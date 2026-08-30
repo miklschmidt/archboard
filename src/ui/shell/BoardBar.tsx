@@ -7,15 +7,16 @@
 // variant, which level, whether it is written down.
 
 import React, { useCallback } from "react";
-import type { BoardHold, BoardIdentity, NoteWrittenElsewhere } from "../types";
+import type { BoardHold, BoardIdentity, LockHolder, NoteWrittenElsewhere } from "../types";
 import { Icon } from "./Icons";
 
 interface BoardBarProps {
 	identity: BoardIdentity | null;
 	boardKey: string | null;
-	vault: string | null;
 	elementCount: number;
 	connected: boolean;
+	/** A real cross-write claim, never the transient lock for one write. */
+	claimedBy: LockHolder | null;
 	/** Set while this board has stopped saving (ADR 0006, TASK-079). */
 	hold: BoardHold | null;
 	onHoldClick: () => void;
@@ -75,22 +76,27 @@ function holdLabel(hold: BoardHold): string {
  * board somebody else is working on; a rollback is somebody's undo arriving
  * from the vault. Only the first two lines below could be said before.
  */
-function noteLabel(written: NoteWrittenElsewhere): string {
-	if (written.reason !== "changed") return "a note here archboard has not read";
+function noteLabel(written: NoteWrittenElsewhere): { copy: string; time?: string } {
+	if (written.reason !== "changed") return { copy: "A note here archboard has not read" };
 	if (written.versionMove === "ahead") {
 		const by = (written.version ?? 0) - (written.ourVersion ?? 0);
-		return `note is ${by} write${by === 1 ? "" : "s"} ahead · ${clock(written.writtenAt)}`;
+		return {
+			copy: `Note is ${by} write${by === 1 ? "" : "s"} ahead`,
+			time: clock(written.writtenAt),
+		};
 	}
-	if (written.versionMove === "behind") return `note was rolled back · ${clock(written.writtenAt)}`;
-	return `note changed on disk · ${clock(written.writtenAt)}`;
+	if (written.versionMove === "behind") {
+		return { copy: "Note was rolled back", time: clock(written.writtenAt) };
+	}
+	return { copy: "Note changed on disk", time: clock(written.writtenAt) };
 }
 
 export function BoardBar({
 	identity,
 	boardKey,
-	vault,
 	elementCount,
 	connected,
+	claimedBy,
 	hold,
 	onHoldClick,
 	writtenElsewhere,
@@ -113,36 +119,46 @@ export function BoardBar({
 	const boardTitle = identity
 		? `${identity.board}${identity.variant === "current" ? "" : ` / ${identity.variant}`}`
 		: (boardKey ?? "No board");
+	const writtenLabel = writtenElsewhere ? noteLabel(writtenElsewhere) : null;
 	return (
 		<header className="bar">
 			<div className="bar-brand" aria-label="archboard">
-				<span className="brand-copy">
-					<span className="wordmark">archboard</span>
-					<span className="vault-name" title={vault ?? undefined}>
-						{vault ? `${vault} / autowrite` : "Connecting to vault"}
-					</span>
-				</span>
+				<span className="wordmark">archboard</span>
 			</div>
 
-			<div className="bar-board bar-identity">
-				<div className="bar-board-title">
-					<span className="board-name">{boardTitle}</span>
-					{identity?.level && <span className="level-tag">{identity.level}</span>}
+			<div className="bar-board">
+				<div className="bar-identity">
+					<div className="bar-board-title">
+						<span className="board-name">{boardTitle}</span>
+						{identity?.level && <span className="level-tag">{identity.level}</span>}
+					</div>
+					<div className="bar-board-meta">
+						<span
+							className={`status ${connected ? "status-live" : "status-offline"}`}
+							title={connected ? "Canvas server connected" : "The canvas server is not answering"}
+						>
+							<span className={`dot ${connected ? "dot-live" : "dot-dead"}`} />
+							{connected ? "Live board" : "Offline"}
+						</span>
+						<span className="bar-meta-rule" aria-hidden="true" />
+						<span className="meta">
+							{elementCount} element{elementCount === 1 ? "" : "s"}
+						</span>
+						{!hold && !writtenElsewhere && (
+							<>
+								<span className="bar-meta-rule" aria-hidden="true" />
+								<span className="meta meta-vault">
+									<Icon name="check" size={13} />
+									<span>In the vault</span>
+								</span>
+							</>
+						)}
+					</div>
 				</div>
-				<div className="bar-board-meta">
-					<span
-						className={`status ${connected ? "status-live" : "status-offline"}`}
-						title={connected ? "Canvas server connected" : "The canvas server is not answering"}
-					>
-						<span className={`dot ${connected ? "dot-live" : "dot-dead"}`} />
-						{connected ? "Live board" : "Offline"}
-					</span>
-					<span className="meta">&bull;</span>
-					<span className="meta">
-						{elementCount} element{elementCount === 1 ? "" : "s"}
-					</span>
-					{/* A hold outranks the earlier note-changed state. */}
-					{hold ? (
+
+				{/* A hold outranks the earlier note-changed state, and both outrank a claim. */}
+				{hold ? (
+					<div className="bar-board-state">
 						<button
 							className="chip chip-held"
 							onClick={onHoldClick}
@@ -150,21 +166,27 @@ export function BoardBar({
 						>
 							{holdLabel(hold)}
 						</button>
-					) : writtenElsewhere ? (
+					</div>
+				) : writtenElsewhere && writtenLabel ? (
+					<div className="bar-board-state">
 						<button
 							className="chip chip-elsewhere"
 							onClick={onNoteClick}
 							title={`${writtenElsewhere.message}\n\nClick to see what you can do about it.`}
 						>
-							{noteLabel(writtenElsewhere)}
+							<span>{writtenLabel.copy}</span>
+							{writtenLabel.time && <time className="chip-time">{writtenLabel.time}</time>}
 						</button>
-					) : (
-						<span className="meta meta-vault">
-							<Icon name="check" size={13} />
-							<span>in the vault</span>
+					</div>
+				) : claimedBy ? (
+					<div className="bar-board-state">
+						<span className="bar-claim" title={claimedBy.reason || claimedBy.id}>
+							<span className="dot" aria-hidden="true" />
+							<span className="claim-label">Claimed by</span>
+							<span className="claim-id">{claimedBy.id}</span>
 						</span>
-					)}
-				</div>
+					</div>
+				) : null}
 			</div>
 
 			<nav className="bar-actions" aria-label="Board actions">

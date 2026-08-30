@@ -122,10 +122,41 @@ test(
 				browser.eval<string | null>(
 					`document.querySelector('.chip-elsewhere')?.textContent ?? null`,
 				),
-			(text) => /note changed on disk/.test(text ?? ""),
+			(text) => /Note changed on disk/.test(text ?? ""),
 			"the pane to notice the foreign note",
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
 		);
+		const conflictType = await browser.eval<{
+			height: number;
+			copyFamily: string;
+			copySize: number;
+			copyLineHeight: number;
+			timeFamily: string;
+			timeSize: number;
+			timeLineHeight: number;
+		}>(`(() => {
+			const chip = document.querySelector('.chip-elsewhere');
+			const copy = chip.querySelector('span');
+			const time = chip.querySelector('.chip-time');
+			return {
+				height: chip.getBoundingClientRect().height,
+				copyFamily: getComputedStyle(copy).fontFamily.toLowerCase(),
+				copySize: parseFloat(getComputedStyle(copy).fontSize),
+				copyLineHeight: parseFloat(getComputedStyle(copy).lineHeight),
+				timeFamily: getComputedStyle(time).fontFamily.toLowerCase(),
+				timeSize: parseFloat(getComputedStyle(time).fontSize),
+				timeLineHeight: parseFloat(getComputedStyle(time).lineHeight),
+			};
+		})()`);
+		expect(conflictType).toMatchObject({
+			height: 44,
+			copySize: 12,
+			copyLineHeight: 16,
+			timeSize: 10,
+			timeLineHeight: 14,
+		});
+		expect(conflictType.copyFamily).toContain("inter");
+		expect(conflictType.timeFamily).toMatch(/mono|consolas/);
 		expect(await paneAppAction(browser, "Pane A", "current", "move")).toBe(true);
 		const heldBefore = await pollUntil(
 			async () => (await request<BoardBody>(`/api/elements?board=${CURRENT}`)).body.held,
@@ -167,6 +198,31 @@ test(
 		expect(entered.controlDisplays).toEqual(entered.controlDisplays.map(() => "none"));
 		expect(entered.dockFocused).toBe(true);
 		expect(entered.sameNodes).toBe(true);
+		const dockType = await browser.eval<{
+			height: number;
+			buttonHeights: number[];
+			buttonFamilies: string[];
+			buttonSizes: number[];
+			buttonLineHeights: number[];
+			buttonWeights: number[];
+		}>(`(() => {
+			const dock = document.querySelector('.presentation-dock');
+			const buttons = [...dock.querySelectorAll('.presentation-pane, .presentation-exit')];
+			return {
+				height: dock.getBoundingClientRect().height,
+				buttonHeights: buttons.map(button => button.getBoundingClientRect().height),
+				buttonFamilies: buttons.map(button => getComputedStyle(button).fontFamily.toLowerCase()),
+				buttonSizes: buttons.map(button => parseFloat(getComputedStyle(button).fontSize)),
+				buttonLineHeights: buttons.map(button => parseFloat(getComputedStyle(button).lineHeight)),
+				buttonWeights: buttons.map(button => parseFloat(getComputedStyle(button).fontWeight)),
+			};
+		})()`);
+		expect(dockType.height).toBeCloseTo(54, 0);
+		expect(dockType.buttonHeights.every((height) => height >= 43.5)).toBe(true);
+		expect(dockType.buttonFamilies.every((family) => family.includes("inter"))).toBe(true);
+		expect(dockType.buttonSizes.every((size) => size === 13)).toBe(true);
+		expect(dockType.buttonLineHeights.every((height) => height === 18)).toBe(true);
+		expect(dockType.buttonWeights.every((weight) => weight === 600)).toBe(true);
 		expect(entered.panes.filter((pane) => pane.rect.width > 0)).toHaveLength(1);
 		expect(entered.panes.find((pane) => pane.label === "Pane B")).toMatchObject({
 			hidden: true,
