@@ -4,7 +4,7 @@ title: Control workhorse turns from the composer
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 15:41'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -25,13 +25,13 @@ ordinal: 202000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own Archboard composer controls in `src/ui/workbench-composer` using assistant-ui composer primitives. No assistant-ui Element is copied; explicit closed capabilities determine submit, steer, Stop, and draft behavior.
+Own text composer submit/steer/interrupt behavior against the authoritative workhorse runtime. Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Empty draft, editing, disabled, submitting, queued, steering, awaiting response, stopping, interrupted, completed, recoverable failure, reconnecting, invalidated, and terminal failure are visibly and programmatically distinct.
-- [ ] #2 Submit starts the exact idle link, Steer names the permitted active turn, and Stop names the active turn; no focus or recent-event heuristic can retarget after pane changes.
-- [ ] #3 Recoverable failure preserves the draft, authoritative success clears it, invalidation freezes input, and every disabled action explains the recovery path.
-- [ ] #4 Tests at src/ui/workbench-composer/tests cover capability/state transitions, keyboard shortcuts, focus return, labels/status, busy semantics, duplicate submission refusal, and pane-focus changes.
+- [ ] #1 Submit creates the authoritative client command and turn-keyed assistant record immediately; an active turn uses steer only with its exact expectedTurnId, and Stop interrupts only the bound current turn.
+- [ ] #2 The draft is frozen while delivery is pending; refused, not_delivered, or outcome_unknown restores the exact draft and disables a duplicate submit until authoritative reconciliation states whether a turn exists.
+- [ ] #3 Delivered clears the draft only after the matching authoritative turn/item event; reconnect, late result, stale link, child exit, and turn replacement reconcile without duplicate user messages.
+- [ ] #4 Keyboard submit/newline, IME composition, paste limits, accessible status, and focus return are deterministic and tested through the runtime public interface.
 <!-- AC:END -->

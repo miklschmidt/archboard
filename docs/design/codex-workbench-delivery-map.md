@@ -1,112 +1,137 @@
 # Codex workbench delivery map
 
 **Planned:** 2026-08-30
+
 **Scope:** TASK-143 and TASK-144 after TASK-140 merged into `main`
 
-This document explains how to execute the Backlog graph. The task records own
-the behavior, acceptance criteria, references, and dependencies. This map owns
-only delegation and reconciliation, so an implementation detail changes in one
-place: the active leaf's plan.
+The Backlog records are the executable specification. This map owns delegation,
+integration order, and reconciliation. A worker activates one ready leaf,
+researches its current seam, and records an implementation plan then; To Do
+tasks deliberately have no speculative `implementationPlan` field.
 
 ## Unit of delegation
 
-An implementation leaf owns one named deep module or one narrow configuration
-seam. Its tests live with that module or exercise its public interface. A leaf
-does not resolve a neighboring module's policy, add a second state owner, or
-change another leaf's contract implicitly.
+A leaf owns one deep module, one test/document owner, or one serialized shared
+configuration seam. Cross-module leaves are reserved for final composition,
+removal, shell/browser integration, and root package/lockfile edits whose value
+is precisely the atomic integration boundary.
 
-The graph contains 74 implementation leaves: 57 under TASK-143 and 17 under
-TASK-144.
+The active graph contains **82 implementation leaves**: **64 under TASK-143**
+and **18 under TASK-144**. TASK-143.04.08 is archived because each browser
+owner now registers itself when it becomes runnable.
 
-| Milestone   | Leaf ownership                                                                                                                                                         |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TASK-143.01 | Shared identities/browser DTO; ignore/generate/register exact protocol; process; epoch; transport; instructions; session; thread link; workhorse start; gateway/canvas |
-| TASK-143.02 | Frozen realtime package/API; serialized root registration; boundary enforcement; browser media/WebRTC; sole Archboard realtime adapter                                 |
-| TASK-143.03 | Browser transport; assistant-ui pin/adapter; owned thread/timeline/composer/queue/approval/coordinator/board UI; text frame; shell; browser owner                      |
-| TASK-143.04 | Voice projection; controls; context; transcript; spoken approval; frame/fullscreen integration; controlled browser owner; inventory; real-audio acceptance             |
-| TASK-143.05 | Wait graph; approval broker; six-tool catalogue; dynamic-tool dispatcher                                                                                               |
-| TASK-143.06 | Semantic publisher; linked delivery; legacy control module removal; legacy command-surface removal                                                                     |
-| TASK-143.07 | Coordinator/voice tool catalogue; coordinator lifecycle; queue policy; bound effects; callbacks; spoken gate; dispatcher                                               |
-| TASK-144    | Serialized dependencies; aliases; theme/import/shell; shadcn; classes; Oxfmt/owner; dialog/opener/owner; guide/AGENTS/enforcement                                      |
+| Milestone   | Leaf ownership                                                                                                                                                                                                                                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| TASK-143.01 | identities/browser DTO; ignored/generated/decoded exact protocol; timing; authored contracts; process/storage/auth; epoch; JSON-RPC; session; thread link; workhorse transaction; root conformance; generated-boundary policy; final production composition; lifecycle process owner |
+| TASK-143.02 | extraction-ready browser realtime contract/export; native media/WebRTC; sole 0.151.0 adapter; real-process contract                                                                                                                                                                  |
+| TASK-143.03 | browser transport; assistant-ui dependency/adapter; thread-link/timeline/composer/queue/approval/coordinator/board UI; text frame; shell/fullscreen text; self-registering text browser owner                                                                                        |
+| TASK-143.04 | voice projection; controls; captured context; canonical transcript; spoken approval; frame/fullscreen voice; self-registering controlled browser owner; real-audio smoke                                                                                                             |
+| TASK-143.05 | wait graph; seven-family approval broker; reviewed six-tool catalogue; general dynamic-tool dispatcher                                                                                                                                                                               |
+| TASK-143.06 | semantic publisher/delivery; serialized legacy server/runtime, control client, CLI, fixture, timing, and current-doc retirement                                                                                                                                                      |
+| TASK-143.07 | reviewed coordinator/voice catalogue; capable coordinator lifecycle; sole queue port; four operations; callbacks; later-turn spoken gate; dispatcher                                                                                                                                 |
+| TASK-144    | serialized dependency/lockfile; Vite/root/frontend/Oxlint aliases; theme/import/shell; shadcn; classes; native formatting; dialog/button/opener; browser and agent-guide enforcement                                                                                                 |
 
-The shared seams have explicit serial owners:
+## Shared-seam serialization
 
-- TASK-143.01.13 registers protocol conformance, TASK-143.02.04 registers the
-  private workspace, TASK-144.01 owns the accepted Tailwind/Base UI dependency
-  set, and TASK-143.03.12 adds assistant-ui last.
-- TASK-144.02 configures the Vite plugin/runtime alias, TASK-144.15 mirrors it
-  in frontend TypeScript, and TASK-144.17 mirrors it in root TypeScript before
-  shadcn configuration is accepted.
-- TASK-144.03 creates `src/ui/theme/app.css`, TASK-144.13 imports it from the
-  frontend, and TASK-144.14 migrates `shell.css` to consume its tokens.
-- TASK-143.03.10 establishes `src/ui/workbench-frame`; TASK-143.04.06 adds
-  voice after the text frame is accepted.
-- TASK-143.03.13 and TASK-143.04.07 own separate text and voice browser tests;
-  TASK-143.04.08 alone registers both in the canonical browser inventory.
-- TASK-144.08 migrates opener settings and TASK-144.11 alone changes its
-  existing browser owner.
+- Root `package.json`/`bun.lock`: TASK-143.01.13 pins Codex and conformance,
+  TASK-144.01 adds Tailwind/Base UI, then TASK-143.03.12 adds assistant-ui.
+- UI alias: TASK-144.02 owns Vite; TASK-144.15 and TASK-144.17 own the two
+  TypeScript projects; TASK-144.18 makes existing Oxlint boundary rules resolve
+  `@/`; TASK-144.04 runs the shadcn dry-run only after all four agree.
+- CSS: TASK-144.03 owns canonical import/theme order, TASK-144.13 imports the
+  stylesheet, and TASK-144.14 migrates the accepted shell.
+- Frame/shell: TASK-143.03.10 owns the text frame; TASK-143.04.06 extends it.
+  TASK-143.03.11 extends the existing `PresentationDock` for text, then
+  TASK-143.04.10 extends that same owner for voice.
+- Browser inventory: TASK-143.06.06 removes the legacy owner first.
+  TASK-143.03.13 adds/runs text and updates 19 to 20. TASK-143.04.07 adds/runs
+  voice and updates 20 to 21. Each landed owner is immediately runnable.
+- `AGENTS.md`: TASK-144.12/16 establish UI guidance; TASK-143.06.08 updates
+  injection guidance; text/voice browser registration then changes only exact
+  inventory counts and owner names in serialized order.
+- Timing: TASK-143.01.16 adds all workbench bounds before consumers;
+  TASK-143.06.07 removes only legacy injection names after migration.
+- Final runtime: TASK-143.01.14 depends on accepted realtime, approvals/tools,
+  semantic delivery, coordinator callbacks, and coordinator dispatch, then
+  composes one production graph. TASK-143.01.15 tests that graph through the
+  server/process boundary.
 
-Dependencies encode every order above. No two ready leaves own the same module
-or configuration seam at the same time.
+No milestone-to-milestone dependency is used inside TASK-143. Leaf dependencies
+are the source of truth and avoid a false cycle between the final TASK-143.01
+composition root and TASK-143.05-.07 inputs.
+
+## Delegation classes
+
+Most leaves are intentionally suitable for `gpt-5.6-luna`:
+
+- `gpt-5.6-luna`, high: bounded exploration, mechanical configuration,
+  generated-boundary checks, exports, cleanup, documentation, and fixtures.
+- `gpt-5.6-luna`, xhigh/max: one behavioral runtime module with a frozen public
+  contract, including protocol/session, media, reducers, catalogues, queue,
+  callbacks, and state-policy modules.
+- `gpt-5.6-sol`, medium: production composition, cross-module legacy removal,
+  lifecycle/process owners, and broad integration review.
+- `gpt-5.6-sol`, high: routine rendered UI and browser implementation. This
+  includes TASK-143.03.03-.09, TASK-143.03.11, TASK-143.03.13,
+  TASK-143.04.02-.07, TASK-143.04.10, TASK-144.03, TASK-144.07-.08,
+  TASK-144.11, and TASK-144.14.
+- `gpt-5.6-sol`, xhigh: the substantial workbench-frame design in
+  TASK-143.03.10 and any change to the reference-mockup/aesthetic contract.
+- `gpt-5.6-sol`, xhigh: TASK-143.01.17 authors the immutable agent/tool bytes.
+  Luna implementers may only load, hash, validate, and dispatch that record.
+
+This leaves a clear Luna majority without assigning visual design, authored
+agent policy, or cross-module composition to a cheaper model.
 
 ## Dependency waves
 
-1. Establish shared identities, exact protocol inputs, private-package
-   governance, authored instructions, and the one root dependency chain.
-2. Build process/transport/session and Tailwind theme/resolver seams, then bind
-   current-epoch threads and create the workhorse-start transaction.
-3. Add approval/tool catalogues, semantic context, coordinator catalogue and
-   lifecycle, queue policy, realtime package/media/adapter, and the browser
-   gateway.
-4. Implement one UI module per leaf against frozen ports. Text composition and
-   shell integration precede voice composition and fullscreen projection.
-5. Add the separate text and controlled-voice browser owners, register them
-   once, run the real-audio acceptance procedure, and execute composed boundary
-   reviews.
+1. Pin exact Codex generation, identities, timing, authored contracts, root
+   dependency order, Tailwind aliases/theme, and repository boundary owners.
+2. Build process/storage/auth, epoch, JSON-RPC/session/pagination, thread
+   classification, workhorse transaction, browser realtime contract/media,
+   approval/catalogue, semantic, coordinator lifecycle, and queue ports.
+3. Build dispatchers, realtime adapter/recovery, coordinator operations,
+   callbacks/spoken gate, browser gateway, then the one production composition
+   root and its lifecycle process owner.
+4. Remove the legacy injection path in its serialized server, client, CLI,
+   fixture, timing, and current-document leaves. Land Tailwind/shadcn shell
+   foundations and assistant-ui before dependent UI modules.
+5. Implement one UI module per leaf. Compose text before voice, and shell text
+   before extending the same fullscreen dock for voice.
+6. Land and register the controlled text browser owner, then voice. Run the
+   clean-process real text/voice smoke and composed boundary reviews.
 
 ## Orchestration loop
 
-1. Select only a leaf whose Backlog dependencies are Done. Read its task,
-   referenced decisions, current module neighbors, and public tests.
-2. Give one isolated worktree and one leaf to a `gpt-5.6-luna` worker. Use
-   high reasoning for configuration or mechanical seams and xhigh or max for
-   behavioral modules. The worker activates the task and records its researched
-   implementation plan only then.
-3. Keep implementation and focused verification inside the owned seam. Route a
-   discovered cross-module contract change to the parent before code crosses
-   the boundary.
-4. Review the leaf independently with `gpt-5.6-sol`. The reviewer checks the
-   leaf's task contract, module boundaries, reachable states, strict types,
-   lint, formatting, and direct verification. Findings return to the same
-   worker until clean.
-5. Reconcile the reviewed commit into the integration branch, run the nearest
-   downstream contract owners, and mark the leaf Done through the Backlog
-   finalization workflow.
-6. Close an integration milestone only after every child is Done and its
-   composed public behavior passes. Run the complete `bun run check` before
-   accepting TASK-144, TASK-143.01, TASK-143.03, and TASK-143.04, and once more
-   for TASK-143.
-
-The parent coordinator owns dependency selection, interface conflicts,
-integration tests, review routing, and final reconciliation. A leaf worker owns
-one module and does not coordinate peer work.
+1. Select one leaf whose Backlog dependencies are Done. Read its record,
+   decisions, named owner path, neighbors, and public tests.
+2. Create an isolated worktree with the model/effort class above. The worker
+   marks the leaf In Progress and records its researched implementation plan.
+3. Keep code and focused verification inside the named seam. A discovered
+   contract change returns to the parent instead of leaking into a peer leaf.
+4. Review independently with `gpt-5.6-sol`: medium for broad code review,
+   higher architectural reasoning only when the seam changes. A reviewer must
+   reject weakened tests, lint, formatting, types, or public verification.
+5. Return findings to the same worker until clean, reconcile the reviewed
+   commit, run dependent contract owners, and finalize through Backlog.
+6. Run `bun run check` at TASK-144, production composition, text UI, voice UI,
+   and final TASK-143 boundaries.
 
 ## Boundary reviews
 
-Review composed seams after these milestone groups:
+1. TASK-144: TASK-140 aesthetics, native Oxc enforcement, resolver agreement,
+   Base UI behavior, and unchanged shell/Excalidraw operation.
+2. TASK-143.01/.02: exact process/storage/auth/protocol, session/link, realtime
+   public contract, production graph, reload/shutdown, and generated boundary.
+3. TASK-143.05-.07: approval identity, wait graph, literal catalogues, target
+   matrix, semantic delivery, queue, capable coordinator, callbacks, and spoken
+   gate.
+4. TASK-143.03: closed browser transport, assistant-ui ownership, complete text
+   workbench, accessibility, and operator-shell/fullscreen integration.
+5. TASK-143.04: browser resource lifecycle, exact realtime binding/recovery,
+   captured context, voice UI, visual fallback, and real microphone smoke.
 
-1. TASK-144: merged TASK-140 aesthetics, native Oxc enforcement, Base UI
-   behavior, and unchanged shell/Excalidraw operation.
-2. TASK-143.01: process, effective storage isolation, protocol/transport,
-   session, thread-link, shared DTO, and browser gateway.
-3. TASK-143.05-.07: approval identity, wait graph, tools, semantic delivery,
-   queue, coordinator, callbacks, and spoken gate.
-4. TASK-143.03: closed browser transport, ExternalStoreRuntime, complete text
-   workbench, accessibility, and operator-shell integration.
-5. TASK-143.02 plus TASK-143.04: browser resource lifecycle, exact realtime
-   session binding, voice UI/recovery, and the real microphone/speaker smoke.
-
-The plan is ready for implementation only when an independent plan reviewer
-reports no inconsistent dependency or ownership seam and explicitly confirms
-that every leaf supplies enough bounded context for a Luna worker to implement
-and verify it without making a cross-module architecture decision.
+The plan is ready only when the independent reviewer returns exactly
+`REVIEW_CLEAN` and explicitly confirms that the complete DAG is coherent and
+granular enough for Luna to implement the majority of leaves without making a
+cross-module architecture decision.

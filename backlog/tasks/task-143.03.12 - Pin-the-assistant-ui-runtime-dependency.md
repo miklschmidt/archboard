@@ -4,7 +4,7 @@ title: Pin the assistant-ui runtime dependency
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 15:51'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
   - TASK-144.01
@@ -12,6 +12,7 @@ references:
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
   - package.json
+  - bun.lock
 parent_task_id: TASK-143.03
 priority: high
 type: task
@@ -21,12 +22,13 @@ ordinal: 226000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the serialized root dependency update for the text workbench runtime. Pin `@assistant-ui/react` 0.15.17 exactly and update `bun.lock`; do not add Assistant Cloud, AI SDK transports, voice, diff, syntax, or copied Elements packages.
+Own the final serialized root package/lockfile edit for @assistant-ui/react 0.15.17 and audit its transitive graph. The runtime is headless support, not Archboard state or transport.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 package.json and bun.lock contain exact @assistant-ui/react 0.15.17 as the sole direct assistant-ui runtime dependency after TASK-144.01.
-- [ ] #2 A frozen Bun install, root type-check, and production frontend build resolve React 19; assistant-cloud may remain a package-transitive lock entry but is never a direct dependency, application import, transport, or production bundle module.
-- [ ] #3 Dependency inspection excludes direct Assistant Cloud, AI SDK, voice, diff, syntax, and copied Elements packages and proves every assistant-ui adapter task depends on this serialized package.json owner.
+- [ ] #1 package.json and bun.lock pin @assistant-ui/react exactly 0.15.17 after the Codex and Tailwind/Base UI root edits; frozen install and license audit pass.
+- [ ] #2 The audit records expected assistant-cloud and Radix helper transitives pulled by the package; the app contains no direct Radix import and no unreviewed runtime service, telemetry, cloud transport, or duplicate React.
+- [ ] #3 Repository policy permits only explicitly assigned assistant-ui runtime/provider/message/composer imports and forbids transport, thread-list, queue, tool handlers, voice adapters, and copied Elements.
+- [ ] #4 Bundle inspection uses an explicit reviewed allowlist and fails on unexpected transitive growth or any app/direct Radix dependency rather than asserting Radix is absent.
 <!-- AC:END -->

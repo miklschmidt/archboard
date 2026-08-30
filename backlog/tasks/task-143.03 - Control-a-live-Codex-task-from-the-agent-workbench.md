@@ -4,14 +4,9 @@ title: 'Build the text, tools, queue, and approvals workbench UI'
 status: To Do
 assignee: []
 created_date: '2026-08-30 11:44'
-updated_date: '2026-08-30 15:46'
+updated_date: '2026-08-30 16:35'
 labels: []
-dependencies:
-  - TASK-140.03
-  - TASK-143.01
-  - TASK-143.05
-  - TASK-143.06
-  - TASK-143.07
+dependencies: []
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
@@ -33,6 +28,6 @@ Integration milestone for browser transport, pinned assistant-ui ExternalStoreRu
 <!-- AC:BEGIN -->
 - [ ] #1 The thirteen leaves compose one workhorse-first desktop workbench; @assistant-ui/react 0.15.17 supplies headless runtime/primitives only, Archboard owns rendered components, and app-server state remains authoritative.
 - [ ] #2 Every executable action names its link/turn/request target; all empty/loading/progress/unavailable/stale/prior-epoch/reconnect/approval/queue/interruption/completion/failure/recovery/unknown states have one module owner and test path.
-- [ ] #3 Ordinary approvals render the broker identity and remain separate from voice eligibility; shared package, module, shell, and browser-inventory edits are explicitly serialized.
+- [ ] #3 Ordinary approvals render the broker identity and remain separate from voice eligibility; root dependency, module, shell, and browser-inventory edits are explicitly serialized.
 - [ ] #4 The text browser owner proves desktop one/two-pane/fullscreen, collapsed/expanded, themes, keyboard, logs, focus, reduced motion, screen reader, Samsung Flip touch, exact targeting, and unchanged Excalidraw.
 <!-- AC:END -->

@@ -4,10 +4,9 @@ title: Expose typed thread-coordination tools to Archboard-created Codex agents
 status: To Do
 assignee: []
 created_date: '2026-08-30 13:07'
-updated_date: '2026-08-30 15:16'
+updated_date: '2026-08-30 16:29'
 labels: []
-dependencies:
-  - TASK-143.01
+dependencies: []
 references:
   - docs/design/desktop-app-server-sharing-research.md
   - docs/design/codex-workbench-delivery-map.md
@@ -20,7 +19,7 @@ ordinal: 165000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Integration milestone for the pure wait graph, approval broker, exact six-tool manifest, and general `item/tool/call` dispatcher delivered by TASK-143.05.01-.04.
+Integration milestone for the pure wait graph, seven-family approval broker, exact reviewed six-tool manifest, and general item/tool/call dispatcher. Milestone ordering is expressed only by leaf dependencies to avoid a cycle with the final TASK-143.01 composition root.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

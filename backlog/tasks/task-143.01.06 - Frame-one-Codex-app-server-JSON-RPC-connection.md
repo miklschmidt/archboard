@@ -4,10 +4,12 @@ title: Frame one Codex app-server JSON-RPC connection
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies:
+  - TASK-143.01.01
   - TASK-143.01.03
-  - TASK-143.01.04
+  - TASK-143.01.16
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
 modified_files:
@@ -21,12 +23,13 @@ ordinal: 176000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own newline-delimited JSON framing and request correlation in `src/runtime/codex-transport`. It connects one process handle to decoded protocol messages without reducing thread semantics.
+Own newline-delimited JSON-RPC framing, request/reverse-request correlation, cancellation settlement, late-result retention, and wire shutdown for one child epoch. It performs no semantic retry and constructs no tool result.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The transport handles partial and coalesced frames, request IDs, notifications, reverse requests, one-shot responses, timeouts, cancellation, and clean close.
-- [ ] #2 Malformed frames, late responses, double responses, unknown notifications, child exit, and writes after close settle deterministically with inspectable errors.
-- [ ] #3 Two child transports with overlapping request IDs prove complete response, notification, approval, and shutdown isolation.
+- [ ] #1 Client requests, responses, notifications, errors, and reverse requests correlate by child, epoch, and requestId; logical dynamic calls retain child, epoch, threadId, turnId, callId, namespace, tool, and manifestHash.
+- [ ] #2 A local timeout or cancellation settles only the local waiter and never claims remote cancellation; late responses remain inspectable and non-idempotent lost responses classify as outcome_unknown.
+- [ ] #3 Only newline-delimited stdout frames enter the decoder, stderr drains independently, malformed/duplicate/unknown frames fail the owning operation without corrupting later frames, and backpressure is bounded.
+- [ ] #4 codex-approvals and dynamic dispatchers alone construct reverse responses; this module validates correlation and writes each supplied response at most once before orderly close.
 <!-- AC:END -->

@@ -4,10 +4,9 @@ title: Connect the browser to the closed workbench contract
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 15:48'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
-  - TASK-143.01.02
   - TASK-143.01.14
 references:
   - docs/design/operator-canvas-shell.md
@@ -23,12 +22,13 @@ ordinal: 198000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the browser transport in `src/ui/workbench-transport`. It exchanges only shared snapshots/events/commands with the Codex gateway and never imports runtime, server, process, credentials, or generated protocol code.
+Connect the browser to the closed workbench gateway produced by the final server composition root. Own transport/reconnect/sequence behavior only; never instantiate a process, session, coordinator, queue, approval, semantic, or realtime owner in the UI.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The transport exposes connecting, ready, disconnected, reconnecting, lease-lost, and child-invalidated states plus validated command results.
-- [ ] #2 Commands always carry explicit thread-link/turn/request identity and expected state; no action infers a target from focus history or the latest event.
-- [ ] #3 Tests prove same-child hydration, replacement-child invalidation, event ordering, cancellation, malformed reply refusal, and cleanup.
+- [ ] #1 The client obtains one versioned full snapshot then applies strictly sequenced deltas from the production gateway; reconnect requests a new snapshot and never replays a command automatically.
+- [ ] #2 Commands carry browser lease, pane, link, child epoch, and command identity and retain their original target across focus/navigation changes.
+- [ ] #3 Stopped/backoff, initialized, storage mismatch, login-capable/signed-out/login pending, account-ready, thread-capable, reconnecting, stale snapshot, and incompatible-contract states are represented without enabling unsupported commands.
+- [ ] #4 Transport tests use the final composed gateway public contract and prove duplicate/out-of-order messages, lost responses, late results, lease expiry, close, and recovery.
 <!-- AC:END -->

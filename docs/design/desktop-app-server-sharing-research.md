@@ -456,8 +456,11 @@ union is `cli | vscode | exec | appServer | subAgent | subAgentReview |
 subAgentCompact | subAgentThreadSpawn | subAgentOther | unknown`. The workbench
 queries only the explicit top-level allowlist `cli`, `vscode`, `exec`, and
 `appServer`, then joins `thread/loaded/list`. Execution requires the current
-child's loaded row with `canAcceptDirectInput === true`; persisted, missing,
-`false`, `null`, unknown-source, and system-error rows remain inspect-only.
+child's fully paginated loaded-ID membership and the joined `Thread` row's
+`canAcceptDirectInput === true`. `thread/loaded/list` returns IDs, not thread
+objects. Persisted-only, absent from the loaded-ID set, `notLoaded`,
+`systemError`, `false`, `null`, unknown-source, stale-child, and
+unknown-provenance rows remain inspect-only with distinct refusal reasons.
 
 The same tree exposes realtime V3 startup context through
 `includeStartupContext`, role-bearing `initialItems`,

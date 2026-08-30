@@ -4,12 +4,9 @@ title: Orchestrate voice through a fast linked coordinator thread
 status: To Do
 assignee: []
 created_date: '2026-08-30 14:13'
-updated_date: '2026-08-30 15:44'
+updated_date: '2026-08-30 16:29'
 labels: []
-dependencies:
-  - TASK-143.01
-  - TASK-143.05
-  - TASK-143.06.01
+dependencies: []
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
   - docs/design/agent-workbench-ui-library-research.md
@@ -23,13 +20,13 @@ ordinal: 169000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Integration milestone for byte-exact coordinator/voice tool catalogue, coordinator lifecycle/settings, queue policy, bound workhorse operations, semantic/operation callbacks, spoken approval gate, and dynamic-call dispatch delivered by TASK-143.07.01-.07.
+Integration milestone for byte-exact coordinator/voice catalogues, capable Luna/medium coordinator lifecycle/settings, sole queue port, four bound workhorse operations, correlated callbacks, one-slot later-turn spoken approval gate, and dynamic-call dispatcher. Ordering is expressed by leaves.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 One same-epoch capable coordinator starts with the persisted catalogue, validates Luna/medium/priority fallback, retains ordinary tools/approvals, and delegates sustained work while allowing quick investigation and one bounded board write.
-- [ ] #2 Exactly four host-bound workhorse operations plus spoken resolver enforce queue/attached-busy/intervention policy without caller targets or a wait tool; catalogue and dispatcher remain separate.
-- [ ] #3 Callbacks consume semantic and operation correlations, buffer non-reentrantly, dispatch inactive inject-items at most once with explicit uncertainty, and use only guarded active realtime append.
-- [ ] #4 The spoken gate holds broker identity and later normal coordinator verdict; codex-approvals alone constructs responses, revalidates effects, and settles exactly once with visual fallbacks/race disclosure.
+- [ ] #1 One current-epoch capable gpt-5.6-luna medium coordinator starts with reviewed bytes/catalogues, normal Codex tools/approvals, fully proven settings, and priority only when advertised.
+- [ ] #2 Exactly four host-bound workhorse operations plus spoken resolver enforce created/attached/busy/queue/steer policy without caller targets, synchronous wait, or duplicate turn on uncertainty.
+- [ ] #3 Callbacks use one closed correlated union and select one guarded active append or eligible inactive injection after dequeue; semantic callbacks stay silent while voice is inactive.
+- [ ] #4 The spoken gate schedules a later ordinary coordinator turn and codex-approvals alone settles the validated request exactly once, with visual fallback for every race/uncertain state.
 <!-- AC:END -->

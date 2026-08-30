@@ -4,7 +4,7 @@ title: Classify and bind current-epoch thread links
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 15:39'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies:
   - TASK-143.01.05
@@ -22,13 +22,13 @@ ordinal: 179000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own thread availability, ownership classification, explicit pane-to-workhorse binding, and rebind guards in `src/runtime/codex-thread-link`. It consumes session probes and epoch records and produces inspect-or-execute capabilities.
+Fully discover, classify, and bind one current-epoch pane thread link by joining paginated persisted thread rows with paginated loaded thread IDs. No loaded-list response is treated as a Thread object.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Discovery paginates thread/list with the explicit top-level sourceKinds [cli, vscode, exec, appServer], joins thread/loaded/list, and classifies current loaded/controllable, current loaded/unavailable, persisted notLoaded/ownership-unknown, prior-epoch inspect-only, and child-exit invalid states.
-- [ ] #2 Controllability requires a current loaded row for the same child plus canAcceptDirectInput === true from thread/loaded/list; false, null, missing, systemError, unknown source, or stale probes are inspect-only with exact refusal reasons.
-- [ ] #3 Only a current-epoch loaded controllable thread can bind one pane/workhorse executable link; active coordinator, tool call, callback, queue tail, approval, or realtime work blocks close/rebind until settled or explicitly stopped.
-- [ ] #4 Tests prove pagination, nonempty allowlist, no cold resume, replacement-child refusal, same-child rehydration, exact one-link targeting, and no recent-thread heuristic.
+- [ ] #1 The classifier exhausts thread/list and thread/loaded/list, joins loaded IDs to Thread rows by exact ThreadId, and never infers membership from recency, status, or a partial page.
+- [ ] #2 Execution requires current child/epoch, allowed top-level source, loaded membership, and canAcceptDirectInput === true; false and null/missing capability are distinct refusal reasons.
+- [ ] #3 Persisted-not-loaded, notLoaded status, systemError status, stale child, prior epoch, unknown provenance/source, absent join row, and outcome-unknown creation remain inspect-only with actionable reasons.
+- [ ] #4 Bindings compare-and-swap pane/link identity and tests cover cursor exhaustion, repeated cursors, disappearing rows, duplicate IDs, stale responses, and every refusal.
 <!-- AC:END -->

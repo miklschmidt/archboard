@@ -1,18 +1,18 @@
 ---
 id: TASK-143.02.04
-title: Govern the private Codex realtime workspace package
+title: Expose the Codex realtime public module
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 15:48'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies:
-  - TASK-143.01.13
   - TASK-143.02.01
+  - TASK-143.02.02
 references:
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
-  - package.json
+  - src/ui/codex-realtime/index.ts
 parent_task_id: TASK-143.02
 priority: high
 type: task
@@ -22,12 +22,13 @@ ordinal: 225000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the serialized root integration seam for the existing private `packages/codex-realtime` package. Register its workspace and type/lint/format/test/build lanes in package.json and bun.lock without publication machinery or policy changes.
+Own the single extraction-ready entrypoint for the browser-native realtime module. It exports only reviewed types/factories and keeps implementation files behind the module boundary; it does not edit root package metadata.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Root scripts include the package in type-check, native Oxlint, Oxfmt, module tests, production consumer build, and canonical check; bun.lock is the only committed dependency-resolution artifact.
-- [ ] #2 The package stays private with no publish script or compatibility promise, and a clean checkout can run every package command through Bun from the repository root.
-- [ ] #3 This package.json edit follows TASK-143.01.13 and precedes TASK-144.01; TASK-143.02.05 separately owns automated boundary/inventory enforcement.
+- [ ] #1 The entrypoint exports only the frozen host contract, state/event types, media-session factory, and supported feature marker; no internal handle, store, test fake, Archboard adapter, or generated Codex type escapes.
+- [ ] #2 A consumer fixture compiles using only the entrypoint and can construct, negotiate, meter, stop, and dispose a session without React or Archboard imports.
+- [ ] #3 Deep imports are rejected by the existing module-entrypoint policy, and API extraction fails on accidental exports or mutable global state.
+- [ ] #4 The module stays private in this repository; a later publication decision would require its own task, metadata, compatibility policy, and security review.
 <!-- AC:END -->

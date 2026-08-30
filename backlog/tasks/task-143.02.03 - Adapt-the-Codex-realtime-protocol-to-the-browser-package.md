@@ -1,17 +1,18 @@
 ---
 id: TASK-143.02.03
-title: Adapt the Codex realtime protocol to the browser package
+title: Adapt the Codex realtime protocol to the browser module
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 15:48'
+updated_date: '2026-08-30 16:35'
 labels: []
 dependencies:
+  - TASK-143.01.07
   - TASK-143.01.08
-  - TASK-143.01.09
   - TASK-143.02.01
-  - TASK-143.02.05
-  - TASK-143.07.01
+  - TASK-143.02.02
+  - TASK-143.06.01
+  - TASK-143.01.16
 references:
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
@@ -25,14 +26,14 @@ ordinal: 183000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the sole Archboard-to-package realtime binding adapter in `src/runtime/codex-realtime`. It consumes the stable Codex session port, binds one coordinator and package session, owns the authoritative realtime phase machine, and exposes guarded append and canonical transcript ports.
+Own the sole adapter from raw decoded Codex 0.151.0 realtime/timeline events to the browser-native module. It owns realtime phase and canonical transcript; the browser media module owns neither.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every start mints a unique realtimeSessionId; active requires RPC success plus matching thread/realtime/started for exact child epoch, coordinator thread, realtime session, and v3, and thread-only notifications are ignored outside the matching phase.
-- [ ] #2 The phase machine serializes same-thread restart behind thread/realtime/stop and matching thread/realtime/closed before starting new package/session resources; child, coordinator, binding, device, and transport replacement have explicit recoverable or terminal outcomes.
-- [ ] #3 Offer/answer, package events, appendSpeech, guarded developer appendText, stop, and disconnect map through one binding. Every append revalidates captured child/epoch/coordinator/session; unsupported output-audio WebSocket never crosses the boundary.
-- [ ] #4 Canonical transcript is built only from matching thread/realtime/item/started, item/transcript/delta, and item/completed identities; flat transcript delta/done events may update ephemeral phase diagnostics but never create duplicate canonical text.
-- [ ] #5 Tests in src/runtime/codex-realtime/tests cover non-v3/mismatch, pre-start/late notifications, stale append, stop/closed/restart ordering, canonical transcript dedupe, same-child recovery, child replacement, and package consumption through its public export.
+- [ ] #1 Each start mints a unique realtimeSessionId and sends outputModality audio, version v3, transport {type: webrtc, sdp}, includeStartupContext true, clientManagedHandoffs true, documented handoff/tail choices, exactly one fresh developer-role semantic brief, and canonical start/end instructions.
+- [ ] #2 The empty start response conveys no SDP or readiness; the adapter accepts an answer only from matching thread/realtime/sdp and becomes ready only after matching thread/realtime/started child, thread, session, and version.
+- [ ] #3 Only item-scoped realtime item started/transcript delta/completed events create canonical transcript. Thread-only error/closed and legacy flat transcript events update diagnostics/phase but never create content; WebSocket appendAudio/outputAudio paths are rejected.
+- [ ] #4 Recovery exhausts thread/timeline/list pagination, detects cursor loops, and merges persisted pages with live item events by stable identity without duplicates, gaps hidden as success, or reordered turns.
+- [ ] #5 appendText, appendSpeech, stop, and recovery revalidate captured child/epoch/thread/coordinator/session immediately before one attempt; lost responses classify outcome_unknown, uncertain spoken approval falls back visual, and no path leaves awaiting_user.
 <!-- AC:END -->

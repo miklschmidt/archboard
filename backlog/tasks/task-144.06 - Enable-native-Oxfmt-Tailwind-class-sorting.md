@@ -4,7 +4,7 @@ title: Enable native Oxfmt Tailwind class sorting
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 15:45'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies:
   - TASK-144.03
@@ -23,12 +23,13 @@ ordinal: 220000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own `.oxfmtrc.jsonc` and its formatter fixtures. Use Oxfmt's built-in Tailwind 4 sorter rather than a formatter plugin or custom class-order rule.
+Enable Oxfmt's native Tailwind v4 sorting using the canonical stylesheet and helper function. Keep className native; add no custom sorting rules or copied defaults.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Oxfmt native Tailwind sorting points to src/ui/theme/app.css, sets attributes to [className] and functions to [cn], retains native duplicate/whitespace defaults, and corrects lineWidth to native printWidth 100.
-- [ ] #2 The installed repository Oxfmt package formats supported source through existing scripts; behavior verification belongs to exact repository owner TASK-144.10.
-- [ ] #3 No second formatter, Tailwind linter, custom Oxlint rule, repository copy of class ordering/defaults, warning allowance, or disabled check is introduced.
+- [ ] #1 Oxfmt configuration names the canonical stylesheet and functions [cn]; className uses native formatter behavior and is not redundantly configured.
+- [ ] #2 Sorting follows installed Oxfmt/Tailwind v4 semantics for static strings and cn calls without formatting dynamic expressions, templates, or data as invented classes.
+- [ ] #3 No Prettier plugin, custom comparator, Tailwind-specific Oxlint rule, warning allowance, or upstream default mirror is added.
+- [ ] #4 TASK-144.10 owns the fail-format-pass repository fixture; this task owns configuration only.
 <!-- AC:END -->

@@ -4,6 +4,7 @@ title: Verify the migrated opener dialog in the browser
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies:
   - TASK-144.08
@@ -20,12 +21,13 @@ ordinal: 233000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the rendered regression update for the migrated Base UI opener dialog in the existing canonical browser owner `tests/system/browser/opener-settings.test.ts`. It adds no application behavior.
+Own the existing opener browser owner after migration. Delegation profile: gpt-5.6-sol, high because this is rendered interaction and accessibility verification.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The owner verifies open, validation, success, failure, cancel, Escape, outside dismissal, focus trap/return, disabled and busy actions, and code-target recovery through rendered behavior.
-- [ ] #2 Both themes, desktop keyboard/pointer, Samsung Flip touch targets, portal stacking, visible focus, and accessible name/description remain correct.
-- [ ] #3 The browser owner proves there is one dialog behavior path, unchanged Excalidraw interaction, and cleanup under the existing serial lane.
+- [ ] #1 The browser owner proves trigger naming, initial focus, focus trap, Tab order, Escape dismissal, outside dismissal policy, portal placement, focus return, labels/descriptions, validation announcement, disabled/save/cancel behavior, and no background interaction.
+- [ ] #2 It verifies light/dark/high-contrast, reduced motion, keyboard, screen-reader accessibility tree, 44px Flip targets, and unchanged opener persistence at the supported viewport.
+- [ ] #3 No unexpected browser/server logs, duplicate dialog roots, focus leaks, or direct Radix/shadcn runtime behavior are tolerated.
+- [ ] #4 The canonical existing browser inventory remains one owner; this task does not create a second opener test or register unrelated workbench tests.
 <!-- AC:END -->

@@ -4,9 +4,10 @@ title: Own linked coordinator lifecycle and model selection
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 15:51'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
+  - TASK-143.01.05
   - TASK-143.01.07
   - TASK-143.01.08
   - TASK-143.01.09
@@ -24,14 +25,14 @@ ordinal: 188000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own one persistent coordinator per valid thread link plus global model/effort/service-tier/intervention settings in `src/runtime/codex-coordinator`. It starts a normal capable Codex thread; workhorse effects live in separate modules.
+Own one persistent current-epoch coordinator, exhaustive model selection, exact settings handshake, and restart/reuse policy. It remains capable under ordinary Codex tools/approvals; delegation is the default for sustained work, not a capability restriction.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A valid pane/workhorse link starts exactly one persistent paginated coordinator at the workhorse's recorded cwd/runtimeWorkspaceRoot with reviewed instructions, TASK-143.07.07 dynamicTools, sessionStartSource startup, threadSource archboard, ephemeral/raw false, and ordinary inherited approval/sandbox settings.
-- [ ] #2 After thread/start, one thread/settings/update sets validated gpt-5.6-luna, medium effort, and requested priority only when model/list advertises each; configured/effective values and fallback are read back and observable before the coordinator becomes reusable.
-- [ ] #3 Start or settings failure leaves no active coordinator: a confirmed new thread is deleted when safe, otherwise recorded inspect-only; one same-epoch ready coordinator persists across voice stops and invalidates on child exit/rebind.
-- [ ] #4 Coordinator instructions retain ordinary web/shell/repository investigation and one bounded board write; sustained mutation defaults to the workhorse, and read-only intervention policy defaults Explicit with Judgment/Never alternatives.
-- [ ] #5 Tests in src/runtime/codex-coordinator/tests cover exact start/settings requests, unsupported model/effort/tier fallback, lost responses, partial cleanup, reuse, invalidation, and no attach-time persisted-tool mutation.
+- [ ] #1 model/list is fully paginated and gpt-5.6-luna with medium reasoning is required; absence refuses coordinator creation rather than choosing another model silently.
+- [ ] #2 Priority service tier is requested only when the selected model advertises it; otherwise the field is omitted and configured versus effective tier/fallback is inspectable.
+- [ ] #3 Thread start supplies exact cwd/history/source/instruction/catalogue fields once, then one settings/update; the empty settings response is insufficient until matching settings-updated proves model, medium effort, effective tier, and unchanged approval/sandbox.
+- [ ] #4 Only a matching loaded controllable current-epoch coordinator with reviewed instruction/manifest hashes and confirmed settings is reusable; all other rows are inspect-only or replaced through the staged transaction.
+- [ ] #5 The coordinator keeps normal web, shell, repository, approval, and bounded board capabilities while its instructions make quick investigation/direct unambiguous board action available and sustained code work default to delegation.
 <!-- AC:END -->

@@ -4,16 +4,15 @@ title: Deliver non-reentrant coordinator callbacks
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 15:40'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
-  - TASK-143.01.08
-  - TASK-143.01.09
+  - TASK-143.01.07
   - TASK-143.02.03
   - TASK-143.06.01
   - TASK-143.07.01
-  - TASK-143.07.02
   - TASK-143.07.03
+  - TASK-143.01.16
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
 modified_files:
@@ -27,13 +26,13 @@ ordinal: 195000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the callback ledger, buffering, and semantic/operation delivery policy in `src/runtime/codex-coordinator-callbacks`. It consumes named semantic-context, workhorse-operation, queue, attention, and guarded realtime-append ports; it never waits or calls app-server directly.
+Deliver non-reentrant coordinator callbacks from normalized semantic and workhorse-operation events using a closed callback union and canonical developer-role bytes. The callback path never blocks in wait_threads.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Records are keyed by child, coordinator, workhorse, semantic or operation source, and stable correlation and survive browser reconnect only on the same child.
-- [ ] #2 Inactive voice dispatches thread/inject_items at most once with delivered, not_delivered, or outcome_unknown because 0.151.0 supplies no idempotency key; active voice uses only codex-realtime's guarded developer append port after binding revalidation.
-- [ ] #3 Delivery buffers while a coordinator turn or dynamic call is active, never reenters it, compacts within the semantic brief budget, drains in order after settlement, and permits speech only for terminal or attention policy.
-- [ ] #4 Tests in src/runtime/codex-coordinator-callbacks/tests cover semantic freshness/ambiguity, operation correlation, duplicates, lost response, buffering/order, interruption, dynamic-call reentrancy, stale realtime, same-child hydration, and child exit.
+- [ ] #1 The closed callback union covers operation accepted/queued/started/progress/attention/completed/failed/outcome_unknown and semantic change/focus/selection with immutable operation/thread/turn/queue/session correlation.
+- [ ] #2 After dequeue, the module revalidates current child/coordinator/realtime/link and chooses exactly one path: active realtime appendText, or inactive inject_items only for operation/queue/attention callbacks; semantic callbacks are silent while voice is inactive.
+- [ ] #3 Each callback uses exactly one developer-role message with one input_text part matching the canonical bytes, is attempted once, and settles delivered/not_delivered/outcome_unknown without fallback retry to the other path.
+- [ ] #4 Buffer order, coalescing, callback-during-callback, active-to-inactive race, stale session/link, child exit, lost response, reload, and bounded overflow are tested with no reentrant turn or duplicate narration.
 <!-- AC:END -->
