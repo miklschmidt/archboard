@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.13
 title: Register Codex protocol conformance in root checks
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-08-30 22:32'
+updated_date: '2026-08-30 22:43'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -36,10 +36,10 @@ Delegation profile: gpt-5.6-luna, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 package.json and bun.lock pin @openai/codex exactly 0.151.0 with frozen-install success; ranges, alternate generators, and a globally newer binary do not alter the contract.
-- [ ] #2 The conformance owner locates the pinned binary, verifies version 0.151.0, generates experimental TypeScript into a fresh temp directory, compares the digest/API inventory to the checked decoder contract, and leaves git status unchanged.
-- [ ] #3 Root check scripts run the conformance owner through the existing repository suite without committing generated files or creating a second build path.
-- [ ] #4 Wrong/missing binary, generation failure, changed experimental type/method, decoder gap, or checkout mutation produces an actionable failure naming regeneration and review steps.
+- [x] #1 package.json and bun.lock pin @openai/codex exactly 0.151.0 with frozen-install success; ranges, alternate generators, and a globally newer binary do not alter the contract.
+- [x] #2 The conformance owner locates the pinned binary, verifies version 0.151.0, generates experimental TypeScript into a fresh temp directory, compares the digest/API inventory to the checked decoder contract, and leaves git status unchanged.
+- [x] #3 Root check scripts run the conformance owner through the existing repository suite without committing generated files or creating a second build path.
+- [x] #4 Wrong/missing binary, generation failure, changed experimental type/method, decoder gap, or checkout mutation produces an actionable failure naming regeneration and review steps.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -71,4 +71,12 @@ Remediation validation: bun test --isolate src/runtime/codex-protocol/tests/conf
 Remediation commit 9bbfabe: the pinned Codex 0.151.0 ClientRequest tree has 157 generated methods, partitioned into 32 supported response methods plus the explicit currentTime/read ServerRequest response alias and 125 reviewed exclusions. Production conformance now requires the generated ClientRequest set to equal the 32 supported methods plus the exact fixed exclusion inventory, checks duplicate-free/disjoint/stable metadata, exact exhaustiveness, and verifies currentTime/read separately in ServerRequest. Independent challenge probes delete thread/start or currentTime/read from both response and decoder inventories, add/remove/drift/overlap/duplicate/reorder exclusions, and all fail. Root resolution has no direct package lookup outside the unified boundary; synthetic tests inject stable in-checkout paths and cover resolver throw/escape, post-status, mutation, and combined generation failure evidence.
 
 Final validation: focused conformance/root/inventory owners passed 35 tests / 129 expect; bun run test:repository passed 126 tests / 397 expect; bun run test:modules passed 1010 tests / 7034 expect; bun run type-check, bun run lint, bun run fmt:check, git diff --check, and bun install --frozen-lockfile passed. Real project-local Codex 0.151.0 generation matched 820 files and the pinned digest. Task remains In Progress with acceptance criteria unchecked.
+
+Parent integration validation at c304185: third complete fixed-range rereview returned REVIEW_CLEAN after independently proving the 157-method ClientRequest partition (32 supported, one currentTime/read ServerRequest response alias, 125 explicit exclusions), exact 81/11/1 generated method inventories in the other directions, all resolver/mutation failure states, and project-local PATH isolation. Integrated checks passed: frozen install; focused conformance/root/inventory owners 35 tests/129 expectations; exact local codex-cli 0.151.0 generation with 820 files and digest cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273; full module lane 1010/7034; repository lane 130/415; both TypeScript projects; Oxlint; Oxfmt on 519 files; git diff --check; clean status.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Pinned @openai/codex exactly at 0.151.0 and registered one fail-closed protocol conformance owner through the existing repository/root lane. The disposable generator now verifies version, 820-file digest, union inventories, exact method coverage—including 32 used ClientRequest responses, one reverse-response alias, and 125 reviewed exclusions—and checkout cleanliness with unified actionable recovery for resolution, generation, decoder drift, and mutation failures. Verified by independent review-clean audit, exact local generation, 35 focused tests, 1,010 module tests, 130 repository-policy tests, frozen install, type-check, lint, formatting, and clean diff/status.
+<!-- SECTION:FINAL_SUMMARY:END -->
