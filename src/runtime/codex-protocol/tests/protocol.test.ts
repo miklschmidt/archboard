@@ -19,8 +19,8 @@ import {
 import { CODEX_PROTOCOL_GENERATED_NOTIFICATION_UNION_PATHS } from "../generated-notification-inventory.js";
 import { clientNotificationFixtures, responseFixtures, serverRequestFixtures } from "./fixtures.js";
 import { notificationFixture, serverNotificationFixtures } from "./notification-fixtures.js";
+import { assertChallengeFailure, changedPaths, pathKey } from "./union-challenge-audit.js";
 import { SERVER_NOTIFICATION_UNION_CHALLENGES } from "./union-challenges.js";
-
 describe("public response boundary", () => {
 	for (const method of RESPONSE_METHODS)
 		test(`decodes ${method}`, () => {
@@ -81,7 +81,7 @@ describe("generated closed-union challenges", () => {
 		);
 		const challengePaths = SERVER_NOTIFICATION_METHODS.flatMap((method) =>
 			SERVER_NOTIFICATION_UNION_CHALLENGES[method].map(
-				(challenge) => `${method}:${challenge.name}`,
+				(challenge) => `${method}:${pathKey(challenge.targetPath)}`,
 			),
 		);
 		const canonicalPaths = CODEX_PROTOCOL_GENERATED_NOTIFICATION_UNION_PATHS.map(
@@ -95,9 +95,54 @@ describe("generated closed-union challenges", () => {
 	for (const method of SERVER_NOTIFICATION_METHODS)
 		for (const challenge of SERVER_NOTIFICATION_UNION_CHALLENGES[method])
 			test(`rejects ${method} ${challenge.name} future member`, () => {
-				const params = challenge.mutate(notificationFixture(method));
-				expect(() => decodeServerNotification({ method, params })).toThrow(ProtocolDecodeError);
+				const prepared = challenge.prepare(notificationFixture(method));
+				expect(decodeServerNotification({ method, params: prepared }) as unknown).toEqual({
+					method,
+					params: prepared,
+				});
+				const mutation = challenge.mutate(prepared);
+				expect(changedPaths(prepared, mutation.params).map(pathKey)).toEqual([
+					pathKey(mutation.targetPath),
+				]);
+				try {
+					decodeServerNotification({ method, params: mutation.params });
+					throw new Error("expected generated union challenge to fail");
+				} catch (error) {
+					expect(error).toBeInstanceOf(ProtocolDecodeError);
+					if (error instanceof ProtocolDecodeError) assertChallengeFailure(error, mutation);
+				}
 			});
+
+	test("aggregates prepared and mutated coverage for every generated challenge", () => {
+		const failures: string[] = [];
+		let audited = 0;
+		for (const method of SERVER_NOTIFICATION_METHODS)
+			for (const challenge of SERVER_NOTIFICATION_UNION_CHALLENGES[method]) {
+				audited += 1;
+				try {
+					const prepared = challenge.prepare(notificationFixture(method));
+					decodeServerNotification({ method, params: prepared });
+					const mutation = challenge.mutate(prepared);
+					expect(changedPaths(prepared, mutation.params).map(pathKey)).toEqual([
+						pathKey(mutation.targetPath),
+					]);
+					try {
+						decodeServerNotification({ method, params: mutation.params });
+						failures.push(`${method}:${challenge.name}: mutated branch decoded`);
+					} catch (error) {
+						if (!(error instanceof ProtocolDecodeError)) throw error;
+						assertChallengeFailure(error, mutation);
+					}
+				} catch (error) {
+					failures.push(`${method}:${challenge.name}: ${String(error)}`);
+				}
+			}
+
+		expect({ audited, failures }).toEqual({
+			audited: CODEX_PROTOCOL_GENERATED_NOTIFICATION_UNION_PATHS.length,
+			failures: [],
+		});
+	});
 
 	test("keeps generated JsonValue extension points open", () => {
 		const params = {
