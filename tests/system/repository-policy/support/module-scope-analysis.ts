@@ -102,6 +102,102 @@ function walkAll(node: ts.Node, visit: (node: ts.Node) => void): void {
 	node.forEachChild((child) => walkAll(child, visit));
 }
 
+function moduleSpecifierPattern(node: ts.Node | undefined): string | undefined {
+	if (!node) return undefined;
+	if (ts.isStringLiteralLikeNode(node)) return node.text;
+	if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+		const left = moduleSpecifierPattern(node.left);
+		const right = moduleSpecifierPattern(node.right);
+		return left !== undefined && right !== undefined
+			? left + right
+			: left !== undefined
+				? `${left}*`
+				: right !== undefined
+					? `*${right}`
+					: undefined;
+	}
+	if (ts.isTemplateExpression(node))
+		return node.templateSpans.reduce(
+			(value, span) => `${value}*${span.literal.text}`,
+			node.head.text,
+		);
+	return undefined;
+}
+export function moduleSpecifiers(source: ts.SourceFile): string[] {
+	const specifiers: string[] = [];
+	walkAll(source, (node) => {
+		if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node))
+			specifiers.push(moduleSpecifierPattern(node.moduleSpecifier) ?? "");
+		if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference))
+			specifiers.push(moduleSpecifierPattern(node.moduleReference.expression) ?? "");
+		if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument))
+			specifiers.push(moduleSpecifierPattern(node.argument.literal) ?? "");
+		if (
+			ts.isCallExpression(node) &&
+			(ts.isImportExpression(node.expression) ||
+				(ts.isIdentifier(node.expression) && node.expression.text === "require")) &&
+			node.arguments.length === 1
+		)
+			specifiers.push(moduleSpecifierPattern(node.arguments[0]) ?? "");
+	});
+	return specifiers.filter(Boolean);
+}
+
+export function typeFingerprintMirror(
+	source: ts.SourceFile,
+	directNames: ReadonlySet<string>,
+	nestedNames: ReadonlySet<string>,
+	exactNestedPath: boolean,
+	codexPath: boolean,
+	isGeneratedImport: (specifier: string) => boolean,
+): boolean {
+	const ignored = new Set<string>();
+	const declared = new Set<string>();
+	for (const statement of source.statements) {
+		if (ts.isTypeAliasDeclaration(statement) || ts.isInterfaceDeclaration(statement))
+			declared.add(statement.name.text);
+		if (!ts.isImportDeclaration(statement) || !statement.importClause) continue;
+		if (
+			isGeneratedImport(
+				ts.isStringLiteralLikeNode(statement.moduleSpecifier) ? statement.moduleSpecifier.text : "",
+			)
+		)
+			continue;
+		if (statement.importClause.name) ignored.add(statement.importClause.name.text);
+		const bindings = statement.importClause.namedBindings;
+		if (bindings && ts.isNamedImports(bindings))
+			for (const element of bindings.elements) ignored.add(element.name.text);
+	}
+	const visit = (node: ts.Node): boolean => {
+		if (ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node)) {
+			const name = node.name.text;
+			if ((exactNestedPath && nestedNames.has(name)) || (codexPath && directNames.has(name)))
+				return true;
+		}
+		if (ts.isTypeAliasDeclaration(node)) {
+			let found = false;
+			const inspect = (child: ts.Node): void => {
+				if (
+					ts.isIdentifier(child) &&
+					!declared.has(child.text) &&
+					!ignored.has(child.text) &&
+					nestedNames.has(child.text)
+				)
+					found = true;
+				child.forEachChild(inspect);
+			};
+			inspect(node.type);
+			if (found) return true;
+		}
+		let found = false;
+		node.forEachChild((child) => {
+			if (!found && visit(child)) found = true;
+		});
+		return found;
+	};
+	return visit(source);
+}
+
 function insideKept(node: ts.Node): boolean {
 	for (let current = node.parent; current; current = current.parent) {
 		if (
