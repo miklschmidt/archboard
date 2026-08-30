@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 20:28'
+updated_date: '2026-08-30 21:06'
 labels: []
 dependencies:
   - TASK-143.01.12
@@ -55,6 +55,10 @@ Delegation profile: gpt-5.6-luna, max.
 10. Extract portable exact-generator conformance into a module-owned function that requires an explicit executable path, keeps the normal module suite deterministic, and records manual validation against the configured local binary without taking TASK-143.01.13's dependency/CI ownership.
 11. Make all public JSON-RPC request, result, and error envelopes strict and mutually exclusive, with direct extra-field regressions for each boundary.
 12. Add a generated-derived challenge matrix covering every union-bearing accepted notification and every closed nested union, with compile-time/runtime completeness checks and intentional JsonValue exceptions preserved.
+
+13. Move notification union completeness to production conformance metadata derived from the exact generated tree, require exact path equality with named challenge cases, and cover every generated reachable closed union/discriminator including the reviewer omissions while preserving intentional JsonValue openness.
+
+14. Add deterministic fake-executable conformance tests for generation failure, count/hash mismatches, successful generation, and temporary-directory cleanup after every outcome without weakening normal manifest expectations or duplicating TASK-143.01.13 ownership.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -67,4 +71,6 @@ Validation: exact generation/version/digest check passed; bun run type-check pas
 Remediation 2026-08-30 (commit 056389e): replaced the fail-open notification fallback with explicit Codex 0.151.0 schemas and fixtures for all 81 server notifications; tightened the response/reverse graph and security-sensitive command, network, filesystem, configuration, and MCP unions; enforced mutually exclusive JSON-RPC result/error envelopes; and added a temporary exact-generator conformance owner with version, file-count, and digest checks. Validation passed: 662 module tests, 118 repository/inventory tests, 228 focused protocol tests, type-check, Oxlint, Oxfmt, diff check, and exact generator digest cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273.
 
 Second remediation complete in commit 55ae4a2. Removed the workstation-local Codex generator path from normal module tests; exported an explicit-path, fail-closed conformance helper that checks codex-cli 0.151.0, generates into a fresh temporary directory, verifies 820 files and digest cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273, and cleans up. Manual helper validation against /home/msc/.cache/.bun/bin/codex passed with the exact version, count, and digest. Strict request/result/error/notification envelopes now reject extras and mutually exclusive result/error siblings. Notification challenge coverage is complete for the accepted method inventory and nested closed unions, including mcpServer/startupStatus/updated and windowsSandbox/setupCompleted; JsonValue extension points remain open by design. Validation: focused protocol 429 pass; bun run test:modules 863 pass; bun run test:repository 118 pass; bun run type-check pass; oxlint, oxfmt --check, and git diff --check pass. TASK-143.01.13 remains the owner of dependency pinning and root-check registration.
+
+Third remediation implemented in source commit 1276e4b (protocol-only). Added production metadata and fresh exact-tree derivation for all 281 reachable closed union/literal-discriminator paths across 81 ServerNotification methods, exact named challenge equality, and JsonValue-open coverage. Added deterministic fake-executable tests for generator failure, file-count mismatch, same-count byte mismatch, inventory mismatch, success, and temp cleanup. Validation: focused protocol/conformance 521 pass; test:modules 955 pass; test:repository 118 pass; type-check, oxlint, oxfmt, git diff --check, and manual /home/msc/.cache/.bun/bin/codex conformance all passed (codex-cli 0.151.0, 820 files, cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273). Acceptance criteria and task status intentionally remain unchanged for parent review; TASK-143.01.13 owns dependency/root-check integration.
 <!-- SECTION:NOTES:END -->
