@@ -4,6 +4,7 @@ title: Remove legacy injection timing constants
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.01.16
@@ -11,6 +12,7 @@ dependencies:
   - TASK-143.06.06
 modified_files:
   - src/shared/timing/timing.ts
+  - src/shared/timing/tests/codex-workbench-policy.test.ts
 parent_task_id: TASK-143.06
 priority: high
 type: task

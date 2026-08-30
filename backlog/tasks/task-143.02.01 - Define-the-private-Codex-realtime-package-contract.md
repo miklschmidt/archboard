@@ -4,13 +4,14 @@ title: Define the browser-native Codex realtime contract
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies: []
 references:
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
   - src/ui/codex-realtime/contract.ts
+  - src/ui/codex-realtime/tests/contract.test.ts
 parent_task_id: TASK-143.02
 priority: high
 type: task

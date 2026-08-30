@@ -4,15 +4,17 @@ title: Deliver semantic context through an exact thread link
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 17:32'
 labels: []
 dependencies:
+  - TASK-143.01.07
   - TASK-143.01.08
   - TASK-143.01.09
   - TASK-143.06.01
 references:
   - docs/adr/0005-push-to-codex-via-app-server.md
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
+  - docs/design/codex-workbench-authored-contracts.md
 modified_files:
   - src/runtime/codex-thread-context
 parent_task_id: TASK-143.06

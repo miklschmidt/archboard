@@ -4,7 +4,7 @@ title: Operate the linked workhorse queue
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 17:31'
 labels: []
 dependencies:
   - TASK-143.03.01
@@ -32,8 +32,8 @@ Delegation profile: gpt-5.6-sol, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Empty, loading, running, queued, interrupted-preserved, approval-blocked, failed, restarted, completed, stale, reconnecting, and unavailable states show ownership, request/turn correlations, and recovery without copying timeline content.
-- [ ] #2 Reorder submits all IDs and moves only coordinator-owned entries while preserving foreign/unowned relative order; attached-busy, stale, pending, and failed actions explain why they are disabled.
-- [ ] #3 No optimistic terminal/reorder state is committed; confirmation, server refusal, outcome_unknown, reconnect, and retry remain explicit.
-- [ ] #4 Tests at src/ui/workbench-queue/tests cover every state/action, keyboard/pointer reorder, focus, labels/status, stale snapshots, errors, and exact cross-links.
+- [ ] #1 The UI exposes Add, List/refresh, Edit, Cancel, Reorder, and Start; Edit emits queue update and Cancel emits queue delete, and no additional queue control exists.
+- [ ] #2 Empty, loading, running, queued, interrupted-preserved, approval-blocked, failed, restarted, completed, stale, reconnecting, unavailable, and outcome_unknown states show exact queue/workhorse correlation and recovery.
+- [ ] #3 Reorder submits all IDs and moves only coordinator-owned entries while preserving foreign relative order; no optimistic terminal/reorder state is committed, and authoritative reconciliation controls visible success.
+- [ ] #4 src/ui/workbench-queue/tests covers all six operations, keyboard/pointer reorder, focus, labels, disabled reasons, stale snapshots, refusal, uncertainty, and cross-links.
 <!-- AC:END -->

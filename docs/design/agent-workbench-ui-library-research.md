@@ -72,13 +72,17 @@ The package inspected was `@assistant-ui/react` 0.15.17, licensed under the repo
 ### Accepted primitive ownership
 
 Archboard adopts no copied Elements. TASK-143.03.02 alone imports
-`useExternalStoreRuntime`, `AssistantRuntimeProvider`, and
-`ReadonlyThreadProvider`. TASK-143.03.04 may import the exact message primitives
-needed to give Archboard-owned item renderers the runtime context.
-TASK-143.03.05 may import the exact composer primitives needed for submit and
-cancel interaction. The queue, tool lifecycle, approval cards, thread picker,
-stopped state, voice UI, and all styling remain Archboard modules driven by the
-app-server contract.
+`useExternalStoreRuntime`, `AssistantRuntimeProvider`,
+`ReadonlyThreadProvider`, and `MessageNotSentError`. TASK-143.03.04 alone
+imports `ThreadPrimitive`, `MessagePrimitive`, and `MessagePartPrimitive`.
+TASK-143.03.05 alone imports `ComposerPrimitive`. Every import is a named root
+import from `@assistant-ui/react`; namespace imports, default imports, package
+subpaths, and every other exported member are forbidden. TASK-143.03.12 owns a
+repository-policy matrix that checks both the permitted symbol and its sole
+module owner.
+
+The queue, tool lifecycle, approval cards, thread picker, stopped state, voice
+UI, and all styling remain Archboard modules driven by the app-server contract.
 
 The [`ReviewableDiff`](https://www.assistant-ui.com/elements/reviewable-diff) exposes per-hunk keep/discard actions. Codex app-server's file-change approval is a request-level accept/decline interaction, while `turn/diff/updated` is a presentation update. Per-hunk buttons would promise a capability the protocol does not provide, so they should not be shown unless Archboard later implements a real patch-editing workflow.
 

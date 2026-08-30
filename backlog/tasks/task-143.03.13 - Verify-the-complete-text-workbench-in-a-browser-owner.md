@@ -4,7 +4,7 @@ title: Verify the complete text workbench in a browser owner
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 16:34'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.03.11
@@ -35,9 +35,9 @@ Own and register the canonical controlled browser owner for the complete text wo
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The controlled child implements only the exact decoded 0.151.0 methods/events needed by the text owner and proves missing/wrong binary, locked home, spawn/backoff/stopped, initialize/config/storage mismatch, signed-out/API-key/ChatGPT/Bedrock login/logout, and command-before-ready.
-- [ ] #2 At 1440x900 and the Flip viewport, the owner covers one/two-pane, expanded/collapsed/fullscreen, light/dark/high-contrast, reduced motion, keyboard, accessibility-tree names/logical order, 44px targets, and unchanged Excalidraw.
-- [ ] #3 It covers all 19 item renderers, submit/steer/interrupt, draft pending/refused/unknown/reconciled, queue, settings pending/refused/unknown/reconciled, multi-form approvals, off-focus request targeting, focus return, and active fullscreen Stop.
-- [ ] #4 No unexpected browser/server logs, orphan child, focus leak, duplicate request, optimistic placeholder, or retargeted command is accepted; lost response and late authoritative reconciliation are directly exercised.
-- [ ] #5 This task appends exactly one owner to BROWSER_TEST_PATHS, package test:serial-browser, repository inventory, count-bearing AGENTS/test-suite docs, and updates the canonical count from 19 to 20.
+- [ ] #1 The controlled child proves missing/wrong binary, locked home, backoff/stopped, config/storage mismatch, signed-out, API-key, hosted ChatGPT, explicit Bedrock API-key, explicit Bedrock access-key/session-token login, refused profile/environment setup, logout, and command-before-ready.
+- [ ] #2 At 1440x900 and Flip viewport it covers one/two-pane, expanded/collapsed/fullscreen, light/dark/high-contrast, reduced motion, keyboard, accessibility order, 44px targets, and unchanged Excalidraw.
+- [ ] #3 It covers all 19 item renderers, submit/steer/interrupt, pending/refused/unknown/reconciled commands, all six queue operations and Edit/update + Cancel/delete labels, settings, forms/approvals, focus return, and fullscreen Stop.
+- [ ] #4 No unexpected logs, orphan, focus leak, duplicate request, optimistic placeholder, or retargeted command is accepted; lost response and late authoritative reconciliation are exercised.
+- [ ] #5 TASK-143.06.08 first reconciles the existing executable/docs baseline to 19. This task then appends exactly owner 20 across BROWSER_TEST_PATHS, package lane, repository inventory, AGENTS.md, and docs/agents/test-suite.md.
 <!-- AC:END -->

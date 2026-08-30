@@ -4,7 +4,7 @@ title: Remove legacy injection from server and runtime
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 17:29'
 labels: []
 dependencies:
   - TASK-143.06.02
@@ -16,6 +16,10 @@ modified_files:
   - src/server/canvas/lib/application.ts
   - src/runtime/engine/injection.ts
   - src/runtime/engine/change-feed.ts
+  - tests/system/canvas-state/injection.test.ts
+  - tests/system/canvas-state/support/injection-daemon.ts
+  - tests/system/browser/support/agent-browser.ts
+  - tests/system/repository-policy/test-inventory.test.ts
 parent_task_id: TASK-143.06
 priority: high
 type: task
@@ -30,8 +34,8 @@ Remove legacy injection startup, routes, status/test handlers, change-feed subsc
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Canvas startup/health/application no longer reads ARCHBOARD_INJECT*, arms injection, exposes /api/injection or /api/injection/test, or holds a legacy injector singleton.
-- [ ] #2 The existing change feed retains human responsiveness and its public semantic source while removing only the legacy control-socket subscriber and injection-specific commentary.
-- [ ] #3 No server/runtime import reaches injection.ts or app-server-control.ts; the replacement production graph owns all Codex delivery through the private stdio session.
-- [ ] #4 Server/process tests prove removed routes return the ordinary unknown-route contract and startup creates no control-socket client while current board/change-feed behavior is unchanged.
+- [ ] #1 Startup/application no longer reads ARCHBOARD_INJECT*, arms injection, exposes /api/injection or /api/injection/test, or holds a legacy injector singleton; removed routes use the ordinary unknown-route contract.
+- [ ] #2 The change feed retains human responsiveness and semantic source while removing only the control-socket subscriber; no server/runtime import reaches injection.ts or app-server-control.ts.
+- [ ] #3 In the same green change, the importing canvas-state injection owner/daemon are retired or rewritten, browser support removes injection routes/fixtures, and repository test inventory removes the retired owner without changing the 19 browser-owner baseline.
+- [ ] #4 Canvas-state/process/browser/repository tests prove no control-socket client, removed routes, unchanged board/change-feed behavior, one private stdio graph, and no missing/duplicate test owner.
 <!-- AC:END -->

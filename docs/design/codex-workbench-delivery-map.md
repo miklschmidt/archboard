@@ -37,7 +37,8 @@ owner now registers itself when it becomes runnable.
   TASK-144.01 adds Tailwind/Base UI, then TASK-143.03.12 adds assistant-ui.
 - UI alias: TASK-144.02 owns Vite; TASK-144.15 and TASK-144.17 own the two
   TypeScript projects; TASK-144.18 makes existing Oxlint boundary rules resolve
-  `@/`; TASK-144.04 runs the shadcn dry-run only after all four agree.
+  `@/` without reading shadcn config; TASK-144.04 alone validates the literal
+  `components.json` and runs the dry-run after all four agree.
 - CSS: TASK-144.03 owns canonical import/theme order, TASK-144.13 imports the
   stylesheet, TASK-144.09 freezes the aesthetic guide, and TASK-144.14 maps the
   existing shell stylesheet to semantic variables without rewriting markup.
@@ -48,7 +49,9 @@ owner now registers itself when it becomes runnable.
 - Frame/shell: TASK-143.03.10 owns the text frame; TASK-143.04.06 extends it.
   TASK-143.03.11 extends the existing `PresentationDock` for text, then
   TASK-143.04.10 extends that same owner for voice.
-- Browser inventory: TASK-143.06.06 removes the legacy owner first.
+- Browser inventory: TASK-143.06.04 atomically removes the legacy injection
+  owner and repairs test inventory first; TASK-143.06.08 reconciles the
+  documented executable baseline to 19.
   TASK-143.03.13 adds/runs text and updates 19 to 20. TASK-143.04.07 adds/runs
   voice and updates 20 to 21. Each landed owner is immediately runnable.
 - `AGENTS.md`: TASK-144.12/16 establish UI guidance; TASK-143.06.08 updates
@@ -67,8 +70,8 @@ composition root and TASK-143.05-.07 inputs.
 
 ## Delegation classes
 
-Every leaf records one literal model and effort. Most leaves are intentionally
-suitable for `gpt-5.6-luna`:
+Every leaf records one literal model and effort. **53 of 83 leaves** are
+intentionally suitable for `gpt-5.6-luna`:
 
 - `gpt-5.6-luna`, high: bounded exploration, mechanical configuration,
   generated-boundary checks, exports, cleanup, documentation, and fixtures.
@@ -100,9 +103,10 @@ agent policy, or cross-module composition to a cheaper model.
 3. Build dispatchers, realtime adapter/recovery, coordinator operations,
    callbacks/spoken gate, browser gateway, then the one production composition
    root and its lifecycle process owner.
-4. Remove the legacy injection path in its serialized server, client, CLI,
-   fixture, timing, and current-document leaves. Land Tailwind/shadcn shell
-   foundations and assistant-ui before dependent UI modules.
+4. Remove the legacy injection path in its green server/system-owner,
+   control-client, CLI/system-owner, remaining environment, timing, and
+   current-document leaves. Land Tailwind/shadcn shell foundations and the
+   exact assistant-ui import policy before dependent UI modules.
 5. Implement one UI module per leaf. Compose text before voice, and shell text
    before extending the same fullscreen dock for voice.
 6. Land and register the controlled text browser owner, then voice. Run the

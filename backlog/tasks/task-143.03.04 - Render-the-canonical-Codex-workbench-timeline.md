@@ -4,7 +4,7 @@ title: Render the canonical Codex workbench timeline
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -28,8 +28,8 @@ Render the complete decoded Codex 0.151.0 ThreadItem union as bounded, escaped, 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Exhaustive rendering covers all 19 generated ThreadItem variants with canonical identity and no assistant-ui state/transport ownership.
-- [ ] #2 Only the explicitly reviewed message primitives are imported directly from assistant-ui; renderers and styling are Archboard-owned and no Elements source is copied.
-- [ ] #3 Large payloads are bounded/expandable, text/control characters escaped, URLs scheme-checked, and malformed local file/image data renders inert fallback.
-- [ ] #4 Keyboard order, semantic structure, live-region policy, screen-reader names, item identity, and expansion survive updates without focus loss or duplicate content.
+- [ ] #1 The module's only assistant-ui imports are named root ThreadPrimitive, MessagePrimitive, and MessagePartPrimitive; every rendered item, fallback, disclosure, class, and semantic state is Archboard-owned.
+- [ ] #2 User/assistant/reasoning/plan/command/file/MCP/web/image/tool/approval/error/interruption items render by stable thread/turn/item identity with bounded expandable raw details and no copied Elements.
+- [ ] #3 The timeline is a named focusable role=log with aria-relevant additions and aria-busy only while streaming; token deltas do not cause repeated live announcements or steal focus.
+- [ ] #4 Unknown item variants, malformed markdown/media, long output, streaming completion, delayed arrival, and prior-epoch history have safe deterministic renderers and module tests.
 <!-- AC:END -->

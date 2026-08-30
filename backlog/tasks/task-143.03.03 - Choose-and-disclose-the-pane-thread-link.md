@@ -4,7 +4,7 @@ title: Choose and disclose the pane thread link
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 16:38'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.01.09
@@ -29,8 +29,8 @@ Own pane thread-link selection and readiness disclosure. Create and Attach are s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Create requires the composed process/session to be thread-capable plus exactly one valid absolute checkout root; it runs the start-and-bind transaction and shows outcome_unknown as inspect-only evidence.
-- [ ] #2 Attach requires a currently discovered Thread row whose ID appears in the fully paginated loaded-ID membership, with canAcceptDirectInput true and current-epoch provenance; persisted-only, notLoaded, systemError, false/null capability, stale-child, unknown-source, and unknown-provenance rows are disabled with exact reasons.
-- [ ] #3 The UI distinctly renders missing/wrong binary, locked home, spawn/backoff/stopped, initialize/config/effective-storage mismatch, signed-out, API-key/ChatGPT/Bedrock login progress/failure, logout, and command-before-ready.
-- [ ] #4 Selection, bind, unbind, reconnect, child replacement, and pane navigation use compare-and-swap identity; focus never retargets a pending command.
+- [ ] #1 Pane selection lists only joined persisted/current loaded records and shows executable, inspect-only, stale, prior-epoch, source, loaded, status, and controllability reasons before bind.
+- [ ] #2 Create/attach/relink/recover actions target captured pane and epoch; a focus change cannot retarget an in-flight action, and ambiguous creation remains inspect-only.
+- [ ] #3 The account UI distinctly renders API key, hosted ChatGPT, explicit amazonBedrock apiKey+region, and amazonBedrockAccessKeys accessKeyId+secretAccessKey+optional sessionToken+region forms; device code, client tokens, and Bedrock profile/environment setup are unavailable with an explanation.
+- [ ] #4 Missing/wrong binary, locked home, backoff/stopped, config/storage mismatch, login progress/failure/logout, command-before-ready, empty list, duplicate rows, and stale response have accessible recovery paths.
 <!-- AC:END -->

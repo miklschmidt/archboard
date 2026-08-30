@@ -103,16 +103,38 @@ default.
 [schema](https://ui.shadcn.com/schema.json) currently represents the selected visual
 preset in `style` values such as `base-nova`, `base-vega`, or another `base-*` value.
 The library choice is a CLI/preset choice, not an invented `componentLibrary` field.
-The file should contain, at minimum:
+TASK-144.04 writes exactly this object:
 
-- the schema URL;
-- the chosen `base-*` style and `rsc: false` for this client-only application;
-- `tailwind.config: ""` for Tailwind 4, the path to the one CSS entrypoint,
-  `cssVariables: true`, a deliberate `baseColor`, and no prefix unless a concrete
-  collision requires one;
-- aliases that resolve to the existing `src/ui` modules; and
-- an icon strategy that does not silently add `lucide-react` when the existing local
-  [`Icons.tsx`](../../src/ui/shell/Icons.tsx) is sufficient.
+```json
+{
+	"$schema": "https://ui.shadcn.com/schema.json",
+	"style": "base-nova",
+	"rsc": false,
+	"tsx": true,
+	"tailwind": {
+		"config": "",
+		"css": "src/ui/theme/app.css",
+		"baseColor": "neutral",
+		"cssVariables": true,
+		"prefix": ""
+	},
+	"aliases": {
+		"components": "@/ui",
+		"ui": "@/ui",
+		"lib": "@/ui",
+		"utils": "@/ui/ui-classnames",
+		"hooks": "@/ui"
+	}
+}
+```
+
+`iconLibrary` is deliberately omitted because the schema has no “use Archboard's
+local icons” value. A non-mutating dry-run may report the registry's default icon
+dependency; that report is evidence, not an instruction to edit `package.json`.
+The two reviewed source reductions remove the placeholder/icon dependency and reuse
+the existing typed [`Icons.tsx`](../../src/ui/shell/Icons.tsx) entrypoint. The task
+must refuse an authored icon-library field, an adopted icon dependency, registry
+defaults in committed source, or another alias.
 
 The shadcn docs state that the `style`, `tailwind.baseColor`, and `cssVariables`
 choices are initialization decisions. Choose them only after the token ownership

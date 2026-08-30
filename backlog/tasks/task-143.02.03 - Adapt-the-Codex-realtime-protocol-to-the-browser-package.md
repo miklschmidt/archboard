@@ -4,7 +4,7 @@ title: Adapt the Codex realtime protocol to the browser module
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 17:03'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -34,7 +34,7 @@ Delegation profile: gpt-5.6-luna, max.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each start mints a unique realtimeSessionId and sends outputModality audio, version v3, WebRTC offer transport, includeStartupContext true, clientManagedHandoffs false, delegationAckFiller true, flushTranscriptTailOnSessionEnd true, codexResponsesAsItems false, handoff mode bemTags, one fresh developer semantic item, and canonical start/end instructions.
+- [ ] #1 Each start mints a unique realtimeSessionId and sends outputModality audio, version v3, WebRTC, includeStartupContext true, clientManagedHandoffs false, delegationAckFiller true, flushTranscriptTailOnSessionEnd true, codexResponsesAsItems false, handoff mode bemTags, exact voice breeze, one fresh developer semantic item, and canonical start/end instructions; there is no selector or fallback.
 - [ ] #2 The empty start response conveys no SDP/readiness; answer comes only from matching thread/realtime/sdp and readiness only from matching thread/realtime/started child, thread, session, and version.
 - [ ] #3 Only item-scoped realtime item started/transcript delta/completed events create canonical transcript. Thread-only error/closed and flat transcript events update diagnostics/phase but never content; WebSocket appendAudio/outputAudio paths are rejected.
 - [ ] #4 Recovery exhausts thread/timeline/list, detects cursor loops, and merges pages with live item events by stable identity without duplicate, hidden gap, or reordered turn.
