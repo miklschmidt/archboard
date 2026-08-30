@@ -4,7 +4,7 @@ title: Adapt Codex state with assistant-ui runtime providers
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 17:27'
+updated_date: '2026-08-30 17:58'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -34,5 +34,5 @@ Delegation profile: gpt-5.6-luna, max.
 - [ ] #1 Only the executable current workhorse uses named root imports useExternalStoreRuntime and AssistantRuntimeProvider; coordinator and persisted/prior-epoch histories use ReadonlyThreadProvider, and MessageNotSentError is the sole additional runtime member.
 - [ ] #2 No namespace/default/subpath import, assistant transport, thread-list, queue, tool handler, setMessages, edit/reload/delete control, assistant voice adapter, or unassigned export is used.
 - [ ] #3 A canonical turn-keyed assistant record is created immediately from authoritative command/turn identity; there is no optimistic placeholder message that can become competing truth.
-- [ ] #4 Runtime failure, unsupported item mapping, stale turn, provider teardown, and reconnect preserve app-server authority and render an explicit recoverable or inspect-only state.
+- [ ] #4 Module tests cover runtime failure, unsupported item mapping, stale turn, provider teardown, and reconnect, proving app-server authority is preserved and each path renders an explicit recoverable or inspect-only state.
 <!-- AC:END -->
