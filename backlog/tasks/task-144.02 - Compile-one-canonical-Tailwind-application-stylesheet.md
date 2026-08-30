@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 23:30'
+updated_date: '2026-08-30 23:48'
 labels: []
 dependencies:
   - TASK-144.01
@@ -43,6 +43,8 @@ Delegation profile: gpt-5.6-luna, high.
 2. Add one self-contained repository-policy owner that creates a disposable Vite fixture, loads the canonical config behavior, imports Tailwind from an aliased fixture module, and asserts generated utility CSS.
 3. Add independent negative fixture cases for absent/duplicate Tailwind plugin, wrong or escaping alias targets, and production-config drift, with actionable build/config failures.
 4. Run the focused owner and proportionate repository, type, lint, format, and frontend-build checks; preserve unrelated work and leave task completion to the parent review.
+
+5. Remediate fixture safety by moving all generated files to an OS-temporary root, using a test-only alias for build, and adding signal/interruption, collision, parallel lint/read, cwd, overlap, drift, path-normalization, and git-integrity coverage.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -51,4 +53,6 @@ Delegation profile: gpt-5.6-luna, high.
 Reserved after TASK-144.01 finalized at integration HEAD a098684. This leaf owns only the Vite Tailwind plugin, canonical @/ alias, and self-contained fixture proof; production stylesheet and rendered-shell behavior remain protected.
 
 Implemented the canonical Vite seam and disposable proof. `vite.config.js` now registers `@tailwindcss/vite` once and maps `@` to the absolute repository `src`; `tests/system/repository-policy/vite-tailwind-contract.test.ts` builds an isolated Tailwind fixture and rejects missing/duplicate plugin, wrong/escaping alias, and production-config drift with actionable diagnostics. Focused fixture, repository-policy, module, type, lint, format, and frontend-build checks pass.
+
+Remediation validation: all generated fixture files now live beneath OS temporary roots, with a temporary dependency symlink for Tailwind resolution and test-only aliasing. Focused owner passes 19 tests including throw, child-failure, SIGTERM, collision, parallel lint/read, cwd, overlap, separator, drift, and git snapshot checks. Sequential `bun run test:repository` passes 149 tests; sequential `bun run test:modules` passes 1013 tests; type-check, lint, format check, and frontend build pass. The earlier concurrent module-lane attempt was invalid due unrelated global fixture contention and was rerun sequentially successfully.
 <!-- SECTION:NOTES:END -->
