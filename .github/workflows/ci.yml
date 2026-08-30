@@ -16,8 +16,8 @@ permissions:
 jobs:
   # The canonical check command stays one step so package.json owns its order.
   # Local `check` is the complete sequential contract. The hosted step below
-  # names its two runner-specific exceptions; repository policy refuses any
-  # other exclusion. TASK-141 owns restoring the system owner.
+  # names its three runner-specific owner exceptions; repository policy refuses
+  # any other exclusion. TASK-141 and TASK-142 own restoring hosted coverage.
   suite:
     name: Lint, format, type check, build, and hosted test subset
     runs-on: ubuntu-latest
@@ -62,11 +62,11 @@ jobs:
           echo "AGENT_BROWSER_EXECUTABLE_PATH=$chrome_path" >> "$GITHUB_ENV"
 
       # Lint, formatting, both type checks, every native owner except opener
-      # persistence, and 14 serial browser owners. Both excluded owners remain
-      # in local `check`; their hosted stalls are recorded in TASK-138.
+      # persistence, and 13 serial browser owners. All excluded owners remain in
+      # local `check`; their hosted stalls are recorded in TASK-138.
       - name: Run hosted checks
         env:
           CI: "true"
-          ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER: tests/system/browser/human-edit-performance.test.ts
+          ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS: tests/system/browser/human-edit-performance.test.ts,tests/system/browser/fixed-point-document.test.ts
           ARCHBOARD_CI_EXCLUDED_SYSTEM_OWNER: tests/system/code-targets/opener-persistence.test.ts
         run: bun run check

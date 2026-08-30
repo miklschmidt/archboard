@@ -28,8 +28,13 @@ export const BROWSER_TEST_PATHS = [
 ] as const;
 
 export type BrowserTestPath = (typeof BROWSER_TEST_PATHS)[number];
-export const CI_EXCLUDED_BROWSER_OWNER_ENV = "ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER";
-export const CI_EXCLUDED_BROWSER_OWNER = BROWSER_TEST_PATHS[0];
+export const HUMAN_PERFORMANCE_BROWSER_OWNER = BROWSER_TEST_PATHS[0];
+export const CI_EXCLUDED_BROWSER_OWNERS_ENV = "ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS";
+export const CI_EXCLUDED_BROWSER_OWNERS = [
+	HUMAN_PERFORMANCE_BROWSER_OWNER,
+	BROWSER_TEST_PATHS[1],
+] as const;
+const CI_EXCLUDED_BROWSER_OWNERS_VALUE = CI_EXCLUDED_BROWSER_OWNERS.join(",");
 export interface BrowserSelection {
 	mode: "package" | "focus";
 	files: BrowserTestPath[];
@@ -123,17 +128,22 @@ export function applyCiBrowserOwnerExclusion(
 	selection: BrowserSelection,
 	environment: Readonly<Record<string, string | undefined>>,
 ): BrowserSelection {
-	const excluded = environment[CI_EXCLUDED_BROWSER_OWNER_ENV];
+	const excluded = environment[CI_EXCLUDED_BROWSER_OWNERS_ENV];
 	if (excluded === undefined) return selection;
 	if (environment.CI !== "true")
-		selectionError(`${CI_EXCLUDED_BROWSER_OWNER_ENV} requires CI=true.`);
+		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} requires CI=true.`);
 	if (selection.mode !== "package") {
-		selectionError(`${CI_EXCLUDED_BROWSER_OWNER_ENV} is valid only for the package browser lane.`);
+		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} is valid only for the package browser lane.`);
 	}
-	if (excluded !== CI_EXCLUDED_BROWSER_OWNER) {
-		selectionError(`${CI_EXCLUDED_BROWSER_OWNER_ENV} cannot exclude \`${excluded}\`.`);
+	if (excluded !== CI_EXCLUDED_BROWSER_OWNERS_VALUE) {
+		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} cannot exclude \`${excluded}\`.`);
 	}
-	return { ...selection, files: selection.files.filter((file) => file !== excluded) };
+	return {
+		...selection,
+		files: selection.files.filter(
+			(file) => !CI_EXCLUDED_BROWSER_OWNERS.some((excludedFile) => excludedFile === file),
+		),
+	};
 }
 
 function requiredEnvironment(name: (typeof REQUIRED_BROWSER_ENV)[number]): string {

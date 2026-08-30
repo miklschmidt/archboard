@@ -69,10 +69,11 @@ with `// hot-safe: <reason>`. Mechanics and costs:
 serial browser lane drives 15 real-browser owners and exits 2 when prerequisites
 are absent; its human-edit performance owner also needs `strace`. It stays
 headless and runs one owner at a time. `bun run check` is the complete local
-gate. GitHub Actions invokes that command with two fail-closed hosted
-exceptions: `tests/system/code-targets/opener-persistence.test.ts` and
-`tests/system/browser/human-edit-performance.test.ts`. TASK-141 owns restoring
-the system owner; repository policy pins both exact exceptions.
+gate. GitHub Actions invokes that command with three fail-closed hosted
+exceptions: `tests/system/code-targets/opener-persistence.test.ts`,
+`tests/system/browser/human-edit-performance.test.ts`, and
+`tests/system/browser/fixed-point-document.test.ts`. TASK-141 and TASK-142 own
+restoring the system and fixed-point owners; repository policy pins all three.
 `bun run test:repository` includes the inventory that rejects missing,
 duplicate, or unreachable tests. Changing tests or CI, or a browser owner
 failing → `docs/agents/test-suite.md`.
