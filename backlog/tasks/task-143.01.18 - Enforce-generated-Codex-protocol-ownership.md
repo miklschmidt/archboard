@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 23:23'
+updated_date: '2026-08-30 23:51'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -15,6 +15,8 @@ references:
   - docs/agents/boundaries.md
 modified_files:
   - tests/system/repository-policy/codex-protocol-boundary.test.ts
+  - tests/system/repository-policy/support/module-scope-analysis.ts
+  - tests/system/repository-policy/support/codex-aliases.ts
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -60,4 +62,10 @@ Scope audit: f7a5d0224f414f96c618ea5c23ce8cb64a996794..90949925b5801c02efc30cf54
 Remediation in commit aa08e42 after reviewer findings: replaced the handwritten import tokenizer with the repository TypeScript AST parser (static/export/import-type/require/import-equals/dynamic import, including no-substitution templates), added relative/root/absolute/file-URL mutation coverage, pinned the exact Codex 0.151.0 generated path inventory at 820 entries with SHA-256 1b25740f89a30fd39632e584b6bfa0d0c9171f6795d33151e5cf3381532d38fb, recognized generated peer Thread and indirect aliases while retaining an unrelated ClientRequest negative control, and scanned git-tracked source entries with lstat rejection for file and directory symlinks. The owner is 482 lines.
 
 Remediation validation: focused owner passed 8 tests / 22 expectations; bun run test:repository passed 138 tests / 437 expectations; codex-protocol and codex-realtime module owners passed 549 tests / 3512 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed. The working tree contains only the owned policy path before this Backlog note update; no pre-existing untracked artifact was present.
+
+Second remediation in commit 7a00d8f after the reviewer’s computed-import, alias, inventory, and mirror findings: module specifier extraction now preserves binary-plus and template-expression patterns; configured aliases are loaded from package imports, both tsconfig path maps, and the authoritative Vite config when present, with no hardcoded alias table. Added independent binary, template, and semantic #codex-generated/* mutations. The exact 820-entry Codex 0.151.0 inventory remains pinned with SHA-256 1b25740f89a30fd39632e584b6bfa0d0c9171f6795d33151e5cf3381532d38fb; a canonical FutureCodexType.ts header fixture now fails with actionable regeneration/version guidance. Mirror detection covers alternate protocol-mirror/v2/Thread.ts direct and indirect aliases while retaining the unrelated same-name ClientRequest negative control.
+
+Second-remediation validation: focused owner passed 10 tests / 24 expectations; bun run test:repository passed 140 tests / 439 expectations; codex-protocol and codex-realtime module owners passed 549 tests / 3512 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed. Policy owner is 494 physical lines; support helpers are 465 and 70 lines.
+
+Second-remediation scope: policy owner plus existing repository-policy module support and the new named repository-policy alias support module; no production paths changed.
 <!-- SECTION:NOTES:END -->
