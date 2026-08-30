@@ -1,4 +1,4 @@
-import React, { useCallback, useId, useState } from "react";
+import React, { useCallback } from "react";
 
 import type { PathFocusNoPathReason, PathFocusSnapshot } from "../path-focus/index.js";
 import type { SelectionProjection } from "./index.js";
@@ -46,15 +46,48 @@ function EmptyState({ selection }: { selection: SelectionProjection }): React.JS
 	);
 }
 
-function Row({ label, value }: { label: string; value: string }): React.JSX.Element {
+function Row({
+	label,
+	value,
+	technical = false,
+}: {
+	readonly label: string;
+	readonly value: string;
+	readonly technical?: boolean;
+}): React.JSX.Element {
 	return (
 		<div className="selection-inspector-row">
 			<dt>{label}</dt>
 			<dd>
-				<code>{value || "."}</code>
+				{technical ? (
+					<code className="selection-inspector-value selection-inspector-value-technical">
+						{value || "."}
+					</code>
+				) : (
+					<span className="selection-inspector-value selection-inspector-value-human">
+						{value || "."}
+					</span>
+				)}
 			</dd>
 		</div>
 	);
+}
+
+function selectionTitle(selection: SelectionProjection): string {
+	if (
+		selection.state === "bound" ||
+		selection.state === "unbound" ||
+		selection.state === "malformed"
+	) {
+		return (
+			selection.element.metadata.name?.trim() ||
+			selection.element.metadata.node?.trim() ||
+			selection.element.id
+		);
+	}
+	if (selection.state === "multiple") return `${selection.count} elements`;
+	if (selection.state === "missing") return "Selection disappeared";
+	return "No selection";
 }
 
 function status(selection: SelectionProjection): string {
@@ -135,8 +168,6 @@ export function SelectionInspector({
 	onFocusPath,
 	onExitPathFocus,
 }: SelectionInspectorProps): React.JSX.Element {
-	const [expanded, setExpanded] = useState(false);
-	const bodyId = useId();
 	const selected =
 		selection.state === "bound" || selection.state === "unbound" || selection.state === "malformed"
 			? selection
@@ -144,39 +175,34 @@ export function SelectionInspector({
 	const openCode = useCallback((): void => {
 		if (selection.state === "bound" && boardKey) onOpenCode(boardKey, selection.element.id);
 	}, [boardKey, onOpenCode, selection]);
-	const toggleExpanded = useCallback((): void => {
-		setExpanded((value) => !value);
-	}, []);
 
 	return (
 		<aside
-			className={`selection-inspector${expanded ? " selection-inspector-expanded" : ""}`}
+			className="selection-inspector"
 			aria-label={`${paneLabel} selection inspector`}
 			data-selection-state={selection.state}
 			data-path-focus-state={pathFocus.state}
 		>
 			<header className="selection-inspector-header">
-				<div>
-					<span className="selection-inspector-kicker">Selection</span>
-					<span
-						className={`selection-inspector-status selection-inspector-status-${selection.state}`}
-					>
-						{status(selection)}
-					</span>
+				<div className="selection-inspector-summary">
+					<div className="selection-inspector-context">
+						<span className="selection-inspector-kicker">Selection</span>
+						<span className="selection-inspector-pane">{paneLabel}</span>
+					</div>
+					<div className="selection-inspector-heading">
+						<strong className="selection-inspector-title">{selectionTitle(selection)}</strong>
+						{selected && (
+							<span
+								className={`selection-inspector-status selection-inspector-status-${selection.state}`}
+							>
+								{status(selection)}
+							</span>
+						)}
+					</div>
 				</div>
-				<span className="selection-inspector-pane">{paneLabel}</span>
-				<button
-					type="button"
-					className="selection-inspector-disclosure"
-					aria-expanded={expanded}
-					aria-controls={bodyId}
-					onClick={toggleExpanded}
-				>
-					{expanded ? "Hide details" : "Show details"}
-				</button>
 			</header>
 
-			<div className="selection-inspector-body" id={bodyId}>
+			<div className="selection-inspector-body">
 				{!selected ? (
 					<>
 						<EmptyState selection={selection} />
@@ -190,45 +216,27 @@ export function SelectionInspector({
 					</>
 				) : (
 					<>
-						<section className="selection-inspector-section" aria-labelledby="selection-identity">
-							<h2 id="selection-identity">Element</h2>
-							<dl>
-								<Row label="ID" value={selected.element.id} />
-								<Row label="Type" value={selected.element.type} />
-							</dl>
-						</section>
-
-						<section className="selection-inspector-section" aria-labelledby="selection-metadata">
-							<h2 id="selection-metadata">Archboard metadata</h2>
-							{Object.keys(selected.element.metadata).length > 0 ? (
-								<dl>
-									{Object.entries(METADATA_LABELS).map(([key, label]) => {
-										const value = selected.element.metadata[key as keyof typeof METADATA_LABELS];
-										return value === undefined ? null : (
-											<Row key={key} label={label} value={value} />
-										);
-									})}
-								</dl>
-							) : (
-								<p className="selection-inspector-copy">No Archboard metadata.</p>
-							)}
-						</section>
+						<PathFocusSection
+							pathFocus={pathFocus}
+							onFocus={onFocusPath}
+							onExit={onExitPathFocus}
+						/>
 
 						<section className="selection-inspector-section" aria-labelledby="selection-binding">
 							<h2 id="selection-binding">Code binding</h2>
 							{selection.state === "bound" ? (
 								<>
 									<dl>
-										<Row label="Repository" value={selection.binding.repo} />
-										<Row label="Path" value={selection.binding.path} />
+										<Row label="Repository" value={selection.binding.repo} technical />
+										<Row label="Path" value={selection.binding.path} technical />
 										{selection.binding.branch && (
-											<Row label="Branch" value={selection.binding.branch} />
+											<Row label="Branch" value={selection.binding.branch} technical />
 										)}
 										{selection.binding.commit && (
-											<Row label="Commit" value={selection.binding.commit} />
+											<Row label="Commit" value={selection.binding.commit} technical />
 										)}
 										{selection.binding.confirmedAt && (
-											<Row label="Confirmed" value={selection.binding.confirmedAt} />
+											<Row label="Confirmed" value={selection.binding.confirmedAt} technical />
 										)}
 									</dl>
 									<button
@@ -256,11 +264,29 @@ export function SelectionInspector({
 							)}
 						</section>
 
-						<PathFocusSection
-							pathFocus={pathFocus}
-							onFocus={onFocusPath}
-							onExit={onExitPathFocus}
-						/>
+						<section className="selection-inspector-section" aria-labelledby="selection-identity">
+							<h2 id="selection-identity">Element</h2>
+							<dl>
+								<Row label="ID" value={selected.element.id} technical />
+								<Row label="Type" value={selected.element.type} />
+							</dl>
+						</section>
+
+						<section className="selection-inspector-section" aria-labelledby="selection-metadata">
+							<h2 id="selection-metadata">Archboard metadata</h2>
+							{Object.keys(selected.element.metadata).length > 0 ? (
+								<dl>
+									{Object.entries(METADATA_LABELS).map(([key, label]) => {
+										const value = selected.element.metadata[key as keyof typeof METADATA_LABELS];
+										return value === undefined ? null : (
+											<Row key={key} label={label} value={value} />
+										);
+									})}
+								</dl>
+							) : (
+								<p className="selection-inspector-copy">No Archboard metadata.</p>
+							)}
+						</section>
 					</>
 				)}
 			</div>
