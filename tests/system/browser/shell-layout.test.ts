@@ -18,6 +18,7 @@ import {
 type PanesBody = { paneCount?: number; panes?: Array<{ board?: string }> };
 type DesktopShell = {
 	navLeftOfCanvas: boolean;
+	navWidth: number;
 	railRightOfCanvas: boolean;
 	columnsAlign: boolean;
 	canvasLargest: boolean;
@@ -62,6 +63,8 @@ type ActivityLayout = {
 };
 type NarrowShell = {
 	navAboveCanvas: boolean;
+	navHeight: number;
+	navWidth: number;
 	railBelowCanvas: boolean;
 	fitsViewport: boolean;
 	canvasLargest: boolean;
@@ -77,7 +80,6 @@ type NarrowShell = {
 	actionWidths: number[];
 	actionsFit: boolean;
 };
-
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
 
@@ -259,6 +261,7 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
     const railRect = rail.getBoundingClientRect();
     return {
       navLeftOfCanvas: navRect.right <= canvasRect.left + 0.5,
+      navWidth: navRect.width,
       railRightOfCanvas: railRect.left >= canvasRect.right - 0.5,
       columnsAlign: Math.abs(navRect.top - canvasRect.top) < 1 &&
         Math.abs(navRect.bottom - canvasRect.bottom) < 1 &&
@@ -269,6 +272,7 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
     };
   })()`);
 	expect(desktop?.navLeftOfCanvas).toBe(true); // check-fixed-point.mjs:1955
+	expect(desktop?.navWidth).toBeCloseTo(184, 0); // approved compact desktop operator strip
 	expect(desktop?.railRightOfCanvas).toBe(true); // check-fixed-point.mjs:1955
 	expect(desktop?.columnsAlign).toBe(true); // check-fixed-point.mjs:1955
 	expect(desktop?.canvasLargest).toBe(true); // approved canvas-primary desktop composition
@@ -342,6 +346,8 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
     const shellStyle = getComputedStyle(shell);
     return {
       navAboveCanvas: navRect.bottom < paneRect.top,
+      navHeight: navRect.height,
+      navWidth: navRect.width,
       railBelowCanvas: railRect.top >= canvasRect.bottom - 0.5,
       fitsViewport: [navRect, paneRect, barRect, railRect].every(rect =>
         rect.left >= -0.5 && rect.right <= innerWidth + 0.5),
@@ -361,6 +367,8 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
   })()`);
 	expect(narrow?.viewportWidth).toBe(420); // approved 420-pixel contract
 	expect(narrow?.navAboveCanvas).toBe(true); // check-fixed-point.mjs:2067
+	expect(narrow?.navHeight).toBeCloseTo(136, 0); // strip stays inside its reserved workspace row
+	expect(narrow?.navWidth).toBeCloseTo(420, 0); // strip never covers or widens the canvas
 	expect(narrow?.railBelowCanvas).toBe(true); // check-fixed-point.mjs:2067
 	expect(narrow?.fitsViewport).toBe(true); // check-fixed-point.mjs:2072
 	expect(narrow?.canvasLargest).toBe(true); // canvas remains the largest stacked region
@@ -401,34 +409,4 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
 	expect(narrowTheme.theme).toBe(otherNarrowTheme);
 	expect(narrowTheme.width).toBe(420);
 	expect(narrowTheme.wordmark).toBe("archboard");
-
-	const switchStarted = await browser.eval<boolean>(`(() => {
-    const row = document.querySelector('.board-group[aria-label="scratch"] .board-nav-row');
-    if (!row) return false;
-    row.click();
-    return true;
-  })()`);
-	const scratch = await pollUntil(
-		() => browser.eval<string | null>("document.querySelector('.board-name')?.textContent.trim()"),
-		(board) => board === "scratch",
-		"the navigator to open scratch",
-		{ timeoutMs: PANE_SETTLE_CAP_MS },
-	);
-	expect(switchStarted).toBe(true); // check-fixed-point.mjs:2091
-	expect(scratch).toBe("scratch"); // check-fixed-point.mjs:2091
-
-	const returnStarted = await browser.eval<boolean>(`(() => {
-    const row = document.querySelector('.board-group[aria-label="fixedpoint"] .board-nav-row');
-    if (!row) return false;
-    row.click();
-    return true;
-  })()`);
-	const returned = await pollUntil(
-		() => browser.eval<string | null>("document.querySelector('.board-name')?.textContent.trim()"),
-		(board) => board === "fixedpoint",
-		"the navigator to return to the original fixedpoint board",
-		{ timeoutMs: PANE_SETTLE_CAP_MS },
-	);
-	expect(returnStarted).toBe(true); // check-fixed-point.mjs:2103
-	expect(returned).toBe("fixedpoint"); // approved exact original-board return
 });

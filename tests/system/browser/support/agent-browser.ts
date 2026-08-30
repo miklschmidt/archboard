@@ -17,6 +17,7 @@ export const BROWSER_TEST_PATHS = [
 	"tests/system/browser/arrow-binding-differential.test.ts",
 	"tests/system/browser/finding-export.test.ts",
 	"tests/system/browser/shell-layout.test.ts",
+	"tests/system/browser/board-navigator.test.ts",
 	"tests/system/browser/fullscreen-presentation.test.ts",
 	"tests/system/browser/typed-text.test.ts",
 	"tests/system/browser/live-session-convergence.test.ts",
