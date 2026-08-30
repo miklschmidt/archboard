@@ -196,6 +196,56 @@ export const DEFAULT_INJECT_DEBOUNCE_MS = 4000;
  */
 export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000;
 
+// ── Codex workbench policy (ADR 0019) ─────────────────────────────────────
+//
+// These are authored policy values, not consumer defaults. Their expiry
+// classifications matter: an expiry bounds a retry, lease, readiness,
+// freshness, approval, recovery, or shutdown operation, but never proves that
+// a remote mutation failed. Consumers must use these names and must not add a
+// local duration or an override hook.
+//
+// Restart delay doubles after each failed child attempt, caps at the maximum,
+// and resets only after one account-ready session. Shutdown is ordered around
+// the child lifecycle: stop realtime first, settle local waiters, close stdin,
+// send TERM, then send KILL at the grace bound. The full sequence stays within
+// the composed shutdown cap.
+
+/** Retry-delay classification. Pulls against the first restart attempt. */
+export const CODEX_PROCESS_RESTART_BASE_MS = 1_000;
+
+/** Retry-delay cap classification. Pulls against request settlement and the backoff ceiling. */
+export const CODEX_PROCESS_RESTART_MAX_MS = 30_000;
+
+/** Uncertainty-bound classification. Pulls against a lost non-idempotent response before `outcome_unknown`. */
+export const CODEX_REQUEST_SETTLEMENT_MS = 30_000;
+
+/** Browser-command lease classification. Pulls against the 120,000 ms wait cap and approval expiry. */
+export const CODEX_BROWSER_COMMAND_LEASE_MS = 150_000;
+
+/** Visual-approval expiry classification. Pulls against the browser-command lease. */
+export const CODEX_APPROVAL_EXPIRY_MS = 90_000;
+
+/** Spoken-approval gate expiry classification. Pulls against visual approval expiry. */
+export const CODEX_SPOKEN_GATE_EXPIRY_MS = 60_000;
+
+/** Semantic-freshness expiry classification. Pulls against realtime recovery. */
+export const CODEX_SEMANTIC_FRESHNESS_MS = 30_000;
+
+/** Realtime-readiness timeout classification. Pulls against permission-independent SDP/start readiness. */
+export const CODEX_REALTIME_START_MS = 15_000;
+
+/** Realtime-stop timeout classification. Pulls against TERM grace so realtime stops first. */
+export const CODEX_REALTIME_STOP_MS = 3_000;
+
+/** Realtime-recovery window classification. Pulls against semantic freshness while reconnecting. */
+export const CODEX_REALTIME_RECOVERY_MS = 45_000;
+
+/** TERM grace classification. Pulls against realtime stop before TERM-to-KILL escalation. */
+export const CODEX_TERM_GRACE_MS = 5_000;
+
+/** Composed-shutdown cap classification. Pulls against realtime stop plus TERM grace. */
+export const CODEX_COMPOSED_SHUTDOWN_MS = 10_000;
+
 // ── One writer at a time (ADR 0016) ───────────────────────────────────────
 //
 // `src/runtime/engine/board-lock.ts` is the only thing that reads these. It was built
