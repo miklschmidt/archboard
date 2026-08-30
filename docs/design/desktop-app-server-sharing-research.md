@@ -22,6 +22,12 @@ not supported Archboard modes. The final boundary is recorded in ADR-0019; the
 rejected Remote Control alternative is recorded in
 [Desktop Remote Control as an Archboard transport](./desktop-remote-control-integration-research.md).
 
+That child uses dedicated Archboard Codex and SQLite homes with a separate
+supported sign-in. A host-owned epoch manifest makes prior-child threads
+inspect-only and prevents Archboard from cold-resuming persisted dynamic tools
+or queued work. This is an accidental-sharing boundary, not a protocol security
+boundary against a same-user process deliberately opening those paths.
+
 The desktop contains an **undocumented and version-coupled** shared-daemon
 branch. A controlled experiment can start the Nix-packaged Codex binary with
 `app-server --listen unix://`, which creates
@@ -298,7 +304,8 @@ probe sent `initialize`, `initialized`, and then
 `account/read { refreshToken: false }`. It reported a ChatGPT-managed account,
 plan `pro`, and `requiresOpenaiAuth: true`. No turn was started and no token was
 refreshed. This verifies that a standalone Archboard process can use the
-existing persisted Codex authentication without the desktop process.
+existing persisted Codex authentication without the desktop process. It was a
+read-only feasibility probe, not the selected ownership design.
 
 OpenAI documents ChatGPT-managed auth as Codex-owned OAuth tokens persisted to
 disk and refreshed automatically. App-server also supports API-key and other
@@ -307,6 +314,12 @@ auth modes through its account RPCs. See
 Sharing `CODEX_HOME` therefore shares credentials and user configuration even
 when processes are isolated; Archboard must not expose `account/logout`, login,
 or config-writing operations without an explicit user action.
+
+The accepted design does not share that home. Archboard uses a dedicated Codex
+and SQLite home with its own supported sign-in. It may seed selected non-secret
+configuration once and pin invariants through explicit `-c` overrides, but it
+does not symlink mutable `auth.json` or `config.toml`, export a bearer token from
+another app-server, or inherit a `CODEX_SQLITE_HOME` override.
 
 Attestation is a reverse request from app-server to a capable desktop client,
 not a token placed in the child environment. The desktop initializes with
@@ -416,15 +429,29 @@ decoded arguments. Archboard can therefore mediate its six coordination tools
 inside the owned session. No MCP child, private host socket, or untyped metadata
 hop is required.
 
+Persistence makes the ownership boundary stricter than transport alone.
+Version 0.151.0 restores dynamic tools from rollout metadata, persists queue
+state separately, and can dispatch queued work during a cold resume. Archboard
+therefore uses a dedicated `CODEX_HOME`, an explicitly dedicated
+`CODEX_SQLITE_HOME`, and its own supported sign-in. A host-owned epoch manifest
+outside both Codex stores makes older threads list/read-only and refuses resume,
+fork, turn, queue-start, and tool execution on a replacement child. This prevents
+accidental sharing; it cannot stop another same-user process that deliberately
+opens those paths because 0.151.0 has no owner capability.
+
 The same tree exposes realtime V3 startup context through
 `includeStartupContext`, role-bearing `initialItems`,
 `realtimeStartInstructions`, and `realtimeEndInstructions`. Archboard's accepted
 voice contract attaches realtime to a persistent configurable fast coordinator
 linked to the pane's workhorse. Each start supplies a fresh semantic brief;
 selection and settled human changes arrive as live developer context. The
-coordinator remains capable under normal task permissions, delegates or queues
-sustained work through host-bound operations, and receives workhorse lifecycle
-events instead of blocking in a wait call.
+coordinator remains capable under normal thread permissions. It queues only to
+an Archboard-created workhorse with proven persistent instructions; attached
+busy work is steered with exact additional context when valid or refused until
+idle. Workhorse lifecycle events become ordered callbacks instead of blocking in
+a wait call. Realtime V3 does not expose typed dynamic-tool calls, so spoken
+approval delegates the final reply into a later ordinary coordinator turn,
+which returns the schema-constrained verdict through a separate resolver tool.
 
 ## Experimental shared-server validation, if pursued
 

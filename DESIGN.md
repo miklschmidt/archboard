@@ -89,84 +89,67 @@ turn rather than starting a new one.
 
 ## Three channels, three jobs
 
-### 1. Turn-start baseline — `UserPromptSubmit` hook
+### 1. Turn-start baseline — owned thread context
 
-Verified: voice-initiated turns and typed turns converge on the same function
-(`turn_input::handle`), with no realtime special-casing in the hook path. So the
-hook **does** fire for voice.
+The configured app-server child is already the turn boundary, so Archboard
+supplies context there instead of installing a hook into the user's global
+Codex configuration. New workhorses receive the exact tracked shared developer
+instructions at `thread/start`. A turn that Archboard starts on an attached
+workhorse carries those instructions once as `additionalContext.archboard` with
+kind `application`; merely linking, rejoining, or reconnecting changes no thread
+configuration.
 
-Config at `~/.codex/hooks.json` (or `[hooks.*]` in `config.toml`):
+A voice coordinator receives the shared instructions plus its exact tracked
+role extension when Archboard starts the coordinator thread. Each realtime V3
+start includes Codex startup context, the same coordinator role instructions,
+and a compact role-bearing semantic brief. The brief fits the generated
+128-item and 8,192-estimated-token limits and names the repository, workhorse,
+coordinator, board, pane, version, selection, claim, doing state, change cursor,
+and compact board description.
 
-```json
-{
-	"hooks": {
-		"UserPromptSubmit": [
-			{
-				"hooks": [
-					{
-						"type": "command",
-						"command": "/path/to/archboard/bin/canvas-hook",
-						"statusMessage": "reading archboard state"
-					}
-				]
-			}
-		]
-	}
-}
-```
-
-The hook writes `hookSpecificOutput.additionalContext` to stdout; Codex converts
-it to a **`developer`-role message appended immediately after the user message**,
-verbatim with no wrapping tags (`core/src/hook_runtime.rs:682`,
-`core/src/context/hook_additional_context.rs:14`).
-
-Budget: **2,500 approximate tokens** by default, tunable per-handler via
-`additionalContextLimit`. Over the limit it spills to a temp file and the model
-sees only a head/tail preview — so treat 2,500 tokens as the real ceiling. This
-reinforces the compression discipline above.
-
-**Gotchas that will bite:**
-
-- The hook's `prompt` field is the full `<realtime_delegation>` XML, **not** the
-  bare utterance. Any regex written against plain prompts silently won't match.
-  Upside: `transcript_delta` hands us the recent spoken conversation for free —
-  useful for deciding which part of the canvas is worth injecting.
-- **Trust gate.** Non-managed hooks only run if `config.toml` carries a matching
-  `[hooks.state."<key>"].trusted_hash = "sha256:…"`, or
-  `--dangerously-bypass-hook-trust` is set. The trust-granting UX is **TUI-only**
-  — `codex exec` has no trust flow at all. Driving Codex programmatically means
-  pre-writing the hash.
-- Sync hooks are on the critical path (latency); async hooks cannot block or
-  alter the turn, though they can still inject into a running turn via
-  `inject_if_running`.
-
-**Do our own diffing.** Codex re-sends whatever we emit every turn. Our hook
-binary should keep a state file of what it last reported and emit only the
-delta — "since last turn: you moved AuthService out of the API cluster and added
-an unlabelled box next to Postgres." Cheaper, and far better prose material.
+There is no `canvas-hook` process, hook trust grant, global `hooks.json` edit, or
+second context diff. The semantic change feed owns compact deltas; the thread
+start and realtime adapters only choose when and where to deliver them.
 
 ### 2. Mid-conversation context — the bound app-server session
 
 The workbench owns one private stdio app-server child and one explicit thread
 link from a pane to its workhorse. That link is the only automatic target for semantic board
-updates. Archboard does not inspect recent activity, count loaded tasks, read an
-environment-selected task id, or connect a second client to a control socket.
+updates. Archboard does not inspect recent activity, count loaded threads, read an
+environment-selected thread id, or connect a second client to a control socket.
+
+The child runs in an Archboard-only `CODEX_HOME` and `CODEX_SQLITE_HOME` with a
+separate supported sign-in. An epoch manifest outside Codex storage makes every
+prior-child thread inspect-only. This avoids accidental cold resume of persisted
+dynamic tools and queued work; it is an operational boundary, not protection
+against a same-user process intentionally pointed at those private paths.
 
 The existing change feed still performs the valuable work: settle a person's
 gesture, discard visual noise, and narrate the semantic delta compactly. A human
 or mixed-origin update is delivered with `thread/inject_items` on the same owned
 connection, so it enters model-visible history without starting a turn. An
 agent-only update is discarded instead of being narrated back to its author.
-No controllable bound task means no delivery and an inspectable reason.
+No controllable linked thread means no delivery and an inspectable reason.
 
-Realtime voice attaches to a persistent fast coordinator task linked to the
+Realtime voice attaches to a persistent fast coordinator thread linked to the
 pane's workhorse, not to the workhorse itself. This keeps low-latency questions,
 web and repository lookups, and immediate board interaction responsive while a
 heavier turn continues. The coordinator has normal Codex capabilities and may
 perform one explicit unambiguous board operation directly; sustained code or
 repository work defaults to delegation. Busy unrelated work uses the app-server
-thread queue, explicit corrections may steer according to a global policy, and
-app-server lifecycle events notify the coordinator without a blocking wait.
+thread queue only for an Archboard-created workhorse with proven persistent
+instructions; an attached busy workhorse can be steered with exact context or is
+refused until idle. App-server lifecycle events notify the coordinator without a
+blocking wait.
+
+Spoken approval is state-gated. Realtime V3 cannot emit a typed tool verdict, so
+the later ordinary coordinator turn classifies the delegated final reply and
+calls a dedicated typed resolver. A request blocking that coordinator remains
+visual-only. One immutable approval may be pending application-wide; target,
+effect, child epoch, realtime session, and expiry are compare-and-swapped before
+one-time execution. Version 0.151.0 cannot correlate `appendSpeech` completion
+with an item id, so Archboard arms the request from the expected session-scoped
+assistant transcript sequence and presents that residual voice race explicitly.
 
 Codex 0.151.0's experimental V3 contract provides startup context, role-bearing
 initial items, session instructions, realtime text append, and transcript-tail
@@ -174,7 +157,7 @@ flush. Each start supplies a fresh semantic brief; while active, the coordinator
 receives the same human board deltas plus live pane and selection context. Its
 timeline remains distinct from the workhorse timeline and the UI cross-links
 delegations, queue changes, callbacks, approvals, and results. There is no
-second board snapshot or implicit task selector.
+second board snapshot or implicit thread selector.
 
 ADR 0019 supersedes ADR 0005's legacy control-socket route, opt-in environment
 switch, explicit thread environment variable, and loud-injection experiment.
@@ -199,7 +182,13 @@ The canvas server therefore remains loopback-only while the workbench is
 enabled. Its browser bridge requires an actual loopback peer, loopback Host, and
 same-origin HTTP and WebSocket requests. A browser lease owns interactive
 reverse requests and is explicitly transferred; a child exit invalidates every
-task-ownership proof.
+thread-ownership proof.
+
+Dynamic-tool mutations also bind approval to child epoch, requesting thread and
+turn, target state, and a canonical effect fingerprint. The target and effect are
+revalidated immediately before dispatch. General waits add edges to a
+session-owned wait-for graph and reject direct or transitive cycles before any
+operation begins.
 
 The Flip thin-client path must use an SSH tunnel that preserves the loopback
 boundary, or run without the workbench. A LAN-bound unauthenticated listener
@@ -217,9 +206,11 @@ But every `WorldStateSection` implementation is in-tree core Rust, assembled at
 startup. There is **no config or plugin surface** to register one. Using it means
 forking and maintaining Codex itself.
 
-Not worth it. A `UserPromptSubmit` hook that does its own diffing gets most of
-the benefit at none of the maintenance cost. Revisit only if Codex ever exposes
-`TurnInputContributor` registration to plugins.
+Not worth it. The owned app-server session now supplies baseline instructions,
+turn context, quiet history injection, and realtime developer context without a
+Codex fork or a global `UserPromptSubmit` hook. Revisit the in-process extension
+only if Codex exposes a supported registration surface that materially simplifies
+that owned-session design.
 
 ## Roadmap
 
@@ -277,12 +268,9 @@ Ordered by dependency, not ambition. Backlog.md is authoritative —
 
 **Later**
 
-- **Change-event feed** — semantic change events (node added, edge severed,
-  cluster split) feeding both the hook's diffing and the turn-injection trigger.
-- **App-server client** — `thread/inject_items` for quiet updates, `turn/steer`
-  for loud ones, behind an explicit opt-in switch (see Security).
-- **`canvas-hook` binary** — `UserPromptSubmit` handler with its own state file.
-  The fallback for when no daemon is running; injection is better when one is.
+- **Owned workbench session** — one exact-binary stdio child, thread links,
+  generated experimental protocol, dynamic coordination tools, semantic context,
+  linked workhorse and coordinator timelines, and browser-native realtime V3.
 - **Architecture node kinds** as a controlled vocabulary — service, queue,
   datastore, gateway, external. Boxes-and-arrows with infra-flavoured types; no
   resource graph underneath.

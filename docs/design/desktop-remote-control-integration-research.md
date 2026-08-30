@@ -4,10 +4,11 @@ Status: rejected as Archboard's controller topology on 2026-08-30.
 
 ## Decision
 
-Archboard will connect through the Codex app-server protocol. Prefer one
-same-user app-server daemon on a Unix socket that both Archboard and ChatGPT
-Desktop can use. Fall back to an Archboard-owned app-server process when the
-shared daemon is unavailable.
+Archboard will connect through the Codex app-server protocol by starting one
+configured binary as a private stdio child in dedicated Codex and SQLite homes.
+It will not discover or share the Desktop app-server, default Codex home, a
+same-user daemon, or the Desktop IPC router. ADR 0019 records the final owner,
+epoch, and transport boundary.
 
 Do not make Codex Remote Control, the Desktop coordination socket, or Desktop
 process automation part of the workbench contract.
@@ -65,17 +66,17 @@ running Desktop app.
 
 ## Capability comparison
 
-| Requirement                                    | Shared Unix app-server                                                 | Remote Control controller                                                           |
-| ---------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Attach by explicit task ID                     | Yes                                                                    | Technically yes after private enrollment                                            |
-| Subscribe to live task events                  | Yes                                                                    | Yes through relayed app-server JSON-RPC                                             |
-| Send, steer, interrupt, and approve            | Yes                                                                    | Yes through relayed app-server JSON-RPC                                             |
-| Inject Archboard developer instructions        | Yes, through app-server task/turn inputs                               | Technically yes, but still subject to the private controller boundary               |
-| Start `thread/realtime/*` voice                | Yes                                                                    | Protocol can carry it, but controller enrollment blocks Archboard                   |
-| Discover the task currently visible in Desktop | No supported active-window contract; persist the board-to-task binding | Remote lists host tasks but does not expose a stable "Desktop-active task" contract |
-| Linux implementation                           | Proven with the bundled Nix Codex binary                               | Host role is experimental; first-party controller enrollment is unavailable         |
-| Supported and maintainable                     | Yes                                                                    | No                                                                                  |
-| Requires OpenAI relay/device pairing           | No                                                                     | Yes                                                                                 |
+| Requirement                                      | Shared Unix app-server                                                 | Remote Control controller                                                               |
+| ------------------------------------------------ | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Attach by explicit task ID                       | Yes                                                                    | Technically yes after private enrollment                                                |
+| Subscribe to live task events                    | Yes                                                                    | Yes through relayed app-server JSON-RPC                                                 |
+| Send, steer, interrupt, and approve              | Yes                                                                    | Yes through relayed app-server JSON-RPC                                                 |
+| Inject Archboard developer instructions          | Yes, through app-server task/turn inputs                               | Technically yes, but still subject to the private controller boundary                   |
+| Start `thread/realtime/*` voice                  | Yes                                                                    | Protocol can carry it, but controller enrollment blocks Archboard                       |
+| Discover the thread currently visible in Desktop | No supported active-window contract; keep an explicit pane thread link | Remote lists host threads but does not expose a stable "Desktop-active thread" contract |
+| Linux implementation                             | Proven with the bundled Nix Codex binary                               | Host role is experimental; first-party controller enrollment is unavailable             |
+| Supported and maintainable                       | Yes                                                                    | No                                                                                      |
+| Requires OpenAI relay/device pairing             | No                                                                     | Yes                                                                                     |
 
 Remote Control does not solve task identity. Archboard must persist the exact
 Codex thread ID attached to each board whether Desktop is also connected or not.
