@@ -88,6 +88,5 @@ and explicit thread-link UI. A child restart is intentionally conservative:
 prior work remains inspectable but not executable until the person creates a
 new current link. Workhorse and coordinator state remain visibly separate.
 
-ADR-0005 continues to describe the shipped implementation until this workbench
-replacement lands. Its push intent survives, but its ambient routing and second
-client do not.
+ADR-0005's semantic-push intent survives, but its routing and process-ownership
+decision is superseded by the explicit thread link and owned session here.

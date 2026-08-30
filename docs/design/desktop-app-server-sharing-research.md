@@ -451,6 +451,14 @@ opens those paths because 0.151.0 has no owner capability.
 Readiness additionally requires the post-initialize configuration reads above
 to prove that managed requirements did not redirect the effective SQLite home.
 
+Thread discovery is version-coupled too. The generated `ThreadSourceKind`
+union is `cli | vscode | exec | appServer | subAgent | subAgentReview |
+subAgentCompact | subAgentThreadSpawn | subAgentOther | unknown`. The workbench
+queries only the explicit top-level allowlist `cli`, `vscode`, `exec`, and
+`appServer`, then joins `thread/loaded/list`. Execution requires the current
+child's loaded row with `canAcceptDirectInput === true`; persisted, missing,
+`false`, `null`, unknown-source, and system-error rows remain inspect-only.
+
 The same tree exposes realtime V3 startup context through
 `includeStartupContext`, role-bearing `initialItems`,
 `realtimeStartInstructions`, and `realtimeEndInstructions`. Archboard's accepted
@@ -473,6 +481,16 @@ readiness only after RPC success plus an exact child/thread/session/version
 match. Active developer context uses `thread/realtime/appendText`, whose request
 does not carry the realtime session id; every append must therefore revalidate
 the captured child epoch, coordinator, and session against the current binding.
+The item-scoped `thread/realtime/item/started`,
+`thread/realtime/item/transcript/delta`, and
+`thread/realtime/item/completed` notifications provide canonical transcript
+identity. The older flat transcript delta/done notifications do not; they may
+inform ephemeral phase diagnostics but must not create a second transcript.
+
+`thread/inject_items` exposes no idempotency key. A lost response cannot be
+retried blindly: quiet semantic or callback delivery settles as `delivered`,
+`not_delivered`, or `outcome_unknown` and is attempted at most once unless a
+later Codex contract adds deduplication.
 
 Reverse requests do not share one identity shape. V2 item requests carry
 JSON-RPC request, thread, turn, and item identity plus optional approval id; MCP

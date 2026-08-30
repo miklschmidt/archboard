@@ -4,7 +4,7 @@ title: 'Build the text, tools, queue, and approvals workbench UI'
 status: To Do
 assignee: []
 created_date: '2026-08-30 11:44'
-updated_date: '2026-08-30 15:16'
+updated_date: '2026-08-30 15:46'
 labels: []
 dependencies:
   - TASK-140.03
@@ -12,7 +12,6 @@ dependencies:
   - TASK-143.05
   - TASK-143.06
   - TASK-143.07
-  - TASK-144
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
@@ -27,13 +26,13 @@ ordinal: 166000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Integration milestone for browser transport, assistant-ui ExternalStoreRuntime, thread-link selection, canonical timelines, composer, queue, ordinary approvals, coordinator disclosure, board status, frame, and shell integration delivered by TASK-143.03.01-.11.
+Integration milestone for browser transport, pinned assistant-ui ExternalStoreRuntime, thread-link selection, owned timelines/composer/queue/approvals, coordinator disclosure, board status, text frame, shell integration, and the canonical text browser owner delivered by TASK-143.03.01-.13.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The eleven leaves compose one workhorse-first desktop workbench over the closed browser contract; `@assistant-ui/react` supplies headless conversation composition only and app-server state remains authoritative.
-- [ ] #2 Every executable action names its thread link/turn/request target; unavailable, stale, prior-epoch, reconnect, approval, queue, interruption, completion, failure, and unknown states remain truthful and reachable.
-- [ ] #3 Ordinary approvals use the discriminated request identity and remain separate from voice-specific eligibility/correlation presentation.
-- [ ] #4 Rendered coverage proves supported desktop one/two-pane/fullscreen, collapsed/expanded, both themes, keyboard, logs, focus return, reduced motion, screen readers, Samsung Flip touch targets, and unchanged Excalidraw behavior.
+- [ ] #1 The thirteen leaves compose one workhorse-first desktop workbench; @assistant-ui/react 0.15.17 supplies headless runtime/primitives only, Archboard owns rendered components, and app-server state remains authoritative.
+- [ ] #2 Every executable action names its link/turn/request target; all empty/loading/progress/unavailable/stale/prior-epoch/reconnect/approval/queue/interruption/completion/failure/recovery/unknown states have one module owner and test path.
+- [ ] #3 Ordinary approvals render the broker identity and remain separate from voice eligibility; shared package, module, shell, and browser-inventory edits are explicitly serialized.
+- [ ] #4 The text browser owner proves desktop one/two-pane/fullscreen, collapsed/expanded, themes, keyboard, logs, focus, reduced motion, screen reader, Samsung Flip touch, exact targeting, and unchanged Excalidraw.
 <!-- AC:END -->

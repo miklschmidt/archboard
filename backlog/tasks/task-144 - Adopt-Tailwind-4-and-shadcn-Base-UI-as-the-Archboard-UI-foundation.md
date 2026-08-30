@@ -4,7 +4,7 @@ title: Adopt Tailwind 4 and shadcn/Base UI as the Archboard UI foundation
 status: To Do
 assignee: []
 created_date: '2026-08-30 14:32'
-updated_date: '2026-08-30 15:16'
+updated_date: '2026-08-30 15:49'
 labels: []
 dependencies:
   - TASK-140
@@ -21,13 +21,13 @@ ordinal: 170000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Map the completed TASK-140 desktop operator shell into a Tailwind 4 development foundation and use shadcn configured for Base UI as reviewed source delivery. Nine leaves own dependency/build, theme, configuration, class composition, native formatting, one dialog, one real migration, and durable aesthetic guidance. Tailwind/shadcn/Base UI supply mechanics and development speed; TASK-140 remains visual authority.
+Map completed TASK-140 into a Tailwind 4 foundation and use shadcn/Base UI as reviewed source delivery. Seventeen leaves serialize dependencies, Vite/root/frontend aliases, CSS import/theme/shell migration, shadcn, classes, native formatting, dialog/opener, exact automated owners, and enforced UI-agent guidance.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 TASK-144.01-.09 compose one canonical Tailwind stylesheet/theme, explicit Base UI shadcn source-delivery configuration, named UI boundaries, one proven dialog consumer, and linked aesthetic guidance without rewriting the completed shell.
-- [ ] #2 Oxfmt uses native Tailwind v4 sorting and actual helper names. New UI remains under the existing strict native Oxlint React/jsx-a11y/type-aware baseline; no custom Tailwind Oxlint rule, external Tailwind linter, second formatter, or repository copy of changing upstream defaults is added.
-- [ ] #3 Preflight remains off, Excalidraw CSS stays separate, semantic tokens map the merged TASK-140 light/dark visual system, and copied source removes unused/default aesthetics rather than importing a generic component bucket.
-- [ ] #4 Frozen install, both TypeScript projects, lint, format, production build, focused module tests, and real-browser opener/shell regression prove accessible keyboard/focus/dismissal behavior and unchanged supported desktop/Excalidraw workflows.
+- [ ] #1 TASK-144.01-.17 compose one canonical Tailwind stylesheet/theme, exact Vite/root/frontend resolver and shadcn base-nova configuration, named UI boundaries, one proven Base UI dialog consumer, automated format/browser/doc owners, and mandatory aesthetic guidance without rewriting the shell.
+- [ ] #2 Oxfmt uses native Tailwind v4 sorting and actual helper names; existing strict native Oxlint rules remain, with no custom Tailwind lint, second formatter, copied upstream defaults, warning allowance, or speculative cva.
+- [ ] #3 Preflight stays off, Excalidraw CSS stays separate, TASK-140 tokens migrate to one theme, official source provenance is recorded, and generated default aesthetics/icons/dependencies are reduced out.
+- [ ] #4 Frozen install, all resolver aliases, both TypeScript projects, lint, native format owner, production build, module tests, opener browser owner, shell regressions, AGENTS link, and repository enforcement prove the result.
 <!-- AC:END -->

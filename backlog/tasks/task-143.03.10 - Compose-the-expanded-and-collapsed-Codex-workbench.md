@@ -4,6 +4,7 @@ title: Compose the expanded and collapsed Codex workbench
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
+updated_date: '2026-08-30 15:41'
 labels: []
 dependencies:
   - TASK-143.03.03
@@ -13,6 +14,7 @@ dependencies:
   - TASK-143.03.07
   - TASK-143.03.08
   - TASK-143.03.09
+  - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
@@ -27,12 +29,13 @@ ordinal: 207000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the canvas-first layout and composition API in `src/ui/workbench-frame`. It arranges thread-link status, workhorse timeline, optional coordinator, queue, approvals, composer, and board status without owning their state.
+Own canvas-first text-workbench composition in `src/ui/workbench-frame`. It arranges thread link, workhorse timeline, optional coordinator, queue, approvals, composer, and board status, and reserves one inert optional voice slot without importing or presenting voice state.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Expanded layout has compact thread-link/status header, workhorse-first timeline, optional coordinator disclosure, queue/approval region, composer/turn controls, and separate board-status region.
-- [ ] #2 Collapsed layout keeps connection, workhorse running/idle, pending approval/queue count, voice status, and Take back control visible without obscuring the canvas.
-- [ ] #3 Supported desktop one-pane, two-pane, fullscreen, light/dark, keyboard, reduced-motion, screen-reader log, and Samsung Flip touch layouts follow the TASK-140 operator shell with flat rules, small radii, cobalt/lime semantics, and no generic chat bubbles/cards/gradients/glow.
+- [ ] #1 Expanded text layout has a compact link/status header, workhorse-first timeline, optional coordinator disclosure, queue/approval region, composer/turn controls, and separate board status.
+- [ ] #2 Collapsed text layout keeps connection, running/idle, pending approval/queue count, and Take back control visible; the inert absent voice slot renders nothing and has no status claim.
+- [ ] #3 Empty/loading/partial/failure/recovery states preserve reachable Stop and recovery actions without hiding the canvas or overlapping fullscreen controls.
+- [ ] #4 Tests at src/ui/workbench-frame/tests cover desktop one/two panes, fullscreen, collapse, light/dark, keyboard, reduced motion, screen-reader log order, and Samsung Flip touch under TASK-140 aesthetics.
 <!-- AC:END -->

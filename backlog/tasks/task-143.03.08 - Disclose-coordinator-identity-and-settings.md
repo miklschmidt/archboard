@@ -4,12 +4,14 @@ title: Disclose coordinator identity and settings
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
+updated_date: '2026-08-30 15:41'
 labels: []
 dependencies:
-  - TASK-143.07.01
   - TASK-143.03.02
   - TASK-143.03.04
-  - TASK-144
+  - TASK-143.07.01
+  - TASK-144.07
+  - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
@@ -29,7 +31,8 @@ Own the separate coordinator disclosure and global settings UI in `src/ui/workbe
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The view names coordinator and linked workhorse identities, configured/effective model and effort, requested/effective service tier, intervention policy, active voice, pending callback, and navigation between timelines.
-- [ ] #2 Settings begin with Luna/medium and Explicit corrections, show Coordinator judgment and Never steer, validate available combinations, and affect only later coordinator decisions.
-- [ ] #3 Unavailable model/effort and priority fallback are actionable and visible; disclosure, settings, focus order, and separate timeline semantics work in both themes.
+- [ ] #1 Empty/creating/ready/active/reconnecting/invalidated/failed coordinator views name coordinator and linked workhorse, configured/effective model/effort/service tier, intervention policy, pending callback, and navigation between separate timelines.
+- [ ] #2 Settings start Luna/medium/Explicit corrections, expose Coordinator judgment and Never steer, validate only model/list combinations, and affect later decisions without rewriting the current turn.
+- [ ] #3 Unavailable model/effort, priority fallback, creation failure, child replacement, and stale settings are actionable and never collapse coordinator history into workhorse history.
+- [ ] #4 Tests at src/ui/workbench-coordinator/tests cover the full state/settings matrix, focus order, keyboard/touch operation, labels/status, cross-links, light/dark, and reduced motion.
 <!-- AC:END -->

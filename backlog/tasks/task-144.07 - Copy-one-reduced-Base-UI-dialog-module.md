@@ -4,12 +4,14 @@ title: Copy one reduced Base UI dialog module
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:11'
+updated_date: '2026-08-30 15:43'
 labels: []
 dependencies:
   - TASK-144.03
   - TASK-144.04
   - TASK-144.05
   - TASK-144.06
+  - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/tailwind-base-ui-adoption-research.md
@@ -24,12 +26,13 @@ ordinal: 221000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the first reviewed shadcn/Base UI source slice in `src/ui/dialog`. Add `@base-ui/react` and only dependencies this reduced dialog actually imports; application state stays outside.
+Own the first reviewed shadcn/Base UI source slice in `src/ui/dialog`. Run the TASK-144.04 command, record the resolved official registry URL and SHA-256, then reduce the result to the minimum Archboard dialog API using @base-ui/react 1.7.0 and local icons.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The named module exposes the minimum dialog composition needed by Archboard and removes unused registry variants, dependencies, default palette styling, icon systems, and generic dashboard treatment.
-- [ ] #2 Keyboard focus trap/return, Escape, outside dismissal, labelling/descriptions, disabled actions, portal stacking, and visible focus work under the existing shell isolation.
-- [ ] #3 The module uses semantic Tailwind utilities, passes the repository's existing strict native Oxlint React/jsx-a11y/type-aware baseline without weakening or custom Tailwind rules, and owns no board/application state.
+- [ ] #1 The module exposes only Root, Trigger, Portal, Backdrop, Popup, Title, Description, Close, and application-controlled open/change composition needed by opener settings; unused variants, palette defaults, animation packages, cva, and Lucide source/dependency are removed.
+- [ ] #2 A source provenance note records pinned shadcn 4.19.0, base-nova @shadcn/dialog resolution URL/hash, reduction decisions, and local src/ui/shell/Icons.tsx replacement without committing registry cache.
+- [ ] #3 Focus trap/return, Escape, outside dismissal, labels/descriptions, disabled actions, portal stacking, visible focus, and controlled/open transitions work under shell isolation.
+- [ ] #4 Tests at src/ui/dialog/tests use semantic Tailwind utilities and pass strict native Oxlint React/jsx-a11y/type-aware rules without weakening, custom Tailwind rules, application state, or second primitive family.
 <!-- AC:END -->
