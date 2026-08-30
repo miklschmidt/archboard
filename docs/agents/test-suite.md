@@ -9,14 +9,14 @@ changing tests or CI, or when a browser check fails.
 - `test:system`: system owners under the eight explicit non-browser directories,
   with `--max-concurrency=1` because they own real processes and hot-reload source edits;
 - `test:repository`: isolated repository-policy tests, including inventory and no-MJS policy;
-- `test:serial-browser`: the 18 canonical browser owners through the strict adapter.
+- `test:serial-browser`: the 19 canonical browser owners through the strict adapter.
 
 `bun run check` is the complete local gate: lint, formatting, both TypeScript
 projects, and that complete test chain. `.github/workflows/ci.yml` invokes the
 same command with two exact hosted-only exceptions after clean-runner stalls:
 `tests/system/code-targets/opener-persistence.test.ts` and the complete serial
 browser lane. All remain mandatory locally; TASK-141 and TASK-142 own restoring
-the system owner and all 18 browser owners to hosted coverage. Repository policy
+the system owner and all 19 browser owners to hosted coverage. Repository policy
 pins both exceptions and rejects a native test with no lane, more than one lane,
 no push path, a browser owner outside the serial adapter, recursive browser
 discovery, or any transitional `test:*` key.
@@ -39,11 +39,11 @@ Run browser diagnosis only through the adapter:
 bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canonical-owner>.test.ts
 ```
 
-The code-target system owners run after `tests/system/process-contracts`; the final browser owners cover selection inspection, opener settings, and code-target activation:
+The code-target system owners run after `tests/system/process-contracts`; the final browser owners cover selection inspection, connected path focus, opener settings, and code-target activation:
 
 ```bash
 bun test --isolate --max-concurrency=1 tests/system/support tests/system/boards tests/system/label-geometry tests/system/cli tests/system/board-inspection tests/system/canvas-state tests/system/process-contracts tests/system/code-targets
-bun tests/system/browser/run-browser-lane.ts tests/system/browser/human-edit-performance.test.ts tests/system/browser/fixed-point-document.test.ts tests/system/browser/malformed-geometry-recovery.test.ts tests/system/browser/pane-telemetry-recovery.test.ts tests/system/browser/arrow-binding-differential.test.ts tests/system/browser/finding-export.test.ts tests/system/browser/shell-layout.test.ts tests/system/browser/board-navigator.test.ts tests/system/browser/fullscreen-presentation.test.ts tests/system/browser/typed-text.test.ts tests/system/browser/live-session-convergence.test.ts tests/system/browser/server-update-ordering.test.ts tests/system/browser/hold-generation.test.ts tests/system/browser/human-hold-persistence.test.ts tests/system/browser/claim-interaction.test.ts tests/system/browser/selection-inspector.test.ts tests/system/browser/opener-settings.test.ts tests/system/browser/code-target-activation.test.ts
+bun tests/system/browser/run-browser-lane.ts tests/system/browser/human-edit-performance.test.ts tests/system/browser/fixed-point-document.test.ts tests/system/browser/malformed-geometry-recovery.test.ts tests/system/browser/pane-telemetry-recovery.test.ts tests/system/browser/arrow-binding-differential.test.ts tests/system/browser/finding-export.test.ts tests/system/browser/shell-layout.test.ts tests/system/browser/board-navigator.test.ts tests/system/browser/fullscreen-presentation.test.ts tests/system/browser/typed-text.test.ts tests/system/browser/live-session-convergence.test.ts tests/system/browser/server-update-ordering.test.ts tests/system/browser/hold-generation.test.ts tests/system/browser/human-hold-persistence.test.ts tests/system/browser/claim-interaction.test.ts tests/system/browser/selection-inspector.test.ts tests/system/browser/connected-path-focus.test.ts tests/system/browser/opener-settings.test.ts tests/system/browser/code-target-activation.test.ts
 ```
 
 The module-scope owner mutates source fixtures only inside its repository-policy
@@ -69,20 +69,20 @@ Every transitional package check now has one final owner lane:
 | `test:geometry`, `test:labels`                                                 | modules and system | `src/runtime/engine/tests/`, `tests/system/label-geometry/`                                                          |
 | `test:text`, `test:library`                                                    | modules            | `src/runtime/engine/tests/`                                                                                          |
 | `test:boards`                                                                  | system             | `tests/system/support/`, `tests/system/boards/`                                                                      |
-| `test:browser`                                                                 | serial-browser     | the 18 literal owners below                                                                                          |
+| `test:browser`                                                                 | serial-browser     | the 19 literal owners below                                                                                          |
 
 ## The serial browser lane
 
 Everything else in `scripts/` stands a WebSocket in for a pane, which cannot
 catch a renderer disagreeing with us: a socket holds whatever it was sent. The
-18 owners under `tests/system/browser/` drive a real browser through one strict
+19 owners under `tests/system/browser/` drive a real browser through one strict
 adapter instead. The lane:
 
 - refuses to claim a pass without `agent-browser` on PATH, or without `strace`
   when human-edit performance is selected — it exits 2 before building or
   starting an owner;
 - asserts `navigator.userAgent` says headless, because a window that maps
-  steals focus under Hyprland; local runs exercise all 18 owners while hosted
+  steals focus under Hyprland; local runs exercise all 19 owners while hosted
   runs exclude the lane until TASK-142 restores it;
 - runs one literal file child at a time, never concurrently. TASK-097 records that two owners
   sharing the machine is how one of them fails for no reason: contention
@@ -113,7 +113,7 @@ The full order is human edit performance; fixed-point document; malformed
 geometry recovery; pane telemetry recovery; arrow-binding differential;
 finding export; shell layout; board navigator; fullscreen presentation; typed text; live-session convergence; server
 update ordering; hold generation; human-hold persistence; claim interaction;
-selection inspector; opener settings; and code-target activation.
+selection inspector; connected path focus; opener settings; and code-target activation.
 
 ### Human edit performance (TASK-118)
 
