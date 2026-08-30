@@ -24,6 +24,7 @@ const textExtensions = new Set([
 	".yaml",
 	".yml",
 	".toml",
+	".txt",
 	".svg",
 ]);
 const binaryExtensions = new Set([

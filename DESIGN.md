@@ -8,6 +8,10 @@ The approved visual direction for the application chrome is the
 separates the composition and visual language to adopt from the mockup details
 that do not represent real product state.
 
+Archboard’s shell is desktop-only. Do not plan, implement, or gate phone/narrow
+responsive layouts unless the user explicitly reverses this decision.
+Desktop-sized touch interaction for the Samsung Flip remains supported.
+
 Everything below marked "verified" was established by reading the Codex source
 at commit `f5a3dc5540` or by testing this build. Nothing here is inferred from
 documentation.

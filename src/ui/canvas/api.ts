@@ -7,6 +7,7 @@ import type {
 	BoardIdentity,
 	BoardInfo,
 	BoardListing,
+	BoardPreviewSnapshot,
 	BoardSaveResult,
 	BoardWriteConflict,
 	LockHolder,
@@ -410,6 +411,14 @@ export function fetchBoardInfo(board: string) {
 
 export function fetchBoards() {
 	return json<BoardListing>("/api/boards");
+}
+
+/** A read-only scene for the navigator; rendering stays in the browser. */
+export function fetchBoardPreview(board: string, signal?: AbortSignal) {
+	return json<BoardPreviewSnapshot & { success: true }>(
+		`/api/boards/preview?board=${encodeURIComponent(board)}`,
+		{ signal },
+	);
 }
 
 /** `pane` is the pane to show it in — required once more than one is open. */

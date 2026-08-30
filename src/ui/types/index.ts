@@ -133,6 +133,14 @@ export interface BoardListing {
 	onScreen: Array<{ paneId: string; place: string; board: string }>;
 }
 
+/** The canonical presentation scene used only for a browser-rendered board preview. */
+export interface BoardPreviewSnapshot {
+	board: string;
+	fingerprint: string;
+	elements: ServerElement[];
+	files: Record<string, BinaryFileData>;
+}
+
 export interface WebSocketMessage {
 	type: string;
 	/** On `board_error`: the actionable refusal the shell must keep visible. */

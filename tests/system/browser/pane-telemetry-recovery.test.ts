@@ -4,11 +4,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-	PANE_DEBOUNCE_MS,
 	PANE_LAYOUT_TIMEOUT_MS,
 	PANE_SETTLE_CAP_MS,
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-	TEST_PANE_DEBOUNCE_MARGIN_MS,
 } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
@@ -36,8 +34,6 @@ type Telemetry = { rect: Rect; viewport: Viewport };
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = path.join(repoRoot, "src/server.ts");
-const sleep = (milliseconds: number): Promise<void> =>
-	new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 function roundedGeometry(value: Partial<Telemetry> | null | undefined): Telemetry {
 	return {
@@ -133,24 +129,38 @@ test(
         window.__task117PaneRect = pane.getBoundingClientRect.bind(pane);
         window.__task117PaneExpected = expected;
         window.__task117Excalidraw = app;
-        pane.getBoundingClientRect = () => ({
-          ...window.__task117PaneRect(),
-          left: expected.rect.x,
-          top: expected.rect.y,
-          width: Infinity,
-          height: expected.rect.height
-        });
+        window.__task117InvalidRectReads = 0;
+        pane.getBoundingClientRect = () => {
+          window.__task117InvalidRectReads += 1;
+          return {
+            ...window.__task117PaneRect(),
+            left: expected.rect.x,
+            top: expected.rect.y,
+            width: Infinity,
+            height: expected.rect.height
+          };
+        };
         app.updateScene({ appState: {
           scrollX: -expected.viewport.x + 1,
           scrollY: -expected.viewport.y,
           zoom: { value: expected.viewport.zoom }
         }});
+        // Ignore any synchronous renderer measurement. The read awaited below
+        // must happen after updateScene returns, when the pane-report debounce
+        // actually samples the test-controlled invalid rectangle.
+        window.__task117InvalidRectReads = 0;
         return true;
       `),
 		);
 		expect(installed).toBe(true); // check-fixed-point.mjs:1254
 
-		await sleep(PANE_DEBOUNCE_MS + TEST_PANE_DEBOUNCE_MARGIN_MS);
+		const invalidRectReads = await pollUntil(
+			() => browser.eval<number>("window.__task117InvalidRectReads ?? 0"),
+			(reads) => reads > 0,
+			"the pane report to measure the invalid rectangle",
+			{ timeoutMs: PANE_SETTLE_CAP_MS },
+		);
+		expect(invalidRectReads).toBeGreaterThan(0);
 		const suppressed = await browser.eval<unknown[]>("window.__task117PanePosts ?? []");
 		expect(suppressed).toHaveLength(0); // check-fixed-point.mjs:1254
 

@@ -14,14 +14,12 @@ permissions:
   contents: read
 
 jobs:
-  # The whole suite, as one step, on purpose. This workflow used to name two
-  # scripts of its own while the suite grew to seventeen around it, so the list
-  # now lives in package.json where it is already maintained. `check` enforces
-  # Oxlint (including Archboard's boundary plugin), formatting, type-checking,
-  # and the complete sequential test chain. `test:repository` verifies that
-  # every native test has exactly one owner in that chain.
+  # The canonical check command stays one step so package.json owns its order.
+  # Local `check` is the complete sequential contract. The hosted step below
+  # names its two runner-specific lane exceptions; repository policy refuses
+  # any other exclusion. TASK-141 and TASK-142 own restoring hosted coverage.
   suite:
-    name: Lint, format, type check, build, and the whole suite
+    name: Lint, format, type check, and hosted test subset
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -35,43 +33,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install tracing prerequisite
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes strace
-
-      # `test:serial-browser` renders a board in a real browser and is in the chain
-      # since TASK-072, so the chain needs one. Pinned to the version the check
-      # was written against: it reads the scene back through the React fiber and
-      # drives the browser through `open` and `eval`, which is 0.34.0's
-      # behaviour. Nothing in package.json depends on it.
-      - name: Install agent-browser
-        run: |
-          bun add --global agent-browser@0.34.0
-          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
-
-      # `install` downloads Chrome into ~/.agent-browser/browsers rather than
-      # trusting whatever the image ships; --with-deps adds the system libraries
-      # through apt, which needs the passwordless sudo a GitHub runner has.
-      # `agent-browser doctor` is what to run here when this step is the one
-      # that broke.
-      - name: Install the browser
-        run: |
-          agent-browser install --with-deps
-          mapfile -t chrome_paths < <(find "$HOME/.agent-browser/browsers" -type f -name chrome -perm /111 -print)
-          if [ "${#chrome_paths[@]}" -ne 1 ]; then
-            echo "Expected exactly one downloaded executable named chrome, found ${#chrome_paths[@]}." >&2
-            printf '%s\n' "${chrome_paths[@]}" >&2
-            exit 1
-          fi
-          chrome_path="$(realpath "${chrome_paths[0]}")"
-          test -x "$chrome_path"
-          echo "AGENT_BROWSER_EXECUTABLE_PATH=$chrome_path" >> "$GITHUB_ENV"
-
-      # Lint, formatting, the type check, and every suite. Every suite that needs a canvas
-      # starts its own on a random port with a throwaway vault, so nothing here
-      # reads a vault, a registry or a running server off the machine it lands
-      # on. The browser adapter owns frontend freshness and builds once when a
-      # clean checkout needs it.
-      - name: Run all checks
+      # Lint, formatting, both type checks, every native owner except opener
+      # persistence, and no serial browser owners. All excluded owners remain in
+      # local `check`; TASK-141 and TASK-142 own restoring hosted coverage.
+      - name: Run hosted checks
+        env:
+          CI: "true"
+          ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS: all
+          ARCHBOARD_CI_EXCLUDED_SYSTEM_OWNER: tests/system/code-targets/opener-persistence.test.ts
         run: bun run check

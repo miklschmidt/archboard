@@ -59,6 +59,7 @@ type PageElement = Pick<ExcalidrawElement, "id" | "x" | "y" | "width" | "height"
 
 interface PageState {
 	perf: PerformanceProbe;
+	zoom: number;
 	tool: string;
 	editing: string | null;
 	typing: string | null;
@@ -158,6 +159,7 @@ const readPageState = inExcalidrawApp(`
   const perf = window.__abHumanPerf;
   return {
     perf,
+    zoom: app.state.zoom?.value ?? 1,
     tool: app.state.activeTool.type,
     editing: app.state.editingTextElement?.id ?? null,
     typing: document.querySelector('textarea.excalidraw-wysiwyg')?.value ?? null,
@@ -302,7 +304,7 @@ test(
 		const isolatedDrag = isolatedAfter.elements.find((element) => element.id === "drag");
 		const isolatedResponse = isolatedAfter.perf.responses[0]!;
 		expect(Number.isFinite(isolatedDragX)).toBeTrue();
-		expect(isolatedDrag!.x).toBeGreaterThan(isolatedDragX! + 10);
+		expect((isolatedDrag!.x - isolatedDragX!) * isolatedBefore.zoom).toBeGreaterThan(10);
 		expect(isolatedAfter.perf.reports).toBe(1);
 		expect(isolatedAfter.perf.responses).toHaveLength(1);
 		expect(isolatedResponse.requestFullReport).toBeFalse();
@@ -332,7 +334,7 @@ test(
 		const dragDuring = await pageState();
 		const draggedX = dragDuring.elements.find((element) => element.id === "drag")!.x;
 		expect(dragDuring.perf.inflight).toBe(1);
-		expect(draggedX).toBeGreaterThan(dragXBefore + 10);
+		expect((draggedX - dragXBefore) * beforeDrag.zoom).toBeGreaterThan(10);
 		expect(draggedX).toBeGreaterThan(afterFirstX);
 		await Bun.sleep(REPORT_PROGRESS_MS + TEST_BROWSER_POLL_MS * 2);
 		const afterFinalProgress = await pageState();
@@ -363,7 +365,8 @@ test(
 		expect(noTail.perf.inflight).toBe(0);
 
 		await frameElement("resize");
-		const resizeBefore = (await pageState()).elements.find((element) => element.id === "resize")!;
+		const resizeBeforeState = await pageState();
+		const resizeBefore = resizeBeforeState.elements.find((element) => element.id === "resize")!;
 		await browser.run(["click", ".excalidraw"]);
 		await dragFrom(await pointOf("resize", true), 24, 18);
 		await pollUntil(pageState, (state) => state.perf.inflight === 1, "the resize report to start");
@@ -371,7 +374,7 @@ test(
 		const resizeDuring = await pageState();
 		const resized = resizeDuring.elements.find((element) => element.id === "resize")!;
 		expect(resizeDuring.perf.inflight).toBe(1);
-		expect(resized.width).toBeGreaterThan(resizeBefore.width + 10);
+		expect((resized.width - resizeBefore.width) * resizeBeforeState.zoom).toBeGreaterThan(10);
 		await pollUntil(
 			pageState,
 			(state) => state.perf.inflight === 0 && state.perf.responses.length === state.perf.reports,

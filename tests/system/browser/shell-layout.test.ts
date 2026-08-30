@@ -14,35 +14,21 @@ import {
 	pollUntil,
 	registerCanvasBase,
 } from "./support/agent-browser.ts";
-
-type PanesBody = { paneCount?: number; panes?: Array<{ board?: string }> };
-type DesktopShell = {
-	navLeftOfCanvas: boolean;
-	railRightOfCanvas: boolean;
-	columnsAlign: boolean;
-	actionHeights: number[];
-	currentBoard: string;
-};
-type ActivityLayout = {
-	lineCount: number;
-	linesFit: boolean;
-	panelFits: boolean;
-	canvasClear: boolean;
-	timestampsAlign: boolean;
-};
-type NarrowShell = {
-	navAboveCanvas: boolean;
-	railBelowCanvas: boolean;
-	fitsViewport: boolean;
-	pageWidth: number;
-	viewportWidth: number;
-	actionHeights: number[];
-};
-
+import {
+	PERSISTENT_NOTICE_TEXT,
+	publishActionableNotice,
+} from "./support/fullscreen-presentation.ts";
+import type {
+	ActivityLayout,
+	DesktopShell,
+	NoticeLayout,
+	PaneBarLayout,
+	PanesBody,
+	ThemeSnapshot,
+} from "./support/shell-contract-types.ts";
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
-
-test("the shell stays usable from desktop width through 420 pixels", async () => {
+test("the desktop shell keeps its type, geometry, states, and touch targets at 1440x900", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "vault");
@@ -56,7 +42,6 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
 	registerCanvasBase(canvas.base);
 	const browser = resources.use(await createAgentBrowser());
 	const api = createJsonRequester(canvas);
-
 	await api("/api/boards/new", {
 		method: "POST",
 		body: { board: "fixedpoint", level: "service" },
@@ -70,6 +55,11 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
 	await browser.run(["open", canvas.base]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
 	await browser.run(["set", "viewport", "1440", "900"]);
+	expect(
+		await browser.eval<string[]>(
+			`[...document.styleSheets].flatMap(sheet => [...sheet.cssRules]).filter(rule => rule instanceof CSSMediaRule && [...rule.media].some(query => Number(query.match(/max-width:\\s*(\\d+)px/)?.[1]) <= 900)).filter(rule => /\\.(shell|workspace|bar|board-nav|canvas-zone|canvas-stage|panes|pane-bar|agent-workbench|selection-inspector|statusbar)\\b/.test(rule.cssText)).map(rule => rule.conditionText)`,
+		),
+	).toEqual([]);
 	await pollUntil(
 		() => api<PanesBody>("/api/panes").then((response) => response.body),
 		(state) => (state.paneCount ?? 0) === 1,
@@ -86,35 +76,312 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
 		"fixedpoint to become the visible board",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
+	await browser.eval<boolean>("document.fonts.ready.then(() => true)");
+
+	const readTheme = () =>
+		browser.eval<ThemeSnapshot | null>(`(() => {
+			const shell = document.querySelector('.shell');
+			const bar = document.querySelector('.bar');
+			const wordmark = document.querySelector('.wordmark');
+			const open = document.querySelector('.bar-actions [aria-label="Open board"]');
+			const board = document.querySelector('.board-name');
+			const meta = document.querySelector('.bar-board-meta');
+			const level = document.querySelector('.level-tag');
+			const connection = document.querySelector('.status');
+			const persistence = document.querySelector('.meta-vault, .chip-held, .chip-elsewhere');
+			const pane = document.querySelector('.pane-tab.focused');
+			const present = document.querySelector('.present-button');
+			const actions = [...document.querySelectorAll('.bar-actions .btn')];
+			const humanLabels = [
+				document.querySelector('.board-nav-title'),
+				document.querySelector('.selection-inspector-kicker'),
+				document.querySelector('.workbench-overview small'),
+			].filter(Boolean);
+			if (!shell || !bar || !wordmark || !open || !board || !meta || !level ||
+				!connection || !persistence || !pane || !present) return null;
+			const metrics = node => {
+				const value = getComputedStyle(node);
+				return {
+					family: value.fontFamily.toLowerCase(),
+					size: parseFloat(value.fontSize),
+					lineHeight: parseFloat(value.lineHeight),
+					weight: parseFloat(value.fontWeight),
+				};
+			};
+			const style = getComputedStyle(shell);
+			const flat = [
+				'.shell', '.bar', '.board-nav', '.board-group.active-group',
+				'.board-nav-row-current', '.scratch-section', '.scratch-card',
+				'.canvas-zone', '.pane-bar', '.agent-rail', '.claim-card',
+				'.statusbar', '.btn-primary'
+			].map(selector => document.querySelector(selector)).filter(Boolean);
+			const rgb = value => (value.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
+			const luminance = value => {
+				const channels = rgb(value).map(channel => {
+					const unit = channel / 255;
+					return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
+				});
+				return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+			};
+			const foreground = luminance(getComputedStyle(wordmark).color);
+			const backdrop = luminance(getComputedStyle(bar).backgroundColor);
+			open.focus();
+			const focus = getComputedStyle(open);
+			const boardRect = board.getBoundingClientRect();
+			const metaRect = meta.getBoundingClientRect();
+			return {
+				theme: shell.dataset.theme,
+				wordmark: wordmark.getAttribute('aria-label'),
+				wordmarkMask: getComputedStyle(wordmark).maskImage ||
+					getComputedStyle(wordmark).webkitMaskImage,
+				wordmarkSize: (() => {
+					const rect = wordmark.getBoundingClientRect();
+					return { width: rect.width, height: rect.height };
+				})(),
+				unexpectedBrandIconCount: document.querySelectorAll('.bar-brand svg:not(.wordmark), .brand-mark').length,
+				headerHeight: bar.getBoundingClientRect().height,
+				selection: style.getPropertyValue('--selection').trim().toLowerCase(),
+				status: style.getPropertyValue('--status').trim().toLowerCase(),
+				background: getComputedStyle(shell).backgroundColor,
+				inkContrast: (Math.max(foreground, backdrop) + 0.05) /
+					(Math.min(foreground, backdrop) + 0.05),
+				flatSurfaces: flat.every(node => getComputedStyle(node).backgroundImage === 'none'),
+				shadowlessSurfaces: flat.every(node => getComputedStyle(node).boxShadow === 'none'),
+				visibleFocus: focus.outlineStyle !== 'none' && parseFloat(focus.outlineWidth) >= 2,
+				boardIdentity: board.textContent.trim(),
+				level: level.textContent.trim(),
+				connectionState: connection.textContent.trim(),
+				persistenceState: persistence.textContent.trim(),
+				paneIdentity: pane.textContent.trim(),
+				legacyVaultLineCount: document.querySelectorAll('.vault-name').length,
+				boardLeftAligned: Math.abs(boardRect.left - metaRect.left) < 0.5,
+				tokens: [
+					'--type-kicker', '--type-tech', '--type-body', '--type-control',
+					'--type-title', '--type-primary'
+				].map(name => style.getPropertyValue(name).trim()),
+				weightTokens: [
+					'--weight-regular', '--weight-medium', '--weight-semibold', '--weight-bold'
+				].map(name => style.getPropertyValue(name).trim()),
+				wordmarkTracking: style.getPropertyValue('--wordmark-tracking').trim(),
+				fontChecks: [
+					document.fonts.check('400 14px "Archboard Onest"'),
+					document.fonts.check('500 14px "Archboard Onest"'),
+					document.fonts.check('600 14px "Archboard Onest"'),
+					document.fonts.check('700 14px "Archboard Onest"'),
+					document.fonts.check('400 10px "Archboard DM Mono"'),
+					document.fonts.check('500 10px "Archboard DM Mono"'),
+				],
+				fontResources: performance.getEntriesByType('resource')
+					.map(entry => entry.name)
+					.filter(name => /(?:Onest-wght|DMMono-(?:Regular|Medium)).*[.]ttf/.test(name)),
+				humanLabels: humanLabels.map(node => {
+					const value = getComputedStyle(node);
+					return {
+						family: value.fontFamily.toLowerCase(),
+						transform: value.textTransform,
+						weight: parseFloat(value.fontWeight),
+					};
+				}),
+				titleType: metrics(board),
+				bodyType: metrics(meta),
+				kickerType: metrics(level),
+				controlType: metrics(open),
+				paneType: metrics(pane),
+				actionTargets: actions.map(button => {
+					const rect = button.getBoundingClientRect();
+					return { width: rect.width, height: rect.height };
+				}),
+				paneTarget: (() => { const rect = pane.getBoundingClientRect(); return { width: rect.width, height: rect.height }; })(),
+				presentTarget: (() => { const rect = present.getBoundingClientRect(); return { width: rect.width, height: rect.height }; })(),
+			};
+		})()`);
+
+	const firstTheme = await readTheme();
+	expect(firstTheme).not.toBeNull();
+	const nextTheme = firstTheme?.theme === "light" ? "dark" : "light";
+	expect(
+		await browser.eval<boolean>(`(() => {
+			const button = document.querySelector('.bar-actions [aria-label="Use ${nextTheme} theme"]');
+			if (!button) return false;
+			button.click();
+			return true;
+		})()`),
+	).toBe(true);
+	const themeTransition = await pollUntil(
+		() =>
+			browser.eval<
+				Record<"theme" | "toggleLabel", string | null> &
+					Record<"shellCount" | "rootChildCount", number>
+			>(`(() => {
+				const shells = [...document.querySelectorAll('.shell')];
+				const toggle = document.querySelector('.bar-actions [aria-label^="Use "][aria-label$=" theme"]');
+				return {
+					theme: shells[0]?.getAttribute('data-theme') ?? null,
+					toggleLabel: toggle?.getAttribute('aria-label') ?? null,
+					shellCount: shells.length,
+					rootChildCount: document.getElementById('root')?.childElementCount ?? 0,
+				};
+			})()`),
+		(state) =>
+			state.theme === nextTheme &&
+			state.toggleLabel === `Use ${firstTheme?.theme ?? "light"} theme`,
+		`${nextTheme} theme to become visible`,
+		{ timeoutMs: PANE_SETTLE_CAP_MS },
+	);
+	expect(themeTransition).toMatchObject({ shellCount: 1, rootChildCount: 1 });
+	const secondTheme = await readTheme();
+	const themes = [firstTheme, secondTheme].filter(
+		(snapshot): snapshot is ThemeSnapshot => snapshot !== null,
+	);
+	expect(themes.map(({ theme }) => theme).toSorted()).toEqual(["dark", "light"]);
+	for (const snapshot of themes) {
+		expect(snapshot.wordmark).toBe("archboard");
+		expect(snapshot.wordmarkMask).toMatch(/archboard-wordmark(?:-[\w-]+)?[.]svg/);
+		expect(Math.abs(snapshot.wordmarkSize.width - 85.7815)).toBeLessThan(0.02);
+		expect(Math.abs(snapshot.wordmarkSize.height - 13.209)).toBeLessThan(0.02);
+		expect(snapshot.unexpectedBrandIconCount).toBe(0);
+		expect(snapshot.headerHeight).toBeCloseTo(56, 0);
+		expect(snapshot.selection).toBe("#155eef");
+		expect(snapshot.status).toBe("#a3e635");
+		expect(snapshot.inkContrast).toBeGreaterThanOrEqual(4.5);
+		expect(snapshot.flatSurfaces).toBe(true);
+		expect(snapshot.shadowlessSurfaces).toBe(true);
+		expect(snapshot.visibleFocus).toBe(true);
+		expect(snapshot.boardIdentity).toBe("fixedpoint");
+		expect(snapshot.level.toLowerCase()).toBe("service");
+		expect(snapshot.connectionState).toContain("Live board");
+		expect(snapshot.persistenceState).toContain("In the vault");
+		expect(snapshot.paneIdentity).toContain("fixedpoint");
+		expect(snapshot.legacyVaultLineCount).toBe(0);
+		expect(snapshot.boardLeftAligned).toBe(true);
+		expect(snapshot.tokens).toEqual([
+			"9px/12px",
+			"10px/14px",
+			"12px/16px",
+			"13px/18px",
+			"14px/20px",
+			"16px/22px",
+		]);
+		expect(snapshot.weightTokens).toEqual(["400", "500", "600", "700"]);
+		expect(Number.parseFloat(snapshot.wordmarkTracking)).toBeCloseTo(-0.02027027027, 6);
+		expect(snapshot.fontChecks).toEqual([true, true, true, true, true, true]);
+		expect(snapshot.fontResources).toHaveLength(3);
+		expect(
+			snapshot.fontResources.every((url) => new URL(url).origin === new URL(canvas.base).origin),
+		).toBe(true);
+		expect(snapshot.fontResources.join(" ")).toMatch(/Onest-wght.*DMMono-(?:Regular|Medium)/);
+		expect(snapshot.humanLabels).toHaveLength(3);
+		expect(
+			snapshot.humanLabels.every(
+				({ family, transform, weight }) =>
+					family.includes("archboard onest") && transform === "none" && [500, 600].includes(weight),
+			),
+		).toBe(true);
+		expect(snapshot.titleType).toMatchObject({ size: 14, lineHeight: 20, weight: 600 });
+		expect(snapshot.bodyType).toMatchObject({ size: 12, lineHeight: 16, weight: 400 });
+		expect(snapshot.kickerType).toMatchObject({ size: 9, lineHeight: 12, weight: 500 });
+		expect(snapshot.controlType).toMatchObject({ size: 13, lineHeight: 18, weight: 600 });
+		expect(snapshot.paneType).toMatchObject({ size: 13, lineHeight: 18, weight: 600 });
+		expect(snapshot.titleType.family).toContain("archboard onest");
+		expect(snapshot.bodyType.family).toContain("archboard onest");
+		expect(snapshot.controlType.family).toContain("archboard onest");
+		expect(snapshot.kickerType.family).toContain("archboard dm mono");
+		expect(
+			snapshot.actionTargets.every(({ width, height }) => width >= 43.5 && height >= 43.5),
+		).toBe(true);
+		expect(snapshot.paneTarget.height).toBeGreaterThanOrEqual(43.5);
+		expect(snapshot.presentTarget.height).toBeGreaterThanOrEqual(43.5);
+	}
+	expect(themes[0]?.background).not.toBe(themes[1]?.background);
 
 	const desktop = await browser.eval<DesktopShell | null>(`(() => {
-    const nav = document.querySelector('.board-nav');
-    const canvas = document.querySelector('.canvas-zone');
-    const rail = document.querySelector('.agent-rail');
-    const actions = [...document.querySelectorAll('.bar-actions .btn')];
-    const current = document.querySelector('.board-nav-row[aria-current="page"]');
-    if (!nav || !canvas || !rail || !current) return null;
-    const navRect = nav.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
-    const railRect = rail.getBoundingClientRect();
-    return {
-      navLeftOfCanvas: navRect.right <= canvasRect.left + 0.5,
-      railRightOfCanvas: railRect.left >= canvasRect.right - 0.5,
-      columnsAlign: Math.abs(navRect.top - canvasRect.top) < 1 &&
-        Math.abs(navRect.bottom - canvasRect.bottom) < 1 &&
-        Math.abs(railRect.top - canvasRect.top) < 1,
-      actionHeights: actions.map(button => button.getBoundingClientRect().height),
-      currentBoard: current.textContent.trim()
-    };
-  })()`);
-	expect(desktop?.navLeftOfCanvas).toBe(true); // check-fixed-point.mjs:1955
-	expect(desktop?.railRightOfCanvas).toBe(true); // check-fixed-point.mjs:1955
-	expect(desktop?.columnsAlign).toBe(true); // check-fixed-point.mjs:1955
-	expect(desktop?.actionHeights.length).toBeGreaterThanOrEqual(5); // check-fixed-point.mjs:1962
-	expect(desktop?.actionHeights.every((height) => height >= 43.5)).toBe(true); // check-fixed-point.mjs:1962
-	expect(desktop?.currentBoard.includes("Current")).toBe(true); // check-fixed-point.mjs:1968
+		const nav = document.querySelector('.board-nav');
+		const canvas = document.querySelector('.canvas-zone');
+		const rail = document.querySelector('.agent-rail');
+		const pane = document.querySelector('.pane');
+		if (!nav || !canvas || !rail || !pane) return null;
+		const navRect = nav.getBoundingClientRect();
+		const canvasRect = canvas.getBoundingClientRect();
+		const railRect = rail.getBoundingClientRect();
+		const paneRect = pane.getBoundingClientRect();
+		return {
+			navLeftOfCanvas: navRect.right <= canvasRect.left + 0.5,
+			navWidth: navRect.width,
+			workbenchBelowPane: railRect.top >= paneRect.bottom - 0.5,
+			workbenchInsideCanvas: railRect.left >= canvasRect.left - 0.5 &&
+				railRect.right <= canvasRect.right + 0.5 && railRect.bottom <= canvasRect.bottom + 0.5,
+			columnsAlign: Math.abs(navRect.top - canvasRect.top) < 1 &&
+				Math.abs(navRect.bottom - canvasRect.bottom) < 1,
+			canvasLargest: canvasRect.width > navRect.width && paneRect.height > railRect.height,
+		};
+	})()`);
+	expect(desktop?.navLeftOfCanvas).toBe(true);
+	expect(desktop?.navWidth).toBeCloseTo(184, 0);
+	expect(desktop?.workbenchBelowPane).toBe(true);
+	expect(desktop?.workbenchInsideCanvas).toBe(true);
+	expect(desktop?.columnsAlign).toBe(true);
+	expect(desktop?.canvasLargest).toBe(true);
 
-	await browser.run(["set", "viewport", "420", "700"]);
+	const readPaneBar = () =>
+		browser.eval<PaneBarLayout>(`(() => {
+			const bar = document.querySelector('.pane-bar');
+			const tabs = [...document.querySelectorAll('.pane-tab')];
+			const focused = document.querySelector('.pane-tab.focused');
+			const dot = focused?.querySelector('.focus-dot');
+			const focusedStyle = getComputedStyle(focused);
+			return {
+				height: bar.getBoundingClientRect().height,
+				tabCount: tabs.length,
+				tabHeights: tabs.map(tab => tab.getBoundingClientRect().height),
+				focusedEdgeWidth: parseFloat(focusedStyle.borderBottomWidth),
+				focusedEdgeColor: focusedStyle.borderBottomColor,
+				focusedDotColor: getComputedStyle(dot).backgroundColor,
+				labels: tabs.map(tab => tab.textContent.trim()),
+			};
+		})()`);
+	const onePaneBar = await readPaneBar();
+	expect(onePaneBar).toMatchObject({ height: 45, tabCount: 1 });
+	expect(onePaneBar.tabHeights.every((height) => height >= 43.5)).toBe(true);
+	expect(onePaneBar.focusedEdgeWidth).toBe(2);
+	expect(onePaneBar.focusedEdgeColor).toBe(onePaneBar.focusedDotColor);
+
+	expect((await api("/api/panes/open", { method: "POST", body: {} })).status).toBe(200);
+	await pollUntil(
+		() => api<PanesBody>("/api/panes").then((response) => response.body),
+		(state) => (state.paneCount ?? 0) === 2,
+		"the desktop shell to mount two panes",
+		{ timeoutMs: PANE_SETTLE_CAP_MS },
+	);
+	const twoPaneBar = await pollUntil(
+		readPaneBar,
+		(layout) => layout.tabCount === 2,
+		"the two-pane identity bar to render",
+		{ timeoutMs: PANE_SETTLE_CAP_MS },
+	);
+	expect(twoPaneBar.height).toBe(45);
+	expect(twoPaneBar.tabHeights.every((height) => height >= 43.5)).toBe(true);
+	expect(twoPaneBar.labels).toHaveLength(2);
+	expect(twoPaneBar.labels[0]).toContain("Pane A");
+	expect(twoPaneBar.labels[1]).toContain("Pane B");
+	expect(
+		(await api("/api/panes/close", { method: "POST", body: { pane: "focused" } })).status,
+	).toBe(200);
+	await pollUntil(
+		() => api<PanesBody>("/api/panes").then((response) => response.body),
+		(state) => (state.paneCount ?? 0) === 1,
+		"the desktop shell to return to one pane",
+		{ timeoutMs: PANE_SETTLE_CAP_MS },
+	);
+
+	const collapsedPaneHeight = await browser.eval<number>(
+		"document.querySelector('.pane').getBoundingClientRect().height",
+	);
+	expect(
+		await browser.eval<boolean>(
+			"document.querySelector('.workbench-toggle').getAttribute('aria-expanded') === 'false'",
+		),
+	).toBe(true);
+	await browser.run(["click", ".workbench-toggle"]);
 	for (const [index, doing] of activityLines.entries()) {
 		const wrote = await api(`/api/elements?board=fixedpoint&doing=${encodeURIComponent(doing)}`, {
 			method: "POST",
@@ -127,95 +394,97 @@ test("the shell stays usable from desktop width through 420 pixels", async () =>
 				height: 10,
 			},
 		});
-		expect([200, 201]).toContain(wrote.status); // check-fixed-point.mjs:1997
+		expect([200, 201]).toContain(wrote.status);
 	}
 	const activity = await pollUntil(
 		() =>
 			browser.eval<ActivityLayout | null>(`(() => {
-        const rail = document.querySelector('.agent-rail');
-        const panel = document.querySelector('.pane-doing');
-        const lines = [...document.querySelectorAll('.pane-doing-line')];
-        const canvas = document.querySelector('.canvas-zone');
-        if (!rail || !panel || !canvas || lines.length !== 5) return null;
-        const railRect = rail.getBoundingClientRect();
-        const panelRect = panel.getBoundingClientRect();
-        const timestamps = [...document.querySelectorAll('.pane-doing-when')]
-          .map(node => node.getBoundingClientRect().left);
-        return {
-          lineCount: lines.length,
-          linesFit: lines.every(line => line.scrollWidth <= line.clientWidth),
-          panelFits: panelRect.left >= railRect.left && panelRect.right <= railRect.right &&
-            panelRect.bottom <= railRect.bottom,
-          canvasClear: railRect.top >= canvas.getBoundingClientRect().bottom - 0.5,
-          timestampsAlign: timestamps.every(left => Math.abs(left - timestamps[0]) < 0.5)
-        };
-      })()`),
+				const rail = document.querySelector('.agent-rail');
+				const panel = document.querySelector('.pane-doing');
+				const lines = [...document.querySelectorAll('.pane-doing-line')];
+				const pane = document.querySelector('.pane');
+				if (!rail || !panel || !pane || lines.length !== 5) return null;
+				const railRect = rail.getBoundingClientRect();
+				const panelRect = panel.getBoundingClientRect();
+				const timestamps = [...document.querySelectorAll('.pane-doing-when')]
+					.map(node => node.getBoundingClientRect().left);
+				return {
+					lineCount: lines.length,
+					linesFit: lines.every(line => line.scrollWidth <= line.clientWidth),
+					panelFits: panelRect.left >= railRect.left && panelRect.right <= railRect.right &&
+						panelRect.bottom <= railRect.bottom,
+					canvasClear: railRect.top >= pane.getBoundingClientRect().bottom - 0.5,
+					timestampsAlign: timestamps.every(left => Math.abs(left - timestamps[0]) < 0.5),
+				};
+			})()`),
 		(layout) => layout?.lineCount === 5,
-		"all five activity rows to render",
+		"all five desktop activity rows to render",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect(activity?.lineCount).toBe(5); // check-fixed-point.mjs:2028
-	expect(activity?.linesFit).toBe(true); // check-fixed-point.mjs:2033
-	expect(activity?.panelFits).toBe(true); // check-fixed-point.mjs:2033
-	expect(activity?.canvasClear).toBe(true); // check-fixed-point.mjs:2033
-	expect(activity?.timestampsAlign).toBe(true); // check-fixed-point.mjs:2040
+	expect(activity).toMatchObject({
+		lineCount: 5,
+		linesFit: true,
+		panelFits: true,
+		canvasClear: true,
+		timestampsAlign: true,
+	});
+	const expandedPaneHeight = await browser.eval<number>(
+		"document.querySelector('.pane').getBoundingClientRect().height",
+	);
+	expect(expandedPaneHeight).toBeLessThan(collapsedPaneHeight - 100);
+	await browser.run(["click", ".workbench-toggle"]);
 
-	const narrow = await browser.eval<NarrowShell | null>(`(() => {
-    const nav = document.querySelector('.board-nav');
-    const pane = document.querySelector('.pane');
-    const bar = document.querySelector('.bar');
-    const canvas = document.querySelector('.canvas-zone');
-    const rail = document.querySelector('.agent-rail');
-    const actions = [...document.querySelectorAll('.bar-actions .btn')];
-    if (!nav || !pane || !bar || !canvas || !rail) return null;
-    const navRect = nav.getBoundingClientRect();
-    const paneRect = pane.getBoundingClientRect();
-    const barRect = bar.getBoundingClientRect();
-    const railRect = rail.getBoundingClientRect();
-    return {
-      navAboveCanvas: navRect.bottom < paneRect.top,
-      railBelowCanvas: railRect.top >= canvas.getBoundingClientRect().bottom - 0.5,
-      fitsViewport: [navRect, paneRect, barRect, railRect].every(rect =>
-        rect.left >= -0.5 && rect.right <= innerWidth + 0.5),
-      pageWidth: document.documentElement.scrollWidth,
-      viewportWidth: innerWidth,
-      actionHeights: actions.map(button => button.getBoundingClientRect().height)
-    };
-  })()`);
-	expect(narrow?.viewportWidth).toBe(420); // approved 420-pixel contract
-	expect(narrow?.navAboveCanvas).toBe(true); // check-fixed-point.mjs:2067
-	expect(narrow?.railBelowCanvas).toBe(true); // check-fixed-point.mjs:2067
-	expect(narrow?.fitsViewport).toBe(true); // check-fixed-point.mjs:2072
-	expect(narrow?.pageWidth).toBe(narrow?.viewportWidth); // check-fixed-point.mjs:2072
-	expect(narrow?.actionHeights.every((height) => height >= 43.5)).toBe(true); // check-fixed-point.mjs:2072
-
-	const switchStarted = await browser.eval<boolean>(`(() => {
-    const row = document.querySelector('.board-group[aria-label="scratch"] .board-nav-row');
-    if (!row) return false;
-    row.click();
-    return true;
-  })()`);
-	const scratch = await pollUntil(
-		() => browser.eval<string | null>("document.querySelector('.board-name')?.textContent.trim()"),
-		(board) => board === "scratch",
-		"the navigator to open scratch",
+	expect(await publishActionableNotice(browser)).toBe(true);
+	const notice = await pollUntil(
+		() =>
+			browser.eval<NoticeLayout | null>(`(() => {
+				const notice = document.querySelector('.notice-shell');
+				const panes = document.querySelector('.panes');
+				const inspector = document.querySelector('.selection-inspector');
+				const text = notice?.querySelector('.notice-text');
+				const action = notice?.querySelector('.notice-actions .btn');
+				const dismiss = notice?.querySelector('.notice-dismiss');
+				if (!notice || !panes || !inspector || !text || !action || !dismiss) return null;
+				const metrics = node => {
+					const value = getComputedStyle(node);
+					return {
+						family: value.fontFamily.toLowerCase(),
+						size: parseFloat(value.fontSize),
+						lineHeight: parseFloat(value.lineHeight),
+						weight: parseFloat(value.fontWeight),
+					};
+				};
+				const noticeRect = notice.getBoundingClientRect();
+				const panesRect = panes.getBoundingClientRect();
+				const inspectorRect = inspector.getBoundingClientRect();
+				return {
+					parentIsPanes: notice.parentElement === panes,
+					insidePanes: noticeRect.left >= panesRect.left && noticeRect.right <= panesRect.right &&
+						noticeRect.top >= panesRect.top && noticeRect.bottom <= panesRect.bottom,
+					overlapsInspector: noticeRect.left < inspectorRect.right && noticeRect.right > inspectorRect.left &&
+						noticeRect.top < inspectorRect.bottom && noticeRect.bottom > inspectorRect.top,
+					width: noticeRect.width,
+					copyType: metrics(text),
+					actionHeight: action.getBoundingClientRect().height,
+					dismissHeight: dismiss.getBoundingClientRect().height,
+					flat: getComputedStyle(notice).boxShadow === 'none' &&
+						getComputedStyle(notice).backgroundImage === 'none',
+					text: text.childNodes[0]?.textContent?.trim() ?? '',
+				};
+			})()`),
+		(layout) => layout?.text === PERSISTENT_NOTICE_TEXT,
+		"the canvas-contained recovery notice to render",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect(switchStarted).toBe(true); // check-fixed-point.mjs:2091
-	expect(scratch).toBe("scratch"); // check-fixed-point.mjs:2091
-
-	const returnStarted = await browser.eval<boolean>(`(() => {
-    const row = document.querySelector('.board-group[aria-label="fixedpoint"] .board-nav-row');
-    if (!row) return false;
-    row.click();
-    return true;
-  })()`);
-	const returned = await pollUntil(
-		() => browser.eval<string | null>("document.querySelector('.board-name')?.textContent.trim()"),
-		(board) => board === "fixedpoint",
-		"the navigator to return to the original fixedpoint board",
-		{ timeoutMs: PANE_SETTLE_CAP_MS },
-	);
-	expect(returnStarted).toBe(true); // check-fixed-point.mjs:2103
-	expect(returned).toBe("fixedpoint"); // approved exact original-board return
+	expect(notice).not.toBeNull();
+	if (!notice) throw new Error("the canvas-contained recovery notice did not render");
+	expect(notice.parentIsPanes).toBe(true);
+	expect(notice.insidePanes).toBe(true);
+	expect(notice.overlapsInspector).toBe(false);
+	expect(notice.width).toBeCloseTo(390, 0);
+	expect(notice.copyType).toMatchObject({ size: 12, lineHeight: 16, weight: 400 });
+	expect(notice.copyType.family).toContain("archboard onest");
+	expect(notice.actionHeight).toBeGreaterThanOrEqual(43.5);
+	expect(notice.dismissHeight).toBeGreaterThanOrEqual(43.5);
+	expect(notice.flat).toBe(true);
 });
