@@ -279,9 +279,9 @@ compatibility, not a forward-compatibility promise. OpenAI explicitly says
 generated schemas are specific to the Codex version that produced them and
 that experimental APIs have no backwards-compatibility guarantee.
 
-| Concern                         | Current desktop child                                         | Archboard standalone default                                 |
+| Concern                         | Original desktop probe                                        | Selected Archboard child                                     |
 | ------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------ |
-| Binary                          | bundled `0.149.0-alpha.4.3`                                   | installed `0.149.1`                                          |
+| Binary                          | bundled `0.149.0-alpha.4.3`                                   | exact reviewed `0.151.0`                                     |
 | Transport                       | one private stdio/socketpair connection                       | Archboard-owned stdio child                                  |
 | Forced config                   | `features.code_mode_host=true`; first-party analytics default | none unless Archboard opts in                                |
 | Client identity                 | `Codex Desktop`, desktop build version                        | explicit Archboard name/title/version                        |
@@ -320,6 +320,15 @@ and SQLite home with its own supported sign-in. It may seed selected non-secret
 configuration once and pin invariants through explicit `-c` overrides, but it
 does not symlink mutable `auth.json` or `config.toml`, export a bearer token from
 another app-server, or inherit a `CODEX_SQLITE_HOME` override.
+
+The environment variable is a requested path, not sufficient proof of the
+effective SQLite boundary. In 0.151.0 a managed exact `sqlite_home` requirement
+can override both ordinary configuration and `CODEX_SQLITE_HOME`, while the
+initialize response reports only the Codex home. After initialization Archboard
+must read `configRequirements/read` and, where necessary, effective
+`config/read`, then refuse readiness unless the effective SQLite home equals
+the typed process manifest. A process fixture with a conflicting managed
+requirement owns this regression.
 
 Attestation is a reverse request from app-server to a capable desktop client,
 not a token placed in the child environment. The desktop initializes with
@@ -439,6 +448,9 @@ fork, turn, queue-start, and tool execution on a replacement child. This prevent
 accidental sharing; it cannot stop another same-user process that deliberately
 opens those paths because 0.151.0 has no owner capability.
 
+Readiness additionally requires the post-initialize configuration reads above
+to prove that managed requirements did not redirect the effective SQLite home.
+
 The same tree exposes realtime V3 startup context through
 `includeStartupContext`, role-bearing `initialItems`,
 `realtimeStartInstructions`, and `realtimeEndInstructions`. Archboard's accepted
@@ -452,6 +464,24 @@ idle. Workhorse lifecycle events become ordered callbacks instead of blocking in
 a wait call. Realtime V3 does not expose typed dynamic-tool calls, so spoken
 approval delegates the final reply into a later ordinary coordinator turn,
 which returns the schema-constrained verdict through a separate resolver tool.
+
+The 0.151.0 realtime start response is empty. Readiness is instead reported by
+`thread/realtime/started`, which carries thread, realtime-session, and version
+identity. Because the core otherwise defaults the realtime session to the thread
+id, Archboard must mint a unique `realtimeSessionId` for every start and accept
+readiness only after RPC success plus an exact child/thread/session/version
+match. Active developer context uses `thread/realtime/appendText`, whose request
+does not carry the realtime session id; every append must therefore revalidate
+the captured child epoch, coordinator, and session against the current binding.
+
+Reverse requests do not share one identity shape. V2 item requests carry
+JSON-RPC request, thread, turn, and item identity plus optional approval id; MCP
+elicitation carries request, thread, a nullable turn, and server identity plus a
+URL elicitation id when present; legacy patch and command approvals carry
+request, conversation, and call identity plus optional approval id. The
+approval broker uses this discriminated union and never fabricates a turn. Its
+effect fingerprint and immediate target revalidation are bound to the actual
+variant.
 
 ## Experimental shared-server validation, if pursued
 
