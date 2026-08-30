@@ -15,10 +15,20 @@ import {
 	CodexProtocolConformanceError,
 	runCodexProtocolConformance,
 } from "../../../src/runtime/codex-protocol/index.js";
+import type { CodexProtocolConformanceResult } from "../../../src/runtime/codex-protocol/index.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const require = createRequire(import.meta.url);
 const recovery = `Regenerate with ${CODEX_PROTOCOL_GENERATION_COMMAND} using the pinned project-local binary, then review the decoder and generated notification inventory before retrying this root check.`;
+
+type ConformanceRunner = (executable: string) => CodexProtocolConformanceResult;
+type StatusReader = () => string;
+
+interface RegisteredConformanceDependencies {
+	readonly resolveExecutable: () => string;
+	readonly run: ConformanceRunner;
+	readonly status: StatusReader;
+}
 
 interface PackageJson {
 	readonly devDependencies?: Record<string, string>;
@@ -29,8 +39,10 @@ function readPackageJson(): PackageJson {
 	return JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8")) as PackageJson;
 }
 
-function projectCodexExecutable(): string {
-	const executable = require.resolve("@openai/codex/bin/codex.js");
+function projectCodexExecutable(
+	resolveExecutable = () => require.resolve("@openai/codex/bin/codex.js"),
+): string {
+	const executable = resolveExecutable();
 	const localNodeModules = `${path.join(repoRoot, "node_modules")}${path.sep}`;
 	if (!executable.startsWith(localNodeModules))
 		throw new Error(`Resolved Codex executable is outside this checkout: ${executable}`);
@@ -44,13 +56,54 @@ function checkoutStatus(): string {
 	});
 }
 
-function runRegisteredConformance(executable: string) {
+const productionDependencies: RegisteredConformanceDependencies = {
+	resolveExecutable: projectCodexExecutable,
+	run: runCodexProtocolConformance,
+	status: checkoutStatus,
+};
+
+function runRegisteredConformance(
+	overrides: Partial<RegisteredConformanceDependencies> = {},
+): CodexProtocolConformanceResult {
+	const dependencies = { ...productionDependencies, ...overrides };
+	let before: string | undefined;
+	let result: CodexProtocolConformanceResult | undefined;
+	let primaryFailure: unknown;
+	let after: string | undefined;
+	let afterFailure: unknown;
 	try {
-		return runCodexProtocolConformance(executable);
+		before = dependencies.status();
+		result = dependencies.run(dependencies.resolveExecutable());
 	} catch (cause) {
-		const detail = cause instanceof Error ? cause.message : String(cause);
-		throw new Error(`${detail}\nRecovery: ${recovery}`, { cause });
+		primaryFailure = cause;
+	} finally {
+		try {
+			after = dependencies.status();
+		} catch (cause) {
+			afterFailure = cause;
+		}
 	}
+
+	const diagnostics: string[] = [];
+	if (primaryFailure)
+		diagnostics.push(
+			primaryFailure instanceof Error ? primaryFailure.message : String(primaryFailure),
+		);
+	if (afterFailure)
+		diagnostics.push(
+			`could not capture the post-conformance checkout status: ${afterFailure instanceof Error ? afterFailure.message : String(afterFailure)}`,
+		);
+	if (before !== undefined && after !== undefined && before !== after)
+		diagnostics.push(
+			`checkout mutation detected during Codex conformance: status before ${JSON.stringify(before)}, status after ${JSON.stringify(after)}`,
+		);
+	if (diagnostics.length)
+		throw new Error(`${diagnostics.join("\n")}\nRecovery: ${recovery}`, {
+			cause: primaryFailure ?? afterFailure,
+		});
+	if (result === undefined)
+		throw new Error(`Codex conformance produced no result.\nRecovery: ${recovery}`);
+	return result;
 }
 
 describe("Codex protocol root-check owner", () => {
@@ -73,22 +126,22 @@ describe("Codex protocol root-check owner", () => {
 	});
 
 	test("runs the pinned generator, verifies the manifest, and leaves the checkout unchanged", () => {
-		const before = checkoutStatus();
-		const result = runRegisteredConformance(projectCodexExecutable());
+		const result = runRegisteredConformance();
 
 		expect(result).toEqual({
-			executablePath: projectCodexExecutable(),
+			executablePath: expect.stringContaining(
+				`${path.sep}node_modules${path.sep}@openai${path.sep}codex${path.sep}`,
+			),
 			version: CODEX_PROTOCOL_BINARY_VERSION,
 			fileCount: CODEX_PROTOCOL_GENERATED_FILE_COUNT,
 			sha256: CODEX_PROTOCOL_GENERATED_TREE_SHA256,
 		});
-		expect(checkoutStatus()).toBe(before);
 	});
 
 	test("rejects a non-pinned executable with regeneration and review recovery", () => {
 		let thrown: unknown;
 		try {
-			runRegisteredConformance(process.execPath);
+			runRegisteredConformance({ resolveExecutable: () => process.execPath });
 		} catch (error) {
 			thrown = error;
 		}
@@ -101,5 +154,88 @@ describe("Codex protocol root-check owner", () => {
 			"review the decoder and generated notification inventory",
 		);
 		expect((thrown as Error).message).toContain(CODEX_PROTOCOL_VERSION);
+	});
+
+	test("reports a missing binary through the same recovery boundary", () => {
+		let thrown: unknown;
+		try {
+			runRegisteredConformance({
+				resolveExecutable: () => path.join(repoRoot, "node_modules", "@openai", "codex", "missing"),
+			});
+		} catch (error) {
+			thrown = error;
+		}
+
+		expect((thrown as Error).message).toContain("could not run --version");
+		expect((thrown as Error).message).toContain("Regenerate with");
+		expect((thrown as Error).message).toContain(
+			"review the decoder and generated notification inventory",
+		);
+	});
+
+	test("reports a project-local resolution escape through the same recovery boundary", () => {
+		let thrown: unknown;
+		try {
+			runRegisteredConformance({
+				resolveExecutable: () => projectCodexExecutable(() => "/tmp/codex"),
+			});
+		} catch (error) {
+			thrown = error;
+		}
+
+		expect((thrown as Error).message).toContain("outside this checkout");
+		expect((thrown as Error).message).toContain("Regenerate with");
+	});
+
+	test("reports checkout mutation after a successful conformance", () => {
+		let statusCall = 0;
+		let thrown: unknown;
+		try {
+			runRegisteredConformance({
+				run: () => ({
+					executablePath: "/tmp/codex",
+					version: CODEX_PROTOCOL_BINARY_VERSION,
+					fileCount: CODEX_PROTOCOL_GENERATED_FILE_COUNT,
+					sha256: CODEX_PROTOCOL_GENERATED_TREE_SHA256,
+				}),
+				status: () => (statusCall++ === 0 ? "before" : "after"),
+			});
+		} catch (error) {
+			thrown = error;
+		}
+
+		expect((thrown as Error).message).toContain("checkout mutation detected");
+		expect((thrown as Error).message).toContain('status before "before"');
+		expect((thrown as Error).message).toContain('status after "after"');
+		expect((thrown as Error).message).toContain(
+			"review the decoder and generated notification inventory",
+		);
+		expect(statusCall).toBe(2);
+	});
+
+	test("preserves generation failure and checkout mutation evidence together", () => {
+		let statusCall = 0;
+		const generationFailure = new CodexProtocolConformanceError({
+			executablePath: "/tmp/codex",
+			phase: "generation",
+			message: "could not generate the experimental tree",
+		});
+		let thrown: unknown;
+		try {
+			runRegisteredConformance({
+				run: () => {
+					throw generationFailure;
+				},
+				status: () => (statusCall++ === 0 ? "before" : "after"),
+			});
+		} catch (error) {
+			thrown = error;
+		}
+
+		expect((thrown as Error).cause).toBe(generationFailure);
+		expect((thrown as Error).message).toContain("could not generate the experimental tree");
+		expect((thrown as Error).message).toContain("checkout mutation detected");
+		expect((thrown as Error).message).toContain("Regenerate with");
+		expect(statusCall).toBe(2);
 	});
 });
