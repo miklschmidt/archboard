@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-08-30 19:07'
+updated_date: '2026-08-30 19:28'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -33,3 +33,21 @@ Define the closed browser DTOs plus the exhaustive host-side server-request cont
 - [ ] #3 The contract imports the literal InitializeCapabilities object and six-login support/refusal table from the reviewed authored contract, including exact extensions, notification opt-outs, time response, and protocol-error policies.
 - [ ] #4 Round-trip/schema fixtures reject unknown identities, methods, result media, status, capability, login variant, browser command, or server request and keep secrets out of browser snapshots.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Add the public src/shared/codex-browser-model/index.ts entrypoint and private implementation modules with closed, strict Zod schemas and inferred browser DTO types; represent the complete browser snapshot/command/event surface for readiness, account/login, thread links, timelines, queue, settings, approvals/forms, text commands, semantic delivery, coordinator, voice, leases, and delivered/not_delivered/outcome_unknown outcomes.
+2. Define the exhaustive host-side server-request union for the exact eleven Codex 0.151.0 reverse-request methods, using only the shared identity root types and local JSON-safe DTOs; provide strict parsers that reject unknown methods, fields, identities, and result media without importing generated protocol bindings.
+3. Freeze the reviewed InitializeCapabilities object, six login policies, current-time response, unsupported token-refresh/attestation errors, and browser-safe dynamic-tool/result envelopes as literal readonly contracts; ensure secret-bearing login fields are accepted only at the host boundary and never appear in browser DTOs or snapshots.
+4. Add module-owned schema/round-trip and compile-time exhaustiveness fixtures covering accepted discriminators and rejection of unknown identities, methods, media, statuses, capabilities, login variants, browser commands, and server requests; enforce root-only imports and generated-protocol independence.
+5. Run focused module/type/lint/format and repository policy checks, audit BASE..HEAD paths and diff whitespace, record validation notes on TASK-143.01.02, and commit only the owned module plus its Backlog record.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented the closed shared Codex browser contract under src/shared/codex-browser-model: strict browser DTOs, exhaustive Codex 0.151.0 reverse-request schemas, reviewed initialize/login/time/error policies, secret-free snapshots, and compile-time/runtime rejection fixtures. No generated protocol imports cross the boundary.
+
+Validation passed: focused module type-check, Oxlint, Oxfmt, and 6 tests (59 expectations); bun run type-check; bun run lint; bun run fmt:check; bun run test:modules (447 tests, 0 failures); bun run test:repository (118 tests, 0 failures).
+<!-- SECTION:NOTES:END -->
