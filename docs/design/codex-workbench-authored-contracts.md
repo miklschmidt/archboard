@@ -353,7 +353,10 @@ values are present as `null`; keys are never omitted or added.
 	"schema": 1,
 	"paneId": "<opaque>",
 	"board": { "note": "<vault-relative>", "version": 0, "cursor": "<opaque-or-null>" },
-	"threadLink": { "state": "executable|inspect_only|unbound", "reason": "<closed-reason-or-null>" },
+	"threadLink": {
+		"state": "executable|inspect_only|unbound",
+		"reason": "stale_child|prior_epoch|thread_start_outcome_unknown|unknown_provenance|thread_list_missing|thread_list_ambiguous|thread_loaded_list_ambiguous|thread_source_custom|thread_source_subagent|thread_source_unknown|thread_status_not_loaded|thread_status_system_error|thread_loaded_list_missing|direct_input_false|direct_input_unknown|null"
+	},
 	"child": { "id": "<opaque>", "epoch": "<opaque>" },
 	"workhorse": { "threadId": "<opaque-or-null>", "turnId": "<opaque-or-null>" },
 	"coordinator": { "threadId": "<opaque-or-null>", "realtimeSessionId": "<opaque-or-null>" },
@@ -369,11 +372,108 @@ values are present as `null`; keys are never omitted or added.
 	"ambiguity": [],
 	"operation": {
 		"id": "<opaque-or-null>",
-		"kind": "<closed-kind-or-null>",
+		"kind": "composer_message|create_thread_initial_turn|fork_thread_initial_turn|send_message_to_thread|delegate_to_workhorse|steer_workhorse|spoken_approval_classifier|null",
+		"rpc": "turn/start|turn/steer|null",
 		"outcome": "delivered|not_delivered|outcome_unknown|null"
 	}
 }
 ```
+
+Pipe-separated strings in this template name the exact allowed values; encoders
+emit one member, or JSON `null` where shown. They never emit the pipe-separated
+documentation string.
+
+### Thread-link reason precedence
+
+The `threadLink.reason` union is closed and ordered. After fully exhausting both
+`thread/list` and `thread/loaded/list`, the classifier applies this order to the
+target `ThreadId` and emits the first matching reason:
+
+1. `stale_child`: the link names a child other than the current owned child.
+2. `prior_epoch`: the link or confirmed provenance belongs to an earlier epoch.
+3. `thread_start_outcome_unknown`: a lost `thread/start` response left an
+   inspect-only tombstone; recency never resolves it.
+4. `unknown_provenance`: no record proves current-epoch ownership for the target.
+5. `thread_list_missing`: the exhausted persisted list has no row for the target.
+6. `thread_list_ambiguous`: the exhausted persisted list has conflicting rows
+   for the target.
+7. `thread_loaded_list_ambiguous`: the exhausted loaded list contains duplicate
+   or conflicting membership evidence for the target.
+8. `thread_source_custom`: the persisted row has a custom source.
+9. `thread_source_subagent`: the persisted row has a subagent source.
+10. `thread_source_unknown`: the persisted row has an unknown source.
+11. `thread_status_not_loaded`: the persisted row reports `notLoaded`.
+12. `thread_status_system_error`: the persisted row reports `systemError`.
+13. `thread_loaded_list_missing`: the target is absent from the exhausted loaded
+    list.
+14. `direct_input_false`: `canAcceptDirectInput` is `false`.
+15. `direct_input_unknown`: `canAcceptDirectInput` is `null`.
+
+Repeated cursors, transport failures, and failures while exhausting either list
+are session or classification failures. They do not become stable thread-link
+reasons. `threadLink.reason` is `null` if and only if `threadLink.state` is
+`unbound` or `executable`. An `inspect_only` link has exactly one non-null reason
+from the ordered union. A thread whose status is `systemError` is never
+`executable`.
+
+### Operation tuple
+
+`operation.kind` names the Archboard product action. `operation.rpc` names the
+concrete app-server mutation. The mapping is closed:
+
+| `operation.kind`             | `operation.rpc`            | Producer boundary                                      |
+| ---------------------------- | -------------------------- | ------------------------------------------------------ |
+| `composer_message`           | `turn/start`, `turn/steer` | Idle submit or active composer steer                   |
+| `create_thread_initial_turn` | `turn/start`               | Confirmed create followed by its initial turn          |
+| `fork_thread_initial_turn`   | `turn/start`               | Confirmed fork with a prompt followed by its turn      |
+| `send_message_to_thread`     | `turn/start`               | General coordination message                           |
+| `delegate_to_workhorse`      | `turn/start`               | Delegate that starts an inactive workhorse immediately |
+| `steer_workhorse`            | `turn/steer`               | Coordinator steer of the exact active workhorse turn   |
+| `spoken_approval_classifier` | `turn/start`               | Later ordinary coordinator classifier turn             |
+
+For create and fork, `operation.id` is the nested
+`initialTurn.operationId`. It is not the outer `thread/start` or `thread/fork`
+operation id. A fork without a prompt has no operation tuple. A queued delegate
+also has no operation tuple until a later producer starts its turn. Interrupt,
+queue, semantic injection, callback injection, and realtime transport never add
+an `operation.kind` or `operation.rpc` member.
+
+### Operation tuple lifecycle
+
+At steady idle, `id`, `kind`, `rpc`, and `outcome` are all `null`. Once a request
+is constructed or sent, `id`, `kind`, and `rpc` are all non-null and `outcome`
+is `null`; the first three fields are an all-or-none triple. An outcome is never
+present without that complete triple.
+
+A successful RPC settlement sets `outcome` to `delivered`. For `turn/start`, a
+matching `turn/started` notification is authoritative active-turn evidence and
+the tuple remains `delivered`. `turn/steer` has no matching `turn/started`;
+its response carries the existing `turnId`. A matching terminal
+`turn/completed`, interrupted, or failed event does not change delivery: the
+tuple remains `delivered`, and turn failure or interruption never becomes
+`not_delivered`.
+
+A pre-effect request rejection sets `outcome` to `not_delivered`. A lost
+settlement sets it to `outcome_unknown`; Archboard does not retry. Exact positive
+correlation may change `outcome_unknown` to `delivered`. No other outcome
+transition is valid:
+
+```text
+null -> delivered | not_delivered | outcome_unknown
+outcome_unknown -> delivered
+```
+
+The terminal operation callback or event exposes the terminal tuple once. The
+next steady-idle context clears all four fields. A lost `thread/start` is not a
+tuple transition: it leaves the link inspect-only with
+`thread_start_outcome_unknown`, and Archboard never infers the thread from
+recency.
+
+Wire RPCs, protocol statuses and notifications, TUI-local state, Archboard
+product actions, and workhorse operation events are separate contracts.
+Operation events and callbacks own `accepted`, `queued`, `started`, `progress`,
+`attention`, `completed`, `failed`, and `outcome_unknown`; the additional-context
+tuple does not grow phase, status, event, or source fields.
 
 The semantic brief, selection IDs, ambiguity entries, and doing text use the
 limits below. Encoding rejects overflow rather than truncating silently:
