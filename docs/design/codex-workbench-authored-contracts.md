@@ -16,6 +16,10 @@ change and requires a new review.
 - UTF-8, no BOM, LF line endings, and one terminal LF.
 - The bytes inside each `text` fence, excluding the opening and closing fence
   lines, are canonical.
+- Every `json` fence contains one strict JSON value. Namespace manifest bytes,
+  excluding the fence lines and including the terminal LF, are canonical.
+  Other JSON fences preserve their reviewed field order after placeholder
+  substitution.
 - The coordinator developer document is the workhorse bytes, then the literal
   separator `\n--- ARCHBOARD COORDINATOR ROLE ---\n`, then the coordinator
   extension bytes. Both component documents already end in LF; there is no
@@ -47,10 +51,12 @@ does not accept the client-managed token login variant; if received, it returns
 `-32601`, `"Client-managed ChatGPT token refresh is not supported"`.
 
 `currentTime/read` is always supported. After validating its `threadId` against
-the current child, it returns exactly:
+the current child, it returns exactly the following shape. The literal `0`
+stands for the numeric floor of current Unix milliseconds divided by 1,000:
 
+<!-- prettier-ignore -->
 ```json
-{"currentTimeAt":<floor-of-current-Unix-milliseconds-divided-by-1000>}
+{"currentTimeAt":0}
 ```
 
 The six generated login variants have one closed policy:
@@ -157,8 +163,13 @@ the returned thread.
 
 After coordinator start, Archboard sends exactly one of:
 
+<!-- prettier-ignore -->
 ```json
 {"threadId":"<coordinator-thread-id>","model":"gpt-5.6-luna","serviceTier":"priority","effort":"medium"}
+```
+
+<!-- prettier-ignore -->
+```json
 {"threadId":"<coordinator-thread-id>","model":"gpt-5.6-luna","effort":"medium"}
 ```
 
@@ -431,10 +442,23 @@ catalogues are eager and ordered as written. Every object schema has
 A valid call response contains exactly one text item. The text is canonical
 compact JSON in one of these envelopes:
 
+<!-- prettier-ignore -->
 ```json
 {"tag":"ok","operationId":"<opaque>","value":{}}
+```
+
+<!-- prettier-ignore -->
+```json
 {"tag":"refused","reason":"invalid_call|not_ready|not_loaded|not_controllable|system_error|stale_child|prior_epoch|unknown_provenance|approval_declined|cycle|busy|expired|unsupported","message":"<bounded-actionable-text>"}
+```
+
+<!-- prettier-ignore -->
+```json
 {"tag":"approval_required","operationId":"<opaque>","summary":"<bounded-effect-summary>"}
+```
+
+<!-- prettier-ignore -->
+```json
 {"tag":"outcome_unknown","operationId":"<opaque>","message":"The request may have taken effect. Inspect authoritative state before another mutation."}
 ```
 
