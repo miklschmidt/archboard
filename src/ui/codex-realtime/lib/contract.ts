@@ -62,32 +62,8 @@ export type RealtimeTerminalErrorReason =
 	| "protocol_error"
 	| "fatal_error";
 
-export type RealtimeTransitionReason =
-	| "created"
-	| "start_requested"
-	| "recovery_requested"
-	| "permission_granted"
-	| "offer_created"
-	| "answer_received"
-	| "negotiation_succeeded"
-	| "mute_requested"
-	| "unmute_requested"
-	| "input_completed"
-	| "processing_complete"
-	| "assistant_started"
-	| "assistant_finished"
-	| "user_interrupted"
-	| "stop_requested"
-	| "dispose_requested"
-	| "stopped"
-	| "disposed"
-	| "recovered"
-	| "terminal_error"
-	| RealtimeRecoverableErrorReason
-	| RealtimeTerminalErrorReason;
-
 export type RealtimeState =
-	| { readonly phase: "idle"; readonly reason: "created" | "stopped" | "recovered" }
+	| { readonly phase: "idle"; readonly reason: "created" | "recovered" }
 	| {
 			readonly phase: "requesting_permission";
 			readonly reason: "start_requested" | "recovery_requested";
@@ -113,7 +89,7 @@ export type RealtimeState =
 	| { readonly phase: "speaking"; readonly reason: "assistant_started" }
 	| {
 			readonly phase: "stopping";
-			readonly reason: "stop_requested" | "dispose_requested" | "terminal_error";
+			readonly reason: "stop_requested" | "dispose_requested";
 	  }
 	| {
 			readonly phase: "recoverable_error";
@@ -125,24 +101,32 @@ export type RealtimeState =
 			readonly reason: RealtimeTerminalErrorReason;
 			readonly message: string;
 	  }
-	| { readonly phase: "closed"; readonly reason: "stopped" | "disposed" | "terminal_error" };
+	| { readonly phase: "closed"; readonly reason: "stopped" | "disposed" };
+
+export type RealtimeTransitionReason = RealtimeState["reason"];
+
+type RealtimeStateForPhase<Phase extends RealtimePhase> = Extract<
+	RealtimeState,
+	{ readonly phase: Phase }
+>;
 
 type RealtimeTransitionTable = Readonly<{
 	[phase in RealtimePhase]: Readonly<
-		Partial<Record<RealtimePhase, readonly RealtimeTransitionReason[]>>
+		Partial<{
+			[destination in RealtimePhase]: readonly RealtimeStateForPhase<destination>["reason"][];
+		}>
 	>;
 }>;
 
 export const REALTIME_TRANSITIONS: RealtimeTransitionTable = Object.freeze({
 	idle: Object.freeze({
 		requesting_permission: Object.freeze(["start_requested", "recovery_requested"] as const),
-		closed: Object.freeze(["disposed"] as const),
+		stopping: Object.freeze(["dispose_requested"] as const),
 	}),
 	requesting_permission: Object.freeze({
 		negotiating: Object.freeze(["permission_granted"] as const),
 		recoverable_error: Object.freeze(["permission_denied", "device_unavailable"] as const),
 		stopping: Object.freeze(["stop_requested", "dispose_requested"] as const),
-		closed: Object.freeze(["disposed"] as const),
 	}),
 	negotiating: Object.freeze({
 		negotiating: Object.freeze(["offer_created", "answer_received"] as const),
@@ -164,7 +148,6 @@ export const REALTIME_TRANSITIONS: RealtimeTransitionTable = Object.freeze({
 			"fatal_error",
 		] as const),
 		stopping: Object.freeze(["stop_requested", "dispose_requested"] as const),
-		closed: Object.freeze(["disposed"] as const),
 	}),
 	listening: Object.freeze({
 		muted: Object.freeze(["mute_requested"] as const),
@@ -181,7 +164,6 @@ export const REALTIME_TRANSITIONS: RealtimeTransitionTable = Object.freeze({
 		] as const),
 		terminal_error: Object.freeze(["invalid_session", "protocol_error", "fatal_error"] as const),
 		stopping: Object.freeze(["stop_requested", "dispose_requested"] as const),
-		closed: Object.freeze(["disposed"] as const),
 	}),
 	muted: Object.freeze({
 		listening: Object.freeze(["unmute_requested"] as const),
@@ -197,7 +179,6 @@ export const REALTIME_TRANSITIONS: RealtimeTransitionTable = Object.freeze({
 		] as const),
 		terminal_error: Object.freeze(["invalid_session", "protocol_error", "fatal_error"] as const),
 		stopping: Object.freeze(["stop_requested", "dispose_requested"] as const),
-		closed: Object.freeze(["disposed"] as const),
 	}),
 	processing: Object.freeze({
 		speaking: Object.freeze(["assistant_started"] as const),
@@ -213,7 +194,6 @@ export const REALTIME_TRANSITIONS: RealtimeTransitionTable = Object.freeze({
 		] as const),
 		terminal_error: Object.freeze(["invalid_session", "protocol_error", "fatal_error"] as const),
 		stopping: Object.freeze(["stop_requested", "dispose_requested"] as const),
-		closed: Object.freeze(["disposed"] as const),
 	}),
 	speaking: Object.freeze({
 		listening: Object.freeze(["assistant_finished"] as const),
@@ -228,7 +208,6 @@ export const REALTIME_TRANSITIONS: RealtimeTransitionTable = Object.freeze({
 		] as const),
 		terminal_error: Object.freeze(["invalid_session", "protocol_error", "fatal_error"] as const),
 		stopping: Object.freeze(["stop_requested", "dispose_requested"] as const),
-		closed: Object.freeze(["disposed"] as const),
 	}),
 	stopping: Object.freeze({
 		closed: Object.freeze(["stopped", "disposed"] as const),
@@ -238,12 +217,11 @@ export const REALTIME_TRANSITIONS: RealtimeTransitionTable = Object.freeze({
 		idle: Object.freeze(["recovered"] as const),
 		requesting_permission: Object.freeze(["recovery_requested"] as const),
 		negotiating: Object.freeze(["recovery_requested"] as const),
+		recoverable_error: Object.freeze(["recovery_failed"] as const),
 		stopping: Object.freeze(["stop_requested", "dispose_requested"] as const),
-		closed: Object.freeze(["disposed"] as const),
 	}),
 	terminal_error: Object.freeze({
 		stopping: Object.freeze(["stop_requested", "dispose_requested"] as const),
-		closed: Object.freeze(["disposed"] as const),
 	}),
 	closed: Object.freeze({}),
 });
@@ -339,13 +317,14 @@ export interface RealtimeCommandRequest extends RealtimeCorrelation {}
 export type StopRequest = RealtimeCommandRequest;
 export type RecoveryRequest = RealtimeCommandRequest;
 
-export type AppendOutcomeReason =
-	| "rejected"
-	| "not_ready"
-	| "stale_session"
-	| "transport_failure"
-	| "response_lost"
-	| "cancelled";
+export type AppendNotDeliveredReason = "rejected" | "not_ready" | "stale_session" | "cancelled";
+export type AppendOutcomeUnknownReason = "transport_failure" | "response_lost";
+
+export type CommandNotDeliveredReason = "rejected" | "not_ready" | "stale_session" | "cancelled";
+export type CommandOutcomeUnknownReason = "transport_failure" | "response_lost";
+
+export type AppendOutcomeReason = AppendNotDeliveredReason | AppendOutcomeUnknownReason;
+export type CommandOutcomeReason = CommandNotDeliveredReason | CommandOutcomeUnknownReason;
 
 export type AppendOutcome =
 	| {
@@ -357,16 +336,33 @@ export type AppendOutcome =
 			readonly outcome: "not_delivered";
 			readonly sessionId: RealtimeSessionId;
 			readonly correlationId: RealtimeCorrelationId;
-			readonly reason: AppendOutcomeReason;
+			readonly reason: AppendNotDeliveredReason;
 	  }
 	| {
 			readonly outcome: "outcome_unknown";
 			readonly sessionId: RealtimeSessionId;
 			readonly correlationId: RealtimeCorrelationId;
-			readonly reason: AppendOutcomeReason;
+			readonly reason: AppendOutcomeUnknownReason;
 	  };
 
-export type CommandOutcome = AppendOutcome;
+export type CommandOutcome =
+	| {
+			readonly outcome: "delivered";
+			readonly sessionId: RealtimeSessionId;
+			readonly correlationId: RealtimeCorrelationId;
+	  }
+	| {
+			readonly outcome: "not_delivered";
+			readonly sessionId: RealtimeSessionId;
+			readonly correlationId: RealtimeCorrelationId;
+			readonly reason: CommandNotDeliveredReason;
+	  }
+	| {
+			readonly outcome: "outcome_unknown";
+			readonly sessionId: RealtimeSessionId;
+			readonly correlationId: RealtimeCorrelationId;
+			readonly reason: CommandOutcomeUnknownReason;
+	  };
 
 export interface RealtimeHost {
 	readonly createOffer: (offer: CreateOfferSdp) => Promise<AnswerSdp>;
