@@ -476,7 +476,6 @@ export const TEST_PANE_MESSAGE_POLL_MS = 20;
  * panes acknowledge callbacks directly and never render.
  */
 export const TEST_PANE_MESSAGE_TIMEOUT_MS = 2_000;
-
 /** Four LOCK_WATCH_MS sweeps cover a timestamp boundary and board_note delivery. */
 export const TEST_NOTE_WATCH_MESSAGE_TIMEOUT_MS = 4 * LOCK_WATCH_MS;
 /**
@@ -484,7 +483,6 @@ export const TEST_NOTE_WATCH_MESSAGE_TIMEOUT_MS = 4 * LOCK_WATCH_MS;
  * than the lock-file machinery that carries the notification.
  */
 export const TEST_NOTE_WATCH_MESSAGE_POLL_MS = LOCK_POLL_MS;
-
 /** One LOCK_WATCH_MS bounds the board_note clearing frame after reload. */
 export const TEST_NOTE_WATCH_CLEAR_TIMEOUT_MS = LOCK_WATCH_MS;
 /** Ordinary browser commands stay at 30s; the 10k-element initial render gets three windows, finite and not an SLA. */
@@ -496,5 +494,7 @@ export const TEST_BROWSER_POLL_MS = LOCK_POLL_MS;
 export const TEST_PANE_DEBOUNCE_MARGIN_MS = 2 * TEST_BROWSER_POLL_MS;
 /** Polls fake-opener lifecycle evidence within its 2s operation bound. */
 export const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2_000 } as const;
+/** Aggregate Bun case, not an operation cap/SLA: 20s avoids the hosted 5s cancellation path while keeping a finite bound. */
+export const TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS = 20_000;
 /** Aggregate Bun case, not an operation cap/SLA: 20s clears hosted 5,034ms and stressed 14,815.78ms. */
 export const TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS = 20_000;
