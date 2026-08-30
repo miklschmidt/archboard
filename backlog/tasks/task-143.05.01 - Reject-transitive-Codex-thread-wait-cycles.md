@@ -1,10 +1,11 @@
 ---
 id: TASK-143.05.01
 title: Reject transitive Codex thread wait cycles
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 19:07'
 labels: []
 dependencies:
   - TASK-143.01.01

@@ -1,10 +1,11 @@
 ---
 id: TASK-143.01.02
 title: Define the closed Codex browser contract
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-08-30 17:03'
+updated_date: '2026-08-30 19:07'
 labels: []
 dependencies:
   - TASK-143.01.01
