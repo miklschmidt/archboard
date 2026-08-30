@@ -13,6 +13,11 @@ import { useCanvasSession } from "./useCanvasSession";
 import type { LockHolder, PaneStatus } from "../types";
 import type { CodeTargetNotice } from "../../shared/code-target";
 import { createCodeTargetLinkHandler } from "../code-target";
+import {
+	projectSelection,
+	sameSelectionProjection,
+	type PaneSelectionSnapshot,
+} from "../selection-inspector";
 // The one thing the browser half shares with the server half by import rather
 // than by copy: the two defaults have to be the same colour, or a box the user
 // draws and a box the agent draws stop matching.
@@ -31,7 +36,7 @@ interface CanvasPaneProps {
 	presentation: "current" | "hidden" | null;
 	theme: "light" | "dark";
 	onStatus: (status: PaneStatus) => void;
-	/** Agent state is shell chrome, so the pane reports it to the dedicated rail. */
+	/** Agent state is shell chrome, so the pane reports it to the workbench. */
 	onAgentState: (paneId: string, heldBy: LockHolder | null, takeBack: () => void) => void;
 	onThemeChange: (theme: "light" | "dark") => void;
 	onFocus: (paneId: string) => void;
@@ -53,6 +58,7 @@ interface CanvasPaneProps {
 	onLayoutRequest: (paneId: string, request: "open" | "close") => void;
 	onBoardError: (error: string) => void;
 	onCodeTargetNotice: (notice: CodeTargetNotice) => void;
+	onSelectionSnapshot: (paneId: string, snapshot: PaneSelectionSnapshot) => void;
 }
 
 export function CanvasPane({
@@ -72,6 +78,7 @@ export function CanvasPane({
 	onLayoutRequest,
 	onBoardError,
 	onCodeTargetNotice,
+	onSelectionSnapshot,
 }: CanvasPaneProps): React.JSX.Element {
 	const layout = useCallback(
 		(request: "open" | "close") => onLayoutRequest(paneId, request),
@@ -102,9 +109,29 @@ export function CanvasPane({
 	// onLibraryChange, and an ungated push would return what the shell just sent
 	// and write it to the server again, forever.
 	const [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null);
+	const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
 	const appliedHashRef = useRef(0);
 	const themeRef = useRef(theme);
 	const pendingThemeRef = useRef<"light" | "dark" | null>(null);
+	const selectionSnapshotRef = useRef<PaneSelectionSnapshot | null>(null);
+	const publishSelection = useCallback(
+		(projection: PaneSelectionSnapshot["projection"]): void => {
+			const next = { boardKey: session.boardKey, projection };
+			const previous = selectionSnapshotRef.current;
+			if (
+				previous?.boardKey === next.boardKey &&
+				sameSelectionProjection(previous.projection, next.projection)
+			)
+				return;
+			selectionSnapshotRef.current = next;
+			onSelectionSnapshot(paneId, next);
+		},
+		[onSelectionSnapshot, paneId, session.boardKey],
+	);
+
+	useEffect(() => {
+		publishSelection({ state: "empty" });
+	}, [publishSelection]);
 
 	useEffect(() => {
 		if (!api) return;
@@ -141,6 +168,7 @@ export function CanvasPane({
 	}, [onFocus, paneId, session]);
 	const setApiFromExcalidraw = useCallback(
 		(instance: ExcalidrawImperativeAPI): void => {
+			apiRef.current = instance;
 			setApi(instance);
 			session.attachExcalidraw(instance);
 		},
@@ -164,9 +192,13 @@ export function CanvasPane({
 			} else if (appState.theme && appState.theme !== themeRef.current) {
 				onThemeChange(appState.theme);
 			}
+			const selectedIds = Object.entries(appState.selectedElementIds ?? {})
+				.filter(([, selected]) => selected)
+				.map(([id]) => id);
+			publishSelection(projectSelection(apiRef.current?.getSceneElements() ?? [], selectedIds));
 			session.handleChange(elements, appState);
 		},
-		[onThemeChange, session],
+		[onThemeChange, publishSelection, session],
 	);
 	const initialData = useMemo(
 		() => ({

@@ -17,6 +17,9 @@ import React, {
 	useSyncExternalStore,
 } from "react";
 import { CanvasPane } from "../canvas/CanvasPane";
+import { activateCodeTarget } from "../code-target";
+import { SelectionInspector } from "../selection-inspector/SelectionInspector";
+import type { PaneSelectionSnapshot, SelectionProjection } from "../selection-inspector";
 import { BoardBar } from "./BoardBar";
 import { BoardNavigator } from "./BoardNavigator";
 import { AgentWorkbench } from "./AgentWorkbench";
@@ -69,6 +72,7 @@ const EMPTY_PRESENTATION: FullscreenPresentationSnapshot = Object.freeze({
 	paneId: null,
 	error: null,
 });
+const EMPTY_SELECTION: SelectionProjection = Object.freeze({ state: "empty" });
 const readEmptyPresentation = (): FullscreenPresentationSnapshot => EMPTY_PRESENTATION;
 const subscribeToNothing = (): (() => void) => () => undefined;
 
@@ -260,6 +264,15 @@ function samePaneStatus(existing: PaneStatus, status: PaneStatus): boolean {
 	return Object.values(same).every(Boolean);
 }
 
+function focusedSelection(
+	snapshots: Readonly<Record<string, PaneSelectionSnapshot>>,
+	paneId: string,
+	boardKey: string | null,
+): SelectionProjection {
+	const snapshot = snapshots[paneId];
+	return snapshot?.boardKey === boardKey ? snapshot.projection : EMPTY_SELECTION;
+}
+
 function createAttemptSave(args: {
 	run: (work: () => Promise<void>) => Promise<void>;
 	status: PaneStatus | null;
@@ -277,7 +290,10 @@ function createAttemptSave(args: {
 	return (request) => {
 		void args.run(async () => {
 			try {
-				const saved = await saveBoard({ clientId: args.status?.clientId, ...request });
+				const saved = await saveBoard({
+					clientId: args.status?.clientId,
+					...request,
+				});
 				const kind = saved.saveKind ?? "same-board";
 				const holdingIt =
 					kind === "branch"
@@ -295,7 +311,11 @@ function createAttemptSave(args: {
 				if (!(error instanceof BoardConflictError)) throw error;
 				args.setDialog(null);
 				args.setDialogError(null);
-				args.setConflict({ conflict: error.conflict, request, hold: error.held ?? args.hold });
+				args.setConflict({
+					conflict: error.conflict,
+					request,
+					hold: error.held ?? args.hold,
+				});
 			}
 		});
 	};
@@ -308,6 +328,9 @@ export function Shell(): React.JSX.Element {
 	const [focused, setFocused] = useState("pane-1");
 	const [statuses, setStatuses] = useState<Record<string, PaneStatus>>({});
 	const [agentStates, setAgentStates] = useState<Record<string, AgentState>>({});
+	const [selectionSnapshots, setSelectionSnapshots] = useState<
+		Record<string, PaneSelectionSnapshot>
+	>({});
 	// Pane ids are never reused. Numbering by list length would assign a reopened
 	// pane the id of the one just closed, and the server keys a pane's selection
 	// and its board by that id.
@@ -365,6 +388,11 @@ export function Shell(): React.JSX.Element {
 		const next = currentPanes.filter((id) => id !== paneId);
 		panesRef.current = next;
 		setPanes(next);
+		setSelectionSnapshots((previous) => {
+			const { [paneId]: removed, ...remaining } = previous;
+			void removed;
+			return remaining;
+		});
 		if (closingPresentation) owner?.exit();
 	}, []);
 
@@ -440,12 +468,22 @@ export function Shell(): React.JSX.Element {
 		},
 		[],
 	);
+	const onSelectionSnapshot = useCallback(
+		(paneId: string, snapshot: PaneSelectionSnapshot): void => {
+			setSelectionSnapshots((previous) => ({
+				...previous,
+				[paneId]: snapshot,
+			}));
+		},
+		[],
+	);
 
 	const status = statuses[focused] ?? statuses[panes[0] ?? ""] ?? null;
 	const agentState = agentStates[focused] ?? agentStates[panes[0] ?? ""] ?? null;
 	const focusedPaneLabel = `Pane ${String.fromCharCode(65 + Math.max(0, panes.indexOf(focused)))}`;
 	const visibleNotice = presentationNotice(presentation, notice);
 	const boardKey = status?.boardKey ?? null;
+	const inspectedSelection = focusedSelection(selectionSnapshots, focused, boardKey);
 	const identity = status?.board ?? boardInfo?.identity ?? null;
 	// Whether the board in front of the human is being written down. It comes
 	// from the pane rather than being asked for, because the pane is what finds
@@ -693,7 +731,11 @@ export function Shell(): React.JSX.Element {
 	const handleHoldClick = useCallback(() => {
 		if (!hold) return;
 		setDialogError(null);
-		setConflict({ conflict: hold.conflict, request: { board: hold.board }, hold });
+		setConflict({
+			conflict: hold.conflict,
+			request: { board: hold.board },
+			hold,
+		});
 	}, [hold]);
 	const handleNoteClick = useCallback(() => setAskingAboutNote(true), []);
 	const handleOpenDialog = useCallback(() => {
@@ -732,8 +774,24 @@ export function Shell(): React.JSX.Element {
 		setNotice({ kind: "error", text: error, hold: true });
 	}, []);
 	const handleCodeTargetNotice = useCallback((next: CodeTargetNotice) => {
-		setNotice({ kind: "error", text: next.message, hold: true, actions: next.actions });
+		setNotice({
+			kind: "error",
+			text: next.message,
+			hold: true,
+			actions: next.actions,
+		});
 	}, []);
+	const handleOpenSelectedCode = useCallback(
+		(selectedBoard: string, elementId: string): void => {
+			activateCodeTarget({
+				boardKey: selectedBoard,
+				elementId,
+				onSuccess: () => undefined,
+				onFailure: handleCodeTargetNotice,
+			});
+		},
+		[handleCodeTargetNotice],
+	);
 	const handleOpenerSuccess = useCallback((message: string) => {
 		setNotice({ kind: "info", text: message });
 	}, []);
@@ -1020,28 +1078,38 @@ export function Shell(): React.JSX.Element {
 						</button>
 					</div>
 
-					<div className={`panes panes-${panes.length}`}>
-						{panes.map((paneId, index) => (
-							<CanvasPane
-								key={paneId}
-								paneId={paneId}
-								primary={index === 0}
-								focused={paneId === focused}
-								presentation={canvasPresentation(paneId, presentation.paneId)}
-								theme={theme}
-								onStatus={onStatus}
-								onAgentState={onAgentState}
-								onThemeChange={setTheme}
-								onFocus={setFocused}
-								label={`Pane ${String.fromCharCode(65 + index)}`}
-								libraryItems={library.items}
-								onLibraryChange={library.reportFromPane}
-								onLibraryChangedElsewhere={library.applyFromServer}
-								onLayoutRequest={handleLayoutRequest}
-								onBoardError={handleBoardError}
-								onCodeTargetNotice={handleCodeTargetNotice}
-							/>
-						))}
+					<div className="canvas-stage">
+						<div className={`panes panes-${panes.length}`}>
+							{panes.map((paneId, index) => (
+								<CanvasPane
+									key={paneId}
+									paneId={paneId}
+									primary={index === 0}
+									focused={paneId === focused}
+									presentation={canvasPresentation(paneId, presentation.paneId)}
+									theme={theme}
+									onStatus={onStatus}
+									onAgentState={onAgentState}
+									onThemeChange={setTheme}
+									onFocus={setFocused}
+									label={`Pane ${String.fromCharCode(65 + index)}`}
+									libraryItems={library.items}
+									onLibraryChange={library.reportFromPane}
+									onLibraryChangedElsewhere={library.applyFromServer}
+									onLayoutRequest={handleLayoutRequest}
+									onBoardError={handleBoardError}
+									onCodeTargetNotice={handleCodeTargetNotice}
+									onSelectionSnapshot={onSelectionSnapshot}
+								/>
+							))}
+						</div>
+
+						<SelectionInspector
+							paneLabel={focusedPaneLabel}
+							boardKey={boardKey}
+							selection={inspectedSelection}
+							onOpenCode={handleOpenSelectedCode}
+						/>
 					</div>
 
 					<AgentWorkbench

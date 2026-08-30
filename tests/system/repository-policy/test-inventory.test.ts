@@ -163,8 +163,8 @@ describe("test inventory policy", () => {
 	test("rejects a reordered browser owner", () => {
 		const reordered = input();
 		reordered.scripts["test:serial-browser"] = packageAdapter.replace(
-			"tests/system/browser/claim-interaction.test.ts tests/system/browser/opener-settings.test.ts",
-			"tests/system/browser/opener-settings.test.ts tests/system/browser/claim-interaction.test.ts",
+			"tests/system/browser/claim-interaction.test.ts tests/system/browser/selection-inspector.test.ts",
+			"tests/system/browser/selection-inspector.test.ts tests/system/browser/claim-interaction.test.ts",
 		);
 		expect(inspectTestInventory(reordered).errors[0]).toContain(
 			"Focused browser paths are not in canonical relative order.",
