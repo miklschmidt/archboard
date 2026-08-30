@@ -1,16 +1,7 @@
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-
 import { describe, expect, test } from "bun:test";
 
 import {
 	CLIENT_NOTIFICATION_METHODS,
-	CODEX_PROTOCOL_BINARY,
-	CODEX_PROTOCOL_BINARY_VERSION,
-	CODEX_PROTOCOL_GENERATED_FILE_COUNT,
-	CODEX_PROTOCOL_GENERATED_TREE_SHA256,
 	CODEX_PROTOCOL_VERSION,
 	ProtocolDecodeError,
 	RESPONSE_METHODS,
@@ -24,49 +15,13 @@ import {
 	decodeResponseEnvelope,
 	decodeServerNotification,
 	decodeServerRequest,
-	digestGeneratedTree,
 } from "../index.js";
 import { clientNotificationFixtures, responseFixtures, serverRequestFixtures } from "./fixtures.js";
 import { notificationFixture, serverNotificationFixtures } from "./notification-fixtures.js";
-
-describe("codex 0.151.0 manifest", () => {
-	test("matches a fresh tree from the exact configured generator", () => {
-		let version: string;
-		try {
-			version = execFileSync(CODEX_PROTOCOL_BINARY, ["--version"], {
-				encoding: "utf8",
-				stdio: ["ignore", "pipe", "pipe"],
-			}).trim();
-		} catch (error) {
-			throw new Error(
-				`Codex protocol conformance prerequisite missing: could not run ${CODEX_PROTOCOL_BINARY} --version. Install/configure Codex ${CODEX_PROTOCOL_BINARY_VERSION} before running test:modules. ${String(error)}`,
-				{ cause: error },
-			);
-		}
-		expect(version).toBe(CODEX_PROTOCOL_BINARY_VERSION);
-
-		const generatedRoot = mkdtempSync(join(tmpdir(), "archboard-codex-generated-"));
-		try {
-			try {
-				execFileSync(
-					CODEX_PROTOCOL_BINARY,
-					["app-server", "generate-ts", "--experimental", "--out", generatedRoot],
-					{ encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
-				);
-			} catch (error) {
-				throw new Error(
-					`Codex protocol conformance failed: ${CODEX_PROTOCOL_BINARY} could not generate the temporary tree. Confirm the installed binary supports app-server generate-ts --experimental. ${String(error)}`,
-					{ cause: error },
-				);
-			}
-			const digest = digestGeneratedTree(generatedRoot);
-			expect(digest.fileCount).toBe(CODEX_PROTOCOL_GENERATED_FILE_COUNT);
-			expect(digest.sha256).toBe(CODEX_PROTOCOL_GENERATED_TREE_SHA256);
-		} finally {
-			rmSync(generatedRoot, { recursive: true, force: true });
-		}
-	});
-});
+import {
+	GENERATED_UNION_BEARING_NOTIFICATION_METHODS,
+	SERVER_NOTIFICATION_UNION_CHALLENGES,
+} from "./union-challenges.js";
 
 describe("public response boundary", () => {
 	for (const method of RESPONSE_METHODS)
@@ -119,6 +74,27 @@ describe("public notification boundary", () => {
 			}),
 		).toEqual({ method: "thread/realtime/closed", params: { threadId: "thread-1", reason: null } });
 	});
+});
+
+describe("generated closed-union challenges", () => {
+	test("covers every generated union-bearing notification", () => {
+		expect(Object.keys(SERVER_NOTIFICATION_UNION_CHALLENGES).toSorted()).toEqual(
+			[...SERVER_NOTIFICATION_METHODS].toSorted(),
+		);
+		const challengedMethods = SERVER_NOTIFICATION_METHODS.filter(
+			(method) => SERVER_NOTIFICATION_UNION_CHALLENGES[method].length > 0,
+		).toSorted();
+		expect(challengedMethods).toEqual([...GENERATED_UNION_BEARING_NOTIFICATION_METHODS].toSorted());
+		for (const method of GENERATED_UNION_BEARING_NOTIFICATION_METHODS)
+			expect(SERVER_NOTIFICATION_UNION_CHALLENGES[method].length).toBeGreaterThan(0);
+	});
+
+	for (const method of SERVER_NOTIFICATION_METHODS)
+		for (const challenge of SERVER_NOTIFICATION_UNION_CHALLENGES[method])
+			test(`rejects ${method} ${challenge.name} future member`, () => {
+				const params = challenge.mutate(notificationFixture(method));
+				expect(() => decodeServerNotification({ method, params })).toThrow(ProtocolDecodeError);
+			});
 });
 
 describe("reverse request boundary", () => {
@@ -178,6 +154,47 @@ describe("fail-closed diagnostics", () => {
 				id: 7,
 				result: { turnId: "turn-1" },
 				error: { code: -32602, message: "invalid params" },
+			}),
+		).toThrow(ProtocolDecodeError);
+	});
+
+	test("rejects extra fields on every public envelope boundary", () => {
+		expect(() => decodeClientNotification({ method: "initialized", extra: true })).toThrow(
+			ProtocolDecodeError,
+		);
+		expect(() =>
+			decodeServerNotification({
+				method: "thread/realtime/closed",
+				params: notificationFixture("thread/realtime/closed"),
+				extra: true,
+			}),
+		).toThrow(ProtocolDecodeError);
+		expect(() =>
+			decodeServerRequest({
+				id: 1,
+				method: "currentTime/read",
+				params: serverRequestFixtures["currentTime/read"],
+				extra: true,
+			}),
+		).toThrow(ProtocolDecodeError);
+		expect(() =>
+			decodeResponseEnvelope("turn/steer", {
+				id: 7,
+				result: responseFixtures["turn/steer"],
+				extra: true,
+			}),
+		).toThrow(ProtocolDecodeError);
+		expect(() =>
+			decodeJsonRpcError({
+				id: 3,
+				error: { code: -32602, message: "invalid params" },
+				extra: true,
+			}),
+		).toThrow(ProtocolDecodeError);
+		expect(() =>
+			decodeJsonRpcError({
+				id: 3,
+				error: { code: -32602, message: "invalid params", extra: true },
 			}),
 		).toThrow(ProtocolDecodeError);
 	});

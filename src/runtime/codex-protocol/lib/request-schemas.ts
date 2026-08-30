@@ -157,10 +157,10 @@ export const CLIENT_NOTIFICATION_SCHEMAS = {
 	initialized: z.strictObject({ method: z.literal("initialized") }),
 } as const satisfies Record<ClientNotificationMethod, z.ZodTypeAny>;
 
-export const JsonRpcErrorSchema = looseObject({
+export const JsonRpcErrorSchema = z.strictObject({
 	id: RequestIdSchema,
 	result: z.never().optional(),
-	error: looseObject({
+	error: z.strictObject({
 		code: z.number().int(),
 		message: z.string(),
 		/** JSON-RPC error data is an intentionally open standard extension. */
