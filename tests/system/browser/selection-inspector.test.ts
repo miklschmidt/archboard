@@ -22,7 +22,24 @@ type Panes = {
 	paneCount: number;
 	panes: Array<{ clientId: string; board: string; place: string }>;
 };
-type InspectorView = { state: string | null; text: string; pane: string };
+type InspectorView = { state: string | null; text: string; pane: string; title: string };
+type TypeMetrics = { family: string; size: number; lineHeight: number };
+type InspectorContract = {
+	sections: string[];
+	titleType: TypeMetrics;
+	statusType: TypeMetrics;
+	kickerType: TypeMetrics;
+	sectionType: TypeMetrics;
+	labelType: TypeMetrics;
+	humanType: TypeMetrics;
+	technicalType: TypeMetrics;
+	copyType: TypeMetrics;
+	controlType: TypeMetrics;
+	kickerContrast: number;
+	labelContrast: number;
+	openHeight: number;
+	focusHeight: number;
+};
 type ChangeFeed = { feedId: string; cursor: number; events: unknown[] };
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
@@ -81,7 +98,55 @@ function readInspector(browser: AgentBrowserSession): Promise<InspectorView> {
 		return {
 			state: inspector?.getAttribute('data-selection-state') ?? null,
 			text: inspector?.innerText ?? '',
-			pane: inspector?.getAttribute('aria-label') ?? ''
+			pane: inspector?.getAttribute('aria-label') ?? '',
+			title: inspector?.querySelector('.selection-inspector-title')?.textContent ?? ''
+		};
+	})()`);
+}
+
+function readInspectorContract(browser: AgentBrowserSession): Promise<InspectorContract> {
+	return browser.eval<InspectorContract>(`(() => {
+		const inspector = document.querySelector('.selection-inspector');
+		const metrics = selector => {
+			const style = getComputedStyle(inspector.querySelector(selector));
+			return {
+				family: style.fontFamily.toLowerCase(),
+				size: parseFloat(style.fontSize),
+				lineHeight: parseFloat(style.lineHeight)
+			};
+		};
+		const rgb = value => (value.match(/[\\d.]+/g) ?? []).slice(0, 3).map(Number);
+		const luminance = value => {
+			const [red, green, blue] = rgb(value).map(channel => {
+				const normalized = channel / 255;
+				return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+			});
+			return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+		};
+		const contrast = (foreground, background) => {
+			const light = Math.max(luminance(foreground), luminance(background));
+			const dark = Math.min(luminance(foreground), luminance(background));
+			return (light + 0.05) / (dark + 0.05);
+		};
+		const background = getComputedStyle(inspector).backgroundColor;
+		const kicker = inspector.querySelector('.selection-inspector-kicker');
+		const label = inspector.querySelector('.selection-inspector-row dt');
+		return {
+			sections: [...inspector.querySelectorAll('.selection-inspector-section > h2')]
+				.map(heading => heading.textContent),
+			titleType: metrics('.selection-inspector-title'),
+			statusType: metrics('.selection-inspector-status'),
+			kickerType: metrics('.selection-inspector-kicker'),
+			sectionType: metrics('.selection-inspector-section > h2'),
+			labelType: metrics('.selection-inspector-row dt'),
+			humanType: metrics('.selection-inspector-value-human'),
+			technicalType: metrics('.selection-inspector-value-technical'),
+			copyType: metrics('.path-focus-section .selection-inspector-copy'),
+			controlType: metrics('.selection-inspector-focus'),
+			kickerContrast: contrast(getComputedStyle(kicker).color, background),
+			labelContrast: contrast(getComputedStyle(label).color, background),
+			openHeight: inspector.querySelector('.selection-inspector-open').getBoundingClientRect().height,
+			focusHeight: inspector.querySelector('.selection-inspector-focus').getBoundingClientRect().height
 		};
 	})()`);
 }
@@ -167,7 +232,6 @@ test(
 							}),
 							shape("unbound", 320, { node: "queue", kind: "queue" }),
 							shape("malformed", 540, {
-								node: "broken",
 								binding: { repo: repository, path: "/home/person/private.ts" },
 							}),
 						]
@@ -186,6 +250,7 @@ test(
 
 		const browser = resources.use(await createAgentBrowser());
 		await browser.run(["open", canvas.base]);
+		await browser.run(["set", "viewport", "1440", "900"]);
 		let panes = await pollUntil(
 			() => api<Panes>("/api/panes").then((response) => response.body),
 			(value) => value.paneCount === 1,
@@ -195,7 +260,7 @@ test(
 			method: "POST",
 			body: { board: "selection-a", pane: panes.panes[0]!.clientId, reload: true },
 		});
-		await waitInspector(browser, "empty", "No selection");
+		expect((await waitInspector(browser, "empty", "No selection")).title).toBe("No selection");
 		expect((await api("/api/panes/open", { method: "POST" })).status).toBe(200);
 		panes = await pollUntil(
 			() => api<Panes>("/api/panes").then((response) => response.body),
@@ -231,15 +296,22 @@ test(
 		);
 
 		await select(browser, "Pane A", ["unbound"]);
-		await waitInspector(browser, "unbound", "Not bound");
+		expect((await waitInspector(browser, "unbound", "Not bound")).title).toBe("queue");
 		await select(browser, "Pane A", ["malformed"]);
-		await waitInspector(browser, "malformed", "Binding unavailable");
+		expect((await waitInspector(browser, "malformed", "Binding unavailable")).title).toBe(
+			"malformed",
+		);
 		await select(browser, "Pane A", ["unbound", "bound-local"]);
-		await waitInspector(browser, "multiple", "2 elements selected");
+		expect((await waitInspector(browser, "multiple", "2 elements selected")).title).toBe(
+			"2 elements",
+		);
 		await select(browser, "Pane A", ["not-in-scene"]);
-		await waitInspector(browser, "missing", "Selection disappeared");
+		expect((await waitInspector(browser, "missing", "Selection disappeared")).title).toBe(
+			"Selection disappeared",
+		);
 		await select(browser, "Pane A", ["bound-local"]);
 		const bound = await waitInspector(browser, "bound", "src/checkout.ts");
+		expect(bound.title).toBe("Checkout Service");
 		for (const value of [
 			"bound-local",
 			"rectangle",
@@ -271,6 +343,38 @@ test(
 			);
 			themes.push(theme);
 			expect((await readInspector(browser)).text).toContain("src/checkout.ts");
+			const contract = await readInspectorContract(browser);
+			expect(contract.sections).toEqual([
+				"Architecture path",
+				"Code binding",
+				"Element",
+				"Archboard metadata",
+			]);
+			const types = [
+				contract.titleType,
+				contract.statusType,
+				contract.kickerType,
+				contract.sectionType,
+				contract.labelType,
+				contract.humanType,
+				contract.technicalType,
+				contract.copyType,
+				contract.controlType,
+			];
+			expect(types.map(({ size, lineHeight }) => `${size}/${lineHeight}`).join(" ")).toBe(
+				"14/20 12/16 9/12 12/16 12/16 12/16 10/14 12/16 12/16",
+			);
+			expect(
+				types
+					.filter((_, typeIndex) => ![2, 6].includes(typeIndex))
+					.every((type) => type.family.includes("inter")),
+			).toBe(true);
+			expect(contract.kickerType.family).toContain("ui-monospace");
+			expect(contract.technicalType.family).toContain("ui-monospace");
+			expect(contract.kickerContrast).toBeGreaterThanOrEqual(4.5);
+			expect(contract.labelContrast).toBeGreaterThanOrEqual(4.5);
+			expect(contract.openHeight).toBeGreaterThanOrEqual(44);
+			expect(contract.focusHeight).toBeGreaterThanOrEqual(44);
 			if (index === 0)
 				await browser.run([
 					"click",
@@ -311,6 +415,15 @@ test(
 		);
 		expect(recovery.alert).toContain("was not found");
 		expect(recovery.github).toBe("https://github.com/acme/inspector/tree/62f0cef/src/checkout.ts");
+		const recoveryOverlapsInspector = await browser.eval<boolean>(`(() => {
+			const notice = document.querySelector('.notice-shell');
+			const inspector = document.querySelector('.selection-inspector');
+			const noticeRect = notice.getBoundingClientRect();
+			const inspectorRect = inspector.getBoundingClientRect();
+			return noticeRect.left < inspectorRect.right && noticeRect.right > inspectorRect.left &&
+				noticeRect.top < inspectorRect.bottom && noticeRect.bottom > inspectorRect.top;
+		})()`);
+		expect(recoveryOverlapsInspector).toBe(false);
 		await browser.run(["click", ".notice-actions button"]);
 		await pollUntil(
 			() =>
@@ -329,7 +442,6 @@ test(
 		);
 		await browser.run(["click", ".notice-dismiss"]);
 
-		await browser.run(["set", "viewport", "1440", "900"]);
 		await browser.run(["click", '.present-button[aria-label="Present Pane A fullscreen"]']);
 		const presented = await pollUntil(
 			() =>
@@ -348,46 +460,27 @@ test(
 			"fullscreen to exit",
 		);
 
-		await browser.run(["set", "viewport", "420", "700"]);
-		const narrow = await browser.eval<{
-			collapsed: boolean;
-			pane: number;
-			inspector: number;
-			workbench: number;
-			page: number;
-		}>(`(() => {
-			const pane = document.querySelector('.pane').getBoundingClientRect();
-			const inspector = document.querySelector('.selection-inspector');
-			const workbench = document.querySelector('.agent-workbench').getBoundingClientRect();
-			return {
-				collapsed: inspector.querySelector('.selection-inspector-disclosure').getAttribute('aria-expanded') === 'false' &&
-					getComputedStyle(inspector.querySelector('.selection-inspector-body')).display === 'none',
-				pane: pane.height,
-				inspector: inspector.getBoundingClientRect().height,
-				workbench: workbench.height,
-				page: document.documentElement.scrollWidth
-			};
-		})()`);
-		expect(narrow.collapsed).toBe(true);
-		expect(narrow.page).toBe(420);
-		expect(narrow.pane).toBeGreaterThan(narrow.inspector + narrow.workbench);
-		await browser.run(["click", ".selection-inspector-disclosure"]);
-		const disclosed = await browser.eval<{
+		const desktop = await browser.eval<{
+			viewport: [number, number];
 			visible: boolean;
-			button: number;
-			fits: boolean;
+			bodyVisible: boolean;
+			insideViewport: boolean;
 		}>(`(() => {
-			const body = document.querySelector('.selection-inspector-body');
-			const button = document.querySelector('.selection-inspector-open').getBoundingClientRect();
-			const panel = document.querySelector('.selection-inspector').getBoundingClientRect();
+			const inspector = document.querySelector('.selection-inspector');
+			const panel = inspector.getBoundingClientRect();
 			return {
-				visible: getComputedStyle(body).display !== 'none',
-				button: button.height,
-				fits: panel.left >= 0 && panel.right <= innerWidth && panel.bottom <= innerHeight
+				viewport: [innerWidth, innerHeight],
+				visible: getComputedStyle(inspector).display === 'flex',
+				bodyVisible: getComputedStyle(inspector.querySelector('.selection-inspector-body')).display !== 'none',
+				insideViewport: panel.left >= 0 && panel.right <= innerWidth && panel.top >= 0 && panel.bottom <= innerHeight
 			};
 		})()`);
-		expect(disclosed).toEqual({ visible: true, button: 44, fits: true });
-
+		expect(desktop).toEqual({
+			viewport: [1440, 900],
+			visible: true,
+			bodyVisible: true,
+			insideViewport: true,
+		});
 		expect(await browser.eval<number>("window.__selectionChangeReports ?? -1")).toBe(0);
 		for (const [index, path] of notePaths.entries()) {
 			expect(readFileSync(path)).toEqual(beforeNotes[index]!);
