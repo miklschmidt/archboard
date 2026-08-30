@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 22:20'
+updated_date: '2026-08-30 22:23'
 labels: []
 dependencies:
   - TASK-143.01.17
@@ -49,4 +49,6 @@ Own every new Codex workbench duration in the existing shared timing module. The
 
 <!-- SECTION:NOTES:BEGIN -->
 Batch reservation at integration HEAD 7e0c8ae: newly ready scoped leaves are exactly TASK-143.01.07 and TASK-143.01.16, with disjoint runtime/codex-instructions and shared/timing ownership. TASK-143.01.13 remains active on the protocol/package seam, so three of four leaf-worker slots are occupied. Slot 4 is intentionally unused because no other TASK-143/TASK-144 leaf is ready; all other ready scoped entries are parent containers and remaining leaves are dependency-blocked. TASK-141/TASK-142 remain unrelated CI-restoration bugs.
+
+Implemented the twelve CODEX_* workbench timing exports in src/shared/timing/timing.ts with authored classifications, pull-against comments, restart backoff/reset policy, and realtime-first shutdown order. Added src/shared/timing/tests/codex-workbench-policy.test.ts with exact values, required inequalities, exact CODEX_* export-set enforcement, and legacy injection-name retention checks. Focused test: 3 pass, 11 expectations; fmt, both TypeScript projects, lint, and diff check pass.
 <!-- SECTION:NOTES:END -->
