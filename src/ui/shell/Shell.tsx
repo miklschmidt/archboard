@@ -20,6 +20,7 @@ import { CanvasPane } from "../canvas/CanvasPane";
 import { activateCodeTarget } from "../code-target";
 import { SelectionInspector } from "../selection-inspector/SelectionInspector";
 import type { PaneSelectionSnapshot, SelectionProjection } from "../selection-inspector";
+import type { PanePathFocusSnapshot, PathFocusController, PathFocusSnapshot } from "../path-focus";
 import { BoardBar } from "./BoardBar";
 import { BoardNavigator } from "./BoardNavigator";
 import { AgentWorkbench } from "./AgentWorkbench";
@@ -73,6 +74,7 @@ const EMPTY_PRESENTATION: FullscreenPresentationSnapshot = Object.freeze({
 	error: null,
 });
 const EMPTY_SELECTION: SelectionProjection = Object.freeze({ state: "empty" });
+const EMPTY_PATH_FOCUS: PathFocusSnapshot = Object.freeze({ state: "inactive" });
 const readEmptyPresentation = (): FullscreenPresentationSnapshot => EMPTY_PRESENTATION;
 const subscribeToNothing = (): (() => void) => () => undefined;
 
@@ -273,6 +275,15 @@ function focusedSelection(
 	return snapshot?.boardKey === boardKey ? snapshot.projection : EMPTY_SELECTION;
 }
 
+function focusedPathFocus(
+	snapshots: Readonly<Record<string, PanePathFocusSnapshot>>,
+	paneId: string,
+	boardKey: string | null,
+): PathFocusSnapshot {
+	const snapshot = snapshots[paneId];
+	return snapshot?.boardKey === boardKey ? snapshot.projection : EMPTY_PATH_FOCUS;
+}
+
 function createAttemptSave(args: {
 	run: (work: () => Promise<void>) => Promise<void>;
 	status: PaneStatus | null;
@@ -331,6 +342,10 @@ export function Shell(): React.JSX.Element {
 	const [selectionSnapshots, setSelectionSnapshots] = useState<
 		Record<string, PaneSelectionSnapshot>
 	>({});
+	const [pathFocusSnapshots, setPathFocusSnapshots] = useState<
+		Record<string, PanePathFocusSnapshot>
+	>({});
+	const pathFocusControllersRef = useRef<Record<string, PathFocusController>>({});
 	// Pane ids are never reused. Numbering by list length would assign a reopened
 	// pane the id of the one just closed, and the server keys a pane's selection
 	// and its board by that id.
@@ -393,6 +408,15 @@ export function Shell(): React.JSX.Element {
 			void removed;
 			return remaining;
 		});
+		setPathFocusSnapshots((previous) => {
+			const { [paneId]: removed, ...remaining } = previous;
+			void removed;
+			return remaining;
+		});
+		const { [paneId]: removedController, ...remainingControllers } =
+			pathFocusControllersRef.current;
+		void removedController;
+		pathFocusControllersRef.current = remainingControllers;
 		if (closingPresentation) owner?.exit();
 	}, []);
 
@@ -477,6 +501,27 @@ export function Shell(): React.JSX.Element {
 		},
 		[],
 	);
+	const onPathFocusSnapshot = useCallback(
+		(paneId: string, snapshot: PanePathFocusSnapshot): void => {
+			setPathFocusSnapshots((previous) => ({ ...previous, [paneId]: snapshot }));
+		},
+		[],
+	);
+	const onPathFocusController = useCallback(
+		(paneId: string, controller: PathFocusController | null): void => {
+			if (controller) {
+				pathFocusControllersRef.current = {
+					...pathFocusControllersRef.current,
+					[paneId]: controller,
+				};
+				return;
+			}
+			const { [paneId]: removed, ...remaining } = pathFocusControllersRef.current;
+			void removed;
+			pathFocusControllersRef.current = remaining;
+		},
+		[],
+	);
 
 	const status = statuses[focused] ?? statuses[panes[0] ?? ""] ?? null;
 	const agentState = agentStates[focused] ?? agentStates[panes[0] ?? ""] ?? null;
@@ -484,6 +529,7 @@ export function Shell(): React.JSX.Element {
 	const visibleNotice = presentationNotice(presentation, notice);
 	const boardKey = status?.boardKey ?? null;
 	const inspectedSelection = focusedSelection(selectionSnapshots, focused, boardKey);
+	const inspectedPathFocus = focusedPathFocus(pathFocusSnapshots, focused, boardKey);
 	const identity = status?.board ?? boardInfo?.identity ?? null;
 	// Whether the board in front of the human is being written down. It comes
 	// from the pane rather than being asked for, because the pane is what finds
@@ -792,6 +838,12 @@ export function Shell(): React.JSX.Element {
 		},
 		[handleCodeTargetNotice],
 	);
+	const handleFocusSelectedPath = useCallback((): void => {
+		pathFocusControllersRef.current[focused]?.focus();
+	}, [focused]);
+	const handleExitPathFocus = useCallback((): void => {
+		pathFocusControllersRef.current[focused]?.exit();
+	}, [focused]);
 	const handleOpenerSuccess = useCallback((message: string) => {
 		setNotice({ kind: "info", text: message });
 	}, []);
@@ -1100,6 +1152,8 @@ export function Shell(): React.JSX.Element {
 									onBoardError={handleBoardError}
 									onCodeTargetNotice={handleCodeTargetNotice}
 									onSelectionSnapshot={onSelectionSnapshot}
+									onPathFocusSnapshot={onPathFocusSnapshot}
+									onPathFocusController={onPathFocusController}
 								/>
 							))}
 						</div>
@@ -1108,7 +1162,10 @@ export function Shell(): React.JSX.Element {
 							paneLabel={focusedPaneLabel}
 							boardKey={boardKey}
 							selection={inspectedSelection}
+							pathFocus={inspectedPathFocus}
 							onOpenCode={handleOpenSelectedCode}
+							onFocusPath={handleFocusSelectedPath}
+							onExitPathFocus={handleExitPathFocus}
 						/>
 					</div>
 
