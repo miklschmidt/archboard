@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
 	BROWSER_ADAPTER_PATH,
 	BROWSER_TEST_PATHS,
-	CI_EXCLUDED_BROWSER_OWNER_ENV,
+	CI_EXCLUDED_BROWSER_OWNERS_ENV,
 	applyCiBrowserOwnerExclusion,
 	validateBrowserSelection,
 } from "../browser/run-browser-lane.ts";
@@ -19,9 +19,11 @@ import {
 import { TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const HOSTED_BROWSER_OWNERS = BROWSER_TEST_PATHS.slice(0, 2).join(",");
+const REVERSED_BROWSER_OWNERS = [BROWSER_TEST_PATHS[1], BROWSER_TEST_PATHS[0]].join(",");
 const HOSTED_BROWSER_EXCLUSION = {
 	CI: "true",
-	ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER: "tests/system/browser/human-edit-performance.test.ts",
+	[CI_EXCLUDED_BROWSER_OWNERS_ENV]: HOSTED_BROWSER_OWNERS,
 } as const;
 const CI_EXCLUDED_SYSTEM_OWNER_ENV = "ARCHBOARD_CI_EXCLUDED_SYSTEM_OWNER";
 const CI_EXCLUDED_SYSTEM_OWNER = "tests/system/code-targets/opener-persistence.test.ts";
@@ -59,7 +61,7 @@ function runSystemOwner(environment: Record<string, string>): {
 	const env = { ...process.env };
 	delete env.CI;
 	delete env.ARCHBOARD_VAULT;
-	delete env.ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER;
+	delete env.ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS;
 	delete env[CI_EXCLUDED_SYSTEM_OWNER_ENV];
 	Object.assign(env, environment);
 	const result = Bun.spawnSync({
@@ -322,26 +324,38 @@ describe("browser executable adapter boundary", () => {
 		expect(selection.files).toEqual([...BROWSER_TEST_PATHS]);
 	});
 
-	test("the hosted package exception removes only the human-performance owner", () => {
+	test("the hosted package exception removes only the two canonical owners", () => {
 		const selection = validateBrowserSelection([
 			"bun",
 			BROWSER_ADAPTER_PATH,
 			...BROWSER_TEST_PATHS,
 		]);
 		const hosted = applyCiBrowserOwnerExclusion(selection, HOSTED_BROWSER_EXCLUSION);
-		expect(hosted).toEqual({ mode: "package", files: BROWSER_TEST_PATHS.slice(1) });
+		expect(hosted).toEqual({ mode: "package", files: BROWSER_TEST_PATHS.slice(2) });
 		expect(selection.files).toEqual([...BROWSER_TEST_PATHS]);
 	});
 
 	test.each([
+		["missing CI", { [CI_EXCLUDED_BROWSER_OWNERS_ENV]: HOSTED_BROWSER_OWNERS }, "requires CI=true"],
+		["empty", { CI: "true", [CI_EXCLUDED_BROWSER_OWNERS_ENV]: "" }, "cannot exclude"],
 		[
-			"missing CI",
-			{ ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER: BROWSER_TEST_PATHS[0] },
-			"requires CI=true",
+			"partial",
+			{ CI: "true", [CI_EXCLUDED_BROWSER_OWNERS_ENV]: BROWSER_TEST_PATHS[0] },
+			"cannot exclude",
+		],
+		[
+			"reordered",
+			{ CI: "true", [CI_EXCLUDED_BROWSER_OWNERS_ENV]: REVERSED_BROWSER_OWNERS },
+			"cannot exclude",
+		],
+		[
+			"extra",
+			{ CI: "true", [CI_EXCLUDED_BROWSER_OWNERS_ENV]: BROWSER_TEST_PATHS.slice(0, 3).join(",") },
+			"cannot exclude",
 		],
 		[
 			"wrong owner",
-			{ CI: "true", ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER: BROWSER_TEST_PATHS[1] },
+			{ CI: "true", [CI_EXCLUDED_BROWSER_OWNERS_ENV]: BROWSER_TEST_PATHS[2] },
 			"cannot exclude",
 		],
 	])("rejects a %s exclusion", (_name, environment, diagnostic) => {
@@ -363,7 +377,7 @@ describe("browser executable adapter boundary", () => {
 		expect(() => applyCiBrowserOwnerExclusion(selection, HOSTED_BROWSER_EXCLUSION)).toThrow(
 			"valid only for the package browser lane",
 		);
-		expect(CI_EXCLUDED_BROWSER_OWNER_ENV).toBe("ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER");
+		expect(CI_EXCLUDED_BROWSER_OWNERS_ENV).toBe("ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS");
 	});
 
 	test("the real package adapter announces the exception and advances to an ordinary owner", async () => {
@@ -373,7 +387,9 @@ describe("browser executable adapter boundary", () => {
 			resources,
 		);
 		expect(result.exitCode).toBe(1);
-		expect(result.stderr).toContain(`# CI-only browser owner excluded: ${BROWSER_TEST_PATHS[0]}`);
+		expect(
+			result.stderr.split(/\r?\n/).filter((line) => line.includes("browser owners excluded")),
+		).toEqual([`# CI-only browser owners excluded: ${HOSTED_BROWSER_OWNERS}`]);
 		expect(fs.existsSync(result.fixture.versionMarker)).toBeTrue();
 		expect(fs.existsSync(result.fixture.unexpectedMarker)).toBeTrue();
 	});
