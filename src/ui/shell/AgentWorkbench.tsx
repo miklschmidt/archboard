@@ -43,17 +43,11 @@ export function AgentWorkbench({
 					onClick={toggleExpanded}
 				>
 					<Icon name="chevron" size={16} className="workbench-chevron" />
-					<span className="agent-avatar">
-						<Icon name="activity" size={15} />
-					</span>
+					<Icon name="activity" size={15} className="workbench-agent-icon" />
 					<span>Agent workbench</span>
 				</button>
 
 				<output className="workbench-overview" aria-live="polite" aria-atomic="true">
-					<span className="workbench-pane">
-						<small>Focused</small>
-						{paneLabel}
-					</span>
 					<span className={`live-badge${connected ? "" : " is-offline"}`}>
 						<small>Status</small>
 						<span>
@@ -61,62 +55,29 @@ export function AgentWorkbench({
 							{state}
 						</span>
 					</span>
-					{claimed && (
-						<span className="workbench-claim-summary">
+					<span className="workbench-claim-summary">
+						{claimed && (
 							<span className="claim-beacon" aria-hidden="true">
 								<span>Agent claim</span>
 							</span>
-							<small>Active claim</small>
-							<span>{heldBy.reason || "Working on the board"}</span>
-						</span>
-					)}
+						)}
+						<small>Claim</small>
+						<span>{claimed ? heldBy.reason || "Working on the board" : "Board is yours"}</span>
+					</span>
 					{latest && (
 						<span className="workbench-latest">
-							<small>Latest</small>
+							<small>Current</small>
 							<span className="doing-now">{latest.doing}</span>
 						</span>
 					)}
+					<span className="workbench-pane">
+						<small>Focused</small>
+						<span>{paneLabel}</span>
+					</span>
 				</output>
 			</header>
 
 			<div className="workbench-body" id={contentId} hidden={!expanded}>
-				<section className={`workbench-claim${claimed ? " is-claimed" : ""}`}>
-					<div className="workbench-section-title">Claim</div>
-					{claimed ? (
-						<div className="pane-claim claim-card">
-							<div className="claim-kicker">
-								<Icon name="check" size={15} />
-								Agent has the board
-							</div>
-							<div className="pane-claim-what claim-title">
-								<small>Active claim</small>
-								{heldBy.reason || "Working on the board"}
-							</div>
-							<p className="claim-copy">
-								Agent edits are serialized while this claim is active. You can return control at any
-								time.
-							</p>
-							<button type="button" className="pane-claim-take take-back" onClick={takeBack}>
-								Take back control
-							</button>
-						</div>
-					) : (
-						<p className="workbench-empty">No active claim. The board is yours to edit.</p>
-					)}
-				</section>
-
-				<section className="workbench-current">
-					<div className="workbench-section-title">Latest update</div>
-					{latest ? (
-						<>
-							<strong>{latest.doing}</strong>
-							<time dateTime={latest.at}>{clock(latest.at)}</time>
-						</>
-					) : (
-						<p className="workbench-empty">No progress has been reported for this board.</p>
-					)}
-				</section>
-
 				<section className="workbench-history">
 					<div className="activity-header">
 						<h2>Recent doing</h2>
@@ -142,6 +103,49 @@ export function AgentWorkbench({
 						)}
 					</ol>
 				</section>
+
+				<div className="workbench-focus">
+					<section className="workbench-current">
+						<div className="workbench-section-title">Current action</div>
+						{latest ? (
+							<>
+								<strong>{latest.doing}</strong>
+								<time dateTime={latest.at}>{clock(latest.at)}</time>
+							</>
+						) : (
+							<p className="workbench-empty">No progress has been reported for this board.</p>
+						)}
+					</section>
+
+					<section className={`workbench-claim${claimed ? " is-claimed" : ""}`}>
+						<div className="claim-heading">
+							<div className="workbench-section-title">Claim</div>
+							{claimed && (
+								<div className="claim-kicker">
+									<Icon name="check" size={15} />
+									Agent has the board
+								</div>
+							)}
+						</div>
+						{claimed ? (
+							<div className="pane-claim claim-card">
+								<div className="pane-claim-what claim-title">
+									<small>Active claim</small>
+									{heldBy.reason || "Working on the board"}
+								</div>
+								<p className="claim-copy">
+									Agent edits are serialized while this claim is active. You can return control at
+									any time.
+								</p>
+								<button type="button" className="pane-claim-take take-back" onClick={takeBack}>
+									Take back control
+								</button>
+							</div>
+						) : (
+							<p className="workbench-empty">No active claim. The board is yours to edit.</p>
+						)}
+					</section>
+				</div>
 			</div>
 		</section>
 	);
