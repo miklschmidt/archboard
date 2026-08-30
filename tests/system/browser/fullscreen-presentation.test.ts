@@ -155,8 +155,8 @@ test(
 			timeSize: 10,
 			timeLineHeight: 14,
 		});
-		expect(conflictType.copyFamily).toContain("inter");
-		expect(conflictType.timeFamily).toMatch(/mono|consolas/);
+		expect(conflictType.copyFamily).toContain("archboard onest");
+		expect(conflictType.timeFamily).toContain("archboard dm mono");
 		expect(await paneAppAction(browser, "Pane A", "current", "move")).toBe(true);
 		const heldBefore = await pollUntil(
 			async () => (await request<BoardBody>(`/api/elements?board=${CURRENT}`)).body.held,
@@ -219,7 +219,9 @@ test(
 		})()`);
 		expect(dockType.height).toBeCloseTo(54, 0);
 		expect(dockType.buttonHeights.every((height) => height >= 43.5)).toBe(true);
-		expect(dockType.buttonFamilies.every((family) => family.includes("inter"))).toBe(true);
+		expect(dockType.buttonFamilies.every((family) => family.includes("archboard onest"))).toBe(
+			true,
+		);
 		expect(dockType.buttonSizes.every((size) => size === 13)).toBe(true);
 		expect(dockType.buttonLineHeights.every((height) => height === 18)).toBe(true);
 		expect(dockType.buttonWeights.every((weight) => weight === 600)).toBe(true);
