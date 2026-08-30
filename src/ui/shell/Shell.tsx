@@ -333,11 +333,9 @@ export function Shell(): React.JSX.Element {
 		readEmptyPresentation,
 	);
 	const panesRef = useRef(panes);
-	const presentedPaneRef = useRef(presentation.paneId);
 	useLayoutEffect(() => {
 		panesRef.current = panes;
-		presentedPaneRef.current = presentation.paneId;
-	}, [panes, presentation.paneId]);
+	}, [panes]);
 
 	// Layout can now be changed from outside the browser (`archboard pane open`),
 	// so these are the shell's two moves, reachable from the buttons and from a
@@ -356,8 +354,8 @@ export function Shell(): React.JSX.Element {
 		// Never the last one: an empty shell shows nothing and offers no way back.
 		if (currentPanes.length < 2 || !currentPanes.includes(paneId)) return;
 		const survivor = currentPanes.find((id) => id !== paneId) ?? null;
-		const closingPresentation = presentedPaneRef.current === paneId && survivor;
 		const owner = presentationOwnerRef.current;
+		const closingPresentation = owner?.getTargetPaneId() === paneId && survivor;
 		if (closingPresentation) {
 			// Transfer before removal and exit. If the browser refuses exit, the
 			// mounted survivor remains visible instead of leaving a blank display.
@@ -741,7 +739,10 @@ export function Shell(): React.JSX.Element {
 	}, []);
 	const openOpenerSettings = useCallback(() => setOpenerSettingsOpen(true), []);
 	const closeOpenerSettings = useCallback(() => setOpenerSettingsOpen(false), []);
-	const handleDismissNotice = useCallback(() => setNotice(null), []);
+	const handleDismissNotice = useCallback(() => {
+		setNotice(null);
+		presentationOwner?.clearError();
+	}, [presentationOwner]);
 	const handleCancelDialog = useCallback(() => {
 		setDialog(null);
 		setDialogError(null);
