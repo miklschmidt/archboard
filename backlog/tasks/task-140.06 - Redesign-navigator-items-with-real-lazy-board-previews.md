@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 09:57'
-updated_date: '2026-08-30 09:58'
+updated_date: '2026-08-30 10:06'
 labels: []
 dependencies:
   - TASK-140.05
@@ -42,13 +42,15 @@ Bring the real desktop board and variant navigator materially closer to the appr
 2. Add the narrowest read-only board-preview GET seam over the existing board inspection snapshot: return canonical presentation elements, files, and a real fingerprint for open, draft, and off-screen boards without registering, opening, focusing, claiming, writing, adding a client, rendering SVG server-side, or exposing local paths.
 3. Add a browser preview projection/export and bounded in-memory cache keyed by stable board identity, fingerprint, and theme where needed; prefer an authoritative mounted pane scene, discard stale in-flight completions, revoke replaced Blob URLs, and keep listing and switching independent of preview work.
 4. Redesign the 184px desktop board and variant items around clear hierarchy and exact focused/on-canvas/open/draft state. Lazily disclose a supplemental noninteractive real-scene preview on desktop pointer hover and keyboard focus, with loading, empty, unavailable, and retry states, while preserving ordinary board selection and Samsung Flip desktop touch targets.
-5. Serialize the four cropped regional UI parity passes around exact Shell.tsx and shell.css ownership: integrate navigator first, then top shell, workbench, and inspector/focus only after each worker supplies tightly cropped desktop light/dark evidence and focused validation. Do not introduce phone breakpoints, fake reference data, new shell modes, telemetry, prompt controls, hidden diffs, or a second agent client.
-6. Extend existing module, server, board-navigator, shell, fullscreen, claim, workbench, selection-inspector, and focus coverage for laziness, accessibility, invalidation, stale/failure recovery, real content, one/two panes, fullscreen, state preservation, and zero note, feed, open/focus, claim, canonical-scene, or export side effects.
-7. Inspect the real supported desktop shell in both themes across one pane, two panes, fullscreen, preview states, claims, notices, workbench, inspector, and focus using tightly cropped regional screenshots. Then run formatting, lint, both TypeScript projects, focused and repository tests, production build, the complete sequential check chain, protected-base audit, and an independent Standards plus Spec review over a8275ac..HEAD with remediation and rereview.
+5. Establish one measured desktop typography and spacing system from the approved reference: neutral grotesk sans for primary hierarchy and body copy, mono only for identifiers, paths, versions, timing, and compact technical labels, legible sizes and line heights, consistent cell padding, and 44px actions. Then serialize navigator, top shell, workbench, and inspector/focus parity passes around exact Shell.tsx and shell.css ownership, integrating only after each worker supplies tightly cropped desktop light/dark evidence and focused validation.
+6. Do not introduce phone breakpoints, fake reference data, new shell modes, telemetry, prompt controls, hidden diffs, or a second agent client. Extend existing module, server, board-navigator, shell, fullscreen, claim, workbench, selection-inspector, and focus coverage for laziness, accessibility, invalidation, stale/failure recovery, real content, one/two panes, fullscreen, state preservation, typography, spacing, and zero note, feed, open/focus, claim, canonical-scene, or export side effects.
+7. Inspect the real supported desktop shell in both themes across one pane, two panes, fullscreen, preview states, claims, notices, workbench, inspector, and focus using tightly cropped regional screenshots. Then run formatting, lint, both TypeScript projects, repository policy, production build, the complete sequential check chain, protected-base audit, and an independent Standards plus Spec review over a8275ac..HEAD with remediation and rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Overlap search before creation found only completed TASK-140.02, whose original no-generated-thumbnail contract remains historically correct. TASK-140.06 owns the newly approved real-data preview and item redesign. The user established the shell as desktop-only; phone, 420px, and narrow-reflow work are excluded, while Samsung Flip desktop-sized touch selection remains supported. The requested writing-for-agents skill is not installed in this environment, so the approved narrow rule will be applied verbatim without broader AGENTS.md restructuring.
+
+Rendered user review added a cross-region parity requirement: the current shell is too mono-heavy, too small, and inconsistently spaced. All four visible UI workers were instructed to measure the 1440x900 reference rhythm and converge on one shared sans/mono role split and spacing system before their regional commits are accepted.
 <!-- SECTION:NOTES:END -->
