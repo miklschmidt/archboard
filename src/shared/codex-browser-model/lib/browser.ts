@@ -148,7 +148,30 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 	]);
 
 	const ThreadStatusSchema = z.enum(["notLoaded", "idle", "systemError", "active"]);
-	const ThreadSourceSchema = z.enum(["cli", "vscode", "exec", "appServer"]);
+	const ExecutableThreadSourceSchema = z.enum(["cli", "vscode", "exec", "appServer"]);
+	const SubAgentSourceSchema = z.union([
+		z.enum(["review", "compact", "memory_consolidation"]),
+		z
+			.object({
+				thread_spawn: z
+					.object({
+						parent_thread_id: ThreadIdSchema,
+						depth: z.number().int(),
+						agent_path: z.string().nullable(),
+						agent_nickname: z.string().nullable(),
+						agent_role: z.string().nullable(),
+					})
+					.strict(),
+			})
+			.strict(),
+		z.object({ other: z.string() }).strict(),
+	]);
+	const InspectOnlyThreadSourceSchema = z.union([
+		ExecutableThreadSourceSchema,
+		z.object({ custom: z.string() }).strict(),
+		z.object({ subAgent: SubAgentSourceSchema }).strict(),
+		z.literal("unknown"),
+	]);
 	const UnboundThreadLinkSchema = z
 		.object({
 			kind: z.literal("thread_link"),
@@ -170,7 +193,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			childId: z.null(),
 			epoch: z.null(),
 			threadId: ThreadIdSchema,
-			source: ThreadSourceSchema,
+			source: InspectOnlyThreadSourceSchema,
 			status: ThreadStatusSchema,
 			loaded: z.boolean(),
 			canAcceptDirectInput: z.literal(false),
@@ -184,7 +207,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			childId: ChildIdSchema,
 			epoch: ChildEpochSchema,
 			threadId: ThreadIdSchema,
-			source: ThreadSourceSchema,
+			source: ExecutableThreadSourceSchema,
 			status: z.enum(["idle", "systemError", "active"]),
 			loaded: z.literal(true),
 			canAcceptDirectInput: z.literal(true),
@@ -543,7 +566,23 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			serviceTier: boundedText(64).nullable(),
 			reason: NullableReasonSchema,
 		})
-		.strict();
+		.strict()
+		.superRefine((value, refinementContext) => {
+			if (value.state === "unbound" && (value.threadId !== null || value.activeTurnId !== null)) {
+				refinementContext.addIssue({
+					code: "custom",
+					path: ["state"],
+					message: "an unbound coordinator cannot publish thread or turn state",
+				});
+			}
+			if (value.activeTurnId !== null && value.threadId === null) {
+				refinementContext.addIssue({
+					code: "custom",
+					path: ["activeTurnId"],
+					message: "an active coordinator turn requires a coordinator thread",
+				});
+			}
+		});
 	const BrowserVoiceSchema = z
 		.object({
 			kind: z.literal("voice"),
@@ -872,7 +911,6 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			const threadIds = [
 				["timeline", value.timeline?.threadId],
 				["semantic", value.semantic?.threadId],
-				["coordinator", value.coordinator.threadId],
 			] as const;
 			for (const [name, threadId] of threadIds) {
 				if (threadId !== null && threadId !== undefined && linkedThreadId !== threadId) {
@@ -885,25 +923,13 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			}
 			if (
 				value.threadLink.state === "unbound" &&
-				(value.timeline !== null || value.semantic !== null || value.coordinator.threadId !== null)
+				(value.timeline !== null || value.semantic !== null)
 			) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["threadLink", "state"],
 					message: "an unbound link cannot publish thread-scoped state",
 				});
-			}
-			if (value.coordinator.activeTurnId !== null) {
-				if (
-					value.timeline === null ||
-					!value.timeline.turns.some((turn) => turn.turnId === value.coordinator.activeTurnId)
-				) {
-					refinementContext.addIssue({
-						code: "custom",
-						path: ["coordinator", "activeTurnId"],
-						message: "active turn is absent from the published timeline",
-					});
-				}
 			}
 		});
 	const BrowserToolResultSchema = z
