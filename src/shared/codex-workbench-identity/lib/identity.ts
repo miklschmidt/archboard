@@ -225,8 +225,29 @@ function mintEpochValue(child: ChildId): ChildEpoch {
 	return wireValue("epoch", `${tokenOf(child)}.h${mintToken()}`);
 }
 
+function isWellFormedUnicode(value: string): boolean {
+	for (let index = 0; index < value.length; index++) {
+		const codeUnit = value.charCodeAt(index);
+		if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
+			const next = value.charCodeAt(index + 1);
+			if (Number.isNaN(next) || next < 0xdc00 || next > 0xdfff) return false;
+			index++;
+		} else if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
+			return false;
+		}
+	}
+	return true;
+}
+
 function encodeRawIdentity(raw: string, domain: IdentityDomain): string {
 	if (raw.length === 0) return fail("empty", `${domain} identity must not be empty.`, domain);
+	if (!isWellFormedUnicode(raw)) {
+		return fail(
+			"invalid-shape",
+			`The server ${domain} identity contains ill-formed Unicode.`,
+			domain,
+		);
+	}
 	const bytes = new TextEncoder().encode(raw);
 	if (bytes.byteLength > RAW_ID_LIMIT_BYTES || raw.includes("\0")) {
 		return fail(
