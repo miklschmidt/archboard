@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-08-30 19:03'
+updated_date: '2026-08-30 19:04'
 labels: []
 dependencies: []
 references:
@@ -64,4 +64,8 @@ Remediation implemented on the same worker branch for all five accepted review f
 Remediation validation: bunx tsc --noEmit --listFiles --pretty false | rg the type-fixtures.ts absolute path (exit 0; fixture listed); bun test --isolate src/shared/codex-workbench-identity (exit 0, 6 passed, 59 assertions); bun run type-check (exit 0); bunx oxlint src/shared/codex-workbench-identity (exit 0); bunx oxfmt --check src/shared/codex-workbench-identity (exit 0); bun test --isolate tests/system/repository-policy/boundaries.test.ts tests/system/repository-policy/test-inventory.test.ts (exit 0, 48 passed, 145 assertions). Raw serializer fixture covers punctuation, whitespace, control characters, and Unicode with byte equality.
 
 Rereview follow-up accepted: raw adoption must fail closed for lone UTF-16 surrogates because TextEncoder would otherwise replace them and collide with literal U+FFFD. The follow-up validates surrogate pairs/code points before encoding, adds high/low-surrogate rejection and distinct well-formed-Unicode fixtures, and records the corrected boundary/inventory result count above.
+
+Narrow follow-up implemented: encodeRawIdentity now validates UTF-16 surrogate pairing before TextEncoder, rejecting lone high/low surrogates so malformed strings cannot collide with U+FFFD. Well-formed supplementary Unicode and literal U+FFFD remain distinct and serialize byte-identically. The repository-check note is corrected to the exact command result: 48 tests and 145 assertions.
+
+Follow-up validation: bun test --isolate src/shared/codex-workbench-identity (exit 0, 7 passed, 65 assertions); bun run type-check (exit 0); bunx tsc --noEmit --listFiles --pretty false with the type-fixtures.ts path check (exit 0; fixture listed); bunx oxlint src/shared/codex-workbench-identity (exit 0); bunx oxfmt --check src/shared/codex-workbench-identity (exit 0); bun test --isolate tests/system/repository-policy/boundaries.test.ts tests/system/repository-policy/test-inventory.test.ts (exit 0, 48 passed, 145 assertions).
 <!-- SECTION:NOTES:END -->
