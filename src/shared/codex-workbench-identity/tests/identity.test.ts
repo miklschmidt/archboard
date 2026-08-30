@@ -3,18 +3,9 @@ import { describe, expect, test } from "bun:test";
 import {
 	IdentityValidationError,
 	createIdentityAuthority,
-	createLogicalToolCallCorrelation,
-	createWireRequestCorrelation,
-	mintChildEpoch,
-	parseBrowserCommandId,
-	parseChildEpoch,
-	parseChildId,
-	parseIdentityDomain,
-	parseThreadId,
-	parseWireRequestCorrelation,
 	restoreIdentityAuthority,
 } from "../index.ts";
-import type { WireRequestCorrelation } from "../index.ts";
+import type { CodexIdentity, WireRequestCorrelation } from "../index.ts";
 
 function errorCode(action: () => unknown): string {
 	try {
@@ -27,98 +18,133 @@ function errorCode(action: () => unknown): string {
 }
 
 describe("codex workbench identities", () => {
-	test("mints distinct domain-tagged identities and preserves them through JSON", () => {
+	test("separates ordinary validation, host issuance, and trusted decoding", () => {
 		const authority = createIdentityAuthority();
+		const { validator, issuer, decoder } = authority;
+		const browserCommand = issuer.mintBrowserCommandId();
+		const hostRequest = issuer.mintJsonRpcRequestId();
+		const realtime = issuer.mintRealtimeSessionId();
+		const threadId = decoder.adoptThreadId("thread-from-codex");
+		const serverIds = [
+			threadId,
+			decoder.adoptTurnId("turn-from-codex"),
+			decoder.adoptItemId("item-from-codex"),
+			decoder.adoptQueuedSubmissionId("queue-from-codex"),
+			decoder.adoptLoginId("login-from-codex"),
+			decoder.adoptJsonRpcRequestId("reverse-request-from-codex"),
+			decoder.adoptDynamicToolCallId("call-from-codex"),
+			decoder.adoptApprovalId("approval-from-codex"),
+		];
 		const values = [
-			authority.childId,
-			authority.epoch,
-			authority.mintBrowserCommandId(),
-			authority.adoptThreadId("thread-from-codex"),
-			authority.adoptTurnId("turn-from-codex"),
-			authority.adoptItemId("item-from-codex"),
-			authority.adoptQueuedSubmissionId("queue-from-codex"),
-			authority.adoptLoginId("login-from-codex"),
-			authority.mintJsonRpcRequestId(),
-			authority.mintDynamicToolCallId(),
-			authority.mintRealtimeSessionId(),
-			authority.mintApprovalId(),
+			validator.childId,
+			validator.epoch,
+			browserCommand,
+			hostRequest,
+			realtime,
+			...serverIds,
 		];
 		expect(new Set(values).size).toBe(values.length);
 		for (const value of values) expect(JSON.parse(JSON.stringify(value))).toBe(value);
-		expect(parseChildId(authority.childId)).toBe(authority.childId);
-		expect(parseChildEpoch(authority.epoch, authority.childId)).toBe(authority.epoch);
-		expect(authority.parseBrowserCommandId(authority.mintBrowserCommandId())).toBeString();
-		expect(authority.parseThreadId(authority.adoptThreadId("another-thread"))).toBeString();
+		expect(decoder.parseBrowserCommandId(browserCommand)).toBe(browserCommand);
+		expect(decoder.parseThreadId(threadId)).toBe(threadId);
+		expect(validator.isCurrentEpoch(validator.childId, validator.epoch)).toBeTrue();
+		expect(decoder.parseChildId(validator.childId)).toBe(validator.childId);
+		expect(decoder.parseChildEpoch(validator.epoch)).toBe(validator.epoch);
 	});
 
-	test("rejects empty, malformed, and wrong-domain wire strings", () => {
+	test("trusted adoption preserves raw Codex values through the authority serializer", () => {
+		const { issuer, decoder } = createIdentityAuthority();
+		const rawValues = [
+			"thread/from-codex/α",
+			"turn from codex",
+			"item:with:punctuation",
+			"queue\nfrom\tcodex",
+			"login-from-codex",
+			"reverse-request-from-codex",
+			"dynamic-call-from-codex",
+			"approval-from-codex",
+		];
+		const threadId = decoder.adoptThreadId(rawValues[0]!);
+		const adopted = [
+			threadId,
+			decoder.adoptTurnId(rawValues[1]!),
+			decoder.adoptItemId(rawValues[2]!),
+			decoder.adoptQueuedSubmissionId(rawValues[3]!),
+			decoder.adoptLoginId(rawValues[4]!),
+			decoder.adoptJsonRpcRequestId(rawValues[5]!),
+			decoder.adoptDynamicToolCallId(rawValues[6]!),
+			decoder.adoptApprovalId(rawValues[7]!),
+		];
+		for (const [index, identity] of adopted.entries()) {
+			const raw = rawValues[index]!;
+			expect(decoder.serializeCodexIdentity(identity)).toBe(raw);
+			expect(new TextEncoder().encode(decoder.serializeCodexIdentity(identity))).toEqual(
+				new TextEncoder().encode(raw),
+			);
+		}
+		const hostRequest = issuer.mintJsonRpcRequestId();
+		expect(decoder.serializeCodexIdentity(hostRequest)).toMatch(/^[a-f0-9]{32}$/);
+		expect(decoder.adoptThreadId(rawValues[0]!)).toBe(threadId);
+	});
+
+	test("rejects empty, malformed, and caller-fabricated identities", () => {
 		const authority = createIdentityAuthority();
-		expect(errorCode(() => parseChildId(""))).toBe("empty");
-		expect(errorCode(() => parseChildId("child:made-up"))).toBe("invalid-shape");
-		expect(errorCode(() => parseChildId(authority.epoch))).toBe("wrong-domain");
-		expect(errorCode(() => parseBrowserCommandId(authority.childId))).toBe("wrong-domain");
-		expect(errorCode(() => parseThreadId("archboard:thread:"))).toBe("invalid-shape");
-		expect(errorCode(() => parseIdentityDomain("archboard:future-domain:value"))).toBe(
-			"wrong-domain",
-		);
+		const { decoder, validator } = authority;
+		expect(errorCode(() => decoder.parseThreadId(""))).toBe("empty");
+		expect(errorCode(() => decoder.parseThreadId("thread:made-up"))).toBe("invalid-shape");
+		expect(errorCode(() => decoder.parseThreadId(validator.childId))).toBe("wrong-domain");
+		expect(errorCode(() => decoder.parseBrowserCommandId(validator.childId))).toBe("wrong-domain");
+		expect(errorCode(() => decoder.parseThreadId("archboard:thread:sfake"))).toBe("unissued");
+		expect(errorCode(() => decoder.adoptThreadId(""))).toBe("empty");
+		expect(errorCode(() => decoder.adoptThreadId("bad\0identity"))).toBe("invalid-shape");
 		expect(
-			errorCode(() => parseChildEpoch(authority.epoch, parseChildId("archboard:child:other"))),
-		).toBe("wrong-child");
-	});
-
-	test("authority rejects caller-fabricated identities and adopts server values once", () => {
-		const authority = createIdentityAuthority();
-		const requestId = authority.mintJsonRpcRequestId();
-		const forgedRequest = `archboard:json-rpc-request:${requestId.slice(-8)}`;
-		expect(errorCode(() => authority.parseJsonRpcRequestId(forgedRequest))).toBe("unissued");
-		const thread = authority.adoptThreadId("server-thread");
-		expect(authority.parseThreadId(thread)).toBe(thread);
-		expect(authority.adoptThreadId("server-thread")).toBe(thread);
-		expect(errorCode(() => authority.parseThreadId("archboard:thread:other-thread"))).toBe(
-			"unissued",
-		);
+			errorCode(() =>
+				decoder.serializeCodexIdentity(validator.childId as unknown as CodexIdentity),
+			),
+		).toBe("wrong-domain");
 	});
 
 	test("wire request correlation is closed and current-epoch bound", () => {
 		const authority = createIdentityAuthority();
-		const requestId = authority.mintJsonRpcRequestId();
-		const correlation = createWireRequestCorrelation(authority, { requestId });
+		const { validator, issuer, decoder } = authority;
+		const requestId = issuer.mintJsonRpcRequestId();
+		const correlation = decoder.createWireRequestCorrelation({ requestId });
 		expect(Object.keys(correlation)).toEqual(["child", "epoch", "requestId"]);
-		expect(parseWireRequestCorrelation(authority, JSON.parse(JSON.stringify(correlation)))).toEqual(
+		expect(decoder.parseWireRequestCorrelation(JSON.parse(JSON.stringify(correlation)))).toEqual(
 			correlation,
 		);
 		expect(
 			errorCode(() =>
-				parseWireRequestCorrelation(authority, { ...correlation, requestId: authority.childId }),
+				decoder.parseWireRequestCorrelation({ ...correlation, requestId: validator.childId }),
 			),
 		).toBe("wrong-domain");
 		expect(
-			errorCode(() => parseWireRequestCorrelation(authority, { ...correlation, extra: true })),
+			errorCode(() => decoder.parseWireRequestCorrelation({ ...correlation, extra: true })),
 		).toBe("extra-field");
 		const replacement = createIdentityAuthority();
-		expect(errorCode(() => parseWireRequestCorrelation(replacement, correlation))).toBe(
+		expect(errorCode(() => replacement.decoder.parseWireRequestCorrelation(correlation))).toBe(
 			"wrong-child",
 		);
 		const sameChildNewEpoch = restoreIdentityAuthority({
-			childId: authority.childId,
-			epoch: mintChildEpoch(authority.childId),
+			childId: validator.childId,
+			epoch: issuer.mintChildEpoch(),
 		});
-		expect(errorCode(() => parseWireRequestCorrelation(sameChildNewEpoch, correlation))).toBe(
-			"stale-epoch",
-		);
+		expect(
+			errorCode(() => sameChildNewEpoch.decoder.parseWireRequestCorrelation(correlation)),
+		).toBe("stale-epoch");
 	});
 
 	test("logical tool-call correlation is closed, typed, and current-epoch bound", () => {
 		const authority = createIdentityAuthority();
-		const input = {
-			threadId: authority.adoptThreadId("thread-1"),
-			turnId: authority.adoptTurnId("turn-1"),
-			callId: authority.mintDynamicToolCallId(),
+		const { decoder, validator } = authority;
+		const correlation = decoder.createLogicalToolCallCorrelation({
+			threadId: decoder.adoptThreadId("thread-1"),
+			turnId: decoder.adoptTurnId("turn-1"),
+			callId: decoder.adoptDynamicToolCallId("call-1"),
 			namespace: "archboard_app",
 			tool: "inspect_workhorse",
 			manifestHash: "a".repeat(64),
-		};
-		const correlation = createLogicalToolCallCorrelation(authority, input);
+		});
 		expect(Object.keys(correlation)).toEqual([
 			"child",
 			"epoch",
@@ -130,31 +156,33 @@ describe("codex workbench identities", () => {
 			"manifestHash",
 		]);
 		expect(
-			authority.parseLogicalToolCallCorrelation(JSON.parse(JSON.stringify(correlation))),
+			decoder.parseLogicalToolCallCorrelation(JSON.parse(JSON.stringify(correlation))),
 		).toEqual(correlation);
 		expect(
 			errorCode(() =>
-				authority.parseLogicalToolCallCorrelation({ ...correlation, turnId: input.threadId }),
+				decoder.parseLogicalToolCallCorrelation({ ...correlation, turnId: correlation.threadId }),
 			),
 		).toBe("wrong-domain");
 		expect(
 			errorCode(() =>
-				authority.parseLogicalToolCallCorrelation({ ...correlation, epoch: authority.childId }),
+				decoder.parseLogicalToolCallCorrelation({ ...correlation, epoch: validator.childId }),
 			),
 		).toBe("wrong-domain");
 		expect(
-			errorCode(() => authority.parseLogicalToolCallCorrelation({ ...correlation, namespace: "" })),
+			errorCode(() => decoder.parseLogicalToolCallCorrelation({ ...correlation, namespace: "" })),
 		).toBe("invalid-field");
 	});
 
-	test("restores persisted child and epoch without changing their wire identity", () => {
+	test("restores persisted child and epoch without changing their identity", () => {
 		const original = createIdentityAuthority();
-		const restored = restoreForTest(original.childId, original.epoch);
-		expect(restored.childId).toBe(original.childId);
-		expect(restored.epoch).toBe(original.epoch);
-		expect(errorCode(() => restored.parseJsonRpcRequestId(original.mintJsonRpcRequestId()))).toBe(
-			"unissued",
-		);
+		const restored = restoreForTest(original.validator.childId, original.validator.epoch);
+		expect(restored.validator.childId).toBe(original.validator.childId);
+		expect(restored.validator.epoch).toBe(original.validator.epoch);
+		expect(
+			errorCode(() =>
+				restored.decoder.parseJsonRpcRequestId(original.issuer.mintJsonRpcRequestId()),
+			),
+		).toBe("unissued");
 	});
 });
 
@@ -162,8 +190,6 @@ function restoreForTest(
 	childId: WireRequestCorrelation["child"],
 	epoch: WireRequestCorrelation["epoch"],
 ): ReturnType<typeof createIdentityAuthority> {
-	// Keep this helper's arguments branded to prove persisted values retain their
-	// domain while crossing the JSON fixture boundary below.
 	const value = JSON.parse(JSON.stringify({ childId, epoch })) as {
 		childId: unknown;
 		epoch: unknown;

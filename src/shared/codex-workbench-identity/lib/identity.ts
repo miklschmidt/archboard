@@ -1,23 +1,14 @@
 const WIRE_PREFIX = "archboard";
-const TOKEN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/;
-const WIRE_PATTERN = /^archboard:([a-z-]+):([A-Za-z0-9][A-Za-z0-9._~-]{0,127})$/;
-const EPOCH_TOKEN_PATTERN =
-	/^([A-Za-z0-9][A-Za-z0-9._~-]{0,127})\.([A-Za-z0-9][A-Za-z0-9._~-]{0,127})$/;
+const WIRE_TOKEN_LIMIT = 8193;
+const RAW_ID_LIMIT_BYTES = 4096;
+const TOKEN_PATTERN = new RegExp(`^[A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}}$`);
+const WIRE_PATTERN = new RegExp(
+	`^${WIRE_PREFIX}:([a-z-]+):([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})$`,
+);
+const EPOCH_TOKEN_PATTERN = new RegExp(
+	`^([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})\\.([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})$`,
+);
 const TEXT_LIMIT = 256;
-const IDENTITY_DOMAINS = new Set<IdentityDomain>([
-	"child",
-	"epoch",
-	"browser-command",
-	"thread",
-	"turn",
-	"item",
-	"queued-submission",
-	"login",
-	"json-rpc-request",
-	"dynamic-tool-call",
-	"realtime-session",
-	"approval",
-]);
 
 declare const identityBrand: unique symbol;
 
@@ -35,6 +26,21 @@ export type IdentityDomain =
 	| "realtime-session"
 	| "approval";
 
+const IDENTITY_DOMAINS = new Set<IdentityDomain>([
+	"child",
+	"epoch",
+	"browser-command",
+	"thread",
+	"turn",
+	"item",
+	"queued-submission",
+	"login",
+	"json-rpc-request",
+	"dynamic-tool-call",
+	"realtime-session",
+	"approval",
+]);
+
 type BrandedIdentity<Domain extends IdentityDomain> = string & {
 	readonly [identityBrand]: Domain;
 };
@@ -48,7 +54,6 @@ export type ItemId = BrandedIdentity<"item">;
 export type QueuedSubmissionId = BrandedIdentity<"queued-submission">;
 export type LoginId = BrandedIdentity<"login">;
 export type JsonRpcRequestId = BrandedIdentity<"json-rpc-request">;
-export type JSONRPCRequestId = JsonRpcRequestId;
 export type DynamicToolCallId = BrandedIdentity<"dynamic-tool-call">;
 export type RealtimeSessionId = BrandedIdentity<"realtime-session">;
 export type ApprovalId = BrandedIdentity<"approval">;
@@ -65,6 +70,17 @@ export type AnyIdentity =
 	| JsonRpcRequestId
 	| DynamicToolCallId
 	| RealtimeSessionId
+	| ApprovalId;
+
+/** Identities that may appear in Codex requests or reverse requests. */
+export type CodexIdentity =
+	| ThreadId
+	| TurnId
+	| ItemId
+	| QueuedSubmissionId
+	| LoginId
+	| JsonRpcRequestId
+	| DynamicToolCallId
 	| ApprovalId;
 
 export interface WireRequestCorrelation {
@@ -130,26 +146,31 @@ function requireRecord(value: unknown, keys: readonly string[]): Record<string, 
 		return fail("invalid-shape", "An identity correlation must be a record.");
 	}
 	const record = value as Record<string, unknown>;
-	const actual = Object.keys(record);
-	for (const key of actual) {
-		if (!keys.includes(key)) fail("extra-field", `Unexpected correlation field "${key}".`);
+	for (const key of Reflect.ownKeys(record)) {
+		if (typeof key !== "string" || !keys.includes(key)) {
+			return fail("extra-field", "An identity correlation contains an unexpected field.");
+		}
 	}
 	for (const key of keys) {
-		if (!(key in record)) fail("invalid-shape", `Missing correlation field "${key}".`);
+		if (!Object.prototype.hasOwnProperty.call(record, key)) {
+			return fail("invalid-shape", `Missing correlation field "${key}".`);
+		}
 	}
 	return record;
 }
 
 function requireToken(value: unknown, domain: IdentityDomain): string {
-	if (typeof value !== "string")
+	if (typeof value !== "string") {
 		return fail("invalid-shape", `${domain} identity must be a string.`, domain);
+	}
 	if (value.length === 0) return fail("empty", `${domain} identity must not be empty.`, domain);
-	if (value.trim() !== value)
+	if (value.trim() !== value) {
 		return fail(
 			"invalid-shape",
 			`${domain} identity must not have surrounding whitespace.`,
 			domain,
 		);
+	}
 	const match = WIRE_PATTERN.exec(value);
 	if (!match) return fail("invalid-shape", `Invalid ${domain} identity wire value.`, domain);
 	if (match[1] !== domain) return fail("wrong-domain", `Expected a ${domain} identity.`, domain);
@@ -160,8 +181,9 @@ function wireValue<Domain extends IdentityDomain>(
 	domain: Domain,
 	token: string,
 ): IdentityValue<Domain> {
-	if (!TOKEN_PATTERN.test(token))
-		fail("invalid-shape", `Invalid ${domain} identity token.`, domain);
+	if (!TOKEN_PATTERN.test(token)) {
+		return fail("invalid-shape", `Invalid ${domain} identity token.`, domain);
+	}
 	return `${WIRE_PREFIX}:${domain}:${token}` as IdentityValue<Domain>;
 }
 
@@ -169,8 +191,14 @@ function mintToken(): string {
 	return crypto.randomUUID().replaceAll("-", "");
 }
 
-function mintValue<Domain extends IdentityDomain>(domain: Domain): IdentityValue<Domain> {
-	return wireValue(domain, mintToken());
+function tokenOf(value: AnyIdentity): string {
+	const match = WIRE_PATTERN.exec(value);
+	if (!match) return fail("invalid-shape", "Identity is not a canonical wire value.");
+	return match[2] as string;
+}
+
+function mintHostValue<Domain extends IdentityDomain>(domain: Domain): IdentityValue<Domain> {
+	return wireValue(domain, `h${mintToken()}`);
 }
 
 function parseValue<Domain extends IdentityDomain>(
@@ -181,16 +209,12 @@ function parseValue<Domain extends IdentityDomain>(
 	return value as IdentityValue<Domain>;
 }
 
-function tokenOf(value: AnyIdentity): string {
-	const match = WIRE_PATTERN.exec(value);
-	if (!match) return fail("invalid-shape", "Identity is not a canonical wire value.");
-	return match[2] as string;
-}
-
 function parseEpochValue(value: unknown, expectedChild?: ChildId): ChildEpoch {
 	const token = requireToken(value, "epoch");
 	const match = EPOCH_TOKEN_PATTERN.exec(token);
-	if (!match) return fail("invalid-shape", "A child epoch must bind to a child identity.", "epoch");
+	if (!match) {
+		return fail("invalid-shape", "A child epoch must bind to a child identity.", "epoch");
+	}
 	if (expectedChild !== undefined && match[1] !== tokenOf(expectedChild)) {
 		return fail("wrong-child", "The child epoch belongs to another child.", "epoch");
 	}
@@ -198,7 +222,22 @@ function parseEpochValue(value: unknown, expectedChild?: ChildId): ChildEpoch {
 }
 
 function mintEpochValue(child: ChildId): ChildEpoch {
-	return wireValue("epoch", `${tokenOf(child)}.${mintToken()}`);
+	return wireValue("epoch", `${tokenOf(child)}.h${mintToken()}`);
+}
+
+function encodeRawIdentity(raw: string, domain: IdentityDomain): string {
+	if (raw.length === 0) return fail("empty", `${domain} identity must not be empty.`, domain);
+	const bytes = new TextEncoder().encode(raw);
+	if (bytes.byteLength > RAW_ID_LIMIT_BYTES || raw.includes("\0")) {
+		return fail(
+			"invalid-shape",
+			`The server ${domain} identity is not a valid wire value.`,
+			domain,
+		);
+	}
+	let encoded = "";
+	for (const byte of bytes) encoded += byte.toString(16).padStart(2, "0");
+	return `s${encoded}`;
 }
 
 function assertText(value: unknown, field: string): string {
@@ -222,8 +261,9 @@ function assertCurrent(
 ): void {
 	if (child !== currentChild)
 		return fail("wrong-child", "The correlation belongs to another child.");
-	if (epoch !== currentEpoch)
+	if (epoch !== currentEpoch) {
 		return fail("stale-epoch", "The correlation belongs to a stale child epoch.");
+	}
 }
 
 function assertIssued<Domain extends IdentityDomain>(
@@ -240,6 +280,15 @@ function assertIssued<Domain extends IdentityDomain>(
 	}
 }
 
+function identityDomain(value: unknown): IdentityDomain {
+	if (typeof value !== "string") return fail("invalid-shape", "Identity must be a string.");
+	const match = WIRE_PATTERN.exec(value);
+	if (!match || !IDENTITY_DOMAINS.has(match[1] as IdentityDomain)) {
+		return fail("invalid-shape", "Identity is not a canonical workbench identity.");
+	}
+	return match[1] as IdentityDomain;
+}
+
 const CORRELATION_KEYS = ["child", "epoch", "requestId"] as const;
 const TOOL_CORRELATION_KEYS = [
 	"child",
@@ -252,26 +301,28 @@ const TOOL_CORRELATION_KEYS = [
 	"manifestHash",
 ] as const;
 
-export interface IdentityAuthority {
+export interface IdentityValidator {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
+	readonly isCurrentEpoch: (child: ChildId, epoch: ChildEpoch) => boolean;
+	readonly assertCurrentEpoch: (child: ChildId, epoch: ChildEpoch) => void;
+}
+
+/** Host-owned IDs are minted here; server-owned IDs can only enter via the trusted decoder. */
+export interface IdentityIssuer {
+	readonly mintBrowserCommandId: () => BrowserCommandId;
+	readonly mintJsonRpcRequestId: () => JsonRpcRequestId;
+	readonly mintRealtimeSessionId: () => RealtimeSessionId;
+	readonly mintChildEpoch: () => ChildEpoch;
+}
+
+/**
+ * This capability is passed only to protocol decoders. Its adoption methods
+ * are deliberately absent from IdentityValidator and IdentityIssuer.
+ */
+export interface TrustedIdentityDecoder {
 	readonly parseChildId: (value: unknown) => ChildId;
 	readonly parseChildEpoch: (value: unknown) => ChildEpoch;
-	readonly mintBrowserCommandId: () => BrowserCommandId;
-	readonly mintThreadId: () => ThreadId;
-	readonly mintTurnId: () => TurnId;
-	readonly mintItemId: () => ItemId;
-	readonly mintQueuedSubmissionId: () => QueuedSubmissionId;
-	readonly mintLoginId: () => LoginId;
-	readonly mintJsonRpcRequestId: () => JsonRpcRequestId;
-	readonly mintDynamicToolCallId: () => DynamicToolCallId;
-	readonly mintRealtimeSessionId: () => RealtimeSessionId;
-	readonly mintApprovalId: () => ApprovalId;
-	readonly adoptThreadId: (wireValue: unknown) => ThreadId;
-	readonly adoptTurnId: (wireValue: unknown) => TurnId;
-	readonly adoptItemId: (wireValue: unknown) => ItemId;
-	readonly adoptQueuedSubmissionId: (wireValue: unknown) => QueuedSubmissionId;
-	readonly adoptLoginId: (wireValue: unknown) => LoginId;
 	readonly parseBrowserCommandId: (value: unknown) => BrowserCommandId;
 	readonly parseThreadId: (value: unknown) => ThreadId;
 	readonly parseTurnId: (value: unknown) => TurnId;
@@ -282,6 +333,15 @@ export interface IdentityAuthority {
 	readonly parseDynamicToolCallId: (value: unknown) => DynamicToolCallId;
 	readonly parseRealtimeSessionId: (value: unknown) => RealtimeSessionId;
 	readonly parseApprovalId: (value: unknown) => ApprovalId;
+	readonly adoptThreadId: (raw: unknown) => ThreadId;
+	readonly adoptTurnId: (raw: unknown) => TurnId;
+	readonly adoptItemId: (raw: unknown) => ItemId;
+	readonly adoptQueuedSubmissionId: (raw: unknown) => QueuedSubmissionId;
+	readonly adoptLoginId: (raw: unknown) => LoginId;
+	readonly adoptJsonRpcRequestId: (raw: unknown) => JsonRpcRequestId;
+	readonly adoptDynamicToolCallId: (raw: unknown) => DynamicToolCallId;
+	readonly adoptApprovalId: (raw: unknown) => ApprovalId;
+	readonly serializeCodexIdentity: (identity: CodexIdentity) => string;
 	readonly createWireRequestCorrelation: (
 		input: WireRequestCorrelationInput,
 	) => WireRequestCorrelation;
@@ -292,45 +352,64 @@ export interface IdentityAuthority {
 	readonly parseLogicalToolCallCorrelation: (value: unknown) => LogicalToolCallCorrelation;
 }
 
-type AdoptableDomain = "thread" | "turn" | "item" | "queued-submission" | "login";
+export interface IdentityAuthority {
+	readonly validator: IdentityValidator;
+	readonly issuer: IdentityIssuer;
+	readonly decoder: TrustedIdentityDecoder;
+}
+
+type AdoptableDomain =
+	| "thread"
+	| "turn"
+	| "item"
+	| "queued-submission"
+	| "login"
+	| "json-rpc-request"
+	| "dynamic-tool-call"
+	| "approval";
 
 function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority {
 	const issued = new Map<IdentityDomain, Set<string>>();
+	const rawByIdentity = new Map<string, string>();
+
 	const issue = <Domain extends IdentityDomain>(
 		domain: Domain,
-		value: IdentityValue<Domain>,
+		token: string,
+		raw: string,
 	): IdentityValue<Domain> => {
+		const value = wireValue(domain, token);
 		let values = issued.get(domain);
 		if (values === undefined) {
 			values = new Set<string>();
 			issued.set(domain, values);
 		}
 		values.add(value);
+		rawByIdentity.set(value, raw);
 		return value;
 	};
 
-	issue("child", childId);
-	issue("epoch", epoch);
+	const issueExisting = <Domain extends IdentityDomain>(
+		domain: Domain,
+		value: IdentityValue<Domain>,
+		raw: string,
+	): IdentityValue<Domain> => issue(domain, tokenOf(value as AnyIdentity), raw);
 
-	const mint = <Domain extends IdentityDomain>(domain: Domain): IdentityValue<Domain> =>
-		issue(domain, mintValue(domain));
+	issueExisting("child", childId, tokenOf(childId));
+	issueExisting("epoch", epoch, tokenOf(epoch));
+
+	const mint = <Domain extends IdentityDomain>(domain: Domain): IdentityValue<Domain> => {
+		const raw = mintToken();
+		return issue(domain, `h${raw}`, raw);
+	};
 	const adopt = <Domain extends AdoptableDomain>(
 		domain: Domain,
-		raw: unknown,
+		rawValue: unknown,
 	): IdentityValue<Domain> => {
-		if (
-			typeof raw !== "string" ||
-			raw.length === 0 ||
-			raw.trim() !== raw ||
-			!TOKEN_PATTERN.test(raw)
-		) {
-			return fail(
-				"invalid-shape",
-				`The server ${domain} identity is not a valid wire token.`,
-				domain,
-			);
+		if (typeof rawValue !== "string") {
+			return fail("invalid-shape", `The server ${domain} identity must be a string.`, domain);
 		}
-		return issue(domain, wireValue(domain, raw));
+		const token = encodeRawIdentity(rawValue, domain);
+		return issue(domain, token, rawValue);
 	};
 	const parseIssued = <Domain extends IdentityDomain>(
 		domain: Domain,
@@ -340,31 +419,50 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		assertIssued(parsed, domain, issued);
 		return parsed;
 	};
+	const serialize = (value: CodexIdentity): string => {
+		const domain = identityDomain(value);
+		if (
+			domain !== "thread" &&
+			domain !== "turn" &&
+			domain !== "item" &&
+			domain !== "queued-submission" &&
+			domain !== "login" &&
+			domain !== "json-rpc-request" &&
+			domain !== "dynamic-tool-call" &&
+			domain !== "approval"
+		) {
+			return fail("wrong-domain", "Identity is not a Codex wire identity.", domain);
+		}
+		assertIssued(value, domain, issued);
+		const raw = rawByIdentity.get(value);
+		if (raw === undefined) return fail("unissued", "Identity has no trusted wire value.", domain);
+		return raw;
+	};
 
-	return {
+	const validator: IdentityValidator = {
 		childId,
 		epoch,
+		isCurrentEpoch: (child, candidateEpoch) => child === childId && candidateEpoch === epoch,
+		assertCurrentEpoch: (child, candidateEpoch) =>
+			assertCurrent(child, candidateEpoch, childId, epoch),
+	};
+	const issuer: IdentityIssuer = {
+		mintBrowserCommandId: () => mint("browser-command"),
+		mintJsonRpcRequestId: () => mint("json-rpc-request"),
+		mintRealtimeSessionId: () => mint("realtime-session"),
+		mintChildEpoch: () => {
+			const nextEpoch = mintEpochValue(childId);
+			issueExisting("epoch", nextEpoch, tokenOf(nextEpoch));
+			return nextEpoch;
+		},
+	};
+	const decoder: TrustedIdentityDecoder = {
 		parseChildId: (value) => parseIssued("child", value),
 		parseChildEpoch: (value) => {
 			const parsed = parseEpochValue(value, childId);
 			assertIssued(parsed, "epoch", issued);
 			return parsed;
 		},
-		mintBrowserCommandId: () => mint("browser-command"),
-		mintThreadId: () => mint("thread"),
-		mintTurnId: () => mint("turn"),
-		mintItemId: () => mint("item"),
-		mintQueuedSubmissionId: () => mint("queued-submission"),
-		mintLoginId: () => mint("login"),
-		mintJsonRpcRequestId: () => mint("json-rpc-request"),
-		mintDynamicToolCallId: () => mint("dynamic-tool-call"),
-		mintRealtimeSessionId: () => mint("realtime-session"),
-		mintApprovalId: () => mint("approval"),
-		adoptThreadId: (raw) => adopt("thread", raw),
-		adoptTurnId: (raw) => adopt("turn", raw),
-		adoptItemId: (raw) => adopt("item", raw),
-		adoptQueuedSubmissionId: (raw) => adopt("queued-submission", raw),
-		adoptLoginId: (raw) => adopt("login", raw),
 		parseBrowserCommandId: (value) => parseIssued("browser-command", value),
 		parseThreadId: (value) => parseIssued("thread", value),
 		parseTurnId: (value) => parseIssued("turn", value),
@@ -375,6 +473,15 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		parseDynamicToolCallId: (value) => parseIssued("dynamic-tool-call", value),
 		parseRealtimeSessionId: (value) => parseIssued("realtime-session", value),
 		parseApprovalId: (value) => parseIssued("approval", value),
+		adoptThreadId: (raw) => adopt("thread", raw),
+		adoptTurnId: (raw) => adopt("turn", raw),
+		adoptItemId: (raw) => adopt("item", raw),
+		adoptQueuedSubmissionId: (raw) => adopt("queued-submission", raw),
+		adoptLoginId: (raw) => adopt("login", raw),
+		adoptJsonRpcRequestId: (raw) => adopt("json-rpc-request", raw),
+		adoptDynamicToolCallId: (raw) => adopt("dynamic-tool-call", raw),
+		adoptApprovalId: (raw) => adopt("approval", raw),
+		serializeCodexIdentity: serialize,
 		createWireRequestCorrelation: (input) => {
 			const requestId = parseIssued("json-rpc-request", input.requestId);
 			return Object.freeze({ child: childId, epoch, requestId });
@@ -399,6 +506,8 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		parseLogicalToolCallCorrelation: (value) =>
 			parseLogicalToolCallCorrelationValue(value, childId, epoch, issued),
 	};
+
+	return { validator, issuer, decoder };
 }
 
 function parseWireRequestCorrelationValue(
@@ -449,7 +558,7 @@ function parseLogicalToolCallCorrelationValue(
 }
 
 export function createIdentityAuthority(): IdentityAuthority {
-	const childId = mintValue("child");
+	const childId = mintHostValue("child");
 	return createAuthority(childId, mintEpochValue(childId));
 }
 
@@ -457,119 +566,7 @@ export function restoreIdentityAuthority(input: {
 	readonly childId: unknown;
 	readonly epoch: unknown;
 }): IdentityAuthority {
-	const childId = parseChildId(input.childId);
-	const epoch = parseChildEpoch(input.epoch, childId);
+	const childId = parseValue(input.childId, "child");
+	const epoch = parseEpochValue(input.epoch, childId);
 	return createAuthority(childId, epoch);
-}
-
-export function mintChildId(): ChildId {
-	return mintValue("child");
-}
-
-export function mintChildEpoch(childId: ChildId): ChildEpoch {
-	parseChildId(childId);
-	return mintEpochValue(childId);
-}
-
-export function parseChildId(value: unknown): ChildId {
-	return parseValue(value, "child");
-}
-
-export function parseChildEpoch(value: unknown, expectedChild?: ChildId): ChildEpoch {
-	if (expectedChild !== undefined) parseChildId(expectedChild);
-	return parseEpochValue(value, expectedChild);
-}
-
-export function parseBrowserCommandId(value: unknown): BrowserCommandId {
-	return parseValue(value, "browser-command");
-}
-
-export function parseThreadId(value: unknown): ThreadId {
-	return parseValue(value, "thread");
-}
-
-export function parseTurnId(value: unknown): TurnId {
-	return parseValue(value, "turn");
-}
-
-export function parseItemId(value: unknown): ItemId {
-	return parseValue(value, "item");
-}
-
-export function parseQueuedSubmissionId(value: unknown): QueuedSubmissionId {
-	return parseValue(value, "queued-submission");
-}
-
-export function parseLoginId(value: unknown): LoginId {
-	return parseValue(value, "login");
-}
-
-export function parseJsonRpcRequestId(value: unknown): JsonRpcRequestId {
-	return parseValue(value, "json-rpc-request");
-}
-
-export function parseDynamicToolCallId(value: unknown): DynamicToolCallId {
-	return parseValue(value, "dynamic-tool-call");
-}
-
-export function parseRealtimeSessionId(value: unknown): RealtimeSessionId {
-	return parseValue(value, "realtime-session");
-}
-
-export function parseApprovalId(value: unknown): ApprovalId {
-	return parseValue(value, "approval");
-}
-
-export function isCurrentEpoch(
-	child: ChildId,
-	epoch: ChildEpoch,
-	current: Pick<IdentityAuthority, "childId" | "epoch">,
-): boolean {
-	return child === current.childId && epoch === current.epoch;
-}
-
-export function assertCurrentEpoch(
-	child: ChildId,
-	epoch: ChildEpoch,
-	current: Pick<IdentityAuthority, "childId" | "epoch">,
-): void {
-	assertCurrent(child, epoch, current.childId, current.epoch);
-}
-
-export function parseIdentityDomain(value: unknown): IdentityDomain {
-	if (typeof value !== "string") return fail("invalid-shape", "Identity domain must be a string.");
-	const match = WIRE_PATTERN.exec(value);
-	if (!match) return fail("invalid-shape", "Identity is not a canonical wire value.");
-	if (!IDENTITY_DOMAINS.has(match[1] as IdentityDomain)) {
-		return fail("wrong-domain", "Identity uses an unknown domain.");
-	}
-	return match[1] as IdentityDomain;
-}
-
-export function createWireRequestCorrelation(
-	authority: IdentityAuthority,
-	input: WireRequestCorrelationInput,
-): WireRequestCorrelation {
-	return authority.createWireRequestCorrelation(input);
-}
-
-export function parseWireRequestCorrelation(
-	authority: IdentityAuthority,
-	value: unknown,
-): WireRequestCorrelation {
-	return authority.parseWireRequestCorrelation(value);
-}
-
-export function createLogicalToolCallCorrelation(
-	authority: IdentityAuthority,
-	input: LogicalToolCallCorrelationInput,
-): LogicalToolCallCorrelation {
-	return authority.createLogicalToolCallCorrelation(input);
-}
-
-export function parseLogicalToolCallCorrelation(
-	authority: IdentityAuthority,
-	value: unknown,
-): LogicalToolCallCorrelation {
-	return authority.parseLogicalToolCallCorrelation(value);
 }

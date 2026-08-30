@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-08-30 18:42'
+updated_date: '2026-08-30 18:57'
 labels: []
 dependencies: []
 references:
@@ -42,6 +42,10 @@ Delegation profile: gpt-5.6-luna, xhigh.
 3. Export exact closed WireRequestCorrelation and LogicalToolCallCorrelation records plus strict parsers/builders that validate identity domains, correlation keys, namespace/tool/hash bounds, and current epoch.
 4. Add module-root contract tests and type fixtures proving all required brands are distinct, records have exact keys, invalid/wrong-domain/stale/unissued values fail, and authority-created identities round-trip stably.
 5. Run focused module tests, the strict repository type check, and the relevant module-boundary/lint checks; record evidence in implementation notes.
+
+6. Remediation: split the public validator from explicit host issuer and trusted protocol decoder capabilities; keep server-owned adoption/brand-producing parsing only on the trusted decoder, and retain host minting separately.
+7. Preserve raw server identity strings in the authority and expose one typed Codex serializer; expand runtime coverage through raw adoption, JSON round trip, byte-identical serialization, stale epoch, wrong-domain, and unissued cases.
+8. Replace the sampled type fixture with a complete pairwise non-interchangeability matrix for ThreadId, TurnId, ItemId, QueuedSubmissionId, LoginId, and JsonRpcRequestId, plus exact correlation-key assertions; remove the duplicate JSONRPCRequestId alias.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -50,4 +54,10 @@ Delegation profile: gpt-5.6-luna, xhigh.
 Implemented the module-root identity contract in src/shared/codex-workbench-identity. Added unique branded ChildId, ChildEpoch, BrowserCommandId, ThreadId, TurnId, ItemId, QueuedSubmissionId, LoginId, JsonRpcRequestId/JSONRPCRequestId, DynamicToolCallId, RealtimeSessionId, and ApprovalId values; domain-tagged parsing; host authority mint/adopt/issuance checks; child-bound epochs; current-epoch guards; and exact closed wire-request/logical-tool-call correlations. Added public-entrypoint runtime round-trip/refusal tests and compiler fixtures for cross-domain assignment rejection.
 
 Validation evidence: bun test --isolate src/shared/codex-workbench-identity (exit 0, 6 passed, 42 assertions); bun run type-check (exit 0); bunx oxlint src/shared/codex-workbench-identity (exit 0); bunx oxfmt --check src/shared/codex-workbench-identity (exit 0); bun test --isolate tests/system/repository-policy/boundaries.test.ts (exit 0, 9 passed). Dependency setup required one bun install because node_modules was absent; no lockfile changes.
+
+Reviewer remediation accepted: the original authority exposed unrestricted brand-producing parsers/adoption and discarded raw server IDs. Remediation will make capability boundaries explicit (validator for ordinary consumers, host issuer for host-owned minting, trusted decoder for server-owned protocol values), preserve raw values for one authority-owned serializer, remove the JSONRPCRequestId alias, and strengthen compile-time fixture coverage to all pairwise required-domain assignments and exact record keys.
+
+Remediation implemented on the same worker branch for all five accepted review findings. IdentityAuthority now separates IdentityValidator (current child/epoch checks only), IdentityIssuer (host-owned browser-command, JSON-RPC request, realtime-session, and epoch minting), and TrustedIdentityDecoder (protocol-only brand parsing/adoption, exact correlation parsing, and one Codex serializer). Server-owned thread/turn/item/queue/login/request/dynamic-call/approval identities are adopted only by the trusted decoder; host-owned IDs remain issuer-minted. Raw Codex strings are encoded into opaque values with an authority map and serializeCodexIdentity returns the exact original string. The module root no longer exports unrestricted identity parsers or the duplicate JSONRPCRequestId alias.
+
+Remediation validation: bunx tsc --noEmit --listFiles --pretty false | rg the type-fixtures.ts absolute path (exit 0; fixture listed); bun test --isolate src/shared/codex-workbench-identity (exit 0, 6 passed, 59 assertions); bun run type-check (exit 0); bunx oxlint src/shared/codex-workbench-identity (exit 0); bunx oxfmt --check src/shared/codex-workbench-identity (exit 0); bun test --isolate tests/system/repository-policy/boundaries.test.ts tests/system/repository-policy/test-inventory.test.ts (exit 0, 57 passed, 145 assertions). Raw serializer fixture covers punctuation, whitespace, control characters, and Unicode with byte equality.
 <!-- SECTION:NOTES:END -->
