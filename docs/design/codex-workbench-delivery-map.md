@@ -139,19 +139,31 @@ inventing a new coordinator tier.
 
 If dependent validation fails after implementation reconciliation, the success
 transition does not run. The leaf stays In Progress and in the remediation
-active set, and the root starts no new worktree from the failing integration
-`HEAD`. It sends the same worker the exact failed command and output, failing
-integration `HEAD`, and preserved-work evidence. The worker commits remediation
-on its existing branch without changing the fixed worker `BASE`; the same
-reviewer rereviews that complete range through the new immutable `HEAD`. After
-`REVIEW_CLEAN`, the root
-reconciles the remediation commit onto the failing integration branch and
-reruns the failed validation plus every focused gate invalidated by the change.
-This loop repeats until validation passes; only then may the root finalize,
-commit finalization, remove the active leaf, and recompute readiness. An
-irreparable or ambiguous ownership, cross-leaf causality, or recovery path
-callbacks the supervising source thread without creating another worker or
-coordinator tier.
+active set, and the root reserves the sequential integration/validation lane
+exclusively for that leaf. The captured failing integration `HEAD` is frozen:
+the root starts no new worktree and reconciles, validates, finalizes, or advances
+no other leaf. Already-active workers and reviewers may continue in isolation
+and callback, but the root queues their reviewed commits with their worker and
+reviewer identities; they do not change integration or Backlog finalization.
+
+The root sends the failing leaf's same worker the exact failed command and
+output, captured integration `HEAD`, and preserved-work evidence. The worker
+commits remediation on its existing branch without changing the fixed worker
+`BASE`; the same reviewer rereviews that complete range through the new
+immutable `HEAD`. After `REVIEW_CLEAN`, the root applies the remediation to the
+unchanged failing integration `HEAD` and reruns the failed validation plus every
+focused gate invalidated by the change. This loop repeats until validation
+passes. Only then may the root finalize that leaf, commit finalization, require
+a clean checkout, remove it from the active set, and advance integration.
+
+The root then drains queued reviewed leaves one at a time onto the new clean
+committed `HEAD`, running each leaf's dependent validation before finalization.
+A reconciliation conflict or changed validation result returns to that leaf's
+same worker and reviewer loop; it never receives a root patch or replacement
+thread. An irreparable or ambiguous ownership, cross-leaf causality, or
+recovery path callbacks the supervising source thread without creating another
+worker or coordinator tier. Readiness is recomputed only after the exclusive
+recovery and queued reconciliation lane is empty and clean.
 
 ## Dependency waves
 
@@ -195,16 +207,21 @@ coordinator tier.
    the parent returns findings to the same worker and requires the same
    reviewer to rereview the complete fixed-BASE range after every remediation.
    After clean review, reconcile the implementation and run dependent
-   validation. On failure, keep the leaf In Progress and active, freeze new
-   dispatch, send exact failure and integration evidence to the same worker,
-   retain the same complete-range reviewer, reconcile the reviewed remediation,
-   and rerun the failed and invalidated gates until green. Only then finalize
-   through Backlog, commit the finalization, require a clean checkout, remove
-   the active leaf, and recompute readiness from the new integration `HEAD`.
+   validation. On failure, keep the leaf In Progress and active; freeze the
+   complete integration `HEAD` and exclusive validation lane; queue all other
+   active reviewed work without reconciliation or finalization; send exact
+   failure, integration, and preserved-work evidence to the same worker; retain
+   the same complete-range reviewer; apply reviewed remediation to the unchanged
+   failing `HEAD`; and rerun failed and invalidated gates until green. Only then
+   finalize through Backlog, commit finalization, require a clean checkout, and
+   drain queued leaves sequentially with their own dependent validation.
 6. If validation failure has ambiguous ownership or cross-leaf causality, pause
    the lane and callback the supervising source; do not patch in the root or
    create a replacement worker, reviewer, or coordinator.
-7. Run `bun run check` at TASK-144, production composition, text UI, voice UI,
+7. A queued leaf that conflicts or validates differently returns to its same
+   worker/reviewer loop. Recompute readiness only after recovery and the queued
+   integration lane are empty, finalized, committed, and clean.
+8. Run `bun run check` at TASK-144, production composition, text UI, voice UI,
    and final TASK-143 boundaries.
 
 Every delegated thread calls `codex_app__send_message_to_thread` for the exact
