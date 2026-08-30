@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 02:29'
-updated_date: '2026-08-30 02:43'
+updated_date: '2026-08-30 10:01'
 labels: []
 dependencies: []
 references:
@@ -23,23 +23,29 @@ Replace the neutral and brass visual direction from TASK-111 with the approved o
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The shipped shell follows the approved operator canvas shell reference in both light and dark modes while preserving the board, pane, persistence, claim, notice, dialog, and responsive behavior delivered by TASK-111
+- [ ] #1 The shipped shell follows the approved operator canvas shell reference in both light and dark modes while preserving the board, pane, persistence, claim, notice, dialog, and supported desktop behavior delivered by TASK-111
 - [ ] #2 The lowercase archboard wordmark, flat technical grid, compact shell regions, cobalt selection accent, and lime status accent form one coherent visual system
-- [ ] #3 The compact board strip, integrated agent workbench, code-binding inspector, and connected-path focus are delivered through focused child tasks
-- [ ] #4 Rendered browser verification covers light and dark desktop layouts, a 420 pixel viewport, one and two panes, and fullscreen presentation without hiding an existing reachable state
-- [ ] #5 Mockup-only branch, telemetry, proposed-diff, prompt-input, and synthetic preview details do not enter the product without a separate product contract
+- [ ] #3 The compact board strip, integrated agent workbench, code-binding inspector, connected-path focus, and real lazy board preview are delivered through focused child tasks
+- [ ] #4 Rendered browser verification covers light and dark supported desktop layouts, one and two panes, fullscreen presentation, pointer and keyboard operation, and Samsung Flip desktop touch targets without hiding an existing reachable state
+- [ ] #5 Mockup-only branch, telemetry, proposed-diff, prompt-input, and illustrative or synthetic preview details do not enter the product; TASK-140.06 is the separate contract for previews of real current board content
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Hold source work until TASK-139 is Done and the parent identifies its approved commits; integrate that fullscreen contract onto the fixed initiative base without taking CI-remediation work from TASK-138.
-2. Preserve the TASK-111 behavior matrix while replacing the neutral/brass shell with one flat operator token system, lowercase wordmark, denser header, cobalt selection, lime live status, accessible states, and a canvas-first one-pane, two-pane, fullscreen, and 420px composition.
-3. Recompose the existing real board/variant navigator as a narrower operator strip, retaining focused-pane navigation, draft/scratch naming, busy, empty, loading, failure, and refresh behavior without generated previews.
-4. Move focused-pane connection, claim, take-back, current doing, and recent doing data into a collapsible bottom workbench, retaining offline/reconnect and fullscreen boundaries and adding no agent-control or proposed-diff concepts.
-5. Add a right inspector driven by the focused pane selection and a validated portable binding projection; reuse the existing board-and-element code-target activation, settings, and GitHub recovery paths, and keep derived machine-local targets out of persistence.
-6. Add a pure canonical-arrow connected-component helper and browser-only focus state that includes bound labels, terminates on cycles, rejects broken endpoints, exits on selection/board/Escape/visible control, and never mutates or exports scene state.
-7. Add the cheapest stable unit, system, repository-inventory, and serial-browser enforcement for the new contracts. Exercise light/dark desktop, exact 420px, one/two panes, fullscreen, conflict, notice, scratch, offline/reconnect, claim/take-back, selection/code-target, and focus states in the rendered application.
-8. Run formatting, lint, both TypeScript projects, focused owners, repository checks, frontend production build, and the complete sequential bun run check lane. Obtain an independent Standards and Spec review of b7be9322fc5a04b1d6cda9ce8d5635e4af9cbf9d..HEAD, remediate and rereview to clean, then finalize children in dependency order and TASK-140 through the Backlog CLI.
-9. Reconcile only the parent-approved latest main after TASK-138 and exact-main CI allow it, rerun proportionate integration checks, and stop on a clean merge-ready branch without merging or pushing.
+1. Preserve the finalized TASK-139 fullscreen contract on the exact green a8275ac base while keeping CI remediation and main reconciliation parent-owned.
+2. Preserve the TASK-111 desktop behavior matrix while replacing the neutral/brass shell with one flat operator token system, lowercase wordmark, denser header, cobalt selection, lime live status, accessible states, and a canvas-first one-pane, two-pane, and fullscreen composition.
+3. Keep the completed TASK-140.02 compact navigator history intact, then use TASK-140.06 to refine its board/variant items and add lazy previews of real current board content through a bounded read-only browser path.
+4. Keep focused-pane connection, claim, take-back, current doing, and recent doing data in the collapsible bottom workbench, retaining offline/reconnect and fullscreen boundaries and adding no agent-control or proposed-diff concepts.
+5. Keep the right inspector driven by focused-pane selection and a validated portable binding projection; reuse board-and-element code-target activation, settings, and GitHub recovery, and keep derived machine-local targets out of persistence.
+6. Keep deterministic canonical-arrow connected-path focus browser-only, including bound labels, cycle termination, broken-endpoint rejection, selection/board/Escape/visible exits, and zero scene or export mutation.
+7. Serialize cropped desktop-only regional parity passes for navigator, top shell, workbench, and inspector/focus. Replace only obsolete phone assertions with supported desktop coverage while preserving panes, fullscreen, notices, conflict, scratch, offline/reconnect, claim/take-back, selection/code-target, focus, accessibility, and Samsung Flip desktop touch behavior.
+8. Run formatting, lint, both TypeScript projects, focused owners, repository checks, frontend production build, and the complete sequential bun run check lane. Obtain an independent Standards and Spec review of a8275ac230dbba315aa5768335f80fc5dcdf91ca..HEAD, remediate and rereview to clean, then finalize TASK-140.06 and TASK-140 through the Backlog CLI.
+9. Stop on a clean merge-ready branch without merging main or pushing; final reconciliation remains parent-owned.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Product scope update (2026-08-30): the user established that Archboard's shell is desktop-only. Active TASK-140 acceptance and planning no longer gate phone, 420px, or narrow reflow. Completed TASK-140.01-.04 history remains unchanged. Desktop pointer, keyboard, and Samsung Flip desktop-sized touch workflows remain required. The user separately approved TASK-140.06 for previews of real current board content, which supersedes only the earlier synthetic/generated-thumbnail non-goal.
+<!-- SECTION:NOTES:END -->
