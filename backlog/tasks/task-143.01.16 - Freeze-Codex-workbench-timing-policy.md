@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 22:37'
+updated_date: '2026-08-30 22:45'
 labels: []
 dependencies:
   - TASK-143.01.17
@@ -59,4 +59,6 @@ Added the explicit authored 120,000 ms wait-cap < browser-command-lease assertio
 Review remediation scope: add request settlement <= restart max with a 29,999 fail-first boundary probe. Remove the test-only public wait-cap literal and route that relationship to TASK-143.05.03, which owns the public timeout schema. This is a reviewed dependency correction, not a waived test.
 
 Remediation validation: focused policy test 4 pass, 15 expectations, including the 29,999 restart-max fail-first mutation; test:modules 997 pass, 0 fail, 6,990 expectations across 75 files; test:repository 122 pass, 0 fail, 381 expectations across 10 files; both TypeScript projects, lint, format, and diff check pass. Final review scope keeps the public wait-cap relationship in TASK-143.05.03.
+
+Final cleanup correction: the permanent matcher self-test was deleted. The earlier remediation note claiming 4 tests/15 expectations and a permanent 29,999 guard is superseded. The final owner is 3 tests/12 expectations. A disposable source-plus-REVIEWED_VALUES mutation to max 29,999 passed the exact-value golden comparison and failed the direct exported settlement <= restart-max relationship with Expected <= 29999, Received 30000.
 <!-- SECTION:NOTES:END -->
