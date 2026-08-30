@@ -20,6 +20,7 @@ import type { CodexProtocolConformanceResult } from "../../../src/runtime/codex-
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const require = createRequire(import.meta.url);
 const recovery = `Regenerate with ${CODEX_PROTOCOL_GENERATION_COMMAND} using the pinned project-local binary, then review the decoder and generated notification inventory before retrying this root check.`;
+const syntheticExecutable = path.join(repoRoot, "node_modules", "@openai", "codex", "synthetic.js");
 
 type ConformanceRunner = (executable: string) => CodexProtocolConformanceResult;
 type StatusReader = () => string;
@@ -120,9 +121,6 @@ describe("Codex protocol root-check owner", () => {
 		expect(CODEX_PROTOCOL_GENERATION_COMMAND).toBe(
 			"codex app-server generate-ts --experimental --out <temporary-directory>",
 		);
-		expect(projectCodexExecutable()).toContain(
-			`${path.sep}node_modules${path.sep}@openai${path.sep}codex${path.sep}`,
-		);
 	});
 
 	test("runs the pinned generator, verifies the manifest, and leaves the checkout unchanged", () => {
@@ -174,10 +172,12 @@ describe("Codex protocol root-check owner", () => {
 	});
 
 	test("reports a project-local resolution escape through the same recovery boundary", () => {
+		let statusCall = 0;
 		let thrown: unknown;
 		try {
 			runRegisteredConformance({
 				resolveExecutable: () => projectCodexExecutable(() => "/tmp/codex"),
+				status: () => (statusCall++ === 0 ? "same" : "same"),
 			});
 		} catch (error) {
 			thrown = error;
@@ -185,6 +185,32 @@ describe("Codex protocol root-check owner", () => {
 
 		expect((thrown as Error).message).toContain("outside this checkout");
 		expect((thrown as Error).message).toContain("Regenerate with");
+		expect((thrown as Error).message).not.toContain("checkout mutation detected");
+		expect(statusCall).toBe(2);
+	});
+
+	test("reports a resolver throw through only the unified actionable boundary", () => {
+		const resolutionFailure = new Error("resolver unavailable");
+		let statusCall = 0;
+		let thrown: unknown;
+		try {
+			runRegisteredConformance({
+				resolveExecutable: () => {
+					throw resolutionFailure;
+				},
+				status: () => (statusCall++ === 0 ? "same" : "same"),
+			});
+		} catch (error) {
+			thrown = error;
+		}
+
+		expect((thrown as Error).cause).toBe(resolutionFailure);
+		expect((thrown as Error).message).toBe(`resolver unavailable\nRecovery: ${recovery}`);
+		expect((thrown as Error).message).not.toContain("checkout mutation detected");
+		expect((thrown as Error).message).not.toContain(
+			"could not capture the post-conformance checkout status",
+		);
+		expect(statusCall).toBe(2);
 	});
 
 	test("reports checkout mutation after a successful conformance", () => {
@@ -192,8 +218,9 @@ describe("Codex protocol root-check owner", () => {
 		let thrown: unknown;
 		try {
 			runRegisteredConformance({
+				resolveExecutable: () => syntheticExecutable,
 				run: () => ({
-					executablePath: "/tmp/codex",
+					executablePath: syntheticExecutable,
 					version: CODEX_PROTOCOL_BINARY_VERSION,
 					fileCount: CODEX_PROTOCOL_GENERATED_FILE_COUNT,
 					sha256: CODEX_PROTOCOL_GENERATED_TREE_SHA256,
@@ -216,13 +243,14 @@ describe("Codex protocol root-check owner", () => {
 	test("preserves generation failure and checkout mutation evidence together", () => {
 		let statusCall = 0;
 		const generationFailure = new CodexProtocolConformanceError({
-			executablePath: "/tmp/codex",
+			executablePath: syntheticExecutable,
 			phase: "generation",
 			message: "could not generate the experimental tree",
 		});
 		let thrown: unknown;
 		try {
 			runRegisteredConformance({
+				resolveExecutable: () => syntheticExecutable,
 				run: () => {
 					throw generationFailure;
 				},

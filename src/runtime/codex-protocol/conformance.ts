@@ -11,6 +11,7 @@ import {
 	digestGeneratedTree,
 } from "./manifest.js";
 import {
+	CODEX_PROTOCOL_GENERATED_CLIENT_REQUEST_EXCLUDED_METHODS,
 	deriveGeneratedProtocolMethodInventories,
 	type GeneratedProtocolMethodDirection,
 	type GeneratedProtocolMethodInventories,
@@ -84,6 +85,8 @@ interface CodexProtocolConformanceExpectations {
 	readonly notificationUnionPaths: readonly GeneratedNotificationUnionPath[];
 	readonly methodInventories?: GeneratedProtocolMethodInventories;
 	readonly decoderMethodInventories?: GeneratedProtocolMethodInventories;
+	readonly clientRequestResponseAlias?: string;
+	readonly clientRequestExcludedMethods?: readonly string[];
 }
 
 const AUTHORED_METHOD_INVENTORIES: GeneratedProtocolMethodInventories = {
@@ -105,6 +108,8 @@ const PRODUCTION_EXPECTATIONS: CodexProtocolConformanceExpectations = {
 		serverRequest: Object.keys(SERVER_REQUEST_SCHEMAS).toSorted(),
 		serverNotification: Object.keys(SERVER_NOTIFICATION_SCHEMAS).toSorted(),
 	},
+	clientRequestResponseAlias: "currentTime/read",
+	clientRequestExcludedMethods: CODEX_PROTOCOL_GENERATED_CLIENT_REQUEST_EXCLUDED_METHODS,
 };
 
 const GENERATED_METHOD_DIRECTION_NAMES: Readonly<Record<GeneratedProtocolMethodDirection, string>> =
@@ -156,19 +161,83 @@ function decoderRegistryMismatch(
 	]);
 }
 
-function generatedMethodsForDecoderComparison(
+function duplicateMethods(methods: readonly string[]): string[] {
+	const seen = new Set<string>();
+	const duplicates = new Set<string>();
+	for (const method of methods) {
+		if (seen.has(method)) duplicates.add(method);
+		seen.add(method);
+	}
+	return [...duplicates].toSorted();
+}
+
+function methodInventoryShapeMismatch(
+	name: string,
 	inventories: GeneratedProtocolMethodInventories,
-): GeneratedProtocolMethodInventories {
-	return {
-		...inventories,
-		// currentTime/read is a reverse request whose result is also decoded.
-		response: [
-			...new Set([
-				...inventories.response,
-				...inventories.serverRequest.filter((method) => method === "currentTime/read"),
-			]),
-		].toSorted(),
-	};
+): string | null {
+	const differences: string[] = [];
+	for (const direction of Object.keys(
+		GENERATED_METHOD_DIRECTION_NAMES,
+	) as GeneratedProtocolMethodDirection[]) {
+		const duplicates = duplicateMethods(inventories[direction]);
+		if (duplicates.length)
+			differences.push(
+				`${name} ${GENERATED_METHOD_DIRECTION_NAMES[direction]} has duplicate methods: ${duplicates.join(", ")}`,
+			);
+	}
+	return differences.length ? differences.join("; ") : null;
+}
+
+function clientRequestInventoryMismatch(
+	expected: GeneratedProtocolMethodInventories,
+	generated: GeneratedProtocolMethodInventories,
+	responseAlias: string,
+	excludedMethods: readonly string[],
+): string | null {
+	const expectedClientResponses = expected.response.filter((method) => method !== responseAlias);
+	const duplicateExcluded = duplicateMethods(excludedMethods);
+	const excludedSet = new Set(excludedMethods);
+	const overlap = expectedClientResponses.filter((method) => excludedSet.has(method));
+	const aliasExcluded = excludedSet.has(responseAlias);
+	const sortedExcluded = excludedMethods.toSorted();
+	const orderingChanged = excludedMethods.some((method, index) => method !== sortedExcluded[index]);
+	const covered = [...new Set([...expectedClientResponses, ...excludedMethods])].toSorted();
+	const missing = methodListDifference(covered, generated.response);
+	const unexpected = methodListDifference(generated.response, covered);
+	const differences: string[] = [];
+	if (duplicateExcluded.length)
+		differences.push(`duplicate exclusions: ${duplicateExcluded.join(", ")}`);
+	if (overlap.length)
+		differences.push(`supported/excluded overlap: ${overlap.toSorted().join(", ")}`);
+	if (aliasExcluded) differences.push(`response alias is excluded: ${responseAlias}`);
+	if (orderingChanged) differences.push("excluded methods are not in stable sorted order");
+	if (missing.length) differences.push(`missing ${missing.join(", ")}`);
+	if (unexpected.length) differences.push(`unexpected ${unexpected.join(", ")}`);
+	if (!differences.length) return null;
+	return [
+		`expected ${expectedClientResponses.length} supported ClientRequest responses plus ${excludedMethods.length} explicit exclusions (${covered.length} unique methods), generated ${generated.response.length}`,
+		...differences,
+	].join("; ");
+}
+
+function responseAliasMismatch(
+	expected: GeneratedProtocolMethodInventories,
+	decoder: GeneratedProtocolMethodInventories | undefined,
+	generated: GeneratedProtocolMethodInventories | undefined,
+	responseAlias: string,
+): string | null {
+	const differences: string[] = [];
+	if (!expected.response.includes(responseAlias))
+		differences.push(`authored response registry is missing required alias ${responseAlias}`);
+	if (!expected.serverRequest.includes(responseAlias))
+		differences.push(`authored server-request registry is missing required alias ${responseAlias}`);
+	if (decoder && !decoder.response.includes(responseAlias))
+		differences.push(`response decoder registry is missing required alias ${responseAlias}`);
+	if (generated && !generated.serverRequest.includes(responseAlias))
+		differences.push(
+			`generated ServerRequest inventory is missing required alias ${responseAlias}`,
+		);
+	return differences.length ? differences.join("; ") : null;
 }
 
 function notificationPathKey(path: GeneratedNotificationUnionPath): string {
@@ -244,6 +313,24 @@ function runCodexProtocolConformanceWithExpectations(
 			"version",
 			`expected ${expectations.binaryVersion}, received ${version || "<empty output>"}`,
 		);
+	const methodShapeMismatch = expectations.methodInventories
+		? methodInventoryShapeMismatch("authored", expectations.methodInventories)
+		: null;
+	if (methodShapeMismatch)
+		throw conformanceError(
+			executablePath,
+			"inventory",
+			`authored method inventory is invalid: ${methodShapeMismatch}`,
+		);
+	const decoderShapeMismatch = expectations.decoderMethodInventories
+		? methodInventoryShapeMismatch("decoder", expectations.decoderMethodInventories)
+		: null;
+	if (decoderShapeMismatch)
+		throw conformanceError(
+			executablePath,
+			"inventory",
+			`decoder method inventory is invalid: ${decoderShapeMismatch}`,
+		);
 	const registryMismatch =
 		expectations.methodInventories && expectations.decoderMethodInventories
 			? decoderRegistryMismatch(
@@ -257,6 +344,24 @@ function runCodexProtocolConformanceWithExpectations(
 			"inventory",
 			`authored decoder registry mismatch: ${registryMismatch}`,
 		);
+	if (
+		expectations.methodInventories &&
+		expectations.clientRequestResponseAlias &&
+		expectations.decoderMethodInventories
+	) {
+		const aliasMismatch = responseAliasMismatch(
+			expectations.methodInventories,
+			expectations.decoderMethodInventories,
+			undefined,
+			expectations.clientRequestResponseAlias,
+		);
+		if (aliasMismatch)
+			throw conformanceError(
+				executablePath,
+				"inventory",
+				`response alias inventory mismatch: ${aliasMismatch}`,
+			);
+	}
 
 	let generatedRoot: string;
 	try {
@@ -340,12 +445,21 @@ function runCodexProtocolConformanceWithExpectations(
 				cause,
 			);
 		}
-		const methodMismatch = expectations.methodInventories
-			? compareMethodInventories(
-					expectations.methodInventories,
-					generatedMethodsForDecoderComparison(generatedMethodInventories),
-					["clientNotification", "serverRequest", "serverNotification"],
-				)
+		const methodExpected =
+			expectations.methodInventories && expectations.clientRequestResponseAlias
+				? {
+						...expectations.methodInventories,
+						response: expectations.methodInventories.response.filter(
+							(method) => method !== expectations.clientRequestResponseAlias,
+						),
+					}
+				: expectations.methodInventories;
+		const methodMismatch = methodExpected
+			? compareMethodInventories(methodExpected, generatedMethodInventories, [
+					"clientNotification",
+					"serverRequest",
+					"serverNotification",
+				])
 			: null;
 		if (methodMismatch)
 			throw conformanceError(
@@ -353,6 +467,36 @@ function runCodexProtocolConformanceWithExpectations(
 				"inventory",
 				`generated API method inventory mismatch: ${methodMismatch}. Regenerate with the exact Codex ${expectations.binaryVersion} binary.`,
 			);
+		if (
+			expectations.methodInventories &&
+			expectations.clientRequestResponseAlias &&
+			expectations.clientRequestExcludedMethods
+		) {
+			const clientRequestMismatch = clientRequestInventoryMismatch(
+				expectations.methodInventories,
+				generatedMethodInventories,
+				expectations.clientRequestResponseAlias,
+				expectations.clientRequestExcludedMethods,
+			);
+			if (clientRequestMismatch)
+				throw conformanceError(
+					executablePath,
+					"inventory",
+					`generated ClientRequest coverage mismatch: ${clientRequestMismatch}. Regenerate with the exact Codex ${expectations.binaryVersion} binary and review the explicit exclusion inventory.`,
+				);
+			const aliasMismatch = responseAliasMismatch(
+				expectations.methodInventories,
+				expectations.decoderMethodInventories,
+				generatedMethodInventories,
+				expectations.clientRequestResponseAlias,
+			);
+			if (aliasMismatch)
+				throw conformanceError(
+					executablePath,
+					"inventory",
+					`response alias inventory mismatch: ${aliasMismatch}. Regenerate with the exact Codex ${expectations.binaryVersion} binary and review the decoder inventory.`,
+				);
+		}
 
 		return {
 			executablePath,

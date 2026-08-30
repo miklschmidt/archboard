@@ -15,6 +15,7 @@ export type {
 	CodexProtocolConformancePhase,
 	CodexProtocolConformanceResult,
 } from "./conformance.js";
+export { CODEX_PROTOCOL_GENERATED_CLIENT_REQUEST_EXCLUDED_METHODS } from "./generated-method-inventory.js";
 
 export {
 	CLIENT_NOTIFICATION_METHODS,
