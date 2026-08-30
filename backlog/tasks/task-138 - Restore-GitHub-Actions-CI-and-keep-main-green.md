@@ -1,11 +1,11 @@
 ---
 id: TASK-138
 title: Restore GitHub Actions CI and keep main green
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:14'
-updated_date: '2026-08-30 05:59'
+updated_date: '2026-08-30 06:05'
 labels: []
 dependencies: []
 references:
@@ -24,6 +24,10 @@ references:
   - 'https://github.com/miklschmidt/archboard/actions/runs/33291111341'
   - 'https://github.com/miklschmidt/archboard/actions/runs/33292227066'
   - TASK-141
+  - 'https://github.com/miklschmidt/archboard/actions/runs/33294001881'
+  - 'https://github.com/miklschmidt/archboard/actions/runs/33294902038'
+  - 'https://github.com/miklschmidt/archboard/actions/runs/33295891876'
+  - TASK-142
 modified_files:
   - .github/workflows/ci.yml
   - AGENTS.md
@@ -61,11 +65,11 @@ GitHub Actions was stale and repeatedly failed on the repository current complet
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The currently failing GitHub Actions run is diagnosed from its public workflow and job logs, with the actionable cause recorded.
-- [ ] #2 The complete local bun run check remains unchanged and passes; any user-authorized hosted-only exception names the exact excluded owner, cites repeated runner evidence, and is enforced by repository policy.
-- [ ] #3 The completed main branch is pushed to origin only after the local fix is verified.
-- [ ] #4 Every required GitHub Actions check for the pushed main commit completes successfully.
-- [ ] #5 Any subsequent CI-only failure is diagnosed and repaired or narrowly excepted under the recorded hosted-only policy in a monitored push-and-check loop until the pushed commit is green.
+- [x] #1 The currently failing GitHub Actions run is diagnosed from its public workflow and job logs, with the actionable cause recorded.
+- [x] #2 The complete local bun run check remains unchanged and passes; any user-authorized hosted-only exception names the exact excluded owner, cites repeated runner evidence, and is enforced by repository policy.
+- [x] #3 The completed main branch is pushed to origin only after the local fix is verified.
+- [x] #4 Every required GitHub Actions check for the pushed main commit completes successfully.
+- [x] #5 Any subsequent CI-only failure is diagnosed and repaired or narrowly excepted under the recorded hosted-only policy in a monitored push-and-check loop until the pushed commit is green.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -559,4 +563,16 @@ CI17 final review and exclusion-free local acceptance, 2026-08-30:
 - Visible independent review task `01a05014-063d-7df1-8651-02172beea3cd` returned `REVIEW_CLEAN` with zero Standards and zero Spec findings after the exact full-stream stderr correction. It verified the exact all-browser sentinel, copied empty hosted selection, early success before executable validation/freshness/build/owner setup, truthful job/docs/task records, eight-path scope, line caps, and TASK-140 separation.
 - After review, one clean `env -u ARCHBOARD_VAULT -u AGENT_BROWSER_EXECUTABLE_PATH -u ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER -u ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS -u ARCHBOARD_CI_EXCLUDED_SYSTEM_OWNER -u AGENT_BROWSER_DEFAULT_TIMEOUT -u CI bun run check` passed in `/tmp/task138-ci17-full-check.log`. Lint, formatting, and both TypeScript projects passed; modules passed 400/400 with 3,144 assertions; serialized system passed 281/281 with 4,163 assertions; repository policy passed 115/115 with 319 assertions; and all 15 serial browser owners passed with their complete existing assertions. Human performance passed 1/64 in 55,945.42 ms, fixed-point 1/66 in 2,193.38 ms, malformed geometry 1/23 in 1,828.46 ms, and live convergence 1/138 in 37,278.86 ms. No CI exclusion diagnostic, failure, dangling-process diagnostic, context-canceled diagnostic, or timeout appeared.
 - Final cleanup audit found no `/tmp/archboard-browser-preflight-*` root and no owned validation/browser process; the sole pgrep match was the audit shell itself. Diff check is green. The current isolated diff remains exactly the eight authorized TASK-138/TASK-142/workflow/docs/browser-policy paths, and protected b7be932/TASK-140 is not in its ancestry or diff.
+
+CI17 hosted acceptance, exact SHA 4fc0489d5108bddd1ed4a25061b93406039f9f2a, 2026-08-30:
+
+- GitHub Actions run https://github.com/miklschmidt/archboard/actions/runs/33295891876, job 99215363643, completed successfully in 5m03s. Checkout, Bun setup, frozen install, the single canonical hosted check, and post steps all passed. Terminal log: `/tmp/task138-ci17-hosted-green.log`.
+- The hosted check passed lint, formatting, both TypeScript projects, 400 module tests / 3,144 assertions, 280 serialized system passes / 4,141 assertions plus the sole exact opener-persistence skip, and 115 repository-policy tests / 319 assertions. It then emitted exactly `# CI-only browser owners excluded: all` and completed. Every executed lane reported zero failures; no dangling-process, context-canceled, or timeout diagnostic occurred.
+- TASK-141 remains the focused unplanned dependent owner for restoring opener-persistence hosted coverage. TASK-142 remains the focused unplanned dependent owner for diagnosing the systemic browser-runner boundary, removing the exact all-browser exception, and restoring all 15 hosted owners within the retained 30-minute cap.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Restored GitHub Actions to a truthful, fail-closed hosted subset while preserving the complete local `bun run check`. The workflow now runs one canonical check with all static, module, viable system, and repository-policy gates; repeated GitHub runner hangs are represented by exact CI-only opener and browser-lane exceptions enforced by repository policy and documented with restoration owners TASK-141 and TASK-142. Verified locally with 400 modules, 281 system tests, 115 repository tests, and all 15 browser owners, then verified exact pushed SHA `4fc0489d5108bddd1ed4a25061b93406039f9f2a` green in Actions run 33295891876.
+<!-- SECTION:FINAL_SUMMARY:END -->
