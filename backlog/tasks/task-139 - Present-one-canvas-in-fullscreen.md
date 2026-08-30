@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-29 16:19'
-updated_date: '2026-08-30 00:22'
+updated_date: '2026-08-30 06:16'
 labels: []
 dependencies: []
 priority: medium
@@ -55,6 +55,8 @@ A person presenting an architecture board needs a distraction-free view of one c
 11. Independent review remediation. The coordinator must expose its synchronous latest target pane ID for Shell lifecycle decisions without making that pending target a rendered presentation state. closePane must consult that target directly, so removal during a pending native entry or before a transfer render commits transfers to the mounted survivor and then cancels/exits exactly as the active-close path does. Add a coordinator regression for synchronous target visibility and cancellation before fullscreen arrives. Extend the existing rendered owner, still below 500 lines, by reopening a second pane after the steady-state close proof, deferring the shell's native request, closing the requested focused pane, then completing native entry under a real browser gesture; assert fullscreen is immediately relinquished, exactly one survivor remains visible, and no presentation class/dock targets the removed pane. Re-run the focused coordinator, rendered owner, static gates, line audit, and independent Standards/Spec rereview; aggregate gates remain serialized behind TASK-138 FINALIZED_GREEN.
 
 12. Standards review remediation. Preserve the existing shell notice affordance and make it honest: add a coordinator clearError operation that clears only a non-presenting entry error, then have Shell's existing Dismiss notice action clear both ordinary notice state and that coordinator error. Do not let dismissal exit an active presentation or hide an exit-refusal alert in the fullscreen dock. Extend the coordinator refusal case to prove clearError removes the refusal while remaining non-presenting and Present can subsequently retry. In the rendered owner, click the visible Dismiss control after deterministic entry refusal, wait for the alert to disappear while fullscreen remains false, and then prove Present remains usable by continuing the existing re-entry path. Retain every predecessor assertion and focused gate.
+
+13. After TASK-138 FINALIZED_GREEN, replay the three signed TASK-139 commits onto exact green main 0f2b38a, retain its fail-closed hosted exclusions, update every current owner-count contract plus TASK-142 from 15 to 16, run focused and complete exclusion-free local gates sequentially, then reuse both independent reviewers over the complete rebased range before Backlog finalization and a non-force fast-forward push.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -63,6 +65,8 @@ A person presenting an architecture board needs a distraction-free view of one c
 Focused implementation checkpoint: the coordinator owner passes 9 cases / 26 assertions; the rendered native-fullscreen owner passes 1 case / 33 assertions; the focused inventory owner passes 38 cases / 60 assertions; type-check, lint, and formatting are green. The rendered external-close case exposed that the long-lived pane socket retains its initial layout callback. Shell now keeps that callback stable while reading current pane and presentation state from commit-synchronized refs, so closing the presented pane deterministically transfers the live survivor before exit. Complete repository and serial-browser aggregate validation remains withheld until TASK-138 reports FINALIZED_GREEN.
 
 Review remediation evidence: the coordinator TDD RED passed 8 predecessor cases and failed the two new contracts exactly because getTargetPaneId and clearError were absent (2 failures, 25 assertions reached). GREEN now passes 11 cases / 37 assertions, including pending-entry removal, same-root transfer removal, and honest entry-error dismissal. The rendered owner passes 1 case / 37 assertions in a real native-fullscreen browser. It now dismisses and retries entry refusal, holds requestFullscreen pending, externally closes the requested Pane B, completes native entry from a real gesture, and proves clean exit with the original Pane A identity/selection/focus/held board intact and visible. To preserve the line policy, browser helpers moved to one 141-line focused support module; the rendered owner is 400 lines, coordinator owner 284, and coordinator module 173. Type-check, Oxlint, formatting, diff check, and the focused inventory owner (38 cases / 60 assertions) pass. No workflow file changed and no TASK-139 process remains; the one observed /home/msc/Projects/archboard server predates and is outside this checkout.
+
+TASK-138 release reconciliation: fetched exact signed origin/main 0f2b38a and anchored the prior signed review-clean checkpoint at codex/task-139-review-clean. Replayed all three TASK-139 commits with signing enabled. The only textual conflict was AGENTS.md; resolution retains TASK-138 hosted exclusions and TASK-141/TASK-142 ownership while updating the complete local lane to 16 owners. The workflow remains byte-identical to origin/main. Current reconciliation also updates the two stale test-suite owner counts, the repository-policy test title, and TASK-142 AC4/AC5 so its existing all-browser restoration scope includes the new fullscreen owner.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

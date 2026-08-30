@@ -16,7 +16,7 @@ projects, and that complete test chain. `.github/workflows/ci.yml` invokes the
 same command with two exact hosted-only exceptions after clean-runner stalls:
 `tests/system/code-targets/opener-persistence.test.ts` and the complete serial
 browser lane. All remain mandatory locally; TASK-141 and TASK-142 own restoring
-the system owner and all 15 browser owners to hosted coverage. Repository policy
+the system owner and all 16 browser owners to hosted coverage. Repository policy
 pins both exceptions and rejects a native test with no lane, more than one lane,
 no push path, a browser owner outside the serial adapter, recursive browser
 discovery, or any transitional `test:*` key.
@@ -82,7 +82,7 @@ adapter instead. The lane:
   when human-edit performance is selected — it exits 2 before building or
   starting an owner;
 - asserts `navigator.userAgent` says headless, because a window that maps
-  steals focus under Hyprland; local runs exercise all 15 owners while hosted
+  steals focus under Hyprland; local runs exercise all 16 owners while hosted
   runs exclude the lane until TASK-142 restores it;
 - runs one literal file child at a time, never concurrently. TASK-097 records that two owners
   sharing the machine is how one of them fails for no reason: contention
