@@ -21,6 +21,12 @@ Where things are written down:
 - Work, open and closed: Backlog.md via the `backlog` CLI; never hand-edit
   files under `backlog/`
 
+## Shell platform contract
+
+Archboard’s shell is desktop-only. Do not plan, implement, or gate phone/narrow
+responsive layouts unless the user explicitly reverses this decision.
+Desktop-sized touch interaction for the Samsung Flip remains supported.
+
 ## Upstream
 
 `main` is based on [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw)
@@ -65,13 +71,17 @@ rebuilds — `bun test tests/system/repository-policy/module-scope-policy.test.t
 with `// hot-safe: <reason>`. Mechanics and costs:
 `docs/design/hot-reload-under-bun.md` and the archboard-dev skill.
 
-**Running the suite needs `agent-browser` on PATH**: one typed serial browser
-lane drives 15 real-browser owners and exits 2 when prerequisites are absent.
-It stays headless because a window that maps steals focus under Hyprland, and
-it runs one owner at a time. A push runs `bun run check`, which enforces lint,
-formatting, type checking, and the complete test chain. `bun run test:repository`
-includes the inventory that rejects missing, duplicate, or unreachable tests.
-Changing tests or CI, or a browser owner failing → `docs/agents/test-suite.md`.
+**Running the complete local suite needs `agent-browser` on PATH**: one typed
+serial browser lane drives 16 real-browser owners and exits 2 when prerequisites
+are absent; its human-edit performance owner also needs `strace`. It stays
+headless and runs one owner at a time. `bun run check` is the complete local
+gate. GitHub Actions invokes that command with two fail-closed hosted
+exceptions: `tests/system/code-targets/opener-persistence.test.ts` and the
+complete serial browser lane. TASK-141 and TASK-142 own restoring the system
+owner and all 16 browser owners; repository policy pins both exceptions.
+`bun run test:repository` includes the inventory that rejects missing,
+duplicate, or unreachable tests. Changing tests or CI, or a browser owner
+failing → `docs/agents/test-suite.md`.
 
 Open <http://127.0.0.1:3000>. A browser tab is required for `screenshot`,
 `mermaid`, image export, and viewport control; pure JSON ops work headless.

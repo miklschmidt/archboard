@@ -163,8 +163,8 @@ describe("test inventory policy", () => {
 	test("rejects a reordered browser owner", () => {
 		const reordered = input();
 		reordered.scripts["test:serial-browser"] = packageAdapter.replace(
-			"tests/system/browser/claim-interaction.test.ts tests/system/browser/opener-settings.test.ts",
-			"tests/system/browser/opener-settings.test.ts tests/system/browser/claim-interaction.test.ts",
+			"tests/system/browser/claim-interaction.test.ts tests/system/browser/selection-inspector.test.ts",
+			"tests/system/browser/selection-inspector.test.ts tests/system/browser/claim-interaction.test.ts",
 		);
 		expect(inspectTestInventory(reordered).errors[0]).toContain(
 			"Focused browser paths are not in canonical relative order.",
@@ -247,7 +247,7 @@ describe("typed serial browser adapter selection", () => {
 		const command = `bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.slice(0, -1).join(" ")}`;
 		expectInventoryError(
 			adapterInput(command),
-			"browser adapter lane `test:serial-browser` is invalid: Package browser lane must name all 15 canonical paths in order.",
+			`browser adapter lane \`test:serial-browser\` is invalid: Package browser lane must name all ${BROWSER_TEST_PATHS.length} canonical paths in order.`,
 		);
 	});
 

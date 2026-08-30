@@ -20,54 +20,50 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
+import {
+	WORKBENCH_SNAPSHOT_EXPRESSION,
+	type WorkbenchSnapshot,
+} from "./support/workbench-metrics.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const BOARD = LIVE_SESSION_BOARD;
-
 interface ElementsBody {
 	elements: ExcalidrawElement[];
 }
-
 interface PaneList {
 	paneCount: number;
 	panes: Array<{ board: string; clientId: string }>;
 }
-
 interface WriteBody {
 	code?: string;
 	element?: ExcalidrawElement;
 	elements?: ExcalidrawElement[];
 	error?: string;
 }
-
 interface ClaimBody {
-	claim: { holder: { kind?: string; reason?: string } };
+	claim: { holder: { id?: string; kind?: string; reason?: string; claimed?: boolean } };
 }
-
 interface ClaimCounts {
 	holds: number;
 	pending: number;
 	sent: number;
 }
-
-interface ClaimBanner {
-	bar: string | null;
-	beacon: string | null;
-	copy: string | null;
-	heading: string | null;
-	holder: string | null;
-	reason: string | null;
-	steps: string[];
-	take: string | null;
+interface ClaimBanner extends WorkbenchSnapshot {
 	view: boolean | null;
-	what: string | null;
+	headerClaim: {
+		beacon: string;
+		label: string;
+		id: string;
+		labelType: [string, number, number];
+		idType: [string, number, number];
+		height: number;
+	} | null;
 }
-
 type Request = ReturnType<typeof createJsonRequester>;
-
 async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 	browser: AgentBrowserSession;
 	canvas: Awaited<ReturnType<typeof startOwnedCanvas>>;
+	clientId: string;
 	request: Request;
 }> {
 	const { ownerRoot } = browserTestRoots();
@@ -94,7 +90,6 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 	expect(
 		(await request("/api/boards/save", { method: "POST", body: { board: BOARD } })).status,
 	).toBe(200);
-
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", canvas.base]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/Headless/i);
@@ -117,9 +112,8 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 		"the pane to render the seeded board",
 	);
 	await browser.run(["click", ".excalidraw"]);
-	return { browser, canvas, request };
+	return { browser, canvas, clientId: panes.panes[0]!.clientId, request };
 }
-
 const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
 	browser.eval(`(() => {
 		window.__claimRecorder = { holds: 0, sent: 0, delay: false, pending: [] };
@@ -146,50 +140,54 @@ const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
 				window.__claimRecorder.pending.push({ release: () => invoke().then(resolve, reject) });
 			});
 		};
-		return { installed: true };
-	})()`);
-
+			return { installed: true };
+		})()`);
 const claimCounts = (browser: AgentBrowserSession): Promise<ClaimCounts> =>
 	browser.eval(`(() => ({
 		holds: window.__claimRecorder.holds,
 		sent: window.__claimRecorder.sent,
-		pending: window.__claimRecorder.pending.length,
-	}))()`);
-
+			pending: window.__claimRecorder.pending.length,
+		}))()`);
 const readBanner = (browser: AgentBrowserSession): Promise<ClaimBanner> =>
 	browser.eval(`(() => {
 		const app = ${EXCALIDRAW_APP_EXPRESSION};
-		const what = document.querySelector(".pane-claim-what");
+		const headerClaim = document.querySelector(".bar-claim");
+		const headerLabel = headerClaim?.querySelector(".claim-label");
+		const headerId = headerClaim?.querySelector(".claim-id");
 		return {
-			beacon: document.querySelector(".claim-beacon span")?.textContent?.trim() ?? null,
-			holder: document.querySelector(".claim-kicker")?.textContent?.trim() ?? null,
-			heading: what?.querySelector("small")?.textContent?.trim() ?? null,
-			reason: what?.lastChild?.textContent?.trim() ?? null,
-			copy: document.querySelector(".claim-copy")?.textContent?.replace(/\\s+/g, " ").trim() ?? null,
-			take: document.querySelector(".pane-claim-take")?.textContent?.trim() ?? null,
-			steps: [...document.querySelectorAll(".pane-doing-text")]
-				.map(line => line.textContent?.trim() ?? ""),
-			bar: document.querySelector(".doing-now")?.textContent?.trim() ?? null,
+			...${WORKBENCH_SNAPSHOT_EXPRESSION},
 			view: app ? app.state.viewModeEnabled === true : null,
-			what: what?.textContent?.replace(/\\s+/g, " ").trim() ?? null,
-		};
-	})()`);
-
+			headerClaim: headerClaim && headerLabel && headerId ? {
+				beacon: getComputedStyle(headerClaim.querySelector(".dot")).backgroundColor,
+				label: headerLabel.textContent?.trim() ?? "",
+				id: headerId.textContent?.trim() ?? "",
+				labelType: [getComputedStyle(headerLabel).fontFamily.toLowerCase(),
+					parseFloat(getComputedStyle(headerLabel).fontSize),
+					parseFloat(getComputedStyle(headerLabel).lineHeight)],
+				idType: [getComputedStyle(headerId).fontFamily.toLowerCase(),
+					parseFloat(getComputedStyle(headerId).fontSize),
+					parseFloat(getComputedStyle(headerId).lineHeight)],
+				height: headerClaim.getBoundingClientRect().height,
+			} : null,
+			};
+		})()`);
 const pageElement = (browser: AgentBrowserSession, id: string): Promise<ExcalidrawElement | null> =>
 	browser.eval(`(() => {
 		const app = ${EXCALIDRAW_APP_EXPRESSION};
 		const element = app?.scene.getElementsIncludingDeleted()
 			.find(candidate => candidate.id === ${JSON.stringify(id)});
-		return element ? { ...element } : null;
-	})()`);
-
+			return element ? { ...element } : null;
+		})()`);
 test(
 	"claims remain readable and camera-safe while content and take-back revoke them",
 	async () => {
 		await using resources = new AsyncDisposableStack();
-		const { browser, canvas, request } = await openSeededBoard(resources);
+		const { browser, canvas, clientId, request } = await openSeededBoard(resources);
 		await installClaimRecorder(browser);
-
+		await browser.run(["click", ".workbench-toggle"]);
+		const initial = await readBanner(browser);
+		expect(initial).toMatchObject({ live: "polite", pane: "Pane A", state: "ready" });
+		expect(initial.headerClaim).toBeNull();
 		const claimWhy = "redrawing the payment path";
 		const claim = await request<ClaimBody>(`/api/boards/claim?board=${BOARD}`, {
 			method: "POST",
@@ -198,6 +196,7 @@ test(
 		expect(claim.status).toBe(200);
 		expect(claim.body.claim.holder.kind).toBe("agent");
 		expect(claim.body.claim.holder.reason).toBe(claimWhy);
+		expect(claim.body.claim.holder.claimed).toBe(true);
 		const claimed = await pollUntil(
 			() => readBanner(browser),
 			(value) => value.reason === claimWhy,
@@ -209,11 +208,44 @@ test(
 		expect(claimed.view).toBe(false);
 		expect(claimed.take).toBe("Take back control");
 		expect(claimed.beacon).toBe("Agent claim");
-		expect(claimed.heading).toBe("Current campaign");
+		expect(claimed.heading).toBe("Active claim");
+		expect(claimed.state).toBe("working");
 		expect(claimed.copy).toBe(
 			"Agent edits are serialized while this claim is active. You can return control at any time.",
 		);
-
+		expect(claimed.workbench).toMatchObject({
+			agentTileCount: 0,
+			beacon: "rgb(163, 230, 53)",
+			bodyHeight: 184,
+			claimCopyType: [expect.stringContaining("archboard onest"), 12, 18, 400],
+			claimReasonType: [expect.stringContaining("archboard onest"), 14, 20, 600],
+			claimStatusType: [expect.stringContaining("archboard onest"), 12, 16, 600],
+			focusHierarchy: ["workbench-current", "workbench-claim"],
+			hierarchy: ["workbench-history", "workbench-focus"],
+			summaryHeight: 44,
+			summaryHierarchy: [
+				"live-badge",
+				"workbench-claim-summary",
+				"workbench-latest",
+				"workbench-pane",
+			],
+			summaryValuesSingleLine: true,
+			takeBackHeight: 44,
+			takeBackType: [expect.stringContaining("archboard onest"), 12, 16, 600],
+			sectionTitleType: [expect.stringContaining("archboard onest"), 9, 12, 600],
+		});
+		expect(claimed.workbench?.historyRatio).toBeCloseTo(0.26, 2);
+		expect(claimed.workbench?.currentRatio).toBeCloseTo(0.55, 2);
+		expect(claimed.headerClaim).toMatchObject({
+			beacon: "rgb(163, 230, 53)",
+			label: "Claimed by",
+			id: claim.body.claim.holder.id,
+			height: 44,
+		});
+		expect(claimed.headerClaim?.labelType.slice(1)).toEqual([12, 16]);
+		expect(claimed.headerClaim?.idType.slice(1)).toEqual([10, 14]);
+		expect(claimed.headerClaim?.labelType[0]).toContain("archboard onest");
+		expect(claimed.headerClaim?.idType[0]).toContain("archboard dm mono");
 		const beforeCamera = await claimCounts(browser);
 		expect(
 			await browser.eval<boolean>(`(() => {
@@ -234,7 +266,6 @@ test(
 		const afterCamera = await claimCounts(browser);
 		expect(afterCamera.holds - beforeCamera.holds).toBe(0);
 		expect(afterCamera.sent - beforeCamera.sent).toBe(0);
-
 		const step = "moving the queue out of the payment path";
 		const claimedWrite = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
 			method: "POST",
@@ -253,6 +284,60 @@ test(
 		expect(narrated.holder).toBe("Agent has the board");
 		expect(narrated.copy).toBe(
 			"Agent edits are serialized while this claim is active. You can return control at any time.",
+		);
+		expect(narrated.workbench).toMatchObject({
+			currentType: [expect.stringContaining("archboard onest"), 16, 22, 600],
+			historyRowMinHeight: 30,
+			historyTextType: [expect.stringContaining("archboard onest"), 12, 17, 500],
+			summaryValuesSingleLine: true,
+			timeColumnWidth: 68,
+			timeNoWrap: true,
+			timeType: [expect.stringContaining("archboard dm mono"), 10, 14, 400],
+			theme: "light",
+		});
+		expect(narrated.workbench?.historyRowHeight).toBeGreaterThanOrEqual(30);
+		expect(narrated.workbench?.technicalContrast).toHaveLength(5);
+		expect(narrated.workbench?.technicalContrast.every(({ ratio }) => ratio >= 4.5)).toBe(true);
+		expect((await request("/api/panes/open", { method: "POST", body: {} })).status).toBe(200);
+		const split = await pollUntil(
+			async () => (await request<PaneList>("/api/panes")).body,
+			(report) => report.paneCount === 2,
+			"a second pane to mount for focused workbench transfer",
+		);
+		const secondClientId = split.panes.find((pane) => pane.clientId !== clientId)?.clientId;
+		expect(typeof secondClientId).toBe("string");
+		expect(
+			(
+				await request("/api/boards/new", {
+					method: "POST",
+					body: { board: "workbench-other", pane: secondClientId },
+				})
+			).status,
+		).toBe(200);
+		await browser.run(["click", '.pane[aria-label="Pane B"] .excalidraw']);
+		const paneB = await pollUntil(
+			() => readBanner(browser),
+			(value) => value.pane === "Pane B",
+			"the workbench to follow Pane B focus",
+		);
+		expect(paneB).toMatchObject({ state: "ready", what: null, bar: null, steps: [] });
+		expect(paneB.headerClaim).toBeNull();
+		await browser.run(["click", '.pane[aria-label="Pane A"] .excalidraw']);
+		const paneA = await pollUntil(
+			() => readBanner(browser),
+			(value) => value.pane === "Pane A" && value.bar === step,
+			"the workbench to restore Pane A claim and progress",
+		);
+		expect(paneA).toMatchObject({ state: "working", reason: claimWhy });
+		await browser.run(["click", '.pane[aria-label="Pane B"] .excalidraw']);
+		expect(
+			(await request("/api/panes/close", { method: "POST", body: { pane: secondClientId } }))
+				.status,
+		).toBe(200);
+		await pollUntil(
+			() => readBanner(browser),
+			(value) => value.pane === "Pane A" && value.reason === claimWhy,
+			"the surviving pane to regain workbench focus",
 		);
 
 		const takeoverId = claimedWrite.body.elements?.[0]?.id ?? claimedWrite.body.element?.id;
@@ -372,8 +457,7 @@ test(
 			(value) => value.what === null && value.view === false,
 			"one activation to return editable control",
 		);
-		expect(returned.what).toBeNull();
-		expect(returned.view).toBe(false);
+		expect(returned).toMatchObject({ what: null, view: false, state: "ready", headerClaim: null });
 
 		const lost = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
 			method: "POST",
@@ -390,13 +474,27 @@ test(
 			).status,
 		).toBe(200);
 
-		await canvas.dispose();
+		await canvas.restart();
 		const disconnected = await pollUntil(
 			() => readBanner(browser),
-			(value) => value.view === true,
+			(value) => value.view === true && value.state === "offline",
 			"the disconnected pane to fail closed as held",
 		);
-		expect(disconnected.view).toBe(true);
+		expect(disconnected).toMatchObject({ view: true, state: "offline" });
+		expect(disconnected.headerClaim).toBeNull();
+		const reconnected = await pollUntil(
+			() => readBanner(browser),
+			(value) => value.view === false && value.state === "ready",
+			"the workbench and pane to recover after reconnection",
+		);
+		expect(reconnected).toMatchObject({ view: false, state: "ready" });
+
+		await canvas.dispose();
+		await pollUntil(
+			() => readBanner(browser),
+			(value) => value.view === true && value.state === "offline",
+			"the stopped canvas to remain fail closed",
+		);
 	},
 	TEST_BROWSER_COMMAND_TIMEOUT_MS * 6,
 );
