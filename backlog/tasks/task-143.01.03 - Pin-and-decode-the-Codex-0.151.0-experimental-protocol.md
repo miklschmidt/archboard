@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 19:30'
+updated_date: '2026-08-30 20:03'
 labels: []
 dependencies:
   - TASK-143.01.12
@@ -59,4 +59,6 @@ Delegation profile: gpt-5.6-luna, max.
 Implemented the pinned Codex 0.151.0 experimental protocol boundary under src/runtime/codex-protocol. The exact configured binary (/home/msc/.cache/.bun/bin/codex) generated 820 ignored TypeScript files; the reproducibility manifest records SHA-256 tree digest cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273 using sorted relative POSIX paths plus per-file hashes. Added closed method registries, strict Zod decoders for responses, client/server notifications and reverse requests, JSON-RPC errors, typed timeline/item/realtime payloads, unsupported-capability recovery errors, and fixtures/tests for valid and malformed directions. Raw realtime payloads are preserved without phase/transcript interpretation.
 
 Validation: exact generation/version/digest check passed; bun run type-check passed; bun run test:modules passed (574 tests, 0 failures); protocol suite passed (140 tests, 0 failures); repository-policy suite passed (56 tests, 0 failures); oxlint, oxfmt --check, and git diff --check passed. Generated output remains ignored and no consumer imports it.
+
+Remediation 2026-08-30 (commit 056389e): replaced the fail-open notification fallback with explicit Codex 0.151.0 schemas and fixtures for all 81 server notifications; tightened the response/reverse graph and security-sensitive command, network, filesystem, configuration, and MCP unions; enforced mutually exclusive JSON-RPC result/error envelopes; and added a temporary exact-generator conformance owner with version, file-count, and digest checks. Validation passed: 662 module tests, 118 repository/inventory tests, 228 focused protocol tests, type-check, Oxlint, Oxfmt, diff check, and exact generator digest cdd893570801b36e404a20e7842c71312abc6bc716960ddaa53dde92bfa6f273.
 <!-- SECTION:NOTES:END -->
