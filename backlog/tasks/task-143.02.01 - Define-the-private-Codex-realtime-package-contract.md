@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 19:12'
+updated_date: '2026-08-30 19:20'
 labels: []
 dependencies: []
 references:
@@ -46,6 +46,8 @@ Delegation profile: gpt-5.6-luna, max.
 5. Run focused tests, both strict TypeScript projects, lint/format and the relevant boundary checks; audit the fixed BASE..HEAD path set and commit the complete leaf.
 
 Remediation: split append and command delivery outcomes into distinct discriminated unions with disjoint definite-failure versus uncertainty reason literals; make the lifecycle graph canonical by routing all disposal and terminal cleanup through stopping -> closed; replace the source regex sample with an AST-backed audit of the public index and private contract plus negative source fixtures for every forbidden dependency/API family. Keep all changes inside the three named module files and this task record, then rerun the focused and invalidated gates against the unchanged base.
+
+Second remediation: extend the AST audit to TypeScript ImportTypeNode literal module specifiers and NodeJS namespace references; add negative fixtures for React and assistant-ui import types, node: and bare-Node import types, and NodeJS.Timeout; preserve the corrected outcome and lifecycle contracts, then rerun focused, strict TypeScript, lint, format, module, repository-policy, diff-scope, and clean-status checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -58,4 +60,6 @@ Implementation checkpoint: added the browser-only contract under src/ui/codex-re
 Reviewer remediation requested from parent after aa79d66218f29b5a8575d7e54716b223e0bdb686: (1) impossible outcome tag/reason pairs must fail at compile time, with CommandOutcome distinct from AppendOutcome; (2) every declared phase/reason must be reachable from an explicit edge, with one stopping -> closed disposal path and exhaustive edge tests; (3) the dependency guard must parse AST imports and dynamic imports, identifiers, transport/API spellings, and caller-selected remote identity, and prove its own rejection behavior with negative fixtures. The fixed BASE remains 8032ba687a133fd1fa84cf7e889f7d8bae086e71.
 
 Reviewer remediation completed on fixed BASE 8032ba687a133fd1fa84cf7e889f7d8bae086e71: outcome unions now separate definite non-delivery reasons from outcome-unknown reasons, and CommandOutcome is a distinct union; RealtimeTransitionReason is derived from RealtimeState and the transition table is destination-phase typed, with all disposal and terminal cleanup routed through stopping to closed and recovery_failed represented explicitly; contract tests now exhaustively exercise every declared edge/destination reason and AST-audit the public index/contract with 15 temporary negative fixtures covering React and assistant-ui static/dynamic package and subpath imports, node: and bare Node builtins, Buffer/process, WebSocket/audio-chunk/transport handles, Codex/Archboard wire imports, and caller-selected remote identity. Temporary fixtures are removed after each run. Validation all exited 0: focused contract suite 7 pass/312 expectations; bun run type-check; bun run lint; bun run fmt:check; focused boundaries/module-scope policy 17 pass/87 expectations; bun run test:modules 441 pass/3547 expectations; bun run test:repository 118 pass/363 expectations; test file remains 494 lines. No task status, acceptance criteria, assignee, or final summary changed.
+
+Second remediation completed on top of a8da1a700420041115394040ccba768a016fe5fc with the same fixed BASE 8032ba687a133fd1fa84cf7e889f7d8bae086e71. The AST audit now handles ImportTypeNode argument literals through auditModuleSpecifier and rejects NodeJS namespace identifiers. Five negative fixtures cover React import types, assistant-ui import types, node: import types, bare-Node import types, and NodeJS.Timeout, bringing the fixture matrix to 20; focused execution proves every fixture produces a finding and removes all temporary files. Product contract files were unchanged. Validation all exited 0: focused contract suite 7 pass/312 expectations; bun run type-check; bun run lint; bun run fmt:check; bun run test:modules 441 pass/3547 expectations; bun run test:repository 118 pass/363 expectations. The test remains exactly 500 lines. No task status, acceptance criteria, assignee, dependencies, siblings, or final summary changed.
 <!-- SECTION:NOTES:END -->
