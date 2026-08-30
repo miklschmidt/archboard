@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 22:55'
+updated_date: '2026-08-30 23:11'
 labels: []
 dependencies:
   - TASK-143.02.01
@@ -51,4 +51,6 @@ Delegation profile: gpt-5.6-luna, max.
 
 <!-- SECTION:NOTES:BEGIN -->
 Parallel reservation at integration HEAD 863ec41 after removing the unjustified worker/reviewer caps: TASK-143.02.02 is dependency-ready and owns a disjoint browser-media boundary. It is dispatched now instead of waiting behind unrelated runtime work.
+
+Implemented the public realtime media factory and literal WebRTC-audio feature marker behind src/ui/codex-realtime/index.ts. The closure-owned session performs the required microphone, peer/transceiver, realtime-events channel, SDP host callback, remote media, and analyser sequence. Correlated restarts use a fresh lifecycle; permission, device, SDP, ICE, channel, remote media, autoplay, device-loss, stop, and dispose paths converge on one frozen contract state with memoized host stop and idempotent cleanup. Public-index-only fake-browser tests cover six stop races and prove tracks, senders, receivers, channel, peer, audio nodes/context, animation frame, browser listeners, timers, media element source, and object URL are released once. No WebSocket, audio-chunk, transcript reduction, React, assistant-ui, generated protocol, or runtime dependency was added. Validation exited 0: focused realtime owners 24 tests and 663 expectations; complete module lane 1,030 tests and 7,397 expectations across 77 files; complete repository lane 130 tests and 415 expectations across 11 files; both strict TypeScript projects; Oxlint; Oxfmt on 522 files; Vite frontend build; git diff check. The first repository run had one transient retained fake agent-browser PID in its existing cleanup-timing test; the PID exited, the exact owner passed on rerun, and the full repository rerun passed.
 <!-- SECTION:NOTES:END -->
