@@ -177,6 +177,8 @@ describe("codex browser model", () => {
 	test("round-trips browser families, relational states, and safe results", () => {
 		const ids = createFixtureIds();
 		const { model } = ids;
+		expect(ids.snapshot.coordinator.threadId).not.toBe(ids.snapshot.threadLink.threadId);
+		expect(ids.snapshot.coordinator.activeTurnId).not.toBeNull();
 		const dtoKinds = [
 			ids.snapshot,
 			ids.snapshot.readiness,
@@ -236,9 +238,21 @@ describe("codex browser model", () => {
 				...ids.snapshot,
 				coordinator: {
 					...ids.snapshot.coordinator,
-					activeTurnId: identity.decoder.adoptTurnId("missing-turn"),
+					activeTurnId: identity.decoder.adoptTurnId("coordinator-turn-not-in-workhorse"),
 				},
 			}).success,
+		).toBeTrue();
+		expect(
+			model.BrowserCoordinatorSchema.safeParse({
+				...ids.snapshot.coordinator,
+				threadId: "archboard:thread:unissued-coordinator",
+			} as unknown).success,
+		).toBeFalse();
+		expect(
+			model.BrowserCoordinatorSchema.safeParse({
+				...ids.snapshot.coordinator,
+				activeTurnId: "archboard:turn:unissued-coordinator",
+			} as unknown).success,
 		).toBeFalse();
 		expect(
 			model.BrowserDtoSchema.safeParse({ ...ids.snapshot.readiness, state: "future" }).success,
@@ -288,10 +302,7 @@ describe("codex browser model", () => {
 			{
 				method: "item/tool/call",
 				result: {
-					contentItems: [
-						{ type: "inputImage", imageUrl: "data" },
-						{ type: "inputAudio", audioUrl: "data" },
-					],
+					contentItems: [{ type: "inputText", text: "tool response" }],
 					success: true,
 				},
 			},
@@ -312,6 +323,21 @@ describe("codex browser model", () => {
 				result: { contentItems: [{ type: "future" }], success: true },
 			}).success,
 		).toBeFalse();
+		for (const contentItems of [
+			[],
+			[{ type: "inputImage", imageUrl: "raw" }],
+			[{ type: "inputAudio", audioUrl: "raw" }],
+			[
+				{ type: "inputText", text: "one" },
+				{ type: "inputText", text: "two" },
+			],
+		])
+			expect(
+				model.ServerRequestResultSchema.safeParse({
+					method: "item/tool/call",
+					result: { contentItems, success: true },
+				}).success,
+			).toBeFalse();
 	});
 
 	test("preserves every MCP form member and validates typed defaults and permissions", () => {

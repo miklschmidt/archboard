@@ -10,6 +10,12 @@ const requestId = model.JsonRpcRequestIdSchema.parse(authority.issuer.mintJsonRp
 const commandId = model.BrowserCommandIdSchema.parse(authority.issuer.mintBrowserCommandId());
 const threadId = model.ThreadIdSchema.parse(authority.decoder.adoptThreadId("thread-fixture"));
 const turnId = model.TurnIdSchema.parse(authority.decoder.adoptTurnId("turn-fixture"));
+const coordinatorThreadId = model.ThreadIdSchema.parse(
+	authority.decoder.adoptThreadId("coordinator-fixture"),
+);
+const coordinatorTurnId = model.TurnIdSchema.parse(
+	authority.decoder.adoptTurnId("coordinator-turn-fixture"),
+);
 const itemId = model.ItemIdSchema.parse(authority.decoder.adoptItemId("item-fixture"));
 const approvalId = model.ApprovalIdSchema.parse(
 	authority.decoder.adoptApprovalId("approval-fixture"),
@@ -107,9 +113,9 @@ const semantic = {
 };
 const coordinator = {
 	kind: "coordinator" as const,
-	state: "ready" as const,
-	threadId,
-	activeTurnId: null,
+	state: "active" as const,
+	threadId: coordinatorThreadId,
+	activeTurnId: coordinatorTurnId,
 	model: "gpt-5.6-luna",
 	effort: "medium",
 	serviceTier: "priority",

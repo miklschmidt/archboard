@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-08-30 19:52'
+updated_date: '2026-08-30 20:06'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -54,4 +54,8 @@ Validation passed: focused module type-check, Oxlint, Oxfmt, and 6 tests (59 exp
 Remediation applied: identity-bearing schemas now require the authority decoder and current child/epoch validator; publishable BrowserDto excludes transient browser-command ingress; accountLogin is limited to the four supported variants; approval responses are strict seven-arm contracts; server requests/results mirror all nested 0.151.0 unions with typed MCP defaults and permission paths; login policy rows are exact and ordered. Added regression fixtures for unissued/wrong-domain/wrong-child/stale-epoch identities, link relations, approval arms, all MCP form members, invalid defaults, permission paths, and reachable recovery states.
 
 Remediation validation: bun test --isolate src/shared/codex-browser-model (8 pass, 129 expectations); bun run type-check; bun run lint; bun run fmt:check; bun run test:modules (449 pass, 0 failures); bun run test:repository (118 pass, 0 failures); git diff --check (pass).
+
+Second remediation applied: coordinator thread/turn identity is independent from the linked workhorse timeline and semantic thread; coordinator-local state is validated separately. Inspect-only thread links preserve the generated custom, subAgent, and unknown source families while executable links remain limited to the four authored source strings. Dynamic item/tool/call results now require exactly one non-empty inputText tuple. Host-generated server-request strings use NUL-safe wireText without undocumented size caps; authored dynamic-tool output retains its reviewed bounded text policy. Added fixtures for distinct coordinator identities, unissued coordinator IDs, inspect-only source families/unknown members, media/arity rejection, and >16K add/delete/unified-diff patch text round-trips.
+
+Second remediation validation: bun test --isolate src/shared/codex-browser-model (9 tests, 145 expectations); bun run type-check; bun run lint; bun run fmt:check; bun run test:modules (450 tests, 0 failures); bun run test:repository (118 tests, 0 failures); git diff --check (pass). Task remains In Progress for parent review.
 <!-- SECTION:NOTES:END -->
