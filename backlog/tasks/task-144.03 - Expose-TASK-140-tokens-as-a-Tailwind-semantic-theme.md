@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 23:33'
+updated_date: '2026-08-30 23:42'
 labels: []
 dependencies:
   - TASK-144.01
@@ -37,10 +37,10 @@ Expose completed TASK-140 tokens as the canonical Tailwind semantic theme while 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Establish src/ui/theme/app.css as the single application stylesheet entrypoint, with Tailwind theme and utilities imports followed by the existing shell stylesheet and no Preflight import.
-2. Define one namespaced source token set from the completed TASK-140 shell values for light and dark color/state roles, pinned typography, compact spacing and radii, flat elevation, and restrained motion; expose only semantic Tailwind namespaces through @theme inline and remove relevant framework defaults.
-3. Add one module-owned static fixture that compiles app.css through Tailwind, supplies complete class candidates, and asserts emitted semantic utilities plus the absence of unknown and framework-palette utilities without treating source text or rendering as proof.
-4. Run the focused compile owner, module and repository policy lanes, both TypeScript projects, lint, formatting, frontend build where the fixed base permits it, and a final scope/status audit; record evidence without completing TASK-144.03.
+1. Audit all 419 variables shipped by Tailwind 4.3.3 theme.css and group every color, typography, spacing, radius, shadow/filter, motion, viewport, and default namespace against the TASK-140 vocabulary.
+2. Prove whether @theme can refuse every unowned utility with a minimal compiler fixture that clears the entire imported theme through --*: initial; stop if Tailwind still emits a listed stock utility.
+3. After parent ownership direction, either narrow acceptance to clearing every configurable visual token while documenting hardcoded generic utilities, or split a separately authorized source-class policy outside this theme leaf. Then fix the cobalt accent alias and add exact import, complete token-oracle, emitted/refused-family, and negative-mutation coverage.
+4. If unblocked, run focused compiler and mutation owners, complete module and repository lanes, both TypeScript projects, lint, formatting, frontend build, and final scope/status audits without claiming rendered equivalence.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -51,4 +51,6 @@ Reserved after TASK-144.01 finalized at integration HEAD a098684. This leaf owns
 Implemented the canonical src/ui/theme/app.css entrypoint and a module-owned Tailwind compiler fixture. The entrypoint imports Tailwind theme, Tailwind utilities, and the existing shell stylesheet in that order; omits Preflight; clears Tailwind visual defaults; preserves exact TASK-140 light/dark typography, color/state, compact geometry, flat elevation, and motion values behind namespaced source variables; and exposes semantic @theme inline utilities. Focused compiler proof passes 4 tests and 93 assertions for exact values, emitted utilities, refused unknown/default tokens, no Preflight output, forced-color preservation, and reduced motion.
 
 Validation at implementation commit 7b5e1ff: bun test src/ui/theme/tests/theme-compile.test.ts passed 4 tests/93 assertions; bun run test:modules passed the complete isolated module lane; bun run test:repository passed 130 tests/415 assertions including inventory, boundaries, module scope, typography, and policy owners; bun run fmt:check, bun run lint, root and frontend TypeScript projects, and bun run build:frontend passed. The build retained its existing large-chunk advisory and expected unresolved /assets/excalidraw.css notice. TASK-144.02/.13 have not yet connected or imported app.css at this fixed base, so this leaf claims compiler proof, not rendered equivalence.
+
+Rereview blocker audit at e687276: Tailwind 4.3.3 theme.css contains 419 variables across 22 fully classified groups, including 288 colors plus every font/type/leading/tracking, spacing, radius, shadow/inset/drop/text-shadow, motion, blur, perspective, aspect, breakpoint, container, and prose-width default. A minimal stylesheet importing only Tailwind theme and utilities and then applying @theme { --*: initial; } removes the reviewed theme-backed defaults, including leading-tight, inset-shadow-sm, drop-shadow-xl, text-shadow-lg, blur-xl, perspective-dramatic, and aspect-video. The same real compiler still emits transition with a hardcoded ease/0s fallback and duration-150 with a hardcoded 150ms value. No @theme namespace or default remains to clear. Disabling those built-in candidates requires a class-source policy or a narrowed contract, both outside the authorized theme-only mechanism. Per the remediation stopping condition, no partial CSS/test changes were made and TASK-144.03 remains In Progress pending parent direction. Accent and exhaustive fixture findings remain accepted and queued behind that decision.
 <!-- SECTION:NOTES:END -->
