@@ -7,7 +7,15 @@
 // question — which is the seam TASK-006 (panes reporting what the human is
 // looking at) lands on.
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { CanvasPane } from "../canvas/CanvasPane";
 import { BoardBar } from "./BoardBar";
 import { BoardNavigator } from "./BoardNavigator";
@@ -18,6 +26,11 @@ import { ConflictDialog } from "./ConflictDialog";
 import { InstallLibraryDialog } from "./InstallLibraryDialog";
 import { OpenerSettingsDialog } from "../opener-settings";
 import { Icon } from "./Icons";
+import {
+	createFullscreenPresentation,
+	type FullscreenPresentation,
+	type FullscreenPresentationSnapshot,
+} from "./fullscreen-presentation";
 import { useLibrary } from "./useLibrary";
 import {
 	BoardConflictError,
@@ -52,6 +65,12 @@ const THEME_KEY = "archboard-theme";
 // same number said in the one place that renders it. It mirrors MAX_PANES in
 // src/runtime/engine/panes.ts, which is where the server's copy lives.
 const MAX_PANES = 2;
+const EMPTY_PRESENTATION: FullscreenPresentationSnapshot = Object.freeze({
+	paneId: null,
+	error: null,
+});
+const readEmptyPresentation = (): FullscreenPresentationSnapshot => EMPTY_PRESENTATION;
+const subscribeToNothing = (): (() => void) => () => undefined;
 
 function initialTheme(): "light" | "dark" {
 	if (typeof window === "undefined") return "light";
@@ -152,6 +171,77 @@ function saveNotice(saved: BoardSaveResult, paneCount: number): Notice {
 	return { kind: "info", text: wrote };
 }
 
+function canvasPresentation(
+	paneId: string,
+	presentedPaneId: string | null,
+): "current" | "hidden" | null {
+	if (!presentedPaneId) return null;
+	return paneId === presentedPaneId ? "current" : "hidden";
+}
+
+function presentationNotice(
+	presentation: FullscreenPresentationSnapshot,
+	notice: Notice | null,
+): Notice | null {
+	if (presentation.error && !presentation.paneId) {
+		return { kind: "error", text: presentation.error, hold: true };
+	}
+	return notice;
+}
+
+function shellClassName(presentedPaneId: string | null): string {
+	return presentedPaneId ? "shell shell-presenting" : "shell";
+}
+
+interface PresentationDockProps {
+	panes: string[];
+	presentation: FullscreenPresentationSnapshot;
+	dockRef: React.RefObject<HTMLDivElement | null>;
+	onTransfer: React.MouseEventHandler<HTMLButtonElement>;
+	onExit: () => void;
+}
+
+function PresentationDock({
+	panes,
+	presentation,
+	dockRef,
+	onTransfer,
+	onExit,
+}: PresentationDockProps): React.JSX.Element | null {
+	if (!presentation.paneId) return null;
+	return (
+		<div
+			className="presentation-dock"
+			role="toolbar"
+			aria-label="Presentation controls"
+			tabIndex={-1}
+			ref={dockRef}
+		>
+			<fieldset className="presentation-panes">
+				<legend>Canvas to present</legend>
+				{panes.map((paneId, index) => (
+					<button
+						type="button"
+						className="presentation-pane"
+						key={paneId}
+						data-pane-id={paneId}
+						aria-pressed={presentation.paneId === paneId}
+						aria-label={`Present Pane ${String.fromCharCode(65 + index)}`}
+						onClick={onTransfer}
+					>
+						Pane {String.fromCharCode(65 + index)}
+					</button>
+				))}
+			</fieldset>
+			{presentation.error && <span role="alert">{presentation.error}</span>}
+			<button type="button" className="presentation-exit" onClick={onExit}>
+				<Icon name="close" size={17} />
+				Exit
+			</button>
+		</div>
+	);
+}
+
 function samePaneStatus(existing: PaneStatus, status: PaneStatus): boolean {
 	// These nested values are replaced at their publication sites, never mutated
 	// in place. Reference equality therefore includes every field they carry.
@@ -222,21 +312,62 @@ export function Shell(): React.JSX.Element {
 	// pane the id of the one just closed, and the server keys a pane's selection
 	// and its board by that id.
 	const nextPaneNumber = useRef(2);
+	const shellElementRef = useRef<HTMLDivElement | null>(null);
+	const presentationOwnerRef = useRef<FullscreenPresentation | null>(null);
+	const [presentationOwner, setPresentationOwner] = useState<FullscreenPresentation | null>(null);
+	const attachShellRoot = useCallback((root: HTMLDivElement | null): void => {
+		if (shellElementRef.current === root) return;
+		const previous = presentationOwnerRef.current;
+		if (previous) {
+			if (!root) previous.rootRemoved();
+			previous.dispose();
+		}
+		shellElementRef.current = root;
+		const next = root ? createFullscreenPresentation(root) : null;
+		presentationOwnerRef.current = next;
+		setPresentationOwner(next);
+	}, []);
+	const presentation = useSyncExternalStore(
+		presentationOwner?.subscribe ?? subscribeToNothing,
+		presentationOwner?.getSnapshot ?? readEmptyPresentation,
+		readEmptyPresentation,
+	);
+	const panesRef = useRef(panes);
+	const presentedPaneRef = useRef(presentation.paneId);
+	useLayoutEffect(() => {
+		panesRef.current = panes;
+		presentedPaneRef.current = presentation.paneId;
+	}, [panes, presentation.paneId]);
 
 	// Layout can now be changed from outside the browser (`archboard pane open`),
 	// so these are the shell's two moves, reachable from the buttons and from a
 	// request arriving on a pane's socket.
 	const addPane = useCallback(() => {
-		setPanes((previous) =>
-			previous.length >= MAX_PANES ? previous : [...previous, `pane-${nextPaneNumber.current++}`],
-		);
+		setPanes((previous) => {
+			const next =
+				previous.length >= MAX_PANES ? previous : [...previous, `pane-${nextPaneNumber.current++}`];
+			panesRef.current = next;
+			return next;
+		});
 	}, []);
 
 	const closePane = useCallback((paneId: string) => {
+		const currentPanes = panesRef.current;
 		// Never the last one: an empty shell shows nothing and offers no way back.
-		setPanes((previous) =>
-			previous.length < 2 ? previous : previous.filter((id) => id !== paneId),
-		);
+		if (currentPanes.length < 2 || !currentPanes.includes(paneId)) return;
+		const survivor = currentPanes.find((id) => id !== paneId) ?? null;
+		const closingPresentation = presentedPaneRef.current === paneId && survivor;
+		const owner = presentationOwnerRef.current;
+		if (closingPresentation) {
+			// Transfer before removal and exit. If the browser refuses exit, the
+			// mounted survivor remains visible instead of leaving a blank display.
+			owner?.present(survivor);
+			setFocused(survivor);
+		}
+		const next = currentPanes.filter((id) => id !== paneId);
+		panesRef.current = next;
+		setPanes(next);
+		if (closingPresentation) owner?.exit();
 	}, []);
 
 	// The canvas server owns the layout request; the shell owns the layout. A
@@ -268,6 +399,15 @@ export function Shell(): React.JSX.Element {
 	const [conflict, setConflict] = useState<ConflictState | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [notice, setNotice] = useState<Notice | null>(null);
+	const presentButtonRef = useRef<HTMLButtonElement | null>(null);
+	const presentationDockRef = useRef<HTMLDivElement | null>(null);
+	const wasPresenting = useRef(false);
+
+	useEffect(() => {
+		if (presentation.paneId) presentationDockRef.current?.focus();
+		else if (wasPresenting.current) presentButtonRef.current?.focus();
+		wasPresenting.current = presentation.paneId !== null;
+	}, [presentation.paneId]);
 
 	// One palette behind however many panes are on screen, held on the server so
 	// that a second tab, a second machine and the agent all see the same one.
@@ -305,6 +445,7 @@ export function Shell(): React.JSX.Element {
 
 	const status = statuses[focused] ?? statuses[panes[0] ?? ""] ?? null;
 	const agentState = agentStates[focused] ?? agentStates[panes[0] ?? ""] ?? null;
+	const visibleNotice = presentationNotice(presentation, notice);
 	const boardKey = status?.boardKey ?? null;
 	const identity = status?.board ?? boardInfo?.identity ?? null;
 	// Whether the board in front of the human is being written down. It comes
@@ -575,6 +716,20 @@ export function Shell(): React.JSX.Element {
 		const paneId = event.currentTarget.dataset.paneId;
 		if (paneId) setFocused(paneId);
 	}, []);
+	const handlePresent = useCallback(() => {
+		setNotice(null);
+		presentationOwner?.present(focused);
+	}, [focused, presentationOwner]);
+	const handlePresentationTransfer = useCallback(
+		(event: React.MouseEvent<HTMLButtonElement>) => {
+			const paneId = event.currentTarget.dataset.paneId;
+			if (!paneId) return;
+			setFocused(paneId);
+			presentationOwner?.present(paneId);
+		},
+		[presentationOwner],
+	);
+	const handlePresentationExit = useCallback(() => presentationOwner?.exit(), [presentationOwner]);
 	const handleBoardError = useCallback((error: string) => {
 		setNotice({ kind: "error", text: error, hold: true });
 	}, []);
@@ -772,7 +927,7 @@ export function Shell(): React.JSX.Element {
 	);
 
 	return (
-		<div className="shell" data-theme={theme}>
+		<div className={shellClassName(presentation.paneId)} data-theme={theme} ref={attachShellRoot}>
 			<BoardBar
 				identity={identity}
 				boardKey={boardKey}
@@ -803,6 +958,14 @@ export function Shell(): React.JSX.Element {
 				// one the human started in. `pane close <spec>` is how a caller says
 				// which half goes.
 				onClosePane={handleCloseLastPane}
+			/>
+
+			<PresentationDock
+				panes={panes}
+				presentation={presentation}
+				dockRef={presentationDockRef}
+				onTransfer={handlePresentationTransfer}
+				onExit={handlePresentationExit}
 			/>
 
 			<div className="workspace">
@@ -843,7 +1006,17 @@ export function Shell(): React.JSX.Element {
 								);
 							})}
 						</div>
-						<span className="pane-tip">Select a variant to replace the focused pane</span>
+						<button
+							type="button"
+							className="present-button"
+							onClick={handlePresent}
+							disabled={!presentationOwner}
+							aria-label={`Present Pane ${String.fromCharCode(65 + Math.max(0, panes.indexOf(focused)))} fullscreen`}
+							ref={presentButtonRef}
+						>
+							<Icon name="fullscreen" size={16} />
+							Present
+						</button>
 					</div>
 
 					<div className={`panes panes-${panes.length}`}>
@@ -853,6 +1026,7 @@ export function Shell(): React.JSX.Element {
 								paneId={paneId}
 								primary={index === 0}
 								focused={paneId === focused}
+								presentation={canvasPresentation(paneId, presentation.paneId)}
 								theme={theme}
 								onStatus={onStatus}
 								onAgentState={onAgentState}
@@ -869,19 +1043,19 @@ export function Shell(): React.JSX.Element {
 						))}
 					</div>
 
-					{notice && (
+					{visibleNotice && (
 						<div
-							className={`notice notice-shell notice-${notice.kind}${notice.hold ? " notice-hold" : ""}`}
-							role={notice.kind === "error" ? "alert" : "status"}
+							className={`notice notice-shell notice-${visibleNotice.kind}${visibleNotice.hold ? " notice-hold" : ""}`}
+							role={visibleNotice.kind === "error" ? "alert" : "status"}
 						>
 							<span className="notice-icon">
-								<Icon name={notice.kind === "error" ? "close" : "check"} size={16} />
+								<Icon name={visibleNotice.kind === "error" ? "close" : "check"} size={16} />
 							</span>
 							<span className="notice-text">
-								{notice.text}
-								{notice.actions && (
+								{visibleNotice.text}
+								{visibleNotice.actions && (
 									<span className="notice-actions">
-										{notice.actions.map((action) => {
+										{visibleNotice.actions.map((action) => {
 											if (action.kind === "settings") {
 												return (
 													<button

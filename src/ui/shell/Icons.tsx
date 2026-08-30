@@ -7,6 +7,7 @@ export type IconName =
 	| "chevron"
 	| "close"
 	| "folder"
+	| "fullscreen"
 	| "moon"
 	| "plus"
 	| "refresh"
@@ -57,6 +58,11 @@ export function Icon({ name, size = 18, className }: IconProps): React.JSX.Eleme
 			</>
 		),
 		folder: <path d="M3.5 7.5h6l2-2h3l2 2h4v11h-17z" />,
+		fullscreen: (
+			<>
+				<path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5" />
+			</>
+		),
 		moon: <path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z" />,
 		plus: (
 			<>

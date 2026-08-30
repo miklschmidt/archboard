@@ -247,7 +247,7 @@ describe("typed serial browser adapter selection", () => {
 		const command = `bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.slice(0, -1).join(" ")}`;
 		expectInventoryError(
 			adapterInput(command),
-			"browser adapter lane `test:serial-browser` is invalid: Package browser lane must name all 15 canonical paths in order.",
+			`browser adapter lane \`test:serial-browser\` is invalid: Package browser lane must name all ${BROWSER_TEST_PATHS.length} canonical paths in order.`,
 		);
 	});
 
