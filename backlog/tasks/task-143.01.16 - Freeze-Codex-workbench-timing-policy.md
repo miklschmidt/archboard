@@ -1,10 +1,11 @@
 ---
 id: TASK-143.01.16
 title: Freeze Codex workbench timing policy
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 17:33'
+updated_date: '2026-08-30 22:20'
 labels: []
 dependencies:
   - TASK-143.01.17
@@ -34,3 +35,18 @@ Own every new Codex workbench duration in the existing shared timing module. The
 - [ ] #3 src/shared/timing/tests/codex-workbench-policy.test.ts proves base <= max, wait cap < browser lease, approval < browser lease, spoken <= approval, semantic freshness < realtime recovery, realtime stop < TERM grace, and realtime stop + TERM grace < composed shutdown.
 - [ ] #4 Legacy injection timing names remain until the later serialized TASK-143.06.07 removal, which must not change any accepted workbench duration.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Reconcile the twelve reviewed Codex workbench durations and their pull-against rationale with the existing shared timing module, retaining all legacy injection timing names.
+2. Export exactly the twelve named millisecond constants with authored expiry classifications, exponential-backoff reset rule, and realtime-first shutdown order documented beside the values.
+3. Add the module-owned policy test for every exact value and all required inequalities, plus repository-visible checks that prevent local consumer duration literals or override hooks.
+4. Run focused timing tests, module and repository gates, both TypeScript projects, lint, format, diff, and clean-status checks without changing consumers or performing TASK-143.06.07 cleanup early.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Batch reservation at integration HEAD 7e0c8ae: newly ready scoped leaves are exactly TASK-143.01.07 and TASK-143.01.16, with disjoint runtime/codex-instructions and shared/timing ownership. TASK-143.01.13 remains active on the protocol/package seam, so three of four leaf-worker slots are occupied. Slot 4 is intentionally unused because no other TASK-143/TASK-144 leaf is ready; all other ready scoped entries are parent containers and remaining leaves are dependency-blocked. TASK-141/TASK-142 remain unrelated CI-restoration bugs.
+<!-- SECTION:NOTES:END -->
