@@ -4,13 +4,13 @@ title: Disclose coordinator identity and settings
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 17:51'
 labels: []
 dependencies:
   - TASK-143.03.02
   - TASK-143.03.04
   - TASK-143.07.01
-  - TASK-144.07
+  - TASK-144.20
   - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md
@@ -26,13 +26,13 @@ ordinal: 205000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Disclose coordinator identity and configured/effective model, effort, service tier, approval, and sandbox settings without presenting it as the workhorse. Delegation profile: gpt-5.6-sol, high.
+Render read-only coordinator identity and host-selected configured/effective model, effort, service tier, approval, and sandbox settings without presenting it as the workhorse. This surface has no edit or save command. Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Settings distinguish loading, saving, matching notification confirmed, refused, stale coordinator, lost/outcome_unknown, reconciled, unavailable model/effort/tier, and fallback where priority is not advertised.
-- [ ] #2 A save remains pending until the exact settings-updated notification proves model, effort, and effective service tier while approval and sandbox remain unchanged.
-- [ ] #3 Failed/uncertain saves restore or freeze the edited values until a full authoritative read reconciles; no optimistic coordinator configuration becomes truth.
-- [ ] #4 Workhorse and coordinator identity/history/settings are labelled distinctly for visual and screen-reader users and never share a thread-link control.
+- [ ] #1 The read-only disclosure distinguishes loading, confirmed, stale coordinator, unavailable, and fallback when priority is not advertised; it has no saving, refused-save, or outcome_unknown edit state.
+- [ ] #2 It displays configured model gpt-5.6-luna, configured reasoning effort medium, effective service tier, approvalPolicy, approvalsReviewer, sandboxPolicy, and activePermissionProfile from authoritative host state.
+- [ ] #3 The module exposes no form fields, save control, browser command, settings/update call, or optimistic settings state; unavailable fields name the missing host fact and recovery.
+- [ ] #4 Workhorse and coordinator identity, history, and settings are labelled distinctly for visual and screen-reader users and never share a thread-link control.
 <!-- AC:END -->
