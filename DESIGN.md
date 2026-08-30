@@ -145,45 +145,39 @@ binary should keep a state file of what it last reported and emit only the
 delta — "since last turn: you moved AuthService out of the API cluster and added
 an unlabelled box next to Postgres." Cheaper, and far better prose material.
 
-### 2. Mid-conversation push — app-server injection
+### 2. Mid-conversation context — the bound app-server session
 
-**This is the unlock.** Because the live session rides on an ordinary thread,
-anything that can reach that thread can push to it.
+The workbench owns one private stdio app-server child and one explicit thread
+link from a pane to its workhorse. That link is the only automatic target for semantic board
+updates. Archboard does not inspect recent activity, count loaded tasks, read an
+environment-selected task id, or connect a second client to a control socket.
 
-The app-server exposes a JSON-RPC control socket at
-`$CODEX_HOME/app-server-control/app-server-control.sock` (mode 0600 in a 0700
-dir, WebSocket-upgraded, **multi-client**). The TUI auto-joins this daemon when
-the socket exists, and voice runs through app-server anyway — so in our use case
-the daemon is already there.
+The existing change feed still performs the valuable work: settle a person's
+gesture, discard visual noise, and narrate the semantic delta compactly. A human
+or mixed-origin update is delivered with `thread/inject_items` on the same owned
+connection, so it enters model-visible history without starting a turn. An
+agent-only update is discarded instead of being narrated back to its author.
+No controllable bound task means no delivery and an inspectable reason.
 
-Two distinct verbs, and the distinction is the whole design:
+Realtime voice attaches to a persistent fast coordinator task linked to the
+pane's workhorse, not to the workhorse itself. This keeps low-latency questions,
+web and repository lookups, and immediate board interaction responsive while a
+heavier turn continues. The coordinator has normal Codex capabilities and may
+perform one explicit unambiguous board operation directly; sustained code or
+repository work defaults to delegation. Busy unrelated work uses the app-server
+thread queue, explicit corrections may steer according to a global policy, and
+app-server lifecycle events notify the coordinator without a blocking wait.
 
-| Verb                  | Effect                                                           | Use for                                                        |
-| --------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------- |
-| `thread/inject_items` | Appends raw items to thread history, **without starting a turn** | Quiet state updates — agent sees the board next time it speaks |
-| `turn/steer`          | Injects input **into the running turn** (needs `expectedTurnId`) | Loud interruptions — agent reacts now                          |
-| `turn/start`          | Starts a turn, or steers if one is live                          | Loud, when no turn is running                                  |
+Codex 0.151.0's experimental V3 contract provides startup context, role-bearing
+initial items, session instructions, realtime text append, and transcript-tail
+flush. Each start supplies a fresh semantic brief; while active, the coordinator
+receives the same human board deltas plus live pane and selection context. Its
+timeline remains distinct from the workhorse timeline and the UI cross-links
+delegations, queue changes, callbacks, approvals, and results. There is no
+second board snapshot or implicit task selector.
 
-Verified: `thread/inject_items` → `thread.inject_response_items(items)`
-(`app-server/src/request_processors/turn_processor.rs:878`), and raw
-`TurnInput::ResponseItem` **skips `UserPromptSubmit`**
-(`core/src/hook_runtime.rs:568`) — so our own injections cannot trigger our own
-hook. No feedback loop by construction.
-
-And output from an externally-initiated turn **is pushed into the voice
-session**: the no-active-handoff branch emits
-`RealtimeOutbound::StandaloneHandoff` under the id `"codex"`
-(`realtime_conversation.rs:818-841`, verified). So a loud injection makes the
-agent _speak_, unprompted. That is the difference between a tool the agent
-queries and a colleague watching you draw.
-
-Default to quiet. Every loud injection makes the agent talk over you — debounce,
-and reserve it for semantically interesting changes (a new unlabelled node, a
-severed edge), never per drag tick.
-
-**Fallback with no daemon:** writing to `$CODEX_HOME/queue_1.sqlite` injects a
-user turn from any process — polled via `PRAGMA data_version` every 10 s,
-between turns only. Reaches even a bare TUI. Cruder, but zero infrastructure.
+ADR 0019 supersedes ADR 0005's legacy control-socket route, opt-in environment
+switch, explicit thread environment variable, and loud-injection experiment.
 
 ### 3. On-demand query — CLI
 
@@ -197,26 +191,19 @@ interface added schemas, dispatch arms, docs, dependencies, and parity tests to
 every capability. ADR 0008 records why it was retired. The loopback REST
 interface remains the application seam behind the CLI and browser.
 
-## Security — read before wiring push
+## Security — read before wiring the workbench
 
-The app-server control socket is filesystem-permission-guarded but **multi-client
-and unauthenticated beyond that**: any local process can steer your thread.
-Our canvas server, meanwhile, **binds `127.0.0.1` with no authentication**.
+The private child removes the shared control socket, but not the authority of a
+workbench that can answer approvals, send turns, and expose coordination tools.
+The canvas server therefore remains loopback-only while the workbench is
+enabled. Its browser bridge requires an actual loopback peer, loopback Host, and
+same-origin HTTP and WebSocket requests. A browser lease owns interactive
+reverse requests and is explicitly transferred; a child exit invalidates every
+task-ownership proof.
 
-Those two facts are individually fine and jointly dangerous. If the canvas is
-ever exposed beyond loopback — notably the thin-client path in
-`FLIP_WHITEBOARD.md`, where an N100 box on the LAN talks to the canvas — and the
-canvas can inject turns into a Codex thread, then **anyone who can reach the
-canvas can drive your coding agent**. That is a remote code execution path with
-extra steps.
-
-Rules:
-
-- Turn injection stays loopback-only. Never reachable from a LAN-bound listener.
-- If the thin-client path is used, the canvas is served over an SSH tunnel, or
-  injection is disabled on that deployment.
-- Treat "canvas can make the agent act" as a privileged capability with its own
-  switch, not something implied by the canvas being up.
+The Flip thin-client path must use an SSH tunnel that preserves the loopback
+boundary, or run without the workbench. A LAN-bound unauthenticated listener
+never receives a path to the app-server child.
 
 ## What we're NOT doing
 

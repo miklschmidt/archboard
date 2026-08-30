@@ -1,8 +1,9 @@
 # Sharing the desktop Codex app-server
 
 **Investigated:** 2026-08-30
-**Host:** NixOS, ChatGPT/Codex desktop `26.818.61809`, bundled Codex
-`0.149.0-alpha.4.3`, separately installed Codex CLI `0.149.1`
+**Host:** NixOS, ChatGPT/Codex desktop `26.825.51511`; the original inspection
+used bundled Codex `0.149.0-alpha.4.3` and standalone `0.149.1`. The selected
+standalone contract was rechecked with Codex CLI `0.151.0` on the same date.
 
 ## Decision
 
@@ -13,28 +14,26 @@ Electron main process. It publishes no app-server listener. The visible
 `~/.codex/ipc/ipc.sock` is a separate desktop IPC router with a different frame
 format and message model; it is not an app-server endpoint.
 
-Prefer a Nix-owned shared `codex app-server --listen unix://` daemon that both
-Archboard and ChatGPT Desktop connect to. Fall back to an Archboard-owned
-app-server process when the shared daemon is unavailable or incompatible. This
-keeps the workbench on the app-server protocol while making shared-desktop
-participation an optional compatibility layer rather than a requirement. The
-final transport decision and rejected Remote Control alternative are recorded
-in [Desktop Remote Control as an Archboard transport](./desktop-remote-control-integration-research.md).
+Archboard should also **not create a shared daemon for the workbench**. It starts
+the configured binary as one private stdio child and owns the connection,
+capabilities, reverse requests, dynamic tools, and shutdown. The shared-daemon
+and direct-WebSocket paths below remain useful findings about Desktop internals,
+not supported Archboard modes. The final boundary is recorded in ADR-0019; the
+rejected Remote Control alternative is recorded in
+[Desktop Remote Control as an Archboard transport](./desktop-remote-control-integration-research.md).
 
 The desktop contains an **undocumented and version-coupled** shared-daemon
-branch. Archboard can start the Nix-packaged Codex binary directly with
+branch. A controlled experiment can start the Nix-packaged Codex binary with
 `app-server --listen unix://`, which creates
 `~/.codex/app-server-control/app-server-control.sock`, then launch the desktop
 app with `CODEX_APP_SERVER_USE_LOCAL_DAEMON=1`. Archboard can connect as another
 app-server client through `codex app-server proxy`. This does not require the
 OpenAI shell installer or its managed standalone layout. Those are requirements
 of the `codex app-server daemon start` launcher, not of the Unix app-server
-transport or the desktop's version probe. This shares an Archboard-started
-server, not the desktop's private stdio child. Because the desktop switch is
-undocumented, Archboard must capability-probe it and preserve the private
-app-server fallback. Desktop update, reconnect, simultaneous-client behavior,
-and process-global mutations need dedicated tests before the shared path can be
-treated as dependable.
+transport or the desktop's version probe. This shares an externally started
+server, not the desktop's private stdio child. Because the switch is
+undocumented and the process-global failure domain is larger, it is rejected
+for the workbench rather than retained as a capability-probed fallback.
 
 The bundle also contains a second inversion experiment:
 `CODEX_APP_SERVER_WS_URL=ws://127.0.0.1:PORT` makes the desktop a WebSocket
@@ -399,10 +398,33 @@ Fallback policy:
    desktop bundle and PATH binary remain aligned.
 3. Advertise only capabilities Archboard handles, and treat unknown methods or
    fields as a version mismatch with an actionable error.
-4. If an explicitly enabled shared-daemon experiment cannot connect,
-   initialize, or satisfy the schema/capability check, close that connection
-   and immediately start the standalone child.
-5. Never treat `~/.codex/ipc/ipc.sock` as a fallback app-server endpoint.
+4. Do not discover or try a shared daemon as a production fallback.
+5. Never treat `~/.codex/ipc/ipc.sock` as an app-server endpoint.
+
+### Codex 0.151.0 contract recheck
+
+`codex app-server generate-ts --experimental` is required. Omitting
+`--experimental` removes the realtime client methods even though some realtime
+notification types remain, so a nonexperimental generated tree is an invalid
+workbench contract.
+
+The 0.151.0 experimental tree adds a smaller coordination seam than the Desktop
+MCP bundle: `thread/start.dynamicTools` persists an eager function or namespace
+catalogue, and calls arrive on the same connection as typed `item/tool/call`
+server requests carrying `threadId`, `turnId`, `callId`, namespace, tool, and
+decoded arguments. Archboard can therefore mediate its six coordination tools
+inside the owned session. No MCP child, private host socket, or untyped metadata
+hop is required.
+
+The same tree exposes realtime V3 startup context through
+`includeStartupContext`, role-bearing `initialItems`,
+`realtimeStartInstructions`, and `realtimeEndInstructions`. Archboard's accepted
+voice contract attaches realtime to a persistent configurable fast coordinator
+linked to the pane's workhorse. Each start supplies a fresh semantic brief;
+selection and settled human changes arrive as live developer context. The
+coordinator remains capable under normal task permissions, delegates or queues
+sustained work through host-bound operations, and receives workhorse lifecycle
+events instead of blocking in a wait call.
 
 ## Experimental shared-server validation, if pursued
 
