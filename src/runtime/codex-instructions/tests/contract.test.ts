@@ -35,6 +35,7 @@ import {
 import { contextFixture, instructionByteMutations } from "./fixtures.js";
 
 const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../../..");
+const canonicalCwd = path.sep === "/" ? "/repo/archboard" : "C:\\repo\\archboard";
 const reviewedContract = readFileSync(
 	path.join(repoRoot, "docs/design/codex-workbench-authored-contracts.md"),
 	"utf8",
@@ -327,7 +328,7 @@ describe("literal turn and injection bodies", () => {
 
 describe("literal fork body", () => {
 	test("uses the reviewed profile and only the optional beforeTurnId", () => {
-		const fork = createThreadForkParams({ threadId: "thread-1", cwd: "/repo/archboard" });
+		const fork = createThreadForkParams({ threadId: "thread-1", cwd: canonicalCwd });
 		expect(Object.keys(fork)).toEqual([
 			"threadId",
 			"cwd",
@@ -339,8 +340,8 @@ describe("literal fork body", () => {
 		]);
 		expect(fork).toMatchObject({
 			threadId: "thread-1",
-			cwd: "/repo/archboard",
-			runtimeWorkspaceRoots: ["/repo/archboard"],
+			cwd: canonicalCwd,
+			runtimeWorkspaceRoots: [canonicalCwd],
 			developerInstructions: WORKHORSE_DEVELOPER_INSTRUCTIONS,
 			ephemeral: false,
 			threadSource: "archboard",
@@ -348,7 +349,7 @@ describe("literal fork body", () => {
 		});
 		const bounded = createThreadForkParams({
 			threadId: "thread-1",
-			cwd: "/repo/archboard",
+			cwd: canonicalCwd,
 			beforeTurnId: "turn-1",
 		});
 		expect(Object.keys(bounded)).toEqual([
@@ -374,7 +375,7 @@ describe("literal fork body", () => {
 	test("self-fork sets the executing turn and ignores no other profile fields", () => {
 		const fork = createSelfThreadForkParams({
 			threadId: "thread-1",
-			cwd: "/repo/archboard",
+			cwd: canonicalCwd,
 			executingTurnId: "executing-turn",
 		});
 		expect(fork.beforeTurnId).toBe("executing-turn");
@@ -382,7 +383,7 @@ describe("literal fork body", () => {
 		expect(() =>
 			createThreadForkParams({
 				threadId: "thread-1",
-				cwd: "/repo/archboard",
+				cwd: canonicalCwd,
 				beforeTurnId: undefined,
 				unexpected: true,
 			} as unknown as Parameters<typeof createThreadForkParams>[0]),
