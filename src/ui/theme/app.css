@@ -118,19 +118,9 @@
 }
 
 @theme inline {
-	--color-*: initial;
-	--font-*: initial;
-	--font-weight-*: initial;
-	--text-*: initial;
-	--tracking-*: initial;
-	--radius-*: initial;
-	--spacing: initial;
-	--spacing-*: initial;
-	--shadow-*: initial;
-	--opacity-*: initial;
-	--transition-duration-*: initial;
-	--ease-*: initial;
-	--animate-*: initial;
+	/* Tailwind's configurable visual defaults stop here. Only the semantic
+	   aliases below re-enter the theme. */
+	--*: initial;
 
 	--color-background: var(--arch-color-background);
 	--color-foreground: var(--arch-color-foreground);
@@ -155,8 +145,8 @@
 	--color-primary-foreground: var(--arch-color-primary-foreground);
 	--color-secondary: var(--arch-color-surface-subtle);
 	--color-secondary-foreground: var(--arch-color-foreground);
-	--color-accent: var(--arch-color-primary-subtle);
-	--color-accent-foreground: var(--arch-color-foreground);
+	--color-accent: var(--arch-color-primary);
+	--color-accent-foreground: var(--arch-color-primary-foreground);
 	--color-destructive: var(--arch-color-destructive);
 	--color-destructive-subtle: var(--arch-color-destructive-subtle);
 	--color-warning: var(--arch-color-warning);
@@ -196,7 +186,7 @@
 
 	--spacing-rule: var(--arch-space-rule);
 	--spacing-compact: var(--arch-space-compact);
-	--spacing-tight: var(--arch-space-tight);
+	--spacing-grid-tight: var(--arch-space-tight);
 	--spacing-control: var(--arch-space-control);
 	--spacing-control-inline: var(--arch-space-control-inline);
 	--spacing-region: var(--arch-space-region);
