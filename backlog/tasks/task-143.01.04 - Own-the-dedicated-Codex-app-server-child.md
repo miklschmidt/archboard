@@ -4,6 +4,7 @@ title: Own the dedicated Codex app-server child
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
+updated_date: '2026-08-30 15:39'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -20,13 +21,13 @@ ordinal: 174000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the typed process manifest, dedicated homes, supported sign-in state, environment, lifecycle, and isolation in `src/runtime/codex-process`. This module returns a child handle and process snapshot; it does not own JSON-RPC framing or thread state.
+Own the typed process manifest, dedicated homes, environment, lifecycle, locking, and isolation in `src/runtime/codex-process`. This module resolves and starts the child and returns a child handle plus process snapshot; initialization, account state, JSON-RPC, and thread state belong to later modules.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The exact configured 0.151.0 binary starts one stdio `app-server` child with the reviewed arguments, dedicated `CODEX_HOME`, dedicated requested `CODEX_SQLITE_HOME`, exact environment allowlist, exclusive home lock, and no Desktop/shared-daemon discovery.
-- [ ] #2 After initialize, the module reads `configRequirements/read` and effective `config/read` where required and refuses readiness unless the effective SQLite home equals the manifest path, including a process test with a conflicting managed requirement.
-- [ ] #3 Snapshots distinguish missing/wrong binary, sign-in required, locked home, starting, ready, crashing/backoff, stopping, and stopped; shutdown reaps the child and two dedicated homes remain isolated.
-- [ ] #4 Supported account/login state is owned by the dedicated home; auth tokens or mutable config from the default Codex home are never borrowed or symlinked.
+- [ ] #1 The exact configured 0.151.0 binary starts one stdio app-server child with reviewed arguments, dedicated CODEX_HOME, dedicated requested CODEX_SQLITE_HOME, exact environment allowlist, exclusive home lock, and no Desktop/shared-daemon discovery.
+- [ ] #2 Snapshots distinguish missing/wrong binary, locked home, spawning, running, crashing/backoff, stopping, and stopped without claiming protocol, configuration, account, or session readiness.
+- [ ] #3 Shutdown, spawn failure, signal exit, and backoff release locks and reap the child; two process owners prove dedicated homes and locks remain isolated.
+- [ ] #4 Process tests cover binary resolution, exact argv/env, lock contention, exponential bounded backoff, SIGTERM then bounded kill, orphan refusal, and no borrowed or symlinked default Codex state.
 <!-- AC:END -->

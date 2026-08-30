@@ -15,27 +15,54 @@ seam. Its tests live with that module or exercise its public interface. A leaf
 does not resolve a neighboring module's policy, add a second state owner, or
 change another leaf's contract implicitly.
 
-The graph contains 53 implementation leaves:
+The graph contains 74 implementation leaves: 57 under TASK-143 and 17 under
+TASK-144.
 
 | Milestone   | Leaf ownership                                                                                                                                                         |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TASK-143.01 | Shared identities and browser DTO; exact protocol; child process; epoch; JSON-RPC transport; instructions; session; thread link; server gateway                        |
-| TASK-143.02 | Private realtime package contract; browser media/WebRTC lifecycle; Archboard realtime adapter                                                                          |
-| TASK-143.03 | Browser transport; assistant-ui adapter; thread link UI; timeline; composer; queue; ordinary approvals; coordinator disclosure; board status; frame; shell integration |
-| TASK-143.04 | Voice presentation state; controls; context; transcript; voice-specific approval; frame integration                                                                    |
+| TASK-143.01 | Shared identities/browser DTO; ignore/generate/register exact protocol; process; epoch; transport; instructions; session; thread link; workhorse start; gateway/canvas |
+| TASK-143.02 | Frozen realtime package/API; serialized root registration; boundary enforcement; browser media/WebRTC; sole Archboard realtime adapter                                 |
+| TASK-143.03 | Browser transport; assistant-ui pin/adapter; owned thread/timeline/composer/queue/approval/coordinator/board UI; text frame; shell; browser owner                      |
+| TASK-143.04 | Voice projection; controls; context; transcript; spoken approval; frame/fullscreen integration; controlled browser owner; inventory; real-audio acceptance             |
 | TASK-143.05 | Wait graph; approval broker; six-tool catalogue; dynamic-tool dispatcher                                                                                               |
 | TASK-143.06 | Semantic publisher; linked delivery; legacy control module removal; legacy command-surface removal                                                                     |
-| TASK-143.07 | Coordinator lifecycle; queue policy; bound workhorse effects; callbacks; spoken gate; coordinator tool dispatcher                                                      |
-| TASK-144    | Dependency seam; Tailwind build; semantic theme; shadcn configuration; class composition; native Oxfmt sorting; dialog; opener migration; aesthetic guide              |
+| TASK-143.07 | Coordinator/voice tool catalogue; coordinator lifecycle; queue policy; bound effects; callbacks; spoken gate; dispatcher                                               |
+| TASK-144    | Serialized dependencies; aliases; theme/import/shell; shadcn; classes; Oxfmt/owner; dialog/opener/owner; guide/AGENTS/enforcement                                      |
 
-Two modules intentionally have serial owners:
+The shared seams have explicit serial owners:
 
-- TASK-144.02 establishes `src/ui/theme`; TASK-144.03 adds the semantic map.
+- TASK-143.01.13 registers protocol conformance, TASK-143.02.04 registers the
+  private workspace, TASK-144.01 owns the accepted Tailwind/Base UI dependency
+  set, and TASK-143.03.12 adds assistant-ui last.
+- TASK-144.02 configures the Vite plugin/runtime alias, TASK-144.15 mirrors it
+  in frontend TypeScript, and TASK-144.17 mirrors it in root TypeScript before
+  shadcn configuration is accepted.
+- TASK-144.03 creates `src/ui/theme/app.css`, TASK-144.13 imports it from the
+  frontend, and TASK-144.14 migrates `shell.css` to consume its tokens.
 - TASK-143.03.10 establishes `src/ui/workbench-frame`; TASK-143.04.06 adds
   voice after the text frame is accepted.
+- TASK-143.03.13 and TASK-143.04.07 own separate text and voice browser tests;
+  TASK-143.04.08 alone registers both in the canonical browser inventory.
+- TASK-144.08 migrates opener settings and TASK-144.11 alone changes its
+  existing browser owner.
 
-Their dependencies encode the order. No two active workers edit either module
-at the same time.
+Dependencies encode every order above. No two ready leaves own the same module
+or configuration seam at the same time.
+
+## Dependency waves
+
+1. Establish shared identities, exact protocol inputs, private-package
+   governance, authored instructions, and the one root dependency chain.
+2. Build process/transport/session and Tailwind theme/resolver seams, then bind
+   current-epoch threads and create the workhorse-start transaction.
+3. Add approval/tool catalogues, semantic context, coordinator catalogue and
+   lifecycle, queue policy, realtime package/media/adapter, and the browser
+   gateway.
+4. Implement one UI module per leaf against frozen ports. Text composition and
+   shell integration precede voice composition and fullscreen projection.
+5. Add the separate text and controlled-voice browser owners, register them
+   once, run the real-audio acceptance procedure, and execute composed boundary
+   reviews.
 
 ## Orchestration loop
 

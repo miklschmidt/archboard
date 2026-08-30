@@ -4,6 +4,7 @@ title: Resolve state-gated spoken approvals
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
+updated_date: '2026-08-30 15:40'
 labels: []
 dependencies:
   - TASK-143.02.03
@@ -22,13 +23,14 @@ ordinal: 196000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the atomic spoken-approval gate and typed resolver in `src/runtime/codex-spoken-approval`. The later normal coordinator turn, not the realtime backing model, classifies a final reply; the host executes only a stored effect.
+Own only voice-gate state and the broker identity for one spoken approval in `src/runtime/codex-spoken-approval`. The normal coordinator turn classifies a final reply; all effect response construction, target revalidation, and settlement execute through `src/runtime/codex-approvals` CAS.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The immutable record includes shared approval identity, approvalId, child epoch, coordinator, realtime session, exact stored description, target state/effect hash, offered one-time decisions, and expiry; exactly one global slot may be pending.
-- [ ] #2 The gate follows none -> presenting -> awaiting_user -> resolving -> terminal. `appendSpeech` speaks the stored description and awaiting_user begins only after the expected session-scoped final assistant transcript sequence; the uncorrelated 0.151.0 speech race remains explicit.
-- [ ] #3 Only a later ordinary coordinator turn may call the typed `{approvalId, verdict: accept|decline}` resolver; coordinator-blocking requests, second requests, session grants, and policy amendments remain visual-only.
-- [ ] #4 Compare-and-swap revalidates every identity/state before one stored effect executes; expiry, target change, realtime close, child/coordinator replacement, visual resolution, duplicate, early, ambiguous, or mismatched replies are inert.
+- [ ] #1 The immutable gate record contains approval broker identity, approvalId, child/epoch, coordinator, realtime session, stored description, target/effect hash, one-time decisions, and expiry; one global slot may be pending.
+- [ ] #2 The gate follows none -> presenting -> awaiting_user -> resolving -> terminal; appendSpeech speaks stored text and awaiting_user begins only after the matching canonical final assistant transcript item sequence.
+- [ ] #3 Only a later ordinary coordinator turn may request {approvalId, verdict: accept|decline}; coordinator-blocking requests, second requests, session grants, policy amendments, and the uncorrelated speech race remain visual-only.
+- [ ] #4 Resolution calls the approval broker CAS and mirrors its terminal outcome; expiry, target change, realtime close, replacement, visual resolution, duplicate, early, ambiguous, or mismatched replies never execute a local effect.
+- [ ] #5 Tests in src/runtime/codex-spoken-approval/tests cover every gate transition and broker outcome without constructing a response or settling an effect in this module.
 <!-- AC:END -->

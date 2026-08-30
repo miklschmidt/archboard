@@ -4,7 +4,7 @@ title: Build a private browser package for Codex realtime voice
 status: To Do
 assignee: []
 created_date: '2026-08-30 11:44'
-updated_date: '2026-08-30 15:16'
+updated_date: '2026-08-30 15:48'
 labels: []
 dependencies:
   - TASK-143.01
@@ -21,12 +21,12 @@ ordinal: 164000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Integration milestone for the private framework-neutral `packages/codex-realtime` contract, its native browser media/WebRTC engine, and the Archboard 0.151.0 realtime adapter delivered by TASK-143.02.01-.03. The package exists for Archboard's current voice consumer; publication obligations remain out of scope.
+Integration milestone for the complete private `packages/codex-realtime` contract, serialized root registration, automated boundary enforcement, native browser media/WebRTC, and the sole Archboard 0.151.0 realtime adapter delivered by TASK-143.02.01-.05. Publication remains out of scope.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The private package owns microphone, peer, ordered data channel, remote audio, level analysis, mute, recovery, stop, and exact-once cleanup without Archboard, React, assistant-ui, Node, or generated-protocol imports.
-- [ ] #2 The host adapter mints and matches exact realtime session IDs and rejects stale child/coordinator/session delivery before every active append.
-- [ ] #3 Controlled browser fakes and a real-browser owner cover every reachable lifecycle/failure state, creation order, recovery, and resource cleanup through the package's public export.
+- [ ] #1 The private package is covered by root type/lint/format/test/build and repository inventory/boundary policy and owns browser media lifecycle without Archboard/React/assistant-ui/Node/generated imports.
+- [ ] #2 The sole host adapter owns exact realtime binding/phase, unique session IDs, stop/closed/restart serialization, guarded append, phase-gated events, and item-scoped canonical transcript.
+- [ ] #3 Controlled package/browser fakes cover every reachable lifecycle/failure, creation order, stale event, recovery, and cleanup through the frozen export.
 <!-- AC:END -->

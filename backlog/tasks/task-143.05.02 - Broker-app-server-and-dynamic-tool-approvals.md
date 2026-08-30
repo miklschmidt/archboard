@@ -4,6 +4,7 @@ title: Broker app-server and dynamic-tool approvals
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
+updated_date: '2026-08-30 15:40'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -22,13 +23,13 @@ ordinal: 185000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own browser approval leases, immutable request records, effect fingerprints, target revalidation, and exact-once decisions in `src/runtime/codex-approvals`. This module does not render cards or execute effects.
+Own immutable approval records, generated response construction, effect fingerprints, target revalidation, and compare-and-swap settlement in `src/runtime/codex-approvals`. Browser lease remains in the gateway; cards and spoken gate hold only broker identity.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Records use the shared discriminated approval identity without manufacturing missing turn IDs and bind child epoch, requester, target state token, canonical effect hash, offered decisions, and expiry.
-- [ ] #2 Immediately before dispatch the broker re-reads target/effect state; change, owner loss, server resolution, fabricated choice, stale identity, or expiry invalidates the record and dispatches no effect.
-- [ ] #3 Valid accept or decline settles exactly once; owner loss emits the generated terminal response for every pending reverse request before lease transfer.
-- [ ] #4 Tests cover every generated approval/elicitation family, legacy identities, null MCP turn, transfer, cancellation before/after dispatch, stale races, and duplicate decisions.
+- [ ] #1 A generated-variant table covers every 0.151.0 command/file approval, tool user-input, MCP elicitation, permissions request, legacy approval, and dynamic-tool effect identity, including request correlation, null-turn variants, legal decisions, and exact terminal responses.
+- [ ] #2 Records bind child/epoch, requester identity, target state token, canonical effect hash, offered decisions, expiry, and cancellation state without manufacturing missing thread/turn IDs.
+- [ ] #3 The broker CAS re-reads target/effect state immediately before dispatch; changed state, owner loss, server resolution, cancellation, fabricated choice, stale identity, expiry, or duplicate produces one typed terminal outcome and no second effect.
+- [ ] #4 Owner loss accepts a request identity from the gateway and constructs the generated terminal response; tests in src/runtime/codex-approvals/tests cover every table cell, transfer, cancellation before/after dispatch, stale races, and duplicate visual/spoken decisions.
 <!-- AC:END -->

@@ -4,10 +4,11 @@ title: Render persistent live voice controls
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:10'
+updated_date: '2026-08-30 15:42'
 labels: []
 dependencies:
   - TASK-143.04.01
-  - TASK-144
+  - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
@@ -27,8 +28,8 @@ Own Start, Mute/Unmute, Stop, permission/negotiation progress, audio level, and 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Idle start explains required thread link, coordinator, experimental capability, microphone availability, and one-session exclusion before requesting permission.
-- [ ] #2 Active controls always show text state, source pane/workhorse/coordinator, configured/effective model and service tier, Mute/Unmute, and Stop; analyser visualization is supplementary.
-- [ ] #3 Stop remains reachable through workbench collapse and supported desktop/fullscreen modes and completes only after authoritative cleanup.
-- [ ] #4 Keyboard, screen-reader text, non-color status, visible focus, reduced motion, both themes, and Samsung Flip touch targets are browser-tested.
+- [ ] #1 Controls render unavailable, ready, requesting permission, negotiating, listening, muted, processing, agent-speaking, recovering, stopping, stopped, retryable failure, and terminal failure with exact bound identity.
+- [ ] #2 Start, mute/unmute, retry when permitted, and Stop emit only explicit presentation-adapter commands; pending/repeated/late input is disabled with an actionable reason.
+- [ ] #3 Level/waveform visualization is supplemental to named status, respects reduced motion, never animates after stop, and never exposes raw media objects.
+- [ ] #4 Tests at src/ui/voice-controls/tests cover keyboard/pointer/touch, visible focus, labels/status, color independence, both themes, Samsung Flip targets, failure recovery, and disposal.
 <!-- AC:END -->

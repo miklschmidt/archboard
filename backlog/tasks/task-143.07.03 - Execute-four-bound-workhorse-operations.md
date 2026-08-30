@@ -4,10 +4,12 @@ title: Execute four bound workhorse operations
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
+updated_date: '2026-08-30 15:40'
 labels: []
 dependencies:
   - TASK-143.01.09
   - TASK-143.06.01
+  - TASK-143.07.01
   - TASK-143.07.02
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
@@ -27,8 +29,8 @@ Own inspect, delegate, queue-management, and conditional steer effects in `src/r
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Inspect is read-only; idle delegation starts a turn with exact Archboard additionalContext; busy created work may queue; busy attached work accepts only a related correction through steer with exact context and expectedTurnId.
-- [ ] #2 Unrelated attached-busy work is refused with an actionable wait-until-idle result; prior-epoch, cross-domain, self-target, unavailable, or mismatched-manifest targets fail closed.
-- [ ] #3 Explicit corrections, Coordinator judgment, and Never steer are enforced exactly and every effect has stable cross-timeline correlation.
-- [ ] #4 Tests cover idle/active/attached/created branches, one bounded direct board action remaining coordinator-owned, and cancellation before/after dispatch.
+- [ ] #1 Inspect is read-only; idle delegation starts one bound turn with exact Archboard additionalContext; busy created work may queue; busy attached work accepts only a related correction through steer with exact context and expectedTurnId.
+- [ ] #2 The host injects the linked workhorse and current coordinator identities; prior-epoch, cross-domain, self, unavailable, manifest mismatch, or unrelated attached-busy target fails closed.
+- [ ] #3 The operation consumes TASK-143.07.01's read-only Explicit corrections, Coordinator judgment, or Never steer policy for this decision and returns stable cross-timeline operation correlation.
+- [ ] #4 Tests in src/runtime/codex-workhorse-operations/tests cover every idle/active/attached/created branch, one bounded coordinator board action, lost response, and cancellation before/after dispatch without duplicate turns.
 <!-- AC:END -->
