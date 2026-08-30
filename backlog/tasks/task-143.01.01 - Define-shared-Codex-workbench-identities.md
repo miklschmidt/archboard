@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.01
 title: Define shared Codex workbench identities
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-08-30 19:04'
+updated_date: '2026-08-30 19:07'
 labels: []
 dependencies: []
 references:
@@ -28,10 +28,10 @@ Delegation profile: gpt-5.6-luna, xhigh.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Distinct opaque types exist for ChildId, ChildEpoch, BrowserCommandId, ThreadId, TurnId, ItemId, QueuedSubmissionId, LoginId, JSON-RPC request id, DynamicToolCallId, RealtimeSessionId, and ApprovalId.
-- [ ] #2 A wire-request correlation is exactly child, epoch, requestId; a logical tool-call correlation is exactly child, epoch, threadId, turnId, callId, namespace, tool, and manifestHash.
-- [ ] #3 Parsers validate wire strings once, preserve opacity across DTOs, and reject empty, wrong-domain, stale-epoch, or caller-fabricated identities.
-- [ ] #4 Type fixtures prove that thread/turn/item/queue/login/request identities cannot be interchanged and runtime fixtures prove stable round trips.
+- [x] #1 Distinct opaque types exist for ChildId, ChildEpoch, BrowserCommandId, ThreadId, TurnId, ItemId, QueuedSubmissionId, LoginId, JSON-RPC request id, DynamicToolCallId, RealtimeSessionId, and ApprovalId.
+- [x] #2 A wire-request correlation is exactly child, epoch, requestId; a logical tool-call correlation is exactly child, epoch, threadId, turnId, callId, namespace, tool, and manifestHash.
+- [x] #3 Parsers validate wire strings once, preserve opacity across DTOs, and reject empty, wrong-domain, stale-epoch, or caller-fabricated identities.
+- [x] #4 Type fixtures prove that thread/turn/item/queue/login/request identities cannot be interchanged and runtime fixtures prove stable round trips.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -68,4 +68,12 @@ Rereview follow-up accepted: raw adoption must fail closed for lone UTF-16 surro
 Narrow follow-up implemented: encodeRawIdentity now validates UTF-16 surrogate pairing before TextEncoder, rejecting lone high/low surrogates so malformed strings cannot collide with U+FFFD. Well-formed supplementary Unicode and literal U+FFFD remain distinct and serialize byte-identically. The repository-check note is corrected to the exact command result: 48 tests and 145 assertions.
 
 Follow-up validation: bun test --isolate src/shared/codex-workbench-identity (exit 0, 7 passed, 65 assertions); bun run type-check (exit 0); bunx tsc --noEmit --listFiles --pretty false with the type-fixtures.ts path check (exit 0; fixture listed); bunx oxlint src/shared/codex-workbench-identity (exit 0); bunx oxfmt --check src/shared/codex-workbench-identity (exit 0); bun test --isolate tests/system/repository-policy/boundaries.test.ts tests/system/repository-policy/test-inventory.test.ts (exit 0, 48 passed, 145 assertions).
+
+Root reconciliation validation at integration commit bb57efbca09d568eca628956a600d3c8dba7c794 repeated the 7-test/65-assertion module contract, strict root and frontend type checks, compiled type-fixture proof, full lint and format checks, the exact 48-test/145-assertion boundary plus inventory command, and the complete 118-test/363-assertion repository lane. The unchanged-base rereviewer returned REVIEW_CLEAN after direct malformed- and well-formed-Unicode probes.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added one shared opaque identity contract with separate ordinary validation, host issuance, and trusted protocol-decoder capabilities. Exact closed correlations reject stale, wrong-domain, unissued, caller-fabricated, and malformed-Unicode identities while server-issued values serialize byte-identically. Exhaustive compiler fixtures cover all required identity domains and correlation keys; module, type, lint, format, boundary, inventory, and repository checks passed under independent review.
+<!-- SECTION:FINAL_SUMMARY:END -->
