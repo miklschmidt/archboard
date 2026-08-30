@@ -30,15 +30,17 @@ export interface RealtimeMediaSession {
 
 const CANCELLED = Symbol("cancelled");
 const TIMED_OUT = Symbol("timed-out");
+type RunTimer = ReturnType<typeof globalThis.setTimeout>;
 
 interface Run {
 	readonly correlation: RealtimeCorrelation;
 	readonly cancelled: Promise<typeof CANCELLED>;
 	readonly cancel: () => void;
 	readonly removers: Array<() => void>;
-	readonly timers: Set<number>;
+	readonly timers: Set<RunTimer>;
 	readonly stoppedTracks: Set<MediaStreamTrack>;
 	state: RealtimeState;
+	snapshot: RealtimeMediaSnapshot;
 	cancelledNow: boolean;
 	failed: boolean;
 	offerSent: boolean;
@@ -48,7 +50,6 @@ interface Run {
 	channel?: RTCDataChannel;
 	remoteStream?: MediaStream;
 	remoteElement?: HTMLMediaElement;
-	remoteObjectUrl?: string;
 	audioContext?: AudioContext;
 	audioSource?: MediaStreamAudioSourceNode;
 	analyser?: AnalyserNode;
@@ -65,6 +66,13 @@ function frozenSnapshot(
 	return Object.freeze({ correlation, state, inputLevel });
 }
 
+function canonicalCorrelation(correlation: RealtimeCorrelation): RealtimeCorrelation {
+	return Object.freeze({
+		sessionId: correlation.sessionId,
+		correlationId: correlation.correlationId,
+	});
+}
+
 function createRun(correlation: RealtimeCorrelation): Run {
 	let resolveCancel!: (value: typeof CANCELLED) => void;
 	const cancelled = new Promise<typeof CANCELLED>((resolve) => {
@@ -78,6 +86,7 @@ function createRun(correlation: RealtimeCorrelation): Run {
 		timers: new Set(),
 		stoppedTracks: new Set(),
 		state: INITIAL_REALTIME_STATE,
+		snapshot: frozenSnapshot(correlation, INITIAL_REALTIME_STATE, 0),
 		cancelledNow: false,
 		failed: false,
 		offerSent: false,
@@ -108,7 +117,7 @@ function listen(run: Run, target: EventTarget, type: string, listener: EventList
 	run.removers.push(() => target.removeEventListener(type, listener));
 }
 
-function clearRunTimer(run: Run, timer: number): void {
+function clearRunTimer(run: Run, timer: RunTimer): void {
 	if (!run.timers.delete(timer)) return;
 	globalThis.clearTimeout(timer);
 }
@@ -117,39 +126,22 @@ async function bounded<T>(
 	run: Run,
 	operation: Promise<T>,
 	durationMs: number,
+	cancellable = true,
 ): Promise<T | typeof CANCELLED | typeof TIMED_OUT> {
-	let timer = 0;
+	let timer: RunTimer | undefined;
 	const timeout = new Promise<typeof TIMED_OUT>((resolve) => {
 		timer = globalThis.setTimeout(() => {
-			run.timers.delete(timer);
+			if (timer !== undefined) run.timers.delete(timer);
 			resolve(TIMED_OUT);
-		}, durationMs) as unknown as number;
+		}, durationMs);
 		run.timers.add(timer);
 	});
 	try {
-		return await Promise.race([operation, run.cancelled, timeout]);
+		return await Promise.race(
+			cancellable ? [operation, run.cancelled, timeout] : [operation, timeout],
+		);
 	} finally {
-		clearRunTimer(run, timer);
-	}
-}
-
-async function boundedCommand<T>(
-	run: Run,
-	operation: Promise<T>,
-	durationMs: number,
-): Promise<T | typeof TIMED_OUT> {
-	let timer = 0;
-	const timeout = new Promise<typeof TIMED_OUT>((resolve) => {
-		timer = globalThis.setTimeout(() => {
-			run.timers.delete(timer);
-			resolve(TIMED_OUT);
-		}, durationMs) as unknown as number;
-		run.timers.add(timer);
-	});
-	try {
-		return await Promise.race([operation, timeout]);
-	} finally {
-		clearRunTimer(run, timer);
+		if (timer !== undefined) clearRunTimer(run, timer);
 	}
 }
 
@@ -169,6 +161,15 @@ function removeListeners(run: Run): void {
 	for (const remove of run.removers.splice(0)) remove();
 }
 
+function detachRemote(run: Run): void {
+	if (!run.remoteElement) return;
+	run.remoteElement.pause();
+	run.remoteElement.srcObject = null;
+	run.remoteElement.removeAttribute("src");
+	run.remoteElement.load();
+	run.remoteElement = undefined;
+}
+
 async function cleanupRun(run: Run): Promise<void> {
 	if (run.cleanup) return run.cleanup;
 	run.cleanup = (async () => {
@@ -181,17 +182,7 @@ async function cleanupRun(run: Run): Promise<void> {
 		run.audioSource?.disconnect();
 		run.analyser?.disconnect();
 		if (run.audioContext) await run.audioContext.close().catch(() => undefined);
-		if (run.remoteElement) {
-			run.remoteElement.pause();
-			if ("srcObject" in run.remoteElement) run.remoteElement.srcObject = null;
-			run.remoteElement.removeAttribute("src");
-			run.remoteElement.load();
-			run.remoteElement = undefined;
-		}
-		if (run.remoteObjectUrl) {
-			URL.revokeObjectURL(run.remoteObjectUrl);
-			run.remoteObjectUrl = undefined;
-		}
+		detachRemote(run);
 		if (run.channel && run.channel.readyState !== "closed") run.channel.close();
 		if (run.peer) {
 			const replacements: Promise<void>[] = [];
@@ -218,18 +209,29 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 	let snapshot = frozenSnapshot(null, INITIAL_REALTIME_STATE, 0);
 	let current: Run | null = null;
 	let disposed = false;
+	let lifecycleQueue = Promise.resolve();
 	const listeners = new Set<RealtimeMediaListener>();
+	const enqueue = <T>(operation: () => Promise<T>): Promise<T> => {
+		const pending = lifecycleQueue.then(operation);
+		lifecycleQueue = pending.then(
+			() => undefined,
+			() => undefined,
+		);
+		return pending;
+	};
 
-	const publish = (run: Run, state: RealtimeState): void => {
+	const publish = (run: Run, state: RealtimeState, inputLevel = run.snapshot.inputLevel): void => {
 		if (current !== run) return;
 		run.state = transitionRealtimeState(run.state, state);
-		snapshot = frozenSnapshot(run.correlation, run.state, snapshot.inputLevel);
+		run.snapshot = frozenSnapshot(run.correlation, run.state, inputLevel);
+		snapshot = run.snapshot;
 		for (const listener of listeners) listener(snapshot);
 	};
 
 	const publishLevel = (run: Run, inputLevel: number): void => {
 		if (current !== run || run.cancelledNow || run.failed) return;
-		snapshot = frozenSnapshot(run.correlation, run.state, inputLevel);
+		run.snapshot = frozenSnapshot(run.correlation, run.state, inputLevel);
+		snapshot = run.snapshot;
 		for (const listener of listeners) listener(snapshot);
 	};
 
@@ -241,7 +243,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 					(outcome) => outcome.outcome === "delivered",
 					() => false,
 				);
-				const result = await boundedCommand(run, pending, CODEX_REALTIME_STOP_MS);
+				const result = await bounded(run, pending, CODEX_REALTIME_STOP_MS, false);
 				return result === true;
 			})();
 		}
@@ -255,10 +257,9 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 	): Promise<void> => {
 		if (current !== run || run.cancelledNow || run.failed) return;
 		run.failed = true;
-		publish(run, { phase: "recoverable_error", reason, message });
+		publish(run, { phase: "recoverable_error", reason, message }, 0);
 		await cleanupRun(run);
 		await stopHost(run);
-		if (current === run) snapshot = frozenSnapshot(run.correlation, run.state, 0);
 	};
 
 	const terminal = async (
@@ -268,34 +269,40 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 	): Promise<void> => {
 		if (current !== run || run.cancelledNow || run.failed) return;
 		run.failed = true;
-		publish(run, { phase: "terminal_error", reason, message });
+		publish(run, { phase: "terminal_error", reason, message }, 0);
 		await cleanupRun(run);
 		await stopHost(run);
-		if (current === run) snapshot = frozenSnapshot(run.correlation, run.state, 0);
 	};
 
 	const stopRun = async (run: Run, dispose: boolean): Promise<void> => {
 		if (run.state.phase === "closed") return;
 		cancelRun(run);
 		if (run.state.phase !== "stopping") {
-			publish(run, {
-				phase: "stopping",
-				reason: dispose ? "dispose_requested" : "stop_requested",
-			});
+			publish(
+				run,
+				{
+					phase: "stopping",
+					reason: dispose ? "dispose_requested" : "stop_requested",
+				},
+				0,
+			);
 		}
 		await cleanupRun(run);
 		const hostStopped = await stopHost(run);
 		if (current !== run || run.state.phase !== "stopping") return;
 		if (!hostStopped) {
-			publish(run, {
-				phase: "recoverable_error",
-				reason: "stop_failed",
-				message: "The realtime host did not confirm that it stopped.",
-			});
+			publish(
+				run,
+				{
+					phase: "recoverable_error",
+					reason: "stop_failed",
+					message: "The realtime host did not confirm that it stopped.",
+				},
+				0,
+			);
 			return;
 		}
-		publish(run, { phase: "closed", reason: dispose ? "disposed" : "stopped" });
-		snapshot = frozenSnapshot(run.correlation, run.state, 0);
+		publish(run, { phase: "closed", reason: dispose ? "disposed" : "stopped" }, 0);
 	};
 
 	const attachRemote = (run: Run): void => {
@@ -305,19 +312,10 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			...run.correlation,
 			attachTo: (element) => {
 				if (current !== run || run.cancelledNow || run.failed || !run.remoteStream) return;
-				run.remoteElement?.pause();
+				detachRemote(run);
 				run.remoteElement = element;
 				try {
-					const target = element as unknown as {
-						srcObject?: MediaProvider | null;
-						src: string;
-					};
-					if ("srcObject" in target) {
-						target.srcObject = run.remoteStream;
-					} else {
-						run.remoteObjectUrl = URL.createObjectURL(run.remoteStream as unknown as Blob);
-						target.src = run.remoteObjectUrl;
-					}
+					element.srcObject = run.remoteStream;
 					void element
 						.play()
 						.catch((error) =>
@@ -344,6 +342,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		run.audioSource.connect(run.analyser);
 		const samples = new Uint8Array(run.analyser.fftSize);
 		const tick = (): void => {
+			run.animationFrame = undefined;
 			if (!run.analyser || run.cancelledNow || run.failed || current !== run) return;
 			run.analyser.getByteTimeDomainData(samples);
 			let sum = 0;
@@ -352,12 +351,13 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 				sum += normalized * normalized;
 			}
 			publishLevel(run, Math.min(1, Math.sqrt(sum / samples.length)));
+			if (run.cancelledNow || run.failed || current !== run) return;
 			run.animationFrame = globalThis.requestAnimationFrame(tick);
 		};
 		run.animationFrame = globalThis.requestAnimationFrame(tick);
 	};
 
-	const start = async (correlation: RealtimeCorrelation): Promise<RealtimeMediaSnapshot> => {
+	const startRun = async (correlation: RealtimeCorrelation): Promise<RealtimeMediaSnapshot> => {
 		if (disposed) throw new Error("The realtime media session is disposed.");
 		if (current && current.state.phase !== "closed") {
 			const previous = current;
@@ -366,17 +366,17 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 				throw new Error("The previous realtime session did not stop cleanly.");
 			}
 		}
-		if (disposed) return snapshot;
+		if (disposed) throw new Error("The realtime media session is disposed.");
 
 		const run = createRun(correlation);
 		current = run;
-		snapshot = frozenSnapshot(correlation, INITIAL_REALTIME_STATE, 0);
+		snapshot = run.snapshot;
 		publish(run, { phase: "requesting_permission", reason: "start_requested" });
 
 		const mediaDevices = globalThis.navigator?.mediaDevices;
 		if (!mediaDevices?.getUserMedia) {
 			await fail(run, "device_unavailable", "This browser cannot request a microphone.");
-			return snapshot;
+			return run.snapshot;
 		}
 
 		let microphone: Promise<MediaStream>;
@@ -385,7 +385,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		} catch (error) {
 			const failure = permissionFailure(error);
 			await fail(run, failure.reason, failure.message);
-			return snapshot;
+			return run.snapshot;
 		}
 		void microphone.then(
 			(stream) => {
@@ -400,14 +400,14 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		} catch (error) {
 			const failure = permissionFailure(error);
 			await fail(run, failure.reason, failure.message);
-			return snapshot;
+			return run.snapshot;
 		}
-		if (stream === CANCELLED) return snapshot;
+		if (stream === CANCELLED) return run.snapshot;
 		run.localStream = stream;
 		const localTrack = stream.getAudioTracks()[0];
 		if (!localTrack) {
 			await fail(run, "device_unavailable", "No audio track was captured.");
-			return snapshot;
+			return run.snapshot;
 		}
 		publish(run, { phase: "negotiating", reason: "permission_granted" });
 
@@ -418,7 +418,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			typeof globalThis.requestAnimationFrame !== "function"
 		) {
 			await terminal(run, "unsupported_browser", "This browser lacks realtime audio support.");
-			return snapshot;
+			return run.snapshot;
 		}
 
 		try {
@@ -450,33 +450,33 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			);
 
 			const offer = await bounded(run, run.peer.createOffer(), CODEX_REALTIME_START_MS);
-			if (offer === CANCELLED) return snapshot;
+			if (offer === CANCELLED) return run.snapshot;
 			if (offer === TIMED_OUT) throw new Error("Creating the realtime offer timed out.");
 			const localSet = await bounded(
 				run,
 				run.peer.setLocalDescription(offer),
 				CODEX_REALTIME_START_MS,
 			);
-			if (localSet === CANCELLED) return snapshot;
+			if (localSet === CANCELLED) return run.snapshot;
 			if (localSet === TIMED_OUT) throw new Error("Setting the realtime offer timed out.");
 			publish(run, { phase: "negotiating", reason: "offer_created" });
 			run.offerSent = true;
 			const answer = await bounded(
 				run,
 				host.createOffer({
-					...correlation,
+					...run.correlation,
 					sdp: run.peer.localDescription?.sdp ?? offer.sdp ?? "",
 				}),
 				CODEX_REALTIME_START_MS,
 			);
-			if (answer === CANCELLED) return snapshot;
+			if (answer === CANCELLED) return run.snapshot;
 			if (answer === TIMED_OUT) throw new Error("The realtime answer timed out.");
 			if (
-				answer.sessionId !== correlation.sessionId ||
-				answer.correlationId !== correlation.correlationId
+				answer.sessionId !== run.correlation.sessionId ||
+				answer.correlationId !== run.correlation.correlationId
 			) {
 				await terminal(run, "protocol_error", "The realtime answer did not match its offer.");
-				return snapshot;
+				return run.snapshot;
 			}
 			publish(run, { phase: "negotiating", reason: "answer_received" });
 			const remoteSet = await bounded(
@@ -484,7 +484,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 				run.peer.setRemoteDescription({ type: "answer", sdp: answer.sdp }),
 				CODEX_REALTIME_START_MS,
 			);
-			if (remoteSet === CANCELLED) return snapshot;
+			if (remoteSet === CANCELLED) return run.snapshot;
 			if (remoteSet === TIMED_OUT) throw new Error("Setting the realtime answer timed out.");
 			try {
 				attachRemote(run);
@@ -494,23 +494,28 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 					"remote_media_failed",
 					errorMessage(error, "Remote audio could not be attached."),
 				);
-				return snapshot;
+				return run.snapshot;
 			}
 			const metered = await bounded(run, setupMeter(run), CODEX_REALTIME_START_MS);
-			if (metered === CANCELLED) return snapshot;
+			if (metered === CANCELLED) return run.snapshot;
 			if (metered === TIMED_OUT) throw new Error("Starting the audio meter timed out.");
-			if (run.cancelledNow || run.failed) return snapshot;
+			if (run.cancelledNow || run.failed) return run.snapshot;
 			publish(run, { phase: "listening", reason: "negotiation_succeeded" });
 			if (run.deviceLost) await fail(run, "device_lost", "The microphone was removed.");
 		} catch (error) {
-			if (run.cancelledNow || run.failed) return snapshot;
+			if (run.cancelledNow || run.failed) return run.snapshot;
 			if (error instanceof DOMException && error.name === "NotAllowedError") {
 				await fail(run, "autoplay_suspended", error.message);
 			} else {
 				await fail(run, "sdp_failed", errorMessage(error, "Realtime negotiation failed."));
 			}
 		}
-		return snapshot;
+		return run.snapshot;
+	};
+
+	const start = (input: RealtimeCorrelation): Promise<RealtimeMediaSnapshot> => {
+		const correlation = canonicalCorrelation(input);
+		return enqueue(() => startRun(correlation));
 	};
 
 	return Object.freeze({
@@ -521,30 +526,36 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			return () => listeners.delete(listener);
 		},
 		start,
-		stop: async () => {
-			if (current && current.state.phase !== "closed") await stopRun(current, false);
-			return snapshot;
+		stop: () => {
+			if (current) cancelRun(current);
+			return enqueue(async () => {
+				if (current && current.state.phase !== "closed") await stopRun(current, false);
+				return snapshot;
+			});
 		},
-		dispose: async () => {
-			if (disposed) return;
+		dispose: () => {
+			if (disposed) return Promise.resolve();
 			disposed = true;
-			if (current && current.state.phase !== "closed") {
-				await stopRun(current, true);
-			} else if (!current) {
-				const stopping = transitionRealtimeState(INITIAL_REALTIME_STATE, {
-					phase: "stopping",
-					reason: "dispose_requested",
-				});
-				snapshot = frozenSnapshot(null, stopping, 0);
-				for (const listener of listeners) listener(snapshot);
-				const closed = transitionRealtimeState(stopping, {
-					phase: "closed",
-					reason: "disposed",
-				});
-				snapshot = frozenSnapshot(null, closed, 0);
-				for (const listener of listeners) listener(snapshot);
-			}
-			listeners.clear();
+			if (current) cancelRun(current);
+			return enqueue(async () => {
+				if (current && current.state.phase !== "closed") {
+					await stopRun(current, true);
+				} else if (!current) {
+					const stopping = transitionRealtimeState(INITIAL_REALTIME_STATE, {
+						phase: "stopping",
+						reason: "dispose_requested",
+					});
+					snapshot = frozenSnapshot(null, stopping, 0);
+					for (const listener of listeners) listener(snapshot);
+					const closed = transitionRealtimeState(stopping, {
+						phase: "closed",
+						reason: "disposed",
+					});
+					snapshot = frozenSnapshot(null, closed, 0);
+					for (const listener of listeners) listener(snapshot);
+				}
+				listeners.clear();
+			});
 		},
 	});
 }

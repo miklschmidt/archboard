@@ -11,6 +11,14 @@ import {
 } from "../index.js";
 
 type Stage = "getUserMedia" | "createOffer" | "setLocal" | "hostOffer" | "setRemote" | "resume";
+const PAUSE_STAGES: Stage[] = [
+	"getUserMedia",
+	"createOffer",
+	"setLocal",
+	"hostOffer",
+	"setRemote",
+	"resume",
+];
 
 class TrackedTarget extends EventTarget {
 	listenerCount = 0;
@@ -168,9 +176,7 @@ class FakeAudio {
 	removeCount = 0;
 	src = "";
 	srcObject?: MediaProvider | null;
-	constructor(readonly env: FakeBrowser) {
-		if (env.objectUrl) delete this.srcObject;
-	}
+	constructor(readonly env: FakeBrowser) {}
 	async play(): Promise<void> {
 		if (this.env.autoplayDenied)
 			throw new DOMException("Playback requires activation.", "NotAllowedError");
@@ -197,15 +203,14 @@ class FakeBrowser extends TrackedTarget {
 	readonly audios: FakeAudio[] = [];
 	readonly frames = new Map<number, FrameRequestCallback>();
 	readonly timers = new Set<number>();
-	readonly createdUrls: string[] = [];
-	readonly revokedUrls: string[] = [];
 	readonly restores: Array<() => void> = [];
+	readonly stopRequests: RealtimeCorrelation[] = [];
+	attachment?: RemoteMediaAttachment;
 	pause?: Stage;
 	fail?: Stage;
 	noTrack = false;
 	autoplayDenied = false;
 	suspended = false;
-	objectUrl = false;
 	throwAttachment = false;
 	stopCount = 0;
 	private releaseGate?: () => void;
@@ -238,18 +243,6 @@ class FakeBrowser extends TrackedTarget {
 			return timer;
 		});
 		this.install("clearTimeout", (id: number) => this.timers.delete(id));
-		const create = URL.createObjectURL.bind(URL);
-		const revoke = URL.revokeObjectURL.bind(URL);
-		URL.createObjectURL = () => {
-			const url = `blob:remote-${this.createdUrls.length + 1}`;
-			this.createdUrls.push(url);
-			return url;
-		};
-		URL.revokeObjectURL = (url) => this.revokedUrls.push(url);
-		this.restores.push(() => {
-			URL.createObjectURL = create;
-			URL.revokeObjectURL = revoke;
-		});
 		active.push(this);
 	}
 	private install(name: string, value: unknown): void {
@@ -308,7 +301,6 @@ class FakeBrowser extends TrackedTarget {
 			expect(audio.removeCount).toBe(1);
 			expect(audio.loadCount).toBe(1);
 		}
-		expect(this.revokedUrls).toEqual(this.createdUrls);
 	}
 }
 const active: FakeBrowser[] = [];
@@ -330,6 +322,7 @@ function host(env: FakeBrowser): RealtimeHost {
 		attachRemoteMedia: (attachment: RemoteMediaAttachment) => {
 			env.order.push("attachRemote");
 			if (env.throwAttachment) throw new Error("attachment failed");
+			env.attachment = attachment;
 			const audio = new FakeAudio(env);
 			env.audios.push(audio);
 			attachment.attachTo(audio as unknown as HTMLMediaElement);
@@ -339,6 +332,7 @@ function host(env: FakeBrowser): RealtimeHost {
 		appendSpeech: async (request) => ({ outcome: "delivered", ...request }),
 		stop: async (request) => {
 			env.stopCount += 1;
+			env.stopRequests.push(request);
 			return { outcome: "delivered", ...request };
 		},
 		recover: async (request) => ({ outcome: "delivered", ...request }),
@@ -347,41 +341,68 @@ function host(env: FakeBrowser): RealtimeHost {
 async function settle(): Promise<void> {
 	for (let index = 0; index < 24; index += 1) await Promise.resolve();
 }
-
 afterEach(() => {
 	while (active.length) active.pop()?.restore();
 });
-
 describe("realtime browser media session", () => {
 	test("constructs in the fixed order, meters, and releases every resource once", async () => {
 		const env = new FakeBrowser();
-		env.objectUrl = true;
 		const session = createRealtimeMediaSession(host(env));
+		const input = { ...correlation() };
 		expect(REALTIME_MEDIA_FEATURE).toBe("webrtc-audio");
-		await session.start(correlation());
-		expect(env.order).toEqual([
-			"getUserMedia",
-			"peer",
-			"transceiver",
-			"channel",
-			"createOffer",
-			"setLocal",
-			"hostOffer",
-			"setRemote",
-			"attachRemote",
-			"audioContext",
-			"source",
-			"analyser",
-		]);
+		const starting = session.start(input);
+		input.sessionId = "mutated" as RealtimeSessionId;
+		const started = await starting;
+		expect(env.order.join(",")).toBe(
+			"getUserMedia,peer,transceiver,channel,createOffer,setLocal,hostOffer,setRemote,attachRemote,audioContext,source,analyser",
+		);
+		expect(started.correlation).toEqual(correlation());
+		expect(Object.isFrozen(started.correlation)).toBe(true);
+		input.correlationId = "mutated" as RealtimeCorrelationId;
+		expect(session.getSnapshot().correlation).toEqual(correlation());
+		const first = env.audios[0]!;
+		const replacement = new FakeAudio(env);
+		env.audios.push(replacement);
+		env.attachment?.attachTo(replacement as unknown as HTMLMediaElement);
+		expect(first.srcObject).toBeNull();
 		env.frame();
 		expect(session.getSnapshot()).toMatchObject({
 			state: { phase: "listening", reason: "negotiation_succeeded" },
 			inputLevel: 0.3535533905932738,
 		});
-		expect(Object.isFrozen(session.getSnapshot())).toBe(true);
-		await session.stop();
+		let stopping: ReturnType<typeof session.stop> | undefined;
+		let closedLevel = -1;
+		session.subscribe((next) => {
+			if (next.inputLevel > 0) stopping = session.stop();
+			if (next.state.phase === "closed") closedLevel = next.inputLevel;
+		});
+		env.frame();
+		await stopping;
 		expect(session.getSnapshot().state).toEqual({ phase: "closed", reason: "stopped" });
-		expect(env.stopCount).toBe(1);
+		expect(closedLevel).toBe(0);
+		expect(env.stopRequests[0]).toEqual(correlation());
+		env.assertReleased();
+	});
+	test("overlapping starts return their own snapshots and release every superseded run", async () => {
+		const env = new FakeBrowser();
+		const session = createRealtimeMediaSession(host(env));
+		const results = await Promise.all([
+			session.start(correlation(1)),
+			session.start(correlation(2)),
+			session.start(correlation(3)),
+		]);
+		expect(results.map((result) => result.correlation)).toEqual([1, 2, 3].map(correlation));
+		await session.stop();
+		await session.start(correlation(4));
+		let disposal: ReturnType<typeof session.dispose> | undefined;
+		session.subscribe((next) => {
+			if (next.inputLevel > 0) disposal = session.dispose();
+		});
+		env.frame();
+		expect(disposal).toBeDefined();
+		await disposal;
+		await session.dispose();
+		expect(session.getSnapshot().state).toEqual({ phase: "closed", reason: "disposed" });
 		env.assertReleased();
 	});
 	test.each([
@@ -418,12 +439,11 @@ describe("realtime browser media session", () => {
 			await settle();
 			expect(session.getSnapshot().state).toMatchObject({
 				phase: "recoverable_error",
-				reason:
-					kind === "no-device"
-						? "device_unavailable"
-						: kind === "attachment"
-							? "remote_media_failed"
-							: "autoplay_suspended",
+				reason: {
+					"no-device": "device_unavailable",
+					attachment: "remote_media_failed",
+					autoplay: "autoplay_suspended",
+				}[kind],
 			});
 			env.assertReleased();
 			env.restore();
@@ -433,11 +453,17 @@ describe("realtime browser media session", () => {
 		const env = new FakeBrowser();
 		const session = createRealtimeMediaSession(host(env));
 		await session.start(correlation());
+		env.frame();
+		let terminal = session.getSnapshot();
+		session.subscribe((next) => {
+			if (next.state.phase === "recoverable_error") terminal = next;
+		});
 		env.peers[0]?.loseIce(ice);
 		await settle();
-		expect(session.getSnapshot().state).toMatchObject({
-			phase: "recoverable_error",
-			reason: "ice_disconnected",
+		expect(terminal).toBe(session.getSnapshot());
+		expect(terminal).toMatchObject({
+			state: { phase: "recoverable_error", reason: "ice_disconnected" },
+			inputLevel: 0,
 		});
 		env.assertReleased();
 	});
@@ -457,15 +483,7 @@ describe("realtime browser media session", () => {
 			env.restore();
 		}
 	});
-
-	test.each([
-		"getUserMedia",
-		"createOffer",
-		"setLocal",
-		"hostOffer",
-		"setRemote",
-		"resume",
-	] as const)("stop is race-safe while %s is pending", async (stage) => {
+	test.each(PAUSE_STAGES)("stop is race-safe while %s is pending", async (stage) => {
 		const env = new FakeBrowser();
 		env.pause = stage;
 		const session = createRealtimeMediaSession(host(env));
@@ -478,22 +496,5 @@ describe("realtime browser media session", () => {
 		await settle();
 		expect(session.getSnapshot().state).toEqual({ phase: "closed", reason: "stopped" });
 		env.assertReleased();
-	});
-
-	test("restarts repeatedly and dispose is an idempotent unmount", async () => {
-		const env = new FakeBrowser();
-		const session = createRealtimeMediaSession(host(env));
-		for (let index = 1; index <= 3; index += 1) {
-			await session.start(correlation(index));
-			expect(session.getSnapshot().correlation).toEqual(correlation(index));
-			await session.stop();
-		}
-		await session.start(correlation(4));
-		await session.dispose();
-		await session.dispose();
-		expect(session.getSnapshot().state).toEqual({ phase: "closed", reason: "disposed" });
-		expect(env.stopCount).toBe(4);
-		env.assertReleased();
-		for (const peer of env.peers) expect(peer.closeCount).toBe(1);
 	});
 });
