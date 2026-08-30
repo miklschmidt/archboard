@@ -1,0 +1,156 @@
+import { z } from "zod";
+
+const utf8Bytes = (value: string): number => Buffer.byteLength(value, "utf8");
+
+function boundedUtf8Text(maxBytes: number, label: string) {
+	return z.string().refine((value) => utf8Bytes(value) <= maxBytes, {
+		message: `${label} must be at most ${maxBytes} UTF-8 bytes`,
+	});
+}
+
+const CursorSchema = boundedUtf8Text(1_024, "cursor");
+const SelectionIdSchema = boundedUtf8Text(64, "selection element id");
+const AmbiguitySchema = boundedUtf8Text(256, "ambiguity entry");
+const DoingSchema = boundedUtf8Text(512, "doing");
+
+export const ArchboardContextSchema = z.strictObject({
+	schema: z.literal(1),
+	paneId: z.string(),
+	board: z.strictObject({
+		note: z.string(),
+		version: z.number().finite().int().nonnegative(),
+		cursor: CursorSchema.nullable(),
+	}),
+	threadLink: z.strictObject({
+		state: z.enum(["executable", "inspect_only", "unbound"]),
+		reason: z.string().nullable(),
+	}),
+	child: z.strictObject({
+		id: z.string(),
+		epoch: z.string(),
+	}),
+	workhorse: z.strictObject({
+		threadId: z.string().nullable(),
+		turnId: z.string().nullable(),
+	}),
+	coordinator: z.strictObject({
+		threadId: z.string().nullable(),
+		realtimeSessionId: z.string().nullable(),
+	}),
+	semantic: z.strictObject({
+		brief: boundedUtf8Text(8_192, "semantic brief"),
+		capturedAtMs: z.number().finite().int().nonnegative(),
+		freshUntilMs: z.number().finite().int().nonnegative(),
+		truncated: z.boolean(),
+	}),
+	focus: z.strictObject({
+		paneId: z.string().nullable(),
+		capturedAtMs: z.number().finite().int().nonnegative(),
+	}),
+	selection: z.strictObject({
+		elementIds: z.array(SelectionIdSchema).max(128),
+		capturedAtMs: z.number().finite().int().nonnegative(),
+	}),
+	claim: z.strictObject({
+		holder: z.enum(["human", "agent", "none"]),
+		doing: DoingSchema.nullable(),
+	}),
+	ambiguity: z.array(AmbiguitySchema).max(16),
+	operation: z.strictObject({
+		id: z.string().nullable(),
+		kind: z.string().nullable(),
+		outcome: z.enum(["delivered", "not_delivered", "outcome_unknown"]).nullable(),
+	}),
+});
+
+export type ArchboardContext = z.infer<typeof ArchboardContextSchema>;
+
+function freezeDeep<T>(value: T): T {
+	if (typeof value !== "object" || value === null || Object.isFrozen(value)) return value;
+	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
+	Object.freeze(value);
+	return value;
+}
+
+function orderedContext(value: ArchboardContext): ArchboardContext {
+	return {
+		schema: value.schema,
+		paneId: value.paneId,
+		board: {
+			note: value.board.note,
+			version: value.board.version,
+			cursor: value.board.cursor,
+		},
+		threadLink: {
+			state: value.threadLink.state,
+			reason: value.threadLink.reason,
+		},
+		child: {
+			id: value.child.id,
+			epoch: value.child.epoch,
+		},
+		workhorse: {
+			threadId: value.workhorse.threadId,
+			turnId: value.workhorse.turnId,
+		},
+		coordinator: {
+			threadId: value.coordinator.threadId,
+			realtimeSessionId: value.coordinator.realtimeSessionId,
+		},
+		semantic: {
+			brief: value.semantic.brief,
+			capturedAtMs: value.semantic.capturedAtMs,
+			freshUntilMs: value.semantic.freshUntilMs,
+			truncated: value.semantic.truncated,
+		},
+		focus: {
+			paneId: value.focus.paneId,
+			capturedAtMs: value.focus.capturedAtMs,
+		},
+		selection: {
+			elementIds: [...value.selection.elementIds],
+			capturedAtMs: value.selection.capturedAtMs,
+		},
+		claim: {
+			holder: value.claim.holder,
+			doing: value.claim.doing,
+		},
+		ambiguity: [...value.ambiguity],
+		operation: {
+			id: value.operation.id,
+			kind: value.operation.kind,
+			outcome: value.operation.outcome,
+		},
+	};
+}
+
+function validateContext(input: unknown): ArchboardContext {
+	const parsed = ArchboardContextSchema.safeParse(input);
+	if (!parsed.success) throw new TypeError(`Invalid Archboard context: ${parsed.error.message}`);
+	return freezeDeep(orderedContext(parsed.data));
+}
+
+export function canonicalContext(input: ArchboardContext): ArchboardContext {
+	return validateContext(input);
+}
+
+export function encodeCanonicalContext(input: ArchboardContext): string {
+	const encoded = JSON.stringify(canonicalContext(input));
+	if (encoded === undefined) throw new TypeError("Archboard context could not be encoded as JSON.");
+	return encoded;
+}
+
+/** Parse only the exact compact field order emitted by encodeCanonicalContext. */
+export function decodeCanonicalContext(encoded: string): ArchboardContext {
+	if (typeof encoded !== "string") throw new TypeError("Canonical context must be a string.");
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(encoded) as unknown;
+	} catch (error) {
+		throw new TypeError("Canonical context is not valid JSON.", { cause: error });
+	}
+	const context = validateContext(parsed);
+	if (JSON.stringify(context) !== encoded)
+		throw new TypeError("Canonical context JSON has unexpected whitespace, order, or escaping.");
+	return context;
+}
