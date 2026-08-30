@@ -50,7 +50,9 @@ describe("Codex workbench timing policy", () => {
 		expect(timing.CODEX_PROCESS_RESTART_BASE_MS).toBeLessThanOrEqual(
 			timing.CODEX_PROCESS_RESTART_MAX_MS,
 		);
-		expect(120_000).toBeLessThan(timing.CODEX_BROWSER_COMMAND_LEASE_MS);
+		expect(timing.CODEX_REQUEST_SETTLEMENT_MS).toBeLessThanOrEqual(
+			timing.CODEX_PROCESS_RESTART_MAX_MS,
+		);
 		expect(timing.CODEX_REQUEST_SETTLEMENT_MS).toBeLessThan(timing.CODEX_BROWSER_COMMAND_LEASE_MS);
 		expect(timing.CODEX_APPROVAL_EXPIRY_MS).toBeLessThan(timing.CODEX_BROWSER_COMMAND_LEASE_MS);
 		expect(timing.CODEX_SPOKEN_GATE_EXPIRY_MS).toBeLessThanOrEqual(timing.CODEX_APPROVAL_EXPIRY_MS);
@@ -59,5 +61,15 @@ describe("Codex workbench timing policy", () => {
 		expect(timing.CODEX_REALTIME_STOP_MS + timing.CODEX_TERM_GRACE_MS).toBeLessThan(
 			timing.CODEX_COMPOSED_SHUTDOWN_MS,
 		);
+	});
+
+	test("rejects a restart max below settlement even when its golden changes", () => {
+		const changedGolden = { ...REVIEWED_VALUES, CODEX_PROCESS_RESTART_MAX_MS: 29_999 };
+		expect(changedGolden.CODEX_PROCESS_RESTART_MAX_MS).toBe(29_999);
+		expect(() =>
+			expect(changedGolden.CODEX_REQUEST_SETTLEMENT_MS).toBeLessThanOrEqual(
+				changedGolden.CODEX_PROCESS_RESTART_MAX_MS,
+			),
+		).toThrow();
 	});
 });
