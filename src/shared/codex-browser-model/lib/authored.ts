@@ -49,13 +49,21 @@ export const LoginPolicySchema = z
 	.object({ variant: LoginVariantSchema, policy: z.enum(["supported", "refused"]) })
 	.strict();
 
+const ExactLoginPolicySchema = <
+	Variant extends (typeof LOGIN_VARIANTS)[number],
+	Policy extends "supported" | "refused",
+>(
+	variant: Variant,
+	policy: Policy,
+) => z.object({ variant: z.literal(variant), policy: z.literal(policy) }).strict();
+
 export const LoginPoliciesSchema = z.tuple([
-	LoginPolicySchema,
-	LoginPolicySchema,
-	LoginPolicySchema,
-	LoginPolicySchema,
-	LoginPolicySchema,
-	LoginPolicySchema,
+	ExactLoginPolicySchema("apiKey", "supported"),
+	ExactLoginPolicySchema("chatgpt", "supported"),
+	ExactLoginPolicySchema("chatgptDeviceCode", "refused"),
+	ExactLoginPolicySchema("chatgptAuthTokens", "refused"),
+	ExactLoginPolicySchema("amazonBedrock", "supported"),
+	ExactLoginPolicySchema("amazonBedrockAccessKeys", "supported"),
 ]);
 
 const ApiKeyLoginSchema = z
@@ -104,6 +112,14 @@ export const LoginAccountParamsSchema = z.discriminatedUnion("type", [
 	BedrockAccessKeysLoginSchema,
 ]);
 export type LoginAccountParams = z.infer<typeof LoginAccountParamsSchema>;
+
+export const SupportedLoginAccountParamsSchema = z.discriminatedUnion("type", [
+	ApiKeyLoginSchema,
+	ChatgptLoginSchema,
+	BedrockApiKeyLoginSchema,
+	BedrockAccessKeysLoginSchema,
+]);
+export type SupportedLoginAccountParams = z.infer<typeof SupportedLoginAccountParamsSchema>;
 
 export const BedrockSetupParamsSchema = z.discriminatedUnion("type", [
 	z
