@@ -43,11 +43,14 @@
 		"test:serial-browser": "bun tests/system/browser/run-browser-lane.ts tests/system/browser/human-edit-performance.test.ts tests/system/browser/fixed-point-document.test.ts tests/system/browser/malformed-geometry-recovery.test.ts tests/system/browser/pane-telemetry-recovery.test.ts tests/system/browser/arrow-binding-differential.test.ts tests/system/browser/finding-export.test.ts tests/system/browser/shell-layout.test.ts tests/system/browser/board-navigator.test.ts tests/system/browser/fullscreen-presentation.test.ts tests/system/browser/typed-text.test.ts tests/system/browser/live-session-convergence.test.ts tests/system/browser/server-update-ordering.test.ts tests/system/browser/hold-generation.test.ts tests/system/browser/human-hold-persistence.test.ts tests/system/browser/claim-interaction.test.ts tests/system/browser/selection-inspector.test.ts tests/system/browser/connected-path-focus.test.ts tests/system/browser/opener-settings.test.ts tests/system/browser/code-target-activation.test.ts",
 		"generate:cli-contract": "bun scripts/generate-cli-contract.ts",
 		"generate:wordmark": "bun scripts/generate-wordmark.ts",
-		"reload": "bun scripts/reload.ts"
+		"reload": "bun scripts/reload.ts",
+		"shadcn": "shadcn"
 	},
 	"dependencies": {
+		"@base-ui/react": "1.7.0",
 		"@excalidraw/excalidraw": "0.18.1",
 		"@excalidraw/mermaid-to-excalidraw": "2.2.2",
+		"clsx": "2.1.1",
 		"commander": "15.0.0",
 		"cors": "2.8.6",
 		"dotenv": "17.4.2",
@@ -56,12 +59,14 @@
 		"mermaid": "11.17.2",
 		"react": "19.2.8",
 		"react-dom": "19.2.8",
+		"tailwind-merge": "3.6.0",
 		"winston": "3.19.0",
 		"ws": "8.21.3",
 		"zod": "4.4.3"
 	},
 	"devDependencies": {
 		"@openai/codex": "0.151.0",
+		"@tailwindcss/vite": "4.3.3",
 		"@types/bun": "1.4.0",
 		"@types/cors": "2.8.19",
 		"@types/express": "5.0.6",
@@ -76,6 +81,8 @@
 		"oxfmt": "0.65.0",
 		"oxlint": "1.80.0",
 		"oxlint-tsgolint": "7.0.2001",
+		"shadcn": "4.19.0",
+		"tailwindcss": "4.3.3",
 		"typescript": "7.0.2",
 		"vite": "8.2.2"
 	},
