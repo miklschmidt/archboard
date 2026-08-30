@@ -4,7 +4,7 @@ title: Define the coordinator and voice dynamic-tool catalogue
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 17:03'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -30,7 +30,7 @@ Load and validate the reviewed eager archboard_workhorse and archboard_voice nam
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The catalogue uses the frozen tool names, descriptions, JSON Schemas, and coordinator identity from docs/design/codex-workbench-authored-contracts.md; queue results contain no synthetic revision or compare-and-swap field.
-- [ ] #2 Every catalogue entry declares its authority target, allowed caller role, required thread links, success result, and typed refusal/error set.
-- [ ] #3 Snapshot tests reject manifest drift, extra tools, missing required fields, ambiguous descriptions, and catalogue definitions outside this owner.
+- [ ] #1 The catalogue uses the frozen tool names, descriptions, schemas, and coordinator identity; queue operations are exactly add, list, update, delete, reorder, and start, with no synthetic revision field.
+- [ ] #2 Every entry declares authority target, caller role, required links, success result, and typed refusal/error set; operation-dependent queue fields match exact 0.151.0 params.
+- [ ] #3 Snapshot tests reject manifest drift, extra/missing tools, nonexistent queue operations, ambiguous descriptions, and catalogue definitions outside this owner.
 <!-- AC:END -->

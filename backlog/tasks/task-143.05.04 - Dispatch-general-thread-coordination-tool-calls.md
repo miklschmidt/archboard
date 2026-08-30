@@ -4,7 +4,7 @@ title: Dispatch general thread-coordination tool calls
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 17:03'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.01.08
@@ -31,9 +31,8 @@ Own item/tool/call validation, exact target/transaction policy, and response con
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Calls validate full logical identity/manifest and the target matrix across current/prior epoch, provenance, loaded membership, controllability, self/other, and notLoaded/idle/systemError/active; create/list have target N/A.
-- [ ] #2 create_thread is confirmed thread/start then turn/start; no title is accepted. fork_thread is thread/fork then turn/start only when prompt is present. send_message_to_thread is turn/start for idle targets and refuses active targets. Every RPC boundary has exact confirmed/partial/outcome_unknown compensation semantics with no retry.
-- [ ] #3 wait_threads attention means a target-owned pending broker request or systemError; completion means matching terminal turn/thread events. Tool list/read preserve pages and return child/epoch/query-bound cursors, while authority reads use the session's exhaustive ports.
-- [ ] #4 Successful create/fork records confirmed identity and hashes; cleanup failure remains inspect_only. This module constructs general tool responses; transport writes each once.
-- [ ] #5 Co-located fake-port tests cover every schema/matrix/transaction/page/attention/cancellation/cycle/uncertainty cell; TASK-143.01.15 owns composed real-process coverage.
+- [ ] #1 Calls validate the authored literal target table for all six tools across epoch, created/attached/foreign provenance, loaded state, direct-input capability, every status, and self/other; every unlisted cell has the authored refusal.
+- [ ] #2 create/fork/send use the exact authored ThreadStartParams, ThreadForkParams, TurnStartParams and two-boundary result schemas. Confirmed identities survive initial-turn rejection/uncertainty; no mutation retries.
+- [ ] #3 list/read use the exact thread/list, loaded/list, turns/list, and conditional items/list bodies/directions/limits; summary/output projection and epoch/method/query-bound cursors match the authored contract. wait accepts/resumes only a cursor bound to the sorted target set.
+- [ ] #4 Successful effects record confirmed identity/hashes; this module constructs general tool responses while transport writes once. Fake-port tests exhaust every table/body/page/projection/attention/cancellation/cycle/uncertainty cell.
 <!-- AC:END -->

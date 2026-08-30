@@ -4,6 +4,7 @@ title: Remove the legacy injection CLI and public contract
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.06.04
@@ -13,6 +14,11 @@ modified_files:
   - src/runtime/engine/canvas-client.ts
   - src/cli/command-contract
   - tests/system/cli/fixtures/fixed-base-compatibility.json
+  - tests/system/cli/package-board-commands.test.ts
+  - tests/system/cli/support/cli-http-double.ts
+  - tests/system/cli/support/install-fixture.ts
+  - tests/system/cli/support/package-cli.ts
+  - tests/system/cli/support/repository-fixture.ts
 parent_task_id: TASK-143.06
 priority: high
 type: task
@@ -27,8 +33,8 @@ Remove the inject command/help/schemas/client calls and fixed compatibility entr
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 archboard help/dispatch no longer exposes inject status/test or ARCHBOARD_INJECT guidance, and the canvas client exports no injection DTO/request.
-- [ ] #2 CLI schemas and generated/fixed command contracts remove only the retired command and preserve stable ordering/behavior for all remaining commands.
-- [ ] #3 Calling the old command follows the ordinary unknown-command path with migration text pointing to the linked workbench, not a compatibility transport.
-- [ ] #4 CLI contract generation and fixed-base tests pass without an injection fixture, hidden alias, dead schema, or second HTTP route.
+- [ ] #1 Help/dispatch no longer exposes inject status/test or ARCHBOARD_INJECT guidance, and canvas-client exports no injection DTO/request.
+- [ ] #2 CLI schemas and fixed contracts remove only the retired command and preserve stable ordering/behavior for all remaining commands.
+- [ ] #3 The old command follows the ordinary unknown-command path with migration text pointing to the linked workbench, not a compatibility transport.
+- [ ] #4 All named CLI system owners/support fixtures are atomically updated; contract generation and fixed-base tests pass without an injection fixture, hidden alias, dead schema, or second HTTP route.
 <!-- AC:END -->

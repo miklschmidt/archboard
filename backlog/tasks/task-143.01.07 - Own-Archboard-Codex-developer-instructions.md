@@ -4,7 +4,7 @@ title: Own Archboard Codex developer instructions
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.01.17
@@ -31,6 +31,6 @@ Delegation profile: gpt-5.6-luna, max.
 <!-- AC:BEGIN -->
 - [ ] #1 Tracked workhorse and coordinator documents match the canonical UTF-8 bytes exactly; coordinator composition is workhorse bytes, the documented LF separator, then coordinator bytes with stable hashes.
 - [ ] #2 additionalContext uses exactly key archboard and value {kind: application, value: canonical-json-string}; canonical JSON has the documented ordered fields and rejects caller-authored prose or unknown keys.
-- [ ] #3 A turn Archboard starts supplies exactly one developer-role input item containing one input_text part; attach, reconnect, rejoin, and fork do not rewrite persisted instructions or tools.
-- [ ] #4 Byte fixtures fail on BOM, newline, whitespace, separator, field order, prose, schema, or hash drift from the reviewed contract.
+- [ ] #3 Ordinary turn/start and turn/steer text is exactly one UserInput {type: text, text, text_elements: []}; developer-role input_text is emitted only by the semantic thread/inject_items body. Attach/reconnect/rejoin never rewrites persisted instructions or tools, while forks use the literal reviewed fork profile.
+- [ ] #4 Byte/body fixtures fail on BOM, newline, whitespace, separator, field order, prose, schema, omitted-field, role, or hash drift from the reviewed contract.
 <!-- AC:END -->

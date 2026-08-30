@@ -4,7 +4,7 @@ title: Frame one Codex app-server JSON-RPC connection
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 17:27'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -33,5 +33,5 @@ Delegation profile: gpt-5.6-luna, max.
 - [ ] #1 Client requests, responses, notifications, errors, and reverse requests correlate by child, epoch, and requestId; logical dynamic calls retain child, epoch, threadId, turnId, callId, namespace, tool, and manifestHash.
 - [ ] #2 A local timeout or cancellation settles only the local waiter and never claims remote cancellation; late responses remain inspectable and non-idempotent lost responses classify as outcome_unknown.
 - [ ] #3 Only newline-delimited stdout frames enter the decoder, stderr drains independently, malformed/duplicate/unknown frames fail the owning operation without corrupting later frames, and backpressure is bounded.
-- [ ] #4 codex-approvals and dynamic dispatchers alone construct reverse responses; this module validates correlation and writes each supplied response at most once before orderly close.
+- [ ] #4 codex-approvals owns seven human responses, the two dynamic dispatchers own item/tool/call responses, and codex-session owns currentTime plus unsupported refresh/attestation responses. Transport validates correlation and writes each supplied response at most once.
 <!-- AC:END -->

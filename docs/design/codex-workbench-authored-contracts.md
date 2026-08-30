@@ -65,9 +65,11 @@ The six generated login variants have one closed policy:
 | `amazonBedrockAccessKeys` | Supported with explicit access keys, optional session token, and region. |
 
 Bedrock profile/environment setup that depends on ambient AWS variables is
-refused because the child strips ambient credentials. Unsupported variants are
-rejected before an RPC with a visual recovery path; they do not make the whole
-session incapable of a supported login.
+refused before an RPC because `BedrockSetupParams` contains only `profile` and
+`environment` variants and the child strips ambient credentials. Bedrock is
+available only through the two explicit `LoginAccountParams` credential forms
+above. Unsupported variants are rejected with a visual recovery path; they do
+not make the whole session incapable of a supported login.
 
 ## Literal thread profiles
 
@@ -136,8 +138,140 @@ After coordinator start, Archboard sends exactly one of:
 
 The empty response is not confirmation. Reuse requires a matching
 `thread/settings/updated` notification whose model, effort, and effective tier
-match the selected profile and whose approval, sandbox, and permissions equal
-the values captured from the start response.
+match the selected profile. It must also preserve the start response's
+`approvalPolicy`, `approvalsReviewer`, `sandbox` as notification
+`sandboxPolicy`, and `activePermissionProfile`. Those four generated names are
+not interchangeable and the last one is never called `permissions` in a
+notification.
+
+The only accepted top-level `Thread.source` values are `"cli"`, `"vscode"`,
+`"exec"`, and `"appServer"`. `{custom:...}`, `{subAgent:...}`, and `"unknown"`
+remain inspect-only. This source set is used by classification and by the
+literal `thread/list` query below.
+
+## Literal turn, steer, fork, and injection bodies
+
+Every Archboard-started ordinary turn uses this complete `TurnStartParams`
+shape after placeholder substitution:
+
+```json
+{
+	"threadId": "<target-thread-id>",
+	"clientUserMessageId": "<host-minted-id>",
+	"input": [{ "type": "text", "text": "<bounded-prompt>", "text_elements": [] }],
+	"turnTrigger": "archboard",
+	"additionalContext": {
+		"archboard": { "kind": "application", "value": "<canonical-context-json>" }
+	}
+}
+```
+
+It omits `toolOutput`, `responsesapiClientMetadata`, `environments`, `cwd`,
+`runtimeWorkspaceRoots`, `approvalPolicy`, `approvalsReviewer`,
+`sandboxPolicy`, `permissions`, `model`, `serviceTier`, `serviceTierForTurn`,
+`effort`, `summary`, `personality`, `outputSchema`, `collaborationMode`,
+`multiAgentMode`, and `cyberAccessProgram`. Text is a `UserInput`; it is not a
+developer-role Responses API item.
+
+Every steer uses this complete `TurnSteerParams` shape:
+
+```json
+{
+	"threadId": "<target-thread-id>",
+	"clientUserMessageId": "<host-minted-id>",
+	"input": [{ "type": "text", "text": "<bounded-prompt>", "text_elements": [] }],
+	"additionalContext": {
+		"archboard": { "kind": "application", "value": "<canonical-context-json>" }
+	},
+	"expectedTurnId": "<host-proven-active-turn-id>"
+}
+```
+
+It omits only `responsesapiClientMetadata`. The caller never supplies
+`expectedTurnId`.
+
+A general-tool fork uses this complete `ThreadForkParams` profile:
+
+```json
+{
+	"threadId": "<target-thread-id>",
+	"cwd": "<canonical-checkout-root>",
+	"runtimeWorkspaceRoots": ["<same-canonical-checkout-root>"],
+	"developerInstructions": "<canonical-workhorse-bytes>",
+	"ephemeral": false,
+	"threadSource": "archboard",
+	"excludeTurns": true
+}
+```
+
+For a non-self fork, optional `beforeTurnId` is included only when supplied by
+the validated tool input. For a self-fork, caller `beforeTurnId` is ignored and
+the host inserts the executing request's server-supplied `beforeTurnId`.
+`lastTurnId`, `path`, `model`, `modelProvider`, `serviceTier`, `approvalPolicy`,
+`approvalsReviewer`, `sandbox`, `permissions`, `config`, `baseInstructions`,
+and `deferGoalContinuation` are always omitted.
+
+Semantic bystander delivery alone uses `thread/inject_items` and this complete
+body:
+
+```json
+{
+	"threadId": "<exact-workhorse-thread-id>",
+	"items": [
+		{
+			"type": "message",
+			"role": "developer",
+			"content": [{ "type": "input_text", "text": "<canonical-semantic-context>" }]
+		}
+	]
+}
+```
+
+No ordinary `turn/start` or `turn/steer` body uses that developer-role shape.
+
+## Literal session port
+
+The session exposes exactly these public methods; consumers do not call a
+generic RPC method:
+
+```text
+initialize, configRead, accountRead, accountLogin, accountLoginCancel,
+accountLogout, modelList, threadStart, threadFork, threadListPage,
+threadLoadedListPage, threadRead, threadTurnsListPage, threadItemsListPage,
+threadDelete, threadSettingsUpdate, turnStart, turnSteer, turnInterrupt,
+queueAdd, queueListPage, queueUpdate, queueDelete, queueReorder, queueStart,
+threadInjectItems, realtimeStart, realtimeAppendText, realtimeAppendSpeech,
+realtimeStop, timelineListPage, respondCurrentTime,
+respondUnsupportedTokenRefresh, respondUnsupportedAttestation
+```
+
+The page methods preserve one decoded page. Classification/authority callers
+loop them with cursor-loop detection; browser/tool callers receive the bounded
+page contract stated below.
+
+## Literal timing policy
+
+All values are milliseconds:
+
+| Constant                         |   Value | Required relationship                                      |
+| -------------------------------- | ------: | ---------------------------------------------------------- |
+| `CODEX_PROCESS_RESTART_BASE_MS`  |   1,000 | first retry delay                                          |
+| `CODEX_PROCESS_RESTART_MAX_MS`   |  30,000 | at least request settlement; exponential backoff caps here |
+| `CODEX_REQUEST_SETTLEMENT_MS`    |  30,000 | lost non-idempotent response becomes `outcome_unknown`     |
+| `CODEX_BROWSER_COMMAND_LEASE_MS` | 150,000 | longer than the 120,000 wait cap and approval expiry       |
+| `CODEX_APPROVAL_EXPIRY_MS`       |  90,000 | shorter than browser lease                                 |
+| `CODEX_SPOKEN_GATE_EXPIRY_MS`    |  60,000 | no longer than approval expiry                             |
+| `CODEX_SEMANTIC_FRESHNESS_MS`    |  30,000 | shorter than realtime recovery                             |
+| `CODEX_REALTIME_START_MS`        |  15,000 | bounds permission-independent SDP/start readiness          |
+| `CODEX_REALTIME_STOP_MS`         |   3,000 | completes before TERM grace                                |
+| `CODEX_REALTIME_RECOVERY_MS`     |  45,000 | longer than semantic freshness                             |
+| `CODEX_TERM_GRACE_MS`            |   5,000 | TERM-to-KILL escalation after realtime stop                |
+| `CODEX_COMPOSED_SHUTDOWN_MS`     |  10,000 | greater than realtime stop plus TERM grace                 |
+
+Expiry never proves a remote mutation failed. Restart delay doubles from base
+to max and resets only after one account-ready session. Shutdown stops
+realtime first, settles local waiters, closes stdin, sends TERM, and sends KILL
+at the grace bound while remaining inside the composed cap.
 
 ### Workhorse developer instructions
 
@@ -247,9 +381,12 @@ Every start uses a new host-minted `realtimeSessionId` and these choices:
 	"realtimeSessionId": "<new-opaque-id>",
 	"transport": { "type": "webrtc", "sdp": "<browser-offer>" },
 	"version": "v3",
-	"voice": "<reviewed-user-choice>"
+	"voice": "breeze"
 }
 ```
+
+`breeze` is the only first-release voice. The workbench has no voice list,
+selector, persistence, per-session override, or fallback choice.
 
 The start response is `{}`. The SDP answer comes only from a matching
 `thread/realtime/sdp` notification. Readiness additionally requires matching
@@ -288,17 +425,37 @@ The `ok.value` object is closed per tool:
 
 ```json
 {
-	"create_thread": { "threadId": "<opaque>", "state": "executable|inspect_only" },
-	"fork_thread": { "threadId": "<opaque>", "state": "executable|inspect_only" },
+	"create_thread": {
+		"threadId": "<opaque>",
+		"state": "executable|inspect_only",
+		"initialTurn": {
+			"delivery": "delivered|not_delivered|outcome_unknown",
+			"turnId": "<opaque-or-null>",
+			"operationId": "<opaque-or-null>",
+			"reason": "<bounded-text-or-null>"
+		}
+	},
+	"fork_thread": {
+		"threadId": "<opaque>",
+		"state": "executable|inspect_only",
+		"initialTurn": {
+			"delivery": "not_requested|delivered|not_delivered|outcome_unknown",
+			"turnId": "<opaque-or-null>",
+			"operationId": "<opaque-or-null>",
+			"reason": "<bounded-text-or-null>"
+		}
+	},
 	"list_threads": {
 		"threads": [
 			{
 				"threadId": "<opaque>",
 				"title": "<string-or-null>",
 				"status": "notLoaded|idle|systemError|active",
-				"loaded": true,
-				"canAcceptDirectInput": true,
-				"provenance": "current|prior|unknown"
+				"source": "cli|vscode|exec|appServer",
+				"epoch": "current|prior|unknown",
+				"ownership": "created|attached|foreign",
+				"loaded": false,
+				"canAcceptDirectInput": null
 			}
 		],
 		"nextCursor": "<opaque-or-null>"
@@ -309,7 +466,9 @@ The `ok.value` object is closed per tool:
 			{
 				"turnId": "<opaque>",
 				"status": "inProgress|completed|interrupted|failed",
-				"summary": "<bounded-text>"
+				"summary": "<bounded-text>",
+				"outputsIncluded": true,
+				"outputsTruncated": false
 			}
 		],
 		"nextCursor": "<opaque-or-null>"
@@ -353,7 +512,8 @@ The `ok.value` object is closed per tool:
 The outer object above is documentation shorthand: a response contains only
 the value under the invoked tool name, never the other tool keys. Thread and
 turn summaries are bounded by the same text limits and cannot embed raw media,
-credentials, process identity, or an unbounded app-server object.
+credentials, process identity, or an unbounded app-server object. `loaded` and
+`outputsIncluded` are booleans; `canAcceptDirectInput` is boolean or null.
 
 ## `archboard_app` manifest
 
@@ -417,7 +577,7 @@ credentials, process identity, or an unbounded app-server object.
 				"properties": {
 					"threadId": { "type": "string", "minLength": 1, "maxLength": 128 },
 					"cursor": { "type": "string", "minLength": 1, "maxLength": 1024 },
-					"turnLimit": { "type": "integer", "minimum": 1, "maximum": 100 },
+					"turnLimit": { "type": "integer", "minimum": 1, "maximum": 20 },
 					"includeOutputs": { "type": "boolean" }
 				},
 				"required": ["threadId"],
@@ -454,7 +614,8 @@ credentials, process identity, or an unbounded app-server object.
 						"uniqueItems": true,
 						"items": { "type": "string", "minLength": 1, "maxLength": 128 }
 					},
-					"timeoutMs": { "type": "integer", "minimum": 0, "maximum": 120000 }
+					"timeoutMs": { "type": "integer", "minimum": 0, "maximum": 120000 },
+					"cursor": { "type": "string", "minLength": 1, "maxLength": 1024 }
 				},
 				"required": ["threadIds"],
 				"additionalProperties": false
@@ -471,27 +632,80 @@ uses the server-supplied executing `beforeTurnId` and no caller override.
 `list_threads` and `read_thread` are read-only. `wait_threads` is allowed only
 when the wait graph proves no transitive cycle.
 
-Operation semantics are exact:
+The caller itself must always be an Archboard-created, current-epoch, loaded,
+controllable thread executing the matching dynamic call. The target matrix is
+literal; `any` means that dimension is observational and does not grant a
+mutation:
+
+| Tool                     | Target epoch               | Target provenance             | Loaded    | `canAcceptDirectInput` | Status                             | Relation      | Result                                  |
+| ------------------------ | -------------------------- | ----------------------------- | --------- | ---------------------- | ---------------------------------- | ------------- | --------------------------------------- |
+| `create_thread`          | N/A                        | N/A                           | N/A       | N/A                    | N/A                                | N/A           | allowed after approval                  |
+| `list_threads`           | N/A                        | N/A                           | N/A       | N/A                    | N/A                                | N/A           | allowed, bounded page                   |
+| `read_thread`            | current, prior, or unknown | created, attached, or foreign | yes or no | any                    | any                                | self or other | inspect-only allowed                    |
+| `fork_thread`            | current                    | created or attached           | yes       | `true`                 | `idle`                             | other         | allowed after approval                  |
+| `fork_thread`            | current                    | created or attached           | yes       | `true`                 | `active`                           | self only     | allowed after approval at host boundary |
+| `send_message_to_thread` | current                    | created or attached           | yes       | `true`                 | `idle`                             | other         | allowed after approval                  |
+| `wait_threads`           | current                    | created or attached           | yes       | any                    | `active`, `idle`, or `systemError` | other         | allowed if acyclic                      |
+
+Every unlisted combination is refused before effect. Prior epoch yields
+`prior_epoch`; foreign/unknown mutation provenance yields
+`unknown_provenance`; unloaded or `notLoaded` yields `not_loaded`; false or
+null direct-input capability yields `not_controllable`; `systemError` mutation
+yields `system_error`; active non-self fork/send yields `busy`; self send/wait
+yields `cycle`; stale child/link yields `stale_child`.
+
+Operation and pagination semantics are exact:
 
 - `create_thread` sends `thread/start` with the literal workhorse profile, then
-  `turn/start` with the required prompt. There is no title argument. A lost
-  start is `outcome_unknown`; a confirmed thread plus refused/not-delivered
-  turn returns the confirmed inspectable thread and the turn outcome; a lost
-  turn response is `outcome_unknown` and is never repeated.
-- `fork_thread` sends `thread/fork` once. When `prompt` is present, a confirmed
-  fork is followed by one `turn/start`; the two uncertainty boundaries match
-  create. With no prompt, the confirmed fork is the terminal success.
-- `send_message_to_thread` sends one `turn/start` only to an idle loaded
-  controllable target. An active target is `refused: busy`; this general tool
-  never steers. A lost response is `outcome_unknown`.
-- `wait_threads` returns `attention` only for a target-owned pending broker
-  request or a target entering `systemError`. `completed` requires a matching
-  terminal turn/thread event; timeout is not attention. The wait graph rejects
-  cycles before registration.
-- Authority, ownership, and policy reads always exhaust pages. Tool
-  `list_threads`, `read_thread`, and wait progress preserve requested pages.
-  Every exposed cursor is an opaque host envelope bound to child epoch, method,
-  and canonical query; it cannot be replayed against another child or query.
+  the literal `turn/start` body. There is no title argument. A lost start uses
+  the outer `outcome_unknown`. After confirmed start, the `ok` result always
+  retains `threadId`; initial-turn rejection uses `not_delivered`, and a lost
+  turn response uses `outcome_unknown`, `state: "inspect_only"`, and the
+  initial-turn `operationId`. Neither boundary is retried.
+- `fork_thread` sends the literal `thread/fork` body once. A lost fork uses the
+  outer `outcome_unknown`. After a confirmed fork, absence of `prompt` yields
+  `initialTurn.delivery: "not_requested"`; a prompt produces one literal
+  `turn/start`. Its rejection/uncertainty remains inside the confirmed-fork
+  result exactly as for create.
+- `send_message_to_thread` sends one literal `turn/start` to the allowed idle
+  target. This general tool never steers. A lost response is
+  `outcome_unknown` and is not retried.
+- `list_threads` sends one `thread/list` page with
+  `{cursor,limit,sortKey:"recency_at",sortDirection:"desc",sourceKinds:["cli","vscode","exec","appServer"],archived:false,useStateDbOnly:false}`;
+  omitted input cursor becomes `null` and omitted limit becomes `10`. It then
+  exhausts `thread/loaded/list` from
+  `{cursor:null,limit:100}` solely to annotate that persisted page. The output
+  cursor wraps only the returned `thread/list.nextCursor`.
+- `read_thread` first classifies the target by exhausting `thread/list` from
+  `{cursor:null,limit:100,sortKey:"recency_at",sortDirection:"desc",sourceKinds:["cli","vscode","exec","appServer"],archived:false,useStateDbOnly:false}`
+  and `thread/loaded/list` from `{cursor:null,limit:100}`. It then
+  sends one `thread/turns/list` page with
+  `{threadId,cursor,limit,sortDirection:"desc",itemsView:"summary"}`; omitted
+  cursor becomes `null` and omitted `turnLimit` becomes `10`. When
+  `includeOutputs` is false or omitted, it sends no item request. When true, it
+  sends exactly one `thread/items/list`
+  `{threadId,turnId,cursor:null,limit:100,sortDirection:"asc"}` for each returned
+  turn, in returned turn order. `outputsTruncated` is true when that item page
+  has `nextCursor` or the bounded projection truncates text.
+- A turn `summary` is not read from the generated `Turn`, which has no such
+  field. It is the deterministic string
+  `<status> · user: <first-user-text-or-none> · assistant: <last-assistant-text-or-none>`.
+  Whitespace collapses to one ASCII space; non-text media becomes `[media]`;
+  tool names/statuses may be included but command/file/tool output bodies are
+  omitted unless `includeOutputs` is true. The complete summary is capped at
+  512 UTF-8 bytes and ends with `…` when truncated. Secrets and raw media never
+  enter it.
+- `wait_threads` canonicalizes its target set by sorting unique ThreadIds. A
+  cursor is optional; when supplied it must unwrap to the same child epoch,
+  method, sorted target set, and prior delivered event sequence. It returns
+  `attention` only for a target-owned pending broker request or `systemError`;
+  `completed` requires a matching terminal turn/thread event; timeout is not
+  attention. Its output cursor resumes after the last delivered event. The
+  wait graph rejects cycles before registration.
+- Every exposed cursor is an opaque host envelope bound to child epoch, method,
+  pagination direction, and canonical query. Authority reads exhaust pages
+  with repeated-cursor detection; tool reads preserve the exact bounded page
+  behavior above.
 
 ## Coordinator manifests
 
@@ -531,7 +745,7 @@ Operation semantics are exact:
 		{
 			"type": "function",
 			"name": "manage_workhorse_queue",
-			"description": "Inspect or mutate the linked created-workhorse queue through the host's versioned queue policy.",
+			"description": "Inspect or mutate the linked created-workhorse queue through the host's serialized queue policy.",
 			"inputSchema": {
 				"type": "object",
 				"properties": {
