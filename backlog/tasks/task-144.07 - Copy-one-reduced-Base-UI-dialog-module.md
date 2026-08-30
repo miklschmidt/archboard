@@ -1,22 +1,19 @@
 ---
 id: TASK-144.07
-title: Copy one reduced Base UI dialog module
+title: Copy reduced Base UI dialog and button modules
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 15:43'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies:
-  - TASK-144.03
   - TASK-144.04
-  - TASK-144.05
-  - TASK-144.06
-  - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/tailwind-base-ui-adoption-research.md
 modified_files:
   - src/ui/dialog
+  - src/ui/button
 parent_task_id: TASK-144
 priority: high
 type: task
@@ -26,13 +23,13 @@ ordinal: 221000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the first reviewed shadcn/Base UI source slice in `src/ui/dialog`. Run the TASK-144.04 command, record the resolved official registry URL and SHA-256, then reduce the result to the minimum Archboard dialog API using @base-ui/react 1.7.0 and local icons.
+Copy and reduce the hash-gated Base UI dialog and its button dependency into named Archboard modules. Delegation profile: gpt-5.6-sol, high because component accessibility and visual API are application-wide.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The module exposes only Root, Trigger, Portal, Backdrop, Popup, Title, Description, Close, and application-controlled open/change composition needed by opener settings; unused variants, palette defaults, animation packages, cva, and Lucide source/dependency are removed.
-- [ ] #2 A source provenance note records pinned shadcn 4.19.0, base-nova @shadcn/dialog resolution URL/hash, reduction decisions, and local src/ui/shell/Icons.tsx replacement without committing registry cache.
-- [ ] #3 Focus trap/return, Escape, outside dismissal, labels/descriptions, disabled actions, portal stacking, visible focus, and controlled/open transitions work under shell isolation.
-- [ ] #4 Tests at src/ui/dialog/tests use semantic Tailwind utilities and pass strict native Oxlint React/jsx-a11y/type-aware rules without weakening, custom Tailwind rules, application state, or second primitive family.
+- [ ] #1 Local dialog and button preserve Base UI roles, labels, focus restoration, Escape, portal, outside-dismissal, disabled state, and ref behavior while exposing a small Archboard-owned API.
+- [ ] #2 Generated default colors, radius, shadows, animation, icon package, cva, demo variants, and unused helpers are removed; semantic Tailwind tokens and ui-classnames are the only style composition path.
+- [ ] #3 Module tests prove exported API, prop/type contracts, deterministic classes, and pure controlled/open-state behavior only; browser interaction/a11y belongs to TASK-144.11.
+- [ ] #4 Provenance comments record registry URLs, both approved hashes, reduction date, and local ownership without implying future generated code is trusted.
 <!-- AC:END -->

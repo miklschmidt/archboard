@@ -4,7 +4,7 @@ title: Show the exact context understood by voice
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:10'
-updated_date: '2026-08-30 15:42'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
   - TASK-143.04.01
@@ -24,13 +24,13 @@ ordinal: 211000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own voice focus, selection, semantic-context freshness, and ambiguity presentation in `src/ui/voice-context`. It reads closed context projections and never takes a board snapshot or chooses a target.
+Show what the current voice session actually captured and what later context delivery did. Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The view names bound pane/board/workhorse/coordinator plus current focus, selection, semantic brief freshness, truncation, and any ambiguity making deictic speech unsafe.
-- [ ] #2 Loading, fresh, stale, ambiguous, truncated, unbound, unavailable, prior-epoch, stopped, and child-exit states are explicit and never retarget to the newly focused pane.
-- [ ] #3 Focus changes consume ephemeral context, board changes consume SemanticContextEvent, and each restarted voice session shows one fresh brief rather than replaying idle deltas.
-- [ ] #4 Tests at src/ui/voice-context/tests cover every state, exact identity, time/freshness boundaries, focus/selection changes, screen-reader naming, both themes, and no board snapshot/write.
+- [ ] #1 The panel renders the exact start brief captured for the active child/coordinator/realtime session, including repository, workhorse, coordinator, board, pane, version, selection/focus freshness, claim, doing, cursor, ambiguity, and truncation.
+- [ ] #2 Later semantic/focus/selection/callback entries show attempted timestamp plus delivered, not_delivered, or outcome_unknown from the adapter; the UI never substitutes the publisher's current sample for what the session received.
+- [ ] #3 Stale brief, session replacement, disconnected append, uncertain response, and history recovery are labelled against immutable session identity and remain inspectable after Stop.
+- [ ] #4 Screen-reader structure, bounded expansion, copy behavior, and freshness language distinguish captured baseline from live delivery outcomes.
 <!-- AC:END -->

@@ -4,6 +4,7 @@ title: Define shared Codex workbench identities
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:06'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies: []
 references:
@@ -19,12 +20,13 @@ ordinal: 171000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Create the shared identity vocabulary used across runtime, server, and UI so child instances, epochs, thread links, calls, correlations, and approvals cannot be confused. This leaf owns only `src/shared/codex-workbench-identity` and has no app-server behavior.
+Own opaque branded identities and closed correlation records shared by the runtime and browser contracts. No module may substitute a string across identity domains or infer identity from recency.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Opaque child, epoch, thread-link, request, call, correlation, and realtime-session identities serialize deterministically and cannot be interchanged by TypeScript.
-- [ ] #2 Approval request identity is a discriminated union: V2 item requests use JSON-RPC request/thread/turn/item plus optional approvalId; MCP uses request/thread/nullable-turn/server plus URL elicitationId when present; legacy uses request/conversation/call plus optional approvalId. No variant invents a turn.
-- [ ] #3 Focused module tests cover round trips, equality, malformed decoding, and compile-time misuse through the public module entrypoint.
+- [ ] #1 Distinct opaque types exist for ChildId, ChildEpoch, BrowserCommandId, ThreadId, TurnId, ItemId, QueuedSubmissionId, LoginId, JSON-RPC request id, DynamicToolCallId, RealtimeSessionId, and ApprovalId.
+- [ ] #2 A wire-request correlation is exactly child, epoch, requestId; a logical tool-call correlation is exactly child, epoch, threadId, turnId, callId, namespace, tool, and manifestHash.
+- [ ] #3 Parsers validate wire strings once, preserve opacity across DTOs, and reject empty, wrong-domain, stale-epoch, or caller-fabricated identities.
+- [ ] #4 Type fixtures prove that thread/turn/item/queue/login/request identities cannot be interchanged and runtime fixtures prove stable round trips.
 <!-- AC:END -->

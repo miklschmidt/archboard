@@ -4,7 +4,7 @@ title: Disclose coordinator identity and settings
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 15:41'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -26,13 +26,13 @@ ordinal: 205000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the separate coordinator disclosure and global settings UI in `src/ui/workbench-coordinator`. It displays the coordinator timeline and configuration without merging it into the workhorse conversation.
+Disclose coordinator identity and configured/effective model, effort, service tier, approval, and sandbox settings without presenting it as the workhorse. Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Empty/creating/ready/active/reconnecting/invalidated/failed coordinator views name coordinator and linked workhorse, configured/effective model/effort/service tier, intervention policy, pending callback, and navigation between separate timelines.
-- [ ] #2 Settings start Luna/medium/Explicit corrections, expose Coordinator judgment and Never steer, validate only model/list combinations, and affect later decisions without rewriting the current turn.
-- [ ] #3 Unavailable model/effort, priority fallback, creation failure, child replacement, and stale settings are actionable and never collapse coordinator history into workhorse history.
-- [ ] #4 Tests at src/ui/workbench-coordinator/tests cover the full state/settings matrix, focus order, keyboard/touch operation, labels/status, cross-links, light/dark, and reduced motion.
+- [ ] #1 Settings distinguish loading, saving, matching notification confirmed, refused, stale coordinator, lost/outcome_unknown, reconciled, unavailable model/effort/tier, and fallback where priority is not advertised.
+- [ ] #2 A save remains pending until the exact settings-updated notification proves model, effort, and effective service tier while approval and sandbox remain unchanged.
+- [ ] #3 Failed/uncertain saves restore or freeze the edited values until a full authoritative read reconciles; no optimistic coordinator configuration becomes truth.
+- [ ] #4 Workhorse and coordinator identity/history/settings are labelled distinctly for visual and screen-reader users and never share a thread-link control.
 <!-- AC:END -->

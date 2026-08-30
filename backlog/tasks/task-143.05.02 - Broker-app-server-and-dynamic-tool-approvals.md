@@ -4,12 +4,14 @@ title: Broker app-server and dynamic-tool approvals
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 15:40'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
   - TASK-143.01.01
+  - TASK-143.01.06
   - TASK-143.01.08
-  - TASK-143.01.10
+  - TASK-143.05.01
+  - TASK-143.01.16
 references:
   - docs/design/desktop-app-server-sharing-research.md
 modified_files:
@@ -23,13 +25,14 @@ ordinal: 185000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own immutable approval records, generated response construction, effect fingerprints, target revalidation, and compare-and-swap settlement in `src/runtime/codex-approvals`. Browser lease remains in the gateway; cards and spoken gate hold only broker identity.
+Own compare-and-swap lifecycle, identity/effect validation, expiry, cancellation, and terminal response construction for all app-server human-interaction families. Dynamic dispatchers never construct approval responses.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A generated-variant table covers every 0.151.0 command/file approval, tool user-input, MCP elicitation, permissions request, legacy approval, and dynamic-tool effect identity, including request correlation, null-turn variants, legal decisions, and exact terminal responses.
-- [ ] #2 Records bind child/epoch, requester identity, target state token, canonical effect hash, offered decisions, expiry, and cancellation state without manufacturing missing thread/turn IDs.
-- [ ] #3 The broker CAS re-reads target/effect state immediately before dispatch; changed state, owner loss, server resolution, cancellation, fabricated choice, stale identity, expiry, or duplicate produces one typed terminal outcome and no second effect.
-- [ ] #4 Owner loss accepts a request identity from the gateway and constructs the generated terminal response; tests in src/runtime/codex-approvals/tests cover every table cell, transfer, cancellation before/after dispatch, stale races, and duplicate visual/spoken decisions.
+- [ ] #1 A closed discriminated union covers command execution, file change, tool requestUserInput, MCP elicitation/openai form/URL, permissions, legacy applyPatchApproval, and legacy execCommandApproval using each real request/thread-or-conversation/turn-or-null/item/call/server/approval identity.
+- [ ] #2 The broker owns staged, pending, settled, expired, cancelled, stale, and outcome_unknown CAS state and revalidates child/epoch/link/target/effect immediately before one terminal response.
+- [ ] #3 Only this module constructs the seven human-interaction response variants; TASK-143.05.04 and TASK-143.07.06 alone construct their dynamic-tool responses, and TASK-143.01.06 alone writes supplied responses to the wire.
+- [ ] #4 Binary spoken eligibility excludes secrets, multi-question/forms/URLs, permission scopes, coordinator-blocking requests, unsupported schemas, stale ownership, and any broader grant; all remain visual.
+- [ ] #5 Tests cover accept/decline/cancel/validation, expiry, simultaneous requests, stale browser lease, effect change, child exit, late result, lost write, and exactly-once settlement for every family.
 <!-- AC:END -->

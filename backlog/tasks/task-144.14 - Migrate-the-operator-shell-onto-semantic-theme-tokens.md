@@ -4,6 +4,7 @@ title: Migrate the operator shell onto semantic theme tokens
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:38'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies:
   - TASK-144.03
@@ -21,12 +22,13 @@ ordinal: 236000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the mechanical token consumption change in `src/ui/shell/shell.css`. Replace local TASK-140 token definitions with the canonical `src/ui/theme/app.css` semantic variables while preserving shell selectors, layout, reset behavior, and appearance.
+Migrate the completed operator shell to semantic theme utilities without redesigning it. Delegation profile: gpt-5.6-sol, high because TASK-140/reference-mockup visual fidelity is the authority.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 shell.css defines no competing paper, ink, rule, cobalt, lime, typography, spacing, radius, focus, motion, or shadow token source after migration.
-- [ ] #2 Selectors and resolved values preserve the completed TASK-140 desktop one/two-pane, fullscreen, light/dark, keyboard, pointer, and Samsung Flip presentation.
-- [ ] #3 CSS/build fixtures and the existing shell browser owners fail on missing tokens or duplicate definitions and show no Excalidraw reset regression.
+- [ ] #1 Shell markup/classes map the existing visual hierarchy, density, surfaces, typography, focus, claim/doing, panes, navigator, status, and fullscreen treatment to semantic tokens without changing behavior or layout ownership.
+- [ ] #2 Obsolete shell declarations are removed only after equivalent semantic utilities exist; Excalidraw CSS/reset remains isolated and no default shadcn aesthetic leaks in.
+- [ ] #3 Rendered comparison at desktop and Samsung Flip viewports covers light/dark/high-contrast/reduced-motion and detects token, overflow, focus, and touch-target regressions.
+- [ ] #4 The migration follows docs/design/operator-canvas-shell.md and the aesthetic guide; deviations require an explicit reviewed contract change.
 <!-- AC:END -->

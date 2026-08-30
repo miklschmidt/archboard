@@ -4,7 +4,7 @@ title: Expose TASK-140 tokens as a Tailwind semantic theme
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 15:43'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies:
   - TASK-144.01
@@ -22,13 +22,13 @@ ordinal: 217000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own `src/ui/theme/app.css` as the one Archboard application stylesheet and semantic token source. It imports Tailwind theme/utilities without Preflight, defines light/dark TASK-140 variables and `@theme inline` aliases, then imports the shell stylesheet.
+Expose completed TASK-140 tokens as the canonical Tailwind semantic theme while preserving reset ownership. Delegation profile: gpt-5.6-sol, high because this is an application-wide visual contract.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 app.css has one Tailwind 4 import path with Preflight disabled and imports src/ui/shell/shell.css once after semantic theme declarations; opener/module CSS can remain explicit until migrated.
-- [ ] #2 One namespaced source owns paper/surfaces, ink/muted/rules, cobalt, acid-lime, danger/warning, Onest/DM Mono, spacing, small radii, focus, restrained motion, and shadow values in light/dark.
-- [ ] #3 Tailwind exposes named semantic utilities from those variables without default-palette visual direction, duplicate tokens, dynamic class interpolation, or a whole-shell rewrite.
-- [ ] #4 Tests at src/ui/theme/tests prove every variable/utility resolves, Preflight is absent, import order is deterministic, and rendered TASK-140 appearance remains authoritative.
+- [ ] #1 app.css places all @import rules first: Tailwind theme/utilities and then the existing shell stylesheet, before any declaration or @theme block; Tailwind preflight/base reset is not imported.
+- [ ] #2 @theme maps the exact operator-shell color, typography, radius, spacing, elevation, state, and motion tokens without adding a second palette or replacing Excalidraw variables.
+- [ ] #3 Static compile fixtures prove named utilities are emitted and unknown token names are absent; they do not claim rendered equivalence.
+- [ ] #4 Theme changes preserve light/dark/high-contrast/reduced-motion contracts and defer rendered shell equivalence to TASK-144.14 browser coverage.
 <!-- AC:END -->

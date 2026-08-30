@@ -4,16 +4,17 @@ title: Integrate the Codex workbench into the operator shell
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 15:41'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
   - TASK-143.03.10
-  - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
-  - src/ui/shell/AgentWorkbench.tsx
+  - src/ui/shell/Shell.tsx
+  - src/ui/shell/shell.css
+  - src/ui/shell/tests/codex-workbench-integration.test.tsx
 parent_task_id: TASK-143.03
 priority: high
 type: task
@@ -23,13 +24,13 @@ ordinal: 208000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Replace the claim-only composition inside `src/ui/shell/AgentWorkbench.tsx` with the public `src/ui/workbench-frame` root while keeping `Shell.tsx` a mechanical caller. This leaf owns the existing shell workbench module and its rendered integration owner.
+Integrate the accepted text workbench frame into the existing operator shell and extend the existing PresentationDock with the active text source and Stop action. Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The operator shell supplies focused pane and public adapter props only; no runtime/server/generated protocol import or second workbench state owner enters src/ui/shell.
-- [ ] #2 Existing claim/doing/take-back behavior survives and every text-workbench empty, connected, linked, running, queued, approval, coordinator, reconnect, invalidated, completed, and failure state is reachable.
-- [ ] #3 Integration tests at src/ui/shell/tests/agent-workbench.test.ts verify the mechanical Shell caller, keyboard/status behavior, collapse/expand, fullscreen coexistence, and unchanged Excalidraw interaction; canonical cross-module browser coverage belongs to TASK-143.03.13.
-- [ ] #4 Production build inspection proves assistant-ui is used only through workbench-runtime and no diff-review, per-hunk patch, assistant transport, or mock data is bundled.
+- [ ] #1 Shell.tsx mounts one workbench per eligible pane through the accepted frame, preserves Excalidraw ownership, pane/navigator/status/claim/doing flows, and introduces no second shell/workbench store.
+- [ ] #2 The existing PresentationDock identifies the active text pane/workhorse/turn and keeps a labelled Stop control reachable in fullscreen without changing fullscreen ownership or inventing a second dock.
+- [ ] #3 CSS consumes the semantic aesthetic contract for desktop, two-pane, collapsed, fullscreen, high contrast, reduced motion, and Flip touch without default assistant-ui/shadcn styling.
+- [ ] #4 The named module test covers one registration, source identity, fullscreen Stop routing, unmount/reload, and unchanged shell/canvas behavior; TASK-143.03.13 owns rendered browser behavior.
 <!-- AC:END -->

@@ -4,13 +4,12 @@ title: Present ordinary Codex approval requests
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 15:41'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
-  - TASK-143.03.01
   - TASK-143.05.02
+  - TASK-143.03.01
   - TASK-144.07
-  - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
@@ -25,13 +24,13 @@ ordinal: 204000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own reusable Archboard non-voice approval cards in `src/ui/workbench-approvals`. They are owned Base UI/Tailwind source, not copied assistant-ui Elements, and render the broker record without owning lease, settlement, spoken eligibility, or speech correlation.
+Render and resolve every ordinary app-server human-interaction request from the approval broker. Spoken eligibility is only an annotation for genuine binary approvals; this module remains the complete visual fallback. Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Cards cover every broker identity/variant and show empty/loading, pending, deciding, accepted, declined, expired, changed, cancelled, server-resolved, owner-lost, outcome_unknown, and failed states with actual effect details.
-- [ ] #2 Only the browser lease owner can submit one offered decision; stale, fabricated, duplicate, invalid, or terminal records expose no second response path and missing turns are never invented.
-- [ ] #3 Command/cwd/action/network/permission/amendment, target token, effect hash, requester identity, and visual-only/spoken eligibility reason remain inspectable without leaking credentials.
-- [ ] #4 Tests at src/ui/workbench-approvals/tests cover every generated identity, state, keyboard-only choice, focus return, dialog/card labels, aria-live status, both themes, and owner loss.
+- [ ] #1 Cards cover command execution, file change, permissions, legacy exec/apply, multi-question requestUserInput, MCP elicitation, openai/form, and URL elicitation with their real discriminated identities and no fabricated turn.
+- [ ] #2 Forms support multiple questions, required/optional validation, secret values without echo/persistence, reviewed permission profile/scope, supported openai field types, safe URL schemes, cancel/decline, and explicit unsupported-schema/unsafe-URL refusal.
+- [ ] #3 Only genuine accept/decline approvals may be spoken-eligible; multi-field input, secrets, URLs, permissions with scope, unsupported forms, and any request blocking the coordinator remain visual-only.
+- [ ] #4 Pending, app-global off-focus visibility, stale ownership, expiry, broker cancellation, delivered, not_delivered, outcome_unknown, and authoritative reconciliation each retain the original immutable target and return focus accessibly.
 <!-- AC:END -->

@@ -1,10 +1,10 @@
 ---
 id: TASK-143.06.03
-title: Retire the legacy app-server control module
+title: Delete the legacy app-server control client
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 15:40'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
   - TASK-143.06.04
@@ -22,12 +22,13 @@ ordinal: 192000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Delete the now-unreferenced `src/runtime/engine/app-server-control.ts` module after TASK-143.06.04 removes its importer. This leaf owns deletion and repository proof only; replacement behavior already lives behind typed session/context modules.
+Delete the obsolete control-socket JSON-RPC client after all runtime imports are removed. Preserve measured/historical research that explains why it was replaced.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 No runtime code discovers or connects to an ambient control socket, configured thread route, Desktop app-server, or recent thread for board changes.
-- [ ] #2 The module and its direct tests are deleted with no compatibility wrapper, environment handling, status path, or fallback.
-- [ ] #3 Focused runtime and repository checks prove no source import, control-socket protocol, ambient selector, or legacy configuration remains and all typed replacement tests stay green.
+- [ ] #1 The app-server-control module is deleted with no runtime/server/UI import, export, duplicate framing helper, or shared-daemon socket lookup remaining.
+- [ ] #2 The owned stdio session remains the only Codex JSON-RPC transport and repository policy rejects reintroducing control-socket production imports.
+- [ ] #3 Historical ADR/research references may name the removed module but current architecture/docs cannot present it as runnable behavior.
+- [ ] #4 Type, module, process, and repository tests pass without a compatibility shim or dead export.
 <!-- AC:END -->

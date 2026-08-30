@@ -4,10 +4,9 @@ title: Pin and decode the Codex 0.151.0 experimental protocol
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 15:48'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies:
-  - TASK-143.01.01
   - TASK-143.01.12
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
@@ -22,13 +21,13 @@ ordinal: 173000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own exact-version protocol generation, schema hashing, and the sole generated-type decoder in `src/runtime/codex-protocol`. Resolve the binary only from reviewed `ARCHBOARD_CODEX_BIN` or PATH and generate into the separately ignored module-local input directory.
+Own the ignored output and checked runtime decoders generated from the exact configured Codex 0.151.0 binary with experimental APIs. Every used response, error, notification, and reverse request is decoded here; no consumer imports generated files.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The module command resolves ARCHBOARD_CODEX_BIN then PATH, requires codex-cli 0.151.0 exactly, runs codex app-server generate-ts --experimental into src/runtime/codex-protocol/generated, and fails when the tracked deterministic schema hash changes.
-- [ ] #2 Generated types never import outside this module; the module exposes generate, conformance, and explicit hash-review commands for later root registration and a non-experimental fixture fails for missing realtime/dynamic-tool contracts.
-- [ ] #3 Runtime decoders cover every generated server-request variant, unknown method, invalid params, protocol error, and stable policy classification consumed by approval/tool modules.
-- [ ] #4 Public-module tests consume only stable decoded types and produce actionable binary/version/schema-review errors without committing derived bindings.
+- [ ] #1 Generation runs codex app-server generate-ts --experimental from the exact binary and records binary version plus generated-tree digest without committing derived bindings.
+- [ ] #2 The adapter decodes every used initialize/account/config/thread/turn/item/queue/model/realtime/timeline response, JSON-RPC error, client notification, and server request, including optional emittedAtMs where supplied.
+- [ ] #3 Raw version-decoded realtime events leave this boundary without phase or transcript interpretation; TASK-143.02.03 is the sole reducer of realtime phase and canonical transcript.
+- [ ] #4 Unknown union members, malformed payloads, version drift, and unsupported capabilities fail closed with the method, direction, expected version, and recovery action.
 <!-- AC:END -->

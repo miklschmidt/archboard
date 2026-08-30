@@ -4,9 +4,10 @@ title: Compose the expanded and collapsed Codex workbench
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 15:41'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
+  - TASK-143.03.02
   - TASK-143.03.03
   - TASK-143.03.04
   - TASK-143.03.05
@@ -29,13 +30,13 @@ ordinal: 207000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own canvas-first text-workbench composition in `src/ui/workbench-frame`. It arranges thread link, workhorse timeline, optional coordinator, queue, approvals, composer, and board status, and reserves one inert optional voice slot without importing or presenting voice state.
+Compose expanded/collapsed workbench layout, app-global request surface, and responsive pane behavior. Delegation profile: gpt-5.6-sol, xhigh because this is substantial UI design governed by the reference mockup.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Expanded text layout has a compact link/status header, workhorse-first timeline, optional coordinator disclosure, queue/approval region, composer/turn controls, and separate board status.
-- [ ] #2 Collapsed text layout keeps connection, running/idle, pending approval/queue count, and Take back control visible; the inert absent voice slot renders nothing and has no status claim.
-- [ ] #3 Empty/loading/partial/failure/recovery states preserve reachable Stop and recovery actions without hiding the canvas or overlapping fullscreen controls.
-- [ ] #4 Tests at src/ui/workbench-frame/tests cover desktop one/two panes, fullscreen, collapse, light/dark, keyboard, reduced motion, screen-reader log order, and Samsung Flip touch under TASK-140 aesthetics.
+- [ ] #1 Expanded and collapsed layouts preserve workhorse-first hierarchy, separate coordinator history/settings, queue, approval, board claim/doing, and exact source-pane labels at one/two-pane desktop and Flip sizes.
+- [ ] #2 A lease-owned app-global approval/input request remains visible and actionable when another pane is focused or navigation changes; its immutable source is shown and no action retargets it.
+- [ ] #3 Keyboard order, focus transitions, screen-reader landmarks, reduced motion, light/dark/high-contrast, 44px touch targets, overflow, and empty/loading/error states follow the aesthetic contract.
+- [ ] #4 The frame consumes module ports only and owns no process/session/timeline/queue/approval/coordinator state.
 <!-- AC:END -->

@@ -4,7 +4,7 @@ title: Own coordinator workhorse queue policy
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 15:40'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
   - TASK-143.01.08
@@ -25,13 +25,13 @@ ordinal: 189000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own coordinator workhorse queue observation and mutation in `src/runtime/codex-workhorse-queue`. It consumes a fully paginated queue snapshot from the stable session port, preserves server order, and applies only to the coordinator-bound workhorse.
+Own coordinator-to-workhorse queue policy and the sole typed queue RPC port. It does not execute operations, start coordinator callbacks, or render queue UI.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The module never paginates app-server itself; it consumes the session queue port and add/edit/cancel/reorder/start results with stable coordinator-request/workhorse-turn correlations.
-- [ ] #2 Queueing is allowed only for an Archboard-created workhorse whose persisted developer-instruction and archboard_app manifest hashes match TASK-143.05.03; attached busy work is never silently queued.
-- [ ] #3 Reorder sends every submission ID, changes only coordinator-owned entries, and preserves foreign/unowned entries and relative order.
-- [ ] #4 Tests in src/runtime/codex-workhorse-queue/tests cover empty/running/queued/interrupted-preserved/approval-blocked/failed/restarted/completed/mixed states plus lost list/start responses without duplicate turns.
+- [ ] #1 The port fully paginates queue reads and exposes add/update/delete/reorder/start with QueuedSubmissionId, clientUserMessageId, order/version, and delivered/not_delivered/outcome_unknown results.
+- [ ] #2 Queue mutation is allowed only for a current-epoch Archboard-created workhorse with matching persisted instruction/manifest hashes; attached or uncertain-provenance workhorses cannot receive queued work.
+- [ ] #3 Active attached work may be eligible for exact-turn steer through TASK-143.07.03 but is never silently queued; inactive attached work starts only through ordinary explicit delegation policy.
+- [ ] #4 Lost queue responses are never repeated, stale versions refuse, and tests cover pagination, CAS conflicts, reorder, start, child/link replacement, cancellation, and cleanup.
 <!-- AC:END -->
