@@ -4,7 +4,7 @@ title: Verify native Tailwind formatting through repository checks
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-144.06
@@ -22,6 +22,8 @@ ordinal: 232000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own a disposable repository-format fixture that proves native Tailwind sorting through the actual bun run fmt/fmt:check commands and leaves the checkout clean.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

@@ -4,7 +4,7 @@ title: Persist Archboard app-server epochs
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -23,6 +23,8 @@ ordinal: 175000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the host epoch manifest and serialized compare-and-swap transaction records outside both Codex stores. It records confirmed ownership and inspect-only uncertainty; it never guesses a thread from recency.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

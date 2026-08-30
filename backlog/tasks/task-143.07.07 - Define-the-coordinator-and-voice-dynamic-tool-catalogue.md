@@ -4,7 +4,7 @@ title: Define the coordinator and voice dynamic-tool catalogue
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 17:03'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -25,13 +25,12 @@ ordinal: 231000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Load and validate the exact reviewed eager archboard_workhorse and archboard_voice namespace manifests and result schemas. It authors no text and dispatches no effect. Delegation profile: gpt-5.6-luna, max.
+Load and validate the reviewed eager archboard_workhorse and archboard_voice namespace manifests/result schemas. It authors no text and dispatches no effect. Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The namespace types/descriptions and ordered inspect_workhorse, delegate_to_workhorse, manage_workhorse_queue, steer_workhorse, and resolve_spoken_approval tools match canonical descriptions, deferLoading false, strict schemas/limits, additionalProperties false, and result/refusal tags byte-for-byte.
-- [ ] #2 resolve_spoken_approval's entire input schema is exactly required verdict enum accept|decline; no approval, child, pane, coordinator, workhorse, thread, turn, call, realtime-session, effect, or expiry identity is caller-selectable.
-- [ ] #3 All results are one inputText item using canonical ok/refused/approval_required/outcome_unknown envelopes; no wait tool or image/audio result exists.
-- [ ] #4 Stable manifest hashes bind to reviewed coordinator instruction bytes and are installed only at coordinator thread/start; fixtures fail on order/prose/schema/limit/tag/eagerness/hash/media drift.
+- [ ] #1 The catalogue uses the frozen tool names, descriptions, JSON Schemas, and coordinator identity from docs/design/codex-workbench-authored-contracts.md; queue results contain no synthetic revision or compare-and-swap field.
+- [ ] #2 Every catalogue entry declares its authority target, allowed caller role, required thread links, success result, and typed refusal/error set.
+- [ ] #3 Snapshot tests reject manifest drift, extra tools, missing required fields, ambiguous descriptions, and catalogue definitions outside this owner.
 <!-- AC:END -->

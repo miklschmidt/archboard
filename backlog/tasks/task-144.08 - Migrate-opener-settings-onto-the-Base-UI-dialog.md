@@ -4,10 +4,10 @@ title: Migrate opener settings onto the Base UI dialog
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
-  - TASK-144.07
+  - TASK-144.19
   - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md

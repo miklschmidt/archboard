@@ -4,7 +4,7 @@ title: Broker app-server and dynamic-tool approvals
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -26,6 +26,8 @@ ordinal: 185000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own compare-and-swap lifecycle, identity/effect validation, expiry, cancellation, and terminal response construction for all app-server human-interaction families. Dynamic dispatchers never construct approval responses.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

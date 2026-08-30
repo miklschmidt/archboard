@@ -4,7 +4,7 @@ title: Configure shadcn to deliver Base UI source into named modules
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-144.05
@@ -16,6 +16,8 @@ references:
   - docs/design/tailwind-base-ui-adoption-research.md
 modified_files:
   - components.json
+  - docs/design/vendor/shadcn-base/button.tsx
+  - docs/design/vendor/shadcn-base/dialog.tsx
 parent_task_id: TASK-144
 priority: high
 type: task
@@ -25,13 +27,13 @@ ordinal: 218000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Configure shadcn base-nova for Base UI source delivery into named Archboard modules after every resolver and class helper is proven. Pin exact upstream dialog and button source hashes; reviewed local modules remain authoritative.
+Configure shadcn base-nova for Base UI source delivery after every resolver/helper is proven. Pin reviewed upstream source at commit b4a618b97e35f5dadf3a00d51f410c84a2567d4d and track exact source fixtures; mutable main is provenance only. Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 components.json selects base-nova, Base UI, TypeScript, CSS variables, Tailwind 4 stylesheet, and aliases components @/ui, ui @/ui, lib @/ui, utils @/ui/ui-classnames, hooks @/ui; no cva, icon library, or generated theme is accepted.
-- [ ] #2 The dry-run hash-gates dialog source SHA-256 99e9d7851f7d00fa85cd66157dd6ee3d6759f149a0a2b850d837407fba61648f and button source SHA-256 434eb70c9158f687770752468a88fd9e164417620ab7047da10d06fe923a04bc before reduction.
-- [ ] #3 Dry-run generation resolves Vite, both TypeScript aliases, Oxlint, and ui-classnames consistently and reports upstream drift without modifying the checkout.
-- [ ] #4 Only reviewed named source files may be copied; future shadcn updates must repeat provenance, hash, dependency, accessibility, aesthetic, and boundary review.
+- [ ] #1 components.json selects base-nova/Base UI/TypeScript/CSS variables/Tailwind 4 with aliases components/ui/lib @/ui, utils @/ui/ui-classnames, hooks @/ui and no cva/icon/theme dependency.
+- [ ] #2 Tracked immutable fixtures are exact bytes from shadcn-ui/ui commit b4a618b97e35f5dadf3a00d51f410c84a2567d4d: button SHA-256 97bfee456444f0495deee6a321933c24267477645b0bf4bfea67c3c62d425a12 and dialog 85f9a33d1a8c495b0faecd066dae1581b8feb5d27f912ecf65f814386f6da3a9.
+- [ ] #3 A dry-run resolves all aliases/lint/helper config, compares generated inputs to tracked fixtures, reports upstream drift, and never modifies the checkout.
+- [ ] #4 Only reviewed named source may be copied; future updates repeat immutable provenance, hash, dependency, accessibility, aesthetic, and boundary review.
 <!-- AC:END -->

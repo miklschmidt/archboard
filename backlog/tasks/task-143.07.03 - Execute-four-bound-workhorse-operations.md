@@ -4,7 +4,7 @@ title: Execute four bound workhorse operations
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.08
@@ -24,6 +24,8 @@ ordinal: 194000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Execute exactly inspect, delegate, queue-management, and steer operations through the thread-link/session/queue ports and emit normalized operation events. It never waits synchronously for workhorse completion.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

@@ -4,7 +4,7 @@ title: Preserve board claim and doing as separate workbench state
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 15:41'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.06.02
@@ -24,6 +24,8 @@ ordinal: 206000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the adapter and view for existing focused-pane connection, claim, doing history, semantic-context freshness, and Take back control in `src/ui/workbench-board-status`. This is the successor to the claim/doing-only TASK-140 AgentWorkbench content.
+
+Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

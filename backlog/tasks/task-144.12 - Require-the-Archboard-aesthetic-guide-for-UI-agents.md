@@ -4,7 +4,7 @@ title: Require the Archboard aesthetic guide for UI agents
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:38'
-updated_date: '2026-08-30 15:48'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-144.09
@@ -22,6 +22,8 @@ ordinal: 234000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the durable agent-facing link from `AGENTS.md` to the Archboard UI aesthetic guide. The link tells future UI workers when the guide is mandatory without copying framework defaults or visual rules into a second source.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

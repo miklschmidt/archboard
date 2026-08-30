@@ -4,7 +4,7 @@ title: Render canonical voice transcript and cross-links
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:10'
-updated_date: '2026-08-30 15:42'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.02.03
@@ -27,6 +27,8 @@ ordinal: 212000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own display projection for the canonical codex-realtime transcript port in `src/ui/voice-transcript`. It renders provisional/final item state and cross-links but does not merge raw events, deduplicate a second stream, or become a second thread history.
+
+Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

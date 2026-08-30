@@ -4,6 +4,7 @@ title: Enforce the UI aesthetic guide link
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:47'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-144.12
@@ -21,6 +22,8 @@ ordinal: 243000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the stable repository-policy check that future UI agents cannot lose the mandatory aesthetic-guide link from `AGENTS.md`. It validates references only and copies no visual or framework policy.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

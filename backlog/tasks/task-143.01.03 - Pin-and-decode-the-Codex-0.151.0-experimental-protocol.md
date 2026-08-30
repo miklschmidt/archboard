@@ -4,7 +4,7 @@ title: Pin and decode the Codex 0.151.0 experimental protocol
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.12
@@ -22,6 +22,8 @@ ordinal: 173000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the ignored output and checked runtime decoders generated from the exact configured Codex 0.151.0 binary with experimental APIs. Every used response, error, notification, and reverse request is decoded here; no consumer imports generated files.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

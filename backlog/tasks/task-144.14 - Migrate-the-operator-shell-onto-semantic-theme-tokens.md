@@ -1,13 +1,14 @@
 ---
 id: TASK-144.14
-title: Migrate the operator shell onto semantic theme tokens
+title: Integrate semantic tokens into the operator shell stylesheet
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:38'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-144.03
+  - TASK-144.09
   - TASK-144.13
 references:
   - docs/design/operator-canvas-shell.md
@@ -22,13 +23,13 @@ ordinal: 236000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Migrate the completed operator shell to semantic theme utilities without redesigning it. Delegation profile: gpt-5.6-sol, high because TASK-140/reference-mockup visual fidelity is the authority.
+Map existing shell CSS declarations to the canonical semantic token variables without rewriting Shell.tsx markup, utility-classifying the shell, or redesigning it. Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Shell markup/classes map the existing visual hierarchy, density, surfaces, typography, focus, claim/doing, panes, navigator, status, and fullscreen treatment to semantic tokens without changing behavior or layout ownership.
-- [ ] #2 Obsolete shell declarations are removed only after equivalent semantic utilities exist; Excalidraw CSS/reset remains isolated and no default shadcn aesthetic leaks in.
-- [ ] #3 Rendered comparison at desktop and Samsung Flip viewports covers light/dark/high-contrast/reduced-motion and detects token, overflow, focus, and touch-target regressions.
-- [ ] #4 The migration follows docs/design/operator-canvas-shell.md and the aesthetic guide; deviations require an explicit reviewed contract change.
+- [ ] #1 Existing shell selectors/layout/markup remain; color, typography, radius, spacing, elevation, state, and motion values consume canonical semantic variables where equivalent.
+- [ ] #2 No Shell.tsx class migration, stylesheet rewrite, Tailwind utility conversion, layout change, or default shadcn aesthetic is introduced; Excalidraw reset/CSS remains isolated.
+- [ ] #3 Rendered equivalence at desktop and Flip viewports covers light/dark/high-contrast/reduced-motion and detects token, overflow, focus, and touch regressions.
+- [ ] #4 The integration follows the prior aesthetic guide and operator-shell reference; a markup/class migration requires separately split component tasks.
 <!-- AC:END -->

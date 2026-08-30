@@ -4,7 +4,7 @@ title: Mirror the UI source alias in root TypeScript
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:49'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-144.15
@@ -21,13 +21,13 @@ ordinal: 244000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the root TypeScript half of the single `@/* -> src/*` resolver alias in `tsconfig.json`. This lets the pinned shadcn CLI resolve the project configuration and keeps root/frontend/Vite alias semantics identical.
+Own the root TypeScript half of the same @/* -> ./src/* alias and prove agreement with frontend TypeScript/Vite. Deep-import policy remains Oxlint-owned. Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 compilerOptions.paths contains exactly @/* mapped to [./src/*] for the owning TypeScript config and does not add baseUrl.
-- [ ] #2 A self-contained root alias fixture resolves a public @/ module and rejects an unknown/deep path under the owning tsc project without depending on pre-created shadcn components.
-- [ ] #3 The mapping agrees with Vite and the peer TypeScript project, preserves bundler resolution/noEmit, and adds no second alias spelling.
-- [ ] #4 TASK-144.04 owns the actual shadcn dry-run after both aliases and Oxlint resolution are ready.
+- [ ] #1 tsconfig.json compilerOptions.paths contains exactly @/* mapped to [./src/*] and does not add baseUrl.
+- [ ] #2 A self-contained root alias fixture proves a public @/ module resolves and an unknown alias fails under root tsc; it does not claim path aliases reject valid deep imports.
+- [ ] #3 The root mapping equals frontend/Vite, preserves bundler resolution/noEmit/includes, and adds no second spelling.
+- [ ] #4 TASK-144.18 alone enforces module entrypoints/deep imports; TASK-144.04 owns the shadcn dry-run after both aliases.
 <!-- AC:END -->

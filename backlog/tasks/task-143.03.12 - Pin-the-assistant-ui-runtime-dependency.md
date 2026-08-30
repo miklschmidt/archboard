@@ -4,7 +4,7 @@ title: Pin the assistant-ui runtime dependency
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-144.01
@@ -23,6 +23,8 @@ ordinal: 226000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the final serialized root package/lockfile edit for @assistant-ui/react 0.15.17 and audit its transitive graph. The runtime is headless support, not Archboard state or transport.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

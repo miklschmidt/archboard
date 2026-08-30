@@ -4,7 +4,7 @@ title: Define the browser-native Codex realtime contract
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies: []
 references:
@@ -21,6 +21,8 @@ ordinal: 181000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the framework-neutral host/browser types and frozen public state machine contract in src/ui/codex-realtime/contract.ts. It contains no Codex wire types, Archboard identities, React, assistant-ui, Node, or implementation globals.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

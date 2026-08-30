@@ -4,7 +4,7 @@ title: Deliver non-reentrant coordinator callbacks
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -27,6 +27,8 @@ ordinal: 195000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Deliver non-reentrant coordinator callbacks from normalized semantic and workhorse-operation events using a closed callback union and canonical developer-role bytes. The callback path never blocks in wait_threads.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

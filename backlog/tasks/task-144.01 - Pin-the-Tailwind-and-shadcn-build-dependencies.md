@@ -4,7 +4,7 @@ title: Pin the Tailwind and shadcn build dependencies
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 16:35'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.13
@@ -24,6 +24,8 @@ ordinal: 215000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the serialized root package.json/bun.lock seam for the accepted Tailwind/Base UI foundation. Pin every reviewed direct dependency needed by later TASK-144 leaves and audit the resulting transitive graph; assistant-ui is added only by the later serialized TASK-143.03.12.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

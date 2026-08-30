@@ -4,7 +4,7 @@ title: Expose the Codex workbench browser gateway
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -25,6 +25,8 @@ ordinal: 180000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Expose the closed browser gateway for account/session readiness, thread links, timelines, settings, queue, approvals, text commands, semantic status, and realtime control. The gateway leases commands but owns no Codex state reducer.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

@@ -4,7 +4,7 @@ title: Resolve state-gated spoken approvals
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.02.03
@@ -24,13 +24,13 @@ ordinal: 196000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the one-slot spoken-approval compare-and-swap gate and schedule a later ordinary coordinator classifier turn. Realtime speech never directly returns a typed verdict.
+Own the one-slot spoken-approval gate and schedule a later ordinary coordinator classifier turn. Realtime speech never directly returns a typed verdict. Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The gate captures the sole immutable eligible approval, effect fingerprint, child/epoch, coordinator/thread, realtime session, expected assistant transcript sequence, manifest hash, and expiry; a second request or coordinator-blocking request stays visual.
-- [ ] #2 After the expected final assistant transcript, the module schedules one ordinary coordinator turn with the canonical classifier input; accept/decline text from realtime alone never settles the broker.
-- [ ] #3 Only a matching later coordinator item/tool/call for resolve_spoken_approval may continue; host validation supplies the pending ApprovalId after child/thread/turn/call/namespace/tool/manifest/session/effect/expiry checks.
-- [ ] #4 Ambiguous/missing transcript, changed effect, stale session/link/epoch, timeout, lost classifier/resolver response, or child exit disarms to visual fallback and never remains awaiting_user.
+- [ ] #1 The gate captures one eligible approval/effect plus child/epoch/coordinator/realtime identity and the effect-prompt item/sequence. It arms only after one later matching final user item; assistant, provisional, pre-prompt, duplicate, or stale items cannot arm.
+- [ ] #2 The module starts one ordinary coordinator turn containing the exact authored classifier bytes with the captured final user text; accept/decline text from realtime alone never settles the broker.
+- [ ] #3 Only a matching later item/tool/call for resolve_spoken_approval continues; host validation supplies ApprovalId after all child/thread/turn/call/manifest/session/item/sequence/effect/expiry checks.
+- [ ] #4 Ambiguity, missing user final, assistant-only response, changed effect, stale state, timeout, lost classifier/resolver, or child exit disarms to visual fallback and never remains awaiting_user.
 <!-- AC:END -->

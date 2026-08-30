@@ -4,7 +4,7 @@ title: Ignore derived Codex protocol bindings
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:47'
-updated_date: '2026-08-30 15:48'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies: []
 references:
@@ -21,6 +21,8 @@ ordinal: 239000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the one ignore rule for derived exact-version Codex protocol bindings in `.gitignore`. Canonical authored inputs and the reviewed schema hash remain tracked; regenerated TypeScript does not.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

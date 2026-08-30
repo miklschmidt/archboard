@@ -4,7 +4,7 @@ title: Delete the legacy app-server control client
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.06.04
@@ -23,6 +23,8 @@ ordinal: 192000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Delete the obsolete control-socket JSON-RPC client after all runtime imports are removed. Preserve measured/historical research that explains why it was replaced.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

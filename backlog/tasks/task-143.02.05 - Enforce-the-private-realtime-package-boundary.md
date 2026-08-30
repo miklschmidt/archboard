@@ -4,7 +4,7 @@ title: Verify the realtime host and process contract
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:47'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.02.03
@@ -23,6 +23,8 @@ ordinal: 242000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the real-process contract test for the runtime adapter and public browser module boundary. Browser device behavior remains in the controlled browser owner; this test drives an exact-version/fake stdio child through public ports.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

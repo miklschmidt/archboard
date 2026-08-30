@@ -23,6 +23,122 @@ change and requires a new review.
 - Hashes are lowercase SHA-256 over those exact bytes. The implementation
   computes and freezes them; callers cannot supply a hash or authored suffix.
 
+## Initialize and auxiliary request policy
+
+The initialize capabilities object is literal:
+
+```json
+{
+	"experimentalApi": true,
+	"requestAttestation": false,
+	"mcpServerOpenaiFormElicitation": true,
+	"optOutNotificationMethods": [],
+	"extensions": {}
+}
+```
+
+Archboard supports the legacy `openai/form` elicitation shape through the
+explicit boolean and advertises no MCP Apps UI extension. It opts out of no
+notifications because the decoder/router is exhaustive. `attestation/generate`
+must not be sent after `requestAttestation: false`; if received, the router
+returns JSON-RPC error `-32601`, `"Attestation is not supported by this
+client"`. `account/chatgptAuthTokens/refresh` is unsupported because Archboard
+does not accept the client-managed token login variant; if received, it returns
+`-32601`, `"Client-managed ChatGPT token refresh is not supported"`.
+
+`currentTime/read` is always supported. After validating its `threadId` against
+the current child, it returns exactly:
+
+```json
+{"currentTimeAt":<floor-of-current-Unix-milliseconds-divided-by-1000>}
+```
+
+The six generated login variants have one closed policy:
+
+| Variant                   | Policy                                                                   |
+| ------------------------- | ------------------------------------------------------------------------ |
+| `apiKey`                  | Supported; secret enters one login RPC and is never snapshotted.         |
+| `chatgpt`                 | Supported hosted browser login with cancel and completion correlation.   |
+| `chatgptDeviceCode`       | Refused as unsupported by this UI.                                       |
+| `chatgptAuthTokens`       | Refused; Archboard does not own token refresh.                           |
+| `amazonBedrock`           | Supported with explicit API key and region.                              |
+| `amazonBedrockAccessKeys` | Supported with explicit access keys, optional session token, and region. |
+
+Bedrock profile/environment setup that depends on ambient AWS variables is
+refused because the child strips ambient credentials. Unsupported variants are
+rejected before an RPC with a visual recovery path; they do not make the whole
+session incapable of a supported login.
+
+## Literal thread profiles
+
+The workhorse `thread/start` contains exactly these fields after placeholders
+are substituted. Angle-bracket strings denote scalar authored values, except
+the `dynamicTools` entries: each of those stands for the complete namespace
+object frozen later in this document and is never serialized as a string.
+
+```json
+{
+	"cwd": "<canonical-checkout-root>",
+	"runtimeWorkspaceRoots": ["<same-canonical-checkout-root>"],
+	"serviceName": "archboard",
+	"developerInstructions": "<canonical-workhorse-bytes>",
+	"ephemeral": false,
+	"historyMode": "paginated",
+	"sessionStartSource": "startup",
+	"threadSource": "archboard",
+	"dynamicTools": ["<canonical-archboard_app-namespace>"],
+	"experimentalRawEvents": false
+}
+```
+
+The coordinator uses exactly one of these two otherwise-identical profiles:
+
+```json
+{
+	"model": "gpt-5.6-luna",
+	"allowProviderModelFallback": false,
+	"serviceTier": "priority",
+	"cwd": "<canonical-checkout-root>",
+	"runtimeWorkspaceRoots": ["<same-canonical-checkout-root>"],
+	"config": { "features": { "realtime_conversation": true } },
+	"serviceName": "archboard",
+	"developerInstructions": "<canonical-composed-coordinator-bytes>",
+	"ephemeral": false,
+	"historyMode": "paginated",
+	"sessionStartSource": "startup",
+	"threadSource": "archboard",
+	"dynamicTools": [
+		"<canonical-archboard_workhorse-namespace>",
+		"<canonical-archboard_voice-namespace>"
+	],
+	"experimentalRawEvents": false
+}
+```
+
+When `model/list` does not advertise priority for `gpt-5.6-luna`, the fallback
+profile omits `serviceTier`; it does not send `null` or another tier. Both
+profiles intentionally omit `modelProvider`, `approvalPolicy`,
+`approvalsReviewer`, `sandbox`, `permissions`, `baseInstructions`,
+`personality`, `multiAgentMode`, `projectId`, `environments`,
+`selectedCapabilityRoots`, and `mockExperimentalField`. Omission preserves the
+dedicated child's reviewed config/default environment and therefore normal
+shell, web, repository, and approval capabilities. Workhorse `model`,
+`allowProviderModelFallback`, `serviceTier`, and `config` are also omitted so
+the configured workhorse defaults remain authoritative and are recorded from
+the returned thread.
+
+After coordinator start, Archboard sends exactly one of:
+
+```json
+{"threadId":"<coordinator-thread-id>","model":"gpt-5.6-luna","serviceTier":"priority","effort":"medium"}
+{"threadId":"<coordinator-thread-id>","model":"gpt-5.6-luna","effort":"medium"}
+```
+
+The empty response is not confirmation. Reuse requires a matching
+`thread/settings/updated` notification whose model, effort, and effective tier
+match the selected profile and whose approval, sandbox, and permissions equal
+the values captured from the start response.
+
 ### Workhorse developer instructions
 
 ```text
@@ -95,7 +211,6 @@ limits below. Encoding rejects overflow rather than truncating silently:
 | ambiguity entries     | 16 entries, 256 UTF-8 bytes each               |
 | doing                 | 512 UTF-8 bytes                                |
 | tool prompt/input     | 16,384 UTF-8 bytes unless narrower below       |
-| title                 | 256 UTF-8 bytes                                |
 | cursor                | 1,024 UTF-8 bytes                              |
 | wait targets          | 8                                              |
 | wait timeout          | 0 through 120,000 milliseconds                 |
@@ -118,11 +233,11 @@ Every start uses a new host-minted `realtimeSessionId` and these choices:
 
 ```json
 {
-	"clientManagedHandoffs": true,
-	"delegationAckFiller": false,
+	"clientManagedHandoffs": false,
+	"delegationAckFiller": true,
 	"flushTranscriptTailOnSessionEnd": true,
-	"codexResponsesAsItems": true,
-	"codexResponseHandoffMode": "commentary",
+	"codexResponsesAsItems": false,
+	"codexResponseHandoffMode": "bemTags",
 	"outputModality": "audio",
 	"includeStartupContext": true,
 	"initialItems": [{ "role": "developer", "text": "<fresh-canonical-semantic-brief>" }],
@@ -212,7 +327,6 @@ The `ok.value` object is closed per tool:
 		"threadId": "<opaque>",
 		"status": "notLoaded|idle|systemError|active",
 		"activeTurnId": "<opaque-or-null>",
-		"queueVersion": 0,
 		"queuedSubmissionIds": []
 	},
 	"delegate_to_workhorse": {
@@ -223,7 +337,6 @@ The `ok.value` object is closed per tool:
 	},
 	"manage_workhorse_queue": {
 		"operation": "list|add|update|delete|reorder|start",
-		"queueVersion": 0,
 		"queuedSubmissionIds": []
 	},
 	"steer_workhorse": {
@@ -257,8 +370,7 @@ credentials, process identity, or an unbounded app-server object.
 			"inputSchema": {
 				"type": "object",
 				"properties": {
-					"prompt": { "type": "string", "minLength": 1, "maxLength": 16384 },
-					"title": { "type": "string", "minLength": 1, "maxLength": 256 }
+					"prompt": { "type": "string", "minLength": 1, "maxLength": 16384 }
 				},
 				"required": ["prompt"],
 				"additionalProperties": false
@@ -358,6 +470,28 @@ Approval mapping: `create_thread`, `fork_thread`, and arbitrary
 uses the server-supplied executing `beforeTurnId` and no caller override.
 `list_threads` and `read_thread` are read-only. `wait_threads` is allowed only
 when the wait graph proves no transitive cycle.
+
+Operation semantics are exact:
+
+- `create_thread` sends `thread/start` with the literal workhorse profile, then
+  `turn/start` with the required prompt. There is no title argument. A lost
+  start is `outcome_unknown`; a confirmed thread plus refused/not-delivered
+  turn returns the confirmed inspectable thread and the turn outcome; a lost
+  turn response is `outcome_unknown` and is never repeated.
+- `fork_thread` sends `thread/fork` once. When `prompt` is present, a confirmed
+  fork is followed by one `turn/start`; the two uncertainty boundaries match
+  create. With no prompt, the confirmed fork is the terminal success.
+- `send_message_to_thread` sends one `turn/start` only to an idle loaded
+  controllable target. An active target is `refused: busy`; this general tool
+  never steers. A lost response is `outcome_unknown`.
+- `wait_threads` returns `attention` only for a target-owned pending broker
+  request or a target entering `systemError`. `completed` requires a matching
+  terminal turn/thread event; timeout is not attention. The wait graph rejects
+  cycles before registration.
+- Authority, ownership, and policy reads always exhaust pages. Tool
+  `list_threads`, `read_thread`, and wait progress preserve requested pages.
+  Every exposed cursor is an opaque host envelope bound to child epoch, method,
+  and canonical query; it cannot be replayed against another child or query.
 
 ## Coordinator manifests
 
@@ -463,10 +597,29 @@ accepts no other property.
 }
 ```
 
-`resolve_spoken_approval` is never called from realtime directly. The host arms
-one immutable eligible request from the expected session-scoped final assistant
-transcript, starts a later ordinary coordinator classifier turn, and accepts
-the call only when child, epoch, coordinator thread, classifier turn, call,
-namespace, tool, manifest hash, realtime session, effect fingerprint, and
-expiry all still match. The host then supplies the sole pending approval
-identity to the broker.
+`resolve_spoken_approval` is never called from realtime directly. After the
+effect prompt, the host arms one immutable eligible request only from the next
+matching final **user** item. It binds the realtime session, item id, and
+monotonic item sequence. Assistant output, provisional user deltas, pre-prompt
+items, duplicates, and stale sessions can never arm authority.
+
+The later ordinary coordinator turn receives these exact UTF-8 template bytes
+(LF endings, one terminal LF) after placeholder substitution:
+
+```text
+Classify one spoken binary approval for Archboard. The host has already bound the request identity; do not infer or mention another request.
+
+<spoken_approval>
+effect: <bounded-effect-summary>
+user_final_item_id: <opaque-item-id>
+user_final_sequence: <decimal-sequence>
+user_final_text: <verbatim-bounded-final-user-text>
+</spoken_approval>
+
+If and only if the user clearly accepts or declines this effect, call archboard_voice.resolve_spoken_approval once with {"verdict":"accept"} or {"verdict":"decline"}. Otherwise do not call the tool; say the request must be resolved in the visual workbench.
+```
+
+The host accepts the resulting call only when child, epoch, coordinator thread,
+classifier turn, call, namespace, tool, manifest hash, realtime session, final
+user item/sequence, effect fingerprint, and expiry still match. It then supplies
+the sole pending approval identity to the broker.
