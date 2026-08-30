@@ -17,6 +17,7 @@ export const BROWSER_TEST_PATHS = [
 	"tests/system/browser/arrow-binding-differential.test.ts",
 	"tests/system/browser/finding-export.test.ts",
 	"tests/system/browser/shell-layout.test.ts",
+	"tests/system/browser/fullscreen-presentation.test.ts",
 	"tests/system/browser/typed-text.test.ts",
 	"tests/system/browser/live-session-convergence.test.ts",
 	"tests/system/browser/server-update-ordering.test.ts",
@@ -115,7 +116,9 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 		(selected.length !== BROWSER_TEST_PATHS.length ||
 			selected.some((file, index) => file !== BROWSER_TEST_PATHS[index]))
 	) {
-		selectionError("Package browser lane must name all 15 canonical paths in order.");
+		selectionError(
+			`Package browser lane must name all ${BROWSER_TEST_PATHS.length} canonical paths in order.`,
+		);
 	}
 	return { mode, files: selected as BrowserTestPath[] };
 }

@@ -28,6 +28,7 @@ interface CanvasPaneProps {
 	 * than one pane to distinguish — a lone pane is trivially the focused one.
 	 */
 	focused: boolean;
+	presentation: "current" | "hidden" | null;
 	theme: "light" | "dark";
 	onStatus: (status: PaneStatus) => void;
 	/** Agent state is shell chrome, so the pane reports it to the dedicated rail. */
@@ -58,6 +59,7 @@ export function CanvasPane({
 	paneId,
 	primary,
 	focused,
+	presentation,
 	theme,
 	onStatus,
 	onAgentState,
@@ -172,10 +174,12 @@ export function CanvasPane({
 
 	return (
 		<section
-			className={`pane${label && focused ? " pane-focused" : ""}`}
+			className={`pane${label && focused ? " pane-focused" : ""}${presentation ? ` presentation-${presentation}` : ""}`}
 			onPointerDownCapture={interacted}
 			onKeyDownCapture={interacted}
 			aria-label={label ?? "canvas"}
+			aria-hidden={presentation === "hidden" ? true : undefined}
+			inert={presentation === "hidden"}
 		>
 			<div className="pane-canvas" ref={setPaneElement}>
 				<Excalidraw

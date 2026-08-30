@@ -66,13 +66,13 @@ with `// hot-safe: <reason>`. Mechanics and costs:
 `docs/design/hot-reload-under-bun.md` and the archboard-dev skill.
 
 **Running the complete local suite needs `agent-browser` on PATH**: one typed
-serial browser lane drives 15 real-browser owners and exits 2 when prerequisites
+serial browser lane drives 16 real-browser owners and exits 2 when prerequisites
 are absent; its human-edit performance owner also needs `strace`. It stays
 headless and runs one owner at a time. `bun run check` is the complete local
 gate. GitHub Actions invokes that command with two fail-closed hosted
 exceptions: `tests/system/code-targets/opener-persistence.test.ts` and the
 complete serial browser lane. TASK-141 and TASK-142 own restoring the system
-owner and all 15 browser owners; repository policy pins both exceptions.
+owner and all 16 browser owners; repository policy pins both exceptions.
 `bun run test:repository` includes the inventory that rejects missing,
 duplicate, or unreachable tests. Changing tests or CI, or a browser owner
 failing → `docs/agents/test-suite.md`.
