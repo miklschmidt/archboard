@@ -3,14 +3,19 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import * as ts from "typescript/unstable/ast";
+import type * as ts from "typescript/unstable/ast";
 import { describe, expect, test } from "bun:test";
 import {
 	discoverNativeTests,
 	inspectTestInventory,
 	type InventoryInput,
 } from "./support/test-inventory.js";
-import { parseModuleSources } from "./support/module-scope-analysis.js";
+import { configuredAliases, resolveConfiguredAlias } from "./support/codex-aliases.js";
+import {
+	moduleSpecifiers,
+	parseModuleSources,
+	typeFingerprintMirror,
+} from "./support/module-scope-analysis.js";
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const GENERATED_ROOT = "src/runtime/codex-protocol/generated/";
 const ADAPTER_PATH = "src/runtime/codex-protocol/index.ts";
@@ -26,6 +31,11 @@ const CODEX_GENERATED_PATH_INVENTORY_SHA256 =
 const CODEX_GENERATED_PATHS = new Set(CODEX_GENERATED_PATH_INVENTORY.split(" "));
 const CODEX_GENERATED_TYPE_NAMES = new Set(
 	[...CODEX_GENERATED_PATHS].map((file) => file.replace(/^.*\//u, "").replace(/\.ts$/u, "")),
+);
+const CODEX_GENERATED_NESTED_TYPE_NAMES = new Set(
+	[...CODEX_GENERATED_PATHS]
+		.filter((file) => file.includes("/"))
+		.map((file) => file.replace(/^.*\//u, "").replace(/\.ts$/u, "")),
 );
 const ALLOWED_GENERATED_IMPORTERS = new Map([
 	[ADAPTER_PATH, "the public codex-protocol adapter is the sole consumer boundary"],
@@ -56,43 +66,15 @@ interface ParsedSourceFile {
 	readonly file: SourceFile;
 	readonly sourceFile: ts.SourceFile;
 }
-function stringSpecifier(node: ts.Node | undefined): string | undefined {
-	return node && ts.isStringLiteralLikeNode(node) ? node.text : undefined;
-}
-function importedSpecifiers(astFile: ts.SourceFile): string[] {
-	const specifiers: string[] = [];
-	const add = (node: ts.Node | undefined): void => {
-		const specifier = stringSpecifier(node);
-		if (specifier !== undefined) specifiers.push(specifier);
-	};
-	const visit = (node: ts.Node): void => {
-		if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
-			add(node.moduleSpecifier);
-		}
-		if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
-			add(node.moduleReference.expression);
-		}
-		if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) {
-			add(node.argument.literal);
-		}
-		if (ts.isCallExpression(node)) {
-			const isImport = ts.isImportExpression(node.expression);
-			const isRequire = ts.isIdentifier(node.expression) && node.expression.text === "require";
-			if ((isImport || isRequire) && node.arguments.length === 1) add(node.arguments[0]);
-		}
-		node.forEachChild(visit);
-	};
-	visit(astFile);
-	return specifiers;
-}
 function normalizeRepositoryPath(value: string): string {
 	return value.replaceAll("\\", "/").replace(/^\.\//u, "");
 }
-function isCanonicalGeneratedPath(filePath: string): boolean {
-	return normalizeRepositoryPath(filePath).startsWith(GENERATED_ROOT);
-}
-function generatedPathFromImport(importer: string, specifier: string): string | undefined {
-	let rawPath = specifier;
+function generatedPathFromImport(
+	importer: string,
+	specifier: string,
+	aliases: ReadonlyMap<string, string>,
+): string | undefined {
+	let rawPath = resolveConfiguredAlias(aliases, specifier) ?? specifier;
 	if (specifier.startsWith("file:")) {
 		try {
 			rawPath = decodeURIComponent(new URL(specifier).pathname);
@@ -100,20 +82,19 @@ function generatedPathFromImport(importer: string, specifier: string): string | 
 			return undefined;
 		}
 	}
+	const marker = "__archboard_dynamic__";
+	rawPath = rawPath.replaceAll("*", marker);
 	const absolute = path.isAbsolute(rawPath)
 		? path.normalize(rawPath)
-		: specifier.startsWith(".")
+		: rawPath.startsWith(".")
 			? path.resolve(repoRoot, path.dirname(importer), rawPath)
 			: path.resolve(repoRoot, rawPath);
 	const relative = normalizeRepositoryPath(path.relative(repoRoot, absolute));
-	const withoutExtension = relative.replace(/\.(?:[cm]?js|tsx?)$/u, "");
+	const withoutExtension = relative.replace(/\.(?:[cm]?js|tsx?)$/u, "").replaceAll(marker, "*");
 	if (withoutExtension.startsWith(GENERATED_ROOT)) return withoutExtension;
 	return withoutExtension.includes("/codex-protocol/") && withoutExtension.includes("/generated/")
 		? withoutExtension
 		: undefined;
-}
-function generatedBindingSource(source: string): boolean {
-	return source.startsWith(GENERATED_HEADER);
 }
 const FINDING_MESSAGES: Record<string, string> = {
 	"symlink source entry":
@@ -122,6 +103,7 @@ const FINDING_MESSAGES: Record<string, string> = {
 		"delete the mirror and consume decoded values through the public codex-protocol adapter",
 	"generated tree outside canonical directory": `move this binding under ${GENERATED_ROOT}, which is the only ignored generated directory`,
 	"committed generated output": "remove it from Git and regenerate into the ignored directory",
+	"unknown generated binding": `regenerate the exact Codex 0.151.0 inventory before adding ${GENERATED_ROOT} output`,
 };
 function addFinding(
 	findings: OwnershipFinding[],
@@ -140,31 +122,25 @@ function generatedInventoryPath(filePath: string): string | undefined {
 		normalized.endsWith(`/${generatedPath}`),
 	);
 }
-function handwrittenMirrorSource(astFile: ts.SourceFile, filePath: string): boolean {
-	if (!isCodexProtocolPath(filePath)) return false;
+function handwrittenMirrorSource(
+	astFile: ts.SourceFile,
+	filePath: string,
+	aliases: ReadonlyMap<string, string>,
+): boolean {
+	const codexPath = isCodexProtocolPath(filePath);
 	const inventoryPath = generatedInventoryPath(filePath);
-	const visit = (node: ts.Node): boolean => {
-		if (ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node)) {
-			const name = node.name.text;
-			if (CODEX_GENERATED_TYPE_NAMES.has(name)) return true;
-		}
-		if (ts.isTypeAliasDeclaration(node)) {
-			let referencesGeneratedName = false;
-			const inspectType = (child: ts.Node): void => {
-				if (ts.isIdentifier(child) && CODEX_GENERATED_TYPE_NAMES.has(child.text))
-					referencesGeneratedName = true;
-				child.forEachChild(inspectType);
-			};
-			inspectType(node.type);
-			if (referencesGeneratedName) return true;
-		}
-		let found = false;
-		node.forEachChild((child) => {
-			if (!found && visit(child)) found = true;
-		});
-		return found;
-	};
-	return (inventoryPath !== undefined && filePath !== ADAPTER_PATH) || visit(astFile);
+	const exactNestedPath = inventoryPath?.includes("/") ?? false;
+	return (
+		(inventoryPath?.includes("/") && filePath !== ADAPTER_PATH) ||
+		typeFingerprintMirror(
+			astFile,
+			CODEX_GENERATED_TYPE_NAMES,
+			CODEX_GENERATED_NESTED_TYPE_NAMES,
+			exactNestedPath,
+			codexPath,
+			(specifier) => generatedPathFromImport(filePath, specifier, aliases) !== undefined,
+		)
+	);
 }
 async function parseSourceFiles(files: readonly SourceFile[]): Promise<ParsedSourceFile[]> {
 	const temporaryRoot = fs.mkdtempSync(
@@ -190,8 +166,12 @@ async function parseSourceFiles(files: readonly SourceFile[]): Promise<ParsedSou
 		fs.rmSync(temporaryRoot, { recursive: true, force: true });
 	}
 }
-async function ownershipFindings(files: readonly SourceFile[]): Promise<OwnershipFinding[]> {
+async function ownershipFindings(
+	files: readonly SourceFile[],
+	configured?: ReadonlyMap<string, string>,
+): Promise<OwnershipFinding[]> {
 	const findings: OwnershipFinding[] = [];
+	const aliases = configured ?? (await configuredAliases(repoRoot));
 	const parsedFiles = await parseSourceFiles(files.filter((file) => !file.symlink));
 	for (const file of files) {
 		if (file.symlink) {
@@ -200,9 +180,10 @@ async function ownershipFindings(files: readonly SourceFile[]): Promise<Ownershi
 		}
 		const parsed = parsedFiles.find(({ file: candidate }) => candidate === file);
 		if (!parsed) throw new Error(`Missing parsed source ${file.path}`);
-		const canonical = isCanonicalGeneratedPath(file.path);
-		const generated = generatedBindingSource(file.source ?? "");
-		const mirror = !generated && handwrittenMirrorSource(parsed.sourceFile, file.path);
+		const normalized = normalizeRepositoryPath(file.path);
+		const canonical = normalized.startsWith(GENERATED_ROOT);
+		const generated = (file.source ?? "").startsWith(GENERATED_HEADER);
+		const mirror = !generated && handwrittenMirrorSource(parsed.sourceFile, file.path, aliases);
 		if (canonical && !generated)
 			addFinding(
 				findings,
@@ -214,9 +195,15 @@ async function ownershipFindings(files: readonly SourceFile[]): Promise<Ownershi
 			addFinding(findings, file.path, "generated tree outside canonical directory");
 		if (canonical && generated && file.tracked)
 			addFinding(findings, file.path, "committed generated output");
+		if (
+			canonical &&
+			generated &&
+			!CODEX_GENERATED_PATHS.has(normalized.slice(GENERATED_ROOT.length))
+		)
+			addFinding(findings, file.path, "unknown generated binding");
 		if (mirror && !canonical) addFinding(findings, file.path, "handwritten mirror");
-		for (const specifier of importedSpecifiers(parsed.sourceFile)) {
-			const target = generatedPathFromImport(file.path, specifier);
+		for (const specifier of moduleSpecifiers(parsed.sourceFile)) {
+			const target = generatedPathFromImport(file.path, specifier, aliases);
 			if (!target) continue;
 			const allowedReason =
 				ALLOWED_GENERATED_IMPORTERS.get(file.path) ??
@@ -322,7 +309,7 @@ describe("Codex protocol generated ownership policy", () => {
 				ADAPTER_PATH,
 				'export type { ClientRequest } from "./generated/ClientRequest.js";\n',
 			),
-			syntheticGeneratedFile(`${GENERATED_ROOT}Thread.ts`),
+			syntheticGeneratedFile(`${GENERATED_ROOT}v2/Thread.ts`),
 			sourceFile(
 				CONFORMANCE_OWNER_PATH,
 				'const generatedRoot = "/tmp/archboard-codex-generated-fixture";\n',
@@ -387,8 +374,8 @@ describe("Codex protocol generated ownership policy", () => {
 				"src/ui/codex-realtime/tests/contract.test.ts",
 				"const fixture = 'import type { Event } from \"./generated/codex-protocol.js\";';\n",
 			),
-			sourceFile("src/runtime/codex-protocol-mirror/v2/Thread.ts", THREAD_SOURCE),
-			sourceFile("src/runtime/codex-protocol-mirror/thread-alias.ts", THREAD_ALIAS_SOURCE),
+			sourceFile("src/runtime/protocol-mirror/v2/Thread.ts", THREAD_SOURCE),
+			sourceFile("src/runtime/protocol-mirror/thread-alias.ts", THREAD_ALIAS_SOURCE),
 		]);
 		expect(ordinary.map(({ reason }) => reason)).toEqual([
 			"handwritten mirror",
@@ -405,6 +392,8 @@ describe("Codex protocol generated ownership policy", () => {
 			`export { ClientRequest as Request } from "${relativeTarget}";`,
 			`void import("${relativeTarget}");`,
 			`void import(\`${relativeTarget}\`);`,
+			'const leaf = "ClientRequest.js"; void import("../runtime/codex-protocol/generated/" + leaf);',
+			'const leaf = "ClientRequest"; void import(`../runtime/codex-protocol/generated/${leaf}.js`);',
 			`type Request = import("${relativeTarget}").ClientRequest;`,
 			`import Request = require("${relativeTarget}");`,
 			`import type { ClientRequest } from "${rootTarget}";`,
@@ -417,6 +406,18 @@ describe("Codex protocol generated ownership policy", () => {
 		expect(findings).toHaveLength(sources.length);
 		expect(findings.map(({ reason }) => reason)).toEqual(sources.map(() => "deep import"));
 	});
+	test("rejects a semantic alias that resolves into generated output", async () => {
+		const findings = await ownershipFindings(
+			[
+				sourceFile(
+					"src/server/semantic-alias.ts",
+					'import type { ClientRequest } from "#codex-generated/ClientRequest.js";',
+				),
+			],
+			new Map([["#codex-generated/*", `${GENERATED_ROOT}*`]]),
+		);
+		expect(findings).toEqual([expect.objectContaining({ reason: "deep import" })]);
+	});
 	test("the pre-policy forbidden fixture fails through the repository owner", async () => {
 		const forbidden = await ownershipFindings([
 			sourceFile("src/server/codex-session.ts", DEEP_IMPORT.replace("type ", "")),
@@ -425,6 +426,17 @@ describe("Codex protocol generated ownership policy", () => {
 			expect.objectContaining({
 				file: "src/server/codex-session.ts",
 				reason: "deep import",
+			}),
+		]);
+	});
+	test("rejects a new canonical generated path outside the exact inventory", async () => {
+		const findings = await ownershipFindings([
+			syntheticGeneratedFile(`${GENERATED_ROOT}FutureCodexType.ts`),
+		]);
+		expect(findings).toEqual([
+			expect.objectContaining({
+				reason: "unknown generated binding",
+				message: expect.stringContaining("0.151.0"),
 			}),
 		]);
 	});
