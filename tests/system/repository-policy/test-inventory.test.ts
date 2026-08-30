@@ -7,7 +7,11 @@ import {
 	BROWSER_TEST_PATHS,
 	validateBrowserSelection,
 } from "../browser/run-browser-lane.ts";
-import { browserCleanupObservationMs, pollUntil } from "../browser/support/agent-browser.ts";
+import {
+	browserCleanupObservationMs,
+	createAgentBrowser,
+	pollUntil,
+} from "../browser/support/agent-browser.ts";
 import {
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_BROWSER_POLL_MS,
@@ -305,6 +309,93 @@ function prerequisiteFixture(withAgentBrowser: boolean) {
 }
 
 describe("browser adapter interruption and cleanup timing", () => {
+	test(
+		"forwards bounded command timeouts and rejects invalid values before spawn",
+		async () => {
+			const fixture = createBrowserPreflightFixture();
+			let commandsAfterClose: string[] = [];
+			let previous = new Map<string, string | undefined>();
+			{
+				await using cleanup = new AsyncDisposableStack();
+				cleanup.defer(() => fs.rmSync(fixture.root, { recursive: true, force: true }));
+				const laneRoot = path.join(fixture.root, "lane");
+				const ownerRoot = path.join(laneRoot, "owner");
+				const marker = path.join(fixture.root, "commands");
+				const release = path.join(fixture.root, "release");
+				const shortTimeoutMs = TEST_BROWSER_POLL_MS * 100;
+				const longTimeoutMs = TEST_BROWSER_POLL_MS * 400;
+				fs.mkdirSync(ownerRoot, { recursive: true });
+				fs.writeFileSync(
+					path.join(fixture.bin, "agent-browser"),
+					`#!/usr/bin/env bun
+	import { appendFileSync, existsSync } from "node:fs";
+	const command = process.argv.at(-1) ?? "";
+	appendFileSync(${JSON.stringify(marker)}, command + "\\n");
+	if (command === "close") process.exit(0);
+	process.on("SIGTERM", () => process.exit(143));
+	while (!existsSync(${JSON.stringify(release)})) await Bun.sleep(${TEST_BROWSER_POLL_MS});
+	console.log("ready");
+`,
+					{ mode: 0o755 },
+				);
+				const environment = {
+					PATH: `${fixture.bin}:${process.env.PATH ?? ""}`,
+					HOME: path.join(ownerRoot, "home"),
+					XDG_CONFIG_HOME: path.join(ownerRoot, "config"),
+					XDG_STATE_HOME: path.join(ownerRoot, "state"),
+					TMPDIR: path.join(ownerRoot, "tmp"),
+					AGENT_BROWSER_SOCKET_DIR: path.join(ownerRoot, "sockets"),
+					AGENT_BROWSER_SESSION: "bounded-command-test",
+					AGENT_BROWSER_NAMESPACE: "bounded-command-test",
+					AGENT_BROWSER_IDLE_TIMEOUT_MS: String(TEST_BROWSER_POLL_MS * 5),
+					AGENT_BROWSER_EXECUTABLE_PATH: fixture.browserExecutable,
+					ARCHBOARD_TEST_BROWSER_LANE_ROOT: laneRoot,
+					ARCHBOARD_TEST_BROWSER_OWNER_ROOT: ownerRoot,
+				};
+				previous = new Map(
+					Object.keys(environment).map((name) => [name, process.env[name]] as const),
+				);
+				cleanup.defer(() => {
+					for (const [name, value] of previous) {
+						if (value === undefined) delete process.env[name];
+						else process.env[name] = value;
+					}
+				});
+				for (const [name, value] of Object.entries(environment)) process.env[name] = value;
+				const browser = await createAgentBrowser();
+				cleanup.defer(() => {
+					commandsAfterClose = fs.readFileSync(marker, "utf8").trim().split("\n");
+				});
+				cleanup.defer(() => browser.close());
+				const timeoutFailure = await browser.run(["slow"], { timeoutMs: shortTimeoutMs }).then(
+					() => null,
+					(error: unknown) => error,
+				);
+				expect(timeoutFailure).toBeInstanceOf(Error);
+				expect((timeoutFailure as Error).message).toBe(
+					`agent-browser slow timed out after ${shortTimeoutMs}ms and ended with exit 143: `,
+				);
+				fs.writeFileSync(release, "release");
+				expect(await browser.run(["slow"], { timeoutMs: longTimeoutMs })).toBe("ready\n");
+				const invalidFailure = await browser.run(["invalid"], { timeoutMs: 0 }).then(
+					() => null,
+					(error: unknown) => error,
+				);
+				expect(invalidFailure).toBeInstanceOf(Error);
+				expect((invalidFailure as Error).message).toBe(
+					"Agent-browser command timeout must be a positive finite integer; received 0.",
+				);
+				expect(fs.readFileSync(marker, "utf8").trim().split("\n")).toEqual(["slow", "slow"]);
+			}
+			expect(commandsAfterClose).toEqual(["slow", "slow", "close"]);
+			expect(new Map([...previous.keys()].map((name) => [name, process.env[name]]))).toEqual(
+				previous,
+			);
+			expect(fs.existsSync(fixture.root)).toBeFalse();
+		},
+		TEST_BROWSER_COMMAND_TIMEOUT_MS,
+	);
+
 	for (const [signal, exitCode] of [
 		["SIGINT", 130],
 		["SIGTERM", 143],
