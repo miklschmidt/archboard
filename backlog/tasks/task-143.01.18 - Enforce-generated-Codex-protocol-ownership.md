@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 22:55'
+updated_date: '2026-08-30 23:23'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -56,4 +56,8 @@ Validation: focused owner passed 6 tests / 32 expectations; relevant boundary, i
 Mutation evidence: the pre-policy src/server/codex-session.ts deep-import fixture fails with a pathful deep-import finding and adapter recovery; the negative matrix produced 9 findings covering committed generated output, an alternate generated tree, two handwritten mirrors, and runtime/server/UI/scripts/tests bypasses. The positive adapter and temporary conformance fixtures produced zero findings.
 
 Scope audit: f7a5d0224f414f96c618ea5c23ce8cb64a996794..90949925b5801c02efc30cf5446c3929db220fce contains exactly one added file, with no diff-check errors. Final code status was clean before this Backlog note update.
+
+Remediation in commit aa08e42 after reviewer findings: replaced the handwritten import tokenizer with the repository TypeScript AST parser (static/export/import-type/require/import-equals/dynamic import, including no-substitution templates), added relative/root/absolute/file-URL mutation coverage, pinned the exact Codex 0.151.0 generated path inventory at 820 entries with SHA-256 1b25740f89a30fd39632e584b6bfa0d0c9171f6795d33151e5cf3381532d38fb, recognized generated peer Thread and indirect aliases while retaining an unrelated ClientRequest negative control, and scanned git-tracked source entries with lstat rejection for file and directory symlinks. The owner is 482 lines.
+
+Remediation validation: focused owner passed 8 tests / 22 expectations; bun run test:repository passed 138 tests / 437 expectations; codex-protocol and codex-realtime module owners passed 549 tests / 3512 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed. The working tree contains only the owned policy path before this Backlog note update; no pre-existing untracked artifact was present.
 <!-- SECTION:NOTES:END -->
