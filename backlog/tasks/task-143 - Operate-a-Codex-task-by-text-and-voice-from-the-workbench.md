@@ -1,13 +1,14 @@
 ---
 id: TASK-143
-title: Operate a Codex task by text and voice from the workbench
+title: Operate Codex threads by text and voice from the workbench
 status: To Do
 assignee: []
 created_date: '2026-08-30 11:43'
-updated_date: '2026-08-30 14:18'
+updated_date: '2026-08-30 14:46'
 labels: []
 dependencies:
   - TASK-140.03
+  - TASK-144
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
@@ -23,29 +24,31 @@ ordinal: 162000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Let a person at the Archboard canvas explicitly start a Codex workhorse task or attach the focused pane to a task that the dedicated Archboard-owned app-server proves is loaded and controllable, send text, follow streamed turns and approvals, keep the task current with semantic board changes, and start one live voice channel through a persistent fast coordinator linked to that workhorse. Archboard starts one exact-version app-server child over stdio and remains its sole client authority. Archboard-created workhorses receive centralized instructions and a reviewed general dynamic task-coordination catalogue; voice coordinators receive exact role instructions and a smaller host-bound catalogue. All calls return as typed item/tool/call requests on the same connection. Remote Control, Desktop or shared app-server attachment, diff review, per-hunk patch actions, and a second MCP process are outside this feature.
+Let a person at the Archboard canvas explicitly create a thread link from the focused pane to one controllable Codex workhorse, operate it through a complete text, tool, queue, and approval workbench, keep it current with semantic board changes, and start one live voice channel through a persistent coordinator linked to that workhorse. Archboard owns one exact-version app-server child over stdio and remains its sole client authority. TASK-144 independently supplies Tailwind 4 and shadcn/Base UI; @assistant-ui/react ExternalStoreRuntime supplies conversation composition inside TASK-143.03. Remote Control, Desktop or shared app-server attachment, diff review, per-hunk patch actions, and a second MCP process are outside the feature.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The focused pane is bound to one visible workhorse on the dedicated Archboard-owned app-server through an explicit new-task start or attachment to a task proven loaded and controllable on that connection. Loaded systemError, direct-input refusal, rejoin refusal, and persisted notLoaded ownership-unknown states remain visible but receive no input. Voice additionally requires one explicit persistent coordinator linked to that exact pane and workhorse
-- [ ] #2 Text input, streamed messages, reasoning summaries, tool progress, supported reverse requests, interruption, completion, failure, same-child browser reconnect recovery, child-exit invalidation, and linked workhorse-coordinator timelines are presented from app-server state without a second agent lifecycle protocol
-- [ ] #3 Every general task started by Archboard receives exactly the reviewed six task-coordination dynamic tools; a voice coordinator receives exactly its four host-bound workhorse operations. Typed item/tool/call requests retain server-supplied calling identity, apply the correct target-state and approval policy, reject deadlocks and cross-process ownership, and require no MCP adapter, private socket, or copied Desktop code
-- [ ] #4 One live voice channel attaches realtime V3 to a configurable fast coordinator that requests priority service with visible standard fallback, includes exact Archboard and semantic board context, remains capable under normal task permissions, delegates or queues sustained work to the workhorse, can perform one explicit board operation directly, and exposes permission, negotiation, context, listening, speaking, approval, device-loss, disconnect, and recovery states accessibly
-- [ ] #5 One configured Codex binary is authoritative for experimental protocol generation and the dedicated stdio child. Archboard reports its version and process state, uses the manifest's exact inherited-environment key set, reaps it on shutdown, and never discovers, configures, or attaches to a Desktop or shared app-server daemon
-- [ ] #6 Tracked shared developer instructions are the sole common task text, and tracked voice-coordinator instructions are the sole coordinator role extension. New workhorses serialize the exact shared UTF-8 content; coordinators serialize one deterministic composition of shared and coordinator content; Archboard-origin turns on attached tasks carry only the exact shared content as additionalContext.archboard; attach and reconnect apply neither thread override
-- [ ] #7 Strict types, runtime decoding, lint, formatting, protocol drift checks, process and ownership isolation, general and coordinator dynamic-tool routing, semantic-context delivery, queue and callback behavior, rendered accessibility, production-bundle inspection, and real text and voice smoke tests against the dedicated exact-binary app-server enforce every reachable state
+- [ ] #1 The focused pane creates an explicit thread link to one current-epoch workhorse thread in the dedicated, separately signed-in Archboard Codex home through a new thread or attachment to a thread proven loaded and controllable on that child. Every unavailable, ownership-unknown, and prior-epoch inspect-only state remains visible but receives no input; voice requires one persistent coordinator thread linked to that exact pane and workhorse.
+- [ ] #2 Text UI built in TASK-143.03 presents workhorse-first and coordinator-linked timelines, streamed messages, reasoning, ordinary and dynamic tools, queue state, all supported approvals, interruption, completion, failure, and unknown items through @assistant-ui/react ExternalStoreRuntime without introducing a second transport or state owner.
+- [ ] #3 The workbench has explicit expanded and collapsed layouts, thread picker and thread-link disclosure, coordinator settings and disclosure, composer submit, steer and stop, queue controls, approval cards, claim and doing separation, and accessible desktop, two-pane, fullscreen, and 420-pixel behavior that follows the approved operator mockup.
+- [ ] #4 Every general Archboard-created workhorse thread receives exactly the reviewed six coordination tools. Every coordinator receives exactly four host-bound workhorse operations plus the separate typed spoken-approval resolver required by the 0.151.0 delegation path. item/tool/call identity, target-state policy, approval freshness, transitive deadlock refusal, prior-epoch refusal, and cross-domain isolation are enforced on the same owned app-server connection without MCP.
+- [ ] #5 Voice UI built in TASK-143.04 attaches one realtime V3 WebRTC session to the linked coordinator, exposes permission and negotiation progress, listening, muted, processing, speaking, approval, device-loss, disconnect, recovery, transcript, context, and persistent Stop states, and never retargets when pane focus changes. Spoken approval uses the later normal coordinator turn and typed resolver only while that coordinator is free; coordinator-blocking requests remain visual-only.
+- [ ] #6 The coordinator is configurable, requests priority with visible fallback, receives exact Archboard and semantic context, remains capable under normal thread permissions, answers quick questions directly, can perform one explicit board operation, and delegates, queues, or conditionally steers sustained work under the selected intervention policy.
+- [ ] #7 One configured Codex binary is authoritative for the exact reviewed 0.151.0 experimental protocol generation and the dedicated stdio child. Archboard reports version and process state, uses the exact inherited-environment allowlist, reaps it on shutdown, and never discovers or attaches to Desktop or a shared daemon.
+- [ ] #8 Strict types, runtime decoding, lint, formatting, Tailwind and Base UI drift guards, app-server schema drift checks, process and ownership isolation, assistant-ui module boundaries, rendered accessibility, production bundle inspection, deterministic browser media tests, and real text and voice smoke tests enforce every reachable state.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Pin the configured Codex binary contract at 0.151.0 or later by generating TypeScript with --experimental, then own one isolated stdio child and connection-scoped thread links.
-2. Reduce app-server events and reverse requests into the closed browser session model, including same-child reconnect, approval ownership, and fail-closed child exit.
-3. Register the six general coordination tools at workhorse thread/start and the four host-bound operations at coordinator thread/start; handle all item/tool/call requests on the same connection.
-4. Replace legacy control-socket injection with semantic board context on the exact bound workhorse and active coordinator.
-5. Build the Tailwind/Base UI and assistant-ui workbench around linked workhorse and coordinator timelines, preserving reference-mockup aesthetics and accessibility.
-6. Create the persistent capable coordinator with global model, effort, priority and intervention settings, app-server queue management, event-driven callbacks, and the accepted spoken one-time approval policy.
-7. Implement browser-native WebRTC voice against realtime V3 with fresh startup context, live selection and semantic deltas, transcript-tail flush to the coordinator, and same-child recovery.
-8. Verify generated-contract drift, process isolation, every tool and orchestration policy, semantic routing, rendered states, accessibility, production bundle boundaries, and real text and voice smoke paths before acceptance.
+1. Land TASK-144 as the independent Tailwind 4 and shadcn/Base UI foundation after the implemented operator shell; do not rewrite TASK-140 scope.
+2. In TASK-143.01, generate the exact reviewed 0.151.0 experimental contract and own one private stdio app-server child in a dedicated signed-in Codex and SQLite home, an external epoch manifest, cold-resume refusal, browser lease, closed reducer, and connection-scoped thread links.
+3. In TASK-143.02, build the standalone browser realtime package boundary with native media and WebRTC APIs, an injected realtime adapter, strict public types, and exhaustive cleanup tests.
+4. In TASK-143.05, register and route the six general dynamic thread-coordination tools on the same app-server connection.
+5. In TASK-143.06, replace legacy bystander injection with semantic board context delivered only through the exact thread link and active coordinator.
+6. In TASK-143.07, create the persistent capable coordinator thread with model, effort, service tier, intervention policy, four bound workhorse operations, the typed spoken resolver, safe queue behavior, callbacks, and the state-gated spoken-approval policy.
+7. In TASK-143.03, pin @assistant-ui/react and map the closed browser model through ExternalStoreRuntime, then build the full text, tool, queue, approval, settings, timeline, composer, and thread-link workbench UI on TASK-144.
+8. In TASK-143.04, build the complete live voice UI around TASK-143.02 and TASK-143.07, including visible context, transcript, persistent controls, spoken approvals, every failure state, same-child reconnect, and end-to-end cleanup.
+9. Verify generated-contract drift, process isolation, every dynamic-tool and coordinator path, every UI state and viewport, accessibility, production module boundaries, and clean-process real text and voice smoke paths before acceptance.
 <!-- SECTION:PLAN:END -->
