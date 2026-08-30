@@ -4,7 +4,7 @@ title: Present ordinary Codex approval requests
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 18:06'
 labels: []
 dependencies:
   - TASK-143.05.02
@@ -15,6 +15,7 @@ references:
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
   - src/ui/workbench-approvals
+  - src/ui/workbench-approvals/tests/approval-surface.test.tsx
 parent_task_id: TASK-143.03
 priority: high
 type: task
@@ -33,4 +34,5 @@ Render and resolve every ordinary app-server human-interaction request from the 
 - [ ] #2 Forms support multiple questions, required/optional validation, secret values without echo/persistence, reviewed permission profile/scope, supported openai field types, safe URL schemes, cancel/decline, and explicit unsupported-schema/unsafe-URL refusal.
 - [ ] #3 Only genuine accept/decline approvals may be spoken-eligible; multi-field input, secrets, URLs, permissions with scope, unsupported forms, and any request blocking the coordinator remain visual-only.
 - [ ] #4 Pending, app-global off-focus visibility, stale ownership, expiry, broker cancellation, delivered, not_delivered, outcome_unknown, and authoritative reconciliation each retain the original immutable target and return focus accessibly.
+- [ ] #5 src/ui/workbench-approvals/tests/approval-surface.test.tsx exhausts all seven request families, field validation, secret non-echo, safe/unsafe URLs, spoken eligibility, app-global focus, stale/expired/cancelled requests, and delivered/not_delivered/outcome_unknown reconciliation.
 <!-- AC:END -->

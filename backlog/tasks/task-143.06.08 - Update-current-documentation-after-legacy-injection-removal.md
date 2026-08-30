@@ -4,7 +4,7 @@ title: Update current documentation after legacy injection removal
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:29'
-updated_date: '2026-08-30 17:58'
+updated_date: '2026-08-30 18:06'
 labels: []
 dependencies:
   - TASK-143.06.05
@@ -23,7 +23,6 @@ modified_files:
   - TESTING.md
   - DESIGN.md
   - docs/agents/test-suite.md
-  - docs/design/cli-command-audit.json
   - docs/design/stateless-server.md
   - tests/system/repository-policy/legacy-injection-retirement.test.ts
 parent_task_id: TASK-143.06
@@ -35,7 +34,7 @@ ordinal: 253000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Update current user/agent/test/architecture documents and command audit to describe owned app-server semantic delivery, while preserving ADR 0005 and measured historical research as history. Serialize AGENTS.md after Tailwind guidance. Delegation profile: gpt-5.6-luna, high.
+Update current user, agent, test, and architecture documents to describe owned app-server semantic delivery, while preserving ADR 0005 and measured historical research as history. Serialize AGENTS.md after Tailwind guidance. Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
