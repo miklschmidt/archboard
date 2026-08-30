@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 21:53'
+updated_date: '2026-08-30 22:02'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -49,4 +49,6 @@ Own the human-reviewed, byte-exact source contract for capabilities, login polic
 
 <!-- SECTION:NOTES:BEGIN -->
 Batch reservation at integration HEAD ac86591: exact scoped ready leaves are TASK-143.01.13 and TASK-143.01.17. They are path-disjoint. Worker slots 3 and 4 are intentionally unused because no additional TASK-143/TASK-144 leaf is ready; the other ready scoped entries are parent containers and every remaining leaf is dependency-blocked. TASK-141 and TASK-142 are unrelated CI-restoration bugs outside this implementation scope.
+
+Implementation commit 81ee8f3cba1e192cd41baee1c6db3de0eff2ef6f freezes the authored contract without changing product runtime. The document now makes all 23 JSON fences independently strict and keeps compact wire envelopes formatter-stable. The new repository-policy owner rejects nested duplicate keys, proves all 11 tools in three namespaces remain eager, closed, and ordered, and pins the complete prose plus workhorse, coordinator, classifier, and namespace SHA-256 bytes for TASK-143.01.07, TASK-143.05.03, and TASK-143.07.07. Acceptance audit found all five criteria represented: 20 AC1 anchors, 15 AC2 anchors, 7 AC3 anchors, 9 AC4 anchors, 12 timing constants, and 34 session methods. Validation passed: focused owner 3 tests/10 expectations; inventory 39/69; boundaries plus module scope 17/87; complete repository policy 121/373; bun run lint; bun run fmt:check; bun run type-check; git diff --check. Scope is exactly the authored document, policy owner, and this task record; no runtime, package, lock, CI, lifecycle field, acceptance checkbox, assignment, dependency, or final summary changed.
 <!-- SECTION:NOTES:END -->
