@@ -1,11 +1,11 @@
 ---
 id: TASK-143.02.01
 title: Define the browser-native Codex realtime contract
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 19:20'
+updated_date: '2026-08-30 19:25'
 labels: []
 dependencies: []
 references:
@@ -30,10 +30,10 @@ Delegation profile: gpt-5.6-luna, max.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The sole public index exports the host interface for createOffer SDP, answer SDP, remote media attachment, semantic events, and stop/recovery commands through opaque session/correlation values rather than Codex-generated types.
-- [ ] #2 Closed states cover idle, requesting_permission, negotiating, listening, muted, processing, speaking, stopping, recoverable_error, terminal_error, and closed with explicit allowed transitions and reasons.
-- [ ] #3 The contract exposes canonical item-scoped transcript records and delivered/not_delivered/outcome_unknown append outcomes but owns no transcript reduction or retry policy.
-- [ ] #4 Tests consume only the public index and reject illegal transitions, caller-selected remote identity, WebSocket/audio-chunk APIs, React/assistant-ui/Node imports, and mutable internal handles.
+- [x] #1 The sole public index exports the host interface for createOffer SDP, answer SDP, remote media attachment, semantic events, and stop/recovery commands through opaque session/correlation values rather than Codex-generated types.
+- [x] #2 Closed states cover idle, requesting_permission, negotiating, listening, muted, processing, speaking, stopping, recoverable_error, terminal_error, and closed with explicit allowed transitions and reasons.
+- [x] #3 The contract exposes canonical item-scoped transcript records and delivered/not_delivered/outcome_unknown append outcomes but owns no transcript reduction or retry policy.
+- [x] #4 Tests consume only the public index and reject illegal transitions, caller-selected remote identity, WebSocket/audio-chunk APIs, React/assistant-ui/Node imports, and mutable internal handles.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -62,4 +62,12 @@ Reviewer remediation requested from parent after aa79d66218f29b5a8575d7e54716b22
 Reviewer remediation completed on fixed BASE 8032ba687a133fd1fa84cf7e889f7d8bae086e71: outcome unions now separate definite non-delivery reasons from outcome-unknown reasons, and CommandOutcome is a distinct union; RealtimeTransitionReason is derived from RealtimeState and the transition table is destination-phase typed, with all disposal and terminal cleanup routed through stopping to closed and recovery_failed represented explicitly; contract tests now exhaustively exercise every declared edge/destination reason and AST-audit the public index/contract with 15 temporary negative fixtures covering React and assistant-ui static/dynamic package and subpath imports, node: and bare Node builtins, Buffer/process, WebSocket/audio-chunk/transport handles, Codex/Archboard wire imports, and caller-selected remote identity. Temporary fixtures are removed after each run. Validation all exited 0: focused contract suite 7 pass/312 expectations; bun run type-check; bun run lint; bun run fmt:check; focused boundaries/module-scope policy 17 pass/87 expectations; bun run test:modules 441 pass/3547 expectations; bun run test:repository 118 pass/363 expectations; test file remains 494 lines. No task status, acceptance criteria, assignee, or final summary changed.
 
 Second remediation completed on top of a8da1a700420041115394040ccba768a016fe5fc with the same fixed BASE 8032ba687a133fd1fa84cf7e889f7d8bae086e71. The AST audit now handles ImportTypeNode argument literals through auditModuleSpecifier and rejects NodeJS namespace identifiers. Five negative fixtures cover React import types, assistant-ui import types, node: import types, bare-Node import types, and NodeJS.Timeout, bringing the fixture matrix to 20; focused execution proves every fixture produces a finding and removes all temporary files. Product contract files were unchanged. Validation all exited 0: focused contract suite 7 pass/312 expectations; bun run type-check; bun run lint; bun run fmt:check; bun run test:modules 441 pass/3547 expectations; bun run test:repository 118 pass/363 expectations. The test remains exactly 500 lines. No task status, acceptance criteria, assignee, dependencies, siblings, or final summary changed.
+
+Root reconciliation validation at integration commit 9d1d27849548ed690741794bd7514d59e7a98fc8 repeated the 7-test/312-expectation public contract, both strict TypeScript projects, lint and format, the full 441-test module lane, 118-test repository lane, and 17 boundary/module-scope tests. Independent rereview returned REVIEW_CLEAN after mutation-testing React, assistant-ui, node: and bare-Node import types plus NodeJS.Timeout; the test owner is exactly at the enforced 500-line ceiling.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Defined the framework-neutral browser realtime contract with opaque identities, correlated SDP/media ports, one reachable 11-phase lifecycle, item-scoped transcripts, and disjoint delivery-certainty outcomes. Public-index tests reject illegal states, mutable handles, caller-selected remote identity, transport/audio APIs, and static, dynamic, or type-level React, assistant-ui, Archboard, Codex, and Node dependencies. Focused, strict type, lint, format, module, repository, and boundary gates passed under mutation-tested independent review.
+<!-- SECTION:FINAL_SUMMARY:END -->
