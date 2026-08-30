@@ -22,8 +22,10 @@ change and requires a new review.
   substitution.
 - The coordinator developer document is the workhorse bytes, then the literal
   separator `\n--- ARCHBOARD COORDINATOR ROLE ---\n`, then the coordinator
-  extension bytes. Both component documents already end in LF; there is no
-  extra blank line.
+  extension bytes. The workhorse bytes end in LF, and the separator begins with
+  LF. Those two LF bytes create exactly one blank line before the coordinator
+  marker. The separator ends in LF, the extension begins immediately after it,
+  and the extension ends in LF. No other whitespace is inserted.
 - Hashes are lowercase SHA-256 over those exact bytes. The implementation
   computes and freezes them; callers cannot supply a hash or authored suffix.
 
