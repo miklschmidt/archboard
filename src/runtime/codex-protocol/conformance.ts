@@ -11,10 +11,24 @@ import {
 	digestGeneratedTree,
 } from "./manifest.js";
 import {
+	deriveGeneratedProtocolMethodInventories,
+	type GeneratedProtocolMethodDirection,
+	type GeneratedProtocolMethodInventories,
+} from "./generated-method-inventory.js";
+import {
 	CODEX_PROTOCOL_GENERATED_NOTIFICATION_UNION_PATHS,
 	deriveGeneratedNotificationUnionPaths,
 	type GeneratedNotificationUnionPath,
 } from "./generated-notification-inventory.js";
+import { CLIENT_NOTIFICATION_SCHEMAS, SERVER_REQUEST_SCHEMAS } from "./lib/request-schemas.js";
+import { RESPONSE_SCHEMAS } from "./lib/response-schemas.js";
+import { SERVER_NOTIFICATION_SCHEMAS } from "./lib/notification-schemas.js";
+import {
+	CLIENT_NOTIFICATION_METHODS,
+	RESPONSE_METHODS,
+	SERVER_NOTIFICATION_METHODS,
+	SERVER_REQUEST_METHODS,
+} from "./lib/methods.js";
 
 export type CodexProtocolConformancePhase =
 	| "path"
@@ -68,14 +82,94 @@ interface CodexProtocolConformanceExpectations {
 	readonly generatedFileCount: number;
 	readonly generatedTreeSha256: string;
 	readonly notificationUnionPaths: readonly GeneratedNotificationUnionPath[];
+	readonly methodInventories?: GeneratedProtocolMethodInventories;
+	readonly decoderMethodInventories?: GeneratedProtocolMethodInventories;
 }
+
+const AUTHORED_METHOD_INVENTORIES: GeneratedProtocolMethodInventories = {
+	response: RESPONSE_METHODS,
+	clientNotification: CLIENT_NOTIFICATION_METHODS,
+	serverRequest: SERVER_REQUEST_METHODS,
+	serverNotification: SERVER_NOTIFICATION_METHODS,
+};
 
 const PRODUCTION_EXPECTATIONS: CodexProtocolConformanceExpectations = {
 	binaryVersion: CODEX_PROTOCOL_BINARY_VERSION,
 	generatedFileCount: CODEX_PROTOCOL_GENERATED_FILE_COUNT,
 	generatedTreeSha256: CODEX_PROTOCOL_GENERATED_TREE_SHA256,
 	notificationUnionPaths: CODEX_PROTOCOL_GENERATED_NOTIFICATION_UNION_PATHS,
+	methodInventories: AUTHORED_METHOD_INVENTORIES,
+	decoderMethodInventories: {
+		response: Object.keys(RESPONSE_SCHEMAS).toSorted(),
+		clientNotification: Object.keys(CLIENT_NOTIFICATION_SCHEMAS).toSorted(),
+		serverRequest: Object.keys(SERVER_REQUEST_SCHEMAS).toSorted(),
+		serverNotification: Object.keys(SERVER_NOTIFICATION_SCHEMAS).toSorted(),
+	},
 };
+
+const GENERATED_METHOD_DIRECTION_NAMES: Readonly<Record<GeneratedProtocolMethodDirection, string>> =
+	Object.freeze({
+		response: "ClientRequest responses",
+		clientNotification: "ClientNotification",
+		serverRequest: "ServerRequest",
+		serverNotification: "ServerNotification",
+	});
+
+function methodListDifference(expected: readonly string[], received: readonly string[]): string[] {
+	const receivedSet = new Set(received);
+	return expected.filter((method) => !receivedSet.has(method));
+}
+
+function compareMethodInventories(
+	expected: GeneratedProtocolMethodInventories,
+	received: GeneratedProtocolMethodInventories,
+	exactDirections: readonly GeneratedProtocolMethodDirection[],
+): string | null {
+	const exact = new Set(exactDirections);
+	const differences: string[] = [];
+	for (const direction of Object.keys(
+		GENERATED_METHOD_DIRECTION_NAMES,
+	) as GeneratedProtocolMethodDirection[]) {
+		const expectedMethods = expected[direction];
+		const receivedMethods = received[direction];
+		const missing = methodListDifference(expectedMethods, receivedMethods);
+		const unexpected = exact.has(direction)
+			? methodListDifference(receivedMethods, expectedMethods)
+			: [];
+		if (missing.length || unexpected.length)
+			differences.push(
+				`${GENERATED_METHOD_DIRECTION_NAMES[direction]} decoder gap: expected ${expectedMethods.length} authored methods, generated ${receivedMethods.length}; missing ${missing.length ? missing.join(", ") : "<none>"}; unexpected ${unexpected.length ? unexpected.join(", ") : "<none>"}`,
+			);
+	}
+	return differences.length ? differences.join("; ") : null;
+}
+
+function decoderRegistryMismatch(
+	authored: GeneratedProtocolMethodInventories,
+	decoder: GeneratedProtocolMethodInventories,
+): string | null {
+	return compareMethodInventories(authored, decoder, [
+		"response",
+		"clientNotification",
+		"serverRequest",
+		"serverNotification",
+	]);
+}
+
+function generatedMethodsForDecoderComparison(
+	inventories: GeneratedProtocolMethodInventories,
+): GeneratedProtocolMethodInventories {
+	return {
+		...inventories,
+		// currentTime/read is a reverse request whose result is also decoded.
+		response: [
+			...new Set([
+				...inventories.response,
+				...inventories.serverRequest.filter((method) => method === "currentTime/read"),
+			]),
+		].toSorted(),
+	};
+}
 
 function notificationPathKey(path: GeneratedNotificationUnionPath): string {
 	return `${path.method}:${path.path}`;
@@ -150,6 +244,19 @@ function runCodexProtocolConformanceWithExpectations(
 			"version",
 			`expected ${expectations.binaryVersion}, received ${version || "<empty output>"}`,
 		);
+	const registryMismatch =
+		expectations.methodInventories && expectations.decoderMethodInventories
+			? decoderRegistryMismatch(
+					expectations.methodInventories,
+					expectations.decoderMethodInventories,
+				)
+			: null;
+	if (registryMismatch)
+		throw conformanceError(
+			executablePath,
+			"inventory",
+			`authored decoder registry mismatch: ${registryMismatch}`,
+		);
 
 	let generatedRoot: string;
 	try {
@@ -220,6 +327,31 @@ function runCodexProtocolConformanceWithExpectations(
 				executablePath,
 				"inventory",
 				`generated notification-union inventory mismatch: ${mismatch}. Regenerate with the exact Codex ${expectations.binaryVersion} binary.`,
+			);
+
+		let generatedMethodInventories: GeneratedProtocolMethodInventories;
+		try {
+			generatedMethodInventories = deriveGeneratedProtocolMethodInventories(generatedRoot);
+		} catch (cause) {
+			throw conformanceError(
+				executablePath,
+				"inventory",
+				`could not derive the generated API method inventory. Confirm the generated tree is complete and compatible with the pinned protocol. ${failureDetail(cause)}`,
+				cause,
+			);
+		}
+		const methodMismatch = expectations.methodInventories
+			? compareMethodInventories(
+					expectations.methodInventories,
+					generatedMethodsForDecoderComparison(generatedMethodInventories),
+					["clientNotification", "serverRequest", "serverNotification"],
+				)
+			: null;
+		if (methodMismatch)
+			throw conformanceError(
+				executablePath,
+				"inventory",
+				`generated API method inventory mismatch: ${methodMismatch}. Regenerate with the exact Codex ${expectations.binaryVersion} binary.`,
 			);
 
 		return {
