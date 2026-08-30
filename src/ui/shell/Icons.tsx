@@ -10,6 +10,7 @@ export type IconName =
 	| "fullscreen"
 	| "moon"
 	| "plus"
+	| "preview"
 	| "refresh"
 	| "settings"
 	| "split"
@@ -68,6 +69,12 @@ export function Icon({ name, size = 18, className }: IconProps): React.JSX.Eleme
 			<>
 				<path d="M12 5v14" />
 				<path d="M5 12h14" />
+			</>
+		),
+		preview: (
+			<>
+				<path d="M3 12s3.2-5 9-5 9 5 9 5-3.2 5-9 5-9-5-9-5Z" />
+				<circle cx="12" cy="12" r="2.5" />
 			</>
 		),
 		refresh: (
