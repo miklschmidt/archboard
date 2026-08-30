@@ -16,6 +16,13 @@ export interface CodeTargetLinkHandlerOptions {
 	onFailure: (notice: CodeTargetNotice) => void;
 }
 
+export interface CodeTargetActivationOptions {
+	boardKey: string | null;
+	elementId: string;
+	onSuccess: (reply: CodeTargetOpenSuccess) => void;
+	onFailure: (notice: CodeTargetNotice) => void;
+}
+
 function notice(reply: CodeTargetOpenFailure): CodeTargetNotice {
 	return {
 		kind: "error",
@@ -26,6 +33,23 @@ function notice(reply: CodeTargetOpenFailure): CodeTargetNotice {
 
 function mismatch(message: string): CodeTargetNotice {
 	return { kind: "error", message, actions: [] };
+}
+
+export function activateCodeTarget({
+	boardKey,
+	elementId,
+	onSuccess,
+	onFailure,
+}: CodeTargetActivationOptions): void {
+	if (!boardKey) {
+		onFailure(mismatch("No board is available for this code target."));
+		return;
+	}
+	void openCodeTarget({ board: boardKey, element: elementId }).then((reply) => {
+		if (reply.success) onSuccess(reply);
+		else onFailure(notice(reply));
+		return reply;
+	});
 }
 
 export function createCodeTargetLinkHandler({
@@ -47,10 +71,11 @@ export function createCodeTargetLinkHandler({
 			return;
 		}
 
-		void openCodeTarget(request).then((reply) => {
-			if (reply.success) onSuccess(reply);
-			else onFailure(notice(reply));
-			return reply;
+		activateCodeTarget({
+			boardKey: request.board,
+			elementId: request.element,
+			onSuccess,
+			onFailure,
 		});
 	};
 }

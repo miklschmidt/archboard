@@ -2,7 +2,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import type { ExcalidrawProps } from "@excalidraw/excalidraw/types";
 
 import type { CodeTargetNotice, CodeTargetOpenSuccess } from "../../../shared/code-target";
-import { createCodeTargetLinkHandler } from "../index.ts";
+import { activateCodeTarget, createCodeTargetLinkHandler } from "../index.ts";
 
 type LinkHandler = NonNullable<ExcalidrawProps["onLinkOpen"]>;
 type LinkElement = Parameters<LinkHandler>[0];
@@ -51,6 +51,51 @@ async function settle(): Promise<void> {
 }
 
 describe("code-target link handler", () => {
+	test("the shared activation helper posts board and element identity only", async () => {
+		const success = {
+			success: true,
+			code: "CODE_TARGET_OPENED",
+			repository: "github.com/acme/repo",
+			path: "src/index.ts",
+			kind: "file",
+		} as const;
+		const fetchMock = mock(async () => reply(success));
+		globalThis.fetch = fetchMock as unknown as typeof fetch;
+		const onSuccess = mock((_reply: CodeTargetOpenSuccess) => undefined);
+		const onFailure = mock((_notice: CodeTargetNotice) => undefined);
+
+		activateCodeTarget({
+			boardKey: "system/payments",
+			elementId: "box 1",
+			onSuccess,
+			onFailure,
+		});
+		expect(fetchMock).toHaveBeenCalledWith("/api/code-targets/open", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ board: "system/payments", element: "box 1" }),
+		});
+		await settle();
+		expect(onSuccess).toHaveBeenCalledWith(success);
+		expect(onFailure).not.toHaveBeenCalled();
+	});
+
+	test("the shared activation helper refuses absent board identity without fetching", () => {
+		const fetchMock = mock(async () => reply({}));
+		globalThis.fetch = fetchMock as unknown as typeof fetch;
+		const onFailure = mock((_notice: CodeTargetNotice) => undefined);
+		activateCodeTarget({
+			boardKey: null,
+			elementId: "box-1",
+			onSuccess: () => undefined,
+			onFailure,
+		});
+		expect(fetchMock).not.toHaveBeenCalled();
+		expect(onFailure.mock.calls[0]?.[0]).toMatchObject({
+			message: "No board is available for this code target.",
+		});
+	});
+
 	test.each([
 		"https://github.com/acme/repo",
 		"/api/code-targets/open?board=board-a&element=box-1&extra=true",
