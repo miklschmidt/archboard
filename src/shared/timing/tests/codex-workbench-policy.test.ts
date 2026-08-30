@@ -50,6 +50,7 @@ describe("Codex workbench timing policy", () => {
 		expect(timing.CODEX_PROCESS_RESTART_BASE_MS).toBeLessThanOrEqual(
 			timing.CODEX_PROCESS_RESTART_MAX_MS,
 		);
+		expect(120_000).toBeLessThan(timing.CODEX_BROWSER_COMMAND_LEASE_MS);
 		expect(timing.CODEX_REQUEST_SETTLEMENT_MS).toBeLessThan(timing.CODEX_BROWSER_COMMAND_LEASE_MS);
 		expect(timing.CODEX_APPROVAL_EXPIRY_MS).toBeLessThan(timing.CODEX_BROWSER_COMMAND_LEASE_MS);
 		expect(timing.CODEX_SPOKEN_GATE_EXPIRY_MS).toBeLessThanOrEqual(timing.CODEX_APPROVAL_EXPIRY_MS);
