@@ -4,10 +4,12 @@ title: Run the clean-process real voice acceptance smoke
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
+updated_date: '2026-08-30 16:36'
 labels: []
 dependencies:
-  - TASK-143.04.08
-  - TASK-143.07.06
+  - TASK-143.01.15
+  - TASK-143.02.05
+  - TASK-143.04.07
 references:
   - TESTING.md
 modified_files:

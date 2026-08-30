@@ -4,6 +4,7 @@ title: Mirror the UI source alias in root TypeScript
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:49'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies:
   - TASK-144.15
@@ -25,7 +26,8 @@ Own the root TypeScript half of the single `@/* -> src/*` resolver alias in `tsc
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 baseUrl and paths resolve @/* to src/* exactly, matching TASK-144.02 Vite and TASK-144.15 frontend TypeScript with no second namespace.
-- [ ] #2 Root type-check remains strict and no include/exclude, module resolution, emitter, or compiler safety option changes.
-- [ ] #3 A shadcn configuration dry-run and both TypeScript checks reject an alias mismatch or unresolved named UI module.
+- [ ] #1 compilerOptions.paths contains exactly @/* mapped to [./src/*] for the owning TypeScript config and does not add baseUrl.
+- [ ] #2 A self-contained root alias fixture resolves a public @/ module and rejects an unknown/deep path under the owning tsc project without depending on pre-created shadcn components.
+- [ ] #3 The mapping agrees with Vite and the peer TypeScript project, preserves bundler resolution/noEmit, and adds no second alias spelling.
+- [ ] #4 TASK-144.04 owns the actual shadcn dry-run after both aliases and Oxlint resolution are ready.
 <!-- AC:END -->

@@ -4,12 +4,15 @@ title: Define the coordinator and voice dynamic-tool catalogue
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
   - TASK-143.01.02
   - TASK-143.01.03
   - TASK-143.01.07
+  - TASK-143.01.17
 references:
+  - docs/design/codex-workbench-authored-contracts.md
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
 modified_files:
   - src/runtime/codex-coordinator-tool-contract
@@ -22,13 +25,13 @@ ordinal: 231000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the byte-exact persisted dynamic-tool catalogue for coordinator thread creation in `src/runtime/codex-coordinator-tool-contract`. It defines closed manifests and result variants but dispatches no effects.
+Load and validate the exact reviewed eager archboard_workhorse and archboard_voice namespace manifests and result schemas. It authors no text and dispatches no effect. Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 archboard_workhorse contains exactly inspect_workhorse, delegate_to_workhorse, manage_workhorse_queue, and steer_workhorse; archboard_voice contains exactly resolve_spoken_approval.
-- [ ] #2 Every description, strict argument schema, success/refusal/approval-required/result variant, media restriction, and stable manifest hash is fixed by byte and schema fixtures.
-- [ ] #3 The contract exposes no caller-selected child, pane, coordinator, workhorse, thread, turn, approval, or realtime-session identity and contains no wait tool.
-- [ ] #4 Coordinator lifecycle consumes this catalogue at thread/start; attached threads never gain or replace persisted tools, and dispatch remains a separate module.
+- [ ] #1 The namespace types/descriptions and ordered inspect_workhorse, delegate_to_workhorse, manage_workhorse_queue, steer_workhorse, and resolve_spoken_approval tools match canonical descriptions, deferLoading false, strict schemas/limits, additionalProperties false, and result/refusal tags byte-for-byte.
+- [ ] #2 resolve_spoken_approval's entire input schema is exactly required verdict enum accept|decline; no approval, child, pane, coordinator, workhorse, thread, turn, call, realtime-session, effect, or expiry identity is caller-selectable.
+- [ ] #3 All results are one inputText item using canonical ok/refused/approval_required/outcome_unknown envelopes; no wait tool or image/audio result exists.
+- [ ] #4 Stable manifest hashes bind to reviewed coordinator instruction bytes and are installed only at coordinator thread/start; fixtures fail on order/prose/schema/limit/tag/eagerness/hash/media drift.
 <!-- AC:END -->

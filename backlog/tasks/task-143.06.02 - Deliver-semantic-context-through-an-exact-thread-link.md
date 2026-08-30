@@ -4,7 +4,7 @@ title: Deliver semantic context through an exact thread link
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 15:40'
+updated_date: '2026-08-30 16:29'
 labels: []
 dependencies:
   - TASK-143.01.08
@@ -24,13 +24,13 @@ ordinal: 191000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own linked workhorse semantic delivery in `src/runtime/codex-thread-context`. It subscribes to `SemanticContextEvent`, resolves one executable thread link, and issues an at-most-one quiet dispatch through the stable session port; coordinator fan-out is separate.
+Deliver settled semantic context to the exact executable workhorse link through the typed session and expose delivery outcomes. It performs one guarded inject_items attempt and owns no target selector.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each significant board event is correlated and dispatched at most once through thread/inject_items to the exact current linked controllable workhorse without starting a turn or selecting a recent thread.
-- [ ] #2 Because 0.151.0 inject_items has no idempotency key, a settled attempt ends as delivered, not_delivered, or outcome_unknown; transport loss never retries outcome_unknown blindly.
-- [ ] #3 Unbound, unavailable, ownership-unknown, prior-epoch, lease-loss, ambiguity beyond policy, or child-exit state produces no dispatch and an inspectable refusal; replacement children inherit no routing proof.
-- [ ] #4 Process tests in src/runtime/codex-thread-context/tests prove exact routing, at-most-one dispatch, lost-response outcome, no polling/self-delivery, same-child reconnect, and two-session isolation.
+- [ ] #1 Immediately before delivery, the module revalidates child, epoch, pane link, loaded membership, controllability, thread status, semantic cursor, and origin; agent-only/cosmetic or stale events do not send.
+- [ ] #2 The payload is exactly one developer message with one input_text part using the canonical context encoding; it starts no turn and targets no coordinator or recent thread.
+- [ ] #3 Each event is attempted at most once and settles delivered, not_delivered with reason, or outcome_unknown on lost response; there is no fallback steer, retry, or alternate thread.
+- [ ] #4 Tests cover unbound/notLoaded/uncontrollable/systemError/prior-epoch/child-exit, link change during delivery, duplicate event, stale cursor, lost response, and inspectable outcome.
 <!-- AC:END -->

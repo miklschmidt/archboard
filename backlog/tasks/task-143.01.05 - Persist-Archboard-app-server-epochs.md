@@ -4,6 +4,7 @@ title: Persist Archboard app-server epochs
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -21,12 +22,13 @@ ordinal: 175000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the atomic epoch manifest outside Codex rollout and SQLite storage in `src/runtime/codex-epoch`. This module records only Archboard child and linked-thread provenance.
+Own the host epoch manifest and serialized compare-and-swap transaction records outside both Codex stores. It records confirmed ownership and inspect-only uncertainty; it never guesses a thread from recency.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Opening a replacement child creates a new epoch while preserving prior records for inspection; corrupt or missing manifests produce explicit recoverable states.
-- [ ] #2 The module records every Archboard-created or explicitly linked workhorse and coordinator with the child epoch and never writes into Codex rollout or SQLite files.
-- [ ] #3 Module tests prove atomic persistence, replacement invalidation, and that prior-epoch records can be read but cannot yield an executable ownership proof.
+- [ ] #1 Epoch startup stages a new operation record, fsyncs and atomically commits the active epoch, and compare-and-swaps all later link/create/fork mutations against the same child and operation identity.
+- [ ] #2 Records distinguish staged, committed, rolled_back, and inspect_only tombstone outcomes and retain confirmed thread provenance, instruction hash, manifest hash, workspace root, and operation correlation.
+- [ ] #3 A lost non-idempotent response is outcome_unknown and creates an inspect-only tombstone; replacement children cannot resume, delete, infer, or execute that thread.
+- [ ] #4 Crash/restart tests cover every fsync boundary, stale writer, conflicting process, corrupted manifest, rollback, and preserved evidence without mutating Codex storage.
 <!-- AC:END -->

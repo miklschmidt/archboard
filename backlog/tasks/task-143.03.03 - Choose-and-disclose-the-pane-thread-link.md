@@ -4,13 +4,12 @@ title: Choose and disclose the pane thread link
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 15:50'
+updated_date: '2026-08-30 16:38'
 labels: []
 dependencies:
+  - TASK-143.01.09
   - TASK-143.01.11
   - TASK-143.03.01
-  - TASK-144.07
-  - TASK-144.14
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
@@ -25,13 +24,13 @@ ordinal: 200000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the current-epoch thread picker and thread-link disclosure in `src/ui/workbench-thread-link`. This is Archboard-owned Base UI/Tailwind source, not a copied assistant-ui Element; it accepts closed rows/capabilities and emits explicit create, attach, inspect, and rebind commands.
+Own pane thread-link selection and readiness disclosure. Create and Attach are separate commands with separate prerequisites; no recent-thread heuristic or implicit load occurs. Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Empty, signing-in, login-cancelled/failed, loading, fresh, same-child-reconnected, and failed discovery are visible; systemError, canAcceptDirectInput false/null, notLoaded, ownership unknown, prior epoch, and child exit show exact disabled reasons.
-- [ ] #2 Dedicated-home sign-in/cancel emits the account command; only a proven current loaded controllable row can create/link, and inspect-only rows expose no keyboard, pointer, form, or command path to mutation.
-- [ ] #3 Disclosure names pane, workhorse, child/epoch, coordinator when present, and every active-work guard blocking close/rebind; create uses TASK-143.01.11 and partial failure is actionable.
-- [ ] #4 Module tests at src/ui/workbench-thread-link/tests cover the complete account/discovery/link matrix, keyboard, focus return, screen-reader labels/status, light/dark, desktop pointer, reduced motion, and Samsung Flip touch.
+- [ ] #1 Create requires the composed process/session to be thread-capable plus exactly one valid absolute checkout root; it runs the start-and-bind transaction and shows outcome_unknown as inspect-only evidence.
+- [ ] #2 Attach requires a currently discovered Thread row whose ID appears in the fully paginated loaded-ID membership, with canAcceptDirectInput true and current-epoch provenance; persisted-only, notLoaded, systemError, false/null capability, stale-child, unknown-source, and unknown-provenance rows are disabled with exact reasons.
+- [ ] #3 The UI distinctly renders missing/wrong binary, locked home, spawn/backoff/stopped, initialize/config/effective-storage mismatch, signed-out, API-key/ChatGPT/Bedrock login progress/failure, logout, and command-before-ready.
+- [ ] #4 Selection, bind, unbind, reconnect, child replacement, and pane navigation use compare-and-swap identity; focus never retargets a pending command.
 <!-- AC:END -->

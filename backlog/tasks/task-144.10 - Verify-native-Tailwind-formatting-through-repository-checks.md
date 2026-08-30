@@ -4,6 +4,7 @@ title: Verify native Tailwind formatting through repository checks
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
+updated_date: '2026-08-30 16:25'
 labels: []
 dependencies:
   - TASK-144.06
@@ -20,12 +21,13 @@ ordinal: 232000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the repository-policy fixture for native Oxfmt Tailwind sorting at `tests/system/repository-policy/oxfmt-tailwind.test.ts`. It tests the configured formatter through package scripts and introduces no formatter or lint policy.
+Own a disposable repository-format fixture that proves native Tailwind sorting through the actual bun run fmt/fmt:check commands and leaves the checkout clean.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A deliberately misordered className and approved cn helper fixture fails fmt:check, is normalized by the installed Oxfmt package, and passes on the second check.
-- [ ] #2 The fixture proves the canonical Tailwind 4 stylesheet and helper-function list are used while native duplicate and whitespace defaults remain unchanged.
-- [ ] #3 Repository and full checks run this owner and no custom Tailwind order, second formatter, plugin, warning allowance, or lint bypass is introduced.
+- [ ] #1 A generated fixture begins deliberately unsorted, makes bun run fmt:check fail for the expected file/reason, runs bun run fmt, then makes fmt:check pass with the installed native Tailwind v4 order.
+- [ ] #2 The fixture covers className and cn, preserves dynamic expressions, and runs without modifying authored production files or relying on a hand-coded expected sorter.
+- [ ] #3 Cleanup is unconditional and a final git diff/status assertion proves no tracked or reproducible derived artifact remains.
+- [ ] #4 A missing stylesheet/helper configuration or future Oxfmt behavior drift fails actionably; no warning suppression is accepted.
 <!-- AC:END -->
