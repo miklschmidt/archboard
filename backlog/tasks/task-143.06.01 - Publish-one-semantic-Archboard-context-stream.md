@@ -4,7 +4,7 @@ title: Publish one semantic Archboard context stream
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -24,6 +24,8 @@ ordinal: 190000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Publish one semantic Archboard context stream and explicit typed subscriptions for settled board change, pane focus, pane selection, and on-demand fresh brief. It reuses the existing change-feed settle boundary and owns no second timer.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

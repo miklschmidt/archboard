@@ -16,8 +16,8 @@ configuration seam. Cross-module leaves are reserved for final composition,
 removal, shell/browser integration, and root package/lockfile edits whose value
 is precisely the atomic integration boundary.
 
-The active graph contains **82 implementation leaves**: **64 under TASK-143**
-and **18 under TASK-144**. TASK-143.04.08 is archived because each browser
+The active graph contains **83 implementation leaves**: **64 under TASK-143**
+and **19 under TASK-144**. TASK-143.04.08 is archived because each browser
 owner now registers itself when it becomes runnable.
 
 | Milestone   | Leaf ownership                                                                                                                                                                                                                                                                       |
@@ -29,7 +29,7 @@ owner now registers itself when it becomes runnable.
 | TASK-143.05 | wait graph; seven-family approval broker; reviewed six-tool catalogue; general dynamic-tool dispatcher                                                                                                                                                                               |
 | TASK-143.06 | semantic publisher/delivery; serialized legacy server/runtime, control client, CLI, fixture, timing, and current-doc retirement                                                                                                                                                      |
 | TASK-143.07 | reviewed coordinator/voice catalogue; capable coordinator lifecycle; sole queue port; four operations; callbacks; later-turn spoken gate; dispatcher                                                                                                                                 |
-| TASK-144    | serialized dependency/lockfile; Vite/root/frontend/Oxlint aliases; theme/import/shell; shadcn; classes; native formatting; dialog/button/opener; browser and agent-guide enforcement                                                                                                 |
+| TASK-144    | serialized dependency/lockfile; Vite/root/frontend/Oxlint aliases; theme/import/shell; immutable shadcn inputs; classes; native formatting; separate button/dialog/opener; browser and agent-guide enforcement                                                                       |
 
 ## Shared-seam serialization
 
@@ -39,7 +39,12 @@ owner now registers itself when it becomes runnable.
   TypeScript projects; TASK-144.18 makes existing Oxlint boundary rules resolve
   `@/`; TASK-144.04 runs the shadcn dry-run only after all four agree.
 - CSS: TASK-144.03 owns canonical import/theme order, TASK-144.13 imports the
-  stylesheet, and TASK-144.14 migrates the accepted shell.
+  stylesheet, TASK-144.09 freezes the aesthetic guide, and TASK-144.14 maps the
+  existing shell stylesheet to semantic variables without rewriting markup.
+- Base UI source: TASK-144.04 tracks and hash-gates immutable upstream button
+  and dialog fixtures. TASK-144.07 reduces the button deep module,
+  TASK-144.19 consumes it and reduces the dialog deep module, and TASK-144.08
+  migrates opener.
 - Frame/shell: TASK-143.03.10 owns the text frame; TASK-143.04.06 extends it.
   TASK-143.03.11 extends the existing `PresentationDock` for text, then
   TASK-143.04.10 extends that same owner for voice.
@@ -62,7 +67,8 @@ composition root and TASK-143.05-.07 inputs.
 
 ## Delegation classes
 
-Most leaves are intentionally suitable for `gpt-5.6-luna`:
+Every leaf records one literal model and effort. Most leaves are intentionally
+suitable for `gpt-5.6-luna`:
 
 - `gpt-5.6-luna`, high: bounded exploration, mechanical configuration,
   generated-boundary checks, exports, cleanup, documentation, and fixtures.
@@ -74,7 +80,7 @@ Most leaves are intentionally suitable for `gpt-5.6-luna`:
 - `gpt-5.6-sol`, high: routine rendered UI and browser implementation. This
   includes TASK-143.03.03-.09, TASK-143.03.11, TASK-143.03.13,
   TASK-143.04.02-.07, TASK-143.04.10, TASK-144.03, TASK-144.07-.08,
-  TASK-144.11, and TASK-144.14.
+  TASK-144.11, TASK-144.14, and TASK-144.19.
 - `gpt-5.6-sol`, xhigh: the substantial workbench-frame design in
   TASK-143.03.10 and any change to the reference-mockup/aesthetic contract.
 - `gpt-5.6-sol`, xhigh: TASK-143.01.17 authors the immutable agent/tool bytes.
@@ -85,8 +91,9 @@ agent policy, or cross-module composition to a cheaper model.
 
 ## Dependency waves
 
-1. Pin exact Codex generation, identities, timing, authored contracts, root
-   dependency order, Tailwind aliases/theme, and repository boundary owners.
+1. Pin exact Codex generation, identities, timing, capabilities/login/thread
+   profiles, authored contracts, root dependency order, immutable shadcn
+   inputs, Tailwind aliases/theme, and repository boundary owners.
 2. Build process/storage/auth, epoch, JSON-RPC/session/pagination, thread
    classification, workhorse transaction, browser realtime contract/media,
    approval/catalogue, semantic, coordinator lifecycle, and queue ports.

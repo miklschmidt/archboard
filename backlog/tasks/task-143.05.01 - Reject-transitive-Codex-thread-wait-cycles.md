@@ -4,6 +4,7 @@ title: Reject transitive Codex thread wait cycles
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -21,6 +22,8 @@ ordinal: 184000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own the pure lifetime-scoped wait-for graph in `src/runtime/codex-wait-graph`. It receives child/caller/turn/call and target identities and decides whether a dynamic operation may wait.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

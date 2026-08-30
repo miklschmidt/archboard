@@ -4,7 +4,7 @@ title: Compose static Tailwind classes through one UI module
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 15:43'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-144.01
@@ -24,6 +24,8 @@ ordinal: 219000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own static class joining in `src/ui/ui-classnames` using the already-pinned clsx 2.1.1 and tailwind-merge 3.6.0. Expose one `cn` function; no variant abstraction is introduced until a named consumer proves it necessary.
+
+Delegation profile: gpt-5.6-luna, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

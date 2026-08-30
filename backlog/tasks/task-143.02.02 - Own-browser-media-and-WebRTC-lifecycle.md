@@ -4,7 +4,7 @@ title: Own browser media and WebRTC lifecycle
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.02.01
@@ -23,6 +23,8 @@ ordinal: 182000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Implement getUserMedia, RTCPeerConnection, AudioContext, AnalyserNode, data-channel events, remote audio, and exhaustive cleanup behind the frozen realtime contract. It never knows Codex thread/session semantics or reduces content.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

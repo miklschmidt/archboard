@@ -1,10 +1,10 @@
 ---
 id: TASK-143.03.02
-title: Map Codex state into assistant-ui ExternalStoreRuntime
+title: Adapt Codex state with assistant-ui runtime providers
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 17:06'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -25,6 +25,8 @@ ordinal: 199000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Map authoritative Codex workhorse turns into assistant-ui through useExternalStoreRuntime and AssistantRuntimeProvider. Coordinator and inspect-only histories use ReadonlyThreadProvider; no assistant-ui transport or state owner is adopted.
+
+Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

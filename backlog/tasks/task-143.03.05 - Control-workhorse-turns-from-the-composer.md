@@ -4,7 +4,7 @@ title: Control workhorse turns from the composer
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -25,13 +25,13 @@ ordinal: 202000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own text composer submit/steer/interrupt behavior against the authoritative workhorse runtime. Delegation profile: gpt-5.6-sol, high.
+Own text composer submit/steer/interrupt behavior against the authoritative workhorse runtime. This leaf alone may directly import the reviewed assistant-ui composer primitives; it copies no Elements. Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Submit creates the authoritative client command and turn-keyed assistant record immediately; an active turn uses steer only with its exact expectedTurnId, and Stop interrupts only the bound current turn.
-- [ ] #2 The draft is frozen while delivery is pending; refused, not_delivered, or outcome_unknown restores the exact draft and disables a duplicate submit until authoritative reconciliation states whether a turn exists.
-- [ ] #3 Delivered clears the draft only after the matching authoritative turn/item event; reconnect, late result, stale link, child exit, and turn replacement reconcile without duplicate user messages.
-- [ ] #4 Keyboard submit/newline, IME composition, paste limits, accessible status, and focus return are deterministic and tested through the runtime public interface.
+- [ ] #1 Submit creates authoritative command/turn identity; active input steers only with exact expectedTurnId and Stop interrupts only the bound current turn.
+- [ ] #2 Only reviewed composer primitives are imported from assistant-ui. No assistant transport, queue/tool handler, setMessages, edit/reload/delete control, voice adapter, or copied Elements enter this module.
+- [ ] #3 Draft freezes while pending; refused/not_delivered/outcome_unknown restores it and blocks duplicate submit until authoritative reconciliation, while delivered clears only after matching events.
+- [ ] #4 Keyboard/newline/IME/paste limits, status, focus return, reconnect, late result, stale link, child exit, and turn replacement are deterministic.
 <!-- AC:END -->

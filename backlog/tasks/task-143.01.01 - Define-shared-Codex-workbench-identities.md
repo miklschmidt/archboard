@@ -4,7 +4,7 @@ title: Define shared Codex workbench identities
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:06'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-30 16:58'
 labels: []
 dependencies: []
 references:
@@ -21,6 +21,8 @@ ordinal: 171000
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Own opaque branded identities and closed correlation records shared by the runtime and browser contracts. No module may substitute a string across identity domains or infer identity from recency.
+
+Delegation profile: gpt-5.6-luna, xhigh.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
