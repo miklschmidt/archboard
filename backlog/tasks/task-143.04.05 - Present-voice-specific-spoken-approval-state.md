@@ -4,7 +4,7 @@ title: Present voice-specific spoken approval state
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:10'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-30 18:00'
 labels: []
 dependencies:
   - TASK-143.03.07
@@ -34,4 +34,5 @@ Present voice-specific eligibility, one-slot gate, captured user-utterance evide
 - [ ] #2 The view shows immutable request/effect/source plus the matching final user realtime item/session/sequence captured after the effect prompt; assistant output is labelled non-authoritative and never arms the gate.
 - [ ] #3 Armed/expired/resolving/visual-fallback/outcome_unknown states explain that a later ordinary classifier turn—not realtime speech—settles the typed request.
 - [ ] #4 A second request, stale identity, ambiguous/missing/non-final user utterance, assistant-only output, lost result, or expiry preserves the visual card and leaves no awaiting_user.
+- [ ] #5 Module tests exhaust eligible, ineligible, armed, expired, resolving, visual-fallback, outcome_unknown, duplicate, and stale-session projections; TASK-143.04.07 owns the rendered browser interaction.
 <!-- AC:END -->
