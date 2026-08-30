@@ -3,7 +3,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { BROWSER_ADAPTER_PATH, BROWSER_TEST_PATHS } from "../browser/run-browser-lane.ts";
+import {
+	BROWSER_ADAPTER_PATH,
+	BROWSER_TEST_PATHS,
+	CI_EXCLUDED_BROWSER_OWNER_ENV,
+	applyCiBrowserOwnerExclusion,
+	validateBrowserSelection,
+} from "../browser/run-browser-lane.ts";
 import {
 	browserBundleSnapshot,
 	createBrowserPreflightFixture,
@@ -13,6 +19,10 @@ import {
 import { TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const HOSTED_BROWSER_EXCLUSION = {
+	CI: "true",
+	ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER: "tests/system/browser/human-edit-performance.test.ts",
+} as const;
 type BrowserPreflightFixture = ReturnType<typeof createBrowserPreflightFixture>;
 
 function usePreflightFixture(resources: AsyncDisposableStack): BrowserPreflightFixture {
@@ -38,6 +48,8 @@ function runAdapter(
 		executablePath?: string;
 		ownerFixture?: string;
 		file?: (typeof BROWSER_TEST_PATHS)[number];
+		packageSelection?: boolean;
+		hostedExclusion?: boolean;
 	},
 	resources: AsyncDisposableStack,
 ): {
@@ -59,8 +71,11 @@ function runAdapter(
 		env.AGENT_BROWSER_EXECUTABLE_PATH = options.executablePath;
 	if (options.ownerFixture !== undefined)
 		env.ARCHBOARD_TEST_BROWSER_OWNER_FIXTURE = options.ownerFixture;
+	if (options.hostedExclusion) Object.assign(env, HOSTED_BROWSER_EXCLUSION);
 	const result = Bun.spawnSync({
-		cmd: ["bun", BROWSER_ADAPTER_PATH, "--focus", options.file ?? BROWSER_TEST_PATHS[1]],
+		cmd: options.packageSelection
+			? ["bun", BROWSER_ADAPTER_PATH, ...BROWSER_TEST_PATHS]
+			: ["bun", BROWSER_ADAPTER_PATH, "--focus", options.file ?? BROWSER_TEST_PATHS[1]],
 		cwd: repoRoot,
 		env,
 		stdout: "ignore",
@@ -99,6 +114,19 @@ describe("CI executable workflow steps", () => {
 	test("accepts the real workflow and one canonical check step", () => {
 		const real = fs.readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
 		expect(inspectWorkflow(real)).toEqual([]);
+		const workflow = Bun.YAML.parse(real) as {
+			jobs?: {
+				suite?: {
+					name?: string;
+					steps?: Array<{ run?: string; env?: Record<string, string> }>;
+				};
+			};
+		};
+		const suite = workflow.jobs?.suite;
+		expect(suite?.name).toBe("Lint, format, type check, build, and hosted test subset");
+		expect(suite?.steps?.some((step) => step.run?.includes("strace"))).toBeFalse();
+		const check = suite?.steps?.find((step) => step.run === "bun run check");
+		expect(check?.env).toEqual(HOSTED_BROWSER_EXCLUSION);
 		expect(inspectWorkflow(workflowWith("bun run check"))).toEqual([]);
 	});
 
@@ -224,6 +252,72 @@ describe("CI executable workflow steps", () => {
 });
 
 describe("browser executable adapter boundary", () => {
+	test("local package selection retains all 15 browser owners", () => {
+		const selection = validateBrowserSelection([
+			"bun",
+			BROWSER_ADAPTER_PATH,
+			...BROWSER_TEST_PATHS,
+		]);
+		expect(applyCiBrowserOwnerExclusion(selection, {})).toBe(selection);
+		expect(selection.files).toEqual([...BROWSER_TEST_PATHS]);
+	});
+
+	test("the hosted package exception removes only the human-performance owner", () => {
+		const selection = validateBrowserSelection([
+			"bun",
+			BROWSER_ADAPTER_PATH,
+			...BROWSER_TEST_PATHS,
+		]);
+		const hosted = applyCiBrowserOwnerExclusion(selection, HOSTED_BROWSER_EXCLUSION);
+		expect(hosted).toEqual({ mode: "package", files: BROWSER_TEST_PATHS.slice(1) });
+		expect(selection.files).toEqual([...BROWSER_TEST_PATHS]);
+	});
+
+	test.each([
+		[
+			"missing CI",
+			{ ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER: BROWSER_TEST_PATHS[0] },
+			"requires CI=true",
+		],
+		[
+			"wrong owner",
+			{ CI: "true", ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER: BROWSER_TEST_PATHS[1] },
+			"cannot exclude",
+		],
+	])("rejects a %s exclusion", (_name, environment, diagnostic) => {
+		const selection = validateBrowserSelection([
+			"bun",
+			BROWSER_ADAPTER_PATH,
+			...BROWSER_TEST_PATHS,
+		]);
+		expect(() => applyCiBrowserOwnerExclusion(selection, environment)).toThrow(diagnostic);
+	});
+
+	test("rejects the hosted exception in focused mode", () => {
+		const selection = validateBrowserSelection([
+			"bun",
+			BROWSER_ADAPTER_PATH,
+			"--focus",
+			BROWSER_TEST_PATHS[0],
+		]);
+		expect(() => applyCiBrowserOwnerExclusion(selection, HOSTED_BROWSER_EXCLUSION)).toThrow(
+			"valid only for the package browser lane",
+		);
+		expect(CI_EXCLUDED_BROWSER_OWNER_ENV).toBe("ARCHBOARD_CI_EXCLUDED_BROWSER_OWNER");
+	});
+
+	test("the real package adapter announces the exception and advances to an ordinary owner", async () => {
+		await using resources = new AsyncDisposableStack();
+		const result = runAdapter(
+			{ withAgentBrowser: true, packageSelection: true, hostedExclusion: true },
+			resources,
+		);
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr).toContain(`# CI-only browser owner excluded: ${BROWSER_TEST_PATHS[0]}`);
+		expect(fs.existsSync(result.fixture.versionMarker)).toBeTrue();
+		expect(fs.existsSync(result.fixture.unexpectedMarker)).toBeTrue();
+	});
+
 	test("an unset local executable advances to PATH-based agent-browser discovery", async () => {
 		await using resources = new AsyncDisposableStack();
 		const beforeBundle = browserBundleSnapshot(repoRoot);
