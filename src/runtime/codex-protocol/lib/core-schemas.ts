@@ -3,11 +3,10 @@ import { z } from "zod";
 import {
 	FiniteNumberSchema,
 	IntegerSchema,
-	JsonRecordSchema,
-	JsonValueSchema,
 	NonNegativeIntegerSchema,
 	looseObject,
 } from "./scalars.js";
+import { MisalignmentErrorDetailsSchema } from "./error-schemas.js";
 
 export const PlanTypeSchema = z.enum([
 	"free",
@@ -40,6 +39,7 @@ export const AuthModeSchema = z.enum([
 	"bedrockAccessKeys",
 ]);
 
+/** Generated `ReasoningEffort` is an open provider-defined string. */
 export const ReasoningEffortSchema = z.string();
 export const ReasoningSummarySchema = z.enum(["auto", "concise", "detailed", "none"]);
 export const PersonalitySchema = z.enum(["none", "friendly", "pragmatic"]);
@@ -182,7 +182,7 @@ export const TurnErrorSchema = looseObject({
 	message: z.string(),
 	codexErrorInfo: CodexErrorInfoSchema.nullable(),
 	additionalDetails: z.string().nullable(),
-	misalignment: JsonValueSchema.nullable(),
+	misalignment: MisalignmentErrorDetailsSchema.nullable(),
 });
 
 export const TurnPlanStepStatusSchema = z.enum(["pending", "inProgress", "completed"]);
@@ -196,6 +196,7 @@ export const RealtimeConversationVersionSchema = z.enum(["v1", "v2", "v3"]);
 export const RealtimeTranscriptRoleSchema = z.enum(["user", "assistant"]);
 export const RealtimeSessionOutcomeSchema = z.enum(["ended", "failed"]);
 export const RealtimeOutputModalitySchema = z.enum(["text", "audio"]);
+/** Generated realtime voices are provider-defined strings. */
 export const RealtimeVoiceSchema = z.string();
 
 export const ThreadRealtimeBemItemPresentationSchema = z.discriminatedUnion("type", [
@@ -204,45 +205,34 @@ export const ThreadRealtimeBemItemPresentationSchema = z.discriminatedUnion("typ
 	looseObject({ type: z.literal("inlineVisualization"), index: NonNegativeIntegerSchema }),
 ]);
 
-export const ThreadRealtimeItemSchema = z
-	.looseObject({
+export const ThreadRealtimeItemSchema = z.discriminatedUnion("type", [
+	looseObject({
 		id: z.string(),
 		realtimeSessionId: z.string(),
-		type: z.string(),
-	})
-	.superRefine((item, context) => {
-		const checks = {
-			realtimeSessionStarted: looseObject({ type: z.literal("realtimeSessionStarted") }),
-			transcriptSegment: looseObject({
-				type: z.literal("transcriptSegment"),
-				role: RealtimeTranscriptRoleSchema,
-				text: z.string(),
-			}),
-			bemItemPromoted: looseObject({
-				type: z.literal("bemItemPromoted"),
-				turnId: z.string(),
-				itemId: z.string(),
-				presentation: ThreadRealtimeBemItemPresentationSchema,
-			}),
-			realtimeSessionClosed: looseObject({
-				type: z.literal("realtimeSessionClosed"),
-				outcome: RealtimeSessionOutcomeSchema,
-			}),
-		} as const;
-		const schema = checks[item.type as keyof typeof checks];
-		if (!schema) {
-			context.addIssue({
-				code: "custom",
-				path: ["type"],
-				message: "Unknown realtime item union member.",
-			});
-			return;
-		}
-		const result = schema.safeParse(item);
-		if (!result.success)
-			for (const issue of result.error.issues)
-				context.addIssue({ code: "custom", path: issue.path, message: issue.message });
-	});
+		type: z.literal("realtimeSessionStarted"),
+	}),
+	looseObject({
+		id: z.string(),
+		realtimeSessionId: z.string(),
+		type: z.literal("transcriptSegment"),
+		role: RealtimeTranscriptRoleSchema,
+		text: z.string(),
+	}),
+	looseObject({
+		id: z.string(),
+		realtimeSessionId: z.string(),
+		type: z.literal("bemItemPromoted"),
+		turnId: z.string(),
+		itemId: z.string(),
+		presentation: ThreadRealtimeBemItemPresentationSchema,
+	}),
+	looseObject({
+		id: z.string(),
+		realtimeSessionId: z.string(),
+		type: z.literal("realtimeSessionClosed"),
+		outcome: RealtimeSessionOutcomeSchema,
+	}),
+]);
 
 export const ThreadRealtimeAudioChunkSchema = looseObject({
 	data: z.string(),
@@ -304,191 +294,3 @@ export const AccountSchema = z.discriminatedUnion("type", [
 	}),
 	looseObject({ type: z.literal("amazonBedrock"), usesCodexManagedCredentials: z.boolean() }),
 ]);
-
-export const ConfigLayerSourceSchema = z.discriminatedUnion("type", [
-	looseObject({ type: z.literal("packagedDefaults"), file: z.string() }),
-	looseObject({ type: z.literal("mdm"), domain: z.string(), key: z.string() }),
-	looseObject({ type: z.literal("system"), file: z.string() }),
-	looseObject({ type: z.literal("enterpriseManaged"), id: z.string(), name: z.string() }),
-	looseObject({ type: z.literal("user"), file: z.string(), profile: z.string().nullable() }),
-	looseObject({ type: z.literal("project"), dotCodexFolder: z.string() }),
-	looseObject({ type: z.literal("sessionFlags") }),
-	looseObject({ type: z.literal("legacyManagedConfigTomlFromFile"), file: z.string() }),
-	looseObject({ type: z.literal("legacyManagedConfigTomlFromMdm") }),
-]);
-
-export const ConfigLayerMetadataSchema = looseObject({
-	name: ConfigLayerSourceSchema,
-	version: z.string(),
-});
-export const ConfigLayerSchema = looseObject({
-	name: ConfigLayerSourceSchema,
-	version: z.string(),
-	config: JsonValueSchema,
-	disabledReason: z.string().nullable(),
-});
-
-export const ConfigSchema = looseObject({
-	model: z.string().nullable(),
-	review_model: z.string().nullable(),
-	model_context_window: IntegerSchema.nullable(),
-	model_auto_compact_token_limit: IntegerSchema.nullable(),
-	model_auto_compact_token_limit_scope: z.string().nullable(),
-	model_provider: z.string().nullable(),
-	approval_policy: AskForApprovalSchema.nullable(),
-	approvals_reviewer: ApprovalsReviewerSchema.nullable(),
-	sandbox_mode: SandboxModeSchema.nullable(),
-	sandbox_workspace_write: JsonValueSchema.nullable(),
-	forced_chatgpt_workspace_id: JsonValueSchema.nullable(),
-	forced_login_method: z.string().nullable(),
-	web_search: z.string().nullable(),
-	tools: JsonValueSchema.nullable(),
-	instructions: z.string().nullable(),
-	developer_instructions: z.string().nullable(),
-	compact_prompt: z.string().nullable(),
-	model_reasoning_effort: ReasoningEffortSchema.nullable(),
-	model_reasoning_summary: ReasoningSummarySchema.nullable(),
-	model_verbosity: z.string().nullable(),
-	service_tier: z.string().nullable(),
-	analytics: JsonValueSchema.nullable(),
-	apps: JsonValueSchema.nullable(),
-	browser_use: JsonValueSchema.nullable(),
-	computer_use: JsonValueSchema.nullable(),
-	desktop: JsonRecordSchema.nullable(),
-});
-
-export const ConfigRequirementsSchema = looseObject({
-	cliAuthCredentialsStore: z.string().nullable(),
-	chatgptBaseUrl: z.string().nullable(),
-	additionalDeveloperInstructions: z.string().nullable(),
-	allowedApprovalPolicies: z.array(AskForApprovalSchema).nullable(),
-	allowedApprovalsReviewers: z.array(ApprovalsReviewerSchema).nullable(),
-	allowedSandboxModes: z.array(SandboxModeSchema).nullable(),
-	allowedWindowsSandboxImplementations: z.array(z.string()).nullable(),
-	allowedPermissionProfiles: z.record(z.string(), z.boolean()).nullable(),
-	defaultPermissions: z.string().nullable(),
-	allowedWebSearchModes: z.array(z.string()).nullable(),
-	allowManagedHooksOnly: z.boolean().nullable(),
-	allowBrowserAndComputerUse: z.boolean().nullable(),
-	allowAppshots: z.boolean().nullable(),
-	allowRemoteControl: z.boolean().nullable(),
-	computerUse: JsonValueSchema.nullable(),
-	browserUse: JsonValueSchema.nullable(),
-	inAppBrowser: JsonValueSchema.nullable(),
-	featureRequirements: z.record(z.string(), z.boolean()).nullable(),
-	hooks: JsonValueSchema.nullable(),
-	enforceResidency: JsonValueSchema.nullable(),
-	network: JsonValueSchema.nullable(),
-	autoReview: JsonValueSchema.nullable(),
-	models: JsonValueSchema.nullable(),
-	sqliteHome: z.string().nullable(),
-	logDir: z.string().nullable(),
-	modelCatalogJson: z.string().nullable(),
-	checkForUpdateOnStartup: z.boolean().nullable(),
-	allowLoginShell: z.boolean().nullable(),
-	feedback: JsonValueSchema.nullable(),
-	windowsSandboxPrivateDesktop: z.boolean().nullable(),
-});
-
-export const ModelServiceTierSchema = looseObject({
-	id: z.string(),
-	name: z.string(),
-	description: z.string(),
-});
-export const ReasoningEffortOptionSchema = looseObject({
-	reasoningEffort: ReasoningEffortSchema,
-	description: z.string(),
-});
-export const ModelSchema = looseObject({
-	id: z.string(),
-	model: z.string(),
-	upgrade: z.string().nullable(),
-	upgradeInfo: JsonValueSchema.nullable(),
-	availabilityNux: JsonValueSchema.nullable(),
-	displayName: z.string(),
-	description: z.string(),
-	modelSpecialty: z.string().nullable(),
-	hidden: z.boolean(),
-	supportedReasoningEfforts: z.array(ReasoningEffortOptionSchema),
-	defaultReasoningEffort: ReasoningEffortSchema,
-	inputModalities: z.array(z.enum(["text", "image", "audio"])),
-	supportsPersonality: z.boolean(),
-	multiAgentVersion: z.enum(["disabled", "v1", "v2"]).nullable(),
-	additionalSpeedTiers: z.array(z.string()),
-	serviceTiers: z.array(ModelServiceTierSchema),
-	defaultServiceTier: z.string().nullable(),
-	isDefault: z.boolean(),
-});
-
-export const ThreadSettingsSchema = looseObject({
-	cwd: z.string(),
-	approvalPolicy: AskForApprovalSchema,
-	approvalsReviewer: ApprovalsReviewerSchema,
-	sandboxPolicy: SandboxPolicySchema,
-	activePermissionProfile: ActivePermissionProfileSchema.nullable(),
-	model: z.string(),
-	modelProvider: z.string(),
-	serviceTier: z.string().nullable(),
-	effort: ReasoningEffortSchema.nullable(),
-	summary: ReasoningSummarySchema.nullable(),
-	collaborationMode: looseObject({
-		mode: z.enum(["plan", "default"]),
-		settings: looseObject({
-			model: z.string(),
-			reasoning_effort: ReasoningEffortSchema.nullable(),
-			developer_instructions: z.string().nullable(),
-		}),
-	}),
-	multiAgentMode: MultiAgentModeSchema,
-	personality: PersonalitySchema.nullable(),
-});
-
-export const TokenUsageBreakdownSchema = looseObject({
-	totalTokens: FiniteNumberSchema,
-	inputTokens: FiniteNumberSchema,
-	cachedInputTokens: FiniteNumberSchema,
-	cacheWriteInputTokens: FiniteNumberSchema,
-	outputTokens: FiniteNumberSchema,
-	reasoningOutputTokens: FiniteNumberSchema,
-});
-export const ThreadTokenUsageSchema = looseObject({
-	total: TokenUsageBreakdownSchema,
-	last: TokenUsageBreakdownSchema,
-	modelContextWindow: FiniteNumberSchema.nullable(),
-});
-
-export const RateLimitWindowSchema = looseObject({
-	usedPercent: FiniteNumberSchema,
-	windowDurationMins: FiniteNumberSchema.nullable(),
-	resetsAt: FiniteNumberSchema.nullable(),
-});
-export const CreditsSnapshotSchema = looseObject({
-	hasCredits: z.boolean(),
-	unlimited: z.boolean(),
-	balance: z.string().nullable(),
-});
-export const SpendControlLimitSnapshotSchema = looseObject({
-	limit: z.string(),
-	used: z.string(),
-	remainingPercent: FiniteNumberSchema,
-	resetsAt: FiniteNumberSchema,
-});
-export const RateLimitSnapshotSchema = looseObject({
-	limitId: z.string().nullable(),
-	limitName: z.string().nullable(),
-	primary: RateLimitWindowSchema.nullable(),
-	secondary: RateLimitWindowSchema.nullable(),
-	credits: CreditsSnapshotSchema.nullable(),
-	individualLimit: SpendControlLimitSnapshotSchema.nullable(),
-	spendControlReached: z.boolean().nullable(),
-	planType: PlanTypeSchema.nullable(),
-	rateLimitReachedType: z
-		.enum([
-			"rate_limit_reached",
-			"workspace_owner_credits_depleted",
-			"workspace_member_credits_depleted",
-			"workspace_owner_usage_limit_reached",
-			"workspace_member_usage_limit_reached",
-		])
-		.nullable(),
-});

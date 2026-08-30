@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 19:18'
+updated_date: '2026-08-30 19:30'
 labels: []
 dependencies:
   - TASK-143.01.12
@@ -43,6 +43,14 @@ Delegation profile: gpt-5.6-luna, max.
 3. Add strict Zod runtime schemas for the used generated unions and nested records, including emittedAtMs, login/capability variants, thread/turn/item/timeline/realtime discriminators, approval and dynamic-tool reverse requests, and version-aware ProtocolDecodeError diagnostics naming method, direction, expected version, and recovery action.
 4. Add module-owned fixtures and tests for every accepted direction and method family, positive payload preservation, unknown methods and union members, malformed payloads, wrong initialize version, unsupported capability variants, optional emittedAtMs, and the invariant that realtime decoding performs no interpretation.
 5. Run exact regeneration and digest/version conformance, module tests, strict type/lint/boundary checks, git diff --check, and a complete BASE..HEAD scope audit; leave generated output ignored and do not change protected paths.
+
+6. Replace the notification fallback with explicit schemas for every generated method, including exact closed enums/unions and intentionally open JsonValue fields, and provide positive plus missing/unknown-member fixtures for all methods.
+
+7. Tighten the full reachable response/reverse-request graph, especially login, approval decisions, network/filesystem profiles, policy amendments, and available decisions; document only intentional openness in code comments.
+
+8. Make JSON-RPC result/error envelopes mutually exclusive and add direct ambiguity regressions.
+
+9. Add a module-owned conformance owner that invokes the exact configured generator into a temporary directory, verifies version/file count/tree digest, and fails actionably when prerequisites are absent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
