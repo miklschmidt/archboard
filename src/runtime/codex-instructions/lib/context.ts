@@ -8,16 +8,33 @@ function boundedUtf8Text(maxBytes: number, label: string) {
 	});
 }
 
-const CursorSchema = boundedUtf8Text(1_024, "cursor");
-const SelectionIdSchema = boundedUtf8Text(64, "selection element id");
+function nonEmptyBoundedUtf8Text(maxBytes: number, label: string) {
+	return z
+		.string()
+		.min(1, `${label} must not be empty`)
+		.refine((value) => utf8Bytes(value) <= maxBytes, {
+			message: `${label} must be at most ${maxBytes} UTF-8 bytes`,
+		});
+}
+
+const NonEmptyStringSchema = z.string().min(1, "value must not be empty");
+const CursorSchema = nonEmptyBoundedUtf8Text(1_024, "cursor");
+const SelectionIdSchema = nonEmptyBoundedUtf8Text(64, "selection element id");
 const AmbiguitySchema = boundedUtf8Text(256, "ambiguity entry");
 const DoingSchema = boundedUtf8Text(512, "doing");
 
-export const ArchboardContextSchema = z.strictObject({
+function freezeDeep<T>(value: T): T {
+	if (typeof value !== "object" || value === null) return value;
+	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
+	Object.freeze(value);
+	return value;
+}
+
+const ArchboardContextRawSchema = z.strictObject({
 	schema: z.literal(1),
-	paneId: z.string(),
+	paneId: NonEmptyStringSchema,
 	board: z.strictObject({
-		note: z.string(),
+		note: NonEmptyStringSchema,
 		version: z.number().finite().int().nonnegative(),
 		cursor: CursorSchema.nullable(),
 	}),
@@ -26,16 +43,16 @@ export const ArchboardContextSchema = z.strictObject({
 		reason: z.string().nullable(),
 	}),
 	child: z.strictObject({
-		id: z.string(),
-		epoch: z.string(),
+		id: NonEmptyStringSchema,
+		epoch: NonEmptyStringSchema,
 	}),
 	workhorse: z.strictObject({
-		threadId: z.string().nullable(),
-		turnId: z.string().nullable(),
+		threadId: NonEmptyStringSchema.nullable(),
+		turnId: NonEmptyStringSchema.nullable(),
 	}),
 	coordinator: z.strictObject({
-		threadId: z.string().nullable(),
-		realtimeSessionId: z.string().nullable(),
+		threadId: NonEmptyStringSchema.nullable(),
+		realtimeSessionId: NonEmptyStringSchema.nullable(),
 	}),
 	semantic: z.strictObject({
 		brief: boundedUtf8Text(8_192, "semantic brief"),
@@ -44,7 +61,7 @@ export const ArchboardContextSchema = z.strictObject({
 		truncated: z.boolean(),
 	}),
 	focus: z.strictObject({
-		paneId: z.string().nullable(),
+		paneId: NonEmptyStringSchema.nullable(),
 		capturedAtMs: z.number().finite().int().nonnegative(),
 	}),
 	selection: z.strictObject({
@@ -57,20 +74,17 @@ export const ArchboardContextSchema = z.strictObject({
 	}),
 	ambiguity: z.array(AmbiguitySchema).max(16),
 	operation: z.strictObject({
-		id: z.string().nullable(),
+		id: NonEmptyStringSchema.nullable(),
 		kind: z.string().nullable(),
 		outcome: z.enum(["delivered", "not_delivered", "outcome_unknown"]).nullable(),
 	}),
 });
 
-export type ArchboardContext = z.infer<typeof ArchboardContextSchema>;
+export const ArchboardContextSchema = ArchboardContextRawSchema.transform((value) =>
+	freezeDeep(value),
+);
 
-function freezeDeep<T>(value: T): T {
-	if (typeof value !== "object" || value === null || Object.isFrozen(value)) return value;
-	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
-	Object.freeze(value);
-	return value;
-}
+export type ArchboardContext = z.infer<typeof ArchboardContextSchema>;
 
 function orderedContext(value: ArchboardContext): ArchboardContext {
 	return {
