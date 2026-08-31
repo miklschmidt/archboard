@@ -1,24 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
-import { mkdtempSync, readFileSync, symlinkSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import {
-	CODEX_RETAINED_ENVIRONMENT_KEYS,
-	buildCodexChildEnvironment,
-	CodexStorageError,
-	prepareCodexStorage,
-} from "../index.js";
-import type { CodexStorageFileSystem } from "../index.js";
-
-function temporaryRoot(): string {
-	return mkdtempSync(path.join(tmpdir(), "archboard-codex-process-test-"));
-}
-
-function removeRoot(root: string): void {
-	fs.rmSync(root, { recursive: true, force: true });
-}
+import { CODEX_RETAINED_ENVIRONMENT_KEYS, buildCodexChildEnvironment } from "../environment.js";
+import { CodexStorageError, prepareCodexStorage } from "../storage.js";
+import type { CodexStorageFileSystem } from "../storage.js";
+import { removeRoot, temporaryRoot } from "./support.js";
 
 function fileSystem(): CodexStorageFileSystem {
 	return {
@@ -202,6 +190,44 @@ describe("dedicated Codex storage", () => {
 			expect(fs.existsSync(lockPath)).toBe(true);
 			expect(() => prepared.release()).not.toThrow();
 			expect(fs.existsSync(lockPath)).toBe(false);
+		} finally {
+			removeRoot(root);
+		}
+	});
+
+	test("preserves preparation cleanup when a config conflict meets an unlink failure", () => {
+		const root = temporaryRoot();
+		try {
+			const initial = prepareCodexStorage({ rootDirectory: root });
+			initial.release();
+			writeFileSync(initial.configPath, 'sqlite_home = "/tmp/other"\n', { mode: 0o600 });
+			let failures = 1;
+			const injected = {
+				...fileSystem(),
+				unlinkSync: ((target: string | Buffer | URL) => {
+					if (String(target).endsWith(".archboard-codex-process.lock") && failures > 0) {
+						failures -= 1;
+						throw new Error("injected preparation lock unlink failure");
+					}
+					fs.unlinkSync(target as Parameters<typeof fs.unlinkSync>[0]);
+				}) as typeof fs.unlinkSync,
+			} satisfies CodexStorageFileSystem;
+			let thrown: unknown;
+			try {
+				prepareCodexStorage({ rootDirectory: root }, { fileSystem: injected });
+			} catch (error) {
+				thrown = error;
+			}
+			expect(thrown).toBeInstanceOf(CodexStorageError);
+			expect((thrown as CodexStorageError).code).toBe("config_conflict");
+			expect((thrown as CodexStorageError).retryCleanup).toBeFunction();
+			expect((thrown as CodexStorageError).message).toContain("retryCleanup");
+			expect(() => prepareCodexStorage({ rootDirectory: root })).toThrow(/locked or colliding/);
+			(thrown as CodexStorageError).retryCleanup!();
+
+			writeFileSync(initial.configPath, initial.configText, { mode: 0o600 });
+			const recovered = prepareCodexStorage({ rootDirectory: root }, { fileSystem: injected });
+			recovered.release();
 		} finally {
 			removeRoot(root);
 		}

@@ -39,18 +39,32 @@ export type CodexStorageFailureCode =
 export class CodexStorageError extends Error {
 	readonly code: CodexStorageFailureCode;
 	readonly target: string;
+	/** Present when config preparation failed after the lock was acquired. */
+	readonly retryCleanup?: () => void;
 
 	constructor(init: {
 		readonly code: CodexStorageFailureCode;
 		readonly target: string;
 		readonly message: string;
 		readonly cause?: unknown;
+		readonly retryCleanup?: () => void;
 	}) {
 		super(init.message, { cause: init.cause });
 		this.name = "CodexStorageError";
 		this.code = init.code;
 		this.target = init.target;
+		this.retryCleanup = init.retryCleanup;
 	}
+}
+
+function withRetryCleanup(error: CodexStorageError, retryCleanup: () => void): CodexStorageError {
+	return new CodexStorageError({
+		code: error.code,
+		target: error.target,
+		message: `${error.message} The storage lock could not be released while unwinding this failure; invoke retryCleanup before retrying preparation.`,
+		cause: error.cause,
+		retryCleanup,
+	});
 }
 
 export interface PreparedCodexStorage {
@@ -82,8 +96,9 @@ function failure(
 	target: string,
 	message: string,
 	cause?: unknown,
+	retryCleanup?: () => void,
 ): CodexStorageError {
-	return new CodexStorageError({ code, target, message, cause });
+	return new CodexStorageError({ code, target, message, cause, retryCleanup });
 }
 
 function absolutePath(candidate: unknown, name: string): string {
@@ -459,17 +474,23 @@ export function prepareCodexStorage(
 				);
 		}
 	} catch (cause) {
+		let retryCleanup: (() => void) | undefined;
 		try {
 			releaseLock();
 		} catch {
-			/* Preserve the config failure and its recovery action. */
+			/* Preserve the lock-release capability for an explicit recovery retry. */
+			retryCleanup = releaseLock;
 		}
-		if (cause instanceof CodexStorageError) throw cause;
+		if (cause instanceof CodexStorageError) {
+			if (retryCleanup) throw withRetryCleanup(cause, retryCleanup);
+			throw cause;
+		}
 		throw failure(
 			"config_write",
 			configPath,
 			`Could not prepare Codex config ${configPath}.`,
 			cause,
+			retryCleanup,
 		);
 	}
 
