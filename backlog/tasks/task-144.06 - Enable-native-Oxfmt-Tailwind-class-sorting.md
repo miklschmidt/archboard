@@ -1,11 +1,11 @@
 ---
 id: TASK-144.06
 title: Enable native Oxfmt Tailwind class sorting
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 00:38'
+updated_date: '2026-08-31 00:44'
 labels: []
 dependencies:
   - TASK-144.03
@@ -31,10 +31,10 @@ Delegation profile: gpt-5.6-luna, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Oxfmt configuration names the canonical stylesheet and functions [cn]; className uses native formatter behavior and is not redundantly configured.
-- [ ] #2 Sorting follows installed Oxfmt/Tailwind v4 semantics for static strings and cn calls without formatting dynamic expressions, templates, or data as invented classes.
-- [ ] #3 No Prettier plugin, custom comparator, Tailwind-specific Oxlint rule, warning allowance, or upstream default mirror is added.
-- [ ] #4 TASK-144.10 owns the fail-format-pass repository fixture; this task owns configuration only.
+- [x] #1 Oxfmt configuration names the canonical stylesheet and functions [cn]; className uses native formatter behavior and is not redundantly configured.
+- [x] #2 Sorting follows installed Oxfmt/Tailwind v4 semantics for static strings and cn calls without formatting dynamic expressions, templates, or data as invented classes.
+- [x] #3 No Prettier plugin, custom comparator, Tailwind-specific Oxlint rule, warning allowance, or upstream default mirror is added.
+- [x] #4 TASK-144.10 owns the fail-format-pass repository fixture; this task owns configuration only.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -61,4 +61,12 @@ Validation: `bun run fmt:check` passed; `bun run type-check` passed; `bun run li
 Remediation after independent review: replaced unsupported `lineWidth` with schema-defined `printWidth` while retaining value 100. Direct disposable width probe with `/tmp/oxfmt-printwidth.jsonc` (`printWidth: 20`) wrapped the long `combine("one", "two", "three", "four", "five")` call, confirming the corrected key is active. Direct Tailwind re-review probe continued to sort static className and cn literals while leaving template and data expressions unchanged.
 
 Remediation validation: `bun run fmt:check`, `bun run type-check`, `bun run lint`, `bun run test:repository` (130 pass, 0 fail), `bun run test:modules` (1042 pass, 0 fail), `bun run build:frontend`, and `git diff --check` all passed.
+
+Parent integration at 902f298: independent final review returned REVIEW_CLEAN after proving printWidth is active, the canonical stylesheet/functions/native className contract is exact, preserveDuplicates retains the deliberate cn duplicate fixture without inhibiting sorting, dynamic/template/data expressions remain untouched, and TASK-144.10 remains the fixture owner. Parent validation passed: Oxfmt on 528 files; repository 137/1177; modules 1042/7632; both TypeScript graphs; Oxlint; frontend build; git diff/status clean.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Enabled Oxfmt 0.65.0 native Tailwind v4 sorting with the canonical Archboard stylesheet, cn helper, native className handling, deliberate duplicate preservation, and the supported printWidth option. Static classes sort while dynamic, interpolated, and data-backed expressions remain unchanged. Independent review and formatter, repository, module, type, lint, and frontend build gates passed; TASK-144.10 retains enforcement-fixture ownership.
+<!-- SECTION:FINAL_SUMMARY:END -->
