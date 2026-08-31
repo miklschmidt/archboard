@@ -1,11 +1,11 @@
 ---
 id: TASK-144.08
 title: Migrate opener settings onto the Base UI dialog
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 05:47'
+updated_date: '2026-08-31 05:51'
 labels: []
 dependencies:
   - TASK-144.19
@@ -29,10 +29,10 @@ Migrate the existing opener settings consumer onto the reviewed Base UI dialog/b
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The opener retains the existing settings state owner, save/cancel semantics, validation, labels, and trigger; only presentation/interaction primitives move to the reviewed dialog/button modules.
-- [ ] #2 The consumer uses semantic Tailwind classes and named module entrypoints without direct @base-ui or Radix imports, copied portal/focus state, inline style policy, or second modal store.
-- [ ] #3 Module tests cover props, state transition requests, and classes only; TASK-144.11 owns rendered focus, Escape, outside-dismissal, portal, accessibility, themes, reduced motion, and touch.
-- [ ] #4 Existing opener errors and unsaved values survive dismiss/refocus behavior exactly as specified by its current public contract.
+- [x] #1 The opener retains the existing settings state owner, save/cancel semantics, validation, labels, and trigger; only presentation/interaction primitives move to the reviewed dialog/button modules.
+- [x] #2 The consumer uses semantic Tailwind classes and named module entrypoints without direct @base-ui or Radix imports, copied portal/focus state, inline style policy, or second modal store.
+- [x] #3 Module tests cover props, state transition requests, and classes only; TASK-144.11 owns rendered focus, Escape, outside-dismissal, portal, accessibility, themes, reduced motion, and touch.
+- [x] #4 Existing opener errors and unsaved values survive dismiss/refocus behavior exactly as specified by its current public contract.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -93,4 +93,19 @@ Final capped remediation evidence, every command used MemoryMax=6G and MemorySwa
 - protected artifact SHA-256 remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6
 
 No broad repository, system, module, or browser lane was run. TASK-144.11 still owns rendered focus movement, focus return, Escape, outside dismissal, portal placement, accessibility, themes, reduced motion, touch, and final sizing. TASK-144.08 remains In Progress with every criterion unchecked for rereview.
+
+Root acceptance after integrating review-clean range 182591d252b5520127c004ff4d49a1b9fe652245..fa4f0c23d6f202e6f4b1d301c5702feafd532bcb at integration commit 1e01fc8:
+- original reviewer complete rereview: REVIEW_CLEAN; specialized state/API reviewer: REVIEW_CLEAN
+- focused opener, theme, stylesheet-entry, adoption, and inventory owners: 76 tests, 768 assertions passed under MemoryMax=6G / MemorySwapMax=1G; peak 1.5G, swap 0B
+- both TypeScript projects passed under the same cap; peak 1.4G, swap 0B
+- production frontend build passed under the same cap; peak 1.4G, swap 0B
+- compiled CSS is exactly 58,230 bytes, contains accepted semantic dialog/radius utilities, and excludes duration-150
+- protected artifact SHA-256 remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6
+Rendered focus timing/return/trap/order, Escape, outside dismissal, portal, accessibility, themes, reduced motion, touch, sizing, and canonical browser selector updates remain exclusively TASK-144.11.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Migrated opener settings from the legacy modal and local CSS to the accepted controlled Base UI Dialog, Button, and semantic Tailwind modules while preserving the existing shell trigger, state owner, validation, API effects, callbacks, errors, and draft lifetime. Review remediation restored Cancel as the safe initial-focus target through the public Dialog API and fixed retained-draft evidence. Two independent reviews were clean after remediation; root acceptance passed 76 focused tests / 768 assertions, both TypeScript projects, the production build, compiled-CSS inspection, and protected-artifact verification. TASK-144.11 retains rendered interaction and browser-selector ownership.
+<!-- SECTION:FINAL_SUMMARY:END -->
