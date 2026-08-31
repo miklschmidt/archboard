@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 03:51'
+updated_date: '2026-08-31 04:02'
 labels: []
 dependencies:
   - TASK-144.01
@@ -64,4 +64,10 @@ Broad modules/system/repository/check/browser lanes remain root-owned and were n
 The headless Vite fixture now observably retains all eight approved values. In production mode it measures 280341 bytes and 280 modules against ceilings of 280379 bytes and 280 modules, asserts the exact reviewed package-root set, and rejects assistant-cloud and safe-content-frame. Direct Radix remains forbidden at the app import boundary while the bundle assertion permits only the reviewed transitive Radix roots.
 
 Focused checks: bun test tests/system/repository-policy/assistant-ui-imports.test.ts — 12 passed, 240 assertions; focused Oxlint on the owned plugin/test — 0 errors; Oxfmt check passed; the policy test is 499 lines against the 500-line repository limit. Disposable bun install --frozen-lockfile --ignore-scripts remains clean with lockUnchanged=true. Broad modules/system/repository/check/browser lanes remain root-owned and were not run. Task remains In Progress and all acceptance criteria remain unchecked. Preserved /home/msc/Projects/archboard/src-DlBR1tzg.js.
+
+2026-08-31 @codex second remediation evidence (code commit 8ceabd5): strengthened the React singleton audit to return every matching lock record as a key-and-identity object without Set deduplication. The real lock now asserts exactly { key: "react", identity: "react@19.2.8" } and { key: "react-dom", identity: "react-dom@19.2.8" }. Hostile fixtures include nested same-version duplicate records and nested different-version records for both React packages.
+
+The assignment visitor now rejects any non-Identifier left target when the right side is a tracked assistant-ui value, covering destructuring assignment aliases. Focused hostile fixtures exercise queue, voice, and tool names through ComposerPrimitive assignment patterns. The copied Elements limitation remains the documented three-name signature inventory and does not claim arbitrary equivalent source detection.
+
+Focused checks: bun test tests/system/repository-policy/assistant-ui-imports.test.ts - 12 passed, 249 assertions; focused Oxlint on the owned plugin/test - 0 errors; Oxfmt check passed; the policy test remains 500 lines against the 500-line repository limit. Package and lockfile were unchanged in this remediation. Broad modules/system/repository/check/browser lanes remain root-owned and were not run. Task remains In Progress and all acceptance criteria remain unchecked. Preserved /home/msc/Projects/archboard/src-DlBR1tzg.js.
 <!-- SECTION:NOTES:END -->
