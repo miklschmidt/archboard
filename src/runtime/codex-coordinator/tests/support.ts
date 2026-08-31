@@ -141,6 +141,7 @@ function settings(
 class FakeEpoch implements CoordinatorEpochPort {
 	readonly records: EpochOperationRecord[] = [];
 	readonly assertRequests: EpochExecutionRequest[] = [];
+	unknownCalls = 0;
 	private revision = 0;
 
 	constructor(
@@ -229,6 +230,7 @@ class FakeEpoch implements CoordinatorEpochPort {
 		reason: string,
 		confirmation?: EpochConfirmation,
 	): EpochOperationRecord {
+		this.unknownCalls += 1;
 		const record = this.recordFor(transaction);
 		return this.replace({
 			...record,
@@ -355,10 +357,17 @@ class FakeSession implements CoordinatorSessionPort {
 	}
 
 	private sendSettingsNotification(authority: IdentityAuthority): void {
+		this.emitSettingsNotification(this.threadSettings, authority);
+	}
+
+	emitSettingsNotification(
+		threadSettings: CoordinatorThreadSettings = this.threadSettings,
+		authority: IdentityAuthority = this.authority,
+	): void {
 		const rawThreadId = this.authority.decoder.serializeCodexIdentity(this.started.thread.id);
 		const notification: ServerNotificationPayloads["thread/settings/updated"] = {
 			threadId: rawThreadId,
-			threadSettings: this.threadSettings,
+			threadSettings,
 		};
 		this.notify?.({
 			correlation: {
