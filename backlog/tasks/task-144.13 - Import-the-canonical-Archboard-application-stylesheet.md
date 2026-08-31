@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:38'
-updated_date: '2026-08-31 02:33'
+updated_date: '2026-08-31 02:40'
 labels: []
 dependencies:
   - TASK-144.02
@@ -13,7 +13,9 @@ dependencies:
 references:
   - docs/design/tailwind-base-ui-adoption-research.md
 modified_files:
-  - frontend
+  - frontend/main.tsx
+  - frontend/index.html
+  - tests/system/repository-policy/frontend-style-entry.test.ts
 parent_task_id: TASK-144
 priority: high
 type: task
@@ -45,4 +47,14 @@ Delegation profile: gpt-5.6-luna, high.
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved after TASK-144.02 finalized and released this dependency-ready UI seam at integration HEAD a6957cc. It owns the frontend entry/import path and is path-disjoint from every active lane; complete browser and broad gates remain root-owned.
+
+Implementation commit `c01e061` imports `src/ui/theme/app.css` once from `frontend/main.tsx`, removes only the direct shell stylesheet link from `frontend/index.html`, and adds a focused repository-policy owner for the entry contract.
+
+Validation:
+- `bun run build:frontend` passed. The built page kept `/assets/excalidraw.css` explicit and emitted one 43.24 kB application CSS asset with one Tailwind theme layer and one utilities layer.
+- `bun test tests/system/repository-policy/frontend-style-entry.test.ts src/ui/theme/tests/theme-compile.test.ts` passed: 23 tests, 576 assertions.
+- Focused serial browser owners passed: `shell-layout.test.ts` covered light/dark themes, controls, one pane, two panes, touch targets, notices, and the workbench at 1440x900; `fullscreen-presentation.test.ts` covered entry, pane switching, refusal recovery, Escape, and exact session restoration.
+- Focused Oxlint, Oxfmt, and frontend TypeScript checks passed.
+
+The complete repository, system, module, and browser lanes remain for the parent integration gate. Per delegation, the task stays In Progress and its acceptance criteria remain unchecked.
 <!-- SECTION:NOTES:END -->
