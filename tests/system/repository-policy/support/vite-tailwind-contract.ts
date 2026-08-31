@@ -60,13 +60,14 @@ function assertNoAliasOverlap(find: string | RegExp): void {
 		return;
 	}
 	const prefix = parseAnchoredLiteralRegex(find);
-	if (prefix !== undefined && !prefix.startsWith("@")) return;
+	if (prefix === undefined) {
+		throw new Error(
+			`Vite fixture contract: unsupported regex alias overlap ${String(find)}; use an anchored literal prefix that cannot match @/.`,
+		);
+	}
 	if (prefix === "@" || prefix?.startsWith("@/")) {
 		throw new Error(`Vite fixture contract: overlapping regex alias ${String(find)} shadows @/.`);
 	}
-	throw new Error(
-		`Vite fixture contract: unsupported regex alias overlap ${String(find)}; use an anchored literal prefix that cannot match @/.`,
-	);
 }
 
 export function assertViteContract(config: InlineConfig, sourceRoot: string): void {

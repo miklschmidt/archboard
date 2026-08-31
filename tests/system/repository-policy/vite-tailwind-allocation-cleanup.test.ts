@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import {
 	existsSync,
+	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	readlinkSync,
@@ -10,9 +11,12 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { TEST_VITE_TAILWIND_ALLOCATION_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 import {
+	childLineReader,
+	childStdout,
+	createViteTailwindFixture,
 	prefixedFixtureRoots,
 	reapChild,
 	runCleanupSteps,
@@ -37,9 +41,15 @@ function runAllocationProbe(parent: string): FixtureChild {
 	return Bun.spawn(["bun", "-e", script], {
 		cwd: parent,
 		stdin: "pipe",
-		stdout: "ignore",
+		stdout: "pipe",
 		stderr: "pipe",
 	});
+}
+
+async function readAllocatedRoot(child: FixtureChild): Promise<string> {
+	const line = await childLineReader(childStdout(child))();
+	if (!line.startsWith("ALLOCATED ")) throw new Error(`Unexpected allocation line: ${line}`);
+	return line.slice("ALLOCATED ".length);
 }
 
 function checkoutStatus(): string {
@@ -50,6 +60,39 @@ function checkoutStatus(): string {
 }
 
 describe("Vite Tailwind allocation cleanup", () => {
+	test("retires a colliding candidate before creating the next exact root", async () => {
+		const parent = mkdtempSync(join(tmpdir(), "archboard-vite-candidate-collision-"));
+		const occupied = join(parent, "archboard-vite-tailwind-occupied");
+		const retry = join(parent, "archboard-vite-tailwind-retry");
+		mkdirSync(occupied);
+		const candidates = [occupied, retry];
+		const allocated: string[] = [];
+		const retired: string[] = [];
+		try {
+			const fixture = await createViteTailwindFixture(
+				parent,
+				repoRoot,
+				{
+					onAllocated: (value) => allocated.push(value.root),
+					onAllocationRetired: (value) => retired.push(value.root),
+				},
+				() => candidates.shift()!,
+			);
+			try {
+				expect(allocated).toEqual([occupied, retry]);
+				expect(retired).toEqual([occupied]);
+				expect(existsSync(occupied)).toBe(true);
+				expect(existsSync(fixture.root)).toBe(true);
+			} finally {
+				await fixture.dispose();
+			}
+			expect(existsSync(occupied)).toBe(true);
+			expect(existsSync(retry)).toBe(false);
+		} finally {
+			rmSync(parent, { recursive: true, force: true });
+		}
+	});
+
 	test(
 		"external root watcher cannot interrupt before ownership registration",
 		async () => {
@@ -59,9 +102,12 @@ describe("Vite Tailwind allocation cleanup", () => {
 			let currentChild: FixtureChild | undefined;
 			let resolveRoot: (() => void) | undefined;
 			let watcherSignals = 0;
+			const allocatedRoots: string[] = [];
+			const createdRoots = new Set<string>();
 			const watcher = watch(parent, (_event, filename) => {
 				const name = filename?.toString() ?? "";
 				if (!name.startsWith("archboard-vite-tailwind-")) return;
+				createdRoots.add(name);
 				if (currentChild === undefined) return;
 				const signal = children.length % 2 === 0 ? "SIGINT" : "SIGTERM";
 				watcherSignals += 1;
@@ -79,10 +125,15 @@ describe("Vite Tailwind allocation cleanup", () => {
 							});
 							currentChild = runAllocationProbe(parent);
 							children.push(currentChild);
+							const allocatedRoot = await readAllocatedRoot(currentChild);
+							expect(dirname(allocatedRoot)).toBe(parent);
+							allocatedRoots.push(basename(allocatedRoot));
 							await rootAppeared;
 							await children.at(-1)!.exited;
 						}
 						expect(watcherSignals).toBe(200);
+						expect(new Set(allocatedRoots).size).toBe(200);
+						expect([...createdRoots].toSorted()).toEqual([...new Set(allocatedRoots)].toSorted());
 						expect(children.map((child) => child.exitCode)).toEqual(
 							children.map((_child, index) => (index % 2 === 0 ? 143 : 130)),
 						);
@@ -126,6 +177,13 @@ describe("Vite Tailwind allocation cleanup", () => {
 					const first = runAllocationProbe(parent);
 					const second = runAllocationProbe(parent);
 					children.push(first, second);
+					const [firstAllocated, secondAllocated] = await Promise.all([
+						readAllocatedRoot(first),
+						readAllocatedRoot(second),
+					]);
+					expect(dirname(firstAllocated)).toBe(parent);
+					expect(dirname(secondAllocated)).toBe(parent);
+					expect(firstAllocated).not.toBe(secondAllocated);
 					await bothRoots;
 					first.kill("SIGTERM");
 					expect(await first.exited).toBe(143);

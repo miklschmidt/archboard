@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 00:58'
+updated_date: '2026-08-31 01:15'
 labels: []
 dependencies:
   - TASK-144.01
@@ -69,4 +69,6 @@ Third remediation: allocation now invokes a synchronous owner callback immediate
 Fourth remediation: fixture allocation now uses mkdtempSync so ownership registration occurs in the same synchronous turn as root creation; an external watcher interrupts 200 real allocation owners, alternating SIGTERM 143 and SIGINT 130, with no root/link/child/checkout residue. Regex aliases now require a fully anchored literal prefix and reject ambiguous alternation/other unparsed forms fail-closed. Cleanup pairing tracks failure presence explicitly, preserving thrown undefined and primary-before-cleanup ordering.
 
 Fifth-round remediation: owner subprocess cleanup now tracks the exact synchronously registered fixture root only; duplicated signal/exit lifecycle code is consolidated, and a concurrent same-parent owner test proves interrupting one owner leaves the other owner's root/link live while an unrelated prefixed sibling survives. Alias-overlap validation now parses the complete RegExp source under a closed anchored-literal grammar and rejects unparsed alternation and other unsupported constructs fail-closed. The 200-owner allocation case uses TEST_VITE_TAILWIND_ALLOCATION_CASE_TIMEOUT_MS from src/shared/timing/timing.ts, whose comment documents the exact workload coupling.
+
+Sixth-round remediation supersedes the earlier mkdtempSync allocation wording: each owner chooses a random exact candidate path, registers that candidate before mkdirSync, and creates it exclusively; EEXIST retires the uncreated candidate without cleanup and retries. Fixture disposal tracks created state and setup guards stop further async work after disposal, preserving exact-root cleanup through pre-create, create, and setup interruption. The external watcher now consumes pre-creation allocation records and proves all 200 allocated candidates become accounted-for roots with alternating 143/130 exits and no residue; collision retry and concurrent same-parent sibling survival remain covered. The literal regex contract now allows fully parsed disjoint /^@admin/ and /^@admin\/panel/ controls while retaining exact overlap and unsupported-grammar refusals.
 <!-- SECTION:NOTES:END -->

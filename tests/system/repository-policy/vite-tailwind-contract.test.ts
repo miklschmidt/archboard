@@ -279,6 +279,8 @@ describe("Vite Tailwind configuration", () => {
 			{ find: /^virtual\//, replacement: join(sourceRoot, "shared") },
 			{ find: "@\\admin", replacement: join(sourceRoot, "admin") },
 			{ find: "@?admin", replacement: join(sourceRoot, "admin") },
+			{ find: /^@admin/, replacement: join(sourceRoot, "admin") },
+			{ find: /^@admin\/panel/, replacement: join(sourceRoot, "admin/panel") },
 		];
 		expect(() =>
 			assertViteContract(withAlias(productionConfig, aliases), sourceRoot),
