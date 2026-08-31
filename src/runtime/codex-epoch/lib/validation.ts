@@ -195,13 +195,6 @@ export function assertThreadProvenanceEligible(
 	record: EpochOperationRecord,
 	threadId: ThreadId | null,
 ): void {
-	if (
-		threadId !== null &&
-		record.status === "inspect_only" &&
-		record.provenance.threadId === threadId
-	) {
-		throw epochError("inspect_only", "a tombstoned thread cannot be confirmed or relinked");
-	}
 	for (const candidate of manifest.records) {
 		if (
 			threadId === null ||
