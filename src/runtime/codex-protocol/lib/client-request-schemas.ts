@@ -24,7 +24,7 @@ import type { ClientRequestMethod, ClientRequestMethodWithoutParams } from "./me
 import {
 	AccountReadParamsSchema,
 	CancelLoginAccountParamsSchema,
-	InitializeParamsSchema,
+	ClientInfoSchema,
 	LoginAccountParamsSchema,
 } from "./request-schemas.js";
 import {
@@ -39,6 +39,27 @@ const NullablePageSchema = {
 	cursor: z.string().nullable().optional(),
 	limit: FiniteNumberSchema.nullable().optional(),
 } as const;
+type GeneratedRecord<Value> = Record<string, Value | undefined>;
+interface GeneratedJsonObject {
+	[key: string]: GeneratedJsonValue | undefined;
+}
+type GeneratedJsonValue =
+	| boolean
+	| number
+	| string
+	| GeneratedJsonValue[]
+	| GeneratedJsonObject
+	| null;
+const ClientJsonValueSchema: z.ZodType<GeneratedJsonValue> = JsonValueSchema;
+const ClientJsonRecordSchema: z.ZodType<GeneratedRecord<GeneratedJsonValue>> = JsonRecordSchema;
+const ClientStringRecordSchema: z.ZodType<GeneratedRecord<string>> = z.record(
+	z.string(),
+	z.string(),
+);
+const ClientStringArrayRecordSchema: z.ZodType<GeneratedRecord<string[]>> = z.record(
+	z.string(),
+	z.array(z.string()),
+);
 const SortDirectionSchema = z.enum(["asc", "desc"]);
 const ThreadSourceKindSchema = z.enum([
 	"cli",
@@ -138,6 +159,9 @@ const AdditionalContextEntrySchema = z.strictObject({
 	value: z.string(),
 	kind: z.enum(["untrusted", "application"]),
 });
+const AdditionalContextRecordSchema: z.ZodType<
+	GeneratedRecord<z.infer<typeof AdditionalContextEntrySchema>>
+> = z.record(z.string(), AdditionalContextEntrySchema);
 const CollaborationModeSchema = z.strictObject({
 	mode: z.enum(["plan", "default"]),
 	settings: z.strictObject({
@@ -150,7 +174,7 @@ const DynamicToolFunctionSpecSchema = z.strictObject({
 	type: z.literal("function"),
 	name: z.string(),
 	description: z.string(),
-	inputSchema: JsonValueSchema,
+	inputSchema: ClientJsonValueSchema,
 	deferLoading: z.boolean().optional(),
 });
 const DynamicToolSpecSchema = z.discriminatedUnion("type", [
@@ -181,6 +205,18 @@ const ThreadRealtimeStartTransportSchema = z.discriminatedUnion("type", [
 	z.strictObject({ type: z.literal("existingCall"), callId: z.string() }),
 ]);
 
+const GeneratedInitializeCapabilitiesSchema = z.strictObject({
+	experimentalApi: z.boolean(),
+	requestAttestation: z.boolean(),
+	mcpServerOpenaiFormElicitation: z.boolean().optional(),
+	optOutNotificationMethods: z.array(z.string()).nullable().optional(),
+	extensions: ClientJsonRecordSchema.nullable().optional(),
+});
+const GeneratedInitializeParamsSchema = z.strictObject({
+	clientInfo: ClientInfoSchema,
+	capabilities: GeneratedInitializeCapabilitiesSchema.nullable(),
+});
+
 const ConfigReadParamsSchema = z.strictObject({
 	includeLayers: z.boolean().optional(),
 	cwd: z.string().nullable().optional(),
@@ -200,7 +236,7 @@ const ThreadStartParamsSchema = z.strictObject({
 	approvalsReviewer: ApprovalsReviewerSchema.nullable().optional(),
 	sandbox: SandboxModeSchema.nullable().optional(),
 	permissions: z.string().nullable().optional(),
-	config: JsonRecordSchema.nullable().optional(),
+	config: ClientJsonRecordSchema.nullable().optional(),
 	serviceName: z.string().nullable().optional(),
 	baseInstructions: z.string().nullable().optional(),
 	developerInstructions: z.string().nullable().optional(),
@@ -231,7 +267,7 @@ const ThreadForkParamsSchema = z.strictObject({
 	approvalsReviewer: ApprovalsReviewerSchema.nullable().optional(),
 	sandbox: SandboxModeSchema.nullable().optional(),
 	permissions: z.string().nullable().optional(),
-	config: JsonRecordSchema.nullable().optional(),
+	config: ClientJsonRecordSchema.nullable().optional(),
 	baseInstructions: z.string().nullable().optional(),
 	developerInstructions: z.string().nullable().optional(),
 	ephemeral: z.boolean().optional(),
@@ -296,8 +332,8 @@ const TurnStartParamsSchema = z.strictObject({
 	input: z.array(ClientUserInputSchema),
 	turnTrigger: z.string().nullable().optional(),
 	toolOutput: TurnToolOutputSchema.nullable().optional(),
-	responsesapiClientMetadata: z.record(z.string(), z.string()).nullable().optional(),
-	additionalContext: z.record(z.string(), AdditionalContextEntrySchema).nullable().optional(),
+	responsesapiClientMetadata: ClientStringRecordSchema.nullable().optional(),
+	additionalContext: AdditionalContextRecordSchema.nullable().optional(),
 	environments: z.array(TurnEnvironmentParamsSchema).nullable().optional(),
 	cwd: z.string().nullable().optional(),
 	runtimeWorkspaceRoots: z.array(z.string()).nullable().optional(),
@@ -311,7 +347,7 @@ const TurnStartParamsSchema = z.strictObject({
 	effort: ReasoningEffortSchema.nullable().optional(),
 	summary: ReasoningSummarySchema.nullable().optional(),
 	personality: PersonalitySchema.nullable().optional(),
-	outputSchema: JsonValueSchema.nullable().optional(),
+	outputSchema: ClientJsonValueSchema.nullable().optional(),
 	collaborationMode: CollaborationModeSchema.nullable().optional(),
 	multiAgentMode: ClientMultiAgentModeSchema.nullable().optional(),
 	cyberAccessProgram: z.enum(["standard", "daybreakBlue", "daybreakRed"]).nullable().optional(),
@@ -320,8 +356,8 @@ const TurnSteerParamsSchema = z.strictObject({
 	threadId: z.string(),
 	clientUserMessageId: z.string().nullable().optional(),
 	input: z.array(ClientUserInputSchema),
-	responsesapiClientMetadata: z.record(z.string(), z.string()).nullable().optional(),
-	additionalContext: z.record(z.string(), AdditionalContextEntrySchema).nullable().optional(),
+	responsesapiClientMetadata: ClientStringRecordSchema.nullable().optional(),
+	additionalContext: AdditionalContextRecordSchema.nullable().optional(),
 	expectedTurnId: z.string(),
 });
 const TurnInterruptParamsSchema = z.strictObject({ threadId: z.string(), turnId: z.string() });
@@ -353,7 +389,7 @@ const ThreadQueueStartParamsSchema = z.strictObject({
 });
 const ThreadInjectItemsParamsSchema = z.strictObject({
 	threadId: z.string(),
-	items: z.array(JsonValueSchema),
+	items: z.array(ClientJsonValueSchema),
 });
 const ThreadRealtimeStartParamsSchema = z.strictObject({
 	threadId: z.string(),
@@ -363,10 +399,7 @@ const ThreadRealtimeStartParamsSchema = z.strictObject({
 	codexResponsesAsItems: z.boolean().nullable().optional(),
 	codexResponseItemPrefix: z.string().nullable().optional(),
 	codexResponseHandoffMode: z.enum(["thinking", "commentary", "bemTags"]).nullable().optional(),
-	codexResponseHandoffChannelPrefixes: z
-		.record(z.string(), z.array(z.string()))
-		.nullable()
-		.optional(),
+	codexResponseHandoffChannelPrefixes: ClientStringArrayRecordSchema.nullable().optional(),
 	model: z.string().nullable().optional(),
 	outputModality: RealtimeOutputModalitySchema,
 	includeStartupContext: z.boolean().nullable().optional(),
@@ -399,7 +432,7 @@ const ThreadTimelineListParamsSchema = z.strictObject({
 
 /** One runtime owner for every client request the public session can emit. */
 export const CLIENT_REQUEST_PARAM_SCHEMAS = {
-	initialize: InitializeParamsSchema,
+	initialize: GeneratedInitializeParamsSchema,
 	"config/read": ConfigReadParamsSchema,
 	"configRequirements/read": z.undefined(),
 	"account/read": AccountReadParamsSchema,
