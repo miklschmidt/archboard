@@ -12,6 +12,7 @@ export type {
 	CodexProcessFailureCode,
 	CodexProcessLifecycle,
 	CodexProcessOptions,
+	CodexProcessStorageInput,
 	CodexProcessSnapshot,
 	CodexProcessState,
 } from "./process.js";
