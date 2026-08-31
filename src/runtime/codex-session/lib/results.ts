@@ -36,11 +36,32 @@ import type {
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
 
+type ProtocolObjectOutput<
+	Schema extends z.ZodObject,
+	Shape extends z.ZodRawShape = Schema["shape"],
+	Output extends object = z.output<Schema>,
+> = {
+	[
+		Key in keyof Shape as Key extends keyof Output
+			? {} extends Pick<Output, Key>
+				? never
+				: Key
+			: never
+	]-?: ProtocolOutput<Shape[Key]>;
+} & {
+	[
+		Key in keyof Shape as Key extends keyof Output
+			? {} extends Pick<Output, Key>
+				? Key
+				: never
+			: never
+	]?: ProtocolOutput<Shape[Key]>;
+};
 type ProtocolOutput<Schema> =
 	Schema extends z.ZodLazy<infer Inner>
 		? ProtocolOutput<Inner>
 		: Schema extends z.ZodObject<infer Shape>
-			? { [Key in keyof Shape]: ProtocolOutput<Shape[Key]> }
+			? ProtocolObjectOutput<Schema, Shape>
 			: Schema extends z.ZodArray<infer Element>
 				? ProtocolOutput<Element>[]
 				: Schema extends z.ZodNullable<infer Inner>
