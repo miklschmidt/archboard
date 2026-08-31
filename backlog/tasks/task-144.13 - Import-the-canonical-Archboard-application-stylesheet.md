@@ -1,10 +1,11 @@
 ---
 id: TASK-144.13
 title: Import the canonical Archboard application stylesheet
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:38'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-31 02:33'
 labels: []
 dependencies:
   - TASK-144.02
@@ -33,3 +34,15 @@ Delegation profile: gpt-5.6-luna, high.
 - [ ] #2 Excalidraw vendor CSS ordering remains explicit and a production build contains one Archboard application stylesheet without duplicate Tailwind output.
 - [ ] #3 Focused build and rendered shell checks prove one/two-pane, fullscreen, and existing controls remain unchanged after the import-path move.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Read the aesthetic guide, Tailwind adoption research, current frontend entry/index ordering, canonical app.css, shell module, and focused rendered owners. 2. Move the canonical application stylesheet import to frontend/main.tsx exactly once and remove only the direct shell stylesheet link from frontend/index.html, preserving explicit Excalidraw vendor CSS ordering. 3. Add the smallest stable build assertion needed to prevent duplicate Archboard/Tailwind output without taking later visual-refactor scope. 4. Validate production build plus focused rendered one-pane, two-pane, fullscreen, and existing-control workflows; submit the immutable range for independent review.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reserved after TASK-144.02 finalized and released this dependency-ready UI seam at integration HEAD a6957cc. It owns the frontend entry/import path and is path-disjoint from every active lane; complete browser and broad gates remain root-owned.
+<!-- SECTION:NOTES:END -->

@@ -1,10 +1,11 @@
 ---
 id: TASK-144.15
 title: Mirror the UI source alias in frontend TypeScript
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:43'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-31 02:33'
 labels: []
 dependencies:
   - TASK-144.02
@@ -31,3 +32,15 @@ Own the frontend TypeScript half of the single @/* -> ./src/* alias. Vite owns r
 - [ ] #3 Bundler resolution/noEmit and existing frontend includes remain unchanged, with no second alias spelling.
 - [ ] #4 Cross-project agreement belongs to TASK-144.17, deep-import policy to TASK-144.18, and shadcn dry-run to TASK-144.04.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Read the Tailwind adoption research, Vite alias owner, frontend TypeScript configuration, and existing public UI module boundaries. 2. Add exactly @/* -> [./src/*] to tsconfig.frontend.json without baseUrl or another alias spelling. 3. Add the smallest self-contained frontend alias fixture proving one public @/ import resolves and an unknown alias fails while preserving existing includes and noEmit behavior. 4. Run focused TypeScript/config/inventory checks and submit the immutable range for independent review; leave cross-project, deep-import, and shadcn work to their named tasks.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reserved after TASK-144.02 finalized and released this dependency-ready configuration leaf at integration HEAD a6957cc. It owns tsconfig.frontend.json plus the minimal self-contained fixture and is path-disjoint from every active lane.
+<!-- SECTION:NOTES:END -->
