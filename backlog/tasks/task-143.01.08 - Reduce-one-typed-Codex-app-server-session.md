@@ -1,10 +1,11 @@
 ---
 id: TASK-143.01.08
 title: Reduce one typed Codex app-server session
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 18:07'
+updated_date: '2026-08-31 04:42'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -38,3 +39,9 @@ Reduce one exact Codex 0.151.0 app-server session behind typed ports. This is th
 - [ ] #5 expectedTurnId is mandatory on steer. Non-idempotent mutations classify delivered, not_delivered, or outcome_unknown and never retry blindly; raw decoded realtime alone crosses to TASK-143.02.03.
 - [ ] #6 src/runtime/codex-session/tests/session.test.ts exhausts initialize ordering, pre-response buffering, capabilities, all login/refusal variants, storage proof, reverse requests, pagination, queue/turn/realtime methods, steer identity, and all three mutation outcomes through the typed transport port.
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reserved immediately after TASK-143.01.05 finalized at integration HEAD 0aef910357ea216f98ff135c93d6bf70bee73341. This leaf owns src/runtime/codex-session and its focused tests. It composes the completed protocol, process, transport, timing, and epoch contracts without reopening their ownership. The current integration branch has two unrelated assistant-ui policy TypeScript diagnostics already assigned to TASK-143.03.12; this session worker must not fix or absorb them.
+<!-- SECTION:NOTES:END -->
