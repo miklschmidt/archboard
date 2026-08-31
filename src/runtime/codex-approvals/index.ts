@@ -1,5 +1,4 @@
 export { createCodexApprovalBroker } from "./lib/broker.js";
-export { classifyResponseFailure } from "./lib/response.js";
 export type {
 	ApprovalBinding,
 	ApprovalBindingInput,
