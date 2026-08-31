@@ -53,7 +53,6 @@ const content = {
 	className: (state) => state.open ? "bg-surface" : undefined,
 	style: (state) => ({ opacity: state.open ? 1 : 0 }),
 	render: createElement("section"),
-	role: "region",
 	"aria-label": "Settings",
 	"data-owner": "archboard",
 	"data-active": true,
@@ -108,6 +107,12 @@ const rootHandle: DialogProps = { open: true, onOpenChange: () => undefined, han
 const triggerId: DialogProps = { open: true, onOpenChange: () => undefined, triggerId: "open" };
 // @ts-expect-error Popup refs retain the vendor HTMLDivElement contract.
 const wrongPopupRef: DialogContentProps = { ref: createRef<HTMLElement>() };
+// @ts-expect-error Base UI alone owns the popup role.
+const roleOverride: DialogContentProps = { role: "region" };
+// @ts-expect-error Base UI Title alone owns the popup label association.
+const labelledByOverride: DialogContentProps = { "aria-labelledby": "other-title" };
+// @ts-expect-error Base UI Description alone owns the popup description association.
+const describedByOverride: DialogContentProps = { "aria-describedby": "other-description" };
 // @ts-expect-error Title refs retain the heading contract.
 const wrongTitleRef: DialogTitleProps = { ref: createRef<SVGSVGElement>() };
 // @ts-expect-error Description refs retain the paragraph contract.
@@ -148,6 +153,9 @@ void rootActions;
 void rootHandle;
 void triggerId;
 void wrongPopupRef;
+void roleOverride;
+void labelledByOverride;
+void describedByOverride;
 void wrongTitleRef;
 void wrongDescriptionRef;
 void wrongCloseRef;
