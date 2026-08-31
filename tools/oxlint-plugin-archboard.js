@@ -40,6 +40,80 @@ const AREA_IMPORT_DENIALS = {
 
 const COMPATIBILITY_IDENTIFIER_PATTERN = /(?:^|_)(?:compat|compatibility|shim|backwards?)(?:$|_)/i;
 const SOURCE_ALIAS_PREFIX = "@/";
+const ASSISTANT_UI_PACKAGE = "@assistant-ui/react";
+const ASSISTANT_UI_AUXILIARY_PACKAGES = new Set(["assistant-cloud", "assistant-stream"]);
+const ASSISTANT_UI_OWNERS = new Map([
+	[
+		"src/ui/workbench-runtime",
+		new Set([
+			"useExternalStoreRuntime",
+			"AssistantRuntimeProvider",
+			"ReadonlyThreadProvider",
+			"MessageNotSentError",
+		]),
+	],
+	[
+		"src/ui/workbench-timeline",
+		new Set(["ThreadPrimitive", "MessagePrimitive", "MessagePartPrimitive"]),
+	],
+	["src/ui/workbench-composer", new Set(["ComposerPrimitive"])],
+]);
+const ASSISTANT_UI_MEMBER_OWNERS = new Map(
+	[...ASSISTANT_UI_OWNERS].flatMap(([owner, members]) =>
+		[...members].map((member) => [member, owner]),
+	),
+);
+const ASSISTANT_UI_FORBIDDEN_APIS = new Set([
+	"AssistantTransport",
+	"useAssistantTransportRuntime",
+	"useAssistantTransportSendCommand",
+	"useAssistantTransportState",
+	"ThreadListPrimitive",
+	"ThreadListItemPrimitive",
+	"ThreadListItemMorePrimitive",
+	"useRemoteThreadListRuntime",
+	"useCloudThreadListRuntime",
+	"useCloudThreadListAdapter",
+	"RemoteThreadList",
+	"SingleThreadList",
+	"InMemoryThreadList",
+	"QueueItemPrimitive",
+	"createMessageQueue",
+	"MessageQueueController",
+	"MessageQueueDriver",
+	"useExternalStoreMessages",
+	"getExternalStoreMessages",
+	"AssistantState",
+	"useAssistantState",
+	"useAuiState",
+	"useAuiEvent",
+	"useThreadViewport",
+	"useThreadViewportAutoScroll",
+	"useThreadViewportStore",
+	"Tool",
+	"Tools",
+	"tool",
+	"AssistantTool",
+	"AssistantToolUI",
+	"useAssistantTool",
+	"useAssistantToolUI",
+	"useVoiceControls",
+	"useVoiceState",
+	"useVoiceVolume",
+	"RealtimeVoiceAdapter",
+	"createVoiceSession",
+	"WebSpeechDictationAdapter",
+	"WebSpeechSynthesisAdapter",
+	"AssistantCloud",
+	"McpAppsHost",
+	"McpAppRenderer",
+	"getMcpAppFromToolPart",
+	"DevToolsHooks",
+	"DevToolsProviderApi",
+	"Orb",
+	"CodeDiff",
+	"ReviewableDiff",
+]);
 
 function createRule(messages, create) {
 	return {
@@ -90,6 +164,228 @@ function sourceImportVisitors(onSource) {
 		},
 	};
 }
+
+function assistantUiOwner(relativePath) {
+	for (const owner of ASSISTANT_UI_OWNERS.keys()) {
+		if (relativePath === owner || relativePath.startsWith(`${owner}/`)) return owner;
+	}
+	return undefined;
+}
+
+function assistantUiImportedName(specifier) {
+	if (specifier.type !== "ImportSpecifier") return undefined;
+	return specifier.imported?.name ?? specifier.imported?.value;
+}
+
+const assistantUiImports = createRule(
+	{
+		noAssistantUiSubpath:
+			"Import assistant-ui only from the exact @assistant-ui/react package root; subpath imports are not supported.",
+		noAssistantUiAlternatePackage:
+			"Do not import an assistant-ui alternate package; the workbench contract permits only named imports from the exact @assistant-ui/react root.",
+		noAssistantUiAuxiliaryPackage:
+			"Do not import assistant-ui's cloud or stream auxiliary package directly; keep the workbench headless and app-server-owned.",
+		noDirectRadixImport:
+			"Do not import Radix directly from application source; use the repository's Base UI layer or an Archboard-owned semantic control.",
+		noAssistantUiOwner:
+			"Only src/ui/workbench-runtime, src/ui/workbench-timeline, and src/ui/workbench-composer may import assistant-ui; move the import to its owning module and expose Archboard-owned behavior.",
+		noAssistantUiNamedImport:
+			"assistant-ui imports must be named imports from the package root; remove the side-effect, dynamic, or require form.",
+		noAssistantUiDefault:
+			"Do not use a default assistant-ui import; import one of the explicitly assigned named root members instead.",
+		noAssistantUiNamespace:
+			"Do not use a namespace assistant-ui import; import only the explicitly assigned named root members instead.",
+		noAssistantUiReExport:
+			"Do not re-export assistant-ui; keep the assigned named root import private to its owning Archboard module.",
+		noAssistantUiMember:
+			"assistant-ui member '{{member}}' is not in Archboard's assigned allowlist; use an Archboard-owned adapter or one of the exact assigned root members.",
+		noAssistantUiForbiddenApi:
+			"assistant-ui API '{{member}}' is a transport, thread-list, queue, tool, voice, or copied-Element API and is forbidden; keep that behavior in Archboard-owned modules.",
+		noAssistantUiWrongOwner:
+			"assistant-ui member '{{member}}' belongs to a different Archboard module; import it only from its named owner.",
+		noAssistantUiNestedMember:
+			"assistant-ui nested member '{{member}}' is not part of Archboard's contract; use the Archboard-owned composition instead of reaching into primitive internals.",
+		noAssistantUiAlias:
+			"Do not alias an assistant-ui import; use the exact assigned local member name so ownership remains enforceable.",
+		noAssistantUiNonLiteral:
+			"Do not hide assistant-ui behind a non-literal dynamic import or require; use a static named root import so ownership is enforceable.",
+	},
+	(context) => {
+		const relativePath = getRepoRelativePath(context);
+		const owner = assistantUiOwner(relativePath);
+		const localAssistantUiMembers = new Map();
+		const nestedMembers = new Map([
+			["ComposerPrimitive", new Set(["Queue", "Dictate", "StopDictation", "DictationTranscript"])],
+			["MessagePrimitive", new Set(["GenerativeUI"])],
+		]);
+
+		function checkSource(source, node, kind, specifiers = []) {
+			if (source === "radix-ui" || source.startsWith("@radix-ui/")) {
+				report(context, node, "noDirectRadixImport");
+				return;
+			}
+			if (
+				[...ASSISTANT_UI_AUXILIARY_PACKAGES].some(
+					(packageName) => source === packageName || source.startsWith(`${packageName}/`),
+				)
+			) {
+				report(context, node, "noAssistantUiAuxiliaryPackage");
+				return;
+			}
+			if (!source.startsWith("@assistant-ui/")) return;
+			if (!source.startsWith(ASSISTANT_UI_PACKAGE)) {
+				report(context, node, "noAssistantUiAlternatePackage");
+				return;
+			}
+			if (source !== ASSISTANT_UI_PACKAGE) {
+				report(context, node, "noAssistantUiSubpath");
+				return;
+			}
+			if (!owner) {
+				report(context, node, "noAssistantUiOwner");
+				return;
+			}
+			if (kind === "re-export") {
+				report(context, node, "noAssistantUiReExport");
+				return;
+			}
+			if (specifiers.length === 0) {
+				report(context, node, "noAssistantUiNamedImport");
+				return;
+			}
+			for (const specifier of specifiers) {
+				if (specifier.type === "ImportDefaultSpecifier") {
+					report(context, specifier, "noAssistantUiDefault");
+					continue;
+				}
+				if (specifier.type === "ImportNamespaceSpecifier") {
+					report(context, specifier, "noAssistantUiNamespace");
+					continue;
+				}
+				const importedName = assistantUiImportedName(specifier);
+				if (!importedName) {
+					report(context, specifier, "noAssistantUiNamedImport");
+					continue;
+				}
+				if (ASSISTANT_UI_FORBIDDEN_APIS.has(importedName)) {
+					context.report({
+						node: specifier,
+						messageId: "noAssistantUiForbiddenApi",
+						data: { member: importedName },
+					});
+					continue;
+				}
+				const expectedOwner = ASSISTANT_UI_MEMBER_OWNERS.get(importedName);
+				if (!expectedOwner) {
+					context.report({
+						node: specifier,
+						messageId: "noAssistantUiMember",
+						data: { member: importedName },
+					});
+					continue;
+				}
+				if (expectedOwner !== owner)
+					context.report({
+						node: specifier,
+						messageId: "noAssistantUiWrongOwner",
+						data: { member: importedName },
+					});
+				if (specifier.local?.name !== importedName) {
+					context.report({
+						node: specifier,
+						messageId: "noAssistantUiAlias",
+					});
+				}
+			}
+		}
+
+		function checkNestedMember(node) {
+			if (node.object?.type !== "Identifier") return;
+			const importedName = localAssistantUiMembers.get(node.object.name);
+			if (!importedName) return;
+			const propertyName = node.computed
+				? node.property?.type === "Literal" && typeof node.property.value === "string"
+					? node.property.value
+					: undefined
+				: node.property?.name;
+			if (!propertyName) {
+				if (node.computed) report(context, node, "noAssistantUiNonLiteral");
+				return;
+			}
+			if (!nestedMembers.get(importedName)?.has(propertyName)) return;
+			context.report({
+				node,
+				messageId: "noAssistantUiNestedMember",
+				data: { member: `${importedName}.${propertyName}` },
+			});
+		}
+
+		return {
+			ImportDeclaration(node) {
+				checkSource(node.source.value, node.source, "import", node.specifiers);
+				if (node.source.value !== ASSISTANT_UI_PACKAGE) return;
+				for (const specifier of node.specifiers) {
+					const importedName = assistantUiImportedName(specifier);
+					if (importedName && specifier.local?.name)
+						localAssistantUiMembers.set(specifier.local.name, importedName);
+				}
+			},
+			ExportNamedDeclaration(node) {
+				if (node.source?.value) checkSource(node.source.value, node.source, "re-export");
+			},
+			ExportAllDeclaration(node) {
+				if (node.source?.value) checkSource(node.source.value, node.source, "re-export");
+			},
+			ImportExpression(node) {
+				if (node.source?.type === "Literal" && typeof node.source.value === "string")
+					checkSource(node.source.value, node.source, "import");
+				else if (owner) report(context, node, "noAssistantUiNonLiteral");
+			},
+			TSImportType(node) {
+				if (node.source?.value && typeof node.source.value === "string")
+					checkSource(node.source.value, node.source, "import");
+			},
+			CallExpression(node) {
+				const argument = node.arguments[0];
+				if (node.callee.type !== "Identifier" || node.callee.name !== "require") return;
+				if (argument?.type === "Literal" && typeof argument.value === "string")
+					checkSource(argument.value, argument, "import");
+				else if (owner) report(context, node, "noAssistantUiNonLiteral");
+			},
+			MemberExpression: checkNestedMember,
+			ChainExpression(node) {
+				if (node.expression?.type === "MemberExpression") checkNestedMember(node.expression);
+			},
+			VariableDeclarator(node) {
+				if (node.init?.type !== "Identifier") return;
+				const importedName = localAssistantUiMembers.get(node.init.name);
+				if (node.id?.type === "Identifier") {
+					if (importedName) localAssistantUiMembers.set(node.id.name, importedName);
+					return;
+				}
+				if (node.id?.type !== "ObjectPattern") return;
+				if (!importedName) return;
+				for (const property of node.id.properties ?? []) {
+					const key = property.key;
+					const propertyName = key?.name ?? key?.value;
+					if (property.computed && typeof propertyName !== "string") {
+						report(context, property, "noAssistantUiNonLiteral");
+						continue;
+					}
+					if (
+						typeof propertyName === "string" &&
+						nestedMembers.get(importedName)?.has(propertyName)
+					)
+						context.report({
+							node: property,
+							messageId: "noAssistantUiNestedMember",
+							data: { member: `${importedName}.${propertyName}` },
+						});
+				}
+			},
+		};
+	},
+);
 
 function report(context, node, messageId) {
 	context.report({
@@ -538,6 +834,7 @@ const plugin = {
 	},
 	rules: {
 		"no-anonymous-jsx-handlers": noAnonymousJsxHandlers,
+		"assistant-ui-imports": assistantUiImports,
 		"no-catch-all-exports": noCatchAllExports,
 		"no-compatibility-identifiers": noCompatibilityIdentifiers,
 		"no-generic-buckets": noGenericBuckets,
