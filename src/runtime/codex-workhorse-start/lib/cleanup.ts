@@ -45,7 +45,7 @@ export async function compensateAfterBindFailure(
 	try {
 		readResponse = await options.session.threadRead({
 			threadId: started.threadId,
-			includeTurns: false,
+			includeTurns: true,
 		});
 	} catch (error) {
 		return inspectAfterBindFailure(

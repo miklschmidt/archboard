@@ -43,6 +43,7 @@ import {
 	validateWorkhorseStartResponse,
 	type ValidatedWorkhorseStart,
 } from "./validation.js";
+import { cloneAndFreeze } from "./immutability.js";
 
 export function createCodexWorkhorseStart(
 	options: CodexWorkhorseStartOptions,
@@ -262,13 +263,13 @@ export function createCodexWorkhorseStart(
 
 		let binding: ThreadLinkBindingSnapshot;
 		try {
-			const target: ThreadLinkTarget = {
+			const target: ThreadLinkTarget = cloneAndFreeze({
 				threadId: started.threadId,
 				childId,
 				epoch,
 				operationId,
 				provenance: proof,
-			};
+			});
 			binding = await options.threadLink.classifyAndBind(input.paneId, input.expected, target);
 		} catch (error) {
 			latest = await compensateAfterBindFailure(

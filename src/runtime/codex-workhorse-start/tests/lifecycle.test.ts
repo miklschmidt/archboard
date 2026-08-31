@@ -6,7 +6,7 @@ import {
 	WORKHORSE_OPERATION_KIND,
 	WORKHORSE_RPC,
 } from "../index.js";
-import { CHECKOUT_ROOT, inspectOnlyBinding, makeFixture } from "./support.js";
+import { CHECKOUT_ROOT, inspectOnlyBinding, makeFixture, turnFixture } from "./support.js";
 
 describe("codex workhorse start transaction", () => {
 	test("stages, confirms, and binds with one canonical operation correlation", async () => {
@@ -175,7 +175,7 @@ describe("codex workhorse start transaction", () => {
 				outcome: "delivered",
 			});
 			expect(fixture.session.readParams).toEqual([
-				{ threadId: fixture.thread.id, includeTurns: false },
+				{ threadId: fixture.thread.id, includeTurns: true },
 			]);
 			expect(fixture.session.deleteParams).toEqual([{ threadId: fixture.thread.id }]);
 			const cleanupRecord = fixture.epoch
@@ -189,6 +189,33 @@ describe("codex workhorse start transaction", () => {
 				provenance: { threadId: fixture.thread.id, threadSource: "appServer" },
 			});
 			expect(result.cleanup?.operationId).not.toBe(result.operationId);
+		} finally {
+			fixture.dispose();
+		}
+	});
+
+	test("refuses cleanup when an idle reread contains a turn", async () => {
+		const fixture = makeFixture();
+		try {
+			fixture.link.outcome = new Error("bind failed");
+			fixture.session.readResult = {
+				thread: { ...fixture.thread, turns: [turnFixture(fixture.authorities)] },
+			};
+			const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+
+			expect(result.state).toBe("inspect_only");
+			expect(result.cleanup).toBeNull();
+			expect(fixture.session.readParams).toEqual([
+				{ threadId: fixture.thread.id, includeTurns: true },
+			]);
+			expect(fixture.session.deleteParams).toHaveLength(0);
+			expect(
+				fixture.epoch
+					.snapshot()
+					.manifest.records.some(
+						(record) => record.operation.kind === WORKHORSE_CLEANUP_OPERATION_KIND,
+					),
+			).toBe(false);
 		} finally {
 			fixture.dispose();
 		}
