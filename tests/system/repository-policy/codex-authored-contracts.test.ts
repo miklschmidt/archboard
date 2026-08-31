@@ -235,9 +235,15 @@ function composeCoordinatorInstructions(
 const reviewedDigests: ReviewedDigest[] = [
 	{
 		name: "complete authored contract prose and literals",
-		consumer: "TASK-143.01.07, TASK-143.05.03, and TASK-143.07.07",
-		expected: "2fd0a5a9ea1b526bd05c514eb69cca6bf744edfe88c2792d6180dbb8a05b7036",
+		consumer: "TASK-143.01.07, TASK-143.01.19, TASK-143.05.03, and TASK-143.07.07",
+		expected: "8c6a279a1c6a543d8a173cf12b6977477d522b0d0f3f9c4189d4a8430639661a",
 		read: () => contractBytes,
+	},
+	{
+		name: "dynamic coordination approval policy manifest",
+		consumer: "TASK-143.01.20, TASK-143.01.21, TASK-143.05.04, and TASK-143.03.07",
+		expected: "d11a60e423f4a0f0fc80f229987d7f0f726bf83a328878913b7b9ef358a84327",
+		read: () => fenceAfter("The strict manifest is the semantic source", "json"),
 	},
 	{
 		name: "canonical additional-context policy manifest",
@@ -301,7 +307,7 @@ const reviewedDigests: ReviewedDigest[] = [
 
 describe("Codex authored contract repository policy", () => {
 	test("keeps one strict JSON value in every reviewed JSON fence", () => {
-		expect(jsonBlocks()).toHaveLength(24);
+		expect(jsonBlocks()).toHaveLength(25);
 		expect(() => parseStrictJson('{"manifest":{"name":"first","name":"second"}}', "probe")).toThrow(
 			'duplicate key "name" at $.manifest',
 		);
