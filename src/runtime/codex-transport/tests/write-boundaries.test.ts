@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { CodexTransportRequestError } from "../errors.js";
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
-import { captureRejection, closeTransport, createHarness } from "./fake-child.js";
+import { captureRejection, createHarness } from "./fake-child.js";
 
 describe("Codex app-server write boundaries", () => {
 	test("classifies pre-write rejection and accepted writer failure separately", async () => {
@@ -21,7 +21,7 @@ describe("Codex app-server write boundaries", () => {
 				retryEligible: true,
 			});
 		} finally {
-			await closeTransport(oversized.transport, oversized.child);
+			await oversized.close();
 		}
 
 		const failed = createHarness();
@@ -39,7 +39,7 @@ describe("Codex app-server write boundaries", () => {
 			});
 			expect(failed.transport.inspect().state).toBe("closed");
 		} finally {
-			await closeTransport(failed.transport, failed.child);
+			await failed.close();
 		}
 	});
 });
