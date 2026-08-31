@@ -14,13 +14,13 @@ import {
 import {
 	CodexThreadLinkConflictError,
 	CodexThreadLinkError,
-	type CodexThreadLinkBindingOptions,
 	type ThreadLink,
 	type ThreadLinkBindingSnapshot,
 	type ThreadLinkClassification,
 	type ThreadLinkCasToken,
 	type ThreadLinkCompareAndSwapInput,
 	type ThreadLinkCurrentEpoch,
+	type ThreadLinkEpochAuthority,
 	type ThreadLinkNonExecutableSnapshot,
 	type ThreadLinkSnapshot,
 	type ThreadLinkSource,
@@ -47,6 +47,10 @@ const EMPTY_LINK: UnboundThreadLink = Object.freeze({
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+interface ThreadLinkBindingAuthorityOptions {
+	readonly epoch: ThreadLinkEpochAuthority;
 }
 
 function invalidInput(message: string): CodexThreadLinkError {
@@ -196,25 +200,14 @@ function isCurrentEpoch(value: unknown): value is ThreadLinkCurrentEpoch {
 	);
 }
 
-function liveEpochOf(options: CodexThreadLinkBindingOptions): ThreadLinkCurrentEpoch | null {
+function liveEpochOf(options: ThreadLinkBindingAuthorityOptions): ThreadLinkCurrentEpoch | null {
 	try {
-		if (options.currentEpoch !== undefined) {
-			const value =
-				typeof options.currentEpoch === "function" ? options.currentEpoch() : options.currentEpoch;
-			if (value === null) return null;
-			if (!isCurrentEpoch(value)) {
-				throw new Error("the current epoch source returned an invalid child/epoch pair");
-			}
-			return Object.freeze({ childId: value.childId, epoch: value.epoch });
+		const active = options.epoch.snapshot().manifest.activeEpoch;
+		if (active === null) return null;
+		if (!isCurrentEpoch(active)) {
+			throw new Error("the epoch store returned an invalid active child/epoch pair");
 		}
-		if (options.epoch !== undefined) {
-			const active = options.epoch.snapshot().manifest.activeEpoch;
-			if (active === null) return null;
-			if (!isCurrentEpoch(active)) {
-				throw new Error("the epoch store returned an invalid active child/epoch pair");
-			}
-			return Object.freeze({ childId: active.childId, epoch: active.epoch });
-		}
+		return Object.freeze({ childId: active.childId, epoch: active.epoch });
 	} catch (error) {
 		throw new CodexThreadLinkError(
 			"current_epoch_unavailable",
@@ -222,16 +215,20 @@ function liveEpochOf(options: CodexThreadLinkBindingOptions): ThreadLinkCurrentE
 			error,
 		);
 	}
-	return null;
 }
 
 function assertLiveEpoch(
-	options: CodexThreadLinkBindingOptions,
+	options: ThreadLinkBindingAuthorityOptions | null,
 	paneId: string,
 	revision: number,
 	next: ThreadLinkSnapshot,
 ): void {
 	if (next.state !== "executable") return;
+	if (options === null) {
+		throw invalidInput(
+			"An executable thread link requires a live epoch authority; use createCodexThreadLink.",
+		);
+	}
 	const current = liveEpochOf(options);
 	if (current === null || next.childId !== current.childId || next.epoch !== current.epoch) {
 		throw new CodexThreadLinkConflictError(
@@ -249,14 +246,14 @@ function copyLink(link: ThreadLinkNonExecutableSnapshot | ThreadLink): ThreadLin
 }
 
 function assertAuthoritativeProof(
-	options: CodexThreadLinkBindingOptions,
+	options: ThreadLinkBindingAuthorityOptions | null,
 	paneId: string,
 	revision: number,
 	link: ThreadLink,
 	classification: ThreadLinkClassification,
 ): void {
 	if (link.state !== "executable") return;
-	if (options.epoch === undefined || classification.proof === null) {
+	if (options === null || classification.proof === null) {
 		throw invalidInput(
 			"An executable thread link requires a classifier result with a live durable epoch proof.",
 		);
@@ -308,8 +305,8 @@ interface ThreadLinkBindingController extends ThreadLinkBindingStore {
 	) => ThreadLinkBindingSnapshot;
 }
 
-export function createCodexThreadLinkBindingController(
-	options: CodexThreadLinkBindingOptions = {},
+function createBindingController(
+	options: ThreadLinkBindingAuthorityOptions | null,
 ): ThreadLinkBindingController {
 	const bindings = new Map<string, ThreadLinkBindingSnapshot>();
 
@@ -375,10 +372,14 @@ export function createCodexThreadLinkBindingController(
 	});
 }
 
-export function createCodexThreadLinkBinding(
-	options: CodexThreadLinkBindingOptions = {},
-): ThreadLinkBindingStore {
-	const controller = createCodexThreadLinkBindingController(options);
+export function createCodexThreadLinkBindingController(
+	options: ThreadLinkBindingAuthorityOptions,
+): ThreadLinkBindingController {
+	return createBindingController(options);
+}
+
+export function createCodexThreadLinkBinding(): ThreadLinkBindingStore {
+	const controller = createBindingController(null);
 	return Object.freeze({
 		snapshot: controller.snapshot,
 		read: controller.read,

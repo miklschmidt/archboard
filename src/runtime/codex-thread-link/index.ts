@@ -1,6 +1,10 @@
 import { createCodexThreadLinkBindingController } from "./lib/binding.js";
 import { createCodexThreadLinkClassifier } from "./lib/classifier.js";
-import type { CodexThreadLinkClassifierOptions, CodexThreadLinkPort } from "./lib/contract.js";
+import type {
+	CodexThreadLinkClassifierOptions,
+	CodexThreadLinkPort,
+	ThreadLinkEpochAuthority,
+} from "./lib/contract.js";
 
 export { createCodexThreadLinkBinding } from "./lib/binding.js";
 export { classifyCodexThreadLink, createCodexThreadLinkClassifier } from "./lib/classifier.js";
@@ -8,7 +12,6 @@ export { CodexThreadLinkConflictError, CodexThreadLinkError } from "./lib/contra
 export type {
 	CodexThreadLinkClassifier,
 	CodexThreadLinkClassifierOptions,
-	CodexThreadLinkBindingOptions,
 	CodexThreadLinkPort,
 	EpochExecutionProof,
 	EpochOperationOutcome,
@@ -44,7 +47,9 @@ export type {
 	UnboundThreadLink,
 } from "./lib/contract.js";
 
-export type CodexThreadLinkOptions = CodexThreadLinkClassifierOptions;
+export interface CodexThreadLinkOptions extends Omit<CodexThreadLinkClassifierOptions, "epoch"> {
+	readonly epoch: ThreadLinkEpochAuthority;
+}
 
 /** Combine deterministic classification with a proof-checked pane binding boundary. */
 export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThreadLinkPort {
