@@ -8,6 +8,10 @@ const WIRE_PATTERN = new RegExp(
 const EPOCH_TOKEN_PATTERN = new RegExp(
 	`^([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})\\.([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})$`,
 );
+export const OPERATION_ID_MAX_BYTES = 128 as const;
+const OPERATION_TOKEN_PATTERN = new RegExp(
+	`^([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})\\.(h[0-9a-f]{32})$`,
+);
 const TEXT_LIMIT = 256;
 
 declare const identityBrand: unique symbol;
@@ -24,7 +28,8 @@ export type IdentityDomain =
 	| "json-rpc-request"
 	| "dynamic-tool-call"
 	| "realtime-session"
-	| "approval";
+	| "approval"
+	| "operation";
 
 const IDENTITY_DOMAINS = new Set<IdentityDomain>([
 	"child",
@@ -39,6 +44,7 @@ const IDENTITY_DOMAINS = new Set<IdentityDomain>([
 	"dynamic-tool-call",
 	"realtime-session",
 	"approval",
+	"operation",
 ]);
 
 type BrandedIdentity<Domain extends IdentityDomain> = string & {
@@ -59,6 +65,8 @@ export type JsonRpcRequestId = BrandedIdentity<"json-rpc-request">;
 export type DynamicToolCallId = BrandedIdentity<"dynamic-tool-call">;
 export type RealtimeSessionId = BrandedIdentity<"realtime-session">;
 export type ApprovalId = BrandedIdentity<"approval">;
+/** A host-issued workbench mutation correlation, bound to one child epoch. */
+export type OperationId = BrandedIdentity<"operation">;
 
 export type AnyIdentity =
 	| ChildId
@@ -72,7 +80,8 @@ export type AnyIdentity =
 	| JsonRpcRequestId
 	| DynamicToolCallId
 	| RealtimeSessionId
-	| ApprovalId;
+	| ApprovalId
+	| OperationId;
 
 /** Identities that may appear in Codex requests or reverse requests. */
 export type CodexIdentity =
@@ -227,6 +236,46 @@ function mintEpochValue(child: ChildId): ChildEpoch {
 	return wireValue("epoch", `${tokenOf(child)}.h${mintToken()}`);
 }
 
+function operationWireValue(epoch: ChildEpoch): OperationId {
+	const value = wireValue("operation", `${tokenOf(epoch)}.h${mintToken()}`);
+	if (new TextEncoder().encode(value).byteLength > OPERATION_ID_MAX_BYTES) {
+		return fail(
+			"invalid-shape",
+			`Operation identity exceeds ${OPERATION_ID_MAX_BYTES} UTF-8 bytes.`,
+			"operation",
+		);
+	}
+	return value;
+}
+
+function requireOperationToken(value: unknown, childId: ChildId, epoch: ChildEpoch): string {
+	const token = requireToken(value, "operation");
+	if (new TextEncoder().encode(String(value)).byteLength > OPERATION_ID_MAX_BYTES) {
+		return fail(
+			"invalid-shape",
+			`Operation identity exceeds ${OPERATION_ID_MAX_BYTES} UTF-8 bytes.`,
+			"operation",
+		);
+	}
+	const match = OPERATION_TOKEN_PATTERN.exec(token);
+	const epochToken = match?.[1];
+	if (epochToken === undefined || !EPOCH_TOKEN_PATTERN.test(epochToken)) {
+		return fail(
+			"invalid-shape",
+			"Operation identity must carry a durable epoch token.",
+			"operation",
+		);
+	}
+	const currentEpochToken = tokenOf(epoch);
+	if (epochToken !== currentEpochToken) {
+		if (epochToken.startsWith(`${tokenOf(childId)}.`)) {
+			return fail("stale-epoch", "The operation belongs to a stale child epoch.", "operation");
+		}
+		return fail("wrong-child", "The operation belongs to another child.", "operation");
+	}
+	return token;
+}
+
 function isWellFormedUnicode(value: string): boolean {
 	for (let index = 0; index < value.length; index++) {
 		const codeUnit = value.charCodeAt(index);
@@ -351,7 +400,16 @@ export interface IdentityValidator {
 	readonly epoch: ChildEpoch;
 	readonly isCurrentEpoch: (child: ChildId, epoch: ChildEpoch) => boolean;
 	readonly assertCurrentEpoch: (child: ChildId, epoch: ChildEpoch) => void;
+	readonly isCurrentOperationId: (operationId: OperationId) => boolean;
+	readonly assertCurrentOperationId: (operationId: OperationId) => void;
+	readonly validateOperationId: (operationId: OperationId) => void;
 }
+
+/** The only capability ordinary mutation owners need to validate an OperationId. */
+export type OperationIdValidator = Pick<
+	IdentityValidator,
+	"isCurrentOperationId" | "assertCurrentOperationId" | "validateOperationId"
+>;
 
 /** Host-owned IDs are minted here; server-owned IDs can only enter via the trusted decoder. */
 export interface IdentityIssuer {
@@ -359,7 +417,11 @@ export interface IdentityIssuer {
 	readonly mintJsonRpcRequestId: () => JsonRpcRequestId;
 	readonly mintRealtimeSessionId: () => RealtimeSessionId;
 	readonly mintChildEpoch: () => ChildEpoch;
+	readonly mintOperationId: () => OperationId;
 }
+
+/** The only capability that can issue a host-owned OperationId. */
+export type OperationIdIssuer = Pick<IdentityIssuer, "mintOperationId">;
 
 /** Raw server identities collected from one decoded app-server response. */
 export interface CodexResponseIdentityBatch {
@@ -396,6 +458,7 @@ export interface TrustedIdentityDecoder {
 	readonly parseDynamicToolCallId: (value: unknown) => DynamicToolCallId;
 	readonly parseRealtimeSessionId: (value: unknown) => RealtimeSessionId;
 	readonly parseApprovalId: (value: unknown) => ApprovalId;
+	readonly parseOperationId: (value: unknown) => OperationId;
 	/** Resolves a raw Codex thread id only when this authority already issued it. */
 	readonly resolveThreadId: (raw: unknown) => ThreadId;
 	readonly adoptThreadId: (raw: unknown) => ThreadId;
@@ -412,6 +475,7 @@ export interface TrustedIdentityDecoder {
 	) => AdoptedCodexResponseIdentityBatch;
 	readonly serializeCodexIdentity: (identity: CodexIdentity) => string;
 	readonly serializeJsonRpcRequestId: (identity: JsonRpcRequestId) => JsonRpcRequestIdWireValue;
+	readonly serializeOperationId: (identity: OperationId) => string;
 	readonly createWireRequestCorrelation: (
 		input: WireRequestCorrelationInput,
 	) => WireRequestCorrelation;
@@ -421,6 +485,12 @@ export interface TrustedIdentityDecoder {
 	) => LogicalToolCallCorrelation;
 	readonly parseLogicalToolCallCorrelation: (value: unknown) => LogicalToolCallCorrelation;
 }
+
+/** Trusted protocol code may parse and serialize, but never adopt, OperationIds. */
+export type TrustedOperationIdDecoder = Pick<
+	TrustedIdentityDecoder,
+	"parseOperationId" | "serializeOperationId"
+>;
 
 export interface IdentityAuthority {
 	readonly validator: IdentityValidator;
@@ -470,6 +540,11 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 	const mint = <Domain extends IdentityDomain>(domain: Domain): IdentityValue<Domain> => {
 		const raw = mintToken();
 		return issue(domain, `h${raw}`, raw);
+	};
+	const mintOperation = (): OperationId => {
+		let value = operationWireValue(epoch);
+		while (issued.get("operation")?.has(value) === true) value = operationWireValue(epoch);
+		return issue("operation", tokenOf(value), value);
 	};
 	const adopt = <Domain extends AdoptableDomain>(
 		domain: Domain,
@@ -553,6 +628,12 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		assertIssued(parsed, domain, issued);
 		return parsed;
 	};
+	const parseOperation = (value: unknown): OperationId => {
+		const parsed = parseValue(value, "operation");
+		requireOperationToken(parsed, childId, epoch);
+		assertIssued(parsed, "operation", issued);
+		return parsed;
+	};
 	const resolveThreadId = (rawValue: unknown): ThreadId => {
 		if (typeof rawValue !== "string") {
 			return fail("invalid-shape", "The server thread identity must be a string.", "thread");
@@ -587,6 +668,18 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		if (raw === undefined) return fail("unissued", "Identity has no trusted wire value.", domain);
 		return raw;
 	};
+	const assertCurrentOperationId = (value: OperationId): void => {
+		parseOperation(value);
+	};
+	const isCurrentOperationId = (value: OperationId): boolean => {
+		try {
+			assertCurrentOperationId(value);
+			return true;
+		} catch (error) {
+			if (error instanceof IdentityValidationError) return false;
+			throw error;
+		}
+	};
 
 	const validator: IdentityValidator = {
 		childId,
@@ -594,6 +687,9 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		isCurrentEpoch: (child, candidateEpoch) => child === childId && candidateEpoch === epoch,
 		assertCurrentEpoch: (child, candidateEpoch) =>
 			assertCurrent(child, candidateEpoch, childId, epoch),
+		isCurrentOperationId,
+		assertCurrentOperationId,
+		validateOperationId: assertCurrentOperationId,
 	};
 	const issuer: IdentityIssuer = {
 		mintBrowserCommandId: () => mint("browser-command"),
@@ -604,6 +700,7 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 			issueExisting("epoch", nextEpoch, tokenOf(nextEpoch));
 			return nextEpoch;
 		},
+		mintOperationId: mintOperation,
 	};
 	const decoder: TrustedIdentityDecoder = {
 		parseChildId: (value) => parseIssued("child", value),
@@ -622,6 +719,7 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		parseDynamicToolCallId: (value) => parseIssued("dynamic-tool-call", value),
 		parseRealtimeSessionId: (value) => parseIssued("realtime-session", value),
 		parseApprovalId: (value) => parseIssued("approval", value),
+		parseOperationId: parseOperation,
 		resolveThreadId,
 		adoptThreadId: (raw) => adopt("thread", raw),
 		adoptTurnId: (raw) => adopt("turn", raw),
@@ -634,6 +732,7 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		adoptCodexResponseIdentities,
 		serializeCodexIdentity: serialize,
 		serializeJsonRpcRequestId: serializeJsonRpc,
+		serializeOperationId: (value) => parseOperation(value),
 		createWireRequestCorrelation: (input) => {
 			const requestId = parseIssued("json-rpc-request", input.requestId);
 			return Object.freeze({ child: childId, epoch, requestId });

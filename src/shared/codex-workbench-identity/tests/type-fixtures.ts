@@ -10,10 +10,15 @@ import type {
 	JsonRpcRequestId,
 	LogicalToolCallCorrelation,
 	LoginId,
+	OperationId,
+	OperationIdIssuer,
+	OperationIdValidator,
 	QueuedSubmissionId,
 	RealtimeSessionId,
 	ThreadId,
 	TurnId,
+	TrustedIdentityDecoder,
+	TrustedOperationIdDecoder,
 	WireRequestCorrelation,
 } from "../index.js";
 
@@ -34,8 +39,13 @@ declare const browserCommand: BrowserCommandId;
 declare const toolCall: DynamicToolCallId;
 declare const realtime: RealtimeSessionId;
 declare const approval: ApprovalId;
+declare const operation: OperationId;
 declare const validator: IdentityValidator;
 declare const issuer: IdentityIssuer;
+declare const decoder: TrustedIdentityDecoder;
+declare const operationValidator: OperationIdValidator;
+declare const operationIssuer: OperationIdIssuer;
+declare const operationDecoder: TrustedOperationIdDecoder;
 
 // Every directed pair is checked so adding a shared string brand cannot make
 // one of the six protocol identities silently interchangeable.
@@ -84,6 +94,33 @@ type _OtherIdentitiesRemainOpaque = [
 	AssertFalse<IsAssignable<RealtimeSessionId, ApprovalId>>,
 ];
 
+type _OperationIdRemainsOpaque = [
+	AssertFalse<IsAssignable<OperationId, ChildId>>,
+	AssertFalse<IsAssignable<OperationId, ChildEpoch>>,
+	AssertFalse<IsAssignable<OperationId, BrowserCommandId>>,
+	AssertFalse<IsAssignable<OperationId, ThreadId>>,
+	AssertFalse<IsAssignable<OperationId, TurnId>>,
+	AssertFalse<IsAssignable<OperationId, ItemId>>,
+	AssertFalse<IsAssignable<OperationId, QueuedSubmissionId>>,
+	AssertFalse<IsAssignable<OperationId, LoginId>>,
+	AssertFalse<IsAssignable<OperationId, JsonRpcRequestId>>,
+	AssertFalse<IsAssignable<OperationId, DynamicToolCallId>>,
+	AssertFalse<IsAssignable<OperationId, RealtimeSessionId>>,
+	AssertFalse<IsAssignable<OperationId, ApprovalId>>,
+	AssertFalse<IsAssignable<ChildId, OperationId>>,
+	AssertFalse<IsAssignable<ChildEpoch, OperationId>>,
+	AssertFalse<IsAssignable<BrowserCommandId, OperationId>>,
+	AssertFalse<IsAssignable<ThreadId, OperationId>>,
+	AssertFalse<IsAssignable<TurnId, OperationId>>,
+	AssertFalse<IsAssignable<ItemId, OperationId>>,
+	AssertFalse<IsAssignable<QueuedSubmissionId, OperationId>>,
+	AssertFalse<IsAssignable<LoginId, OperationId>>,
+	AssertFalse<IsAssignable<JsonRpcRequestId, OperationId>>,
+	AssertFalse<IsAssignable<DynamicToolCallId, OperationId>>,
+	AssertFalse<IsAssignable<RealtimeSessionId, OperationId>>,
+	AssertFalse<IsAssignable<ApprovalId, OperationId>>,
+];
+
 type _ExactCorrelationKeys = [
 	Assert<Equal<keyof WireRequestCorrelation, "child" | "epoch" | "requestId">>,
 	Assert<
@@ -102,6 +139,22 @@ validator.parseJsonRpcRequestId("request");
 // @ts-expect-error IdentityIssuer must not adopt server-owned identities.
 issuer.adoptThreadId("thread");
 
+// The operation capability is the exact reusable type accepted by the three
+// future workbench mutation owners.
+operationValidator.assertCurrentOperationId(operation);
+operationValidator.validateOperationId(operation);
+operationIssuer.mintOperationId();
+operationDecoder.parseOperationId(operation);
+operationDecoder.serializeOperationId(operation);
+// @ts-expect-error OperationId cannot be supplied as a plain string.
+operationIssuer.mintOperationId("caller-supplied");
+// @ts-expect-error Validation does not mint or adopt operation identities.
+operationValidator.adoptOperationId("operation");
+// @ts-expect-error Trusted operation decoding has no server-owned adoption.
+operationDecoder.adoptOperationId("operation");
+// @ts-expect-error OperationId is not a server-owned Codex identity.
+decoder.serializeCodexIdentity(operation);
+
 export type IdentityTypeFixture = [
 	typeof child,
 	typeof childEpoch,
@@ -119,5 +172,6 @@ export type IdentityTypeFixture = [
 	_NoItemCrossAssignment,
 	_NoLoginRequestCrossAssignment,
 	_OtherIdentitiesRemainOpaque,
+	_OperationIdRemainsOpaque,
 	_ExactCorrelationKeys,
 ];
