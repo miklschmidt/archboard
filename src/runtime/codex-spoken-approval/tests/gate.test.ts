@@ -62,7 +62,10 @@ describe("spoken approval state gate", () => {
 		] as const;
 		for (const [record, reason] of cases) {
 			const h = harness({
-				records: [transcript("assistant", "final", PROMPT.itemId, 10, "Run echo approved"), record],
+				records: [
+					transcript("assistant", "final", PROMPT.itemId, 10, "Run echo approved in /workspace"),
+					record,
+				],
 			});
 			const snapshot = h.gate.arm(h.armInput);
 			expect(snapshot.state).toBe("visual_fallback");
@@ -98,6 +101,21 @@ describe("spoken approval state gate", () => {
 			state: "visual_fallback",
 			reason: "invalid_effect_prompt",
 		});
+	});
+
+	test("keeps null and omitted command approvals visual-only", () => {
+		for (const options of [{ command: null }, { omitCommand: true }]) {
+			const h = harness(options);
+			expect(h.broker.spokenEligibility(h.approval.requestId)).toEqual({
+				eligible: false,
+				reason: "unsupported_schema",
+			});
+			expect(h.gate.arm(h.armInput)).toMatchObject({
+				state: "visual_fallback",
+				reason: "not_eligible",
+			});
+			expect(h.startParams).toHaveLength(0);
+		}
 	});
 
 	test("falls back on stale session, empty final text, assistant speech, and realtime failure", () => {
