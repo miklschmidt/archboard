@@ -62,13 +62,13 @@ describe("brand typography assets", () => {
 
 	test("loads only the pinned application families and supported weights", () => {
 		const css = fs.readFileSync(path.join(repoRoot, "src/ui/shell/shell.css"), "utf8");
-		expect(css).toContain('--font-ui: "Archboard Onest";');
-		expect(css).toContain('--font-mono: "Archboard DM Mono";');
+		expect(css).toContain("--font-ui: var(--arch-font-ui);");
+		expect(css).toContain("--font-mono: var(--arch-font-technical);");
 		expect(css).toContain("font-synthesis: none;");
 		expect(css).toContain("font-weight: 400 700;");
 		expect(css).toContain("font-weight: 400;");
 		expect(css).toContain("font-weight: 500;");
-		expect(css).toContain("--wordmark-tracking: -0.02027027027em;");
+		expect(css).toContain("--wordmark-tracking: var(--arch-wordmark-tracking);");
 		expect(css).toContain('mask: url("./assets/archboard-wordmark.svg")');
 		expect(css).not.toMatch(/\b(?:Inter|Geist|Manrope|ui-monospace|SFMono|Consolas)\b/);
 		expect(css).not.toContain("Onest-Medium-v1.000.ttf");
@@ -83,14 +83,22 @@ describe("brand typography assets", () => {
 		expect(boardBar).toContain("<title>archboard</title>");
 		expect(boardBar).not.toContain("dangerouslySetInnerHTML");
 
-		const declaredWeights = [
-			...[...css.matchAll(/font-weight:\s*(\d+)(?:\s+(\d+))?/g)].flatMap((match) =>
-				match[2] ? [Number(match[1]), Number(match[2])] : [Number(match[1])],
+		const productRules = css.slice(css.indexOf(".shell {"));
+		const declaredWeightRoles = [
+			...[...productRules.matchAll(/font-weight:\s*var\(--arch-weight-([a-z]+)\)/g)].map(
+				(match) => match[1],
 			),
-			...[...css.matchAll(/font:\s*(\d+)\s+/g)].map((match) => Number(match[1])),
+			...[...productRules.matchAll(/font:\s*var\(--arch-weight-([a-z]+)\)/g)].map(
+				(match) => match[1],
+			),
 		];
-		expect(declaredWeights.length).toBeGreaterThan(20);
-		expect(declaredWeights.every((weight) => [400, 500, 600, 700].includes(weight))).toBe(true);
+		expect(declaredWeightRoles.length).toBeGreaterThan(20);
+		expect(
+			declaredWeightRoles.every((weight) =>
+				["regular", "medium", "semibold", "bold"].includes(weight!),
+			),
+		).toBe(true);
+		expect(productRules).not.toMatch(/(?:font|font-weight):\s*(?:400|500|600|700)\b/);
 
 		const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8")) as {
 			devDependencies: Record<string, string>;
@@ -98,5 +106,36 @@ describe("brand typography assets", () => {
 		};
 		expect(pkg.devDependencies["opentype.js"]).toBe("1.3.4");
 		expect(pkg.scripts["generate:wordmark"]).toBe("bun scripts/generate-wordmark.ts");
+	});
+
+	test("maps the shell onto the canonical semantic token families", () => {
+		const css = fs.readFileSync(path.join(repoRoot, "src/ui/shell/shell.css"), "utf8");
+		const theme = fs.readFileSync(path.join(repoRoot, "src/ui/theme/app.css"), "utf8");
+		const requiredFamilies = [
+			"--arch-color-",
+			"--arch-font-",
+			"--arch-weight-",
+			"--arch-text-",
+			"--arch-radius-",
+			"--arch-space-",
+			"--arch-size-",
+			"--arch-shadow-",
+			"--arch-opacity-",
+			"--arch-duration-",
+			"--arch-ease-",
+			"--arch-animation-",
+		];
+		for (const family of requiredFamilies) expect(css).toContain(`var(${family}`);
+
+		const canonicalThemeColors = [...theme.matchAll(/^\s*--arch-color-[\w-]+:\s*([^;]+);/gm)]
+			.map((match) => match[1]!.trim())
+			.filter((value) => /^(?:#|rgba?\()/.test(value));
+		for (const color of new Set(canonicalThemeColors)) {
+			expect(css).not.toContain(`: ${color};`);
+		}
+
+		expect(css).not.toMatch(/\b(?:140ms|2\.4s)\b/);
+		expect(css).not.toContain("box-shadow: none;");
+		expect(css).not.toMatch(/opacity:\s*(?:0\.46|0\.5|0\.52|0\.84|1);/);
 	});
 });
