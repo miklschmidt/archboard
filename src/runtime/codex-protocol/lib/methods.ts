@@ -1,5 +1,5 @@
-/** Methods whose JSON-RPC result payloads are consumed by the workbench. */
-export const RESPONSE_METHODS = [
+/** Supported client-to-server requests from the generated Codex 0.151.0 union. */
+export const CLIENT_REQUEST_METHODS = [
 	"initialize",
 	"config/read",
 	"configRequirements/read",
@@ -32,8 +32,10 @@ export const RESPONSE_METHODS = [
 	"thread/realtime/appendSpeech",
 	"thread/realtime/stop",
 	"thread/timeline/list",
-	"currentTime/read",
 ] as const;
+
+/** Result decoders also own the currentTime/read reverse-request response alias. */
+export const RESPONSE_METHODS = [...CLIENT_REQUEST_METHODS, "currentTime/read"] as const;
 
 /** The only client notification emitted on the app-server connection. */
 export const CLIENT_NOTIFICATION_METHODS = ["initialized"] as const;
@@ -139,6 +141,7 @@ export const SERVER_NOTIFICATION_METHODS = [
 ] as const;
 
 export type ResponseMethod = (typeof RESPONSE_METHODS)[number];
+export type ClientRequestMethod = (typeof CLIENT_REQUEST_METHODS)[number];
 export type ClientNotificationMethod = (typeof CLIENT_NOTIFICATION_METHODS)[number];
 export type ServerRequestMethod = (typeof SERVER_REQUEST_METHODS)[number];
 export type ServerNotificationMethod = (typeof SERVER_NOTIFICATION_METHODS)[number];
