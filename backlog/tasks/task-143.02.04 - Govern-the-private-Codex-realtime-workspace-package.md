@@ -1,11 +1,11 @@
 ---
 id: TASK-143.02.04
 title: Govern the private Codex realtime workspace package
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 03:07'
+updated_date: '2026-08-31 03:12'
 labels: []
 dependencies:
   - TASK-143.02.01
@@ -31,10 +31,10 @@ Delegation profile: gpt-5.6-luna, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The boundary fixture proves src/ui/codex-realtime/index.ts is the sole public entrypoint and exports only the frozen host contract, state/event types, media-session factory, and supported feature marker.
-- [ ] #2 A consumer fixture imports only the index and can construct, negotiate, meter, stop, and dispose a session without React, Archboard, internal-handle, store, test-fake, or generated Codex imports.
-- [ ] #3 Repository policy rejects consumer deep imports into lib, extra public entrypoints, accidental exports, and mutable module-global state with actionable failures.
-- [ ] #4 The module stays private in this repository; a later publication decision requires its own task, metadata, compatibility policy, and security review.
+- [x] #1 The boundary fixture proves src/ui/codex-realtime/index.ts is the sole public entrypoint and exports only the frozen host contract, state/event types, media-session factory, and supported feature marker.
+- [x] #2 A consumer fixture imports only the index and can construct, negotiate, meter, stop, and dispose a session without React, Archboard, internal-handle, store, test-fake, or generated Codex imports.
+- [x] #3 Repository policy rejects consumer deep imports into lib, extra public entrypoints, accidental exports, and mutable module-global state with actionable failures.
+- [x] #4 The module stays private in this repository; a later publication decision requires its own task, metadata, compatibility policy, and security review.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -53,4 +53,12 @@ Implementation commit 9a39e7e (test(realtime): govern private public boundary) a
 Review remediation commit 82d376de522d8da3044fe06d1381526385a6d085 on fixed BASE ecd1b317bd3f6ce7fabd65c19baea3e2e8ce0d7e. It keeps root package.json private:true, rejects publication-routing metadata and nested module package.json, walks the realtime production graph across static/type/dynamic/require edges, rejects forbidden framework/runtime/generated/alternate-transport dependencies, and closes deep-import checks for query, alias, dynamic, type, and require forms. Focused evidence passed: public API 3 tests/31 expectations; boundary 5 tests/31 expectations; inventory 39 tests/69 expectations; module-scope policy 8 tests/11 expectations; both strict TypeScript projects; focused Oxlint; focused Oxfmt check; git diff --check. Broad module/system/repository/check/browser lanes remain intentionally unrun and root-owned. Task remains In Progress with ACs unchecked.
 
 Final P2 remediation commit 5bddd51f80a34399113da72f9aaaaf0d8cd12727 on fixed BASE ecd1b317bd3f6ce7fabd65c19baea3e2e8ce0d7e. Both sole-root-entrypoint inventories now use the complete .ts/.tsx/.js/.jsx/.mts/.cts predicate and include hostile non-TS fixtures. Direct-export enforcement uses TypeScript AST modifiers and rejects export declare const, export declare namespace, direct export type, and other direct declarations. Focused evidence passed: public API 3 tests/32 expectations; boundary 5 tests/32 expectations; inventory 39 tests/69 expectations; module-scope policy 8 tests/11 expectations; both strict TypeScript projects; focused Oxlint; focused Oxfmt check; git diff --check; both owners remain at or below 500 lines. Task remains In Progress with ACs unchecked; broad lanes remain root-owned.
+
+Independent complete-range rereview returned REVIEW_CLEAN. Root capped validation passed in archboard-task1430204-focused-34af54e.service (55 tests, 144 expectations plus both TypeScript graphs, 1.4 GB peak, 0 swap under 6 GB/1 GB caps), archboard-task1430204-modules-34af54e.service (1,299 tests, 12,705 expectations, 958.3 MB peak, 0 swap), and archboard-task1430204-repository-34af54e.service (240 tests, 1,983 expectations, 2.8 GB peak, 0 swap); broad units used 12 GB/2 GB caps and no cap was hit.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Governed the private realtime module with an exact public surface, executable index-only consumer, private-package enforcement, reachable dependency-graph audit, deep-import and extra-entrypoint rejection, AST accidental-export detection, and module-scope safety. Three review rounds and capped focused, module, repository, and type validation passed.
+<!-- SECTION:FINAL_SUMMARY:END -->
