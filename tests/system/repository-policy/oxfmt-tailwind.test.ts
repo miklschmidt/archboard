@@ -1,23 +1,36 @@
 import { expect, test } from "bun:test";
-import { spawnSync, type SpawnSyncReturns } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import {
 	existsSync,
 	mkdtempSync,
 	mkdirSync,
 	readFileSync,
+	realpathSync,
 	rmSync,
-	symlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
 import {
+	CANONICAL_FORMAT_SCRIPTS,
+	artifactSnapshot,
+	copyReadOnlyDependencyView,
+	dependencySnapshot,
+	fileSnapshot,
+	reapProcessGroup,
+	type CommandRecord,
+	type DependencyRecord,
+	type OwnerResult,
+} from "./support/oxfmt-tailwind-owner.ts";
+import {
 	TEST_CANVAS_HEALTH_POLL_MS,
+	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
 	TEST_CANVAS_STARTUP_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
+const ownerScript = join(import.meta.dir, "support/oxfmt-tailwind-owner.ts");
 const canonicalFiles = [
 	"package.json",
 	".oxfmtrc.jsonc",
@@ -25,9 +38,6 @@ const canonicalFiles = [
 	"src/ui/shell/shell.css",
 	"src/ui/ui-classnames/index.ts",
 ] as const;
-const fmtCheckInvocation = "$ oxfmt --check . '!dist/**' '!node_modules/**' '!backlog/**'";
-const fmtInvocation = "$ oxfmt . '!dist/**' '!node_modules/**' '!backlog/**'";
-
 const unsortedFixture = `import { cn } from "./ui/ui-classnames";
 
 type Data = { classes: string };
@@ -36,7 +46,6 @@ export function Fixture({ enabled, tone, data }: { enabled: boolean; tone: strin
 	return <div className="text-sm md:p-4 hover:bg-primary flex p-2 items-center bg-secondary">{cn("text-muted-foreground p-4 flex items-center bg-secondary hover:bg-primary", \`data-[tone=\${tone}]:text-foreground\`, data.classes, enabled && "hidden")}</div>;
 }
 `;
-
 const expectedFormattedFixture = `import { cn } from "./ui/ui-classnames";
 
 type Data = { classes: string };
@@ -54,286 +63,339 @@ export function Fixture({ enabled, tone, data }: { enabled: boolean; tone: strin
 	);
 }
 `;
+const fmtCheckInvocation = "$ oxfmt --check . '!dist/**' '!node_modules/**' '!backlog/**'";
+const fmtInvocation = "$ oxfmt . '!dist/**' '!node_modules/**' '!backlog/**'";
 
-type CommandResult = SpawnSyncReturns<string>;
-
-function requiredCanonicalFile(relativePath: string): string {
-	const source = join(repoRoot, relativePath);
-	if (!existsSync(source)) {
-		throw new Error(
-			`Tailwind formatter fixture cannot start: missing canonical file ${relativePath}. Restore the checked-in stylesheet, formatter configuration, or helper before running fmt checks.`,
-		);
-	}
-	return source;
+function requiredFile(relativePath: string): string {
+	const file = join(repoRoot, relativePath);
+	if (!existsSync(file)) throw new Error(`Missing canonical formatter file ${relativePath}.`);
+	return file;
 }
 
-function copyCanonicalFile(fixtureRoot: string, relativePath: string): void {
-	const source = requiredCanonicalFile(relativePath);
-	const target = join(fixtureRoot, relativePath);
-	mkdirSync(dirname(target), { recursive: true });
-	writeFileSync(target, readFileSync(source));
-}
-
-function assertCanonicalFormatterConfiguration(): void {
-	const config = readFileSync(requiredCanonicalFile(".oxfmtrc.jsonc"), "utf8");
-	if (!config.includes('"sortTailwindcss"')) {
-		throw new Error(
-			"Tailwind formatter fixture requires .oxfmtrc.jsonc sortTailwindcss configuration; restore the native formatter option before running this check.",
-		);
-	}
-	if (!/"stylesheet"\s*:\s*"src\/ui\/theme\/app\.css"/.test(config)) {
-		throw new Error(
-			"Tailwind formatter fixture requires sortTailwindcss.stylesheet to be src/ui/theme/app.css; restore the canonical v4 stylesheet path before running this check.",
-		);
-	}
-	if (!/"functions"\s*:\s*\[[^\]]*"cn"/.test(config)) {
-		throw new Error(
-			"Tailwind formatter fixture requires cn in sortTailwindcss.functions; restore the exact composition helper configuration before running this check.",
-		);
-	}
-}
-
-function assertFormatterScripts(): void {
-	const packageJson = JSON.parse(readFileSync(requiredCanonicalFile("package.json"), "utf8")) as {
+function assertCanonicalInputs(): void {
+	const packageJson = JSON.parse(readFileSync(requiredFile("package.json"), "utf8")) as {
 		scripts?: Record<string, unknown>;
 	};
-	for (const script of ["fmt", "fmt:check"]) {
-		const command = packageJson.scripts?.[script];
-		if (typeof command !== "string" || !command.includes("oxfmt")) {
-			throw new Error(
-				`Tailwind formatter fixture requires the checked-in bun run ${script} script to invoke oxfmt; restore the repository formatter command before running this check.`,
-			);
-		}
-	}
+	for (const [name, command] of Object.entries(CANONICAL_FORMAT_SCRIPTS))
+		expect(packageJson.scripts?.[name], `checked-in package.json ${name} script`).toBe(command);
+	const config = readFileSync(requiredFile(".oxfmtrc.jsonc"), "utf8");
+	expect(config).toContain('"sortTailwindcss": {');
+	expect(config).toContain('"src/ui/theme/app.css"');
+	expect(config).toContain('"functions": ["cn"]');
+	expect(config).toContain('"preserveDuplicates": true');
+	const oxfmtPackage = JSON.parse(
+		readFileSync(requiredFile("node_modules/oxfmt/package.json"), "utf8"),
+	) as { version?: unknown };
+	expect(oxfmtPackage.version, "project-local Oxfmt identity").toBe("0.65.0");
+	const executable = requiredFile("node_modules/oxfmt/bin/oxfmt");
+	const dependencyRoot = resolve(repoRoot, "node_modules");
+	expect(
+		realpathSync(executable).startsWith(`${realpathSync(dependencyRoot)}/`),
+		"Oxfmt executable containment",
+	).toBeTrue();
 }
 
-function runFormatterScript(fixtureRoot: string, script: "fmt" | "fmt:check"): CommandResult {
-	return spawnSync("bun", ["run", script], {
-		cwd: fixtureRoot,
-		encoding: "utf8",
-	});
-}
-
-function commandFailure(script: string, result: CommandResult): string {
-	return [
-		`bun run ${script} did not complete successfully`,
-		`status: ${result.status ?? "null"}`,
-		`signal: ${result.signal ?? "null"}`,
-		`spawn error: ${result.error?.message ?? "none"}`,
-		`stdout:\n${result.stdout}`,
-		`stderr:\n${result.stderr}`,
-	].join("\n");
-}
-
-function expectCommandStatus(
-	script: "fmt" | "fmt:check",
-	result: CommandResult,
-	status: number,
-): void {
-	expect(result.error, commandFailure(script, result)).toBeUndefined();
-	expect(result.signal, commandFailure(script, result)).toBeNull();
-	expect(result.status, commandFailure(script, result)).toBe(status);
+function canonicalState(): DependencyRecord[] {
+	return fileSnapshot(repoRoot, canonicalFiles);
 }
 
 function authoredGitState(): string {
-	const status = spawnSync("git", ["status", "--porcelain=v1", "--untracked-files=all"], {
-		cwd: repoRoot,
-		encoding: "utf8",
-	});
-	const staged = spawnSync("git", ["diff", "--cached", "--binary", "--no-ext-diff"], {
-		cwd: repoRoot,
-		encoding: "utf8",
-	});
-	const unstaged = spawnSync("git", ["diff", "--binary", "--no-ext-diff"], {
-		cwd: repoRoot,
-		encoding: "utf8",
-	});
-	for (const [label, result] of [
-		["status", status],
-		["staged diff", staged],
-		["unstaged diff", unstaged],
-	] as const) {
-		if (result.error || result.signal || result.status !== 0) {
+	const commands = [
+		["status", ["status", "--porcelain=v1", "--untracked-files=all"]],
+		["staged", ["diff", "--cached", "--binary", "--no-ext-diff"]],
+		["unstaged", ["diff", "--binary", "--no-ext-diff"]],
+	] as const;
+	const state: Record<string, string> = {};
+	for (const [label, args] of commands) {
+		const result = spawnSync("git", args, { cwd: repoRoot, encoding: "utf8" });
+		if (result.error || result.signal || result.status !== 0)
 			throw new Error(
-				`Could not capture authored checkout ${label}: status=${result.status ?? "null"}, signal=${result.signal ?? "null"}, error=${result.error?.message ?? "none"}`,
+				`Could not capture authored ${label} state: ${result.error?.message ?? result.status}`,
 			);
-		}
+		state[label] = result.stdout;
 	}
-	return JSON.stringify({
-		status: status.stdout,
-		staged: staged.stdout,
-		unstaged: unstaged.stdout,
+	return JSON.stringify(state);
+}
+
+function createFixture(container: string): string {
+	const root = join(container, "fixture");
+	mkdirSync(root, { recursive: true });
+	for (const relativePath of canonicalFiles) {
+		const target = join(root, relativePath);
+		mkdirSync(dirname(target), { recursive: true });
+		writeFileSync(target, readFileSync(requiredFile(relativePath)));
+	}
+	copyReadOnlyDependencyView(repoRoot, root);
+	const fixtureFile = join(root, "src/fixture.tsx");
+	mkdirSync(dirname(fixtureFile), { recursive: true });
+	writeFileSync(fixtureFile, unsortedFixture);
+	return root;
+}
+
+function createSignalFixture(container: string): string {
+	const root = createFixture(container);
+	for (let index = 0; index < 256; index++) {
+		writeFileSync(join(root, `src/fixture-${index}.tsx`), unsortedFixture);
+	}
+	return root;
+}
+
+function mutateScript(
+	root: string,
+	script: keyof typeof CANONICAL_FORMAT_SCRIPTS,
+	marker: string,
+): void {
+	const packageFile = join(root, "package.json");
+	const packageJson = JSON.parse(readFileSync(packageFile, "utf8")) as {
+		scripts: Record<string, string>;
+	};
+	packageJson.scripts[script] =
+		`${CANONICAL_FORMAT_SCRIPTS[script]} ; ${process.execPath} -e ${JSON.stringify(`require("node:fs").writeFileSync(${JSON.stringify(marker)}, "escaped")`)}`;
+	writeFileSync(packageFile, `${JSON.stringify(packageJson, null, "\t")}\n`);
+}
+
+function assertDependencyContainment(root: string, records: readonly DependencyRecord[]): void {
+	const dependencyRoot = resolve(root, "node_modules");
+	for (const record of records) {
+		expect(record.realpath.startsWith(`${dependencyRoot}/`), record.path).toBeTrue();
+	}
+}
+
+function assertReadOnlyDependencyView(root: string): void {
+	const target = join(root, "node_modules/oxfmt/package.json");
+	const before = readFileSync(target);
+	let failure: unknown;
+	try {
+		writeFileSync(target, Buffer.concat([before, Buffer.from("blocked")]));
+	} catch (error) {
+		failure = error;
+	}
+	expect(failure).toBeInstanceOf(Error);
+	expect(readFileSync(target)).toEqual(before);
+}
+
+function resultFile(container: string): string {
+	return join(container, "owner-result.json");
+}
+
+function launchOwner(
+	root: string,
+	container: string,
+	options: {
+		activePidFile?: string;
+		cleanupPaths?: readonly string[];
+		holdPhase?: "check" | "fmt";
+		holdMarker?: string;
+	} = {},
+): Bun.Subprocess {
+	return Bun.spawn({
+		cmd: [process.execPath, ownerScript],
+		detached: true,
+		env: {
+			...process.env,
+			ARCHBOARD_OXFMT_OWNER_ROOT: root,
+			ARCHBOARD_OXFMT_OWNER_RESULT: resultFile(container),
+			...(options.cleanupPaths || options.activePidFile
+				? {
+						ARCHBOARD_OXFMT_OWNER_CLEANUP_PATHS: JSON.stringify(
+							options.cleanupPaths ?? [options.activePidFile],
+						),
+					}
+				: {}),
+			...(options.activePidFile ? { ARCHBOARD_OXFMT_OWNER_ACTIVE_PID: options.activePidFile } : {}),
+			...(options.holdPhase ? { ARCHBOARD_OXFMT_OWNER_HOLD_PHASE: options.holdPhase } : {}),
+			...(options.holdMarker ? { ARCHBOARD_OXFMT_OWNER_HOLD_MARKER: options.holdMarker } : {}),
+		},
+		stdout: "pipe",
+		stderr: "pipe",
 	});
 }
 
-async function withTemporaryRoot<T>(
-	prefix: string,
-	operation: (root: string) => T | Promise<T>,
-): Promise<T> {
-	const resources = new AsyncDisposableStack();
-	const root = mkdtempSync(join(tmpdir(), prefix));
-	resources.defer(() => {
-		rmSync(root, { recursive: true, force: true });
-		if (existsSync(root)) throw new Error(`temporary root still exists after cleanup: ${root}`);
-	});
-	let primaryError: unknown;
-	let value: T | undefined;
-	try {
-		value = await operation(root);
-	} catch (error) {
-		primaryError = error;
-	}
-	let cleanupError: unknown;
-	try {
-		await resources.disposeAsync();
-	} catch (error) {
-		cleanupError = error;
-	}
-	if (primaryError && cleanupError) {
-		throw new AggregateError(
-			[primaryError, cleanupError],
-			`Temporary formatter fixture failed and cleanup also failed for ${root}`,
-		);
-	}
-	if (primaryError) throw primaryError;
-	if (cleanupError) throw cleanupError;
-	return value as T;
-}
-
-async function waitForFile(file: string, owner: Bun.Subprocess): Promise<void> {
+async function waitForFile(file: string, child: Bun.Subprocess): Promise<void> {
 	const deadline = Date.now() + TEST_CANVAS_STARTUP_TIMEOUT_MS;
 	while (!existsSync(file)) {
-		if (owner.exitCode !== null) {
-			throw new Error(`signal cleanup owner exited before readiness with code ${owner.exitCode}`);
-		}
-		if (Date.now() >= deadline) {
-			throw new Error(`signal cleanup owner did not publish readiness at ${file}`);
-		}
+		if (child.exitCode !== null) throw new Error(`Owner exited before ${file}: ${child.exitCode}`);
+		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${file}`);
 		await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
 	}
 }
 
-test("checks native Tailwind ordering through the checked-in fmt scripts", async () => {
-	assertCanonicalFormatterConfiguration();
-	assertFormatterScripts();
-	const authoredBefore = authoredGitState();
-	let primaryError: unknown;
+async function waitForExit(child: Bun.Subprocess): Promise<number> {
+	const deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+	while (child.exitCode === null && Date.now() < deadline)
+		await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
+	if (child.exitCode === null) throw new Error(`Owner ${child.pid} exceeded bounded exit wait.`);
+	return await child.exited;
+}
+
+async function stopOwner(child: Bun.Subprocess): Promise<void> {
+	if (child.exitCode === null) child.kill("SIGKILL");
+	await child.exited;
+	await reapProcessGroup(child.pid);
+}
+
+function readOwnerResult(container: string): OwnerResult {
+	const file = resultFile(container);
+	if (!existsSync(file)) throw new Error(`Owner did not publish ${file}.`);
+	return JSON.parse(readFileSync(file, "utf8")) as OwnerResult;
+}
+
+function commandFailure(command: CommandRecord): string {
+	return [
+		`bun run ${command.script} failed unexpectedly`,
+		`status=${command.status ?? "null"}`,
+		`signal=${command.signal ?? "null"}`,
+		`spawnError=${command.spawnError ?? "none"}`,
+		`stdout:\n${command.stdout}`,
+		`stderr:\n${command.stderr}`,
+	].join("\n");
+}
+
+function expectCommand(command: CommandRecord, status: number): void {
+	expect(command.spawnError, commandFailure(command)).toBeUndefined();
+	expect(command.signal, commandFailure(command)).toBeNull();
+	expect(command.status, commandFailure(command)).toBe(status);
+}
+
+async function withContainer<T>(operation: (container: string) => Promise<T>): Promise<T> {
+	const container = mkdtempSync(join(tmpdir(), "archboard-oxfmt-tailwind-owner-"));
+	let primary: unknown;
+	let value: T | undefined;
 	try {
-		await withTemporaryRoot("archboard-oxfmt-tailwind-", async (fixtureRoot) => {
-			for (const relativePath of canonicalFiles) copyCanonicalFile(fixtureRoot, relativePath);
-			const nodeModules = join(repoRoot, "node_modules");
-			if (!existsSync(nodeModules)) {
-				throw new Error(
-					"Tailwind formatter fixture requires installed dependencies; run bun install first.",
-				);
-			}
-			symlinkSync(nodeModules, join(fixtureRoot, "node_modules"));
-			const canonicalBefore = new Map(
-				canonicalFiles.map((relativePath) => [
-					relativePath,
-					readFileSync(join(fixtureRoot, relativePath), "utf8"),
-				]),
-			);
-			const fixtureFile = join(fixtureRoot, "src/fixture.tsx");
-			mkdirSync(dirname(fixtureFile), { recursive: true });
-			writeFileSync(fixtureFile, unsortedFixture);
-
-			const before = runFormatterScript(fixtureRoot, "fmt:check");
-			expectCommandStatus("fmt:check", before, 1);
-			expect(before.stderr).toContain(fmtCheckInvocation);
-			expect(before.stdout).toContain("src/fixture.tsx");
-			expect(before.stdout).toContain("Format issues found");
-
-			const format = runFormatterScript(fixtureRoot, "fmt");
-			expectCommandStatus("fmt", format, 0);
-			expect(format.stderr).toContain(fmtInvocation);
-
-			const formatted = readFileSync(fixtureFile, "utf8");
-			if (formatted !== expectedFormattedFixture) {
-				throw new Error(
-					[
-						"Native Oxfmt Tailwind output drifted for the representative fixture.",
-						"Run bun run fmt in this checkout and review the canonical stylesheet/configuration before updating this conformance test.",
-						`Expected:\n${expectedFormattedFixture}`,
-						`Observed:\n${formatted}`,
-					].join("\n"),
-				);
-			}
-			expect(formatted).toContain("`data-[tone=${tone}]:text-foreground`");
-			expect(formatted).toContain("data.classes");
-			expect(formatted).toContain('enabled && "hidden"');
-
-			for (const relativePath of canonicalFiles) {
-				const original = canonicalBefore.get(relativePath);
-				if (original === undefined) throw new Error(`missing canonical snapshot: ${relativePath}`);
-				expect(readFileSync(join(fixtureRoot, relativePath), "utf8"), relativePath).toBe(original);
-			}
-
-			const after = runFormatterScript(fixtureRoot, "fmt:check");
-			expectCommandStatus("fmt:check", after, 0);
-			expect(after.stderr).toContain(fmtCheckInvocation);
-			expect(after.stdout).toContain("All matched files use the correct format.");
-		});
+		value = await operation(container);
 	} catch (error) {
-		primaryError = error;
+		primary = error;
 	}
-	let gitStateError: unknown;
+	let cleanup: unknown;
 	try {
-		expect(authoredGitState(), "formatter fixture must leave authored git state unchanged").toBe(
-			authoredBefore,
-		);
+		rmSync(container, { recursive: true, force: true });
+		if (existsSync(container)) throw new Error(`Container remains after cleanup: ${container}`);
 	} catch (error) {
-		gitStateError = error;
+		cleanup = error;
 	}
-	if (primaryError && gitStateError) {
-		throw new AggregateError(
-			[primaryError, gitStateError],
-			"Formatter fixture failure and authored checkout state failure",
-		);
-	}
-	if (primaryError) throw primaryError;
-	if (gitStateError) throw gitStateError;
+	if (primary && cleanup)
+		throw new AggregateError([primary, cleanup], "formatter fixture and cleanup failed");
+	if (primary) throw primary;
+	if (cleanup) throw cleanup;
+	return value as T;
+}
+
+test("checks native Tailwind formatting through a bounded owner", async () => {
+	const beforeCheckout = authoredGitState();
+	assertCanonicalInputs();
+	const beforeCanonical = canonicalState();
+	await withContainer(async (container) => {
+		const root = createFixture(container);
+		const beforeFixtureCanonical = fileSnapshot(root, canonicalFiles);
+		const beforeDependencies = dependencySnapshot(root);
+		const beforeArtifacts = artifactSnapshot(root);
+		assertDependencyContainment(root, beforeDependencies);
+		assertReadOnlyDependencyView(root);
+		const owner = launchOwner(root, container);
+		try {
+			expect(await waitForExit(owner)).toBe(0);
+		} finally {
+			if (owner.exitCode === null) await stopOwner(owner);
+		}
+		const result = readOwnerResult(container);
+		expect(result.error).toBeUndefined();
+		expect(result.commands).toHaveLength(3);
+		const [before, format, after] = result.commands;
+		if (!before || !format || !after)
+			throw new Error("Owner returned an incomplete formatter result.");
+		expectCommand(before, 1);
+		expect(before.stderr).toContain(fmtCheckInvocation);
+		const beforeOutput = `${before.stdout}\n${before.stderr}`;
+		expect(beforeOutput).toContain("src/fixture.tsx");
+		expect(beforeOutput).toContain("Format issues found");
+		expectCommand(format, 0);
+		expect(format.stderr).toContain(fmtInvocation);
+		expectCommand(after, 0);
+		expect(after.stdout).toContain("All matched files use the correct format.");
+		expect(result.formatted).toBe(expectedFormattedFixture);
+		expect(result.formatted).toContain("`data-[tone=${tone}]:text-foreground`");
+		expect(result.formatted).toContain("data.classes");
+		expect(result.formatted).toContain('enabled && "hidden"');
+		expect(result.canonical).toEqual(beforeFixtureCanonical);
+		expect(result.dependencies).toEqual(beforeDependencies);
+		expect(result.artifacts).toEqual(beforeArtifacts);
+		assertDependencyContainment(root, result.dependencies ?? []);
+	});
+	expect(authoredGitState()).toBe(beforeCheckout);
+	expect(canonicalState()).toEqual(beforeCanonical);
 });
 
-for (const signal of ["SIGINT", "SIGTERM"] as const) {
-	test(`cleans a formatter owner fixture when the owner receives ${signal}`, async () => {
-		await withTemporaryRoot("archboard-oxfmt-tailwind-signal-", async (root) => {
-			const ownerScript = join(root, "owner.ts");
-			const ready = join(root, "ready");
-			writeFileSync(
-				ownerScript,
-				`import { join } from "node:path";
-import { rmSync, writeFileSync } from "node:fs";
-
-const root = process.env.ARCHBOARD_OXFMT_SIGNAL_ROOT;
-if (!root) throw new Error("missing signal cleanup root");
-const cleanup = () => {
-	rmSync(root, { recursive: true, force: true });
-	process.exit(0);
-};
-process.once("SIGTERM", cleanup);
-process.once("SIGINT", cleanup);
-writeFileSync(join(root, "ready"), String(process.pid));
-await new Promise<never>(() => undefined);
-`,
-			);
-			const owner = Bun.spawn({
-				cmd: [process.execPath, ownerScript],
-				env: { ...process.env, ARCHBOARD_OXFMT_SIGNAL_ROOT: root },
-				stdout: "ignore",
-				stderr: "pipe",
-			});
-			let exitObserved = false;
+for (const script of ["fmt", "fmt:check"] as const) {
+	test(`rejects a hostile ${script} suffix before it can escape the fixture`, async () => {
+		const beforeCheckout = authoredGitState();
+		assertCanonicalInputs();
+		await withContainer(async (container) => {
+			const root = createFixture(container);
+			const marker = join(container, "escaped-marker");
+			mutateScript(root, script, marker);
+			const owner = launchOwner(root, container);
 			try {
-				await waitForFile(ready, owner);
-				owner.kill(signal);
-				expect(await owner.exited).toBe(0);
-				exitObserved = true;
-				expect(existsSync(root)).toBeFalse();
+				expect(await waitForExit(owner)).toBe(1);
 			} finally {
-				if (!exitObserved) owner.kill("SIGKILL");
-				if (!exitObserved) await owner.exited;
+				if (owner.exitCode === null) await stopOwner(owner);
 			}
+			const result = readOwnerResult(container);
+			expect(result.error).toContain(`Refusing to execute fixture script ${script}`);
+			expect(result.commands).toEqual([]);
+			expect(existsSync(marker)).toBeFalse();
 		});
+		expect(authoredGitState()).toBe(beforeCheckout);
 	});
+}
+
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+	for (const phase of ["check", "fmt"] as const) {
+		test(`reaps the real blocked ${phase} formatter on ${signal}`, async () => {
+			const beforeCheckout = authoredGitState();
+			assertCanonicalInputs();
+			await withContainer(async (container) => {
+				const root = createSignalFixture(container);
+				const blockedMarker = join(container, "blocked-formatter");
+				const activePidFile = join(container, "active-owner-child");
+				const beforeDependencies = dependencySnapshot(root);
+				const owner = launchOwner(root, container, {
+					activePidFile,
+					cleanupPaths: [blockedMarker, activePidFile],
+					holdPhase: phase,
+					holdMarker: blockedMarker,
+				});
+				let ownerExit: number | undefined;
+				try {
+					await waitForFile(blockedMarker, owner);
+					expect(existsSync(activePidFile)).toBeTrue();
+					const activePid = Number(readFileSync(activePidFile, "utf8"));
+					expect(Number.isSafeInteger(activePid)).toBeTrue();
+					owner.kill(signal);
+					ownerExit = await waitForExit(owner);
+					expect(ownerExit).toBe(signal === "SIGINT" ? 130 : 143);
+					expect(existsSync(root)).toBeFalse();
+					expect(existsSync(blockedMarker)).toBeFalse();
+					expect(existsSync(activePidFile)).toBeFalse();
+					await expectProcessGroupGone(activePid);
+				} finally {
+					if (ownerExit === undefined) await stopOwner(owner);
+				}
+				expect(beforeDependencies.length).toBeGreaterThan(0);
+			});
+			expect(authoredGitState()).toBe(beforeCheckout);
+		});
+	}
+}
+
+async function expectProcessGroupGone(group: number): Promise<void> {
+	const deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+	while (Date.now() < deadline) {
+		try {
+			process.kill(-group, 0);
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === "ESRCH") return;
+		}
+		await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
+	}
+	throw new Error(`Formatter process group ${group} survived bounded cleanup.`);
 }
