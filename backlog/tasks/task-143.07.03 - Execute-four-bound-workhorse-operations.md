@@ -4,11 +4,12 @@ title: Execute four bound workhorse operations
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 18:07'
+updated_date: '2026-08-31 14:27'
 labels: []
 dependencies:
   - TASK-143.01.08
   - TASK-143.01.09
+  - TASK-143.01.20
   - TASK-143.07.02
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
@@ -36,4 +37,5 @@ Delegation profile: gpt-5.6-luna, max.
 - [ ] #3 A lost start/steer/queue response becomes outcome_unknown and never starts a second turn or alternate operation; later authoritative events reconcile the original operation correlation.
 - [ ] #4 The public output is a closed normalized operation-event union consumed by callbacks/UI, not raw app-server events or a second thread/queue store.
 - [ ] #5 src/runtime/codex-workhorse-operations/tests/operations.test.ts exhausts inspect, delegate, queue-management, and steer across every identity/status/queue race and delivered/not_delivered/outcome_unknown result, proving one attempt and stable operation correlation.
+- [ ] #6 Every delegate, queue mutation, and steer correlation uses the shared canonical OperationId authority and reuses the same identity across clientUserMessageId, durable operation state, normalized events, callbacks, and browser results without local string minting.
 <!-- AC:END -->
