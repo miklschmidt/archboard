@@ -1,9 +1,14 @@
-import { chmodSync, mkdirSync, symlinkSync } from "node:fs";
+import { chmodSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { CodexSessionStorageError } from "../index.js";
-import { configFixture, createSessionFixture, requirementsFixture } from "./support.js";
+import {
+	configFixture,
+	createSessionFixture,
+	makeStorage,
+	requirementsFixture,
+} from "./support.js";
 
 async function rejected(promise: Promise<unknown>): Promise<unknown> {
 	try {
@@ -98,6 +103,39 @@ describe("Codex session storage proof", () => {
 		wrongOrigin.close();
 	});
 
+	test("uses the canonical checkout scope when proving config storage", async () => {
+		const fixture = createSessionFixture();
+		const conflicting = makeStorage();
+		try {
+			fixture.transport.beforeRequest = (method, params) => {
+				if (
+					method !== "config/read" ||
+					params === null ||
+					typeof params !== "object" ||
+					Array.isArray(params) ||
+					(params as { readonly cwd?: unknown }).cwd !== fixture.checkoutRoot
+				)
+					return;
+				fixture.transport.prependResponse(
+					"config/read",
+					configFixture(conflicting.storage.sqliteHome, conflicting.storage.configPath) as never,
+				);
+			};
+			const error = await rejected(fixture.session.initialize());
+			expect(error).toBeInstanceOf(CodexSessionStorageError);
+			const configRequest = fixture.transport.requests.find(
+				({ method }) => method === "config/read",
+			);
+			expect(configRequest?.params).toEqual({
+				includeLayers: true,
+				cwd: fixture.checkoutRoot,
+			});
+		} finally {
+			fixture.close();
+			rmSync(conflicting.root, { recursive: true, force: true });
+		}
+	});
+
 	test("reconciles requirements and rejects conflicts, symlinked roots, and loose modes", async () => {
 		const conflict = createSessionFixture();
 		const other = path.join(conflict.root, "other-sqlite");
@@ -129,5 +167,54 @@ describe("Codex session storage proof", () => {
 			CodexSessionStorageError,
 		);
 		looseConfig.close();
+	});
+
+	test("refuses wrong origin files/types, config outside CODEX_HOME, and nested roots", async () => {
+		const wrongFile = createSessionFixture();
+		const wrongFileConfig = configFixture(
+			wrongFile.storage.sqliteHome,
+			wrongFile.storage.configPath,
+		);
+		(wrongFileConfig.origins.sqlite_home as Record<string, unknown>).name = {
+			type: "user",
+			file: path.join(wrongFile.root, "other-config.toml"),
+			profile: null,
+		};
+		wrongFile.transport.prependResponse("config/read", wrongFileConfig as never);
+		expect(await rejected(wrongFile.session.initialize())).toBeInstanceOf(CodexSessionStorageError);
+		wrongFile.close();
+
+		const wrongType = createSessionFixture();
+		const wrongTypeConfig = configFixture(
+			wrongType.storage.sqliteHome,
+			wrongType.storage.configPath,
+		);
+		(wrongTypeConfig.origins.sqlite_home as Record<string, unknown>).name = {
+			type: "system",
+			file: wrongType.storage.configPath,
+		};
+		wrongType.transport.prependResponse("config/read", wrongTypeConfig as never);
+		expect(await rejected(wrongType.session.initialize())).toBeInstanceOf(CodexSessionStorageError);
+		wrongType.close();
+
+		const outside = createSessionFixture({
+			storageTransform: (storage) => {
+				const configPath = path.join(path.dirname(storage.codexHome), "outside-config.toml");
+				writeFileSync(configPath, 'sqlite_home = "outside"\n', { mode: 0o600 });
+				return { ...storage, configPath };
+			},
+		});
+		expect(await rejected(outside.session.initialize())).toBeInstanceOf(CodexSessionStorageError);
+		outside.close();
+
+		const nested = createSessionFixture({
+			storageTransform: (storage) => {
+				const sqliteHome = path.join(storage.codexHome, "nested-sqlite");
+				mkdirSync(sqliteHome, { mode: 0o700 });
+				return { ...storage, sqliteHome };
+			},
+		});
+		expect(await rejected(nested.session.initialize())).toBeInstanceOf(CodexSessionStorageError);
+		nested.close();
 	});
 });

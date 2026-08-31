@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -219,6 +219,27 @@ export const configFixture = (sqliteHome: string, configPath: string) => ({
 	layers: null,
 });
 
+export const modelFixture = {
+	id: "gpt-5.6-luna",
+	model: "gpt-5.6-luna",
+	upgrade: null,
+	upgradeInfo: null,
+	availabilityNux: null,
+	displayName: "Luna",
+	description: "fixture",
+	modelSpecialty: null,
+	hidden: false,
+	supportedReasoningEfforts: [{ reasoningEffort: "medium", description: "fixture" }],
+	defaultReasoningEffort: "medium",
+	inputModalities: ["text"],
+	supportsPersonality: false,
+	multiAgentVersion: null,
+	additionalSpeedTiers: [],
+	serviceTiers: [],
+	defaultServiceTier: null,
+	isDefault: true,
+};
+
 export const requirementsFixture = (sqliteHome: string | null) => ({
 	requirements: {
 		cliAuthCredentialsStore: null,
@@ -254,6 +275,24 @@ export const requirementsFixture = (sqliteHome: string | null) => ({
 	},
 });
 
+export const threadItemFixture = {
+	type: "userMessage",
+	id: "item-1",
+	clientId: null,
+	content: [{ type: "text", text: "hello", text_elements: [] }],
+};
+
+export const turnFixture = {
+	id: "turn-1",
+	items: [threadItemFixture],
+	itemsView: "full",
+	status: "completed",
+	error: null,
+	startedAt: 1,
+	completedAt: 2,
+	durationMs: 1,
+};
+
 export const threadFixture = {
 	id: "thread-1",
 	extra: {},
@@ -281,18 +320,7 @@ export const threadFixture = {
 	agentRole: null,
 	gitInfo: null,
 	name: null,
-	turns: [],
-};
-
-export const turnFixture = {
-	id: "turn-1",
-	items: [],
-	itemsView: "full",
-	status: "completed",
-	error: null,
-	startedAt: 1,
-	completedAt: 2,
-	durationMs: 1,
+	turns: [turnFixture],
 };
 
 export const emptyResponse = {};
@@ -311,6 +339,7 @@ export function makeStorage(): { readonly root: string; readonly storage: CodexS
 export interface SessionFixture {
 	readonly root: string;
 	readonly storage: CodexSessionStorage;
+	readonly checkoutRoot: string;
 	readonly identity: IdentityAuthority;
 	readonly transport: FakeTransport;
 	readonly session: CodexSession;
@@ -329,6 +358,7 @@ export function createSessionFixture(
 		readonly config?: unknown;
 		readonly storage?: CodexSessionStorage;
 		readonly storageTransform?: (storage: CodexSessionStorage) => CodexSessionStorage;
+		readonly checkoutRoot?: string;
 		readonly initializeCodexHome?: string;
 		readonly onNotification?: (event: TransportServerNotification) => void;
 		readonly now?: () => number;
@@ -336,6 +366,7 @@ export function createSessionFixture(
 ): SessionFixture {
 	const { root, storage: createdStorage } = makeStorage();
 	const storage = options.storage ?? options.storageTransform?.(createdStorage) ?? createdStorage;
+	const checkoutRoot = realpathSync(options.checkoutRoot ?? process.cwd());
 	const identity = createIdentityAuthority();
 	const transport = new FakeTransport(identity);
 	transport.enqueueResponse("initialize", {
@@ -371,6 +402,7 @@ export function createSessionFixture(
 		transport,
 		identity,
 		storage,
+		checkoutRoot,
 		lifecycle,
 		now: options.now,
 		onNotification: (event) => {
@@ -381,6 +413,7 @@ export function createSessionFixture(
 	return {
 		root,
 		storage,
+		checkoutRoot,
 		identity,
 		transport,
 		session,

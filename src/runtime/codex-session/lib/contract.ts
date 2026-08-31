@@ -4,17 +4,23 @@ import type {
 	TransportServerRequest,
 } from "../../codex-transport/server-requests.js";
 import type { CodexTransport } from "../../codex-transport/index.js";
-import type { ResponseMethod, ResponsePayloads } from "../../codex-protocol/index.js";
+import type {
+	ClientRequestMethod,
+	CodexSessionRequestParams,
+	ResponseMethod,
+	ResponsePayloads,
+} from "../../codex-protocol/index.js";
 import type {
 	IdentityAuthority,
 	ThreadId,
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
-import type { LoginAccountParams } from "../../../shared/codex-browser-model/index.js";
+import type {
+	BedrockSetupParams,
+	LoginAccountParams,
+} from "../../../shared/codex-browser-model/index.js";
 
-export type BedrockSetupParams =
-	| { readonly type: "profile"; readonly profile: string; readonly region: string }
-	| { readonly type: "environment"; readonly region: string };
+export type { BedrockSetupParams } from "../../../shared/codex-browser-model/index.js";
 
 /** The public methods of one reviewed Codex app-server session. */
 export const SESSION_METHODS = Object.freeze([
@@ -56,8 +62,9 @@ export const SESSION_METHODS = Object.freeze([
 
 export type SessionMethod = (typeof SESSION_METHODS)[number];
 
-/** Parameters for generated methods whose request schema is owned by Codex. */
-export type SessionParams = Readonly<Record<string, unknown>>;
+/** Branded parameters for one generated Codex request owned by this session. */
+export type SessionParams<Method extends ClientRequestMethod = ClientRequestMethod> =
+	CodexSessionRequestParams<Method>;
 
 export type SessionLoginParams = LoginAccountParams | BedrockSetupParams;
 
@@ -74,10 +81,10 @@ export interface CodexSessionOptions {
 	readonly transport: CodexTransport;
 	readonly identity: IdentityAuthority;
 	readonly storage: CodexSessionStorage;
+	/** Canonical checkout cwd supplied by the owning Codex process. */
+	readonly checkoutRoot: string;
 	readonly lifecycle?: CodexProcessLifecycle;
 	readonly onNotification?: SessionNotificationHandler;
-	/** Alias retained for callers that use the transport event's name. */
-	readonly onServerNotification?: SessionNotificationHandler;
 	readonly now?: () => number;
 }
 
@@ -98,7 +105,7 @@ export type SessionAttestationRequest = Extract<
 	{ readonly method: "attestation/generate" }
 >;
 
-export type SessionMutationOutcome = "delivered" | "not_delivered" | "outcome_unknown";
+export type SessionMutationOutcome = "not_delivered" | "outcome_unknown";
 
 export type CodexSessionErrorCode =
 	| "already_initialized"
@@ -108,7 +115,6 @@ export type CodexSessionErrorCode =
 	| "unsupported_login"
 	| "invalid_identity"
 	| "invalid_request"
-	| "initialization_failed"
 	| "mutation_failed";
 
 export class CodexSessionError extends Error {
@@ -135,6 +141,7 @@ export class CodexSessionMutationError extends CodexSessionError {
 	override readonly name = "CodexSessionMutationError";
 	readonly method: string;
 	readonly outcome: SessionMutationOutcome;
+	readonly retryEligible = false;
 
 	constructor(method: string, outcome: SessionMutationOutcome, message: string, cause?: unknown) {
 		super("mutation_failed", message, cause);
@@ -145,63 +152,95 @@ export class CodexSessionMutationError extends CodexSessionError {
 
 export interface CodexSession {
 	readonly initialize: () => Promise<ResponsePayloads["initialize"]>;
-	readonly configRead: (params?: SessionParams) => Promise<ResponsePayloads["config/read"]>;
-	readonly accountRead: (params?: SessionParams) => Promise<ResponsePayloads["account/read"]>;
+	readonly configRead: (
+		params?: SessionParams<"config/read">,
+	) => Promise<ResponsePayloads["config/read"]>;
+	readonly accountRead: (
+		params?: SessionParams<"account/read">,
+	) => Promise<ResponsePayloads["account/read"]>;
 	readonly accountLogin: (
 		params: SessionLoginParams,
 	) => Promise<ResponsePayloads["account/login/start"]>;
 	readonly accountLoginCancel: (
-		params?: SessionParams,
+		params: SessionParams<"account/login/cancel">,
 	) => Promise<ResponsePayloads["account/login/cancel"]>;
-	readonly accountLogout: (params?: SessionParams) => Promise<ResponsePayloads["account/logout"]>;
-	readonly modelList: (params?: SessionParams) => Promise<ResponsePayloads["model/list"]>;
-	readonly threadStart: (params: SessionParams) => Promise<ResponsePayloads["thread/start"]>;
-	readonly threadFork: (params: SessionParams) => Promise<ResponsePayloads["thread/fork"]>;
-	readonly threadListPage: (params?: SessionParams) => Promise<ResponsePayloads["thread/list"]>;
+	readonly accountLogout: (
+		params?: SessionParams<"account/logout">,
+	) => Promise<ResponsePayloads["account/logout"]>;
+	readonly modelList: (
+		params?: SessionParams<"model/list">,
+	) => Promise<ResponsePayloads["model/list"]>;
+	readonly threadStart: (
+		params: SessionParams<"thread/start">,
+	) => Promise<ResponsePayloads["thread/start"]>;
+	readonly threadFork: (
+		params: SessionParams<"thread/fork">,
+	) => Promise<ResponsePayloads["thread/fork"]>;
+	readonly threadListPage: (
+		params?: SessionParams<"thread/list">,
+	) => Promise<ResponsePayloads["thread/list"]>;
 	readonly threadLoadedListPage: (
-		params?: SessionParams,
+		params?: SessionParams<"thread/loaded/list">,
 	) => Promise<ResponsePayloads["thread/loaded/list"]>;
-	readonly threadRead: (params: SessionParams) => Promise<ResponsePayloads["thread/read"]>;
+	readonly threadRead: (
+		params: SessionParams<"thread/read">,
+	) => Promise<ResponsePayloads["thread/read"]>;
 	readonly threadTurnsListPage: (
-		params?: SessionParams,
+		params?: SessionParams<"thread/turns/list">,
 	) => Promise<ResponsePayloads["thread/turns/list"]>;
 	readonly threadItemsListPage: (
-		params?: SessionParams,
+		params?: SessionParams<"thread/items/list">,
 	) => Promise<ResponsePayloads["thread/items/list"]>;
-	readonly threadDelete: (params: SessionParams) => Promise<ResponsePayloads["thread/delete"]>;
+	readonly threadDelete: (
+		params: SessionParams<"thread/delete">,
+	) => Promise<ResponsePayloads["thread/delete"]>;
 	readonly threadSettingsUpdate: (
-		params: SessionParams,
+		params: SessionParams<"thread/settings/update">,
 	) => Promise<ResponsePayloads["thread/settings/update"]>;
-	readonly turnStart: (params: SessionParams) => Promise<ResponsePayloads["turn/start"]>;
-	readonly turnSteer: (params: SessionParams) => Promise<ResponsePayloads["turn/steer"]>;
-	readonly turnInterrupt: (params: SessionParams) => Promise<ResponsePayloads["turn/interrupt"]>;
-	readonly queueAdd: (params: SessionParams) => Promise<ResponsePayloads["thread/queue/add"]>;
+	readonly turnStart: (
+		params: SessionParams<"turn/start">,
+	) => Promise<ResponsePayloads["turn/start"]>;
+	readonly turnSteer: (
+		params: SessionParams<"turn/steer">,
+	) => Promise<ResponsePayloads["turn/steer"]>;
+	readonly turnInterrupt: (
+		params: SessionParams<"turn/interrupt">,
+	) => Promise<ResponsePayloads["turn/interrupt"]>;
+	readonly queueAdd: (
+		params: SessionParams<"thread/queue/add">,
+	) => Promise<ResponsePayloads["thread/queue/add"]>;
 	readonly queueListPage: (
-		params?: SessionParams,
+		params?: SessionParams<"thread/queue/list">,
 	) => Promise<ResponsePayloads["thread/queue/list"]>;
-	readonly queueUpdate: (params: SessionParams) => Promise<ResponsePayloads["thread/queue/update"]>;
-	readonly queueDelete: (params: SessionParams) => Promise<ResponsePayloads["thread/queue/delete"]>;
+	readonly queueUpdate: (
+		params: SessionParams<"thread/queue/update">,
+	) => Promise<ResponsePayloads["thread/queue/update"]>;
+	readonly queueDelete: (
+		params: SessionParams<"thread/queue/delete">,
+	) => Promise<ResponsePayloads["thread/queue/delete"]>;
 	readonly queueReorder: (
-		params: SessionParams,
+		params: SessionParams<"thread/queue/reorder">,
 	) => Promise<ResponsePayloads["thread/queue/reorder"]>;
-	readonly queueStart: (params: SessionParams) => Promise<ResponsePayloads["thread/queue/start"]>;
+	readonly queueStart: (
+		params: SessionParams<"thread/queue/start">,
+	) => Promise<ResponsePayloads["thread/queue/start"]>;
 	readonly threadInjectItems: (
-		params: SessionParams,
+		params: SessionParams<"thread/inject_items">,
 	) => Promise<ResponsePayloads["thread/inject_items"]>;
 	readonly realtimeStart: (
-		params: SessionParams,
+		params: SessionParams<"thread/realtime/start">,
 	) => Promise<ResponsePayloads["thread/realtime/start"]>;
 	readonly realtimeAppendText: (
-		params: SessionParams,
+		params: SessionParams<"thread/realtime/appendText">,
 	) => Promise<ResponsePayloads["thread/realtime/appendText"]>;
 	readonly realtimeAppendSpeech: (
-		params: SessionParams,
+		params: SessionParams<"thread/realtime/appendSpeech">,
 	) => Promise<ResponsePayloads["thread/realtime/appendSpeech"]>;
 	readonly realtimeStop: (
-		params: SessionParams,
+		params: SessionParams<"thread/realtime/stop">,
 	) => Promise<ResponsePayloads["thread/realtime/stop"]>;
 	readonly timelineListPage: (
-		params?: SessionParams,
+		params?: SessionParams<"thread/timeline/list">,
 	) => Promise<ResponsePayloads["thread/timeline/list"]>;
 	readonly respondCurrentTime: (request: SessionCurrentTimeRequest) => Promise<void>;
 	readonly respondUnsupportedTokenRefresh: (request: SessionTokenRefreshRequest) => Promise<void>;
