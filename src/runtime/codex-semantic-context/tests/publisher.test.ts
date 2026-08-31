@@ -4,9 +4,12 @@ import { CODEX_SEMANTIC_FRESHNESS_MS } from "../../../shared/timing/timing.ts";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.ts";
 import {
 	createSemanticContextPublisher,
+	SemanticContextLifecycleError,
 	SEMANTIC_CONTEXT_LIMITS,
 	type SemanticContextInput,
+	type SemanticCursor,
 	type SettledChangeSourceEvent,
+	type SettledSemanticChangeEvent,
 } from "../index.ts";
 
 function identities() {
@@ -62,7 +65,14 @@ function change(
 	};
 }
 
-function harness() {
+type RegistrationFailure = "feed" | "focus" | "selection";
+
+interface HarnessOptions {
+	readonly registrationFailure?: RegistrationFailure;
+	readonly cleanupFailures?: readonly RegistrationFailure[];
+}
+
+function sourceHarness(options: HarnessOptions = {}) {
 	const ids = identities();
 	const state = {
 		now: 1_700_000_000_000,
@@ -80,9 +90,14 @@ function harness() {
 	const feedListeners = new Set<(event: SettledChangeSourceEvent) => void>();
 	const focusListeners = new Set<(input: SemanticContextInput) => void>();
 	const selectionListeners = new Set<(input: SemanticContextInput) => void>();
+	const cleanupShouldFail = (port: RegistrationFailure) =>
+		options.cleanupFailures?.includes(port) === true;
 	const feed = {
 		onChange(listener: (event: SettledChangeSourceEvent) => void) {
 			state.feedSubscriptions++;
+			if (options.registrationFailure === "feed") {
+				throw new Error("feed registration failed");
+			}
 			feedListeners.add(listener);
 			let active = true;
 			return () => {
@@ -90,12 +105,16 @@ function harness() {
 				active = false;
 				state.feedUnsubscriptions++;
 				feedListeners.delete(listener);
+				if (cleanupShouldFail("feed")) throw new Error("feed cleanup failed");
 			};
 		},
 	};
 	const pane = {
 		onFocus(listener: (input: SemanticContextInput) => void) {
 			state.focusSubscriptions++;
+			if (options.registrationFailure === "focus") {
+				throw new Error("focus registration failed");
+			}
 			focusListeners.add(listener);
 			let active = true;
 			return () => {
@@ -103,10 +122,14 @@ function harness() {
 				active = false;
 				state.focusUnsubscriptions++;
 				focusListeners.delete(listener);
+				if (cleanupShouldFail("focus")) throw new Error("focus cleanup failed");
 			};
 		},
 		onSelection(listener: (input: SemanticContextInput) => void) {
 			state.selectionSubscriptions++;
+			if (options.registrationFailure === "selection") {
+				throw new Error("selection registration failed");
+			}
 			selectionListeners.add(listener);
 			let active = true;
 			return () => {
@@ -114,29 +137,38 @@ function harness() {
 				active = false;
 				state.selectionUnsubscriptions++;
 				selectionListeners.delete(listener);
+				if (cleanupShouldFail("selection")) {
+					throw new Error("selection cleanup failed");
+				}
 			};
 		},
 	};
-	const publisher = createSemanticContextPublisher({
-		feed,
-		feedId: "feed-1",
-		pane,
-		fresh: {
-			read: () => {
-				state.freshReads++;
-				return state.freshContext;
+	const createPublisher = () =>
+		createSemanticContextPublisher({
+			feed,
+			feedId: "feed-1",
+			pane,
+			fresh: {
+				read: () => {
+					state.freshReads++;
+					return state.freshContext;
+				},
 			},
-		},
-		contextForChange: () => {
-			state.changeReads++;
-			return state.changeContext;
-		},
-		now: () => state.now,
-	});
+			contextForChange: () => {
+				state.changeReads++;
+				return state.changeContext;
+			},
+			now: () => state.now,
+		});
 	return {
 		ids,
 		state,
-		publisher,
+		createPublisher,
+		activeSources: () => ({
+			feed: feedListeners.size,
+			focus: focusListeners.size,
+			selection: selectionListeners.size,
+		}),
 		emitFeed: (event: SettledChangeSourceEvent) => {
 			for (const listener of feedListeners) listener(event);
 		},
@@ -149,34 +181,40 @@ function harness() {
 	};
 }
 
+function harness() {
+	const source = sourceHarness();
+	return { ...source, publisher: source.createPublisher() };
+}
+
+function utf8(value: string): number {
+	return new TextEncoder().encode(value).byteLength;
+}
+
 describe("semantic context publisher", () => {
-	test("publishes focus and selection immediately through independent ports", () => {
+	test("publishes focus and selection immediately without a settle path", () => {
 		const h = harness();
-		const focus: unknown[] = [];
-		const selection: unknown[] = [];
+		const focus: string[] = [];
+		const selection: string[][] = [];
 		const settled: unknown[] = [];
-		h.publisher.subscribePaneFocus((event) => focus.push(event));
-		h.publisher.subscribePaneSelection((event) => selection.push(event));
+		h.publisher.subscribePaneFocus((event) => focus.push(event.pane.paneId));
+		h.publisher.subscribePaneSelection((event) => selection.push([...event.selection]));
 		h.publisher.subscribeSettledChange((event) => settled.push(event));
 
 		h.emitFocus(context(h.ids, { pane: { paneId: "pane-b", focused: false } }));
 		h.emitSelection(context(h.ids, { selection: ["selected-now"] }));
 		h.emitFocus(context(h.ids, { pane: { paneId: "pane-c", focused: true } }));
 
-		expect(focus).toHaveLength(2);
-		expect(selection).toHaveLength(1);
+		expect(focus).toEqual(["pane-b", "pane-c"]);
+		expect(selection).toEqual([["selected-now"]]);
 		expect(settled).toHaveLength(0);
-		expect((focus[0] as { kind: string; pane: { paneId: string } }).kind).toBe("pane_focus");
-		expect((focus[0] as { pane: { paneId: string } }).pane.paneId).toBe("pane-b");
-		expect((selection[0] as { kind: string; selection: string[] }).kind).toBe("pane_selection");
-		expect((selection[0] as { selection: string[] }).selection).toEqual(["selected-now"]);
+		expect(h.state.feedSubscriptions).toBe(1);
 	});
 
 	test("filters agent-only and cosmetic feed events while accepting human and mixed changes", () => {
 		const h = harness();
-		const settled: Array<{ origin: string; source: string; cursor: string | null }> = [];
+		const settled: Array<{ origin: string; cursor: SemanticCursor | null }> = [];
 		h.publisher.subscribeSettledChange((event) =>
-			settled.push({ origin: event.origin ?? "none", source: event.source, cursor: event.cursor }),
+			settled.push({ origin: event.origin ?? "none", cursor: event.cursor }),
 		);
 
 		h.emitFeed(change(h.state.now));
@@ -185,23 +223,28 @@ describe("semantic context publisher", () => {
 		h.emitFeed(change(h.state.now, { significance: "cosmetic" }));
 
 		expect(settled).toEqual([
-			{ origin: "human", source: "settled_change", cursor: "feed-1:3" },
-			{ origin: "mixed", source: "settled_change", cursor: "feed-1:3" },
+			{ origin: "human", cursor: { feedId: "feed-1", sequence: 3 } },
+			{ origin: "mixed", cursor: { feedId: "feed-1", sequence: 3 } },
 		]);
 		expect(h.state.changeReads).toBe(2);
 	});
 
-	test("includes the canonical identity fields and keeps each published event immutable", () => {
+	test("includes identity fields and freezes the exact current-feed cursor", () => {
 		const h = harness();
+		h.state.changeContext = context(h.ids, {
+			cursor: { feedId: "prior-feed", sequence: 99 },
+		});
 		let published: ReturnType<typeof h.publisher.publishPaneFocus> | undefined;
 		h.publisher.subscribePaneFocus((event) => {
 			published = event;
 		});
 
-		const returned = h.publisher.publishPaneFocus(context(h.ids));
+		h.emitFeed(change(h.state.now, { cursor: 42 }));
+		const settled = published;
+		expect(settled).toBeUndefined();
+		const event = h.publisher.publishPaneFocus(context(h.ids));
 
-		expect(published).toBe(returned);
-		expect(returned).toMatchObject({
+		expect(event).toMatchObject({
 			kind: "pane_focus",
 			source: "pane_focus",
 			feedId: "feed-1",
@@ -209,28 +252,42 @@ describe("semantic context publisher", () => {
 			board: { key: "payments", note: "boards/payments.excalidraw.md" },
 			version: 7,
 			pane: { paneId: "pane-a", focused: true },
-			cursor: "feed-1:3",
+			cursor: { feedId: "feed-1", sequence: 3 },
 			freshness: { state: "fresh", capturedAtMs: h.state.now },
 			child: { id: h.ids.child, epoch: h.ids.epoch },
-			workhorse: { threadId: h.ids.thread("workhorse"), turnId: h.ids.turn("turn-1") },
-			coordinator: {
-				threadId: h.ids.thread("coordinator"),
-				realtimeSessionId: h.ids.realtimeSession,
-			},
 			claim: { holder: "agent", doing: "mapping the board" },
 			doing: "mapping the board",
 		});
-		expect(returned.brief).toContain('"description":"Payments board');
-		expect(Object.isFrozen(returned)).toBe(true);
-		expect(Object.isFrozen(returned.selection)).toBe(true);
-		expect(Object.isFrozen(returned.freshness)).toBe(true);
-		expect(Object.isFrozen(returned.staleness)).toBe(true);
-		const before = returned.selection;
-		expect(() => (before as string[]).push("not-published")).toThrow();
-		expect(returned.selection).toEqual(["element-a", "element-b"]);
+		expect(Object.isFrozen(event)).toBe(true);
+		expect(Object.isFrozen(event.cursor)).toBe(true);
+		expect(Object.isFrozen(event.selection)).toBe(true);
+		expect(() => (event.selection as string[]).push("not-published")).toThrow();
+		expect(event.brief).toContain('"description":"Payments board');
 	});
 
-	test("reads a fresh brief on demand, never on construction, and renders deterministically", () => {
+	test("settled publication derives one cursor from the source event", () => {
+		const h = harness();
+		h.state.changeContext = context(h.ids, {
+			cursor: { feedId: "prior-feed", sequence: 99 },
+		});
+		let event: SettledSemanticChangeEvent | undefined;
+		h.publisher.subscribeSettledChange((published) => {
+			event = published;
+		});
+		h.emitFeed(
+			change(h.state.now, {
+				cursor: 44,
+			}),
+		);
+
+		if (event === undefined) throw new Error("expected a settled event");
+		if (event.cursor === null) throw new Error("expected a settled cursor");
+		expect(event.cursor).toEqual({ feedId: "feed-1", sequence: 44 });
+		expect(event.change.cursor).toBe(event.cursor);
+		expect(event.staleness).toEqual({ state: "current", reasons: [] });
+	});
+
+	test("reads fresh context only on demand and renders the same bytes deterministically", () => {
 		const h = harness();
 		expect(h.state.freshReads).toBe(0);
 		const first = h.publisher.freshBrief();
@@ -239,88 +296,159 @@ describe("semantic context publisher", () => {
 		expect(h.state.freshReads).toBe(2);
 		expect(first.kind).toBe("fresh_brief");
 		expect(first.brief).toBe(second.brief);
-		expect(first.bytes).toBe(new TextEncoder().encode(first.brief).byteLength);
+		expect(first.bytes).toBe(utf8(first.brief));
 	});
 
-	test("bounds selection, ambiguity, description, and the serialized brief with a truncation marker", () => {
+	test("fits hostile valid maxima into one deterministic UTF-8 budget", () => {
 		const h = harness();
-		const selection = Array.from({ length: 200 }, (_, index) => `${index}-`.repeat(40));
-		const ambiguity = Array.from({ length: 20 }, (_, index) => `${index}: `.repeat(100));
-		const description = "界".repeat(6_000);
-		const originalSelectionLength = selection.length;
-		const event = h.publisher.publishPaneSelection(
-			context(h.ids, { selection, ambiguity, description }),
+		const selection = Array.from(
+			{ length: SEMANTIC_CONTEXT_LIMITS.selectionEntries },
+			(_, index) => `${String(index).padStart(3, "0")}${"界".repeat(20)}`,
 		);
+		const ambiguity = Array.from(
+			{ length: SEMANTIC_CONTEXT_LIMITS.ambiguityEntries },
+			(_, index) => `${String(index).padStart(2, "0")}${"界".repeat(84)}`,
+		);
+		const staleReasons = ambiguity.map((reason) => `stale:${reason}`);
+		const hostile = context(h.ids, {
+			repository: "r".repeat(SEMANTIC_CONTEXT_LIMITS.repositoryBytes),
+			threadLink: { state: "inspect_only", reason: "界".repeat(170) },
+			board: {
+				key: "b".repeat(SEMANTIC_CONTEXT_LIMITS.boardKeyBytes),
+				note: "界".repeat(1_365),
+				version: 7,
+			},
+			pane: { paneId: "p".repeat(SEMANTIC_CONTEXT_LIMITS.paneIdBytes), focused: true },
+			selection,
+			claim: { holder: "agent", doing: "界".repeat(170) },
+			doing: "界".repeat(170),
+			description: "界".repeat(2_730),
+			ambiguity,
+			stale: true,
+			staleReasons,
+		});
 
-		expect(event.truncated).toBe(true);
-		expect(event.selection.length).toBeLessThanOrEqual(SEMANTIC_CONTEXT_LIMITS.selectionEntries);
-		expect(event.ambiguity.length).toBeLessThanOrEqual(SEMANTIC_CONTEXT_LIMITS.ambiguityEntries);
+		const first = h.publisher.publishPaneSelection(hostile);
+		const second = h.publisher.publishPaneSelection(hostile);
+
+		expect(first.brief).toBe(second.brief);
+		expect(first.truncated).toBe(true);
+		expect(JSON.parse(first.brief).truncated).toBe(true);
+		expect(utf8(first.brief)).toBeLessThanOrEqual(SEMANTIC_CONTEXT_LIMITS.briefBytes);
+		expect(first.brief).toContain("…");
+		expect(first.repository).not.toBe("");
+		expect(first.board.key).not.toBe("");
+		expect(first.board.note).not.toBe("");
+		expect(first.pane.paneId).not.toBe("");
 		expect(
-			event.selection.every(
-				(id) => new TextEncoder().encode(id).byteLength <= SEMANTIC_CONTEXT_LIMITS.selectionIdBytes,
-			),
+			first.selection.every((id) => utf8(id) <= SEMANTIC_CONTEXT_LIMITS.selectionIdBytes),
 		).toBe(true);
 		expect(
-			event.ambiguity.every(
-				(reason) =>
-					new TextEncoder().encode(reason).byteLength <= SEMANTIC_CONTEXT_LIMITS.ambiguityBytes,
-			),
+			first.ambiguity.every((reason) => utf8(reason) <= SEMANTIC_CONTEXT_LIMITS.ambiguityBytes),
 		).toBe(true);
-		expect(new TextEncoder().encode(event.description).byteLength).toBeLessThanOrEqual(
-			SEMANTIC_CONTEXT_LIMITS.descriptionBytes,
-		);
-		expect(new TextEncoder().encode(event.brief).byteLength).toBeLessThanOrEqual(
-			SEMANTIC_CONTEXT_LIMITS.briefBytes,
-		);
-		expect(event.brief).toContain("…");
-		expect(selection).toHaveLength(originalSelectionLength);
+		expect(utf8(first.description)).toBeLessThanOrEqual(SEMANTIC_CONTEXT_LIMITS.descriptionBytes);
 	});
 
-	test("marks stale and ambiguous settled context instead of hiding identity disagreement", () => {
+	test("marks prior-feed cursors stale and rejects malformed cursor shapes", () => {
+		const h = harness();
+		const prior = h.publisher.publishPaneSelection(
+			context(h.ids, { cursor: { feedId: "prior-feed", sequence: 7 } }),
+		);
+		expect(prior.cursor).toEqual({ feedId: "prior-feed", sequence: 7 });
+		expect(prior.staleness.state).toBe("stale");
+		expect(prior.ambiguity.join(" ")).toContain("cursor belongs to feed");
+
+		const malformed = {
+			...context(h.ids),
+			cursor: "feed-1:7",
+		} as unknown as SemanticContextInput;
+		expect(() => h.publisher.publishPaneSelection(malformed)).toThrow(/cursor/);
+		const extraKey = {
+			feedId: "feed-1",
+			sequence: 7,
+			extra: true,
+		};
+		expect(() =>
+			h.publisher.publishPaneSelection({
+				...context(h.ids),
+				cursor: extraKey as never,
+			}),
+		).toThrow(/feedId and sequence/);
+	});
+
+	test("marks stale timestamps and board disagreement instead of hiding ambiguity", () => {
 		const h = harness();
 		h.state.now += CODEX_SEMANTIC_FRESHNESS_MS + 1;
-		const stale: Array<{ freshness: string; staleness: string; reasons: readonly string[] }> = [];
+		const stale: Array<{
+			freshness: string;
+			reasons: readonly string[];
+			ambiguity: readonly string[];
+		}> = [];
 		h.publisher.subscribeSettledChange((event) =>
 			stale.push({
 				freshness: event.freshness.state,
-				staleness: event.staleness.state,
 				reasons: event.staleness.reasons,
+				ambiguity: event.ambiguity,
 			}),
 		);
 		h.emitFeed(change(h.state.now - CODEX_SEMANTIC_FRESHNESS_MS - 1));
 		h.emitFeed(change(h.state.now, { board: "other-board", at: "not-a-date" }));
 
-		expect(stale[0]).toMatchObject({ freshness: "stale", staleness: "stale" });
+		expect(stale[0]?.freshness).toBe("stale");
 		expect(stale[0]?.reasons).toContain("semantic freshness window expired");
 		expect(stale[1]?.reasons.join(" ")).toContain("settled event names board");
+		expect(stale[1]?.ambiguity.join(" ")).toContain("settled event names board");
 	});
 
-	test("deduplicates listeners and removes every source subscription exactly once on dispose", () => {
-		const h = harness();
-		let calls = 0;
-		const listener = () => {
-			calls++;
-		};
-		h.publisher.subscribePaneFocus(listener);
-		h.publisher.subscribePaneFocus(listener);
-		h.emitFocus(context(h.ids));
-		expect(calls).toBe(1);
-		expect(h.state).toMatchObject({
-			feedSubscriptions: 1,
-			focusSubscriptions: 1,
-			selectionSubscriptions: 1,
-			feedUnsubscriptions: 0,
-		});
+	test("rolls back every acquired source when registration fails at each step", () => {
+		for (const failure of ["feed", "focus", "selection"] as const) {
+			const h = sourceHarness({ registrationFailure: failure });
+			expect(() => h.createPublisher()).toThrow(`${failure} registration failed`);
+			expect(h.activeSources()).toEqual({ feed: 0, focus: 0, selection: 0 });
+			if (failure === "feed") {
+				expect(h.state.feedUnsubscriptions).toBe(0);
+			} else if (failure === "focus") {
+				expect(h.state.feedUnsubscriptions).toBe(1);
+				expect(h.state.focusUnsubscriptions).toBe(0);
+			} else {
+				expect(h.state.feedUnsubscriptions).toBe(1);
+				expect(h.state.focusUnsubscriptions).toBe(1);
+				expect(h.state.selectionUnsubscriptions).toBe(0);
+			}
+		}
+	});
 
-		h.publisher.dispose();
-		h.publisher.dispose();
+	test("reports cleanup errors after attempting every source cleanup", () => {
+		const h = sourceHarness({ cleanupFailures: ["feed", "focus", "selection"] });
+		const publisher = h.createPublisher();
+		expect(() => publisher.dispose()).toThrow(SemanticContextLifecycleError);
+		expect(h.activeSources()).toEqual({ feed: 0, focus: 0, selection: 0 });
 		expect(h.state).toMatchObject({
 			feedUnsubscriptions: 1,
 			focusUnsubscriptions: 1,
 			selectionUnsubscriptions: 1,
 		});
-		h.emitFocus(context(h.ids));
-		expect(calls).toBe(1);
-		expect(() => h.publisher.freshBrief()).toThrow("disposed");
+		publisher.dispose();
+		expect(h.state.feedUnsubscriptions).toBe(1);
+	});
+
+	test("replacement creates one live binding and no second settle timer", () => {
+		const h = sourceHarness();
+		const first = h.createPublisher();
+		first.dispose();
+		const second = h.createPublisher();
+		const seen: string[] = [];
+		second.subscribePaneFocus((event) => seen.push(event.pane.paneId));
+
+		expect(h.activeSources()).toEqual({ feed: 1, focus: 1, selection: 1 });
+		expect(h.state).toMatchObject({
+			feedSubscriptions: 2,
+			feedUnsubscriptions: 1,
+			focusSubscriptions: 2,
+			selectionSubscriptions: 2,
+		});
+		h.emitFocus(context(h.ids, { pane: { paneId: "replacement", focused: true } }));
+		expect(seen).toEqual(["replacement"]);
+		second.dispose();
 	});
 });

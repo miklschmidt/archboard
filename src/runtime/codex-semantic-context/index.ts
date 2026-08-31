@@ -1,4 +1,8 @@
-export { SemanticContextInputError, createSemanticContextPublisher } from "./lib/publisher.js";
+export {
+	SemanticContextInputError,
+	SemanticContextLifecycleError,
+	createSemanticContextPublisher,
+} from "./lib/publisher.js";
 
 export type {
 	FreshBriefSource,
@@ -23,9 +27,13 @@ export type {
 	SemanticContextPublisherOptions,
 	SemanticCoordinator,
 	SemanticCoordinatorInput,
+	SemanticCursor,
+	SemanticCursorInput,
 	SemanticFreshness,
+	SemanticListenerFailure,
 	SemanticPane,
 	SemanticPaneInput,
+	SemanticPublisherPort,
 	SemanticStaleness,
 	SemanticThreadLink,
 	SemanticThreadLinkInput,

@@ -15,8 +15,17 @@ export type SemanticBriefSource =
 	| "fresh_brief";
 export type SemanticThreadLinkState = "executable" | "inspect_only" | "unbound";
 export type SemanticClaimHolder = "human" | "agent" | "none";
+export type SemanticPublisherPort = "settled_change" | "pane_focus" | "pane_selection";
 
 export type SemanticUnsubscribe = () => void;
+
+export interface SemanticCursor {
+	readonly feedId: string;
+	readonly sequence: number;
+}
+
+/** A numeric sequence is shorthand for the publisher's current feed. */
+export type SemanticCursorInput = number | SemanticCursor;
 
 /** The settled fields consumed from the existing change feed. */
 export interface SettledChangeSourceEvent {
@@ -98,7 +107,7 @@ export interface SemanticContextInput {
 	readonly selection: readonly string[];
 	readonly claim?: SemanticClaimInput;
 	readonly doing: string | null;
-	readonly cursor: string | number | null;
+	readonly cursor: SemanticCursorInput | null;
 	readonly description: string;
 	readonly ambiguity?: readonly string[];
 	readonly stale?: boolean;
@@ -166,7 +175,7 @@ export interface SemanticBriefFields {
 	readonly selection: readonly string[];
 	readonly claim: SemanticClaim;
 	readonly doing: string | null;
-	readonly cursor: string | null;
+	readonly cursor: SemanticCursor | null;
 	readonly description: string;
 	readonly freshness: SemanticFreshness;
 	readonly truncated: boolean;
@@ -181,7 +190,7 @@ export interface SettledSemanticChangeEvent extends SemanticBriefFields {
 	readonly kind: "settled_change";
 	readonly change: {
 		readonly feedId: string;
-		readonly cursor: number;
+		readonly cursor: SemanticCursor;
 		readonly board: string;
 		readonly at: string;
 		readonly origin: SemanticChangeOrigin;
@@ -206,6 +215,14 @@ export interface PaneSelectionEvent extends SemanticBriefFields {
 
 export interface FreshSemanticBrief extends SemanticBriefFields {
 	readonly kind: "fresh_brief";
+}
+
+export interface SemanticListenerFailure {
+	readonly port: SemanticPublisherPort;
+	readonly eventKind: SemanticBrief["kind"];
+	readonly listenerIndex: number;
+	readonly errorName: string;
+	readonly message: string;
 }
 
 export type SemanticBrief =
@@ -236,5 +253,7 @@ export interface SemanticContextPublisher {
 	readonly publishPaneFocus: (input: SemanticContextInput) => PaneFocusEvent;
 	readonly publishPaneSelection: (input: SemanticContextInput) => PaneSelectionEvent;
 	readonly freshBrief: () => FreshSemanticBrief;
+	/** Returns and clears downstream listener failures in emission order. */
+	readonly drainListenerFailures: () => readonly SemanticListenerFailure[];
 	readonly dispose: () => void;
 }
