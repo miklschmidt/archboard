@@ -145,7 +145,6 @@ function resolvedIdentities(
 function packageRootFromModule(module: string): string | undefined {
 	return module.match(/\/node_modules\/((?:@[^/]+\/)?[^/]+)/)?.[1];
 }
-
 describe("assistant-ui dependency and import policy", () => {
 	test("pins the root package, lock entry, licenses, and exact transitive allowlist", () => {
 		const packageJson = JSON.parse(
@@ -256,18 +255,19 @@ describe("assistant-ui dependency and import policy", () => {
 		}
 	});
 	test("rejects local aliases and nested primitive internals", async () => {
-		const composerCase = (
-			body: string,
-			message = "Do not alias an assistant-ui import",
-		): [string, string] => [
+		const composerCase = (body: string, message = "Do not alias an assistant-ui import") => [
 			`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\n${body}`,
 			message,
 		];
-		const cases: Array<[string, string]> = [
+		const cases = [
 			[
 				`import { ComposerPrimitive as Primitive } from "${ASSISTANT_UI_PACKAGE}";\nvoid Primitive;`,
 				"Do not alias an assistant-ui import",
 			],
+			composerCase("const Primitive = ComposerPrimitive;void Primitive;"),
+			composerCase(
+				"const Primitive = ComposerPrimitive satisfies typeof ComposerPrimitive;void Primitive;",
+			),
 			composerCase("void ComposerPrimitive.Queue;", "ComposerPrimitive.Queue"),
 			composerCase('void ComposerPrimitive["Dictate"];', "ComposerPrimitive.Dictate"),
 			composerCase(

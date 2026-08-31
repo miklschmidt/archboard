@@ -386,12 +386,12 @@ const assistantUiImports = createRule(
 				const init = unwrapExpression(node.init);
 				if (init?.type !== "Identifier") return;
 				const importedName = localAssistantUiMembers.get(init.name);
-				if (node.id?.type === "Identifier") {
-					if (importedName) localAssistantUiMembers.set(node.id.name, importedName);
-					return;
+				if (node.id?.type === "Identifier" && importedName) {
+					report(context, node, "noAssistantUiAlias");
+					localAssistantUiMembers.set(node.id.name, importedName);
 				}
-				if (node.id?.type !== "ObjectPattern") return;
-				if (!importedName) return;
+				if (node.id?.type === "Identifier") return;
+				if (node.id?.type !== "ObjectPattern" || !importedName) return;
 				for (const property of node.id.properties ?? []) {
 					const key = property.key;
 					const propertyName = key?.name ?? key?.value;
