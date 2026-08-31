@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 02:35'
+updated_date: '2026-08-31 02:47'
 labels: []
 dependencies:
   - TASK-143.02.01
@@ -47,4 +47,6 @@ Delegation profile: gpt-5.6-luna, high.
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved immediately after TASK-143.02.02 finalized and released this dependency-ready boundary leaf at integration HEAD eb9aeae. It owns only public API and repository-policy tests and is path-disjoint from active production work.
+
+Implementation commit 9a39e7e (test(realtime): govern private public boundary) adds only src/ui/codex-realtime/tests/public-api.test.ts and tests/system/repository-policy/codex-realtime-boundary.test.ts. The public owner executes a temporary consumer importing only the public index through negotiation, metering, stop, and dispose; the boundary owner enforces the sole entrypoint, canonical frozen re-export sources, hostile deep-import/extra-entrypoint/accidental-export diagnostics, and module-scope safety. Focused evidence passed: public API 3 tests/31 expectations; boundary 3 tests/9 expectations; repository inventory 39 tests/69 expectations; module-scope policy 8 tests/11 expectations; both strict TypeScript projects; focused Oxlint; focused Oxfmt check; git diff --check. Broad module, system, repository, check, and browser lanes were intentionally not run. Remaining risk: broad integration and browser lanes remain root-owned. Task remains In Progress with acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->
