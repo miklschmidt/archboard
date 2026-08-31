@@ -155,7 +155,6 @@ describe("assistant-ui dependency and import policy", () => {
 		};
 		expect(packageJson.dependencies?.[ASSISTANT_UI_PACKAGE]).toBe("0.15.17");
 		expect(directRadixDependencies(packageJson)).toEqual([]);
-
 		const lock = Bun.JSON5.parse(fs.readFileSync(path.join(repoRoot, "bun.lock"), "utf8")) as {
 			workspaces: Record<string, { dependencies?: Record<string, string> }>;
 			packages: Record<string, [string, string, Record<string, unknown>?]>;
@@ -164,7 +163,6 @@ describe("assistant-ui dependency and import policy", () => {
 		expect(lock.packages[ASSISTANT_UI_PACKAGE]?.[0]).toBe("@assistant-ui/react@0.15.17");
 		expect(resolvedIdentities(lock.packages, /^react@/)).toEqual([EXPECTED_REACT]);
 		expect(resolvedIdentities(lock.packages, /^react-dom@/)).toEqual([EXPECTED_REACT_DOM]);
-
 		const graph = assistantUiDependencyGraph();
 		expect(new Set(graph.keys())).toEqual(ASSISTANT_UI_TRANSITIVE_ALLOWLIST);
 		for (const [identity, manifest] of graph) {
@@ -185,7 +183,6 @@ describe("assistant-ui dependency and import policy", () => {
 			]),
 		);
 	});
-
 	test("counts React identities in hostile nested lock keys", () => {
 		const hostile = {
 			"owner/react": ["react@19.2.8", "", {}],
@@ -206,16 +203,14 @@ describe("assistant-ui dependency and import policy", () => {
 			{ key: "nested/react-dom-v18", identity: "react-dom@18.3.1" },
 		]);
 	});
-
 	for (const [file, members] of OWNER_MEMBERS) {
-		test(`allows the exact named members in ${path.dirname(file)}`, async () => {
-			await withProject(
+		test(`allows the exact named members in ${path.dirname(file)}`, () =>
+			withProject(
 				{
 					[file]: `import { ${members.join(", ")} } from "${ASSISTANT_UI_PACKAGE}";\nexport const contract = [${members.join(", ")}];\n`,
 				},
 				(root) => expectPass(lint(root, file)),
-			);
-		});
+			));
 	}
 	test("rejects wrong owners, extra members, copied Elements, and every forbidden API family", async () => {
 		const cases: Array<[string, string]> = [
@@ -261,43 +256,34 @@ describe("assistant-ui dependency and import policy", () => {
 		}
 	});
 	test("rejects local aliases and nested primitive internals", async () => {
+		const composerCase = (
+			body: string,
+			message = "Do not alias an assistant-ui import",
+		): [string, string] => [
+			`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\n${body}`,
+			message,
+		];
 		const cases: Array<[string, string]> = [
 			[
 				`import { ComposerPrimitive as Primitive } from "${ASSISTANT_UI_PACKAGE}";\nvoid Primitive;`,
 				"Do not alias an assistant-ui import",
 			],
-			[
-				`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nvoid ComposerPrimitive.Queue;`,
-				"ComposerPrimitive.Queue",
-			],
-			[
-				`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nvoid ComposerPrimitive["Dictate"];`,
-				"ComposerPrimitive.Dictate",
-			],
-			[
-				`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nconst key = "Queue";\nvoid ComposerPrimitive[key];`,
+			composerCase("void ComposerPrimitive.Queue;", "ComposerPrimitive.Queue"),
+			composerCase('void ComposerPrimitive["Dictate"];', "ComposerPrimitive.Dictate"),
+			composerCase(
+				'const key = "Queue";\nvoid ComposerPrimitive[key];',
 				"non-literal dynamic import",
-			],
-			[
-				`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nlet Primitive;\nPrimitive = ComposerPrimitive;\nvoid Primitive.Queue;`,
-				"Do not alias an assistant-ui import",
-			],
-			[
-				`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nlet Primitive;\nPrimitive = ComposerPrimitive;\nvoid Primitive.Dictate;`,
-				"Do not alias an assistant-ui import",
-			],
-			[
-				`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nconst Primitive = ComposerPrimitive as typeof ComposerPrimitive;\nvoid Primitive.Queue;`,
+			),
+			composerCase("let Primitive;\nPrimitive = ComposerPrimitive;\nvoid Primitive.Queue;"),
+			composerCase("let Primitive;\nPrimitive = ComposerPrimitive;\nvoid Primitive.Dictate;"),
+			composerCase(
+				"const Primitive = ComposerPrimitive as typeof ComposerPrimitive;\nvoid Primitive.Queue;",
 				"ComposerPrimitive.Queue",
-			],
-			[
-				`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nlet Primitive;\nPrimitive = ComposerPrimitive!;\nvoid Primitive.Dictate;`,
-				"Do not alias an assistant-ui import",
-			],
-			[
-				`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nlet Tool;\n({ Tool } = <typeof ComposerPrimitive>ComposerPrimitive);\nvoid Tool;`,
-				"Do not alias an assistant-ui import",
-			],
+			),
+			composerCase("let Primitive;\nPrimitive = ComposerPrimitive!;\nvoid Primitive.Dictate;"),
+			composerCase(
+				"let Tool;\n({ Tool } = <typeof ComposerPrimitive>ComposerPrimitive);\nvoid Tool;",
+			),
 			[
 				`import { MessagePrimitive } from "${ASSISTANT_UI_PACKAGE}";\nlet Primitive;\nPrimitive = MessagePrimitive;\nvoid Primitive.GenerativeUI;`,
 				"Do not alias an assistant-ui import",
@@ -310,12 +296,27 @@ describe("assistant-ui dependency and import policy", () => {
 				`import { MessagePrimitive } from "${ASSISTANT_UI_PACKAGE}";\nconst Primitive = MessagePrimitive;\nvoid Primitive.GenerativeUI;`,
 				"MessagePrimitive.GenerativeUI",
 			],
-			...["Queue", "Dictate", "Tool"].map(
-				(member) =>
-					[
-						`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nlet ${member};\n({ ${member} } = ComposerPrimitive);\nvoid ${member};`,
-						"Do not alias an assistant-ui import",
-					] as [string, string],
+			...["Queue", "Dictate", "Tool"].map((member) =>
+				composerCase(`let ${member};\n({ ${member} } = ComposerPrimitive);\nvoid ${member};`),
+			),
+			composerCase(
+				"const Primitive = ComposerPrimitive satisfies typeof ComposerPrimitive;\nvoid Primitive.Queue;",
+				"ComposerPrimitive.Queue",
+			),
+			composerCase(
+				"let Primitive;\nPrimitive = ComposerPrimitive satisfies typeof ComposerPrimitive;\nvoid Primitive.Dictate;",
+			),
+			composerCase(
+				"let Tool;\n({ Tool } = ComposerPrimitive satisfies typeof ComposerPrimitive);\nvoid Tool;",
+			),
+			composerCase(
+				"void (ComposerPrimitive as typeof ComposerPrimitive).Queue;",
+				"ComposerPrimitive.Queue",
+			),
+			composerCase("void ComposerPrimitive!.Dictate;", "ComposerPrimitive.Dictate"),
+			composerCase(
+				"void (ComposerPrimitive satisfies typeof ComposerPrimitive).Queue;",
+				"ComposerPrimitive.Queue",
 			),
 		];
 		for (const [source, message] of cases) {
@@ -404,7 +405,6 @@ describe("assistant-ui dependency and import policy", () => {
 			},
 		);
 	});
-
 	test("keeps the assistant runtime bundle within the bounded headless surface", () => {
 		const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-assistant-ui-bundle-"));
 		try {
