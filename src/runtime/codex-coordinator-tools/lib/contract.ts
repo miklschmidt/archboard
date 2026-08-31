@@ -20,6 +20,7 @@ import type {
 	IdentityAuthority,
 	JsonRpcRequestId,
 	LogicalToolCallCorrelation,
+	OperationAuthority,
 	ThreadId,
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
@@ -76,8 +77,6 @@ export interface CoordinatorToolAuthorityPort {
 	readonly currentCoordinator: () => CoordinatorToolCoordinatorAuthority | null;
 	readonly currentWorkhorseBinding: () => WorkhorseOperationBinding | null;
 	readonly currentCall: () => LogicalToolCallCorrelation | null;
-	/** Supplies the already-issued opaque id used in the outer result envelope. */
-	readonly operationIdFor: (request: DynamicServerRequest) => string | null;
 	/** Supplies expectedTurnId; the coordinator never receives it from tool arguments. */
 	readonly expectedTurnId: () => TurnId | null;
 }
@@ -93,6 +92,7 @@ export interface CoordinatorToolResponsePort {
 
 export interface CodexCoordinatorToolsOptions {
 	readonly identity: IdentityAuthority;
+	readonly operation: Pick<OperationAuthority, "issuer" | "validator" | "decoder">;
 	readonly authority: CoordinatorToolAuthorityPort;
 	readonly operations: Pick<
 		CodexWorkhorseOperations,
@@ -105,8 +105,6 @@ export interface CodexCoordinatorToolsOptions {
 export type CoordinatorToolsServerRequest = DynamicServerRequest & {
 	readonly owner: typeof COORDINATOR_TOOLS_OWNER;
 };
-
-export type CoordinatorToolOperationId = string;
 
 export type DynamicToolResponse =
 	| z.infer<typeof ValidDynamicToolResponseSchema>

@@ -78,6 +78,9 @@ describe("coordinator dynamic-tool dispatcher", () => {
 		const queue = await dispatch(h, queueRequest);
 		const steerRequest = h.request("steer_workhorse");
 		const steer = await dispatch(h, steerRequest);
+		const queueCall = h.operations.calls.manageQueue[0];
+		if (queueCall === undefined || queueCall.operation === "list")
+			throw new Error("expected one queue mutation call");
 
 		expect(inspect.attempted).toBe(true);
 		expect(delegate.attempted).toBe(true);
@@ -87,23 +90,25 @@ describe("coordinator dynamic-tool dispatcher", () => {
 		expect(h.operations.calls.inspect[0]).toMatchObject({ call: inspectRequest.logicalCall });
 		expect(h.operations.calls.delegate[0]).toMatchObject({
 			call: delegateRequest.logicalCall,
+			operationId: expect.any(String),
 			input: "delegate input",
 			transcriptDelta: "spoken context",
 		});
 		expect(h.operations.calls.manageQueue[0]).toMatchObject({
 			call: queueRequest.logicalCall,
+			operationId: expect.any(String),
 			operation: "update",
 			submissionId: "submission-1",
 			prompt: "updated prompt",
 		});
 		expect(h.operations.calls.steer[0]).toMatchObject({
 			call: steerRequest.logicalCall,
+			operationId: expect.any(String),
 			expectedTurnId: h.expectedTurnId,
 			input: "steer input",
 		});
-		expect(envelope(inspect.response)).toEqual({
+		expect(envelope(inspect.response)).toMatchObject({
 			tag: "ok",
-			operationId: `operation-${String(inspectRequest.requestId)}`,
 			value: {
 				threadId: h.workhorseThreadId,
 				status: "idle",
@@ -113,6 +118,7 @@ describe("coordinator dynamic-tool dispatcher", () => {
 		});
 		expect(envelope(delegate.response)).toMatchObject({
 			tag: "ok",
+			operationId: h.operations.calls.delegate[0]!.operationId,
 			value: {
 				mode: "started",
 				clientUserMessageId: "client-user-message",
@@ -122,11 +128,12 @@ describe("coordinator dynamic-tool dispatcher", () => {
 		});
 		expect(envelope(queue.response)).toMatchObject({
 			tag: "ok",
+			operationId: queueCall.operationId,
 			value: { operation: "update", queuedSubmissionIds: [] },
 		});
 		expect(envelope(steer.response)).toEqual({
 			tag: "ok",
-			operationId: `operation-${String(steerRequest.requestId)}`,
+			operationId: h.operations.calls.steer[0]!.operationId,
 			value: { turnId: h.expectedTurnId, delivery: "delivered" },
 		});
 		expect(h.transport.writes).toHaveLength(4);
@@ -161,7 +168,7 @@ describe("coordinator dynamic-tool dispatcher", () => {
 		expect(h.operations.calls.steer).toHaveLength(0);
 		expect(envelope(result.response)).toEqual({
 			tag: "ok",
-			operationId: "classifier-operation",
+			operationId: h.spokenApproval.snapshot().operationId,
 			value: { verdict: "decline", settlement: "outcome_unknown" },
 		});
 		expect(h.timeline).toEqual(["voice.resolve", "transport.respond"]);
@@ -169,15 +176,29 @@ describe("coordinator dynamic-tool dispatcher", () => {
 
 	test("preserves gate refusals for later classifier, fallback, final-user, second-slot, and stale-session states", async () => {
 		const cases = [
-			["later classifier turn", "invalid_call"],
-			["visual fallback", "unsupported"],
-			["final-user authority", "unknown_provenance"],
-			["second slot", "busy"],
-			["stale realtime session", "unknown_provenance"],
+			["later classifier turn", "invalid_call", { state: "classifying", classifierTurnId: null }],
+			["visual fallback", "unsupported", { state: "visual_fallback", reason: "ambiguous" }],
+			[
+				"final-user authority",
+				"unknown_provenance",
+				{ finalUserText: null, reason: "missing_user_final" },
+			],
+			["second slot", "busy", { state: "resolving" }],
+			[
+				"stale realtime session",
+				"unknown_provenance",
+				{ state: "visual_fallback", reason: "stale_realtime_session" },
+			],
 		] as const;
-		for (const [label, reason] of cases) {
+		for (const [label, reason, snapshotChange] of cases) {
 			const h = fixture();
 			const request = h.request("resolve_spoken_approval");
+			h.spokenApproval.setSnapshot(
+				Object.freeze({
+					...h.spokenApproval.snapshot(),
+					...snapshotChange,
+				}),
+			);
 			h.spokenApproval.setResult({
 				tag: "refused",
 				reason,
@@ -186,7 +207,12 @@ describe("coordinator dynamic-tool dispatcher", () => {
 			const result = await dispatch(h, request);
 			validateResponse(result.response);
 			expect(result.response.success).toBe(true);
-			expect(envelope(result.response)).toMatchObject({ tag: "refused", reason });
+			expect(envelope(result.response)).toMatchObject({
+				tag: "refused",
+				reason,
+				message: `${label} refused by the spoken gate`,
+			});
+			expect(h.spokenApproval.calls).toEqual([request]);
 			expect(h.operations.calls.inspect).toHaveLength(0);
 			expect(h.transport.writes).toHaveLength(1);
 		}

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-31 20:33'
+updated_date: '2026-08-31 20:56'
 labels: []
 dependencies:
   - TASK-143.07.03
@@ -15,6 +15,7 @@ references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
 modified_files:
   - src/runtime/codex-coordinator-tools
+  - src/runtime/codex-workhorse-operations
 parent_task_id: TASK-143.07
 priority: high
 type: task
@@ -43,10 +44,22 @@ Own coordinator item/tool/call validation, routing, and response construction fo
 3. Serialize each request into one dispatch/response attempt, map accepted results and typed refusals without inventing settlement, and handle cancellation, lost dispatch, stale/current epoch, self/cross-domain, and manifest failures fail-closed.
 4. Add co-located fake-port tests covering every namespace/tool route, schema/identity/manifest refusal, host authority race, workhorse result/refusal/unknown outcomes, later-turn and final-user-gated voice results, visual fallback, second slot, stale session, cancellation, child disconnect, duplicate response, and timeline ordering.
 5. Run sequential named transient systemd validation with explicit cwd/cgroup and 6G/1G caps for focused tests, both type graphs, scoped lint/format, inventory, diff/clean/protected-hash checks; preserve known capped-OOM evidence, commit the coherent module, and leave acceptance criteria unchecked for independent review.
+
+6. Replace the dispatcher string/request-derived response identity with the shared OperationAuthority: issue and validate one branded ID per workhorse call, pass it into every mutation request, reuse it for durable state/errors/results, issue read-result IDs without mutation state, and accept voice IDs only from the gate snapshot.
+
+7. Add an optional host-issued OperationId to the .07.03 mutation request contract for compatibility, centralize validate-or-mint selection inside that module, and prove delegate, queue mutation, and steer reuse the exact supplied identity while rejecting cross-domain, unissued, and stale values before effect.
+
+8. Claim full logical-call identity independently of wire request identity, reuse the first terminal result for a second request carrying the same call, and retain existing wire-request duplicate refusal with one effect and one response attempt.
+
+9. Replace label-only spoken tests with full public SpokenApprovalSnapshot fixtures and add disposal timing owners that distinguish writable disposal from exact child disconnect.
+
+10. Run only the requested focused coordinator/workhorse suites, both type graphs, scoped lint/format, inventory, fixed-range diff/clean/protected-hash checks in sequential named 6G/1G transient units; preserve all known capped-OOM lanes and leave acceptance criteria unchecked.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented the coordinator-tools deep module with strict logical-call/manifest/epoch/host-binding validation, exact workhorse and spoken-gate routing, canonical one-item responses, and one-shot lifecycle/transport handling. Final focused evidence: archboard-task1430706-focused-final passed 19 tests / 232 expectations; archboard-task1430706-typecheck-final passed both TypeScript projects; archboard-task1430706-lint-final passed Oxlint with 0 warnings/errors; archboard-task1430706-fmt-final passed Oxfmt check; archboard-task1430706-inventory-final passed 39 tests / 69 expectations; git diff --check passed; protected bundle SHA-256 remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. The full test:modules lane was attempted once under archboard-task1430706-modules-final and reached the enforced MemoryMax=6G / MemorySwapMax=1G cap with a 6G memory and 1G swap peak; it was not retried. Task remains In Progress with acceptance criteria unchecked for independent review.
+
+Remediation: coordinator now mints one canonical OperationId per workhorse dispatch, injects it through the TASK-143.07.03 mutation seam, and uses only the spoken classifier snapshot identity for voice settlement. Full logical-call correlation deduplicates retries across request IDs. Disposal closes admission without suppressing owned response writes; exact child disconnect remains the sole wire suppression condition. Regression coverage uses full public SpokenApprovalSnapshot fixtures and exercises pre-effect, in-flight read, in-flight mutation, and post-effect response delivery. Focused tests: 49 pass; both TypeScript graphs pass; scoped lint/format pass; test inventory: 39 pass. The previously observed capped test:modules OOM at MemoryMax=6G and MemorySwapMax=1G was not rerun. Acceptance criteria remain unchecked pending parent review.
 <!-- SECTION:NOTES:END -->
