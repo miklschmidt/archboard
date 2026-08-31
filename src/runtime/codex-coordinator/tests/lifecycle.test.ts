@@ -179,6 +179,45 @@ describe("coordinator lifecycle", () => {
 		}
 	});
 
+	test("settles timeout before deferred update without an unhandled rejection", async () => {
+		const fixtureValue = fixture({ emitSettings: false, deferSettingsUpdate: true });
+		const unhandledRejections: unknown[] = [];
+		const onUnhandledRejection = (reason: unknown): void => {
+			unhandledRejections.push(reason);
+		};
+		process.on("unhandledRejection", onUnhandledRejection);
+		jest.useFakeTimers();
+		try {
+			const pending = fixtureValue.coordinator.ensure({ operationId: "deferred-settings-timeout" });
+			await flushMicrotasks();
+			expect(fixtureValue.session.updateParams).toHaveLength(1);
+
+			jest.advanceTimersByTime(CODEX_REQUEST_SETTLEMENT_MS);
+			await flushMicrotasks();
+			expect(fixtureValue.epoch.unknownCalls).toBe(0);
+
+			fixtureValue.session.releaseSettingsUpdate();
+			const snapshot = await pending;
+			const retry = await fixtureValue.coordinator.ensure({
+				operationId: "deferred-settings-timeout-retry",
+			});
+			await flushMicrotasks();
+
+			expect(snapshot.state).toBe("inspect_only");
+			expect(snapshot.threadId).not.toBeNull();
+			expect(fixtureValue.epoch.unknownCalls).toBe(1);
+			expect(retry.state).toBe("inspect_only");
+			expect(fixtureValue.epoch.unknownCalls).toBe(1);
+			expect(fixtureValue.session.startParams).toHaveLength(1);
+			expect(fixtureValue.session.updateParams).toHaveLength(1);
+			expect(unhandledRejections).toHaveLength(0);
+		} finally {
+			fixtureValue.session.releaseSettingsUpdate();
+			jest.useRealTimers();
+			process.off("unhandledRejection", onUnhandledRejection);
+		}
+	});
+
 	test("retains an earlier same-thread mismatch until a later exact notification", async () => {
 		const fixtureValue = fixture({ emitSettings: false });
 		jest.useFakeTimers();

@@ -43,10 +43,13 @@ interface PendingSettingsNotification {
 	readonly threadId: ThreadId;
 	readonly started: CoordinatorStartResponse;
 	readonly configured: CoordinatorConfiguredSettings;
-	readonly resolve: (settings: CoordinatorThreadSettings) => void;
-	readonly reject: (error: CodexCoordinatorError) => void;
+	readonly resolve: (outcome: SettingsNotificationOutcome) => void;
 	readonly cancel: () => void;
 }
+
+type SettingsNotificationOutcome =
+	| { readonly kind: "matched"; readonly settings: CoordinatorThreadSettings }
+	| { readonly kind: "expired"; readonly error: CodexCoordinatorError };
 
 export interface CoordinatorStartHooks {
 	readonly setSnapshot: (snapshot: CoordinatorSnapshot) => void;
@@ -88,7 +91,7 @@ export function createCoordinatorStarter(
 		);
 		if (mismatch !== null) return;
 		pending.cancel();
-		pending.resolve(notification.params.threadSettings);
+		pending.resolve({ kind: "matched", settings: notification.params.threadSettings });
 	};
 
 	const start = async (
@@ -210,10 +213,8 @@ export function createCoordinatorStarter(
 			return hooks.snapshot();
 		}
 
-		let notificationSettings: CoordinatorThreadSettings;
-		try {
-			notificationSettings = await waiting.promise;
-		} catch (error) {
+		const notificationOutcome = await waiting.promise;
+		if (notificationOutcome.kind === "expired") {
 			markUnknown(
 				transaction,
 				"coordinator settings notification settlement expired",
@@ -221,12 +222,19 @@ export function createCoordinatorStarter(
 			);
 			hooks.setPersistence(null);
 			hooks.setSnapshot(
-				inspectSnapshot(startedThreadId, operationId, configured, null, null, errorMessage(error)),
+				inspectSnapshot(
+					startedThreadId,
+					operationId,
+					configured,
+					null,
+					null,
+					errorMessage(notificationOutcome.error),
+				),
 			);
 			return hooks.snapshot();
 		}
 
-		const settings = coordinatorSettings(configured, notificationSettings);
+		const settings = coordinatorSettings(configured, notificationOutcome.settings);
 		let review: CoordinatorReviewHashes;
 		try {
 			review = reviewedCoordinatorHashes(hashCoordinatorSettings(settings));
@@ -284,18 +292,16 @@ export function createCoordinatorStarter(
 		threadId: ThreadId,
 		started: CoordinatorStartResponse,
 		configured: CoordinatorConfiguredSettings,
-	): { readonly promise: Promise<CoordinatorThreadSettings>; readonly cancel: () => void } {
+	): { readonly promise: Promise<SettingsNotificationOutcome>; readonly cancel: () => void } {
 		if (pendingSettings !== null) {
 			throw new CodexCoordinatorError(
 				"transaction_failed",
 				"A coordinator settings handshake is already pending.",
 			);
 		}
-		let resolve!: (settings: CoordinatorThreadSettings) => void;
-		let reject!: (error: CodexCoordinatorError) => void;
-		const promise = new Promise<CoordinatorThreadSettings>((promiseResolve, promiseReject) => {
+		let resolve!: (outcome: SettingsNotificationOutcome) => void;
+		const promise = new Promise<SettingsNotificationOutcome>((promiseResolve) => {
 			resolve = promiseResolve;
-			reject = promiseReject;
 		});
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		const pending: PendingSettingsNotification = {
@@ -303,7 +309,6 @@ export function createCoordinatorStarter(
 			started,
 			configured,
 			resolve,
-			reject,
 			cancel: () => {
 				if (pendingSettings !== pending) return;
 				pendingSettings = null;
@@ -314,12 +319,13 @@ export function createCoordinatorStarter(
 		timer = setTimeout(() => {
 			if (pendingSettings !== pending) return;
 			pendingSettings = null;
-			reject(
-				new CodexCoordinatorError(
+			resolve({
+				kind: "expired",
+				error: new CodexCoordinatorError(
 					"settings_timeout",
 					`The coordinator settings notification did not match within ${CODEX_REQUEST_SETTLEMENT_MS} ms; inspect the authoritative thread list.`,
 				),
-			);
+			});
 		}, CODEX_REQUEST_SETTLEMENT_MS);
 		return {
 			promise,
