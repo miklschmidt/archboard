@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.08
 title: Reduce one typed Codex app-server session
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 06:50'
+updated_date: '2026-08-31 12:31'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -37,6 +37,15 @@ modified_files:
   - src/shared/codex-workbench-identity/lib/identity.ts
   - src/shared/codex-browser-model/index.ts
   - src/shared/codex-browser-model/lib/authored.ts
+  - src/runtime/codex-protocol/conformance.ts
+  - src/runtime/codex-protocol/lib/client-request-schema-conformance.ts
+  - src/runtime/codex-protocol/lib/thread-schemas.ts
+  - src/runtime/codex-protocol/tests/client-request-schema-conformance.test.ts
+  - src/runtime/codex-session/lib/results.ts
+  - src/runtime/codex-session/tests/response-identities.test.ts
+  - src/runtime/codex-session/tests/response-workflows.test.ts
+  - src/shared/codex-workbench-identity/index.ts
+  - src/shared/codex-workbench-identity/tests/identity.test.ts
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -51,12 +60,12 @@ Reduce one exact Codex 0.151.0 app-server session behind typed ports. This is th
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Initialize sends the literal reviewed capabilities object, buffers pre-response notifications, decodes the response, then sends initialized. currentTime/read returns {currentTimeAt: floor(Date.now()/1000)} after validating its ThreadId; unsupported token-refresh/attestation requests receive the reviewed JSON-RPC protocol error exactly once.
-- [ ] #2 The six LoginAccountParams variants follow the reviewed support/refusal table. API key, hosted ChatGPT, amazonBedrock, and amazonBedrockAccessKeys login plus account read/cancel/logout remain available before account_ready; chatgptDeviceCode, chatgptAuthTokens, and both profile/environment BedrockSetupParams are refused before RPC.
-- [ ] #3 Effective-storage proof requires initialize.codexHome and config/read origins to identify the restrictive CODEX_HOME/config.toml sqlite_home, reconciles configRequirements/managed policy and CODEX roots by canonical realpath, and refuses null, redirected, conflicting, symlink-escaped, or unowned stores.
-- [ ] #4 The public port has exactly the authored initialize/config/account/model, thread/page/settings, turn, six queue, injection, realtime/timeline, and three auxiliary response method names. Page methods return one decoded page; authority callers exhaust them with cursor-loop detection and tool/UI callers use epoch/method/query-bound cursors.
-- [ ] #5 expectedTurnId is mandatory on steer. Non-idempotent mutations classify delivered, not_delivered, or outcome_unknown and never retry blindly; raw decoded realtime alone crosses to TASK-143.02.03.
-- [ ] #6 src/runtime/codex-session/tests/session.test.ts exhausts initialize ordering, pre-response buffering, capabilities, all login/refusal variants, storage proof, reverse requests, pagination, queue/turn/realtime methods, steer identity, and all three mutation outcomes through the typed transport port.
+- [x] #1 Initialize sends the literal reviewed capabilities object, buffers pre-response notifications, decodes the response, then sends initialized. currentTime/read returns {currentTimeAt: floor(Date.now()/1000)} after validating its ThreadId; unsupported token-refresh/attestation requests receive the reviewed JSON-RPC protocol error exactly once.
+- [x] #2 The six LoginAccountParams variants follow the reviewed support/refusal table. API key, hosted ChatGPT, amazonBedrock, and amazonBedrockAccessKeys login plus account read/cancel/logout remain available before account_ready; chatgptDeviceCode, chatgptAuthTokens, and both profile/environment BedrockSetupParams are refused before RPC.
+- [x] #3 Effective-storage proof requires initialize.codexHome and config/read origins to identify the restrictive CODEX_HOME/config.toml sqlite_home, reconciles configRequirements/managed policy and CODEX roots by canonical realpath, and refuses null, redirected, conflicting, symlink-escaped, or unowned stores.
+- [x] #4 The public port has exactly the authored initialize/config/account/model, thread/page/settings, turn, six queue, injection, realtime/timeline, and three auxiliary response method names. Page methods return one decoded page; authority callers exhaust them with cursor-loop detection and tool/UI callers use epoch/method/query-bound cursors.
+- [x] #5 expectedTurnId is mandatory on steer. Non-idempotent mutations classify delivered, not_delivered, or outcome_unknown and never retry blindly; raw decoded realtime alone crosses to TASK-143.02.03.
+- [x] #6 src/runtime/codex-session/tests/session.test.ts exhausts initialize ordering, pre-response buffering, capabilities, all login/refusal variants, storage proof, reverse requests, pagination, queue/turn/realtime methods, steer identity, and all three mutation outcomes through the typed transport port.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -104,4 +113,16 @@ Type validation: bunx tsc --noEmit -p tsconfig.frontend.json passed. The root bu
 Protected protocol fingerprint guard was attempted with the mandated 6G/1G cap; systemd reported oom-kill at the 6G limit with 641.5M swap peak while parsing the 820-file generated tree. A bun --smol retry also hit the same cap (664.5M swap). This is an environment/resource-limited check and is not claimed as a semantic pass.
 
 Task remains In Progress and all acceptance criteria remain unchecked; full repository/module/system/browser lanes were not run.
+
+Finalization evidence (2026-08-31, exact assembled HEAD ad1e98b9ad32a4a14d8b7dfc128d2a1f54435e34; fixed range 938857e01ac792ef22a70585921684063d298fef..ad1e98b9ad32a4a14d8b7dfc128d2a1f54435e34): three independent final reviews returned CLEAN for the complete range.
+
+Acceptance mapping: #1 is proven by protocol decode tests plus session initialization/buffering/currentTime/unsupported-reverse tests and real-generator conformance; #2 by the reviewed login/refusal matrix and readiness/logout tests; #3 by storage-proof tests covering null, missing, redirected, conflicting, symlink-escaped, wrong-origin, nested, and loose-mode stores plus review of the ownership guard (an unowned-root fixture is not deterministic under the current test UID and remains an explicit manual limitation); #4 by the exhaustive public-method oracle, branded mandatory page-query compile fixtures, generated request conformance, and response-identity workflows; #5 by mandatory steer identity, delivered/not_delivered/outcome_unknown no-retry tests, and realtime passthrough tests; #6 by the complete protocol/session module lane and its focused session, response-identity, storage, logout, reverse, and method owners. All six ACs are checked. No Definition of Done items were defined.
+
+Final validation ran sequentially in named transient systemd services, each with explicit WorkingDirectory and MemoryMax=6G/MemorySwapMax=1G: protocol+session module lane 601 pass / 3,728 expect() calls across 13 files, 431.1M peak; pinned real-generator conformance owner 8 pass / 34 expect() calls, 418M peak; scoped strict TypeScript with noImplicitOverride pass, 793.8M peak; scoped Oxlint pass with 0 warnings/errors on 93 files, 961.6M peak; scoped Oxfmt --check pass on 93 files, 61.5M peak; git diff --check pass, 2.2M peak; clean git status pass, 2.0M peak. Protected no-diff check passed for src/runtime/codex-protocol/manifest.ts and tests/system/repository-policy/support/codex-protocol-fingerprint-corpus.json across the fixed range. The prohibited 820-file fingerprint corpus, broad repository/module/system/browser lanes, and known OOM lane were not run. Existing root assistant-ui diagnostics remain owned by TASK-143.03.12 and are outside this task.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Reduced one typed Codex 0.151.0 app-server session with exact generated request/response boundaries, identity-safe result decoding, strict JSON record/branch validation, and preserved no-parameter, page, and currentTime semantics. The session owns initialization buffering, login/readiness/storage proof, pagination, mutation outcomes, reverse requests, and realtime passthrough. Final reviews were CLEAN for the complete fixed range; verification passed with 601 protocol/session tests (3,728 assertions), 8 pinned real-generator conformance tests (34 assertions), scoped strict TypeScript with noImplicitOverride, scoped Oxlint/Oxfmt, protected manifest/fingerprint no-diff, git diff --check, and clean status. The 820-file fingerprint corpus and broad repository/browser lanes were intentionally not run; the existing assistant-ui diagnostics remain owned by TASK-143.03.12.
+<!-- SECTION:FINAL_SUMMARY:END -->
