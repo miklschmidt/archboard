@@ -28,15 +28,10 @@ describe("codex epoch settlement", () => {
 			});
 			store.startEpoch(input(authority, "epoch-start", "epoch_start"));
 			const observedThread = authority.decoder.adoptThreadId("observed-thread");
-			const unrelatedThread = authority.decoder.adoptThreadId("unrelated-thread");
 			const staged = store.stageOperation(
 				input(authority, "link-unknown", "link", store.snapshot().cas),
 			);
-			store.markOutcomeUnknown(staged, "response was lost", { threadId: observedThread });
-
-			expect(() => store.confirmOutcome(staged, { threadId: unrelatedThread })).toThrowError(
-				expect.objectContaining({ code: "unknown_provenance" }),
-			);
+			store.markOutcomeUnknown(staged, "response was lost");
 			expect(store.snapshot().manifest.records.at(-1)?.status).toBe("inspect_only");
 			const confirmed = store.confirmOutcome(staged, { threadId: observedThread });
 			expect(confirmed.status).toBe("committed");
@@ -56,6 +51,41 @@ describe("codex epoch settlement", () => {
 					threadId: observedThread,
 				}),
 			).toMatchObject({ record: confirmed });
+		} finally {
+			rmSync(parent, { recursive: true, force: true });
+		}
+	});
+
+	test("never revives a thread recorded on an outcome-unknown tombstone", () => {
+		const parent = mkdtempSync(join("/tmp", "archboard-codex-settlement-"));
+		const root = join(parent, "epoch");
+		const codexHome = join(parent, "codex-home");
+		const sqliteHome = join(parent, "codex-sqlite");
+		mkdirSync(root, { recursive: true, mode: 0o700 });
+		mkdirSync(codexHome, { recursive: true, mode: 0o700 });
+		mkdirSync(sqliteHome, { recursive: true, mode: 0o700 });
+		try {
+			const authority = createIdentityAuthority();
+			const store = createCodexEpochStore({
+				rootDirectory: root,
+				codexHome,
+				sqliteHome,
+				now: () => 100,
+			});
+			store.startEpoch(input(authority, "epoch-start", "epoch_start"));
+			const observedThread = authority.decoder.adoptThreadId("observed-thread");
+			const staged = store.stageOperation(
+				input(authority, "link-unknown", "link", store.snapshot().cas),
+			);
+			store.markOutcomeUnknown(staged, "response was lost", { threadId: observedThread });
+
+			expect(() => store.confirmOutcome(staged, { threadId: observedThread })).toThrowError(
+				expect.objectContaining({ code: "inspect_only" }),
+			);
+			expect(store.snapshot().manifest.records.at(-1)).toMatchObject({
+				status: "inspect_only",
+				outcome: "outcome_unknown",
+			});
 		} finally {
 			rmSync(parent, { recursive: true, force: true });
 		}

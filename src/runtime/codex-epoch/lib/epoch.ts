@@ -17,6 +17,7 @@ import {
 } from "./storage.js";
 import { CodexEpochError } from "./contract.js";
 import { mapLockError, mapStorageError } from "./errors.js";
+import { assertSafeStorageRoots } from "./path-safety.js";
 import type { EpochManifest, EpochOperationRecord } from "./manifest.js";
 import type {
 	CodexEpochStore,
@@ -37,8 +38,8 @@ import {
 	assertExactConfirmation,
 	assertExecutionThread,
 	assertManifestRelations,
-	assertOutsideCodexStores,
 	assertStageGeneration,
+	assertThreadProvenanceEligible,
 	casFor,
 	casForState,
 	committedProvenance,
@@ -60,7 +61,7 @@ import {
 export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpochStore {
 	const fileSystem = options.fileSystem ?? defaultCodexEpochFileSystem;
 	const rootDirectory = normalizeRoot(options.rootDirectory);
-	assertOutsideCodexStores(rootDirectory, options.codexHome, options.sqliteHome);
+	assertSafeStorageRoots(fileSystem, rootDirectory, options.codexHome, options.sqliteHome);
 	try {
 		ensureEpochDirectory(fileSystem, rootDirectory);
 	} catch (error) {
@@ -167,6 +168,7 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 				assertCurrentGeneration(current.manifest, record.correlation);
 			}
 			const provenance = committedProvenance(record, confirmation, now);
+			assertThreadProvenanceEligible(current.manifest, record, provenance.threadId);
 			const committed = freezeRecord({
 				...record,
 				status: "committed",
@@ -282,6 +284,7 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 			}
 			const provenance = committedProvenance(record, confirmation, now);
 			assertExactConfirmation(record.provenance, provenance);
+			assertThreadProvenanceEligible(current.manifest, record, provenance.threadId);
 			const confirmed = freezeRecord({
 				...record,
 				status: "committed",
@@ -345,6 +348,7 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 			);
 		}
 		assertExecutionThread(record, prepared.threadId);
+		assertThreadProvenanceEligible(current.manifest, record, record.provenance.threadId);
 		return { record, manifestRevision: current.manifest.revision };
 	};
 

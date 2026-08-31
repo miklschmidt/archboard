@@ -18,6 +18,7 @@ export interface CodexEpochFileSystem {
 		options: { readonly recursive: true; readonly mode: number },
 	) => string | undefined;
 	readonly lstatSync: (path: string) => nodeFs.Stats;
+	readonly realpathSync: (path: string) => string;
 }
 
 export const defaultCodexEpochFileSystem: CodexEpochFileSystem = {
@@ -30,6 +31,7 @@ export const defaultCodexEpochFileSystem: CodexEpochFileSystem = {
 	readFileSync: (path) => nodeFs.readFileSync(path),
 	mkdirSync: nodeFs.mkdirSync,
 	lstatSync: nodeFs.lstatSync,
+	realpathSync: nodeFs.realpathSync,
 };
 
 export type DurableWritePhase =
@@ -214,15 +216,77 @@ export function acquireDurableLock(
 			if (existing === "invalid" || !expiredDeadLock(existing)) {
 				throw new Error("epoch lock is already held", { cause });
 			}
-			try {
-				fileSystem.unlinkSync(lockPath);
-				fsyncDirectory(fileSystem, lockDirectory);
-			} catch (cleanupError) {
-				throw new DurableStorageError("directory_fsync", cleanupError);
-			}
+			return recoverExpiredLock(fileSystem, lockPath, lockDirectory, existing);
 		}
 	}
 	throw new Error("epoch lock is already held");
+}
+
+function recoverExpiredLock(
+	fileSystem: CodexEpochFileSystem,
+	lockPath: string,
+	lockDirectory: string,
+	observed: LockRecord,
+): DurableLock {
+	const guard = acquireRecoveryGuard(fileSystem, `${lockPath}.recovery`);
+	let recovered: DurableLock | undefined;
+	let failure: unknown;
+	try {
+		const current = readLock(fileSystem, lockPath);
+		if (
+			current === "missing" ||
+			current === "invalid" ||
+			!sameLock(current, observed) ||
+			!expiredDeadLock(current)
+		) {
+			throw new Error("epoch lock is already held");
+		}
+		fileSystem.unlinkSync(lockPath);
+		fsyncDirectory(fileSystem, lockDirectory);
+		try {
+			recovered = createLock(fileSystem, lockPath, lockDirectory);
+		} catch (error) {
+			if (isAlreadyExists(error)) throw new Error("epoch lock is already held", { cause: error });
+			throw error;
+		}
+	} catch (error) {
+		failure = error;
+	}
+	try {
+		guard.release();
+	} catch (error) {
+		if (failure === undefined) failure = error;
+	}
+	if (failure !== undefined) throw failure;
+	return recovered as DurableLock;
+}
+
+function acquireRecoveryGuard(fileSystem: CodexEpochFileSystem, guardPath: string): DurableLock {
+	let descriptor: number;
+	try {
+		descriptor = fileSystem.openSync(guardPath, "wx", 0o600);
+	} catch (error) {
+		if (isAlreadyExists(error)) throw new Error("epoch lock is already held", { cause: error });
+		throw new DurableStorageError("temp_open", error);
+	}
+	let released = false;
+	return {
+		release: () => {
+			if (released) return;
+			released = true;
+			fileSystem.closeSync(descriptor);
+			fileSystem.unlinkSync(guardPath);
+		},
+	};
+}
+
+function sameLock(left: LockRecord, right: LockRecord): boolean {
+	return (
+		left.pid === right.pid &&
+		left.token === right.token &&
+		left.acquiredAtMs === right.acquiredAtMs &&
+		left.untilMs === right.untilMs
+	);
 }
 
 function createLock(
