@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-31 01:27'
+updated_date: '2026-08-31 02:15'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -120,4 +120,6 @@ The checked-in distinctive corpus is now the sole mirror reference. Locally pres
 Further-remediation validation: focused boundary/alias/corpus owners passed 17 tests / 49 expectations; bun run test:repository passed 147 tests / 466 expectations; bun run test:modules passed 1010 tests / 7034 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed; bun run check:codex-protocol-fingerprint-corpus regenerated and verified all 820 fingerprints. The boundary owner is 497 lines and every changed TypeScript file remains below 500 lines. No production files changed.
 
 Further-remediation scope: scripts/typescript-analysis.ts, canonical fingerprint and checker updates, repository-policy alias/fixture/source support, corpus regeneration, and boundary controls. The task remains In Progress for same-reviewer rereview.
+
+Narrow P2 remediation in commit 8785021 after reviewer finding: namespaceImportMirror now emits import type * as declarations and replaces identifiers only after removing imports through a trivia-aware pass that preserves module specifiers, comments, and strings; importTypeMirror uses the same safe pass. Added a direct TypeScript API oracle with a relative ../AbsolutePathBuf import, asserting the original specifier is retained and syntactic/semantic diagnostics are empty. Focused boundary/alias/corpus suite passed 18 tests / 54 expectations; bun run check:codex-protocol-fingerprint-corpus passed all 820 fingerprints; bun run type-check, bun run lint, bun run fmt:check, and git diff --check passed. Per durable OOM rule, repository-wide, module, system, check, and browser lanes were not rerun; root owns those broad gates. Task remains In Progress for rereview.
 <!-- SECTION:NOTES:END -->
