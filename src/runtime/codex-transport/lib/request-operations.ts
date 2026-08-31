@@ -1,7 +1,9 @@
 import {
 	isSupportedClientNotificationMethod,
+	isClientRequestMethodWithoutParams,
 	isSupportedResponseMethod,
 	type ClientNotificationMethod,
+	type ClientRequestMethodWithoutParams,
 	type ResponseMethod,
 } from "../../codex-protocol/index.js";
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
@@ -18,7 +20,11 @@ import {
 	type CodexRequestFailureReason,
 } from "./errors.js";
 import type { FrameWriterJob } from "./frame-writer.js";
-import type { CodexTransportRequestOptions, CodexTransportResponse } from "./types.js";
+import type {
+	CodexTransportRequest,
+	CodexTransportRequestOptions,
+	CodexTransportResponse,
+} from "./types.js";
 import type { NotificationJob, PendingRequest, RequestJob, WriteJob } from "./internals.js";
 import { isRecord, jsonLine, wireKey } from "./wire.js";
 
@@ -36,11 +42,7 @@ export interface OutboundOperationsOptions {
 }
 
 export interface OutboundOperations {
-	readonly request: <Method extends ResponseMethod>(
-		method: Method,
-		params: unknown,
-		requestOptions?: CodexTransportRequestOptions,
-	) => Promise<CodexTransportResponse<Method>>;
+	readonly request: CodexTransportRequest;
 	readonly sendNotification: (method: ClientNotificationMethod) => Promise<void>;
 }
 
@@ -70,19 +72,24 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 		});
 	};
 
-	const request = <Method extends ResponseMethod>(
+	const request: CodexTransportRequest = <Method extends ResponseMethod>(
 		method: Method,
-		params: unknown,
+		params: Method extends ClientRequestMethodWithoutParams ? undefined : unknown,
 		requestOptions: CodexTransportRequestOptions = {},
-	): Promise<CodexTransportResponse<Method>> => {
+	) => {
 		if (options.state() !== "open") return Promise.reject(closedError());
 		if (!isSupportedResponseMethod(method))
 			return Promise.reject(
 				new CodexTransportUsageError(`unsupported response method ${String(method)}`),
 			);
-		if (!isRecord(params))
+		const noParams = isClientRequestMethodWithoutParams(method);
+		if (noParams ? params !== undefined : !isRecord(params))
 			return Promise.reject(
-				new CodexTransportUsageError("Codex request params must be a JSON object"),
+				new CodexTransportUsageError(
+					noParams
+						? `Codex request ${method} must omit params`
+						: "Codex request params must be a JSON object",
+				),
 			);
 		if (options.pendingRequests.size >= CODEX_APP_SERVER_CAPACITY.outbound.pendingRequests)
 			return Promise.reject(
@@ -97,7 +104,10 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 			options.identity.decoder.createWireRequestCorrelation({ requestId: wireId });
 		let frame: Buffer;
 		try {
-			frame = jsonLine({ id: rawId, method, params }, `request ${method}`);
+			frame = jsonLine(
+				noParams ? { id: rawId, method } : { id: rawId, method, params },
+				`request ${method}`,
+			);
 		} catch (cause) {
 			if (cause instanceof CodexTransportWriteError)
 				return Promise.reject(

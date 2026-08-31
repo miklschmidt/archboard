@@ -68,6 +68,7 @@ describe("typed Codex session", () => {
 				extensions: {},
 			},
 		});
+		expect(fixture.transport.requests[1]?.params).toBeUndefined();
 		expect(fixture.events.map(({ notification }) => notification.method)).toEqual([
 			"warning",
 			"thread/realtime/transcript/delta",

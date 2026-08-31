@@ -64,7 +64,7 @@ const OPERATION_CASES = {
 	accountRead: request("account/read"),
 	accountLogin: request("account/login/start", { type: "apiKey", apiKey: "fixture-secret" }, true),
 	accountLoginCancel: request("account/login/cancel", { loginId: "login-1" }, true),
-	accountLogout: request("account/logout", {}, true),
+	accountLogout: request("account/logout", undefined, true),
 	modelList: request("model/list"),
 	threadStart: request("thread/start", {}, true),
 	threadFork: request("thread/fork", { threadId: "thread-1" }, true),
@@ -249,10 +249,16 @@ describe("typed Codex session public port", () => {
 		] extends [never, never]
 			? true
 			: never = true;
+		const exactLogoutParams: Parameters<CodexSession["accountLogout"]> extends []
+			? [] extends Parameters<CodexSession["accountLogout"]>
+				? true
+				: never
+			: never = true;
 		const fixture = createSessionFixture();
 		expect(Object.keys(fixture.session)).toEqual([...AUTHORED_SESSION_METHODS]);
 		expect(SESSION_METHODS).toEqual([...AUTHORED_SESSION_METHODS]);
 		expect(exactPort).toBe(true);
+		expect(exactLogoutParams).toBe(true);
 		fixture.close();
 	});
 
@@ -290,8 +296,9 @@ describe("typed Codex session public port", () => {
 			const logout = OPERATION_CASES.accountLogout;
 			if (logout.kind !== "request") throw new Error("logout case is not a request");
 			fixture.transport.enqueueResponse("account/logout", emptyResponse);
-			const logoutResult = await fixture.session.accountLogout({});
+			const logoutResult = await fixture.session.accountLogout();
 			assertDecodedResult(logout.wire, logoutResult);
+			expect(fixture.transport.requests.at(-1)?.params).toBeUndefined();
 		} finally {
 			fixture.close();
 		}

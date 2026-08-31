@@ -3,7 +3,7 @@ import { z } from "zod";
 import { CODEX_PROTOCOL_VERSION, isSupportedCodexUserAgent } from "../manifest.js";
 import {
 	CLIENT_REQUEST_PARAM_SCHEMAS,
-	type ClientRequestPayloads,
+	type ClientRequestParams,
 } from "./client-request-schemas.js";
 import {
 	CLIENT_NOTIFICATION_SCHEMAS,
@@ -247,9 +247,9 @@ export type ResponsePayloads = {
 export function decodeClientRequestParams<Method extends ClientRequestMethod>(
 	method: Method,
 	params: unknown,
-): ClientRequestPayloads[Method] {
+): ClientRequestParams<Method> {
 	const schema = methodSchema(CLIENT_REQUEST_PARAM_SCHEMAS, method, "client-request");
-	return decodeSchema(method, "client-request", schema, params) as ClientRequestPayloads[Method];
+	return decodeSchema(method, "client-request", schema, params) as ClientRequestParams<Method>;
 }
 
 export function decodeResponse<M extends ResponseMethod>(

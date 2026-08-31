@@ -8,6 +8,7 @@ import {
 import {
 	decodeClientRequestParams,
 	decodeResponse,
+	isClientRequestMethodWithoutParams,
 	ProtocolDecodeError,
 	type ClientRequestMethod,
 	type ClientRequestParams,
@@ -186,6 +187,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		method: Method,
 		value: unknown,
 	): ClientRequestParams<Method> => {
+		if (isClientRequestMethodWithoutParams(method)) return value as ClientRequestParams<Method>;
 		const params = requestParams(value);
 		const fields = identityFields[method];
 		if (!fields) return params as ClientRequestParams<Method>;
@@ -441,7 +443,12 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 			phase = "initialize-accepted";
 			await transport.sendNotification("initialized");
 			phase = "initialized-written";
-			const requirements = await requestDecoded("configRequirements/read", {}, READ_OPTIONS, false);
+			const requirements = await requestDecoded(
+				"configRequirements/read",
+				undefined,
+				READ_OPTIONS,
+				false,
+			);
 			const config = await requestDecoded(
 				"config/read",
 				{ includeLayers: true, cwd: options.checkoutRoot },
@@ -487,11 +494,11 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		mutate("account/login/start", params, "login-capable", validateLogin);
 	const accountLoginCancel = (params: SessionParams<"account/login/cancel">) =>
 		mutate("account/login/cancel", params, "login-capable");
-	const accountLogout = async (params?: SessionParams<"account/logout">) => {
+	const accountLogout = async () => {
 		const restoreReady = accountReady && phase === "thread-capable";
 		if (restoreReady) setAccountReadiness(false);
 		try {
-			const result = await mutate("account/logout", params, "login-capable");
+			const result = await mutate("account/logout", undefined, "login-capable");
 			setAccountReadiness(false);
 			return result;
 		} catch (error) {

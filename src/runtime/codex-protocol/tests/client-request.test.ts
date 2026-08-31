@@ -2,10 +2,12 @@ import { describe, expect, test } from "bun:test";
 
 import {
 	CLIENT_REQUEST_METHODS,
+	CLIENT_REQUEST_METHODS_WITHOUT_PARAMS,
 	CLIENT_REQUEST_PARAM_SCHEMAS,
 	decodeClientRequestParams,
 	ProtocolDecodeError,
 	RESPONSE_METHODS,
+	type ClientRequestParams,
 } from "../index.js";
 import { BedrockSetupParamsSchema } from "../../../shared/codex-browser-model/index.js";
 import {
@@ -25,6 +27,26 @@ function captured(run: () => unknown): ProtocolDecodeError {
 }
 
 describe("Codex generated client request params", () => {
+	test("keeps the generated no-parameter request shape exact", () => {
+		type Exact<Actual, Expected> = [Actual, Expected] extends [Expected, Actual] ? true : false;
+		const configRequirementsParams: Exact<
+			ClientRequestParams<"configRequirements/read">,
+			undefined
+		> = true;
+		const accountLogoutParams: Exact<ClientRequestParams<"account/logout">, undefined> = true;
+
+		expect(CLIENT_REQUEST_METHODS_WITHOUT_PARAMS).toEqual([
+			"configRequirements/read",
+			"account/logout",
+		]);
+		expect(configRequirementsParams).toBeTrue();
+		expect(accountLogoutParams).toBeTrue();
+		expect(decodeClientRequestParams("configRequirements/read", undefined)).toBeUndefined();
+		expect(decodeClientRequestParams("account/logout", undefined)).toBeUndefined();
+		captured(() => decodeClientRequestParams("configRequirements/read", {}));
+		captured(() => decodeClientRequestParams("account/logout", {}));
+	});
+
 	test("owns every supported outbound method in one exact registry", () => {
 		expect(CLIENT_REQUEST_METHODS).toHaveLength(32);
 		expect(Object.keys(CLIENT_REQUEST_PARAM_SCHEMAS)).toEqual([...CLIENT_REQUEST_METHODS]);
@@ -69,7 +91,7 @@ describe("Codex generated client request params", () => {
 		);
 	});
 
-	test("rejects extra request fields, including empty-param methods", () => {
+	test("rejects extra request fields", () => {
 		const configError = captured(() =>
 			decodeClientRequestParams("config/read", {
 				includeLayers: true,
@@ -80,7 +102,6 @@ describe("Codex generated client request params", () => {
 			expect.arrayContaining([expect.objectContaining({ path: [] })]),
 		);
 
-		captured(() => decodeClientRequestParams("account/logout", { unexpected: true }));
 		captured(() =>
 			decodeClientRequestParams("turn/steer", {
 				threadId: "thread-1",

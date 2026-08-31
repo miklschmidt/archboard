@@ -20,7 +20,7 @@ import {
 	SandboxModeSchema,
 	ThreadHistoryModeSchema,
 } from "./core-schemas.js";
-import type { ClientRequestMethod } from "./methods.js";
+import type { ClientRequestMethod, ClientRequestMethodWithoutParams } from "./methods.js";
 import {
 	AccountReadParamsSchema,
 	CancelLoginAccountParamsSchema,
@@ -35,7 +35,6 @@ import {
 } from "./scalars.js";
 import { TurnItemsViewSchema } from "./thread-schemas.js";
 
-const EmptyRequestParamsSchema = z.strictObject({});
 const NullablePageSchema = {
 	cursor: z.string().nullable().optional(),
 	limit: FiniteNumberSchema.nullable().optional(),
@@ -402,11 +401,11 @@ const ThreadTimelineListParamsSchema = z.strictObject({
 export const CLIENT_REQUEST_PARAM_SCHEMAS = {
 	initialize: InitializeParamsSchema,
 	"config/read": ConfigReadParamsSchema,
-	"configRequirements/read": EmptyRequestParamsSchema,
+	"configRequirements/read": z.undefined(),
 	"account/read": AccountReadParamsSchema,
 	"account/login/start": LoginAccountParamsSchema,
 	"account/login/cancel": CancelLoginAccountParamsSchema,
-	"account/logout": EmptyRequestParamsSchema,
+	"account/logout": z.undefined(),
 	"model/list": ModelListParamsSchema,
 	"thread/start": ThreadStartParamsSchema,
 	"thread/fork": ThreadForkParamsSchema,
@@ -437,7 +436,8 @@ export const CLIENT_REQUEST_PARAM_SCHEMAS = {
 export type ClientRequestPayloads = {
 	[Method in ClientRequestMethod]: z.infer<(typeof CLIENT_REQUEST_PARAM_SCHEMAS)[Method]>;
 };
-export type ClientRequestParams<Method extends ClientRequestMethod> = ClientRequestPayloads[Method];
+export type ClientRequestParams<Method extends ClientRequestMethod> =
+	Method extends ClientRequestMethodWithoutParams ? undefined : ClientRequestPayloads[Method];
 
 type PreserveNullish<Value, Identity> = Identity | Extract<Value, null | undefined>;
 type BrandIdentityField<Key, Value> = Key extends "threadId" | "parentThreadId" | "ancestorThreadId"
@@ -453,9 +453,11 @@ type BrandIdentityField<Key, Value> = Key extends "threadId" | "parentThreadId" 
 					: Key extends "realtimeSessionId"
 						? PreserveNullish<Value, RealtimeSessionId>
 						: Value;
-type BrandedRequestParams<Value> = Readonly<{
-	[Key in keyof Value]: BrandIdentityField<Key, Value[Key]>;
-}>;
+type BrandedRequestParams<Value> = Value extends undefined
+	? undefined
+	: Readonly<{
+			[Key in keyof Value]: BrandIdentityField<Key, Value[Key]>;
+		}>;
 
 type GeneratedTurnSteerParams = BrandedRequestParams<ClientRequestPayloads["turn/steer"]>;
 export type CodexSessionTurnSteerParams = Readonly<{
