@@ -127,7 +127,7 @@ describe("strict six-tool argument boundary", () => {
 		expectRejected(() => parseToolArguments("list_threads", undefined));
 	});
 
-	test("enforces exact ASCII, Unicode code-point, and UTF-8 boundaries", () => {
+	test("enforces code-point boundaries for manifest fields without a hidden byte cap", () => {
 		expect(parseToolArguments("create_thread", { prompt: "p".repeat(16_384) })).toBeTruthy();
 		expectRejected(() => parseToolArguments("create_thread", { prompt: "p".repeat(16_385) }));
 		expect(parseToolArguments("list_threads", { cursor: "c".repeat(1_024) })).toBeTruthy();
@@ -135,19 +135,38 @@ describe("strict six-tool argument boundary", () => {
 		expect(parseToolArguments("fork_thread", { threadId: "i".repeat(128) })).toBeTruthy();
 		expectRejected(() => parseToolArguments("fork_thread", { threadId: "i".repeat(129) }));
 
-		const exactUnicodePrompt = "😀".repeat(4_096);
-		expect(Buffer.byteLength(exactUnicodePrompt, "utf8")).toBe(16_384);
+		const exactUnicodePrompt = "😀".repeat(16_384);
+		expect(Array.from(exactUnicodePrompt)).toHaveLength(16_384);
+		expect(Buffer.byteLength(exactUnicodePrompt, "utf8")).toBe(65_536);
 		expect(parseToolArguments("create_thread", { prompt: exactUnicodePrompt })).toBeTruthy();
 		expectRejected(() =>
 			parseToolArguments("create_thread", { prompt: `${exactUnicodePrompt}😀` }),
 		);
-		const exactMultibytePrompt = "é".repeat(8_192);
+		const exactMultibytePrompt = "é".repeat(16_384);
 		expect(parseToolArguments("create_thread", { prompt: exactMultibytePrompt })).toBeTruthy();
 		expectRejected(() =>
 			parseToolArguments("create_thread", { prompt: `${exactMultibytePrompt}é` }),
 		);
 		expectRejected(() => parseToolArguments("create_thread", { prompt: "\ud800" }));
-		expectRejected(() => parseToolArguments("create_thread", { prompt: "a\0b" }));
+		expect(parseToolArguments("create_thread", { prompt: "a\0b" })).toEqual({ prompt: "a\0b" });
+	});
+
+	test("keeps explicit UTF-8 result fields bounded independently", () => {
+		const listValue = VALID_OK_VALUES.list_threads as Record<string, unknown>;
+		const exactCursor = "é".repeat(512);
+		const value = { ...listValue, nextCursor: exactCursor };
+		const envelope = JSON.stringify({ tag: "ok", operationId: "operation-1", value });
+		expect(parseToolResultEnvelope("list_threads", envelope)).toMatchObject({
+			tag: "ok",
+			value: { nextCursor: exactCursor },
+		});
+		const tooLong = { ...listValue, nextCursor: `${exactCursor}é` };
+		expectRejected(() =>
+			parseToolResultEnvelope(
+				"list_threads",
+				JSON.stringify({ tag: "ok", operationId: "operation-1", value: tooLong }),
+			),
+		);
 	});
 
 	test("keeps wait timeout and target count at the reviewed boundaries", () => {
@@ -180,6 +199,112 @@ describe("strict dynamic-tool result boundary", () => {
 			});
 			expectDeepFrozen(response);
 		}
+	});
+
+	test("correlates initial-turn delivery with identity fields and thread state", () => {
+		const createVariants = [
+			{
+				threadId: "thread-1",
+				state: "executable",
+				initialTurn: {
+					delivery: "delivered",
+					turnId: "turn-1",
+					operationId: "operation-2",
+					reason: null,
+				},
+			},
+			{
+				threadId: "thread-1",
+				state: "executable",
+				initialTurn: {
+					delivery: "not_delivered",
+					turnId: null,
+					operationId: "operation-2",
+					reason: "The initial turn was refused before effect.",
+				},
+			},
+			{
+				threadId: "thread-1",
+				state: "inspect_only",
+				initialTurn: {
+					delivery: "outcome_unknown",
+					turnId: null,
+					operationId: "operation-2",
+					reason: "The initial turn settlement was lost.",
+				},
+			},
+		];
+		for (const value of createVariants)
+			expect(
+				parseToolResultEnvelope(
+					"create_thread",
+					JSON.stringify({ tag: "ok", operationId: "operation-1", value }),
+				),
+			).toMatchObject({ tag: "ok", value });
+
+		const forkVariants = [
+			{
+				threadId: "thread-2",
+				state: "executable",
+				initialTurn: { delivery: "not_requested", turnId: null, operationId: null, reason: null },
+			},
+			...createVariants,
+		];
+		for (const value of forkVariants)
+			expect(
+				parseToolResultEnvelope(
+					"fork_thread",
+					JSON.stringify({ tag: "ok", operationId: "operation-1", value }),
+				),
+			).toMatchObject({ tag: "ok", value });
+
+		const invalidCreateVariants = [
+			{ state: "executable", initialTurn: createVariants[2]!.initialTurn },
+			{ state: "inspect_only", initialTurn: createVariants[0]!.initialTurn },
+			{
+				state: "executable",
+				initialTurn: {
+					delivery: "delivered",
+					turnId: null,
+					operationId: "operation-2",
+					reason: null,
+				},
+			},
+			{
+				state: "inspect_only",
+				initialTurn: {
+					delivery: "outcome_unknown",
+					turnId: null,
+					operationId: null,
+					reason: "The initial turn settlement was lost.",
+				},
+			},
+		];
+		for (const value of invalidCreateVariants)
+			expectRejected(() =>
+				parseToolResultEnvelope(
+					"create_thread",
+					JSON.stringify({
+						tag: "ok",
+						operationId: "operation-1",
+						value: { threadId: "thread-1", ...value },
+					}),
+				),
+			);
+		const invalidFork = {
+			state: "inspect_only",
+			initialTurn: { delivery: "not_requested", turnId: null, operationId: null, reason: null },
+		};
+		expectRejected(() =>
+			parseToolResultEnvelope(
+				"fork_thread",
+				JSON.stringify({
+					tag: "ok",
+					operationId: "operation-1",
+					value: { threadId: "thread-2", ...invalidFork },
+				}),
+			),
+		);
 	});
 
 	test("accepts refused, approval-required, and uncertainty envelopes as successful calls", () => {

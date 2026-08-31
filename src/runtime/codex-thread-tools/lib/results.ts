@@ -1,44 +1,79 @@
 import { z } from "zod";
 
 import { GeneralThreadToolNameSchema, type GeneralThreadToolName } from "./manifest.js";
-import { parseCompactJson } from "./json.js";
-import { boundedText, nullableText } from "./limits.js";
+import { parseStrictJson } from "./json.js";
+import { boundedText, boundedUtf8Text, nullableUtf8Text } from "./limits.js";
 
 const IdentitySchema = boundedText(128);
-const CursorSchema = boundedText(1024);
-const ReasonSchema = nullableText(512);
+const CursorSchema = boundedUtf8Text(1024);
+const ReasonSchema = nullableUtf8Text(512);
 
 export const ToolDeliverySchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
 
-const CreateInitialTurnSchema = z.strictObject({
-	delivery: ToolDeliverySchema,
-	turnId: IdentitySchema.nullable(),
-	operationId: IdentitySchema.nullable(),
+const DeliveredInitialTurnSchema = z.strictObject({
+	delivery: z.literal("delivered"),
+	turnId: IdentitySchema,
+	operationId: IdentitySchema,
+	reason: z.null(),
+});
+
+const NotDeliveredInitialTurnSchema = z.strictObject({
+	delivery: z.literal("not_delivered"),
+	turnId: z.null(),
+	operationId: IdentitySchema,
 	reason: ReasonSchema,
 });
 
-const ForkInitialTurnSchema = z.strictObject({
-	delivery: z.enum(["not_requested", ...ToolDeliverySchema.options]),
-	turnId: IdentitySchema.nullable(),
-	operationId: IdentitySchema.nullable(),
+const OutcomeUnknownInitialTurnSchema = z.strictObject({
+	delivery: z.literal("outcome_unknown"),
+	turnId: z.null(),
+	operationId: IdentitySchema,
 	reason: ReasonSchema,
 });
 
-const CreateThreadValueSchema = z.strictObject({
-	threadId: IdentitySchema,
-	state: z.enum(["executable", "inspect_only"]),
-	initialTurn: CreateInitialTurnSchema,
+const NotRequestedInitialTurnSchema = z.strictObject({
+	delivery: z.literal("not_requested"),
+	turnId: z.null(),
+	operationId: z.null(),
+	reason: z.null(),
 });
 
-const ForkThreadValueSchema = z.strictObject({
-	threadId: IdentitySchema,
-	state: z.enum(["executable", "inspect_only"]),
-	initialTurn: ForkInitialTurnSchema,
-});
+const CreateThreadValueSchema = z.union([
+	z.strictObject({
+		threadId: IdentitySchema,
+		state: z.literal("executable"),
+		initialTurn: z.discriminatedUnion("delivery", [
+			DeliveredInitialTurnSchema,
+			NotDeliveredInitialTurnSchema,
+		]),
+	}),
+	z.strictObject({
+		threadId: IdentitySchema,
+		state: z.literal("inspect_only"),
+		initialTurn: OutcomeUnknownInitialTurnSchema,
+	}),
+]);
+
+const ForkThreadValueSchema = z.union([
+	z.strictObject({
+		threadId: IdentitySchema,
+		state: z.literal("executable"),
+		initialTurn: z.discriminatedUnion("delivery", [
+			NotRequestedInitialTurnSchema,
+			DeliveredInitialTurnSchema,
+			NotDeliveredInitialTurnSchema,
+		]),
+	}),
+	z.strictObject({
+		threadId: IdentitySchema,
+		state: z.literal("inspect_only"),
+		initialTurn: OutcomeUnknownInitialTurnSchema,
+	}),
+]);
 
 const ListedThreadSchema = z.strictObject({
 	threadId: IdentitySchema,
-	title: nullableText(512),
+	title: nullableUtf8Text(512),
 	status: z.enum(["notLoaded", "idle", "systemError", "active"]),
 	source: z.enum(["cli", "vscode", "exec", "appServer"]),
 	epoch: z.enum(["current", "prior", "unknown"]),
@@ -48,21 +83,21 @@ const ListedThreadSchema = z.strictObject({
 });
 
 const ListThreadsValueSchema = z.strictObject({
-	threads: z.array(ListedThreadSchema),
+	threads: z.array(ListedThreadSchema).max(100),
 	nextCursor: CursorSchema.nullable(),
 });
 
 const ReadTurnSchema = z.strictObject({
 	turnId: IdentitySchema,
 	status: z.enum(["inProgress", "completed", "interrupted", "failed"]),
-	summary: boundedText(512),
+	summary: boundedUtf8Text(512),
 	outputsIncluded: z.boolean(),
 	outputsTruncated: z.boolean(),
 });
 
 const ReadThreadValueSchema = z.strictObject({
 	threadId: IdentitySchema,
-	turns: z.array(ReadTurnSchema),
+	turns: z.array(ReadTurnSchema).max(20),
 	nextCursor: CursorSchema.nullable(),
 });
 
@@ -94,13 +129,15 @@ const RefusedEnvelopeSchema = z.strictObject({
 		"expired",
 		"unsupported",
 	]),
-	message: boundedText(512),
+	message: boundedUtf8Text(512),
 });
+
+const OUTER_FAILURE_REASONS = new Set(["invalid_call", "unsupported"]);
 
 const ApprovalRequiredEnvelopeSchema = z.strictObject({
 	tag: z.literal("approval_required"),
 	operationId: IdentitySchema,
-	summary: boundedText(512),
+	summary: boundedUtf8Text(512),
 });
 
 const OutcomeUnknownEnvelopeSchema = z.strictObject({
@@ -136,7 +173,7 @@ export const TOOL_RESULT_ENVELOPE_SCHEMAS = Object.freeze({
 
 const InputTextResultSchema = z.strictObject({
 	type: z.literal("inputText"),
-	text: z.string().min(1),
+	text: boundedText(16_384),
 });
 
 export const DynamicToolCallResponseSchema = z.strictObject({
@@ -171,6 +208,97 @@ function invalidResult(label: string, issues: readonly { readonly message: strin
 	throw new TypeError(`Invalid ${label}: ${issues.map((issue) => issue.message).join("; ")}`);
 }
 
+type JsonRecord = Record<string, unknown>;
+
+function orderedObject(
+	value: JsonRecord,
+	keys: readonly string[],
+	overrides: Readonly<JsonRecord> = {},
+): JsonRecord {
+	const result: JsonRecord = {};
+	for (const key of keys)
+		result[key] = Object.prototype.hasOwnProperty.call(overrides, key)
+			? overrides[key]
+			: value[key];
+	return result;
+}
+
+function canonicalInitialTurn(value: unknown): JsonRecord {
+	return orderedObject(value as JsonRecord, ["delivery", "turnId", "operationId", "reason"]);
+}
+
+function canonicalThreadValue(value: unknown): JsonRecord {
+	const record = value as JsonRecord;
+	return orderedObject(record, ["threadId", "state", "initialTurn"], {
+		initialTurn: canonicalInitialTurn(record.initialTurn),
+	});
+}
+
+function canonicalListValue(value: unknown): JsonRecord {
+	const record = value as JsonRecord;
+	const threads = (record.threads as readonly unknown[]).map((thread) =>
+		orderedObject(thread as JsonRecord, [
+			"threadId",
+			"title",
+			"status",
+			"source",
+			"epoch",
+			"ownership",
+			"loaded",
+			"canAcceptDirectInput",
+		]),
+	);
+	return orderedObject(record, ["threads", "nextCursor"], { threads });
+}
+
+function canonicalReadValue(value: unknown): JsonRecord {
+	const record = value as JsonRecord;
+	const turns = (record.turns as readonly unknown[]).map((turn) =>
+		orderedObject(turn as JsonRecord, [
+			"turnId",
+			"status",
+			"summary",
+			"outputsIncluded",
+			"outputsTruncated",
+		]),
+	);
+	return orderedObject(record, ["threadId", "turns", "nextCursor"], { turns });
+}
+
+function canonicalToolValue(name: GeneralThreadToolName, value: unknown): JsonRecord {
+	switch (name) {
+		case "create_thread":
+		case "fork_thread":
+			return canonicalThreadValue(value);
+		case "list_threads":
+			return canonicalListValue(value);
+		case "read_thread":
+			return canonicalReadValue(value);
+		case "send_message_to_thread":
+			return orderedObject(value as JsonRecord, ["threadId", "delivery"]);
+		case "wait_threads":
+			return orderedObject(value as JsonRecord, ["event", "threadId", "cursor"]);
+	}
+}
+
+function canonicalEnvelope(name: GeneralThreadToolName, value: unknown): JsonRecord {
+	const record = value as JsonRecord;
+	switch (record.tag) {
+		case "ok":
+			return orderedObject(record, ["tag", "operationId", "value"], {
+				value: canonicalToolValue(name, record.value),
+			});
+		case "refused":
+			return orderedObject(record, ["tag", "reason", "message"]);
+		case "approval_required":
+			return orderedObject(record, ["tag", "operationId", "summary"]);
+		case "outcome_unknown":
+			return orderedObject(record, ["tag", "operationId", "message"]);
+		default:
+			throw new TypeError(`Unknown ${name} result envelope tag.`);
+	}
+}
+
 export function parseToolResultEnvelope<Name extends GeneralThreadToolName>(
 	name: Name,
 	text: string,
@@ -183,9 +311,14 @@ export function parseToolResultEnvelope(
 	name: unknown,
 	text: string,
 ): ToolResultEnvelope<GeneralThreadToolName> {
-	const value = parseCompactJson(text, `${String(name)} result envelope`);
+	const label = `${String(name)} result envelope`;
+	const value = parseStrictJson(text, label);
 	const parsed = schemaFor(name).safeParse(value);
-	if (!parsed.success) invalidResult(`${String(name)} result envelope`, parsed.error.issues);
+	if (!parsed.success) invalidResult(label, parsed.error.issues);
+	const canonicalText = JSON.stringify(
+		canonicalEnvelope(name as GeneralThreadToolName, parsed.data),
+	);
+	if (canonicalText !== text) throw new TypeError(`${label} must use canonical compact JSON.`);
 	return freezeDeep(parsed.data) as ToolResultEnvelope<GeneralThreadToolName>;
 }
 
@@ -204,10 +337,12 @@ export function parseDynamicToolCallResponse(
 	const parsed = DynamicToolCallResponseSchema.safeParse(response);
 	if (!parsed.success) invalidResult(`${String(name)} dynamic tool response`, parsed.error.issues);
 	const envelope = parseToolResultEnvelope(name, parsed.data.contentItems[0].text);
-	if (!parsed.data.success && envelope.tag !== "refused")
-		throw new TypeError(
-			`${String(name)} dynamic tool response must use a refused envelope when success is false.`,
-		);
+	if (!parsed.data.success) {
+		if (envelope.tag !== "refused" || !OUTER_FAILURE_REASONS.has(envelope.reason))
+			throw new TypeError(
+				`${String(name)} dynamic tool response must use a boundary-refusal envelope when success is false.`,
+			);
+	}
 	return freezeDeep({
 		contentItems: parsed.data.contentItems,
 		success: parsed.data.success,

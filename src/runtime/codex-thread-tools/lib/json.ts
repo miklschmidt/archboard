@@ -125,10 +125,3 @@ export function parseStrictJson(source: string, label: string): unknown {
 		);
 	}
 }
-
-export function parseCompactJson(source: string, label: string): unknown {
-	const value = parseStrictJson(source, label);
-	if (JSON.stringify(value) !== source)
-		throw new TypeError(`${label} must be canonical compact JSON.`);
-	return value;
-}
