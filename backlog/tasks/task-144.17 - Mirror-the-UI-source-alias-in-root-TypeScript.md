@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:49'
-updated_date: '2026-08-31 02:46'
+updated_date: '2026-08-31 02:53'
 labels: []
 dependencies:
   - TASK-144.15
@@ -46,4 +46,6 @@ Own the root TypeScript half of the same @/* -> ./src/* alias and prove agreemen
 Reserved immediately after TASK-144.15 finalized and released this dependency-ready root TypeScript leaf at integration HEAD 6c992d9. It owns tsconfig.json plus the minimal alias/agreement fixture and is path-disjoint from every active lane.
 
 Implemented in 1be7964. Focused evidence: bun test tests/system/repository-policy/tsconfig-root-alias.test.ts (3 pass); bunx tsc --noEmit -p tsconfig.json (pass); bun test tests/system/repository-policy/tsconfig-frontend-alias.test.ts (2 pass); bun test tests/system/repository-policy/test-inventory.test.ts (39 pass); bunx oxlint tsconfig.json tests/system/repository-policy/tsconfig-root-alias.test.ts (pass); bunx oxfmt --check tsconfig.json tests/system/repository-policy/tsconfig-root-alias.test.ts (pass); git diff --check (pass). The root fixture resolves the public @/ui/types entrypoint and independently rejects ~/ui/types; the agreement assertion confirms root TypeScript, frontend TypeScript, and Vite resolve the same src target without a deep-import claim. Scope audit: only tsconfig.json and tests/system/repository-policy/tsconfig-root-alias.test.ts changed; frontend tsconfig, Vite, package scripts, CI, Oxlint/deep-import policy, shadcn config, UI source, TASK-144.18, TASK-144.04, and src-DlBR1tzg.js were untouched. Acceptance criteria intentionally remain unchecked; broad gates remain parent-owned.
+
+Review remediation implemented in 18a75d0 on fixed BASE ece005deac3abc6b49fc2a83682cf6f7d90c5ea4. The disposable tsc fixture now uses OS tmpdir() with finally cleanup and a git-status before/after assertion proving no checkout residue; the fixture adds only temporary typeRoots so the real root config resolves ambient types from the repository installation. The Vite agreement now filters to the canonical find "@" alias, requires exactly one real src target, and does not reject unrelated aliases; existing Vite contract coverage continues to reject alternate/overlapping @ aliases and allow unrelated non-overlapping aliases. Focused evidence after remediation: root alias test 4 pass / 17 expectations; bunx tsc --noEmit -p tsconfig.json pass; frontend alias test 2 pass / 7 expectations; Vite contract 42 pass / 90 expectations; inventory 39 pass / 69 expectations; focused Oxlint, Oxfmt, and git diff --check pass. Acceptance criteria remain unchecked; broad gates remain parent-owned.
 <!-- SECTION:NOTES:END -->
