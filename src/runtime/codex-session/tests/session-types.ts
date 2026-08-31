@@ -1,5 +1,18 @@
-import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
-import type { CodexSession, SessionParams } from "../index.js";
+import type {
+	ItemId,
+	LoginId,
+	QueuedSubmissionId,
+	ThreadId,
+	TurnId,
+} from "../../../shared/codex-workbench-identity/index.js";
+import type {
+	CodexSession,
+	SessionAgentMessageItem,
+	SessionCollabAgentItem,
+	SessionParams,
+	SessionSubAgentActivityItem,
+	SessionThreadSource,
+} from "../index.js";
 
 declare const session: CodexSession;
 declare const threadId: ThreadId;
@@ -22,6 +35,36 @@ void session.threadItemsListPage();
 void session.queueListPage();
 // @ts-expect-error The generated thread/timeline/list request requires threadId.
 void session.timelineListPage();
+
+type Equal<Left, Right> = [Left] extends [Right] ? ([Right] extends [Left] ? true : false) : false;
+type Assert<Value extends true> = Value;
+type Result<Method extends keyof CodexSession> = Awaited<ReturnType<CodexSession[Method]>>;
+
+type HostedLogin = Extract<Result<"accountLogin">, { readonly type: "chatgpt" }>;
+type ThreadStart = Result<"threadStart">;
+type ThreadItems = Result<"threadItemsListPage">;
+type QueueAdd = Result<"queueAdd">;
+type Timeline = Result<"timelineListPage">;
+type SubAgentSource = Extract<SessionThreadSource, { readonly subAgent: unknown }>["subAgent"];
+type SpawnSource = Extract<SubAgentSource, { readonly thread_spawn: unknown }>;
+
+export type SessionResponseIdentityFixture = [
+	Assert<Equal<HostedLogin["loginId"], LoginId>>,
+	Assert<Equal<ThreadStart["thread"]["id"], ThreadId>>,
+	Assert<Equal<ThreadStart["thread"]["turns"][number]["id"], TurnId>>,
+	Assert<Equal<ThreadStart["thread"]["turns"][number]["items"][number]["id"], ItemId>>,
+	Assert<Equal<ThreadItems["data"][number]["turnId"], TurnId>>,
+	Assert<Equal<QueueAdd["queuedSubmission"]["id"], QueuedSubmissionId>>,
+	Assert<Equal<SpawnSource["thread_spawn"]["parent_thread_id"], ThreadId>>,
+	Assert<
+		Equal<NonNullable<SessionAgentMessageItem["memoryCitation"]>["threadIds"][number], ThreadId>
+	>,
+	Assert<Equal<SessionCollabAgentItem["senderThreadId"], ThreadId>>,
+	Assert<Equal<SessionCollabAgentItem["receiverThreadIds"][number], ThreadId>>,
+	Assert<Equal<keyof SessionCollabAgentItem["agentsStates"], ThreadId>>,
+	Assert<Equal<SessionSubAgentActivityItem["agentThreadId"], ThreadId>>,
+	Assert<Equal<Extract<Timeline["data"][number], { type: "turnStarted" }>["turnId"], string>>,
+];
 
 export type SessionPageParameterFixture = [
 	typeof turns,

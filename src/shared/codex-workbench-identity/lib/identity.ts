@@ -361,6 +361,24 @@ export interface IdentityIssuer {
 	readonly mintChildEpoch: () => ChildEpoch;
 }
 
+/** Raw server identities collected from one decoded app-server response. */
+export interface CodexResponseIdentityBatch {
+	readonly threadIds?: readonly unknown[];
+	readonly turnIds?: readonly unknown[];
+	readonly itemIds?: readonly unknown[];
+	readonly queuedSubmissionIds?: readonly unknown[];
+	readonly loginIds?: readonly unknown[];
+}
+
+/** Branded identities returned in the same order as one response batch. */
+export interface AdoptedCodexResponseIdentityBatch {
+	readonly threadIds: readonly ThreadId[];
+	readonly turnIds: readonly TurnId[];
+	readonly itemIds: readonly ItemId[];
+	readonly queuedSubmissionIds: readonly QueuedSubmissionId[];
+	readonly loginIds: readonly LoginId[];
+}
+
 /**
  * This capability is passed only to protocol decoders. Its adoption methods
  * are deliberately absent from IdentityValidator and IdentityIssuer.
@@ -388,6 +406,10 @@ export interface TrustedIdentityDecoder {
 	readonly adoptJsonRpcRequestId: (raw: unknown) => JsonRpcRequestId;
 	readonly adoptDynamicToolCallId: (raw: unknown) => DynamicToolCallId;
 	readonly adoptApprovalId: (raw: unknown) => ApprovalId;
+	/** Validates a complete decoded response before adopting any identity from it. */
+	readonly adoptCodexResponseIdentities: (
+		batch: CodexResponseIdentityBatch,
+	) => AdoptedCodexResponseIdentityBatch;
 	readonly serializeCodexIdentity: (identity: CodexIdentity) => string;
 	readonly serializeJsonRpcRequestId: (identity: JsonRpcRequestId) => JsonRpcRequestIdWireValue;
 	readonly createWireRequestCorrelation: (
@@ -472,6 +494,56 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		}
 		const token = encodeRawJsonRpcRequestId(rawValue);
 		return issue("json-rpc-request", token, rawValue);
+	};
+	type ResponseAdoptionDomain = "thread" | "turn" | "item" | "queued-submission" | "login";
+	interface StagedResponseIdentity<Domain extends ResponseAdoptionDomain> {
+		readonly domain: Domain;
+		readonly raw: string;
+		readonly value: IdentityValue<Domain>;
+	}
+	const stageResponseIdentity = <Domain extends ResponseAdoptionDomain>(
+		domain: Domain,
+		rawValue: unknown,
+	): StagedResponseIdentity<Domain> => {
+		if (typeof rawValue !== "string") {
+			return fail("invalid-shape", `The server ${domain} identity must be a string.`, domain);
+		}
+		return {
+			domain,
+			raw: rawValue,
+			value: wireValue(domain, encodeRawIdentity(rawValue, domain)),
+		};
+	};
+	const stageResponseIdentities = <Domain extends ResponseAdoptionDomain>(
+		domain: Domain,
+		values: readonly unknown[] | undefined,
+	): readonly StagedResponseIdentity<Domain>[] =>
+		(values ?? []).map((value) => stageResponseIdentity(domain, value));
+	const commitResponseIdentities = <Domain extends ResponseAdoptionDomain>(
+		values: readonly StagedResponseIdentity<Domain>[],
+	): readonly IdentityValue<Domain>[] =>
+		values.map(({ domain, raw, value }) => issueExisting(domain, value, raw));
+	const adoptCodexResponseIdentities = (
+		batch: CodexResponseIdentityBatch,
+	): AdoptedCodexResponseIdentityBatch => {
+		const threadIds = stageResponseIdentities("thread", batch.threadIds);
+		const turnIds = stageResponseIdentities("turn", batch.turnIds);
+		const itemIds = stageResponseIdentities("item", batch.itemIds);
+		const queuedSubmissionIds = stageResponseIdentities(
+			"queued-submission",
+			batch.queuedSubmissionIds,
+		);
+		const loginIds = stageResponseIdentities("login", batch.loginIds);
+
+		// Staging every domain first makes a hostile late field fail without
+		// trusting the valid identities that preceded it in the response.
+		return Object.freeze({
+			threadIds: Object.freeze(commitResponseIdentities(threadIds)),
+			turnIds: Object.freeze(commitResponseIdentities(turnIds)),
+			itemIds: Object.freeze(commitResponseIdentities(itemIds)),
+			queuedSubmissionIds: Object.freeze(commitResponseIdentities(queuedSubmissionIds)),
+			loginIds: Object.freeze(commitResponseIdentities(loginIds)),
+		});
 	};
 	const parseIssued = <Domain extends IdentityDomain>(
 		domain: Domain,
@@ -559,6 +631,7 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		adoptJsonRpcRequestId,
 		adoptDynamicToolCallId: (raw) => adopt("dynamic-tool-call", raw),
 		adoptApprovalId: (raw) => adopt("approval", raw),
+		adoptCodexResponseIdentities,
 		serializeCodexIdentity: serialize,
 		serializeJsonRpcRequestId: serializeJsonRpc,
 		createWireRequestCorrelation: (input) => {

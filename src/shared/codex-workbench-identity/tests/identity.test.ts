@@ -103,6 +103,26 @@ describe("codex workbench identities", () => {
 		);
 	});
 
+	test("adopts response identities atomically and preserves duplicate identity equality", () => {
+		const { decoder } = createIdentityAuthority();
+		expect(() =>
+			decoder.adoptCodexResponseIdentities({
+				threadIds: ["valid-before-failure", ""],
+				turnIds: ["turn-before-failure"],
+			}),
+		).toThrow(IdentityValidationError);
+		expect(errorCode(() => decoder.resolveThreadId("valid-before-failure"))).toBe("unissued");
+
+		const adopted = decoder.adoptCodexResponseIdentities({
+			threadIds: ["same-thread", "same-thread"],
+			turnIds: ["same-turn", "same-turn"],
+			itemIds: ["same-item", "same-item"],
+			queuedSubmissionIds: ["same-queue", "same-queue"],
+			loginIds: ["same-login", "same-login"],
+		});
+		for (const values of Object.values(adopted)) expect(values[0]).toBe(values[1]);
+	});
+
 	test("rejects empty, malformed, and caller-fabricated identities", () => {
 		const authority = createIdentityAuthority();
 		const { decoder, validator } = authority;
