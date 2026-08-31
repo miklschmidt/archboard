@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 06:24'
+updated_date: '2026-08-31 06:50'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -26,7 +26,17 @@ modified_files:
   - src/runtime/codex-session/tests/session-types.ts
   - src/runtime/codex-session/tests/storage.test.ts
   - src/runtime/codex-session/tests/support.ts
+  - src/runtime/codex-session/tests/transport-chain-support.ts
   - src/runtime/codex-protocol
+  - src/runtime/codex-transport/lib/inbound-router.ts
+  - src/runtime/codex-transport/lib/request-operations.ts
+  - src/runtime/codex-transport/lib/types.ts
+  - src/runtime/codex-transport/tests/fake-child.ts
+  - src/runtime/codex-transport/tests/no-params.test.ts
+  - src/runtime/codex-transport/tests/transport.test.ts
+  - src/shared/codex-workbench-identity/lib/identity.ts
+  - src/shared/codex-browser-model/index.ts
+  - src/shared/codex-browser-model/lib/authored.ts
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -84,4 +94,14 @@ Typed-boundary remediation (2026-08-31): cherry-picked protocol boundary commit 
 Follow-up review scope (2026-08-31): remediate only mandatory threadTurnsListPage, threadItemsListPage, queueListPage, and timelineListPage parameters plus the CodexSessionMutationError inherited cause override. CurrentTime/read remains assigned to the dedicated boundary worker and is intentionally out of scope.
 
 Follow-up remediation (2026-08-31): commit 250810e requires branded threadId-bearing params for threadTurnsListPage, threadItemsListPage, queueListPage, and timelineListPage in both CodexSession and createCodexSession implementations. Added session-types.ts compile-time fixtures proving valid branded calls compile and omitted arguments fail. Marked CodexSessionError.cause with override for noImplicitOverride. Focused evidence under the 6G/1G systemd cap: 20 session tests passed with 268 assertions; strict scoped TypeScript with noImplicitOverride passed; scoped Oxlint, Oxfmt check, and git diff --check passed. CurrentTime/read remains untouched and owned by the dedicated boundary worker. Acceptance criteria remain unchecked; task remains In Progress.
+
+Final reconciliation evidence (2026-08-31, code HEAD 36f6efc0 before this evidence update): preserved the mandatory branded page-query params and CodexSessionError cause override from 250810e, integrated currentTime/read identity and transport resolution from 175d1283 (source 6315359), and integrated the final no-parameter boundary from 36f6efc0 (source 04e4ddb6). configRequirements/read and account/logout now use exact undefined request typing and decoding, omit params on the wire, reject invented object params, and expose zero-argument accountLogout; object-param methods still reject undefined. currentTime/read resolves raw wire ThreadIds only through issued current identity and the transport/session reverse-request path is covered by real frames.
+
+Combined focused validation under systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=1G: bun test --reporter=dots src/runtime/codex-protocol/tests/*.test.ts src/shared/codex-workbench-identity/tests/*.test.ts src/runtime/codex-transport/tests/*.test.ts src/runtime/codex-session/tests/*.test.ts — 605 pass, 0 fail, 3,797 expect() calls across 18 files. Assistant-ui policy owner independently passed 12 tests / 282 expect() calls.
+
+Type validation: bunx tsc --noEmit -p tsconfig.frontend.json passed. The root bunx tsc --noEmit (and therefore bun run type-check before its frontend leg) still reports exactly two diagnostics already owned by TASK-143.03.12: tests/system/repository-policy/assistant-ui-imports.test.ts:168:64 TS2769 (unknown is not assignable to string) and :324:68 TS2345 (string | undefined is not assignable to string). No assistant-ui files were changed. Scoped Oxlint passed, Oxfmt --check passed on 77 files, and git diff --check passed.
+
+Protected protocol fingerprint guard was attempted with the mandated 6G/1G cap; systemd reported oom-kill at the 6G limit with 641.5M swap peak while parsing the 820-file generated tree. A bun --smol retry also hit the same cap (664.5M swap). This is an environment/resource-limited check and is not claimed as a semantic pass.
+
+Task remains In Progress and all acceptance criteria remain unchecked; full repository/module/system/browser lanes were not run.
 <!-- SECTION:NOTES:END -->
