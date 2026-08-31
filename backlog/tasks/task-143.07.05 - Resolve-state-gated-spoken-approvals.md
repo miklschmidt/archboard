@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 18:18'
+updated_date: '2026-08-31 18:26'
 labels: []
 dependencies:
   - TASK-143.02.03
@@ -54,6 +54,8 @@ Own the one-slot spoken-approval gate and schedule a later ordinary coordinator 
 9. Make omitted or null command approvals visual-only by requiring a cached broker-derived executable presentation, never falling back to reason, and audit command effect fields plus broader-grant gates before spoken classification.
 
 10. Add fail-first broker and public-gate tests for decoded null and omitted command shapes, rerun focused broker/spoken, type, lint, format, module, and diff checks without repeating preserved repository-policy OOM lanes, then commit and report the complete fixed-base range.
+
+11. Extend the broker remediation matrix with unsafe command, null or unsafe cwd, non-null environmentId, and non-null networkApprovalContext cases; assert unsupported_schema and absent cached presentation, keep one null/omitted public-gate integration case, then run focused validation and report a new fixed-base range.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -62,4 +64,6 @@ Own the one-slot spoken-approval gate and schedule a later ordinary coordinator 
 Review remediation applied: the approval broker now caches a frozen spokenEffectPresentation derived from the normalized command effect, and the public gate rejects both caller-summary and assistant-prompt mismatches as invalid_effect_prompt before any classifier turn. The generic TransportServerRequest export was removed from the transport root; spoken-approval fixtures use the existing internal server-request contract. Final focused evidence: approval and spoken-approval suites passed 29 tests with 207 assertions; TypeScript, scoped Oxlint, scoped Oxfmt, the full module lane, and git diff --check passed. The full repository lane and a two-owner boundary invocation reached the mandated 6G/1G cap after initial boundary owners emitted passing results and were not retried. Protected frontend bundle SHA-256 remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Task remains In Progress with acceptance criteria unchecked for independent rereview.
 
 Remediation 2: the broker now caches a safe executable effect presentation at normalization and passes its availability into spoken eligibility. Missing or unsafe command text, cwd, execution-environment identity, or network approval context stays visual-only with unsupported_schema; the free-form reason is never used as a spoken effect fallback. Added broker regressions for decoded null and omitted command fields plus public spoken-gate regressions proving no classifier turn starts. Final scoped evidence: 38 focused approvals/spoken tests passed with 308 expectations; bunx tsc --noEmit passed; scoped oxlint passed; scoped oxfmt check passed; bun run test:modules passed. The preserved full repository-policy and boundary lanes were not rerun because their prior mandated 6G/1G cgroup OOM evidence remains unchanged.
+
+Remediation 3: expanded the table-driven broker regression to cover null and omitted command, unsafe command text, null cwd, unsafe cwd, non-null environmentId, and non-null networkApprovalContext. Every case returns unsupported_schema from spoken eligibility and throws unsupported_schema when the cached spoken presentation is requested. Kept the single public-gate null/omitted integration case. Final focused evidence: 25 tests passed with 185 expectations; bunx tsc --noEmit, scoped Oxlint, and scoped Oxfmt checks passed. Known full repository-policy and boundary cgroup OOM lanes were not rerun.
 <!-- SECTION:NOTES:END -->
