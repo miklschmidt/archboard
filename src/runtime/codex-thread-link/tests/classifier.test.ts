@@ -275,28 +275,33 @@ describe("codex thread-link classification", () => {
 		}
 	});
 
-	test("uses the authored thread-start condition, not a turn/start or alias kind", async () => {
-		await withFixture(
-			{
-				operationId: "thread-loss",
-				kind: "not-an-alias",
-				rpc: "thread/start",
-				unknownReason: "thread/start settlement was lost",
-			},
-			async (fixture) => {
-				const result = await classifyCodexThreadLink(
-					{ session: onePageSession(thread(fixture.authority, "target")), epoch: fixture.store },
-					fixture.target,
-				);
-				expect(result.link.reason).toBe("thread_start_outcome_unknown");
-			},
-		);
+	test("uses typed thread/start state for arbitrary diagnostics, not operation kind", async () => {
+		for (const [operationId, unknownReason] of [
+			["thread-loss-response", "response was lost"],
+			["thread-loss-settlement", "settlement lost"],
+		] as const) {
+			await withFixture(
+				{
+					operationId,
+					kind: "not-an-alias",
+					rpc: "thread/start",
+					unknownReason,
+				},
+				async (fixture) => {
+					const result = await classifyCodexThreadLink(
+						{ session: onePageSession(thread(fixture.authority, "target")), epoch: fixture.store },
+						fixture.target,
+					);
+					expect(result.link.reason).toBe("thread_start_outcome_unknown");
+				},
+			);
+		}
 		await withFixture(
 			{
 				operationId: "turn-loss",
 				kind: "create_thread_initial_turn",
 				rpc: "turn/start",
-				unknownReason: "The initial turn settlement was lost.",
+				unknownReason: "settlement lost",
 			},
 			async (fixture) => {
 				const result = await classifyCodexThreadLink(
