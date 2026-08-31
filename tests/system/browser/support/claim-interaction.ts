@@ -11,6 +11,12 @@ export interface ClaimCounts {
 	pending: number;
 	sent: number;
 	takeBackPending: number;
+	takeBackSettled: number;
+}
+
+interface PaneList {
+	paneCount: number;
+	panes: Array<{ board: string; clientId: string }>;
 }
 
 type Request = ReturnType<typeof createJsonRequester>;
@@ -24,6 +30,7 @@ export const installClaimRecorder = (browser: AgentBrowserSession): Promise<unkn
 			pending: [],
 			takeBackMode: "pass",
 			takeBackPending: [],
+			takeBackSettled: 0,
 		};
 		window.__delayNextClaimReport = () => { window.__claimRecorder.delay = true; };
 		window.__delayNextTakeBack = () => { window.__claimRecorder.takeBackMode = "delay"; };
@@ -61,7 +68,10 @@ export const installClaimRecorder = (browser: AgentBrowserSession): Promise<unkn
 				window.__claimRecorder.takeBackMode = "pass";
 				return new Promise((resolve, reject) => {
 					window.__claimRecorder.takeBackPending.push({
-						release: () => invoke().then(resolve, reject),
+						release: () => invoke().then(value => {
+							window.__claimRecorder.takeBackSettled += 1;
+							resolve(value);
+						}, reject),
 					});
 				});
 			}
@@ -80,6 +90,7 @@ export const claimCounts = (browser: AgentBrowserSession): Promise<ClaimCounts> 
 		sent: window.__claimRecorder.sent,
 		pending: window.__claimRecorder.pending.length,
 		takeBackPending: window.__claimRecorder.takeBackPending.length,
+		takeBackSettled: window.__claimRecorder.takeBackSettled,
 	}))()`);
 
 export function noteBytes(noteFile: string): Buffer<ArrayBuffer> {
@@ -201,11 +212,15 @@ export async function verifyBoardStatusPresentation(options: {
 	return before;
 }
 
-export async function beginDelayedTakeBack(
-	browser: AgentBrowserSession,
-	readStatus: () => Promise<WorkbenchSnapshot>,
-	reason: string,
-): Promise<void> {
+export async function verifyPaneScopedTakeBack(options: {
+	board: string;
+	browser: AgentBrowserSession;
+	primaryClientId: string;
+	readStatus: () => Promise<WorkbenchSnapshot>;
+	reason: string;
+	request: Request;
+}): Promise<void> {
+	const { board, browser, primaryClientId, readStatus, reason, request } = options;
 	await browser.eval(`(() => {
 		window.__takeBackActivations = 0;
 		document.querySelector(".pane-claim-take")?.addEventListener(
@@ -229,7 +244,76 @@ export async function beginDelayedTakeBack(
 		take: "Taking back control",
 		takeBackState: "pending",
 	});
+
+	expect((await request("/api/panes/open", { method: "POST", body: {} })).status).toBe(200);
+	const split = await pollUntil(
+		async () => (await request<PaneList>("/api/panes")).body,
+		(report) => report.paneCount === 2,
+		"a second pane to mount while Pane A take-back remains pending",
+	);
+	const secondClientId = split.panes.find((pane) => pane.clientId !== primaryClientId)?.clientId;
+	expect(typeof secondClientId).toBe("string");
+	expect(
+		(
+			await request("/api/boards/new", {
+				method: "POST",
+				body: { board: `${board}-take-back-other`, pane: secondClientId },
+			})
+		).status,
+	).toBe(200);
+	await browser.run(["click", '.pane[aria-label="Pane B"] .excalidraw']);
+	const paneBBeforeSettlement = await pollUntil(
+		readStatus,
+		(value) => value.pane === "Pane B" && value.takeBackState === "idle",
+		"Pane B to expose only its own idle take-back state",
+	);
+	expect(paneBBeforeSettlement).toMatchObject({
+		takeBackAnnouncement: null,
+		takeBackState: "idle",
+		what: null,
+	});
 	expect((await browser.eval<{ released: boolean }>("window.__releaseTakeBack()")).released).toBe(
 		true,
+	);
+	const paneBAfterSettlement = await pollUntil(
+		async () => ({ banner: await readStatus(), counts: await claimCounts(browser) }),
+		(value) =>
+			value.banner.pane === "Pane B" &&
+			value.banner.takeBackState === "idle" &&
+			value.counts.takeBackSettled === 1,
+		"Pane B to remain idle after Pane A settles",
+	);
+	expect(paneBAfterSettlement.banner).toMatchObject({
+		takeBackAnnouncement: null,
+		takeBackState: "idle",
+		what: null,
+	});
+
+	await browser.run(["click", '.pane[aria-label="Pane A"] .excalidraw']);
+	const paneASettled = await pollUntil(
+		readStatus,
+		(value) =>
+			value.pane === "Pane A" &&
+			value.takeBackState === "success" &&
+			value.takeBackAnnouncement === "Board control returned.",
+		"Pane A to retain its own settled take-back result",
+	);
+	expect(paneASettled).toMatchObject({
+		takeBackAnnouncement: "Board control returned.",
+		takeBackState: "success",
+		what: null,
+	});
+	expect(
+		(
+			await request("/api/panes/close", {
+				method: "POST",
+				body: { pane: secondClientId },
+			})
+		).status,
+	).toBe(200);
+	await pollUntil(
+		async () => (await request<PaneList>("/api/panes")).body,
+		(report) => report.paneCount === 1,
+		"the take-back isolation pane to close",
 	);
 }

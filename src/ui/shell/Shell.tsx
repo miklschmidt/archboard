@@ -23,6 +23,7 @@ import {
 	claimFromLockHolder,
 	WorkbenchBoardStatus,
 	type WorkbenchTakeBackResult,
+	type WorkbenchTakeBackState,
 } from "../workbench-board-status";
 import { SelectionInspector } from "../selection-inspector/SelectionInspector";
 import type { PaneSelectionSnapshot, SelectionProjection } from "../selection-inspector";
@@ -103,8 +104,36 @@ interface Notice {
 	actions?: readonly CodeTargetNoticeAction[];
 }
 interface AgentState {
+	boardKey: string | null;
 	heldBy: LockHolder | null;
 	takeBack: () => Promise<WorkbenchTakeBackResult>;
+	takeBackOperation: number;
+	takeBackState: WorkbenchTakeBackState;
+}
+
+function claimCampaign(holder: LockHolder | null): string | null {
+	return holder?.claimed === true ? `${holder.id}:${holder.since}` : null;
+}
+
+function preservesTakeBackLifecycle(
+	existing: AgentState,
+	boardKey: string | null,
+	heldBy: LockHolder | null,
+	takeBack: AgentState["takeBack"],
+): boolean {
+	if (existing.boardKey !== boardKey || existing.takeBack !== takeBack) return false;
+	const existingClaim = claimCampaign(existing.heldBy);
+	const nextClaim = claimCampaign(heldBy);
+	if (existingClaim === nextClaim) return true;
+	return (
+		nextClaim === null &&
+		existingClaim !== null &&
+		(existing.takeBackState === "pending" || existing.takeBackState === "success")
+	);
+}
+
+function takeBackStateFor(holder: LockHolder | null): WorkbenchTakeBackState {
+	return holder?.claimed === true ? "available" : "idle";
 }
 
 interface ConflictState {
@@ -349,6 +378,7 @@ export function Shell(): React.JSX.Element {
 	const [focused, setFocused] = useState("pane-1");
 	const [statuses, setStatuses] = useState<Record<string, PaneStatus>>({});
 	const [agentStates, setAgentStates] = useState<Record<string, AgentState>>({});
+	const nextTakeBackOperation = useRef(0);
 	const [selectionSnapshots, setSelectionSnapshots] = useState<
 		Record<string, PaneSelectionSnapshot>
 	>({});
@@ -420,6 +450,11 @@ export function Shell(): React.JSX.Element {
 			return remaining;
 		});
 		setPathFocusSnapshots((previous) => {
+			const { [paneId]: removed, ...remaining } = previous;
+			void removed;
+			return remaining;
+		});
+		setAgentStates((previous) => {
 			const { [paneId]: removed, ...remaining } = previous;
 			void removed;
 			return remaining;
@@ -506,13 +541,33 @@ export function Shell(): React.JSX.Element {
 	const onAgentState = useCallback(
 		(
 			paneId: string,
+			boardKey: string | null,
 			heldBy: LockHolder | null,
 			takeBack: () => Promise<WorkbenchTakeBackResult>,
 		) => {
 			setAgentStates((previous) => {
 				const existing = previous[paneId];
-				if (existing?.heldBy === heldBy && existing.takeBack === takeBack) return previous;
-				return { ...previous, [paneId]: { heldBy, takeBack } };
+				const preserve =
+					existing !== undefined &&
+					preservesTakeBackLifecycle(existing, boardKey, heldBy, takeBack);
+				const next: AgentState = {
+					boardKey,
+					heldBy,
+					takeBack,
+					takeBackOperation: preserve
+						? existing.takeBackOperation
+						: ++nextTakeBackOperation.current,
+					takeBackState: preserve ? existing.takeBackState : takeBackStateFor(heldBy),
+				};
+				if (
+					existing?.boardKey === next.boardKey &&
+					existing.heldBy === next.heldBy &&
+					existing.takeBack === next.takeBack &&
+					existing.takeBackOperation === next.takeBackOperation &&
+					existing.takeBackState === next.takeBackState
+				)
+					return previous;
+				return { ...previous, [paneId]: next };
 			});
 		},
 		[],
@@ -574,8 +629,37 @@ export function Shell(): React.JSX.Element {
 		[focused],
 	);
 
-	const status = statuses[focused] ?? statuses[panes[0] ?? ""] ?? null;
-	const agentState = agentStates[focused] ?? agentStates[panes[0] ?? ""] ?? null;
+	const status = statuses[focused] ?? null;
+	const agentState = agentStates[focused] ?? null;
+	const takeBackFocused = useCallback(async (): Promise<WorkbenchTakeBackResult> => {
+		if (!agentState) return { outcome: "failure" };
+		const paneId = focused;
+		const action = agentState.takeBack;
+		const operation = ++nextTakeBackOperation.current;
+		setAgentStates((previous) => {
+			const current = previous[paneId];
+			if (!current || current.takeBack !== action) return previous;
+			return {
+				...previous,
+				[paneId]: { ...current, takeBackOperation: operation, takeBackState: "pending" },
+			};
+		});
+		let result: WorkbenchTakeBackResult;
+		try {
+			result = await action();
+		} catch {
+			result = { outcome: "failure" };
+		}
+		setAgentStates((previous) => {
+			const current = previous[paneId];
+			if (!current || current.takeBackOperation !== operation) return previous;
+			return {
+				...previous,
+				[paneId]: { ...current, takeBackState: result.outcome },
+			};
+		});
+		return result;
+	}, [agentState, focused]);
 	const claimedBy = agentState?.heldBy?.claimed === true ? agentState.heldBy : null;
 	const focusedPaneLabel = `Pane ${String.fromCharCode(65 + Math.max(0, panes.indexOf(focused)))}`;
 	const visibleNotice = presentationNotice(presentation, notice);
@@ -1280,7 +1364,8 @@ export function Shell(): React.JSX.Element {
 						connection={boardConnection(status)}
 						claim={claimFromLockHolder(agentState?.heldBy ?? null)}
 						doing={visibleDoing}
-						onTakeBack={agentState?.takeBack}
+						onTakeBack={agentState ? takeBackFocused : undefined}
+						takeBackState={agentState?.takeBackState ?? "idle"}
 					/>
 				</main>
 			</div>

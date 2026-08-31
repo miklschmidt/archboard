@@ -105,6 +105,19 @@ function render(options?: {
 	);
 }
 
+function semanticRegion(markup: string): string {
+	const region = markup.match(/<output class="workbench-semantic[\s\S]*?<\/output>/)?.[0];
+	if (!region) throw new Error("Semantic status region is missing.");
+	return region;
+}
+
+function regionText(region: string): string {
+	return region
+		.replace(/<[^>]+>/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+}
+
 describe("workbench board status adapter", () => {
 	test("projects every closed connection, take-back, and semantic state by name", () => {
 		for (const connection of CONNECTION_STATES) {
@@ -196,9 +209,17 @@ describe("workbench board status view", () => {
 	test("renders every named semantic and take-back state with accessible status text", () => {
 		for (const semanticContext of SEMANTIC_STATES) {
 			const markup = render({ semanticContext });
+			const snapshot = project({ semanticContext });
+			const region = semanticRegion(markup);
+			const failure = semanticContext.state === "refused";
 			expect(markup).toContain(`data-semantic="${semanticContext.state}"`);
-			expect(markup).toContain(`data-semantic-state="${semanticContext.state}"`);
-			expect(markup).toContain("Semantic context");
+			expect(region).toContain(`data-semantic-state="${semanticContext.state}"`);
+			expect(region).toContain(`role="${failure ? "alert" : "status"}"`);
+			expect(region).toContain(`aria-live="${failure ? "assertive" : "polite"}"`);
+			expect(region).toContain('aria-atomic="true"');
+			expect(regionText(region)).toBe(
+				`Semantic context ${snapshot.semanticContext.label} ${snapshot.semanticContext.description}`,
+			);
 		}
 
 		for (const takeBackState of TAKE_BACK_STATES) {
