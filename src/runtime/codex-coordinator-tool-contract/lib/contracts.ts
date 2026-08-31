@@ -1,0 +1,752 @@
+import { z } from "zod";
+
+import { CODEX_PROTOCOL_VERSION, UserInputSchema } from "../../codex-protocol/index.js";
+import type {
+	JsonSchema,
+	NamespaceName,
+	CanonicalTool,
+	CoordinatorToolName,
+	WorkhorseToolName,
+	VoiceToolName,
+} from "./manifest.js";
+import {
+	ARCHBOARD_VOICE_NAMESPACE,
+	ARCHBOARD_VOICE_TOOL_NAMES,
+	ARCHBOARD_WORKHORSE_NAMESPACE,
+	ARCHBOARD_WORKHORSE_TOOL_NAMES,
+	canonicalTool,
+} from "./manifest.js";
+
+export const COORDINATOR_ROLE = "coordinator" as const;
+export type CoordinatorRole = typeof COORDINATOR_ROLE;
+
+export const COORDINATOR_NAMESPACE_NAMES = Object.freeze([
+	"archboard_workhorse",
+	"archboard_voice",
+] as const);
+
+function freezeDeep<T>(value: T): T {
+	if (typeof value !== "object" || value === null || Object.isFrozen(value)) return value;
+	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
+	Object.freeze(value);
+	return value;
+}
+
+/** The reviewed identity that a coordinator turn must carry. */
+export const COORDINATOR_IDENTITY = freezeDeep({
+	role: COORDINATOR_ROLE,
+	model: "gpt-5.6-luna",
+	effort: "medium",
+	allowProviderModelFallback: false,
+	config: { features: { realtime_conversation: true } },
+	serviceName: "archboard",
+	ephemeral: false,
+	historyMode: "paginated",
+	sessionStartSource: "startup",
+	threadSource: "archboard",
+	dynamicTools: [...COORDINATOR_NAMESPACE_NAMES],
+	experimentalRawEvents: false,
+} as const);
+
+export const CoordinatorIdentitySchema = z
+	.object({
+		role: z.literal(COORDINATOR_ROLE),
+		model: z.literal("gpt-5.6-luna"),
+		effort: z.literal("medium"),
+		allowProviderModelFallback: z.literal(false),
+		config: z
+			.object({ features: z.object({ realtime_conversation: z.literal(true) }).strict() })
+			.strict(),
+		serviceName: z.literal("archboard"),
+		ephemeral: z.literal(false),
+		historyMode: z.literal("paginated"),
+		sessionStartSource: z.literal("startup"),
+		threadSource: z.literal("archboard"),
+		dynamicTools: z.tuple([z.literal("archboard_workhorse"), z.literal("archboard_voice")]),
+		experimentalRawEvents: z.literal(false),
+	})
+	.strict();
+
+export const DYNAMIC_TOOL_REFUSAL_REASONS = Object.freeze([
+	"invalid_call",
+	"not_ready",
+	"not_loaded",
+	"not_controllable",
+	"system_error",
+	"stale_child",
+	"prior_epoch",
+	"unknown_provenance",
+	"approval_declined",
+	"cycle",
+	"busy",
+	"expired",
+	"unsupported",
+] as const);
+export type DynamicToolRefusalReason = (typeof DYNAMIC_TOOL_REFUSAL_REASONS)[number];
+export const DynamicToolRefusalReasonSchema = z.enum(DYNAMIC_TOOL_REFUSAL_REASONS);
+
+const OpaqueIdSchema = z.string().min(1).max(128);
+const BoundedDiagnosticSchema = z.string().min(1).max(4_096);
+const JsonObjectSchema = z.record(z.string(), z.json());
+
+export const DynamicToolOkEnvelopeSchema = z
+	.object({
+		tag: z.literal("ok"),
+		operationId: OpaqueIdSchema,
+		value: JsonObjectSchema,
+	})
+	.strict();
+export const DynamicToolRefusedEnvelopeSchema = z
+	.object({
+		tag: z.literal("refused"),
+		reason: DynamicToolRefusalReasonSchema,
+		message: BoundedDiagnosticSchema,
+	})
+	.strict();
+export const DynamicToolApprovalRequiredEnvelopeSchema = z
+	.object({
+		tag: z.literal("approval_required"),
+		operationId: OpaqueIdSchema,
+		summary: BoundedDiagnosticSchema,
+	})
+	.strict();
+export const DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE =
+	"The request may have taken effect. Inspect authoritative state before another mutation." as const;
+export const DynamicToolOutcomeUnknownEnvelopeSchema = z
+	.object({
+		tag: z.literal("outcome_unknown"),
+		operationId: OpaqueIdSchema,
+		message: z.literal(DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE),
+	})
+	.strict();
+
+export const DynamicToolEnvelopeSchema = z.discriminatedUnion("tag", [
+	DynamicToolOkEnvelopeSchema,
+	DynamicToolRefusedEnvelopeSchema,
+	DynamicToolApprovalRequiredEnvelopeSchema,
+	DynamicToolOutcomeUnknownEnvelopeSchema,
+]);
+
+export const DynamicToolEnvelopeTextSchema = z
+	.string()
+	.min(1)
+	.max(16_384)
+	.superRefine((text, context) => {
+		let value: unknown;
+		try {
+			value = JSON.parse(text) as unknown;
+		} catch {
+			context.addIssue({ code: "custom", message: "tool response text must be JSON" });
+			return;
+		}
+		const parsed = DynamicToolEnvelopeSchema.safeParse(value);
+		if (!parsed.success || JSON.stringify(parsed.data) !== text)
+			context.addIssue({ code: "custom", message: "tool response text must be canonical JSON" });
+	});
+
+export const DynamicToolResponseSchema = z
+	.object({
+		contentItems: z.tuple([
+			z.object({ type: z.literal("inputText"), text: DynamicToolEnvelopeTextSchema }).strict(),
+		]),
+		success: z.boolean(),
+	})
+	.strict()
+	.superRefine((response, context) => {
+		if (!response.success) {
+			const envelope = JSON.parse(response.contentItems[0].text) as { tag?: unknown };
+			if (envelope.tag !== "refused")
+				context.addIssue({
+					code: "custom",
+					path: ["success"],
+					message: "only a refused envelope may use success=false",
+				});
+		}
+	});
+export const DynamicToolCallResponseSchema = DynamicToolResponseSchema;
+
+export const InspectWorkhorseInputSchema = z.object({}).strict();
+export const DelegateToWorkhorseInputSchema = z
+	.object({
+		input: z.string().min(1).max(4_096),
+		transcriptDelta: z.string().min(0).max(4_096),
+	})
+	.strict();
+
+export const QueueOperationSchema = z.enum(["list", "add", "update", "delete", "reorder", "start"]);
+export type QueueOperation = z.infer<typeof QueueOperationSchema>;
+
+const QueueSubmissionIdSchema = z.string().min(1).max(128);
+const QueuePromptSchema = z.string().min(1).max(16_384);
+const QueueOrderSchema = z
+	.array(QueueSubmissionIdSchema)
+	.min(1)
+	.max(100)
+	.refine((values) => new Set(values).size === values.length, "submission ids must be unique");
+
+export const QueueListInputSchema = z.object({ operation: z.literal("list") }).strict();
+export const QueueAddInputSchema = z
+	.object({ operation: z.literal("add"), prompt: QueuePromptSchema })
+	.strict();
+export const QueueUpdateInputSchema = z
+	.object({
+		operation: z.literal("update"),
+		submissionId: QueueSubmissionIdSchema,
+		prompt: QueuePromptSchema,
+	})
+	.strict();
+export const QueueDeleteInputSchema = z
+	.object({ operation: z.literal("delete"), submissionId: QueueSubmissionIdSchema })
+	.strict();
+export const QueueReorderInputSchema = z
+	.object({ operation: z.literal("reorder"), orderedSubmissionIds: QueueOrderSchema })
+	.strict();
+export const QueueStartInputSchema = z
+	.object({ operation: z.literal("start"), submissionId: QueueSubmissionIdSchema })
+	.strict();
+
+export const ManageWorkhorseQueueInputSchema = z.discriminatedUnion("operation", [
+	QueueListInputSchema,
+	QueueAddInputSchema,
+	QueueUpdateInputSchema,
+	QueueDeleteInputSchema,
+	QueueReorderInputSchema,
+	QueueStartInputSchema,
+]);
+
+export const SteerWorkhorseInputSchema = z.object({ input: z.string().min(1).max(4_096) }).strict();
+export const ResolveSpokenApprovalInputSchema = z
+	.object({ verdict: z.enum(["accept", "decline"]) })
+	.strict();
+
+export type InspectWorkhorseInput = z.infer<typeof InspectWorkhorseInputSchema>;
+export type DelegateToWorkhorseInput = z.infer<typeof DelegateToWorkhorseInputSchema>;
+export type ManageWorkhorseQueueInput = z.infer<typeof ManageWorkhorseQueueInputSchema>;
+export type SteerWorkhorseInput = z.infer<typeof SteerWorkhorseInputSchema>;
+export type ResolveSpokenApprovalInput = z.infer<typeof ResolveSpokenApprovalInputSchema>;
+
+export const WORKHORSE_TOOL_INPUT_SCHEMAS = Object.freeze({
+	inspect_workhorse: InspectWorkhorseInputSchema,
+	delegate_to_workhorse: DelegateToWorkhorseInputSchema,
+	manage_workhorse_queue: ManageWorkhorseQueueInputSchema,
+	steer_workhorse: SteerWorkhorseInputSchema,
+} satisfies Record<WorkhorseToolName, z.ZodTypeAny>);
+
+export const VOICE_TOOL_INPUT_SCHEMAS = Object.freeze({
+	resolve_spoken_approval: ResolveSpokenApprovalInputSchema,
+} satisfies Record<VoiceToolName, z.ZodTypeAny>);
+
+export function parseWorkhorseToolInput(toolName: WorkhorseToolName, input: unknown): unknown {
+	return WORKHORSE_TOOL_INPUT_SCHEMAS[toolName].parse(input);
+}
+
+export function parseVoiceToolInput(toolName: VoiceToolName, input: unknown): unknown {
+	return VOICE_TOOL_INPUT_SCHEMAS[toolName].parse(input);
+}
+
+export function parseCoordinatorToolInput(
+	namespace: NamespaceName,
+	toolName: CoordinatorToolName,
+	input: unknown,
+): unknown {
+	if (namespace === "archboard_workhorse") {
+		if (!ARCHBOARD_WORKHORSE_TOOL_NAMES.includes(toolName as WorkhorseToolName))
+			throw new TypeError(`${namespace} does not declare ${toolName}.`);
+		return parseWorkhorseToolInput(toolName as WorkhorseToolName, input);
+	}
+	if (!ARCHBOARD_VOICE_TOOL_NAMES.includes(toolName as VoiceToolName))
+		throw new TypeError(`${namespace} does not declare ${toolName}.`);
+	return parseVoiceToolInput(toolName as VoiceToolName, input);
+}
+
+const ProtocolThreadIdSchema = z.string();
+const ProtocolSubmissionIdSchema = z.string();
+const ProtocolCursorSchema = z.string();
+const ProtocolLimitSchema = z.number().int().nonnegative().max(4_294_967_295);
+const ProtocolInputSchema = z.array(UserInputSchema);
+
+/** Exact generated app-server 0.151.0 queue parameter objects. */
+export const ThreadQueueAddParamsSchema = z
+	.object({
+		threadId: ProtocolThreadIdSchema,
+		input: ProtocolInputSchema,
+		clientUserMessageId: z.string(),
+	})
+	.strict();
+export const ThreadQueueListParamsSchema = z
+	.object({
+		threadId: ProtocolThreadIdSchema,
+		cursor: ProtocolCursorSchema.nullable().optional(),
+		limit: ProtocolLimitSchema.nullable().optional(),
+	})
+	.strict();
+export const ThreadQueueUpdateParamsSchema = z
+	.object({
+		threadId: ProtocolThreadIdSchema,
+		queuedSubmissionId: ProtocolSubmissionIdSchema,
+		input: ProtocolInputSchema,
+	})
+	.strict();
+export const ThreadQueueDeleteParamsSchema = z
+	.object({
+		threadId: ProtocolThreadIdSchema,
+		queuedSubmissionId: ProtocolSubmissionIdSchema,
+	})
+	.strict();
+export const ThreadQueueReorderParamsSchema = z
+	.object({
+		threadId: ProtocolThreadIdSchema,
+		queuedSubmissionIds: z.array(ProtocolSubmissionIdSchema),
+	})
+	.strict();
+export const ThreadQueueStartParamsSchema = z
+	.object({
+		threadId: ProtocolThreadIdSchema,
+		queuedSubmissionId: ProtocolSubmissionIdSchema.nullable().optional(),
+	})
+	.strict();
+
+export type ThreadQueueAddParams = z.infer<typeof ThreadQueueAddParamsSchema>;
+export type ThreadQueueListParams = z.infer<typeof ThreadQueueListParamsSchema>;
+export type ThreadQueueUpdateParams = z.infer<typeof ThreadQueueUpdateParamsSchema>;
+export type ThreadQueueDeleteParams = z.infer<typeof ThreadQueueDeleteParamsSchema>;
+export type ThreadQueueReorderParams = z.infer<typeof ThreadQueueReorderParamsSchema>;
+export type ThreadQueueStartParams = z.infer<typeof ThreadQueueStartParamsSchema>;
+
+export const CODEX_QUEUE_PARAMETER_SCHEMAS = Object.freeze({
+	add: ThreadQueueAddParamsSchema,
+	list: ThreadQueueListParamsSchema,
+	update: ThreadQueueUpdateParamsSchema,
+	delete: ThreadQueueDeleteParamsSchema,
+	reorder: ThreadQueueReorderParamsSchema,
+	start: ThreadQueueStartParamsSchema,
+});
+
+export interface QueueOperationContract {
+	readonly operation: QueueOperation;
+	readonly rpc: `thread/queue/${QueueOperation}`;
+	readonly toolFields: readonly string[];
+	readonly protocolFields: readonly string[];
+	readonly protocolRequiredFields: readonly string[];
+	readonly protocolOptionalNullableFields: readonly string[];
+	readonly hostSuppliedFields: readonly string[];
+	readonly fieldMapping: Readonly<Record<string, string>>;
+}
+
+export const CODEX_QUEUE_OPERATION_CONTRACTS = freezeDeep([
+	{
+		operation: "add",
+		rpc: "thread/queue/add",
+		toolFields: ["operation", "prompt"],
+		protocolFields: ["threadId", "input", "clientUserMessageId"],
+		protocolRequiredFields: ["threadId", "input", "clientUserMessageId"],
+		protocolOptionalNullableFields: [],
+		hostSuppliedFields: ["threadId", "clientUserMessageId"],
+		fieldMapping: { prompt: "input", clientUserMessageId: "host_minted" },
+	},
+	{
+		operation: "list",
+		rpc: "thread/queue/list",
+		toolFields: ["operation"],
+		protocolFields: ["threadId", "cursor", "limit"],
+		protocolRequiredFields: ["threadId"],
+		protocolOptionalNullableFields: ["cursor", "limit"],
+		hostSuppliedFields: ["threadId", "cursor", "limit"],
+		fieldMapping: {},
+	},
+	{
+		operation: "update",
+		rpc: "thread/queue/update",
+		toolFields: ["operation", "submissionId", "prompt"],
+		protocolFields: ["threadId", "queuedSubmissionId", "input"],
+		protocolRequiredFields: ["threadId", "queuedSubmissionId", "input"],
+		protocolOptionalNullableFields: [],
+		hostSuppliedFields: ["threadId"],
+		fieldMapping: { submissionId: "queuedSubmissionId", prompt: "input" },
+	},
+	{
+		operation: "delete",
+		rpc: "thread/queue/delete",
+		toolFields: ["operation", "submissionId"],
+		protocolFields: ["threadId", "queuedSubmissionId"],
+		protocolRequiredFields: ["threadId", "queuedSubmissionId"],
+		protocolOptionalNullableFields: [],
+		hostSuppliedFields: ["threadId"],
+		fieldMapping: { submissionId: "queuedSubmissionId" },
+	},
+	{
+		operation: "reorder",
+		rpc: "thread/queue/reorder",
+		toolFields: ["operation", "orderedSubmissionIds"],
+		protocolFields: ["threadId", "queuedSubmissionIds"],
+		protocolRequiredFields: ["threadId", "queuedSubmissionIds"],
+		protocolOptionalNullableFields: [],
+		hostSuppliedFields: ["threadId"],
+		fieldMapping: { orderedSubmissionIds: "queuedSubmissionIds" },
+	},
+	{
+		operation: "start",
+		rpc: "thread/queue/start",
+		toolFields: ["operation", "submissionId"],
+		protocolFields: ["threadId", "queuedSubmissionId"],
+		protocolRequiredFields: ["threadId"],
+		protocolOptionalNullableFields: ["queuedSubmissionId"],
+		hostSuppliedFields: ["threadId"],
+		fieldMapping: { submissionId: "queuedSubmissionId" },
+	},
+] satisfies readonly QueueOperationContract[]);
+
+export const CODEX_QUEUE_OPERATION_NAMES = Object.freeze(
+	CODEX_QUEUE_OPERATION_CONTRACTS.map(({ operation }) => operation),
+);
+
+export const CODEX_QUEUE_PROTOCOL = Object.freeze({
+	protocol: "codex-app-server",
+	version: CODEX_PROTOCOL_VERSION,
+	operations: CODEX_QUEUE_OPERATION_NAMES,
+});
+
+const WorkhorseStatusSchema = z.enum(["notLoaded", "idle", "systemError", "active"]);
+const DeliverySchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
+const NullableOpaqueIdSchema = OpaqueIdSchema.nullable();
+const QueuedSubmissionIdsSchema = z.array(QueueSubmissionIdSchema).max(100);
+
+export const InspectWorkhorseResultSchema = z
+	.object({
+		threadId: OpaqueIdSchema,
+		status: WorkhorseStatusSchema,
+		activeTurnId: NullableOpaqueIdSchema,
+		queuedSubmissionIds: QueuedSubmissionIdsSchema,
+	})
+	.strict();
+export const DelegateToWorkhorseResultSchema = z
+	.object({
+		mode: z.enum(["started", "queued"]),
+		clientUserMessageId: OpaqueIdSchema,
+		queuedSubmissionId: NullableOpaqueIdSchema,
+		turnId: NullableOpaqueIdSchema,
+	})
+	.strict();
+export const ManageWorkhorseQueueResultSchema = z
+	.object({
+		operation: QueueOperationSchema,
+		queuedSubmissionIds: QueuedSubmissionIdsSchema,
+	})
+	.strict();
+export const SteerWorkhorseResultSchema = z
+	.object({
+		turnId: OpaqueIdSchema,
+		delivery: DeliverySchema,
+	})
+	.strict();
+export const ResolveSpokenApprovalResultSchema = z
+	.object({
+		verdict: z.enum(["accept", "decline"]),
+		settlement: DeliverySchema,
+	})
+	.strict();
+
+export type InspectWorkhorseResult = z.infer<typeof InspectWorkhorseResultSchema>;
+export type DelegateToWorkhorseResult = z.infer<typeof DelegateToWorkhorseResultSchema>;
+export type ManageWorkhorseQueueResult = z.infer<typeof ManageWorkhorseQueueResultSchema>;
+export type SteerWorkhorseResult = z.infer<typeof SteerWorkhorseResultSchema>;
+export type ResolveSpokenApprovalResult = z.infer<typeof ResolveSpokenApprovalResultSchema>;
+
+export const COORDINATOR_TOOL_RESULT_SCHEMAS = Object.freeze({
+	inspect_workhorse: InspectWorkhorseResultSchema,
+	delegate_to_workhorse: DelegateToWorkhorseResultSchema,
+	manage_workhorse_queue: ManageWorkhorseQueueResultSchema,
+	steer_workhorse: SteerWorkhorseResultSchema,
+	resolve_spoken_approval: ResolveSpokenApprovalResultSchema,
+} satisfies Record<CoordinatorToolName, z.ZodTypeAny>);
+
+export function parseCoordinatorToolResult(toolName: CoordinatorToolName, value: unknown): unknown {
+	return COORDINATOR_TOOL_RESULT_SCHEMAS[toolName].parse(value);
+}
+
+const JsonStringSchema: JsonSchema = Object.freeze({ type: "string" });
+const JsonNullableStringSchema: JsonSchema = freezeDeep({
+	anyOf: [JsonStringSchema, Object.freeze({ type: "null" })],
+});
+
+function strictResultObject(
+	properties: Readonly<Record<string, JsonSchema>>,
+	required: readonly string[],
+): JsonSchema {
+	return freezeDeep({
+		type: "object",
+		properties,
+		required: [...required],
+		additionalProperties: false,
+	});
+}
+
+const ResultOperationSchema: JsonSchema = freezeDeep({
+	type: "string",
+	enum: [...QueueOperationSchema.options],
+});
+const ResultStatusSchema: JsonSchema = freezeDeep({
+	type: "string",
+	enum: ["notLoaded", "idle", "systemError", "active"],
+});
+const ResultDeliverySchema: JsonSchema = freezeDeep({
+	type: "string",
+	enum: ["delivered", "not_delivered", "outcome_unknown"],
+});
+const ResultQueuedSubmissionIdsSchema: JsonSchema = freezeDeep({
+	type: "array",
+	items: JsonStringSchema,
+	maxItems: 100,
+});
+
+const TOOL_SUCCESS_RESULT_SCHEMAS = freezeDeep({
+	inspect_workhorse: strictResultObject(
+		{
+			threadId: JsonStringSchema,
+			status: ResultStatusSchema,
+			activeTurnId: JsonNullableStringSchema,
+			queuedSubmissionIds: ResultQueuedSubmissionIdsSchema,
+		},
+		["threadId", "status", "activeTurnId", "queuedSubmissionIds"],
+	),
+	delegate_to_workhorse: strictResultObject(
+		{
+			mode: freezeDeep({ type: "string", enum: ["started", "queued"] }),
+			clientUserMessageId: JsonStringSchema,
+			queuedSubmissionId: JsonNullableStringSchema,
+			turnId: JsonNullableStringSchema,
+		},
+		["mode", "clientUserMessageId", "queuedSubmissionId", "turnId"],
+	),
+	manage_workhorse_queue: strictResultObject(
+		{ operation: ResultOperationSchema, queuedSubmissionIds: ResultQueuedSubmissionIdsSchema },
+		["operation", "queuedSubmissionIds"],
+	),
+	steer_workhorse: strictResultObject(
+		{ turnId: JsonStringSchema, delivery: ResultDeliverySchema },
+		["turnId", "delivery"],
+	),
+	resolve_spoken_approval: strictResultObject(
+		{
+			verdict: freezeDeep({ type: "string", enum: ["accept", "decline"] }),
+			settlement: ResultDeliverySchema,
+		},
+		["verdict", "settlement"],
+	),
+} satisfies Record<CoordinatorToolName, JsonSchema>);
+
+export type AuthorityTarget =
+	| "host_bound_workhorse"
+	| "host_created_workhorse_queue"
+	| "host_proven_workhorse_turn"
+	| "host_validated_spoken_approval";
+export const AuthorityTargetSchema = z.enum([
+	"host_bound_workhorse",
+	"host_created_workhorse_queue",
+	"host_proven_workhorse_turn",
+	"host_validated_spoken_approval",
+]);
+
+export type RequiredLink =
+	| "child"
+	| "epoch"
+	| "threadId"
+	| "turnId"
+	| "callId"
+	| "namespace"
+	| "tool"
+	| "manifestHash"
+	| "workhorseThreadId"
+	| "queuedSubmissionIds"
+	| "expectedTurnId"
+	| "realtimeSessionId"
+	| "classifierTurnId"
+	| "finalUserItemId"
+	| "finalUserSequence"
+	| "effectFingerprint"
+	| "expiry";
+export const RequiredLinkSchema = z.enum([
+	"child",
+	"epoch",
+	"threadId",
+	"turnId",
+	"callId",
+	"namespace",
+	"tool",
+	"manifestHash",
+	"workhorseThreadId",
+	"queuedSubmissionIds",
+	"expectedTurnId",
+	"realtimeSessionId",
+	"classifierTurnId",
+	"finalUserItemId",
+	"finalUserSequence",
+	"effectFingerprint",
+	"expiry",
+]);
+
+export const CoordinatorToolContractSchema = z
+	.object({
+		type: z.literal("function"),
+		name: z.string().min(1),
+		description: z.string().min(1),
+		inputSchema: JsonObjectSchema,
+		deferLoading: z.literal(false),
+		namespace: z.enum(["archboard_workhorse", "archboard_voice"]),
+		authorityTarget: AuthorityTargetSchema,
+		callerRole: z.literal(COORDINATOR_ROLE),
+		requiredLinks: z.array(RequiredLinkSchema),
+		successResult: z.object({ tag: z.literal("ok"), valueSchema: JsonObjectSchema }).strict(),
+		refusalErrors: z.array(DynamicToolRefusalReasonSchema),
+	})
+	.strict();
+
+export type SuccessResultContract = Readonly<{
+	tag: "ok";
+	valueSchema: JsonSchema;
+}>;
+
+export interface CoordinatorToolContract extends CanonicalTool {
+	readonly namespace: NamespaceName;
+	readonly authorityTarget: AuthorityTarget;
+	readonly callerRole: CoordinatorRole;
+	readonly requiredLinks: readonly RequiredLink[];
+	readonly successResult: SuccessResultContract;
+	readonly refusalErrors: readonly DynamicToolRefusalReason[];
+}
+
+const TOOL_CORRELATION_LINKS = [
+	"child",
+	"epoch",
+	"threadId",
+	"turnId",
+	"callId",
+	"namespace",
+	"tool",
+	"manifestHash",
+] as const satisfies readonly RequiredLink[];
+
+const WORKHORSE_LINKS = [...TOOL_CORRELATION_LINKS, "workhorseThreadId"] as const;
+const QUEUE_LINKS = [...WORKHORSE_LINKS, "queuedSubmissionIds"] as const;
+const STEER_LINKS = [...WORKHORSE_LINKS, "expectedTurnId"] as const;
+const VOICE_LINKS = [
+	...TOOL_CORRELATION_LINKS,
+	"realtimeSessionId",
+	"classifierTurnId",
+	"finalUserItemId",
+	"finalUserSequence",
+	"effectFingerprint",
+	"expiry",
+] as const;
+
+const INSPECT_REFUSALS = [
+	"invalid_call",
+	"not_ready",
+	"not_loaded",
+	"system_error",
+	"stale_child",
+	"prior_epoch",
+	"unknown_provenance",
+] as const satisfies readonly DynamicToolRefusalReason[];
+const MUTATING_WORKHORSE_REFUSALS = [
+	"invalid_call",
+	"not_ready",
+	"not_loaded",
+	"not_controllable",
+	"system_error",
+	"stale_child",
+	"prior_epoch",
+	"unknown_provenance",
+	"approval_declined",
+	"busy",
+] as const satisfies readonly DynamicToolRefusalReason[];
+const QUEUE_REFUSALS = [
+	...MUTATING_WORKHORSE_REFUSALS,
+	"expired",
+	"unsupported",
+] as const satisfies readonly DynamicToolRefusalReason[];
+const VOICE_REFUSALS = [
+	"invalid_call",
+	"not_ready",
+	"not_loaded",
+	"system_error",
+	"stale_child",
+	"prior_epoch",
+	"unknown_provenance",
+	"approval_declined",
+	"expired",
+	"unsupported",
+] as const satisfies readonly DynamicToolRefusalReason[];
+
+function contract(
+	namespace: NamespaceName,
+	toolName: CoordinatorToolName,
+	metadata: Omit<
+		CoordinatorToolContract,
+		keyof CanonicalTool | "namespace" | "callerRole" | "successResult"
+	> & {
+		successResult: SuccessResultContract;
+	},
+): CoordinatorToolContract {
+	return freezeDeep({
+		...canonicalTool(namespace, toolName),
+		namespace,
+		callerRole: COORDINATOR_ROLE,
+		...metadata,
+	});
+}
+
+export const ARCHBOARD_WORKHORSE_TOOL_CONTRACTS = freezeDeep([
+	contract("archboard_workhorse", "inspect_workhorse", {
+		authorityTarget: "host_bound_workhorse",
+		requiredLinks: [...WORKHORSE_LINKS],
+		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.inspect_workhorse },
+		refusalErrors: [...INSPECT_REFUSALS],
+	}),
+	contract("archboard_workhorse", "delegate_to_workhorse", {
+		authorityTarget: "host_bound_workhorse",
+		requiredLinks: [...WORKHORSE_LINKS],
+		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.delegate_to_workhorse },
+		refusalErrors: [...MUTATING_WORKHORSE_REFUSALS],
+	}),
+	contract("archboard_workhorse", "manage_workhorse_queue", {
+		authorityTarget: "host_created_workhorse_queue",
+		requiredLinks: [...QUEUE_LINKS],
+		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.manage_workhorse_queue },
+		refusalErrors: [...QUEUE_REFUSALS],
+	}),
+	contract("archboard_workhorse", "steer_workhorse", {
+		authorityTarget: "host_proven_workhorse_turn",
+		requiredLinks: [...STEER_LINKS],
+		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.steer_workhorse },
+		refusalErrors: [...MUTATING_WORKHORSE_REFUSALS],
+	}),
+] satisfies readonly CoordinatorToolContract[]);
+
+export const ARCHBOARD_VOICE_TOOL_CONTRACTS = freezeDeep([
+	contract("archboard_voice", "resolve_spoken_approval", {
+		authorityTarget: "host_validated_spoken_approval",
+		requiredLinks: [...VOICE_LINKS],
+		successResult: { tag: "ok", valueSchema: TOOL_SUCCESS_RESULT_SCHEMAS.resolve_spoken_approval },
+		refusalErrors: [...VOICE_REFUSALS],
+	}),
+] satisfies readonly CoordinatorToolContract[]);
+
+export const COORDINATOR_TOOL_CONTRACTS = freezeDeep([
+	...ARCHBOARD_WORKHORSE_TOOL_CONTRACTS,
+	...ARCHBOARD_VOICE_TOOL_CONTRACTS,
+]);
+
+export const ARCHBOARD_WORKHORSE_CATALOGUE = freezeDeep({
+	namespace: ARCHBOARD_WORKHORSE_NAMESPACE,
+	tools: ARCHBOARD_WORKHORSE_TOOL_CONTRACTS,
+});
+export const ARCHBOARD_VOICE_CATALOGUE = freezeDeep({
+	namespace: ARCHBOARD_VOICE_NAMESPACE,
+	tools: ARCHBOARD_VOICE_TOOL_CONTRACTS,
+});
+export const COORDINATOR_TOOL_CATALOGUE = freezeDeep({
+	identity: COORDINATOR_IDENTITY,
+	namespaces: [ARCHBOARD_WORKHORSE_NAMESPACE, ARCHBOARD_VOICE_NAMESPACE],
+	tools: COORDINATOR_TOOL_CONTRACTS,
+});
