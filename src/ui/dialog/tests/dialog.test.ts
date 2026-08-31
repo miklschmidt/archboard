@@ -105,7 +105,8 @@ describe("dialog public module", () => {
 		expect(content.type).toBe(BaseDialog.Portal);
 		expect(backdrop.type).toBe(BaseDialog.Backdrop);
 		expect(popup.type).toBe(BaseDialog.Popup);
-		expect(backdropProps.className).toBe("fixed inset-0 z-50 bg-background/60");
+		expect(backdropProps.className).toBe("fixed z-50 bg-background/60");
+		expect(backdropProps.style).toEqual({ inset: 0 });
 		expect(popupProps.className).toBe(POPUP_CLASSES);
 		for (const name of [
 			"ref",

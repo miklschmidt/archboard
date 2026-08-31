@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 
-type RecordedRequest = { method: string; path: string; body: unknown };
 type DialogSnapshot = {
 	count: number;
 	name: string | null;
@@ -36,8 +35,11 @@ type NoticeSnapshot = {
 	settings: string | null;
 	github: { text: string; href: string; target: string; rel: string } | null;
 };
+type ColorChannels = readonly [red: number, green: number, blue: number, alpha: number];
 type VisualSnapshot = {
 	theme: string | null;
+	rootTheme: string | null;
+	colors: Record<"dialogSurface" | "dialogForeground" | "dialogBorder" | "backdrop", ColorChannels>;
 	queries: { dark: boolean; reducedMotion: boolean; forcedColors: boolean };
 	pageOverflow: boolean;
 	dialogWithinViewport: boolean;
@@ -56,6 +58,21 @@ type VisualSnapshot = {
 type MediaMode = "normal" | "reduced-motion" | "forced-colors";
 type ShellTheme = "light" | "dark";
 
+const EXPECTED_DIALOG_COLORS = {
+	light: {
+		dialogSurface: [255, 255, 255, 255],
+		dialogForeground: [24, 24, 27, 255],
+		dialogBorder: [207, 209, 212, 255],
+		backdrop: [243, 243, 242, 153],
+	},
+	dark: {
+		dialogSurface: [29, 31, 36, 255],
+		dialogForeground: [244, 244, 240, 255],
+		dialogBorder: [59, 62, 69, 255],
+		backdrop: [23, 23, 27, 153],
+	},
+} as const satisfies Record<ShellTheme, VisualSnapshot["colors"]>;
+
 const repoRoot = fileURLToPath(new URL("../../../..", import.meta.url));
 export const serverPath = join(repoRoot, "src/server.ts");
 export const repository = "github.com/acme/archboard";
@@ -66,27 +83,6 @@ export const draftSelection = {
 	executable: "/opt/draft/bin/editor",
 	argv: ["--first", "{path}", "--last"],
 } as const;
-
-export function roleAction(
-	browser: AgentBrowserSession,
-	role: string,
-	name: string,
-	action: "click" | "text" = "click",
-): Promise<string> {
-	return browser.run(["find", "role", role, action, "--name", name, "--exact"]);
-}
-
-export function fillLabel(
-	browser: AgentBrowserSession,
-	label: string,
-	value: string,
-): Promise<string> {
-	return browser.run(["find", "label", label, "fill", value, "--exact"]);
-}
-
-export async function requests(browser: AgentBrowserSession): Promise<RecordedRequest[]> {
-	return browser.eval<RecordedRequest[]>("window.__openerProbe?.requests ?? []");
-}
 
 export async function dialogSnapshot(browser: AgentBrowserSession): Promise<DialogSnapshot | null> {
 	return browser.eval<DialogSnapshot | null>(`(() => {
@@ -191,7 +187,8 @@ export async function installFetchDouble(browser: AgentBrowserSession): Promise<
 			argv: ['--reuse-window', '{path}', '--wait']
 		};
 		const probe = window.__openerProbe = {
-			requests: [], selection: initial, nextTest: 'success', holdNext: 'GET:/api/settings/opener',
+			requests: [], selection: initial, nextGet: 'success', nextTest: 'success',
+			holdNext: 'GET:/api/settings/opener',
 			pending: null,
 			hold(key) { this.holdNext = key; },
 			release(key) {
@@ -247,7 +244,16 @@ export async function installFetchDouble(browser: AgentBrowserSession): Promise<
 				}, 500);
 				return reply({ success: true, code: 'OPENER_TESTED', repository: ${JSON.stringify(repository)} });
 			});
-			if (method === 'GET') return deferred(key, () => reply(settings()));
+			if (method === 'GET') return deferred(key, () => probe.nextGet === 'failure'
+				? reply({
+					success: false, code: 'OPENER_CONFIG_INVALID',
+					error: 'Controlled settings read failed after cancellation.',
+					actions: [
+						{ kind: 'settings', label: 'Opener settings' },
+						{ kind: 'github', label: 'Open on GitHub', href: ${JSON.stringify(githubHref)} }
+					]
+				}, 500)
+				: reply(settings()));
 			if (method === 'DELETE') return deferred(key, () => {
 				probe.selection = { version: 1, kind: 'platform' };
 				return reply({ success: true, selection: probe.selection });
@@ -261,40 +267,6 @@ export async function installFetchDouble(browser: AgentBrowserSession): Promise<
 		return true;
 	})()`);
 	expect(installed).toBe(true);
-}
-
-export async function setProbeHold(browser: AgentBrowserSession, key: string): Promise<void> {
-	expect(
-		await browser.eval<boolean>(
-			`Boolean(window.__openerProbe && (window.__openerProbe.hold(${JSON.stringify(key)}), true))`,
-		),
-	).toBe(true);
-}
-
-export async function releaseProbe(browser: AgentBrowserSession, key: string): Promise<void> {
-	await pollUntil(
-		() => browser.eval<boolean>(`window.__openerProbe?.pending?.key === ${JSON.stringify(key)}`),
-		Boolean,
-		`${key} to become pending`,
-	);
-	expect(
-		await browser.eval<boolean>(`window.__openerProbe?.release(${JSON.stringify(key)}) ?? false`),
-	).toBe(true);
-}
-
-export async function setTheme(browser: AgentBrowserSession, theme: ShellTheme): Promise<void> {
-	const current = await browser.eval<string | null>(
-		"document.querySelector('.shell')?.getAttribute('data-theme') ?? null",
-	);
-	if (current !== theme) await roleAction(browser, "button", `Use ${theme} theme`);
-	await pollUntil(
-		() =>
-			browser.eval<string | null>(
-				"document.querySelector('.shell')?.getAttribute('data-theme') ?? null",
-			),
-		(value) => value === theme,
-		`the ${theme} theme`,
-	);
 }
 
 async function emulateMedia(
@@ -383,6 +355,24 @@ export async function visualSnapshot(browser: AgentBrowserSession): Promise<Visu
 			node.labels?.[0]?.getAttribute('aria-label') || node.labels?.[0]?.textContent?.trim() ||
 			node.textContent?.trim() || node.tagName.toLowerCase();
 		const rect = node => node.getBoundingClientRect();
+		const portalOwner = [...document.body.children].find(node => node.contains(dialog));
+		const backdrop = [...(portalOwner?.querySelectorAll('*') ?? [])].find(node => {
+			if (node.contains(dialog)) return false;
+			const box = rect(node);
+			const background = getComputedStyle(node).backgroundColor;
+			return box.left <= 0 && box.top <= 0 && box.right >= innerWidth && box.bottom >= innerHeight &&
+				background !== 'rgba(0, 0, 0, 0)' && background !== 'transparent';
+		});
+		if (!backdrop) throw new Error('the colored opener backdrop is absent from the body portal');
+		const colorCanvas = document.createElement('canvas');
+		colorCanvas.width = colorCanvas.height = 1;
+		const colorContext = colorCanvas.getContext('2d', { willReadFrequently: true });
+		const channels = value => {
+			colorContext.clearRect(0, 0, 1, 1);
+			colorContext.fillStyle = value;
+			colorContext.fillRect(0, 0, 1, 1);
+			return [...colorContext.getImageData(0, 0, 1, 1).data];
+		};
 		const targets = [...dialog.querySelectorAll('button, input:not([type="radio"]), select'),
 			...dialog.querySelectorAll('input[type="radio"]')].map(node => {
 			const target = node.type === 'radio' ? node.labels?.[0] ?? node : node;
@@ -401,10 +391,18 @@ export async function visualSnapshot(browser: AgentBrowserSession): Promise<Visu
 		const foreground = luminance(getComputedStyle(title).color);
 		const background = luminance(getComputedStyle(dialog).backgroundColor);
 		const focused = getComputedStyle(document.activeElement);
+		const dialogStyle = getComputedStyle(dialog);
 		const dialogRect = rect(dialog);
 		const scrollOwner = [...dialog.children].find(node => getComputedStyle(node).overflowY === 'auto');
 		return {
 			theme: shell.getAttribute('data-theme'),
+			rootTheme: document.documentElement.getAttribute('data-theme'),
+			colors: {
+				dialogSurface: channels(dialogStyle.backgroundColor),
+				dialogForeground: channels(dialogStyle.color),
+				dialogBorder: channels(dialogStyle.borderColor),
+				backdrop: channels(getComputedStyle(backdrop).backgroundColor)
+			},
 			queries: { dark: matchMedia('(prefers-color-scheme: dark)').matches,
 				reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
 				forcedColors: matchMedia('(forced-colors: active)').matches },
@@ -453,6 +451,8 @@ export async function verifyVisualModes(
 				);
 			}
 			expect(snapshot.theme).toBe(theme);
+			expect(snapshot.rootTheme).toBe(theme);
+			if (mode === "normal") expect(snapshot.colors).toEqual(EXPECTED_DIALOG_COLORS[theme]);
 			expect(snapshot.queries).toEqual({
 				dark: theme === "dark",
 				reducedMotion: mode === "reduced-motion",
@@ -474,19 +474,4 @@ export async function verifyVisualModes(
 			await restore();
 		}
 	}
-}
-
-export async function assertDialogClosedAndFocusReturned(
-	browser: AgentBrowserSession,
-): Promise<void> {
-	await pollUntil(
-		() => dialogSnapshot(browser),
-		(value) => value === null,
-		"the opener settings dialog to close",
-	);
-	expect(
-		await browser.eval<boolean>(
-			"document.activeElement === window.__openerTrigger && document.querySelectorAll('[role=dialog]').length === 0",
-		),
-	).toBe(true);
 }

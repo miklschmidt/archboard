@@ -12,23 +12,28 @@ import {
 } from "./support/agent-browser.ts";
 import {
 	assertDialogClosedAndFocusReturned,
+	fillLabel,
+	roleAction,
+	setTheme,
+} from "./support/opener-settings-interaction.ts";
+import {
 	dialogSnapshot,
 	draftSelection,
-	fillLabel,
 	githubHref,
 	installFetchDouble,
 	noticeSnapshot,
-	releaseProbe,
 	repository,
-	requests,
-	roleAction,
 	serverPath,
-	setProbeHold,
-	setTheme,
 	validationSnapshot,
 	verifyVisualModes,
 	visualSnapshot,
 } from "./support/opener-settings.ts";
+import {
+	releaseProbe,
+	requests,
+	setNextGet,
+	setProbeHold,
+} from "./support/opener-settings-probe.ts";
 
 test("the migrated opener dialog keeps its rendered interaction and persistence contract", async () => {
 	await using resources = new AsyncDisposableStack();
@@ -101,6 +106,7 @@ test("the migrated opener dialog keeps its rendered interaction and persistence 
 	expect(loading?.focus).toBe("Cancel");
 	await roleAction(browser, "button", "Cancel");
 	await assertDialogClosedAndFocusReturned(browser);
+	await setNextGet(browser, "failure");
 	await releaseProbe(browser, "GET:/api/settings/opener");
 	await browser.eval<boolean>(
 		"new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))",
@@ -110,6 +116,13 @@ test("the migrated opener dialog keeps its rendered interaction and persistence 
 			"!document.querySelector('[role=dialog]') && document.body.childElementCount === window.__openerBodyChildren",
 		),
 	).toBe(true);
+	expect(await noticeSnapshot(browser)).toEqual({
+		role: null,
+		text: null,
+		settings: null,
+		github: null,
+	});
+	await setNextGet(browser, "success");
 
 	await roleAction(browser, "button", "Opener settings");
 
@@ -278,10 +291,10 @@ test("the migrated opener dialog keeps its rendered interaction and persistence 
 		await browser.eval<boolean>(`(() => {
 			const trigger = window.__openerTrigger;
 			if (!(trigger instanceof HTMLButtonElement)) return false;
-			const probe = { count: 0, listener: null };
+			const probe = { trigger, count: 0, listener: null };
 			probe.listener = () => { probe.count += 1; };
 			trigger.addEventListener('click', probe.listener);
-			window.__coveredOpenerTriggerProbe = { trigger, ...probe };
+			window.__coveredOpenerTriggerProbe = probe;
 			return true;
 		})()`),
 	).toBe(true);

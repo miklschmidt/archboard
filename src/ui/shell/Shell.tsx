@@ -436,6 +436,13 @@ export function Shell(): React.JSX.Element {
 	);
 
 	const [theme, setTheme] = useState<"light" | "dark">(initialTheme);
+	useLayoutEffect(() => {
+		const root = document.documentElement;
+		root.dataset.theme = theme;
+		return () => {
+			if (root.dataset.theme === theme) delete root.dataset.theme;
+		};
+	}, [theme]);
 	const [boardInfo, setBoardInfo] = useState<BoardInfo | null>(null);
 	const [dialog, setDialog] = useState<BoardDialogMode | null>(null);
 	const [dialogError, setDialogError] = useState<string | null>(null);

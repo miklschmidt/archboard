@@ -111,7 +111,7 @@ function sourceContractErrors(source: string): string[] {
 		...mapErrors(
 			"dark tokens",
 			properties(
-				blockFrom(source, '.shell[data-theme="dark"]', "--arch-color-muted-foreground: #b5b7bd"),
+				blockFrom(source, ':root[data-theme="dark"]', "--arch-color-muted-foreground: #b5b7bd"),
 			),
 			DARK_TOKEN_OVERRIDES,
 		),
@@ -147,7 +147,7 @@ function compiledTokenErrors(css: string): string[] {
 		...mapErrors(
 			"compiled dark tokens",
 			properties(
-				blockFrom(css, '.shell[data-theme="dark"]', "--arch-color-muted-foreground: #b5b7bd"),
+				blockFrom(css, ':root[data-theme="dark"]', "--arch-color-muted-foreground: #b5b7bd"),
 			),
 			DARK_TOKEN_OVERRIDES,
 		),
