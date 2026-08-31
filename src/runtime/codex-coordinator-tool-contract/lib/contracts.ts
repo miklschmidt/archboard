@@ -144,25 +144,36 @@ export const DynamicToolEnvelopeTextSchema = z
 			context.addIssue({ code: "custom", message: "tool response text must be canonical JSON" });
 	});
 
-export const DynamicToolResponseSchema = z
+const DynamicToolContentItemsSchema = z.tuple([
+	z.object({ type: z.literal("inputText"), text: DynamicToolEnvelopeTextSchema }).strict(),
+]);
+
+/** Responses for calls that passed the coordinator's identity/manifest checks. */
+export const ValidDynamicToolResponseSchema = z
 	.object({
-		contentItems: z.tuple([
-			z.object({ type: z.literal("inputText"), text: DynamicToolEnvelopeTextSchema }).strict(),
-		]),
-		success: z.boolean(),
+		contentItems: DynamicToolContentItemsSchema,
+		success: z.literal(true),
+	})
+	.strict();
+
+/** Responses for calls rejected before a tool call could be established. */
+export const UnknownDynamicToolResponseSchema = z
+	.object({
+		contentItems: DynamicToolContentItemsSchema,
+		success: z.literal(false),
 	})
 	.strict()
 	.superRefine((response, context) => {
-		if (!response.success) {
-			const envelope = JSON.parse(response.contentItems[0].text) as { tag?: unknown };
-			if (envelope.tag !== "refused")
-				context.addIssue({
-					code: "custom",
-					path: ["success"],
-					message: "only a refused envelope may use success=false",
-				});
-		}
+		const envelope = JSON.parse(response.contentItems[0].text) as { tag?: unknown };
+		if (envelope.tag !== "refused")
+			context.addIssue({
+				code: "custom",
+				path: ["contentItems"],
+				message: "unknown calls must return a refused envelope",
+			});
 	});
+
+export const DynamicToolResponseSchema = ValidDynamicToolResponseSchema;
 export const DynamicToolCallResponseSchema = DynamicToolResponseSchema;
 
 export const InspectWorkhorseInputSchema = z.object({}).strict();
@@ -314,8 +325,8 @@ export type ThreadQueueReorderParams = z.infer<typeof ThreadQueueReorderParamsSc
 export type ThreadQueueStartParams = z.infer<typeof ThreadQueueStartParamsSchema>;
 
 export const CODEX_QUEUE_PARAMETER_SCHEMAS = Object.freeze({
-	add: ThreadQueueAddParamsSchema,
 	list: ThreadQueueListParamsSchema,
+	add: ThreadQueueAddParamsSchema,
 	update: ThreadQueueUpdateParamsSchema,
 	delete: ThreadQueueDeleteParamsSchema,
 	reorder: ThreadQueueReorderParamsSchema,
@@ -335,16 +346,6 @@ export interface QueueOperationContract {
 
 export const CODEX_QUEUE_OPERATION_CONTRACTS = freezeDeep([
 	{
-		operation: "add",
-		rpc: "thread/queue/add",
-		toolFields: ["operation", "prompt"],
-		protocolFields: ["threadId", "input", "clientUserMessageId"],
-		protocolRequiredFields: ["threadId", "input", "clientUserMessageId"],
-		protocolOptionalNullableFields: [],
-		hostSuppliedFields: ["threadId", "clientUserMessageId"],
-		fieldMapping: { prompt: "input", clientUserMessageId: "host_minted" },
-	},
-	{
 		operation: "list",
 		rpc: "thread/queue/list",
 		toolFields: ["operation"],
@@ -353,6 +354,16 @@ export const CODEX_QUEUE_OPERATION_CONTRACTS = freezeDeep([
 		protocolOptionalNullableFields: ["cursor", "limit"],
 		hostSuppliedFields: ["threadId", "cursor", "limit"],
 		fieldMapping: {},
+	},
+	{
+		operation: "add",
+		rpc: "thread/queue/add",
+		toolFields: ["operation", "prompt"],
+		protocolFields: ["threadId", "input", "clientUserMessageId"],
+		protocolRequiredFields: ["threadId", "input", "clientUserMessageId"],
+		protocolOptionalNullableFields: [],
+		hostSuppliedFields: ["threadId", "clientUserMessageId"],
+		fieldMapping: { prompt: "input", clientUserMessageId: "host_minted" },
 	},
 	{
 		operation: "update",
