@@ -1,8 +1,9 @@
 export {
 	IdentityValidationError,
 	OPERATION_ID_MAX_BYTES,
-	OPERATION_ID_MAX_ISSUE_ATTEMPTS,
+	createIdentityAuthorities,
 	createIdentityAuthority,
+	restoreIdentityAuthorities,
 	restoreIdentityAuthority,
 } from "./lib/identity.js";
 
@@ -17,8 +18,7 @@ export type {
 	CodexResponseIdentityBatch,
 	DynamicToolCallId,
 	IdentityAuthority,
-	IdentityAuthorityOptions,
-	IdentityAuthorityWithOperations,
+	IdentityAuthorities,
 	IdentityDomain,
 	IdentityIssuer,
 	IdentityValidationCode,
