@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 03:00'
+updated_date: '2026-08-31 04:08'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -46,4 +46,8 @@ Delegation profile: gpt-5.6-luna, max.
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved after TASK-143.01.04 finalized at integration HEAD 6515ee1. This dependency-ready leaf owns src/runtime/codex-epoch and is path-disjoint from active transport, realtime-boundary, formatter, shell-token, and lint-alias lanes.
+
+Implementation commit 431f18d (based on 6d0f8e562e97eb0b555e27c6abda58ed8f8ff194). Added the module-root codex-epoch owner with a canonical, fsynced twin manifest/journal, atomic publish ordering, durable lock lease, exact child/epoch/operation CAS, staged/committed/rolled_back/inspect_only transitions, outcome_unknown confirmation rules, strict corruption validation, and replacement-child refusal.
+
+Focused evidence: bunx oxlint src/runtime/codex-epoch; bunx oxfmt --check src/runtime/codex-epoch; bunx tsc --noEmit --pretty false; bun test --isolate src/runtime/codex-epoch/tests (14 pass, 126 expectations); git diff --cached --check. Storage-failure tests inject target_stat, temp_open, temp_write, temp_fsync, temp_close, publish, directory_open, directory_fsync, and directory_close in both records-first staging and manifest-first commit. Codex-home and sqlite-home byte/inode/mode/directory sentinels remain unchanged across success, refusal, rollback, replacement, corruption, and injected durability failures. Broad module/system/repository/check/browser lanes were not rerun; the root owner retains those gates. Task remains In Progress and acceptance criteria remain unchecked for independent review.
 <!-- SECTION:NOTES:END -->
