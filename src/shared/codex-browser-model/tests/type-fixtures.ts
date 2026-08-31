@@ -1,4 +1,10 @@
-import type { BrowserDto, ServerRequest, ServerRequestMethod } from "../index.js";
+import type {
+	BrowserDto,
+	BrowserDynamicApprovalResponse,
+	DynamicApprovalState,
+	ServerRequest,
+	ServerRequestMethod,
+} from "../index.js";
 
 type Assert<T extends true> = T;
 type Equal<A, B> = [A, B] extends [B, A] ? true : false;
@@ -20,6 +26,7 @@ export function exhaustiveBrowserDto(dto: BrowserDto): string {
 		case "voice":
 		case "command_lease":
 		case "operation_outcome":
+		case "dynamic_approval":
 			return dto.kind;
 		default: {
 			const neverDto: never = dto;
@@ -49,6 +56,48 @@ export function exhaustiveServerRequest(request: ServerRequest): ServerRequestMe
 	}
 }
 
+export function exhaustiveDynamicApprovalState(state: DynamicApprovalState): string {
+	switch (state) {
+		case "pending":
+		case "approved":
+		case "declined":
+		case "expired":
+		case "cancelled":
+		case "disconnected":
+		case "stale":
+		case "delivered":
+		case "not_delivered":
+		case "outcome_unknown":
+			return state;
+		default: {
+			const neverState: never = state;
+			return neverState;
+		}
+	}
+}
+
+export function dynamicApprovalResponseDecision(
+	response: BrowserDynamicApprovalResponse,
+): "approve" | "decline" {
+	return response.decision;
+}
+
+type _DynamicApprovalStatesAreClosed = Assert<
+	Equal<
+		DynamicApprovalState,
+		| "pending"
+		| "approved"
+		| "declined"
+		| "expired"
+		| "cancelled"
+		| "disconnected"
+		| "stale"
+		| "delivered"
+		| "not_delivered"
+		| "outcome_unknown"
+	>
+>;
+
 type _BrowserDtoIsClosed = Assert<
 	Equal<
 		BrowserDto["kind"],
@@ -67,6 +116,7 @@ type _BrowserDtoIsClosed = Assert<
 		| "voice"
 		| "command_lease"
 		| "operation_outcome"
+		| "dynamic_approval"
 	>
 >;
 

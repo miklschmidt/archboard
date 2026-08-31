@@ -13,6 +13,8 @@ import type {
 	ItemId,
 	JsonRpcRequestId,
 	LoginId,
+	OperationAuthority,
+	OperationId,
 	QueuedSubmissionId,
 	RealtimeSessionId,
 	ThreadId,
@@ -72,10 +74,14 @@ export interface IdentitySchemas {
 	readonly DynamicToolCallIdSchema: z.ZodType<DynamicToolCallId>;
 	readonly RealtimeSessionIdSchema: z.ZodType<RealtimeSessionId>;
 	readonly ApprovalIdSchema: z.ZodType<ApprovalId>;
+	readonly OperationIdSchema: z.ZodType<OperationId>;
 	readonly OpaqueIdentitySchema: z.ZodType<AnyIdentity>;
 }
 
-export type IdentityContext = Pick<IdentityAuthority, "decoder" | "validator">;
+export type IdentityContext = Pick<IdentityAuthority, "decoder" | "validator"> & {
+	/** Dynamic approval schemas are authority-bound when this capability is supplied. */
+	readonly operation?: Pick<OperationAuthority, "decoder" | "validator">;
+};
 
 function authorityIdentity<Identity extends string>(
 	parse: (value: unknown) => Identity,
@@ -108,6 +114,9 @@ export function createIdentitySchemas(context: IdentityContext): IdentitySchemas
 		DynamicToolCallIdSchema: authorityIdentity(decoder.parseDynamicToolCallId),
 		RealtimeSessionIdSchema: authorityIdentity(decoder.parseRealtimeSessionId),
 		ApprovalIdSchema: authorityIdentity(decoder.parseApprovalId),
+		OperationIdSchema: context.operation
+			? authorityIdentity(context.operation.decoder.parseOperationId)
+			: z.custom<OperationId>(() => false, "OperationId authority is not available"),
 	};
 	return {
 		...identities,
@@ -124,6 +133,7 @@ export function createIdentitySchemas(context: IdentityContext): IdentitySchemas
 			identities.DynamicToolCallIdSchema,
 			identities.RealtimeSessionIdSchema,
 			identities.ApprovalIdSchema,
+			identities.OperationIdSchema,
 		]),
 	};
 }
