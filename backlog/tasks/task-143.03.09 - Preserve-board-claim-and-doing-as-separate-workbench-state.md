@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-31 18:16'
+updated_date: '2026-08-31 18:24'
 labels: []
 dependencies:
   - TASK-143.06.02
@@ -58,6 +58,8 @@ Delegation profile: gpt-5.6-sol, high.
 7. Put semantic state, label, and detail in one atomic status region, using alert only for refused delivery; add exact-role/text module assertions and a delayed Pane A settlement browser case that proves Pane B remains idle.
 
 8. Keep one semantic announcer mounted beside the workbench summary outside the hidden disclosure body, render expanded semantic detail as non-live presentation, and verify collapsed polite and refused transitions through the browser accessibility tree without changing visual geometry.
+
+9. Supersede step 8 browser evidence: remove direct announcer mutation, prove only the real collapsed Unavailable state through Chrome accessibility data, and defer rendered Fresh and Refused transition coverage to TASK-143.06.02, which owns the semantic delivery source.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -68,4 +70,6 @@ Implementation complete for independent review. Added the closed board-status pr
 Independent-review remediation complete. Shell now owns take-back pending and settled state in its pane-keyed agentStates, keys it to the pane board and durable claim, and stamps operations so a stale completion cannot replace newer pane state. WorkbenchBoardStatus receives controlled state and keeps no local settlement lifecycle. Semantic label and detail now share one atomic accessible region; refused is alert/assertive and the other five states are status/polite. Validation passed: module 8 tests / 124 expectations; both TypeScript projects; scoped Oxlint and Oxfmt; frontend build; shell-layout browser owner 241 expectations; claim-interaction browser owner 94 expectations, including delayed Pane A settlement while Pane B stays idle before and after completion and Pane A alone announces success. Board-note immutability and both themes remain covered. Per parent direction, the known 6 GiB OOM boundaries and module-scope lanes were not rerun; their prior OOM evidence is preserved. Task remains In Progress with ACs unchecked.
 
 Remediation 2 (2026-08-31): Kept exactly one atomic semantic announcer mounted outside the collapsed hidden disclosure body, with refused exposed as alert/assertive and every other state as status/polite. The expanded semantic detail is visual and non-live, so opening the workbench does not duplicate announcements. Module coverage verifies all six closed semantic states, one announcer, hidden-body separation, exact role/live/text, and non-live detail. The real browser owner verifies the workbench remains collapsed, the announcer has no hidden ancestor, and Chrome accessibility data reports exact status/polite/fresh and alert/assertive/refused nodes. Final capped validation passed: module 8 tests/178 assertions; type-check; scoped lint 0/0; scoped format check; frontend build; shell-layout 1 test/241 assertions; claim-interaction 1 test/102 assertions. The previously observed 6G+1G OOM evidence for the boundary and module-scope repository owners is preserved and those owners were not rerun, as requested. Task remains In Progress with acceptance criteria unchecked pending parent rereview.
+
+Remediation 3 correction (2026-08-31): The prior Fresh and Refused browser evidence was synthetic because the owner changed announcer attributes and text directly. Removed that mutation. The browser owner now verifies only the shell state the product really renders here: one collapsed Unavailable announcer outside the hidden disclosure, exposed by Chrome as an unignored atomic status with polite live priority and the exact accessible name. Static module tests still verify React markup for all six closed semantic states, including Refused alert/assertive. A real browser-rendered Fresh to Refused transition is deferred to TASK-143.06.02, the dependency that owns the semantic delivery source. Capped validation passed: module 8 tests/178 assertions; type-check; scoped lint 0/0; scoped format check; frontend build; shell-layout 1 test/241 assertions; claim-interaction 1 test/96 assertions. Known boundary and module-scope OOM evidence remains preserved and was not rerun. Task remains In Progress with acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->
