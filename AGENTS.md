@@ -27,6 +27,14 @@ Archboard’s shell is desktop-only. Do not plan, implement, or gate phone/narro
 responsive layouts unless the user explicitly reverses this decision.
 Desktop-sized touch interaction for the Samsung Flip remains supported.
 
+## UI visual authority
+
+Every UI-design or UI-implementation worker must read
+`docs/design/archboard-ui-aesthetics.md` before changing rendered Archboard UI.
+The TASK-140 operator canvas shell reference and its light/dark mockup, together
+with that guide, are the visual authority. Keep UI code boundaries and
+verification requirements in their existing documents.
+
 ## Upstream
 
 `main` is based on [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw)
