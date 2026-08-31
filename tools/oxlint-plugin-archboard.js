@@ -177,6 +177,18 @@ function assistantUiImportedName(specifier) {
 	return specifier.imported?.name ?? specifier.imported?.value;
 }
 
+function unwrapExpression(expression) {
+	while (
+		expression?.type === "TSAsExpression" ||
+		expression?.type === "TSTypeAssertion" ||
+		expression?.type === "TSNonNullExpression" ||
+		expression?.type === "ChainExpression" ||
+		expression?.type === "ParenthesizedExpression"
+	)
+		expression = expression.expression;
+	return expression;
+}
+
 const assistantUiImports = createRule(
 	{
 		noAssistantUiSubpath:
@@ -218,18 +230,6 @@ const assistantUiImports = createRule(
 			["ComposerPrimitive", new Set(["Queue", "Dictate", "StopDictation", "DictationTranscript"])],
 			["MessagePrimitive", new Set(["GenerativeUI"])],
 		]);
-
-		function unwrapExpression(expression) {
-			while (
-				expression?.type === "TSAsExpression" ||
-				expression?.type === "TSTypeAssertion" ||
-				expression?.type === "TSNonNullExpression" ||
-				expression?.type === "ChainExpression" ||
-				expression?.type === "ParenthesizedExpression"
-			)
-				expression = expression.expression;
-			return expression;
-		}
 
 		function checkSource(source, node, kind, specifiers = []) {
 			if (source === "radix-ui" || source.startsWith("@radix-ui/")) {
