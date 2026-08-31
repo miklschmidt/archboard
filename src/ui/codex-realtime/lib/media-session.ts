@@ -143,6 +143,7 @@ async function bounded<T>(
 		run.timers.add(timer);
 	});
 	try {
+		if (cancellable && run.cancelledNow) return CANCELLED;
 		const pending = operation();
 		const result = await Promise.race(
 			cancellable ? [pending, run.cancelled, timeout] : [pending, timeout],
@@ -179,6 +180,12 @@ function cancelRun(run: Run): void {
 
 function isStopFailure(run: Run): boolean {
 	return run.state.phase === "recoverable_error" && run.state.reason === "stop_failed";
+}
+
+function restartRefusal(run: Run, previous: Run): Error {
+	return new Error(
+		`Realtime media start ${run.correlation.sessionId}/${run.correlation.correlationId} was refused because active ${previous.correlation.sessionId}/${previous.correlation.correlationId} did not confirm stop.`,
+	);
 }
 
 function removeListeners(run: Run): void {
@@ -311,7 +318,10 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 					run,
 					() =>
 						host.stop(run.correlation).then(
-							(outcome) => outcome.outcome === "delivered",
+							(outcome) =>
+								outcome.outcome === "delivered" &&
+								outcome.sessionId === run.correlation.sessionId &&
+								outcome.correlationId === run.correlation.correlationId,
 							() => false,
 						),
 					CODEX_REALTIME_STOP_MS,
@@ -381,7 +391,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 				{
 					phase: "recoverable_error",
 					reason: "stop_failed",
-					message: "The realtime host did not confirm that it stopped.",
+					message: `The realtime host did not confirm that ${run.correlation.sessionId}/${run.correlation.correlationId} stopped.`,
 				},
 				0,
 				visible,
@@ -404,15 +414,18 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 	const attachRemote = (run: Run): void => {
 		const receivers = run.peer?.getReceivers() ?? [];
 		run.remoteStream = new MediaStream(receivers.map((receiver) => receiver.track));
+		if (inactive(run)) return;
 		host.attachRemoteMedia({
 			...run.correlation,
 			attachTo: (element) => {
 				if (current !== run || run.cancelledNow || run.failed || !run.remoteStream) return;
 				detachRemote(run);
+				if (inactive(run)) return;
 				run.remoteElement = element;
 				const attachmentGeneration = run.attachmentGeneration;
 				try {
 					element.srcObject = run.remoteStream;
+					if (inactive(run)) return;
 					void element.play().catch((error) => {
 						if (
 							current !== run ||
@@ -472,9 +485,11 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		if (disposed) throw new Error("The realtime media session is disposed.");
 		if (current && current.state.phase !== "closed") {
 			const previous = current;
-			await stopRun(previous, false);
+			publicOutcomeOwner = previous;
+			if (!isStopFailure(previous)) await stopRun(previous, false);
 			if ((previous.state as RealtimeState).phase !== "closed") {
-				throw new Error("The previous realtime session did not stop cleanly.");
+				adoptRun(previous);
+				throw restartRefusal(run, previous);
 			}
 		}
 		if (disposed) throw new Error("The realtime media session is disposed.");
@@ -644,7 +659,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 	};
 	const stop = (): Promise<RealtimeMediaSnapshot> => {
 		const active = current?.state.phase === "closed" ? null : current;
-		const owner = active ?? latestRun;
+		const owner = active ?? publicOutcomeOwner ?? latestRun;
 		if (owner) publicOutcomeOwner = owner;
 		for (const run of pendingRuns) cancelRun(run);
 		if (current) cancelRun(current);
