@@ -44,12 +44,29 @@ interface CallState {
 	responseAttempted: boolean;
 	cancelled: CoordinatorToolCancellation | null;
 	childDisconnected: boolean;
+	readonly cancellation: Promise<void>;
+	readonly wakeCancellation: () => void;
 	promise: Promise<CoordinatorToolDispatchResult> | null;
+}
+
+interface LogicalCallState {
+	readonly owner: CallState;
+	promise: Promise<CoordinatorToolDispatchResult> | null;
+	terminal: CoordinatorToolDispatchResult | null;
 }
 
 function errorMessage(error: unknown): string {
 	return error instanceof Error && error.message.length > 0 ? error.message : "unknown error";
 }
+
+function complete(
+	response: DynamicToolResponse,
+	attempted: boolean,
+): CoordinatorToolDispatchResult {
+	return Object.freeze({ response, attempted });
+}
+
+function ignoreCancellation(): void {}
 
 function isBoundaryRefusal(reason: CoordinatorToolValidationError["reason"]): boolean {
 	return (
@@ -65,7 +82,7 @@ export function createCodexCoordinatorTools(
 ): CoordinatorToolDispatcher {
 	let disposed = false;
 	const wireCalls = new Map<string, CallState>();
-	const logicalCalls = new Map<string, CallState>();
+	const logicalCalls = new Map<string, LogicalCallState>();
 
 	const respondOnce = async (state: CallState, response: DynamicToolResponse): Promise<void> => {
 		if (state.responseAttempted || state.childDisconnected) return;
@@ -85,17 +102,125 @@ export function createCodexCoordinatorTools(
 		return Object.freeze({ response, attempted: state.operationAttempted });
 	};
 
-	const unavailable = (state: CallState): Promise<CoordinatorToolDispatchResult> =>
-		finish(
-			state,
+	const unavailable = (attempted: boolean): CoordinatorToolDispatchResult =>
+		complete(
 			refusedResponse(
 				"invalid_call",
 				"The coordinator tool call is no longer executing; submit a new call.",
 				true,
 			),
+			attempted,
 		);
 
-	const run = async (state: CallState): Promise<CoordinatorToolDispatchResult> => {
+	const execute = async (
+		state: CallState,
+		validated: ValidatedCoordinatorToolCall,
+	): Promise<CoordinatorToolDispatchResult> => {
+		if (state.cancelled !== null || state.childDisconnected || disposed) return unavailable(false);
+
+		let operation: IssuedOperationIdentity | null = null;
+		if (validated.namespace === "archboard_workhorse") {
+			try {
+				operation = issueOperationIdentity(options);
+			} catch (error) {
+				return complete(
+					refusedResponse(
+						"system_error",
+						`The host could not issue a current operation identity: ${errorMessage(error)}`,
+					),
+					false,
+				);
+			}
+		}
+
+		await Promise.resolve();
+		if (state.cancelled !== null || state.childDisconnected || disposed) return unavailable(false);
+
+		state.operationAttempted = true;
+		if (validated.namespace === "archboard_voice") {
+			const input = spokenInput(validated);
+			const spokenOperation = captureSpokenOperationIdentity(options);
+			const result = await options.spokenApproval.resolve(state.request);
+			if (state.childDisconnected) return complete(spokenResponse(result, spokenOperation), true);
+			if (state.cancelled !== null) {
+				if (result.tag === "refused")
+					return complete(spokenResponse(result, spokenOperation), true);
+				if (spokenOperation === null)
+					return complete(
+						refusedResponse(
+							"system_error",
+							"The cancelled spoken approval has no current classifier operation identity.",
+							true,
+						),
+						true,
+					);
+				return complete(outcomeUnknownResponse(spokenOperation.wire), true);
+			}
+			if (result.tag === "ok" && input.verdict !== result.value.verdict)
+				return complete(
+					refusedResponse("invalid_call", "The spoken gate returned a different verdict.", true),
+					true,
+				);
+			return complete(spokenResponse(result, spokenOperation), true);
+		}
+
+		if (operation === null)
+			return complete(
+				refusedResponse("system_error", "The workhorse call has no issued operation identity."),
+				true,
+			);
+		try {
+			const result = await invokeWorkhorse(options.operations, validated, operation);
+			if (state.cancelled !== null) {
+				if (isMutation(validated)) return complete(outcomeUnknownResponse(operation.wire), true);
+				return complete(
+					refusedResponse(
+						"invalid_call",
+						"The coordinator tool call was cancelled before its read result could be delivered.",
+						true,
+					),
+					true,
+				);
+			}
+			try {
+				validateCoordinatorToolRequest(options, state.request);
+			} catch (error) {
+				if (isMutation(validated)) return complete(outcomeUnknownResponse(operation.wire), true);
+				const reason =
+					error instanceof CoordinatorToolValidationError ? error.reason : "unknown_provenance";
+				return complete(refusedResponse(reason, errorMessage(error)), true);
+			}
+			return complete(workhorseResponse(options, validated, operation, result), true);
+		} catch (error) {
+			const response = responseForWorkhorseError(options, validated, error, operation);
+			return complete(response, true);
+		}
+	};
+
+	const settleWire = async (
+		state: CallState,
+		logical: LogicalCallState,
+	): Promise<CoordinatorToolDispatchResult> => {
+		const cancelled = (): CoordinatorToolDispatchResult => unavailable(false);
+		let terminal: CoordinatorToolDispatchResult;
+		if (state === logical.owner) {
+			const disconnected = state.cancellation.then(() =>
+				state.childDisconnected ? unavailable(state.operationAttempted) : logical.promise!,
+			);
+			terminal = logical.terminal ?? (await Promise.race([logical.promise!, disconnected]));
+		} else {
+			const settled =
+				logical.terminal ??
+				(await Promise.race([logical.promise!, state.cancellation.then(cancelled)]));
+			if (state.cancelled !== null) terminal = cancelled();
+			else terminal = settled;
+		}
+		state.operationAttempted = terminal.attempted;
+		if (state.childDisconnected) return terminal;
+		return finish(state, terminal.response);
+	};
+
+	const runWire = async (state: CallState): Promise<CoordinatorToolDispatchResult> => {
 		let validated: ValidatedCoordinatorToolCall;
 		try {
 			validated = validateCoordinatorToolRequest(options, state.request);
@@ -107,98 +232,28 @@ export function createCodexCoordinatorTools(
 			return finish(state, refusedResponse(reason, message, isBoundaryRefusal(reason)));
 		}
 
-		const logicalKey = logicalCallKey(validated.call);
-		const owner = logicalCalls.get(logicalKey);
-		if (owner !== undefined && owner !== state) return owner.promise!;
-		logicalCalls.set(logicalKey, state);
-		if (state.cancelled !== null || state.childDisconnected || disposed) return unavailable(state);
-
-		let operation: IssuedOperationIdentity | null = null;
-		if (validated.namespace === "archboard_workhorse") {
-			try {
-				operation = issueOperationIdentity(options);
-			} catch (error) {
-				return finish(
-					state,
-					refusedResponse(
-						"system_error",
-						`The host could not issue a current operation identity: ${errorMessage(error)}`,
-					),
-				);
-			}
-		}
-
-		await Promise.resolve();
-		if (state.cancelled !== null || state.childDisconnected || disposed) return unavailable(state);
-
-		state.operationAttempted = true;
-		if (validated.namespace === "archboard_voice") {
-			const input = spokenInput(validated);
-			const spokenOperation = captureSpokenOperationIdentity(options);
-			const result = await options.spokenApproval.resolve(state.request);
-			if (state.childDisconnected)
-				return Object.freeze({
-					response: spokenResponse(result, spokenOperation),
-					attempted: true,
-				});
-			if (state.cancelled !== null) {
-				if (result.tag === "refused") return finish(state, spokenResponse(result, spokenOperation));
-				if (spokenOperation === null)
-					return finish(
-						state,
+		const key = logicalCallKey(validated.call);
+		let logical = logicalCalls.get(key);
+		if (logical === undefined) {
+			logical = { owner: state, promise: null, terminal: null };
+			logicalCalls.set(key, logical);
+			const owned = logical;
+			owned.promise = execute(state, validated)
+				.catch((error: unknown) =>
+					complete(
 						refusedResponse(
 							"system_error",
-							"The cancelled spoken approval has no current classifier operation identity.",
-							true,
+							`The coordinator tool call failed: ${errorMessage(error)}`,
 						),
-					);
-				return finish(state, outcomeUnknownResponse(spokenOperation.wire));
-			}
-			if (result.tag === "ok" && input.verdict !== result.value.verdict)
-				return finish(
-					state,
-					refusedResponse("invalid_call", "The spoken gate returned a different verdict.", true),
-				);
-			return finish(state, spokenResponse(result, spokenOperation));
-		}
-
-		if (operation === null)
-			return finish(
-				state,
-				refusedResponse("system_error", "The workhorse call has no issued operation identity."),
-			);
-		try {
-			const result = await invokeWorkhorse(options.operations, validated, operation);
-			if (state.cancelled !== null) {
-				if (isMutation(validated)) return finish(state, outcomeUnknownResponse(operation.wire));
-				return finish(
-					state,
-					refusedResponse(
-						"invalid_call",
-						"The coordinator tool call was cancelled before its read result could be delivered.",
-						true,
+						state.operationAttempted,
 					),
-				);
-			}
-			try {
-				validateCoordinatorToolRequest(options, state.request);
-			} catch (error) {
-				if (isMutation(validated)) return finish(state, outcomeUnknownResponse(operation.wire));
-				const reason =
-					error instanceof CoordinatorToolValidationError ? error.reason : "unknown_provenance";
-				return finish(state, refusedResponse(reason, errorMessage(error)));
-			}
-			if (state.childDisconnected)
-				return Object.freeze({
-					response: workhorseResponse(options, validated, operation, result),
-					attempted: true,
+				)
+				.then((terminal) => {
+					owned.terminal = terminal;
+					return terminal;
 				});
-			return finish(state, workhorseResponse(options, validated, operation, result));
-		} catch (error) {
-			const response = responseForWorkhorseError(options, validated, error, operation);
-			if (state.childDisconnected) return Object.freeze({ response, attempted: true });
-			return finish(state, response);
 		}
+		return settleWire(state, logical);
 	};
 
 	const dispatch = (
@@ -223,15 +278,21 @@ export function createCodexCoordinatorTools(
 				);
 			return existing.promise!;
 		}
+		let wakeCancellation = ignoreCancellation;
+		const cancellation = new Promise<void>((resolve) => {
+			wakeCancellation = resolve;
+		});
 		const state: CallState = {
 			request,
 			operationAttempted: false,
 			responseAttempted: false,
 			cancelled: null,
 			childDisconnected: false,
+			cancellation,
+			wakeCancellation,
 			promise: null,
 		};
-		const promise = Promise.resolve().then(() => run(state));
+		const promise = Promise.resolve().then(() => runWire(state));
 		state.promise = promise;
 		wireCalls.set(key, state);
 		return promise;
@@ -254,6 +315,7 @@ export function createCodexCoordinatorTools(
 		);
 		if (state === undefined || state.responseAttempted) return;
 		state.cancelled = Object.freeze({ requestId, cause });
+		state.wakeCancellation();
 	};
 
 	const onChildExit = (exit: { readonly child: ChildId; readonly epoch: ChildEpoch }): void => {
@@ -264,6 +326,7 @@ export function createCodexCoordinatorTools(
 					requestId: state.request.requestId,
 					cause: "child_disconnect",
 				});
+				state.wakeCancellation();
 			}
 		}
 	};
@@ -271,11 +334,13 @@ export function createCodexCoordinatorTools(
 	const dispose = (): void => {
 		if (disposed) return;
 		disposed = true;
-		for (const state of wireCalls.values())
+		for (const state of wireCalls.values()) {
 			state.cancelled ??= Object.freeze({
 				requestId: state.request.requestId,
 				cause: "host_shutdown",
 			});
+			state.wakeCancellation();
+		}
 	};
 
 	return Object.freeze({ dispatch, onServerRequest, cancel, onChildExit, dispose });

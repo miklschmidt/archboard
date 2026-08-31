@@ -87,6 +87,7 @@ export interface CoordinatorToolsFixture {
 			response: ReverseResponse,
 		) => Promise<void>;
 		failWrites: boolean;
+		failFor: (request: DynamicServerRequest) => void;
 		hold: () => void;
 		release: () => void;
 	};
@@ -303,6 +304,7 @@ export function fixture(
 	const writes: ResponseWrite[] = [];
 	let responseBarrier: Promise<void> | null = null;
 	let releaseResponse: (() => void) | null = null;
+	const failedRequests = new Set<DynamicServerRequest["requestId"]>();
 	const transport = {
 		writes,
 		failWrites: false,
@@ -314,7 +316,11 @@ export function fixture(
 			writes.push({ request, owner, response });
 			timeline.push("transport.respond");
 			if (responseBarrier !== null) await responseBarrier;
-			if (transport.failWrites) throw new Error("response write lost");
+			if (transport.failWrites || failedRequests.has(request.requestId))
+				throw new Error("response write lost");
+		},
+		failFor: (request: DynamicServerRequest) => {
+			failedRequests.add(request.requestId);
 		},
 		hold: () => {
 			if (responseBarrier !== null) throw new Error("response barrier is already held");
