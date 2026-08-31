@@ -8,7 +8,6 @@ import {
 	SERVER_NOTIFICATION_METHODS,
 	SERVER_REQUEST_METHODS,
 	decodeClientNotification,
-	decodeInitializeParams,
 	decodeJsonRpcError,
 	decodeLoginAccountParams,
 	decodeResponse,
@@ -422,15 +421,6 @@ describe("fail-closed diagnostics", () => {
 				codexHome: "/tmp/codex",
 				platformFamily: "unix",
 				platformOs: "linux",
-			}),
-		).toThrow(ProtocolDecodeError);
-	});
-
-	test("requires the authored initialize capabilities", () => {
-		expect(() =>
-			decodeInitializeParams({
-				clientInfo: { name: "archboard", title: null, version: "0.1.0" },
-				capabilities: { experimentalApi: true, requestAttestation: true },
 			}),
 		).toThrow(ProtocolDecodeError);
 	});

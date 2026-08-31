@@ -21,20 +21,6 @@ export const ClientInfoSchema = z.strictObject({
 	version: z.string(),
 });
 
-/** The literal capabilities authored by Archboard's app-server client. */
-export const InitializeCapabilitiesSchema = z.strictObject({
-	experimentalApi: z.literal(true),
-	requestAttestation: z.literal(false),
-	mcpServerOpenaiFormElicitation: z.literal(true),
-	optOutNotificationMethods: z.array(z.string()).length(0),
-	extensions: z.strictObject({}),
-});
-
-export const InitializeParamsSchema = z.strictObject({
-	clientInfo: ClientInfoSchema,
-	capabilities: InitializeCapabilitiesSchema,
-});
-
 export const LoginAccountParamsSchema = z.discriminatedUnion("type", [
 	z.strictObject({ type: z.literal("apiKey"), apiKey: z.string() }),
 	z.strictObject({

@@ -9,6 +9,38 @@ import { assertGeneratedClientRequestSchemaConformanceForTest } from "../conform
 
 const repositoryRoot = fileURLToPath(new URL("../../../../", import.meta.url));
 const methods = ["thread/read", "account/logout"] as const;
+const focusedGeneratedThreadReadSource =
+	"export type ThreadReadParams = { threadId: string; includeTurns?: boolean };\n";
+const structuredGeneratedThreadReadSource = `export type ThreadReadParams = {
+	threadId: string;
+	includeTurns?: boolean;
+	options?: {
+		nested?: { enabled?: boolean };
+		choice?: { type: "alpha"; alpha?: string } | { type: "beta"; beta?: number };
+		entries?: { [key in string]?: { label?: string } };
+		items?: Array<{ value?: string }>;
+	};
+};
+`;
+const exactLocalParamsSource = `
+type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
+type ThreadReadParams = {
+	threadId: string;
+	includeTurns?: boolean;
+	options?: {
+		nested?: { enabled?: boolean };
+		choice?: { type: "alpha"; alpha?: string } | { type: "beta"; beta?: number };
+		entries?: { [key: string]: { label?: string } };
+		items?: Array<{ value?: string }>;
+	};
+};
+export type ClientRequestParams<Method extends "thread/read" | "account/logout" | "thread/inject_items"> =
+	Method extends "thread/read" ? ThreadReadParams :
+	Method extends "thread/inject_items" ? { threadId: string; items: JsonValue[] } :
+	undefined;
+export type ClientRequestInput<Method extends "thread/read" | "account/logout" | "thread/inject_items"> =
+	ClientRequestParams<Method>;
+`;
 
 function temporaryConformanceDirectories(): string[] {
 	return readdirSync(tmpdir())
@@ -16,7 +48,10 @@ function temporaryConformanceDirectories(): string[] {
 		.toSorted();
 }
 
-function writeGeneratedRequests(root: string): void {
+function writeGeneratedRequests(
+	root: string,
+	threadReadSource = structuredGeneratedThreadReadSource,
+): void {
 	writeFileSync(
 		join(root, "ClientRequest.ts"),
 		[
@@ -27,10 +62,7 @@ function writeGeneratedRequests(root: string): void {
 			"",
 		].join("\n"),
 	);
-	writeFileSync(
-		join(root, "ThreadReadParams.ts"),
-		"export type ThreadReadParams = { threadId: string; includeTurns?: boolean };\n",
-	);
+	writeFileSync(join(root, "ThreadReadParams.ts"), threadReadSource);
 	writeFileSync(
 		join(root, "ThreadInjectItemsParams.ts"),
 		"type JsonValue = null | boolean | number | string | JsonValue[] | { [key in string]?: JsonValue };\nexport type ThreadInjectItemsParams = { threadId: string; items: JsonValue[] };\n",
@@ -52,40 +84,73 @@ function runConformance(
 	});
 }
 
-function writeNarrowedProductionSchema(targetPath: string): void {
+function replaceExactlyOnce(source: string, original: string, replacement: string): string {
+	if (!source.includes(original) || source.indexOf(original) !== source.lastIndexOf(original))
+		throw new Error(`expected exactly one fixture fragment ${JSON.stringify(original)}`);
+	return source.replace(original, replacement);
+}
+
+function writeProductionSchema(
+	targetPath: string,
+	mutation?: "remove-generated-optional" | "invent-local-optional",
+): void {
 	const productionPath = join(
 		repositoryRoot,
 		"src/runtime/codex-protocol/lib/client-request-schemas.ts",
 	);
 	const source = readFileSync(productionPath, "utf8");
 	const original = "includeTurns: z.boolean().optional(),";
-	const narrowed = "includeTurns: z.literal(true).optional(),";
-	if (!source.includes(original) || source.indexOf(original) !== source.lastIndexOf(original))
-		throw new Error("expected one production thread/read includeTurns schema");
-	const withNarrowing = source.replace(original, narrowed);
-	const withAbsoluteImports = withNarrowing.replace(
+	const mutated =
+		mutation === undefined
+			? source
+			: replaceExactlyOnce(
+					source,
+					original,
+					mutation === "remove-generated-optional"
+						? ""
+						: `${original}\n\tlocalOnlyForConformance: z.boolean().optional(),`,
+				);
+	const withAbsoluteImports = mutated.replace(
 		/from "(\.{1,2}\/[^"]+)\.js";/g,
 		(_statement, specifier: string) =>
 			`from ${JSON.stringify(resolve(dirname(productionPath), `${specifier}.ts`))};`,
 	);
 	const withAbsoluteZodImport = withAbsoluteImports.replace(
 		'from "zod";',
-		`from ${JSON.stringify(join(repositoryRoot, "node_modules/zod/index.js"))};`,
+		`from ${JSON.stringify(join(repositoryRoot, "node_modules/zod/index.cjs"))};`,
 	);
 	writeFileSync(targetPath, withAbsoluteZodImport);
 }
 
+function conformanceFailure(
+	generatedRoot: string,
+	localParamsModulePath: string,
+	selectedMethods: readonly string[] = ["thread/read"],
+): string {
+	let thrown: unknown;
+	try {
+		runConformance(generatedRoot, localParamsModulePath, selectedMethods);
+	} catch (error) {
+		thrown = error;
+	}
+	expect(thrown).toBeInstanceOf(Error);
+	return (thrown as Error).message;
+}
+
+function expectDeepExactFailure(message: string, method = "thread/read"): void {
+	expect(message).toContain(`methods/${method}/schema-output-to-generated.ts`);
+	expect(message).toContain(`methods/${method}/generated-to-schema-input.ts`);
+	expect(message).toContain("does not satisfy the constraint 'true'");
+}
+
 describe("generated ClientRequest schema conformance", () => {
-	test("accepts bidirectional payload equality including exact undefined params", () => {
+	test("accepts directional payload assignability with deep shape exactness", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-request-schema-exact-"));
 		const localParamsModulePath = join(root, "local.ts");
 		const before = temporaryConformanceDirectories();
 		try {
 			writeGeneratedRequests(root);
-			writeFileSync(
-				localParamsModulePath,
-				'type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };\nexport type ClientRequestParams<Method extends "thread/read" | "account/logout" | "thread/inject_items"> = Method extends "thread/read" ? { threadId: string; includeTurns?: boolean } : Method extends "thread/inject_items" ? { threadId: string; items: JsonValue[] } : undefined;\nexport type ClientRequestInput<Method extends "thread/read" | "account/logout" | "thread/inject_items"> = ClientRequestParams<Method>;\n',
-			);
+			writeFileSync(localParamsModulePath, exactLocalParamsSource);
 			runConformance(root, localParamsModulePath);
 			expect(temporaryConformanceDirectories()).toEqual(before);
 		} finally {
@@ -93,28 +158,107 @@ describe("generated ClientRequest schema conformance", () => {
 		}
 	});
 
-	test("rejects an actual narrowing of the production runtime schema", () => {
-		const root = mkdtempSync(join(tmpdir(), "archboard-request-schema-hostile-"));
+	for (const hostile of [
+		{
+			name: "generated-only optional keys",
+			source: replaceExactlyOnce(exactLocalParamsSource, "\tincludeTurns?: boolean;\n", ""),
+		},
+		{
+			name: "local-only optional keys",
+			source: replaceExactlyOnce(
+				exactLocalParamsSource,
+				"\tincludeTurns?: boolean;\n",
+				"\tincludeTurns?: boolean;\n\tlocalOnly?: boolean;\n",
+			),
+		},
+		{
+			name: "nested optional keys",
+			source: replaceExactlyOnce(
+				exactLocalParamsSource,
+				"nested?: { enabled?: boolean }",
+				"nested?: {}",
+			),
+		},
+		{
+			name: "optional keys inside union branches",
+			source: replaceExactlyOnce(
+				exactLocalParamsSource,
+				'{ type: "alpha"; alpha?: string }',
+				'{ type: "alpha" }',
+			),
+		},
+		{
+			name: "optional keys inside record values",
+			source: replaceExactlyOnce(
+				exactLocalParamsSource,
+				"{ [key: string]: { label?: string } }",
+				"{ [key: string]: {} }",
+			),
+		},
+		{
+			name: "optional keys inside array elements",
+			source: replaceExactlyOnce(exactLocalParamsSource, "Array<{ value?: string }>", "Array<{}>"),
+		},
+	] as const)
+		test(`rejects ${hostile.name}`, () => {
+			const root = mkdtempSync(join(tmpdir(), "archboard-request-schema-hostile-"));
+			const localParamsModulePath = join(root, "local.ts");
+			const before = temporaryConformanceDirectories();
+			try {
+				writeGeneratedRequests(root);
+				writeFileSync(localParamsModulePath, hostile.source);
+				expectDeepExactFailure(conformanceFailure(root, localParamsModulePath));
+				expect(temporaryConformanceDirectories()).toEqual(before);
+			} finally {
+				rmSync(root, { recursive: true, force: true });
+			}
+		});
+
+	test("rejects an object for an exact undefined no-parameter request", () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-request-schema-undefined-hostile-"));
 		const localParamsModulePath = join(root, "local.ts");
 		const before = temporaryConformanceDirectories();
 		try {
 			writeGeneratedRequests(root);
-			writeNarrowedProductionSchema(localParamsModulePath);
-			let thrown: unknown;
-			try {
-				runConformance(root, localParamsModulePath, ["thread/read"]);
-			} catch (error) {
-				thrown = error;
-			}
-			expect(thrown).toBeInstanceOf(Error);
-			const message = (thrown as Error).message;
-			expect(message).toContain("methods/thread/read/generated-to-schema-input.ts");
-			expect(message).toContain("includeTurns");
-			expect(message).toContain("boolean");
-			expect(message).toContain("true");
+			writeFileSync(
+				localParamsModulePath,
+				replaceExactlyOnce(exactLocalParamsSource, "\tundefined;", "\t{};"),
+			);
+			const message = conformanceFailure(root, localParamsModulePath, ["account/logout"]);
+			expect(message).toContain("methods/account/logout/schema-output-to-generated.ts");
+			expect(message).toContain("methods/account/logout/generated-to-schema-input.ts");
 			expect(temporaryConformanceDirectories()).toEqual(before);
 		} finally {
 			rmSync(root, { recursive: true, force: true });
 		}
 	});
+
+	test("accepts the unmodified production schema against the focused generated fixture", () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-request-schema-production-exact-"));
+		const localParamsModulePath = join(root, "local.ts");
+		const before = temporaryConformanceDirectories();
+		try {
+			writeGeneratedRequests(root, focusedGeneratedThreadReadSource);
+			writeProductionSchema(localParamsModulePath);
+			runConformance(root, localParamsModulePath, ["thread/read"]);
+			expect(temporaryConformanceDirectories()).toEqual(before);
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+
+	for (const mutation of ["remove-generated-optional", "invent-local-optional"] as const)
+		test(`rejects production schema mutation ${mutation}`, () => {
+			const root = mkdtempSync(join(tmpdir(), "archboard-request-schema-production-hostile-"));
+			const localParamsModulePath = join(root, "local.ts");
+			const before = temporaryConformanceDirectories();
+			try {
+				writeGeneratedRequests(root, focusedGeneratedThreadReadSource);
+				writeProductionSchema(localParamsModulePath, mutation);
+				expectDeepExactFailure(conformanceFailure(root, localParamsModulePath));
+				expect(temporaryConformanceDirectories()).toEqual(before);
+			} finally {
+				rmSync(root, { recursive: true, force: true });
+			}
+		});
 });
