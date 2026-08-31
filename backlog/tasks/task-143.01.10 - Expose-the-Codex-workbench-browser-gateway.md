@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.10
 title: Expose the Codex workbench browser gateway
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 19:53'
+updated_date: '2026-08-31 19:57'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -31,10 +31,10 @@ Expose the closed browser gateway for account and session readiness, thread link
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Browser state distinguishes child stopped or backoff, initialized, storage mismatch, login capable, signed out, login pending, account ready, thread capable, and reconnecting without enabling commands early.
-- [ ] #2 A renewable app-global command lease binds browser, pane, link, child epoch, and command id; navigation or focus changes do not retarget a pending ordinary or dynamic approval, and expiry produces one visible refusal.
-- [ ] #3 Account read, login, cancel, and logout are available before account readiness; all thread, turn, item, queue, tool, realtime, ordinary approval, and dynamic coordination approval operations require composed thread capability and the exact current link. Dynamic responses preserve OperationId, logical call identity, and effect hash.
-- [ ] #4 Reconnect snapshots and sequenced deltas are idempotent and bounded. Tests cover stale sequence, duplicate command, lost response, late result, lease transfer, dynamic approval expiry or disconnect, terminal approval_required without resume, child exit, browser close, and recovery.
+- [x] #1 Browser state distinguishes child stopped or backoff, initialized, storage mismatch, login capable, signed out, login pending, account ready, thread capable, and reconnecting without enabling commands early.
+- [x] #2 A renewable app-global command lease binds browser, pane, link, child epoch, and command id; navigation or focus changes do not retarget a pending ordinary or dynamic approval, and expiry produces one visible refusal.
+- [x] #3 Account read, login, cancel, and logout are available before account readiness; all thread, turn, item, queue, tool, realtime, ordinary approval, and dynamic coordination approval operations require composed thread capability and the exact current link. Dynamic responses preserve OperationId, logical call identity, and effect hash.
+- [x] #4 Reconnect snapshots and sequenced deltas are idempotent and bounded. Tests cover stale sequence, duplicate command, lost response, late result, lease transfer, dynamic approval expiry or disconnect, terminal approval_required without resume, child exit, browser close, and recovery.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -53,4 +53,12 @@ Expose the closed browser gateway for account and session readiness, thread link
 Remediation ready for independent review: childExit now makes the gateway terminal and recovery uses a newly constructed authority; wrapper arms are exact; in-flight and bounded settled command retention are separate and evicted IDs cannot execute. Focused gateway tests: 29 pass and 147 assertions. Backend and frontend TypeScript, scoped Oxlint, Oxfmt check, repository inventory, and diff checks pass. Acceptance criteria intentionally remain unchecked; task remains In Progress.
 
 Async settlement remediation complete: disconnect owners now run independently after synchronous authority revocation, pending settlement promises are drained by browser close, exact child exit, and dispose, and lifecycle child-exit listeners are awaitable. Rejection policy is best effort after all owners receive a chance to settle. Final focused gateway suite: 36 pass and 197 assertions. Both TypeScript graphs, scoped Oxlint, Oxfmt check, repository inventory, and diff checks pass. Acceptance criteria remain unchecked and task remains In Progress.
+
+Finalization evidence: AC #1 is proved by the closed readiness and capability-gate tests. AC #2 is proved by renewable app-global lease, exact link binding, non-retargetable approvals, and expiry or transfer tests. AC #3 is proved by account pre-readiness coverage, every route owner, exact capability and link checks, and preserved dynamic identity fields. AC #4 is proved by bounded snapshots, strict sequenced delivery, duplicate and stale handling, command retention, approval_required, disconnect, recovery, and lifecycle-drain tests. The complete BASE..HEAD range is review-clean. The documented combined repository-policy run remains preserved as capped-OOM and was not rerun.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented and independently reviewed the Codex workbench browser gateway across readiness, leases, commands, approvals, realtime control, bounded sequenced delivery, recovery, and awaited async teardown. Verified with 36 focused gateway tests and 197 expectations, both TypeScript graphs, scoped Oxlint and Oxfmt, repository inventory, clean full-range diff checks, and the protected hash.
+<!-- SECTION:FINAL_SUMMARY:END -->
