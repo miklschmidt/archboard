@@ -233,7 +233,7 @@ describe("Codex approval broker", () => {
 				response: { approvalKind: "command_execution", decision: "accept" },
 			});
 			expect(settlement).toMatchObject({ state: "stale", outcome: "delivered" });
-			expect(expectSingleResponse(fixture.port)).toEqual({ result: { decision: "decline" } });
+			expect(expectSingleResponse(fixture.port)).toEqual({ result: { decision: "cancel" } });
 		} finally {
 			closeBroker(fixture.broker);
 		}

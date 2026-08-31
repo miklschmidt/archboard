@@ -5,6 +5,7 @@ import type {
 } from "../../../shared/codex-browser-model/index.js";
 import type {
 	ApprovalFamily,
+	CommandApprovalRequest,
 	ApprovalRequest,
 	ApprovalSettlement,
 	SpokenEligibility,
@@ -36,13 +37,27 @@ function decisionEqual(left: unknown, right: unknown): boolean {
 	return JSON.stringify(left) === JSON.stringify(right);
 }
 
-function decisionAllowed(request: ApprovalRequest, response: BrowserApprovalResponse): boolean {
-	if (request.family === "command_execution" && response.approvalKind === "command_execution") {
-		const available = request.params.availableDecisions;
-		return (
-			available === undefined ||
-			available === null ||
-			available.some((decision) => decisionEqual(decision, response.decision))
+type CommandDecision = NonNullable<CommandApprovalRequest["params"]["availableDecisions"]>[number];
+
+const DEFAULT_COMMAND_DECISIONS: readonly CommandDecision[] = ["accept", "decline", "cancel"];
+
+function effectiveCommandDecisions(request: CommandApprovalRequest): readonly CommandDecision[] {
+	const available = request.params.availableDecisions;
+	return available === undefined || available === null ? DEFAULT_COMMAND_DECISIONS : available;
+}
+
+function decisionAllowed(
+	request: ApprovalRequest,
+	response: BrowserApprovalResponse,
+	respectAvailableDecisions: boolean,
+): boolean {
+	if (
+		respectAvailableDecisions &&
+		request.family === "command_execution" &&
+		response.approvalKind === "command_execution"
+	) {
+		return effectiveCommandDecisions(request).some((decision) =>
+			decisionEqual(decision, response.decision),
 		);
 	}
 	return true;
@@ -52,6 +67,7 @@ export function validateBrowserResponse(
 	model: CodexBrowserModel,
 	request: ApprovalRequest,
 	response: BrowserApprovalResponse,
+	options: { readonly respectAvailableDecisions?: boolean } = {},
 ): BrowserApprovalResponse {
 	const parsed = model.BrowserApprovalResponseSchema.safeParse(response);
 	if (!parsed.success) {
@@ -68,7 +84,7 @@ export function validateBrowserResponse(
 			request.requestId,
 		);
 	}
-	if (!decisionAllowed(request, parsed.data)) {
+	if (!decisionAllowed(request, parsed.data, options.respectAvailableDecisions !== false)) {
 		throw new CodexApprovalError(
 			"invalid_response",
 			"The approval decision is not one of the decisions offered by Codex.",
@@ -135,12 +151,7 @@ export function fallbackResponse(
 ): BrowserApprovalResponse {
 	switch (request.family) {
 		case "command_execution":
-			return {
-				approvalKind: "command_execution",
-				decision: request.params.availableDecisions?.some((decision) => decision === "cancel")
-					? "cancel"
-					: "decline",
-			};
+			return { approvalKind: "command_execution", decision: "cancel" };
 		case "file_change":
 			return { approvalKind: "file_change", decision: state === "settled" ? "decline" : "cancel" };
 		case "user_input":
@@ -266,7 +277,7 @@ export function toBrowserApproval(
 				reason: request.params.reason ?? null,
 				command: request.params.command ?? null,
 				cwd: request.params.cwd ?? null,
-				availableDecisions: request.params.availableDecisions ?? ["accept", "decline", "cancel"],
+				availableDecisions: effectiveCommandDecisions(request),
 			};
 			break;
 		case "file_change":
@@ -358,9 +369,7 @@ export function spokenEligibility(
 	switch (request.family) {
 		case "command_execution": {
 			if (request.params.kind !== "command") return { eligible: false, reason: "not_binary" };
-			const available = request.params.availableDecisions;
-			if (available === undefined || available === null)
-				return { eligible: false, reason: "unsupported_schema" };
+			const available = effectiveCommandDecisions(request);
 			if (
 				request.params.additionalPermissions !== undefined &&
 				request.params.additionalPermissions !== null
@@ -415,7 +424,11 @@ export function failedSettlement(
 	});
 }
 
-export function classifyResponseFailure(error: unknown): "not_delivered" | "outcome_unknown" {
+export function classifyResponseFailure(
+	error: unknown,
+	writeAttempted = true,
+): "not_delivered" | "outcome_unknown" {
+	if (!writeAttempted) return "not_delivered";
 	if (!isRecord(error)) return "outcome_unknown";
 	if (error.outcome === "not_delivered" || error.outcome === "outcome_unknown")
 		return error.outcome;
