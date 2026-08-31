@@ -13,3 +13,7 @@
 The reviewed fixture is a noncompiled reading copy. The reduced module is Archboard-owned source.
 Any update requires a new immutable upstream commit, fixture hash, dependency review, and local
 review before the source changes.
+
+The local backdrop uses the semantic background color at 60% opacity through
+`bg-background/60`. This stays close to the legacy modal backdrop's 62% opacity while leaving the
+canvas visible behind the dialog.

@@ -105,7 +105,7 @@ describe("dialog public module", () => {
 		expect(content.type).toBe(BaseDialog.Portal);
 		expect(backdrop.type).toBe(BaseDialog.Backdrop);
 		expect(popup.type).toBe(BaseDialog.Popup);
-		expect(backdropProps.className).toBe("fixed inset-0 z-50 bg-background");
+		expect(backdropProps.className).toBe("fixed inset-0 z-50 bg-background/60");
 		expect(popupProps.className).toBe(POPUP_CLASSES);
 		for (const name of [
 			"ref",
@@ -244,5 +244,7 @@ describe("dialog public module", () => {
 		expect(provenance).toContain(
 			"requires a new immutable upstream commit, fixture hash, dependency review, and local",
 		);
+		expect(provenance).toContain("semantic background color at 60% opacity");
+		expect(provenance).toContain("legacy modal backdrop's 62% opacity");
 	});
 });

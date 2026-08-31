@@ -12,7 +12,7 @@ type WithRef<Props, Component extends ElementType> = Omit<Props, "ref"> &
 	Pick<ComponentProps<Component>, "ref">;
 type StatefulClassName<State> = string | ((state: State) => string | undefined) | undefined;
 
-const BACKDROP_CLASSES = "fixed inset-0 z-50 bg-background";
+const BACKDROP_CLASSES = "fixed inset-0 z-50 bg-background/60";
 const POPUP_CLASSES =
 	"fixed top-1/2 left-1/2 z-50 flex max-h-full max-w-full -translate-x-1/2 -translate-y-1/2 flex-col gap-region overflow-auto rounded-dialog border border-border bg-surface-raised p-panel font-sans !text-body text-foreground shadow-flat outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 const TITLE_CLASSES = "font-sans !text-title font-semibold text-foreground";
@@ -31,6 +31,7 @@ function composeClasses<State>(
 
 type BaseRootProps = BaseDialog.Root.Props;
 type RootOpenChange = NonNullable<BaseRootProps["onOpenChange"]>;
+type BasePopupProps = Omit<BaseDialog.Popup.Props, "aria-describedby" | "aria-labelledby" | "role">;
 
 export type DialogProps = Omit<
 	BaseRootProps,
@@ -48,8 +49,7 @@ export type DialogProps = Omit<
 	onOpenChange: RootOpenChange;
 };
 
-export type DialogContentProps = WithRef<BaseDialog.Popup.Props, typeof BaseDialog.Popup> &
-	DataAttributes;
+export type DialogContentProps = WithRef<BasePopupProps, typeof BaseDialog.Popup> & DataAttributes;
 export type DialogTitleProps = WithRef<BaseDialog.Title.Props, typeof BaseDialog.Title> &
 	DataAttributes;
 export type DialogDescriptionProps = WithRef<
