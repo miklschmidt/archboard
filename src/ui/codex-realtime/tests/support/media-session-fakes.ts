@@ -1,12 +1,14 @@
 import { expect } from "bun:test";
-import type {
-	AnswerSdp,
-	CommandOutcome,
-	RealtimeCorrelation,
-	RealtimeCorrelationId,
-	RealtimeHost,
-	RealtimeSessionId,
-	RemoteMediaAttachment,
+
+import {
+	createRealtimeMediaSession,
+	type AnswerSdp,
+	type CommandOutcome,
+	type RealtimeCorrelation,
+	type RealtimeCorrelationId,
+	type RealtimeHost,
+	type RealtimeSessionId,
+	type RemoteMediaAttachment,
 } from "../../index.js";
 
 export type Stage =
@@ -18,6 +20,41 @@ export type Stage =
 	| "resume";
 export type StopMode = "delivered" | "rejected" | "not_delivered" | "outcome_unknown" | "paused";
 export type BrowserPromiseMode = "resolved" | "rejected" | "pending";
+export type StopIdentityMode =
+	| "exact"
+	| "missing"
+	| "swapped"
+	| "stale"
+	| "future"
+	| "session_mismatch"
+	| "correlation_mismatch";
+export const STOP_IDENTITIES: StopIdentityMode[] = [
+	"exact",
+	"missing",
+	"swapped",
+	"stale",
+	"future",
+	"session_mismatch",
+	"correlation_mismatch",
+];
+export const PUBLISHED_CHECKPOINTS = [
+	["requesting_permission", "start_requested", "getUserMedia"],
+	["negotiating", "permission_granted", "peer"],
+	["negotiating", "offer_created", "hostOffer"],
+	["negotiating", "answer_received", "setRemote"],
+	["listening", "negotiation_succeeded", null],
+] as const;
+export const SIDE_EFFECT_CHECKPOINTS = [
+	["timer", "createOffer"],
+	["peer", "transceiver"],
+	["transceiver", "channel"],
+	["channel", "createOffer"],
+	["remoteStream", "attachRemote"],
+	["attachRemote", "audioContext"],
+	["play", "audioContext"],
+	["audioContext", "source"],
+	["source", "analyser"],
+] as const;
 
 class TrackedTarget extends EventTarget {
 	listenerCount = 0;
@@ -40,7 +77,6 @@ class TrackedTarget extends EventTarget {
 }
 
 export class FakeTrack extends TrackedTarget {
-	readonly kind = "audio";
 	readyState: MediaStreamTrackState = "live";
 	stopCount = 0;
 	stop(): void {
@@ -54,7 +90,13 @@ export class FakeTrack extends TrackedTarget {
 }
 
 class FakeStream {
-	constructor(readonly tracks: FakeTrack[] = []) {}
+	constructor(
+		readonly tracks: FakeTrack[] = [],
+		record = true,
+	) {
+		const env = activeBrowser();
+		if (record && env.onStep) env.record("remoteStream");
+	}
 	getTracks(): FakeTrack[] {
 		return this.tracks;
 	}
@@ -167,13 +209,13 @@ class FakeContext {
 	readonly analyser = new FakeAnalyser();
 	constructor(readonly env: FakeBrowser) {
 		this.state =
-			env.pause === "resume" || env.fail === "resume" || env.costs.has("resume") || env.suspended
+			env.pause === "resume" || env.fail === "resume" || env.costs.has("resume")
 				? "suspended"
 				: "running";
 	}
 	async resume(): Promise<void> {
 		await this.env.stage("resume", undefined);
-		if (!this.env.suspended) this.state = "running";
+		this.state = "running";
 	}
 	createMediaStreamSource(): MediaStreamAudioSourceNode {
 		this.env.record("source");
@@ -196,22 +238,17 @@ export class FakeAudio {
 	pauseCount = 0;
 	loadCount = 0;
 	removeCount = 0;
-	src = "";
 	srcObject?: MediaProvider | null;
-	private resolvePlay?: () => void;
 	private rejectPlay?: (error: unknown) => void;
 	constructor(readonly env: FakeBrowser) {}
 	play(): Promise<void> {
+		if (this.env.onStep) this.env.record("play");
 		if (this.env.autoplayDenied)
 			return Promise.reject(new DOMException("Playback requires activation.", "NotAllowedError"));
 		if (!this.env.deferPlay) return Promise.resolve();
-		return new Promise<void>((resolve, reject) => {
-			this.resolvePlay = resolve;
+		return new Promise<void>((_resolve, reject) => {
 			this.rejectPlay = reject;
 		});
-	}
-	resolve(): void {
-		this.resolvePlay?.();
 	}
 	reject(message = "Playback requires activation."): void {
 		this.rejectPlay?.(new DOMException(message, "NotAllowedError"));
@@ -221,7 +258,6 @@ export class FakeAudio {
 	}
 	removeAttribute(): void {
 		this.removeCount += 1;
-		this.src = "";
 	}
 	load(): void {
 		this.loadCount += 1;
@@ -248,19 +284,18 @@ export class FakeBrowser extends TrackedTarget {
 	pause?: Stage;
 	fail?: Stage;
 	stopMode: StopMode = "delivered";
+	stopIdentity: StopIdentityMode = "exact";
 	replaceTrackMode: BrowserPromiseMode = "resolved";
 	closeContextMode: BrowserPromiseMode = "resolved";
 	senderCount = 1;
 	noTrack = false;
 	autoplayDenied = false;
 	deferPlay = false;
-	suspended = false;
 	throwAttachment = false;
 	stopCount = 0;
 	now = 0;
 	onStep?: (step: string) => void;
 	private releaseGate?: () => void;
-	private releaseStopGate?: (outcome: CommandOutcome) => void;
 	get localTrack(): FakeTrack {
 		return this.localTracks.at(-1)!;
 	}
@@ -290,6 +325,7 @@ export class FakeBrowser extends TrackedTarget {
 		this.install("cancelAnimationFrame", (id: number) => this.frames.delete(id));
 		let timer = 0;
 		this.install("setTimeout", (callback: () => void, delay = 0) => {
+			if (this.onStep) this.record("timer");
 			const id = ++timer;
 			this.timers.set(id, { due: this.now + delay, callback });
 			return id;
@@ -320,21 +356,17 @@ export class FakeBrowser extends TrackedTarget {
 	async getUserMedia(): Promise<MediaStream> {
 		const tracks = this.noTrack ? [] : [new FakeTrack()];
 		this.localTracks.push(...tracks);
-		return this.stage("getUserMedia", new FakeStream(tracks) as unknown as MediaStream);
+		return this.stage("getUserMedia", new FakeStream(tracks, false) as unknown as MediaStream);
 	}
 	async stop(request: RealtimeCorrelation): Promise<CommandOutcome> {
 		this.stopCount += 1;
 		this.stopRequests.push(request);
 		if (this.stopMode === "rejected") throw new Error("stop rejected");
-		if (this.stopMode === "paused")
-			return new Promise<CommandOutcome>((resolve) => (this.releaseStopGate = resolve));
-		return stopOutcome(this.stopMode, request);
+		if (this.stopMode === "paused") return new Promise<CommandOutcome>(() => undefined);
+		return stopOutcome(this.stopMode, request, this.stopIdentity);
 	}
 	release(): void {
 		this.releaseGate?.();
-	}
-	releaseStop(mode: Exclude<StopMode, "paused" | "rejected"> = "delivered"): void {
-		this.releaseStopGate?.(stopOutcome(mode, this.stopRequests.at(-1)!));
 	}
 	advance(durationMs: number): void {
 		this.now += durationMs;
@@ -394,9 +426,23 @@ function activeBrowser(): FakeBrowser {
 function stopOutcome(
 	mode: Exclude<StopMode, "paused" | "rejected">,
 	request: RealtimeCorrelation,
+	identity: StopIdentityMode,
 ): CommandOutcome {
 	if (mode === "not_delivered") return { outcome: mode, reason: "rejected", ...request };
 	if (mode === "outcome_unknown") return { outcome: mode, reason: "response_lost", ...request };
+	if (identity === "missing") return { outcome: "delivered" } as CommandOutcome;
+	if (identity === "swapped")
+		return {
+			outcome: "delivered",
+			sessionId: request.correlationId as unknown as RealtimeSessionId,
+			correlationId: request.sessionId as unknown as RealtimeCorrelationId,
+		};
+	if (identity === "stale") return { outcome: "delivered", ...correlation(0) };
+	if (identity === "future") return { outcome: "delivered", ...correlation(99) };
+	if (identity === "session_mismatch")
+		return { outcome: "delivered", ...request, sessionId: correlation(9).sessionId };
+	if (identity === "correlation_mismatch")
+		return { outcome: "delivered", ...request, correlationId: correlation(9).correlationId };
 	return { outcome: "delivered", ...request };
 }
 
@@ -425,6 +471,24 @@ export function host(env: FakeBrowser): RealtimeHost {
 		stop: (request) => env.stop(request),
 		recover: async (request) => ({ outcome: "delivered", ...request }),
 	};
+}
+
+export async function runStopIdentityScenario(
+	action: "stop" | "dispose" | "restart",
+	identity: StopIdentityMode,
+) {
+	const env = new FakeBrowser();
+	env.stopIdentity = identity;
+	const session = createRealtimeMediaSession(host(env));
+	await session.start(correlation(1));
+	if (action === "stop") return { env, session, result: await session.stop() };
+	if (action === "dispose") {
+		await session.dispose();
+		return { env, session, result: session.getSnapshot() };
+	}
+	if (identity === "exact") return { env, session, result: await session.start(correlation(2)) };
+	expect(await session.start(correlation(2)).then(() => "", String)).toContain("session-2");
+	return { env, session, result: session.getSnapshot() };
 }
 
 export async function settle(turns = 24): Promise<void> {
