@@ -7,6 +7,8 @@ export type {
 	QueueAddResult,
 	QueueDeleteRequest,
 	QueueDeleteResult,
+	QueueBeforeEffect,
+	QueueEffectContext,
 	QueueListResult,
 	QueueMutationOutcome,
 	QueueMutationResult,

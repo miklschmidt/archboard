@@ -180,6 +180,7 @@ describe("Codex workhorse queue contract", () => {
 			submissionId: startItem.id,
 		});
 		expect(started.turnId).toBe(startFixture.identity.decoder.adoptTurnId("start-turn"));
+		expect(started.clientUserMessageId).toBe(startItem.clientUserMessageId);
 		expect(requestParams(startFixture, "thread/queue/start")).toEqual({
 			threadId: binding(startFixture.identity).workhorseThreadId,
 			queuedSubmissionId: startItem.id,
@@ -423,7 +424,8 @@ describe("Codex workhorse queue contract", () => {
 			fixtureValue.queue.start({
 				operationId: "start-operation",
 				submissionId: target.id,
-				beforeEffect: () => {
+				beforeEffect: (context) => {
+					expect(context).toMatchObject({ operation: "start", target });
 					throw new Error("authority revoked");
 				},
 			}),
@@ -450,7 +452,11 @@ describe("Codex workhorse queue contract", () => {
 			submissionId: target.id,
 		});
 
-		expect(result).toMatchObject({ outcome: "outcome_unknown", turnId: null });
+		expect(result).toMatchObject({
+			clientUserMessageId: target.clientUserMessageId,
+			outcome: "outcome_unknown",
+			turnId: null,
+		});
 		expect(
 			fixtureValue.session.requests.filter(({ method }) => method === "thread/queue/start"),
 		).toHaveLength(1);

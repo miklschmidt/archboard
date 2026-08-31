@@ -50,7 +50,7 @@ export interface OperationState {
 	readonly workhorseThreadId: ThreadId;
 	readonly workhorseThreadSource: string;
 	readonly transaction: EpochTransaction;
-	readonly clientUserMessageId: string | null;
+	clientUserMessageId: string | null;
 	queuedSubmissionId: QueuedSubmissionId | null;
 	turnId: TurnId | null;
 	outcome: WorkhorseOperationDelivery;

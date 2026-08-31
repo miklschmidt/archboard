@@ -95,7 +95,22 @@ async function mutateQueue(
 	try {
 		const staged = await runtime.classify(binding, request.call, "manage_workhorse_queue");
 		assertCreatedWorkhorse(staged.workhorse);
-		const beforeEffect = async (): Promise<void> => {
+		const beforeEffect: NonNullable<
+			Parameters<WorkhorseRuntime["options"]["queue"]["start"]>[0]["beforeEffect"]
+		> = async (context): Promise<void> => {
+			if (request.operation === "start") {
+				if (
+					context.operation !== "start" ||
+					context.target === null ||
+					context.target.id !== request.submissionId
+				)
+					throw operationError(
+						"outcome_unknown",
+						"Queue start did not preserve its exact baseline target.",
+						{ operation: "manage_workhorse_queue", operationId },
+					);
+				state.clientUserMessageId = context.target.clientUserMessageId;
+			}
 			const current = await runtime.classify(binding, request.call, "manage_workhorse_queue");
 			assertCreatedWorkhorse(current.workhorse);
 		};
@@ -162,19 +177,29 @@ async function mutateQueue(
 	}
 	if (request.operation === "start" && "turnId" in result && result.turnId !== null)
 		state.turnId = result.turnId;
+	if (
+		request.operation === "start" &&
+		"clientUserMessageId" in result &&
+		state.clientUserMessageId !== result.clientUserMessageId
+	)
+		state.clientUserMessageId = null;
 	const hasExactQueueIdentity = state.queuedSubmissionId !== null;
 	const requestedOutcome =
-		request.operation === "start" && "turnId" in result && result.turnId !== null
-			? "delivered"
-			: request.operation === "start" && result.outcome === "delivered"
-				? "outcome_unknown"
-				: request.operation === "add" &&
-					  (result.outcome === "delivered" || result.outcome === "outcome_unknown") &&
-					  hasExactQueueIdentity
-					? "delivered"
-					: request.operation === "add" && result.outcome === "delivered" && !hasExactQueueIdentity
-						? "outcome_unknown"
-						: result.outcome;
+		request.operation === "start" && state.clientUserMessageId === null
+			? "outcome_unknown"
+			: request.operation === "start" && "turnId" in result && result.turnId !== null
+				? "delivered"
+				: request.operation === "start" && result.outcome === "delivered"
+					? "outcome_unknown"
+					: request.operation === "add" &&
+						  (result.outcome === "delivered" || result.outcome === "outcome_unknown") &&
+						  hasExactQueueIdentity
+						? "delivered"
+						: request.operation === "add" &&
+							  result.outcome === "delivered" &&
+							  !hasExactQueueIdentity
+							? "outcome_unknown"
+							: result.outcome;
 	const outcome = runtime.settleDurable(state, requestedOutcome, null);
 	const ids = queueIds(result.queue);
 	if (outcome === "delivered") {
