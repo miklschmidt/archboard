@@ -267,6 +267,8 @@ describe("coordinator dynamic-tool dispatcher", () => {
 		h.dispatcher.onServerRequest(request);
 		await nextMicrotasks();
 		await nextMicrotasks();
+		await nextMicrotasks();
+		await nextMicrotasks();
 		expect(h.operations.calls.inspect).toHaveLength(1);
 		expect(h.transport.writes).toHaveLength(1);
 		expect(h.timeline).toEqual(["workhorse.inspect", "transport.respond"]);
