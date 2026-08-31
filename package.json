@@ -49,6 +49,7 @@
 		"shadcn": "shadcn"
 	},
 	"dependencies": {
+		"@assistant-ui/react": "0.15.17",
 		"@base-ui/react": "1.7.0",
 		"@excalidraw/excalidraw": "0.18.1",
 		"@excalidraw/mermaid-to-excalidraw": "2.2.2",
