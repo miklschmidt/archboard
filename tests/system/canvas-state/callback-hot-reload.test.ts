@@ -6,6 +6,7 @@ import { join, resolve } from "node:path";
 import type { Readable } from "node:stream";
 
 import {
+	TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_MARGIN_MS,
 	TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_TIMEOUT_MS,
 	TEST_CANVAS_HEALTH_POLL_MS,
 	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
@@ -96,9 +97,9 @@ describe.serial("coordinator callback hot reload", () => {
 	test(
 		"re-evaluates the production installer graph and retains one callback cohort",
 		async () => {
-			expect(TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_TIMEOUT_MS).toBeGreaterThanOrEqual(
-				CALLBACK_HOT_RELOAD_MIN_TIMEOUT_MS,
-			);
+			expect(
+				TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_TIMEOUT_MS - CALLBACK_HOT_RELOAD_MIN_TIMEOUT_MS,
+			).toBeGreaterThanOrEqual(TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_MARGIN_MS);
 			const root = mkdtempSync(join(tmpdir(), "archboard-callback-hot-"));
 			const token = join(root, "generation.ts");
 			writeFileSync(token, "export const generation = 1;\n");
