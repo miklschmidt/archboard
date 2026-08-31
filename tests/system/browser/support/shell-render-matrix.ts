@@ -138,15 +138,15 @@ async function emulateMedia(
 	await command(
 		"Emulation.setEmulatedMedia",
 		{
-				media: "screen",
-				features: [
-					{ name: "prefers-color-scheme", value: theme },
-					{
-						name: "prefers-reduced-motion",
-						value: mode === "reduced-motion" ? "reduce" : "no-preference",
-					},
-					{ name: "forced-colors", value: mode === "forced-colors" ? "active" : "none" },
-				],
+			media: "screen",
+			features: [
+				{ name: "prefers-color-scheme", value: theme },
+				{
+					name: "prefers-reduced-motion",
+					value: mode === "reduced-motion" ? "reduce" : "no-preference",
+				},
+				{ name: "forced-colors", value: mode === "forced-colors" ? "active" : "none" },
+			],
 		},
 		attached.sessionId,
 	);
@@ -312,7 +312,13 @@ export async function captureShellRenderMatrix(
 	mkdirSync(artifactRoot, { recursive: true });
 	const cells: ShellMatrixCell[] = [];
 	for (const viewport of viewports) {
-		await browser.run(["set", "viewport", String(viewport.width), String(viewport.height), String(viewport.scale)]);
+		await browser.run([
+			"set",
+			"viewport",
+			String(viewport.width),
+			String(viewport.height),
+			String(viewport.scale),
+		]);
 		for (const theme of themes) {
 			for (const mode of modes) {
 				const restoreMedia = await emulateMedia(browser, theme, mode);
@@ -321,7 +327,9 @@ export async function captureShellRenderMatrix(
 				const screenshot = join(artifactRoot, `${name}.png`);
 				try {
 					await setTheme(browser, theme);
-					await browser.eval<boolean>("new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))");
+					await browser.eval<boolean>(
+						"new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))",
+					);
 					value = await probe(browser);
 					await browser.run(["screenshot", screenshot]);
 				} finally {
@@ -335,13 +343,29 @@ export async function captureShellRenderMatrix(
 						touchTargets: value.touchTargets.map(({ width, height }) => ({ width, height })),
 					}),
 				);
-				const normalizedHash = sha256(stable({ viewport, theme, mode, ...value, themeSnapshot: undefined }));
-				cells.push({ viewport: viewport.name, width: viewport.width, height: viewport.height,
-					deviceScaleFactor: viewport.scale, actualDeviceScaleFactor: value.deviceScaleFactor,
-					theme, mode, queryTruth: value.queryTruth,
-					motion: value.motion, focus: value.focus, pageOverflow: value.pageOverflow,
-					touchTargets: value.touchTargets, stateHash, geometryHash, normalizedHash, screenshot,
-					screenshotSha256: sha256(readFileSync(screenshot)), themeSnapshot: value.themeSnapshot });
+				const normalizedHash = sha256(
+					stable({ viewport, theme, mode, ...value, themeSnapshot: undefined }),
+				);
+				cells.push({
+					viewport: viewport.name,
+					width: viewport.width,
+					height: viewport.height,
+					deviceScaleFactor: viewport.scale,
+					actualDeviceScaleFactor: value.deviceScaleFactor,
+					theme,
+					mode,
+					queryTruth: value.queryTruth,
+					motion: value.motion,
+					focus: value.focus,
+					pageOverflow: value.pageOverflow,
+					touchTargets: value.touchTargets,
+					stateHash,
+					geometryHash,
+					normalizedHash,
+					screenshot,
+					screenshotSha256: sha256(readFileSync(screenshot)),
+					themeSnapshot: value.themeSnapshot,
+				});
 			}
 		}
 	}
@@ -352,6 +376,9 @@ export async function captureShellRenderMatrix(
 	} finally {
 		await restoreMedia();
 	}
-	writeFileSync(join(artifactRoot, "metrics.json"), `${JSON.stringify({ revision, cells }, null, 2)}\n`);
+	writeFileSync(
+		join(artifactRoot, "metrics.json"),
+		`${JSON.stringify({ revision, cells }, null, 2)}\n`,
+	);
 	return { revision, artifactRoot, cells };
 }
