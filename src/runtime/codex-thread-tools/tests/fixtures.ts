@@ -30,7 +30,7 @@ export const VALID_OK_VALUES: Record<GeneralThreadToolName, unknown> = {
 	},
 	fork_thread: {
 		threadId: "thread-2",
-		state: "inspect_only",
+		state: "executable",
 		initialTurn: {
 			delivery: "not_requested",
 			turnId: null,
