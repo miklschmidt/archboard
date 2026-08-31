@@ -12,7 +12,11 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
-import { TEST_VITE_TAILWIND_ALLOCATION_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import {
+	TEST_VITE_TAILWIND_ALLOCATION_CASE_TIMEOUT_MS,
+	TEST_VITE_TAILWIND_ROOT_OBSERVATION_POLL_MS,
+	TEST_VITE_TAILWIND_ROOT_OBSERVATION_TIMEOUT_MS,
+} from "../../../src/shared/timing/timing.ts";
 import {
 	childLineReader,
 	childStdout,
@@ -52,6 +56,14 @@ async function readAllocatedRoot(child: FixtureChild): Promise<string> {
 	return line.slice("ALLOCATED ".length);
 }
 
+async function waitForExactRoot(root: string, wakeOnWatch: () => Promise<void>): Promise<void> {
+	const deadline = Date.now() + TEST_VITE_TAILWIND_ROOT_OBSERVATION_TIMEOUT_MS;
+	while (!existsSync(root)) {
+		if (Date.now() >= deadline) throw new Error(`Fixture root did not appear: ${root}`);
+		await Promise.race([Bun.sleep(TEST_VITE_TAILWIND_ROOT_OBSERVATION_POLL_MS), wakeOnWatch()]);
+	}
+}
+
 function checkoutStatus(): string {
 	return execFileSync("git", ["status", "--porcelain=v1", "--untracked-files=all"], {
 		cwd: repoRoot,
@@ -60,6 +72,30 @@ function checkoutStatus(): string {
 }
 
 describe("Vite Tailwind allocation cleanup", () => {
+	test("pre-create async disposal cleans a root created after registration", async () => {
+		const parent = mkdtempSync(join(tmpdir(), "archboard-vite-precreate-dispose-"));
+		let candidate = "";
+		try {
+			let failure: unknown;
+			try {
+				await createViteTailwindFixture(parent, repoRoot, {
+					onAllocated: (fixture) => {
+						candidate = fixture.root;
+						expect(existsSync(candidate)).toBe(false);
+						void fixture.dispose();
+					},
+				});
+			} catch (error) {
+				failure = error;
+			}
+			expect((failure as Error).message).toContain("stopped during setup");
+			expect(existsSync(candidate)).toBe(false);
+			expect(prefixedFixtureRoots(parent)).toEqual([]);
+		} finally {
+			rmSync(parent, { recursive: true, force: true });
+		}
+	});
+
 	test("retires a colliding candidate before creating the next exact root", async () => {
 		const parent = mkdtempSync(join(tmpdir(), "archboard-vite-candidate-collision-"));
 		const occupied = join(parent, "archboard-vite-tailwind-occupied");
@@ -100,40 +136,44 @@ describe("Vite Tailwind allocation cleanup", () => {
 			const before = checkoutStatus();
 			const children: FixtureChild[] = [];
 			let currentChild: FixtureChild | undefined;
-			let resolveRoot: (() => void) | undefined;
-			let watcherSignals = 0;
+			let currentRoot: string | undefined;
+			let resolveWatchWake: (() => void) | undefined;
 			const allocatedRoots: string[] = [];
-			const createdRoots = new Set<string>();
+			const observedRoots = new Set<string>();
+			let watchEvents = 0;
 			const watcher = watch(parent, (_event, filename) => {
 				const name = filename?.toString() ?? "";
 				if (!name.startsWith("archboard-vite-tailwind-")) return;
-				createdRoots.add(name);
-				if (currentChild === undefined) return;
-				const signal = children.length % 2 === 0 ? "SIGINT" : "SIGTERM";
-				watcherSignals += 1;
-				currentChild.kill(signal);
-				currentChild = undefined;
-				resolveRoot?.();
-				resolveRoot = undefined;
+				watchEvents += 1;
+				if (currentRoot === join(parent, name)) resolveWatchWake?.();
 			});
 			try {
 				await withPrimaryAndCleanup(
 					async () => {
 						for (let index = 0; index < 200; index += 1) {
-							const rootAppeared = new Promise<void>((resolve) => {
-								resolveRoot = resolve;
-							});
 							currentChild = runAllocationProbe(parent);
 							children.push(currentChild);
 							const allocatedRoot = await readAllocatedRoot(currentChild);
 							expect(dirname(allocatedRoot)).toBe(parent);
 							allocatedRoots.push(basename(allocatedRoot));
-							await rootAppeared;
-							await children.at(-1)!.exited;
+							currentRoot = allocatedRoot;
+							await waitForExactRoot(
+								allocatedRoot,
+								() =>
+									new Promise<void>((resolve) => {
+										resolveWatchWake = resolve;
+									}),
+							);
+							observedRoots.add(basename(allocatedRoot));
+							const owner = currentChild;
+							currentChild = undefined;
+							currentRoot = undefined;
+							owner.kill(index % 2 === 0 ? "SIGTERM" : "SIGINT");
+							await owner.exited;
 						}
-						expect(watcherSignals).toBe(200);
+						expect(watchEvents).toBeGreaterThan(0);
 						expect(new Set(allocatedRoots).size).toBe(200);
-						expect([...createdRoots].toSorted()).toEqual([...new Set(allocatedRoots)].toSorted());
+						expect([...observedRoots].toSorted()).toEqual([...new Set(allocatedRoots)].toSorted());
 						expect(children.map((child) => child.exitCode)).toEqual(
 							children.map((_child, index) => (index % 2 === 0 ? 143 : 130)),
 						);

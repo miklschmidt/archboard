@@ -124,31 +124,47 @@ export async function createViteTailwindFixture(
 	while (fixture === undefined) {
 		const root = nextRoot();
 		let created = false;
-		let disposing = false;
+		let retired = false;
+		let cleanupRequested = false;
+		let syncCleanupRequested = false;
+		let allocationSettled = false;
+		let resolveAllocation: (() => void) | undefined;
+		const allocationReady = new Promise<void>((resolve) => {
+			resolveAllocation = resolve;
+		});
 		let disposal: Promise<void> | undefined;
+		const removeOwnedRoot = async (): Promise<void> => {
+			if (!created) return;
+			created = false;
+			await rm(root, { recursive: true, force: true });
+		};
+		const removeOwnedRootSync = (): void => {
+			if (!created) return;
+			created = false;
+			rmSync(root, { recursive: true, force: true });
+		};
 		fixture = {
 			root,
 			projectRoot: join(root, "project"),
 			sourceRoot: join(root, "source with spaces"),
 			outputRoot: join(root, "output"),
 			assertActive: () => {
-				if (!created || disposing) throw new Error("Vite fixture owner stopped during setup.");
+				if (!created || cleanupRequested || retired)
+					throw new Error("Vite fixture owner stopped during setup.");
 			},
 			dispose: () => {
 				if (disposal !== undefined) return disposal;
-				disposing = true;
+				cleanupRequested = true;
 				disposal = (async () => {
-					if (created) await rm(root, { recursive: true, force: true });
-					created = false;
+					await allocationReady;
+					await removeOwnedRoot();
 				})();
 				return disposal;
 			},
 			disposeSync: () => {
-				disposing = true;
-				if (created) {
-					rmSync(root, { recursive: true, force: true });
-					created = false;
-				}
+				cleanupRequested = true;
+				syncCleanupRequested = true;
+				if (allocationSettled) removeOwnedRootSync();
 			},
 		};
 		lifecycle.onAllocated?.(fixture);
@@ -156,10 +172,17 @@ export async function createViteTailwindFixture(
 			mkdirSync(root);
 			created = true;
 		} catch (error) {
+			retired = true;
+			allocationSettled = true;
+			resolveAllocation?.();
 			if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
 			lifecycle.onAllocationRetired?.(fixture);
 			fixture = undefined;
+			continue;
 		}
+		allocationSettled = true;
+		resolveAllocation?.();
+		if (cleanupRequested && syncCleanupRequested) removeOwnedRootSync();
 	}
 	try {
 		const allocatedFixture = fixture;
