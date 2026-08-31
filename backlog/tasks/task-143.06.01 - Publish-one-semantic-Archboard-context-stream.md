@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 23:24'
+updated_date: '2026-08-31 00:06'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -58,4 +58,6 @@ Decision: the publisher consumes the existing settled-feed callback and exposes 
 Validation: focused publisher tests 7/7; bun run type-check; bun run lint; bun run fmt:check; bun run test:modules (1,020/1,020); bun run test:system (284/284); bun run test:repository (130/130); bun run test:serial-browser (all listed owners passed); git diff --check clean.
 
 Scope: only src/runtime/codex-semantic-context/** plus this task record. Task status, assignment, dependencies, acceptance criteria, and final summary were not changed.
+
+Independent rereview remediation at code commit 1353f79: aggregate UTF-8 admission now fits every mutable brief field with required-field minima and deterministic truncation; cursors use the typed {feedId, sequence} grammar with source-event precedence and stale prior-feed reporting; source registration/disposal are transactional and attempt all cleanup; listener fanout snapshots, continues after throws, and exposes ordered instance-scoped diagnostics. Added adversarial coverage for hostile multibyte maxima, malformed and prior-feed cursors, lifecycle rollback/cleanup, replacement bindings, reentrant fanout, unsubscribe snapshots, and recovery. Final validation: focused semantic-context lane 14/14; full modules 1,027/1,027; repository policy 130/130; system 284/284; both TypeScript projects, lint, format, and diff checks passed. Scope remains src/runtime/codex-semantic-context/** plus this task record; no UI/server paths or src-DlBR1tzg.js were changed.
 <!-- SECTION:NOTES:END -->
