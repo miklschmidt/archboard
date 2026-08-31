@@ -20,6 +20,8 @@ export { CODEX_PROTOCOL_GENERATED_CLIENT_REQUEST_EXCLUDED_METHODS } from "./gene
 export {
 	CLIENT_NOTIFICATION_METHODS,
 	CLIENT_REQUEST_METHODS,
+	CLIENT_REQUEST_METHODS_WITHOUT_PARAMS,
+	isClientRequestMethodWithoutParams,
 	RESPONSE_METHODS,
 	SERVER_NOTIFICATION_METHODS,
 	SERVER_REQUEST_METHODS,
@@ -27,6 +29,7 @@ export {
 export type {
 	ClientNotificationMethod,
 	ClientRequestMethod,
+	ClientRequestMethodWithoutParams,
 	ResponseMethod,
 	ServerNotificationMethod,
 	ServerRequestMethod,

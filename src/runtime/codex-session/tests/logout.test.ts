@@ -79,7 +79,7 @@ describe("Codex session logout readiness", () => {
 				outcome: "outcome_unknown",
 			});
 			fixture.transport.enqueueResponse("account/logout", lowerError);
-			const error = await rejected(fixture.session.accountLogout({}));
+			const error = await rejected(fixture.session.accountLogout());
 			expect(error).toBeInstanceOf(CodexSessionMutationError);
 			expect(error).toMatchObject({
 				method: "account/logout",
@@ -106,7 +106,7 @@ describe("Codex session logout readiness", () => {
 				outcome: "not_delivered",
 			});
 			fixture.transport.enqueueResponse("account/logout", lowerError);
-			const error = await rejected(fixture.session.accountLogout({}));
+			const error = await rejected(fixture.session.accountLogout());
 			expect(error).toBeInstanceOf(CodexSessionMutationError);
 			expect(error).toMatchObject({
 				method: "account/logout",
@@ -134,7 +134,7 @@ describe("Codex session logout readiness", () => {
 				loginId: fixture.identity.decoder.adoptLoginId("login-1"),
 			});
 			fixture.transport.enqueueResponse("account/logout", emptyResponse);
-			await fixture.session.accountLogout({});
+			await fixture.session.accountLogout();
 			expect(fixture.transport.requests.map(({ method }) => method)).toEqual([
 				"initialize",
 				"configRequirements/read",

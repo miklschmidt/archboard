@@ -34,6 +34,12 @@ export const CLIENT_REQUEST_METHODS = [
 	"thread/timeline/list",
 ] as const;
 
+/** Generated requests whose `params` value is exactly undefined and omitted on the wire. */
+export const CLIENT_REQUEST_METHODS_WITHOUT_PARAMS = [
+	"configRequirements/read",
+	"account/logout",
+] as const satisfies readonly ClientRequestMethod[];
+
 /** Result decoders also own the currentTime/read reverse-request response alias. */
 export const RESPONSE_METHODS = [...CLIENT_REQUEST_METHODS, "currentTime/read"] as const;
 
@@ -142,6 +148,14 @@ export const SERVER_NOTIFICATION_METHODS = [
 
 export type ResponseMethod = (typeof RESPONSE_METHODS)[number];
 export type ClientRequestMethod = (typeof CLIENT_REQUEST_METHODS)[number];
+export type ClientRequestMethodWithoutParams =
+	(typeof CLIENT_REQUEST_METHODS_WITHOUT_PARAMS)[number];
 export type ClientNotificationMethod = (typeof CLIENT_NOTIFICATION_METHODS)[number];
 export type ServerRequestMethod = (typeof SERVER_REQUEST_METHODS)[number];
 export type ServerNotificationMethod = (typeof SERVER_NOTIFICATION_METHODS)[number];
+
+export function isClientRequestMethodWithoutParams(
+	method: string,
+): method is ClientRequestMethodWithoutParams {
+	return (CLIENT_REQUEST_METHODS_WITHOUT_PARAMS as readonly string[]).includes(method);
+}
