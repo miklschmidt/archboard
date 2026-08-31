@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 23:55'
+updated_date: '2026-08-31 02:24'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -16,6 +16,9 @@ references:
 modified_files:
   - src/runtime/codex-transport
   - src/runtime/codex-transport/tests/transport.test.ts
+  - src/shared/codex-app-server-capacity
+  - src/shared/codex-workbench-identity
+  - tests/system/repository-policy/codex-app-server-capacity.test.ts
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -46,6 +49,8 @@ Delegation profile: gpt-5.6-luna, max.
 2. Implement one instance-scoped newline JSON-RPC transport with bounded writes, exact child/epoch/request and dynamic-call correlation, local settlement, inspectable late results, and deterministic shutdown.
 3. Add fake-child stream tests for every direction, response owner, malformed/duplicate/unknown frames, timeout/cancellation, late outcome_unknown results, bounded backpressure, one-write response settlement, and recovery of later frames.
 4. Run focused transport tests, complete module and repository lanes, both TypeScript projects, lint, format, diff and clean-status checks; record evidence without finalizing before independent review.
+
+5. Apply the reviewed shared Codex app-server capacity authority, then remediate strict envelope direction, duplicate-key rejection, method-specific reverse schemas, numeric wire IDs, reverse error settlement, two-lane atomic response admission, terminal detachment, deep redacted projections, and adversarial public oracles.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -54,4 +59,8 @@ Delegation profile: gpt-5.6-luna, max.
 Parallel reservation at integration HEAD 863ec41 after removing the unjustified worker/reviewer caps: TASK-143.01.06 is dependency-ready and path-disjoint from every active leaf. It is dispatched alongside all other ready leaves; only dependency and file-ownership conflicts serialize later work.
 
 Implemented the instance-scoped Codex app-server JSONL transport under src/runtime/codex-transport. It owns complete-line stdout framing, independent stderr draining, bounded writes, request and reverse-request correlation, local timeout/cancellation settlement, inspectable late results, response ownership, and deterministic shutdown. Dynamic tool result construction remains outside the transport. Validation passed: bun test --isolate src/runtime/codex-transport (7 tests), bun run test:modules (1,020 tests), bun run test:repository (130 tests), bun run type-check, bun run lint, bun run fmt:check, and git diff --check. The task remains In Progress for independent review; acceptance criteria and terminal status were not changed.
+
+Remediation committed as 3fea481 (fix(codex-transport): harden app-server wire lifecycle), following the initial implementation 103ddf8 and fixed BASE b5d5062. Centralized all non-duration limits in src/shared/codex-app-server-capacity; added strict duplicate-key JSONL decoding, typed numeric/string wire IDs, dual regular/response admission, owner-aware method-specific reverse validation, bounded late/diagnostic projections, accepted-write settlement semantics, fatal oversized-frame handling, and terminal/shutdown detachment.
+
+Current focused validation: transport contract tests 20 pass / 0 fail / 126 expect across 4 files; capacity and repository-policy tests 6 pass / 0 fail / 152 expect across 2 files; bun run type-check, bun run lint, bun run fmt:check, and git diff --check pass. Preserved broad evidence from before the parent OOM guard: bun run test:modules 1,033 pass / 0 fail / 7,173 expect across 80 files, and bun run test:repository 134 pass / 0 fail / 559 expect across 12 files. No broad lane was rerun after that guard. Task remains In Progress pending independent review; acceptance criteria and terminal status were not changed.
 <!-- SECTION:NOTES:END -->
