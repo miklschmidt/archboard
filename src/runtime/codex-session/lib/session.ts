@@ -112,36 +112,40 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 	let notificationsStopped = false;
 	let publishingNotifications = false;
 	const bufferedNotifications: TransportServerNotification[] = [];
+	const requestIdentitySerializers = {
+		threadId: (value: unknown) =>
+			identity.decoder.serializeCodexIdentity(identity.decoder.parseThreadId(value)),
+		parentThreadId: (value: unknown) =>
+			identity.decoder.serializeCodexIdentity(identity.decoder.parseThreadId(value)),
+		ancestorThreadId: (value: unknown) =>
+			identity.decoder.serializeCodexIdentity(identity.decoder.parseThreadId(value)),
+		turnId: (value: unknown) =>
+			identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value)),
+		lastTurnId: (value: unknown) =>
+			identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value)),
+		beforeTurnId: (value: unknown) =>
+			identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value)),
+		expectedTurnId: (value: unknown) =>
+			identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value)),
+		queuedSubmissionId: (value: unknown) =>
+			identity.decoder.serializeCodexIdentity(identity.decoder.parseQueuedSubmissionId(value)),
+		queuedSubmissionIds: (value: unknown) => {
+			if (!Array.isArray(value))
+				throw new TypeError("queuedSubmissionIds must be an array of issued identities.");
+			return value.map((candidate) =>
+				identity.decoder.serializeCodexIdentity(
+					identity.decoder.parseQueuedSubmissionId(candidate),
+				),
+			);
+		},
+		loginId: (value: unknown) =>
+			identity.decoder.serializeCodexIdentity(identity.decoder.parseLoginId(value)),
+		realtimeSessionId: (value: unknown) => identity.decoder.parseRealtimeSessionId(value),
+	} satisfies Record<SessionRequestIdentityField, (value: unknown) => unknown>;
 	const serializeIdentityField = (field: SessionRequestIdentityField, value: unknown): unknown => {
 		if (value === undefined || value === null) return value;
 		try {
-			switch (field) {
-				case "threadId":
-				case "parentThreadId":
-				case "ancestorThreadId":
-					return identity.decoder.serializeCodexIdentity(identity.decoder.parseThreadId(value));
-				case "turnId":
-				case "lastTurnId":
-				case "beforeTurnId":
-				case "expectedTurnId":
-					return identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value));
-				case "queuedSubmissionId":
-					return identity.decoder.serializeCodexIdentity(
-						identity.decoder.parseQueuedSubmissionId(value),
-					);
-				case "queuedSubmissionIds":
-					if (!Array.isArray(value))
-						throw new TypeError("queuedSubmissionIds must be an array of issued identities.");
-					return value.map((candidate) =>
-						identity.decoder.serializeCodexIdentity(
-							identity.decoder.parseQueuedSubmissionId(candidate),
-						),
-					);
-				case "loginId":
-					return identity.decoder.serializeCodexIdentity(identity.decoder.parseLoginId(value));
-				case "realtimeSessionId":
-					return identity.decoder.parseRealtimeSessionId(value);
-			}
+			return requestIdentitySerializers[field](value);
 		} catch (error) {
 			throw new CodexSessionError(
 				"invalid_identity",

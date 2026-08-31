@@ -146,6 +146,7 @@ function hasSpawnSource(value: SessionThread["source"]): value is SessionSpawnTh
 	return (
 		typeof value === "object" &&
 		value !== null &&
+		"subAgent" in value &&
 		typeof value.subAgent === "object" &&
 		value.subAgent !== null &&
 		"thread_spawn" in value.subAgent &&

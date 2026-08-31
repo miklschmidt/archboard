@@ -16,6 +16,7 @@ import type {
 	SessionRequestIdentityField,
 	SessionSubAgentActivityItem,
 	SessionThread,
+	SessionThreadItem,
 	SessionThreadSpawnSource,
 	SessionTurn,
 } from "../index.js";
@@ -58,6 +59,42 @@ type RawAgentMessage = Extract<RawThreadItem, { readonly type: "agentMessage" }>
 type RawCollabAgent = Extract<RawThreadItem, { readonly type: "collabAgentToolCall" }>;
 type RawQueuedSubmission = ResponsePayloads["thread/queue/add"]["queuedSubmission"];
 
+declare const brandedTurn: SessionTurn;
+declare const brandedItem: SessionThreadItem;
+declare const rawTurn: RawTurn;
+declare const rawItem: RawThreadItem;
+declare const rawThreadId: string;
+declare const threadResult: ThreadStart;
+declare const turnResult: SessionTurn;
+declare const threadPage: Result<"threadListPage">;
+declare const citation: NonNullable<SessionAgentMessageItem["memoryCitation"]>;
+declare const collabItem: SessionCollabAgentItem;
+
+declare function acceptSessionTurns(value: SessionThread["turns"]): void;
+declare function acceptSessionItems(value: SessionTurn["items"]): void;
+declare function acceptSessionThreadIds(value: typeof citation.threadIds): void;
+
+acceptSessionTurns([brandedTurn]);
+acceptSessionItems([brandedItem]);
+acceptSessionThreadIds([threadId]);
+void collabItem.agentsStates[threadId];
+// @ts-expect-error A raw turn has no branded TurnId or ItemIds.
+acceptSessionTurns([rawTurn]);
+// @ts-expect-error A raw item has no branded ItemId.
+acceptSessionItems([rawItem]);
+// @ts-expect-error Session thread identity arrays reject raw strings.
+acceptSessionThreadIds([rawThreadId]);
+// @ts-expect-error Session thread turns are readonly.
+threadResult.thread.turns.push(brandedTurn);
+// @ts-expect-error Session turn items are readonly.
+turnResult.items.push(brandedItem);
+// @ts-expect-error Session page data is readonly.
+threadPage.data.push(threadResult.thread);
+// @ts-expect-error Session citation threadIds are readonly.
+citation.threadIds.push(threadId);
+// @ts-expect-error Agent state maps require a branded ThreadId key.
+void collabItem.agentsStates[rawThreadId];
+
 declare function acceptExactRequestIdentities<
 	Method extends ResponseMethod,
 	Value extends readonly SessionRequestIdentityField[],
@@ -92,20 +129,15 @@ export type SessionResponseIdentityFixture = [
 ];
 
 export type SessionResponseShapeFixture = [
+	Assert<Equal<SessionThread["preview"], RawThread["preview"]>>,
+	Assert<Equal<SessionTurn["status"], RawTurn["status"]>>,
+	Assert<Equal<SessionAgentMessageItem["text"], RawAgentMessage["text"]>>,
 	Assert<
 		Equal<
-			Omit<SessionThread, "id" | "forkedFromId" | "parentThreadId" | "source" | "turns">,
-			Omit<RawThread, "id" | "forkedFromId" | "parentThreadId" | "source" | "turns">
+			SessionQueuedSubmission["clientUserMessageId"],
+			RawQueuedSubmission["clientUserMessageId"]
 		>
 	>,
-	Assert<Equal<Omit<SessionTurn, "id" | "items">, Omit<RawTurn, "id" | "items">>>,
-	Assert<
-		Equal<
-			Omit<SessionAgentMessageItem, "id" | "memoryCitation">,
-			Omit<RawAgentMessage, "id" | "memoryCitation">
-		>
-	>,
-	Assert<Equal<Omit<SessionQueuedSubmission, "id">, Omit<RawQueuedSubmission, "id">>>,
 ];
 
 export type SessionPageParameterFixture = [
