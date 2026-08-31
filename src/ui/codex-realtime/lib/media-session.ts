@@ -1,6 +1,7 @@
 import {
 	INITIAL_REALTIME_STATE,
 	transitionRealtimeState,
+	type AnswerSdp,
 	type RealtimeCorrelation,
 	type RealtimeHost,
 	type RealtimeRecoverableErrorReason,
@@ -248,6 +249,7 @@ async function cleanupRun(run: Run): Promise<void> {
 export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSession {
 	let snapshot = frozenSnapshot(null, INITIAL_REALTIME_STATE, 0);
 	let current: Run | null = null;
+	let inFlightStart: Run | null = null;
 	let latestRun: Run | null = null;
 	let publicOutcomeOwner: Run | null = null;
 	let disposed = false;
@@ -413,6 +415,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 
 	const attachRemote = (run: Run): void => {
 		const receivers = run.peer?.getReceivers() ?? [];
+		if (inactive(run)) return;
 		run.remoteStream = new MediaStream(receivers.map((receiver) => receiver.track));
 		if (inactive(run)) return;
 		host.attachRemoteMedia({
@@ -453,9 +456,13 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		if (inactive(run)) return;
 		run.audioContext = new AudioContext();
 		if (inactive(run)) return;
-		if (run.audioContext.state === "suspended") await run.audioContext.resume();
+		const initialContextState = run.audioContext.state;
 		if (inactive(run)) return;
-		if (run.audioContext.state === "suspended") {
+		if (initialContextState === "suspended") await run.audioContext.resume();
+		if (inactive(run)) return;
+		const resumedContextState = run.audioContext.state;
+		if (inactive(run)) return;
+		if (resumedContextState === "suspended") {
 			throw new DOMException("Audio playback remains suspended.", "NotAllowedError");
 		}
 		run.audioSource = run.audioContext.createMediaStreamSource(run.localStream);
@@ -464,7 +471,9 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		if (inactive(run)) return;
 		run.audioSource.connect(run.analyser);
 		if (inactive(run)) return;
-		const samples = new Uint8Array(run.analyser.fftSize);
+		const fftSize = run.analyser.fftSize;
+		if (inactive(run)) return;
+		const samples = new Uint8Array(fftSize);
 		const tick = (): void => {
 			run.animationFrame = undefined;
 			if (!run.analyser || run.cancelledNow || run.failed || current !== run) return;
@@ -481,12 +490,59 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		run.animationFrame = globalThis.requestAnimationFrame(tick);
 	};
 
+	const installRunListeners = (
+		run: Run,
+		mediaDevices: MediaDevices,
+		localTrack: MediaStreamTrack,
+	): boolean => {
+		const deviceLost = (): void => {
+			run.deviceLost = true;
+			if (run.state.phase !== "negotiating")
+				void fail(run, "device_lost", "The microphone was removed.");
+		};
+		listen(run, localTrack, "ended", deviceLost);
+		if (inactive(run)) return false;
+		listen(run, mediaDevices, "devicechange", () => {
+			if (localTrack.readyState === "ended") deviceLost();
+		});
+		if (inactive(run)) return false;
+		listen(run, run.peer!, "iceconnectionstatechange", () => {
+			if (
+				run.peer?.iceConnectionState === "disconnected" ||
+				run.peer?.iceConnectionState === "failed"
+			)
+				void fail(run, "ice_disconnected", "The realtime audio connection was lost.");
+		});
+		if (inactive(run)) return false;
+		listen(
+			run,
+			run.channel!,
+			"close",
+			() => void fail(run, "data_channel_closed", "The realtime events channel closed."),
+		);
+		return !inactive(run);
+	};
+
+	const readAnswer = (run: Run, answer: AnswerSdp): AnswerSdp | null => {
+		const sessionId = answer.sessionId;
+		if (inactive(run)) return null;
+		const correlationId = answer.correlationId;
+		if (inactive(run)) return null;
+		const sdp = answer.sdp;
+		if (inactive(run)) return null;
+		return { sessionId, correlationId, sdp };
+	};
+
 	const startRun = async (run: Run): Promise<RealtimeMediaSnapshot> => {
 		if (disposed) throw new Error("The realtime media session is disposed.");
 		if (current && current.state.phase !== "closed") {
 			const previous = current;
 			publicOutcomeOwner = previous;
 			if (!isStopFailure(previous)) await stopRun(previous, false);
+			if (run.cancelledNow || disposed) {
+				settleDormantRun(run);
+				return run.snapshot;
+			}
 			if ((previous.state as RealtimeState).phase !== "closed") {
 				adoptRun(previous);
 				throw restartRefusal(run, previous);
@@ -501,6 +557,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		if (inactive(run)) return settleCancelledRun(run);
 
 		const mediaDevices = globalThis.navigator?.mediaDevices;
+		if (inactive(run)) return settleCancelledRun(run);
 		if (!mediaDevices?.getUserMedia) {
 			await fail(run, "device_unavailable", "This browser cannot request a microphone.");
 			return run.snapshot;
@@ -534,6 +591,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		run.localStream = stream;
 		run.startDeadline = monotonicNow() + CODEX_REALTIME_START_MS;
 		const localTrack = stream.getAudioTracks()[0];
+		if (inactive(run)) return settleCancelledRun(run);
 		if (!localTrack) {
 			await fail(run, "device_unavailable", "No audio track was captured.");
 			return run.snapshot;
@@ -559,28 +617,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			run.channel = run.peer.createDataChannel("realtime-events");
 			if (inactive(run)) return settleCancelledRun(run);
 
-			const deviceLost = (): void => {
-				run.deviceLost = true;
-				if (run.state.phase !== "negotiating")
-					void fail(run, "device_lost", "The microphone was removed.");
-			};
-			listen(run, localTrack, "ended", deviceLost);
-			listen(run, mediaDevices, "devicechange", () => {
-				if (localTrack.readyState === "ended") deviceLost();
-			});
-			listen(run, run.peer, "iceconnectionstatechange", () => {
-				if (
-					run.peer?.iceConnectionState === "disconnected" ||
-					run.peer?.iceConnectionState === "failed"
-				)
-					void fail(run, "ice_disconnected", "The realtime audio connection was lost.");
-			});
-			listen(
-				run,
-				run.channel,
-				"close",
-				() => void fail(run, "data_channel_closed", "The realtime events channel closed."),
-			);
+			if (!installRunListeners(run, mediaDevices, localTrack)) return settleCancelledRun(run);
 
 			const offer = await withinStartDeadline(run, () => run.peer!.createOffer());
 			if (offer === CANCELLED) return settleCancelledRun(run);
@@ -591,17 +628,21 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			publish(run, { phase: "negotiating", reason: "offer_created" });
 			if (inactive(run)) return settleCancelledRun(run);
 			run.offerSent = true;
+			const offerSdp = run.peer.localDescription?.sdp ?? offer.sdp ?? "";
+			if (inactive(run)) return settleCancelledRun(run);
 			const answer = await withinStartDeadline(run, () =>
 				host.createOffer({
 					...run.correlation,
-					sdp: run.peer!.localDescription?.sdp ?? offer.sdp ?? "",
+					sdp: offerSdp,
 				}),
 			);
 			if (answer === CANCELLED) return settleCancelledRun(run);
 			if (answer === TIMED_OUT) throw new Error("The realtime answer timed out.");
+			const verifiedAnswer = readAnswer(run, answer);
+			if (!verifiedAnswer) return settleCancelledRun(run);
 			if (
-				answer.sessionId !== run.correlation.sessionId ||
-				answer.correlationId !== run.correlation.correlationId
+				verifiedAnswer.sessionId !== run.correlation.sessionId ||
+				verifiedAnswer.correlationId !== run.correlation.correlationId
 			) {
 				await terminal(run, "protocol_error", "The realtime answer did not match its offer.");
 				return run.snapshot;
@@ -609,7 +650,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			publish(run, { phase: "negotiating", reason: "answer_received" });
 			if (inactive(run)) return settleCancelledRun(run);
 			const remoteSet = await withinStartDeadline(run, () =>
-				run.peer!.setRemoteDescription({ type: "answer", sdp: answer.sdp }),
+				run.peer!.setRemoteDescription({ type: "answer", sdp: verifiedAnswer.sdp }),
 			);
 			if (remoteSet === CANCELLED) return settleCancelledRun(run);
 			if (remoteSet === TIMED_OUT) throw new Error("Setting the realtime answer timed out.");
@@ -654,7 +695,12 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 				settleDormantRun(run);
 				return run.snapshot;
 			}
-			return startRun(run);
+			inFlightStart = run;
+			try {
+				return await startRun(run);
+			} finally {
+				if (inFlightStart === run) inFlightStart = null;
+			}
 		});
 	};
 	const stop = (): Promise<RealtimeMediaSnapshot> => {
@@ -662,6 +708,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		const owner = active ?? publicOutcomeOwner ?? latestRun;
 		if (owner) publicOutcomeOwner = owner;
 		for (const run of pendingRuns) cancelRun(run);
+		if (inFlightStart && inFlightStart !== current) cancelRun(inFlightStart);
 		if (current) cancelRun(current);
 		return enqueue(async () => {
 			if (active && active.state.phase !== "closed" && !isStopFailure(active))
@@ -677,6 +724,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		if (owner) publicOutcomeOwner = owner;
 		disposed = true;
 		for (const run of pendingRuns) cancelRun(run);
+		if (inFlightStart && inFlightStart !== current) cancelRun(inFlightStart);
 		if (current) cancelRun(current);
 		disposalPromise = enqueue(async () => {
 			if (active && active.state.phase !== "closed" && !isStopFailure(active))
