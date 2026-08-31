@@ -18,12 +18,16 @@ import {
 	copyReadOnlyDependencyView,
 	dependencySnapshot,
 	fileSnapshot,
+	installLiveOxfmtEntrypoint,
+	readOwnerState,
 	reapProcessGroup,
+	restoreAndRemoveScenarioRoot,
 	type CommandRecord,
 	type DependencyRecord,
 	type OwnerResult,
 } from "./support/oxfmt-tailwind-owner.ts";
 import {
+	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
 	TEST_CANVAS_HEALTH_POLL_MS,
 	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
 	TEST_CANVAS_STARTUP_TIMEOUT_MS,
@@ -178,6 +182,10 @@ function resultFile(container: string): string {
 	return join(container, "owner-result.json");
 }
 
+function stateFile(container: string): string {
+	return join(container, "owner-state.json");
+}
+
 function launchOwner(
 	root: string,
 	container: string,
@@ -186,8 +194,10 @@ function launchOwner(
 		cleanupPaths?: readonly string[];
 		holdPhase?: "check" | "fmt";
 		holdMarker?: string;
+		formatterGroupFile?: string;
 	} = {},
 ): Bun.Subprocess {
+	writeFileSync(stateFile(container), JSON.stringify({ root, formatterGroups: [] }));
 	return Bun.spawn({
 		cmd: [process.execPath, ownerScript],
 		detached: true,
@@ -195,6 +205,7 @@ function launchOwner(
 			...process.env,
 			ARCHBOARD_OXFMT_OWNER_ROOT: root,
 			ARCHBOARD_OXFMT_OWNER_RESULT: resultFile(container),
+			ARCHBOARD_OXFMT_OWNER_STATE: stateFile(container),
 			...(options.cleanupPaths || options.activePidFile
 				? {
 						ARCHBOARD_OXFMT_OWNER_CLEANUP_PATHS: JSON.stringify(
@@ -205,6 +216,9 @@ function launchOwner(
 			...(options.activePidFile ? { ARCHBOARD_OXFMT_OWNER_ACTIVE_PID: options.activePidFile } : {}),
 			...(options.holdPhase ? { ARCHBOARD_OXFMT_OWNER_HOLD_PHASE: options.holdPhase } : {}),
 			...(options.holdMarker ? { ARCHBOARD_OXFMT_OWNER_HOLD_MARKER: options.holdMarker } : {}),
+			...(options.formatterGroupFile
+				? { ARCHBOARD_OXFMT_OWNER_FORMATTER_GROUP_FILE: options.formatterGroupFile }
+				: {}),
 		},
 		stdout: "pipe",
 		stderr: "pipe",
@@ -220,18 +234,57 @@ async function waitForFile(file: string, child: Bun.Subprocess): Promise<void> {
 	}
 }
 
-async function waitForExit(child: Bun.Subprocess): Promise<number> {
-	const deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+async function waitForExit(
+	child: Bun.Subprocess,
+	timeoutMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+): Promise<number> {
+	const deadline = Date.now() + timeoutMs;
 	while (child.exitCode === null && Date.now() < deadline)
 		await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
 	if (child.exitCode === null) throw new Error(`Owner ${child.pid} exceeded bounded exit wait.`);
 	return await child.exited;
 }
 
-async function stopOwner(child: Bun.Subprocess): Promise<void> {
-	if (child.exitCode === null) child.kill("SIGKILL");
-	await child.exited;
-	await reapProcessGroup(child.pid);
+async function ownerExitedWithin(child: Bun.Subprocess): Promise<boolean> {
+	return Promise.race([
+		child.exited.then(() => true),
+		Bun.sleep(TEST_CANVAS_SHUTDOWN_TIMEOUT_MS).then(() => false),
+	]);
+}
+
+async function stopOwner(
+	child: Bun.Subprocess,
+	root: string,
+	container: string,
+): Promise<{ ownerTimedOut: boolean; formatterGroups: number[] }> {
+	let ownerTimedOut = false;
+	if (child.exitCode === null) {
+		child.kill("SIGCONT");
+		child.kill("SIGTERM");
+		ownerTimedOut = !(await ownerExitedWithin(child));
+	}
+	const state = existsSync(stateFile(container))
+		? readOwnerState(stateFile(container))
+		: { root, formatterGroups: [] };
+	const failures: unknown[] = [];
+	for (const group of state.formatterGroups) {
+		try {
+			await reapProcessGroup(group);
+		} catch (error) {
+			failures.push(error);
+		}
+	}
+	try {
+		if (existsSync(root)) restoreAndRemoveScenarioRoot(root);
+	} catch (error) {
+		failures.push(error);
+	}
+	if (child.exitCode === null) {
+		child.kill("SIGKILL");
+		await child.exited;
+	}
+	if (failures.length > 0) throw new AggregateError(failures, "Owner fallback cleanup failed");
+	return { ownerTimedOut, formatterGroups: state.formatterGroups };
 }
 
 function readOwnerResult(container: string): OwnerResult {
@@ -295,7 +348,7 @@ test("checks native Tailwind formatting through a bounded owner", async () => {
 		try {
 			expect(await waitForExit(owner)).toBe(0);
 		} finally {
-			if (owner.exitCode === null) await stopOwner(owner);
+			if (owner.exitCode === null) await stopOwner(owner, root, container);
 		}
 		const result = readOwnerResult(container);
 		expect(result.error).toBeUndefined();
@@ -337,7 +390,7 @@ for (const script of ["fmt", "fmt:check"] as const) {
 			try {
 				expect(await waitForExit(owner)).toBe(1);
 			} finally {
-				if (owner.exitCode === null) await stopOwner(owner);
+				if (owner.exitCode === null) await stopOwner(owner, root, container);
 			}
 			const result = readOwnerResult(container);
 			expect(result.error).toContain(`Refusing to execute fixture script ${script}`);
@@ -347,6 +400,44 @@ for (const script of ["fmt", "fmt:check"] as const) {
 		expect(authoredGitState()).toBe(beforeCheckout);
 	});
 }
+
+test("parent fallback preserves timeout and cleanup evidence for a live copied entrypoint", async () => {
+	const beforeCheckout = authoredGitState();
+	let containerPath = "";
+	await withContainer(async (container) => {
+		containerPath = container;
+		const root = createFixture(container);
+		const groupFile = join(container, "hostile-formatter-group");
+		installLiveOxfmtEntrypoint(root, groupFile);
+		const owner = launchOwner(root, container, { formatterGroupFile: groupFile });
+		let primary: unknown;
+		try {
+			await waitForFile(groupFile, owner);
+			await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS * 2);
+			const observed = readOwnerState(stateFile(container));
+			expect(observed.root).toBe(root);
+			expect(observed.formatterGroups.length).toBeGreaterThan(1);
+			const hostileGroup = Number(JSON.parse(readFileSync(groupFile, "utf8")).group);
+			expect(observed.formatterGroups).toContain(hostileGroup);
+			try {
+				await waitForExit(owner, TEST_CANVAS_SHUTDOWN_TIMEOUT_MS);
+			} catch (error) {
+				primary = error;
+			}
+			expect(primary).toBeInstanceOf(Error);
+			expect((primary as Error).message).toContain("exceeded bounded exit wait");
+			const cleanup = await stopOwner(owner, root, container);
+			expect(cleanup.ownerTimedOut).toBeTrue();
+			expect(cleanup.formatterGroups).toContain(hostileGroup);
+			await expectProcessGroupGone(hostileGroup);
+			expect(existsSync(root)).toBeFalse();
+		} finally {
+			if (owner.exitCode === null) await stopOwner(owner, root, container);
+		}
+	});
+	expect(existsSync(containerPath)).toBeFalse();
+	expect(authoredGitState()).toBe(beforeCheckout);
+});
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
 	for (const phase of ["check", "fmt"] as const) {
@@ -378,7 +469,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 					expect(existsSync(activePidFile)).toBeFalse();
 					await expectProcessGroupGone(activePid);
 				} finally {
-					if (ownerExit === undefined) await stopOwner(owner);
+					if (ownerExit === undefined) await stopOwner(owner, root, container);
 				}
 				expect(beforeDependencies.length).toBeGreaterThan(0);
 			});
