@@ -7,10 +7,12 @@ export {
 export type {
 	AnyIdentity,
 	ApprovalId,
+	AdoptedCodexResponseIdentityBatch,
 	BrowserCommandId,
 	ChildEpoch,
 	ChildId,
 	CodexIdentity,
+	CodexResponseIdentityBatch,
 	DynamicToolCallId,
 	IdentityAuthority,
 	IdentityDomain,

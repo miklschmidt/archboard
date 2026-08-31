@@ -15,7 +15,7 @@ import {
 	type ResponseMethod,
 	type ResponsePayloads,
 } from "../../codex-protocol/index.js";
-import type { CodexTransport } from "../../codex-transport/index.js";
+import type { CodexTransport, CodexTransportResponse } from "../../codex-transport/index.js";
 import type {
 	TransportServerRequest,
 	TransportServerNotification,
@@ -29,6 +29,12 @@ import {
 	type SessionServerRequest,
 	type SessionMutationOutcome,
 } from "./contract.js";
+import {
+	adoptSessionResponse,
+	SESSION_PROTOCOL_METHODS,
+	type SessionRequestIdentityField,
+	type SessionResponsePayloads,
+} from "./results.js";
 import { proveCodexStorage } from "./storage-proof.js";
 
 const CLIENT_INFO = Object.freeze({
@@ -42,18 +48,6 @@ const MUTATION_OPTIONS = Object.freeze({ idempotent: false, retryEligible: false
 const INVALID_PARAMS_CODE = -32602;
 
 type OutboundMethod = Extract<ClientRequestMethod, ResponseMethod>;
-type IdentityField =
-	| "threadId"
-	| "parentThreadId"
-	| "ancestorThreadId"
-	| "turnId"
-	| "lastTurnId"
-	| "beforeTurnId"
-	| "expectedTurnId"
-	| "queuedSubmissionId"
-	| "queuedSubmissionIds"
-	| "loginId"
-	| "realtimeSessionId";
 
 type SessionPhase =
 	| "transport-connected"
@@ -118,33 +112,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 	let notificationsStopped = false;
 	let publishingNotifications = false;
 	const bufferedNotifications: TransportServerNotification[] = [];
-	const identityFields: Partial<Record<OutboundMethod, readonly IdentityField[]>> = {
-		"account/login/cancel": ["loginId"],
-		"thread/fork": ["threadId", "lastTurnId", "beforeTurnId"],
-		"thread/list": ["parentThreadId", "ancestorThreadId"],
-		"thread/read": ["threadId"],
-		"thread/turns/list": ["threadId"],
-		"thread/items/list": ["threadId", "turnId"],
-		"thread/delete": ["threadId"],
-		"thread/settings/update": ["threadId"],
-		"turn/start": ["threadId"],
-		"turn/steer": ["threadId", "expectedTurnId"],
-		"turn/interrupt": ["threadId", "turnId"],
-		"thread/queue/add": ["threadId"],
-		"thread/queue/list": ["threadId"],
-		"thread/queue/update": ["threadId", "queuedSubmissionId"],
-		"thread/queue/delete": ["threadId", "queuedSubmissionId"],
-		"thread/queue/reorder": ["threadId", "queuedSubmissionIds"],
-		"thread/queue/start": ["threadId", "queuedSubmissionId"],
-		"thread/inject_items": ["threadId"],
-		"thread/realtime/start": ["threadId", "realtimeSessionId"],
-		"thread/realtime/appendText": ["threadId"],
-		"thread/realtime/appendSpeech": ["threadId"],
-		"thread/realtime/stop": ["threadId"],
-		"thread/timeline/list": ["threadId"],
-	};
-
-	const serializeIdentityField = (field: IdentityField, value: unknown): unknown => {
+	const serializeIdentityField = (field: SessionRequestIdentityField, value: unknown): unknown => {
 		if (value === undefined || value === null) return value;
 		try {
 			switch (field) {
@@ -189,8 +157,8 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 	): ClientRequestParams<Method> => {
 		if (isClientRequestMethodWithoutParams(method)) return value as ClientRequestParams<Method>;
 		const params = requestParams(value);
-		const fields = identityFields[method];
-		if (!fields) return params as ClientRequestParams<Method>;
+		const fields = SESSION_PROTOCOL_METHODS[method].requestIdentities;
+		if (fields.length === 0) return params as ClientRequestParams<Method>;
 		const serialized = { ...params };
 		for (const field of fields) serialized[field] = serializeIdentityField(field, params[field]);
 		return serialized as ClientRequestParams<Method>;
@@ -252,7 +220,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		params: unknown,
 		requestOptions: typeof READ_OPTIONS | typeof MUTATION_OPTIONS | typeof INITIALIZE_OPTIONS,
 		mutation: boolean,
-	): Promise<ResponsePayloads[Method]> => {
+	): Promise<SessionResponsePayloads[Method]> => {
 		let decodedParams: ClientRequestParams<Method>;
 		try {
 			decodedParams = decodeClientRequestParams(method, serializeRequestParams(method, params));
@@ -266,7 +234,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 				);
 			throw error;
 		}
-		let response: { readonly result: unknown };
+		let response: CodexTransportResponse<Method>;
 		try {
 			response = await transport.request(method, decodedParams, requestOptions);
 		} catch (error) {
@@ -274,10 +242,45 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 			throw error;
 		}
 		try {
-			return decodeResponse(method, response.result) as ResponsePayloads[Method];
+			identity.validator.assertCurrentEpoch(response.correlation.child, response.correlation.epoch);
+		} catch (error) {
+			const failure = new CodexSessionError(
+				"invalid_identity",
+				`Codex response ${method} is not from the current child epoch.`,
+				error,
+			);
+			if (mutation)
+				throw new CodexSessionMutationError(
+					method,
+					"outcome_unknown",
+					`Codex mutation ${method} returned with an invalid child correlation.`,
+					failure,
+				);
+			throw failure;
+		}
+		let decoded: ResponsePayloads[Method];
+		try {
+			decoded = decodeResponse(method, response.result) as ResponsePayloads[Method];
 		} catch (error) {
 			if (mutation) throw mutationFailure(method, error);
 			throw error;
+		}
+		try {
+			return adoptSessionResponse(method, decoded, identity.decoder);
+		} catch (error) {
+			const failure = new CodexSessionError(
+				"invalid_identity",
+				`Codex response ${method} contains an invalid server identity.`,
+				error,
+			);
+			if (mutation)
+				throw new CodexSessionMutationError(
+					method,
+					"outcome_unknown",
+					`Codex mutation ${method} returned identities that could not be trusted.`,
+					failure,
+				);
+			throw failure;
 		}
 	};
 
@@ -285,7 +288,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		method: Method,
 		params: unknown,
 		gate: SessionGate,
-	): Promise<ResponsePayloads[Method]> => {
+	): Promise<SessionResponsePayloads[Method]> => {
 		requireGate(gate);
 		return requestDecoded(method, params, READ_OPTIONS, false);
 	};
@@ -295,7 +298,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		params: unknown,
 		gate: SessionGate | undefined,
 		prepare: (value: unknown) => unknown = (value) => value,
-	): Promise<ResponsePayloads[Method]> => {
+	): Promise<SessionResponsePayloads[Method]> => {
 		try {
 			if (gate !== undefined) requireGate(gate);
 			return await requestDecoded(method, prepare(params), MUTATION_OPTIONS, true);
@@ -423,7 +426,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 	transport.onServerNotification(onNotification);
 	transport.onServerRequest(onServerRequest);
 
-	const initialize = async (): Promise<ResponsePayloads["initialize"]> => {
+	const initialize = async (): Promise<SessionResponsePayloads["initialize"]> => {
 		if (phase !== "transport-connected")
 			throw new CodexSessionError(
 				"already_initialized",

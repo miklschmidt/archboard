@@ -5,6 +5,7 @@ import path from "node:path";
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
+	type WireRequestCorrelation,
 } from "../../../shared/codex-workbench-identity/index.js";
 import { createCodexSession, type CodexSession, type CodexSessionStorage } from "../index.js";
 import type { ResponseMethod, ResponsePayloads } from "../../codex-protocol/index.js";
@@ -54,6 +55,7 @@ export class FakeTransport implements CodexTransport {
 	private requestListener: ((request: TransportServerRequest) => void) | undefined;
 	beforeRequest: ((method: ResponseMethod, params: unknown) => void) | undefined;
 	beforeNotificationWrite: ((method: "initialized") => void) | undefined;
+	nextResponseCorrelation: WireRequestCorrelation | undefined;
 
 	constructor(identity: IdentityAuthority) {
 		this.identity = identity;
@@ -89,9 +91,13 @@ export class FakeTransport implements CodexTransport {
 		if (value === undefined) throw new Error(`no fake response for ${method}`);
 		if (value instanceof Error) throw value;
 		const requestId = this.identity.issuer.mintJsonRpcRequestId();
+		const correlation =
+			this.nextResponseCorrelation ??
+			this.identity.decoder.createWireRequestCorrelation({ requestId });
+		this.nextResponseCorrelation = undefined;
 		return {
 			method,
-			correlation: this.identity.decoder.createWireRequestCorrelation({ requestId }),
+			correlation,
 			result: value as ResponsePayloads[Method],
 		};
 	}
