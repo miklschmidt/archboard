@@ -2,6 +2,7 @@ import {
 	assertCreatedWorkhorse,
 	activeTurnFromClassification,
 	freeze,
+	isCreatedWorkhorse,
 	messageOf,
 	operationError,
 	queueIds,
@@ -52,9 +53,10 @@ export function createInspect(
 	return (request) =>
 		runtime.enqueue(async () => {
 			const binding = runtime.currentBinding();
-			await runtime.classify(binding, request.call, "inspect_workhorse");
-			const result = await runtime.options.queue.list();
-			runtime.assertCurrentBinding(binding);
+			const initial = await runtime.classify(binding, request.call, "inspect_workhorse");
+			const result = isCreatedWorkhorse(initial.workhorse)
+				? await runtime.options.queue.list()
+				: { operation: "list" as const, queue: [] };
 			const final = await runtime.classify(binding, request.call, "inspect_workhorse");
 			const currentTurnId = activeTurnId(runtime, binding.workhorse.threadId, final.workhorse);
 			return freeze({
@@ -87,38 +89,52 @@ async function mutateQueue(
 		workhorse: validated.workhorse,
 		clientUserMessageId: request.operation === "add" ? operationIdWire : null,
 	});
+	if ("submissionId" in request) state.queuedSubmissionId = request.submissionId;
 	let result;
 	let effectStarted = false;
 	try {
-		runtime.assertCurrentBinding(binding);
+		const staged = await runtime.classify(binding, request.call, "manage_workhorse_queue");
+		assertCreatedWorkhorse(staged.workhorse);
+		const beforeEffect = async (): Promise<void> => {
+			const current = await runtime.classify(binding, request.call, "manage_workhorse_queue");
+			assertCreatedWorkhorse(current.workhorse);
+		};
 		effectStarted = true;
 		switch (request.operation) {
 			case "add":
-				result = await runtime.options.queue.add({ operationId, prompt: request.prompt });
+				result = await runtime.options.queue.add({
+					operationId,
+					prompt: request.prompt,
+					beforeEffect,
+				});
 				break;
 			case "update":
 				result = await runtime.options.queue.update({
 					operationId,
 					submissionId: request.submissionId,
 					prompt: request.prompt,
+					beforeEffect,
 				});
 				break;
 			case "delete":
 				result = await runtime.options.queue.delete({
 					operationId,
 					submissionId: request.submissionId,
+					beforeEffect,
 				});
 				break;
 			case "reorder":
 				result = await runtime.options.queue.reorder({
 					operationId,
 					orderedSubmissionIds: request.orderedSubmissionIds,
+					beforeEffect,
 				});
 				break;
 			case "start":
 				result = await runtime.options.queue.start({
 					operationId,
 					submissionId: request.submissionId,
+					beforeEffect,
 				});
 				break;
 		}
@@ -144,24 +160,37 @@ async function mutateQueue(
 		);
 		if (matches.length === 1) state.queuedSubmissionId = matches[0]!.id;
 	}
+	if (request.operation === "start" && "turnId" in result && result.turnId !== null)
+		state.turnId = result.turnId;
 	const hasExactQueueIdentity = state.queuedSubmissionId !== null;
 	const requestedOutcome =
-		request.operation === "add" &&
-		(result.outcome === "delivered" || result.outcome === "outcome_unknown") &&
-		hasExactQueueIdentity
+		request.operation === "start" && "turnId" in result && result.turnId !== null
 			? "delivered"
-			: request.operation === "add" && result.outcome === "delivered" && !hasExactQueueIdentity
+			: request.operation === "start" && result.outcome === "delivered"
 				? "outcome_unknown"
-				: result.outcome;
+				: request.operation === "add" &&
+					  (result.outcome === "delivered" || result.outcome === "outcome_unknown") &&
+					  hasExactQueueIdentity
+					? "delivered"
+					: request.operation === "add" && result.outcome === "delivered" && !hasExactQueueIdentity
+						? "outcome_unknown"
+						: result.outcome;
 	const outcome = runtime.settleDurable(state, requestedOutcome, null);
 	const ids = queueIds(result.queue);
 	if (outcome === "delivered") {
 		if (request.operation === "add") {
-			runtime.clear(state);
-			runtime.emit(state, "queued", outcome, result.queue);
+			if (!state.queuedEmitted) {
+				state.queuedEmitted = true;
+				runtime.emit(state, "queued", outcome, result.queue);
+			}
 		} else if (request.operation === "start") {
-			runtime.clear(state);
-			runtime.emit(state, "started", outcome, result.queue);
+			if (state.turnId === null)
+				throw operationError(
+					"outcome_unknown",
+					"Queue start returned no authoritative turn identity.",
+					{ operation: "manage_workhorse_queue", outcome, operationId },
+				);
+			runtime.correlateTurn(state, state.turnId, result.queue);
 		} else runtime.terminal(state, "completed", result.queue, null);
 	} else if (outcome === "not_delivered")
 		runtime.terminal(state, "failed", result.queue, "The queue operation was not delivered.");
