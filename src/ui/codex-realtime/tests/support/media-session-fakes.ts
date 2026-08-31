@@ -135,7 +135,7 @@ export class FakePeer extends TrackedTarget {
 	readonly channel = new FakeChannel();
 	readonly remoteTrack = new FakeTrack();
 	readonly senders: FakeSender[] = [];
-	localDescription: RTCSessionDescription | null = null;
+	private storedLocalDescription: RTCSessionDescription | null = null;
 	connectionState: RTCPeerConnectionState = "new";
 	iceConnectionState: RTCIceConnectionState = "new";
 	closeCount = 0;
@@ -148,6 +148,13 @@ export class FakePeer extends TrackedTarget {
 		this.channel.onListenerAdded = () => {
 			if (env.onStep) env.record("channelListener");
 		};
+	}
+	get localDescription(): RTCSessionDescription | null {
+		if (this.env.onStep) this.env.record("localDescription");
+		return this.storedLocalDescription;
+	}
+	set localDescription(description: RTCSessionDescription | null) {
+		this.storedLocalDescription = description;
 	}
 	addTransceiver(track: MediaStreamTrack): RTCRtpTransceiver {
 		this.env.record("transceiver");
