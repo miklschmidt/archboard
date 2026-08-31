@@ -1,11 +1,11 @@
 ---
 id: TASK-144.04
 title: Configure shadcn to deliver Base UI source into named modules
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 03:56'
+updated_date: '2026-08-31 04:02'
 labels: []
 dependencies:
   - TASK-144.05
@@ -33,10 +33,10 @@ Configure shadcn base-nova for Base UI source delivery after every resolver/help
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 components.json is byte-equivalent JSON to the reviewed literal: schema URL, style base-nova, rsc false, tsx true, tailwind config empty/css src/ui/theme/app.css/baseColor neutral/cssVariables true/prefix empty, and components/ui/lib/hooks @/ui plus utils @/ui/ui-classnames aliases.
-- [ ] #2 iconLibrary is intentionally omitted because the schema has no local-icon value. A non-mutating dry-run may report its default, but package/source adoption is refused; button/dialog fixtures match the immutable commit and exact hashes.
-- [ ] #3 The dry-run uses finished Vite/TypeScript/Oxlint aliases, validates literal components.json, compares generated inputs to tracked fixtures, reports default/icon/upstream drift, and never modifies the checkout.
-- [ ] #4 Only reviewed named source may be copied; reductions remove icon/default helpers and future updates repeat provenance, hash, dependency, accessibility, aesthetic, and boundary review.
+- [x] #1 components.json is byte-equivalent JSON to the reviewed literal: schema URL, style base-nova, rsc false, tsx true, tailwind config empty/css src/ui/theme/app.css/baseColor neutral/cssVariables true/prefix empty, and components/ui/lib/hooks @/ui plus utils @/ui/ui-classnames aliases.
+- [x] #2 iconLibrary is intentionally omitted because the schema has no local-icon value. A non-mutating dry-run may report its default, but package/source adoption is refused; button/dialog fixtures match the immutable commit and exact hashes.
+- [x] #3 The dry-run uses finished Vite/TypeScript/Oxlint aliases, validates literal components.json, compares generated inputs to tracked fixtures, reports default/icon/upstream drift, and never modifies the checkout.
+- [x] #4 Only reviewed named source may be copied; reductions remove icon/default helpers and future updates repeat provenance, hash, dependency, accessibility, aesthetic, and boundary review.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -73,4 +73,12 @@ Final category-separation remediation implemented in 901c331 on fixed BASE 29928
 Focused hostile coverage remains offline/deterministic: 9 tests / 43 expectations, including injected checkout adoption, pure pinned-fatal classification, third create, unexpected update, mutation, dirty-before, failed runner, and unsafe overwrite. Focused Oxlint, Oxfmt, root TypeScript, and git diff --check pass.
 
 Clean live probe from 901c331: ARCHBOARD_SHADCN_LIVE=1 bun test tests/system/repository-policy/shadcn-base-adoption.test.ts exited 0 with fatal=[]; only info --json and add button dialog --dry-run --yes --view ran against local shadcn 4.19.0; parsed exactly button/dialog create actions; reported registry package/source drift plus registry upstream drift; no cleanup or rollback; empty status and identical binary/tree snapshots before/after. Capture /tmp/archboard-task14404-live-category-separation.json SHA-256 b80c0b57704c5d0f24782eaf6df1090d400b3718895f309f3625168da503770f. Task remains In Progress and ACs remain unchecked.
+
+Root acceptance at integrated HEAD e6927eb: independent reviewer returned REVIEW_CLEAN for the complete immutable range 299286acb43b5a4e9ace716b5886d1a271a3b17a..500b7f167ef5a69497d5782dc257fa0b76d7fcca. Root capped validation passed: full lint in archboard-task14404-lint-e6927eb.service at 1.6G peak and swap 0; repository-wide format in archboard-task14404-fmt-e6927eb.service at 1.4G peak and swap 0; both TypeScript projects in archboard-task14404-types-e6927eb.service at 1.4G peak and swap 0; focused shadcn policy 9 tests/43 assertions in archboard-task14404-focused-e6927eb.service at 23.8M peak and swap 0; frontend build in archboard-task14404-build-e6927eb.service at 1.4G peak and swap 0. The complete repository-policy lane had already reached its fixed 12G memory and 2G swap caps in archboard-task14414-repository-0d2ee03.service and was not rerun or granted a higher cap; the focused owner plus inventory passed during independent review. Final changed-path audit shows no package/lock/product source/config/script/CI/browser changes, and the checkout is clean.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Pinned the exact base-nova shadcn configuration and immutable Base UI button/dialog source inputs without adopting generated packages or product source. Added an offline deterministic policy and explicit local live probe that inventories every proposed action, proves checkout non-mutation, distinguishes mutable registry diagnostics from fatal checkout or pinned-input drift, and fails closed on unsafe outcomes. Independent review was clean; full lint, format, both TypeScript projects, the focused policy, and frontend build passed under caps.
+<!-- SECTION:FINAL_SUMMARY:END -->
