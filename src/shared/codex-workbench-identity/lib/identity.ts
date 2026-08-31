@@ -9,7 +9,7 @@ const EPOCH_TOKEN_PATTERN = new RegExp(
 	`^([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})\\.([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})$`,
 );
 export const OPERATION_ID_MAX_BYTES = 128 as const;
-export const OPERATION_ID_MAX_ISSUE_ATTEMPTS = 16 as const;
+const OPERATION_ID_MAX_ISSUE_ATTEMPTS = 16 as const;
 const OPERATION_TOKEN_PATTERN = new RegExp(
 	`^([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})\\.(h[0-9a-f]{32})$`,
 );
@@ -416,7 +416,6 @@ export interface IdentityValidator {
 export interface OperationIdValidator {
 	readonly isCurrentOperationId: (operationId: OperationId) => boolean;
 	readonly assertCurrentOperationId: (operationId: OperationId) => void;
-	readonly validateOperationId: (operationId: OperationId) => void;
 }
 
 /** Host-owned IDs are minted here; server-owned IDs can only enter via the trusted decoder. */
@@ -513,7 +512,8 @@ export interface IdentityAuthority {
 }
 
 /** The factory return type composes legacy identity capabilities with operation capabilities. */
-export interface IdentityAuthorityWithOperations extends IdentityAuthority {
+export interface IdentityAuthorities {
+	readonly identity: IdentityAuthority;
 	readonly operation: OperationAuthority;
 }
 
@@ -527,16 +527,7 @@ type AdoptableDomain =
 	| "dynamic-tool-call"
 	| "approval";
 
-export interface IdentityAuthorityOptions {
-	/** Test-controlled raw nonce source; production defaults to crypto.randomUUID(). */
-	readonly operationNonce?: () => string;
-}
-
-function createAuthority(
-	childId: ChildId,
-	epoch: ChildEpoch,
-	options: IdentityAuthorityOptions,
-): IdentityAuthorityWithOperations {
+function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthorities {
 	const issued = new Map<IdentityDomain, Set<string>>();
 	const rawByIdentity = new Map<string, JsonRpcRequestIdWireValue>();
 
@@ -569,10 +560,9 @@ function createAuthority(
 		const raw = mintToken();
 		return issue(domain, `h${raw}`, raw);
 	};
-	const operationNonce = options.operationNonce ?? mintToken;
 	const mintOperation = (): OperationId => {
 		for (let attempt = 0; attempt < OPERATION_ID_MAX_ISSUE_ATTEMPTS; attempt++) {
-			const value = operationWireValue(epoch, operationNonce());
+			const value = operationWireValue(epoch, mintToken());
 			if (issued.get("operation")?.has(value) !== true) {
 				return issue("operation", tokenOf(value), value);
 			}
@@ -725,6 +715,7 @@ function createAuthority(
 		assertCurrentEpoch: (child, candidateEpoch) =>
 			assertCurrent(child, candidateEpoch, childId, epoch),
 	};
+	Object.freeze(validator);
 	const issuer: IdentityIssuer = {
 		mintBrowserCommandId: () => mint("browser-command"),
 		mintJsonRpcRequestId: () => mint("json-rpc-request"),
@@ -735,6 +726,7 @@ function createAuthority(
 			return nextEpoch;
 		},
 	};
+	Object.freeze(issuer);
 	const decoder: TrustedIdentityDecoder = {
 		parseChildId: (value) => parseIssued("child", value),
 		parseChildEpoch: (value) => {
@@ -788,22 +780,23 @@ function createAuthority(
 		parseLogicalToolCallCorrelation: (value) =>
 			parseLogicalToolCallCorrelationValue(value, childId, epoch, issued),
 	};
+	Object.freeze(decoder);
 
 	const operationValidator: OperationIdValidator = {
 		isCurrentOperationId,
 		assertCurrentOperationId,
-		validateOperationId: assertCurrentOperationId,
 	};
+	Object.freeze(operationValidator);
 	const operationIssuer: OperationIdIssuer = { mintOperationId: mintOperation };
+	Object.freeze(operationIssuer);
 	const operationDecoder: TrustedOperationIdDecoder = {
 		parseOperationId: parseOperation,
 		serializeOperationId: (value) => parseOperation(value),
 	};
+	Object.freeze(operationDecoder);
 
 	return {
-		validator,
-		issuer,
-		decoder,
+		identity: Object.freeze({ validator, issuer, decoder }),
 		operation: Object.freeze({
 			validator: operationValidator,
 			issuer: operationIssuer,
@@ -859,21 +852,27 @@ function parseLogicalToolCallCorrelationValue(
 	});
 }
 
-export function createIdentityAuthority(
-	options: IdentityAuthorityOptions = {},
-): IdentityAuthorityWithOperations {
+export function createIdentityAuthorities(): IdentityAuthorities {
 	const childId = mintHostValue("child");
-	return createAuthority(childId, mintEpochValue(childId), options);
+	return createAuthority(childId, mintEpochValue(childId));
 }
 
-export function restoreIdentityAuthority(
-	input: {
-		readonly childId: unknown;
-		readonly epoch: unknown;
-	},
-	options: IdentityAuthorityOptions = {},
-): IdentityAuthorityWithOperations {
+export function createIdentityAuthority(): IdentityAuthority {
+	return createIdentityAuthorities().identity;
+}
+
+export function restoreIdentityAuthorities(input: {
+	readonly childId: unknown;
+	readonly epoch: unknown;
+}): IdentityAuthorities {
 	const childId = parseValue(input.childId, "child");
 	const epoch = parseEpochValue(input.epoch, childId);
-	return createAuthority(childId, epoch, options);
+	return createAuthority(childId, epoch);
+}
+
+export function restoreIdentityAuthority(input: {
+	readonly childId: unknown;
+	readonly epoch: unknown;
+}): IdentityAuthority {
+	return restoreIdentityAuthorities(input).identity;
 }

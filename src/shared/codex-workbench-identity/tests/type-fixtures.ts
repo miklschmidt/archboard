@@ -5,6 +5,7 @@ import type {
 	ChildId,
 	DynamicToolCallId,
 	IdentityAuthority,
+	IdentityAuthorities,
 	IdentityIssuer,
 	IdentityValidator,
 	ItemId,
@@ -128,20 +129,15 @@ type _OperationIdRemainsOpaque = [
 type _BroadIdentityCapabilitiesRemainNarrow = [
 	AssertFalse<"isCurrentOperationId" extends keyof IdentityValidator ? true : false>,
 	AssertFalse<"assertCurrentOperationId" extends keyof IdentityValidator ? true : false>,
-	AssertFalse<"validateOperationId" extends keyof IdentityValidator ? true : false>,
 	AssertFalse<"mintOperationId" extends keyof IdentityIssuer ? true : false>,
 	AssertFalse<"parseOperationId" extends keyof TrustedIdentityDecoder ? true : false>,
 	AssertFalse<"serializeOperationId" extends keyof TrustedIdentityDecoder ? true : false>,
 	AssertFalse<"operation" extends keyof IdentityAuthority ? true : false>,
-	Assert<
-		Equal<
-			keyof OperationIdValidator,
-			"isCurrentOperationId" | "assertCurrentOperationId" | "validateOperationId"
-		>
-	>,
+	Assert<Equal<keyof OperationIdValidator, "isCurrentOperationId" | "assertCurrentOperationId">>,
 	Assert<Equal<keyof OperationIdIssuer, "mintOperationId">>,
 	Assert<Equal<keyof TrustedOperationIdDecoder, "parseOperationId" | "serializeOperationId">>,
 	Assert<Equal<keyof OperationAuthority, "validator" | "issuer" | "decoder">>,
+	Assert<Equal<keyof IdentityAuthorities, "identity" | "operation">>,
 ];
 
 type _ExactCorrelationKeys = [
@@ -175,7 +171,6 @@ void identityAuthority.operation;
 // The operation capability is the exact reusable type accepted by the three
 // future workbench mutation owners.
 operationValidator.assertCurrentOperationId(operation);
-operationValidator.validateOperationId(operation);
 operationIssuer.mintOperationId();
 operationDecoder.parseOperationId(operation);
 operationDecoder.serializeOperationId(operation);

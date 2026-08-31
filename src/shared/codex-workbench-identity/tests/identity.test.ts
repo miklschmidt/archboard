@@ -3,11 +3,13 @@ import { describe, expect, test } from "bun:test";
 import {
 	IdentityValidationError,
 	OPERATION_ID_MAX_BYTES,
-	OPERATION_ID_MAX_ISSUE_ATTEMPTS,
+	createIdentityAuthorities,
 	createIdentityAuthority,
+	restoreIdentityAuthorities,
 	restoreIdentityAuthority,
 } from "../index.ts";
 import type { CodexIdentity, WireRequestCorrelation } from "../index.ts";
+import { withOperationNonceSequence } from "./support.ts";
 
 function errorCode(action: () => unknown): string {
 	try {
@@ -54,12 +56,26 @@ describe("codex workbench identities", () => {
 		expect(decoder.parseChildEpoch(validator.epoch)).toBe(validator.epoch);
 	});
 
+	test("keeps ordinary identity facades physically separate from operation authority", () => {
+		const ordinary = createIdentityAuthority();
+
+		expect(Object.keys(ordinary)).toEqual(["validator", "issuer", "decoder"]);
+		expect(Reflect.ownKeys(ordinary)).toEqual(["validator", "issuer", "decoder"]);
+		expect("operation" in ordinary).toBeFalse();
+		expect(Reflect.get(ordinary, "operation")).toBeUndefined();
+
+		for (const capability of [ordinary.validator, ordinary.issuer, ordinary.decoder]) {
+			expect(Reflect.get(capability, "mintOperationId")).toBeUndefined();
+			expect(Reflect.get(capability, "parseOperationId")).toBeUndefined();
+			expect(Reflect.get(capability, "serializeOperationId")).toBeUndefined();
+		}
+	});
+
 	test("issues unique epoch-bound operation IDs within the authored result bound", () => {
-		const authority = createIdentityAuthority();
-		const { issuer, validator } = authority;
-		const operationIds = Array.from({ length: 64 }, () =>
-			authority.operation.issuer.mintOperationId(),
-		);
+		const authorities = createIdentityAuthorities();
+		const { identity, operation } = authorities;
+		const { issuer, validator } = identity;
+		const operationIds = Array.from({ length: 64 }, () => operation.issuer.mintOperationId());
 		const firstOperationId = operationIds[0]!;
 		const epochToken = validator.epoch.slice("archboard:epoch:".length);
 		expect(new Set(operationIds).size).toBe(operationIds.length);
@@ -70,35 +86,30 @@ describe("codex workbench identities", () => {
 			expect(new TextEncoder().encode(operationId).byteLength).toBeLessThanOrEqual(
 				OPERATION_ID_MAX_BYTES,
 			);
-			expect(authority.operation.decoder.serializeOperationId(operationId)).toBe(operationId);
-			expect(
-				authority.operation.decoder.parseOperationId(JSON.parse(JSON.stringify(operationId))),
-			).toBe(operationId);
-			expect(authority.operation.validator.isCurrentOperationId(operationId)).toBeTrue();
-			authority.operation.validator.assertCurrentOperationId(operationId);
-			authority.operation.validator.validateOperationId(operationId);
+			expect(operation.decoder.serializeOperationId(operationId)).toBe(operationId);
+			expect(operation.decoder.parseOperationId(JSON.parse(JSON.stringify(operationId)))).toBe(
+				operationId,
+			);
+			expect(operation.validator.isCurrentOperationId(operationId)).toBeTrue();
+			operation.validator.assertCurrentOperationId(operationId);
 		}
 
 		const fabricated = `archboard:operation:${epochToken}.h${"a".repeat(32)}`;
-		const unissued = restoreIdentityAuthority({
+		const unissued = restoreIdentityAuthorities({
 			childId: validator.childId,
 			epoch: validator.epoch,
 		});
 		const nextEpoch = issuer.mintChildEpoch();
-		const stale = restoreIdentityAuthority({ childId: validator.childId, epoch: nextEpoch });
-		const otherChild = createIdentityAuthority();
-		expect(errorCode(() => authority.operation.decoder.parseOperationId(""))).toBe("empty");
+		const stale = restoreIdentityAuthorities({ childId: validator.childId, epoch: nextEpoch });
+		const otherChild = createIdentityAuthorities();
+		expect(errorCode(() => operation.decoder.parseOperationId(""))).toBe("empty");
 		expect(
-			errorCode(() =>
-				authority.operation.decoder.parseOperationId("archboard:operation:malformed"),
-			),
+			errorCode(() => operation.decoder.parseOperationId("archboard:operation:malformed")),
 		).toBe("invalid-shape");
-		expect(errorCode(() => authority.operation.decoder.parseOperationId(validator.childId))).toBe(
+		expect(errorCode(() => operation.decoder.parseOperationId(validator.childId))).toBe(
 			"wrong-domain",
 		);
-		expect(errorCode(() => authority.operation.decoder.parseOperationId(fabricated))).toBe(
-			"unissued",
-		);
+		expect(errorCode(() => operation.decoder.parseOperationId(fabricated))).toBe("unissued");
 		expect(errorCode(() => unissued.operation.decoder.parseOperationId(firstOperationId))).toBe(
 			"unissued",
 		);
@@ -111,7 +122,7 @@ describe("codex workbench identities", () => {
 		expect(stale.operation.validator.isCurrentOperationId(firstOperationId)).toBeFalse();
 
 		const oversizedChildToken = "c".repeat(90);
-		const oversized = restoreIdentityAuthority({
+		const oversized = restoreIdentityAuthorities({
 			childId: `archboard:child:${oversizedChildToken}`,
 			epoch: `archboard:epoch:${oversizedChildToken}.h${"a".repeat(32)}`,
 		});
@@ -121,32 +132,24 @@ describe("codex workbench identities", () => {
 	test("retries a duplicate nonce once and accepts the next unique nonce", () => {
 		const duplicate = "a".repeat(32);
 		const fresh = "b".repeat(32);
-		const nonces = [duplicate, duplicate, fresh];
-		const authority = createIdentityAuthority({ operationNonce: () => nonces.shift()! });
+		withOperationNonceSequence([duplicate, duplicate, fresh], (authorities) => {
+			const first = authorities.operation.issuer.mintOperationId();
+			const second = authorities.operation.issuer.mintOperationId();
 
-		const first = authority.operation.issuer.mintOperationId();
-		const second = authority.operation.issuer.mintOperationId();
-
-		expect(first).toContain(`.h${duplicate}`);
-		expect(second).toContain(`.h${fresh}`);
-		expect(nonces).toEqual([]);
+			expect(first).toContain(`.h${duplicate}`);
+			expect(second).toContain(`.h${fresh}`);
+		});
 	});
 
 	test("fails predictably after the canonical duplicate retry budget", () => {
 		const duplicate = "c".repeat(32);
-		let attempts = 0;
-		const authority = createIdentityAuthority({
-			operationNonce: () => {
-				attempts++;
-				return duplicate;
-			},
+		withOperationNonceSequence([duplicate], (authorities, attempts) => {
+			authorities.operation.issuer.mintOperationId();
+			expect(errorCode(() => authorities.operation.issuer.mintOperationId())).toBe(
+				"issuance-exhausted",
+			);
+			expect(attempts()).toBe(17);
 		});
-
-		authority.operation.issuer.mintOperationId();
-		expect(errorCode(() => authority.operation.issuer.mintOperationId())).toBe(
-			"issuance-exhausted",
-		);
-		expect(attempts).toBe(1 + OPERATION_ID_MAX_ISSUE_ATTEMPTS);
 	});
 
 	test("trusted adoption preserves raw Codex values through the authority serializer", () => {
