@@ -14,6 +14,7 @@ import type {
 	IdentityAuthority,
 	JsonRpcRequestId,
 	LogicalToolCallCorrelation,
+	ThreadId,
 	WireRequestCorrelation,
 } from "../../../shared/codex-workbench-identity/index.js";
 import type {
@@ -100,9 +101,23 @@ type HumanServerRequest = {
 	[Method in HumanApprovalMethod]: ServerRequestEnvelope<Method, "codex-approvals">;
 }[HumanApprovalMethod];
 
-type SessionServerRequest = {
-	[Method in SessionServerRequestMethod]: ServerRequestEnvelope<Method, "codex-session">;
-}[SessionServerRequestMethod];
+type CurrentTimeServerRequest = Omit<
+	ServerRequestEnvelope<"currentTime/read", "codex-session">,
+	"params"
+> & {
+	readonly params: Omit<ServerRequestPayloads["currentTime/read"], "threadId"> & {
+		readonly threadId: ThreadId;
+	};
+};
+
+type SessionServerRequest =
+	| CurrentTimeServerRequest
+	| {
+			[Method in Exclude<SessionServerRequestMethod, "currentTime/read">]: ServerRequestEnvelope<
+				Method,
+				"codex-session"
+			>;
+	  }[Exclude<SessionServerRequestMethod, "currentTime/read">];
 
 export type DynamicServerRequest = ServerRequestEnvelope<
 	"item/tool/call",

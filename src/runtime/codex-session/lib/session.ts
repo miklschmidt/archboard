@@ -38,6 +38,7 @@ const CLIENT_INFO = Object.freeze({
 const INITIALIZE_OPTIONS = Object.freeze({ idempotent: false, retryEligible: false });
 const READ_OPTIONS = Object.freeze({ idempotent: true, retryEligible: false });
 const MUTATION_OPTIONS = Object.freeze({ idempotent: false, retryEligible: false });
+const INVALID_PARAMS_CODE = -32602;
 
 type OutboundMethod = Extract<ClientRequestMethod, ResponseMethod>;
 type IdentityField =
@@ -393,6 +394,17 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		await transport.respond(request, "codex-session", { error: UNSUPPORTED_ATTESTATION_ERROR });
 	};
 
+	const respondInvalidReverseRequest = (request: SessionServerRequest): void => {
+		void transport
+			.respond(request, "codex-session", {
+				error: {
+					code: INVALID_PARAMS_CODE,
+					message: "The reverse request is not valid for the current Codex child epoch.",
+				},
+			})
+			.catch(() => undefined);
+	};
+
 	const onServerRequest = (request: TransportServerRequest): void => {
 		if (request.owner !== "codex-session") return;
 		const operation =
@@ -401,7 +413,9 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 				: request.method === "account/chatgptAuthTokens/refresh"
 					? respondUnsupportedTokenRefresh(request)
 					: respondUnsupportedAttestation(request);
-		void operation.catch(() => undefined);
+		void operation.catch((error: unknown) => {
+			if (error instanceof CodexSessionError) respondInvalidReverseRequest(request);
+		});
 	};
 
 	transport.onServerNotification(onNotification);

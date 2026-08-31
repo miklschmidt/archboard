@@ -285,7 +285,9 @@ describe("Codex app-server transport", () => {
 			await flushStreams();
 			const currentTime = requests.at(-1);
 			expect(currentTime?.owner).toBe("codex-session");
-			if (!currentTime) throw new Error("currentTime request was not routed");
+			if (currentTime?.method !== "currentTime/read")
+				throw new Error("currentTime request was not routed");
+			expect(currentTime.params.threadId).toBe(identity.decoder.resolveThreadId("thread-1"));
 			await transport.respond(currentTime, "codex-session", { result: { currentTimeAt: 0 } });
 
 			for (const [index, [method, error]] of (

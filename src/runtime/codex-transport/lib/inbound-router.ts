@@ -200,6 +200,21 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 				logicalCall,
 			} as TransportServerRequest;
 		}
+		if (decoded.method === "currentTime/read") {
+			const params = decoded.params as ServerRequestPayloads["currentTime/read"];
+			return {
+				child: correlation.child,
+				epoch: correlation.epoch,
+				requestId,
+				correlation,
+				method: decoded.method,
+				params: {
+					...params,
+					threadId: options.identity.decoder.resolveThreadId(params.threadId),
+				},
+				owner: "codex-session",
+			} as TransportServerRequest;
+		}
 		if (isInList(SESSION_SERVER_REQUEST_METHODS, decoded.method))
 			return {
 				child: correlation.child,
