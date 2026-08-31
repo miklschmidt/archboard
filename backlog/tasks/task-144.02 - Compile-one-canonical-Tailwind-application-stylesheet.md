@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 01:28'
+updated_date: '2026-08-31 02:19'
 labels: []
 dependencies:
   - TASK-144.01
@@ -73,4 +73,6 @@ Fifth-round remediation: owner subprocess cleanup now tracks the exact synchrono
 Sixth-round remediation supersedes the earlier mkdtempSync allocation wording: each owner chooses a random exact candidate path, registers that candidate before mkdirSync, and creates it exclusively; EEXIST retires the uncreated candidate without cleanup and retries. Fixture disposal tracks created state and setup guards stop further async work after disposal, preserving exact-root cleanup through pre-create, create, and setup interruption. The external watcher now consumes pre-creation allocation records and proves all 200 allocated candidates become accounted-for roots with alternating 143/130 exits and no residue; collision retry and concurrent same-parent sibling survival remain covered. The literal regex contract now allows fully parsed disjoint /^@admin/ and /^@admin\/panel/ controls while retaining exact overlap and unsupported-grammar refusals.
 
 Seventh-round remediation: fixture disposal now waits for an explicit allocation-settled handshake and tracks candidate, owned, and retired states. A pre-create async or sync disposal request cannot memoize a no-op before mkdirSync; if this process creates the candidate afterward, cleanup still removes exactly that root, while EEXIST candidates remain foreign and are retired without removal. Setup guards prevent in-flight recreation after disposal. The public helper regression exercises disposal inside onAllocated before creation, and the existing signal matrix covers the pre-create signal boundary. The 200-owner regression now treats bounded existsSync polling of each printed candidate path as authoritative; fs.watch is only an optional wake-up/acceleration signal, with exact candidate/root accounting and no dependence on lossy event delivery.
+
+Eighth-round remediation: durable fixture ownership now remains true until exact-root removal succeeds, and cleanup waits for all tracked fixture work before its final removal. Disposal failures clear only the failed attempt memo, so a later cleanup call retries after transient removal failure; render-start disposal and in-flight output recreation are covered by public regressions. The concurrent-owner check now uses bounded polling of both exact allocated paths; fs.watch is only an optional wake-up for the 200-owner observation case, with no event-count dependency. Validation: focused allocation regressions (5 pass, 25 assertions), full vite-tailwind-contract suite (42 pass, 90 assertions), type-check, lint, format check, and frontend build. Per the app OOM instruction, the 200-owner stress, modules, system, complete check, and browser lanes were not rerun in this round; prior evidence remains recorded above.
 <!-- SECTION:NOTES:END -->
