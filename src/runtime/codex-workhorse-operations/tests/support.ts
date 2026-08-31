@@ -14,6 +14,7 @@ import {
 	type EpochStageInput,
 } from "../../codex-epoch/index.js";
 import {
+	CodexWorkhorseQueueError,
 	type CodexWorkhorseQueue,
 	type QueueMutationOutcome,
 	type QueueSnapshot,
@@ -39,7 +40,6 @@ import {
 	type WorkhorseOperationSessionPort,
 } from "../index.js";
 import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 
 const INSTRUCTION_HASH = "1".repeat(64);
 const MANIFEST_HASH = "2".repeat(64);
@@ -86,20 +86,25 @@ export class FakeQueue implements CodexWorkhorseQueue<OperationId> {
 	state: SessionQueuedSubmission[] = [];
 	nextError: Error | null = null;
 	nextOutcome: QueueMutationOutcome = "delivered";
+	nextStartTurnId: TurnId | null;
+	beforeEffect: (() => void) | null = null;
 	private nextId = 0;
 
 	constructor(
 		readonly identity: IdentityAuthority,
 		readonly operation: OperationAuthority,
-	) {}
+	) {
+		this.nextStartTurnId = identity.decoder.adoptTurnId("queue-start-turn");
+	}
 
 	async list() {
 		this.calls.push("list");
 		return Object.freeze({ operation: "list" as const, queue: this.snapshot() });
 	}
 
-	async add(request: { readonly operationId: OperationId; readonly prompt: string }) {
+	async add(request: Parameters<CodexWorkhorseQueue<OperationId>["add"]>[0]) {
 		this.calls.push("add");
+		await this.authorize(request.beforeEffect);
 		this.throwNext();
 		const item = {
 			id: this.identity.decoder.adoptQueuedSubmissionId("queue-" + this.nextId++),
@@ -110,12 +115,9 @@ export class FakeQueue implements CodexWorkhorseQueue<OperationId> {
 		return this.result("add", request.operationId);
 	}
 
-	async update(request: {
-		readonly operationId: OperationId;
-		readonly submissionId: SessionQueuedSubmission["id"];
-		readonly prompt: string;
-	}) {
+	async update(request: Parameters<CodexWorkhorseQueue<OperationId>["update"]>[0]) {
 		this.calls.push("update");
+		await this.authorize(request.beforeEffect);
 		this.throwNext();
 		this.state = this.state.map((item) =>
 			item.id === request.submissionId
@@ -125,21 +127,17 @@ export class FakeQueue implements CodexWorkhorseQueue<OperationId> {
 		return this.result("update", request.operationId);
 	}
 
-	async delete(request: {
-		readonly operationId: OperationId;
-		readonly submissionId: SessionQueuedSubmission["id"];
-	}) {
+	async delete(request: Parameters<CodexWorkhorseQueue<OperationId>["delete"]>[0]) {
 		this.calls.push("delete");
+		await this.authorize(request.beforeEffect);
 		this.throwNext();
 		this.state = this.state.filter((item) => item.id !== request.submissionId);
 		return this.result("delete", request.operationId);
 	}
 
-	async reorder(request: {
-		readonly operationId: OperationId;
-		readonly orderedSubmissionIds: readonly SessionQueuedSubmission["id"][];
-	}) {
+	async reorder(request: Parameters<CodexWorkhorseQueue<OperationId>["reorder"]>[0]) {
 		this.calls.push("reorder");
+		await this.authorize(request.beforeEffect);
 		this.throwNext();
 		const byId = new Map(this.state.map((item) => [item.id, item]));
 		this.state = request.orderedSubmissionIds.flatMap((id) => {
@@ -149,18 +147,31 @@ export class FakeQueue implements CodexWorkhorseQueue<OperationId> {
 		return this.result("reorder", request.operationId);
 	}
 
-	async start(request: {
-		readonly operationId: OperationId;
-		readonly submissionId: SessionQueuedSubmission["id"];
-	}) {
+	async start(request: Parameters<CodexWorkhorseQueue<OperationId>["start"]>[0]) {
 		this.calls.push("start");
+		await this.authorize(request.beforeEffect);
 		this.throwNext();
 		this.state = this.state.filter((item) => item.id !== request.submissionId);
-		return this.result("start", request.operationId);
+		return Object.freeze({
+			...this.result("start", request.operationId),
+			turnId: this.nextOutcome === "not_delivered" ? null : this.nextStartTurnId,
+		});
 	}
 
 	private snapshot(): QueueSnapshot {
 		return Object.freeze([...this.state]);
+	}
+
+	private async authorize(hook: (() => void | Promise<void>) | undefined): Promise<void> {
+		try {
+			this.beforeEffect?.();
+			await hook?.();
+		} catch (error) {
+			throw new CodexWorkhorseQueueError("authorization_failed", "revoked", {
+				outcome: "not_delivered",
+				cause: error,
+			});
+		}
 	}
 
 	private throwNext(): void {
@@ -191,7 +202,13 @@ export interface Fixture {
 	readonly queue: FakeQueue;
 	readonly operations: ReturnType<typeof createCodexWorkhorseOperations>;
 	readonly setCall: (tool: WorkhorseOperationName) => LogicalToolCallCorrelation;
-	readonly setStatus: (status: "idle" | "active", turns?: readonly SessionTurn[]) => void;
+	readonly setStatus: (
+		status: "notLoaded" | "idle" | "systemError" | "active",
+		turns?: readonly SessionTurn[],
+	) => void;
+	readonly setAttached: () => void;
+	readonly setControllable: (value: boolean) => void;
+	readonly replaceCall: (call: LogicalToolCallCorrelation | null) => void;
 	readonly replaceBinding: (binding: WorkhorseOperationBinding) => void;
 	readonly setBeforeContext: (hook: (() => void) | null) => void;
 	readonly cleanup: () => void;
@@ -235,6 +252,15 @@ export function fixture(initialStatus: "idle" | "active" = "idle"): Fixture {
 		"archboard",
 		"thread/start",
 	);
+	const attachedWorkhorseProof = committedProof(
+		epoch,
+		identity,
+		"workhorse-attach",
+		"link",
+		workhorseThreadId,
+		"attached",
+		"thread/link",
+	);
 	const binding: WorkhorseOperationBinding = {
 		childId: identity.validator.childId,
 		epoch: identity.validator.epoch,
@@ -252,8 +278,10 @@ export function fixture(initialStatus: "idle" | "active" = "idle"): Fixture {
 		},
 	};
 	let currentBinding = binding;
-	let status = initialStatus;
+	let status: "notLoaded" | "idle" | "systemError" | "active" = initialStatus;
 	let turns: readonly SessionTurn[] = [];
+	let created = true;
+	let controllable = true;
 	let currentCall: LogicalToolCallCorrelation | null = null;
 	let callCount = 0;
 	let beforeContext: (() => void) | null = null;
@@ -275,44 +303,58 @@ export function fixture(initialStatus: "idle" | "active" = "idle"): Fixture {
 		target: WorkhorseOperationBinding["coordinator"],
 	): Promise<ThreadLinkClassification> => {
 		const isWorkhorse = target.threadId === workhorseThreadId;
-		const targetStatus = isWorkhorse && status === "active" ? "active" : "idle";
+		const targetStatus = isWorkhorse ? status : "idle";
+		const targetControllable = isWorkhorse ? controllable : true;
+		const executable =
+			!isWorkhorse || (status !== "notLoaded" && status !== "systemError" && targetControllable);
+		const reason: ThreadLinkClassification["link"]["reason"] = executable
+			? null
+			: targetStatus === "notLoaded"
+				? "thread_status_not_loaded"
+				: targetStatus === "systemError"
+					? "thread_status_system_error"
+					: "direct_input_false";
 		const thread = {
 			id: target.threadId,
 			source: "appServer" as const,
 			status:
 				targetStatus === "active"
 					? { type: "active" as const, activeFlags: [] }
-					: { type: "idle" as const },
-			canAcceptDirectInput: true,
+					: { type: targetStatus as "idle" | "notLoaded" | "systemError" },
+			canAcceptDirectInput: targetControllable,
 			turns: isWorkhorse ? turns : [],
 		};
-		const proof = isWorkhorse ? workhorseProof : coordinatorProof;
+		const proof = isWorkhorse
+			? created
+				? workhorseProof
+				: attachedWorkhorseProof
+			: coordinatorProof;
 		return {
 			link: {
 				kind: "thread_link",
-				state: "executable",
+				state: executable ? "executable" : "inspect_only",
 				childId: identity.validator.childId,
 				epoch: identity.validator.epoch,
 				threadId: target.threadId,
 				source: "appServer",
 				status: targetStatus,
-				loaded: true,
-				canAcceptDirectInput: true,
-				reason: null,
+				loaded: targetStatus !== "notLoaded",
+				canAcceptDirectInput: targetControllable,
+				reason,
 			},
 			thread: thread as unknown as ThreadLinkClassification["thread"],
 			observation: {
 				persisted: true,
 				persistedRows: 1,
-				loaded: true,
+				loaded: targetStatus !== "notLoaded",
 				loadedOccurrences: 1,
 				source: "appServer",
 				status: targetStatus,
-				canAcceptDirectInput: true,
+				canAcceptDirectInput: targetControllable,
 			},
 			currentEpoch: { childId: identity.validator.childId, epoch: identity.validator.epoch },
 			proof,
-		};
+		} as unknown as ThreadLinkClassification;
 	};
 	const options: WorkhorseOperationOptions = {
 		session,
@@ -361,6 +403,19 @@ export function fixture(initialStatus: "idle" | "active" = "idle"): Fixture {
 		setStatus: (nextStatus, nextTurns = []) => {
 			status = nextStatus;
 			turns = nextTurns;
+		},
+		setAttached: () => {
+			created = false;
+			currentBinding = {
+				...currentBinding,
+				workhorse: { ...currentBinding.workhorse, operationId: "workhorse-attach" },
+			};
+		},
+		setControllable: (value) => {
+			controllable = value;
+		},
+		replaceCall: (call) => {
+			currentCall = call;
 		},
 		replaceBinding: (next) => {
 			currentBinding = next;
@@ -439,37 +494,4 @@ export function turn(
 		completedAt: status === "inProgress" ? null : 2,
 		durationMs: status === "inProgress" ? null : 1,
 	};
-}
-
-export function rawTurn(
-	identity: IdentityAuthority,
-	rawId: string,
-	status: "inProgress" | "completed" | "interrupted" | "failed",
-	clientId: string,
-): unknown {
-	return { ...turn(identity, rawId, status, clientId), id: rawId };
-}
-
-export function notification(fixtureValue: Fixture, value: unknown): TransportServerNotification {
-	return {
-		correlation: {
-			child: fixtureValue.identity.validator.childId,
-			epoch: fixtureValue.identity.validator.epoch,
-			requestId: fixtureValue.identity.issuer.mintJsonRpcRequestId(),
-		},
-		notification: value as TransportServerNotification["notification"],
-	};
-}
-
-export async function rejected(promise: Promise<unknown>): Promise<unknown> {
-	try {
-		await promise;
-		throw new Error("expected rejection");
-	} catch (error) {
-		return error;
-	}
-}
-
-export async function flush(): Promise<void> {
-	for (let index = 0; index < 8; index += 1) await Promise.resolve();
 }

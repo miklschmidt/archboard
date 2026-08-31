@@ -1,11 +1,9 @@
 import { createAdditionalContext, createTextUserInput } from "../../codex-instructions/index.js";
-import { CodexSessionMutationError, type SessionTurn } from "../../codex-session/index.js";
+import type { SessionTurn } from "../../codex-session/index.js";
 import {
 	CodexWorkhorseOperationsError,
 	type DelegateToWorkhorseRequest,
 	type DelegateToWorkhorseResult,
-	type SteerWorkhorseRequest,
-	type SteerWorkhorseResult,
 } from "./contract.js";
 import {
 	assertCreatedWorkhorse,
@@ -31,6 +29,24 @@ async function invokeTurnStart(
 	request: DelegateToWorkhorseRequest,
 	prompt: string,
 ): Promise<DelegateToWorkhorseResult> {
+	try {
+		const validated = await runtime.classify(state.binding, request.call, "delegate_to_workhorse");
+		if (validated.workhorse.link.status !== "idle")
+			throw operationError("busy", "The workhorse is no longer idle for direct delegation.");
+	} catch (error) {
+		const outcome = runtime.settleDurable(state, "not_delivered", messageOf(error));
+		runtime.terminal(state, "failed", [], messageOf(error));
+		throw operationError(
+			error instanceof CodexWorkhorseOperationsError ? error.code : "stale_link",
+			"The direct delegate lost authority before context construction.",
+			{
+				operation: "delegate_to_workhorse",
+				outcome,
+				operationId: state.operationId,
+				cause: error,
+			},
+		);
+	}
 	let context;
 	try {
 		context = runtime.options.contextFor({
@@ -77,7 +93,9 @@ async function invokeTurnStart(
 	}
 
 	try {
-		runtime.assertCurrentBinding(state.binding);
+		const validated = await runtime.classify(state.binding, request.call, "delegate_to_workhorse");
+		if (validated.workhorse.link.status !== "idle")
+			throw operationError("busy", "The workhorse is no longer idle for direct delegation.");
 	} catch (error) {
 		const outcome = runtime.settleDurable(state, "not_delivered", messageOf(error));
 		runtime.terminal(state, "failed", [], messageOf(error));
@@ -202,7 +220,6 @@ export function createDelegate(
 		return runtime.enqueue(async () => {
 			const binding = runtime.currentBinding();
 			const validated = await runtime.classify(binding, request.call, "delegate_to_workhorse");
-			assertCreatedWorkhorse(validated.workhorse);
 			const prompt =
 				request.transcriptDelta.length === 0
 					? request.input
@@ -215,6 +232,7 @@ export function createDelegate(
 				});
 			}
 			if (validated.workhorse.link.status === "active") {
+				assertCreatedWorkhorse(validated.workhorse);
 				const state = runtime.stage({
 					operationId,
 					operationIdWire,
@@ -229,9 +247,25 @@ export function createDelegate(
 				let result;
 				let effectStarted = false;
 				try {
-					runtime.assertCurrentBinding(binding);
+					const staged = await runtime.classify(binding, request.call, "delegate_to_workhorse");
+					assertCreatedWorkhorse(staged.workhorse);
+					if (staged.workhorse.link.status !== "active")
+						throw operationError("busy", "The workhorse is no longer active for queueing.");
 					effectStarted = true;
-					result = await runtime.options.queue.add({ operationId, prompt });
+					result = await runtime.options.queue.add({
+						operationId,
+						prompt,
+						beforeEffect: async () => {
+							const current = await runtime.classify(
+								binding,
+								request.call,
+								"delegate_to_workhorse",
+							);
+							assertCreatedWorkhorse(current.workhorse);
+							if (current.workhorse.link.status !== "active")
+								throw operationError("busy", "The workhorse is no longer active for queueing.");
+						},
+					});
 					runtime.assertCurrentBinding(binding);
 					await runtime.classify(binding, request.call, "delegate_to_workhorse");
 				} catch (error) {
@@ -265,8 +299,10 @@ export function createDelegate(
 							: result.outcome;
 				const outcome = runtime.settleDurable(state, requestedOutcome, null);
 				if (outcome === "delivered" && state.queuedSubmissionId !== null) {
-					runtime.clear(state);
-					runtime.emit(state, "queued", outcome, result.queue);
+					if (!state.queuedEmitted) {
+						state.queuedEmitted = true;
+						runtime.emit(state, "queued", outcome, result.queue);
+					}
 				} else if (outcome === "outcome_unknown")
 					runtime.emit(
 						state,
@@ -304,140 +340,6 @@ export function createDelegate(
 				clientUserMessageId: operationIdWire,
 			});
 			return invokeTurnStart(runtime, state, request, prompt);
-		});
-	};
-}
-
-export function createSteer(
-	runtime: WorkhorseRuntime,
-): (request: SteerWorkhorseRequest) => Promise<SteerWorkhorseResult> {
-	return (request) => {
-		validateBoundedInput(request.input, "steer input");
-		runtime.assertCall(request.call, "steer_workhorse");
-		let operationId;
-		try {
-			operationId = runtime.options.operation.issuer.mintOperationId();
-			runtime.options.operation.validator.assertCurrentOperationId(operationId);
-		} catch (error) {
-			return Promise.reject(
-				operationError("invalid_input", "A current steer operation identity was unavailable.", {
-					cause: error,
-				}),
-			);
-		}
-		const operationIdWire = runtime.options.operation.decoder.serializeOperationId(operationId);
-		return runtime.enqueue(async () => {
-			const binding = runtime.currentBinding();
-			const validated = await runtime.classify(binding, request.call, "steer_workhorse");
-			assertCreatedWorkhorse(validated.workhorse);
-			const activeTurnId =
-				validated.workhorse.thread === null
-					? null
-					: validated.workhorse.thread.turns.filter((turn) => turn.status === "inProgress")
-								.length === 1
-						? (validated.workhorse.thread.turns.find((turn) => turn.status === "inProgress")?.id ??
-							null)
-						: null;
-			const knownTurnId =
-				activeTurnId ??
-				runtime.activeTurns.get(threadIdWire(runtime.options, binding.workhorse.threadId)) ??
-				null;
-			if (validated.workhorse.link.status !== "active" || knownTurnId !== request.expectedTurnId)
-				throw operationError("busy", "Steer requires the exact currently active workhorse turn.");
-			const state = runtime.stage({
-				operationId,
-				operationIdWire,
-				operation: "steer_workhorse",
-				queueOperation: null,
-				call: request.call,
-				binding,
-				workhorse: validated.workhorse,
-				clientUserMessageId: operationIdWire,
-			});
-			state.turnId = request.expectedTurnId;
-			let context;
-			let params;
-			try {
-				context = runtime.options.contextFor({
-					operationId,
-					kind: "steer_workhorse",
-					rpc: "turn/steer",
-				});
-				if (
-					context.operation.id !== operationIdWire ||
-					context.operation.kind !== "steer_workhorse" ||
-					context.operation.rpc !== "turn/steer" ||
-					context.operation.outcome !== null
-				)
-					throw new TypeError("steer context does not carry the current operation identity");
-				params = {
-					threadId: binding.workhorse.threadId,
-					clientUserMessageId: operationIdWire,
-					input: [createTextUserInput(request.input)],
-					additionalContext: createAdditionalContext(context),
-					expectedTurnId: request.expectedTurnId,
-				} satisfies Parameters<WorkhorseRuntime["options"]["session"]["turnSteer"]>[0];
-			} catch (error) {
-				runtime.settleDurable(state, "not_delivered", "The steer body was invalid.");
-				runtime.terminal(state, "failed", [], messageOf(error));
-				throw operationError("invalid_input", "The steer turn body was not canonical.", {
-					operation: "steer_workhorse",
-					outcome: "not_delivered",
-					operationId,
-					cause: error,
-				});
-			}
-			try {
-				runtime.assertCurrentBinding(state.binding);
-			} catch (error) {
-				const outcome = runtime.settleDurable(state, "not_delivered", messageOf(error));
-				runtime.terminal(state, "failed", [], messageOf(error));
-				const code =
-					error instanceof CodexWorkhorseOperationsError ? error.code : ("stale_link" as const);
-				throw operationError(code, "The steer link changed before delivery.", {
-					operation: "steer_workhorse",
-					outcome,
-					operationId,
-					cause: error,
-				});
-			}
-			try {
-				const response = await runtime.options.session.turnSteer(params);
-				if (response.turnId !== request.expectedTurnId)
-					throw new TypeError("turn/steer returned a different turn identity");
-				runtime.assertCurrentBinding(binding);
-				await runtime.classify(binding, request.call, "steer_workhorse");
-				const outcome = runtime.settleDurable(state, "delivered", null);
-				if (outcome !== "delivered") {
-					runtime.emit(
-						state,
-						"outcome_unknown",
-						outcome,
-						[],
-						"The steer response could not be durably committed.",
-					);
-					return Object.freeze({ turnId: request.expectedTurnId, delivery: outcome });
-				}
-				if (!state.terminalEmitted) {
-					runtime.activeTurns.set(
-						threadIdWire(runtime.options, state.workhorseThreadId),
-						request.expectedTurnId,
-					);
-					if (!state.startedEmitted) {
-						state.startedEmitted = true;
-						runtime.emit(state, "started", "delivered", []);
-					}
-				}
-				return Object.freeze({ turnId: request.expectedTurnId, delivery: "delivered" });
-			} catch (error) {
-				const requested =
-					error instanceof CodexSessionMutationError ? error.outcome : "outcome_unknown";
-				const outcome = runtime.settleDurable(state, requested, messageOf(error));
-				if (outcome === "outcome_unknown")
-					runtime.emit(state, "outcome_unknown", outcome, [], messageOf(error));
-				else runtime.terminal(state, "failed", [], messageOf(error));
-				return Object.freeze({ turnId: request.expectedTurnId, delivery: outcome });
-			}
 		});
 	};
 }

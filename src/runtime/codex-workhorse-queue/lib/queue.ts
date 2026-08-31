@@ -316,6 +316,16 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 			);
 		}
 		assertCurrentBinding(binding, operation);
+		try {
+			await request.beforeEffect?.();
+		} catch (error) {
+			throw queueError(
+				"authorization_failed",
+				"Queue mutation authority changed before the remote effect.",
+				{ operation, outcome: "not_delivered", cause: error },
+			);
+		}
+		assertCurrentBinding(binding, operation);
 
 		let response: Response;
 		try {
@@ -350,7 +360,12 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 			const result = await runMutation(
 				"add",
 				acceptedBinding,
-				{ operation: "add", operationId: request.operationId, prompt: request.prompt },
+				{
+					operation: "add",
+					operationId: request.operationId,
+					prompt: request.prompt,
+					beforeEffect: request.beforeEffect,
+				},
 				(rpcBinding, clientUserMessageId) => {
 					if (clientUserMessageId === null)
 						throw new Error("add requires a serialized client user message identity");
@@ -381,6 +396,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 					operationId: request.operationId,
 					submissionId: request.submissionId,
 					prompt: request.prompt,
+					beforeEffect: request.beforeEffect,
 				},
 				(rpcBinding) =>
 					options.session.queueUpdate({
@@ -405,6 +421,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 					operation: "delete",
 					operationId: request.operationId,
 					submissionId: request.submissionId,
+					beforeEffect: request.beforeEffect,
 				},
 				(rpcBinding) =>
 					options.session.queueDelete({
@@ -427,6 +444,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 					operation: "reorder",
 					operationId: request.operationId,
 					orderedSubmissionIds: request.orderedSubmissionIds,
+					beforeEffect: request.beforeEffect,
 				},
 				(rpcBinding) =>
 					options.session.queueReorder({
@@ -441,24 +459,30 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	const start = (
 		request: QueueStartRequest<OperationIdValue>,
 	): Promise<QueueStartResult<OperationIdValue>> =>
-		enqueueForBinding("start", (acceptedBinding) =>
-			runMutation(
+		enqueueForBinding("start", async (acceptedBinding) => {
+			let turnId = null;
+			const result = await runMutation(
 				"start",
 				acceptedBinding,
 				{
 					operation: "start",
 					operationId: request.operationId,
 					submissionId: request.submissionId,
+					beforeEffect: request.beforeEffect,
 				},
-				(rpcBinding) =>
-					options.session.queueStart({
+				async (rpcBinding) => {
+					const response = await options.session.queueStart({
 						threadId: rpcBinding.workhorseThreadId,
 						queuedSubmissionId: request.submissionId,
-					}),
+					});
+					turnId = response.turn.id;
+					return response;
+				},
 				(before) => assertTarget(before, request.submissionId, "start"),
 				(before, after) => expectedStart(before, after, request.submissionId),
-			),
-		);
+			);
+			return Object.freeze({ ...result, turnId });
+		});
 
 	return Object.freeze({ list, add, update, delete: remove, reorder, start });
 }

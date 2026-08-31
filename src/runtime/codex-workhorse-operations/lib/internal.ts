@@ -48,12 +48,14 @@ export interface OperationState {
 	readonly binding: WorkhorseOperationBinding;
 	readonly coordinatorThreadId: ThreadId;
 	readonly workhorseThreadId: ThreadId;
+	readonly workhorseThreadSource: string;
 	readonly transaction: EpochTransaction;
 	readonly clientUserMessageId: string | null;
 	queuedSubmissionId: QueuedSubmissionId | null;
 	turnId: TurnId | null;
 	outcome: WorkhorseOperationDelivery;
 	durableSettled: boolean;
+	queuedEmitted: boolean;
 	startedEmitted: boolean;
 	terminalEmitted: boolean;
 }
@@ -79,7 +81,11 @@ export interface StageInput {
 export interface WorkhorseValidation {
 	readonly currentBinding: () => WorkhorseOperationBinding;
 	readonly assertCurrentBinding: (binding: WorkhorseOperationBinding) => void;
-	readonly assertCall: (call: WorkhorseCoordinatorCall, tool: WorkhorseOperationName) => void;
+	readonly assertCall: (
+		call: WorkhorseCoordinatorCall,
+		tool: WorkhorseOperationName,
+		binding?: WorkhorseOperationBinding,
+	) => void;
 	readonly classify: (
 		binding: WorkhorseOperationBinding,
 		call: WorkhorseCoordinatorCall,
@@ -117,6 +123,11 @@ export interface WorkhorseEvents {
 		detail: string | null,
 	) => void;
 	readonly clear: (state: OperationState) => void;
+	readonly correlateTurn: (
+		state: OperationState,
+		turnId: TurnId,
+		queue?: readonly { readonly id: QueuedSubmissionId }[],
+	) => void;
 	readonly reconcileUnknownQueue: (
 		queue: readonly { readonly id: QueuedSubmissionId; readonly clientUserMessageId: string }[],
 	) => void;
@@ -366,15 +377,18 @@ export function assertExecutableClassification(
 }
 
 export function assertCreatedWorkhorse(classification: ThreadLinkClassification): void {
-	if (
-		classification.link.state !== "executable" ||
-		classification.link.source !== "appServer" ||
-		classification.proof === null ||
-		classification.proof.record.operation.kind !== WORKHORSE_CREATION_KIND ||
-		classification.proof.record.provenance.threadSource !== WORKHORSE_THREAD_SOURCE
-	)
+	if (!isCreatedWorkhorse(classification))
 		throw operationError(
 			"unknown_provenance",
 			"Queue access is restricted to the created Archboard workhorse with proven ownership.",
 		);
+}
+
+export function isCreatedWorkhorse(classification: ThreadLinkClassification): boolean {
+	return (
+		classification.link.state === "executable" &&
+		classification.link.source === "appServer" &&
+		classification.proof?.record.operation.kind === WORKHORSE_CREATION_KIND &&
+		classification.proof.record.provenance.threadSource === WORKHORSE_THREAD_SOURCE
+	);
 }

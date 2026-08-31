@@ -5,6 +5,7 @@ import type {
 	IdentityValidator,
 	QueuedSubmissionId,
 	ThreadId,
+	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
 
 /** The only queue operations exposed to Archboard callers. */
@@ -67,27 +68,32 @@ export interface QueueListResult {
 export interface QueueAddRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly prompt: string;
+	readonly beforeEffect?: () => void | Promise<void>;
 }
 
 export interface QueueUpdateRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly submissionId: QueuedSubmissionId;
 	readonly prompt: string;
+	readonly beforeEffect?: () => void | Promise<void>;
 }
 
 export interface QueueDeleteRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly submissionId: QueuedSubmissionId;
+	readonly beforeEffect?: () => void | Promise<void>;
 }
 
 export interface QueueReorderRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly orderedSubmissionIds: readonly QueuedSubmissionId[];
+	readonly beforeEffect?: () => void | Promise<void>;
 }
 
 export interface QueueStartRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly submissionId: QueuedSubmissionId;
+	readonly beforeEffect?: () => void | Promise<void>;
 }
 
 export type QueueSnapshot = readonly SessionQueuedSubmission[];
@@ -122,7 +128,7 @@ export type QueueReorderResult<OperationIdValue extends string> = QueueMutationR
 export type QueueStartResult<OperationIdValue extends string> = QueueMutationResult<
 	"start",
 	OperationIdValue
->;
+> & { readonly turnId: TurnId | null };
 
 export type WorkhorseQueueResult<OperationIdValue extends string> =
 	| QueueListResult
@@ -136,6 +142,7 @@ export type WorkhorseQueueErrorCode =
 	| "not_ready"
 	| "stale_link"
 	| "invalid_input"
+	| "authorization_failed"
 	| "invalid_result"
 	| "repeated_cursor"
 	| "transport_failure"

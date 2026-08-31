@@ -79,6 +79,7 @@ export class QueueSession implements WorkhorseQueueSessionPort {
 	addIds: QueuedSubmissionId[] = [];
 	beforeMutation: ((method: string) => void | Promise<void>) | null = null;
 	nextAddError: Error | null = null;
+	nextStartError: Error | null = null;
 	private readonly identity: IdentityAuthority;
 
 	constructor(identity: IdentityAuthority, nextAddId = "queue-added") {
@@ -148,6 +149,11 @@ export class QueueSession implements WorkhorseQueueSessionPort {
 	async queueStart(params: QueueStartParams): Promise<SessionQueueStartResult> {
 		this.requests.push({ method: "thread/queue/start", params });
 		await this.beforeMutation?.("start");
+		if (this.nextStartError !== null) {
+			const error = this.nextStartError;
+			this.nextStartError = null;
+			throw error;
+		}
 		this.state = this.state.filter((candidate) => candidate.id !== params.queuedSubmissionId);
 		return { turn: startedTurn(this.identity) };
 	}

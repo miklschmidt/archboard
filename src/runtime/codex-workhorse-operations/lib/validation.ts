@@ -55,7 +55,11 @@ export function createWorkhorseValidation(options: WorkhorseOperationOptions): W
 			);
 	};
 
-	const assertCall = (call: WorkhorseCoordinatorCall, tool: WorkhorseOperationName): void => {
+	const assertCall = (
+		call: WorkhorseCoordinatorCall,
+		tool: WorkhorseOperationName,
+		binding?: WorkhorseOperationBinding,
+	): void => {
 		let parsed: WorkhorseCoordinatorCall;
 		try {
 			parsed = options.identity.decoder.parseLogicalToolCallCorrelation(call);
@@ -70,6 +74,16 @@ export function createWorkhorseValidation(options: WorkhorseOperationOptions): W
 			parsed.manifestHash !== ARCHBOARD_WORKHORSE_MANIFEST_SHA256
 		)
 			throw operationError("invalid_call", `The coordinator call is not for ${tool}.`);
+		if (
+			binding !== undefined &&
+			(parsed.child !== binding.childId ||
+				parsed.epoch !== binding.epoch ||
+				parsed.threadId !== binding.coordinator.threadId)
+		)
+			throw operationError(
+				"invalid_call",
+				"The coordinator call does not belong to the captured child, epoch, and coordinator thread.",
+			);
 		let current: WorkhorseCoordinatorCall | null;
 		try {
 			current = options.currentCoordinatorCall();
@@ -95,7 +109,7 @@ export function createWorkhorseValidation(options: WorkhorseOperationOptions): W
 		readonly workhorse: ThreadLinkClassification;
 	}> => {
 		assertCurrentBinding(binding);
-		assertCall(call, tool);
+		assertCall(call, tool, binding);
 		let coordinator: ThreadLinkClassification;
 		let workhorse: ThreadLinkClassification;
 		try {
@@ -108,9 +122,12 @@ export function createWorkhorseValidation(options: WorkhorseOperationOptions): W
 			});
 		}
 		assertCurrentBinding(binding);
+		assertCall(call, tool, binding);
 		assertExecutableClassification(coordinator, binding.coordinator, "The coordinator link");
 		if (tool !== "inspect_workhorse")
 			assertExecutableClassification(workhorse, binding.workhorse, "The workhorse link");
+		assertCurrentBinding(binding);
+		assertCall(call, tool, binding);
 		return { binding, coordinator, workhorse };
 	};
 
