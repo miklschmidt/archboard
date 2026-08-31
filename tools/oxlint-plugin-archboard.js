@@ -352,6 +352,13 @@ const assistantUiImports = createRule(
 					checkSource(argument.value, argument, "import");
 				else if (owner) report(context, node, "noAssistantUiNonLiteral");
 			},
+			AssignmentExpression(node) {
+				if (node.left?.type !== "Identifier" || node.right?.type !== "Identifier") return;
+				const importedName = localAssistantUiMembers.get(node.right.name);
+				if (!importedName) return;
+				report(context, node, "noAssistantUiAlias");
+				localAssistantUiMembers.set(node.left.name, importedName);
+			},
 			MemberExpression: checkNestedMember,
 			ChainExpression(node) {
 				if (node.expression?.type === "MemberExpression") checkNestedMember(node.expression);
