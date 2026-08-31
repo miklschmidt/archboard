@@ -71,6 +71,34 @@ describe("codex workbench identities", () => {
 		}
 	});
 
+	test("restores the test entropy seam topology after success and failure", () => {
+		const beforeSuccess = {
+			own: Object.hasOwn(crypto, "randomUUID"),
+			descriptor: Object.getOwnPropertyDescriptor(crypto, "randomUUID"),
+			value: Reflect.get(crypto, "randomUUID"),
+		};
+		withOperationNonceSequence(["a".repeat(32)], (authorities) => {
+			authorities.operation.issuer.mintOperationId();
+		});
+		expect(Object.hasOwn(crypto, "randomUUID")).toBe(beforeSuccess.own);
+		expect(Object.getOwnPropertyDescriptor(crypto, "randomUUID")).toEqual(beforeSuccess.descriptor);
+		expect(Reflect.get(crypto, "randomUUID")).toBe(beforeSuccess.value);
+
+		const beforeFailure = {
+			own: Object.hasOwn(crypto, "randomUUID"),
+			descriptor: Object.getOwnPropertyDescriptor(crypto, "randomUUID"),
+			value: Reflect.get(crypto, "randomUUID"),
+		};
+		expect(() =>
+			withOperationNonceSequence(["b".repeat(32)], () => {
+				throw new Error("test seam failure");
+			}),
+		).toThrow("test seam failure");
+		expect(Object.hasOwn(crypto, "randomUUID")).toBe(beforeFailure.own);
+		expect(Object.getOwnPropertyDescriptor(crypto, "randomUUID")).toEqual(beforeFailure.descriptor);
+		expect(Reflect.get(crypto, "randomUUID")).toBe(beforeFailure.value);
+	});
+
 	test("issues unique epoch-bound operation IDs within the authored result bound", () => {
 		const authorities = createIdentityAuthorities();
 		const { identity, operation } = authorities;

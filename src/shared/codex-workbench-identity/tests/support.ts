@@ -15,7 +15,7 @@ export function withOperationNonceSequence<T>(
 ): T {
 	const sequence = ["0".repeat(32), "1".repeat(32), ...nonces];
 	let index = 0;
-	const original = crypto.randomUUID.bind(crypto);
+	const originalDescriptor = Object.getOwnPropertyDescriptor(crypto, "randomUUID");
 	Object.defineProperty(crypto, "randomUUID", {
 		configurable: true,
 		writable: true,
@@ -27,6 +27,10 @@ export function withOperationNonceSequence<T>(
 	try {
 		return action(createIdentityAuthorities(), () => index - 2);
 	} finally {
-		crypto.randomUUID = original;
+		if (originalDescriptor === undefined) {
+			Reflect.deleteProperty(crypto, "randomUUID");
+		} else {
+			Object.defineProperty(crypto, "randomUUID", originalDescriptor);
+		}
 	}
 }
