@@ -47,6 +47,17 @@ export const CODEX_APP_SERVER_ARGUMENTS = Object.freeze([
 export const CODEX_PROCESS_STDERR_MAX_BYTES = 64 * 1024;
 const STRICT_CONFIG_MATCH_WINDOW = 256;
 const SECRET_ENVIRONMENT_KEY = /(?:KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|AUTH|COOKIE|PRIVATE)/iu;
+const PUBLIC_DIAGNOSTIC_MAX_BYTES = CODEX_PROCESS_STDERR_MAX_BYTES;
+
+function truncateUtf8(text: string, limitBytes: number): string {
+	const bytes = Buffer.from(text, "utf8");
+	if (bytes.byteLength <= limitBytes) return text;
+	const marker = limitBytes >= 3 ? "…" : ".";
+	const markerBytes = Buffer.byteLength(marker, "utf8");
+	let end = Math.max(0, limitBytes - markerBytes);
+	while (end > 0 && (bytes[end]! & 0xc0) === 0x80) end -= 1;
+	return `${bytes.subarray(0, end).toString("utf8")}${marker}`;
+}
 
 export type CodexProcessState =
 	| "stopped"
@@ -67,6 +78,7 @@ export type CodexProcessFailureCode =
 	| "early_exit"
 	| "crash"
 	| "startup_timeout"
+	| "listener_failed"
 	| "shutdown_failed";
 
 export interface CodexProcessFailure {
@@ -102,6 +114,14 @@ export interface CodexProcessChild {
 	readonly stdin: Writable;
 	readonly stdout: Readable;
 	readonly stderr: Readable;
+	/** Opaque capability bound to this exact child generation. */
+	readonly lifecycle: CodexProcessLifecycle;
+}
+
+export interface CodexProcessLifecycle {
+	readonly markAppServerReady: () => void;
+	readonly markAccountReady: () => void;
+	readonly markTerminalFailure: (message: string, cause?: unknown) => void;
 }
 
 type Child = ChildProcessByStdio<Writable, Readable, Readable>;
@@ -125,14 +145,14 @@ export interface CodexProcessDependencies {
 export interface CodexProcessOptions {
 	readonly executablePath: string;
 	readonly checkoutRoot?: string;
-	readonly cwd?: string;
 	readonly storage?: CodexStorageInput;
-	readonly rootDirectory?: string;
-	readonly codexHome?: string;
-	readonly sqliteHome?: string;
-	readonly ambientEnvironment?: CodexAmbientEnvironment;
 	/** Secrets supplied by a caller are redacted before process diagnostics are retained. */
 	readonly diagnosticSecrets?: readonly string[];
+}
+
+/** Test-only seams for deterministic lifecycle and failure-owner tests. */
+export interface CodexProcessTestOptions extends CodexProcessOptions {
+	readonly ambientEnvironment?: CodexAmbientEnvironment;
 	readonly argv?: readonly string[];
 	readonly stderrLimitBytes?: number;
 	readonly dependencies?: CodexProcessDependencies;
@@ -141,9 +161,6 @@ export interface CodexProcessOptions {
 export interface CodexProcess {
 	readonly start: () => Promise<CodexProcessSnapshot>;
 	readonly stop: () => Promise<CodexProcessSnapshot>;
-	readonly markAppServerReady: () => void;
-	readonly markAccountReady: () => void;
-	readonly markTerminalFailure: (message: string, cause?: unknown) => void;
 	readonly snapshot: () => CodexProcessSnapshot;
 	readonly currentChild: () => CodexProcessChild | null;
 	readonly onChild: (listener: (child: CodexProcessChild) => void) => () => void;
@@ -203,7 +220,8 @@ function exactArguments(
 		throw new CodexProcessError({
 			code: "binary_invalid",
 			terminal: true,
-			message: `The Codex child argv must be exactly ${JSON.stringify(expected)}; received ${JSON.stringify(candidate)}. Daemon, proxy, listen, websocket, analytics-default, code-mode-host, Desktop MCP, and caller-supplied extra arguments are refused.`,
+			message:
+				"The Codex child argv must contain only the configured executable, app-server, --stdio, and --strict-config. Daemon, proxy, listen, websocket, analytics-default, code-mode-host, Desktop MCP, and caller-supplied extra arguments are refused.",
 		});
 	return Object.freeze([...candidate]);
 }
@@ -222,7 +240,7 @@ function exitFailureMessage(
 	return `Codex child ${classification} with code=${String(exit.code)} signal=${String(exit.signal)} argv=${JSON.stringify(argv)}.${detail}`;
 }
 
-function diagnosticSecrets(options: CodexProcessOptions): readonly string[] {
+function diagnosticSecrets(options: CodexProcessTestOptions): readonly string[] {
 	const ambientSecrets = Object.entries(options.ambientEnvironment ?? process.env)
 		.filter(([key, value]) => value !== undefined && SECRET_ENVIRONMENT_KEY.test(key))
 		.map(([, value]) => value!);
@@ -230,7 +248,7 @@ function diagnosticSecrets(options: CodexProcessOptions): readonly string[] {
 }
 
 /** Own one dedicated, exact-argv Codex app-server child and its restart/stop policy. */
-export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
+function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProcess {
 	const dependencies = options.dependencies ?? {};
 	const spawnChild = dependencies.spawn ?? (nodeSpawn as unknown as SpawnChild);
 	const verifyExecutable = dependencies.verifyExecutable ?? verifyCodexExecutable;
@@ -245,12 +263,8 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 	);
 	const listeners = new Set<(snapshot: CodexProcessSnapshot) => void>();
 	const childListeners = new Set<(child: CodexProcessChild) => void>();
-	const cwdInput = options.checkoutRoot ?? options.cwd;
-	const storageInput: CodexStorageInput = Object.freeze({
-		rootDirectory: options.storage?.rootDirectory ?? options.rootDirectory,
-		codexHome: options.storage?.codexHome ?? options.codexHome,
-		sqliteHome: options.storage?.sqliteHome ?? options.sqliteHome,
-	});
+	const cwdInput = options.checkoutRoot;
+	const storageInput: CodexStorageInput = options.storage ?? {};
 
 	let state: CodexProcessState = "stopped";
 	let executablePath = options.executablePath;
@@ -261,6 +275,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 	let cwd: string | null = null;
 	let environment: CodexChildEnvironment | null = null;
 	let storage: PreparedCodexStorage | undefined;
+	let storageCleanup: (() => void) | undefined;
 	let current: ChildRecord | undefined;
 	let restartTimer: Timer | undefined;
 	let restartAttempt = 0;
@@ -275,11 +290,13 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 	let resolveStart: ((snapshot: CodexProcessSnapshot) => void) | undefined;
 	let rejectStart: ((error: Error) => void) | undefined;
 	let stopping = false;
+	let nextGeneration = 0;
 	const groups = new Set<ChildRecord>();
 
 	interface ChildRecord {
 		readonly child: Child;
 		readonly group: CodexProcessGroupIdentity;
+		readonly generation: number;
 		readonly closed: Promise<{
 			readonly code: number | null;
 			readonly signal: NodeJS.Signals | null;
@@ -299,8 +316,24 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		error?: Error;
 	}
 
+	function publicDiagnostic(text: string): string {
+		return truncateUtf8(diagnostics.redact(text), PUBLIC_DIAGNOSTIC_MAX_BYTES);
+	}
+
 	function safeCauseMessage(cause: unknown): string {
-		return diagnostics.redact(cause instanceof Error ? cause.message : String(cause));
+		try {
+			return publicDiagnostic(cause instanceof Error ? cause.message : String(cause));
+		} catch {
+			return "an unknown failure";
+		}
+	}
+
+	function sanitizeProcessError(error: CodexProcessError): CodexProcessError {
+		return new CodexProcessError({
+			code: error.code,
+			terminal: error.terminal,
+			message: publicDiagnostic(error.message),
+		});
 	}
 
 	function snapshot(): CodexProcessSnapshot {
@@ -321,9 +354,33 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		});
 	}
 
+	function listenerFailure(kind: "snapshot" | "child", cause: unknown): CodexProcessError {
+		return new CodexProcessError({
+			code: "listener_failed",
+			terminal: true,
+			message: publicDiagnostic(
+				`Codex ${kind} listener failed: ${safeCauseMessage(cause)}. Recovery: the listener was retired; inspect the terminal owner and retry after fixing the listener.`,
+			),
+		});
+	}
+
+	function retireListener(kind: "snapshot" | "child", cause: unknown): void {
+		terminalFailure(listenerFailure(kind, cause));
+		if (!stopping && (current || groups.size > 0)) void stop().catch(() => undefined);
+	}
+
 	function publish(): void {
 		const currentSnapshot = snapshot();
-		for (const listener of listeners) listener(currentSnapshot);
+		const failures: unknown[] = [];
+		for (const listener of Array.from(listeners)) {
+			try {
+				listener(currentSnapshot);
+			} catch (cause) {
+				listeners.delete(listener);
+				failures.push(cause);
+			}
+		}
+		for (const cause of failures) retireListener("snapshot", cause);
 	}
 
 	function setState(next: CodexProcessState): void {
@@ -334,13 +391,17 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 	function failureValue(error: CodexProcessError): CodexProcessFailure {
 		return Object.freeze({
 			code: error.code,
-			message: diagnostics.redact(error.message),
+			message: publicDiagnostic(error.message),
 			terminal: error.terminal,
 		});
 	}
 
 	function shutdownError(message: string): CodexProcessError {
-		return new CodexProcessError({ code: "shutdown_failed", terminal: true, message });
+		return new CodexProcessError({
+			code: "shutdown_failed",
+			terminal: true,
+			message: publicDiagnostic(message),
+		});
 	}
 
 	function rejectPendingStart(error: Error): void {
@@ -373,21 +434,103 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		record.readinessTimer = undefined;
 	}
 
+	function isCurrentGeneration(record: ChildRecord, generation: number): boolean {
+		return (
+			current === record &&
+			record.generation === generation &&
+			!record.closedHandled &&
+			groups.has(record)
+		);
+	}
+
+	function markAppServerReady(record: ChildRecord, generation: number): void {
+		if (!isCurrentGeneration(record, generation) || stopping || state !== "running" || record.ready)
+			return;
+		record.ready = true;
+		record.strictHint = false;
+		record.strictTail = "";
+		clearReadiness(record);
+		publish();
+		resolvePendingStart();
+	}
+
+	function markAccountReady(record: ChildRecord, generation: number): void {
+		if (!isCurrentGeneration(record, generation) || state !== "running" || !record.ready) return;
+		accountReady = true;
+		restartAttempt = 0;
+		lastFailure = null;
+		publish();
+	}
+
+	function markTerminalFailure(
+		record: ChildRecord,
+		generation: number,
+		message: string,
+		cause?: unknown,
+	): void {
+		if (!isCurrentGeneration(record, generation) || stopping || state !== "running") return;
+		const detail = cause === undefined ? message : `${message}: ${safeCauseMessage(cause)}`;
+		terminalFailure(
+			new CodexProcessError({
+				code: "strict_config_rejected",
+				terminal: true,
+				message: publicDiagnostic(detail),
+			}),
+		);
+		void stop().catch(() => undefined);
+	}
+
+	function childLifecycle(record: ChildRecord): CodexProcessLifecycle {
+		const { generation } = record;
+		return Object.freeze({
+			markAppServerReady: () => markAppServerReady(record, generation),
+			markAccountReady: () => markAccountReady(record, generation),
+			markTerminalFailure: (message: string, cause?: unknown) =>
+				markTerminalFailure(record, generation, message, cause),
+		});
+	}
+
+	function publicChild(record: ChildRecord): CodexProcessChild {
+		return Object.freeze({
+			pid: record.child.pid!,
+			stdin: record.child.stdin,
+			stdout: record.child.stdout,
+			stderr: record.child.stderr,
+			lifecycle: childLifecycle(record),
+		});
+	}
+
 	function releaseStorage(): CodexProcessError | undefined {
 		const prepared = storage;
-		if (!prepared) return undefined;
-		try {
-			prepared.release();
-			storage = undefined;
-			return undefined;
-		} catch (cause) {
-			const error = shutdownError(
-				`Codex child ownership ended, but dedicated storage cleanup failed: ${safeCauseMessage(cause)}. Recovery: retry stop so the lock release can be attempted again.`,
-			);
-			lastFailure = failureValue(error);
-			publish();
-			return error;
+		const retryCleanup = storageCleanup;
+		if (!prepared && !retryCleanup) return undefined;
+		if (prepared) {
+			try {
+				prepared.release();
+				storage = undefined;
+			} catch (cause) {
+				const error = shutdownError(
+					`Codex child ownership ended, but dedicated storage cleanup failed: ${safeCauseMessage(cause)}. Recovery: retry stop so the lock release can be attempted again.`,
+				);
+				lastFailure = failureValue(error);
+				publish();
+				return error;
+			}
 		}
+		if (retryCleanup) {
+			try {
+				retryCleanup();
+				storageCleanup = undefined;
+			} catch (cause) {
+				const error = shutdownError(
+					`Codex child ownership ended, but dedicated storage cleanup failed: ${safeCauseMessage(cause)}. Recovery: retry stop so the lock release can be attempted again.`,
+				);
+				lastFailure = failureValue(error);
+				publish();
+				return error;
+			}
+		}
+		return undefined;
 	}
 
 	function clearRestart(): void {
@@ -398,6 +541,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 	}
 
 	function terminalFailure(error: CodexProcessError): void {
+		error = sanitizeProcessError(error);
 		clearRestart();
 		terminalError = error;
 		lastFailure = failureValue(error);
@@ -624,7 +768,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 			(cause: unknown) => {
 				const error =
 					cause instanceof CodexProcessError
-						? cause
+						? sanitizeProcessError(cause)
 						: shutdownError(
 								`Could not complete Codex process-group cleanup: ${safeCauseMessage(cause)}.`,
 							);
@@ -653,7 +797,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		lastFailure = Object.freeze({
 			code: classification,
 			terminal: false,
-			message: diagnostics.redact(
+			message: publicDiagnostic(
 				exitFailureMessage(classification, exit, argv, diagnostics.snapshot()),
 			),
 		});
@@ -669,7 +813,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 				} catch (cause) {
 					const error =
 						cause instanceof CodexProcessError
-							? cause
+							? sanitizeProcessError(cause)
 							: new CodexProcessError({
 									code: "spawn_failed",
 									terminal: true,
@@ -686,9 +830,10 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		}
 	}
 
-	function updateStrictHint(record: ChildRecord, chunk: string): void {
-		record.strictHint ||= strictConfigHint(chunk);
-		record.strictTail = `${record.strictTail}${chunk}`.slice(-STRICT_CONFIG_MATCH_WINDOW);
+	function updateStrictHint(record: ChildRecord, chunk: Uint8Array | string): void {
+		const text = typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
+		record.strictHint ||= strictConfigHint(text);
+		record.strictTail = `${record.strictTail}${text}`.slice(-STRICT_CONFIG_MATCH_WINDOW);
 		record.strictHint ||= strictConfigHint(record.strictTail);
 	}
 
@@ -699,6 +844,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		if (record.closedHandled) return;
 		record.closedHandled = true;
 		clearReadiness(record);
+		diagnostics.finalize();
 		record.resolveClosed(exit);
 		if (current === record) current = undefined;
 		const classification = classifyExit(record);
@@ -718,9 +864,10 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 			const error = new CodexProcessError({
 				code: "strict_config_rejected",
 				terminal: true,
-				message:
+				message: publicDiagnostic(
 					exitFailureMessage("strict_config", exit, argv, diagnostics.snapshot()) +
-					" Check config.toml and the exact strict argv.",
+						" Check config.toml and the exact strict argv.",
+				),
 			});
 			terminalFailure(error);
 			observeGroupCleanup(record, now() + CODEX_COMPOSED_SHUTDOWN_MS);
@@ -731,7 +878,9 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 				new CodexProcessError({
 					code: "early_exit",
 					terminal: false,
-					message: exitFailureMessage("early_exit", exit, argv, diagnostics.snapshot()),
+					message: publicDiagnostic(
+						exitFailureMessage("early_exit", exit, argv, diagnostics.snapshot()),
+					),
 				}),
 			);
 		setState("group_cleanup");
@@ -745,7 +894,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 			(cause: unknown) => {
 				const error =
 					cause instanceof CodexProcessError
-						? cause
+						? sanitizeProcessError(cause)
 						: shutdownError(
 								`Could not complete Codex process-group cleanup: ${safeCauseMessage(cause)}.`,
 							);
@@ -776,6 +925,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 	function spawnAttempt(): void {
 		if (stopping) return;
 		setState("starting");
+		if (state !== "starting" || stopping) return;
 		let verified: VerifiedCodexExecutable;
 		try {
 			verified = verifyExecutable(options.executablePath);
@@ -790,7 +940,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 										? "binary_missing"
 										: "binary_invalid",
 							terminal: true,
-							message: diagnostics.redact(cause.message),
+							message: publicDiagnostic(cause.message),
 						})
 					: new CodexProcessError({
 							code: "binary_invalid",
@@ -807,7 +957,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		} catch (cause) {
 			const error =
 				cause instanceof CodexProcessError
-					? cause
+					? sanitizeProcessError(cause)
 					: new CodexProcessError({
 							code: "binary_invalid",
 							terminal: true,
@@ -823,7 +973,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 			} catch (cause) {
 				const error =
 					cause instanceof CodexProcessError
-						? cause
+						? sanitizeProcessError(cause)
 						: new CodexProcessError({
 								code: "storage_refused",
 								terminal: true,
@@ -848,7 +998,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 						? new CodexProcessError({
 								code: "storage_refused",
 								terminal: true,
-								message: `${diagnostics.redact(cause.message)} Recovery: use fresh owner-controlled 0700 CODEX_HOME and CODEX_SQLITE_HOME roots, then retry.`,
+								message: `${publicDiagnostic(cause.message)} Recovery: use fresh owner-controlled 0700 CODEX_HOME and CODEX_SQLITE_HOME roots, then retry.`,
 							})
 						: new CodexProcessError({
 								code: "storage_refused",
@@ -856,12 +1006,21 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 								message: `Could not prepare the dedicated Codex storage: ${safeCauseMessage(cause)}.`,
 								cause,
 							});
+				if (cause instanceof CodexStorageError) storageCleanup = cause.retryCleanup;
 				if (storage) {
 					try {
 						storage.release();
 						storage = undefined;
 					} catch {
 						/* Retain storage ownership so terminal cleanup can retry the lock release. */
+					}
+				}
+				if (storageCleanup) {
+					try {
+						storageCleanup();
+						storageCleanup = undefined;
+					} catch {
+						/* Retain the recovery capability for the next stop attempt. */
 					}
 				}
 				terminalFailure(error);
@@ -935,6 +1094,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		const record: ChildRecord = {
 			child,
 			group,
+			generation: ++nextGeneration,
 			closed,
 			resolveClosed,
 			spawned: false,
@@ -947,8 +1107,8 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		current = record;
 		groups.add(record);
 		child.stderr.on("data", (chunk: Buffer | string) => {
-			const redacted = diagnostics.append(chunk);
-			updateStrictHint(record, redacted);
+			if (!record.ready) updateStrictHint(record, chunk);
+			diagnostics.append(chunk);
 			publish();
 		});
 		child.stderr.resume();
@@ -957,6 +1117,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 			record.spawned = true;
 			if (stopping) return;
 			setState("running");
+			if (state !== "running" || stopping || record.closedHandled) return;
 			try {
 				record.readinessTimer = schedule(
 					() => readinessTimeout(record),
@@ -971,13 +1132,17 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 				void stop().catch(() => undefined);
 				return;
 			}
-			const publicChild = Object.freeze({
-				pid: child.pid!,
-				stdin: child.stdin,
-				stdout: child.stdout,
-				stderr: child.stderr,
-			});
-			for (const listener of childListeners) listener(publicChild);
+			const childValue = publicChild(record);
+			const failures: unknown[] = [];
+			for (const listener of Array.from(childListeners)) {
+				try {
+					listener(childValue);
+				} catch (cause) {
+					childListeners.delete(listener);
+					failures.push(cause);
+				}
+			}
+			for (const cause of failures) retireListener("child", cause);
 		});
 		child.once("error", (error) => {
 			record.error = error;
@@ -989,7 +1154,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 					cause: error,
 				});
 				terminalFailure(processError);
-				rejectPendingStart(processError);
+				rejectPendingStart(sanitizeProcessError(processError));
 			}
 		});
 		child.once("close", (code, signal) => handleClosed(record, { code, signal }));
@@ -1006,7 +1171,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		} catch (cause) {
 			const error =
 				cause instanceof CodexProcessError
-					? cause
+					? sanitizeProcessError(cause)
 					: new CodexProcessError({
 							code: "spawn_failed",
 							terminal: true,
@@ -1101,7 +1266,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 			if (failed) {
 				const cause = failed.reason;
 				throw cause instanceof CodexProcessError
-					? cause
+					? sanitizeProcessError(cause)
 					: shutdownError(`Could not complete Codex shutdown: ${safeCauseMessage(cause)}.`);
 			}
 			if (now() >= deadlineAtMs || current || groups.size > 0)
@@ -1122,51 +1287,29 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 			stopPromise = undefined;
 			const error =
 				cause instanceof CodexProcessError
-					? cause
+					? sanitizeProcessError(cause)
 					: shutdownError(`Could not complete Codex shutdown: ${safeCauseMessage(cause)}.`);
 			terminalFailure(error);
 		});
 		return operation;
 	}
 
-	function markAppServerReady(): void {
-		if (stopping || state !== "running" || !current || current.closedHandled || current.ready)
-			return;
-		current.ready = true;
-		clearReadiness(current);
-		publish();
-		resolvePendingStart();
-	}
-
-	function markAccountReady(): void {
-		if (state !== "running" || !current?.ready) return;
-		accountReady = true;
-		restartAttempt = 0;
-		lastFailure = null;
-		publish();
-	}
-
-	function markTerminalFailure(message: string, cause?: unknown): void {
-		terminalFailure(
-			new CodexProcessError({ code: "strict_config_rejected", terminal: true, message, cause }),
-		);
-		if (current || groups.size > 0) void stop().catch(() => undefined);
-	}
-
 	function currentChild(): CodexProcessChild | null {
 		if (!current || current.closedHandled || !current.spawned) return null;
-		return Object.freeze({
-			pid: current.child.pid!,
-			stdin: current.child.stdin,
-			stdout: current.child.stdout,
-			stderr: current.child.stderr,
-		});
+		return publicChild(current);
 	}
 
 	function onChild(listener: (child: CodexProcessChild) => void): () => void {
 		childListeners.add(listener);
 		const active = currentChild();
-		if (active) listener(active);
+		if (active) {
+			try {
+				listener(active);
+			} catch (cause) {
+				childListeners.delete(listener);
+				retireListener("child", cause);
+			}
+		}
 		return () => childListeners.delete(listener);
 	}
 
@@ -1178,12 +1321,19 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 	return Object.freeze({
 		start,
 		stop,
-		markAppServerReady,
-		markAccountReady,
-		markTerminalFailure,
 		snapshot,
 		currentChild,
 		onChild,
 		subscribe,
 	});
+}
+
+/** Production lifecycle entrypoint. Test seams are available from testing.ts. */
+export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
+	return createCodexProcessInternal(options);
+}
+
+/** Deterministic test entrypoint for injected process, storage, and clock seams. */
+export function createCodexProcessForTesting(options: CodexProcessTestOptions): CodexProcess {
+	return createCodexProcessInternal(options);
 }

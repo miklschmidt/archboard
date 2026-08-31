@@ -94,5 +94,3 @@ export function buildCodexChildEnvironment(input: {
 	child.CODEX_SQLITE_HOME = sqliteHome;
 	return Object.freeze(child);
 }
-
-export const buildCodexEnvironment = buildCodexChildEnvironment;

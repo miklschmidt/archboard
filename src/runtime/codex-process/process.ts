@@ -3,7 +3,7 @@ export {
 	CODEX_PROCESS_STDERR_MAX_BYTES,
 	CodexProcessError,
 	createCodexProcess,
-} from "./process.js";
+} from "./lib/process.js";
 export type {
 	CodexProcess,
 	CodexProcessChild,
@@ -14,4 +14,4 @@ export type {
 	CodexProcessOptions,
 	CodexProcessSnapshot,
 	CodexProcessState,
-} from "./process.js";
+} from "./lib/process.js";

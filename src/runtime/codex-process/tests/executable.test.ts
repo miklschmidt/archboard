@@ -10,7 +10,7 @@ import {
 	CodexExecutableError,
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
-} from "../index.js";
+} from "../executable.js";
 import { CODEX_PROTOCOL_BINARY_VERSION } from "../../codex-protocol/index.js";
 import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
 
