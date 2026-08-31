@@ -1,10 +1,11 @@
 ---
 id: TASK-144.05
 title: Compose static Tailwind classes through one UI module
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-31 00:11'
 labels: []
 dependencies:
   - TASK-144.01
@@ -34,3 +35,9 @@ Delegation profile: gpt-5.6-luna, high.
 - [ ] #2 Tailwind names are never interpolated or assembled from fragments; exhaustive component state maps remain in their owning UI modules.
 - [ ] #3 class-variance-authority and a repository-owned variant DSL are absent; tests at src/ui/ui-classnames/tests cover conflict resolution, falsy inputs, deterministic order, and named-entrypoint-only imports.
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reserved after TASK-144.03 finalized at integration HEAD 741b442. This leaf owns only src/ui/ui-classnames and its module tests; it consumes the already pinned clsx/tailwind-merge and canonical theme without adding a variant DSL or touching UI consumers.
+<!-- SECTION:NOTES:END -->
