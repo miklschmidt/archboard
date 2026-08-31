@@ -5,12 +5,12 @@ import {
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
 } from "../../../shared/codex-browser-model/index.js";
-import type { TurnId } from "../../../shared/codex-workbench-identity/index.js";
 import {
-	decodeInitializeParams,
-	decodeLoginAccountParams,
+	decodeClientRequestParams,
 	decodeResponse,
 	ProtocolDecodeError,
+	type ClientRequestMethod,
+	type ClientRequestParams,
 	type ResponseMethod,
 	type ResponsePayloads,
 } from "../../codex-protocol/index.js";
@@ -26,6 +26,7 @@ import {
 	type CodexSessionOptions,
 	type SessionParams,
 	type SessionServerRequest,
+	type SessionMutationOutcome,
 } from "./contract.js";
 import { proveCodexStorage } from "./storage-proof.js";
 
@@ -37,7 +38,20 @@ const CLIENT_INFO = Object.freeze({
 const INITIALIZE_OPTIONS = Object.freeze({ idempotent: false, retryEligible: false });
 const READ_OPTIONS = Object.freeze({ idempotent: true, retryEligible: false });
 const MUTATION_OPTIONS = Object.freeze({ idempotent: false, retryEligible: false });
-const INVALID_PARAMS_CODE = -32602;
+
+type OutboundMethod = Extract<ClientRequestMethod, ResponseMethod>;
+type IdentityField =
+	| "threadId"
+	| "parentThreadId"
+	| "ancestorThreadId"
+	| "turnId"
+	| "lastTurnId"
+	| "beforeTurnId"
+	| "expectedTurnId"
+	| "queuedSubmissionId"
+	| "queuedSubmissionIds"
+	| "loginId"
+	| "realtimeSessionId";
 
 type SessionPhase =
 	| "transport-connected"
@@ -49,11 +63,11 @@ type SessionPhase =
 	| "failed";
 type SessionGate = "login-capable" | "thread-capable";
 
-function isRecord(value: unknown): value is SessionParams {
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function requestParams(value: unknown): SessionParams {
+function requestParams(value: unknown): Readonly<Record<string, unknown>> {
 	if (value === undefined) return {};
 	if (!isRecord(value))
 		throw new CodexSessionError(
@@ -72,9 +86,12 @@ function hasOutcome(
 }
 
 function mutationFailure(method: string, error: unknown): CodexSessionMutationError {
-	if (hasOutcome(error)) return error as unknown as CodexSessionMutationError;
-	const outcome: "not_delivered" | "outcome_unknown" =
-		error instanceof ProtocolDecodeError ? "outcome_unknown" : "not_delivered";
+	if (error instanceof CodexSessionMutationError) return error;
+	const outcome: SessionMutationOutcome = hasOutcome(error)
+		? error.outcome
+		: error instanceof ProtocolDecodeError
+			? "outcome_unknown"
+			: "not_delivered";
 	const message =
 		outcome === "outcome_unknown"
 			? `Codex mutation ${method} has an unknown outcome; inspect authoritative state before retrying.`
@@ -82,15 +99,16 @@ function mutationFailure(method: string, error: unknown): CodexSessionMutationEr
 	return new CodexSessionMutationError(method, outcome, message, error);
 }
 
-function isCanonicalIdentity(value: unknown): value is string {
-	return typeof value === "string" && value.startsWith("archboard:");
+function mutationOutcome(error: unknown): SessionMutationOutcome | undefined {
+	if (error instanceof CodexSessionMutationError) return error.outcome;
+	return hasOutcome(error) ? error.outcome : undefined;
 }
 
 export function createCodexSession(options: CodexSessionOptions): CodexSession {
 	const transport: CodexTransport = options.transport;
 	const identity = options.identity;
 	const lifecycle = options.lifecycle;
-	const notificationSink = options.onNotification ?? options.onServerNotification;
+	const notificationSink = options.onNotification;
 	const now = options.now ?? Date.now;
 	let phase: SessionPhase = "transport-connected";
 	let accountReady = false;
@@ -98,6 +116,87 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 	let notificationsStopped = false;
 	let publishingNotifications = false;
 	const bufferedNotifications: TransportServerNotification[] = [];
+	const identityFields: Partial<Record<OutboundMethod, readonly IdentityField[]>> = {
+		"account/login/cancel": ["loginId"],
+		"thread/fork": ["threadId", "lastTurnId", "beforeTurnId"],
+		"thread/list": ["parentThreadId", "ancestorThreadId"],
+		"thread/read": ["threadId"],
+		"thread/turns/list": ["threadId"],
+		"thread/items/list": ["threadId", "turnId"],
+		"thread/delete": ["threadId"],
+		"thread/settings/update": ["threadId"],
+		"turn/start": ["threadId"],
+		"turn/steer": ["threadId", "expectedTurnId"],
+		"turn/interrupt": ["threadId", "turnId"],
+		"thread/queue/add": ["threadId"],
+		"thread/queue/list": ["threadId"],
+		"thread/queue/update": ["threadId", "queuedSubmissionId"],
+		"thread/queue/delete": ["threadId", "queuedSubmissionId"],
+		"thread/queue/reorder": ["threadId", "queuedSubmissionIds"],
+		"thread/queue/start": ["threadId", "queuedSubmissionId"],
+		"thread/inject_items": ["threadId"],
+		"thread/realtime/start": ["threadId", "realtimeSessionId"],
+		"thread/realtime/appendText": ["threadId"],
+		"thread/realtime/appendSpeech": ["threadId"],
+		"thread/realtime/stop": ["threadId"],
+		"thread/timeline/list": ["threadId"],
+	};
+
+	const serializeIdentityField = (field: IdentityField, value: unknown): unknown => {
+		if (value === undefined || value === null) return value;
+		try {
+			switch (field) {
+				case "threadId":
+				case "parentThreadId":
+				case "ancestorThreadId":
+					return identity.decoder.serializeCodexIdentity(identity.decoder.parseThreadId(value));
+				case "turnId":
+				case "lastTurnId":
+				case "beforeTurnId":
+				case "expectedTurnId":
+					return identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value));
+				case "queuedSubmissionId":
+					return identity.decoder.serializeCodexIdentity(
+						identity.decoder.parseQueuedSubmissionId(value),
+					);
+				case "queuedSubmissionIds":
+					if (!Array.isArray(value))
+						throw new TypeError("queuedSubmissionIds must be an array of issued identities.");
+					return value.map((candidate) =>
+						identity.decoder.serializeCodexIdentity(
+							identity.decoder.parseQueuedSubmissionId(candidate),
+						),
+					);
+				case "loginId":
+					return identity.decoder.serializeCodexIdentity(identity.decoder.parseLoginId(value));
+				case "realtimeSessionId":
+					return identity.decoder.parseRealtimeSessionId(value);
+			}
+		} catch (error) {
+			throw new CodexSessionError(
+				"invalid_identity",
+				`Codex request field ${field} is not an issued identity for this child.`,
+				error,
+			);
+		}
+	};
+
+	const serializeRequestParams = <Method extends OutboundMethod>(
+		method: Method,
+		value: unknown,
+	): ClientRequestParams<Method> => {
+		const params = requestParams(value);
+		const fields = identityFields[method];
+		if (!fields) return params as ClientRequestParams<Method>;
+		const serialized = { ...params };
+		for (const field of fields) serialized[field] = serializeIdentityField(field, params[field]);
+		return serialized as ClientRequestParams<Method>;
+	};
+
+	const setAccountReadiness = (ready: boolean): void => {
+		accountReady = ready;
+		if (phase !== "failed") phase = ready ? "thread-capable" : "login-capable";
+	};
 
 	const deliverNotification = (event: TransportServerNotification): void => {
 		if (!notificationSink) return;
@@ -145,15 +244,28 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 			);
 	};
 
-	const requestDecoded = async <Method extends ResponseMethod>(
+	const requestDecoded = async <Method extends OutboundMethod>(
 		method: Method,
-		params: SessionParams,
+		params: unknown,
 		requestOptions: typeof READ_OPTIONS | typeof MUTATION_OPTIONS | typeof INITIALIZE_OPTIONS,
 		mutation: boolean,
 	): Promise<ResponsePayloads[Method]> => {
+		let decodedParams: ClientRequestParams<Method>;
+		try {
+			decodedParams = decodeClientRequestParams(method, serializeRequestParams(method, params));
+		} catch (error) {
+			if (mutation)
+				throw new CodexSessionMutationError(
+					method,
+					"not_delivered",
+					`Codex mutation ${method} was rejected before delivery.`,
+					error,
+				);
+			throw error;
+		}
 		let response: { readonly result: unknown };
 		try {
-			response = await transport.request(method, params, requestOptions);
+			response = await transport.request(method, decodedParams, requestOptions);
 		} catch (error) {
 			if (mutation) throw mutationFailure(method, error);
 			throw error;
@@ -166,31 +278,31 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		}
 	};
 
-	const read = async <Method extends ResponseMethod>(
+	const read = async <Method extends OutboundMethod>(
 		method: Method,
 		params: unknown,
 		gate: SessionGate,
 	): Promise<ResponsePayloads[Method]> => {
 		requireGate(gate);
-		return requestDecoded(method, requestParams(params), READ_OPTIONS, false);
+		return requestDecoded(method, params, READ_OPTIONS, false);
 	};
 
-	const mutate = async <Method extends ResponseMethod>(
+	const mutate = async <Method extends OutboundMethod>(
 		method: Method,
 		params: unknown,
 		gate: SessionGate | undefined,
-		prepare: (value: unknown) => SessionParams = requestParams,
+		prepare: (value: unknown) => unknown = (value) => value,
 	): Promise<ResponsePayloads[Method]> => {
 		try {
 			if (gate !== undefined) requireGate(gate);
 			return await requestDecoded(method, prepare(params), MUTATION_OPTIONS, true);
 		} catch (error) {
-			if (error instanceof CodexSessionMutationError || hasOutcome(error)) throw error;
+			if (error instanceof CodexSessionMutationError) throw error;
 			throw mutationFailure(method, error);
 		}
 	};
 
-	const validateLogin = (value: unknown): SessionParams => {
+	const validateLogin = (value: unknown): unknown => {
 		const variant = isRecord(value) && typeof value.type === "string" ? value.type : undefined;
 		const policy = LOGIN_POLICIES.find((candidate) => candidate.variant === variant);
 		if (policy?.policy === "refused")
@@ -203,52 +315,14 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 				"unsupported_login",
 				`The reviewed Bedrock ${variant} setup is refused before RPC.`,
 			);
-		try {
-			const decoded = decodeLoginAccountParams(value);
-			const supported = SupportedLoginAccountParamsSchema.parse(decoded);
-			return supported as unknown as SessionParams;
-		} catch {
+		const supported = SupportedLoginAccountParamsSchema.safeParse(value);
+		if (!supported.success) {
 			throw new CodexSessionError(
 				"unsupported_login",
 				"The login variant is not supported by the reviewed Archboard session.",
 			);
 		}
-	};
-
-	const prepareSteer = (value: unknown): SessionParams => {
-		const params = requestParams(value);
-		if (!Object.prototype.hasOwnProperty.call(params, "expectedTurnId"))
-			throw new CodexSessionError(
-				"invalid_identity",
-				"turn/steer requires an issued current expectedTurnId.",
-			);
-		let turnId: TurnId;
-		try {
-			turnId = identity.decoder.parseTurnId(params.expectedTurnId);
-		} catch (error) {
-			throw new CodexSessionError(
-				"invalid_identity",
-				"turn/steer expectedTurnId is not an issued current TurnId.",
-				error,
-			);
-		}
-		const expectedTurnId = identity.decoder.serializeCodexIdentity(turnId);
-		const threadValue = params.threadId;
-		if (!isCanonicalIdentity(threadValue)) return { ...params, expectedTurnId };
-		try {
-			const threadId = identity.decoder.parseThreadId(threadValue);
-			return {
-				...params,
-				threadId: identity.decoder.serializeCodexIdentity(threadId),
-				expectedTurnId,
-			};
-		} catch (error) {
-			throw new CodexSessionError(
-				"invalid_identity",
-				"turn/steer threadId is not an issued current ThreadId.",
-				error,
-			);
-		}
+		return supported.data;
 	};
 
 	const validateReverseRequest = (
@@ -282,8 +356,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 				"currentTime/read requires a nonempty current ThreadId.",
 			);
 		try {
-			if (isCanonicalIdentity(threadId)) identity.decoder.parseThreadId(threadId);
-			else identity.decoder.adoptThreadId(threadId);
+			identity.decoder.parseThreadId(threadId);
 		} catch (error) {
 			throw new CodexSessionError(
 				"invalid_identity",
@@ -298,8 +371,11 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 	): Promise<void> => {
 		validateReverseRequest(request, "currentTime/read");
 		validateCurrentThread(request);
+		const result: ResponsePayloads["currentTime/read"] = {
+			currentTimeAt: Math.floor(now() / 1000),
+		};
 		await transport.respond(request, "codex-session", {
-			result: { currentTimeAt: Math.floor(now() / 1000) },
+			result,
 		});
 	};
 
@@ -317,17 +393,6 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		await transport.respond(request, "codex-session", { error: UNSUPPORTED_ATTESTATION_ERROR });
 	};
 
-	const respondInvalidReverseRequest = (request: SessionServerRequest): void => {
-		void transport
-			.respond(request, "codex-session", {
-				error: {
-					code: INVALID_PARAMS_CODE,
-					message: "The reverse request is not valid for the current Codex child epoch.",
-				},
-			})
-			.catch(() => undefined);
-	};
-
 	const onServerRequest = (request: TransportServerRequest): void => {
 		if (request.owner !== "codex-session") return;
 		const operation =
@@ -336,9 +401,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 				: request.method === "account/chatgptAuthTokens/refresh"
 					? respondUnsupportedTokenRefresh(request)
 					: respondUnsupportedAttestation(request);
-		void operation.catch((error: unknown) => {
-			if (error instanceof CodexSessionError) respondInvalidReverseRequest(request);
-		});
+		void operation.catch(() => undefined);
 	};
 
 	transport.onServerNotification(onNotification);
@@ -352,18 +415,22 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 			);
 		phase = "initializing";
 		try {
-			const params = decodeInitializeParams({
-				clientInfo: CLIENT_INFO,
-				capabilities: INITIALIZE_CAPABILITIES,
-			});
-			const initialized = await requestDecoded("initialize", params, INITIALIZE_OPTIONS, false);
+			const initialized = await requestDecoded(
+				"initialize",
+				{
+					clientInfo: CLIENT_INFO,
+					capabilities: INITIALIZE_CAPABILITIES,
+				},
+				INITIALIZE_OPTIONS,
+				false,
+			);
 			phase = "initialize-accepted";
 			await transport.sendNotification("initialized");
 			phase = "initialized-written";
 			const requirements = await requestDecoded("configRequirements/read", {}, READ_OPTIONS, false);
 			const config = await requestDecoded(
 				"config/read",
-				{ includeLayers: true },
+				{ includeLayers: true, cwd: options.checkoutRoot },
 				READ_OPTIONS,
 				false,
 			);
@@ -390,70 +457,84 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		}
 	};
 
-	const configRead = (params?: SessionParams) => read("config/read", params, "login-capable");
-	const accountRead = async (params?: SessionParams) => {
+	const configRead = (params?: SessionParams<"config/read">) =>
+		read("config/read", params, "login-capable");
+	const accountRead = async (params?: SessionParams<"account/read">) => {
 		const result = await read("account/read", params, "login-capable");
 		if (result.account === null) {
-			accountReady = false;
-			phase = "login-capable";
+			setAccountReadiness(false);
 		} else {
-			accountReady = true;
-			phase = "thread-capable";
+			setAccountReadiness(true);
 			lifecycle?.markAccountReady();
 		}
 		return result;
 	};
 	const accountLogin = (params: Parameters<CodexSession["accountLogin"]>[0]) =>
 		mutate("account/login/start", params, "login-capable", validateLogin);
-	const accountLoginCancel = (params?: SessionParams) =>
+	const accountLoginCancel = (params: SessionParams<"account/login/cancel">) =>
 		mutate("account/login/cancel", params, "login-capable");
-	const accountLogout = async (params?: SessionParams) => {
-		const result = await mutate("account/logout", params, "login-capable");
-		accountReady = false;
-		phase = "login-capable";
-		return result;
+	const accountLogout = async (params?: SessionParams<"account/logout">) => {
+		const restoreReady = accountReady && phase === "thread-capable";
+		if (restoreReady) setAccountReadiness(false);
+		try {
+			const result = await mutate("account/logout", params, "login-capable");
+			setAccountReadiness(false);
+			return result;
+		} catch (error) {
+			if (restoreReady && mutationOutcome(error) === "not_delivered") setAccountReadiness(true);
+			else setAccountReadiness(false);
+			throw error;
+		}
 	};
-	const modelList = (params?: SessionParams) => read("model/list", params, "login-capable");
-	const threadStart = (params: SessionParams) => mutate("thread/start", params, "thread-capable");
-	const threadFork = (params: SessionParams) => mutate("thread/fork", params, "thread-capable");
-	const threadListPage = (params?: SessionParams) => read("thread/list", params, "thread-capable");
-	const threadLoadedListPage = (params?: SessionParams) =>
+	const modelList = (params?: SessionParams<"model/list">) =>
+		read("model/list", params, "login-capable");
+	const threadStart = (params: SessionParams<"thread/start">) =>
+		mutate("thread/start", params, "thread-capable");
+	const threadFork = (params: SessionParams<"thread/fork">) =>
+		mutate("thread/fork", params, "thread-capable");
+	const threadListPage = (params?: SessionParams<"thread/list">) =>
+		read("thread/list", params, "thread-capable");
+	const threadLoadedListPage = (params?: SessionParams<"thread/loaded/list">) =>
 		read("thread/loaded/list", params, "thread-capable");
-	const threadRead = (params: SessionParams) => read("thread/read", params, "thread-capable");
-	const threadTurnsListPage = (params?: SessionParams) =>
+	const threadRead = (params: SessionParams<"thread/read">) =>
+		read("thread/read", params, "thread-capable");
+	const threadTurnsListPage = (params?: SessionParams<"thread/turns/list">) =>
 		read("thread/turns/list", params, "thread-capable");
-	const threadItemsListPage = (params?: SessionParams) =>
+	const threadItemsListPage = (params?: SessionParams<"thread/items/list">) =>
 		read("thread/items/list", params, "thread-capable");
-	const threadDelete = (params: SessionParams) => mutate("thread/delete", params, "thread-capable");
-	const threadSettingsUpdate = (params: SessionParams) =>
+	const threadDelete = (params: SessionParams<"thread/delete">) =>
+		mutate("thread/delete", params, "thread-capable");
+	const threadSettingsUpdate = (params: SessionParams<"thread/settings/update">) =>
 		mutate("thread/settings/update", params, "thread-capable");
-	const turnStart = (params: SessionParams) => mutate("turn/start", params, "thread-capable");
-	const turnSteer = (params: SessionParams) =>
-		mutate("turn/steer", params, "thread-capable", prepareSteer);
-	const turnInterrupt = (params: SessionParams) =>
+	const turnStart = (params: SessionParams<"turn/start">) =>
+		mutate("turn/start", params, "thread-capable");
+	const turnSteer = (params: SessionParams<"turn/steer">) =>
+		mutate("turn/steer", params, "thread-capable");
+	const turnInterrupt = (params: SessionParams<"turn/interrupt">) =>
 		mutate("turn/interrupt", params, "thread-capable");
-	const queueAdd = (params: SessionParams) => mutate("thread/queue/add", params, "thread-capable");
-	const queueListPage = (params?: SessionParams) =>
+	const queueAdd = (params: SessionParams<"thread/queue/add">) =>
+		mutate("thread/queue/add", params, "thread-capable");
+	const queueListPage = (params?: SessionParams<"thread/queue/list">) =>
 		read("thread/queue/list", params, "thread-capable");
-	const queueUpdate = (params: SessionParams) =>
+	const queueUpdate = (params: SessionParams<"thread/queue/update">) =>
 		mutate("thread/queue/update", params, "thread-capable");
-	const queueDelete = (params: SessionParams) =>
+	const queueDelete = (params: SessionParams<"thread/queue/delete">) =>
 		mutate("thread/queue/delete", params, "thread-capable");
-	const queueReorder = (params: SessionParams) =>
+	const queueReorder = (params: SessionParams<"thread/queue/reorder">) =>
 		mutate("thread/queue/reorder", params, "thread-capable");
-	const queueStart = (params: SessionParams) =>
+	const queueStart = (params: SessionParams<"thread/queue/start">) =>
 		mutate("thread/queue/start", params, "thread-capable");
-	const threadInjectItems = (params: SessionParams) =>
+	const threadInjectItems = (params: SessionParams<"thread/inject_items">) =>
 		mutate("thread/inject_items", params, "thread-capable");
-	const realtimeStart = (params: SessionParams) =>
+	const realtimeStart = (params: SessionParams<"thread/realtime/start">) =>
 		mutate("thread/realtime/start", params, "thread-capable");
-	const realtimeAppendText = (params: SessionParams) =>
+	const realtimeAppendText = (params: SessionParams<"thread/realtime/appendText">) =>
 		mutate("thread/realtime/appendText", params, "thread-capable");
-	const realtimeAppendSpeech = (params: SessionParams) =>
+	const realtimeAppendSpeech = (params: SessionParams<"thread/realtime/appendSpeech">) =>
 		mutate("thread/realtime/appendSpeech", params, "thread-capable");
-	const realtimeStop = (params: SessionParams) =>
+	const realtimeStop = (params: SessionParams<"thread/realtime/stop">) =>
 		mutate("thread/realtime/stop", params, "thread-capable");
-	const timelineListPage = (params?: SessionParams) =>
+	const timelineListPage = (params?: SessionParams<"thread/timeline/list">) =>
 		read("thread/timeline/list", params, "thread-capable");
 
 	return Object.freeze({
