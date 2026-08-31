@@ -1,11 +1,11 @@
 ---
 id: TASK-143.07.06
 title: Dispatch coordinator and voice dynamic tools
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-31 21:32'
+updated_date: '2026-08-31 21:35'
 labels: []
 dependencies:
   - TASK-143.07.03
@@ -30,10 +30,10 @@ Own coordinator item/tool/call validation, routing, and response construction fo
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Calls validate full coordinator logical identity/manifest; the host supplies workhorse/queue/approval identity and rejects caller targets or stale/self/cross-domain/prior-epoch state.
-- [ ] #2 Workhorse tools route only to TASK-143.07.03. resolve_spoken_approval accepts only verdict and routes only after TASK-143.07.05 validates the sole final-user-derived pending broker identity.
-- [ ] #3 This module alone constructs coordinator/voice dynamic-tool text responses; transport writes each once. Cancellation/lost dispatch cannot duplicate mutation or fabricate settlement.
-- [ ] #4 Co-located fake-port tests cover every route/refusal/result, manifest mismatch, later classifier turn, visual fallback, final-user authority, second-slot refusal, stale session, and timelines; TASK-143.01.15 owns composed real-process coverage.
+- [x] #1 Calls validate full coordinator logical identity/manifest; the host supplies workhorse/queue/approval identity and rejects caller targets or stale/self/cross-domain/prior-epoch state.
+- [x] #2 Workhorse tools route only to TASK-143.07.03. resolve_spoken_approval accepts only verdict and routes only after TASK-143.07.05 validates the sole final-user-derived pending broker identity.
+- [x] #3 This module alone constructs coordinator/voice dynamic-tool text responses; transport writes each once. Cancellation/lost dispatch cannot duplicate mutation or fabricate settlement.
+- [x] #4 Co-located fake-port tests cover every route/refusal/result, manifest mismatch, later classifier turn, visual fallback, final-user authority, second-slot refusal, stale session, and timelines; TASK-143.01.15 owns composed real-process coverage.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -80,4 +80,12 @@ Replay settlement remediation: logical execution and wire settlement now have se
 Replay identity/retention remediation: validated closed tool inputs now produce tool-specific canonical SHA-256 fingerprints; only byte-identical fingerprints share a logical result. Changed delegate text, queue arguments, and spoken verdicts receive alias-only invalid_call boundary refusals. Replay ownership is split into bounded live wires, compact terminal wire tombstones, live logical effects, and compact terminal logical responses. Limits are 8 concurrent aliases, 128 wire tombstones, and 32 logical terminals. Current-call changes evict stale logical state; child exit/dispose clear epoch state. Count-only replay inspection exposes no request/input/response bodies. Stress coverage drove 130 wire IDs through one 16 KiB queue prompt while retaining 128 tombstones, one 64-byte fingerprint, and one effect. Final capped unit archboard-1430706-retention-final-gates: focused tests 60 pass / 445 expectations; both TypeScript graphs pass; scoped Oxlint 0 warnings/errors; scoped Oxfmt clean; inventory 39 pass / 69 expectations; peak 1.8G, swap 0B. Known capped-OOM lanes were not rerun. Task remains In Progress with acceptance criteria unchecked.
 
 Fourth remediation: live-alias overflow invalid_call refusals now enter the ordinary compact bounded wire tombstone path. Same-object and copied canonical-wire redispatch before and after owner settlement return the original overflow refusal with one transport write and one delegate effect; exact child-exit zero-write behavior remains covered. Added a table-driven public-boundary fingerprint matrix for inspect, delegate, steer, both spoken verdicts, and all six queue operations, covering reordered exact objects, changed canonical fields (including UTF-8), strict extra/null/default-like invalid inputs, one alias-only invalid_call response, stable OperationId/results for exact aliases, and zero additional effects. Final capped unit archboard-1430706-fingerprint-final-1: focused tests 71 pass / 800 expectations; both TypeScript graphs pass; scoped Oxlint 0 warnings/errors; scoped Oxfmt clean; peak 1.7G, swap 0B. Inventory unit: 39 pass / 69 expectations. git diff --check passed; source/test files remain under 500 lines; protected bundle SHA-256 remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Known capped-OOM lanes were not rerun. Task remains In Progress with all acceptance criteria unchecked for independent review.
+
+Finalization evidence after independent REVIEW_CLEAN on 5842f4383bed569d876d0a05e747e551b49b74e9..d13a4cc403fd6b81d599cfac655e05f681476673: AC1 is proved by exact logical identity, manifest, epoch, host authority, and shared branded OperationId validation through the .07.03 seam. AC2 is proved by exhaustive dispatcher routing through CodexWorkhorseOperations and sole final-user-derived SpokenApprovalSnapshot gate authority. AC3 is proved by canonical response ownership, one effect per logical call, one settlement attempt per admitted wire, bounded fingerprint and tombstone replay, overflow replay, cancellation, write-loss, disposal, and exact child-exit tests. AC4 is proved by co-located fake-port coverage for every tool route, refusal, result, authority race, manifest mismatch, later classifier turn, visual fallback, final-user authority, second-slot refusal, stale session, and timeline. Accepted capped evidence: 71 focused tests / 800 expectations, both TypeScript graphs, scoped Oxlint and Oxfmt, repository inventory 39 tests / 69 expectations, clean fixed-range review, and unchanged protected hash. The prior full test:modules run reached MemoryMax=6G plus MemorySwapMax=1G and was not rerun.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Completed coordinator and voice dynamic-tool dispatch with strict identity and authority validation, shared OperationId continuity, exclusive workhorse and spoken-gate routing, canonical one-wire responses, and bounded deterministic replay. Independent review found no issues in the complete fixed-base range. Validation passed 71 focused tests with 800 expectations, both TypeScript graphs, scoped static checks, and the 39-test repository inventory; preserved capped-OOM evidence remains documented.
+<!-- SECTION:FINAL_SUMMARY:END -->
