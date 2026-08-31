@@ -1,0 +1,106 @@
+{
+	"type": "namespace",
+	"name": "archboard_app",
+	"description": "Coordinate bounded work across Codex threads owned or inspected by this Archboard app-server session.",
+	"tools": [
+		{
+			"type": "function",
+			"name": "create_thread",
+			"description": "Create one persistent Archboard Codex thread after host approval and return its confirmed identity or uncertainty.",
+			"inputSchema": {
+				"type": "object",
+				"properties": {
+					"prompt": { "type": "string", "minLength": 1, "maxLength": 16384 }
+				},
+				"required": ["prompt"],
+				"additionalProperties": false
+			},
+			"deferLoading": false
+		},
+		{
+			"type": "function",
+			"name": "fork_thread",
+			"description": "Fork one eligible loaded controllable thread at a reviewed turn boundary after host approval.",
+			"inputSchema": {
+				"type": "object",
+				"properties": {
+					"threadId": { "type": "string", "minLength": 1, "maxLength": 128 },
+					"beforeTurnId": { "type": "string", "minLength": 1, "maxLength": 128 },
+					"prompt": { "type": "string", "minLength": 1, "maxLength": 16384 }
+				},
+				"required": ["threadId"],
+				"additionalProperties": false
+			},
+			"deferLoading": false
+		},
+		{
+			"type": "function",
+			"name": "list_threads",
+			"description": "List inspectable threads from the owned app-server session without loading or mutating them.",
+			"inputSchema": {
+				"type": "object",
+				"properties": {
+					"cursor": { "type": "string", "minLength": 1, "maxLength": 1024 },
+					"limit": { "type": "integer", "minimum": 1, "maximum": 100 }
+				},
+				"required": [],
+				"additionalProperties": false
+			},
+			"deferLoading": false
+		},
+		{
+			"type": "function",
+			"name": "read_thread",
+			"description": "Read bounded authoritative history for one inspectable thread without loading or mutating it.",
+			"inputSchema": {
+				"type": "object",
+				"properties": {
+					"threadId": { "type": "string", "minLength": 1, "maxLength": 128 },
+					"cursor": { "type": "string", "minLength": 1, "maxLength": 1024 },
+					"turnLimit": { "type": "integer", "minimum": 1, "maximum": 20 },
+					"includeOutputs": { "type": "boolean" }
+				},
+				"required": ["threadId"],
+				"additionalProperties": false
+			},
+			"deferLoading": false
+		},
+		{
+			"type": "function",
+			"name": "send_message_to_thread",
+			"description": "Send one message to an eligible target after policy and approval checks; never retry an uncertain mutation.",
+			"inputSchema": {
+				"type": "object",
+				"properties": {
+					"threadId": { "type": "string", "minLength": 1, "maxLength": 128 },
+					"prompt": { "type": "string", "minLength": 1, "maxLength": 16384 }
+				},
+				"required": ["threadId", "prompt"],
+				"additionalProperties": false
+			},
+			"deferLoading": false
+		},
+		{
+			"type": "function",
+			"name": "wait_threads",
+			"description": "Wait without creating a dependency cycle for the first bounded target to complete or need attention.",
+			"inputSchema": {
+				"type": "object",
+				"properties": {
+					"threadIds": {
+						"type": "array",
+						"minItems": 1,
+						"maxItems": 8,
+						"uniqueItems": true,
+						"items": { "type": "string", "minLength": 1, "maxLength": 128 }
+					},
+					"timeoutMs": { "type": "integer", "minimum": 0, "maximum": 120000 },
+					"cursor": { "type": "string", "minLength": 1, "maxLength": 1024 }
+				},
+				"required": ["threadIds"],
+				"additionalProperties": false
+			},
+			"deferLoading": false
+		}
+	]
+}
