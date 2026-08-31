@@ -19,6 +19,21 @@ import {
 
 const NEGOTIATION_STAGES: Stage[] = ["createOffer", "setLocal", "hostOffer", "setRemote", "resume"];
 const PAUSE_STAGES: Stage[] = ["getUserMedia", ...NEGOTIATION_STAGES];
+const PUBLISHED_CHECKPOINTS = [
+	["requesting_permission", "start_requested", "getUserMedia"],
+	["negotiating", "permission_granted", "peer"],
+	["negotiating", "offer_created", "hostOffer"],
+	["negotiating", "answer_received", "setRemote"],
+	["listening", "negotiation_succeeded", null],
+] as const;
+const SIDE_EFFECT_CHECKPOINTS = [
+	["peer", "transceiver"],
+	["transceiver", "channel"],
+	["channel", "createOffer"],
+	["attachRemote", "audioContext"],
+	["audioContext", "source"],
+	["source", "analyser"],
+] as const;
 
 afterEach(restoreFakeBrowsers);
 
@@ -193,7 +208,7 @@ describe("realtime browser media session", () => {
 		expect(env.order.filter((value) => value === "getUserMedia")).toHaveLength(1);
 		expect(a.state).toEqual({ phase: "closed", reason: "stopped" });
 		expect(b.state).toEqual({ phase: "closed", reason: "stopped" });
-		expect(stopped).toBe(b);
+		expect(stopped).toBe(a);
 		env.release();
 		await settle();
 		expect(env.localTrack.stopCount).toBe(1);
@@ -312,6 +327,64 @@ describe("realtime browser media session", () => {
 		env.assertReleased();
 	});
 
+	test.each(["pending", "rejected"] as const)(
+		"%s browser cleanup promises cannot retain the lifecycle queue",
+		async (mode) => {
+			const env = new FakeBrowser();
+			env.senderCount = 3;
+			env.replaceTrackMode = mode;
+			env.closeContextMode = mode;
+			const session = createRealtimeMediaSession(host(env));
+			await session.start(correlation(1));
+			expect((await session.stop()).state).toEqual({ phase: "closed", reason: "stopped" });
+			expect((await session.start(correlation(2))).state.phase).toBe("listening");
+			await session.dispose();
+			expect(env.peers.map((peer) => peer.senders.length)).toEqual([3, 3]);
+			expect(env.timers.size).toBe(0);
+			env.assertReleased();
+		},
+	);
+
+	test.each(["stop", "dispose"] as const)(
+		"%s from every published checkpoint blocks the next effect",
+		async (action) => {
+			for (const [phase, reason, forbidden] of PUBLISHED_CHECKPOINTS) {
+				const env = new FakeBrowser();
+				const session = createRealtimeMediaSession(host(env));
+				let ending: Promise<unknown> | undefined;
+				session.subscribe((next) => {
+					if (!ending && next.state.phase === phase && next.state.reason === reason)
+						ending = action === "stop" ? session.stop() : session.dispose();
+				});
+				await session.start(correlation());
+				await ending;
+				if (forbidden) expect(env.order).not.toContain(forbidden);
+				env.assertReleased();
+				env.restore();
+			}
+		},
+	);
+
+	test.each(["stop", "dispose"] as const)(
+		"%s during synchronous construction blocks its next effect",
+		async (action) => {
+			for (const [checkpoint, forbidden] of SIDE_EFFECT_CHECKPOINTS) {
+				const env = new FakeBrowser();
+				const session = createRealtimeMediaSession(host(env));
+				let ending: Promise<unknown> | undefined;
+				env.onStep = (step) => {
+					if (!ending && step === checkpoint)
+						ending = action === "stop" ? session.stop() : session.dispose();
+				};
+				await session.start(correlation());
+				await ending;
+				expect(env.order).not.toContain(forbidden);
+				env.assertReleased();
+				env.restore();
+			}
+		},
+	);
+
 	test.each(NEGOTIATION_STAGES)("one start deadline expires during %s", async (stage) => {
 		const env = new FakeBrowser();
 		env.pause = stage;
@@ -364,37 +437,52 @@ describe("realtime browser media session", () => {
 		env.assertReleased();
 	});
 
-	test.each(["rejected", "not_delivered", "outcome_unknown"] as StopMode[])(
-		"host stop %s settles as one public failure",
+	test.each(["delivered", "rejected", "not_delivered", "outcome_unknown", "paused"] as StopMode[])(
+		"active A outranks dormant B when host stop is %s",
 		async (mode) => {
 			const env = new FakeBrowser();
 			env.stopMode = mode;
 			const session = createRealtimeMediaSession(host(env));
-			await session.start(correlation());
-			const stopped = await session.stop();
-			expect(stopped).toBe(session.getSnapshot());
-			expect(stopped).toMatchObject({
-				state: { phase: "recoverable_error", reason: "stop_failed" },
-				inputLevel: 0,
+			await session.start(correlation(1));
+			const terminal: string[] = [];
+			session.subscribe((next) => {
+				if (next.state.phase === "closed" || next.state.phase === "recoverable_error")
+					terminal.push(`${next.correlation?.sessionId}:${next.state.reason}`);
 			});
+			const second = session.start(correlation(2));
+			const stopping = session.stop();
+			if (mode === "paused") {
+				await settle();
+				env.advance(CODEX_REALTIME_STOP_MS);
+			}
+			const [b, stopped] = await Promise.all([second, stopping]);
+			expect(b.state).toEqual({ phase: "closed", reason: "stopped" });
+			expect(stopped.correlation).toEqual(correlation(1));
+			expect(stopped).toBe(session.getSnapshot());
+			expect(stopped.state).toMatchObject(
+				mode === "delivered"
+					? { phase: "closed", reason: "stopped" }
+					: { phase: "recoverable_error", reason: "stop_failed" },
+			);
+			expect(terminal).toEqual([`session-1:${mode === "delivered" ? "stopped" : "stop_failed"}`]);
 			expect(env.stopCount).toBe(1);
 			env.assertReleased();
 		},
 	);
 
-	test("an expired host stop settles once with stop_failed", async () => {
+	test("dispose does not turn an active stop failure into dormant success", async () => {
 		const env = new FakeBrowser();
-		env.stopMode = "paused";
+		env.stopMode = "not_delivered";
 		const session = createRealtimeMediaSession(host(env));
-		await session.start(correlation());
+		await session.start(correlation(1));
+		const second = session.start(correlation(2));
 		const stopping = session.stop();
-		await settle();
-		env.advance(CODEX_REALTIME_STOP_MS);
-		const stopped = await stopping;
+		const disposing = session.dispose();
+		const [b, stopped] = await Promise.all([second, stopping, disposing]);
+		expect(b.state).toEqual({ phase: "closed", reason: "disposed" });
 		expect(stopped.state).toMatchObject({ phase: "recoverable_error", reason: "stop_failed" });
-		env.releaseStop();
-		await settle();
 		expect(session.getSnapshot()).toBe(stopped);
+		expect(env.stopCount).toBe(1);
 		env.assertReleased();
 	});
 });
