@@ -551,3 +551,7 @@ export const TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS = 20_000;
 
 /** Aggregate test-case threshold for 200 sequential external allocation owners and exact-root cleanup. */
 export const TEST_VITE_TAILWIND_ALLOCATION_CASE_TIMEOUT_MS = 30_000;
+/** Per-candidate cap for exact filesystem observation in the allocation owner regression. */
+export const TEST_VITE_TAILWIND_ROOT_OBSERVATION_TIMEOUT_MS = 2_000;
+/** Exact filesystem observation cadence; fs.watch may wake the probe sooner. */
+export const TEST_VITE_TAILWIND_ROOT_OBSERVATION_POLL_MS = 10;
