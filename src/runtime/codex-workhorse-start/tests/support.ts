@@ -6,7 +6,12 @@ import {
 	type CodexEpochStore,
 	type EpochStageInput,
 } from "../../codex-epoch/index.js";
-import type { SessionParams, SessionResponse, SessionThread } from "../../codex-session/index.js";
+import type {
+	SessionParams,
+	SessionResponse,
+	SessionThread,
+	SessionTurn,
+} from "../../codex-session/index.js";
 import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
@@ -206,7 +211,12 @@ export function threadFixture(threadId: ThreadId): SessionThread {
 	};
 }
 
-export function startResponse(thread: SessionThread): SessionResponse<"thread/start"> {
+export function startResponse(
+	thread: SessionThread,
+	overrides: Partial<
+		Pick<SessionResponse<"thread/start">, "approvalPolicy" | "sandbox" | "activePermissionProfile">
+	> = {},
+): SessionResponse<"thread/start"> {
 	return {
 		thread,
 		model: "gpt-5.6-luna",
@@ -221,6 +231,27 @@ export function startResponse(thread: SessionThread): SessionResponse<"thread/st
 		activePermissionProfile: { id: "archboard-default", extends: null },
 		reasoningEffort: null,
 		multiAgentMode: "explicitRequestOnly",
+		...overrides,
+	};
+}
+
+export function turnFixture(authorities: IdentityAuthorities): SessionTurn {
+	return {
+		id: authorities.identity.decoder.adoptTurnId("workhorse-turn-1"),
+		items: [
+			{
+				type: "userMessage",
+				id: authorities.identity.decoder.adoptItemId("workhorse-item-1"),
+				clientId: null,
+				content: [{ type: "text", text: "existing turn", text_elements: [] }],
+			},
+		],
+		itemsView: "full",
+		status: "completed",
+		error: null,
+		startedAt: 1,
+		completedAt: 2,
+		durationMs: 1,
 	};
 }
 
