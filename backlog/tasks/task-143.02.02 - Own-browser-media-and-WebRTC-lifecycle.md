@@ -1,11 +1,11 @@
 ---
 id: TASK-143.02.02
 title: Own browser media and WebRTC lifecycle
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 02:13'
+updated_date: '2026-08-31 02:34'
 labels: []
 dependencies:
   - TASK-143.02.01
@@ -36,10 +36,10 @@ Delegation profile: gpt-5.6-luna, max.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Construction order is getUserMedia, RTCPeerConnection/audio transceiver, realtime-events data channel, local offer/setLocalDescription, host offer callback, setRemoteDescription, remote audio attachment, AudioContext/AnalyserNode metering.
-- [ ] #2 The implementation uses WebRTC audio only and exposes neither websocket transport nor appendAudio/outputAudio content paths; data-channel events are diagnostics/control, not a second transcript.
-- [ ] #3 Permission denial, absent devices, SDP failure, ICE disconnect/fail, data-channel close, autoplay suspension, device loss, stop during every phase, restart, and unmount each produce one contract state and idempotent cleanup.
-- [ ] #4 Cleanup stops every track, sender/receiver, data channel, peer, AudioContext, animation frame, listener, timer, remote audio source, and object URL exactly once; fake browser tests consume only the public index and verify leak-free repetition.
+- [x] #1 Construction order is getUserMedia, RTCPeerConnection/audio transceiver, realtime-events data channel, local offer/setLocalDescription, host offer callback, setRemoteDescription, remote audio attachment, AudioContext/AnalyserNode metering.
+- [x] #2 The implementation uses WebRTC audio only and exposes neither websocket transport nor appendAudio/outputAudio content paths; data-channel events are diagnostics/control, not a second transcript.
+- [x] #3 Permission denial, absent devices, SDP failure, ICE disconnect/fail, data-channel close, autoplay suspension, device loss, stop during every phase, restart, and unmount each produce one contract state and idempotent cleanup.
+- [x] #4 Cleanup stops every track, sender/receiver, data channel, peer, AudioContext, animation frame, listener, timer, remote audio source, and object URL exactly once; fake browser tests consume only the public index and verify leak-free repetition.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -73,4 +73,18 @@ Fifth review remediation: a dequeued restart remains explicitly in-flight until 
 Sixth review remediation: listener notification now snapshots the current state and invokes every subscriber in registration order behind per-listener exception isolation; throwing subscribers remain subscribed and cannot suppress later observers, host stop, cleanup, reentrant stop/dispose, or the one terminal publication. Public adversarial owners exercise first, middle, and last throwing positions across implicit-restart stopping, ordinary stop, recoverable failure, terminal failure, dispose close, repeated notification, and reentrant stop/dispose. Device loss now settles promptly as device_lost throughout negotiation instead of waiting for and misclassifying a later SDP failure; the closed contract adds only the reachable negotiating-to-recoverable device_lost edge. A phase matrix covers createOffer, setLocalDescription, host offer, setRemoteDescription, and AudioContext resume, with stale completions proven silent and correlation-aware host-stop behavior. Same-turn loss during remote attachment, play, AudioContext, source, and analyser construction also proves compensating cleanup of resources created by reentrant hooks. Validation exited 0 on the exact final code: 96 focused realtime tests / 2,979 expectations; 1,102 module tests / 9,713 expectations; 284 system tests / 4,198 expectations; 130 repository-policy tests / 415 expectations; all 19 serial browser owners through bun run check; both strict TypeScript graphs; Oxlint; Oxfmt; Vite frontend build; diff check. Typed owner line counts are 500, 484, 419, 476, and 57. The protected external artifact remains unchanged at SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6, 1,516,136 bytes, mtime 2026-08-30 17:03:10 +0200. No status, assignee, acceptance check, dependency, plan, sibling record, or final summary changed.
 
 Seventh review remediation, code commit d1802b3: every notification captures both its frozen media snapshot and its listener cohort. Subscribe and unsubscribe changes therefore apply to the next publication, not the current fanout. Nested publications enter one synchronous FIFO drain, so every listener finishes offer_created before any listener receives a reentrant device_lost state. Subscriber exceptions remain isolated per callback. Host offer ownership now flips only inside the exact host createOffer invocation after localDescription extraction and cancellation checks. Same-turn device loss while reading localDescription performs no host stop, while loss after host invocation begins sends one exactly correlated stop. Public owners cover cohort mutation, exact two-listener reentrant order, and both sides of the host ownership boundary. Requested memory-safe validation exited 0: 100 focused realtime tests and 3,039 expectations; both strict TypeScript graphs; Oxlint; Oxfmt; Vite frontend build; diff check. Test/support owners are 486, 484, and 483 lines. Per the durable OOM rule, this remediation did not launch module, system, repository, complete-check, or browser lanes. Root retains those broad gates. The protected external artifact remains unchanged at SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6, 1,516,136 bytes, mtime 2026-08-30 17:03:10 +0200. No status, assignee, acceptance check, dependency, plan, sibling record, or final summary changed.
+
+Root integration and finalization evidence (2026-08-31):
+- Independent seventh-round complete-range rereview returned REVIEW_CLEAN at exact worker HEAD e32e2bdce88b8d266e3ba56b585098a31b8c5e40.
+- Integrated the nine-commit review-clean range as c520ba9 through 5cdd3ae.
+- Root-owned capped module validation passed in archboard-integration-modules-3bc0a1e.service with MemoryMax=12G and MemorySwapMax=2G: 1,264 tests, 11,271 expectations, exit 0, peak 1.0G, swap 0, no limit hit. The included public media owners passed all 100 lifecycle tests and 3,039 focused expectations, covering cohort snapshots, reentrant FIFO publication, exact host-offer ownership, phase cancellation, cleanup, and stop/restart/dispose outcomes.
+- Capped type-check, lint, and frontend build subsequently passed on the integrated branch in archboard-task14402-typecheck-25532ee.service, archboard-task14402-lint-25532ee.service, and archboard-task14402-build-25532ee.service. Peaks were 1.3G, 1.5G, and 1.4G with zero swap and no limit hits.
+- git diff --check and clean worktree status passed. This module has no rendered React owner; its acceptance contract explicitly uses deterministic public-index fake browser tests, so no separate browser lane applies.
+- The combined repository lane failure belongs to active TASK-144.10 and does not select or invalidate this task-owned module suite.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented the browser-native realtime media lifecycle behind the frozen public index, with ordered WebRTC setup, exhaustive correlated failure and cancellation states, listener-safe publication, and idempotent leak-free cleanup proven by 100 public fake-browser tests.
+<!-- SECTION:FINAL_SUMMARY:END -->
