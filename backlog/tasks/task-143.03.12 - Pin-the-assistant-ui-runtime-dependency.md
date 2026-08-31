@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 04:27'
+updated_date: '2026-08-31 04:36'
 labels: []
 dependencies:
   - TASK-144.01
@@ -87,5 +87,12 @@ Final focused checks after the lint-safe follow-up: bun test tests/system/reposi
 - Added hostile fixtures for satisfies through const, simple assignment, and destructuring assignment, plus direct TSAsExpression, TSNonNullExpression, and TSSatisfiesExpression nested accesses.
 - Consolidated the local-alias fixtures and retained the reviewed copied-Element limitation and three-name inventory; tests/system/repository-policy/assistant-ui-imports.test.ts remains exactly 500 lines.
 - Focused evidence: bun test tests/system/repository-policy/assistant-ui-imports.test.ts passed 12 tests and 276 expect() calls; Oxlint passed with 0 warnings and 0 errors; Oxfmt check passed; git diff --check passed.
+- Broad repository, system, and browser lanes were intentionally not run because they remain root-owned. External /home/msc/Projects/archboard/src-DlBR1tzg.js remained unchanged. Task remains In Progress with all acceptance criteria unchecked.
+
+2026-08-31 @codex declarator-alias consistency evidence (code commit da8761b997d023cf366a3bfa5f45b2dbc448184c)
+
+- VariableDeclarator now reports noAssistantUiAlias for tracked assistant-ui identifier initializers before retaining map propagation; transparent satisfies unwrapping remains in force.
+- Added isolated hostile fixtures for plain and satisfies-wrapped const declarators, both using the alias without nested members so the alias diagnostic itself is asserted.
+- Focused evidence: bun test tests/system/repository-policy/assistant-ui-imports.test.ts passed 12 tests and 282 expect() calls; Oxlint passed with 0 warnings and 0 errors; Oxfmt check passed; the policy test remains exactly 500 lines; git diff --check passed.
 - Broad repository, system, and browser lanes were intentionally not run because they remain root-owned. External /home/msc/Projects/archboard/src-DlBR1tzg.js remained unchanged. Task remains In Progress with all acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->
