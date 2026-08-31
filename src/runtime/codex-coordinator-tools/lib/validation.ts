@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import {
 	ARCHBOARD_VOICE_MANIFEST_SHA256,
 	ARCHBOARD_VOICE_TOOL_NAMES,
@@ -49,9 +51,65 @@ export interface ValidatedCoordinatorToolCall {
 	readonly tool: CoordinatorToolName;
 	readonly call: WorkhorseCoordinatorCall;
 	readonly input: CoordinatorToolInput;
+	readonly inputFingerprint: string;
 	readonly coordinator: CoordinatorToolCoordinatorAuthority;
 	readonly workhorseBinding: WorkhorseOperationBinding | null;
 	readonly expectedTurnId: TurnId | null;
+}
+
+function canonicalInput(tool: CoordinatorToolName, input: CoordinatorToolInput): string {
+	switch (tool) {
+		case "inspect_workhorse":
+			return "{}";
+		case "delegate_to_workhorse": {
+			const value = input as DelegateToWorkhorseInput;
+			return JSON.stringify({ input: value.input, transcriptDelta: value.transcriptDelta });
+		}
+		case "manage_workhorse_queue": {
+			const value = input as ManageWorkhorseQueueInput;
+			switch (value.operation) {
+				case "list":
+					return JSON.stringify({ operation: value.operation });
+				case "add":
+					return JSON.stringify({ operation: value.operation, prompt: value.prompt });
+				case "update":
+					return JSON.stringify({
+						operation: value.operation,
+						submissionId: value.submissionId,
+						prompt: value.prompt,
+					});
+				case "delete":
+				case "start":
+					return JSON.stringify({
+						operation: value.operation,
+						submissionId: value.submissionId,
+					});
+				case "reorder":
+					return JSON.stringify({
+						operation: value.operation,
+						orderedSubmissionIds: value.orderedSubmissionIds,
+					});
+			}
+		}
+		case "steer_workhorse":
+			return JSON.stringify({ input: (input as SteerWorkhorseInput).input });
+		case "resolve_spoken_approval":
+			return JSON.stringify({ verdict: (input as ResolveSpokenApprovalInput).verdict });
+	}
+}
+
+function inputFingerprint(
+	namespace: NamespaceName,
+	tool: CoordinatorToolName,
+	input: CoordinatorToolInput,
+): string {
+	return createHash("sha256")
+		.update(namespace, "utf8")
+		.update("\0", "utf8")
+		.update(tool, "utf8")
+		.update("\0", "utf8")
+		.update(canonicalInput(tool, input), "utf8")
+		.digest("hex");
 }
 
 export class CoordinatorToolValidationError extends Error {
@@ -298,12 +356,14 @@ export function validateCoordinatorToolRequest(
 		fail("invalid_call", `The reviewed namespace does not declare ${tool}.`);
 	const coordinator = currentCoordinator(options, call);
 	const input = parseInput(namespace, tool, request.params.arguments);
+	const fingerprint = inputFingerprint(namespace, tool, input);
 	if (namespace === "archboard_voice")
 		return Object.freeze({
 			namespace,
 			tool,
 			call,
 			input,
+			inputFingerprint: fingerprint,
 			coordinator,
 			workhorseBinding: null,
 			expectedTurnId: null,
@@ -324,6 +384,7 @@ export function validateCoordinatorToolRequest(
 		tool,
 		call,
 		input,
+		inputFingerprint: fingerprint,
 		coordinator,
 		workhorseBinding: binding,
 		expectedTurnId,

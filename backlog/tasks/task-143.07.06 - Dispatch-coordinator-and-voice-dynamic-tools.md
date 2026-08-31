@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-31 21:07'
+updated_date: '2026-08-31 21:21'
 labels: []
 dependencies:
   - TASK-143.07.03
@@ -56,6 +56,12 @@ Own coordinator item/tool/call validation, routing, and response construction fo
 10. Run only the requested focused coordinator/workhorse suites, both type graphs, scoped lint/format, inventory, fixed-range diff/clean/protected-hash checks in sequential named 6G/1G transient units; preserve all known capped-OOM lanes and leave acceptance criteria unchecked.
 
 11. Separate logical effect ownership from per-wire settlement: cache the owner's canonical terminal result, let each admitted alias await it and attempt exactly one response on its own request, isolate alias cancellation, and cover concurrent/late aliases, write loss, per-wire failure, and child exit.
+
+12. Hash a tool-specific canonical serialization of the closed validated input and require exact fingerprint equality before sharing a logical result; refuse mismatched aliases on their wire only.
+
+13. Split replay storage into bounded live wires, compact terminal wire tombstones, live logical effects, and compact terminal logical results; cap aliases, evict stale current-call state, clear epoch state on child exit/dispose, and expose count-only inspection.
+
+14. Add deterministic replay-capacity and lifecycle tests for normalized exact input, mismatched workhorse/queue/voice aliases, terminal outcomes, large queue text non-retention, bound overflow, cancellation/write loss, child exit/dispose, late retained aliases, and post-eviction no-effect refusal.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -66,4 +72,6 @@ Implemented the coordinator-tools deep module with strict logical-call/manifest/
 Remediation: coordinator now mints one canonical OperationId per workhorse dispatch, injects it through the TASK-143.07.03 mutation seam, and uses only the spoken classifier snapshot identity for voice settlement. Full logical-call correlation deduplicates retries across request IDs. Disposal closes admission without suppressing owned response writes; exact child disconnect remains the sole wire suppression condition. Regression coverage uses full public SpokenApprovalSnapshot fixtures and exercises pre-effect, in-flight read, in-flight mutation, and post-effect response delivery. Focused tests: 49 pass; both TypeScript graphs pass; scoped lint/format pass; test inventory: 39 pass. The previously observed capped test:modules OOM at MemoryMax=6G and MemorySwapMax=1G was not rerun. Acceptance criteria remain unchecked pending parent review.
 
 Replay settlement remediation: logical execution and wire settlement now have separate owners. The first admitted call executes once and caches one canonical result; concurrent and late aliases each attempt one response on their own request ID without reminting an OperationId. Alias cancellation returns one isolated invalid_call refusal without cancelling the owner. Per-wire write loss is isolated, and exact child exit retires both wire owners without writes while the logical effect remains single. Final capped unit archboard-1430706-replay-final-gates: focused tests 53 pass / 412 expectations; both TypeScript graphs pass; scoped Oxlint 0 warnings/errors; scoped Oxfmt clean; inventory 39 pass / 69 expectations; peak 1.7G, swap 0B. Known capped-OOM lanes were not rerun. Task remains In Progress with acceptance criteria unchecked.
+
+Replay identity/retention remediation: validated closed tool inputs now produce tool-specific canonical SHA-256 fingerprints; only byte-identical fingerprints share a logical result. Changed delegate text, queue arguments, and spoken verdicts receive alias-only invalid_call boundary refusals. Replay ownership is split into bounded live wires, compact terminal wire tombstones, live logical effects, and compact terminal logical responses. Limits are 8 concurrent aliases, 128 wire tombstones, and 32 logical terminals. Current-call changes evict stale logical state; child exit/dispose clear epoch state. Count-only replay inspection exposes no request/input/response bodies. Stress coverage drove 130 wire IDs through one 16 KiB queue prompt while retaining 128 tombstones, one 64-byte fingerprint, and one effect. Final capped unit archboard-1430706-retention-final-gates: focused tests 60 pass / 445 expectations; both TypeScript graphs pass; scoped Oxlint 0 warnings/errors; scoped Oxfmt clean; inventory 39 pass / 69 expectations; peak 1.8G, swap 0B. Known capped-OOM lanes were not rerun. Task remains In Progress with acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->

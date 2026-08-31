@@ -133,6 +133,20 @@ export interface CoordinatorToolDispatchResult {
 	readonly attempted: boolean;
 }
 
+export const COORDINATOR_REPLAY_LIMITS = Object.freeze({
+	aliasesPerLiveLogicalCall: 8,
+	retainedWireCalls: 128,
+	retainedLogicalCalls: 32,
+});
+
+export interface CoordinatorReplayStateSnapshot {
+	readonly liveWireCount: number;
+	readonly retainedWireCount: number;
+	readonly liveLogicalCount: number;
+	readonly retainedLogicalCount: number;
+	readonly retainedFingerprintBytes: number;
+}
+
 export type CoordinatorToolLifecycleCause =
 	| "call_cancelled"
 	| "caller_turn_interrupted"
@@ -171,6 +185,8 @@ export interface CoordinatorToolDispatcher {
 	readonly cancel: (requestId: JsonRpcRequestId, cause: CoordinatorToolLifecycleCause) => void;
 	/** Child disconnect prevents any later wire response and any retry. */
 	readonly onChildExit: (exit: { readonly child: ChildId; readonly epoch: ChildEpoch }) => void;
+	/** Count-only replay ownership inspection. It never exposes calls, inputs, or responses. */
+	readonly replayState: () => CoordinatorReplayStateSnapshot;
 	readonly dispose: () => void;
 }
 

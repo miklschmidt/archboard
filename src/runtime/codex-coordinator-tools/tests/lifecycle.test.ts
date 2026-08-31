@@ -132,6 +132,12 @@ describe("coordinator dynamic-tool lifecycle", () => {
 		});
 		expect(h.transport.writes).toHaveLength(1);
 		expect(h.operations.calls.delegate).toHaveLength(1);
+		expect(h.dispatcher.replayState()).toMatchObject({
+			liveWireCount: 0,
+			retainedWireCount: 1,
+			liveLogicalCount: 0,
+			retainedLogicalCount: 1,
+		});
 	});
 
 	test("conservatively reports an unknown mutation when authority changes during the call", async () => {
@@ -211,16 +217,13 @@ describe("coordinator dynamic-tool lifecycle", () => {
 		});
 	});
 
-	test("rejects a second object with the same request identity and retains one result", async () => {
+	test("uses a compact wire tombstone for a repeated terminal request identity", async () => {
 		const h = fixture();
 		const request = h.request("inspect_workhorse");
 		const first = await dispatch(h, request);
 		const duplicate = copyRequest(request);
-		const duplicateError = await dispatch(h, duplicate).catch((error: unknown) => error);
-		expect(duplicateError).toMatchObject({
-			name: "CodexCoordinatorToolsError",
-			code: "duplicate",
-		});
+		const duplicateResult = await dispatch(h, duplicate);
+		expect(duplicateResult).toEqual(first);
 		expect(first.attempted).toBe(true);
 		expect(h.operations.calls.inspect).toHaveLength(1);
 		expect(h.transport.writes).toHaveLength(1);
@@ -284,6 +287,12 @@ describe("coordinator dynamic-tool lifecycle", () => {
 		expect(h.operations.calls.delegate).toHaveLength(1);
 		expect(h.transport.writes).toHaveLength(2);
 		expect(h.transport.writes.filter(({ request }) => request === aliasRequest)).toHaveLength(1);
+		expect(h.dispatcher.replayState()).toMatchObject({
+			liveWireCount: 0,
+			retainedWireCount: 2,
+			liveLogicalCount: 0,
+			retainedLogicalCount: 1,
+		});
 	});
 
 	test("settles each logical replay once when either wire response write fails", async () => {
@@ -305,6 +314,12 @@ describe("coordinator dynamic-tool lifecycle", () => {
 			expect(new Set(h.transport.writes.map(({ request }) => request))).toEqual(
 				new Set([ownerRequest, aliasRequest]),
 			);
+			expect(h.dispatcher.replayState()).toMatchObject({
+				liveWireCount: 0,
+				retainedWireCount: 2,
+				liveLogicalCount: 0,
+				retainedLogicalCount: 1,
+			});
 		}
 	});
 
