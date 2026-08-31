@@ -10,11 +10,8 @@ import {
 	CODEX_PROTOCOL_VERSION,
 	digestGeneratedTree,
 } from "../src/runtime/codex-protocol/manifest.js";
-import {
-	astFingerprint,
-	parseModuleSources,
-	type AstFingerprint,
-} from "./codex-protocol-fingerprints.js";
+import { astFingerprint, type AstFingerprint } from "./codex-protocol-fingerprints.js";
+import { parseModuleSources } from "./typescript-analysis.js";
 
 const repoRoot = path.resolve(import.meta.dir, "..");
 const defaultCorpusPath = path.join(
