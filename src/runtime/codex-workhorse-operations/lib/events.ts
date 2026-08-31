@@ -6,7 +6,6 @@ import {
 	type WorkhorseOperationOptions,
 } from "./contract.js";
 import {
-	WORKHORSE_THREAD_SOURCE,
 	boundedDetail,
 	freeze,
 	operationError,
@@ -83,12 +82,21 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 			default:
 				return;
 		}
-		for (const listener of Array.from(listeners)) listener(event);
+		const cohort = Array.from(listeners);
+		for (const listener of cohort) {
+			try {
+				listener(event);
+			} catch {
+				/* Consumers cannot alter operation delivery or later ordered listeners. */
+			}
+		}
 	};
 
 	const stage = (input: StageInput): OperationState => {
 		if (input.workhorse.proof === null)
 			throw operationError("unknown_provenance", "Workhorse proof is missing.");
+		if (input.workhorse.proof.record.provenance.threadSource === null)
+			throw operationError("unknown_provenance", "Workhorse source provenance is missing.");
 		if (operations.has(input.operationIdWire))
 			throw operationError(
 				"transaction_failed",
@@ -147,12 +155,14 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 			binding: input.binding,
 			coordinatorThreadId: input.binding.coordinator.threadId,
 			workhorseThreadId: input.binding.workhorse.threadId,
+			workhorseThreadSource: input.workhorse.proof.record.provenance.threadSource,
 			transaction,
 			clientUserMessageId: input.clientUserMessageId,
 			queuedSubmissionId: null,
 			turnId: null,
 			outcome: "pending",
 			durableSettled: false,
+			queuedEmitted: false,
 			startedEmitted: false,
 			terminalEmitted: false,
 		};
@@ -172,7 +182,7 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 					options.epoch.confirmOutcome(state.transaction, {
 						threadId: state.workhorseThreadId,
 						turnId: state.turnId,
-						threadSource: WORKHORSE_THREAD_SOURCE,
+						threadSource: state.workhorseThreadSource,
 					});
 					state.outcome = "delivered";
 				} catch {
@@ -186,7 +196,7 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 			const confirmation = {
 				threadId: state.workhorseThreadId,
 				turnId: state.turnId,
-				threadSource: WORKHORSE_THREAD_SOURCE,
+				threadSource: state.workhorseThreadSource,
 			};
 			if (requested === "delivered") options.epoch.commitOperation(state.transaction, confirmation);
 			else if (requested === "not_delivered")
@@ -206,7 +216,7 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 					{
 						threadId: state.workhorseThreadId,
 						turnId: state.turnId,
-						threadSource: WORKHORSE_THREAD_SOURCE,
+						threadSource: state.workhorseThreadSource,
 					},
 				);
 			} catch {
@@ -238,6 +248,38 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 		if (state.turnId !== null) activeTurns.delete(threadIdWire(options, state.workhorseThreadId));
 	};
 
+	const correlateTurn = (
+		state: OperationState,
+		turnId: TurnId,
+		queue: readonly { readonly id: QueuedSubmissionId }[] = [],
+	): void => {
+		const related =
+			state.queuedSubmissionId === null
+				? [state]
+				: [...operations.values()].filter(
+						(candidate) =>
+							candidate.queuedSubmissionId === state.queuedSubmissionId &&
+							candidate.workhorseThreadId === state.workhorseThreadId &&
+							sameBinding(candidate.binding, state.binding),
+					);
+		for (const candidate of related) {
+			if (candidate.terminalEmitted) continue;
+			if (candidate.turnId !== null && candidate.turnId !== turnId) continue;
+			candidate.turnId = turnId;
+			activeTurns.set(threadIdWire(options, candidate.workhorseThreadId), turnId);
+			if (candidate.outcome === "pending" || candidate.outcome === "outcome_unknown")
+				settleDurable(
+					candidate,
+					"delivered",
+					"The exact workhorse turn was observed for the queued submission.",
+				);
+			if (candidate.outcome === "delivered" && !candidate.startedEmitted) {
+				candidate.startedEmitted = true;
+				emit(candidate, "started", "delivered", queue);
+			}
+		}
+	};
+
 	const reconcileUnknownQueue = (
 		queue: readonly { readonly id: QueuedSubmissionId; readonly clientUserMessageId: string }[],
 	): void => {
@@ -263,8 +305,10 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 					"The queued submission was later confirmed by exact client identity.",
 				) === "delivered"
 			) {
-				clear(state);
-				emit(state, "queued", "delivered", queue);
+				if (!state.queuedEmitted) {
+					state.queuedEmitted = true;
+					emit(state, "queued", "delivered", queue);
+				}
 			}
 		}
 	};
@@ -299,6 +343,7 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 		settleDurable,
 		terminal,
 		clear,
+		correlateTurn,
 		reconcileUnknownQueue,
 		scheduleQueueReconciliation,
 		subscribe,

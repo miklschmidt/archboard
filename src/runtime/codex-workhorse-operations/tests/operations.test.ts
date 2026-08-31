@@ -1,460 +1,400 @@
 import { describe, expect, test } from "bun:test";
 
 import { createTextUserInput } from "../../codex-instructions/index.js";
-import { CodexSessionMutationError } from "../../codex-session/index.js";
-import { CodexWorkhorseQueueError } from "../../codex-workhorse-queue/index.js";
-import { fixture, flush, notification, rawTurn, rejected, turn } from "./support.js";
+import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import type { ManageWorkhorseQueueRequest, WorkhorseOperationEvent } from "../index.js";
+import { notification, rawTurn, rejected } from "./evidence.js";
+import { fixture, turn, type Fixture } from "./support.js";
 
-describe("codex workhorse operations", () => {
-	test("rejects a coordinator call for the wrong operation before touching a port", async () => {
+function queuedItem(fixtureValue: Fixture, id = "queue-target") {
+	return {
+		id: fixtureValue.identity.decoder.adoptQueuedSubmissionId(id),
+		input: [createTextUserInput("queued")],
+		clientUserMessageId: `client-${id}`,
+	};
+}
+
+async function mutate(
+	fixtureValue: Fixture,
+	operation: Exclude<ManageWorkhorseQueueRequest["operation"], "list">,
+) {
+	const call = fixtureValue.setCall("manage_workhorse_queue");
+	const target = fixtureValue.queue.state[0];
+	switch (operation) {
+		case "add":
+			return fixtureValue.operations.manageQueue({ call, operation, prompt: "add" });
+		case "update":
+			if (target === undefined) throw new Error("missing update target");
+			return fixtureValue.operations.manageQueue({
+				call,
+				operation,
+				submissionId: target.id,
+				prompt: "updated",
+			});
+		case "delete":
+			if (target === undefined) throw new Error("missing delete target");
+			return fixtureValue.operations.manageQueue({ call, operation, submissionId: target.id });
+		case "reorder":
+			if (target === undefined) throw new Error("missing reorder target");
+			return fixtureValue.operations.manageQueue({
+				call,
+				operation,
+				orderedSubmissionIds: [target.id],
+			});
+		case "start":
+			if (target === undefined) throw new Error("missing start target");
+			return fixtureValue.operations.manageQueue({ call, operation, submissionId: target.id });
+	}
+}
+
+describe("codex workhorse operation authority and correlation", () => {
+	test("inspects and directly controls an executable attached workhorse without queue authority", async () => {
 		const fixtureValue = fixture();
 		try {
-			const error = await rejected(
-				fixtureValue.operations.inspect({
-					call: fixtureValue.setCall("manage_workhorse_queue"),
+			fixtureValue.setAttached();
+			const inspected = await fixtureValue.operations.inspect({
+				call: fixtureValue.setCall("inspect_workhorse"),
+			});
+			expect(inspected).toMatchObject({ status: "idle", queuedSubmissionIds: [] });
+			expect(fixtureValue.queue.calls).toEqual([]);
+			const delegated = await fixtureValue.operations.delegate({
+				call: fixtureValue.setCall("delegate_to_workhorse"),
+				input: "attached direct work",
+				transcriptDelta: "",
+			});
+			expect(delegated.mode).toBe("started");
+
+			const turnId = fixtureValue.identity.decoder.adoptTurnId("attached-active");
+			fixtureValue.setStatus("active", [
+				turn(fixtureValue.identity, "attached-active", "inProgress"),
+			]);
+			expect(
+				await fixtureValue.operations.steer({
+					call: fixtureValue.setCall("steer_workhorse"),
+					expectedTurnId: turnId,
+					input: "related correction",
 				}),
-			);
-			expect(error).toMatchObject({ code: "invalid_call" });
+			).toEqual({ turnId, delivery: "delivered" });
+			expect(
+				await rejected(
+					fixtureValue.operations.delegate({
+						call: fixtureValue.setCall("delegate_to_workhorse"),
+						input: "unrelated queued work",
+						transcriptDelta: "",
+					}),
+				),
+			).toMatchObject({ code: "unknown_provenance" });
 			expect(fixtureValue.queue.calls).toEqual([]);
 		} finally {
 			fixtureValue.cleanup();
 		}
 	});
 
-	test("inspects read-only state and starts one inactive delegate with stable correlation", async () => {
-		const fixtureValue = fixture();
-		try {
-			await fixtureValue.operations.inspect({ call: fixtureValue.setCall("inspect_workhorse") });
-			expect(fixtureValue.session.starts).toHaveLength(0);
-			const events: string[] = [];
-			const correlations: string[] = [];
-			fixtureValue.operations.subscribe((event) => {
-				events.push(event.type);
-				correlations.push(String(event.correlation.operationId));
-			});
-			fixtureValue.session.nextStartTurn = turn(
-				fixtureValue.identity,
-				"delegate-turn",
-				"inProgress",
-			);
-			const result = await fixtureValue.operations.delegate({
-				call: fixtureValue.setCall("delegate_to_workhorse"),
-				input: "do the work",
-				transcriptDelta: "the user added context",
-			});
-			expect(result.mode).toBe("started");
-			expect(fixtureValue.session.starts).toHaveLength(1);
-			expect(fixtureValue.session.starts[0]).toMatchObject({
-				threadId: fixtureValue.binding.workhorse.threadId,
-				clientUserMessageId: result.clientUserMessageId,
-				turnTrigger: "archboard",
-				input: [
-					{
-						type: "text",
-						text: "do the work\n\nRealtime transcript context:\nthe user added context",
-						text_elements: [],
-					},
-				],
-			});
-			expect(events).toEqual(["accepted", "started"]);
-			expect(new Set(correlations)).toEqual(new Set([result.clientUserMessageId]));
-			fixtureValue.operations.onNotification(
-				notification(fixtureValue, {
-					method: "turn/completed",
-					params: {
-						threadId: "workhorse",
-						turn: rawTurn(
-							fixtureValue.identity,
-							"delegate-turn",
-							"completed",
-							result.clientUserMessageId,
-						),
-					},
-				}),
-			);
-			expect(events).toEqual(["accepted", "started", "completed"]);
-			fixtureValue.operations.onNotification(
-				notification(fixtureValue, {
-					method: "turn/completed",
-					params: {
-						threadId: "workhorse",
-						turn: rawTurn(
-							fixtureValue.identity,
-							"delegate-turn",
-							"completed",
-							result.clientUserMessageId,
-						),
-					},
-				}),
-			);
-			expect(events).toEqual(["accepted", "started", "completed"]);
-		} finally {
-			fixtureValue.cleanup();
-		}
-	});
-
-	test("settles a direct delegate when turn evidence arrives before its response", async () => {
-		const fixtureValue = fixture();
-		try {
-			fixtureValue.session.nextStartTurn = turn(fixtureValue.identity, "early-turn", "inProgress");
-			const events: string[] = [];
-			let operationId = "";
-			let outcomeAtNotification = "";
-			fixtureValue.operations.subscribe((event) => {
-				events.push(event.type);
-				operationId = String(event.correlation.operationId);
-			});
-			fixtureValue.session.beforeStart = () => {
-				fixtureValue.operations.onNotification(
-					notification(fixtureValue, {
-						method: "turn/started",
-						params: {
-							threadId: "workhorse",
-							turn: rawTurn(fixtureValue.identity, "early-turn", "inProgress", operationId),
-						},
+	test("refuses reachable unloaded, uncontrollable, and system-error workhorses before effect", async () => {
+		for (const expected of [
+			{ status: "notLoaded" as const, controllable: true, code: "not_loaded" },
+			{ status: "idle" as const, controllable: false, code: "not_controllable" },
+			{ status: "systemError" as const, controllable: true, code: "system_error" },
+		]) {
+			const fixtureValue = fixture();
+			try {
+				fixtureValue.setStatus(expected.status);
+				fixtureValue.setControllable(expected.controllable);
+				expect(
+					await fixtureValue.operations.inspect({
+						call: fixtureValue.setCall("inspect_workhorse"),
 					}),
-				);
-				outcomeAtNotification = String(
-					fixtureValue.epoch.snapshot().manifest.records.at(-1)?.outcome,
-				);
-			};
-			const result = await fixtureValue.operations.delegate({
-				call: fixtureValue.setCall("delegate_to_workhorse"),
-				input: "early evidence",
-				transcriptDelta: "",
-			});
-			expect(result.turnId).toBe(fixtureValue.session.nextStartTurn.id);
-			expect(outcomeAtNotification).toBe("delivered");
-			expect(events).toEqual(["accepted", "started"]);
-			expect(fixtureValue.session.starts).toHaveLength(1);
-		} finally {
-			fixtureValue.cleanup();
+				).toMatchObject({ status: expected.status, queuedSubmissionIds: [] });
+				expect(
+					await rejected(
+						fixtureValue.operations.delegate({
+							call: fixtureValue.setCall("delegate_to_workhorse"),
+							input: "must refuse",
+							transcriptDelta: "",
+						}),
+					),
+				).toMatchObject({ code: expected.code });
+				expect(fixtureValue.session.starts).toEqual([]);
+			} finally {
+				fixtureValue.cleanup();
+			}
 		}
 	});
 
-	test("queues an active delegate and routes every queue mutation through the queue port", async () => {
+	test("binds the logical call to the coordinator thread and rechecks child and epoch after staging", async () => {
+		const cross = fixture();
+		try {
+			const call = cross.setCall("delegate_to_workhorse");
+			const wrongCall = {
+				...call,
+				threadId: cross.identity.decoder.adoptThreadId("another-coordinator"),
+			};
+			cross.replaceCall(wrongCall);
+			expect(
+				await rejected(
+					cross.operations.delegate({
+						call: wrongCall,
+						input: "wrong caller",
+						transcriptDelta: "",
+					}),
+				),
+			).toMatchObject({ code: "invalid_call" });
+			expect(cross.session.starts).toEqual([]);
+		} finally {
+			cross.cleanup();
+		}
+
+		for (const change of ["child", "epoch"] as const) {
+			const fixtureValue = fixture();
+			try {
+				fixtureValue.operations.subscribe((event) => {
+					if (event.type !== "accepted") return;
+					const replacementIdentity = createIdentityAuthority();
+					const childId =
+						change === "child"
+							? replacementIdentity.validator.childId
+							: fixtureValue.binding.childId;
+					const epoch =
+						change === "epoch"
+							? fixtureValue.identity.issuer.mintChildEpoch()
+							: fixtureValue.binding.epoch;
+					fixtureValue.replaceBinding({
+						...fixtureValue.binding,
+						childId,
+						epoch,
+						coordinator: { ...fixtureValue.binding.coordinator, childId, epoch },
+						workhorse: { ...fixtureValue.binding.workhorse, childId, epoch },
+					});
+				});
+				expect(
+					await rejected(
+						fixtureValue.operations.delegate({
+							call: fixtureValue.setCall("delegate_to_workhorse"),
+							input: "revoked after stage",
+							transcriptDelta: "",
+						}),
+					),
+				).toMatchObject({ code: change === "child" ? "stale_child" : "prior_epoch" });
+				expect(fixtureValue.session.starts).toEqual([]);
+			} finally {
+				fixtureValue.cleanup();
+			}
+		}
+	});
+
+	test("rechecks the current call after context and at the queue final pre-effect boundary", async () => {
+		const direct = fixture();
+		try {
+			direct.setBeforeContext(() => direct.replaceCall(null));
+			expect(
+				await rejected(
+					direct.operations.delegate({
+						call: direct.setCall("delegate_to_workhorse"),
+						input: "revoked in context",
+						transcriptDelta: "",
+					}),
+				),
+			).toMatchObject({ code: "invalid_call", outcome: "not_delivered" });
+			expect(direct.session.starts).toEqual([]);
+		} finally {
+			direct.cleanup();
+		}
+
+		const queued = fixture("active");
+		try {
+			queued.setStatus("active", [turn(queued.identity, "active", "inProgress")]);
+			queued.queue.beforeEffect = () => {
+				const current = queued.setCall("manage_workhorse_queue");
+				queued.replaceCall({
+					...current,
+					threadId: queued.identity.decoder.adoptThreadId("other-coordinator"),
+				});
+			};
+			expect(
+				await rejected(
+					queued.operations.manageQueue({
+						call: queued.setCall("manage_workhorse_queue"),
+						operation: "add",
+						prompt: "revoked before queue RPC",
+					}),
+				),
+			).toMatchObject({ outcome: "not_delivered" });
+			expect(queued.queue.state).toEqual([]);
+		} finally {
+			queued.cleanup();
+		}
+	});
+
+	test("reconciles an unknown queue start through the queued client identity", async () => {
 		const fixtureValue = fixture("active");
 		try {
-			fixtureValue.setStatus("active", [turn(fixtureValue.identity, "active", "inProgress")]);
+			fixtureValue.setStatus("active", [turn(fixtureValue.identity, "busy", "inProgress")]);
+			const events: WorkhorseOperationEvent[] = [];
+			fixtureValue.operations.subscribe((event) => events.push(event));
 			const delegated = await fixtureValue.operations.delegate({
 				call: fixtureValue.setCall("delegate_to_workhorse"),
-				input: "queue this",
+				input: "queued unknown start",
 				transcriptDelta: "",
 			});
-			expect(delegated.mode).toBe("queued");
-			expect(fixtureValue.session.starts).toHaveLength(0);
-			const first = fixtureValue.queue.state[0];
-			if (first === undefined) throw new Error("delegate did not create a queue item");
-			const second = {
-				...first,
-				id: fixtureValue.identity.decoder.adoptQueuedSubmissionId("second"),
-				clientUserMessageId: "external",
-			};
-			fixtureValue.queue.state = [first, second];
-			await fixtureValue.operations.manageQueue({
-				call: fixtureValue.setCall("manage_workhorse_queue"),
-				operation: "list",
-			});
-			await fixtureValue.operations.manageQueue({
-				call: fixtureValue.setCall("manage_workhorse_queue"),
-				operation: "update",
-				submissionId: first.id,
-				prompt: "updated",
-			});
-			await fixtureValue.operations.manageQueue({
-				call: fixtureValue.setCall("manage_workhorse_queue"),
-				operation: "reorder",
-				orderedSubmissionIds: [second.id, first.id],
-			});
-			await fixtureValue.operations.manageQueue({
-				call: fixtureValue.setCall("manage_workhorse_queue"),
-				operation: "delete",
-				submissionId: second.id,
-			});
-			await fixtureValue.operations.manageQueue({
-				call: fixtureValue.setCall("manage_workhorse_queue"),
-				operation: "start",
-				submissionId: first.id,
-			});
-			expect(fixtureValue.queue.calls).toEqual([
-				"add",
-				"list",
-				"update",
-				"reorder",
-				"delete",
-				"start",
-			]);
-		} finally {
-			fixtureValue.cleanup();
-		}
-	});
-
-	test("steers only the exact active turn with one bounded literal body", async () => {
-		const fixtureValue = fixture();
-		try {
-			const expectedTurnId = fixtureValue.identity.decoder.adoptTurnId("active-steer");
-			fixtureValue.setStatus("active", [turn(fixtureValue.identity, "active-steer", "inProgress")]);
-			const events: string[] = [];
-			fixtureValue.operations.subscribe((event) => events.push(event.type));
-			const result = await fixtureValue.operations.steer({
-				call: fixtureValue.setCall("steer_workhorse"),
-				expectedTurnId,
-				input: "stop and inspect",
-			});
-			expect(result).toEqual({ turnId: expectedTurnId, delivery: "delivered" });
-			expect(fixtureValue.session.steers).toHaveLength(1);
-			expect(fixtureValue.session.steers[0]).toMatchObject({
-				threadId: fixtureValue.binding.workhorse.threadId,
-				clientUserMessageId: expect.any(String),
-				expectedTurnId,
-				input: [{ type: "text", text: "stop and inspect", text_elements: [] }],
-			});
-			expect(events).toEqual(["accepted", "started"]);
-			const wrong = await rejected(
-				fixtureValue.operations.steer({
-					call: fixtureValue.setCall("steer_workhorse"),
-					expectedTurnId: fixtureValue.identity.decoder.adoptTurnId("wrong-turn"),
-					input: "must not send",
-				}),
-			);
-			expect(wrong).toMatchObject({ code: "busy" });
-			expect(fixtureValue.session.steers).toHaveLength(1);
-		} finally {
-			fixtureValue.cleanup();
-		}
-	});
-
-	test("keeps one unknown start attempt and confirms it only from exact later turn evidence", async () => {
-		const fixtureValue = fixture();
-		try {
-			fixtureValue.session.nextStartError = new CodexSessionMutationError(
-				"turn/start",
-				"outcome_unknown",
-				"lost",
-			);
-			const events: string[] = [];
-			let operationId = "";
-			fixtureValue.operations.subscribe((event) => {
-				events.push(event.type);
-				operationId = String(event.correlation.operationId);
-			});
-			const error = await rejected(
-				fixtureValue.operations.delegate({
-					call: fixtureValue.setCall("delegate_to_workhorse"),
-					input: "lost start",
-					transcriptDelta: "",
-				}),
-			);
-			expect(error).toMatchObject({ code: "outcome_unknown", outcome: "outcome_unknown" });
-			expect(fixtureValue.session.starts).toHaveLength(1);
-			expect(events).toEqual(["accepted", "outcome_unknown"]);
+			if (delegated.queuedSubmissionId === null) throw new Error("delegate was not queued");
+			fixtureValue.queue.nextOutcome = "outcome_unknown";
+			fixtureValue.queue.nextStartTurnId = null;
+			expect(
+				await rejected(
+					fixtureValue.operations.manageQueue({
+						call: fixtureValue.setCall("manage_workhorse_queue"),
+						operation: "start",
+						submissionId: delegated.queuedSubmissionId,
+					}),
+				),
+			).toMatchObject({ outcome: "outcome_unknown" });
 			fixtureValue.operations.onNotification(
 				notification(fixtureValue, {
 					method: "turn/started",
 					params: {
 						threadId: "workhorse",
-						turn: rawTurn(fixtureValue.identity, "lost-turn", "inProgress", operationId),
+						turn: rawTurn(
+							fixtureValue.identity,
+							"late-queue-turn",
+							"inProgress",
+							delegated.clientUserMessageId,
+						),
 					},
 				}),
 			);
-			expect(events).toEqual(["accepted", "outcome_unknown", "started"]);
-			const record = fixtureValue.epoch
-				.snapshot()
-				.manifest.records.find((candidate) => candidate.correlation.operationId === operationId);
-			expect(record).toMatchObject({ status: "committed", outcome: "delivered" });
-			fixtureValue.operations.onNotification(
-				notification(fixtureValue, {
-					method: "turn/completed",
-					params: {
-						threadId: "workhorse",
-						turn: rawTurn(fixtureValue.identity, "lost-turn", "completed", operationId),
-					},
-				}),
+			expect(events.filter((event) => event.type === "started")).toHaveLength(2);
+			expect(fixtureValue.queue.calls.filter((call) => call === "start")).toHaveLength(1);
+			expect(fixtureValue.epoch.snapshot().manifest.records.slice(-2)).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({ status: "committed", outcome: "delivered" }),
+					expect.objectContaining({ status: "committed", outcome: "delivered" }),
+				]),
 			);
-			expect(events).toEqual(["accepted", "outcome_unknown", "started", "completed"]);
 		} finally {
 			fixtureValue.cleanup();
 		}
 	});
 
-	test("reconciles one unknown queue response by exact client identity and never retries", async () => {
+	test("never uses the active-turn cache as steer authority", async () => {
+		const fixtureValue = fixture();
+		try {
+			fixtureValue.session.nextStartTurn = turn(fixtureValue.identity, "cached", "inProgress");
+			const delegated = await fixtureValue.operations.delegate({
+				call: fixtureValue.setCall("delegate_to_workhorse"),
+				input: "seed cache",
+				transcriptDelta: "",
+			});
+			fixtureValue.setStatus("active", []);
+			expect(
+				await rejected(
+					fixtureValue.operations.steer({
+						call: fixtureValue.setCall("steer_workhorse"),
+						expectedTurnId: delegated.turnId!,
+						input: "must not use cache",
+					}),
+				),
+			).toMatchObject({ code: "busy" });
+			expect(fixtureValue.session.steers).toEqual([]);
+		} finally {
+			fixtureValue.cleanup();
+		}
+	});
+
+	test("isolates throwing listeners and snapshots a reentrant subscriber cohort", async () => {
+		const fixtureValue = fixture();
+		try {
+			const ordered: string[] = [];
+			fixtureValue.operations.subscribe(() => {
+				throw new Error("consumer failure");
+			});
+			fixtureValue.operations.subscribe((event) => {
+				ordered.push(`existing:${event.type}`);
+				if (event.type === "accepted")
+					fixtureValue.operations.subscribe((later) => ordered.push(`late:${later.type}`));
+			});
+			const result = await fixtureValue.operations.delegate({
+				call: fixtureValue.setCall("delegate_to_workhorse"),
+				input: "listener isolation",
+				transcriptDelta: "",
+			});
+			expect(result.mode).toBe("started");
+			expect(ordered).toEqual(["existing:accepted", "existing:started", "late:started"]);
+			expect(fixtureValue.session.starts).toHaveLength(1);
+		} finally {
+			fixtureValue.cleanup();
+		}
+	});
+
+	test("retains queued correlation through authoritative queue start and completion", async () => {
 		const fixtureValue = fixture("active");
 		try {
-			fixtureValue.setStatus("active", [turn(fixtureValue.identity, "active", "inProgress")]);
-			fixtureValue.queue.nextError = new CodexWorkhorseQueueError("transport_failure", "lost", {
-				operation: "add",
-				outcome: "outcome_unknown",
+			fixtureValue.setStatus("active", [turn(fixtureValue.identity, "busy", "inProgress")]);
+			const events: WorkhorseOperationEvent[] = [];
+			fixtureValue.operations.subscribe((event) => events.push(event));
+			const delegated = await fixtureValue.operations.delegate({
+				call: fixtureValue.setCall("delegate_to_workhorse"),
+				input: "queued lifecycle",
+				transcriptDelta: "",
 			});
-			const events: string[] = [];
-			let operationId = "";
-			fixtureValue.operations.subscribe((event) => {
-				events.push(event.type);
-				operationId = String(event.correlation.operationId);
+			if (delegated.queuedSubmissionId === null) throw new Error("delegate was not queued");
+			const startResult = await fixtureValue.operations.manageQueue({
+				call: fixtureValue.setCall("manage_workhorse_queue"),
+				operation: "start",
+				submissionId: delegated.queuedSubmissionId,
 			});
-			const error = await rejected(
-				fixtureValue.operations.manageQueue({
-					call: fixtureValue.setCall("manage_workhorse_queue"),
-					operation: "add",
-					prompt: "lost queue",
-				}),
-			);
-			expect(error).toMatchObject({ code: "outcome_unknown", outcome: "outcome_unknown" });
-			expect(fixtureValue.queue.calls).toEqual(["add"]);
-			fixtureValue.queue.state = [
-				{
-					id: fixtureValue.identity.decoder.adoptQueuedSubmissionId("late-queue"),
-					input: [createTextUserInput("lost queue")],
-					clientUserMessageId: operationId,
-				},
-			];
-			fixtureValue.operations.onNotification(
-				notification(fixtureValue, {
-					method: "thread/queue/changed",
-					params: { threadId: "workhorse" },
-				}),
-			);
-			await flush();
-			expect(events).toEqual(["accepted", "outcome_unknown", "queued"]);
-			expect(fixtureValue.queue.calls).toEqual(["add", "list"]);
-			const record = fixtureValue.epoch
-				.snapshot()
-				.manifest.records.find((candidate) => candidate.correlation.operationId === operationId);
-			expect(record).toMatchObject({ status: "committed", outcome: "delivered" });
-		} finally {
-			fixtureValue.cleanup();
-		}
-	});
-
-	test("returns not_delivered for a lost steer without issuing a second request", async () => {
-		const fixtureValue = fixture();
-		try {
-			const expectedTurnId = fixtureValue.identity.decoder.adoptTurnId("steer-loss");
-			fixtureValue.setStatus("active", [turn(fixtureValue.identity, "steer-loss", "inProgress")]);
-			fixtureValue.session.nextSteerError = new CodexSessionMutationError(
-				"turn/steer",
-				"not_delivered",
-				"not sent",
-			);
-			const events: string[] = [];
-			fixtureValue.operations.subscribe((event) => events.push(event.type));
-			const result = await fixtureValue.operations.steer({
-				call: fixtureValue.setCall("steer_workhorse"),
-				expectedTurnId,
-				input: "one attempt",
-			});
-			expect(result.delivery).toBe("not_delivered");
-			expect(fixtureValue.session.steers).toHaveLength(1);
-			expect(events).toEqual(["accepted", "failed"]);
-		} finally {
-			fixtureValue.cleanup();
-		}
-	});
-
-	test("reconciles an unknown steer from terminal evidence without retrying", async () => {
-		const fixtureValue = fixture();
-		try {
-			const expectedTurnId = fixtureValue.identity.decoder.adoptTurnId("unknown-steer");
-			fixtureValue.setStatus("active", [
-				turn(fixtureValue.identity, "unknown-steer", "inProgress"),
+			expect(startResult.operation).toBe("start");
+			const started = events.filter((event) => event.type === "started");
+			expect(started).toHaveLength(2);
+			expect(started.map((event) => event.correlation.turnId)).toEqual([
+				fixtureValue.queue.nextStartTurnId,
+				fixtureValue.queue.nextStartTurnId,
 			]);
-			fixtureValue.session.nextSteerError = new CodexSessionMutationError(
-				"turn/steer",
-				"outcome_unknown",
-				"response lost",
-			);
-			const events: string[] = [];
-			let operationId = "";
-			fixtureValue.operations.subscribe((event) => {
-				events.push(event.type);
-				operationId = String(event.correlation.operationId);
-			});
-			const result = await fixtureValue.operations.steer({
-				call: fixtureValue.setCall("steer_workhorse"),
-				expectedTurnId,
-				input: "one unknown steer",
-			});
-			expect(result).toEqual({ turnId: expectedTurnId, delivery: "outcome_unknown" });
-			expect(fixtureValue.session.steers).toHaveLength(1);
-			expect(events).toEqual(["accepted", "outcome_unknown"]);
-
 			fixtureValue.operations.onNotification(
 				notification(fixtureValue, {
 					method: "turn/completed",
 					params: {
 						threadId: "workhorse",
-						turn: rawTurn(fixtureValue.identity, "unknown-steer", "completed", operationId),
+						turn: rawTurn(
+							fixtureValue.identity,
+							"queue-start-turn",
+							"completed",
+							delegated.clientUserMessageId,
+						),
 					},
 				}),
 			);
-			await flush();
-			expect(events).toEqual(["accepted", "outcome_unknown", "started", "completed"]);
-			expect(fixtureValue.session.steers).toHaveLength(1);
+			expect(events.filter((event) => event.type === "completed")).toHaveLength(2);
 			expect(
-				fixtureValue.epoch
-					.snapshot()
-					.manifest.records.find((record) => record.correlation.operationId === operationId),
-			).toMatchObject({ status: "committed", outcome: "delivered" });
-		} finally {
-			fixtureValue.cleanup();
-		}
-	});
-
-	test("rolls back a staged delegate when its link changes before turn delivery", async () => {
-		const fixtureValue = fixture();
-		try {
-			fixtureValue.setBeforeContext(() =>
-				fixtureValue.replaceBinding({
-					...fixtureValue.binding,
-					workhorse: {
-						...fixtureValue.binding.workhorse,
-						threadId: fixtureValue.identity.decoder.adoptThreadId("context-replacement"),
-					},
-				}),
-			);
-			const error = await rejected(
-				fixtureValue.operations.delegate({
-					call: fixtureValue.setCall("delegate_to_workhorse"),
-					input: "must not send",
-					transcriptDelta: "",
-				}),
-			);
-			expect(error).toMatchObject({ code: "stale_link", outcome: "not_delivered" });
-			expect(fixtureValue.session.starts).toHaveLength(0);
-			expect(fixtureValue.epoch.snapshot().manifest.records.at(-1)).toMatchObject({
-				status: "rolled_back",
-				outcome: "not_delivered",
+				events.find(
+					(event) => event.operation === "delegate_to_workhorse" && event.type === "completed",
+				)?.correlation,
+			).toMatchObject({
+				clientUserMessageId: delegated.clientUserMessageId,
+				queuedSubmissionId: delegated.queuedSubmissionId,
+				turnId: fixtureValue.queue.nextStartTurnId,
 			});
 		} finally {
 			fixtureValue.cleanup();
 		}
 	});
 
-	test("revalidates the link after a delivered response and preserves one unknown operation", async () => {
-		const fixtureValue = fixture();
-		try {
-			fixtureValue.session.nextStartTurn = turn(fixtureValue.identity, "race-turn", "inProgress");
-			fixtureValue.session.beforeStart = () =>
-				fixtureValue.replaceBinding({
-					...fixtureValue.binding,
-					workhorse: {
-						...fixtureValue.binding.workhorse,
-						threadId: fixtureValue.identity.decoder.adoptThreadId("replacement-workhorse"),
-					},
-				});
-			const events: string[] = [];
-			fixtureValue.operations.subscribe((event) => events.push(event.type));
-			const error = await rejected(
-				fixtureValue.operations.delegate({
-					call: fixtureValue.setCall("delegate_to_workhorse"),
-					input: "race",
-					transcriptDelta: "",
-				}),
-			);
-			expect(error).toMatchObject({ code: "outcome_unknown" });
-			expect(fixtureValue.session.starts).toHaveLength(1);
-			expect(events).toEqual(["accepted", "outcome_unknown"]);
-		} finally {
-			fixtureValue.cleanup();
-		}
-	});
+	for (const operation of ["add", "update", "delete", "reorder", "start"] as const) {
+		test(`attempts queue ${operation} once for every delivery outcome`, async () => {
+			for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const) {
+				const fixtureValue = fixture();
+				try {
+					if (operation !== "add") fixtureValue.queue.state = [queuedItem(fixtureValue)];
+					fixtureValue.queue.nextOutcome = outcome;
+					if (operation === "start" && outcome === "outcome_unknown")
+						fixtureValue.queue.nextStartTurnId = null;
+					const pending = mutate(fixtureValue, operation);
+					if (outcome === "delivered") expect((await pending).operation).toBe(operation);
+					else expect(await rejected(pending)).toMatchObject({ outcome });
+					expect(fixtureValue.queue.calls).toEqual([operation]);
+				} finally {
+					fixtureValue.cleanup();
+				}
+			}
+		});
+	}
 });

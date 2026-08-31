@@ -76,35 +76,14 @@ export function createNotificationHandler(
 			const rawTurnId = turn.id;
 			const clientIds = userMessageClientIds(turn);
 			for (const state of states) {
-				if (notification.method === "turn/started" && state.rpc !== "turn/start") continue;
 				const matchesClient =
 					state.clientUserMessageId !== null && clientIds.includes(state.clientUserMessageId);
 				const matchesTurn =
 					state.turnId !== null && turnIdWire(runtime.options, state.turnId) === rawTurnId;
 				if (!matchesClient && !matchesTurn) continue;
 				if (state.turnId !== null && !matchesTurn) continue;
-				const priorOutcome = state.outcome;
-				state.turnId = turnIdFromRaw(runtime.options, rawTurnId);
-				runtime.activeTurns.set(threadId, state.turnId);
-				if (state.outcome === "pending" || state.outcome === "outcome_unknown") {
-					const outcome = runtime.settleDurable(
-						state,
-						"delivered",
-						"The workhorse turn was later observed with exact correlation.",
-					);
-					if (outcome === "outcome_unknown" && priorOutcome !== "outcome_unknown")
-						runtime.emit(
-							state,
-							"outcome_unknown",
-							outcome,
-							[],
-							"The correlated workhorse turn could not be durably confirmed.",
-						);
-					if (outcome === "delivered" && !state.startedEmitted && !state.terminalEmitted) {
-						state.startedEmitted = true;
-						runtime.emit(state, "started", "delivered", []);
-					}
-				}
+				const turnId = turnIdFromRaw(runtime.options, rawTurnId);
+				runtime.correlateTurn(state, turnId);
 				if (notification.method === "turn/completed") {
 					if (turn.status === "failed" || turn.status === "interrupted")
 						runtime.terminal(state, "failed", [], "The correlated workhorse turn failed.");
@@ -125,26 +104,9 @@ export function createNotificationHandler(
 			for (const state of states) {
 				if (state.turnId === null || turnIdWire(runtime.options, state.turnId) !== rawTurnId)
 					continue;
-				const priorOutcome = state.outcome;
 				if (state.outcome === "pending" || state.outcome === "outcome_unknown") {
-					const outcome = runtime.settleDurable(
-						state,
-						"delivered",
-						"The workhorse turn later emitted exact correlated progress.",
-					);
-					if (outcome === "outcome_unknown" && priorOutcome !== "outcome_unknown")
-						runtime.emit(
-							state,
-							"outcome_unknown",
-							outcome,
-							[],
-							"The correlated workhorse progress could not be durably confirmed.",
-						);
-					if (outcome !== "delivered") continue;
-					if (!state.startedEmitted && !state.terminalEmitted) {
-						state.startedEmitted = true;
-						runtime.emit(state, "started", "delivered", []);
-					}
+					runtime.correlateTurn(state, state.turnId);
+					if ((state.outcome as string) !== "delivered") continue;
 				}
 				runtime.emit(state, "progress", "delivered", [], progressDetail(notification));
 			}

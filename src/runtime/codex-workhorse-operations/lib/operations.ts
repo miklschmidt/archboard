@@ -4,7 +4,8 @@ import { createWorkhorseEvents } from "./events.js";
 import { createWorkhorseValidation } from "./validation.js";
 import { createNotificationHandler } from "./notifications.js";
 import { createInspect, createManageQueue } from "./queue.js";
-import { createDelegate, createSteer } from "./turns.js";
+import { createSteer } from "./steer.js";
+import { createDelegate } from "./turns.js";
 
 export function createCodexWorkhorseOperations(
 	options: WorkhorseOperationOptions,

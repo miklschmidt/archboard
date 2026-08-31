@@ -175,10 +175,11 @@ describe("Codex workhorse queue contract", () => {
 		const startFixture = fixture();
 		const startItem = submission(startFixture.identity, "queue-start", "start me");
 		startFixture.session.state = [startItem];
-		await startFixture.queue.start({
+		const started = await startFixture.queue.start({
 			operationId: "start-operation",
 			submissionId: startItem.id,
 		});
+		expect(started.turnId).toBe(startFixture.identity.decoder.adoptTurnId("start-turn"));
 		expect(requestParams(startFixture, "thread/queue/start")).toEqual({
 			threadId: binding(startFixture.identity).workhorseThreadId,
 			queuedSubmissionId: startItem.id,
@@ -412,6 +413,47 @@ describe("Codex workhorse queue contract", () => {
 		});
 		expect(await rejected(staleEpochFixture.queue.list())).toMatchObject({ code: "stale_link" });
 		expect(staleEpochFixture.session.requests).toEqual([]);
+	});
+
+	test("runs caller authorization after the baseline read and before the mutation RPC", async () => {
+		const fixtureValue = fixture();
+		const target = submission(fixtureValue.identity, "queue-start", "start me");
+		fixtureValue.session.state = [target];
+		const error = await rejected(
+			fixtureValue.queue.start({
+				operationId: "start-operation",
+				submissionId: target.id,
+				beforeEffect: () => {
+					throw new Error("authority revoked");
+				},
+			}),
+		);
+
+		expect(error).toMatchObject({ code: "authorization_failed", outcome: "not_delivered" });
+		expect(fixtureValue.session.requests.map(({ method }) => method)).toEqual([
+			"thread/queue/list",
+		]);
+	});
+
+	test("returns no turn identity when queue-start settlement is lost", async () => {
+		const fixtureValue = fixture();
+		const target = submission(fixtureValue.identity, "queue-start", "start me");
+		fixtureValue.session.state = [target];
+		fixtureValue.session.nextStartError = new CodexSessionMutationError(
+			"thread/queue/start",
+			"outcome_unknown",
+			"response lost",
+		);
+
+		const result = await fixtureValue.queue.start({
+			operationId: "start-operation",
+			submissionId: target.id,
+		});
+
+		expect(result).toMatchObject({ outcome: "outcome_unknown", turnId: null });
+		expect(
+			fixtureValue.session.requests.filter(({ method }) => method === "thread/queue/start"),
+		).toHaveLength(1);
 	});
 
 	test("rejects invalid prompts before reading or mutating the queue", async () => {
