@@ -45,6 +45,11 @@ export class FakeStdin extends Writable {
 		callback();
 	}
 
+	override destroy(error?: Error): this {
+		this.blockedCallback = undefined;
+		return super.destroy(error);
+	}
+
 	release(): void {
 		const callback = this.blockedCallback;
 		this.blockedCallback = undefined;
@@ -61,6 +66,17 @@ export class FakeChild extends EventEmitter implements CodexTransportChild {
 	exit(code: number | null = 0, signal: NodeJS.Signals | null = null): void {
 		this.emit("exit", code, signal);
 	}
+
+	dispose(): void {
+		this.stdin.destroy();
+		this.stdin.writes.length = 0;
+		this.stdout.destroy();
+		this.stderr.destroy();
+		this.stdin.removeAllListeners();
+		this.stdout.removeAllListeners();
+		this.stderr.removeAllListeners();
+		this.removeAllListeners();
+	}
 }
 
 export function createHarness(
@@ -72,8 +88,12 @@ export function createHarness(
 	return { child, identity, transport };
 }
 
-export async function closeTransport(transport: CodexTransport): Promise<void> {
-	await transport.shutdown();
+export async function closeTransport(transport: CodexTransport, child: FakeChild): Promise<void> {
+	try {
+		await transport.shutdown();
+	} finally {
+		child.dispose();
+	}
 }
 
 export async function captureRejection(promise: Promise<unknown>): Promise<unknown> {
