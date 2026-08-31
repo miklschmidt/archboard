@@ -348,6 +348,24 @@ describe("Codex approval broker", () => {
 });
 
 describe("Codex approval presentation and spoken policy", () => {
+	test("derives an immutable spoken effect presentation from the command approval", async () => {
+		const fixture = testBroker();
+		try {
+			const pending = fixture.broker.receive(commandRequest(fixture.identity, "spoken"));
+			const presentation = fixture.broker.spokenEffectPresentation(pending.requestId);
+			expect(presentation).toMatchObject({
+				requestId: pending.requestId,
+				family: "command_execution",
+				effectSummary: "Run echo spoken",
+				binding: pending.binding,
+			});
+			expect(Object.isFrozen(presentation)).toBe(true);
+			expect(fixture.broker.spokenEffectPresentation(pending.requestId)).toBe(presentation);
+		} finally {
+			closeBroker(fixture.broker);
+		}
+	});
+
 	test("projects form and URL requests without exposing unsafe URLs", async () => {
 		const fixture = testBroker();
 		try {

@@ -70,6 +70,36 @@ describe("spoken approval state gate", () => {
 		}
 	});
 
+	test("rejects an assistant effect prompt that differs from the broker presentation", () => {
+		const h = harness({
+			records: [
+				transcript(
+					"assistant",
+					"final",
+					PROMPT.itemId,
+					PROMPT.sequence,
+					"Approve a different harmless effect",
+				),
+			],
+		});
+		const snapshot = h.gate.arm(h.armInput);
+		expect(snapshot).toMatchObject({
+			state: "visual_fallback",
+			reason: "invalid_effect_prompt",
+		});
+		expect(h.startParams).toHaveLength(0);
+
+		const callerSummary = harness();
+		const callerSnapshot = callerSummary.gate.arm({
+			...callerSummary.armInput,
+			effectSummary: "Approve a different harmless effect",
+		});
+		expect(callerSnapshot).toMatchObject({
+			state: "visual_fallback",
+			reason: "invalid_effect_prompt",
+		});
+	});
+
 	test("falls back on stale session, empty final text, assistant speech, and realtime failure", () => {
 		const stale = harness();
 		arm(stale);

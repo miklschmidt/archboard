@@ -217,6 +217,18 @@ export interface ApprovalSnapshot {
 	readonly reason: string | null;
 }
 
+/**
+ * The immutable one-line effect disclosure used to bind a spoken prompt to
+ * the normalized command approval that produced it.
+ */
+export type SpokenApprovalEffectPresentation = Pick<
+	ApprovalSnapshot,
+	"requestId" | "child" | "epoch" | "threadId" | "turnId" | "itemId" | "approvalId" | "binding"
+> & {
+	readonly family: "command_execution";
+	readonly effectSummary: string;
+};
+
 export interface ApprovalResolveInput {
 	readonly requestId: JsonRpcRequestId;
 	readonly approvalId?: ApprovalId | null;
@@ -315,6 +327,9 @@ export interface CodexApprovalBroker {
 	readonly getRequest: (requestId: JsonRpcRequestId) => ApprovalRequest | undefined;
 	readonly inspect: () => readonly ApprovalSnapshot[];
 	readonly toBrowserApproval: (requestId: JsonRpcRequestId) => BrowserApproval;
+	readonly spokenEffectPresentation: (
+		requestId: JsonRpcRequestId,
+	) => SpokenApprovalEffectPresentation;
 	readonly spokenEligibility: (requestId: JsonRpcRequestId) => SpokenEligibility;
 	readonly resolve: (input: ApprovalResolveInput) => Promise<ApprovalSettlement>;
 	readonly cancel: (requestId: JsonRpcRequestId, reason?: string) => Promise<ApprovalSettlement>;
