@@ -1,7 +1,4 @@
-import type {
-	LogicalToolCallCorrelation,
-	QueuedSubmissionId,
-} from "../../../shared/codex-workbench-identity/index.js";
+import type { LogicalToolCallCorrelation } from "../../../shared/codex-workbench-identity/index.js";
 import type {
 	PaneFocusEvent,
 	PaneSelectionEvent,
@@ -11,6 +8,8 @@ import type { WorkhorseOperationEvent } from "../../codex-workhorse-operations/i
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackCorrelation,
+	CoordinatorCallbackLinkCorrelation,
+	CoordinatorCallbackRealtimeGeneration,
 	CoordinatorCallbackSource,
 	CoordinatorOperationCallback,
 	CoordinatorSemanticCallback,
@@ -24,6 +23,19 @@ function freezeArray<T>(values: readonly T[]): readonly T[] {
 	return freeze([...values]);
 }
 
+function freezeTree(value: object): void {
+	for (const child of Object.values(value)) {
+		if (child !== null && typeof child === "object") freezeTree(child);
+	}
+	Object.freeze(value);
+}
+
+function copyLink(value: CoordinatorCallbackLinkCorrelation): CoordinatorCallbackLinkCorrelation {
+	const copy = structuredClone(value);
+	freezeTree(copy);
+	return copy;
+}
+
 function copyCall(value: LogicalToolCallCorrelation): LogicalToolCallCorrelation {
 	return freeze({ ...value });
 }
@@ -34,7 +46,19 @@ function copyQueueOperation(
 	return value === null ? null : value;
 }
 
-function operationCorrelation(event: WorkhorseOperationEvent): CoordinatorCallbackCorrelation {
+function operationKind(): "operation" {
+	return "operation";
+}
+
+function semanticKind(): "semantic" {
+	return "semantic";
+}
+
+function operationCorrelation(
+	event: WorkhorseOperationEvent,
+	workhorseLink: CoordinatorCallbackLinkCorrelation,
+	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
+): CoordinatorCallbackCorrelation {
 	const value = event.correlation;
 	return freeze({
 		operationId: value.operationId,
@@ -48,25 +72,33 @@ function operationCorrelation(event: WorkhorseOperationEvent): CoordinatorCallba
 		clientUserMessageId: value.clientUserMessageId,
 		realtimeSessionId: null,
 		coordinatorCall: copyCall(value.coordinatorCall),
+		workhorseLink: copyLink(workhorseLink),
+		realtimeGeneration: realtimeGeneration === null ? null : freeze({ ...realtimeGeneration }),
 	});
 }
 
-function operationBase(event: WorkhorseOperationEvent) {
+function operationBase(
+	event: WorkhorseOperationEvent,
+	workhorseLink: CoordinatorCallbackLinkCorrelation,
+	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
+) {
 	return {
-		kind: "operation" as const,
+		kind: operationKind(),
 		operation: event.operation,
 		queueOperation: copyQueueOperation(event.queueOperation),
 		rpc: event.rpc,
-		correlation: operationCorrelation(event),
-		queuedSubmissionIds: freezeArray(event.queuedSubmissionIds) as readonly QueuedSubmissionId[],
+		correlation: operationCorrelation(event, workhorseLink, realtimeGeneration),
+		queuedSubmissionIds: freezeArray(event.queuedSubmissionIds),
 		detail: event.detail,
 	};
 }
 
 export function normalizeOperationCallback(
 	event: WorkhorseOperationEvent,
+	workhorseLink: CoordinatorCallbackLinkCorrelation,
+	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
 ): CoordinatorOperationCallback {
-	const base = operationBase(event);
+	const base = operationBase(event, workhorseLink, realtimeGeneration);
 	switch (event.type) {
 		case "accepted":
 			return freeze({ ...base, type: "accepted", outcome: "pending" });
@@ -91,7 +123,11 @@ export function normalizeOperationCallback(
 
 type SemanticSource = SettledSemanticChangeEvent | PaneFocusEvent | PaneSelectionEvent;
 
-function semanticCorrelation(event: SemanticSource): CoordinatorCallbackCorrelation {
+function semanticCorrelation(
+	event: SemanticSource,
+	workhorseLink: CoordinatorCallbackLinkCorrelation,
+	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
+): CoordinatorCallbackCorrelation {
 	return freeze({
 		operationId: null,
 		childId: event.child.id,
@@ -104,6 +140,8 @@ function semanticCorrelation(event: SemanticSource): CoordinatorCallbackCorrelat
 		clientUserMessageId: null,
 		realtimeSessionId: event.coordinator.realtimeSessionId,
 		coordinatorCall: null,
+		workhorseLink: copyLink(workhorseLink),
+		realtimeGeneration: realtimeGeneration === null ? null : freeze({ ...realtimeGeneration }),
 	});
 }
 
@@ -113,10 +151,14 @@ function semanticCapturedAt(event: SemanticSource): number {
 	return event.freshness.capturedAtMs;
 }
 
-function semanticBase(event: SemanticSource) {
+function semanticBase(
+	event: SemanticSource,
+	workhorseLink: CoordinatorCallbackLinkCorrelation,
+	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
+) {
 	return {
-		kind: "semantic" as const,
-		correlation: semanticCorrelation(event),
+		kind: semanticKind(),
+		correlation: semanticCorrelation(event, workhorseLink, realtimeGeneration),
 		threadLinkState: event.threadLink.state,
 		threadLinkReason: event.threadLink.reason,
 		semantic: freeze({
@@ -134,8 +176,12 @@ function semanticBase(event: SemanticSource) {
 	};
 }
 
-export function normalizeSemanticCallback(event: SemanticSource): CoordinatorSemanticCallback {
-	const base = semanticBase(event);
+export function normalizeSemanticCallback(
+	event: SemanticSource,
+	workhorseLink: CoordinatorCallbackLinkCorrelation,
+	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
+): CoordinatorSemanticCallback {
+	const base = semanticBase(event, workhorseLink, realtimeGeneration);
 	if (event.kind === "settled_change") return freeze({ ...base, type: "change" });
 	if (event.kind === "pane_focus") return freeze({ ...base, type: "focus" });
 	if (event.kind === "pane_selection") return freeze({ ...base, type: "selection" });
@@ -144,6 +190,8 @@ export function normalizeSemanticCallback(event: SemanticSource): CoordinatorSem
 
 export function normalizeCoordinatorCallback(
 	event: CoordinatorCallbackSource,
+	workhorseLink: CoordinatorCallbackLinkCorrelation,
+	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
 ): CoordinatorCallback {
 	if ("kind" in event) {
 		if (
@@ -151,10 +199,10 @@ export function normalizeCoordinatorCallback(
 			event.kind === "pane_focus" ||
 			event.kind === "pane_selection"
 		)
-			return normalizeSemanticCallback(event);
+			return normalizeSemanticCallback(event, workhorseLink, realtimeGeneration);
 		throw new TypeError("Fresh semantic briefs are not callback sources.");
 	}
-	return normalizeOperationCallback(event);
+	return normalizeOperationCallback(event, workhorseLink, realtimeGeneration);
 }
 
 function valueOrNull(value: string | null): string {

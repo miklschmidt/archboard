@@ -1,19 +1,16 @@
 import {
 	createCodexCoordinatorCallbacks,
-	type CoordinatorCallback,
-	type CoordinatorCallbackCurrent,
+	createCoordinatorCallbackRealtimePort,
+	type CoordinatorCallbackCurrentChild,
+	type CoordinatorCallbackLinkCorrelation,
 	type CoordinatorCallbackOptions,
+	type CoordinatorCallbackReadyCoordinator,
+	type CoordinatorCallbackRealtimeGeneration,
+	type CoordinatorCallbackRealtimeRequest,
 } from "../index.js";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthorities,
-	type LogicalToolCallCorrelation,
-} from "../../../shared/codex-workbench-identity/index.js";
-import {
-	parseRealtimeCorrelationId,
-	parseRealtimeSessionId,
-	type AppendTextRequest,
-} from "../../../shared/codex-realtime-host/index.js";
+import { COORDINATOR_CAPABILITY_POLICY } from "../../codex-coordinator/index.js";
+import type { EpochExecutionProof, EpochOperationRecord } from "../../codex-epoch/index.js";
+import { CodexSessionMutationError, type SessionParams } from "../../codex-session/index.js";
 import {
 	createSemanticContextPublisher,
 	type PaneFocusEvent,
@@ -23,10 +20,17 @@ import {
 	type SettledChangeSourceEvent,
 	type SettledSemanticChangeEvent,
 } from "../../codex-semantic-context/index.js";
-import { CodexSessionMutationError, type SessionParams } from "../../codex-session/index.js";
-import type { ThreadLinkSnapshot } from "../../codex-thread-link/index.js";
+import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
 import type { WorkhorseOperationEvent } from "../../codex-workhorse-operations/index.js";
-import type { ArchboardContext } from "../../codex-instructions/index.js";
+import {
+	restoreIdentityAuthorities,
+	type IdentityAuthorities,
+	type LogicalToolCallCorrelation,
+} from "../../../shared/codex-workbench-identity/index.js";
+import {
+	parseRealtimeCorrelationId,
+	parseRealtimeSessionId,
+} from "../../../shared/codex-realtime-host/index.js";
 
 export interface Identities {
 	readonly authorities: IdentityAuthorities;
@@ -44,19 +48,15 @@ export interface Identities {
 }
 
 export function identities(): Identities {
-	const authorities = createIdentityAuthorities();
+	const childId = "archboard:child:h11111111111111111111111111111111";
+	const authorities = restoreIdentityAuthorities({
+		childId,
+		epoch: "archboard:epoch:h11111111111111111111111111111111.h22222222222222222222222222222222",
+	});
 	const identity = authorities.identity;
 	const coordinator = identity.decoder.adoptThreadId("coordinator");
 	const workhorse = identity.decoder.adoptThreadId("workhorse");
 	const turn = identity.decoder.adoptTurnId("coordinator-turn");
-	const call = identity.decoder.createLogicalToolCallCorrelation({
-		threadId: coordinator,
-		turnId: turn,
-		callId: identity.decoder.adoptDynamicToolCallId("callback-call"),
-		namespace: "archboard_app",
-		tool: "delegate_to_workhorse",
-		manifestHash: "manifest-hash",
-	});
 	return {
 		authorities,
 		child: identity.validator.childId,
@@ -64,15 +64,49 @@ export function identities(): Identities {
 		coordinator,
 		workhorse,
 		turn,
-		call,
+		call: identity.decoder.createLogicalToolCallCorrelation({
+			threadId: coordinator,
+			turnId: turn,
+			callId: identity.decoder.adoptDynamicToolCallId("callback-call"),
+			namespace: "archboard_app",
+			tool: "delegate_to_workhorse",
+			manifestHash: "manifest-hash",
+		}),
 		wireSessionId: identity.issuer.mintRealtimeSessionId(),
 		browserSessionId: parseRealtimeSessionId("browser-session"),
 		browserCorrelationId: parseRealtimeCorrelationId("browser-correlation"),
 	};
 }
 
-function executableLink(ids: Identities): ThreadLinkSnapshot {
+function record(ids: Identities): EpochOperationRecord {
 	return {
+		correlation: { childId: ids.child, epoch: ids.epoch, operationId: "link-operation" },
+		operation: { id: "link-operation", kind: "thread_link", rpc: "thread/read" },
+		status: "committed",
+		outcome: "delivered",
+		provenance: {
+			childId: ids.child,
+			epoch: ids.epoch,
+			threadId: ids.workhorse,
+			turnId: ids.turn,
+			threadSource: "appServer",
+			workspaceRoot: "/workspace",
+			instructionHash: "instruction-hash",
+			manifestHash: "manifest-hash",
+			confirmedAtMs: 100,
+		},
+		reason: null,
+		createdAtMs: 90,
+		updatedAtMs: 100,
+	};
+}
+
+function proof(ids: Identities): EpochExecutionProof {
+	return { record: record(ids), manifestRevision: 7 };
+}
+
+export function link(ids: Identities): CoordinatorCallbackLinkCorrelation {
+	const executable = {
 		kind: "thread_link",
 		state: "executable",
 		childId: ids.child,
@@ -83,24 +117,38 @@ function executableLink(ids: Identities): ThreadLinkSnapshot {
 		loaded: true,
 		canAcceptDirectInput: true,
 		reason: null,
+	} satisfies CoordinatorCallbackLinkCorrelation["binding"]["link"];
+	return {
+		binding: {
+			paneId: "pane-a",
+			revision: 4,
+			link: executable,
+			cas: {
+				revision: 4,
+				paneId: "pane-a",
+				childId: ids.child,
+				epoch: ids.epoch,
+				threadId: ids.workhorse,
+			},
+		},
+		target: {
+			threadId: ids.workhorse,
+			childId: ids.child,
+			epoch: ids.epoch,
+			operationId: "link-operation",
+			provenance: proof(ids),
+		},
 	};
 }
 
-function currentFor(ids: Identities, active = true): CoordinatorCallbackCurrent {
+function generation(ids: Identities): CoordinatorCallbackRealtimeGeneration {
 	return {
 		childId: ids.child,
 		epoch: ids.epoch,
 		coordinatorThreadId: ids.coordinator,
-		link: executableLink(ids),
-		realtime: active
-			? {
-					wireSessionId: ids.wireSessionId,
-					correlation: {
-						sessionId: ids.browserSessionId,
-						correlationId: ids.browserCorrelationId,
-					},
-				}
-			: null,
+		wireSessionId: ids.wireSessionId,
+		browserSessionId: ids.browserSessionId,
+		browserCorrelationId: ids.browserCorrelationId,
 	};
 }
 
@@ -114,14 +162,15 @@ export function operationEvent(
 		| "manage_workhorse_queue"
 		| "steer_workhorse" = "delegate_to_workhorse",
 ): WorkhorseOperationEvent {
-	const queueOperation = operation === "manage_workhorse_queue" ? ("add" as const) : null;
-	const rpc =
+	const queueOperation: WorkhorseOperationEvent["queueOperation"] =
+		operation === "manage_workhorse_queue" ? "add" : null;
+	const rpc: WorkhorseOperationEvent["rpc"] =
 		operation === "manage_workhorse_queue"
-			? ("thread/queue/add" as const)
+			? "thread/queue/add"
 			: operation === "steer_workhorse"
-				? ("turn/steer" as const)
-				: ("turn/start" as const);
-	const queuedSubmissionId = ids.authorities.identity.decoder.adoptQueuedSubmissionId("queue-1");
+				? "turn/steer"
+				: "turn/start";
+	const queued = ids.authorities.identity.decoder.adoptQueuedSubmissionId("queue-1");
 	const base = {
 		operation,
 		queueOperation,
@@ -135,10 +184,10 @@ export function operationEvent(
 			workhorseThreadId: ids.workhorse,
 			coordinatorCall: ids.call,
 			clientUserMessageId: "client-message",
-			queuedSubmissionId: queueOperation === null ? null : queuedSubmissionId,
+			queuedSubmissionId: queueOperation === null ? null : queued,
 			turnId: operation === "manage_workhorse_queue" ? null : ids.turn,
 		},
-		queuedSubmissionIds: queueOperation === null ? [] : [queuedSubmissionId],
+		queuedSubmissionIds: queueOperation === null ? [] : [queued],
 		detail: "callback detail",
 	};
 	if (type === "accepted") return Object.freeze({ ...base, type, outcome: "pending" });
@@ -148,25 +197,22 @@ export function operationEvent(
 	return Object.freeze({ ...base, type, outcome: "delivered" });
 }
 
-function semanticInput(
-	ids: Identities,
-	wireSessionId: Identities["wireSessionId"] | null,
-	selection: readonly string[] = ["element-a", "element-b"],
-): SemanticContextInput {
+function semanticInput(ids: Identities, active: boolean): SemanticContextInput {
 	return {
 		repository: "archboard",
 		child: { id: ids.child, epoch: ids.epoch },
 		threadLink: { state: "executable", reason: null },
 		workhorse: { threadId: ids.workhorse, turnId: ids.turn },
-		coordinator: { threadId: ids.coordinator, realtimeSessionId: wireSessionId },
+		coordinator: {
+			threadId: ids.coordinator,
+			realtimeSessionId: active ? ids.wireSessionId : null,
+		},
 		board: { key: "architecture", note: "boards/architecture.md", version: 7 },
 		pane: { paneId: "pane-a", focused: true },
-		selection,
-		claim: { holder: "human", doing: "mapping the boundary" },
-		doing: "mapping the boundary",
+		selection: ["element-a", "element-b"],
+		doing: "mapping",
 		cursor: { feedId: "feed-1", sequence: 7 },
-		description: "The architecture board contains the coordinator boundary.",
-		ambiguity: [],
+		description: "Architecture board",
 	};
 }
 
@@ -175,249 +221,195 @@ export interface SemanticSources {
 	readonly change: SettledSemanticChangeEvent;
 	readonly focus: PaneFocusEvent;
 	readonly selection: PaneSelectionEvent;
-	readonly nextFocus: () => PaneFocusEvent;
 	readonly dispose: () => void;
 }
 
-export function semanticSources(
-	ids: Identities,
-	wireSessionId: Identities["wireSessionId"] | null,
-): SemanticSources {
-	let now = 1_700_000_000_000;
-	let changeListener: ((event: SettledSemanticChangeEvent) => void) | null = null;
-	const feedListeners = new Set<(event: SettledChangeSourceEvent) => void>();
-	const feed = {
-		onChange(listener: (event: SettledChangeSourceEvent) => void) {
-			feedListeners.add(listener);
-			return () => feedListeners.delete(listener);
-		},
-	};
-	const input = semanticInput(ids, wireSessionId);
+export function semanticSources(ids: Identities, active: boolean): SemanticSources {
+	let change: SettledSemanticChangeEvent | null = null;
+	const listeners = new Set<(event: SettledChangeSourceEvent) => void>();
+	const input = semanticInput(ids, active);
 	const publisher = createSemanticContextPublisher({
-		feed,
+		feed: {
+			onChange(listener) {
+				listeners.add(listener);
+				return () => listeners.delete(listener);
+			},
+		},
 		feedId: "feed-1",
 		fresh: { read: () => input },
-		contextForChange: (event) => ({
-			...input,
-			board: { ...input.board, version: event.cursor },
-			cursor: { feedId: "feed-1", sequence: event.cursor },
-		}),
-		now: () => now,
+		contextForChange: () => input,
+		now: () => 1_700_000_000_000,
 	});
 	publisher.subscribeSettledChange((event) => {
-		changeListener?.(event);
-	});
-	let change: SettledSemanticChangeEvent | null = null;
-	changeListener = (event) => {
 		change = event;
-	};
+	});
 	const focus = publisher.publishPaneFocus(input);
 	const selection = publisher.publishPaneSelection({ ...input, selection: ["element-c"] });
-	for (const listener of feedListeners)
+	for (const listener of listeners)
 		listener({
 			cursor: 7,
 			board: "architecture",
-			at: new Date(now).toISOString(),
+			at: "2023-11-14T22:13:20.000Z",
 			origin: "human",
 			significance: "structural",
-			text: "A person settled a structural change.",
+			text: "A structural change.",
 		});
-	if (change === null) throw new Error("semantic change fixture did not publish");
-	return {
-		publisher,
-		change,
-		focus,
-		selection,
-		nextFocus: () => {
-			now += 1;
-			return publisher.publishPaneFocus({ ...input, pane: { paneId: "pane-a", focused: false } });
-		},
-		dispose: () => publisher.dispose(),
-	};
+	if (change === null) throw new Error("semantic fixture failed");
+	return { publisher, change, focus, selection, dispose: () => publisher.dispose() };
 }
 
-export function contextFor(
-	callback: CoordinatorCallback,
-	current: CoordinatorCallbackCurrent,
-): ArchboardContext {
-	const semantic = callback.kind === "semantic" ? callback.semantic : null;
-	const target = callback.correlation;
-	const operation: ArchboardContext["operation"] =
-		callback.kind === "operation" && callback.operation !== "manage_workhorse_queue"
-			? {
-					id: target.operationId!,
-					kind: callback.operation,
-					rpc: callback.rpc as "turn/start" | "turn/steer",
-					outcome: callback.outcome === "pending" ? null : callback.outcome,
-				}
-			: { id: null, kind: null, rpc: null, outcome: null };
-	const capturedAtMs = semantic?.capturedAtMs ?? 0;
-	return {
-		schema: 1,
-		paneId: semantic?.paneId ?? "pane-a",
-		board: {
-			note: "boards/architecture.md",
-			version: 7,
-			cursor:
-				semantic?.sequence == null ? "operation-cursor" : `${semantic.feedId}:${semantic.sequence}`,
-		},
-		threadLink: { state: "executable", reason: null },
-		child: { id: current.childId, epoch: current.epoch },
-		workhorse: { threadId: target.workhorseThreadId, turnId: target.turnId },
-		coordinator: {
-			threadId: current.coordinatorThreadId,
-			realtimeSessionId: current.realtime?.wireSessionId ?? null,
-		},
-		semantic: {
-			brief: semantic?.brief ?? "operation callback context",
-			capturedAtMs,
-			freshUntilMs: capturedAtMs + 30_000,
-			truncated: false,
-		},
-		focus: {
-			paneId:
-				callback.kind === "semantic" && callback.type === "focus" && semantic?.focused
-					? semantic.paneId
-					: null,
-			capturedAtMs: callback.kind === "semantic" && callback.type === "focus" ? capturedAtMs : 0,
-		},
-		selection: {
-			elementIds: semantic?.selection ? [...semantic.selection] : ["element-a"],
-			capturedAtMs:
-				callback.kind === "semantic" && callback.type === "selection" ? capturedAtMs : 0,
-		},
-		claim: { holder: "human", doing: "mapping the boundary" },
-		ambiguity: [],
-		operation,
-	};
-}
+type MutationMode = "delivered" | "rejected" | "lost";
 
-type AppendMode = "delivered" | "rejected" | "unknown" | "lost" | "mismatched";
-type InjectionMode = "delivered" | "rejected" | "unknown";
+export interface HarnessState {
+	child: CoordinatorCallbackCurrentChild | null;
+	coordinator: CoordinatorCallbackReadyCoordinator | null;
+	link: CoordinatorCallbackLinkCorrelation | null;
+	generation: CoordinatorCallbackRealtimeGeneration | null;
+	classification: ThreadLinkClassification;
+}
 
 export interface Harness {
 	readonly ids: Identities;
-	readonly state: { current: CoordinatorCallbackCurrent | null };
-	readonly operations: {
-		readonly subscribe: (listener: (event: WorkhorseOperationEvent) => void) => () => boolean;
-		readonly emit: (event: WorkhorseOperationEvent) => void;
-	};
+	readonly state: HarnessState;
 	readonly semantic: SemanticSources;
-	readonly appendRequests: AppendTextRequest[];
+	readonly operations: {
+		readonly emit: (event: WorkhorseOperationEvent) => void;
+		readonly listenerCount: () => number;
+	};
 	readonly injections: SessionParams<"thread/inject_items">[];
-	readonly setAppendMode: (mode: AppendMode) => void;
-	readonly setInjectionMode: (mode: InjectionMode) => void;
-	readonly setAppendHook: (hook: (() => void) | null) => void;
-	readonly setContextHook: (hook: (() => void) | null) => void;
+	readonly realtimeRequests: CoordinatorCallbackRealtimeRequest[];
 	readonly callbacks: ReturnType<typeof createCodexCoordinatorCallbacks>;
+	readonly options: CoordinatorCallbackOptions;
+	readonly setMutationMode: (mode: MutationMode) => void;
+	readonly setClassifyHook: (hook: (() => void) | null) => void;
+	readonly setMutationHook: (hook: (() => void) | null) => void;
 }
 
 export function harness(active = true): Harness {
 	const ids = identities();
-	const state = { current: currentFor(ids, active) };
-	const operationListeners = new Set<(event: WorkhorseOperationEvent) => void>();
-	const operations = {
-		subscribe(listener: (event: WorkhorseOperationEvent) => void) {
-			operationListeners.add(listener);
-			return () => operationListeners.delete(listener);
+	const capturedLink = link(ids);
+	const classifiedLink = capturedLink.binding.link;
+	if (classifiedLink.state !== "executable") throw new Error("workhorse link fixture failed");
+	const activeGeneration = active ? generation(ids) : null;
+	const state: HarnessState = {
+		child: { childId: ids.child, epoch: ids.epoch },
+		coordinator: {
+			state: "ready",
+			threadId: ids.coordinator,
+			childId: ids.child,
+			epoch: ids.epoch,
+			operationId: "coordinator-operation",
+			configured: null,
+			effective: null,
+			approvalPolicy: null,
+			approvalsReviewer: null,
+			sandboxPolicy: null,
+			activePermissionProfile: null,
+			review: null,
+			capabilities: COORDINATOR_CAPABILITY_POLICY,
+			persistence: null,
+			reason: null,
 		},
-		emit(event: WorkhorseOperationEvent) {
-			for (const listener of operationListeners) listener(event);
+		link: capturedLink,
+		generation: activeGeneration,
+		classification: {
+			link: classifiedLink,
+			thread: null,
+			observation: {
+				persisted: true,
+				persistedRows: 1,
+				loaded: true,
+				loadedOccurrences: 1,
+				source: "appServer",
+				status: "idle",
+				canAcceptDirectInput: true,
+			},
+			currentEpoch: { childId: ids.child, epoch: ids.epoch },
+			proof: proof(ids),
 		},
 	};
-	const semantic = semanticSources(ids, active ? ids.wireSessionId : null);
-	const appendRequests: AppendTextRequest[] = [];
+	const semantic = semanticSources(ids, active);
+	const listeners = new Set<(event: WorkhorseOperationEvent) => void>();
 	const injections: SessionParams<"thread/inject_items">[] = [];
-	let appendMode: AppendMode = "delivered";
-	let injectionMode: InjectionMode = "delivered";
-	let appendHook: (() => void) | null = null;
-	let contextHook: (() => void) | null = null;
-	const realtime: CoordinatorCallbackOptions["realtime"] = {
-		appendText: async (request) => {
-			appendRequests.push(request);
-			appendHook?.();
-			if (appendMode === "lost") throw new Error("realtime response lost");
-			if (appendMode === "mismatched")
-				return {
-					sessionId: parseRealtimeSessionId("stale-session"),
-					correlationId: parseRealtimeCorrelationId("stale-correlation"),
-					outcome: "delivered",
-				};
-			if (appendMode === "unknown")
-				return {
-					sessionId: request.sessionId,
-					correlationId: request.correlationId,
-					outcome: "outcome_unknown",
-					reason: "transport_failure",
-				};
-			if (appendMode === "rejected")
-				return {
-					sessionId: request.sessionId,
-					correlationId: request.correlationId,
-					outcome: "not_delivered",
-					reason: "rejected",
-				};
-			return {
-				sessionId: request.sessionId,
-				correlationId: request.correlationId,
-				outcome: "delivered",
-			};
-		},
-	};
-	const session: CoordinatorCallbackOptions["session"] = {
-		threadInjectItems: async (params) => {
+	const realtimeRequests: CoordinatorCallbackRealtimeRequest[] = [];
+	let mode: MutationMode = "delivered";
+	let classifyHook: (() => void) | null = null;
+	let mutationHook: (() => void) | null = null;
+	const callbackSession = {
+		threadInjectItems: async (params: SessionParams<"thread/inject_items">) => {
 			injections.push(params);
-			if (injectionMode === "rejected")
-				throw new CodexSessionMutationError(
-					"thread/inject_items",
-					"not_delivered",
-					"injection rejected",
-				);
-			if (injectionMode === "unknown")
-				throw new CodexSessionMutationError(
-					"thread/inject_items",
-					"outcome_unknown",
-					"injection response lost",
-				);
+			mutationHook?.();
+			if (mode === "rejected")
+				throw new CodexSessionMutationError("thread/inject_items", "not_delivered", "rejected");
+			if (mode === "lost") throw new Error("lost");
 			return {};
 		},
 	};
+	const realtime = createCoordinatorCallbackRealtimePort({
+		currentGeneration: () => state.generation,
+		session: {
+			realtimeAppendText: async (params) => {
+				realtimeRequests.push({ generation: activeGeneration ?? generation(ids), params });
+				mutationHook?.();
+				if (mode === "rejected")
+					throw new CodexSessionMutationError(
+						"thread/realtime/appendText",
+						"not_delivered",
+						"rejected",
+					);
+				if (mode === "lost") throw new Error("lost");
+				return {};
+			},
+		},
+	});
 	const options: CoordinatorCallbackOptions = {
 		semantic: semantic.publisher,
-		operations,
-		realtime,
-		session,
-		current: () => state.current,
-		contextFor: (callback, current) => {
-			const context = contextFor(callback, current);
-			contextHook?.();
-			return context;
+		operations: {
+			subscribe(listener) {
+				listeners.add(listener);
+				return () => listeners.delete(listener);
+			},
 		},
+		session: callbackSession,
+		realtime,
+		threadLink: {
+			classify: async () => {
+				classifyHook?.();
+				return state.classification;
+			},
+		},
+		currentChild: () => state.child,
+		currentCoordinator: () => state.coordinator,
+		currentWorkhorseLink: () => state.link,
+		currentRealtimeGeneration: () => state.generation,
 	};
 	return {
 		ids,
 		state,
-		operations,
 		semantic,
-		appendRequests,
+		operations: {
+			emit: (event) => {
+				for (const listener of listeners) listener(event);
+			},
+			listenerCount: () => listeners.size,
+		},
 		injections,
-		setAppendMode: (mode) => {
-			appendMode = mode;
-		},
-		setInjectionMode: (mode) => {
-			injectionMode = mode;
-		},
-		setAppendHook: (hook) => {
-			appendHook = hook;
-		},
-		setContextHook: (hook) => {
-			contextHook = hook;
-		},
+		realtimeRequests,
 		callbacks: createCodexCoordinatorCallbacks(options),
+		options,
+		setMutationMode: (value) => {
+			mode = value;
+		},
+		setClassifyHook: (value) => {
+			classifyHook = value;
+		},
+		setMutationHook: (value) => {
+			mutationHook = value;
+		},
 	};
 }
 
-export function close(h: Harness): void {
-	h.callbacks.dispose();
-	h.semantic.dispose();
+export function close(value: Harness): void {
+	value.callbacks.dispose();
+	value.semantic.dispose();
 }

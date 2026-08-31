@@ -677,6 +677,44 @@ developer message with one `input_text` part:
 }
 ```
 
+### Coordinator callback bytes
+
+Coordinator callback text is compact JSON with no prose prefix or suffix. Every
+object key is serialized in lexical order, recursively. Arrays retain source
+order. The top-level `schema` is `1`; `kind` is `operation` or `semantic`; and
+`type` is one of the closed eleven-member set:
+
+```text
+operation: accepted, queued, started, progress, attention, completed, failed, outcome_unknown
+semantic: change, focus, selection
+```
+
+Every operation member contains `correlation`, `detail`, `kind`, `operation`,
+`outcome`, `queuedSubmissionIds`, `queueOperation`, `rpc`, `schema`, and `type`.
+This retains the real `manage_workhorse_queue` operation, queue operation, RPC,
+outcome, and submission tuple. Every semantic member contains `correlation`,
+`kind`, `schema`, `semantic`, `threadLinkReason`, `threadLinkState`, and `type`.
+The semantic object contains `brief`, `capturedAtMs`, `detail`, `feedId`,
+`focused`, `origin`, `paneId`, `selection`, `sequence`, and `significance`.
+
+The common correlation object contains `childId`, `clientUserMessageId`,
+`coordinatorCall`, `coordinatorThreadId`, `coordinatorTurnId`, `epoch`,
+`operationId`, `queuedSubmissionId`, `realtimeGeneration`, `realtimeSessionId`,
+`turnId`, `workhorseLink`, and `workhorseThreadId`. `workhorseLink` retains the
+captured pane and binding revision, accepted link fields, exact classifier
+target, and complete durable provenance record plus manifest revision.
+`realtimeGeneration`, when present, retains the child, epoch, coordinator
+thread, wire session, browser session, and browser correlation identities.
+
+The encoder rejects any callback above 32,768 UTF-8 bytes, any string above
+8,192 UTF-8 bytes, any array above 128 entries, any queued submission ID above
+1,024 UTF-8 bytes, or any selection ID above 64 UTF-8 bytes. It does not
+truncate. The callback is the exact `text` in the one developer message above.
+Inactive operation callbacks send that message to `coordinatorThreadId` through
+`thread/inject_items`. Active callbacks send the same text to that thread
+through `thread/realtime/appendText` with role `developer`. The workhorse thread
+is correlation only and is never the callback mutation target.
+
 ## Realtime V3 start policy
 
 Every start uses a new host-minted `realtimeSessionId` and these choices:
