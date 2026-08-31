@@ -276,10 +276,6 @@ export interface Harness {
 		readonly emit: (event: WorkhorseOperationEvent) => void;
 		readonly listenerCount: () => number;
 	};
-	readonly sourceSubscriptions: {
-		readonly activeCount: () => number;
-		readonly cleanupCount: () => number;
-	};
 	readonly injections: SessionParams<"thread/inject_items">[];
 	readonly realtimeRequests: CoordinatorCallbackRealtimeRequest[];
 	readonly callbacks: ReturnType<typeof createCodexCoordinatorCallbacks>;
@@ -339,19 +335,6 @@ export function harness(active = true): Harness {
 	let mode: MutationMode = "delivered";
 	let classifyHook: (() => void) | null = null;
 	let mutationHook: (() => void) | null = null;
-	let activeSourceSubscriptions = 0;
-	let sourceCleanups = 0;
-	const countedCleanup = (cleanup: () => void): (() => void) => {
-		activeSourceSubscriptions += 1;
-		let cleaned = false;
-		return () => {
-			if (cleaned) return;
-			cleaned = true;
-			activeSourceSubscriptions -= 1;
-			sourceCleanups += 1;
-			cleanup();
-		};
-	};
 	const callbackSession = {
 		threadInjectItems: async (params: SessionParams<"thread/inject_items">) => {
 			injections.push(params);
@@ -380,20 +363,11 @@ export function harness(active = true): Harness {
 		},
 	});
 	const options: CoordinatorCallbackOptions = {
-		semantic: {
-			subscribeSettledChange: (listener) =>
-				countedCleanup(semantic.publisher.subscribeSettledChange(listener)),
-			subscribePaneFocus: (listener) =>
-				countedCleanup(semantic.publisher.subscribePaneFocus(listener)),
-			subscribePaneSelection: (listener) =>
-				countedCleanup(semantic.publisher.subscribePaneSelection(listener)),
-		},
+		semantic: semantic.publisher,
 		operations: {
 			subscribe(listener) {
 				listeners.add(listener);
-				return countedCleanup(() => {
-					listeners.delete(listener);
-				});
+				return () => listeners.delete(listener);
 			},
 		},
 		session: callbackSession,
@@ -418,10 +392,6 @@ export function harness(active = true): Harness {
 				for (const listener of listeners) listener(event);
 			},
 			listenerCount: () => listeners.size,
-		},
-		sourceSubscriptions: {
-			activeCount: () => activeSourceSubscriptions,
-			cleanupCount: () => sourceCleanups,
 		},
 		injections,
 		realtimeRequests,
