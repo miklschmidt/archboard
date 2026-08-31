@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 02:19'
+updated_date: '2026-08-31 02:26'
 labels: []
 dependencies:
   - TASK-144.01
@@ -75,4 +75,6 @@ Sixth-round remediation supersedes the earlier mkdtempSync allocation wording: e
 Seventh-round remediation: fixture disposal now waits for an explicit allocation-settled handshake and tracks candidate, owned, and retired states. A pre-create async or sync disposal request cannot memoize a no-op before mkdirSync; if this process creates the candidate afterward, cleanup still removes exactly that root, while EEXIST candidates remain foreign and are retired without removal. Setup guards prevent in-flight recreation after disposal. The public helper regression exercises disposal inside onAllocated before creation, and the existing signal matrix covers the pre-create signal boundary. The 200-owner regression now treats bounded existsSync polling of each printed candidate path as authoritative; fs.watch is only an optional wake-up/acceleration signal, with exact candidate/root accounting and no dependence on lossy event delivery.
 
 Eighth-round remediation: durable fixture ownership now remains true until exact-root removal succeeds, and cleanup waits for all tracked fixture work before its final removal. Disposal failures clear only the failed attempt memo, so a later cleanup call retries after transient removal failure; render-start disposal and in-flight output recreation are covered by public regressions. The concurrent-owner check now uses bounded polling of both exact allocated paths; fs.watch is only an optional wake-up for the 200-owner observation case, with no event-count dependency. Validation: focused allocation regressions (5 pass, 25 assertions), full vite-tailwind-contract suite (42 pass, 90 assertions), type-check, lint, format check, and frontend build. Per the app OOM instruction, the 200-owner stress, modules, system, complete check, and browser lanes were not rerun in this round; prior evidence remains recorded above.
+
+Ninth-round remediation: candidate-local ownership validation is now immutable per allocation attempt; retained EEXIST fixtures reject both assertActive and run after retry, and the foreign occupied directory remains byte-identical. Exact-root observation awaits the named polling interval when no wake callback exists. Watcher setup is optional and caught; a focused regression proves polling continues after simulated watcher failure. Validation: focused allocation ownership cases (7 pass, 38 assertions), type-check, format check, lint, and git diff --check. The 200-owner stress and all broad modules/repository/system/check/browser lanes remain intentionally skipped per the app OOM instruction.
 <!-- SECTION:NOTES:END -->
