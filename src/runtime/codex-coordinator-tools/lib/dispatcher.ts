@@ -327,7 +327,6 @@ export function createCodexCoordinatorTools(
 						"The logical tool call has reached its concurrent replay limit.",
 						true,
 					),
-					false,
 				);
 			live.acceptedAliases += 1;
 			return settleWire(state, live);
