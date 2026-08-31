@@ -1,10 +1,11 @@
 ---
 id: TASK-144.04
 title: Configure shadcn to deliver Base UI source into named modules
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 17:30'
+updated_date: '2026-08-31 03:15'
 labels: []
 dependencies:
   - TASK-144.05
@@ -37,3 +38,15 @@ Configure shadcn base-nova for Base UI source delivery after every resolver/help
 - [ ] #3 The dry-run uses finished Vite/TypeScript/Oxlint aliases, validates literal components.json, compares generated inputs to tracked fixtures, reports default/icon/upstream drift, and never modifies the checkout.
 - [ ] #4 Only reviewed named source may be copied; reductions remove icon/default helpers and future updates repeat provenance, hash, dependency, accessibility, aesthetic, and boundary review.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Reconcile the reviewed base-nova components literal, pinned upstream commit, existing aliases, and vendor fixture provenance. 2. Write only the exact components.json and immutable button/dialog source fixtures, intentionally omitting iconLibrary. 3. Add a non-mutating dry-run owner that validates literal config, alias agreement, fixture bytes/hashes, default/icon/upstream drift, and checkout cleanliness without package/source adoption. 4. Run focused config/provenance/dry-run/type/lint/format/inventory/diff checks; leave broad lanes to root caps.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reserved after TASK-144.18 finalized at integration HEAD 4cbceec. This ready leaf owns components.json, the two pinned vendor fixtures, and its narrow dry-run evidence; it is disjoint from active shell-token remediation and assistant-ui dependency work.
+<!-- SECTION:NOTES:END -->
