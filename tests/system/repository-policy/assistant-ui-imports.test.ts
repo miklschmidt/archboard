@@ -43,7 +43,6 @@ const ASSISTANT_UI_TRANSITIVE_ALLOWLIST = new Set(
 	),
 );
 type CommandResult = { exitCode: number; output: string };
-
 function run(cwd: string, command: string[]): CommandResult {
 	const result = Bun.spawnSync({
 		cmd: command,
@@ -61,7 +60,6 @@ function run(cwd: string, command: string[]): CommandResult {
 		output: `${result.stdout.toString()}${result.stderr.toString()}`,
 	};
 }
-
 function repositoryOxlintConfig(): string {
 	const authored = fs.readFileSync(path.join(repoRoot, ".oxlintrc.jsonc"), "utf8");
 	const relativePlugin = '"./tools/oxlint-plugin-archboard.js"';
@@ -69,7 +67,6 @@ function repositoryOxlintConfig(): string {
 		throw new Error("repository Oxlint plugin path is missing");
 	return authored.replace(relativePlugin, JSON.stringify(plugin));
 }
-
 async function withProject<T>(
 	files: Record<string, string>,
 	check: (root: string) => T | Promise<T>,
@@ -89,21 +86,17 @@ async function withProject<T>(
 		fs.rmSync(root, { recursive: true, force: true });
 	}
 }
-
 function lint(root: string, relativePath: string): CommandResult {
 	return run(root, [oxlint, "--config=.oxlintrc.jsonc", "--format=default", relativePath]);
 }
-
 function expectPass(result: CommandResult): void {
 	expect(result.exitCode, result.output).toBe(0);
 }
-
 function expectRule(result: CommandResult, message: string): void {
 	expect(result.exitCode, result.output).not.toBe(0);
 	expect(result.output).toContain("archboard(assistant-ui-imports)");
 	expect(result.output).toContain(message);
 }
-
 function resolvePackageJson(name: string, fromDirectory: string): string | undefined {
 	let directory = fromDirectory;
 	while (true) {
@@ -114,7 +107,6 @@ function resolvePackageJson(name: string, fromDirectory: string): string | undef
 		directory = parent;
 	}
 }
-
 function assistantUiDependencyGraph(): Map<string, Record<string, unknown>> {
 	const packages = new Map<string, Record<string, unknown>>();
 	const pending: Array<[string, string]> = [[ASSISTANT_UI_PACKAGE, repoRoot]];
@@ -133,7 +125,6 @@ function assistantUiDependencyGraph(): Map<string, Record<string, unknown>> {
 	}
 	return packages;
 }
-
 function directRadixDependencies(packageJson: Record<string, unknown>): string[] {
 	return DEPENDENCY_SECTIONS.flatMap((section) => {
 		const dependencies = packageJson[section];
@@ -143,7 +134,6 @@ function directRadixDependencies(packageJson: Record<string, unknown>): string[]
 			.map((name) => `${section}.${name}`);
 	});
 }
-
 function resolvedIdentities(
 	packages: Record<string, [string, string, Record<string, unknown>?]>,
 	pattern: RegExp,
@@ -152,7 +142,6 @@ function resolvedIdentities(
 		.map(([key, [identity]]) => ({ key, identity }))
 		.filter(({ identity }) => pattern.test(identity));
 }
-
 function packageRootFromModule(module: string): string | undefined {
 	return module.match(/\/node_modules\/((?:@[^/]+\/)?[^/]+)/)?.[1];
 }
@@ -182,7 +171,6 @@ describe("assistant-ui dependency and import policy", () => {
 			expect(["MIT", "BSD-3-Clause", "0BSD"], identity).toContain(manifest.license);
 		}
 	});
-
 	test("audits Radix declarations in every package dependency section", () => {
 		const hostile = Object.fromEntries(
 			DEPENDENCY_SECTIONS.map((section) => [
@@ -296,6 +284,18 @@ describe("assistant-ui dependency and import policy", () => {
 			],
 			[
 				`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nlet Primitive;\nPrimitive = ComposerPrimitive;\nvoid Primitive.Dictate;`,
+				"Do not alias an assistant-ui import",
+			],
+			[
+				`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nconst Primitive = ComposerPrimitive as typeof ComposerPrimitive;\nvoid Primitive.Queue;`,
+				"ComposerPrimitive.Queue",
+			],
+			[
+				`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nlet Primitive;\nPrimitive = ComposerPrimitive!;\nvoid Primitive.Dictate;`,
+				"Do not alias an assistant-ui import",
+			],
+			[
+				`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nlet Tool;\n({ Tool } = <typeof ComposerPrimitive>ComposerPrimitive);\nvoid Tool;`,
 				"Do not alias an assistant-ui import",
 			],
 			[
