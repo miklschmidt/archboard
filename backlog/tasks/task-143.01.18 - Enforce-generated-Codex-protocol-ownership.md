@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.18
 title: Enforce generated Codex protocol ownership
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-31 02:23'
+updated_date: '2026-08-31 02:37'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -47,10 +47,10 @@ Own one repository-policy rule that makes generated Codex 0.151.0 bindings reach
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Generated files may exist only in the ignored codex-protocol generated directory and may be imported only by the codex-protocol adapter.
-- [ ] #2 Runtime, server, UI, scripts, and tests outside the conformance owner fail with an actionable path when they deep-import or commit a generated binding.
-- [ ] #3 The policy permits the temp-directory generator/compare owner and fixtures without permitting a second generated tree or a handwritten mirror.
-- [ ] #4 The test is registered in the existing repository inventory and fails on the pre-policy forbidden fixture.
+- [x] #1 Generated files may exist only in the ignored codex-protocol generated directory and may be imported only by the codex-protocol adapter.
+- [x] #2 Runtime, server, UI, scripts, and tests outside the conformance owner fail with an actionable path when they deep-import or commit a generated binding.
+- [x] #3 The policy permits the temp-directory generator/compare owner and fixtures without permitting a second generated tree or a handwritten mirror.
+- [x] #4 The test is registered in the existing repository inventory and fails on the pre-policy forbidden fixture.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -124,4 +124,18 @@ Further-remediation scope: scripts/typescript-analysis.ts, canonical fingerprint
 Narrow P2 remediation in commit 8785021 after reviewer finding: namespaceImportMirror now emits import type * as declarations and replaces identifiers only after removing imports through a trivia-aware pass that preserves module specifiers, comments, and strings; importTypeMirror uses the same safe pass. Added a direct TypeScript API oracle with a relative ../AbsolutePathBuf import, asserting the original specifier is retained and syntactic/semantic diagnostics are empty. Focused boundary/alias/corpus suite passed 18 tests / 54 expectations; bun run check:codex-protocol-fingerprint-corpus passed all 820 fingerprints; bun run type-check, bun run lint, bun run fmt:check, and git diff --check passed. Per durable OOM rule, repository-wide, module, system, check, and browser lanes were not rerun; root owns those broad gates. Task remains In Progress for rereview.
 
 Final reviewer P2 remediation in commit 04f4033: replaced raw named-import regex discovery with the TypeScript scanner, records actual token spans, and replaces only those declaration spans. Added controls for import-shaped comments, single-quoted strings, and template strings covering both namespaceImportMirror and importTypeMirror; duplicate importType aliases are asserted absent and both transformed fixtures compile with zero diagnostics. Focused boundary/alias/corpus suite passed 18 tests / 62 expectations; bun run check:codex-protocol-fingerprint-corpus verified all 820 fingerprints; bun run type-check, bun run lint, bun run fmt:check, and git diff --check passed. Per durable OOM rule, broad repository/module/system/check/browser lanes were not rerun; root owns them. Task remains In Progress with ACs unchecked.
+
+Root integration and finalization evidence (2026-08-31):
+- Same-reviewer final complete-range rereview returned REVIEW_CLEAN at exact worker HEAD e0a6f41f2cb3068a9aece0154efd60e517470df9.
+- Integrated the review-clean range as 8588b22 through 33ff8b9.
+- Root-owned exact policy suite passed in capped unit archboard-task1430118-focused-33ff8b9.service with MemoryMax=8G and MemorySwapMax=1G: 18 tests, 62 expectations, exit 0, peak 1.4G, swap 0, no limit hit. It regenerated all 820 pinned fingerprints, rejected corpus corruption, compiled namespace/import-type mirrors, exercised every deep-import and handwritten-mirror bypass, verified inventory reachability, and audited the real checkout.
+- Root-owned capped module validation passed in archboard-integration-modules-3bc0a1e.service: 1,264 tests, 11,271 expectations, peak 1.0G, swap 0, no limit hit.
+- Capped type-check and lint passed on the integrated branch in archboard-task14402-typecheck-25532ee.service and archboard-task14402-lint-25532ee.service, with zero swap and no limit hits.
+- git diff --check and clean worktree status passed. The combined repository lane separately found one active TASK-144.10 signal-owner failure; all three TASK-143.01.18 policy owners passed both in that run and in the independent capped rerun, so no exception or weakened gate was used.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added the reproducible repository-policy owner for generated Codex 0.151.0 bindings, enforcing one ignored generated tree, one adapter boundary, structural handwritten-mirror rejection, and a pinned 820-file fingerprint corpus with clean-checkout and bypass coverage.
+<!-- SECTION:FINAL_SUMMARY:END -->
