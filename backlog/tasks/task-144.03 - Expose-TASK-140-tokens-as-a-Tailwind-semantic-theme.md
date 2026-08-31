@@ -1,11 +1,11 @@
 ---
 id: TASK-144.03
 title: Expose TASK-140 tokens as a Tailwind semantic theme
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 00:05'
+updated_date: '2026-08-31 00:10'
 labels: []
 dependencies:
   - TASK-144.01
@@ -28,10 +28,10 @@ Expose completed TASK-140 tokens as the canonical Tailwind semantic theme while 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 app.css places all @import rules first: Tailwind theme/utilities and then the existing shell stylesheet, before any declaration or @theme block; Tailwind preflight/base reset is not imported.
-- [ ] #2 @theme maps the exact operator-shell color, typography, radius, spacing, elevation, state, and motion tokens without adding a second palette or replacing Excalidraw variables.
-- [ ] #3 Static compile fixtures prove named utilities are emitted and unknown token names are absent; they do not claim rendered equivalence.
-- [ ] #4 Theme changes preserve light/dark/high-contrast/reduced-motion contracts and defer rendered shell equivalence to TASK-144.14 browser coverage.
+- [x] #1 app.css places all @import rules first: Tailwind theme/utilities and then the existing shell stylesheet, before any declaration or @theme block; Tailwind preflight/base reset is not imported.
+- [x] #2 @theme maps the exact operator-shell color, typography, radius, spacing, elevation, state, and motion tokens without adding a second palette or replacing Excalidraw variables.
+- [x] #3 Static compile fixtures prove named utilities are emitted and unknown token names are absent; they do not claim rendered equivalence.
+- [x] #4 Theme changes preserve light/dark/high-contrast/reduced-motion contracts and defer rendered shell equivalence to TASK-144.14 browser coverage.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -64,4 +64,12 @@ The independent contract fixture pins the exact import prefix, all light tokens,
 Validation after remediation: bun test src/ui/theme/tests/theme-compile.test.ts passed 21 tests/571 assertions; bun run test:modules passed 1,034 tests/7,617 assertions; bun run test:repository passed 130 tests/415 assertions; bun run fmt:check, bun run lint, root and frontend TypeScript projects, and bun run build:frontend passed. The build retained the expected unresolved /assets/excalidraw.css notice and existing large-chunk advisory. The first module-lane attempt overlapped another repository-wide validation process and hit unrelated fixed five-second timeouts in Codex protocol and code-target fixtures; a clean sequential rerun passed the full lane. This leaf still claims compiler and policy proof only, not rendered equivalence, and TASK-144.03 remains In Progress for parent review.
 
 Final reviewer wording correction: renamed the fixture identifier to HARDCODED_TRANSITION_DEFAULT_CANDIDATES and narrowed the test and task prose to the two hardcoded transition-default fallbacks. The task now states explicitly that unrelated compiler-built utilities remain outside this semantic-theme contract and that this leaf neither adopts them as Archboard semantic tokens nor prohibits them globally. No CSS, semantic value, import, token table, candidate inventory, enforcement, or Option A decision changed. Focused validation passed 21 theme tests/571 assertions, formatting, lint, both TypeScript projects, and 56 repository-policy tests/156 assertions.
+
+Parent integration at 6033faf preserved the review-clean semantic theme. Integration validation passed the 21-test/571-assertion real Tailwind compiler owner, module lane 1,034/7,617, repository policy 130/415, both TypeScript projects, Oxlint, Oxfmt, frontend build, and diff/status checks. Independent final review returned REVIEW_CLEAN and verified app.css SHA-256 f3b7020a82f4b24a7ce48dc761b95994593c55592b7acf76eb186a7147a3c4c9.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Established the canonical Tailwind semantic theme from the exact TASK-140 operator-shell tokens, cleared all 419 configurable Tailwind defaults, preserved cobalt accent and accessibility/motion contracts, and added exhaustive compiler and mutation proof. The leaf passed independent review and integration validation; rendered shell equivalence remains deliberately owned by TASK-144.14.
+<!-- SECTION:FINAL_SUMMARY:END -->
