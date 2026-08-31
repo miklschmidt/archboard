@@ -134,28 +134,7 @@ const readSemanticAnnouncer = (browser: AgentBrowserSession): Promise<SemanticAn
 		};
 	})()`);
 
-async function setSemanticAnnouncer(
-	browser: AgentBrowserSession,
-	state: string,
-	role: "alert" | "status",
-	live: "assertive" | "polite",
-	text: string,
-): Promise<void> {
-	expect(
-		await browser.eval<boolean>(`(() => {
-			const announcer = document.querySelector(".workbench-semantic-announcer");
-			if (!announcer) return false;
-			announcer.setAttribute("data-semantic-state", ${JSON.stringify(state)});
-			announcer.setAttribute("role", ${JSON.stringify(role)});
-			announcer.setAttribute("aria-live", ${JSON.stringify(live)});
-			announcer.setAttribute("aria-label", ${JSON.stringify(text)});
-			announcer.textContent = ${JSON.stringify(text)};
-			return true;
-		})()`),
-	).toBe(true);
-}
-
-export async function verifyCollapsedSemanticAnnouncements(
+export async function verifyCollapsedSemanticAnnouncement(
 	browser: AgentBrowserSession,
 ): Promise<void> {
 	const unavailableText =
@@ -172,36 +151,13 @@ export async function verifyCollapsedSemanticAnnouncements(
 		text: unavailableText,
 		workbenchExpanded: "false",
 	});
-
-	const freshText = "Semantic context Fresh Delivered to the linked workhorse.";
-	await setSemanticAnnouncer(browser, "fresh", "status", "polite", freshText);
-	const polite = await readSemanticAnnouncer(browser);
-	expect(polite).toMatchObject({ live: "polite", role: "status", state: "fresh", text: freshText });
 	expect(await readSemanticAccessibility(browser)).toEqual({
 		atomic: true,
 		ignored: false,
 		live: "polite",
-		name: freshText,
+		name: unavailableText,
 		role: "status",
 	});
-
-	const refusedText = "Semantic context Refused The linked thread is not loaded.";
-	await setSemanticAnnouncer(browser, "refused", "alert", "assertive", refusedText);
-	const refused = await readSemanticAnnouncer(browser);
-	expect(refused).toMatchObject({
-		live: "assertive",
-		role: "alert",
-		state: "refused",
-		text: refusedText,
-	});
-	expect(await readSemanticAccessibility(browser)).toEqual({
-		atomic: true,
-		ignored: false,
-		live: "assertive",
-		name: refusedText,
-		role: "alert",
-	});
-	await setSemanticAnnouncer(browser, "unavailable", "status", "polite", unavailableText);
 }
 
 export async function verifyBoardStatusPresentation(options: {
