@@ -287,19 +287,53 @@ export interface DynamicMutationQuarantineOwner {
 	readonly childExit: Promise<DynamicMutationQuarantineExit>;
 }
 
+export type DynamicFailClosedShutdownReason =
+	| "poison_acquisition_failed"
+	| "wire_capacity_exceeded"
+	| "response_write_failed";
+
+export interface DynamicEpochTeardownProof {
+	readonly child: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly sessionClosed: true;
+	readonly transportClosed: true;
+}
+
+export interface DynamicFailClosedShutdownOwner {
+	readonly child: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly shutdownInitiated: true;
+	readonly teardown: Promise<DynamicEpochTeardownProof>;
+}
+
+export interface DynamicFatalLifecycleFault {
+	readonly child: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly reason: DynamicFailClosedShutdownReason | "invalid_child_exit_proof";
+	readonly message: string;
+	readonly cause: unknown;
+}
+
 export type DynamicMutationQuarantineState =
 	| "poisoning"
 	| "poisoned"
 	| "terminalizing"
-	| "poison_failed";
+	| "shutdown_pending"
+	| "fatal";
 
 export interface DynamicMutationQuarantineInspection {
 	readonly epochCount: number;
 	readonly callCount: number;
+	readonly wireCount: number;
+	readonly blockedWireCount: number;
+	readonly fatalEpochCount: number;
 	readonly entries: readonly Readonly<{
 		readonly identity: DynamicMutationQuarantineIdentity;
 		readonly state: DynamicMutationQuarantineState;
 		readonly unresolvedOperationCount: number;
+		readonly wireCount: number;
+		readonly blockedWireCount: number;
+		readonly overflowed: boolean;
 	}>[];
 }
 
@@ -342,6 +376,14 @@ export interface DynamicToolLifecyclePort {
 		readonly identity: DynamicMutationQuarantineIdentity;
 		readonly retryTerminalization: () => Promise<DynamicMutationTerminalProof>;
 	}) => DynamicMutationQuarantineOwner;
+	/** Starts exact fail-closed shutdown synchronously and owns its teardown proof. */
+	readonly failClosedShutdownEpoch: (input: {
+		readonly child: ChildId;
+		readonly epoch: ChildEpoch;
+		readonly reason: DynamicFailClosedShutdownReason;
+	}) => DynamicFailClosedShutdownOwner;
+	/** Reports a retained fatal owner when neither poison nor teardown authority is proven. */
+	readonly reportFatalLifecycleFault: (fault: DynamicFatalLifecycleFault) => void;
 	readonly waitForTargets: (input: {
 		readonly owner: DynamicWaitOwner;
 		readonly cursor: string | null;

@@ -277,13 +277,19 @@ function validateExecution(root: JsonRecord): void {
 	]);
 	exact("unresolved terminal authority", ids.unresolvedTerminalAuthority, {
 		transition: "host_confirmed_idempotent_atomic",
-		owner: "exact_child_epoch_and_logical_call_quarantine",
+		logicalOwner: "exact_child_epoch_and_logical_call_quarantine",
+		wireOwner: "one_original_transport_handle_per_admitted_json_rpc_request_id",
 		epochStateBeforeRelease: "poisoned",
-		sameLogicalCall: "join_existing_pending_owner",
-		otherCallsInEpoch: "reject_before_operation_id_approval_stage_or_effect",
+		sameRequestId: "deduplicate_without_second_response_write",
+		sameLogicalCall: "admit_distinct_wire_and_fan_canonical_outcome",
+		otherCallsInEpoch:
+			"retain_distinct_wire_with_canonical_refusal_before_operation_id_approval_stage_or_effect",
+		wireCapacity: 128,
+		overflow: "synchronous_fail_closed_shutdown_without_unbounded_wire_admission",
+		poisonFailure: "synchronous_exact_epoch_shutdown_or_retained_fatal_lifecycle_fault",
 		normalResponseWhileAnyOwnedIdIsCurrent: false,
-		recovery: "lifecycle_triggered_bounded_terminalization_or_exact_child_exit",
-		clearOn: ["proven_terminality", "exact_child_exit", "dispose"],
+		recovery: "lifecycle_triggered_bounded_terminalization_then_one_response_per_admitted_wire",
+		clearWithoutResponseOn: ["exact_child_exit", "exact_transport_teardown", "dispose"],
 	});
 	exact(
 		"clientUserMessageId policy",

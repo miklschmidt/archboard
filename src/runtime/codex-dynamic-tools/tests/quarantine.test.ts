@@ -28,7 +28,50 @@ function cancelledApproval(): FakeApproval {
 }
 
 describe("codex dynamic unresolved mutation quarantine", () => {
-	test("joins reconstructed and same-object replay without issuing another authority", async () => {
+	test("joins the logical effect before quarantine while retaining both arriving wires", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const approval = cancelledApproval();
+		const fixture = optionsFor(authorities, caller, { approval });
+		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
+		const tools = createCodexDynamicTools(fixture.options);
+		const firstRequest = requestFor(
+			authorities,
+			caller,
+			"create_thread",
+			{ prompt: "arrive together" },
+			"simultaneous-call",
+		);
+		const secondRequest = requestFor(
+			authorities,
+			caller,
+			"create_thread",
+			{ prompt: "arrive together" },
+			"simultaneous-call",
+		);
+
+		const first = tools.dispatch(firstRequest);
+		const second = tools.dispatch(secondRequest);
+		await reachQuarantine(tools);
+
+		expect(fixture.operationIds.issued).toHaveLength(2);
+		expect(approval.presented).toHaveLength(1);
+		expect(tools.inspectMutationQuarantine()).toMatchObject({
+			callCount: 1,
+			wireCount: 2,
+			entries: [{ wireCount: 2 }],
+		});
+		expect(fixture.transportResponses).toHaveLength(0);
+
+		await fixture.lifecycle.retryQuarantine();
+		const [firstResponse, secondResponse] = await Promise.all([first, second]);
+		expect(secondResponse).toEqual(firstResponse);
+		expect(fixture.transportResponses.map(({ request }) => request)).toEqual([
+			firstRequest,
+			secondRequest,
+		]);
+	});
+
+	test("owns each wire while joining one logical effect and retaining other calls", async () => {
 		const { authorities, caller, otherTarget } = setupAuthorities();
 		const approval = cancelledApproval();
 		const fixture = optionsFor(authorities, caller, { approval });
@@ -46,29 +89,30 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		const original = tools.dispatch(request);
 		expect(tools.dispatch(request)).toBe(original);
 		await reachQuarantine(tools);
-		const reconstructed = requestFor(
+		const sameWire = { ...request };
+		const sameWirePending = tools.dispatch(sameWire);
+		const logicalAlias = requestFor(
 			authorities,
 			caller,
 			"create_thread",
 			{ prompt: "owned once" },
 			"quarantined-call",
 		);
-		expect(tools.dispatch(reconstructed)).toBe(original);
+		const aliasPending = tools.dispatch(logicalAlias);
+		expect(aliasPending).not.toBe(original);
 
 		const issued = fixture.operationIds.issued.length;
 		const approvals = approval.presented.length;
 		const effects = fixture.session.calls.length;
-		expect(
-			tools.dispatch(
-				requestFor(authorities, caller, "send_message_to_thread", {
-					threadId: otherTarget.wireThreadId,
-					prompt: "must be blocked",
-				}),
-			),
-		).rejects.toMatchObject({ code: "system_error", retryEligible: false });
-		expect(
-			tools.dispatch(requestFor(authorities, caller, "list_threads", { limit: 1 })),
-		).rejects.toMatchObject({ code: "system_error", retryEligible: false });
+		const blockedMutation = tools.dispatch(
+			requestFor(authorities, caller, "send_message_to_thread", {
+				threadId: otherTarget.wireThreadId,
+				prompt: "must be blocked",
+			}),
+		);
+		const blockedRead = tools.dispatch(
+			requestFor(authorities, caller, "list_threads", { limit: 1 }),
+		);
 		expect(fixture.operationIds.issued).toHaveLength(issued);
 		expect(approval.presented).toHaveLength(approvals);
 		expect(fixture.session.calls).toHaveLength(effects);
@@ -76,12 +120,30 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		expect(tools.inspectMutationQuarantine()).toMatchObject({
 			epochCount: 1,
 			callCount: 1,
-			entries: [{ state: "poisoned", unresolvedOperationCount: 2 }],
+			wireCount: 4,
+			blockedWireCount: 2,
+			entries: [{ state: "poisoned", unresolvedOperationCount: 2, wireCount: 2 }],
 		});
 		expect(JSON.stringify(tools.inspectMutationQuarantine())).not.toContain("owned once");
 
-		tools.dispose();
-		expect(original).rejects.toMatchObject({ retryEligible: false });
+		await fixture.lifecycle.retryQuarantine();
+		const [canonical, sameWireResponse, alias, mutationRefusal, readRefusal] = await Promise.all([
+			original,
+			sameWirePending,
+			aliasPending,
+			blockedMutation,
+			blockedRead,
+		]);
+		expect(sameWireResponse).toEqual(canonical);
+		expect(alias).toEqual(canonical);
+		expect(mutationRefusal).toMatchObject({ success: false });
+		expect(readRefusal).toMatchObject({ success: false });
+		expect(fixture.transportResponses.map(({ request: owned }) => owned)).toEqual([
+			request,
+			logicalAlias,
+			expect.anything(),
+			expect.anything(),
+		]);
 	});
 
 	test("delivers the original canonical response only after lifecycle-triggered terminal proof", async () => {
@@ -91,7 +153,9 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
 		const tools = createCodexDynamicTools(fixture.options);
 		const pending = tools.dispatch(
-			requestFor(authorities, caller, "create_thread", { prompt: "recover once" }),
+			requestFor(authorities, caller, "create_thread", {
+				prompt: "recover once",
+			}),
 		);
 		await reachQuarantine(tools);
 
@@ -104,28 +168,36 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		expect(fixture.lifecycle.retryQuarantine()).rejects.toMatchObject({
 			retryEligible: false,
 		});
-		expect(tools.inspectMutationQuarantine()).toMatchObject({ epochCount: 1, callCount: 1 });
+		expect(tools.inspectMutationQuarantine()).toMatchObject({
+			epochCount: 1,
+			callCount: 1,
+		});
 		expect(fixture.transportResponses).toHaveLength(0);
+		const issued = fixture.operationIds.issued.length;
+		const approvals = approval.presented.length;
+		const aliasRequest = requestFor(authorities, caller, "create_thread", {
+			prompt: "recover once",
+		});
+		const replay = tools.dispatch(aliasRequest);
+		expect(replay).not.toBe(pending);
+		expect(fixture.operationIds.issued).toHaveLength(issued);
+		expect(approval.presented).toHaveLength(approvals);
 		expect(await fixture.lifecycle.retryQuarantine()).toEqual({
 			terminal: true,
 			unresolvedOperationCount: 0,
 		});
 		const response = await pending;
-		const issued = fixture.operationIds.issued.length;
-		const approvals = approval.presented.length;
-		const replay = tools.dispatch(
-			requestFor(authorities, caller, "create_thread", { prompt: "recover once" }),
-		);
-
 		expect(response.success).toBe(true);
-		expect(replay).toBe(pending);
-		expect(await replay).toBe(response);
+		expect(await replay).toEqual(response);
 		expect(fixture.operationIds.issued).toHaveLength(issued);
 		expect(approval.presented).toHaveLength(approvals);
-		expect(fixture.transportResponses).toHaveLength(1);
+		expect(fixture.transportResponses).toHaveLength(2);
 		expect(tools.inspectMutationQuarantine()).toEqual({
 			epochCount: 0,
 			callCount: 0,
+			wireCount: 0,
+			blockedWireCount: 0,
+			fatalEpochCount: 0,
 			entries: [],
 		});
 		for (const operationId of fixture.operationIds.issued)
@@ -160,7 +232,10 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		const response = await pending;
 		const parsed = parseDynamicToolCallResponse("send_message_to_thread", response);
 
-		expect(parsed.envelope).toMatchObject({ tag: "ok", value: { delivery: "delivered" } });
+		expect(parsed.envelope).toMatchObject({
+			tag: "ok",
+			value: { delivery: "delivered" },
+		});
 		expect(fixture.operationIds.consumed).toHaveLength(1);
 		expect(fixture.operationIds.retired).toHaveLength(0);
 		expect(() =>
@@ -176,7 +251,9 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
 		const tools = createCodexDynamicTools(fixture.options);
 		const pending = tools.dispatch(
-			requestFor(authorities, caller, "create_thread", { prompt: "partial issuance" }),
+			requestFor(authorities, caller, "create_thread", {
+				prompt: "partial issuance",
+			}),
 		);
 		await reachQuarantine(tools);
 
@@ -202,27 +279,41 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 
 	test("lets exact child exit close the pending owner without a dynamic response", async () => {
 		const { authorities, caller } = setupAuthorities();
-		const fixture = optionsFor(authorities, caller, { approval: cancelledApproval() });
+		const fixture = optionsFor(authorities, caller, {
+			approval: cancelledApproval(),
+		});
 		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
 		const tools = createCodexDynamicTools(fixture.options);
 		const pending = tools.dispatch(
-			requestFor(authorities, caller, "create_thread", { prompt: "exit closes" }),
+			requestFor(authorities, caller, "create_thread", {
+				prompt: "exit closes",
+			}),
 		);
 		await reachQuarantine(tools);
 
 		fixture.lifecycle.exitQuarantine();
-		expect(pending).rejects.toMatchObject({ code: "system_error", retryEligible: false });
+		expect(pending).rejects.toMatchObject({
+			code: "system_error",
+			retryEligible: false,
+		});
 		expect(fixture.transportResponses).toHaveLength(0);
-		expect(tools.inspectMutationQuarantine()).toMatchObject({ epochCount: 0, callCount: 0 });
+		expect(tools.inspectMutationQuarantine()).toMatchObject({
+			epochCount: 0,
+			callCount: 0,
+		});
 	});
 
 	test("does not clear ownership for a different child exit", async () => {
 		const { authorities, caller } = setupAuthorities();
-		const fixture = optionsFor(authorities, caller, { approval: cancelledApproval() });
+		const fixture = optionsFor(authorities, caller, {
+			approval: cancelledApproval(),
+		});
 		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
 		const tools = createCodexDynamicTools(fixture.options);
 		const pending = tools.dispatch(
-			requestFor(authorities, caller, "create_thread", { prompt: "wrong exit stays owned" }),
+			requestFor(authorities, caller, "create_thread", {
+				prompt: "wrong exit stays owned",
+			}),
 		);
 		await reachQuarantine(tools);
 
@@ -234,8 +325,10 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		expect(tools.inspectMutationQuarantine()).toMatchObject({
 			epochCount: 1,
 			callCount: 1,
-			entries: [{ state: "poison_failed" }],
+			fatalEpochCount: 1,
+			entries: [{ state: "fatal" }],
 		});
+		expect(fixture.lifecycle.fatalFaults).toHaveLength(1);
 		expect(fixture.transportResponses).toHaveLength(0);
 
 		tools.dispose();
@@ -244,21 +337,126 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 
 	test("dispose rejects and clears every retained owner without inventing a response", async () => {
 		const { authorities, caller } = setupAuthorities();
-		const fixture = optionsFor(authorities, caller, { approval: cancelledApproval() });
+		const fixture = optionsFor(authorities, caller, {
+			approval: cancelledApproval(),
+		});
 		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
 		const tools = createCodexDynamicTools(fixture.options);
 		const pending = tools.dispatch(
-			requestFor(authorities, caller, "create_thread", { prompt: "dispose closes" }),
+			requestFor(authorities, caller, "create_thread", {
+				prompt: "dispose closes",
+			}),
 		);
 		await reachQuarantine(tools);
 
 		tools.dispose();
-		expect(pending).rejects.toMatchObject({ code: "system_error", retryEligible: false });
+		expect(pending).rejects.toMatchObject({
+			code: "system_error",
+			retryEligible: false,
+		});
 		expect(fixture.transportResponses).toHaveLength(0);
 		expect(tools.inspectMutationQuarantine()).toEqual({
 			epochCount: 0,
 			callCount: 0,
+			wireCount: 0,
+			blockedWireCount: 0,
+			fatalEpochCount: 0,
 			entries: [],
 		});
+	});
+
+	test("poison acquisition failure starts exact fail-closed teardown before clearing", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller, {
+			approval: cancelledApproval(),
+		});
+		fixture.lifecycle.poisonError = new Error("poison unavailable");
+		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
+		const tools = createCodexDynamicTools(fixture.options);
+		const pending = tools
+			.dispatch(
+				requestFor(authorities, caller, "create_thread", {
+					prompt: "fail closed",
+				}),
+			)
+			.catch((error: unknown) => error);
+		await reachQuarantine(tools);
+
+		expect(fixture.lifecycle.shutdownInputs).toEqual([
+			expect.objectContaining({ reason: "poison_acquisition_failed" }),
+		]);
+		expect(tools.inspectMutationQuarantine()).toMatchObject({
+			epochCount: 1,
+			wireCount: 1,
+			entries: [{ state: "shutdown_pending" }],
+		});
+		expect(fixture.transportResponses).toHaveLength(0);
+
+		fixture.lifecycle.completeShutdown();
+		expect(await pending).toMatchObject({ retryEligible: false });
+		expect(tools.inspectMutationQuarantine()).toMatchObject({
+			epochCount: 0,
+			wireCount: 0,
+		});
+	});
+
+	test("malformed poison ownership also requires exact fail-closed teardown", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller, { approval: cancelledApproval() });
+		fixture.lifecycle.poisonOwnerOverride = {
+			child: createIdentityAuthorities().identity.validator.childId,
+			epoch: caller.epoch,
+		};
+		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
+		const tools = createCodexDynamicTools(fixture.options);
+		const pending = tools
+			.dispatch(requestFor(authorities, caller, "create_thread", { prompt: "wrong owner" }))
+			.catch((error: unknown) => error);
+		await reachQuarantine(tools);
+
+		expect(fixture.lifecycle.shutdownInputs).toEqual([
+			expect.objectContaining({ reason: "poison_acquisition_failed" }),
+		]);
+		expect(tools.inspectMutationQuarantine()).toMatchObject({
+			epochCount: 1,
+			entries: [{ state: "shutdown_pending" }],
+		});
+
+		fixture.lifecycle.completeShutdown();
+		expect(await pending).toMatchObject({ retryEligible: false });
+		expect(fixture.transportResponses).toHaveLength(0);
+	});
+
+	test("retains and reports a fatal owner when fail-closed authority cannot be acquired", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller, {
+			approval: cancelledApproval(),
+		});
+		fixture.lifecycle.poisonError = new Error("poison unavailable");
+		fixture.lifecycle.shutdownError = new Error("shutdown unavailable");
+		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
+		const tools = createCodexDynamicTools(fixture.options);
+		const pending = tools
+			.dispatch(
+				requestFor(authorities, caller, "create_thread", {
+					prompt: "retain fatal",
+				}),
+			)
+			.catch((error: unknown) => error);
+		await reachQuarantine(tools);
+
+		expect(fixture.lifecycle.fatalFaults).toEqual([
+			expect.objectContaining({ reason: "poison_acquisition_failed" }),
+		]);
+		expect(tools.inspectMutationQuarantine()).toMatchObject({
+			epochCount: 1,
+			wireCount: 1,
+			fatalEpochCount: 1,
+			entries: [{ state: "fatal" }],
+		});
+		expect(fixture.transportResponses).toHaveLength(0);
+
+		tools.dispose();
+		expect(await pending).toMatchObject({ retryEligible: false });
 	});
 });
