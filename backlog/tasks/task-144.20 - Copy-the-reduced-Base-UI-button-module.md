@@ -1,11 +1,11 @@
 ---
 id: TASK-144.20
 title: Copy the reduced Base UI button module
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 17:51'
-updated_date: '2026-08-31 04:44'
+updated_date: '2026-08-31 04:49'
 labels: []
 dependencies:
   - TASK-144.04
@@ -28,10 +28,10 @@ Copy and reduce only the pinned Base UI button fixture into one named Archboard 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The local button preserves Base UI button semantics, disabled/ref behavior, keyboard/pointer activation, and a small Archboard-owned API.
-- [ ] #2 Generated default aesthetics, icon package, cva, demo variants, and unused helpers are removed; semantic tokens and ui-classnames are the sole class path.
-- [ ] #3 Module tests prove exported API, prop/types, deterministic classes, and pure disabled/state behavior; rendered interaction belongs to TASK-144.11.
-- [ ] #4 Provenance records the immutable commit, button hash, reduction date, and local ownership.
+- [x] #1 The local button preserves Base UI button semantics, disabled/ref behavior, keyboard/pointer activation, and a small Archboard-owned API.
+- [x] #2 Generated default aesthetics, icon package, cva, demo variants, and unused helpers are removed; semantic tokens and ui-classnames are the sole class path.
+- [x] #3 Module tests prove exported API, prop/types, deterministic classes, and pure disabled/state behavior; rendered interaction belongs to TASK-144.11.
+- [x] #4 Provenance records the immutable commit, button hash, reduction date, and local ownership.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -102,4 +102,12 @@ Focused capped evidence with MemoryMax=6G and MemorySwapMax=1G:
 - precommit diff and protected-input audit: pass; pinned fixture SHA-256 remains 97bfee456444f0495deee6a321933c24267477645b0bf4bfea67c3c62d425a12 and /home/msc/Projects/archboard/src-DlBR1tzg.js remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6.
 
 The boundary lane was not rerun, as instructed after both authorized attempts exhausted the cap. TASK-144.20 remains In Progress and all acceptance criteria remain unchecked for complete-range rereview.
+
+Root acceptance at integrated HEAD 2daf116: independent reviewer returned REVIEW_CLEAN for exact immutable range f25688065484034539b26d92b6ba10ca8b82bae2..651f5c4bee1c0f8b24bc7ca3ff0a1c394443711f. Root capped focused unit archboard-task14420-focused-2daf116.service passed 31 tests and 636 assertions across the button API/types, production style entry, and semantic theme at 1.4G peak/swap 0. Both TypeScript projects passed in archboard-task14420-types-2daf116.service at 1.5G peak/swap 0. Production build passed in archboard-task14420-build-2daf116.service at 1.4G peak/swap 0; artifact dist/frontend/assets/index-l9HclMoo.css is exactly 57,848 bytes, contains .min-h-touch-target, .size-touch-target, and .bg-primary, and excludes .duration-150. The full boundary owner and a narrowed remaining case each previously reached the fixed 6G memory/1G swap caps; neither was repeated or granted higher limits. Scoped lint/format, inventory, shadcn policy, diff/path/hash audits passed in worker/review. Rendered keyboard, pointer, focus, and ref attachment remain explicitly owned by TASK-144.11.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added one Archboard-owned Base UI Button module with an exact Button/ButtonProps surface, explicit primary/secondary/quiet tones, control/icon sizes, semantic static classes, scalar data attributes, preserved Base UI polymorphic/ref/disabled/event behavior, and immutable source provenance. Extended the canonical Tailwind source seam to scan product src/ui TypeScript while excluding test owners, with production artifact assertions for required selectors and test-only utility absence. Independent review was clean; focused owners, both TypeScript projects, and the production build passed under caps.
+<!-- SECTION:FINAL_SUMMARY:END -->
