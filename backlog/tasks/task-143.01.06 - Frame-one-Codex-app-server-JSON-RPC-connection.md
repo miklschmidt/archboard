@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 02:58'
+updated_date: '2026-08-31 03:09'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -39,7 +39,7 @@ Delegation profile: gpt-5.6-luna, max.
 - [ ] #2 A local timeout or cancellation settles only the local waiter and never claims remote cancellation; late responses remain inspectable and non-idempotent lost responses classify as outcome_unknown.
 - [ ] #3 Only newline-delimited stdout frames enter the decoder, stderr drains independently, malformed/duplicate/unknown frames fail the owning operation without corrupting later frames, and backpressure is bounded.
 - [ ] #4 codex-approvals owns seven human responses, the two dynamic dispatchers own item/tool/call responses, and codex-session owns currentTime plus unsupported refresh/attestation responses. Transport validates correlation and writes each supplied response at most once.
-- [ ] #5 src/runtime/codex-transport/tests/transport.test.ts exhausts framing, every message direction, correlation, cancellation, late/duplicate/malformed frames, bounded backpressure, response ownership, one-write settlement, and shutdown against fake child streams.
+- [ ] #5 The src/runtime/codex-transport/tests suite exhausts framing, every message direction, correlation, cancellation, late/duplicate/malformed frames, bounded backpressure, response ownership, one-write settlement, and shutdown against fake child streams.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -53,6 +53,8 @@ Delegation profile: gpt-5.6-luna, max.
 5. Apply the reviewed shared Codex app-server capacity authority, then remediate strict envelope direction, duplicate-key rejection, method-specific reverse schemas, numeric wire IDs, reverse error settlement, two-lane atomic response admission, terminal detachment, deep redacted projections, and adversarial public oracles.
 
 6. Apply independent-review fixes: settle reverse-response promises on accepted-write failure, fail the owning request on known-id duplicate-key responses, preserve terminal late-response diagnostics, centralize remaining non-duration bounds, derive child stdio types from Node, narrow transport entrypoints, and consolidate local test helpers.
+
+7. Resolve ID-only malformed-frame correlation before reverse fallback, add recovery coverage, and truthfully broaden AC #5 to the transport test suite through the Backlog CLI.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -67,4 +69,6 @@ Remediation committed as 3fea481 (fix(codex-transport): harden app-server wire l
 Current focused validation: transport contract tests 20 pass / 0 fail / 126 expect across 4 files; capacity and repository-policy tests 6 pass / 0 fail / 152 expect across 2 files; bun run type-check, bun run lint, bun run fmt:check, and git diff --check pass. Preserved broad evidence from before the parent OOM guard: bun run test:modules 1,033 pass / 0 fail / 7,173 expect across 80 files, and bun run test:repository 134 pass / 0 fail / 559 expect across 12 files. No broad lane was rerun after that guard. Task remains In Progress pending independent review; acceptance criteria and terminal status were not changed.
 
 Second independent-review remediation is in code commit 35e7d4d (following 103ddf8, 3fea481, and the prior evidence commit 3fdee76). Reverse-response accepted-write failures now reject respond(), known-id duplicate-key response frames settle the owning request as malformed outcome_unknown, late-response diagnostics survive ordinary shutdown and child failure, and remaining text bounds use the shared canonical capacity contract. Child stdio fields derive from ChildProcessWithoutNullStreams with Node event tuples, the transport public surface is split into narrow client/errors/server-requests/diagnostics entrypoints, notify was removed, and captureRejection is owned once by fake-child support. Validation after remediation: 28 focused transport/capacity tests pass / 0 fail / 437 expect across 6 files; boundaries and module-scope policy owners pass 17 / 0 / 87; bun run type-check, bun run lint, bun run fmt:check, and git diff --check pass. Preserved broad evidence from before the parent OOM guard: bun run test:modules 1,033 pass / 0 fail / 7,173 expect across 80 files and bun run test:repository 134 pass / 0 fail / 559 expect across 12 files; no broad lane was rerun after that guard. Task remains In Progress; acceptance criteria and terminal status were not changed.
+
+Final review remediation is in code commit 4696b23. ID-only malformed frames with a known pending client id now route through response validation before reverse-request fallback, settle the waiter as malformed-response/outcome_unknown, release pending admission, emit no -32600 response for the client id, and preserve later request/response recovery; malformed-routing.test.ts is the focused hostile oracle. AC #5 was updated through the Backlog CLI to name the complete src/runtime/codex-transport/tests suite. Final focused validation: bun test --isolate src/runtime/codex-transport/tests 23 pass / 0 fail / 139 expect across 5 files; boundary and capacity policy owners 13 pass / 0 fail / 370 expect across 2 files; bunx tsc --noEmit, scoped oxlint, scoped oxfmt --check, and git diff --check pass. Preserved broad evidence from before the parent OOM guard remains bun run test:modules 1,033 pass / 0 fail / 7,173 expect across 80 files and bun run test:repository 134 pass / 0 fail / 559 expect across 12 files; no broad lanes were run for this remediation. Task remains In Progress and all ACs remain unchecked.
 <!-- SECTION:NOTES:END -->
