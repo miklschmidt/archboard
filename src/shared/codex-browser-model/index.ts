@@ -9,6 +9,7 @@ import {
 	SafeUrlSchema,
 } from "./lib/scalars.js";
 import { createServerRequestSchemas, SERVER_REQUEST_METHODS } from "./lib/server-requests.js";
+import type { IdentityAuthorities } from "../codex-workbench-identity/index.js";
 import type { IdentityContext } from "./lib/scalars.js";
 
 export {
@@ -39,12 +40,22 @@ export {
 	boundedWireText,
 };
 export { SERVER_REQUEST_METHODS };
+export {
+	createDynamicApprovalSchemas,
+	CODEX_APPROVAL_EXPIRY_MS,
+	DYNAMIC_APPROVAL_DECISIONS,
+	DYNAMIC_APPROVAL_NAMESPACE,
+	DYNAMIC_APPROVAL_STATES,
+	DYNAMIC_APPROVAL_TOOLS,
+} from "./lib/dynamic-approval.js";
 
-export function createCodexBrowserModel(context: IdentityContext) {
-	const identity = createIdentitySchemas(context);
+export function createCodexBrowserModel(context: IdentityContext | IdentityAuthorities) {
+	const normalizedContext: IdentityContext =
+		"identity" in context ? { ...context.identity, operation: context.operation } : context;
+	const identity = createIdentitySchemas(normalizedContext);
 	return {
 		...identity,
-		...createBrowserSchemas(identity, context),
+		...createBrowserSchemas(identity, normalizedContext),
 		...createServerRequestSchemas(identity),
 	};
 }
@@ -74,6 +85,27 @@ export type {
 	BrowserSchemas,
 	DeliveryOutcome,
 } from "./lib/browser.js";
+
+export type {
+	BrowserDynamicApproval,
+	BrowserDynamicApprovalEffect,
+	BrowserDynamicApprovalResponse,
+	BrowserDynamicApprovalResponseCommand,
+	BrowserDynamicCoordinationApproval,
+	DynamicApprovalBinding,
+	DynamicApprovalDecision,
+	DynamicApprovalEffect,
+	DynamicApprovalIdentity,
+	DynamicApprovalLink,
+	DynamicApprovalRequest,
+	DynamicApprovalResponse,
+	DynamicApprovalState,
+	DynamicApprovalToolResult,
+	DynamicApprovalSchemas,
+	DynamicCoordinationApprovalRequest,
+	DynamicCoordinationApprovalResponse,
+	DynamicCoordinationApprovalState,
+} from "./lib/dynamic-approval.js";
 
 export type {
 	AnyIdentity,
