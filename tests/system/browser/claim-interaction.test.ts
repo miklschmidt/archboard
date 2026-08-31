@@ -20,11 +20,11 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import {
-	beginDelayedTakeBack,
 	claimCounts,
 	expectNoteUnchanged,
 	installClaimRecorder,
 	verifyBoardStatusPresentation,
+	verifyPaneScopedTakeBack,
 } from "./support/claim-interaction.ts";
 import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
 import {
@@ -432,18 +432,13 @@ test(
 		);
 		expect(explicitClaim.reason).toBe(explicitWhy);
 		expect(explicitClaim.take).toBe("Take back control");
-		await beginDelayedTakeBack(browser, () => readBanner(browser), explicitWhy);
-		const returned = await pollUntil(
-			() => readBanner(browser),
-			(value) => value.what === null && value.view === false && value.takeBackState === "success",
-			"one activation to return editable control",
-		);
-		expect(returned).toMatchObject({
-			what: null,
-			view: false,
-			state: "ready",
-			headerClaim: null,
-			takeBackState: "success",
+		await verifyPaneScopedTakeBack({
+			board: BOARD,
+			browser,
+			primaryClientId: clientId,
+			readStatus: () => readBanner(browser),
+			reason: explicitWhy,
+			request,
 		});
 		expectNoteUnchanged(noteFile, noteBeforePresentation);
 

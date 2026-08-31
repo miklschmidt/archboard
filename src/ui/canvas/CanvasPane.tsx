@@ -48,6 +48,7 @@ interface CanvasPaneProps {
 	/** Agent state is shell chrome, so the pane reports it to the workbench. */
 	onAgentState: (
 		paneId: string,
+		boardKey: string | null,
 		heldBy: LockHolder | null,
 		takeBack: () => Promise<WorkbenchTakeBackResult>,
 	) => void;
@@ -239,8 +240,8 @@ export function CanvasPane({
 	);
 
 	useEffect(() => {
-		onAgentState(paneId, session.heldBy, session.takeBack);
-	}, [onAgentState, paneId, session.heldBy, session.takeBack]);
+		onAgentState(paneId, session.boardKey, session.heldBy, session.takeBack);
+	}, [onAgentState, paneId, session.boardKey, session.heldBy, session.takeBack]);
 
 	// Excalidraw keeps its own copy of the library per instance, so the shell's
 	// copy has to be pushed in. Guarded by content hash: pushing fires

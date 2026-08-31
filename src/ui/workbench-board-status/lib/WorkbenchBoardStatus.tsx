@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useId, useRef, useState } from "react";
+import React, { useCallback, useId, useState } from "react";
 
 import { Icon } from "../../shell/Icons";
 import type {
 	WorkbenchBoardStatusProps,
 	WorkbenchBoardStatusSnapshot,
 	WorkbenchSemanticContextState,
-	WorkbenchTakeBackState,
 } from "./contract";
 import { projectWorkbenchBoardStatus } from "./projection";
 
@@ -33,8 +32,8 @@ function TakeBackOutcome({ snapshot }: { snapshot: WorkbenchBoardStatusSnapshot 
 		<p
 			className={
 				snapshot.takeBack.state === "failure"
-					? "mt-grid-tight font-sans text-body text-destructive"
-					: "mt-grid-tight font-sans text-body text-muted-foreground"
+					? "take-back-outcome mt-grid-tight font-sans text-body text-destructive"
+					: "take-back-outcome mt-grid-tight font-sans text-body text-muted-foreground"
 			}
 			role={snapshot.takeBack.state === "failure" ? "alert" : "status"}
 		>
@@ -45,24 +44,23 @@ function TakeBackOutcome({ snapshot }: { snapshot: WorkbenchBoardStatusSnapshot 
 
 function SemanticStatus({ snapshot }: { snapshot: WorkbenchBoardStatusSnapshot }) {
 	const semantic = snapshot.semanticContext;
+	const failure = semantic.state === "refused";
 	return (
-		<div
-			className="workbench-semantic mt-auto border-t border-border-subtle pt-control font-sans text-body"
+		<output
+			className="workbench-semantic mt-auto block border-t border-border-subtle pt-control font-sans text-body"
 			data-semantic-state={semantic.state}
+			role={failure ? "alert" : "status"}
+			aria-live={failure ? "assertive" : "polite"}
+			aria-atomic="true"
 		>
-			<div className="min-w-0 flex items-baseline gap-control">
+			<span className="min-w-0 flex items-baseline gap-control">
 				<span className="text-kicker font-semibold text-muted-foreground">Semantic context</span>
-				<output
-					className={SEMANTIC_TONE_CLASSES[semantic.state]}
-					aria-label={`Semantic context ${semantic.label.toLowerCase()}`}
-				>
-					{semantic.label}
-				</output>
-			</div>
-			<span className="line-clamp-1 text-muted-foreground" title={semantic.description}>
+				<span className={SEMANTIC_TONE_CLASSES[semantic.state]}>{semantic.label}</span>
+			</span>
+			<span className="line-clamp-1 block text-muted-foreground" title={semantic.description}>
 				{semantic.description}
 			</span>
-		</div>
+		</output>
 	);
 }
 
@@ -76,21 +74,9 @@ export function WorkbenchBoardStatus({
 	takeBackState,
 }: WorkbenchBoardStatusProps): React.JSX.Element {
 	const [expanded, setExpanded] = useState(false);
-	const claimKey = claim.state === "claimed" ? `${claim.holderId}:${claim.claimedAt}` : null;
-	const [localTakeBack, setLocalTakeBack] = useState<{
-		claimKey: string | null;
-		state: WorkbenchTakeBackState;
-	}>(() => ({ claimKey, state: claimKey ? "available" : "idle" }));
 	const contentId = useId();
-	const mounted = useRef(true);
 	const claimed = claim.state === "claimed";
-	const derivedTakeBack =
-		localTakeBack.claimKey === claimKey || (localTakeBack.state === "success" && claimKey === null)
-			? localTakeBack.state
-			: claimKey
-				? "available"
-				: "idle";
-	const effectiveTakeBack = takeBackState ?? derivedTakeBack;
+	const effectiveTakeBack = takeBackState ?? (claimed ? "available" : "idle");
 	const snapshot = projectWorkbenchBoardStatus({
 		paneLabel,
 		connection,
@@ -101,31 +87,11 @@ export function WorkbenchBoardStatus({
 	});
 	const latest = snapshot.doing.current;
 
-	useEffect(() => {
-		mounted.current = true;
-		return () => {
-			mounted.current = false;
-		};
-	}, []);
-
 	const toggleExpanded = useCallback(() => setExpanded((current) => !current), []);
 	const takeBack = useCallback(async () => {
 		if (!onTakeBack || effectiveTakeBack === "pending") return;
-		const actionClaimKey = claimKey;
-		if (takeBackState === undefined) {
-			setLocalTakeBack({ claimKey: actionClaimKey, state: "pending" });
-		}
-		try {
-			const result = await onTakeBack();
-			if (mounted.current && takeBackState === undefined) {
-				setLocalTakeBack({ claimKey: actionClaimKey, state: result.outcome });
-			}
-		} catch {
-			if (mounted.current && takeBackState === undefined) {
-				setLocalTakeBack({ claimKey: actionClaimKey, state: "failure" });
-			}
-		}
-	}, [claimKey, effectiveTakeBack, onTakeBack, takeBackState]);
+		await onTakeBack();
+	}, [effectiveTakeBack, onTakeBack]);
 	const handleTakeBack = useCallback((): void => {
 		void takeBack();
 	}, [takeBack]);
