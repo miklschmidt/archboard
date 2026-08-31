@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import * as ts from "typescript/unstable/ast";
 import { parseModuleSources } from "../../../scripts/typescript-analysis.js";
 import { analyzeModuleScope, moduleGraph } from "./support/module-scope-analysis.js";
+import { forbiddenRealtimeModuleFinding } from "./support/codex-realtime-dependency.js";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const moduleRoot = path.join(repoRoot, "src/ui/codex-realtime");
 const indexPath = path.join(moduleRoot, "index.ts");
@@ -43,11 +44,6 @@ const TYPE_EXPORT_SOURCES = new Map([
 	["RealtimeMediaSession", "./lib/media-session.js"],
 	["RealtimeMediaSnapshot", "./lib/media-session.js"],
 ]);
-const NODE_BUILTINS = new Set(
-	"assert assert/strict buffer child_process cluster console constants crypto dgram diagnostics_channel dns dns/promises domain events fs fs/promises http http2 https module net os path path/posix path/win32 perf_hooks process punycode querystring readline readline/promises repl stream stream/consumers stream/promises stream/web string_decoder sys timers timers/promises tls trace_events tty url util util/types v8 vm wasi worker_threads zlib".split(
-		" ",
-	),
-);
 const PRIVATE_PACKAGE_KEYS =
 	"exports files workspaces publishConfig main module types typesVersions unpkg jsdelivr browser".split(
 		" ",
@@ -247,31 +243,6 @@ function deepImportFindings(file: string, source: ts.SourceFile): Finding[] {
 		}));
 }
 
-function forbiddenModuleFinding(file: string, reference: ModuleReference): Finding | undefined {
-	const normalized = stripSpecifierQuery(reference.specifier).toLowerCase();
-	if (normalized.endsWith("shared/codex-realtime-host/index.js")) return undefined;
-	const root = normalized.split("/")[0] ?? "";
-	if (normalized.startsWith("node:") || NODE_BUILTINS.has(normalized) || NODE_BUILTINS.has(root))
-		return {
-			file,
-			reason: "forbidden dependency",
-			message: `remove ${reference.kind} ${reference.specifier}; browser realtime code cannot import Node`,
-		};
-	if (/^(?:react|@assistant-ui(?:\/|$))/.test(normalized))
-		return {
-			file,
-			reason: "forbidden dependency",
-			message: `remove ${reference.kind} ${reference.specifier}; the realtime module is framework-free`,
-		};
-	if (/(?:archboard|codex|generated|runtime|stores?|fakes?)/u.test(normalized))
-		return {
-			file,
-			reason: "forbidden dependency",
-			message: `remove ${reference.kind} ${reference.specifier}; use the framework-free realtime contract`,
-		};
-	return undefined;
-}
-
 function forbiddenApiFindings(file: string, source: ts.SourceFile): Finding[] {
 	const findings: Finding[] = [];
 	const visit = (node: ts.Node): void => {
@@ -303,7 +274,7 @@ function realtimeGraphFindings(
 		const references = moduleReferences(source);
 		findings.push(
 			...references.flatMap((reference) => {
-				const dependency = forbiddenModuleFinding(file, reference);
+				const dependency = forbiddenRealtimeModuleFinding(file, reference, repoRoot);
 				return dependency ? [dependency] : [];
 			}),
 		);
@@ -442,12 +413,22 @@ describe("Codex realtime private package boundary", () => {
 		expect(realtimeGraphFindings(indexPath, realSources)).toEqual([]);
 
 		const hostileCases = [
-			["React import", 'import React from "react";\n'],
-			["assistant-ui import", 'type Thread = import("@assistant-ui/react").Thread;\n'],
-			["Node type import", 'type Stats = import("node:fs").Stats;\n'],
-			["dynamic generated import", 'void import("./generated-codex.ts");\n'],
-			["require fake import", 'void require("./fakes.ts");\n'],
-			["WebSocket API", 'const connection = new WebSocket("wss://example.test");\n'],
+			[
+				"framework and near host suffix",
+				'import React from "react"; type Thread = import("@assistant-ui/react").Thread; type Host = import("./near/shared/codex-realtime-host/index.js").Host;\n',
+			],
+			[
+				"Node host masquerade",
+				'type Host = import("node:shared/codex-realtime-host/index.js").Host;\n',
+			],
+			[
+				"runtime generated lookalike",
+				'void import("./runtime/generated/codex-realtime-host/index.js");\n',
+			],
+			[
+				"require fake and WebSocket API",
+				'void require("./fakes.ts"); new WebSocket("wss://example.test");\n',
+			],
 		] as const;
 		for (const [label, source] of hostileCases) {
 			await withParsedFixtures(

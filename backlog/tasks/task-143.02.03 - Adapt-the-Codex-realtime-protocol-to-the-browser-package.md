@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 13:01'
+updated_date: '2026-08-31 13:22'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -54,6 +54,8 @@ Delegation profile: gpt-5.6-luna, max.
 5. Add same-owner adapter tests with decoded Codex 0.151.0 fixtures covering start, SDP, readiness, every realtime/timeline case, pagination loops, merge order, identity mismatch, lost responses, stop, and cleanup. Run only focused sequential named 6G/1G transient systemd services for tests, strict typing, Oxlint, and formatting; report each unit's result and memory peak.
 
 Approved seam: create src/shared/codex-realtime-host as the one declaration site for browser-media identities and host-facing types; src/ui/codex-realtime keeps its public names through exact re-exports, and repository policy enforces both the neutral root and the unchanged runtime-to-UI prohibition.
+
+Review remediation: finalize exact item/thread closure while retaining transcript; make the adapter own and validate one canonical RealtimeState through transitionRealtimeState for every emission; replace the suffix dependency exception with exact resolved-path equality after Node rejection; replace private-identifier counting with exported-brand declaration scanning, hostile duplicate fixtures, and compile-time negative brand assignability.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -64,6 +66,10 @@ Parent approved the neutral shared contract extraction and expanded ownership on
 Implementation checkpoints: 08426a97935ea20a75ca893f3e2b64e4890c35fd extracts the single neutral host contract and exact UI re-exports; a33db45acf329dc02e8b652c84b9070079f81aa1 adds the Codex 0.151.0 V3 adapter, identity-bound transcript reducer, exhaustive timeline recovery, one-attempt commands, and same-owner tests.
 
 Final focused evidence, every allocating command in a named transient systemd service with MemoryMax=6G and MemorySwapMax=1G: archboard-task1430203-final3-tests-08426a9.service passed 58 tests and 991 assertions across adapter, neutral-boundary, UI public API, and unchanged WebRTC media behavior at 51.6M peak and 0B swap; archboard-task1430203-final3-types-08426a9.service passed both TypeScript projects at 1.7G peak and 0B swap; archboard-task1430203-final3-lint-08426a9.service passed scoped Oxlint and Oxfmt at 543.9M peak and 0B swap; archboard-task1430203-final3-format-08426a9.service passed at 28.5M peak and 0B swap. git diff --check passed. The known high-memory codex-realtime-boundary compiler owner, broad fingerprint, browser, and OOM lanes were not run per delegation constraints; the new cheap neutral-boundary owner directly proves one declaration site, exact UI re-export routing, neutral runtime imports, and the continued runtime-to-UI ban.
+
+Independent review found authoritative close left the active session commandable, semantic phase events bypassed the canonical transition reducer, the neutral dependency exception used a suffix match before Node rejection, and the one-owner brand test counted a private marker without proving type incompatibility. Remediation is scoped to these four findings; no UI/media behavior or public names will change.
+
+Review remediation complete: authoritative item/thread closure now follows canonical stopping -> closed transitions, retains transcript/diagnostics, clears the active session, rejects post-close mutations, and permits a fresh replacement. Every adapter state emission is reduced through the neutral canonical transitionRealtimeState implementation; recovery is callable only from recoverable_error and successful recovery detaches the old session. The dependency exception now rejects Node first and allows only exact resolved equality to src/shared/codex-realtime-host/index.ts, with cheap hostile fixtures. Brand ownership scans exported declarations across .ts/.tsx/.mts and compile-time @ts-expect-error assertions prove all browser IDs are mutually incompatible and browser/wire session IDs are incompatible both ways. Validation: archboard-task1430203-remediate-final-tests2-08426a9.service passed 13 focused tests / 74 assertions at 47.5M peak, 0B swap; archboard-task1430203-remediate-final-types4-08426a9.service passed both TypeScript projects at 1.7G, 0B swap; archboard-task1430203-remediate-final-scoped-lint2-08426a9.service passed at 611.2M, 0B swap; formatting passed in archboard-task1430203-remediate-final-format7-08426a9.service at 1.5G, 0B swap. The known compiler-heavy codex-realtime-boundary owner was attempted once in archboard-task1430203-remediate-tests-08426a9.service and hit the mandated 6G/1G ceiling; it was not retried. Its new exact-path cases are also covered by the passing cheap dependency owner.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
