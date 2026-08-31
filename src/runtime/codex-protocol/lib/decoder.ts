@@ -2,6 +2,10 @@ import { z } from "zod";
 
 import { CODEX_PROTOCOL_VERSION, isSupportedCodexUserAgent } from "../manifest.js";
 import {
+	CLIENT_REQUEST_PARAM_SCHEMAS,
+	type ClientRequestPayloads,
+} from "./client-request-schemas.js";
+import {
 	CLIENT_NOTIFICATION_SCHEMAS,
 	InitializeParamsSchema,
 	JsonRpcErrorSchema,
@@ -10,6 +14,8 @@ import {
 } from "./request-schemas.js";
 import {
 	CLIENT_NOTIFICATION_METHODS,
+	CLIENT_REQUEST_METHODS,
+	type ClientRequestMethod,
 	type ResponseMethod,
 	RESPONSE_METHODS,
 	type ServerRequestMethod,
@@ -238,6 +244,14 @@ export type ResponsePayloads = {
 	[M in ResponseMethod]: z.infer<(typeof RESPONSE_SCHEMAS)[M]>;
 };
 
+export function decodeClientRequestParams<Method extends ClientRequestMethod>(
+	method: Method,
+	params: unknown,
+): ClientRequestPayloads[Method] {
+	const schema = methodSchema(CLIENT_REQUEST_PARAM_SCHEMAS, method, "client-request");
+	return decodeSchema(method, "client-request", schema, params) as ClientRequestPayloads[Method];
+}
+
 export function decodeResponse<M extends ResponseMethod>(
 	method: M,
 	payload: unknown,
@@ -399,6 +413,10 @@ export function decodeResponseEnvelope<M extends ResponseMethod>(
 
 export function isSupportedResponseMethod(method: string): method is ResponseMethod {
 	return (RESPONSE_METHODS as readonly string[]).includes(method);
+}
+
+export function isSupportedClientRequestMethod(method: string): method is ClientRequestMethod {
+	return (CLIENT_REQUEST_METHODS as readonly string[]).includes(method);
 }
 
 export function isSupportedServerRequestMethod(method: string): method is ServerRequestMethod {

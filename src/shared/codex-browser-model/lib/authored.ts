@@ -127,6 +127,7 @@ export const BedrockSetupParamsSchema = z.discriminatedUnion("type", [
 		.strict(),
 	z.object({ type: z.literal("environment"), region: boundedText(256) }).strict(),
 ]);
+export type BedrockSetupParams = z.infer<typeof BedrockSetupParamsSchema>;
 
 export const BEDROCK_SETUP_POLICIES = [
 	{ variant: "profile", policy: "refused" },

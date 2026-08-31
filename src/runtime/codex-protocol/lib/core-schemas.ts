@@ -196,8 +196,27 @@ export const RealtimeConversationVersionSchema = z.enum(["v1", "v2", "v3"]);
 export const RealtimeTranscriptRoleSchema = z.enum(["user", "assistant"]);
 export const RealtimeSessionOutcomeSchema = z.enum(["ended", "failed"]);
 export const RealtimeOutputModalitySchema = z.enum(["text", "audio"]);
-/** Generated realtime voices are provider-defined strings. */
-export const RealtimeVoiceSchema = z.string();
+export const RealtimeVoiceSchema = z.enum([
+	"alloy",
+	"arbor",
+	"ash",
+	"ballad",
+	"breeze",
+	"cedar",
+	"coral",
+	"cove",
+	"echo",
+	"ember",
+	"juniper",
+	"maple",
+	"marin",
+	"sage",
+	"shimmer",
+	"sol",
+	"spruce",
+	"vale",
+	"verse",
+]);
 
 export const ThreadRealtimeBemItemPresentationSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("wholeItem") }),

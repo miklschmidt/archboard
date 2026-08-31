@@ -19,18 +19,21 @@ export { CODEX_PROTOCOL_GENERATED_CLIENT_REQUEST_EXCLUDED_METHODS } from "./gene
 
 export {
 	CLIENT_NOTIFICATION_METHODS,
+	CLIENT_REQUEST_METHODS,
 	RESPONSE_METHODS,
 	SERVER_NOTIFICATION_METHODS,
 	SERVER_REQUEST_METHODS,
 } from "./lib/methods.js";
 export type {
 	ClientNotificationMethod,
+	ClientRequestMethod,
 	ResponseMethod,
 	ServerNotificationMethod,
 	ServerRequestMethod,
 } from "./lib/methods.js";
 
 export {
+	decodeClientRequestParams,
 	decodeClientNotification,
 	decodeInitializeParams,
 	decodeJsonRpcError,
@@ -40,6 +43,7 @@ export {
 	decodeServerNotification,
 	decodeServerRequest,
 	isSupportedClientNotificationMethod,
+	isSupportedClientRequestMethod,
 	isSupportedResponseMethod,
 	isSupportedServerRequestMethod,
 	PROTOCOL_RECOVERY_ACTION,
@@ -56,6 +60,15 @@ export type {
 	ServerNotificationPayloads,
 	ServerRequestPayloads,
 } from "./lib/decoder.js";
+
+export { CLIENT_REQUEST_PARAM_SCHEMAS } from "./lib/client-request-schemas.js";
+export type {
+	ClientRequestParams,
+	ClientRequestPayloads,
+	CodexSessionRequestParams,
+	CodexSessionRequestPayloads,
+	CodexSessionTurnSteerParams,
+} from "./lib/client-request-schemas.js";
 
 export {
 	AccountSchema,
