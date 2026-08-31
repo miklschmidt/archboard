@@ -1,12 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, relative, resolve, sep } from "node:path";
-
-interface GeneratedClientRequestVariant {
-	readonly method: string;
-	readonly paramsType: string;
-}
+import { dirname, join, relative, sep } from "node:path";
 
 export interface ClientRequestSchemaConformanceOptions {
 	readonly generatedRoot: string;
@@ -15,104 +10,51 @@ export interface ClientRequestSchemaConformanceOptions {
 	readonly repositoryTsconfigPath: string;
 	readonly typeScriptExecutablePath: string;
 }
-
-const TYPESCRIPT_BUILTIN_TYPE_NAMES = new Set([
-	"any",
-	"bigint",
-	"boolean",
-	"never",
-	"null",
-	"number",
-	"object",
-	"string",
-	"symbol",
-	"undefined",
-	"unknown",
-	"void",
-]);
-
 function moduleSpecifier(fromFile: string, targetFile: string): string {
 	const path = relative(dirname(fromFile), targetFile).split(sep).join("/");
 	return path.startsWith(".") ? path : `./${path}`;
 }
 
-function generatedClientRequestVariants(source: string): readonly GeneratedClientRequestVariant[] {
-	const variants = [
-		...source.matchAll(/\{ "method": "([^"]+)", id: RequestId, params\??: ([^,]+), \}/g),
-	].map((match) => ({ method: match[1]!, paramsType: match[2]!.trim() }));
-	if (!variants.length) throw new Error("generated ClientRequest.ts contains no request variants");
-	const methods = variants.map((variant) => variant.method);
-	if (new Set(methods).size !== methods.length)
-		throw new Error("generated ClientRequest.ts contains duplicate request methods");
-	return variants;
-}
-
-function generatedTypeImports(source: string): ReadonlyMap<string, string> {
-	const imports = new Map<string, string>();
-	for (const match of source.matchAll(/^import type \{ ([A-Za-z_$][\w$]*) \} from "([^"]+)";$/gm)) {
-		const [, name, path] = match;
-		if (imports.has(name!)) throw new Error(`generated ClientRequest.ts imports ${name} twice`);
-		imports.set(name!, path!);
-	}
-	return imports;
-}
-
-function requestedVariants(
-	variants: readonly GeneratedClientRequestVariant[],
-	methods: readonly string[],
-): readonly GeneratedClientRequestVariant[] {
-	const byMethod = new Map(variants.map((variant) => [variant.method, variant] as const));
-	return methods.map((method) => {
-		const variant = byMethod.get(method);
-		if (!variant)
-			throw new Error(`generated ClientRequest.ts has no params variant for method ${method}`);
-		return variant;
-	});
-}
-
-function importedTypeNames(variants: readonly GeneratedClientRequestVariant[]): readonly string[] {
-	return [
-		...new Set(
-			variants.flatMap((variant) =>
-				[...variant.paramsType.matchAll(/[A-Za-z_$][\w$]*/g)]
-					.map((match) => match[0])
-					.filter((name) => !TYPESCRIPT_BUILTIN_TYPE_NAMES.has(name)),
-			),
-		),
-	].toSorted();
-}
-
-function writePayloadOwner(
+function writeTypeOwner(
 	filePath: string,
 	generatedRoot: string,
 	localParamsModulePath: string,
-	variants: readonly GeneratedClientRequestVariant[],
-	imports: ReadonlyMap<string, string>,
 ): void {
-	const importLines = importedTypeNames(variants).map((name) => {
-		const generatedPath = imports.get(name);
-		if (!generatedPath)
-			throw new Error(
-				`generated ClientRequest params reference ${name}, but ClientRequest.ts does not import it`,
-			);
-		const targetPath = resolve(generatedRoot, `${generatedPath}.ts`);
-		if (!existsSync(targetPath))
-			throw new Error(`generated ClientRequest params import ${name} from missing ${targetPath}`);
-		return `import type { ${name} } from ${JSON.stringify(moduleSpecifier(filePath, targetPath))};`;
-	});
-	const payloadLines = variants.map(
-		(variant) => `\t${JSON.stringify(variant.method)}: ${variant.paramsType};`,
-	);
+	const generatedClientRequestPath = join(generatedRoot, "ClientRequest.ts");
+	if (!existsSync(generatedClientRequestPath))
+		throw new Error(`generated ClientRequest union is missing at ${generatedClientRequestPath}`);
 	writeFileSync(
 		filePath,
 		[
-			`import type { ClientRequestParams as ArchboardClientRequestParams } from ${JSON.stringify(moduleSpecifier(filePath, localParamsModulePath))};`,
-			...importLines,
+			`import type { ClientRequest as GeneratedClientRequest } from ${JSON.stringify(moduleSpecifier(filePath, generatedClientRequestPath))};`,
+			`import type { ClientRequestInput as ArchboardClientRequestInput, ClientRequestParams as ArchboardClientRequestOutput } from ${JSON.stringify(moduleSpecifier(filePath, localParamsModulePath))};`,
 			"",
-			"export type { ArchboardClientRequestParams };",
-			"export interface GeneratedClientRequestPayloads {",
-			...payloadLines,
-			"}",
+			"// ts-rs emits JSON/string index signatures as optional even though JSON cannot carry undefined.",
+			"type GeneratedJsonValue =",
+			'\tExtract<GeneratedClientRequest, { method: "thread/inject_items" }>["params"]["items"][number];',
+			"type ArchboardJsonValueInput =",
+			'\tArchboardClientRequestInput<"thread/inject_items">["items"][number];',
+			"type SameType<Left, Right> =",
+			"\t[Left] extends [Right] ? ([Right] extends [Left] ? true : false) : false;",
+			"type NormalizeTsRsOptionalIndexArtifactsForSchemaInput<Value> =",
+			"\tSameType<Value, GeneratedJsonValue> extends true",
+			"\t\t? ArchboardJsonValueInput",
+			"\t\t: Value extends readonly unknown[]",
+			"\t\t? { [Index in keyof Value]: NormalizeTsRsOptionalIndexArtifactsForSchemaInput<Value[Index]> }",
+			"\t\t: Value extends object",
+			"\t\t\t? string extends keyof Value",
+			"\t\t\t\t? { [Key in keyof Value]-?: NormalizeTsRsOptionalIndexArtifactsForSchemaInput<Exclude<Value[Key], undefined>> }",
+			"\t\t\t\t: { [Key in keyof Value]: NormalizeTsRsOptionalIndexArtifactsForSchemaInput<Exclude<Value[Key], undefined>> }",
+			"\t\t\t: Value;",
+			"",
+			'type GeneratedClientRequestParams<Method extends GeneratedClientRequest["method"]> =',
+			'\tExtract<GeneratedClientRequest, { method: Method }>["params"];',
+			"",
+			"export type { ArchboardClientRequestInput, ArchboardClientRequestOutput };",
+			'export type RawGeneratedClientRequestParams<Method extends GeneratedClientRequest["method"]> =',
+			"\tGeneratedClientRequestParams<Method>;",
+			'export type NormalizedGeneratedClientRequestInput<Method extends GeneratedClientRequest["method"]> =',
+			"\tNormalizeTsRsOptionalIndexArtifactsForSchemaInput<GeneratedClientRequestParams<Method>>;",
 			"",
 		].join("\n"),
 	);
@@ -120,21 +62,23 @@ function writePayloadOwner(
 
 function writeMethodCheck(
 	filePath: string,
-	payloadOwnerPath: string,
+	typeOwnerPath: string,
 	method: string,
-	direction: "archboard-schema-to-generated" | "generated-to-archboard-schema",
+	direction: "schema-output-to-generated" | "generated-to-schema-input",
 ): void {
 	mkdirSync(dirname(filePath), { recursive: true });
-	const archboardType = `ArchboardClientRequestParams<${JSON.stringify(method)}>`;
-	const generatedType = `GeneratedClientRequestPayloads[${JSON.stringify(method)}]`;
+	const archboardInputType = `ArchboardClientRequestInput<${JSON.stringify(method)}>`;
+	const archboardOutputType = `ArchboardClientRequestOutput<${JSON.stringify(method)}>`;
+	const normalizedGeneratedType = `NormalizedGeneratedClientRequestInput<${JSON.stringify(method)}>`;
+	const rawGeneratedType = `RawGeneratedClientRequestParams<${JSON.stringify(method)}>`;
 	const [sourceType, targetType] =
-		direction === "archboard-schema-to-generated"
-			? [archboardType, generatedType]
-			: [generatedType, archboardType];
+		direction === "schema-output-to-generated"
+			? [archboardOutputType, rawGeneratedType]
+			: [normalizedGeneratedType, archboardInputType];
 	writeFileSync(
 		filePath,
 		[
-			`import type { ArchboardClientRequestParams, GeneratedClientRequestPayloads } from ${JSON.stringify(moduleSpecifier(filePath, payloadOwnerPath))};`,
+			`import type { ArchboardClientRequestInput, ArchboardClientRequestOutput, NormalizedGeneratedClientRequestInput, RawGeneratedClientRequestParams } from ${JSON.stringify(moduleSpecifier(filePath, typeOwnerPath))};`,
 			"",
 			`declare const params: ${sourceType};`,
 			`const conformance: ${targetType} = params;`,
@@ -167,34 +111,24 @@ function writeTypeScriptProject(
 	);
 }
 
-/** Compiles local Zod inference against generated Codex request params in both directions. */
+/** Compiles schema output to raw vendor params and normalized vendor params to schema input. */
 export function assertGeneratedClientRequestSchemaConformance(
 	options: ClientRequestSchemaConformanceOptions,
 ): void {
-	const generatedClientRequestPath = join(options.generatedRoot, "ClientRequest.ts");
-	const source = readFileSync(generatedClientRequestPath, "utf8");
-	const variants = requestedVariants(generatedClientRequestVariants(source), options.methods);
-	const imports = generatedTypeImports(source);
 	const conformanceRoot = mkdtempSync(join(tmpdir(), "archboard-codex-request-conformance-"));
 	try {
-		const payloadOwnerPath = join(conformanceRoot, "payloads.ts");
-		writePayloadOwner(
-			payloadOwnerPath,
-			options.generatedRoot,
-			options.localParamsModulePath,
-			variants,
-			imports,
-		);
+		const typeOwnerPath = join(conformanceRoot, "request-types.ts");
+		writeTypeOwner(typeOwnerPath, options.generatedRoot, options.localParamsModulePath);
 		const checkFiles = options.methods.flatMap((method) => {
 			const methodRoot = join(
 				conformanceRoot,
 				"methods",
 				...method.split("/").map(encodeURIComponent),
 			);
-			return (["archboard-schema-to-generated", "generated-to-archboard-schema"] as const).map(
+			return (["schema-output-to-generated", "generated-to-schema-input"] as const).map(
 				(direction) => {
 					const filePath = join(methodRoot, `${direction}.ts`);
-					writeMethodCheck(filePath, payloadOwnerPath, method, direction);
+					writeMethodCheck(filePath, typeOwnerPath, method, direction);
 					return filePath;
 				},
 			);

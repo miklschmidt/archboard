@@ -66,6 +66,8 @@ export type {
 
 export { CLIENT_REQUEST_PARAM_SCHEMAS } from "./lib/client-request-schemas.js";
 export type {
+	ClientRequestInput,
+	ClientRequestInputPayloads,
 	ClientRequestParams,
 	ClientRequestPayloads,
 	CodexSessionRequestParams,
