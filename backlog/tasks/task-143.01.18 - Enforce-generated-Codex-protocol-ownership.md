@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-31 00:38'
+updated_date: '2026-08-31 01:03'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -14,14 +14,21 @@ dependencies:
 references:
   - docs/agents/boundaries.md
 modified_files:
+  - package.json
+  - docs/design/codex-protocol-fingerprint-corpus.md
+  - scripts/codex-protocol-fingerprints.ts
+  - scripts/check-codex-protocol-fingerprint-corpus.ts
   - tests/system/repository-policy/codex-protocol-boundary.test.ts
   - tests/system/repository-policy/codex-protocol-aliases.test.ts
+  - tests/system/repository-policy/codex-protocol-fingerprint-corpus.test.ts
   - tests/system/repository-policy/support/codex-protocol-aliases.ts
+  - >-
+    tests/system/repository-policy/support/codex-protocol-fingerprint-corpus.json
   - tests/system/repository-policy/support/codex-protocol-imports.ts
   - tests/system/repository-policy/support/codex-protocol-mirrors.ts
   - tests/system/repository-policy/support/codex-protocol-paths.ts
-  - >-
-    tests/system/repository-policy/support/codex-protocol-fingerprint-corpus.json
+  - tests/system/repository-policy/support/codex-protocol-sources.ts
+  - tests/system/repository-policy/support/module-scope-analysis.ts
   - tests/system/repository-policy/fixtures/codex-protocol/v2/Thread.ts.txt
   - tests/system/repository-policy/fixtures/codex-protocol/ThreadId.ts.txt
 parent_task_id: TASK-143.01
@@ -51,6 +58,10 @@ Own one repository-policy rule that makes generated Codex 0.151.0 bindings reach
 2. Add one repository-policy owner that permits generated bindings only beneath the ignored codex-protocol/generated directory and permits access only from the adapter/conformance owners with explicit reasons.
 3. Add deterministic forbidden fixtures for committed generated output, generated trees elsewhere, external deep imports, handwritten mirrors, and test/script/UI/server bypasses while retaining the one disposable generator/compare path.
 4. Register through the existing repository lane and run focused positive/negative probes, repository/module gates, both TypeScript projects, lint, format, diff, and clean-status checks.
+
+5. Extend semantic fingerprinting with imported and transparent local type aliases, then mine the pinned 820-file corpus for indistinguishable small-shape collisions and add unrelated controls.
+6. Add one deterministic pinned-generator path that regenerates every fingerprint and compares the complete corpus content, documenting why the reviewed corpus remains tracked.
+7. Run focused owners, the full repository/module/type/lint/format/diff gates, the exact generator comparison, and audit the fixed BASE-to-HEAD scope before rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -91,4 +102,12 @@ Fourth remediation in commit 092adc5 after reviewer findings: the ownership owne
 Fourth-remediation validation: focused boundary plus alias probes passed 12 tests / 41 expectations; bun run test:repository passed 142 tests / 456 expectations; bun run test:modules passed 1010 tests / 7034 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed. The policy owner is exactly 500 physical lines and every changed TypeScript file remains within the repository cap.
 
 Fourth-remediation scope: repository-policy owner/support plus the intentional authoritative fingerprint corpus and two real generated-shape fixtures; no production changes. Remaining maintenance risk is explicit: a future Codex protocol version requires regenerating and reviewing the corpus and exact inventory together.
+
+Further remediation in commit 05c9c44 after the same reviewer findings: semantic fingerprinting now canonicalizes type-only imported aliases (including imported-as-local names) and transparent local type aliases before matching, with both real v2/Thread.ts clean-checkout mutations covered. The 820-file corpus was mined for 39 exact collision groups; only the 706 corpus-unique fingerprints are ownership evidence, so common indistinguishable shapes are not rejected. Added simple Failure and compound FailureDetails unrelated controls while preserving distinctive real Thread rejection.
+
+The tracked corpus is now machine-reproducible through the single canonical scripts/codex-protocol-fingerprints.ts implementation. `bun run generate:codex-protocol-fingerprint-corpus` invokes the pinned project-local @openai/codex 0.151.0 binary, runs app-server generate-ts --experimental into a temporary directory, checks the 820-file tree digest, computes all fingerprints, and writes the exact formatted corpus. `bun run check:codex-protocol-fingerprint-corpus` performs the same generation and compares complete JSON bytes. A repository-policy test corrupts an otherwise unused token and proves the checker fails. The tracked corpus remains justified because ignored generated output is absent in a clean checkout and policy scans need a fast local reference; the gate prevents silent drift.
+
+Further-remediation validation: focused boundary, alias, and corpus owners passed 16 tests / 48 expectations; bun run test:repository passed 146 tests / 463 expectations; bun run test:modules passed 1010 tests / 7034 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed; bun run check:codex-protocol-fingerprint-corpus passed for all 820 generated fingerprints. Policy owner is exactly 500 lines and every changed TypeScript file remains below 500 lines. No production files changed.
+
+Further-remediation scope: package script and design note for the reproducible corpus command; scripts/codex-protocol-fingerprints.ts and scripts/check-codex-protocol-fingerprint-corpus.ts; repository-policy boundary/corpus tests; named source/mirror support; and the existing generated-shape fixtures/corpus. The task remains In Progress for same-reviewer rereview.
 <!-- SECTION:NOTES:END -->
