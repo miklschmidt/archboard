@@ -1,10 +1,11 @@
 ---
 id: TASK-144.06
 title: Enable native Oxfmt Tailwind class sorting
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-31 00:26'
 labels: []
 dependencies:
   - TASK-144.03
@@ -35,3 +36,19 @@ Delegation profile: gpt-5.6-luna, high.
 - [ ] #3 No Prettier plugin, custom comparator, Tailwind-specific Oxlint rule, warning allowance, or upstream default mirror is added.
 - [ ] #4 TASK-144.10 owns the fail-format-pass repository fixture; this task owns configuration only.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Inspect the installed Oxfmt version, current .oxfmtrc.jsonc, canonical Tailwind stylesheet, and cn entrypoint to confirm the supported native Tailwind v4 configuration keys.
+
+2. Change only .oxfmtrc.jsonc to enable native Tailwind sorting with the canonical stylesheet and functions [cn], leaving className to native behavior and adding no custom rules or fallback tooling.
+
+3. Verify Oxfmt accepts the configuration and preserves dynamic expressions while sorting representative static class strings and cn calls; run format, repository, module, type, lint, and frontend gates without adding the TASK-144.10 enforcement fixture.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reserved after TASK-144.05 finalized at integration HEAD ef4ce5c. Configuration-only leaf: .oxfmtrc.jsonc and task record are owned; TASK-144.10 owns the fail-format-pass repository fixture.
+<!-- SECTION:NOTES:END -->
