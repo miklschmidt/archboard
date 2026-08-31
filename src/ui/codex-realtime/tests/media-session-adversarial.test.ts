@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { CODEX_REALTIME_START_MS, CODEX_REALTIME_STOP_MS } from "../../../shared/timing/timing.js";
-import { createRealtimeMediaSession } from "../index.js";
+import {
+	createRealtimeMediaSession,
+	type RealtimeMediaSession,
+	type RealtimeMediaSnapshot,
+} from "../index.js";
 import {
 	correlation,
 	FakeBrowser,
@@ -15,10 +19,183 @@ import {
 import { STOP_IDENTITIES, type StopMode } from "./support/media-session-stop-fixtures.js";
 
 const NEGOTIATION_STAGES: Stage[] = ["createOffer", "setLocal", "hostOffer", "setRemote", "resume"];
+const LISTENER_POSITIONS: Array<"first" | "middle" | "last"> = ["first", "middle", "last"];
+
+function subscribeThrowingTriplet(
+	session: RealtimeMediaSession,
+	throwing: (typeof LISTENER_POSITIONS)[number],
+	target: (snapshot: RealtimeMediaSnapshot) => boolean,
+): { readonly order: string[]; readonly seen: Record<string, string[]> } {
+	const order: string[] = [];
+	const seen: Record<string, string[]> = { first: [], middle: [], last: [] };
+	for (const label of LISTENER_POSITIONS) {
+		session.subscribe((next) => {
+			seen[label]!.push(
+				`${next.correlation?.sessionId ?? "none"}:${next.state.phase}:${next.state.reason}`,
+			);
+			if (!target(next)) return;
+			order.push(label);
+			if (label === throwing) throw new Error("consumer");
+		});
+	}
+	return { order, seen };
+}
 
 afterEach(restoreFakeBrowsers);
 
 describe("realtime browser media lifecycle boundaries", () => {
+	test.each(LISTENER_POSITIONS)(
+		"a throwing %s listener cannot interrupt implicit restart cleanup",
+		async (throwing) => {
+			const env = new FakeBrowser();
+			const session = createRealtimeMediaSession(host(env));
+			await session.start(correlation(1));
+			const observed = subscribeThrowingTriplet(
+				session,
+				throwing,
+				(next) => next.correlation?.sessionId === "session-1" && next.state.phase === "stopping",
+			);
+			const restarted = await session.start(correlation(2));
+			expect(observed.order).toEqual(LISTENER_POSITIONS);
+			expect(restarted).toMatchObject({
+				correlation: correlation(2),
+				state: { phase: "listening", reason: "negotiation_succeeded" },
+			});
+			for (const label of LISTENER_POSITIONS)
+				expect(
+					observed.seen[label]!.filter((value) => value === "session-1:closed:stopped"),
+				).toHaveLength(1);
+			expect(env.peers[0]!.connectionState).toBe("closed");
+			expect(env.stopRequests).toEqual([correlation(1)]);
+			await session.dispose();
+			env.assertReleased();
+		},
+	);
+
+	test.each(LISTENER_POSITIONS)(
+		"a throwing %s listener cannot change ordinary stop or suppress host stop",
+		async (throwing) => {
+			const env = new FakeBrowser();
+			const session = createRealtimeMediaSession(host(env));
+			await session.start(correlation());
+			const observed = subscribeThrowingTriplet(
+				session,
+				throwing,
+				(next) => next.state.phase === "stopping",
+			);
+			const stopped = await session.stop();
+			expect(observed.order).toEqual(LISTENER_POSITIONS);
+			expect(stopped).toMatchObject({
+				correlation: correlation(),
+				state: { phase: "closed", reason: "stopped" },
+			});
+			for (const label of LISTENER_POSITIONS)
+				expect(
+					observed.seen[label]!.filter((value) => value === "session-1:closed:stopped"),
+				).toHaveLength(1);
+			expect(env.stopRequests).toEqual([correlation()]);
+			env.assertReleased();
+		},
+	);
+
+	test.each(LISTENER_POSITIONS)(
+		"a throwing %s listener cannot replace a recoverable failure",
+		async (throwing) => {
+			const env = new FakeBrowser();
+			env.fail = "createOffer";
+			const session = createRealtimeMediaSession(host(env));
+			const observed = subscribeThrowingTriplet(
+				session,
+				throwing,
+				(next) => next.state.phase === "recoverable_error",
+			);
+			const failed = await session.start(correlation());
+			expect(observed.order).toEqual(LISTENER_POSITIONS);
+			expect(failed.state).toMatchObject({ phase: "recoverable_error", reason: "sdp_failed" });
+			for (const label of LISTENER_POSITIONS)
+				expect(
+					observed.seen[label]!.filter(
+						(value) => value === "session-1:recoverable_error:sdp_failed",
+					),
+				).toHaveLength(1);
+			expect(env.stopCount).toBe(0);
+			env.assertReleased();
+		},
+	);
+
+	test.each(LISTENER_POSITIONS)(
+		"a throwing %s listener cannot replace a terminal failure",
+		async (throwing) => {
+			const env = new FakeBrowser();
+			const mediaHost = host(env);
+			const session = createRealtimeMediaSession({
+				...mediaHost,
+				createOffer: async (offer) => ({
+					...(await mediaHost.createOffer(offer)),
+					sessionId: correlation(9).sessionId,
+				}),
+			});
+			const observed = subscribeThrowingTriplet(
+				session,
+				throwing,
+				(next) => next.state.phase === "terminal_error",
+			);
+			const failed = await session.start(correlation());
+			expect(observed.order).toEqual(LISTENER_POSITIONS);
+			expect(failed.state).toMatchObject({ phase: "terminal_error", reason: "protocol_error" });
+			for (const label of LISTENER_POSITIONS)
+				expect(
+					observed.seen[label]!.filter(
+						(value) => value === "session-1:terminal_error:protocol_error",
+					),
+				).toHaveLength(1);
+			expect(env.stopRequests).toEqual([correlation()]);
+			env.assertReleased();
+		},
+	);
+
+	test.each(LISTENER_POSITIONS)(
+		"a throwing %s listener cannot reject terminal close",
+		async (throwing) => {
+			const env = new FakeBrowser();
+			const session = createRealtimeMediaSession(host(env));
+			await session.start(correlation());
+			const observed = subscribeThrowingTriplet(
+				session,
+				throwing,
+				(next) => next.state.phase === "closed",
+			);
+			await session.dispose();
+			expect(observed.order).toEqual(LISTENER_POSITIONS);
+			expect(session.getSnapshot().state).toEqual({ phase: "closed", reason: "disposed" });
+			for (const label of LISTENER_POSITIONS)
+				expect(
+					observed.seen[label]!.filter((value) => value === "session-1:closed:disposed"),
+				).toHaveLength(1);
+			expect(env.stopRequests).toEqual([correlation()]);
+			env.assertReleased();
+		},
+	);
+
+	test("a repeatedly throwing listener stays subscribed and isolated", async () => {
+		const env = new FakeBrowser();
+		const session = createRealtimeMediaSession(host(env));
+		let throwingDeliveries = 0;
+		let laterDeliveries = 0;
+		session.subscribe(() => {
+			throwingDeliveries += 1;
+			throw new Error("consumer");
+		});
+		session.subscribe(() => {
+			laterDeliveries += 1;
+		});
+		await session.start(correlation());
+		await session.stop();
+		expect(throwingDeliveries).toBeGreaterThan(3);
+		expect(laterDeliveries).toBe(throwingDeliveries);
+		env.assertReleased();
+	});
+
 	test.each(["pending", "rejected"] as const)(
 		"%s browser cleanup promises cannot retain the lifecycle queue",
 		async (mode) => {

@@ -46,7 +46,9 @@ interface Run {
 	cancelledNow: boolean;
 	failed: boolean;
 	offerSent: boolean;
-	deviceLost: boolean;
+	audioContextClosed: boolean;
+	audioSourceDisconnected: boolean;
+	analyserDisconnected: boolean;
 	startDeadline?: number;
 	localStream?: MediaStream;
 	peer?: RTCPeerConnection;
@@ -95,7 +97,9 @@ function createRun(correlation: RealtimeCorrelation): Run {
 		cancelledNow: false,
 		failed: false,
 		offerSent: false,
-		deviceLost: false,
+		audioContextClosed: false,
+		audioSourceDisconnected: false,
+		analyserDisconnected: false,
 	};
 }
 
@@ -203,6 +207,28 @@ function detachRemote(run: Run): void {
 	run.remoteElement = undefined;
 }
 
+function disconnectAudioSource(run: Run): void {
+	if (!run.audioSource || run.audioSourceDisconnected) return;
+	run.audioSourceDisconnected = true;
+	run.audioSource.disconnect();
+}
+
+function disconnectAnalyser(run: Run): void {
+	if (!run.analyser || run.analyserDisconnected) return;
+	run.analyserDisconnected = true;
+	run.analyser.disconnect();
+}
+
+function closeAudioContext(run: Run): void {
+	if (!run.audioContext || run.audioContextClosed) return;
+	run.audioContextClosed = true;
+	try {
+		void run.audioContext.close().catch(() => undefined);
+	} catch {
+		// Browser cleanup is best effort; local resource release must continue.
+	}
+}
+
 async function cleanupRun(run: Run): Promise<void> {
 	if (run.cleanup) return run.cleanup;
 	run.cleanup = (async () => {
@@ -212,15 +238,9 @@ async function cleanupRun(run: Run): Promise<void> {
 			globalThis.cancelAnimationFrame(run.animationFrame);
 			run.animationFrame = undefined;
 		}
-		run.audioSource?.disconnect();
-		run.analyser?.disconnect();
-		if (run.audioContext) {
-			try {
-				void run.audioContext.close().catch(() => undefined);
-			} catch {
-				// Browser cleanup is best effort; local resource release must continue.
-			}
-		}
+		disconnectAudioSource(run);
+		disconnectAnalyser(run);
+		closeAudioContext(run);
 		detachRemote(run);
 		if (run.channel && run.channel.readyState !== "closed") run.channel.close();
 		if (run.peer) {
@@ -266,7 +286,14 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		return pending;
 	};
 	const notify = (): void => {
-		for (const listener of listeners) listener(snapshot);
+		const published = snapshot;
+		for (const listener of listeners) {
+			try {
+				listener(published);
+			} catch {
+				// A subscriber cannot take ownership of the media lifecycle.
+			}
+		}
 	};
 	const inactive = (run: Run): boolean => current !== run || run.cancelledNow || run.failed;
 	const adoptRun = (run: Run): void => {
@@ -455,7 +482,10 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		if (!run.localStream) throw new Error("The microphone stream is absent.");
 		if (inactive(run)) return;
 		run.audioContext = new AudioContext();
-		if (inactive(run)) return;
+		if (inactive(run)) {
+			closeAudioContext(run);
+			return;
+		}
 		const initialContextState = run.audioContext.state;
 		if (inactive(run)) return;
 		if (initialContextState === "suspended") await run.audioContext.resume();
@@ -466,9 +496,15 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			throw new DOMException("Audio playback remains suspended.", "NotAllowedError");
 		}
 		run.audioSource = run.audioContext.createMediaStreamSource(run.localStream);
-		if (inactive(run)) return;
+		if (inactive(run)) {
+			disconnectAudioSource(run);
+			return;
+		}
 		run.analyser = run.audioContext.createAnalyser();
-		if (inactive(run)) return;
+		if (inactive(run)) {
+			disconnectAnalyser(run);
+			return;
+		}
 		run.audioSource.connect(run.analyser);
 		if (inactive(run)) return;
 		const fftSize = run.analyser.fftSize;
@@ -496,9 +532,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		localTrack: MediaStreamTrack,
 	): boolean => {
 		const deviceLost = (): void => {
-			run.deviceLost = true;
-			if (run.state.phase !== "negotiating")
-				void fail(run, "device_lost", "The microphone was removed.");
+			void fail(run, "device_lost", "The microphone was removed.");
 		};
 		listen(run, localTrack, "ended", deviceLost);
 		if (inactive(run)) return false;
@@ -671,7 +705,6 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			if (run.cancelledNow || run.failed) return settleCancelledRun(run);
 			publish(run, { phase: "listening", reason: "negotiation_succeeded" });
 			if (inactive(run)) return settleCancelledRun(run);
-			if (run.deviceLost) await fail(run, "device_lost", "The microphone was removed.");
 		} catch (error) {
 			if (run.cancelledNow || run.failed) return settleCancelledRun(run);
 			if (error instanceof DOMException && error.name === "NotAllowedError") {
