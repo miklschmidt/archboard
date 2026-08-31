@@ -271,8 +271,9 @@ export interface BrowserWorkbenchActions {
 
 export interface BrowserLifecyclePort {
 	readonly onChange?: (listener: () => void) => BrowserUnsubscribe;
+	/** The child-exit source must await this promise before closing its transport. */
 	readonly onChildExit?: (
-		listener: (childId: ChildId, epoch: ChildEpoch) => void,
+		listener: (childId: ChildId, epoch: ChildEpoch) => Promise<void>,
 	) => BrowserUnsubscribe;
 }
 

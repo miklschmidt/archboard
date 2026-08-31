@@ -256,6 +256,7 @@ export function createCodexWorkbenchGateway(
 	const settledCommands = new Map<BrowserCommandId, CachedCommand>();
 	const disconnectNotified = new Set<BrowserCommandId>();
 	const disconnectReasons = new Map<BrowserCommandId, BrowserDisconnectReason>();
+	const pendingSettlements = new Set<Promise<void>>();
 	const now = options.now ?? Date.now;
 	let disposed = false;
 	let publishing = false;
@@ -263,9 +264,30 @@ export function createCodexWorkbenchGateway(
 	let leaseManager: BrowserLeaseManager;
 	const sourceUnsubscribers: BrowserUnsubscribe[] = [];
 
-	const notifyDisconnect = (record: BrowserLeaseRecord, reason: BrowserDisconnectReason): void => {
+	const trackSettlement = (settlement: Promise<void>): void => {
+		pendingSettlements.add(settlement);
+		void settlement.then(
+			() => {
+				pendingSettlements.delete(settlement);
+				return undefined;
+			},
+			() => {
+				pendingSettlements.delete(settlement);
+				return undefined;
+			},
+		);
+	};
+
+	const drainSettlements = async (): Promise<void> => {
+		while (pendingSettlements.size > 0) await Promise.allSettled(Array.from(pendingSettlements));
+	};
+
+	const notifyDisconnect = (
+		record: BrowserLeaseRecord,
+		reason: BrowserDisconnectReason,
+	): Promise<void> => {
 		const commandId = record.lease.commandId;
-		if (disconnectNotified.has(commandId)) return;
+		if (disconnectNotified.has(commandId)) return Promise.resolve();
 		disconnectNotified.add(commandId);
 		disconnectReasons.set(commandId, reason);
 		inFlightCommands.delete(commandId);
@@ -279,20 +301,29 @@ export function createCodexWorkbenchGateway(
 			disconnectReasons.delete(oldest);
 		}
 		const context = record.binding satisfies BrowserActionContext;
-		const callbacks = [
-			options.actions.ordinaryApprovals.onBrowserDisconnect,
-			options.actions.dynamicApprovals.onBrowserDisconnect,
-		];
-		for (const callback of callbacks) {
-			if (callback === undefined) continue;
+		// Approval teardown is best effort. Both owners get a chance to settle,
+		// and lifecycle methods resolve after all settlement promises finish.
+		const invoke = (
+			callback:
+				| ((context: BrowserActionContext, reason: BrowserDisconnectReason) => Promise<void> | void)
+				| undefined,
+		): Promise<void> => {
+			if (callback === undefined) return Promise.resolve();
 			try {
-				const result = callback(context, reason);
-				if (result instanceof Promise) void result.catch(() => undefined);
+				return Promise.resolve(callback(context, reason)).then(
+					() => undefined,
+					() => undefined,
+				);
 			} catch {
-				// Approval owners are notified independently; one teardown failure
-				// must not keep the browser lease from being retired.
+				return Promise.resolve();
 			}
-		}
+		};
+		const settlement = Promise.allSettled([
+			invoke(options.actions.ordinaryApprovals.onBrowserDisconnect),
+			invoke(options.actions.dynamicApprovals.onBrowserDisconnect),
+		]).then(() => undefined);
+		trackSettlement(settlement);
+		return settlement;
 	};
 
 	// A lease is app-global, so retiring its owner removes its only possible
@@ -322,7 +353,7 @@ export function createCodexWorkbenchGateway(
 	): BrowserLeaseRecord | null => {
 		if (leaseManager.current()?.lease.commandId !== record.lease.commandId) return null;
 		const result = leaseManager.invalidate(record.lease.childId, record.lease.epoch, state);
-		if (result !== null) notifyDisconnect(result, "link_changed");
+		if (result !== null) void notifyDisconnect(result, "link_changed");
 		return result;
 	};
 
@@ -360,7 +391,7 @@ export function createCodexWorkbenchGateway(
 		const current = leaseManager.current();
 		if (current === null || now() < current.lease.expiresAtMs) return;
 		const expired = leaseManager.invalidate(current.lease.childId, current.lease.epoch, "expired");
-		if (expired !== null) notifyDisconnect(expired, "lease_expired");
+		if (expired !== null) void notifyDisconnect(expired, "lease_expired");
 	};
 
 	const leaseForSnapshot = (state: ConnectionState): BrowserCommandLease | null => {
@@ -833,7 +864,7 @@ export function createCodexWorkbenchGateway(
 				previous.binding.paneId,
 				previous.lease.commandId,
 			);
-			if (released !== null) notifyDisconnect(released, "lease_transferred");
+			if (released !== null) void notifyDisconnect(released, "lease_transferred");
 		}
 		const record = leaseManager.claim(browserId, paneId, readBinding(paneId));
 		state.lease = record.lease;
@@ -880,7 +911,7 @@ export function createCodexWorkbenchGateway(
 		expireLeaseIfDue();
 		if (commandId === undefined) commandId = state.lease?.commandId;
 		const record = leaseManager.release(browserId, paneId, commandId);
-		if (record?.lease.state === "released") notifyDisconnect(record, "browser_disconnected");
+		if (record?.lease.state === "released") void notifyDisconnect(record, "browser_disconnected");
 		return record?.lease ?? null;
 	};
 
@@ -909,16 +940,13 @@ export function createCodexWorkbenchGateway(
 	const terminate = (reason: BrowserDisconnectReason): void => {
 		if (disposed) return;
 		disposed = true;
-		for (const unsubscribe of sourceUnsubscribers.splice(0)) unsubscribe();
 		const current = leaseManager.current();
+		let released: BrowserLeaseRecord | null = null;
 		if (current !== null) {
-			const released = leaseManager.invalidate(
-				current.lease.childId,
-				current.lease.epoch,
-				"released",
-			);
-			if (released !== null) notifyDisconnect(released, reason);
+			released = leaseManager.invalidate(current.lease.childId, current.lease.epoch, "released");
 		}
+		leaseManager.dispose();
+		for (const unsubscribe of sourceUnsubscribers.splice(0)) unsubscribe();
 		for (const state of connections.values()) {
 			state.closed = true;
 			state.listeners.clear();
@@ -926,11 +954,14 @@ export function createCodexWorkbenchGateway(
 		connections.clear();
 		inFlightCommands.clear();
 		settledCommands.clear();
-		leaseManager.dispose();
+		if (released !== null) void notifyDisconnect(released, reason);
 	};
 
 	const closeBrowser = async (browserId: string): Promise<void> => {
-		if (disposed) return;
+		if (disposed) {
+			await drainSettlements();
+			return;
+		}
 		for (const [key, state] of connections) {
 			if (state.browserId !== browserId) continue;
 			state.closed = true;
@@ -944,22 +975,28 @@ export function createCodexWorkbenchGateway(
 				current.binding.paneId,
 				current.lease.commandId,
 			);
-			if (released !== null) notifyDisconnect(released, "browser_disconnected");
+			if (released !== null) void notifyDisconnect(released, "browser_disconnected");
 		}
+		await drainSettlements();
 	};
 
 	const childExit = async (childId: ChildId, epoch: ChildEpoch): Promise<void> => {
-		if (disposed) return;
+		if (disposed) {
+			await drainSettlements();
+			return;
+		}
 		if (
 			childId !== identity.identity.validator.childId ||
 			epoch !== identity.identity.validator.epoch
 		)
 			return;
 		terminate("child_disconnected");
+		await drainSettlements();
 	};
 
 	const dispose = async (): Promise<void> => {
 		terminate("gateway_shutdown");
+		await drainSettlements();
 	};
 
 	const subscribe = (
@@ -1006,7 +1043,7 @@ export function createCodexWorkbenchGateway(
 		sourceUnsubscribers.push(options.lifecycle.onChange(publishAll));
 	if (options.lifecycle?.onChildExit !== undefined)
 		sourceUnsubscribers.push(
-			options.lifecycle.onChildExit((childId, epoch) => void childExit(childId, epoch)) ??
+			options.lifecycle.onChildExit((childId, epoch) => childExit(childId, epoch)) ??
 				(() => undefined),
 		);
 

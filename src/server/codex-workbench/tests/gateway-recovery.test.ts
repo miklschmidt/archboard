@@ -21,6 +21,14 @@ function harness(): GatewayHarness {
 	return value;
 }
 
+function deferred(): { readonly promise: Promise<void>; readonly resolve: () => void } {
+	const state: { resolve: () => void } = { resolve: () => undefined };
+	const promise = new Promise<void>((resolve) => {
+		state.resolve = () => resolve();
+	});
+	return { promise, resolve: () => state.resolve() };
+}
+
 describe("Codex workbench browser recovery and delivery", () => {
 	test("deduplicates an in-flight command and classifies a late result as unknown", async () => {
 		const value = harness();
@@ -254,5 +262,197 @@ describe("Codex workbench browser recovery and delivery", () => {
 		expect(value.disconnectReasons).toEqual(["browser_disconnected", "browser_disconnected"]);
 		const recovered = value.gateway.connect("browser-two", "pane-two");
 		expect(recovered.claimLease().state).toBe("active");
+	});
+
+	test("waits for both close settlements after revoking browser authority", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const lease = connection.claimLease();
+		const ordinary = deferred();
+		const dynamic = deferred();
+		value.setOrdinaryDisconnectGate(ordinary.promise);
+		value.setDynamicDisconnectGate(dynamic.promise);
+		let closed = false;
+		const closing = connection.close().then(() => {
+			closed = true;
+			return undefined;
+		});
+		expect(closed).toBeFalse();
+		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
+		expect(value.disconnectSettled).toEqual([]);
+		expectGatewayError(() => connection.claimLease(), "invalid_input");
+		expectGatewayError(() => connection.renewLease(), "invalid_input");
+		await expectRejected(() => connection.command(startCommand(value, lease)), "invalid_input");
+		ordinary.resolve();
+		await Promise.resolve();
+		expect(closed).toBeFalse();
+		dynamic.resolve();
+		await closing;
+		expect(closed).toBeTrue();
+		expect(value.disconnectSettled).toEqual(["ordinary", "dynamic"]);
+	});
+
+	test("waits for both child-exit settlements after terminalizing the gateway", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const lease = connection.claimLease();
+		const ordinary = deferred();
+		const dynamic = deferred();
+		value.setOrdinaryDisconnectGate(ordinary.promise);
+		value.setDynamicDisconnectGate(dynamic.promise);
+		let exited = false;
+		const exiting = value.gateway.childExit(value.childId, value.epoch).then(() => {
+			exited = true;
+			return undefined;
+		});
+		expect(exited).toBeFalse();
+		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
+		expectGatewayError(() => connection.claimLease(), "disposed");
+		expectGatewayError(() => connection.renewLease(), "disposed");
+		await expectRejected(() => connection.command(startCommand(value, lease)), "disposed");
+		ordinary.resolve();
+		await Promise.resolve();
+		expect(exited).toBeFalse();
+		dynamic.resolve();
+		await exiting;
+		expect(exited).toBeTrue();
+		expect(value.disconnectSettled).toEqual(["ordinary", "dynamic"]);
+	});
+
+	test("waits for both shutdown settlements after closing authority", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const lease = connection.claimLease();
+		const ordinary = deferred();
+		const dynamic = deferred();
+		value.setOrdinaryDisconnectGate(ordinary.promise);
+		value.setDynamicDisconnectGate(dynamic.promise);
+		let disposed = false;
+		const disposing = value.gateway.dispose().then(() => {
+			disposed = true;
+			return undefined;
+		});
+		expect(disposed).toBeFalse();
+		expectGatewayError(() => value.gateway.connect("browser-two", "pane-two"), "disposed");
+		expectGatewayError(() => connection.claimLease(), "disposed");
+		await expectRejected(() => connection.command(startCommand(value, lease)), "disposed");
+		ordinary.resolve();
+		await Promise.resolve();
+		expect(disposed).toBeFalse();
+		dynamic.resolve();
+		await disposing;
+		expect(disposed).toBeTrue();
+		expect(value.disconnectSettled).toEqual(["ordinary", "dynamic"]);
+	});
+
+	test("swallows one settlement failure only after the other owner settles", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		connection.claimLease();
+		const dynamic = deferred();
+		value.setOrdinaryDisconnectError(new Error("ordinary settlement failed"));
+		value.setDynamicDisconnectGate(dynamic.promise);
+		let closed = false;
+		const closing = connection.close().then(() => {
+			closed = true;
+			return undefined;
+		});
+		expect(closed).toBeFalse();
+		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
+		dynamic.resolve();
+		await closing;
+		expect(closed).toBeTrue();
+		expect(value.disconnectSettled).toEqual(["dynamic"]);
+	});
+
+	test("drains transfer settlement work that predates shutdown", async () => {
+		const value = harness();
+		const first = value.gateway.connect(value.browserId, value.paneId);
+		const second = value.gateway.connect("browser-two", "pane-two");
+		first.claimLease();
+		const ordinary = deferred();
+		const dynamic = deferred();
+		value.setOrdinaryDisconnectGate(ordinary.promise);
+		value.setDynamicDisconnectGate(dynamic.promise);
+		second.claimLease();
+		second.releaseLease();
+		let disposed = false;
+		const disposing = value.gateway.dispose().then(() => {
+			disposed = true;
+			return undefined;
+		});
+		expect(disposed).toBeFalse();
+		expect(value.disconnectReasons).toEqual([
+			"lease_transferred",
+			"lease_transferred",
+			"browser_disconnected",
+			"browser_disconnected",
+		]);
+		ordinary.resolve();
+		dynamic.resolve();
+		await disposing;
+		expect(disposed).toBeTrue();
+		expect(value.disconnectSettled).toHaveLength(4);
+	});
+
+	test("drains expiry settlement work that predates shutdown", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const lease = connection.claimLease();
+		const ordinary = deferred();
+		const dynamic = deferred();
+		value.setOrdinaryDisconnectGate(ordinary.promise);
+		value.setDynamicDisconnectGate(dynamic.promise);
+		value.advance(150_001);
+		const expired = await connection.command(startCommand(value, lease));
+		expect(expired).toMatchObject({ code: "lease_expired", outcome: "not_delivered" });
+		expect(value.disconnectReasons).toEqual(["lease_expired", "lease_expired"]);
+		let disposed = false;
+		const disposing = value.gateway.dispose().then(() => {
+			disposed = true;
+			return undefined;
+		});
+		expect(disposed).toBeFalse();
+		ordinary.resolve();
+		dynamic.resolve();
+		await disposing;
+		expect(disposed).toBeTrue();
+		expect(value.disconnectSettled).toEqual(["ordinary", "dynamic"]);
+	});
+
+	test("exposes an awaitable child-exit lifecycle listener", async () => {
+		let listener:
+			| ((childId: GatewayHarness["childId"], epoch: GatewayHarness["epoch"]) => Promise<void>)
+			| undefined;
+		const value = createGatewayHarness(undefined, {
+			onChildExit: (candidate) => {
+				listener = candidate;
+				return () => undefined;
+			},
+		});
+		openHarnesses.push(value);
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const lease = connection.claimLease();
+		const ordinary = deferred();
+		const dynamic = deferred();
+		value.setOrdinaryDisconnectGate(ordinary.promise);
+		value.setDynamicDisconnectGate(dynamic.promise);
+		expect(listener).toBeDefined();
+		const staleEpoch = value.authorities.identity.issuer.mintChildEpoch();
+		await listener!(value.childId, staleEpoch);
+		expect(value.disconnects).toEqual([]);
+		const exit = listener!(value.childId, value.epoch);
+		expectGatewayError(() => connection.claimLease(), "disposed");
+		let settled = false;
+		const observed = exit.then(() => {
+			settled = true;
+			return undefined;
+		});
+		expect(settled).toBeFalse();
+		await expectRejected(() => connection.command(startCommand(value, lease)), "disposed");
+		ordinary.resolve();
+		dynamic.resolve();
+		await observed;
+		expect(settled).toBeTrue();
 	});
 });

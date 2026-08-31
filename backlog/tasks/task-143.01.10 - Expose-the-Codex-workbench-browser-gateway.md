@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 19:40'
+updated_date: '2026-08-31 19:53'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -43,10 +43,14 @@ Expose the closed browser gateway for account and session readiness, thread link
 1. Define the server-root gateway contract and narrow injected ports for lifecycle/readiness, session operations, current thread-link CAS, ordinary approvals, dynamic coordination approvals, queue, semantic, coordinator, and realtime projections; keep browser DTO validation at the shared model boundary and expose only bounded JSON-safe results. 2. Implement app-global browser connection and renewable command-lease ownership, binding each lease to browser, pane, captured link, current child epoch, and command id; enforce exact lease/link/capability checks, deterministic expiry/refusal, duplicate and late-command handling, and lease transfer/close recovery without retargeting pending approvals. 3. Compose readiness/account/thread/timeline/settings/queue/approval/dynamic/semantic/coordinator/voice projections on demand from injected owners, route account commands before account readiness, gate all thread-scoped operations on thread capability plus exact current link, and preserve dynamic OperationId/logical-call/effect-hash DTOs through pending-aware response validation. 4. Add focused gateway tests for all reachable readiness and recovery states, command and lease races, ordinary and dynamic approval lifecycles, bounded snapshots/sequenced idempotent deltas, stale and duplicate inputs, child/browser disconnect, lost/late outcomes, and exact capability/link enforcement. 5. Run scoped gateway tests, strict TypeScript, Oxlint, Oxfmt, diff and path audits under sequential named 6G/1G transient user units; record evidence and commit only src/server/codex-workbench plus the Backlog record, leaving acceptance criteria unchecked for independent review.
 
 6. Make exact child exit terminal for this gateway: revoke the old lease and reject all later connections and commands under the captured authority; test recovery only through a newly constructed gateway with genuinely different child and epoch authorities. 7. Expand owner tests across terminal approval_required and late responses, lost outcomes, renewal, logout, all thread-link, text, queue, and realtime commands, capability/link matrices, and hostile lifecycle recovery. 8. Make gateway message validation strict at the wrapper arm and retain only bounded settled command results while in-flight deduplication remains shared; evicted command IDs must still fail through retired lease authority and never execute again. 9. Rerun both type graphs, focused gateway tests, scoped lint/format, repository inventory, diff/path audits, clean-tree and protected-hash checks, then commit remediation without checking acceptance criteria.
+
+10. Make disconnect settlement async-aware: revoke lease and local authority before callbacks, invoke both approval owners independently, track only pending settlement promises, and await a failure-isolated drain from browser close, child exit, dispose, expiry, and transfer. 11. Add deferred-owner tests for close, exact child exit, dispose, transfer, expiry, rejection isolation, and authority refusal during the wait. 12. Rerun focused gateway tests, both type graphs, scoped lint/format, inventory, diff/path, clean-tree, and protected-hash audits, then commit this remediation with acceptance criteria unchecked.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Remediation ready for independent review: childExit now makes the gateway terminal and recovery uses a newly constructed authority; wrapper arms are exact; in-flight and bounded settled command retention are separate and evicted IDs cannot execute. Focused gateway tests: 29 pass and 147 assertions. Backend and frontend TypeScript, scoped Oxlint, Oxfmt check, repository inventory, and diff checks pass. Acceptance criteria intentionally remain unchecked; task remains In Progress.
+
+Async settlement remediation complete: disconnect owners now run independently after synchronous authority revocation, pending settlement promises are drained by browser close, exact child exit, and dispose, and lifecycle child-exit listeners are awaitable. Rejection policy is best effort after all owners receive a chance to settle. Final focused gateway suite: 36 pass and 197 assertions. Both TypeScript graphs, scoped Oxlint, Oxfmt check, repository inventory, and diff checks pass. Acceptance criteria remain unchecked and task remains In Progress.
 <!-- SECTION:NOTES:END -->
