@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 13:22'
+updated_date: '2026-08-31 13:34'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -56,6 +56,8 @@ Delegation profile: gpt-5.6-luna, max.
 Approved seam: create src/shared/codex-realtime-host as the one declaration site for browser-media identities and host-facing types; src/ui/codex-realtime keeps its public names through exact re-exports, and repository policy enforces both the neutral root and the unchanged runtime-to-UI prohibition.
 
 Review remediation: finalize exact item/thread closure while retaining transcript; make the adapter own and validate one canonical RealtimeState through transitionRealtimeState for every emission; replace the suffix dependency exception with exact resolved-path equality after Node rejection; replace private-identifier counting with exported-brand declaration scanning, hostile duplicate fixtures, and compile-time negative brand assignability.
+
+6. Second race remediation: give the active session sole settlement ownership for the browser offer; make exact start errors reject once and make late RPC/SDP/started gates inert. Require active===session after every awaited mutation or recovery call, return typed stale/terminal outcomes after authoritative close, and suppress all post-close phase/diagnostic changes. Add manually deferred start, stop, and timeline tests that drive both resolve and reject races through the reducer-checked event recorder. Re-run only focused sequential named 6G/1G services and leave the task In Progress for rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -70,6 +72,10 @@ Final focused evidence, every allocating command in a named transient systemd se
 Independent review found authoritative close left the active session commandable, semantic phase events bypassed the canonical transition reducer, the neutral dependency exception used a suffix match before Node rejection, and the one-owner brand test counted a private marker without proving type incompatibility. Remediation is scoped to these four findings; no UI/media behavior or public names will change.
 
 Review remediation complete: authoritative item/thread closure now follows canonical stopping -> closed transitions, retains transcript/diagnostics, clears the active session, rejects post-close mutations, and permits a fresh replacement. Every adapter state emission is reduced through the neutral canonical transitionRealtimeState implementation; recovery is callable only from recoverable_error and successful recovery detaches the old session. The dependency exception now rejects Node first and allows only exact resolved equality to src/shared/codex-realtime-host/index.ts, with cheap hostile fixtures. Brand ownership scans exported declarations across .ts/.tsx/.mts and compile-time @ts-expect-error assertions prove all browser IDs are mutually incompatible and browser/wire session IDs are incompatible both ways. Validation: archboard-task1430203-remediate-final-tests2-08426a9.service passed 13 focused tests / 74 assertions at 47.5M peak, 0B swap; archboard-task1430203-remediate-final-types4-08426a9.service passed both TypeScript projects at 1.7G, 0B swap; archboard-task1430203-remediate-final-scoped-lint2-08426a9.service passed at 611.2M, 0B swap; formatting passed in archboard-task1430203-remediate-final-format7-08426a9.service at 1.5G, 0B swap. The known compiler-heavy codex-realtime-boundary owner was attempted once in archboard-task1430203-remediate-tests-08426a9.service and hit the mandated 6G/1G ceiling; it was not retried. Its new exact-path cases are also covered by the passing cheap dependency owner.
+
+Second review found two protocol races: exact start errors could leave the browser offer pending and later gates could attempt illegal transitions; authoritative close could be followed by stop/recovery completion paths that emitted transitions from closed. Remediation owns settlement and terminal generation in the adapter only; the shared/UI boundary work remains unchanged.
+
+Second race remediation complete. Start settlement now has one owner: an exact negotiating thread/realtime/error marks the offer settled, emits the legal recoverable transition, and rejects once; start RPC completion and SDP/started gates are phase-aware and inert after settlement. Active generation identity is now part of every post-await currentness check. A close during stop, recovery, appendText, or appendSpeech therefore returns outcome_unknown/response_lost without diagnostics or phase changes; stop and recovery also guard their own post-await reducers. Deferred tests cover error then RPC reject, error then RPC success plus late SDP/started, SDP/started competing before error, stop resolve/reject after close, recovery resolve/reject after close, and append completion after close. Final focused evidence: archboard-task1430203-race-final2-tests-f1c161e.service passed 20 tests / 107 assertions at 47.2M peak, 0B swap; archboard-task1430203-race-final2-types-f1c161e.service passed both TypeScript projects at 1.6G peak, 0B swap; archboard-task1430203-race-final2-lint-f1c161e.service passed scoped Oxlint at 607.9M peak, 0B swap; archboard-task1430203-race-final2-format-check-f1c161e.service passed at 1.6G peak, 0B swap. git diff --check passed. Known OOM lanes were not run.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
