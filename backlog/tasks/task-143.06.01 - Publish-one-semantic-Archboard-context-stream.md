@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 00:44'
+updated_date: '2026-08-31 01:08'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -66,4 +66,9 @@ Second remediation implementation and validation (2026-08-31):
 - Public SemanticCursorInput is now only {feedId, sequence}; numeric cursors remain only on SettledChangeSourceEvent. Runtime rejection covers numbers and malformed shapes; tests cover current/prior feeds, restart feed identity, source sequence derivation, and the compile-time fixture.
 - Listener diagnostics are instance-local and bounded. Concrete policy: retain the oldest 64 entries; cap each error-name JSON string token at 128 UTF-8 bytes and message token at 2,048 bytes; no unbounded thrown text is retained. Fixed record bytes are 111, calculated as the UTF-8 bytes of the settled-change diagnostic object with empty errorName and message and a maximum-safe listenerIndex, less the two empty string tokens (2 + 2). A maximum record is 111 + 128 + 2,048 = 2,287 bytes. The batch bound is a 12-byte entries-array prefix + (64 * 2,287) + 63 separators + a 34-byte maximum-safe droppedCount suffix = 146,477 UTF-8 bytes per publisher instance before drain. Oldest-retained behavior, dropped-count overflow accounting, frozen drain/reset batches, 1 MiB messages, Unicode/control strings, multiple drains, hostile getters/toString/Symbol.toPrimitive/proxies/revoked proxies, primitive throws, reentrant emission, later listeners, and recovery are covered.
 - Validation: focused semantic module 24/24; bun run type-check; bun run lint; bun run fmt:check; bun run test:repository 130/130; bun run test:modules 1,037/1,037; bun run test:system 284/284; git diff --check. The serial browser lane was not rerun because this remediation only changes the headless semantic-context module; the previous reviewed browser validation remains applicable.
+
+Third remediation implementation and validation (2026-08-31):
+- Aggregate brief fitting no longer treats feedId and cursor.feedId as independent truncatable slots. Both qualified identities remain exact while lower-priority repository, board, pane, description, arrays, and other descriptive fields fit around them. Public feed and cursor admission now enforces a 3,074-byte JSON token ceiling, derived from two quote bytes plus 512 worst-case six-byte control escapes, so two exact copies have a reserved bound within the 8,192-byte brief budget. Pressure oracles cover maximum repository, board, pane, description, and identity fields; current, prior-feed, and restarted-feed cases assert parsed feed identity, cursor identity, event cursor identity, exact sequence, current or stale classification, valid JSON, deterministic output, and the byte ceiling.
+- The permanent hostile listener test now constructs an actual 1,050,000-code-unit error name and message and asserts at least 1,048,576 UTF-8 bytes before publication. It still verifies the 128-byte name and 2,048-byte message caps, the 146,477-byte batch bound, later-listener continuation, multiple drains, reset, and recovery.
+- Validation: focused semantic-context lane 26/26; bun run test:modules 1,039/1,039 in isolation; bun run test:repository 130/130; bun run test:system 284/284; both TypeScript projects; lint; format; diff checks. No browser owner maps to this headless semantic-context module, so the serial browser lane was not rerun. Scope remains src/runtime/codex-semantic-context/** plus this task record; task status and final summary were not changed.
 <!-- SECTION:NOTES:END -->
