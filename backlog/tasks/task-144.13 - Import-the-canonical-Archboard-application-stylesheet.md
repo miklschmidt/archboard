@@ -1,11 +1,11 @@
 ---
 id: TASK-144.13
 title: Import the canonical Archboard application stylesheet
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:38'
-updated_date: '2026-08-31 02:40'
+updated_date: '2026-08-31 02:44'
 labels: []
 dependencies:
   - TASK-144.02
@@ -32,9 +32,9 @@ Delegation profile: gpt-5.6-luna, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 frontend/main.tsx imports the canonical Archboard application stylesheet exactly once and frontend/index.html no longer links src/ui/shell/shell.css directly.
-- [ ] #2 Excalidraw vendor CSS ordering remains explicit and a production build contains one Archboard application stylesheet without duplicate Tailwind output.
-- [ ] #3 Focused build and rendered shell checks prove one/two-pane, fullscreen, and existing controls remain unchanged after the import-path move.
+- [x] #1 frontend/main.tsx imports the canonical Archboard application stylesheet exactly once and frontend/index.html no longer links src/ui/shell/shell.css directly.
+- [x] #2 Excalidraw vendor CSS ordering remains explicit and a production build contains one Archboard application stylesheet without duplicate Tailwind output.
+- [x] #3 Focused build and rendered shell checks prove one/two-pane, fullscreen, and existing controls remain unchanged after the import-path move.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -57,4 +57,18 @@ Validation:
 - Focused Oxlint, Oxfmt, and frontend TypeScript checks passed.
 
 The complete repository, system, module, and browser lanes remain for the parent integration gate. Per delegation, the task stays In Progress and its acceptance criteria remain unchecked.
+
+Root integration and finalization evidence (2026-08-31):
+- Independent complete-range review returned REVIEW_CLEAN at exact worker HEAD ae64ce38995b19df8b4ace5c306a9328d71fbdf4.
+- Integrated the review-clean range as 4065f02 and 3b75109.
+- Root-owned capped stylesheet-entry plus theme contract passed in archboard-task14413-focused-3b75109.service with MemoryMax=6G and MemorySwapMax=1G: 23 tests, 576 expectations, exit 0, peak 50.8M, swap 0, no limit hit.
+- Root-owned capped production build passed in archboard-task14413-build-3b75109.service: 2,446 modules transformed, one 43.24 kB application CSS asset, vendor link first, one Tailwind banner, one theme layer, one utilities layer, shell rules and canonical Archboard tokens present; peak 1.4G, swap 0, no limit hit.
+- Direct rendered validation passed in capped unit archboard-task14413-browser-3b75109.service with MemoryMax=12G and MemorySwapMax=2G: shell-layout one/two-pane, themes, controls, notices, workbench, touch targets passed 123 expectations; fullscreen presentation/transfer/refusal/Escape/restoration passed 51 expectations; peak 492.1M, swap 0, no limit hit.
+- frontend/main.tsx owns one ../src/ui/theme/app.css import; frontend/index.html removed only the direct shell.css link and preserves explicit Excalidraw vendor order. app.css, shell.css, UI rendering, and later-task scope remain unchanged. git diff --check and clean status passed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Moved the canonical Archboard application stylesheet to the frontend entry seam exactly once, preserved explicit Excalidraw vendor ordering, produced one Tailwind application stylesheet, and verified unchanged one-pane, two-pane, fullscreen, and control workflows in the rendered browser.
+<!-- SECTION:FINAL_SUMMARY:END -->
