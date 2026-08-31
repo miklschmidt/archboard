@@ -5,6 +5,7 @@ import type {
 	ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import type { ThreadLinkBindingSnapshot } from "../../codex-thread-link/index.js";
+import { cloneAndFreeze } from "./immutability.js";
 import type {
 	WorkhorseCleanupFacts,
 	WorkhorseSettlementOutcome,
@@ -13,7 +14,7 @@ import type {
 } from "./contract.js";
 
 export function emptySnapshot(): WorkhorseSnapshot {
-	return Object.freeze({
+	return cloneAndFreeze({
 		kind: "codex_workhorse" as const,
 		state: "unbound" as const,
 		paneId: null,
@@ -35,7 +36,7 @@ export function startingSnapshot(
 	epoch: ChildEpoch,
 	operationId: OperationId,
 ): WorkhorseSnapshot {
-	return Object.freeze({
+	return cloneAndFreeze({
 		...emptySnapshot(),
 		state: "starting" as const,
 		paneId,
@@ -51,7 +52,7 @@ export function failedSnapshot(
 	operationId: OperationId,
 	reason: string,
 ): WorkhorseSnapshot {
-	return Object.freeze({
+	return cloneAndFreeze({
 		...emptySnapshot(),
 		state: "failed" as const,
 		paneId,
@@ -75,7 +76,7 @@ export interface InspectSnapshotInput {
 }
 
 export function inspectSnapshot(input: InspectSnapshotInput): WorkhorseSnapshot {
-	return Object.freeze({
+	return cloneAndFreeze({
 		kind: "codex_workhorse" as const,
 		state: "inspect_only" as const,
 		paneId: input.paneId,
@@ -99,7 +100,7 @@ export function readySnapshot(
 	start: WorkhorseStartFacts,
 	binding: ThreadLinkBindingSnapshot,
 ): WorkhorseSnapshot {
-	return Object.freeze({
+	return cloneAndFreeze({
 		kind: "codex_workhorse" as const,
 		state: "ready" as const,
 		paneId,
@@ -121,7 +122,7 @@ export function cleanupFacts(
 	outcome: Exclude<WorkhorseSettlementOutcome, "pending">,
 	reason: string | null,
 ): WorkhorseCleanupFacts {
-	return Object.freeze({ operationId, threadId, outcome, reason });
+	return cloneAndFreeze({ operationId, threadId, outcome, reason });
 }
 
 export function errorMessage(error: unknown): string {

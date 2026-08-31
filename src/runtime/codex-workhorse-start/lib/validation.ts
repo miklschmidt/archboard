@@ -25,6 +25,7 @@ import type {
 	WorkhorseStartResponse,
 	WorkhorseThread,
 } from "./contract.js";
+import { cloneAndFreeze } from "./immutability.js";
 
 export interface ValidatedWorkhorseStart {
 	readonly thread: WorkhorseThread;
@@ -62,10 +63,10 @@ export function validateWorkhorseStartResponse(
 		throw new Error("The workhorse thread/start response does not match the authored profile.");
 	}
 
-	const facts: WorkhorseStartFacts = Object.freeze({
+	const facts: WorkhorseStartFacts = cloneAndFreeze({
 		threadId,
 		cwd: response.cwd,
-		runtimeWorkspaceRoots: Object.freeze([...response.runtimeWorkspaceRoots]),
+		runtimeWorkspaceRoots: [...response.runtimeWorkspaceRoots],
 		historyMode: "paginated",
 		source: WORKHORSE_THREAD_SOURCE,
 		threadSource: WORKHORSE_THREAD_SOURCE_TAG,
@@ -79,7 +80,7 @@ export function validateWorkhorseStartResponse(
 		instructionHash: WORKHORSE_INSTRUCTION_HASH,
 		manifestHash: WORKHORSE_MANIFEST_HASH,
 	});
-	return Object.freeze({ thread: response.thread, threadId, facts });
+	return Object.freeze({ thread: cloneAndFreeze(response.thread), threadId, facts });
 }
 
 export function isCommittedStartRecord(
