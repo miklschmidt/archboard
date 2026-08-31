@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.07
 title: Own Archboard Codex developer instructions
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 01:14'
+updated_date: '2026-08-31 01:21'
 labels: []
 dependencies:
   - TASK-143.01.17
@@ -30,10 +30,10 @@ Delegation profile: gpt-5.6-luna, max.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Tracked workhorse and coordinator documents match the canonical UTF-8 bytes exactly; coordinator composition is workhorse bytes, the documented LF separator, then coordinator bytes with stable hashes.
-- [ ] #2 additionalContext uses exactly key archboard and value {kind: application, value: canonical-json-string}; canonical JSON has the documented ordered fields and rejects caller-authored prose or unknown keys.
-- [ ] #3 Ordinary turn/start and turn/steer text is exactly one UserInput {type: text, text, text_elements: []}; developer-role input_text is emitted only by the semantic thread/inject_items body. Attach/reconnect/rejoin never rewrites persisted instructions or tools, while forks use the literal reviewed fork profile.
-- [ ] #4 Byte/body fixtures fail on BOM, newline, whitespace, separator, field order, prose, schema, omitted-field, role, or hash drift from the reviewed contract.
+- [x] #1 Tracked workhorse and coordinator documents match the canonical UTF-8 bytes exactly; coordinator composition is workhorse bytes, the documented LF separator, then coordinator bytes with stable hashes.
+- [x] #2 additionalContext uses exactly key archboard and value {kind: application, value: canonical-json-string}; canonical JSON has the documented ordered fields and rejects caller-authored prose or unknown keys.
+- [x] #3 Ordinary turn/start and turn/steer text is exactly one UserInput {type: text, text, text_elements: []}; developer-role input_text is emitted only by the semantic thread/inject_items body. Attach/reconnect/rejoin never rewrites persisted instructions or tools, while forks use the literal reviewed fork profile.
+- [x] #4 Byte/body fixtures fail on BOM, newline, whitespace, separator, field order, prose, schema, omitted-field, role, or hash drift from the reviewed contract.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -55,4 +55,12 @@ Implemented the scoped src/runtime/codex-instructions boundary: tracked UTF-8 ro
 Review remediation applied without changing authored bytes or pending reason/kind domains: platform-native lexical checkout validation now rejects foreign and noncanonical roots; prompt and identity lower bounds reject empty values; exported validation schemas return independent deep-frozen values; independent tests pin the complete context key/known-domain oracle and negative paths. Final validation: focused module tests 46 pass/196 expectations; bun run test:modules 1,039 pass/7,171 expectations; bun run test:repository 122 pass/381 expectations; both TypeScript projects, Oxlint, Oxfmt, and diff check pass. Finding 1 remains pending authored-domain decision.
 
 Replacement remediation pass (2026-08-31): added the runtime ADDITIONAL_CONTEXT_POLICY mirror and wired ArchboardContextSchema to the closed thread-link states/reasons, operation tuple states, producer RPC sets, and canonical operation field order. Added an independent reviewed-manifest oracle and mutation coverage in the owned module tests. Canonical manifest reconciliation against e9fd2144bcde98fba4c14267c7d537223c02a81e was exact; authored instruction/workhorse/coordinator bytes were unchanged. Validation: bun run test:modules (1048 pass), bun run test:repository (122 pass), both TypeScript graphs, bun run lint, bun run fmt:check, and git diff --check.
+
+Parent integration validation after clean cherry-pick: focused codex-instructions 55/55 with 341 expectations, repository policy 137/137, modules 1,123/1,123, both TypeScript projects, lint, and format passed. Independent replacement review was clean at exact worker HEAD e5a3b8bdc449971a2da3c47f410d8b443c0d92e5 and confirmed byte-identical authored documents, hashes, canonical additional-context policy, closed operation tuples, literal turn/inject/fork bodies, and exact scope.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Owned the canonical Archboard Codex developer-instruction boundary as tracked, byte-frozen workhorse and coordinator documents with stable composition hashes. Added exact typed builders and validators for canonical additionalContext, turn/start, turn/steer, semantic inject_items, and fork bodies, with mutation and repository-policy enforcement against prose, schema, ordering, role, omission, and hash drift.
+<!-- SECTION:FINAL_SUMMARY:END -->
