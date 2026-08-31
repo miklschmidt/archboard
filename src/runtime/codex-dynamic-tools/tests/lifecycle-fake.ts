@@ -31,6 +31,7 @@ export class FakeLifecycle implements DynamicToolLifecyclePort {
 		readonly reason: DynamicFailClosedShutdownReason;
 	}> = [];
 	readonly fatalFaults: DynamicFatalLifecycleFault[] = [];
+	fatalReportError: Error | null = null;
 	poisonError: Error | null = null;
 	poisonOwnerOverride: {
 		readonly child: ChildId;
@@ -144,6 +145,7 @@ export class FakeLifecycle implements DynamicToolLifecyclePort {
 
 	reportFatalLifecycleFault(fault: DynamicFatalLifecycleFault): void {
 		this.fatalFaults.push(fault);
+		if (this.fatalReportError !== null) throw this.fatalReportError;
 	}
 
 	retryQuarantine(index = 0): Promise<DynamicMutationTerminalProof> {

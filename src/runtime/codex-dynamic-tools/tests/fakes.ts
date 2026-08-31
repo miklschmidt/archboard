@@ -6,7 +6,11 @@ import type {
 	EpochTransaction,
 } from "../../codex-epoch/index.js";
 import { emptyManifest } from "../../codex-epoch/index.js";
-import type { ReverseResponse, ResponseOwner } from "../../codex-transport/server-requests.js";
+import type {
+	ReverseResponse,
+	ResponseOwner,
+	TransportServerRequest,
+} from "../../codex-transport/server-requests.js";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -286,6 +290,7 @@ export function optionsFor(
 		readonly owner: ResponseOwner;
 		readonly response: ReverseResponse;
 	}> = [];
+	const completedTransportRequestIds = new Set<string>();
 	const contextReads: Array<{ readonly operationId: OperationId; readonly kind: string }> = [];
 	const contextAuthority: DynamicContextAuthority = {
 		token: authorityToken("pane-authority"),
@@ -318,12 +323,15 @@ export function optionsFor(
 		},
 	};
 	const transport = {
+		ownsPendingReverseRequest: (request: TransportServerRequest) =>
+			!completedTransportRequestIds.has(String(request.requestId)),
 		respond: async (
-			request: unknown,
+			request: TransportServerRequest,
 			owner: ResponseOwner,
 			response: ReverseResponse,
 		): Promise<void> => {
 			transportResponses.push({ request, owner, response });
+			completedTransportRequestIds.add(String(request.requestId));
 		},
 	};
 	const options = {

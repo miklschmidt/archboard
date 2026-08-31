@@ -11,6 +11,7 @@ import {
 } from "./contract.js";
 import {
 	blockedDynamicResponse,
+	createOrdinaryWireOwners,
 	deferred,
 	DYNAMIC_QUARANTINE_WIRE_CAP,
 	type DispatchCandidate,
@@ -90,7 +91,7 @@ export function createDynamicQuarantineDispatcher(
 ): DynamicQuarantineDispatcher {
 	let disposed = false;
 	const quarantines = new Map<string, EpochQuarantineOwner>();
-	const completedWires = new Map<string, Promise<DynamicToolCallResponse>>();
+	const ordinaryWires = createOrdinaryWireOwners();
 	const logicalRuns = new Map<string, LogicalRunOwner>();
 
 	const reportFatal = (
@@ -100,22 +101,25 @@ export function createDynamicQuarantineDispatcher(
 		cause: unknown,
 	): void => {
 		quarantine.state = "fatal";
-		options.lifecycle.reportFatalLifecycleFault(
-			Object.freeze({
-				child: quarantine.child,
-				epoch: quarantine.epoch,
-				reason,
-				message,
-				cause,
-			}),
-		);
+		try {
+			options.lifecycle.reportFatalLifecycleFault(
+				Object.freeze({
+					child: quarantine.child,
+					epoch: quarantine.epoch,
+					reason,
+					message,
+					cause,
+				}),
+			);
+		} catch {
+			/* Local fatal ownership remains authoritative when reporting fails. */
+		}
 	};
 
 	const clearWithoutResponses = (quarantine: EpochQuarantineOwner, error: unknown): void => {
 		if (quarantines.get(quarantine.key) === quarantine) quarantines.delete(quarantine.key);
 		quarantine.active = false;
 		for (const owner of quarantine.logicalOwners.values()) logicalRuns.delete(owner.key);
-		for (const wire of quarantine.wireOwners.values()) completedWires.delete(wire.key);
 		for (const wire of quarantine.wireOwners.values()) {
 			if (wire.settled) continue;
 			wire.settled = true;
@@ -195,7 +199,6 @@ export function createDynamicQuarantineDispatcher(
 			}
 			wire.settled = true;
 			wire.deferred.resolve(wire.response);
-			completedWires.set(wire.key, wire.deferred.promise);
 		}
 		quarantine.active = false;
 		quarantines.delete(quarantine.key);
@@ -266,7 +269,6 @@ export function createDynamicQuarantineDispatcher(
 				}
 				if (!quarantine.active) {
 					for (const logical of quarantine.logicalOwners.values()) logicalRuns.delete(logical.key);
-					for (const wire of quarantine.wireOwners.values()) completedWires.delete(wire.key);
 					return undefined;
 				}
 				clearWithoutResponses(
@@ -365,8 +367,6 @@ export function createDynamicQuarantineDispatcher(
 		} catch {
 			/* The exact response remains terminal when a non-quarantined child disconnects. */
 		}
-		const wireKey = requestWireKey(request);
-		if (wireKey !== null) completedWires.set(wireKey, Promise.resolve(response));
 		return response;
 	};
 
@@ -389,15 +389,23 @@ export function createDynamicQuarantineDispatcher(
 		run: () => Promise<DispatchCandidate>,
 	): Promise<DynamicToolCallResponse> => {
 		const wireKey = requestWireKey(request);
-		if (wireKey !== null) {
-			const completed = completedWires.get(wireKey);
-			if (completed !== undefined) return completed;
-		}
+		if (wireKey === null)
+			return run().then((candidate) => {
+				if (candidate.settlement !== null)
+					throw quarantineError("A mutation cannot execute without exact wire identity.");
+				return send(request, candidate.response);
+			});
+		const ordinaryExisting = ordinaryWires.get(wireKey);
+		if (ordinaryExisting !== undefined) return ordinaryExisting;
 		const key = requestEpochKey(request);
 		const quarantine = key === null ? undefined : quarantines.get(key);
 		if (quarantine?.active) {
-			const existing = wireKey === null ? undefined : quarantine.wireOwners.get(wireKey);
+			const existing = quarantine.wireOwners.get(wireKey);
 			if (existing !== undefined) return existing.deferred.promise;
+			if (!options.transport.ownsPendingReverseRequest(request, "codex-dynamic-tools"))
+				return Promise.reject(
+					quarantineError("The dynamic transport no longer owns this reverse request."),
+				);
 			const identity = mutationIdentity(request, options);
 			const ownerKey = identity === null ? null : logicalKey(identity);
 			const logical = ownerKey === null ? undefined : quarantine.logicalOwners.get(ownerKey);
@@ -410,54 +418,62 @@ export function createDynamicQuarantineDispatcher(
 			);
 		}
 		if (disposed) return Promise.reject(quarantineError("Dynamic tools are disposed."));
-		const identity = mutationIdentity(request, options);
-		const ownerKey = identity === null ? null : logicalKey(identity);
-		if (ownerKey !== null) {
-			const existing = logicalRuns.get(ownerKey);
-			if (existing !== undefined) return joinLogicalRun(existing, request);
-		}
-		const runOwner =
-			ownerKey === null ? null : { signal: deferred<LogicalRunSignal>(), retained: false };
-		if (ownerKey !== null && runOwner !== null) {
-			logicalRuns.set(ownerKey, runOwner);
-			void runOwner.signal.promise.catch(() => undefined);
-		}
-		const operation = run().then(async (candidate) => {
-			if (candidate.settlement === null) {
-				const response = await send(request, candidate.response);
-				runOwner?.signal.resolve({ response, quarantine: null });
-				return response;
+		if (!options.transport.ownsPendingReverseRequest(request, "codex-dynamic-tools"))
+			return Promise.reject(
+				quarantineError("The dynamic transport no longer owns this reverse request."),
+			);
+
+		const execute = (): Promise<DynamicToolCallResponse> => {
+			const identity = mutationIdentity(request, options);
+			const ownerKey = identity === null ? null : logicalKey(identity);
+			if (ownerKey !== null) {
+				const existing = logicalRuns.get(ownerKey);
+				if (existing !== undefined) return joinLogicalRun(existing, request);
 			}
-			try {
-				candidate.settlement.retireUnsettled();
-				const response = await send(request, candidate.response);
-				runOwner?.signal.resolve({ response, quarantine: null });
-				return response;
-			} catch (error) {
-				if (!(error instanceof CodexDynamicOperationTerminalizationError) || identity === null)
+			const runOwner =
+				ownerKey === null ? null : { signal: deferred<LogicalRunSignal>(), retained: false };
+			if (ownerKey !== null && runOwner !== null) {
+				logicalRuns.set(ownerKey, runOwner);
+				void runOwner.signal.promise.catch(() => undefined);
+			}
+			const operation = run().then(async (candidate) => {
+				if (candidate.settlement === null) {
+					const response = await send(request, candidate.response);
+					runOwner?.signal.resolve({ response, quarantine: null });
+					return response;
+				}
+				try {
+					candidate.settlement.retireUnsettled();
+					const response = await send(request, candidate.response);
+					runOwner?.signal.resolve({ response, quarantine: null });
+					return response;
+				} catch (error) {
+					if (!(error instanceof CodexDynamicOperationTerminalizationError) || identity === null)
+						throw error;
+					const response = enterQuarantine(identity, request, candidate);
+					const epochOwner = quarantines.get(requestEpochKey(request) ?? "");
+					if (epochOwner === undefined)
+						throw new Error("The unresolved mutation has no quarantine.", { cause: error });
+					if (runOwner !== null) runOwner.retained = true;
+					runOwner?.signal.resolve({ response: candidate.response, quarantine: epochOwner });
+					return response;
+				}
+			});
+			return operation.then(
+				(response) => {
+					if (ownerKey !== null && runOwner !== null && !runOwner.retained)
+						logicalRuns.delete(ownerKey);
+					return response;
+				},
+				(error) => {
+					runOwner?.signal.reject(error);
+					if (ownerKey !== null && runOwner !== null && !runOwner.retained)
+						logicalRuns.delete(ownerKey);
 					throw error;
-				const response = enterQuarantine(identity, request, candidate);
-				const epochOwner = quarantines.get(requestEpochKey(request) ?? "");
-				if (epochOwner === undefined)
-					throw new Error("The unresolved mutation has no quarantine.", { cause: error });
-				if (runOwner !== null) runOwner.retained = true;
-				runOwner?.signal.resolve({ response: candidate.response, quarantine: epochOwner });
-				return response;
-			}
-		});
-		return operation.then(
-			(response) => {
-				if (ownerKey !== null && runOwner !== null && !runOwner.retained)
-					logicalRuns.delete(ownerKey);
-				return response;
-			},
-			(error) => {
-				runOwner?.signal.reject(error);
-				if (ownerKey !== null && runOwner !== null && !runOwner.retained)
-					logicalRuns.delete(ownerKey);
-				throw error;
-			},
-		);
+				},
+			);
+		};
+		return ordinaryWires.own(wireKey, execute);
 	};
 
 	const inspect = (): DynamicMutationQuarantineInspection => {
@@ -480,6 +496,7 @@ export function createDynamicQuarantineDispatcher(
 		return Object.freeze({
 			epochCount: active.length,
 			callCount: entries.length,
+			ordinaryInFlightWireCount: ordinaryWires.size(),
 			wireCount: active.reduce((count, owner) => count + owner.wireOwners.size, 0),
 			blockedWireCount: active.reduce(
 				(count, owner) =>
@@ -500,7 +517,7 @@ export function createDynamicQuarantineDispatcher(
 				quarantineError("Dynamic tools were disposed while mutation terminality was unresolved."),
 			);
 		quarantines.clear();
-		completedWires.clear();
+		ordinaryWires.clear();
 		logicalRuns.clear();
 	};
 

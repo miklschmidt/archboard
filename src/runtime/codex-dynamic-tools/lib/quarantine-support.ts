@@ -28,6 +28,16 @@ export interface Deferred<Value> {
 	readonly reject: (error: unknown) => void;
 }
 
+export interface OrdinaryWireOwners {
+	readonly get: (key: string) => Promise<DynamicToolCallResponse> | undefined;
+	readonly own: (
+		key: string,
+		run: () => Promise<DynamicToolCallResponse>,
+	) => Promise<DynamicToolCallResponse>;
+	readonly size: () => number;
+	readonly clear: () => void;
+}
+
 export interface DispatchCandidate {
 	readonly response: DynamicToolCallResponse;
 	readonly settlement: DynamicOperationSettlement | null;
@@ -74,6 +84,44 @@ export function deferred<Value>(): Deferred<Value> {
 		reject = decline;
 	});
 	return Object.freeze({ promise, resolve, reject });
+}
+
+export function createOrdinaryWireOwners(): OrdinaryWireOwners {
+	const owners = new Map<string, Deferred<DynamicToolCallResponse>>();
+	const own = (
+		key: string,
+		run: () => Promise<DynamicToolCallResponse>,
+	): Promise<DynamicToolCallResponse> => {
+		const existing = owners.get(key);
+		if (existing !== undefined) return existing.promise;
+		const owner = deferred<DynamicToolCallResponse>();
+		owners.set(key, owner);
+		let operation: Promise<DynamicToolCallResponse>;
+		try {
+			operation = run();
+		} catch (error) {
+			operation = Promise.reject(error);
+		}
+		void operation.then(
+			(response) => {
+				if (owners.get(key) === owner) owners.delete(key);
+				owner.resolve(response);
+				return undefined;
+			},
+			(error) => {
+				if (owners.get(key) === owner) owners.delete(key);
+				owner.reject(error);
+				return undefined;
+			},
+		);
+		return owner.promise;
+	};
+	return Object.freeze({
+		get: (key: string) => owners.get(key)?.promise,
+		own,
+		size: () => owners.size,
+		clear: () => owners.clear(),
+	});
 }
 
 function isMutationTool(value: string): value is DynamicMutationToolName {

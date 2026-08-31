@@ -1450,9 +1450,11 @@ contracts:
 		"unresolvedTerminalAuthority": {
 			"transition": "host_confirmed_idempotent_atomic",
 			"logicalOwner": "exact_child_epoch_and_logical_call_quarantine",
-			"wireOwner": "one_original_transport_handle_per_admitted_json_rpc_request_id",
+			"wireOwner": "transport_pending_reverse_record_plus_leaf_in_flight_join",
+			"wireLifecycle": "accepted_transport_request_until_response_or_exact_teardown",
+			"ordinaryCompletionRetention": "none_in_leaf",
 			"epochStateBeforeRelease": "poisoned",
-			"sameRequestId": "deduplicate_without_second_response_write",
+			"sameRequestId": "join_once_while_authoritative_wire_lifecycle_is_active",
 			"sameLogicalCall": "admit_distinct_wire_and_fan_canonical_outcome",
 			"otherCallsInEpoch": "retain_distinct_wire_with_canonical_refusal_before_operation_id_approval_stage_or_effect",
 			"wireCapacity": 128,
@@ -1649,6 +1651,14 @@ pending. Before returning it, the dispatcher settles and removes the request
 and its visual authority. A new tool call starts over with new call identity,
 operation IDs, effect snapshot, hash, and decision. A late browser command is
 rejected at the browser boundary and cannot produce another tool response.
+
+The transport's pending reverse record owns each accepted wire from routing
+until one response or exact teardown. The dynamic dispatcher keeps only an
+in-flight join keyed by child, epoch, and request ID, so a reconstructed
+same-ID call joins before any effect. It drops that join at settlement and
+asks the transport to prove ownership before a later call can execute. There
+is no completed-response cache in the dynamic dispatcher and no lifetime
+limit on ordinary completed calls.
 
 Child disconnect is the one state in which a wire response cannot be
 delivered. The dispatcher still settles the request as disconnected, removes
