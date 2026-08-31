@@ -1,11 +1,11 @@
 ---
 id: TASK-144.09
 title: Document the Archboard UI aesthetic contract
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 02:10'
+updated_date: '2026-08-31 02:15'
 labels: []
 dependencies:
   - TASK-144.03
@@ -28,10 +28,10 @@ Own docs/design/archboard-ui-aesthetics.md before any semantic shell integration
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The guide names the TASK-140 reference/mockup as authority and documents canvas-first proportions, Swiss grid, typography, flat rules, small radii, cobalt/lime, restrained motion, and themes.
-- [ ] #2 It forbids generic bubbles/cards/gradients/glow/decorative shadows/mock data/framework defaults while distinguishing illustrative reference content from product state.
-- [ ] #3 It requires named modules, semantic utilities, native formatting/lint, accessibility, rendered inspection, and one behavior/state owner.
-- [ ] #4 This guide is a dependency of shell integration and future-agent enforcement; it does not claim that later rendered work already conforms.
+- [x] #1 The guide names the TASK-140 reference/mockup as authority and documents canvas-first proportions, Swiss grid, typography, flat rules, small radii, cobalt/lime, restrained motion, and themes.
+- [x] #2 It forbids generic bubbles/cards/gradients/glow/decorative shadows/mock data/framework defaults while distinguishing illustrative reference content from product state.
+- [x] #3 It requires named modules, semantic utilities, native formatting/lint, accessibility, rendered inspection, and one behavior/state owner.
+- [x] #4 This guide is a dependency of shell integration and future-agent enforcement; it does not claim that later rendered work already conforms.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -57,4 +57,18 @@ Reviewer remediation (2026-08-31):
 - Commit bab6cc217edb3ba91ec06094f85d7744dcc9c9eb removes the theoretical partial, stale-display, and separate error UI requirements from docs/design/archboard-ui-aesthetics.md. It does not authorize new preview states.
 - Focused documentation validation passed: all 10 local links resolve; bun run fmt, bun run fmt:check, and bun run lint pass; git diff --check passes; the remediation implementation commit changes only the aesthetic guide. No broad test lane applies to this wording-only correction.
 - TASK-144.09 remains In Progress for complete-range rereview.
+
+Root integration and finalization evidence (2026-08-31):
+- Independent complete-range rereview returned REVIEW_CLEAN at exact worker HEAD cc418dffab460b7b1599f101932dc20d73a16824. No findings remained after the preview-state remediation.
+- Integrated the review-clean range as 79ba1c6, 7b6a3d7, 1dea9ef, and a567e83 on the orchestration branch.
+- Focused checks passed: bunx oxfmt --check docs/design/archboard-ui-aesthetics.md; all 10 local links resolve; git diff --check HEAD~4..HEAD.
+- Root-owned capped lint passed in systemd unit archboard-task14409-lint-a567e83.service with MemoryMax=4G and MemorySwapMax=1G. Result success, exit 0, peak 1.5G, swap 0, no limit hit.
+- Root-owned capped repository validation passed in systemd unit archboard-task14409-repository-a567e83.service with MemoryMax=8G and MemorySwapMax=2G. Result success, exit 0, 137 tests and 1,177 expectations, peak 708.1M, swap 0, no limit hit.
+- No rendered code changed, so browser validation does not apply.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Documented the durable Archboard UI aesthetic contract, tied it to the TASK-140 reference, corrected preview-state language to match reachable product behavior, passed independent rereview, and completed focused plus capped repository validation.
+<!-- SECTION:FINAL_SUMMARY:END -->
