@@ -1,11 +1,11 @@
 ---
 id: TASK-143.07.04
 title: Deliver non-reentrant coordinator callbacks
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 21:38'
+updated_date: '2026-08-31 21:43'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -40,11 +40,11 @@ Delegation profile: gpt-5.6-luna, max.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The closed callback union covers operation accepted/queued/started/progress/attention/completed/failed/outcome_unknown and semantic change/focus/selection with immutable operation/thread/turn/queue/session correlation.
-- [ ] #2 After dequeue, the module revalidates current child/coordinator/realtime/link and chooses exactly one path: active realtime appendText, or inactive inject_items only for operation/queue/attention callbacks; semantic callbacks are silent while voice is inactive.
-- [ ] #3 Each callback uses exactly one developer-role message with one input_text part matching the canonical bytes, is attempted once, and settles delivered/not_delivered/outcome_unknown without fallback retry to the other path.
-- [ ] #4 Buffer order, coalescing, callback-during-callback, active-to-inactive race, stale session/link, child exit, lost response, reload, and bounded overflow are tested with no reentrant turn or duplicate narration.
-- [ ] #5 src/runtime/codex-coordinator-callbacks/tests/callbacks.test.ts exhausts the closed callback union, realtime/inject routing, ordering, coalescing, reentrancy, lifecycle races, stale identity, overflow, reload, and every delivery outcome using the canonical bytes.
+- [x] #1 The closed callback union covers operation accepted/queued/started/progress/attention/completed/failed/outcome_unknown and semantic change/focus/selection with immutable operation/thread/turn/queue/session correlation.
+- [x] #2 After dequeue, the module revalidates current child/coordinator/realtime/link and chooses exactly one path: active realtime appendText, or inactive inject_items only for operation/queue/attention callbacks; semantic callbacks are silent while voice is inactive.
+- [x] #3 Each callback uses exactly one developer-role message with one input_text part matching the canonical bytes, is attempted once, and settles delivered/not_delivered/outcome_unknown without fallback retry to the other path.
+- [x] #4 Buffer order, coalescing, callback-during-callback, active-to-inactive race, stale session/link, child exit, lost response, reload, and bounded overflow are tested with no reentrant turn or duplicate narration.
+- [x] #5 src/runtime/codex-coordinator-callbacks/tests/callbacks.test.ts exhausts the closed callback union, realtime/inject routing, ordering, coalescing, reentrancy, lifecycle races, stale identity, overflow, reload, and every delivery outcome using the canonical bytes.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -89,6 +89,16 @@ Capped validation archboard-1430704-remediate4-final-01.service printed cwd and 
 Fifth remediation closes the remaining timing-margin finding. The callback hot-reload owner now reserves TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_MARGIN_MS separately beyond the 32.1-second inner budget. The margin is two TEST_CANVAS_SHUTDOWN_TIMEOUT_MS intervals (2 seconds), and the timing documentation explicitly assigns it to mkdtemp/write/spawn/listener setup, record parsing/assertions, generation write, signal dispatch, failure diagnostics, and temporary-directory cleanup. The owner asserts outer timeout minus the complete two-record/two-shutdown/two-poll inner path is at least that margin.
 
 Capped validation archboard-1430704-remediate5-final-01.service printed cwd and cgroup, completed successfully with MemoryMax=6G and MemorySwapMax=1G, and passed the focused hot-reload owner (1 test, 4 assertions), both TypeScript graphs, scoped Oxlint/Oxfmt, timing-only staged scope checks, clean-tree checks, and the protected artifact size check. Peak memory was 1.8G with no swap. Protected /home/msc/Projects/archboard/src-DlBR1tzg.js remains 1,516,136 bytes with SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Known broad capped-OOM lanes were not rerun. Task remains In Progress with every acceptance criterion unchecked.
+
+Final evidence mapping after independent REVIEW_CLEAN on 5842f438..08d420fb:
+
+- AC1: callbacks.test.ts exercises and freezes all 11 callback variants with immutable operation, thread, turn, queue, link, provenance, and session correlation. Encoding owners enforce the authored byte and queue/RPC bounds.
+- AC2: route owners and authority-race tests prove live classifier, child, ready coordinator, link, and realtime/session revalidation. Active delivery uses one developer-role realtime append; eligible inactive operation callbacks inject once into the coordinator; inactive semantic callbacks stay silent.
+- AC3: exact encoding snapshots and request assertions prove one bounded canonical developer message with one input_text part. Delivery is attempted once and settles delivered, not_delivered, or outcome_unknown without route fallback.
+- AC4: lifecycle and authority-race owners prove FIFO, callback-during-callback non-reentrancy, coalescing, bounded overflow, disposal, active/inactive and stale-authority races, lost responses, and no duplicate narration. The owned bun --hot system test proves two production installer generations retain one callback identity and one listener cohort, with one delivery and complete cleanup. Its 34.1-second outer timeout covers the full inner path plus a separate 2-second case margin.
+- AC5: the callback test owner is split across callbacks.test.ts, encoding.test.ts, lifecycle.test.ts, authority-races.test.ts, and source-policy.test.ts to keep files below 500 lines. Together with callback-hot-reload.test.ts, it covers every listed union, routing, bytes, lifecycle, outcome, and reload case.
+
+Reviewer 01a05963-77ca-76b1-8aaa-855be8023e7e reported REVIEW_CLEAN with no findings. The reviewer confirmed production callback and hot-fixture bytes remained unchanged after acceptance, git diff --check passed, and the worktree was clean. Known 6G+1G capped-OOM evidence for broad repository-boundary, module-scope, and repository-policy lanes remains preserved and was not rerun.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -141,4 +151,16 @@ created: 2026-08-31 21:38
 ---
 Fifth remediation is ready for independent rereview. The callback hot-reload owner now has a separate timing-derived outer-case margin beyond the complete inner path; status and acceptance criteria remain unchanged.
 ---
+
+author: @codex
+created: 2026-08-31 21:43
+---
+Finalized after independent REVIEW_CLEAN on the complete fixed range. AC1 through AC5 are checked from the recorded focused tests, real hot-reload owner, and reviewer audit.
+---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Delivered the closed non-reentrant coordinator callback boundary with bounded canonical developer bytes, live authority checks, exact realtime/inactive routing, one-attempt settlement, bounded FIFO/coalescing, and real two-generation hot-reload coverage. Focused capped validation and independent complete-range review passed with no findings; broad known-OOM evidence was preserved.
+<!-- SECTION:FINAL_SUMMARY:END -->
