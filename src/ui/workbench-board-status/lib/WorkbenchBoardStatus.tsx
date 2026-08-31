@@ -42,16 +42,32 @@ function TakeBackOutcome({ snapshot }: { snapshot: WorkbenchBoardStatusSnapshot 
 	);
 }
 
-function SemanticStatus({ snapshot }: { snapshot: WorkbenchBoardStatusSnapshot }) {
+function SemanticAnnouncement({ snapshot }: { snapshot: WorkbenchBoardStatusSnapshot }) {
 	const semantic = snapshot.semanticContext;
 	const failure = semantic.state === "refused";
+	const announcement = `Semantic context ${semantic.label} ${semantic.description}`;
 	return (
 		<output
-			className="workbench-semantic mt-auto block border-t border-border-subtle pt-control font-sans text-body"
+			className="workbench-semantic-announcer sr-only"
+			data-semantic-announcer=""
 			data-semantic-state={semantic.state}
 			role={failure ? "alert" : "status"}
 			aria-live={failure ? "assertive" : "polite"}
 			aria-atomic="true"
+			aria-label={announcement}
+		>
+			{announcement}
+		</output>
+	);
+}
+
+function SemanticDetail({ snapshot }: { snapshot: WorkbenchBoardStatusSnapshot }) {
+	const semantic = snapshot.semanticContext;
+	return (
+		<div
+			className="workbench-semantic mt-auto border-t border-border-subtle pt-control font-sans text-body"
+			data-semantic-detail=""
+			data-semantic-state={semantic.state}
 		>
 			<span className="min-w-0 flex items-baseline gap-control">
 				<span className="text-kicker font-semibold text-muted-foreground">Semantic context</span>
@@ -60,7 +76,7 @@ function SemanticStatus({ snapshot }: { snapshot: WorkbenchBoardStatusSnapshot }
 			<span className="line-clamp-1 block text-muted-foreground" title={semantic.description}>
 				{semantic.description}
 			</span>
-		</output>
+		</div>
 	);
 }
 
@@ -153,6 +169,7 @@ export function WorkbenchBoardStatus({
 					</span>
 				</output>
 			</header>
+			<SemanticAnnouncement snapshot={snapshot} />
 
 			<div className="workbench-body" id={contentId} hidden={!expanded}>
 				<section className="workbench-history">
@@ -196,7 +213,7 @@ export function WorkbenchBoardStatus({
 						) : (
 							<p className="workbench-empty">No progress has been reported for this board.</p>
 						)}
-						<SemanticStatus snapshot={snapshot} />
+						<SemanticDetail snapshot={snapshot} />
 					</section>
 
 					<section className={`workbench-claim${claimed ? " is-claimed" : ""}`}>

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-31 17:51'
+updated_date: '2026-08-31 18:16'
 labels: []
 dependencies:
   - TASK-143.06.02
@@ -21,6 +21,7 @@ modified_files:
   - src/ui/canvas/useCanvasSession.ts
   - tests/system/browser/claim-interaction.test.ts
   - tests/system/browser/support/claim-interaction.ts
+  - tests/system/browser/support/semantic-accessibility.ts
   - tests/system/browser/support/workbench-metrics.ts
 parent_task_id: TASK-143.03
 priority: high
@@ -55,6 +56,8 @@ Delegation profile: gpt-5.6-sol, high.
 6. Remediate review: move take-back pending and settled state into Shell agentStates by pane, stamp each operation with a monotonic token, ignore stale settlements, and pass takeBackState as a controlled view input.
 
 7. Put semantic state, label, and detail in one atomic status region, using alert only for refused delivery; add exact-role/text module assertions and a delayed Pane A settlement browser case that proves Pane B remains idle.
+
+8. Keep one semantic announcer mounted beside the workbench summary outside the hidden disclosure body, render expanded semantic detail as non-live presentation, and verify collapsed polite and refused transitions through the browser accessibility tree without changing visual geometry.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -63,4 +66,6 @@ Delegation profile: gpt-5.6-sol, high.
 Implementation complete for independent review. Added the closed board-status projection and moved the TASK-140 workbench view into its owned module; shell composition now passes focused-pane connection, durable claim, doing history, and explicit take-back results without Codex execution state. Validation passed: 8 module tests / 106 expectations; both TypeScript projects; scoped Oxlint and Oxfmt; frontend build; repository inventory (39 tests); focused shell-layout browser owner (241 expectations); focused claim-interaction browser owner (88 expectations), including pending/success/failure, keyboard focus, both themes, semantic default, and unchanged note bytes. Direct in-app visual inspection at 1440x900 passed in light and dark with no root/body overflow and a 44px take-back target. The broader boundaries and module-scope repository owners exceeded the mandated 6 GiB cgroup and were OOM-killed; directly applicable scoped lint and inventory remained green. Task intentionally remains In Progress with acceptance criteria unchecked for parent review.
 
 Independent-review remediation complete. Shell now owns take-back pending and settled state in its pane-keyed agentStates, keys it to the pane board and durable claim, and stamps operations so a stale completion cannot replace newer pane state. WorkbenchBoardStatus receives controlled state and keeps no local settlement lifecycle. Semantic label and detail now share one atomic accessible region; refused is alert/assertive and the other five states are status/polite. Validation passed: module 8 tests / 124 expectations; both TypeScript projects; scoped Oxlint and Oxfmt; frontend build; shell-layout browser owner 241 expectations; claim-interaction browser owner 94 expectations, including delayed Pane A settlement while Pane B stays idle before and after completion and Pane A alone announces success. Board-note immutability and both themes remain covered. Per parent direction, the known 6 GiB OOM boundaries and module-scope lanes were not rerun; their prior OOM evidence is preserved. Task remains In Progress with ACs unchecked.
+
+Remediation 2 (2026-08-31): Kept exactly one atomic semantic announcer mounted outside the collapsed hidden disclosure body, with refused exposed as alert/assertive and every other state as status/polite. The expanded semantic detail is visual and non-live, so opening the workbench does not duplicate announcements. Module coverage verifies all six closed semantic states, one announcer, hidden-body separation, exact role/live/text, and non-live detail. The real browser owner verifies the workbench remains collapsed, the announcer has no hidden ancestor, and Chrome accessibility data reports exact status/polite/fresh and alert/assertive/refused nodes. Final capped validation passed: module 8 tests/178 assertions; type-check; scoped lint 0/0; scoped format check; frontend build; shell-layout 1 test/241 assertions; claim-interaction 1 test/102 assertions. The previously observed 6G+1G OOM evidence for the boundary and module-scope repository owners is preserved and those owners were not rerun, as requested. Task remains In Progress with acceptance criteria unchecked pending parent rereview.
 <!-- SECTION:NOTES:END -->

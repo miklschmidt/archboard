@@ -105,10 +105,16 @@ function render(options?: {
 	);
 }
 
-function semanticRegion(markup: string): string {
-	const region = markup.match(/<output class="workbench-semantic[\s\S]*?<\/output>/)?.[0];
+function semanticAnnouncer(markup: string): string {
+	const region = markup.match(/<output class="workbench-semantic-announcer[\s\S]*?<\/output>/)?.[0];
 	if (!region) throw new Error("Semantic status region is missing.");
 	return region;
+}
+
+function semanticDetail(markup: string): string {
+	const detail = markup.match(/<div class="workbench-semantic [\s\S]*?<\/div>/)?.[0];
+	if (!detail) throw new Error("Semantic visual detail is missing.");
+	return detail;
 }
 
 function regionText(region: string): string {
@@ -210,16 +216,27 @@ describe("workbench board status view", () => {
 		for (const semanticContext of SEMANTIC_STATES) {
 			const markup = render({ semanticContext });
 			const snapshot = project({ semanticContext });
-			const region = semanticRegion(markup);
+			const region = semanticAnnouncer(markup);
+			const detail = semanticDetail(markup);
 			const failure = semanticContext.state === "refused";
 			expect(markup).toContain(`data-semantic="${semanticContext.state}"`);
+			expect(markup.match(/data-semantic-announcer=""/g)).toHaveLength(1);
+			expect(markup).toContain('class="workbench-body"');
+			expect(markup).toContain('hidden=""');
+			expect(markup.indexOf(region)).toBeLessThan(markup.indexOf('class="workbench-body"'));
 			expect(region).toContain(`data-semantic-state="${semanticContext.state}"`);
 			expect(region).toContain(`role="${failure ? "alert" : "status"}"`);
 			expect(region).toContain(`aria-live="${failure ? "assertive" : "polite"}"`);
 			expect(region).toContain('aria-atomic="true"');
-			expect(regionText(region)).toBe(
-				`Semantic context ${snapshot.semanticContext.label} ${snapshot.semanticContext.description}`,
-			);
+			const announcement =
+				`Semantic context ${snapshot.semanticContext.label} ` +
+				snapshot.semanticContext.description;
+			expect(region).toContain(`aria-label="${announcement}"`);
+			expect(regionText(region)).toBe(announcement);
+			expect(detail).toContain(`data-semantic-state="${semanticContext.state}"`);
+			expect(detail).not.toContain("aria-live");
+			expect(detail).not.toContain('role="status"');
+			expect(detail).not.toContain('role="alert"');
 		}
 
 		for (const takeBackState of TAKE_BACK_STATES) {

@@ -24,6 +24,7 @@ import {
 	expectNoteUnchanged,
 	installClaimRecorder,
 	verifyBoardStatusPresentation,
+	verifyCollapsedSemanticAnnouncements,
 	verifyPaneScopedTakeBack,
 } from "./support/claim-interaction.ts";
 import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
@@ -162,6 +163,7 @@ test(
 		await using resources = new AsyncDisposableStack();
 		const { browser, canvas, clientId, noteFile, request } = await openSeededBoard(resources);
 		await installClaimRecorder(browser);
+		await verifyCollapsedSemanticAnnouncements(browser);
 		await browser.run(["click", ".workbench-toggle"]);
 		const initial = await readBanner(browser);
 		expect(initial).toMatchObject({ live: "polite", pane: "Pane A", state: "ready" });
