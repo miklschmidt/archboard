@@ -1,14 +1,13 @@
-import {
-	INITIAL_REALTIME_STATE,
-	transitionRealtimeState,
-	type AnswerSdp,
-	type RealtimeCorrelation,
-	type RealtimeHost,
-	type RealtimeRecoverableErrorReason,
-	type RealtimeState,
-	type RealtimeTerminalErrorReason,
-	type RealtimeUnsubscribe,
-} from "./contract.js";
+import { INITIAL_REALTIME_STATE, transitionRealtimeState } from "./contract.js";
+import type {
+	AnswerSdp,
+	RealtimeCorrelation,
+	RealtimeHost,
+	RealtimeRecoverableErrorReason,
+	RealtimeState,
+	RealtimeTerminalErrorReason,
+	RealtimeUnsubscribe,
+} from "../../../shared/codex-realtime-host/index.js";
 import { CODEX_REALTIME_START_MS, CODEX_REALTIME_STOP_MS } from "../../../shared/timing/timing.js";
 
 export const REALTIME_MEDIA_FEATURE = "webrtc-audio" as const;
