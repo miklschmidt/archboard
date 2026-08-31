@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 03:50'
+updated_date: '2026-08-31 03:56'
 labels: []
 dependencies:
   - TASK-144.05
@@ -67,4 +67,10 @@ Rereview remediation implemented in fc4d399 on fixed BASE 299286acb43b5a4e9ace71
 The --view parser now records every proposed file/action header before extracting only reviewed button/dialog create source. Captured hostile tests cover a third create, unexpected update, unsafe overwrite, changed second snapshot, nonempty initial status, and failed runner. Standard owner remains offline/deterministic with 9 tests / 40 expectations.
 
 Final focused evidence from clean fc4d399: bun test tests/system/repository-policy/shadcn-base-adoption.test.ts (9 pass / 40 expectations); focused Oxlint; focused Oxfmt; root TypeScript; git diff --check — all passed. Clean live evidence: ARCHBOARD_SHADCN_LIVE=1 bun test tests/system/repository-policy/shadcn-base-adoption.test.ts exited 0 with fatal=[]; status empty before/after; exact empty binary HEAD diff SHA-256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855; relevant tree hashes unchanged; capture /tmp/archboard-task14404-live-fail-closed.json SHA-256 55d9552b52bd17fbcfc0deeac68ac41f4aafd9bbc9b7edfebb2b7d9a545b8dd4. Package/lock, product source, Vite/TypeScript/Oxlint config, scripts, CI, and browser owners remain untouched. Acceptance criteria remain unchecked and TASK-144.04 remains In Progress.
+
+Final category-separation remediation implemented in 901c331 on fixed BASE 299286acb43b5a4e9ace716b5886d1a271a3b17a. Generated mutable registry imports/styles are classified as nonfatal registry package/source drift; generated source mismatch is nonfatal registry upstream drift. Checkout package.json/bun.lock and product-source findings are injected/read separately and classified as fatal checkout package/source adoption. Reviewed fixture hash/provenance mismatch is classified as fatal pinned fixture/provenance drift. fatalProbeRefusals includes checkout and pinned categories but not registry diagnostics.
+
+Focused hostile coverage remains offline/deterministic: 9 tests / 43 expectations, including injected checkout adoption, pure pinned-fatal classification, third create, unexpected update, mutation, dirty-before, failed runner, and unsafe overwrite. Focused Oxlint, Oxfmt, root TypeScript, and git diff --check pass.
+
+Clean live probe from 901c331: ARCHBOARD_SHADCN_LIVE=1 bun test tests/system/repository-policy/shadcn-base-adoption.test.ts exited 0 with fatal=[]; only info --json and add button dialog --dry-run --yes --view ran against local shadcn 4.19.0; parsed exactly button/dialog create actions; reported registry package/source drift plus registry upstream drift; no cleanup or rollback; empty status and identical binary/tree snapshots before/after. Capture /tmp/archboard-task14404-live-category-separation.json SHA-256 b80c0b57704c5d0f24782eaf6df1090d400b3718895f309f3625168da503770f. Task remains In Progress and ACs remain unchecked.
 <!-- SECTION:NOTES:END -->
