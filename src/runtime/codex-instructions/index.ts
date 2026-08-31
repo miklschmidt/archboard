@@ -22,6 +22,16 @@ export {
 } from "./lib/context.js";
 export type { ArchboardContext } from "./lib/context.js";
 
+export { ADDITIONAL_CONTEXT_POLICY } from "./lib/context-policy.js";
+export type {
+	AdditionalContextPolicy,
+	OperationKind,
+	OperationOutcome,
+	OperationRpc,
+	ThreadLinkReason,
+	ThreadLinkState,
+} from "./lib/context-policy.js";
+
 export {
 	AdditionalContextSchema,
 	createAdditionalContext,
