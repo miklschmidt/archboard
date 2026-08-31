@@ -1,23 +1,33 @@
+import { CodexEpochError } from "../../codex-epoch/index.js";
 import { ADDITIONAL_CONTEXT_POLICY } from "../../codex-instructions/index.js";
+import {
+	deepEqual,
+	cloneAndFreeze,
+	isEpochExecutionProof,
+	proofMatchesManifest,
+} from "./provenance.js";
+import {
+	isAllowedThreadLinkSource,
+	isExecutableThreadLinkStatus,
+	isThreadLinkStatus,
+} from "./classifier.js";
 import {
 	CodexThreadLinkConflictError,
 	CodexThreadLinkError,
+	type CodexThreadLinkBindingOptions,
 	type ThreadLink,
 	type ThreadLinkBindingSnapshot,
-	type CodexThreadLinkBindingOptions,
-	type ThreadLinkBindingStore,
+	type ThreadLinkClassification,
 	type ThreadLinkCasToken,
 	type ThreadLinkCompareAndSwapInput,
-	type ThreadLinkAllowedSource,
 	type ThreadLinkCurrentEpoch,
+	type ThreadLinkNonExecutableSnapshot,
 	type ThreadLinkSnapshot,
 	type ThreadLinkSource,
-	type ThreadLinkStatus,
+	type ThreadLinkBindingStore,
 	type UnboundThreadLink,
 } from "./contract.js";
 
-const ALLOWED_SOURCES = new Set(["cli", "vscode", "exec", "appServer"]);
-const STATUS_VALUES = new Set<ThreadLinkStatus>(["notLoaded", "idle", "systemError", "active"]);
 const REASON_VALUES = new Set<string>(
 	ADDITIONAL_CONTEXT_POLICY.threadLink.reasonPrecedence.map(({ reason }) => reason),
 );
@@ -49,41 +59,17 @@ function assertPaneId(paneId: string): void {
 	}
 }
 
-function cloneAndFreeze(value: unknown): unknown {
-	if (Array.isArray(value)) return Object.freeze(value.map(cloneAndFreeze));
-	if (!isRecord(value)) return value;
-	const copy = Object.fromEntries(
-		Object.entries(value).map(([key, child]) => [key, cloneAndFreeze(child)]),
-	);
-	return Object.freeze(copy);
-}
-
-function copyLink(link: ThreadLinkSnapshot): ThreadLinkSnapshot {
-	if (link.state === "unbound") return EMPTY_LINK;
-	if (link.state === "executable") {
-		return Object.freeze({
-			...link,
-			source: cloneAndFreeze(link.source) as ThreadLinkAllowedSource,
-		});
-	}
-	return Object.freeze({
-		...link,
-		source: cloneAndFreeze(link.source) as ThreadLinkSource,
-	});
-}
-
 function isThreadLinkSource(value: unknown): value is ThreadLinkSource {
-	if (typeof value === "string") return ALLOWED_SOURCES.has(value) || value === "unknown";
+	if (typeof value === "string") return isAllowedThreadLinkSource(value) || value === "unknown";
 	if (!isRecord(value)) return false;
-	if (Object.hasOwn(value, "custom")) return typeof value.custom === "string";
-	return Object.hasOwn(value, "subAgent");
+	return Object.hasOwn(value, "custom") || Object.hasOwn(value, "subAgent");
 }
 
 function isReason(value: unknown): boolean {
 	return typeof value === "string" && REASON_VALUES.has(value);
 }
 
-function assertLink(link: ThreadLinkSnapshot): void {
+function assertLink(link: ThreadLinkSnapshot, allowExecutable: boolean): void {
 	if (!isRecord(link) || link.kind !== "thread_link") {
 		throw invalidInput("A thread-link binding requires a thread_link snapshot.");
 	}
@@ -111,14 +97,19 @@ function assertLink(link: ThreadLinkSnapshot): void {
 	if (!isThreadLinkSource(link.source)) {
 		throw invalidInput("A bound thread link requires a recognized Codex thread source.");
 	}
-	if (!STATUS_VALUES.has(link.status as ThreadLinkStatus)) {
+	const status: unknown = link.status;
+	if (!isThreadLinkStatus(status)) {
 		throw invalidInput("A bound thread link requires a recognized Codex thread status.");
 	}
-	const status = link.status as ThreadLinkStatus;
 	if (typeof link.loaded !== "boolean" || typeof link.canAcceptDirectInput !== "boolean") {
 		throw invalidInput("A bound thread link must publish boolean loaded and direct-input state.");
 	}
 	if (link.state === "executable") {
+		if (!allowExecutable) {
+			throw invalidInput(
+				"Executable thread links can only be adopted by classifyAndBind through a live epoch proof.",
+			);
+		}
 		if (
 			typeof link.childId !== "string" ||
 			link.childId.length === 0 ||
@@ -127,10 +118,8 @@ function assertLink(link: ThreadLinkSnapshot): void {
 			!link.loaded ||
 			!link.canAcceptDirectInput ||
 			link.reason !== null ||
-			typeof link.source !== "string" ||
-			!ALLOWED_SOURCES.has(link.source) ||
-			status === "notLoaded" ||
-			status === "systemError"
+			!isAllowedThreadLinkSource(link.source) ||
+			!isExecutableThreadLinkStatus(status)
 		) {
 			throw invalidInput(
 				"An executable thread link must be current, loaded, directly writable, and top-level.",
@@ -197,26 +186,34 @@ function conflict(paneId: string, revision: number): CodexThreadLinkConflictErro
 	);
 }
 
+function isCurrentEpoch(value: unknown): value is ThreadLinkCurrentEpoch {
+	return (
+		isRecord(value) &&
+		typeof value.childId === "string" &&
+		value.childId.length > 0 &&
+		typeof value.epoch === "string" &&
+		value.epoch.length > 0
+	);
+}
+
 function liveEpochOf(options: CodexThreadLinkBindingOptions): ThreadLinkCurrentEpoch | null {
 	try {
 		if (options.currentEpoch !== undefined) {
 			const value =
 				typeof options.currentEpoch === "function" ? options.currentEpoch() : options.currentEpoch;
 			if (value === null) return null;
-			if (
-				!isRecord(value) ||
-				typeof value.childId !== "string" ||
-				value.childId.length === 0 ||
-				typeof value.epoch !== "string" ||
-				value.epoch.length === 0
-			) {
+			if (!isCurrentEpoch(value)) {
 				throw new Error("the current epoch source returned an invalid child/epoch pair");
 			}
-			return value as ThreadLinkCurrentEpoch;
+			return Object.freeze({ childId: value.childId, epoch: value.epoch });
 		}
 		if (options.epoch !== undefined) {
 			const active = options.epoch.snapshot().manifest.activeEpoch;
-			return active === null ? null : active;
+			if (active === null) return null;
+			if (!isCurrentEpoch(active)) {
+				throw new Error("the epoch store returned an invalid active child/epoch pair");
+			}
+			return Object.freeze({ childId: active.childId, epoch: active.epoch });
 		}
 	} catch (error) {
 		throw new CodexThreadLinkError(
@@ -235,7 +232,6 @@ function assertLiveEpoch(
 	next: ThreadLinkSnapshot,
 ): void {
 	if (next.state !== "executable") return;
-	if (options.currentEpoch === undefined && options.epoch === undefined) return;
 	const current = liveEpochOf(options);
 	if (current === null || next.childId !== current.childId || next.epoch !== current.epoch) {
 		throw new CodexThreadLinkConflictError(
@@ -244,9 +240,77 @@ function assertLiveEpoch(
 	}
 }
 
-export function createCodexThreadLinkBinding(
+function copyLink(link: ThreadLinkNonExecutableSnapshot | ThreadLink): ThreadLinkSnapshot {
+	if (link.state === "unbound") return EMPTY_LINK;
+	if (link.state === "executable") {
+		return Object.freeze({ ...link, source: cloneAndFreeze(link.source) });
+	}
+	return Object.freeze({ ...link, source: cloneAndFreeze(link.source) });
+}
+
+function assertAuthoritativeProof(
+	options: CodexThreadLinkBindingOptions,
+	paneId: string,
+	revision: number,
+	link: ThreadLink,
+	classification: ThreadLinkClassification,
+): void {
+	if (link.state !== "executable") return;
+	if (options.epoch === undefined || classification.proof === null) {
+		throw invalidInput(
+			"An executable thread link requires a classifier result with a live durable epoch proof.",
+		);
+	}
+	const proof = classification.proof;
+	if (!isEpochExecutionProof(proof)) {
+		throw invalidInput("The executable thread-link proof is malformed; classify the target again.");
+	}
+	let liveProof;
+	try {
+		liveProof = options.epoch.assertCurrent({
+			childId: link.childId,
+			epoch: link.epoch,
+			operationId: proof.record.correlation.operationId,
+			threadId: link.threadId,
+		});
+		const manifest = options.epoch.snapshot().manifest;
+		if (
+			!proofMatchesManifest(liveProof, manifest) ||
+			!deepEqual(liveProof, proof) ||
+			liveProof.record.correlation.childId !== link.childId ||
+			liveProof.record.correlation.epoch !== link.epoch ||
+			liveProof.record.provenance.threadId !== link.threadId
+		) {
+			throw new CodexThreadLinkConflictError(
+				`The executable thread link for pane ${JSON.stringify(paneId)} changed before adoption at binding revision ${revision}; classify again with the current epoch proof.`,
+			);
+		}
+	} catch (error) {
+		if (error instanceof CodexThreadLinkConflictError) throw error;
+		if (error instanceof CodexEpochError) {
+			throw new CodexThreadLinkConflictError(
+				`The executable thread link for pane ${JSON.stringify(paneId)} is no longer current (${error.code}); classify again before adopting it.`,
+			);
+		}
+		throw new CodexThreadLinkError(
+			"current_epoch_unavailable",
+			"The live epoch proof could not be revalidated; the pane binding was not changed.",
+			error,
+		);
+	}
+}
+
+interface ThreadLinkBindingController extends ThreadLinkBindingStore {
+	readonly commitClassified: (
+		paneId: string,
+		expected: ThreadLinkCasToken | null,
+		classification: ThreadLinkClassification,
+	) => ThreadLinkBindingSnapshot;
+}
+
+export function createCodexThreadLinkBindingController(
 	options: CodexThreadLinkBindingOptions = {},
-): ThreadLinkBindingStore {
+): ThreadLinkBindingController {
 	const bindings = new Map<string, ThreadLinkBindingSnapshot>();
 
 	const snapshot = (paneId: string): ThreadLinkBindingSnapshot => {
@@ -258,9 +322,15 @@ export function createCodexThreadLinkBinding(
 		return initial;
 	};
 
-	const compareAndSwap = ({ paneId, expected, next }: ThreadLinkCompareAndSwapInput) => {
+	const compareAndSwapInternal = (
+		paneId: string,
+		expected: ThreadLinkCasToken | null,
+		next: ThreadLinkSnapshot,
+		allowExecutable: boolean,
+		classification?: ThreadLinkClassification,
+	): ThreadLinkBindingSnapshot => {
 		assertPaneId(paneId);
-		assertLink(next);
+		assertLink(next, allowExecutable);
 		const current = snapshot(paneId);
 		if (expected === null) {
 			if (current.revision !== 0 || current.link.state !== "unbound") {
@@ -271,6 +341,11 @@ export function createCodexThreadLinkBinding(
 			if (!sameCas(expected, current.cas)) throw conflict(paneId, current.revision);
 		}
 		assertLiveEpoch(options, paneId, current.revision, next);
+		if (classification !== undefined) {
+			if (next.state === "executable") {
+				assertAuthoritativeProof(options, paneId, current.revision, next, classification);
+			}
+		}
 		const revision = current.revision + 1;
 		const link = copyLink(next);
 		const cas = casFor(paneId, revision, link);
@@ -279,11 +354,35 @@ export function createCodexThreadLinkBinding(
 		return updated;
 	};
 
-	const bind = (paneId: string, expected: ThreadLinkCasToken | null, next: ThreadLink) =>
-		compareAndSwap({ paneId, expected, next });
+	const compareAndSwap = (input: ThreadLinkCompareAndSwapInput): ThreadLinkBindingSnapshot =>
+		compareAndSwapInternal(input.paneId, input.expected, input.next, false);
 
 	const clear = (paneId: string, expected: ThreadLinkCasToken | null) =>
-		compareAndSwap({ paneId, expected, next: EMPTY_LINK });
+		compareAndSwapInternal(paneId, expected, EMPTY_LINK, false);
 
-	return Object.freeze({ snapshot, read: snapshot, compareAndSwap, bind, clear });
+	const commitClassified = (
+		paneId: string,
+		expected: ThreadLinkCasToken | null,
+		classification: ThreadLinkClassification,
+	) => compareAndSwapInternal(paneId, expected, classification.link, true, classification);
+
+	return Object.freeze({
+		snapshot,
+		read: snapshot,
+		compareAndSwap,
+		clear,
+		commitClassified,
+	});
+}
+
+export function createCodexThreadLinkBinding(
+	options: CodexThreadLinkBindingOptions = {},
+): ThreadLinkBindingStore {
+	const controller = createCodexThreadLinkBindingController(options);
+	return Object.freeze({
+		snapshot: controller.snapshot,
+		read: controller.read,
+		compareAndSwap: controller.compareAndSwap,
+		clear: controller.clear,
+	});
 }
