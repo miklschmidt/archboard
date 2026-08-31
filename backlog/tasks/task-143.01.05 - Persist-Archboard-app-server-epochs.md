@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 04:08'
+updated_date: '2026-08-31 04:30'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -50,4 +50,6 @@ Reserved after TASK-143.01.04 finalized at integration HEAD 6515ee1. This depend
 Implementation commit 431f18d (based on 6d0f8e562e97eb0b555e27c6abda58ed8f8ff194). Added the module-root codex-epoch owner with a canonical, fsynced twin manifest/journal, atomic publish ordering, durable lock lease, exact child/epoch/operation CAS, staged/committed/rolled_back/inspect_only transitions, outcome_unknown confirmation rules, strict corruption validation, and replacement-child refusal.
 
 Focused evidence: bunx oxlint src/runtime/codex-epoch; bunx oxfmt --check src/runtime/codex-epoch; bunx tsc --noEmit --pretty false; bun test --isolate src/runtime/codex-epoch/tests (14 pass, 126 expectations); git diff --cached --check. Storage-failure tests inject target_stat, temp_open, temp_write, temp_fsync, temp_close, publish, directory_open, directory_fsync, and directory_close in both records-first staging and manifest-first commit. Codex-home and sqlite-home byte/inode/mode/directory sentinels remain unchanged across success, refusal, rollback, replacement, corruption, and injected durability failures. Broad module/system/repository/check/browser lanes were not rerun; the root owner retains those gates. Task remains In Progress and acceptance criteria remain unchecked for independent review.
+
+Review remediation commit 973a3b5 closes the reproduced parent-symlink storage escape, replacement-child tombstone relink, and stale-lock ABA race. Fail-first evidence: archboard-task1430105-failfirst-r1.service produced 3/3 hostile failures with MemoryPeak 13.2M and swap 0B. The earlier durability note is superseded: its matrix exercised only the first-written target for stage and commit, not both targets or rollback/outcome_unknown. Corrected matrix evidence in archboard-task1430105-durability-r2.service covers stage, commit, rollback, and outcome_unknown; first and second targets in records-first and manifest-first order; target_stat through directory_close; exact before/corrupt/after restart state, in-process quarantine, preserved twin evidence, and unchanged Codex-store sentinels: 5 pass, 446 expectations, MemoryPeak 27M, swap 0B. Additional capped evidence: archboard-task1430105-remediation-r1.service 3 pass/12 expectations, MemoryPeak 14.1M, swap 0B; archboard-task1430105-codex-epoch-r1.service 20 pass/510 expectations, MemoryPeak 34.7M, swap 0B; archboard-task1430105-typecheck-r1.service success, MemoryPeak 1.4G, swap 0B; archboard-task1430105-lint-r2.service 0 warnings/errors, MemoryPeak 307.4M, swap 0B; archboard-task1430105-fmtcheck-r1.service success, MemoryPeak 28M, swap 0B; git diff --check clean. Broad module/system/repository/check/browser lanes remain with the capped root owner. Task remains In Progress and all acceptance criteria remain unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
