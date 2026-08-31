@@ -43,7 +43,7 @@ export type {
 	RecoveryRequest,
 	RemoteMediaAttachment,
 	StopRequest,
-} from "./lib/contract.js";
+} from "../../shared/codex-realtime-host/index.js";
 
 export type {
 	RealtimeMediaListener,
