@@ -165,6 +165,7 @@ describe("assistant-ui dependency and import policy", () => {
 		const graph = assistantUiDependencyGraph();
 		expect(new Set(graph.keys())).toEqual(ASSISTANT_UI_TRANSITIVE_ALLOWLIST);
 		for (const [identity, manifest] of graph) {
+			if (typeof manifest.license !== "string") throw new Error(`missing license for ${identity}`);
 			expect(["MIT", "BSD-3-Clause", "0BSD"], identity).toContain(manifest.license);
 		}
 	});
@@ -255,11 +256,10 @@ describe("assistant-ui dependency and import policy", () => {
 		}
 	});
 	test("rejects local aliases and nested primitive internals", async () => {
-		const composerCase = (body: string, message = "Do not alias an assistant-ui import") => [
-			`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\n${body}`,
-			message,
-		];
-		const cases = [
+		const composerImport = `import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";`;
+		const composerCase = (body: string, message = "Do not alias an assistant-ui import") =>
+			[`${composerImport}\n${body}`, message] satisfies [string, string];
+		const cases: Array<[string, string]> = [
 			[
 				`import { ComposerPrimitive as Primitive } from "${ASSISTANT_UI_PACKAGE}";\nvoid Primitive;`,
 				"Do not alias an assistant-ui import",
