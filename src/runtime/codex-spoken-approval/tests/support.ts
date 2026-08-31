@@ -101,6 +101,8 @@ export class FakeRealtime {
 
 export interface HarnessOptions {
 	readonly records?: readonly RealtimeTranscriptRecord[];
+	readonly command?: string | null;
+	readonly omitCommand?: boolean;
 	readonly turnFailure?: Error;
 	readonly deferTurn?: boolean;
 	readonly settlementFailure?: "not_delivered" | "outcome_unknown";
@@ -124,8 +126,13 @@ export interface GateHarness {
 	readonly fallbackReasons: readonly string[];
 }
 
-function approvalRequest(identity: IdentityAuthority): TransportServerRequest {
+function approvalRequest(
+	identity: IdentityAuthority,
+	options: Pick<HarnessOptions, "command" | "omitCommand">,
+): TransportServerRequest {
 	const requestId = identity.decoder.adoptJsonRpcRequestId("approval-request");
+	const command = options.command === undefined ? "echo approved" : options.command;
+	const commandField = options.omitCommand ? {} : { command };
 	const params = {
 		kind: "command",
 		threadId: "coordinator-thread",
@@ -136,13 +143,13 @@ function approvalRequest(identity: IdentityAuthority): TransportServerRequest {
 		environmentId: null,
 		reason: "Run the reviewed command",
 		networkApprovalContext: null,
-		command: "echo approved",
 		cwd: "/workspace",
 		commandActions: null,
 		additionalPermissions: null,
 		proposedExecpolicyAmendment: null,
 		proposedNetworkPolicyAmendments: null,
 		availableDecisions: ["accept", "decline"],
+		...commandField,
 	} satisfies Extract<
 		TransportServerRequest,
 		{ readonly method: "item/commandExecution/requestApproval" }
@@ -233,7 +240,7 @@ export function makeHarness(options: HarnessOptions = {}): GateHarness {
 		transport: port,
 		getCurrentBinding: () => currentBinding,
 	});
-	const approval = broker.receive(approvalRequest(identity));
+	const approval = broker.receive(approvalRequest(identity, options));
 	const threadId = approval.threadId;
 	const turnId = identity.decoder.adoptTurnId("classifier-turn");
 	const turn: SessionTurn = {
@@ -263,14 +270,14 @@ export function makeHarness(options: HarnessOptions = {}): GateHarness {
 		"final",
 		PROMPT.itemId,
 		PROMPT.sequence,
-		"Run echo approved",
+		"Run echo approved in /workspace",
 	);
 	const realtime = new FakeRealtime(options.records ?? [prompt]);
 	let coordinatorState = readySnapshot(identity, threadId);
 	const context = classifierContext(identity, threadId, "classifier-operation");
 	const armInput: SpokenApprovalArmInput = {
 		requestId: approval.requestId,
-		effectSummary: "Run echo approved",
+		effectSummary: "Run echo approved in /workspace",
 		realtime: REALTIME,
 		effectPrompt: PROMPT,
 		classifier: {

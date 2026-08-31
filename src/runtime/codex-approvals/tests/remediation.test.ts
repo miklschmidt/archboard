@@ -4,6 +4,7 @@ import type { ApprovalBinding, BrowserApprovalResponse } from "../index.js";
 import {
 	closeBroker,
 	commandRequestWithAvailableDecisions,
+	commandRequestWithoutCommand,
 	commandRequestWithoutAvailableDecisions,
 	expectSingleResponse,
 	testBroker,
@@ -35,6 +36,21 @@ const networkResponse: BrowserApprovalResponse = {
 };
 
 describe("Codex approval remediation", () => {
+	test.each(["null", "omitted"] as const)("keeps %s command approvals visual-only", (shape) => {
+		const fixture = testBroker();
+		try {
+			const pending = fixture.broker.receive(
+				commandRequestWithoutCommand(fixture.identity, `spoken-${shape}`, shape),
+			);
+			expect(fixture.broker.spokenEligibility(pending.requestId)).toEqual({
+				eligible: false,
+				reason: "unsupported_schema",
+			});
+		} finally {
+			closeBroker(fixture.broker);
+		}
+	});
+
 	test("treats an explicit null link as revocation in captured evidence", async () => {
 		const live: Partial<ApprovalBinding> = {
 			link: "link-a",
