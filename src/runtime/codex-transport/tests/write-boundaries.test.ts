@@ -1,17 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { CodexTransportRequestError } from "../index.js";
+import { CodexTransportRequestError } from "../errors.js";
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
-import { closeTransport, createHarness } from "./fake-child.js";
-
-async function captureRejection(promise: Promise<unknown>): Promise<unknown> {
-	try {
-		await promise;
-	} catch (error) {
-		return error;
-	}
-	throw new Error("Expected the operation to reject");
-}
+import { captureRejection, closeTransport, createHarness } from "./fake-child.js";
 
 describe("Codex app-server write boundaries", () => {
 	test("classifies pre-write rejection and accepted writer failure separately", async () => {

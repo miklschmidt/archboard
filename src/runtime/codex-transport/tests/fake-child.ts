@@ -1,12 +1,8 @@
 import { EventEmitter } from "node:events";
 import { PassThrough, Writable } from "node:stream";
 
-import {
-	createCodexTransport,
-	type CodexTransport,
-	type CodexTransportChild,
-	type DynamicDispatcherRegistration,
-} from "../index.js";
+import { createCodexTransport, type CodexTransport, type CodexTransportChild } from "../index.js";
+import type { DynamicDispatcherRegistration } from "../server-requests.js";
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
@@ -78,6 +74,15 @@ export function createHarness(
 
 export async function closeTransport(transport: CodexTransport): Promise<void> {
 	await transport.shutdown();
+}
+
+export async function captureRejection(promise: Promise<unknown>): Promise<unknown> {
+	try {
+		await promise;
+	} catch (error) {
+		return error;
+	}
+	throw new Error("Expected the operation to reject");
 }
 
 export function frames(child: FakeChild): WireFrame[] {

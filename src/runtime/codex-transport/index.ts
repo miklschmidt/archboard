@@ -1,48 +1,10 @@
-export { createCodexTransport } from "./lib/transport.js";
-export {
-	CodexTransportClosedError,
-	CodexTransportError,
-	CodexTransportOwnershipError,
-	CodexTransportRemoteError,
-	CodexTransportRequestError,
-	CodexTransportUsageError,
-	CodexTransportWriteError,
-} from "./lib/errors.js";
-export type {
-	CodexRemoteError,
-	CodexRequestFailureReason,
-	CodexRequestOutcome,
-	TransportRemoteErrorSummary,
-} from "./lib/errors.js";
-export { HUMAN_APPROVAL_METHODS, SESSION_SERVER_REQUEST_METHODS } from "./lib/types.js";
 export type {
 	CodexTransport,
 	CodexTransportChild,
 	CodexTransportOptions,
 	CodexTransportRequestOptions,
 	CodexTransportResponse,
-	DynamicDispatcherOwner,
-	DynamicDispatcherRegistration,
-	DynamicServerRequest,
-	HumanApprovalMethod,
-	LateResponseKind,
-	LateResponseOutcome,
-	ResponseOwner,
-	ReverseResponse,
-	SessionServerRequestMethod,
-	TransportExit,
-	TransportFrameCorrelation,
-	TransportIssue,
-	TransportIssueKind,
-	TransportLateResponse,
-	TransportLateResponseFor,
-	TransportLateMalformedPayload,
-	TransportLateRedactedPayload,
-	TransportServerNotification,
-	TransportServerRequest,
-	TransportSnapshot,
-	TransportStderrChunk,
-	TransportStderrSnapshot,
 	TransportRequestFailure,
-	Unsubscribe,
-} from "./lib/types.js";
+} from "./client.js";
+
+export { createCodexTransport } from "./client.js";
