@@ -1,17 +1,27 @@
 import { describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { mkdtempSync, rmSync } from "node:fs";
-import { readFile, readdir } from "node:fs/promises";
+import {
+	existsSync,
+	mkdtempSync,
+	readFileSync,
+	readlinkSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
+import { readFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { build, type InlineConfig } from "vite";
+import type { InlineConfig } from "vite";
 import {
+	buildViteTailwindFixture,
+	childLineReader,
 	createViteTailwindFixture,
+	prefixedFixtureRoots,
+	reapChild,
 	toPosixSpecifier,
+	withReapedChild,
 	withViteTailwindFixture,
-	writeViteTailwindFixture,
 } from "./support/vite-tailwind-fixture.ts";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -25,6 +35,7 @@ type PluginLike = { name?: unknown };
 type OutputContract = { chunkFileNames?: (chunk: { name: string }) => string };
 type ProxyContract = { target?: string; changeOrigin?: boolean };
 type ResolveOptions = NonNullable<InlineConfig["resolve"]>;
+type AliasEntry = { find: string | RegExp; replacement?: string };
 
 function pluginName(value: unknown): string | undefined {
 	if (typeof value !== "object" || value === null || !("name" in value)) return undefined;
@@ -49,6 +60,30 @@ function isWithin(root: string, candidate: string): boolean {
 	return pathFromRoot === "" || (!isAbsolute(pathFromRoot) && !parts.includes(".."));
 }
 
+function aliasEntries(config: InlineConfig): AliasEntry[] | undefined {
+	const aliases = config.resolve?.alias;
+	if (aliases === undefined || aliases === null) return undefined;
+	if (Array.isArray(aliases)) return aliases as AliasEntry[];
+	if (typeof aliases !== "object") return undefined;
+	return Object.entries(aliases).map(([find, replacement]) => ({
+		find,
+		replacement: typeof replacement === "string" ? replacement : undefined,
+	}));
+}
+
+function aliasMatches(find: string | RegExp, importee: string): boolean {
+	if (typeof find === "string") return importee === find || importee.startsWith(`${find}/`);
+	const lastIndex = find.lastIndex;
+	find.lastIndex = 0;
+	const matches = find.test(importee);
+	find.lastIndex = lastIndex;
+	return matches;
+}
+
+function overlapsAt(find: string | RegExp): boolean {
+	return ["@", "@/", "@/ui", "@/ui/source.ts"].some((importee) => aliasMatches(find, importee));
+}
+
 function assertViteContract(config: InlineConfig): void {
 	const registrations = tailwindRegistrationCount(config.plugins);
 	if (registrations === 0) {
@@ -60,24 +95,23 @@ function assertViteContract(config: InlineConfig): void {
 		);
 	}
 
-	const aliases = config.resolve?.alias;
-	if (
-		Array.isArray(aliases) ||
-		aliases === undefined ||
-		aliases === null ||
-		typeof aliases !== "object"
-	) {
-		throw new Error(
-			"Vite fixture contract: production @/ alias authority must be exactly one object entry; overlapping string or regex aliases are forbidden.",
-		);
+	const aliases = aliasEntries(config);
+	if (aliases === undefined) {
+		throw new Error("Vite fixture contract: production aliases must contain one exact @ entry.");
 	}
-	const aliasEntries = Object.entries(aliases);
-	if (aliasEntries.length !== 1 || aliasEntries[0]?.[0] !== "@") {
-		throw new Error(
-			"Vite fixture contract: production @/ alias authority must be exactly the single @ entry; overlapping aliases are forbidden.",
-		);
+	const canonicalAliases = aliases.filter((entry) => entry.find === "@");
+	if (canonicalAliases.length === 0) {
+		throw new Error("Vite fixture contract: production aliases must contain one exact @ entry.");
 	}
-	const configuredAlias = aliasEntries[0][1];
+	if (canonicalAliases.length > 1) {
+		throw new Error("Vite fixture contract: duplicate @ aliases are forbidden.");
+	}
+	for (const alias of aliases) {
+		if (alias.find !== "@" && overlapsAt(alias.find)) {
+			throw new Error(`Vite fixture contract: overlapping alias ${String(alias.find)} shadows @/.`);
+		}
+	}
+	const configuredAlias = canonicalAliases[0]?.replacement;
 	if (typeof configuredAlias !== "string" || !isAbsolute(configuredAlias)) {
 		throw new Error(
 			`Vite fixture contract: @/ alias must be an absolute repository src path: ${String(configuredAlias)}.`,
@@ -111,7 +145,7 @@ function assertViteContract(config: InlineConfig): void {
 		);
 	}
 
-	const output = config.build.rollupOptions?.output as OutputContract | undefined;
+	const output = config.build?.rollupOptions?.output as OutputContract | undefined;
 	if (typeof output?.chunkFileNames !== "function") {
 		throw new Error("Vite fixture contract: production Excalidraw chunk naming is missing.");
 	}
@@ -157,87 +191,37 @@ function gitSnapshot(): { status: string; diff: string } {
 }
 
 async function buildFixture(config: InlineConfig): Promise<string> {
-	return await withViteTailwindFixture(
-		async (fixture) => {
-			await writeViteTailwindFixture(fixture);
-			await build({
-				...config,
-				configFile: false,
-				root: fixture.projectRoot,
-				logLevel: "silent",
-				resolve: { ...config.resolve, alias: { "@": fixture.sourceRoot } },
-				build: {
-					...config.build,
-					outDir: fixture.outputRoot,
-					emptyOutDir: true,
-					rollupOptions: {
-						...config.build?.rollupOptions,
-						input: join(fixture.projectRoot, "frontend/index.html"),
-					},
-				},
-			});
-
-			const cssFiles = (await readdir(join(fixture.outputRoot, "assets"))).filter((file) =>
-				file.endsWith(".css"),
-			);
-			if (cssFiles.length !== 1)
-				throw new Error(`Vite fixture emitted ${cssFiles.length} CSS files.`);
-			return await readFile(join(fixture.outputRoot, "assets", cssFiles[0]!), "utf8");
-		},
-		tmpdir(),
-		repoRoot,
-	);
+	return await buildViteTailwindFixture(config, tmpdir(), repoRoot);
 }
 
-async function waitForFile(filename: string): Promise<void> {
-	for (let attempt = 0; attempt < 1000; attempt++) {
-		if (existsSync(filename)) return;
-		await Bun.sleep(5);
+function runOwnedFixtureChild(parent: string, mode: "hold" | "fail"): ReturnType<typeof Bun.spawn> {
+	const supportPath = join(
+		repoRoot,
+		"tests/system/repository-policy/support/vite-tailwind-fixture.ts",
+	);
+	const script = `(async () => {
+	const { runOwnedViteTailwindFixture } = await import(${JSON.stringify(pathToFileURL(supportPath).href)});
+	const config = (await import(${JSON.stringify(pathToFileURL(configPath).href)})).default;
+	await runOwnedViteTailwindFixture(config, {
+		parent: ${JSON.stringify(parent)},
+		dependenciesRoot: ${JSON.stringify(repoRoot)},
+		failAfterReady: ${mode === "fail"},
+		holdAfterReady: ${mode === "hold"},
+	});
+})().catch(() => process.exit(1));`;
+	return Bun.spawn(["bun", "-e", script], {
+		cwd: parent,
+		stdin: "pipe",
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+}
+
+function childStdout(child: ReturnType<typeof Bun.spawn>): ReadableStream<Uint8Array> {
+	if (child.stdout === undefined || typeof child.stdout === "number") {
+		throw new Error("Fixture owner stdout must be piped.");
 	}
-	throw new Error(`Timed out waiting for ${filename}.`);
-}
-
-function runSignalFixture(parent: string, marker: string): ReturnType<typeof Bun.spawn> {
-	const supportPath = join(
-		repoRoot,
-		"tests/system/repository-policy/support/vite-tailwind-fixture.ts",
-	);
-	const script = `(async () => {
-	const { createViteTailwindFixture } = await import(${JSON.stringify(pathToFileURL(supportPath).href)});
-	const fixture = await createViteTailwindFixture(${JSON.stringify(parent)}, ${JSON.stringify(repoRoot)});
-	process.on("SIGTERM", async () => {
-		await fixture.dispose();
-		process.exit(0);
-	});
-	const { writeFileSync } = await import("node:fs");
-	writeFileSync(${JSON.stringify(marker)}, fixture.root);
-	setInterval(() => {}, 1000);
-})().catch(() => process.exit(1));`;
-	return Bun.spawn(["bun", "-e", script], {
-		cwd: parent,
-		stdout: "ignore",
-		stderr: "pipe",
-	});
-}
-
-function runFailingFixture(parent: string, marker: string): ReturnType<typeof Bun.spawn> {
-	const supportPath = join(
-		repoRoot,
-		"tests/system/repository-policy/support/vite-tailwind-fixture.ts",
-	);
-	const script = `(async () => {
-	const { withViteTailwindFixture } = await import(${JSON.stringify(pathToFileURL(supportPath).href)});
-	const { writeFileSync } = await import("node:fs");
-	await withViteTailwindFixture(async (fixture) => {
-		writeFileSync(${JSON.stringify(marker)}, fixture.root);
-		throw new Error("fixture child failure");
-	}, ${JSON.stringify(parent)}, ${JSON.stringify(repoRoot)});
-})().catch(() => process.exit(1));`;
-	return Bun.spawn(["bun", "-e", script], {
-		cwd: parent,
-		stdout: "ignore",
-		stderr: "pipe",
-	});
+	return child.stdout;
 }
 
 describe("Vite Tailwind configuration", () => {
@@ -255,10 +239,11 @@ describe("Vite Tailwind configuration", () => {
 	});
 
 	test("keeps fixture cleanup safe around an existing colliding sibling", async () => {
-		const fixture = await createViteTailwindFixture();
+		const fixture = await createViteTailwindFixture(tmpdir(), repoRoot);
 		const sibling = `${fixture.root}.existing`;
 		writeFileSync(sibling, "preserve me");
 		try {
+			expect(readlinkSync(join(fixture.root, "node_modules"))).toBe(join(repoRoot, "node_modules"));
 			await fixture.dispose();
 			expect(readFileSync(sibling, "utf8")).toBe("preserve me");
 		} finally {
@@ -268,17 +253,41 @@ describe("Vite Tailwind configuration", () => {
 
 	test("cleans a signaled fixture before the child exits", async () => {
 		const parent = mkdtempSync(join(tmpdir(), "archboard-vite-signal-parent-"));
-		const marker = join(parent, "fixture-root.txt");
+		const before = gitSnapshot();
+		let child: ReturnType<typeof Bun.spawn> | undefined;
 		try {
-			const child = runSignalFixture(parent, marker);
-			await waitForFile(marker);
-			const fixtureRoot = readFileSync(marker, "utf8");
-			child.kill("SIGTERM");
-			expect(await child.exited).toBe(0);
-			expect(existsSync(fixtureRoot)).toBe(false);
+			child = runOwnedFixtureChild(parent, "hold");
+			await withReapedChild(child, async (owner) => {
+				owner.kill("SIGTERM");
+				expect(await owner.exited).toBe(143);
+				expect(prefixedFixtureRoots(parent)).toEqual([]);
+			});
 		} finally {
+			await reapChild(child);
 			rmSync(parent, { recursive: true, force: true });
 		}
+		expect(gitSnapshot()).toEqual(before);
+	});
+
+	test("cleans the real fixture owner after readiness is published", async () => {
+		const parent = mkdtempSync(join(tmpdir(), "archboard-vite-ready-parent-"));
+		const before = gitSnapshot();
+		let child: ReturnType<typeof Bun.spawn> | undefined;
+		try {
+			child = runOwnedFixtureChild(parent, "hold");
+			const nextLine = childLineReader(childStdout(child));
+			await withReapedChild(child, async (owner) => {
+				const ready = await nextLine();
+				expect(ready).toMatch(/^READY \/.*archboard-vite-tailwind-/);
+				owner.kill("SIGTERM");
+				expect(await owner.exited).toBe(143);
+				expect(prefixedFixtureRoots(parent)).toEqual([]);
+			});
+		} finally {
+			await reapChild(child);
+			rmSync(parent, { recursive: true, force: true });
+		}
+		expect(gitSnapshot()).toEqual(before);
 	});
 
 	test("cleans a fixture after an in-process callback throws", async () => {
@@ -297,13 +306,37 @@ describe("Vite Tailwind configuration", () => {
 
 	test("cleans a child fixture before reporting child failure", async () => {
 		const parent = mkdtempSync(join(tmpdir(), "archboard-vite-failure-parent-"));
-		const marker = join(parent, "fixture-root.txt");
+		const before = gitSnapshot();
+		let child: ReturnType<typeof Bun.spawn> | undefined;
 		try {
-			const child = runFailingFixture(parent, marker);
-			await waitForFile(marker);
-			const fixtureRoot = readFileSync(marker, "utf8");
-			expect(await child.exited).toBe(1);
-			expect(existsSync(fixtureRoot)).toBe(false);
+			child = runOwnedFixtureChild(parent, "fail");
+			const nextLine = childLineReader(childStdout(child));
+			await withReapedChild(child, async (owner) => {
+				expect(await nextLine()).toMatch(/^READY /);
+				expect(await owner.exited).toBe(1);
+				expect(prefixedFixtureRoots(parent)).toEqual([]);
+			});
+		} finally {
+			await reapChild(child);
+			rmSync(parent, { recursive: true, force: true });
+		}
+		expect(gitSnapshot()).toEqual(before);
+	});
+
+	test("keeps parallel fixture owners independent", async () => {
+		const parent = mkdtempSync(join(tmpdir(), "archboard-vite-parallel-parent-"));
+		try {
+			const [first, second] = await Promise.all([
+				createViteTailwindFixture(parent, repoRoot),
+				createViteTailwindFixture(parent, repoRoot),
+			]);
+			try {
+				await first.dispose();
+				expect(existsSync(second.root)).toBe(true);
+			} finally {
+				await second.dispose();
+			}
+			expect(prefixedFixtureRoots(parent)).toEqual([]);
 		} finally {
 			rmSync(parent, { recursive: true, force: true });
 		}
@@ -311,19 +344,26 @@ describe("Vite Tailwind configuration", () => {
 
 	test("keeps parallel lint and reads isolated from fixture files", async () => {
 		const before = gitSnapshot();
-		const lint = Bun.spawn(["bunx", "oxlint", "vite.config.js", "tests/system/repository-policy"], {
-			cwd: repoRoot,
-			stdout: "pipe",
-			stderr: "pipe",
-		});
-		const [css, configBytes, lintExit] = await Promise.all([
-			buildFixture(productionConfig),
-			readFile(configPath, "utf8"),
-			lint.exited,
-		]);
-		expect(lintExit).toBe(0);
-		expect(configBytes).toContain("@tailwindcss/vite");
-		expect(css).toContain(".bg-red-500");
+		let lint: ReturnType<typeof Bun.spawn> | undefined;
+		try {
+			lint = Bun.spawn(["bunx", "oxlint", "vite.config.js", "tests/system/repository-policy"], {
+				cwd: repoRoot,
+				stdout: "pipe",
+				stderr: "pipe",
+			});
+			await withReapedChild(lint, async (owner) => {
+				const [css, configBytes, lintExit] = await Promise.all([
+					buildFixture(productionConfig),
+					readFile(configPath, "utf8"),
+					owner.exited,
+				]);
+				expect(lintExit).toBe(0);
+				expect(configBytes).toContain("@tailwindcss/vite");
+				expect(css).toContain(".bg-red-500");
+			});
+		} finally {
+			await reapChild(lint);
+		}
 		expect(gitSnapshot()).toEqual(before);
 	});
 
@@ -341,6 +381,15 @@ describe("Vite Tailwind configuration", () => {
 		} finally {
 			rmSync(cwd, { recursive: true, force: true });
 		}
+	});
+
+	test("allows unrelated string and regex aliases", () => {
+		const aliases = [
+			{ find: "@", replacement: sourceRoot },
+			{ find: "~", replacement: join(sourceRoot, "ui") },
+			{ find: /^virtual\//, replacement: join(sourceRoot, "shared") },
+		];
+		expect(() => assertViteContract(withAlias(productionConfig, aliases))).not.toThrow();
 	});
 
 	const negativeFixtures: Array<[string, (config: InlineConfig) => InlineConfig, string]> = [
@@ -371,12 +420,12 @@ describe("Vite Tailwind configuration", () => {
 		[
 			"earlier overlapping string alias",
 			(config) => withAlias(config, { "@/ui": join(sourceRoot, "ui"), "@": sourceRoot }),
-			"exactly the single @ entry",
+			"overlapping alias",
 		],
 		[
 			"later overlapping string alias",
 			(config) => withAlias(config, { "@": sourceRoot, "@/ui": join(sourceRoot, "ui") }),
-			"exactly the single @ entry",
+			"overlapping alias",
 		],
 		[
 			"overlapping regex alias",
@@ -385,7 +434,16 @@ describe("Vite Tailwind configuration", () => {
 					{ find: /^@\//, replacement: join(sourceRoot, "ui") },
 					{ find: "@", replacement: sourceRoot },
 				]),
-			"exactly one object entry",
+			"overlapping alias",
+		],
+		[
+			"duplicate @ aliases",
+			(config) =>
+				withAlias(config, [
+					{ find: "@", replacement: sourceRoot },
+					{ find: "@", replacement: sourceRoot },
+				]),
+			"duplicate @ aliases",
 		],
 		[
 			"duplicate plugin",

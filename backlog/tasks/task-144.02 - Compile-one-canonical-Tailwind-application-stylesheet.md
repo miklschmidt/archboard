@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 23:48'
+updated_date: '2026-08-31 00:05'
 labels: []
 dependencies:
   - TASK-144.01
@@ -55,4 +55,6 @@ Reserved after TASK-144.01 finalized at integration HEAD a098684. This leaf owns
 Implemented the canonical Vite seam and disposable proof. `vite.config.js` now registers `@tailwindcss/vite` once and maps `@` to the absolute repository `src`; `tests/system/repository-policy/vite-tailwind-contract.test.ts` builds an isolated Tailwind fixture and rejects missing/duplicate plugin, wrong/escaping alias, and production-config drift with actionable diagnostics. Focused fixture, repository-policy, module, type, lint, format, and frontend-build checks pass.
 
 Remediation validation: all generated fixture files now live beneath OS temporary roots, with a temporary dependency symlink for Tailwind resolution and test-only aliasing. Focused owner passes 19 tests including throw, child-failure, SIGTERM, collision, parallel lint/read, cwd, overlap, separator, drift, and git snapshot checks. Sequential `bun run test:repository` passes 149 tests; sequential `bun run test:modules` passes 1013 tests; type-check, lint, format check, and frontend build pass. The earlier concurrent module-lane attempt was invalid due unrelated global fixture contention and was rerun sequentially successfully.
+
+Second remediation: the disposable Vite/Tailwind owner now registers its temporary root before writes, installs scoped SIGINT/SIGTERM and exit cleanup, uses readiness stdout plus stdin event waiting, and unconditionally reaps spawned children while preserving primary failures. Alias checks now model Vite string/regex matching, require one exact @ mapping, reject only @ overlaps, and allow unrelated aliases. Added pre-ready/post-ready signal/failure cleanup, parallel-owner isolation, checkout snapshots, and dependency-link target assertions.
 <!-- SECTION:NOTES:END -->
