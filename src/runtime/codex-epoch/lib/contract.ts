@@ -1,0 +1,142 @@
+import type {
+	ChildEpoch,
+	ChildId,
+	ThreadId,
+	TurnId,
+} from "../../../shared/codex-workbench-identity/index.js";
+import type { ActiveEpoch, EpochManifest, EpochOperationRecord } from "./manifest.js";
+import type { CodexEpochFileSystem } from "./storage.js";
+
+export type CodexEpochErrorCode =
+	| "invalid_input"
+	| "outside_codex_storage"
+	| "closed"
+	| "locked"
+	| "corrupt_manifest"
+	| "storage_failure"
+	| "durability_failed"
+	| "conflict"
+	| "not_initialized"
+	| "stale_child"
+	| "prior_epoch"
+	| "unknown_provenance"
+	| "inspect_only"
+	| "not_executable"
+	| "invalid_transition";
+
+export class CodexEpochError extends Error {
+	readonly code: CodexEpochErrorCode;
+	override readonly cause: unknown;
+
+	constructor(code: CodexEpochErrorCode, message: string, cause?: unknown) {
+		super(message);
+		this.name = "CodexEpochError";
+		this.code = code;
+		this.cause = cause;
+	}
+}
+
+export interface EpochCasToken {
+	readonly revision: number;
+	readonly bytesHash: string | null;
+}
+
+export interface EpochSnapshot {
+	readonly manifest: EpochManifest;
+	readonly cas: EpochCasToken;
+	readonly manifestPath: string;
+	readonly recordsPath: string;
+}
+
+export interface EpochStageInput {
+	readonly childId: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly operationId: string;
+	readonly kind: string;
+	readonly rpc?: string | null;
+	readonly workspaceRoot: string;
+	readonly instructionHash: string;
+	readonly manifestHash: string;
+	readonly expected?: EpochCasToken;
+}
+
+export interface EpochConfirmation {
+	readonly threadId?: ThreadId | null;
+	readonly turnId?: TurnId | null;
+	readonly threadSource?: string | null;
+	readonly confirmedAtMs?: number;
+}
+
+export interface EpochTransaction {
+	readonly record: EpochOperationRecord;
+	readonly cas: EpochCasToken;
+}
+
+export interface EpochExecutionRequest {
+	readonly childId: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly operationId: string;
+	readonly threadId?: ThreadId | null;
+}
+
+export interface EpochExecutionProof {
+	readonly record: EpochOperationRecord;
+	readonly manifestRevision: number;
+}
+
+export interface CodexEpochStoreOptions {
+	readonly rootDirectory: string;
+	readonly codexHome: string;
+	readonly sqliteHome: string;
+	readonly fileSystem?: CodexEpochFileSystem;
+	readonly now?: () => number;
+}
+
+export interface CodexEpochStore {
+	readonly rootDirectory: string;
+	readonly manifestPath: string;
+	readonly recordsPath: string;
+	readonly lockPath: string;
+	readonly snapshot: () => EpochSnapshot;
+	readonly stageEpoch: (input: EpochStageInput) => EpochTransaction;
+	readonly startEpoch: (input: EpochStageInput) => EpochOperationRecord;
+	readonly commitEpoch: (
+		transaction: EpochTransaction,
+		confirmation?: EpochConfirmation,
+	) => EpochOperationRecord;
+	readonly stageOperation: (input: EpochStageInput) => EpochTransaction;
+	readonly commitOperation: (
+		transaction: EpochTransaction,
+		confirmation?: EpochConfirmation,
+	) => EpochOperationRecord;
+	readonly rollbackOperation: (
+		transaction: EpochTransaction,
+		reason: string,
+	) => EpochOperationRecord;
+	readonly markOutcomeUnknown: (
+		transaction: EpochTransaction,
+		reason: string,
+		confirmation?: EpochConfirmation,
+	) => EpochOperationRecord;
+	readonly confirmOutcome: (
+		transaction: EpochTransaction,
+		confirmation: EpochConfirmation,
+	) => EpochOperationRecord;
+	readonly assertCurrent: (request: EpochExecutionRequest) => EpochExecutionProof;
+	readonly canExecute: (request: EpochExecutionRequest) => boolean;
+	readonly close: () => void;
+}
+
+export interface DiskState {
+	readonly manifest: EpochManifest;
+	readonly bytesHash: string | null;
+}
+
+export interface Mutation<T> {
+	readonly writeOrder: "manifest-first" | "records-first";
+	readonly payload: {
+		readonly activeEpoch: ActiveEpoch | null;
+		readonly records: readonly EpochOperationRecord[];
+	};
+	readonly result: (manifest: EpochManifest) => T;
+}
