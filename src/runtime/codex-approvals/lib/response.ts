@@ -14,6 +14,10 @@ import type {
 } from "./contract.js";
 import { CodexApprovalError } from "./contract.js";
 import type { ReverseResponse } from "../../codex-transport/server-requests.js";
+import {
+	CodexTransportOwnershipError,
+	CodexTransportUsageError,
+} from "../../codex-transport/errors.js";
 
 type RecordValue = Record<string, unknown>;
 
@@ -429,6 +433,8 @@ export function classifyResponseFailure(
 	writeAttempted = true,
 ): "not_delivered" | "outcome_unknown" {
 	if (!writeAttempted) return "not_delivered";
+	if (error instanceof CodexTransportOwnershipError || error instanceof CodexTransportUsageError)
+		return "not_delivered";
 	if (!isRecord(error)) return "outcome_unknown";
 	if (error.outcome === "not_delivered" || error.outcome === "outcome_unknown")
 		return error.outcome;

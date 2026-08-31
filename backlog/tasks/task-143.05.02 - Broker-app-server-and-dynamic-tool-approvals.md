@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 13:25'
+updated_date: '2026-08-31 13:32'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -54,4 +54,6 @@ Delegation profile: gpt-5.6-luna, max.
 
 <!-- SECTION:NOTES:BEGIN -->
 Remediation applied: explicit link:null now revokes captured/live ownership; browser and settlement use the same effective command decision set, with omitted/null defaulting to accept/decline/cancel and amendments accepted only when explicitly offered; host-forced cancellation/expiry bypasses visual offerings while emitting protocol-valid terminal responses; zero-wire local preparation failures classify as not_delivered. Added seven-family lifecycle and exact-payload coverage plus a deferred in-flight race covering delivered, not_delivered, and outcome_unknown with competing settlement callers. Focused validation: 28 tests, 711 assertions, type-check, lint, and format clean. Broad module/repository lanes remain capped-memory incomplete from the prior review.
+
+Final transport-boundary remediation: real CodexTransportOwnershipError and CodexTransportUsageError rejections now classify as not_delivered after the single broker attempt; generic write errors remain outcome_unknown. Removed the classifier from the approval module root API. Added broker-level shared-settlement and no-retry assertions for both production error classes and the ambiguous case. Final focused validation: 28 tests, 728 assertions, type-check, lint, and format clean.
 <!-- SECTION:NOTES:END -->

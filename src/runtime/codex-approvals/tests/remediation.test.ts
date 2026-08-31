@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import { classifyResponseFailure } from "../index.js";
 import type { ApprovalBinding, BrowserApprovalResponse } from "../index.js";
 import {
 	closeBroker,
@@ -246,18 +245,45 @@ describe("Codex approval remediation", () => {
 		}
 	});
 
-	test("classifies zero-write local failures as not delivered", () => {
-		expect(classifyResponseFailure(new Error("local validation failed"), false)).toBe(
-			"not_delivered",
-		);
-		expect(classifyResponseFailure({ accepted: true, reason: "write-error" }, false)).toBe(
-			"not_delivered",
-		);
-		expect(classifyResponseFailure({ accepted: false, reason: "backpressure" }, true)).toBe(
-			"not_delivered",
-		);
-		expect(classifyResponseFailure({ accepted: true, reason: "write-error" }, true)).toBe(
-			"outcome_unknown",
-		);
+	test("classifies real pre-enqueue transport errors without retrying", async () => {
+		for (const mode of ["ownership_error", "usage_error", "generic_error"] as const) {
+			const fixture = testBroker(mode);
+			try {
+				const pending = fixture.broker.receive(
+					commandRequestWithAvailableDecisions(fixture.identity, mode, ["accept"]),
+				);
+				const response = { approvalKind: "command_execution", decision: "accept" } as const;
+				const first = fixture.broker.resolve({
+					requestId: pending.requestId,
+					approvalId: pending.approvalId,
+					response,
+				});
+				const duplicateResolve = fixture.broker.resolve({
+					requestId: pending.requestId,
+					approvalId: pending.approvalId,
+					response,
+				});
+				const cancel = fixture.broker.cancel(pending.requestId);
+				const expire = fixture.broker.expire(pending.requestId);
+				const stale = fixture.broker.markStale(pending.requestId);
+				const childExit = fixture.broker.childExit({
+					child: fixture.identity.validator.childId,
+					epoch: fixture.identity.validator.epoch,
+				});
+				expect(duplicateResolve).toBe(first);
+				expect(cancel).toBe(first);
+				expect(expire).toBe(first);
+				expect(stale).toBe(first);
+				const settlement = await first;
+				expect(await childExit).toEqual([settlement]);
+				expect(settlement).toMatchObject({
+					outcome: mode === "generic_error" ? "outcome_unknown" : "not_delivered",
+					state: mode === "generic_error" ? "outcome_unknown" : "settled",
+				});
+				expect(fixture.port.responses).toHaveLength(1);
+			} finally {
+				closeBroker(fixture.broker);
+			}
+		}
 	});
 });
