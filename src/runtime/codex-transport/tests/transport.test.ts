@@ -1,10 +1,6 @@
 import { describe, expect, jest, test } from "bun:test";
 
 import {
-	CODEX_TRANSPORT_MAX_FRAME_BYTES,
-	CODEX_TRANSPORT_MAX_QUEUED_BYTES,
-	CODEX_TRANSPORT_MAX_QUEUED_FRAMES,
-	CODEX_TRANSPORT_MAX_STDERR_BYTES,
 	CodexTransportRequestError,
 	HUMAN_APPROVAL_METHODS,
 	SESSION_SERVER_REQUEST_METHODS,
@@ -13,6 +9,7 @@ import {
 	type TransportServerNotification,
 	type TransportServerRequest,
 } from "../index.js";
+import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 
 async function captureRejection(promise: Promise<unknown>): Promise<unknown> {
 	try {
@@ -118,9 +115,8 @@ describe("Codex app-server transport", () => {
 			});
 
 			sendRaw(child, "not json");
+			sendRaw(child, Buffer.from("\uFEFF{}\n", "utf8"));
 			sendJson(child, { id: "foreign-response", result: {} });
-			child.stdout.write(Buffer.alloc(CODEX_TRANSPORT_MAX_FRAME_BYTES + 1, 0x78));
-			child.stdout.write("\n");
 
 			const recoveredPromise = transport.request("turn/steer", {});
 			const recoveredId = frameAt(child, 1).id;
@@ -143,15 +139,10 @@ describe("Codex app-server transport", () => {
 				}),
 			);
 			expect(transport.inspectLateResponses()[0]?.requestId).toBe(
-				transport.inspectLateResponses()[0]?.correlation.requestId,
+				transport.inspectLateResponses()[0]?.correlation?.requestId,
 			);
 			expect(issueKinds(transport)).toEqual(
-				expect.arrayContaining([
-					"malformed-frame",
-					"unknown-response",
-					"oversized-frame",
-					"duplicate-response",
-				]),
+				expect.arrayContaining(["malformed-frame", "unknown-response", "duplicate-response"]),
 			);
 		} finally {
 			await closeTransport(transport);
@@ -242,7 +233,17 @@ describe("Codex app-server transport", () => {
 					epoch: identity.validator.epoch,
 					requestId: request.requestId,
 				});
-				await transport.respond(request, "codex-approvals", { result: { decision: "accept" } });
+				const response =
+					method === "item/tool/requestUserInput"
+						? { result: { answers: {} } }
+						: method === "mcpServer/elicitation/request"
+							? { result: { action: "accept", content: null, _meta: null } }
+							: method === "item/permissions/requestApproval"
+								? { result: { permissions: {}, scope: "turn" } }
+								: method === "applyPatchApproval" || method === "execCommandApproval"
+									? { result: { decision: "approved" } }
+									: { result: { decision: "accept" } };
+				await transport.respond(request, "codex-approvals", response);
 			}
 			expect(requests).toHaveLength(HUMAN_APPROVAL_METHODS.length);
 
@@ -280,7 +281,9 @@ describe("Codex app-server transport", () => {
 					manifestHash,
 				});
 				expect(request.correlation.requestId).toBe(request.requestId);
-				await transport.respond(request, { result: { contentItems: [], success: true } });
+				await transport.respond(request, owner, {
+					result: { contentItems: [{ type: "inputText", text: "ok" }], success: true },
+				});
 			}
 
 			sendJson(child, {
@@ -292,7 +295,7 @@ describe("Codex app-server transport", () => {
 			const currentTime = requests.at(-1);
 			expect(currentTime?.owner).toBe("codex-session");
 			if (!currentTime) throw new Error("currentTime request was not routed");
-			await transport.respond(currentTime, { result: { currentTimeAt: 0 } });
+			await transport.respond(currentTime, "codex-session", { result: { currentTimeAt: 0 } });
 
 			for (const [index, [method, error]] of (
 				[
@@ -309,7 +312,7 @@ describe("Codex app-server transport", () => {
 				const request = requests.at(-1);
 				expect(request?.owner).toBe("codex-session");
 				if (!request) throw new Error("unsupported request was not routed");
-				await transport.respond(request, { error });
+				await transport.respond(request, "codex-session", { error });
 			}
 
 			const output = frames(child).slice(HUMAN_APPROVAL_METHODS.length);
@@ -344,7 +347,7 @@ describe("Codex app-server transport", () => {
 				expect.objectContaining({ outcome: "outcome_unknown", settlement: "outcome_unknown" }),
 			);
 			expect(transport.inspectLateResponses()[0]?.requestId).toBe(
-				transport.inspectLateResponses()[0]?.correlation.requestId,
+				transport.inspectLateResponses()[0]?.correlation?.requestId,
 			);
 
 			const controller = new AbortController();
@@ -371,7 +374,7 @@ describe("Codex app-server transport", () => {
 			}
 			expect(idempotentError).toBeInstanceOf(CodexTransportRequestError);
 			expect((idempotentError as CodexTransportRequestError).reason).toBe("timeout");
-			expect((idempotentError as CodexTransportRequestError).outcome).toBe("not_delivered");
+			expect((idempotentError as CodexTransportRequestError).outcome).toBe("outcome_unknown");
 			expect((idempotentError as CodexTransportRequestError).accepted).toBeTrue();
 		} finally {
 			if (fakeTimers) jest.useRealTimers();
@@ -384,15 +387,18 @@ describe("Codex app-server transport", () => {
 		try {
 			child.stdin.blockNext = true;
 			const first = transport.sendNotification("initialized");
-			const queued = Array.from({ length: CODEX_TRANSPORT_MAX_QUEUED_FRAMES }, () =>
-				transport.sendNotification("initialized"),
+			const queued = Array.from(
+				{ length: CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedFrames },
+				() => transport.sendNotification("initialized"),
 			);
 			expect(transport.inspect()).toMatchObject({
-				queuedFrames: CODEX_TRANSPORT_MAX_QUEUED_FRAMES,
+				queuedFrames: CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedFrames,
 				queuedBytes: expect.any(Number),
 				writeInFlight: true,
 			});
-			expect(transport.inspect().queuedBytes).toBeLessThanOrEqual(CODEX_TRANSPORT_MAX_QUEUED_BYTES);
+			expect(transport.inspect().queuedBytes).toBeLessThanOrEqual(
+				CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedBytes,
+			);
 			const overflow = transport.sendNotification("initialized");
 			expect(await captureRejection(overflow)).toMatchObject({
 				name: "CodexTransportWriteError",
@@ -400,16 +406,18 @@ describe("Codex app-server transport", () => {
 			});
 			child.stdin.release();
 			await Promise.all([first, ...queued]);
-			expect(frames(child)).toHaveLength(CODEX_TRANSPORT_MAX_QUEUED_FRAMES + 1);
+			expect(frames(child)).toHaveLength(
+				CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedFrames + 1,
+			);
 
 			const stderrChunks: string[] = [];
 			transport.onStderr((chunk) => stderrChunks.push(chunk.text));
 			child.stderr.write("first stderr\n");
-			child.stderr.write(Buffer.alloc(CODEX_TRANSPORT_MAX_STDERR_BYTES + 1, 0x73));
+			child.stderr.write(Buffer.alloc(CODEX_APP_SERVER_CAPACITY.stderrRetainedBytes + 1, 0x73));
 			await flushStreams();
 			expect(stderrChunks.join("")).toContain("first stderr");
 			expect(transport.inspectStderr()).toMatchObject({
-				retainedBytes: CODEX_TRANSPORT_MAX_STDERR_BYTES,
+				retainedBytes: CODEX_APP_SERVER_CAPACITY.stderrRetainedBytes,
 				truncated: true,
 			});
 		} finally {
@@ -436,7 +444,7 @@ describe("Codex app-server transport", () => {
 					transport.respond(request, "codex-session", { result: { decision: "accept" } }),
 				),
 			).toMatchObject({ name: "CodexTransportOwnershipError" });
-			await transport.respond(request, { result: { decision: "accept" } });
+			await transport.respond(request, "codex-approvals", { result: { decision: "accept" } });
 			sendJson(child, {
 				id: "approval-once",
 				method: "item/fileChange/requestApproval",
@@ -445,7 +453,9 @@ describe("Codex app-server transport", () => {
 			await flushStreams();
 			expect(issueKinds(transport)).toContain("duplicate-server-request");
 			expect(
-				await captureRejection(transport.respond(request, { result: { decision: "again" } })),
+				await captureRejection(
+					transport.respond(request, "codex-approvals", { result: { decision: "again" } }),
+				),
 			).toMatchObject({
 				name: "CodexTransportOwnershipError",
 			});

@@ -1,51 +1,48 @@
-import {
-	UNSUPPORTED_ATTESTATION_ERROR,
-	UNSUPPORTED_TOKEN_REFRESH_ERROR,
-} from "../../../shared/codex-browser-model/index.js";
-import type { ResponseOwner } from "./types.js";
-import type { ReverseResponse, TransportServerRequest } from "./types.js";
+import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
+import type { IdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 import { CodexTransportOwnershipError, CodexTransportUsageError } from "./errors.js";
 import type { ReverseRecord, ReverseResponseJob, WriteJob } from "./internals.js";
+import type { ResponseOwner, ReverseResponse, TransportServerRequest } from "./types.js";
 import { hasOwn, isRecord, jsonLine } from "./wire.js";
+import { cloneAndFreeze } from "./public-values.js";
+import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 
 export interface ReverseResponderOptions {
+	readonly identity: IdentityAuthority;
 	readonly reverseRequests: Map<string, ReverseRecord>;
 	readonly reverseHandles: WeakMap<TransportServerRequest, ReverseRecord>;
+	readonly removePendingBytes: (bytes: number) => void;
 	readonly retainCompletedReverseId: (key: string) => void;
-	readonly enqueue: (job: WriteJob) => void;
+	readonly enqueue: (job: WriteJob, lane: "response") => void;
 }
 
 export interface ReverseResponder {
-	readonly respond: {
-		(request: TransportServerRequest, response: ReverseResponse): Promise<void>;
-		(
-			request: TransportServerRequest,
-			owner: ResponseOwner,
-			response: ReverseResponse,
-		): Promise<void>;
-	};
-}
-
-export function createReverseResponder(options: ReverseResponderOptions): ReverseResponder {
-	function respond(request: TransportServerRequest, response: ReverseResponse): Promise<void>;
-	function respond(
+	readonly respond: (
 		request: TransportServerRequest,
 		owner: ResponseOwner,
 		response: ReverseResponse,
-	): Promise<void>;
-	function respond(
+	) => Promise<void>;
+}
+
+export function createReverseResponder(options: ReverseResponderOptions): ReverseResponder {
+	const model = createCodexBrowserModel(options.identity);
+
+	const respond = (
 		request: TransportServerRequest,
-		ownerOrResponse: ResponseOwner | ReverseResponse,
-		maybeResponse?: ReverseResponse,
-	): Promise<void> {
-		const owner = maybeResponse === undefined ? undefined : (ownerOrResponse as ResponseOwner);
-		const response = maybeResponse === undefined ? ownerOrResponse : maybeResponse;
+		owner: ResponseOwner,
+		response: ReverseResponse,
+	): Promise<void> => {
 		const record = options.reverseHandles.get(request);
-		if (!record || record.responded || options.reverseRequests.get(record.key) !== record)
+		if (
+			!record ||
+			record.responded ||
+			record.responding ||
+			options.reverseRequests.get(record.key) !== record
+		)
 			return Promise.reject(
 				new CodexTransportOwnershipError("the reverse request is unknown or already answered"),
 			);
-		if (owner !== undefined && owner !== record.request.owner)
+		if (owner !== record.request.owner)
 			return Promise.reject(
 				new CodexTransportOwnershipError(
 					`owner ${JSON.stringify(owner)} cannot answer a request owned by ${record.request.owner}`,
@@ -53,80 +50,50 @@ export function createReverseResponder(options: ReverseResponderOptions): Revers
 			);
 		if (!isRecord(response))
 			return Promise.reject(new CodexTransportUsageError("reverse response must be an object"));
-		const hasResult = hasOwn(response, "result");
-		const hasError = hasOwn(response, "error");
-		if (hasResult === hasError)
-			return Promise.reject(
-				new CodexTransportUsageError("reverse response must contain exactly one result or error"),
-			);
-		if (hasError) {
+		let hasResult: boolean;
+		let canonical: Record<string, unknown>;
+		try {
+			hasResult = hasOwn(response, "result");
+			const hasError = hasOwn(response, "error");
 			if (
-				!isRecord(response.error) ||
-				typeof response.error.code !== "number" ||
-				!Number.isInteger(response.error.code)
+				hasResult === hasError ||
+				Reflect.ownKeys(response).some(
+					(key) => typeof key !== "string" || (key !== "result" && key !== "error"),
+				)
 			)
 				return Promise.reject(
-					new CodexTransportUsageError("reverse error must contain an integer code"),
+					new CodexTransportUsageError("reverse response must contain exactly one result or error"),
 				);
-			if (typeof response.error.message !== "string")
+			const candidate = hasResult
+				? { method: record.request.method, result: response.result }
+				: { method: record.request.method, error: response.error };
+			const parsed = model.ServerRequestResultSchema.safeParse(candidate);
+			if (!parsed.success)
 				return Promise.reject(
-					new CodexTransportUsageError("reverse error must contain a string message"),
+					new CodexTransportUsageError(
+						`reverse response does not match the authored ${record.request.method} result schema`,
+					),
 				);
-			for (const key of Object.keys(response.error))
-				if (key !== "code" && key !== "message" && key !== "data")
-					return Promise.reject(
-						new CodexTransportUsageError(`reverse error contains unknown field ${key}`),
-					);
-		}
-		if (record.request.owner === "codex-session") {
-			if (record.request.method === "currentTime/read") {
-				if (
-					!hasResult ||
-					!isRecord(response.result) ||
-					Object.keys(response.result).length !== 1 ||
-					!hasOwn(response.result, "currentTimeAt") ||
-					typeof response.result.currentTimeAt !== "number" ||
-					!Number.isSafeInteger(response.result.currentTimeAt) ||
-					response.result.currentTimeAt < 0
-				)
-					return Promise.reject(
-						new CodexTransportUsageError("currentTime/read must return { currentTimeAt }"),
-					);
-			} else {
-				const expected =
-					record.request.method === "attestation/generate"
-						? UNSUPPORTED_ATTESTATION_ERROR
-						: UNSUPPORTED_TOKEN_REFRESH_ERROR;
-				if (
-					!hasError ||
-					!isRecord(response.error) ||
-					response.error.code !== expected.code ||
-					response.error.message !== expected.message ||
-					hasOwn(response.error, "data")
-				)
-					return Promise.reject(
-						new CodexTransportUsageError(
-							`unsupported ${record.request.method} must return its authored -32601 error`,
-						),
-					);
-			}
+			canonical = cloneAndFreeze(parsed.data) as Record<string, unknown>;
+		} catch {
+			return Promise.reject(new CodexTransportUsageError("reverse response is not JSON-shaped"));
 		}
 		let frame: Buffer;
 		try {
 			frame = jsonLine(
 				{
 					id: record.wireId,
-					...(hasResult ? { result: response.result } : { error: response.error }),
+					...(hasOwn(canonical, "result")
+						? { result: canonical.result }
+						: { error: canonical.error }),
 				},
 				"reverse response",
+				CODEX_APP_SERVER_CAPACITY.outbound.maxReverseResponseBytes,
 			);
 		} catch (error) {
 			return Promise.reject(error);
 		}
-		record.responded = true;
-		options.reverseRequests.delete(record.key);
-		options.reverseHandles.delete(request);
-		options.retainCompletedReverseId(record.key);
+
 		return new Promise<void>((resolve, reject) => {
 			const job: ReverseResponseJob = {
 				kind: "reverse-response",
@@ -136,14 +103,17 @@ export function createReverseResponder(options: ReverseResponderOptions): Revers
 				reject,
 				settled: false,
 			};
+			record.responding = true;
 			try {
-				options.enqueue(job);
+				options.enqueue(job, "response");
 			} catch (error) {
+				record.responding = false;
 				job.settled = true;
 				reject(error);
+				return;
 			}
 		});
-	}
+	};
 
 	return Object.freeze({ respond });
 }

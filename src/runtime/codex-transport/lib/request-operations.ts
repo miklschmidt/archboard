@@ -4,6 +4,7 @@ import {
 	type ClientNotificationMethod,
 	type ResponseMethod,
 } from "../../codex-protocol/index.js";
+import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
 import type {
 	IdentityAuthority,
@@ -11,6 +12,7 @@ import type {
 } from "../../../shared/codex-workbench-identity/index.js";
 import {
 	CodexTransportClosedError,
+	CodexTransportRequestError,
 	CodexTransportUsageError,
 	CodexTransportWriteError,
 	type CodexRequestFailureReason,
@@ -82,14 +84,32 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 			return Promise.reject(
 				new CodexTransportUsageError("Codex request params must be a JSON object"),
 			);
+		if (options.pendingRequests.size >= CODEX_APP_SERVER_CAPACITY.outbound.pendingRequests)
+			return Promise.reject(
+				new CodexTransportWriteError(
+					"backpressure",
+					`pending Codex requests are limited to ${CODEX_APP_SERVER_CAPACITY.outbound.pendingRequests}`,
+				),
+			);
 		const wireId = options.identity.issuer.mintJsonRpcRequestId();
-		const rawId = options.identity.decoder.serializeCodexIdentity(wireId);
+		const rawId = options.identity.decoder.serializeJsonRpcRequestId(wireId);
 		const correlation: WireRequestCorrelation =
 			options.identity.decoder.createWireRequestCorrelation({ requestId: wireId });
 		let frame: Buffer;
 		try {
 			frame = jsonLine({ id: rawId, method, params }, `request ${method}`);
 		} catch (cause) {
+			if (cause instanceof CodexTransportWriteError)
+				return Promise.reject(
+					new CodexTransportRequestError({
+						method,
+						correlation,
+						outcome: "not_delivered",
+						reason: cause.reason,
+						accepted: false,
+						retryEligible: true,
+					}),
+				);
 			return Promise.reject(cause);
 		}
 		const key = wireKey(rawId);
@@ -99,7 +119,7 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 				wireId,
 				method,
 				correlation,
-				idempotent: requestOptions.idempotent === true,
+				retryEligible: requestOptions.retryEligible === true || requestOptions.idempotent === true,
 				resolve: (value) => resolve(value as CodexTransportResponse<Method>),
 				reject,
 				signal: requestOptions.signal,
@@ -128,7 +148,11 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 				pending.job = undefined;
 				options.settleFailure(
 					pending,
-					cause instanceof CodexTransportWriteError ? cause.reason : "backpressure",
+					cause instanceof CodexTransportWriteError
+						? cause.reason
+						: cause instanceof CodexTransportClosedError
+							? cause.reason
+							: "backpressure",
 					cause,
 				);
 			}
