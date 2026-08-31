@@ -304,6 +304,7 @@ interface FakeSessionOptions {
 	readonly settingsOverrides?: Partial<CoordinatorThreadSettings>;
 	readonly staleNotificationAuthority?: IdentityAuthority;
 	readonly emitSettings?: boolean;
+	readonly deferSettingsUpdate?: boolean;
 }
 
 class FakeSession implements CoordinatorSessionPort {
@@ -321,6 +322,7 @@ class FakeSession implements CoordinatorSessionPort {
 		private readonly updateError: CodexSessionMutationError | null,
 		private readonly staleNotificationAuthority: IdentityAuthority | null,
 		private readonly shouldEmitSettingsNotification: boolean,
+		private readonly deferSettingsUpdate: boolean,
 		threadRawId: string,
 		settingsOverrides: Partial<CoordinatorThreadSettings>,
 	) {
@@ -330,6 +332,8 @@ class FakeSession implements CoordinatorSessionPort {
 		this.started = startResponse(authority, threadRawId, serviceTier);
 		this.threadSettings = settings(this.started, settingsOverrides);
 	}
+
+	private deferredSettingsUpdateRelease: (() => void) | null = null;
 
 	async modelList(params?: SessionParams<"model/list">): Promise<SessionResponse<"model/list">> {
 		this.modelRequests.push(params);
@@ -349,11 +353,22 @@ class FakeSession implements CoordinatorSessionPort {
 	): Promise<SessionResponse<"thread/settings/update">> {
 		this.updateParams.push(params);
 		if (this.updateError !== null) throw this.updateError;
+		if (this.deferSettingsUpdate) {
+			await new Promise<void>((resolve) => {
+				this.deferredSettingsUpdateRelease = resolve;
+			});
+		}
 		if (this.staleNotificationAuthority !== null) {
 			this.sendSettingsNotification(this.staleNotificationAuthority);
 		}
 		if (this.shouldEmitSettingsNotification) this.sendSettingsNotification(this.authority);
 		return {};
+	}
+
+	releaseSettingsUpdate(): void {
+		const release = this.deferredSettingsUpdateRelease;
+		this.deferredSettingsUpdateRelease = null;
+		release?.();
 	}
 
 	private sendSettingsNotification(authority: IdentityAuthority): void {
@@ -417,6 +432,7 @@ export function fixture(options: FixtureOptions = {}): Fixture {
 		options.updateError ?? null,
 		options.staleNotificationAuthority ?? null,
 		options.emitSettings ?? true,
+		options.deferSettingsUpdate ?? false,
 		options.threadRawId ?? "coordinator-thread",
 		options.settingsOverrides ?? {},
 	);
