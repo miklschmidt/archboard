@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.20
 title: Issue canonical workbench operation identities
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-31 14:25'
-updated_date: '2026-08-31 17:01'
+updated_date: '2026-08-31 17:07'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -29,10 +29,10 @@ Add one shared branded host-owned OperationId domain for every Archboard workben
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 OperationId is a distinct opaque branded identity with one host issuer and exact parser and serializer; callers cannot adopt server strings, cast another identity domain, or mint through a second module.
-- [ ] #2 Minted operation IDs satisfy the durable epoch token and authored context/result bounds, remain unique within the owned child session, serialize deterministically, and reject empty, malformed, wrong-domain, unissued, or stale values.
-- [ ] #3 The public capability split preserves validator, issuer, and trusted decoder authority: ordinary consumers receive only the narrow operation-ID capabilities they need, and server-owned identity adoption remains unavailable.
-- [ ] #4 Runtime and compile fixtures prove operation IDs round-trip, cannot interchange with every existing identity domain, cannot be caller-fabricated, and provide the exact reusable type consumed by workhorse start, general dynamic tools, and coordinator workhorse operations.
+- [x] #1 OperationId is a distinct opaque branded identity with one host issuer and exact parser and serializer; callers cannot adopt server strings, cast another identity domain, or mint through a second module.
+- [x] #2 Minted operation IDs satisfy the durable epoch token and authored context/result bounds, remain unique within the owned child session, serialize deterministically, and reject empty, malformed, wrong-domain, unissued, or stale values.
+- [x] #3 The public capability split preserves validator, issuer, and trusted decoder authority: ordinary consumers receive only the narrow operation-ID capabilities they need, and server-owned identity adoption remains unavailable.
+- [x] #4 Runtime and compile fixtures prove operation IDs round-trip, cannot interchange with every existing identity domain, cannot be caller-fabricated, and provide the exact reusable type consumed by workhorse start, general dynamic tools, and coordinator workhorse operations.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -58,4 +58,12 @@ Review remediation: OperationId methods were removed from IdentityValidator, Ide
 Rereview remediation 2: ordinary createIdentityAuthority now returns a frozen three-key facade; createIdentityAuthorities/restoreIdentityAuthorities return physically separate identity and operation bundles, with runtime Object.keys, in, Reflect.get, and exact capability probes. Production root no longer exports the retry budget or entropy options; deterministic nonce control is test-owned in tests/support.ts. Removed duplicate validateOperationId, retaining assertCurrentOperationId. Validation: remediation2-focused-03 passed 12 tests and 419 expectations; remediation2-typecheck-04 passed both TypeScript projects at 1.6G; remediation2-scoped-02 passed Oxlint 0 warnings/errors and Oxfmt; remediation2-inventory-01 passed 39 tests and 69 expectations. Known boundaries/module-scope OOM owners were not rerun.
 
 Rereview remediation 3: test-owned nonce support now snapshots crypto.randomUUID own-property descriptor and restores it exactly after success or failure, deleting the temporary own property when the original was inherited. Focused topology probes assert own-property presence, descriptor equality, and function identity. Validation: remediation3-focused-02 passed 13 tests and 426 expectations; remediation3-typecheck-02 passed both TypeScript projects at 1.7G; remediation3-scoped-02 passed Oxlint 0 warnings/errors and Oxfmt check. Known boundaries/module-scope OOM owners were not rerun.
+
+Finalization evidence: fixed range 0d32b661111b3bc47efcb54273cfc9015589ccd1..2e72b4827b19fe39bed90252f6d9267f18a28af6 independently passed git diff --check and review-clean rereview. Focused identity suite passed 13 tests and 426 expectations, covering runtime facade topology, no reflective operation path, round trips, epoch/refusal behavior, bounded collisions, and exact crypto.randomUUID seam restoration after success and failure. Type-check passed both TypeScript projects at 1.7G; scoped Oxlint passed with 0 warnings/errors and Oxfmt check passed; repository inventory passed 39 tests and 69 expectations. All four acceptance criteria are now checked. The combined repository-policy boundaries owner and standalone module-scope owner remain documented 6G/1G cgroup OOM limitations and were not rerun or treated as passing evidence. Finalization changes only this Backlog task metadata; source, consumers, generated files, sibling tasks, and protected files remain unchanged.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented the single host-owned epoch-bound OperationId domain with exact parsing/serialization, narrow capabilities, physically isolated runtime authority, fixed bounded collision handling, and type/runtime enforcement. Verified with 13 focused identity tests (426 expectations), both TypeScript projects, scoped Oxlint/Oxfmt, repository inventory, and fixed-range diff checks. Finalized all four acceptance criteria; known 6G/1G OOM owner limitations remain documented.
+<!-- SECTION:FINAL_SUMMARY:END -->
