@@ -129,9 +129,10 @@ In particular, the image alone does not authorize:
 - another drawing toolbar.
 
 A navigator preview depicts real current board content without opening, claiming, focusing, or
-changing that board. Empty, loading, partial, unavailable, stale, and error states must say what is
-true. A later feature may implement something that resembles an illustrative detail, but it must be
-accepted on its own product contract and real state source, not on the picture.
+changing that board. Loading, empty, and recoverable unavailable states must say what is true.
+Discard stale in-flight results instead of presenting a stale state. A later feature may implement
+something that resembles an illustrative detail, but it must be accepted on its own product contract
+and real state source, not on the picture.
 
 ## Build through named modules and semantic utilities
 
