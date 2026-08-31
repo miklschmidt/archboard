@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-31 00:17'
+updated_date: '2026-08-31 00:38'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -16,12 +16,14 @@ references:
 modified_files:
   - tests/system/repository-policy/codex-protocol-boundary.test.ts
   - tests/system/repository-policy/codex-protocol-aliases.test.ts
-  - tests/system/repository-policy/support/module-scope-analysis.ts
-  - tests/system/repository-policy/support/codex-aliases.ts
   - tests/system/repository-policy/support/codex-protocol-aliases.ts
   - tests/system/repository-policy/support/codex-protocol-imports.ts
   - tests/system/repository-policy/support/codex-protocol-mirrors.ts
   - tests/system/repository-policy/support/codex-protocol-paths.ts
+  - >-
+    tests/system/repository-policy/support/codex-protocol-fingerprint-corpus.json
+  - tests/system/repository-policy/fixtures/codex-protocol/v2/Thread.ts.txt
+  - tests/system/repository-policy/fixtures/codex-protocol/ThreadId.ts.txt
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -83,4 +85,10 @@ Mirror support derives normalized AST-kind fingerprints from canonical generated
 Third-remediation validation: focused owner plus alias probes passed 11 tests / 37 expectations; bun run test:repository passed 141 tests / 452 expectations; codex-protocol and codex-realtime module owners passed 549 tests / 3512 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed. Policy owner is 477 physical lines; every changed TypeScript support/test file is below 500 lines.
 
 Third-remediation scope: repository-policy owner/support/tests only; no production changes. The prior support/codex-aliases.ts was replaced by cohesive codex-protocol support modules.
+
+Fourth remediation in commit 092adc5 after reviewer findings: the ownership owner now consumes a checked-in authoritative semantic fingerprint corpus for the exact Codex 0.151.0 generated inventory (820 entries, inventory SHA-256 1b25740f89a30fd39632e584b6bfa0d0c9171f6795d33151e5cf3381532d38fb). The corpus is independent of ignored generated output, so a clean checkout still rejects a real renamed v2/Thread.ts mirror. Fingerprints preserve semantic identifiers, property names, non-module literals, numeric literals, and structure while ignoring only cosmetic declaration and module names; a real ThreadId.ts control proves an unrelated primitive alias is not a false positive.
+
+Fourth-remediation validation: focused boundary plus alias probes passed 12 tests / 41 expectations; bun run test:repository passed 142 tests / 456 expectations; bun run test:modules passed 1010 tests / 7034 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed. The policy owner is exactly 500 physical lines and every changed TypeScript file remains within the repository cap.
+
+Fourth-remediation scope: repository-policy owner/support plus the intentional authoritative fingerprint corpus and two real generated-shape fixtures; no production changes. Remaining maintenance risk is explicit: a future Codex protocol version requires regenerating and reviewing the corpus and exact inventory together.
 <!-- SECTION:NOTES:END -->
