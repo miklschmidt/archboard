@@ -12,6 +12,7 @@ import type {
 	BrowserProjectionPort,
 	BrowserGatewayMessage,
 	BrowserDisconnectReason,
+	BrowserLifecyclePort,
 	CodexWorkbenchGateway,
 } from "../index.js";
 import { createCodexWorkbenchGateway } from "../index.js";
@@ -43,6 +44,7 @@ export interface GatewayHarness {
 	readonly calls: string[];
 	readonly disconnects: string[];
 	readonly disconnectReasons: BrowserDisconnectReason[];
+	readonly disconnectSettled: string[];
 	readonly advance: (milliseconds: number) => void;
 	readonly setReadiness: (state: BrowserReadiness["state"]) => void;
 	readonly setLink: (link: ThreadLinkSnapshot) => void;
@@ -52,6 +54,10 @@ export interface GatewayHarness {
 	readonly setActionError: (error: unknown) => void;
 	readonly setActionResult: (result: BrowserActionResult | undefined) => void;
 	readonly setActionGate: (gate: Promise<BrowserActionResult> | null) => void;
+	readonly setOrdinaryDisconnectGate: (gate: Promise<void> | null) => void;
+	readonly setDynamicDisconnectGate: (gate: Promise<void> | null) => void;
+	readonly setOrdinaryDisconnectError: (error: unknown) => void;
+	readonly setDynamicDisconnectError: (error: unknown) => void;
 	readonly binding: () => ThreadLinkBindingSnapshot;
 	readonly makeOrdinaryApproval: () => BrowserApproval;
 	readonly makeDynamicApproval: (
@@ -117,6 +123,7 @@ function readinessFor(
 
 export function createGatewayHarness(
 	authorities: IdentityAuthorities = createIdentityAuthorities(),
+	lifecycle?: BrowserLifecyclePort,
 ): GatewayHarness {
 	const model = createCodexBrowserModel(authorities);
 	const childId = model.ChildIdSchema.parse(authorities.identity.validator.childId);
@@ -147,9 +154,14 @@ export function createGatewayHarness(
 	let actionError: unknown = null;
 	let actionResult: BrowserActionResult | undefined;
 	let actionGate: Promise<BrowserActionResult> | null = null;
+	let ordinaryDisconnectGate: Promise<void> | null = null;
+	let dynamicDisconnectGate: Promise<void> | null = null;
+	let ordinaryDisconnectError: unknown = null;
+	let dynamicDisconnectError: unknown = null;
 	const calls: string[] = [];
 	const disconnects: string[] = [];
 	const disconnectReasons: BrowserDisconnectReason[] = [];
+	const disconnectSettled: string[] = [];
 	const projectionListeners = new Set<() => void>();
 
 	const run = async (name: string): Promise<BrowserActionResult> => {
@@ -162,6 +174,15 @@ export function createGatewayHarness(
 		(name: string) =>
 		async (..._args: readonly unknown[]): Promise<BrowserActionResult> =>
 			run(name);
+	const settleDisconnect = async (
+		name: string,
+		gate: Promise<void> | null,
+		error: unknown,
+	): Promise<void> => {
+		if (gate !== null) await gate;
+		if (error !== null) throw error;
+		disconnectSettled.push(name);
+	};
 	const actions: BrowserWorkbenchActions = {
 		account: {
 			read: action("account.read"),
@@ -198,6 +219,7 @@ export function createGatewayHarness(
 				disconnects.push("ordinary");
 				disconnectReasons.push(reason);
 				ordinaryApproval = null;
+				return settleDisconnect("ordinary", ordinaryDisconnectGate, ordinaryDisconnectError);
 			},
 		},
 		dynamicApprovals: {
@@ -207,6 +229,7 @@ export function createGatewayHarness(
 				disconnects.push("dynamic");
 				disconnectReasons.push(reason);
 				dynamicApprovals = [];
+				return settleDisconnect("dynamic", dynamicDisconnectGate, dynamicDisconnectError);
 			},
 		},
 	};
@@ -251,6 +274,7 @@ export function createGatewayHarness(
 		projection,
 		threadLink,
 		actions,
+		lifecycle,
 		now: () => clock,
 	});
 
@@ -350,6 +374,7 @@ export function createGatewayHarness(
 		calls,
 		disconnects,
 		disconnectReasons,
+		disconnectSettled,
 		advance: (milliseconds) => {
 			clock += milliseconds;
 		},
@@ -372,6 +397,18 @@ export function createGatewayHarness(
 		},
 		setActionGate: (gate) => {
 			actionGate = gate;
+		},
+		setOrdinaryDisconnectGate: (gate) => {
+			ordinaryDisconnectGate = gate;
+		},
+		setDynamicDisconnectGate: (gate) => {
+			dynamicDisconnectGate = gate;
+		},
+		setOrdinaryDisconnectError: (error) => {
+			ordinaryDisconnectError = error;
+		},
+		setDynamicDisconnectError: (error) => {
+			dynamicDisconnectError = error;
 		},
 		binding: () => bindingFor(paneId, revision, link),
 		makeOrdinaryApproval,
