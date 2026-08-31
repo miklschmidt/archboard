@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 00:09'
+updated_date: '2026-08-31 00:31'
 labels: []
 dependencies:
   - TASK-143.02.01
@@ -62,4 +62,6 @@ Remediation after reviewer feedback: start/stop/dispose now cancel dormant reque
 Line-count correction after formatting: the scenario owner is 400 lines and the named typed support module is 415 lines; both remain below the enforced 500-line test-source ceiling.
 
 Third review remediation: local cleanup no longer awaits AudioContext.close() or sender.replaceTrack(null). It attaches rejection handlers, then closes the peer and stops all tracks synchronously, so pending or rejected browser promises cannot retain the lifecycle queue. Every listener-visible state and synchronous construction step now rechecks cancellation before the next browser or host call; the phase deadline helper also checks before invocation and after settlement. Public stop precedence now belongs to the active effect-bearing run, so dormant B cannot hide A host-stop rejection, not_delivered, outcome_unknown, or expiry. Explicit dispose still produces disposed after a confirmed stop, while an unconfirmed stop remains stop_failed. Adversarial owners cover three senders, pending and rejected cleanup promises, later start, stop/dispose at every public phase and construction checkpoint, and A/B precedence for all five host-stop outcomes. Validation: 57 realtime tests / 1,433 expectations; 1,063 module tests / 8,167 expectations; 130 repository tests / 415 expectations; lint, formatting, both TypeScript graphs, frontend production build, and diff check pass. media-session.test.ts is 488 lines and its typed support module is 436 lines.
+
+Fourth review remediation: implicit restart assigns active A as public outcome owner before cleanup. An unconfirmed A stop now publishes one correlated stop_failed and rejects B with both canonical correlations; later retries remain correlated and do not emit another terminal event. Delivered stop outcomes count only when both returned identity fields exactly match the frozen request. Missing, swapped, stale, future, session-only mismatch, and correlation-only mismatch fail identically for stop, dispose, and restart. Bounded work rechecks cancellation after timer registration, and remote media rechecks after MediaStream construction, prior attachment teardown, source assignment, host attachment, and play before metering. Public ownership persists through first, concurrent, reentrant, and repeated stop, including dormant B, then resets only when C actually activates. Adversarial validation: 62 realtime tests / 2,050 expectations; 1,068 module tests / 8,784 expectations; 130 repository tests / 415 expectations; lint, formatting, both TypeScript graphs, frontend production build, and diff check pass. Both typed test files are exactly 500 lines. The first final repository rerun hit the known retained fake agent-browser cleanup race; its processes exited, the exact owner passed, and the complete repository rerun passed without a code change.
 <!-- SECTION:NOTES:END -->
