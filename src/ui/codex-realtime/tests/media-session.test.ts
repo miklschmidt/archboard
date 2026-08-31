@@ -17,6 +17,13 @@ import {
 
 const NEGOTIATION_STAGES: Stage[] = ["createOffer", "setLocal", "hostOffer", "setRemote", "resume"];
 const PAUSE_STAGES: Stage[] = ["getUserMedia", ...NEGOTIATION_STAGES];
+const DEVICE_LOSS_CHECKPOINTS: string[] = [
+	"attachRemote",
+	"play",
+	"audioContext",
+	"source",
+	"analyser",
+];
 
 afterEach(restoreFakeBrowsers);
 
@@ -232,6 +239,68 @@ describe("realtime browser media session", () => {
 		env.assertReleased();
 	});
 
+	test.each(NEGOTIATION_STAGES)("device loss preempts a pending %s phase", async (stage) => {
+		const env = new FakeBrowser();
+		env.pause = stage;
+		const session = createRealtimeMediaSession(host(env));
+		const failures: string[] = [];
+		session.subscribe((next) => {
+			if (next.state.phase === "recoverable_error") failures.push(next.state.reason);
+		});
+		const starting = session.start(correlation());
+		await settle();
+		env.localTrack.lose();
+		const failed = await starting;
+		expect(failed.state).toMatchObject({ phase: "recoverable_error", reason: "device_lost" });
+		expect(failures).toEqual(["device_lost"]);
+		expect(env.now).toBe(0);
+		expect(env.stopRequests).toEqual(
+			stage === "createOffer" || stage === "setLocal" ? [] : [correlation()],
+		);
+		env.release();
+		await settle();
+		expect(session.getSnapshot()).toBe(failed);
+		env.assertReleased();
+	});
+
+	test.each(DEVICE_LOSS_CHECKPOINTS)(
+		"same-turn device loss during %s settles before listening",
+		async (checkpoint) => {
+			const env = new FakeBrowser();
+			env.deferPlay = checkpoint === "play";
+			const session = createRealtimeMediaSession(host(env));
+			const failures: string[] = [];
+			session.subscribe((next) => {
+				if (next.state.phase === "recoverable_error") failures.push(next.state.reason);
+			});
+			env.onStep = (step) => {
+				if (step === checkpoint) env.localTrack.lose();
+			};
+			const failed = await session.start(correlation());
+			expect(failed.state).toMatchObject({ phase: "recoverable_error", reason: "device_lost" });
+			expect(failures).toEqual(["device_lost"]);
+			expect(env.stopRequests).toEqual([correlation()]);
+			expect(env.order).not.toContain("resume");
+			env.assertReleased();
+		},
+	);
+
+	test("listener-triggered device loss wins on the offer-created publication", async () => {
+		const env = new FakeBrowser();
+		const session = createRealtimeMediaSession(host(env));
+		const failures: string[] = [];
+		session.subscribe((next) => {
+			if (next.state.reason === "offer_created") env.localTrack.lose();
+			if (next.state.phase === "recoverable_error") failures.push(next.state.reason);
+		});
+		const failed = await session.start(correlation());
+		expect(failed.state).toMatchObject({ phase: "recoverable_error", reason: "device_lost" });
+		expect(failures).toEqual(["device_lost"]);
+		expect(env.order).not.toContain("hostOffer");
+		expect(env.stopCount).toBe(0);
+		env.assertReleased();
+	});
+
 	test("a stale play rejection cannot fail or detach its replacement", async () => {
 		const env = new FakeBrowser();
 		env.deferPlay = true;
@@ -310,4 +379,41 @@ describe("realtime browser media session", () => {
 		expect(session.getSnapshot().state).toEqual({ phase: "closed", reason: "disposed" });
 		env.assertReleased();
 	});
+
+	test.each(["stop", "dispose"] as const)(
+		"throwing first, middle, and last listeners cannot block a later reentrant %s",
+		async (action) => {
+			for (const throwing of ["first", "middle", "last"]) {
+				const env = new FakeBrowser();
+				const session = createRealtimeMediaSession(host(env));
+				const order: string[] = [];
+				let ending: Promise<unknown> | undefined;
+				for (const label of ["first", "middle", "last"])
+					session.subscribe((next) => {
+						if (next.state.phase !== "listening") return;
+						order.push(label);
+						if (label === throwing) throw new Error("consumer");
+					});
+				session.subscribe((next) => {
+					if (next.state.phase !== "listening" || ending) return;
+					order.push(action);
+					ending = action === "stop" ? session.stop() : session.dispose();
+				});
+				session.subscribe((next) => {
+					if (next.state.phase === "listening") order.push("later");
+				});
+				const started = await session.start(correlation());
+				await ending;
+				expect(order).toEqual(["first", "middle", "last", action, "later"]);
+				expect(started.state).toEqual({
+					phase: "closed",
+					reason: action === "stop" ? "stopped" : "disposed",
+				});
+				expect(session.getSnapshot()).toBe(started);
+				expect(env.stopRequests).toEqual([correlation()]);
+				env.assertReleased();
+				env.restore();
+			}
+		},
+	);
 });
