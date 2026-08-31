@@ -1,10 +1,6 @@
-import { createCodexThreadLinkBinding } from "./lib/binding.js";
+import { createCodexThreadLinkBindingController } from "./lib/binding.js";
 import { createCodexThreadLinkClassifier } from "./lib/classifier.js";
-import type {
-	CodexThreadLinkClassifierOptions,
-	CodexThreadLinkPort,
-	ThreadLinkBindingStore,
-} from "./lib/contract.js";
+import type { CodexThreadLinkClassifierOptions, CodexThreadLinkPort } from "./lib/contract.js";
 
 export { createCodexThreadLinkBinding } from "./lib/binding.js";
 export { classifyCodexThreadLink, createCodexThreadLinkClassifier } from "./lib/classifier.js";
@@ -33,8 +29,11 @@ export type {
 	ThreadLinkCompareAndSwapInput,
 	ThreadLinkCurrentEpoch,
 	ThreadLinkCurrentEpochSource,
+	ThreadLinkCondition,
 	ThreadLinkEpochProof,
+	ThreadLinkEpochAuthority,
 	ThreadLinkExecutableStatus,
+	ThreadLinkNonExecutableSnapshot,
 	ThreadLinkObservation,
 	ThreadLinkReasonCode,
 	ThreadLinkSnapshot,
@@ -45,13 +44,29 @@ export type {
 	UnboundThreadLink,
 } from "./lib/contract.js";
 
-export interface CodexThreadLinkOptions extends CodexThreadLinkClassifierOptions {
-	readonly binding?: ThreadLinkBindingStore;
-}
+export type CodexThreadLinkOptions = CodexThreadLinkClassifierOptions;
 
-/** Combine deterministic classification with the pane binding CAS boundary. */
+/** Combine deterministic classification with a proof-checked pane binding boundary. */
 export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThreadLinkPort {
 	const classifier = createCodexThreadLinkClassifier(options);
-	const binding = options.binding ?? createCodexThreadLinkBinding(options);
-	return Object.freeze({ ...classifier, ...binding });
+	const binding = createCodexThreadLinkBindingController(options);
+	const classifyAndBind: CodexThreadLinkPort["classifyAndBind"] = async (
+		paneId,
+		expected,
+		target,
+	) => {
+		// The first pass may observe a list/epoch transition. The second pass is
+		// the only result handed to the synchronous CAS boundary.
+		await classifier.classify(target);
+		const fresh = await classifier.classify(target);
+		return binding.commitClassified(paneId, expected, fresh);
+	};
+	return Object.freeze({
+		classify: classifier.classify,
+		snapshot: binding.snapshot,
+		read: binding.read,
+		compareAndSwap: binding.compareAndSwap,
+		clear: binding.clear,
+		classifyAndBind,
+	});
 }

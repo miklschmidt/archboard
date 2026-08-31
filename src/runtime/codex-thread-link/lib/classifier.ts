@@ -1,54 +1,105 @@
+import {
+	CodexEpochError,
+	type EpochExecutionProof,
+	type EpochOperationRecord,
+} from "../../codex-epoch/index.js";
+import { ADDITIONAL_CONTEXT_POLICY } from "../../codex-instructions/index.js";
 import type {
 	CodexSession,
 	SessionLoadedThreadPageResult,
 	SessionThread,
 	SessionThreadPageResult,
 } from "../../codex-session/index.js";
-import type { EpochOperationRecord } from "../../codex-epoch/index.js";
-import type { ThreadLinkReason } from "../../codex-instructions/index.js";
-import type { ChildEpoch, ChildId } from "../../../shared/codex-workbench-identity/index.js";
-import { isEpochOperationRecord } from "./provenance.js";
+import {
+	cloneAndFreeze,
+	deepEqual,
+	isEpochExecutionProof,
+	isEpochOperationRecord,
+	proofMatchesManifest,
+} from "./provenance.js";
 import {
 	CodexThreadLinkError,
 	type CodexThreadLinkClassifier,
 	type CodexThreadLinkClassifierOptions,
 	type ThreadLinkClassification,
+	type ThreadLinkCondition,
 	type ThreadLinkCurrentEpoch,
 	type ThreadLinkAllowedSource,
 	type ThreadLinkExecutableStatus,
 	type ThreadLinkObservation,
+	type ThreadLinkReason,
 	type ThreadLinkSource,
+	type ThreadLinkStatus,
 	type ThreadLink,
 	type ThreadLinkTarget,
 } from "./contract.js";
 
 const PAGE_LIMIT = 100;
-const ALLOWED_SOURCES = Object.freeze(["cli", "vscode", "exec", "appServer"] as const);
+const ALLOWED_SOURCES = Object.freeze([
+	"cli",
+	"vscode",
+	"exec",
+	"appServer",
+] satisfies readonly ThreadLinkAllowedSource[]);
 const ALLOWED_SOURCE_SET = new Set<string>(ALLOWED_SOURCES);
-const STATUS_VALUES = new Set(["notLoaded", "idle", "systemError", "active"]);
-const THREAD_CREATION_KINDS = new Set([
-	"create",
-	"create_thread",
-	"thread_create",
-	"fork",
-	"fork_thread",
-	"thread_fork",
-	"create_thread_initial_turn",
-	"fork_thread_initial_turn",
-	"thread_start",
-]);
+const STATUS_VALUES = new Set<string>(["notLoaded", "idle", "systemError", "active"]);
+const NON_EXECUTABLE_STATUS_SET = new Set<string>(
+	ADDITIONAL_CONTEXT_POLICY.threadLink.nonExecutableStatuses,
+);
+const REASON_PRECEDENCE = ADDITIONAL_CONTEXT_POLICY.threadLink.reasonPrecedence;
 type ThreadListSession = Pick<CodexSession, "threadListPage" | "threadLoadedListPage">;
+
+function assertPolicyConformance(): void {
+	const conditions = new Set(REASON_PRECEDENCE.map(({ condition }) => condition));
+	const reasons = new Set(REASON_PRECEDENCE.map(({ reason }) => reason));
+	if (
+		conditions.size !== REASON_PRECEDENCE.length ||
+		reasons.size !== REASON_PRECEDENCE.length ||
+		NON_EXECUTABLE_STATUS_SET.size !== 1 ||
+		!NON_EXECUTABLE_STATUS_SET.has("systemError") ||
+		[...NON_EXECUTABLE_STATUS_SET].some((status) => !STATUS_VALUES.has(status))
+	) {
+		throw new Error(
+			"additional-context thread-link policy has drifted from its classifier contract",
+		);
+	}
+}
+
+assertPolicyConformance();
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function authoredReason(condition: ThreadLinkCondition): ThreadLinkReason {
+	const entry = REASON_PRECEDENCE.find((candidate) => candidate.condition === condition);
+	if (entry === undefined) {
+		throw new Error(`additional-context policy is missing condition ${condition}`);
+	}
+	return entry.reason;
+}
+
+const THREAD_START_LOST_CONDITION: ThreadLinkCondition = (() => {
+	const expectedReason = ADDITIONAL_CONTEXT_POLICY.operation.threadStartOutcomeUnknown.reason;
+	const entry = REASON_PRECEDENCE.find((candidate) => candidate.reason === expectedReason);
+	if (entry === undefined) {
+		throw new Error("additional-context policy has no thread-start settlement condition");
+	}
+	return entry.condition;
+})();
+
 function invalidResult(message: string, cause?: unknown): CodexThreadLinkError {
 	return new CodexThreadLinkError("invalid_result", message, cause);
 }
 
-function listFailure(message: string, cause?: unknown): CodexThreadLinkError {
-	return new CodexThreadLinkError("list_exhaustion_failure", message, cause);
+function isCurrentEpoch(value: unknown): value is ThreadLinkCurrentEpoch {
+	return (
+		isRecord(value) &&
+		typeof value.childId === "string" &&
+		value.childId.length > 0 &&
+		typeof value.epoch === "string" &&
+		value.epoch.length > 0
+	);
 }
 
 function currentEpochOf(options: CodexThreadLinkClassifierOptions): ThreadLinkCurrentEpoch | null {
@@ -57,25 +108,18 @@ function currentEpochOf(options: CodexThreadLinkClassifierOptions): ThreadLinkCu
 			const value =
 				typeof options.currentEpoch === "function" ? options.currentEpoch() : options.currentEpoch;
 			if (value === null) return null;
-			if (
-				!isRecord(value) ||
-				typeof value.childId !== "string" ||
-				value.childId.length === 0 ||
-				typeof value.epoch !== "string" ||
-				value.epoch.length === 0
-			) {
+			if (!isCurrentEpoch(value)) {
 				throw new Error("the current epoch source returned an invalid child/epoch pair");
 			}
-			return Object.freeze({
-				childId: value.childId as ChildId,
-				epoch: value.epoch as ChildEpoch,
-			});
+			return Object.freeze({ childId: value.childId, epoch: value.epoch });
 		}
 		if (options.epoch !== undefined) {
 			const active = options.epoch.snapshot().manifest.activeEpoch;
-			return active === null
-				? null
-				: Object.freeze({ childId: active.childId, epoch: active.epoch });
+			if (active === null) return null;
+			if (!isCurrentEpoch(active)) {
+				throw new Error("the epoch store returned an invalid active child/epoch pair");
+			}
+			return Object.freeze({ childId: active.childId, epoch: active.epoch });
 		}
 	} catch (error) {
 		throw new CodexThreadLinkError(
@@ -138,10 +182,16 @@ function loadedListParams(cursor: string | null) {
 
 function assertThreadPage(value: unknown): asserts value is SessionThreadPageResult {
 	if (!isRecord(value) || !Array.isArray(value.data)) {
-		throw listFailure("thread/list returned an invalid page before exhaustion.");
+		throw new CodexThreadLinkError(
+			"list_exhaustion_failure",
+			"thread/list returned an invalid page before exhaustion.",
+		);
 	}
 	if (value.nextCursor !== null && typeof value.nextCursor !== "string") {
-		throw listFailure("thread/list returned an invalid nextCursor before exhaustion.");
+		throw new CodexThreadLinkError(
+			"list_exhaustion_failure",
+			"thread/list returned an invalid nextCursor before exhaustion.",
+		);
 	}
 	for (const row of value.data) {
 		if (!isRecord(row) || typeof row.id !== "string" || row.id.length === 0) {
@@ -152,10 +202,16 @@ function assertThreadPage(value: unknown): asserts value is SessionThreadPageRes
 
 function assertLoadedPage(value: unknown): asserts value is SessionLoadedThreadPageResult {
 	if (!isRecord(value) || !Array.isArray(value.data)) {
-		throw listFailure("thread/loaded/list returned an invalid page before exhaustion.");
+		throw new CodexThreadLinkError(
+			"list_exhaustion_failure",
+			"thread/loaded/list returned an invalid page before exhaustion.",
+		);
 	}
 	if (value.nextCursor !== null && typeof value.nextCursor !== "string") {
-		throw listFailure("thread/loaded/list returned an invalid nextCursor before exhaustion.");
+		throw new CodexThreadLinkError(
+			"list_exhaustion_failure",
+			"thread/loaded/list returned an invalid nextCursor before exhaustion.",
+		);
 	}
 	for (const id of value.data) {
 		if (typeof id !== "string" || id.length === 0) {
@@ -169,7 +225,7 @@ async function exhaustThreadList(session: ThreadListSession): Promise<readonly S
 	const seenCursors = new Set<string>();
 	let cursor: string | null = null;
 	while (true) {
-		let page: SessionThreadPageResult;
+		let page: unknown;
 		try {
 			page = await session.threadListPage(threadListParams(cursor));
 		} catch (error) {
@@ -200,7 +256,7 @@ async function exhaustLoadedList(session: ThreadListSession): Promise<readonly s
 	const seenCursors = new Set<string>();
 	let cursor: string | null = null;
 	while (true) {
-		let page: SessionLoadedThreadPageResult;
+		let page: unknown;
 		try {
 			page = await session.threadLoadedListPage(loadedListParams(cursor));
 		} catch (error) {
@@ -226,70 +282,244 @@ async function exhaustLoadedList(session: ThreadListSession): Promise<readonly s
 	}
 }
 
+export function isAllowedThreadLinkSource(value: unknown): value is ThreadLinkAllowedSource {
+	return typeof value === "string" && ALLOWED_SOURCE_SET.has(value);
+}
+
+export function allowedThreadLinkSources(): readonly ThreadLinkAllowedSource[] {
+	return ALLOWED_SOURCES;
+}
+
+function isThreadLinkSource(value: unknown): value is ThreadLinkSource {
+	if (typeof value === "string") return isAllowedThreadLinkSource(value) || value === "unknown";
+	if (!isRecord(value)) return false;
+	return Object.hasOwn(value, "custom") || Object.hasOwn(value, "subAgent");
+}
+
 function sourceOf(thread: SessionThread): ThreadLinkSource {
-	const source = thread.source as unknown;
-	if (typeof source === "string") {
-		if (ALLOWED_SOURCE_SET.has(source) || source === "unknown") return source as ThreadLinkSource;
-		return "unknown";
-	}
-	if (isRecord(source) && (Object.hasOwn(source, "custom") || Object.hasOwn(source, "subAgent"))) {
-		return source as ThreadLinkSource;
-	}
-	return "unknown";
+	const source: unknown = thread.source;
+	return isThreadLinkSource(source) ? source : "unknown";
+}
+
+export function isThreadLinkStatus(value: unknown): value is ThreadLinkStatus {
+	return typeof value === "string" && STATUS_VALUES.has(value);
+}
+
+export function isExecutableThreadLinkStatus(value: unknown): value is ThreadLinkExecutableStatus {
+	return (
+		isThreadLinkStatus(value) && value !== "notLoaded" && !NON_EXECUTABLE_STATUS_SET.has(value)
+	);
 }
 
 function statusOf(thread: SessionThread): SessionThread["status"]["type"] {
-	const status = thread.status as unknown;
-	if (!isRecord(status) || typeof status.type !== "string" || !STATUS_VALUES.has(status.type)) {
+	const status: unknown = thread.status;
+	if (!isRecord(status) || !isThreadLinkStatus(status.type)) {
 		throw invalidResult("thread/list returned a row with an invalid thread status.");
 	}
-	return status.type as SessionThread["status"]["type"];
+	return status.type;
 }
 
 function observedDirectInput(thread: SessionThread): boolean | null {
-	return thread.canAcceptDirectInput === true
-		? true
-		: thread.canAcceptDirectInput === false
-			? false
-			: null;
+	const capability: unknown = thread.canAcceptDirectInput;
+	return capability === true ? true : capability === false ? false : null;
 }
 
 function sourceReason(source: ThreadLinkSource): ThreadLinkReason | null {
 	if (typeof source === "object" && source !== null) {
-		if (Object.hasOwn(source, "custom")) return "thread_source_custom";
-		if (Object.hasOwn(source, "subAgent")) return "thread_source_subagent";
-		return "thread_source_unknown";
+		if (Object.hasOwn(source, "custom")) return authoredReason("thread_source_is_custom");
+		if (Object.hasOwn(source, "subAgent")) return authoredReason("thread_source_is_subagent");
+		return authoredReason("thread_source_is_unknown");
 	}
-	return ALLOWED_SOURCE_SET.has(source) ? null : "thread_source_unknown";
+	return isAllowedThreadLinkSource(source) ? null : authoredReason("thread_source_is_unknown");
 }
 
-function recordFromProof(target: ThreadLinkTarget): EpochOperationRecord | null {
-	if (target.provenance === undefined || target.provenance === null) return null;
-	const value = target.provenance as unknown;
-	const record = isRecord(value) && Object.hasOwn(value, "record") ? value.record : value;
-	return isEpochOperationRecord(record) ? record : null;
+function statusReason(status: SessionThread["status"]["type"]): ThreadLinkReason | null {
+	if (status === "notLoaded") return authoredReason("thread_status_is_not_loaded");
+	if (NON_EXECUTABLE_STATUS_SET.has(status)) {
+		return authoredReason("thread_status_is_system_error");
+	}
+	return null;
 }
 
-function recordFromEpoch(
+interface SuppliedEvidence {
+	readonly record: EpochOperationRecord;
+	readonly manifestRevision: number | null;
+}
+
+function suppliedEvidence(target: ThreadLinkTarget): SuppliedEvidence | null {
+	const value = target.provenance;
+	if (value === undefined || value === null) return null;
+	if (isEpochExecutionProof(value)) {
+		return { record: value.record, manifestRevision: value.manifestRevision };
+	}
+	if (isEpochOperationRecord(value)) return { record: value, manifestRevision: null };
+	return null;
+}
+
+function hasMalformedEvidence(target: ThreadLinkTarget): boolean {
+	return (
+		target.provenance !== undefined &&
+		target.provenance !== null &&
+		suppliedEvidence(target) === null
+	);
+}
+
+function conditionToken(value: string): string {
+	return value
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "_")
+		.replace(/^_+|_+$/g, "");
+}
+
+/** The authored special reason requires the persisted wire boundary and settlement condition. */
+function isThreadStartSettlementLost(record: EpochOperationRecord): boolean {
+	return (
+		record.status === "inspect_only" &&
+		record.outcome === "outcome_unknown" &&
+		record.operation.rpc === "thread/start" &&
+		record.reason !== null &&
+		conditionToken(record.reason) === THREAD_START_LOST_CONDITION
+	);
+}
+
+interface DurableEvidence {
+	readonly record: EpochOperationRecord | null;
+	readonly proof: EpochExecutionProof | null;
+	readonly reason: ThreadLinkReason | null;
+}
+
+function epochUnavailable(message: string, cause?: unknown): CodexThreadLinkError {
+	return new CodexThreadLinkError("current_epoch_unavailable", message, cause);
+}
+
+function recordForOperation(
+	manifest: { readonly records: readonly EpochOperationRecord[] },
+	operationId: string,
+): EpochOperationRecord | null {
+	const matches = manifest.records.filter(
+		(record) => record.correlation.operationId === operationId,
+	);
+	return matches.length === 1 ? (matches[0] ?? null) : null;
+}
+
+function reasonForEpochError(
+	error: unknown,
+	record: EpochOperationRecord | null,
+): ThreadLinkReason {
+	if (!(error instanceof CodexEpochError))
+		return authoredReason("current_epoch_ownership_is_unproven");
+	if (error.code === "stale_child") return authoredReason("link_child_is_not_current_child");
+	if (error.code === "prior_epoch") return authoredReason("link_or_provenance_epoch_is_prior");
+	if (error.code === "inspect_only" && record !== null && isThreadStartSettlementLost(record)) {
+		return authoredReason("thread_start_settlement_was_lost");
+	}
+	if (
+		error.code === "unknown_provenance" ||
+		error.code === "inspect_only" ||
+		error.code === "not_executable" ||
+		error.code === "not_initialized" ||
+		error.code === "invalid_input"
+	) {
+		return authoredReason("current_epoch_ownership_is_unproven");
+	}
+	throw epochUnavailable(
+		"The live epoch proof could not be read; the thread link was not classified.",
+		error,
+	);
+}
+
+function durableEvidence(
 	options: CodexThreadLinkClassifierOptions,
 	target: ThreadLinkTarget,
-): EpochOperationRecord | null {
-	if (target.provenance !== undefined) return recordFromProof(target);
-	if (options.epoch === undefined || target.operationId === undefined) return null;
+): DurableEvidence {
+	const unknown = authoredReason("current_epoch_ownership_is_unproven");
+	const evidence = suppliedEvidence(target);
+	if (hasMalformedEvidence(target)) return { record: null, proof: null, reason: unknown };
+	if (
+		options.epoch === undefined ||
+		target.operationId === undefined ||
+		target.childId === null ||
+		target.epoch === null
+	) {
+		return { record: null, proof: null, reason: unknown };
+	}
+
+	let observedRecord: EpochOperationRecord | null;
 	try {
-		return (
-			options.epoch
-				.snapshot()
-				.manifest.records.find((record) => record.correlation.operationId === target.operationId) ??
-			null
-		);
+		observedRecord = recordForOperation(options.epoch.snapshot().manifest, target.operationId);
 	} catch (error) {
-		throw new CodexThreadLinkError(
-			"current_epoch_unavailable",
-			"The epoch provenance could not be read; the thread link was not classified.",
+		throw epochUnavailable(
+			"The durable epoch manifest could not be read; the thread link was not classified.",
 			error,
 		);
 	}
+	if (observedRecord === null || !isEpochOperationRecord(observedRecord)) {
+		return { record: null, proof: null, reason: unknown };
+	}
+
+	let proof: EpochExecutionProof;
+	try {
+		proof = options.epoch.assertCurrent({
+			childId: target.childId,
+			epoch: target.epoch,
+			operationId: target.operationId,
+			threadId: target.threadId,
+		});
+	} catch (error) {
+		return {
+			record: observedRecord,
+			proof: null,
+			reason: reasonForEpochError(error, observedRecord),
+		};
+	}
+
+	let currentManifest: ReturnType<
+		NonNullable<CodexThreadLinkClassifierOptions["epoch"]>["snapshot"]
+	>["manifest"];
+	try {
+		currentManifest = options.epoch.snapshot().manifest;
+	} catch (error) {
+		throw epochUnavailable(
+			"The durable epoch manifest changed before proof adoption; the thread link was not classified.",
+			error,
+		);
+	}
+	if (
+		!isEpochExecutionProof(proof) ||
+		!proofMatchesManifest(proof, currentManifest) ||
+		proof.record.correlation.operationId !== target.operationId ||
+		!deepEqual(observedRecord, proof.record)
+	) {
+		return { record: observedRecord, proof: null, reason: unknown };
+	}
+	const activeEpoch = currentManifest.activeEpoch;
+	if (activeEpoch === null) {
+		return { record: proof.record, proof: null, reason: unknown };
+	}
+	if (activeEpoch.childId !== target.childId) {
+		return {
+			record: proof.record,
+			proof: null,
+			reason: authoredReason("link_child_is_not_current_child"),
+		};
+	}
+	if (activeEpoch.epoch !== target.epoch) {
+		return {
+			record: proof.record,
+			proof: null,
+			reason: authoredReason("link_or_provenance_epoch_is_prior"),
+		};
+	}
+	if (evidence !== null) {
+		if (
+			!deepEqual(evidence.record, proof.record) ||
+			(evidence.manifestRevision !== null && evidence.manifestRevision !== proof.manifestRevision)
+		) {
+			return { record: proof.record, proof: null, reason: unknown };
+		}
+	}
+	return { record: proof.record, proof: cloneAndFreeze(proof), reason: null };
 }
 
 function epochChangeReason(
@@ -297,9 +527,10 @@ function epochChangeReason(
 	ended: ThreadLinkCurrentEpoch | null,
 ): ThreadLinkReason | null {
 	if (started === null && ended === null) return null;
-	if (started === null || ended === null) return "unknown_provenance";
-	if (started.childId !== ended.childId) return "stale_child";
-	if (started.epoch !== ended.epoch) return "prior_epoch";
+	if (started === null || ended === null)
+		return authoredReason("current_epoch_ownership_is_unproven");
+	if (started.childId !== ended.childId) return authoredReason("link_child_is_not_current_child");
+	if (started.epoch !== ended.epoch) return authoredReason("link_or_provenance_epoch_is_prior");
 	return null;
 }
 
@@ -308,29 +539,32 @@ function ownershipReason(
 	started: ThreadLinkCurrentEpoch | null,
 	ended: ThreadLinkCurrentEpoch | null,
 	record: EpochOperationRecord | null,
+	durableReason: ThreadLinkReason | null,
 ): ThreadLinkReason | null {
 	const changed = epochChangeReason(started, ended);
 	if (changed !== null) return changed;
-	if (ended === null) return "unknown_provenance";
-	if (target.childId === null || target.epoch === null) return "unknown_provenance";
-	if (target.childId !== ended.childId) return "stale_child";
-	if (target.epoch !== ended.epoch) return "prior_epoch";
-	if (record === null) return "unknown_provenance";
+	if (ended === null) return authoredReason("current_epoch_ownership_is_unproven");
+	if (target.childId === null || target.epoch === null) {
+		return authoredReason("current_epoch_ownership_is_unproven");
+	}
+	if (target.childId !== ended.childId) return authoredReason("link_child_is_not_current_child");
+	if (target.epoch !== ended.epoch) return authoredReason("link_or_provenance_epoch_is_prior");
+	if (record === null) return authoredReason("current_epoch_ownership_is_unproven");
 	if (record.correlation.childId !== ended.childId || record.provenance.childId !== ended.childId) {
-		return "stale_child";
+		return authoredReason("link_child_is_not_current_child");
 	}
 	if (record.correlation.epoch !== ended.epoch || record.provenance.epoch !== ended.epoch) {
-		return "prior_epoch";
+		return authoredReason("link_or_provenance_epoch_is_prior");
 	}
 	if (target.operationId !== undefined && record.correlation.operationId !== target.operationId) {
-		return "unknown_provenance";
+		return authoredReason("current_epoch_ownership_is_unproven");
 	}
-	const creationUnknown =
-		record.outcome === "outcome_unknown" && THREAD_CREATION_KINDS.has(record.operation.kind);
-	if (creationUnknown) return "thread_start_outcome_unknown";
-	if (record.provenance.threadId !== target.threadId) return "unknown_provenance";
+	if (durableReason !== null) return durableReason;
+	if (record.provenance.threadId !== target.threadId) {
+		return authoredReason("current_epoch_ownership_is_unproven");
+	}
 	if (record.status !== "committed" || record.outcome !== "delivered") {
-		return "unknown_provenance";
+		return authoredReason("current_epoch_ownership_is_unproven");
 	}
 	return null;
 }
@@ -340,26 +574,65 @@ function classifyReason(
 	started: ThreadLinkCurrentEpoch | null,
 	ended: ThreadLinkCurrentEpoch | null,
 	record: EpochOperationRecord | null,
+	durableReason: ThreadLinkReason | null,
 	persistedRows: number,
 	loadedOccurrences: number,
 	thread: SessionThread | null,
 ): ThreadLinkReason | null {
-	const ownership = ownershipReason(target, started, ended, record);
-	if (ownership !== null) return ownership;
-	if (persistedRows === 0) return "thread_list_missing";
-	if (persistedRows > 1) return "thread_list_ambiguous";
-	if (loadedOccurrences > 1) return "thread_loaded_list_ambiguous";
-	if (thread === null) return "thread_list_missing";
-	const source = sourceOf(thread);
-	const sourceRefusal = sourceReason(source);
-	if (sourceRefusal !== null) return sourceRefusal;
-	const status = statusOf(thread);
-	if (status === "notLoaded") return "thread_status_not_loaded";
-	if (status === "systemError") return "thread_status_system_error";
-	if (loadedOccurrences === 0) return "thread_loaded_list_missing";
-	const directInput = observedDirectInput(thread);
-	if (directInput === false) return "direct_input_false";
-	if (directInput === null) return "direct_input_unknown";
+	const ownership = ownershipReason(target, started, ended, record, durableReason);
+	const source = thread === null ? "unknown" : sourceOf(thread);
+	const status = thread === null ? null : statusOf(thread);
+	const directInput = thread === null ? null : observedDirectInput(thread);
+	const conditions = new Map<ThreadLinkCondition, boolean>([
+		[
+			"link_child_is_not_current_child",
+			ownership === authoredReason("link_child_is_not_current_child"),
+		],
+		[
+			"link_or_provenance_epoch_is_prior",
+			ownership === authoredReason("link_or_provenance_epoch_is_prior"),
+		],
+		[
+			"thread_start_settlement_was_lost",
+			ownership === authoredReason("thread_start_settlement_was_lost"),
+		],
+		[
+			"current_epoch_ownership_is_unproven",
+			ownership === authoredReason("current_epoch_ownership_is_unproven"),
+		],
+		["persisted_target_row_is_missing", persistedRows === 0],
+		["persisted_target_rows_conflict", persistedRows > 1],
+		["loaded_target_membership_is_duplicate_or_conflicting", loadedOccurrences > 1],
+		["thread_source_is_custom", sourceReason(source) === authoredReason("thread_source_is_custom")],
+		[
+			"thread_source_is_subagent",
+			sourceReason(source) === authoredReason("thread_source_is_subagent"),
+		],
+		[
+			"thread_source_is_unknown",
+			sourceReason(source) === authoredReason("thread_source_is_unknown"),
+		],
+		[
+			"thread_status_is_not_loaded",
+			status !== null && statusReason(status) === authoredReason("thread_status_is_not_loaded"),
+		],
+		[
+			"thread_status_is_system_error",
+			status !== null && statusReason(status) === authoredReason("thread_status_is_system_error"),
+		],
+		["loaded_target_membership_is_missing", loadedOccurrences === 0],
+		["direct_input_capability_is_false", directInput === false],
+		["direct_input_capability_is_null", directInput === null && thread !== null],
+	]);
+	if (
+		conditions.size !== REASON_PRECEDENCE.length ||
+		REASON_PRECEDENCE.some((entry) => !conditions.has(entry.condition))
+	) {
+		throw new Error("additional-context thread-link policy has an unimplemented refusal condition");
+	}
+	for (const entry of REASON_PRECEDENCE) {
+		if (conditions.get(entry.condition) === true) return entry.reason;
+	}
 	return null;
 }
 
@@ -390,6 +663,12 @@ function observationFor(
 	});
 }
 
+function isExecutableStatus(
+	value: ThreadLinkObservation["status"],
+): value is ThreadLinkExecutableStatus {
+	return isExecutableThreadLinkStatus(value);
+}
+
 function linkFor(
 	target: ThreadLinkTarget,
 	current: ThreadLinkCurrentEpoch | null,
@@ -397,15 +676,21 @@ function linkFor(
 	refusal: ThreadLinkReason | null,
 ): ThreadLink {
 	if (refusal === null) {
-		if (current === null) throw new Error("an executable link must have a current epoch");
+		if (
+			current === null ||
+			!isAllowedThreadLinkSource(observation.source) ||
+			!isExecutableStatus(observation.status)
+		) {
+			throw new Error("an executable link failed its final source, status, or epoch guard");
+		}
 		return Object.freeze({
 			kind: "thread_link" as const,
 			state: "executable" as const,
 			childId: current.childId,
 			epoch: current.epoch,
 			threadId: target.threadId,
-			source: observation.source as ThreadLinkAllowedSource,
-			status: observation.status as ThreadLinkExecutableStatus,
+			source: observation.source,
+			status: observation.status,
 			loaded: true as const,
 			canAcceptDirectInput: true as const,
 			reason: null,
@@ -438,21 +723,22 @@ export function createCodexThreadLinkClassifier(
 	const classify = async (target: ThreadLinkTarget): Promise<ThreadLinkClassification> => {
 		validateTarget(target);
 		const started = currentEpochOf(options);
-		// The two result sets are deliberately exhausted in authored order. A
-		// partial persisted or loaded page can never decide a stable link state.
+		// Both result sets are exhausted before precedence is evaluated. A partial
+		// page can never decide a stable link state.
 		const persisted = await exhaustThreadList(session);
 		const loaded = await exhaustLoadedList(session);
 		const ended = currentEpochOf(options);
-		const record = recordFromEpoch(options, target);
+		const evidence = durableEvidence(options, target);
 		const matchingThreads = persisted.filter((thread) => thread.id === target.threadId);
 		const matchingLoaded = loaded.filter((threadId) => threadId === target.threadId);
-		const thread = matchingThreads.length === 1 ? matchingThreads[0]! : null;
+		const thread = matchingThreads.length === 1 ? cloneAndFreeze(matchingThreads[0]!) : null;
 		const observation = observationFor(thread, matchingLoaded.length, matchingThreads.length);
 		const refusal = classifyReason(
 			target,
 			started,
 			ended,
-			record,
+			evidence.record,
+			evidence.reason,
 			matchingThreads.length,
 			matchingLoaded.length,
 			thread,
@@ -462,6 +748,7 @@ export function createCodexThreadLinkClassifier(
 			thread,
 			observation,
 			currentEpoch: ended,
+			proof: evidence.proof,
 		});
 	};
 	return Object.freeze({ classify });

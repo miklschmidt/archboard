@@ -19,11 +19,15 @@ import type {
 	ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import type {
-	ThreadLinkReason,
+	ThreadLinkReason as AuthoredThreadLinkReason,
 	ThreadLinkState as AuthoredThreadLinkState,
 } from "../../codex-instructions/index.js";
+import type { AdditionalContextPolicy } from "../../codex-instructions/index.js";
 
+export type ThreadLinkReason = AuthoredThreadLinkReason;
 export type ThreadLinkReasonCode = ThreadLinkReason;
+export type ThreadLinkCondition =
+	AdditionalContextPolicy["threadLink"]["reasonPrecedence"][number]["condition"];
 export type ThreadLinkState = AuthoredThreadLinkState;
 export type ThreadLinkStatus = SessionThread["status"]["type"];
 export type ThreadLinkSource = SessionThreadSource;
@@ -37,6 +41,9 @@ export type ThreadLinkCurrentEpoch = Pick<ActiveEpoch, "childId" | "epoch">;
 export type ThreadLinkCurrentEpochSource =
 	| ThreadLinkCurrentEpoch
 	| (() => ThreadLinkCurrentEpoch | null);
+
+/** The live durable authority required before a link can become executable. */
+export type ThreadLinkEpochAuthority = Pick<CodexEpochStore, "assertCurrent" | "snapshot">;
 
 /** A committed epoch record or a proof returned by `assertCurrent`. */
 export type ThreadLinkEpochProof = EpochOperationRecord | EpochExecutionProof;
@@ -54,7 +61,7 @@ export interface CodexThreadLinkClassifierOptions {
 	readonly session: Pick<CodexSession, "threadListPage" | "threadLoadedListPage">;
 	/** Prefer this live source when supplied; `epoch.snapshot()` is the fallback. */
 	readonly currentEpoch?: ThreadLinkCurrentEpochSource;
-	readonly epoch?: Pick<CodexEpochStore, "snapshot">;
+	readonly epoch?: ThreadLinkEpochAuthority;
 }
 
 export interface ThreadLinkObservation {
@@ -116,6 +123,8 @@ export interface ThreadLinkClassification {
 	readonly thread: SessionThread | null;
 	readonly observation: ThreadLinkObservation;
 	readonly currentEpoch: ThreadLinkCurrentEpoch | null;
+	/** The matching proof read from the live durable epoch authority, if any. */
+	readonly proof: EpochExecutionProof | null;
 }
 
 export type ThreadLinkClassificationErrorCode =
@@ -164,24 +173,22 @@ export interface ThreadLinkBindingSnapshot {
 
 export interface CodexThreadLinkBindingOptions {
 	readonly currentEpoch?: ThreadLinkCurrentEpochSource;
-	readonly epoch?: Pick<CodexEpochStore, "snapshot">;
+	readonly epoch?: ThreadLinkEpochAuthority;
 }
+
+/** Public CAS accepts only unbound or explicitly inspect-only links. */
+export type ThreadLinkNonExecutableSnapshot = InspectOnlyThreadLink | UnboundThreadLink;
 
 export interface ThreadLinkCompareAndSwapInput {
 	readonly paneId: string;
 	readonly expected: ThreadLinkCasToken | null;
-	readonly next: ThreadLinkSnapshot;
+	readonly next: ThreadLinkNonExecutableSnapshot;
 }
 
 export interface ThreadLinkBindingStore {
 	readonly snapshot: (paneId: string) => ThreadLinkBindingSnapshot;
 	readonly read: (paneId: string) => ThreadLinkBindingSnapshot;
 	readonly compareAndSwap: (input: ThreadLinkCompareAndSwapInput) => ThreadLinkBindingSnapshot;
-	readonly bind: (
-		paneId: string,
-		expected: ThreadLinkCasToken | null,
-		next: ThreadLink,
-	) => ThreadLinkBindingSnapshot;
 	readonly clear: (
 		paneId: string,
 		expected: ThreadLinkCasToken | null,
@@ -192,7 +199,14 @@ export interface CodexThreadLinkClassifier {
 	readonly classify: (target: ThreadLinkTarget) => Promise<ThreadLinkClassification>;
 }
 
-export interface CodexThreadLinkPort extends CodexThreadLinkClassifier, ThreadLinkBindingStore {}
+export interface CodexThreadLinkPort extends CodexThreadLinkClassifier, ThreadLinkBindingStore {
+	/** Classify twice through the live authorities, then adopt the fresh result by CAS. */
+	readonly classifyAndBind: (
+		paneId: string,
+		expected: ThreadLinkCasToken | null,
+		target: ThreadLinkTarget,
+	) => Promise<ThreadLinkBindingSnapshot>;
+}
 
 export type {
 	EpochExecutionProof,

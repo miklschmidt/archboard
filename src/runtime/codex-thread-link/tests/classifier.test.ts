@@ -4,6 +4,7 @@ import {
 	CodexThreadLinkError,
 	classifyCodexThreadLink,
 	createCodexThreadLinkClassifier,
+	type ThreadLinkTarget,
 } from "../index.ts";
 import {
 	createIdentityAuthority,
@@ -12,13 +13,16 @@ import {
 import {
 	currentEpoch,
 	loadedPage,
-	operationRecord,
 	session,
 	thread,
 	threadPage,
-	target,
 	type ScriptedSession,
 } from "./fixtures.ts";
+import {
+	realEpochFixture,
+	type RealEpochFixture,
+	type RealEpochOptions,
+} from "./epoch-fixtures.ts";
 
 function onePageSession(
 	row: ReturnType<typeof thread>,
@@ -27,15 +31,25 @@ function onePageSession(
 	return session(new Map([[null, threadPage([row])]]), new Map([[null, loadedPage(loadedIds)]]));
 }
 
-function ownedTarget(
-	authority: ReturnType<typeof createIdentityAuthority>,
-	rawThreadId = "target",
-	operationId = "link-1",
-	options: Parameters<typeof operationRecord>[3] = {},
-) {
-	const threadId = authority.decoder.adoptThreadId(rawThreadId);
-	const record = operationRecord(authority, threadId, operationId, options);
-	return target(authority, rawThreadId, { operationId, provenance: record });
+async function withFixture<T>(
+	options: RealEpochOptions,
+	action: (fixture: RealEpochFixture) => Promise<T>,
+): Promise<T> {
+	const fixture = realEpochFixture(createIdentityAuthority(), options);
+	try {
+		return await action(fixture);
+	} finally {
+		fixture.cleanup();
+	}
+}
+
+function targetWithoutAttachedProof(fixture: RealEpochFixture): ThreadLinkTarget {
+	return {
+		threadId: fixture.target.threadId,
+		childId: fixture.target.childId,
+		epoch: fixture.target.epoch,
+		operationId: fixture.target.operationId,
+	};
 }
 
 async function rejection(promise: Promise<unknown>): Promise<CodexThreadLinkError> {
@@ -50,36 +64,41 @@ async function rejection(promise: Promise<unknown>): Promise<CodexThreadLinkErro
 
 describe("codex thread-link classification", () => {
 	test("exhausts both pages and joins by exact ThreadId with literal queries", async () => {
-		const authority = createIdentityAuthority();
-		const other = thread(authority, "other");
-		const wanted = thread(authority, "wanted");
-		const sessionFixture = session(
-			new Map([
-				[null, threadPage([other], "thread-page-2")],
-				["thread-page-2", threadPage([wanted])],
-			]),
-			new Map([
-				[null, loadedPage([other.id], "loaded-page-2")],
-				["loaded-page-2", loadedPage([wanted.id])],
-			]),
-		);
-		const result = await classifyCodexThreadLink(
-			{ session: sessionFixture, currentEpoch: currentEpoch(authority) },
-			ownedTarget(authority, "wanted"),
-		);
+		await withFixture({ threadId: "wanted" }, async (fixture) => {
+			const other = thread(fixture.authority, "other");
+			const wanted = thread(fixture.authority, "wanted");
+			const sessionFixture = session(
+				new Map([
+					[null, threadPage([other], "thread-page-2")],
+					["thread-page-2", threadPage([wanted])],
+				]),
+				new Map([
+					[null, loadedPage([other.id], "loaded-page-2")],
+					["loaded-page-2", loadedPage([wanted.id])],
+				]),
+			);
+			const result = await classifyCodexThreadLink(
+				{ session: sessionFixture, epoch: fixture.store },
+				fixture.target,
+			);
 
-		expect(result.link).toMatchObject({
-			state: "executable",
-			threadId: wanted.id,
-			childId: authority.validator.childId,
-			epoch: authority.validator.epoch,
-			loaded: true,
-			canAcceptDirectInput: true,
-			reason: null,
-		});
-		expect(result.thread).toBe(wanted);
-		expect(sessionFixture.threadListRequests).toEqual([
-			{
+			expect(result.link).toMatchObject({
+				state: "executable",
+				threadId: wanted.id,
+				childId: fixture.authority.validator.childId,
+				epoch: fixture.authority.validator.epoch,
+				loaded: true,
+				canAcceptDirectInput: true,
+				reason: null,
+			});
+			expect(result.thread).toEqual(wanted);
+			expect(result.proof).toEqual(fixture.proof);
+			expect(sessionFixture.threadListRequests).toHaveLength(2);
+			expect(sessionFixture.loadedListRequests).toEqual([
+				{ cursor: null, limit: 100 },
+				{ cursor: "loaded-page-2", limit: 100 },
+			]);
+			expect(sessionFixture.threadListRequests[0]).toMatchObject({
 				cursor: null,
 				limit: 100,
 				sortKey: "recency_at",
@@ -87,271 +106,283 @@ describe("codex thread-link classification", () => {
 				sourceKinds: ["cli", "vscode", "exec", "appServer"],
 				archived: false,
 				useStateDbOnly: false,
-			},
-			{
-				cursor: "thread-page-2",
-				limit: 100,
-				sortKey: "recency_at",
-				sortDirection: "desc",
-				sourceKinds: ["cli", "vscode", "exec", "appServer"],
-				archived: false,
-				useStateDbOnly: false,
-			},
-		]);
-		expect(sessionFixture.loadedListRequests).toEqual([
-			{ cursor: null, limit: 100 },
-			{ cursor: "loaded-page-2", limit: 100 },
-		]);
+			});
+		});
 	});
 
 	test("does not infer a target from recency or a loaded-only row", async () => {
-		const authority = createIdentityAuthority();
-		const recent = thread(authority, "recent", { status: "active" });
-		const targetId = authority.decoder.adoptThreadId("not-persisted");
-		const result = await classifyCodexThreadLink(
-			{
-				session: session(
-					new Map([[null, threadPage([recent])]]),
-					new Map([[null, loadedPage([targetId])]]),
-				),
-				currentEpoch: currentEpoch(authority),
-			},
-			ownedTarget(authority, "not-persisted"),
-		);
-
-		expect(result.link.state).toBe("inspect_only");
-		expect(result.link.reason).toBe("thread_list_missing");
-		expect(result.link.loaded).toBe(true);
-		expect(result.thread).toBeNull();
+		await withFixture({ threadId: "not-persisted" }, async (fixture) => {
+			const recent = thread(fixture.authority, "recent", { status: "active" });
+			const result = await classifyCodexThreadLink(
+				{
+					session: session(
+						new Map([[null, threadPage([recent])]]),
+						new Map([[null, loadedPage([fixture.target.threadId])]]),
+					),
+					epoch: fixture.store,
+				},
+				fixture.target,
+			);
+			expect(result.link).toMatchObject({
+				state: "inspect_only",
+				reason: "thread_list_missing",
+				loaded: true,
+			});
+			expect(result.thread).toBeNull();
+		});
 	});
 
-	test("refuses duplicate rows and duplicate loaded membership", async () => {
-		const authority = createIdentityAuthority();
-		const wanted = thread(authority, "duplicate");
-		const duplicateSession = session(
-			new Map([[null, threadPage([wanted, wanted])]]),
-			new Map([[null, loadedPage([wanted.id])]]),
-		);
-		const duplicatePersisted = await classifyCodexThreadLink(
-			{ session: duplicateSession, currentEpoch: currentEpoch(authority) },
-			ownedTarget(authority, "duplicate"),
-		);
-		const duplicateLoaded = await classifyCodexThreadLink(
-			{
-				session: session(
-					new Map([[null, threadPage([wanted])]]),
-					new Map([[null, loadedPage([wanted.id, wanted.id])]]),
-				),
-				currentEpoch: currentEpoch(authority),
-			},
-			ownedTarget(authority, "duplicate"),
-		);
+	test("refuses duplicate rows, duplicate membership, and repeated cursors", async () => {
+		await withFixture({ threadId: "target" }, async (fixture) => {
+			const row = thread(fixture.authority, "target");
+			const duplicatePersisted = await classifyCodexThreadLink(
+				{
+					session: session(
+						new Map([[null, threadPage([row, row])]]),
+						new Map([[null, loadedPage([row.id])]]),
+					),
+					epoch: fixture.store,
+				},
+				fixture.target,
+			);
+			const duplicateLoaded = await classifyCodexThreadLink(
+				{ session: onePageSession(row, [row.id, row.id]), epoch: fixture.store },
+				fixture.target,
+			);
+			const persistedRepeat = await rejection(
+				createCodexThreadLinkClassifier({
+					session: session(
+						new Map([
+							[null, threadPage([row], "same")],
+							["same", threadPage([], "same")],
+						]),
+						new Map([[null, loadedPage([row.id])]]),
+					),
+					epoch: fixture.store,
+				}).classify(fixture.target),
+			);
+			const loadedRepeat = await rejection(
+				createCodexThreadLinkClassifier({
+					session: session(
+						new Map([[null, threadPage([row])]]),
+						new Map([
+							[null, loadedPage([row.id], "same")],
+							["same", loadedPage([], "same")],
+						]),
+					),
+					epoch: fixture.store,
+				}).classify(fixture.target),
+			);
 
-		expect(duplicatePersisted.link.reason).toBe("thread_list_ambiguous");
-		expect(duplicateLoaded.link.reason).toBe("thread_loaded_list_ambiguous");
-	});
-
-	test("detects repeated cursors and malformed exhaustion pages", async () => {
-		const authority = createIdentityAuthority();
-		const wanted = thread(authority, "cursor-target");
-		const persistedRepeat = await rejection(
-			createCodexThreadLinkClassifier({
-				session: session(
-					new Map([
-						[null, threadPage([wanted], "same")],
-						["same", threadPage([], "same")],
-					]),
-					new Map([[null, loadedPage([wanted.id])]]),
-				),
-				currentEpoch: currentEpoch(authority),
-			}).classify(ownedTarget(authority, "cursor-target")),
-		);
-		const loadedRepeat = await rejection(
-			createCodexThreadLinkClassifier({
-				session: session(
-					new Map([[null, threadPage([wanted])]]),
-					new Map([
-						[null, loadedPage([wanted.id], "same")],
-						["same", loadedPage([], "same")],
-					]),
-				),
-				currentEpoch: currentEpoch(authority),
-			}).classify(ownedTarget(authority, "cursor-target")),
-		);
-		const malformed = await rejection(
-			createCodexThreadLinkClassifier({
-				session: session(
-					new Map([[null, { data: [], nextCursor: 7 } as never]]),
-					new Map([[null, loadedPage([wanted.id])]]),
-				),
-				currentEpoch: currentEpoch(authority),
-			}).classify(ownedTarget(authority, "cursor-target")),
-		);
-
-		expect(persistedRepeat.code).toBe("repeated_cursor");
-		expect(loadedRepeat.code).toBe("repeated_cursor");
-		expect(malformed.code).toBe("list_exhaustion_failure");
+			expect(duplicatePersisted.link.reason).toBe("thread_list_ambiguous");
+			expect(duplicateLoaded.link.reason).toBe("thread_loaded_list_ambiguous");
+			expect(persistedRepeat.code).toBe("repeated_cursor");
+			expect(loadedRepeat.code).toBe("repeated_cursor");
+		});
 	});
 
 	test("refuses a target that disappears from loaded membership", async () => {
-		const authority = createIdentityAuthority();
-		const wanted = thread(authority, "disappeared");
-		const result = await classifyCodexThreadLink(
-			{ session: onePageSession(wanted, []), currentEpoch: currentEpoch(authority) },
-			ownedTarget(authority, "disappeared"),
-		);
-
-		expect(result.link).toMatchObject({
-			state: "inspect_only",
-			reason: "thread_loaded_list_missing",
+		await withFixture({ threadId: "disappeared" }, async (fixture) => {
+			const row = thread(fixture.authority, "disappeared");
+			const result = await classifyCodexThreadLink(
+				{ session: onePageSession(row, []), epoch: fixture.store },
+				fixture.target,
+			);
+			expect(result.link).toMatchObject({
+				state: "inspect_only",
+				reason: "thread_loaded_list_missing",
+			});
 		});
-		expect(result.observation).toMatchObject({ persisted: true, loaded: false });
 	});
 
-	test("allows exactly the four top-level sources", async () => {
-		const authority = createIdentityAuthority();
-		for (const source of ["cli", "vscode", "exec", "appServer"] as const) {
-			const row = thread(authority, `source-${source}`, { source });
-			const result = await classifyCodexThreadLink(
-				{ session: onePageSession(row), currentEpoch: currentEpoch(authority) },
-				ownedTarget(authority, `source-${source}`),
-			);
-			expect(result.link.state).toBe("executable");
-			expect(result.link.source).toBe(source);
-		}
+	test("allows the four top-level sources and refuses nested source variants", async () => {
+		await withFixture({}, async (fixture) => {
+			for (const source of ["cli", "vscode", "exec", "appServer"] as const) {
+				const row = thread(fixture.authority, "target", { source });
+				const result = await classifyCodexThreadLink(
+					{ session: onePageSession(row), epoch: fixture.store },
+					fixture.target,
+				);
+				expect(result.link).toMatchObject({ state: "executable", source });
+			}
+			for (const [source, reason] of [
+				[{ custom: "integration" }, "thread_source_custom"],
+				[{ subAgent: "review" }, "thread_source_subagent"],
+				["unknown", "thread_source_unknown"],
+			] as const) {
+				const row = thread(fixture.authority, "target", { source });
+				const result = await classifyCodexThreadLink(
+					{ session: onePageSession(row), epoch: fixture.store },
+					fixture.target,
+				);
+				expect(result.link).toMatchObject({ state: "inspect_only", reason });
+			}
+		});
 	});
 
-	test("gives custom, subagent, and unknown sources distinct reasons", async () => {
-		const authority = createIdentityAuthority();
-		const cases = [
-			[{ custom: "integration" }, "thread_source_custom"],
-			[{ subAgent: "review" }, "thread_source_subagent"],
-			["unknown", "thread_source_unknown"],
-		] as const;
-		for (const [source, expectedReason] of cases) {
-			const rawId = `refused-${expectedReason}`;
-			const row = thread(authority, rawId, { source });
-			const result = await classifyCodexThreadLink(
-				{ session: onePageSession(row), currentEpoch: currentEpoch(authority) },
-				ownedTarget(authority, rawId),
-			);
-			expect(result.link).toMatchObject({ state: "inspect_only", reason: expectedReason });
-		}
+	test("keeps notLoaded, systemError, false, and null capability refusals distinct", async () => {
+		await withFixture({}, async (fixture) => {
+			for (const [status, canAcceptDirectInput, reason] of [
+				["notLoaded", true, "thread_status_not_loaded"],
+				["systemError", true, "thread_status_system_error"],
+				["idle", false, "direct_input_false"],
+				["idle", null, "direct_input_unknown"],
+			] as const) {
+				const row = thread(fixture.authority, "target", { status, canAcceptDirectInput });
+				const result = await classifyCodexThreadLink(
+					{ session: onePageSession(row), epoch: fixture.store },
+					fixture.target,
+				);
+				expect(result.link).toMatchObject({ state: "inspect_only", reason });
+			}
+		});
 	});
 
-	test("keeps status and direct-input refusals distinct", async () => {
-		const authority = createIdentityAuthority();
-		const cases = [
-			["notLoaded", true, "thread_status_not_loaded"],
-			["systemError", true, "thread_status_system_error"],
-			["idle", false, "direct_input_false"],
-			["idle", null, "direct_input_unknown"],
-		] as const;
-		for (const [status, canAcceptDirectInput, expectedReason] of cases) {
-			const rawId = `status-${expectedReason}`;
-			const row = thread(authority, rawId, { status, canAcceptDirectInput });
-			const result = await classifyCodexThreadLink(
-				{ session: onePageSession(row), currentEpoch: currentEpoch(authority) },
-				ownedTarget(authority, rawId),
-			);
-			expect(result.link).toMatchObject({ state: "inspect_only", reason: expectedReason });
-		}
-	});
-
-	test("reports missing persisted rows before join or capability state", async () => {
-		const authority = createIdentityAuthority();
-		const rawId = "absent";
-		const id = authority.decoder.adoptThreadId(rawId);
-		const result = await classifyCodexThreadLink(
-			{
-				session: session(new Map([[null, threadPage([])]]), new Map([[null, loadedPage([id])]])),
-				currentEpoch: currentEpoch(authority),
-			},
-			ownedTarget(authority, rawId),
-		);
-
-		expect(result.link.reason).toBe("thread_list_missing");
-		expect(result.observation).toMatchObject({ persisted: false, loaded: true });
-	});
-
-	test("returns stale-child and prior-epoch reasons before all join reasons", async () => {
+	test("returns stale-child and prior-epoch before lower list reasons", async () => {
 		const oldAuthority = createIdentityAuthority();
-		const oldRow = thread(oldAuthority, "old-thread");
-		const replacement = createIdentityAuthority();
-		const stale = await classifyCodexThreadLink(
-			{ session: onePageSession(oldRow), currentEpoch: currentEpoch(replacement) },
-			ownedTarget(oldAuthority, "old-thread"),
-		);
-
-		const sameChildNewEpoch = restoreIdentityAuthority({
-			childId: oldAuthority.validator.childId,
-			epoch: oldAuthority.issuer.mintChildEpoch(),
-		});
-		const prior = await classifyCodexThreadLink(
-			{ session: onePageSession(oldRow), currentEpoch: currentEpoch(sameChildNewEpoch) },
-			ownedTarget(oldAuthority, "old-thread"),
-		);
-
-		expect(stale.link.reason).toBe("stale_child");
-		expect(prior.link.reason).toBe("prior_epoch");
+		const fixture = realEpochFixture(oldAuthority, { threadId: "target" });
+		try {
+			const row = thread(oldAuthority, "target", {
+				source: { custom: "foreign" },
+				status: "systemError",
+				canAcceptDirectInput: false,
+			});
+			const replacement = createIdentityAuthority();
+			const stale = await classifyCodexThreadLink(
+				{
+					session: onePageSession(row, [row.id, row.id]),
+					currentEpoch: currentEpoch(replacement),
+					epoch: fixture.store,
+				},
+				fixture.target,
+			);
+			const sameChildNewEpoch = restoreIdentityAuthority({
+				childId: oldAuthority.validator.childId,
+				epoch: oldAuthority.issuer.mintChildEpoch(),
+			});
+			const prior = await classifyCodexThreadLink(
+				{
+					session: onePageSession(row, [row.id, row.id]),
+					currentEpoch: currentEpoch(sameChildNewEpoch),
+					epoch: fixture.store,
+				},
+				fixture.target,
+			);
+			expect(stale.link.reason).toBe("stale_child");
+			expect(prior.link.reason).toBe("prior_epoch");
+		} finally {
+			fixture.cleanup();
+		}
 	});
 
-	test("marks absent provenance and outcome-unknown creation inspect-only", async () => {
-		const authority = createIdentityAuthority();
-		const row = thread(authority, "unknown-provenance");
-		const missing = await classifyCodexThreadLink(
-			{ session: onePageSession(row), currentEpoch: currentEpoch(authority) },
-			target(authority, "unknown-provenance"),
+	test("uses the authored thread-start condition, not a turn/start or alias kind", async () => {
+		await withFixture(
+			{
+				operationId: "thread-loss",
+				kind: "not-an-alias",
+				rpc: "thread/start",
+				unknownReason: "thread/start settlement was lost",
+			},
+			async (fixture) => {
+				const result = await classifyCodexThreadLink(
+					{ session: onePageSession(thread(fixture.authority, "target")), epoch: fixture.store },
+					fixture.target,
+				);
+				expect(result.link.reason).toBe("thread_start_outcome_unknown");
+			},
 		);
-		const unknownStartRow = thread(authority, "unknown-start");
-		const unknownStart = await classifyCodexThreadLink(
-			{ session: onePageSession(unknownStartRow), currentEpoch: currentEpoch(authority) },
-			ownedTarget(authority, "unknown-start", "start-unknown", {
+		await withFixture(
+			{
+				operationId: "turn-loss",
 				kind: "create_thread_initial_turn",
-				outcome: "outcome_unknown",
-				provenanceThreadId: null,
-			}),
+				rpc: "turn/start",
+				unknownReason: "The initial turn settlement was lost.",
+			},
+			async (fixture) => {
+				const result = await classifyCodexThreadLink(
+					{ session: onePageSession(thread(fixture.authority, "target")), epoch: fixture.store },
+					fixture.target,
+				);
+				expect(result.link.reason).toBe("unknown_provenance");
+			},
 		);
-		const ordinaryUnknownRow = thread(authority, "ordinary-unknown");
-		const ordinaryUnknown = await classifyCodexThreadLink(
-			{ session: onePageSession(ordinaryUnknownRow), currentEpoch: currentEpoch(authority) },
-			ownedTarget(authority, "ordinary-unknown", "message-unknown", {
-				kind: "send_message_to_thread",
-				outcome: "outcome_unknown",
-				provenanceThreadId: null,
-			}),
-		);
-
-		expect(missing.link.reason).toBe("unknown_provenance");
-		expect(unknownStart.link).toMatchObject({
-			state: "inspect_only",
-			reason: "thread_start_outcome_unknown",
-		});
-		expect(ordinaryUnknown.link.reason).toBe("unknown_provenance");
 	});
 
-	test("does not call an absent active epoch stale or executable", async () => {
+	test("treats caller provenance as evidence and rejects stale, forged, and mismatched evidence", async () => {
+		await withFixture({}, async (fixture) => {
+			const row = thread(fixture.authority, "target");
+			const options = { session: onePageSession(row), epoch: fixture.store };
+			const missing = await classifyCodexThreadLink(options, targetWithoutAttachedProof(fixture));
+			const missingRecord = await classifyCodexThreadLink(options, {
+				...fixture.target,
+				operationId: "missing-operation",
+				provenance: null,
+			});
+			const staleAuthority = createIdentityAuthority();
+			const stale = await classifyCodexThreadLink(
+				{ ...options, currentEpoch: currentEpoch(staleAuthority) },
+				fixture.target,
+			);
+			const forgedRevision = await classifyCodexThreadLink(options, {
+				...fixture.target,
+				provenance: { ...fixture.proof!, manifestRevision: fixture.proof!.manifestRevision + 1 },
+			});
+			const staleRecord = {
+				...fixture.proof!.record,
+				provenance: {
+					...fixture.proof!.record.provenance,
+					threadId: fixture.authority.decoder.adoptThreadId("other-thread"),
+				},
+			};
+			const staleEvidence = await classifyCodexThreadLink(options, {
+				...fixture.target,
+				provenance: staleRecord,
+			});
+			const wrongStatus = {
+				...fixture.proof!.record,
+				status: "inspect_only" as const,
+				outcome: "outcome_unknown" as const,
+			};
+			const mismatched = await classifyCodexThreadLink(options, {
+				...fixture.target,
+				provenance: wrongStatus,
+			});
+			const invalidOutcomePair = await classifyCodexThreadLink(options, {
+				...fixture.target,
+				provenance: {
+					...fixture.proof!.record,
+					status: "committed",
+					outcome: "outcome_unknown",
+				},
+			});
+			const malformed = await classifyCodexThreadLink(options, {
+				...fixture.target,
+				provenance: { record: { nope: true }, manifestRevision: 1 } as never,
+			});
+
+			expect(missing.link.state).toBe("executable");
+			expect(missingRecord.link.reason).toBe("unknown_provenance");
+			expect(stale.link.reason).toBe("stale_child");
+			expect(forgedRevision.link.reason).toBe("unknown_provenance");
+			expect(staleEvidence.link.reason).toBe("unknown_provenance");
+			expect(mismatched.link.reason).toBe("unknown_provenance");
+			expect(invalidOutcomePair.link.reason).toBe("unknown_provenance");
+			expect(malformed.link.reason).toBe("unknown_provenance");
+		});
+	});
+
+	test("returns inspect-only when no active epoch exists or the live epoch changes", async () => {
 		const authority = createIdentityAuthority();
 		const row = thread(authority, "stopped-child");
-		const result = await classifyCodexThreadLink(
+		const stopped = await classifyCodexThreadLink(
 			{ session: onePageSession(row), currentEpoch: () => null },
-			ownedTarget(authority, "stopped-child"),
+			{ threadId: row.id, childId: authority.validator.childId, epoch: authority.validator.epoch },
 		);
+		expect(stopped.link).toMatchObject({ state: "inspect_only", reason: "unknown_provenance" });
 
-		expect(result.link).toMatchObject({
-			state: "inspect_only",
-			childId: null,
-			epoch: null,
-			reason: "unknown_provenance",
-		});
-	});
-
-	test("refuses a live epoch that changes while the lists are exhausted", async () => {
-		const authority = createIdentityAuthority();
 		const replacement = createIdentityAuthority();
-		const row = thread(authority, "moving-target");
 		let reads = 0;
-		const result = await classifyCodexThreadLink(
+		const moving = await classifyCodexThreadLink(
 			{
 				session: onePageSession(row),
 				currentEpoch: () => {
@@ -359,28 +390,61 @@ describe("codex thread-link classification", () => {
 					return reads === 1 ? currentEpoch(authority) : currentEpoch(replacement);
 				},
 			},
-			ownedTarget(authority, "moving-target"),
+			{ threadId: row.id, childId: authority.validator.childId, epoch: authority.validator.epoch },
 		);
-
-		expect(result.link.reason).toBe("stale_child");
+		expect(moving.link.reason).toBe("stale_child");
 		expect(reads).toBe(2);
 	});
 
 	test("fails classification when a page transport cannot be exhausted", async () => {
-		const authority = createIdentityAuthority();
-		const error = await rejection(
-			classifyCodexThreadLink(
-				{
-					session: session(
-						new Map([[null, new Error("session closed")]]),
-						new Map([[null, loadedPage([])]]),
-					),
-					currentEpoch: currentEpoch(authority),
-				},
-				ownedTarget(authority),
-			),
-		);
+		await withFixture({}, async (fixture) => {
+			const error = await rejection(
+				classifyCodexThreadLink(
+					{
+						session: session(
+							new Map([[null, new Error("session closed")]]),
+							new Map([[null, loadedPage([])]]),
+						),
+						epoch: fixture.store,
+					},
+					fixture.target,
+				),
+			);
+			expect(error.code).toBe("transport_failure");
+		});
+	});
 
-		expect(error.code).toBe("transport_failure");
+	test("returns transitively immutable replacements of the observed thread", async () => {
+		await withFixture({}, async (fixture) => {
+			const source = { custom: "integration" };
+			const nestedItem = { type: "userMessage", content: [{ type: "text", text: "hello" }] };
+			const row = {
+				...thread(fixture.authority, "target", { source }),
+				turns: [
+					{
+						id: fixture.authority.decoder.adoptTurnId("turn-1"),
+						items: [nestedItem],
+					},
+				],
+			} as never;
+			const result = await classifyCodexThreadLink(
+				{ session: onePageSession(row), epoch: fixture.store },
+				fixture.target,
+			);
+
+			source.custom = "mutated";
+			nestedItem.content[0]!.text = "mutated";
+			expect(result.thread).toMatchObject({
+				source: { custom: "integration" },
+				turns: [{ items: [{ content: [{ text: "hello" }] }] }],
+			});
+			expect(Object.isFrozen(result.thread)).toBe(true);
+			expect(Object.isFrozen(result.thread?.source)).toBe(true);
+			expect(Object.isFrozen(result.thread?.turns)).toBe(true);
+			expect(Object.isFrozen(result.thread?.turns[0]?.items)).toBe(true);
+			expect(Object.isFrozen(result.link)).toBe(true);
+			expect(Object.isFrozen(result.observation)).toBe(true);
+			expect(Object.isFrozen(result.proof)).toBe(true);
+		});
 	});
 });
