@@ -51,6 +51,7 @@ export type ProbeSnapshot = {
 	treeHashes: Record<string, string>;
 };
 export type ProposedFile = { path: string; action: string };
+export type CheckoutAdoption = { packageOrLockFiles: string[]; productSourceFiles: string[] };
 export type ProbeReport = {
 	commands: string[][];
 	proposedFiles: ProposedFile[];
@@ -129,6 +130,16 @@ function productSourceFiles(): string[] {
 		if (result.status !== 0) throw new Error(result.stderr || `rg failed for ${root}`);
 		return result.stdout.trim().split("\n").filter(Boolean);
 	});
+}
+
+function checkoutAdoption(): CheckoutAdoption {
+	const packageOrLockFiles = ["package.json", "bun.lock"].filter((relativePath) => {
+		const source = fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
+		return /lucide-react|class-variance-authority|IconPlaceholder|@\/registry\/bases\/base/.test(
+			source,
+		);
+	});
+	return { packageOrLockFiles, productSourceFiles: productSourceFiles() };
 }
 
 function runLocalShadcn(args: readonly string[]): ProbeResult {
@@ -224,10 +235,12 @@ export function runShadcnProbe(
 		run?: ProbeRunner;
 		snapshot?: () => ProbeSnapshot;
 		addArgs?: readonly string[];
+		checkout?: () => CheckoutAdoption;
 	} = {},
 ): ProbeReport {
 	const run = options.run ?? runLocalShadcn;
 	const snapshot = options.snapshot ?? probeSnapshot;
+	const checkout = options.checkout ?? checkoutAdoption;
 	const addArgs = [...(options.addArgs ?? expectedProbeCommands[1])];
 	const before = snapshot();
 	const refusals = new Set<string>();
@@ -285,7 +298,7 @@ export function runShadcnProbe(
 			assertReviewedFixture(fixture.path, fixture.hash);
 			assertImmutableProvenance(fixture.upstream);
 		} catch {
-			addRefusal(refusals, "upstream drift");
+			addRefusal(refusals, "pinned fixture/provenance drift");
 		}
 	}
 
@@ -302,21 +315,16 @@ export function runShadcnProbe(
 	for (const fixture of reviewedFixtures) {
 		const generated = sources[`src/ui/${path.basename(fixture.path)}`];
 		const tracked = fs.readFileSync(path.join(repoRoot, fixture.path), "utf8");
-		if (generated === undefined || generated !== tracked) addRefusal(refusals, "upstream drift");
+		if (generated === undefined || generated !== tracked)
+			addRefusal(refusals, "registry upstream drift");
 	}
 	if (imports.some((source) => /lucide|IconPlaceholder|class-variance-authority/.test(source)))
-		addRefusal(refusals, "package/source adoption attempt");
+		addRefusal(refusals, "registry package/source drift");
 	if (Object.values(sources).some((source) => /rounded-xl|bg-primary|components\/ui/.test(source)))
-		addRefusal(refusals, "package/source adoption attempt");
-	const packageJson = readJson("package.json") as {
-		dependencies: Record<string, string>;
-		devDependencies: Record<string, string>;
-	};
-	if (
-		Object.hasOwn({ ...packageJson.dependencies, ...packageJson.devDependencies }, "lucide-react")
-	)
-		addRefusal(refusals, "package/source adoption attempt");
-	if (productSourceFiles().length > 0) addRefusal(refusals, "package/source adoption attempt");
+		addRefusal(refusals, "registry package/source drift");
+	const adoption = checkout();
+	if (adoption.packageOrLockFiles.length > 0 || adoption.productSourceFiles.length > 0)
+		addRefusal(refusals, "checkout package/source adoption");
 
 	const after = snapshot();
 	if (
@@ -346,6 +354,8 @@ export const fatalProbeRefusals = [
 	"default/icon drift",
 	"unsafe command",
 	"generated destination/action drift",
+	"pinned fixture/provenance drift",
+	"checkout package/source adoption",
 ] as const;
 
 export function fatalProbeFailures(report: ProbeReport): string[] {
