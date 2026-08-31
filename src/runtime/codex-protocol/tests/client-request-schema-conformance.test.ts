@@ -11,10 +11,14 @@ const repositoryRoot = fileURLToPath(new URL("../../../../", import.meta.url));
 const methods = ["thread/read", "account/logout"] as const;
 const focusedGeneratedThreadReadSource =
 	"export type ThreadReadParams = { threadId: string; includeTurns?: boolean };\n";
+const exactGeneratedJsonValueSource =
+	"type JsonValue = null | boolean | number | string | JsonValue[] | { [key in string]?: JsonValue };";
 const structuredGeneratedThreadReadSource = `export type ThreadReadParams = {
 	threadId: string;
 	includeTurns?: boolean;
 	options?: {
+		opaque: unknown;
+		impossible: never;
 		nested?: { enabled?: boolean };
 		choice?: { type: "alpha"; alpha?: string } | { type: "beta"; beta?: number };
 		entries?: { [key in string]?: { label?: string } };
@@ -28,6 +32,8 @@ type ThreadReadParams = {
 	threadId: string;
 	includeTurns?: boolean;
 	options?: {
+		opaque: unknown;
+		impossible: never;
 		nested?: { enabled?: boolean };
 		choice?: { type: "alpha"; alpha?: string } | { type: "beta"; beta?: number };
 		entries?: { [key: string]: { label?: string } };
@@ -51,6 +57,7 @@ function temporaryConformanceDirectories(): string[] {
 function writeGeneratedRequests(
 	root: string,
 	threadReadSource = structuredGeneratedThreadReadSource,
+	jsonValueSource = exactGeneratedJsonValueSource,
 ): void {
 	writeFileSync(
 		join(root, "ClientRequest.ts"),
@@ -65,7 +72,7 @@ function writeGeneratedRequests(
 	writeFileSync(join(root, "ThreadReadParams.ts"), threadReadSource);
 	writeFileSync(
 		join(root, "ThreadInjectItemsParams.ts"),
-		"type JsonValue = null | boolean | number | string | JsonValue[] | { [key in string]?: JsonValue };\nexport type ThreadInjectItemsParams = { threadId: string; items: JsonValue[] };\n",
+		`${jsonValueSource}\nexport type ThreadInjectItemsParams = { threadId: string; items: JsonValue[] };\n`,
 	);
 	writeFileSync(join(root, "RequestId.ts"), "export type RequestId = string | number;\n");
 }
@@ -92,24 +99,25 @@ function replaceExactlyOnce(source: string, original: string, replacement: strin
 
 function writeProductionSchema(
 	targetPath: string,
-	mutation?: "remove-generated-optional" | "invent-local-optional",
+	mutation?: "remove-generated-optional" | "invent-local-optional" | "replace-json-with-any",
 ): void {
 	const productionPath = join(
 		repositoryRoot,
 		"src/runtime/codex-protocol/lib/client-request-schemas.ts",
 	);
 	const source = readFileSync(productionPath, "utf8");
-	const original = "includeTurns: z.boolean().optional(),";
 	const mutated =
 		mutation === undefined
 			? source
-			: replaceExactlyOnce(
-					source,
-					original,
-					mutation === "remove-generated-optional"
-						? ""
-						: `${original}\n\tlocalOnlyForConformance: z.boolean().optional(),`,
-				);
+			: mutation === "replace-json-with-any"
+				? replaceExactlyOnce(source, "items: z.array(JsonValueSchema),", "items: z.array(z.any()),")
+				: replaceExactlyOnce(
+						source,
+						"includeTurns: z.boolean().optional(),",
+						mutation === "remove-generated-optional"
+							? ""
+							: "includeTurns: z.boolean().optional(),\n\tlocalOnlyForConformance: z.boolean().optional(),",
+					);
 	const withAbsoluteImports = mutated.replace(
 		/from "(\.{1,2}\/[^"]+)\.js";/g,
 		(_statement, specifier: string) =>
@@ -199,6 +207,38 @@ describe("generated ClientRequest schema conformance", () => {
 			name: "optional keys inside array elements",
 			source: replaceExactlyOnce(exactLocalParamsSource, "Array<{ value?: string }>", "Array<{}>"),
 		},
+		{
+			name: "any inside a nested object",
+			source: replaceExactlyOnce(
+				exactLocalParamsSource,
+				"nested?: { enabled?: boolean }",
+				"nested?: { enabled?: any }",
+			),
+		},
+		{
+			name: "any inside a union branch",
+			source: replaceExactlyOnce(
+				exactLocalParamsSource,
+				'{ type: "alpha"; alpha?: string }',
+				'{ type: "alpha"; alpha?: any }',
+			),
+		},
+		{
+			name: "any inside a record value",
+			source: replaceExactlyOnce(
+				exactLocalParamsSource,
+				"{ [key: string]: { label?: string } }",
+				"{ [key: string]: { label?: any } }",
+			),
+		},
+		{
+			name: "any inside an array element",
+			source: replaceExactlyOnce(
+				exactLocalParamsSource,
+				"Array<{ value?: string }>",
+				"Array<{ value?: any }>",
+			),
+		},
 	] as const)
 		test(`rejects ${hostile.name}`, () => {
 			const root = mkdtempSync(join(tmpdir(), "archboard-request-schema-hostile-"));
@@ -208,6 +248,58 @@ describe("generated ClientRequest schema conformance", () => {
 				writeGeneratedRequests(root);
 				writeFileSync(localParamsModulePath, hostile.source);
 				expectDeepExactFailure(conformanceFailure(root, localParamsModulePath));
+				expect(temporaryConformanceDirectories()).toEqual(before);
+			} finally {
+				rmSync(root, { recursive: true, force: true });
+			}
+		});
+
+	test("rejects any as the local JSON model", () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-request-schema-json-any-hostile-"));
+		const localParamsModulePath = join(root, "local.ts");
+		const before = temporaryConformanceDirectories();
+		try {
+			writeGeneratedRequests(root);
+			writeFileSync(
+				localParamsModulePath,
+				replaceExactlyOnce(
+					exactLocalParamsSource,
+					"type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };",
+					"type JsonValue = any;",
+				),
+			);
+			expectDeepExactFailure(
+				conformanceFailure(root, localParamsModulePath, ["thread/inject_items"]),
+				"thread/inject_items",
+			);
+			expect(temporaryConformanceDirectories()).toEqual(before);
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+
+	for (const hostile of [
+		{
+			name: "a widened scalar branch",
+			source: replaceExactlyOnce(exactGeneratedJsonValueSource, ";", " | bigint;"),
+		},
+		{
+			name: "any inside the array branch",
+			source:
+				"type JsonValue = null | boolean | number | string | any[] | { [key in string]?: JsonValue };",
+		},
+	] as const)
+		test(`rejects generated JSON with ${hostile.name}`, () => {
+			const root = mkdtempSync(join(tmpdir(), "archboard-request-schema-generated-json-hostile-"));
+			const localParamsModulePath = join(root, "local.ts");
+			const before = temporaryConformanceDirectories();
+			try {
+				writeGeneratedRequests(root, structuredGeneratedThreadReadSource, hostile.source);
+				writeFileSync(localParamsModulePath, exactLocalParamsSource);
+				expectDeepExactFailure(
+					conformanceFailure(root, localParamsModulePath, ["thread/inject_items"]),
+					"thread/inject_items",
+				);
 				expect(temporaryConformanceDirectories()).toEqual(before);
 			} finally {
 				rmSync(root, { recursive: true, force: true });
@@ -240,7 +332,7 @@ describe("generated ClientRequest schema conformance", () => {
 		try {
 			writeGeneratedRequests(root, focusedGeneratedThreadReadSource);
 			writeProductionSchema(localParamsModulePath);
-			runConformance(root, localParamsModulePath, ["thread/read"]);
+			runConformance(root, localParamsModulePath, ["thread/read", "thread/inject_items"]);
 			expect(temporaryConformanceDirectories()).toEqual(before);
 		} finally {
 			rmSync(root, { recursive: true, force: true });
@@ -261,4 +353,21 @@ describe("generated ClientRequest schema conformance", () => {
 				rmSync(root, { recursive: true, force: true });
 			}
 		});
+
+	test("rejects a production JsonValueSchema field weakened to z.any", () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-request-schema-production-any-hostile-"));
+		const localParamsModulePath = join(root, "local.ts");
+		const before = temporaryConformanceDirectories();
+		try {
+			writeGeneratedRequests(root, focusedGeneratedThreadReadSource);
+			writeProductionSchema(localParamsModulePath, "replace-json-with-any");
+			expectDeepExactFailure(
+				conformanceFailure(root, localParamsModulePath, ["thread/inject_items"]),
+				"thread/inject_items",
+			);
+			expect(temporaryConformanceDirectories()).toEqual(before);
+		} finally {
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
 });
