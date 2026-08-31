@@ -31,11 +31,14 @@ describe("frontend stylesheet entry", () => {
 		expect(htmlSource.indexOf(vendorLink)).toBeLessThan(htmlSource.indexOf(moduleEntry));
 	});
 
-	test("builds Button utilities from the one authored src/ui source path", () => {
-		const sourceDirectives = [...appSource.matchAll(/^@source\s+"[^"]+";$/gm)].map(
+	test("builds product Button utilities without test-only candidates", () => {
+		const sourceDirectives = [...appSource.matchAll(/^@source(?:\s+not)?\s+"[^"]+";$/gm)].map(
 			(match) => match[0],
 		);
-		expect(sourceDirectives).toEqual(['@source "../**/*.{ts,tsx}";']);
+		expect(sourceDirectives).toEqual([
+			'@source "../**/*.{ts,tsx}";',
+			'@source not "../**/tests/**/*.{ts,tsx}";',
+		]);
 
 		const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-production-css-"));
 		try {
@@ -56,6 +59,7 @@ describe("frontend stylesheet entry", () => {
 			for (const selector of ["min-h-touch-target", "size-touch-target", "bg-primary"]) {
 				expect(css).toMatch(new RegExp(`\\.${selector}\\s*\\{`));
 			}
+			expect(css).not.toMatch(/\.duration-150\s*\{/);
 		} finally {
 			fs.rmSync(outputRoot, { recursive: true, force: true });
 		}
