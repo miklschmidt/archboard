@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-31 14:25'
-updated_date: '2026-08-31 15:16'
+updated_date: '2026-08-31 15:39'
 labels: []
 dependencies:
   - TASK-143.01.17
@@ -47,6 +47,11 @@ Own the human-reviewed dynamic create, fork, and send approval policy that gener
 3. Add a dedicated repository-policy parser/validator and mutation owner under tests/system/repository-policy. Enforce exact ordered fields and rows, closed unions, expiry/disconnect/cancellation/late-decision behavior, stale revalidation, operation-ID boundaries, no reused/resumable authority, and exact wait release/ownership rules.
 4. Run only focused policy owners and scoped formatter, linter, TypeScript, and diff checks. Every Bun/Node/tsc/Oxlint command will run sequentially in a named transient systemd user service with 6G memory and 1G swap limits, explicit cwd, verified cgroup, and recorded peak memory.
 5. Record scoped evidence and preserved-work audit, commit the coherent policy-only change, leave the task In Progress with acceptance criteria unchecked, and send the required READY_FOR_REVIEW callback with the fixed base and complete range.
+
+6. Review remediation: add logical_call_no_longer_executing -> invalid_call to the closed stale-approved refusal table and prove the approval/cancellation race retires IDs without an effect.
+7. Preserve active self-fork by narrowing the busy revalidation condition to non-self fork and send targets.
+8. Make decidedAtMs host-issued at terminal compare-and-set and bind person acceptance and expiry to that same host clock observation.
+9. Add TASK-143.01.21 to TASK-143.03.07 through Backlog CLI, rerun the focused capped gates, commit, and return the full fixed-base range for rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -59,4 +64,8 @@ Repository enforcement adds a typed fixed policy, validator, and mutation owner.
 Final named systemd user services all used --pipe --wait --collect, MemoryMax=6G, MemorySwapMax=1G, explicit repository cwd, and printed their service cgroup. archboard-task1430119-focused-final-1543 passed 15 tests and 326 expectations at 31.7M peak; archboard-task1430119-tsc-final-1544 passed at 1.7G; archboard-task1430119-oxlint-final-1545 passed with 0 warnings/errors at 349.9M; archboard-task1430119-format-final-1546 passed at 377.7M; archboard-task1430119-inventory-final-1547 passed 39 tests and 69 expectations at 39.5M. Every final service used 0B swap. git diff --check passed. The first type-check attempt could not start because node_modules was absent; a frozen-lockfile install ran in archboard-task1430119-install-1528 at 24.8M, changed neither package.json nor bun.lock, and the unchanged final type command passed. Broad repository, module, browser, and fingerprint lanes were intentionally not run.
 
 Preserved-work audit: only this task record and its recorded document/repository-policy ownership changed. Runtime, browser DTO, dispatcher, UI, gateway, composition, package, lock, generated protocol, sibling tasks, statuses, and acceptance boxes are unchanged. Protected untracked src-DlBR1tzg.js remains 1,516,136 bytes with SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.19 remains In Progress with acceptance criteria unchecked for independent review.
+
+Review remediation closes all four parent findings. The stale-approved table now maps logical_call_no_longer_executing to invalid_call and the mutation owner rejects approval_required for that cancellation or interruption race; operation IDs retire and no effect runs. Busy now applies only to non-self fork or send targets that became active, preserving active self-fork. The host now stamps decidedAtMs during the terminal compare-and-set, and the same host nowMs observation deterministically selects person acceptance before expiresAtMs or expiry at and after it; browser-supplied timestamps and split-clock acceptance are rejected. TASK-143.03.07 now depends on TASK-143.01.21 through Backlog CLI.
+
+Remediation byte evidence supersedes the earlier changed-block digests: complete contract SHA-256 is 97f45a526ac5e8fbe4de1fa916c3a16584e5d20f5817cfb1ff9c92162ff54f10 and dynamic policy SHA-256 is c1140c7ab6e7627b1efc3e680266db4ceff87b6b79e8ef00c45a81ad87a6e8d5. Final capped services: archboard-task1430119-remediation-focused-tests-1612 passed 15 tests and 340 expectations at 36.2M peak; archboard-task1430119-remediation-tsc-1613 passed at 1.6G; archboard-task1430119-remediation-oxlint-1614 passed with 0 warnings and 0 errors at 347.2M; archboard-task1430119-remediation-format-check-1615 passed at 379M; archboard-task1430119-remediation-inventory-1616 passed 39 tests and 69 expectations at 40.4M. Every service printed its cgroup and used 0B swap. Scoped formatting write also passed in archboard-task1430119-remediation-format-test-1602 at 35M. Broad lanes remain intentionally excluded. The task remains In Progress with all acceptance criteria unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
