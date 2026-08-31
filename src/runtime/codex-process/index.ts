@@ -7,6 +7,7 @@ export {
 export type { CodexAmbientEnvironment, CodexChildEnvironment } from "./lib/environment.js";
 
 export {
+	CODEX_EXECUTABLE_PROOF_MAX_BYTES,
 	CodexExecutableError,
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
@@ -15,6 +16,15 @@ export type { CodexExecutableFailureCode, VerifiedCodexExecutable } from "./lib/
 
 export { createCodexDiagnosticsBuffer } from "./lib/diagnostics.js";
 export type { BoundedCodexDiagnostics, CodexDiagnosticsBuffer } from "./lib/diagnostics.js";
+
+export { CodexProcessGroupError, createCodexProcessGroupOperations } from "./lib/process-group.js";
+export type {
+	CodexProcessGroupFailureCode,
+	CodexProcessGroupIdentity,
+	CodexProcessGroupInspection,
+	CodexProcessGroupOperations,
+	CodexProcessGroupSignal,
+} from "./lib/process-group.js";
 
 export { CodexStorageError, prepareCodexStorage } from "./lib/storage.js";
 export type {
