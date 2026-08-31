@@ -498,9 +498,9 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		read("thread/loaded/list", params, "thread-capable");
 	const threadRead = (params: SessionParams<"thread/read">) =>
 		read("thread/read", params, "thread-capable");
-	const threadTurnsListPage = (params?: SessionParams<"thread/turns/list">) =>
+	const threadTurnsListPage = (params: SessionParams<"thread/turns/list">) =>
 		read("thread/turns/list", params, "thread-capable");
-	const threadItemsListPage = (params?: SessionParams<"thread/items/list">) =>
+	const threadItemsListPage = (params: SessionParams<"thread/items/list">) =>
 		read("thread/items/list", params, "thread-capable");
 	const threadDelete = (params: SessionParams<"thread/delete">) =>
 		mutate("thread/delete", params, "thread-capable");
@@ -514,7 +514,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		mutate("turn/interrupt", params, "thread-capable");
 	const queueAdd = (params: SessionParams<"thread/queue/add">) =>
 		mutate("thread/queue/add", params, "thread-capable");
-	const queueListPage = (params?: SessionParams<"thread/queue/list">) =>
+	const queueListPage = (params: SessionParams<"thread/queue/list">) =>
 		read("thread/queue/list", params, "thread-capable");
 	const queueUpdate = (params: SessionParams<"thread/queue/update">) =>
 		mutate("thread/queue/update", params, "thread-capable");
@@ -534,7 +534,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		mutate("thread/realtime/appendSpeech", params, "thread-capable");
 	const realtimeStop = (params: SessionParams<"thread/realtime/stop">) =>
 		mutate("thread/realtime/stop", params, "thread-capable");
-	const timelineListPage = (params?: SessionParams<"thread/timeline/list">) =>
+	const timelineListPage = (params: SessionParams<"thread/timeline/list">) =>
 		read("thread/timeline/list", params, "thread-capable");
 
 	return Object.freeze({
