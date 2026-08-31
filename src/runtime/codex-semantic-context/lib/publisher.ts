@@ -1,7 +1,6 @@
-import type { BoundedValue } from "./normalize.js";
-import { deepFreeze, fail, textValue } from "./normalize.js";
 import { buildSemanticBrief } from "./brief.js";
 import { SEMANTIC_CONTEXT_LIMITS } from "./limits.js";
+import { deepFreeze, fail, textValue } from "./normalize.js";
 import type {
 	FreshSemanticBrief,
 	PaneFocusEvent,
@@ -11,6 +10,8 @@ import type {
 	SemanticContextInput,
 	SemanticContextPublisher,
 	SemanticContextPublisherOptions,
+	SemanticListenerFailure,
+	SemanticPublisherPort,
 	SemanticUnsubscribe,
 	SettledChangeSourceEvent,
 	SettledSemanticChangeEvent,
@@ -18,16 +19,26 @@ import type {
 
 export { SemanticContextInputError } from "./normalize.js";
 
+export class SemanticContextLifecycleError extends Error {
+	readonly phase: "registration" | "dispose";
+	readonly causes: readonly unknown[];
+
+	constructor(phase: "registration" | "dispose", causes: readonly unknown[]) {
+		super(
+			`Semantic context ${phase} failed with ${causes.length} error${causes.length === 1 ? "" : "s"}.`,
+		);
+		this.name = "SemanticContextLifecycleError";
+		this.phase = phase;
+		this.causes = Object.freeze([...causes]);
+	}
+}
+
 function withKind(
 	fields: ReturnType<typeof buildSemanticBrief>,
 	kind: SemanticBrief["kind"],
 	extra: Record<string, unknown> = {},
 ): SemanticBrief {
 	return deepFreeze({ kind, ...fields, ...extra }) as SemanticBrief;
-}
-
-function emit<Event>(listeners: ReadonlySet<(event: Event) => void>, event: Event): void {
-	for (const listener of Array.from(listeners)) listener(event);
 }
 
 function validateFeedId(feedId: string): string {
@@ -56,14 +67,34 @@ function sourceCursor(value: unknown): number {
 function dateCapture(
 	at: string,
 	clock: () => number,
-): {
-	capturedAtMs: number;
-	ambiguous: boolean;
-} {
+): { capturedAtMs: number; ambiguous: boolean } {
 	const parsed = Date.parse(at);
 	return Number.isFinite(parsed)
 		? { capturedAtMs: parsed, ambiguous: false }
 		: { capturedAtMs: clock(), ambiguous: true };
+}
+
+function cleanupAll(cleanups: readonly SemanticUnsubscribe[]): unknown[] {
+	const errors: unknown[] = [];
+	for (let index = cleanups.length - 1; index >= 0; index--) {
+		try {
+			cleanups[index]!();
+		} catch (error) {
+			errors.push(error);
+		}
+	}
+	return errors;
+}
+
+function errorDetails(error: unknown): { errorName: string; message: string } {
+	if (error instanceof Error) {
+		return { errorName: error.name || "Error", message: error.message || String(error) };
+	}
+	try {
+		return { errorName: "ThrownValue", message: String(error) };
+	} catch {
+		return { errorName: "ThrownValue", message: "listener threw an unprintable value" };
+	}
 }
 
 export function createSemanticContextPublisher(
@@ -74,20 +105,35 @@ export function createSemanticContextPublisher(
 	const settledListeners = new Set<(event: SettledSemanticChangeEvent) => void>();
 	const focusListeners = new Set<(event: PaneFocusEvent) => void>();
 	const selectionListeners = new Set<(event: PaneSelectionEvent) => void>();
+	const listenerFailures: SemanticListenerFailure[] = [];
 	let disposed = false;
 
-	const qualifyCursor = (cursor: string | number | null): BoundedValue<string | null> => {
-		if (cursor === null) return { value: null, truncated: false };
-		const raw = typeof cursor === "number" ? String(cursor) : cursor;
-		const qualified = raw.startsWith(`${feedId}:`) ? raw : `${feedId}:${raw}`;
-		const result = textValue(qualified, "cursor", SEMANTIC_CONTEXT_LIMITS.cursorBytes);
-		return { value: result.value, truncated: result.truncated };
+	const emit = <Event>(
+		listeners: Iterable<(event: Event) => void>,
+		event: Event,
+		port: SemanticPublisherPort,
+		eventKind: SemanticBrief["kind"],
+	): void => {
+		for (const [listenerIndex, listener] of Array.from(listeners).entries()) {
+			try {
+				listener(event);
+			} catch (error) {
+				const details = errorDetails(error);
+				listenerFailures.push(
+					deepFreeze({
+						port,
+						eventKind,
+						listenerIndex,
+						errorName: details.errorName,
+						message: details.message,
+					}),
+				);
+			}
+		}
 	};
 
 	const ensureLive = (): void => {
-		if (disposed) {
-			throw new Error("The semantic context publisher has been disposed.");
-		}
+		if (disposed) throw new Error("The semantic context publisher has been disposed.");
 	};
 
 	const subscribe = <Event>(
@@ -107,7 +153,7 @@ export function createSemanticContextPublisher(
 	function publishPaneFocus(input: SemanticContextInput): PaneFocusEvent {
 		ensureLive();
 		const capturedAtMs = clock();
-		const fields = buildSemanticBrief(input, feedId, qualifyCursor, clock, {
+		const fields = buildSemanticBrief(input, feedId, clock, {
 			source: "pane_focus",
 			origin: null,
 			capturedAtMs,
@@ -119,14 +165,14 @@ export function createSemanticContextPublisher(
 				capturedAtMs,
 			},
 		}) as PaneFocusEvent;
-		emit(focusListeners, event);
+		emit(focusListeners, event, "pane_focus", "pane_focus");
 		return event;
 	}
 
 	function publishPaneSelection(input: SemanticContextInput): PaneSelectionEvent {
 		ensureLive();
 		const capturedAtMs = clock();
-		const fields = buildSemanticBrief(input, feedId, qualifyCursor, clock, {
+		const fields = buildSemanticBrief(input, feedId, clock, {
 			source: "pane_selection",
 			origin: null,
 			capturedAtMs,
@@ -134,14 +180,14 @@ export function createSemanticContextPublisher(
 		const event = withKind(fields, "pane_selection", {
 			selectionCapturedAtMs: capturedAtMs,
 		}) as PaneSelectionEvent;
-		emit(selectionListeners, event);
+		emit(selectionListeners, event, "pane_selection", "pane_selection");
 		return event;
 	}
 
 	function freshBrief(): FreshSemanticBrief {
 		ensureLive();
 		const capturedAtMs = clock();
-		const fields = buildSemanticBrief(options.fresh.read(), feedId, qualifyCursor, clock, {
+		const fields = buildSemanticBrief(options.fresh.read(), feedId, clock, {
 			source: "fresh_brief",
 			origin: null,
 			capturedAtMs,
@@ -152,12 +198,8 @@ export function createSemanticContextPublisher(
 	const onSettledChange = (event: SettledChangeSourceEvent): void => {
 		if (disposed) return;
 		if (!validOrigin(event.origin)) fail("change.origin", "is invalid");
-		if (!validSignificance(event.significance)) {
-			fail("change.significance", "is invalid");
-		}
-		if (event.origin === "agent" || event.significance === "cosmetic") {
-			return;
-		}
+		if (!validSignificance(event.significance)) fail("change.significance", "is invalid");
+		if (event.origin === "agent" || event.significance === "cosmetic") return;
 		const eventCursor = sourceCursor(event.cursor);
 		const eventBoard = textValue(
 			event.board,
@@ -173,19 +215,19 @@ export function createSemanticContextPublisher(
 				: [
 						`settled event names board "${eventBoard.value}" but context names "${context.board.key}"`,
 					];
-		const boardAmbiguity = staleReasons;
 		const changeText = textValue(
 			event.text,
 			"change.text",
 			SEMANTIC_CONTEXT_LIMITS.descriptionBytes,
 			false,
 		);
-		const fields = buildSemanticBrief(context, feedId, qualifyCursor, clock, {
+		const fields = buildSemanticBrief(context, feedId, clock, {
 			source: "settled_change",
 			origin: event.origin,
+			cursorOverride: { feedId, sequence: eventCursor },
 			capturedAtMs: capture.capturedAtMs,
 			additionalAmbiguity: [
-				...boardAmbiguity,
+				...staleReasons,
 				...(eventAt.truncated ? ["settled event timestamp was truncated"] : []),
 				...(capture.ambiguous
 					? ["settled event timestamp was invalid; capture time was used"]
@@ -194,35 +236,51 @@ export function createSemanticContextPublisher(
 			additionalStaleReasons: staleReasons,
 			inputTruncated: eventBoard.truncated || eventAt.truncated || changeText.truncated,
 		});
+		if (fields.cursor === null) fail("change.cursor", "settled changes require a cursor");
 		const published = withKind(fields, "settled_change", {
 			change: {
 				feedId,
-				cursor: eventCursor,
+				cursor: fields.cursor,
 				board: eventBoard.value,
 				at: eventAt.value,
 				origin: event.origin,
 				significance: event.significance,
 				text: changeText.value,
 			},
-		});
-		emit(settledListeners, published as SettledSemanticChangeEvent);
+		}) as SettledSemanticChangeEvent;
+		emit(settledListeners, published, "settled_change", "settled_change");
 	};
 
-	const feedUnsubscribe = options.feed.onChange(onSettledChange);
-	const paneUnsubscribes: SemanticUnsubscribe[] = [];
-	if (options.pane) {
-		paneUnsubscribes.push(options.pane.onFocus((input) => publishPaneFocus(input)));
-		paneUnsubscribes.push(options.pane.onSelection((input) => publishPaneSelection(input)));
+	const sourceUnsubscribes: SemanticUnsubscribe[] = [];
+	try {
+		sourceUnsubscribes.push(options.feed.onChange(onSettledChange));
+		if (options.pane) {
+			sourceUnsubscribes.push(options.pane.onFocus((input) => publishPaneFocus(input)));
+			sourceUnsubscribes.push(options.pane.onSelection((input) => publishPaneSelection(input)));
+		}
+	} catch (error) {
+		const cleanupErrors = cleanupAll(sourceUnsubscribes);
+		if (cleanupErrors.length > 0) {
+			throw new SemanticContextLifecycleError("registration", [error, ...cleanupErrors]);
+		}
+		throw error;
+	}
+
+	function drainListenerFailures(): readonly SemanticListenerFailure[] {
+		const drained = listenerFailures.splice(0);
+		return deepFreeze(drained);
 	}
 
 	function dispose(): void {
 		if (disposed) return;
 		disposed = true;
-		feedUnsubscribe();
-		for (const unsubscribe of paneUnsubscribes) unsubscribe();
+		const cleanupErrors = cleanupAll(sourceUnsubscribes);
 		settledListeners.clear();
 		focusListeners.clear();
 		selectionListeners.clear();
+		if (cleanupErrors.length > 0) {
+			throw new SemanticContextLifecycleError("dispose", cleanupErrors);
+		}
 	}
 
 	return Object.freeze({
@@ -235,6 +293,7 @@ export function createSemanticContextPublisher(
 		publishPaneFocus,
 		publishPaneSelection,
 		freshBrief,
+		drainListenerFailures,
 		dispose,
 	});
 }

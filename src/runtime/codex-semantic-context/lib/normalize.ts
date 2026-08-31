@@ -6,6 +6,8 @@ import type {
 	SemanticClaim,
 	SemanticCoordinator,
 	SemanticBoard,
+	SemanticCursor,
+	SemanticCursorInput,
 	SemanticPane,
 	SemanticThreadLink,
 	SemanticWorkhorse,
@@ -27,7 +29,7 @@ export interface NormalizedContext {
 	readonly selection: readonly string[];
 	readonly claim: SemanticClaim;
 	readonly doing: string | null;
-	readonly cursor: string | null;
+	readonly cursor: SemanticCursor | null;
 	readonly description: string;
 	readonly ambiguity: readonly string[];
 	readonly staleReasons: readonly string[];
@@ -54,6 +56,9 @@ export function byteLength(value: string): number {
 
 export function clipUtf8(value: string, maximum: number): BoundedValue<string> {
 	if (byteLength(value) <= maximum) return { value, truncated: false };
+	if (byteLength(SEMANTIC_CONTEXT_ELLIPSIS) > maximum) {
+		return { value: "", truncated: true };
+	}
 	let kept = "";
 	for (const character of Array.from(value)) {
 		const candidate = `${kept}${character}${SEMANTIC_CONTEXT_ELLIPSIS}`;
@@ -61,7 +66,7 @@ export function clipUtf8(value: string, maximum: number): BoundedValue<string> {
 		kept += character;
 	}
 	return {
-		value: kept ? `${kept}${SEMANTIC_CONTEXT_ELLIPSIS}` : "",
+		value: `${kept}${SEMANTIC_CONTEXT_ELLIPSIS}`,
 		truncated: true,
 	};
 }
@@ -111,6 +116,53 @@ export function numberValue(value: unknown, field: string): number | null {
 	return value;
 }
 
+interface NormalizedCursor {
+	readonly value: SemanticCursor | null;
+	readonly staleReason: string | null;
+}
+
+function exactCursorKeys(value: Record<string, unknown>): void {
+	const keys = Reflect.ownKeys(value);
+	if (
+		keys.length !== 2 ||
+		keys.some((key) => typeof key !== "string") ||
+		keys.map(String).toSorted().join("\u0000") !== "feedId\u0000sequence"
+	) {
+		fail("cursor", "must contain only feedId and sequence");
+	}
+}
+
+function normalizeCursor(value: unknown, currentFeedId: string): NormalizedCursor {
+	if (value === null) return { value: null, staleReason: null };
+	if (typeof value === "number") {
+		const sequence = numberValue(value, "cursor.sequence");
+		if (sequence === null) fail("cursor.sequence", "must be a number");
+		return {
+			value: deepFreeze({ feedId: currentFeedId, sequence }),
+			staleReason: null,
+		};
+	}
+	if (typeof value !== "object" || Array.isArray(value)) {
+		fail("cursor", "must be null, a sequence number, or {feedId, sequence}");
+	}
+	const record = value as Record<string, unknown>;
+	exactCursorKeys(record);
+	const feedId = textValue(record.feedId, "cursor.feedId", SEMANTIC_CONTEXT_LIMITS.cursorBytes);
+	if (feedId.truncated) {
+		fail("cursor.feedId", `must not exceed ${SEMANTIC_CONTEXT_LIMITS.cursorBytes} UTF-8 bytes`);
+	}
+	const sequence = numberValue(record.sequence, "cursor.sequence");
+	if (sequence === null) fail("cursor.sequence", "must be a number");
+	const staleReason =
+		feedId.value === currentFeedId
+			? null
+			: `cursor belongs to feed "${feedId.value}"; current feed is "${currentFeedId}"`;
+	return {
+		value: deepFreeze({ feedId: feedId.value, sequence }),
+		staleReason,
+	};
+}
+
 export function uniqueSorted(values: readonly string[]): string[] {
 	return [...new Set(values)].toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0));
 }
@@ -143,7 +195,7 @@ function booleanValue(value: unknown, field: string): boolean {
 	return value;
 }
 
-function boundedReasons(values: readonly unknown[], field: string): BoundedValue<string[]> {
+export function boundedReasons(values: readonly unknown[], field: string): BoundedValue<string[]> {
 	const entries = values.map((value, index) =>
 		textValue(value, `${field}[${index}]`, SEMANTIC_CONTEXT_LIMITS.ambiguityBytes),
 	);
@@ -158,7 +210,8 @@ function boundedReasons(values: readonly unknown[], field: string): BoundedValue
 
 export function normalizeContext(
 	input: SemanticContextInput,
-	qualifyCursor: (cursor: string | number | null) => BoundedValue<string | null>,
+	currentFeedId: string,
+	cursorOverride?: SemanticCursorInput | null,
 	additionalStaleReasons: readonly string[] = [],
 ): NormalizedContext {
 	const repository = textValue(
@@ -209,6 +262,11 @@ export function normalizeContext(
 			"coordinator.realtimeSessionId",
 		),
 	});
+	const cursor = normalizeCursor(
+		cursorOverride === undefined ? input.cursor : cursorOverride,
+		currentFeedId,
+	);
+	const cursorReasons = cursor.staleReason === null ? [] : [cursor.staleReason];
 	if (!Array.isArray(input.selection)) fail("selection", "must be an array");
 	const selectionEntries = input.selection.map((id, index) =>
 		textValue(id, `selection[${index}]`, SEMANTIC_CONTEXT_LIMITS.selectionIdBytes),
@@ -216,7 +274,7 @@ export function normalizeContext(
 	const selection = uniqueSorted(selectionEntries.map((entry) => entry.value));
 	const ambiguityInput = input.ambiguity ?? [];
 	if (!Array.isArray(ambiguityInput)) fail("ambiguity", "must be an array");
-	const ambiguity = boundedReasons(ambiguityInput, "ambiguity");
+	const ambiguity = boundedReasons([...ambiguityInput, ...cursorReasons], "ambiguity");
 	if (!Array.isArray(input.staleReasons ?? [])) {
 		fail("staleReasons", "must be an array");
 	}
@@ -224,11 +282,11 @@ export function normalizeContext(
 		[
 			...(input.stale === true ? ["source marked this context stale"] : []),
 			...(input.staleReasons ?? []),
+			...cursorReasons,
 			...additionalStaleReasons,
 		],
 		"staleReasons",
 	);
-	const cursor = qualifyCursor(input.cursor);
 	const truncated =
 		repository.truncated ||
 		boardKey.truncated ||
@@ -241,8 +299,7 @@ export function normalizeContext(
 		selectionEntries.some((entry) => entry.truncated) ||
 		selection.length > SEMANTIC_CONTEXT_LIMITS.selectionEntries ||
 		ambiguity.truncated ||
-		staleReasons.truncated ||
-		cursor.truncated;
+		staleReasons.truncated;
 	return {
 		repository: repository.value,
 		child,
