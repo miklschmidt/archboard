@@ -1,10 +1,11 @@
 ---
 id: TASK-143.05.03
 title: Define the six general thread-coordination tools
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 22:34'
+updated_date: '2026-08-31 01:22'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -36,8 +37,16 @@ Load and validate the exact reviewed eager archboard_app namespace manifest and 
 - [ ] #4 Fixtures fail on order/prose/schema/limit/tag drift, unknown tools/fields, caller-selected identity, unsupported override, malformed bound cursor/timeout, missing partial-result fields, or non-text output; the public wait timeout maximum imports and remains strictly below CODEX_BROWSER_COMMAND_LEASE_MS.
 <!-- AC:END -->
 
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Reconcile the reviewed archboard_app manifest, canonical workhorse bytes, public wait timeout, and exact Codex result envelopes. 2. Implement one codex-thread-tools catalogue boundary with byte-stable eager namespace metadata, strict request/result schemas, and eligible-start binding only. 3. Add independent fixtures and mutation tests for ordering, prose, schema, limits, tags, cursor/timeout, delivery uncertainty, media, identity selection, and attach/reconnect exclusions. 4. Run focused, module, repository, type, lint, format, diff, and clean-status gates; record evidence for independent review.
+<!-- SECTION:PLAN:END -->
+
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Review-driven dependency correction from TASK-143.01.16: the 120,000 ms wait_threads maximum is owned by this public tool schema, not by a test-only literal in shared timing. This leaf now depends on TASK-143.01.16 and must enforce its exported timeout maximum against CODEX_BROWSER_COMMAND_LEASE_MS while retaining the exact reviewed manifest bytes.
+
+Reserved immediately after TASK-143.01.07 finalized at integration HEAD d890552. This dependency-ready leaf owns only src/runtime/codex-thread-tools and is path-disjoint from every active implementation.
 <!-- SECTION:NOTES:END -->
