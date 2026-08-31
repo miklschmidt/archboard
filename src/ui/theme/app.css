@@ -85,7 +85,7 @@
 		var(--arch-status-iteration-count);
 }
 
-.shell[data-theme="dark"] {
+:root[data-theme="dark"] {
 	--arch-color-selection: #155eef;
 	--arch-color-status: #a3e635;
 	--arch-color-foreground: #f4f4f0;
