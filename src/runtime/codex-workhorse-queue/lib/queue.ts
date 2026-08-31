@@ -32,6 +32,8 @@ import {
 	sameBinding,
 	snapshot,
 } from "./reconcile.js";
+import { assertCompleteOrder, queueMutationTarget } from "./input-validation.js";
+import { queueStartClientUserMessageId, queueStartTarget } from "./start-correlation.js";
 
 const QUEUE_PAGE_LIMIT = 100;
 
@@ -61,41 +63,6 @@ function inputForPrompt(prompt: string): TextUserInput {
 			{
 				cause: error,
 			},
-		);
-	}
-}
-
-function assertTarget(
-	queue: QueueSnapshot,
-	submissionId: SessionQueuedSubmission["id"],
-	operation: WorkhorseQueueMutation,
-): void {
-	if (queue.some((submission) => submission.id === submissionId)) return;
-	throw queueError(
-		"invalid_input",
-		`Queue ${operation} requires a submission from the current authoritative workhorse queue.`,
-		{ operation },
-	);
-}
-
-function assertCompleteOrder(
-	queue: QueueSnapshot,
-	orderedSubmissionIds: readonly SessionQueuedSubmission["id"][],
-): void {
-	if (orderedSubmissionIds.length === 0 || orderedSubmissionIds.length !== queue.length) {
-		throw queueError(
-			"invalid_input",
-			"Queue reorder must submit every current queue id exactly once.",
-			{ operation: "reorder" },
-		);
-	}
-	const expected = new Set(queue.map((submission) => submission.id));
-	const actual = new Set(orderedSubmissionIds);
-	if (expected.size !== actual.size || orderedSubmissionIds.some((id) => !expected.has(id))) {
-		throw queueError(
-			"invalid_input",
-			"Queue reorder must submit every current queue id exactly once.",
-			{ operation: "reorder" },
 		);
 	}
 }
@@ -284,7 +251,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 			binding: WorkhorseQueueBinding,
 			clientUserMessageId: string | null,
 		) => Promise<Response>,
-		validateBefore: (queue: QueueSnapshot) => void,
+		validateBefore: (queue: QueueSnapshot) => SessionQueuedSubmission | null,
 		reconciles: (
 			before: QueueSnapshot,
 			after: QueueSnapshot,
@@ -305,7 +272,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		);
 		const before = await readAuthoritative(binding);
 		assertCurrentBinding(binding, operation);
-		validateBefore(before);
+		const target = validateBefore(before);
 		try {
 			options.operationIds.assertCurrent(request.operationId);
 		} catch (error) {
@@ -317,7 +284,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		}
 		assertCurrentBinding(binding, operation);
 		try {
-			await request.beforeEffect?.();
+			await request.beforeEffect?.(Object.freeze({ operation, target }));
 		} catch (error) {
 			throw queueError(
 				"authorization_failed",
@@ -375,7 +342,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 						clientUserMessageId,
 					});
 				},
-				() => undefined,
+				() => null,
 				(before, after, response, clientUserMessageId) =>
 					clientUserMessageId !== null &&
 					expectedAdd(before, after, response, input, clientUserMessageId),
@@ -404,7 +371,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 						queuedSubmissionId: request.submissionId,
 						input: [input],
 					}),
-				(before) => assertTarget(before, request.submissionId, "update"),
+				(before) => queueMutationTarget(before, request.submissionId, "update"),
 				(before, after, response) =>
 					expectedUpdate(before, after, response, request.submissionId, input),
 			);
@@ -428,7 +395,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 						threadId: rpcBinding.workhorseThreadId,
 						queuedSubmissionId: request.submissionId,
 					}),
-				(before) => assertTarget(before, request.submissionId, "delete"),
+				(before) => queueMutationTarget(before, request.submissionId, "delete"),
 				(before, after, response) => expectedDelete(before, after, response, request.submissionId),
 			),
 		);
@@ -451,7 +418,10 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 						threadId: rpcBinding.workhorseThreadId,
 						queuedSubmissionIds: Array.from(request.orderedSubmissionIds),
 					}),
-				(before) => assertCompleteOrder(before, request.orderedSubmissionIds),
+				(before) => {
+					assertCompleteOrder(before, request.orderedSubmissionIds);
+					return null;
+				},
 				(before, after) => expectedReorder(before, after, request.orderedSubmissionIds),
 			),
 		);
@@ -460,6 +430,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		request: QueueStartRequest<OperationIdValue>,
 	): Promise<QueueStartResult<OperationIdValue>> =>
 		enqueueForBinding("start", async (acceptedBinding) => {
+			let clientUserMessageId: string | null = null;
 			let turnId = null;
 			const result = await runMutation(
 				"start",
@@ -478,10 +449,18 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 					turnId = response.turn.id;
 					return response;
 				},
-				(before) => assertTarget(before, request.submissionId, "start"),
+				(before) => {
+					const target = queueStartTarget(before, request.submissionId);
+					clientUserMessageId = target.clientUserMessageId;
+					return target;
+				},
 				(before, after) => expectedStart(before, after, request.submissionId),
 			);
-			return Object.freeze({ ...result, turnId });
+			return Object.freeze({
+				...result,
+				clientUserMessageId: queueStartClientUserMessageId(clientUserMessageId),
+				turnId,
+			});
 		});
 
 	return Object.freeze({ list, add, update, delete: remove, reorder, start });
