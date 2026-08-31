@@ -1,11 +1,11 @@
 ---
 id: TASK-143.02.03
 title: Adapt the Codex realtime protocol to the browser module
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 13:40'
+updated_date: '2026-08-31 13:42'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -36,12 +36,12 @@ Delegation profile: gpt-5.6-luna, max.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each start mints a unique realtimeSessionId and sends outputModality audio, version v3, WebRTC, includeStartupContext true, clientManagedHandoffs false, delegationAckFiller true, flushTranscriptTailOnSessionEnd true, codexResponsesAsItems false, handoff mode bemTags, exact voice breeze, one fresh developer semantic item, and canonical start/end instructions; there is no selector or fallback.
-- [ ] #2 The empty start response conveys no SDP/readiness; answer comes only from matching thread/realtime/sdp and readiness only from matching thread/realtime/started child, thread, session, and version.
-- [ ] #3 Only item-scoped realtime item started/transcript delta/completed events create canonical transcript. Thread-only error/closed and flat transcript events update diagnostics/phase but never content; WebSocket appendAudio/outputAudio paths are rejected.
-- [ ] #4 Recovery exhausts thread/timeline/list, detects cursor loops, and merges pages with live item events by stable identity without duplicate, hidden gap, or reordered turn.
-- [ ] #5 appendText, appendSpeech, stop, and recovery revalidate captured child/epoch/thread/coordinator/session before one attempt; lost responses are outcome_unknown, uncertain approval falls back visual, and no path leaves awaiting_user.
-- [ ] #6 src/runtime/codex-realtime/tests/adapter.test.ts drives decoded 0.151.0 fixtures through start, SDP, readiness, every item/thread/timeline event, paging/recovery, identity mismatch, lost response, stop, and cleanup, proving canonical transcript order and every closed failure outcome.
+- [x] #1 Each start mints a unique realtimeSessionId and sends outputModality audio, version v3, WebRTC, includeStartupContext true, clientManagedHandoffs false, delegationAckFiller true, flushTranscriptTailOnSessionEnd true, codexResponsesAsItems false, handoff mode bemTags, exact voice breeze, one fresh developer semantic item, and canonical start/end instructions; there is no selector or fallback.
+- [x] #2 The empty start response conveys no SDP/readiness; answer comes only from matching thread/realtime/sdp and readiness only from matching thread/realtime/started child, thread, session, and version.
+- [x] #3 Only item-scoped realtime item started/transcript delta/completed events create canonical transcript. Thread-only error/closed and flat transcript events update diagnostics/phase but never content; WebSocket appendAudio/outputAudio paths are rejected.
+- [x] #4 Recovery exhausts thread/timeline/list, detects cursor loops, and merges pages with live item events by stable identity without duplicate, hidden gap, or reordered turn.
+- [x] #5 appendText, appendSpeech, stop, and recovery revalidate captured child/epoch/thread/coordinator/session before one attempt; lost responses are outcome_unknown, uncertain approval falls back visual, and no path leaves awaiting_user.
+- [x] #6 src/runtime/codex-realtime/tests/adapter.test.ts drives decoded 0.151.0 fixtures through start, SDP, readiness, every item/thread/timeline event, paging/recovery, identity mismatch, lost response, stop, and cleanup, proving canonical transcript order and every closed failure outcome.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -82,6 +82,15 @@ Second race remediation complete. Start settlement now has one owner: an exact n
 Final review isolated one pre-invocation race in the queued realtimeStart callback. This follow-up changes only invocation ownership and its deferred tests; all boundary and post-invocation fixes remain protected.
 
 Final pre-invocation remediation complete. The scheduled realtimeStart callback now checks answer settlement and the exact active/current binding before invoking Codex. Immediate dispose owns and rejects the offer before the callback, so the callback makes zero RPC calls. A replaced binding finalizes the never-started generation and rejects once with a reducer-valid stopping/closed sequence. Synchronous realtimeStart throws remain inside the promise chain, enter failStart once, and can recover through the canonical timeline path before a replacement session starts. Final evidence: archboard-task1430203-invoke-final-tests-5710f74.service passed 23 tests / 123 assertions at 46M peak, 0B swap; archboard-task1430203-invoke-final-types-5710f74.service passed both TypeScript projects at 1.5G peak, 0B swap; archboard-task1430203-invoke-final-lint-5710f74.service passed scoped Oxlint at 566M peak, 0B swap; archboard-task1430203-invoke-final-format-check-5710f74.service passed at 1.5G peak, 0B swap. git diff --check passed. Known OOM lanes were not run.
+
+Final acceptance mapping after two independent clean reviews of e53d27a7deabf067b4aecf7a12655eececd06f8c..9ed1b74bbf0937c83cebb56ca747ab8b3aa54e56:
+1. Exact V3/WebRTC/audio/breeze/bemTags envelope, unique wire identity, fresh semantic item, and fixed instructions are proved by the adapter envelope tests in the accepted 58-test lane.
+2. SDP and readiness remain separate, exact child/epoch/thread/session/version gates; empty start and every pre/post-invocation ordering are covered by adapter and deferred race tests.
+3. Decoded item-scoped transcript events alone mutate canonical content; thread error/close and rejected flat/audio paths only affect phase or diagnostics, proved by decoded notification tests.
+4. Timeline recovery exhausts pages, detects cursor loops, and merges stable identities in deterministic order without duplicates, proved by the paging and live-merge tests.
+5. Every append, stop, and recovery path revalidates the captured active generation around one attempt; lost and terminal races return typed outcomes, no path emits awaiting_user, and close wins over in-flight work.
+6. Same-owner decoded adapter and race suites cover start, exact gates, item/thread events, paging, mismatch, lost response, authoritative close, stop, cleanup, synchronous throw, and all requested invocation races with reducer-valid state streams.
+There are no task-specific or project-configured Definition of Done checklist items. Accepted gates: 23 tests/123 assertions in the final race lane, earlier 58/991 and 13/74 focused lanes, both TypeScript projects, scoped lint, formatting, diff checks, and two independent clean reviews. Known compiler-heavy, broad repository/module/browser/fingerprint, and OOM lanes remain intentionally unrun under the task constraints.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -93,3 +102,9 @@ created: 2026-08-31 12:38
 PLAN_APPROVAL_REQUIRED: runtime cannot import src/ui/**, but RealtimeHost and its opaque browser-media brands exist only in src/ui/codex-realtime. A sound implementation needs a neutral shared host-contract extraction and unchanged UI re-exports, or an explicit rejected alternative such as a runtime-to-UI type import, duplicated lookalike contract, or casts.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented the sole Codex 0.151.0 realtime adapter behind one neutral browser host contract. It sends the exact V3 WebRTC request, correlates SDP/readiness and decoded events, owns canonical reducer-valid phase/transcript state, exhausts timeline recovery, classifies one-attempt mutation outcomes, and makes authoritative close or pre-invocation invalidation win every async race. Verified by accepted focused lanes totaling 58/991, 13/74, and 23/123; both TypeScript projects; scoped lint, formatting, diff checks; and two clean independent reviews.
+<!-- SECTION:FINAL_SUMMARY:END -->
