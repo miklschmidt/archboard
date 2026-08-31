@@ -1,5 +1,6 @@
 export { createCodexDynamicToolDispatcher, createCodexDynamicTools } from "./lib/dispatcher.js";
 export {
+	CodexDynamicEpochQuarantinedError,
 	CodexDynamicOperationTerminalizationError,
 	CodexDynamicToolsError,
 } from "./lib/contract.js";
@@ -31,6 +32,12 @@ export type {
 	DynamicImmutableEffect,
 	DynamicLifecyclePhase,
 	DynamicMutationToolName,
+	DynamicMutationQuarantineExit,
+	DynamicMutationQuarantineIdentity,
+	DynamicMutationQuarantineInspection,
+	DynamicMutationQuarantineOwner,
+	DynamicMutationQuarantineState,
+	DynamicMutationTerminalProof,
 	DynamicObservedTarget,
 	DynamicOperationIdPort,
 	DynamicOperationTerminalDisposition,

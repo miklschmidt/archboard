@@ -15,6 +15,8 @@ export class FakeOperationIds implements DynamicOperationIdPort {
 		readonly disposition: DynamicOperationTerminalDisposition;
 	}> = [];
 	readonly terminalFaults: Array<"before" | "after"> = [];
+	issueErrorAt: number | null = null;
+	private issueAttempts = 0;
 	private readonly terminal = new Map<OperationId, DynamicOperationTerminalResult>();
 	private readonly operation: AuthorityIds["operation"];
 
@@ -23,6 +25,9 @@ export class FakeOperationIds implements DynamicOperationIdPort {
 	}
 
 	issueCanonicalOperationId(): OperationId {
+		this.issueAttempts += 1;
+		if (this.issueErrorAt === this.issueAttempts)
+			throw new Error("operation identity issuance failed");
 		const id = this.operation.issuer.mintOperationId();
 		this.issued.push(id);
 		return id;

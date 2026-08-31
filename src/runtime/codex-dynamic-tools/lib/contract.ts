@@ -258,6 +258,51 @@ export interface DynamicWaitOwner extends WaitOwner {
 	readonly operationId: null;
 }
 
+export interface DynamicMutationQuarantineIdentity {
+	readonly child: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly threadId: ThreadId;
+	readonly turnId: TurnId;
+	readonly callId: DynamicToolCallId;
+	readonly namespace: "archboard_app";
+	readonly tool: DynamicMutationToolName;
+	readonly manifestHash: string;
+}
+
+export interface DynamicMutationTerminalProof {
+	readonly terminal: true;
+	readonly unresolvedOperationCount: 0;
+}
+
+export interface DynamicMutationQuarantineExit {
+	readonly child: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly exited: true;
+}
+
+export interface DynamicMutationQuarantineOwner {
+	readonly child: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly poisoned: true;
+	readonly childExit: Promise<DynamicMutationQuarantineExit>;
+}
+
+export type DynamicMutationQuarantineState =
+	| "poisoning"
+	| "poisoned"
+	| "terminalizing"
+	| "poison_failed";
+
+export interface DynamicMutationQuarantineInspection {
+	readonly epochCount: number;
+	readonly callCount: number;
+	readonly entries: readonly Readonly<{
+		readonly identity: DynamicMutationQuarantineIdentity;
+		readonly state: DynamicMutationQuarantineState;
+		readonly unresolvedOperationCount: number;
+	}>[];
+}
+
 export type DynamicWaitEvent =
 	| {
 			readonly event: "completed" | "attention";
@@ -288,6 +333,15 @@ export interface DynamicToolLifecyclePort {
 		readonly cause: DynamicWaitReleaseCause;
 	}) => Promise<void> | void;
 	readonly releaseWaitOwnersForChild: (input: { readonly child: ChildId }) => Promise<void> | void;
+	/**
+	 * Synchronously poisons the exact child epoch before returning its owner.
+	 * The owner may call retryTerminalization only on a host or lifecycle trigger;
+	 * childExit resolves only after shutdown of that exact child epoch is confirmed.
+	 */
+	readonly poisonEpochAndOwnMutationQuarantine: (input: {
+		readonly identity: DynamicMutationQuarantineIdentity;
+		readonly retryTerminalization: () => Promise<DynamicMutationTerminalProof>;
+	}) => DynamicMutationQuarantineOwner;
 	readonly waitForTargets: (input: {
 		readonly owner: DynamicWaitOwner;
 		readonly cursor: string | null;
@@ -377,6 +431,7 @@ export interface CodexDynamicToolsOptions {
 
 export interface CodexDynamicTools {
 	readonly dispatch: (request: DynamicServerRequest) => Promise<DynamicToolCallResponse>;
+	readonly inspectMutationQuarantine: () => DynamicMutationQuarantineInspection;
 	readonly dispose: () => void;
 }
 
@@ -401,9 +456,24 @@ export class CodexDynamicToolsError extends Error {
 export class CodexDynamicOperationTerminalizationError extends CodexDynamicToolsError {
 	readonly retryEligible = false;
 	readonly operationId: OperationId;
+	readonly disposition: DynamicOperationTerminalDisposition;
 
-	constructor(operationId: OperationId, message: string, cause?: unknown) {
+	constructor(
+		operationId: OperationId,
+		disposition: DynamicOperationTerminalDisposition,
+		message: string,
+		cause?: unknown,
+	) {
 		super("system_error", message, cause);
 		this.operationId = operationId;
+		this.disposition = disposition;
+	}
+}
+
+export class CodexDynamicEpochQuarantinedError extends CodexDynamicToolsError {
+	readonly retryEligible = false;
+
+	constructor(message: string, cause?: unknown) {
+		super("system_error", message, cause);
 	}
 }

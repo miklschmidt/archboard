@@ -281,6 +281,11 @@ describe("dynamic coordination approval authored policy", () => {
 	test("rejects every operation-ID boundary or reuse change", () => {
 		attackRows((root) => records(operationIds(root).boundaries, "operation ID boundaries"));
 		attackRows((root) => records(operationIds(root).contextOperations, "context operation rows"));
+		attackObject(
+			(root) =>
+				record(operationIds(root).unresolvedTerminalAuthority, "unresolved terminal authority"),
+			"unresolved terminal authority changed",
+		);
 		for (const field of [
 			"clientUserMessageId",
 			"retireOn",

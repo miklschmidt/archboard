@@ -26,9 +26,6 @@ import type {
 	DynamicThreadAuthorityPort,
 	DynamicToolApprovalDecision,
 	DynamicToolApprovalPort,
-	DynamicToolLifecyclePort,
-	DynamicWaitEvent,
-	DynamicWaitOwner,
 } from "../index.js";
 import type { ThreadLinkTarget } from "../../codex-thread-link/index.js";
 import type { CodexWaitGraph } from "../../codex-wait-graph/index.js";
@@ -41,6 +38,7 @@ import {
 	targetAuthority,
 	type AuthorityIds,
 } from "./fixtures.js";
+import { FakeLifecycle } from "./lifecycle-fake.js";
 import { FakeSession } from "./session-fake.js";
 import { FakeOperationIds } from "./operation-id-fake.js";
 
@@ -213,62 +211,6 @@ export function approvedFor(
 		decidedAtMs: nowMs,
 		cause: "person_approved",
 	};
-}
-
-export class FakeLifecycle implements DynamicToolLifecyclePort {
-	readonly assertions: string[] = [];
-	readonly registered: DynamicWaitOwner[] = [];
-	readonly releases: Array<{ readonly cause: string; readonly owner: DynamicWaitOwner }> = [];
-	readonly childReleases: ChildId[] = [];
-	readonly waitInputs: Array<{
-		readonly owner: DynamicWaitOwner;
-		readonly cursor: string | null;
-		readonly timeoutMs: number;
-		readonly previousSequence: number;
-	}> = [];
-	waitEvent: DynamicWaitEvent | Error = {
-		event: "timeout",
-		threadId: null,
-		sequence: 0,
-		cursor: null,
-	};
-	assertionError: Error | null = null;
-	assertionErrorPhase: string | null = null;
-
-	assertCallExecuting(input: { readonly phase: string }): void {
-		this.assertions.push(input.phase);
-		if (
-			this.assertionError !== null &&
-			(this.assertionErrorPhase === null || this.assertionErrorPhase === input.phase)
-		)
-			throw this.assertionError;
-	}
-
-	registerWaitOwner(input: { readonly owner: DynamicWaitOwner }): void {
-		this.registered.push(input.owner);
-	}
-
-	releaseWaitOwner(input: {
-		readonly owner: DynamicWaitOwner;
-		readonly cause: "settle" | "cancellation" | "interruption" | "disconnect";
-	}): void {
-		this.releases.push(input);
-	}
-
-	releaseWaitOwnersForChild(input: { readonly child: ChildId }): void {
-		this.childReleases.push(input.child);
-	}
-
-	async waitForTargets(input: {
-		readonly owner: DynamicWaitOwner;
-		readonly cursor: string | null;
-		readonly timeoutMs: number;
-		readonly previousSequence: number;
-	}): Promise<DynamicWaitEvent> {
-		this.waitInputs.push(input);
-		if (this.waitEvent instanceof Error) throw this.waitEvent;
-		return this.waitEvent;
-	}
 }
 
 export class FakeThreadAuthority implements DynamicThreadAuthorityPort {
