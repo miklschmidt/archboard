@@ -241,6 +241,7 @@ function validateExecution(root: JsonRecord): void {
 		"outerOperationId",
 		"boundaries",
 		"contextOperations",
+		"unresolvedTerminalAuthority",
 		"clientUserMessageId",
 		"retireOn",
 		"consumeOn",
@@ -274,6 +275,16 @@ function validateExecution(root: JsonRecord): void {
 			rpc: "turn/start",
 		},
 	]);
+	exact("unresolved terminal authority", ids.unresolvedTerminalAuthority, {
+		transition: "host_confirmed_idempotent_atomic",
+		owner: "exact_child_epoch_and_logical_call_quarantine",
+		epochStateBeforeRelease: "poisoned",
+		sameLogicalCall: "join_existing_pending_owner",
+		otherCallsInEpoch: "reject_before_operation_id_approval_stage_or_effect",
+		normalResponseWhileAnyOwnedIdIsCurrent: false,
+		recovery: "lifecycle_triggered_bounded_terminalization_or_exact_child_exit",
+		clearOn: ["proven_terminality", "exact_child_exit", "dispose"],
+	});
 	exact(
 		"clientUserMessageId policy",
 		ids.clientUserMessageId,
