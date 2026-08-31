@@ -219,6 +219,18 @@ const assistantUiImports = createRule(
 			["MessagePrimitive", new Set(["GenerativeUI"])],
 		]);
 
+		function unwrapExpression(expression) {
+			while (
+				expression?.type === "TSAsExpression" ||
+				expression?.type === "TSTypeAssertion" ||
+				expression?.type === "TSNonNullExpression" ||
+				expression?.type === "ChainExpression" ||
+				expression?.type === "ParenthesizedExpression"
+			)
+				expression = expression.expression;
+			return expression;
+		}
+
 		function checkSource(source, node, kind, specifiers = []) {
 			if (source === "radix-ui" || source.startsWith("@radix-ui/")) {
 				report(context, node, "noDirectRadixImport");
@@ -353,8 +365,9 @@ const assistantUiImports = createRule(
 				else if (owner) report(context, node, "noAssistantUiNonLiteral");
 			},
 			AssignmentExpression(node) {
-				if (node.right?.type !== "Identifier") return;
-				const importedName = localAssistantUiMembers.get(node.right.name);
+				const right = unwrapExpression(node.right);
+				if (right?.type !== "Identifier") return;
+				const importedName = localAssistantUiMembers.get(right.name);
 				if (!importedName) return;
 				if (node.left?.type !== "Identifier") {
 					report(context, node, "noAssistantUiAlias");
@@ -368,8 +381,9 @@ const assistantUiImports = createRule(
 				if (node.expression?.type === "MemberExpression") checkNestedMember(node.expression);
 			},
 			VariableDeclarator(node) {
-				if (node.init?.type !== "Identifier") return;
-				const importedName = localAssistantUiMembers.get(node.init.name);
+				const init = unwrapExpression(node.init);
+				if (init?.type !== "Identifier") return;
+				const importedName = localAssistantUiMembers.get(init.name);
 				if (node.id?.type === "Identifier") {
 					if (importedName) localAssistantUiMembers.set(node.id.name, importedName);
 					return;
