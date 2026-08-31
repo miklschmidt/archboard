@@ -10,6 +10,7 @@ import {
 	messageOf,
 	operationError,
 	queueMutationOutcome,
+	selectOperationIdentity,
 	sessionMutationOutcome,
 	threadIdWire,
 	validateBoundedInput,
@@ -205,18 +206,17 @@ export function createDelegate(
 		validateBoundedInput(request.input, "delegate input");
 		validateBoundedInput(request.transcriptDelta, "transcript delta", true);
 		runtime.assertCall(request.call, "delegate_to_workhorse");
-		let operationId;
+		let operationIdentity;
 		try {
-			operationId = runtime.options.operation.issuer.mintOperationId();
-			runtime.options.operation.validator.assertCurrentOperationId(operationId);
-		} catch (error) {
-			return Promise.reject(
-				operationError("invalid_input", "A current delegate operation identity was unavailable.", {
-					cause: error,
-				}),
+			operationIdentity = selectOperationIdentity(
+				runtime,
+				"delegate_to_workhorse",
+				request.operationId,
 			);
+		} catch (error) {
+			return Promise.reject(error);
 		}
-		const operationIdWire = runtime.options.operation.decoder.serializeOperationId(operationId);
+		const { operationId, operationIdWire } = operationIdentity;
 		return runtime.enqueue(async () => {
 			const binding = runtime.currentBinding();
 			const validated = await runtime.classify(binding, request.call, "delegate_to_workhorse");

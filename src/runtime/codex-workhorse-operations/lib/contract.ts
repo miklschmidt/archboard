@@ -106,44 +106,50 @@ export interface InspectWorkhorseRequest {
 
 export interface DelegateToWorkhorseRequest {
 	readonly call: WorkhorseCoordinatorCall;
+	/** Reuse this host-issued identity when the dispatcher already owns the effect. */
+	readonly operationId?: OperationId;
 	readonly input: string;
 	readonly transcriptDelta: string;
 }
+
+type ManageWorkhorseQueueMutationRequest =
+	| {
+			readonly operation: "add";
+			readonly prompt: string;
+	  }
+	| {
+			readonly operation: "update";
+			readonly submissionId: QueuedSubmissionId;
+			readonly prompt: string;
+	  }
+	| {
+			readonly operation: "delete";
+			readonly submissionId: QueuedSubmissionId;
+	  }
+	| {
+			readonly operation: "reorder";
+			readonly orderedSubmissionIds: readonly QueuedSubmissionId[];
+	  }
+	| {
+			readonly operation: "start";
+			readonly submissionId: QueuedSubmissionId;
+	  };
 
 export type ManageWorkhorseQueueRequest =
 	| {
 			readonly call: WorkhorseCoordinatorCall;
 			readonly operation: "list";
 	  }
-	| {
+	| (ManageWorkhorseQueueMutationRequest & {
 			readonly call: WorkhorseCoordinatorCall;
-			readonly operation: "add";
-			readonly prompt: string;
-	  }
-	| {
-			readonly call: WorkhorseCoordinatorCall;
-			readonly operation: "update";
-			readonly submissionId: QueuedSubmissionId;
-			readonly prompt: string;
-	  }
-	| {
-			readonly call: WorkhorseCoordinatorCall;
-			readonly operation: "delete";
-			readonly submissionId: QueuedSubmissionId;
-	  }
-	| {
-			readonly call: WorkhorseCoordinatorCall;
-			readonly operation: "reorder";
-			readonly orderedSubmissionIds: readonly QueuedSubmissionId[];
-	  }
-	| {
-			readonly call: WorkhorseCoordinatorCall;
-			readonly operation: "start";
-			readonly submissionId: QueuedSubmissionId;
-	  };
+			/** Reuse this host-issued identity when the dispatcher already owns the effect. */
+			readonly operationId?: OperationId;
+	  });
 
 export interface SteerWorkhorseRequest {
 	readonly call: WorkhorseCoordinatorCall;
+	/** Reuse this host-issued identity when the dispatcher already owns the effect. */
+	readonly operationId?: OperationId;
 	/** Captured by the host from the exact active workhorse classification. */
 	readonly expectedTurnId: TurnId;
 	readonly input: string;

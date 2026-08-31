@@ -10,6 +10,7 @@ import {
 	type CoordinatorToolsServerRequest,
 } from "../index.js";
 import { fixture, responseEnvelope, type CoordinatorToolsFixture } from "./support.js";
+import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 
 function dispatch(fixtureValue: CoordinatorToolsFixture, request: DynamicServerRequest) {
 	return fixtureValue.dispatcher.dispatch(request as CoordinatorToolsServerRequest);
@@ -202,14 +203,14 @@ describe("coordinator dynamic-tool identity and authority validation", () => {
 		expect(COORDINATOR_TOOLS_OWNER).toBe("codex-coordinator-tools");
 	});
 
-	test("refuses a validated call when the host cannot supply an operation identity", async () => {
+	test("refuses a validated call when the issuer returns a foreign operation identity", async () => {
 		const h = fixture();
-		h.authority.setOperationId(null);
+		h.operation.setNextIssued(createIdentityAuthorities().operation.issuer.mintOperationId());
 		const result = await dispatch(h, h.request("inspect_workhorse"));
 		expect(result.response.success).toBe(true);
 		expect(responseEnvelope(result.response)).toMatchObject({
 			tag: "refused",
-			reason: "not_ready",
+			reason: "system_error",
 		});
 		expect(h.operations.calls.inspect).toHaveLength(0);
 	});

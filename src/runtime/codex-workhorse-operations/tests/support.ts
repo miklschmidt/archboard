@@ -17,7 +17,9 @@ import {
 import {
 	createIdentityAuthorities,
 	type IdentityAuthority,
+	type IdentityAuthorities,
 	type LogicalToolCallCorrelation,
+	type OperationAuthority,
 	type OperationId,
 	type ThreadId,
 	type TurnId,
@@ -74,6 +76,7 @@ export class FakeSession implements WorkhorseOperationSessionPort {
 
 export interface Fixture {
 	readonly identity: IdentityAuthority;
+	readonly operation: OperationAuthority;
 	readonly epoch: CodexEpochStore;
 	readonly binding: WorkhorseOperationBinding;
 	readonly session: FakeSession;
@@ -92,8 +95,10 @@ export interface Fixture {
 	readonly cleanup: () => void;
 }
 
-export function fixture(initialStatus: "idle" | "active" = "idle"): Fixture {
-	const authorities = createIdentityAuthorities();
+export function fixture(
+	initialStatus: "idle" | "active" = "idle",
+	authorities: IdentityAuthorities = createIdentityAuthorities(),
+): Fixture {
 	const identity = authorities.identity;
 	const parent = mkdtempSync(join("/tmp", "archboard-workhorse-operations-"));
 	const epochRoot = join(parent, "epoch");
@@ -272,6 +277,7 @@ export function fixture(initialStatus: "idle" | "active" = "idle"): Fixture {
 	const operations = createCodexWorkhorseOperations(options);
 	return {
 		identity,
+		operation: authorities.operation,
 		epoch,
 		binding,
 		session,

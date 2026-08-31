@@ -29,9 +29,16 @@ import {
 	type IdentityAuthority,
 	type IdentityAuthorities,
 	type LogicalToolCallCorrelation,
+	type OperationAuthority,
+	type OperationId,
 	type ThreadId,
 	type TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
+import {
+	parseRealtimeCorrelationId,
+	parseRealtimeItemId,
+	parseRealtimeSessionId,
+} from "../../../shared/codex-realtime-host/index.js";
 
 export interface ResponseWrite {
 	readonly request: DynamicServerRequest;
@@ -46,6 +53,9 @@ export interface CoordinatorToolsFixture {
 	readonly workhorseThreadId: ThreadId;
 	readonly expectedTurnId: TurnId;
 	readonly binding: WorkhorseOperationBinding;
+	readonly operation: Pick<OperationAuthority, "issuer" | "validator" | "decoder"> & {
+		setNextIssued: (value: OperationId) => void;
+	};
 	readonly timeline: string[];
 	readonly operations: Pick<
 		CodexWorkhorseOperations,
@@ -67,6 +77,7 @@ export interface CoordinatorToolsFixture {
 		readonly calls: DynamicServerRequest[];
 		setResult: (result: SpokenApprovalToolResult) => void;
 		setOperationId: (operationId: string | null) => void;
+		setSnapshot: (snapshot: SpokenApprovalSnapshot) => void;
 	};
 	readonly transport: {
 		readonly writes: ResponseWrite[];
@@ -76,12 +87,13 @@ export interface CoordinatorToolsFixture {
 			response: ReverseResponse,
 		) => Promise<void>;
 		failWrites: boolean;
+		hold: () => void;
+		release: () => void;
 	};
 	readonly authority: CoordinatorToolAuthorityPort & {
 		setCoordinator: (value: CoordinatorToolCoordinatorAuthority | null) => void;
 		setBinding: (value: WorkhorseOperationBinding | null) => void;
 		setCall: (value: LogicalToolCallCorrelation | null) => void;
-		setOperationId: (value: string | null) => void;
 		setExpectedTurnId: (value: TurnId | null) => void;
 	};
 	readonly dispatcher: CoordinatorToolDispatcher;
@@ -150,7 +162,7 @@ export function fixture(
 	let currentBinding: WorkhorseOperationBinding | null = binding;
 	let currentCall: LogicalToolCallCorrelation | null = null;
 	let currentExpectedTurnId: TurnId | null = expectedTurnId;
-	let currentOperationId: string | null | undefined;
+	let nextIssuedOperation: OperationId | null = null;
 	let nextOperationError: unknown = null;
 	let operationBarrier: Promise<void> | null = null;
 	let releaseOperation: (() => void) | null = null;
@@ -244,10 +256,33 @@ export function fixture(
 		tag: "ok",
 		value: { verdict: "accept", settlement: "delivered" },
 	};
-	let spokenOperationId: string | null = "classifier-operation";
+	const initialSpokenOperation = authorities.operation.issuer.mintOperationId();
+	let spokenSnapshot: SpokenApprovalSnapshot = Object.freeze({
+		state: "awaiting_resolver",
+		requestId: identity.decoder.adoptJsonRpcRequestId("spoken-approval-request"),
+		approvalId: identity.decoder.adoptApprovalId("spoken-approval"),
+		child: identity.validator.childId,
+		epoch: identity.validator.epoch,
+		coordinatorThreadId,
+		realtimeSessionId: parseRealtimeSessionId("spoken-session"),
+		realtimeCorrelationId: parseRealtimeCorrelationId("spoken-correlation"),
+		effectSummary: "Apply the requested operation",
+		effectFingerprint: "spoken-effect-fingerprint",
+		effectPromptItemId: parseRealtimeItemId("spoken-effect-prompt"),
+		effectPromptSequence: 7,
+		finalUserItemId: parseRealtimeItemId("spoken-final-user"),
+		finalUserSequence: 8,
+		finalUserText: "yes",
+		operationId: authorities.operation.decoder.serializeOperationId(initialSpokenOperation),
+		classifierTurnId: identity.decoder.adoptTurnId("spoken-classifier-turn"),
+		resolverCallId: identity.decoder.adoptDynamicToolCallId("spoken-resolver-call"),
+		expiresAtMs: 10_000,
+		settlement: null,
+		reason: null,
+	});
 	const spokenCalls: DynamicServerRequest[] = [];
 	const spokenApproval = {
-		snapshot: () => ({ operationId: spokenOperationId }) as unknown as SpokenApprovalSnapshot,
+		snapshot: () => spokenSnapshot,
 		resolve: async (request: DynamicServerRequest) => {
 			spokenCalls.push(request);
 			timeline.push("voice.resolve");
@@ -258,11 +293,16 @@ export function fixture(
 			spokenResult = result;
 		},
 		setOperationId: (operationId: string | null) => {
-			spokenOperationId = operationId;
+			spokenSnapshot = Object.freeze({ ...spokenSnapshot, operationId });
+		},
+		setSnapshot: (snapshot: SpokenApprovalSnapshot) => {
+			spokenSnapshot = snapshot;
 		},
 	};
 
 	const writes: ResponseWrite[] = [];
+	let responseBarrier: Promise<void> | null = null;
+	let releaseResponse: (() => void) | null = null;
 	const transport = {
 		writes,
 		failWrites: false,
@@ -273,7 +313,20 @@ export function fixture(
 		): Promise<void> => {
 			writes.push({ request, owner, response });
 			timeline.push("transport.respond");
+			if (responseBarrier !== null) await responseBarrier;
 			if (transport.failWrites) throw new Error("response write lost");
+		},
+		hold: () => {
+			if (responseBarrier !== null) throw new Error("response barrier is already held");
+			responseBarrier = new Promise<void>((resolve) => {
+				releaseResponse = resolve;
+			});
+		},
+		release: () => {
+			const release = releaseResponse;
+			releaseResponse = null;
+			responseBarrier = null;
+			release?.();
 		},
 	};
 
@@ -281,10 +334,6 @@ export function fixture(
 		currentCoordinator: () => coordinator,
 		currentWorkhorseBinding: () => currentBinding,
 		currentCall: () => currentCall,
-		operationIdFor: (request: DynamicServerRequest) =>
-			currentOperationId === undefined
-				? `operation-${String(request.requestId)}`
-				: currentOperationId,
 		expectedTurnId: () => currentExpectedTurnId,
 		setCoordinator: (value: CoordinatorToolCoordinatorAuthority | null) => {
 			coordinator = value;
@@ -295,9 +344,6 @@ export function fixture(
 		setCall: (value: LogicalToolCallCorrelation | null) => {
 			currentCall = value;
 		},
-		setOperationId: (value: string | null) => {
-			currentOperationId = value;
-		},
 		setExpectedTurnId: (value: TurnId | null) => {
 			currentExpectedTurnId = value;
 		},
@@ -305,13 +351,27 @@ export function fixture(
 		setCoordinator: (value: CoordinatorToolCoordinatorAuthority | null) => void;
 		setBinding: (value: WorkhorseOperationBinding | null) => void;
 		setCall: (value: LogicalToolCallCorrelation | null) => void;
-		setOperationId: (value: string | null) => void;
 		setExpectedTurnId: (value: TurnId | null) => void;
+	};
+	const operation = {
+		issuer: {
+			mintOperationId: () => {
+				const selected = nextIssuedOperation ?? authorities.operation.issuer.mintOperationId();
+				nextIssuedOperation = null;
+				return selected;
+			},
+		},
+		validator: authorities.operation.validator,
+		decoder: authorities.operation.decoder,
+		setNextIssued: (value: OperationId) => {
+			nextIssuedOperation = value;
+		},
 	};
 
 	const dispatcher = createCodexCoordinatorTools({
 		identity,
 		authority,
+		operation,
 		operations,
 		spokenApproval,
 		transport,
@@ -360,6 +420,8 @@ export function fixture(
 			manifestHash,
 		});
 		currentCall = call;
+		if (tool === "resolve_spoken_approval")
+			spokenSnapshot = Object.freeze({ ...spokenSnapshot, resolverCallId: callId });
 		const requestId = identity.decoder.adoptJsonRpcRequestId(`request-${requestNumber++}`);
 		return {
 			child: identity.validator.childId,
@@ -387,6 +449,7 @@ export function fixture(
 		workhorseThreadId,
 		expectedTurnId,
 		binding,
+		operation,
 		timeline,
 		operations,
 		spokenApproval,
