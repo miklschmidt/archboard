@@ -139,6 +139,7 @@ function validateDecision(root: JsonRecord): void {
 	const decision = record(root.decision, "decision");
 	fields("decision", decision, [
 		"fieldOrder",
+		"timestampAuthority",
 		"outcomes",
 		"personDecisionOutcomes",
 		"hostTerminalOutcomes",
@@ -154,6 +155,12 @@ function validateDecision(root: JsonRecord): void {
 		"decidedAtMs",
 		"cause",
 	]);
+	exact("decision timestamp authority", decision.timestampAuthority, {
+		decidedAtMs: "host_nowMs_at_terminal_compare_and_set",
+		callerSupplied: false,
+		personDecisionAcceptedWhen: "same_host_nowMs < expiresAtMs",
+		expiryWinsWhen: "same_host_nowMs >= expiresAtMs",
+	});
 	ordered("decision outcomes", strings(decision.outcomes, "decision outcomes"), decisionOutcomes);
 	ordered(
 		"person decision outcomes",
@@ -172,7 +179,7 @@ function validateDecision(root: JsonRecord): void {
 			"request_is_pending",
 			"identity_exactly_echoes_request",
 			"effect_hash_exactly_echoes_request",
-			"decidedAtMs_is_before_expiresAtMs",
+			"same_host_nowMs_stamped_as_decidedAtMs_is_before_expiresAtMs",
 		],
 	);
 	exact("decision causes", decision.causes, decisionCauses);

@@ -160,6 +160,10 @@ describe("dynamic coordination approval authored policy", () => {
 			["outcome", "identity", "effectHash", "decidedAtMs", "cause"],
 			"decision fields",
 		);
+		attackObject(
+			(root) => record(decision(root).timestampAuthority, "decision timestamp authority"),
+			"decision timestamp authority changed",
+		);
 		attackOrdered(
 			(root) => strings(decision(root).personDecisionOutcomes, "person decision outcomes"),
 			["approved", "declined"],
@@ -176,11 +180,23 @@ describe("dynamic coordination approval authored policy", () => {
 				"request_is_pending",
 				"identity_exactly_echoes_request",
 				"effect_hash_exactly_echoes_request",
-				"decidedAtMs_is_before_expiresAtMs",
+				"same_host_nowMs_stamped_as_decidedAtMs_is_before_expiresAtMs",
 			],
 			"person decision acceptance",
 		);
 		attackRows((root) => records(decision(root).causes, "decision causes"));
+		const callerTimestamp = clonePolicy();
+		record(
+			decision(callerTimestamp).timestampAuthority,
+			"decision timestamp authority",
+		).callerSupplied = true;
+		expect(() => validatePolicy(callerTimestamp)).toThrow("decision timestamp authority changed");
+		const splitClock = clonePolicy();
+		record(
+			decision(splitClock).timestampAuthority,
+			"decision timestamp authority",
+		).personDecisionAcceptedWhen = "browser_decidedAtMs < expiresAtMs";
+		expect(() => validatePolicy(splitClock)).toThrow("decision timestamp authority changed");
 		const causes = records(decision(policy).causes, "decision causes").map(
 			(row) => `${String(row.outcome)}:${String(row.cause)}`,
 		);
@@ -216,7 +232,30 @@ describe("dynamic coordination approval authored policy", () => {
 
 	test("rejects every stale revalidation and refusal mapping change", () => {
 		attackRows((root) => records(revalidation(root).failures, "revalidation failures"));
+		const failures = records(revalidation(policy).failures, "revalidation failures");
+		expect(failures.find((row) => row.condition === "logical_call_no_longer_executing")).toEqual({
+			condition: "logical_call_no_longer_executing",
+			reason: "invalid_call",
+		});
+		expect(
+			failures.find((row) => row.condition === "non_self_fork_or_send_target_became_active"),
+		).toEqual({
+			condition: "non_self_fork_or_send_target_became_active",
+			reason: "busy",
+		});
+		expect(failures.some((row) => row.condition === "fork_or_send_target_became_active")).toBe(
+			false,
+		);
+		const stoppedCallRace = clonePolicy();
+		const stoppedCall = records(
+			revalidation(stoppedCallRace).failures,
+			"revalidation failures",
+		).find((row) => row.condition === "logical_call_no_longer_executing");
+		if (stoppedCall === undefined) throw new Error("logical call race row is missing");
+		stoppedCall.reason = "approval_required";
+		expect(() => validatePolicy(stoppedCallRace)).toThrow("revalidation failures changed");
 		expect(revalidationFailures.map((row) => row.reason)).toEqual([
+			"invalid_call",
 			"invalid_call",
 			"stale_child",
 			"prior_epoch",

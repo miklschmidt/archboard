@@ -72,13 +72,14 @@ export const decisionCauses = [
 ].map(([outcome, cause, effect, toolResult]) => ({ outcome, cause, effect, toolResult }));
 export const revalidationFailures = [
 	["decision_identity_effect_or_manifest_changed", "invalid_call"],
+	["logical_call_no_longer_executing", "invalid_call"],
 	["child_replaced_or_disconnected", "stale_child"],
 	["epoch_became_prior", "prior_epoch"],
 	["caller_target_or_context_provenance_unproven", "unknown_provenance"],
 	["caller_or_target_not_loaded", "not_loaded"],
 	["caller_or_target_direct_input_not_true", "not_controllable"],
 	["caller_or_target_system_error", "system_error"],
-	["fork_or_send_target_became_active", "busy"],
+	["non_self_fork_or_send_target_became_active", "busy"],
 	["relation_became_invalid_or_cyclic", "cycle"],
 	["authority_token_effect_hash_or_operation_id_changed", "invalid_call"],
 	["approval_expired_before_effect", "expired"],

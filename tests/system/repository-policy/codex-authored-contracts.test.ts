@@ -236,13 +236,13 @@ const reviewedDigests: ReviewedDigest[] = [
 	{
 		name: "complete authored contract prose and literals",
 		consumer: "TASK-143.01.07, TASK-143.01.19, TASK-143.05.03, and TASK-143.07.07",
-		expected: "8c6a279a1c6a543d8a173cf12b6977477d522b0d0f3f9c4189d4a8430639661a",
+		expected: "97f45a526ac5e8fbe4de1fa916c3a16584e5d20f5817cfb1ff9c92162ff54f10",
 		read: () => contractBytes,
 	},
 	{
 		name: "dynamic coordination approval policy manifest",
 		consumer: "TASK-143.01.20, TASK-143.01.21, TASK-143.05.04, and TASK-143.03.07",
-		expected: "d11a60e423f4a0f0fc80f229987d7f0f726bf83a328878913b7b9ef358a84327",
+		expected: "c1140c7ab6e7627b1efc3e680266db4ceff87b6b79e8ef00c45a81ad87a6e8d5",
 		read: () => fenceAfter("The strict manifest is the semantic source", "json"),
 	},
 	{

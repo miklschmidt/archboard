@@ -1061,7 +1061,10 @@ been issued. The hash input is compact UTF-8 JSON containing exactly
 `identity` then `effect`, in the field order below. The visual summary is part
 of the effect and therefore part of the hash. A decision echoes the complete
 identity and hash. It does not supply a target, arguments, boundary, context,
-or grant.
+or grant. The host stamps `decidedAtMs` from its clock during the terminal
+compare-and-set. The same `nowMs` observation chooses person acceptance when
+it is before `expiresAtMs`, or expiry when it is equal to or later than that
+deadline. The browser cannot supply either time.
 
 The strict manifest is the semantic source for downstream runtime and browser
 contracts:
@@ -1164,6 +1167,12 @@ contracts:
 	},
 	"decision": {
 		"fieldOrder": ["outcome", "identity", "effectHash", "decidedAtMs", "cause"],
+		"timestampAuthority": {
+			"decidedAtMs": "host_nowMs_at_terminal_compare_and_set",
+			"callerSupplied": false,
+			"personDecisionAcceptedWhen": "same_host_nowMs < expiresAtMs",
+			"expiryWinsWhen": "same_host_nowMs >= expiresAtMs"
+		},
 		"outcomes": ["approved", "declined", "expired", "cancelled", "disconnected"],
 		"personDecisionOutcomes": ["approved", "declined"],
 		"hostTerminalOutcomes": ["expired", "cancelled", "disconnected"],
@@ -1171,7 +1180,7 @@ contracts:
 			"request_is_pending",
 			"identity_exactly_echoes_request",
 			"effect_hash_exactly_echoes_request",
-			"decidedAtMs_is_before_expiresAtMs"
+			"same_host_nowMs_stamped_as_decidedAtMs_is_before_expiresAtMs"
 		],
 		"causes": [
 			{
@@ -1258,6 +1267,10 @@ contracts:
 				"reason": "invalid_call"
 			},
 			{
+				"condition": "logical_call_no_longer_executing",
+				"reason": "invalid_call"
+			},
+			{
 				"condition": "child_replaced_or_disconnected",
 				"reason": "stale_child"
 			},
@@ -1282,7 +1295,7 @@ contracts:
 				"reason": "system_error"
 			},
 			{
-				"condition": "fork_or_send_target_became_active",
+				"condition": "non_self_fork_or_send_target_became_active",
 				"reason": "busy"
 			},
 			{
@@ -1554,6 +1567,13 @@ effect will run. The dispatcher must pass every revalidation row before it
 reads fresh context or stages a transaction. A stale approved decision keeps
 its recorded outcome and produces the exact refusal from the table. It never
 changes into decline and never runs a fallback effect.
+
+If approval settles first and the call is cancelled or its caller turn is
+interrupted before revalidation, `logical_call_no_longer_executing` returns
+`invalid_call`, retires the operation IDs, and runs no effect. It does not
+return `approval_required`, because the approval request is no longer pending.
+An active self-fork remains allowed at its captured executing-turn boundary;
+only a non-self fork or send target that became active returns `busy`.
 
 `approval_required` is the final dynamic tool result for cancellation, caller
 turn interruption, host shutdown, or browser disconnect while approval is
