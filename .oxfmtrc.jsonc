@@ -1,8 +1,13 @@
 {
 	"useTabs": true,
-	"lineWidth": 100,
+	"printWidth": 100,
 	"quoteStyle": "double",
 	"semicolons": "always",
 	"trailingComma": "all",
 	"endOfLine": "lf",
+	"sortTailwindcss": {
+		"stylesheet": "src/ui/theme/app.css",
+		"functions": ["cn"],
+		"preserveDuplicates": true,
+	},
 }
