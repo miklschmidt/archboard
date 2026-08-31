@@ -1,18 +1,13 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import type {
-	BrowserCommand,
-	BrowserDynamicApprovalResponse,
-	BrowserGatewayClientState,
-	BrowserGatewayMessage,
-} from "../index.js";
-import { applyBrowserGatewayMessage, CodexWorkbenchGatewayError } from "../index.js";
 import {
-	commandTarget,
-	createGatewayHarness,
-	latestDelta,
-	type GatewayHarness,
-} from "./support.js";
+	accountCommand,
+	dynamicResponse,
+	expectGatewayError,
+	startCommand,
+	terminalDynamicApproval,
+} from "./helpers.js";
+import { createGatewayHarness, commandTarget, type GatewayHarness } from "./support.js";
 
 const openHarnesses: GatewayHarness[] = [];
 
@@ -24,70 +19,6 @@ function harness(): GatewayHarness {
 	const value = createGatewayHarness();
 	openHarnesses.push(value);
 	return value;
-}
-
-function expectGatewayError(action: () => unknown, code: CodexWorkbenchGatewayError["code"]): void {
-	expect(action).toThrow(CodexWorkbenchGatewayError);
-	try {
-		action();
-	} catch (error) {
-		expect(error).toMatchObject({ code });
-	}
-}
-
-function accountCommand(
-	harnessValue: GatewayHarness,
-	lease: ReturnType<GatewayHarness["gateway"]["claimLease"]>,
-	command: "accountLogin" | "accountLoginCancel" | "accountLogout",
-): BrowserCommand {
-	const target = commandTarget(lease);
-	if (command === "accountLogin")
-		return harnessValue.model.BrowserCommandSchema.parse({
-			...target,
-			command,
-			login: { type: "chatgpt" },
-		});
-	if (command === "accountLoginCancel")
-		return harnessValue.model.BrowserCommandSchema.parse({
-			...target,
-			command,
-			loginId: harnessValue.model.LoginIdSchema.parse(
-				harnessValue.authorities.identity.decoder.adoptLoginId("gateway-login"),
-			),
-		});
-	return harnessValue.model.BrowserCommandSchema.parse({ ...target, command });
-}
-
-function startCommand(
-	harnessValue: GatewayHarness,
-	lease: ReturnType<GatewayHarness["gateway"]["claimLease"]>,
-	threadId = harnessValue.threadId,
-): BrowserCommand {
-	return harnessValue.model.BrowserCommandSchema.parse({
-		...commandTarget(lease),
-		command: "start",
-		threadId,
-		prompt: "Run the bounded command",
-	});
-}
-
-function dynamicResponse(
-	harnessValue: GatewayHarness,
-	approval: ReturnType<GatewayHarness["makeDynamicApproval"]>,
-	decision: "approve" | "decline" = "approve",
-): BrowserDynamicApprovalResponse {
-	return harnessValue.model.BrowserDynamicApprovalResponseSchema.parse({
-		kind: "browser_command",
-		command: "dynamicApprovalRespond",
-		commandId: approval.binding!.commandId,
-		paneId: approval.binding!.paneId,
-		childId: harnessValue.childId,
-		epoch: harnessValue.epoch,
-		capturedLink: approval.binding!.capturedLink,
-		identity: approval.identity,
-		effectHash: approval.effectHash,
-		decision,
-	});
 }
 
 describe("Codex workbench browser gateway readiness", () => {
@@ -139,6 +70,17 @@ describe("Codex workbench browser gateway readiness", () => {
 		expect(value.calls.filter((call) => call === "account.login")).toHaveLength(4);
 		expect(value.calls.filter((call) => call === "account.loginCancel")).toHaveLength(1);
 	});
+
+	test("routes account logout while the account is only login-capable", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		value.setReadiness("signed_out");
+		const result = await connection.command(
+			accountCommand(value, connection.claimLease(), "accountLogout"),
+		);
+		expect(result.outcome).toBe("delivered");
+		expect(value.calls).toContain("account.logout");
+	});
 });
 
 describe("Codex workbench browser command leases", () => {
@@ -150,6 +92,7 @@ describe("Codex workbench browser command leases", () => {
 		const secondLease = second.claimLease();
 		expect(secondLease.commandId).not.toBe(firstLease.commandId);
 		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
+		expect(value.disconnectReasons).toEqual(["lease_transferred", "lease_transferred"]);
 		const result = await first.command(startCommand(value, firstLease));
 		expect(result).toMatchObject({ code: "lease_transferred", outcome: "not_delivered" });
 		expect(value.calls).not.toContain("text.start");
@@ -168,8 +111,23 @@ describe("Codex workbench browser command leases", () => {
 			outcome: "not_delivered",
 		});
 		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
+		expect(value.disconnectReasons).toEqual(["lease_expired", "lease_expired"]);
 		const recovered = connection.claimLease();
 		expect(recovered.commandId).not.toBe(lease.commandId);
+	});
+
+	test("renews the app-global lease and keeps its exact binding", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const lease = connection.claimLease();
+		value.advance(1_000);
+		const renewed = connection.renewLease();
+		expect(renewed.commandId).toBe(lease.commandId);
+		expect(renewed.paneId).toBe(lease.paneId);
+		expect(renewed.childId).toBe(lease.childId);
+		expect(renewed.epoch).toBe(lease.epoch);
+		expect(renewed.expiresAtMs).toBeGreaterThan(lease.expiresAtMs);
+		expect((await connection.command(startCommand(value, renewed))).outcome).toBe("delivered");
 	});
 
 	test("does not deliver a command after the captured link changes", async () => {
@@ -304,125 +262,27 @@ describe("Codex workbench browser command routing", () => {
 		});
 		expect(value.calls).not.toContain("dynamic.resolve");
 	});
-});
 
-describe("Codex workbench browser recovery and delivery", () => {
-	test("deduplicates an in-flight command and classifies a late result as unknown", async () => {
-		const value = harness();
-		const first = value.gateway.connect(value.browserId, value.paneId);
-		const second = value.gateway.connect("browser-two", "pane-two");
-		const lease = first.claimLease();
-		let settle: ((result: undefined) => void) | undefined;
-		value.setActionResult(undefined);
-		const delayed = new Promise<undefined>((resolve) => {
-			settle = resolve;
-		});
-		value.setActionError(null);
-		value.setActionGate(delayed);
-		const original = value.calls.length;
-		const command = startCommand(value, lease);
-		const pending = first.command(command);
-		await Promise.resolve();
-		const transferred = second.claimLease();
-		expect(transferred.commandId).not.toBe(lease.commandId);
-		settle?.(undefined);
-		value.setActionGate(null);
-		const result = await pending;
-		expect(result).toMatchObject({ code: "outcome_unknown", outcome: "outcome_unknown" });
-		expect(value.calls.length).toBeGreaterThanOrEqual(original);
-		const duplicate = await first.command(command);
-		expect(duplicate).toEqual(result);
-	});
-
-	test("does not replay a cached command across browser ownership", async () => {
-		const value = harness();
-		const first = value.gateway.connect(value.browserId, value.paneId);
-		const second = value.gateway.connect("browser-two", value.paneId);
-		const lease = first.claimLease();
-		const command = startCommand(value, lease);
-		const delivered = await first.command(command);
-		const replay = await second.command(command);
-		expect(delivered.outcome).toBe("delivered");
-		expect(replay).toMatchObject({ code: "lease_transferred", outcome: "not_delivered" });
-		expect(value.calls.filter((call) => call === "text.start")).toHaveLength(1);
-	});
-
-	test("rejects a dynamic response whose captured link is not current", async () => {
+	test("projects terminal approval_required and rejects its late response", async () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);
 		const lease = connection.claimLease();
-		const otherThread = value.model.ThreadIdSchema.parse(
-			value.authorities.identity.decoder.adoptThreadId("other-thread"),
-		);
-		const approval = value.makeDynamicApproval(lease.commandId, otherThread);
-		value.setDynamicApprovals([approval]);
-		const result = await connection.command(dynamicResponse(value, approval));
-		expect(result).toMatchObject({
+		const pending = value.makeDynamicApproval(lease.commandId);
+		const terminal = terminalDynamicApproval(value, pending);
+		value.setDynamicApprovals([terminal]);
+		const snapshot = connection.snapshot().snapshot;
+		expect(snapshot.dynamicApprovals).toEqual([terminal]);
+		expect(snapshot.dynamicApprovals[0]).toMatchObject({
+			state: "cancelled",
+			toolResult: "approval_required",
+			binding: null,
+			resumable: false,
+		});
+		const late = await connection.command(dynamicResponse(value, pending));
+		expect(late).toMatchObject({
 			code: "dynamic_approval_not_pending",
 			outcome: "not_delivered",
 		});
 		expect(value.calls).not.toContain("dynamic.resolve");
-	});
-
-	test("falls back to one bounded full snapshot when a delta is too large", () => {
-		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
-		connection.snapshot();
-		const messages: BrowserGatewayMessage[] = [];
-		connection.subscribe((message) => messages.push(message));
-		const lease = connection.claimLease();
-		messages.length = 0;
-		value.setDynamicApprovals(
-			Array.from({ length: 500 }, () => value.makeDynamicApproval(lease.commandId)),
-		);
-		const message = messages.at(-1);
-		expect(message?.kind).toBe("snapshot");
-		if (message?.kind === "snapshot") expect(message.sequence).toBeGreaterThan(0);
-	});
-
-	test("applies snapshots, rejects gaps, and treats duplicate or stale messages idempotently", () => {
-		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
-		const first = connection.snapshot();
-		let state: BrowserGatewayClientState | null = applyBrowserGatewayMessage(
-			value.model,
-			first,
-			null,
-		).state;
-		expect(state).not.toBeNull();
-		const messages: BrowserGatewayMessage[] = [];
-		const unsubscribe = connection.subscribe((message) => messages.push(message));
-		value.setReadiness("account_ready");
-		const delta = latestDelta(messages);
-		expect(delta).toBeDefined();
-		const applied = applyBrowserGatewayMessage(value.model, delta, state);
-		expect(applied.status).toBe("applied");
-		state = applied.state;
-		expect(state).not.toBeNull();
-		expect(applyBrowserGatewayMessage(value.model, delta, state).status).toBe("duplicate");
-		expect(
-			applyBrowserGatewayMessage(value.model, { ...delta!, sequence: delta!.sequence - 1 }, state)
-				.status,
-		).toBe("stale");
-		expect(
-			applyBrowserGatewayMessage(value.model, { ...delta!, sequence: state!.sequence + 2 }, state)
-				.status,
-		).toBe("gap");
-		unsubscribe();
-	});
-
-	test("child exit and browser close release ownership while a fresh connection recovers", async () => {
-		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
-		const lease = connection.claimLease();
-		await value.gateway.childExit(value.childId, value.epoch);
-		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
-		const afterExit = await connection.command(startCommand(value, lease));
-		expect(afterExit).toMatchObject({ code: "child_disconnected", outcome: "not_delivered" });
-		const recovered = value.gateway.connect("browser-two", "pane-two");
-		recovered.claimLease();
-		await recovered.close();
-		const final = value.gateway.connect("browser-three", "pane-three");
-		expect(final.claimLease().state).toBe("active");
 	});
 });

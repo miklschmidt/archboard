@@ -1,4 +1,4 @@
-export { createCodexWorkbenchGateway } from "./lib/gateway.js";
+export { BROWSER_SETTLED_COMMAND_LIMIT, createCodexWorkbenchGateway } from "./lib/gateway.js";
 export { applyBrowserGatewayMessage, browserGatewayMessageSchema } from "./lib/sequence.js";
 export {
 	BROWSER_DELTA_MAX_BYTES,

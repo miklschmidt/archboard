@@ -48,6 +48,7 @@ const ACCOUNT_READINESS = new Set([
 ]);
 const THREAD_READINESS = new Set(["thread_capable"]);
 const DISCONNECT_MEMORY_LIMIT = 128;
+export const BROWSER_SETTLED_COMMAND_LIMIT = 64;
 
 interface ConnectionState {
 	readonly browserId: BrowserConnectionId;
@@ -251,7 +252,8 @@ export function createCodexWorkbenchGateway(
 	const identity: IdentityAuthorities = options.identity;
 	const model = createCodexBrowserModel(identity);
 	const connections = new Map<string, ConnectionState>();
-	const cachedCommands = new Map<BrowserCommandId, CachedCommand>();
+	const inFlightCommands = new Map<BrowserCommandId, CachedCommand>();
+	const settledCommands = new Map<BrowserCommandId, CachedCommand>();
 	const disconnectNotified = new Set<BrowserCommandId>();
 	const disconnectReasons = new Map<BrowserCommandId, BrowserDisconnectReason>();
 	const now = options.now ?? Date.now;
@@ -266,6 +268,7 @@ export function createCodexWorkbenchGateway(
 		if (disconnectNotified.has(commandId)) return;
 		disconnectNotified.add(commandId);
 		disconnectReasons.set(commandId, reason);
+		inFlightCommands.delete(commandId);
 		for (const state of connections.values()) {
 			if (state.lease?.commandId === commandId) state.lease = record.lease;
 		}
@@ -289,6 +292,27 @@ export function createCodexWorkbenchGateway(
 				// Approval owners are notified independently; one teardown failure
 				// must not keep the browser lease from being retired.
 			}
+		}
+	};
+
+	// A lease is app-global, so retiring its owner removes its only possible
+	// in-flight entry. Settled entries remain replayable until bounded eviction;
+	// an evicted id is necessarily non-current and must pass lease authority.
+	const rememberSettled = (commandId: BrowserCommandId, entry: CachedCommand): void => {
+		if (disposed) return;
+		settledCommands.delete(commandId);
+		settledCommands.set(commandId, entry);
+		const activeCommandId = leaseManager.current()?.lease.commandId;
+		while (settledCommands.size > BROWSER_SETTLED_COMMAND_LIMIT) {
+			let evicted: BrowserCommandId | undefined;
+			for (const candidate of settledCommands.keys()) {
+				if (candidate !== activeCommandId) {
+					evicted = candidate;
+					break;
+				}
+			}
+			if (evicted === undefined) break;
+			settledCommands.delete(evicted);
 		}
 	};
 
@@ -324,6 +348,8 @@ export function createCodexWorkbenchGateway(
 	};
 
 	const stateFor = (browserId: string, paneId: string): ConnectionState => {
+		if (disposed)
+			throw new CodexWorkbenchGatewayError("disposed", "The browser gateway is disposed.");
 		const state = connections.get(connectionKey(browserId, paneId));
 		if (state === undefined || state.closed)
 			throw new CodexWorkbenchGatewayError("invalid_input", "The browser connection is closed.");
@@ -728,7 +754,8 @@ export function createCodexWorkbenchGateway(
 			return refusal(state, null, "invalid_command");
 		}
 		const fingerprint = fingerprintCommand(parsed);
-		const existing = cachedCommands.get(parsed.commandId);
+		const existing =
+			inFlightCommands.get(parsed.commandId) ?? settledCommands.get(parsed.commandId);
 		if (existing !== undefined) {
 			if (existing.fingerprint === fingerprint) {
 				if (existing.browserId !== browserId || existing.paneId !== paneId)
@@ -738,12 +765,29 @@ export function createCodexWorkbenchGateway(
 			return refusal(state, parsed.commandId, "invalid_command");
 		}
 		const result = execute(state, parsed);
-		cachedCommands.set(parsed.commandId, {
+		const entry: CachedCommand = {
 			fingerprint,
 			browserId,
 			paneId,
 			result,
-		});
+		};
+		if (leaseManager.current()?.lease.commandId === parsed.commandId) {
+			inFlightCommands.set(parsed.commandId, entry);
+			void result.then(
+				() => {
+					if (inFlightCommands.get(parsed.commandId) === entry) {
+						inFlightCommands.delete(parsed.commandId);
+						rememberSettled(parsed.commandId, entry);
+					}
+					return undefined;
+				},
+				() => {
+					if (inFlightCommands.get(parsed.commandId) === entry)
+						inFlightCommands.delete(parsed.commandId);
+					return undefined;
+				},
+			);
+		}
 		return result;
 	};
 
@@ -862,7 +906,31 @@ export function createCodexWorkbenchGateway(
 		return connectionFor(state);
 	};
 
+	const terminate = (reason: BrowserDisconnectReason): void => {
+		if (disposed) return;
+		disposed = true;
+		for (const unsubscribe of sourceUnsubscribers.splice(0)) unsubscribe();
+		const current = leaseManager.current();
+		if (current !== null) {
+			const released = leaseManager.invalidate(
+				current.lease.childId,
+				current.lease.epoch,
+				"released",
+			);
+			if (released !== null) notifyDisconnect(released, reason);
+		}
+		for (const state of connections.values()) {
+			state.closed = true;
+			state.listeners.clear();
+		}
+		connections.clear();
+		inFlightCommands.clear();
+		settledCommands.clear();
+		leaseManager.dispose();
+	};
+
 	const closeBrowser = async (browserId: string): Promise<void> => {
+		if (disposed) return;
 		for (const [key, state] of connections) {
 			if (state.browserId !== browserId) continue;
 			state.closed = true;
@@ -881,27 +949,17 @@ export function createCodexWorkbenchGateway(
 	};
 
 	const childExit = async (childId: ChildId, epoch: ChildEpoch): Promise<void> => {
-		const current = leaseManager.current();
-		if (current === null || current.lease.childId !== childId || current.lease.epoch !== epoch)
+		if (disposed) return;
+		if (
+			childId !== identity.identity.validator.childId ||
+			epoch !== identity.identity.validator.epoch
+		)
 			return;
-		const released = leaseManager.invalidate(childId, epoch, "released");
-		if (released !== null) notifyDisconnect(released, "child_disconnected");
-		publishAll();
+		terminate("child_disconnected");
 	};
 
 	const dispose = async (): Promise<void> => {
-		if (disposed) return;
-		disposed = true;
-		for (const unsubscribe of sourceUnsubscribers.splice(0)) unsubscribe();
-		for (const state of connections.values()) {
-			state.closed = true;
-			state.listeners.clear();
-		}
-		connections.clear();
-		const current = leaseManager.current();
-		if (current !== null) notifyDisconnect(current, "gateway_shutdown");
-		leaseManager.dispose();
-		cachedCommands.clear();
+		terminate("gateway_shutdown");
 	};
 
 	const subscribe = (
@@ -918,9 +976,13 @@ export function createCodexWorkbenchGateway(
 		Object.freeze({
 			browserId: state.browserId,
 			paneId: state.paneId,
-			snapshot: () => updateSnapshot(state),
+			snapshot: () => {
+				const current = stateFor(state.browserId, state.paneId);
+				return updateSnapshot(current);
+			},
 			claimLease: () => claimLease(state.browserId, state.paneId),
 			renewLease: () => {
+				stateFor(state.browserId, state.paneId);
 				expireLeaseIfDue();
 				if (state.lease === null)
 					throw new CodexWorkbenchGatewayError("lease_required", "No command lease is active.");
