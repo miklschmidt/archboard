@@ -39,6 +39,7 @@ const AREA_IMPORT_DENIALS = {
 };
 
 const COMPATIBILITY_IDENTIFIER_PATTERN = /(?:^|_)(?:compat|compatibility|shim|backwards?)(?:$|_)/i;
+const SOURCE_ALIAS_PREFIX = "@/";
 
 function createRule(messages, create) {
 	return {
@@ -121,6 +122,13 @@ function isStateFile(relativePath) {
 }
 
 function sourceToRepoPath(fromRelativePath, source) {
+	if (source.startsWith(SOURCE_ALIAS_PREFIX)) {
+		const resolved = path.posix.normalize(
+			path.posix.join("src", source.slice(SOURCE_ALIAS_PREFIX.length)),
+		);
+		return resolved === "src" || resolved.startsWith("src/") ? resolved : undefined;
+	}
+
 	if (!source.startsWith(".")) {
 		return undefined;
 	}
@@ -387,6 +395,8 @@ const moduleEntrypoints = createRule(
 			"Code outside a module may import only that module's root entrypoint files, never implementation subfolders.",
 		noDeepImportAcrossModules:
 			"Import another module through one of its root entrypoint files, not through its implementation subfolders.",
+		noUnresolvedSourceAlias:
+			"Canonical @/ imports must resolve to a source module entrypoint and stay inside src/.",
 		noProductTestImport:
 			"Product, scripts, and tools must not import test-owned source. Move shared behavior behind a product module root entrypoint.",
 		noCrossOwnerTestImport:
@@ -408,6 +418,11 @@ const moduleEntrypoints = createRule(
 			const importedPath = resolveSourcePath(context, relativePath, source);
 			const importedOwner = importedPath ? testOwnerAt(importedPath) : undefined;
 			const imported = importedPath ? moduleAt(importedPath) : undefined;
+
+			if (!importedPath && source.startsWith(SOURCE_ALIAS_PREFIX)) {
+				report(context, node, "noUnresolvedSourceAlias");
+				return;
+			}
 
 			if (importedOwner) {
 				if (!importerOwner) {
