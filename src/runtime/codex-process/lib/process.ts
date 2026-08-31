@@ -142,10 +142,18 @@ export interface CodexProcessDependencies {
 	readonly cancel?: (timer: Timer) => void;
 }
 
+export type CodexProcessStorageInput =
+	| (CodexStorageInput & { readonly rootDirectory: string })
+	| (CodexStorageInput & {
+			readonly rootDirectory?: never;
+			readonly codexHome: string;
+			readonly sqliteHome: string;
+	  });
+
 export interface CodexProcessOptions {
 	readonly executablePath: string;
-	readonly checkoutRoot?: string;
-	readonly storage?: CodexStorageInput;
+	readonly checkoutRoot: string;
+	readonly storage: CodexProcessStorageInput;
 	/** Secrets supplied by a caller are redacted before process diagnostics are retained. */
 	readonly diagnosticSecrets?: readonly string[];
 }

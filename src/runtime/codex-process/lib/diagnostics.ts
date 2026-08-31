@@ -12,10 +12,10 @@ export interface BoundedCodexDiagnostics {
 }
 
 export interface CodexDiagnosticsBuffer {
-	/** Append raw bytes and return only their redacted form for classification. */
-	readonly append: (chunk: Uint8Array | string) => string;
+	/** Append raw bytes; only bounded committed redacted bytes become observable via snapshot. */
+	readonly append: (chunk: Uint8Array | string) => void;
 	/** Commit the bounded redacted carry when the owning child reaches a terminal boundary. */
-	readonly finalize: () => string;
+	readonly finalize: () => void;
 	readonly redact: (text: string) => string;
 	readonly snapshot: () => BoundedCodexDiagnostics;
 }
@@ -29,7 +29,7 @@ function uniqueSecrets(secrets: readonly string[]): readonly string[] {
 }
 
 function createRedactor(secrets: readonly string[]): {
-	readonly append: (text: string) => { readonly stable: string; readonly visible: string };
+	readonly append: (text: string) => string;
 	readonly finalize: () => string;
 	readonly preview: () => string;
 	readonly redact: (text: string) => string;
@@ -47,14 +47,13 @@ function createRedactor(secrets: readonly string[]): {
 		return redacted;
 	};
 
-	const append = (text: string): { readonly stable: string; readonly visible: string } => {
-		const previousPending = pending;
+	const append = (text: string): string => {
 		pending += text;
 		let stable = "";
 		if (maxSecretLength === 0) {
 			stable = pending;
 			pending = "";
-			return { stable, visible: redact(previousPending + text) };
+			return stable;
 		}
 		while (pending.length > 0) {
 			const secret = knownSecrets.find((candidate) => pending.startsWith(candidate));
@@ -67,7 +66,7 @@ function createRedactor(secrets: readonly string[]): {
 			stable += pending[0];
 			pending = pending.slice(1);
 		}
-		return { stable, visible: redact(previousPending + text) };
+		return stable;
 	};
 	const finalize = (): string => {
 		const stable = redact(pending);
@@ -114,19 +113,16 @@ export function createCodexDiagnosticsBuffer(
 		retainedBytes += retained.byteLength;
 	};
 
-	const append = (chunk: Uint8Array | string): string => {
+	const append = (chunk: Uint8Array | string): void => {
 		const bytes = typeof chunk === "string" ? Buffer.from(chunk, "utf8") : Buffer.from(chunk);
 		const text = bytes.toString("utf8");
 		totalBytes += bytes.byteLength;
-		const redacted = redactor.append(text);
-		commit(redacted.stable);
-		return redacted.visible;
+		commit(redactor.append(text));
 	};
 
-	const finalize = (): string => {
+	const finalize = (): void => {
 		const stable = redactor.finalize();
 		commit(stable);
-		return stable;
 	};
 
 	const snapshot = (): BoundedCodexDiagnostics => {
