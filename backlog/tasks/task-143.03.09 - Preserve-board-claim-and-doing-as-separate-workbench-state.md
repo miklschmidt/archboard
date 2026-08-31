@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.09
 title: Preserve board claim and doing as separate workbench state
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-31 18:28'
+updated_date: '2026-08-31 18:31'
 labels: []
 dependencies:
   - TASK-143.06.02
@@ -39,9 +39,9 @@ Delegation profile: gpt-5.6-sol, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Board connection, claim holder/reason, doing history, semantic-context delivery, and Take back control retain existing behavior and remain separate from Codex turn, queue, approval, coordinator, and voice state.
-- [ ] #2 Disconnected, reconnecting, unclaimed, claimed, take-back pending/success/failure, semantic fresh/stale/ambiguous/refused/outcome_unknown states are named and never conflated with thread execution.
-- [ ] #3 Existing TASK-140 claim/take-back browser assertions remain green; tests at src/ui/workbench-board-status/tests exhaust closed adapter states, accessibility status, keyboard focus, both themes, and no board-note write from presentation.
+- [x] #1 Board connection, claim holder/reason, doing history, semantic-context delivery, and Take back control retain existing behavior and remain separate from Codex turn, queue, approval, coordinator, and voice state.
+- [x] #2 Disconnected, reconnecting, unclaimed, claimed, take-back pending/success/failure, semantic fresh/stale/ambiguous/refused/outcome_unknown states are named and never conflated with thread execution.
+- [x] #3 Existing TASK-140 claim/take-back browser assertions remain green; tests at src/ui/workbench-board-status/tests exhaust closed adapter states, accessibility status, keyboard focus, both themes, and no board-note write from presentation.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -70,4 +70,12 @@ The second remediation kept exactly one semantic announcer outside the collapsed
 A later browser attempt manufactured Fresh and Refused by changing announcer attributes and text directly. The third remediation removed that synthetic evidence. Current browser evidence covers only the shell state this leaf really renders: one collapsed Unavailable announcer outside the hidden disclosure, exposed by Chrome as an unignored atomic status with polite live priority and the exact accessible name. Focused validation passed with module 8 tests and 178 assertions, typecheck, scoped lint with no findings, scoped format, frontend build, shell-layout 1 test and 241 assertions, and claim-interaction 1 test and 96 assertions. The prior capped OOM results for the boundary and module-scope repository owners remain recorded and were not rerun.
 
 Ownership correction: TASK-143.06.02 is Done and supplies runtime exact-thread semantic delivery with module and fake-port evidence. It does not own a rendered Fresh-to-Refused transition. TASK-143.01.14 composes semantic delivery into the production graph, TASK-143.03.10 composes the workbench, TASK-143.03.11 integrates it into the shell, and TASK-143.03.13 owns rendered browser behavior. TASK-143.03.13 must prove the real collapsed Fresh-to-Refused React and accessibility transition after that chain lands. This future evidence does not expand the accepted source scope of TASK-143.03.09. The task remains In Progress with all acceptance criteria unchecked.
+
+Finalization evidence after REVIEW_CLEAN on reviewed HEAD 1301fae8. AC1: the adapter and view module tests prove connection, durable claim identity and reason, doing history, take-back state, and semantic delivery stay separate, immutable, and free of Codex execution inputs; focused browser coverage proves the pane-scoped behavior. AC2: the closed projection test names every connection, claim, take-back, and all six semantic states without conflating them with thread execution. AC3: the module owner passes 8 tests and 178 assertions; shell-layout passes 241 browser assertions; claim-interaction passes 96 browser assertions covering TASK-140 claim and take-back behavior, keyboard focus, both themes, pane scoping, unchanged board-note bytes, and the real collapsed Unavailable React and Chrome accessibility state. TASK-143.03.13 retains the future real collapsed Fresh-to-Refused browser transition. No Definition of Done items exist.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Completed the board-status workbench module with separate connection, claim, doing, take-back, and semantic state. Verified all closed state shapes in module tests and preserved TASK-140 behavior in the real browser owners, including the actual collapsed Unavailable accessibility node. Independent review reported REVIEW_CLEAN for BASE 3a1098e3 through reviewed HEAD 1301fae8. TASK-143.03.13 owns the later production Fresh-to-Refused browser transition.
+<!-- SECTION:FINAL_SUMMARY:END -->
