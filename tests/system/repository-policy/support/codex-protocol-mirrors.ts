@@ -2,38 +2,11 @@ import type * as ts from "typescript/unstable/ast";
 import {
 	astFingerprint,
 	distinctiveFingerprints,
-	parseModuleSources,
 } from "../../../../scripts/codex-protocol-fingerprints.js";
 import type { AstFingerprint } from "../../../../scripts/codex-protocol-fingerprints.js";
 
-export { astFingerprint, distinctiveFingerprints, parseModuleSources };
+export { astFingerprint, distinctiveFingerprints };
 export type { AstFingerprint };
-
-export interface FingerprintSource {
-	readonly path: string;
-	readonly source?: string;
-	readonly sourceFile: ts.SourceFile;
-}
-
-export function mergeGeneratedFingerprints(
-	authoritative: readonly AstFingerprint[],
-	sources: readonly FingerprintSource[],
-	generatedRoot: string,
-	header: string,
-	paths: ReadonlySet<string>,
-): AstFingerprint[] {
-	return [
-		...authoritative,
-		...sources
-			.filter(
-				({ path, source }) =>
-					path.startsWith(generatedRoot) &&
-					(source ?? "").startsWith(header) &&
-					paths.has(path.replaceAll("\\", "/").slice(generatedRoot.length)),
-			)
-			.map(({ sourceFile }) => astFingerprint(sourceFile)),
-	];
-}
 
 function nearMatch(candidate: AstFingerprint, generated: AstFingerprint): boolean {
 	const length = Math.max(candidate.length, generated.length);

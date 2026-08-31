@@ -1,30 +1,6 @@
-import path from "node:path";
-import { API } from "typescript/unstable/async";
 import * as ts from "typescript/unstable/ast";
 
 export type AstFingerprint = readonly string[];
-
-export async function parseModuleSources(
-	repoRoot: string,
-	openFiles: string[],
-): Promise<Map<string, ts.SourceFile>> {
-	const parsed = new Map<string, ts.SourceFile>();
-	const compiler = new API({ cwd: repoRoot });
-	try {
-		const snapshot = await compiler.updateSnapshot({
-			openProjects: [path.join(repoRoot, "tsconfig.json")],
-			openFiles,
-		});
-		for (const project of snapshot.getProjects())
-			for (const file of await project.program.getSourceFileNames()) {
-				const source = await project.program.getSourceFile(file);
-				if (source) parsed.set(path.resolve(file), source);
-			}
-	} finally {
-		void compiler.close();
-	}
-	return parsed;
-}
 
 function typeDeclarations(
 	source: ts.SourceFile,
@@ -72,35 +48,73 @@ function structuralTypeNames(source: ts.SourceFile): Map<string, number> {
 	return new Map([...structural].toSorted().map((name, index) => [name, index]));
 }
 
-function isTypeImport(node: ts.ImportSpecifier): boolean {
-	const declaration = node.parent.parent.parent;
-	return (
-		node.isTypeOnly ||
-		(ts.isImportDeclaration(declaration) && !!declaration.importClause?.phaseModifier)
-	);
+interface AliasContext {
+	readonly symbols: Map<string, string>;
+	readonly namespaces: ReadonlySet<string>;
+	readonly transparent: ReadonlySet<string>;
 }
 
-function typeAliases(source: ts.SourceFile): Map<string, string> {
-	const aliases = new Map<string, string>();
+function entityNameLeaf(node: ts.Node): string | undefined {
+	if (ts.isIdentifier(node)) return node.text;
+	if (ts.isQualifiedName(node)) return entityNameLeaf(node.right);
+	return undefined;
+}
+
+function unwrappedType(node: ts.TypeNode): ts.TypeNode {
+	let current = node;
+	while (ts.isParenthesizedTypeNode(current)) current = current.type;
+	return current;
+}
+
+function importedTypeName(node: ts.TypeNode): string | undefined {
+	const unwrapped = unwrappedType(node);
+	if (ts.isTypeReferenceNode(unwrapped)) return entityNameLeaf(unwrapped.typeName);
+	if (ts.isImportTypeNode(unwrapped))
+		return unwrapped.qualifier ? entityNameLeaf(unwrapped.qualifier) : undefined;
+	return undefined;
+}
+
+function aliasContext(source: ts.SourceFile): AliasContext {
+	const symbols = new Map<string, string>();
+	const namespaces = new Set<string>();
 	const declarations = typeDeclarations(source);
 	const visit = (node: ts.Node): void => {
-		if (ts.isImportSpecifier(node) && isTypeImport(node)) {
-			const imported = node.propertyName?.text ?? node.name.text;
-			aliases.set(node.name.text, imported);
+		if (ts.isImportDeclaration(node)) {
+			const bindings = node.importClause?.namedBindings;
+			if (bindings && ts.isNamespaceImport(bindings)) namespaces.add(bindings.name.text);
+			if (bindings && ts.isNamedImports(bindings))
+				for (const specifier of bindings.elements) {
+					const imported = specifier.propertyName?.text ?? specifier.name.text;
+					symbols.set(specifier.name.text, imported);
+				}
 		}
 		node.forEachChild(visit);
 	};
 	visit(source);
-	for (const [name, declaration] of declarations)
-		if (
-			ts.isTypeAliasDeclaration(declaration) &&
-			ts.isTypeReferenceNode(declaration.type) &&
-			ts.isIdentifier(declaration.type.typeName) &&
-			(declarations.has(declaration.type.typeName.text) ||
-				aliases.has(declaration.type.typeName.text))
-		)
-			aliases.set(name, declaration.type.typeName.text);
-	return aliases;
+	const transparent = new Set<string>();
+	let changed = true;
+	while (changed) {
+		changed = false;
+		for (const [name, declaration] of declarations) {
+			if (!ts.isTypeAliasDeclaration(declaration)) continue;
+			const target = importedTypeName(declaration.type);
+			if (
+				!target ||
+				(!declarations.has(target) &&
+					!symbols.has(target) &&
+					!namespaces.has(target) &&
+					!ts.isImportTypeNode(unwrappedType(declaration.type)))
+			)
+				continue;
+			const resolved = symbols.get(target) ?? target;
+			if (symbols.get(name) !== resolved) {
+				symbols.set(name, resolved);
+				changed = true;
+			}
+			transparent.add(name);
+		}
+	}
+	return { symbols, namespaces, transparent };
 }
 
 function resolveAlias(name: string, aliases: ReadonlyMap<string, string>): string {
@@ -111,18 +125,6 @@ function resolveAlias(name: string, aliases: ReadonlyMap<string, string>): strin
 		resolved = aliases.get(resolved) ?? resolved;
 	}
 	return resolved;
-}
-
-function isTransparentAliasDeclaration(
-	node: ts.Node,
-	aliases: ReadonlyMap<string, string>,
-): boolean {
-	return (
-		ts.isTypeAliasDeclaration(node) &&
-		ts.isIdentifier(node.name) &&
-		aliases.has(node.name.text) &&
-		ts.isTypeReferenceNode(node.type)
-	);
 }
 
 function isModuleLiteral(node: ts.Node): boolean {
@@ -140,19 +142,34 @@ function walk(
 	node: ts.Node,
 	tokens: string[],
 	localTypes: ReadonlyMap<string, number>,
-	aliases: ReadonlyMap<string, string>,
+	aliases: AliasContext,
 ): void {
-	if (isTransparentAliasDeclaration(node, aliases)) return;
-	if (
-		ts.isIdentifier(node) &&
-		ts.isImportSpecifier(node.parent) &&
-		node.parent.name === node &&
-		!!node.parent.propertyName &&
-		isTypeImport(node.parent)
-	)
+	if (ts.isImportDeclaration(node)) {
+		tokens.push("import");
 		return;
+	}
+	if (ts.isTypeAliasDeclaration(node) && aliases.transparent.has(node.name.text)) {
+		if (ts.isImportTypeNode(unwrappedType(node.type))) tokens.push("import");
+		return;
+	}
+	if (ts.isParenthesizedTypeNode(node)) {
+		walk(node.type, tokens, localTypes, aliases);
+		return;
+	}
+	if (ts.isImportTypeNode(node)) {
+		if (node.qualifier) walk(node.qualifier, tokens, localTypes, aliases);
+		return;
+	}
+	if (
+		ts.isQualifiedName(node) &&
+		ts.isIdentifier(node.left) &&
+		aliases.namespaces.has(node.left.text)
+	) {
+		walk(node.right, tokens, localTypes, aliases);
+		return;
+	}
 	if (ts.isIdentifier(node)) {
-		const resolved = resolveAlias(node.text, aliases);
+		const resolved = resolveAlias(node.text, aliases.symbols);
 		tokens.push(localTypes.has(resolved) ? `type:${localTypes.get(resolved)}` : `id:${resolved}`);
 	} else if (ts.isStringLiteralLikeNode(node))
 		tokens.push(isModuleLiteral(node) ? "module" : `string:${JSON.stringify(node.text)}`);
@@ -163,7 +180,7 @@ function walk(
 
 export function astFingerprint(source: ts.SourceFile): AstFingerprint {
 	const tokens: string[] = [];
-	walk(source, tokens, structuralTypeNames(source), typeAliases(source));
+	walk(source, tokens, structuralTypeNames(source), aliasContext(source));
 	return tokens;
 }
 
