@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 01:22'
+updated_date: '2026-08-31 01:29'
 labels: []
 dependencies:
   - TASK-144.03
@@ -44,4 +44,11 @@ Own docs/design/archboard-ui-aesthetics.md before any semantic shell integration
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved immediately after TASK-143.01.07 finalized at integration HEAD d890552. This dependency-ready documentation leaf owns only docs/design/archboard-ui-aesthetics.md and is path-disjoint from every active implementation.
+
+Implementation evidence (2026-08-31):
+- Added docs/design/archboard-ui-aesthetics.md in implementation commit 7f02633850584a9c500db7ee6413f2eefdc101d9. The guide makes the TASK-140 reference authoritative for canvas-first desktop and Flip composition, Swiss grid, typography, flat rules, small radii, cobalt/lime roles, themes, restrained motion, and accessibility.
+- It explicitly rejects generic bubbles and cards, gradients, glow, decorative shadows, mock data, and framework defaults as visual direction; separates illustrative reference content from real product state; and requires named modules, semantic utilities, native Oxfmt/Oxlint gates, rendered inspection, and one behavior/state owner.
+- The guide is a prerequisite for shell integration and future agent enforcement and explicitly makes no conformance claim for later rendered work. The canonical reference PNG was inspected directly.
+- Validation: all 10 local Markdown links resolve; bun run fmt and bun run fmt:check pass; bun run lint passes; bun run test:repository passes 137 tests and 1,177 assertions; git diff --check passes; scope is the one authored document plus this task record. No rendered product code changed, so browser execution is not applicable to this documentation leaf.
+- Fixed base 317d3aca9c82e4f13242def9040a1aa5ffb0f07c was verified before work. The original checkout's untracked src-DlBR1tzg.js remains present and untracked.
 <!-- SECTION:NOTES:END -->
