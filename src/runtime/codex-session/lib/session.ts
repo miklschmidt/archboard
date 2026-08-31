@@ -1,5 +1,6 @@
 import {
 	INITIALIZE_CAPABILITIES,
+	InitializeCapabilitiesSchema,
 	LOGIN_POLICIES,
 	SupportedLoginAccountParamsSchema,
 	UNSUPPORTED_ATTESTATION_ERROR,
@@ -98,6 +99,14 @@ function mutationFailure(method: string, error: unknown): CodexSessionMutationEr
 function mutationOutcome(error: unknown): SessionMutationOutcome | undefined {
 	if (error instanceof CodexSessionMutationError) return error.outcome;
 	return hasOutcome(error) ? error.outcome : undefined;
+}
+
+/** Applies the authored policy inside the session before the public wire decoder runs. */
+function authoredSessionInitializeParams(): ClientRequestParams<"initialize"> {
+	return {
+		clientInfo: CLIENT_INFO,
+		capabilities: InitializeCapabilitiesSchema.parse(INITIALIZE_CAPABILITIES),
+	};
 }
 
 export function createCodexSession(options: CodexSessionOptions): CodexSession {
@@ -440,10 +449,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		try {
 			const initialized = await requestDecoded(
 				"initialize",
-				{
-					clientInfo: CLIENT_INFO,
-					capabilities: INITIALIZE_CAPABILITIES,
-				},
+				authoredSessionInitializeParams(),
 				INITIALIZE_OPTIONS,
 				false,
 			);

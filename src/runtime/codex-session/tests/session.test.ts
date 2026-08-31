@@ -34,7 +34,7 @@ async function readyFixture(): Promise<SessionFixture> {
 }
 
 describe("typed Codex session", () => {
-	test("buffers decoded notifications until the initialized storage proof succeeds", async () => {
+	test("emits the authored initialize policy and buffers notifications until storage proof", async () => {
 		const fixture = createSessionFixture({ now: () => 12_345 });
 		fixture.transport.beforeRequest = (method) => {
 			if (method === "initialize")

@@ -38,7 +38,6 @@ export type {
 export {
 	decodeClientRequestParams,
 	decodeClientNotification,
-	decodeInitializeParams,
 	decodeJsonRpcError,
 	decodeLoginAccountParams,
 	decodeResponse,
@@ -213,8 +212,6 @@ export {
 	CurrentTimeReadParamsSchema,
 	DynamicToolCallParamsSchema,
 	FileChangeRequestApprovalParamsSchema,
-	InitializeCapabilitiesSchema,
-	InitializeParamsSchema,
 	JSON_RPC_ERROR_CODES,
 	JsonRpcErrorSchema,
 	LoginAccountParamsSchema,

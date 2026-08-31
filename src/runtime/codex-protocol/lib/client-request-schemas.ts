@@ -409,7 +409,7 @@ const ThreadTimelineListParamsSchema = z.strictObject({
 	...NullablePageSchema,
 });
 
-/** One runtime owner for every client request the public session can emit. */
+/** Wire decoder schemas for every generated request the public session can emit. */
 export const CLIENT_REQUEST_PARAM_SCHEMAS = {
 	initialize: GeneratedInitializeParamsSchema,
 	"config/read": ConfigReadParamsSchema,
