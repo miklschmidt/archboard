@@ -63,6 +63,14 @@ describe("Codex generated client request params", () => {
 		}
 	});
 
+	test("accepts the generated initialize envelope beyond the authored session policy", () => {
+		const generatedParams = {
+			clientInfo: { name: "archboard", title: null, version: "1" },
+			capabilities: null,
+		};
+		expect(decodeClientRequestParams("initialize", generatedParams)).toEqual(generatedParams);
+	});
+
 	test("keeps all generated login and refused Bedrock setup variants typed", () => {
 		for (const fixture of LOGIN_ACCOUNT_FIXTURES)
 			expect(decodeClientRequestParams("account/login/start", fixture)).toEqual(fixture);
@@ -138,6 +146,18 @@ describe("Codex generated client request params", () => {
 						inputSchema: () => undefined,
 					},
 				],
+			}),
+		);
+		captured(() =>
+			decodeClientRequestParams("thread/start", {
+				config: { invalidJsonValue: undefined },
+			}),
+		);
+		captured(() =>
+			decodeClientRequestParams("turn/start", {
+				threadId: "thread-1",
+				input: [],
+				responsesapiClientMetadata: { invalidString: undefined },
 			}),
 		);
 	});
