@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
 import type { ApprovalBinding, BrowserApprovalResponse } from "../index.js";
+import type { IdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 import {
 	closeBroker,
 	commandRequestWithAvailableDecisions,
+	commandRequestWithParams,
 	commandRequestWithoutCommand,
 	commandRequestWithoutAvailableDecisions,
 	expectSingleResponse,
@@ -35,17 +37,53 @@ const networkResponse: BrowserApprovalResponse = {
 	},
 };
 
+type CommandRequestFactory = (
+	identity: IdentityAuthority,
+	label: string,
+) => ReturnType<typeof commandRequestWithParams>;
+
+const unsupportedSpokenEffectCases: ReadonlyArray<readonly [string, CommandRequestFactory]> = [
+	["null command", (identity, label) => commandRequestWithoutCommand(identity, label, "null")],
+	[
+		"omitted command",
+		(identity, label) => commandRequestWithoutCommand(identity, label, "omitted"),
+	],
+	[
+		"unsafe command",
+		(identity, label) =>
+			commandRequestWithParams(identity, label, { command: "echo unsafe\ncommand" }),
+	],
+	["null cwd", (identity, label) => commandRequestWithParams(identity, label, { cwd: null })],
+	[
+		"unsafe cwd",
+		(identity, label) => commandRequestWithParams(identity, label, { cwd: "/workspace\nother" }),
+	],
+	[
+		"non-null environmentId",
+		(identity, label) =>
+			commandRequestWithParams(identity, label, { environmentId: "environment-1" }),
+	],
+	[
+		"non-null networkApprovalContext",
+		(identity, label) =>
+			commandRequestWithParams(identity, label, {
+				networkApprovalContext: { host: "example.test", protocol: "https" },
+			}),
+	],
+];
+
 describe("Codex approval remediation", () => {
-	test.each(["null", "omitted"] as const)("keeps %s command approvals visual-only", (shape) => {
+	test.each(unsupportedSpokenEffectCases)("keeps %s visual-only", (_name, makeRequest) => {
 		const fixture = testBroker();
 		try {
-			const pending = fixture.broker.receive(
-				commandRequestWithoutCommand(fixture.identity, `spoken-${shape}`, shape),
-			);
+			const pending = fixture.broker.receive(makeRequest(fixture.identity, "spoken-effect"));
 			expect(fixture.broker.spokenEligibility(pending.requestId)).toEqual({
 				eligible: false,
 				reason: "unsupported_schema",
 			});
+			expect(() => fixture.broker.spokenEffectPresentation(pending.requestId)).toThrowError(
+				expect.objectContaining({ code: "unsupported_schema" }),
+			);
 		} finally {
 			closeBroker(fixture.broker);
 		}

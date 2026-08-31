@@ -203,6 +203,20 @@ export function commandRequestWithAvailableDecisions(
 	);
 }
 
+export function commandRequestWithParams(
+	identity: IdentityAuthority,
+	label: string,
+	overrides: Partial<
+		Extract<
+			TransportServerRequest,
+			{ readonly method: "item/commandExecution/requestApproval" }
+		>["params"]
+	>,
+): Extract<TransportServerRequest, { readonly method: "item/commandExecution/requestApproval" }> {
+	const request = commandRequest(identity, label);
+	return { ...request, params: { ...request.params, ...overrides } };
+}
+
 export function commandRequestWithoutCommand(
 	identity: IdentityAuthority,
 	label: string,
