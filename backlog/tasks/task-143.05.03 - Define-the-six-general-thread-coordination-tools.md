@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 01:22'
+updated_date: '2026-08-31 02:23'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -49,4 +49,10 @@ Load and validate the exact reviewed eager archboard_app namespace manifest and 
 Review-driven dependency correction from TASK-143.01.16: the 120,000 ms wait_threads maximum is owned by this public tool schema, not by a test-only literal in shared timing. This leaf now depends on TASK-143.01.16 and must enforce its exported timeout maximum against CODEX_BROWSER_COMMAND_LEASE_MS while retaining the exact reviewed manifest bytes.
 
 Reserved immediately after TASK-143.01.07 finalized at integration HEAD d890552. This dependency-ready leaf owns only src/runtime/codex-thread-tools and is path-disjoint from every active implementation.
+
+Implemented in 93cdace from fixed integration base 317d3aca9c82e4f13242def9040a1aa5ffb0f07c. Added the exact eager archboard_app manifest, independent raw-byte SHA-256 verification, strict six-tool argument/result boundaries, canonical compact JSON and one-inputText response validation, reviewed workhorse-byte binding, and fresh Archboard-created-start-only installation gating.
+
+Focused evidence at this head: bun test --isolate src/runtime/codex-thread-tools/tests (14/14 tests, 276 expectations); bunx tsc --noEmit --pretty false; bunx oxlint src/runtime/codex-thread-tools; bunx oxfmt --check src/runtime/codex-thread-tools; git diff --check; manifest sha256sum df0fc2b1b33d985a7b84e54431162d6c00a3da0f8cecd98a18730e55bc7b272e. The public wait maximum is 120000 ms and is checked strictly below CODEX_BROWSER_COMMAND_LEASE_MS.
+
+The uncapped module/system/check/serial-browser lanes were intentionally not rerun in this continuation after the desktop app OOM; parent-owned capped broad validation remains the integration follow-up. Scope remains src/runtime/codex-thread-tools/** plus this task record.
 <!-- SECTION:NOTES:END -->
