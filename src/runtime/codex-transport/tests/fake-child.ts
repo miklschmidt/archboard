@@ -7,7 +7,10 @@ import {
 	type CodexTransportChild,
 	type DynamicDispatcherRegistration,
 } from "../index.js";
-import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import {
+	createIdentityAuthority,
+	type IdentityAuthority,
+} from "../../../shared/codex-workbench-identity/index.js";
 
 export type WireFrame = Record<string, unknown>;
 
@@ -15,6 +18,7 @@ export class FakeStdin extends Writable {
 	readonly writes: Buffer[] = [];
 	private blockedCallback: ((error?: Error | null) => void) | undefined;
 	blockNext = false;
+	failNext = false;
 	finalizations = 0;
 
 	constructor() {
@@ -27,6 +31,11 @@ export class FakeStdin extends Writable {
 		callback: (error?: Error | null) => void,
 	): void {
 		this.writes.push(Buffer.from(chunk));
+		if (this.failNext) {
+			this.failNext = false;
+			callback(new Error("fixture stdin failure"));
+			return;
+		}
 		if (this.blockNext) {
 			this.blockNext = false;
 			this.blockedCallback = callback;
@@ -58,9 +67,11 @@ export class FakeChild extends EventEmitter implements CodexTransportChild {
 	}
 }
 
-export function createHarness(registrations?: readonly DynamicDispatcherRegistration[]) {
+export function createHarness(
+	registrations?: readonly DynamicDispatcherRegistration[],
+	identity: IdentityAuthority = createIdentityAuthority(),
+) {
 	const child = new FakeChild();
-	const identity = createIdentityAuthority();
 	const transport = createCodexTransport({ child, identity, dynamicDispatchers: registrations });
 	return { child, identity, transport };
 }

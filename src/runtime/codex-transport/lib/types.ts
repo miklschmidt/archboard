@@ -21,6 +21,7 @@ import type {
 	CodexRequestFailureReason,
 	CodexRequestOutcome,
 	CodexTransportRequestError,
+	TransportRemoteErrorSummary,
 	CodexTransportRemoteError,
 	CodexTransportWriteError,
 } from "./errors.js";
@@ -32,6 +33,11 @@ export interface CodexTransportChild {
 	readonly stderr: Readable;
 	on(event: "error", listener: (error: Error) => void): this;
 	on(event: "exit", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
+	removeListener(event: "error", listener: (error: Error) => void): this;
+	removeListener(
+		event: "exit",
+		listener: (code: number | null, signal: NodeJS.Signals | null) => void,
+	): this;
 }
 
 export type ResponseOwner =
@@ -115,8 +121,10 @@ export type ReverseResponse =
 
 export interface CodexTransportRequestOptions {
 	readonly signal?: AbortSignal;
-	/** Idempotency changes only the local uncertainty label. It never enables retry. */
+	/** Compatibility metadata; it never changes delivered-versus-unknown settlement. */
 	readonly idempotent?: boolean;
+	/** The caller may safely retry after inspecting the returned settlement. */
+	readonly retryEligible?: boolean;
 }
 
 export interface CodexTransportResponse<Method extends ResponseMethod> {
@@ -144,6 +152,7 @@ export interface TransportExit {
 
 export type TransportIssueKind =
 	| "malformed-frame"
+	| "duplicate-key"
 	| "oversized-frame"
 	| "unknown-frame"
 	| "unknown-response"
@@ -169,32 +178,71 @@ export interface TransportIssue {
 		| "write";
 	readonly method?: string;
 	readonly requestId?: string | number;
-	readonly cause?: unknown;
 }
 
-export type LateResponseKind = "result" | "error" | "malformed";
+export type LateResponseKind = "result" | "error" | "malformed" | "redacted";
 export type LateResponseOutcome = "outcome_unknown" | "duplicate";
 
-export interface TransportLateResponse {
-	readonly kind: LateResponseKind;
+type TransportLateResponseContext<Method extends ResponseMethod> = {
 	readonly outcome: LateResponseOutcome;
-	readonly method: string;
-	readonly correlation: WireRequestCorrelation;
-	readonly requestId: JsonRpcRequestId;
-	readonly payload: unknown;
+	readonly method: Method;
 	readonly settlement: "delivered" | CodexRequestOutcome;
+	readonly retryEligible: boolean;
 	readonly reason?: CodexRequestFailureReason;
+};
+
+type TransportCorrelatedLateResponse<Method extends ResponseMethod> =
+	TransportLateResponseContext<Method> & {
+		readonly correlation: WireRequestCorrelation;
+		readonly requestId: JsonRpcRequestId;
+	} & (
+			| { readonly kind: "result"; readonly payload: ResponsePayloads[Method] }
+			| { readonly kind: "error"; readonly payload: TransportRemoteErrorSummary }
+			| { readonly kind: "malformed"; readonly payload: TransportLateMalformedPayload }
+		);
+
+type TransportRedactedLateResponse<Method extends ResponseMethod> =
+	TransportLateResponseContext<Method> & {
+		readonly kind: "redacted";
+		readonly payload: TransportLateRedactedPayload;
+		/** Correlation is omitted only when retaining it would exceed the record bound. */
+		readonly correlation?: WireRequestCorrelation;
+		readonly requestId?: JsonRpcRequestId;
+	};
+
+export interface TransportLateMalformedPayload {
+	readonly reason: "response-schema";
 }
+
+export interface TransportLateRedactedPayload {
+	readonly reason: "retained-size";
+	readonly byteLength: number;
+}
+
+export type TransportLateResponseFor<Method extends ResponseMethod> =
+	| TransportCorrelatedLateResponse<Method>
+	| TransportRedactedLateResponse<Method>;
+
+export type TransportLateResponse = {
+	[Method in ResponseMethod]: TransportLateResponseFor<Method>;
+}[ResponseMethod];
 
 export interface TransportSnapshot {
 	readonly state: "open" | "closing" | "closed";
 	readonly pendingRequests: number;
 	readonly pendingReverseRequests: number;
+	readonly pendingReverseBytes: number;
 	readonly queuedFrames: number;
 	readonly queuedBytes: number;
 	readonly writeInFlight: boolean;
 	readonly maxQueuedFrames: number;
 	readonly maxQueuedBytes: number;
+	readonly responseQueuedFrames: number;
+	readonly responseQueuedBytes: number;
+	readonly maxResponseQueuedFrames: number;
+	readonly maxResponseQueuedBytes: number;
+	readonly maxPendingReverseRequests: number;
+	readonly maxPendingReverseBytes: number;
 }
 
 export interface TransportStderrSnapshot {
@@ -219,7 +267,6 @@ export interface CodexTransport {
 	readonly notify: (method: ClientNotificationMethod) => Promise<void>;
 	readonly registerDynamicDispatcher: (registration: DynamicDispatcherRegistration) => void;
 	readonly respond: {
-		(request: TransportServerRequest, response: ReverseResponse): Promise<void>;
 		(
 			request: TransportServerRequest,
 			owner: ResponseOwner,

@@ -12,7 +12,7 @@ export interface PendingRequest {
 	readonly wireId: JsonRpcRequestId;
 	readonly method: ResponseMethod;
 	readonly correlation: WireRequestCorrelation;
-	readonly idempotent: boolean;
+	readonly retryEligible: boolean;
 	readonly resolve: (value: unknown) => void;
 	readonly reject: (reason: unknown) => void;
 	readonly signal?: AbortSignal;
@@ -28,7 +28,7 @@ export interface RequestTombstone {
 	readonly wireId: JsonRpcRequestId;
 	readonly method: ResponseMethod;
 	readonly correlation: WireRequestCorrelation;
-	readonly idempotent: boolean;
+	readonly retryEligible: boolean;
 	accepted: boolean;
 	settlement: "delivered" | "not_delivered" | "outcome_unknown";
 	reason?: CodexRequestFailureReason;
@@ -38,7 +38,9 @@ export interface ReverseRecord {
 	readonly key: string;
 	readonly wireId: string | number;
 	readonly request: TransportServerRequest;
+	readonly bytes: number;
 	responded: boolean;
+	responding: boolean;
 }
 
 export interface RequestJob {
@@ -64,4 +66,10 @@ export interface ReverseResponseJob {
 	settled: boolean;
 }
 
-export type WriteJob = RequestJob | NotificationJob | ReverseResponseJob;
+export interface ProtocolErrorJob {
+	readonly kind: "protocol-error";
+	readonly frame: Buffer;
+	readonly key: string;
+}
+
+export type WriteJob = RequestJob | NotificationJob | ReverseResponseJob | ProtocolErrorJob;

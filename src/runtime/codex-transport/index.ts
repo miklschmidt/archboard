@@ -12,16 +12,8 @@ export type {
 	CodexRemoteError,
 	CodexRequestFailureReason,
 	CodexRequestOutcome,
+	TransportRemoteErrorSummary,
 } from "./lib/errors.js";
-export {
-	CODEX_TRANSPORT_MAX_FRAME_BYTES,
-	CODEX_TRANSPORT_MAX_QUEUED_BYTES,
-	CODEX_TRANSPORT_MAX_QUEUED_FRAMES,
-	CODEX_TRANSPORT_MAX_RETAINED_ISSUES,
-	CODEX_TRANSPORT_MAX_RETAINED_LATE_RESPONSES,
-	CODEX_TRANSPORT_MAX_STDERR_BYTES,
-	CODEX_TRANSPORT_MAX_STDOUT_BUFFER_BYTES,
-} from "./lib/limits.js";
 export { HUMAN_APPROVAL_METHODS, SESSION_SERVER_REQUEST_METHODS } from "./lib/types.js";
 export type {
 	CodexTransport,
@@ -43,6 +35,9 @@ export type {
 	TransportIssue,
 	TransportIssueKind,
 	TransportLateResponse,
+	TransportLateResponseFor,
+	TransportLateMalformedPayload,
+	TransportLateRedactedPayload,
 	TransportServerNotification,
 	TransportServerRequest,
 	TransportSnapshot,

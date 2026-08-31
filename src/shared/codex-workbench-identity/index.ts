@@ -19,6 +19,7 @@ export type {
 	IdentityValidator,
 	ItemId,
 	JsonRpcRequestId,
+	JsonRpcRequestIdWireValue,
 	LogicalToolCallCorrelation,
 	LogicalToolCallCorrelationInput,
 	LoginId,

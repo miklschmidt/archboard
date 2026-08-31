@@ -45,6 +45,8 @@ type BrandedIdentity<Domain extends IdentityDomain> = string & {
 	readonly [identityBrand]: Domain;
 };
 
+export type JsonRpcRequestIdWireValue = string | number;
+
 export type ChildId = BrandedIdentity<"child">;
 export type ChildEpoch = BrandedIdentity<"epoch">;
 export type BrowserCommandId = BrandedIdentity<"browser-command">;
@@ -261,6 +263,28 @@ function encodeRawIdentity(raw: string, domain: IdentityDomain): string {
 	return `s${encoded}`;
 }
 
+function encodeRawJsonRpcRequestId(raw: JsonRpcRequestIdWireValue): string {
+	if (typeof raw === "string") return encodeRawIdentity(raw, "json-rpc-request");
+	if (!Number.isSafeInteger(raw)) {
+		return fail(
+			"invalid-shape",
+			"The server json-rpc-request identity must be a string or integer.",
+			"json-rpc-request",
+		);
+	}
+	const encoded = new TextEncoder().encode(Object.is(raw, -0) ? "-0" : String(raw));
+	if (encoded.byteLength > RAW_ID_LIMIT_BYTES) {
+		return fail(
+			"invalid-shape",
+			"The server json-rpc-request identity is too large.",
+			"json-rpc-request",
+		);
+	}
+	let hex = "";
+	for (const byte of encoded) hex += byte.toString(16).padStart(2, "0");
+	return `n${hex}`;
+}
+
 function assertText(value: unknown, field: string): string {
 	if (
 		typeof value !== "string" ||
@@ -363,6 +387,7 @@ export interface TrustedIdentityDecoder {
 	readonly adoptDynamicToolCallId: (raw: unknown) => DynamicToolCallId;
 	readonly adoptApprovalId: (raw: unknown) => ApprovalId;
 	readonly serializeCodexIdentity: (identity: CodexIdentity) => string;
+	readonly serializeJsonRpcRequestId: (identity: JsonRpcRequestId) => JsonRpcRequestIdWireValue;
 	readonly createWireRequestCorrelation: (
 		input: WireRequestCorrelationInput,
 	) => WireRequestCorrelation;
@@ -391,12 +416,12 @@ type AdoptableDomain =
 
 function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority {
 	const issued = new Map<IdentityDomain, Set<string>>();
-	const rawByIdentity = new Map<string, string>();
+	const rawByIdentity = new Map<string, JsonRpcRequestIdWireValue>();
 
 	const issue = <Domain extends IdentityDomain>(
 		domain: Domain,
 		token: string,
-		raw: string,
+		raw: JsonRpcRequestIdWireValue,
 	): IdentityValue<Domain> => {
 		const value = wireValue(domain, token);
 		let values = issued.get(domain);
@@ -412,7 +437,7 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 	const issueExisting = <Domain extends IdentityDomain>(
 		domain: Domain,
 		value: IdentityValue<Domain>,
-		raw: string,
+		raw: JsonRpcRequestIdWireValue,
 	): IdentityValue<Domain> => issue(domain, tokenOf(value as AnyIdentity), raw);
 
 	issueExisting("child", childId, tokenOf(childId));
@@ -431,6 +456,20 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		}
 		const token = encodeRawIdentity(rawValue, domain);
 		return issue(domain, token, rawValue);
+	};
+	const adoptJsonRpcRequestId = (rawValue: unknown): JsonRpcRequestId => {
+		if (
+			(typeof rawValue !== "string" && typeof rawValue !== "number") ||
+			(typeof rawValue === "number" && !Number.isSafeInteger(rawValue))
+		) {
+			return fail(
+				"invalid-shape",
+				"The server json-rpc-request identity must be a string or integer.",
+				"json-rpc-request",
+			);
+		}
+		const token = encodeRawJsonRpcRequestId(rawValue);
+		return issue("json-rpc-request", token, rawValue);
 	};
 	const parseIssued = <Domain extends IdentityDomain>(
 		domain: Domain,
@@ -454,6 +493,15 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		) {
 			return fail("wrong-domain", "Identity is not a Codex wire identity.", domain);
 		}
+		assertIssued(value, domain, issued);
+		const raw = rawByIdentity.get(value);
+		if (raw === undefined) return fail("unissued", "Identity has no trusted wire value.", domain);
+		return String(raw);
+	};
+	const serializeJsonRpc = (value: JsonRpcRequestId): JsonRpcRequestIdWireValue => {
+		const domain = identityDomain(value);
+		if (domain !== "json-rpc-request")
+			return fail("wrong-domain", "Identity is not a JSON-RPC request identity.", domain);
 		assertIssued(value, domain, issued);
 		const raw = rawByIdentity.get(value);
 		if (raw === undefined) return fail("unissued", "Identity has no trusted wire value.", domain);
@@ -499,10 +547,11 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		adoptItemId: (raw) => adopt("item", raw),
 		adoptQueuedSubmissionId: (raw) => adopt("queued-submission", raw),
 		adoptLoginId: (raw) => adopt("login", raw),
-		adoptJsonRpcRequestId: (raw) => adopt("json-rpc-request", raw),
+		adoptJsonRpcRequestId,
 		adoptDynamicToolCallId: (raw) => adopt("dynamic-tool-call", raw),
 		adoptApprovalId: (raw) => adopt("approval", raw),
 		serializeCodexIdentity: serialize,
+		serializeJsonRpcRequestId: serializeJsonRpc,
 		createWireRequestCorrelation: (input) => {
 			const requestId = parseIssued("json-rpc-request", input.requestId);
 			return Object.freeze({ child: childId, epoch, requestId });
