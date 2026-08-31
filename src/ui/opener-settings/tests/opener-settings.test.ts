@@ -256,6 +256,8 @@ describe("opener settings public consumer", () => {
 		const cancel = findByText(root, DialogClose, "Cancel");
 		expect(content?.props.initialFocus).toBe(cancel.props.ref);
 		expect(cancel.props.ref).toEqual({ current: null });
+		expect(cancel.props.disabled).toBe(false);
+		expect(source).toContain('disabled={busy && working !== "load"}');
 		const close = elements(root).find(
 			(element) => element.type === DialogClose && element.props["aria-label"] === "Close dialog",
 		);
