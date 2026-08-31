@@ -1,10 +1,11 @@
 ---
 id: TASK-144.11
 title: Verify the migrated opener dialog in the browser
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 16:25'
+updated_date: '2026-08-31 05:51'
 labels: []
 dependencies:
   - TASK-144.08
@@ -31,3 +32,9 @@ Own the existing opener browser owner after migration. Delegation profile: gpt-5
 - [ ] #3 No unexpected browser/server logs, duplicate dialog roots, focus leaks, or direct Radix/shadcn runtime behavior are tolerated.
 - [ ] #4 The canonical existing browser inventory remains one owner; this task does not create a second opener test or register unrelated workbench tests.
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reserved immediately after TASK-144.08 finalized at integration HEAD 5aced519ba8553b7692a360a26b34a205f388620. This leaf owns the canonical existing opener browser owner and rendered migration evidence. A narrowly necessary selector update in an existing browser owner may be proposed only if direct migration fallout would otherwise leave the typed serial lane red; no second opener owner or unrelated workbench coverage is permitted.
+<!-- SECTION:NOTES:END -->
