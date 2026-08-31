@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
 	IdentityValidationError,
+	OPERATION_ID_MAX_BYTES,
 	createIdentityAuthority,
 	restoreIdentityAuthority,
 } from "../index.ts";
@@ -50,6 +51,56 @@ describe("codex workbench identities", () => {
 		expect(validator.isCurrentEpoch(validator.childId, validator.epoch)).toBeTrue();
 		expect(decoder.parseChildId(validator.childId)).toBe(validator.childId);
 		expect(decoder.parseChildEpoch(validator.epoch)).toBe(validator.epoch);
+	});
+
+	test("issues unique epoch-bound operation IDs within the authored result bound", () => {
+		const authority = createIdentityAuthority();
+		const { decoder, issuer, validator } = authority;
+		const operationIds = Array.from({ length: 64 }, () => issuer.mintOperationId());
+		const firstOperationId = operationIds[0]!;
+		const epochToken = validator.epoch.slice("archboard:epoch:".length);
+		expect(new Set(operationIds).size).toBe(operationIds.length);
+		for (const operationId of operationIds) {
+			expect(operationId).toMatch(
+				new RegExp(`^archboard:operation:${epochToken}\\.h[0-9a-f]{32}$`, "u"),
+			);
+			expect(new TextEncoder().encode(operationId).byteLength).toBeLessThanOrEqual(
+				OPERATION_ID_MAX_BYTES,
+			);
+			expect(decoder.serializeOperationId(operationId)).toBe(operationId);
+			expect(decoder.parseOperationId(JSON.parse(JSON.stringify(operationId)))).toBe(operationId);
+			expect(validator.isCurrentOperationId(operationId)).toBeTrue();
+			validator.assertCurrentOperationId(operationId);
+			validator.validateOperationId(operationId);
+		}
+
+		const fabricated = `archboard:operation:${epochToken}.h${"a".repeat(32)}`;
+		const unissued = restoreIdentityAuthority({
+			childId: validator.childId,
+			epoch: validator.epoch,
+		});
+		const nextEpoch = issuer.mintChildEpoch();
+		const stale = restoreIdentityAuthority({ childId: validator.childId, epoch: nextEpoch });
+		const otherChild = createIdentityAuthority();
+		expect(errorCode(() => decoder.parseOperationId(""))).toBe("empty");
+		expect(errorCode(() => decoder.parseOperationId("archboard:operation:malformed"))).toBe(
+			"invalid-shape",
+		);
+		expect(errorCode(() => decoder.parseOperationId(validator.childId))).toBe("wrong-domain");
+		expect(errorCode(() => decoder.parseOperationId(fabricated))).toBe("unissued");
+		expect(errorCode(() => unissued.decoder.parseOperationId(firstOperationId))).toBe("unissued");
+		expect(errorCode(() => stale.decoder.parseOperationId(firstOperationId))).toBe("stale-epoch");
+		expect(errorCode(() => otherChild.decoder.parseOperationId(firstOperationId))).toBe(
+			"wrong-child",
+		);
+		expect(stale.validator.isCurrentOperationId(firstOperationId)).toBeFalse();
+
+		const oversizedChildToken = "c".repeat(90);
+		const oversized = restoreIdentityAuthority({
+			childId: `archboard:child:${oversizedChildToken}`,
+			epoch: `archboard:epoch:${oversizedChildToken}.h${"a".repeat(32)}`,
+		});
+		expect(errorCode(() => oversized.issuer.mintOperationId())).toBe("invalid-shape");
 	});
 
 	test("trusted adoption preserves raw Codex values through the authority serializer", () => {

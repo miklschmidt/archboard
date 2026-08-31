@@ -1,5 +1,6 @@
 export {
 	IdentityValidationError,
+	OPERATION_ID_MAX_BYTES,
 	createIdentityAuthority,
 	restoreIdentityAuthority,
 } from "./lib/identity.js";
@@ -25,11 +26,15 @@ export type {
 	LogicalToolCallCorrelation,
 	LogicalToolCallCorrelationInput,
 	LoginId,
+	OperationId,
+	OperationIdIssuer,
+	OperationIdValidator,
 	QueuedSubmissionId,
 	RealtimeSessionId,
 	ThreadId,
 	TurnId,
 	TrustedIdentityDecoder,
+	TrustedOperationIdDecoder,
 	WireRequestCorrelation,
 	WireRequestCorrelationInput,
 } from "./lib/identity.js";
