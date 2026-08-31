@@ -15,12 +15,12 @@ import {
 	type RealtimeTranscriptRecord,
 	type RemoteMediaAttachment,
 } from "../../../shared/codex-realtime-host/index.js";
-import { CodexSessionMutationError } from "../../codex-session/index.js";
 import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 import type { CodexRealtimeAdapter, CodexRealtimeAdapterOptions } from "./contract.js";
 import { realtimeErrorMessage, sameRealtimeBinding } from "./binding.js";
 import * as phase from "./phase.js";
 import { exactNotification, orderedRecords } from "./records.js";
+import { runRealtimeMutation } from "./mutation.js";
 import { createRealtimeStartParams } from "./start-policy.js";
 import type { ActiveRealtimeSession } from "./state.js";
 const TIMELINE_PAGE_LIMIT = 100;
@@ -86,6 +86,7 @@ export function createCodexRealtimeAdapter(
 		const current = options.currentBinding();
 		return (
 			!disposed &&
+			active === session &&
 			current !== null &&
 			sameRealtimeBinding(session.binding, current) &&
 			options.identity.validator.isCurrentEpoch(session.binding.child, session.binding.epoch)
@@ -110,6 +111,7 @@ export function createCodexRealtimeAdapter(
 	const settleAnswer = (session: ActiveRealtimeSession): void => {
 		if (
 			session.answerSettled ||
+			session.state.phase !== "negotiating" ||
 			!session.startReturned ||
 			!session.started ||
 			session.answerSdp === null
@@ -134,11 +136,8 @@ export function createCodexRealtimeAdapter(
 		if (session.answerSettled) return;
 		session.answerSettled = true;
 		emitDiagnostic(session, "app_server", realtimeErrorMessage(error));
-		state(session, {
-			phase: "recoverable_error",
-			reason: "app_server_unavailable",
-			message: realtimeErrorMessage(error),
-		});
+		const failure = phase.appServerFailureState(session.state, realtimeErrorMessage(error));
+		if (failure) state(session, failure);
 		session.rejectAnswer(error instanceof Error ? error : new Error(realtimeErrorMessage(error)));
 	};
 
@@ -181,17 +180,20 @@ export function createCodexRealtimeAdapter(
 		state(session, { phase: "negotiating", reason: "permission_granted" });
 		state(session, { phase: "negotiating", reason: "offer_created" });
 		const semanticBrief = options.freshSemanticBrief();
-		void options.session
-			.realtimeStart(
-				createRealtimeStartParams({
-					threadId: binding.coordinatorThreadId,
-					realtimeSessionId: session.wireSessionId,
-					sdp: offer.sdp,
-					semanticBrief,
-				}),
+		void Promise.resolve()
+			.then(() =>
+				options.session.realtimeStart(
+					createRealtimeStartParams({
+						threadId: binding.coordinatorThreadId,
+						realtimeSessionId: session.wireSessionId,
+						sdp: offer.sdp,
+						semanticBrief,
+					}),
+				),
 			)
 			.then(
 				() => {
+					if (session.answerSettled) return;
 					session.startReturned = true;
 					return settleAnswer(session);
 				},
@@ -234,10 +236,12 @@ export function createCodexRealtimeAdapter(
 		const notification = event.notification;
 		switch (notification.method) {
 			case "thread/realtime/sdp":
+				if (session.answerSettled || session.state.phase !== "negotiating") break;
 				session.answerSdp = notification.params.sdp;
 				settleAnswer(session);
 				break;
 			case "thread/realtime/started":
+				if (session.answerSettled || session.state.phase !== "negotiating") break;
 				if (
 					notification.params.realtimeSessionId !== session.wireSessionId ||
 					notification.params.version !== "v3"
@@ -280,7 +284,12 @@ export function createCodexRealtimeAdapter(
 				emitDiagnostic(session, "app_server", notification.params.message);
 				{
 					const failure = phase.realtimeFailureState(session.state, notification.params.message);
-					if (failure) state(session, failure);
+					if (failure) {
+						const ownsPendingStart = !session.answerSettled;
+						if (ownsPendingStart) session.answerSettled = true;
+						state(session, failure);
+						if (ownsPendingStart) session.rejectAnswer(new Error(notification.params.message));
+					}
 				}
 				break;
 			case "thread/realtime/closed":
@@ -312,33 +321,13 @@ export function createCodexRealtimeAdapter(
 		},
 		invoke: () => Promise<unknown>,
 		kind: "append" | "command",
-	): Promise<AppendOutcome> => {
-		if (!requestIsCurrent(session, request)) {
-			return { ...request, outcome: "not_delivered", reason: "stale_session" };
-		}
-		try {
-			await invoke();
-			if (!requestIsCurrent(session, request))
-				return { ...request, outcome: "outcome_unknown", reason: "response_lost" };
-			return { ...request, outcome: "delivered" };
-		} catch (error) {
-			const outcome: AppendOutcome =
-				error instanceof CodexSessionMutationError && error.outcome === "not_delivered"
-					? { ...request, outcome: "not_delivered", reason: "rejected" }
-					: {
-							...request,
-							outcome: "outcome_unknown",
-							reason:
-								error instanceof CodexSessionMutationError ? "response_lost" : "transport_failure",
-						};
-			emitDiagnostic(
-				session,
-				kind === "append" ? "realtime" : "app_server",
-				realtimeErrorMessage(error),
-			);
-			return outcome;
-		}
-	};
+	): Promise<AppendOutcome> =>
+		runRealtimeMutation(
+			request,
+			invoke,
+			() => requestIsCurrent(session, request),
+			(message) => emitDiagnostic(session, kind === "append" ? "realtime" : "app_server", message),
+		);
 
 	const currentFor = (request: {
 		readonly sessionId: BrowserRealtimeSessionId;
@@ -403,6 +392,7 @@ export function createCodexRealtimeAdapter(
 			() => options.session.realtimeStop({ threadId: session.binding.coordinatorThreadId }),
 			"command",
 		);
+		if (active !== session) return outcome;
 		if (outcome.outcome === "delivered") {
 			finalize(session);
 		} else {
@@ -462,6 +452,8 @@ export function createCodexRealtimeAdapter(
 			if (active === session) active = null;
 			return { ...request, outcome: "delivered" };
 		} catch (error) {
+			if (!requestIsCurrent(session, request))
+				return { ...request, outcome: "outcome_unknown", reason: "response_lost" };
 			emitDiagnostic(session, "protocol", realtimeErrorMessage(error));
 			state(session, {
 				phase: "recoverable_error",

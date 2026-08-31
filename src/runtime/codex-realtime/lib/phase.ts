@@ -52,6 +52,18 @@ export function realtimeFailureState(
 	return canTransitionRealtimeState(current, failure) ? failure : null;
 }
 
+export function appServerFailureState(
+	current: RealtimeState,
+	message: string,
+): RealtimeState | null {
+	const failure: RealtimeState = {
+		phase: "recoverable_error",
+		reason: "app_server_unavailable",
+		message,
+	};
+	return canTransitionRealtimeState(current, failure) ? failure : null;
+}
+
 export function stopState(current: RealtimeState): RealtimeState | null {
 	const stopping: RealtimeState = { phase: "stopping", reason: "stop_requested" };
 	return canTransitionRealtimeState(current, stopping) ? stopping : null;
