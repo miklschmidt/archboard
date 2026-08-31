@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 01:30'
+updated_date: '2026-08-31 01:31'
 labels: []
 dependencies:
   - TASK-144.06
@@ -13,6 +13,7 @@ references:
   - docs/design/tailwind-base-ui-adoption-research.md
 modified_files:
   - tests/system/repository-policy/oxfmt-tailwind.test.ts
+  - tests/system/repository-policy/support/oxfmt-tailwind-owner.ts
 parent_task_id: TASK-144
 priority: high
 type: task
