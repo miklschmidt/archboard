@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 00:46'
+updated_date: '2026-08-31 00:58'
 labels: []
 dependencies:
   - TASK-144.01
@@ -14,6 +14,12 @@ references:
   - docs/design/tailwind-base-ui-adoption-research.md
 modified_files:
   - vite.config.js
+  - src/shared/timing/timing.ts
+  - tests/system/repository-policy/support/vite-tailwind-contract.ts
+  - tests/system/repository-policy/support/vite-tailwind-fixture.ts
+  - tests/system/repository-policy/vite-tailwind-allocation-cleanup.test.ts
+  - tests/system/repository-policy/vite-tailwind-contract.test.ts
+  - tests/system/repository-policy/vite-tailwind-failure-pairing.test.ts
 parent_task_id: TASK-144
 priority: high
 type: task
@@ -61,4 +67,6 @@ Second remediation: the disposable Vite/Tailwind owner now registers its tempora
 Third remediation: allocation now invokes a synchronous owner callback immediately after mkdtemp and exposes deterministic hooks for every setup, readiness, callback, and build-start phase. The real child matrix interrupts all phases and verifies no temporary root, dependency link, child, checkout status, or diff residue. Alias validation structurally rejects every additional @/ string prefix and uses a documented anchored-literal-prefix regex policy that fails closed otherwise; object and array alias normalization is exercised outside the repository cwd. Shared primary/cleanup pairing preserves both failures in order, including multiple cleanup failures and root removal.
 
 Fourth remediation: fixture allocation now uses mkdtempSync so ownership registration occurs in the same synchronous turn as root creation; an external watcher interrupts 200 real allocation owners, alternating SIGTERM 143 and SIGINT 130, with no root/link/child/checkout residue. Regex aliases now require a fully anchored literal prefix and reject ambiguous alternation/other unparsed forms fail-closed. Cleanup pairing tracks failure presence explicitly, preserving thrown undefined and primary-before-cleanup ordering.
+
+Fifth-round remediation: owner subprocess cleanup now tracks the exact synchronously registered fixture root only; duplicated signal/exit lifecycle code is consolidated, and a concurrent same-parent owner test proves interrupting one owner leaves the other owner's root/link live while an unrelated prefixed sibling survives. Alias-overlap validation now parses the complete RegExp source under a closed anchored-literal grammar and rejects unparsed alternation and other unsupported constructs fail-closed. The 200-owner allocation case uses TEST_VITE_TAILWIND_ALLOCATION_CASE_TIMEOUT_MS from src/shared/timing/timing.ts, whose comment documents the exact workload coupling.
 <!-- SECTION:NOTES:END -->

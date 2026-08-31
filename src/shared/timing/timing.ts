@@ -548,3 +548,6 @@ export const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2_000 } as const;
 export const TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS = 20_000;
 /** Aggregate Bun case, not an operation cap/SLA: 20s clears hosted 5,034ms and stressed 14,815.78ms. */
 export const TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS = 20_000;
+
+/** Aggregate test-case threshold for 200 sequential external allocation owners and exact-root cleanup. */
+export const TEST_VITE_TAILWIND_ALLOCATION_CASE_TIMEOUT_MS = 30_000;

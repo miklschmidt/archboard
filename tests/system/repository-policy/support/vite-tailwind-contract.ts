@@ -30,18 +30,28 @@ function isWithin(root: string, candidate: string): boolean {
 	return pathFromRoot === "" || (!isAbsolute(pathFromRoot) && !parts.includes(".."));
 }
 
-function anchoredLiteralPrefix(find: RegExp): string | undefined {
-	if (!find.source.startsWith("^")) return undefined;
+function parseAnchoredLiteralRegex(find: RegExp): string | undefined {
+	if (find.flags !== "" || !find.source.startsWith("^")) return undefined;
 	let prefix = "";
-	for (const character of find.source.slice(1)) {
-		if (!/[A-Za-z0-9_/@-]/.test(character)) break;
-		prefix += character;
+	const source = find.source.slice(1);
+	for (let index = 0; index < source.length; index += 1) {
+		const character = source[index];
+		if (/[A-Za-z0-9_/@-]/.test(character!)) {
+			prefix += character!;
+			continue;
+		}
+		if (character === "\\" && source[index + 1] === "/") {
+			prefix += "/";
+			index += 1;
+			continue;
+		}
+		return undefined;
 	}
 	return prefix || undefined;
 }
 
-// Regex overlap is decidable here only for an anchored literal prefix. Anything
-// else fails closed because Vite may test the regex against any @/ import.
+// Regex overlap is accepted only for the complete anchored-literal grammar
+// above. Anything else fails closed because Vite may test it against any @/ import.
 function assertNoAliasOverlap(find: string | RegExp): void {
 	if (typeof find === "string") {
 		if (find === "@" || find.startsWith("@/")) {
@@ -49,7 +59,7 @@ function assertNoAliasOverlap(find: string | RegExp): void {
 		}
 		return;
 	}
-	const prefix = anchoredLiteralPrefix(find);
+	const prefix = parseAnchoredLiteralRegex(find);
 	if (prefix !== undefined && !prefix.startsWith("@")) return;
 	if (prefix === "@" || prefix?.startsWith("@/")) {
 		throw new Error(`Vite fixture contract: overlapping regex alias ${String(find)} shadows @/.`);

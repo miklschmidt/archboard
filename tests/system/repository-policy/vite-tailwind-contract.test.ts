@@ -15,6 +15,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import type { InlineConfig } from "vite";
 import {
 	buildViteTailwindFixture,
+	captureFailure,
 	childLineReader,
 	childStdout,
 	createViteTailwindFixture,
@@ -51,15 +52,6 @@ function gitSnapshot(): { status: string; diff: string } {
 			encoding: "utf8",
 		}),
 	};
-}
-
-async function failureOf(action: () => Promise<unknown>): Promise<unknown> {
-	try {
-		await action();
-	} catch (error) {
-		return error;
-	}
-	return undefined;
 }
 
 async function buildFixture(config: InlineConfig): Promise<string> {
@@ -307,7 +299,7 @@ describe("Vite Tailwind configuration", () => {
 	test("preserves primary and cleanup failures in stable order", async () => {
 		const primary = new Error("primary");
 		const cleanup = new Error("cleanup");
-		const failure = await failureOf(() =>
+		const failure = await captureFailure(() =>
 			withPrimaryAndCleanup(
 				async () => {
 					throw primary;
@@ -325,7 +317,7 @@ describe("Vite Tailwind configuration", () => {
 		const primary = new Error("primary-only");
 		const cleanup = new Error("cleanup-only");
 		expect(
-			await failureOf(() =>
+			await captureFailure(() =>
 				withPrimaryAndCleanup(
 					async () => {
 						throw primary;
@@ -335,7 +327,7 @@ describe("Vite Tailwind configuration", () => {
 			),
 		).toBe(primary);
 		expect(
-			await failureOf(() =>
+			await captureFailure(() =>
 				withPrimaryAndCleanup(
 					async () => "ok",
 					() => {
@@ -355,7 +347,7 @@ describe("Vite Tailwind configuration", () => {
 		const firstCleanup = new Error("first-cleanup");
 		const secondCleanup = new Error("second-cleanup");
 		try {
-			const failure = await failureOf(() =>
+			const failure = await captureFailure(() =>
 				withPrimaryAndCleanup(
 					async () => {
 						throw primary;
@@ -448,6 +440,15 @@ describe("Vite Tailwind configuration", () => {
 			(config) =>
 				withAlias(config, [
 					{ find: /@/, replacement: sourceRoot },
+					{ find: "@", replacement: sourceRoot },
+				]),
+			"unsupported regex alias overlap",
+		],
+		[
+			"alternating regex alias",
+			(config) =>
+				withAlias(config, [
+					{ find: /^virtual|^@\//, replacement: sourceRoot },
 					{ find: "@", replacement: sourceRoot },
 				]),
 			"unsupported regex alias overlap",
