@@ -74,6 +74,8 @@ export interface CodexThreadContextDeliveryOptions {
 	readonly paneId: string;
 	/** The feed identity is fixed for this delivery port; old feeds are stale. */
 	readonly feedId: string;
+	/** The clock used by the final synchronous freshness gate before injection. */
+	readonly now: () => number;
 	readonly publisher: Pick<SemanticContextPublisher, "subscribeSettledChange">;
 	readonly session: Pick<CodexSession, "threadInjectItems">;
 	readonly threadLink: Pick<CodexThreadLinkPort, "read" | "classify">;

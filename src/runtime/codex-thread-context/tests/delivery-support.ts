@@ -25,6 +25,7 @@ import {
 	type ThreadId,
 } from "../../../shared/codex-workbench-identity/index.ts";
 import {
+	canonicalSemanticCursorToken,
 	createCodexThreadContextDelivery,
 	type CodexThreadContextDelivery,
 	type CodexThreadContextDeliveryOptions,
@@ -63,6 +64,8 @@ interface HarnessOptions {
 	readonly initialLink?: ThreadLinkSnapshot;
 	readonly classificationLink?: ThreadLinkSnapshot;
 	readonly contextValid?: boolean;
+	readonly contextCursorSequence?: number;
+	readonly now?: number;
 }
 
 export interface Harness {
@@ -75,7 +78,9 @@ export interface Harness {
 	readonly setLink: (link: ThreadLinkSnapshot) => void;
 	readonly setClassificationLink: (link: ThreadLinkSnapshot) => void;
 	readonly setClassifyEffect: (effect: (() => void) | null) => void;
+	readonly setClassificationDelay: (delay: ((call: number) => Promise<void>) | null) => void;
 	readonly setExecution: (execution: CodexThreadContextExecution | null) => void;
+	readonly setNow: (value: number) => void;
 	readonly setEpochError: (error: CodexEpochError | null) => void;
 	readonly setSessionBehavior: (
 		behavior: (request: InjectRequest) => Promise<InjectResponse>,
@@ -180,26 +185,37 @@ function baseContext(
 	childId: ChildId,
 	epoch: ChildEpoch,
 	threadId: ThreadId,
-	brief: string,
+	event: SettledSemanticChangeEvent,
+	contextCursorSequence: number | undefined,
 ): ArchboardContext {
+	const cursor =
+		event.cursor === null
+			? null
+			: canonicalSemanticCursorToken({
+					feedId: event.cursor.feedId,
+					sequence: contextCursorSequence ?? event.cursor.sequence,
+				});
 	return {
 		schema: 1,
 		paneId: PANE_ID,
-		board: { note: "boards/payments.excalidraw.md", version: 7, cursor: "feed-1:1" },
+		board: { note: event.board.note, version: event.version ?? 7, cursor },
 		threadLink: { state: "executable", reason: null },
 		child: { id: childId, epoch },
-		workhorse: { threadId, turnId: null },
-		coordinator: { threadId: null, realtimeSessionId: null },
+		workhorse: { threadId, turnId: event.workhorse.turnId },
+		coordinator: { ...event.coordinator },
 		semantic: {
-			brief,
-			capturedAtMs: 100,
-			freshUntilMs: 200,
-			truncated: false,
+			brief: event.brief,
+			capturedAtMs: event.freshness.capturedAtMs,
+			freshUntilMs: event.freshness.freshUntilMs,
+			truncated: event.truncated,
 		},
-		focus: { paneId: PANE_ID, capturedAtMs: 100 },
-		selection: { elementIds: [], capturedAtMs: 100 },
-		claim: { holder: "none", doing: null },
-		ambiguity: [],
+		focus: { paneId: event.pane.paneId, capturedAtMs: event.freshness.capturedAtMs },
+		selection: {
+			elementIds: [...event.selection],
+			capturedAtMs: event.freshness.capturedAtMs,
+		},
+		claim: { ...event.claim },
+		ambiguity: [...event.ambiguity],
 		operation: { id: null, kind: null, rpc: null, outcome: null },
 	};
 }
@@ -219,8 +235,10 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 	let link: ThreadLinkSnapshot = options.initialLink ?? executableLink(childId, epoch, threadId);
 	let classification = options.classificationLink ?? link;
 	let classifyEffect: (() => void) | null = null;
+	let classificationDelay: ((call: number) => Promise<void>) | null = null;
 	let revision = 1;
 	let classifyCount = 0;
+	let now = options.now ?? 150;
 	let epochError: CodexEpochError | null = null;
 	const received: InjectRequest[] = [];
 	const epochRequests: EpochExecutionRequest[] = [];
@@ -243,6 +261,7 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 		classify: async () => {
 			classifyCount++;
 			classifyEffect?.();
+			await classificationDelay?.(classifyCount);
 			const current =
 				classification.state === "unbound"
 					? executableLink(childId, epoch, threadId)
@@ -281,7 +300,7 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 		},
 	};
 	const contextForEvent = (event: SettledSemanticChangeEvent): ArchboardContext => {
-		const context = baseContext(childId, epoch, threadId, event.brief);
+		const context = baseContext(childId, epoch, threadId, event, options.contextCursorSequence);
 		if (options.contextValid === false) {
 			return { ...context, semantic: { ...context.semantic, brief: "wrong-brief" } };
 		}
@@ -298,6 +317,7 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 	const delivery = createCodexThreadContextDelivery({
 		paneId: PANE_ID,
 		feedId: FEED_ID,
+		now: () => now,
 		publisher,
 		session,
 		threadLink,
@@ -375,8 +395,14 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 		setClassifyEffect: (effect) => {
 			classifyEffect = effect;
 		},
+		setClassificationDelay: (delay) => {
+			classificationDelay = delay;
+		},
 		setExecution: (next) => {
 			execution = next;
+		},
+		setNow: (next) => {
+			now = next;
 		},
 		setEpochError: (next) => {
 			epochError = next;

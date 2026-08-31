@@ -1,4 +1,4 @@
-export { createCodexThreadContextDelivery } from "./lib/delivery.js";
+export { canonicalSemanticCursorToken, createCodexThreadContextDelivery } from "./lib/delivery.js";
 export type {
 	CodexThreadContextDelivery,
 	CodexThreadContextDeliveryOptions,

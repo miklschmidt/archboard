@@ -6,6 +6,11 @@ import type { ThreadLinkSnapshot } from "../../codex-thread-link/index.ts";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.ts";
 import { createHarness, FEED_ID, inspectOnlyLink, unboundLink } from "./delivery-support.ts";
 
+function invokeRelease(release: (() => void) | null, message: string): void {
+	if (release === null) throw new Error(message);
+	release();
+}
+
 describe("codex thread context delivery", () => {
 	test("delivers one canonical developer input_text body through the fixed link", async () => {
 		const harness = createHarness();
@@ -171,6 +176,61 @@ describe("codex thread context delivery", () => {
 		expect(harness.received).toHaveLength(1);
 	});
 
+	test("reserves a newer cursor before delayed classification and inspects in first-seen order", async () => {
+		const harness = createHarness();
+		let releaseFirst: (() => void) | null = null;
+		harness.setClassificationDelay((call) =>
+			call === 1
+				? new Promise<void>((resolve) => {
+						releaseFirst = () => resolve();
+					})
+				: Promise.resolve(),
+		);
+
+		const firstPromise = harness.delivery.deliver(harness.events({ sequence: 1 }));
+		await harness.flush();
+		expect(harness.classifyCalls()).toBe(1);
+
+		const second = await harness.delivery.deliver(harness.events({ sequence: 2 }));
+		expect(second).toMatchObject({ outcome: "delivered", attempted: true, reason: null });
+		expect(harness.delivery.inspect()).toEqual([second]);
+		expect(harness.received).toHaveLength(1);
+
+		invokeRelease(releaseFirst, "first classification was not held");
+		const first = await firstPromise;
+		expect(first).toMatchObject({
+			outcome: "not_delivered",
+			reason: "stale_cursor",
+			attempted: false,
+		});
+		expect(harness.delivery.inspect()).toEqual([first, second]);
+		expect(harness.received).toHaveLength(1);
+	});
+
+	test("checks the injected clock after a classification that crosses freshness expiry", async () => {
+		const harness = createHarness();
+		let releaseClassification: (() => void) | null = null;
+		harness.setClassificationDelay(
+			() =>
+				new Promise<void>((resolve) => {
+					releaseClassification = () => resolve();
+				}),
+		);
+
+		const deliveryPromise = harness.delivery.deliver(harness.events());
+		await harness.flush();
+		harness.setNow(201);
+		invokeRelease(releaseClassification, "classification was not held");
+
+		const result = await deliveryPromise;
+		expect(result).toMatchObject({
+			outcome: "not_delivered",
+			reason: "stale_event",
+			attempted: false,
+		});
+		expect(harness.received).toHaveLength(0);
+	});
+
 	test("coalesces a duplicate identity while the first attempt is in flight", async () => {
 		const harness = createHarness();
 		harness.holdResponse();
@@ -276,6 +336,20 @@ describe("codex thread context delivery", () => {
 		const harness = createHarness({ contextValid: false });
 
 		const result = await harness.delivery.deliver(harness.events());
+
+		expect(result).toMatchObject({
+			outcome: "not_delivered",
+			reason: "invalid_context",
+			attempted: false,
+		});
+		expect(harness.classifyCalls()).toBe(0);
+		expect(harness.received).toHaveLength(0);
+	});
+
+	test("rejects a context cursor from sequence 1 for a sequence 3 event", async () => {
+		const harness = createHarness({ contextCursorSequence: 1 });
+
+		const result = await harness.delivery.deliver(harness.events({ sequence: 3 }));
 
 		expect(result).toMatchObject({
 			outcome: "not_delivered",

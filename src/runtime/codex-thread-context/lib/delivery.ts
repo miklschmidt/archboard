@@ -5,7 +5,10 @@ import {
 	type ArchboardContext,
 	type ThreadInjectItemsParams,
 } from "../../codex-instructions/index.js";
-import type { SettledSemanticChangeEvent } from "../../codex-semantic-context/index.js";
+import type {
+	SemanticCursor,
+	SettledSemanticChangeEvent,
+} from "../../codex-semantic-context/index.js";
 import type {
 	ThreadLink,
 	ThreadLinkBindingSnapshot,
@@ -40,6 +43,11 @@ interface DeliveryState {
 	readonly id: CodexThreadContextEventId;
 	readonly initialBinding: ThreadLinkBindingSnapshot;
 	readonly payload: ThreadInjectItemsParams;
+}
+
+/** The opaque board cursor carried by the canonical context for one feed event. */
+export function canonicalSemanticCursorToken(cursor: SemanticCursor): string {
+	return `${cursor.feedId}:${cursor.sequence}`;
 }
 
 const keyFor = (event: CodexThreadContextEventId): string =>
@@ -100,6 +108,10 @@ function sameBinding(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSn
 		left.revision === right.revision &&
 		sameLink(left.link, right.link)
 	);
+}
+
+function sameStringValues(left: readonly string[], right: readonly string[]): boolean {
+	return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function readExecution(
@@ -238,19 +250,37 @@ function contextMatchesEvent(
 	target: DeliveryTarget,
 	paneId: string,
 ): boolean {
+	if (event.cursor === null || event.version === null) return false;
+	const cursor = canonicalSemanticCursorToken(event.cursor);
+
 	return (
 		context.paneId === paneId &&
 		context.board.note === event.board.note &&
-		context.threadLink.state === "executable" &&
-		context.threadLink.reason === null &&
+		context.board.version === event.version &&
+		context.board.cursor === cursor &&
+		context.threadLink.state === event.threadLink.state &&
+		context.threadLink.reason === event.threadLink.reason &&
+		context.child.id === event.child.id &&
+		context.child.epoch === event.child.epoch &&
 		context.child.id === target.childId &&
 		context.child.epoch === target.epoch &&
+		context.workhorse.threadId === event.workhorse.threadId &&
 		context.workhorse.threadId === target.threadId &&
 		context.workhorse.turnId === event.workhorse.turnId &&
+		context.coordinator.threadId === event.coordinator.threadId &&
+		context.coordinator.realtimeSessionId === event.coordinator.realtimeSessionId &&
 		context.semantic.brief === event.brief &&
 		context.semantic.capturedAtMs === event.freshness.capturedAtMs &&
 		context.semantic.freshUntilMs === event.freshness.freshUntilMs &&
 		context.semantic.truncated === event.truncated &&
+		context.focus.paneId === event.pane.paneId &&
+		context.focus.capturedAtMs === event.freshness.capturedAtMs &&
+		sameStringValues(context.selection.elementIds, event.selection) &&
+		context.selection.capturedAtMs === event.freshness.capturedAtMs &&
+		context.claim.holder === event.claim.holder &&
+		context.claim.doing === event.claim.doing &&
+		context.claim.doing === event.doing &&
+		sameStringValues(context.ambiguity, event.ambiguity) &&
 		context.operation.id === null
 	);
 }
@@ -268,6 +298,7 @@ function finalReason(
 	state: DeliveryState,
 	options: CodexThreadContextDeliveryOptions,
 	classification: ThreadLinkClassification,
+	highestReservedSequence: () => number,
 ): CodexThreadContextDeliveryReason | null {
 	const identityFailure = eventIdentityReason(state.event, state.id);
 	if (identityFailure !== null) return identityFailure;
@@ -293,6 +324,13 @@ function finalReason(
 		options.epoch.assertCurrent(requestFor(options.target));
 	} catch (error) {
 		return epochErrorReason(error);
+	}
+	const now = options.now();
+	if (!Number.isFinite(now) || now >= state.event.freshness.freshUntilMs) {
+		return "stale_event";
+	}
+	if (state.id.feedId === options.feedId && state.id.sequence < highestReservedSequence()) {
+		return "stale_cursor";
 	}
 	return null;
 }
@@ -361,6 +399,7 @@ async function deliverOne(
 	event: SettledSemanticChangeEvent,
 	options: CodexThreadContextDeliveryOptions,
 	lastSequence: number,
+	highestReservedSequence: () => number,
 ): Promise<CodexThreadContextDeliveryOutcome> {
 	const reason = eventReason(event, options, lastSequence);
 	if (reason !== null) return outcome(event, options, "not_delivered", reason, false, null);
@@ -445,17 +484,6 @@ async function deliverOne(
 		return outcome(event, options, "not_delivered", "unknown_provenance", false, payload);
 	}
 
-	const state: DeliveryState = {
-		event,
-		id: eventId(event),
-		initialBinding,
-		payload,
-	};
-	const finalGuardReason = finalReason(state, options, classification);
-	if (finalGuardReason !== null) {
-		return outcome(event, options, "not_delivered", finalGuardReason, false, payload);
-	}
-
 	let sessionPayload: SessionParams<"thread/inject_items">;
 	try {
 		sessionPayload = {
@@ -464,6 +492,17 @@ async function deliverOne(
 		};
 	} catch {
 		return outcome(event, options, "not_delivered", "unknown_provenance", false, payload);
+	}
+
+	const state: DeliveryState = {
+		event,
+		id: eventId(event),
+		initialBinding,
+		payload,
+	};
+	const finalGuardReason = finalReason(state, options, classification, highestReservedSequence);
+	if (finalGuardReason !== null) {
+		return outcome(event, options, "not_delivered", finalGuardReason, false, payload);
 	}
 
 	try {
@@ -500,7 +539,8 @@ export function createCodexThreadContextDelivery(
 ): CodexThreadContextDelivery {
 	const pending = new Map<string, Promise<CodexThreadContextDeliveryOutcome>>();
 	const settled = new Map<string, CodexThreadContextDeliveryOutcome>();
-	let lastSequence = -1;
+	const firstSeenKeys: string[] = [];
+	let highestReservedSequence = -1;
 	let disposed = false;
 
 	const deliver = (
@@ -513,16 +553,17 @@ export function createCodexThreadContextDelivery(
 		const settledOutcome = settled.get(key);
 		if (settledOutcome !== undefined) return Promise.resolve(settledOutcome);
 
-		const previousSequence = lastSequence;
+		firstSeenKeys.push(key);
+		const previousSequence = highestReservedSequence;
 		const sequence = event.cursor?.sequence ?? -1;
-		if (event.feedId === options.feedId && sequence > lastSequence) {
-			lastSequence = sequence;
+		if (event.feedId === options.feedId && sequence > highestReservedSequence) {
+			highestReservedSequence = sequence;
 		}
 
 		const promise = (
 			disposed
 				? Promise.resolve(outcome(event, options, "not_delivered", "disposed", false, null))
-				: deliverOne(event, options, previousSequence)
+				: deliverOne(event, options, previousSequence, () => highestReservedSequence)
 		)
 			.catch(() =>
 				outcome(event, options, "not_delivered", "thread_revalidation_failed", false, null),
@@ -542,7 +583,13 @@ export function createCodexThreadContextDelivery(
 
 	return Object.freeze({
 		deliver,
-		inspect: () => Object.freeze([...settled.values()]),
+		inspect: () =>
+			Object.freeze(
+				firstSeenKeys.flatMap((key) => {
+					const result = settled.get(key);
+					return result === undefined ? [] : [result];
+				}),
+			),
 		get: (event: CodexThreadContextEventId) => settled.get(keyFor(event)),
 		dispose: () => {
 			if (disposed) return;
