@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 00:05'
+updated_date: '2026-08-31 00:25'
 labels: []
 dependencies:
   - TASK-144.01
@@ -57,4 +57,6 @@ Implemented the canonical Vite seam and disposable proof. `vite.config.js` now r
 Remediation validation: all generated fixture files now live beneath OS temporary roots, with a temporary dependency symlink for Tailwind resolution and test-only aliasing. Focused owner passes 19 tests including throw, child-failure, SIGTERM, collision, parallel lint/read, cwd, overlap, separator, drift, and git snapshot checks. Sequential `bun run test:repository` passes 149 tests; sequential `bun run test:modules` passes 1013 tests; type-check, lint, format check, and frontend build pass. The earlier concurrent module-lane attempt was invalid due unrelated global fixture contention and was rerun sequentially successfully.
 
 Second remediation: the disposable Vite/Tailwind owner now registers its temporary root before writes, installs scoped SIGINT/SIGTERM and exit cleanup, uses readiness stdout plus stdin event waiting, and unconditionally reaps spawned children while preserving primary failures. Alias checks now model Vite string/regex matching, require one exact @ mapping, reject only @ overlaps, and allow unrelated aliases. Added pre-ready/post-ready signal/failure cleanup, parallel-owner isolation, checkout snapshots, and dependency-link target assertions.
+
+Third remediation: allocation now invokes a synchronous owner callback immediately after mkdtemp and exposes deterministic hooks for every setup, readiness, callback, and build-start phase. The real child matrix interrupts all phases and verifies no temporary root, dependency link, child, checkout status, or diff residue. Alias validation structurally rejects every additional @/ string prefix and uses a documented anchored-literal-prefix regex policy that fails closed otherwise; object and array alias normalization is exercised outside the repository cwd. Shared primary/cleanup pairing preserves both failures in order, including multiple cleanup failures and root removal.
 <!-- SECTION:NOTES:END -->
