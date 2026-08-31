@@ -43,6 +43,17 @@ function requestParams(harness: RealtimeHarness, method: string): Record<string,
 		.map((entry) => entry.params as Record<string, unknown>);
 }
 
+function expectPendingOffer(harness: RealtimeHarness, settled: boolean): void {
+	expect(settled).toBeFalse();
+	expect(latestState(harness)).toEqual({ phase: "negotiating", reason: "offer_created" });
+}
+
+async function waitForDiagnostic(harness: RealtimeHarness, count: number): Promise<void> {
+	await waitFor(
+		() => harness.events.filter((event) => event.kind === "diagnostic").length === count,
+	);
+}
+
 test("real process proves the exact realtime envelope, gates, transcript, and one-attempt commands", async () => {
 	await withHarness(
 		{
@@ -100,26 +111,6 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 			expect(startResponses[0]?.result).toEqual({});
 			const start = requestParams(harness, "thread/realtime/start")[0];
 			expect(start).toBeDefined();
-			expect(Object.keys(start!).toSorted()).toEqual(
-				[
-					"clientManagedHandoffs",
-					"codexResponseHandoffMode",
-					"codexResponsesAsItems",
-					"delegationAckFiller",
-					"flushTranscriptTailOnSessionEnd",
-					"includeStartupContext",
-					"initialItems",
-					"prompt",
-					"realtimeEndInstructions",
-					"realtimeSessionId",
-					"realtimeStartInstructions",
-					"threadId",
-					"transport",
-					"version",
-					"voice",
-					"outputModality",
-				].toSorted(),
-			);
 			expect(start).toEqual({
 				threadId: "coordinator-thread",
 				clientManagedHandoffs: false,
@@ -228,8 +219,7 @@ test("real process rejects wrong child/thread/session/version, stale SDP, and fl
 					sdp: "wrong-child",
 				}),
 			);
-			expect(settled).toBeFalse();
-			expect(latestState(harness)).toEqual({ phase: "negotiating", reason: "offer_created" });
+			expectPendingOffer(harness, settled);
 			const wrongThread = generation.identity.decoder.adoptThreadId("other-thread");
 			generation.adapter.onNotification(
 				makeNotification(generation.identity, "thread/realtime/sdp", {
@@ -237,24 +227,27 @@ test("real process rejects wrong child/thread/session/version, stale SDP, and fl
 					sdp: "wrong-thread-current-child",
 				}),
 			);
-			expect(settled).toBeFalse();
-			expect(latestState(harness)).toEqual({ phase: "negotiating", reason: "offer_created" });
-			await waitFor(
-				() => harness.events.filter((event) => event.kind === "diagnostic").length === 1,
+			expectPendingOffer(harness, settled);
+			const start = requestParams(harness, "thread/realtime/start")[0];
+			if (typeof start?.realtimeSessionId !== "string")
+				throw new Error("Pending start identity missing.");
+			generation.adapter.onNotification(
+				makeNotification(generation.identity, "thread/realtime/started", {
+					threadId: "coordinator-thread",
+					realtimeSessionId: start.realtimeSessionId,
+					version: "v3",
+				}),
 			);
-			expect(settled).toBeFalse();
-			expect(latestState(harness)).toEqual({ phase: "negotiating", reason: "offer_created" });
-			await waitFor(
-				() => harness.events.filter((event) => event.kind === "diagnostic").length === 2,
-			);
-			expect(settled).toBeFalse();
-			expect(latestState(harness)).toEqual({ phase: "negotiating", reason: "offer_created" });
+			// A matching started event must not make an invalid SDP answer usable.
+			expectPendingOffer(harness, settled);
+			await waitForDiagnostic(harness, 1);
+			expectPendingOffer(harness, settled);
+			await waitForDiagnostic(harness, 2);
+			expectPendingOffer(harness, settled);
 			const answer = await pending;
 			expect(answer.sdp).toBe("answer-sdp");
 			expect(latestState(harness)).toEqual({ phase: "listening", reason: "negotiation_succeeded" });
-			await waitFor(
-				() => harness.events.filter((event) => event.kind === "diagnostic").length === 3,
-			);
+			await waitForDiagnostic(harness, 3);
 			expect(latestState(harness)).toEqual({ phase: "listening", reason: "negotiation_succeeded" });
 			expect(generation.adapter.transcript()).toEqual([]);
 			const diagnostics = harness.events.filter((event) => event.kind === "diagnostic");
@@ -472,23 +465,24 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 					sdp: "stale-old-child",
 				}),
 			);
-			expect(freshSettled).toBeFalse();
-			expect(latestState(harness)).toEqual({ phase: "negotiating", reason: "offer_created" });
+			expectPendingOffer(harness, freshSettled);
 			const freshStart = requestParams(harness, "thread/realtime/start")[2];
 			if (typeof freshStart?.realtimeSessionId !== "string")
 				throw new Error("Fresh start identity missing.");
 			const freshThread = second.binding.coordinatorThreadId;
 			second.adapter.onNotification(
-				makeNotification(second.identity, "thread/realtime/sdp", {
-					threadId: freshThread,
-					sdp: "fresh-answer",
-				}),
-			);
-			second.adapter.onNotification(
 				makeNotification(second.identity, "thread/realtime/started", {
 					threadId: freshThread,
 					realtimeSessionId: freshStart.realtimeSessionId,
 					version: "v3",
+				}),
+			);
+			// A fresh generation must ignore stale SDP even after its own identity is started.
+			expectPendingOffer(harness, freshSettled);
+			second.adapter.onNotification(
+				makeNotification(second.identity, "thread/realtime/sdp", {
+					threadId: freshThread,
+					sdp: "fresh-answer",
 				}),
 			);
 			expect((await freshOffer).sdp).toBe("fresh-answer");
