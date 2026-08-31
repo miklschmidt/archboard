@@ -57,6 +57,10 @@ export interface EventOptions {
 	readonly changeFeedId?: string;
 	readonly origin?: "human" | "agent" | "mixed";
 	readonly significance?: "layout" | "structural" | "cosmetic";
+	readonly focused?: boolean;
+	readonly claimDoing?: string | null;
+	readonly doing?: string | null;
+	readonly brief?: string;
 	readonly stale?: boolean;
 }
 
@@ -65,6 +69,7 @@ interface HarnessOptions {
 	readonly classificationLink?: ThreadLinkSnapshot;
 	readonly contextValid?: boolean;
 	readonly contextCursorSequence?: number;
+	readonly contextFocusPaneId?: string | null;
 	readonly now?: number;
 }
 
@@ -187,6 +192,7 @@ function baseContext(
 	threadId: ThreadId,
 	event: SettledSemanticChangeEvent,
 	contextCursorSequence: number | undefined,
+	contextFocusPaneId: string | null | undefined,
 ): ArchboardContext {
 	const cursor =
 		event.cursor === null
@@ -195,6 +201,12 @@ function baseContext(
 					feedId: event.cursor.feedId,
 					sequence: contextCursorSequence ?? event.cursor.sequence,
 				});
+	const focusPaneId =
+		contextFocusPaneId === undefined
+			? event.pane.focused
+				? event.pane.paneId
+				: null
+			: contextFocusPaneId;
 	return {
 		schema: 1,
 		paneId: PANE_ID,
@@ -209,7 +221,7 @@ function baseContext(
 			freshUntilMs: event.freshness.freshUntilMs,
 			truncated: event.truncated,
 		},
-		focus: { paneId: event.pane.paneId, capturedAtMs: event.freshness.capturedAtMs },
+		focus: { paneId: focusPaneId, capturedAtMs: event.freshness.capturedAtMs },
 		selection: {
 			elementIds: [...event.selection],
 			capturedAtMs: event.freshness.capturedAtMs,
@@ -300,7 +312,14 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 		},
 	};
 	const contextForEvent = (event: SettledSemanticChangeEvent): ArchboardContext => {
-		const context = baseContext(childId, epoch, threadId, event, options.contextCursorSequence);
+		const context = baseContext(
+			childId,
+			epoch,
+			threadId,
+			event,
+			options.contextCursorSequence,
+			options.contextFocusPaneId,
+		);
 		if (options.contextValid === false) {
 			return { ...context, semantic: { ...context.semantic, brief: "wrong-brief" } };
 		}
@@ -335,6 +354,9 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 		const changeFeedId = eventOptions.changeFeedId ?? feedId;
 		const origin = eventOptions.origin ?? "human";
 		const significance = eventOptions.significance ?? "structural";
+		const focused = eventOptions.focused ?? true;
+		const claimDoing = eventOptions.claimDoing ?? null;
+		const doing = eventOptions.doing ?? null;
 		const cursor = Object.freeze({ feedId: cursorFeedId, sequence });
 		return Object.freeze({
 			kind: "settled_change" as const,
@@ -347,11 +369,11 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 			workhorse: { threadId, turnId: null },
 			coordinator: { threadId: null, realtimeSessionId: null },
 			board: { key: "payments", note: "boards/payments.excalidraw.md" },
-			pane: { paneId: PANE_ID, focused: true },
+			pane: { paneId: PANE_ID, focused },
 			version: 7,
 			selection: [],
-			claim: { holder: "none" as const, doing: null },
-			doing: null,
+			claim: { holder: "none" as const, doing: claimDoing },
+			doing,
 			cursor,
 			description: "A settled human architecture change.",
 			freshness: {
@@ -365,7 +387,7 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 				state: eventOptions.stale ? ("stale" as const) : ("current" as const),
 				reasons: eventOptions.stale ? ["old cursor"] : [],
 			},
-			brief: `brief-${sequence}`,
+			brief: eventOptions.brief ?? `brief-${sequence}`,
 			bytes: 10,
 			change: {
 				feedId: changeFeedId,

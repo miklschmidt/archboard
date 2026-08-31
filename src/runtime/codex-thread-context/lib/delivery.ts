@@ -273,13 +273,12 @@ function contextMatchesEvent(
 		context.semantic.capturedAtMs === event.freshness.capturedAtMs &&
 		context.semantic.freshUntilMs === event.freshness.freshUntilMs &&
 		context.semantic.truncated === event.truncated &&
-		context.focus.paneId === event.pane.paneId &&
+		context.focus.paneId === (event.pane.focused ? event.pane.paneId : null) &&
 		context.focus.capturedAtMs === event.freshness.capturedAtMs &&
 		sameStringValues(context.selection.elementIds, event.selection) &&
 		context.selection.capturedAtMs === event.freshness.capturedAtMs &&
 		context.claim.holder === event.claim.holder &&
 		context.claim.doing === event.claim.doing &&
-		context.claim.doing === event.doing &&
 		sameStringValues(context.ambiguity, event.ambiguity) &&
 		context.operation.id === null
 	);
