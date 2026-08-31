@@ -57,6 +57,7 @@
 		"react/no-danger": "error",
 		"react/react-in-jsx-scope": "off",
 		"archboard/no-anonymous-jsx-handlers": "error",
+		"archboard/assistant-ui-imports": "error",
 		"archboard/no-catch-all-exports": "error",
 		"archboard/no-compatibility-identifiers": "error",
 		"archboard/no-generic-buckets": "error",
