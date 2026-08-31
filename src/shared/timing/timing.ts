@@ -481,16 +481,25 @@ export const TEST_CANVAS_CONCURRENT_RELEASE_DELAY_MS = TEST_CANVAS_SHUTDOWN_TIME
 export const TEST_CANVAS_CASE_TIMEOUT_MARGIN_MS = 2 * TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
 
 /**
+ * Extra outer-case room for the callback hot-reload owner after its inner
+ * waits. It covers setup, generation write, parsing/assertions, signal
+ * dispatch, failure diagnostics, and temporary-directory cleanup.
+ */
+export const TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_MARGIN_MS = 2 * TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+
+/**
  * Outer threshold for the callback hot-reload owner.
  *
  * The owner has two sequential record waits, then may spend one shutdown
  * interval on SIGTERM and one on SIGKILL observation. Two health-poll
- * intervals leave a small margin for polling and temporary-directory cleanup.
+ * intervals cover the waits' polling overshoots; the explicit case margin
+ * reserves time for setup and cleanup outside those inner waits.
  */
 export const TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_TIMEOUT_MS =
 	2 * TEST_CANVAS_STARTUP_TIMEOUT_MS +
 	2 * TEST_CANVAS_SHUTDOWN_TIMEOUT_MS +
-	2 * TEST_CANVAS_HEALTH_POLL_MS;
+	2 * TEST_CANVAS_HEALTH_POLL_MS +
+	TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_MARGIN_MS;
 
 /**
  * Cap for the post-cleanup health probe.
