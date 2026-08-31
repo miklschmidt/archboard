@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 17:51'
-updated_date: '2026-08-31 04:37'
+updated_date: '2026-08-31 04:44'
 labels: []
 dependencies:
   - TASK-144.04
@@ -45,6 +45,8 @@ Copy and reduce only the pinned Base UI button fixture into one named Archboard 
 5. Add one exact Tailwind @source directive in src/ui/theme/app.css for authored src/ui TypeScript and TSX, then extend the existing frontend stylesheet-entry owner to build with the production Vite config in a temporary output and require representative Button selectors.
 
 6. Restrict ButtonProps data-* values to DOM-serializable scalars, add valid string/boolean and rejected object/function/symbol type cases, then rerun only the authorized capped source, compiler, build, inventory, shadcn, and stylesheet-entry checks without any boundary-owner retry.
+
+7. Keep the positive authored src/ui Tailwind source, exclude nested tests with one exact negative source directive, require both directives in the production stylesheet-entry owner, and prove Button selectors remain while the test-only duration-150 sentinel is absent; rerun only focused capped owners and the production build.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -85,4 +87,19 @@ Focused capped remediation evidence with MemoryMax=6G and MemorySwapMax=1G:
 - diff, path, and protected-input hash audit: pass; pinned fixture SHA-256 remains 97bfee456444f0495deee6a321933c24267477645b0bf4bfea67c3c62d425a12 and /home/msc/Projects/archboard/src-DlBR1tzg.js remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6.
 
 The boundary owner was not rerun: both authorized attempts had already exhausted the 6G/1G cap, and the parent remediation instruction explicitly prohibited another run. Rendered keyboard, pointer, focus, and ref attachment remain TASK-144.11 ownership. TASK-144.20 remains In Progress and all acceptance criteria remain unchecked for independent rereview.
+
+Second review remediation implementation commit: 0afe990f7c27ce8cb0b0be9c2533174acaba1fd6.
+
+Narrowed Tailwind discovery without losing product classes: the positive src/ui TypeScript/TSX source remains, one exact negative directive excludes nested test owners, and the production contract requires both directives. The built stylesheet keeps .min-h-touch-target, .size-touch-target, and .bg-primary while rejecting the test-only .duration-150 sentinel.
+
+Focused capped evidence with MemoryMax=6G and MemorySwapMax=1G:
+- production stylesheet-entry owner: 3 pass, 11 expectations; MemoryPeak=1.4G, swap=0B
+- theme compile owner: 21 pass, 571 expectations; MemoryPeak=62.2M, swap=0B
+- production frontend build: pass; CSS artifact dist/frontend/assets/index-l9HclMoo.css is 57,848 bytes, reported as 57.84 kB and 9.98 kB gzip; MemoryPeak=1.4G, swap=0B
+- byte-exact artifact proof: .min-h-touch-target, .size-touch-target, and .bg-primary present; .duration-150 absent; MemoryPeak=3.5M, swap=0B
+- scoped Oxlint: 0 warnings/errors; MemoryPeak=304.3M, swap=0B
+- scoped Oxfmt check: pass; MemoryPeak=24.1M, swap=0B
+- precommit diff and protected-input audit: pass; pinned fixture SHA-256 remains 97bfee456444f0495deee6a321933c24267477645b0bf4bfea67c3c62d425a12 and /home/msc/Projects/archboard/src-DlBR1tzg.js remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6.
+
+The boundary lane was not rerun, as instructed after both authorized attempts exhausted the cap. TASK-144.20 remains In Progress and all acceptance criteria remain unchecked for complete-range rereview.
 <!-- SECTION:NOTES:END -->
