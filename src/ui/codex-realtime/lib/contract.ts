@@ -132,6 +132,7 @@ export const REALTIME_TRANSITIONS: RealtimeTransitionTable = Object.freeze({
 		negotiating: Object.freeze(["offer_created", "answer_received"] as const),
 		listening: Object.freeze(["negotiation_succeeded"] as const),
 		recoverable_error: Object.freeze([
+			"device_lost",
 			"sdp_failed",
 			"ice_disconnected",
 			"data_channel_closed",
