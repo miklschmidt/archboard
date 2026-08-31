@@ -8,6 +8,7 @@ import {
 import { createTextUserInput } from "../../codex-instructions/index.js";
 import {
 	createCodexWorkhorseQueue,
+	type CodexWorkhorseQueue,
 	type WorkhorseQueueBinding,
 	type WorkhorseQueueOperationIdPort,
 	type WorkhorseQueueSessionPort,
@@ -155,8 +156,8 @@ export class QueueSession implements WorkhorseQueueSessionPort {
 export interface Fixture {
 	readonly identity: IdentityAuthority;
 	readonly session: QueueSession;
-	readonly operationIds: WorkhorseQueueOperationIdPort;
-	readonly queue: ReturnType<typeof createCodexWorkhorseQueue>;
+	readonly operationIds: WorkhorseQueueOperationIdPort<string>;
+	readonly queue: CodexWorkhorseQueue<string>;
 	setBinding: (next: WorkhorseQueueBinding | null) => void;
 }
 
@@ -165,7 +166,7 @@ export function fixture(initial: SessionQueueListResult["data"] = []): Fixture {
 	const session = new QueueSession(identity);
 	session.state = initial;
 	let currentBinding: WorkhorseQueueBinding | null = binding(identity);
-	const operationIds: WorkhorseQueueOperationIdPort = {
+	const operationIds: WorkhorseQueueOperationIdPort<string> = {
 		assertCurrent: (operationId) => {
 			if (operationId === "stale-operation") throw new Error("operation is stale");
 		},

@@ -126,7 +126,7 @@ function operationIdPort<OperationIdValue extends string>(
 	}
 }
 
-export function createCodexWorkhorseQueue<OperationIdValue extends string = string>(
+export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	options: WorkhorseQueueOptions<OperationIdValue>,
 ): CodexWorkhorseQueue<OperationIdValue> {
 	let commandTail: Promise<void> = Promise.resolve();
@@ -170,6 +170,30 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string = stri
 			"The coordinator or workhorse link changed; re-read the current queue before retrying.",
 			{ operation, outcome },
 		);
+	};
+
+	type AcceptedBinding =
+		| { readonly binding: WorkhorseQueueBinding; readonly error?: never }
+		| { readonly binding?: never; readonly error: unknown };
+
+	const captureBinding = (): AcceptedBinding => {
+		try {
+			return { binding: currentBinding() };
+		} catch (error) {
+			return { error };
+		}
+	};
+
+	const enqueueForBinding = <Value>(
+		operation: WorkhorseQueueOperation,
+		work: (binding: WorkhorseQueueBinding) => Promise<Value>,
+	): Promise<Value> => {
+		const accepted = captureBinding();
+		if ("error" in accepted) return Promise.reject(accepted.error);
+		return enqueue(async () => {
+			assertCurrentBinding(accepted.binding, operation);
+			return work(accepted.binding);
+		});
 	};
 
 	const readAuthoritative = async (binding: WorkhorseQueueBinding): Promise<QueueSnapshot> => {
@@ -254,6 +278,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string = stri
 		Response extends MutationResponse,
 	>(
 		operation: Operation,
+		binding: WorkhorseQueueBinding,
 		request: MutationRequest<OperationIdValue> & { readonly operation: Operation },
 		invoke: (
 			binding: WorkhorseQueueBinding,
@@ -272,7 +297,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string = stri
 		readonly outcome: QueueMutationOutcome;
 		readonly queue: QueueSnapshot;
 	}> => {
-		const binding = currentBinding();
+		assertCurrentBinding(binding, operation);
 		const clientUserMessageId = operationIdPort(
 			options.operationIds,
 			operation,
@@ -311,8 +336,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string = stri
 	};
 
 	const list = (): Promise<QueueListResult> =>
-		enqueue(async () => {
-			const binding = currentBinding();
+		enqueueForBinding("list", async (binding) => {
 			const queue = await readAuthoritative(binding);
 			const result: QueueListResult = { operation: "list", queue };
 			return Object.freeze(result);
@@ -321,16 +345,17 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string = stri
 	const add = (
 		request: QueueAddRequest<OperationIdValue>,
 	): Promise<QueueAddResult<OperationIdValue>> =>
-		enqueue(async () => {
+		enqueueForBinding("add", async (acceptedBinding) => {
 			const input = inputForPrompt(request.prompt);
 			const result = await runMutation(
 				"add",
+				acceptedBinding,
 				{ operation: "add", operationId: request.operationId, prompt: request.prompt },
-				(binding, clientUserMessageId) => {
+				(rpcBinding, clientUserMessageId) => {
 					if (clientUserMessageId === null)
 						throw new Error("add requires a serialized client user message identity");
 					return options.session.queueAdd({
-						threadId: binding.workhorseThreadId,
+						threadId: rpcBinding.workhorseThreadId,
 						input: [input],
 						clientUserMessageId,
 					});
@@ -346,19 +371,20 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string = stri
 	const update = (
 		request: QueueUpdateRequest<OperationIdValue>,
 	): Promise<QueueUpdateResult<OperationIdValue>> =>
-		enqueue(async () => {
+		enqueueForBinding("update", async (acceptedBinding) => {
 			const input = inputForPrompt(request.prompt);
 			return runMutation(
 				"update",
+				acceptedBinding,
 				{
 					operation: "update",
 					operationId: request.operationId,
 					submissionId: request.submissionId,
 					prompt: request.prompt,
 				},
-				(binding) =>
+				(rpcBinding) =>
 					options.session.queueUpdate({
-						threadId: binding.workhorseThreadId,
+						threadId: rpcBinding.workhorseThreadId,
 						queuedSubmissionId: request.submissionId,
 						input: [input],
 					}),
@@ -371,17 +397,18 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string = stri
 	const remove = (
 		request: QueueDeleteRequest<OperationIdValue>,
 	): Promise<QueueDeleteResult<OperationIdValue>> =>
-		enqueue(() =>
+		enqueueForBinding("delete", (acceptedBinding) =>
 			runMutation(
 				"delete",
+				acceptedBinding,
 				{
 					operation: "delete",
 					operationId: request.operationId,
 					submissionId: request.submissionId,
 				},
-				(binding) =>
+				(rpcBinding) =>
 					options.session.queueDelete({
-						threadId: binding.workhorseThreadId,
+						threadId: rpcBinding.workhorseThreadId,
 						queuedSubmissionId: request.submissionId,
 					}),
 				(before) => assertTarget(before, request.submissionId, "delete"),
@@ -392,17 +419,18 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string = stri
 	const reorder = (
 		request: QueueReorderRequest<OperationIdValue>,
 	): Promise<QueueReorderResult<OperationIdValue>> =>
-		enqueue(() =>
+		enqueueForBinding("reorder", (acceptedBinding) =>
 			runMutation(
 				"reorder",
+				acceptedBinding,
 				{
 					operation: "reorder",
 					operationId: request.operationId,
 					orderedSubmissionIds: request.orderedSubmissionIds,
 				},
-				(binding) =>
+				(rpcBinding) =>
 					options.session.queueReorder({
-						threadId: binding.workhorseThreadId,
+						threadId: rpcBinding.workhorseThreadId,
 						queuedSubmissionIds: Array.from(request.orderedSubmissionIds),
 					}),
 				(before) => assertCompleteOrder(before, request.orderedSubmissionIds),
@@ -413,17 +441,18 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string = stri
 	const start = (
 		request: QueueStartRequest<OperationIdValue>,
 	): Promise<QueueStartResult<OperationIdValue>> =>
-		enqueue(() =>
+		enqueueForBinding("start", (acceptedBinding) =>
 			runMutation(
 				"start",
+				acceptedBinding,
 				{
 					operation: "start",
 					operationId: request.operationId,
 					submissionId: request.submissionId,
 				},
-				(binding) =>
+				(rpcBinding) =>
 					options.session.queueStart({
-						threadId: binding.workhorseThreadId,
+						threadId: rpcBinding.workhorseThreadId,
 						queuedSubmissionId: request.submissionId,
 					}),
 				(before) => assertTarget(before, request.submissionId, "start"),
