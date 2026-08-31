@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 21:28'
+updated_date: '2026-08-31 21:32'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -54,6 +54,8 @@ Delegation profile: gpt-5.6-luna, max.
 3. Add a focused system owner that writes generation 2 to the watched token, waits for the same process to report a second callback graph evaluation, and proves changed installer identity, one retained callback identity, one four-listener cohort, one delivery and narration for one source event, and exactly four cleanup calls after repeated disposal. Kill the process group and remove the temporary directory on every path.
 4. Run the focused hot-process owner and callback/encoder owners, both TypeScript graphs, scoped lint/format, authored policy, inventory, diff, clean tree, file lengths, source restrictions, and protected artifact checks in sequential capped transient units. Preserve known broad OOM evidence without rerunning those lanes.
 5. Keep TASK-143.07.04 In Progress with every acceptance criterion unchecked for independent rereview.
+
+6. Replace the hot-reload owner timeout with an explicit timing-derived budget covering two record waits, two shutdown intervals, and two polling-margin intervals; assert the budget relationship and rerun only focused/capped checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes

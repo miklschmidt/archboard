@@ -6,6 +6,7 @@ import { join, resolve } from "node:path";
 import type { Readable } from "node:stream";
 
 import {
+	TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_TIMEOUT_MS,
 	TEST_CANVAS_HEALTH_POLL_MS,
 	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
 	TEST_CANVAS_STARTUP_TIMEOUT_MS,
@@ -14,6 +15,14 @@ import {
 const repoRoot = resolve(import.meta.dir, "../../..");
 const entry = join(repoRoot, "tests/system/fixtures/callback-hot-entry.ts");
 type HotChild = ChildProcessByStdio<null, Readable, Readable>;
+
+const CALLBACK_HOT_RELOAD_RECORD_WAIT_COUNT = 2;
+const CALLBACK_HOT_RELOAD_SHUTDOWN_INTERVAL_COUNT = 2;
+const CALLBACK_HOT_RELOAD_POLL_MARGIN_COUNT = 2;
+const CALLBACK_HOT_RELOAD_MIN_TIMEOUT_MS =
+	CALLBACK_HOT_RELOAD_RECORD_WAIT_COUNT * TEST_CANVAS_STARTUP_TIMEOUT_MS +
+	CALLBACK_HOT_RELOAD_SHUTDOWN_INTERVAL_COUNT * TEST_CANVAS_SHUTDOWN_TIMEOUT_MS +
+	CALLBACK_HOT_RELOAD_POLL_MARGIN_COUNT * TEST_CANVAS_HEALTH_POLL_MS;
 
 interface ProtocolRecord {
 	readonly phase: "installed" | "verified";
@@ -87,6 +96,9 @@ describe.serial("coordinator callback hot reload", () => {
 	test(
 		"re-evaluates the production installer graph and retains one callback cohort",
 		async () => {
+			expect(TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_TIMEOUT_MS).toBeGreaterThanOrEqual(
+				CALLBACK_HOT_RELOAD_MIN_TIMEOUT_MS,
+			);
 			const root = mkdtempSync(join(tmpdir(), "archboard-callback-hot-"));
 			const token = join(root, "generation.ts");
 			writeFileSync(token, "export const generation = 1;\n");
@@ -141,6 +153,6 @@ describe.serial("coordinator callback hot reload", () => {
 				}
 			}
 		},
-		TEST_CANVAS_STARTUP_TIMEOUT_MS + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
+		TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_TIMEOUT_MS,
 	);
 });
