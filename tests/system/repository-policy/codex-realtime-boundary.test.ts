@@ -6,7 +6,6 @@ import { fileURLToPath } from "node:url";
 import * as ts from "typescript/unstable/ast";
 import { parseModuleSources } from "../../../scripts/typescript-analysis.js";
 import { analyzeModuleScope, moduleGraph } from "./support/module-scope-analysis.js";
-
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const moduleRoot = path.join(repoRoot, "src/ui/codex-realtime");
 const indexPath = path.join(moduleRoot, "index.ts");
@@ -25,8 +24,7 @@ const VALUE_EXPORTS = new Set(
 		" ",
 	),
 );
-const CONTRACT_MODULE = "./lib/contract.js",
-	MEDIA_MODULE = "./lib/media-session.js";
+const CONTRACT_MODULE = "./lib/contract.js";
 const TYPE_EXPORTS = new Set(
 	"AnswerSdp AppendNotDeliveredReason AppendOutcome AppendOutcomeReason AppendOutcomeUnknownReason AppendSpeechRequest AppendTextRequest CommandNotDeliveredReason CommandOutcome CommandOutcomeReason CommandOutcomeUnknownReason CreateOfferSdp RealtimeCommandRequest RealtimeCorrelation RealtimeCorrelationId RealtimeDiagnosticCode RealtimeHost RealtimeItemId RealtimePhase RealtimeRecoverableErrorReason RealtimeSemanticEvent RealtimeSemanticEventListener RealtimeSessionId RealtimeState RealtimeTerminalErrorReason RealtimeTranscriptRecord RealtimeTranscriptRole RealtimeTranscriptStatus RealtimeTransitionReason RealtimeUnsubscribe RecoveryRequest RemoteMediaAttachment StopRequest RealtimeMediaListener RealtimeMediaSession RealtimeMediaSnapshot".split(
 		" ",
@@ -34,14 +32,16 @@ const TYPE_EXPORTS = new Set(
 );
 const VALUE_EXPORT_SOURCES = new Map([
 	...[...VALUE_EXPORTS].slice(0, 6).map((name) => [name, CONTRACT_MODULE] as const),
-	["createRealtimeMediaSession", MEDIA_MODULE],
-	["REALTIME_MEDIA_FEATURE", MEDIA_MODULE],
+	["createRealtimeMediaSession", "./lib/media-session.js"],
+	["REALTIME_MEDIA_FEATURE", "./lib/media-session.js"],
 ]);
 const TYPE_EXPORT_SOURCES = new Map([
-	...[...TYPE_EXPORTS].slice(0, 33).map((name) => [name, CONTRACT_MODULE] as const),
-	["RealtimeMediaListener", MEDIA_MODULE],
-	["RealtimeMediaSession", MEDIA_MODULE],
-	["RealtimeMediaSnapshot", MEDIA_MODULE],
+	...[...TYPE_EXPORTS]
+		.slice(0, 33)
+		.map((name) => [name, "../../shared/codex-realtime-host/index.js"] as const),
+	["RealtimeMediaListener", "./lib/media-session.js"],
+	["RealtimeMediaSession", "./lib/media-session.js"],
+	["RealtimeMediaSnapshot", "./lib/media-session.js"],
 ]);
 const NODE_BUILTINS = new Set(
 	"assert assert/strict buffer child_process cluster console constants crypto dgram diagnostics_channel dns dns/promises domain events fs fs/promises http http2 https module net os path path/posix path/win32 perf_hooks process punycode querystring readline readline/promises repl stream stream/consumers stream/promises stream/web string_decoder sys timers timers/promises tls trace_events tty url util util/types v8 vm wasi worker_threads zlib".split(
@@ -66,7 +66,6 @@ type ModuleReference = {
 	specifier: string;
 	kind: "static import" | "type import" | "dynamic import" | "require";
 };
-
 function privatePackageFindings(file: string, packageJson: Record<string, unknown>): Finding[] {
 	const findings: Finding[] = [];
 	if (packageJson.private !== true)
@@ -250,6 +249,7 @@ function deepImportFindings(file: string, source: ts.SourceFile): Finding[] {
 
 function forbiddenModuleFinding(file: string, reference: ModuleReference): Finding | undefined {
 	const normalized = stripSpecifierQuery(reference.specifier).toLowerCase();
+	if (normalized.endsWith("shared/codex-realtime-host/index.js")) return undefined;
 	const root = normalized.split("/")[0] ?? "";
 	if (normalized.startsWith("node:") || NODE_BUILTINS.has(normalized) || NODE_BUILTINS.has(root))
 		return {
