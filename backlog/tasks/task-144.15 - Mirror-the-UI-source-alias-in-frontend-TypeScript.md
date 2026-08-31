@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:43'
-updated_date: '2026-08-31 02:33'
+updated_date: '2026-08-31 02:38'
 labels: []
 dependencies:
   - TASK-144.02
@@ -43,4 +43,6 @@ Own the frontend TypeScript half of the single @/* -> ./src/* alias. Vite owns r
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved after TASK-144.02 finalized and released this dependency-ready configuration leaf at integration HEAD a6957cc. It owns tsconfig.frontend.json plus the minimal self-contained fixture and is path-disjoint from every active lane.
+
+Implemented in f9681543c732c4364c949513ed8137f6fc855b9d. Focused evidence: `bun test tests/system/repository-policy/tsconfig-frontend-alias.test.ts` (2 pass); `bunx tsc --noEmit -p tsconfig.frontend.json` (pass); `bunx oxfmt --check tsconfig.frontend.json tests/system/repository-policy/tsconfig-frontend-alias.test.ts` (pass); `bunx oxlint tsconfig.frontend.json tests/system/repository-policy/tsconfig-frontend-alias.test.ts` (pass); `bun test tests/system/repository-policy/test-inventory.test.ts` (39 pass). Scope audit: only tsconfig.frontend.json and the focused alias test changed; Vite, root tsconfig, package scripts, CI, deep-import policy, shadcn config, other alias tasks, and src-DlBR1tzg.js were untouched. Broad gates remain owned by the parent. Acceptance criteria intentionally remain unchecked.
 <!-- SECTION:NOTES:END -->
