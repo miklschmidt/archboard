@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import type { Dirent } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -9,7 +10,7 @@ import {
 	restoreAndRemoveScenarioRoot,
 	type ProcessReader,
 } from "./support/oxfmt-tailwind-owner.ts";
-import { actualOxfmtProcess, processGroupOf } from "./support/oxfmt-tailwind-process.ts";
+import { actualOxfmtProcess } from "./support/oxfmt-tailwind-process.ts";
 
 function injectedReader(pid: number, failure?: NodeJS.ErrnoException): ProcessReader {
 	return {
@@ -25,6 +26,10 @@ function errorWithCode(code: string): NodeJS.ErrnoException {
 	const error = new Error(`${code} injected`) as NodeJS.ErrnoException;
 	error.code = code;
 	return error;
+}
+
+function syntheticEntry(name: string): Dirent {
+	return { name, isDirectory: () => true } as unknown as Dirent;
 }
 
 test("skips an injected vanished process during formatter refresh", () => {
@@ -49,17 +54,28 @@ test("publishes injected permission failures during formatter refresh", () => {
 });
 
 test("publishes injected permission failures during formatter lookup", () => {
-	const pid = process.pid;
-	const group = processGroupOf(pid);
-	expect(group).toBeGreaterThan(0);
+	const group = 9401;
+	const formatter = 9402;
 	const reader: ProcessReader = {
-		readdirProc: () => readdirSync("/proc", { withFileTypes: true }),
+		readdirProc: () => [syntheticEntry(String(formatter))],
 		readFile(path) {
-			if (path === `/proc/${pid}/cmdline`) throw errorWithCode("EACCES");
-			return readFileSync(path);
+			if (path === `/proc/${formatter}/stat`)
+				return Buffer.from(`${formatter} (synthetic) S 1 ${group} ${group}`);
+			if (path === `/proc/${formatter}/cmdline`) throw errorWithCode("EACCES");
+			throw new Error(`Unexpected synthetic process path ${path}`);
 		},
 	};
-	expect(() => actualOxfmtProcess(group!, reader)).toThrow("EACCES");
+	expect(() => actualOxfmtProcess(group, reader)).toThrow("EACCES");
+});
+
+test("publishes injected I/O failures during formatter refresh", () => {
+	const pid = process.pid;
+	const state = inspectFormatterGroupsForTest(
+		"/tmp/archboard-reader-eio",
+		injectedReader(pid, errorWithCode("EIO")),
+		[4242],
+	);
+	expect(state.refreshError).toContain("EIO");
 });
 
 test("publishes malformed process metadata during formatter refresh", () => {
