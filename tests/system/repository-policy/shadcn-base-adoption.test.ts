@@ -180,7 +180,7 @@ if (process.env.ARCHBOARD_SHADCN_LIVE === "1") {
 				"lucide-react",
 			]);
 			expect(report.defaults).toEqual({ base: "base", iconLibrary: "lucide", font: "geist" });
-			expect(report.refusals).toEqual(["package/source adoption attempt", "upstream drift"]);
+			expect(report.refusals).toEqual(["registry package/source drift", "registry upstream drift"]);
 			expect(fatalProbeFailures(report)).toEqual([]);
 			expect(report.before).toEqual(report.after);
 			expect(fs.existsSync(path.join(repoRoot, "src/ui/button.tsx"))).toBe(false);
@@ -230,6 +230,20 @@ if (process.env.ARCHBOARD_SHADCN_LIVE === "1") {
 			const failed = runShadcnProbe({ run: failedRunner([]), snapshot: stableSnapshot });
 			expect(failed.refusals).toContain("network unable-to-verify");
 			expectFatal(failed, "network unable-to-verify");
+
+			const checkout = runShadcnProbe({
+				run: capturedRunner([]),
+				snapshot: stableSnapshot,
+				checkout: () => ({
+					packageOrLockFiles: ["bun.lock"],
+					productSourceFiles: ["src/ui/button.tsx"],
+				}),
+			});
+			expect(checkout.refusals).toContain("checkout package/source adoption");
+			expectFatal(checkout, "checkout package/source adoption");
+
+			const pinned = { ...checkout, refusals: ["pinned fixture/provenance drift"] };
+			expectFatal(pinned, "pinned fixture/provenance drift");
 		});
 
 		test("blocks unsafe add commands before a runner or registry can execute them", () => {
