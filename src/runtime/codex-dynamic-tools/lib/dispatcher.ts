@@ -33,6 +33,7 @@ import {
 } from "./classification.js";
 import {
 	approvalExpiry,
+	createDynamicOperationRecoverySettlement,
 	createDynamicOperationSettlement,
 	dynamicEffectHash,
 	issueMutationOperations,
@@ -53,12 +54,11 @@ import {
 } from "./response.js";
 import { waitForDynamicThreads } from "./wait.js";
 import { encodeDynamicCursor, unwrapDynamicCursor } from "./cursors.js";
+import { createDynamicQuarantineDispatcher } from "./quarantine.js";
 
-const MUTATION_TOOL_NAMES = Object.freeze([
-	"create_thread",
-	"fork_thread",
-	"send_message_to_thread",
-] as const);
+function isMutationToolName(value: GeneralThreadToolName): value is DynamicMutationToolName {
+	return value === "create_thread" || value === "fork_thread" || value === "send_message_to_thread";
+}
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -522,10 +522,13 @@ async function executeMutation(
 async function dispatchOne(
 	request: DynamicServerRequest,
 	options: CodexDynamicToolsOptions,
+	state: {
+		operationSettlement: DynamicOperationSettlement | null;
+		mutationName: DynamicMutationToolName | null;
+	},
 ): Promise<DynamicToolCallResponse> {
 	let knownName: GeneralThreadToolName | null = null;
 	let boundaryValidated = false;
-	let operationSettlement: DynamicOperationSettlement | null = null;
 	try {
 		const call = validateDynamicCall(request, options);
 		knownName = call.name;
@@ -616,11 +619,12 @@ async function dispatchOne(
 		}
 
 		const mutationName = call.name;
-		if (!MUTATION_TOOL_NAMES.includes(mutationName))
+		if (!isMutationToolName(mutationName))
 			throw new CodexDynamicToolsError(
 				"unsupported",
 				"The dynamic tool is not a mutation or read operation.",
 			);
+		state.mutationName = mutationName;
 		let target: DynamicTargetAuthority | null = null;
 		let relation: "self" | "other" | null = null;
 		let boundary: TurnId | null = null;
@@ -663,7 +667,8 @@ async function dispatchOne(
 			mutationName === "create_thread" ||
 				(mutationName === "fork_thread" && call.arguments.prompt !== undefined),
 		);
-		operationSettlement = createDynamicOperationSettlement(options, operations);
+		const operationSettlement = createDynamicOperationSettlement(options, operations);
+		state.operationSettlement = operationSettlement;
 		const effectArgs = effectArguments(mutationName, call.arguments);
 		const prepared = prepareMutation(
 			immutableRequest,
@@ -736,8 +741,6 @@ async function dispatchOne(
 			failure.code === "unsupported" ? "unsupported" : "invalid_call",
 			boundedFailureMessage(failure.message),
 		);
-	} finally {
-		operationSettlement?.retireUnsettled();
 	}
 }
 
@@ -798,6 +801,7 @@ export function createCodexDynamicTools(options: CodexDynamicToolsOptions): Code
 		throw new CodexDynamicToolsError("invalid_call", "Dynamic tools require a checkout root.");
 	let disposed = false;
 	const responses = new WeakMap<object, Promise<DynamicToolCallResponse>>();
+	const quarantine = createDynamicQuarantineDispatcher(options);
 	const dispatch = (request: DynamicServerRequest): Promise<DynamicToolCallResponse> => {
 		const cacheKey = isRecord(request) ? request : null;
 		if (cacheKey !== null) {
@@ -811,21 +815,46 @@ export function createCodexDynamicTools(options: CodexDynamicToolsOptions): Code
 			if (cacheKey !== null) responses.set(cacheKey, response);
 			return response;
 		}
-		const response = dispatchOne(request, options).then(async (value) => {
+		const state: {
+			operationSettlement: DynamicOperationSettlement | null;
+			mutationName: DynamicMutationToolName | null;
+		} = {
+			operationSettlement: null,
+			mutationName: null,
+		};
+		const response = quarantine.dispatch(request, async () => {
 			try {
-				await options.transport.respond(request, "codex-dynamic-tools", { result: value });
-			} catch {
-				/* The child disconnect is a single not-delivered response attempt. */
+				return {
+					response: await dispatchOne(request, options, state),
+					settlement: state.operationSettlement,
+				};
+			} catch (error) {
+				if (!(error instanceof CodexDynamicOperationTerminalizationError)) throw error;
+				if (state.mutationName === null) throw error;
+				return {
+					response: refusedDynamicResponse(
+						state.mutationName,
+						"system_error",
+						"The dynamic operation authority is quarantined pending host recovery.",
+					),
+					settlement:
+						state.operationSettlement ?? createDynamicOperationRecoverySettlement(options, error),
+				};
 			}
-			return value;
 		});
 		if (cacheKey !== null) responses.set(cacheKey, response);
 		return response;
 	};
 	const dispose = (): void => {
+		if (disposed) return;
 		disposed = true;
+		quarantine.dispose();
 	};
-	return Object.freeze({ dispatch, dispose });
+	return Object.freeze({
+		dispatch,
+		inspectMutationQuarantine: quarantine.inspect,
+		dispose,
+	});
 }
 
 export const createCodexDynamicToolDispatcher = createCodexDynamicTools;

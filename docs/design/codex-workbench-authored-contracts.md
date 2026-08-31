@@ -1447,6 +1447,16 @@ contracts:
 				"rpc": "turn/start"
 			}
 		],
+		"unresolvedTerminalAuthority": {
+			"transition": "host_confirmed_idempotent_atomic",
+			"owner": "exact_child_epoch_and_logical_call_quarantine",
+			"epochStateBeforeRelease": "poisoned",
+			"sameLogicalCall": "join_existing_pending_owner",
+			"otherCallsInEpoch": "reject_before_operation_id_approval_stage_or_effect",
+			"normalResponseWhileAnyOwnedIdIsCurrent": false,
+			"recovery": "lifecycle_triggered_bounded_terminalization_or_exact_child_exit",
+			"clearOn": ["proven_terminality", "exact_child_exit", "dispose"]
+		},
 		"clientUserMessageId": "serialize_the_same_boundary_operation_id",
 		"retireOn": ["declined", "expired", "cancelled", "disconnected", "stale_revalidation"],
 		"consumeOn": "durable_boundary_settlement",

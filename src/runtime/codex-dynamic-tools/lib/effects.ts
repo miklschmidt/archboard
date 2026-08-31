@@ -54,6 +54,7 @@ export interface DynamicOperationSettlement {
 	readonly consume: (operationId: OperationId) => void;
 	readonly retire: (operationId: OperationId) => void;
 	readonly retireUnsettled: () => void;
+	readonly unresolvedOperationCount: () => number;
 }
 
 export interface PreparedDynamicMutation {
@@ -287,6 +288,7 @@ export function terminalizeDynamicOperationId(
 			if (result.disposition !== disposition)
 				throw new CodexDynamicOperationTerminalizationError(
 					operationId,
+					disposition,
 					"The host terminalized the dynamic operation with another disposition.",
 				);
 			return result;
@@ -301,6 +303,7 @@ export function terminalizeDynamicOperationId(
 			if (observed.disposition !== disposition)
 				throw new CodexDynamicOperationTerminalizationError(
 					operationId,
+					disposition,
 					"The host reports another terminal disposition for the dynamic operation.",
 					Object.freeze([...causes]),
 				);
@@ -313,6 +316,7 @@ export function terminalizeDynamicOperationId(
 
 	throw new CodexDynamicOperationTerminalizationError(
 		operationId,
+		disposition,
 		"The host could not prove the dynamic operation terminal after idempotent settlement.",
 		Object.freeze(causes),
 	);
@@ -334,7 +338,11 @@ export function createDynamicOperationSettlement(
 	const requested = new Map<OperationId, DynamicOperationTerminalDisposition>();
 	const terminal = new Map<OperationId, DynamicOperationTerminalDisposition>();
 
-	const terminalize = (operationId: OperationId, kind: "consume" | "retire"): void => {
+	const terminalize = (
+		operationId: OperationId,
+		kind: "consume" | "retire",
+		deferUnresolved: boolean,
+	): void => {
 		if (!owned.includes(operationId))
 			throw new CodexDynamicToolsError(
 				"system_error",
@@ -353,8 +361,13 @@ export function createDynamicOperationSettlement(
 				"The dynamic operation settlement changed its requested disposition.",
 			);
 		requested.set(operationId, disposition);
-		const result = terminalizeDynamicOperationId(options.operationId, operationId, disposition);
-		terminal.set(operationId, result.disposition);
+		try {
+			const result = terminalizeDynamicOperationId(options.operationId, operationId, disposition);
+			terminal.set(operationId, result.disposition);
+		} catch (error) {
+			if (deferUnresolved && error instanceof CodexDynamicOperationTerminalizationError) return;
+			throw error;
+		}
 	};
 
 	const retireUnsettled = (): void => {
@@ -362,7 +375,11 @@ export function createDynamicOperationSettlement(
 		for (const operationId of owned) {
 			if (terminal.has(operationId)) continue;
 			try {
-				terminalize(operationId, requested.get(operationId) === "consumed" ? "consume" : "retire");
+				terminalize(
+					operationId,
+					requested.get(operationId) === "consumed" ? "consume" : "retire",
+					false,
+				);
 			} catch (error) {
 				firstError ??= error;
 			}
@@ -371,9 +388,34 @@ export function createDynamicOperationSettlement(
 	};
 
 	return Object.freeze({
-		consume: (operationId: OperationId): void => terminalize(operationId, "consume"),
-		retire: (operationId: OperationId): void => terminalize(operationId, "retire"),
+		consume: (operationId: OperationId): void => terminalize(operationId, "consume", true),
+		retire: (operationId: OperationId): void => terminalize(operationId, "retire", true),
 		retireUnsettled,
+		unresolvedOperationCount: (): number => owned.length - terminal.size,
+	});
+}
+
+export function createDynamicOperationRecoverySettlement(
+	options: CodexDynamicToolsOptions,
+	error: CodexDynamicOperationTerminalizationError,
+): DynamicOperationSettlement {
+	let terminal = false;
+	const retry = (deferUnresolved: boolean): void => {
+		if (terminal) return;
+		try {
+			terminalizeDynamicOperationId(options.operationId, error.operationId, error.disposition);
+			terminal = true;
+		} catch (retryError) {
+			if (deferUnresolved && retryError instanceof CodexDynamicOperationTerminalizationError)
+				return;
+			throw retryError;
+		}
+	};
+	return Object.freeze({
+		consume: (): void => retry(true),
+		retire: (): void => retry(true),
+		retireUnsettled: (): void => retry(false),
+		unresolvedOperationCount: (): number => (terminal ? 0 : 1),
 	});
 }
 

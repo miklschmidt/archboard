@@ -90,22 +90,29 @@ describe("codex dynamic host operation terminalization", () => {
 			);
 	});
 
-	test("rejects non-retryably instead of returning while host terminality is unresolved", async () => {
+	test("retains unresolved terminality without returning a response", async () => {
 		const { authorities, caller } = setupAuthorities();
 		const approval = cancelledApproval();
 		const fixture = optionsFor(authorities, caller, { approval });
 		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
 
-		expect(
-			createCodexDynamicTools(fixture.options).dispatch(
-				requestFor(authorities, caller, "create_thread", { prompt: "cannot terminalize" }),
-			),
-		).rejects.toMatchObject({ code: "system_error", retryEligible: false });
+		const tools = createCodexDynamicTools(fixture.options);
+		const pending = tools.dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "cannot terminalize" }),
+		);
+		for (let index = 0; index < 100; index++) {
+			if (tools.inspectMutationQuarantine().callCount === 1) break;
+			await Promise.resolve();
+		}
+
+		expect(tools.inspectMutationQuarantine()).toMatchObject({ epochCount: 1, callCount: 1 });
 		expect(fixture.transportResponses).toHaveLength(0);
 		expect(fixture.operationIds.retired).toHaveLength(0);
 		for (const operationId of fixture.operationIds.issued)
 			expect(() =>
 				fixture.operationIds.validateCurrentUnconsumedOperationId(operationId),
 			).not.toThrow();
+		tools.dispose();
+		expect(pending).rejects.toMatchObject({ code: "system_error", retryEligible: false });
 	});
 });
