@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 02:51'
+updated_date: '2026-08-31 02:58'
 labels: []
 dependencies:
   - TASK-144.06
@@ -16,6 +16,7 @@ modified_files:
   - tests/system/repository-policy/support/oxfmt-tailwind-owner.ts
   - tests/system/repository-policy/support/oxfmt-tailwind-fixture.ts
   - tests/system/repository-policy/support/oxfmt-tailwind-process.ts
+  - tests/system/repository-policy/support/oxfmt-tailwind-owner-lifecycle.ts
   - tests/system/repository-policy/oxfmt-tailwind-owner-reader.test.ts
 parent_task_id: TASK-144
 priority: high
@@ -70,4 +71,8 @@ Code commit: 960186f (separate from Backlog evidence). Validation: 10 consecutiv
 Reviewer P2 remediation: centralized /proc access behind an injected ProcessReader. processGroupOf now returns undefined only for ENOENT/ESRCH; cmdline/stat and directory-reader failures otherwise throw actionable errors, malformed stat records and invalid non-kernel process groups fail closed, and the owner interval captures the first refresh failure in owner-state.json while continuing exact known-group/root cleanup. AggregateError formatting now retains execution, refresh, and cleanup evidence.
 
 Added focused reader regressions for vanished PID, EACCES stat/cmdline, malformed stat, invalid group, and exact root/known-group cleanup. Code commit: ac50288 (separate from Backlog evidence). Validation: reader suite 6/6 with 15 assertions; real owner suite 8/8 with 322 assertions; 10 consecutive focused SIGTERM fmt-owner runs passed; bun run type-check passed; scoped oxlint and oxfmt passed; git diff --check passed; no formatter processes or temporary fixture roots remained after residue cleanup. Broad lanes remain intentionally skipped under the durable OOM constraint.
+
+P1 rereview remediation: stopOwner now SIGSTOPs and confirms a timed-out owner before reaping recorded groups or removing the exact scenario root; SIGKILL remains last. Cmdline EACCES coverage is synthetic and ordered, with no dependency on the test runner process group. Separate focused fixtures now cover ENOENT, EACCES stat/cmdline, EIO, malformed stat, invalid group, and exact cleanup.
+
+Evidence correction: the earlier note's broad test:repository (140) and test:modules (1042) counts were not reproduced in this remediation and are not authoritative; broad lanes remain intentionally skipped under the durable OOM constraint. Authoritative P1 validation: reader suite 7/7 with 15 assertions; real owner suite 8/8 with 322 assertions; fallback test 5 consecutive passes; SIGTERM fmt-owner test 10 consecutive passes; bun run type-check passed; scoped oxlint and oxfmt passed; git diff --check passed; no formatter processes or temporary fixture roots remained. Code commit: 2c4256f (separate from Backlog evidence).
 <!-- SECTION:NOTES:END -->
