@@ -9,6 +9,9 @@
 		"module": "ESNext",
 		"moduleDetection": "force",
 		"moduleResolution": "bundler",
+		"paths": {
+			"@/*": ["./src/*"]
+		},
 		"allowImportingTsExtensions": true,
 		"jsx": "react-jsx",
 		"strict": true,
