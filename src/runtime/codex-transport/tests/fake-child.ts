@@ -46,15 +46,21 @@ export class FakeStdin extends Writable {
 	}
 
 	override destroy(error?: Error): this {
-		this.blockedCallback = undefined;
+		this.settleBlockedWrite(error);
 		return super.destroy(error);
 	}
 
 	release(): void {
+		this.settleBlockedWrite();
+	}
+
+	private settleBlockedWrite(error?: Error): void {
 		const callback = this.blockedCallback;
 		this.blockedCallback = undefined;
-		callback?.();
-		this.emit("drain");
+		if (callback) {
+			callback(error);
+			this.emit("drain");
+		}
 	}
 }
 
@@ -67,7 +73,12 @@ export class FakeChild extends EventEmitter implements CodexTransportChild {
 		this.emit("exit", code, signal);
 	}
 
+	releaseBlockedWrite(): void {
+		this.stdin.release();
+	}
+
 	dispose(): void {
+		this.releaseBlockedWrite();
 		this.stdin.destroy();
 		this.stdin.writes.length = 0;
 		this.stdout.destroy();
@@ -79,21 +90,29 @@ export class FakeChild extends EventEmitter implements CodexTransportChild {
 	}
 }
 
+export interface FakeChildHarness {
+	readonly child: FakeChild;
+	readonly identity: IdentityAuthority;
+	readonly transport: CodexTransport;
+	readonly close: () => Promise<void>;
+}
+
 export function createHarness(
 	registrations?: readonly DynamicDispatcherRegistration[],
 	identity: IdentityAuthority = createIdentityAuthority(),
-) {
+): FakeChildHarness {
 	const child = new FakeChild();
 	const transport = createCodexTransport({ child, identity, dynamicDispatchers: registrations });
-	return { child, identity, transport };
-}
-
-export async function closeTransport(transport: CodexTransport, child: FakeChild): Promise<void> {
-	try {
-		await transport.shutdown();
-	} finally {
-		child.dispose();
-	}
+	const close = async (): Promise<void> => {
+		const shutdown = transport.shutdown();
+		child.releaseBlockedWrite();
+		try {
+			await shutdown;
+		} finally {
+			child.dispose();
+		}
+	};
+	return { child, identity, transport, close };
 }
 
 export async function captureRejection(promise: Promise<unknown>): Promise<unknown> {

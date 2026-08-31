@@ -4,7 +4,6 @@ import { CodexTransportClosedError, CodexTransportWriteError } from "../errors.j
 import type { TransportServerRequest } from "../server-requests.js";
 import {
 	captureRejection,
-	closeTransport,
 	createHarness,
 	frameAt,
 	flushStreams,
@@ -18,7 +17,7 @@ function currentTimeRequest(id: string | number) {
 
 describe("Codex app-server shutdown contract", () => {
 	test("returns a bounded internal error for an unhandled reverse request", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			sendJson(child, currentTimeRequest("unhandled"));
 			await flushStreams();
@@ -28,12 +27,12 @@ describe("Codex app-server shutdown contract", () => {
 			});
 			expect(transport.inspect().pendingReverseRequests).toBe(0);
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
 	test("answers a reverse request that arrives while shutdown is flushing", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			let delivered = 0;
 			transport.onServerRequest(() => (delivered += 1));
@@ -50,12 +49,12 @@ describe("Codex app-server shutdown contract", () => {
 				error: { code: -32603, message: "Codex transport is shutting down." },
 			});
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
 	test("substitutes a shutdown response when an admitted reverse response has not been written", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			child.stdin.blockNext = true;
 			const regular = transport.sendNotification("initialized");
@@ -78,12 +77,12 @@ describe("Codex app-server shutdown contract", () => {
 				},
 			]);
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
 	test("rejects a response waiter when its accepted write fails", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			let request: TransportServerRequest | undefined;
 			transport.onServerRequest((value) => (request = value));
@@ -99,7 +98,7 @@ describe("Codex app-server shutdown contract", () => {
 			expect(error).toMatchObject({ reason: "write-error" });
 			expect(transport.inspect()).toMatchObject({ state: "closed", pendingReverseRequests: 0 });
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
@@ -122,7 +121,7 @@ describe("Codex app-server shutdown contract", () => {
 			await shutdownHarness.transport.shutdown();
 			expect(shutdownHarness.transport.inspectLateResponses()).toEqual(before);
 		} finally {
-			await closeTransport(shutdownHarness.transport, shutdownHarness.child);
+			await shutdownHarness.close();
 		}
 
 		const exitHarness = createHarness();
@@ -141,7 +140,7 @@ describe("Codex app-server shutdown contract", () => {
 			await flushStreams();
 			expect(exitHarness.transport.inspectLateResponses()).toHaveLength(1);
 		} finally {
-			await closeTransport(exitHarness.transport, exitHarness.child);
+			await exitHarness.close();
 		}
 	});
 });

@@ -17,7 +17,6 @@ import {
 import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
 import {
 	captureRejection,
-	closeTransport,
 	createHarness,
 	frameAt,
 	frames,
@@ -29,7 +28,7 @@ import {
 
 describe("Codex app-server transport", () => {
 	test("frames client requests, errors, notifications, and correlated server events", async () => {
-		const { child, identity, transport } = createHarness();
+		const { child, identity, transport, close } = createHarness();
 		try {
 			const deliveredPromise = transport.request("turn/steer", {
 				threadId: "thread-1",
@@ -87,12 +86,12 @@ describe("Codex app-server transport", () => {
 				requestId: null,
 			});
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
 	test("recovers after malformed, unknown, oversized, split, and duplicate frames", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			const malformedPromise = transport.request("turn/steer", {});
 			const malformedId = frameAt(child, 0).id;
@@ -137,7 +136,7 @@ describe("Codex app-server transport", () => {
 				expect.arrayContaining(["malformed-frame", "unknown-response", "duplicate-response"]),
 			);
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
@@ -150,7 +149,7 @@ describe("Codex app-server transport", () => {
 				manifestHash: "voice-manifest",
 			},
 		];
-		const { child, identity, transport } = createHarness(registrations);
+		const { child, identity, transport, close } = createHarness(registrations);
 		try {
 			const requests: TransportServerRequest[] = [];
 			transport.onServerRequest((request) => requests.push(request));
@@ -315,12 +314,12 @@ describe("Codex app-server transport", () => {
 				"attestation/generate",
 			]);
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
 	test("settles timeout and cancellation locally, retaining late uncertainty without retry", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		let fakeTimers = false;
 		try {
 			jest.useFakeTimers();
@@ -370,12 +369,12 @@ describe("Codex app-server transport", () => {
 			expect((idempotentError as CodexTransportRequestError).accepted).toBeTrue();
 		} finally {
 			if (fakeTimers) jest.useRealTimers();
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
 	test("bounds queued writes and drains stderr independently", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			child.stdin.blockNext = true;
 			const first = transport.sendNotification("initialized");
@@ -413,12 +412,12 @@ describe("Codex app-server transport", () => {
 				truncated: true,
 			});
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
 	test("writes one reverse response, rejects wrong or duplicate ownership, and shuts down deterministically", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			let request: TransportServerRequest | undefined;
 			transport.onServerRequest((value) => {
@@ -464,12 +463,12 @@ describe("Codex app-server transport", () => {
 			expect(transport.inspect().state).toBe("closed");
 			expect(child.stdin.finalizations).toBe(1);
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
 	test("settles pending requests and emits one exit event when the child exits", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			const exits: unknown[] = [];
 			transport.onExit((event) => exits.push(event));
@@ -485,7 +484,7 @@ describe("Codex app-server transport", () => {
 			expect(exits[0]).toMatchObject({ code: 17, signal: "SIGTERM" });
 			expect(transport.inspect().state).toBe("closed");
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 });

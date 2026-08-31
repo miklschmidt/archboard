@@ -3,7 +3,6 @@ import { describe, expect, test } from "bun:test";
 import { CodexTransportRequestError } from "../errors.js";
 import {
 	captureRejection,
-	closeTransport,
 	createHarness,
 	frameAt,
 	frames,
@@ -13,7 +12,7 @@ import {
 
 describe("Codex app-server malformed routing contract", () => {
 	test("settles a pending id-only frame before reverse-request fallback", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			const pending = transport.request("turn/steer", {});
 			const id = frameAt(child, 0).id;
@@ -40,7 +39,7 @@ describe("Codex app-server malformed routing contract", () => {
 			sendJson(child, { id: recoveredId, result: { turnId: "recovered" } });
 			expect((await recovered).result).toEqual({ turnId: "recovered" });
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 });
