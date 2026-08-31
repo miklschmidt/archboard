@@ -12,27 +12,83 @@ function namedTypeImports(source: string): NamedTypeImport[] {
 	});
 }
 
+function replaceTypeReferenceUsages(
+	source: string,
+	replacements: ReadonlyMap<string, string>,
+): string {
+	let result = "";
+	let index = 0;
+	while (index < source.length) {
+		const character = source[index];
+		const next = source[index + 1];
+		if (character === "/" && next === "/") {
+			const end = source.indexOf("\n", index + 2);
+			const stop = end < 0 ? source.length : end;
+			result += source.slice(index, stop);
+			index = stop;
+			continue;
+		}
+		if (character === "/" && next === "*") {
+			const end = source.indexOf("*/", index + 2);
+			const stop = end < 0 ? source.length : end + 2;
+			result += source.slice(index, stop);
+			index = stop;
+			continue;
+		}
+		if (character === '"' || character === "'" || character === "`") {
+			const quote = character;
+			let stop = index + 1;
+			while (stop < source.length) {
+				if (source[stop] === "\\") stop += 2;
+				else if (source[stop] === quote) {
+					stop++;
+					break;
+				} else stop++;
+			}
+			result += source.slice(index, stop);
+			index = stop;
+			continue;
+		}
+		if (character && /[A-Za-z_$]/u.test(character)) {
+			let stop = index + 1;
+			while (stop < source.length && /[A-Za-z0-9_$]/u.test(source[stop] ?? "")) stop++;
+			const identifier = source.slice(index, stop);
+			result += replacements.get(identifier) ?? identifier;
+			index = stop;
+			continue;
+		}
+		if (character) result += character;
+		index++;
+	}
+	return result;
+}
+
 export function namespaceImportMirror(source: string, header: string): string {
 	let mirror = source.replace(header, "");
-	for (const { name, module } of namedTypeImports(mirror)) {
-		const alias = `Namespace${name}`;
+	const imports = namedTypeImports(mirror);
+	for (const { name, module } of imports)
 		mirror = mirror.replace(
 			`import type { ${name} } from "${module}";`,
-			`import * as ${alias} from "${module}";`,
+			`import type * as Namespace${name} from "${module}";`,
 		);
-		mirror = mirror.replace(new RegExp(`\\b${name}\\b`, "gu"), `${alias}.${name}`);
-	}
-	return mirror.replace(/\bThread\b/gu, "NamespaceThread");
+	const replacements = new Map([
+		...imports.map(({ name }) => [name, `Namespace${name}.${name}`] as const),
+		["Thread", "NamespaceThread"] as const,
+	]);
+	return replaceTypeReferenceUsages(mirror, replacements);
 }
 
 export function importTypeMirror(source: string, header: string): string {
 	let mirror = source.replace(header, "");
 	const aliases: string[] = [];
-	for (const { name, module } of namedTypeImports(mirror)) {
-		const alias = `ImportType${name}`;
+	const imports = namedTypeImports(mirror);
+	for (const { name, module } of imports) {
 		mirror = mirror.replace(`import type { ${name} } from "${module}";`, "");
-		mirror = mirror.replace(new RegExp(`\\b${name}\\b`, "gu"), alias);
-		aliases.push(`type ${alias} = (import("${module}").${name});`);
+		aliases.push(`type ImportType${name} = (import("${module}").${name});`);
 	}
-	return `${aliases.join("\n")}\n${mirror.replace(/\bThread\b/gu, "ImportTypeThread")}`;
+	const replacements = new Map([
+		...imports.map(({ name }) => [name, `ImportType${name}`] as const),
+		["Thread", "ImportTypeThread"] as const,
+	]);
+	return `${aliases.join("\n")}\n${replaceTypeReferenceUsages(mirror, replacements)}`;
 }
