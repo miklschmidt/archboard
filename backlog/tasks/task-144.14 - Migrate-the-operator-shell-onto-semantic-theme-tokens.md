@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:38'
-updated_date: '2026-08-31 03:02'
+updated_date: '2026-08-31 03:34'
 labels: []
 dependencies:
   - TASK-144.03
@@ -16,6 +16,8 @@ references:
 modified_files:
   - src/ui/shell/shell.css
   - tests/system/repository-policy/brand-typography.test.ts
+  - tests/system/browser/shell-layout.test.ts
+  - tests/system/browser/support/shell-render-matrix.ts
 parent_task_id: TASK-144
 priority: high
 type: task
@@ -46,11 +48,13 @@ Map existing shell CSS declarations to the canonical semantic token variables wi
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Reserved immediately after TASK-144.13 finalized and released this dependency-ready CSS-only UI leaf at integration HEAD 17e8fd7. It owns shell.css plus narrowly necessary token-equivalence proof and is path-disjoint from all active implementation lanes.
+Reserved immediately after TASK-144.13 finalized and released this dependency-ready CSS-only UI leaf at integration HEAD 17e8fd7. It owns shell.css plus narrowly necessary token-equivalence proof and remains path-disjoint from the active broad-gate lane.
 
-Implementation evidence at af7243d (base 2c22eac): mapped only exact equivalent shell declaration values to canonical semantic color, typography, radius, spacing, touch/header size, flat elevation, disabled/status opacity, and motion variables. Shell.tsx stayed byte-identical. A PostCSS structure comparison found the same 1,586 rule, at-rule, declaration-property, order, and important records before and after.
+Implementation range from fixed base 2c22eac1c3ecb13b322f0965d8a19931f7ffb7b9 through 6cf1494534a346836050c042dd3433cd89acde74 maps exact equivalent shell values to canonical semantic color, typography, true rule/region/panel/control roles, touch/header size, flat elevation, disabled/status state, and motion variables. Reviewer remediation restored authored literals where values only coincided numerically with a different role: 4px control corners, 12px/18px human-copy leading, layout/list/panel spacing, and the 2px focused-tab stroke. Shell.tsx remains byte-identical.
 
-Rendered evidence: before and after, bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/shell-layout.test.ts passed 1 owner, 123 assertions. Disposable probes at 1440x900 and 3840x2160 measured identical light/dark geometry and colors: shell exactly filled each viewport, header 56px, navigator 184px, canvas 1256x810 and 3656x2070, no document or shell overflow, and every sampled shell control remained at least 44px. Forced colors stayed active with forced-color-adjust auto, browser-owned foreground/background, a solid 2px keyboard focus outline, and no overflow at both viewports. Reduced-motion geometry and screenshot pixels stayed unchanged while the mapped control and disclosure transitions correctly changed from 140ms to the canonical 0.001ms. Ephemeral before/after screenshots remain under /tmp/archboard-14414-evidence and are not tracked.
+The existing shell-layout browser owner now contains a deterministic 12-cell matrix extracted into named support: CSS viewports 1440x900 at DPR 1 and a scaled Flip proxy of 1920x1080 at DPR 2, each light/dark and normal/reduced-motion/forced-colors. The DPR-2 screenshots are 3840x2160 physical pixels; this is explicitly a scaled proxy, not a native 3840x2160 CSS viewport or a manual Samsung Flip probe. CDP media emulation runs inside the same canonical browser owner. It proves query activation, reduced computed 0.001ms durations and iteration count 1, forced-color-adjust auto with an unclipped >=2px focus outline, no page overflow, stable state/geometry, and visible shell touch targets >=43.5px.
 
-Focused checks passed: build:frontend; type-check; lint; focused Oxfmt check; git diff --check; theme compiler and mutation owner; shell fullscreen module owner; updated brand/semantic-token policy owner; focused shell-layout browser owner. The three focused native files passed 36 tests and 708 assertions. The generated dist tree stayed ignored; src-DlBR1tzg.js was absent before and after. Broad module, system, repository, complete browser, and check gates were not run here per parent ownership. Task intentionally remains In Progress with all ACs unchecked for independent review and capped broad gates.
+Disposable evidence is under /tmp/archboard-task-144-14-shell-matrix. Before remediation uses reviewed CSS revision dca2b58a2dfd; after uses 6cf1494534a3. Each directory contains metrics.json and 12 matching screenshots. Comparison reported 12/12 normalized-hash matches, 12/12 state-hash matches, and 12/12 geometry-hash matches. Screenshot SHA-256 values are recorded per capture but are not asserted byte-identical. Visual inspection covered desktop-light-normal and flip-scaled-dark-forced-colors.
+
+Focused verification passed: bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/shell-layout.test.ts (1 owner, 241 assertions); bun test tests/system/repository-policy/brand-typography.test.ts (4 tests, 52 assertions); targeted oxlint for the changed CSS/test/support files; git diff --check; and the browser owner frontend prerequisite build. The repository policy parses the complete light/default and dark legacy alias bridges, pins curated exact role mappings including compound type size/line pairs, and rejects hostile color, typography, radius, spacing, state, and motion swaps. Broad type, module, system, repository, complete browser, and check gates were not run here per parent ownership. Task intentionally remains In Progress with all acceptance criteria unchecked for independent review and capped broad gates.
 <!-- SECTION:NOTES:END -->
