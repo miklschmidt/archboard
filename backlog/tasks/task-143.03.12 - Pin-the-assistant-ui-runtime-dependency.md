@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 04:36'
+updated_date: '2026-08-31 04:45'
 labels: []
 dependencies:
   - TASK-144.01
@@ -94,5 +94,12 @@ Final focused checks after the lint-safe follow-up: bun test tests/system/reposi
 - VariableDeclarator now reports noAssistantUiAlias for tracked assistant-ui identifier initializers before retaining map propagation; transparent satisfies unwrapping remains in force.
 - Added isolated hostile fixtures for plain and satisfies-wrapped const declarators, both using the alias without nested members so the alias diagnostic itself is asserted.
 - Focused evidence: bun test tests/system/repository-policy/assistant-ui-imports.test.ts passed 12 tests and 282 expect() calls; Oxlint passed with 0 warnings and 0 errors; Oxfmt check passed; the policy test remains exactly 500 lines; git diff --check passed.
+- Broad repository, system, and browser lanes were intentionally not run because they remain root-owned. External /home/msc/Projects/archboard/src-DlBR1tzg.js remained unchanged. Task remains In Progress with all acceptance criteria unchecked.
+
+2026-08-31 @codex root-type-gate remediation evidence (code commit 62647e60d3db2031323e32cecd0ef51f8f64788e)
+
+- The policy test now narrows manifest.license with a runtime string guard and uses a satisfies-validated tuple helper so generated fixture messages are statically strings. Runtime policy behavior and assertions are unchanged; tests/system/repository-policy/assistant-ui-imports.test.ts remains exactly 500 lines.
+- Root TypeScript: bunx tsc --noEmit exited 0. Frontend TypeScript: bunx tsc --noEmit -p tsconfig.frontend.json exited 0.
+- Focused evidence: bun test tests/system/repository-policy/assistant-ui-imports.test.ts passed 12 tests and 282 expect() calls; Oxlint passed with 0 warnings and 0 errors; Oxfmt check passed; git diff --check passed.
 - Broad repository, system, and browser lanes were intentionally not run because they remain root-owned. External /home/msc/Projects/archboard/src-DlBR1tzg.js remained unchanged. Task remains In Progress with all acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->
