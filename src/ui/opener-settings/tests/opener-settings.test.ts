@@ -7,6 +7,7 @@ import {
 	type EffectCallback,
 	type ReactElement,
 	type ReactNode,
+	type RefObject,
 	type SetStateAction,
 } from "react";
 import ReactDefault, * as ReactRuntime from "react";
@@ -19,7 +20,9 @@ type TestComponent = (props: ElementProps) => TestElement;
 
 const stateCells: StateCell[] = [];
 const effects: EffectCallback[] = [];
+const refCells: Array<RefObject<unknown>> = [];
 let stateCursor = 0;
+let refCursor = 0;
 
 function useStateHarness<State>(
 	initial: State | (() => State),
@@ -44,6 +47,11 @@ await mock.module("react", () => ({
 		effects.push(effect);
 	},
 	useMemo: <Value>(factory: () => Value) => factory(),
+	useRef: <Value>(initial: Value) => {
+		const index = refCursor++;
+		refCells[index] ??= { current: initial };
+		return refCells[index] as RefObject<Value>;
+	},
 	useState: useStateHarness,
 }));
 
@@ -151,6 +159,7 @@ const callbacks = {
 
 function renderDialog(): TestElement {
 	stateCursor = 0;
+	refCursor = 0;
 	return OpenerSettingsDialog({
 		onCancel: () => {
 			callbacks.cancel += 1;
@@ -211,7 +220,9 @@ async function runLoadEffect(): Promise<void> {
 beforeEach(() => {
 	stateCells.length = 0;
 	effects.length = 0;
+	refCells.length = 0;
 	stateCursor = 0;
+	refCursor = 0;
 	calls.fetch = 0;
 	calls.reset = 0;
 	calls.save.length = 0;
@@ -242,6 +253,9 @@ describe("opener settings public consumer", () => {
 		expect(content?.props.className).toBe("opener-dialog gap-0 p-0 overflow-hidden");
 		expect(findByText(root, DialogTitle, "Opener settings")).toBeDefined();
 		expect(findByText(root, DialogDescription, "Reading opener settings…")).toBeDefined();
+		const cancel = findByText(root, DialogClose, "Cancel");
+		expect(content?.props.initialFocus).toBe(cancel.props.ref);
+		expect(cancel.props.ref).toEqual({ current: null });
 		const close = elements(root).find(
 			(element) => element.type === DialogClose && element.props["aria-label"] === "Close dialog",
 		);
@@ -259,7 +273,8 @@ describe("opener settings public consumer", () => {
 		const executable = elements(root).find(
 			(element) => element.type === "input" && element.props.placeholder,
 		);
-		expect(executable?.props.value).toBe(customSelection.executable);
+		if (!executable) throw new Error("Could not find the custom executable input.");
+		expect(executable.props.value).toBe(customSelection.executable);
 		const argumentIds = elements(root)
 			.filter((element) => element.type === "input" && element.props["data-argument-id"])
 			.map((element) => element.props["data-argument-id"]);
@@ -274,15 +289,37 @@ describe("opener settings public consumer", () => {
 		expect(callbacks.success).toEqual([`Test opener launched for ${repository}.`]);
 		expect(callbacks.cancel).toBe(0);
 
+		const unsavedSelection = {
+			...customSelection,
+			executable: "/opt/draft/bin/editor",
+			argv: ["--new-window", "{path}"],
+		};
+		(executable.props.onChange as (event: unknown) => void)({
+			target: { value: unsavedSelection.executable },
+		});
+		const firstArgument = elements(root).find(
+			(element) => element.type === "input" && element.props["data-argument-id"] === argumentIds[0],
+		);
+		if (!firstArgument) throw new Error("Could not find the first custom argument input.");
+		(firstArgument.props.onChange as (event: unknown) => void)({
+			currentTarget: {
+				dataset: { argumentId: argumentIds[0] },
+				value: unsavedSelection.argv[0],
+			},
+		});
+		root = renderDialog();
 		testReply = {
 			success: false,
 			code: "OPENER_SPAWN_FAILED",
 			error: "Controlled opener failed before launch.",
 			actions: [{ kind: "settings", label: "Opener settings" }],
 		};
-		root = renderDialog();
 		await click(findByText(root, Button, "Test"));
 		root = renderDialog();
+		expect(calls.test).toEqual([
+			{ selection: customSelection, repository },
+			{ selection: unsavedSelection, repository },
+		]);
 		expect(callbacks.failure).toEqual([
 			{
 				kind: "error",
@@ -291,12 +328,18 @@ describe("opener settings public consumer", () => {
 			},
 		]);
 		expect(textContent(root)).toContain("Controlled opener failed before launch.");
-		expect(
-			elements(root)
-				.filter((element) => element.type === "input" && element.props["data-argument-id"])
-				.map((element) => element.props["data-argument-id"]),
-		).toEqual(argumentIds);
-		expect(executable?.props.value).toBe(customSelection.executable);
+		const currentExecutable = elements(root).find(
+			(element) => element.type === "input" && element.props.placeholder,
+		);
+		const currentArguments = elements(root).filter(
+			(element) => element.type === "input" && element.props["data-argument-id"],
+		);
+		if (!currentExecutable) throw new Error("The custom executable input was lost after failure.");
+		expect(currentExecutable.props.value).toBe(unsavedSelection.executable);
+		expect(currentArguments.map((element) => element.props["data-argument-id"])).toEqual(
+			argumentIds,
+		);
+		expect(currentArguments.map((element) => element.props.value)).toEqual(unsavedSelection.argv);
 		expect(callbacks.cancel).toBe(0);
 	});
 

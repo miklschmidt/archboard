@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
 	OpenerSelectionSchema,
@@ -74,6 +74,7 @@ export function OpenerSettingsDialog({
 	const [repository, setRepository] = useState("");
 	const [working, setWorking] = useState<Working>("load");
 	const [serverError, setServerError] = useState<string | null>(null);
+	const cancelRef = useRef<HTMLButtonElement>(null);
 
 	const applySettings = useCallback(
 		(result: OpenerSettingsReply | CodeTargetOpenFailure): void => {
@@ -224,7 +225,7 @@ export function OpenerSettingsDialog({
 	const availability = settings?.availability;
 	return (
 		<Dialog open={true} onOpenChange={requestOpenChange}>
-			<DialogContent className="opener-dialog gap-0 p-0 overflow-hidden">
+			<DialogContent className="opener-dialog gap-0 p-0 overflow-hidden" initialFocus={cancelRef}>
 				<header className="flex items-start justify-between gap-region border-b border-border px-panel py-region">
 					<div>
 						<span className="mb-grid-tight block font-sans !text-technical font-semibold text-muted-foreground">
@@ -427,7 +428,9 @@ export function OpenerSettingsDialog({
 					<Button tone="secondary" onClick={testDraft} disabled={busy || !valid || !testable}>
 						{working === "test" ? "Testing…" : "Test"}
 					</Button>
-					<DialogClose disabled={busy}>Cancel</DialogClose>
+					<DialogClose ref={cancelRef} disabled={busy}>
+						Cancel
+					</DialogClose>
 					<Button tone="primary" onClick={saveDraft} disabled={busy || !valid}>
 						{working === "save" ? "Saving…" : "Save"}
 					</Button>
