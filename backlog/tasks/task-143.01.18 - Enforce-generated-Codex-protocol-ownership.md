@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 23:51'
+updated_date: '2026-08-31 00:17'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -15,8 +15,13 @@ references:
   - docs/agents/boundaries.md
 modified_files:
   - tests/system/repository-policy/codex-protocol-boundary.test.ts
+  - tests/system/repository-policy/codex-protocol-aliases.test.ts
   - tests/system/repository-policy/support/module-scope-analysis.ts
   - tests/system/repository-policy/support/codex-aliases.ts
+  - tests/system/repository-policy/support/codex-protocol-aliases.ts
+  - tests/system/repository-policy/support/codex-protocol-imports.ts
+  - tests/system/repository-policy/support/codex-protocol-mirrors.ts
+  - tests/system/repository-policy/support/codex-protocol-paths.ts
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -68,4 +73,14 @@ Second remediation in commit 7a00d8f after the reviewer’s computed-import, ali
 Second-remediation validation: focused owner passed 10 tests / 24 expectations; bun run test:repository passed 140 tests / 439 expectations; codex-protocol and codex-realtime module owners passed 549 tests / 3512 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed. Policy owner is 494 physical lines; support helpers are 465 and 70 lines.
 
 Second-remediation scope: policy owner plus existing repository-policy module support and the new named repository-policy alias support module; no production paths changed.
+
+Third remediation in commit 675efe0 after the reviewer’s authority, wrapper, fingerprint, and line-cap findings: Codex-specific module-specifier, alias, path, and mirror logic now lives in named codex-protocol-boundary support modules; module-scope-analysis.ts retains only shared AST/module analysis. Transparent-expression unwrapping covers parenthesized, as, type-assertion, satisfies, non-null, and partially-emitted wrappers while leaving unknown ordinary import(token) unresolved.
+
+Alias support preserves separate package, root-tsconfig, frontend-tsconfig, and Vite authorities. TypeScript aliases come from the TypeScript API so JSONC comments, trailing commas, extends, baseUrl, every fallback target, and root-vs-frontend context are retained. Package conditional arrays/objects are conservatively expanded; matching uses exact/longest-prefix semantics. Vite object and ordered array aliases, string prefix matching, RegExp find entries, replacements, and ordering are covered. Ambiguous/configuration-load failures produce actionable fail-closed findings.
+
+Mirror support derives normalized AST-kind fingerprints from canonical generated files carrying the exact pinned header and inventory path, ignoring names/comments/formatting; exact and near renamed structural mirrors fail across arbitrary paths while partial, same-name, and ordinary controls remain allowed. The exact 820-entry inventory and SHA-256 1b25740f89a30fd39632e584b6bfa0d0c9171f6795d33151e5cf3381532d38fb proof, unknown generated path failure, symlink coverage, literal/import forms, and prior mutations remain intact.
+
+Third-remediation validation: focused owner plus alias probes passed 11 tests / 37 expectations; bun run test:repository passed 141 tests / 452 expectations; codex-protocol and codex-realtime module owners passed 549 tests / 3512 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed. Policy owner is 477 physical lines; every changed TypeScript support/test file is below 500 lines.
+
+Third-remediation scope: repository-policy owner/support/tests only; no production changes. The prior support/codex-aliases.ts was replaced by cohesive codex-protocol support modules.
 <!-- SECTION:NOTES:END -->
