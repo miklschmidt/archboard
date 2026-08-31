@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 03:32'
+updated_date: '2026-08-31 03:51'
 labels: []
 dependencies:
   - TASK-144.01
@@ -58,4 +58,10 @@ Real-Oxlint policy tests: bun test tests/system/repository-policy/assistant-ui-i
 Dependency evidence: disposable bun install --frozen-lockfile --ignore-scripts exited 0 with lockUnchanged=true. The lock review is 107 added keys, 20 obsolete nested keys removed, and 24 shared records re-resolved; the test freezes the 91 reachable assistant-ui name@version identities, MIT/BSD-3-Clause/0BSD license set, one React and one React DOM lock entry, and the bounded headless Vite bundle (294955-byte/275-module ceiling, no assistant-cloud/safe-content-frame/Radix).
 
 Broad modules/system/repository/check/browser lanes remain root-owned and were not run. Task remains In Progress and all acceptance criteria remain unchecked. Preserved /home/msc/Projects/archboard/src-DlBR1tzg.js.
+
+2026-08-31 @codex remediation evidence (code commit f1586b6): closed the review gaps without changing the package or lockfile commits. The Oxlint visitor now rejects assignment aliases of approved imports and propagates the alias to the nested-member check. The repository-policy fixture audits bare radix-ui and @radix-ui/* declarations across dependencies, devDependencies, peerDependencies, and optionalDependencies, counts resolved React identities from lock values even under nested lock keys, and exercises hostile cases for each gap.
+
+The headless Vite fixture now observably retains all eight approved values. In production mode it measures 280341 bytes and 280 modules against ceilings of 280379 bytes and 280 modules, asserts the exact reviewed package-root set, and rejects assistant-cloud and safe-content-frame. Direct Radix remains forbidden at the app import boundary while the bundle assertion permits only the reviewed transitive Radix roots.
+
+Focused checks: bun test tests/system/repository-policy/assistant-ui-imports.test.ts — 12 passed, 240 assertions; focused Oxlint on the owned plugin/test — 0 errors; Oxfmt check passed; the policy test is 499 lines against the 500-line repository limit. Disposable bun install --frozen-lockfile --ignore-scripts remains clean with lockUnchanged=true. Broad modules/system/repository/check/browser lanes remain root-owned and were not run. Task remains In Progress and all acceptance criteria remain unchecked. Preserved /home/msc/Projects/archboard/src-DlBR1tzg.js.
 <!-- SECTION:NOTES:END -->
