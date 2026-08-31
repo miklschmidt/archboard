@@ -17,6 +17,10 @@ import type {
 	ReverseResponse,
 	TransportServerRequest,
 } from "../../codex-transport/server-requests.js";
+import {
+	CodexTransportOwnershipError,
+	CodexTransportUsageError,
+} from "../../codex-transport/errors.js";
 
 export interface CapturedResponse {
 	readonly request: TransportServerRequest;
@@ -24,7 +28,14 @@ export interface CapturedResponse {
 	readonly response: ReverseResponse;
 }
 
-export type ResponseMode = "delivered" | "not_delivered" | "outcome_unknown" | "deferred";
+export type ResponseMode =
+	| "delivered"
+	| "not_delivered"
+	| "outcome_unknown"
+	| "deferred"
+	| "ownership_error"
+	| "usage_error"
+	| "generic_error";
 
 export class FakeApprovalPort implements ApprovalResponsePort {
 	readonly responses: CapturedResponse[] = [];
@@ -56,6 +67,11 @@ export class FakeApprovalPort implements ApprovalResponsePort {
 			return new Promise<void>((resolve, reject) => {
 				this.deferredSettlement = { resolve, reject };
 			});
+		if (this.mode === "ownership_error")
+			return Promise.reject(new CodexTransportOwnershipError("the response owner is invalid"));
+		if (this.mode === "usage_error")
+			return Promise.reject(new CodexTransportUsageError("the response payload is invalid"));
+		if (this.mode === "generic_error") return Promise.reject(new Error("ambiguous write failure"));
 		return Promise.reject({ accepted: true, reason: "write-error" });
 	}
 
