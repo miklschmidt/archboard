@@ -39,6 +39,7 @@ export interface WorkbenchMetrics {
 export interface WorkbenchSnapshot {
 	bar: string | null;
 	beacon: string | null;
+	connection: string | null;
 	copy: string | null;
 	heading: string | null;
 	holder: string | null;
@@ -47,7 +48,9 @@ export interface WorkbenchSnapshot {
 	reason: string | null;
 	state: string | null;
 	steps: string[];
+	semantic: string | null;
 	take: string | null;
+	takeBackState: string | null;
 	what: string | null;
 	workbench: WorkbenchMetrics | null;
 }
@@ -119,6 +122,7 @@ export const WORKBENCH_SNAPSHOT_EXPRESSION = `(() => {
 	)];
 	return {
 		beacon: document.querySelector(".claim-beacon span")?.textContent?.trim() ?? null,
+		connection: workbench?.getAttribute("data-connection") ?? null,
 		holder: document.querySelector(".claim-kicker")?.textContent?.trim() ?? null,
 		live: document.querySelector(".workbench-overview")?.getAttribute("aria-live") ?? null,
 		pane: document.querySelector(".workbench-pane > span")?.textContent?.trim() ?? null,
@@ -127,6 +131,8 @@ export const WORKBENCH_SNAPSHOT_EXPRESSION = `(() => {
 		copy: document.querySelector(".claim-copy")?.textContent?.replace(/\\s+/g, " ").trim() ?? null,
 		take: document.querySelector(".pane-claim-take")?.textContent?.trim() ?? null,
 		state: workbench?.getAttribute("data-state") ?? null,
+		semantic: workbench?.getAttribute("data-semantic") ?? null,
+		takeBackState: workbench?.getAttribute("data-take-back") ?? null,
 		steps: [...document.querySelectorAll(".pane-doing-text")]
 			.map(line => line.textContent?.trim() ?? ""),
 		bar: document.querySelector(".doing-now")?.textContent?.trim() ?? null,
