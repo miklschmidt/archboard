@@ -12,10 +12,21 @@ import {
 } from "./support/test-inventory.js";
 import { configuredAliases, type ConfiguredAliases } from "./support/codex-protocol-aliases.js";
 import { moduleSpecifiers } from "./support/codex-protocol-imports.js";
-import { isGeneratedMirror, mergeGeneratedFingerprints } from "./support/codex-protocol-mirrors.js";
+import {
+	distinctiveFingerprints,
+	isGeneratedMirror,
+	mergeGeneratedFingerprints,
+} from "./support/codex-protocol-mirrors.js";
 import fingerprintCorpus from "./support/codex-protocol-fingerprint-corpus.json";
 import { generatedPathsFromImport } from "./support/codex-protocol-paths.js";
 import { parseModuleSources } from "./support/module-scope-analysis.js";
+import {
+	normalizeRepositoryPath,
+	readProtocolFixture,
+	sourceEntries,
+	trackedRepositoryPaths,
+	type SourceFile,
+} from "./support/codex-protocol-sources.js";
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const GENERATED_ROOT = "src/runtime/codex-protocol/generated/";
 const ADAPTER_PATH = "src/runtime/codex-protocol/index.ts";
@@ -29,7 +40,7 @@ const CODEX_GENERATED_PATH_INVENTORY = `AbsolutePathBuf.ts AgentMessageInputCont
 const CODEX_GENERATED_PATH_INVENTORY_SHA256 =
 	"1b25740f89a30fd39632e584b6bfa0d0c9171f6795d33151e5cf3381532d38fb";
 const CODEX_GENERATED_PATHS = new Set(CODEX_GENERATED_PATH_INVENTORY.split(" "));
-const AUTHORITATIVE_FINGERPRINTS = Object.values(fingerprintCorpus.entries);
+const AUTHORITATIVE_FINGERPRINTS = distinctiveFingerprints(fingerprintCorpus.entries);
 const ALLOWED_GENERATED_IMPORTERS = new Map([
 	[ADAPTER_PATH, "the public codex-protocol adapter is the sole consumer boundary"],
 	[GENERATED_ROOT, "generated files may import their own generated peers"],
@@ -44,12 +55,6 @@ const TEMP_GENERATION_OWNERS = new Map([
 		"the root conformance owner uses disposable generator fixtures only",
 	],
 ]);
-interface SourceFile {
-	readonly path: string;
-	readonly source?: string;
-	readonly tracked?: boolean;
-	readonly symlink?: boolean;
-}
 interface OwnershipFinding {
 	readonly file: string;
 	readonly reason: string;
@@ -59,8 +64,6 @@ interface ParsedSourceFile {
 	readonly file: SourceFile;
 	readonly sourceFile: ts.SourceFile;
 }
-const normalizeRepositoryPath = (value: string): string =>
-	value.replaceAll("\\", "/").replace(/^\.\//u, "");
 const FINDING_MESSAGES: Record<string, string> = {
 	"symlink source entry":
 		"replace the source symlink with a tracked regular file so repository ownership is explicit",
@@ -172,46 +175,6 @@ async function ownershipFindings(
 	}
 	return findings;
 }
-function isSourceFilePath(filePath: string): boolean {
-	return /\.(?:[cm]?[jt]sx?)$/u.test(filePath);
-}
-function isSourceEntryPath(filePath: string): boolean {
-	return isSourceFilePath(filePath) || /^(?:src|scripts|tests|tools)(?:\/|$)/u.test(filePath);
-}
-function trackedRepositoryPaths(root: string): Set<string> {
-	return new Set(
-		execFileSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8" })
-			.split("\0")
-			.filter(Boolean)
-			.map(normalizeRepositoryPath),
-	);
-}
-function sourceEntries(root: string, tracked: ReadonlySet<string>): SourceFile[] {
-	const paths = new Set<string>();
-	for (const file of tracked) if (isSourceEntryPath(file)) paths.add(file);
-	for (const pattern of ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.mjs", "**/*.cjs"]) {
-		for (const file of new Bun.Glob(pattern).scanSync({ cwd: root, onlyFiles: true })) {
-			if (/(?:^|\/)(?:\.git|backlog|dist|node_modules)(?:\/|$)/u.test(file)) continue;
-			paths.add(normalizeRepositoryPath(file));
-		}
-	}
-	return [...paths].toSorted().flatMap<SourceFile>((file) => {
-		const absolute = path.join(root, file);
-		let stat: fs.Stats;
-		try {
-			stat = fs.lstatSync(absolute);
-		} catch {
-			return [];
-		}
-		if (stat.isSymbolicLink())
-			return isSourceEntryPath(file)
-				? [{ path: file, tracked: tracked.has(file), symlink: true }]
-				: [];
-		return stat.isFile() && isSourceFilePath(file)
-			? [{ path: file, source: fs.readFileSync(absolute, "utf8"), tracked: tracked.has(file) }]
-			: [];
-	});
-}
 function generatedDirectoryIsIgnored(): boolean {
 	try {
 		execFileSync(
@@ -236,9 +199,6 @@ function syntheticGeneratedFile(
 	};
 }
 const sourceFile = (filePath: string, source: string): SourceFile => ({ path: filePath, source });
-function readProtocolFixture(filePath: string): string {
-	return fs.readFileSync(path.join(import.meta.dir, "fixtures/codex-protocol", filePath), "utf8");
-}
 const DEEP_IMPORT =
 	'import type { ClientRequest } from "../runtime/codex-protocol/generated/ClientRequest.js";\n';
 const THREAD_SOURCE = "export type Thread = { id: string };\n";
@@ -259,6 +219,7 @@ describe("Codex protocol generated ownership policy", () => {
 		expect(generatedDirectoryIsIgnored()).toBeTrue();
 		expect(CODEX_GENERATED_PATHS).toHaveLength(820);
 		expect(fingerprintCorpus.fileCount).toBe(820);
+		expect(AUTHORITATIVE_FINGERPRINTS.length).toBe(706);
 		expect(Object.keys(fingerprintCorpus.entries).toSorted()).toEqual(
 			[...CODEX_GENERATED_PATHS].toSorted(),
 		);
@@ -429,14 +390,14 @@ describe("Codex protocol generated ownership policy", () => {
 		]);
 	});
 	test("rejects a real clean-checkout mirror but not an unrelated primitive shape", async () => {
-		const threadFixture = readProtocolFixture("v2/Thread.ts.txt");
+		const threadFixture = readProtocolFixture(repoRoot, "v2/Thread.ts.txt");
 		const threadMirror = threadFixture
 			.replace(GENERATED_HEADER, "")
 			.replace(/\bThread\b/gu, "LocalThread");
 		const threadFindings = await ownershipFindings([
 			sourceFile("src/domain/local-thread.ts", threadMirror),
 		]);
-		const idFixture = readProtocolFixture("ThreadId.ts.txt");
+		const idFixture = readProtocolFixture(repoRoot, "ThreadId.ts.txt");
 		const idFindings = await ownershipFindings([
 			sourceFile(
 				"src/domain/BoardName.ts",
@@ -445,6 +406,45 @@ describe("Codex protocol generated ownership policy", () => {
 		]);
 		expect(threadFindings.map(({ reason }) => reason)).toEqual(["handwritten mirror"]);
 		expect(idFindings).toEqual([]);
+	});
+	test("canonicalizes imported and transparent local type aliases", async () => {
+		const threadFixture = readProtocolFixture(repoRoot, "v2/Thread.ts.txt");
+		const importedAlias = threadFixture
+			.replace(GENERATED_HEADER, "")
+			.replace(
+				'import type { AbsolutePathBuf } from "../AbsolutePathBuf";',
+				'import type { AbsolutePathBuf as LocalPath } from "../AbsolutePathBuf";',
+			)
+			.replace(/\bcwd: AbsolutePathBuf\b/gu, "cwd: LocalPath")
+			.replace(/\bThread\b/gu, "ImportedAliasThread");
+		const localAlias = threadFixture
+			.replace(GENERATED_HEADER, "")
+			.replace(
+				'import type { AbsolutePathBuf } from "../AbsolutePathBuf";',
+				'import type { AbsolutePathBuf } from "../AbsolutePathBuf";\ntype LocalPath = AbsolutePathBuf;',
+			)
+			.replace(/\bcwd: AbsolutePathBuf\b/gu, "cwd: LocalPath")
+			.replace(/\bThread\b/gu, "LocalAliasThread");
+		expect(
+			(
+				await ownershipFindings([sourceFile("src/domain/imported-alias-thread.ts", importedAlias)])
+			).map(({ reason }) => reason),
+		).toEqual(["handwritten mirror"]);
+		expect(
+			(await ownershipFindings([sourceFile("src/domain/local-alias-thread.ts", localAlias)])).map(
+				({ reason }) => reason,
+			),
+		).toEqual(["handwritten mirror"]);
+	});
+	test("ignores indistinguishable common shapes", async () => {
+		const findings = await ownershipFindings([
+			sourceFile("src/domain/failure.ts", "export type Failure = { message: string };\n"),
+			sourceFile(
+				"src/domain/failure-details.ts",
+				"export type FailureDetails = { message: string; code: number };\n",
+			),
+		]);
+		expect(findings).toEqual([]);
 	});
 	test("is reached once by the existing repository inventory", () => {
 		const inventory = inventoryInput();
