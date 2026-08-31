@@ -1,9 +1,26 @@
-import type { ArchboardContext, ThreadInjectItemsParams } from "../../codex-instructions/index.js";
-import type { CodexSession } from "../../codex-session/index.js";
+import type { CoordinatorSnapshot } from "../../codex-coordinator/index.js";
+import type { CodexSession, SessionParams } from "../../codex-session/index.js";
 import type {
-	AppendTextRequest,
-	RealtimeCorrelation,
-	RealtimeHost,
+	PaneFocusEvent,
+	PaneSelectionEvent,
+	SemanticChangeOrigin,
+	SemanticChangeSignificance,
+	SemanticContextPublisher,
+	SettledSemanticChangeEvent,
+} from "../../codex-semantic-context/index.js";
+import type {
+	CodexThreadLinkClassifier,
+	ThreadLinkBindingSnapshot,
+	ThreadLinkClassification,
+	ThreadLinkTarget,
+} from "../../codex-thread-link/index.js";
+import type {
+	CodexWorkhorseOperations,
+	WorkhorseOperationEvent,
+} from "../../codex-workhorse-operations/index.js";
+import type {
+	RealtimeCorrelationId,
+	RealtimeSessionId as BrowserRealtimeSessionId,
 } from "../../../shared/codex-realtime-host/index.js";
 import type {
 	ChildEpoch,
@@ -15,28 +32,18 @@ import type {
 	ThreadId,
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
-import type {
-	PaneFocusEvent,
-	PaneSelectionEvent,
-	SemanticChangeOrigin,
-	SemanticChangeSignificance,
-	SemanticContextPublisher,
-	SettledSemanticChangeEvent,
-} from "../../codex-semantic-context/index.js";
-import type { ThreadLinkSnapshot } from "../../codex-thread-link/index.js";
-import type {
-	CodexWorkhorseOperations,
-	WorkhorseOperationEvent,
-} from "../../codex-workhorse-operations/index.js";
 
 export type SemanticCallbackSource =
 	| SettledSemanticChangeEvent
 	| PaneFocusEvent
 	| PaneSelectionEvent;
-
 export type CoordinatorCallbackSource = WorkhorseOperationEvent | SemanticCallbackSource;
 
-/** Correlation copied from a source event at the callback boundary. */
+export interface CoordinatorCallbackLinkCorrelation {
+	readonly binding: ThreadLinkBindingSnapshot;
+	readonly target: ThreadLinkTarget;
+}
+
 export interface CoordinatorCallbackCorrelation {
 	readonly operationId: OperationId | null;
 	readonly childId: ChildId | null;
@@ -49,6 +56,8 @@ export interface CoordinatorCallbackCorrelation {
 	readonly clientUserMessageId: string | null;
 	readonly realtimeSessionId: RealtimeSessionId | null;
 	readonly coordinatorCall: LogicalToolCallCorrelation | null;
+	readonly workhorseLink: CoordinatorCallbackLinkCorrelation;
+	readonly realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null;
 }
 
 interface CoordinatorOperationCallbackBase {
@@ -62,18 +71,9 @@ interface CoordinatorOperationCallbackBase {
 }
 
 export type CoordinatorOperationCallback =
-	| (CoordinatorOperationCallbackBase & {
-			readonly type: "accepted";
-			readonly outcome: "pending";
-	  })
-	| (CoordinatorOperationCallbackBase & {
-			readonly type: "queued";
-			readonly outcome: "delivered";
-	  })
-	| (CoordinatorOperationCallbackBase & {
-			readonly type: "started";
-			readonly outcome: "delivered";
-	  })
+	| (CoordinatorOperationCallbackBase & { readonly type: "accepted"; readonly outcome: "pending" })
+	| (CoordinatorOperationCallbackBase & { readonly type: "queued"; readonly outcome: "delivered" })
+	| (CoordinatorOperationCallbackBase & { readonly type: "started"; readonly outcome: "delivered" })
 	| (CoordinatorOperationCallbackBase & {
 			readonly type: "progress";
 			readonly outcome: "delivered";
@@ -117,50 +117,61 @@ interface CoordinatorSemanticCallbackBase {
 }
 
 export type CoordinatorSemanticCallback =
-	| (CoordinatorSemanticCallbackBase & {
-			readonly type: "change";
-	  })
-	| (CoordinatorSemanticCallbackBase & {
-			readonly type: "focus";
-	  })
-	| (CoordinatorSemanticCallbackBase & {
-			readonly type: "selection";
-	  });
-
+	| (CoordinatorSemanticCallbackBase & { readonly type: "change" })
+	| (CoordinatorSemanticCallbackBase & { readonly type: "focus" })
+	| (CoordinatorSemanticCallbackBase & { readonly type: "selection" });
 export type CoordinatorCallback = CoordinatorOperationCallback | CoordinatorSemanticCallback;
 
-export interface CoordinatorCallbackRealtime {
-	/** The wire identity that gates the active browser session. */
-	readonly wireSessionId: RealtimeSessionId;
-	/** The browser identity sent to `thread/realtime/appendText`. */
-	readonly correlation: RealtimeCorrelation;
-}
-
-/** The complete current authority snapshot used after a callback leaves the FIFO. */
-export interface CoordinatorCallbackCurrent {
+export interface CoordinatorCallbackRealtimeGeneration {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly coordinatorThreadId: ThreadId;
-	readonly link: ThreadLinkSnapshot | null;
-	readonly realtime: CoordinatorCallbackRealtime | null;
+	readonly wireSessionId: RealtimeSessionId;
+	readonly browserSessionId: BrowserRealtimeSessionId;
+	readonly browserCorrelationId: RealtimeCorrelationId;
+}
+
+export interface CoordinatorCallbackRealtimeRequest {
+	readonly generation: CoordinatorCallbackRealtimeGeneration;
+	readonly params: SessionParams<"thread/realtime/appendText">;
 }
 
 export type CoordinatorCallbackDeliveryOutcome = "delivered" | "not_delivered" | "outcome_unknown";
+export interface CoordinatorCallbackMutationResult {
+	readonly attempted: boolean;
+	readonly outcome: CoordinatorCallbackDeliveryOutcome;
+	readonly reason: "stale_session" | "session_rejected" | "response_lost" | null;
+}
+
+export interface CoordinatorCallbackRealtimePort {
+	readonly appendDeveloper: (
+		request: CoordinatorCallbackRealtimeRequest,
+	) => Promise<CoordinatorCallbackMutationResult>;
+}
+
+export interface CoordinatorCallbackCurrentChild {
+	readonly childId: ChildId;
+	readonly epoch: ChildEpoch;
+}
+
+export type CoordinatorCallbackReadyCoordinator = CoordinatorSnapshot & {
+	readonly state: "ready";
+	readonly threadId: ThreadId;
+	readonly childId: ChildId;
+	readonly epoch: ChildEpoch;
+};
 
 export type CoordinatorCallbackDeliveryPath =
 	| "none"
 	| "silent"
 	| "realtime_appendText"
 	| "thread_inject_items";
-
 export type CallbackBufferOverflowReason = "buffer_overflow" | "coalesced";
-
 export type CoordinatorCallbackDeliveryReason =
 	| CallbackBufferOverflowReason
 	| "child_exit"
 	| "disposed"
 	| "invalid_callback"
-	| "invalid_context"
 	| "not_ready"
 	| "prior_epoch"
 	| "stale_child"
@@ -168,24 +179,20 @@ export type CoordinatorCallbackDeliveryReason =
 	| "stale_link"
 	| "stale_session"
 	| "voice_inactive"
-	| "rejected"
-	| "cancelled"
 	| "session_rejected"
 	| "response_lost"
 	| "transport_failure";
 
 export interface CoordinatorCallbackDelivery {
 	readonly kind: "coordinator_callback_delivery";
-	/** Null is used only for an invalid runtime input rejected before enqueue. */
 	readonly callback: CoordinatorCallback | null;
 	readonly attempted: boolean;
 	readonly path: CoordinatorCallbackDeliveryPath;
 	readonly outcome: CoordinatorCallbackDeliveryOutcome;
 	readonly reason: CoordinatorCallbackDeliveryReason | null;
-	/** Canonical context bytes used by the route, or built before a stale refusal. */
 	readonly text: string | null;
-	readonly payload: ThreadInjectItemsParams | null;
-	readonly realtimeRequest: AppendTextRequest | null;
+	readonly payload: SessionParams<"thread/inject_items"> | null;
+	readonly realtimeRequest: CoordinatorCallbackRealtimeRequest | null;
 }
 
 export interface CoordinatorCallbackOptions {
@@ -194,24 +201,29 @@ export interface CoordinatorCallbackOptions {
 		"subscribeSettledChange" | "subscribePaneFocus" | "subscribePaneSelection"
 	>;
 	readonly operations: Pick<CodexWorkhorseOperations, "subscribe">;
-	readonly realtime: Pick<RealtimeHost, "appendText">;
 	readonly session: Pick<CodexSession, "threadInjectItems">;
-	readonly current: () => CoordinatorCallbackCurrent | null;
-	/** Supplies the scalar context that this immutable callback is allowed to send. */
-	readonly contextFor: (
-		callback: CoordinatorCallback,
-		current: CoordinatorCallbackCurrent,
-	) => ArchboardContext;
+	readonly realtime: CoordinatorCallbackRealtimePort;
+	readonly threadLink: Pick<CodexThreadLinkClassifier, "classify">;
+	readonly currentChild: () => CoordinatorCallbackCurrentChild | null;
+	readonly currentCoordinator: () => CoordinatorCallbackReadyCoordinator | null;
+	readonly currentWorkhorseLink: () => CoordinatorCallbackLinkCorrelation | null;
+	readonly currentRealtimeGeneration: () => CoordinatorCallbackRealtimeGeneration | null;
 }
 
 export interface CoordinatorCallbacks {
-	/** Enqueue a source event; settlement never rejects. */
 	readonly enqueue: (event: CoordinatorCallbackSource) => Promise<CoordinatorCallbackDelivery>;
-	/** Wait for the scheduled FIFO drain, including callbacks enqueued by callbacks. */
 	readonly flush: () => Promise<void>;
-	/** Returns settled records in first-settlement order. */
 	readonly inspect: () => readonly CoordinatorCallbackDelivery[];
 	readonly get: (event: CoordinatorCallbackSource) => CoordinatorCallbackDelivery | undefined;
 	readonly pendingCount: () => number;
 	readonly dispose: () => void;
+}
+
+export interface CoordinatorCallbacksRetainedState {
+	current: CoordinatorCallbacks | null;
+}
+
+export interface CoordinatorCallbackClassification {
+	readonly captured: CoordinatorCallbackLinkCorrelation;
+	readonly live: ThreadLinkClassification;
 }

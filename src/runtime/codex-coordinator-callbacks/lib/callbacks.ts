@@ -11,6 +11,7 @@ import type {
 	CoordinatorCallbackDeliveryReason,
 	CoordinatorCallbackOptions,
 	CoordinatorCallbacks,
+	CoordinatorCallbacksRetainedState,
 	CoordinatorCallbackSource,
 } from "./contract.js";
 
@@ -95,7 +96,7 @@ export function createCodexCoordinatorCallbacks(
 						attempted: false,
 						path: "none",
 						outcome: "not_delivered",
-						reason: "invalid_context",
+						reason: "invalid_callback",
 					});
 				}
 				settle(entry, delivery);
@@ -118,7 +119,9 @@ export function createCodexCoordinatorCallbacks(
 	const enqueue = (event: CoordinatorCallbackSource): Promise<CoordinatorCallbackDelivery> => {
 		let callback: CoordinatorCallback;
 		try {
-			callback = normalizeCoordinatorCallback(event);
+			const link = options.currentWorkhorseLink();
+			if (link === null) return Promise.resolve(invalidDelivery());
+			callback = normalizeCoordinatorCallback(event, link, options.currentRealtimeGeneration());
 		} catch {
 			return Promise.resolve(invalidDelivery());
 		}
@@ -198,7 +201,13 @@ export function createCodexCoordinatorCallbacks(
 			),
 		get: (event: CoordinatorCallbackSource) => {
 			try {
-				return settledByKey.get(coordinatorCallbackKey(normalizeCoordinatorCallback(event)));
+				const link = options.currentWorkhorseLink();
+				if (link === null) return undefined;
+				return settledByKey.get(
+					coordinatorCallbackKey(
+						normalizeCoordinatorCallback(event, link, options.currentRealtimeGeneration()),
+					),
+				);
 			} catch {
 				return undefined;
 			}
@@ -218,6 +227,16 @@ export function createCodexCoordinatorCallbacks(
 				settleWithoutAttempt(entry, "not_delivered", "disposed");
 		},
 	});
+}
+
+export function installCodexCoordinatorCallbacks(
+	retained: CoordinatorCallbacksRetainedState,
+	options: CoordinatorCallbackOptions,
+): CoordinatorCallbacks {
+	if (retained.current !== null) return retained.current;
+	const callbacks = createCodexCoordinatorCallbacks(options);
+	retained.current = callbacks;
+	return callbacks;
 }
 
 export { coordinatorCallbackKey, normalizeCoordinatorCallback } from "./normalize.js";
