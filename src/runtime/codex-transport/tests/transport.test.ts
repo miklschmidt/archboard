@@ -1,30 +1,22 @@
 import { describe, expect, jest, test } from "bun:test";
 
+import { CodexTransportRequestError } from "../errors.js";
 import {
-	CodexTransportRequestError,
 	HUMAN_APPROVAL_METHODS,
 	SESSION_SERVER_REQUEST_METHODS,
 	type DynamicDispatcherRegistration,
 	type HumanApprovalMethod,
 	type TransportServerNotification,
 	type TransportServerRequest,
-} from "../index.js";
+} from "../server-requests.js";
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
-
-async function captureRejection(promise: Promise<unknown>): Promise<unknown> {
-	try {
-		await promise;
-	} catch (error) {
-		return error;
-	}
-	throw new Error("Expected the operation to reject");
-}
 import {
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
 } from "../../../shared/codex-browser-model/index.js";
 import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
 import {
+	captureRejection,
 	closeTransport,
 	createHarness,
 	frameAt,

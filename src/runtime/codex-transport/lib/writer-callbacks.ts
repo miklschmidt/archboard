@@ -66,6 +66,10 @@ export function createTransportWriterCallbacks(
 			options.settleFailure(job.pending, "write-error");
 		} else if (job.kind === "reverse-response") {
 			options.releaseReverseResponse(job.record);
+			if (!job.settled) {
+				job.settled = true;
+				job.reject(new CodexTransportWriteError("write-error", "Codex stdin rejected a frame"));
+			}
 		} else if (isSettledJob(job) && !job.settled) {
 			job.settled = true;
 			job.reject(new CodexTransportWriteError("write-error", "Codex stdin rejected a frame"));

@@ -15,15 +15,19 @@ const allowedImportRoots = [
 	"src/runtime/codex-dynamic-tools/",
 	"src/runtime/codex-coordinator-tools/",
 ];
-const reviewedNumericLiterals = [
-	"16_777_216",
-	"16777216",
-	"65_536",
-	"65536",
-	"524_288",
-	"524288",
-	"67_108_864",
-	"67108864",
+function numericCapacityValues(value: unknown): number[] {
+	if (typeof value === "number" && value > 1) return [value];
+	if (value === null || typeof value !== "object") return [];
+	return Object.values(value).flatMap(numericCapacityValues);
+}
+
+function numericSpellings(value: number): string[] {
+	const decimal = String(value);
+	return [decimal, decimal.replace(/\B(?=(\d{3})+(?!\d))/g, "_")];
+}
+
+const capacityLiterals = [
+	...new Set(numericCapacityValues(CODEX_APP_SERVER_CAPACITY).flatMap(numericSpellings)),
 ];
 
 function productionFiles(root: string): string[] {
@@ -54,7 +58,7 @@ describe("Codex app-server capacity repository policy", () => {
 		}
 	});
 
-	test("allows the shared authority only to reviewed production import roots", () => {
+	test("allows the shared authority only to designated production import roots", () => {
 		const imports: string[] = [];
 		for (const file of productionFiles(sourceRoot)) {
 			const relative = path.relative(repoRoot, file).replaceAll(path.sep, "/");
@@ -68,15 +72,15 @@ describe("Codex app-server capacity repository policy", () => {
 		expect(imports.every((file) => file.startsWith("src/runtime/codex-transport/"))).toBeTrue();
 	});
 
-	test("keeps reviewed numeric capacity literals out of transport production code", () => {
+	test("keeps capacity literals out of transport production code", () => {
 		for (const file of productionFiles(path.join(sourceRoot, "runtime/codex-transport"))) {
 			const source = fs.readFileSync(file, "utf8");
-			for (const literal of reviewedNumericLiterals)
+			for (const literal of capacityLiterals)
 				expect(source).not.toMatch(new RegExp(`(?<![\\w])${literal}(?![\\w])`));
 		}
 	});
 
-	test("keeps the reviewed capacity relationships machine-observable", () => {
+	test("keeps the capacity relationships machine-observable", () => {
 		expect(CODEX_APP_SERVER_CAPACITY.frameBytes).toBe(CODEX_APP_SERVER_CAPACITY.partialFrameBytes);
 		expect(Number(CODEX_APP_SERVER_CAPACITY.outbound.responseReservedBytes)).toBe(
 			Number(CODEX_APP_SERVER_CAPACITY.outbound.responseReservedFrames) *

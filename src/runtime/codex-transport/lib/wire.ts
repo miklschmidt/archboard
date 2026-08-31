@@ -213,7 +213,7 @@ export function boundedText(value: unknown, field: string): asserts value is str
 	if (
 		typeof value !== "string" ||
 		value.length === 0 ||
-		value.length > 256 ||
+		value.length > CODEX_APP_SERVER_CAPACITY.text.maxChars ||
 		value.trim() !== value ||
 		value.includes("\0")
 	)

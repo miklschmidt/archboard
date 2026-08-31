@@ -236,7 +236,6 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	const clearEpochRetention = (): void => {
 		tombstones.clear();
 		completedReverseIds.clear();
-		lateResponseStore.clear();
 		dynamicDispatchers.clear();
 	};
 
@@ -478,7 +477,6 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	return Object.freeze({
 		request: outbound.request,
 		sendNotification: outbound.sendNotification,
-		notify: outbound.sendNotification,
 		registerDynamicDispatcher,
 		respond: router.respond,
 		onServerRequest: events.onServerRequest,

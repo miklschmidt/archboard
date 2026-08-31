@@ -1,3 +1,4 @@
+import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 import type { WireRequestCorrelation } from "../../../shared/codex-workbench-identity/index.js";
 
 export type CodexRequestFailureReason =
@@ -21,7 +22,12 @@ export interface TransportRemoteErrorSummary {
 }
 
 function redactRemoteError(error: CodexRemoteError): TransportRemoteErrorSummary {
-	const message = error.message.length > 256 ? `${error.message.slice(0, 253)}...` : error.message;
+	const maximum = CODEX_APP_SERVER_CAPACITY.text.maxChars;
+	const suffix = "...";
+	const message =
+		error.message.length > maximum
+			? `${error.message.slice(0, maximum - suffix.length)}${suffix}`
+			: error.message;
 	return Object.freeze({
 		code: error.code,
 		message,
@@ -130,10 +136,12 @@ export class CodexTransportRemoteError extends CodexTransportError {
 		readonly correlation: WireRequestCorrelation;
 		readonly rpcError: CodexRemoteError;
 	}) {
+		const maximum = CODEX_APP_SERVER_CAPACITY.text.maxChars;
+		const suffix = "...";
 		super(
 			`Codex request ${input.method} returned JSON-RPC error ${input.rpcError.code}: ${
-				input.rpcError.message.length > 256
-					? `${input.rpcError.message.slice(0, 253)}...`
+				input.rpcError.message.length > maximum
+					? `${input.rpcError.message.slice(0, maximum - suffix.length)}${suffix}`
 					: input.rpcError.message
 			}`,
 		);

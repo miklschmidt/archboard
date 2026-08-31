@@ -105,7 +105,6 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 	const protocolError = (rawId: WireId, code: number, message: string): void => {
 		options.enqueueProtocolError(rawId, code, message);
 	};
-
 	const handleResponse = (value: Record<string, unknown>): void => {
 		const rawId = value.id;
 		if (!isWireId(rawId)) {
@@ -157,7 +156,6 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 			options.settleFailure(pending, "malformed-response");
 		}
 	};
-
 	const routeServerRequest = (
 		decoded: DecodedServerRequest,
 		rawId: WireId,
@@ -214,7 +212,6 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 			} as TransportServerRequest;
 		throw new CodexTransportUsageError("no response owner exists for the reverse method");
 	};
-
 	const handleServerRequest = (value: Record<string, unknown>, frameBytes: number): void => {
 		const rawId = value.id;
 		if (!isWireId(rawId)) {
@@ -276,7 +273,6 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 			protocolError(rawId, -32001, REVERSE_ERROR_MESSAGES.overloaded);
 			return;
 		}
-
 		let decoded: DecodedServerRequest;
 		try {
 			decoded = decodeServerRequest(value);
@@ -303,7 +299,6 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 			}
 			decoded = { id: rawId, method, params: parsed.data } as DecodedServerRequest;
 		}
-
 		let request: TransportServerRequest;
 		try {
 			request = cloneAndFreeze(routeServerRequest(decoded, rawId));
@@ -394,14 +389,20 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 			);
 		} catch (error) {
 			if (error instanceof JsonFrameDecodeError && error.kind === "duplicate-key") {
+				const pending =
+					error.wireId === undefined || error.methodPresent
+						? undefined
+						: options.pendingRequests.get(wireKey(error.wireId));
 				const reverseDuplicate = error.methodPresent && error.wireId !== undefined;
 				options.emitIssue({
 					kind: "duplicate-key",
-					direction: reverseDuplicate ? "server-request" : "stdout",
+					direction: pending ? "response" : reverseDuplicate ? "server-request" : "stdout",
 					detail: "A JSON object contains a duplicate key",
+					...(pending === undefined ? {} : { method: pending.method }),
 					...(error.wireId === undefined ? {} : { requestId: error.wireId }),
 				});
-				if (error.methodPresent && error.wireId !== undefined)
+				if (pending) options.settleFailure(pending, "malformed-response");
+				else if (error.methodPresent && error.wireId !== undefined)
 					protocolError(
 						error.wireId,
 						state === "closing"
@@ -471,7 +472,6 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 				detail: "The JSON frame has no known direction",
 			});
 	};
-
 	const registerDynamicDispatcher = (registration: DynamicDispatcherRegistration): void => {
 		if (
 			registration.owner !== "codex-dynamic-tools" &&
@@ -486,7 +486,6 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 			);
 		options.dynamicDispatchers.set(registration.namespace, Object.freeze({ ...registration }));
 	};
-
 	const responder = createReverseResponder({
 		identity: options.identity,
 		reverseRequests: options.reverseRequests,

@@ -1,4 +1,4 @@
-import type { Readable, Writable } from "node:stream";
+import type { ChildProcessEventMap, ChildProcessWithoutNullStreams } from "node:child_process";
 
 import type {
 	ClientNotificationMethod,
@@ -26,19 +26,20 @@ import type {
 	CodexTransportWriteError,
 } from "./errors.js";
 
-/** The subset of a Node stdio child that the transport needs. */
-export interface CodexTransportChild {
-	readonly stdin: Writable;
-	readonly stdout: Readable;
-	readonly stderr: Readable;
-	on(event: "error", listener: (error: Error) => void): this;
-	on(event: "exit", listener: (code: number | null, signal: NodeJS.Signals | null) => void): this;
-	removeListener(event: "error", listener: (error: Error) => void): this;
-	removeListener(
-		event: "exit",
-		listener: (code: number | null, signal: NodeJS.Signals | null) => void,
-	): this;
-}
+/** The subset of the Node child-process contract that the transport needs. */
+export type CodexTransportChild = Pick<
+	ChildProcessWithoutNullStreams,
+	"stdin" | "stdout" | "stderr"
+> & {
+	on<E extends "error" | "exit">(
+		event: E,
+		listener: (...args: ChildProcessEventMap[E]) => void,
+	): CodexTransportChild;
+	removeListener<E extends "error" | "exit">(
+		event: E,
+		listener: (...args: ChildProcessEventMap[E]) => void,
+	): CodexTransportChild;
+};
 
 export type ResponseOwner =
 	| "codex-approvals"
@@ -264,7 +265,6 @@ export interface CodexTransport {
 		options?: CodexTransportRequestOptions,
 	) => Promise<CodexTransportResponse<Method>>;
 	readonly sendNotification: (method: ClientNotificationMethod) => Promise<void>;
-	readonly notify: (method: ClientNotificationMethod) => Promise<void>;
 	readonly registerDynamicDispatcher: (registration: DynamicDispatcherRegistration) => void;
 	readonly respond: {
 		(
