@@ -706,10 +706,25 @@ target, and complete durable provenance record plus manifest revision.
 `realtimeGeneration`, when present, retains the child, epoch, coordinator
 thread, wire session, browser session, and browser correlation identities.
 
+`manage_workhorse_queue` accepts only these exact queue operation and RPC pairs:
+
+| Queue operation | RPC                    |
+| --------------- | ---------------------- |
+| `add`           | `thread/queue/add`     |
+| `update`        | `thread/queue/update`  |
+| `delete`        | `thread/queue/delete`  |
+| `reorder`       | `thread/queue/reorder` |
+| `start`         | `thread/queue/start`   |
+
+Every other operation requires a null `queueOperation`. Prefix matches and
+other queue operation/RPC combinations are invalid.
+
 The encoder rejects any callback above 32,768 UTF-8 bytes, any string above
-8,192 UTF-8 bytes, any array above 128 entries, any queued submission ID above
-1,024 UTF-8 bytes, or any selection ID above 64 UTF-8 bytes. It does not
-truncate. The callback is the exact `text` in the one developer message above.
+8,192 UTF-8 bytes, or any array above 128 entries. Both the singular
+`correlation.queuedSubmissionId` and each `queuedSubmissionIds` entry allow at
+most 1,024 UTF-8 bytes. A selection ID allows at most 64 UTF-8 bytes. The
+encoder does not truncate. The callback is the exact `text` in the one
+developer message above.
 Inactive operation callbacks send that message to `coordinatorThreadId` through
 `thread/inject_items`. Active callbacks send the same text to that thread
 through `thread/realtime/appendText` with role `developer`. The workhorse thread

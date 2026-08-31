@@ -236,7 +236,7 @@ const reviewedDigests: ReviewedDigest[] = [
 	{
 		name: "complete authored contract prose and literals",
 		consumer: "TASK-143.01.07, TASK-143.01.19, TASK-143.05.03, and TASK-143.07.07",
-		expected: "6c6a9f14301c23a28c6ca8e2ad64def5d94edc1d56b889cd6da08c1ff78c0def",
+		expected: "82c647b4fc133c965a5c839b76082f0108143cf689221ab213a285213eecae47",
 		read: () => contractBytes,
 	},
 	{
@@ -343,6 +343,18 @@ describe("Codex authored contract repository policy", () => {
 		);
 		expect(contract).toContain("with role `developer`");
 		expect(contract).toContain("is never the callback mutation target");
+		for (const row of [
+			"| `add`           | `thread/queue/add`     |",
+			"| `update`        | `thread/queue/update`  |",
+			"| `delete`        | `thread/queue/delete`  |",
+			"| `reorder`       | `thread/queue/reorder` |",
+			"| `start`         | `thread/queue/start`   |",
+		]) {
+			expect(contract).toContain(row);
+		}
+		expect(contract).toMatch(
+			/Both the singular\s+`correlation\.queuedSubmissionId` and each `queuedSubmissionIds` entry allow at\s+most 1,024 UTF-8 bytes\./u,
+		);
 	});
 
 	test("keeps exactly one blank line before the coordinator marker", () => {

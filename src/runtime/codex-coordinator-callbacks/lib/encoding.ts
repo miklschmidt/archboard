@@ -32,6 +32,13 @@ function requireString(value: string | null): string | null {
 	return value;
 }
 
+function requireId(value: string | null): string | null {
+	const checked = requireString(value);
+	if (checked !== null && utf8(checked) > CALLBACK_MAX_ID_UTF8_BYTES)
+		throw new TypeError("Callback ID exceeds its UTF-8 limit.");
+	return checked;
+}
+
 function requireArray(values: readonly string[], entryBytes: number): readonly string[] {
 	if (values.length > CALLBACK_MAX_ARRAY_ENTRIES)
 		throw new TypeError("Callback array exceeds its entry limit.");
@@ -42,6 +49,23 @@ function requireArray(values: readonly string[], entryBytes: number): readonly s
 			throw new TypeError("Callback array entry exceeds its UTF-8 limit.");
 		return checked;
 	});
+}
+
+function queueRpc(operation: unknown): string | null {
+	switch (operation) {
+		case "add":
+			return "thread/queue/add";
+		case "update":
+			return "thread/queue/update";
+		case "delete":
+			return "thread/queue/delete";
+		case "reorder":
+			return "thread/queue/reorder";
+		case "start":
+			return "thread/queue/start";
+		default:
+			return null;
+	}
 }
 
 function operationRecord(record: EpochOperationRecord) {
@@ -143,7 +167,7 @@ function correlation(value: CoordinatorCallbackCorrelation) {
 		coordinatorTurnId: requireString(value.coordinatorTurnId),
 		workhorseThreadId: requireString(value.workhorseThreadId),
 		turnId: requireString(value.turnId),
-		queuedSubmissionId: requireString(value.queuedSubmissionId),
+		queuedSubmissionId: requireId(value.queuedSubmissionId),
 		clientUserMessageId: requireString(value.clientUserMessageId),
 		realtimeSessionId: requireString(value.realtimeSessionId),
 		coordinatorCall:
@@ -219,6 +243,12 @@ function callbackDocument(callback: CoordinatorCallback) {
 			].includes(callback.type)
 		)
 			throw new TypeError("Unknown operation callback discriminant.");
+		if (
+			!["delegate_to_workhorse", "manage_workhorse_queue", "steer_workhorse"].includes(
+				callback.operation,
+			)
+		)
+			throw new TypeError("Unknown callback operation.");
 		const expectedOutcome =
 			callback.type === "accepted"
 				? "pending"
@@ -229,11 +259,13 @@ function callbackDocument(callback: CoordinatorCallback) {
 						: "delivered";
 		if (callback.outcome !== expectedOutcome)
 			throw new TypeError("Operation callback discriminant and outcome do not match.");
-		if (
-			(callback.operation === "manage_workhorse_queue") !==
-			(callback.queueOperation !== null && callback.rpc.startsWith("thread/queue/"))
-		)
-			throw new TypeError("Operation callback queue tuple does not match.");
+		if (callback.operation === "manage_workhorse_queue") {
+			const expectedRpc = queueRpc(callback.queueOperation);
+			if (expectedRpc === null || callback.rpc !== expectedRpc)
+				throw new TypeError("Operation callback queue tuple does not match.");
+		} else if (callback.queueOperation !== null) {
+			throw new TypeError("Non-queue callback has a queue operation.");
+		}
 		if (callback.operation === "delegate_to_workhorse" && callback.rpc !== "turn/start")
 			throw new TypeError("Delegate callback RPC does not match.");
 		if (callback.operation === "steer_workhorse" && callback.rpc !== "turn/steer")

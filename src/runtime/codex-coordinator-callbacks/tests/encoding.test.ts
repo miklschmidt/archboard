@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
 	CALLBACK_MAX_ARRAY_ENTRIES,
+	CALLBACK_MAX_ID_UTF8_BYTES,
 	CALLBACK_MAX_STRING_UTF8_BYTES,
 	encodeCoordinatorCallback,
 	normalizeCoordinatorCallback,
@@ -63,5 +64,82 @@ describe("coordinator callback bytes", () => {
 		const unknownKey = structuredClone(callback);
 		Reflect.set(unknownKey, "narrative", "duplicate narration");
 		expect(() => Reflect.apply(encodeCoordinatorCallback, undefined, [unknownKey])).toThrow();
+	});
+
+	test("singular and array queue IDs enforce exact UTF-8 byte boundaries", () => {
+		const ids = identities();
+		const original = normalizeCoordinatorCallback(
+			operationEvent(ids, "completed", "manage_workhorse_queue"),
+			link(ids),
+			null,
+		);
+		const boundaryValues = [
+			"a".repeat(CALLBACK_MAX_ID_UTF8_BYTES),
+			"é".repeat(CALLBACK_MAX_ID_UTF8_BYTES / 2),
+		];
+		const overflowValues = [
+			"a".repeat(CALLBACK_MAX_ID_UTF8_BYTES + 1),
+			`${"é".repeat(CALLBACK_MAX_ID_UTF8_BYTES / 2)}a`,
+		];
+		for (const value of boundaryValues) {
+			const singular = structuredClone(original);
+			Reflect.set(singular.correlation, "queuedSubmissionId", value);
+			expect(encodeCoordinatorCallback(singular)).toContain(JSON.stringify(value));
+			const array = structuredClone(original);
+			Reflect.set(array, "queuedSubmissionIds", [value]);
+			expect(encodeCoordinatorCallback(array)).toContain(JSON.stringify(value));
+		}
+		for (const value of overflowValues) {
+			const singular = structuredClone(original);
+			Reflect.set(singular.correlation, "queuedSubmissionId", value);
+			expect(() => encodeCoordinatorCallback(singular)).toThrow("Callback ID exceeds");
+			const array = structuredClone(original);
+			Reflect.set(array, "queuedSubmissionIds", [value]);
+			expect(() => encodeCoordinatorCallback(array)).toThrow("array entry exceeds");
+		}
+		const nullable = structuredClone(original);
+		Reflect.set(nullable.correlation, "queuedSubmissionId", null);
+		expect(encodeCoordinatorCallback(nullable)).toContain('"queuedSubmissionId":null');
+	});
+
+	test("queue operations serialize only their exact RPC pair", () => {
+		const ids = identities();
+		const original = normalizeCoordinatorCallback(
+			operationEvent(ids, "completed", "manage_workhorse_queue"),
+			link(ids),
+			null,
+		);
+		const pairs = [
+			{ operation: "add", rpc: "thread/queue/add" },
+			{ operation: "update", rpc: "thread/queue/update" },
+			{ operation: "delete", rpc: "thread/queue/delete" },
+			{ operation: "reorder", rpc: "thread/queue/reorder" },
+			{ operation: "start", rpc: "thread/queue/start" },
+		];
+		for (const [index, pair] of pairs.entries()) {
+			const valid = structuredClone(original);
+			Reflect.set(valid, "queueOperation", pair.operation);
+			Reflect.set(valid, "rpc", pair.rpc);
+			const text = encodeCoordinatorCallback(valid);
+			expect(text).toContain(`"queueOperation":"${pair.operation}"`);
+			expect(text).toContain(`"rpc":"${pair.rpc}"`);
+			const mismatch = structuredClone(valid);
+			Reflect.set(mismatch, "rpc", pairs[(index + 1) % pairs.length]?.rpc);
+			expect(() => encodeCoordinatorCallback(mismatch)).toThrow("queue tuple does not match");
+		}
+		const missingOperation = structuredClone(original);
+		Reflect.set(missingOperation, "queueOperation", null);
+		expect(() => encodeCoordinatorCallback(missingOperation)).toThrow("queue tuple does not match");
+		const nonQueue = normalizeCoordinatorCallback(
+			operationEvent(ids, "completed", "delegate_to_workhorse"),
+			link(ids),
+			null,
+		);
+		expect(encodeCoordinatorCallback(nonQueue)).toContain('"queueOperation":null');
+		const hostileNonQueue = structuredClone(nonQueue);
+		Reflect.set(hostileNonQueue, "queueOperation", "add");
+		expect(() => encodeCoordinatorCallback(hostileNonQueue)).toThrow(
+			"Non-queue callback has a queue operation",
+		);
 	});
 });

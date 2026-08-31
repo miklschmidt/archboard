@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 21:07'
+updated_date: '2026-08-31 21:18'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -47,12 +47,11 @@ Delegation profile: gpt-5.6-luna, max.
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Replace the generic context callback payload with a closed, bounded, deterministic encoding for all eight operation and three semantic callback variants; document and policy-test the exact developer-message bytes.
-2. Capture immutable child, coordinator, workhorse-link, provenance, binding revision, and realtime-generation correlation when each source event enters the FIFO.
-3. Revalidate the exact workhorse link through the live classifier as the last asynchronous authority read, then synchronously compare current child, ready coordinator, binding, callback correlation, and realtime generation before one delivery attempt.
-4. Route inactive operation callbacks to the coordinator through one developer thread/inject_items item; route active callbacks through a narrow developer-role realtime session adapter using exact wire and browser generation identities. Preserve no fallback and outcome_unknown after an attempted mutation loses authority.
-5. Split focused owners under 500 lines and cover all eleven variants, golden bytes and bounds, inactive and active races, FIFO/coalescing/overflow/listener faults/disposal, retained reload state and subscriptions, forbidden waits/casts/retries, and route request shape.
-6. Run the requested focused, contract, type-graph, lint/format, inventory, diff, length, authored-policy, clean-tree, and protected-artifact checks in sequential capped transient units; record only new evidence and retain known OOM fingerprints.
+1. Apply one 1,024 UTF-8 byte validator to both correlation.queuedSubmissionId and queuedSubmissionIds entries while preserving null for the singular field. Add exact ASCII and multibyte boundary owners for 1,024-byte acceptance and 1,025-byte rejection.
+2. Replace prefix-based queue validation with the closed five-row queue operation/RPC table. Test every valid row and every hostile mismatched row before encoding. Update the authored callback contract and its reviewed digest.
+3. Replace the same-generation retained lookup test with a cache-busted Bun fixture imported under two query-token generations. The fixture will call the public installer against one kept record; the owner will prove two module evaluations, one callback instance, one four-listener cohort, one delivery for one event, and one cleanup per source subscription.
+4. Preserve the existing callback routes and authority checks. Split files if any owner approaches 500 physical lines.
+5. Run focused encoder, callback, and reload owners plus affected session/link contracts, both TypeScript graphs, scoped lint/format, authored policy, inventory, staged diff, clean tree, file lengths, source restrictions, and protected artifact checks in sequential capped transient units. Keep known broad OOM lanes unrun.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -63,6 +62,12 @@ Implemented the closed coordinator callback boundary in src/runtime/codex-coordi
 Remediation of reviewer findings 1-5 replaces generic context delivery with deterministic closed callback bytes, coordinator-only inactive injection, and a narrow developer-role realtime session adapter. Each enqueued callback freezes the accepted binding revision, exact classifier target and durable provenance, plus wire/browser realtime generation when active. Delivery classifies that exact target as its last asynchronous authority read, then synchronously rechecks child, ready coordinator, binding, callback correlation, and generation before one RPC. Post-attempt authority loss settles outcome_unknown with no fallback. The authored contract now pins the byte grammar and route policy. Focused owners split below 500 lines and cover all eleven variants, exact snapshot bytes, hostile mutation and bounds, queue tuples, semantic focus/selection, inactive operation families, active developer request shape, authority races, one-attempt outcomes, FIFO/coalescing/overflow, listener cleanup, disposal, and kept reload subscriptions.
 
 Final capped validation: archboard-1430704-remediate-final-01.service printed cgroup and passed 17 callback tests, 21 affected session/realtime/thread-link tests, both TypeScript graphs, scoped Oxlint, scoped Oxfmt check, 44 authored-contract and inventory tests, staged diff check, clean unstaged diff, source lengths, and protected artifact hash/size. archboard-1430704-remediate-sourcegate-03.service separately proved no casts, wait dependency, RealtimeHost, or user role in callback lib and exactly one realtimeAppendText plus one threadInjectItems call site. Preserved known 6G plus 1G capped-OOM fingerprints for broad repository boundary, module-scope, and repository-policy owners; those lanes were not rerun. Protected artifact remains 1,516,136 bytes with SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Task remains In Progress and all acceptance criteria remain unchecked for independent rereview.
+
+Second remediation pass closes the accepted rereview gaps. The encoder now applies the 1,024 UTF-8 byte ID limit to both correlation.queuedSubmissionId and each queuedSubmissionIds entry. Focused tests cover 1,024-byte ASCII and multibyte acceptance plus 1,025-byte rejection for both locations. Queue validation now uses the exact add, update, delete, reorder, and start RPC table; every valid pair serializes and every rotated hostile mismatch fails before encoding. The authored contract and reviewed digest pin both rules.
+
+Reload evidence now imports a focused fixture with generation=1 and generation=2 query tokens around one kept record. Both module generations have distinct evaluation identities and call the public installer. They reuse one callback instance and one four-listener cohort. One emitted operation produces one delivery, and repeated disposal leaves exactly four cleanup calls.
+
+Capped validation archboard-1430704-remediate2-final-01.service printed its cgroup and passed 19 callback/encoder/reload tests, 21 affected session/realtime/thread-link tests, both TypeScript graphs, scoped Oxlint and Oxfmt, 44 authored-contract and inventory tests, staged diff, clean unstaged diff, all callback TypeScript files at or below 500 lines, source restrictions, and the protected artifact check. Known broad capped-OOM fingerprints were preserved and not rerun. The protected artifact remains 1,516,136 bytes with SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Task remains In Progress with every AC unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -78,5 +83,17 @@ author: @codex
 created: 2026-08-31 21:07
 ---
 Remediation is ready for independent rereview. Task status and acceptance criteria intentionally remain unchanged.
+---
+
+author: @codex
+created: 2026-08-31 21:12
+---
+Second remediation pass started for the accepted singular-ID, queue-pair, and real module-generation findings. Status and acceptance criteria remain unchanged.
+---
+
+author: @codex
+created: 2026-08-31 21:18
+---
+Second remediation pass is ready for independent rereview. Status and acceptance criteria remain unchanged.
 ---
 <!-- COMMENTS:END -->
