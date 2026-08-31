@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 04:10'
+updated_date: '2026-08-31 04:11'
 labels: []
 dependencies:
   - TASK-144.01
@@ -76,4 +76,8 @@ Focused checks: bun test tests/system/repository-policy/assistant-ui-imports.tes
 Focused hostile fixtures cover a const alias through an as assertion, a simple assignment through a non-null assertion, and a destructuring assignment through a type assertion. The copied Elements limitation remains the documented three-name signature inventory and does not claim arbitrary equivalent-source detection.
 
 Focused checks: bun test tests/system/repository-policy/assistant-ui-imports.test.ts - 12 passed, 258 assertions; focused Oxlint on the owned plugin/test - 0 errors; Oxfmt check passed; the policy test remains 500 lines against the 500-line repository limit. Package and lockfile were unchanged in this remediation. Broad modules/system/repository/check/browser lanes remain root-owned and were not run. Task remains In Progress and all acceptance criteria remain unchecked. Preserved /home/msc/Projects/archboard/src-DlBR1tzg.js.
+
+2026-08-31 @codex wrapper-remediation correction (final code commit 449e46f; behavior introduced in 6b0d4bd): kept transparent expression normalization at module scope so the repository lint rule is satisfied. The normalizer covers TSAsExpression, TSTypeAssertion, TSNonNullExpression, ChainExpression, and ParenthesizedExpression, and is used only by the existing assistant-ui binding lookups.
+
+Final focused checks after the lint-safe follow-up: bun test tests/system/repository-policy/assistant-ui-imports.test.ts - 12 passed, 258 assertions; focused Oxlint on the owned plugin/test - 0 errors; Oxfmt check passed; the policy test remains 500 lines against the 500-line repository limit. Package and lockfile were unchanged. Task remains In Progress and all acceptance criteria remain unchecked. Broad modules/system/repository/check/browser lanes remain root-owned and were not run. Preserved /home/msc/Projects/archboard/src-DlBR1tzg.js.
 <!-- SECTION:NOTES:END -->
