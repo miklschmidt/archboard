@@ -25,6 +25,7 @@ import {
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
+	type WireRequestCorrelation,
 } from "../../../../src/shared/codex-workbench-identity/index.ts";
 import type { RealtimeSemanticEvent } from "../../../../src/shared/codex-realtime-host/index.ts";
 
@@ -163,11 +164,12 @@ export function makeNotification(
 	identity: IdentityAuthority,
 	method: string,
 	params: unknown,
+	overrides: Partial<Pick<WireRequestCorrelation, "child" | "epoch">> = {},
 ): Parameters<CodexRealtimeAdapter["onNotification"]>[0] {
 	return {
 		correlation: {
-			child: identity.validator.childId,
-			epoch: identity.validator.epoch,
+			child: overrides.child ?? identity.validator.childId,
+			epoch: overrides.epoch ?? identity.validator.epoch,
 			requestId: null,
 		},
 		notification: { method, params } as never,
