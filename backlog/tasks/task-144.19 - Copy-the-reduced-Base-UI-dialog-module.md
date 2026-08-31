@@ -1,11 +1,11 @@
 ---
 id: TASK-144.19
 title: Copy the reduced Base UI dialog module
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:58'
-updated_date: '2026-08-31 05:14'
+updated_date: '2026-08-31 05:19'
 labels: []
 dependencies:
   - TASK-144.20
@@ -28,10 +28,10 @@ Copy and reduce only the pinned Base UI dialog fixture after the button module e
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The local dialog preserves Base UI controlled/open state, roles, labels/descriptions, focus trap/restoration, Escape, portal, outside-dismissal policy, and refs through a small Archboard API.
-- [ ] #2 It consumes the named button entrypoint and semantic tokens; default aesthetics, icons, demos, duplicate state, and unused helpers are removed.
-- [ ] #3 Module tests prove exported API, props/types, deterministic classes, and pure controlled state only; TASK-144.11 owns rendered focus/portal/a11y.
-- [ ] #4 Provenance records the immutable commit, dialog hash, dependency on the accepted button module, reduction date, and local ownership.
+- [x] #1 The local dialog preserves Base UI controlled/open state, roles, labels/descriptions, focus trap/restoration, Escape, portal, outside-dismissal policy, and refs through a small Archboard API.
+- [x] #2 It consumes the named button entrypoint and semantic tokens; default aesthetics, icons, demos, duplicate state, and unused helpers are removed.
+- [x] #3 Module tests prove exported API, props/types, deterministic classes, and pure controlled state only; TASK-144.11 owns rendered focus/portal/a11y.
+- [x] #4 Provenance records the immutable commit, dialog hash, dependency on the accepted button module, reduction date, and local ownership.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -89,4 +89,19 @@ Capped remediation evidence, every command under systemd-run with MemoryMax=6G a
 - protected artifact SHA-256 remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6
 
 Rendered backdrop judgment and focus, portal, Escape, outside-dismissal, labels/descriptions, theme, accessibility, and Flip touch remain TASK-144.11 ownership. No browser or broad lane was run, and no rendered claim is made.
+
+Root acceptance at integrated commit 441d3a2d780ac90cad48a1684fbcb6ce9bf1db58:
+- review-clean implementation/remediation range d841cb4820d42696859eadc06d46bababeb06b62..bb433aa2ced4f8f9cd1a3745c130f853aba9735e
+- focused dialog, theme, style-entry, adoption, and inventory owners passed: 79 dialog assertions plus 72 policy tests / 694 assertions
+- both TypeScript projects passed under MemoryMax=6G / MemorySwapMax=1G; peak 1.4G, swap 0B
+- production frontend build passed under the same cap; peak 1.4G, swap 0B
+- compiled CSS is 59,385 bytes, contains the exact semantic .bg-background\/60 rule, and excludes duration-150
+- protected artifact SHA-256 remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6
+Rendered focus, portal, Escape, outside-dismissal, association, theme, accessibility, and Flip-touch verification remains explicitly owned by TASK-144.11.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added the reduced, controlled Base UI dialog module with exactly five runtime exports, semantic styling, accepted Button composition, immutable provenance, and no duplicate interaction machinery. Independent review found and remediation removed caller-owned role/association overrides and replaced the backdrop with bg-background/60. Root acceptance passed focused contract/policy tests, both TypeScript projects, the production build, compiled-CSS inspection, and protected-artifact verification; TASK-144.11 retains rendered interaction ownership.
+<!-- SECTION:FINAL_SUMMARY:END -->
