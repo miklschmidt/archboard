@@ -1,81 +1,13 @@
-import * as ts from "typescript/unstable/ast";
+import type * as ts from "typescript/unstable/ast";
+import {
+	astFingerprint,
+	distinctiveFingerprints,
+	parseModuleSources,
+} from "../../../../scripts/codex-protocol-fingerprints.js";
+import type { AstFingerprint } from "../../../../scripts/codex-protocol-fingerprints.js";
 
-export type AstFingerprint = readonly string[];
-
-function typeDeclarations(
-	source: ts.SourceFile,
-): Map<string, ts.TypeAliasDeclaration | ts.InterfaceDeclaration> {
-	const declarations = new Map<string, ts.TypeAliasDeclaration | ts.InterfaceDeclaration>();
-	const visit = (node: ts.Node): void => {
-		if (ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node))
-			declarations.set(node.name.text, node);
-		node.forEachChild(visit);
-	};
-	visit(source);
-	return declarations;
-}
-
-function referencesLocalType(node: ts.Node, names: ReadonlySet<string>): boolean {
-	let found = false;
-	const visit = (child: ts.Node): void => {
-		if (ts.isIdentifier(child) && names.has(child.text)) found = true;
-		child.forEachChild(visit);
-	};
-	visit(node);
-	return found;
-}
-
-function structuralTypeNames(source: ts.SourceFile): Map<string, number> {
-	const declarations = typeDeclarations(source);
-	const structural = new Set<string>();
-	for (const [name, declaration] of declarations) {
-		if (ts.isInterfaceDeclaration(declaration)) structural.add(name);
-		else if (ts.isTypeLiteralNode(declaration.type)) structural.add(name);
-	}
-	let changed = true;
-	while (changed) {
-		changed = false;
-		for (const [name, declaration] of declarations)
-			if (
-				ts.isTypeAliasDeclaration(declaration) &&
-				!structural.has(name) &&
-				referencesLocalType(declaration.type, structural)
-			) {
-				structural.add(name);
-				changed = true;
-			}
-	}
-	return new Map([...structural].toSorted().map((name, index) => [name, index]));
-}
-
-function isModuleLiteral(node: ts.Node): boolean {
-	const parent = node.parent;
-	return (
-		!!parent &&
-		(ts.isImportDeclaration(parent) ||
-			ts.isExportDeclaration(parent) ||
-			(ts.isLiteralTypeNode(parent) && ts.isImportTypeNode(parent.parent)) ||
-			(ts.isCallExpression(parent) && ts.isImportExpression(parent.expression)))
-	);
-}
-
-function walk(node: ts.Node, tokens: string[], localTypes: ReadonlyMap<string, number>): void {
-	if (ts.isIdentifier(node))
-		tokens.push(
-			localTypes.has(node.text) ? `type:${localTypes.get(node.text)}` : `id:${node.text}`,
-		);
-	else if (ts.isStringLiteralLikeNode(node))
-		tokens.push(isModuleLiteral(node) ? "module" : `string:${JSON.stringify(node.text)}`);
-	else if (ts.isNumericLiteral(node)) tokens.push(`number:${node.text}`);
-	else tokens.push(`kind:${node.kind}`);
-	node.forEachChild((child) => walk(child, tokens, localTypes));
-}
-
-export function astFingerprint(source: ts.SourceFile): AstFingerprint {
-	const tokens: string[] = [];
-	walk(source, tokens, structuralTypeNames(source));
-	return tokens;
-}
+export { astFingerprint, distinctiveFingerprints, parseModuleSources };
+export type { AstFingerprint };
 
 export interface FingerprintSource {
 	readonly path: string;
