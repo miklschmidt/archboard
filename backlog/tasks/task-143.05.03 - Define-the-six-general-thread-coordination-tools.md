@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 02:23'
+updated_date: '2026-08-31 02:42'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -55,4 +55,6 @@ Implemented in 93cdace from fixed integration base 317d3aca9c82e4f13242def9040a1
 Focused evidence at this head: bun test --isolate src/runtime/codex-thread-tools/tests (14/14 tests, 276 expectations); bunx tsc --noEmit --pretty false; bunx oxlint src/runtime/codex-thread-tools; bunx oxfmt --check src/runtime/codex-thread-tools; git diff --check; manifest sha256sum df0fc2b1b33d985a7b84e54431162d6c00a3da0f8cecd98a18730e55bc7b272e. The public wait maximum is 120000 ms and is checked strictly below CODEX_BROWSER_COMMAND_LEASE_MS.
 
 The uncapped module/system/check/serial-browser lanes were intentionally not rerun in this continuation after the desktop app OOM; parent-owned capped broad validation remains the integration follow-up. Scope remains src/runtime/codex-thread-tools/** plus this task record.
+
+Review remediation committed in b6b86cdea6138b1202382a869f37a4e3f94ee5ab from prior head 5c0d1f2f8632d8dc845ce27e3678a6c4e7722021: split code-point manifest maxLength validation from explicit UTF-8 output caps, removed the undocumented NUL rejection, added recursive schema-defined canonical JSON serialization, correlated create/fork initialTurn delivery with state and identities, restricted success:false to boundary refusals, and enforced list/read/inputText cardinalities. Added adversarial mutation coverage for all envelope families, refusal reasons, state/identity combinations, and reviewed 100/101, 20/21, and 16,384/16,385 boundaries. Focused evidence at this head: bun test --isolate src/runtime/codex-thread-tools/tests (20/20 tests, 344 expectations); bunx tsc --noEmit --pretty false; bunx oxlint src/runtime/codex-thread-tools; bunx oxfmt --check src/runtime/codex-thread-tools; git diff --check; manifest sha256sum df0fc2b1b33d985a7b84e54431162d6c00a3da0f8cecd98a18730e55bc7b272e. Uncapped module/system/check/serial-browser lanes remain intentionally deferred after desktop-app OOM; parent owns capped broad validation. Scope remains src/runtime/codex-thread-tools/** plus this task record.
 <!-- SECTION:NOTES:END -->
