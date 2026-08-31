@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-08-31 02:29'
+updated_date: '2026-08-31 02:33'
 labels: []
 dependencies:
   - TASK-144.12
@@ -44,4 +44,6 @@ Delegation profile: gpt-5.6-luna, high.
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved immediately after TASK-144.12 finalized at integration HEAD f01ac49. This new repository-policy owner is path-disjoint from every active implementation lane; broad repository/check execution remains root-owned and memory-capped.
+
+Implementation commit db928f69ac3cae8d7be9c7c26c648c7f43e18941 adds the sole owned repository-policy test. Focused evidence: the owner passed 4 tests/8 expectations; the focused inventory owner passed 39 tests/69 expectations; bunx oxlint on the owner, bun run type-check, bunx oxfmt --check on the owner, and git diff --check passed. The owner proves the exact AGENTS.md UI-worker guide relationship, missing-link and missing-file failures with actionable diagnostics, and one check -> test -> test:repository reachability. No broad repository, system, check, or browser lanes were run per delegation; acceptance criteria remain unchecked and task remains In Progress.
 <!-- SECTION:NOTES:END -->
