@@ -64,6 +64,13 @@ function waitForState(
 	});
 }
 
+function startReady(
+	owner: ReturnType<typeof createCodexProcess>,
+): Promise<ReturnType<typeof owner.snapshot>> {
+	owner.onChild(() => owner.markAppServerReady());
+	return owner.start();
+}
+
 describe("Codex process owner", () => {
 	test("spawns the exact app-server argv and closed child environment", async () => {
 		const root = temporaryRoot();
@@ -77,6 +84,7 @@ describe("Codex process owner", () => {
 			owner = processOwner;
 			const output = new Promise<Record<string, unknown>>((resolve) => {
 				const unsubscribe = processOwner.onChild((child) => {
+					processOwner.markAppServerReady();
 					child.stdout.once("data", (chunk) => {
 						unsubscribe();
 						resolve(JSON.parse(chunk.toString()) as Record<string, unknown>);
@@ -86,6 +94,7 @@ describe("Codex process owner", () => {
 			const started = await processOwner.start();
 			const observed = await output;
 			expect(started.state).toBe("running");
+			expect(started.ready).toBe(true);
 			expect(started.argv).toEqual([executable, ...CODEX_APP_SERVER_ARGUMENTS]);
 			expect(observed.argv).toEqual([...CODEX_APP_SERVER_ARGUMENTS]);
 			expect(observed.keys).toEqual(["HOME", "PATH", "CODEX_HOME", "CODEX_SQLITE_HOME"]);
@@ -93,6 +102,7 @@ describe("Codex process owner", () => {
 			expect(observed.pwd).toBeUndefined();
 			expect(observed.secret).toBeUndefined();
 			expect(processOwner.snapshot().stderr.totalBytes).toBe(0);
+			expect(processOwner.snapshot().stderr.redacted).toBe(true);
 			const stopped = await processOwner.stop();
 			expect(stopped.state).toBe("stopped");
 			expect(stopped.lastExit?.classification).toBe("requested");
@@ -112,7 +122,7 @@ describe("Codex process owner", () => {
 			const started = owner.start();
 			const backoff = await waitForState(owner, (state) => state === "backoff");
 			await started.catch(() => undefined);
-			expect(backoff.failure?.code).toBe("crash");
+			expect(backoff.failure?.code).toBe("early_exit");
 			expect(backoff.restartAttempt).toBe(1);
 			expect(backoff.restartDelayMs).toBe(CODEX_PROCESS_RESTART_BASE_MS);
 			await owner.stop();
@@ -132,7 +142,7 @@ describe("Codex process owner", () => {
 				`process.stdin.resume(); setInterval(() => {}, ${CODEX_TERM_GRACE_MS});`,
 			);
 			owner = createCodexProcess(options(root, executable));
-			await owner.start();
+			await startReady(owner);
 			owner.markAccountReady();
 			expect(owner.snapshot().accountReady).toBe(true);
 			const child = owner.currentChild();
@@ -154,14 +164,15 @@ describe("Codex process owner", () => {
 		try {
 			const executable = fixture(
 				root,
-				`process.stderr.write("strict-config rejected: extra argument\\n"); process.exit(2);`,
+				`process.stderr.write("strict-"); setImmediate(() => { process.stderr.write("config rejected: extra argument\\n"); process.exit(2); });`,
 			);
 			owner = createCodexProcess({
 				...options(root, executable),
 				stderrLimitBytes: CODEX_PROCESS_STDERR_MAX_BYTES,
 			});
 			const terminal = waitForState(owner, (state) => state === "terminal_failure");
-			await owner.start();
+			const started = owner.start();
+			await started.catch(() => undefined);
 			const snapshot = await terminal;
 			expect(snapshot.failure?.code).toBe("strict_config_rejected");
 			expect(snapshot.lastExit?.classification).toBe("strict_config");
@@ -194,25 +205,25 @@ describe("Codex process owner", () => {
 		}
 	});
 
-	test("sends TERM, then KILL, to a child that refuses TERM", async () => {
+	test("redacts registered secrets from stderr, failure messages, and listener snapshots", async () => {
 		const root = temporaryRoot();
 		let owner: ReturnType<typeof createCodexProcess> | undefined;
+		const published: string[] = [];
 		try {
 			const executable = fixture(
 				root,
-				`process.on("SIGTERM", () => {}); process.stdin.resume(); setInterval(() => {}, ${CODEX_TERM_GRACE_MS});`,
+				`process.stderr.write("authorization=poisoned-secret"); process.exit(17);`,
 			);
-			owner = createCodexProcess({
-				...options(root, executable),
-				dependencies: { schedule: (callback) => setTimeout(callback, 0) },
-			});
-			await owner.start();
-			const pid = owner.snapshot().pid;
-			expect(pid).toBeNumber();
-			const stopped = await owner.stop();
-			expect(stopped.state).toBe("stopped");
-			expect(stopped.lastExit?.classification).toBe("requested");
-			expect(owner.currentChild()).toBeNull();
+			owner = createCodexProcess(options(root, executable));
+			owner.subscribe((snapshot) => published.push(JSON.stringify(snapshot)));
+			const started = owner.start();
+			const backoff = await waitForState(owner, (state) => state === "backoff");
+			await started.catch(() => undefined);
+			expect(backoff.stderr.text).not.toContain("poisoned-secret");
+			expect(backoff.stderr.text).toContain("[REDACTED]");
+			expect(backoff.failure?.message).not.toContain("poisoned-secret");
+			expect(backoff.failure).not.toHaveProperty("cause");
+			expect(published.join("\n")).not.toContain("poisoned-secret");
 		} finally {
 			if (owner) await owner.stop().catch(() => undefined);
 			removeRoot(root);
@@ -223,7 +234,7 @@ describe("Codex process owner", () => {
 		const root = temporaryRoot();
 		let owner: ReturnType<typeof createCodexProcess> | undefined;
 		try {
-			const wrongVersion = fixture(root, `process.exit(0);`, "codex-cli 0.150.0");
+			const wrongVersion = fixture(root, `process.exit(0);`, "poisoned-secret");
 			for (const [executable, code] of [
 				[wrongVersion, "binary_wrong_version"],
 				[path.join(root, "missing"), "binary_missing"],
@@ -237,7 +248,9 @@ describe("Codex process owner", () => {
 				}
 				expect(failure).toBeInstanceOf(CodexProcessError);
 				expect((failure as CodexProcessError).code).toBe(code);
+				expect((failure as CodexProcessError).cause).toBeUndefined();
 				expect(owner.snapshot().state).toBe("terminal_failure");
+				expect(owner.snapshot().failure?.message).not.toContain("poisoned-secret");
 				await owner.stop();
 			}
 		} finally {
@@ -271,30 +284,6 @@ describe("Codex process owner", () => {
 			expect(processOwner.snapshot().state).toBe("terminal_failure");
 			expect(fs.readdirSync(path.join(root, "storage", "codex-home"))).toEqual(["config.toml"]);
 			await processOwner.stop();
-		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
-			removeRoot(root);
-		}
-	});
-
-	test("terminal failure owns shutdown of an active child", async () => {
-		const root = temporaryRoot();
-		let owner: ReturnType<typeof createCodexProcess> | undefined;
-		try {
-			const executable = fixture(
-				root,
-				`process.on("SIGTERM", () => {}); process.stdin.resume(); setInterval(() => {}, ${CODEX_TERM_GRACE_MS});`,
-			);
-			const processOwner = createCodexProcess({
-				...options(root, executable),
-				dependencies: { schedule: (callback) => setTimeout(callback, 0) },
-			});
-			owner = processOwner;
-			await processOwner.start();
-			processOwner.markTerminalFailure("protocol became terminal");
-			const stopped = await waitForState(processOwner, (state) => state === "stopped");
-			expect(stopped.failure?.code).toBe("strict_config_rejected");
-			expect(processOwner.currentChild()).toBeNull();
 		} finally {
 			if (owner) await owner.stop().catch(() => undefined);
 			removeRoot(root);

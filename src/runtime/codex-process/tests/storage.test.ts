@@ -182,6 +182,31 @@ describe("dedicated Codex storage", () => {
 		}
 	});
 
+	test("retains the lock after an unlink failure and permits an explicit release retry", () => {
+		const root = temporaryRoot();
+		try {
+			let failures = 1;
+			const injected = {
+				...fileSystem(),
+				unlinkSync: ((target: string | Buffer | URL) => {
+					if (String(target).endsWith(".archboard-codex-process.lock") && failures > 0) {
+						failures -= 1;
+						throw new Error("injected lock unlink failure");
+					}
+					fs.unlinkSync(target as Parameters<typeof fs.unlinkSync>[0]);
+				}) as typeof fs.unlinkSync,
+			} satisfies CodexStorageFileSystem;
+			const prepared = prepareCodexStorage({ rootDirectory: root }, { fileSystem: injected });
+			const lockPath = path.join(prepared.codexHome, ".archboard-codex-process.lock");
+			expect(() => prepared.release()).toThrow(CodexStorageError);
+			expect(fs.existsSync(lockPath)).toBe(true);
+			expect(() => prepared.release()).not.toThrow();
+			expect(fs.existsSync(lockPath)).toBe(false);
+		} finally {
+			removeRoot(root);
+		}
+	});
+
 	test("leaves no temp file or lock after config write, fsync, or rename failure", () => {
 		const root = temporaryRoot();
 		try {

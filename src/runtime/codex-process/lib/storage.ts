@@ -481,8 +481,8 @@ export function prepareCodexStorage(
 		configText,
 		release: () => {
 			if (released) return;
-			released = true;
 			releaseLock();
+			released = true;
 		},
 	});
 }

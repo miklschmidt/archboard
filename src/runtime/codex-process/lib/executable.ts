@@ -5,6 +5,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { CODEX_PROTOCOL_BINARY_VERSION } from "../../codex-protocol/index.js";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
+
+export const CODEX_EXECUTABLE_PROOF_MAX_BYTES = 64 * 1024;
+const VERIFICATION_ENVIRONMENT_KEYS = [
+	"PATH",
+	"HOME",
+	"SystemRoot",
+	"WINDIR",
+	"TMPDIR",
+	"TMP",
+	"TEMP",
+] as const;
 
 export interface VerifiedCodexExecutable {
 	readonly executablePath: string;
@@ -28,13 +40,24 @@ export class CodexExecutableError extends Error {
 		readonly code: CodexExecutableFailureCode;
 		readonly executablePath: string;
 		readonly message: string;
-		readonly cause?: unknown;
 	}) {
-		super(init.message, { cause: init.cause });
+		super(init.message);
 		this.name = "CodexExecutableError";
 		this.code = init.code;
 		this.executablePath = init.executablePath;
 	}
+}
+
+function verificationEnvironment(): NodeJS.ProcessEnv {
+	const environment: NodeJS.ProcessEnv = {};
+	for (const key of VERIFICATION_ENVIRONMENT_KEYS) {
+		const value = process.env[key];
+		if (value === undefined) continue;
+		if (value.includes("\0"))
+			throw new Error(`The executable verification environment contains a NUL in ${key}.`);
+		environment[key] = value;
+	}
+	return Object.freeze(environment);
 }
 
 function absolutePath(candidate: string): string {
@@ -60,13 +83,12 @@ export function resolveProjectCodexExecutable(): string {
 	let resolved: string;
 	try {
 		resolved = require.resolve("@openai/codex/bin/codex.js");
-	} catch (cause) {
+	} catch {
 		throw new CodexExecutableError({
 			code: "missing",
 			executablePath: "@openai/codex/bin/codex.js",
 			message:
 				"The pinned project-local @openai/codex executable is unavailable. Run bun install and retry.",
-			cause,
 		});
 	}
 	const localNodeModules = `${path.join(projectRoot, "node_modules")}${path.sep}`;
@@ -81,17 +103,19 @@ export function resolveProjectCodexExecutable(): string {
 }
 
 /** Verify the exact pinned executable without consulting PATH or ambient args. */
-export function verifyCodexExecutable(candidate: string): VerifiedCodexExecutable {
+export function verifyCodexExecutable(
+	candidate: string,
+	options: { readonly execFileSync?: typeof execFileSync } = {},
+): VerifiedCodexExecutable {
 	const executablePath = absolutePath(candidate);
 	let stats: fs.Stats;
 	try {
 		stats = fs.statSync(executablePath);
-	} catch (cause) {
+	} catch {
 		throw new CodexExecutableError({
 			code: "missing",
 			executablePath,
 			message: `The configured Codex executable does not exist: ${executablePath}. Provide the pinned Codex ${CODEX_PROTOCOL_BINARY_VERSION} binary.`,
-			cause,
 		});
 	}
 	if (!stats.isFile())
@@ -102,35 +126,38 @@ export function verifyCodexExecutable(candidate: string): VerifiedCodexExecutabl
 		});
 	try {
 		fs.accessSync(executablePath, fs.constants.X_OK);
-	} catch (cause) {
+	} catch {
 		throw new CodexExecutableError({
 			code: "not_executable",
 			executablePath,
 			message: `The configured Codex executable is not executable: ${executablePath}.`,
-			cause,
 		});
 	}
 
 	let version: string;
 	try {
-		version = execFileSync(executablePath, ["--version"], {
+		const execute = options.execFileSync ?? execFileSync;
+		version = execute(executablePath, ["--version"], {
 			encoding: "utf8",
+			env: verificationEnvironment(),
+			maxBuffer: CODEX_EXECUTABLE_PROOF_MAX_BYTES,
+			timeout: CODEX_REQUEST_SETTLEMENT_MS,
+			killSignal: "SIGKILL",
 			stdio: ["ignore", "pipe", "pipe"],
 			windowsHide: true,
 		}).trim();
-	} catch (cause) {
+	} catch {
 		throw new CodexExecutableError({
 			code: "version_unavailable",
 			executablePath,
 			message: `Could not run ${executablePath} --version. Provide the exact Codex ${CODEX_PROTOCOL_BINARY_VERSION} executable; PATH lookup is disabled.`,
-			cause,
 		});
 	}
 	if (version !== CODEX_PROTOCOL_BINARY_VERSION)
 		throw new CodexExecutableError({
 			code: "wrong_version",
 			executablePath,
-			message: `The configured Codex executable reported ${version || "<empty output>"}; expected ${CODEX_PROTOCOL_BINARY_VERSION}.`,
+			message: `The configured Codex executable reported an unexpected version; expected ${CODEX_PROTOCOL_BINARY_VERSION}.`,
 		});
 	return Object.freeze({ executablePath, version: CODEX_PROTOCOL_BINARY_VERSION });
 }

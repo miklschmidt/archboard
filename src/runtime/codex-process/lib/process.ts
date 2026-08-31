@@ -8,8 +8,10 @@ import path from "node:path";
 import type { Readable, Writable } from "node:stream";
 
 import {
+	CODEX_COMPOSED_SHUTDOWN_MS,
 	CODEX_PROCESS_RESTART_BASE_MS,
 	CODEX_PROCESS_RESTART_MAX_MS,
+	CODEX_REQUEST_SETTLEMENT_MS,
 	CODEX_TERM_GRACE_MS,
 } from "../../../shared/timing/timing.js";
 import {
@@ -24,6 +26,12 @@ import {
 } from "./executable.js";
 import { createCodexDiagnosticsBuffer, type BoundedCodexDiagnostics } from "./diagnostics.js";
 import {
+	createCodexProcessGroupOperations,
+	type CodexProcessGroupIdentity,
+	type CodexProcessGroupInspection,
+	type CodexProcessGroupOperations,
+} from "./process-group.js";
+import {
 	CodexStorageError,
 	prepareCodexStorage,
 	type CodexStorageFileSystem,
@@ -37,12 +45,15 @@ export const CODEX_APP_SERVER_ARGUMENTS = Object.freeze([
 	"--strict-config",
 ] as const);
 export const CODEX_PROCESS_STDERR_MAX_BYTES = 64 * 1024;
+const STRICT_CONFIG_MATCH_WINDOW = 256;
+const SECRET_ENVIRONMENT_KEY = /(?:KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL|AUTH|COOKIE|PRIVATE)/iu;
 
 export type CodexProcessState =
 	| "stopped"
 	| "starting"
 	| "running"
 	| "backoff"
+	| "group_cleanup"
 	| "stopping"
 	| "terminal_failure";
 
@@ -55,13 +66,13 @@ export type CodexProcessFailureCode =
 	| "strict_config_rejected"
 	| "early_exit"
 	| "crash"
+	| "startup_timeout"
 	| "shutdown_failed";
 
 export interface CodexProcessFailure {
 	readonly code: CodexProcessFailureCode;
 	readonly message: string;
 	readonly terminal: boolean;
-	readonly cause?: unknown;
 }
 
 export interface CodexProcessExit {
@@ -76,6 +87,7 @@ export interface CodexProcessSnapshot {
 	readonly executablePath: string;
 	readonly argv: readonly string[];
 	readonly cwd: string | null;
+	readonly ready: boolean;
 	readonly accountReady: boolean;
 	readonly restartAttempt: number;
 	readonly nextRestartAtMs: number | null;
@@ -104,6 +116,7 @@ export interface CodexProcessDependencies {
 		options?: { readonly fileSystem?: CodexStorageFileSystem },
 	) => PreparedCodexStorage;
 	readonly fileSystem?: CodexStorageFileSystem;
+	readonly processGroup?: CodexProcessGroupOperations;
 	readonly now?: () => number;
 	readonly schedule?: (callback: () => void, delayMs: number) => Timer;
 	readonly cancel?: (timer: Timer) => void;
@@ -118,6 +131,8 @@ export interface CodexProcessOptions {
 	readonly codexHome?: string;
 	readonly sqliteHome?: string;
 	readonly ambientEnvironment?: CodexAmbientEnvironment;
+	/** Secrets supplied by a caller are redacted before process diagnostics are retained. */
+	readonly diagnosticSecrets?: readonly string[];
 	readonly argv?: readonly string[];
 	readonly stderrLimitBytes?: number;
 	readonly dependencies?: CodexProcessDependencies;
@@ -126,6 +141,7 @@ export interface CodexProcessOptions {
 export interface CodexProcess {
 	readonly start: () => Promise<CodexProcessSnapshot>;
 	readonly stop: () => Promise<CodexProcessSnapshot>;
+	readonly markAppServerReady: () => void;
 	readonly markAccountReady: () => void;
 	readonly markTerminalFailure: (message: string, cause?: unknown) => void;
 	readonly snapshot: () => CodexProcessSnapshot;
@@ -142,9 +158,10 @@ export class CodexProcessError extends Error {
 		readonly code: CodexProcessFailureCode;
 		readonly message: string;
 		readonly terminal: boolean;
+		/** Accepted for internal call-site compatibility but never retained publicly. */
 		readonly cause?: unknown;
 	}) {
-		super(init.message, { cause: init.cause });
+		super(init.message);
 		this.name = "CodexProcessError";
 		this.code = init.code;
 		this.terminal = init.terminal;
@@ -163,43 +180,14 @@ function canonicalCheckout(candidate: string | undefined): string {
 	try {
 		canonical = fs.realpathSync(value);
 		if (!fs.statSync(canonical).isDirectory()) throw new Error("not a directory");
-	} catch (cause) {
+	} catch {
 		throw new CodexProcessError({
 			code: "storage_refused",
 			terminal: true,
 			message: `The Codex checkout cwd ${value} is missing or not a directory.`,
-			cause,
 		});
 	}
 	return canonical;
-}
-
-function mapExecutableFailure(error: CodexExecutableError): CodexProcessError {
-	const code =
-		error.code === "wrong_version"
-			? "binary_wrong_version"
-			: error.code === "missing" || error.code === "version_unavailable"
-				? "binary_missing"
-				: "binary_invalid";
-	return new CodexProcessError({ code, terminal: true, message: error.message, cause: error });
-}
-
-function mapStorageFailure(error: CodexStorageError): CodexProcessError {
-	return new CodexProcessError({
-		code: "storage_refused",
-		terminal: true,
-		message: `${error.message} Recovery: use fresh owner-controlled 0700 CODEX_HOME and CODEX_SQLITE_HOME roots, then retry.`,
-		cause: error,
-	});
-}
-
-function failureValue(error: CodexProcessError): CodexProcessFailure {
-	return Object.freeze({
-		code: error.code,
-		message: error.message,
-		terminal: error.terminal,
-		cause: error.cause,
-	});
 }
 
 function exactArguments(
@@ -220,9 +208,8 @@ function exactArguments(
 	return Object.freeze([...candidate]);
 }
 
-function strictConfigHint(chunk: Uint8Array | string): boolean {
-	const text = typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
-	return /strict(?:[- ]config)|unknown argument|unrecognized option|invalid config/i.test(text);
+function strictConfigHint(text: string): boolean {
+	return /strict(?:[- ]config)|unknown argument|unrecognized option|invalid config/iu.test(text);
 }
 
 function exitFailureMessage(
@@ -235,21 +222,11 @@ function exitFailureMessage(
 	return `Codex child ${classification} with code=${String(exit.code)} signal=${String(exit.signal)} argv=${JSON.stringify(argv)}.${detail}`;
 }
 
-function signalChild(child: Child, signal: NodeJS.Signals): void {
-	const pid = child.pid;
-	if (process.platform !== "win32" && pid !== undefined && pid > 0) {
-		try {
-			process.kill(-pid, signal);
-			return;
-		} catch {
-			/* Fall through when the child is already closing or has no group. */
-		}
-	}
-	try {
-		child.kill(signal);
-	} catch {
-		/* A concurrent close already owns the exit result. */
-	}
+function diagnosticSecrets(options: CodexProcessOptions): readonly string[] {
+	const ambientSecrets = Object.entries(options.ambientEnvironment ?? process.env)
+		.filter(([key, value]) => value !== undefined && SECRET_ENVIRONMENT_KEY.test(key))
+		.map(([, value]) => value!);
+	return Object.freeze([...(options.diagnosticSecrets ?? []), ...ambientSecrets]);
 }
 
 /** Own one dedicated, exact-argv Codex app-server child and its restart/stop policy. */
@@ -258,11 +235,13 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 	const spawnChild = dependencies.spawn ?? (nodeSpawn as unknown as SpawnChild);
 	const verifyExecutable = dependencies.verifyExecutable ?? verifyCodexExecutable;
 	const prepareStorage = dependencies.prepareStorage ?? prepareCodexStorage;
+	const processGroup = dependencies.processGroup ?? createCodexProcessGroupOperations();
 	const now = dependencies.now ?? Date.now;
 	const schedule = dependencies.schedule ?? ((callback, delayMs) => setTimeout(callback, delayMs));
 	const cancel = dependencies.cancel ?? ((timer) => clearTimeout(timer));
 	const diagnostics = createCodexDiagnosticsBuffer(
 		options.stderrLimitBytes ?? CODEX_PROCESS_STDERR_MAX_BYTES,
+		diagnosticSecrets(options),
 	);
 	const listeners = new Set<(snapshot: CodexProcessSnapshot) => void>();
 	const childListeners = new Set<(child: CodexProcessChild) => void>();
@@ -296,9 +275,11 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 	let resolveStart: ((snapshot: CodexProcessSnapshot) => void) | undefined;
 	let rejectStart: ((error: Error) => void) | undefined;
 	let stopping = false;
+	const groups = new Set<ChildRecord>();
 
 	interface ChildRecord {
 		readonly child: Child;
+		readonly group: CodexProcessGroupIdentity;
 		readonly closed: Promise<{
 			readonly code: number | null;
 			readonly signal: NodeJS.Signals | null;
@@ -308,9 +289,18 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 			readonly signal: NodeJS.Signals | null;
 		}) => void;
 		spawned: boolean;
+		ready: boolean;
 		closedHandled: boolean;
 		strictHint: boolean;
+		strictTail: string;
+		groupQuiescent: boolean;
+		readinessTimer?: Timer;
+		groupCleanup?: Promise<void>;
 		error?: Error;
+	}
+
+	function safeCauseMessage(cause: unknown): string {
+		return diagnostics.redact(cause instanceof Error ? cause.message : String(cause));
 	}
 
 	function snapshot(): CodexProcessSnapshot {
@@ -320,6 +310,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 			executablePath,
 			argv: Object.freeze([...argv]),
 			cwd,
+			ready: current?.ready ?? false,
 			accountReady,
 			restartAttempt,
 			nextRestartAtMs,
@@ -340,6 +331,18 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		publish();
 	}
 
+	function failureValue(error: CodexProcessError): CodexProcessFailure {
+		return Object.freeze({
+			code: error.code,
+			message: diagnostics.redact(error.message),
+			terminal: error.terminal,
+		});
+	}
+
+	function shutdownError(message: string): CodexProcessError {
+		return new CodexProcessError({ code: "shutdown_failed", terminal: true, message });
+	}
+
 	function rejectPendingStart(error: Error): void {
 		const reject = rejectStart;
 		resolveStart = undefined;
@@ -356,29 +359,40 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		if (resolve) resolve(snapshot());
 	}
 
-	function releaseStorage(): void {
+	function cancelTimer(timer: Timer | undefined): void {
+		if (timer === undefined) return;
+		try {
+			cancel(timer);
+		} catch {
+			/* A timer that already fired has no further ownership. */
+		}
+	}
+
+	function clearReadiness(record: ChildRecord): void {
+		cancelTimer(record.readinessTimer);
+		record.readinessTimer = undefined;
+	}
+
+	function releaseStorage(): CodexProcessError | undefined {
 		const prepared = storage;
-		storage = undefined;
-		if (!prepared) return;
+		if (!prepared) return undefined;
 		try {
 			prepared.release();
+			storage = undefined;
+			return undefined;
 		} catch (cause) {
-			const error = new CodexProcessError({
-				code: "shutdown_failed",
-				terminal: true,
-				message: `Codex child stopped, but dedicated storage cleanup failed: ${cause instanceof Error ? cause.message : String(cause)}.`,
-				cause,
-			});
+			const error = shutdownError(
+				`Codex child ownership ended, but dedicated storage cleanup failed: ${safeCauseMessage(cause)}. Recovery: retry stop so the lock release can be attempted again.`,
+			);
 			lastFailure = failureValue(error);
 			publish();
+			return error;
 		}
 	}
 
 	function clearRestart(): void {
-		if (restartTimer !== undefined) {
-			cancel(restartTimer);
-			restartTimer = undefined;
-		}
+		cancelTimer(restartTimer);
+		restartTimer = undefined;
 		nextRestartAtMs = null;
 		restartDelayMs = null;
 	}
@@ -388,15 +402,241 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		terminalError = error;
 		lastFailure = failureValue(error);
 		accountReady = false;
+		if (current) {
+			current.ready = false;
+			clearReadiness(current);
+		}
 		setState("terminal_failure");
 		rejectPendingStart(error);
-		if (!current) releaseStorage();
+		if (!current && groups.size === 0) {
+			const cleanupError = releaseStorage();
+			if (cleanupError) {
+				terminalError = cleanupError;
+				lastFailure = failureValue(cleanupError);
+				publish();
+			}
+		}
+	}
+
+	function groupInspection(record: ChildRecord): CodexProcessGroupInspection {
+		try {
+			return processGroup.inspect(record.group);
+		} catch {
+			return "unproven";
+		}
+	}
+
+	function markGroupQuiescent(record: ChildRecord): void {
+		record.groupQuiescent = true;
+		if (record.closedHandled) groups.delete(record);
+	}
+
+	function groupFailure(status: CodexProcessGroupInspection, action: string): CodexProcessError {
+		const detail =
+			status === "reused" ? "its leader identity was reused" : "its ownership could not be proved";
+		return shutdownError(
+			`Could not ${action}: the Codex process group is ${detail}. Recovery: keep the owner terminal and retry after inspecting the remaining process group.`,
+		);
+	}
+
+	function waitUntil(deadlineAtMs: number): Promise<void> {
+		const delayMs = Math.max(0, deadlineAtMs - now());
+		if (delayMs === 0) return Promise.resolve();
+		return new Promise<void>((resolve, reject) => {
+			let timer: Timer | undefined;
+			let settled = false;
+			const finish = (): void => {
+				if (settled) return;
+				settled = true;
+				cancelTimer(timer);
+				resolve();
+			};
+			try {
+				timer = schedule(finish, delayMs);
+				if (settled) cancelTimer(timer);
+			} catch (cause) {
+				if (settled) return;
+				settled = true;
+				reject(cause);
+			}
+		});
+	}
+
+	function waitForClosedOrAt(
+		record: ChildRecord,
+		deadlineAtMs: number,
+	): Promise<"closed" | "time"> {
+		const delayMs = Math.max(0, deadlineAtMs - now());
+		if (delayMs === 0) return Promise.resolve("time");
+		return new Promise<"closed" | "time">((resolve, reject) => {
+			let timer: Timer | undefined;
+			let settled = false;
+			const finish = (result: "closed" | "time"): void => {
+				if (settled) return;
+				settled = true;
+				cancelTimer(timer);
+				resolve(result);
+			};
+			void record.closed.then(() => finish("closed"));
+			try {
+				timer = schedule(() => finish("time"), delayMs);
+				if (settled) cancelTimer(timer);
+			} catch (cause) {
+				if (settled) return;
+				settled = true;
+				reject(cause);
+			}
+		});
+	}
+
+	async function settleBeforeDeadline(
+		work: readonly Promise<void>[],
+		deadlineAtMs: number,
+	): Promise<PromiseSettledResult<void>[]> {
+		const all = Promise.allSettled(work);
+		let timer: Timer | undefined;
+		let settled = false;
+		const deadline = new Promise<never>((_resolve, reject) => {
+			const fail = (): void => {
+				if (settled) return;
+				settled = true;
+				reject(
+					shutdownError(
+						"The composed Codex shutdown deadline expired. Recovery: inspect retained process ownership and retry stop.",
+					),
+				);
+			};
+			try {
+				timer = schedule(fail, Math.max(0, deadlineAtMs - now()));
+				if (settled) cancelTimer(timer);
+			} catch (cause) {
+				if (settled) return;
+				settled = true;
+				reject(
+					shutdownError(
+						`Could not schedule the composed Codex shutdown deadline: ${safeCauseMessage(cause)}.`,
+					),
+				);
+			}
+		});
+		try {
+			return await Promise.race([all, deadline]);
+		} finally {
+			settled = true;
+			cancelTimer(timer);
+		}
+	}
+
+	async function cleanupGroup(record: ChildRecord, deadlineAtMs: number): Promise<void> {
+		if (record.groupQuiescent) return;
+		let status = groupInspection(record);
+		if (status === "quiescent") {
+			markGroupQuiescent(record);
+			return;
+		}
+		if (status !== "owned") throw groupFailure(status, "clean up the Codex process group");
+		try {
+			processGroup.signal(record.group, "SIGTERM");
+		} catch (cause) {
+			throw shutdownError(
+				`Could not send TERM to the Codex process group. Recovery: ${safeCauseMessage(cause)}.`,
+			);
+		}
+
+		const termAtMs = Math.min(deadlineAtMs, now() + CODEX_TERM_GRACE_MS);
+		const firstEvent = await waitForClosedOrAt(record, termAtMs);
+		status = groupInspection(record);
+		if (status === "quiescent") {
+			markGroupQuiescent(record);
+			return;
+		}
+		if (status !== "owned")
+			throw groupFailure(status, "finish TERM cleanup of the Codex process group");
+		if (firstEvent === "closed" && now() < termAtMs) await waitUntil(termAtMs);
+		if (now() < termAtMs) await waitUntil(termAtMs);
+
+		status = groupInspection(record);
+		if (status === "quiescent") {
+			markGroupQuiescent(record);
+			return;
+		}
+		if (status !== "owned") throw groupFailure(status, "escalate the Codex process group");
+		try {
+			processGroup.signal(record.group, "SIGKILL");
+		} catch (cause) {
+			throw shutdownError(
+				`Could not send KILL to the Codex process group. Recovery: ${safeCauseMessage(cause)}.`,
+			);
+		}
+		status = groupInspection(record);
+		if (status === "quiescent") {
+			markGroupQuiescent(record);
+			return;
+		}
+		if (status !== "owned")
+			throw groupFailure(status, "verify KILL cleanup of the Codex process group");
+		if (now() < deadlineAtMs) {
+			const killEvent = await waitForClosedOrAt(record, deadlineAtMs);
+			if (killEvent === "closed") {
+				status = groupInspection(record);
+				if (status === "quiescent") {
+					markGroupQuiescent(record);
+					return;
+				}
+				if (status !== "owned")
+					throw groupFailure(status, "verify KILL cleanup of the Codex process group");
+			}
+			if (now() < deadlineAtMs) await waitUntil(deadlineAtMs);
+		}
+		status = groupInspection(record);
+		if (status === "quiescent") {
+			markGroupQuiescent(record);
+			return;
+		}
+		throw groupFailure(status, "complete composed Codex shutdown");
+	}
+
+	function ensureGroupCleanup(record: ChildRecord, deadlineAtMs: number): Promise<void> {
+		if (record.groupQuiescent) return Promise.resolve();
+		if (record.groupCleanup) return record.groupCleanup;
+		const pending = cleanupGroup(record, deadlineAtMs);
+		record.groupCleanup = pending;
+		void pending.catch(() => {
+			if (record.groupCleanup === pending) record.groupCleanup = undefined;
+		});
+		return pending;
+	}
+
+	function observeGroupCleanup(record: ChildRecord, deadlineAtMs: number): void {
+		const cleanup = ensureGroupCleanup(record, deadlineAtMs);
+		void cleanup.then(
+			() => {
+				if (state === "terminal_failure" && !current && groups.size === 0) {
+					const cleanupError = releaseStorage();
+					if (cleanupError) {
+						terminalError = cleanupError;
+						lastFailure = failureValue(cleanupError);
+						publish();
+					}
+				}
+				return undefined;
+			},
+			(cause: unknown) => {
+				const error =
+					cause instanceof CodexProcessError
+						? cause
+						: shutdownError(
+								`Could not complete Codex process-group cleanup: ${safeCauseMessage(cause)}.`,
+							);
+				terminalFailure(error);
+			},
+		);
 	}
 
 	function classifyExit(record: ChildRecord): CodexProcessExit["classification"] {
 		if (stopping) return "requested";
 		if (record.strictHint) return "strict_config";
-		return record.spawned ? "crash" : "early_exit";
+		return record.ready ? "crash" : "early_exit";
 	}
 
 	function scheduleRestart(
@@ -413,29 +653,43 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		lastFailure = Object.freeze({
 			code: classification,
 			terminal: false,
-			message: exitFailureMessage(classification, exit, argv, diagnostics.snapshot()),
+			message: diagnostics.redact(
+				exitFailureMessage(classification, exit, argv, diagnostics.snapshot()),
+			),
 		});
 		setState("backoff");
-		restartTimer = schedule(() => {
-			restartTimer = undefined;
-			nextRestartAtMs = null;
-			restartDelayMs = null;
-			if (stopping || state !== "backoff") return;
-			try {
-				spawnAttempt();
-			} catch (cause) {
-				const error =
-					cause instanceof CodexProcessError
-						? cause
-						: new CodexProcessError({
-								code: "spawn_failed",
-								terminal: true,
-								message: `Could not restart the Codex child: ${cause instanceof Error ? cause.message : String(cause)}.`,
-								cause,
-							});
-				terminalFailure(error);
-			}
-		}, delayMs);
+		try {
+			restartTimer = schedule(() => {
+				restartTimer = undefined;
+				nextRestartAtMs = null;
+				restartDelayMs = null;
+				if (stopping || state !== "backoff") return;
+				try {
+					spawnAttempt();
+				} catch (cause) {
+					const error =
+						cause instanceof CodexProcessError
+							? cause
+							: new CodexProcessError({
+									code: "spawn_failed",
+									terminal: true,
+									message: `Could not restart the Codex child: ${safeCauseMessage(cause)}.`,
+									cause,
+								});
+					terminalFailure(error);
+				}
+			}, delayMs);
+		} catch (cause) {
+			terminalFailure(
+				shutdownError(`Could not schedule the Codex restart: ${safeCauseMessage(cause)}.`),
+			);
+		}
+	}
+
+	function updateStrictHint(record: ChildRecord, chunk: string): void {
+		record.strictHint ||= strictConfigHint(chunk);
+		record.strictTail = `${record.strictTail}${chunk}`.slice(-STRICT_CONFIG_MATCH_WINDOW);
+		record.strictHint ||= strictConfigHint(record.strictTail);
 	}
 
 	function handleClosed(
@@ -444,6 +698,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 	): void {
 		if (record.closedHandled) return;
 		record.closedHandled = true;
+		clearReadiness(record);
 		record.resolveClosed(exit);
 		if (current === record) current = undefined;
 		const classification = classifyExit(record);
@@ -452,11 +707,11 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		publish();
 
 		if (classification === "requested") {
-			publish();
+			observeGroupCleanup(record, now() + CODEX_COMPOSED_SHUTDOWN_MS);
 			return;
 		}
 		if (state === "terminal_failure") {
-			releaseStorage();
+			observeGroupCleanup(record, now() + CODEX_COMPOSED_SHUTDOWN_MS);
 			return;
 		}
 		if (classification === "strict_config") {
@@ -468,9 +723,10 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 					" Check config.toml and the exact strict argv.",
 			});
 			terminalFailure(error);
+			observeGroupCleanup(record, now() + CODEX_COMPOSED_SHUTDOWN_MS);
 			return;
 		}
-		if (!record.spawned) {
+		if (!record.ready)
 			rejectPendingStart(
 				new CodexProcessError({
 					code: "early_exit",
@@ -478,8 +734,43 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 					message: exitFailureMessage("early_exit", exit, argv, diagnostics.snapshot()),
 				}),
 			);
-		}
-		scheduleRestart(exit, classification);
+		setState("group_cleanup");
+		const cleanup = ensureGroupCleanup(record, now() + CODEX_COMPOSED_SHUTDOWN_MS);
+		void cleanup.then(
+			() => {
+				if (stopping || state !== "group_cleanup") return;
+				scheduleRestart(exit, classification);
+				return undefined;
+			},
+			(cause: unknown) => {
+				const error =
+					cause instanceof CodexProcessError
+						? cause
+						: shutdownError(
+								`Could not complete Codex process-group cleanup: ${safeCauseMessage(cause)}.`,
+							);
+				terminalFailure(error);
+			},
+		);
+	}
+
+	function readinessTimeout(record: ChildRecord): void {
+		record.readinessTimer = undefined;
+		if (
+			current !== record ||
+			record.closedHandled ||
+			record.ready ||
+			stopping ||
+			state !== "running"
+		)
+			return;
+		const error = new CodexProcessError({
+			code: "startup_timeout",
+			terminal: true,
+			message: `The Codex app-server spawned but did not acknowledge typed readiness within ${CODEX_REQUEST_SETTLEMENT_MS} ms. Recovery: verify the app-server handshake and retry start.`,
+		});
+		terminalFailure(error);
+		void stop().catch(() => undefined);
 	}
 
 	function spawnAttempt(): void {
@@ -491,11 +782,20 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		} catch (cause) {
 			const error =
 				cause instanceof CodexExecutableError
-					? mapExecutableFailure(cause)
+					? new CodexProcessError({
+							code:
+								cause.code === "wrong_version"
+									? "binary_wrong_version"
+									: cause.code === "missing" || cause.code === "version_unavailable"
+										? "binary_missing"
+										: "binary_invalid",
+							terminal: true,
+							message: diagnostics.redact(cause.message),
+						})
 					: new CodexProcessError({
 							code: "binary_invalid",
 							terminal: true,
-							message: `Could not verify the configured Codex executable: ${cause instanceof Error ? cause.message : String(cause)}.`,
+							message: `Could not verify the configured Codex executable: ${safeCauseMessage(cause)}.`,
 							cause,
 						});
 			terminalFailure(error);
@@ -511,7 +811,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 					: new CodexProcessError({
 							code: "binary_invalid",
 							terminal: true,
-							message: `The configured Codex child argv is invalid: ${cause instanceof Error ? cause.message : String(cause)}.`,
+							message: `The configured Codex child argv is invalid: ${safeCauseMessage(cause)}.`,
 							cause,
 						});
 			terminalFailure(error);
@@ -527,7 +827,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 						: new CodexProcessError({
 								code: "storage_refused",
 								terminal: true,
-								message: `Could not establish the canonical Codex checkout cwd: ${cause instanceof Error ? cause.message : String(cause)}.`,
+								message: `Could not establish the canonical Codex checkout cwd: ${safeCauseMessage(cause)}.`,
 								cause,
 							});
 				terminalFailure(error);
@@ -545,20 +845,24 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 			} catch (cause) {
 				const error =
 					cause instanceof CodexStorageError
-						? mapStorageFailure(cause)
+						? new CodexProcessError({
+								code: "storage_refused",
+								terminal: true,
+								message: `${diagnostics.redact(cause.message)} Recovery: use fresh owner-controlled 0700 CODEX_HOME and CODEX_SQLITE_HOME roots, then retry.`,
+							})
 						: new CodexProcessError({
 								code: "storage_refused",
 								terminal: true,
-								message: `Could not prepare the dedicated Codex storage: ${cause instanceof Error ? cause.message : String(cause)}.`,
+								message: `Could not prepare the dedicated Codex storage: ${safeCauseMessage(cause)}.`,
 								cause,
 							});
 				if (storage) {
 					try {
 						storage.release();
+						storage = undefined;
 					} catch {
-						/* Preserve the preparation failure. */
+						/* Retain storage ownership so terminal cleanup can retry the lock release. */
 					}
-					storage = undefined;
 				}
 				terminalFailure(error);
 				throw error;
@@ -581,7 +885,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 			const error = new CodexProcessError({
 				code: "spawn_failed",
 				terminal: true,
-				message: `Could not spawn the exact Codex app-server child with argv ${JSON.stringify(argv)}.`,
+				message: `Could not spawn the exact Codex app-server child with argv ${JSON.stringify(argv)}: ${safeCauseMessage(cause)}.`,
 				cause,
 			});
 			terminalFailure(error);
@@ -601,6 +905,26 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 			}
 			throw error;
 		}
+
+		let group: CodexProcessGroupIdentity;
+		try {
+			group = processGroup.capture(child.pid);
+		} catch (cause) {
+			const error = new CodexProcessError({
+				code: "spawn_failed",
+				terminal: true,
+				message: `Could not prove ownership of the Codex process group after spawn. Recovery: refuse restart until the child-group boundary is available.`,
+				cause,
+			});
+			try {
+				child.kill("SIGKILL");
+			} catch {
+				/* A positive child handle is the only safe fallback when group proof failed. */
+			}
+			terminalFailure(error);
+			throw error;
+		}
+
 		let resolveClosed!: ChildRecord["resolveClosed"];
 		const closed = new Promise<{
 			readonly code: number | null;
@@ -610,23 +934,43 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		});
 		const record: ChildRecord = {
 			child,
+			group,
 			closed,
 			resolveClosed,
 			spawned: false,
+			ready: false,
 			closedHandled: false,
 			strictHint: false,
+			strictTail: "",
+			groupQuiescent: false,
 		};
 		current = record;
+		groups.add(record);
 		child.stderr.on("data", (chunk: Buffer | string) => {
-			record.strictHint ||= strictConfigHint(chunk);
-			diagnostics.append(chunk);
+			const redacted = diagnostics.append(chunk);
+			updateStrictHint(record, redacted);
 			publish();
 		});
 		child.stderr.resume();
 		child.once("spawn", () => {
+			if (record.closedHandled) return;
 			record.spawned = true;
 			if (stopping) return;
 			setState("running");
+			try {
+				record.readinessTimer = schedule(
+					() => readinessTimeout(record),
+					CODEX_REQUEST_SETTLEMENT_MS,
+				);
+			} catch (cause) {
+				terminalFailure(
+					shutdownError(
+						`Could not schedule the Codex readiness timeout: ${safeCauseMessage(cause)}.`,
+					),
+				);
+				void stop().catch(() => undefined);
+				return;
+			}
 			const publicChild = Object.freeze({
 				pid: child.pid!,
 				stdin: child.stdin,
@@ -634,7 +978,6 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 				stderr: child.stderr,
 			});
 			for (const listener of childListeners) listener(publicChild);
-			resolvePendingStart();
 		});
 		child.once("error", (error) => {
 			record.error = error;
@@ -642,7 +985,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 				const processError = new CodexProcessError({
 					code: "spawn_failed",
 					terminal: true,
-					message: `The Codex app-server child failed before spawn with argv ${JSON.stringify(argv)}: ${error.message}.`,
+					message: `The Codex app-server child failed before spawn with argv ${JSON.stringify(argv)}: ${safeCauseMessage(error)}.`,
 					cause: error,
 				});
 				terminalFailure(processError);
@@ -667,7 +1010,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 					: new CodexProcessError({
 							code: "spawn_failed",
 							terminal: true,
-							message: `Could not start the Codex app-server child: ${cause instanceof Error ? cause.message : String(cause)}.`,
+							message: `Could not start the Codex app-server child: ${safeCauseMessage(cause)}.`,
 							cause,
 						});
 			if (state !== "terminal_failure") terminalFailure(error);
@@ -676,10 +1019,28 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		return pending;
 	}
 
+	function waitForReadiness(): Promise<CodexProcessSnapshot> {
+		if (current?.ready) return Promise.resolve(snapshot());
+		if (startPromise) return startPromise;
+		if (!current)
+			return Promise.reject(
+				new CodexProcessError({
+					code: "spawn_failed",
+					terminal: true,
+					message: "The Codex process is running without an owned child readiness record.",
+				}),
+			);
+		const pending = new Promise<CodexProcessSnapshot>((resolve, reject) => {
+			resolveStart = resolve;
+			rejectStart = reject;
+		});
+		startPromise = pending;
+		return pending;
+	}
+
 	async function start(): Promise<CodexProcessSnapshot> {
-		if (state === "running" || state === "starting")
-			return startPromise ?? Promise.resolve(snapshot());
-		if (state === "backoff") return Promise.resolve(snapshot());
+		if (state === "running" || state === "starting") return waitForReadiness();
+		if (state === "backoff" || state === "group_cleanup") return Promise.resolve(snapshot());
 		if (state === "stopping" && stopPromise) {
 			await stopPromise;
 			return start();
@@ -695,49 +1056,90 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 
 	async function stop(): Promise<CodexProcessSnapshot> {
 		if (stopPromise) return stopPromise;
-		stopPromise = (async () => {
+		const operation = (async (): Promise<CodexProcessSnapshot> => {
 			stopping = true;
 			clearRestart();
 			if (state !== "stopped") setState("stopping");
+			const deadlineAtMs = now() + CODEX_COMPOSED_SHUTDOWN_MS;
+			rejectPendingStart(
+				shutdownError(
+					"Codex startup was canceled by stop before app-server readiness. Recovery: await stop, then retry start.",
+				),
+			);
+			let shutdownIssue: CodexProcessError | undefined;
 			const record = current;
 			if (record) {
 				try {
 					if (!record.child.stdin.destroyed && !record.child.stdin.writableEnded)
 						record.child.stdin.end();
 				} catch (cause) {
-					lastFailure = Object.freeze({
-						code: "shutdown_failed",
-						terminal: false,
-						message: `Could not close Codex child stdin: ${cause instanceof Error ? cause.message : String(cause)}.`,
-						cause,
-					});
-					publish();
-				}
-				if (!record.closedHandled) signalChild(record.child, "SIGTERM");
-				const termGraceTimer = new Promise<false>((resolve) => {
-					const timer = schedule(() => resolve(false), CODEX_TERM_GRACE_MS);
-					void record.closed.then(() => cancel(timer));
-				});
-				const exitedBeforeKill = await Promise.race([
-					record.closed.then(() => true),
-					termGraceTimer,
-				]);
-				if (!exitedBeforeKill && !record.closedHandled) {
-					signalChild(record.child, "SIGKILL");
-					await record.closed;
+					shutdownIssue = shutdownError(
+						`Could not close Codex child stdin: ${safeCauseMessage(cause)}. Recovery: retry stop after the child has settled.`,
+					);
 				}
 			}
+
+			const records = [...groups];
+			const work: Promise<void>[] = [];
+			for (const owned of records) {
+				work.push(
+					(async () => {
+						await ensureGroupCleanup(owned, deadlineAtMs);
+						if (owned.closedHandled) return;
+						const result = await waitForClosedOrAt(owned, deadlineAtMs);
+						if (result === "time")
+							throw shutdownError(
+								"The Codex child did not close before the composed shutdown deadline. Recovery: inspect the retained process group and retry stop.",
+							);
+					})(),
+				);
+			}
+			const results = await settleBeforeDeadline(work, deadlineAtMs);
+			const failed = results.find(
+				(result): result is PromiseRejectedResult => result.status === "rejected",
+			);
+			if (failed) {
+				const cause = failed.reason;
+				throw cause instanceof CodexProcessError
+					? cause
+					: shutdownError(`Could not complete Codex shutdown: ${safeCauseMessage(cause)}.`);
+			}
+			if (now() >= deadlineAtMs || current || groups.size > 0)
+				throw shutdownError(
+					"Codex shutdown did not prove that the child and its process group are quiescent. Recovery: inspect the retained ownership and retry stop.",
+				);
+			if (shutdownIssue) throw shutdownIssue;
+			const releaseError = releaseStorage();
+			if (releaseError) throw releaseError;
 			accountReady = false;
-			releaseStorage();
-			setState("stopped");
 			stopping = false;
+			setState("stopped");
 			return snapshot();
 		})();
-		return stopPromise;
+		stopPromise = operation;
+		void operation.catch((cause: unknown) => {
+			if (stopPromise !== operation) return;
+			stopPromise = undefined;
+			const error =
+				cause instanceof CodexProcessError
+					? cause
+					: shutdownError(`Could not complete Codex shutdown: ${safeCauseMessage(cause)}.`);
+			terminalFailure(error);
+		});
+		return operation;
+	}
+
+	function markAppServerReady(): void {
+		if (stopping || state !== "running" || !current || current.closedHandled || current.ready)
+			return;
+		current.ready = true;
+		clearReadiness(current);
+		publish();
+		resolvePendingStart();
 	}
 
 	function markAccountReady(): void {
-		if (state !== "running") return;
+		if (state !== "running" || !current?.ready) return;
 		accountReady = true;
 		restartAttempt = 0;
 		lastFailure = null;
@@ -748,11 +1150,11 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 		terminalFailure(
 			new CodexProcessError({ code: "strict_config_rejected", terminal: true, message, cause }),
 		);
-		if (current) void stop().catch(() => undefined);
+		if (current || groups.size > 0) void stop().catch(() => undefined);
 	}
 
 	function currentChild(): CodexProcessChild | null {
-		if (!current || current.closedHandled) return null;
+		if (!current || current.closedHandled || !current.spawned) return null;
 		return Object.freeze({
 			pid: current.child.pid!,
 			stdin: current.child.stdin,
@@ -776,6 +1178,7 @@ export function createCodexProcess(options: CodexProcessOptions): CodexProcess {
 	return Object.freeze({
 		start,
 		stop,
+		markAppServerReady,
 		markAccountReady,
 		markTerminalFailure,
 		snapshot,
