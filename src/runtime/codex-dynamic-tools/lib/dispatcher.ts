@@ -10,11 +10,13 @@ import {
 	CodexDynamicToolsError,
 	type CodexDynamicTools,
 	type CodexDynamicToolsOptions,
+	type DynamicDispatchErrorCode,
 	type DynamicApprovalIdentity,
 	type DynamicCallerAuthority,
 	type DynamicContextAuthority,
 	type DynamicImmutableEffect,
 	type DynamicMutationToolName,
+	type DynamicRefusalReason,
 	type DynamicTargetAuthority,
 	type DynamicToolApprovalDecision,
 	type DynamicToolApprovalRequest,
@@ -30,6 +32,7 @@ import {
 } from "./classification.js";
 import {
 	approvalExpiry,
+	createDynamicOperationSettlement,
 	dynamicEffectHash,
 	issueMutationOperations,
 	issueReadOperation,
@@ -38,7 +41,7 @@ import {
 	validateDecisionShape,
 } from "./effects.js";
 import { executeCreate, executeFork, executeSend, type MutationExecution } from "./mutations.js";
-import type { PreparedDynamicMutation } from "./effects.js";
+import type { DynamicOperationSettlement, PreparedDynamicMutation } from "./effects.js";
 import { projectList, projectRead } from "./projection.js";
 import {
 	approvalRequiredDynamicResponse,
@@ -475,10 +478,18 @@ async function executeMutation(
 	target: DynamicTargetAuthority | null,
 	contextAuthority: DynamicContextAuthority,
 	options: CodexDynamicToolsOptions,
+	operationSettlement: DynamicOperationSettlement,
 ): Promise<MutationExecution> {
 	switch (prepared.effect.tool) {
 		case "create_thread":
-			return executeCreate(prepared, request, caller, contextAuthority, options);
+			return executeCreate(
+				prepared,
+				request,
+				caller,
+				contextAuthority,
+				options,
+				operationSettlement,
+			);
 		case "fork_thread":
 			if (target === null || prepared.relation === null)
 				throw new CodexDynamicToolsError("invalid_call", "The fork target authority is missing.");
@@ -490,11 +501,20 @@ async function executeMutation(
 				target,
 				prepared.relation,
 				options,
+				operationSettlement,
 			);
 		case "send_message_to_thread":
 			if (target === null)
 				throw new CodexDynamicToolsError("invalid_call", "The send target authority is missing.");
-			return executeSend(prepared, request, caller, contextAuthority, target, options);
+			return executeSend(
+				prepared,
+				request,
+				caller,
+				contextAuthority,
+				target,
+				options,
+				operationSettlement,
+			);
 	}
 }
 
@@ -503,10 +523,13 @@ async function dispatchOne(
 	options: CodexDynamicToolsOptions,
 ): Promise<DynamicToolCallResponse> {
 	let knownName: GeneralThreadToolName | null = null;
+	let boundaryValidated = false;
+	let operationSettlement: DynamicOperationSettlement | null = null;
 	try {
 		const call = validateDynamicCall(request, options);
-		const immutableRequest = freezeDynamicRequest(request);
+		boundaryValidated = true;
 		knownName = call.name;
+		const immutableRequest = freezeDynamicRequest(request);
 		const caller = await resolveCaller(immutableRequest, options);
 		await assertCallExecuting(options, immutableRequest, caller, "before_approval");
 		if (call.name === "list_threads") {
@@ -639,6 +662,7 @@ async function dispatchOne(
 			mutationName === "create_thread" ||
 				(mutationName === "fork_thread" && call.arguments.prompt !== undefined),
 		);
+		operationSettlement = createDynamicOperationSettlement(options, operations);
 		const effectArgs = effectArguments(mutationName, call.arguments);
 		const prepared = prepareMutation(
 			immutableRequest,
@@ -687,6 +711,7 @@ async function dispatchOne(
 			revalidated.target,
 			revalidated.context,
 			options,
+			operationSettlement,
 		);
 		if (execution.kind === "outcome_unknown")
 			return outcomeUnknownDynamicResponse(mutationName, execution.operationId);
@@ -699,28 +724,29 @@ async function dispatchOne(
 		});
 	} catch (error) {
 		const failure = dynamicErrorForResponse(error);
-		if (knownName !== null) {
-			if (failure.code === "invalid_call" || failure.code === "unsupported")
-				return dynamicResponse(
-					knownName,
-					{
-						tag: "refused",
-						reason: failure.code,
-						message: boundedFailureMessage(failure.message),
-					},
-					false,
-				);
+		if (boundaryValidated && knownName !== null)
 			return refusedDynamicResponse(
 				knownName,
-				failure.code as Exclude<typeof failure.code, "not_delivered" | "outcome_unknown">,
+				refusalReasonForResponse(failure.code),
 				boundedFailureMessage(failure.message),
 			);
-		}
 		return invalidDynamicResponse(
 			failure.code === "unsupported" ? "unsupported" : "invalid_call",
 			boundedFailureMessage(failure.message),
 		);
+	} finally {
+		if (operationSettlement !== null) {
+			try {
+				operationSettlement.retireUnsettled();
+			} catch {
+				/* The settlement marks before crossing the host boundary; never retry it. */
+			}
+		}
 	}
+}
+
+function refusalReasonForResponse(code: DynamicDispatchErrorCode): DynamicRefusalReason {
+	return code === "not_delivered" || code === "outcome_unknown" ? "system_error" : code;
 }
 
 function boundedFailureMessage(value: string): string {

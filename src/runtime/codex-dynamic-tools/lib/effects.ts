@@ -41,6 +41,17 @@ export interface DynamicIssuedOperations {
 	readonly initialTurnOperationId: OperationId | null;
 }
 
+/**
+ * Owns the terminal transition for the operation identities issued by one
+ * mutation call. Keeping this state beside the prepared effect prevents a
+ * late error path from reusing an identity or leaving it current forever.
+ */
+export interface DynamicOperationSettlement {
+	readonly consume: (operationId: OperationId) => void;
+	readonly retire: (operationId: OperationId) => void;
+	readonly retireUnsettled: () => void;
+}
+
 export interface PreparedDynamicMutation {
 	readonly identity: DynamicApprovalIdentity;
 	readonly effect: DynamicImmutableEffect;
@@ -198,13 +209,83 @@ export function issueMutationOperations(
 	hasInitialTurn: boolean,
 ): DynamicIssuedOperations {
 	const mutationOperationId = options.operationId.issueCanonicalOperationId();
-	const initialTurnOperationId = hasInitialTurn
-		? options.operationId.issueCanonicalOperationId()
-		: null;
+	try {
+		return Object.freeze({
+			resultOperationId: mutationOperationId,
+			mutationOperationId,
+			initialTurnOperationId: hasInitialTurn
+				? options.operationId.issueCanonicalOperationId()
+				: null,
+		});
+	} catch (error) {
+		try {
+			options.operationId.retireCanonicalOperationId(mutationOperationId);
+		} catch (retirementError) {
+			throw new CodexDynamicToolsError(
+				"system_error",
+				"The partially issued dynamic operation could not be retired.",
+				retirementError,
+			);
+		}
+		throw error;
+	}
+}
+
+export function createDynamicOperationSettlement(
+	options: CodexDynamicToolsOptions,
+	operations: DynamicIssuedOperations,
+): DynamicOperationSettlement {
+	const owned = Object.freeze(operationIdsForRetirement(operations));
+	if (new Set(owned).size !== owned.length)
+		throw new CodexDynamicToolsError(
+			"system_error",
+			"The dynamic operation authority issued duplicate identities for one call.",
+		);
+	const terminal = new Set<OperationId>();
+
+	const terminalize = (operationId: OperationId, kind: "consume" | "retire"): void => {
+		if (!owned.includes(operationId))
+			throw new CodexDynamicToolsError(
+				"system_error",
+				"The dynamic operation settlement received an identity it does not own.",
+			);
+		if (terminal.has(operationId))
+			throw new CodexDynamicToolsError(
+				"system_error",
+				"The dynamic operation identity was settled more than once.",
+			);
+		// Mark before crossing the port boundary. A throwing host implementation
+		// must not cause the dispatcher to invoke the terminal authority twice.
+		terminal.add(operationId);
+		try {
+			if (kind === "consume") options.operationId.consumeCanonicalOperationId(operationId);
+			else options.operationId.retireCanonicalOperationId(operationId);
+		} catch (error) {
+			throw new CodexDynamicToolsError(
+				"system_error",
+				`The dynamic operation identity could not be ${kind}d.`,
+				error,
+			);
+		}
+	};
+
+	const retireUnsettled = (): void => {
+		let firstError: unknown = null;
+		for (const operationId of owned) {
+			if (terminal.has(operationId)) continue;
+			try {
+				terminalize(operationId, "retire");
+			} catch (error) {
+				firstError ??= error;
+			}
+		}
+		if (firstError !== null) throw firstError;
+	};
+
 	return Object.freeze({
-		resultOperationId: mutationOperationId,
-		mutationOperationId,
-		initialTurnOperationId,
+		consume: (operationId: OperationId): void => terminalize(operationId, "consume"),
+		retire: (operationId: OperationId): void => terminalize(operationId, "retire"),
+		retireUnsettled,
 	});
 }
 
