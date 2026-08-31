@@ -1,6 +1,7 @@
 export {
 	COORDINATOR_DYNAMIC_DISPATCHERS,
 	COORDINATOR_TOOLS_OWNER,
+	COORDINATOR_REPLAY_LIMITS,
 	CodexCoordinatorToolsError,
 } from "./lib/contract.js";
 export type {
@@ -20,6 +21,7 @@ export type {
 	CoordinatorToolNameValue,
 	CoordinatorToolRefusal,
 	CoordinatorToolResponsePort,
+	CoordinatorReplayStateSnapshot,
 	CoordinatorToolSpokenResult,
 	CoordinatorToolThread,
 	CoordinatorToolValue,
