@@ -356,7 +356,7 @@ describe("Codex approval presentation and spoken policy", () => {
 			expect(presentation).toMatchObject({
 				requestId: pending.requestId,
 				family: "command_execution",
-				effectSummary: "Run echo spoken",
+				effectSummary: "Run echo spoken in /workspace",
 				binding: pending.binding,
 			});
 			expect(Object.isFrozen(presentation)).toBe(true);

@@ -171,7 +171,7 @@ export function commandRequest(
 	identity: IdentityAuthority,
 	label: string,
 	availableDecisions = ["accept", "decline"],
-): TransportServerRequest {
+): Extract<TransportServerRequest, { readonly method: "item/commandExecution/requestApproval" }> {
 	return commandRequestWithAvailableDecisions(identity, label, availableDecisions);
 }
 
@@ -179,7 +179,7 @@ export function commandRequestWithAvailableDecisions(
 	identity: IdentityAuthority,
 	label: string,
 	availableDecisions: readonly unknown[] | null | undefined,
-): TransportServerRequest {
+): Extract<TransportServerRequest, { readonly method: "item/commandExecution/requestApproval" }> {
 	const params = {
 		...itemParams(identity, label),
 		kind: "command",
@@ -201,6 +201,18 @@ export function commandRequestWithAvailableDecisions(
 		availableDecisions === undefined ? params : { ...params, availableDecisions },
 		label,
 	);
+}
+
+export function commandRequestWithoutCommand(
+	identity: IdentityAuthority,
+	label: string,
+	shape: "null" | "omitted",
+): Extract<TransportServerRequest, { readonly method: "item/commandExecution/requestApproval" }> {
+	const request = commandRequest(identity, label);
+	if (shape === "null") return { ...request, params: { ...request.params, command: null } };
+	const { command: omittedCommand, ...params } = request.params;
+	void omittedCommand;
+	return { ...request, params };
 }
 
 export function commandRequestWithoutAvailableDecisions(

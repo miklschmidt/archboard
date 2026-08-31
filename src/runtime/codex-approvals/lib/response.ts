@@ -270,13 +270,36 @@ function spokenText(value: unknown): string | null {
 }
 
 function spokenCommandEffectSummary(request: CommandApprovalRequest): string {
-	let summary: string | null;
-	if (request.params.command !== undefined && request.params.command !== null) {
-		const command = spokenText(request.params.command);
-		summary = command === null ? null : `Run ${command}`;
-	} else {
-		summary = spokenText(request.params.reason);
-	}
+	if (request.params.command === undefined || request.params.command === null)
+		throw new CodexApprovalError(
+			"unsupported_schema",
+			"The command approval has no executable command for spoken presentation.",
+			request.requestId,
+		);
+	const command = spokenText(request.params.command);
+	const cwd = spokenText(request.params.cwd);
+	if (command === null || cwd === null)
+		throw new CodexApprovalError(
+			"unsupported_schema",
+			"The command approval has no safe one-line executable effect presentation.",
+			request.requestId,
+		);
+	if (request.params.environmentId !== undefined && request.params.environmentId !== null)
+		throw new CodexApprovalError(
+			"unsupported_schema",
+			"The command approval targets an undisclosed execution environment.",
+			request.requestId,
+		);
+	if (
+		request.params.networkApprovalContext !== undefined &&
+		request.params.networkApprovalContext !== null
+	)
+		throw new CodexApprovalError(
+			"unsupported_schema",
+			"The command approval includes an undisclosed network effect.",
+			request.requestId,
+		);
+	const summary = `Run ${command} in ${cwd}`;
 	const bounded = spokenText(summary);
 	if (bounded === null)
 		throw new CodexApprovalError(
@@ -408,6 +431,7 @@ export function spokenEligibility(
 	request: ApprovalRequest,
 	currentBinding: boolean,
 	facts: SpokenEligibilityFacts,
+	effectPresentation: SpokenApprovalEffectPresentation | null,
 ): SpokenEligibility {
 	if (
 		request.family === "user_input" &&
@@ -419,6 +443,8 @@ export function spokenEligibility(
 		return { eligible: false, reason: "coordinator_blocking" };
 	if (facts.unsupportedSchema === true) return { eligible: false, reason: "unsupported_schema" };
 	if (facts.broaderGrant === true) return { eligible: false, reason: "broader_grant" };
+	if (request.family === "command_execution" && effectPresentation === null)
+		return { eligible: false, reason: "unsupported_schema" };
 	if (!currentBinding) return { eligible: false, reason: "stale_ownership" };
 
 	switch (request.family) {

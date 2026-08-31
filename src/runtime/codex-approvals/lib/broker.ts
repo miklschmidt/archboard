@@ -429,6 +429,7 @@ export function createCodexApprovalBroker(
 			record.request,
 			live !== null && sameBinding(live, record.request.binding),
 			facts,
+			record.spokenEffectPresentation,
 		);
 	};
 

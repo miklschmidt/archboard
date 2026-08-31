@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 17:57'
+updated_date: '2026-08-31 18:18'
 labels: []
 dependencies:
   - TASK-143.02.03
@@ -50,10 +50,16 @@ Own the one-slot spoken-approval gate and schedule a later ordinary coordinator 
 7. Remove the fixture-only TransportServerRequest export from the public transport root and type test support through the existing internal server-request contract without widening production API.
 
 8. Re-run focused mismatch, type, lint, format, repository, module, and diff checks, preserve task state and protected files, then commit and report the complete remediation range for rereview.
+
+9. Make omitted or null command approvals visual-only by requiring a cached broker-derived executable presentation, never falling back to reason, and audit command effect fields plus broader-grant gates before spoken classification.
+
+10. Add fail-first broker and public-gate tests for decoded null and omitted command shapes, rerun focused broker/spoken, type, lint, format, module, and diff checks without repeating preserved repository-policy OOM lanes, then commit and report the complete fixed-base range.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Review remediation applied: the approval broker now caches a frozen spokenEffectPresentation derived from the normalized command effect, and the public gate rejects both caller-summary and assistant-prompt mismatches as invalid_effect_prompt before any classifier turn. The generic TransportServerRequest export was removed from the transport root; spoken-approval fixtures use the existing internal server-request contract. Final focused evidence: approval and spoken-approval suites passed 29 tests with 207 assertions; TypeScript, scoped Oxlint, scoped Oxfmt, the full module lane, and git diff --check passed. The full repository lane and a two-owner boundary invocation reached the mandated 6G/1G cap after initial boundary owners emitted passing results and were not retried. Protected frontend bundle SHA-256 remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Task remains In Progress with acceptance criteria unchecked for independent rereview.
+
+Remediation 2: the broker now caches a safe executable effect presentation at normalization and passes its availability into spoken eligibility. Missing or unsafe command text, cwd, execution-environment identity, or network approval context stays visual-only with unsupported_schema; the free-form reason is never used as a spoken effect fallback. Added broker regressions for decoded null and omitted command fields plus public spoken-gate regressions proving no classifier turn starts. Final scoped evidence: 38 focused approvals/spoken tests passed with 308 expectations; bunx tsc --noEmit passed; scoped oxlint passed; scoped oxfmt check passed; bun run test:modules passed. The preserved full repository-policy and boundary lanes were not rerun because their prior mandated 6G/1G cgroup OOM evidence remains unchanged.
 <!-- SECTION:NOTES:END -->
