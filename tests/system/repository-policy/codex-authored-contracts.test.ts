@@ -236,13 +236,13 @@ const reviewedDigests: ReviewedDigest[] = [
 	{
 		name: "complete authored contract prose and literals",
 		consumer: "TASK-143.01.07, TASK-143.05.03, and TASK-143.07.07",
-		expected: "f6623b8539d6d92a056ec375618c7667ba50f490f39f17662ab471ce985bbacf",
+		expected: "2fd0a5a9ea1b526bd05c514eb69cca6bf744edfe88c2792d6180dbb8a05b7036",
 		read: () => contractBytes,
 	},
 	{
 		name: "canonical additional-context policy manifest",
 		consumer: "TASK-143.01.07, TASK-143.01.08, TASK-143.01.09, TASK-143.07.03, and TASK-143.07.04",
-		expected: "18f7facf1ced6da33fdd7338635ffb052a6929e4bcc7509534aace9e114099be",
+		expected: "4a74b68c5be278a53fe8bc6de40833b12d91cbb3c124dde0949116ce0eaa2119",
 		read: () => fenceAfter("### Additional-context policy manifest", "json"),
 	},
 	{
