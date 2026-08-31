@@ -82,6 +82,7 @@ export function turn(
 	authorities: AuthorityIds,
 	rawId: string,
 	status: SessionTurn["status"] = "completed",
+	userText = "hello from fixture",
 ): SessionTurn {
 	return {
 		id: authorities.identity.decoder.adoptTurnId(rawId),
@@ -90,7 +91,7 @@ export function turn(
 				type: "userMessage",
 				id: authorities.identity.decoder.adoptItemId(`item-${rawId}`),
 				clientId: null,
-				content: [{ type: "text", text: "hello from fixture", text_elements: [] }],
+				content: [{ type: "text", text: userText, text_elements: [] }],
 			},
 		],
 		itemsView: "full",

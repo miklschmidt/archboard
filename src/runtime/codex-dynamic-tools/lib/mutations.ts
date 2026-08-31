@@ -134,6 +134,10 @@ function remoteOutcome(error: unknown): "not_delivered" | "outcome_unknown" {
 	return "not_delivered";
 }
 
+interface DurableSettlementResult {
+	readonly durable: boolean;
+}
+
 function settle(
 	options: CodexDynamicToolsOptions,
 	settlement: DynamicOperationSettlement,
@@ -145,7 +149,8 @@ function settle(
 		readonly turnId?: TurnId | null;
 		readonly threadSource?: string | null;
 	},
-): void {
+): DurableSettlementResult {
+	let durable = true;
 	try {
 		if (outcome === "delivered") options.epoch.commitOperation(transaction, confirmation);
 		else if (outcome === "not_delivered")
@@ -156,19 +161,12 @@ function settle(
 				"dynamic mutation settlement is unknown",
 				confirmation,
 			);
-	} catch (error) {
-		try {
-			settlement.retire(operationId);
-		} catch (retirementError) {
-			throw new CodexDynamicToolsError(
-				"system_error",
-				"The durable dynamic operation settlement and its identity retirement failed.",
-				retirementError,
-			);
-		}
-		throw epochError(error, "The durable dynamic operation settlement failed.");
+	} catch {
+		durable = false;
 	}
-	settlement.consume(operationId);
+	if (durable || outcome !== "not_delivered") settlement.consume(operationId);
+	else settlement.retire(operationId);
+	return { durable };
 }
 
 function initialTurnValue(
@@ -590,10 +588,32 @@ export async function executeCreate(
 		settle(options, operationSettlement, operationId, transaction, "not_delivered");
 		return { kind: "refused", reason: "not_ready", message: "The thread start was not delivered." };
 	}
-	settle(options, operationSettlement, operationId, transaction, "delivered", {
-		threadId: thread.id,
-		threadSource: targetThreadSource(thread),
-	});
+	const outerSettlement = settle(
+		options,
+		operationSettlement,
+		operationId,
+		transaction,
+		"delivered",
+		{
+			threadId: thread.id,
+			threadSource: targetThreadSource(thread),
+		},
+	);
+	if (!outerSettlement.durable) {
+		const initialId = initialOperationWire(prepared);
+		return {
+			kind: "ok",
+			operationId: operationWireId,
+			value: {
+				threadId: String(thread.id),
+				state: "executable",
+				initialTurn: notDeliveredInitial(
+					initialId,
+					"The thread was created, but its local durable settlement failed before the initial turn.",
+				),
+			},
+		};
+	}
 	const initial = await executeInitialTurn({
 		prepared,
 		request,
@@ -703,10 +723,17 @@ export async function executeFork(
 		settle(options, operationSettlement, operationId, transaction, "not_delivered");
 		return { kind: "refused", reason: "not_ready", message: "The thread fork was not delivered." };
 	}
-	settle(options, operationSettlement, operationId, transaction, "delivered", {
-		threadId: thread.id,
-		threadSource: targetThreadSource(thread),
-	});
+	const outerSettlement = settle(
+		options,
+		operationSettlement,
+		operationId,
+		transaction,
+		"delivered",
+		{
+			threadId: thread.id,
+			threadSource: targetThreadSource(thread),
+		},
+	);
 	if (prepared.effect.initialTurnOperationId === null)
 		return {
 			kind: "ok",
@@ -715,6 +742,19 @@ export async function executeFork(
 				threadId: String(thread.id),
 				state: "executable",
 				initialTurn: { delivery: "not_requested", turnId: null, operationId: null, reason: null },
+			},
+		};
+	if (!outerSettlement.durable)
+		return {
+			kind: "ok",
+			operationId: operationWireId,
+			value: {
+				threadId: String(thread.id),
+				state: "executable",
+				initialTurn: notDeliveredInitial(
+					initialOperationWire(prepared),
+					"The thread was forked, but its local durable settlement failed before the initial turn.",
+				),
 			},
 		};
 	if (prompt === null || context === null)
@@ -795,22 +835,25 @@ export async function executeSend(
 			message: refusalMessage(error, "The send operation could not be staged."),
 		};
 	}
+	let turn: SessionTurn;
 	try {
-		await options.session.turnStart(
-			turnParams(
-				target.threadId,
-				operationWireId,
-				prepared.effect.tool === "send_message_to_thread"
-					? prepared.effect.arguments.prompt
-					: (() => {
-							throw new CodexDynamicToolsError(
-								"invalid_call",
-								"The send effect tool changed before execution.",
-							);
-						})(),
-				context,
-			),
-		);
+		turn = (
+			await options.session.turnStart(
+				turnParams(
+					target.threadId,
+					operationWireId,
+					prepared.effect.tool === "send_message_to_thread"
+						? prepared.effect.arguments.prompt
+						: (() => {
+								throw new CodexDynamicToolsError(
+									"invalid_call",
+									"The send effect tool changed before execution.",
+								);
+							})(),
+					context,
+				),
+			)
+		).turn;
 	} catch (error) {
 		const outcome = remoteOutcome(error);
 		if (outcome === "outcome_unknown") {
@@ -828,6 +871,7 @@ export async function executeSend(
 	}
 	settle(options, operationSettlement, operationId, transaction, "delivered", {
 		threadId: target.threadId,
+		turnId: turn.id,
 		threadSource: typeof target.source === "string" ? target.source : null,
 	});
 	return {

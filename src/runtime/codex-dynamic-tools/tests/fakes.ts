@@ -22,7 +22,6 @@ import type {
 	DynamicCallerAuthority,
 	DynamicContextAuthority,
 	DynamicImmutableEffect,
-	DynamicOperationIdPort,
 	DynamicTargetAuthority,
 	DynamicThreadAuthorityPort,
 	DynamicToolApprovalDecision,
@@ -43,14 +42,18 @@ import {
 	type AuthorityIds,
 } from "./fixtures.js";
 import { FakeSession } from "./session-fake.js";
+import { FakeOperationIds } from "./operation-id-fake.js";
 
 export class FakeEpoch {
 	readonly stages: EpochStageInput[] = [];
 	readonly settlements: Array<{ readonly operationId: string; readonly outcome: string }> = [];
+	readonly commitConfirmations: Array<EpochConfirmation | undefined> = [];
 	stageError: Error | null = null;
 	commitError: Error | null = null;
+	commitErrorAt: number | null = null;
 	rollbackError: Error | null = null;
 	unknownError: Error | null = null;
+	private commitAttempts = 0;
 	private revision = 0;
 
 	constructor(private readonly authorities: AuthorityIds) {}
@@ -104,7 +107,13 @@ export class FakeEpoch {
 		transaction: EpochTransaction,
 		confirmation?: EpochConfirmation,
 	): EpochOperationRecord {
-		if (this.commitError !== null) throw this.commitError;
+		this.commitAttempts += 1;
+		this.commitConfirmations.push(confirmation);
+		if (
+			this.commitError !== null &&
+			(this.commitErrorAt === null || this.commitErrorAt === this.commitAttempts)
+		)
+			throw this.commitError;
 		this.settlements.push({ operationId: transaction.record.operation.id, outcome: "delivered" });
 		return terminalRecord(transaction.record, "committed", "delivered", confirmation);
 	}
@@ -204,45 +213,6 @@ export function approvedFor(
 		decidedAtMs: nowMs,
 		cause: "person_approved",
 	};
-}
-
-export class FakeOperationIds implements DynamicOperationIdPort {
-	readonly issued: OperationId[] = [];
-	readonly consumed: OperationId[] = [];
-	readonly retired: OperationId[] = [];
-	private readonly terminal = new Set<OperationId>();
-	private readonly operation: AuthorityIds["operation"];
-
-	constructor(authorities: AuthorityIds) {
-		this.operation = authorities.operation;
-	}
-
-	issueCanonicalOperationId(): OperationId {
-		const id = this.operation.issuer.mintOperationId();
-		this.issued.push(id);
-		return id;
-	}
-
-	validateCurrentUnconsumedOperationId(operationId: OperationId): void {
-		this.operation.validator.assertCurrentOperationId(operationId);
-		if (this.terminal.has(operationId)) throw new Error("the operation identity is terminal");
-	}
-
-	serializeForOwnedWireFields(operationId: OperationId): string {
-		return String(this.operation.decoder.serializeOperationId(operationId));
-	}
-
-	consumeCanonicalOperationId(operationId: OperationId): void {
-		this.validateCurrentUnconsumedOperationId(operationId);
-		this.terminal.add(operationId);
-		this.consumed.push(operationId);
-	}
-
-	retireCanonicalOperationId(operationId: OperationId): void {
-		this.validateCurrentUnconsumedOperationId(operationId);
-		this.terminal.add(operationId);
-		this.retired.push(operationId);
-	}
 }
 
 export class FakeLifecycle implements DynamicToolLifecyclePort {
