@@ -1,5 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+// Vite loads the application stylesheet through this entrypoint for its side effects.
+// oxlint-disable-next-line import/no-unassigned-import
+import "../src/ui/theme/app.css";
 import { Shell } from "../src/ui/shell/Shell";
 
 // Name the tab so libraries.excalidraw.com can come back to it.
