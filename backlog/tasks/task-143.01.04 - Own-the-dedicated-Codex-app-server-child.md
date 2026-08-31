@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.04
 title: Own the dedicated Codex app-server child
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 02:08'
+updated_date: '2026-08-31 02:59'
 labels: []
 dependencies:
   - TASK-143.01.16
@@ -28,10 +28,10 @@ Own one dedicated Codex 0.151.0 stdio child, exact environment/config constructi
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Before spawn, the host creates restrictive dedicated CODEX_HOME and CODEX_SQLITE_HOME directories and atomically writes CODEX_HOME/config.toml with exactly sqlite_home = the quoted canonical absolute SQLite root; permissions, ownership, escaping, symlinks, and pre-existing conflicting config fail closed.
-- [ ] #2 The exact argv is the configured absolute codex binary followed by app-server, --stdio, --strict-config; version is proven as 0.151.0 and no daemon, proxy, listen, websocket, analytics-default, code-mode-host, or Desktop MCP argument is accepted.
-- [ ] #3 The child environment is built from empty using exactly the retained keys and order frozen in the authored contract, then canonical CODEX_HOME and CODEX_SQLITE_HOME overwrite ambient values; a poisoned-environment fixture asserts the exact output key set, byte-preserved values, absent optional keys, NUL rejection, and no fallthrough.
-- [ ] #4 stderr drains continuously into bounded diagnostics; missing/wrong binary, config write/fsync/rename failure, locked/unwritable/colliding roots, strict-config rejection, early exit, crash, backoff, TERM/KILL, and stopped state are deterministic with no orphan.
+- [x] #1 Before spawn, the host creates restrictive dedicated CODEX_HOME and CODEX_SQLITE_HOME directories and atomically writes CODEX_HOME/config.toml with exactly sqlite_home = the quoted canonical absolute SQLite root; permissions, ownership, escaping, symlinks, and pre-existing conflicting config fail closed.
+- [x] #2 The exact argv is the configured absolute codex binary followed by app-server, --stdio, --strict-config; version is proven as 0.151.0 and no daemon, proxy, listen, websocket, analytics-default, code-mode-host, or Desktop MCP argument is accepted.
+- [x] #3 The child environment is built from empty using exactly the retained keys and order frozen in the authored contract, then canonical CODEX_HOME and CODEX_SQLITE_HOME overwrite ambient values; a poisoned-environment fixture asserts the exact output key set, byte-preserved values, absent optional keys, NUL rejection, and no fallthrough.
+- [x] #4 stderr drains continuously into bounded diagnostics; missing/wrong binary, config write/fsync/rename failure, locked/unwritable/colliding roots, strict-config rejection, early exit, crash, backoff, TERM/KILL, and stopped state are deterministic with no orphan.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -63,4 +63,12 @@ Review remediation committed in 8d56b7d2ca4259f0708839aa21adb62a6ceeb3e8 from re
 Second-round remediation evidence: fixed BASE 863ec41391267793e0c0faeec291ca10f1d6e48b; reviewed HEAD b47a11c52ab9d18340889676f3b754708eb9e48d; product commit 816bb9b. The child lifecycle is now an opaque per-generation capability with late-child-A-after-child-B readiness, account-ready, and terminal-failure hostile tests. Diagnostics retain only committed redacted bytes, finalize terminal carry, classify raw strict-config text only before readiness, cap serialized UTF-8 safely, and cover one-byte/adversarial splits, post-ready false positives, and redaction false negatives. Storage preparation preserves retryable lock cleanup across config conflict plus unlink failure; public lifecycle errors and listener snapshots are redacted; throwing subscribe/onChild listeners are retired and owned shutdown settles start once. The root module exports only the production lifecycle contract; named diagnostics/environment/executable/process-group/storage and testing seams are covered by entrypoint tests. Validation: focused codex-process suite 46 pass / 262 expectations; bun run test:modules 1,059 pass / 7,308 expectations across 83 files; bun run test:repository 130 pass / 415 expectations across 11 files; both TypeScript graphs, lint, format check, and git diff --check pass. Fresh real project-local Codex wrapper probe used exact app-server --stdio --strict-config argv, canonical sqlite config, readiness, clean stop, no live leader, no lock, and zero serialized stderr bytes. Scope audit: product changes are confined to src/runtime/codex-process/** plus this tracking note; src-DlBR1tzg.js is untouched. Remaining risk: downstream transport/session/composition and full system/browser lanes are outside this leaf. Task remains In Progress with acceptance criteria unchecked. PARENT_ACTION=reuse reviewer 01a054fe-78c0-71f1-ae86-ad1afa22c77b; do not merge or finalize TASK-143.01.04.
 
 Follow-up remediation evidence: fixed BASE 863ec41391267793e0c0faeec291ca10f1d6e48b; prior reviewed HEAD 9e1b73a462a3b89b07b3c51d88a360c81e9047d5; implementation commit ea29948. acquireLock now carries an idempotent retryCleanup capability when lock-file initialization and unwind unlink both fail, with a hostile test proving the orphaned lock blocks preparation until explicit cleanup and then recovers. CodexDiagnosticsBuffer.append and finalize now return void; direct split-secret and tiny-cap tests prove no redacted carry or uncapped value crosses the public return boundary. Production CodexProcessOptions now requires checkoutRoot and a storage union containing rootDirectory or both explicit codexHome and sqliteHome roots; the type is exported through named production entrypoints. Focused validation after the fixes: 48 pass / 273 expectations across the codex-process suite; both TypeScript graphs, lint, fmt:check, and git diff --check pass. The prior clean-range evidence remains valid for bun run test:modules (1,059 pass / 7,308 expectations across 83 files), bun run test:repository (130 pass / 415 expectations across 11 files), and the real project-local Codex wrapper probe; those broad lanes and another real probe were not rerun after the global OOM because the parent instructed this worker to use focused validation only, and the parent will run any broad rerun in an isolated memory-capped unit. Scope remains src/runtime/codex-process/** plus this tracking note; unrelated src-DlBR1tzg.js is untouched. Task remains In Progress with acceptance criteria unchecked. PARENT_ACTION=reuse reviewer 01a054fe-78c0-71f1-ae86-ad1afa22c77b; do not merge or finalize TASK-143.01.04.
+
+Independent complete-range review returned REVIEW_CLEAN before integration. Root hosted-equivalent system validation passed in capped unit archboard-task1430104-system-35aa78d.service with the repository's documented opener-persistence exclusion: 283 pass, 1 skip, 4,176 expectations, 618.6 MB peak, 0 swap under 12 GB/2 GB caps; no cap was hit. Earlier integrated focused, module, repository, both TypeScript, lint, format, and real-child lifecycle evidence remains recorded above.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented the dedicated strict Codex 0.151.0 stdio child with closed storage, environment, argv, diagnostics, restart, and shutdown contracts. Multiple adversarial review rounds closed generation, process-group, redaction, cleanup, and public-boundary gaps. Independent review and capped hosted-equivalent system validation passed.
+<!-- SECTION:FINAL_SUMMARY:END -->
