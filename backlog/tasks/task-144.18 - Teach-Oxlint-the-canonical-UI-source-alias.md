@@ -1,10 +1,11 @@
 ---
 id: TASK-144.18
 title: Teach Oxlint the canonical UI source alias
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 17:27'
+updated_date: '2026-08-31 03:00'
 labels: []
 dependencies:
   - TASK-144.15
@@ -34,3 +35,15 @@ Own the narrow lint resolver/policy seam for @/ after both TypeScript aliases ex
 - [ ] #3 Repository fixtures prove valid UI entrypoints pass while deep, cross-area, unknown, and escaping paths fail with existing actionable rule names.
 - [ ] #4 bun run lint stays deny-warnings clean. TASK-144.04 alone validates components.json agreement and runs shadcn after this alias owner completes.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Reconcile the existing Oxlint area/module-entrypoint/deep-import rules with the completed root, frontend, and Vite alias authorities. 2. Extend the narrow resolver seam so @/ maps once to ./src/ without Tailwind rules, duplicate alias tables, shadcn work, or changed defaults. 3. Add repository fixtures proving public UI entrypoints pass and deep, cross-area, unknown, and escaping aliases fail under existing actionable rule names. 4. Run focused resolver/policy, lint, type, format, inventory, and diff checks; leave broad repository/check lanes to the capped root owner.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reserved after TASK-144.17 finalized at integration HEAD 6515ee1. This dependency-ready leaf owns .oxlintrc.jsonc, tools/oxlint-plugin-archboard.js, and tests/system/repository-policy/oxlint-ui-alias.test.ts; it is path-disjoint from active shell-token and formatter lanes.
+<!-- SECTION:NOTES:END -->
