@@ -42,7 +42,7 @@ export interface WorkhorseQueueIdentityPort {
  * eventual shared OperationId authority supplies this capability at the
  * composition boundary.
  */
-export interface WorkhorseQueueOperationIdPort<OperationIdValue extends string = string> {
+export interface WorkhorseQueueOperationIdPort<OperationIdValue extends string> {
 	readonly assertCurrent: (operationId: OperationIdValue) => void;
 	readonly serialize: (operationId: OperationIdValue) => string;
 }
@@ -52,7 +52,7 @@ export type WorkhorseQueueSessionPort = Pick<
 	"queueAdd" | "queueListPage" | "queueUpdate" | "queueDelete" | "queueReorder" | "queueStart"
 >;
 
-export interface WorkhorseQueueOptions<OperationIdValue extends string = string> {
+export interface WorkhorseQueueOptions<OperationIdValue extends string> {
 	readonly session: WorkhorseQueueSessionPort;
 	readonly currentBinding: CurrentWorkhorseQueueBinding;
 	readonly identity: WorkhorseQueueIdentityPort;
@@ -64,28 +64,28 @@ export interface QueueListResult {
 	readonly queue: QueueSnapshot;
 }
 
-export interface QueueAddRequest<OperationIdValue extends string = string> {
+export interface QueueAddRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly prompt: string;
 }
 
-export interface QueueUpdateRequest<OperationIdValue extends string = string> {
+export interface QueueUpdateRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly submissionId: QueuedSubmissionId;
 	readonly prompt: string;
 }
 
-export interface QueueDeleteRequest<OperationIdValue extends string = string> {
+export interface QueueDeleteRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly submissionId: QueuedSubmissionId;
 }
 
-export interface QueueReorderRequest<OperationIdValue extends string = string> {
+export interface QueueReorderRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly orderedSubmissionIds: readonly QueuedSubmissionId[];
 }
 
-export interface QueueStartRequest<OperationIdValue extends string = string> {
+export interface QueueStartRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly submissionId: QueuedSubmissionId;
 }
@@ -95,7 +95,7 @@ export type QueueMutationOutcome = "delivered" | "not_delivered" | "outcome_unkn
 
 export interface QueueMutationResult<
 	Operation extends WorkhorseQueueMutation,
-	OperationIdValue extends string = string,
+	OperationIdValue extends string,
 > {
 	readonly operation: Operation;
 	readonly operationId: OperationIdValue;
@@ -103,28 +103,28 @@ export interface QueueMutationResult<
 	readonly queue: QueueSnapshot;
 }
 
-export type QueueAddResult<OperationIdValue extends string = string> = QueueMutationResult<
+export type QueueAddResult<OperationIdValue extends string> = QueueMutationResult<
 	"add",
 	OperationIdValue
 >;
-export type QueueUpdateResult<OperationIdValue extends string = string> = QueueMutationResult<
+export type QueueUpdateResult<OperationIdValue extends string> = QueueMutationResult<
 	"update",
 	OperationIdValue
 >;
-export type QueueDeleteResult<OperationIdValue extends string = string> = QueueMutationResult<
+export type QueueDeleteResult<OperationIdValue extends string> = QueueMutationResult<
 	"delete",
 	OperationIdValue
 >;
-export type QueueReorderResult<OperationIdValue extends string = string> = QueueMutationResult<
+export type QueueReorderResult<OperationIdValue extends string> = QueueMutationResult<
 	"reorder",
 	OperationIdValue
 >;
-export type QueueStartResult<OperationIdValue extends string = string> = QueueMutationResult<
+export type QueueStartResult<OperationIdValue extends string> = QueueMutationResult<
 	"start",
 	OperationIdValue
 >;
 
-export type WorkhorseQueueResult<OperationIdValue extends string = string> =
+export type WorkhorseQueueResult<OperationIdValue extends string> =
 	| QueueListResult
 	| QueueAddResult<OperationIdValue>
 	| QueueUpdateResult<OperationIdValue>
@@ -168,7 +168,7 @@ export class CodexWorkhorseQueueError extends Error {
 	}
 }
 
-export interface CodexWorkhorseQueue<OperationIdValue extends string = string> {
+export interface CodexWorkhorseQueue<OperationIdValue extends string> {
 	readonly list: () => Promise<QueueListResult>;
 	readonly add: (
 		request: QueueAddRequest<OperationIdValue>,
