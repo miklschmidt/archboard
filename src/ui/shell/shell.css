@@ -119,19 +119,21 @@
 .shell::after {
 	display: none;
 }
-button,
-input,
-select {
-	font: inherit;
-}
-button {
-	color: inherit;
-}
-button:focus-visible,
-input:focus-visible,
-select:focus-visible {
-	outline: 2px solid var(--selection);
-	outline-offset: 2px;
+@layer theme {
+	button,
+	input,
+	select {
+		font: inherit;
+	}
+	button {
+		color: inherit;
+	}
+	button:focus-visible,
+	input:focus-visible,
+	select:focus-visible {
+		outline: 2px solid var(--arch-color-selection);
+		outline-offset: 2px;
+	}
 }
 
 /* Aligned header */

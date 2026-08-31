@@ -426,6 +426,9 @@ describe("opener settings public consumer", () => {
 		expect(source).toContain('from "@/ui/dialog"');
 		expect(source).toContain('from "@/ui/button"');
 		expect(source).toContain('from "@/ui/ui-classnames"');
+		expect(source).toContain(
+			"outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring",
+		);
 		expect(entrypoint).not.toContain(".css");
 		expect(fs.existsSync(new URL("../opener-settings.css", import.meta.url))).toBe(false);
 		for (const marker of [

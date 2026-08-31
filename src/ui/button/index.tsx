@@ -18,7 +18,7 @@ export type ButtonProps = Omit<BaseButtonProps, "className"> &
 	};
 
 const ROOT_CLASSES =
-	"inline-flex shrink-0 items-center justify-center gap-control whitespace-nowrap rounded-control border font-sans !text-control font-medium shadow-flat outline-none select-none transition-colors duration-control ease-control data-disabled:cursor-default data-disabled:opacity-disabled-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_svg]:pointer-events-none [&_svg]:shrink-0";
+	"inline-flex shrink-0 items-center justify-center gap-control whitespace-nowrap rounded-control border font-sans !text-control font-medium shadow-flat outline-none select-none transition-colors duration-control ease-control data-disabled:cursor-default data-disabled:opacity-disabled-control focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring [&_svg]:pointer-events-none [&_svg]:shrink-0";
 
 const TONE_CLASSES = {
 	primary:
