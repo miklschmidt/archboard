@@ -236,7 +236,7 @@ const reviewedDigests: ReviewedDigest[] = [
 	{
 		name: "complete authored contract prose and literals",
 		consumer: "TASK-143.01.07, TASK-143.01.19, TASK-143.05.03, and TASK-143.07.07",
-		expected: "97f45a526ac5e8fbe4de1fa916c3a16584e5d20f5817cfb1ff9c92162ff54f10",
+		expected: "6c6a9f14301c23a28c6ca8e2ad64def5d94edc1d56b889cd6da08c1ff78c0def",
 		read: () => contractBytes,
 	},
 	{
@@ -329,6 +329,20 @@ describe("Codex authored contract repository policy", () => {
 			"steer_workhorse",
 		]);
 		expect(namespaceToolNames("archboard_voice")).toEqual(["resolve_spoken_approval"]);
+	});
+
+	test("pins the closed coordinator callback byte and route policy", () => {
+		expect(contract).toContain("### Coordinator callback bytes");
+		expect(contract).toContain(
+			"operation: accepted, queued, started, progress, attention, completed, failed, outcome_unknown",
+		);
+		expect(contract).toContain("semantic: change, focus, selection");
+		expect(contract).toMatch(/Every\s+object key is serialized in lexical order, recursively\./u);
+		expect(contract).toMatch(
+			/Inactive operation callbacks send that message to `coordinatorThreadId`/u,
+		);
+		expect(contract).toContain("with role `developer`");
+		expect(contract).toContain("is never the callback mutation target");
 	});
 
 	test("keeps exactly one blank line before the coordinator marker", () => {
