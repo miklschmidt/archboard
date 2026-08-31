@@ -164,17 +164,17 @@ export async function createViteTailwindFixture(
 			if (cleanupRequested && syncCleanupRequested && allocationSettled && inFlight === 0)
 				removeOwnedRootSync();
 		};
+		const assertCandidateActive = (): void => {
+			if (!created || cleanupRequested) throw new Error("Vite fixture owner stopped during setup.");
+		};
 		fixture = {
 			root,
 			projectRoot: join(root, "project"),
 			sourceRoot: join(root, "source with spaces"),
 			outputRoot: join(root, "output"),
-			assertActive: () => {
-				if (!created || cleanupRequested)
-					throw new Error("Vite fixture owner stopped during setup.");
-			},
+			assertActive: assertCandidateActive,
 			run: async <T>(action: () => Promise<T>): Promise<T> => {
-				fixture?.assertActive();
+				assertCandidateActive();
 				if (inFlight === 0) {
 					idle = new Promise<void>((resolve) => {
 						resolveIdle = resolve;

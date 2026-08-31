@@ -5,6 +5,7 @@ import {
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
+	readdirSync,
 	readFileSync,
 	readlinkSync,
 	rmSync,
@@ -30,6 +31,7 @@ import {
 	runCleanupSteps,
 	withPrimaryAndCleanup,
 	type FixtureChild,
+	type ViteTailwindFixture,
 } from "./support/vite-tailwind-fixture.ts";
 
 const repoRoot = process.cwd();
@@ -62,14 +64,34 @@ async function readAllocatedRoot(child: FixtureChild): Promise<string> {
 	return line.slice("ALLOCATED ".length);
 }
 
-async function waitForExactRoot(
-	root: string,
-	wakeOnWatch = async (): Promise<void> => {},
-): Promise<void> {
+async function waitForExactRoot(root: string, wakeOnWatch?: () => Promise<void>): Promise<void> {
 	const deadline = Date.now() + TEST_VITE_TAILWIND_ROOT_OBSERVATION_TIMEOUT_MS;
 	while (!existsSync(root)) {
 		if (Date.now() >= deadline) throw new Error(`Fixture root did not appear: ${root}`);
-		await Promise.race([Bun.sleep(TEST_VITE_TAILWIND_ROOT_OBSERVATION_POLL_MS), wakeOnWatch()]);
+		if (wakeOnWatch === undefined) {
+			await Bun.sleep(TEST_VITE_TAILWIND_ROOT_OBSERVATION_POLL_MS);
+		} else {
+			await Promise.race([Bun.sleep(TEST_VITE_TAILWIND_ROOT_OBSERVATION_POLL_MS), wakeOnWatch()]);
+		}
+	}
+}
+
+type OptionalRootWatcher = { close: () => void };
+type RootWatcherFactory = (
+	parent: string,
+	callback: (filename: string | Buffer | null | undefined) => void,
+) => OptionalRootWatcher;
+
+function openOptionalRootWatcher(
+	parent: string,
+	onName: (name: string) => void,
+	open: RootWatcherFactory = (path, callback) =>
+		watch(path, (_event, filename) => callback(filename)),
+): OptionalRootWatcher | undefined {
+	try {
+		return open(parent, (filename) => onName(filename?.toString() ?? ""));
+	} catch {
+		return undefined;
 	}
 }
 
@@ -185,16 +207,23 @@ describe("Vite Tailwind allocation cleanup", () => {
 		const occupied = join(parent, "archboard-vite-tailwind-occupied");
 		const retry = join(parent, "archboard-vite-tailwind-retry");
 		mkdirSync(occupied);
+		const foreignFile = join(occupied, "foreign.txt");
+		writeFileSync(foreignFile, "foreign");
+		const foreignBytes = readFileSync(foreignFile);
 		const candidates = [occupied, retry];
 		const allocated: string[] = [];
 		const retired: string[] = [];
+		let retiredFixture: ViteTailwindFixture | undefined;
 		try {
 			const fixture = await createViteTailwindFixture(
 				parent,
 				repoRoot,
 				{
 					onAllocated: (value) => allocated.push(value.root),
-					onAllocationRetired: (value) => retired.push(value.root),
+					onAllocationRetired: (value) => {
+						retired.push(value.root);
+						retiredFixture = value;
+					},
 				},
 				() => candidates.shift()!,
 			);
@@ -203,11 +232,42 @@ describe("Vite Tailwind allocation cleanup", () => {
 				expect(retired).toEqual([occupied]);
 				expect(existsSync(occupied)).toBe(true);
 				expect(existsSync(fixture.root)).toBe(true);
+				const retiredOwner = retiredFixture;
+				expect(retiredOwner).toBeDefined();
+				if (retiredOwner === undefined) throw new Error("Retired fixture was not captured.");
+				expect(() => retiredOwner.assertActive()).toThrow("stopped during setup");
+				const runFailure = await captureFailure(() =>
+					retiredOwner.run(async () => writeFile(join(occupied, "mutated.txt"), "mutated")),
+				);
+				expect((runFailure as Error).message).toContain("stopped during setup");
+				expect(readFileSync(foreignFile)).toEqual(foreignBytes);
+				expect(readdirSync(occupied)).toEqual(["foreign.txt"]);
 			} finally {
 				await fixture.dispose();
 			}
 			expect(existsSync(occupied)).toBe(true);
 			expect(existsSync(retry)).toBe(false);
+		} finally {
+			rmSync(parent, { recursive: true, force: true });
+		}
+	});
+
+	test("exact-root polling survives watcher setup failure", async () => {
+		const parent = mkdtempSync(join(tmpdir(), "archboard-vite-watcher-failure-"));
+		const root = join(parent, "archboard-vite-tailwind-polled");
+		try {
+			const watcher = openOptionalRootWatcher(
+				parent,
+				() => {},
+				() => {
+					throw new Error("watch unavailable");
+				},
+			);
+			expect(watcher).toBeUndefined();
+			const observation = waitForExactRoot(root);
+			mkdirSync(root);
+			await observation;
+			expect(existsSync(root)).toBe(true);
 		} finally {
 			rmSync(parent, { recursive: true, force: true });
 		}
@@ -224,8 +284,7 @@ describe("Vite Tailwind allocation cleanup", () => {
 			let resolveWatchWake: (() => void) | undefined;
 			const allocatedRoots: string[] = [];
 			const observedRoots = new Set<string>();
-			const watcher = watch(parent, (_event, filename) => {
-				const name = filename?.toString() ?? "";
+			const watcher = openOptionalRootWatcher(parent, (name) => {
 				if (!name.startsWith("archboard-vite-tailwind-")) return;
 				if (currentRoot === join(parent, name)) resolveWatchWake?.();
 			});
@@ -262,13 +321,13 @@ describe("Vite Tailwind allocation cleanup", () => {
 					},
 					async () =>
 						runCleanupSteps([
-							() => watcher.close(),
+							() => watcher?.close(),
 							() => Promise.all(children.map(reapChild)).then(() => undefined),
 							() => rmSync(parent, { recursive: true, force: true }),
 						]),
 				);
 			} finally {
-				watcher.close();
+				watcher?.close();
 				await Promise.all(children.map(reapChild));
 				rmSync(parent, { recursive: true, force: true });
 			}
