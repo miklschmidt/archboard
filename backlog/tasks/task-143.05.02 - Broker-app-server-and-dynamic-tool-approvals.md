@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 13:35'
+updated_date: '2026-08-31 14:47'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -26,9 +26,7 @@ ordinal: 185000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own compare-and-swap lifecycle, identity/effect validation, expiry, cancellation, and terminal response construction for all app-server human-interaction families. Dynamic dispatchers never construct approval responses.
-
-Delegation profile: gpt-5.6-luna, max.
+Own compare-and-swap lifecycle, identity and effect validation, expiry, cancellation, and terminal response construction for exactly the seven app-server human-interaction request families. Dynamic item/tool/call approvals are outside this module: TASK-143.05.04 owns their headless approval port and dynamic responses, the browser contract and workbench UI own their visual projection, and this broker never accepts or fabricates a dynamic request. Delegation profile: gpt-5.6-luna, max.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
