@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 03:15'
+updated_date: '2026-08-31 03:32'
 labels: []
 dependencies:
   - TASK-144.01
@@ -50,4 +50,12 @@ Delegation profile: gpt-5.6-luna, high.
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved after TASK-144.18 finalized at integration HEAD 4cbceec. This ready leaf owns the serialized package/lock edit and assistant-ui import policy; no active worker owns those paths.
+
+2026-08-31 @codex implementation evidence (code commit c6e168e): pinned @assistant-ui/react exactly 0.15.17 and added the canonical archboard/assistant-ui-imports Oxlint rule. Ownership is exact: workbench-runtime owns useExternalStoreRuntime, AssistantRuntimeProvider, ReadonlyThreadProvider, and MessageNotSentError; workbench-timeline owns ThreadPrimitive, MessagePrimitive, and MessagePartPrimitive; workbench-composer owns ComposerPrimitive.
+
+Real-Oxlint policy tests: bun test tests/system/repository-policy/assistant-ui-imports.test.ts — 10 passed, 229 assertions. Fixtures cover every allowed owner/member, wrong/unrelated owners, default/namespace/side-effect/type-only/export-from/export-star/dynamic/require/non-literal/query/hash/trailing-slash/subpath/alternate/auxiliary package forms, explicit transport/thread-list/queue/tool/voice/state/cloud/MCP/devtool/copy signatures, local aliases and nested primitive internals, and direct Radix imports. Owned plugin/test lint and Oxfmt checks pass.
+
+Dependency evidence: disposable bun install --frozen-lockfile --ignore-scripts exited 0 with lockUnchanged=true. The lock review is 107 added keys, 20 obsolete nested keys removed, and 24 shared records re-resolved; the test freezes the 91 reachable assistant-ui name@version identities, MIT/BSD-3-Clause/0BSD license set, one React and one React DOM lock entry, and the bounded headless Vite bundle (294955-byte/275-module ceiling, no assistant-cloud/safe-content-frame/Radix).
+
+Broad modules/system/repository/check/browser lanes remain root-owned and were not run. Task remains In Progress and all acceptance criteria remain unchecked. Preserved /home/msc/Projects/archboard/src-DlBR1tzg.js.
 <!-- SECTION:NOTES:END -->
