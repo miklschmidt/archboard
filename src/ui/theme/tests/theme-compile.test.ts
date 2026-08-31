@@ -6,7 +6,7 @@ import { compile } from "tailwindcss";
 import {
 	DARK_TOKEN_OVERRIDES,
 	EXPECTED_IMPORTS,
-	HARDCODED_COMPILER_CANDIDATES,
+	HARDCODED_TRANSITION_DEFAULT_CANDIDATES,
 	HIGH_CONTRAST_FORBIDDEN_DECLARATIONS,
 	LIGHT_TOKENS,
 	OWNED_CANDIDATES,
@@ -223,7 +223,7 @@ describe("Archboard semantic Tailwind theme", () => {
 			expect(TAILWIND_THEME_GROUPS.filter((group) => group.pattern.test(variable))).toHaveLength(1);
 		}
 		expect(TAILWIND_THEME_GROUPS.flatMap((group) => group.hardcodedCandidates ?? [])).toEqual([
-			...HARDCODED_COMPILER_CANDIDATES,
+			...HARDCODED_TRANSITION_DEFAULT_CANDIDATES,
 		]);
 		expect(appSource).toContain("--*: initial;");
 	});
@@ -238,9 +238,9 @@ describe("Archboard semantic Tailwind theme", () => {
 		}
 	});
 
-	test("records the two hardcoded compiler candidates without adopting them", async () => {
+	test("records the two hardcoded transition-default fallbacks without adopting them", async () => {
 		const minimalReset = `${EXPECTED_IMPORTS.slice(0, 2).join("\n")}\n@theme { --*: initial; }`;
-		const css = await compiledTheme(minimalReset, HARDCODED_COMPILER_CANDIDATES);
+		const css = await compiledTheme(minimalReset, HARDCODED_TRANSITION_DEFAULT_CANDIDATES);
 
 		expect(css).toContain(".transition {");
 		expect(css).toContain("transition-timing-function: var(--tw-ease, ease)");
