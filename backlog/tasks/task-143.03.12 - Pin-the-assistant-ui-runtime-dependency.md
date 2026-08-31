@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 04:02'
+updated_date: '2026-08-31 04:10'
 labels: []
 dependencies:
   - TASK-144.01
@@ -70,4 +70,10 @@ Focused checks: bun test tests/system/repository-policy/assistant-ui-imports.tes
 The assignment visitor now rejects any non-Identifier left target when the right side is a tracked assistant-ui value, covering destructuring assignment aliases. Focused hostile fixtures exercise queue, voice, and tool names through ComposerPrimitive assignment patterns. The copied Elements limitation remains the documented three-name signature inventory and does not claim arbitrary equivalent source detection.
 
 Focused checks: bun test tests/system/repository-policy/assistant-ui-imports.test.ts - 12 passed, 249 assertions; focused Oxlint on the owned plugin/test - 0 errors; Oxfmt check passed; the policy test remains 500 lines against the 500-line repository limit. Package and lockfile were unchanged in this remediation. Broad modules/system/repository/check/browser lanes remain root-owned and were not run. Task remains In Progress and all acceptance criteria remain unchecked. Preserved /home/msc/Projects/archboard/src-DlBR1tzg.js.
+
+2026-08-31 @codex wrapper-remediation evidence (code commit 6b0d4bd): normalized only transparent expression wrappers before existing assistant-ui binding lookup. The helper covers TSAsExpression, TSTypeAssertion, TSNonNullExpression, ChainExpression, and ParenthesizedExpression, with no arbitrary dataflow or container tracking. Variable aliases and assignment aliases now reach the existing nested-member and alias diagnostics through those wrappers.
+
+Focused hostile fixtures cover a const alias through an as assertion, a simple assignment through a non-null assertion, and a destructuring assignment through a type assertion. The copied Elements limitation remains the documented three-name signature inventory and does not claim arbitrary equivalent-source detection.
+
+Focused checks: bun test tests/system/repository-policy/assistant-ui-imports.test.ts - 12 passed, 258 assertions; focused Oxlint on the owned plugin/test - 0 errors; Oxfmt check passed; the policy test remains 500 lines against the 500-line repository limit. Package and lockfile were unchanged in this remediation. Broad modules/system/repository/check/browser lanes remain root-owned and were not run. Task remains In Progress and all acceptance criteria remain unchecked. Preserved /home/msc/Projects/archboard/src-DlBR1tzg.js.
 <!-- SECTION:NOTES:END -->
