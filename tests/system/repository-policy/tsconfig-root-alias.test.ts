@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { aliasResolutions, configuredAliases } from "./support/codex-protocol-aliases.js";
 
@@ -32,12 +34,26 @@ function rootConfig(): JsonObject {
 	return JSON.parse(result.output) as JsonObject;
 }
 
+function gitStatus(): string {
+	return execFileSync("git", ["status", "--porcelain=v1", "--untracked-files=all"], {
+		cwd: repoRoot,
+		encoding: "utf8",
+	});
+}
+
 function fixtureDiagnostics(importSource: string): string {
-	const root = mkdtempSync(join(repoRoot, ".archboard-tsconfig-root-alias-"));
+	const root = mkdtempSync(join(tmpdir(), "archboard-tsconfig-root-alias-"));
 	const fixture = join(root, "fixture.ts");
 	const fixtureConfig = join(root, "tsconfig.json");
 	writeFileSync(fixture, `${importSource}\n`);
-	writeFileSync(fixtureConfig, JSON.stringify({ extends: configPath, include: ["fixture.ts"] }));
+	writeFileSync(
+		fixtureConfig,
+		JSON.stringify({
+			extends: configPath,
+			compilerOptions: { typeRoots: [join(repoRoot, "node_modules", "@types")] },
+			include: ["fixture.ts"],
+		}),
+	);
 	try {
 		return tsc(fixtureConfig).output;
 	} finally {
@@ -70,9 +86,16 @@ describe("root TypeScript source alias", () => {
 		expect(diagnostics).toContain("Cannot find module '~/ui/types'");
 	});
 
+	test("does not leave disposable compiler fixtures in the checkout", () => {
+		const before = gitStatus();
+		expect(fixtureDiagnostics('import type { BoardIdentity } from "@/ui/types";')).toBe("");
+		expect(gitStatus()).toBe(before);
+	});
+
 	test("keeps root TypeScript, frontend TypeScript, and Vite on one source target", async () => {
 		const aliases = await configuredAliases(repoRoot);
 		const sourceTarget = join(repoRoot, "src", "ui", "types");
+		const canonicalViteAliases = aliases.vite.filter((alias) => alias.find === "@");
 
 		expect(aliases.errors).toEqual([]);
 		expect(aliases.root).toEqual([
@@ -81,7 +104,10 @@ describe("root TypeScript source alias", () => {
 		expect(aliases.frontend).toEqual([
 			{ find: "@/*", targets: [join(repoRoot, "src", "*")], kind: "tsconfig" },
 		]);
-		expect(aliases.vite).toEqual([{ find: "@", targets: [join(repoRoot, "src")], kind: "vite" }]);
+		expect(canonicalViteAliases).toEqual([
+			{ find: "@", targets: [join(repoRoot, "src")], kind: "vite" },
+		]);
+		expect(canonicalViteAliases).toHaveLength(1);
 		expect(aliasResolutions(aliases, "src/server/index.ts", "@/ui/types")).toEqual([
 			{ kind: "tsconfig", target: sourceTarget },
 		]);
