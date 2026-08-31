@@ -103,16 +103,18 @@ describe("coordinator logical replay ownership", () => {
 		expect(h.transport.writes).toHaveLength(2);
 	});
 
-	test("bounds live aliases and refuses overflow without retaining it", async () => {
+	test("bounds live aliases and tombstones one overflow refusal", async () => {
 		const h = fixture();
 		h.operations.hold();
 		const ownerRequest = h.request("delegate_to_workhorse");
 		const ownerPending = dispatch(h, ownerRequest);
-		const aliases = Array.from(
+		const aliasRequests = Array.from(
 			{ length: COORDINATOR_REPLAY_LIMITS.aliasesPerLiveLogicalCall + 1 },
-			(_, index) => dispatch(h, replayRequest(h, ownerRequest, `bounded-live-alias-${index}`)),
+			(_, index) => replayRequest(h, ownerRequest, `bounded-live-alias-${index}`),
 		);
+		const aliases = aliasRequests.map((request) => dispatch(h, request));
 		await nextMicrotasks();
+		const overflowRequest = aliasRequests.at(-1)!;
 		const overflow = await aliases.at(-1)!;
 		expect(overflow.response.success).toBe(false);
 		expect(responseEnvelope(overflow.response)).toMatchObject({
@@ -121,13 +123,27 @@ describe("coordinator logical replay ownership", () => {
 		});
 		expect(h.dispatcher.replayState()).toMatchObject({
 			liveWireCount: 1 + COORDINATOR_REPLAY_LIMITS.aliasesPerLiveLogicalCall,
-			retainedWireCount: 0,
+			retainedWireCount: 1,
 			liveLogicalCount: 1,
 			retainedLogicalCount: 0,
 		});
+		const repeated = await dispatch(h, overflowRequest);
+		const copied = await dispatch(h, copyRequest(overflowRequest));
+		expect(repeated).toEqual(overflow);
+		expect(copied).toEqual(overflow);
+		expect(
+			h.transport.writes.filter(({ request }) => request.requestId === overflowRequest.requestId),
+		).toHaveLength(1);
 		expect(h.operations.calls.delegate).toHaveLength(1);
 		h.operations.release();
 		await Promise.all([ownerPending, ...aliases.slice(0, -1)]);
+		const afterOwner = await dispatch(h, copyRequest(overflowRequest));
+		expect(afterOwner).toEqual(overflow);
+		expect(afterOwner.response).not.toEqual((await ownerPending).response);
+		expect(
+			h.transport.writes.filter(({ request }) => request.requestId === overflowRequest.requestId),
+		).toHaveLength(1);
+		expect(h.operations.calls.delegate).toHaveLength(1);
 	});
 
 	test("bounds compact wire tombstones and retains no large queue prompt", async () => {

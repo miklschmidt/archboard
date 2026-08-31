@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-31 21:21'
+updated_date: '2026-08-31 21:32'
 labels: []
 dependencies:
   - TASK-143.07.03
@@ -62,6 +62,10 @@ Own coordinator item/tool/call validation, routing, and response construction fo
 13. Split replay storage into bounded live wires, compact terminal wire tombstones, live logical effects, and compact terminal logical results; cap aliases, evict stale current-call state, clear epoch state on child exit/dispose, and expose count-only inspection.
 
 14. Add deterministic replay-capacity and lifecycle tests for normalized exact input, mismatched workhorse/queue/voice aliases, terminal outcomes, large queue text non-retention, bound overflow, cancellation/write loss, child exit/dispose, late retained aliases, and post-eviction no-effect refusal.
+
+15. Retain the live-alias overflow refusal as a normal compact bounded wire tombstone, and prove same-object and copied-wire redispatch return that refusal without another write, effect, or owner-result adoption.
+
+16. Replace spot fingerprint checks with a table-driven public-boundary matrix covering strict inspect/delegate/steer/voice inputs and exact/mismatched forms for all six queue variants, including reordered fields and multibyte text.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -74,4 +78,6 @@ Remediation: coordinator now mints one canonical OperationId per workhorse dispa
 Replay settlement remediation: logical execution and wire settlement now have separate owners. The first admitted call executes once and caches one canonical result; concurrent and late aliases each attempt one response on their own request ID without reminting an OperationId. Alias cancellation returns one isolated invalid_call refusal without cancelling the owner. Per-wire write loss is isolated, and exact child exit retires both wire owners without writes while the logical effect remains single. Final capped unit archboard-1430706-replay-final-gates: focused tests 53 pass / 412 expectations; both TypeScript graphs pass; scoped Oxlint 0 warnings/errors; scoped Oxfmt clean; inventory 39 pass / 69 expectations; peak 1.7G, swap 0B. Known capped-OOM lanes were not rerun. Task remains In Progress with acceptance criteria unchecked.
 
 Replay identity/retention remediation: validated closed tool inputs now produce tool-specific canonical SHA-256 fingerprints; only byte-identical fingerprints share a logical result. Changed delegate text, queue arguments, and spoken verdicts receive alias-only invalid_call boundary refusals. Replay ownership is split into bounded live wires, compact terminal wire tombstones, live logical effects, and compact terminal logical responses. Limits are 8 concurrent aliases, 128 wire tombstones, and 32 logical terminals. Current-call changes evict stale logical state; child exit/dispose clear epoch state. Count-only replay inspection exposes no request/input/response bodies. Stress coverage drove 130 wire IDs through one 16 KiB queue prompt while retaining 128 tombstones, one 64-byte fingerprint, and one effect. Final capped unit archboard-1430706-retention-final-gates: focused tests 60 pass / 445 expectations; both TypeScript graphs pass; scoped Oxlint 0 warnings/errors; scoped Oxfmt clean; inventory 39 pass / 69 expectations; peak 1.8G, swap 0B. Known capped-OOM lanes were not rerun. Task remains In Progress with acceptance criteria unchecked.
+
+Fourth remediation: live-alias overflow invalid_call refusals now enter the ordinary compact bounded wire tombstone path. Same-object and copied canonical-wire redispatch before and after owner settlement return the original overflow refusal with one transport write and one delegate effect; exact child-exit zero-write behavior remains covered. Added a table-driven public-boundary fingerprint matrix for inspect, delegate, steer, both spoken verdicts, and all six queue operations, covering reordered exact objects, changed canonical fields (including UTF-8), strict extra/null/default-like invalid inputs, one alias-only invalid_call response, stable OperationId/results for exact aliases, and zero additional effects. Final capped unit archboard-1430706-fingerprint-final-1: focused tests 71 pass / 800 expectations; both TypeScript graphs pass; scoped Oxlint 0 warnings/errors; scoped Oxfmt clean; peak 1.7G, swap 0B. Inventory unit: 39 pass / 69 expectations. git diff --check passed; source/test files remain under 500 lines; protected bundle SHA-256 remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Known capped-OOM lanes were not rerun. Task remains In Progress with all acceptance criteria unchecked for independent review.
 <!-- SECTION:NOTES:END -->
