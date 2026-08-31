@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 00:59'
+updated_date: '2026-08-31 01:30'
 labels: []
 dependencies:
   - TASK-144.06
@@ -51,4 +51,6 @@ Delegation profile: gpt-5.6-luna, high.
 Reserved after TASK-144.06 finalized at integration HEAD e9fd214. This leaf owns tests/system/repository-policy/oxfmt-tailwind.test.ts and its task record only; it must exercise the actual package scripts and must not hand-code a Tailwind sorter or modify authored production/configuration files.
 
 Implemented tests/system/repository-policy/oxfmt-tailwind.test.ts. The owner copies the checked-in package scripts, .oxfmtrc.jsonc, canonical Tailwind stylesheet/imported shell CSS, helper, and installed node_modules into /tmp; bun run fmt:check fails on the deliberately unsorted className/cn fixture, bun run fmt rewrites it with exact Oxfmt 0.65.0 native output, and the second check passes. Dynamic template, data-backed, and conditional cn expressions are asserted unchanged. Temporary fixture cleanup preserves primary plus cleanup failures and SIGINT/SIGTERM child-owner tests prove signal cleanup; authored status/staged/unstaged diff snapshots remain unchanged. Validation: focused owner, test:repository (140 pass), test:modules (1042 pass), type-check, lint, fmt:check, build:frontend, and git diff --check all pass.
+
+Reviewer remediation supersedes the earlier signal-test wording: the signal cases now run the unchanged checked-in bun run fmt:check and bun run fmt scripts with a copied, read-only project-local Oxfmt 0.65.0 dependency view. The owner locates the actual Oxfmt process in its detached process group, holds the requested check or fmt phase, verifies SIGINT 130 and SIGTERM 143, reaps descendants with bounded TERM/KILL cleanup, removes the fixture and observability markers, and preserves cleanup failures. Exact script values, Oxfmt identity, dependency bytes and metadata, canonical fixture bytes, ignored dist artifacts, and authored git status/staged/unstaged state are audited. Hostile script suffixes are rejected before execution or marker creation.
 <!-- SECTION:NOTES:END -->
