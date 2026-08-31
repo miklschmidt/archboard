@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-31 14:25'
-updated_date: '2026-08-31 16:51'
+updated_date: '2026-08-31 17:01'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -56,4 +56,6 @@ Preserved-work audit: changed source scope is only src/shared/codex-workbench-id
 Review remediation: OperationId methods were removed from IdentityValidator, IdentityIssuer, and TrustedIdentityDecoder. A separate OperationAuthority is returned under authority.operation, with exact narrow capability interfaces and keyof/@ts-expect-error negative-space fixtures. Operation nonce injection now drives a finite 16-attempt retry budget and returns issuance-exhausted after repeated duplicates; deterministic duplicate-then-fresh and exhaustion tests cover both paths.
 
 Rereview remediation 2: ordinary createIdentityAuthority now returns a frozen three-key facade; createIdentityAuthorities/restoreIdentityAuthorities return physically separate identity and operation bundles, with runtime Object.keys, in, Reflect.get, and exact capability probes. Production root no longer exports the retry budget or entropy options; deterministic nonce control is test-owned in tests/support.ts. Removed duplicate validateOperationId, retaining assertCurrentOperationId. Validation: remediation2-focused-03 passed 12 tests and 419 expectations; remediation2-typecheck-04 passed both TypeScript projects at 1.6G; remediation2-scoped-02 passed Oxlint 0 warnings/errors and Oxfmt; remediation2-inventory-01 passed 39 tests and 69 expectations. Known boundaries/module-scope OOM owners were not rerun.
+
+Rereview remediation 3: test-owned nonce support now snapshots crypto.randomUUID own-property descriptor and restores it exactly after success or failure, deleting the temporary own property when the original was inherited. Focused topology probes assert own-property presence, descriptor equality, and function identity. Validation: remediation3-focused-02 passed 13 tests and 426 expectations; remediation3-typecheck-02 passed both TypeScript projects at 1.7G; remediation3-scoped-02 passed Oxlint 0 warnings/errors and Oxfmt check. Known boundaries/module-scope OOM owners were not rerun.
 <!-- SECTION:NOTES:END -->
