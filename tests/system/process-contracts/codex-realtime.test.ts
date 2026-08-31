@@ -213,20 +213,25 @@ test("real process rejects wrong child/thread/session/version, stale SDP, and fl
 			);
 			await waitFor(() => requestParams(harness, "thread/realtime/start").length === 1);
 			const foreign = createIdentityAuthority();
-			generation.adapter.onNotification(
-				makeNotification(foreign, "thread/realtime/sdp", {
-					threadId: "coordinator-thread",
-					sdp: "wrong-child",
-				}),
-			);
+			const sendSdp = (
+				identity: typeof generation.identity,
+				threadId: string,
+				sdp: string,
+				overrides: Parameters<typeof makeNotification>[3] = {},
+			): void =>
+				generation.adapter.onNotification(
+					makeNotification(identity, "thread/realtime/sdp", { threadId, sdp }, overrides),
+				);
+			sendSdp(foreign, "coordinator-thread", "wrong-child", {
+				epoch: generation.identity.validator.epoch,
+			});
+			expectPendingOffer(harness, settled);
+			sendSdp(generation.identity, "coordinator-thread", "wrong-epoch-current-child", {
+				epoch: foreign.validator.epoch,
+			});
 			expectPendingOffer(harness, settled);
 			const wrongThread = generation.identity.decoder.adoptThreadId("other-thread");
-			generation.adapter.onNotification(
-				makeNotification(generation.identity, "thread/realtime/sdp", {
-					threadId: wrongThread,
-					sdp: "wrong-thread-current-child",
-				}),
-			);
+			sendSdp(generation.identity, wrongThread, "wrong-thread-current-child");
 			expectPendingOffer(harness, settled);
 			const start = requestParams(harness, "thread/realtime/start")[0];
 			if (typeof start?.realtimeSessionId !== "string")
