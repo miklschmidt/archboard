@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { CODEX_APPROVAL_EXPIRY_MS } from "../../timing/timing.js";
 import { DYNAMIC_APPROVAL_DECISIONS, DYNAMIC_APPROVAL_STATES } from "./dynamic-approval-effects.js";
+import { validateDynamicApprovalState } from "./dynamic-approval-lifecycle.js";
 import type {
 	createDynamicApprovalEffectSchemas,
 	DynamicApprovalEffectSchemas,
@@ -37,6 +38,15 @@ function sameIdentity(
 		left.tool === right.tool &&
 		left.manifestHash === right.manifestHash &&
 		left.operationId === right.operationId
+	);
+}
+
+function sameLink(
+	left: { readonly threadId: string; readonly childId: string; readonly epoch: string },
+	right: { readonly threadId: string; readonly childId: string; readonly epoch: string },
+): boolean {
+	return (
+		left.threadId === right.threadId && left.childId === right.childId && left.epoch === right.epoch
 	);
 }
 
@@ -142,10 +152,10 @@ export function createDynamicApprovalBrowserSchemas(
 				approval.decision,
 				refinementContext,
 			);
-			validateApprovalState(approval, refinementContext);
+			validateDynamicApprovalState(approval, refinementContext);
 		});
-	type BrowserDynamicApprovalValue = z.infer<typeof BrowserDynamicApprovalSchema>;
-
+	// This schema is the structural ingress arm for BrowserCommandSchema. Approval
+	// handlers must use the pending-aware schema below before acting on it.
 	const BrowserDynamicApprovalResponseSchema = z
 		.object({
 			kind: z.literal("browser_command"),
@@ -196,6 +206,43 @@ export function createDynamicApprovalBrowserSchemas(
 					"captured link cannot retarget the caller",
 				);
 		});
+
+	const createDynamicApprovalResponseSchema = (pending: unknown) => {
+		const pendingApproval = BrowserDynamicApprovalSchema.parse(pending);
+		if (pendingApproval.state !== "pending" || pendingApproval.binding === null)
+			throw new Error("dynamic approval response requires a pending approval with a binding");
+		const { binding } = pendingApproval;
+		return BrowserDynamicApprovalResponseSchema.superRefine((response, refinementContext) => {
+			if (response.commandId !== binding.commandId)
+				addIssue(
+					refinementContext,
+					["commandId"],
+					"response command lease does not match pending approval",
+				);
+			if (response.paneId !== binding.paneId)
+				addIssue(refinementContext, ["paneId"], "response pane does not match pending approval");
+			if (!sameLink(response.capturedLink, binding.capturedLink))
+				addIssue(
+					refinementContext,
+					["capturedLink"],
+					"response link does not match pending approval",
+				);
+			if (!sameIdentity(response.identity, pendingApproval.identity))
+				addIssue(
+					refinementContext,
+					["identity"],
+					"response identity does not match pending approval",
+				);
+			if (response.effectHash !== pendingApproval.effectHash)
+				addIssue(
+					refinementContext,
+					["effectHash"],
+					"response effectHash does not match pending approval",
+				);
+		});
+	};
+	const parseDynamicApprovalResponse = (pending: unknown, response: unknown) =>
+		createDynamicApprovalResponseSchema(pending).parse(response);
 
 	function decision(
 		outcome: "approved" | "declined" | "expired",
@@ -284,105 +331,6 @@ export function createDynamicApprovalBrowserSchemas(
 			);
 	}
 
-	function validateApprovalState(
-		approval: BrowserDynamicApprovalValue,
-		refinementContext: z.RefinementCtx,
-	): void {
-		const outcome = approval.decision?.outcome;
-		if (approval.state === "pending") {
-			if (approval.binding === null)
-				addIssue(refinementContext, ["binding"], "pending approval needs a browser binding");
-			if (approval.decision !== null || approval.delivery !== null || approval.toolResult !== null)
-				addIssue(refinementContext, ["state"], "pending approval cannot carry terminal state");
-			if (
-				approval.binding !== null &&
-				approval.binding.capturedLink.threadId !== approval.identity.threadId
-			)
-				addIssue(
-					refinementContext,
-					["binding", "capturedLink"],
-					"pending binding cannot retarget the caller",
-				);
-			return;
-		}
-		if (approval.binding !== null)
-			addIssue(refinementContext, ["binding"], "terminal approval cannot retain browser authority");
-		if (
-			approval.state === "approved" &&
-			(outcome !== "approved" || approval.delivery !== null || approval.toolResult !== null)
-		)
-			addIssue(
-				refinementContext,
-				["state"],
-				"approved state must await delivery without a tool result",
-			);
-		if (
-			approval.state === "declined" &&
-			(outcome !== "declined" || approval.toolResult !== "refused:approval_declined")
-		)
-			addIssue(refinementContext, ["state"], "declined state has the wrong terminal result");
-		if (
-			approval.state === "expired" &&
-			(outcome !== "expired" || approval.toolResult !== "refused:expired")
-		)
-			addIssue(refinementContext, ["state"], "expired state has the wrong terminal result");
-		if (
-			approval.state === "cancelled" &&
-			(outcome !== "cancelled" || approval.toolResult !== "approval_required")
-		)
-			addIssue(refinementContext, ["state"], "cancelled state must be terminal approval_required");
-		if (approval.state === "disconnected" && outcome !== "disconnected")
-			addIssue(refinementContext, ["state"], "disconnected state needs a disconnected decision");
-		if (
-			approval.state === "disconnected" &&
-			approval.decision?.cause === "browser_disconnected" &&
-			(approval.delivery !== null || approval.toolResult !== "approval_required")
-		)
-			addIssue(
-				refinementContext,
-				["state"],
-				"browser disconnect must settle as terminal approval_required",
-			);
-		if (
-			approval.state === "disconnected" &&
-			approval.decision?.cause === "child_disconnected" &&
-			(approval.delivery !== "not_delivered" || approval.toolResult !== "transport_not_delivered")
-		)
-			addIssue(refinementContext, ["state"], "child disconnect must settle as not_delivered");
-		if (
-			approval.state === "stale" &&
-			(outcome !== "approved" ||
-				approval.toolResult === null ||
-				!approval.toolResult.startsWith("refused:"))
-		)
-			addIssue(refinementContext, ["state"], "stale state must refuse the approved effect");
-		if (
-			approval.state === "delivered" &&
-			(outcome !== "approved" || approval.delivery !== "delivered" || approval.toolResult !== null)
-		)
-			addIssue(refinementContext, ["state"], "delivered state must carry only delivered approval");
-		if (
-			approval.state === "not_delivered" &&
-			(outcome !== "approved" ||
-				approval.delivery !== "not_delivered" ||
-				approval.toolResult !== "transport_not_delivered")
-		)
-			addIssue(
-				refinementContext,
-				["state"],
-				"not_delivered state must carry approved delivery failure",
-			);
-		if (
-			approval.state === "outcome_unknown" &&
-			(outcome !== "approved" || approval.delivery !== "outcome_unknown")
-		)
-			addIssue(
-				refinementContext,
-				["state"],
-				"outcome_unknown state must carry uncertain approved delivery",
-			);
-	}
-
 	return {
 		DynamicApprovalStateSchema,
 		DynamicApprovalDecisionSchema,
@@ -391,10 +339,16 @@ export function createDynamicApprovalBrowserSchemas(
 		DynamicApprovalLinkSchema,
 		BrowserDynamicApprovalSchema,
 		BrowserDynamicApprovalResponseSchema,
+		createDynamicApprovalResponseSchema,
+		parseDynamicApprovalResponse,
+		createPendingDynamicApprovalResponseSchema: createDynamicApprovalResponseSchema,
+		parsePendingDynamicApprovalResponse: parseDynamicApprovalResponse,
 		DynamicApprovalResponseSchema: BrowserDynamicApprovalResponseSchema,
 		BrowserDynamicApprovalResponseCommandSchema: BrowserDynamicApprovalResponseSchema,
 		DynamicCoordinationApprovalStateSchema: DynamicApprovalStateSchema,
 		DynamicCoordinationApprovalResponseSchema: BrowserDynamicApprovalResponseSchema,
+		createDynamicCoordinationApprovalResponseSchema: createDynamicApprovalResponseSchema,
+		parseDynamicCoordinationApprovalResponse: parseDynamicApprovalResponse,
 		BrowserDynamicCoordinationApprovalSchema: BrowserDynamicApprovalSchema,
 	};
 }

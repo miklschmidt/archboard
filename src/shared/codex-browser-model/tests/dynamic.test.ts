@@ -163,6 +163,26 @@ describe("dynamic coordination approval browser contract", () => {
 	test("binds response to the lease, pane, captured link, child epoch, call, operation, and hash", () => {
 		const fixture = createDynamicFixture();
 		const response = fixture.response;
+		const pendingResponseSchema = fixture.model.createDynamicApprovalResponseSchema(
+			fixture.pending,
+		);
+		expect(pendingResponseSchema.parse(response)).toEqual(response);
+		const swappedTargetIdentity = { ...response.identity, threadId: fixture.other };
+		const swappedTargetLink = { ...response.capturedLink, threadId: fixture.other };
+		const exactPendingMutations = [
+			{ commandId: fixture.authorities.identity.issuer.mintBrowserCommandId() },
+			{ paneId: "pane-other" },
+			{ capturedLink: swappedTargetLink, identity: swappedTargetIdentity },
+			{ identity: fixture.requests[2]!.identity },
+			{ effectHash: fixture.requests[2]!.effectHash },
+		];
+		for (const mutation of exactPendingMutations) {
+			const candidate = { ...response, ...mutation };
+			expect(
+				fixture.model.BrowserDynamicApprovalResponseSchema.safeParse(candidate).success,
+			).toBeTrue();
+			expect(pendingResponseSchema.safeParse(candidate).success).toBeFalse();
+		}
 		for (const mutation of [
 			{ capturedLink: { ...response.capturedLink, threadId: fixture.other } },
 			{
@@ -195,6 +215,76 @@ describe("dynamic coordination approval browser contract", () => {
 					...response,
 					...extra,
 				} as unknown).success,
+			).toBeFalse();
+		const terminal = approvalFor(
+			fixture.requests[0]!,
+			"declined",
+			decisionFor(fixture.requests[0]!, "declined", "person_declined"),
+			null,
+			"refused:approval_declined",
+		);
+		expect(() => fixture.model.createDynamicApprovalResponseSchema(terminal)).toThrow();
+		expect(() => fixture.model.parseDynamicApprovalResponse(terminal, response)).toThrow();
+	});
+
+	test("rejects cross-state terminal and delivery combinations", () => {
+		const fixture = createDynamicFixture();
+		const request = fixture.requests[0]!;
+		const invalid = [
+			{
+				...approvalFor(
+					request,
+					"declined",
+					decisionFor(request, "declined", "person_declined"),
+					null,
+					"refused:approval_declined",
+				),
+				delivery: "delivered",
+			},
+			{
+				...approvalFor(
+					request,
+					"expired",
+					decisionFor(request, "expired", "deadline_reached"),
+					null,
+					"refused:expired",
+				),
+				delivery: "outcome_unknown",
+			},
+			{
+				...approvalFor(
+					request,
+					"cancelled",
+					decisionFor(request, "cancelled", "host_shutdown"),
+					null,
+					"approval_required",
+				),
+				delivery: "delivered",
+			},
+			{
+				...approvalFor(
+					request,
+					"stale",
+					decisionFor(request, "approved", "person_approved"),
+					null,
+					"refused:invalid_call",
+				),
+				delivery: "delivered",
+			},
+			{
+				...approvalFor(
+					request,
+					"outcome_unknown",
+					decisionFor(request, "approved", "person_approved"),
+					"outcome_unknown",
+					null,
+				),
+				toolResult: "approval_required",
+			},
+		];
+		for (const approval of invalid)
+			expect(
+				fixture.model.BrowserDynamicApprovalSchema.safeParse(approval as unknown).success,
 			).toBeFalse();
 	});
 

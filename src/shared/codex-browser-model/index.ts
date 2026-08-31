@@ -42,6 +42,8 @@ export {
 export { SERVER_REQUEST_METHODS };
 export {
 	createDynamicApprovalSchemas,
+	canonicalDynamicApprovalJson,
+	dynamicApprovalHashForCanonicalJson,
 	CODEX_APPROVAL_EXPIRY_MS,
 	DYNAMIC_APPROVAL_DECISIONS,
 	DYNAMIC_APPROVAL_NAMESPACE,
@@ -92,6 +94,9 @@ export type {
 	BrowserDynamicApprovalResponse,
 	BrowserDynamicApprovalResponseCommand,
 	BrowserDynamicCoordinationApproval,
+	DynamicApprovalCanonicalEffect,
+	DynamicApprovalCanonicalIdentity,
+	DynamicApprovalCanonicalInput,
 	DynamicApprovalBinding,
 	DynamicApprovalDecision,
 	DynamicApprovalEffect,

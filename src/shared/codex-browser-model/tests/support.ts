@@ -164,6 +164,7 @@ export function createFixtureIds(): {
 		queue,
 		settings: [settings],
 		approvals: [approval],
+		dynamicApprovals: [],
 		semantic,
 		coordinator,
 		voice,

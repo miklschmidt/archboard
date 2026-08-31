@@ -18,7 +18,7 @@ const EffectHashSchema = z
 	.string()
 	.regex(/^sha256:[0-9a-f]{64}$/u, "effect hash must be sha256 plus 64 lowercase hex characters");
 
-type CanonicalIdentity = {
+export type DynamicApprovalCanonicalIdentity = {
 	readonly child: string;
 	readonly epoch: string;
 	readonly threadId: string;
@@ -30,6 +30,56 @@ type CanonicalIdentity = {
 	readonly operationId: string;
 };
 
+export type DynamicApprovalCanonicalEffect =
+	| {
+			readonly tool: "create_thread";
+			readonly arguments: { readonly prompt: string };
+			readonly callerAuthority: string;
+			readonly targetAuthority: null;
+			readonly contextAuthority: string;
+			readonly effectiveBoundary: null;
+			readonly mutationOperationId: string;
+			readonly initialTurnOperationId: string;
+			readonly visualSummary: string;
+	  }
+	| {
+			readonly tool: "fork_thread";
+			readonly arguments: {
+				readonly threadId: string;
+				readonly beforeTurnId: string | null;
+				readonly prompt: string | null;
+			};
+			readonly callerAuthority: string;
+			readonly targetAuthority: string;
+			readonly contextAuthority: string;
+			readonly effectiveBoundary:
+				| { readonly relation: "self"; readonly beforeTurnId: string }
+				| { readonly relation: "other"; readonly beforeTurnId: string | null };
+			readonly mutationOperationId: string;
+			readonly initialTurnOperationId: string | null;
+			readonly visualSummary: string;
+	  }
+	| {
+			readonly tool: "send_message_to_thread";
+			readonly arguments: { readonly threadId: string; readonly prompt: string };
+			readonly callerAuthority: string;
+			readonly targetAuthority: string;
+			readonly contextAuthority: string;
+			readonly effectiveBoundary: null;
+			readonly mutationOperationId: string;
+			readonly initialTurnOperationId: null;
+			readonly visualSummary: string;
+	  };
+
+export type DynamicApprovalCanonicalInput = {
+	readonly identity: DynamicApprovalCanonicalIdentity;
+	readonly effect: DynamicApprovalCanonicalEffect;
+};
+
+export function dynamicApprovalHashForCanonicalJson(value: string): string {
+	return effectHashFor(value);
+}
+
 type EffectSchemas = ReturnType<typeof createDynamicApprovalEffectSchemas>;
 type DynamicApprovalIdentityValue = z.infer<
 	DynamicApprovalEffectSchemas["DynamicApprovalIdentitySchema"]
@@ -37,6 +87,29 @@ type DynamicApprovalIdentityValue = z.infer<
 type DynamicApprovalEffectValue = z.infer<
 	DynamicApprovalEffectSchemas["DynamicApprovalEffectSchema"]
 >;
+
+function canonicalArguments(
+	argumentsValue: DynamicApprovalCanonicalEffect["arguments"],
+): DynamicApprovalCanonicalEffect["arguments"] {
+	if ("beforeTurnId" in argumentsValue)
+		return {
+			threadId: argumentsValue.threadId,
+			beforeTurnId: argumentsValue.beforeTurnId,
+			prompt: argumentsValue.prompt,
+		};
+	if ("threadId" in argumentsValue)
+		return { threadId: argumentsValue.threadId, prompt: argumentsValue.prompt };
+	return { prompt: argumentsValue.prompt };
+}
+
+function canonicalBoundary(
+	boundary: DynamicApprovalCanonicalEffect["effectiveBoundary"],
+): DynamicApprovalCanonicalEffect["effectiveBoundary"] {
+	if (boundary === null) return null;
+	if (boundary.relation === "self")
+		return { relation: "self", beforeTurnId: boundary.beforeTurnId };
+	return { relation: "other", beforeTurnId: boundary.beforeTurnId };
+}
 
 function validateIdentityAndEffect(
 	approvalIdentity: DynamicApprovalIdentityValue,
@@ -94,10 +167,8 @@ function validateIdentityAndEffect(
 	}
 }
 
-function canonicalHashInput(
-	approvalIdentity: CanonicalIdentity,
-	approvalEffect: z.infer<EffectSchemas["DynamicApprovalEffectSchema"]>,
-): string {
+export function canonicalDynamicApprovalJson(input: DynamicApprovalCanonicalInput): string {
+	const { identity: approvalIdentity, effect: approvalEffect } = input;
 	return JSON.stringify({
 		identity: {
 			child: approvalIdentity.child,
@@ -112,16 +183,23 @@ function canonicalHashInput(
 		},
 		effect: {
 			tool: approvalEffect.tool,
-			arguments: approvalEffect.arguments,
+			arguments: canonicalArguments(approvalEffect.arguments),
 			callerAuthority: approvalEffect.callerAuthority,
 			targetAuthority: approvalEffect.targetAuthority,
 			contextAuthority: approvalEffect.contextAuthority,
-			effectiveBoundary: approvalEffect.effectiveBoundary,
+			effectiveBoundary: canonicalBoundary(approvalEffect.effectiveBoundary),
 			mutationOperationId: approvalEffect.mutationOperationId,
 			initialTurnOperationId: approvalEffect.initialTurnOperationId,
 			visualSummary: approvalEffect.visualSummary,
 		},
 	});
+}
+
+function canonicalHashInput(
+	approvalIdentity: z.infer<EffectSchemas["DynamicApprovalIdentitySchema"]>,
+	approvalEffect: z.infer<EffectSchemas["DynamicApprovalEffectSchema"]>,
+): string {
+	return canonicalDynamicApprovalJson({ identity: approvalIdentity, effect: approvalEffect });
 }
 
 export function createDynamicApprovalSchemas(identity: IdentitySchemas, context: IdentityContext) {
@@ -162,6 +240,8 @@ export function createDynamicApprovalSchemas(identity: IdentitySchemas, context:
 		...browserSchemas,
 		DynamicApprovalRequestSchema,
 		DynamicCoordinationApprovalRequestSchema: DynamicApprovalRequestSchema,
+		canonicalDynamicApprovalJson,
+		dynamicApprovalHashForCanonicalJson,
 		effectHashForRequest: (input: {
 			identity: DynamicApprovalIdentityValue;
 			effect: DynamicApprovalEffectValue;

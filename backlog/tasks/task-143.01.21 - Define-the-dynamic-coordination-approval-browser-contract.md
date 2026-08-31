@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-31 14:26'
-updated_date: '2026-08-31 17:56'
+updated_date: '2026-08-31 18:20'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -39,7 +39,7 @@ Extend the closed browser model with a distinct dynamic coordination approval re
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Add a private dynamic-approval contract module under src/shared/codex-browser-model and expose its closed schemas/types from the module root, using only the existing branded identity and OperationId authorities. 2. Model the exact ordered logical-call identity, three immutable tool effects, effective boundary, bounded visual summary, effect hash, creation/expiry, and pending or terminal lifecycle without ordinary ApprovalId or raw protocol values. 3. Add a binary browser approve/decline command bound to lease, pane/link, child epoch, logical call, OperationId, and effect hash; add strict relational refinements for current epoch, effect hash, state/decision shape, duplicate-safe terminal representation, and non-resumable approval_required. 4. Extend module-owned fixtures/tests for round trips, all lifecycle states, seven-family separation, secret/extra-field rejection, identity swaps, stale epoch, hash mismatch, duplicate decisions, and fabricated resume; add compile-time type fixtures. 5. Run focused tests, both TypeScript projects, scoped lint/format, repository inventory/policy checks, and git diff --check in sequential capped systemd user services; preserve unrelated/protected work, commit only this module and task metadata, and leave the task In Progress for independent review.
+1. Add a pending-aware response parser that requires one exact pending BrowserDynamicApproval and compares the browser lease, pane, captured link, complete logical identity, and effect hash, rejecting terminal/replayed responses. 2. Replace permissive lifecycle refinements with an exhaustive closed relation table for decision, delivery, toolResult, binding, and resumable fields, including exact disconnect and approval_required arms. 3. Add literal canonical compact JSON and independently computed SHA-256 vectors for create, self-fork, other-fork, send, nullability, and UTF-8 summaries. 4. Make BrowserSnapshot.dynamicApprovals required and update only module-owned fixtures/tests/type assertions. 5. Re-run focused/public probes, both TypeScript projects, scoped lint/format, inventory/authored policy owners, and diff checks under capped systemd services; preserve the known boundary-owner OOM limitation, commit the remediation, and leave the task In Progress.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -48,4 +48,6 @@ Extend the closed browser model with a distinct dynamic coordination approval re
 Implemented the closed dynamic coordination approval browser contract under src/shared/codex-browser-model. Added authority-bound immutable request/effect schemas for create_thread, fork_thread, and send_message_to_thread; safe secret-free browser projections; binary lease/pane/link/child-epoch/identity/OperationId/effect-hash response; exact expiry/hash/state/decision refinements; and module tests/type fixtures. Kept runtime, gateway, dispatcher, UI, and composition out of scope.
 
 Validation: focused browser-model tests pass (16 tests, 199 expectations); dynamic authored policy owner passes (11 tests, 322 expectations); both TypeScript projects, scoped Oxlint, scoped Oxfmt, git diff --check, repository inventory, authored-contract, and protocol-alias policy owners pass. The scoped codex-protocol-boundary owner was previously killed by its capped cgroup (known OOM-prone lane) and was not rerun. Protected frontend bundle is absent in this worktree. Task remains In Progress for independent review.
+
+Review remediation implemented: added pending-aware response schema/parser with exact pending lease, pane, captured link, logical identity, and effect-hash matching; terminal/replayed cards without bindings are rejected. Replaced permissive lifecycle checks with exhaustive closed state arms, added independent literal canonical JSON and SHA-256 vectors for create, self-fork, other-fork, send, nullability, and UTF-8, and made snapshot dynamicApprovals required. Validation passed: 18 focused tests / 243 expectations, both TypeScript projects, scoped lint/format, dynamic policy owner, test inventory, authored-contract, protocol-alias owner, and diff checks. The known codex-protocol-boundary OOM lane remains intentionally unrerun. Task remains In Progress with ACs unchecked.
 <!-- SECTION:NOTES:END -->

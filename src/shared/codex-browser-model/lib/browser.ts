@@ -902,7 +902,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			queue: BrowserQueueSchema,
 			settings: z.array(BrowserSettingsSchema),
 			approvals: z.array(BrowserApprovalSchema),
-			dynamicApprovals: z.array(dynamic.BrowserDynamicApprovalSchema).default([]),
+			dynamicApprovals: z.array(dynamic.BrowserDynamicApprovalSchema),
 			semantic: BrowserSemanticDeliverySchema.nullable(),
 			coordinator: BrowserCoordinatorSchema,
 			voice: BrowserVoiceSchema,
