@@ -339,3 +339,16 @@ export function isCoordinatorToolRequest(
 export function callKey(request: DynamicServerRequest): string {
 	return `${request.child}\u0000${request.epoch}\u0000${String(request.requestId)}`;
 }
+
+export function logicalCallKey(call: LogicalToolCallCorrelation): string {
+	return [
+		call.child,
+		call.epoch,
+		call.threadId,
+		call.turnId,
+		call.callId,
+		call.namespace,
+		call.tool,
+		call.manifestHash,
+	].join("\u0000");
+}

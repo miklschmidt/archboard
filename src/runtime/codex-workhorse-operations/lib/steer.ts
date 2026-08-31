@@ -9,6 +9,7 @@ import {
 	activeTurnFromClassification,
 	messageOf,
 	operationError,
+	selectOperationIdentity,
 	threadIdWire,
 	validateBoundedInput,
 	type WorkhorseRuntime,
@@ -58,18 +59,13 @@ export function createSteer(
 	return (request) => {
 		validateBoundedInput(request.input, "steer input");
 		runtime.assertCall(request.call, "steer_workhorse");
-		let operationId;
+		let operationIdentity;
 		try {
-			operationId = runtime.options.operation.issuer.mintOperationId();
-			runtime.options.operation.validator.assertCurrentOperationId(operationId);
+			operationIdentity = selectOperationIdentity(runtime, "steer_workhorse", request.operationId);
 		} catch (error) {
-			return Promise.reject(
-				operationError("invalid_input", "A current steer operation identity was unavailable.", {
-					cause: error,
-				}),
-			);
+			return Promise.reject(error);
 		}
-		const operationIdWire = runtime.options.operation.decoder.serializeOperationId(operationId);
+		const { operationId, operationIdWire } = operationIdentity;
 		return runtime.enqueue(async () => {
 			const binding = runtime.currentBinding();
 			const validated = await runtime.classify(binding, request.call, "steer_workhorse");

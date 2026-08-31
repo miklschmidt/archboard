@@ -7,6 +7,7 @@ import {
 	operationError,
 	queueIds,
 	queueMutationOutcome,
+	selectOperationIdentity,
 	threadIdWire,
 	type WorkhorseRuntime,
 } from "./internal.js";
@@ -253,18 +254,17 @@ export function createManageQueue(
 				return freeze({ operation: "list", queuedSubmissionIds: queueIds(result.queue) });
 			});
 
-		let operationId: OperationId;
+		let operationIdentity;
 		try {
-			operationId = runtime.options.operation.issuer.mintOperationId();
-			runtime.options.operation.validator.assertCurrentOperationId(operationId);
-		} catch (error) {
-			return Promise.reject(
-				operationError("invalid_input", "A current queue operation identity was unavailable.", {
-					cause: error,
-				}),
+			operationIdentity = selectOperationIdentity(
+				runtime,
+				"manage_workhorse_queue",
+				request.operationId,
 			);
+		} catch (error) {
+			return Promise.reject(error);
 		}
-		const operationIdWire = runtime.options.operation.decoder.serializeOperationId(operationId);
+		const { operationId, operationIdWire } = operationIdentity;
 		return runtime.enqueue(async () => {
 			const binding = runtime.currentBinding();
 			const validated = await runtime.classify(binding, request.call, "manage_workhorse_queue");

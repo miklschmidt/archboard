@@ -35,7 +35,7 @@ describe("coordinator dynamic-tool lifecycle", () => {
 		});
 	});
 
-	test("does not answer a request after child disconnect or host disposal", async () => {
+	test("suppresses only a disconnected child and still answers an owned call during disposal", async () => {
 		const child = fixture();
 		const childRequest = child.request("inspect_workhorse");
 		const childPending = dispatch(child, childRequest);
@@ -55,7 +55,46 @@ describe("coordinator dynamic-tool lifecycle", () => {
 		const disposedResult = await disposedPending;
 		expect(disposedResult.attempted).toBe(false);
 		expect(disposed.operations.calls.inspect).toHaveLength(0);
-		expect(disposed.transport.writes).toHaveLength(0);
+		expect(disposed.transport.writes).toHaveLength(1);
+	});
+
+	test("keeps one writable terminal response when disposed during reads, mutations, or response delivery", async () => {
+		const reading = fixture();
+		reading.operations.hold();
+		const readPending = dispatch(reading, reading.request("inspect_workhorse"));
+		await nextMicrotasks();
+		expect(reading.operations.calls.inspect).toHaveLength(1);
+		reading.dispatcher.dispose();
+		reading.operations.release();
+		const readResult = await readPending;
+		expect(responseEnvelope(readResult.response)).toMatchObject({ tag: "refused" });
+		expect(reading.operations.calls.inspect).toHaveLength(1);
+		expect(reading.transport.writes).toHaveLength(1);
+
+		const mutating = fixture();
+		mutating.operations.hold();
+		const mutationPending = dispatch(mutating, mutating.request("delegate_to_workhorse"));
+		await nextMicrotasks();
+		expect(mutating.operations.calls.delegate).toHaveLength(1);
+		mutating.dispatcher.dispose();
+		mutating.operations.release();
+		const mutationResult = await mutationPending;
+		expect(responseEnvelope(mutationResult.response)).toMatchObject({ tag: "outcome_unknown" });
+		expect(mutating.operations.calls.delegate).toHaveLength(1);
+		expect(mutating.transport.writes).toHaveLength(1);
+
+		const delivered = fixture();
+		delivered.transport.hold();
+		const deliveredPending = dispatch(delivered, delivered.request("inspect_workhorse"));
+		await nextMicrotasks();
+		await nextMicrotasks();
+		expect(delivered.operations.calls.inspect).toHaveLength(1);
+		expect(delivered.transport.writes).toHaveLength(1);
+		delivered.dispatcher.dispose();
+		delivered.transport.release();
+		const deliveredResult = await deliveredPending;
+		expect(responseEnvelope(deliveredResult.response)).toMatchObject({ tag: "ok" });
+		expect(delivered.transport.writes).toHaveLength(1);
 	});
 
 	test("turns cancellation after a mutation starts into one uncertainty envelope", async () => {
@@ -72,7 +111,9 @@ describe("coordinator dynamic-tool lifecycle", () => {
 		expect(result.attempted).toBe(true);
 		expect(responseEnvelope(result.response)).toMatchObject({
 			tag: "outcome_unknown",
-			operationId: `operation-${String(request.requestId)}`,
+			operationId: h.authorities.operation.decoder.serializeOperationId(
+				h.operations.calls.delegate[0]!.operationId!,
+			),
 		});
 		expect(h.transport.writes).toHaveLength(1);
 		expect(h.operations.calls.delegate).toHaveLength(1);
@@ -91,7 +132,9 @@ describe("coordinator dynamic-tool lifecycle", () => {
 
 		expect(responseEnvelope(result.response)).toMatchObject({
 			tag: "outcome_unknown",
-			operationId: `operation-${String(request.requestId)}`,
+			operationId: h.authorities.operation.decoder.serializeOperationId(
+				h.operations.calls.steer[0]!.operationId!,
+			),
 		});
 		expect(h.transport.writes).toHaveLength(1);
 	});
@@ -132,7 +175,9 @@ describe("coordinator dynamic-tool lifecycle", () => {
 		const unknownResult = await dispatch(unknown, unknownRequest);
 		expect(responseEnvelope(unknownResult.response)).toMatchObject({
 			tag: "outcome_unknown",
-			operationId: `operation-${String(unknownRequest.requestId)}`,
+			operationId: unknown.authorities.operation.decoder.serializeOperationId(
+				unknown.operations.calls.delegate[0]!.operationId!,
+			),
 		});
 
 		const notDelivered = fixture();
@@ -164,6 +209,28 @@ describe("coordinator dynamic-tool lifecycle", () => {
 		expect(first.attempted).toBe(true);
 		expect(h.operations.calls.inspect).toHaveLength(1);
 		expect(h.transport.writes).toHaveLength(1);
+	});
+
+	test("reuses one terminal promise for a logical call retried under a fresh request identity", async () => {
+		const h = fixture();
+		h.operations.hold();
+		const firstRequest = h.request("delegate_to_workhorse");
+		const secondRequestId = h.identity.decoder.adoptJsonRpcRequestId("logical-retry-request");
+		const secondRequest = {
+			...copyRequest(firstRequest),
+			requestId: secondRequestId,
+			correlation: h.identity.decoder.createWireRequestCorrelation({ requestId: secondRequestId }),
+		};
+		const firstPending = dispatch(h, firstRequest);
+		const secondPending = dispatch(h, secondRequest);
+		await nextMicrotasks();
+		expect(h.operations.calls.delegate).toHaveLength(1);
+		h.operations.release();
+		const [first, second] = await Promise.all([firstPending, secondPending]);
+		expect(second).toBe(first);
+		expect(h.operations.calls.delegate).toHaveLength(1);
+		expect(h.transport.writes).toHaveLength(1);
+		expect(h.transport.writes[0]!.request).toBe(firstRequest);
 	});
 
 	test("disposes idempotently and rejects new dispatches", async () => {

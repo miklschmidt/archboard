@@ -297,6 +297,26 @@ export function validateBoundedInput(value: string, label: string, allowEmpty = 
 		);
 }
 
+export function selectOperationIdentity(
+	runtime: WorkhorseRuntime,
+	operation: MutationOperation,
+	candidate: OperationId | undefined,
+): { readonly operationId: OperationId; readonly operationIdWire: string } {
+	try {
+		const operationId = candidate ?? runtime.options.operation.issuer.mintOperationId();
+		runtime.options.operation.validator.assertCurrentOperationId(operationId);
+		return Object.freeze({
+			operationId,
+			operationIdWire: runtime.options.operation.decoder.serializeOperationId(operationId),
+		});
+	} catch (error) {
+		throw operationError("invalid_input", `A current ${operation} identity was unavailable.`, {
+			operation,
+			cause: error,
+		});
+	}
+}
+
 export function activeTurnFromClassification(
 	classification: WorkhorseOperationClassification,
 ): TurnId | null {

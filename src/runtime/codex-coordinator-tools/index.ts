@@ -18,7 +18,6 @@ export type {
 	CoordinatorToolInput,
 	CoordinatorToolLifecycleCause,
 	CoordinatorToolNameValue,
-	CoordinatorToolOperationId,
 	CoordinatorToolRefusal,
 	CoordinatorToolResponsePort,
 	CoordinatorToolSpokenResult,
