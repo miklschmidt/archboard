@@ -89,6 +89,7 @@ test("the migrated opener dialog keeps its rendered interaction and persistence 
 		title: "Opener settings",
 		description: "Reading opener settings…",
 		rootContainsDialog: false,
+		shellContainsDialog: false,
 		portalAtBody: true,
 		focusInside: true,
 	});
@@ -140,6 +141,7 @@ test("the migrated opener dialog keeps its rendered interaction and persistence 
 		focus: "Cancel",
 		focusInside: true,
 		rootContainsDialog: false,
+		shellContainsDialog: false,
 		portalAtBody: true,
 	});
 	expect(await requests(browser)).toEqual([
@@ -272,6 +274,17 @@ test("the migrated opener dialog keeps its rendered interaction and persistence 
 	expect(flip.pageOverflow).toBe(false);
 	expect(flip.targets.every(({ width, height }) => width >= 43.5 && height >= 43.5)).toBe(true);
 	await browser.run(["set", "viewport", "1440", "900", "1"]);
+	expect(
+		await browser.eval<boolean>(`(() => {
+			const trigger = window.__openerTrigger;
+			if (!(trigger instanceof HTMLButtonElement)) return false;
+			const probe = { count: 0, listener: null };
+			probe.listener = () => { probe.count += 1; };
+			trigger.addEventListener('click', probe.listener);
+			window.__coveredOpenerTriggerProbe = { trigger, ...probe };
+			return true;
+		})()`),
+	).toBe(true);
 	const triggerPoint = await pollUntil(
 		() =>
 			browser.eval<{ x?: number; y?: number }>(`(() => {
@@ -290,6 +303,14 @@ test("the migrated opener dialog keeps its rendered interaction and persistence 
 	await browser.run(["mouse", "down"]);
 	await browser.run(["mouse", "up"]);
 	await assertDialogClosedAndFocusReturned(browser);
+	const coveredTriggerClicks = await browser.eval<number>(`(() => {
+		const probe = window.__coveredOpenerTriggerProbe;
+		if (!probe) return -1;
+		probe.trigger.removeEventListener('click', probe.listener);
+		delete window.__coveredOpenerTriggerProbe;
+		return probe.count;
+	})()`);
+	expect(coveredTriggerClicks).toBe(0);
 	expect((await requests(browser)).filter((request) => request.method === "GET").length).toBe(
 		getCountBeforeOutside,
 	);
