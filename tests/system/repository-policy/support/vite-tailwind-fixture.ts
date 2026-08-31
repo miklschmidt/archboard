@@ -28,6 +28,7 @@ export type ViteTailwindFixture = {
 	sourceRoot: string;
 	outputRoot: string;
 	assertActive: () => void;
+	run: <T>(action: () => Promise<T>) => Promise<T>;
 	dispose: () => Promise<void>;
 	disposeSync: () => void;
 };
@@ -42,6 +43,7 @@ export type FixtureLifecycle = {
 };
 
 export type ViteAliasEntry = { find: string | RegExp; replacement?: string };
+type FixtureRemoval = { remove: (r: string) => Promise<void>; removeSync: (r: string) => void };
 
 export function normalizeViteAliasEntries(
 	aliases: NonNullable<InlineConfig["resolve"]>["alias"] | null | undefined,
@@ -54,7 +56,6 @@ export function normalizeViteAliasEntries(
 		replacement: typeof replacement === "string" ? replacement : undefined,
 	}));
 }
-
 export async function withPrimaryAndCleanup<T>(
 	action: () => Promise<T>,
 	cleanup: () => Promise<void> | void,
@@ -86,7 +87,6 @@ export async function withPrimaryAndCleanup<T>(
 	if (hasCleanupFailure) throw cleanupFailure;
 	return result as T;
 }
-
 export async function runCleanupSteps(cleanups: Array<() => Promise<void> | void>): Promise<void> {
 	const failures: unknown[] = [];
 	for (const cleanup of cleanups) {
@@ -100,7 +100,6 @@ export async function runCleanupSteps(cleanups: Array<() => Promise<void> | void
 	if (failures.length > 1)
 		throw new AggregateError(failures, "Multiple cleanup operations failed.");
 }
-
 export async function captureFailure(action: () => Promise<unknown>): Promise<unknown> {
 	try {
 		await action();
@@ -109,39 +108,61 @@ export async function captureFailure(action: () => Promise<unknown>): Promise<un
 	}
 	return undefined;
 }
-
 export function toPosixSpecifier(value: string): string {
 	return value.replaceAll("\\", "/");
 }
-
 export async function createViteTailwindFixture(
 	parent = tmpdir(),
 	dependenciesRoot = process.cwd(),
 	lifecycle: Pick<FixtureLifecycle, "onAllocated" | "onAllocationRetired" | "onSetupStep"> = {},
 	nextRoot: () => string = () => join(parent, `archboard-vite-tailwind-${randomUUID()}`),
+	removal: FixtureRemoval = {
+		remove: (root) => rm(root, { recursive: true, force: true }),
+		removeSync: (root) => rmSync(root, { recursive: true, force: true }),
+	},
 ): Promise<ViteTailwindFixture> {
 	let fixture: ViteTailwindFixture | undefined;
 	while (fixture === undefined) {
 		const root = nextRoot();
 		let created = false;
-		let retired = false;
 		let cleanupRequested = false;
 		let syncCleanupRequested = false;
 		let allocationSettled = false;
+		let inFlight = 0;
+		let resolveIdle: (() => void) | undefined;
+		let idle = Promise.resolve();
 		let resolveAllocation: (() => void) | undefined;
 		const allocationReady = new Promise<void>((resolve) => {
 			resolveAllocation = resolve;
 		});
 		let disposal: Promise<void> | undefined;
+		let removalInFlight = false;
+		const waitForIdle = async (): Promise<void> => {
+			if (inFlight > 0) await idle;
+		};
 		const removeOwnedRoot = async (): Promise<void> => {
-			if (!created) return;
-			created = false;
-			await rm(root, { recursive: true, force: true });
+			if (!created || removalInFlight) return;
+			removalInFlight = true;
+			try {
+				await removal.remove(root);
+				created = false;
+			} finally {
+				removalInFlight = false;
+			}
 		};
 		const removeOwnedRootSync = (): void => {
-			if (!created) return;
-			created = false;
-			rmSync(root, { recursive: true, force: true });
+			if (!created || removalInFlight) return;
+			removalInFlight = true;
+			try {
+				removal.removeSync(root);
+				created = false;
+			} finally {
+				removalInFlight = false;
+			}
+		};
+		const maybeRemoveSynchronously = (): void => {
+			if (cleanupRequested && syncCleanupRequested && allocationSettled && inFlight === 0)
+				removeOwnedRootSync();
 		};
 		fixture = {
 			root,
@@ -149,22 +170,46 @@ export async function createViteTailwindFixture(
 			sourceRoot: join(root, "source with spaces"),
 			outputRoot: join(root, "output"),
 			assertActive: () => {
-				if (!created || cleanupRequested || retired)
+				if (!created || cleanupRequested)
 					throw new Error("Vite fixture owner stopped during setup.");
+			},
+			run: async <T>(action: () => Promise<T>): Promise<T> => {
+				fixture?.assertActive();
+				if (inFlight === 0) {
+					idle = new Promise<void>((resolve) => {
+						resolveIdle = resolve;
+					});
+				}
+				inFlight += 1;
+				try {
+					return await action();
+				} finally {
+					inFlight -= 1;
+					if (inFlight === 0) {
+						resolveIdle?.();
+						resolveIdle = undefined;
+						maybeRemoveSynchronously();
+					}
+				}
 			},
 			dispose: () => {
 				if (disposal !== undefined) return disposal;
 				cleanupRequested = true;
-				disposal = (async () => {
+				const attempt = (async () => {
 					await allocationReady;
+					await waitForIdle();
 					await removeOwnedRoot();
 				})();
+				disposal = attempt;
+				void attempt.catch(() => {
+					if (disposal === attempt) disposal = undefined;
+				});
 				return disposal;
 			},
 			disposeSync: () => {
 				cleanupRequested = true;
 				syncCleanupRequested = true;
-				if (allocationSettled) removeOwnedRootSync();
+				maybeRemoveSynchronously();
 			},
 		};
 		lifecycle.onAllocated?.(fixture);
@@ -172,7 +217,6 @@ export async function createViteTailwindFixture(
 			mkdirSync(root);
 			created = true;
 		} catch (error) {
-			retired = true;
 			allocationSettled = true;
 			resolveAllocation?.();
 			if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
@@ -182,24 +226,27 @@ export async function createViteTailwindFixture(
 		}
 		allocationSettled = true;
 		resolveAllocation?.();
-		if (cleanupRequested && syncCleanupRequested) removeOwnedRootSync();
+		maybeRemoveSynchronously();
 	}
 	try {
 		const allocatedFixture = fixture;
-		allocatedFixture.assertActive();
-		await symlink(
-			join(dependenciesRoot, "node_modules"),
-			join(allocatedFixture.root, "node_modules"),
-			"dir",
+		await allocatedFixture.run(() =>
+			symlink(
+				join(dependenciesRoot, "node_modules"),
+				join(allocatedFixture.root, "node_modules"),
+				"dir",
+			),
 		);
 		allocatedFixture.assertActive();
 		lifecycle.onSetupStep?.("dependency-link", allocatedFixture);
-		allocatedFixture.assertActive();
-		await mkdir(join(allocatedFixture.projectRoot, "frontend"), { recursive: true });
+		await allocatedFixture.run(() =>
+			mkdir(join(allocatedFixture.projectRoot, "frontend"), { recursive: true }),
+		);
 		allocatedFixture.assertActive();
 		lifecycle.onSetupStep?.("project-directory", allocatedFixture);
-		allocatedFixture.assertActive();
-		await mkdir(join(allocatedFixture.sourceRoot, "nested"), { recursive: true });
+		await allocatedFixture.run(() =>
+			mkdir(join(allocatedFixture.sourceRoot, "nested"), { recursive: true }),
+		);
 		allocatedFixture.assertActive();
 		lifecycle.onSetupStep?.("source-directory", allocatedFixture);
 		return allocatedFixture;
@@ -209,41 +256,35 @@ export async function createViteTailwindFixture(
 		}, fixture.dispose);
 	}
 }
-
 export async function writeViteTailwindFixture(
 	fixture: ViteTailwindFixture,
 	onSetupStep?: FixtureLifecycle["onSetupStep"],
 ): Promise<void> {
-	fixture.assertActive();
-	await writeFile(
+	const write = async (path: string, contents: string): Promise<void> => {
+		await fixture.run(() => writeFile(path, contents));
+		fixture.assertActive();
+	};
+	await write(
 		join(fixture.projectRoot, "frontend/index.html"),
 		'<!doctype html><html><body><script type="module" src="./main.ts"></script></body></html>',
 	);
-	fixture.assertActive();
 	onSetupStep?.("index-file", fixture);
-	fixture.assertActive();
-	await writeFile(
+	await write(
 		join(fixture.projectRoot, "frontend/main.ts"),
 		`import "@/app.css";\nimport { fixtureClassName } from "@/nested/source.ts";\ndocument.body.className = fixtureClassName;\n`,
 	);
-	fixture.assertActive();
 	onSetupStep?.("main-file", fixture);
-	fixture.assertActive();
-	await writeFile(
+	await write(
 		join(fixture.sourceRoot, "nested/source.ts"),
 		'export const fixtureClassName = "bg-red-500";\n',
 	);
-	fixture.assertActive();
 	onSetupStep?.("source-file", fixture);
-	fixture.assertActive();
-	await writeFile(
+	await write(
 		join(fixture.sourceRoot, "app.css"),
 		`@import "tailwindcss";\n@source "./${toPosixSpecifier("nested/source.ts")}";\n`,
 	);
-	fixture.assertActive();
 	onSetupStep?.("stylesheet-file", fixture);
 }
-
 export async function buildViteTailwindFixture(
 	config: InlineConfig,
 	parent = tmpdir(),
@@ -264,30 +305,35 @@ export async function buildViteTailwindFixture(
 					},
 				]
 			: config.plugins;
-		await build({
-			...config,
-			plugins,
-			configFile: false,
-			root: fixture.projectRoot,
-			logLevel: "silent",
-			resolve: { ...config.resolve, alias: { "@": fixture.sourceRoot } },
-			build: {
-				...config.build,
-				outDir: fixture.outputRoot,
-				emptyOutDir: true,
-				rollupOptions: {
-					...config.build?.rollupOptions,
-					input: join(fixture.projectRoot, "frontend/index.html"),
+		await fixture.run(() =>
+			build({
+				...config,
+				plugins,
+				configFile: false,
+				root: fixture.projectRoot,
+				logLevel: "silent",
+				resolve: { ...config.resolve, alias: { "@": fixture.sourceRoot } },
+				build: {
+					...config.build,
+					outDir: fixture.outputRoot,
+					emptyOutDir: true,
+					rollupOptions: {
+						...config.build?.rollupOptions,
+						input: join(fixture.projectRoot, "frontend/index.html"),
+					},
 				},
-			},
-		});
+			}),
+		);
+		fixture.assertActive();
 
-		const cssFiles = (await readdir(join(fixture.outputRoot, "assets"))).filter((file) =>
-			file.endsWith(".css"),
+		const cssFiles = (await fixture.run(() => readdir(join(fixture.outputRoot, "assets")))).filter(
+			(file) => file.endsWith(".css"),
 		);
 		if (cssFiles.length !== 1)
 			throw new Error(`Vite fixture emitted ${cssFiles.length} CSS files.`);
-		return await readFile(join(fixture.outputRoot, "assets", cssFiles[0]!), "utf8");
+		return await fixture.run(() =>
+			readFile(join(fixture.outputRoot, "assets", cssFiles[0]!), "utf8"),
+		);
 	}, fixture.dispose);
 }
 
@@ -448,6 +494,5 @@ export async function withReapedChild<T>(
 	);
 }
 
-export function prefixedFixtureRoots(parent: string): string[] {
-	return readdirSync(parent).filter((name) => name.startsWith("archboard-vite-tailwind-"));
-}
+export const prefixedFixtureRoots = (parent: string): string[] =>
+	readdirSync(parent).filter((name) => name.startsWith("archboard-vite-tailwind-"));
