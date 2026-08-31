@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 01:29'
+updated_date: '2026-08-31 02:10'
 labels: []
 dependencies:
   - TASK-144.03
@@ -51,4 +51,10 @@ Implementation evidence (2026-08-31):
 - The guide is a prerequisite for shell integration and future agent enforcement and explicitly makes no conformance claim for later rendered work. The canonical reference PNG was inspected directly.
 - Validation: all 10 local Markdown links resolve; bun run fmt and bun run fmt:check pass; bun run lint passes; bun run test:repository passes 137 tests and 1,177 assertions; git diff --check passes; scope is the one authored document plus this task record. No rendered product code changed, so browser execution is not applicable to this documentation leaf.
 - Fixed base 317d3aca9c82e4f13242def9040a1aa5ffb0f07c was verified before work. The original checkout's untracked src-DlBR1tzg.js remains present and untracked.
+
+Reviewer remediation (2026-08-31):
+- Confirmed the P2 against TASK-140.06 acceptance criteria and implementation. The product presents loading, empty, and recoverable unavailable previews, while stale in-flight completions are discarded rather than rendered.
+- Commit bab6cc217edb3ba91ec06094f85d7744dcc9c9eb removes the theoretical partial, stale-display, and separate error UI requirements from docs/design/archboard-ui-aesthetics.md. It does not authorize new preview states.
+- Focused documentation validation passed: all 10 local links resolve; bun run fmt, bun run fmt:check, and bun run lint pass; git diff --check passes; the remediation implementation commit changes only the aesthetic guide. No broad test lane applies to this wording-only correction.
+- TASK-144.09 remains In Progress for complete-range rereview.
 <!-- SECTION:NOTES:END -->
