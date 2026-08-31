@@ -33,12 +33,10 @@ const EXPECTED_BUNDLE_PACKAGE_ROOTS = new Set(
 		" ",
 	),
 );
-const DEPENDENCY_SECTIONS = [
-	"dependencies",
-	"devDependencies",
-	"peerDependencies",
-	"optionalDependencies",
-] as const;
+const DEPENDENCY_SECTIONS =
+	"dependencies devDependencies peerDependencies optionalDependencies".split(" ");
+const EXPECTED_REACT = { key: "react", identity: "react@19.2.8" };
+const EXPECTED_REACT_DOM = { key: "react-dom", identity: "react-dom@19.2.8" };
 const ASSISTANT_UI_TRANSITIVE_ALLOWLIST = new Set(
 	`@assistant-ui/core@0.3.16 @assistant-ui/react@0.15.17 @assistant-ui/store@0.3.11 @assistant-ui/tap@0.9.15 @babel/runtime@7.29.7 @floating-ui/core@1.8.0 @floating-ui/dom@1.8.0 @floating-ui/react-dom@2.1.9 @floating-ui/utils@0.2.12 @radix-ui/number@1.1.3 @radix-ui/primitive@1.1.7 @radix-ui/react-accessible-icon@1.1.15 @radix-ui/react-accordion@1.2.20 @radix-ui/react-alert-dialog@1.1.23 @radix-ui/react-arrow@1.1.15 @radix-ui/react-aspect-ratio@1.1.15 @radix-ui/react-avatar@1.2.6 @radix-ui/react-checkbox@1.3.11 @radix-ui/react-collapsible@1.1.20 @radix-ui/react-collection@1.1.15 @radix-ui/react-compose-refs@1.1.5 @radix-ui/react-context-menu@2.3.7 @radix-ui/react-context@1.2.2 @radix-ui/react-dialog@1.1.23 @radix-ui/react-direction@1.1.4 @radix-ui/react-dismissable-layer@1.1.19 @radix-ui/react-dropdown-menu@2.1.24 @radix-ui/react-focus-guards@1.1.6 @radix-ui/react-focus-scope@1.1.16 @radix-ui/react-form@0.1.16 @radix-ui/react-hover-card@1.1.23 @radix-ui/react-id@1.1.4 @radix-ui/react-label@2.1.15 @radix-ui/react-menu@2.1.24 @radix-ui/react-menubar@1.1.24 @radix-ui/react-navigation-menu@1.2.22 @radix-ui/react-one-time-password-field@0.1.16 @radix-ui/react-password-toggle-field@0.1.11 @radix-ui/react-popover@1.1.23 @radix-ui/react-popper@1.3.7 @radix-ui/react-portal@1.1.17 @radix-ui/react-presence@1.1.10 @radix-ui/react-primitive@2.1.10 @radix-ui/react-progress@1.1.16 @radix-ui/react-radio-group@1.4.7 @radix-ui/react-roving-focus@1.1.19 @radix-ui/react-scroll-area@1.2.18 @radix-ui/react-select@2.3.7 @radix-ui/react-separator@1.1.15 @radix-ui/react-slider@1.4.7 @radix-ui/react-slot@1.3.3 @radix-ui/react-switch@1.3.7 @radix-ui/react-tabs@1.1.21 @radix-ui/react-toast@1.2.23 @radix-ui/react-toggle-group@1.1.19 @radix-ui/react-toggle@1.1.18 @radix-ui/react-toolbar@1.1.19 @radix-ui/react-tooltip@1.2.16 @radix-ui/react-use-callback-ref@1.1.4 @radix-ui/react-use-controllable-state@1.2.6 @radix-ui/react-use-effect-event@0.0.5 @radix-ui/react-use-escape-keydown@1.1.5 @radix-ui/react-use-is-hydrated@0.1.3 @radix-ui/react-use-layout-effect@1.1.4 @radix-ui/react-use-previous@1.1.4 @radix-ui/react-use-rect@1.1.4 @radix-ui/react-use-size@1.1.4 @radix-ui/react-visually-hidden@1.2.11 @radix-ui/rect@1.1.3 @standard-schema/spec@1.1.0 aria-hidden@1.2.6 assistant-cloud@0.1.42 assistant-stream@0.3.40 detect-node-es@1.1.0 get-nonce@1.0.1 nanoid@6.0.1 radix-ui@1.6.7 react-remove-scroll-bar@2.3.8 react-remove-scroll@2.7.2 react-style-singleton@2.2.3 react-textarea-autosize@8.5.9 safe-content-frame@0.0.28 secure-json-parse@4.1.0 tslib@2.8.1 use-callback-ref@1.3.3 use-composed-ref@1.4.0 use-isomorphic-layout-effect@1.2.1 use-latest@1.3.0 use-sidecar@1.1.3 zod@4.4.3 zustand@5.0.15`.split(
 		" ",
@@ -149,24 +147,14 @@ function directRadixDependencies(packageJson: Record<string, unknown>): string[]
 function resolvedIdentities(
 	packages: Record<string, [string, string, Record<string, unknown>?]>,
 	pattern: RegExp,
-): string[] {
-	return [
-		...new Set(
-			Object.values(packages)
-				.map(([identity]) => identity)
-				.filter((identity) => pattern.test(identity)),
-		),
-	];
+): Array<{ key: string; identity: string }> {
+	return Object.entries(packages)
+		.map(([key, [identity]]) => ({ key, identity }))
+		.filter(({ identity }) => pattern.test(identity));
 }
 
 function packageRootFromModule(module: string): string | undefined {
-	const marker = "/node_modules/";
-	const markerIndex = module.indexOf(marker);
-	if (markerIndex === -1) return undefined;
-	const packagePath = module.slice(markerIndex + marker.length);
-	if (!packagePath) return undefined;
-	const segments = packagePath.split("/");
-	return segments[0]?.startsWith("@") ? segments.slice(0, 2).join("/") : segments[0];
+	return module.match(/\/node_modules\/((?:@[^/]+\/)?[^/]+)/)?.[1];
 }
 
 describe("assistant-ui dependency and import policy", () => {
@@ -185,8 +173,8 @@ describe("assistant-ui dependency and import policy", () => {
 		};
 		expect(lock.workspaces[""]?.dependencies?.[ASSISTANT_UI_PACKAGE]).toBe("0.15.17");
 		expect(lock.packages[ASSISTANT_UI_PACKAGE]?.[0]).toBe("@assistant-ui/react@0.15.17");
-		expect(resolvedIdentities(lock.packages, /^react@/)).toEqual(["react@19.2.8"]);
-		expect(resolvedIdentities(lock.packages, /^react-dom@/)).toEqual(["react-dom@19.2.8"]);
+		expect(resolvedIdentities(lock.packages, /^react@/)).toEqual([EXPECTED_REACT]);
+		expect(resolvedIdentities(lock.packages, /^react-dom@/)).toEqual([EXPECTED_REACT_DOM]);
 
 		const graph = assistantUiDependencyGraph();
 		expect(new Set(graph.keys())).toEqual(ASSISTANT_UI_TRANSITIVE_ALLOWLIST);
@@ -213,11 +201,22 @@ describe("assistant-ui dependency and import policy", () => {
 	test("counts React identities in hostile nested lock keys", () => {
 		const hostile = {
 			"owner/react": ["react@19.2.8", "", {}],
+			"nested/react": ["react@19.2.8", "", {}],
+			"nested/react-v18": ["react@18.3.1", "", {}],
 			"owner/react-dom": ["react-dom@19.2.8", "", {}],
-			"nested/react": ["react@18.3.1", "", {}],
+			"nested/react-dom": ["react-dom@19.2.8", "", {}],
+			"nested/react-dom-v18": ["react-dom@18.3.1", "", {}],
 		} as Record<string, [string, string, Record<string, unknown>?]>;
-		expect(resolvedIdentities(hostile, /^react@/)).toEqual(["react@19.2.8", "react@18.3.1"]);
-		expect(resolvedIdentities(hostile, /^react-dom@/)).toEqual(["react-dom@19.2.8"]);
+		expect(resolvedIdentities(hostile, /^react@/)).toEqual([
+			{ key: "owner/react", identity: "react@19.2.8" },
+			{ key: "nested/react", identity: "react@19.2.8" },
+			{ key: "nested/react-v18", identity: "react@18.3.1" },
+		]);
+		expect(resolvedIdentities(hostile, /^react-dom@/)).toEqual([
+			{ key: "owner/react-dom", identity: "react-dom@19.2.8" },
+			{ key: "nested/react-dom", identity: "react-dom@19.2.8" },
+			{ key: "nested/react-dom-v18", identity: "react-dom@18.3.1" },
+		]);
 	});
 
 	for (const [file, members] of OWNER_MEMBERS) {
@@ -230,7 +229,6 @@ describe("assistant-ui dependency and import policy", () => {
 			);
 		});
 	}
-
 	test("rejects wrong owners, extra members, copied Elements, and every forbidden API family", async () => {
 		const cases: Array<[string, string]> = [
 			[
@@ -274,7 +272,6 @@ describe("assistant-ui dependency and import policy", () => {
 			);
 		}
 	});
-
 	test("rejects local aliases and nested primitive internals", async () => {
 		const cases: Array<[string, string]> = [
 			[
@@ -313,6 +310,13 @@ describe("assistant-ui dependency and import policy", () => {
 				`import { MessagePrimitive } from "${ASSISTANT_UI_PACKAGE}";\nconst Primitive = MessagePrimitive;\nvoid Primitive.GenerativeUI;`,
 				"MessagePrimitive.GenerativeUI",
 			],
+			...["Queue", "Dictate", "Tool"].map(
+				(member) =>
+					[
+						`import { ComposerPrimitive } from "${ASSISTANT_UI_PACKAGE}";\nlet ${member};\n({ ${member} } = ComposerPrimitive);\nvoid ${member};`,
+						"Do not alias an assistant-ui import",
+					] as [string, string],
+			),
 		];
 		for (const [source, message] of cases) {
 			await withProject({ "src/ui/workbench-composer/hostile.ts": `${source}\n` }, (root) =>
@@ -320,7 +324,6 @@ describe("assistant-ui dependency and import policy", () => {
 			);
 		}
 	});
-
 	test("rejects default, namespace, side-effect, re-export, dynamic, require, and type forms", async () => {
 		const cases: Array<[string, string]> = [
 			["default", `import AssistantUI from "${ASSISTANT_UI_PACKAGE}";`],
@@ -350,7 +353,6 @@ describe("assistant-ui dependency and import policy", () => {
 			);
 		}
 	});
-
 	test("rejects assistant-ui imports from every other module, alternate packages, and all subpaths", async () => {
 		await withProject(
 			{
@@ -387,7 +389,6 @@ describe("assistant-ui dependency and import policy", () => {
 			},
 		);
 	});
-
 	test("rejects direct Radix imports through the same real-Oxlint source visitor", async () => {
 		await withProject(
 			{
