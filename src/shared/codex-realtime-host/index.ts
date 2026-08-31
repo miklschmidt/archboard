@@ -33,3 +33,9 @@ export type {
 	RemoteMediaAttachment,
 	StopRequest,
 } from "./lib/contract.js";
+
+export {
+	parseRealtimeCorrelationId,
+	parseRealtimeItemId,
+	parseRealtimeSessionId,
+} from "./lib/contract.js";
