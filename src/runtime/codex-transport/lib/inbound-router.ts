@@ -453,7 +453,8 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 		} else if (hasId && hasResultOrError) handleResponse(decoded);
 		else if (hasId && isWireId(decoded.id)) {
 			const key = wireKey(decoded.id);
-			if (options.reverseRequests.has(key) || options.completedReverseIds.has(key))
+			if (options.pendingRequests.has(key)) handleResponse(decoded);
+			else if (options.reverseRequests.has(key) || options.completedReverseIds.has(key))
 				issueReverse(
 					"duplicate-server-request",
 					"A reverse request id was already used",
