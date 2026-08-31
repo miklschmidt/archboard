@@ -238,11 +238,17 @@ function acquireLock(codexHome: string, fileSystem: CodexStorageFileSystem): () 
 				/* Preserve the primary lock failure. */
 			}
 		}
+		let retryCleanup: (() => void) | undefined;
 		if (created) {
 			try {
 				fileSystem.unlinkSync(lockPath);
 			} catch {
-				/* Preserve the primary lock failure. */
+				let released = false;
+				retryCleanup = () => {
+					if (released) return;
+					fileSystem.unlinkSync(lockPath);
+					released = true;
+				};
 			}
 		}
 		throw failure(
@@ -250,6 +256,7 @@ function acquireLock(codexHome: string, fileSystem: CodexStorageFileSystem): () 
 			lockPath,
 			`Dedicated Codex roots are locked or colliding at ${codexHome}. Stop the other owner before retrying.`,
 			cause,
+			retryCleanup,
 		);
 	}
 	let released = false;

@@ -9,11 +9,22 @@ describe("Codex process diagnostics", () => {
 		const second = diagnostics.append("secret");
 		const snapshot = diagnostics.snapshot();
 
-		expect(first).not.toContain("split-secret");
-		expect(second).not.toContain("split-secret");
+		expect(first).toBeUndefined();
+		expect(second).toBeUndefined();
 		expect(snapshot.redacted).toBe(true);
 		expect(snapshot.text).not.toContain("split-secret");
 		expect(snapshot.text).toContain("[REDACTED]");
+	});
+
+	test("append exposes no redacted carry or uncapped value at a tiny limit", () => {
+		const diagnostics = createCodexDiagnosticsBuffer(4, ["secret"]);
+
+		expect(diagnostics.append("se")).toBeUndefined();
+		expect(diagnostics.snapshot().text).toBe("");
+		expect(diagnostics.append("cret")).toBeUndefined();
+		const snapshot = diagnostics.snapshot();
+		expect(snapshot.text).toBe("[RED");
+		expect(Buffer.byteLength(snapshot.text, "utf8")).toBeLessThanOrEqual(4);
 	});
 
 	test("never publishes an ambiguous secret carry between adversarial one-byte splits", () => {

@@ -170,6 +170,44 @@ describe("dedicated Codex storage", () => {
 		}
 	});
 
+	test("preserves cleanup when lock initialization and unwind unlink both fail", () => {
+		const root = temporaryRoot();
+		try {
+			let unlinkFailures = 1;
+			const hostileFileSystem = {
+				...fileSystem(),
+				writeFileSync: (() => {
+					throw new Error("injected lock write failure");
+				}) as typeof fs.writeFileSync,
+				unlinkSync: ((target: string | Buffer | URL) => {
+					if (String(target).endsWith(".archboard-codex-process.lock") && unlinkFailures > 0) {
+						unlinkFailures -= 1;
+						throw new Error("injected unwind unlink failure");
+					}
+					fs.unlinkSync(target as Parameters<typeof fs.unlinkSync>[0]);
+				}) as typeof fs.unlinkSync,
+			} satisfies CodexStorageFileSystem;
+			let thrown: unknown;
+			try {
+				prepareCodexStorage({ rootDirectory: root }, { fileSystem: hostileFileSystem });
+			} catch (error) {
+				thrown = error;
+			}
+			const lockPath = path.join(root, "codex-home", ".archboard-codex-process.lock");
+			expect(thrown).toBeInstanceOf(CodexStorageError);
+			expect((thrown as CodexStorageError).code).toBe("lock");
+			expect((thrown as CodexStorageError).retryCleanup).toBeFunction();
+			expect(fs.existsSync(lockPath)).toBe(true);
+			expect(() => prepareCodexStorage({ rootDirectory: root })).toThrow(/locked or colliding/);
+			(thrown as CodexStorageError).retryCleanup!();
+			expect(fs.existsSync(lockPath)).toBe(false);
+			const recovered = prepareCodexStorage({ rootDirectory: root });
+			recovered.release();
+		} finally {
+			removeRoot(root);
+		}
+	});
+
 	test("retains the lock after an unlink failure and permits an explicit release retry", () => {
 		const root = temporaryRoot();
 		try {
