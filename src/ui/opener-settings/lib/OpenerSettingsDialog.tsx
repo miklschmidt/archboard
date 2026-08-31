@@ -428,7 +428,7 @@ export function OpenerSettingsDialog({
 					<Button tone="secondary" onClick={testDraft} disabled={busy || !valid || !testable}>
 						{working === "test" ? "Testing…" : "Test"}
 					</Button>
-					<DialogClose ref={cancelRef} disabled={busy}>
+					<DialogClose ref={cancelRef} disabled={busy && working !== "load"}>
 						Cancel
 					</DialogClose>
 					<Button tone="primary" onClick={saveDraft} disabled={busy || !valid}>
