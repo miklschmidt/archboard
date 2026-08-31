@@ -23,6 +23,7 @@ export type {
 	LegacyApprovalIdentity,
 	PermissionsApprovalRequest,
 	SpokenEligibility,
+	SpokenApprovalEffectPresentation,
 	SpokenEligibilityFacts,
 	SpokenEligibilityReason,
 	TerminalApprovalState,

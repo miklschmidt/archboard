@@ -9,6 +9,7 @@ import type {
 	ApprovalOutcome,
 	CodexApprovalBroker,
 	CodexApprovalBrokerOptions,
+	SpokenApprovalEffectPresentation,
 	SpokenEligibility,
 	TerminalApprovalState,
 } from "./contract.js";
@@ -20,6 +21,7 @@ import {
 	failedSettlement,
 	spokenEligibility as assessSpokenEligibility,
 	toBrowserApproval,
+	toSpokenEffectPresentation,
 	toServerResponse,
 	validateBrowserResponse,
 } from "./response.js";
@@ -34,6 +36,7 @@ import type { TransportServerRequest } from "../../codex-transport/server-reques
 
 interface ApprovalRecord {
 	readonly request: ApprovalRequest;
+	readonly spokenEffectPresentation: SpokenApprovalEffectPresentation | null;
 	state: ApprovalState;
 	outcome: ApprovalOutcome | null;
 	reason: string | null;
@@ -284,8 +287,17 @@ export function createCodexApprovalBroker(
 			bindingInput === undefined
 				? provisional
 				: normalizeApprovalRequest(identity, request, expiresAtMs, bindingInput);
+		let spokenEffectPresentation: SpokenApprovalEffectPresentation | null = null;
+		if (normalized.family === "command_execution") {
+			try {
+				spokenEffectPresentation = toSpokenEffectPresentation(normalized);
+			} catch {
+				// A command without a safe spoken presentation remains visual-only.
+			}
+		}
 		const record: ApprovalRecord = {
 			request: normalized,
+			spokenEffectPresentation,
 			state: "staged",
 			outcome: null,
 			reason: null,
@@ -392,6 +404,17 @@ export function createCodexApprovalBroker(
 		return toBrowserApproval(model, record.request);
 	};
 
+	const spokenPresentation = (requestId: JsonRpcRequestId) => {
+		const record = requireRecord(requestId);
+		if (record.spokenEffectPresentation === null)
+			throw new ApprovalError(
+				"unsupported_schema",
+				"The approval has no safe one-line spoken effect presentation.",
+				requestId,
+			);
+		return record.spokenEffectPresentation;
+	};
+
 	const spoken = (requestId: JsonRpcRequestId): SpokenEligibility => {
 		const record = requireRecord(requestId);
 		if (record.state !== "pending") return { eligible: false, reason: "not_pending" };
@@ -477,6 +500,7 @@ export function createCodexApprovalBroker(
 		getRequest,
 		inspect,
 		toBrowserApproval: browserApproval,
+		spokenEffectPresentation: spokenPresentation,
 		spokenEligibility: spoken,
 		resolve,
 		cancel: (requestId: JsonRpcRequestId, reason = "The approval was cancelled.") =>
