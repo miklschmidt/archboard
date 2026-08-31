@@ -1,0 +1,422 @@
+import {
+	ARCHBOARD_VOICE_MANIFEST_SHA256,
+	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
+	type CoordinatorToolName,
+} from "../../codex-coordinator-tool-contract/index.js";
+import type {
+	CodexWorkhorseOperations,
+	WorkhorseOperationBinding,
+} from "../../codex-workhorse-operations/index.js";
+import type {
+	SpokenApprovalSnapshot,
+	SpokenApprovalToolResult,
+} from "../../codex-spoken-approval/index.js";
+import type {
+	DynamicServerRequest,
+	ReverseResponse,
+} from "../../codex-transport/server-requests.js";
+import {
+	COORDINATOR_TOOLS_OWNER,
+	createCodexCoordinatorTools,
+	type CoordinatorToolAuthorityPort,
+	type CoordinatorToolCoordinatorAuthority,
+	type CoordinatorToolDispatcher,
+	type DynamicToolResponse,
+} from "../index.js";
+import {
+	createIdentityAuthorities,
+	type DynamicToolCallId,
+	type IdentityAuthority,
+	type IdentityAuthorities,
+	type LogicalToolCallCorrelation,
+	type ThreadId,
+	type TurnId,
+} from "../../../shared/codex-workbench-identity/index.js";
+
+export interface ResponseWrite {
+	readonly request: DynamicServerRequest;
+	readonly owner: typeof COORDINATOR_TOOLS_OWNER;
+	readonly response: ReverseResponse;
+}
+
+export interface CoordinatorToolsFixture {
+	readonly authorities: IdentityAuthorities;
+	readonly identity: IdentityAuthority;
+	readonly coordinatorThreadId: ThreadId;
+	readonly workhorseThreadId: ThreadId;
+	readonly expectedTurnId: TurnId;
+	readonly binding: WorkhorseOperationBinding;
+	readonly timeline: string[];
+	readonly operations: Pick<
+		CodexWorkhorseOperations,
+		"inspect" | "delegate" | "manageQueue" | "steer"
+	> & {
+		readonly calls: {
+			readonly inspect: Array<Parameters<CodexWorkhorseOperations["inspect"]>[0]>;
+			readonly delegate: Array<Parameters<CodexWorkhorseOperations["delegate"]>[0]>;
+			readonly manageQueue: Array<Parameters<CodexWorkhorseOperations["manageQueue"]>[0]>;
+			readonly steer: Array<Parameters<CodexWorkhorseOperations["steer"]>[0]>;
+		};
+		setError: (error: unknown) => void;
+		hold: () => void;
+		release: () => void;
+	};
+	readonly spokenApproval: {
+		readonly snapshot: () => SpokenApprovalSnapshot;
+		readonly resolve: (request: DynamicServerRequest) => Promise<SpokenApprovalToolResult>;
+		readonly calls: DynamicServerRequest[];
+		setResult: (result: SpokenApprovalToolResult) => void;
+		setOperationId: (operationId: string | null) => void;
+	};
+	readonly transport: {
+		readonly writes: ResponseWrite[];
+		respond: (
+			request: DynamicServerRequest,
+			owner: typeof COORDINATOR_TOOLS_OWNER,
+			response: ReverseResponse,
+		) => Promise<void>;
+		failWrites: boolean;
+	};
+	readonly authority: CoordinatorToolAuthorityPort & {
+		setCoordinator: (value: CoordinatorToolCoordinatorAuthority | null) => void;
+		setBinding: (value: WorkhorseOperationBinding | null) => void;
+		setCall: (value: LogicalToolCallCorrelation | null) => void;
+		setOperationId: (value: string | null) => void;
+		setExpectedTurnId: (value: TurnId | null) => void;
+	};
+	readonly dispatcher: CoordinatorToolDispatcher;
+	readonly request: (
+		tool: CoordinatorToolName,
+		options?: {
+			readonly arguments?: unknown;
+			readonly callId?: DynamicToolCallId;
+			readonly namespace?: string;
+			readonly manifestHash?: string;
+			readonly threadId?: ThreadId;
+			readonly turnId?: TurnId;
+		},
+	) => DynamicServerRequest;
+}
+
+function readyAuthority(
+	identity: IdentityAuthority,
+	coordinatorThreadId: ThreadId,
+): CoordinatorToolCoordinatorAuthority {
+	return Object.freeze({
+		state: "ready",
+		childId: identity.validator.childId,
+		epoch: identity.validator.epoch,
+		threadId: coordinatorThreadId,
+	});
+}
+
+function bindingFor(
+	identity: IdentityAuthority,
+	coordinatorThreadId: ThreadId,
+	workhorseThreadId: ThreadId,
+): WorkhorseOperationBinding {
+	const childId = identity.validator.childId;
+	const epoch = identity.validator.epoch;
+	return Object.freeze({
+		childId,
+		epoch,
+		coordinator: Object.freeze({
+			childId,
+			epoch,
+			threadId: coordinatorThreadId,
+			operationId: "coordinator-link",
+		}),
+		workhorse: Object.freeze({
+			childId,
+			epoch,
+			threadId: workhorseThreadId,
+			operationId: "workhorse-link",
+		}),
+	});
+}
+
+export function fixture(
+	authorities: IdentityAuthorities = createIdentityAuthorities(),
+): CoordinatorToolsFixture {
+	const identity = authorities.identity;
+	const coordinatorThreadId = identity.decoder.adoptThreadId("coordinator");
+	const workhorseThreadId = identity.decoder.adoptThreadId("workhorse");
+	const expectedTurnId = identity.decoder.adoptTurnId("workhorse-turn");
+	const binding = bindingFor(identity, coordinatorThreadId, workhorseThreadId);
+	let coordinator: CoordinatorToolCoordinatorAuthority | null = readyAuthority(
+		identity,
+		coordinatorThreadId,
+	);
+	let currentBinding: WorkhorseOperationBinding | null = binding;
+	let currentCall: LogicalToolCallCorrelation | null = null;
+	let currentExpectedTurnId: TurnId | null = expectedTurnId;
+	let currentOperationId: string | null | undefined;
+	let nextOperationError: unknown = null;
+	let operationBarrier: Promise<void> | null = null;
+	let releaseOperation: (() => void) | null = null;
+	let requestNumber = 0;
+	const waitForOperation = async (): Promise<void> => {
+		const barrier = operationBarrier;
+		if (barrier !== null) await barrier;
+	};
+
+	const operationCalls = {
+		inspect: [] as Array<Parameters<CodexWorkhorseOperations["inspect"]>[0]>,
+		delegate: [] as Array<Parameters<CodexWorkhorseOperations["delegate"]>[0]>,
+		manageQueue: [] as Array<Parameters<CodexWorkhorseOperations["manageQueue"]>[0]>,
+		steer: [] as Array<Parameters<CodexWorkhorseOperations["steer"]>[0]>,
+	};
+	const timeline: string[] = [];
+	const operations = {
+		inspect: async (request: Parameters<CodexWorkhorseOperations["inspect"]>[0]) => {
+			operationCalls.inspect.push(request);
+			timeline.push("workhorse.inspect");
+			await waitForOperation();
+			if (nextOperationError !== null) {
+				const error = nextOperationError;
+				nextOperationError = null;
+				throw error;
+			}
+			return {
+				threadId: workhorseThreadId,
+				status: "idle" as const,
+				activeTurnId: null,
+				queuedSubmissionIds: [],
+			};
+		},
+		delegate: async (request: Parameters<CodexWorkhorseOperations["delegate"]>[0]) => {
+			operationCalls.delegate.push(request);
+			timeline.push("workhorse.delegate");
+			await waitForOperation();
+			if (nextOperationError !== null) {
+				const error = nextOperationError;
+				nextOperationError = null;
+				throw error;
+			}
+			return {
+				mode: "started" as const,
+				clientUserMessageId: "client-user-message",
+				queuedSubmissionId: null,
+				turnId: expectedTurnId,
+			};
+		},
+		manageQueue: async (request: Parameters<CodexWorkhorseOperations["manageQueue"]>[0]) => {
+			operationCalls.manageQueue.push(request);
+			timeline.push("workhorse.manageQueue");
+			await waitForOperation();
+			if (nextOperationError !== null) {
+				const error = nextOperationError;
+				nextOperationError = null;
+				throw error;
+			}
+			return { operation: request.operation, queuedSubmissionIds: [] };
+		},
+		steer: async (request: Parameters<CodexWorkhorseOperations["steer"]>[0]) => {
+			operationCalls.steer.push(request);
+			timeline.push("workhorse.steer");
+			await waitForOperation();
+			if (nextOperationError !== null) {
+				const error = nextOperationError;
+				nextOperationError = null;
+				throw error;
+			}
+			return { turnId: request.expectedTurnId, delivery: "delivered" as const };
+		},
+		calls: operationCalls,
+		setError: (error: unknown) => {
+			nextOperationError = error;
+		},
+		hold: () => {
+			if (operationBarrier !== null) throw new Error("operation barrier is already held");
+			operationBarrier = new Promise<void>((resolve) => {
+				releaseOperation = resolve;
+			});
+		},
+		release: () => {
+			const release = releaseOperation;
+			releaseOperation = null;
+			operationBarrier = null;
+			release?.();
+		},
+	};
+
+	let spokenResult: SpokenApprovalToolResult = {
+		tag: "ok",
+		value: { verdict: "accept", settlement: "delivered" },
+	};
+	let spokenOperationId: string | null = "classifier-operation";
+	const spokenCalls: DynamicServerRequest[] = [];
+	const spokenApproval = {
+		snapshot: () => ({ operationId: spokenOperationId }) as unknown as SpokenApprovalSnapshot,
+		resolve: async (request: DynamicServerRequest) => {
+			spokenCalls.push(request);
+			timeline.push("voice.resolve");
+			return spokenResult;
+		},
+		calls: spokenCalls,
+		setResult: (result: SpokenApprovalToolResult) => {
+			spokenResult = result;
+		},
+		setOperationId: (operationId: string | null) => {
+			spokenOperationId = operationId;
+		},
+	};
+
+	const writes: ResponseWrite[] = [];
+	const transport = {
+		writes,
+		failWrites: false,
+		respond: async (
+			request: DynamicServerRequest,
+			owner: typeof COORDINATOR_TOOLS_OWNER,
+			response: ReverseResponse,
+		): Promise<void> => {
+			writes.push({ request, owner, response });
+			timeline.push("transport.respond");
+			if (transport.failWrites) throw new Error("response write lost");
+		},
+	};
+
+	const authority = {
+		currentCoordinator: () => coordinator,
+		currentWorkhorseBinding: () => currentBinding,
+		currentCall: () => currentCall,
+		operationIdFor: (request: DynamicServerRequest) =>
+			currentOperationId === undefined
+				? `operation-${String(request.requestId)}`
+				: currentOperationId,
+		expectedTurnId: () => currentExpectedTurnId,
+		setCoordinator: (value: CoordinatorToolCoordinatorAuthority | null) => {
+			coordinator = value;
+		},
+		setBinding: (value: WorkhorseOperationBinding | null) => {
+			currentBinding = value;
+		},
+		setCall: (value: LogicalToolCallCorrelation | null) => {
+			currentCall = value;
+		},
+		setOperationId: (value: string | null) => {
+			currentOperationId = value;
+		},
+		setExpectedTurnId: (value: TurnId | null) => {
+			currentExpectedTurnId = value;
+		},
+	} satisfies CoordinatorToolAuthorityPort & {
+		setCoordinator: (value: CoordinatorToolCoordinatorAuthority | null) => void;
+		setBinding: (value: WorkhorseOperationBinding | null) => void;
+		setCall: (value: LogicalToolCallCorrelation | null) => void;
+		setOperationId: (value: string | null) => void;
+		setExpectedTurnId: (value: TurnId | null) => void;
+	};
+
+	const dispatcher = createCodexCoordinatorTools({
+		identity,
+		authority,
+		operations,
+		spokenApproval,
+		transport,
+	});
+
+	const request = (
+		tool: CoordinatorToolName,
+		options: {
+			readonly arguments?: unknown;
+			readonly callId?: DynamicToolCallId;
+			readonly namespace?: string;
+			readonly manifestHash?: string;
+			readonly threadId?: ThreadId;
+			readonly turnId?: TurnId;
+		} = {},
+	): DynamicServerRequest => {
+		const namespace =
+			options.namespace ??
+			(tool === "resolve_spoken_approval" ? "archboard_voice" : "archboard_workhorse");
+		const manifestHash =
+			options.manifestHash ??
+			(namespace === "archboard_voice"
+				? ARCHBOARD_VOICE_MANIFEST_SHA256
+				: ARCHBOARD_WORKHORSE_MANIFEST_SHA256);
+		const threadId = options.threadId ?? coordinatorThreadId;
+		const turnId = options.turnId ?? expectedTurnId;
+		const callId =
+			options.callId ?? identity.decoder.adoptDynamicToolCallId(`call-${requestNumber++}-${tool}`);
+		const argumentsValue =
+			options.arguments ??
+			(tool === "inspect_workhorse"
+				? {}
+				: tool === "delegate_to_workhorse"
+					? { input: "delegate input", transcriptDelta: "spoken context" }
+					: tool === "manage_workhorse_queue"
+						? { operation: "list" }
+						: tool === "steer_workhorse"
+							? { input: "steer input" }
+							: { verdict: "accept" });
+		const call = identity.decoder.createLogicalToolCallCorrelation({
+			threadId,
+			turnId,
+			callId,
+			namespace,
+			tool,
+			manifestHash,
+		});
+		currentCall = call;
+		const requestId = identity.decoder.adoptJsonRpcRequestId(`request-${requestNumber++}`);
+		return {
+			child: identity.validator.childId,
+			epoch: identity.validator.epoch,
+			requestId,
+			correlation: identity.decoder.createWireRequestCorrelation({ requestId }),
+			method: "item/tool/call",
+			params: {
+				threadId: identity.decoder.serializeCodexIdentity(threadId),
+				turnId: identity.decoder.serializeCodexIdentity(turnId),
+				callId: identity.decoder.serializeCodexIdentity(callId),
+				namespace,
+				tool,
+				arguments: argumentsValue,
+			} as DynamicServerRequest["params"],
+			owner: COORDINATOR_TOOLS_OWNER,
+			logicalCall: call,
+		};
+	};
+
+	return {
+		authorities,
+		identity,
+		coordinatorThreadId,
+		workhorseThreadId,
+		expectedTurnId,
+		binding,
+		timeline,
+		operations,
+		spokenApproval,
+		transport,
+		authority,
+		dispatcher,
+		request,
+	};
+}
+
+export function copyRequest(request: DynamicServerRequest): DynamicServerRequest {
+	return {
+		...request,
+		params: { ...request.params },
+	};
+}
+
+export function responseValue(response: DynamicToolResponse): unknown {
+	const text = response.contentItems[0]?.text;
+	if (text === undefined) throw new Error("response has no inputText item");
+	return JSON.parse(text) as unknown;
+}
+
+export function responseEnvelope(response: DynamicToolResponse): Record<string, unknown> {
+	const value = responseValue(response);
+	if (value === null || typeof value !== "object" || Array.isArray(value))
+		throw new Error("response envelope is not an object");
+	return value as Record<string, unknown>;
+}
+
+export function nextMicrotasks(): Promise<void> {
+	return Promise.resolve().then(() => undefined);
+}
