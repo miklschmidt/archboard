@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 00:06'
+updated_date: '2026-08-31 00:44'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -60,4 +60,10 @@ Validation: focused publisher tests 7/7; bun run type-check; bun run lint; bun r
 Scope: only src/runtime/codex-semantic-context/** plus this task record. Task status, assignment, dependencies, acceptance criteria, and final summary were not changed.
 
 Independent rereview remediation at code commit 1353f79: aggregate UTF-8 admission now fits every mutable brief field with required-field minima and deterministic truncation; cursors use the typed {feedId, sequence} grammar with source-event precedence and stale prior-feed reporting; source registration/disposal are transactional and attempt all cleanup; listener fanout snapshots, continues after throws, and exposes ordered instance-scoped diagnostics. Added adversarial coverage for hostile multibyte maxima, malformed and prior-feed cursors, lifecycle rollback/cleanup, replacement bindings, reentrant fanout, unsubscribe snapshots, and recovery. Final validation: focused semantic-context lane 14/14; full modules 1,027/1,027; repository policy 130/130; system 284/284; both TypeScript projects, lint, format, and diff checks passed. Scope remains src/runtime/codex-semantic-context/** plus this task record; no UI/server paths or src-DlBR1tzg.js were changed.
+
+Second remediation implementation and validation (2026-08-31):
+- Aggregate briefs now fit against the actual UTF-8 byte length of their canonical JSON rendering. String slots use a JSON-aware clipper that accounts for quotes, backslashes, all JSON control escapes, lone surrogates, and complete Unicode code points; fixed identity fields, cursor feed identity, arrays, and truncation markers are included in the deterministic priority order. Public tests cover admitted hostile boundary values, all mutable maxima, maximum fixed identities, JSON.parse, deterministic bytes, and no surrogate-pair split. The authored NUL-free string contract remains explicit.
+- Public SemanticCursorInput is now only {feedId, sequence}; numeric cursors remain only on SettledChangeSourceEvent. Runtime rejection covers numbers and malformed shapes; tests cover current/prior feeds, restart feed identity, source sequence derivation, and the compile-time fixture.
+- Listener diagnostics are instance-local and bounded. Concrete policy: retain the oldest 64 entries; cap each error-name JSON string token at 128 UTF-8 bytes and message token at 2,048 bytes; no unbounded thrown text is retained. Fixed record bytes are 111, calculated as the UTF-8 bytes of the settled-change diagnostic object with empty errorName and message and a maximum-safe listenerIndex, less the two empty string tokens (2 + 2). A maximum record is 111 + 128 + 2,048 = 2,287 bytes. The batch bound is a 12-byte entries-array prefix + (64 * 2,287) + 63 separators + a 34-byte maximum-safe droppedCount suffix = 146,477 UTF-8 bytes per publisher instance before drain. Oldest-retained behavior, dropped-count overflow accounting, frozen drain/reset batches, 1 MiB messages, Unicode/control strings, multiple drains, hostile getters/toString/Symbol.toPrimitive/proxies/revoked proxies, primitive throws, reentrant emission, later listeners, and recovery are covered.
+- Validation: focused semantic module 24/24; bun run type-check; bun run lint; bun run fmt:check; bun run test:repository 130/130; bun run test:modules 1,037/1,037; bun run test:system 284/284; git diff --check. The serial browser lane was not rerun because this remediation only changes the headless semantic-context module; the previous reviewed browser validation remains applicable.
 <!-- SECTION:NOTES:END -->
