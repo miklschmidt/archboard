@@ -72,7 +72,7 @@ export interface SpokenApprovalClassifierInput {
 
 export interface SpokenApprovalArmInput {
 	readonly requestId: JsonRpcRequestId;
-	/** The bounded, one-line effect text the person was shown or told. */
+	/** Must equal the broker-derived presentation for this request. */
 	readonly effectSummary: string;
 	readonly realtime: RealtimeCorrelation;
 	readonly effectPrompt: SpokenApprovalEffectPrompt;
@@ -118,7 +118,10 @@ export type SpokenApprovalToolResult =
 	  };
 
 export interface CodexSpokenApprovalGateOptions {
-	readonly approvalBroker: Pick<CodexApprovalBroker, "get" | "spokenEligibility" | "resolve">;
+	readonly approvalBroker: Pick<
+		CodexApprovalBroker,
+		"get" | "spokenEligibility" | "spokenEffectPresentation" | "resolve"
+	>;
 	readonly coordinator: Pick<CodexCoordinator, "snapshot">;
 	readonly realtime: Pick<CodexRealtimeAdapter, "onSemanticEvent" | "transcript">;
 	readonly session: Pick<CodexSession, "turnStart">;

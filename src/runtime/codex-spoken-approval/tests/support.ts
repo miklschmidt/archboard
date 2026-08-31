@@ -28,7 +28,7 @@ import {
 	type CodexApprovalBroker,
 } from "../../codex-approvals/index.js";
 import { ARCHBOARD_VOICE_MANIFEST_SHA256 } from "../../codex-coordinator-tool-contract/index.js";
-import type { TransportServerRequest } from "../../codex-transport/index.js";
+import type { TransportServerRequest } from "../../codex-transport/server-requests.js";
 import type { TransportServerNotification } from "../../codex-transport/index.js";
 import type {
 	CodexSession,

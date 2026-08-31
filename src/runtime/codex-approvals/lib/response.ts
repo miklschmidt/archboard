@@ -3,11 +3,13 @@ import type {
 	BrowserApprovalResponse,
 	CodexBrowserModel,
 } from "../../../shared/codex-browser-model/index.js";
+import { boundedWireText } from "../../../shared/codex-browser-model/index.js";
 import type {
 	ApprovalFamily,
 	CommandApprovalRequest,
 	ApprovalRequest,
 	ApprovalSettlement,
+	SpokenApprovalEffectPresentation,
 	SpokenEligibility,
 	SpokenEligibilityFacts,
 	TerminalApprovalState,
@@ -257,6 +259,55 @@ function fileSystemMode(value: RecordValue | null): "read" | "write" | "deny" | 
 	)
 		return "deny";
 	return null;
+}
+
+function spokenText(value: unknown): string | null {
+	if (typeof value !== "string") return null;
+	const parsed = boundedWireText(256).safeParse(value);
+	if (!parsed.success || parsed.data.length === 0) return null;
+	if (parsed.data.includes("\r") || parsed.data.includes("\n")) return null;
+	return parsed.data;
+}
+
+function spokenCommandEffectSummary(request: CommandApprovalRequest): string {
+	let summary: string | null;
+	if (request.params.command !== undefined && request.params.command !== null) {
+		const command = spokenText(request.params.command);
+		summary = command === null ? null : `Run ${command}`;
+	} else {
+		summary = spokenText(request.params.reason);
+	}
+	const bounded = spokenText(summary);
+	if (bounded === null)
+		throw new CodexApprovalError(
+			"unsupported_schema",
+			"The command approval has no safe one-line spoken effect presentation.",
+			request.requestId,
+		);
+	return bounded;
+}
+
+export function toSpokenEffectPresentation(
+	request: ApprovalRequest,
+): SpokenApprovalEffectPresentation {
+	if (request.family !== "command_execution")
+		throw new CodexApprovalError(
+			"unsupported_request",
+			"Only command approvals have a spoken effect presentation.",
+			request.requestId,
+		);
+	return Object.freeze({
+		requestId: request.requestId,
+		family: request.family,
+		child: request.child,
+		epoch: request.epoch,
+		threadId: request.threadId,
+		turnId: request.turnId,
+		itemId: request.itemId,
+		approvalId: request.approvalId,
+		binding: request.binding,
+		effectSummary: spokenCommandEffectSummary(request),
+	});
 }
 
 export function toBrowserApproval(

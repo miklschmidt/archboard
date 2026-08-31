@@ -1,4 +1,8 @@
-import type { ApprovalSnapshot, CodexApprovalBroker } from "../../codex-approvals/index.js";
+import type {
+	ApprovalSnapshot,
+	CodexApprovalBroker,
+	SpokenApprovalEffectPresentation,
+} from "../../codex-approvals/index.js";
 import {
 	ARCHBOARD_VOICE_MANIFEST_SHA256,
 	type DynamicToolRefusalReason,
@@ -29,7 +33,10 @@ export interface CoordinatorIdentity {
 }
 
 export interface ValidationHost {
-	readonly approvalBroker: Pick<CodexApprovalBroker, "get" | "spokenEligibility">;
+	readonly approvalBroker: Pick<
+		CodexApprovalBroker,
+		"get" | "spokenEligibility" | "spokenEffectPresentation"
+	>;
 	readonly identity: IdentityAuthority;
 	readonly currentCoordinator: () => CoordinatorIdentity | null;
 	readonly currentRealtime: () => RealtimeCorrelation | null;
@@ -74,6 +81,23 @@ export function sameBinding(
 		left.link === right.link &&
 		left.target === right.target &&
 		left.effect === right.effect
+	);
+}
+
+function sameSpokenEffectPresentation(
+	presentation: SpokenApprovalEffectPresentation,
+	approval: ApprovalSnapshot,
+): boolean {
+	return (
+		presentation.requestId === approval.requestId &&
+		presentation.family === approval.family &&
+		presentation.child === approval.child &&
+		presentation.epoch === approval.epoch &&
+		presentation.threadId === approval.threadId &&
+		presentation.turnId === approval.turnId &&
+		presentation.itemId === approval.itemId &&
+		presentation.approvalId === approval.approvalId &&
+		sameBinding(presentation.binding, approval.binding)
 	);
 }
 
@@ -176,8 +200,19 @@ export function validateArm(
 	if (approval.family !== "command_execution") return invalid("not_eligible");
 	if (approval.child !== coordinator.child || approval.epoch !== coordinator.epoch)
 		return invalid("stale_state");
+	let presentation: SpokenApprovalEffectPresentation;
+	try {
+		presentation = host.approvalBroker.spokenEffectPresentation(input.requestId);
+	} catch {
+		return invalid("invalid_effect_prompt");
+	}
+	if (
+		!sameSpokenEffectPresentation(presentation, approval) ||
+		presentation.effectSummary !== effectSummary
+	)
+		return invalid("invalid_effect_prompt");
 	return validateArmContext(host, input, {
-		effectSummary,
+		effectSummary: presentation.effectSummary,
 		operationId,
 		clientUserMessageId,
 		approval,
@@ -226,7 +261,12 @@ function validateArmContext(
 			record.itemId === input.effectPrompt.itemId &&
 			record.sequence === input.effectPrompt.sequence,
 	);
-	if (prompt?.role !== "assistant" || prompt?.status !== "final" || prompt?.text.length === 0)
+	if (
+		prompt?.role !== "assistant" ||
+		prompt?.status !== "final" ||
+		prompt?.text.length === 0 ||
+		prompt.text !== values.effectSummary
+	)
 		return invalid("invalid_effect_prompt");
 	const baselineRecordKeys = new Set<string>();
 	for (const record of records) {

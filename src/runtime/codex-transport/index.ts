@@ -9,8 +9,4 @@ export type {
 
 export { createCodexTransport } from "./client.js";
 
-export type {
-	DynamicServerRequest,
-	TransportServerRequest,
-	TransportServerNotification,
-} from "./server-requests.js";
+export type { DynamicServerRequest, TransportServerNotification } from "./server-requests.js";
