@@ -1,10 +1,11 @@
 ---
 id: TASK-144.09
 title: Document the Archboard UI aesthetic contract
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-08-31 01:22'
 labels: []
 dependencies:
   - TASK-144.03
@@ -32,3 +33,15 @@ Own docs/design/archboard-ui-aesthetics.md before any semantic shell integration
 - [ ] #3 It requires named modules, semantic utilities, native formatting/lint, accessibility, rendered inspection, and one behavior/state owner.
 - [ ] #4 This guide is a dependency of shell integration and future-agent enforcement; it does not claim that later rendered work already conforms.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Reconcile the TASK-140 reference/mockup and the two reviewed design records into one durable UI-aesthetic authority. 2. Document canvas-first proportions, Swiss grid, typography, flat rules, radii, cobalt/lime, themes, motion, accessibility, semantic utilities, named modules, native checks, rendered inspection, and single behavior/state ownership. 3. State explicit prohibitions and distinguish illustrative reference content from real product state without claiming later UI already conforms. 4. Validate document links, repository policy, formatting, diff scope, and clean status; record evidence for independent review.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Reserved immediately after TASK-143.01.07 finalized at integration HEAD d890552. This dependency-ready documentation leaf owns only docs/design/archboard-ui-aesthetics.md and is path-disjoint from every active implementation.
+<!-- SECTION:NOTES:END -->
