@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 21:33'
+updated_date: '2026-08-31 21:38'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -57,6 +57,8 @@ Delegation profile: gpt-5.6-luna, max.
 5. Keep TASK-143.07.04 In Progress with every acceptance criterion unchecked for independent rereview.
 
 6. Replace the hot-reload owner timeout with an explicit timing-derived budget covering two record waits, two shutdown intervals, and two polling-margin intervals; assert the budget relationship and rerun only focused/capped checks.
+
+7. Add a separate callback-hot outer-case margin beyond the full inner wait budget, document its coverage, assert outer minus inner is at least that margin, and rerun focused capped checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -83,6 +85,10 @@ Final capped validation archboard-1430704-remediate3-final-03.service printed cw
 Fourth remediation closes the remaining test-timeout finding. The hot-reload owner now uses TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_TIMEOUT_MS, derived from two TEST_CANVAS_STARTUP_TIMEOUT_MS record waits, two TEST_CANVAS_SHUTDOWN_TIMEOUT_MS termination intervals, and two TEST_CANVAS_HEALTH_POLL_MS polling margins. A stable owner assertion verifies the timeout is at least that full permitted-path budget, so the outer runner cannot preempt either sequential record wait or the two-stage cleanup path.
 
 Capped validation archboard-1430704-remediate4-final-01.service printed cwd and cgroup, completed successfully with MemoryMax=6G and MemorySwapMax=1G, and passed the focused hot-reload owner (1 test, 4 assertions), both TypeScript graphs, scoped Oxlint/Oxfmt, staged diff and clean-tree checks, and the protected artifact size check. Peak memory was 1.8G with no swap. Protected /home/msc/Projects/archboard/src-DlBR1tzg.js remains 1,516,136 bytes with SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Known broad capped-OOM lanes were not rerun. Task remains In Progress with every acceptance criterion unchecked.
+
+Fifth remediation closes the remaining timing-margin finding. The callback hot-reload owner now reserves TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_MARGIN_MS separately beyond the 32.1-second inner budget. The margin is two TEST_CANVAS_SHUTDOWN_TIMEOUT_MS intervals (2 seconds), and the timing documentation explicitly assigns it to mkdtemp/write/spawn/listener setup, record parsing/assertions, generation write, signal dispatch, failure diagnostics, and temporary-directory cleanup. The owner asserts outer timeout minus the complete two-record/two-shutdown/two-poll inner path is at least that margin.
+
+Capped validation archboard-1430704-remediate5-final-01.service printed cwd and cgroup, completed successfully with MemoryMax=6G and MemorySwapMax=1G, and passed the focused hot-reload owner (1 test, 4 assertions), both TypeScript graphs, scoped Oxlint/Oxfmt, timing-only staged scope checks, clean-tree checks, and the protected artifact size check. Peak memory was 1.8G with no swap. Protected /home/msc/Projects/archboard/src-DlBR1tzg.js remains 1,516,136 bytes with SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Known broad capped-OOM lanes were not rerun. Task remains In Progress with every acceptance criterion unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -128,5 +134,11 @@ author: @codex
 created: 2026-08-31 21:33
 ---
 Fourth remediation is ready for independent rereview. The hot-reload outer timeout now covers the complete two-wait, two-shutdown path with timing-derived polling margin; status and acceptance criteria remain unchanged.
+---
+
+author: @codex
+created: 2026-08-31 21:38
+---
+Fifth remediation is ready for independent rereview. The callback hot-reload owner now has a separate timing-derived outer-case margin beyond the complete inner path; status and acceptance criteria remain unchanged.
 ---
 <!-- COMMENTS:END -->
