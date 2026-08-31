@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 22:19'
+updated_date: '2026-08-31 00:44'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -83,10 +83,12 @@ Reviewed SHA-256 values are 2fd0a5a9ea1b526bd05c514eb69cca6bf744edfe88c2792d6180
 Second structural remediation commit e8347d546e3459ffb553c6386a18f43e9f5a5374 is based on fixed review base 5a1ab9588a5f860cc8812ec68a7193ce3f55f921. Its scope is this task record, the authored contract, the two contract owners, fixed policy support, and the typed mutation harness. No runtime, package, lock, CI, generated protocol, sibling task, acceptance checkbox, final summary, push, merge, or rebase changed. Protected src-DlBR1tzg.js remains absent. TASK-143.01.17 stays In Progress for parent-owned independent re-review and finalization.
 
 Final maintainability remediation replaces the duplicate, missing, extra, and reorder loops inside exactRows with validateOrderedValues(label, actualKeys, expectedKeys). The ordered exactObject loop remains unchanged. No authored contract, manifest, fixed row, digest, mutation owner, or production byte changed. The fixed policy support drops from 480 to 468 lines without a waiver. Validation passes: focused contract owners 11 tests and 780 expectations with the same exact diagnostics; targeted inventory, boundaries, code-target, and module-scope owners 58/166; both TypeScript graphs; Oxlint; Oxfmt over 519 files; git diff --check. Protected src-DlBR1tzg.js remains absent.
+
+Parent amendment integration at 902f298: replacement independent reviewer returned REVIEW_CLEAN for the complete source-backed contract range. The integrated contract pins turn/start versus turn/steer terminal evidence, schema 1, exact ordered root/threadLink/operation fields, closed unions, state/reason nullability, producer and evidence RPC sets, retry/recency/clear behavior, and the exhaustive mutation matrix. Parent validation passed: focused authored-contract owners 11 tests/780 expectations; complete repository lane 137 tests/1177 expectations; modules 1042/7632; both TypeScript graphs; Oxlint; Oxfmt on 528 files; frontend build; git diff/status clean.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Froze the human-reviewed Codex workbench source contract for initialization, login, thread profiles, instructions, timing, context, realtime, tool manifests, RPC bodies, and spoken approvals. Added a fail-closed repository-policy owner for all 23 strict JSON blocks, nested duplicate keys, fixed downstream-consumer digests, manifest/prose drift, and the exact one-blank-line coordinator boundary. Verified by exact Codex 0.151.0 regeneration, independent review-clean audit, 15 mutation families, 122 repository-policy tests, type-check, lint, formatting, and clean diff/status.
+Froze the complete human-reviewed Codex workbench authored contract, including source-backed turn/start and turn/steer terminal evidence, exact additional-context schema and lifecycle rules, instructions, timing, tool manifests, RPC bodies, and spoken approval identity. Fail-closed repository owners enforce exact bytes, ordered closed structures, duplicates, nullability, producer/evidence mappings, clearing, retry, recency, and exhaustive mutations. The amended fixed range is independently review-clean and passed 780 focused expectations, 137 repository-policy tests, 1042 module tests, type-check, lint, formatting, and frontend build.
 <!-- SECTION:FINAL_SUMMARY:END -->
