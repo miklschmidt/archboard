@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 01:22'
+updated_date: '2026-08-31 02:31'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -46,4 +46,6 @@ Load and validate the reviewed eager archboard_workhorse and archboard_voice nam
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved immediately after TASK-143.01.07 finalized at integration HEAD d890552. This dependency-ready leaf owns only src/runtime/codex-coordinator-tool-contract and is path-disjoint from every active implementation.
+
+Implementation commit 97a6407 defines the byte-checked archboard_workhorse and archboard_voice manifests, frozen coordinator metadata/result contracts, canonical response envelopes, and exact Codex 0.151.0 queue operation/parameter schemas under src/runtime/codex-coordinator-tool-contract. Focused validation passed: 11 catalogue tests / 1,048 assertions; bun run type-check; bun run lint; bun run fmt:check; targeted oxfmt and oxlint; git diff --check. The tests independently snapshot manifest bytes and names, reject missing/extra/reordered/ambiguous tools and invented queue fields, enforce one canonical inputText envelope, validate success=false refusal semantics, verify authority/link/result/refusal metadata, freeze inputs, and reject namespace definitions outside the owner. Manifest digests remain fe8dd9bfaf91b37cbae31136ccdfc4eb1106728b40d2bc3ea01036606d6f748f and 792d6ec96edc2fbffc8400ce0d1304a56662bee5436e95914505cb848356c393. Module/system/repository/browser lanes were not run because the parent task supplied a capped-run constraint after the global OOM; parent review must run those lanes under the capped runner before finalization. No unrelated files, including the protected src-DlBR1tz.js, were changed.
 <!-- SECTION:NOTES:END -->
