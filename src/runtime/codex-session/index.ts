@@ -22,6 +22,7 @@ export type {
 	SessionTokenRefreshRequest,
 } from "./lib/contract.js";
 export type {
+	ExactSessionRequestIdentityTuple,
 	SessionAccountLoginResult,
 	SessionAgentMessageItem,
 	SessionCollabAgentItem,
@@ -33,6 +34,7 @@ export type {
 	SessionQueueUpdateResult,
 	SessionResponse,
 	SessionResponsePayloads,
+	SessionRequestIdentityField,
 	SessionSubAgentActivityItem,
 	SessionThread,
 	SessionThreadForkResult,
@@ -41,6 +43,7 @@ export type {
 	SessionThreadPageResult,
 	SessionThreadReadResult,
 	SessionThreadSource,
+	SessionThreadSpawnSource,
 	SessionThreadStartResult,
 	SessionThreadTurnPageResult,
 	SessionTurn,
