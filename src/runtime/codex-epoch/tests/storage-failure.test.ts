@@ -1,90 +1,53 @@
-import { mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
-import {
-	createCodexEpochStore,
-	defaultCodexEpochFileSystem,
-	type CodexEpochFileSystem,
-	type EpochStageInput,
+import type {
+	CodexEpochStore,
+	EpochManifest,
+	EpochOperationOutcome,
+	EpochOperationStatus,
+	EpochSnapshot,
 } from "../index.js";
+import {
+	ATOMIC_PHASES,
+	failingFileSystem,
+	input,
+	makeStore,
+	sentinel,
+	withState,
+	type AtomicPhase,
+	type StateTarget,
+	type TestState,
+} from "./storage-failure-support.js";
 
-const INSTRUCTION_HASH = "1".repeat(64);
-const MANIFEST_HASH = "2".repeat(64);
-const ATOMIC_PHASES = [
-	"target_stat",
-	"temp_open",
-	"temp_write",
-	"temp_fsync",
-	"temp_close",
-	"publish",
-	"directory_open",
-	"directory_fsync",
-	"directory_close",
-] as const;
-type AtomicPhase = (typeof ATOMIC_PHASES)[number];
+type Transition = "stage" | "commit" | "rollback" | "outcome_unknown";
+type RestartState = "before" | "corrupt" | "after";
+
+interface Scenario {
+	readonly before: EpochSnapshot;
+	readonly operationId: string;
+	readonly status: EpochOperationStatus;
+	readonly outcome: EpochOperationOutcome;
+	readonly order: "manifest-first" | "records-first";
+	readonly action: (store: CodexEpochStore) => unknown;
+}
+
+const TRANSITIONS: readonly Transition[] = ["stage", "commit", "rollback", "outcome_unknown"];
 
 describe("codex epoch durability boundaries", () => {
-	test("fails closed at every records-first atomic boundary", () => {
-		for (const phase of ATOMIC_PHASES) {
-			withState((state) => {
-				const beforeCodex = sentinel(state.codexHome);
-				const beforeSqlite = sentinel(state.sqliteHome);
-				const authority = createIdentityAuthority();
-				const store = makeStore(state, failingFileSystem(state, { phase, target: "records" }));
-
-				expectDurabilityFailure(() =>
-					store.stageEpoch(input(authority, `stage-${phase}`, "epoch_start")),
-				);
-				expectRestartIsEmptyOrCorrupt(
-					state,
-					phase === "target_stat" ||
-						phase === "temp_open" ||
-						phase === "temp_write" ||
-						phase === "temp_fsync" ||
-						phase === "temp_close" ||
-						phase === "publish",
-				);
-				expect(sentinel(state.codexHome)).toEqual(beforeCodex);
-				expect(sentinel(state.sqliteHome)).toEqual(beforeSqlite);
-			});
-		}
-	});
-
-	test("fails closed at every manifest-first commit boundary", () => {
-		for (const phase of ATOMIC_PHASES) {
-			withState((state) => {
-				const beforeCodex = sentinel(state.codexHome);
-				const beforeSqlite = sentinel(state.sqliteHome);
-				const authority = createIdentityAuthority();
-				const prepared = makeStore(state);
-				prepared.startEpoch(input(authority, "epoch-start", "epoch_start"));
-				const threadId = authority.decoder.adoptThreadId(`thread-${phase}`);
-				const transaction = prepared.stageOperation(
-					input(authority, `commit-${phase}`, "link", prepared.snapshot().cas),
-				);
-				const store = makeStore(state, failingFileSystem(state, { phase, target: "manifest" }));
-
-				expectDurabilityFailure(() => store.commitOperation(transaction, { threadId }));
-				const restarted = makeStore(state).snapshot;
-				if (
-					phase === "directory_open" ||
-					phase === "directory_fsync" ||
-					phase === "directory_close"
-				) {
-					expect(() => restarted()).toThrowError(
-						expect.objectContaining({ code: "corrupt_manifest" }),
-					);
-				} else {
-					expect(restarted().manifest.records.at(-1)?.status).toBe("staged");
+	for (const transition of TRANSITIONS) {
+		test(`${transition} covers both twin targets and every atomic boundary`, () => {
+			const order = orderFor(transition);
+			for (const [targetIndex, target] of targetsFor(order).entries()) {
+				for (const phase of ATOMIC_PHASES) {
+					withState((state) => exerciseFailure(state, transition, phase, targetIndex, target));
 				}
-				expect(sentinel(state.codexHome)).toEqual(beforeCodex);
-				expect(sentinel(state.sqliteHome)).toEqual(beforeSqlite);
-			});
-		}
-	});
+			}
+		});
+	}
 
 	test("preserves the primary fsync failure when temp cleanup also fails", () => {
 		withState((state) => {
@@ -93,201 +56,166 @@ describe("codex epoch durability boundaries", () => {
 				state,
 				failingFileSystem(state, { phase: "temp_fsync", target: "records", failCleanup: true }),
 			);
-			let failure: unknown;
-			try {
-				store.stageEpoch(input(authority, "cleanup-failure", "epoch_start"));
-			} catch (error) {
-				failure = error;
-			}
-			expect(failure).toMatchObject({ code: "durability_failed" });
-			expect(failure).toMatchObject({ cause: { phase: "temp_fsync" } });
+			const failure = captureFailure(() =>
+				store.stageEpoch(input(authority, "cleanup-failure", "epoch_start")),
+			);
+			expect(failure).toMatchObject({ code: "durability_failed", cause: { phase: "temp_fsync" } });
 			expect(readdirSync(state.root).some((entry) => entry.endsWith(".tmp"))).toBe(true);
 		});
 	});
 });
 
-interface TestState {
-	readonly root: string;
-	readonly codexHome: string;
-	readonly sqliteHome: string;
+function exerciseFailure(
+	state: TestState,
+	transition: Transition,
+	phase: AtomicPhase,
+	targetIndex: number,
+	target: StateTarget,
+): void {
+	const scenario = prepareScenario(state, transition);
+	const beforeCodex = sentinel(state.codexHome);
+	const beforeSqlite = sentinel(state.sqliteHome);
+	const beforeBytes = stateBytes(state);
+	const store = makeStore(state, failingFileSystem(state, { phase, target }));
+	const failure = captureFailure(() => scenario.action(store));
+	expect(failure).toMatchObject({ code: "durability_failed" });
+	expect(() =>
+		store.stageEpoch(input(createIdentityAuthority(), "quarantine", "epoch_start")),
+	).toThrowError(expect.objectContaining({ code: "durability_failed" }));
+	assertRestart(state, scenario, expectedRestart(targetIndex, phase), beforeBytes);
+	expect(sentinel(state.codexHome)).toEqual(beforeCodex);
+	expect(sentinel(state.sqliteHome)).toEqual(beforeSqlite);
 }
 
-interface FailureOptions {
-	readonly phase: AtomicPhase;
-	readonly target: "manifest" | "records";
-	readonly failCleanup?: boolean;
-}
-
-function withState<T>(callback: (state: TestState) => T): T {
-	const parent = mkdtempSync(join("/tmp", "archboard-codex-failure-"));
-	const state: TestState = {
-		root: join(parent, "epoch"),
-		codexHome: join(parent, "codex-home"),
-		sqliteHome: join(parent, "codex-sqlite"),
-	};
-	mkdirSync(state.root, { recursive: true, mode: 0o700 });
-	mkdirSync(state.codexHome, { recursive: true, mode: 0o700 });
-	mkdirSync(state.sqliteHome, { recursive: true, mode: 0o700 });
-	writeSentinel(state.codexHome, "codex-state");
-	writeSentinel(state.sqliteHome, "sqlite-state");
-	try {
-		return callback(state);
-	} finally {
-		rmSync(parent, { recursive: true, force: true });
+function prepareScenario(state: TestState, transition: Transition): Scenario {
+	const authority = createIdentityAuthority();
+	const prepared = makeStore(state);
+	if (transition === "stage") {
+		return {
+			before: prepared.snapshot(),
+			operationId: "epoch-stage",
+			status: "staged",
+			outcome: "pending",
+			order: "records-first",
+			action: (store) => store.stageEpoch(input(authority, "epoch-stage", "epoch_start")),
+		};
 	}
-}
-
-function writeSentinel(directory: string, contents: string): void {
-	const path = join(directory, "sentinel");
-	const descriptor = defaultCodexEpochFileSystem.openSync(path, "w", 0o600);
-	try {
-		defaultCodexEpochFileSystem.writeSync(
-			descriptor,
-			new TextEncoder().encode(contents),
-			0,
-			contents.length,
-		);
-	} finally {
-		defaultCodexEpochFileSystem.closeSync(descriptor);
+	prepared.startEpoch(input(authority, "epoch-start", "epoch_start"));
+	const operationId = `operation-${transition}`;
+	const kind = transitionKind(transition);
+	const transaction = prepared.stageOperation(
+		input(authority, operationId, kind, prepared.snapshot().cas),
+	);
+	const before = prepared.snapshot();
+	if (transition === "commit") {
+		const threadId = authority.decoder.adoptThreadId("committed-thread");
+		return {
+			before,
+			operationId,
+			status: "committed",
+			outcome: "delivered",
+			order: "manifest-first",
+			action: (store) => store.commitOperation(transaction, { threadId }),
+		};
 	}
-}
-
-function makeStore(state: TestState, fileSystem?: CodexEpochFileSystem) {
-	return createCodexEpochStore({
-		rootDirectory: state.root,
-		codexHome: state.codexHome,
-		sqliteHome: state.sqliteHome,
-		fileSystem,
-		now: () => 100,
-	});
-}
-
-function input(
-	authority: ReturnType<typeof createIdentityAuthority>,
-	operationId: string,
-	kind: string,
-	expected?: EpochStageInput["expected"],
-): EpochStageInput {
+	if (transition === "rollback") {
+		return {
+			before,
+			operationId,
+			status: "rolled_back",
+			outcome: "not_delivered",
+			order: "manifest-first",
+			action: (store) => store.rollbackOperation(transaction, "not delivered"),
+		};
+	}
 	return {
-		childId: authority.validator.childId,
-		epoch: authority.validator.epoch,
+		before,
 		operationId,
-		kind,
-		rpc: kind === "epoch_start" ? "epoch/start" : "turn/start",
-		workspaceRoot: "/workspace/archboard",
-		instructionHash: INSTRUCTION_HASH,
-		manifestHash: MANIFEST_HASH,
-		expected,
+		status: "inspect_only",
+		outcome: "outcome_unknown",
+		order: "manifest-first",
+		action: (store) => store.markOutcomeUnknown(transaction, "settlement lost"),
 	};
 }
 
-function failingFileSystem(state: TestState, options: FailureOptions): CodexEpochFileSystem {
-	const descriptors = new Map<number, string>();
-	const targetPath = join(state.root, `epoch-${options.target}.json`);
-	const targetTempPrefix = join(state.root, `.epoch-${options.target}.`);
-	let publishedTarget: string | null = null;
-	let injected = false;
-	let cleanupInjected = false;
-	let targetStatReads = 0;
-	const shouldFail = (condition: boolean): void => {
-		if (condition && !injected) {
-			injected = true;
-			throw new Error(`injected ${options.phase} failure`);
-		}
-	};
-	const isTargetTemp = (path: string): boolean =>
-		path.startsWith(targetTempPrefix) && path.endsWith(".tmp");
+function transitionKind(transition: Transition): string {
+	if (transition === "commit") return "link";
+	if (transition === "outcome_unknown") return "create_thread";
+	return "other";
+}
+
+function orderFor(transition: Transition): Scenario["order"] {
+	return transition === "stage" ? "records-first" : "manifest-first";
+}
+
+function targetsFor(order: Scenario["order"]): readonly StateTarget[] {
+	return order === "records-first" ? ["records", "manifest"] : ["manifest", "records"];
+}
+
+function expectedRestart(targetIndex: number, phase: AtomicPhase): RestartState {
+	const afterRename = phase.startsWith("directory_");
+	if (targetIndex === 0 && !afterRename) return "before";
+	if (targetIndex === 1 && afterRename) return "after";
+	return "corrupt";
+}
+
+interface StateBytes {
+	readonly manifest: string | null;
+	readonly records: string | null;
+}
+
+function stateBytes(state: TestState): StateBytes {
 	return {
-		...defaultCodexEpochFileSystem,
-		lstatSync: (path) => {
-			if (path === targetPath) {
-				targetStatReads++;
-				shouldFail(options.phase === "target_stat" && targetStatReads >= 2);
-			}
-			return defaultCodexEpochFileSystem.lstatSync(path);
-		},
-		openSync: (path, flags, mode) => {
-			shouldFail(options.phase === "temp_open" && isTargetTemp(path));
-			shouldFail(
-				options.phase === "directory_open" &&
-					path === state.root &&
-					publishedTarget === options.target,
-			);
-			const descriptor = defaultCodexEpochFileSystem.openSync(path, flags, mode);
-			descriptors.set(descriptor, path);
-			return descriptor;
-		},
-		writeSync: (descriptor, data, offset, length) => {
-			shouldFail(options.phase === "temp_write" && isTargetTemp(descriptors.get(descriptor) ?? ""));
-			return defaultCodexEpochFileSystem.writeSync(descriptor, data, offset, length);
-		},
-		fsyncSync: (descriptor) => {
-			const path = descriptors.get(descriptor) ?? "";
-			shouldFail(options.phase === "temp_fsync" && isTargetTemp(path));
-			shouldFail(
-				options.phase === "directory_fsync" &&
-					path === state.root &&
-					publishedTarget === options.target,
-			);
-			return defaultCodexEpochFileSystem.fsyncSync(descriptor);
-		},
-		closeSync: (descriptor) => {
-			const path = descriptors.get(descriptor) ?? "";
-			shouldFail(options.phase === "temp_close" && isTargetTemp(path));
-			shouldFail(
-				options.phase === "directory_close" &&
-					path === state.root &&
-					publishedTarget === options.target,
-			);
-			defaultCodexEpochFileSystem.closeSync(descriptor);
-			descriptors.delete(descriptor);
-		},
-		renameSync: (oldPath, newPath) => {
-			shouldFail(options.phase === "publish" && newPath === targetPath);
-			defaultCodexEpochFileSystem.renameSync(oldPath, newPath);
-			if (newPath === targetPath) {
-				publishedTarget = options.target;
-			}
-		},
-		unlinkSync: (path) => {
-			if (options.failCleanup === true && isTargetTemp(path) && !cleanupInjected) {
-				cleanupInjected = true;
-				throw new Error("injected temp cleanup failure");
-			}
-			return defaultCodexEpochFileSystem.unlinkSync(path);
-		},
+		manifest: readOptional(join(state.root, "epoch-manifest.json")),
+		records: readOptional(join(state.root, "epoch-records.json")),
 	};
 }
 
-function expectDurabilityFailure(action: () => unknown): void {
-	expect(action).toThrowError(expect.objectContaining({ code: "durability_failed" }));
+function readOptional(path: string): string | null {
+	return existsSync(path) ? readFileSync(path, "utf8") : null;
 }
 
-function expectRestartIsEmptyOrCorrupt(state: TestState, expectEmpty: boolean): void {
-	const restarted = makeStore(state);
-	if (expectEmpty) {
-		expect(restarted.snapshot().manifest.revision).toBe(0);
-	} else {
-		expect(() => restarted.snapshot()).toThrowError(
+function assertRestart(
+	state: TestState,
+	scenario: Scenario,
+	restart: RestartState,
+	beforeBytes: StateBytes,
+): void {
+	const afterBytes = stateBytes(state);
+	if (restart === "before") {
+		expect(makeStore(state).snapshot().manifest).toEqual(scenario.before.manifest);
+		expect(afterBytes).toEqual(beforeBytes);
+		return;
+	}
+	if (restart === "corrupt") {
+		expect(() => makeStore(state).snapshot()).toThrowError(
 			expect.objectContaining({ code: "corrupt_manifest" }),
 		);
+		expect(changedFileCount(beforeBytes, afterBytes)).toBe(1);
+		return;
 	}
+	const snapshot = makeStore(state).snapshot();
+	expect(snapshot.manifest.revision).toBe(scenario.before.manifest.revision + 1);
+	expect(record(snapshot.manifest, scenario.operationId)).toMatchObject({
+		status: scenario.status,
+		outcome: scenario.outcome,
+	});
+	expect(afterBytes.manifest).toBe(afterBytes.records);
 }
 
-interface Sentinel {
-	readonly bytes: string;
-	readonly inode: number;
-	readonly mode: number;
-	readonly entries: readonly string[];
+function changedFileCount(before: StateBytes, after: StateBytes): number {
+	return Number(before.manifest !== after.manifest) + Number(before.records !== after.records);
 }
 
-function sentinel(directory: string): Sentinel {
-	const file = join(directory, readdirSync(directory).toSorted()[0]!);
-	const stats = statSync(file);
-	return {
-		bytes: readFileSync(file, "utf8"),
-		inode: stats.ino,
-		mode: stats.mode,
-		entries: readdirSync(directory).toSorted(),
-	};
+function record(manifest: EpochManifest, operationId: string) {
+	return manifest.records.find((candidate) => candidate.correlation.operationId === operationId);
+}
+
+function captureFailure(action: () => unknown): unknown {
+	try {
+		action();
+	} catch (error) {
+		return error;
+	}
+	throw new Error("expected injected durability failure");
 }
