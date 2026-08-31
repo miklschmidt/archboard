@@ -275,6 +275,59 @@ describe("codex workhorse operation authority and correlation", () => {
 		}
 	});
 
+	test("reconciles a lost start for a pre-existing submission without companion state", async () => {
+		const fixtureValue = fixture();
+		try {
+			const target = queuedItem(fixtureValue, "pre-existing");
+			fixtureValue.queue.state = [target];
+			fixtureValue.queue.nextOutcome = "outcome_unknown";
+			fixtureValue.queue.nextStartTurnId = null;
+			const events: WorkhorseOperationEvent[] = [];
+			fixtureValue.operations.subscribe((event) => events.push(event));
+			expect(
+				await rejected(
+					fixtureValue.operations.manageQueue({
+						call: fixtureValue.setCall("manage_workhorse_queue"),
+						operation: "start",
+						submissionId: target.id,
+					}),
+				),
+			).toMatchObject({ outcome: "outcome_unknown" });
+			for (const [method, status] of [
+				["turn/started", "inProgress"],
+				["turn/completed", "completed"],
+			] as const)
+				fixtureValue.operations.onNotification(
+					notification(fixtureValue, {
+						method,
+						params: {
+							threadId: "workhorse",
+							turn: rawTurn(
+								fixtureValue.identity,
+								"restored-turn",
+								status,
+								target.clientUserMessageId,
+							),
+						},
+					}),
+				);
+			expect(events.map(({ type }) => type)).toEqual([
+				"accepted",
+				"outcome_unknown",
+				"started",
+				"completed",
+			]);
+			expect(events.at(-1)?.correlation).toMatchObject({
+				clientUserMessageId: target.clientUserMessageId,
+				queuedSubmissionId: target.id,
+				turnId: fixtureValue.identity.decoder.adoptTurnId("restored-turn"),
+			});
+			expect(fixtureValue.queue.calls).toEqual(["start"]);
+		} finally {
+			fixtureValue.cleanup();
+		}
+	});
+
 	test("never uses the active-turn cache as steer authority", async () => {
 		const fixtureValue = fixture();
 		try {
@@ -320,6 +373,44 @@ describe("codex workhorse operation authority and correlation", () => {
 			expect(result.mode).toBe("started");
 			expect(ordered).toEqual(["existing:accepted", "existing:started", "late:started"]);
 			expect(fixtureValue.session.starts).toHaveLength(1);
+		} finally {
+			fixtureValue.cleanup();
+		}
+	});
+
+	test("drains reentrant publications after every listener receives the current event", async () => {
+		const fixtureValue = fixture();
+		try {
+			fixtureValue.session.nextStartTurn = turn(fixtureValue.identity, "nested", "inProgress");
+			const order: string[] = [];
+			fixtureValue.operations.subscribe((event) => {
+				if (event.type !== "started" && event.type !== "completed") return;
+				order.push(`one:${event.type}`);
+				if (event.type === "started")
+					fixtureValue.operations.onNotification(
+						notification(fixtureValue, {
+							method: "turn/completed",
+							params: {
+								threadId: "workhorse",
+								turn: rawTurn(
+									fixtureValue.identity,
+									"nested",
+									"completed",
+									event.correlation.clientUserMessageId!,
+								),
+							},
+						}),
+					);
+			});
+			fixtureValue.operations.subscribe((event) => {
+				if (event.type === "started" || event.type === "completed") order.push(`two:${event.type}`);
+			});
+			await fixtureValue.operations.delegate({
+				call: fixtureValue.setCall("delegate_to_workhorse"),
+				input: "nested publication",
+				transcriptDelta: "",
+			});
+			expect(order).toEqual(["one:started", "two:started", "one:completed", "two:completed"]);
 		} finally {
 			fixtureValue.cleanup();
 		}

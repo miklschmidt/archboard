@@ -38,6 +38,11 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 	const listeners = new Set<WorkhorseOperationEventListener>();
 	const operations = new Map<string, OperationState>();
 	const activeTurns = new Map<string, TurnId>();
+	const publications: Array<{
+		readonly event: WorkhorseOperationEvent;
+		readonly cohort: readonly WorkhorseOperationEventListener[];
+	}> = [];
+	let drainingPublications = false;
 	let queueReconcileTail: Promise<void> = Promise.resolve();
 
 	const correlation = correlationForState;
@@ -82,13 +87,23 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 			default:
 				return;
 		}
-		const cohort = Array.from(listeners);
-		for (const listener of cohort) {
-			try {
-				listener(event);
-			} catch {
-				/* Consumers cannot alter operation delivery or later ordered listeners. */
+		publications.push({ event, cohort: Array.from(listeners) });
+		if (drainingPublications) return;
+		drainingPublications = true;
+		try {
+			for (;;) {
+				const publication = publications.shift();
+				if (publication === undefined) break;
+				for (const listener of publication.cohort) {
+					try {
+						listener(publication.event);
+					} catch {
+						/* Consumers cannot alter settlement or later ordered listeners. */
+					}
+				}
 			}
+		} finally {
+			drainingPublications = false;
 		}
 	};
 

@@ -65,35 +65,42 @@ export interface QueueListResult {
 	readonly queue: QueueSnapshot;
 }
 
+export interface QueueEffectContext {
+	readonly operation: WorkhorseQueueMutation;
+	readonly target: SessionQueuedSubmission | null;
+}
+
+export type QueueBeforeEffect = (context: QueueEffectContext) => void | Promise<void>;
+
 export interface QueueAddRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly prompt: string;
-	readonly beforeEffect?: () => void | Promise<void>;
+	readonly beforeEffect?: QueueBeforeEffect;
 }
 
 export interface QueueUpdateRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly submissionId: QueuedSubmissionId;
 	readonly prompt: string;
-	readonly beforeEffect?: () => void | Promise<void>;
+	readonly beforeEffect?: QueueBeforeEffect;
 }
 
 export interface QueueDeleteRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly submissionId: QueuedSubmissionId;
-	readonly beforeEffect?: () => void | Promise<void>;
+	readonly beforeEffect?: QueueBeforeEffect;
 }
 
 export interface QueueReorderRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly orderedSubmissionIds: readonly QueuedSubmissionId[];
-	readonly beforeEffect?: () => void | Promise<void>;
+	readonly beforeEffect?: QueueBeforeEffect;
 }
 
 export interface QueueStartRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly submissionId: QueuedSubmissionId;
-	readonly beforeEffect?: () => void | Promise<void>;
+	readonly beforeEffect?: QueueBeforeEffect;
 }
 
 export type QueueSnapshot = readonly SessionQueuedSubmission[];
@@ -128,7 +135,10 @@ export type QueueReorderResult<OperationIdValue extends string> = QueueMutationR
 export type QueueStartResult<OperationIdValue extends string> = QueueMutationResult<
 	"start",
 	OperationIdValue
-> & { readonly turnId: TurnId | null };
+> & {
+	readonly clientUserMessageId: string;
+	readonly turnId: TurnId | null;
+};
 
 export type WorkhorseQueueResult<OperationIdValue extends string> =
 	| QueueListResult
