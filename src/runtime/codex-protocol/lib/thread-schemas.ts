@@ -14,7 +14,7 @@ import { FiniteNumberSchema, looseObject } from "./scalars.js";
 
 export const TurnItemsViewSchema = z.enum(["notLoaded", "summary", "full"]);
 
-export const TurnSchema: z.ZodTypeAny = z.lazy(() =>
+export const TurnSchema = z.lazy(() =>
 	looseObject({
 		id: z.string(),
 		items: z.array(ThreadItemSchema),
@@ -27,7 +27,7 @@ export const TurnSchema: z.ZodTypeAny = z.lazy(() =>
 	}),
 );
 
-export const ThreadSchema: z.ZodTypeAny = z.lazy(() =>
+export const ThreadSchema = z.lazy(() =>
 	looseObject({
 		id: z.string(),
 		extra: z.strictObject({}).nullable(),

@@ -1,13 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ResponseMethod } from "../../codex-protocol/index.js";
+import type { ResponseMethod, ResponsePayloads } from "../../codex-protocol/index.js";
 import { configFixture, requirementsFixture, threadFixture } from "./support.js";
 import {
 	createTransportSessionFixture,
 	type TransportSessionFixture,
 } from "./transport-chain-support.js";
 
-function threadStartResponse(thread: unknown) {
+function threadStartResponse(
+	thread: ResponsePayloads["thread/read"]["thread"],
+): ResponsePayloads["thread/start"] {
 	return {
 		thread,
 		model: "gpt-5.6-luna",
@@ -25,10 +27,10 @@ function threadStartResponse(thread: unknown) {
 	};
 }
 
-async function answerPending(
+async function answerPending<Method extends ResponseMethod>(
 	fixture: TransportSessionFixture,
-	method: ResponseMethod,
-	result: unknown,
+	method: Method,
+	result: ResponsePayloads[Method],
 	from: number,
 ): Promise<number> {
 	await fixture.settle();
@@ -72,11 +74,11 @@ async function initializeTransportSession(fixture: TransportSessionFixture): Pro
 	await pending;
 }
 
-async function roundTrip<Result>(
+async function roundTrip<Method extends ResponseMethod, Result>(
 	fixture: TransportSessionFixture,
-	method: ResponseMethod,
+	method: Method,
 	start: () => Promise<Result>,
-	result: unknown,
+	result: ResponsePayloads[Method],
 ): Promise<Result> {
 	const from = fixture.frames().length;
 	const pending = start();
