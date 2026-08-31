@@ -30,6 +30,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function assertExactKeys(value: Record<string, unknown>, keys: readonly string[]): void {
+	const actual = Object.keys(value);
+	if (actual.length !== keys.length || keys.some((key) => !Object.hasOwn(value, key)))
+		throw new Error("browser gateway message wrapper keys are invalid");
+}
+
 function assertSequence(value: unknown): asserts value is number {
 	if (!Number.isSafeInteger(value) || (value as number) < 0)
 		throw new Error("browser gateway sequence must be a non-negative safe integer");
@@ -75,10 +81,12 @@ function parseMessage(model: CodexBrowserModel, value: unknown): BrowserGatewayM
 		throw new Error("browser gateway message kind is invalid");
 	assertSequence(value.sequence);
 	if (value.kind === "snapshot") {
+		assertExactKeys(value, ["kind", "sequence", "snapshot"]);
 		const snapshot = model.BrowserSnapshotSchema.parse(value.snapshot);
 		assertBrowserSnapshotBounded(snapshot);
 		return Object.freeze({ kind: "snapshot", sequence: value.sequence, snapshot });
 	}
+	assertExactKeys(value, ["kind", "sequence", "delta"]);
 	if (!isRecord(value.delta)) throw new Error("browser gateway delta must be an object");
 	const parsedDelta: Record<string, unknown> = {};
 	for (const key of Object.keys(value.delta)) {

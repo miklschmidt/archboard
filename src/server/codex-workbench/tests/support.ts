@@ -11,6 +11,7 @@ import type {
 	BrowserActionResult,
 	BrowserProjectionPort,
 	BrowserGatewayMessage,
+	BrowserDisconnectReason,
 	CodexWorkbenchGateway,
 } from "../index.js";
 import { createCodexWorkbenchGateway } from "../index.js";
@@ -41,6 +42,7 @@ export interface GatewayHarness {
 	readonly turnId: TurnId;
 	readonly calls: string[];
 	readonly disconnects: string[];
+	readonly disconnectReasons: BrowserDisconnectReason[];
 	readonly advance: (milliseconds: number) => void;
 	readonly setReadiness: (state: BrowserReadiness["state"]) => void;
 	readonly setLink: (link: ThreadLinkSnapshot) => void;
@@ -113,8 +115,9 @@ function readinessFor(
 	return { kind: "readiness", state };
 }
 
-export function createGatewayHarness(): GatewayHarness {
-	const authorities = createIdentityAuthorities();
+export function createGatewayHarness(
+	authorities: IdentityAuthorities = createIdentityAuthorities(),
+): GatewayHarness {
 	const model = createCodexBrowserModel(authorities);
 	const childId = model.ChildIdSchema.parse(authorities.identity.validator.childId);
 	const epoch = model.ChildEpochSchema.parse(authorities.identity.validator.epoch);
@@ -146,6 +149,7 @@ export function createGatewayHarness(): GatewayHarness {
 	let actionGate: Promise<BrowserActionResult> | null = null;
 	const calls: string[] = [];
 	const disconnects: string[] = [];
+	const disconnectReasons: BrowserDisconnectReason[] = [];
 	const projectionListeners = new Set<() => void>();
 
 	const run = async (name: string): Promise<BrowserActionResult> => {
@@ -190,16 +194,18 @@ export function createGatewayHarness(): GatewayHarness {
 		ordinaryApprovals: {
 			pending: (candidate) => (candidate === requestId ? ordinaryApproval : null),
 			resolve: action("approval.resolve"),
-			onBrowserDisconnect: () => {
+			onBrowserDisconnect: (_context, reason) => {
 				disconnects.push("ordinary");
+				disconnectReasons.push(reason);
 				ordinaryApproval = null;
 			},
 		},
 		dynamicApprovals: {
 			pending: () => dynamicApprovals,
 			resolve: action("dynamic.resolve"),
-			onBrowserDisconnect: () => {
+			onBrowserDisconnect: (_context, reason) => {
 				disconnects.push("dynamic");
+				disconnectReasons.push(reason);
 				dynamicApprovals = [];
 			},
 		},
@@ -343,6 +349,7 @@ export function createGatewayHarness(): GatewayHarness {
 		turnId,
 		calls,
 		disconnects,
+		disconnectReasons,
 		advance: (milliseconds) => {
 			clock += milliseconds;
 		},
