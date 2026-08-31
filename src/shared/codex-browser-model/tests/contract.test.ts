@@ -242,6 +242,11 @@ describe("codex browser model", () => {
 				},
 			}).success,
 		).toBeTrue();
+		const { dynamicApprovals, ...snapshotWithoutDynamicApprovals } = ids.snapshot;
+		expect(dynamicApprovals).toEqual([]);
+		expect(
+			model.BrowserSnapshotSchema.safeParse(snapshotWithoutDynamicApprovals).success,
+		).toBeFalse();
 		expect(
 			model.BrowserCoordinatorSchema.safeParse({
 				...ids.snapshot.coordinator,
