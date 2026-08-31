@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 03:15'
+updated_date: '2026-08-31 03:25'
 labels: []
 dependencies:
   - TASK-144.05
@@ -49,4 +49,10 @@ Configure shadcn base-nova for Base UI source delivery after every resolver/help
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved after TASK-144.18 finalized at integration HEAD 4cbceec. This ready leaf owns components.json, the two pinned vendor fixtures, and its narrow dry-run evidence; it is disjoint from active shell-token remediation and assistant-ui dependency work.
+
+Implemented in 32cfcd6 from fixed BASE 299286acb43b5a4e9ace716b5886d1a271a3b17a0. Scope is components.json, exact non-compiled vendor reading fixtures, one focused repository-policy owner, and the narrow formatter ignore required to preserve upstream bytes; package/lock, src product code, Vite/TypeScript/Oxlint config, scripts, CI, and browser owners are untouched.
+
+Evidence: components.json SHA-256 b5d8f37341a1f185337f79c5ef8447e914d280bc0670a635fadeac023c7f0a8c; Button fixture SHA-256 97bfee456444f0495deee6a321933c24267477645b0bf4bfea67c3c62d425a12; Dialog fixture SHA-256 85f9a33d1a8c495b0faecd066dae1581b8feb5d27f912ecf65f814386f6da3a9; provenance is full immutable shadcn-ui/ui commit b4a618b97e35f5dadf3a00d51f410c84a2567d4d. The offline owner passes 6 tests / 28 expectations, exact config and hostile drift checks, alias agreement checks, product/package adoption refusals, deterministic named-input planning, and status-before/after equality.
+
+Focused validation: bun test tests/system/repository-policy/shadcn-base-adoption.test.ts; bunx oxlint tests/system/repository-policy/shadcn-base-adoption.test.ts; bunx oxfmt --check components.json tests/system/repository-policy/shadcn-base-adoption.test.ts; repository-wide oxfmt traversal with the vendor ignore; bunx tsc --noEmit --pretty false -p tsconfig.json; git diff --check — all passed. Live focused probe used only shadcn info --json and add button dialog --dry-run/--view; it reported Vite, base-nova/base, completed aliases, default lucide/geist, proposed only src/ui/button.tsx and src/ui/dialog.tsx, and left a clean checkout byte-identical before/after. Evidence capture: /tmp/archboard-task14404-evidence/base-to-head.patch SHA-256 8a6769c931d383cfc0f24e111314ac0ce91f3ccbc3245181d4d9f37bb00e5bb7. Protected /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Broad modules/system/repository/check/browser lanes remain root-owned. Acceptance criteria intentionally remain unchecked; TASK-144.04 remains In Progress.
 <!-- SECTION:NOTES:END -->
