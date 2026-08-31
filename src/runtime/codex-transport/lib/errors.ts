@@ -14,6 +14,21 @@ export type CodexRequestFailureReason =
 
 export type CodexRequestOutcome = "not_delivered" | "outcome_unknown";
 
+export interface TransportRemoteErrorSummary {
+	readonly code: number;
+	readonly message: string;
+	readonly dataPresent: boolean;
+}
+
+function redactRemoteError(error: CodexRemoteError): TransportRemoteErrorSummary {
+	const message = error.message.length > 256 ? `${error.message.slice(0, 253)}...` : error.message;
+	return Object.freeze({
+		code: error.code,
+		message,
+		dataPresent: Object.prototype.hasOwnProperty.call(error, "data"),
+	});
+}
+
 export class CodexTransportError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -73,7 +88,7 @@ export class CodexTransportRequestError extends CodexTransportError {
 	readonly outcome: CodexRequestOutcome;
 	readonly reason: CodexRequestFailureReason;
 	readonly accepted: boolean;
-	override readonly cause?: unknown;
+	readonly retryEligible: boolean;
 
 	constructor(input: {
 		readonly method: string;
@@ -81,7 +96,7 @@ export class CodexTransportRequestError extends CodexTransportError {
 		readonly outcome: CodexRequestOutcome;
 		readonly reason: CodexRequestFailureReason;
 		readonly accepted: boolean;
-		readonly cause?: unknown;
+		readonly retryEligible: boolean;
 	}) {
 		const remoteStatus =
 			input.outcome === "outcome_unknown" ? "outcome is unknown" : "was not delivered";
@@ -94,7 +109,7 @@ export class CodexTransportRequestError extends CodexTransportError {
 		this.outcome = input.outcome;
 		this.reason = input.reason;
 		this.accepted = input.accepted;
-		this.cause = input.cause;
+		this.retryEligible = input.retryEligible;
 	}
 }
 
@@ -108,7 +123,7 @@ export class CodexTransportRemoteError extends CodexTransportError {
 	override readonly name = "CodexTransportRemoteError";
 	readonly method: string;
 	readonly correlation: WireRequestCorrelation;
-	readonly rpcError: CodexRemoteError;
+	readonly rpcError: TransportRemoteErrorSummary;
 
 	constructor(input: {
 		readonly method: string;
@@ -116,10 +131,14 @@ export class CodexTransportRemoteError extends CodexTransportError {
 		readonly rpcError: CodexRemoteError;
 	}) {
 		super(
-			`Codex request ${input.method} returned JSON-RPC error ${input.rpcError.code}: ${input.rpcError.message}`,
+			`Codex request ${input.method} returned JSON-RPC error ${input.rpcError.code}: ${
+				input.rpcError.message.length > 256
+					? `${input.rpcError.message.slice(0, 253)}...`
+					: input.rpcError.message
+			}`,
 		);
 		this.method = input.method;
 		this.correlation = input.correlation;
-		this.rpcError = input.rpcError;
+		this.rpcError = redactRemoteError(input.rpcError);
 	}
 }
