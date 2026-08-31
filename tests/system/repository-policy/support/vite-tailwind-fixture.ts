@@ -98,16 +98,17 @@ export async function runCleanupSteps(cleanups: Array<() => Promise<void> | void
 		throw new AggregateError(failures, "Multiple cleanup operations failed.");
 }
 
-export function toPosixSpecifier(value: string): string {
-	return value.replaceAll("\\", "/");
+export async function captureFailure(action: () => Promise<unknown>): Promise<unknown> {
+	try {
+		await action();
+	} catch (error) {
+		return error;
+	}
+	return undefined;
 }
 
-function removeFixtureRootsSync(parent: string): void {
-	for (const name of readdirSync(parent)) {
-		if (name.startsWith("archboard-vite-tailwind-")) {
-			rmSync(join(parent, name), { recursive: true, force: true });
-		}
-	}
+export function toPosixSpecifier(value: string): string {
+	return value.replaceAll("\\", "/");
 }
 
 export async function createViteTailwindFixture(
@@ -222,6 +223,48 @@ export async function withViteTailwindFixture<T>(
 	return await withPrimaryAndCleanup(() => callback(fixture), fixture.dispose);
 }
 
+async function withOwnedViteTailwindLifecycle<T>(
+	operation: (register: (fixture: ViteTailwindFixture) => void) => Promise<T>,
+): Promise<T> {
+	let activeFixture: ViteTailwindFixture | undefined;
+	let stopping = false;
+	const stop = (exitCode: number): void => {
+		if (stopping) return;
+		stopping = true;
+		void (async () => {
+			try {
+				await activeFixture?.dispose();
+			} finally {
+				process.exit(exitCode);
+			}
+		})();
+	};
+	const onSigint = (): void => stop(130);
+	const onSigterm = (): void => stop(143);
+	const onExit = (): void => {
+		activeFixture?.disposeSync();
+	};
+	process.once("SIGINT", onSigint);
+	process.once("SIGTERM", onSigterm);
+	process.once("exit", onExit);
+	const cleanup = async (): Promise<void> => {
+		try {
+			await activeFixture?.dispose();
+		} finally {
+			process.removeListener("SIGINT", onSigint);
+			process.removeListener("SIGTERM", onSigterm);
+			process.removeListener("exit", onExit);
+		}
+	};
+	return await withPrimaryAndCleanup(
+		() =>
+			operation((fixture) => {
+				activeFixture = fixture;
+			}),
+		cleanup,
+	);
+}
+
 export async function runOwnedViteTailwindFixture(
 	config: InlineConfig,
 	options: {
@@ -232,46 +275,13 @@ export async function runOwnedViteTailwindFixture(
 		interruptAt?: FixturePhase;
 	},
 ): Promise<void> {
-	let activeFixture: ViteTailwindFixture | undefined;
-	let stopping = false;
-	const stop = (exitCode: number): void => {
-		if (stopping) return;
-		stopping = true;
-		void (async () => {
-			try {
-				if (activeFixture === undefined) removeFixtureRootsSync(options.parent);
-				else await activeFixture.dispose();
-			} finally {
-				process.exit(exitCode);
-			}
-		})();
-	};
-	const onSigint = (): void => stop(130);
-	const onSigterm = (): void => stop(143);
-	const onExit = (): void => {
-		activeFixture?.disposeSync();
-		removeFixtureRootsSync(options.parent);
-	};
 	const interrupt = (phase: FixturePhase): void => {
 		if (options.interruptAt === phase) process.kill(process.pid, "SIGTERM");
 	};
-	process.once("SIGINT", onSigint);
-	process.once("SIGTERM", onSigterm);
-	process.once("exit", onExit);
-	const cleanup = async (): Promise<void> => {
-		try {
-			if (activeFixture === undefined) removeFixtureRootsSync(options.parent);
-			else await activeFixture.dispose();
-		} finally {
-			process.removeListener("SIGINT", onSigint);
-			process.removeListener("SIGTERM", onSigterm);
-			process.removeListener("exit", onExit);
-		}
-	};
-	await withPrimaryAndCleanup(async () => {
+	await withOwnedViteTailwindLifecycle(async (register) => {
 		await buildViteTailwindFixture(config, options.parent, options.dependenciesRoot, {
 			onAllocated: (fixture) => {
-				activeFixture = fixture;
+				register(fixture);
 				interrupt("after-mkdtemp");
 			},
 			onSetupStep: (step) => interrupt(step),
@@ -285,54 +295,19 @@ export async function runOwnedViteTailwindFixture(
 			},
 			onBuildStart: () => interrupt("during-build"),
 		});
-	}, cleanup);
+	});
 }
 
 export async function runOwnedViteTailwindAllocationProbe(options: {
 	parent: string;
 	dependenciesRoot: string;
 }): Promise<void> {
-	let activeFixture: ViteTailwindFixture | undefined;
-	let stopping = false;
-	const stop = (exitCode: number): void => {
-		if (stopping) return;
-		stopping = true;
-		void (async () => {
-			try {
-				if (activeFixture === undefined) removeFixtureRootsSync(options.parent);
-				else await activeFixture.dispose();
-			} finally {
-				process.exit(exitCode);
-			}
-		})();
-	};
-	const onSigint = (): void => stop(130);
-	const onSigterm = (): void => stop(143);
-	const onExit = (): void => {
-		activeFixture?.disposeSync();
-		removeFixtureRootsSync(options.parent);
-	};
-	process.once("SIGINT", onSigint);
-	process.once("SIGTERM", onSigterm);
-	process.once("exit", onExit);
-	const cleanup = async (): Promise<void> => {
-		try {
-			if (activeFixture === undefined) removeFixtureRootsSync(options.parent);
-			else await activeFixture.dispose();
-		} finally {
-			process.removeListener("SIGINT", onSigint);
-			process.removeListener("SIGTERM", onSigterm);
-			process.removeListener("exit", onExit);
-		}
-	};
-	await withPrimaryAndCleanup(async () => {
+	await withOwnedViteTailwindLifecycle(async (register) => {
 		await createViteTailwindFixture(options.parent, options.dependenciesRoot, {
-			onAllocated: (fixture) => {
-				activeFixture = fixture;
-			},
+			onAllocated: register,
 		});
 		await Bun.stdin.stream().getReader().read();
-	}, cleanup);
+	});
 }
 
 export type FixtureChild = ReturnType<typeof Bun.spawn>;
