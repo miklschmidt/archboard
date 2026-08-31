@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:49'
-updated_date: '2026-08-31 02:43'
+updated_date: '2026-08-31 02:46'
 labels: []
 dependencies:
   - TASK-144.15
@@ -13,6 +13,7 @@ references:
   - docs/design/tailwind-base-ui-adoption-research.md
 modified_files:
   - tsconfig.json
+  - tests/system/repository-policy/tsconfig-root-alias.test.ts
 parent_task_id: TASK-144
 priority: high
 type: task
@@ -43,4 +44,6 @@ Own the root TypeScript half of the same @/* -> ./src/* alias and prove agreemen
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved immediately after TASK-144.15 finalized and released this dependency-ready root TypeScript leaf at integration HEAD 6c992d9. It owns tsconfig.json plus the minimal alias/agreement fixture and is path-disjoint from every active lane.
+
+Implemented in 1be7964. Focused evidence: bun test tests/system/repository-policy/tsconfig-root-alias.test.ts (3 pass); bunx tsc --noEmit -p tsconfig.json (pass); bun test tests/system/repository-policy/tsconfig-frontend-alias.test.ts (2 pass); bun test tests/system/repository-policy/test-inventory.test.ts (39 pass); bunx oxlint tsconfig.json tests/system/repository-policy/tsconfig-root-alias.test.ts (pass); bunx oxfmt --check tsconfig.json tests/system/repository-policy/tsconfig-root-alias.test.ts (pass); git diff --check (pass). The root fixture resolves the public @/ui/types entrypoint and independently rejects ~/ui/types; the agreement assertion confirms root TypeScript, frontend TypeScript, and Vite resolve the same src target without a deep-import claim. Scope audit: only tsconfig.json and tests/system/repository-policy/tsconfig-root-alias.test.ts changed; frontend tsconfig, Vite, package scripts, CI, Oxlint/deep-import policy, shadcn config, UI source, TASK-144.18, TASK-144.04, and src-DlBR1tzg.js were untouched. Acceptance criteria intentionally remain unchecked; broad gates remain parent-owned.
 <!-- SECTION:NOTES:END -->
