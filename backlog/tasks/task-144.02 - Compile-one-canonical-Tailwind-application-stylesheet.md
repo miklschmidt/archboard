@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 00:25'
+updated_date: '2026-08-31 00:46'
 labels: []
 dependencies:
   - TASK-144.01
@@ -59,4 +59,6 @@ Remediation validation: all generated fixture files now live beneath OS temporar
 Second remediation: the disposable Vite/Tailwind owner now registers its temporary root before writes, installs scoped SIGINT/SIGTERM and exit cleanup, uses readiness stdout plus stdin event waiting, and unconditionally reaps spawned children while preserving primary failures. Alias checks now model Vite string/regex matching, require one exact @ mapping, reject only @ overlaps, and allow unrelated aliases. Added pre-ready/post-ready signal/failure cleanup, parallel-owner isolation, checkout snapshots, and dependency-link target assertions.
 
 Third remediation: allocation now invokes a synchronous owner callback immediately after mkdtemp and exposes deterministic hooks for every setup, readiness, callback, and build-start phase. The real child matrix interrupts all phases and verifies no temporary root, dependency link, child, checkout status, or diff residue. Alias validation structurally rejects every additional @/ string prefix and uses a documented anchored-literal-prefix regex policy that fails closed otherwise; object and array alias normalization is exercised outside the repository cwd. Shared primary/cleanup pairing preserves both failures in order, including multiple cleanup failures and root removal.
+
+Fourth remediation: fixture allocation now uses mkdtempSync so ownership registration occurs in the same synchronous turn as root creation; an external watcher interrupts 200 real allocation owners, alternating SIGTERM 143 and SIGINT 130, with no root/link/child/checkout residue. Regex aliases now require a fully anchored literal prefix and reject ambiguous alternation/other unparsed forms fail-closed. Cleanup pairing tracks failure presence explicitly, preserving thrown undefined and primary-before-cleanup ordering.
 <!-- SECTION:NOTES:END -->
