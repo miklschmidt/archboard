@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+import {
+	ADDITIONAL_CONTEXT_POLICY,
+	type OperationKind,
+	type OperationOutcome,
+	type OperationRpc,
+	type ThreadLinkReason,
+	type ThreadLinkState,
+} from "./context-policy.js";
+
 const utf8Bytes = (value: string): number => Buffer.byteLength(value, "utf8");
 
 function boundedUtf8Text(maxBytes: number, label: string) {
@@ -23,6 +32,26 @@ const SelectionIdSchema = nonEmptyBoundedUtf8Text(64, "selection element id");
 const AmbiguitySchema = boundedUtf8Text(256, "ambiguity entry");
 const DoingSchema = boundedUtf8Text(512, "doing");
 
+const threadLinkStateValues = [
+	...ADDITIONAL_CONTEXT_POLICY.threadLink.reasonNullStates,
+	...ADDITIONAL_CONTEXT_POLICY.threadLink.reasonRequiredStates,
+] as [ThreadLinkState, ...ThreadLinkState[]];
+const threadLinkReasonValues = ADDITIONAL_CONTEXT_POLICY.threadLink.reasonPrecedence.map(
+	({ reason }) => reason,
+) as [ThreadLinkReason, ...ThreadLinkReason[]];
+const operationKindValues = ADDITIONAL_CONTEXT_POLICY.operation.producers.map(
+	({ kind }) => kind,
+) as [OperationKind, ...OperationKind[]];
+const operationRpcValues = [
+	...new Set(ADDITIONAL_CONTEXT_POLICY.operation.producers.flatMap(({ rpcs }) => rpcs)),
+] as [OperationRpc, ...OperationRpc[]];
+const operationOutcomeValues = ADDITIONAL_CONTEXT_POLICY.operation.tupleStates
+	.filter(({ outcome }) => outcome !== "null")
+	.map(({ outcome }) => outcome) as [OperationOutcome, ...OperationOutcome[]];
+const deliveredOutcomeSchema = z.literal(operationOutcomeValues[0]);
+const notDeliveredOutcomeSchema = z.literal(operationOutcomeValues[1]);
+const outcomeUnknownSchema = z.literal(operationOutcomeValues[2]);
+
 function freezeDeep<T>(value: T): T {
 	if (typeof value !== "object" || value === null) return value;
 	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
@@ -38,10 +67,30 @@ const ArchboardContextRawSchema = z.strictObject({
 		version: z.number().finite().int().nonnegative(),
 		cursor: CursorSchema.nullable(),
 	}),
-	threadLink: z.strictObject({
-		state: z.enum(["executable", "inspect_only", "unbound"]),
-		reason: z.string().nullable(),
-	}),
+	threadLink: z
+		.strictObject({
+			state: z.enum(threadLinkStateValues),
+			reason: z.enum(threadLinkReasonValues).nullable(),
+		})
+		.superRefine((value, refinementContext) => {
+			const reasonNullStates = ADDITIONAL_CONTEXT_POLICY.threadLink
+				.reasonNullStates as readonly string[];
+			if (reasonNullStates.includes(value.state)) {
+				if (value.reason !== null)
+					refinementContext.addIssue({
+						code: "custom",
+						path: ["reason"],
+						message: `threadLink state ${value.state} requires null reason`,
+					});
+				return;
+			}
+			if (value.reason === null)
+				refinementContext.addIssue({
+					code: "custom",
+					path: ["reason"],
+					message: `threadLink state ${value.state} requires a non-null reason`,
+				});
+		}),
 	child: z.strictObject({
 		id: NonEmptyStringSchema,
 		epoch: NonEmptyStringSchema,
@@ -73,11 +122,52 @@ const ArchboardContextRawSchema = z.strictObject({
 		doing: DoingSchema.nullable(),
 	}),
 	ambiguity: z.array(AmbiguitySchema).max(16),
-	operation: z.strictObject({
-		id: NonEmptyStringSchema.nullable(),
-		kind: z.string().nullable(),
-		outcome: z.enum(["delivered", "not_delivered", "outcome_unknown"]).nullable(),
-	}),
+	operation: z
+		.union([
+			z.strictObject({
+				id: z.null(),
+				kind: z.null(),
+				rpc: z.null(),
+				outcome: z.null(),
+			}),
+			z.strictObject({
+				id: NonEmptyStringSchema,
+				kind: z.enum(operationKindValues),
+				rpc: z.enum(operationRpcValues),
+				outcome: z.null(),
+			}),
+			z.strictObject({
+				id: NonEmptyStringSchema,
+				kind: z.enum(operationKindValues),
+				rpc: z.enum(operationRpcValues),
+				outcome: deliveredOutcomeSchema,
+			}),
+			z.strictObject({
+				id: NonEmptyStringSchema,
+				kind: z.enum(operationKindValues),
+				rpc: z.enum(operationRpcValues),
+				outcome: notDeliveredOutcomeSchema,
+			}),
+			z.strictObject({
+				id: NonEmptyStringSchema,
+				kind: z.enum(operationKindValues),
+				rpc: z.enum(operationRpcValues),
+				outcome: outcomeUnknownSchema,
+			}),
+		])
+		.superRefine((value, refinementContext) => {
+			if (value.id === null) return;
+			const producer = ADDITIONAL_CONTEXT_POLICY.operation.producers.find(
+				({ kind }) => kind === value.kind,
+			);
+			if (producer !== undefined && (producer.rpcs as readonly string[]).includes(value.rpc))
+				return;
+			refinementContext.addIssue({
+				code: "custom",
+				path: ["rpc"],
+				message: `operation kind ${value.kind} does not allow rpc ${value.rpc}`,
+			});
+		}),
 });
 
 export const ArchboardContextSchema = ArchboardContextRawSchema.transform((value) =>
@@ -85,6 +175,17 @@ export const ArchboardContextSchema = ArchboardContextRawSchema.transform((value
 );
 
 export type ArchboardContext = z.infer<typeof ArchboardContextSchema>;
+
+function orderedOperation(value: ArchboardContext["operation"]): ArchboardContext["operation"] {
+	if (value.id === null) return { id: null, kind: null, rpc: null, outcome: null };
+	if (value.outcome === null)
+		return { id: value.id, kind: value.kind, rpc: value.rpc, outcome: null };
+	if (value.outcome === "delivered")
+		return { id: value.id, kind: value.kind, rpc: value.rpc, outcome: "delivered" };
+	if (value.outcome === "not_delivered")
+		return { id: value.id, kind: value.kind, rpc: value.rpc, outcome: "not_delivered" };
+	return { id: value.id, kind: value.kind, rpc: value.rpc, outcome: "outcome_unknown" };
+}
 
 function orderedContext(value: ArchboardContext): ArchboardContext {
 	return {
@@ -130,11 +231,7 @@ function orderedContext(value: ArchboardContext): ArchboardContext {
 			doing: value.claim.doing,
 		},
 		ambiguity: [...value.ambiguity],
-		operation: {
-			id: value.operation.id,
-			kind: value.operation.kind,
-			outcome: value.operation.outcome,
-		},
+		operation: orderedOperation(value.operation),
 	};
 }
 

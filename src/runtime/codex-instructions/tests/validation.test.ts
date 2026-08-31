@@ -47,14 +47,14 @@ const CONTEXT_KEY_ORACLE = {
 	focus: ["paneId", "capturedAtMs"],
 	selection: ["elementIds", "capturedAtMs"],
 	claim: ["holder", "doing"],
-	operation: ["id", "kind", "outcome"],
+	operation: ["id", "kind", "rpc", "outcome"],
 } as const;
 
 const CONTEXT_DOMAIN_ORACLE = {
 	schema: [1],
-	threadLinkState: ["executable", "inspect_only", "unbound"],
+	threadLinkState: ["unbound", "executable", "inspect_only"],
 	claimHolder: ["human", "agent", "none"],
-	operationOutcome: [null, "delivered", "not_delivered", "outcome_unknown"],
+	operationOutcome: ["delivered", "not_delivered", "outcome_unknown", null],
 } as const;
 
 function contextCopy(): ArchboardContext {
@@ -99,16 +99,12 @@ describe("independent context contract oracle", () => {
 		for (const state of CONTEXT_DOMAIN_ORACLE.threadLinkState) {
 			const candidate = contextCopy();
 			candidate.threadLink.state = state;
+			candidate.threadLink.reason = state === "inspect_only" ? "stale_child" : null;
 			expect(ArchboardContextSchema.safeParse(candidate).success).toBe(true);
 		}
 		for (const holder of CONTEXT_DOMAIN_ORACLE.claimHolder) {
 			const candidate = contextCopy();
 			candidate.claim.holder = holder;
-			expect(ArchboardContextSchema.safeParse(candidate).success).toBe(true);
-		}
-		for (const outcome of CONTEXT_DOMAIN_ORACLE.operationOutcome) {
-			const candidate = contextCopy();
-			candidate.operation.outcome = outcome;
 			expect(ArchboardContextSchema.safeParse(candidate).success).toBe(true);
 		}
 		const unknownState = contextCopy();
@@ -122,11 +118,113 @@ describe("independent context contract oracle", () => {
 		expect(ArchboardContextSchema.safeParse(unknownOutcome).success).toBe(false);
 
 		const pendingReason = contextCopy();
-		pendingReason.threadLink.reason = "review-pending-reason";
-		expect(ArchboardContextSchema.safeParse(pendingReason).success).toBe(true);
+		pendingReason.threadLink.reason = "review-pending-reason" as never;
+		expect(ArchboardContextSchema.safeParse(pendingReason).success).toBe(false);
 		const pendingKind = contextCopy();
-		pendingKind.operation.kind = "review-pending-kind";
-		expect(ArchboardContextSchema.safeParse(pendingKind).success).toBe(true);
+		pendingKind.operation.kind = "review-pending-kind" as never;
+		expect(ArchboardContextSchema.safeParse(pendingKind).success).toBe(false);
+		const pendingRpc = contextCopy();
+		pendingRpc.operation.rpc = "review-pending-rpc" as never;
+		expect(ArchboardContextSchema.safeParse(pendingRpc).success).toBe(false);
+	});
+});
+
+describe("closed thread-link and operation tuples", () => {
+	test("requires the reviewed reason nullability pairing", () => {
+		for (const state of ["unbound", "executable"] as const) {
+			const withReason = contextCopy();
+			withReason.threadLink.state = state;
+			withReason.threadLink.reason = "stale_child";
+			expect(ArchboardContextSchema.safeParse(withReason).success).toBe(false);
+		}
+		const withoutReason = contextCopy();
+		withoutReason.threadLink.state = "inspect_only";
+		withoutReason.threadLink.reason = null;
+		expect(ArchboardContextSchema.safeParse(withoutReason).success).toBe(false);
+		const validInspectOnly = contextCopy();
+		validInspectOnly.threadLink.state = "inspect_only";
+		validInspectOnly.threadLink.reason = "thread_list_ambiguous";
+		expect(ArchboardContextSchema.safeParse(validInspectOnly).success).toBe(true);
+	});
+
+	test("accepts only the five reviewed operation tuple states", () => {
+		const valid = [
+			{ id: null, kind: null, rpc: null, outcome: null },
+			{ id: "operation-1", kind: "composer_message", rpc: "turn/start", outcome: null },
+			{
+				id: "operation-1",
+				kind: "composer_message",
+				rpc: "turn/start",
+				outcome: "delivered",
+			},
+			{
+				id: "operation-1",
+				kind: "composer_message",
+				rpc: "turn/start",
+				outcome: "not_delivered",
+			},
+			{
+				id: "operation-1",
+				kind: "composer_message",
+				rpc: "turn/start",
+				outcome: "outcome_unknown",
+			},
+		] as const;
+		for (const operation of valid)
+			expect(ArchboardContextSchema.safeParse({ ...contextFixture, operation }).success).toBe(true);
+		expect(CONTEXT_DOMAIN_ORACLE.operationOutcome).toEqual([
+			"delivered",
+			"not_delivered",
+			"outcome_unknown",
+			null,
+		]);
+
+		const invalid = [
+			{ id: null, kind: null, rpc: null, outcome: "delivered" },
+			{ id: "operation-1", kind: null, rpc: "turn/start", outcome: "delivered" },
+			{ id: "operation-1", kind: "composer_message", rpc: null, outcome: "delivered" },
+			{ id: null, kind: "composer_message", rpc: "turn/start", outcome: null },
+			{ id: "operation-1", kind: "composer_message", rpc: "turn/start", outcome: "future" },
+		] as const;
+		for (const operation of invalid)
+			expect(ArchboardContextSchema.safeParse({ ...contextFixture, operation }).success).toBe(
+				false,
+			);
+	});
+
+	test("closes the operation RPC domain and rejects omitted or extra fields", () => {
+		const delivered = {
+			...contextFixture,
+			operation: {
+				id: "operation-1",
+				kind: "composer_message",
+				rpc: "turn/start",
+				outcome: "delivered",
+			},
+		};
+		expect(ArchboardContextSchema.safeParse(delivered).success).toBe(true);
+		expect(
+			ArchboardContextSchema.safeParse({
+				...delivered,
+				operation: { ...delivered.operation, rpc: "turn/other" },
+			}).success,
+		).toBe(false);
+		expect(
+			ArchboardContextSchema.safeParse({
+				...delivered,
+				operation: {
+					id: delivered.operation.id,
+					kind: delivered.operation.kind,
+					outcome: delivered.operation.outcome,
+				},
+			}).success,
+		).toBe(false);
+		expect(
+			ArchboardContextSchema.safeParse({
+				...delivered,
+				operation: { ...delivered.operation, extra: true },
+			}).success,
+		).toBe(false);
 	});
 });
 
