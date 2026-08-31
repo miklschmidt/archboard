@@ -33,6 +33,7 @@ import {
 	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
 	TEST_CANVAS_STARTUP_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
+import { stopOwnerMutation } from "./support/oxfmt-tailwind-owner-lifecycle.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const ownerScript = join(import.meta.dir, "support/oxfmt-tailwind-owner.ts");
@@ -263,6 +264,7 @@ async function stopOwner(
 		child.kill("SIGCONT");
 		child.kill("SIGTERM");
 		ownerTimedOut = !(await ownerExitedWithin(child));
+		if (ownerTimedOut && child.exitCode === null) await stopOwnerMutation(child);
 	}
 	const state = existsSync(stateFile(container))
 		? readOwnerState(stateFile(container))
