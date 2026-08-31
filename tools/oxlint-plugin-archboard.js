@@ -353,9 +353,13 @@ const assistantUiImports = createRule(
 				else if (owner) report(context, node, "noAssistantUiNonLiteral");
 			},
 			AssignmentExpression(node) {
-				if (node.left?.type !== "Identifier" || node.right?.type !== "Identifier") return;
+				if (node.right?.type !== "Identifier") return;
 				const importedName = localAssistantUiMembers.get(node.right.name);
 				if (!importedName) return;
+				if (node.left?.type !== "Identifier") {
+					report(context, node, "noAssistantUiAlias");
+					return;
+				}
 				report(context, node, "noAssistantUiAlias");
 				localAssistantUiMembers.set(node.left.name, importedName);
 			},
