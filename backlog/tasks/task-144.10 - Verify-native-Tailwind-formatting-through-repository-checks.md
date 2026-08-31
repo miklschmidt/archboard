@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 02:36'
+updated_date: '2026-08-31 02:51'
 labels: []
 dependencies:
   - TASK-144.06
@@ -15,6 +15,8 @@ modified_files:
   - tests/system/repository-policy/oxfmt-tailwind.test.ts
   - tests/system/repository-policy/support/oxfmt-tailwind-owner.ts
   - tests/system/repository-policy/support/oxfmt-tailwind-fixture.ts
+  - tests/system/repository-policy/support/oxfmt-tailwind-process.ts
+  - tests/system/repository-policy/oxfmt-tailwind-owner-reader.test.ts
 parent_task_id: TASK-144
 priority: high
 type: task
@@ -45,6 +47,9 @@ Delegation profile: gpt-5.6-luna, high.
 2. Add one disposable repository-policy owner that creates a deliberately unsorted isolated fixture, proves the real fmt:check fails actionably, runs the real fmt command, and proves the real fmt:check then passes with native className and cn ordering while dynamic expressions remain unchanged.
 
 3. Make cleanup unconditional across success, failure, signal, and assertion paths; prove the authored checkout and reproducible artifacts remain unchanged, then run focused, repository, module, type, lint, format, and frontend gates.
+
+4. Remediate the integration race by distinguishing vanished /proc entries from real reader failures, publishing refresh failures through owner state, preserving exact cleanup, and adding injected-reader regressions for ENOENT, EACCES, and malformed process metadata.
+5. Run only the focused owner tests plus type-check, touched-file lint/format, and diff/scope checks; leave the task In Progress for parent review.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -61,4 +66,8 @@ Reviewer remediation 2: each owner bun run child now has a bounded execution and
 Integration follow-up: fixed a real nondeterministic owner race where /proc refresh observed a formatter PID disappearing before process-group lookup, causing an uncaught exit before readiness/result publication. Process-group lookup is now disappearance-safe and stale PIDs are skipped; owner errors preserve AggregateError primary and cleanup details, and startup diagnostics include root/process-group cleanup evidence.
 
 Code commit: 960186f (separate from Backlog evidence). Validation: 10 consecutive focused SIGTERM fmt-owner runs passed; 5 consecutive complete focused owner-suite runs passed; final focused suite passed 8/8 with 322 assertions; bun run type-check passed; touched-file oxlint and oxfmt passed; no formatter processes or fixture temp roots remained.
+
+Reviewer P2 remediation: centralized /proc access behind an injected ProcessReader. processGroupOf now returns undefined only for ENOENT/ESRCH; cmdline/stat and directory-reader failures otherwise throw actionable errors, malformed stat records and invalid non-kernel process groups fail closed, and the owner interval captures the first refresh failure in owner-state.json while continuing exact known-group/root cleanup. AggregateError formatting now retains execution, refresh, and cleanup evidence.
+
+Added focused reader regressions for vanished PID, EACCES stat/cmdline, malformed stat, invalid group, and exact root/known-group cleanup. Code commit: ac50288 (separate from Backlog evidence). Validation: reader suite 6/6 with 15 assertions; real owner suite 8/8 with 322 assertions; 10 consecutive focused SIGTERM fmt-owner runs passed; bun run type-check passed; scoped oxlint and oxfmt passed; git diff --check passed; no formatter processes or temporary fixture roots remained after residue cleanup. Broad lanes remain intentionally skipped under the durable OOM constraint.
 <!-- SECTION:NOTES:END -->
