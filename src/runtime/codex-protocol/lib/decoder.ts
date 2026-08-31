@@ -7,7 +7,6 @@ import {
 } from "./client-request-schemas.js";
 import {
 	CLIENT_NOTIFICATION_SCHEMAS,
-	InitializeParamsSchema,
 	JsonRpcErrorSchema,
 	LoginAccountParamsSchema,
 	SERVER_REQUEST_SCHEMAS,
@@ -272,10 +271,6 @@ export function decodeResponse(method: string, payload: unknown): unknown {
 			});
 	}
 	return decoded;
-}
-
-export function decodeInitializeParams(value: unknown) {
-	return decodeSchema("initialize", "client-request", InitializeParamsSchema, value);
 }
 
 export function decodeLoginAccountParams(value: unknown) {

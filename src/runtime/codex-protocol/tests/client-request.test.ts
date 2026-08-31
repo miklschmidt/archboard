@@ -63,11 +63,15 @@ describe("Codex generated client request params", () => {
 		}
 	});
 
-	test("accepts the generated initialize envelope beyond the authored session policy", () => {
+	test("owns the public initialize wire decoder beyond the authored session policy", async () => {
+		const publicProtocol = await import("../index.js");
 		const generatedParams = {
 			clientInfo: { name: "archboard", title: null, version: "1" },
 			capabilities: null,
 		};
+		expect(publicProtocol).not.toHaveProperty("decodeInitializeParams");
+		expect(publicProtocol).not.toHaveProperty("InitializeCapabilitiesSchema");
+		expect(publicProtocol).not.toHaveProperty("InitializeParamsSchema");
 		expect(decodeClientRequestParams("initialize", generatedParams)).toEqual(generatedParams);
 	});
 
