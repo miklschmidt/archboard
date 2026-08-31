@@ -1,13 +1,6 @@
 import { buildSemanticBrief } from "./brief.js";
 import { SEMANTIC_CONTEXT_LIMITS } from "./limits.js";
-import {
-	byteLength,
-	clipJsonUtf8,
-	deepFreeze,
-	fail,
-	jsonStringByteLength,
-	textValue,
-} from "./normalize.js";
+import { byteLength, clipJsonUtf8, deepFreeze, feedIdValue, fail, textValue } from "./normalize.js";
 import type {
 	FreshSemanticBrief,
 	PaneFocusEvent,
@@ -41,8 +34,7 @@ const LISTENER_DIAGNOSTIC_RECORD_FIXED_BYTES =
 			errorName: "",
 			message: "",
 		}),
-	) -
-	jsonStringByteLength("") * 2;
+	) - 4;
 const LISTENER_DIAGNOSTIC_MAX_RECORD_BYTES =
 	LISTENER_DIAGNOSTIC_RECORD_FIXED_BYTES +
 	LISTENER_DIAGNOSTIC_ERROR_NAME_BYTES +
@@ -94,11 +86,7 @@ function withKind(
 }
 
 function validateFeedId(feedId: string): string {
-	const result = textValue(feedId, "feedId", SEMANTIC_CONTEXT_LIMITS.cursorBytes);
-	if (result.truncated) {
-		fail("feedId", `must not exceed ${SEMANTIC_CONTEXT_LIMITS.cursorBytes} UTF-8 bytes`);
-	}
-	return result.value;
+	return feedIdValue(feedId, "feedId");
 }
 
 function validOrigin(value: unknown): value is SemanticChangeOrigin {

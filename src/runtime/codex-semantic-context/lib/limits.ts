@@ -6,6 +6,7 @@ export const SEMANTIC_CONTEXT_LIMITS = Object.freeze({
 	ambiguityBytes: 256,
 	doingBytes: 512,
 	cursorBytes: 1_024,
+	feedIdJsonBytes: 3_074,
 	paneIdBytes: 128,
 	reasonBytes: 512,
 	repositoryBytes: 2_048,

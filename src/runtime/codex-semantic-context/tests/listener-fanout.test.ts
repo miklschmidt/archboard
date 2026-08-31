@@ -195,14 +195,21 @@ describe("semantic context listener fanout", () => {
 	test("clips JSON-hostile diagnostic strings without exceeding the byte policy", () => {
 		const h = publisherWithFeed();
 		const controls = String.fromCharCode(...Array.from({ length: 32 }, (_, index) => index));
-		const hostile = `name " \\\b\t\n\f\r${controls}\ud800\udc00𝄞界`;
+		const hostilePrefix = `name " \\\b\t\n\f\r${controls}\ud800\udc00𝄞界`;
+		const megabyte = `${hostilePrefix}${"x".repeat(1_050_000)}`;
+		expect(utf8(megabyte)).toBeGreaterThanOrEqual(1_048_576);
+		let laterDeliveries = 0;
 		h.publisher.subscribeSettledChange(() => {
-			const error = new Error(hostile.repeat(100));
-			error.name = hostile.repeat(100);
+			const error = new Error(megabyte);
+			error.name = megabyte;
 			throw error;
+		});
+		h.publisher.subscribeSettledChange(() => {
+			laterDeliveries++;
 		});
 
 		h.emit(change(1));
+		expect(laterDeliveries).toBe(1);
 		const batch = h.publisher.drainListenerFailures();
 		const entry = batch.entries[0];
 		if (entry === undefined) throw new Error("expected a listener diagnostic");
@@ -218,6 +225,10 @@ describe("semantic context listener fanout", () => {
 		);
 		expect(entry.errorName.endsWith("…")).toBe(true);
 		expect(entry.message.endsWith("…")).toBe(true);
+		h.emit(change(2));
+		expect(laterDeliveries).toBe(2);
+		expect(h.publisher.drainListenerFailures().entries).toHaveLength(1);
+		expect(h.publisher.drainListenerFailures()).toEqual({ entries: [], droppedCount: 0 });
 	});
 
 	test("contains hostile thrown values and recovers without suppressing later listeners", () => {

@@ -37,7 +37,7 @@ type BriefContext = {
 
 interface FitParts {
 	readonly context: BriefContext;
-	feedId: string;
+	readonly feedId: string;
 	selection: string[];
 	ambiguity: string[];
 	description: string;
@@ -174,15 +174,8 @@ function fitAggregate(
 	parts.selection = [];
 	parts.ambiguity = [];
 	parts.staleness.reasons = [];
+	// Both qualified identities stay exact. The remaining slots fit around them.
 	const slots: readonly TextSlot[] = [
-		{
-			original: feedId,
-			empty: "",
-			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
-			set: (value) => {
-				parts.feedId = value ?? SEMANTIC_CONTEXT_ELLIPSIS;
-			},
-		},
 		{
 			original: context.repository,
 			empty: "",
@@ -276,16 +269,6 @@ function fitAggregate(
 			},
 		},
 		{
-			original: context.cursor?.feedId ?? null,
-			empty: null,
-			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
-			set: (value) => {
-				if (context.cursor !== null) {
-					context.cursor = { ...context.cursor, feedId: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
-				}
-			},
-		},
-		{
 			original: parts.description,
 			empty: "",
 			minimum: "",
@@ -318,13 +301,11 @@ function fitAggregate(
 			},
 		},
 	];
-	for (const slot of slots) {
-		slot.set(slot.minimum);
-	}
+	for (const slot of slots) slot.set(slot.minimum);
 	if (byteLength(render(context, parts)) > SEMANTIC_CONTEXT_LIMITS.briefBytes) {
 		fail(
 			"brief",
-			`fixed semantic identity fields exceed ${SEMANTIC_CONTEXT_LIMITS.briefBytes} UTF-8 bytes`,
+			`qualified cursor identities exceed ${SEMANTIC_CONTEXT_LIMITS.briefBytes} UTF-8 bytes`,
 		);
 	}
 	for (const slot of slots) fitTextSlot(parts, context, slot);
@@ -341,7 +322,7 @@ function fitAggregate(
 	if (byteLength(brief) > SEMANTIC_CONTEXT_LIMITS.briefBytes) {
 		fail(
 			"brief",
-			`fixed semantic identity fields exceed ${SEMANTIC_CONTEXT_LIMITS.briefBytes} UTF-8 bytes`,
+			`qualified cursor identities exceed ${SEMANTIC_CONTEXT_LIMITS.briefBytes} UTF-8 bytes`,
 		);
 	}
 	return { ...parts, brief };
