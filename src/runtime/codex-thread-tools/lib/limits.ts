@@ -21,7 +21,7 @@ function isWellFormedUnicode(value: string): boolean {
 	return true;
 }
 
-/** Enforce JSON Schema code-point length and the authored UTF-8 byte ceiling. */
+/** Enforce the JSON Schema string length in Unicode code points. */
 export const boundedText = (maximum: number) =>
 	z
 		.string()
@@ -31,10 +31,19 @@ export const boundedText = (maximum: number) =>
 				context.addIssue({ code: "custom", message: "text must be well-formed Unicode" });
 			if (Array.from(value).length > maximum)
 				context.addIssue({ code: "custom", message: `text exceeds ${maximum} code points` });
-			if (value.includes("\0"))
-				context.addIssue({ code: "custom", message: "text must not contain NUL" });
+		});
+
+/** Enforce an explicit UTF-8 byte ceiling without imposing a second code-point limit. */
+export const boundedUtf8Text = (maximum: number) =>
+	z
+		.string()
+		.min(1)
+		.superRefine((value, context) => {
+			if (!isWellFormedUnicode(value))
+				context.addIssue({ code: "custom", message: "text must be well-formed Unicode" });
 			if (Buffer.byteLength(value, "utf8") > maximum)
 				context.addIssue({ code: "custom", message: `text exceeds ${maximum} UTF-8 bytes` });
 		});
 
 export const nullableText = (maximum: number) => boundedText(maximum).nullable();
+export const nullableUtf8Text = (maximum: number) => boundedUtf8Text(maximum).nullable();
