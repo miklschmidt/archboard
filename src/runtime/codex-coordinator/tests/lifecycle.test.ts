@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, jest, test } from "bun:test";
 
 import { CodexSessionMutationError } from "../../codex-session/index.js";
 import type {
@@ -14,7 +14,12 @@ import {
 	createCoordinatorThreadStartParams,
 } from "../index.js";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
 import { CHECKOUT_ROOT, coordinatorModel, fixture, type Fixture } from "./support.js";
+
+async function flushMicrotasks(): Promise<void> {
+	for (let turn = 0; turn < 8; turn += 1) await Promise.resolve();
+}
 
 async function ready(
 	fixtureValue: Fixture,
@@ -146,16 +151,57 @@ describe("coordinator lifecycle", () => {
 		expect(second.reason).toContain("uncertain");
 	});
 
-	test("quarantines a notification that changes a preserved setting", async () => {
+	test("expires after a delivered empty update without a matching notification", async () => {
 		const fixtureValue = fixture({
-			settingsOverrides: { sandboxPolicy: { type: "readOnly", networkAccess: false } },
+			emitSettings: false,
 		});
-		const snapshot = await fixtureValue.coordinator.ensure({ operationId: "mismatched-settings" });
+		jest.useFakeTimers();
+		try {
+			const pending = fixtureValue.coordinator.ensure({ operationId: "settings-timeout" });
+			await flushMicrotasks();
+			jest.advanceTimersByTime(CODEX_REQUEST_SETTLEMENT_MS);
+			const snapshot = await pending;
+			const retry = await fixtureValue.coordinator.ensure({
+				operationId: "settings-timeout-retry",
+			});
 
-		expect(snapshot.state).toBe("inspect_only");
-		expect(snapshot.reason).toContain("sandbox policy");
-		expect(fixtureValue.epoch.records[0]?.outcome).toBe("outcome_unknown");
-		expect(fixtureValue.session.updateParams).toHaveLength(1);
+			expect(snapshot.state).toBe("inspect_only");
+			expect(snapshot.threadId).not.toBeNull();
+			expect(snapshot.reason).toContain("did not match");
+			expect(fixtureValue.epoch.records[0]?.outcome).toBe("outcome_unknown");
+			expect(fixtureValue.epoch.unknownCalls).toBe(1);
+			expect(retry.state).toBe("inspect_only");
+			expect(fixtureValue.epoch.unknownCalls).toBe(1);
+			expect(fixtureValue.session.startParams).toHaveLength(1);
+			expect(fixtureValue.session.updateParams).toHaveLength(1);
+		} finally {
+			jest.useRealTimers();
+		}
+	});
+
+	test("retains an earlier same-thread mismatch until a later exact notification", async () => {
+		const fixtureValue = fixture({ emitSettings: false });
+		jest.useFakeTimers();
+		try {
+			const pending = fixtureValue.coordinator.ensure({ operationId: "mismatch-then-exact" });
+			await flushMicrotasks();
+			const mismatchedSettings = {
+				...fixtureValue.session.threadSettings,
+				activePermissionProfile: { id: "other-profile", extends: null },
+			};
+			fixtureValue.session.emitSettingsNotification(mismatchedSettings);
+			await flushMicrotasks();
+			expect(fixtureValue.coordinator.snapshot().state).toBe("starting");
+			expect(fixtureValue.epoch.records[0]?.status).toBe("staged");
+
+			fixtureValue.session.emitSettingsNotification();
+			const snapshot = await pending;
+			expect(snapshot.state).toBe("ready");
+			expect(fixtureValue.epoch.records[0]?.status).toBe("committed");
+			expect(fixtureValue.session.updateParams).toHaveLength(1);
+		} finally {
+			jest.useRealTimers();
+		}
 	});
 
 	test("fails the ensure when the current epoch is unavailable", async () => {

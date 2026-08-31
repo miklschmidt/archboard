@@ -2,6 +2,7 @@ import { CodexSessionMutationError } from "../../codex-session/index.js";
 import type { SessionNotificationHandler } from "../../codex-session/index.js";
 import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
 import {
 	CodexCoordinatorError,
 	type CodexCoordinatorOptions,
@@ -44,6 +45,7 @@ interface PendingSettingsNotification {
 	readonly configured: CoordinatorConfiguredSettings;
 	readonly resolve: (settings: CoordinatorThreadSettings) => void;
 	readonly reject: (error: CodexCoordinatorError) => void;
+	readonly cancel: () => void;
 }
 
 export interface CoordinatorStartHooks {
@@ -84,11 +86,8 @@ export function createCoordinatorStarter(
 			pending.configured,
 			notification.params.threadSettings,
 		);
-		pendingSettings = null;
-		if (mismatch !== null) {
-			pending.reject(new CodexCoordinatorError("settings_mismatch", mismatch));
-			return;
-		}
+		if (mismatch !== null) return;
+		pending.cancel();
 		pending.resolve(notification.params.threadSettings);
 	};
 
@@ -215,7 +214,11 @@ export function createCoordinatorStarter(
 		try {
 			notificationSettings = await waiting.promise;
 		} catch (error) {
-			markUnknown(transaction, "coordinator settings notification did not match", startedThreadId);
+			markUnknown(
+				transaction,
+				"coordinator settings notification settlement expired",
+				startedThreadId,
+			);
 			hooks.setPersistence(null);
 			hooks.setSnapshot(
 				inspectSnapshot(startedThreadId, operationId, configured, null, null, errorMessage(error)),
@@ -294,13 +297,33 @@ export function createCoordinatorStarter(
 			resolve = promiseResolve;
 			reject = promiseReject;
 		});
-		const pending: PendingSettingsNotification = { threadId, started, configured, resolve, reject };
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		const pending: PendingSettingsNotification = {
+			threadId,
+			started,
+			configured,
+			resolve,
+			reject,
+			cancel: () => {
+				if (pendingSettings !== pending) return;
+				pendingSettings = null;
+				if (timer !== undefined) clearTimeout(timer);
+			},
+		};
 		pendingSettings = pending;
+		timer = setTimeout(() => {
+			if (pendingSettings !== pending) return;
+			pendingSettings = null;
+			reject(
+				new CodexCoordinatorError(
+					"settings_timeout",
+					`The coordinator settings notification did not match within ${CODEX_REQUEST_SETTLEMENT_MS} ms; inspect the authoritative thread list.`,
+				),
+			);
+		}, CODEX_REQUEST_SETTLEMENT_MS);
 		return {
 			promise,
-			cancel: () => {
-				if (pendingSettings === pending) pendingSettings = null;
-			},
+			cancel: pending.cancel,
 		};
 	}
 

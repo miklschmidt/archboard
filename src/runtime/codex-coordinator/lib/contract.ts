@@ -176,7 +176,8 @@ export type CoordinatorErrorCode =
 	| "epoch_unavailable"
 	| "transaction_failed"
 	| "invalid_start_response"
-	| "settings_mismatch";
+	| "settings_mismatch"
+	| "settings_timeout";
 
 export class CodexCoordinatorError extends Error {
 	override readonly name = "CodexCoordinatorError";
