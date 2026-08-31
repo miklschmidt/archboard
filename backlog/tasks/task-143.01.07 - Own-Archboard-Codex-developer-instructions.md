@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-30 22:59'
+updated_date: '2026-08-31 01:14'
 labels: []
 dependencies:
   - TASK-143.01.17
@@ -53,4 +53,6 @@ Batch reservation at integration HEAD 7e0c8ae: newly ready scoped leaves are exa
 Implemented the scoped src/runtime/codex-instructions boundary: tracked UTF-8 role documents load with fixed SHA-256 validation; canonical context, turn/start, turn/steer, thread/inject_items, and fork builders use strict schemas and deep-frozen outputs. Added byte/body mutation fixtures for encoding, boundary, order, schema, role, omission, and hash drift cases. Focused validation passed: 11 tests, 81 expectations; tsc, Oxlint, and Oxfmt checks passed.
 
 Review remediation applied without changing authored bytes or pending reason/kind domains: platform-native lexical checkout validation now rejects foreign and noncanonical roots; prompt and identity lower bounds reject empty values; exported validation schemas return independent deep-frozen values; independent tests pin the complete context key/known-domain oracle and negative paths. Final validation: focused module tests 46 pass/196 expectations; bun run test:modules 1,039 pass/7,171 expectations; bun run test:repository 122 pass/381 expectations; both TypeScript projects, Oxlint, Oxfmt, and diff check pass. Finding 1 remains pending authored-domain decision.
+
+Replacement remediation pass (2026-08-31): added the runtime ADDITIONAL_CONTEXT_POLICY mirror and wired ArchboardContextSchema to the closed thread-link states/reasons, operation tuple states, producer RPC sets, and canonical operation field order. Added an independent reviewed-manifest oracle and mutation coverage in the owned module tests. Canonical manifest reconciliation against e9fd2144bcde98fba4c14267c7d537223c02a81e was exact; authored instruction/workhorse/coordinator bytes were unchanged. Validation: bun run test:modules (1048 pass), bun run test:repository (122 pass), both TypeScript graphs, bun run lint, bun run fmt:check, and git diff --check.
 <!-- SECTION:NOTES:END -->
