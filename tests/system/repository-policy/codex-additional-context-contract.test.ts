@@ -1,176 +1,385 @@
 import { describe, expect, test } from "bun:test";
 import {
 	canonical,
+	canonicalOperationFields,
+	canonicalRootFields,
+	canonicalThreadLinkFields,
+	cloneCanonical,
 	cloneManifest,
 	evidenceRows,
 	linkPolicy,
+	linkPolicyFields,
 	manifest,
+	manifestRootFields,
 	operationPolicy,
+	operationPolicyFields,
 	producerRows,
+	reasonNullStates,
+	reasonRequiredStates,
 	reasonRows,
 	record,
 	records,
 	strings,
+	threadLinkStates,
 	transitionRows,
 	tupleRows,
+	union,
 	validateCanonicalContext,
 	validateManifest,
+	validateThreadLinkPair,
+	type JsonRecord,
 } from "./support/codex-additional-context-policy.js";
+import {
+	expectObjectSurfaceAttacks,
+	expectOrderedSetAttacks,
+	expectRowCollectionAttacks,
+	expectRowFieldAttacks,
+	type Selector,
+	type Values,
+} from "./support/codex-additional-context-mutations.js";
+
+type RowCase = readonly [
+	(root: JsonRecord) => JsonRecord[],
+	readonly JsonRecord[],
+	(row: JsonRecord) => string,
+	JsonRecord,
+	string,
+];
+function arrayValues(select: (root: JsonRecord) => unknown): Values {
+	return {
+		get: (root) => [...strings(select(root), "ordered values")],
+		set: (root, values) => {
+			const target = strings(select(root), "ordered values");
+			target.splice(0, target.length, ...values);
+		},
+	};
+}
+
+function unionValues(select: Selector, field: string, label: string): Values {
+	return {
+		get: (root) => union(select(root)[field], label),
+		set: (root, values) => {
+			select(root)[field] = values.join("|");
+		},
+	};
+}
+
+const canonicalLink = (root: JsonRecord): JsonRecord =>
+	record(root.threadLink, "canonical threadLink");
+const canonicalOperation = (root: JsonRecord): JsonRecord =>
+	record(root.operation, "canonical operation");
+
+const reasons = (root: JsonRecord): JsonRecord[] =>
+	records(linkPolicy(root).reasonPrecedence, "reasons");
+const producers = (root: JsonRecord): JsonRecord[] =>
+	records(operationPolicy(root).producers, "producers");
+const tuples = (root: JsonRecord): JsonRecord[] =>
+	records(operationPolicy(root).tupleStates, "tuple states");
+const transitions = (root: JsonRecord): JsonRecord[] =>
+	records(operationPolicy(root).outcomeTransitions, "transitions");
+const evidence = (root: JsonRecord): JsonRecord[] =>
+	records(operationPolicy(root).turnEvidence, "turn evidence");
+const evidenceKey = (row: JsonRecord): string =>
+	`${String(row.event)}:${String(row.status ?? "-")}`;
+const rowCases: readonly RowCase[] = [
+	[
+		reasons,
+		reasonRows,
+		(row) => String(row.reason),
+		{ reason: "unreviewed_reason", condition: "unreviewed_condition" },
+		"threadLink reasons",
+	],
+	[
+		producers,
+		producerRows,
+		(row) => String(row.kind),
+		{ kind: "unreviewed_operation" },
+		"operation producers",
+	],
+	[tuples, tupleRows, (row) => String(row.state), { state: "unreviewed_state" }, "tuple states"],
+	[
+		transitions,
+		transitionRows,
+		(row) => `${String(row.from)}:${String(row.event)}`,
+		{ from: "unreviewed", event: "unreviewed" },
+		"outcome transitions",
+	],
+	[evidence, evidenceRows, evidenceKey, { event: "unreviewed" }, "turn evidence"],
+];
 
 describe("Codex additional-context authored policy", () => {
-	test("matches the canonical context and fixed structured manifest", () => {
+	test("matches the canonical schema, manifest, and every thread-link pair", () => {
 		expect(() => validateManifest(manifest)).not.toThrow();
 		expect(() => validateCanonicalContext(canonical)).not.toThrow();
-	});
-
-	test("rejects reason deletion, reorder, addition, and duplication", () => {
-		for (const [index, expected] of reasonRows.entries()) {
-			const changed = cloneManifest();
-			records(linkPolicy(changed).reasonPrecedence, "reasons").splice(index, 1);
-			expect(() => validateManifest(changed)).toThrow(
-				`threadLink reasons is missing ${expected.reason}`,
-			);
-		}
-		const reordered = cloneManifest();
-		const reorderedRows = records(linkPolicy(reordered).reasonPrecedence, "reasons");
-		[reorderedRows[0], reorderedRows[1]] = [reorderedRows[1]!, reorderedRows[0]!];
-		expect(() => validateManifest(reordered)).toThrow("threadLink reasons reordered stale_child");
-		const added = cloneManifest();
-		records(linkPolicy(added).reasonPrecedence, "reasons").push({
-			reason: "unreviewed_reason",
-			condition: "unreviewed_condition",
-		});
-		expect(() => validateManifest(added)).toThrow("threadLink reasons has extra unreviewed_reason");
-		const duplicated = cloneManifest();
-		const duplicatedRows = records(linkPolicy(duplicated).reasonPrecedence, "reasons");
-		duplicatedRows.push(structuredClone(duplicatedRows[0]!));
-		expect(() => validateManifest(duplicated)).toThrow(
-			"threadLink reasons has duplicate stale_child",
-		);
-	});
-
-	test("rejects producer structure and every producer contradiction", () => {
-		for (const [index, expected] of producerRows.entries()) {
-			const deleted = cloneManifest();
-			records(operationPolicy(deleted).producers, "producers").splice(index, 1);
-			expect(() => validateManifest(deleted)).toThrow(
-				`operation producers is missing ${expected.kind}`,
-			);
-
-			for (const field of ["rpcs", "operationIdSource", "omitWhen"] as const) {
-				const contradicted = cloneManifest();
-				const producer = records(operationPolicy(contradicted).producers, "producers")[index]!;
-				producer[field] = field === "operationIdSource" ? "wrong_source" : ["wrong_value"];
-				expect(() => validateManifest(contradicted)).toThrow(
-					`operation producers ${expected.kind} changed`,
+		for (const state of reasonNullStates) {
+			expect(() => validateThreadLinkPair(state, null)).not.toThrow();
+			for (const { reason } of reasonRows) {
+				expect(() => validateThreadLinkPair(state, reason)).toThrow(
+					`threadLink state ${state} requires null reason`,
 				);
 			}
 		}
-		const reordered = cloneManifest();
-		const rows = records(operationPolicy(reordered).producers, "producers");
-		[rows[0], rows[1]] = [rows[1]!, rows[0]!];
-		expect(() => validateManifest(reordered)).toThrow(
-			"operation producers reordered composer_message",
+		for (const state of reasonRequiredStates) {
+			expect(() => validateThreadLinkPair(state, null)).toThrow(
+				`threadLink state ${state} requires a non-null reason`,
+			);
+			for (const { reason } of reasonRows) {
+				expect(() => validateThreadLinkPair(state, reason)).not.toThrow();
+			}
+		}
+		expect(() => validateThreadLinkPair("unknown", null)).toThrow(
+			"threadLink state has unknown unknown",
 		);
-		const added = cloneManifest();
-		records(operationPolicy(added).producers, "producers").push({
-			kind: "unreviewed_operation",
-			rpcs: ["turn/start"],
-			operationIdSource: "host_minted",
-			omitWhen: [],
-		});
-		expect(() => validateManifest(added)).toThrow(
-			"operation producers has extra unreviewed_operation",
-		);
-		const duplicated = cloneManifest();
-		const duplicateRows = records(operationPolicy(duplicated).producers, "producers");
-		duplicateRows.push(structuredClone(duplicateRows[0]!));
-		expect(() => validateManifest(duplicated)).toThrow(
-			"operation producers has duplicate composer_message",
+		expect(() => validateThreadLinkPair("inspect_only", "unknown")).toThrow(
+			"threadLink reason has unknown unknown",
 		);
 	});
 
-	test("rejects every tuple-state mutation and transition drift", () => {
-		for (const [index, expected] of tupleRows.entries()) {
-			const changed = cloneManifest();
-			records(operationPolicy(changed).tupleStates, "tuple states")[index]!.outcome = "wrong";
-			expect(() => validateManifest(changed)).toThrow(`tuple states ${expected.state} changed`);
-		}
-		for (const [index, expected] of transitionRows.entries()) {
-			const changed = cloneManifest();
-			records(operationPolicy(changed).outcomeTransitions, "transitions").splice(index, 1);
-			expect(() => validateManifest(changed)).toThrow(
-				`outcome transitions is missing ${expected.from}:${expected.event}`,
+	test("rejects every canonical object and union drift", () => {
+		expectObjectSurfaceAttacks(
+			cloneCanonical,
+			(root) => root,
+			validateCanonicalContext,
+			"canonical root fields",
+			canonicalRootFields,
+		);
+		expectObjectSurfaceAttacks(
+			cloneCanonical,
+			(root) => record(root.threadLink, "canonical threadLink"),
+			validateCanonicalContext,
+			"canonical threadLink fields",
+			canonicalThreadLinkFields,
+		);
+		expectObjectSurfaceAttacks(
+			cloneCanonical,
+			(root) => record(root.operation, "canonical operation"),
+			validateCanonicalContext,
+			"canonical operation fields",
+			canonicalOperationFields,
+		);
+		const schema = cloneCanonical();
+		schema.schema = 2;
+		expect(() => validateCanonicalContext(schema)).toThrow("canonical schema changed");
+		const id = cloneCanonical();
+		record(id.operation, "canonical operation").id = "<wrong>";
+		expect(() => validateCanonicalContext(id)).toThrow("canonical operation.id changed");
+
+		for (const [field, label, expected] of [
+			["state", "canonical state union", threadLinkStates],
+			["reason", "canonical reason union", [...reasonRows.map((row) => row.reason), "null"]],
+		] as const) {
+			expectOrderedSetAttacks(
+				cloneCanonical,
+				unionValues(canonicalLink, field, label),
+				validateCanonicalContext,
+				label,
+				expected,
 			);
 		}
-		const reordered = cloneManifest();
-		const reorderedRows = records(operationPolicy(reordered).outcomeTransitions, "transitions");
-		[reorderedRows[0], reorderedRows[1]] = [reorderedRows[1]!, reorderedRows[0]!];
-		expect(() => validateManifest(reordered)).toThrow(
-			"outcome transitions reordered null:rpc_settled_successfully",
-		);
-		const duplicated = cloneManifest();
-		const duplicateRows = records(operationPolicy(duplicated).outcomeTransitions, "transitions");
-		duplicateRows.push(structuredClone(duplicateRows[0]!));
-		expect(() => validateManifest(duplicated)).toThrow(
-			"outcome transitions has duplicate null:rpc_settled_successfully",
-		);
-		const downgraded = cloneManifest();
-		const transitions = records(operationPolicy(downgraded).outcomeTransitions, "transitions");
-		transitions[3]!.to = "not_delivered";
-		expect(() => validateManifest(downgraded)).toThrow(
-			"outcome transitions outcome_unknown:exact_positive_correlation changed",
-		);
-		const illegal = cloneManifest();
-		records(operationPolicy(illegal).outcomeTransitions, "transitions").push({
-			from: "delivered",
-			event: "turn_failed",
-			to: "not_delivered",
-		});
-		expect(() => validateManifest(illegal)).toThrow(
-			"outcome transitions has extra delivered:turn_failed",
-		);
+		for (const [field, label, expected] of [
+			["kind", "canonical kind union", [...producerRows.map((row) => row.kind), "null"]],
+			["rpc", "canonical rpc union", ["turn/start", "turn/steer", "null"]],
+			[
+				"outcome",
+				"canonical outcome union",
+				["delivered", "not_delivered", "outcome_unknown", "null"],
+			],
+		] as const) {
+			expectOrderedSetAttacks(
+				cloneCanonical,
+				unionValues(canonicalOperation, field, label),
+				validateCanonicalContext,
+				label,
+				expected,
+			);
+		}
 	});
 
-	test("rejects lifecycle deletion, reorder, downgrade, and premature clearing", () => {
-		for (const [index, expected] of evidenceRows.entries()) {
-			const key = `${expected.event}:${"status" in expected ? expected.status : "-"}`;
-			const deleted = cloneManifest();
-			records(operationPolicy(deleted).turnEvidence, "turn evidence").splice(index, 1);
-			expect(() => validateManifest(deleted)).toThrow(`turn evidence is missing ${key}`);
+	test("rejects every manifest object and ordered-set drift", () => {
+		expectObjectSurfaceAttacks(
+			cloneManifest,
+			(root) => root,
+			validateManifest,
+			"manifest fields",
+			manifestRootFields,
+		);
+		expectObjectSurfaceAttacks(
+			cloneManifest,
+			linkPolicy,
+			validateManifest,
+			"threadLink policy fields",
+			linkPolicyFields,
+		);
+		expectObjectSurfaceAttacks(
+			cloneManifest,
+			operationPolicy,
+			validateManifest,
+			"operation policy fields",
+			operationPolicyFields,
+		);
+		const manifestSchema = cloneManifest();
+		manifestSchema.schema = 2;
+		expect(() => validateManifest(manifestSchema)).toThrow("manifest schema changed");
+		const classificationTarget = cloneManifest();
+		linkPolicy(classificationTarget).classificationTarget = "recent_thread";
+		expect(() => validateManifest(classificationTarget)).toThrow("classification target changed");
+		for (const [field, label, expected] of [
+			[
+				"exhaustBeforePrecedence",
+				"classification exhaustion",
+				["thread/list", "thread/loaded/list"],
+			],
+			[
+				"classificationFailures",
+				"classification failures",
+				["repeated_cursor", "transport_failure", "list_exhaustion_failure"],
+			],
+			["reasonNullStates", "reason-null states", reasonNullStates],
+			["reasonRequiredStates", "reason-required states", reasonRequiredStates],
+			["nonExecutableStatuses", "non-executable statuses", ["systemError"]],
+		] as const) {
+			expectOrderedSetAttacks(
+				cloneManifest,
+				arrayValues((root) => linkPolicy(root)[field]),
+				validateManifest,
+				label,
+				expected,
+			);
+		}
+		for (const [field, label, expected] of [
+			["fieldOrder", "operation field order", ["id", "kind", "rpc", "outcome"]],
+			[
+				"excludedBoundaries",
+				"excluded boundaries",
+				["interrupt", "queue", "semantic_injection", "callback_injection", "realtime_transport"],
+			],
+			[
+				"callbackEvents",
+				"callback events",
+				[
+					"accepted",
+					"queued",
+					"started",
+					"progress",
+					"attention",
+					"completed",
+					"failed",
+					"outcome_unknown",
+				],
+			],
+			["forbiddenFields", "forbidden fields", ["phase", "status", "event", "source"]],
+		] as const) {
+			expectOrderedSetAttacks(
+				cloneManifest,
+				arrayValues((root) => operationPolicy(root)[field]),
+				validateManifest,
+				label,
+				expected,
+			);
+		}
+	});
 
+	test("rejects every row, row-field, and tuple-state drift", () => {
+		for (const [select, expected, key, unknown, label] of rowCases) {
+			expectRowCollectionAttacks(select, expected, key, unknown, label);
+			expectRowFieldAttacks(select, expected, key, label);
+		}
+		for (const [index, row] of tupleRows.entries()) {
+			for (const field of ["id", "kind", "rpc", "outcome"]) {
+				const changed = cloneManifest();
+				tuples(changed)[index]![field] = "wrong_nullability";
+				expect(() => validateManifest(changed)).toThrow(
+					`tuple states ${row.state}.${field} changed`,
+				);
+			}
+		}
+	});
+
+	test("rejects every producer and evidence RPC-set drift", () => {
+		for (const [index, row] of producerRows.entries()) {
+			for (const field of ["rpcs", "omitWhen"] as const) {
+				expectOrderedSetAttacks(
+					cloneManifest,
+					arrayValues((root) => producers(root)[index]![field]),
+					validateManifest,
+					`operation producers ${row.kind}.${field}`,
+					row[field],
+				);
+			}
+			const source = cloneManifest();
+			producers(source)[index]!.operationIdSource = "wrong_source";
+			expect(() => validateManifest(source)).toThrow(
+				`operation producers ${row.kind}.operationIdSource changed`,
+			);
+		}
+		for (const [index, row] of evidenceRows.entries()) {
+			expectOrderedSetAttacks(
+				cloneManifest,
+				arrayValues((root) => evidence(root)[index]!.rpcs),
+				validateManifest,
+				`turn evidence ${evidenceKey(row)}.rpcs`,
+				row.rpcs,
+			);
+		}
+		const startedAsSteer = cloneManifest();
+		evidence(startedAsSteer)[0]!.rpcs = ["turn/start", "turn/steer"];
+		expect(() => validateManifest(startedAsSteer)).toThrow(
+			"turn evidence turn/started:-.rpcs has extra turn/steer",
+		);
+		for (const index of [2, 3, 4]) {
+			const missingSteer = cloneManifest();
+			evidence(missingSteer)[index]!.rpcs = ["turn/start"];
+			expect(() => validateManifest(missingSteer)).toThrow(
+				`turn evidence ${evidenceKey(evidenceRows[index]!)}.rpcs is missing turn/steer`,
+			);
+		}
+	});
+
+	test("rejects lifecycle downgrade, premature clear, retry, and inference", () => {
+		for (const index of [2, 3, 4]) {
 			const downgraded = cloneManifest();
-			records(operationPolicy(downgraded).turnEvidence, "turn evidence")[index]!.outcome =
-				"not_delivered";
-			expect(() => validateManifest(downgraded)).toThrow(`turn evidence ${key} changed`);
+			evidence(downgraded)[index]!.outcome = "not_delivered";
+			expect(() => validateManifest(downgraded)).toThrow(
+				`turn evidence ${evidenceKey(evidenceRows[index]!)}.outcome changed`,
+			);
 		}
-		const reordered = cloneManifest();
-		const evidence = records(operationPolicy(reordered).turnEvidence, "turn evidence");
-		[evidence[0], evidence[1]] = [evidence[1]!, evidence[0]!];
-		expect(() => validateManifest(reordered)).toThrow("turn evidence reordered turn/started:-");
-		const duplicated = cloneManifest();
-		const duplicatedEvidence = records(operationPolicy(duplicated).turnEvidence, "turn evidence");
-		duplicatedEvidence.push(structuredClone(duplicatedEvidence[0]!));
-		expect(() => validateManifest(duplicated)).toThrow(
-			"turn evidence has duplicate turn/started:-",
+		expectObjectSurfaceAttacks(
+			cloneManifest,
+			(root) => record(operationPolicy(root).terminal, "terminal policy"),
+			validateManifest,
+			"terminal policy fields",
+			["emit", "clear", "clearFields"],
 		);
-		const earlyClear = cloneManifest();
-		const earlyTerminal = record(operationPolicy(earlyClear).terminal, "terminal");
-		earlyTerminal.clear = "before_terminal_callback_or_event";
-		expect(() => validateManifest(earlyClear)).toThrow("terminal policy changed");
-		for (const field of ["id", "kind", "rpc", "outcome"]) {
-			const incompleteClear = cloneManifest();
-			const terminal = record(operationPolicy(incompleteClear).terminal, "terminal");
-			const clearFields = strings(terminal.clearFields, "clear fields");
-			clearFields.splice(clearFields.indexOf(field), 1);
-			expect(() => validateManifest(incompleteClear)).toThrow("terminal policy changed");
+		expectObjectSurfaceAttacks(
+			cloneManifest,
+			(root) => record(operationPolicy(root).threadStartOutcomeUnknown, "thread/start uncertainty"),
+			validateManifest,
+			"thread/start uncertainty fields",
+			["linkState", "reason", "inferFromRecency"],
+		);
+		expectOrderedSetAttacks(
+			cloneManifest,
+			arrayValues((root) => record(operationPolicy(root).terminal, "terminal").clearFields),
+			validateManifest,
+			"terminal policy.clearFields",
+			["id", "kind", "rpc", "outcome"],
+		);
+		for (const [field, value] of [
+			["emit", "repeated"],
+			["clear", "before_terminal_callback_or_event"],
+		] as const) {
+			const changed = cloneManifest();
+			record(operationPolicy(changed).terminal, "terminal")[field] = value;
+			expect(() => validateManifest(changed)).toThrow(`terminal policy.${field} changed`);
 		}
-		const repeatedTerminal = cloneManifest();
-		record(operationPolicy(repeatedTerminal).terminal, "terminal").emit = "repeated";
-		expect(() => validateManifest(repeatedTerminal)).toThrow("terminal policy changed");
-	});
-
-	test("rejects retry, recency inference, and thread-link nullability drift", () => {
+		for (const [field, value] of [
+			["linkState", "executable"],
+			["reason", "unknown_reason"],
+		] as const) {
+			const changed = cloneManifest();
+			record(operationPolicy(changed).threadStartOutcomeUnknown, "uncertainty")[field] = value;
+			expect(() => validateManifest(changed)).toThrow(`thread/start uncertainty.${field} changed`);
+		}
 		const retried = cloneManifest();
 		operationPolicy(retried).retryAfterOutcomeUnknown = true;
 		expect(() => validateManifest(retried)).toThrow("retry after outcome_unknown changed");
@@ -180,65 +389,36 @@ describe("Codex additional-context authored policy", () => {
 		const inferredStart = cloneManifest();
 		record(
 			operationPolicy(inferredStart).threadStartOutcomeUnknown,
-			"thread/start uncertainty",
+			"uncertainty",
 		).inferFromRecency = true;
-		expect(() => validateManifest(inferredStart)).toThrow("thread/start uncertainty changed");
-		for (const [field, label, value] of [
-			["reasonNullStates", "reason-null states", "unbound"],
-			["reasonRequiredStates", "reason-required states", "inspect_only"],
-			["nonExecutableStatuses", "non-executable statuses", "systemError"],
-		] as const) {
-			const changed = cloneManifest();
-			const values = strings(linkPolicy(changed)[field], label);
-			values.splice(values.indexOf(value), 1);
-			expect(() => validateManifest(changed)).toThrow(`${label} is missing ${value}`);
-		}
+		expect(() => validateManifest(inferredStart)).toThrow(
+			"thread/start uncertainty.inferFromRecency changed",
+		);
 	});
 
-	test("rejects classification, omission, nested-id, and exclusion drift", () => {
+	test("rejects classifier failure promotion and producer omission drift", () => {
 		for (const failure of ["repeated_cursor", "transport_failure", "list_exhaustion_failure"]) {
-			const changed = cloneManifest();
-			const values = strings(linkPolicy(changed).classificationFailures, "failures");
-			values.splice(values.indexOf(failure), 1);
-			expect(() => validateManifest(changed)).toThrow(
-				`classification failures is missing ${failure}`,
-			);
 			const stabilized = cloneManifest();
-			records(linkPolicy(stabilized).reasonPrecedence, "reasons").push({
-				reason: failure,
-				condition: "classification_failed",
-			});
+			reasons(stabilized).push({ reason: failure, condition: "classification_failed" });
 			expect(() => validateManifest(stabilized)).toThrow(`threadLink reasons has extra ${failure}`);
 		}
 		for (const kind of ["create_thread_initial_turn", "fork_thread_initial_turn"]) {
 			const changed = cloneManifest();
-			const producer = records(operationPolicy(changed).producers, "producers").find(
-				(row) => row.kind === kind,
-			)!;
+			const producer = producers(changed).find((row) => row.kind === kind)!;
 			producer.operationIdSource = "outer_operation_id";
-			expect(() => validateManifest(changed)).toThrow(`operation producers ${kind} changed`);
-		}
-		const promptlessFork = cloneManifest();
-		const fork = records(operationPolicy(promptlessFork).producers, "producers").find(
-			(row) => row.kind === "fork_thread_initial_turn",
-		)!;
-		fork.omitWhen = [];
-		expect(() => validateManifest(promptlessFork)).toThrow(
-			"operation producers fork_thread_initial_turn changed",
-		);
-		for (const exclusion of [
-			"interrupt",
-			"queue",
-			"semantic_injection",
-			"callback_injection",
-			"realtime_transport",
-		]) {
-			const changed = cloneManifest();
-			const values = strings(operationPolicy(changed).excludedBoundaries, "excluded boundaries");
-			values.splice(values.indexOf(exclusion), 1);
 			expect(() => validateManifest(changed)).toThrow(
-				`excluded boundaries is missing ${exclusion}`,
+				`operation producers ${kind}.operationIdSource changed`,
 			);
 		}
+		const promptlessFork = cloneManifest();
+		producers(promptlessFork).find((row) => row.kind === "fork_thread_initial_turn")!.omitWhen = [];
+		expect(() => validateManifest(promptlessFork)).toThrow(
+			"operation producers fork_thread_initial_turn.omitWhen is missing prompt_absent",
+		);
+		const queuedDelegate = cloneManifest();
+		producers(queuedDelegate).find((row) => row.kind === "delegate_to_workhorse")!.omitWhen = [];
+		expect(() => validateManifest(queuedDelegate)).toThrow(
+			"operation producers delegate_to_workhorse.omitWhen is missing queued",
+		);
 	});
 });

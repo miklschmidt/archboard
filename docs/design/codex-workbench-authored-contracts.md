@@ -354,7 +354,7 @@ values are present as `null`; keys are never omitted or added.
 	"paneId": "<opaque>",
 	"board": { "note": "<vault-relative>", "version": 0, "cursor": "<opaque-or-null>" },
 	"threadLink": {
-		"state": "executable|inspect_only|unbound",
+		"state": "unbound|executable|inspect_only",
 		"reason": "stale_child|prior_epoch|thread_start_outcome_unknown|unknown_provenance|thread_list_missing|thread_list_ambiguous|thread_loaded_list_ambiguous|thread_source_custom|thread_source_subagent|thread_source_unknown|thread_status_not_loaded|thread_status_system_error|thread_loaded_list_missing|direct_input_false|direct_input_unknown|null"
 	},
 	"child": { "id": "<opaque>", "epoch": "<opaque>" },
@@ -570,34 +570,34 @@ operation producers, tuple states, lifecycle, and exclusions:
 		"turnEvidence": [
 			{
 				"event": "turn/started",
-				"rpc": "turn/start",
+				"rpcs": ["turn/start"],
 				"outcome": "delivered",
 				"tupleAction": "retain"
 			},
 			{
 				"event": "turn/steer_response",
-				"rpc": "turn/steer",
+				"rpcs": ["turn/steer"],
 				"outcome": "delivered",
 				"tupleAction": "retain_existing_turn_id"
 			},
 			{
 				"event": "turn/completed",
 				"status": "completed",
-				"rpc": "turn/start",
+				"rpcs": ["turn/start", "turn/steer"],
 				"outcome": "delivered",
 				"tupleAction": "emit_terminal_then_clear"
 			},
 			{
 				"event": "turn/completed",
 				"status": "interrupted",
-				"rpc": "turn/start",
+				"rpcs": ["turn/start", "turn/steer"],
 				"outcome": "delivered",
 				"tupleAction": "emit_terminal_then_clear"
 			},
 			{
 				"event": "turn/completed",
 				"status": "failed",
-				"rpc": "turn/start",
+				"rpcs": ["turn/start", "turn/steer"],
 				"outcome": "delivered",
 				"tupleAction": "emit_terminal_then_clear"
 			}
@@ -642,9 +642,14 @@ the manifest's state sets.
 
 `operation.kind` names the Archboard action and `operation.rpc` names its wire
 mutation. Producer rows own correlation and omission. Tuple rows and transition
-rows are exhaustive. Terminal evidence emits the tuple once before all four
-fields clear. The exclusion and callback lists keep wire state, TUI state,
-product action, and operation-event lifecycle separate.
+rows are exhaustive. A `turn/started` notification is evidence only for
+`turn/start`. `TurnSteerResponse` instead returns the existing `turnId`. The
+matching `TurnCompletedNotification` carries the thread and terminal turn, not
+the originating RPC, so completed, interrupted, and failed terminal evidence
+applies to both RPCs. It exposes the retained tuple once and then clears all four
+fields. Failure and interruption do not change delivery to `not_delivered`.
+The exclusion and callback lists keep wire state, TUI state, product action, and
+operation-event lifecycle separate without adding a phase field.
 
 The semantic brief, selection IDs, ambiguity entries, and doing text use the
 limits below. Encoding rejects overflow rather than truncating silently:
