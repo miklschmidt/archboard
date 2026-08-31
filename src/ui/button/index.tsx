@@ -7,7 +7,8 @@ type ButtonTone = "primary" | "secondary" | "quiet";
 type ButtonSize = "control" | "icon";
 type BaseButtonProps = Omit<BaseButton.Props, "ref"> &
 	Pick<ComponentProps<typeof BaseButton>, "ref">;
-type DataAttributes = { [name: `data-${string}`]: unknown };
+type DataAttributeValue = string | number | bigint | boolean | null | undefined;
+type DataAttributes = { [name: `data-${string}`]: DataAttributeValue };
 
 export type ButtonProps = Omit<BaseButtonProps, "className"> &
 	DataAttributes & {

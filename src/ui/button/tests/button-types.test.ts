@@ -33,6 +33,7 @@ const accepted = {
 	form: "settings",
 	"aria-label": "Inspect settings",
 	"data-owner": "archboard",
+	"data-active": true,
 	onClick: (event) => event.preventBaseUIHandler(),
 	onKeyDown: (event) => event.preventBaseUIHandler(),
 	onPointerDown: (event) => event.preventBaseUIHandler(),
@@ -57,6 +58,12 @@ const unknownTone: ButtonProps = { tone: "danger" };
 const stockVariant: ButtonProps = { tone: "primary", variant: "outline" };
 // @ts-expect-error Stock shadcn sizes are not part of the owned API.
 const stockSize: ButtonProps = { tone: "primary", size: "sm" };
+// @ts-expect-error data-* attributes serialize only scalar DOM values.
+const objectData: ButtonProps = { tone: "primary", "data-value": {} };
+// @ts-expect-error data-* attributes cannot carry functions into the DOM.
+const functionData: ButtonProps = { tone: "primary", "data-value": () => undefined };
+// @ts-expect-error data-* attributes cannot carry symbols into the DOM.
+const symbolData: ButtonProps = { tone: "primary", "data-value": Symbol("value") };
 // @ts-expect-error No class recipe or helper is public.
 void publicApi.buttonClassName;
 
@@ -71,6 +78,9 @@ void missingTone;
 void unknownTone;
 void stockVariant;
 void stockSize;
+void objectData;
+void functionData;
+void symbolData;
 `;
 	const config = {
 		extends: frontendConfig,
