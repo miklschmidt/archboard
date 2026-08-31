@@ -167,12 +167,9 @@ async function changeOpenerCaptureThroughSettings(
 		[5, exits],
 	] as const)
 		await browser.run(["fill", `.opener-argument input[aria-label="Argument ${argument}"]`, value]);
-	await browser.run(["click", ".modal-footer .btn-primary"]);
+	await browser.run(["find", "role", "button", "click", "--name", "Save", "--exact"]);
 	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				"Boolean(document.querySelector('dialog[aria-label=\"Opener settings\"]'))",
-			),
+		() => browser.eval<boolean>("Boolean(document.querySelector('[role=\"dialog\"]'))"),
 		(value) => !value,
 		"the saved opener settings dialog to close",
 	);

@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
@@ -10,217 +9,41 @@ import {
 	createAgentBrowser,
 	pollUntil,
 	registerCanvasBase,
-	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import {
+	assertDialogClosedAndFocusReturned,
+	dialogSnapshot,
+	draftSelection,
+	fillLabel,
+	githubHref,
+	installFetchDouble,
+	noticeSnapshot,
+	releaseProbe,
+	repository,
+	requests,
+	roleAction,
+	serverPath,
+	setProbeHold,
+	setTheme,
+	validationSnapshot,
+	verifyVisualModes,
+	visualSnapshot,
+} from "./support/opener-settings.ts";
 
-type RecordedRequest = { method: string; path: string; body: unknown };
-type DialogSnapshot = {
-	title: string | null;
-	current: string | null;
-	effective: string | null;
-	availability: string | null;
-	choices: Array<{ label: string; command: string }>;
-	executable: string | null;
-	arguments: string[];
-	repositories: Array<{ value: string; label: string }>;
-	checkout: string | null;
-};
-type ValidationSnapshot = {
-	message: string | null;
-	saveDisabled: boolean;
-	testDisabled: boolean;
-};
-type NoticeSnapshot = {
-	kind: string | null;
-	text: string | null;
-	settings: string | null;
-	github: { text: string; href: string; target: string; rel: string } | null;
-};
-
-const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
-const serverPath = join(repoRoot, "src/server.ts");
-const repository = "github.com/acme/archboard";
-const githubHref = "https://github.com/acme/archboard/actions/workflows/check.yml";
-const draftSelection = {
-	version: 1,
-	kind: "custom",
-	executable: "/opt/draft/bin/editor",
-	argv: ["--first", "{path}", "--last"],
-} as const;
-
-async function click(browser: AgentBrowserSession, selector: string): Promise<void> {
-	const clicked = await browser.eval<boolean>(`(() => {
-    const element = document.querySelector(${JSON.stringify(selector)});
-    if (!(element instanceof HTMLElement)) return false;
-    element.click();
-    return true;
-  })()`);
-	expect(clicked).toBe(true);
-}
-
-async function fill(browser: AgentBrowserSession, selector: string, value: string): Promise<void> {
-	const written = await browser.eval<string | null>(`(() => {
-    const element = document.querySelector(${JSON.stringify(selector)});
-    if (!(element instanceof HTMLInputElement)) return null;
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-    setter?.call(element, ${JSON.stringify(value)});
-    element.dispatchEvent(new Event("input", { bubbles: true }));
-    return element.value;
-  })()`);
-	expect(written).toBe(value);
-}
-
-async function requests(browser: AgentBrowserSession): Promise<RecordedRequest[]> {
-	return browser.eval<RecordedRequest[]>("window.__openerProbe?.requests ?? []");
-}
-
-async function dialogSnapshot(browser: AgentBrowserSession): Promise<DialogSnapshot | null> {
-	return browser.eval<DialogSnapshot | null>(`(() => {
-    const dialog = document.querySelector('dialog[aria-label="Opener settings"]');
-    if (!(dialog instanceof HTMLDialogElement)) return null;
-    const text = selector => dialog.querySelector(selector)?.textContent?.trim() ?? null;
-    return {
-      title: text('.modal-title'),
-      current: text('.opener-summary strong'),
-      effective: text('.opener-summary code'),
-      availability: text('.opener-availability'),
-      choices: [...dialog.querySelectorAll('.opener-choice')].map(choice => ({
-        label: choice.querySelector('strong')?.textContent?.trim() ?? '',
-        command: choice.querySelector('small')?.textContent?.trim() ?? ''
-      })),
-      executable: dialog.querySelector('.opener-custom input')?.value ?? null,
-      arguments: [...dialog.querySelectorAll('.opener-argument input')].map(input => input.value),
-      repositories: [...dialog.querySelectorAll('.opener-checkout option')].map(option => ({
-        value: option.value,
-        label: option.textContent?.trim() ?? ''
-      })),
-      checkout: text('.opener-checkout small')
-    };
-  })()`);
-}
-
-async function validationSnapshot(browser: AgentBrowserSession): Promise<ValidationSnapshot> {
-	return browser.eval<ValidationSnapshot>(`(() => {
-    const dialog = document.querySelector('dialog[aria-label="Opener settings"]');
-    const button = label => [...(dialog?.querySelectorAll('.modal-footer button') ?? [])]
-      .find(candidate => candidate.textContent?.trim() === label);
-    return {
-      message: dialog?.querySelector('[role="alert"]')?.textContent?.trim() ?? null,
-      saveDisabled: button('Save')?.disabled ?? false,
-      testDisabled: button('Test')?.disabled ?? false
-    };
-  })()`);
-}
-
-async function noticeSnapshot(browser: AgentBrowserSession): Promise<NoticeSnapshot> {
-	return browser.eval<NoticeSnapshot>(`(() => {
-    const notice = document.querySelector('.notice-shell');
-    const github = notice?.querySelector('.notice-actions a');
-    return {
-      kind: notice?.getAttribute('class') ?? null,
-      text: notice?.querySelector('.notice-text')?.childNodes[0]?.textContent?.trim() ?? null,
-      settings: notice?.querySelector('.notice-actions button')?.textContent?.trim() ?? null,
-      github: github instanceof HTMLAnchorElement ? {
-        text: github.textContent?.trim() ?? '',
-        href: github.href,
-        target: github.target,
-        rel: github.rel
-      } : null
-    };
-  })()`);
-}
-
-async function installFetchDouble(browser: AgentBrowserSession): Promise<void> {
-	const installed = await browser.eval<boolean>(`(() => {
-    const original = window.fetch;
-    const initial = {
-      version: 1,
-      kind: 'custom',
-      executable: '/opt/acme/bin/editor',
-      argv: ['--reuse-window', '{path}', '--wait']
-    };
-    const probe = window.__openerProbe = {
-      requests: [],
-      selection: initial,
-      nextTest: 'success'
-    };
-    const command = selection => selection.kind === 'platform'
-      ? { executable: 'xdg-open', argv: ['{path}'] }
-      : selection.kind === 'preset'
-        ? { executable: selection.preset, argv: ['{path}'] }
-        : { executable: selection.executable, argv: selection.argv };
-    const settings = () => ({
-      success: true,
-      selection: probe.selection,
-      effectiveCommand: command(probe.selection),
-      availability: { available: true },
-      platformDefault: { executable: 'xdg-open', argv: ['{path}'] },
-      presets: [
-        { preset: 'vscode', command: { executable: 'code', argv: ['{path}'] } },
-        { preset: 'cursor', command: { executable: 'cursor', argv: ['{path}'] } },
-        { preset: 'zed', command: { executable: 'zed', argv: ['{path}'] } }
-      ],
-      repositories: [{
-        repository: ${JSON.stringify(repository)},
-        root: '/controlled/checkout',
-        exists: true,
-        identityMatches: true
-      }]
-    });
-    const reply = (body, status = 200) => new Response(JSON.stringify(body), {
-      status,
-      headers: { 'Content-Type': 'application/json' }
-    });
-    window.fetch = async (input, init) => {
-      const url = new URL(typeof input === 'string' ? input : input.url, location.href);
-      if (url.pathname !== '/api/settings/opener' &&
-          url.pathname !== '/api/settings/opener/test') {
-        return original.call(window, input, init);
-      }
-      const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
-      const body = typeof init?.body === 'string' ? JSON.parse(init.body) : null;
-      probe.requests.push({ method, path: url.pathname, body });
-      if (url.pathname === '/api/settings/opener/test') {
-        if (probe.nextTest === 'failure') return reply({
-          success: false,
-          code: 'OPENER_SPAWN_FAILED',
-          error: 'Controlled opener failed before launch.',
-          actions: [
-            { kind: 'settings', label: 'Opener settings' },
-            { kind: 'github', label: 'Open on GitHub', href: ${JSON.stringify(githubHref)} }
-          ]
-        }, 500);
-        return reply({ success: true, code: 'OPENER_TESTED', repository: ${JSON.stringify(repository)} });
-      }
-      if (method === 'GET') return reply(settings());
-      if (method === 'DELETE') {
-        probe.selection = { version: 1, kind: 'platform' };
-        return reply({ success: true, selection: probe.selection });
-      }
-      if (method === 'PUT') {
-        probe.selection = body;
-        return reply({ success: true, selection: body });
-      }
-      return reply({ success: false, code: 'REQUEST_INVALID', error: 'Unexpected test request.' }, 400);
-    };
-    return true;
-  })()`);
-	expect(installed).toBe(true);
-}
-
-test("global opener settings validate, test, reset, and save through the rendered shell", async () => {
+test("the migrated opener dialog keeps its rendered interaction and persistence contract", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const testRoot = join(ownerRoot, "opener-settings");
 	resources.defer(() => rmSync(testRoot, { recursive: true, force: true }));
 	mkdirSync(testRoot, { recursive: true });
 	const vault = join(testRoot, "vault");
+	const logPath = join(testRoot, "canvas.log");
 	mkdirSync(vault, { recursive: true });
 	const canvas = await startOwnedCanvas({
 		serverPath,
 		vault,
 		env: canvasTestEnvironment({
-			LOG_FILE_PATH: join(testRoot, "canvas.log"),
+			LOG_FILE_PATH: logPath,
 			ARCHBOARD_OPENER_CONFIG: join(testRoot, "machine-state", "opener.json"),
 		}),
 	});
@@ -229,25 +52,77 @@ test("global opener settings validate, test, reset, and save through the rendere
 	const browser = resources.use(await createAgentBrowser());
 
 	await browser.run(["open", canvas.base]);
+	await browser.run(["set", "viewport", "1440", "900", "1"]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
 	await pollUntil(
 		() =>
-			browser.eval<boolean>(
-				'Boolean(document.querySelector("button[aria-label=\\"Opener settings\\"]"))',
-			),
+			browser
+				.run(["snapshot", "--interactive", "--compact"])
+				.then((value) => value.includes('button "Opener settings"')),
 		Boolean,
-		"the opener settings gear to render",
+		"the named opener settings trigger",
 	);
+	await browser.run(["console", "--clear"]);
+	await browser.run(["errors", "--clear"]);
 	await installFetchDouble(browser);
+	expect(
+		await browser.eval<boolean>(`(() => {
+			const trigger = [...document.querySelectorAll('button')]
+				.find(node => node.getAttribute('aria-label') === 'Opener settings');
+			if (!trigger) return false;
+			window.__openerTrigger = trigger;
+			window.__openerBodyChildren = document.body.childElementCount;
+			return true;
+		})()`),
+	).toBe(true);
 
-	await click(browser, 'button[aria-label="Opener settings"]');
+	await roleAction(browser, "button", "Opener settings");
+	const loading = await pollUntil(
+		() => dialogSnapshot(browser),
+		(value) => value?.description === "Reading opener settings…",
+		"the described opener loading state",
+	);
+	expect(loading).toMatchObject({
+		count: 1,
+		name: "Opener settings",
+		tag: "DIV",
+		title: "Opener settings",
+		description: "Reading opener settings…",
+		rootContainsDialog: false,
+		portalAtBody: true,
+		focusInside: true,
+	});
+	const loadingTree = await browser.run(["snapshot", "--compact", "--selector", '[role="dialog"]']);
+	expect(loadingTree).toContain('dialog "Opener settings"');
+	expect(loadingTree).toContain("Reading opener settings…");
+	expect(loadingTree).toContain('button "Cancel"');
+	expect(loadingTree).not.toContain('button "Cancel" [disabled]');
+	expect(loading?.focus).toBe("Cancel");
+	await roleAction(browser, "button", "Cancel");
+	await assertDialogClosedAndFocusReturned(browser);
+	await releaseProbe(browser, "GET:/api/settings/opener");
+	await browser.eval<boolean>(
+		"new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))",
+	);
+	expect(
+		await browser.eval<boolean>(
+			"!document.querySelector('[role=dialog]') && document.body.childElementCount === window.__openerBodyChildren",
+		),
+	).toBe(true);
+
+	await roleAction(browser, "button", "Opener settings");
+
 	const initial = await pollUntil(
 		() => dialogSnapshot(browser),
-		(value) => value?.executable === "/opt/acme/bin/editor",
-		"the custom opener settings to render",
+		(value) => value?.executable === "/opt/acme/bin/editor" && value.focus === "Cancel",
+		"the loaded opener settings with initial Cancel focus",
 	);
 	expect(initial).toEqual({
+		count: 1,
+		name: "Opener settings",
+		tag: "DIV",
 		title: "Opener settings",
+		description: null,
 		current: "Custom",
 		effective: "/opt/acme/bin/editor --reuse-window {path} --wait",
 		availability: "Available",
@@ -262,12 +137,85 @@ test("global opener settings validate, test, reset, and save through the rendere
 		arguments: ["--reuse-window", "{path}", "--wait"],
 		repositories: [{ value: repository, label: repository }],
 		checkout: "/controlled/checkout",
+		focus: "Cancel",
+		focusInside: true,
+		rootContainsDialog: false,
+		portalAtBody: true,
 	});
 	expect(await requests(browser)).toEqual([
 		{ method: "GET", path: "/api/settings/opener", body: null },
+		{ method: "GET", path: "/api/settings/opener", body: null },
 	]);
 
-	await fill(browser, ".opener-custom .field input", "./editor");
+	const focusOrder = [
+		"Save",
+		"Close dialog",
+		"Custom opener",
+		"Executable",
+		"Add argument",
+		"Argument 1",
+		"Remove argument 1",
+		"Argument 2",
+		"Remove argument 2",
+		"Argument 3",
+		"Remove argument 3",
+		"Registered checkout for Test",
+		"Reset",
+		"Test",
+		"Cancel",
+	];
+	const observedFocus: string[] = [];
+	for (const expected of focusOrder) {
+		await browser.run(["press", "Tab"]);
+		const focused = await pollUntil(
+			() => dialogSnapshot(browser),
+			(value) => value?.focus === expected && value.focusInside,
+			`${expected} to receive focus in the dialog Tab cycle`,
+		);
+		observedFocus.push(focused?.focus ?? "");
+		expect({ expected, focus: focused?.focus, focusInside: focused?.focusInside }).toEqual({
+			expected,
+			focus: expected,
+			focusInside: true,
+		});
+	}
+	expect(observedFocus).toEqual(focusOrder);
+	await browser.run(["press", "Shift+Tab"]);
+	expect((await dialogSnapshot(browser))?.focus).toBe("Test");
+	await browser.run(["press", "Tab"]);
+	expect((await dialogSnapshot(browser))?.focus).toBe("Cancel");
+	const modalTree = await browser.run(["snapshot", "--interactive", "--compact"]);
+	expect(modalTree).toContain('heading "Opener settings"');
+	expect(modalTree).toContain('button "Cancel"');
+	expect(modalTree).not.toContain('button "Opener settings"');
+
+	const accessibilityTree = await browser.run([
+		"snapshot",
+		"--compact",
+		"--selector",
+		'[role="dialog"]',
+	]);
+	for (const contract of [
+		'dialog "Opener settings"',
+		'radio "Custom opener" [checked=true',
+		'textbox "Executable"',
+		'textbox "Argument 1"',
+		'combobox "Registered checkout for Test',
+		'button "Reset"',
+		'button "Test"',
+		'button "Cancel"',
+		'button "Save"',
+	])
+		expect(accessibilityTree).toContain(contract);
+	const auditText = await browser.run(["a11y", "--selector", '[role="dialog"]', "--json"]);
+	const audit = JSON.parse(auditText) as {
+		violations?: unknown[];
+		data?: { violations?: unknown[] };
+	};
+	expect(audit.violations ?? audit.data?.violations ?? []).toEqual([]);
+	await verifyVisualModes(browser, "light");
+
+	await fillLabel(browser, "Executable", "./editor");
 	const relativeExecutable = await pollUntil(
 		() => validationSnapshot(browser),
 		(value) => value.saveDisabled && value.testDisabled,
@@ -276,9 +224,18 @@ test("global opener settings validate, test, reset, and save through the rendere
 	expect(relativeExecutable.message).toBe(
 		"A custom executable must be absolute or a bare PATH name.",
 	);
-	await fill(browser, ".opener-custom .field input", "/opt/acme/bin/editor");
+	const invalidTree = await browser.run(["snapshot", "--compact", "--selector", '[role="dialog"]']);
+	expect([...invalidTree.matchAll(/^\s*- alert$/gm)]).toHaveLength(1);
+	expect(invalidTree).toContain(
+		'StaticText "A custom executable must be absolute or a bare PATH name."',
+	);
+	const beforeInvalidActions = await requests(browser);
+	await roleAction(browser, "button", "Test").catch(() => undefined);
+	await roleAction(browser, "button", "Save").catch(() => undefined);
+	expect(await requests(browser)).toEqual(beforeInvalidActions);
 
-	await fill(browser, '.opener-argument input[aria-label="Argument 2"]', "--without-path");
+	await fillLabel(browser, "Executable", "/opt/acme/bin/editor");
+	await fillLabel(browser, "Argument 2", "--without-path");
 	const invalid = await pollUntil(
 		() => validationSnapshot(browser),
 		(value) => value.saveDisabled && value.testDisabled,
@@ -286,22 +243,99 @@ test("global opener settings validate, test, reset, and save through the rendere
 	);
 	expect(invalid.message).toBe("argv must contain exactly one {path} token");
 
-	await fill(browser, ".opener-custom .field input", draftSelection.executable);
 	for (const [index, argument] of draftSelection.argv.entries()) {
-		await fill(browser, `.opener-argument input[aria-label="Argument ${index + 1}"]`, argument);
+		await fillLabel(browser, `Argument ${index + 1}`, argument);
 	}
+	await fillLabel(browser, "Executable", draftSelection.executable);
 	await pollUntil(
 		() => validationSnapshot(browser),
 		(value) => !value.message && !value.saveDisabled && !value.testDisabled,
 		"the corrected custom draft",
 	);
-	await click(browser, ".modal-footer .btn-secondary");
+
+	await browser.run(["press", "Escape"]);
+	await assertDialogClosedAndFocusReturned(browser);
+	expect((await requests(browser)).some((request) => request.method === "PUT")).toBe(false);
+
+	await setTheme(browser, "dark");
+	await roleAction(browser, "button", "Opener settings");
+	await pollUntil(
+		() => dialogSnapshot(browser),
+		(value) => value?.focus === "Cancel",
+		"the dark opener dialog to load",
+	);
+	expect((await dialogSnapshot(browser))?.count).toBe(1);
+	await verifyVisualModes(browser, "dark");
+	await browser.run(["set", "viewport", "1920", "1080", "2"]);
+	const flip = await visualSnapshot(browser);
+	expect(flip.dialogWithinViewport).toBe(true);
+	expect(flip.pageOverflow).toBe(false);
+	expect(flip.targets.every(({ width, height }) => width >= 43.5 && height >= 43.5)).toBe(true);
+	await browser.run(["set", "viewport", "1440", "900", "1"]);
+	const triggerPoint = await pollUntil(
+		() =>
+			browser.eval<{ x?: number; y?: number }>(`(() => {
+				const rect = window.__openerTrigger.getBoundingClientRect();
+				return { x: Math.round(rect.left + rect.width / 2),
+					y: Math.round(rect.top + rect.height / 2) };
+			})()`),
+		(value): value is { x: number; y: number } =>
+			Number.isFinite(value.x) && Number.isFinite(value.y),
+		"the opener trigger coordinates behind the dialog backdrop",
+	);
+	const getCountBeforeOutside = (await requests(browser)).filter(
+		(request) => request.method === "GET",
+	).length;
+	await browser.run(["mouse", "move", String(triggerPoint.x), String(triggerPoint.y)]);
+	await browser.run(["mouse", "down"]);
+	await browser.run(["mouse", "up"]);
+	await assertDialogClosedAndFocusReturned(browser);
+	expect((await requests(browser)).filter((request) => request.method === "GET").length).toBe(
+		getCountBeforeOutside,
+	);
+
+	await setTheme(browser, "light");
+	await roleAction(browser, "button", "Opener settings");
+	await pollUntil(
+		() => dialogSnapshot(browser),
+		(value) => value?.focus === "Cancel",
+		"the opener dialog before Cancel dismissal",
+	);
+	await roleAction(browser, "button", "Cancel");
+	await assertDialogClosedAndFocusReturned(browser);
+	expect((await requests(browser)).some((request) => request.method === "PUT")).toBe(false);
+
+	await roleAction(browser, "button", "Opener settings");
+	await pollUntil(
+		() => dialogSnapshot(browser),
+		(value) => value?.executable === "/opt/acme/bin/editor",
+		"the persistence workflow dialog",
+	);
+	await fillLabel(browser, "Executable", draftSelection.executable);
+	for (const [index, argument] of draftSelection.argv.entries()) {
+		await fillLabel(browser, `Argument ${index + 1}`, argument);
+	}
+	await setProbeHold(browser, "POST:/api/settings/opener/test");
+	await roleAction(browser, "button", "Test");
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`(() => {
+				const dialog = document.querySelector('[role="dialog"]');
+				const buttons = [...dialog.querySelectorAll('button')];
+				return buttons.find(node => node.textContent?.trim() === 'Testing…')?.disabled === true &&
+					buttons.filter(node => ['Reset', 'Cancel', 'Save'].includes(node.textContent?.trim()))
+						.every(node => node.disabled);
+			})()`),
+		Boolean,
+		"the pending Test controls",
+	);
+	await releaseProbe(browser, "POST:/api/settings/opener/test");
 	const tested = await pollUntil(
 		() => noticeSnapshot(browser),
-		(value) => value.text === `Test opener launched for ${repository}.`,
+		(value) => value.text?.includes(`Test opener launched for ${repository}.`) ?? false,
 		"the controlled test success notice",
 	);
-	expect(tested.kind).toContain("notice-info");
+	expect(tested.role).toBe("status");
 	let recorded = await requests(browser);
 	expect(recorded.at(-1)).toEqual({
 		method: "POST",
@@ -310,16 +344,18 @@ test("global opener settings validate, test, reset, and save through the rendere
 	});
 	expect(recorded.some((request) => request.method === "PUT")).toBe(false);
 
-	await browser.eval<boolean>(
-		"Boolean(window.__openerProbe && (window.__openerProbe.nextTest = 'failure'))",
-	);
-	await click(browser, ".modal-footer .btn-secondary");
+	expect(
+		await browser.eval<boolean>(
+			"Boolean(window.__openerProbe && (window.__openerProbe.nextTest = 'failure'))",
+		),
+	).toBe(true);
+	await roleAction(browser, "button", "Test");
 	const failed = await pollUntil(
 		() => noticeSnapshot(browser),
-		(value) => value.text === "Controlled opener failed before launch.",
+		(value) => value.text?.includes("Controlled opener failed before launch.") ?? false,
 		"the controlled opener failure notice",
 	);
-	expect(failed.kind).toContain("notice-error");
+	expect(failed.role).toBe("alert");
 	expect(failed.settings).toBe("Opener settings");
 	expect(failed.github).toEqual({
 		text: "Open on GitHub",
@@ -327,22 +363,37 @@ test("global opener settings validate, test, reset, and save through the rendere
 		target: "_blank",
 		rel: "noopener noreferrer",
 	});
+	expect((await dialogSnapshot(browser))?.executable).toBe(draftSelection.executable);
+	expect((await dialogSnapshot(browser))?.arguments).toEqual([...draftSelection.argv]);
 
-	await click(browser, ".modal-close");
-	await pollUntil(
-		() => dialogSnapshot(browser),
-		(value) => value === null,
-		"the failed settings dialog to close",
-	);
-	await click(browser, ".notice-actions button");
+	await roleAction(browser, "button", "Close dialog");
+	await assertDialogClosedAndFocusReturned(browser);
+	const recoveryGetCount = (await requests(browser)).filter(
+		(request) => request.method === "GET",
+	).length;
+	expect(
+		await browser.eval<boolean>(`(() => {
+			const notice = document.querySelector('[role="alert"]');
+			const action = [...(notice?.querySelectorAll('button') ?? [])]
+				.find(node => node.textContent?.trim() === 'Opener settings');
+			if (!action) return false;
+			action.click();
+			return true;
+		})()`),
+	).toBe(true);
 	await pollUntil(
 		() => requests(browser),
-		(value) => value.filter((request) => request.method === "GET").length === 2,
-		"the settings action to fetch fresh state",
+		(value) => value.filter((request) => request.method === "GET").length === recoveryGetCount + 1,
+		"the settings recovery action to fetch fresh state",
 	);
-	expect((await dialogSnapshot(browser))?.current).toBe("Custom");
+	const recovered = await pollUntil(
+		() => dialogSnapshot(browser),
+		(value) => value?.current === "Custom" && value.executable === "/opt/acme/bin/editor",
+		"the recovery settings to render",
+	);
+	expect(recovered?.arguments).toEqual(["--reuse-window", "{path}", "--wait"]);
 
-	await click(browser, ".opener-reset");
+	await roleAction(browser, "button", "Reset");
 	const reset = await pollUntil(
 		() => dialogSnapshot(browser),
 		(value) => value?.current === "System default" && value.effective === "xdg-open {path}",
@@ -355,25 +406,59 @@ test("global opener settings validate, test, reset, and save through the rendere
 		{ method: "GET", path: "/api/settings/opener", body: null },
 	]);
 
-	await click(browser, 'label[aria-label="Custom opener"]');
-	await fill(browser, ".opener-custom .field input", draftSelection.executable);
+	await roleAction(browser, "radio", "Custom opener");
+	await fillLabel(browser, "Executable", draftSelection.executable);
 	for (const [index, argument] of draftSelection.argv.entries()) {
-		await fill(browser, `.opener-argument input[aria-label="Argument ${index + 1}"]`, argument);
+		await fillLabel(browser, `Argument ${index + 1}`, argument);
 	}
-	await click(browser, ".modal-footer .btn-primary");
+	await setProbeHold(browser, "PUT:/api/settings/opener");
+	await roleAction(browser, "button", "Save");
 	await pollUntil(
-		() => dialogSnapshot(browser),
-		(value) => value === null,
-		"save to close the settings dialog",
+		() =>
+			browser.eval<boolean>(`(() => {
+				const dialog = document.querySelector('[role="dialog"]');
+				const buttons = [...dialog.querySelectorAll('button')];
+				return buttons.find(node => node.textContent?.trim() === 'Saving…')?.disabled === true &&
+					buttons.filter(node => ['Reset', 'Test', 'Cancel'].includes(node.textContent?.trim()))
+						.every(node => node.disabled);
+			})()`),
+		Boolean,
+		"the pending Save controls",
 	);
+	await releaseProbe(browser, "PUT:/api/settings/opener");
+	await assertDialogClosedAndFocusReturned(browser);
 	recorded = await requests(browser);
-	expect(recorded.at(-1)).toEqual({
-		method: "PUT",
-		path: "/api/settings/opener",
-		body: draftSelection,
-	});
+	expect(recorded.filter((request) => request.method === "PUT")).toEqual([
+		{ method: "PUT", path: "/api/settings/opener", body: draftSelection },
+	]);
 	const saved = await noticeSnapshot(browser);
-	expect(saved.kind).toContain("notice-info");
-	expect(saved.text).toBe("Saved. Every pane and caller uses this opener on the next activation.");
+	expect(saved.role).toBe("status");
+	expect(saved.text).toContain(
+		"Saved. Every pane and caller uses this opener on the next activation.",
+	);
+
+	await roleAction(browser, "button", "Opener settings");
+	const reopened = await pollUntil(
+		() => dialogSnapshot(browser),
+		(value) => value?.executable === draftSelection.executable,
+		"the saved opener to persist across reopen",
+	);
+	expect(reopened?.arguments).toEqual([...draftSelection.argv]);
+	expect(reopened?.count).toBe(1);
+	await roleAction(browser, "button", "Cancel");
+	await assertDialogClosedAndFocusReturned(browser);
+	expect(
+		await browser.eval<boolean>(
+			"document.body.childElementCount === window.__openerBodyChildren && !document.querySelector('[role=dialog]')",
+		),
+	).toBe(true);
+
+	const consoleOutput = await browser.run(["console"]);
+	const pageErrors = await browser.run(["errors"]);
+	expect(consoleOutput.trim()).toBe("");
+	expect(pageErrors.trim()).toBe("");
 	await canvas.assertRunning();
-});
+	expect(canvas.stderr.trim()).toBe("");
+	const serverLog = existsSync(logPath) ? readFileSync(logPath, "utf8") : "";
+	expect(serverLog).not.toMatch(/\[(?:warn|error)\]/i);
+}, 30_000);

@@ -420,15 +420,21 @@ test(
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(
-					"Boolean(document.querySelector('dialog[aria-label=\"Opener settings\"] .modal-footer [data-autofocus]:not(:disabled)'))",
+					`(() => {
+						const dialog = [...document.querySelectorAll('[role="dialog"]')].find(node =>
+							node.getAttribute('aria-labelledby')?.split(/\\s+/).some(id =>
+								document.getElementById(id)?.textContent?.trim() === 'Opener settings'));
+						const cancel = [...(dialog?.querySelectorAll('button') ?? [])]
+							.find(node => node.textContent?.trim() === 'Cancel');
+						return cancel?.disabled === false && document.activeElement === cancel;
+					})()`,
 				),
 			Boolean,
 			"the opener settings recovery dialog to finish loading",
 		);
-		await browser.run(["click", "dialog .modal-footer [data-autofocus]:not(:disabled)"]);
+		await browser.run(["find", "role", "button", "click", "--name", "Cancel", "--exact"]);
 		await pollUntil(
-			() =>
-				browser.eval<boolean>("!document.querySelector('dialog[aria-label=\"Opener settings\"]')"),
+			() => browser.eval<boolean>("!document.querySelector('[role=\"dialog\"]')"),
 			Boolean,
 			"the opener settings recovery dialog to close",
 		);
