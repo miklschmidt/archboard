@@ -82,14 +82,18 @@ function declarationsFor(source: string, selector: string): Map<string, string> 
 		if (source[end] === "{") depth += 1;
 		if (source[end] === "}") depth -= 1;
 	}
-	const body = source
-		.slice(open + 1, end - 1)
-		.replaceAll(/\/\*[\s\S]*?\*\//g, "");
+	const body = source.slice(open + 1, end - 1).replaceAll(/\/\*[\s\S]*?\*\//g, "");
 	const declarations = new Map<string, string>();
 	for (const item of body.split(";")) {
 		const colon = item.indexOf(":");
 		if (colon < 0) continue;
-		declarations.set(item.slice(0, colon).trim(), item.slice(colon + 1).trim().replaceAll(/\s+/g, " "));
+		declarations.set(
+			item.slice(0, colon).trim(),
+			item
+				.slice(colon + 1)
+				.trim()
+				.replaceAll(/\s+/g, " "),
+		);
 	}
 	return declarations;
 }
