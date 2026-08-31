@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-31 03:00'
+updated_date: '2026-08-31 03:06'
 labels: []
 dependencies:
   - TASK-144.15
@@ -46,4 +46,6 @@ Own the narrow lint resolver/policy seam for @/ after both TypeScript aliases ex
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved after TASK-144.17 finalized at integration HEAD 6515ee1. This dependency-ready leaf owns .oxlintrc.jsonc, tools/oxlint-plugin-archboard.js, and tests/system/repository-policy/oxlint-ui-alias.test.ts; it is path-disjoint from active shell-token and formatter lanes.
+
+Implemented in 7c88e33. The existing Oxlint source resolver now maps the single canonical @/ prefix to src/, preserves extension and query resolution, rejects alias escapes, and routes unresolved aliases through the existing archboard(module-entrypoints) rule. Added tests/system/repository-policy/oxlint-ui-alias.test.ts with real Oxlint subprocess fixtures covering public UI entrypoints, deep imports, cross-area imports, unknown and escaping aliases, and type/dynamic/require/query spellings. Focused evidence: bun test tests/system/repository-policy/oxlint-ui-alias.test.ts (4 pass, 23 expectations); bun test tests/system/repository-policy/boundaries.test.ts (9 pass, 76 expectations); bun test tests/system/repository-policy/test-inventory.test.ts (39 pass, 69 expectations); bunx tsc --noEmit --pretty false -p tsconfig.json (pass); bunx oxlint tools/oxlint-plugin-archboard.js tests/system/repository-policy/oxlint-ui-alias.test.ts (pass); bunx oxfmt --check tools/oxlint-plugin-archboard.js tests/system/repository-policy/oxlint-ui-alias.test.ts (pass); git diff --check (pass). Broad modules/system/repository/check/browser lanes intentionally not run; root owns capped broad validation. .oxlintrc.jsonc and /home/msc/Projects/archboard/src-DlBR1tzg.js preserved; source file sha256 observed as 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Acceptance criteria remain unchecked.
 <!-- SECTION:NOTES:END -->
