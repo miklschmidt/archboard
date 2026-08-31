@@ -22,6 +22,7 @@ type DialogSnapshot = {
 	focus: string | null;
 	focusInside: boolean;
 	rootContainsDialog: boolean;
+	shellContainsDialog: boolean;
 	portalAtBody: boolean;
 };
 type ValidationSnapshot = {
@@ -115,6 +116,8 @@ export async function dialogSnapshot(browser: AgentBrowserSession): Promise<Dial
 		const executable = labelled('Executable')?.querySelector('input');
 		const checkout = labelled('Registered checkout for Test');
 		const root = document.getElementById('root');
+		const shell = document.querySelector('.shell');
+		const bodyChild = [...document.body.children].find(node => node.contains(dialog));
 		return {
 			count: dialogs.length,
 			name: labelledText(dialog, 'aria-labelledby'),
@@ -135,7 +138,9 @@ export async function dialogSnapshot(browser: AgentBrowserSession): Promise<Dial
 			focus: controlName(document.activeElement),
 			focusInside: dialog.contains(document.activeElement),
 			rootContainsDialog: Boolean(root?.contains(dialog)),
-			portalAtBody: dialog.closest('[data-base-ui-portal]')?.parentElement === document.body
+			shellContainsDialog: Boolean(shell?.contains(dialog)),
+			portalAtBody: document.body.contains(dialog) && bodyChild?.parentElement === document.body &&
+				bodyChild !== root && bodyChild !== shell
 		};
 	})()`);
 }
