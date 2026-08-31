@@ -36,22 +36,22 @@ export const InitializeParamsSchema = z.strictObject({
 });
 
 export const LoginAccountParamsSchema = z.discriminatedUnion("type", [
-	looseObject({ type: z.literal("apiKey"), apiKey: z.string() }),
-	looseObject({
+	z.strictObject({ type: z.literal("apiKey"), apiKey: z.string() }),
+	z.strictObject({
 		type: z.literal("chatgpt"),
 		codexStreamlinedLogin: z.boolean().optional(),
 		useHostedLoginSuccessPage: z.boolean().optional(),
 		appBrand: z.enum(["codex", "chatgpt"]).nullable().optional(),
 	}),
-	looseObject({ type: z.literal("chatgptDeviceCode") }),
-	looseObject({
+	z.strictObject({ type: z.literal("chatgptDeviceCode") }),
+	z.strictObject({
 		type: z.literal("chatgptAuthTokens"),
 		accessToken: z.string(),
 		chatgptAccountId: z.string(),
 		chatgptPlanType: z.string().nullable().optional(),
 	}),
-	looseObject({ type: z.literal("amazonBedrock"), apiKey: z.string(), region: z.string() }),
-	looseObject({
+	z.strictObject({ type: z.literal("amazonBedrock"), apiKey: z.string(), region: z.string() }),
+	z.strictObject({
 		type: z.literal("amazonBedrockAccessKeys"),
 		accessKeyId: z.string(),
 		secretAccessKey: z.string(),
@@ -60,8 +60,8 @@ export const LoginAccountParamsSchema = z.discriminatedUnion("type", [
 	}),
 ]);
 
-export const CancelLoginAccountParamsSchema = looseObject({ loginId: z.string() });
-export const AccountReadParamsSchema = looseObject({ refreshToken: z.boolean().optional() });
+export const CancelLoginAccountParamsSchema = z.strictObject({ loginId: z.string() });
+export const AccountReadParamsSchema = z.strictObject({ refreshToken: z.boolean().optional() });
 
 /** Approval prompts are closed so an unrecognized permission cannot be acted on. */
 export const CommandExecutionRequestApprovalParamsSchema = z.strictObject({

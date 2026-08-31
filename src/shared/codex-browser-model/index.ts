@@ -92,6 +92,7 @@ export type {
 } from "./lib/server-requests.js";
 
 export type {
+	BedrockSetupParams,
 	CurrentTimeReadResponse,
 	InitializeCapabilities,
 	LoginAccountParams,
