@@ -10,6 +10,7 @@ import {
 	optionsFor,
 	requestFor,
 	setupAuthorities,
+	targetAuthority,
 	thread,
 	threadForkResult,
 	threadStartResult,
@@ -24,6 +25,63 @@ function record(value: unknown): Record<string, unknown> {
 }
 
 describe("codex dynamic dispatcher terminal boundaries", () => {
+	test("keeps unresolved, mismatched, and unproven caller identities outside the valid boundary", async () => {
+		for (const kind of ["unresolved", "mismatched", "unproven"] as const) {
+			const { authorities, caller } = setupAuthorities();
+			const fixture = optionsFor(authorities, caller);
+			if (kind === "unresolved")
+				fixture.threadAuthority.callerError = Object.assign(new Error("caller disappeared"), {
+					code: "stale_child",
+				});
+			else if (kind === "mismatched")
+				fixture.threadAuthority.caller = { ...caller, wireThreadId: "another-thread" };
+			else fixture.threadAuthority.caller = { ...caller, provenance: null };
+
+			const response = await createCodexDynamicTools(fixture.options).dispatch(
+				requestFor(authorities, caller, "create_thread", { prompt: kind }, `caller-${kind}`),
+			);
+			const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+			expect(response.success).toBe(false);
+			expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "invalid_call" });
+			expect(fixture.approval.presented).toHaveLength(0);
+			expect(fixture.session.calls).toHaveLength(0);
+		}
+	});
+
+	test("keeps current-call and target-policy refusals inside the valid identity boundary", async () => {
+		const { authorities, caller, otherTarget } = setupAuthorities();
+		const stale = optionsFor(authorities, caller);
+		stale.lifecycle.assertionError = Object.assign(new Error("current call ended"), {
+			code: "stale_child",
+		});
+		stale.lifecycle.assertionErrorPhase = "before_approval";
+		const staleResponse = await createCodexDynamicTools(stale.options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "stale current call" }),
+		);
+		const staleParsed = parseDynamicToolCallResponse("create_thread", staleResponse);
+		expect(staleResponse.success).toBe(true);
+		expect(staleParsed.envelope).toMatchObject({ tag: "refused", reason: "stale_child" });
+
+		const policy = optionsFor(authorities, caller);
+		const foreign = targetAuthority(authorities, otherTarget.wireThreadId, caller, {
+			ownership: "foreign",
+		});
+		policy.threadAuthority.targets.set(foreign.wireThreadId, foreign);
+		const policyResponse = await createCodexDynamicTools(policy.options).dispatch(
+			requestFor(authorities, caller, "send_message_to_thread", {
+				threadId: foreign.wireThreadId,
+				prompt: "policy refusal",
+			}),
+		);
+		const policyParsed = parseDynamicToolCallResponse("send_message_to_thread", policyResponse);
+		expect(policyResponse.success).toBe(true);
+		expect(policyParsed.envelope).toMatchObject({
+			tag: "refused",
+			reason: "unknown_provenance",
+		});
+	});
+
 	test("honors the approval port's terminal timestamp without a second clock race", async () => {
 		const { authorities, caller } = setupAuthorities();
 		const approval = new FakeApproval((request) =>
@@ -245,7 +303,7 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		expect(fixture.operationIds.consumed).toHaveLength(0);
 	});
 
-	test("retires every issued identity when durable settlement throws", async () => {
+	test("keeps a confirmed create identity when its durable settlement throws", async () => {
 		const { authorities, caller } = setupAuthorities();
 		const fixture = optionsFor(authorities, caller);
 		fixture.epoch.commitError = new Error("durable commit failed");
@@ -258,11 +316,17 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		const parsed = parseDynamicToolCallResponse("create_thread", response);
 
 		expect(response.success).toBe(true);
-		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "system_error" });
+		expect(parsed.envelope).toMatchObject({
+			tag: "ok",
+			value: {
+				threadId: String(createdThread.id),
+				initialTurn: { delivery: "not_delivered" },
+			},
+		});
 		expect(fixture.session.calls.map(({ method }) => method)).toEqual(["thread/start"]);
 		expect(fixture.epoch.settlements).toHaveLength(0);
-		expect(fixture.operationIds.consumed).toHaveLength(0);
-		expect(fixture.operationIds.retired).toHaveLength(2);
+		expect(fixture.operationIds.consumed).toHaveLength(1);
+		expect(fixture.operationIds.retired).toHaveLength(1);
 	});
 
 	test("retires every issued identity when staging throws after approval", async () => {

@@ -1,5 +1,8 @@
 export { createCodexDynamicToolDispatcher, createCodexDynamicTools } from "./lib/dispatcher.js";
-export { CodexDynamicToolsError } from "./lib/contract.js";
+export {
+	CodexDynamicOperationTerminalizationError,
+	CodexDynamicToolsError,
+} from "./lib/contract.js";
 export {
 	assertMutationTargetAllowed,
 	assertWaitTargetAllowed,
@@ -30,6 +33,8 @@ export type {
 	DynamicMutationToolName,
 	DynamicObservedTarget,
 	DynamicOperationIdPort,
+	DynamicOperationTerminalDisposition,
+	DynamicOperationTerminalResult,
 	DynamicOwnership,
 	DynamicRelation,
 	DynamicRefusalReason,

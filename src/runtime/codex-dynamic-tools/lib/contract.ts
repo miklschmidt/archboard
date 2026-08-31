@@ -222,18 +222,31 @@ export interface DynamicContextPort {
 	}) => Promise<ArchboardContext>;
 }
 
+export type DynamicOperationTerminalDisposition = "consumed" | "retired";
+
+export interface DynamicOperationTerminalResult {
+	readonly operationId: OperationId;
+	readonly disposition: DynamicOperationTerminalDisposition;
+	readonly terminal: true;
+}
+
 export interface DynamicOperationIdPort {
 	readonly issueCanonicalOperationId: () => OperationId;
 	readonly validateCurrentUnconsumedOperationId: (operationId: OperationId) => void;
 	readonly serializeForOwnedWireFields: (operationId: OperationId) => string;
 	/**
-	 * Permanently consumes an issued identity after its durable effect/outcome
-	 * record has been settled. The dispatcher calls this exactly once per
-	 * effect-bearing operation.
+	 * Atomically terminalizes one issued identity. The operation is idempotent
+	 * for the same disposition and returns the existing exact result after a
+	 * prior transition. A different terminal disposition must be rejected.
 	 */
-	readonly consumeCanonicalOperationId: (operationId: OperationId) => void;
-	/** Permanently retires an issued identity when approval produced no effect. */
-	readonly retireCanonicalOperationId: (operationId: OperationId) => void;
+	readonly terminalizeCanonicalOperationId: (input: {
+		readonly operationId: OperationId;
+		readonly disposition: DynamicOperationTerminalDisposition;
+	}) => DynamicOperationTerminalResult;
+	/** Returns null only while the exact issued identity is current and unconsumed. */
+	readonly readCanonicalOperationTerminalResult: (
+		operationId: OperationId,
+	) => DynamicOperationTerminalResult | null;
 }
 
 export interface DynamicWaitOwner extends WaitOwner {
@@ -382,5 +395,15 @@ export class CodexDynamicToolsError extends Error {
 		super(message);
 		this.code = code;
 		this.cause = cause;
+	}
+}
+
+export class CodexDynamicOperationTerminalizationError extends CodexDynamicToolsError {
+	readonly retryEligible = false;
+	readonly operationId: OperationId;
+
+	constructor(operationId: OperationId, message: string, cause?: unknown) {
+		super("system_error", message, cause);
+		this.operationId = operationId;
 	}
 }
