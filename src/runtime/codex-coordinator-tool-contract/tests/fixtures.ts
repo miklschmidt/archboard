@@ -100,8 +100,8 @@ export const VOICE_MANIFEST_SNAPSHOT = {
 } as const;
 
 export const QUEUE_OPERATION_SNAPSHOT = [
-	"add",
 	"list",
+	"add",
 	"update",
 	"delete",
 	"reorder",

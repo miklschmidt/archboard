@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 import {
@@ -15,7 +14,15 @@ import {
 	DYNAMIC_TOOL_REFUSAL_REASONS,
 	DynamicToolEnvelopeSchema,
 	DynamicToolResponseSchema,
+	UnknownDynamicToolResponseSchema,
 } from "../index.js";
+import {
+	definitionsOutsideOwner,
+	hasJsonCatalogueDefinition,
+	hasTypeScriptCatalogueDefinition,
+	ownerOfDefinition,
+	realCatalogueDefinitions,
+} from "./catalogue-ownership.js";
 
 const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../../..");
 const ownerRoot = path.join(repoRoot, "src/runtime/codex-coordinator-tool-contract");
@@ -24,13 +31,6 @@ function expectDeepFrozen(value: unknown): void {
 	expect(Object.isFrozen(value)).toBe(true);
 	if (typeof value !== "object" || value === null) return;
 	for (const child of Object.values(value)) expectDeepFrozen(child);
-}
-
-function sourceFiles(root: string): string[] {
-	return readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
-		const file = path.join(root, entry.name);
-		return entry.isDirectory() ? sourceFiles(file) : entry.name.endsWith(".ts") ? [file] : [];
-	});
 }
 
 describe("dynamic wire envelopes and metadata", () => {
@@ -92,7 +92,7 @@ describe("dynamic wire envelopes and metadata", () => {
 			}),
 		).toThrow();
 		expect(
-			DynamicToolResponseSchema.parse({
+			UnknownDynamicToolResponseSchema.parse({
 				contentItems: [
 					{
 						type: "inputText",
@@ -109,6 +109,21 @@ describe("dynamic wire envelopes and metadata", () => {
 		expect(() =>
 			DynamicToolResponseSchema.parse({
 				contentItems: [{ type: "inputText", text: JSON.stringify(envelope) }],
+				success: false,
+			}),
+		).toThrow();
+		expect(() =>
+			DynamicToolResponseSchema.parse({
+				contentItems: [
+					{
+						type: "inputText",
+						text: JSON.stringify({
+							tag: "refused",
+							reason: "not_ready",
+							message: "Inspect the linked workhorse first.",
+						}),
+					},
+				],
 				success: false,
 			}),
 		).toThrow();
@@ -315,12 +330,44 @@ describe("dynamic wire envelopes and metadata", () => {
 	});
 });
 
-test("keeps coordinator and voice namespace definitions inside their owner", () => {
-	const definitionsOutsideOwner = sourceFiles(path.join(repoRoot, "src"))
-		.filter((file) => !file.startsWith(ownerRoot + path.sep))
-		.filter((file) => {
-			const source = readFileSync(file, "utf8");
-			return source.includes("archboard_workhorse") || source.includes("archboard_voice");
-		});
-	expect(definitionsOutsideOwner).toEqual([]);
+test("structurally detects outside-owner namespace definitions without prose false positives", () => {
+	const fakeTypeScript = `const duplicate = { type: "namespace", name: "archboard_workhorse", tools: [] };`;
+	const fakeCatalogue = `const duplicate = { namespace: "archboard_voice", tools: [] };`;
+	const fakeJson = JSON.stringify({
+		type: "namespace",
+		name: "archboard_voice",
+		description: "duplicate",
+		tools: [],
+	});
+	const importOnly = `import { ARCHBOARD_WORKHORSE_NAMESPACE } from "./catalogue.js";`;
+	const proseOnly = `const note = "archboard_workhorse is named here, not defined";`;
+
+	expect(hasTypeScriptCatalogueDefinition(fakeTypeScript)).toBe(true);
+	expect(hasTypeScriptCatalogueDefinition(fakeCatalogue)).toBe(true);
+	expect(hasJsonCatalogueDefinition(fakeJson)).toBe(true);
+	expect(hasTypeScriptCatalogueDefinition(importOnly)).toBe(false);
+	expect(hasTypeScriptCatalogueDefinition(proseOnly)).toBe(false);
+	expect(
+		definitionsOutsideOwner(
+			[
+				{ fileName: path.join(repoRoot, "src/fake-catalogue.ts"), source: fakeTypeScript },
+				{ fileName: path.join(repoRoot, "src/fake-manifest.json"), source: fakeJson },
+				{ fileName: path.join(repoRoot, "src/prose.ts"), source: proseOnly },
+			],
+			ownerRoot,
+		),
+	).toEqual([
+		path.join(repoRoot, "src/fake-catalogue.ts"),
+		path.join(repoRoot, "src/fake-manifest.json"),
+	]);
+});
+
+test("keeps real namespace definitions in one owner", () => {
+	const definitions = realCatalogueDefinitions(path.join(repoRoot, "src"));
+	expect(definitions.length).toBeGreaterThanOrEqual(2);
+	expect(definitions.every((file) => file.startsWith(ownerRoot + path.sep))).toBe(true);
+	expect(new Set(definitions.map((file) => ownerOfDefinition(file, ownerRoot)))).toEqual(
+		new Set([ownerRoot]),
+	);
+	expect(definitions.filter((file) => path.extname(file) === ".json")).toHaveLength(2);
 });

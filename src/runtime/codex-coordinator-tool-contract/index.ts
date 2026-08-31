@@ -54,6 +54,8 @@ export {
 	DynamicToolRefusalReasonSchema,
 	DynamicToolRefusedEnvelopeSchema,
 	DynamicToolResponseSchema,
+	UnknownDynamicToolResponseSchema,
+	ValidDynamicToolResponseSchema,
 	InspectWorkhorseInputSchema,
 	InspectWorkhorseResultSchema,
 	ManageWorkhorseQueueInputSchema,
