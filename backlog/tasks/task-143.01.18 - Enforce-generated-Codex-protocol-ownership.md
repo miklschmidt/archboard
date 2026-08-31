@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-31 02:15'
+updated_date: '2026-08-31 02:23'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -122,4 +122,6 @@ Further-remediation validation: focused boundary/alias/corpus owners passed 17 t
 Further-remediation scope: scripts/typescript-analysis.ts, canonical fingerprint and checker updates, repository-policy alias/fixture/source support, corpus regeneration, and boundary controls. The task remains In Progress for same-reviewer rereview.
 
 Narrow P2 remediation in commit 8785021 after reviewer finding: namespaceImportMirror now emits import type * as declarations and replaces identifiers only after removing imports through a trivia-aware pass that preserves module specifiers, comments, and strings; importTypeMirror uses the same safe pass. Added a direct TypeScript API oracle with a relative ../AbsolutePathBuf import, asserting the original specifier is retained and syntactic/semantic diagnostics are empty. Focused boundary/alias/corpus suite passed 18 tests / 54 expectations; bun run check:codex-protocol-fingerprint-corpus passed all 820 fingerprints; bun run type-check, bun run lint, bun run fmt:check, and git diff --check passed. Per durable OOM rule, repository-wide, module, system, check, and browser lanes were not rerun; root owns those broad gates. Task remains In Progress for rereview.
+
+Final reviewer P2 remediation in commit 04f4033: replaced raw named-import regex discovery with the TypeScript scanner, records actual token spans, and replaces only those declaration spans. Added controls for import-shaped comments, single-quoted strings, and template strings covering both namespaceImportMirror and importTypeMirror; duplicate importType aliases are asserted absent and both transformed fixtures compile with zero diagnostics. Focused boundary/alias/corpus suite passed 18 tests / 62 expectations; bun run check:codex-protocol-fingerprint-corpus verified all 820 fingerprints; bun run type-check, bun run lint, bun run fmt:check, and git diff --check passed. Per durable OOM rule, broad repository/module/system/check/browser lanes were not rerun; root owns them. Task remains In Progress with ACs unchecked.
 <!-- SECTION:NOTES:END -->
