@@ -277,6 +277,11 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 	let lifecycleQueue = Promise.resolve();
 	const pendingRuns = new Set<Run>();
 	const listeners = new Set<RealtimeMediaListener>();
+	const notificationQueue: Array<{
+		readonly snapshot: RealtimeMediaSnapshot;
+		readonly listeners: readonly RealtimeMediaListener[];
+	}> = [];
+	let notifying = false;
 	const enqueue = <T>(operation: () => Promise<T>): Promise<T> => {
 		const pending = lifecycleQueue.then(operation);
 		lifecycleQueue = pending.then(
@@ -286,13 +291,23 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		return pending;
 	};
 	const notify = (): void => {
-		const published = snapshot;
-		for (const listener of listeners) {
-			try {
-				listener(published);
-			} catch {
-				// A subscriber cannot take ownership of the media lifecycle.
+		notificationQueue.push({ snapshot, listeners: [...listeners] });
+		if (notifying) return;
+		notifying = true;
+		try {
+			for (;;) {
+				const publication = notificationQueue.shift();
+				if (!publication) return;
+				for (const listener of publication.listeners) {
+					try {
+						listener(publication.snapshot);
+					} catch {
+						// A subscriber cannot take ownership of the media lifecycle.
+					}
+				}
 			}
+		} finally {
+			notifying = false;
 		}
 	};
 	const inactive = (run: Run): boolean => current !== run || run.cancelledNow || run.failed;
@@ -661,15 +676,15 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			if (localSet === TIMED_OUT) throw new Error("Setting the realtime offer timed out.");
 			publish(run, { phase: "negotiating", reason: "offer_created" });
 			if (inactive(run)) return settleCancelledRun(run);
-			run.offerSent = true;
 			const offerSdp = run.peer.localDescription?.sdp ?? offer.sdp ?? "";
 			if (inactive(run)) return settleCancelledRun(run);
-			const answer = await withinStartDeadline(run, () =>
-				host.createOffer({
+			const answer = await withinStartDeadline(run, () => {
+				run.offerSent = true;
+				return host.createOffer({
 					...run.correlation,
 					sdp: offerSdp,
-				}),
-			);
+				});
+			});
 			if (answer === CANCELLED) return settleCancelledRun(run);
 			if (answer === TIMED_OUT) throw new Error("The realtime answer timed out.");
 			const verifiedAnswer = readAnswer(run, answer);
