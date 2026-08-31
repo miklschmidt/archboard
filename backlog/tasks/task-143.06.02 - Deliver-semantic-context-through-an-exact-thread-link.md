@@ -1,10 +1,11 @@
 ---
 id: TASK-143.06.02
 title: Deliver semantic context through an exact thread link
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 17:32'
+updated_date: '2026-08-31 15:11'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -38,3 +39,12 @@ Delegation profile: gpt-5.6-luna, max.
 - [ ] #3 Each event is attempted at most once and settles delivered, not_delivered with reason, or outcome_unknown on lost response; there is no fallback steer, retry, or alternate thread.
 - [ ] #4 Tests cover unbound/notLoaded/uncontrollable/systemError/prior-epoch/child-exit, link change during delivery, duplicate event, stale cursor, lost response, and inspectable outcome.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Define a public exact-thread semantic delivery port with immutable event records, deterministic refusal reasons, and no target selector.
+2. Compose the existing semantic publisher, thread-link/epoch authorities, owned child lifecycle, session threadInjectItems method, and canonical codex-instructions injection builder at one guarded delivery boundary.
+3. Revalidate all current child/epoch, pane/link/provenance, loaded/controllable/status, semantic cursor/origin, and event-identity conditions immediately before the single write; settle each event once as delivered, not_delivered, or outcome_unknown.
+4. Add focused fake-port race tests for every requested refusal, duplicate/stale event, link/child changes during delivery, and lost responses; run only scoped type, lint, format, and module tests.
+<!-- SECTION:PLAN:END -->
