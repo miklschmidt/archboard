@@ -24,8 +24,7 @@ export interface SemanticCursor {
 	readonly sequence: number;
 }
 
-/** A numeric sequence is shorthand for the publisher's current feed. */
-export type SemanticCursorInput = number | SemanticCursor;
+export type SemanticCursorInput = SemanticCursor;
 
 /** The settled fields consumed from the existing change feed. */
 export interface SettledChangeSourceEvent {
@@ -225,6 +224,22 @@ export interface SemanticListenerFailure {
 	readonly message: string;
 }
 
+export interface SemanticListenerFailureBatch {
+	readonly entries: readonly SemanticListenerFailure[];
+	readonly droppedCount: number;
+}
+
+export interface SemanticListenerDiagnosticPolicy {
+	/** Maximum number of oldest failure entries retained before a drain. */
+	readonly maxEntries: number;
+	/** Maximum UTF-8 bytes of the JSON string token used for an error name. */
+	readonly errorNameBytes: number;
+	/** Maximum UTF-8 bytes of the JSON string token used for a message. */
+	readonly messageBytes: number;
+	/** Maximum UTF-8 bytes of JSON.stringify({ entries, droppedCount }). */
+	readonly maxBatchBytes: number;
+}
+
 export type SemanticBrief =
 	| SettledSemanticChangeEvent
 	| PaneFocusEvent
@@ -253,7 +268,7 @@ export interface SemanticContextPublisher {
 	readonly publishPaneFocus: (input: SemanticContextInput) => PaneFocusEvent;
 	readonly publishPaneSelection: (input: SemanticContextInput) => PaneSelectionEvent;
 	readonly freshBrief: () => FreshSemanticBrief;
-	/** Returns and clears downstream listener failures in emission order. */
-	readonly drainListenerFailures: () => readonly SemanticListenerFailure[];
+	/** Returns and clears the oldest bounded failures and the dropped count. */
+	readonly drainListenerFailures: () => SemanticListenerFailureBatch;
 	readonly dispose: () => void;
 }
