@@ -1,17 +1,11 @@
-import type { z } from "zod";
-
 import type {
+	ClientRequestMethod,
+	CodexSessionRequestParams,
 	ResponseMethod,
 	ResponsePayloads,
-	ThreadHistoryModeSchema,
-	ThreadItemSchema,
-	ThreadSectionSchema,
-	ThreadStatusSchema,
-	TurnErrorSchema,
-	TurnItemsViewSchema,
-	TurnStatusSchema,
 } from "../../codex-protocol/index.js";
 import type {
+	AnyIdentity,
 	ItemId,
 	LoginId,
 	QueuedSubmissionId,
@@ -20,30 +14,27 @@ import type {
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
 
-type Replace<Value, Fields extends object> = Omit<Value, keyof Fields> & Fields;
-type RawThreadItem = z.infer<typeof ThreadItemSchema>;
+type Replace<Value, Fields extends object> = Value & Fields;
+type RawThread = ResponsePayloads["thread/read"]["thread"];
+type RawTurn = ResponsePayloads["turn/start"]["turn"];
+type RawThreadItem = RawTurn["items"][number];
+type RawAgentMessageItem = Extract<RawThreadItem, { readonly type: "agentMessage" }>;
 type RawCollabAgentItem = Extract<RawThreadItem, { readonly type: "collabAgentToolCall" }>;
 type RawSubAgentActivityItem = Extract<RawThreadItem, { readonly type: "subAgentActivity" }>;
 type RelatedThreadItemType = "agentMessage" | "collabAgentToolCall" | "subAgentActivity";
 
-export interface SessionAgentMessageItem {
-	readonly type: "agentMessage";
-	readonly id: ItemId;
-	readonly text: string;
-	readonly phase: "commentary" | "final_answer" | null;
-	readonly memoryCitation: {
-		readonly entries: readonly {
-			readonly path: string;
-			readonly lineStart: number;
-			readonly lineEnd: number;
-			readonly note: string;
-		}[];
-		readonly threadIds: readonly ThreadId[];
-		readonly [key: string]: unknown;
-	} | null;
-	readonly delivery: "async" | null;
-	readonly [key: string]: unknown;
-}
+type RawMemoryCitation = NonNullable<RawAgentMessageItem["memoryCitation"]>;
+
+export type SessionAgentMessageItem = Replace<
+	RawAgentMessageItem,
+	{
+		readonly id: ItemId;
+		readonly memoryCitation: Replace<
+			RawMemoryCitation,
+			{ readonly threadIds: readonly ThreadId[] }
+		> | null;
+	}
+>;
 
 export type SessionCollabAgentItem = Replace<
 	RawCollabAgentItem,
@@ -75,98 +66,54 @@ export type SessionThreadItem =
 	| SessionSubAgentActivityItem
 	| SessionOtherThreadItem;
 
+type RawThreadSource = RawThread["source"];
+type RawSubAgentThreadSource = Extract<RawThreadSource, { readonly subAgent: unknown }>;
+type RawSubAgentSource = RawSubAgentThreadSource["subAgent"];
+type RawThreadSpawnSource = Extract<RawSubAgentSource, { readonly thread_spawn: unknown }>;
+export type SessionThreadSpawnSource = Replace<
+	RawThreadSpawnSource,
+	{
+		readonly thread_spawn: Replace<
+			RawThreadSpawnSource["thread_spawn"],
+			{ readonly parent_thread_id: ThreadId }
+		>;
+	}
+>;
 type SessionSubAgentSource =
-	| "review"
-	| "compact"
-	| "memory_consolidation"
-	| {
-			readonly thread_spawn: {
-				readonly parent_thread_id: ThreadId;
-				readonly depth: number;
-				readonly agent_path: string | null;
-				readonly agent_nickname: string | null;
-				readonly agent_role: string | null;
-			};
-	  }
-	| { readonly other: string };
+	| Exclude<RawSubAgentSource, RawThreadSpawnSource>
+	| SessionThreadSpawnSource;
+type BrandSubAgentThreadSource<Value> = Value extends unknown
+	? Replace<RawSubAgentThreadSource, { readonly subAgent: Value }>
+	: never;
 
 /** Thread provenance with a branded parent for generated subagent sources. */
 export type SessionThreadSource =
-	| "cli"
-	| "vscode"
-	| "exec"
-	| "appServer"
-	| "unknown"
-	| { readonly custom: string }
-	| { readonly subAgent: SessionSubAgentSource };
+	| Exclude<RawThreadSource, RawSubAgentThreadSource>
+	| BrandSubAgentThreadSource<SessionSubAgentSource>;
 
 /** One decoded turn with branded turn and item identities. */
-export interface SessionTurn {
-	readonly id: TurnId;
-	readonly items: readonly SessionThreadItem[];
-	readonly itemsView: z.infer<typeof TurnItemsViewSchema>;
-	readonly status: z.infer<typeof TurnStatusSchema>;
-	readonly error: z.infer<typeof TurnErrorSchema> | null;
-	readonly startedAt: number | null;
-	readonly completedAt: number | null;
-	readonly durationMs: number | null;
-	readonly [key: string]: unknown;
-}
+export type SessionTurn = Replace<
+	RawTurn,
+	{ readonly id: TurnId; readonly items: readonly SessionThreadItem[] }
+>;
 
 /** One decoded thread with branded ancestry, turns, and nested item identities. */
-export interface SessionThread {
-	readonly id: ThreadId;
-	readonly extra: Readonly<Record<string, never>> | null;
-	readonly sessionId: string;
-	readonly forkedFromId: ThreadId | null;
-	readonly parentThreadId: ThreadId | null;
-	readonly preview: string;
-	readonly ephemeral: boolean;
-	readonly section: z.infer<typeof ThreadSectionSchema> | null;
-	readonly sectionEnteredAt: number | null;
-	readonly projectId: string | null;
-	readonly historyMode: z.infer<typeof ThreadHistoryModeSchema>;
-	readonly modelProvider: string;
-	readonly createdAt: number;
-	readonly updatedAt: number;
-	readonly recencyAt: number | null;
-	readonly status: z.infer<typeof ThreadStatusSchema>;
-	readonly path: string | null;
-	readonly cwd: string;
-	readonly cliVersion: string;
-	readonly source: SessionThreadSource;
-	readonly canAcceptDirectInput: boolean | null;
-	readonly threadSource: string | null;
-	readonly agentNickname: string | null;
-	readonly agentRole: string | null;
-	readonly gitInfo: {
-		readonly sha: string | null;
-		readonly branch: string | null;
-		readonly originUrl: string | null;
-	} | null;
-	readonly name: string | null;
-	readonly turns: readonly SessionTurn[];
-	readonly [key: string]: unknown;
-}
+export type SessionThread = Replace<
+	RawThread,
+	{
+		readonly id: ThreadId;
+		readonly forkedFromId: ThreadId | null;
+		readonly parentThreadId: ThreadId | null;
+		readonly source: SessionThreadSource;
+		readonly turns: readonly SessionTurn[];
+	}
+>;
 
 /** Hosted and device-code login results carry a session-issued LoginId. */
-export type SessionAccountLoginResult =
-	| { readonly type: "apiKey"; readonly [key: string]: unknown }
-	| {
-			readonly type: "chatgpt";
-			readonly loginId: LoginId;
-			readonly authUrl: string;
-			readonly [key: string]: unknown;
-	  }
-	| {
-			readonly type: "chatgptDeviceCode";
-			readonly loginId: LoginId;
-			readonly verificationUrl: string;
-			readonly userCode: string;
-			readonly [key: string]: unknown;
-	  }
-	| { readonly type: "chatgptAuthTokens"; readonly [key: string]: unknown }
-	| { readonly type: "amazonBedrock"; readonly [key: string]: unknown };
+type BrandLoginResult<Value> = Value extends { readonly loginId: unknown }
+	? Replace<Value, { readonly loginId: LoginId }>
+	: Value;
+export type SessionAccountLoginResult = BrandLoginResult<ResponsePayloads["account/login/start"]>;
 
 export type SessionThreadStartResult = Replace<
 	ResponsePayloads["thread/start"],
@@ -192,14 +139,14 @@ export type SessionThreadTurnPageResult = Replace<
 	ResponsePayloads["thread/turns/list"],
 	{ readonly data: readonly SessionTurn[] }
 >;
+type RawThreadItemEntry = ResponsePayloads["thread/items/list"]["data"][number];
+type SessionThreadItemEntry = Replace<
+	RawThreadItemEntry,
+	{ readonly turnId: TurnId; readonly item: SessionThreadItem }
+>;
 export type SessionThreadItemPageResult = Replace<
 	ResponsePayloads["thread/items/list"],
-	{
-		readonly data: readonly {
-			readonly turnId: TurnId;
-			readonly item: SessionThreadItem;
-		}[];
-	}
+	{ readonly data: readonly SessionThreadItemEntry[] }
 >;
 export type SessionTurnResult = Replace<
 	ResponsePayloads["turn/start"],
@@ -258,18 +205,51 @@ export type SessionResponsePayloads = {
 
 export type SessionResponse<Method extends ResponseMethod> = SessionResponsePayloads[Method];
 
-export type SessionRequestIdentityField =
-	| "threadId"
-	| "parentThreadId"
-	| "ancestorThreadId"
-	| "turnId"
-	| "lastTurnId"
-	| "beforeTurnId"
-	| "expectedTurnId"
-	| "queuedSubmissionId"
-	| "queuedSubmissionIds"
-	| "loginId"
-	| "realtimeSessionId";
+type SessionRequestIdentityValue = AnyIdentity | readonly AnyIdentity[];
+type IdentityBearingRequestKey<Method extends ResponseMethod> = Method extends ClientRequestMethod
+	? CodexSessionRequestParams<Method> extends infer Params
+		? Params extends undefined
+			? never
+			: {
+					[Key in keyof Params]-?: [Exclude<Params[Key], null | undefined>] extends [
+						SessionRequestIdentityValue,
+					]
+						? Key
+						: never;
+				}[keyof Params] &
+					string
+		: never
+	: never;
+
+/** Every request property whose protocol type carries a branded session identity. */
+export type SessionRequestIdentityField = {
+	[Method in ResponseMethod]: IdentityBearingRequestKey<Method>;
+}[ResponseMethod];
+
+type HasDuplicate<Value extends readonly unknown[], Seen = never> = Value extends readonly [
+	infer First,
+	...infer Rest,
+]
+	? First extends Seen
+		? true
+		: HasDuplicate<Rest, Seen | First>
+	: false;
+
+/**
+ * Returns the tuple only when it contains every branded request key exactly once.
+ * Missing, extra, and duplicate identity fields reduce to never.
+ */
+export type ExactSessionRequestIdentityTuple<
+	Method extends ResponseMethod,
+	Value extends readonly SessionRequestIdentityField[],
+> =
+	HasDuplicate<Value> extends true
+		? never
+		: [Exclude<IdentityBearingRequestKey<Method>, Value[number]>] extends [never]
+			? [Exclude<Value[number], IdentityBearingRequestKey<Method>>] extends [never]
+				? Value
+				: never
+			: never;
 
 type ResponseIdentityKind =
 	| "none"
@@ -291,15 +271,31 @@ interface SessionProtocolMethodDescriptor {
 	readonly responseIdentities: ResponseIdentityKind;
 }
 
+type SessionProtocolMethodTable = Record<ResponseMethod, SessionProtocolMethodDescriptor>;
+type ExactSessionProtocolMethodTable<Table extends SessionProtocolMethodTable> = {
+	[Method in ResponseMethod]: Omit<Table[Method], "requestIdentities"> & {
+		readonly requestIdentities: ExactSessionRequestIdentityTuple<
+			Method,
+			Table[Method]["requestIdentities"]
+		>;
+	};
+};
+type NoExtraSessionProtocolMethods<Table> =
+	Exclude<keyof Table, ResponseMethod> extends never ? unknown : never;
+function defineSessionProtocolMethods<const Table extends SessionProtocolMethodTable>(
+	table: Table & ExactSessionProtocolMethodTable<Table> & NoExtraSessionProtocolMethods<Table>,
+): Table {
+	return table;
+}
+
 /**
  * The one exhaustive owner of request serialization and response adoption.
  * Protocol schemas still own wire validation; this table only names trusted identities.
- * Compile-time request branding remains in
- * src/runtime/codex-protocol/lib/client-request-schemas.ts, whose protocol boundary
- * is outside this session owner. The ResponseMethod record check and the 34-method
- * request oracle enforce this runtime owner instead.
+ * Compile-time request branding remains in the protocol-owned request types. The
+ * table builder derives each method's identity-bearing keys from those brands and
+ * rejects any missing, extra, or duplicate runtime field.
  */
-export const SESSION_PROTOCOL_METHODS = {
+export const SESSION_PROTOCOL_METHODS = defineSessionProtocolMethods({
 	initialize: { requestIdentities: [], responseIdentities: "none" },
 	"config/read": { requestIdentities: [], responseIdentities: "none" },
 	"configRequirements/read": { requestIdentities: [], responseIdentities: "none" },
@@ -378,7 +374,7 @@ export const SESSION_PROTOCOL_METHODS = {
 		responseIdentities: "raw-realtime",
 	},
 	"currentTime/read": { requestIdentities: [], responseIdentities: "none" },
-} as const satisfies Record<ResponseMethod, SessionProtocolMethodDescriptor>;
+});
 
 interface ResponseIdentityCollection {
 	readonly threadIds: unknown[];

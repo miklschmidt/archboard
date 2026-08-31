@@ -4,14 +4,25 @@ import {
 	createIdentityAuthority,
 	IdentityValidationError,
 } from "../../../shared/codex-workbench-identity/index.js";
+import type { ResponseMethod, ResponsePayloads } from "../../codex-protocol/index.js";
 import {
 	CodexSessionMutationError,
 	type SessionAgentMessageItem,
 	type SessionCollabAgentItem,
 	type SessionSubAgentActivityItem,
 	type SessionThread,
+	type SessionThreadSpawnSource,
 } from "../index.js";
 import { createSessionFixture, threadFixture, type SessionFixture } from "./support.js";
+
+type RawThread = ResponsePayloads["thread/read"]["thread"];
+type RawTurn = ResponsePayloads["turn/start"]["turn"];
+type RawThreadItem = RawTurn["items"][number];
+type RawQueuedSubmission = ResponsePayloads["thread/queue/add"]["queuedSubmission"];
+type SessionSpawnThreadSource = Extract<
+	SessionThread["source"],
+	{ readonly subAgent: SessionThreadSpawnSource }
+>;
 
 async function rejected(promise: Promise<unknown>): Promise<unknown> {
 	try {
@@ -33,38 +44,37 @@ async function readyFixture(): Promise<SessionFixture> {
 	return fixture;
 }
 
-const richItems = [
-	{
-		type: "agentMessage",
-		id: "item-agent",
-		text: "nested",
-		phase: null,
-		memoryCitation: { entries: [], threadIds: ["thread-parent"] },
-		delivery: null,
+const richAgentItem = {
+	type: "agentMessage",
+	id: "item-agent",
+	text: "nested",
+	phase: null,
+	memoryCitation: { entries: [], threadIds: ["thread-parent"] },
+	delivery: null,
+} satisfies Extract<RawThreadItem, { readonly type: "agentMessage" }>;
+const richCollabItem = {
+	type: "collabAgentToolCall",
+	id: "item-collab",
+	tool: "sendMessage",
+	status: "completed",
+	senderThreadId: "thread-parent",
+	receiverThreadIds: ["thread-child", "thread-parent"],
+	prompt: null,
+	model: null,
+	reasoningEffort: null,
+	agentsStates: {
+		"thread-parent": { status: "completed", message: null },
+		"thread-child": { status: "running", message: "working" },
 	},
-	{
-		type: "collabAgentToolCall",
-		id: "item-collab",
-		tool: "sendMessage",
-		status: "completed",
-		senderThreadId: "thread-parent",
-		receiverThreadIds: ["thread-child", "thread-parent"],
-		prompt: null,
-		model: null,
-		reasoningEffort: null,
-		agentsStates: {
-			"thread-parent": { status: "completed", message: null },
-			"thread-child": { status: "running", message: "working" },
-		},
-	},
-	{
-		type: "subAgentActivity",
-		id: "item-subagent",
-		kind: "started",
-		agentThreadId: "thread-child",
-		agentPath: "/root/worker",
-	},
-] as const;
+} satisfies Extract<RawThreadItem, { readonly type: "collabAgentToolCall" }>;
+const richSubAgentItem = {
+	type: "subAgentActivity",
+	id: "item-subagent",
+	kind: "started",
+	agentThreadId: "thread-child",
+	agentPath: "/root/worker",
+} satisfies Extract<RawThreadItem, { readonly type: "subAgentActivity" }>;
+const richItems = [richAgentItem, richCollabItem, richSubAgentItem] satisfies RawThreadItem[];
 
 const richTurn = {
 	id: "turn-rich",
@@ -75,7 +85,7 @@ const richTurn = {
 	startedAt: 1,
 	completedAt: 2,
 	durationMs: 1,
-} as const;
+} satisfies RawTurn;
 
 const richThread = {
 	...threadFixture,
@@ -94,9 +104,9 @@ const richThread = {
 		},
 	},
 	turns: [richTurn],
-} as const;
+} satisfies RawThread;
 
-function threadStartResponse(thread: unknown) {
+function threadStartResponse(thread: RawThread): ResponsePayloads["thread/start"] {
 	return {
 		thread,
 		model: "gpt-5.6-luna",
@@ -114,12 +124,34 @@ function threadStartResponse(thread: unknown) {
 	};
 }
 
-function queueResponse(id: string) {
+function queueResponse(id: string): RawQueuedSubmission {
 	return {
 		id,
 		input: [{ type: "text", text: "queued", text_elements: [] }],
 		clientUserMessageId: `client-${id}`,
 	};
+}
+
+function enqueueHostileRawResponse(
+	fixture: SessionFixture,
+	method: ResponseMethod,
+	response: unknown,
+): void {
+	// FakeTransport stands in for the untrusted wire here. Keep the one deliberate
+	// cast at this boundary so valid fixtures remain checked against ResponsePayloads.
+	fixture.transport.enqueueResponse(method, response as ResponsePayloads[ResponseMethod]);
+}
+
+function hasSpawnSource(value: SessionThread["source"]): value is SessionSpawnThreadSource {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		typeof value.subAgent === "object" &&
+		value.subAgent !== null &&
+		"thread_spawn" in value.subAgent &&
+		typeof value.subAgent.thread_spawn === "object" &&
+		value.subAgent.thread_spawn !== null
+	);
 }
 
 function expectRawIdentity(
@@ -136,13 +168,7 @@ function expectRichThread(fixture: SessionFixture, thread: SessionThread): void 
 		throw new Error("rich thread ancestry was not returned");
 	expect(thread.forkedFromId).toBe(thread.parentThreadId);
 	expectRawIdentity(fixture, thread.parentThreadId, "thread-parent");
-	if (
-		typeof thread.source !== "object" ||
-		!("subAgent" in thread.source) ||
-		typeof thread.source.subAgent !== "object" ||
-		!("thread_spawn" in thread.source.subAgent)
-	)
-		throw new Error("rich thread source was not returned");
+	if (!hasSpawnSource(thread.source)) throw new Error("rich thread source was not returned");
 	expect(thread.source.subAgent.thread_spawn.parent_thread_id).toBe(thread.parentThreadId);
 	const turn = thread.turns[0];
 	if (!turn) throw new Error("rich turn was not returned");
@@ -176,14 +202,14 @@ describe("Codex session response identities", () => {
 	test("adopts every non-realtime result shape, nested identities, duplicate IDs, and pages", async () => {
 		const fixture = await readyFixture();
 		try {
-			fixture.transport.enqueueResponse("thread/start", threadStartResponse(richThread) as never);
+			fixture.transport.enqueueResponse("thread/start", threadStartResponse(richThread));
 			const started = await fixture.session.threadStart({});
 			expectRichThread(fixture, started.thread);
 			const threadId = started.thread.id;
 
 			fixture.transport.enqueueResponse(
 				"thread/fork",
-				threadStartResponse({ ...richThread, id: "thread-forked" }) as never,
+				threadStartResponse({ ...richThread, id: "thread-forked" }),
 			);
 			const forked = await fixture.session.threadFork({ threadId });
 			expectRawIdentity(fixture, forked.thread.id, "thread-forked");
@@ -192,7 +218,7 @@ describe("Codex session response identities", () => {
 				data: [richThread, richThread],
 				nextCursor: "thread-next",
 				backwardsCursor: "thread-back",
-			} as never);
+			} satisfies ResponsePayloads["thread/list"]);
 			const threads = await fixture.session.threadListPage({});
 			expect(threads.nextCursor).toBe("thread-next");
 			expect(threads.backwardsCursor).toBe("thread-back");
@@ -203,13 +229,15 @@ describe("Codex session response identities", () => {
 			fixture.transport.enqueueResponse("thread/loaded/list", {
 				data: ["thread-child", "thread-child"],
 				nextCursor: "loaded-next",
-			} as never);
+			} satisfies ResponsePayloads["thread/loaded/list"]);
 			const loaded = await fixture.session.threadLoadedListPage({});
 			expect(loaded.data[0]).toBe(loaded.data[1]);
 			expect(loaded.data[0]).toBe(threadId);
 			expect(loaded.nextCursor).toBe("loaded-next");
 
-			fixture.transport.enqueueResponse("thread/read", { thread: richThread } as never);
+			fixture.transport.enqueueResponse("thread/read", {
+				thread: richThread,
+			} satisfies ResponsePayloads["thread/read"]);
 			const read = await fixture.session.threadRead({ threadId });
 			expectRichThread(fixture, read.thread);
 
@@ -217,7 +245,7 @@ describe("Codex session response identities", () => {
 				data: [richTurn],
 				nextCursor: "turn-next",
 				backwardsCursor: "turn-back",
-			} as never);
+			} satisfies ResponsePayloads["thread/turns/list"]);
 			const turns = await fixture.session.threadTurnsListPage({ threadId });
 			const listedTurn = turns.data[0];
 			if (!listedTurn) throw new Error("turn page was empty");
@@ -226,17 +254,19 @@ describe("Codex session response identities", () => {
 			expect(turns.backwardsCursor).toBe("turn-back");
 
 			fixture.transport.enqueueResponse("thread/items/list", {
-				data: [{ turnId: "turn-rich", item: richItems[0] }],
+				data: [{ turnId: "turn-rich", item: richAgentItem }],
 				nextCursor: "item-next",
 				backwardsCursor: "item-back",
-			} as never);
+			} satisfies ResponsePayloads["thread/items/list"]);
 			const items = await fixture.session.threadItemsListPage({ threadId });
 			expect(items.data[0]?.turnId).toBe(turns.data[0]?.id);
 			expect(items.data[0]?.item.id).toBe(turns.data[0]?.items[0]?.id);
 			expect(items.nextCursor).toBe("item-next");
 			expect(items.backwardsCursor).toBe("item-back");
 
-			fixture.transport.enqueueResponse("turn/start", { turn: richTurn } as never);
+			fixture.transport.enqueueResponse("turn/start", {
+				turn: richTurn,
+			} satisfies ResponsePayloads["turn/start"]);
 			const turnStarted = await fixture.session.turnStart({
 				threadId,
 				input: [{ type: "text", text: "continue", text_elements: [] }],
@@ -255,7 +285,7 @@ describe("Codex session response identities", () => {
 
 			fixture.transport.enqueueResponse("thread/queue/add", {
 				queuedSubmission: queueResponse("queue-add"),
-			} as never);
+			} satisfies ResponsePayloads["thread/queue/add"]);
 			const added = await fixture.session.queueAdd({
 				threadId,
 				input: [{ type: "text", text: "queued", text_elements: [] }],
@@ -266,14 +296,14 @@ describe("Codex session response identities", () => {
 			fixture.transport.enqueueResponse("thread/queue/list", {
 				data: [queueResponse("queue-add")],
 				nextCursor: "queue-next",
-			} as never);
+			} satisfies ResponsePayloads["thread/queue/list"]);
 			const queue = await fixture.session.queueListPage({ threadId });
 			expect(queue.data[0]?.id).toBe(added.queuedSubmission.id);
 			expect(queue.nextCursor).toBe("queue-next");
 
 			fixture.transport.enqueueResponse("thread/queue/update", {
 				queuedSubmission: queueResponse("queue-updated"),
-			} as never);
+			} satisfies ResponsePayloads["thread/queue/update"]);
 			const updated = await fixture.session.queueUpdate({
 				threadId,
 				queuedSubmissionId: added.queuedSubmission.id,
@@ -281,7 +311,9 @@ describe("Codex session response identities", () => {
 			});
 			expectRawIdentity(fixture, updated.queuedSubmission.id, "queue-updated");
 
-			fixture.transport.enqueueResponse("thread/queue/start", { turn: richTurn } as never);
+			fixture.transport.enqueueResponse("thread/queue/start", {
+				turn: richTurn,
+			} satisfies ResponsePayloads["thread/queue/start"]);
 			const queueStarted = await fixture.session.queueStart({
 				threadId,
 				queuedSubmissionId: updated.queuedSubmission.id,
@@ -292,7 +324,7 @@ describe("Codex session response identities", () => {
 				data: [{ type: "turnStarted", position: 1, turnId: "raw-realtime-turn", startedAt: 1 }],
 				nextCursor: "timeline-next",
 				activeRealtimeSessionAtPageStart: null,
-			} as never);
+			} satisfies ResponsePayloads["thread/timeline/list"]);
 			const timeline = await fixture.session.timelineListPage({ threadId });
 			const timelineEntry = timeline.data[0];
 			if (timelineEntry?.type !== "turnStarted")
@@ -310,7 +342,7 @@ describe("Codex session response identities", () => {
 	test("rejects an invalid late nested identity before trusting any earlier field", async () => {
 		const fixture = await readyFixture();
 		try {
-			fixture.transport.enqueueResponse("thread/list", {
+			enqueueHostileRawResponse(fixture, "thread/list", {
 				data: [
 					{ ...threadFixture, id: "valid-before-failure", turns: [] },
 					{
@@ -321,7 +353,7 @@ describe("Codex session response identities", () => {
 				],
 				nextCursor: null,
 				backwardsCursor: null,
-			} as never);
+			});
 			const error = await rejected(fixture.session.threadListPage({}));
 			expect(error).toMatchObject({ code: "invalid_identity" });
 			expect(() => fixture.identity.decoder.resolveThreadId("valid-before-failure")).toThrow(
@@ -348,7 +380,7 @@ describe("Codex session response identities", () => {
 				data: [{ ...threadFixture, id: "stale-result-thread", turns: [] }],
 				nextCursor: null,
 				backwardsCursor: null,
-			} as never);
+			} satisfies ResponsePayloads["thread/list"]);
 			expect(await rejected(stale.session.threadListPage({}))).toMatchObject({
 				code: "invalid_identity",
 			});
@@ -367,7 +399,7 @@ describe("Codex session response identities", () => {
 			});
 			wrongChild.transport.enqueueResponse(
 				"thread/start",
-				threadStartResponse({ ...threadFixture, id: "wrong-child-thread", turns: [] }) as never,
+				threadStartResponse({ ...threadFixture, id: "wrong-child-thread", turns: [] }),
 			);
 			const error = await rejected(wrongChild.session.threadStart({}));
 			expect(error).toBeInstanceOf(CodexSessionMutationError);

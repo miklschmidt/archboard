@@ -186,7 +186,10 @@ export class FakeTransport implements CodexTransport {
 	}
 }
 
-export const configFixture = (sqliteHome: string, configPath: string) => ({
+export const configFixture = (
+	sqliteHome: string,
+	configPath: string,
+): ResponsePayloads["config/read"] => ({
 	config: {
 		model: null,
 		review_model: null,
@@ -244,9 +247,11 @@ export const modelFixture = {
 	serviceTiers: [],
 	defaultServiceTier: null,
 	isDefault: true,
-};
+} satisfies ResponsePayloads["model/list"]["data"][number];
 
-export const requirementsFixture = (sqliteHome: string | null) => ({
+export const requirementsFixture = (
+	sqliteHome: string | null,
+): ResponsePayloads["configRequirements/read"] => ({
 	requirements: {
 		cliAuthCredentialsStore: null,
 		chatgptBaseUrl: null,
@@ -286,7 +291,7 @@ export const threadItemFixture = {
 	id: "item-1",
 	clientId: null,
 	content: [{ type: "text", text: "hello", text_elements: [] }],
-};
+} satisfies ResponsePayloads["thread/items/list"]["data"][number]["item"];
 
 export const turnFixture = {
 	id: "turn-1",
@@ -297,7 +302,7 @@ export const turnFixture = {
 	startedAt: 1,
 	completedAt: 2,
 	durationMs: 1,
-};
+} satisfies ResponsePayloads["turn/start"]["turn"];
 
 export const threadFixture = {
 	id: "thread-1",
@@ -327,7 +332,7 @@ export const threadFixture = {
 	gitInfo: null,
 	name: null,
 	turns: [turnFixture],
-};
+} satisfies ResponsePayloads["thread/read"]["thread"];
 
 export const emptyResponse = {};
 
