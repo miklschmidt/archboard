@@ -1,11 +1,11 @@
 ---
 id: TASK-144.02
 title: Configure Tailwind 4 in Vite
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 02:26'
+updated_date: '2026-08-31 02:32'
 labels: []
 dependencies:
   - TASK-144.01
@@ -36,10 +36,10 @@ Delegation profile: gpt-5.6-luna, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 vite.config.js registers the pinned @tailwindcss/vite plugin once and maps @/ to the absolute repository src directory without changing frontend root, proxy, Excalidraw handling, or output naming.
-- [ ] #2 A disposable fixture imports Tailwind, scans a static class through the @/ alias, and proves generated utility output with no dependence on production app.css, shell.tsx, or later tasks.
-- [ ] #3 Missing plugin, wrong alias target, alias escape, duplicate plugin, and production config drift fail with actionable fixture output.
-- [ ] #4 The task claims only configuration/fixture behavior; rendered production proof remains owned by TASK-144.13, TASK-144.14, and TASK-144.11.
+- [x] #1 vite.config.js registers the pinned @tailwindcss/vite plugin once and maps @/ to the absolute repository src directory without changing frontend root, proxy, Excalidraw handling, or output naming.
+- [x] #2 A disposable fixture imports Tailwind, scans a static class through the @/ alias, and proves generated utility output with no dependence on production app.css, shell.tsx, or later tasks.
+- [x] #3 Missing plugin, wrong alias target, alias escape, duplicate plugin, and production config drift fail with actionable fixture output.
+- [x] #4 The task claims only configuration/fixture behavior; rendered production proof remains owned by TASK-144.13, TASK-144.14, and TASK-144.11.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -77,4 +77,20 @@ Seventh-round remediation: fixture disposal now waits for an explicit allocation
 Eighth-round remediation: durable fixture ownership now remains true until exact-root removal succeeds, and cleanup waits for all tracked fixture work before its final removal. Disposal failures clear only the failed attempt memo, so a later cleanup call retries after transient removal failure; render-start disposal and in-flight output recreation are covered by public regressions. The concurrent-owner check now uses bounded polling of both exact allocated paths; fs.watch is only an optional wake-up for the 200-owner observation case, with no event-count dependency. Validation: focused allocation regressions (5 pass, 25 assertions), full vite-tailwind-contract suite (42 pass, 90 assertions), type-check, lint, format check, and frontend build. Per the app OOM instruction, the 200-owner stress, modules, system, complete check, and browser lanes were not rerun in this round; prior evidence remains recorded above.
 
 Ninth-round remediation: candidate-local ownership validation is now immutable per allocation attempt; retained EEXIST fixtures reject both assertActive and run after retry, and the foreign occupied directory remains byte-identical. Exact-root observation awaits the named polling interval when no wake callback exists. Watcher setup is optional and caught; a focused regression proves polling continues after simulated watcher failure. Validation: focused allocation ownership cases (7 pass, 38 assertions), type-check, format check, lint, and git diff --check. The 200-owner stress and all broad modules/repository/system/check/browser lanes remain intentionally skipped per the app OOM instruction.
+
+Root integration and finalization evidence (2026-08-31):
+- Independent ninth-round complete-range review returned REVIEW_CLEAN at exact worker HEAD cd11e7e220fba2c41e779e6aa582657bd13504e.
+- Integrated the review-clean range through orchestration HEAD 25532ee.
+- Root-owned full task scope passed in capped unit archboard-task14402-focused-25532ee.service with MemoryMax=8G and MemorySwapMax=1G: 51 tests, 336 expectations, exit 0, peak 565.8M, swap 0, no limit hit. This included the previously deferred 200-owner exact-root observation case plus contract, allocation cleanup, failure pairing, collision, watcher-failure, interruption, alias, and configuration-drift owners.
+- Capped type-check passed in archboard-task14402-typecheck-25532ee.service: exit 0, peak 1.3G, swap 0, no limit hit.
+- Capped lint passed in archboard-task14402-lint-25532ee.service: 0 warnings/errors, peak 1.5G, swap 0, no limit hit.
+- Capped frontend build passed in archboard-task14402-build-25532ee.service: 2,446 modules transformed, exit 0, peak 1.4G, swap 0, no limit hit.
+- git diff --check and clean worktree status passed. The combined repository lane separately exposed one failure in active TASK-144.10, not in this task-owned scope; every TASK-144.02 owner passed and no exception was added.
+- Production rendered proof remains explicitly owned by TASK-144.11, TASK-144.13, and TASK-144.14.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Configured the pinned Tailwind Vite plugin and canonical @ alias, added a disposable isolated fixture with deterministic failure and cleanup coverage, and passed the complete task-owned suite including the 200-owner allocation case under memory caps.
+<!-- SECTION:FINAL_SUMMARY:END -->
