@@ -41,6 +41,11 @@ export function strings(value: unknown, label: string): string[] {
 	return value as string[];
 }
 
+export function union(value: unknown, label: string): string[] {
+	if (typeof value !== "string") throw new Error(`${label} must be a pipe-separated string`);
+	return value.split("|");
+}
+
 function sameJson(actual: unknown, expected: unknown, label: string): void {
 	if (JSON.stringify(actual) !== JSON.stringify(expected)) {
 		throw new Error(
@@ -49,7 +54,11 @@ function sameJson(actual: unknown, expected: unknown, label: string): void {
 	}
 }
 
-function exactValues(label: string, actual: string[], expected: readonly string[]): void {
+export function validateOrderedValues(
+	label: string,
+	actual: string[],
+	expected: readonly string[],
+): void {
 	const duplicate = actual.find((value, index) => actual.indexOf(value) !== index);
 	if (duplicate !== undefined) throw new Error(`${label} has duplicate ${duplicate}`);
 	for (const value of expected) {
@@ -64,6 +73,22 @@ function exactValues(label: string, actual: string[], expected: readonly string[
 				`${label} reordered ${value}: expected index ${index}, received ${actual[index]}`,
 			);
 		}
+	}
+}
+
+function exactObject(label: string, actual: JsonRecord, expected: JsonRecord): void {
+	validateOrderedValues(`${label} fields`, Object.keys(actual), Object.keys(expected));
+	for (const [field, expectedValue] of Object.entries(expected)) {
+		const actualValue = actual[field];
+		if (Array.isArray(expectedValue) && expectedValue.every((entry) => typeof entry === "string")) {
+			validateOrderedValues(
+				`${label}.${field}`,
+				strings(actualValue, `${label}.${field}`),
+				expectedValue,
+			);
+			continue;
+		}
+		sameJson(actualValue, expectedValue, `${label}.${field}`);
 	}
 }
 
@@ -89,9 +114,54 @@ function exactRows(
 				`${label} reordered ${value}: expected index ${index}, received ${actualKeys[index]}`,
 			);
 		}
-		sameJson(actual[index], expected[index], `${label} ${value}`);
+		exactObject(`${label} ${value}`, actual[index]!, expected[index]!);
 	}
 }
+
+export const manifestRootFields = ["schema", "threadLink", "operation"] as const;
+export const linkPolicyFields = [
+	"classificationTarget",
+	"exhaustBeforePrecedence",
+	"classificationFailures",
+	"reasonNullStates",
+	"reasonRequiredStates",
+	"nonExecutableStatuses",
+	"reasonPrecedence",
+	"inferThreadFromRecency",
+] as const;
+export const operationPolicyFields = [
+	"fieldOrder",
+	"producers",
+	"tupleStates",
+	"outcomeTransitions",
+	"turnEvidence",
+	"terminal",
+	"retryAfterOutcomeUnknown",
+	"threadStartOutcomeUnknown",
+	"excludedBoundaries",
+	"callbackEvents",
+	"forbiddenFields",
+] as const;
+export const canonicalRootFields = [
+	"schema",
+	"paneId",
+	"board",
+	"threadLink",
+	"child",
+	"workhorse",
+	"coordinator",
+	"semantic",
+	"focus",
+	"selection",
+	"claim",
+	"ambiguity",
+	"operation",
+] as const;
+export const canonicalThreadLinkFields = ["state", "reason"] as const;
+export const canonicalOperationFields = ["id", "kind", "rpc", "outcome"] as const;
+export const reasonNullStates = ["unbound", "executable"] as const;
+export const reasonRequiredStates = ["inspect_only"] as const;
+export const threadLinkStates = [...reasonNullStates, ...reasonRequiredStates] as const;
 
 export const reasonRows = [
 	{ reason: "stale_child", condition: "link_child_is_not_current_child" },
@@ -193,31 +263,36 @@ export const transitionRows = [
 ] as const;
 
 export const evidenceRows = [
-	{ event: "turn/started", rpc: "turn/start", outcome: "delivered", tupleAction: "retain" },
+	{
+		event: "turn/started",
+		rpcs: ["turn/start"],
+		outcome: "delivered",
+		tupleAction: "retain",
+	},
 	{
 		event: "turn/steer_response",
-		rpc: "turn/steer",
+		rpcs: ["turn/steer"],
 		outcome: "delivered",
 		tupleAction: "retain_existing_turn_id",
 	},
 	{
 		event: "turn/completed",
 		status: "completed",
-		rpc: "turn/start",
+		rpcs: ["turn/start", "turn/steer"],
 		outcome: "delivered",
 		tupleAction: "emit_terminal_then_clear",
 	},
 	{
 		event: "turn/completed",
 		status: "interrupted",
-		rpc: "turn/start",
+		rpcs: ["turn/start", "turn/steer"],
 		outcome: "delivered",
 		tupleAction: "emit_terminal_then_clear",
 	},
 	{
 		event: "turn/completed",
 		status: "failed",
-		rpc: "turn/start",
+		rpcs: ["turn/start", "turn/steer"],
 		outcome: "delivered",
 		tupleAction: "emit_terminal_then_clear",
 	},
@@ -234,37 +309,32 @@ export const canonical = record(
 
 export function validateManifest(value: unknown): void {
 	const root = record(value, "manifest");
-	exactValues("manifest fields", Object.keys(root), ["schema", "threadLink", "operation"]);
+	validateOrderedValues("manifest fields", Object.keys(root), manifestRootFields);
 	sameJson(root.schema, 1, "manifest schema");
 	const link = record(root.threadLink, "threadLink policy");
-	exactValues("threadLink policy fields", Object.keys(link), [
-		"classificationTarget",
-		"exhaustBeforePrecedence",
-		"classificationFailures",
-		"reasonNullStates",
-		"reasonRequiredStates",
-		"nonExecutableStatuses",
-		"reasonPrecedence",
-		"inferThreadFromRecency",
-	]);
+	validateOrderedValues("threadLink policy fields", Object.keys(link), linkPolicyFields);
 	sameJson(link.classificationTarget, "target_thread_id", "classification target");
-	exactValues("classification exhaustion", strings(link.exhaustBeforePrecedence, "exhaustion"), [
-		"thread/list",
-		"thread/loaded/list",
-	]);
-	exactValues("classification failures", strings(link.classificationFailures, "failures"), [
-		"repeated_cursor",
-		"transport_failure",
-		"list_exhaustion_failure",
-	]);
-	exactValues("reason-null states", strings(link.reasonNullStates, "reason-null states"), [
-		"unbound",
-		"executable",
-	]);
-	exactValues("reason-required states", strings(link.reasonRequiredStates, "required states"), [
-		"inspect_only",
-	]);
-	exactValues(
+	validateOrderedValues(
+		"classification exhaustion",
+		strings(link.exhaustBeforePrecedence, "exhaustion"),
+		["thread/list", "thread/loaded/list"],
+	);
+	validateOrderedValues(
+		"classification failures",
+		strings(link.classificationFailures, "failures"),
+		["repeated_cursor", "transport_failure", "list_exhaustion_failure"],
+	);
+	validateOrderedValues(
+		"reason-null states",
+		strings(link.reasonNullStates, "reason-null states"),
+		reasonNullStates,
+	);
+	validateOrderedValues(
+		"reason-required states",
+		strings(link.reasonRequiredStates, "required states"),
+		reasonRequiredStates,
+	);
+	validateOrderedValues(
 		"non-executable statuses",
 		strings(link.nonExecutableStatuses, "non-executable statuses"),
 		["systemError"],
@@ -275,20 +345,8 @@ export function validateManifest(value: unknown): void {
 	sameJson(link.inferThreadFromRecency, false, "threadLink recency inference");
 
 	const operation = record(root.operation, "operation policy");
-	exactValues("operation policy fields", Object.keys(operation), [
-		"fieldOrder",
-		"producers",
-		"tupleStates",
-		"outcomeTransitions",
-		"turnEvidence",
-		"terminal",
-		"retryAfterOutcomeUnknown",
-		"threadStartOutcomeUnknown",
-		"excludedBoundaries",
-		"callbackEvents",
-		"forbiddenFields",
-	]);
-	exactValues("operation field order", strings(operation.fieldOrder, "field order"), [
+	validateOrderedValues("operation policy fields", Object.keys(operation), operationPolicyFields);
+	validateOrderedValues("operation field order", strings(operation.fieldOrder, "field order"), [
 		"id",
 		"kind",
 		"rpc",
@@ -312,33 +370,27 @@ export function validateManifest(value: unknown): void {
 		evidenceRows,
 		(row) => `${String(row.event)}:${String(row.status ?? "-")}`,
 	);
-	sameJson(
-		operation.terminal,
-		{
-			emit: "once",
-			clear: "after_terminal_callback_or_event",
-			clearFields: ["id", "kind", "rpc", "outcome"],
-		},
-		"terminal policy",
-	);
+	exactObject("terminal policy", record(operation.terminal, "terminal policy"), {
+		emit: "once",
+		clear: "after_terminal_callback_or_event",
+		clearFields: ["id", "kind", "rpc", "outcome"],
+	});
 	sameJson(operation.retryAfterOutcomeUnknown, false, "retry after outcome_unknown");
-	sameJson(
-		operation.threadStartOutcomeUnknown,
+	exactObject(
+		"thread/start uncertainty",
+		record(operation.threadStartOutcomeUnknown, "thread/start uncertainty"),
 		{
 			linkState: "inspect_only",
 			reason: "thread_start_outcome_unknown",
 			inferFromRecency: false,
 		},
-		"thread/start uncertainty",
 	);
-	exactValues("excluded boundaries", strings(operation.excludedBoundaries, "excluded boundaries"), [
-		"interrupt",
-		"queue",
-		"semantic_injection",
-		"callback_injection",
-		"realtime_transport",
-	]);
-	exactValues("callback events", strings(operation.callbackEvents, "callback events"), [
+	validateOrderedValues(
+		"excluded boundaries",
+		strings(operation.excludedBoundaries, "excluded boundaries"),
+		["interrupt", "queue", "semantic_injection", "callback_injection", "realtime_transport"],
+	);
+	validateOrderedValues("callback events", strings(operation.callbackEvents, "callback events"), [
 		"accepted",
 		"queued",
 		"started",
@@ -348,48 +400,75 @@ export function validateManifest(value: unknown): void {
 		"failed",
 		"outcome_unknown",
 	]);
-	exactValues("forbidden fields", strings(operation.forbiddenFields, "forbidden fields"), [
-		"phase",
-		"status",
-		"event",
-		"source",
-	]);
+	validateOrderedValues(
+		"forbidden fields",
+		strings(operation.forbiddenFields, "forbidden fields"),
+		["phase", "status", "event", "source"],
+	);
 }
 
 export function validateCanonicalContext(value: unknown): void {
 	const root = record(value, "canonical context");
+	validateOrderedValues("canonical root fields", Object.keys(root), canonicalRootFields);
+	sameJson(root.schema, 1, "canonical schema");
 	const link = record(root.threadLink, "canonical threadLink");
 	const operation = record(root.operation, "canonical operation");
-	exactValues("canonical threadLink fields", Object.keys(link), ["state", "reason"]);
-	exactValues("canonical operation fields", Object.keys(operation), [
-		"id",
-		"kind",
-		"rpc",
-		"outcome",
-	]);
-	exactValues("canonical reason union", String(link.reason).split("|"), [
+	validateOrderedValues(
+		"canonical threadLink fields",
+		Object.keys(link),
+		canonicalThreadLinkFields,
+	);
+	validateOrderedValues(
+		"canonical operation fields",
+		Object.keys(operation),
+		canonicalOperationFields,
+	);
+	validateOrderedValues(
+		"canonical state union",
+		union(link.state, "canonical state union"),
+		threadLinkStates,
+	);
+	validateOrderedValues("canonical reason union", union(link.reason, "canonical reason union"), [
 		...reasonRows.map((row) => row.reason),
 		"null",
 	]);
-	exactValues("canonical kind union", String(operation.kind).split("|"), [
+	sameJson(operation.id, "<opaque-or-null>", "canonical operation.id");
+	validateOrderedValues("canonical kind union", union(operation.kind, "canonical kind union"), [
 		...producerRows.map((row) => row.kind),
 		"null",
 	]);
-	exactValues("canonical rpc union", String(operation.rpc).split("|"), [
+	validateOrderedValues("canonical rpc union", union(operation.rpc, "canonical rpc union"), [
 		"turn/start",
 		"turn/steer",
 		"null",
 	]);
-	exactValues("canonical outcome union", String(operation.outcome).split("|"), [
-		"delivered",
-		"not_delivered",
-		"outcome_unknown",
-		"null",
-	]);
+	validateOrderedValues(
+		"canonical outcome union",
+		union(operation.outcome, "canonical outcome union"),
+		["delivered", "not_delivered", "outcome_unknown", "null"],
+	);
+}
+
+export function validateThreadLinkPair(state: unknown, reason: unknown): void {
+	if (typeof state !== "string" || !(threadLinkStates as readonly string[]).includes(state)) {
+		throw new Error(`threadLink state has unknown ${String(state)}`);
+	}
+	if ((reasonNullStates as readonly string[]).includes(state)) {
+		if (reason !== null) throw new Error(`threadLink state ${state} requires null reason`);
+		return;
+	}
+	if (reason === null) throw new Error(`threadLink state ${state} requires a non-null reason`);
+	if (typeof reason !== "string" || !reasonRows.some((row) => row.reason === reason)) {
+		throw new Error(`threadLink reason has unknown ${String(reason)}`);
+	}
 }
 
 export function cloneManifest(): JsonRecord {
 	return structuredClone(manifest);
+}
+
+export function cloneCanonical(): JsonRecord {
+	return structuredClone(canonical);
 }
 
 export function linkPolicy(root: JsonRecord): JsonRecord {
