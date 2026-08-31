@@ -45,9 +45,18 @@ const DEFAULTS = {
 };
 
 export type FixtureControl = {
-	readonly startEvents?: readonly { readonly method: string; readonly params: unknown }[];
-	readonly afterStartEvents?: readonly { readonly method: string; readonly params: unknown }[];
+	readonly startEvents?: readonly {
+		readonly method: string;
+		readonly params: unknown;
+		readonly delayMs?: number;
+	}[];
+	readonly afterStartEvents?: readonly {
+		readonly method: string;
+		readonly params: unknown;
+		readonly delayMs?: number;
+	}[];
 	readonly pages?: readonly unknown[];
+	readonly startDelayMs?: number;
 	readonly exitOn?: string | null;
 	readonly drop?: readonly string[];
 };
@@ -87,8 +96,12 @@ class PublicChildBridge extends EventEmitter implements CodexTransportChild {
 	}
 }
 
-const FAKE_CODEX_SOURCE = (logPath: string, controlPath: string): string => `#!${process.execPath}
-const fs=require("node:fs"),logPath=${JSON.stringify(logPath)},controlPath=${JSON.stringify(controlPath)},version=${JSON.stringify(CODEX_VERSION)};
+const FAKE_CODEX_SOURCE = (
+	logPath: string,
+	controlPath: string,
+	version: string,
+): string => `#!${process.execPath}
+const fs=require("node:fs"),logPath=${JSON.stringify(logPath)},controlPath=${JSON.stringify(controlPath)},version=${JSON.stringify(version)};
 const expectedArgs=JSON.stringify(["app-server","--stdio","--strict-config"]); let pageIndex=0,realtimeSessionId="";
 const record=value=>fs.appendFileSync(logPath,JSON.stringify(value)+"\\n");
 const control=()=>{try{return JSON.parse(fs.readFileSync(controlPath,"utf8"));}catch{return {};}};
@@ -104,11 +117,12 @@ if(frame.method==="configRequirements/read"){response(frame,{requirements:null})
 if(frame.method==="config/read"){response(frame,configResponse());return;}
 if(frame.method==="account/read"){response(frame,{account:{type:"chatgpt",email:null,planType:"pro"},requiresOpenaiAuth:true});return;}
 const current=control();record({kind:"request",method:frame.method,params:frame.params});
-if(frame.method==="thread/realtime/start"){realtimeSessionId=frame.params.realtimeSessionId;response(frame,{});for(const event of current.startEvents??${JSON.stringify(DEFAULTS.startEvents)})notification(event.method,replace(event.params,realtimeSessionId,frame.params.threadId));for(const event of current.afterStartEvents??[])notification(event.method,replace(event.params,realtimeSessionId,frame.params.threadId));return;}
+if(frame.method==="thread/realtime/start"){realtimeSessionId=frame.params.realtimeSessionId;response(frame,{});const emitEvents=values=>{let delay=0;for(const event of values){delay+=event.delayMs??0;setTimeout(()=>notification(event.method,replace(event.params,realtimeSessionId,frame.params.threadId)),delay);}};const emitStart=()=>{const latest=control();emitEvents(latest.startEvents??${JSON.stringify(DEFAULTS.startEvents)});emitEvents(latest.afterStartEvents??[]);};if(current.startDelayMs)setTimeout(emitStart,current.startDelayMs);else emitStart();return;}
 if(frame.method==="thread/timeline/list"){const pages=current.pages??[];const page=pages[pageIndex++]??{data:[],nextCursor:null,activeRealtimeSessionAtPageStart:null};response(frame,replace(page,realtimeSessionId,frame.params.threadId));return;}
 if(current.exitOn===frame.method){process.exit(17);return;} if((current.drop??[]).includes(frame.method))return; response(frame,{});
 }
-if(process.argv[2]==="--version"){process.stdout.write(version+"\\n");process.exit(0);} if(JSON.stringify(process.argv.slice(2))!==expectedArgs){process.stderr.write("argv rejected\\n");process.exit(9);}
+if(process.argv[2]==="--version"){record({kind:"version_probe",args:process.argv.slice(2),version});process.stdout.write(version+"\\n");process.exit(0);} if(JSON.stringify(process.argv.slice(2))!==expectedArgs){process.stderr.write("argv rejected\\n");process.exit(9);}
+record({kind:"app_server_spawn",args:process.argv.slice(2)});
 let input="";process.stdin.on("data",chunk=>{input+=chunk.toString();let newline;while((newline=input.indexOf("\\n"))>=0){const line=input.slice(0,newline);input=input.slice(newline+1);if(!line.trim())continue;try{handle(JSON.parse(line));}catch(error){record({kind:"fixture-error",message:String(error),stack:error&&error.stack});process.stderr.write(String(error)+"\\n");process.exit(19);}}});process.stdin.resume();
 `;
 
@@ -116,7 +130,7 @@ function sleep(milliseconds: number): Promise<void> {
 	return new Promise((done) => setTimeout(done, milliseconds));
 }
 
-async function waitFor(predicate: () => boolean, timeoutMs = 5_000): Promise<void> {
+export async function waitFor(predicate: () => boolean, timeoutMs = 5_000): Promise<void> {
 	const deadline = Date.now() + timeoutMs;
 	while (!predicate()) {
 		if (Date.now() >= deadline)
@@ -160,21 +174,34 @@ export function makeNotification(
 	} as Parameters<CodexRealtimeAdapter["onNotification"]>[0];
 }
 
-function writeFakeExecutable(root: string, logPath: string, controlPath: string): string {
+function writeFakeExecutable(
+	root: string,
+	logPath: string,
+	controlPath: string,
+	version: string,
+): string {
 	const executable = join(root, "codex-fixture");
-	writeFileSync(executable, FAKE_CODEX_SOURCE(logPath, controlPath), { mode: 0o700 });
+	writeFileSync(executable, FAKE_CODEX_SOURCE(logPath, controlPath, version), { mode: 0o700 });
 	chmodSync(executable, 0o700);
 	return executable;
 }
 
-export async function createHarness(control: FixtureControl = {}): Promise<RealtimeHarness> {
+export async function createHarness(
+	control: FixtureControl = {},
+	options: { readonly version?: string } = {},
+): Promise<RealtimeHarness> {
 	const root = mkdtempSync(join(tmpdir(), "archboard-codex-realtime-process-"));
 	const controlPath = join(root, "control.json");
 	const logPath = join(root, "requests.ndjson");
 	writeFileSync(logPath, "");
 	writeControl(controlPath, control);
 	const owner = createCodexProcess({
-		executablePath: writeFakeExecutable(root, logPath, controlPath),
+		executablePath: writeFakeExecutable(
+			root,
+			logPath,
+			controlPath,
+			options.version ?? CODEX_VERSION,
+		),
 		checkoutRoot: repoRoot,
 		storage: { rootDirectory: join(root, "storage") },
 	});
@@ -199,6 +226,7 @@ export async function createHarness(control: FixtureControl = {}): Promise<Realt
 		writeControl(controlPath, controlState, String(binding.coordinatorThreadId));
 		const readyState = { settled: false };
 		let adapter!: CodexRealtimeAdapter;
+		bridge.stdout.prependOnceListener("end", () => bridge?.emit("exit", null, null));
 		const transport = createCodexTransport({ child: bridge, identity });
 		const session = createCodexSession({
 			transport,
@@ -344,4 +372,20 @@ export async function withHarness(
 	} finally {
 		await harness.close();
 	}
+}
+
+export function latestState(harness: RealtimeHarness) {
+	for (let index = harness.events.length - 1; index >= 0; index -= 1) {
+		const event = harness.events[index];
+		if (event?.kind === "state") return event.state;
+	}
+	throw new Error("The realtime harness has not emitted a state.");
+}
+
+export async function waitForState(harness: RealtimeHarness): Promise<void> {
+	await waitFor(() => latestState(harness).phase === "recoverable_error");
+}
+
+export async function waitForGenerations(harness: RealtimeHarness, count: number): Promise<void> {
+	await waitFor(() => harness.generations.length === count);
 }

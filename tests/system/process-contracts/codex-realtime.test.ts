@@ -4,16 +4,24 @@ import { expect, test } from "bun:test";
 
 import {
 	createHarness,
+	latestState,
 	makeNotification,
 	type RealtimeHarness,
+	waitFor,
+	waitForGenerations,
+	waitForState,
 	withHarness,
 } from "./fixtures/codex-realtime-process.ts";
+import { composeCoordinatorInstructions } from "../../../src/runtime/codex-instructions/index.ts";
 import { createIdentityAuthority } from "../../../src/shared/codex-workbench-identity/index.ts";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
 } from "../../../src/shared/codex-realtime-host/index.ts";
+
+const REALTIME_END_INSTRUCTIONS =
+	"Finish the current sentence, preserve unresolved approvals for the visual workbench, and leave no work waiting on voice.";
 
 function browserCorrelation(suffix = "") {
 	return {
@@ -75,7 +83,17 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 			const browser = browserCorrelation();
 			const answer = await generation.adapter.createOffer({ ...browser, sdp: "offer-sdp" });
 			expect(answer).toEqual({ ...browser, sdp: "answer-sdp" });
-			const startResponses = readRecords(harness).filter(
+			const records = readRecords(harness);
+			const versionProbe = records.findIndex((entry) => entry.kind === "version_probe");
+			const appServerSpawn = records.findIndex((entry) => entry.kind === "app_server_spawn");
+			expect(records[versionProbe]).toMatchObject({ kind: "version_probe", args: ["--version"] });
+			expect(records[appServerSpawn]).toMatchObject({
+				kind: "app_server_spawn",
+				args: ["app-server", "--stdio", "--strict-config"],
+			});
+			expect(versionProbe).toBeGreaterThanOrEqual(0);
+			expect(appServerSpawn).toBeGreaterThan(versionProbe);
+			const startResponses = records.filter(
 				(entry) => entry.kind === "response" && entry.method === "thread/realtime/start",
 			);
 			expect(startResponses).toHaveLength(1);
@@ -102,7 +120,7 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 					"outputModality",
 				].toSorted(),
 			);
-			expect(start).toMatchObject({
+			expect(start).toEqual({
 				threadId: "coordinator-thread",
 				clientManagedHandoffs: false,
 				delegationAckFiller: true,
@@ -114,12 +132,15 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 				initialItems: [
 					{ role: "developer", text: '{"source":"fresh-process-brief","board":"Architecture"}' },
 				],
+				realtimeStartInstructions: composeCoordinatorInstructions(),
+				realtimeEndInstructions: REALTIME_END_INSTRUCTIONS,
 				prompt: null,
+				realtimeSessionId: start!.realtimeSessionId,
 				transport: { type: "webrtc", sdp: "offer-sdp" },
 				version: "v3",
 				voice: "breeze",
 			});
-			expect(start!.realtimeStartInstructions).toContain("persistent voice coordinator");
+			expect(start!.realtimeSessionId).toMatch(/^archboard:realtime-session:h[a-f0-9]{32}$/);
 			expect(generation.adapter.transcript()).toEqual([
 				expect.objectContaining({
 					itemId: "assistant-item",
@@ -150,34 +171,56 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 test("real process rejects wrong child/thread/session/version, stale SDP, and flat transcript content", async () => {
 	await withHarness(
 		{
+			startDelayMs: 50,
 			startEvents: [
 				{
 					method: "thread/realtime/sdp",
 					params: { threadId: "other-thread", sdp: "wrong-thread" },
+					delayMs: 0,
 				},
 				{
 					method: "thread/realtime/started",
 					params: { threadId: "$THREAD", realtimeSessionId: "wrong-session", version: "v3" },
+					delayMs: 20,
 				},
 				{
 					method: "thread/realtime/started",
 					params: { threadId: "$THREAD", realtimeSessionId: "$SESSION", version: "v2" },
+					delayMs: 20,
 				},
-				{ method: "thread/realtime/sdp", params: { threadId: "$THREAD", sdp: "answer-sdp" } },
+				{
+					method: "thread/realtime/sdp",
+					params: { threadId: "$THREAD", sdp: "answer-sdp" },
+					delayMs: 20,
+				},
 				{
 					method: "thread/realtime/started",
 					params: { threadId: "$THREAD", realtimeSessionId: "$SESSION", version: "v3" },
+					delayMs: 20,
 				},
 			],
 			afterStartEvents: [
 				{
 					method: "thread/realtime/transcript/delta",
 					params: { threadId: "$THREAD", role: "assistant", delta: "flat" },
+					delayMs: 150,
 				},
 			],
 		},
 		async (harness, generation) => {
 			const browser = browserCorrelation("-gates");
+			let settled = false;
+			const pending = generation.adapter.createOffer({ ...browser, sdp: "offer-sdp" }).then(
+				(answer) => {
+					settled = true;
+					return answer;
+				},
+				(error: unknown) => {
+					settled = true;
+					throw error;
+				},
+			);
+			await waitFor(() => requestParams(harness, "thread/realtime/start").length === 1);
 			const foreign = createIdentityAuthority();
 			generation.adapter.onNotification(
 				makeNotification(foreign, "thread/realtime/sdp", {
@@ -185,14 +228,34 @@ test("real process rejects wrong child/thread/session/version, stale SDP, and fl
 					sdp: "wrong-child",
 				}),
 			);
-			const answer = await generation.adapter.createOffer({ ...browser, sdp: "offer-sdp" });
-			expect(answer.sdp).toBe("answer-sdp");
+			expect(settled).toBeFalse();
+			expect(latestState(harness)).toEqual({ phase: "negotiating", reason: "offer_created" });
+			const wrongThread = generation.identity.decoder.adoptThreadId("other-thread");
 			generation.adapter.onNotification(
-				makeNotification(foreign, "thread/realtime/sdp", {
-					threadId: "coordinator-thread",
-					sdp: "stale-answer",
+				makeNotification(generation.identity, "thread/realtime/sdp", {
+					threadId: wrongThread,
+					sdp: "wrong-thread-current-child",
 				}),
 			);
+			expect(settled).toBeFalse();
+			expect(latestState(harness)).toEqual({ phase: "negotiating", reason: "offer_created" });
+			await waitFor(
+				() => harness.events.filter((event) => event.kind === "diagnostic").length === 1,
+			);
+			expect(settled).toBeFalse();
+			expect(latestState(harness)).toEqual({ phase: "negotiating", reason: "offer_created" });
+			await waitFor(
+				() => harness.events.filter((event) => event.kind === "diagnostic").length === 2,
+			);
+			expect(settled).toBeFalse();
+			expect(latestState(harness)).toEqual({ phase: "negotiating", reason: "offer_created" });
+			const answer = await pending;
+			expect(answer.sdp).toBe("answer-sdp");
+			expect(latestState(harness)).toEqual({ phase: "listening", reason: "negotiation_succeeded" });
+			await waitFor(
+				() => harness.events.filter((event) => event.kind === "diagnostic").length === 3,
+			);
+			expect(latestState(harness)).toEqual({ phase: "listening", reason: "negotiation_succeeded" });
 			expect(generation.adapter.transcript()).toEqual([]);
 			const diagnostics = harness.events.filter((event) => event.kind === "diagnostic");
 			expect(diagnostics).toHaveLength(3);
@@ -206,15 +269,78 @@ test("real process rejects wrong child/thread/session/version, stale SDP, and fl
 	);
 });
 
+test("real process probes the pinned binary before spawn and rejects a wrong version", async () => {
+	const harness = await createHarness({}, { version: "codex-cli 0.150.0" });
+	try {
+		const startFailure = harness.owner.start();
+		expect(startFailure).rejects.toMatchObject({ code: "binary_wrong_version" });
+		await waitFor(() => harness.owner.snapshot().failure?.code === "binary_wrong_version");
+		const records = readRecords(harness);
+		const versionProbe = records.findIndex((entry) => entry.kind === "version_probe");
+		const appServerSpawn = records.findIndex((entry) => entry.kind === "app_server_spawn");
+		expect(records[versionProbe]).toMatchObject({
+			kind: "version_probe",
+			args: ["--version"],
+			version: "codex-cli 0.150.0",
+		});
+		expect(versionProbe).toBeGreaterThanOrEqual(0);
+		expect(appServerSpawn).toBe(-1);
+		expect(harness.generations).toHaveLength(0);
+		expect(harness.owner.snapshot()).toMatchObject({
+			state: "terminal_failure",
+			failure: { code: "binary_wrong_version" },
+		});
+	} finally {
+		await harness.close();
+	}
+});
+
 test("real process recovers pages, detects cursor loops, and classifies lost append once across restart", async () => {
 	await withHarness(
 		{
 			afterStartEvents: [
+				{
+					method: "thread/realtime/item/started",
+					params: {
+						threadId: "$THREAD",
+						item: {
+							id: "item-a",
+							realtimeSessionId: "$SESSION",
+							type: "transcriptSegment",
+							role: "assistant",
+							text: "live",
+						},
+					},
+				},
+				{
+					method: "thread/realtime/item/completed",
+					params: {
+						threadId: "$THREAD",
+						item: {
+							id: "item-a",
+							realtimeSessionId: "$SESSION",
+							type: "transcriptSegment",
+							role: "assistant",
+							text: "live",
+						},
+					},
+				},
 				{ method: "thread/realtime/error", params: { threadId: "$THREAD", message: "recover" } },
 			],
 			pages: [
 				{
 					data: [
+						{
+							type: "realtime",
+							position: 10,
+							item: {
+								id: "item-a",
+								realtimeSessionId: "$SESSION",
+								type: "transcriptSegment",
+								role: "assistant",
+								text: "first",
+							},
+						},
 						{
 							type: "realtime",
 							position: 20,
@@ -253,10 +379,16 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 			const browser = browserCorrelation("-recovery");
 			await generation.adapter.createOffer({ ...browser, sdp: "offer-sdp" });
 			await waitForState(harness);
+			expect(latestState(harness)).toMatchObject({
+				phase: "recoverable_error",
+				reason: "realtime_unavailable",
+			});
 			expect(await generation.adapter.recover(browser)).toMatchObject({ outcome: "delivered" });
+			expect(latestState(harness)).toEqual({ phase: "idle", reason: "recovered" });
 			expect(requestParams(harness, "thread/timeline/list").map((params) => params.cursor)).toEqual(
 				[null, "next"],
 			);
+			expect(generation.adapter.transcript()).toHaveLength(2);
 			expect(
 				generation.adapter
 					.transcript()
@@ -284,11 +416,16 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 					outcome: "outcome_unknown",
 					reason: "transport_failure",
 				});
+				expect(latestState(looping)).toMatchObject({
+					phase: "recoverable_error",
+					reason: "recovery_failed",
+					message: expect.stringContaining("cursor loop"),
+				});
 			} finally {
 				await looping.close();
 			}
 
-			harness.setControl({ exitOn: "thread/realtime/appendText" });
+			harness.setControl({ startDelayMs: 50, exitOn: "thread/realtime/appendText" });
 			const replacementOffer = browserCorrelation("-lost");
 			expect(
 				await generation.adapter.createOffer({ ...replacementOffer, sdp: "offer-sdp" }),
@@ -300,6 +437,14 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 			expect(
 				await generation.adapter.appendText({ ...replacementOffer, text: "lost" }),
 			).toMatchObject({ outcome: "outcome_unknown", reason: "response_lost" });
+			expect(latestState(harness)).toEqual({ phase: "listening", reason: "negotiation_succeeded" });
+			await waitFor(() => harness.owner.snapshot().state === "backoff");
+			expect(harness.owner.snapshot()).toMatchObject({
+				state: "backoff",
+				pid: null,
+				restartAttempt: 1,
+				lastExit: { classification: "crash" },
+			});
 			await waitForGenerations(harness, 2);
 			const second = harness.generations[1];
 			if (!second) throw new Error("Restart generation missing.");
@@ -313,40 +458,41 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 			expect(harness.owner.snapshot().lastExit?.classification).toBe("crash");
 			expect(requestParams(harness, "thread/realtime/appendText")).toHaveLength(1);
 			const freshBrowser = browserCorrelation("-fresh");
-			await second.adapter.createOffer({ ...freshBrowser, sdp: "offer-sdp" });
+			let freshSettled = false;
+			const freshOffer = second.adapter
+				.createOffer({ ...freshBrowser, sdp: "offer-sdp" })
+				.then((answer) => {
+					freshSettled = true;
+					return answer;
+				});
+			await waitFor(() => requestParams(harness, "thread/realtime/start").length === 3);
 			second.adapter.onNotification(
 				makeNotification(generation.identity, "thread/realtime/sdp", {
 					threadId: "coordinator-thread",
 					sdp: "stale-old-child",
 				}),
 			);
+			expect(freshSettled).toBeFalse();
+			expect(latestState(harness)).toEqual({ phase: "negotiating", reason: "offer_created" });
+			const freshStart = requestParams(harness, "thread/realtime/start")[2];
+			if (typeof freshStart?.realtimeSessionId !== "string")
+				throw new Error("Fresh start identity missing.");
+			const freshThread = second.binding.coordinatorThreadId;
+			second.adapter.onNotification(
+				makeNotification(second.identity, "thread/realtime/sdp", {
+					threadId: freshThread,
+					sdp: "fresh-answer",
+				}),
+			);
+			second.adapter.onNotification(
+				makeNotification(second.identity, "thread/realtime/started", {
+					threadId: freshThread,
+					realtimeSessionId: freshStart.realtimeSessionId,
+					version: "v3",
+				}),
+			);
+			expect((await freshOffer).sdp).toBe("fresh-answer");
 			expect(await second.adapter.stop(freshBrowser)).toMatchObject({ outcome: "delivered" });
 		},
 	);
 });
-
-async function waitFor(predicate: () => boolean, timeoutMs = 5_000): Promise<void> {
-	const deadline = Date.now() + timeoutMs;
-	while (!predicate()) {
-		if (Date.now() >= deadline)
-			throw new Error("Timed out waiting for the realtime process fixture.");
-		await new Promise((done) => setTimeout(done, 10));
-	}
-}
-
-async function waitForState(harness: RealtimeHarness): Promise<void> {
-	await waitFor(() =>
-		harness.events.some(
-			(event) => event.kind === "state" && event.state.phase === "recoverable_error",
-		),
-	);
-}
-
-async function waitForGenerations(harness: RealtimeHarness, count: number): Promise<void> {
-	const deadline = Date.now() + 5_000;
-	while (harness.generations.length !== count) {
-		if (Date.now() >= deadline)
-			throw new Error("Timed out waiting for the realtime process restart.");
-		await new Promise((done) => setTimeout(done, 10));
-	}
-}
