@@ -1,0 +1,19 @@
+{
+	"type": "namespace",
+	"name": "archboard_voice",
+	"description": "Resolve the sole host-validated spoken binary approval from a later ordinary coordinator turn.",
+	"tools": [
+		{
+			"type": "function",
+			"name": "resolve_spoken_approval",
+			"description": "Return accept or decline for the sole still-current spoken approval; the host supplies and validates every request identity.",
+			"inputSchema": {
+				"type": "object",
+				"properties": { "verdict": { "type": "string", "enum": ["accept", "decline"] } },
+				"required": ["verdict"],
+				"additionalProperties": false
+			},
+			"deferLoading": false
+		}
+	]
+}
