@@ -278,6 +278,37 @@ describe("Codex workhorse queue contract", () => {
 		).toHaveLength(4);
 	});
 
+	test("rejects a queued request when its accepted binding is replaced before dequeue", async () => {
+		const fixtureValue = fixture();
+		const firstId = fixtureValue.identity.decoder.adoptQueuedSubmissionId("queue-first");
+		const secondId = fixtureValue.identity.decoder.adoptQueuedSubmissionId("queue-second");
+		fixtureValue.session.addIds = [firstId, secondId];
+		const gate = deferred();
+		const firstAddStarted = deferred();
+		let firstAdd = true;
+		fixtureValue.session.beforeMutation = async (method) => {
+			if (method !== "add" || !firstAdd) return;
+			firstAdd = false;
+			firstAddStarted.resolve();
+			await gate.promise;
+		};
+
+		const first = fixtureValue.queue.add({ operationId: "first-operation", prompt: "first" });
+		await firstAddStarted.promise;
+		const second = fixtureValue.queue.add({ operationId: "second-operation", prompt: "second" });
+		gate.resolve();
+		await first;
+		fixtureValue.setBinding(binding(fixtureValue.identity, "replacement"));
+
+		expect(await rejected(second)).toMatchObject({ code: "stale_link" });
+		expect(
+			fixtureValue.session.requests.filter(({ method }) => method === "thread/queue/add"),
+		).toHaveLength(1);
+		expect(
+			fixtureValue.session.requests.filter(({ method }) => method === "thread/queue/list"),
+		).toHaveLength(2);
+	});
+
 	test("returns outcome_unknown and a fresh list when server activity is not attributable", async () => {
 		const fixtureValue = fixture();
 		const existing = submission(fixtureValue.identity, "queue-existing", "existing");

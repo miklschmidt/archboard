@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 17:10'
+updated_date: '2026-08-31 17:31'
 labels: []
 dependencies:
   - TASK-143.01.08
@@ -47,10 +47,20 @@ Own coordinator-to-workhorse queue policy and the sole typed queue RPC port. It 
 4. Reconcile every mutation against its authoritative pre-mutation snapshot and returned evidence; return delivered/not_delivered only for attributable outcomes, and return outcome_unknown with the fresh list for concurrent or lost outcomes without retrying.
 5. Add focused public-boundary fixtures covering all six bodies, identity/link validation, serialization, pagination, reconciliation, UI operation mappings, stale links, concurrent activity, and uncertainty.
 6. Run the focused suite, scoped type/lint/format and repository boundary checks, audit the diff, and commit only the named queue module plus its task metadata.
+
+7. Capture the exact current coordinator/workhorse binding synchronously at every public call, pass it through serialized execution, and refuse it before any queued RPC if the link changes.
+
+8. Remove all OperationId string defaults and infer the identity brand from the required host operation port; add compile-time proof for opaque and future canonical OperationId values.
+
+9. Add deterministic binding-drift coverage proving a queued request makes zero RPCs after replacement, while preserving the reviewed six-operation behavior.
+
+10. Run the remediation-focused tests, compile fixture, scoped type/lint/format/diff checks, audit preserved files, and commit for rereview without finalizing the task.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented the closed six-operation coordinator workhorse queue port with literal UserInput and queue RPC bodies, host-owned operation identity validation, exact current-link checks, serialized commands, exhaustive authoritative pagination, and before/after reconciliation that preserves not_delivered or returns outcome_unknown with a fresh list without retry. Focused validation under named systemd user services with MemoryMax=6G and MemorySwapMax=1G (cgroup paths printed): bun test --isolate src/runtime/codex-workhorse-queue/tests passed 15 tests and 43 expectations; bunx tsc --noEmit passed; bunx oxlint src/runtime/codex-workhorse-queue passed with 0 warnings/errors; bunx oxfmt --check src/runtime/codex-workhorse-queue passed; tests/system/repository-policy/test-inventory.test.ts passed 39 tests and 69 expectations. The targeted repository boundary harness reached the mandated 6G+1G cap while spawning its subprocesses and was not rerun. Protected canonical root bundle remained at sha256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Task remains In Progress with acceptance criteria unchecked pending independent review.
+
+Review remediation implemented from 2cba2ce39189f830d9336173cd97b51ce776f26e: public queue calls now capture a frozen exact coordinator/workhorse binding before enqueue and revalidate it immediately after dequeue, so replaced links produce stale_link with zero RPCs; the factory and all public OperationId-bearing types no longer default to string and infer the identity brand from the required host operation port. Added deterministic queued-binding drift coverage and an opaque OperationId compile fixture, including a TASK-143.01.20-compatible stand-in. Final remediation validation under named systemd user services with MemoryMax=6G and MemorySwapMax=1G (cgroup paths printed): bun test --isolate src/runtime/codex-workhorse-queue/tests passed 16 tests and 46 expectations; bunx tsc --noEmit passed; bunx oxlint src/runtime/codex-workhorse-queue passed with 0 warnings/errors; bunx oxfmt --check src/runtime/codex-workhorse-queue passed; git diff --cached --check passed. The known repository boundary harness cap remains preserved and was not rerun. Task remains In Progress with acceptance criteria unchecked pending rereview.
 <!-- SECTION:NOTES:END -->
