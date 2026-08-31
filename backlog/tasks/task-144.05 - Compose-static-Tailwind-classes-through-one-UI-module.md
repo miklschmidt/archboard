@@ -1,11 +1,11 @@
 ---
 id: TASK-144.05
 title: Compose static Tailwind classes through one UI module
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 00:15'
+updated_date: '2026-08-31 00:25'
 labels: []
 dependencies:
   - TASK-144.01
@@ -31,9 +31,9 @@ Delegation profile: gpt-5.6-luna, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The public module exposes cn only, imports exact direct helpers from TASK-144.01, and accepts complete statically detectable class strings.
-- [ ] #2 Tailwind names are never interpolated or assembled from fragments; exhaustive component state maps remain in their owning UI modules.
-- [ ] #3 class-variance-authority and a repository-owned variant DSL are absent; tests at src/ui/ui-classnames/tests cover conflict resolution, falsy inputs, deterministic order, and named-entrypoint-only imports.
+- [x] #1 The public module exposes cn only, imports exact direct helpers from TASK-144.01, and accepts complete statically detectable class strings.
+- [x] #2 Tailwind names are never interpolated or assembled from fragments; exhaustive component state maps remain in their owning UI modules.
+- [x] #3 class-variance-authority and a repository-owned variant DSL are absent; tests at src/ui/ui-classnames/tests cover conflict resolution, falsy inputs, deterministic order, and named-entrypoint-only imports.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -50,4 +50,12 @@ Delegation profile: gpt-5.6-luna, high.
 Reserved after TASK-144.03 finalized at integration HEAD 741b442. This leaf owns only src/ui/ui-classnames and its module tests; it consumes the already pinned clsx/tailwind-merge and canonical theme without adding a variant DSL or touching UI consumers.
 
 Implemented src/ui/ui-classnames/index.ts as the sole cn entrypoint with direct clsx 2.1.1 then tailwind-merge 3.6.0 composition. Added public-module tests for export shape, semantic/stock conflict precedence, variant isolation, clsx falsy/nested values, deterministic ordering, duplicate handling, arbitrary class preservation, input nonmutation, and independent calls. The focused run initially established that default tailwind-merge preserves unknown named radius tokens, so no custom configuration was added. Validation: focused module tests pass; bun run test:modules (1042 pass); bun run test:repository (130 pass); bun run type-check; bun run lint; bun run fmt:check; bun run build.
+
+Parent integration validation at 98c84cd: bun test src/ui/ui-classnames/tests (8 pass); bun run test:modules (1042 pass, 7632 expectations); bun run test:repository (130 pass, 415 expectations); bun run type-check; bun run lint; bun run fmt:check; bun run build:frontend. Independent review was clean. The default tailwind-merge intentionally preserves unknown semantic radius groups; no custom configuration is added without a real consumer.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added the sole cn UI class-composition entrypoint using direct clsx and tailwind-merge composition, with tests for its public export, conflict behavior, falsy and nested inputs, deterministic order, nonmutation, and independent calls. Independent review and all focused, module, repository, type, lint, format, and frontend build gates passed.
+<!-- SECTION:FINAL_SUMMARY:END -->
