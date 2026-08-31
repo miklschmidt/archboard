@@ -17,6 +17,7 @@ export type Stage =
 	| "setRemote"
 	| "resume";
 export type StopMode = "delivered" | "rejected" | "not_delivered" | "outcome_unknown" | "paused";
+export type BrowserPromiseMode = "resolved" | "rejected" | "pending";
 
 class TrackedTarget extends EventTarget {
 	listenerCount = 0;
@@ -77,9 +78,16 @@ export class FakeChannel extends TrackedTarget {
 
 class FakeSender {
 	replaceCount = 0;
-	constructor(readonly track: FakeTrack) {}
-	async replaceTrack(): Promise<void> {
+	constructor(
+		readonly track: FakeTrack,
+		readonly env: FakeBrowser,
+	) {}
+	replaceTrack(): Promise<void> {
 		this.replaceCount += 1;
+		if (this.env.replaceTrackMode === "rejected")
+			return Promise.reject(new Error("replace failed"));
+		if (this.env.replaceTrackMode === "pending") return new Promise(() => undefined);
+		return Promise.resolve();
 	}
 }
 
@@ -96,12 +104,13 @@ export class FakePeer extends TrackedTarget {
 		super();
 	}
 	addTransceiver(track: MediaStreamTrack): RTCRtpTransceiver {
-		this.env.order.push("transceiver");
-		this.senders.push(new FakeSender(track as unknown as FakeTrack));
+		this.env.record("transceiver");
+		for (let index = 0; index < this.env.senderCount; index += 1)
+			this.senders.push(new FakeSender(track as unknown as FakeTrack, this.env));
 		return {} as RTCRtpTransceiver;
 	}
 	createDataChannel(): RTCDataChannel {
-		this.env.order.push("channel");
+		this.env.record("channel");
 		return this.channel as unknown as RTCDataChannel;
 	}
 	async createOffer(): Promise<RTCSessionDescriptionInit> {
@@ -167,16 +176,19 @@ class FakeContext {
 		if (!this.env.suspended) this.state = "running";
 	}
 	createMediaStreamSource(): MediaStreamAudioSourceNode {
-		this.env.order.push("source");
+		this.env.record("source");
 		return this.source as unknown as MediaStreamAudioSourceNode;
 	}
 	createAnalyser(): AnalyserNode {
-		this.env.order.push("analyser");
+		this.env.record("analyser");
 		return this.analyser as unknown as AnalyserNode;
 	}
-	async close(): Promise<void> {
+	close(): Promise<void> {
 		this.closeCount += 1;
 		this.state = "closed";
+		if (this.env.closeContextMode === "rejected") return Promise.reject(new Error("close failed"));
+		if (this.env.closeContextMode === "pending") return new Promise(() => undefined);
+		return Promise.resolve();
 	}
 }
 
@@ -236,6 +248,9 @@ export class FakeBrowser extends TrackedTarget {
 	pause?: Stage;
 	fail?: Stage;
 	stopMode: StopMode = "delivered";
+	replaceTrackMode: BrowserPromiseMode = "resolved";
+	closeContextMode: BrowserPromiseMode = "resolved";
+	senderCount = 1;
 	noTrack = false;
 	autoplayDenied = false;
 	deferPlay = false;
@@ -243,6 +258,7 @@ export class FakeBrowser extends TrackedTarget {
 	throwAttachment = false;
 	stopCount = 0;
 	now = 0;
+	onStep?: (step: string) => void;
 	private releaseGate?: () => void;
 	private releaseStopGate?: (outcome: CommandOutcome) => void;
 	get localTrack(): FakeTrack {
@@ -255,13 +271,13 @@ export class FakeBrowser extends TrackedTarget {
 		this.install("MediaStream", FakeStream);
 		this.install("RTCPeerConnection", function (this: unknown) {
 			const peer = new FakePeer(activeBrowser());
-			peer.env.order.push("peer");
+			peer.env.record("peer");
 			peer.env.peers.push(peer);
 			return peer;
 		});
 		this.install("AudioContext", function (this: unknown) {
 			const env = activeBrowser();
-			env.order.push("audioContext");
+			env.record("audioContext");
 			const context = new FakeContext(env);
 			env.contexts.push(context);
 			return context;
@@ -281,6 +297,10 @@ export class FakeBrowser extends TrackedTarget {
 		this.install("clearTimeout", (id: number) => this.timers.delete(id));
 		active.push(this);
 	}
+	record(step: string): void {
+		this.order.push(step);
+		this.onStep?.(step);
+	}
 	private install(name: string, value: unknown): void {
 		const descriptor = Object.getOwnPropertyDescriptor(globalThis, name);
 		Object.defineProperty(globalThis, name, { configurable: true, writable: true, value });
@@ -290,7 +310,7 @@ export class FakeBrowser extends TrackedTarget {
 		});
 	}
 	async stage<T>(stage: Stage, value: T): Promise<T> {
-		this.order.push(stage);
+		this.record(stage);
 		const cost = this.costs.get(stage);
 		if (cost) this.advance(cost);
 		if (this.fail === stage) throw new Error(`${stage} failed`);
@@ -356,9 +376,10 @@ export class FakeBrowser extends TrackedTarget {
 		for (const peer of this.peers) expect(peer.remoteTrack.stopCount).toBe(1);
 		for (const track of this.localTracks) expect(track.stopCount).toBe(1);
 		for (const audio of this.audios) {
-			expect(audio.pauseCount).toBe(1);
-			expect(audio.removeCount).toBe(1);
-			expect(audio.loadCount).toBe(1);
+			const detachCount = audio.srcObject === undefined ? 0 : 1;
+			expect(audio.pauseCount).toBe(detachCount);
+			expect(audio.removeCount).toBe(detachCount);
+			expect(audio.loadCount).toBe(detachCount);
 		}
 	}
 }
@@ -391,7 +412,7 @@ export function host(env: FakeBrowser): RealtimeHost {
 		createOffer: async (offer) =>
 			env.stage<AnswerSdp>("hostOffer", { ...offer, sdp: "remote-answer" }),
 		attachRemoteMedia: (attachment) => {
-			env.order.push("attachRemote");
+			env.record("attachRemote");
 			if (env.throwAttachment) throw new Error("attachment failed");
 			env.attachment = attachment;
 			const audio = new FakeAudio(env);
