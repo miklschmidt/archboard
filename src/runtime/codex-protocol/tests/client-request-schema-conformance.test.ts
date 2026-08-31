@@ -141,8 +141,9 @@ function conformanceFailure(
 	} catch (error) {
 		thrown = error;
 	}
-	expect(thrown).toBeInstanceOf(Error);
-	return (thrown as Error).message;
+	if (!(thrown instanceof Error))
+		throw new Error(`expected conformance to throw an Error, received ${String(thrown)}`);
+	return thrown.message;
 }
 
 function expectDeepExactFailure(message: string, method = "thread/read"): void {
@@ -287,6 +288,20 @@ describe("generated ClientRequest schema conformance", () => {
 			name: "any inside the array branch",
 			source:
 				"type JsonValue = null | boolean | number | string | any[] | { [key in string]?: JsonValue };",
+		},
+		{
+			name: "complementary homogeneous object branches",
+			source: [
+				"type JsonObject =",
+				"\t| { [key in string]?: null | boolean | number | string | JsonValue[] }",
+				"\t| { [key in string]?: JsonObject };",
+				"type JsonValue = null | boolean | number | string | JsonValue[] | JsonObject;",
+			].join("\n"),
+		},
+		{
+			name: "a readonly array branch",
+			source:
+				"type JsonValue = null | boolean | number | string | ReadonlyArray<JsonValue> | { [key in string]?: JsonValue };",
 		},
 	] as const)
 		test(`rejects generated JSON with ${hostile.name}`, () => {
