@@ -10,16 +10,23 @@ import { analyzeModuleScope, moduleGraph } from "./support/module-scope-analysis
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const moduleRoot = path.join(repoRoot, "src/ui/codex-realtime");
 const indexPath = path.join(moduleRoot, "index.ts");
-const packagePath = path.join(repoRoot, "package.json");
-const nestedPackagePath = path.join(moduleRoot, "package.json");
-
+const packagePath = path.join(repoRoot, "package.json"),
+	nestedPackagePath = path.join(moduleRoot, "package.json");
+const SOURCE_LIKE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mts", ".cts"]);
+const sourceLike = (name: string): boolean => SOURCE_LIKE_EXTENSIONS.has(path.extname(name));
+const rootEntries = (root: string): string[] =>
+	fs
+		.readdirSync(root, { withFileTypes: true })
+		.filter((entry) => entry.isFile() && sourceLike(entry.name))
+		.map((entry) => entry.name)
+		.toSorted();
 const VALUE_EXPORTS = new Set(
 	"assertRealtimeTransition canTransitionRealtimeState INITIAL_REALTIME_STATE REALTIME_PHASES REALTIME_TRANSITIONS transitionRealtimeState createRealtimeMediaSession REALTIME_MEDIA_FEATURE".split(
 		" ",
 	),
 );
-const CONTRACT_MODULE = "./lib/contract.js";
-const MEDIA_MODULE = "./lib/media-session.js";
+const CONTRACT_MODULE = "./lib/contract.js",
+	MEDIA_MODULE = "./lib/media-session.js";
 const TYPE_EXPORTS = new Set(
 	"AnswerSdp AppendNotDeliveredReason AppendOutcome AppendOutcomeReason AppendOutcomeUnknownReason AppendSpeechRequest AppendTextRequest CommandNotDeliveredReason CommandOutcome CommandOutcomeReason CommandOutcomeUnknownReason CreateOfferSdp RealtimeCommandRequest RealtimeCorrelation RealtimeCorrelationId RealtimeDiagnosticCode RealtimeHost RealtimeItemId RealtimePhase RealtimeRecoverableErrorReason RealtimeSemanticEvent RealtimeSemanticEventListener RealtimeSessionId RealtimeState RealtimeTerminalErrorReason RealtimeTranscriptRecord RealtimeTranscriptRole RealtimeTranscriptStatus RealtimeTransitionReason RealtimeUnsubscribe RecoveryRequest RemoteMediaAttachment StopRequest RealtimeMediaListener RealtimeMediaSession RealtimeMediaSnapshot".split(
 		" ",
@@ -50,16 +57,15 @@ const ALTERNATE_REALTIME_APIS = new Set(
 		" ",
 	),
 );
-
 interface Finding {
 	file: string;
 	reason: string;
 	message: string;
 }
-interface ModuleReference {
+type ModuleReference = {
 	specifier: string;
 	kind: "static import" | "type import" | "dynamic import" | "require";
-}
+};
 
 function privatePackageFindings(file: string, packageJson: Record<string, unknown>): Finding[] {
 	const findings: Finding[] = [];
@@ -82,16 +88,18 @@ function privatePackageFindings(file: string, packageJson: Record<string, unknow
 
 function indexFindings(file: string, ast: ts.SourceFile): Finding[] {
 	const findings: Finding[] = [];
-	if (
-		/^\s*export\s+(?:default\s+)?(?:(?:const|function|class|interface)\b|type\s+(?!\{))/mu.test(
-			ast.text,
+	for (const statement of ast.statements) {
+		const modifiers = (statement as { modifiers?: readonly ts.Node[] }).modifiers ?? [];
+		if (
+			modifiers.some(({ kind }) => kind === ts.SyntaxKind.ExportKeyword) &&
+			!ts.isExportDeclaration(statement)
 		)
-	)
-		findings.push({
-			file,
-			reason: "accidental export",
-			message: "remove direct public declarations; the public contract is re-exported only",
-		});
+			findings.push({
+				file,
+				reason: "accidental export",
+				message: "remove direct public declarations; the public contract is re-exported only",
+			});
+	}
 	for (const statement of ast.statements) {
 		if (!ts.isExportDeclaration(statement)) {
 			if (ts.isExportAssignment(statement))
@@ -145,11 +153,10 @@ function entrypointFindings(root: string, names: readonly string[]): Finding[] {
 		}));
 }
 
-function literalText(node: ts.Node | undefined): string | undefined {
-	return node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))
+const literalText = (node: ts.Node | undefined): string | undefined =>
+	node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))
 		? node.text
 		: undefined;
-}
 
 function moduleReferences(source: ts.SourceFile): ModuleReference[] {
 	const references: ModuleReference[] = [];
@@ -354,15 +361,14 @@ describe("Codex realtime private package boundary", () => {
 				({ message }) => message.includes("private") || message.includes("out of scope"),
 			),
 		).toBe(true);
+		expect(["index.ts", "client.js"].filter(sourceLike).toSorted()).toEqual([
+			"client.js",
+			"index.ts",
+		]);
 	});
 
 	test("has one entrypoint and the index contains only the frozen contract", async () => {
-		const entries = fs
-			.readdirSync(moduleRoot, { withFileTypes: true })
-			.filter((entry) => entry.isFile() && /\.tsx?$/u.test(entry.name))
-			.map((entry) => entry.name)
-			.toSorted();
-		expect(entries).toEqual(["index.ts"]);
+		expect(rootEntries(moduleRoot)).toEqual(["index.ts"]);
 		const parsed = await sourceMap([indexPath]);
 		const ast = parsed.get(indexPath);
 		if (!ast) throw new Error(`TypeScript did not parse ${indexPath}`);
@@ -381,7 +387,7 @@ describe("Codex realtime private package boundary", () => {
 		const accidental = await withParsedFixtures(
 			{
 				"src/ui/codex-realtime/index.ts":
-					'export * from "./lib/secret.js";\nexport { leaked } from "./lib/secret.js";\nexport const accidental = true;\n',
+					'export * from "./lib/secret.js";\nexport { leaked } from "./lib/secret.js";\nexport declare const ambient: string;\nexport declare namespace Ambient {}\nexport type AmbientType = string;\n',
 			},
 			async (paths, parsed) =>
 				indexFindings(
@@ -389,7 +395,7 @@ describe("Codex realtime private package boundary", () => {
 					parsed.get(paths.get("src/ui/codex-realtime/index.ts")!)!,
 				),
 		);
-		expect(accidental).toHaveLength(3);
+		expect(accidental).toHaveLength(5);
 		expect(accidental.every(({ message }) => message.includes("public"))).toBe(true);
 
 		for (const [kind, source] of [

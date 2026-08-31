@@ -18,6 +18,19 @@ import type {
 
 const indexPath = path.resolve(import.meta.dirname, "../index.ts");
 const moduleRoot = path.dirname(indexPath);
+const SOURCE_LIKE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mts", ".cts"]);
+
+function sourceLike(name: string): boolean {
+	return SOURCE_LIKE_EXTENSIONS.has(path.extname(name));
+}
+
+function rootEntries(root: string): string[] {
+	return fs
+		.readdirSync(root, { withFileTypes: true })
+		.filter((entry) => entry.isFile() && sourceLike(entry.name))
+		.map((entry) => entry.name)
+		.toSorted();
+}
 
 const EXPECTED_VALUE_EXPORTS = [
 	"assertRealtimeTransition",
@@ -146,12 +159,11 @@ afterEach(restoreFakeBrowsers);
 
 describe("codex realtime public API", () => {
 	test("keeps the index as the sole entrypoint with the exact frozen export surface", async () => {
-		const rootEntries = fs
-			.readdirSync(moduleRoot, { withFileTypes: true })
-			.filter((entry) => entry.isFile() && /\.tsx?$/u.test(entry.name))
-			.map((entry) => entry.name)
-			.toSorted();
-		expect(rootEntries).toEqual(["index.ts"]);
+		expect(rootEntries(moduleRoot)).toEqual(["index.ts"]);
+		expect(["index.ts", "client.js"].filter(sourceLike).toSorted()).toEqual([
+			"client.js",
+			"index.ts",
+		]);
 		expect(exportedNames(fs.readFileSync(indexPath, "utf8"))).toEqual({
 			values: [...EXPECTED_VALUE_EXPORTS],
 			types: [...EXPECTED_TYPE_EXPORTS],
