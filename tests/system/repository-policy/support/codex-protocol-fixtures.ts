@@ -1,15 +1,72 @@
+import { LanguageVariant, SyntaxKind } from "typescript/unstable/ast";
+import { createScanner } from "typescript/unstable/ast/scanner";
+
 interface NamedTypeImport {
 	readonly name: string;
 	readonly module: string;
+	readonly start: number;
+	readonly end: number;
 }
 
 function namedTypeImports(source: string): NamedTypeImport[] {
-	return [...source.matchAll(/import type \{ (\w+) \} from "([^"]+)";/gu)].map((match) => {
-		const name = match[1];
-		const module = match[2];
-		if (!name || !module) throw new Error("Malformed generated type import");
-		return { name, module };
-	});
+	const scanner = createScanner(true, LanguageVariant.Standard, source);
+	const tokens: Array<{
+		readonly kind: SyntaxKind;
+		readonly text: string;
+		readonly value: string;
+		readonly start: number;
+		readonly end: number;
+	}> = [];
+	for (let kind = scanner.scan(); kind !== SyntaxKind.EndOfFile; kind = scanner.scan())
+		tokens.push({
+			kind,
+			text: scanner.getTokenText(),
+			value: scanner.getTokenValue(),
+			start: scanner.getTokenStart(),
+			end: scanner.getTokenEnd(),
+		});
+	const imports: NamedTypeImport[] = [];
+	for (let index = 0; index + 7 < tokens.length; index++) {
+		const declaration = tokens[index];
+		const type = tokens[index + 1];
+		const openBrace = tokens[index + 2];
+		const name = tokens[index + 3];
+		const closeBrace = tokens[index + 4];
+		const from = tokens[index + 5];
+		const module = tokens[index + 6];
+		const semicolon = tokens[index + 7];
+		if (
+			declaration?.kind !== SyntaxKind.ImportKeyword ||
+			type?.kind !== SyntaxKind.TypeKeyword ||
+			openBrace?.kind !== SyntaxKind.OpenBraceToken ||
+			name?.kind !== SyntaxKind.Identifier ||
+			closeBrace?.kind !== SyntaxKind.CloseBraceToken ||
+			from?.kind !== SyntaxKind.FromKeyword ||
+			module?.kind !== SyntaxKind.StringLiteral ||
+			semicolon?.kind !== SyntaxKind.SemicolonToken
+		)
+			continue;
+		imports.push({
+			name: name.text,
+			module: module.value,
+			start: declaration.start,
+			end: semicolon.end,
+		});
+		index += 7;
+	}
+	return imports;
+}
+
+function replaceImportDeclarations(
+	source: string,
+	imports: readonly NamedTypeImport[],
+	replacement: (declaration: NamedTypeImport) => string,
+): string {
+	let result = source;
+	for (const declaration of imports.toReversed())
+		result =
+			result.slice(0, declaration.start) + replacement(declaration) + result.slice(declaration.end);
+	return result;
 }
 
 function replaceTypeReferenceUsages(
@@ -66,11 +123,11 @@ function replaceTypeReferenceUsages(
 export function namespaceImportMirror(source: string, header: string): string {
 	let mirror = source.replace(header, "");
 	const imports = namedTypeImports(mirror);
-	for (const { name, module } of imports)
-		mirror = mirror.replace(
-			`import type { ${name} } from "${module}";`,
-			`import type * as Namespace${name} from "${module}";`,
-		);
+	mirror = replaceImportDeclarations(
+		mirror,
+		imports,
+		({ name, module }) => `import type * as Namespace${name} from "${module}";`,
+	);
 	const replacements = new Map([
 		...imports.map(({ name }) => [name, `Namespace${name}.${name}`] as const),
 		["Thread", "NamespaceThread"] as const,
@@ -82,10 +139,9 @@ export function importTypeMirror(source: string, header: string): string {
 	let mirror = source.replace(header, "");
 	const aliases: string[] = [];
 	const imports = namedTypeImports(mirror);
-	for (const { name, module } of imports) {
-		mirror = mirror.replace(`import type { ${name} } from "${module}";`, "");
+	for (const { name, module } of imports)
 		aliases.push(`type ImportType${name} = (import("${module}").${name});`);
-	}
+	mirror = replaceImportDeclarations(mirror, imports, () => "");
 	const replacements = new Map([
 		...imports.map(({ name }) => [name, `ImportType${name}`] as const),
 		["Thread", "ImportTypeThread"] as const,
