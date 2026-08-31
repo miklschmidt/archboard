@@ -182,6 +182,7 @@ function unwrapExpression(expression) {
 		expression?.type === "TSAsExpression" ||
 		expression?.type === "TSTypeAssertion" ||
 		expression?.type === "TSNonNullExpression" ||
+		expression?.type === "TSSatisfiesExpression" ||
 		expression?.type === "ChainExpression" ||
 		expression?.type === "ParenthesizedExpression"
 	)
@@ -312,8 +313,9 @@ const assistantUiImports = createRule(
 		}
 
 		function checkNestedMember(node) {
-			if (node.object?.type !== "Identifier") return;
-			const importedName = localAssistantUiMembers.get(node.object.name);
+			const object = unwrapExpression(node.object);
+			if (object?.type !== "Identifier") return;
+			const importedName = localAssistantUiMembers.get(object.name);
 			if (!importedName) return;
 			const propertyName = node.computed
 				? node.property?.type === "Literal" && typeof node.property.value === "string"
