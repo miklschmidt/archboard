@@ -27,6 +27,133 @@ function sha256(filename: string): string {
 	return createHash("sha256").update(fs.readFileSync(filename)).digest("hex");
 }
 
+const typeAliases = new Map([
+	["--font-ui", "var(--arch-font-ui)"],
+	["--font-mono", "var(--arch-font-technical)"],
+	["--weight-regular", "var(--arch-weight-regular)"],
+	["--weight-medium", "var(--arch-weight-medium)"],
+	["--weight-semibold", "var(--arch-weight-semibold)"],
+	["--weight-bold", "var(--arch-weight-bold)"],
+	["--wordmark-tracking", "var(--arch-wordmark-tracking)"],
+	["--type-kicker", "var(--arch-text-kicker-size)/var(--arch-text-kicker-line)"],
+	["--type-tech", "var(--arch-text-technical-size)/var(--arch-text-technical-line)"],
+	["--type-body", "var(--arch-text-body-size)/var(--arch-text-body-line)"],
+	["--type-control", "var(--arch-text-control-size)/var(--arch-text-control-line)"],
+	["--type-title", "var(--arch-text-title-size)/var(--arch-text-title-line)"],
+	["--type-primary", "var(--arch-text-primary-size)/var(--arch-text-primary-line)"],
+]);
+
+const colorAliases = new Map([
+	["--selection", "var(--arch-color-selection)"],
+	["--status", "var(--arch-color-status)"],
+	["--ink", "var(--arch-color-foreground)"],
+	["--muted", "var(--arch-color-muted-foreground)"],
+	["--faint", "var(--arch-color-faint-foreground)"],
+	["--border", "var(--arch-color-border)"],
+	["--soft-border", "var(--arch-color-border-subtle)"],
+	["--paper", "var(--arch-color-background)"],
+	["--surface", "var(--arch-color-surface)"],
+	["--surface-raised", "var(--arch-color-surface-raised)"],
+	["--surface-soft", "var(--arch-color-surface-subtle)"],
+	["--surface-hover", "var(--arch-color-surface-hover)"],
+	["--accent", "var(--arch-color-primary)"],
+	["--accent-hover", "var(--arch-color-primary-hover)"],
+	["--accent-soft", "var(--arch-color-primary-subtle)"],
+	["--accent-ink", "var(--arch-color-primary-foreground)"],
+	["--danger", "var(--arch-color-destructive)"],
+	["--danger-soft", "var(--arch-color-destructive-subtle)"],
+	["--warn", "var(--arch-color-warning)"],
+	["--warn-soft", "var(--arch-color-warning-subtle)"],
+	["--live", "var(--arch-color-status)"],
+	["--live-ink", "var(--arch-color-status-foreground)"],
+	["--live-soft", "var(--arch-color-status-subtle)"],
+	["--dead", "var(--arch-color-offline)"],
+	["--path-focus-dim", "var(--arch-color-path-focus-dim)"],
+]);
+
+function declarationsFor(source: string, selector: string): Map<string, string> {
+	const marker = `${selector} {`;
+	const start = source.indexOf(marker);
+	if (start < 0) return new Map();
+	const open = source.indexOf("{", start);
+	let depth = 1;
+	let end = open + 1;
+	for (; end < source.length && depth > 0; end += 1) {
+		if (source[end] === "{") depth += 1;
+		if (source[end] === "}") depth -= 1;
+	}
+	const body = source
+		.slice(open + 1, end - 1)
+		.replaceAll(/\/\*[\s\S]*?\*\//g, "");
+	const declarations = new Map<string, string>();
+	for (const item of body.split(";")) {
+		const colon = item.indexOf(":");
+		if (colon < 0) continue;
+		declarations.set(item.slice(0, colon).trim(), item.slice(colon + 1).trim().replaceAll(/\s+/g, " "));
+	}
+	return declarations;
+}
+
+const curatedShellDeclarations = [
+	[".shell", "grid-template", "var(--arch-size-header) minmax(0, 1fr) 34px / minmax(0, 1fr)"],
+	[".bar", "border-bottom", "var(--arch-space-rule) solid var(--border)"],
+	[".bar-board-meta", "gap", "12px"],
+	[".chip", "padding", "0 var(--arch-space-control-inline)"],
+	[".board-group", "border-radius", "var(--arch-radius-panel)"],
+	[".btn", "border-radius", "4px"],
+	[".icon-btn,\n.notice-dismiss,\n.modal-close", "border-radius", "4px"],
+	[".board-preview-control", "border-radius", "4px"],
+	[".present-button", "border-radius", "4px"],
+	[".take-back", "border-radius", "4px"],
+	[".field input,\n.field select", "border-radius", "4px"],
+	[".pane-tab.focused", "border-bottom", "2px solid var(--accent)"],
+	[
+		".claim-copy",
+		"font",
+		"var(--arch-weight-regular) var(--arch-text-body-size) / 18px var(--font-ui)",
+	],
+	[
+		".btn:disabled,\n.icon-btn:disabled,\n.name-button:disabled",
+		"opacity",
+		"var(--arch-opacity-disabled-control)",
+	],
+	[
+		".btn,\n.icon-btn,\n.notice-dismiss,\n.modal-close,\n.name-button",
+		"transition",
+		"border-color var(--arch-duration-control) var(--arch-ease-control), background var(--arch-duration-control) var(--arch-ease-control)",
+	],
+	[".claim-beacon", "animation", "var(--arch-animation-status)"],
+] as const;
+
+function shellTokenErrors(source: string): string[] {
+	const errors: string[] = [];
+	const shellAliases = new Map(
+		[...declarationsFor(source, ".shell")].filter(([property]) => property.startsWith("--")),
+	);
+	const expectedShellAliases = new Map([...typeAliases, ...colorAliases]);
+	if (JSON.stringify([...shellAliases]) !== JSON.stringify([...expectedShellAliases])) {
+		errors.push("the .shell legacy bridge does not exactly match the canonical alias map");
+	}
+	const darkAliases = new Map(
+		[...declarationsFor(source, '.shell[data-theme="dark"]')].filter(([property]) =>
+			property.startsWith("--"),
+		),
+	);
+	if (JSON.stringify([...darkAliases]) !== JSON.stringify([...colorAliases])) {
+		errors.push("the dark shell bridge does not exactly match the canonical color alias map");
+	}
+	for (const [selector, property, expected] of curatedShellDeclarations) {
+		const actual = declarationsFor(source, selector).get(property);
+		if (actual !== expected) errors.push(`${selector} ${property} maps to ${actual ?? "nothing"}`);
+	}
+	return errors;
+}
+
+function replaceOnce(source: string, from: string, to: string): string {
+	if (!source.includes(from)) throw new Error(`hostile policy fixture could not find ${from}`);
+	return source.replace(from, to);
+}
+
 describe("brand typography assets", () => {
 	test("pins the exact redistributable font and license bytes", () => {
 		for (const [filename, expectedHash] of pinnedFiles) {
@@ -108,34 +235,40 @@ describe("brand typography assets", () => {
 		expect(pkg.scripts["generate:wordmark"]).toBe("bun scripts/generate-wordmark.ts");
 	});
 
-	test("maps the shell onto the canonical semantic token families", () => {
+	test("maps the legacy shell bridge and curated roles to exact canonical tokens", () => {
 		const css = fs.readFileSync(path.join(repoRoot, "src/ui/shell/shell.css"), "utf8");
-		const theme = fs.readFileSync(path.join(repoRoot, "src/ui/theme/app.css"), "utf8");
-		const requiredFamilies = [
-			"--arch-color-",
-			"--arch-font-",
-			"--arch-weight-",
-			"--arch-text-",
-			"--arch-radius-",
-			"--arch-space-",
-			"--arch-size-",
-			"--arch-shadow-",
-			"--arch-opacity-",
-			"--arch-duration-",
-			"--arch-ease-",
-			"--arch-animation-",
-		];
-		for (const family of requiredFamilies) expect(css).toContain(`var(${family}`);
+		expect(shellTokenErrors(css)).toEqual([]);
 
-		const canonicalThemeColors = [...theme.matchAll(/^\s*--arch-color-[\w-]+:\s*([^;]+);/gm)]
-			.map((match) => match[1]!.trim())
-			.filter((value) => /^(?:#|rgba?\()/.test(value));
-		for (const color of new Set(canonicalThemeColors)) {
-			expect(css).not.toContain(`: ${color};`);
+		const hostileSwaps = [
+			[
+				"color",
+				"--ink: var(--arch-color-foreground);",
+				"--ink: var(--arch-color-muted-foreground);",
+			],
+			[
+				"typography",
+				"--type-control: var(--arch-text-control-size)/var(--arch-text-control-line);",
+				"--type-control: var(--arch-text-control-size)/var(--arch-text-body-line);",
+			],
+			[
+				"radius",
+				"border-radius: var(--arch-radius-panel);",
+				"border-radius: var(--arch-radius-control);",
+			],
+			["spacing", "gap: 12px;", "gap: var(--arch-space-control-inline);"],
+			[
+				"state",
+				"opacity: var(--arch-opacity-disabled-control);",
+				"opacity: var(--arch-opacity-disabled-item);",
+			],
+			[
+				"motion",
+				"animation: var(--arch-animation-status);",
+				"animation: var(--arch-duration-control);",
+			],
+		] as const;
+		for (const [family, from, to] of hostileSwaps) {
+			expect(shellTokenErrors(replaceOnce(css, from, to)), family).not.toEqual([]);
 		}
-
-		expect(css).not.toMatch(/\b(?:140ms|2\.4s)\b/);
-		expect(css).not.toContain("box-shadow: none;");
-		expect(css).not.toMatch(/opacity:\s*(?:0\.46|0\.5|0\.52|0\.84|1);/);
 	});
 });
