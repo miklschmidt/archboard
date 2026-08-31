@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 00:26'
+updated_date: '2026-08-31 00:38'
 labels: []
 dependencies:
   - TASK-144.03
@@ -51,4 +51,14 @@ Delegation profile: gpt-5.6-luna, high.
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved after TASK-144.05 finalized at integration HEAD ef4ce5c. Configuration-only leaf: .oxfmtrc.jsonc and task record are owned; TASK-144.10 owns the fail-format-pass repository fixture.
+
+Implemented `.oxfmtrc.jsonc` only. Oxfmt 0.65.0 local `configuration_schema.json` confirms native `sortTailwindcss` keys `stylesheet`, `functions`, and `preserveDuplicates`; native `className` is already built in and was not redundantly configured. Set stylesheet to `src/ui/theme/app.css`, functions to `["cn"]`, and preserveDuplicates to true so the existing cn duplicate-handling fixture remains intact.
+
+Disposable probe evidence (`/tmp/oxfmt-tailwind-probe.tsx`): before static `className` and cn literal were `text-white px-4 hover:bg-blue-600 bg-blue-500 flex p-2`; Oxfmt output was `text-white px-4 hover:bg-blue-600 bg-blue-500 p-2 flex`. Template literal `` `text-white ${tone} px-4` `` and data-backed `data.className`/`data.classes` expressions remained unchanged and were not turned into invented classes. Duplicate probe `cn("flex flex", "items-center items-center")` remained byte-for-byte unchanged with preserveDuplicates.
+
+Validation: `bun run fmt:check` passed; `bun run type-check` passed; `bun run lint` passed; `bun run test:repository` passed (130 tests); `bun run test:modules` passed (1042 tests); `bun run build:frontend` passed. Build retained existing missing `/assets/excalidraw.css` and large-chunk advisories. No TASK-144.10 fixture or protected file was changed.
+
+Remediation after independent review: replaced unsupported `lineWidth` with schema-defined `printWidth` while retaining value 100. Direct disposable width probe with `/tmp/oxfmt-printwidth.jsonc` (`printWidth: 20`) wrapped the long `combine("one", "two", "three", "four", "five")` call, confirming the corrected key is active. Direct Tailwind re-review probe continued to sort static className and cn literals while leaving template and data expressions unchanged.
+
+Remediation validation: `bun run fmt:check`, `bun run type-check`, `bun run lint`, `bun run test:repository` (130 pass, 0 fail), `bun run test:modules` (1042 pass, 0 fail), `bun run build:frontend`, and `git diff --check` all passed.
 <!-- SECTION:NOTES:END -->
