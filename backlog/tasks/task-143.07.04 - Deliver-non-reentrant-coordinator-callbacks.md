@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 21:32'
+updated_date: '2026-08-31 21:33'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -19,6 +19,7 @@ references:
   - docs/design/codex-workbench-authored-contracts.md
 modified_files:
   - src/runtime/codex-coordinator-callbacks
+  - src/shared/timing/timing.ts
   - tests/system/canvas-state/callback-hot-reload.test.ts
   - tests/system/fixtures/callback-hot-entry.ts
   - docs/design/codex-workbench-authored-contracts.md
@@ -78,6 +79,10 @@ Third remediation supersedes the prior second-pass reload statement: the query-t
 The replacement owner launches an owned bun --hot process, watches a random temporary generation token, and directly cache-busts the production codex-coordinator-callbacks public module on each generation. Both generations call the public installer against one kept record. Process-visible assertions prove the same PID reaches generation 2, the production installer identity changes, the callback instance identity is retained, exactly one four-listener cohort remains, one emitted operation causes one delivery and one narration, repeated disposal produces exactly four cleanup calls, and only two protocol records exist. Process-group termination and temporary-directory removal run on every success or failure path.
 
 Final capped validation archboard-1430704-remediate3-final-03.service printed cwd and cgroup, completed successfully with MemoryMax=6G and MemorySwapMax=1G, and passed the real hot-reload owner, callback suite, both TypeScript graphs, scoped Oxlint and Oxfmt, authored-contract and inventory owners, staged/unstaged diff checks, file-length and source restrictions, and exactly two route callsites. Peak memory was 1.7G with no swap. Known broad capped-OOM lanes were preserved and not rerun. Protected /home/msc/Projects/archboard/src-DlBR1tzg.js remains 1,516,136 bytes with SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Task remains In Progress with every acceptance criterion unchecked for independent rereview.
+
+Fourth remediation closes the remaining test-timeout finding. The hot-reload owner now uses TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_TIMEOUT_MS, derived from two TEST_CANVAS_STARTUP_TIMEOUT_MS record waits, two TEST_CANVAS_SHUTDOWN_TIMEOUT_MS termination intervals, and two TEST_CANVAS_HEALTH_POLL_MS polling margins. A stable owner assertion verifies the timeout is at least that full permitted-path budget, so the outer runner cannot preempt either sequential record wait or the two-stage cleanup path.
+
+Capped validation archboard-1430704-remediate4-final-01.service printed cwd and cgroup, completed successfully with MemoryMax=6G and MemorySwapMax=1G, and passed the focused hot-reload owner (1 test, 4 assertions), both TypeScript graphs, scoped Oxlint/Oxfmt, staged diff and clean-tree checks, and the protected artifact size check. Peak memory was 1.8G with no swap. Protected /home/msc/Projects/archboard/src-DlBR1tzg.js remains 1,516,136 bytes with SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Known broad capped-OOM lanes were not rerun. Task remains In Progress with every acceptance criterion unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -117,5 +122,11 @@ author: @codex
 created: 2026-08-31 21:28
 ---
 Third remediation is ready for independent rereview. The previous query-wrapper reload claim is explicitly superseded; status and acceptance criteria remain unchanged.
+---
+
+author: @codex
+created: 2026-08-31 21:33
+---
+Fourth remediation is ready for independent rereview. The hot-reload outer timeout now covers the complete two-wait, two-shutdown path with timing-derived polling margin; status and acceptance criteria remain unchanged.
 ---
 <!-- COMMENTS:END -->
