@@ -19,6 +19,7 @@ import {
 	dependencySnapshot,
 	fileSnapshot,
 	installLiveOxfmtEntrypoint,
+	ownerExitDiagnostic,
 	readOwnerState,
 	reapProcessGroup,
 	restoreAndRemoveScenarioRoot,
@@ -228,7 +229,7 @@ function launchOwner(
 async function waitForFile(file: string, child: Bun.Subprocess): Promise<void> {
 	const deadline = Date.now() + TEST_CANVAS_STARTUP_TIMEOUT_MS;
 	while (!existsSync(file)) {
-		if (child.exitCode !== null) throw new Error(`Owner exited before ${file}: ${child.exitCode}`);
+		if (child.exitCode !== null) throw new Error(ownerExitDiagnostic(file, child.exitCode));
 		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${file}`);
 		await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
 	}

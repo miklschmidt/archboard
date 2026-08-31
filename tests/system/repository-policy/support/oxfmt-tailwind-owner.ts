@@ -6,7 +6,7 @@ import {
 	rmSync,
 	writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import {
 	TEST_CANVAS_HEALTH_POLL_MS,
@@ -49,6 +49,7 @@ export interface OwnerResult {
 	dependencies?: DependencyRecord[];
 	artifacts?: DependencyRecord[];
 	error?: string;
+	cleanupError?: string;
 }
 
 export interface OwnerState {
@@ -62,8 +63,25 @@ function requiredEnvironment(name: string): string {
 	return value;
 }
 
+function errorMessage(error: unknown): string {
+	if (error instanceof AggregateError)
+		return `${error.message}: ${error.errors.map((nested) => errorMessage(nested)).join(" | ")}`;
+	return error instanceof Error ? error.message : String(error);
+}
+
 export function readOwnerState(file: string): OwnerState {
 	return JSON.parse(readFileSync(file, "utf8")) as OwnerState;
+}
+
+export function ownerExitDiagnostic(file: string, exitCode: number): string {
+	const container = dirname(file);
+	const resultPath = join(container, "owner-result.json");
+	const result = existsSync(resultPath)
+		? (JSON.parse(readFileSync(resultPath, "utf8")) as OwnerResult)
+		: undefined;
+	const statePath = join(container, "owner-state.json");
+	const state = existsSync(statePath) ? readOwnerState(statePath) : undefined;
+	return `Owner exited before ${file}: ${exitCode}; primary=${result?.error ?? "unpublished"}; cleanup=${result?.cleanupError ?? (state ? `root=${existsSync(state.root) ? "present" : "removed"}; formatterGroups=${state.formatterGroups.join(",") || "none"}` : "unpublished")}`;
 }
 
 function removeExternalCleanupPaths(): void {
@@ -193,7 +211,7 @@ function actualOxfmtProcess(group: number): number | undefined {
 	for (const pid of processGroupMembers(group)) {
 		try {
 			const command = readFileSync(`/proc/${pid}/cmdline`).toString().replaceAll("\0", " ");
-			if (command.includes("oxfmt")) return pid;
+			if (command.includes("oxfmt") && processGroupOf(pid) !== undefined) return pid;
 		} catch {
 			continue;
 		}
@@ -201,10 +219,15 @@ function actualOxfmtProcess(group: number): number | undefined {
 	return undefined;
 }
 
-function processGroupOf(pid: number): number {
-	const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
-	const fields = stat.slice(stat.lastIndexOf(")") + 2).split(" ");
-	return Number(fields[2]);
+function processGroupOf(pid: number): number | undefined {
+	try {
+		const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
+		const fields = stat.slice(stat.lastIndexOf(")") + 2).split(" ");
+		const group = Number(fields[2]);
+		return Number.isSafeInteger(group) && group > 0 ? group : undefined;
+	} catch {
+		return undefined;
+	}
 }
 
 async function holdActualFormatter(
@@ -220,12 +243,15 @@ async function holdActualFormatter(
 		if (child.exitCode !== null) throw new Error(`Actual Oxfmt exited before the ${script} hold.`);
 		const formatter = actualOxfmtProcess(child.pid);
 		if (formatter !== undefined) {
-			activeGroups.add(processGroupOf(formatter));
-			writeOwnerState();
-			process.kill(-child.pid, "SIGSTOP");
-			process.kill(-processGroupOf(formatter), "SIGSTOP");
-			writeFileSync(marker, String(child.pid));
-			return;
+			const formatterGroup = processGroupOf(formatter);
+			if (formatterGroup !== undefined) {
+				activeGroups.add(formatterGroup);
+				writeOwnerState();
+				process.kill(-child.pid, "SIGSTOP");
+				process.kill(-formatterGroup, "SIGSTOP");
+				writeFileSync(marker, String(child.pid));
+				return;
+			}
 		}
 		await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
 	}
@@ -278,7 +304,10 @@ function refreshFormatterGroups(root: string): void {
 			continue;
 		}
 	}
-	for (const pid of formatterPids) activeGroups.add(processGroupOf(pid));
+	for (const pid of formatterPids) {
+		const group = processGroupOf(pid);
+		if (group !== undefined) activeGroups.add(group);
+	}
 	writeOwnerState();
 }
 
@@ -425,7 +454,7 @@ async function runOwner(): Promise<void> {
 		result.artifacts = artifactSnapshot(root);
 	} catch (error) {
 		primaryError = error;
-		result.error = error instanceof Error ? error.message : String(error);
+		result.error = errorMessage(error);
 	}
 	let cleanupError: unknown;
 	try {
@@ -434,6 +463,7 @@ async function runOwner(): Promise<void> {
 	} catch (error) {
 		cleanupError = error;
 	}
+	if (cleanupError) result.cleanupError = errorMessage(cleanupError);
 	try {
 		writeFileSync(resultFile, JSON.stringify(result));
 	} catch (error) {
@@ -441,13 +471,13 @@ async function runOwner(): Promise<void> {
 	}
 	if (primaryError && cleanupError) {
 		process.stderr.write(
-			`${new AggregateError([primaryError, cleanupError], "Formatter owner and cleanup both failed").message}\n`,
+			`${errorMessage(new AggregateError([primaryError, cleanupError], "Formatter owner and cleanup both failed"))}\n`,
 		);
 		process.exit(1);
 	}
 	if (primaryError || cleanupError) {
 		const failure = primaryError ?? cleanupError;
-		process.stderr.write(`${failure instanceof Error ? failure.message : String(failure)}\n`);
+		process.stderr.write(`${errorMessage(failure)}\n`);
 		process.exit(1);
 	}
 }
