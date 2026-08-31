@@ -49,6 +49,8 @@ type LifecyclePortKeys = Assert<
 		| "releaseWaitOwner"
 		| "releaseWaitOwnersForChild"
 		| "poisonEpochAndOwnMutationQuarantine"
+		| "failClosedShutdownEpoch"
+		| "reportFatalLifecycleFault"
 		| "waitForTargets"
 	>
 >;
