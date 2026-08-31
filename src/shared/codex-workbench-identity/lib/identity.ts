@@ -378,6 +378,8 @@ export interface TrustedIdentityDecoder {
 	readonly parseDynamicToolCallId: (value: unknown) => DynamicToolCallId;
 	readonly parseRealtimeSessionId: (value: unknown) => RealtimeSessionId;
 	readonly parseApprovalId: (value: unknown) => ApprovalId;
+	/** Resolves a raw Codex thread id only when this authority already issued it. */
+	readonly resolveThreadId: (raw: unknown) => ThreadId;
 	readonly adoptThreadId: (raw: unknown) => ThreadId;
 	readonly adoptTurnId: (raw: unknown) => TurnId;
 	readonly adoptItemId: (raw: unknown) => ItemId;
@@ -479,6 +481,12 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		assertIssued(parsed, domain, issued);
 		return parsed;
 	};
+	const resolveThreadId = (rawValue: unknown): ThreadId => {
+		if (typeof rawValue !== "string") {
+			return fail("invalid-shape", "The server thread identity must be a string.", "thread");
+		}
+		return parseIssued("thread", wireValue("thread", encodeRawIdentity(rawValue, "thread")));
+	};
 	const serialize = (value: CodexIdentity): string => {
 		const domain = identityDomain(value);
 		if (
@@ -542,6 +550,7 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		parseDynamicToolCallId: (value) => parseIssued("dynamic-tool-call", value),
 		parseRealtimeSessionId: (value) => parseIssued("realtime-session", value),
 		parseApprovalId: (value) => parseIssued("approval", value),
+		resolveThreadId,
 		adoptThreadId: (raw) => adopt("thread", raw),
 		adoptTurnId: (raw) => adopt("turn", raw),
 		adoptItemId: (raw) => adopt("item", raw),

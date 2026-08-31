@@ -102,6 +102,7 @@ export function createHarness(
 	identity: IdentityAuthority = createIdentityAuthority(),
 ): FakeChildHarness {
 	const child = new FakeChild();
+	identity.decoder.adoptThreadId("thread-1");
 	const transport = createCodexTransport({ child, identity, dynamicDispatchers: registrations });
 	const close = async (): Promise<void> => {
 		const shutdown = transport.shutdown();
