@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 03:25'
+updated_date: '2026-08-31 03:39'
 labels: []
 dependencies:
   - TASK-144.05
@@ -52,7 +52,11 @@ Reserved after TASK-144.18 finalized at integration HEAD 4cbceec. This ready lea
 
 Implemented in 32cfcd6 from fixed BASE 299286acb43b5a4e9ace716b5886d1a271a3b17a0. Scope is components.json, exact non-compiled vendor reading fixtures, one focused repository-policy owner, and the narrow formatter ignore required to preserve upstream bytes; package/lock, src product code, Vite/TypeScript/Oxlint config, scripts, CI, and browser owners are untouched.
 
-Evidence: components.json SHA-256 b5d8f37341a1f185337f79c5ef8447e914d280bc0670a635fadeac023c7f0a8c; Button fixture SHA-256 97bfee456444f0495deee6a321933c24267477645b0bf4bfea67c3c62d425a12; Dialog fixture SHA-256 85f9a33d1a8c495b0faecd066dae1581b8feb5d27f912ecf65f814386f6da3a9; provenance is full immutable shadcn-ui/ui commit b4a618b97e35f5dadf3a00d51f410c84a2567d4d. The offline owner passes 6 tests / 28 expectations, exact config and hostile drift checks, alias agreement checks, product/package adoption refusals, deterministic named-input planning, and status-before/after equality.
+Evidence: components.json SHA-256 b5d8f37341a1f185337f79c5ef8447e914d280bc0670a635fadeac023c7f0a8c; Button fixture SHA-256 97bfee456444f0495deee6a321933c24267477645b0bf4bfea67c3c62d425a12; Dialog fixture SHA-256 85f9a33d1a8c495b0faecd066dae1581b8feb5d27f912ecf65f814386f6da3a9; provenance is full immutable shadcn-ui/ui commit b4a618b97e35f5dadf3a00d51f410c84a2567d4d. The offline owner initially passed 6 tests / 28 expectations; implementation and focused evidence are in 32cfcd6.
 
-Focused validation: bun test tests/system/repository-policy/shadcn-base-adoption.test.ts; bunx oxlint tests/system/repository-policy/shadcn-base-adoption.test.ts; bunx oxfmt --check components.json tests/system/repository-policy/shadcn-base-adoption.test.ts; repository-wide oxfmt traversal with the vendor ignore; bunx tsc --noEmit --pretty false -p tsconfig.json; git diff --check — all passed. Live focused probe used only shadcn info --json and add button dialog --dry-run/--view; it reported Vite, base-nova/base, completed aliases, default lucide/geist, proposed only src/ui/button.tsx and src/ui/dialog.tsx, and left a clean checkout byte-identical before/after. Evidence capture: /tmp/archboard-task14404-evidence/base-to-head.patch SHA-256 8a6769c931d383cfc0f24e111314ac0ce91f3ccbc3245181d4d9f37bb00e5bb7. Protected /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Broad modules/system/repository/check/browser lanes remain root-owned. Acceptance criteria intentionally remain unchecked; TASK-144.04 remains In Progress.
+Correction: the earlier evidence note mistakenly wrote the fixed BASE with an extra trailing 0 (`...17a0`). The actual full fixed BASE is 299286acb43b5a4e9ace716b5886d1a271a3b17a. This metadata correction does not change implementation bytes.
+
+Remediation implemented in c8fd582 on the same fixed BASE: replaced the hard-coded plan with a reusable local shadcn probe boundary that snapshots status, git diff --binary HEAD, and relevant tree hashes; invokes only pinned local shadcn info plus add button/dialog --dry-run/--view when explicitly run; parses destinations, imports, generated source, and defaults; compares against reviewed fixtures/provenance; and classifies config/default/icon/upstream/package-source drift, unsafe write attempts, network inability, and mutation. The standard owner uses captured outputs and a local runner double, remains offline/deterministic, and rejects unsafe commands before the runner.
+
+Focused remediation evidence: 7 tests / 34 expectations; bunx oxlint tests/system/repository-policy/shadcn-base-adoption.test.ts; bunx oxfmt --check components.json tests/system/repository-policy/shadcn-base-adoption.test.ts; bunx tsc --noEmit --pretty false -p tsconfig.json — all passed. Acceptance criteria intentionally remain unchecked; TASK-144.04 remains In Progress.
 <!-- SECTION:NOTES:END -->
