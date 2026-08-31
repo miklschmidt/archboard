@@ -11,7 +11,7 @@ import {
 	type CodexTransport,
 	type CodexTransportChild,
 } from "../../codex-transport/index.js";
-import { createCodexSession } from "../index.js";
+import { createCodexSession, type CodexSession, type CodexSessionStorage } from "../index.js";
 import { makeStorage } from "./support.js";
 
 class CapturingStdin extends Writable {
@@ -43,6 +43,8 @@ class TransportSessionChild extends EventEmitter implements CodexTransportChild 
 export interface TransportSessionFixture {
 	readonly identity: IdentityAuthority;
 	readonly transport: CodexTransport;
+	readonly session: CodexSession;
+	readonly storage: CodexSessionStorage;
 	readonly send: (value: unknown) => void;
 	readonly frames: () => readonly Record<string, unknown>[];
 	readonly settle: () => Promise<void>;
@@ -54,7 +56,7 @@ export function createTransportSessionFixture(now: () => number): TransportSessi
 	const identity = createIdentityAuthority();
 	const child = new TransportSessionChild();
 	const transport = createCodexTransport({ child, identity });
-	createCodexSession({
+	const session = createCodexSession({
 		transport,
 		identity,
 		storage,
@@ -64,6 +66,8 @@ export function createTransportSessionFixture(now: () => number): TransportSessi
 	return {
 		identity,
 		transport,
+		session,
+		storage,
 		send: (value) => child.stdout.write(`${JSON.stringify(value)}\n`),
 		frames: () =>
 			child.stdin.writes.map(

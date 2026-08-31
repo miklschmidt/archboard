@@ -119,7 +119,11 @@ describe("Codex session logout readiness", () => {
 				nextCursor: null,
 				backwardsCursor: null,
 			});
-			expect(await fixture.session.threadListPage({})).toMatchObject({ data: [threadFixture] });
+			const page = await fixture.session.threadListPage({});
+			expect(page.data).toHaveLength(1);
+			const listed = page.data[0];
+			if (!listed) throw new Error("thread/list returned no fixture thread");
+			expect(fixture.identity.decoder.serializeCodexIdentity(listed.id)).toBe("thread-1");
 		} finally {
 			fixture.close();
 		}
