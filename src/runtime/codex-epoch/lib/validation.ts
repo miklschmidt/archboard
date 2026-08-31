@@ -1,4 +1,4 @@
-import { isAbsolute, relative, resolve } from "node:path";
+import { isAbsolute, resolve } from "node:path";
 
 import type {
 	ChildEpoch,
@@ -190,6 +190,38 @@ export function assertExecutionThread(
 	}
 }
 
+export function assertThreadProvenanceEligible(
+	manifest: EpochManifest,
+	record: EpochOperationRecord,
+	threadId: ThreadId | null,
+): void {
+	if (
+		threadId !== null &&
+		record.status === "inspect_only" &&
+		record.provenance.threadId === threadId
+	) {
+		throw epochError("inspect_only", "a tombstoned thread cannot be confirmed or relinked");
+	}
+	for (const candidate of manifest.records) {
+		if (
+			threadId === null ||
+			candidate.correlation.operationId === record.correlation.operationId ||
+			candidate.provenance.threadId !== threadId
+		) {
+			continue;
+		}
+		if (candidate.status === "inspect_only") {
+			throw epochError("inspect_only", "a tombstoned thread cannot be confirmed or relinked");
+		}
+		if (candidate.correlation.childId !== record.correlation.childId) {
+			throw epochError("stale_child", "thread provenance belongs to a replaced child");
+		}
+		if (candidate.correlation.epoch !== record.correlation.epoch) {
+			throw epochError("prior_epoch", "thread provenance belongs to a prior epoch");
+		}
+	}
+}
+
 export function findStagedRecord(
 	manifest: EpochManifest,
 	transaction: EpochTransaction,
@@ -355,36 +387,6 @@ export function normalizeRoot(value: string): string {
 		throw epochError("invalid_input", "epoch root cannot be the filesystem root");
 	}
 	return root;
-}
-
-export function assertOutsideCodexStores(
-	root: string,
-	...stores: readonly (string | undefined)[]
-): void {
-	for (const store of stores) {
-		if (store === undefined) {
-			continue;
-		}
-		if (typeof store !== "string" || !isAbsolute(store)) {
-			throw epochError("invalid_input", "Codex storage paths must be absolute");
-		}
-		const normalizedStore = resolve(store);
-		if (isPathRelated(root, normalizedStore)) {
-			throw epochError(
-				"outside_codex_storage",
-				"epoch state must be outside both Codex storage roots",
-			);
-		}
-	}
-}
-
-function isPathRelated(left: string, right: string): boolean {
-	return isWithin(left, right) || isWithin(right, left);
-}
-
-function isWithin(child: string, parent: string): boolean {
-	const path = relative(parent, child);
-	return path === "" || (!path.startsWith("..") && !isAbsolute(path));
 }
 
 export function canonicalChild(value: unknown, label: string): ChildId {
