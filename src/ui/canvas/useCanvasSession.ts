@@ -72,6 +72,7 @@ import {
 	takeBoardBack,
 } from "./api";
 import type { ChangeReportReply, PaneReport } from "./api";
+import type { WorkbenchTakeBackResult } from "../workbench-board-status/contract";
 
 // Messages that say what is on a board, as opposed to messages about the board.
 // A pane that must send a full report ignores the first kind and acts on the
@@ -334,7 +335,7 @@ export interface CanvasSession {
 	 * edit is also deliberate takeover. Panning, zooming, selection and pointer
 	 * contact with no content delta do not revoke a claim.
 	 */
-	takeBack: () => void;
+	takeBack: () => Promise<WorkbenchTakeBackResult>;
 	/**
 	 * The last few things an agent said it was doing here, oldest first
 	 * (TASK-095).
@@ -1011,19 +1012,18 @@ export function useCanvasSession({
 	 * its next act rather than being stopped mid-write. The board goes to nobody,
 	 * not to this pane — the next thing drawn takes it the way any gesture does.
 	 */
-	const takeBack = useCallback((): void => {
+	const takeBack = useCallback(async (): Promise<WorkbenchTakeBackResult> => {
 		const target = boardKeyRef.current;
-		void takeBoardBack(target, clientId)
-			.then((reply) => {
-				if (boardKeyRef.current !== target) return null;
-				// Believed only on success. A refusal means somebody is mid-write and
-				// the board is still theirs, and the broadcast will say so anyway.
-				if (reply.held) setHeldBy(null);
-				return reply;
-			})
-			.catch(() => {
-				/* the broadcast is the truth; a failed tap changes nothing */
-			});
+		try {
+			const reply = await takeBoardBack(target, clientId);
+			if (boardKeyRef.current !== target || !reply.held) return { outcome: "failure" };
+			// Believed only on success. A refusal means somebody is mid-write and
+			// the board is still theirs, and the broadcast will say so anyway.
+			setHeldBy(null);
+			return { outcome: "success" };
+		} catch {
+			return { outcome: "failure" };
+		}
 	}, [clientId]);
 
 	/**

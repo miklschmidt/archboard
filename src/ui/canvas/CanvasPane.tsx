@@ -12,6 +12,7 @@ import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { useCanvasSession } from "./useCanvasSession";
 import type { LockHolder, PaneStatus } from "../types";
 import type { CodeTargetNotice } from "../../shared/code-target";
+import type { WorkbenchTakeBackResult } from "../workbench-board-status";
 import { createCodeTargetLinkHandler } from "../code-target";
 import type { MountedBoardPreviewController } from "../board-preview";
 import {
@@ -45,7 +46,11 @@ interface CanvasPaneProps {
 	theme: "light" | "dark";
 	onStatus: (status: PaneStatus) => void;
 	/** Agent state is shell chrome, so the pane reports it to the workbench. */
-	onAgentState: (paneId: string, heldBy: LockHolder | null, takeBack: () => void) => void;
+	onAgentState: (
+		paneId: string,
+		heldBy: LockHolder | null,
+		takeBack: () => Promise<WorkbenchTakeBackResult>,
+	) => void;
 	onThemeChange: (theme: "light" | "dark") => void;
 	onFocus: (paneId: string) => void;
 	/** Shown only when more than one pane is mounted. */

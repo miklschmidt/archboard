@@ -19,6 +19,13 @@ import {
 	registerCanvasBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import {
+	beginDelayedTakeBack,
+	claimCounts,
+	expectNoteUnchanged,
+	installClaimRecorder,
+	verifyBoardStatusPresentation,
+} from "./support/claim-interaction.ts";
 import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
 import {
 	WORKBENCH_SNAPSHOT_EXPRESSION,
@@ -43,11 +50,6 @@ interface WriteBody {
 interface ClaimBody {
 	claim: { holder: { id?: string; kind?: string; reason?: string; claimed?: boolean } };
 }
-interface ClaimCounts {
-	holds: number;
-	pending: number;
-	sent: number;
-}
 interface ClaimBanner extends WorkbenchSnapshot {
 	view: boolean | null;
 	headerClaim: {
@@ -64,6 +66,7 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 	browser: AgentBrowserSession;
 	canvas: Awaited<ReturnType<typeof startOwnedCanvas>>;
 	clientId: string;
+	noteFile: string;
 	request: Request;
 }> {
 	const { ownerRoot } = browserTestRoots();
@@ -87,9 +90,12 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 	});
 	expect(seeded.status).toBe(200);
 	expect(seeded.body.elements).toHaveLength(8);
-	expect(
-		(await request("/api/boards/save", { method: "POST", body: { board: BOARD } })).status,
-	).toBe(200);
+	const saved = await request<{ file: string }>("/api/boards/save", {
+		method: "POST",
+		body: { board: BOARD },
+	});
+	expect(saved.status).toBe(200);
+	expect(typeof saved.body.file).toBe("string");
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", canvas.base]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/Headless/i);
@@ -112,42 +118,14 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 		"the pane to render the seeded board",
 	);
 	await browser.run(["click", ".excalidraw"]);
-	return { browser, canvas, clientId: panes.panes[0]!.clientId, request };
+	return {
+		browser,
+		canvas,
+		clientId: panes.panes[0]!.clientId,
+		noteFile: saved.body.file,
+		request,
+	};
 }
-const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
-	browser.eval(`(() => {
-		window.__claimRecorder = { holds: 0, sent: 0, delay: false, pending: [] };
-		window.__delayNextClaimReport = () => { window.__claimRecorder.delay = true; };
-		window.__releaseClaimReport = () => {
-			const entry = window.__claimRecorder.pending.shift();
-			if (!entry) return { released: false };
-			entry.release();
-			return { released: true };
-		};
-		const original = window.fetch;
-		window.fetch = function(input, init) {
-			const invoke = () => original.apply(this, arguments);
-			const url = typeof input === "string" ? input : input?.url ?? "";
-			const method = init?.method ?? input?.method ?? "GET";
-			const report = method === "POST" && url.includes("/api/elements/changes");
-			const hold = method === "POST" && url.includes("/api/boards/hold")
-				&& !url.includes("/api/boards/hold/release");
-			if (report) window.__claimRecorder.sent += 1;
-			if (hold) window.__claimRecorder.holds += 1;
-			if (!report || !window.__claimRecorder.delay) return invoke();
-			window.__claimRecorder.delay = false;
-			return new Promise((resolve, reject) => {
-				window.__claimRecorder.pending.push({ release: () => invoke().then(resolve, reject) });
-			});
-		};
-			return { installed: true };
-		})()`);
-const claimCounts = (browser: AgentBrowserSession): Promise<ClaimCounts> =>
-	browser.eval(`(() => ({
-		holds: window.__claimRecorder.holds,
-		sent: window.__claimRecorder.sent,
-			pending: window.__claimRecorder.pending.length,
-		}))()`);
 const readBanner = (browser: AgentBrowserSession): Promise<ClaimBanner> =>
 	browser.eval(`(() => {
 		const app = ${EXCALIDRAW_APP_EXPRESSION};
@@ -182,11 +160,16 @@ test(
 	"claims remain readable and camera-safe while content and take-back revoke them",
 	async () => {
 		await using resources = new AsyncDisposableStack();
-		const { browser, canvas, clientId, request } = await openSeededBoard(resources);
+		const { browser, canvas, clientId, noteFile, request } = await openSeededBoard(resources);
 		await installClaimRecorder(browser);
 		await browser.run(["click", ".workbench-toggle"]);
 		const initial = await readBanner(browser);
 		expect(initial).toMatchObject({ live: "polite", pane: "Pane A", state: "ready" });
+		expect(initial).toMatchObject({
+			connection: "connected",
+			semantic: "unavailable",
+			takeBackState: "idle",
+		});
 		expect(initial.headerClaim).toBeNull();
 		const claimWhy = "redrawing the payment path";
 		const claim = await request<ClaimBody>(`/api/boards/claim?board=${BOARD}`, {
@@ -425,6 +408,14 @@ test(
 		});
 		expect(contentToldOnce.status).toBe(200);
 
+		const noteBeforePresentation = await verifyBoardStatusPresentation({
+			board: BOARD,
+			browser,
+			noteFile,
+			readStatus: () => readBanner(browser),
+			request,
+		});
+
 		const explicitWhy = "checking the explicit take-back control";
 		expect(
 			(
@@ -441,23 +432,20 @@ test(
 		);
 		expect(explicitClaim.reason).toBe(explicitWhy);
 		expect(explicitClaim.take).toBe("Take back control");
-		await browser.eval(`(() => {
-			window.__takeBackActivations = 0;
-			document.querySelector(".pane-claim-take")?.addEventListener(
-				"click",
-				() => { window.__takeBackActivations += 1; },
-				{ once: true },
-			);
-			return true;
-		})()`);
-		await browser.run(["click", ".pane-claim-take"]);
-		expect(await browser.eval<number>("window.__takeBackActivations")).toBe(1);
+		await beginDelayedTakeBack(browser, () => readBanner(browser), explicitWhy);
 		const returned = await pollUntil(
 			() => readBanner(browser),
-			(value) => value.what === null && value.view === false,
+			(value) => value.what === null && value.view === false && value.takeBackState === "success",
 			"one activation to return editable control",
 		);
-		expect(returned).toMatchObject({ what: null, view: false, state: "ready", headerClaim: null });
+		expect(returned).toMatchObject({
+			what: null,
+			view: false,
+			state: "ready",
+			headerClaim: null,
+			takeBackState: "success",
+		});
+		expectNoteUnchanged(noteFile, noteBeforePresentation);
 
 		const lost = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
 			method: "POST",
@@ -480,7 +468,11 @@ test(
 			(value) => value.view === true && value.state === "offline",
 			"the disconnected pane to fail closed as held",
 		);
-		expect(disconnected).toMatchObject({ view: true, state: "offline" });
+		expect(disconnected).toMatchObject({
+			connection: "reconnecting",
+			view: true,
+			state: "offline",
+		});
 		expect(disconnected.headerClaim).toBeNull();
 		const reconnected = await pollUntil(
 			() => readBanner(browser),

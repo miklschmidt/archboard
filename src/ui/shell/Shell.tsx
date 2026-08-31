@@ -19,12 +19,16 @@ import React, {
 import { CanvasPane } from "../canvas/CanvasPane";
 import { activateCodeTarget } from "../code-target";
 import type { MountedBoardPreviewController, MountedBoardPreviewScene } from "../board-preview";
+import {
+	claimFromLockHolder,
+	WorkbenchBoardStatus,
+	type WorkbenchTakeBackResult,
+} from "../workbench-board-status";
 import { SelectionInspector } from "../selection-inspector/SelectionInspector";
 import type { PaneSelectionSnapshot, SelectionProjection } from "../selection-inspector";
 import type { PanePathFocusSnapshot, PathFocusController, PathFocusSnapshot } from "../path-focus";
 import { BoardBar } from "./BoardBar";
 import { BoardNavigator } from "./BoardNavigator";
-import { AgentWorkbench } from "./AgentWorkbench";
 import { BoardDialog, type BoardDialogMode } from "./BoardDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { ConflictDialog } from "./ConflictDialog";
@@ -100,7 +104,7 @@ interface Notice {
 }
 interface AgentState {
 	heldBy: LockHolder | null;
-	takeBack: () => void;
+	takeBack: () => Promise<WorkbenchTakeBackResult>;
 }
 
 interface ConflictState {
@@ -198,6 +202,11 @@ function presentationNotice(
 
 function shellClassName(presentedPaneId: string | null): string {
 	return presentedPaneId ? "shell shell-presenting" : "shell";
+}
+
+function boardConnection(status: PaneStatus | null): "disconnected" | "reconnecting" | "connected" {
+	if (status?.connected) return "connected";
+	return status ? "reconnecting" : "disconnected";
 }
 
 interface PresentationDockProps {
@@ -495,7 +504,11 @@ export function Shell(): React.JSX.Element {
 	}, []);
 
 	const onAgentState = useCallback(
-		(paneId: string, heldBy: LockHolder | null, takeBack: () => void) => {
+		(
+			paneId: string,
+			heldBy: LockHolder | null,
+			takeBack: () => Promise<WorkbenchTakeBackResult>,
+		) => {
 			setAgentStates((previous) => {
 				const existing = previous[paneId];
 				if (existing?.heldBy === heldBy && existing.takeBack === takeBack) return previous;
@@ -1262,12 +1275,12 @@ export function Shell(): React.JSX.Element {
 						/>
 					</div>
 
-					<AgentWorkbench
+					<WorkbenchBoardStatus
 						paneLabel={focusedPaneLabel}
-						connected={status?.connected ?? false}
-						heldBy={agentState?.heldBy ?? null}
+						connection={boardConnection(status)}
+						claim={claimFromLockHolder(agentState?.heldBy ?? null)}
 						doing={visibleDoing}
-						takeBack={agentState?.takeBack}
+						onTakeBack={agentState?.takeBack}
 					/>
 				</main>
 			</div>
