@@ -12,7 +12,8 @@ import {
 } from "./support/test-inventory.js";
 import { configuredAliases, type ConfiguredAliases } from "./support/codex-protocol-aliases.js";
 import { moduleSpecifiers } from "./support/codex-protocol-imports.js";
-import { astFingerprint, isGeneratedMirror } from "./support/codex-protocol-mirrors.js";
+import { isGeneratedMirror, mergeGeneratedFingerprints } from "./support/codex-protocol-mirrors.js";
+import fingerprintCorpus from "./support/codex-protocol-fingerprint-corpus.json";
 import { generatedPathsFromImport } from "./support/codex-protocol-paths.js";
 import { parseModuleSources } from "./support/module-scope-analysis.js";
 const repoRoot = path.resolve(import.meta.dir, "../../..");
@@ -28,6 +29,7 @@ const CODEX_GENERATED_PATH_INVENTORY = `AbsolutePathBuf.ts AgentMessageInputCont
 const CODEX_GENERATED_PATH_INVENTORY_SHA256 =
 	"1b25740f89a30fd39632e584b6bfa0d0c9171f6795d33151e5cf3381532d38fb";
 const CODEX_GENERATED_PATHS = new Set(CODEX_GENERATED_PATH_INVENTORY.split(" "));
+const AUTHORITATIVE_FINGERPRINTS = Object.values(fingerprintCorpus.entries);
 const ALLOWED_GENERATED_IMPORTERS = new Map([
 	[ADAPTER_PATH, "the public codex-protocol adapter is the sole consumer boundary"],
 	[GENERATED_ROOT, "generated files may import their own generated peers"],
@@ -57,9 +59,8 @@ interface ParsedSourceFile {
 	readonly file: SourceFile;
 	readonly sourceFile: ts.SourceFile;
 }
-function normalizeRepositoryPath(value: string): string {
-	return value.replaceAll("\\", "/").replace(/^\.\//u, "");
-}
+const normalizeRepositoryPath = (value: string): string =>
+	value.replaceAll("\\", "/").replace(/^\.\//u, "");
 const FINDING_MESSAGES: Record<string, string> = {
 	"symlink source entry":
 		"replace the source symlink with a tracked regular file so repository ownership is explicit",
@@ -110,14 +111,13 @@ async function ownershipFindings(
 	const findings: OwnershipFinding[] = [];
 	const aliases = configured ?? (await configuredAliases(repoRoot));
 	const parsedFiles = await parseSourceFiles(files.filter((file) => !file.symlink));
-	const generatedFingerprints = parsedFiles
-		.filter(
-			({ file }) =>
-				file.path.startsWith(GENERATED_ROOT) &&
-				(file.source ?? "").startsWith(GENERATED_HEADER) &&
-				CODEX_GENERATED_PATHS.has(normalizeRepositoryPath(file.path).slice(GENERATED_ROOT.length)),
-		)
-		.map(({ sourceFile: ast }) => astFingerprint(ast));
+	const generatedFingerprints = mergeGeneratedFingerprints(
+		AUTHORITATIVE_FINGERPRINTS,
+		parsedFiles.map(({ file, sourceFile: ast }) => ({ ...file, sourceFile: ast })),
+		GENERATED_ROOT,
+		GENERATED_HEADER,
+		CODEX_GENERATED_PATHS,
+	);
 	for (const file of files) {
 		if (file.symlink) {
 			addFinding(findings, file.path, "symlink source entry");
@@ -235,8 +235,9 @@ function syntheticGeneratedFile(
 		tracked,
 	};
 }
-function sourceFile(filePath: string, source: string): SourceFile {
-	return { path: filePath, source };
+const sourceFile = (filePath: string, source: string): SourceFile => ({ path: filePath, source });
+function readProtocolFixture(filePath: string): string {
+	return fs.readFileSync(path.join(import.meta.dir, "fixtures/codex-protocol", filePath), "utf8");
 }
 const DEEP_IMPORT =
 	'import type { ClientRequest } from "../runtime/codex-protocol/generated/ClientRequest.js";\n';
@@ -257,6 +258,10 @@ describe("Codex protocol generated ownership policy", () => {
 	test("keeps the exact generated directory ignored and the adapter boundary explicit", async () => {
 		expect(generatedDirectoryIsIgnored()).toBeTrue();
 		expect(CODEX_GENERATED_PATHS).toHaveLength(820);
+		expect(fingerprintCorpus.fileCount).toBe(820);
+		expect(Object.keys(fingerprintCorpus.entries).toSorted()).toEqual(
+			[...CODEX_GENERATED_PATHS].toSorted(),
+		);
 		expect(
 			createHash("sha256")
 				.update(`${[...CODEX_GENERATED_PATHS].toSorted().join("\n")}\n`, "utf8")
@@ -422,6 +427,24 @@ describe("Codex protocol generated ownership policy", () => {
 				message: expect.stringContaining("0.151.0"),
 			}),
 		]);
+	});
+	test("rejects a real clean-checkout mirror but not an unrelated primitive shape", async () => {
+		const threadFixture = readProtocolFixture("v2/Thread.ts.txt");
+		const threadMirror = threadFixture
+			.replace(GENERATED_HEADER, "")
+			.replace(/\bThread\b/gu, "LocalThread");
+		const threadFindings = await ownershipFindings([
+			sourceFile("src/domain/local-thread.ts", threadMirror),
+		]);
+		const idFixture = readProtocolFixture("ThreadId.ts.txt");
+		const idFindings = await ownershipFindings([
+			sourceFile(
+				"src/domain/BoardName.ts",
+				idFixture.replace(GENERATED_HEADER, "").replaceAll("ThreadId", "BoardName"),
+			),
+		]);
+		expect(threadFindings.map(({ reason }) => reason)).toEqual(["handwritten mirror"]);
+		expect(idFindings).toEqual([]);
 	});
 	test("is reached once by the existing repository inventory", () => {
 		const inventory = inventoryInput();
