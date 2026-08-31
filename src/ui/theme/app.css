@@ -2,6 +2,8 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 @import "../shell/shell.css";
 
+@source "../**/*.{ts,tsx}";
+
 /* TASK-140 is the visual authority. These names expose that completed system to
    Tailwind without giving framework defaults a second say in the palette. */
 :root {
