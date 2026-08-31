@@ -32,7 +32,7 @@ export const COMPLETE_CLIENT_REQUEST_FIXTURES = {
 		},
 	},
 	"config/read": { includeLayers: true, cwd: "/repo" },
-	"configRequirements/read": {},
+	"configRequirements/read": undefined,
 	"account/read": { refreshToken: true },
 	"account/login/start": {
 		type: "amazonBedrockAccessKeys",
@@ -42,7 +42,7 @@ export const COMPLETE_CLIENT_REQUEST_FIXTURES = {
 		region: "eu-west-1",
 	},
 	"account/login/cancel": { loginId: "login-1" },
-	"account/logout": {},
+	"account/logout": undefined,
 	"model/list": { cursor: "model-cursor", limit: 20, includeHidden: true },
 	"thread/start": {
 		model: "gpt-5.6-luna",

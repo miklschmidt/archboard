@@ -164,9 +164,7 @@ export interface CodexSession {
 	readonly accountLoginCancel: (
 		params: SessionParams<"account/login/cancel">,
 	) => Promise<ResponsePayloads["account/login/cancel"]>;
-	readonly accountLogout: (
-		params?: SessionParams<"account/logout">,
-	) => Promise<ResponsePayloads["account/logout"]>;
+	readonly accountLogout: () => Promise<ResponsePayloads["account/logout"]>;
 	readonly modelList: (
 		params?: SessionParams<"model/list">,
 	) => Promise<ResponsePayloads["model/list"]>;

@@ -2,6 +2,7 @@ import type { ChildProcessEventMap, ChildProcessWithoutNullStreams } from "node:
 
 import type {
 	ClientNotificationMethod,
+	ClientRequestMethodWithoutParams,
 	DecodedServerNotification,
 	ResponseMethod,
 	ResponsePayloads,
@@ -273,12 +274,19 @@ export type TransportStderrListener = (chunk: TransportStderrChunk) => void;
 export type TransportExitListener = (exit: TransportExit) => void;
 export type Unsubscribe = () => void;
 
-export interface CodexTransport {
-	readonly request: <Method extends ResponseMethod>(
+export type CodexTransportRequestParams<Method extends ResponseMethod> =
+	Method extends ClientRequestMethodWithoutParams ? undefined : unknown;
+
+export interface CodexTransportRequest {
+	<Method extends ResponseMethod>(
 		method: Method,
-		params: unknown,
+		params: CodexTransportRequestParams<Method>,
 		options?: CodexTransportRequestOptions,
-	) => Promise<CodexTransportResponse<Method>>;
+	): Promise<CodexTransportResponse<Method>>;
+}
+
+export interface CodexTransport {
+	readonly request: CodexTransportRequest;
 	readonly sendNotification: (method: ClientNotificationMethod) => Promise<void>;
 	readonly registerDynamicDispatcher: (registration: DynamicDispatcherRegistration) => void;
 	readonly respond: {
