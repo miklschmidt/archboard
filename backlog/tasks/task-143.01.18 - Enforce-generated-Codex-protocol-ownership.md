@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-31 01:03'
+updated_date: '2026-08-31 01:27'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -18,6 +18,7 @@ modified_files:
   - docs/design/codex-protocol-fingerprint-corpus.md
   - scripts/codex-protocol-fingerprints.ts
   - scripts/check-codex-protocol-fingerprint-corpus.ts
+  - scripts/typescript-analysis.ts
   - tests/system/repository-policy/codex-protocol-boundary.test.ts
   - tests/system/repository-policy/codex-protocol-aliases.test.ts
   - tests/system/repository-policy/codex-protocol-fingerprint-corpus.test.ts
@@ -28,6 +29,7 @@ modified_files:
   - tests/system/repository-policy/support/codex-protocol-mirrors.ts
   - tests/system/repository-policy/support/codex-protocol-paths.ts
   - tests/system/repository-policy/support/codex-protocol-sources.ts
+  - tests/system/repository-policy/support/codex-protocol-fixtures.ts
   - tests/system/repository-policy/support/module-scope-analysis.ts
   - tests/system/repository-policy/fixtures/codex-protocol/v2/Thread.ts.txt
   - tests/system/repository-policy/fixtures/codex-protocol/ThreadId.ts.txt
@@ -110,4 +112,12 @@ The tracked corpus is now machine-reproducible through the single canonical scri
 Further-remediation validation: focused boundary, alias, and corpus owners passed 16 tests / 48 expectations; bun run test:repository passed 146 tests / 463 expectations; bun run test:modules passed 1010 tests / 7034 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed; bun run check:codex-protocol-fingerprint-corpus passed for all 820 generated fingerprints. Policy owner is exactly 500 lines and every changed TypeScript file remains below 500 lines. No production files changed.
 
 Further-remediation scope: package script and design note for the reproducible corpus command; scripts/codex-protocol-fingerprints.ts and scripts/check-codex-protocol-fingerprint-corpus.ts; repository-policy boundary/corpus tests; named source/mirror support; and the existing generated-shape fixtures/corpus. The task remains In Progress for same-reviewer rereview.
+
+Further remediation in commit dfc9f94 after the same reviewer findings: one canonical alias representation now handles named type aliases, namespace imports with qualified references, inline ImportTypeNode aliases, and parenthesized type references. Real v2/Thread.ts probes cover one imported alias and all nine generated imports under namespace and ImportTypeNode spellings; each remains rejected as a mirror after the Thread declaration is renamed.
+
+The checked-in distinctive corpus is now the sole mirror reference. Locally present ignored generated files are still checked for canonical path, header, inventory, and tracking rules, but their fingerprints are never merged into matcher references. A generated-tree-present common-shape control proves a local generated Failure shape cannot broaden mirror detection. The neutral scripts/typescript-analysis.ts helper owns parseModuleSources and is imported by both generic module-scope analysis and Codex corpus generation; module-scope analysis no longer depends on Codex-specific generation code.
+
+Further-remediation validation: focused boundary/alias/corpus owners passed 17 tests / 49 expectations; bun run test:repository passed 147 tests / 466 expectations; bun run test:modules passed 1010 tests / 7034 expectations; bun run type-check passed both TypeScript projects; bun run lint, bun run fmt:check, and git diff --check passed; bun run check:codex-protocol-fingerprint-corpus regenerated and verified all 820 fingerprints. The boundary owner is 497 lines and every changed TypeScript file remains below 500 lines. No production files changed.
+
+Further-remediation scope: scripts/typescript-analysis.ts, canonical fingerprint and checker updates, repository-policy alias/fixture/source support, corpus regeneration, and boundary controls. The task remains In Progress for same-reviewer rereview.
 <!-- SECTION:NOTES:END -->
