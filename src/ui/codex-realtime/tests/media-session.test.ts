@@ -301,6 +301,73 @@ describe("realtime browser media session", () => {
 		env.assertReleased();
 	});
 
+	test("subscription changes take effect after the current publication cohort", async () => {
+		const env = new FakeBrowser();
+		const session = createRealtimeMediaSession(host(env));
+		const seen: string[] = [];
+		let changed = false;
+		let unsubscribeSecond: (() => void) | undefined;
+		session.subscribe((next) => {
+			seen.push(`first:${next.state.phase}:${next.state.reason}`);
+			if (changed || next.state.reason !== "start_requested") return;
+			changed = true;
+			unsubscribeSecond?.();
+			session.subscribe((later) => {
+				seen.push(`new:${later.state.phase}:${later.state.reason}`);
+			});
+		});
+		unsubscribeSecond = session.subscribe((next) => {
+			seen.push(`second:${next.state.phase}:${next.state.reason}`);
+		});
+		await session.start(correlation());
+		expect(seen.slice(0, 4)).toEqual([
+			"first:requesting_permission:start_requested",
+			"second:requesting_permission:start_requested",
+			"first:negotiating:permission_granted",
+			"new:negotiating:permission_granted",
+		]);
+		await session.dispose();
+		env.assertReleased();
+	});
+
+	test("reentrant device loss preserves publication order for every listener", async () => {
+		const env = new FakeBrowser();
+		const session = createRealtimeMediaSession(host(env));
+		const first: string[] = [];
+		const second: string[] = [];
+		session.subscribe((next) => {
+			first.push(`${next.state.phase}:${next.state.reason}`);
+			if (next.state.reason === "offer_created") env.localTrack.lose();
+		});
+		session.subscribe((next) => second.push(`${next.state.phase}:${next.state.reason}`));
+		const failed = await session.start(correlation());
+		expect(first).toEqual([
+			"requesting_permission:start_requested",
+			"negotiating:permission_granted",
+			"negotiating:offer_created",
+			"recoverable_error:device_lost",
+		]);
+		expect(second).toEqual(first);
+		expect(failed).toBe(session.getSnapshot());
+		env.assertReleased();
+	});
+
+	test.each([
+		["localDescription", false],
+		["hostOffer", true],
+	] as const)("device loss at %s records exact host offer ownership", async (checkpoint, sent) => {
+		const env = new FakeBrowser();
+		const session = createRealtimeMediaSession(host(env));
+		env.onStep = (step) => {
+			if (step === checkpoint) env.localTrack.lose();
+		};
+		const failed = await session.start(correlation());
+		expect(failed.state).toMatchObject({ phase: "recoverable_error", reason: "device_lost" });
+		expect(env.stopRequests).toEqual(sent ? [correlation()] : []);
+		expect(env.order.includes("hostOffer")).toBe(sent);
+		env.assertReleased();
+	});
+
 	test("a stale play rejection cannot fail or detach its replacement", async () => {
 		const env = new FakeBrowser();
 		env.deferPlay = true;
