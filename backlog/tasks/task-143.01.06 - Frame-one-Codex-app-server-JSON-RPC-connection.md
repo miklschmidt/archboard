@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.06
 title: Frame one Codex app-server JSON-RPC connection
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 03:51'
+updated_date: '2026-08-31 03:54'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -35,11 +35,11 @@ Delegation profile: gpt-5.6-luna, max.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Client requests, responses, notifications, errors, and reverse requests correlate by child, epoch, and requestId; logical dynamic calls retain child, epoch, threadId, turnId, callId, namespace, tool, and manifestHash.
-- [ ] #2 A local timeout or cancellation settles only the local waiter and never claims remote cancellation; late responses remain inspectable and non-idempotent lost responses classify as outcome_unknown.
-- [ ] #3 Only newline-delimited stdout frames enter the decoder, stderr drains independently, malformed/duplicate/unknown frames fail the owning operation without corrupting later frames, and backpressure is bounded.
-- [ ] #4 codex-approvals owns seven human responses, the two dynamic dispatchers own item/tool/call responses, and codex-session owns currentTime plus unsupported refresh/attestation responses. Transport validates correlation and writes each supplied response at most once.
-- [ ] #5 The src/runtime/codex-transport/tests suite exhausts framing, every message direction, correlation, cancellation, late/duplicate/malformed frames, bounded backpressure, response ownership, one-write settlement, and shutdown against fake child streams.
+- [x] #1 Client requests, responses, notifications, errors, and reverse requests correlate by child, epoch, and requestId; logical dynamic calls retain child, epoch, threadId, turnId, callId, namespace, tool, and manifestHash.
+- [x] #2 A local timeout or cancellation settles only the local waiter and never claims remote cancellation; late responses remain inspectable and non-idempotent lost responses classify as outcome_unknown.
+- [x] #3 Only newline-delimited stdout frames enter the decoder, stderr drains independently, malformed/duplicate/unknown frames fail the owning operation without corrupting later frames, and backpressure is bounded.
+- [x] #4 codex-approvals owns seven human responses, the two dynamic dispatchers own item/tool/call responses, and codex-session owns currentTime plus unsupported refresh/attestation responses. Transport validates correlation and writes each supplied response at most once.
+- [x] #5 The src/runtime/codex-transport/tests suite exhausts framing, every message direction, correlation, cancellation, late/duplicate/malformed frames, bounded backpressure, response ownership, one-write settlement, and shutdown against fake child streams.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -81,4 +81,12 @@ Resource-regression investigation and focused remediation: the transport harness
 Rereview remediation: the reviewer reproduced blockNext=true plus a 1,024-byte FakeStdin write followed by child.dispose(); destroyed became true but writableLength stayed 1,024 after a tick because destroy discarded the captured callback without settling Node's active Writable chunk. FakeStdin now settles that callback (including direct destroy), FakeChild.dispose releases before destroy, and createHarness returns an owned close() closure. close() starts transport.shutdown(), releases the captured fake write before awaiting it, and always disposes the paired child in finally; this removes the mismatched closeTransport(transport, child) interface and avoids the composed shutdown timeout. Added fail-first blocked-write assertions for writableLength, destroyed stdio, cleared writes, and listener removal, plus a blocked transport-write shutdown regression. Capped rereview evidence (MemoryMax=6G, MemorySwapMax=1G): cleanup/blocked-write owner 3 pass/0 fail/32 expect, peak 57,679,872 bytes; transport suite 26 pass/0 fail/171 expect, peak 1,496,584,192 bytes; exact-frame owner 1 pass/0 fail/7 expect, peak 1,314,689,024 bytes; bunx tsc --noEmit, scoped oxlint, scoped oxfmt --check, and git diff --check pass. No combined transport+realtime sequence was run and caps were not raised. Code commit: 5bb5374. Task remains In Progress with acceptance criteria unchecked.
 
 Final mechanical rereview fix: extracted the duplicated destroyed-child, buffer, write, and listener assertions into expectChildDisposed(child), called by both setup-specific cleanup tests. No production behavior or gates changed. Capped cleanup owner remains 3 pass/0 fail/34 expect with MemoryPeak 55,840,768 bytes; oxfmt --check and git diff --check pass. Code commit: be03953. Task remains In Progress with acceptance criteria unchecked.
+
+Root acceptance at integrated remediation HEAD 4539475: independent final rereview returned REVIEW_CLEAN for remediation commits through worker HEAD 7c5c9ea. The root capped transport unit archboard-task1430106-transport-4539475.service passed 26 tests and 173 assertions at 1.1G peak with swap 0 under MemoryMax 6G and MemorySwapMax 1G. It covers the prior blocked-write leak, harness-bound close ownership, one disposal contract, exact-frame handling, all transport directions, malformed recovery, backpressure, correlation, one-write settlement, and shutdown. The earlier integration module unit reached the fixed 12G memory and 2G swap caps at the separate final realtime contract owner after all transport tests; the focused realtime TypeScript owner independently reproduces that cap. Per the resource policy, neither sequence was rerun and no cap was raised. That separate compiler peak does not contradict the transport acceptance evidence.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented one instance-scoped Codex app-server JSONL transport with typed request and reverse-request correlation, bounded dual-lane writes, local timeout/cancellation settlement, inspectable late outcomes, strict malformed-frame recovery, owner-specific one-write responses, and deterministic shutdown. Review remediation closed lifecycle, response-settlement, ID-only routing, stream-retention, blocked-write, and test-harness ownership gaps. Independent review was clean and the integrated capped transport suite passed 26 tests and 173 assertions with 1.1G peak and no swap.
+<!-- SECTION:FINAL_SUMMARY:END -->
