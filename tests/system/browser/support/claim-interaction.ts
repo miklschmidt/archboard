@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 import type { createJsonRequester } from "../../boards/support/http.ts";
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
+import { readSemanticAccessibility } from "./semantic-accessibility.ts";
 import type { WorkbenchSnapshot } from "./workbench-metrics.ts";
 
 export interface ClaimCounts {
@@ -99,6 +100,108 @@ export function noteBytes(noteFile: string): Buffer<ArrayBuffer> {
 
 export function expectNoteUnchanged(noteFile: string, expected: Buffer<ArrayBuffer>): void {
 	expect(readFileSync(noteFile)).toEqual(expected);
+}
+
+interface SemanticAnnouncerSnapshot {
+	atomic: string | null;
+	bodyHidden: boolean;
+	count: number;
+	hiddenAncestor: boolean;
+	label: string | null;
+	live: string | null;
+	role: string | null;
+	state: string | null;
+	text: string;
+	workbenchExpanded: string | null;
+}
+
+const readSemanticAnnouncer = (browser: AgentBrowserSession): Promise<SemanticAnnouncerSnapshot> =>
+	browser.eval(`(() => {
+		const announcer = document.querySelector(".workbench-semantic-announcer");
+		const body = document.querySelector(".workbench-body");
+		const workbench = document.querySelector(".agent-workbench");
+		return {
+			atomic: announcer?.getAttribute("aria-atomic") ?? null,
+			bodyHidden: body?.hidden === true,
+			count: document.querySelectorAll(".workbench-semantic-announcer").length,
+			hiddenAncestor: announcer?.closest("[hidden]") !== null,
+			label: announcer?.getAttribute("aria-label") ?? null,
+			live: announcer?.getAttribute("aria-live") ?? null,
+			role: announcer?.getAttribute("role") ?? null,
+			state: announcer?.getAttribute("data-semantic-state") ?? null,
+			text: announcer?.textContent?.replace(/\\s+/g, " ").trim() ?? "",
+			workbenchExpanded: workbench?.getAttribute("data-expanded") ?? null,
+		};
+	})()`);
+
+async function setSemanticAnnouncer(
+	browser: AgentBrowserSession,
+	state: string,
+	role: "alert" | "status",
+	live: "assertive" | "polite",
+	text: string,
+): Promise<void> {
+	expect(
+		await browser.eval<boolean>(`(() => {
+			const announcer = document.querySelector(".workbench-semantic-announcer");
+			if (!announcer) return false;
+			announcer.setAttribute("data-semantic-state", ${JSON.stringify(state)});
+			announcer.setAttribute("role", ${JSON.stringify(role)});
+			announcer.setAttribute("aria-live", ${JSON.stringify(live)});
+			announcer.setAttribute("aria-label", ${JSON.stringify(text)});
+			announcer.textContent = ${JSON.stringify(text)};
+			return true;
+		})()`),
+	).toBe(true);
+}
+
+export async function verifyCollapsedSemanticAnnouncements(
+	browser: AgentBrowserSession,
+): Promise<void> {
+	const unavailableText =
+		"Semantic context Unavailable No semantic context delivery is available for this pane.";
+	expect(await readSemanticAnnouncer(browser)).toEqual({
+		atomic: "true",
+		bodyHidden: true,
+		count: 1,
+		hiddenAncestor: false,
+		label: unavailableText,
+		live: "polite",
+		role: "status",
+		state: "unavailable",
+		text: unavailableText,
+		workbenchExpanded: "false",
+	});
+
+	const freshText = "Semantic context Fresh Delivered to the linked workhorse.";
+	await setSemanticAnnouncer(browser, "fresh", "status", "polite", freshText);
+	const polite = await readSemanticAnnouncer(browser);
+	expect(polite).toMatchObject({ live: "polite", role: "status", state: "fresh", text: freshText });
+	expect(await readSemanticAccessibility(browser)).toEqual({
+		atomic: true,
+		ignored: false,
+		live: "polite",
+		name: freshText,
+		role: "status",
+	});
+
+	const refusedText = "Semantic context Refused The linked thread is not loaded.";
+	await setSemanticAnnouncer(browser, "refused", "alert", "assertive", refusedText);
+	const refused = await readSemanticAnnouncer(browser);
+	expect(refused).toMatchObject({
+		live: "assertive",
+		role: "alert",
+		state: "refused",
+		text: refusedText,
+	});
+	expect(await readSemanticAccessibility(browser)).toEqual({
+		atomic: true,
+		ignored: false,
+		live: "assertive",
+		name: refusedText,
+		role: "alert",
+	});
+	await setSemanticAnnouncer(browser, "unavailable", "status", "polite", unavailableText);
 }
 
 export async function verifyBoardStatusPresentation(options: {
