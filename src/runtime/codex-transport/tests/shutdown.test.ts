@@ -28,7 +28,7 @@ describe("Codex app-server shutdown contract", () => {
 			});
 			expect(transport.inspect().pendingReverseRequests).toBe(0);
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -50,7 +50,7 @@ describe("Codex app-server shutdown contract", () => {
 				error: { code: -32603, message: "Codex transport is shutting down." },
 			});
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -78,7 +78,7 @@ describe("Codex app-server shutdown contract", () => {
 				},
 			]);
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -99,7 +99,7 @@ describe("Codex app-server shutdown contract", () => {
 			expect(error).toMatchObject({ reason: "write-error" });
 			expect(transport.inspect()).toMatchObject({ state: "closed", pendingReverseRequests: 0 });
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -122,7 +122,7 @@ describe("Codex app-server shutdown contract", () => {
 			await shutdownHarness.transport.shutdown();
 			expect(shutdownHarness.transport.inspectLateResponses()).toEqual(before);
 		} finally {
-			await closeTransport(shutdownHarness.transport);
+			await closeTransport(shutdownHarness.transport, shutdownHarness.child);
 		}
 
 		const exitHarness = createHarness();
@@ -141,7 +141,7 @@ describe("Codex app-server shutdown contract", () => {
 			await flushStreams();
 			expect(exitHarness.transport.inspectLateResponses()).toHaveLength(1);
 		} finally {
-			await closeTransport(exitHarness.transport);
+			await closeTransport(exitHarness.transport, exitHarness.child);
 		}
 	});
 });

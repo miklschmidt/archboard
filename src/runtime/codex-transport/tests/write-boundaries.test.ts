@@ -21,7 +21,7 @@ describe("Codex app-server write boundaries", () => {
 				retryEligible: true,
 			});
 		} finally {
-			await closeTransport(oversized.transport);
+			await closeTransport(oversized.transport, oversized.child);
 		}
 
 		const failed = createHarness();
@@ -39,7 +39,7 @@ describe("Codex app-server write boundaries", () => {
 			});
 			expect(failed.transport.inspect().state).toBe("closed");
 		} finally {
-			await closeTransport(failed.transport);
+			await closeTransport(failed.transport, failed.child);
 		}
 	});
 });
