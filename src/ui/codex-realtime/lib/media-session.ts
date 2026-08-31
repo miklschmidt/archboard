@@ -132,6 +132,7 @@ async function bounded<T>(
 	durationMs: number,
 	cancellable = true,
 ): Promise<T | typeof CANCELLED | typeof TIMED_OUT> {
+	if (cancellable && run.cancelledNow) return CANCELLED;
 	if (durationMs <= 0) return TIMED_OUT;
 	let timer: RunTimer | undefined;
 	const timeout = new Promise<typeof TIMED_OUT>((resolve) => {
@@ -143,7 +144,10 @@ async function bounded<T>(
 	});
 	try {
 		const pending = operation();
-		return await Promise.race(cancellable ? [pending, run.cancelled, timeout] : [pending, timeout]);
+		const result = await Promise.race(
+			cancellable ? [pending, run.cancelled, timeout] : [pending, timeout],
+		);
+		return cancellable && run.cancelledNow ? CANCELLED : result;
 	} finally {
 		if (timer !== undefined) clearRunTimer(run, timer);
 	}
@@ -173,6 +177,10 @@ function cancelRun(run: Run): void {
 	run.cancel();
 }
 
+function isStopFailure(run: Run): boolean {
+	return run.state.phase === "recoverable_error" && run.state.reason === "stop_failed";
+}
+
 function removeListeners(run: Run): void {
 	for (const remove of run.removers.splice(0)) remove();
 }
@@ -198,14 +206,23 @@ async function cleanupRun(run: Run): Promise<void> {
 		}
 		run.audioSource?.disconnect();
 		run.analyser?.disconnect();
-		if (run.audioContext) await run.audioContext.close().catch(() => undefined);
+		if (run.audioContext) {
+			try {
+				void run.audioContext.close().catch(() => undefined);
+			} catch {
+				// Browser cleanup is best effort; local resource release must continue.
+			}
+		}
 		detachRemote(run);
 		if (run.channel && run.channel.readyState !== "closed") run.channel.close();
 		if (run.peer) {
-			const replacements: Promise<void>[] = [];
 			for (const sender of run.peer.getSenders()) {
 				if (sender.track) stopTrack(run, sender.track);
-				replacements.push(sender.replaceTrack(null).catch(() => undefined));
+				try {
+					void sender.replaceTrack(null).catch(() => undefined);
+				} catch {
+					// A closed peer may reject replacement synchronously.
+				}
 				try {
 					run.peer.removeTrack(sender);
 				} catch {
@@ -213,7 +230,6 @@ async function cleanupRun(run: Run): Promise<void> {
 				}
 			}
 			for (const receiver of run.peer.getReceivers()) stopTrack(run, receiver.track);
-			await Promise.all(replacements);
 			if (run.peer.connectionState !== "closed") run.peer.close();
 		}
 		for (const track of run.localStream?.getTracks() ?? []) stopTrack(run, track);
@@ -226,6 +242,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 	let snapshot = frozenSnapshot(null, INITIAL_REALTIME_STATE, 0);
 	let current: Run | null = null;
 	let latestRun: Run | null = null;
+	let publicOutcomeOwner: Run | null = null;
 	let disposed = false;
 	let disposalPromise: Promise<void> | null = null;
 	let lifecycleQueue = Promise.resolve();
@@ -242,9 +259,10 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 	const notify = (): void => {
 		for (const listener of listeners) listener(snapshot);
 	};
-	const adoptLatestClosed = (): void => {
-		if (latestRun?.state.phase !== "closed" || snapshot === latestRun.snapshot) return;
-		snapshot = latestRun.snapshot;
+	const inactive = (run: Run): boolean => current !== run || run.cancelledNow || run.failed;
+	const adoptRun = (run: Run): void => {
+		if (snapshot === run.snapshot) return;
+		snapshot = run.snapshot;
 		notify();
 	};
 	const settleDormantRun = (run: Run): void => {
@@ -261,7 +279,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		});
 		run.state = closed;
 		run.snapshot = frozenSnapshot(run.correlation, closed, 0);
-		if (latestRun === run) adoptLatestClosed();
+		if ((publicOutcomeOwner ?? latestRun) === run) adoptRun(run);
 	};
 
 	const publish = (
@@ -341,7 +359,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 
 	const stopRun = async (run: Run, dispose: boolean): Promise<void> => {
 		if (run.state.phase === "closed") return;
-		const visible = latestRun === run;
+		const visible = (publicOutcomeOwner ?? latestRun) === run;
 		cancelRun(run);
 		if (run.state.phase !== "stopping") {
 			publish(
@@ -357,7 +375,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		await cleanupRun(run);
 		const hostStopped = await stopHost(run);
 		if (current !== run || run.state.phase !== "stopping") return;
-		if (!hostStopped && !dispose && !disposed) {
+		if (!hostStopped) {
 			publish(
 				run,
 				{
@@ -419,16 +437,20 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 
 	const setupMeter = async (run: Run): Promise<void> => {
 		if (!run.localStream) throw new Error("The microphone stream is absent.");
-		if (run.cancelledNow || run.failed) return;
+		if (inactive(run)) return;
 		run.audioContext = new AudioContext();
+		if (inactive(run)) return;
 		if (run.audioContext.state === "suspended") await run.audioContext.resume();
-		if (run.cancelledNow || run.failed) return;
+		if (inactive(run)) return;
 		if (run.audioContext.state === "suspended") {
 			throw new DOMException("Audio playback remains suspended.", "NotAllowedError");
 		}
 		run.audioSource = run.audioContext.createMediaStreamSource(run.localStream);
+		if (inactive(run)) return;
 		run.analyser = run.audioContext.createAnalyser();
+		if (inactive(run)) return;
 		run.audioSource.connect(run.analyser);
+		if (inactive(run)) return;
 		const samples = new Uint8Array(run.analyser.fftSize);
 		const tick = (): void => {
 			run.animationFrame = undefined;
@@ -457,9 +479,11 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		}
 		if (disposed) throw new Error("The realtime media session is disposed.");
 
+		publicOutcomeOwner = null;
 		current = run;
 		snapshot = run.snapshot;
 		publish(run, { phase: "requesting_permission", reason: "start_requested" });
+		if (inactive(run)) return settleCancelledRun(run);
 
 		const mediaDevices = globalThis.navigator?.mediaDevices;
 		if (!mediaDevices?.getUserMedia) {
@@ -469,6 +493,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 
 		let microphone: Promise<MediaStream>;
 		try {
+			if (inactive(run)) return settleCancelledRun(run);
 			microphone = mediaDevices.getUserMedia({ audio: true, video: false });
 		} catch (error) {
 			const failure = permissionFailure(error);
@@ -490,7 +515,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			await fail(run, failure.reason, failure.message);
 			return run.snapshot;
 		}
-		if (stream === CANCELLED) return settleCancelledRun(run);
+		if (stream === CANCELLED || inactive(run)) return settleCancelledRun(run);
 		run.localStream = stream;
 		run.startDeadline = monotonicNow() + CODEX_REALTIME_START_MS;
 		const localTrack = stream.getAudioTracks()[0];
@@ -499,6 +524,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			return run.snapshot;
 		}
 		publish(run, { phase: "negotiating", reason: "permission_granted" });
+		if (inactive(run)) return settleCancelledRun(run);
 
 		if (
 			typeof globalThis.RTCPeerConnection !== "function" ||
@@ -512,8 +538,11 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 
 		try {
 			run.peer = new RTCPeerConnection();
+			if (inactive(run)) return settleCancelledRun(run);
 			run.peer.addTransceiver(localTrack, { direction: "sendrecv", streams: [stream] });
+			if (inactive(run)) return settleCancelledRun(run);
 			run.channel = run.peer.createDataChannel("realtime-events");
+			if (inactive(run)) return settleCancelledRun(run);
 
 			const deviceLost = (): void => {
 				run.deviceLost = true;
@@ -545,6 +574,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			if (localSet === CANCELLED) return settleCancelledRun(run);
 			if (localSet === TIMED_OUT) throw new Error("Setting the realtime offer timed out.");
 			publish(run, { phase: "negotiating", reason: "offer_created" });
+			if (inactive(run)) return settleCancelledRun(run);
 			run.offerSent = true;
 			const answer = await withinStartDeadline(run, () =>
 				host.createOffer({
@@ -562,6 +592,7 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 				return run.snapshot;
 			}
 			publish(run, { phase: "negotiating", reason: "answer_received" });
+			if (inactive(run)) return settleCancelledRun(run);
 			const remoteSet = await withinStartDeadline(run, () =>
 				run.peer!.setRemoteDescription({ type: "answer", sdp: answer.sdp }),
 			);
@@ -577,11 +608,13 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 				);
 				return run.snapshot;
 			}
+			if (inactive(run)) return settleCancelledRun(run);
 			const metered = await withinStartDeadline(run, () => setupMeter(run));
 			if (metered === CANCELLED) return settleCancelledRun(run);
 			if (metered === TIMED_OUT) throw new Error("Starting the audio meter timed out.");
 			if (run.cancelledNow || run.failed) return settleCancelledRun(run);
 			publish(run, { phase: "listening", reason: "negotiation_succeeded" });
+			if (inactive(run)) return settleCancelledRun(run);
 			if (run.deviceLost) await fail(run, "device_lost", "The microphone was removed.");
 		} catch (error) {
 			if (run.cancelledNow || run.failed) return settleCancelledRun(run);
@@ -610,24 +643,32 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		});
 	};
 	const stop = (): Promise<RealtimeMediaSnapshot> => {
+		const active = current?.state.phase === "closed" ? null : current;
+		const owner = active ?? latestRun;
+		if (owner) publicOutcomeOwner = owner;
 		for (const run of pendingRuns) cancelRun(run);
 		if (current) cancelRun(current);
 		return enqueue(async () => {
-			if (current && current.state.phase !== "closed") await stopRun(current, false);
-			adoptLatestClosed();
-			return snapshot;
+			if (active && active.state.phase !== "closed" && !isStopFailure(active))
+				await stopRun(active, false);
+			if (owner) adoptRun(owner);
+			return owner?.snapshot ?? snapshot;
 		});
 	};
 	const dispose = (): Promise<void> => {
 		if (disposalPromise) return disposalPromise;
+		const active = current?.state.phase === "closed" ? null : current;
+		const owner = publicOutcomeOwner ?? active ?? latestRun;
+		if (owner) publicOutcomeOwner = owner;
 		disposed = true;
 		for (const run of pendingRuns) cancelRun(run);
 		if (current) cancelRun(current);
 		disposalPromise = enqueue(async () => {
-			if (current && current.state.phase !== "closed") {
-				await stopRun(current, true);
-				adoptLatestClosed();
-			} else if (!latestRun) {
+			if (active && active.state.phase !== "closed" && !isStopFailure(active))
+				await stopRun(active, true);
+			if (owner) {
+				adoptRun(owner);
+			} else {
 				const stopping = transitionRealtimeState(INITIAL_REALTIME_STATE, {
 					phase: "stopping",
 					reason: "dispose_requested",
@@ -640,8 +681,6 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 				});
 				snapshot = frozenSnapshot(null, closed, 0);
 				notify();
-			} else {
-				adoptLatestClosed();
 			}
 			listeners.clear();
 		});
