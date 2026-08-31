@@ -432,12 +432,16 @@ describe("Codex app-server transport", () => {
 			});
 			await flushStreams();
 			if (!request) throw new Error("reverse request was not routed");
+			expect(transport.ownsPendingReverseRequest(request, "codex-approvals")).toBe(true);
+			expect(transport.ownsPendingReverseRequest(request, "codex-session")).toBe(false);
+			expect(transport.ownsPendingReverseRequest({ ...request }, "codex-approvals")).toBe(false);
 			expect(
 				await captureRejection(
 					transport.respond(request, "codex-session", { result: { decision: "accept" } }),
 				),
 			).toMatchObject({ name: "CodexTransportOwnershipError" });
 			await transport.respond(request, "codex-approvals", { result: { decision: "accept" } });
+			expect(transport.ownsPendingReverseRequest(request, "codex-approvals")).toBe(false);
 			sendJson(child, {
 				id: "approval-once",
 				method: "item/fileChange/requestApproval",
