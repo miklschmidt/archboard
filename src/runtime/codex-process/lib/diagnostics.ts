@@ -14,6 +14,8 @@ export interface BoundedCodexDiagnostics {
 export interface CodexDiagnosticsBuffer {
 	/** Append raw bytes and return only their redacted form for classification. */
 	readonly append: (chunk: Uint8Array | string) => string;
+	/** Commit the bounded redacted carry when the owning child reaches a terminal boundary. */
+	readonly finalize: () => string;
 	readonly redact: (text: string) => string;
 	readonly snapshot: () => BoundedCodexDiagnostics;
 }
@@ -28,6 +30,7 @@ function uniqueSecrets(secrets: readonly string[]): readonly string[] {
 
 function createRedactor(secrets: readonly string[]): {
 	readonly append: (text: string) => { readonly stable: string; readonly visible: string };
+	readonly finalize: () => string;
 	readonly preview: () => string;
 	readonly redact: (text: string) => string;
 } {
@@ -66,9 +69,15 @@ function createRedactor(secrets: readonly string[]): {
 		}
 		return { stable, visible: redact(previousPending + text) };
 	};
+	const finalize = (): string => {
+		const stable = redact(pending);
+		pending = "";
+		return stable;
+	};
 
 	return Object.freeze({
 		append,
+		finalize,
 		preview: () => redact(pending),
 		redact,
 	});
@@ -76,9 +85,9 @@ function createRedactor(secrets: readonly string[]): {
 
 function copyPrefix(text: string, limitBytes: number): Buffer {
 	const bytes = Buffer.from(text, "utf8");
-	const retained = Buffer.allocUnsafe(Math.min(bytes.byteLength, limitBytes));
-	bytes.copy(retained);
-	return retained;
+	let end = Math.min(bytes.byteLength, limitBytes);
+	while (end > 0 && end < bytes.byteLength && (bytes[end]! & 0xc0) === 0x80) end -= 1;
+	return Buffer.from(bytes.subarray(0, end));
 }
 
 export function createCodexDiagnosticsBuffer(
@@ -95,34 +104,40 @@ export function createCodexDiagnosticsBuffer(
 	let totalBytes = 0;
 	let redactedBytes = 0;
 
+	const commit = (text: string): void => {
+		const bytes = Buffer.byteLength(text, "utf8");
+		redactedBytes += bytes;
+		if (retainedBytes >= limitBytes || bytes === 0) return;
+		const retained = copyPrefix(text, limitBytes - retainedBytes);
+		if (retained.byteLength === 0) return;
+		chunks.push(retained);
+		retainedBytes += retained.byteLength;
+	};
+
 	const append = (chunk: Uint8Array | string): string => {
 		const bytes = typeof chunk === "string" ? Buffer.from(chunk, "utf8") : Buffer.from(chunk);
 		const text = bytes.toString("utf8");
 		totalBytes += bytes.byteLength;
 		const redacted = redactor.append(text);
-		redactedBytes += Buffer.byteLength(redacted.stable, "utf8");
-		if (retainedBytes < limitBytes) {
-			const retained = copyPrefix(redacted.stable, limitBytes - retainedBytes);
-			chunks.push(retained);
-			retainedBytes += retained.byteLength;
-		}
+		commit(redacted.stable);
 		return redacted.visible;
 	};
 
+	const finalize = (): string => {
+		const stable = redactor.finalize();
+		commit(stable);
+		return stable;
+	};
+
 	const snapshot = (): BoundedCodexDiagnostics => {
-		const carry = Buffer.from(redactor.preview(), "utf8");
-		const visible = Buffer.allocUnsafe(Math.min(limitBytes, retainedBytes + carry.byteLength));
-		const completeRedactedBytes = redactedBytes + carry.byteLength;
+		const pending = Buffer.from(redactor.preview(), "utf8");
+		const visible = Buffer.allocUnsafe(retainedBytes);
+		const completeRedactedBytes = redactedBytes + pending.byteLength;
 		let offset = 0;
 		for (const chunk of chunks) {
 			if (offset >= visible.byteLength) break;
 			const amount = Math.min(chunk.byteLength, visible.byteLength - offset);
 			chunk.copy(visible, offset, 0, amount);
-			offset += amount;
-		}
-		if (offset < visible.byteLength) {
-			const amount = Math.min(carry.byteLength, visible.byteLength - offset);
-			carry.copy(visible, offset, 0, amount);
 			offset += amount;
 		}
 		return Object.freeze({
@@ -135,5 +150,5 @@ export function createCodexDiagnosticsBuffer(
 		});
 	};
 
-	return Object.freeze({ append, redact: redactor.redact, snapshot });
+	return Object.freeze({ append, finalize, redact: redactor.redact, snapshot });
 }
