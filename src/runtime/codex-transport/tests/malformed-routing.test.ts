@@ -40,7 +40,7 @@ describe("Codex app-server malformed routing contract", () => {
 			sendJson(child, { id: recoveredId, result: { turnId: "recovered" } });
 			expect((await recovered).result).toEqual({ turnId: "recovered" });
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 });

@@ -87,7 +87,7 @@ describe("Codex app-server transport", () => {
 				requestId: null,
 			});
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -137,7 +137,7 @@ describe("Codex app-server transport", () => {
 				expect.arrayContaining(["malformed-frame", "unknown-response", "duplicate-response"]),
 			);
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -315,7 +315,7 @@ describe("Codex app-server transport", () => {
 				"attestation/generate",
 			]);
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -370,7 +370,7 @@ describe("Codex app-server transport", () => {
 			expect((idempotentError as CodexTransportRequestError).accepted).toBeTrue();
 		} finally {
 			if (fakeTimers) jest.useRealTimers();
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -413,7 +413,7 @@ describe("Codex app-server transport", () => {
 				truncated: true,
 			});
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -464,7 +464,7 @@ describe("Codex app-server transport", () => {
 			expect(transport.inspect().state).toBe("closed");
 			expect(child.stdin.finalizations).toBe(1);
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -485,7 +485,7 @@ describe("Codex app-server transport", () => {
 			expect(exits[0]).toMatchObject({ code: 17, signal: "SIGTERM" });
 			expect(transport.inspect().state).toBe("closed");
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 });

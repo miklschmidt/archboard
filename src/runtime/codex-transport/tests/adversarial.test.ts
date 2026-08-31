@@ -112,7 +112,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 			});
 			expect(frames(child).filter((frame) => frame.id === undefined)).toHaveLength(0);
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -152,7 +152,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				error: { code: -32600 },
 			});
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -179,7 +179,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 					.map((frame) => frame.id),
 			).toEqual([1, "1"]);
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -242,7 +242,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				frames(child).findLast((frame) => frame.id === "dynamic-null-namespace"),
 			).toMatchObject({ error: { code: -32602 } });
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -260,7 +260,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				error: { code: -32603 },
 			});
 		} finally {
-			await closeTransport(shutdownHarness.transport);
+			await closeTransport(shutdownHarness.transport, shutdownHarness.child);
 		}
 
 		const { child, transport } = createHarness();
@@ -296,7 +296,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				}),
 			);
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 
 		const longId = createHarness(undefined, makeLongIdIdentity());
@@ -316,7 +316,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				CODEX_APP_SERVER_CAPACITY.retention.lateResponseRecordBytes,
 			);
 		} finally {
-			await closeTransport(longId.transport);
+			await closeTransport(longId.transport, longId.child);
 		}
 	});
 
@@ -341,7 +341,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 			await transport.shutdown();
 			await Promise.all(pending);
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 
@@ -367,7 +367,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				{ method: "initialized" },
 			]);
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 
 		const second = createHarness();
@@ -406,7 +406,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 			await Promise.all(responses);
 			await second.transport.respond(last, "codex-session", { result: { currentTimeAt: 0 } });
 		} finally {
-			await closeTransport(second.transport);
+			await closeTransport(second.transport, second.child);
 		}
 	});
 
@@ -426,7 +426,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				expect((await pending).result).toEqual({ turnId: response.turnId });
 			}
 		} finally {
-			await closeTransport(boundary.transport);
+			await closeTransport(boundary.transport, boundary.child);
 		}
 
 		const fatal = createHarness();
@@ -454,7 +454,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				fatal.transport.inspectIssues().filter((issue) => issue.kind === "oversized-frame"),
 			).toHaveLength(1);
 		} finally {
-			await closeTransport(fatal.transport);
+			await closeTransport(fatal.transport, fatal.child);
 		}
 	});
 
@@ -494,7 +494,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 			expect(transport.inspect().state).toBe("closed");
 			await transport.shutdown();
 		} finally {
-			await closeTransport(transport);
+			await closeTransport(transport, child);
 		}
 	});
 });
