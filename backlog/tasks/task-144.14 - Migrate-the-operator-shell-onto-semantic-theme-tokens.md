@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:38'
-updated_date: '2026-08-31 02:44'
+updated_date: '2026-08-31 03:02'
 labels: []
 dependencies:
   - TASK-144.03
@@ -15,6 +15,7 @@ references:
   - docs/design/operator-canvas-shell.md
 modified_files:
   - src/ui/shell/shell.css
+  - tests/system/repository-policy/brand-typography.test.ts
 parent_task_id: TASK-144
 priority: high
 type: task
@@ -46,4 +47,10 @@ Map existing shell CSS declarations to the canonical semantic token variables wi
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved immediately after TASK-144.13 finalized and released this dependency-ready CSS-only UI leaf at integration HEAD 17e8fd7. It owns shell.css plus narrowly necessary token-equivalence proof and is path-disjoint from all active implementation lanes.
+
+Implementation evidence at af7243d (base 2c22eac): mapped only exact equivalent shell declaration values to canonical semantic color, typography, radius, spacing, touch/header size, flat elevation, disabled/status opacity, and motion variables. Shell.tsx stayed byte-identical. A PostCSS structure comparison found the same 1,586 rule, at-rule, declaration-property, order, and important records before and after.
+
+Rendered evidence: before and after, bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/shell-layout.test.ts passed 1 owner, 123 assertions. Disposable probes at 1440x900 and 3840x2160 measured identical light/dark geometry and colors: shell exactly filled each viewport, header 56px, navigator 184px, canvas 1256x810 and 3656x2070, no document or shell overflow, and every sampled shell control remained at least 44px. Forced colors stayed active with forced-color-adjust auto, browser-owned foreground/background, a solid 2px keyboard focus outline, and no overflow at both viewports. Reduced-motion geometry and screenshot pixels stayed unchanged while the mapped control and disclosure transitions correctly changed from 140ms to the canonical 0.001ms. Ephemeral before/after screenshots remain under /tmp/archboard-14414-evidence and are not tracked.
+
+Focused checks passed: build:frontend; type-check; lint; focused Oxfmt check; git diff --check; theme compiler and mutation owner; shell fullscreen module owner; updated brand/semantic-token policy owner; focused shell-layout browser owner. The three focused native files passed 36 tests and 708 assertions. The generated dist tree stayed ignored; src-DlBR1tzg.js was absent before and after. Broad module, system, repository, complete browser, and check gates were not run here per parent ownership. Task intentionally remains In Progress with all ACs unchecked for independent review and capped broad gates.
 <!-- SECTION:NOTES:END -->
