@@ -181,16 +181,21 @@ export function createCodexRealtimeAdapter(
 		state(session, { phase: "negotiating", reason: "offer_created" });
 		const semanticBrief = options.freshSemanticBrief();
 		void Promise.resolve()
-			.then(() =>
-				options.session.realtimeStart(
+			.then(() => {
+				if (session.answerSettled) return;
+				if (!bindingIsCurrent(session)) {
+					finalize(session);
+					return;
+				}
+				return options.session.realtimeStart(
 					createRealtimeStartParams({
 						threadId: binding.coordinatorThreadId,
 						realtimeSessionId: session.wireSessionId,
 						sdp: offer.sdp,
 						semanticBrief,
 					}),
-				),
-			)
+				);
+			})
 			.then(
 				() => {
 					if (session.answerSettled) return;
