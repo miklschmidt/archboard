@@ -34,7 +34,7 @@ import {
 	type DynamicRelation,
 	type DynamicTargetAuthority,
 } from "./contract.js";
-import type { PreparedDynamicMutation } from "./effects.js";
+import type { DynamicOperationSettlement, PreparedDynamicMutation } from "./effects.js";
 
 const MUTATION_KINDS = {
 	create_thread: { kind: "create_thread", rpc: "thread/start" },
@@ -136,6 +136,8 @@ function remoteOutcome(error: unknown): "not_delivered" | "outcome_unknown" {
 
 function settle(
 	options: CodexDynamicToolsOptions,
+	settlement: DynamicOperationSettlement,
+	operationId: OperationId,
 	transaction: EpochTransaction,
 	outcome: "delivered" | "not_delivered" | "outcome_unknown",
 	confirmation?: {
@@ -155,8 +157,18 @@ function settle(
 				confirmation,
 			);
 	} catch (error) {
+		try {
+			settlement.retire(operationId);
+		} catch (retirementError) {
+			throw new CodexDynamicToolsError(
+				"system_error",
+				"The durable dynamic operation settlement and its identity retirement failed.",
+				retirementError,
+			);
+		}
 		throw epochError(error, "The durable dynamic operation settlement failed.");
 	}
+	settlement.consume(operationId);
 }
 
 function initialTurnValue(
@@ -457,6 +469,7 @@ async function executeInitialTurn(input: {
 	readonly prompt: string;
 	readonly kind: "create_thread_initial_turn" | "fork_thread_initial_turn";
 	readonly options: CodexDynamicToolsOptions;
+	readonly operationSettlement: DynamicOperationSettlement;
 }): Promise<{
 	readonly delivery: "delivered" | "not_delivered" | "outcome_unknown";
 	readonly turn: SessionTurn | null;
@@ -489,10 +502,17 @@ async function executeInitialTurn(input: {
 	} catch (error) {
 		const outcome = remoteOutcome(error);
 		if (outcome === "outcome_unknown") {
-			settle(input.options, transaction, "outcome_unknown", {
-				threadId: input.targetThread.id,
-				threadSource: targetThreadSource(input.targetThread),
-			});
+			settle(
+				input.options,
+				input.operationSettlement,
+				operationId,
+				transaction,
+				"outcome_unknown",
+				{
+					threadId: input.targetThread.id,
+					threadSource: targetThreadSource(input.targetThread),
+				},
+			);
 			return {
 				delivery: "outcome_unknown",
 				turn: null,
@@ -500,14 +520,14 @@ async function executeInitialTurn(input: {
 					"The request may have taken effect. Inspect authoritative state before another mutation.",
 			};
 		}
-		settle(input.options, transaction, "not_delivered");
+		settle(input.options, input.operationSettlement, operationId, transaction, "not_delivered");
 		return {
 			delivery: "not_delivered",
 			turn: null,
 			message: refusalMessage(error, "The initial turn was not delivered."),
 		};
 	}
-	settle(input.options, transaction, "delivered", {
+	settle(input.options, input.operationSettlement, operationId, transaction, "delivered", {
 		threadId: input.targetThread.id,
 		turnId: result.turn.id,
 		threadSource: targetThreadSource(input.targetThread),
@@ -521,6 +541,7 @@ export async function executeCreate(
 	caller: DynamicCallerAuthority,
 	contextAuthority: DynamicContextAuthority,
 	options: CodexDynamicToolsOptions,
+	operationSettlement: DynamicOperationSettlement,
 ): Promise<MutationExecution> {
 	const operationId = prepared.operations.mutationOperationId;
 	const operationWireId = operationWire(options, operationId);
@@ -563,13 +584,13 @@ export async function executeCreate(
 	} catch (error) {
 		const outcome = remoteOutcome(error);
 		if (outcome === "outcome_unknown") {
-			settle(options, transaction, "outcome_unknown");
+			settle(options, operationSettlement, operationId, transaction, "outcome_unknown");
 			return { kind: "outcome_unknown", operationId: operationWireId };
 		}
-		settle(options, transaction, "not_delivered");
+		settle(options, operationSettlement, operationId, transaction, "not_delivered");
 		return { kind: "refused", reason: "not_ready", message: "The thread start was not delivered." };
 	}
-	settle(options, transaction, "delivered", {
+	settle(options, operationSettlement, operationId, transaction, "delivered", {
 		threadId: thread.id,
 		threadSource: targetThreadSource(thread),
 	});
@@ -589,6 +610,7 @@ export async function executeCreate(
 		})(),
 		kind: "create_thread_initial_turn",
 		options,
+		operationSettlement,
 	});
 	const initialId = initialOperationWire(prepared);
 	return {
@@ -618,6 +640,7 @@ export async function executeFork(
 	target: DynamicTargetAuthority,
 	relation: DynamicRelation,
 	options: CodexDynamicToolsOptions,
+	operationSettlement: DynamicOperationSettlement,
 ): Promise<MutationExecution> {
 	const operationId = prepared.operations.mutationOperationId;
 	const operationWireId = operationWire(options, operationId);
@@ -674,13 +697,13 @@ export async function executeFork(
 	} catch (error) {
 		const outcome = remoteOutcome(error);
 		if (outcome === "outcome_unknown") {
-			settle(options, transaction, "outcome_unknown");
+			settle(options, operationSettlement, operationId, transaction, "outcome_unknown");
 			return { kind: "outcome_unknown", operationId: operationWireId };
 		}
-		settle(options, transaction, "not_delivered");
+		settle(options, operationSettlement, operationId, transaction, "not_delivered");
 		return { kind: "refused", reason: "not_ready", message: "The thread fork was not delivered." };
 	}
-	settle(options, transaction, "delivered", {
+	settle(options, operationSettlement, operationId, transaction, "delivered", {
 		threadId: thread.id,
 		threadSource: targetThreadSource(thread),
 	});
@@ -705,6 +728,7 @@ export async function executeFork(
 		prompt,
 		kind: "fork_thread_initial_turn",
 		options,
+		operationSettlement,
 	});
 	const initialId = initialOperationWire(prepared);
 	return {
@@ -733,6 +757,7 @@ export async function executeSend(
 	contextAuthority: DynamicContextAuthority,
 	target: DynamicTargetAuthority,
 	options: CodexDynamicToolsOptions,
+	operationSettlement: DynamicOperationSettlement,
 ): Promise<MutationExecution> {
 	const operationId = prepared.operations.mutationOperationId;
 	const operationWireId = operationWire(options, operationId);
@@ -789,17 +814,19 @@ export async function executeSend(
 	} catch (error) {
 		const outcome = remoteOutcome(error);
 		if (outcome === "outcome_unknown") {
-			settle(options, transaction, "outcome_unknown", { threadId: target.threadId });
+			settle(options, operationSettlement, operationId, transaction, "outcome_unknown", {
+				threadId: target.threadId,
+			});
 			return { kind: "outcome_unknown", operationId: operationWireId };
 		}
-		settle(options, transaction, "not_delivered");
+		settle(options, operationSettlement, operationId, transaction, "not_delivered");
 		return {
 			kind: "refused",
 			reason: "not_ready",
 			message: refusalMessage(error, "The message was not delivered."),
 		};
 	}
-	settle(options, transaction, "delivered", {
+	settle(options, operationSettlement, operationId, transaction, "delivered", {
 		threadId: target.threadId,
 		threadSource: typeof target.source === "string" ? target.source : null,
 	});

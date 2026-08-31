@@ -78,6 +78,17 @@ describe("codex dynamic dispatcher", () => {
 			"delivered",
 			"delivered",
 		]);
+		expect(fixture.operationIds.consumed).toHaveLength(2);
+		expect(fixture.operationIds.retired).toHaveLength(0);
+		for (const operationId of fixture.operationIds.consumed)
+			expect(() => fixture.operationIds.validateCurrentUnconsumedOperationId(operationId)).toThrow(
+				/terminal/,
+			);
+		const unrelatedOperationId = fixture.operationIds.issueCanonicalOperationId();
+		expect(() =>
+			fixture.operationIds.validateCurrentUnconsumedOperationId(unrelatedOperationId),
+		).not.toThrow();
+		fixture.operationIds.retireCanonicalOperationId(unrelatedOperationId);
 		expect(fixture.lifecycle.assertions).toEqual([
 			"before_approval",
 			"after_approval",
@@ -133,6 +144,12 @@ describe("codex dynamic dispatcher", () => {
 		expect(cancelledApproval.settled).toHaveLength(1);
 		expect(fixture.session.calls).toHaveLength(0);
 		expect(fixture.epoch.stages).toHaveLength(0);
+		expect(fixture.operationIds.retired).toHaveLength(2);
+		expect(fixture.operationIds.consumed).toHaveLength(0);
+		for (const operationId of fixture.operationIds.retired)
+			expect(() => fixture.operationIds.validateCurrentUnconsumedOperationId(operationId)).toThrow(
+				/terminal/,
+			);
 		expect(fixture.transportResponses).toHaveLength(1);
 
 		const declinedApproval = new FakeApproval((approval) =>
@@ -147,6 +164,8 @@ describe("codex dynamic dispatcher", () => {
 		expect(declinedParsed.envelope.reason).toBe("approval_declined");
 		expect(declinedFixture.session.calls).toHaveLength(0);
 		expect(declinedFixture.epoch.stages).toHaveLength(0);
+		expect(declinedFixture.operationIds.retired).toHaveLength(2);
+		expect(declinedFixture.operationIds.consumed).toHaveLength(0);
 	});
 
 	test("preserves confirmed thread identity when the initial turn is rejected or uncertain", async () => {
@@ -187,6 +206,10 @@ describe("codex dynamic dispatcher", () => {
 			state: "inspect_only",
 			initialTurn: { delivery: "outcome_unknown" },
 		});
+		expect(rejected.operationIds.consumed).toHaveLength(2);
+		expect(rejected.operationIds.retired).toHaveLength(0);
+		expect(uncertain.operationIds.consumed).toHaveLength(2);
+		expect(uncertain.operationIds.retired).toHaveLength(0);
 	});
 
 	test("sends one idle-target turn and never retries an uncertain response", async () => {
@@ -260,8 +283,11 @@ describe("codex dynamic dispatcher", () => {
 		const parsed = parseDynamicToolCallResponse("create_thread", response);
 		if (parsed.envelope.tag !== "refused") throw new Error("stale call was not refused");
 		expect(parsed.envelope.reason).toBe("stale_child");
+		expect(response.success).toBe(true);
 		expect(fixture.session.calls).toHaveLength(0);
 		expect(fixture.epoch.stages).toHaveLength(0);
+		expect(fixture.operationIds.retired).toHaveLength(2);
+		expect(fixture.operationIds.consumed).toHaveLength(0);
 	});
 
 	test("invalid envelope is a failed boundary response and transport is attempted once", async () => {

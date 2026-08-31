@@ -37,6 +37,8 @@ type OperationPortKeys = Assert<
 		| "issueCanonicalOperationId"
 		| "validateCurrentUnconsumedOperationId"
 		| "serializeForOwnedWireFields"
+		| "consumeCanonicalOperationId"
+		| "retireCanonicalOperationId"
 	>
 >;
 type LifecyclePortKeys = Assert<

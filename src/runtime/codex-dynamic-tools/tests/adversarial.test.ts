@@ -67,6 +67,7 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		const parsed = parseDynamicToolCallResponse("create_thread", response);
 
 		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "expired" });
+		expect(response.success).toBe(true);
 		expect(approval.settled[0]?.decision).toMatchObject({
 			outcome: "expired",
 			cause: "deadline_reached",
@@ -162,6 +163,7 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		const parsed = parseDynamicToolCallResponse("fork_thread", response);
 
 		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "invalid_call" });
+		expect(response.success).toBe(true);
 		expect(fixture.approval.presented).toHaveLength(0);
 		expect(fixture.session.calls).toHaveLength(0);
 		expect(fixture.epoch.stages).toHaveLength(0);
@@ -191,6 +193,7 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		const parsed = parseDynamicToolCallResponse("create_thread", response);
 
 		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "invalid_call" });
+		expect(response.success).toBe(true);
 		expect(fixture.approval.presented).toHaveLength(1);
 		expect(fixture.session.calls).toHaveLength(0);
 		expect(fixture.epoch.stages).toHaveLength(0);
@@ -213,8 +216,71 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		const parsed = parseDynamicToolCallResponse("send_message_to_thread", response);
 
 		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "stale_child" });
+		expect(response.success).toBe(true);
 		expect(fixture.session.calls).toHaveLength(0);
 		expect(fixture.epoch.stages).toHaveLength(0);
+		expect(fixture.operationIds.retired).toHaveLength(1);
+		expect(fixture.operationIds.consumed).toHaveLength(0);
+	});
+
+	test("keeps an approved lifecycle refusal successful and retires issued identities", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		fixture.lifecycle.assertionError = Object.assign(new Error("the call was interrupted"), {
+			code: "invalid_call",
+		});
+		fixture.lifecycle.assertionErrorPhase = "after_approval";
+
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "lifecycle refusal" }),
+		);
+		const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+		expect(response.success).toBe(true);
+		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "invalid_call" });
+		expect(fixture.approval.presented).toHaveLength(1);
+		expect(fixture.session.calls).toHaveLength(0);
+		expect(fixture.epoch.stages).toHaveLength(0);
+		expect(fixture.operationIds.retired).toHaveLength(2);
+		expect(fixture.operationIds.consumed).toHaveLength(0);
+	});
+
+	test("retires every issued identity when durable settlement throws", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		fixture.epoch.commitError = new Error("durable commit failed");
+		const createdThread = thread(authorities, "commit-error-thread");
+		fixture.session.threadStartResult = threadStartResult(createdThread);
+
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "commit error" }),
+		);
+		const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+		expect(response.success).toBe(true);
+		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "system_error" });
+		expect(fixture.session.calls.map(({ method }) => method)).toEqual(["thread/start"]);
+		expect(fixture.epoch.settlements).toHaveLength(0);
+		expect(fixture.operationIds.consumed).toHaveLength(0);
+		expect(fixture.operationIds.retired).toHaveLength(2);
+	});
+
+	test("retires every issued identity when staging throws after approval", async () => {
+		const { authorities, caller } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		fixture.epoch.stageError = new Error("stage failed");
+
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "create_thread", { prompt: "stage error" }),
+		);
+		const parsed = parseDynamicToolCallResponse("create_thread", response);
+
+		expect(response.success).toBe(true);
+		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "system_error" });
+		expect(fixture.approval.presented).toHaveLength(1);
+		expect(fixture.session.calls).toHaveLength(0);
+		expect(fixture.operationIds.consumed).toHaveLength(0);
+		expect(fixture.operationIds.retired).toHaveLength(2);
 	});
 
 	test("malformed non-object input still gets one failed transport boundary", async () => {

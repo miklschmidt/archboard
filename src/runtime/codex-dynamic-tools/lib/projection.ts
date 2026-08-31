@@ -20,6 +20,15 @@ import {
 export const THREAD_SOURCE_KINDS = Object.freeze(["cli", "vscode", "exec", "appServer"] as const);
 export const AUTHORITY_PAGE_LIMIT = 100 as const;
 
+/**
+ * The authored read projection keeps each rendered output entry within 256
+ * UTF-8 bytes, the output group within 1024 bytes, and the complete summary
+ * within the documented 512-byte response bound.
+ */
+const SUMMARY_MAX_UTF8_BYTES = 512 as const;
+const OUTPUT_ENTRY_MAX_UTF8_BYTES = 256 as const;
+const OUTPUT_AGGREGATE_MAX_UTF8_BYTES = 1024 as const;
+
 type TargetClassifier = (
 	threadId: unknown,
 	observed?: DynamicObservedTarget,
@@ -260,7 +269,80 @@ function assistantText(item: SessionThreadItem): string | null {
 	return text.length === 0 ? null : text;
 }
 
-function turnSummary(turn: SessionTurn): { readonly value: string; readonly truncated: boolean } {
+type OutputKind = "commandExecution" | "fileChange" | "functionCallOutput" | "mcpToolCall";
+
+interface OutputEntry {
+	readonly kind: OutputKind;
+	readonly body: string;
+}
+
+interface OutputProjection {
+	readonly value: string | null;
+	readonly truncated: boolean;
+}
+
+function textBodiesFromFunctionOutput(value: unknown): readonly string[] {
+	if (typeof value === "string") return [value];
+	if (!Array.isArray(value)) return [];
+	const bodies: string[] = [];
+	for (const item of value) {
+		if (!isRecord(item) || item.type !== "input_text" || typeof item.text !== "string") continue;
+		bodies.push(item.text);
+	}
+	return bodies;
+}
+
+function textBodiesFromMcpResult(value: unknown): readonly string[] {
+	if (!isRecord(value) || !Array.isArray(value.content)) return [];
+	const bodies: string[] = [];
+	for (const item of value.content) {
+		if (!isRecord(item) || item.type !== "text" || typeof item.text !== "string") continue;
+		bodies.push(item.text);
+	}
+	return bodies;
+}
+
+function outputEntries(item: SessionThreadItem): readonly OutputEntry[] {
+	switch (item.type) {
+		case "commandExecution":
+			return item.aggregatedOutput === null
+				? []
+				: [{ kind: "commandExecution", body: item.aggregatedOutput }];
+		case "fileChange":
+			return item.changes.map((change) => ({ kind: "fileChange", body: change.diff }));
+		case "functionCallOutput":
+			return textBodiesFromFunctionOutput(item.output).map((body) => ({
+				kind: "functionCallOutput",
+				body,
+			}));
+		case "mcpToolCall":
+			return textBodiesFromMcpResult(item.result).map((body) => ({
+				kind: "mcpToolCall",
+				body,
+			}));
+		default:
+			return [];
+	}
+}
+
+function outputProjection(items: readonly SessionThreadItem[]): OutputProjection {
+	const rendered: string[] = [];
+	let truncated = false;
+	for (const item of items) {
+		for (const entry of outputEntries(item)) {
+			const body = normalizeWhitespace(entry.body);
+			if (body.length === 0) continue;
+			const renderedEntry = truncateUtf8(`${entry.kind}: ${body}`, OUTPUT_ENTRY_MAX_UTF8_BYTES);
+			truncated ||= renderedEntry.truncated;
+			rendered.push(renderedEntry.value);
+		}
+	}
+	if (rendered.length === 0) return { value: null, truncated };
+	const aggregate = truncateUtf8(rendered.join(" | "), OUTPUT_AGGREGATE_MAX_UTF8_BYTES);
+	return { value: aggregate.value, truncated: truncated || aggregate.truncated };
+}
+
+function rawTurnSummary(turn: SessionTurn): string {
 	let user: string | null = null;
 	let assistant: string | null = null;
 	for (const item of turn.items) {
@@ -268,8 +350,33 @@ function turnSummary(turn: SessionTurn): { readonly value: string; readonly trun
 		const nextAssistant = assistantText(item);
 		if (nextAssistant !== null) assistant = nextAssistant;
 	}
-	const summary = `${turn.status} · user: ${user ?? "none"} · assistant: ${assistant ?? "none"}`;
-	return truncateUtf8(summary, 512);
+	return `${turn.status} · user: ${user ?? "none"} · assistant: ${assistant ?? "none"}`;
+}
+
+function turnSummary(
+	turn: SessionTurn,
+	outputs: OutputProjection | null,
+): { readonly value: string; readonly truncated: boolean } {
+	const base = rawTurnSummary(turn);
+	const combined =
+		outputs?.value === null || outputs === null ? base : `${base} · outputs: ${outputs.value}`;
+	const summary = truncateUtf8(combined, SUMMARY_MAX_UTF8_BYTES);
+	return {
+		value: summary.value,
+		truncated: summary.truncated || outputs?.truncated === true,
+	};
+}
+
+function itemForRequestedTurn(value: unknown, requestedTurnId: string): SessionThreadItem {
+	if (
+		!isRecord(value) ||
+		typeof value.turnId !== "string" ||
+		value.turnId !== requestedTurnId ||
+		!isRecord(value.item) ||
+		typeof value.item.type !== "string"
+	)
+		throw projectionError("thread/items/list returned an item for a different or invalid turn.");
+	return value.item as SessionThreadItem;
 }
 
 export async function projectRead(
@@ -337,8 +444,8 @@ export async function projectRead(
 	assertCursorPage(page, "thread/turns/list");
 	const turns: ReadTurnProjection[] = [];
 	for (const turn of page.data) {
-		const summary = turnSummary(turn);
-		let outputsTruncated = summary.truncated;
+		let outputs: OutputProjection | null = null;
+		let pageTruncated = false;
 		if (input.includeOutputs) {
 			let itemPage: SessionThreadItemPageResult;
 			try {
@@ -353,14 +460,17 @@ export async function projectRead(
 				throw projectionError("thread/items/list could not be read.", error);
 			}
 			assertCursorPage(itemPage, "thread/items/list");
-			if (itemPage.nextCursor !== null) outputsTruncated = true;
+			const items = itemPage.data.map((entry) => itemForRequestedTurn(entry, String(turn.id)));
+			outputs = outputProjection(items);
+			pageTruncated = itemPage.nextCursor !== null;
 		}
+		const summary = turnSummary(turn, outputs);
 		turns.push({
 			turnId: String(turn.id),
 			status: turn.status,
 			summary: summary.value,
 			outputsIncluded: input.includeOutputs,
-			outputsTruncated,
+			outputsTruncated: summary.truncated || pageTruncated,
 		});
 	}
 	void caller;

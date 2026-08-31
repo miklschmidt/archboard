@@ -7,6 +7,11 @@ export {
 	threadStartResult,
 	turn,
 	turnResult,
+	commandExecutionItem,
+	fileChangeItem,
+	functionCallOutputItem,
+	itemPage,
+	mcpToolCallItem,
 	targetAuthority,
 } from "./fixtures.js";
 export { dynamicDecision, FakeApproval, optionsFor, setupAuthorities } from "./fakes.js";

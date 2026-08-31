@@ -226,6 +226,14 @@ export interface DynamicOperationIdPort {
 	readonly issueCanonicalOperationId: () => OperationId;
 	readonly validateCurrentUnconsumedOperationId: (operationId: OperationId) => void;
 	readonly serializeForOwnedWireFields: (operationId: OperationId) => string;
+	/**
+	 * Permanently consumes an issued identity after its durable effect/outcome
+	 * record has been settled. The dispatcher calls this exactly once per
+	 * effect-bearing operation.
+	 */
+	readonly consumeCanonicalOperationId: (operationId: OperationId) => void;
+	/** Permanently retires an issued identity when approval produced no effect. */
+	readonly retireCanonicalOperationId: (operationId: OperationId) => void;
 }
 
 export interface DynamicWaitOwner extends WaitOwner {
