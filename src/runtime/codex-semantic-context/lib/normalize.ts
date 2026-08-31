@@ -101,6 +101,20 @@ export function clipJsonUtf8(value: string, maximum: number): BoundedValue<strin
 	return { value: `${kept.join("")}${suffix}`, truncated: true };
 }
 
+export function feedIdValue(value: unknown, field: string): string {
+	const result = textValue(value, field, SEMANTIC_CONTEXT_LIMITS.cursorBytes);
+	if (result.truncated) {
+		fail(field, `must not exceed ${SEMANTIC_CONTEXT_LIMITS.cursorBytes} UTF-8 bytes`);
+	}
+	if (jsonStringByteLength(result.value) > SEMANTIC_CONTEXT_LIMITS.feedIdJsonBytes) {
+		fail(
+			field,
+			`must not exceed ${SEMANTIC_CONTEXT_LIMITS.feedIdJsonBytes} UTF-8 bytes when JSON encoded`,
+		);
+	}
+	return result.value;
+}
+
 export function clipUtf8(value: string, maximum: number): BoundedValue<string> {
 	if (byteLength(value) <= maximum) return { value, truncated: false };
 	if (byteLength(SEMANTIC_CONTEXT_ELLIPSIS) > maximum) {
@@ -186,18 +200,15 @@ function normalizeCursor(value: unknown, currentFeedId: string): NormalizedCurso
 	}
 	const record = value as Record<string, unknown>;
 	exactCursorKeys(record);
-	const feedId = textValue(record.feedId, "cursor.feedId", SEMANTIC_CONTEXT_LIMITS.cursorBytes);
-	if (feedId.truncated) {
-		fail("cursor.feedId", `must not exceed ${SEMANTIC_CONTEXT_LIMITS.cursorBytes} UTF-8 bytes`);
-	}
+	const feedId = feedIdValue(record.feedId, "cursor.feedId");
 	const sequence = numberValue(record.sequence, "cursor.sequence");
 	if (sequence === null) fail("cursor.sequence", "must be a number");
 	const staleReason =
-		feedId.value === currentFeedId
+		feedId === currentFeedId
 			? null
-			: `cursor belongs to feed "${feedId.value}"; current feed is "${currentFeedId}"`;
+			: `cursor belongs to feed "${feedId}"; current feed is "${currentFeedId}"`;
 	return {
-		value: deepFreeze({ feedId: feedId.value, sequence }),
+		value: deepFreeze({ feedId, sequence }),
 		staleReason,
 	};
 }
