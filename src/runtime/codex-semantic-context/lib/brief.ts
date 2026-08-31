@@ -3,9 +3,10 @@ import { SEMANTIC_CONTEXT_ELLIPSIS, SEMANTIC_CONTEXT_LIMITS } from "./limits.js"
 import {
 	boundedReasons,
 	byteLength,
-	clipUtf8,
+	clipJsonUtf8,
 	deepFreeze,
 	fail,
+	jsonStringByteLength,
 	normalizeContext,
 	type NormalizedContext,
 	uniqueSorted,
@@ -36,6 +37,7 @@ type BriefContext = {
 
 interface FitParts {
 	readonly context: BriefContext;
+	feedId: string;
 	selection: string[];
 	ambiguity: string[];
 	description: string;
@@ -58,6 +60,7 @@ function copyContext(context: NormalizedContext): BriefContext {
 		pane: { ...context.pane },
 		selection: [...context.selection],
 		claim: { ...context.claim },
+		cursor: context.cursor === null ? null : { ...context.cursor },
 		ambiguity: [...context.ambiguity],
 		staleReasons: [...context.staleReasons],
 	};
@@ -65,15 +68,14 @@ function copyContext(context: NormalizedContext): BriefContext {
 
 function serializableBrief(
 	context: BriefContext,
-	feedId: string,
 	parts: Pick<
 		FitParts,
-		"selection" | "ambiguity" | "description" | "freshness" | "staleness" | "truncated"
+		"feedId" | "selection" | "ambiguity" | "description" | "freshness" | "staleness" | "truncated"
 	>,
 ): Record<string, unknown> {
 	return {
 		source: "semantic_context",
-		feedId,
+		feedId: parts.feedId,
 		repository: context.repository,
 		workhorse: context.workhorse,
 		coordinator: context.coordinator,
@@ -94,8 +96,8 @@ function serializableBrief(
 	};
 }
 
-function render(context: BriefContext, feedId: string, parts: FitParts): string {
-	return JSON.stringify(serializableBrief(context, feedId, parts));
+function render(context: BriefContext, parts: FitParts): string {
+	return JSON.stringify(serializableBrief(context, parts));
 }
 
 function timestamp(value: number, field: string): number {
@@ -110,21 +112,21 @@ interface TextSlot {
 	readonly set: (value: string | null) => void;
 }
 
-function fitTextSlot(parts: FitParts, context: BriefContext, feedId: string, slot: TextSlot): void {
+function fitTextSlot(parts: FitParts, context: BriefContext, slot: TextSlot): void {
 	if (slot.original === null) {
 		slot.set(null);
 		return;
 	}
 	slot.set(slot.empty);
-	const available = SEMANTIC_CONTEXT_LIMITS.briefBytes - byteLength(render(context, feedId, parts));
-	const fitted = clipUtf8(slot.original, Math.max(0, available)).value;
+	const emptyBytes = slot.empty === null ? byteLength("null") : jsonStringByteLength(slot.empty);
+	const available = SEMANTIC_CONTEXT_LIMITS.briefBytes - byteLength(render(context, parts));
+	const fitted = clipJsonUtf8(slot.original, Math.max(0, available + emptyBytes)).value;
 	slot.set(fitted || slot.minimum);
 }
 
 function fitArray(
 	parts: FitParts,
 	context: BriefContext,
-	feedId: string,
 	original: readonly string[],
 	set: (value: string[]) => void,
 ): void {
@@ -132,7 +134,7 @@ function fitArray(
 	set(fitted);
 	for (const value of original) {
 		fitted.push(value);
-		if (byteLength(render(context, feedId, parts)) > SEMANTIC_CONTEXT_LIMITS.briefBytes) {
+		if (byteLength(render(context, parts)) > SEMANTIC_CONTEXT_LIMITS.briefBytes) {
 			fitted.pop();
 			set(fitted);
 			break;
@@ -152,6 +154,7 @@ function fitAggregate(
 ): FitParts & { readonly brief: string } {
 	const parts: FitParts = {
 		context,
+		feedId,
 		selection,
 		ambiguity,
 		description,
@@ -162,8 +165,9 @@ function fitAggregate(
 	const selectionOriginal = [...parts.selection];
 	const ambiguityOriginal = [...parts.ambiguity];
 	const staleReasonsOriginal = [...parts.staleness.reasons];
-	if (byteLength(render(context, feedId, parts)) <= SEMANTIC_CONTEXT_LIMITS.briefBytes) {
-		return { ...parts, brief: render(context, feedId, parts) };
+	let brief = render(context, parts);
+	if (byteLength(brief) <= SEMANTIC_CONTEXT_LIMITS.briefBytes) {
+		return { ...parts, brief };
 	}
 
 	parts.truncated = true;
@@ -171,6 +175,14 @@ function fitAggregate(
 	parts.ambiguity = [];
 	parts.staleness.reasons = [];
 	const slots: readonly TextSlot[] = [
+		{
+			original: feedId,
+			empty: "",
+			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			set: (value) => {
+				parts.feedId = value ?? SEMANTIC_CONTEXT_ELLIPSIS;
+			},
+		},
 		{
 			original: context.repository,
 			empty: "",
@@ -188,6 +200,66 @@ function fitAggregate(
 			},
 		},
 		{
+			original: context.child.id,
+			empty: null,
+			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			set: (value) => {
+				context.child = { ...context.child, id: value as typeof context.child.id };
+			},
+		},
+		{
+			original: context.child.epoch,
+			empty: null,
+			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			set: (value) => {
+				context.child = { ...context.child, epoch: value as typeof context.child.epoch };
+			},
+		},
+		{
+			original: context.workhorse.threadId,
+			empty: null,
+			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			set: (value) => {
+				context.workhorse = {
+					...context.workhorse,
+					threadId: value as typeof context.workhorse.threadId,
+				};
+			},
+		},
+		{
+			original: context.workhorse.turnId,
+			empty: null,
+			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			set: (value) => {
+				context.workhorse = {
+					...context.workhorse,
+					turnId: value as typeof context.workhorse.turnId,
+				};
+			},
+		},
+		{
+			original: context.coordinator.threadId,
+			empty: null,
+			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			set: (value) => {
+				context.coordinator = {
+					...context.coordinator,
+					threadId: value as typeof context.coordinator.threadId,
+				};
+			},
+		},
+		{
+			original: context.coordinator.realtimeSessionId,
+			empty: null,
+			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			set: (value) => {
+				context.coordinator = {
+					...context.coordinator,
+					realtimeSessionId: value as typeof context.coordinator.realtimeSessionId,
+				};
+			},
+		},
+		{
 			original: context.board.note,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
@@ -201,6 +273,16 @@ function fitAggregate(
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			set: (value) => {
 				context.pane = { ...context.pane, paneId: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
+			},
+		},
+		{
+			original: context.cursor?.feedId ?? null,
+			empty: null,
+			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			set: (value) => {
+				if (context.cursor !== null) {
+					context.cursor = { ...context.cursor, feedId: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
+				}
 			},
 		},
 		{
@@ -239,23 +321,23 @@ function fitAggregate(
 	for (const slot of slots) {
 		slot.set(slot.minimum);
 	}
-	if (byteLength(render(context, feedId, parts)) > SEMANTIC_CONTEXT_LIMITS.briefBytes) {
+	if (byteLength(render(context, parts)) > SEMANTIC_CONTEXT_LIMITS.briefBytes) {
 		fail(
 			"brief",
 			`fixed semantic identity fields exceed ${SEMANTIC_CONTEXT_LIMITS.briefBytes} UTF-8 bytes`,
 		);
 	}
-	for (const slot of slots) fitTextSlot(parts, context, feedId, slot);
-	fitArray(parts, context, feedId, selectionOriginal, (value) => {
+	for (const slot of slots) fitTextSlot(parts, context, slot);
+	fitArray(parts, context, selectionOriginal, (value) => {
 		parts.selection = value;
 	});
-	fitArray(parts, context, feedId, ambiguityOriginal, (value) => {
+	fitArray(parts, context, ambiguityOriginal, (value) => {
 		parts.ambiguity = value;
 	});
-	fitArray(parts, context, feedId, staleReasonsOriginal, (value) => {
+	fitArray(parts, context, staleReasonsOriginal, (value) => {
 		parts.staleness.reasons = value;
 	});
-	const brief = render(context, feedId, parts);
+	brief = render(context, parts);
 	if (byteLength(brief) > SEMANTIC_CONTEXT_LIMITS.briefBytes) {
 		fail(
 			"brief",
@@ -317,26 +399,26 @@ export function buildSemanticBrief(
 		source: metadata.source,
 		origin: metadata.origin,
 		feedId,
-		repository: fitted.context.repository,
-		child: fitted.context.child,
-		threadLink: fitted.context.threadLink,
-		workhorse: fitted.context.workhorse,
-		coordinator: fitted.context.coordinator,
+		repository: context.repository,
+		child: context.child,
+		threadLink: context.threadLink,
+		workhorse: context.workhorse,
+		coordinator: context.coordinator,
 		board: {
-			key: fitted.context.board.key,
-			note: fitted.context.board.note,
+			key: context.board.key,
+			note: context.board.note,
 		},
-		pane: fitted.context.pane,
-		version: fitted.context.board.version,
-		selection: Object.freeze([...fitted.selection]),
-		claim: fitted.context.claim,
-		doing: fitted.context.doing,
-		cursor: fitted.context.cursor,
-		description: fitted.description,
+		pane: context.pane,
+		version: context.board.version,
+		selection: Object.freeze([...selection]),
+		claim: context.claim,
+		doing: context.doing,
+		cursor: context.cursor,
+		description: context.description,
 		freshness,
 		truncated: fitted.truncated,
-		ambiguity: Object.freeze([...fitted.ambiguity]),
-		staleness: deepFreeze(fitted.staleness),
+		ambiguity: Object.freeze([...ambiguity]),
+		staleness: deepFreeze(staleness),
 		brief: fitted.brief,
 		bytes: byteLength(fitted.brief),
 	};

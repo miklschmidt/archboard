@@ -43,7 +43,7 @@ function context(
 		selection: ["element-b", "element-a"],
 		claim: { holder: "agent", doing: "mapping the board" },
 		doing: "mapping the board",
-		cursor: 3,
+		cursor: { feedId: "feed-1", sequence: 3 },
 		description: "Payments board: checkout, ledger, and settlement boundaries.",
 		ambiguity: [],
 		...overrides,
@@ -143,10 +143,10 @@ function sourceHarness(options: HarnessOptions = {}) {
 			};
 		},
 	};
-	const createPublisher = () =>
+	const createPublisher = (feedId = "feed-1") =>
 		createSemanticContextPublisher({
 			feed,
-			feedId: "feed-1",
+			feedId,
 			pane,
 			fresh: {
 				read: () => {
@@ -374,6 +374,31 @@ describe("semantic context publisher", () => {
 				cursor: extraKey as never,
 			}),
 		).toThrow(/feedId and sequence/);
+		const numeric = {
+			...context(h.ids),
+			cursor: 7,
+		} as unknown as SemanticContextInput;
+		expect(() => h.publisher.publishPaneSelection(numeric)).toThrow(/cursor/);
+	});
+
+	test("keeps cursors qualified across a publisher restart", () => {
+		const h = sourceHarness();
+		const first = h.createPublisher("feed-1");
+		first.dispose();
+		const restarted = h.createPublisher("feed-2");
+
+		const current = restarted.publishPaneSelection(
+			context(h.ids, { cursor: { feedId: "feed-2", sequence: 8 } }),
+		);
+		const prior = restarted.publishPaneSelection(
+			context(h.ids, { cursor: { feedId: "feed-1", sequence: 9 } }),
+		);
+
+		expect(current.cursor).toEqual({ feedId: "feed-2", sequence: 8 });
+		expect(current.staleness.state).toBe("current");
+		expect(prior.cursor).toEqual({ feedId: "feed-1", sequence: 9 });
+		expect(prior.staleness.state).toBe("stale");
+		restarted.dispose();
 	});
 
 	test("marks stale timestamps and board disagreement instead of hiding ambiguity", () => {

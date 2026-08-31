@@ -1,6 +1,13 @@
 import { buildSemanticBrief } from "./brief.js";
 import { SEMANTIC_CONTEXT_LIMITS } from "./limits.js";
-import { deepFreeze, fail, textValue } from "./normalize.js";
+import {
+	byteLength,
+	clipJsonUtf8,
+	deepFreeze,
+	fail,
+	jsonStringByteLength,
+	textValue,
+} from "./normalize.js";
 import type {
 	FreshSemanticBrief,
 	PaneFocusEvent,
@@ -10,6 +17,8 @@ import type {
 	SemanticContextInput,
 	SemanticContextPublisher,
 	SemanticContextPublisherOptions,
+	SemanticListenerDiagnosticPolicy,
+	SemanticListenerFailureBatch,
 	SemanticListenerFailure,
 	SemanticPublisherPort,
 	SemanticUnsubscribe,
@@ -18,6 +27,49 @@ import type {
 } from "./types.js";
 
 export { SemanticContextInputError } from "./normalize.js";
+
+const LISTENER_DIAGNOSTIC_MAX_DROPPED_COUNT = Number.MAX_SAFE_INTEGER;
+const LISTENER_DIAGNOSTIC_MAX_ENTRIES = 64;
+const LISTENER_DIAGNOSTIC_ERROR_NAME_BYTES = 128;
+const LISTENER_DIAGNOSTIC_MESSAGE_BYTES = 2_048;
+const LISTENER_DIAGNOSTIC_RECORD_FIXED_BYTES =
+	byteLength(
+		JSON.stringify({
+			port: "settled_change",
+			eventKind: "settled_change",
+			listenerIndex: LISTENER_DIAGNOSTIC_MAX_DROPPED_COUNT,
+			errorName: "",
+			message: "",
+		}),
+	) -
+	jsonStringByteLength("") * 2;
+const LISTENER_DIAGNOSTIC_MAX_RECORD_BYTES =
+	LISTENER_DIAGNOSTIC_RECORD_FIXED_BYTES +
+	LISTENER_DIAGNOSTIC_ERROR_NAME_BYTES +
+	LISTENER_DIAGNOSTIC_MESSAGE_BYTES;
+const LISTENER_DIAGNOSTIC_BATCH_PREFIX_BYTES = byteLength('{"entries":[');
+const LISTENER_DIAGNOSTIC_BATCH_SUFFIX_BYTES = byteLength(
+	`],"droppedCount":${LISTENER_DIAGNOSTIC_MAX_DROPPED_COUNT}}`,
+);
+
+/**
+ * One pending debug burst retains its oldest 64 reports. The two string-token
+ * caps and the derived batch ceiling bound the JSON payload kept in memory.
+ */
+export const SEMANTIC_LISTENER_DIAGNOSTIC_POLICY: SemanticListenerDiagnosticPolicy = Object.freeze({
+	maxEntries: LISTENER_DIAGNOSTIC_MAX_ENTRIES,
+	errorNameBytes: LISTENER_DIAGNOSTIC_ERROR_NAME_BYTES,
+	messageBytes: LISTENER_DIAGNOSTIC_MESSAGE_BYTES,
+	maxBatchBytes:
+		LISTENER_DIAGNOSTIC_BATCH_PREFIX_BYTES +
+		LISTENER_DIAGNOSTIC_MAX_ENTRIES * LISTENER_DIAGNOSTIC_MAX_RECORD_BYTES +
+		(LISTENER_DIAGNOSTIC_MAX_ENTRIES - 1) +
+		LISTENER_DIAGNOSTIC_BATCH_SUFFIX_BYTES,
+});
+
+const LISTENER_DIAGNOSTIC_FALLBACK_NAME = "ThrownValue";
+const LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE = "listener failure details unavailable";
+const LISTENER_DIAGNOSTIC_ERROR_NAME_FALLBACK = "Error";
 
 export class SemanticContextLifecycleError extends Error {
 	readonly phase: "registration" | "dispose";
@@ -87,13 +139,46 @@ function cleanupAll(cleanups: readonly SemanticUnsubscribe[]): unknown[] {
 }
 
 function errorDetails(error: unknown): { errorName: string; message: string } {
-	if (error instanceof Error) {
-		return { errorName: error.name || "Error", message: error.message || String(error) };
+	let isError: boolean;
+	try {
+		isError = error instanceof Error;
+	} catch {
+		return {
+			errorName: LISTENER_DIAGNOSTIC_FALLBACK_NAME,
+			message: LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE,
+		};
+	}
+	if (isError) {
+		let errorName: unknown;
+		let message: unknown;
+		try {
+			errorName = (error as Error).name;
+		} catch {
+			errorName = LISTENER_DIAGNOSTIC_ERROR_NAME_FALLBACK;
+		}
+		try {
+			message = (error as Error).message;
+		} catch {
+			message = LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE;
+		}
+		return {
+			errorName:
+				typeof errorName === "string" && errorName.length > 0
+					? errorName
+					: LISTENER_DIAGNOSTIC_ERROR_NAME_FALLBACK,
+			message:
+				typeof message === "string" && message.length > 0
+					? message
+					: LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE,
+		};
 	}
 	try {
-		return { errorName: "ThrownValue", message: String(error) };
+		return { errorName: LISTENER_DIAGNOSTIC_FALLBACK_NAME, message: String(error) };
 	} catch {
-		return { errorName: "ThrownValue", message: "listener threw an unprintable value" };
+		return {
+			errorName: LISTENER_DIAGNOSTIC_FALLBACK_NAME,
+			message: LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE,
+		};
 	}
 }
 
@@ -106,7 +191,38 @@ export function createSemanticContextPublisher(
 	const focusListeners = new Set<(event: PaneFocusEvent) => void>();
 	const selectionListeners = new Set<(event: PaneSelectionEvent) => void>();
 	const listenerFailures: SemanticListenerFailure[] = [];
+	let droppedListenerFailures = 0;
 	let disposed = false;
+
+	const recordListenerFailure = (
+		port: SemanticPublisherPort,
+		eventKind: SemanticBrief["kind"],
+		listenerIndex: number,
+		error: unknown,
+	): void => {
+		if (listenerFailures.length >= SEMANTIC_LISTENER_DIAGNOSTIC_POLICY.maxEntries) {
+			if (droppedListenerFailures < LISTENER_DIAGNOSTIC_MAX_DROPPED_COUNT) {
+				droppedListenerFailures++;
+			}
+			return;
+		}
+		const details = errorDetails(error);
+		const errorName =
+			clipJsonUtf8(details.errorName, SEMANTIC_LISTENER_DIAGNOSTIC_POLICY.errorNameBytes).value ||
+			LISTENER_DIAGNOSTIC_ERROR_NAME_FALLBACK;
+		const message =
+			clipJsonUtf8(details.message, SEMANTIC_LISTENER_DIAGNOSTIC_POLICY.messageBytes).value ||
+			LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE;
+		listenerFailures.push(
+			deepFreeze({
+				port,
+				eventKind,
+				listenerIndex,
+				errorName,
+				message,
+			}),
+		);
+	};
 
 	const emit = <Event>(
 		listeners: Iterable<(event: Event) => void>,
@@ -118,16 +234,7 @@ export function createSemanticContextPublisher(
 			try {
 				listener(event);
 			} catch (error) {
-				const details = errorDetails(error);
-				listenerFailures.push(
-					deepFreeze({
-						port,
-						eventKind,
-						listenerIndex,
-						errorName: details.errorName,
-						message: details.message,
-					}),
-				);
+				recordListenerFailure(port, eventKind, listenerIndex, error);
 			}
 		}
 	};
@@ -266,8 +373,12 @@ export function createSemanticContextPublisher(
 		throw error;
 	}
 
-	function drainListenerFailures(): readonly SemanticListenerFailure[] {
-		const drained = listenerFailures.splice(0);
+	function drainListenerFailures(): SemanticListenerFailureBatch {
+		const drained = {
+			entries: listenerFailures.splice(0),
+			droppedCount: droppedListenerFailures,
+		};
+		droppedListenerFailures = 0;
 		return deepFreeze(drained);
 	}
 

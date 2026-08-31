@@ -54,6 +54,53 @@ export function byteLength(value: string): number {
 	return new TextEncoder().encode(value).byteLength;
 }
 
+function jsonStringPayloadBytes(character: string): number {
+	const codeUnit = character.charCodeAt(0);
+	if (character === '"' || character === "\\") return 2;
+	if (codeUnit <= 0x1f) {
+		return codeUnit === 0x08 ||
+			codeUnit === 0x09 ||
+			codeUnit === 0x0a ||
+			codeUnit === 0x0c ||
+			codeUnit === 0x0d
+			? 2
+			: 6;
+	}
+	if (character.length === 1 && codeUnit >= 0xd800 && codeUnit <= 0xdfff) return 6;
+	return byteLength(character);
+}
+
+/** UTF-8 bytes occupied by JSON.stringify(value), including its quotes. */
+export function jsonStringByteLength(value: string): number {
+	let bytes = 2;
+	for (const character of value) bytes += jsonStringPayloadBytes(character);
+	return bytes;
+}
+
+/** Clips a string by its JSON-encoded UTF-8 size without splitting a code point. */
+export function clipJsonUtf8(value: string, maximum: number): BoundedValue<string> {
+	let encodedBytes = 2;
+	for (const character of value) {
+		encodedBytes += jsonStringPayloadBytes(character);
+		if (encodedBytes > maximum) break;
+	}
+	if (encodedBytes <= maximum) return { value, truncated: false };
+
+	const suffix = SEMANTIC_CONTEXT_ELLIPSIS;
+	const suffixBytes = jsonStringByteLength(suffix);
+	if (suffixBytes > maximum) return { value: "", truncated: true };
+
+	const kept: string[] = [];
+	encodedBytes = suffixBytes;
+	for (const character of value) {
+		const characterBytes = jsonStringPayloadBytes(character);
+		if (encodedBytes + characterBytes > maximum) break;
+		kept.push(character);
+		encodedBytes += characterBytes;
+	}
+	return { value: `${kept.join("")}${suffix}`, truncated: true };
+}
+
 export function clipUtf8(value: string, maximum: number): BoundedValue<string> {
 	if (byteLength(value) <= maximum) return { value, truncated: false };
 	if (byteLength(SEMANTIC_CONTEXT_ELLIPSIS) > maximum) {
@@ -134,16 +181,8 @@ function exactCursorKeys(value: Record<string, unknown>): void {
 
 function normalizeCursor(value: unknown, currentFeedId: string): NormalizedCursor {
 	if (value === null) return { value: null, staleReason: null };
-	if (typeof value === "number") {
-		const sequence = numberValue(value, "cursor.sequence");
-		if (sequence === null) fail("cursor.sequence", "must be a number");
-		return {
-			value: deepFreeze({ feedId: currentFeedId, sequence }),
-			staleReason: null,
-		};
-	}
 	if (typeof value !== "object" || Array.isArray(value)) {
-		fail("cursor", "must be null, a sequence number, or {feedId, sequence}");
+		fail("cursor", "must be null or {feedId, sequence}");
 	}
 	const record = value as Record<string, unknown>;
 	exactCursorKeys(record);

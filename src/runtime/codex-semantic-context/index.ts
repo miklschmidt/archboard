@@ -1,6 +1,7 @@
 export {
 	SemanticContextInputError,
 	SemanticContextLifecycleError,
+	SEMANTIC_LISTENER_DIAGNOSTIC_POLICY,
 	createSemanticContextPublisher,
 } from "./lib/publisher.js";
 
@@ -30,7 +31,9 @@ export type {
 	SemanticCursor,
 	SemanticCursorInput,
 	SemanticFreshness,
+	SemanticListenerDiagnosticPolicy,
 	SemanticListenerFailure,
+	SemanticListenerFailureBatch,
 	SemanticPane,
 	SemanticPaneInput,
 	SemanticPublisherPort,
