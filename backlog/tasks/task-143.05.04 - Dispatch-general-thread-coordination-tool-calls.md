@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 20:34'
+updated_date: '2026-08-31 21:02'
 labels: []
 dependencies:
   - TASK-143.01.08
@@ -56,4 +56,6 @@ Own item/tool/call validation, the literal target and transaction policy, and re
 Implemented the six general archboard_app dynamic tool boundary in src/runtime/codex-dynamic-tools: exact manifest/correlation validation, proof-backed classification, literal list/read projections and cursors, immutable approval/effect/revalidation policy, one-shot create/fork/send execution, canonical responses, and wait graph/lifecycle cleanup. Added fake-port, adversarial, projection, cursor, and compile fixtures; tightened self/other fork-boundary validation and pane-authority identity revalidation.
 
 Validation: bun run type-check, scoped oxlint, bun run fmt:check, 28 focused tests (4 files), and the dedicated 11-test repository contract policy all pass. The full repository-policy inventory reached the 6 GiB service cap after the boundary owners passed, so that combined lane was not rerun; browser lanes were not run per task scope. Acceptance criteria remain unchecked for independent review.
+
+Remediation: terminalize every issued mutation and initial-turn OperationId exactly once at durable settlement or approved no-effect cleanup; preserve boundary-invalid success:false versus post-validation success:true refusal semantics; and project bounded, ordered textual command/file/function/MCP outputs only when includeOutputs is true, rejecting wrong-turn item pages. Added exception and truncation regression coverage while keeping the task In Progress and acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->

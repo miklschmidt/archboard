@@ -3,6 +3,8 @@ import type { ArchboardContext } from "../../codex-instructions/index.js";
 import type {
 	SessionThread,
 	SessionThreadForkResult,
+	SessionThreadItem,
+	SessionThreadItemPageResult,
 	SessionThreadStartResult,
 	SessionTurn,
 	SessionTurnResult,
@@ -98,6 +100,98 @@ export function turn(
 		completedAt: 2,
 		durationMs: 1,
 	} as SessionTurn;
+}
+
+export function commandExecutionItem(
+	authorities: AuthorityIds,
+	rawId: string,
+	output: string | null,
+): SessionThreadItem {
+	return {
+		type: "commandExecution",
+		id: authorities.identity.decoder.adoptItemId(rawId),
+		pluginId: null,
+		scriptPath: null,
+		command: "printf fixture",
+		cwd: CHECKOUT_ROOT,
+		processId: null,
+		source: "agent",
+		status: "completed",
+		commandActions: [],
+		aggregatedOutput: output,
+		exitCode: 0,
+		durationMs: 1,
+	} as SessionThreadItem;
+}
+
+export function fileChangeItem(
+	authorities: AuthorityIds,
+	rawId: string,
+	diff: string,
+): SessionThreadItem {
+	return {
+		type: "fileChange",
+		id: authorities.identity.decoder.adoptItemId(rawId),
+		changes: [
+			{
+				path: "src/fixture.ts",
+				kind: { type: "update", move_path: null },
+				diff,
+			},
+		],
+		status: "completed",
+	} as SessionThreadItem;
+}
+
+export function functionCallOutputItem(
+	authorities: AuthorityIds,
+	rawId: string,
+	output: string,
+): SessionThreadItem {
+	return {
+		type: "functionCallOutput",
+		id: authorities.identity.decoder.adoptItemId(rawId),
+		name: "fixture_tool",
+		namespace: null,
+		output: [{ type: "input_text", text: output }],
+	} as SessionThreadItem;
+}
+
+export function mcpToolCallItem(
+	authorities: AuthorityIds,
+	rawId: string,
+	output: string,
+): SessionThreadItem {
+	return {
+		type: "mcpToolCall",
+		id: authorities.identity.decoder.adoptItemId(rawId),
+		server: "fixture_server",
+		tool: "fixture_tool",
+		status: "completed",
+		arguments: {},
+		appContext: null,
+		pluginId: null,
+		readOnlyHint: null,
+		result: {
+			content: [{ type: "text", text: output }],
+			structuredContent: null,
+			_meta: null,
+		},
+		error: null,
+		durationMs: 1,
+	} as SessionThreadItem;
+}
+
+export function itemPage(
+	turnId: TurnId,
+	items: readonly SessionThreadItem[],
+	nextCursor: string | null = null,
+): SessionThreadItemPageResult {
+	return {
+		data: items.map((item) => ({ turnId, item })),
+		nextCursor,
+		backwardsCursor: null,
+	} as SessionThreadItemPageResult;
 }
 
 export function threadStartResult(threadValue: SessionThread): SessionThreadStartResult {

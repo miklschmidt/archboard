@@ -47,6 +47,10 @@ import { FakeSession } from "./session-fake.js";
 export class FakeEpoch {
 	readonly stages: EpochStageInput[] = [];
 	readonly settlements: Array<{ readonly operationId: string; readonly outcome: string }> = [];
+	stageError: Error | null = null;
+	commitError: Error | null = null;
+	rollbackError: Error | null = null;
+	unknownError: Error | null = null;
 	private revision = 0;
 
 	constructor(private readonly authorities: AuthorityIds) {}
@@ -70,6 +74,7 @@ export class FakeEpoch {
 	}
 
 	stageOperation(input: EpochStageInput): EpochTransaction {
+		if (this.stageError !== null) throw this.stageError;
 		this.stages.push(input);
 		const record: EpochOperationRecord = {
 			correlation: { childId: input.childId, epoch: input.epoch, operationId: input.operationId },
@@ -99,11 +104,13 @@ export class FakeEpoch {
 		transaction: EpochTransaction,
 		confirmation?: EpochConfirmation,
 	): EpochOperationRecord {
+		if (this.commitError !== null) throw this.commitError;
 		this.settlements.push({ operationId: transaction.record.operation.id, outcome: "delivered" });
 		return terminalRecord(transaction.record, "committed", "delivered", confirmation);
 	}
 
 	rollbackOperation(transaction: EpochTransaction, reason: string): EpochOperationRecord {
+		if (this.rollbackError !== null) throw this.rollbackError;
 		this.settlements.push({
 			operationId: transaction.record.operation.id,
 			outcome: "not_delivered",
@@ -118,6 +125,7 @@ export class FakeEpoch {
 		reason: string,
 		confirmation?: EpochConfirmation,
 	): EpochOperationRecord {
+		if (this.unknownError !== null) throw this.unknownError;
 		this.settlements.push({
 			operationId: transaction.record.operation.id,
 			outcome: "outcome_unknown",
@@ -200,6 +208,9 @@ export function approvedFor(
 
 export class FakeOperationIds implements DynamicOperationIdPort {
 	readonly issued: OperationId[] = [];
+	readonly consumed: OperationId[] = [];
+	readonly retired: OperationId[] = [];
+	private readonly terminal = new Set<OperationId>();
 	private readonly operation: AuthorityIds["operation"];
 
 	constructor(authorities: AuthorityIds) {
@@ -214,10 +225,23 @@ export class FakeOperationIds implements DynamicOperationIdPort {
 
 	validateCurrentUnconsumedOperationId(operationId: OperationId): void {
 		this.operation.validator.assertCurrentOperationId(operationId);
+		if (this.terminal.has(operationId)) throw new Error("the operation identity is terminal");
 	}
 
 	serializeForOwnedWireFields(operationId: OperationId): string {
 		return String(this.operation.decoder.serializeOperationId(operationId));
+	}
+
+	consumeCanonicalOperationId(operationId: OperationId): void {
+		this.validateCurrentUnconsumedOperationId(operationId);
+		this.terminal.add(operationId);
+		this.consumed.push(operationId);
+	}
+
+	retireCanonicalOperationId(operationId: OperationId): void {
+		this.validateCurrentUnconsumedOperationId(operationId);
+		this.terminal.add(operationId);
+		this.retired.push(operationId);
 	}
 }
 
@@ -238,9 +262,16 @@ export class FakeLifecycle implements DynamicToolLifecyclePort {
 		sequence: 0,
 		cursor: null,
 	};
+	assertionError: Error | null = null;
+	assertionErrorPhase: string | null = null;
 
 	assertCallExecuting(input: { readonly phase: string }): void {
 		this.assertions.push(input.phase);
+		if (
+			this.assertionError !== null &&
+			(this.assertionErrorPhase === null || this.assertionErrorPhase === input.phase)
+		)
+			throw this.assertionError;
 	}
 
 	registerWaitOwner(input: { readonly owner: DynamicWaitOwner }): void {
@@ -325,6 +356,7 @@ export function optionsFor(
 	readonly approval: FakeApproval;
 	readonly lifecycle: FakeLifecycle;
 	readonly threadAuthority: FakeThreadAuthority;
+	readonly operationIds: FakeOperationIds;
 	readonly transportResponses: Array<{
 		readonly request: unknown;
 		readonly owner: ResponseOwner;
@@ -422,6 +454,7 @@ export function optionsFor(
 		approval,
 		lifecycle,
 		threadAuthority,
+		operationIds,
 		transportResponses,
 		contextReads,
 	};
