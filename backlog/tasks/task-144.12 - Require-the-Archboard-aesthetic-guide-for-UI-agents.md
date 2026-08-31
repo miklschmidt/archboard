@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:38'
-updated_date: '2026-08-31 02:19'
+updated_date: '2026-08-31 02:21'
 labels: []
 dependencies:
   - TASK-144.09
@@ -44,4 +44,6 @@ Delegation profile: gpt-5.6-luna, high.
 
 <!-- SECTION:NOTES:BEGIN -->
 Reserved after TASK-144.09 completed and released this dependency-ready leaf at integration HEAD 73b849a. The lane owns AGENTS.md only and is path-disjoint from all active implementation and review lanes.
+
+Implemented in commit a624b84. Added the durable AGENTS.md rule requiring UI-design and UI-implementation workers to read docs/design/archboard-ui-aesthetics.md before changing rendered UI; named the TASK-140 operator canvas shell reference and light/dark mockup plus the guide as visual authority; preserved existing code-boundary and verification ownership; left automated enforcement to TASK-144.16. Focused validation: git diff --check; bunx oxfmt --check AGENTS.md; referenced authority files present.
 <!-- SECTION:NOTES:END -->
