@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 04:11'
+updated_date: '2026-08-31 04:27'
 labels: []
 dependencies:
   - TASK-144.01
@@ -80,4 +80,12 @@ Focused checks: bun test tests/system/repository-policy/assistant-ui-imports.tes
 2026-08-31 @codex wrapper-remediation correction (final code commit 449e46f; behavior introduced in 6b0d4bd): kept transparent expression normalization at module scope so the repository lint rule is satisfied. The normalizer covers TSAsExpression, TSTypeAssertion, TSNonNullExpression, ChainExpression, and ParenthesizedExpression, and is used only by the existing assistant-ui binding lookups.
 
 Final focused checks after the lint-safe follow-up: bun test tests/system/repository-policy/assistant-ui-imports.test.ts - 12 passed, 258 assertions; focused Oxlint on the owned plugin/test - 0 errors; Oxfmt check passed; the policy test remains 500 lines against the 500-line repository limit. Package and lockfile were unchanged. Task remains In Progress and all acceptance criteria remain unchecked. Broad modules/system/repository/check/browser lanes remain root-owned and were not run. Preserved /home/msc/Projects/archboard/src-DlBR1tzg.js.
+
+2026-08-31 @codex satisfies-wrapper remediation evidence (code commit 2cdb46d7d70dda23794672e0ec462ec134b703e0)
+
+- Added TSSatisfiesExpression to unwrapExpression and normalized checkNestedMember receivers before identifier lookup.
+- Added hostile fixtures for satisfies through const, simple assignment, and destructuring assignment, plus direct TSAsExpression, TSNonNullExpression, and TSSatisfiesExpression nested accesses.
+- Consolidated the local-alias fixtures and retained the reviewed copied-Element limitation and three-name inventory; tests/system/repository-policy/assistant-ui-imports.test.ts remains exactly 500 lines.
+- Focused evidence: bun test tests/system/repository-policy/assistant-ui-imports.test.ts passed 12 tests and 276 expect() calls; Oxlint passed with 0 warnings and 0 errors; Oxfmt check passed; git diff --check passed.
+- Broad repository, system, and browser lanes were intentionally not run because they remain root-owned. External /home/msc/Projects/archboard/src-DlBR1tzg.js remained unchanged. Task remains In Progress with all acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->
