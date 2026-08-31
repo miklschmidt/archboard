@@ -377,7 +377,7 @@ export const REFUSED_CANDIDATES = [
 	"bg-token-that-does-not-exist",
 ] as const;
 
-export const HARDCODED_COMPILER_CANDIDATES = ["transition", "duration-150"] as const;
+export const HARDCODED_TRANSITION_DEFAULT_CANDIDATES = ["transition", "duration-150"] as const;
 
 export const TOKEN_FAMILY_MUTATIONS = [
 	["typography", '"Archboard Onest"', '"Wrong Sans"'],
