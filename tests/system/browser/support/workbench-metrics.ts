@@ -50,6 +50,7 @@ export interface WorkbenchSnapshot {
 	steps: string[];
 	semantic: string | null;
 	take: string | null;
+	takeBackAnnouncement: string | null;
 	takeBackState: string | null;
 	what: string | null;
 	workbench: WorkbenchMetrics | null;
@@ -130,6 +131,8 @@ export const WORKBENCH_SNAPSHOT_EXPRESSION = `(() => {
 		reason: what?.lastChild?.textContent?.trim() ?? null,
 		copy: document.querySelector(".claim-copy")?.textContent?.replace(/\\s+/g, " ").trim() ?? null,
 		take: document.querySelector(".pane-claim-take")?.textContent?.trim() ?? null,
+		takeBackAnnouncement: document.querySelector(".take-back-outcome")
+			?.textContent?.replace(/\\s+/g, " ").trim() ?? null,
 		state: workbench?.getAttribute("data-state") ?? null,
 		semantic: workbench?.getAttribute("data-semantic") ?? null,
 		takeBackState: workbench?.getAttribute("data-take-back") ?? null,
