@@ -40,7 +40,7 @@ const LABELS: Record<Choice, string> = {
 	custom: "Custom",
 };
 const INPUT_CLASSES =
-	"min-h-touch-target w-full rounded-control border border-border bg-surface-raised px-control-inline font-sans !text-control text-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+	"min-h-touch-target w-full rounded-control border border-border bg-surface-raised px-control-inline font-sans !text-control text-foreground outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 function choiceFor(selection: OpenerSelection): Choice {
 	return selection.kind === "preset" ? selection.preset : selection.kind;
