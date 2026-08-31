@@ -1,6 +1,6 @@
-import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "bun:test";
@@ -21,8 +21,9 @@ function writeGeneratedRequests(root: string): void {
 		join(root, "ClientRequest.ts"),
 		[
 			'import type { ThreadReadParams } from "./ThreadReadParams";',
+			'import type { ThreadInjectItemsParams } from "./ThreadInjectItemsParams";',
 			'import type { RequestId } from "./RequestId";',
-			'export type ClientRequest = { "method": "thread/read", id: RequestId, params: ThreadReadParams, } | { "method": "account/logout", id: RequestId, params: undefined, };',
+			'export type ClientRequest = { "method": "thread/read", id: RequestId, params: ThreadReadParams, } | { "method": "account/logout", id: RequestId, params: undefined, } | { "method": "thread/inject_items", id: RequestId, params: ThreadInjectItemsParams, };',
 			"",
 		].join("\n"),
 	);
@@ -30,16 +31,48 @@ function writeGeneratedRequests(root: string): void {
 		join(root, "ThreadReadParams.ts"),
 		"export type ThreadReadParams = { threadId: string; includeTurns?: boolean };\n",
 	);
+	writeFileSync(
+		join(root, "ThreadInjectItemsParams.ts"),
+		"type JsonValue = null | boolean | number | string | JsonValue[] | { [key in string]?: JsonValue };\nexport type ThreadInjectItemsParams = { threadId: string; items: JsonValue[] };\n",
+	);
+	writeFileSync(join(root, "RequestId.ts"), "export type RequestId = string | number;\n");
 }
 
-function runConformance(generatedRoot: string, localParamsModulePath: string): void {
+function runConformance(
+	generatedRoot: string,
+	localParamsModulePath: string,
+	selectedMethods: readonly string[] = methods,
+): void {
 	assertGeneratedClientRequestSchemaConformanceForTest({
 		generatedRoot,
 		localParamsModulePath,
-		methods,
+		methods: selectedMethods,
 		repositoryTsconfigPath: join(repositoryRoot, "tsconfig.json"),
 		typeScriptExecutablePath: join(repositoryRoot, "node_modules/typescript/bin/tsc"),
 	});
+}
+
+function writeNarrowedProductionSchema(targetPath: string): void {
+	const productionPath = join(
+		repositoryRoot,
+		"src/runtime/codex-protocol/lib/client-request-schemas.ts",
+	);
+	const source = readFileSync(productionPath, "utf8");
+	const original = "includeTurns: z.boolean().optional(),";
+	const narrowed = "includeTurns: z.literal(true).optional(),";
+	if (!source.includes(original) || source.indexOf(original) !== source.lastIndexOf(original))
+		throw new Error("expected one production thread/read includeTurns schema");
+	const withNarrowing = source.replace(original, narrowed);
+	const withAbsoluteImports = withNarrowing.replace(
+		/from "(\.{1,2}\/[^"]+)\.js";/g,
+		(_statement, specifier: string) =>
+			`from ${JSON.stringify(resolve(dirname(productionPath), `${specifier}.ts`))};`,
+	);
+	const withAbsoluteZodImport = withAbsoluteImports.replace(
+		'from "zod";',
+		`from ${JSON.stringify(join(repositoryRoot, "node_modules/zod/index.js"))};`,
+	);
+	writeFileSync(targetPath, withAbsoluteZodImport);
 }
 
 describe("generated ClientRequest schema conformance", () => {
@@ -51,7 +84,7 @@ describe("generated ClientRequest schema conformance", () => {
 			writeGeneratedRequests(root);
 			writeFileSync(
 				localParamsModulePath,
-				'export type ClientRequestParams<Method extends "thread/read" | "account/logout"> = Method extends "thread/read" ? { threadId: string; includeTurns?: boolean } : undefined;\n',
+				'type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };\nexport type ClientRequestParams<Method extends "thread/read" | "account/logout" | "thread/inject_items"> = Method extends "thread/read" ? { threadId: string; includeTurns?: boolean } : Method extends "thread/inject_items" ? { threadId: string; items: JsonValue[] } : undefined;\nexport type ClientRequestInput<Method extends "thread/read" | "account/logout" | "thread/inject_items"> = ClientRequestParams<Method>;\n',
 			);
 			runConformance(root, localParamsModulePath);
 			expect(temporaryConformanceDirectories()).toEqual(before);
@@ -60,32 +93,25 @@ describe("generated ClientRequest schema conformance", () => {
 		}
 	});
 
-	test("names the method, direction, and conflicting types for hostile drift", () => {
+	test("rejects an actual narrowing of the production runtime schema", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-request-schema-hostile-"));
 		const localParamsModulePath = join(root, "local.ts");
 		const before = temporaryConformanceDirectories();
 		try {
 			writeGeneratedRequests(root);
-			writeFileSync(
-				localParamsModulePath,
-				'export type ClientRequestParams<Method extends "thread/read" | "account/logout"> = Method extends "thread/read" ? { threadId: string; includeTurns?: string } : {};\n',
-			);
+			writeNarrowedProductionSchema(localParamsModulePath);
 			let thrown: unknown;
 			try {
-				runConformance(root, localParamsModulePath);
+				runConformance(root, localParamsModulePath, ["thread/read"]);
 			} catch (error) {
 				thrown = error;
 			}
 			expect(thrown).toBeInstanceOf(Error);
 			const message = (thrown as Error).message;
-			expect(message).toContain("methods/thread/read/archboard-schema-to-generated.ts");
-			expect(message).toContain("methods/thread/read/generated-to-archboard-schema.ts");
+			expect(message).toContain("methods/thread/read/generated-to-schema-input.ts");
 			expect(message).toContain("includeTurns");
-			expect(message).toContain("string");
 			expect(message).toContain("boolean");
-			expect(message).toContain("methods/account/logout/archboard-schema-to-generated.ts");
-			expect(message).toContain("methods/account/logout/generated-to-archboard-schema.ts");
-			expect(message).toContain("not assignable to type 'undefined'");
+			expect(message).toContain("true");
 			expect(temporaryConformanceDirectories()).toEqual(before);
 		} finally {
 			rmSync(root, { recursive: true, force: true });
