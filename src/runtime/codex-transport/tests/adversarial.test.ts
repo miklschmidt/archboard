@@ -14,7 +14,6 @@ import {
 } from "../../../shared/codex-workbench-identity/index.js";
 import {
 	captureRejection,
-	closeTransport,
 	createHarness,
 	frameAt,
 	frames,
@@ -66,7 +65,7 @@ function makeLongIdIdentity(): IdentityAuthority {
 
 describe("Codex app-server transport adversarial public contract", () => {
 	test("classifies method frames before response correlation and recovers with protocol errors", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			const pending = transport.request("turn/steer", {});
 			const id = frameAt(child, 0).id;
@@ -112,12 +111,12 @@ describe("Codex app-server transport adversarial public contract", () => {
 			});
 			expect(frames(child).filter((frame) => frame.id === undefined)).toHaveLength(0);
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
 	test("rejects duplicate keys, settles the owner, and preserves escaped-key identity", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			const pending = transport.request("turn/steer", {});
 			const malformed = captureRejection(pending);
@@ -152,12 +151,12 @@ describe("Codex app-server transport adversarial public contract", () => {
 				error: { code: -32600 },
 			});
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
 	test("keeps numeric and string reverse ids distinct and writes their original types", async () => {
-		const { child, identity, transport } = createHarness();
+		const { child, identity, transport, close } = createHarness();
 		try {
 			const seen: TransportServerRequest[] = [];
 			transport.onServerRequest((request) => seen.push(request));
@@ -179,7 +178,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 					.map((frame) => frame.id),
 			).toEqual([1, "1"]);
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
@@ -187,7 +186,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 		const registrations = [
 			{ owner: "codex-dynamic-tools", namespace: "archboard_app", manifestHash: "manifest" },
 		] as const;
-		const { child, transport } = createHarness(registrations);
+		const { child, transport, close } = createHarness(registrations);
 		try {
 			let request: Parameters<typeof transport.respond>[0] | undefined;
 			transport.onServerRequest((value) => {
@@ -242,7 +241,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				frames(child).findLast((frame) => frame.id === "dynamic-null-namespace"),
 			).toMatchObject({ error: { code: -32602 } });
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
@@ -260,10 +259,10 @@ describe("Codex app-server transport adversarial public contract", () => {
 				error: { code: -32603 },
 			});
 		} finally {
-			await closeTransport(shutdownHarness.transport, shutdownHarness.child);
+			await shutdownHarness.close();
 		}
 
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			const remote = captureRejection(transport.request("turn/steer", {}));
 			const remoteId = frameAt(child, 0).id;
@@ -296,7 +295,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				}),
 			);
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 
 		const longId = createHarness(undefined, makeLongIdIdentity());
@@ -316,13 +315,13 @@ describe("Codex app-server transport adversarial public contract", () => {
 				CODEX_APP_SERVER_CAPACITY.retention.lateResponseRecordBytes,
 			);
 		} finally {
-			await closeTransport(longId.transport, longId.child);
+			await longId.close();
 		}
 	});
 
 	test("checks the pending-request cap before minting another wire id", async () => {
 		const counted = makeMintCountingIdentity();
-		const { child, transport } = createHarness(undefined, counted.identity);
+		const { child, transport, close } = createHarness(undefined, counted.identity);
 		try {
 			child.stdin.blockNext = true;
 			const pending = Array.from(
@@ -341,12 +340,12 @@ describe("Codex app-server transport adversarial public contract", () => {
 			await transport.shutdown();
 			await Promise.all(pending);
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 
 	test("prioritizes response writes and retries an admitted response after reserve pressure", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			child.stdin.blockNext = true;
 			const firstRegular = transport.sendNotification("initialized");
@@ -367,7 +366,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				{ method: "initialized" },
 			]);
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 
 		const second = createHarness();
@@ -406,7 +405,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 			await Promise.all(responses);
 			await second.transport.respond(last, "codex-session", { result: { currentTimeAt: 0 } });
 		} finally {
-			await closeTransport(second.transport, second.child);
+			await second.close();
 		}
 	});
 
@@ -426,7 +425,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				expect((await pending).result).toEqual({ turnId: response.turnId });
 			}
 		} finally {
-			await closeTransport(boundary.transport, boundary.child);
+			await boundary.close();
 		}
 
 		const fatal = createHarness();
@@ -454,12 +453,12 @@ describe("Codex app-server transport adversarial public contract", () => {
 				fatal.transport.inspectIssues().filter((issue) => issue.kind === "oversized-frame"),
 			).toHaveLength(1);
 		} finally {
-			await closeTransport(fatal.transport, fatal.child);
+			await fatal.close();
 		}
 	});
 
 	test("bounds diagnostics, isolates listener failures, and detaches all input after shutdown", async () => {
-		const { child, transport } = createHarness();
+		const { child, transport, close } = createHarness();
 		try {
 			const issueUnsubscribe = transport.onIssue(() => {
 				throw new Error("listener fixture");
@@ -494,7 +493,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 			expect(transport.inspect().state).toBe("closed");
 			await transport.shutdown();
 		} finally {
-			await closeTransport(transport, child);
+			await close();
 		}
 	});
 });
