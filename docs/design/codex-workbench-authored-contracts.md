@@ -1037,6 +1037,543 @@ Operation and pagination semantics are exact:
   with repeated-cursor detection; tool reads preserve the exact bounded page
   behavior above.
 
+## Dynamic coordination approval lifecycle
+
+**Owner:** TASK-143.01.19
+
+This policy applies only to `archboard_app.create_thread`, `fork_thread`, and
+`send_message_to_thread`. Each valid dynamic call gets one fresh visual
+decision. A prior decision, a session grant, or a decision for another call can
+never authorize it. The seven app-server approval families remain in
+`src/runtime/codex-approvals`; this policy and its requests never enter that
+broker.
+
+The request identity is the exact `LogicalToolCallCorrelation` in its existing
+field order followed by one canonical host-issued `OperationId`. In those
+fields, `threadId` is the caller, `turnId` is its executing turn, and `callId`
+is the dynamic call. The request stores one immutable parsed effect. Optional
+tool arguments are present as `null`; there is no raw argument object, protocol
+object, or second context snapshot. Authority values are opaque tokens issued
+by the named ports and can only be checked by those ports.
+
+`effectHash` is computed once after all operation IDs and authority tokens have
+been issued. The hash input is compact UTF-8 JSON containing exactly
+`identity` then `effect`, in the field order below. The visual summary is part
+of the effect and therefore part of the hash. A decision echoes the complete
+identity and hash. It does not supply a target, arguments, boundary, context,
+or grant.
+
+The strict manifest is the semantic source for downstream runtime and browser
+contracts:
+
+```json
+{
+	"schema": 1,
+	"request": {
+		"fieldOrder": ["identity", "effect", "effectHash", "createdAtMs", "expiresAtMs"],
+		"identityFields": [
+			"child",
+			"epoch",
+			"threadId",
+			"turnId",
+			"callId",
+			"namespace",
+			"tool",
+			"manifestHash",
+			"operationId"
+		],
+		"effectFields": [
+			"tool",
+			"arguments",
+			"callerAuthority",
+			"targetAuthority",
+			"contextAuthority",
+			"effectiveBoundary",
+			"mutationOperationId",
+			"initialTurnOperationId",
+			"visualSummary"
+		],
+		"effectiveBoundaryFields": ["relation", "beforeTurnId"],
+		"effects": [
+			{
+				"tool": "create_thread",
+				"argumentFields": ["prompt"],
+				"nullableArguments": [],
+				"callerAuthority": "required",
+				"targetAuthority": "null",
+				"contextAuthority": "required",
+				"effectiveBoundary": "null",
+				"mutationOperationId": "identity.operationId",
+				"initialTurnOperationId": "fresh_required",
+				"visualSummaryLimitUtf8Bytes": 512
+			},
+			{
+				"tool": "fork_thread",
+				"argumentFields": ["threadId", "beforeTurnId", "prompt"],
+				"nullableArguments": ["beforeTurnId", "prompt"],
+				"callerAuthority": "required",
+				"targetAuthority": "required",
+				"contextAuthority": "required",
+				"effectiveBoundary": "required",
+				"mutationOperationId": "identity.operationId",
+				"initialTurnOperationId": "fresh_when_prompt_else_null",
+				"visualSummaryLimitUtf8Bytes": 512
+			},
+			{
+				"tool": "send_message_to_thread",
+				"argumentFields": ["threadId", "prompt"],
+				"nullableArguments": [],
+				"callerAuthority": "required",
+				"targetAuthority": "required",
+				"contextAuthority": "required",
+				"effectiveBoundary": "null",
+				"mutationOperationId": "identity.operationId",
+				"initialTurnOperationId": "null",
+				"visualSummaryLimitUtf8Bytes": 512
+			}
+		],
+		"selfForkBoundary": {
+			"relation": "self",
+			"beforeTurnId": "identity.turnId",
+			"callerBeforeTurnId": "ignored"
+		},
+		"otherForkBoundary": {
+			"relation": "other",
+			"beforeTurnId": "arguments.beforeTurnId"
+		},
+		"hash": {
+			"algorithm": "sha256",
+			"wireForm": "sha256:<64-lowercase-hex>",
+			"inputFields": ["identity", "effect"],
+			"canonicalization": "utf8_compact_json_in_manifest_field_order"
+		},
+		"expiry": {
+			"durationMs": 90000,
+			"source": "CODEX_APPROVAL_EXPIRY_MS",
+			"expiresAtMs": "createdAtMs + durationMs",
+			"expiredWhen": "nowMs >= expiresAtMs",
+			"extendable": false
+		},
+		"freshness": {
+			"oneRequestPerDynamicCall": true,
+			"cachedGrant": false,
+			"sessionGrant": false,
+			"reusedDecision": false,
+			"mutableSnapshot": false
+		}
+	},
+	"decision": {
+		"fieldOrder": ["outcome", "identity", "effectHash", "decidedAtMs", "cause"],
+		"outcomes": ["approved", "declined", "expired", "cancelled", "disconnected"],
+		"personDecisionOutcomes": ["approved", "declined"],
+		"hostTerminalOutcomes": ["expired", "cancelled", "disconnected"],
+		"personDecisionAcceptedWhen": [
+			"request_is_pending",
+			"identity_exactly_echoes_request",
+			"effect_hash_exactly_echoes_request",
+			"decidedAtMs_is_before_expiresAtMs"
+		],
+		"causes": [
+			{
+				"outcome": "approved",
+				"cause": "person_approved",
+				"effect": "revalidate_then_continue",
+				"toolResult": "after_dispatch"
+			},
+			{
+				"outcome": "declined",
+				"cause": "person_declined",
+				"effect": "none",
+				"toolResult": "refused:approval_declined"
+			},
+			{
+				"outcome": "expired",
+				"cause": "deadline_reached",
+				"effect": "none",
+				"toolResult": "refused:expired"
+			},
+			{
+				"outcome": "cancelled",
+				"cause": "call_cancelled",
+				"effect": "none",
+				"toolResult": "approval_required"
+			},
+			{
+				"outcome": "cancelled",
+				"cause": "caller_turn_interrupted",
+				"effect": "none",
+				"toolResult": "approval_required"
+			},
+			{
+				"outcome": "cancelled",
+				"cause": "host_shutdown",
+				"effect": "none",
+				"toolResult": "approval_required"
+			},
+			{
+				"outcome": "disconnected",
+				"cause": "browser_disconnected",
+				"effect": "none",
+				"toolResult": "approval_required"
+			},
+			{
+				"outcome": "disconnected",
+				"cause": "child_disconnected",
+				"effect": "none",
+				"toolResult": "transport_not_delivered"
+			}
+		],
+		"terminal": {
+			"settle": "compare_and_set_once",
+			"removePendingAuthority": true,
+			"removePendingCard": true,
+			"approvedOperationIds": "reserved_for_same_in_flight_call_only",
+			"nonApprovedOperationIds": "retire_without_effect",
+			"lateDecision": "reject_without_effect_or_second_tool_response",
+			"duplicateDecision": "reject_without_replacing_terminal_decision"
+		},
+		"approvalRequired": {
+			"terminalToolResult": true,
+			"resumable": false,
+			"resumeCommand": null,
+			"retainedExecutionAuthority": false,
+			"retainedPendingCard": false,
+			"nextAttempt": "new_dynamic_call_with_new_identity_operation_ids_effect_hash_and_decision"
+		}
+	},
+	"revalidation": {
+		"order": [
+			"decision_identity_and_effect_hash",
+			"current_child_epoch_and_logical_call",
+			"caller_authority",
+			"target_authority_and_classification",
+			"immutable_effect_and_effective_boundary",
+			"context_authority",
+			"operation_ids_unconsumed",
+			"approval_expiry"
+		],
+		"failures": [
+			{
+				"condition": "decision_identity_effect_or_manifest_changed",
+				"reason": "invalid_call"
+			},
+			{
+				"condition": "child_replaced_or_disconnected",
+				"reason": "stale_child"
+			},
+			{
+				"condition": "epoch_became_prior",
+				"reason": "prior_epoch"
+			},
+			{
+				"condition": "caller_target_or_context_provenance_unproven",
+				"reason": "unknown_provenance"
+			},
+			{
+				"condition": "caller_or_target_not_loaded",
+				"reason": "not_loaded"
+			},
+			{
+				"condition": "caller_or_target_direct_input_not_true",
+				"reason": "not_controllable"
+			},
+			{
+				"condition": "caller_or_target_system_error",
+				"reason": "system_error"
+			},
+			{
+				"condition": "fork_or_send_target_became_active",
+				"reason": "busy"
+			},
+			{
+				"condition": "relation_became_invalid_or_cyclic",
+				"reason": "cycle"
+			},
+			{
+				"condition": "authority_token_effect_hash_or_operation_id_changed",
+				"reason": "invalid_call"
+			},
+			{
+				"condition": "approval_expired_before_effect",
+				"reason": "expired"
+			}
+		],
+		"freshContext": {
+			"readAfterApprovalAndRevalidation": true,
+			"source": "DynamicContextPort",
+			"capturedContentMayAdvance": true,
+			"paneLinkAuthorityMustMatch": true,
+			"callerSuppliedContext": false,
+			"fallbackContext": false
+		},
+		"staleApprovedDecision": {
+			"approvalOutcomeRemains": "approved",
+			"effect": "none",
+			"operationIds": "retire_without_effect",
+			"toolResult": "refused_with_exact_failure_reason"
+		}
+	},
+	"operationIds": {
+		"issuer": "DynamicOperationIdPort",
+		"outerOperationId": "one_fresh_id_per_mutating_dynamic_call_before_effect_hash",
+		"boundaries": [
+			{
+				"tool": "create_thread",
+				"boundary": "thread/start",
+				"operationId": "identity.operationId",
+				"reuse": ["effect.mutationOperationId", "epoch.operationId", "outer_result.operationId"]
+			},
+			{
+				"tool": "create_thread",
+				"boundary": "initial_turn/turn/start",
+				"operationId": "effect.initialTurnOperationId",
+				"reuse": [
+					"epoch.operationId",
+					"ArchboardContext.operation.id",
+					"TurnStartParams.clientUserMessageId",
+					"ok.value.initialTurn.operationId"
+				]
+			},
+			{
+				"tool": "fork_thread",
+				"boundary": "thread/fork",
+				"operationId": "identity.operationId",
+				"reuse": ["effect.mutationOperationId", "epoch.operationId", "outer_result.operationId"]
+			},
+			{
+				"tool": "fork_thread",
+				"boundary": "optional_initial_turn/turn/start",
+				"operationId": "effect.initialTurnOperationId_or_null_without_prompt",
+				"reuse": [
+					"epoch.operationId",
+					"ArchboardContext.operation.id",
+					"TurnStartParams.clientUserMessageId",
+					"ok.value.initialTurn.operationId"
+				]
+			},
+			{
+				"tool": "send_message_to_thread",
+				"boundary": "turn/start",
+				"operationId": "identity.operationId",
+				"reuse": [
+					"effect.mutationOperationId",
+					"epoch.operationId",
+					"ArchboardContext.operation.id",
+					"TurnStartParams.clientUserMessageId",
+					"outer_result.operationId"
+				]
+			}
+		],
+		"contextOperations": [
+			{
+				"boundary": "create_thread_initial_turn",
+				"kind": "create_thread_initial_turn",
+				"rpc": "turn/start"
+			},
+			{
+				"boundary": "fork_thread_initial_turn",
+				"kind": "fork_thread_initial_turn",
+				"rpc": "turn/start"
+			},
+			{
+				"boundary": "send_message_to_thread",
+				"kind": "send_message_to_thread",
+				"rpc": "turn/start"
+			}
+		],
+		"clientUserMessageId": "serialize_the_same_boundary_operation_id",
+		"retireOn": ["declined", "expired", "cancelled", "disconnected", "stale_revalidation"],
+		"consumeOn": "durable_boundary_settlement",
+		"reusable": false,
+		"newIdForRetry": false,
+		"callerSuppliedId": false,
+		"castFromAnotherIdentity": false,
+		"adHocMinting": false
+	},
+	"dispatcher": {
+		"order": [
+			"validate_call_arguments_and_manifest",
+			"resolve_and_classify_caller_target_and_context_authority",
+			"issue_all_required_operation_ids",
+			"freeze_immutable_effect_and_hash",
+			"await_one_fresh_visual_approval",
+			"revalidate_decision_caller_target_effect_context_and_ids",
+			"read_one_fresh_ArchboardContext",
+			"stage_one_local_epoch_transaction",
+			"attempt_one_remote_rpc",
+			"settle_durable_provenance_once",
+			"construct_one_canonical_tool_result",
+			"attempt_one_transport_response"
+		],
+		"operationGroups": [
+			{
+				"tool": "create_thread",
+				"boundaries": ["thread/start", "initial_turn/turn/start"]
+			},
+			{
+				"tool": "fork_thread",
+				"boundaries": ["thread/fork", "optional_initial_turn/turn/start"]
+			},
+			{
+				"tool": "send_message_to_thread",
+				"boundaries": ["turn/start"]
+			}
+		],
+		"initialTurnCondition": "only_after_confirmed_create_or_fork_and_when_prompt_present",
+		"mutationRetry": false,
+		"provenanceSettlement": "once_per_declared_operation_boundary",
+		"toolResultConstruction": "once_after_all_attempted_boundaries_settle",
+		"transportResponseAttempt": "once_when_child_request_transport_is_owned",
+		"childDisconnectResponse": "classify_not_delivered_and_never_retry"
+	},
+	"waitThreads": {
+		"ownerFields": [
+			"child",
+			"epoch",
+			"threadId",
+			"turnId",
+			"callId",
+			"namespace",
+			"tool",
+			"manifestHash",
+			"sortedTargetThreadIds"
+		],
+		"operationId": null,
+		"registrationOrder": [
+			"validate_call_and_cursor",
+			"resolve_exact_caller_and_targets",
+			"sort_unique_target_ids",
+			"reject_direct_or_transitive_cycle",
+			"register_exact_owner_once"
+		],
+		"release": [
+			{
+				"event": "completion",
+				"action": "release_owner_once_before_completed_response"
+			},
+			{
+				"event": "attention",
+				"action": "release_owner_once_before_attention_response"
+			},
+			{
+				"event": "timeout",
+				"action": "release_owner_once_before_timeout_response"
+			},
+			{
+				"event": "cancellation",
+				"action": "release_owner_once_before_terminal_settlement"
+			},
+			{
+				"event": "interruption",
+				"action": "release_owner_once_for_caller_turn"
+			},
+			{
+				"event": "disconnect",
+				"action": "release_owner_once_for_disconnected_call"
+			},
+			{
+				"event": "child_exit",
+				"action": "release_every_owner_for_exact_child_once"
+			}
+		],
+		"retainedOwnerAfterRelease": false,
+		"reusedOwner": false,
+		"releaseAfterResponse": false
+	},
+	"ports": [
+		{
+			"port": "DynamicToolApprovalPort",
+			"provides": [
+				"present_immutable_request",
+				"await_one_exact_visual_decision",
+				"settle_identity_and_effect_hash_once"
+			],
+			"forbids": ["seven_family_broker", "cached_or_session_grant", "resumable_approval_required"]
+		},
+		{
+			"port": "DynamicThreadAuthorityPort",
+			"provides": [
+				"resolve_exact_logical_caller",
+				"classify_exact_target",
+				"issue_and_revalidate_opaque_authority_tokens"
+			],
+			"forbids": [
+				"recency_or_focus_inference",
+				"fabricated_provenance",
+				"caller_selected_authority"
+			]
+		},
+		{
+			"port": "DynamicContextPort",
+			"provides": [
+				"issue_and_revalidate_pane_link_authority",
+				"read_one_fresh_ArchboardContext_after_approval"
+			],
+			"forbids": ["caller_supplied_context", "duplicate_context_source", "fallback_context"]
+		},
+		{
+			"port": "DynamicOperationIdPort",
+			"provides": [
+				"issue_canonical_OperationId",
+				"validate_current_unconsumed_OperationId",
+				"serialize_for_owned_wire_fields"
+			],
+			"forbids": ["cast_from_other_identity", "caller_supplied_id", "second_minting_site"]
+		},
+		{
+			"port": "DynamicToolLifecyclePort",
+			"provides": [
+				"call_cancellation_and_turn_interruption",
+				"browser_child_and_host_disconnect_settlement",
+				"exact_wait_owner_registration_and_release"
+			],
+			"forbids": [
+				"retained_authority_after_terminal_state",
+				"duplicate_settlement",
+				"orphaned_wait_owner"
+			]
+		}
+	],
+	"ownership": {
+		"authoredPolicy": "TASK-143.01.19",
+		"operationIdentity": "TASK-143.01.20",
+		"browserContract": "TASK-143.01.21",
+		"headlessPortsAndDispatcher": "TASK-143.05.04",
+		"gateway": "TASK-143.01.10",
+		"ui": "TASK-143.03.07",
+		"composition": "TASK-143.01.14",
+		"systemOwner": "TASK-143.01.15",
+		"browserOwner": "TASK-143.03.13",
+		"excludedBroker": "src/runtime/codex-approvals"
+	}
+}
+```
+
+`approved` is terminal for the approval request, but not a promise that the
+effect will run. The dispatcher must pass every revalidation row before it
+reads fresh context or stages a transaction. A stale approved decision keeps
+its recorded outcome and produces the exact refusal from the table. It never
+changes into decline and never runs a fallback effect.
+
+`approval_required` is the final dynamic tool result for cancellation, caller
+turn interruption, host shutdown, or browser disconnect while approval is
+pending. Before returning it, the dispatcher settles and removes the request
+and its visual authority. A new tool call starts over with new call identity,
+operation IDs, effect snapshot, hash, and decision. A late browser command is
+rejected at the browser boundary and cannot produce another tool response.
+
+Child disconnect is the one state in which a wire response cannot be
+delivered. The dispatcher still settles the request as disconnected, removes
+all authority, classifies the single response attempt as not delivered, and
+never retries it. Host shutdown settles pending approvals before closing the
+owned transport when that transport is still writable.
+
+Each stage, RPC, and settlement group runs once for its declared OperationId.
+For confirmed create and fork results, the optional initial turn is a second
+group with its own OperationId. A missing fork prompt omits that group and
+keeps every initial-turn result identity `null`. No RPC or transport response
+is retried after a lost settlement.
+
 ## Coordinator manifests
 
 ```json
