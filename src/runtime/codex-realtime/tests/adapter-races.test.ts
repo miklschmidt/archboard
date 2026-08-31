@@ -16,6 +16,7 @@ import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,
 	type CodexRealtimeAdapterOptions,
+	type CodexRealtimeBinding,
 } from "../index.js";
 import { recordReducerCheckedEvents } from "./state-test-support.js";
 
@@ -55,6 +56,8 @@ interface RaceHarness {
 	readonly stop: Deferred<StopResult>;
 	readonly append: Deferred<AppendResult>;
 	readonly timeline: Deferred<TimelineResult>;
+	readonly replaceBinding: () => void;
+	startFailure: Error | null;
 }
 
 const transitionFailures: string[] = [];
@@ -66,29 +69,34 @@ afterEach(() => {
 function raceHarness(): RaceHarness {
 	const identity = createIdentityAuthority();
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
-		threadIds: ["race-linked", "race-coordinator"],
+		threadIds: ["race-linked", "race-coordinator", "replacement-coordinator"],
 	});
 	const linkedThreadId = adopted.threadIds[0];
 	const coordinatorThreadId = adopted.threadIds[1];
-	if (!linkedThreadId || !coordinatorThreadId) throw new Error("Missing adopted race identity.");
+	const replacementThreadId = adopted.threadIds[2];
+	if (!linkedThreadId || !coordinatorThreadId || !replacementThreadId)
+		throw new Error("Missing adopted race identity.");
 	const start = deferred<StartResult>();
 	const stop = deferred<StopResult>();
 	const append = deferred<AppendResult>();
 	const timeline = deferred<TimelineResult>();
 	const starts: SessionParams<"thread/realtime/start">[] = [];
+	let binding: CodexRealtimeBinding = {
+		child: identity.validator.childId,
+		epoch: identity.validator.epoch,
+		linkedThreadId,
+		coordinatorThreadId,
+	};
+	const control = { startFailure: null as Error | null };
 	const adapter = createCodexRealtimeAdapter({
 		identity,
-		currentBinding: () => ({
-			child: identity.validator.childId,
-			epoch: identity.validator.epoch,
-			linkedThreadId,
-			coordinatorThreadId,
-		}),
+		currentBinding: () => binding,
 		freshSemanticBrief: () => '{"source":"race"}',
 		attachRemoteMedia: () => undefined,
 		session: {
 			realtimeStart: (params) => {
 				starts.push(params);
+				if (control.startFailure) throw control.startFailure;
 				return start.promise;
 			},
 			realtimeAppendText: () => append.promise,
@@ -99,7 +107,7 @@ function raceHarness(): RaceHarness {
 	});
 	const events: RealtimeSemanticEvent[] = [];
 	recordReducerCheckedEvents(adapter, events, transitionFailures);
-	return {
+	const result: RaceHarness = {
 		adapter,
 		events,
 		coordinatorThreadId,
@@ -110,7 +118,17 @@ function raceHarness(): RaceHarness {
 		stop,
 		append,
 		timeline,
+		replaceBinding: () => {
+			binding = { ...binding, coordinatorThreadId: replacementThreadId };
+		},
+		get startFailure() {
+			return control.startFailure;
+		},
+		set startFailure(value) {
+			control.startFailure = value;
+		},
 	};
+	return result;
 }
 
 function notify(h: RaceHarness, method: string, params: unknown): void {
@@ -129,9 +147,10 @@ function browser(suffix: string) {
 
 async function begin(h: RaceHarness, suffix: string) {
 	const correlation = browser(suffix);
+	const startIndex = h.starts.length;
 	const offer = h.adapter.createOffer({ ...correlation, sdp: "offer" });
 	await Promise.resolve();
-	const wireSessionId = h.starts[0]?.realtimeSessionId;
+	const wireSessionId = h.starts[startIndex]?.realtimeSessionId;
 	if (!wireSessionId) throw new Error("Race start has no realtime session identity.");
 	return { correlation, offer, wireSessionId };
 }
@@ -194,6 +213,61 @@ function observeRejection(promise: Promise<unknown>) {
 }
 
 describe("Codex realtime adapter races", () => {
+	test("dispose before the invocation turn makes no start call", async () => {
+		const h = raceHarness();
+		const correlation = browser("disposed-before-call");
+		const offer = h.adapter.createOffer({ ...correlation, sdp: "offer" });
+		const rejection = observeRejection(offer);
+		h.adapter.dispose();
+		await Promise.resolve();
+		expect(h.starts).toHaveLength(0);
+		expect(await rejection.message).toBe("The Codex realtime adapter was disposed.");
+		expect(rejection.count).toBe(1);
+	});
+
+	test("binding replacement before the invocation turn makes no start call", async () => {
+		const h = raceHarness();
+		const correlation = browser("stale-before-call");
+		const offer = h.adapter.createOffer({ ...correlation, sdp: "offer" });
+		const rejection = observeRejection(offer);
+		h.replaceBinding();
+		await Promise.resolve();
+		expect(h.starts).toHaveLength(0);
+		expect(await rejection.message).toBe(
+			"Codex closed the realtime session before negotiation completed.",
+		);
+		expect(rejection.count).toBe(1);
+		expect(stateCount(h, "closed")).toBe(1);
+	});
+
+	test("a synchronous start throw settles once and permits canonical recovery", async () => {
+		const h = raceHarness();
+		h.startFailure = new Error("synchronous start failure");
+		const failed = await begin(h, "sync-throw");
+		const rejection = observeRejection(failed.offer);
+		expect(await rejection.message).toBe("synchronous start failure");
+		expect(rejection.count).toBe(1);
+		expect(h.starts).toHaveLength(1);
+		expect(stateCount(h, "recoverable_error")).toBe(1);
+		h.startFailure = null;
+		h.timeline.resolve({
+			data: [],
+			nextCursor: null,
+			activeRealtimeSessionAtPageStart: failed.wireSessionId,
+		});
+		expect(await h.adapter.recover(failed.correlation)).toMatchObject({ outcome: "delivered" });
+		const replacement = await begin(h, "after-sync-throw");
+		h.start.resolve({});
+		notify(h, "thread/realtime/sdp", { threadId: h.coordinatorThreadId, sdp: "answer" });
+		notify(h, "thread/realtime/started", {
+			threadId: h.coordinatorThreadId,
+			realtimeSessionId: replacement.wireSessionId,
+			version: "v3",
+		});
+		await replacement.offer;
+		expect(h.starts).toHaveLength(2);
+	});
+
 	test("start error owns rejection before a late RPC rejection", async () => {
 		const h = raceHarness();
 		const pending = await begin(h, "rpc-reject");
