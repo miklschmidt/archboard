@@ -1,0 +1,206 @@
+import type {
+	ActiveEpoch,
+	CodexEpochStore,
+	EpochExecutionProof,
+	EpochOperationRecord,
+	EpochOperationStatus,
+	EpochOperationOutcome,
+} from "../../codex-epoch/index.js";
+import type {
+	CodexSession,
+	SessionLoadedThreadPageResult,
+	SessionThread,
+	SessionThreadPageResult,
+	SessionThreadSource,
+} from "../../codex-session/index.js";
+import type {
+	ChildEpoch,
+	ChildId,
+	ThreadId,
+} from "../../../shared/codex-workbench-identity/index.js";
+import type {
+	ThreadLinkReason,
+	ThreadLinkState as AuthoredThreadLinkState,
+} from "../../codex-instructions/index.js";
+
+export type ThreadLinkReasonCode = ThreadLinkReason;
+export type ThreadLinkState = AuthoredThreadLinkState;
+export type ThreadLinkStatus = SessionThread["status"]["type"];
+export type ThreadLinkSource = SessionThreadSource;
+export type ThreadLinkAllowedSource = Extract<
+	ThreadLinkSource,
+	"cli" | "vscode" | "exec" | "appServer"
+>;
+export type ThreadLinkExecutableStatus = Exclude<ThreadLinkStatus, "notLoaded" | "systemError">;
+
+export type ThreadLinkCurrentEpoch = Pick<ActiveEpoch, "childId" | "epoch">;
+export type ThreadLinkCurrentEpochSource =
+	| ThreadLinkCurrentEpoch
+	| (() => ThreadLinkCurrentEpoch | null);
+
+/** A committed epoch record or a proof returned by `assertCurrent`. */
+export type ThreadLinkEpochProof = EpochOperationRecord | EpochExecutionProof;
+
+/** The identity and durable ownership evidence captured by a pane link. */
+export interface ThreadLinkTarget {
+	readonly threadId: ThreadId;
+	readonly childId: ChildId | null;
+	readonly epoch: ChildEpoch | null;
+	readonly operationId?: string;
+	readonly provenance?: ThreadLinkEpochProof | null;
+}
+
+export interface CodexThreadLinkClassifierOptions {
+	readonly session: Pick<CodexSession, "threadListPage" | "threadLoadedListPage">;
+	/** Prefer this live source when supplied; `epoch.snapshot()` is the fallback. */
+	readonly currentEpoch?: ThreadLinkCurrentEpochSource;
+	readonly epoch?: Pick<CodexEpochStore, "snapshot">;
+}
+
+export interface ThreadLinkObservation {
+	readonly persisted: boolean;
+	readonly persistedRows: number;
+	readonly loaded: boolean;
+	readonly loadedOccurrences: number;
+	readonly source: ThreadLinkSource;
+	readonly status: ThreadLinkStatus;
+	readonly canAcceptDirectInput: boolean | null;
+}
+
+export interface ExecutableThreadLink {
+	readonly kind: "thread_link";
+	readonly state: "executable";
+	readonly childId: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly threadId: ThreadId;
+	readonly source: ThreadLinkAllowedSource;
+	readonly status: ThreadLinkExecutableStatus;
+	readonly loaded: true;
+	readonly canAcceptDirectInput: true;
+	readonly reason: null;
+}
+
+export interface InspectOnlyThreadLink {
+	readonly kind: "thread_link";
+	readonly state: "inspect_only";
+	readonly childId: null;
+	readonly epoch: null;
+	readonly threadId: ThreadId;
+	readonly source: ThreadLinkSource;
+	readonly status: ThreadLinkStatus;
+	readonly loaded: boolean;
+	/** False for every inspect-only link, including an observed null capability. */
+	readonly canAcceptDirectInput: false;
+	readonly reason: ThreadLinkReason;
+}
+
+export type ThreadLink = ExecutableThreadLink | InspectOnlyThreadLink;
+
+export interface UnboundThreadLink {
+	readonly kind: "thread_link";
+	readonly state: "unbound";
+	readonly childId: null;
+	readonly epoch: null;
+	readonly threadId: null;
+	readonly source: null;
+	readonly status: "notLoaded";
+	readonly loaded: false;
+	readonly canAcceptDirectInput: false;
+	readonly reason: null;
+}
+
+export type ThreadLinkSnapshot = ThreadLink | UnboundThreadLink;
+
+export interface ThreadLinkClassification {
+	readonly link: ThreadLink;
+	readonly thread: SessionThread | null;
+	readonly observation: ThreadLinkObservation;
+	readonly currentEpoch: ThreadLinkCurrentEpoch | null;
+}
+
+export type ThreadLinkClassificationErrorCode =
+	| "invalid_input"
+	| "invalid_result"
+	| "current_epoch_unavailable"
+	| "repeated_cursor"
+	| "transport_failure"
+	| "list_exhaustion_failure"
+	| "conflict";
+
+export class CodexThreadLinkError extends Error {
+	override readonly name: string = "CodexThreadLinkError";
+	readonly code: ThreadLinkClassificationErrorCode;
+	override readonly cause: unknown;
+
+	constructor(code: ThreadLinkClassificationErrorCode, message: string, cause?: unknown) {
+		super(message);
+		this.code = code;
+		this.cause = cause;
+	}
+}
+
+export class CodexThreadLinkConflictError extends CodexThreadLinkError {
+	override readonly name: string = "CodexThreadLinkConflictError";
+
+	constructor(message: string) {
+		super("conflict", message);
+	}
+}
+
+export interface ThreadLinkCasToken {
+	readonly revision: number;
+	readonly paneId: string;
+	readonly childId: ChildId | null;
+	readonly epoch: ChildEpoch | null;
+	readonly threadId: ThreadId | null;
+}
+
+export interface ThreadLinkBindingSnapshot {
+	readonly paneId: string;
+	readonly revision: number;
+	readonly link: ThreadLinkSnapshot;
+	readonly cas: ThreadLinkCasToken;
+}
+
+export interface CodexThreadLinkBindingOptions {
+	readonly currentEpoch?: ThreadLinkCurrentEpochSource;
+	readonly epoch?: Pick<CodexEpochStore, "snapshot">;
+}
+
+export interface ThreadLinkCompareAndSwapInput {
+	readonly paneId: string;
+	readonly expected: ThreadLinkCasToken | null;
+	readonly next: ThreadLinkSnapshot;
+}
+
+export interface ThreadLinkBindingStore {
+	readonly snapshot: (paneId: string) => ThreadLinkBindingSnapshot;
+	readonly read: (paneId: string) => ThreadLinkBindingSnapshot;
+	readonly compareAndSwap: (input: ThreadLinkCompareAndSwapInput) => ThreadLinkBindingSnapshot;
+	readonly bind: (
+		paneId: string,
+		expected: ThreadLinkCasToken | null,
+		next: ThreadLink,
+	) => ThreadLinkBindingSnapshot;
+	readonly clear: (
+		paneId: string,
+		expected: ThreadLinkCasToken | null,
+	) => ThreadLinkBindingSnapshot;
+}
+
+export interface CodexThreadLinkClassifier {
+	readonly classify: (target: ThreadLinkTarget) => Promise<ThreadLinkClassification>;
+}
+
+export interface CodexThreadLinkPort extends CodexThreadLinkClassifier, ThreadLinkBindingStore {}
+
+export type {
+	EpochExecutionProof,
+	EpochOperationOutcome,
+	EpochOperationRecord,
+	EpochOperationStatus,
+	SessionLoadedThreadPageResult,
+	SessionThread,
+	SessionThreadPageResult,
+	SessionThreadSource,
+};
