@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { SupportedLoginAccountParamsSchema } from "./authored.js";
+import { createDynamicApprovalSchemas } from "./dynamic-approval.js";
 import {
 	assertCurrentTarget,
 	boundedText,
@@ -36,6 +37,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		ThreadIdSchema,
 		TurnIdSchema,
 	} = identity;
+	const dynamic = createDynamicApprovalSchemas(identity, context);
 	const NullableReasonSchema = optionalNullableText(512);
 	const PaneIdSchema = boundedText(128);
 
@@ -876,6 +878,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 				turnId: TurnIdSchema,
 			})
 			.strict(),
+		dynamic.BrowserDynamicApprovalResponseSchema,
 	] as const;
 	const BrowserCommandSchema = z
 		.discriminatedUnion("command", CommandArms)
@@ -899,6 +902,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			queue: BrowserQueueSchema,
 			settings: z.array(BrowserSettingsSchema),
 			approvals: z.array(BrowserApprovalSchema),
+			dynamicApprovals: z.array(dynamic.BrowserDynamicApprovalSchema).default([]),
 			semantic: BrowserSemanticDeliverySchema.nullable(),
 			coordinator: BrowserCoordinatorSchema,
 			voice: BrowserVoiceSchema,
@@ -950,6 +954,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		BrowserQueueSchema,
 		BrowserSettingsSchema,
 		BrowserApprovalSchema,
+		dynamic.BrowserDynamicApprovalSchema,
 		BrowserTextCommandSchema,
 		BrowserSemanticDeliverySchema,
 		BrowserCoordinatorSchema,
@@ -978,6 +983,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		BrowserSnapshotSchema,
 		BrowserToolResultSchema,
 		BrowserDtoSchema,
+		...dynamic,
 	};
 }
 
