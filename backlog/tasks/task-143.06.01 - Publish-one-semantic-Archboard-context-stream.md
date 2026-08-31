@@ -1,11 +1,11 @@
 ---
 id: TASK-143.06.01
 title: Publish one semantic Archboard context stream
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 01:08'
+updated_date: '2026-08-31 01:19'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -31,10 +31,10 @@ Delegation profile: gpt-5.6-luna, max.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Public ports expose settled semantic change events, immediate pane-focus events, immediate pane-selection events, and an on-demand fresh-brief query with board/pane/version/cursor/freshness identity.
-- [ ] #2 Existing change-feed settle/debounce remains the sole semantic coalescing timer; the publisher filters agent-only/cosmetic noise and never snapshots a second board document.
-- [ ] #3 Brief generation is deterministic, bounded to realtime limits, marks truncation/ambiguity/staleness, and includes repository/workhorse/coordinator/board/pane/version/selection/claim/doing/cursor/compact description.
-- [ ] #4 Module tests prove each port independently, source classification, rapid focus/selection without settle delay, fresh on-demand reads, and no duplicate subscription/timer after reload.
+- [x] #1 Public ports expose settled semantic change events, immediate pane-focus events, immediate pane-selection events, and an on-demand fresh-brief query with board/pane/version/cursor/freshness identity.
+- [x] #2 Existing change-feed settle/debounce remains the sole semantic coalescing timer; the publisher filters agent-only/cosmetic noise and never snapshots a second board document.
+- [x] #3 Brief generation is deterministic, bounded to realtime limits, marks truncation/ambiguity/staleness, and includes repository/workhorse/coordinator/board/pane/version/selection/claim/doing/cursor/compact description.
+- [x] #4 Module tests prove each port independently, source classification, rapid focus/selection without settle delay, fresh on-demand reads, and no duplicate subscription/timer after reload.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -71,4 +71,12 @@ Third remediation implementation and validation (2026-08-31):
 - Aggregate brief fitting no longer treats feedId and cursor.feedId as independent truncatable slots. Both qualified identities remain exact while lower-priority repository, board, pane, description, arrays, and other descriptive fields fit around them. Public feed and cursor admission now enforces a 3,074-byte JSON token ceiling, derived from two quote bytes plus 512 worst-case six-byte control escapes, so two exact copies have a reserved bound within the 8,192-byte brief budget. Pressure oracles cover maximum repository, board, pane, description, and identity fields; current, prior-feed, and restarted-feed cases assert parsed feed identity, cursor identity, event cursor identity, exact sequence, current or stale classification, valid JSON, deterministic output, and the byte ceiling.
 - The permanent hostile listener test now constructs an actual 1,050,000-code-unit error name and message and asserts at least 1,048,576 UTF-8 bytes before publication. It still verifies the 128-byte name and 2,048-byte message caps, the 146,477-byte batch bound, later-listener continuation, multiple drains, reset, and recovery.
 - Validation: focused semantic-context lane 26/26; bun run test:modules 1,039/1,039 in isolation; bun run test:repository 130/130; bun run test:system 284/284; both TypeScript projects; lint; format; diff checks. No browser owner maps to this headless semantic-context module, so the serial browser lane was not rerun. Scope remains src/runtime/codex-semantic-context/** plus this task record; task status and final summary were not changed.
+
+Parent integration validation at integration HEAD 1028a3c: focused semantic-context 26/26, repository 137/137, modules 1,068/1,068, system 284/284, both TypeScript projects, lint, and format all passed. Independent review was clean at exact worker HEAD 102c6ce961b773193c22bc15b7c8df3c4b3b784a; no browser owner maps to this headless module.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Published one deterministic, bounded semantic Archboard context stream with settled change, immediate focus and selection, and fresh-brief ports. It reuses the existing settle boundary, preserves exact feed/cursor identity under byte pressure, isolates hostile subscribers with bounded diagnostics, and is covered across focused, repository, module, system, type, lint, and format gates.
+<!-- SECTION:FINAL_SUMMARY:END -->
