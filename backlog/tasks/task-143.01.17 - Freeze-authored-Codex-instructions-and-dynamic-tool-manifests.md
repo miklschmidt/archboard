@@ -42,10 +42,9 @@ Own the human-reviewed, byte-exact source contract for capabilities, login polic
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Change the structured turn-evidence rows to ordered rpcs arrays: turn/started owns only turn/start, turn/steer_response owns only turn/steer, and completed/interrupted/failed terminal rows own turn/start then turn/steer before the one terminal emit and complete clear.
-2. Extend the fixed typed validator to enforce canonical schema 1, exact canonical root/threadLink/operation fields, a state union derived from reasonNullStates plus reasonRequiredStates, exact state/reason nullability pairs, and field-level diagnostics for every manifest row and nested object.
-3. Replace representative attacks with reusable data-driven matrices covering every closed object field list, row field list, tuple field, union, ordered set, terminal RPC set, producer mapping, lifecycle transition, and forbidden addition/deletion/reorder/duplicate.
-4. Update only the complete-contract and additional-context manifest digests, record Codex 0.151 evidence and validation through Backlog CLI, commit conventional remediation changes, run all required gates, and send the exact parent callback without finalizing.
+1. Replace the duplicated exactRows key-set checks with validateOrderedValues(label, actualKeys, expectedKeys), keeping the per-row exactObject loop unchanged.
+2. Prove diagnostic and mutation behavior is byte-for-byte stable with focused contract owners and the requested repository, type, lint, format, and diff gates.
+3. Record the one-file remediation through Backlog CLI, commit it conventionally, preserve every contract, digest, and runtime byte, and send the required parent re-review callback.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -80,6 +79,10 @@ Canonical enforcement now pins schema 1, all root fields in order, exact threadL
 Exhaustive focused validation passes 11 tests and 780 expectations. It attacks every closed object field list, row collection, row field list, tuple id/kind/rpc/outcome member, union, ordered set, producer mapping, terminal RPC set, lifecycle outcome, clear field, retry path, recency path, classification-failure promotion, promptless fork, queued delegate, and nested initial-turn operation id. Each terminal row independently rejects removal of turn/steer, unknown RPCs, reorder, and duplication; turn/started independently rejects turn/steer. Targeted inventory/boundary/code-target/module-scope passes 58/166. Complete repository passes 129/1143. Both TypeScript projects, Oxlint, Oxfmt over 519 files, and git diff --check pass.
 
 Reviewed SHA-256 values are 2fd0a5a9ea1b526bd05c514eb69cca6bf744edfe88c2792d6180dbb8a05b7036 for the complete contract and 4a74b68c5be278a53fe8bc6de40833b12d91cbb3c124dde0949116ce0eaa2119 for the additional-context manifest. Unrelated reviewed bytes remain identical: workhorse 257b4ab944737418ee0713b4a748405446f8bc009d0dfc4557b099cd2c1038e6; separator e64743b591f47a59eea6118686fc5b9f0bcca3e2d4e6af2dd8acfe55fe97653a; coordinator extension c187f85f75515bf07091904f96fee503080f23ce84afb606674e040c80e2d87b; composition de6b52ca41c65ea73cdf24e2ecaf9fa0c1c2ea68178119c252f266f8ac90b61c; classifier 215bd565500a9188f5e8f0d920a078113937f36296535054c56d7f12d74d1c6f; archboard_app df0fc2b1b33d985a7b84e54431162d6c00a3da0f8cecd98a18730e55bc7b272e; archboard_workhorse fe8dd9bfaf91b37cbae31136ccdfc4eb1106728b40d2bc3ea01036606d6f748f; archboard_voice 792d6ec96edc2fbffc8400ce0d1304a56662bee5436e95914505cb848356c393.
+
+Second structural remediation commit e8347d546e3459ffb553c6386a18f43e9f5a5374 is based on fixed review base 5a1ab9588a5f860cc8812ec68a7193ce3f55f921. Its scope is this task record, the authored contract, the two contract owners, fixed policy support, and the typed mutation harness. No runtime, package, lock, CI, generated protocol, sibling task, acceptance checkbox, final summary, push, merge, or rebase changed. Protected src-DlBR1tzg.js remains absent. TASK-143.01.17 stays In Progress for parent-owned independent re-review and finalization.
+
+Final maintainability remediation replaces the duplicate, missing, extra, and reorder loops inside exactRows with validateOrderedValues(label, actualKeys, expectedKeys). The ordered exactObject loop remains unchanged. No authored contract, manifest, fixed row, digest, mutation owner, or production byte changed. The fixed policy support drops from 480 to 468 lines without a waiver. Validation passes: focused contract owners 11 tests and 780 expectations with the same exact diagnostics; targeted inventory, boundaries, code-target, and module-scope owners 58/166; both TypeScript graphs; Oxlint; Oxfmt over 519 files; git diff --check. Protected src-DlBR1tzg.js remains absent.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

@@ -100,20 +100,8 @@ function exactRows(
 ): void {
 	const actualKeys = actual.map(key);
 	const expectedKeys = expected.map(key);
-	const duplicate = actualKeys.find((value, index) => actualKeys.indexOf(value) !== index);
-	if (duplicate !== undefined) throw new Error(`${label} has duplicate ${duplicate}`);
-	for (const value of expectedKeys) {
-		if (!actualKeys.includes(value)) throw new Error(`${label} is missing ${value}`);
-	}
-	for (const value of actualKeys) {
-		if (!expectedKeys.includes(value)) throw new Error(`${label} has extra ${value}`);
-	}
+	validateOrderedValues(label, actualKeys, expectedKeys);
 	for (const [index, value] of expectedKeys.entries()) {
-		if (actualKeys[index] !== value) {
-			throw new Error(
-				`${label} reordered ${value}: expected index ${index}, received ${actualKeys[index]}`,
-			);
-		}
 		exactObject(`${label} ${value}`, actual[index]!, expected[index]!);
 	}
 }
