@@ -1,8 +1,30 @@
+import type { z } from "zod";
+
 import type {
 	ClientRequestMethod,
 	CodexSessionRequestParams,
+	LoadedThreadPageSchema,
+	LoginAccountResponseSchema,
+	QueueStartSchema,
+	QueuedSubmissionSchema,
 	ResponseMethod,
 	ResponsePayloads,
+	SessionSourceSchema,
+	ThreadForkResponseSchema,
+	ThreadItemEntrySchema,
+	ThreadItemPageSchema,
+	ThreadItemSchema,
+	ThreadPageSchema,
+	ThreadQueueAddResponseSchema,
+	ThreadQueueListResponseSchema,
+	ThreadQueueUpdateResponseSchema,
+	ThreadReadSchema,
+	ThreadSchema,
+	ThreadStartResponseSchema,
+	ThreadTurnPageSchema,
+	TurnSchema,
+	TurnStartSchema,
+	TurnSteerResponseSchema,
 } from "../../codex-protocol/index.js";
 import type {
 	AnyIdentity,
@@ -14,10 +36,28 @@ import type {
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
 
-type Replace<Value, Fields extends object> = Value & Fields;
-type RawThread = ResponsePayloads["thread/read"]["thread"];
-type RawTurn = ResponsePayloads["turn/start"]["turn"];
-type RawThreadItem = RawTurn["items"][number];
+type ProtocolOutput<Schema> =
+	Schema extends z.ZodLazy<infer Inner>
+		? ProtocolOutput<Inner>
+		: Schema extends z.ZodObject<infer Shape>
+			? { [Key in keyof Shape]: ProtocolOutput<Shape[Key]> }
+			: Schema extends z.ZodArray<infer Element>
+				? ProtocolOutput<Element>[]
+				: Schema extends z.ZodNullable<infer Inner>
+					? ProtocolOutput<Inner> | null
+					: Schema extends z.ZodOptional<infer Inner>
+						? ProtocolOutput<Inner> | undefined
+						: Schema extends z.ZodUnion<infer Options>
+							? ProtocolOutput<Options[number]>
+							: Schema extends z.core.$ZodType
+								? z.output<Schema>
+								: never;
+type Replace<Value, Fields extends object> = Value extends unknown
+	? Omit<Value, keyof Fields> & Fields
+	: never;
+type RawThread = ProtocolOutput<typeof ThreadSchema>;
+type RawTurn = ProtocolOutput<typeof TurnSchema>;
+type RawThreadItem = ProtocolOutput<typeof ThreadItemSchema>;
 type RawAgentMessageItem = Extract<RawThreadItem, { readonly type: "agentMessage" }>;
 type RawCollabAgentItem = Extract<RawThreadItem, { readonly type: "collabAgentToolCall" }>;
 type RawSubAgentActivityItem = Extract<RawThreadItem, { readonly type: "subAgentActivity" }>;
@@ -66,9 +106,13 @@ export type SessionThreadItem =
 	| SessionSubAgentActivityItem
 	| SessionOtherThreadItem;
 
-type RawThreadSource = RawThread["source"];
+type RawThreadSource = ProtocolOutput<typeof SessionSourceSchema>;
+type RawNamedThreadSource = Extract<RawThreadSource, string>;
+type RawCustomThreadSource = Extract<RawThreadSource, { readonly custom: unknown }>;
 type RawSubAgentThreadSource = Extract<RawThreadSource, { readonly subAgent: unknown }>;
 type RawSubAgentSource = RawSubAgentThreadSource["subAgent"];
+type RawNamedSubAgentSource = Extract<RawSubAgentSource, string>;
+type RawOtherSubAgentSource = Extract<RawSubAgentSource, { readonly other: unknown }>;
 type RawThreadSpawnSource = Extract<RawSubAgentSource, { readonly thread_spawn: unknown }>;
 export type SessionThreadSpawnSource = Replace<
 	RawThreadSpawnSource,
@@ -80,7 +124,8 @@ export type SessionThreadSpawnSource = Replace<
 	}
 >;
 type SessionSubAgentSource =
-	| Exclude<RawSubAgentSource, RawThreadSpawnSource>
+	| RawNamedSubAgentSource
+	| RawOtherSubAgentSource
 	| SessionThreadSpawnSource;
 type BrandSubAgentThreadSource<Value> = Value extends unknown
 	? Replace<RawSubAgentThreadSource, { readonly subAgent: Value }>
@@ -88,7 +133,8 @@ type BrandSubAgentThreadSource<Value> = Value extends unknown
 
 /** Thread provenance with a branded parent for generated subagent sources. */
 export type SessionThreadSource =
-	| Exclude<RawThreadSource, RawSubAgentThreadSource>
+	| RawNamedThreadSource
+	| RawCustomThreadSource
 	| BrandSubAgentThreadSource<SessionSubAgentSource>;
 
 /** One decoded turn with branded turn and item identities. */
@@ -113,69 +159,71 @@ export type SessionThread = Replace<
 type BrandLoginResult<Value> = Value extends { readonly loginId: unknown }
 	? Replace<Value, { readonly loginId: LoginId }>
 	: Value;
-export type SessionAccountLoginResult = BrandLoginResult<ResponsePayloads["account/login/start"]>;
+export type SessionAccountLoginResult = BrandLoginResult<
+	ProtocolOutput<typeof LoginAccountResponseSchema>
+>;
 
 export type SessionThreadStartResult = Replace<
-	ResponsePayloads["thread/start"],
+	ProtocolOutput<typeof ThreadStartResponseSchema>,
 	{ readonly thread: SessionThread }
 >;
 export type SessionThreadForkResult = Replace<
-	ResponsePayloads["thread/fork"],
+	ProtocolOutput<typeof ThreadForkResponseSchema>,
 	{ readonly thread: SessionThread }
 >;
 export type SessionThreadPageResult = Replace<
-	ResponsePayloads["thread/list"],
+	ProtocolOutput<typeof ThreadPageSchema>,
 	{ readonly data: readonly SessionThread[] }
 >;
 export type SessionLoadedThreadPageResult = Replace<
-	ResponsePayloads["thread/loaded/list"],
+	ProtocolOutput<typeof LoadedThreadPageSchema>,
 	{ readonly data: readonly ThreadId[] }
 >;
 export type SessionThreadReadResult = Replace<
-	ResponsePayloads["thread/read"],
+	ProtocolOutput<typeof ThreadReadSchema>,
 	{ readonly thread: SessionThread }
 >;
 export type SessionThreadTurnPageResult = Replace<
-	ResponsePayloads["thread/turns/list"],
+	ProtocolOutput<typeof ThreadTurnPageSchema>,
 	{ readonly data: readonly SessionTurn[] }
 >;
-type RawThreadItemEntry = ResponsePayloads["thread/items/list"]["data"][number];
+type RawThreadItemEntry = ProtocolOutput<typeof ThreadItemEntrySchema>;
 type SessionThreadItemEntry = Replace<
 	RawThreadItemEntry,
 	{ readonly turnId: TurnId; readonly item: SessionThreadItem }
 >;
 export type SessionThreadItemPageResult = Replace<
-	ResponsePayloads["thread/items/list"],
+	ProtocolOutput<typeof ThreadItemPageSchema>,
 	{ readonly data: readonly SessionThreadItemEntry[] }
 >;
 export type SessionTurnResult = Replace<
-	ResponsePayloads["turn/start"],
+	ProtocolOutput<typeof TurnStartSchema>,
 	{ readonly turn: SessionTurn }
 >;
 export type SessionTurnSteerResult = Replace<
-	ResponsePayloads["turn/steer"],
+	ProtocolOutput<typeof TurnSteerResponseSchema>,
 	{ readonly turnId: TurnId }
 >;
 
-type RawQueuedSubmission = ResponsePayloads["thread/queue/add"]["queuedSubmission"];
+type RawQueuedSubmission = ProtocolOutput<typeof QueuedSubmissionSchema>;
 export type SessionQueuedSubmission = Replace<
 	RawQueuedSubmission,
 	{ readonly id: QueuedSubmissionId }
 >;
 export type SessionQueueAddResult = Replace<
-	ResponsePayloads["thread/queue/add"],
+	ProtocolOutput<typeof ThreadQueueAddResponseSchema>,
 	{ readonly queuedSubmission: SessionQueuedSubmission }
 >;
 export type SessionQueueListResult = Replace<
-	ResponsePayloads["thread/queue/list"],
+	ProtocolOutput<typeof ThreadQueueListResponseSchema>,
 	{ readonly data: readonly SessionQueuedSubmission[] }
 >;
 export type SessionQueueUpdateResult = Replace<
-	ResponsePayloads["thread/queue/update"],
+	ProtocolOutput<typeof ThreadQueueUpdateResponseSchema>,
 	{ readonly queuedSubmission: SessionQueuedSubmission }
 >;
 export type SessionQueueStartResult = Replace<
-	ResponsePayloads["thread/queue/start"],
+	ProtocolOutput<typeof QueueStartSchema>,
 	{ readonly turn: SessionTurn }
 >;
 
