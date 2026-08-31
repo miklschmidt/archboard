@@ -19,7 +19,7 @@ describe("neutral Codex realtime host contract", () => {
 	test("owns browser-media brands once and re-exports the exact UI names", () => {
 		const allSources = sourceFiles(path.join(repoRoot, "src"));
 		const brandOwners = allSources.filter((file) =>
-			fs.readFileSync(file, "utf8").includes("browserRealtimeBrand"),
+			fs.readFileSync(file, "utf8").includes("BrowserRealtimeIdentitySchemas"),
 		);
 		expect(brandOwners).toEqual([path.join(sharedRoot, "lib/contract.ts")]);
 		const ui = fs.readFileSync(uiIndex, "utf8");
