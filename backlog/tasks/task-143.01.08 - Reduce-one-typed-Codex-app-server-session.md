@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 06:11'
+updated_date: '2026-08-31 06:24'
 labels: []
 dependencies:
   - TASK-143.01.03
@@ -23,6 +23,7 @@ modified_files:
   - src/runtime/codex-session/tests/response-fixtures.ts
   - src/runtime/codex-session/tests/reverse.test.ts
   - src/runtime/codex-session/tests/session.test.ts
+  - src/runtime/codex-session/tests/session-types.ts
   - src/runtime/codex-session/tests/storage.test.ts
   - src/runtime/codex-session/tests/support.ts
   - src/runtime/codex-protocol
@@ -59,6 +60,10 @@ Reduce one exact Codex 0.151.0 app-server session behind typed ports. This is th
 5. Remediate review findings by exposing exact method-specific request payload types and runtime decoders from the pinned protocol boundary, preserving account readiness across logout settlement, binding storage proof to the canonical child checkout, and requiring issued current ThreadIds for reverse currentTime/read.
 6. Replace loose request fixtures with complete protocol-owned valid fixtures and hostile missing, extra, closed-union, logout, checkout-scope, and identity cases.
 7. Run only capped focused session/protocol type, test, lint, format, and diff checks; record the remediation evidence separately while keeping acceptance criteria unchecked and status In Progress.
+
+8. Make required thread/page request parameters mandatory in the public and implementation ports, with compile-time omission fixtures and valid branded calls.
+
+9. Add noImplicitOverride strict evidence for CodexSessionMutationError and rerun only capped session checks without touching currentTime/read.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -75,4 +80,8 @@ Focused evidence (all under systemd-run --user --scope -p MemoryMax=6G -p Memory
 Independent review remediation (2026-08-31): four blockers were verified against BASE ab4cb9a1ec35cebb6a52cc8f0d3099467589ccd6 through HEAD 99872e36da76c212d8948dcee096700b5bd20d3b: loose outbound request typing, uncertain logout readiness, unscoped checkout storage proof, and arbitrary raw currentTime ThreadId adoption. The approved narrow scope permits only the existing codex-protocol public boundary where exact generated request types/decoders must be exported; protocol/process/transport/epoch owners remain closed. Remediation remains In Progress with all acceptance criteria unchecked.
 
 Typed-boundary remediation (2026-08-31): cherry-picked protocol boundary commit 119df6c and reconciled session implementation in 0281106. CodexSession now exposes method-specific CodexSessionRequestParams, imports shared BedrockSetupParams, serializes only issued identity fields at the session boundary, and invokes decodeClientRequestParams once before each outbound transport request. Logout gates thread-capable operations before transport and restores readiness only for not_delivered; delivered/unknown failures leave the session login-capable until accountRead. config/read is scoped to the canonical checkoutRoot. Mutation failures always surface as CodexSessionMutationError with cause, outcome, and retryEligible=false. Independent 34-name session oracle covers every public method, complete valid results/pages/cursors, accountRead, and all reverse methods. Combined capped focused suite: 569 pass, 0 fail, 3,530 assertions across codex-protocol and codex-session. Scoped strict TypeScript, Oxlint, Oxfmt check, and git diff --check passed under the 6G/1G systemd cap. Storage hostile coverage is deterministic for wrong-origin file/type, config outside CODEX_HOME, and nested roots; an unowned-root fixture cannot be deterministic under the current test UID without chown/ownership injection, so that remains an explicit manual/contract limitation and is not claimed as automated coverage. Acceptance criteria remain unchecked; task remains In Progress.
+
+Follow-up review scope (2026-08-31): remediate only mandatory threadTurnsListPage, threadItemsListPage, queueListPage, and timelineListPage parameters plus the CodexSessionMutationError inherited cause override. CurrentTime/read remains assigned to the dedicated boundary worker and is intentionally out of scope.
+
+Follow-up remediation (2026-08-31): commit 250810e requires branded threadId-bearing params for threadTurnsListPage, threadItemsListPage, queueListPage, and timelineListPage in both CodexSession and createCodexSession implementations. Added session-types.ts compile-time fixtures proving valid branded calls compile and omitted arguments fail. Marked CodexSessionError.cause with override for noImplicitOverride. Focused evidence under the 6G/1G systemd cap: 20 session tests passed with 268 assertions; strict scoped TypeScript with noImplicitOverride passed; scoped Oxlint, Oxfmt check, and git diff --check passed. CurrentTime/read remains untouched and owned by the dedicated boundary worker. Acceptance criteria remain unchecked; task remains In Progress.
 <!-- SECTION:NOTES:END -->
