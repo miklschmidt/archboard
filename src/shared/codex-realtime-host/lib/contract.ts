@@ -1,11 +1,31 @@
-declare const browserRealtimeBrand: unique symbol;
-type BrowserRealtimeString<Brand extends string> = string & {
-	readonly [browserRealtimeBrand]: Brand;
+import { z } from "zod";
+
+const BrowserRealtimeIdentitySchemas = {
+	session: z.string().brand<"BrowserRealtimeSessionId">(),
+	correlation: z.string().brand<"BrowserRealtimeCorrelationId">(),
+	item: z
+		.string()
+		.min(1)
+		.max(4096)
+		.refine((value) => !value.includes("\0"))
+		.brand<"BrowserRealtimeItemId">(),
 };
 
-export type RealtimeSessionId = BrowserRealtimeString<"session">;
-export type RealtimeCorrelationId = BrowserRealtimeString<"correlation">;
-export type RealtimeItemId = BrowserRealtimeString<"item">;
+export type RealtimeSessionId = z.infer<typeof BrowserRealtimeIdentitySchemas.session>;
+export type RealtimeCorrelationId = z.infer<typeof BrowserRealtimeIdentitySchemas.correlation>;
+export type RealtimeItemId = z.infer<typeof BrowserRealtimeIdentitySchemas.item>;
+
+export function parseRealtimeSessionId(value: unknown): RealtimeSessionId {
+	return BrowserRealtimeIdentitySchemas.session.parse(value);
+}
+
+export function parseRealtimeCorrelationId(value: unknown): RealtimeCorrelationId {
+	return BrowserRealtimeIdentitySchemas.correlation.parse(value);
+}
+
+export function parseRealtimeItemId(value: unknown): RealtimeItemId {
+	return BrowserRealtimeIdentitySchemas.item.parse(value);
+}
 
 export interface RealtimeCorrelation {
 	readonly sessionId: RealtimeSessionId;
