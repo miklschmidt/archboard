@@ -56,6 +56,7 @@ export type {
 	BrowserGatewayMessage,
 	BrowserGatewaySnapshotMessage,
 	BrowserLeaseBinding,
+	BrowserLifecyclePort,
 	BrowserOrdinaryApprovalActions,
 	BrowserProjection,
 	BrowserProjectionContext,
