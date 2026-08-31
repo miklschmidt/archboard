@@ -39,9 +39,8 @@ export const policy = JSON.parse(
 ) as JsonRecord;
 
 export function record(value: unknown, label: string): JsonRecord {
-	if (value === null || typeof value !== "object" || Array.isArray(value)) {
+	if (value === null || typeof value !== "object" || Array.isArray(value))
 		throw new Error(`${label} must be an object`);
-	}
 	return value as JsonRecord;
 }
 
@@ -52,9 +51,8 @@ export function records(value: unknown, label: string): JsonRecord[] {
 }
 
 export function strings(value: unknown, label: string): string[] {
-	if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+	if (!Array.isArray(value) || value.some((item) => typeof item !== "string"))
 		throw new Error(`${label} must be a string array`);
-	}
 	return value as string[];
 }
 
@@ -278,9 +276,11 @@ function validateExecution(root: JsonRecord): void {
 	exact("unresolved terminal authority", ids.unresolvedTerminalAuthority, {
 		transition: "host_confirmed_idempotent_atomic",
 		logicalOwner: "exact_child_epoch_and_logical_call_quarantine",
-		wireOwner: "one_original_transport_handle_per_admitted_json_rpc_request_id",
+		wireOwner: "transport_pending_reverse_record_plus_leaf_in_flight_join",
+		wireLifecycle: "accepted_transport_request_until_response_or_exact_teardown",
+		ordinaryCompletionRetention: "none_in_leaf",
 		epochStateBeforeRelease: "poisoned",
-		sameRequestId: "deduplicate_without_second_response_write",
+		sameRequestId: "join_once_while_authoritative_wire_lifecycle_is_active",
 		sameLogicalCall: "admit_distinct_wire_and_fan_canonical_outcome",
 		otherCallsInEpoch:
 			"retain_distinct_wire_with_canonical_refusal_before_operation_id_approval_stage_or_effect",

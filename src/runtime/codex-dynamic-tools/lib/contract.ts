@@ -101,7 +101,10 @@ export type DynamicEpochDependency = Pick<
 	"stageOperation" | "snapshot" | "commitOperation" | "rollbackOperation" | "markOutcomeUnknown"
 >;
 export type DynamicThreadLinkDependency = Pick<CodexThreadLinkPort, "classify">;
-export type DynamicTransportDependency = Pick<CodexTransport, "respond">;
+export type DynamicTransportDependency = Pick<
+	CodexTransport,
+	"ownsPendingReverseRequest" | "respond"
+>;
 
 export interface DynamicToolApprovalRequest {
 	readonly identity: DynamicApprovalIdentity;
@@ -324,6 +327,7 @@ export type DynamicMutationQuarantineState =
 export interface DynamicMutationQuarantineInspection {
 	readonly epochCount: number;
 	readonly callCount: number;
+	readonly ordinaryInFlightWireCount: number;
 	readonly wireCount: number;
 	readonly blockedWireCount: number;
 	readonly fatalEpochCount: number;

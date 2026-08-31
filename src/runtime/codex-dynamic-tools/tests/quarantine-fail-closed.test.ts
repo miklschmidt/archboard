@@ -18,6 +18,23 @@ async function reachQuarantine(tools: CodexDynamicTools): Promise<void> {
 	throw new Error("the mutation did not reach quarantine");
 }
 
+async function settledAfterMicrotasks(promise: Promise<unknown>): Promise<boolean> {
+	let settled = false;
+	void promise.then(
+		() => {
+			settled = true;
+			return undefined;
+		},
+		() => {
+			settled = true;
+			return undefined;
+		},
+	);
+	await Promise.resolve();
+	await Promise.resolve();
+	return settled;
+}
+
 function cancelledApproval(): FakeApproval {
 	return new FakeApproval((request) =>
 		dynamicDecision(request, { outcome: "cancelled", cause: "call_cancelled" }),
@@ -29,6 +46,7 @@ describe("codex dynamic quarantine fail-closed ownership", () => {
 		const { authorities, caller } = setupAuthorities();
 		const fixture = optionsFor(authorities, caller, { approval: cancelledApproval() });
 		fixture.lifecycle.poisonError = new Error("poison unavailable");
+		fixture.lifecycle.fatalReportError = new Error("fatal reporter failed");
 		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
 		const tools = createCodexDynamicTools(fixture.options);
 		const pending = tools
@@ -49,6 +67,7 @@ describe("codex dynamic quarantine fail-closed ownership", () => {
 			fatalEpochCount: 1,
 			entries: [{ state: "fatal" }],
 		});
+		expect(await settledAfterMicrotasks(pending)).toBe(false);
 
 		tools.dispose();
 		expect(await pending).toMatchObject({ retryEligible: false });
@@ -58,6 +77,7 @@ describe("codex dynamic quarantine fail-closed ownership", () => {
 		const { authorities, caller } = setupAuthorities();
 		const fixture = optionsFor(authorities, caller, { approval: cancelledApproval() });
 		fixture.lifecycle.poisonError = new Error("poison unavailable");
+		fixture.lifecycle.fatalReportError = new Error("fatal reporter failed");
 		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
 		const tools = createCodexDynamicTools(fixture.options);
 		const pending = tools
@@ -75,6 +95,7 @@ describe("codex dynamic quarantine fail-closed ownership", () => {
 			fatalEpochCount: 1,
 			entries: [{ state: "fatal" }],
 		});
+		expect(await settledAfterMicrotasks(pending)).toBe(false);
 
 		tools.dispose();
 		expect(await pending).toMatchObject({ retryEligible: false });
@@ -128,12 +149,13 @@ describe("codex dynamic quarantine fail-closed ownership", () => {
 		expect(tools.inspectMutationQuarantine()).toMatchObject({ epochCount: 0, wireCount: 0 });
 	});
 
-	test("response write failure triggers exact teardown instead of resolving silently", async () => {
+	test("response write and shutdown reporter failures retain the exact wire", async () => {
 		const { authorities, caller } = setupAuthorities();
 		let writeAttempts = 0;
 		const fixture = optionsFor(authorities, caller, {
 			approval: cancelledApproval(),
 			transport: {
+				ownsPendingReverseRequest: () => true,
 				respond: async () => {
 					writeAttempts += 1;
 					throw new Error("transport write failed");
@@ -141,6 +163,8 @@ describe("codex dynamic quarantine fail-closed ownership", () => {
 			},
 		});
 		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
+		fixture.lifecycle.shutdownError = new Error("shutdown unavailable");
+		fixture.lifecycle.fatalReportError = new Error("fatal reporter failed");
 		const tools = createCodexDynamicTools(fixture.options);
 		const pending = tools
 			.dispatch(requestFor(authorities, caller, "create_thread", { prompt: "write once" }))
@@ -155,10 +179,12 @@ describe("codex dynamic quarantine fail-closed ownership", () => {
 		expect(tools.inspectMutationQuarantine()).toMatchObject({
 			epochCount: 1,
 			wireCount: 1,
-			entries: [{ state: "shutdown_pending" }],
+			fatalEpochCount: 1,
+			entries: [{ state: "fatal" }],
 		});
+		expect(await settledAfterMicrotasks(pending)).toBe(false);
 
-		fixture.lifecycle.completeShutdown();
+		tools.dispose();
 		expect(await pending).toMatchObject({ retryEligible: false });
 		expect(writeAttempts).toBe(1);
 	});

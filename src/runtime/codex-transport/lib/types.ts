@@ -289,6 +289,10 @@ export interface CodexTransport {
 	readonly request: CodexTransportRequest;
 	readonly sendNotification: (method: ClientNotificationMethod) => Promise<void>;
 	readonly registerDynamicDispatcher: (registration: DynamicDispatcherRegistration) => void;
+	readonly ownsPendingReverseRequest: (
+		request: TransportServerRequest,
+		owner: ResponseOwner,
+	) => boolean;
 	readonly respond: {
 		(
 			request: TransportServerRequest,

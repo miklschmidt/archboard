@@ -109,6 +109,10 @@ export class FakeTransport implements CodexTransport {
 
 	registerDynamicDispatcher(_registration: DynamicDispatcherRegistration): void {}
 
+	ownsPendingReverseRequest(): boolean {
+		return true;
+	}
+
 	async respond(
 		request: TransportServerRequest,
 		owner: ResponseOwner,

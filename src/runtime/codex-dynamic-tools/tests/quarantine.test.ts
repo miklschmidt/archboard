@@ -21,6 +21,23 @@ async function reachQuarantine(tools: CodexDynamicTools): Promise<void> {
 	throw new Error("the mutation did not reach quarantine");
 }
 
+async function settledAfterMicrotasks(promise: Promise<unknown>): Promise<boolean> {
+	let settled = false;
+	void promise.then(
+		() => {
+			settled = true;
+			return undefined;
+		},
+		() => {
+			settled = true;
+			return undefined;
+		},
+	);
+	await Promise.resolve();
+	await Promise.resolve();
+	return settled;
+}
+
 function cancelledApproval(): FakeApproval {
 	return new FakeApproval((request) =>
 		dynamicDecision(request, { outcome: "cancelled", cause: "call_cancelled" }),
@@ -195,6 +212,7 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		expect(tools.inspectMutationQuarantine()).toEqual({
 			epochCount: 0,
 			callCount: 0,
+			ordinaryInFlightWireCount: 0,
 			wireCount: 0,
 			blockedWireCount: 0,
 			fatalEpochCount: 0,
@@ -308,6 +326,7 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		const fixture = optionsFor(authorities, caller, {
 			approval: cancelledApproval(),
 		});
+		fixture.lifecycle.fatalReportError = new Error("fatal reporter failed");
 		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
 		const tools = createCodexDynamicTools(fixture.options);
 		const pending = tools.dispatch(
@@ -330,6 +349,7 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		});
 		expect(fixture.lifecycle.fatalFaults).toHaveLength(1);
 		expect(fixture.transportResponses).toHaveLength(0);
+		expect(await settledAfterMicrotasks(pending)).toBe(false);
 
 		tools.dispose();
 		expect(pending).rejects.toMatchObject({ retryEligible: false });
@@ -358,6 +378,7 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		expect(tools.inspectMutationQuarantine()).toEqual({
 			epochCount: 0,
 			callCount: 0,
+			ordinaryInFlightWireCount: 0,
 			wireCount: 0,
 			blockedWireCount: 0,
 			fatalEpochCount: 0,
@@ -434,6 +455,7 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		});
 		fixture.lifecycle.poisonError = new Error("poison unavailable");
 		fixture.lifecycle.shutdownError = new Error("shutdown unavailable");
+		fixture.lifecycle.fatalReportError = new Error("fatal reporter failed");
 		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");
 		const tools = createCodexDynamicTools(fixture.options);
 		const pending = tools
@@ -455,6 +477,7 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 			entries: [{ state: "fatal" }],
 		});
 		expect(fixture.transportResponses).toHaveLength(0);
+		expect(await settledAfterMicrotasks(pending)).toBe(false);
 
 		tools.dispose();
 		expect(await pending).toMatchObject({ retryEligible: false });

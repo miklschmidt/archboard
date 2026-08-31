@@ -442,6 +442,18 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 			throw new CodexTransportClosedError(state === "closing" ? "shutdown" : "transport-closed");
 		router.registerDynamicDispatcher(registration);
 	};
+	const ownsPendingReverseRequest = (
+		request: TransportServerRequest,
+		owner: TransportServerRequest["owner"],
+	): boolean => {
+		const record = reverseHandles.get(request);
+		return (
+			record?.request.owner === owner &&
+			!record.responded &&
+			!record.responding &&
+			reverseRequests.get(record.key) === record
+		);
+	};
 
 	child.stdin.on("error", onStdinError);
 	child.stdin.on("finish", onStdinFinish);
@@ -478,6 +490,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		request: outbound.request,
 		sendNotification: outbound.sendNotification,
 		registerDynamicDispatcher,
+		ownsPendingReverseRequest,
 		respond: router.respond,
 		onServerRequest: events.onServerRequest,
 		onServerNotification: events.onServerNotification,
