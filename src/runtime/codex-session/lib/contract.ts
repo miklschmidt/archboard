@@ -120,7 +120,7 @@ export type CodexSessionErrorCode =
 export class CodexSessionError extends Error {
 	override readonly name: string = "CodexSessionError";
 	readonly code: CodexSessionErrorCode;
-	readonly cause: unknown;
+	override readonly cause: unknown;
 
 	constructor(code: CodexSessionErrorCode, message: string, cause?: unknown) {
 		super(message);
@@ -186,10 +186,10 @@ export interface CodexSession {
 		params: SessionParams<"thread/read">,
 	) => Promise<ResponsePayloads["thread/read"]>;
 	readonly threadTurnsListPage: (
-		params?: SessionParams<"thread/turns/list">,
+		params: SessionParams<"thread/turns/list">,
 	) => Promise<ResponsePayloads["thread/turns/list"]>;
 	readonly threadItemsListPage: (
-		params?: SessionParams<"thread/items/list">,
+		params: SessionParams<"thread/items/list">,
 	) => Promise<ResponsePayloads["thread/items/list"]>;
 	readonly threadDelete: (
 		params: SessionParams<"thread/delete">,
@@ -210,7 +210,7 @@ export interface CodexSession {
 		params: SessionParams<"thread/queue/add">,
 	) => Promise<ResponsePayloads["thread/queue/add"]>;
 	readonly queueListPage: (
-		params?: SessionParams<"thread/queue/list">,
+		params: SessionParams<"thread/queue/list">,
 	) => Promise<ResponsePayloads["thread/queue/list"]>;
 	readonly queueUpdate: (
 		params: SessionParams<"thread/queue/update">,
@@ -240,7 +240,7 @@ export interface CodexSession {
 		params: SessionParams<"thread/realtime/stop">,
 	) => Promise<ResponsePayloads["thread/realtime/stop"]>;
 	readonly timelineListPage: (
-		params?: SessionParams<"thread/timeline/list">,
+		params: SessionParams<"thread/timeline/list">,
 	) => Promise<ResponsePayloads["thread/timeline/list"]>;
 	readonly respondCurrentTime: (request: SessionCurrentTimeRequest) => Promise<void>;
 	readonly respondUnsupportedTokenRefresh: (request: SessionTokenRefreshRequest) => Promise<void>;
