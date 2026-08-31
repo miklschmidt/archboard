@@ -1,16 +1,16 @@
 import { describe, expect, test } from "bun:test";
 
-import { CodexTransportClosedError, type TransportServerRequest } from "../index.js";
-import { closeTransport, createHarness, flushStreams, frames, sendJson } from "./fake-child.js";
-
-async function captureRejection(promise: Promise<unknown>): Promise<unknown> {
-	try {
-		await promise;
-	} catch (error) {
-		return error;
-	}
-	throw new Error("Expected the operation to reject");
-}
+import { CodexTransportClosedError, CodexTransportWriteError } from "../errors.js";
+import type { TransportServerRequest } from "../server-requests.js";
+import {
+	captureRejection,
+	closeTransport,
+	createHarness,
+	frameAt,
+	flushStreams,
+	frames,
+	sendJson,
+} from "./fake-child.js";
 
 function currentTimeRequest(id: string | number) {
 	return { id, method: "currentTime/read", params: { threadId: "thread-1" } };
@@ -79,6 +79,69 @@ describe("Codex app-server shutdown contract", () => {
 			]);
 		} finally {
 			await closeTransport(transport);
+		}
+	});
+
+	test("rejects a response waiter when its accepted write fails", async () => {
+		const { child, transport } = createHarness();
+		try {
+			let request: TransportServerRequest | undefined;
+			transport.onServerRequest((value) => (request = value));
+			sendJson(child, currentTimeRequest("write-failure"));
+			await flushStreams();
+			if (!request) throw new Error("reverse request was not routed");
+			child.stdin.failNext = true;
+			const response = transport.respond(request, "codex-session", {
+				result: { currentTimeAt: 0 },
+			});
+			const error = await captureRejection(response);
+			expect(error).toBeInstanceOf(CodexTransportWriteError);
+			expect(error).toMatchObject({ reason: "write-error" });
+			expect(transport.inspect()).toMatchObject({ state: "closed", pendingReverseRequests: 0 });
+		} finally {
+			await closeTransport(transport);
+		}
+	});
+
+	test("preserves late-response diagnostics after shutdown and child failure", async () => {
+		const shutdownHarness = createHarness();
+		try {
+			const controller = new AbortController();
+			const late = captureRejection(
+				shutdownHarness.transport.request("turn/steer", {}, { signal: controller.signal }),
+			);
+			const id = frameAt(shutdownHarness.child, 0).id;
+			await flushStreams();
+			controller.abort();
+			await late;
+			sendJson(shutdownHarness.child, { id, result: { turnId: "late" } });
+			await flushStreams();
+			const before = shutdownHarness.transport.inspectLateResponses();
+			expect(before).toHaveLength(1);
+			expect(Object.isFrozen(before[0])).toBeTrue();
+			await shutdownHarness.transport.shutdown();
+			expect(shutdownHarness.transport.inspectLateResponses()).toEqual(before);
+		} finally {
+			await closeTransport(shutdownHarness.transport);
+		}
+
+		const exitHarness = createHarness();
+		try {
+			const controller = new AbortController();
+			const late = captureRejection(
+				exitHarness.transport.request("turn/steer", {}, { signal: controller.signal }),
+			);
+			const id = frameAt(exitHarness.child, 0).id;
+			await flushStreams();
+			controller.abort();
+			await late;
+			sendJson(exitHarness.child, { id, result: { turnId: "late-after-exit" } });
+			await flushStreams();
+			exitHarness.child.exit(1);
+			await flushStreams();
+			expect(exitHarness.transport.inspectLateResponses()).toHaveLength(1);
+		} finally {
+			await closeTransport(exitHarness.transport);
 		}
 	});
 });

@@ -9,9 +9,14 @@ function redactError(error: {
 	readonly message: string;
 	readonly data?: unknown;
 }) {
+	const maximum = CODEX_APP_SERVER_CAPACITY.text.maxChars;
+	const suffix = "...";
 	return Object.freeze({
 		code: error.code,
-		message: error.message.length > 256 ? `${error.message.slice(0, 253)}...` : error.message,
+		message:
+			error.message.length > maximum
+				? `${error.message.slice(0, maximum - suffix.length)}${suffix}`
+				: error.message,
 		dataPresent: Object.prototype.hasOwnProperty.call(error, "data"),
 	});
 }
@@ -19,7 +24,6 @@ function redactError(error: {
 export interface LateResponseStore {
 	readonly values: TransportLateResponse[];
 	readonly retain: (tombstone: RequestTombstone, value: Record<string, unknown>) => void;
-	readonly clear: () => void;
 }
 
 export function createLateResponseStore(
@@ -101,5 +105,5 @@ export function createLateResponseStore(
 		});
 	};
 
-	return Object.freeze({ values, retain, clear: () => (values.length = 0) });
+	return Object.freeze({ values, retain });
 }

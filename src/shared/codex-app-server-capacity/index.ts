@@ -1,11 +1,14 @@
 /**
- * The one reviewed non-duration capacity policy for a Codex app-server
+ * The canonical non-duration capacity contract for one Codex app-server
  * connection. Durations remain in shared/timing/timing.ts.
  */
 export const CODEX_APP_SERVER_CAPACITY = Object.freeze({
 	frameBytes: 16_777_216,
 	partialFrameBytes: 16_777_216,
 	stderrRetainedBytes: 65_536,
+	text: Object.freeze({
+		maxChars: 256,
+	}),
 	outbound: Object.freeze({
 		pendingRequests: 128,
 		regularQueuedFrames: 128,

@@ -5,14 +5,15 @@ import {
 	CodexTransportRequestError,
 	CodexTransportUsageError,
 	CodexTransportWriteError,
-} from "../index.js";
-import type { TransportServerRequest } from "../index.js";
+} from "../errors.js";
+import type { TransportServerRequest } from "../server-requests.js";
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 import {
 	createIdentityAuthority,
 	type IdentityAuthority,
 } from "../../../shared/codex-workbench-identity/index.js";
 import {
+	captureRejection,
 	closeTransport,
 	createHarness,
 	frameAt,
@@ -21,15 +22,6 @@ import {
 	sendJson,
 	sendRaw,
 } from "./fake-child.js";
-
-async function captureRejection(promise: Promise<unknown>): Promise<unknown> {
-	try {
-		await promise;
-	} catch (error) {
-		return error;
-	}
-	throw new Error("Expected the operation to reject");
-}
 
 function currentTimeRequest(id: string | number) {
 	return { id, method: "currentTime/read", params: { threadId: "thread-1" } };
@@ -124,22 +116,31 @@ describe("Codex app-server transport adversarial public contract", () => {
 		}
 	});
 
-	test("rejects duplicate keys without settling a waiter and preserves escaped-key identity", async () => {
+	test("rejects duplicate keys, settles the owner, and preserves escaped-key identity", async () => {
 		const { child, transport } = createHarness();
 		try {
 			const pending = transport.request("turn/steer", {});
+			const malformed = captureRejection(pending);
 			const id = frameAt(child, 0).id;
 			sendRaw(
 				child,
 				`{"id":${JSON.stringify(id)},"result":{"turnId":"first"},"result":{"turnId":"second"}}`,
 			);
 			await flushStreams();
-			expect(transport.inspect().pendingRequests).toBe(1);
+			const malformedError = await malformed;
+			expect(malformedError).toMatchObject({
+				name: "CodexTransportRequestError",
+				reason: "malformed-response",
+				outcome: "outcome_unknown",
+			});
+			expect(transport.inspect().pendingRequests).toBe(0);
 			expect(transport.inspectIssues()).toContainEqual(
 				expect.objectContaining({ kind: "duplicate-key" }),
 			);
-			sendJson(child, { id, result: { turnId: "recovered" } });
-			expect((await pending).result).toEqual({ turnId: "recovered" });
+			const recovered = transport.request("turn/steer", {});
+			const recoveredId = frameAt(child, 1).id;
+			sendJson(child, { id: recoveredId, result: { turnId: "recovered" } });
+			expect((await recovered).result).toEqual({ turnId: "recovered" });
 
 			sendRaw(
 				child,
@@ -276,7 +277,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 			});
 			expect(
 				(remoteError as { rpcError: { message: string } }).rpcError.message.length,
-			).toBeLessThanOrEqual(256);
+			).toBeLessThanOrEqual(CODEX_APP_SERVER_CAPACITY.text.maxChars);
 
 			const controller = new AbortController();
 			const lateRequest = captureRejection(
