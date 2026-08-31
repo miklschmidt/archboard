@@ -187,15 +187,23 @@ export function createCodexApprovalBroker(
 		record.settlementPromise = settlementPromise;
 		notify(record);
 
-		let responsePromise: Promise<void>;
+		let serverResponse: ReturnType<typeof toServerResponse>;
 		try {
-			const validated = validateBrowserResponse(model, record.request, finalResponse);
+			const validated = validateBrowserResponse(model, record.request, finalResponse, {
+				respectAvailableDecisions: finalState === "settled",
+			});
+			serverResponse = toServerResponse(record.request, validated);
+		} catch (error) {
+			finish("not_delivered", error);
+			return settlementPromise;
+		}
+
+		let responsePromise: Promise<void>;
+		let writeAttempted = false;
+		try {
+			writeAttempted = true;
 			responsePromise = Promise.resolve(
-				options.transport.respond(
-					record.request.request,
-					"codex-approvals",
-					toServerResponse(record.request, validated),
-				),
+				options.transport.respond(record.request.request, "codex-approvals", serverResponse),
 			);
 		} catch (error) {
 			responsePromise = Promise.reject(error);
@@ -203,7 +211,7 @@ export function createCodexApprovalBroker(
 
 		void responsePromise.then(
 			() => finish("delivered"),
-			(error) => finish(classifyResponseFailure(error), error),
+			(error) => finish(classifyResponseFailure(error, writeAttempted), error),
 		);
 		return settlementPromise;
 
@@ -314,45 +322,49 @@ export function createCodexApprovalBroker(
 		return snapshotOf(record);
 	};
 
-	const resolve = async (input: ApprovalResolveInput): Promise<ApprovalSettlement> => {
-		if (disposed) throw new ApprovalError("disposed", "The approval broker has been disposed.");
-		const record = requireRecord(input.requestId);
-		if (record.settlementPromise !== undefined) return record.settlementPromise;
-		if (record.state !== "pending")
-			throw new ApprovalError(
-				"invalid_state",
-				"Only a pending approval may be resolved.",
-				record.request.requestId,
-			);
-		const suppliedApprovalId = input.approvalId;
-		if (suppliedApprovalId !== undefined && suppliedApprovalId !== null) {
-			try {
-				identity.decoder.parseApprovalId(suppliedApprovalId);
-			} catch (error) {
+	const resolve = (input: ApprovalResolveInput): Promise<ApprovalSettlement> => {
+		try {
+			if (disposed) throw new ApprovalError("disposed", "The approval broker has been disposed.");
+			const record = requireRecord(input.requestId);
+			if (record.settlementPromise !== undefined) return record.settlementPromise;
+			if (record.state !== "pending")
 				throw new ApprovalError(
-					"invalid_identity",
-					`The approval id is not valid in this workbench session: ${toError(error).message}`,
+					"invalid_state",
+					"Only a pending approval may be resolved.",
+					record.request.requestId,
+				);
+			const suppliedApprovalId = input.approvalId;
+			if (suppliedApprovalId !== undefined && suppliedApprovalId !== null) {
+				try {
+					identity.decoder.parseApprovalId(suppliedApprovalId);
+				} catch (error) {
+					throw new ApprovalError(
+						"invalid_identity",
+						`The approval id is not valid in this workbench session: ${toError(error).message}`,
+						record.request.requestId,
+					);
+				}
+			}
+			if (record.request.approvalId !== (suppliedApprovalId ?? null)) {
+				throw new ApprovalError(
+					"identity_mismatch",
+					"The approval id does not match the pending request.",
 					record.request.requestId,
 				);
 			}
+			const response = validateBrowserResponse(model, record.request, input.response);
+			if (!bindingEvidenceMatches(record, input)) {
+				return settleTransport(
+					record,
+					"stale",
+					"The approval evidence no longer matches the pending target or effect.",
+					fallbackResponse(record.request, "stale"),
+				);
+			}
+			return settleTransport(record, "settled", "The approval response was accepted.", response);
+		} catch (error) {
+			return Promise.reject(error);
 		}
-		if (record.request.approvalId !== (suppliedApprovalId ?? null)) {
-			throw new ApprovalError(
-				"identity_mismatch",
-				"The approval id does not match the pending request.",
-				record.request.requestId,
-			);
-		}
-		const response = validateBrowserResponse(model, record.request, input.response);
-		if (!bindingEvidenceMatches(record, input)) {
-			return settleTransport(
-				record,
-				"stale",
-				"The approval evidence no longer matches the pending target or effect.",
-				fallbackResponse(record.request, "stale"),
-			);
-		}
-		return settleTransport(record, "settled", "The approval response was accepted.", response);
 	};
 
 	const get = (requestId: JsonRpcRequestId): ApprovalSnapshot | undefined => {
@@ -403,11 +415,12 @@ export function createCodexApprovalBroker(
 	}): Promise<readonly ApprovalSettlement[]> => {
 		const settlements: Promise<ApprovalSettlement>[] = [];
 		for (const record of records.values()) {
-			if (
-				record.request.child === exit.child &&
-				record.request.epoch === exit.epoch &&
-				(record.state === "staged" || record.state === "pending")
-			) {
+			if (record.request.child !== exit.child || record.request.epoch !== exit.epoch) continue;
+			if (record.settlementPromise !== undefined) {
+				if (record.outcome === null) settlements.push(record.settlementPromise);
+				continue;
+			}
+			if (record.state === "staged" || record.state === "pending") {
 				settlements.push(
 					terminal(
 						record.request.requestId,

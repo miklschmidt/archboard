@@ -161,10 +161,18 @@ export function completeBinding(
 	request: ApprovalRequest,
 	input: ApprovalBindingInput | undefined,
 ): ApprovalBinding {
+	const link =
+		input !== undefined && Object.hasOwn(input, "link") ? input.link : request.binding.link;
+	if (link === undefined) {
+		throw new CodexApprovalError(
+			"invalid_request",
+			"Approval link must be null or a non-empty string.",
+		);
+	}
 	const candidate = {
 		child: input?.child ?? request.child,
 		epoch: input?.epoch ?? request.epoch,
-		link: input?.link ?? request.binding.link,
+		link,
 		target: input?.target ?? request.binding.target,
 		effect: input?.effect ?? request.binding.effect,
 	};

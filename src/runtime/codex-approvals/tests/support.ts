@@ -24,7 +24,7 @@ export interface CapturedResponse {
 	readonly response: ReverseResponse;
 }
 
-export type ResponseMode = "delivered" | "not_delivered" | "outcome_unknown";
+export type ResponseMode = "delivered" | "not_delivered" | "outcome_unknown" | "deferred";
 
 export class FakeApprovalPort implements ApprovalResponsePort {
 	readonly responses: CapturedResponse[] = [];
@@ -34,6 +34,10 @@ export class FakeApprovalPort implements ApprovalResponsePort {
 	private readonly exitListeners = new Set<
 		(exit: { readonly child: ChildId; readonly epoch: ChildEpoch }) => void
 	>();
+	private deferredSettlement?: {
+		readonly resolve: () => void;
+		readonly reject: (reason: unknown) => void;
+	};
 
 	constructor(mode: ResponseMode = "delivered") {
 		this.mode = mode;
@@ -48,7 +52,29 @@ export class FakeApprovalPort implements ApprovalResponsePort {
 		if (this.mode === "delivered") return Promise.resolve();
 		if (this.mode === "not_delivered")
 			return Promise.reject({ accepted: false, outcome: "not_delivered", reason: "backpressure" });
+		if (this.mode === "deferred")
+			return new Promise<void>((resolve, reject) => {
+				this.deferredSettlement = { resolve, reject };
+			});
 		return Promise.reject({ accepted: true, reason: "write-error" });
+	}
+
+	resolveDeferred(): void {
+		const deferred = this.deferredSettlement;
+		if (deferred === undefined) throw new Error("No deferred response is pending.");
+		this.deferredSettlement = undefined;
+		deferred.resolve();
+	}
+
+	rejectDeferred(outcome: "not_delivered" | "outcome_unknown"): void {
+		const deferred = this.deferredSettlement;
+		if (deferred === undefined) throw new Error("No deferred response is pending.");
+		this.deferredSettlement = undefined;
+		deferred.reject(
+			outcome === "not_delivered"
+				? { accepted: false, outcome, reason: "backpressure" }
+				: { accepted: true, outcome, reason: "write-error" },
+		);
 	}
 
 	onServerRequest(listener: (request: TransportServerRequest) => void): () => void {
@@ -130,27 +156,42 @@ export function commandRequest(
 	label: string,
 	availableDecisions = ["accept", "decline"],
 ): TransportServerRequest {
+	return commandRequestWithAvailableDecisions(identity, label, availableDecisions);
+}
+
+export function commandRequestWithAvailableDecisions(
+	identity: IdentityAuthority,
+	label: string,
+	availableDecisions: readonly unknown[] | null | undefined,
+): TransportServerRequest {
+	const params = {
+		...itemParams(identity, label),
+		kind: "command",
+		startedAtMs: 10,
+		approvalId: `approval-${label}`,
+		environmentId: null,
+		reason: `Run ${label}`,
+		networkApprovalContext: null,
+		command: `echo ${label}`,
+		cwd: "/workspace",
+		commandActions: null,
+		additionalPermissions: null,
+		proposedExecpolicyAmendment: null,
+		proposedNetworkPolicyAmendments: null,
+	};
 	return requestEnvelope(
 		identity,
 		"item/commandExecution/requestApproval",
-		{
-			...itemParams(identity, label),
-			kind: "command",
-			startedAtMs: 10,
-			approvalId: `approval-${label}`,
-			environmentId: null,
-			reason: `Run ${label}`,
-			networkApprovalContext: null,
-			command: `echo ${label}`,
-			cwd: "/workspace",
-			commandActions: null,
-			additionalPermissions: null,
-			proposedExecpolicyAmendment: null,
-			proposedNetworkPolicyAmendments: null,
-			availableDecisions,
-		},
+		availableDecisions === undefined ? params : { ...params, availableDecisions },
 		label,
 	);
+}
+
+export function commandRequestWithoutAvailableDecisions(
+	identity: IdentityAuthority,
+	label: string,
+): TransportServerRequest {
+	return commandRequestWithAvailableDecisions(identity, label, undefined);
 }
 
 export function fileRequest(identity: IdentityAuthority, label: string): TransportServerRequest {
