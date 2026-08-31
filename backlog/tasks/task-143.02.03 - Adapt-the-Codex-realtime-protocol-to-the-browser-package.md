@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 13:34'
+updated_date: '2026-08-31 13:40'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -58,6 +58,8 @@ Approved seam: create src/shared/codex-realtime-host as the one declaration site
 Review remediation: finalize exact item/thread closure while retaining transcript; make the adapter own and validate one canonical RealtimeState through transitionRealtimeState for every emission; replace the suffix dependency exception with exact resolved-path equality after Node rejection; replace private-identifier counting with exported-brand declaration scanning, hostile duplicate fixtures, and compile-time negative brand assignability.
 
 6. Second race remediation: give the active session sole settlement ownership for the browser offer; make exact start errors reject once and make late RPC/SDP/started gates inert. Require active===session after every awaited mutation or recovery call, return typed stale/terminal outcomes after authoritative close, and suppress all post-close phase/diagnostic changes. Add manually deferred start, stop, and timeline tests that drive both resolve and reject races through the reducer-checked event recorder. Re-run only focused sequential named 6G/1G services and leave the task In Progress for rereview.
+
+7. Final protocol remediation: keep the queued realtimeStart invocation for synchronous-throw capture, but revalidate pending settlement plus active/current binding inside that callback before making the RPC. If invalid, let dispose or binding-staleness own the already typed offer rejection and make zero server calls. Add focused invocation-window tests for immediate dispose, binding replacement, and synchronous throw plus canonical recovery/replacement.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -76,6 +78,10 @@ Review remediation complete: authoritative item/thread closure now follows canon
 Second review found two protocol races: exact start errors could leave the browser offer pending and later gates could attempt illegal transitions; authoritative close could be followed by stop/recovery completion paths that emitted transitions from closed. Remediation owns settlement and terminal generation in the adapter only; the shared/UI boundary work remains unchanged.
 
 Second race remediation complete. Start settlement now has one owner: an exact negotiating thread/realtime/error marks the offer settled, emits the legal recoverable transition, and rejects once; start RPC completion and SDP/started gates are phase-aware and inert after settlement. Active generation identity is now part of every post-await currentness check. A close during stop, recovery, appendText, or appendSpeech therefore returns outcome_unknown/response_lost without diagnostics or phase changes; stop and recovery also guard their own post-await reducers. Deferred tests cover error then RPC reject, error then RPC success plus late SDP/started, SDP/started competing before error, stop resolve/reject after close, recovery resolve/reject after close, and append completion after close. Final focused evidence: archboard-task1430203-race-final2-tests-f1c161e.service passed 20 tests / 107 assertions at 47.2M peak, 0B swap; archboard-task1430203-race-final2-types-f1c161e.service passed both TypeScript projects at 1.6G peak, 0B swap; archboard-task1430203-race-final2-lint-f1c161e.service passed scoped Oxlint at 607.9M peak, 0B swap; archboard-task1430203-race-final2-format-check-f1c161e.service passed at 1.6G peak, 0B swap. git diff --check passed. Known OOM lanes were not run.
+
+Final review isolated one pre-invocation race in the queued realtimeStart callback. This follow-up changes only invocation ownership and its deferred tests; all boundary and post-invocation fixes remain protected.
+
+Final pre-invocation remediation complete. The scheduled realtimeStart callback now checks answer settlement and the exact active/current binding before invoking Codex. Immediate dispose owns and rejects the offer before the callback, so the callback makes zero RPC calls. A replaced binding finalizes the never-started generation and rejects once with a reducer-valid stopping/closed sequence. Synchronous realtimeStart throws remain inside the promise chain, enter failStart once, and can recover through the canonical timeline path before a replacement session starts. Final evidence: archboard-task1430203-invoke-final-tests-5710f74.service passed 23 tests / 123 assertions at 46M peak, 0B swap; archboard-task1430203-invoke-final-types-5710f74.service passed both TypeScript projects at 1.5G peak, 0B swap; archboard-task1430203-invoke-final-lint-5710f74.service passed scoped Oxlint at 566M peak, 0B swap; archboard-task1430203-invoke-final-format-check-5710f74.service passed at 1.5G peak, 0B swap. git diff --check passed. Known OOM lanes were not run.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
