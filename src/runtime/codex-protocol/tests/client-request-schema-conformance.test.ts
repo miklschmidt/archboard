@@ -303,6 +303,33 @@ describe("generated ClientRequest schema conformance", () => {
 			source:
 				"type JsonValue = null | boolean | number | string | ReadonlyArray<JsonValue> | { [key in string]?: JsonValue };",
 		},
+		{
+			name: "a mutable tuple array branch",
+			source:
+				"type JsonValue = null | boolean | number | string | [JsonValue] | { [key in string]?: JsonValue };",
+		},
+		{
+			name: "a recursive record with a required named property",
+			source: [
+				"type JsonObject = { [key: string]: JsonValue; required: string };",
+				"type JsonValue = null | boolean | number | string | JsonValue[] | JsonObject;",
+			].join("\n"),
+		},
+		{
+			name: "an optional named property intersected into a recursive record",
+			source: [
+				"type JsonObject = { [key in string]?: JsonValue } & { optional?: string };",
+				"type JsonValue = null | boolean | number | string | JsonValue[] | JsonObject;",
+			].join("\n"),
+		},
+		{
+			name: "an aliased recursive record intersected with a named property",
+			source: [
+				"type RecursiveJsonRecord = { [key in string]?: JsonValue };",
+				"type JsonObject = RecursiveJsonRecord & { required: string };",
+				"type JsonValue = null | boolean | number | string | JsonValue[] | JsonObject;",
+			].join("\n"),
+		},
 	] as const)
 		test(`rejects generated JSON with ${hostile.name}`, () => {
 			const root = mkdtempSync(join(tmpdir(), "archboard-request-schema-generated-json-hostile-"));
