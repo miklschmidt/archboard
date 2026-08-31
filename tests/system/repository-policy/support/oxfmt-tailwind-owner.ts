@@ -1,11 +1,4 @@
-import {
-	existsSync,
-	readFileSync,
-	readdirSync,
-	realpathSync,
-	rmSync,
-	writeFileSync,
-} from "node:fs";
+import { existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import {
@@ -14,6 +7,14 @@ import {
 	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
 	TEST_CANVAS_STARTUP_TIMEOUT_MS,
 } from "../../../../src/shared/timing/timing.ts";
+import {
+	actualOxfmtProcess,
+	liveProcessReader,
+	processGroupMembers,
+	processGroupOf,
+	processIsLive,
+	refreshFormatterGroups as refreshProcessGroups,
+} from "./oxfmt-tailwind-process.ts";
 import {
 	CANONICAL_FORMAT_SCRIPTS,
 	artifactSnapshot,
@@ -32,6 +33,8 @@ export {
 	restoreAndRemoveScenarioRoot,
 	type DependencyRecord,
 } from "./oxfmt-tailwind-fixture.ts";
+export { inspectFormatterGroupsForTest } from "./oxfmt-tailwind-process.ts";
+export type { ProcessReader } from "./oxfmt-tailwind-process.ts";
 
 export interface CommandRecord {
 	script: keyof typeof CANONICAL_FORMAT_SCRIPTS;
@@ -55,6 +58,7 @@ export interface OwnerResult {
 export interface OwnerState {
 	root: string;
 	formatterGroups: number[];
+	refreshError?: string;
 }
 
 function requiredEnvironment(name: string): string {
@@ -66,7 +70,9 @@ function requiredEnvironment(name: string): string {
 function errorMessage(error: unknown): string {
 	if (error instanceof AggregateError)
 		return `${error.message}: ${error.errors.map((nested) => errorMessage(nested)).join(" | ")}`;
-	return error instanceof Error ? error.message : String(error);
+	const message = error instanceof Error ? error.message : String(error);
+	const code = (error as NodeJS.ErrnoException).code;
+	return code && !message.startsWith(`${code}:`) ? `${code}: ${message}` : message;
 }
 
 export function readOwnerState(file: string): OwnerState {
@@ -81,7 +87,7 @@ export function ownerExitDiagnostic(file: string, exitCode: number): string {
 		: undefined;
 	const statePath = join(container, "owner-state.json");
 	const state = existsSync(statePath) ? readOwnerState(statePath) : undefined;
-	return `Owner exited before ${file}: ${exitCode}; primary=${result?.error ?? "unpublished"}; cleanup=${result?.cleanupError ?? (state ? `root=${existsSync(state.root) ? "present" : "removed"}; formatterGroups=${state.formatterGroups.join(",") || "none"}` : "unpublished")}`;
+	return `Owner exited before ${file}: ${exitCode}; primary=${result?.error ?? "unpublished"}; cleanup=${result?.cleanupError ?? (state ? `refresh=${state.refreshError ?? "none"}; root=${existsSync(state.root) ? "present" : "removed"}; formatterGroups=${state.formatterGroups.join(",") || "none"}` : "unpublished")}`;
 }
 
 function removeExternalCleanupPaths(): void {
@@ -137,27 +143,10 @@ function validateFixture(fixtureRoot: string): void {
 async function waitForGroupGone(group: number): Promise<boolean> {
 	const deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
 	while (Date.now() < deadline) {
-		if (
-			!processGroupMembers(group).some((pid) => {
-				try {
-					const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
-					return stat.slice(stat.lastIndexOf(")") + 2, stat.lastIndexOf(")") + 3) !== "Z";
-				} catch {
-					return false;
-				}
-			})
-		)
-			return true;
+		if (!processGroupMembers(group).some(processIsLive)) return true;
 		await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
 	}
-	return !processGroupMembers(group).some((pid) => {
-		try {
-			const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
-			return stat.slice(stat.lastIndexOf(")") + 2, stat.lastIndexOf(")") + 3) !== "Z";
-		} catch {
-			return false;
-		}
-	});
+	return !processGroupMembers(group).some(processIsLive);
 }
 
 export async function reapProcessGroup(group: number): Promise<void> {
@@ -191,45 +180,6 @@ async function stopProcessGroup(group: number): Promise<void> {
 	}
 }
 
-function processGroupMembers(group: number): number[] {
-	const members: number[] = [];
-	for (const entry of readdirSync("/proc", { withFileTypes: true })) {
-		if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) continue;
-		try {
-			const stat = readFileSync(`/proc/${entry.name}/stat`, "utf8");
-			const close = stat.lastIndexOf(")");
-			const fields = stat.slice(close + 2).split(" ");
-			if (Number(fields[2]) === group) members.push(Number(entry.name));
-		} catch {
-			continue;
-		}
-	}
-	return members;
-}
-
-function actualOxfmtProcess(group: number): number | undefined {
-	for (const pid of processGroupMembers(group)) {
-		try {
-			const command = readFileSync(`/proc/${pid}/cmdline`).toString().replaceAll("\0", " ");
-			if (command.includes("oxfmt") && processGroupOf(pid) !== undefined) return pid;
-		} catch {
-			continue;
-		}
-	}
-	return undefined;
-}
-
-function processGroupOf(pid: number): number | undefined {
-	try {
-		const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
-		const fields = stat.slice(stat.lastIndexOf(")") + 2).split(" ");
-		const group = Number(fields[2]);
-		return Number.isSafeInteger(group) && group > 0 ? group : undefined;
-	} catch {
-		return undefined;
-	}
-}
-
 async function holdActualFormatter(
 	child: Bun.Subprocess,
 	script: keyof typeof CANONICAL_FORMAT_SCRIPTS,
@@ -258,16 +208,24 @@ async function holdActualFormatter(
 	throw new Error(`Timed out waiting for actual Oxfmt during ${script}.`);
 }
 
-function writeOwnerState(): void {
+function writeOwnerState(refreshError?: string): void {
 	const file = process.env.ARCHBOARD_OXFMT_OWNER_STATE;
 	if (!file) return;
-	writeFileSync(
-		file,
-		JSON.stringify({
-			root: requiredEnvironment("ARCHBOARD_OXFMT_OWNER_ROOT"),
-			formatterGroups: [...activeGroups],
-		}),
-	);
+	let previousRefreshError: string | undefined;
+	if (existsSync(file)) {
+		try {
+			previousRefreshError = readOwnerState(file).refreshError;
+		} catch {
+			/* Replace a partial state publication with the next complete state. */
+		}
+	}
+	const state: OwnerState = {
+		root: requiredEnvironment("ARCHBOARD_OXFMT_OWNER_ROOT"),
+		formatterGroups: [...activeGroups],
+	};
+	const publishedRefreshError = refreshError ?? previousRefreshError;
+	if (publishedRefreshError) state.refreshError = publishedRefreshError;
+	writeFileSync(file, JSON.stringify(state));
 }
 
 function refreshFormatterGroups(root: string): void {
@@ -282,32 +240,7 @@ function refreshFormatterGroups(root: string): void {
 			/* The entrypoint may be publishing its group file in this tick. */
 		}
 	}
-	const formatterPids = new Set<number>();
-	for (const entry of readdirSync("/proc", { withFileTypes: true })) {
-		if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) continue;
-		const pid = Number(entry.name);
-		try {
-			const command = readFileSync(`/proc/${entry.name}/cmdline`).toString();
-			if (command.includes(`${root}/node_modules/`) && command.includes("oxfmt"))
-				formatterPids.add(pid);
-		} catch {
-			continue;
-		}
-	}
-	for (const entry of readdirSync("/proc", { withFileTypes: true })) {
-		if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) continue;
-		try {
-			const stat = readFileSync(`/proc/${entry.name}/stat`, "utf8");
-			const fields = stat.slice(stat.lastIndexOf(")") + 2).split(" ");
-			if (formatterPids.has(Number(fields[1]))) formatterPids.add(Number(entry.name));
-		} catch {
-			continue;
-		}
-	}
-	for (const pid of formatterPids) {
-		const group = processGroupOf(pid);
-		if (group !== undefined) activeGroups.add(group);
-	}
+	refreshProcessGroups(root, activeGroups, liveProcessReader);
 	writeOwnerState();
 }
 
@@ -331,10 +264,25 @@ async function runScript(
 	let result: CommandRecord | undefined;
 	let primaryError: unknown;
 	let cleanupError: unknown;
-	const refreshTimer = setInterval(
-		() => refreshFormatterGroups(fixtureRoot),
-		TEST_CANVAS_HEALTH_POLL_MS,
-	);
+	let refreshError: unknown;
+	const recordRefreshError = (error: unknown): void => {
+		refreshError ??= error;
+		try {
+			writeOwnerState(errorMessage(refreshError));
+		} catch (stateError) {
+			refreshError = new AggregateError(
+				[refreshError, stateError],
+				"Formatter refresh failure could not be published",
+			);
+		}
+	};
+	const refreshTimer = setInterval(() => {
+		try {
+			refreshFormatterGroups(fixtureRoot);
+		} catch (error) {
+			recordRefreshError(error);
+		}
+	}, TEST_CANVAS_HEALTH_POLL_MS);
 	try {
 		await holdActualFormatter(child, script);
 		const timedOut = Symbol("formatter-timeout");
@@ -373,7 +321,19 @@ async function runScript(
 		try {
 			refreshFormatterGroups(fixtureRoot);
 		} catch (error) {
-			cleanupError = error;
+			recordRefreshError(error);
+		}
+		if (refreshError) {
+			const refreshFailure = new Error(
+				`Formatter process refresh failed: ${errorMessage(refreshError)}`,
+				{ cause: refreshError },
+			);
+			primaryError = primaryError
+				? new AggregateError(
+						[primaryError, refreshFailure],
+						"Formatter execution and process refresh both failed",
+					)
+				: refreshFailure;
 		}
 		const groups = [...activeGroups];
 		for (const group of groups) {
@@ -384,7 +344,7 @@ async function runScript(
 				cleanupError ??= error;
 			}
 		}
-		writeOwnerState();
+		writeOwnerState(refreshError ? errorMessage(refreshError) : undefined);
 	}
 	if (primaryError && cleanupError)
 		throw new AggregateError(
