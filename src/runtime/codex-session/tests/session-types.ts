@@ -57,10 +57,13 @@ type RawTurn = ResponsePayloads["turn/start"]["turn"];
 type RawThreadItem = RawTurn["items"][number];
 type RawAgentMessage = Extract<RawThreadItem, { readonly type: "agentMessage" }>;
 type RawCollabAgent = Extract<RawThreadItem, { readonly type: "collabAgentToolCall" }>;
+type RawImageGenerationItem = Extract<RawThreadItem, { readonly type: "imageGeneration" }>;
 type RawQueuedSubmission = ResponsePayloads["thread/queue/add"]["queuedSubmission"];
+type SessionImageGenerationItem = Extract<SessionThreadItem, { readonly type: "imageGeneration" }>;
 
 declare const brandedTurn: SessionTurn;
 declare const brandedItem: SessionThreadItem;
+declare const itemId: ItemId;
 declare const rawTurn: RawTurn;
 declare const rawItem: RawThreadItem;
 declare const rawThreadId: string;
@@ -73,10 +76,25 @@ declare const collabItem: SessionCollabAgentItem;
 declare function acceptSessionTurns(value: SessionThread["turns"]): void;
 declare function acceptSessionItems(value: SessionTurn["items"]): void;
 declare function acceptSessionThreadIds(value: typeof citation.threadIds): void;
+declare function acceptSessionImageGeneration(value: SessionImageGenerationItem): void;
+
+const rawImageGenerationWithoutOptional = {
+	type: "imageGeneration",
+	id: "raw-image-item",
+	status: "completed",
+	revisedPrompt: null,
+	result: "/tmp/generated.png",
+	failure: null,
+} satisfies RawImageGenerationItem;
+const imageGenerationWithoutOptional = {
+	...rawImageGenerationWithoutOptional,
+	id: itemId,
+} satisfies SessionImageGenerationItem;
 
 acceptSessionTurns([brandedTurn]);
 acceptSessionItems([brandedItem]);
 acceptSessionThreadIds([threadId]);
+acceptSessionImageGeneration(imageGenerationWithoutOptional);
 void collabItem.agentsStates[threadId];
 // @ts-expect-error A raw turn has no branded TurnId or ItemIds.
 acceptSessionTurns([rawTurn]);
@@ -94,6 +112,14 @@ threadPage.data.push(threadResult.thread);
 citation.threadIds.push(threadId);
 // @ts-expect-error Agent state maps require a branded ThreadId key.
 void collabItem.agentsStates[rawThreadId];
+// @ts-expect-error imageGeneration requires its result field even when optional fields are omitted.
+acceptSessionImageGeneration({
+	type: "imageGeneration",
+	id: itemId,
+	status: "completed",
+	revisedPrompt: null,
+	failure: null,
+});
 
 declare function acceptExactRequestIdentities<
 	Method extends ResponseMethod,
