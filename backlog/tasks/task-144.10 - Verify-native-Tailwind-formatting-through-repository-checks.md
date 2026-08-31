@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 02:23'
+updated_date: '2026-08-31 02:36'
 labels: []
 dependencies:
   - TASK-144.06
@@ -57,4 +57,8 @@ Implemented tests/system/repository-policy/oxfmt-tailwind.test.ts. The owner cop
 Reviewer remediation supersedes the earlier signal-test wording: the signal cases now run the unchanged checked-in bun run fmt:check and bun run fmt scripts with a copied, read-only project-local Oxfmt 0.65.0 dependency view. The owner locates the actual Oxfmt process in its detached process group, holds the requested check or fmt phase, verifies SIGINT 130 and SIGTERM 143, reaps descendants with bounded TERM/KILL cleanup, removes the fixture and observability markers, and preserves cleanup failures. Exact script values, Oxfmt identity, dependency bytes and metadata, canonical fixture bytes, ignored dist artifacts, and authored git status/staged/unstaged state are audited. Hostile script suffixes are rejected before execution or marker creation.
 
 Reviewer remediation 2: each owner bun run child now has a bounded execution and output wait, with process-group reaping in a finally path for normal exit, timeout, output/hold failure, and ordinary exceptions. Parent cleanup records the exact scenario root and every discovered formatter group before launch, attempts SIGCONT/SIGTERM within the bound, reaps the recorded groups, restores permissions only on that root, removes it, and uses owner SIGKILL last. A focused hostile copied project-local Oxfmt entrypoint test keeps a detached TERM-resistant formatter alive, proves the parent timeout preserves both primary timeout text and cleanup group/root evidence, and asserts no group, fixture, or container remains. The owner and fixture support are split below the 500-line repository policy. Validation for this remediation is focused owner 8 pass, type-check, lint, fmt:check, frontend build, diff check, and clean scope; broad suites remain root-owned per the durable OOM rule.
+
+Integration follow-up: fixed a real nondeterministic owner race where /proc refresh observed a formatter PID disappearing before process-group lookup, causing an uncaught exit before readiness/result publication. Process-group lookup is now disappearance-safe and stale PIDs are skipped; owner errors preserve AggregateError primary and cleanup details, and startup diagnostics include root/process-group cleanup evidence.
+
+Code commit: 960186f (separate from Backlog evidence). Validation: 10 consecutive focused SIGTERM fmt-owner runs passed; 5 consecutive complete focused owner-suite runs passed; final focused suite passed 8/8 with 322 assertions; bun run type-check passed; touched-file oxlint and oxfmt passed; no formatter processes or fixture temp roots remained.
 <!-- SECTION:NOTES:END -->
