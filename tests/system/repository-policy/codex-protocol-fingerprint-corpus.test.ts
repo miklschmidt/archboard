@@ -5,7 +5,7 @@ import path from "node:path";
 
 import { describe, expect, test } from "bun:test";
 import { API } from "typescript/unstable/async";
-import { namespaceImportMirror } from "./support/codex-protocol-fixtures.js";
+import { importTypeMirror, namespaceImportMirror } from "./support/codex-protocol-fixtures.js";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const checker = path.join(repoRoot, "scripts/check-codex-protocol-fingerprint-corpus.ts");
@@ -87,22 +87,45 @@ describe("Codex protocol fingerprint corpus", () => {
 	test("keeps namespace mirror imports resolvable", async () => {
 		const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-codex-mirror-"));
 		try {
-			const source = `${GENERATED_HEADER}\n\nimport type { AbsolutePathBuf } from "../AbsolutePathBuf";\n// AbsolutePathBuf stays in comments.\nexport type Thread = { cwd: AbsolutePathBuf };\nexport const label = "AbsolutePathBuf";\n`;
-			const mirror = namespaceImportMirror(source, GENERATED_HEADER);
-			const entry = path.join(temporaryRoot, "v2", "Thread.ts");
-			fs.mkdirSync(path.dirname(entry), { recursive: true });
-			fs.writeFileSync(entry, mirror);
+			const source = [
+				GENERATED_HEADER,
+				"",
+				'import type { AbsolutePathBuf } from "../AbsolutePathBuf";',
+				'// import type { AbsolutePathBuf } from "../AbsolutePathBuf";',
+				"const single = 'import type { AbsolutePathBuf } from \"../AbsolutePathBuf\";';",
+				'const template = `import type { AbsolutePathBuf } from "../AbsolutePathBuf";`;',
+				"export type Thread = { cwd: AbsolutePathBuf };",
+				'export const label = "AbsolutePathBuf";',
+			].join("\n");
+			const namespaceMirror = namespaceImportMirror(source, GENERATED_HEADER);
+			const importTypeMirrorSource = importTypeMirror(source, GENERATED_HEADER);
+			const namespaceEntry = path.join(temporaryRoot, "v2", "NamespaceThread.ts");
+			const importTypeEntry = path.join(temporaryRoot, "v2", "ImportTypeThread.ts");
+			fs.mkdirSync(path.dirname(namespaceEntry), { recursive: true });
+			fs.writeFileSync(namespaceEntry, namespaceMirror);
+			fs.writeFileSync(importTypeEntry, importTypeMirrorSource);
 			fs.writeFileSync(
 				path.join(temporaryRoot, "AbsolutePathBuf.ts"),
 				"export type AbsolutePathBuf = string;\n",
 			);
-			expect(mirror).toContain(
+			expect(namespaceMirror).toContain(
 				'import type * as NamespaceAbsolutePathBuf from "../AbsolutePathBuf";',
 			);
-			expect(mirror).toContain("// AbsolutePathBuf stays in comments.");
-			expect(mirror).toContain('label = "AbsolutePathBuf"');
-			expect(mirror).not.toContain("NamespaceAbsolutePathBuf.AbsolutePathBuf.AbsolutePathBuf");
-			expect(await diagnosticsFor(repoRoot, entry)).toEqual([]);
+			expect(importTypeMirrorSource).toContain(
+				'type ImportTypeAbsolutePathBuf = (import("../AbsolutePathBuf").AbsolutePathBuf);',
+			);
+			for (const mirror of [namespaceMirror, importTypeMirrorSource]) {
+				expect(mirror).toContain('// import type { AbsolutePathBuf } from "../AbsolutePathBuf";');
+				expect(mirror).toContain(
+					"const single = 'import type { AbsolutePathBuf } from \"../AbsolutePathBuf\";';",
+				);
+				expect(mirror).toContain(
+					'const template = `import type { AbsolutePathBuf } from "../AbsolutePathBuf";`;',
+				);
+			}
+			expect(importTypeMirrorSource.match(/type ImportTypeAbsolutePathBuf/gu)).toHaveLength(1);
+			expect(await diagnosticsFor(repoRoot, namespaceEntry)).toEqual([]);
+			expect(await diagnosticsFor(repoRoot, importTypeEntry)).toEqual([]);
 		} finally {
 			fs.rmSync(temporaryRoot, { recursive: true, force: true });
 		}
