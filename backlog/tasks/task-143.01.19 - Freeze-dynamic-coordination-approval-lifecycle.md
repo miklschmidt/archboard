@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.19
 title: Freeze dynamic coordination approval lifecycle
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-31 14:25'
-updated_date: '2026-08-31 15:39'
+updated_date: '2026-08-31 15:48'
 labels: []
 dependencies:
   - TASK-143.01.17
@@ -33,10 +33,10 @@ Own the human-reviewed dynamic create, fork, and send approval policy that gener
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The authored contract defines one closed dynamic-approval request identity and immutable effect union for create_thread, fork_thread, and send_message_to_thread, including caller, target, effective self-fork boundary, parsed arguments, bounded visual summary, canonical effect hash, created time, expiry, and one host OperationId.
-- [ ] #2 Decision outcomes are exactly approved, declined, expired, cancelled, and disconnected; every outcome has a deterministic no-effect or revalidation path, and approval_required is a terminal no-resume tool result that leaves no pending card or reusable authority.
-- [ ] #3 The contract fixes dispatcher order and refusal mapping: validate and classify, issue operation IDs, await one fresh approval, revalidate exact caller, target, effect, and context, stage each local transaction, attempt each remote mutation once, settle durable provenance, and respond once.
-- [ ] #4 Repository-policy tests parse and pin the closed policy and independently reject missing, extra, reordered, duplicated, or changed identity fields, effect fields, outcomes, refusal mappings, expiry and disconnect behavior, operation-ID boundary rules, and any approval_required resume path.
+- [x] #1 The authored contract defines one closed dynamic-approval request identity and immutable effect union for create_thread, fork_thread, and send_message_to_thread, including caller, target, effective self-fork boundary, parsed arguments, bounded visual summary, canonical effect hash, created time, expiry, and one host OperationId.
+- [x] #2 Decision outcomes are exactly approved, declined, expired, cancelled, and disconnected; every outcome has a deterministic no-effect or revalidation path, and approval_required is a terminal no-resume tool result that leaves no pending card or reusable authority.
+- [x] #3 The contract fixes dispatcher order and refusal mapping: validate and classify, issue operation IDs, await one fresh approval, revalidate exact caller, target, effect, and context, stage each local transaction, attempt each remote mutation once, settle durable provenance, and respond once.
+- [x] #4 Repository-policy tests parse and pin the closed policy and independently reject missing, extra, reordered, duplicated, or changed identity fields, effect fields, outcomes, refusal mappings, expiry and disconnect behavior, operation-ID boundary rules, and any approval_required resume path.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -68,4 +68,14 @@ Preserved-work audit: only this task record and its recorded document/repository
 Review remediation closes all four parent findings. The stale-approved table now maps logical_call_no_longer_executing to invalid_call and the mutation owner rejects approval_required for that cancellation or interruption race; operation IDs retire and no effect runs. Busy now applies only to non-self fork or send targets that became active, preserving active self-fork. The host now stamps decidedAtMs during the terminal compare-and-set, and the same host nowMs observation deterministically selects person acceptance before expiresAtMs or expiry at and after it; browser-supplied timestamps and split-clock acceptance are rejected. TASK-143.03.07 now depends on TASK-143.01.21 through Backlog CLI.
 
 Remediation byte evidence supersedes the earlier changed-block digests: complete contract SHA-256 is 97f45a526ac5e8fbe4de1fa916c3a16584e5d20f5817cfb1ff9c92162ff54f10 and dynamic policy SHA-256 is c1140c7ab6e7627b1efc3e680266db4ceff87b6b79e8ef00c45a81ad87a6e8d5. Final capped services: archboard-task1430119-remediation-focused-tests-1612 passed 15 tests and 340 expectations at 36.2M peak; archboard-task1430119-remediation-tsc-1613 passed at 1.6G; archboard-task1430119-remediation-oxlint-1614 passed with 0 warnings and 0 errors at 347.2M; archboard-task1430119-remediation-format-check-1615 passed at 379M; archboard-task1430119-remediation-inventory-1616 passed 39 tests and 69 expectations at 40.4M. Every service printed its cgroup and used 0B swap. Scoped formatting write also passed in archboard-task1430119-remediation-format-test-1602 at 35M. Broad lanes remain intentionally excluded. The task remains In Progress with all acceptance criteria unchecked for independent rereview.
+
+Final acceptance evidence at clean reviewed HEAD 777c70ad08a79ec91d368294a069773a69f7964b: AC1 is proven by the strict request manifest with ordered logical-call identity plus host OperationId, immutable parsed create, fork, and send effects, self-fork boundary, bounded visual summary, canonical SHA-256 input, created time, and 90-second expiry. AC2 is proven by the exact five-outcome decision and cause tables, same-host terminal timestamp rule, deterministic no-effect or approved revalidation paths, terminal non-resumable approval_required cleanup, and operation-ID retirement. AC3 is proven by the ordered revalidation/refusal matrix, operation-boundary reuse table, and twelve-step dispatcher sequence with one staged local transaction, one remote attempt, one durable settlement, one canonical result, and one response attempt. AC4 is proven by the independent parser, fixed policy, byte pins, and mutation owner that rejects field, effect, outcome, refusal, expiry, disconnect, operation-ID, dispatcher, and resume drift.
+
+Final verification evidence remains the capped remediation run: 15 focused contract tests with 340 expectations, TypeScript, scoped Oxlint with 0 warnings and 0 errors, scoped format, 39 inventory tests with 69 expectations, and git diff --check all passed. Independent parent rereview reported REVIEW_CLEAN for fixed range 34a37f9d5a0ea0a9a87b1843d6645a58c49c6a92..777c70ad08a79ec91d368294a069773a69f7964b. No broad lanes were required for this authored-policy leaf.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Authored and byte-pinned the closed dynamic create, fork, and send approval lifecycle, including immutable effects, host-owned terminal decisions, exact stale refusal and self-fork behavior, operation-ID boundaries, deterministic dispatcher ordering, and terminal no-resume cleanup. Independent mutation owners and byte checks passed 15 focused tests with 340 expectations; TypeScript, scoped lint and format, repository inventory, diff checks, and parent rereview also passed.
+<!-- SECTION:FINAL_SUMMARY:END -->
