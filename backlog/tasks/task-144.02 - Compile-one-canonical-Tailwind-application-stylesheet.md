@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 01:15'
+updated_date: '2026-08-31 01:28'
 labels: []
 dependencies:
   - TASK-144.01
@@ -71,4 +71,6 @@ Fourth remediation: fixture allocation now uses mkdtempSync so ownership registr
 Fifth-round remediation: owner subprocess cleanup now tracks the exact synchronously registered fixture root only; duplicated signal/exit lifecycle code is consolidated, and a concurrent same-parent owner test proves interrupting one owner leaves the other owner's root/link live while an unrelated prefixed sibling survives. Alias-overlap validation now parses the complete RegExp source under a closed anchored-literal grammar and rejects unparsed alternation and other unsupported constructs fail-closed. The 200-owner allocation case uses TEST_VITE_TAILWIND_ALLOCATION_CASE_TIMEOUT_MS from src/shared/timing/timing.ts, whose comment documents the exact workload coupling.
 
 Sixth-round remediation supersedes the earlier mkdtempSync allocation wording: each owner chooses a random exact candidate path, registers that candidate before mkdirSync, and creates it exclusively; EEXIST retires the uncreated candidate without cleanup and retries. Fixture disposal tracks created state and setup guards stop further async work after disposal, preserving exact-root cleanup through pre-create, create, and setup interruption. The external watcher now consumes pre-creation allocation records and proves all 200 allocated candidates become accounted-for roots with alternating 143/130 exits and no residue; collision retry and concurrent same-parent sibling survival remain covered. The literal regex contract now allows fully parsed disjoint /^@admin/ and /^@admin\/panel/ controls while retaining exact overlap and unsupported-grammar refusals.
+
+Seventh-round remediation: fixture disposal now waits for an explicit allocation-settled handshake and tracks candidate, owned, and retired states. A pre-create async or sync disposal request cannot memoize a no-op before mkdirSync; if this process creates the candidate afterward, cleanup still removes exactly that root, while EEXIST candidates remain foreign and are retired without removal. Setup guards prevent in-flight recreation after disposal. The public helper regression exercises disposal inside onAllocated before creation, and the existing signal matrix covers the pre-create signal boundary. The 200-owner regression now treats bounded existsSync polling of each printed candidate path as authoritative; fs.watch is only an optional wake-up/acceleration signal, with exact candidate/root accounting and no dependence on lossy event delivery.
 <!-- SECTION:NOTES:END -->
