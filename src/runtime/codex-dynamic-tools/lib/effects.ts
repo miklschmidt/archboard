@@ -9,6 +9,7 @@ import type {
 } from "../../../shared/codex-workbench-identity/index.js";
 import { CODEX_APPROVAL_EXPIRY_MS } from "../../../shared/timing/timing.js";
 import {
+	CodexDynamicOperationTerminalizationError,
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,
 	type DynamicApprovalIdentity,
@@ -16,6 +17,9 @@ import {
 	type DynamicContextAuthority,
 	type DynamicImmutableEffect,
 	type DynamicMutationToolName,
+	type DynamicOperationIdPort,
+	type DynamicOperationTerminalDisposition,
+	type DynamicOperationTerminalResult,
 	type DynamicRelation,
 	type DynamicTargetAuthority,
 	type DynamicToolApprovalRequest,
@@ -219,16 +223,99 @@ export function issueMutationOperations(
 		});
 	} catch (error) {
 		try {
-			options.operationId.retireCanonicalOperationId(mutationOperationId);
+			terminalizeDynamicOperationId(options.operationId, mutationOperationId, "retired");
 		} catch (retirementError) {
-			throw new CodexDynamicToolsError(
-				"system_error",
-				"The partially issued dynamic operation could not be retired.",
-				retirementError,
-			);
+			throw retirementError instanceof CodexDynamicOperationTerminalizationError
+				? retirementError
+				: new CodexDynamicToolsError(
+						"system_error",
+						"The partially issued dynamic operation could not be retired.",
+						retirementError,
+					);
 		}
 		throw error;
 	}
+}
+
+function exactTerminalResult(
+	value: unknown,
+	operationId: OperationId,
+): DynamicOperationTerminalResult {
+	if (
+		typeof value !== "object" ||
+		value === null ||
+		!hasExactKeys(value, ["operationId", "disposition", "terminal"])
+	)
+		throw new Error("the terminal operation result shape is not exact");
+	const result = value as Readonly<Record<string, unknown>>;
+	if (
+		result.operationId !== operationId ||
+		(result.disposition !== "consumed" && result.disposition !== "retired") ||
+		result.terminal !== true
+	)
+		throw new Error("the terminal operation result does not match the issued identity");
+	return Object.freeze({ operationId, disposition: result.disposition, terminal: true });
+}
+
+function readTerminalResult(
+	port: DynamicOperationIdPort,
+	operationId: OperationId,
+): DynamicOperationTerminalResult | null {
+	const observed = port.readCanonicalOperationTerminalResult(operationId);
+	if (observed !== null) return exactTerminalResult(observed, operationId);
+	port.validateCurrentUnconsumedOperationId(operationId);
+	return null;
+}
+
+/**
+ * Cross the host terminal boundary with an idempotent operation. A thrown
+ * attempt is inspected and retried only while the host still reports the ID
+ * current. Returning means the requested host disposition is proven.
+ */
+export function terminalizeDynamicOperationId(
+	port: DynamicOperationIdPort,
+	operationId: OperationId,
+	disposition: DynamicOperationTerminalDisposition,
+): DynamicOperationTerminalResult {
+	const causes: unknown[] = [];
+	for (let attempt = 0; attempt < 2; attempt++) {
+		try {
+			const result = exactTerminalResult(
+				port.terminalizeCanonicalOperationId({ operationId, disposition }),
+				operationId,
+			);
+			if (result.disposition !== disposition)
+				throw new CodexDynamicOperationTerminalizationError(
+					operationId,
+					"The host terminalized the dynamic operation with another disposition.",
+				);
+			return result;
+		} catch (error) {
+			if (error instanceof CodexDynamicOperationTerminalizationError) throw error;
+			causes.push(error);
+		}
+
+		try {
+			const observed = readTerminalResult(port, operationId);
+			if (observed === null) continue;
+			if (observed.disposition !== disposition)
+				throw new CodexDynamicOperationTerminalizationError(
+					operationId,
+					"The host reports another terminal disposition for the dynamic operation.",
+					Object.freeze([...causes]),
+				);
+			return observed;
+		} catch (error) {
+			if (error instanceof CodexDynamicOperationTerminalizationError) throw error;
+			causes.push(error);
+		}
+	}
+
+	throw new CodexDynamicOperationTerminalizationError(
+		operationId,
+		"The host could not prove the dynamic operation terminal after idempotent settlement.",
+		Object.freeze(causes),
+	);
 }
 
 export function createDynamicOperationSettlement(
@@ -236,12 +323,16 @@ export function createDynamicOperationSettlement(
 	operations: DynamicIssuedOperations,
 ): DynamicOperationSettlement {
 	const owned = Object.freeze(operationIdsForRetirement(operations));
-	if (new Set(owned).size !== owned.length)
+	if (new Set(owned).size !== owned.length) {
+		for (const operationId of new Set(owned))
+			terminalizeDynamicOperationId(options.operationId, operationId, "retired");
 		throw new CodexDynamicToolsError(
 			"system_error",
 			"The dynamic operation authority issued duplicate identities for one call.",
 		);
-	const terminal = new Set<OperationId>();
+	}
+	const requested = new Map<OperationId, DynamicOperationTerminalDisposition>();
+	const terminal = new Map<OperationId, DynamicOperationTerminalDisposition>();
 
 	const terminalize = (operationId: OperationId, kind: "consume" | "retire"): void => {
 		if (!owned.includes(operationId))
@@ -254,19 +345,16 @@ export function createDynamicOperationSettlement(
 				"system_error",
 				"The dynamic operation identity was settled more than once.",
 			);
-		// Mark before crossing the port boundary. A throwing host implementation
-		// must not cause the dispatcher to invoke the terminal authority twice.
-		terminal.add(operationId);
-		try {
-			if (kind === "consume") options.operationId.consumeCanonicalOperationId(operationId);
-			else options.operationId.retireCanonicalOperationId(operationId);
-		} catch (error) {
+		const disposition = kind === "consume" ? "consumed" : "retired";
+		const priorRequest = requested.get(operationId);
+		if (priorRequest !== undefined && priorRequest !== disposition)
 			throw new CodexDynamicToolsError(
 				"system_error",
-				`The dynamic operation identity could not be ${kind}d.`,
-				error,
+				"The dynamic operation settlement changed its requested disposition.",
 			);
-		}
+		requested.set(operationId, disposition);
+		const result = terminalizeDynamicOperationId(options.operationId, operationId, disposition);
+		terminal.set(operationId, result.disposition);
 	};
 
 	const retireUnsettled = (): void => {
@@ -274,7 +362,7 @@ export function createDynamicOperationSettlement(
 		for (const operationId of owned) {
 			if (terminal.has(operationId)) continue;
 			try {
-				terminalize(operationId, "retire");
+				terminalize(operationId, requested.get(operationId) === "consumed" ? "consume" : "retire");
 			} catch (error) {
 				firstError ??= error;
 			}

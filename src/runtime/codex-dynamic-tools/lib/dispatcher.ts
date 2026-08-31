@@ -7,6 +7,7 @@ import type { DynamicToolCallResponse } from "../../codex-thread-tools/index.js"
 import type { DynamicServerRequest } from "../../codex-transport/server-requests.js";
 import type { OperationId, TurnId } from "../../../shared/codex-workbench-identity/index.js";
 import {
+	CodexDynamicOperationTerminalizationError,
 	CodexDynamicToolsError,
 	type CodexDynamicTools,
 	type CodexDynamicToolsOptions,
@@ -527,10 +528,10 @@ async function dispatchOne(
 	let operationSettlement: DynamicOperationSettlement | null = null;
 	try {
 		const call = validateDynamicCall(request, options);
-		boundaryValidated = true;
 		knownName = call.name;
 		const immutableRequest = freezeDynamicRequest(request);
 		const caller = await resolveCaller(immutableRequest, options);
+		boundaryValidated = true;
 		await assertCallExecuting(options, immutableRequest, caller, "before_approval");
 		if (call.name === "list_threads") {
 			const operation = issueReadOperation(options).resultOperationId;
@@ -723,6 +724,7 @@ async function dispatchOne(
 			value: execution.value,
 		});
 	} catch (error) {
+		if (error instanceof CodexDynamicOperationTerminalizationError) throw error;
 		const failure = dynamicErrorForResponse(error);
 		if (boundaryValidated && knownName !== null)
 			return refusedDynamicResponse(
@@ -735,13 +737,7 @@ async function dispatchOne(
 			boundedFailureMessage(failure.message),
 		);
 	} finally {
-		if (operationSettlement !== null) {
-			try {
-				operationSettlement.retireUnsettled();
-			} catch {
-				/* The settlement marks before crossing the host boundary; never retry it. */
-			}
-		}
+		operationSettlement?.retireUnsettled();
 	}
 }
 

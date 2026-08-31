@@ -22,12 +22,15 @@ export const AUTHORITY_PAGE_LIMIT = 100 as const;
 
 /**
  * The authored read projection keeps each rendered output entry within 256
- * UTF-8 bytes, the output group within 1024 bytes, and the complete summary
- * within the documented 512-byte response bound.
+ * UTF-8 bytes, the output group within 1024 bytes, the visible output section
+ * within 256 bytes, and the complete summary within the documented 512-byte
+ * response bound.
  */
 const SUMMARY_MAX_UTF8_BYTES = 512 as const;
 const OUTPUT_ENTRY_MAX_UTF8_BYTES = 256 as const;
 const OUTPUT_AGGREGATE_MAX_UTF8_BYTES = 1024 as const;
+const OUTPUT_SUMMARY_MAX_UTF8_BYTES = 256 as const;
+const OUTPUT_MARKER = " · outputs: " as const;
 
 type TargetClassifier = (
 	threadId: unknown,
@@ -358,12 +361,19 @@ function turnSummary(
 	outputs: OutputProjection | null,
 ): { readonly value: string; readonly truncated: boolean } {
 	const base = rawTurnSummary(turn);
-	const combined =
-		outputs?.value === null || outputs === null ? base : `${base} · outputs: ${outputs.value}`;
-	const summary = truncateUtf8(combined, SUMMARY_MAX_UTF8_BYTES);
+	const outputValue = outputs?.value;
+	const outputWasTruncated = outputs?.truncated === true;
+	if (outputValue === undefined || outputValue === null)
+		return truncateUtf8(base, SUMMARY_MAX_UTF8_BYTES);
+	const visibleOutput = truncateUtf8(outputValue, OUTPUT_SUMMARY_MAX_UTF8_BYTES);
+	const baseBudget =
+		SUMMARY_MAX_UTF8_BYTES -
+		Buffer.byteLength(OUTPUT_MARKER, "utf8") -
+		Buffer.byteLength(visibleOutput.value, "utf8");
+	const visibleBase = truncateUtf8(base, baseBudget);
 	return {
-		value: summary.value,
-		truncated: summary.truncated || outputs?.truncated === true,
+		value: `${visibleBase.value}${OUTPUT_MARKER}${visibleOutput.value}`,
+		truncated: visibleBase.truncated || visibleOutput.truncated || outputWasTruncated,
 	};
 }
 

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 21:02'
+updated_date: '2026-08-31 21:30'
 labels: []
 dependencies:
   - TASK-143.01.08
@@ -48,6 +48,8 @@ Own item/tool/call validation, the literal target and transaction policy, and re
 3. Implement list/read projections with exact session request bodies and epoch/method/direction/query-bound cursors, plus create/fork/send approval, immutable effect hashing, post-approval revalidation, one-shot epoch staging/remote settlement, confirmed identity preservation, and canonical response construction.
 4. Implement wait target canonicalization, cursor binding, cycle rejection before registration, and exact lifecycle owner cleanup for every authored settlement and teardown event.
 5. Add exhaustive fake-port and compile fixtures for matrix cells, approval outcomes, stale/uncertain boundaries, body/page/projection contracts, wait/cycle/cleanup, identity reuse, terminal approval_required, and self-fork; run focused capped tests, strict type/lint/format/inventory/policy checks, diff audit, then commit with acceptance criteria unchecked for independent review.
+
+6. Remediation 2: move success:true eligibility after exact caller resolution; replace split consume/retire calls with idempotent host-confirmed terminalization and fail closed when terminality cannot be proven; preserve confirmed remote identities and non-retryable results through epoch settlement faults; reserve bounded read-summary space for requested textual outputs; add hostile terminal-port, caller-boundary, mutation-combination, and long-summary regressions, then rerun the requested capped validation without checking acceptance criteria.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -58,4 +60,6 @@ Implemented the six general archboard_app dynamic tool boundary in src/runtime/c
 Validation: bun run type-check, scoped oxlint, bun run fmt:check, 28 focused tests (4 files), and the dedicated 11-test repository contract policy all pass. The full repository-policy inventory reached the 6 GiB service cap after the boundary owners passed, so that combined lane was not rerun; browser lanes were not run per task scope. Acceptance criteria remain unchecked for independent review.
 
 Remediation: terminalize every issued mutation and initial-turn OperationId exactly once at durable settlement or approved no-effect cleanup; preserve boundary-invalid success:false versus post-validation success:true refusal semantics; and project bounded, ordered textual command/file/function/MCP outputs only when includeOutputs is true, rejecting wrong-turn item pages. Added exception and truncation regression coverage while keeping the task In Progress and acceptance criteria unchecked.
+
+Remediation 2 completed: success:true now begins only after exact caller identity resolution; mutation IDs use idempotent host-confirmed terminalization with readback and a non-retryable unresolved-terminality error; confirmed create, fork, send, and initial-turn identities/results survive local commit or outcome-marking failures; requested read outputs retain a visible marker and prefix inside the 512-byte summary bound. Validation passed under sequential 6 GiB memory/1 GiB swap transient units: format write (799 files), both TypeScript graphs, scoped oxlint (24 files, 0 warnings/errors), fmt:check (799 files), dynamic suite (49 tests/7 files, 281 expectations), authored contract policy (11 tests, 322 expectations), and repository inventory policy (39 tests, 69 expectations). The previously recorded full repository-policy OOM service remains preserved and was not rerun; browser owners remain outside this remediation run. Task stays In Progress with acceptance criteria unchecked for independent review.
 <!-- SECTION:NOTES:END -->

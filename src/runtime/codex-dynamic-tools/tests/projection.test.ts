@@ -81,6 +81,108 @@ describe("codex dynamic read projection", () => {
 		expect(turnValue.outputsTruncated).toBe(false);
 	});
 
+	test("reserves summary space for a short requested output after a long base", async () => {
+		const { authorities, caller, otherTarget } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		const returnedTurn = turn(
+			authorities,
+			"long-base-short-output",
+			"completed",
+			"long base ".repeat(120),
+		);
+		configureReadFixture(fixture, otherTarget, returnedTurn);
+		fixture.session.itemPages.set(
+			String(returnedTurn.id),
+			itemPage(returnedTurn.id, [
+				commandExecutionItem(authorities, "short-visible-output", "VISIBLE_OUTPUT"),
+			]),
+		);
+
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "read_thread", {
+				threadId: otherTarget.wireThreadId,
+				includeOutputs: true,
+			}),
+		);
+		const parsed = parseDynamicToolCallResponse("read_thread", response);
+		if (parsed.envelope.tag !== "ok") throw new Error("long-base fixture did not succeed");
+		const turns = record(parsed.envelope.value).turns;
+		if (!Array.isArray(turns) || turns.length !== 1) throw new Error("missing projected turn");
+		const turnValue = record(turns[0]);
+		const summary = String(turnValue.summary);
+
+		expect(Buffer.byteLength(summary, "utf8")).toBeLessThanOrEqual(512);
+		expect(summary).toContain(" · outputs: commandExecution: VISIBLE_OUTPUT");
+		expect(turnValue.outputsTruncated).toBe(true);
+	});
+
+	test("keeps a visible prefix for long multibyte output after a long base", async () => {
+		const { authorities, caller, otherTarget } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		const returnedTurn = turn(authorities, "long-base-long-output", "completed", "😀".repeat(300));
+		configureReadFixture(fixture, otherTarget, returnedTurn);
+		fixture.session.itemPages.set(
+			String(returnedTurn.id),
+			itemPage(returnedTurn.id, [
+				commandExecutionItem(authorities, "long-visible-output", "終".repeat(300)),
+			]),
+		);
+
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "read_thread", {
+				threadId: otherTarget.wireThreadId,
+				includeOutputs: true,
+			}),
+		);
+		const parsed = parseDynamicToolCallResponse("read_thread", response);
+		if (parsed.envelope.tag !== "ok") throw new Error("multibyte fixture did not succeed");
+		const turns = record(parsed.envelope.value).turns;
+		if (!Array.isArray(turns) || turns.length !== 1) throw new Error("missing projected turn");
+		const turnValue = record(turns[0]);
+		const summary = String(turnValue.summary);
+
+		expect(Buffer.byteLength(summary, "utf8")).toBeLessThanOrEqual(512);
+		expect(summary).toContain(" · outputs: commandExecution: 終");
+		expect(summary).not.toContain("�");
+		expect(turnValue.outputsTruncated).toBe(true);
+	});
+
+	test("does not request or reveal output when includeOutputs is false", async () => {
+		const { authorities, caller, otherTarget } = setupAuthorities();
+		const fixture = optionsFor(authorities, caller);
+		const returnedTurn = turn(
+			authorities,
+			"long-base-no-output",
+			"completed",
+			"no output base ".repeat(100),
+		);
+		configureReadFixture(fixture, otherTarget, returnedTurn);
+		fixture.session.itemPages.set(
+			String(returnedTurn.id),
+			itemPage(returnedTurn.id, [
+				commandExecutionItem(authorities, "hidden-output", "MUST_NOT_APPEAR"),
+			]),
+		);
+
+		const response = await createCodexDynamicTools(fixture.options).dispatch(
+			requestFor(authorities, caller, "read_thread", {
+				threadId: otherTarget.wireThreadId,
+				includeOutputs: false,
+			}),
+		);
+		const parsed = parseDynamicToolCallResponse("read_thread", response);
+		if (parsed.envelope.tag !== "ok") throw new Error("no-output fixture did not succeed");
+		const turns = record(parsed.envelope.value).turns;
+		if (!Array.isArray(turns) || turns.length !== 1) throw new Error("missing projected turn");
+		const turnValue = record(turns[0]);
+		const summary = String(turnValue.summary);
+
+		expect(summary).not.toContain("outputs:");
+		expect(summary).not.toContain("MUST_NOT_APPEAR");
+		expect(turnValue.outputsIncluded).toBe(false);
+		expect(fixture.session.calls.map(({ method }) => method)).not.toContain("thread/items/list");
+	});
+
 	test("rejects an item page that carries a different turn identity", async () => {
 		const { authorities, caller, otherTarget } = setupAuthorities();
 		const fixture = optionsFor(authorities, caller);

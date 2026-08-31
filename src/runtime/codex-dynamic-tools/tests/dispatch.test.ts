@@ -88,7 +88,10 @@ describe("codex dynamic dispatcher", () => {
 		expect(() =>
 			fixture.operationIds.validateCurrentUnconsumedOperationId(unrelatedOperationId),
 		).not.toThrow();
-		fixture.operationIds.retireCanonicalOperationId(unrelatedOperationId);
+		fixture.operationIds.terminalizeCanonicalOperationId({
+			operationId: unrelatedOperationId,
+			disposition: "retired",
+		});
 		expect(fixture.lifecycle.assertions).toEqual([
 			"before_approval",
 			"after_approval",
