@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 02:24'
+updated_date: '2026-08-31 02:58'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -51,6 +51,8 @@ Delegation profile: gpt-5.6-luna, max.
 4. Run focused transport tests, complete module and repository lanes, both TypeScript projects, lint, format, diff and clean-status checks; record evidence without finalizing before independent review.
 
 5. Apply the reviewed shared Codex app-server capacity authority, then remediate strict envelope direction, duplicate-key rejection, method-specific reverse schemas, numeric wire IDs, reverse error settlement, two-lane atomic response admission, terminal detachment, deep redacted projections, and adversarial public oracles.
+
+6. Apply independent-review fixes: settle reverse-response promises on accepted-write failure, fail the owning request on known-id duplicate-key responses, preserve terminal late-response diagnostics, centralize remaining non-duration bounds, derive child stdio types from Node, narrow transport entrypoints, and consolidate local test helpers.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -63,4 +65,6 @@ Implemented the instance-scoped Codex app-server JSONL transport under src/runti
 Remediation committed as 3fea481 (fix(codex-transport): harden app-server wire lifecycle), following the initial implementation 103ddf8 and fixed BASE b5d5062. Centralized all non-duration limits in src/shared/codex-app-server-capacity; added strict duplicate-key JSONL decoding, typed numeric/string wire IDs, dual regular/response admission, owner-aware method-specific reverse validation, bounded late/diagnostic projections, accepted-write settlement semantics, fatal oversized-frame handling, and terminal/shutdown detachment.
 
 Current focused validation: transport contract tests 20 pass / 0 fail / 126 expect across 4 files; capacity and repository-policy tests 6 pass / 0 fail / 152 expect across 2 files; bun run type-check, bun run lint, bun run fmt:check, and git diff --check pass. Preserved broad evidence from before the parent OOM guard: bun run test:modules 1,033 pass / 0 fail / 7,173 expect across 80 files, and bun run test:repository 134 pass / 0 fail / 559 expect across 12 files. No broad lane was rerun after that guard. Task remains In Progress pending independent review; acceptance criteria and terminal status were not changed.
+
+Second independent-review remediation is in code commit 35e7d4d (following 103ddf8, 3fea481, and the prior evidence commit 3fdee76). Reverse-response accepted-write failures now reject respond(), known-id duplicate-key response frames settle the owning request as malformed outcome_unknown, late-response diagnostics survive ordinary shutdown and child failure, and remaining text bounds use the shared canonical capacity contract. Child stdio fields derive from ChildProcessWithoutNullStreams with Node event tuples, the transport public surface is split into narrow client/errors/server-requests/diagnostics entrypoints, notify was removed, and captureRejection is owned once by fake-child support. Validation after remediation: 28 focused transport/capacity tests pass / 0 fail / 437 expect across 6 files; boundaries and module-scope policy owners pass 17 / 0 / 87; bun run type-check, bun run lint, bun run fmt:check, and git diff --check pass. Preserved broad evidence from before the parent OOM guard: bun run test:modules 1,033 pass / 0 fail / 7,173 expect across 80 files and bun run test:repository 134 pass / 0 fail / 559 expect across 12 files; no broad lane was rerun after that guard. Task remains In Progress; acceptance criteria and terminal status were not changed.
 <!-- SECTION:NOTES:END -->
