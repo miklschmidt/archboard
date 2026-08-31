@@ -17,6 +17,19 @@ function dispatch(
 	return fixtureValue.dispatcher.dispatch(request as CoordinatorToolsServerRequest);
 }
 
+function replayRequest(
+	fixtureValue: CoordinatorToolsFixture,
+	request: ReturnType<CoordinatorToolsFixture["request"]>,
+	label: string,
+): ReturnType<CoordinatorToolsFixture["request"]> {
+	const requestId = fixtureValue.identity.decoder.adoptJsonRpcRequestId(label);
+	return {
+		...copyRequest(request),
+		requestId,
+		correlation: fixtureValue.identity.decoder.createWireRequestCorrelation({ requestId }),
+	};
+}
+
 describe("coordinator dynamic-tool lifecycle", () => {
 	test("cancels in the pre-effect window without invoking a mutation", async () => {
 		const h = fixture();
@@ -86,6 +99,8 @@ describe("coordinator dynamic-tool lifecycle", () => {
 		const delivered = fixture();
 		delivered.transport.hold();
 		const deliveredPending = dispatch(delivered, delivered.request("inspect_workhorse"));
+		await nextMicrotasks();
+		await nextMicrotasks();
 		await nextMicrotasks();
 		await nextMicrotasks();
 		expect(delivered.operations.calls.inspect).toHaveLength(1);
@@ -211,26 +226,109 @@ describe("coordinator dynamic-tool lifecycle", () => {
 		expect(h.transport.writes).toHaveLength(1);
 	});
 
-	test("reuses one terminal promise for a logical call retried under a fresh request identity", async () => {
+	test("settles concurrent logical replays on both wire requests with one effect", async () => {
 		const h = fixture();
 		h.operations.hold();
 		const firstRequest = h.request("delegate_to_workhorse");
-		const secondRequestId = h.identity.decoder.adoptJsonRpcRequestId("logical-retry-request");
-		const secondRequest = {
-			...copyRequest(firstRequest),
-			requestId: secondRequestId,
-			correlation: h.identity.decoder.createWireRequestCorrelation({ requestId: secondRequestId }),
-		};
+		const secondRequest = replayRequest(h, firstRequest, "logical-retry-request");
 		const firstPending = dispatch(h, firstRequest);
 		const secondPending = dispatch(h, secondRequest);
 		await nextMicrotasks();
 		expect(h.operations.calls.delegate).toHaveLength(1);
 		h.operations.release();
 		const [first, second] = await Promise.all([firstPending, secondPending]);
-		expect(second).toBe(first);
+		expect(second.response).toEqual(first.response);
 		expect(h.operations.calls.delegate).toHaveLength(1);
+		expect(h.transport.writes).toHaveLength(2);
+		expect(new Set(h.transport.writes.map(({ request }) => request))).toEqual(
+			new Set([firstRequest, secondRequest]),
+		);
+		expect(responseEnvelope(second.response)).toMatchObject({
+			operationId: responseEnvelope(first.response).operationId,
+		});
+	});
+
+	test("settles a late logical replay from the cached result without another effect", async () => {
+		const h = fixture();
+		const firstRequest = h.request("delegate_to_workhorse");
+		const first = await dispatch(h, firstRequest);
+		const lateRequest = replayRequest(h, firstRequest, "late-logical-retry");
+		const late = await dispatch(h, lateRequest);
+
+		expect(late.response).toEqual(first.response);
+		expect(h.operations.calls.delegate).toHaveLength(1);
+		expect(h.transport.writes.map(({ request }) => request)).toEqual([firstRequest, lateRequest]);
+	});
+
+	test("isolates alias cancellation from the logical owner effect and response", async () => {
+		const h = fixture();
+		h.operations.hold();
+		const ownerRequest = h.request("delegate_to_workhorse");
+		const aliasRequest = replayRequest(h, ownerRequest, "cancelled-logical-retry");
+		const ownerPending = dispatch(h, ownerRequest);
+		const aliasPending = dispatch(h, aliasRequest);
+		await nextMicrotasks();
+		expect(h.operations.calls.delegate).toHaveLength(1);
+		h.dispatcher.cancel(aliasRequest.requestId, "caller_turn_interrupted");
+		const alias = await aliasPending;
+		expect(responseEnvelope(alias.response)).toMatchObject({
+			tag: "refused",
+			reason: "invalid_call",
+		});
 		expect(h.transport.writes).toHaveLength(1);
-		expect(h.transport.writes[0]!.request).toBe(firstRequest);
+		expect(h.transport.writes[0]!.request).toBe(aliasRequest);
+
+		h.operations.release();
+		const owner = await ownerPending;
+		expect(responseEnvelope(owner.response)).toMatchObject({ tag: "ok" });
+		expect(h.operations.calls.delegate).toHaveLength(1);
+		expect(h.transport.writes).toHaveLength(2);
+		expect(h.transport.writes.filter(({ request }) => request === aliasRequest)).toHaveLength(1);
+	});
+
+	test("settles each logical replay once when either wire response write fails", async () => {
+		for (const failed of ["owner", "alias"] as const) {
+			const h = fixture();
+			h.operations.hold();
+			const ownerRequest = h.request("delegate_to_workhorse");
+			const aliasRequest = replayRequest(h, ownerRequest, `failed-${failed}-logical-retry`);
+			h.transport.failFor(failed === "owner" ? ownerRequest : aliasRequest);
+			const ownerPending = dispatch(h, ownerRequest);
+			const aliasPending = dispatch(h, aliasRequest);
+			await nextMicrotasks();
+			h.operations.release();
+			const [owner, alias] = await Promise.all([ownerPending, aliasPending]);
+
+			expect(alias.response).toEqual(owner.response);
+			expect(h.operations.calls.delegate).toHaveLength(1);
+			expect(h.transport.writes).toHaveLength(2);
+			expect(new Set(h.transport.writes.map(({ request }) => request))).toEqual(
+				new Set([ownerRequest, aliasRequest]),
+			);
+		}
+	});
+
+	test("retires two logical replay wire owners without writes on exact child exit", async () => {
+		const h = fixture();
+		h.operations.hold();
+		const ownerRequest = h.request("delegate_to_workhorse");
+		const aliasRequest = replayRequest(h, ownerRequest, "disconnected-logical-retry");
+		const ownerPending = dispatch(h, ownerRequest);
+		const aliasPending = dispatch(h, aliasRequest);
+		await nextMicrotasks();
+		expect(h.operations.calls.delegate).toHaveLength(1);
+		h.dispatcher.onChildExit({
+			child: h.identity.validator.childId,
+			epoch: h.identity.validator.epoch,
+		});
+		const [owner, alias] = await Promise.all([ownerPending, aliasPending]);
+		expect(owner.attempted).toBe(true);
+		expect(alias.attempted).toBe(false);
+		expect(h.transport.writes).toHaveLength(0);
+		h.operations.release();
+		await nextMicrotasks();
+		expect(h.operations.calls.delegate).toHaveLength(1);
+		expect(h.transport.writes).toHaveLength(0);
 	});
 
 	test("disposes idempotently and rejects new dispatches", async () => {
