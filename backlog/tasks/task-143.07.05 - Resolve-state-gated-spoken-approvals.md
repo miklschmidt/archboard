@@ -1,11 +1,11 @@
 ---
 id: TASK-143.07.05
 title: Resolve state-gated spoken approvals
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 18:26'
+updated_date: '2026-08-31 18:29'
 labels: []
 dependencies:
   - TASK-143.02.03
@@ -30,10 +30,10 @@ Own the one-slot spoken-approval gate and schedule a later ordinary coordinator 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The gate captures one eligible approval/effect plus child/epoch/coordinator/realtime identity and the effect-prompt item/sequence. It arms only after one later matching final user item; assistant, provisional, pre-prompt, duplicate, or stale items cannot arm.
-- [ ] #2 The module starts one ordinary coordinator turn containing the exact authored classifier bytes with the captured final user text; accept/decline text from realtime alone never settles the broker.
-- [ ] #3 Only a matching later item/tool/call for resolve_spoken_approval continues; host validation supplies ApprovalId after all child/thread/turn/call/manifest/session/item/sequence/effect/expiry checks.
-- [ ] #4 Ambiguity, missing user final, assistant-only response, changed effect, stale state, timeout, lost classifier/resolver, or child exit disarms to visual fallback and never remains awaiting_user.
+- [x] #1 The gate captures one eligible approval/effect plus child/epoch/coordinator/realtime identity and the effect-prompt item/sequence. It arms only after one later matching final user item; assistant, provisional, pre-prompt, duplicate, or stale items cannot arm.
+- [x] #2 The module starts one ordinary coordinator turn containing the exact authored classifier bytes with the captured final user text; accept/decline text from realtime alone never settles the broker.
+- [x] #3 Only a matching later item/tool/call for resolve_spoken_approval continues; host validation supplies ApprovalId after all child/thread/turn/call/manifest/session/item/sequence/effect/expiry checks.
+- [x] #4 Ambiguity, missing user final, assistant-only response, changed effect, stale state, timeout, lost classifier/resolver, or child exit disarms to visual fallback and never remains awaiting_user.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -66,4 +66,12 @@ Review remediation applied: the approval broker now caches a frozen spokenEffect
 Remediation 2: the broker now caches a safe executable effect presentation at normalization and passes its availability into spoken eligibility. Missing or unsafe command text, cwd, execution-environment identity, or network approval context stays visual-only with unsupported_schema; the free-form reason is never used as a spoken effect fallback. Added broker regressions for decoded null and omitted command fields plus public spoken-gate regressions proving no classifier turn starts. Final scoped evidence: 38 focused approvals/spoken tests passed with 308 expectations; bunx tsc --noEmit passed; scoped oxlint passed; scoped oxfmt check passed; bun run test:modules passed. The preserved full repository-policy and boundary lanes were not rerun because their prior mandated 6G/1G cgroup OOM evidence remains unchanged.
 
 Remediation 3: expanded the table-driven broker regression to cover null and omitted command, unsafe command text, null cwd, unsafe cwd, non-null environmentId, and non-null networkApprovalContext. Every case returns unsupported_schema from spoken eligibility and throws unsupported_schema when the cached spoken presentation is requested. Kept the single public-gate null/omitted integration case. Final focused evidence: 25 tests passed with 185 expectations; bunx tsc --noEmit, scoped Oxlint, and scoped Oxfmt checks passed. Known full repository-policy and boundary cgroup OOM lanes were not rerun.
+
+Finalization evidence: independent reviewer 01a058e2-5cc0-7f42-87e5-892496fdb70f reported REVIEW_CLEAN for the complete implementation range 7e878e29b5dbb464ef12d72be0ca5db23c79efb3..59f101598b2cabcb47510fa31199c8f3c1f1b288. The complete focused approvals and spoken-approval suites passed 50 tests with 831 expectations. This proves AC #1 arming and identity capture, AC #2 exact classifier bytes and one ordinary turn, AC #3 matching resolver and host identity checks, and AC #4 fallback and one-shot behavior. TypeScript, scoped Oxlint, scoped Oxfmt, the module lane, and fixed-base git diff --check passed. Protected frontend bundle SHA-256 remains 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Known repository-policy and boundary lanes remain documented as mandated 6G/1G cgroup OOM and were not rerun. All four acceptance criteria are now checked; no Definition of Done items exist.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented and reviewed the state-gated spoken approval workflow, including exact classifier and resolver identity checks and fail-closed command-effect presentation. Verified by independent REVIEW_CLEAN on 7e878e29b5dbb464ef12d72be0ca5db23c79efb3..59f101598b2cabcb47510fa31199c8f3c1f1b288, 50 focused tests with 831 expectations, TypeScript, scoped Oxlint/Oxfmt, the module lane, and git diff --check. Protected bundle hash is unchanged; known capped-OOM lanes were preserved and not rerun.
+<!-- SECTION:FINAL_SUMMARY:END -->
