@@ -9,9 +9,11 @@ const EPOCH_TOKEN_PATTERN = new RegExp(
 	`^([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})\\.([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})$`,
 );
 export const OPERATION_ID_MAX_BYTES = 128 as const;
+export const OPERATION_ID_MAX_ISSUE_ATTEMPTS = 16 as const;
 const OPERATION_TOKEN_PATTERN = new RegExp(
 	`^([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})\\.(h[0-9a-f]{32})$`,
 );
+const OPERATION_NONCE_PATTERN = /^[0-9a-f]{32}$/u;
 const TEXT_LIMIT = 256;
 
 declare const identityBrand: unique symbol;
@@ -131,6 +133,7 @@ export type IdentityValidationCode =
 	| "unissued"
 	| "stale-epoch"
 	| "wrong-child"
+	| "issuance-exhausted"
 	| "extra-field"
 	| "invalid-field";
 
@@ -236,8 +239,15 @@ function mintEpochValue(child: ChildId): ChildEpoch {
 	return wireValue("epoch", `${tokenOf(child)}.h${mintToken()}`);
 }
 
-function operationWireValue(epoch: ChildEpoch): OperationId {
-	const value = wireValue("operation", `${tokenOf(epoch)}.h${mintToken()}`);
+function operationWireValue(epoch: ChildEpoch, nonce: unknown): OperationId {
+	if (typeof nonce !== "string" || !OPERATION_NONCE_PATTERN.test(nonce)) {
+		return fail(
+			"invalid-shape",
+			"Operation identity nonce must be 32 lowercase hexadecimal characters.",
+			"operation",
+		);
+	}
+	const value = wireValue("operation", `${tokenOf(epoch)}.h${nonce}`);
 	if (new TextEncoder().encode(value).byteLength > OPERATION_ID_MAX_BYTES) {
 		return fail(
 			"invalid-shape",
@@ -400,16 +410,14 @@ export interface IdentityValidator {
 	readonly epoch: ChildEpoch;
 	readonly isCurrentEpoch: (child: ChildId, epoch: ChildEpoch) => boolean;
 	readonly assertCurrentEpoch: (child: ChildId, epoch: ChildEpoch) => void;
+}
+
+/** The only capability ordinary mutation owners need to validate an OperationId. */
+export interface OperationIdValidator {
 	readonly isCurrentOperationId: (operationId: OperationId) => boolean;
 	readonly assertCurrentOperationId: (operationId: OperationId) => void;
 	readonly validateOperationId: (operationId: OperationId) => void;
 }
-
-/** The only capability ordinary mutation owners need to validate an OperationId. */
-export type OperationIdValidator = Pick<
-	IdentityValidator,
-	"isCurrentOperationId" | "assertCurrentOperationId" | "validateOperationId"
->;
 
 /** Host-owned IDs are minted here; server-owned IDs can only enter via the trusted decoder. */
 export interface IdentityIssuer {
@@ -417,11 +425,12 @@ export interface IdentityIssuer {
 	readonly mintJsonRpcRequestId: () => JsonRpcRequestId;
 	readonly mintRealtimeSessionId: () => RealtimeSessionId;
 	readonly mintChildEpoch: () => ChildEpoch;
-	readonly mintOperationId: () => OperationId;
 }
 
 /** The only capability that can issue a host-owned OperationId. */
-export type OperationIdIssuer = Pick<IdentityIssuer, "mintOperationId">;
+export interface OperationIdIssuer {
+	readonly mintOperationId: () => OperationId;
+}
 
 /** Raw server identities collected from one decoded app-server response. */
 export interface CodexResponseIdentityBatch {
@@ -458,7 +467,6 @@ export interface TrustedIdentityDecoder {
 	readonly parseDynamicToolCallId: (value: unknown) => DynamicToolCallId;
 	readonly parseRealtimeSessionId: (value: unknown) => RealtimeSessionId;
 	readonly parseApprovalId: (value: unknown) => ApprovalId;
-	readonly parseOperationId: (value: unknown) => OperationId;
 	/** Resolves a raw Codex thread id only when this authority already issued it. */
 	readonly resolveThreadId: (raw: unknown) => ThreadId;
 	readonly adoptThreadId: (raw: unknown) => ThreadId;
@@ -475,7 +483,6 @@ export interface TrustedIdentityDecoder {
 	) => AdoptedCodexResponseIdentityBatch;
 	readonly serializeCodexIdentity: (identity: CodexIdentity) => string;
 	readonly serializeJsonRpcRequestId: (identity: JsonRpcRequestId) => JsonRpcRequestIdWireValue;
-	readonly serializeOperationId: (identity: OperationId) => string;
 	readonly createWireRequestCorrelation: (
 		input: WireRequestCorrelationInput,
 	) => WireRequestCorrelation;
@@ -487,15 +494,27 @@ export interface TrustedIdentityDecoder {
 }
 
 /** Trusted protocol code may parse and serialize, but never adopt, OperationIds. */
-export type TrustedOperationIdDecoder = Pick<
-	TrustedIdentityDecoder,
-	"parseOperationId" | "serializeOperationId"
->;
+export interface TrustedOperationIdDecoder {
+	readonly parseOperationId: (value: unknown) => OperationId;
+	readonly serializeOperationId: (identity: OperationId) => string;
+}
+
+/** The complete operation capability is composed only at the authority boundary. */
+export interface OperationAuthority {
+	readonly validator: OperationIdValidator;
+	readonly issuer: OperationIdIssuer;
+	readonly decoder: TrustedOperationIdDecoder;
+}
 
 export interface IdentityAuthority {
 	readonly validator: IdentityValidator;
 	readonly issuer: IdentityIssuer;
 	readonly decoder: TrustedIdentityDecoder;
+}
+
+/** The factory return type composes legacy identity capabilities with operation capabilities. */
+export interface IdentityAuthorityWithOperations extends IdentityAuthority {
+	readonly operation: OperationAuthority;
 }
 
 type AdoptableDomain =
@@ -508,7 +527,16 @@ type AdoptableDomain =
 	| "dynamic-tool-call"
 	| "approval";
 
-function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority {
+export interface IdentityAuthorityOptions {
+	/** Test-controlled raw nonce source; production defaults to crypto.randomUUID(). */
+	readonly operationNonce?: () => string;
+}
+
+function createAuthority(
+	childId: ChildId,
+	epoch: ChildEpoch,
+	options: IdentityAuthorityOptions,
+): IdentityAuthorityWithOperations {
 	const issued = new Map<IdentityDomain, Set<string>>();
 	const rawByIdentity = new Map<string, JsonRpcRequestIdWireValue>();
 
@@ -541,10 +569,19 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		const raw = mintToken();
 		return issue(domain, `h${raw}`, raw);
 	};
+	const operationNonce = options.operationNonce ?? mintToken;
 	const mintOperation = (): OperationId => {
-		let value = operationWireValue(epoch);
-		while (issued.get("operation")?.has(value) === true) value = operationWireValue(epoch);
-		return issue("operation", tokenOf(value), value);
+		for (let attempt = 0; attempt < OPERATION_ID_MAX_ISSUE_ATTEMPTS; attempt++) {
+			const value = operationWireValue(epoch, operationNonce());
+			if (issued.get("operation")?.has(value) !== true) {
+				return issue("operation", tokenOf(value), value);
+			}
+		}
+		return fail(
+			"issuance-exhausted",
+			`Could not issue a unique operation identity after ${OPERATION_ID_MAX_ISSUE_ATTEMPTS} attempts.`,
+			"operation",
+		);
 	};
 	const adopt = <Domain extends AdoptableDomain>(
 		domain: Domain,
@@ -687,9 +724,6 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		isCurrentEpoch: (child, candidateEpoch) => child === childId && candidateEpoch === epoch,
 		assertCurrentEpoch: (child, candidateEpoch) =>
 			assertCurrent(child, candidateEpoch, childId, epoch),
-		isCurrentOperationId,
-		assertCurrentOperationId,
-		validateOperationId: assertCurrentOperationId,
 	};
 	const issuer: IdentityIssuer = {
 		mintBrowserCommandId: () => mint("browser-command"),
@@ -700,7 +734,6 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 			issueExisting("epoch", nextEpoch, tokenOf(nextEpoch));
 			return nextEpoch;
 		},
-		mintOperationId: mintOperation,
 	};
 	const decoder: TrustedIdentityDecoder = {
 		parseChildId: (value) => parseIssued("child", value),
@@ -719,7 +752,6 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		parseDynamicToolCallId: (value) => parseIssued("dynamic-tool-call", value),
 		parseRealtimeSessionId: (value) => parseIssued("realtime-session", value),
 		parseApprovalId: (value) => parseIssued("approval", value),
-		parseOperationId: parseOperation,
 		resolveThreadId,
 		adoptThreadId: (raw) => adopt("thread", raw),
 		adoptTurnId: (raw) => adopt("turn", raw),
@@ -732,7 +764,6 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 		adoptCodexResponseIdentities,
 		serializeCodexIdentity: serialize,
 		serializeJsonRpcRequestId: serializeJsonRpc,
-		serializeOperationId: (value) => parseOperation(value),
 		createWireRequestCorrelation: (input) => {
 			const requestId = parseIssued("json-rpc-request", input.requestId);
 			return Object.freeze({ child: childId, epoch, requestId });
@@ -758,7 +789,27 @@ function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthority
 			parseLogicalToolCallCorrelationValue(value, childId, epoch, issued),
 	};
 
-	return { validator, issuer, decoder };
+	const operationValidator: OperationIdValidator = {
+		isCurrentOperationId,
+		assertCurrentOperationId,
+		validateOperationId: assertCurrentOperationId,
+	};
+	const operationIssuer: OperationIdIssuer = { mintOperationId: mintOperation };
+	const operationDecoder: TrustedOperationIdDecoder = {
+		parseOperationId: parseOperation,
+		serializeOperationId: (value) => parseOperation(value),
+	};
+
+	return {
+		validator,
+		issuer,
+		decoder,
+		operation: Object.freeze({
+			validator: operationValidator,
+			issuer: operationIssuer,
+			decoder: operationDecoder,
+		}),
+	};
 }
 
 function parseWireRequestCorrelationValue(
@@ -808,16 +859,21 @@ function parseLogicalToolCallCorrelationValue(
 	});
 }
 
-export function createIdentityAuthority(): IdentityAuthority {
+export function createIdentityAuthority(
+	options: IdentityAuthorityOptions = {},
+): IdentityAuthorityWithOperations {
 	const childId = mintHostValue("child");
-	return createAuthority(childId, mintEpochValue(childId));
+	return createAuthority(childId, mintEpochValue(childId), options);
 }
 
-export function restoreIdentityAuthority(input: {
-	readonly childId: unknown;
-	readonly epoch: unknown;
-}): IdentityAuthority {
+export function restoreIdentityAuthority(
+	input: {
+		readonly childId: unknown;
+		readonly epoch: unknown;
+	},
+	options: IdentityAuthorityOptions = {},
+): IdentityAuthorityWithOperations {
 	const childId = parseValue(input.childId, "child");
 	const epoch = parseEpochValue(input.epoch, childId);
-	return createAuthority(childId, epoch);
+	return createAuthority(childId, epoch, options);
 }

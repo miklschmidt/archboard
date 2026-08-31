@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-31 14:25'
-updated_date: '2026-08-31 16:12'
+updated_date: '2026-08-31 16:34'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -52,4 +52,6 @@ Implemented one epoch-bound OperationId domain in the existing shared identity a
 Validation: named service archboard-task1430120-identity-focused-03 passed 9 tests and 402 expectations; archboard-task1430120-typecheck-04 passed both TypeScript projects at 1.7G; archboard-task1430120-scoped-final-01 passed Oxlint with 0 warnings/errors and Oxfmt check; archboard-task1430120-inventory-01 passed 39 tests and 69 expectations; archboard-task1430120-diff-final-01 passed git diff --check. The combined boundaries owner and standalone module-scope owner each reached the 6G/1G cgroup ceiling and were not rerun. Every command used a named transient systemd user service with --pipe --wait --collect, explicit checkout cwd, printed cgroup, MemoryMax=6G, MemorySwapMax=1G, and verified limits.
 
 Preserved-work audit: changed source scope is only src/shared/codex-workbench-identity plus this task record; no consumer modules, generated files, package or lock files, sibling task state, acceptance boxes, or protected bundle changed. The protected src-DlBR1tzg.js path is absent in this isolated worktree. Task remains In Progress with acceptance criteria unchecked for independent review.
+
+Review remediation: OperationId methods were removed from IdentityValidator, IdentityIssuer, and TrustedIdentityDecoder. A separate OperationAuthority is returned under authority.operation, with exact narrow capability interfaces and keyof/@ts-expect-error negative-space fixtures. Operation nonce injection now drives a finite 16-attempt retry budget and returns issuance-exhausted after repeated duplicates; deterministic duplicate-then-fresh and exhaustion tests cover both paths.
 <!-- SECTION:NOTES:END -->

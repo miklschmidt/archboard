@@ -4,6 +4,7 @@ import type {
 	ChildEpoch,
 	ChildId,
 	DynamicToolCallId,
+	IdentityAuthority,
 	IdentityIssuer,
 	IdentityValidator,
 	ItemId,
@@ -11,6 +12,7 @@ import type {
 	LogicalToolCallCorrelation,
 	LoginId,
 	OperationId,
+	OperationAuthority,
 	OperationIdIssuer,
 	OperationIdValidator,
 	QueuedSubmissionId,
@@ -43,6 +45,7 @@ declare const operation: OperationId;
 declare const validator: IdentityValidator;
 declare const issuer: IdentityIssuer;
 declare const decoder: TrustedIdentityDecoder;
+declare const identityAuthority: IdentityAuthority;
 declare const operationValidator: OperationIdValidator;
 declare const operationIssuer: OperationIdIssuer;
 declare const operationDecoder: TrustedOperationIdDecoder;
@@ -95,6 +98,7 @@ type _OtherIdentitiesRemainOpaque = [
 ];
 
 type _OperationIdRemainsOpaque = [
+	AssertFalse<IsAssignable<string, OperationId>>,
 	AssertFalse<IsAssignable<OperationId, ChildId>>,
 	AssertFalse<IsAssignable<OperationId, ChildEpoch>>,
 	AssertFalse<IsAssignable<OperationId, BrowserCommandId>>,
@@ -121,6 +125,25 @@ type _OperationIdRemainsOpaque = [
 	AssertFalse<IsAssignable<ApprovalId, OperationId>>,
 ];
 
+type _BroadIdentityCapabilitiesRemainNarrow = [
+	AssertFalse<"isCurrentOperationId" extends keyof IdentityValidator ? true : false>,
+	AssertFalse<"assertCurrentOperationId" extends keyof IdentityValidator ? true : false>,
+	AssertFalse<"validateOperationId" extends keyof IdentityValidator ? true : false>,
+	AssertFalse<"mintOperationId" extends keyof IdentityIssuer ? true : false>,
+	AssertFalse<"parseOperationId" extends keyof TrustedIdentityDecoder ? true : false>,
+	AssertFalse<"serializeOperationId" extends keyof TrustedIdentityDecoder ? true : false>,
+	AssertFalse<"operation" extends keyof IdentityAuthority ? true : false>,
+	Assert<
+		Equal<
+			keyof OperationIdValidator,
+			"isCurrentOperationId" | "assertCurrentOperationId" | "validateOperationId"
+		>
+	>,
+	Assert<Equal<keyof OperationIdIssuer, "mintOperationId">>,
+	Assert<Equal<keyof TrustedOperationIdDecoder, "parseOperationId" | "serializeOperationId">>,
+	Assert<Equal<keyof OperationAuthority, "validator" | "issuer" | "decoder">>,
+];
+
 type _ExactCorrelationKeys = [
 	Assert<Equal<keyof WireRequestCorrelation, "child" | "epoch" | "requestId">>,
 	Assert<
@@ -138,6 +161,16 @@ validator.adoptThreadId("thread");
 validator.parseJsonRpcRequestId("request");
 // @ts-expect-error IdentityIssuer must not adopt server-owned identities.
 issuer.adoptThreadId("thread");
+// @ts-expect-error Broad identity validation must not expose operation IDs.
+validator.isCurrentOperationId(operation);
+// @ts-expect-error Broad identity issuance must not expose operation IDs.
+issuer.mintOperationId();
+// @ts-expect-error Broad trusted decoding must not parse operation IDs.
+decoder.parseOperationId(operation);
+// @ts-expect-error Broad trusted decoding must not serialize operation IDs.
+decoder.serializeOperationId(operation);
+// @ts-expect-error Unrelated consumers accepting IdentityAuthority cannot reach operations.
+void identityAuthority.operation;
 
 // The operation capability is the exact reusable type accepted by the three
 // future workbench mutation owners.
@@ -173,5 +206,6 @@ export type IdentityTypeFixture = [
 	_NoLoginRequestCrossAssignment,
 	_OtherIdentitiesRemainOpaque,
 	_OperationIdRemainsOpaque,
+	_BroadIdentityCapabilitiesRemainNarrow,
 	_ExactCorrelationKeys,
 ];
