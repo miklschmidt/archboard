@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.12
 title: Pin the assistant-ui runtime dependency
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 04:45'
+updated_date: '2026-08-31 04:48'
 labels: []
 dependencies:
   - TASK-144.01
@@ -34,10 +34,10 @@ Delegation profile: gpt-5.6-luna, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 package.json and bun.lock pin @assistant-ui/react exactly 0.15.17 after Codex/Tailwind/Base UI root edits; frozen install, license audit, and transitive allowlist pass without duplicate React or direct Radix dependency.
-- [ ] #2 Repository policy allows only named root imports: TASK-143.03.02 owns useExternalStoreRuntime, AssistantRuntimeProvider, ReadonlyThreadProvider, MessageNotSentError; .03.04 owns ThreadPrimitive, MessagePrimitive, MessagePartPrimitive; .03.05 owns ComposerPrimitive.
-- [ ] #3 The policy rejects namespace/default/subpath imports, all other members, copied Elements, AssistantTransport, thread-list, queue, tool, voice APIs, and assistant-ui imports from every other module with actionable diagnostics.
-- [ ] #4 tests/system/repository-policy/assistant-ui-imports.test.ts proves every allowed owner/member and rejects each forbidden shape; bundle inspection fails on unexpected transitive growth or app/direct Radix use.
+- [x] #1 package.json and bun.lock pin @assistant-ui/react exactly 0.15.17 after Codex/Tailwind/Base UI root edits; frozen install, license audit, and transitive allowlist pass without duplicate React or direct Radix dependency.
+- [x] #2 Repository policy allows only named root imports: TASK-143.03.02 owns useExternalStoreRuntime, AssistantRuntimeProvider, ReadonlyThreadProvider, MessageNotSentError; .03.04 owns ThreadPrimitive, MessagePrimitive, MessagePartPrimitive; .03.05 owns ComposerPrimitive.
+- [x] #3 The policy rejects namespace/default/subpath imports, all other members, copied Elements, AssistantTransport, thread-list, queue, tool, voice APIs, and assistant-ui imports from every other module with actionable diagnostics.
+- [x] #4 tests/system/repository-policy/assistant-ui-imports.test.ts proves every allowed owner/member and rejects each forbidden shape; bundle inspection fails on unexpected transitive growth or app/direct Radix use.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -102,4 +102,12 @@ Final focused checks after the lint-safe follow-up: bun test tests/system/reposi
 - Root TypeScript: bunx tsc --noEmit exited 0. Frontend TypeScript: bunx tsc --noEmit -p tsconfig.frontend.json exited 0.
 - Focused evidence: bun test tests/system/repository-policy/assistant-ui-imports.test.ts passed 12 tests and 282 expect() calls; Oxlint passed with 0 warnings and 0 errors; Oxfmt check passed; git diff --check passed.
 - Broad repository, system, and browser lanes were intentionally not run because they remain root-owned. External /home/msc/Projects/archboard/src-DlBR1tzg.js remained unchanged. Task remains In Progress with all acceptance criteria unchecked.
+
+Root acceptance at integrated HEAD 2364910: independent reviewer returned REVIEW_CLEAN for complete immutable range 299286acb43b5a4e9ace716b5886d1a271a3b17a..a6ee154c5aeed4d1ca433cd5b69d9b92137d296f. The integration checkout first lacked the newly pinned ignored dependency, so capped frozen install archboard-task1430312-install-7c21364.service installed @assistant-ui/react 0.15.17 at 12.4M peak with swap 0; the lock remained frozen. Root capped validation then passed both TypeScript projects in archboard-task1430312-types2-2364910.service at 1.5G peak/swap 0 and the focused policy in archboard-task1430312-focused3-2364910.service with 12 tests/282 assertions at 401.2M peak/swap 0. Full lint passed at 1.6G peak and repository-wide format at 1.4G peak before the type-only remediation; scoped lint/format passed after it. The complete repository and module lanes had previously reached their fixed 12G memory/2G swap caps and were not repeated or granted higher limits. No product browser surface consumes this dependency yet, so no rendered/browser claim is made. The copied-Element guard intentionally remains limited to Message, CodeDiff, and ReviewableDiff signatures.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Pinned @assistant-ui/react 0.15.17 with a frozen audited dependency graph, exact React singleton records, license/package-root and retained-bundle ceilings, and one error-level Oxlint ownership rule. The policy permits only the reviewed named members in three workbench modules and rejects alternate owners, packages, Radix app use, copied reviewed Elements, forbidden API families, aliases, destructuring, and transparent TypeScript wrapper bypasses. Independent full-range review was clean; frozen install, both TypeScript projects, focused policy, lint, and format passed under caps.
+<!-- SECTION:FINAL_SUMMARY:END -->
