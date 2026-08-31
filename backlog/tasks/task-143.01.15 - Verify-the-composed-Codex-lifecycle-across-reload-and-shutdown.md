@@ -4,7 +4,7 @@ title: Verify the composed Codex lifecycle across reload and shutdown
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:25'
-updated_date: '2026-08-30 17:27'
+updated_date: '2026-08-31 14:27'
 labels: []
 dependencies:
   - TASK-143.01.14
@@ -27,8 +27,8 @@ Own the one real-process lifecycle and protocol owner for the production Codex c
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A clean restrictive home proves config.toml materialization, initialize.codexHome, config origin/sqlite_home, managed-requirement reconciliation, account readiness, and one executable link; env-only/null, redirected, symlink, and conflicting stores refuse.
-- [ ] #2 The process owner drives all eleven server-request variants through the exhaustive production router, including whole-second currentTime/read and exact token-refresh/attestation errors, with no dropped/double response.
-- [ ] #3 Through public ports it covers all six general tools, their confirmed/partial/uncertain results, two-home isolation, general/coordinator dynamic calls, and seven approval families; module owners retain exhaustive fake-port target and policy matrices.
-- [ ] #4 Reload during in-flight RPC/reverse requests preserves one child/listener/coordinator/queue/broker/gate with handler replacement; child exit, signals, and normal close settle/classify work and leave no orphan.
+- [ ] #1 A clean restrictive home proves config.toml materialization, initialize.codexHome, config origin and sqlite_home, managed-requirement reconciliation, account readiness, one executable link, and canonical OperationId issuance; env-only or null, redirected, symlink, and conflicting stores refuse.
+- [ ] #2 The process owner drives all eleven server-request variants through the exhaustive production router, including whole-second currentTime/read and exact token-refresh and attestation errors, with no dropped or double response.
+- [ ] #3 Through public ports it covers all six general tools, their confirmed, partial, and uncertain results, two-home isolation, general and coordinator dynamic calls, seven ordinary approval families, and fresh create, fork, and send visual approvals across approve, decline, expiry, cancellation, browser disconnect, stale revalidation, and terminal approval_required without resume. Module owners retain exhaustive fake-port matrices.
+- [ ] #4 Reload during in-flight RPC, ordinary reverse requests, dynamic approval, and wait preserves one child, listener, coordinator, queue, broker, gate, and replaceable handler set. Browser disconnect, child exit, signals, and normal close settle or classify every request, release wait edges, invalidate effect authority, and leave no orphan or later mutation.
 <!-- AC:END -->

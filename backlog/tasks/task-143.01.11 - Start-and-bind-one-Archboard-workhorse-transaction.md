@@ -4,13 +4,14 @@ title: Start and bind one Archboard workhorse transaction
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-30 17:27'
+updated_date: '2026-08-31 14:27'
 labels: []
 dependencies:
   - TASK-143.01.05
   - TASK-143.01.07
   - TASK-143.01.08
   - TASK-143.01.09
+  - TASK-143.01.20
   - TASK-143.05.03
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
@@ -35,4 +36,5 @@ Own one serialized start-and-bind transaction for an Archboard-created workhorse
 - [ ] #2 The transaction stages one thread/start, verifies returned ThreadId/cwd/root/history/source/threadSource/model/provider/tier plus start-response approvalPolicy, approvalsReviewer, sandbox, and activePermissionProfile, then commits provenance/hashes and binds exactly once.
 - [ ] #3 Before confirmed start, failure rolls back locally. After confirmed start but failed bind, delete is allowed only after re-reading that new idle root; failed/lost delete becomes inspect_only.
 - [ ] #4 A lost thread/start response is outcome_unknown, never retried, inferred, or cleaned up; every staged/confirmed/bind/cleanup boundary is tested.
+- [ ] #5 Every staged thread-start, bind, cleanup, and initial operation correlation uses the shared canonical OperationId authority; this module does not mint strings or reuse another identity domain.
 <!-- AC:END -->
