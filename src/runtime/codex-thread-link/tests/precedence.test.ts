@@ -77,7 +77,7 @@ describe("codex thread-link authored refusal precedence", () => {
 			{
 				operationId: "thread-loss",
 				rpc: "thread/start",
-				unknownReason: "thread_start_settlement_was_lost",
+				unknownReason: "response was lost",
 			},
 			async (fixture) => {
 				const row = thread(fixture.authority, "target", {

@@ -171,11 +171,6 @@ export interface ThreadLinkBindingSnapshot {
 	readonly cas: ThreadLinkCasToken;
 }
 
-export interface CodexThreadLinkBindingOptions {
-	readonly currentEpoch?: ThreadLinkCurrentEpochSource;
-	readonly epoch?: ThreadLinkEpochAuthority;
-}
-
 /** Public CAS accepts only unbound or explicitly inspect-only links. */
 export type ThreadLinkNonExecutableSnapshot = InspectOnlyThreadLink | UnboundThreadLink;
 

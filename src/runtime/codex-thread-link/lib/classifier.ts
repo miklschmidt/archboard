@@ -79,15 +79,6 @@ function authoredReason(condition: ThreadLinkCondition): ThreadLinkReason {
 	return entry.reason;
 }
 
-const THREAD_START_LOST_CONDITION: ThreadLinkCondition = (() => {
-	const expectedReason = ADDITIONAL_CONTEXT_POLICY.operation.threadStartOutcomeUnknown.reason;
-	const entry = REASON_PRECEDENCE.find((candidate) => candidate.reason === expectedReason);
-	if (entry === undefined) {
-		throw new Error("additional-context policy has no thread-start settlement condition");
-	}
-	return entry.condition;
-})();
-
 function invalidResult(message: string, cause?: unknown): CodexThreadLinkError {
 	return new CodexThreadLinkError("invalid_result", message, cause);
 }
@@ -364,22 +355,12 @@ function hasMalformedEvidence(target: ThreadLinkTarget): boolean {
 	);
 }
 
-function conditionToken(value: string): string {
-	return value
-		.trim()
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, "_")
-		.replace(/^_+|_+$/g, "");
-}
-
-/** The authored special reason requires the persisted wire boundary and settlement condition. */
-function isThreadStartSettlementLost(record: EpochOperationRecord): boolean {
+/** The authored special reason requires only the typed settlement state and wire boundary. */
+function isThreadStartOutcomeUnknown(record: EpochOperationRecord): boolean {
 	return (
 		record.status === "inspect_only" &&
 		record.outcome === "outcome_unknown" &&
-		record.operation.rpc === "thread/start" &&
-		record.reason !== null &&
-		conditionToken(record.reason) === THREAD_START_LOST_CONDITION
+		record.operation.rpc === "thread/start"
 	);
 }
 
@@ -411,7 +392,7 @@ function reasonForEpochError(
 		return authoredReason("current_epoch_ownership_is_unproven");
 	if (error.code === "stale_child") return authoredReason("link_child_is_not_current_child");
 	if (error.code === "prior_epoch") return authoredReason("link_or_provenance_epoch_is_prior");
-	if (error.code === "inspect_only" && record !== null && isThreadStartSettlementLost(record)) {
+	if (error.code === "inspect_only" && record !== null && isThreadStartOutcomeUnknown(record)) {
 		return authoredReason("thread_start_settlement_was_lost");
 	}
 	if (
