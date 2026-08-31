@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeItemId,
@@ -23,6 +23,7 @@ import {
 	type CodexRealtimeAdapterOptions,
 	type CodexRealtimeBinding,
 } from "../index.js";
+import { recordReducerCheckedEvents } from "./state-test-support.js";
 
 type TimelinePage = Awaited<ReturnType<CodexRealtimeAdapterOptions["session"]["timelineListPage"]>>;
 
@@ -98,6 +99,12 @@ interface Harness {
 	binding: CodexRealtimeBinding | null;
 }
 
+const transitionFailures: string[] = [];
+afterEach(() => {
+	expect(transitionFailures).toEqual([]);
+	transitionFailures.length = 0;
+});
+
 function harness(): Harness {
 	const identity = createIdentityAuthority();
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
@@ -124,7 +131,7 @@ function harness(): Harness {
 		currentBinding: () => bindingState.binding,
 		attachRemoteMedia: () => undefined,
 	});
-	adapter.onSemanticEvent((semanticEvent) => events.push(semanticEvent));
+	recordReducerCheckedEvents(adapter, events, transitionFailures);
 	return {
 		adapter,
 		session,
@@ -161,21 +168,25 @@ function notify(h: Harness, method: string, params: unknown): void {
 	h.adapter.onNotification(notificationEvent(h, decodeServerNotification({ method, params })));
 }
 
-function correlation() {
+function correlation(suffix = "") {
 	return {
-		sessionId: parseRealtimeSessionId("browser-session"),
-		correlationId: parseRealtimeCorrelationId("browser-correlation"),
+		sessionId: parseRealtimeSessionId(`browser-session${suffix}`),
+		correlationId: parseRealtimeCorrelationId(`browser-correlation${suffix}`),
 	};
 }
 
-async function started(h: Harness): Promise<{
+async function started(
+	h: Harness,
+	suffix = "",
+): Promise<{
 	readonly wireSessionId: string;
 	readonly correlation: ReturnType<typeof correlation>;
 }> {
-	const browser = correlation();
+	const browser = correlation(suffix);
+	const startIndex = h.session.starts.length;
 	const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" });
 	await Promise.resolve();
-	const start = h.session.starts[0];
+	const start = h.session.starts[startIndex];
 	if (!start?.realtimeSessionId) throw new Error("Start did not mint a realtime identity.");
 	notify(h, "thread/realtime/sdp", {
 		threadId: h.coordinatorThreadId,
@@ -357,6 +368,10 @@ describe("Codex realtime adapter", () => {
 				activeRealtimeSessionAtPageStart: wireSessionId,
 			},
 		];
+		notify(h, "thread/realtime/error", {
+			threadId: h.coordinatorThreadId,
+			message: "recover timeline",
+		});
 		expect(await h.adapter.recover(browser)).toEqual({ ...browser, outcome: "delivered" });
 		expect(h.session.timelineRequests.map((request) => request.cursor)).toEqual([null, "next"]);
 		expect(
@@ -365,14 +380,46 @@ describe("Codex realtime adapter", () => {
 			{ itemId: parseRealtimeItemId("item-a"), sequence: 0, text: "first" },
 			{ itemId: parseRealtimeItemId("item-b"), sequence: 1, text: "recovered" },
 		]);
-		h.session.timelinePages = [
-			{ data: [], nextCursor: "loop", activeRealtimeSessionAtPageStart: wireSessionId },
-			{ data: [], nextCursor: "loop", activeRealtimeSessionAtPageStart: wireSessionId },
+		const looping = harness();
+		const loopStart = await started(looping, "-loop");
+		notify(looping, "thread/realtime/error", {
+			threadId: looping.coordinatorThreadId,
+			message: "recover loop",
+		});
+		looping.session.timelinePages = [
+			{ data: [], nextCursor: "loop", activeRealtimeSessionAtPageStart: loopStart.wireSessionId },
+			{ data: [], nextCursor: "loop", activeRealtimeSessionAtPageStart: loopStart.wireSessionId },
 		];
-		expect(await h.adapter.recover(browser)).toMatchObject({
+		expect(await looping.adapter.recover(loopStart.correlation)).toMatchObject({
 			outcome: "outcome_unknown",
 			reason: "transport_failure",
 		});
+	});
+
+	test("finalizes authoritative close, rejects stale commands, and accepts a replacement", async () => {
+		const h = harness();
+		const first = await started(h, "-first");
+		notify(h, "thread/realtime/item/completed", {
+			threadId: h.coordinatorThreadId,
+			item: {
+				id: "closed-item",
+				realtimeSessionId: first.wireSessionId,
+				type: "realtimeSessionClosed",
+				outcome: "failed",
+			},
+		});
+		expect(h.events).toContainEqual(
+			expect.objectContaining({ kind: "diagnostic", message: expect.stringContaining("failed") }),
+		);
+		const staleOutcomes = await Promise.all([
+			h.adapter.appendText({ ...first.correlation, text: "late" }),
+			h.adapter.stop(first.correlation),
+			h.adapter.recover(first.correlation),
+		]);
+		for (const outcome of staleOutcomes)
+			expect(outcome).toMatchObject({ outcome: "not_delivered" });
+		await started(h, "-replacement");
+		expect(h.session.starts).toHaveLength(2);
 	});
 
 	test("revalidates every mutation, attempts once, and classifies lost responses", async () => {

@@ -1,5 +1,7 @@
 import {
+	INITIAL_REALTIME_STATE,
 	parseRealtimeItemId,
+	transitionRealtimeState,
 	type AnswerSdp,
 	type AppendOutcome,
 	type AppendSpeechRequest,
@@ -17,35 +19,11 @@ import { CodexSessionMutationError } from "../../codex-session/index.js";
 import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 import type { CodexRealtimeAdapter, CodexRealtimeAdapterOptions } from "./contract.js";
 import { realtimeErrorMessage, sameRealtimeBinding } from "./binding.js";
+import * as phase from "./phase.js";
+import { exactNotification, orderedRecords } from "./records.js";
 import { createRealtimeStartParams } from "./start-policy.js";
 import type { ActiveRealtimeSession } from "./state.js";
 const TIMELINE_PAGE_LIMIT = 100;
-
-function orderedRecords(session: ActiveRealtimeSession): readonly RealtimeTranscriptRecord[] {
-	return [...session.entries.values()]
-		.toSorted((left, right) => left.order - right.order || left.itemId.localeCompare(right.itemId))
-		.map((entry, sequence) => ({
-			sessionId: session.browserSessionId,
-			correlationId: session.correlationId,
-			itemId: entry.itemId,
-			sequence,
-			role: entry.role,
-			status: entry.status,
-			text: entry.text,
-		}));
-}
-
-function exactNotification(
-	session: ActiveRealtimeSession,
-	event: TransportServerNotification,
-): boolean {
-	return (
-		event.correlation.child === session.binding.child &&
-		event.correlation.epoch === session.binding.epoch &&
-		"threadId" in event.notification.params &&
-		event.notification.params.threadId === session.binding.coordinatorThreadId
-	);
-}
 
 export function createCodexRealtimeAdapter(
 	options: CodexRealtimeAdapterOptions,
@@ -75,20 +53,35 @@ export function createCodexRealtimeAdapter(
 			code,
 			message,
 		});
-	const emitState = (
-		session: ActiveRealtimeSession,
-		state: RealtimeSemanticEvent & { kind: "state" },
-	): void => emit(state);
 	const state = (
 		session: ActiveRealtimeSession,
 		value: Extract<RealtimeSemanticEvent, { kind: "state" }>["state"],
-	): void =>
-		emitState(session, {
+	): void => {
+		session.state = transitionRealtimeState(session.state, value);
+		emit({
 			kind: "state",
 			sessionId: session.browserSessionId,
 			correlationId: session.correlationId,
-			state: value,
+			state: session.state,
 		});
+	};
+	const states = (
+		session: ActiveRealtimeSession,
+		values: readonly Parameters<typeof state>[1][],
+	) => {
+		for (const value of values) state(session, value);
+	};
+	const finalize = (session: ActiveRealtimeSession): void => {
+		states(session, phase.closingStates(session.state));
+		retainedTranscript = orderedRecords(session);
+		if (!session.answerSettled) {
+			session.answerSettled = true;
+			session.rejectAnswer(
+				new Error("Codex closed the realtime session before negotiation completed."),
+			);
+		}
+		if (active === session) active = null;
+	};
 	const bindingIsCurrent = (session: ActiveRealtimeSession): boolean => {
 		const current = options.currentBinding();
 		return (
@@ -128,6 +121,7 @@ export function createCodexRealtimeAdapter(
 			return;
 		}
 		session.answerSettled = true;
+		state(session, { phase: "negotiating", reason: "answer_received" });
 		state(session, { phase: "listening", reason: "negotiation_succeeded" });
 		session.resolveAnswer({
 			sessionId: session.browserSessionId,
@@ -174,6 +168,7 @@ export function createCodexRealtimeAdapter(
 			resolveAnswer,
 			rejectAnswer,
 			entries: new Map(),
+			state: INITIAL_REALTIME_STATE,
 			startReturned: false,
 			started: false,
 			answerSdp: null,
@@ -182,6 +177,8 @@ export function createCodexRealtimeAdapter(
 		};
 		active = session;
 		retainedTranscript = [];
+		state(session, { phase: "requesting_permission", reason: "start_requested" });
+		state(session, { phase: "negotiating", reason: "permission_granted" });
 		state(session, { phase: "negotiating", reason: "offer_created" });
 		const semanticBrief = options.freshSemanticBrief();
 		void options.session
@@ -212,7 +209,7 @@ export function createCodexRealtimeAdapter(
 			readonly role?: RealtimeTranscriptRecord["role"];
 			readonly text?: string;
 		},
-		status: RealtimeTranscriptRecord["status"],
+		status: "provisional" | "final",
 	): void => {
 		if (item.realtimeSessionId !== session.wireSessionId || item.type !== "transcriptSegment")
 			return;
@@ -226,12 +223,8 @@ export function createCodexRealtimeAdapter(
 			text: item.text,
 			order: existing?.order ?? session.nextLiveOrder++,
 		});
-		if (item.role === "assistant") {
-			if (status === "final") state(session, { phase: "listening", reason: "assistant_finished" });
-			else state(session, { phase: "speaking", reason: "assistant_started" });
-		} else if (status === "final") {
-			state(session, { phase: "processing", reason: "input_completed" });
-		}
+		if (item.role === "assistant") states(session, phase.assistantStates(session.state, status));
+		else if (status === "final") states(session, phase.inputStates(session.state));
 		publishTranscript(session);
 	};
 
@@ -280,16 +273,15 @@ export function createCodexRealtimeAdapter(
 				) {
 					if (notification.params.item.outcome === "failed")
 						emitDiagnostic(session, "realtime", "Codex closed the realtime session as failed.");
-					state(session, { phase: "closed", reason: "stopped" });
+					finalize(session);
 				}
 				break;
 			case "thread/realtime/error":
 				emitDiagnostic(session, "app_server", notification.params.message);
-				state(session, {
-					phase: "recoverable_error",
-					reason: "realtime_unavailable",
-					message: notification.params.message,
-				});
+				{
+					const failure = phase.realtimeFailureState(session.state, notification.params.message);
+					if (failure) state(session, failure);
+				}
 				break;
 			case "thread/realtime/closed":
 				emitDiagnostic(
@@ -297,7 +289,7 @@ export function createCodexRealtimeAdapter(
 					"realtime",
 					notification.params.reason ?? "Codex closed the realtime session.",
 				);
-				state(session, { phase: "closed", reason: "stopped" });
+				finalize(session);
 				break;
 			case "thread/realtime/itemAdded":
 			case "thread/realtime/transcript/delta":
@@ -375,8 +367,7 @@ export function createCodexRealtimeAdapter(
 				}),
 			"append",
 		).then((outcome) => {
-			if (outcome.outcome === "delivered")
-				state(session, { phase: "processing", reason: "input_completed" });
+			if (outcome.outcome === "delivered") states(session, phase.inputStates(session.state));
 			return outcome;
 		});
 	};
@@ -394,13 +385,18 @@ export function createCodexRealtimeAdapter(
 					text: request.text,
 				}),
 			"append",
-		);
+		).then((outcome) => {
+			if (outcome.outcome === "delivered") states(session, phase.inputStates(session.state));
+			return outcome;
+		});
 	};
 
 	const stop: CodexRealtimeAdapter["stop"] = async (request) => {
 		const session = currentFor(request);
 		if (!session) return { ...request, outcome: "not_delivered", reason: "not_ready" };
-		state(session, { phase: "stopping", reason: "stop_requested" });
+		const stopping = phase.stopState(session.state);
+		if (!stopping) return { ...request, outcome: "not_delivered", reason: "not_ready" };
+		state(session, stopping);
 		const outcome: CommandOutcome = await mutationOutcome(
 			session,
 			request,
@@ -408,9 +404,7 @@ export function createCodexRealtimeAdapter(
 			"command",
 		);
 		if (outcome.outcome === "delivered") {
-			state(session, { phase: "closed", reason: "stopped" });
-			retainedTranscript = orderedRecords(session);
-			if (active === session) active = null;
+			finalize(session);
 		} else {
 			state(session, {
 				phase: "recoverable_error",
@@ -424,6 +418,8 @@ export function createCodexRealtimeAdapter(
 	const recover: CodexRealtimeAdapter["recover"] = async (request) => {
 		const session = currentFor(request);
 		if (!session) return { ...request, outcome: "not_delivered", reason: "not_ready" };
+		if (session.state.phase !== "recoverable_error")
+			return { ...request, outcome: "not_delivered", reason: "not_ready" };
 		const cursors = new Set<string>();
 		let cursor: string | null = null;
 		try {
@@ -462,6 +458,8 @@ export function createCodexRealtimeAdapter(
 			}
 			publishTranscript(session);
 			state(session, { phase: "idle", reason: "recovered" });
+			retainedTranscript = orderedRecords(session);
+			if (active === session) active = null;
 			return { ...request, outcome: "delivered" };
 		} catch (error) {
 			emitDiagnostic(session, "protocol", realtimeErrorMessage(error));

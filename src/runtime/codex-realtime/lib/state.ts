@@ -3,6 +3,7 @@ import type {
 	RealtimeCorrelationId,
 	RealtimeItemId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
+	RealtimeState,
 	RealtimeTranscriptRecord,
 	RealtimeTranscriptRole,
 } from "../../../shared/codex-realtime-host/index.js";
@@ -26,6 +27,7 @@ export interface ActiveRealtimeSession {
 	readonly resolveAnswer: (answer: AnswerSdp) => void;
 	readonly rejectAnswer: (error: Error) => void;
 	readonly entries: Map<RealtimeItemId, RealtimeTranscriptEntry>;
+	state: RealtimeState;
 	startReturned: boolean;
 	started: boolean;
 	answerSdp: string | null;
