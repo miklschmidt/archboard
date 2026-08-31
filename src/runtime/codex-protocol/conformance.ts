@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
 	CODEX_PROTOCOL_BINARY_VERSION,
@@ -25,7 +26,12 @@ import { CLIENT_NOTIFICATION_SCHEMAS, SERVER_REQUEST_SCHEMAS } from "./lib/reque
 import { RESPONSE_SCHEMAS } from "./lib/response-schemas.js";
 import { SERVER_NOTIFICATION_SCHEMAS } from "./lib/notification-schemas.js";
 import {
+	assertGeneratedClientRequestSchemaConformance,
+	type ClientRequestSchemaConformanceOptions,
+} from "./lib/client-request-schema-conformance.js";
+import {
 	CLIENT_NOTIFICATION_METHODS,
+	CLIENT_REQUEST_METHODS,
 	RESPONSE_METHODS,
 	SERVER_NOTIFICATION_METHODS,
 	SERVER_REQUEST_METHODS,
@@ -36,7 +42,8 @@ export type CodexProtocolConformancePhase =
 	| "version"
 	| "generation"
 	| "digest"
-	| "inventory";
+	| "inventory"
+	| "request-schema";
 
 export interface CodexProtocolConformanceResult {
 	readonly executablePath: string;
@@ -87,7 +94,10 @@ interface CodexProtocolConformanceExpectations {
 	readonly decoderMethodInventories?: GeneratedProtocolMethodInventories;
 	readonly clientRequestResponseAlias?: string;
 	readonly clientRequestExcludedMethods?: readonly string[];
+	readonly requestSchemaConformance?: Omit<ClientRequestSchemaConformanceOptions, "generatedRoot">;
 }
+
+const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
 const AUTHORED_METHOD_INVENTORIES: GeneratedProtocolMethodInventories = {
 	response: RESPONSE_METHODS,
@@ -110,6 +120,15 @@ const PRODUCTION_EXPECTATIONS: CodexProtocolConformanceExpectations = {
 	},
 	clientRequestResponseAlias: "currentTime/read",
 	clientRequestExcludedMethods: CODEX_PROTOCOL_GENERATED_CLIENT_REQUEST_EXCLUDED_METHODS,
+	requestSchemaConformance: {
+		localParamsModulePath: join(
+			repositoryRoot,
+			"src/runtime/codex-protocol/lib/client-request-schemas.ts",
+		),
+		methods: CLIENT_REQUEST_METHODS,
+		repositoryTsconfigPath: join(repositoryRoot, "tsconfig.json"),
+		typeScriptExecutablePath: join(repositoryRoot, "node_modules/typescript/bin/tsc"),
+	},
 };
 
 const GENERATED_METHOD_DIRECTION_NAMES: Readonly<Record<GeneratedProtocolMethodDirection, string>> =
@@ -497,6 +516,21 @@ function runCodexProtocolConformanceWithExpectations(
 					`response alias inventory mismatch: ${aliasMismatch}. Regenerate with the exact Codex ${expectations.binaryVersion} binary and review the decoder inventory.`,
 				);
 		}
+		if (expectations.requestSchemaConformance) {
+			try {
+				assertGeneratedClientRequestSchemaConformance({
+					generatedRoot,
+					...expectations.requestSchemaConformance,
+				});
+			} catch (cause) {
+				throw conformanceError(
+					executablePath,
+					"request-schema",
+					`could not compile generated ClientRequest params against local schema inference. ${failureDetail(cause)}`,
+					cause,
+				);
+			}
+		}
 
 		return {
 			executablePath,
@@ -526,4 +560,11 @@ export function runCodexProtocolConformanceForTest(
 	expectations: CodexProtocolConformanceExpectations,
 ): CodexProtocolConformanceResult {
 	return runCodexProtocolConformanceWithExpectations(executablePath, expectations);
+}
+
+/** Test-only request-schema probe; intentionally not re-exported from the package entrypoint. */
+export function assertGeneratedClientRequestSchemaConformanceForTest(
+	options: ClientRequestSchemaConformanceOptions,
+): void {
+	assertGeneratedClientRequestSchemaConformance(options);
 }
