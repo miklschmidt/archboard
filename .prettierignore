@@ -1,2 +1,6 @@
 # This fixture pins the two-space JSON emitted by the command presentation seam.
 src/runtime/board-inspection/tests/fixtures/dense-compare.json
+
+# These are immutable two-space upstream reading fixtures; their hashes are
+# enforced by the shadcn Base UI repository-policy owner.
+docs/design/vendor/shadcn-base/
