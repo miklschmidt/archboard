@@ -1,25 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	CALLBACK_BUFFER_LIMIT,
-	createCodexCoordinatorCallbacks,
-	type CoordinatorCallbacksRetainedState,
-} from "../index.js";
-import { kept } from "../../engine/hot.js";
+import { CALLBACK_BUFFER_LIMIT, createCodexCoordinatorCallbacks } from "../index.js";
 import { close, harness, operationEvent } from "./support.js";
-import type {
-	CallbackReloadFixtureModule,
-	CallbackReloadFixtureRecord,
-} from "./fixtures/reload-generation.fixture.js";
-
-function loadReloadGeneration(
-	key: string,
-	generation: number,
-): Promise<CallbackReloadFixtureModule> {
-	return import(
-		`./fixtures/reload-generation.fixture.ts?key=${encodeURIComponent(key)}&generation=${generation}`
-	);
-}
 
 describe("coordinator callback lifecycle", () => {
 	test("delivers all eleven members exactly once through one active route", async () => {
@@ -107,39 +89,5 @@ describe("coordinator callback lifecycle", () => {
 		).toThrow("listener registration failed");
 		expect(cleaned).toBe(1);
 		close(h);
-	});
-
-	test("two Bun module generations reuse one retained callback and listener cohort", async () => {
-		const h = harness(false);
-		expect(h.sourceSubscriptions.activeCount()).toBe(4);
-		h.callbacks.dispose();
-		expect(h.sourceSubscriptions.activeCount()).toBe(0);
-		const cleanupBaseline = h.sourceSubscriptions.cleanupCount();
-		const key = `coordinator-callback-test-${crypto.randomUUID()}`;
-		const record = kept<CallbackReloadFixtureRecord>(key, () => ({
-			options: h.options,
-			retained: { current: null } satisfies CoordinatorCallbacksRetainedState,
-			evaluations: [],
-			instances: [],
-		}));
-		const first = await loadReloadGeneration(key, 1);
-		const second = await loadReloadGeneration(key, 2);
-		if (first.instance === null || second.instance === null)
-			throw new Error("Reload generation did not install callbacks.");
-		expect(first.evaluationIdentity).not.toBe(second.evaluationIdentity);
-		expect(record.evaluations).toEqual(["1", "2"]);
-		expect(record.instances).toEqual([first.instance, first.instance]);
-		expect(second.instance).toBe(first.instance);
-		expect(h.sourceSubscriptions.activeCount()).toBe(4);
-		h.operations.emit(operationEvent(h.ids, "completed"));
-		await first.instance.flush();
-		expect(first.instance.inspect()).toHaveLength(1);
-		expect(h.injections).toHaveLength(1);
-		second.instance.dispose();
-		expect(h.sourceSubscriptions.activeCount()).toBe(0);
-		expect(h.sourceSubscriptions.cleanupCount() - cleanupBaseline).toBe(4);
-		first.instance.dispose();
-		expect(h.sourceSubscriptions.cleanupCount() - cleanupBaseline).toBe(4);
-		h.semantic.dispose();
 	});
 });

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-31 21:18'
+updated_date: '2026-08-31 21:28'
 labels: []
 dependencies:
   - TASK-143.01.07
@@ -19,6 +19,8 @@ references:
   - docs/design/codex-workbench-authored-contracts.md
 modified_files:
   - src/runtime/codex-coordinator-callbacks
+  - tests/system/canvas-state/callback-hot-reload.test.ts
+  - tests/system/fixtures/callback-hot-entry.ts
   - docs/design/codex-workbench-authored-contracts.md
   - tests/system/repository-policy/codex-authored-contracts.test.ts
 parent_task_id: TASK-143.07
@@ -47,11 +49,11 @@ Delegation profile: gpt-5.6-luna, max.
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Apply one 1,024 UTF-8 byte validator to both correlation.queuedSubmissionId and queuedSubmissionIds entries while preserving null for the singular field. Add exact ASCII and multibyte boundary owners for 1,024-byte acceptance and 1,025-byte rejection.
-2. Replace prefix-based queue validation with the closed five-row queue operation/RPC table. Test every valid row and every hostile mismatched row before encoding. Update the authored callback contract and its reviewed digest.
-3. Replace the same-generation retained lookup test with a cache-busted Bun fixture imported under two query-token generations. The fixture will call the public installer against one kept record; the owner will prove two module evaluations, one callback instance, one four-listener cohort, one delivery for one event, and one cleanup per source subscription.
-4. Preserve the existing callback routes and authority checks. Split files if any owner approaches 500 physical lines.
-5. Run focused encoder, callback, and reload owners plus affected session/link contracts, both TypeScript graphs, scoped lint/format, authored policy, inventory, staged diff, clean tree, file lengths, source restrictions, and protected artifact checks in sequential capped transient units. Keep known broad OOM lanes unrun.
+1. Preserve the accepted callback encoder, routing, and authority code unchanged. Remove the ordinary bun:test query-wrapper reload claim and its test-only subscription instrumentation.
+2. Add an owned callback hot-process fixture that starts under bun --hot, watches a random temporary generation token, and cache-busts the production codex-coordinator-callbacks public module for each generation. Each generation calls the public installCodexCoordinatorCallbacks against one kept record.
+3. Add a focused system owner that writes generation 2 to the watched token, waits for the same process to report a second callback graph evaluation, and proves changed installer identity, one retained callback identity, one four-listener cohort, one delivery and narration for one source event, and exactly four cleanup calls after repeated disposal. Kill the process group and remove the temporary directory on every path.
+4. Run the focused hot-process owner and callback/encoder owners, both TypeScript graphs, scoped lint/format, authored policy, inventory, diff, clean tree, file lengths, source restrictions, and protected artifact checks in sequential capped transient units. Preserve known broad OOM evidence without rerunning those lanes.
+5. Keep TASK-143.07.04 In Progress with every acceptance criterion unchecked for independent rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -68,6 +70,12 @@ Second remediation pass closes the accepted rereview gaps. The encoder now appli
 Reload evidence now imports a focused fixture with generation=1 and generation=2 query tokens around one kept record. Both module generations have distinct evaluation identities and call the public installer. They reuse one callback instance and one four-listener cohort. One emitted operation produces one delivery, and repeated disposal leaves exactly four cleanup calls.
 
 Capped validation archboard-1430704-remediate2-final-01.service printed its cgroup and passed 19 callback/encoder/reload tests, 21 affected session/realtime/thread-link tests, both TypeScript graphs, scoped Oxlint and Oxfmt, 44 authored-contract and inventory tests, staged diff, clean unstaged diff, all callback TypeScript files at or below 500 lines, source restrictions, and the protected artifact check. Known broad capped-OOM fingerprints were preserved and not rerun. The protected artifact remains 1,516,136 bytes with SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Task remains In Progress with every AC unchecked for independent rereview.
+
+Third remediation supersedes the prior second-pass reload statement: the query-token fixture did not prove a callback module reload because its wrapper generations statically reused the cached callback index. That fixture and its test-only subscription instrumentation are removed.
+
+The replacement owner launches an owned bun --hot process, watches a random temporary generation token, and directly cache-busts the production codex-coordinator-callbacks public module on each generation. Both generations call the public installer against one kept record. Process-visible assertions prove the same PID reaches generation 2, the production installer identity changes, the callback instance identity is retained, exactly one four-listener cohort remains, one emitted operation causes one delivery and one narration, repeated disposal produces exactly four cleanup calls, and only two protocol records exist. Process-group termination and temporary-directory removal run on every success or failure path.
+
+Final capped validation archboard-1430704-remediate3-final-03.service printed cwd and cgroup, completed successfully with MemoryMax=6G and MemorySwapMax=1G, and passed the real hot-reload owner, callback suite, both TypeScript graphs, scoped Oxlint and Oxfmt, authored-contract and inventory owners, staged/unstaged diff checks, file-length and source restrictions, and exactly two route callsites. Peak memory was 1.7G with no swap. Known broad capped-OOM lanes were preserved and not rerun. Protected /home/msc/Projects/archboard/src-DlBR1tzg.js remains 1,516,136 bytes with SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Task remains In Progress with every acceptance criterion unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -95,5 +103,17 @@ author: @codex
 created: 2026-08-31 21:18
 ---
 Second remediation pass is ready for independent rereview. Status and acceptance criteria remain unchanged.
+---
+
+author: @codex
+created: 2026-08-31 21:22
+---
+Third remediation pass replaces the cached query-wrapper test with an owned bun --hot system owner that directly cache-busts the production callback public module.
+---
+
+author: @codex
+created: 2026-08-31 21:28
+---
+Third remediation is ready for independent rereview. The previous query-wrapper reload claim is explicitly superseded; status and acceptance criteria remain unchanged.
 ---
 <!-- COMMENTS:END -->
