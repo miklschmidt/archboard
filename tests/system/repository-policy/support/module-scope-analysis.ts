@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import * as ts from "typescript/unstable/ast";
-export { parseModuleSources } from "../../../../scripts/codex-protocol-fingerprints.js";
+export { parseModuleSources } from "../../../../scripts/typescript-analysis.js";
 
 export interface ModuleScopeFinding {
 	file: string;

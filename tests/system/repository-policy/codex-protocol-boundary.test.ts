@@ -5,18 +5,10 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type * as ts from "typescript/unstable/ast";
 import { describe, expect, test } from "bun:test";
-import {
-	discoverNativeTests,
-	inspectTestInventory,
-	type InventoryInput,
-} from "./support/test-inventory.js";
+import { discoverNativeTests, inspectTestInventory } from "./support/test-inventory.js";
 import { configuredAliases, type ConfiguredAliases } from "./support/codex-protocol-aliases.js";
 import { moduleSpecifiers } from "./support/codex-protocol-imports.js";
-import {
-	distinctiveFingerprints,
-	isGeneratedMirror,
-	mergeGeneratedFingerprints,
-} from "./support/codex-protocol-mirrors.js";
+import { distinctiveFingerprints, isGeneratedMirror } from "./support/codex-protocol-mirrors.js";
 import fingerprintCorpus from "./support/codex-protocol-fingerprint-corpus.json";
 import { generatedPathsFromImport } from "./support/codex-protocol-paths.js";
 import { parseModuleSources } from "./support/module-scope-analysis.js";
@@ -27,6 +19,7 @@ import {
 	trackedRepositoryPaths,
 	type SourceFile,
 } from "./support/codex-protocol-sources.js";
+import { importTypeMirror, namespaceImportMirror } from "./support/codex-protocol-fixtures.js";
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const GENERATED_ROOT = "src/runtime/codex-protocol/generated/";
 const ADAPTER_PATH = "src/runtime/codex-protocol/index.ts";
@@ -114,13 +107,7 @@ async function ownershipFindings(
 	const findings: OwnershipFinding[] = [];
 	const aliases = configured ?? (await configuredAliases(repoRoot));
 	const parsedFiles = await parseSourceFiles(files.filter((file) => !file.symlink));
-	const generatedFingerprints = mergeGeneratedFingerprints(
-		AUTHORITATIVE_FINGERPRINTS,
-		parsedFiles.map(({ file, sourceFile: ast }) => ({ ...file, sourceFile: ast })),
-		GENERATED_ROOT,
-		GENERATED_HEADER,
-		CODEX_GENERATED_PATHS,
-	);
+	const generatedFingerprints = AUTHORITATIVE_FINGERPRINTS;
 	for (const file of files) {
 		if (file.symlink) {
 			addFinding(findings, file.path, "symlink source entry");
@@ -202,13 +189,11 @@ const sourceFile = (filePath: string, source: string): SourceFile => ({ path: fi
 const DEEP_IMPORT =
 	'import type { ClientRequest } from "../runtime/codex-protocol/generated/ClientRequest.js";\n';
 const THREAD_SOURCE = "export type Thread = { id: string };\n";
-const THREAD_ALIAS_SOURCE =
-	"type GeneratedThread = Thread; export type ThreadAlias = GeneratedThread;\n";
-const REVIEWED_THREAD_SOURCE = `type ThreadPayload = { ${Array.from(
-	{ length: 16 },
-	(_, index) => `field${index}: string`,
-).join("; ")}; export type ClientRequest = ThreadPayload;\n`;
-function inventoryInput(): InventoryInput {
+const THREAD_ALIAS_SOURCE = "type A = Thread; export type B = A;\n";
+const REAL_THREAD_MIRROR = readProtocolFixture(repoRoot, "v2/Thread.ts.txt")
+	.replace(GENERATED_HEADER, "")
+	.replace(/\bThread\b/gu, "WireThread");
+function inventoryInput() {
 	const { scripts } = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8")) as {
 		scripts: Record<string, string>;
 	};
@@ -259,12 +244,9 @@ describe("Codex protocol generated ownership policy", () => {
 			),
 			sourceFile(
 				"src/runtime/codex-protocol-mirror.ts",
-				REVIEWED_THREAD_SOURCE.replaceAll("ThreadPayload", "WirePayload").replaceAll(
-					"ClientRequest",
-					"WireEnvelope",
-				),
+				REAL_THREAD_MIRROR.replaceAll("WireThread", "WireEnvelope"),
 			),
-			syntheticGeneratedFile(`${GENERATED_ROOT}v2/Thread.ts`, false, REVIEWED_THREAD_SOURCE),
+			syntheticGeneratedFile(`${GENERATED_ROOT}v2/Thread.ts`),
 		];
 		for (const importer of [
 			"src/runtime/consumer.ts",
@@ -297,14 +279,13 @@ describe("Codex protocol generated ownership policy", () => {
 		]);
 	});
 	test("detects renamed exact and near structural mirrors without path or name heuristics", async () => {
-		const exact = REVIEWED_THREAD_SOURCE.replaceAll("ThreadPayload", "WirePayload").replaceAll(
-			"ClientRequest",
-			"WireEnvelope",
+		const exact = REAL_THREAD_MIRROR.replaceAll("WireThread", "WireEnvelope");
+		const near = REAL_THREAD_MIRROR.replace("cwd: AbsolutePathBuf", "cwd: string").replaceAll(
+			"WireThread",
+			"NearThread",
 		);
-		const near = REVIEWED_THREAD_SOURCE.replace("field15: string", "field15: number");
 		const partial = "type PartialThread = { field0: string; field1: string; };\n";
 		const findings = await ownershipFindings([
-			syntheticGeneratedFile(`${GENERATED_ROOT}v2/Thread.ts`, false, REVIEWED_THREAD_SOURCE),
 			sourceFile("src/domain/api/v2/Thread.ts", exact),
 			sourceFile("src/server/renamed-thread.ts", near),
 			sourceFile("src/server/partial-thread.ts", partial),
@@ -332,6 +313,21 @@ describe("Codex protocol generated ownership policy", () => {
 			{ file: "src/domain/api/v2/Thread.ts", reason: "handwritten mirror" },
 			{ file: "src/server/renamed-thread.ts", reason: "handwritten mirror" },
 		]);
+	});
+	test("does not fingerprint locally present generated common shapes", async () => {
+		const generated = syntheticGeneratedFile(
+			`${GENERATED_ROOT}v2/Thread.ts`,
+			false,
+			"export type Failure = { message: string };",
+		);
+		const findings = await ownershipFindings([
+			generated,
+			sourceFile(
+				"src/domain/local-failure.ts",
+				"export type LocalFailure = { message: string };\n",
+			),
+		]);
+		expect(findings).toEqual([]);
 	});
 	test("rejects every static, dynamic, alias, root, absolute, and file-URL deep import", async () => {
 		const relativeTarget = "../runtime/codex-protocol/generated/ClientRequest.js";
@@ -425,16 +421,17 @@ describe("Codex protocol generated ownership policy", () => {
 			)
 			.replace(/\bcwd: AbsolutePathBuf\b/gu, "cwd: LocalPath")
 			.replace(/\bThread\b/gu, "LocalAliasThread");
-		expect(
-			(
-				await ownershipFindings([sourceFile("src/domain/imported-alias-thread.ts", importedAlias)])
-			).map(({ reason }) => reason),
-		).toEqual(["handwritten mirror"]);
-		expect(
-			(await ownershipFindings([sourceFile("src/domain/local-alias-thread.ts", localAlias)])).map(
-				({ reason }) => reason,
-			),
-		).toEqual(["handwritten mirror"]);
+		const namespaceAlias = namespaceImportMirror(threadFixture, GENERATED_HEADER);
+		const importTypeAlias = importTypeMirror(threadFixture, GENERATED_HEADER);
+		for (const [file, source] of [
+			["src/domain/imported-alias-thread.ts", importedAlias],
+			["src/domain/local-alias-thread.ts", localAlias],
+			["src/domain/namespace-thread.ts", namespaceAlias],
+			["src/domain/import-type-thread.ts", importTypeAlias],
+		] as const)
+			expect(
+				(await ownershipFindings([sourceFile(file, source)])).map(({ reason }) => reason),
+			).toEqual(["handwritten mirror"]);
 	});
 	test("ignores indistinguishable common shapes", async () => {
 		const findings = await ownershipFindings([
