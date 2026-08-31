@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 03:40'
+updated_date: '2026-08-31 03:50'
 labels: []
 dependencies:
   - TASK-144.05
@@ -61,4 +61,10 @@ Remediation implemented in c8fd582 on the same fixed BASE: replaced the hard-cod
 Focused remediation evidence: 7 tests / 34 expectations; bunx oxlint tests/system/repository-policy/shadcn-base-adoption.test.ts; bunx oxfmt --check components.json tests/system/repository-policy/shadcn-base-adoption.test.ts; bunx tsc --noEmit --pretty false -p tsconfig.json — all passed. Acceptance criteria intentionally remain unchecked; TASK-144.04 remains In Progress.
 
 Live probe evidence (separate from standard enforcement): from clean remediation HEAD d68a0e9, ARCHBOARD_SHADCN_LIVE=1 bun test tests/system/repository-policy/shadcn-base-adoption.test.ts invoked only pinned local shadcn 4.19.0 via info --json and add button dialog --dry-run --yes --view. It parsed destinations src/ui/button.tsx and src/ui/dialog.tsx; imports @base-ui/react/button, @base-ui/react/dialog, @/ui/button, @/ui/ui-classnames/index, class-variance-authority, lucide-react, and react; defaults base/base, iconLibrary/lucide, font/geist; and correctly classified package/source adoption attempt plus upstream drift. No cleanup or rollback ran. cleanBeforeAfter=true with empty status before/after, identical empty git diff --binary HEAD SHA-256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855, and identical relevant tree hashes. Capture: /tmp/archboard-task14404-live-remediation.json (SHA-256 21305af646dfc018f3b23ec0512991ee612a10e8d8b2b723d26b479e580258d0). Standard repository enforcement remains offline/deterministic and uses captured output/runner-double tests only.
+
+Rereview remediation implemented in fc4d399 on fixed BASE 299286acb43b5a4e9ace716b5886d1a271a3b17a. The reusable probe support moved to tests/system/repository-policy/support/shadcn-base-probe.ts, leaving the owner at 256 lines and support at 361 lines. Live mode now fails closed for dirty-before, exact before/after snapshot mismatch, dry-run mutation, network unable-to-verify, config drift, default/icon drift, unsafe command, and generated destination/action drift; expected mutable registry package/source and upstream drift remain diagnostic.
+
+The --view parser now records every proposed file/action header before extracting only reviewed button/dialog create source. Captured hostile tests cover a third create, unexpected update, unsafe overwrite, changed second snapshot, nonempty initial status, and failed runner. Standard owner remains offline/deterministic with 9 tests / 40 expectations.
+
+Final focused evidence from clean fc4d399: bun test tests/system/repository-policy/shadcn-base-adoption.test.ts (9 pass / 40 expectations); focused Oxlint; focused Oxfmt; root TypeScript; git diff --check — all passed. Clean live evidence: ARCHBOARD_SHADCN_LIVE=1 bun test tests/system/repository-policy/shadcn-base-adoption.test.ts exited 0 with fatal=[]; status empty before/after; exact empty binary HEAD diff SHA-256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855; relevant tree hashes unchanged; capture /tmp/archboard-task14404-live-fail-closed.json SHA-256 55d9552b52bd17fbcfc0deeac68ac41f4aafd9bbc9b7edfebb2b7d9a545b8dd4. Package/lock, product source, Vite/TypeScript/Oxlint config, scripts, CI, and browser owners remain untouched. Acceptance criteria remain unchecked and TASK-144.04 remains In Progress.
 <!-- SECTION:NOTES:END -->
