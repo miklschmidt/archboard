@@ -1,24 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
-import type {
-	CodexProcess,
-	CodexProcessChild,
-	CodexProcessSnapshot,
-} from "../../../runtime/codex-process/index.js";
 import type { TransportServerRequest } from "../../../runtime/codex-transport/server-requests.js";
-import type { CodexWorkbenchGateway } from "../../codex-workbench/index.js";
-import {
-	createCodexWorkbenchRequestRouter,
-	type CodexWorkbenchGenerationHooks,
-} from "../codex-workbench-generation.js";
+import { createCodexWorkbenchRequestRouter } from "../codex-workbench-generation.js";
 import {
 	CodexWorkbenchCompositionError,
 	emptyCodexWorkbenchRetainedState,
 	installCodexWorkbenchOwner,
 	type CODEX_WORKBENCH_OWNER,
-	type CodexWorkbenchGeneration,
 	type CodexWorkbenchGenerationInput,
 } from "../codex-workbench-owner.js";
+import { fakeGeneration, fakeProcess } from "./support/codex-workbench-owner-fake.js";
 
 const HUMAN_METHODS = [
 	"item/commandExecution/requestApproval",
@@ -104,60 +95,6 @@ describe("production Codex request router", () => {
 	});
 });
 
-function fakeProcess(events: string[]): CodexProcess {
-	const child = { pid: 14314 } as CodexProcessChild;
-	const listeners = new Set<(child: CodexProcessChild) => void>();
-	let running = false;
-	const snapshot = (): CodexProcessSnapshot =>
-		({
-			state: running ? "running" : "stopped",
-			pid: running ? child.pid : null,
-			executablePath: "/repo/node_modules/@openai/codex/bin/codex.js",
-			argv: [],
-			cwd: "/repo",
-			ready: running,
-			accountReady: false,
-			restartAttempt: 0,
-			nextRestartAtMs: null,
-			restartDelayMs: null,
-			stderr: { text: "", totalBytes: 0, retainedBytes: 0, truncated: false },
-			lastExit: null,
-			failure: null,
-		}) as unknown as CodexProcessSnapshot;
-	return {
-		start: async () => {
-			events.push("process:start");
-			running = true;
-			for (const listener of listeners) listener(child);
-			return snapshot();
-		},
-		stop: async () => {
-			events.push("process:stop");
-			running = false;
-			return snapshot();
-		},
-		snapshot,
-		currentChild: () => (running ? child : null),
-		onChild: (listener) => {
-			listeners.add(listener);
-			if (running) listener(child);
-			return () => listeners.delete(listener);
-		},
-		subscribe: () => () => undefined,
-	};
-}
-
-function fakeGeneration(events: string[], number: number): CodexWorkbenchGeneration {
-	return {
-		transport: {} as never,
-		gateway: { marker: number } as unknown as CodexWorkbenchGateway,
-		router: { route: () => undefined },
-		replaceHooks: async () => void events.push(`generation:${number}:replace-hooks`),
-		stop: async (reason) => void events.push(`generation:${number}:stop:${reason}`),
-		finishStop: () => void events.push(`generation:${number}:finish-stop`),
-	};
-}
-
 describe("production Codex owner installation", () => {
 	test("releases registration when process-owner construction fails", () => {
 		const retained = emptyCodexWorkbenchRetainedState();
@@ -194,7 +131,9 @@ describe("production Codex owner installation", () => {
 		};
 		const first = installCodexWorkbenchOwner(retained, options);
 		expect((await first.start()).ready).toBeTrue();
-		await first.reload({} as CodexWorkbenchGenerationHooks);
+		const reloadHooks = retained.control.runtime?.generation?.ownerHooks;
+		if (reloadHooks === undefined) throw new Error("The reload hooks were not retained.");
+		await first.reload(reloadHooks);
 		expect(processCreates).toBe(1);
 		expect(events).toEqual(["process:start", "generation:1:create", "generation:1:replace-hooks"]);
 		expect((first.gateway() as unknown as { marker: number }).marker).toBe(1);
@@ -247,7 +186,7 @@ describe("production Codex owner installation", () => {
 		if (captured === null) throw new Error("generation input was not captured");
 		captured.onChildExitStart();
 		expect(owner.snapshot()).toMatchObject({ state: "stopping", ready: false });
-		await captured.onChildExitFinished();
+		await captured.onChildExitFinished(null);
 		expect(owner.snapshot()).toMatchObject({ state: "idle", ready: false });
 		expect(() => installCodexWorkbenchOwner(retained, options)).not.toThrow();
 	});

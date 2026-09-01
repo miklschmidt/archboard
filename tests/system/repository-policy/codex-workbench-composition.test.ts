@@ -6,6 +6,7 @@ import type {
 	CodexProcessChild,
 	CodexProcessSnapshot,
 } from "../../../src/runtime/codex-process/index.js";
+import { CODEX_SESSION_CONTROL } from "../../../src/runtime/codex-session/index.js";
 import type { CodexWorkbenchGateway } from "../../../src/server/codex-workbench/index.js";
 import {
 	assertCodexWorkbenchRetainedState,
@@ -18,6 +19,21 @@ import type { CodexWorkbenchGenerationHooks } from "../../../src/server/canvas/c
 const RETAINED_KEYS = ["control", "failure", "generation", "owner", "process", "state"] as const;
 
 const OWNER_SLOT_KEYS = ["gateway", "reload", "shutdown", "snapshot", "start"] as const;
+const RUNTIME_KEYS = [
+	"child",
+	"childRetiring",
+	"generation",
+	"process",
+	"released",
+	"shutdownPromise",
+	"startPromise",
+] as const;
+
+const noop = () => undefined;
+
+function poisonOriginalGeneration(): never {
+	throw new Error("poisoned original source-generation method executed");
+}
 
 function policyProcess(): CodexProcess {
 	const child = { pid: 14314 } as CodexProcessChild;
@@ -49,10 +65,82 @@ function policyProcess(): CodexProcess {
 }
 
 function policyGeneration(reloads: { count: number }): CodexWorkbenchGeneration {
+	const disposable = { dispose: noop };
+	const transport = {
+		onServerRequest: () => noop,
+		onServerNotification: () => noop,
+		onExit: () => noop,
+		shutdown: async () => undefined,
+	};
+	const session = {
+		respondCurrentTime: async () => undefined,
+		respondUnsupportedTokenRefresh: async () => undefined,
+		respondUnsupportedAttestation: async () => undefined,
+		[CODEX_SESSION_CONTROL]: { onNotification: noop, dispose: noop },
+	};
+	const approvals = { ...disposable, receive: noop };
+	const dynamicTools = { ...disposable, dispatch: async () => undefined };
+	const coordinatorTools = { ...disposable, onServerRequest: noop, onChildExit: noop };
+	const gateway = { dispose: async () => undefined } as CodexWorkbenchGateway;
+	const hooks = {
+		threadContext: {},
+		installIdentityDecoders: noop,
+		installLifecycleSignals: () => noop,
+		installApprovalProjection: () => noop,
+		installBrowserGateway: () => noop,
+		initializeSession: async () => undefined,
+		stopBrowser: async () => undefined,
+		stopRealtime: async () => undefined,
+		stopQueue: noop,
+		cancelDynamicApprovalsAndWaits: async () => undefined,
+		settleOrdinaryRequests: async () => undefined,
+	} as unknown as CodexWorkbenchGenerationHooks;
+	const components = {
+		identity: {},
+		epoch: { close: noop },
+		transport,
+		session,
+		threadLink: {},
+		workhorse: {},
+		semanticPublisher: disposable,
+		realtime: { ...disposable, onNotification: noop },
+		approvals,
+		dynamicTools,
+		semanticDelivery: {
+			...disposable,
+			replaceHooks: () => void (reloads.count += 1),
+		},
+		coordinator: { onNotification: noop },
+		queue: {},
+		operations: { onNotification: noop },
+		spokenApproval: { ...disposable, onNotification: noop },
+		coordinatorTools,
+		callbacks: disposable,
+		gateway,
+	} as unknown as CodexWorkbenchGeneration["state"]["components"];
+	const state: CodexWorkbenchGeneration["state"] = {
+		components,
+		owners: { approvals, dynamicTools, coordinatorTools, session } as never,
+		ownerHooks: hooks,
+		onChildExitStart: undefined,
+		onChildExitFinished: undefined,
+		transportUnsubscribers: [],
+		hookUnsubscribers: [],
+		approvalProjectionUnsubscribe: null,
+		pendingChildSettlements: new Set(),
+		currentHooks: hooks,
+		stopped: false,
+		stopPromise: null,
+		stopComplete: false,
+		stopFinished: false,
+	};
 	return {
-		transport: {} as never,
-		gateway: {} as CodexWorkbenchGateway,
+		state,
+		transport: transport as never,
+		gateway,
 		router: { route: () => undefined },
+		onNotification: () => undefined,
+		onExit: () => undefined,
 		replaceHooks: async () => void (reloads.count += 1),
 		stop: async () => undefined,
 		finishStop: () => undefined,
@@ -91,28 +179,45 @@ describe("production Codex workbench composition policy", () => {
 	test("keeps the exact retained allowlist across install and source-hook reload", async () => {
 		const retained = Object.seal(emptyCodexWorkbenchRetainedState());
 		const reloads = { count: 0 };
+		let originalGeneration: CodexWorkbenchGeneration | null = null;
 		const owner = installCodexWorkbenchOwner(retained, {
 			createProcess: policyProcess,
-			createGeneration: async () => policyGeneration(reloads),
+			createGeneration: async () => {
+				originalGeneration = policyGeneration(reloads);
+				return originalGeneration;
+			},
 		});
+		const installationSlots = retained.control.current;
+		if (installationSlots === null) throw new Error("Installation did not publish source slots.");
 
 		await owner.start();
 		expect(Object.keys(retained).toSorted()).toEqual([...RETAINED_KEYS]);
-		expect(Object.values(retained)).not.toContain(owner.gateway());
 		const generationGateway = owner.gateway();
+		expect(Object.values(retained)).not.toContain(generationGateway);
 		const stableWrappers = retained.control.wrappers;
 		const firstSlots = retained.control.current;
-		const lifecyclePort = retained.control.runtime;
+		if (firstSlots === null) throw new Error("Start did not publish source slots.");
+		for (const key of OWNER_SLOT_KEYS) expect(firstSlots[key]).not.toBe(installationSlots[key]);
+		for (const key of OWNER_SLOT_KEYS)
+			(installationSlots as unknown as Record<(typeof OWNER_SLOT_KEYS)[number], () => never>)[key] =
+				() => {
+					throw new Error(`poisoned installation ${key} slot executed`);
+				};
+		const runtimeState = retained.control.runtime;
+		if (runtimeState === null) throw new Error("The runtime state port was not retained.");
+		expect(Object.keys(runtimeState).toSorted()).toEqual([...RUNTIME_KEYS]);
+		for (const key of OWNER_SLOT_KEYS) expect(key in runtimeState).toBeFalse();
 
-		await owner.reload({} as CodexWorkbenchGenerationHooks);
+		const reloadHooks = runtimeState.generation?.ownerHooks;
+		if (reloadHooks === undefined) throw new Error("The generation hooks were not retained.");
+		await stableWrappers.reload(reloadHooks);
 		expect(reloads.count).toBe(1);
 		expect(Object.keys(retained).toSorted()).toEqual([...RETAINED_KEYS]);
-		expect(Object.values(retained)).not.toContain(owner.gateway());
+		expect(Object.values(retained)).not.toContain(generationGateway);
 		expect(retained.control.wrappers).toBe(stableWrappers);
-		expect(retained.control.runtime).toBe(lifecyclePort);
+		expect(retained.control.runtime).toBe(runtimeState);
 		expect(retained.control.current).not.toBe(firstSlots);
 		expect(Object.keys(retained.control.current ?? {}).toSorted()).toEqual([...OWNER_SLOT_KEYS]);
-		if (firstSlots === null) throw new Error("The first generation did not publish owner slots.");
 		const currentSlots = retained.control.current;
 		if (currentSlots === null) throw new Error("Reload did not publish current source slots.");
 		for (const key of OWNER_SLOT_KEYS) expect(currentSlots[key]).not.toBe(firstSlots[key]);
@@ -121,6 +226,15 @@ describe("production Codex workbench composition policy", () => {
 				() => {
 					throw new Error(`poisoned retired ${key} slot executed`);
 				};
+		if (originalGeneration === null) throw new Error("The original generation was not captured.");
+		Object.assign(originalGeneration, {
+			router: { route: poisonOriginalGeneration },
+			onNotification: poisonOriginalGeneration,
+			onExit: poisonOriginalGeneration,
+			replaceHooks: poisonOriginalGeneration,
+			stop: poisonOriginalGeneration,
+			finishStop: poisonOriginalGeneration,
+		});
 		expect(retained.control.wrappers.snapshot().generation).toBe(2);
 		expect(retained.control.wrappers.gateway()).toBe(generationGateway);
 		await retained.control.wrappers.shutdown();
