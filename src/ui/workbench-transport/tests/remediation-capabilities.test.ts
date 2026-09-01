@@ -339,7 +339,7 @@ test("keeps the readiness, link, and command capability matrix explicit", async 
 		expect(capabilities.supportsCommand("accountLogout")).toBe(accountReady);
 		expect(capabilities.supportsCommand("threadLinkCreate")).toBe(state === "thread_capable");
 		expect(capabilities.supportsCommand("start")).toBe(state === "thread_capable");
-		expect(capabilities.supportsCommand("dynamicApprovalRespond")).toBe(state === "thread_capable");
+		expect(capabilities.supportsCommand("dynamicApprovalRespond")).toBe(false);
 		expect(capabilities.canCommand).toBe(state === "thread_capable");
 		expect(capabilities.canThreadCommands).toBe(state === "thread_capable");
 		expect(capabilities.canRealtime).toBe(state === "thread_capable");
@@ -378,7 +378,7 @@ test("requires dynamic approval identity and captured-link fields to match the c
 	transports.push(transport);
 	const socket = new FakeSocket();
 	await attachWithSnapshot(transport, socket, snapshot({ lease: lease() }));
-	expect(transport.capabilities().supportsCommand("dynamicApprovalRespond")).toBe(true);
+	expect(transport.capabilities().supportsCommand("dynamicApprovalRespond")).toBe(false);
 
 	const wrongLink = dynamicDraft("thread-b");
 	const wrongIdentity = dynamicDraft();
@@ -389,11 +389,7 @@ test("requires dynamic approval identity and captured-link fields to match the c
 	};
 	for (const draft of [wrongLink, wrongIdentity]) {
 		const error = await rejection(transport.command(draft));
-		expect(error).toMatchObject({
-			code: "link_changed",
-			outcome: "not_delivered",
-			commandId: "command-a",
-		});
+		expect(error).toMatchObject({ code: "not_ready", outcome: "not_delivered" });
 	}
 	expect(socket.sent.some((request) => request.action === "command")).toBe(false);
 });

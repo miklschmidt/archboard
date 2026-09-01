@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import {
 	createCodexBrowserModel,
+	type BrowserCommand,
 	type BrowserCommandLease,
 	type BrowserSnapshot,
 	type IdentityContext,
@@ -211,6 +212,20 @@ export function parseRequiredBrowserCommandLease(value: unknown): BrowserCommand
 	const parsed = parseBrowserCommandLease(value);
 	if (parsed === null) fail("The Codex workbench returned no command lease.");
 	return parsed;
+}
+
+export function parseBrowserDynamicApprovalResponse(
+	pending: unknown,
+	value: unknown,
+): Extract<BrowserCommand, { readonly command: "dynamicApprovalRespond" }> {
+	const parsed = parseModel(
+		"The Codex workbench dynamic approval response is malformed or no longer pending",
+		() => browserModel.parseDynamicApprovalResponse(pending, value),
+	);
+	return cloneImmutable(parsed) as Extract<
+		BrowserCommand,
+		{ readonly command: "dynamicApprovalRespond" }
+	>;
 }
 
 function parseDeltaValue(key: string, value: unknown): unknown {

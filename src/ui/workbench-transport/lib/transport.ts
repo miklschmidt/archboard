@@ -2,6 +2,7 @@ import { CODEX_REQUEST_SETTLEMENT_MS, SOCKET_RECONNECT_MS } from "../../../share
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
+	BrowserDynamicApproval,
 	BrowserSnapshot,
 } from "../../../shared/codex-browser-model/index.js";
 import {
@@ -26,6 +27,7 @@ import {
 	parseBrowserAccountReadResult,
 	parseBrowserCommandLease,
 	parseBrowserCommandResult,
+	parseBrowserDynamicApprovalResponse,
 	parseBrowserEvent,
 	parseRequiredBrowserCommandLease,
 	parseBrowserResponse,
@@ -111,26 +113,106 @@ function sameLeaseTarget(
 	);
 }
 
-function dynamicCommandMatchesTarget(
-	draft: BrowserCommandDraft,
+const DYNAMIC_IDENTITY_FIELDS = [
+	"child",
+	"epoch",
+	"threadId",
+	"turnId",
+	"callId",
+	"namespace",
+	"tool",
+	"manifestHash",
+	"operationId",
+] as const;
+
+function sameDynamicIdentity(left: unknown, right: unknown): boolean {
+	if (!isRecord(left) || !isRecord(right)) return false;
+	return DYNAMIC_IDENTITY_FIELDS.every((field) => left[field] === right[field]);
+}
+
+function sameDynamicLink(left: unknown, right: unknown): boolean {
+	if (!isRecord(left) || !isRecord(right)) return false;
+	return (
+		left.threadId === right.threadId && left.childId === right.childId && left.epoch === right.epoch
+	);
+}
+
+function sameDynamicBinding(
+	approval: BrowserDynamicApproval,
 	target: BrowserWorkbenchCommandTarget,
 ): boolean {
-	if (!isRecord(draft)) return false;
+	return (
+		approval.binding !== null &&
+		approval.binding.commandId === target.commandId &&
+		approval.binding.paneId === target.paneId &&
+		sameDynamicLink(approval.binding.capturedLink, target.capturedThreadLink)
+	);
+}
+
+function dynamicApprovalMatchesTarget(
+	active: SocketRun,
+	draft: BrowserCommandDraft,
+	target: BrowserWorkbenchCommandTarget,
+	fullCommand: BrowserCommand,
+	now: () => number,
+): boolean {
+	if (active.snapshot === null) return false;
 	const draftRecord = draft as unknown as Record<string, unknown>;
+	const identity = draftRecord.identity;
 	const capturedLink = draftRecord.capturedLink;
-	if (!isRecord(capturedLink)) return false;
+	const effectHash = draftRecord.effectHash;
+	if (!isRecord(identity) || !isRecord(capturedLink) || typeof effectHash !== "string")
+		return false;
 	if (
-		capturedLink.threadId !== target.capturedThreadLink.threadId ||
-		capturedLink.childId !== target.capturedThreadLink.childId ||
-		capturedLink.epoch !== target.capturedThreadLink.epoch
+		identity.child !== target.childId ||
+		identity.epoch !== target.epoch ||
+		identity.threadId !== target.capturedThreadLink.threadId ||
+		!sameDynamicLink(capturedLink, target.capturedThreadLink)
 	)
 		return false;
-	const identity = draftRecord.identity;
+	const pending = active.snapshot.dynamicApprovals.find(
+		(candidate) =>
+			candidate.state === "pending" &&
+			candidate.decision === null &&
+			candidate.delivery === null &&
+			candidate.toolResult === null &&
+			candidate.expiresAtMs > now() &&
+			candidate.effectHash === effectHash &&
+			sameDynamicIdentity(candidate.identity, identity) &&
+			sameDynamicBinding(candidate, target),
+	);
+	if (pending === undefined) return false;
+	try {
+		parseBrowserDynamicApprovalResponse(pending, fullCommand);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function hasUsableDynamicApproval(
+	active: SocketRun,
+	targetLease: BrowserCommandLease | null,
+	now: () => number,
+): boolean {
+	const link = active.snapshot?.threadLink;
+	if (targetLease === null || link?.state !== "executable") return false;
 	return (
-		isRecord(identity) &&
-		identity.child === target.childId &&
-		identity.epoch === target.epoch &&
-		identity.threadId === target.capturedThreadLink.threadId
+		active.snapshot?.dynamicApprovals.some(
+			(candidate) =>
+				candidate.state === "pending" &&
+				candidate.decision === null &&
+				candidate.delivery === null &&
+				candidate.toolResult === null &&
+				candidate.expiresAtMs > now() &&
+				candidate.binding !== null &&
+				candidate.binding.commandId === targetLease.commandId &&
+				candidate.binding.paneId === targetLease.paneId &&
+				candidate.identity.child === targetLease.childId &&
+				candidate.identity.epoch === targetLease.epoch &&
+				candidate.identity.threadId === link.threadId &&
+				sameDynamicLink(candidate.binding.capturedLink, link),
+		) ?? false
 	);
 }
 
@@ -615,10 +697,12 @@ export function createBrowserWorkbenchTransport(
 		currentLease?.state === "active" && currentLease.expiresAtMs > now();
 
 	const commandSupported = (active: SocketRun, command: BrowserCommandName): boolean => {
-		if (!accountReady(active) || currentLease?.state !== "active") return false;
+		if (!accountReady(active) || !leaseUsable()) return false;
 		if (ACCOUNT_COMMANDS.has(command)) return true;
 		if (active.snapshot?.readiness.state !== "thread_capable") return false;
 		if (THREAD_LINK_COMMANDS.has(command)) return true;
+		if (command === "dynamicApprovalRespond")
+			return hasUsableDynamicApproval(active, currentLease, now);
 		return active.snapshot.threadLink.state === "executable";
 	};
 
@@ -662,14 +746,22 @@ export function createBrowserWorkbenchTransport(
 		if (active === null)
 			throw transportFailure("socket_unavailable", "The Codex workbench has no active socket.");
 		const commandName = (draft as { readonly command?: unknown }).command;
-		if (
-			typeof commandName !== "string" ||
-			!commandSupported(active, commandName as BrowserCommandName)
-		)
+		if (typeof commandName !== "string")
 			throw transportFailure(
 				"not_ready",
 				"The requested browser command is not enabled in the current workbench state.",
 			);
+		if (!commandSupported(active, commandName as BrowserCommandName)) {
+			if (
+				currentLease?.state === "expired" ||
+				(currentLease?.state === "active" && currentLease.expiresAtMs <= now())
+			)
+				captureLease(active);
+			throw transportFailure(
+				"not_ready",
+				"The requested browser command is not enabled in the current workbench state.",
+			);
+		}
 		const target = captureTarget(active);
 		if (
 			!ACCOUNT_COMMANDS.has(commandName as BrowserCommandName) &&
@@ -687,12 +779,6 @@ export function createBrowserWorkbenchTransport(
 				},
 			);
 		}
-		if (commandName === "dynamicApprovalRespond" && !dynamicCommandMatchesTarget(draft, target))
-			throw transportFailure(
-				"link_changed",
-				"The dynamic approval target no longer matches the captured workbench link.",
-				{ commandId: target.commandId },
-			);
 		const fullCommand = {
 			...(draft as unknown as Record<string, unknown>),
 			kind: "browser_command",
@@ -701,6 +787,15 @@ export function createBrowserWorkbenchTransport(
 			childId: target.childId,
 			epoch: target.epoch,
 		} as unknown as BrowserCommand;
+		if (
+			commandName === "dynamicApprovalRespond" &&
+			!dynamicApprovalMatchesTarget(active, draft, target, fullCommand, now)
+		)
+			throw transportFailure(
+				"dynamic_approval_not_pending",
+				"The dynamic approval is no longer pending for the captured browser target.",
+				{ commandId: target.commandId },
+			);
 		const value = await sendRequest(
 			active,
 			"command",
@@ -745,7 +840,7 @@ export function createBrowserWorkbenchTransport(
 		const canReadAccount = connected && accountReady(active);
 		const canClaimLease = connected && accountReady(active);
 		const canRenewLease = connected && leaseUsable();
-		const canReleaseLease = connected && currentLease?.state === "active";
+		const canReleaseLease = connected && leaseUsable();
 		const canCommand =
 			connected &&
 			ownerState.kind === "readiness" &&
@@ -933,6 +1028,7 @@ export function createBrowserWorkbenchTransport(
 			throw transportFailure("socket_unavailable", "The Codex workbench has no active socket.");
 		const existing = currentLease;
 		if (existing === null) return null;
+		captureLease(active);
 		const value = await sendRequest(active, "releaseLease", {}, "lease", existing.commandId);
 		let released: BrowserCommandLease | null;
 		try {
