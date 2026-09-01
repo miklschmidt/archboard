@@ -376,6 +376,7 @@ export function createSessionFixture(
 		readonly checkoutRoot?: string;
 		readonly initializeCodexHome?: string;
 		readonly onNotification?: (event: TransportServerNotification) => void;
+		readonly listenerOwnership?: "self" | "composition";
 		readonly now?: () => number;
 	} = {},
 ): SessionFixture {
@@ -424,6 +425,7 @@ export function createSessionFixture(
 			events.push(event);
 			options.onNotification?.(event);
 		},
+		listenerOwnership: options.listenerOwnership,
 	});
 	return {
 		root,

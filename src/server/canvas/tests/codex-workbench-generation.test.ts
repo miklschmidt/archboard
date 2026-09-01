@@ -1,15 +1,26 @@
 import { expect, test } from "bun:test";
 
 import {
+	CODEX_SESSION_CONTROL,
+	type ControlledCodexSession,
+} from "../../../runtime/codex-session/index.js";
+import {
 	composeCodexWorkbenchGeneration,
 	type CodexWorkbenchComponentFactories,
 	type CodexWorkbenchComponents,
 	type CodexWorkbenchGenerationHooks,
-} from "../index.js";
+} from "../codex-workbench.js";
+
+type ExitListener = Parameters<CodexWorkbenchComponents["transport"]["onExit"]>[0];
 
 test("the production generation creates every owner once before readiness and shuts down in order", async () => {
 	const events: string[] = [];
 	const unsubscribers: Array<() => void> = [];
+	let exitListener: ExitListener | null = null;
+	let resolveChildRetirement!: () => void;
+	const childRetirement = new Promise<void>((resolve) => {
+		resolveChildRetirement = resolve;
+	});
 	const disposable = (name: string) => ({ dispose: () => void events.push(`${name}:dispose`) });
 	const parts = {
 		identity: {},
@@ -29,19 +40,33 @@ test("the production generation creates every owner once before readiness and sh
 				unsubscribers.push(unsubscribe);
 				return unsubscribe;
 			},
-			onExit: () => {
+			onExit: (listener: ExitListener) => {
 				events.push("child-exit:install");
+				exitListener = listener;
 				const unsubscribe = () => void events.push("child-exit:remove");
 				unsubscribers.push(unsubscribe);
 				return unsubscribe;
 			},
-			shutdown: async () => void events.push("transport:shutdown"),
+			shutdown: async () => {
+				events.push("transport:shutdown");
+				exitListener?.({
+					child: "child" as never,
+					epoch: "epoch" as never,
+					code: 0,
+					signal: null,
+				});
+			},
 		},
 		session: {
 			respondCurrentTime: async () => undefined,
 			respondUnsupportedTokenRefresh: async () => undefined,
 			respondUnsupportedAttestation: async () => undefined,
-		},
+			[CODEX_SESSION_CONTROL]: {
+				onNotification: () => undefined,
+				onServerRequest: () => undefined,
+				dispose: () => void events.push("session:dispose"),
+			},
+		} as unknown as ControlledCodexSession,
 		threadLink: {},
 		workhorse: {},
 		realtime: { ...disposable("realtime"), onNotification: () => undefined },
@@ -51,7 +76,11 @@ test("the production generation creates every owner once before readiness and sh
 			childExit: async () => [],
 		},
 		dynamicTools: { ...disposable("dynamic"), dispatch: async () => ({}) },
-		semanticDelivery: disposable("semantic"),
+		semanticDelivery: {
+			...disposable("semantic"),
+			replaceHooks: () => void events.push("semantic:hooks"),
+			childExit: async () => void events.push("semantic:child-exit"),
+		},
 		coordinator: { onNotification: () => undefined },
 		queue: {},
 		operations: { onNotification: () => undefined },
@@ -102,6 +131,7 @@ test("the production generation creates every owner once before readiness and sh
 		]),
 	) as unknown as CodexWorkbenchComponentFactories;
 	const hooks: CodexWorkbenchGenerationHooks = {
+		threadContext: { contextForEvent: () => ({}) as never },
 		installIdentityDecoders: () => void events.push("identity:install"),
 		installLifecycleSignals: () => {
 			events.push("lifecycle:install");
@@ -123,9 +153,17 @@ test("the production generation creates every owner once before readiness and sh
 		settleOrdinaryRequests: async () => void events.push("ordinary:settle"),
 	};
 
-	const generation = await composeCodexWorkbenchGeneration({ factories, hooks });
+	const generation = await composeCodexWorkbenchGeneration({
+		factories,
+		hooks,
+		onChildExitStart: () => void events.push("child-retirement:start"),
+		onChildExitFinished: () => {
+			events.push("child-retirement:finish");
+			resolveChildRetirement();
+		},
+	});
 	expect(Object.fromEntries(calls)).toEqual(Object.fromEntries(order.map((name) => [name, 1])));
-	expect(events.indexOf("identity:install")).toBeLessThan(events.indexOf("create:transport"));
+	expect(events.indexOf("identity:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.filter((event) => event.startsWith("dynamic:install:"))).toHaveLength(3);
 	expect(events.indexOf("dynamic:install:archboard_app")).toBeLessThan(
 		events.indexOf("create:session"),
@@ -136,10 +174,47 @@ test("the production generation creates every owner once before readiness and sh
 
 	await generation.stop("shutdown");
 	generation.finishStop();
+	await childRetirement;
 	expect(events.indexOf("gateway:dispose")).toBeLessThan(events.indexOf("realtime:stop"));
 	expect(events.indexOf("realtime:stop")).toBeLessThan(events.indexOf("queue:stop"));
 	expect(events.indexOf("queue:stop")).toBeLessThan(events.indexOf("dynamic:cancel"));
 	expect(events.indexOf("dynamic:cancel")).toBeLessThan(events.indexOf("ordinary:settle"));
 	expect(events.indexOf("transport:shutdown")).toBeLessThan(events.indexOf("router:remove"));
 	expect(events.indexOf("router:remove")).toBeLessThan(events.indexOf("epoch:close"));
+	expect(events).toContain("child-retirement:start");
+	expect(events).toContain("child-retirement:finish");
+
+	const cleanupEvent = new Map<string, string>([
+		["epoch", "epoch:close"],
+		["transport", "transport:shutdown"],
+		["session", "session:dispose"],
+		["realtime", "realtime:dispose"],
+		["approvals", "approvals:dispose"],
+		["dynamicTools", "dynamic:dispose"],
+		["semanticDelivery", "semantic:dispose"],
+		["spokenApproval", "spoken:dispose"],
+		["coordinatorTools", "coordinator-tools:dispose"],
+		["callbacks", "callbacks:dispose"],
+	]);
+	for (const [failedIndex, failedName] of order.entries()) {
+		events.length = 0;
+		const failing = Object.fromEntries(
+			order.map((name, index) => [
+				name,
+				index === failedIndex
+					? () => {
+							throw new Error(`create:${name}:failed`);
+						}
+					: () => parts[name],
+			]),
+		) as unknown as CodexWorkbenchComponentFactories;
+		expect(composeCodexWorkbenchGeneration({ factories: failing, hooks })).rejects.toThrow(
+			`create:${failedName}:failed`,
+		);
+		for (const acquired of order.slice(0, failedIndex)) {
+			const expected = cleanupEvent.get(acquired);
+			if (expected !== undefined)
+				expect(events, `${failedName} cleans ${acquired}`).toContain(expected);
+		}
+	}
 });

@@ -3,6 +3,7 @@ import type { CodexSession } from "../../codex-session/index.js";
 import type { ArchboardContext, ThreadInjectItemsParams } from "../../codex-instructions/index.js";
 import type {
 	CodexThreadLinkPort,
+	ThreadLinkBindingSnapshot,
 	ThreadLinkReasonCode,
 	ThreadLinkTarget,
 } from "../../codex-thread-link/index.js";
@@ -54,21 +55,36 @@ export type CodexThreadContextDeliveryReason =
 
 export type CodexThreadContextDeliveryState = "delivered" | "not_delivered" | "outcome_unknown";
 
-/** The immutable record for one semantic event identity. */
-export interface CodexThreadContextDeliveryOutcome {
+interface CodexThreadContextDeliveryOutcomeBase {
 	readonly kind: "thread_context_delivery";
 	readonly event: CodexThreadContextEventId;
-	readonly paneId: string;
-	readonly targetThreadId: ThreadId;
-	readonly targetChildId: ChildId;
-	readonly targetEpoch: ChildEpoch;
-	readonly targetOperationId: string;
 	readonly attempted: boolean;
 	readonly outcome: CodexThreadContextDeliveryState;
 	readonly reason: CodexThreadContextDeliveryReason | null;
 	/** The exact canonical body, when the body was built before refusal or attempt. */
 	readonly payload: ThreadInjectItemsParams | null;
 }
+
+/** The immutable record for one semantic event identity. */
+export type CodexThreadContextDeliveryOutcome =
+	| (CodexThreadContextDeliveryOutcomeBase & {
+			readonly paneId: string;
+			readonly targetThreadId: ThreadId;
+			readonly targetChildId: ChildId;
+			readonly targetEpoch: ChildEpoch;
+			readonly targetOperationId: string;
+	  })
+	| (CodexThreadContextDeliveryOutcomeBase & {
+			readonly paneId: null;
+			readonly targetThreadId: null;
+			readonly targetChildId: null;
+			readonly targetEpoch: null;
+			readonly targetOperationId: null;
+			readonly attempted: false;
+			readonly outcome: "not_delivered";
+			readonly reason: "unbound" | "disposed";
+			readonly payload: null;
+	  });
 
 export interface CodexThreadContextDeliveryOptions {
 	readonly paneId: string;
@@ -96,4 +112,71 @@ export interface CodexThreadContextDelivery {
 	readonly inspect: () => readonly CodexThreadContextDeliveryOutcome[];
 	readonly get: (event: CodexThreadContextEventId) => CodexThreadContextDeliveryOutcome | undefined;
 	readonly dispose: () => void;
+}
+
+export interface CodexThreadContextBinding {
+	readonly paneId: string;
+	readonly target: CodexThreadContextTarget;
+	/** Exact pane/link CAS evidence captured by the target-selection action. */
+	readonly link: ThreadLinkBindingSnapshot;
+}
+
+export interface CodexThreadContextBindingToken {
+	readonly revision: number;
+}
+
+export interface CodexThreadContextBindingSnapshot {
+	readonly token: CodexThreadContextBindingToken;
+	readonly binding: CodexThreadContextBinding | null;
+}
+
+export interface CodexThreadContextBindingTransition {
+	readonly expected: CodexThreadContextBindingToken;
+	readonly next: CodexThreadContextBinding | null;
+}
+
+export type CodexThreadContextControllerErrorCode =
+	| "disposed"
+	| "stale_binding"
+	| "duplicate_binding"
+	| "invalid_binding";
+
+export class CodexThreadContextControllerError extends Error {
+	override readonly name = "CodexThreadContextControllerError";
+
+	constructor(
+		readonly code: CodexThreadContextControllerErrorCode,
+		message: string,
+		override readonly cause?: unknown,
+	) {
+		super(message);
+	}
+}
+
+export interface CodexThreadContextControllerHooks {
+	readonly contextForEvent: (
+		event: SettledSemanticChangeEvent,
+		binding: CodexThreadContextBinding,
+	) => ArchboardContext;
+}
+
+export interface CodexThreadContextControllerOptions extends Omit<
+	CodexThreadContextDeliveryOptions,
+	"paneId" | "target" | "contextForEvent" | "publisher"
+> {
+	readonly publisher: Pick<SemanticContextPublisher, "subscribeSettledChange">;
+	readonly hooks: CodexThreadContextControllerHooks;
+	/** Retire the exact child epoch after execution has been made unavailable. */
+	readonly retireEpoch: (child: ChildId, epoch: ChildEpoch) => Promise<void> | void;
+}
+
+/** One process-lifetime subscription and event ledger over replaceable exact bindings. */
+export interface CodexThreadContextController extends CodexThreadContextDelivery {
+	readonly snapshot: () => CodexThreadContextBindingSnapshot;
+	readonly compareAndSwap: (
+		transition: CodexThreadContextBindingTransition,
+	) => CodexThreadContextBindingSnapshot;
+	readonly replaceHooks: (hooks: CodexThreadContextControllerHooks) => void;
+	/** Null execution first, then clear the matching epoch and dispose the owner. */
+	readonly childExit: (child: ChildId, epoch: ChildEpoch) => Promise<void>;
 }

@@ -1,4 +1,10 @@
-import { CodexSessionError, CodexSessionMutationError, type SessionLoginParams } from "../index.js";
+import {
+	CODEX_SESSION_CONTROL,
+	CodexSessionError,
+	CodexSessionMutationError,
+	type ControlledCodexSession,
+	type SessionLoginParams,
+} from "../index.js";
 import { describe, expect, test } from "bun:test";
 import {
 	CodexTransportRemoteError,
@@ -34,6 +40,22 @@ async function readyFixture(): Promise<SessionFixture> {
 }
 
 describe("typed Codex session", () => {
+	test("leaves notification and reverse-request listeners to composition when configured", async () => {
+		const fixture = createSessionFixture({ listenerOwnership: "composition" });
+		try {
+			fixture.transport.emitNotification(makeNotification(fixture) as TransportServerNotification);
+			fixture.transport.emitServerRequest(
+				reverseRequest(fixture, "account/chatgptAuthTokens/refresh", {}),
+			);
+			await Promise.resolve();
+			expect(fixture.events).toEqual([]);
+			expect(fixture.transport.reverseResponses).toEqual([]);
+		} finally {
+			(fixture.session as ControlledCodexSession)[CODEX_SESSION_CONTROL].dispose();
+			fixture.close();
+		}
+	});
+
 	test("emits the authored initialize policy and buffers notifications until storage proof", async () => {
 		const fixture = createSessionFixture({ now: () => 12_345 });
 		fixture.transport.beforeRequest = (method) => {

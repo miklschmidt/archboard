@@ -27,6 +27,9 @@ import {
 import {
 	canonicalSemanticCursorToken,
 	createCodexThreadContextDelivery,
+	createCodexThreadContextController,
+	type CodexThreadContextBinding,
+	type CodexThreadContextController,
 	type CodexThreadContextDelivery,
 	type CodexThreadContextDeliveryOptions,
 	type CodexThreadContextExecution,
@@ -65,6 +68,7 @@ export interface EventOptions {
 }
 
 interface HarnessOptions {
+	readonly controller?: boolean;
 	readonly initialLink?: ThreadLinkSnapshot;
 	readonly classificationLink?: ThreadLinkSnapshot;
 	readonly contextValid?: boolean;
@@ -77,6 +81,7 @@ export interface Harness {
 	readonly authority: IdentityAuthority;
 	readonly target: CodexThreadContextTarget;
 	readonly delivery: CodexThreadContextDelivery;
+	readonly controller: CodexThreadContextController | null;
 	readonly received: InjectRequest[];
 	readonly events: (options?: EventOptions) => SettledSemanticChangeEvent;
 	readonly emit: (event: SettledSemanticChangeEvent) => void;
@@ -95,6 +100,9 @@ export interface Harness {
 	readonly classifyCalls: () => number;
 	readonly epochRequests: () => readonly EpochExecutionRequest[];
 	readonly flush: () => Promise<void>;
+	readonly subscriptionCount: () => number;
+	readonly retiredEpochs: () => number;
+	readonly readLink: () => ThreadLinkBindingSnapshot;
 }
 
 function proofFor(
@@ -257,6 +265,8 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 	let behavior: (request: InjectRequest) => Promise<InjectResponse> = successfulInject;
 	let resolveHeld: (() => void) | null = null;
 	let listener: ((event: SettledSemanticChangeEvent) => void) | null = null;
+	let subscriptions = 0;
+	let retired = 0;
 
 	const read = (): ThreadLinkBindingSnapshot => {
 		const cas: ThreadLinkCasToken = {
@@ -327,25 +337,38 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 	};
 	const publisher = {
 		subscribeSettledChange(next: (event: SettledSemanticChangeEvent) => void) {
+			subscriptions++;
 			listener = next;
 			return () => {
 				listener = null;
 			};
 		},
 	};
-	const delivery = createCodexThreadContextDelivery({
-		paneId: PANE_ID,
+	const common = {
 		feedId: FEED_ID,
 		now: () => now,
 		publisher,
 		session,
 		threadLink,
-		target,
 		identity: authority,
 		epoch: epochPort,
 		currentExecution: () => execution,
-		contextForEvent,
-	});
+	};
+	const controller = options.controller
+		? createCodexThreadContextController({
+				...common,
+				hooks: { contextForEvent },
+				retireEpoch: () => void retired++,
+			})
+		: null;
+	const delivery =
+		controller ??
+		createCodexThreadContextDelivery({
+			...common,
+			paneId: PANE_ID,
+			target,
+			contextForEvent,
+		});
 
 	const events = (eventOptions: EventOptions = {}): SettledSemanticChangeEvent => {
 		const sequence = eventOptions.sequence ?? 1;
@@ -404,6 +427,7 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 		authority,
 		target,
 		delivery,
+		controller,
 		received,
 		events,
 		emit: (event) => listener?.(event),
@@ -445,5 +469,16 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 		classifyCalls: () => classifyCount,
 		epochRequests: () => Object.freeze([...epochRequests]),
 		flush: flushMicrotasks,
+		subscriptionCount: () => subscriptions,
+		retiredEpochs: () => retired,
+		readLink: read,
 	};
+}
+
+export function bindingFor(harness: Harness): CodexThreadContextBinding {
+	return Object.freeze({
+		paneId: PANE_ID,
+		target: harness.target,
+		link: harness.readLink(),
+	});
 }
