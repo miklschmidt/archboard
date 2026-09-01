@@ -339,7 +339,7 @@ describe("documented CLI workflows", () => {
 	});
 
 	test("keeps the released registry and artifact count", () => {
-		expect(cliContractRegistry()).toHaveLength(61);
+		expect(cliContractRegistry()).toHaveLength(58);
 		expect([
 			"cli-command-audit.md",
 			"command-contract-proof.json",

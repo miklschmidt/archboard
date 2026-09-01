@@ -5,12 +5,10 @@ import { cleanupCommandContractTest, proofContract } from "./support.js";
 afterEach(cleanupCommandContractTest);
 
 describe("command-contract schemas", () => {
-	test("board and injection result schemas accept the protected server response shapes", async () => {
+	test("board and pane result schemas accept the protected server response shapes", async () => {
 		const { BoardInfoResultSchema, BoardNewResultSchema, BoardOpenResultSchema } =
 			await import("../../commands/board.js");
 		const { PaneOpenResultSchema } = await import("../../commands/pane.js");
-		const { InjectStatusResultSchema, InjectTestResultSchema } =
-			await import("../../commands/inject.js");
 		const identityState = {
 			board: "payments",
 			identity: {
@@ -55,49 +53,6 @@ describe("command-contract schemas", () => {
 		).toBeFalse();
 		expect(BoardNewResultSchema.safeParse(info).success).toBeFalse();
 		expect(BoardOpenResultSchema.safeParse(info).success).toBeFalse();
-
-		const injectionStatus = {
-			enabled: true,
-			armed: true,
-			loud: false,
-			refusal: null,
-			host: "127.0.0.1",
-			socket: {
-				path: "/tmp/app-server.sock",
-				exists: true,
-				isSocket: true,
-				ownedByUs: true,
-				mode: "600",
-			},
-			connected: true,
-			lastError: null,
-			target: {
-				threadId: "thread-1",
-				reason: "pinned" as const,
-				explanation: "the fixture thread is pinned",
-				activeTurnId: null,
-			},
-			threadsSeen: 1,
-			pending: 0,
-			debounceMs: 200,
-			minIntervalMs: 500,
-			injected: { quiet: 2, loud: 1, failed: 0 },
-			lastInjectionAt: "2026-08-26T10:01:00.000Z",
-			lastInjection: {
-				channel: "quiet" as const,
-				threadId: "thread-1",
-				at: "2026-08-26T10:01:00.000Z",
-				text: "fixture change",
-			},
-		};
-		expect(InjectStatusResultSchema.parse(injectionStatus)).toEqual(injectionStatus);
-		expect(
-			InjectTestResultSchema.parse({ channel: "loud", threadId: "thread-1", text: "probe" }),
-		).toEqual({ channel: "loud", threadId: "thread-1", text: "probe" });
-		expect(
-			InjectStatusResultSchema.safeParse({ held: { board: "x", message: "held" } }).success,
-		).toBeFalse();
-		expect(InjectTestResultSchema.safeParse({ channel: "quiet" }).success).toBeFalse();
 	});
 
 	test("named Zod schemas own migrated defaults, coercions, enums, and cross-field rules", async () => {

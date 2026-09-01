@@ -5,10 +5,6 @@ import {
 	BoardNewResultSchema,
 	BoardOpenResultSchema,
 } from "../../../src/cli/commands/board.ts";
-import {
-	InjectStatusResultSchema,
-	InjectTestResultSchema,
-} from "../../../src/cli/commands/inject.ts";
 import { PaneOpenResultSchema } from "../../../src/cli/commands/pane.ts";
 import { QueryResultSchema } from "../../../src/cli/command-contract/query.ts";
 import { UpdateResultSchema } from "../../../src/cli/command-contract/update.ts";
@@ -76,7 +72,7 @@ async function closedUrl(): Promise<string> {
 }
 
 describe("package board commands", () => {
-	test("accepts public board, pane, and injection schemas without invented fields", async () => {
+	test("accepts public board and pane schemas without invented fields", async () => {
 		await using resources = new AsyncDisposableStack();
 		const http = resources.use(createCliHttpDouble());
 		const owner = resources.use(createPackageCliOwner());
@@ -126,28 +122,26 @@ describe("package board commands", () => {
 			paneCount: 2,
 			board: { source: "vault", version: 7, placeholder: false },
 		});
+	});
 
-		const status = await owner.run(["inject", "status"], { url: http.url });
-		diagnostic = packageFailure(status);
-		expect(status.status, diagnostic).toBe(0);
-		expect(status.stderr, diagnostic).toBe("");
-		expect(decodePackage(status, InjectStatusResultSchema), diagnostic).toMatchObject({
-			enabled: true,
-			armed: true,
-			connected: true,
-			target: { threadId: "thread-fixture", reason: "pinned" },
-			injected: { quiet: 2, loud: 1, failed: 0 },
-		});
-
-		const injected = await owner.run(["inject", "test", "--note", "fixture"], { url: http.url });
-		diagnostic = packageFailure(injected);
-		expect(injected.status, diagnostic).toBe(0);
-		expect(injected.stderr, diagnostic).toBe("");
-		expect(decodePackage(injected, InjectTestResultSchema), diagnostic).toEqual({
-			channel: "quiet",
-			threadId: "thread-fixture",
-			text: "fixture injection text",
-		});
+	test("retires inject through the ordinary unknown-command path", async () => {
+		await using resources = new AsyncDisposableStack();
+		const http = resources.use(createCliHttpDouble());
+		const owner = resources.use(createPackageCliOwner());
+		for (const argv of [
+			["inject", "status"],
+			["inject", "test", "--note", "fixture"],
+		]) {
+			const before = http.contacts.length;
+			const result = await owner.run(argv, { url: http.url });
+			const diagnostic = packageFailure(result);
+			expect(result.status, diagnostic).toBe(2);
+			expect(result.stdout, diagnostic).toBe("");
+			expect(result.stderr, diagnostic).toBe(
+				'Unknown command "inject". Board changes now reach the linked Codex workbench; inspect or test the connection there. Run `archboard help` for the list.\n',
+			);
+			expect(http.contacts.slice(before), diagnostic).toEqual([]);
+		}
 	});
 
 	test("routes global board, doing, and document through one write", async () => {

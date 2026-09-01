@@ -102,6 +102,24 @@ describe("command contract audit", () => {
 		expect(registry.every((entry) => !("handlerName" in entry))).toBe(true);
 	});
 
+	test("keeps the legacy injection command and transport artifacts retired", () => {
+		expect(cliSurface().some(({ name }) => name === "inject")).toBeFalse();
+		expect(
+			registry.some(({ name }) => name === "inject" || name.startsWith("inject ")),
+		).toBeFalse();
+		expect(existsSync(join(checkoutRoot, "src/cli/commands/inject.ts"))).toBeFalse();
+		for (const relativePath of [
+			"src/runtime/engine/canvas-client.ts",
+			"tests/system/cli/support/cli-http-double.ts",
+		]) {
+			const source = readFileSync(join(checkoutRoot, relativePath), "utf8");
+			expect(source, relativePath).not.toContain("/api/injection");
+			expect(source, relativePath).not.toMatch(
+				/\b(?:getInjection|postInjectionTest|InjectionReport)\b/,
+			);
+		}
+	});
+
 	test("keeps fixed-base coverage and explicit introduced paths", () => {
 		expect(compatibility.fixedBase).toBe("6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a");
 		expect(compatibility.publicPaths).toEqual(
@@ -123,7 +141,6 @@ describe("command contract audit", () => {
 				"snapshot-restore-missing-name",
 				"snapshot-option-leading-restore",
 				"arrange-option-leading-align",
-				"inject-unknown-option-shaped-subcommand",
 			].toSorted(),
 		);
 	});
@@ -240,8 +257,6 @@ describe("command contract audit", () => {
 					"pane",
 				],
 			],
-			["inject status", ["enabled", "armed", "socket", "target", "injected", "lastInjection"]],
-			["inject test", ["channel", "threadId", "text"]],
 		] as const) {
 			const schema = contracts.find((contract) => contract.name === path)?.result as
 				| { required?: readonly string[] }

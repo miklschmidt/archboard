@@ -181,49 +181,6 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 						: undefined;
 			const preflight = preflightResponse(request.method, url, record, compatibilityRecord);
 			if (preflight) return preflight;
-			if (request.method === "GET" && url.pathname === "/api/injection")
-				return Response.json({
-					success: true,
-					enabled: true,
-					armed: true,
-					loud: false,
-					refusal: null,
-					host: "127.0.0.1",
-					socket: {
-						path: "/tmp/app-server.sock",
-						exists: true,
-						isSocket: true,
-						ownedByUs: true,
-						mode: "600",
-					},
-					connected: true,
-					lastError: null,
-					target: {
-						threadId: "thread-fixture",
-						reason: "pinned",
-						explanation: "fixture",
-						activeTurnId: null,
-					},
-					threadsSeen: 1,
-					pending: 0,
-					debounceMs: 200,
-					minIntervalMs: 500,
-					injected: { quiet: 2, loud: 1, failed: 0 },
-					lastInjectionAt: "2026-08-26T10:01:00.000Z",
-					lastInjection: {
-						channel: "quiet",
-						threadId: "thread-fixture",
-						at: "2026-08-26T10:01:00.000Z",
-						text: "fixture change",
-					},
-				});
-			if (request.method === "POST" && url.pathname === "/api/injection/test")
-				return Response.json({
-					success: true,
-					channel: record.loud ? "loud" : "quiet",
-					threadId: "thread-fixture",
-					text: "fixture injection text",
-				});
 			if (request.method === "POST" && url.pathname === "/api/boards/save") {
 				if (url.searchParams.get("board") === "false-success")
 					return Response.json({
