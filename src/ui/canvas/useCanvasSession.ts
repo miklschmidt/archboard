@@ -77,6 +77,11 @@ import {
 	createBrowserWorkbenchMediaOwner,
 	type BrowserWorkbenchMediaOwner,
 } from "../codex-workbench-media";
+import {
+	createCanvasWorkbenchSocketOwner,
+	type CanvasWorkbenchSocketOwner,
+} from "./workbench-socket.js";
+import type { BrowserWorkbenchTransport } from "../workbench-transport/index.js";
 
 // Messages that say what is on a board, as opposed to messages about the board.
 // A pane that must send a full report ignores the first kind and acts on the
@@ -352,6 +357,8 @@ export interface CanvasSession {
 	doing: DoingEntry[];
 	/** Browser-local WebRTC and media owner for this exact pane socket. */
 	realtime: BrowserWorkbenchMediaOwner;
+	/** The transport retained by the current canvas socket generation. */
+	workbenchTransport: () => BrowserWorkbenchTransport | null;
 }
 
 export function useCanvasSession({
@@ -372,6 +379,9 @@ export function useCanvasSession({
 	const socketRef = useRef<WebSocket | null>(null);
 	const closedRef = useRef(false);
 	const [realtime] = useState<BrowserWorkbenchMediaOwner>(() => createBrowserWorkbenchMediaOwner());
+	const [workbenchSockets] = useState<CanvasWorkbenchSocketOwner>(() =>
+		createCanvasWorkbenchSocketOwner({ media: realtime }),
+	);
 
 	const [connected, setConnected] = useState(false);
 	const connectedRef = useRef(false);
@@ -1584,10 +1594,16 @@ export function useCanvasSession({
 			socketRef.current = socket;
 
 			socket.addEventListener("open", () => {
-				void realtime.attach(socket).then(() => {
-					if (socketRef.current === socket) publishStatus();
-					return undefined;
-				});
+				void workbenchSockets
+					.attach(socket)
+					.then(() => {
+						if (socketRef.current === socket) publishStatus();
+						return undefined;
+					})
+					.catch((error) => {
+						if (socketRef.current === socket) publishStatus();
+						void error;
+					});
 				connectedRef.current = true;
 				setConnected(true);
 				// The server retires a pane when its socket closes, so a reconnection has
@@ -1606,7 +1622,7 @@ export function useCanvasSession({
 				}
 			});
 			socket.addEventListener("close", (event) => {
-				void realtime.detach(socket).catch(() => undefined);
+				void workbenchSockets.detach(socket).catch(() => undefined);
 				connectedRef.current = false;
 				setConnected(false);
 				publishStatus();
@@ -1618,7 +1634,7 @@ export function useCanvasSession({
 				publishStatus();
 			});
 		},
-		[clientId, handleMessage, publishStatus, realtime],
+		[clientId, handleMessage, publishStatus, workbenchSockets],
 	);
 
 	const attachExcalidraw = useCallback(
@@ -1653,10 +1669,9 @@ export function useCanvasSession({
 			// Closing the socket is also how this pane stops being reported: an
 			// unsplit pane is no longer displayed, and the server drops it on the
 			// close.
-			socketRef.current?.close(1000);
-			void realtime.dispose();
+			void workbenchSockets.dispose().finally(() => socketRef.current?.close(1000));
 		};
-	}, [clientId, dispatchReporting, flushWithBeacon, realtime]);
+	}, [clientId, dispatchReporting, flushWithBeacon, workbenchSockets]);
 
 	const handleChange = useCallback(
 		(elements: readonly Partial<ExcalidrawElement>[], appState: unknown): void => {
@@ -1680,6 +1695,11 @@ export function useCanvasSession({
 		dispatchReporting({ type: "user_interacted" });
 	}, [dispatchReporting]);
 
+	const currentWorkbenchTransport = useCallback(
+		(): BrowserWorkbenchTransport | null => workbenchSockets.current()?.transport ?? null,
+		[workbenchSockets],
+	);
+
 	return {
 		attachExcalidraw,
 		attachPaneElement,
@@ -1696,5 +1716,6 @@ export function useCanvasSession({
 		takeBack,
 		doing,
 		realtime,
+		workbenchTransport: currentWorkbenchTransport,
 	};
 }

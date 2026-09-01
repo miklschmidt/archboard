@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-01 15:52'
+updated_date: '2026-09-01 16:23'
 labels: []
 dependencies:
   - TASK-143.01.14
@@ -21,6 +21,9 @@ modified_files:
   - src/ui/codex-workbench-media/index.ts
   - src/ui/codex-workbench-media/lib/media-owner.ts
   - src/ui/codex-workbench-media/tests/media-owner.test.ts
+  - src/ui/canvas/useCanvasSession.ts
+  - src/ui/canvas/workbench-socket.ts
+  - src/ui/canvas/tests/workbench-socket.test.ts
   - tests/system/canvas-state/codex-workbench-application-sockets.test.ts
 parent_task_id: TASK-143.03
 priority: high
@@ -47,13 +50,13 @@ Delegation profile: gpt-5.6-luna, max.
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Second remediation plan (authorized cross-module scope):
+Third remediation plan (authorized cross-module scope):
 
-1. Keep the workbench transport as the sole UI socket-level gateway owner and snapshot reducer. Add the shared pending dynamic-approval parser adapter and enforce exact lease usability at every command-specific capability/request boundary.
-2. Refactor the media owner to consume the public workbench transport port for snapshots, leases, commands, and media readiness. For the existing raw-socket callsite, create the transport adapter at this boundary only; the media owner will not parse gateway frames, subscribe to the socket, or reduce snapshots.
-3. Replace media and shared-socket tests with transport-port composition tests, including exact pending dynamic-approval identity/expiry rejection and lease-expiry no-request coverage.
-4. Add the smallest real canvas-socket/gateway integration owner in tests/system to exercise the production seam, assert one subscribe per socket generation and one authoritative transport reducer, and prove media disposal does not close the canvas socket.
-5. Run targeted module, media, production-boundary, type, lint, format, and repository-policy evidence; preserve reviewer-closed findings 2, 4, and 5 and leave acceptance criteria unchecked.
+1. Remove BrowserWorkbenchSocket from the media public contract and delete every media-owned transport construction or socket fallback; retain one deterministic transport-only media lifecycle.
+2. Make useCanvasSession create one BrowserWorkbenchTransport per current WebSocket generation, attach it before media, pass that exact instance to media, and dispose/retire it in canvas-owned socket ordering without closing sockets from consumers.
+3. Exercise the real composition path in useCanvasSession-owned and production canvas-socket tests: one subscribe/reducer, same transport identity, replacement/backoff/attach failure, late-frame isolation, and media disposal without socket close.
+4. Preserve all previously closed findings and validation evidence; keep acceptance criteria unchecked and do not weaken repository checks.
+5. Run bounded transport, media, useCanvasSession, production-boundary, targeted policy, TypeScript, lint, format, and diff checks; do not rerun known aggregate OOM fingerprints or the serial browser lane.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -64,4 +67,8 @@ Remediation (2026-09-01): addressed the review blockers within src/ui/workbench-
 Second remediation scope is deliberately limited to the public workbench transport, its wire/reducer tests, the directly-owned media owner/tests, and the existing production canvas-socket system owner. useCanvasSession remains unchanged: its raw socket is adapted into one transport by the media boundary only when no shared transport is supplied. Findings 2 (transport response settlement), 4 (strict wire/snapshot validation), and 5 (lease-target/result identity) remain preserved from the prior remediation.
 
 Second remediation evidence (2026-09-01): bun test --isolate src/ui/workbench-transport/tests: 22 pass, 0 fail, 334 expect calls. bun test --isolate src/ui/codex-workbench-media/tests src/ui/workbench-transport/tests/shared-socket.test.ts: 6 pass, 0 fail, 30 expect calls. bun test --isolate tests/system/canvas-state/codex-workbench-application-sockets.test.ts: 2 pass, 0 fail, 21 expect calls, including one subscribe, transport-only media composition, backoff disposal, and media disposal leaving the real canvas socket open. bun test --isolate tests/system/repository-policy/codex-workbench-composition.test.ts tests/system/repository-policy/codex-dynamic-approval-contract.test.ts: 15 pass, 0 fail, 388 expect calls. bun run type-check, bun run fmt:check, and scoped bunx oxlint src/ui/codex-workbench-media src/ui/workbench-transport tests/system/canvas-state/codex-workbench-application-sockets.test.ts: all pass. Aggregate test:modules, test:repository, and the repository boundary owner remain intentionally unrun in this remediation because the prior required-bounds attempts were OOM-killed; no existing checks were weakened.
+
+Third remediation started (2026-09-01): reviewer findings 1 and 7 require removing the raw-socket media overload and moving transport construction into the actual canvas socket composition. The public media owner will accept only BrowserWorkbenchTransport; useCanvasSession will retain one transport per WebSocket generation and remain the only socket close owner. The transport, media, and production system owners will verify one subscribe, one reducer, identity sharing, replacement/backoff recovery, late-frame isolation, and media disposal without socket close. Findings 2, 3, 4, 5, and 6 remain preserved; acceptance criteria and final summary stay unchanged.
+
+Third remediation evidence (2026-09-01): removed the raw BrowserWorkbenchSocket media overload, the media-owned transport fallback, and attach_failed state; media now accepts only BrowserWorkbenchTransport and leaves transport retirement to the canvas socket owner. Added src/ui/canvas/workbench-socket.ts, which creates one transport per current WebSocket generation, passes that exact transport to media and the future transport accessor, retires old generations once, gates stale concurrent attaches, and never closes the canvas socket. useCanvasSession now delegates attach/detach/disposal to that owner and closes the raw socket only after owner disposal. Focused canvas/media/shared tests: bun test --isolate src/ui/canvas/tests/workbench-socket.test.ts src/ui/codex-workbench-media/tests src/ui/workbench-transport/tests/shared-socket.test.ts — 12 pass, 0 fail, 77 expect calls. Transport suite: bun test --isolate src/ui/workbench-transport/tests — 22 pass, 0 fail, 334 expect calls. Production canvas socket owner: bun test --isolate tests/system/canvas-state/codex-workbench-application-sockets.test.ts — 2 pass, 0 fail, 21 expect calls, including one subscribe/reducer, shared transport composition, replacement safety, and media disposal leaving the real socket open. Targeted policy owners: 15 pass, 0 fail, 388 expect calls. bun run type-check, bun run build, bun run lint, scoped oxlint, bun run fmt:check, and git diff --check pass. Aggregate test:modules, test:repository, repository boundary owner, and serial browser lane remain intentionally unrun because prior bounded attempts were OOM-killed or prerequisites were unavailable; no checks were weakened. Acceptance criteria remain unchecked and the task remains In Progress for parent review.
 <!-- SECTION:NOTES:END -->
