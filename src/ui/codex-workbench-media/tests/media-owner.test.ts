@@ -1,4 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import type {
 	BrowserCommandDraft,
@@ -47,12 +49,32 @@ class FakeTransport implements BrowserWorkbenchTransport {
 	readonly commands: BrowserCommandDraft[] = [];
 	private readonly listeners = new Set<() => void>();
 	private currentSequence = 1;
-	private currentSnapshot = workbenchSnapshot();
+	private currentSnapshot: BrowserSnapshot | null;
 	private currentLease: BrowserCommandLease | null = null;
-	private currentState: BrowserWorkbenchState = this.readinessState();
+	private currentState: BrowserWorkbenchState;
 	disposeCount = 0;
 
+	constructor(
+		options: {
+			readonly snapshot?: BrowserSnapshot | null;
+			readonly state?: BrowserWorkbenchState;
+		} = {},
+	) {
+		this.currentSnapshot = options.snapshot === undefined ? workbenchSnapshot() : options.snapshot;
+		this.currentState = options.state ?? this.readinessState();
+	}
+
 	private readinessState(): BrowserWorkbenchState {
+		if (this.currentSnapshot === null)
+			return {
+				kind: "connection",
+				state: "backoff",
+				connection: "reconnecting",
+				snapshot: null,
+				sequence: null,
+				retryAtMs: Date.now() + 1_000,
+				reason: "retrying",
+			};
 		return {
 			kind: "readiness",
 			state: "thread_capable",
@@ -79,6 +101,7 @@ class FakeTransport implements BrowserWorkbenchTransport {
 		return Promise.resolve(this.snapshotMessage());
 	}
 	claimLease(): Promise<BrowserCommandLease> {
+		if (this.currentSnapshot === null) return Promise.reject(new Error("no snapshot"));
 		const commandId = `media-lease-${this.mediaReady.length + this.commands.length + 1}`;
 		this.currentLease = {
 			kind: "command_lease",
@@ -106,6 +129,7 @@ class FakeTransport implements BrowserWorkbenchTransport {
 	}
 	command(draft: BrowserCommandDraft): Promise<BrowserWorkbenchCommandResult> {
 		this.commands.push(draft);
+		if (this.currentSnapshot === null) return Promise.reject(new Error("no snapshot"));
 		const commandId = this.currentLease?.commandId ?? null;
 		const value: BrowserWorkbenchCommandResult = {
 			kind: "command_result",
@@ -128,13 +152,13 @@ class FakeTransport implements BrowserWorkbenchTransport {
 		return Promise.resolve(value);
 	}
 	captureCommandTarget(): BrowserWorkbenchCommandTarget {
-		if (this.currentLease === null) throw new Error("no lease");
+		if (this.currentLease === null || this.currentSnapshot === null) throw new Error("no target");
 		return {
 			...this.currentLease,
 			capturedThreadLink: this.currentSnapshot.threadLink,
 		};
 	}
-	snapshot(): BrowserSnapshot {
+	snapshot(): BrowserSnapshot | null {
 		return this.currentSnapshot;
 	}
 	sequence(): number {
@@ -159,6 +183,7 @@ class FakeTransport implements BrowserWorkbenchTransport {
 	}
 
 	emitVoice(state: "ready" | "unavailable"): void {
+		if (this.currentSnapshot === null) return;
 		this.currentSnapshot = {
 			...this.currentSnapshot,
 			voice: { state },
@@ -180,6 +205,7 @@ class FakeTransport implements BrowserWorkbenchTransport {
 	}
 
 	private snapshotMessage(): BrowserWorkbenchSnapshotMessage {
+		if (this.currentSnapshot === null) throw new Error("no snapshot");
 		return {
 			kind: "snapshot",
 			sequence: this.currentSequence,
@@ -294,6 +320,48 @@ test("authoritative transport closure revokes media without closing or disposing
 	expect(disposedSessions).toBe(1);
 	expect(transport.disposeCount).toBe(0);
 	await owner.dispose();
+});
+
+test("a transport without a snapshot reports backoff through the transport-only media boundary", async () => {
+	const transport = new FakeTransport({
+		snapshot: null,
+		state: {
+			kind: "connection",
+			state: "backoff",
+			connection: "reconnecting",
+			snapshot: null,
+			sequence: null,
+			retryAtMs: Date.now() + 1_000,
+			reason: "retrying",
+		},
+	});
+	const owner = createBrowserWorkbenchMediaOwner();
+
+	try {
+		expect(await owner.attach(transport)).toEqual({
+			state: "unavailable",
+			reason: "socket_closed",
+			message: "retrying",
+		});
+		expect(owner.state()).toEqual({
+			state: "unavailable",
+			reason: "socket_closed",
+			message: "retrying",
+		});
+		expect(transport.disposeCount).toBe(0);
+	} finally {
+		await owner.dispose();
+	}
+});
+
+test("the media owner source has no raw-socket or transport-construction fallback", () => {
+	const source = readFileSync(resolve(import.meta.dir, "../lib/media-owner.ts"), "utf8");
+	expect(source).toContain(
+		"readonly attach: (transport: BrowserWorkbenchTransport) => Promise<BrowserWorkbenchMediaState>",
+	);
+	expect(source).not.toContain("BrowserWorkbenchSocket");
+	expect(source).not.toContain("createBrowserWorkbenchTransport");
+	expect(source).not.toContain("attach_failed");
 });
 
 test("missing browser media APIs publish unavailable through the transport port", async () => {
