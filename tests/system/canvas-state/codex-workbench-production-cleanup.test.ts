@@ -9,7 +9,9 @@ import {
 	openApplicationSocket,
 	prepareProductionFixture,
 	type FixtureSetupFailure,
+	type SocketOpenFailure,
 } from "./support/codex-production.ts";
+import { createRequester } from "./support/http.ts";
 
 const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
@@ -48,6 +50,17 @@ async function closeServer(server: Server): Promise<void> {
 		),
 	);
 }
+
+const pane = (clientId: string, primary: boolean, focused: boolean) => ({
+	clientId,
+	paneId: `${clientId}-pane`,
+	primary,
+	focused,
+	elementCount: 0,
+	board: "scratch",
+	rect: { x: 0, y: 0, width: 1280, height: 800 },
+	viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
+});
 
 describe.serial("production Codex setup cleanup", () => {
 	for (const failAt of [
@@ -117,14 +130,16 @@ describe.serial("production Codex setup cleanup", () => {
 		await assertProcessesStopped(records);
 	}, 20_000);
 
-	test("first socket open failure closes the partial socket before server and root cleanup", async () => {
+	test("every first-socket failure closes listeners and preserves production recovery", async () => {
 		const resources = new AsyncDisposableStack();
 		let root = "";
-		let socket: WebSocket | null = null;
 		let canvasPid: number | null = null;
+		let records: ProcessRecord[] = [];
+		const cleanupOrder: string[] = [];
 		try {
 			const fixture = prepareProductionFixture(resources, executableSource, {
 				onRoot: (value) => void (root = value),
+				onRootCleanup: () => void cleanupOrder.push("root"),
 			});
 			const canvas = await startOwnedCanvas({
 				serverPath,
@@ -137,26 +152,70 @@ describe.serial("production Codex setup cleanup", () => {
 				},
 			});
 			canvasPid = canvas.pid;
-			resources.defer(() => canvas.dispose());
-			const failure = await openApplicationSocket(canvas.base, "injected-open-failure", {
-				failAfterCreate: true,
-				onSocket: (value) => void (socket = value),
-			}).then(
-				() => null,
-				(error: unknown) => error,
-			);
-			expect(failure).toBeInstanceOf(Error);
-			const partialSocket = socket as WebSocket | null;
-			if (partialSocket === null) throw new Error("The partial socket was not captured.");
-			expect(partialSocket.readyState).toBe(WebSocket.CLOSED);
-			expect(partialSocket.listenerCount("message")).toBe(0);
-			expect(partialSocket.listenerCount("open")).toBe(0);
-			expect(partialSocket.listenerCount("error")).toBe(0);
+			const request = createRequester(canvas);
+			resources.defer(async () => {
+				await canvas.dispose();
+				cleanupOrder.push("canvas");
+			});
+			const focusedSocket = await openApplicationSocket(canvas.base, "focused-client");
+			resources.defer(() => focusedSocket.close());
+			for (const scenario of [
+				{ name: "hook_throw", failAt: undefined },
+				{ name: "socket_error", failAt: "socket_error" },
+				{ name: "early_close", failAt: "early_close" },
+				{ name: "timeout", failAt: "timeout" },
+			] as const satisfies readonly {
+				readonly name: string;
+				readonly failAt: SocketOpenFailure | undefined;
+			}[]) {
+				let socket: WebSocket | null = null;
+				const failure = await openApplicationSocket(canvas.base, "bound-client", {
+					...(scenario.failAt === undefined ? {} : { failAt: scenario.failAt }),
+					timeoutMs: 20,
+					onSocket: (value) => {
+						socket = value;
+						if (scenario.name === "hook_throw") throw new Error("injected socket hook failure");
+					},
+				}).then(
+					() => null,
+					(error: unknown) => error,
+				);
+				expect(failure, scenario.name).toBeInstanceOf(Error);
+				const partialSocket = socket as WebSocket | null;
+				if (partialSocket === null) throw new Error("The partial socket was not captured.");
+				expect(partialSocket.readyState, scenario.name).toBe(WebSocket.CLOSED);
+				for (const event of ["message", "open", "error", "close"])
+					expect(partialSocket.listenerCount(event), `${scenario.name}:${event}`).toBe(0);
+
+				const recovery = await openApplicationSocket(canvas.base, "bound-client");
+				for (const paneRegistration of [
+					pane("bound-client", false, true),
+					pane("focused-client", true, false),
+				]) {
+					const registered = await request("/api/panes", {
+						method: "POST",
+						doing: false,
+						body: paneRegistration,
+					});
+					expect(registered.status, scenario.name).toBe(200);
+				}
+				expect(await recovery.request("connect"), scenario.name).toMatchObject({ ok: true });
+				expect(await recovery.request("claimLease"), scenario.name).toMatchObject({ ok: true });
+				expect(await recovery.request("releaseLease"), scenario.name).toMatchObject({ ok: true });
+				await recovery.close();
+			}
+			const finalSocket = await openApplicationSocket(canvas.base, "cleanup-order");
+			resources.defer(async () => {
+				await finalSocket.close();
+				cleanupOrder.push("socket");
+			});
+			records = processRecords(fixture.logPath);
 		} finally {
 			await resources.disposeAsync();
 		}
 		expect(existsSync(root)).toBeFalse();
-		if (canvasPid !== null) await assertProcessesStopped([{ pid: canvasPid }]);
+		expect(cleanupOrder).toEqual(["socket", "canvas", "root"]);
+		await assertProcessesStopped([...records, ...(canvasPid === null ? [] : [{ pid: canvasPid }])]);
 	}, 20_000);
 
 	test("Codex child start failure reaps both child and canvas before removing the root", async () => {

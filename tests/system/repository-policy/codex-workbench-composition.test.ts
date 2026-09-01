@@ -13,6 +13,7 @@ import {
 	emptyCodexWorkbenchRetainedState,
 	installCodexWorkbenchOwner,
 	type CodexWorkbenchGeneration,
+	type CodexWorkbenchGenerationSlots,
 } from "../../../src/server/canvas/codex-workbench-owner.js";
 import type { CodexWorkbenchGenerationHooks } from "../../../src/server/canvas/codex-workbench-generation.js";
 
@@ -28,11 +29,57 @@ const RUNTIME_KEYS = [
 	"shutdownPromise",
 	"startPromise",
 ] as const;
+const GENERATION_KEYS = [
+	"components",
+	"current",
+	"owners",
+	"pendingChildSettlements",
+	"registrations",
+	"stopComplete",
+	"stopFinished",
+	"stopPromise",
+	"stopped",
+] as const;
+const GENERATION_SLOT_KEYS = [
+	"finishStop",
+	"hooks",
+	"onChildExitFinished",
+	"onChildExitStart",
+	"onExit",
+	"onNotification",
+	"replaceHooks",
+	"route",
+	"stop",
+] as const;
+const GENERATION_REGISTRATION_KEYS = [
+	"approvalProjection",
+	"browserGateway",
+	"lifecycleSignals",
+	"transportExit",
+	"transportNotification",
+	"transportRequest",
+] as const;
 
 const noop = () => undefined;
 
 function poisonOriginalGeneration(): never {
 	throw new Error("poisoned original source-generation method executed");
+}
+
+function policyHooks(): CodexWorkbenchGenerationHooks {
+	return {
+		threadContext: { contextForEvent: () => ({}) as never },
+		installIdentityDecoders: noop,
+		installLifecycleSignals: () => noop,
+		installApprovalProjection: () => noop,
+		installBrowserGateway: () => noop,
+		initializeSession: async () => undefined,
+		stopBrowser: async () => undefined,
+		stopRealtime: async () => undefined,
+		stopQueue: noop,
+		cancelDynamicApprovalsAndWaits: async () => undefined,
+		settleOrdinaryRequests: async () => undefined,
+	};
 }
 
 function policyProcess(): CodexProcess {
@@ -82,19 +129,7 @@ function policyGeneration(reloads: { count: number }): CodexWorkbenchGeneration 
 	const dynamicTools = { ...disposable, dispatch: async () => undefined };
 	const coordinatorTools = { ...disposable, onServerRequest: noop, onChildExit: noop };
 	const gateway = { dispose: async () => undefined } as CodexWorkbenchGateway;
-	const hooks = {
-		threadContext: {},
-		installIdentityDecoders: noop,
-		installLifecycleSignals: () => noop,
-		installApprovalProjection: () => noop,
-		installBrowserGateway: () => noop,
-		initializeSession: async () => undefined,
-		stopBrowser: async () => undefined,
-		stopRealtime: async () => undefined,
-		stopQueue: noop,
-		cancelDynamicApprovalsAndWaits: async () => undefined,
-		settleOrdinaryRequests: async () => undefined,
-	} as unknown as CodexWorkbenchGenerationHooks;
+	const hooks = policyHooks();
 	const components = {
 		identity: {},
 		epoch: { close: noop },
@@ -118,17 +153,30 @@ function policyGeneration(reloads: { count: number }): CodexWorkbenchGeneration 
 		callbacks: disposable,
 		gateway,
 	} as unknown as CodexWorkbenchGeneration["state"]["components"];
+	const slots: CodexWorkbenchGenerationSlots = {
+		hooks,
+		onChildExitStart: () => undefined,
+		onChildExitFinished: async () => undefined,
+		route: noop,
+		onNotification: noop,
+		onExit: noop,
+		replaceHooks: async () => void (reloads.count += 1),
+		stop: async () => undefined,
+		finishStop: noop,
+	};
 	const state: CodexWorkbenchGeneration["state"] = {
 		components,
 		owners: { approvals, dynamicTools, coordinatorTools, session } as never,
-		ownerHooks: hooks,
-		onChildExitStart: undefined,
-		onChildExitFinished: undefined,
-		transportUnsubscribers: [],
-		hookUnsubscribers: [],
-		approvalProjectionUnsubscribe: null,
+		current: slots,
+		registrations: {
+			transportRequest: null,
+			transportNotification: null,
+			transportExit: null,
+			lifecycleSignals: null,
+			browserGateway: null,
+			approvalProjection: null,
+		},
 		pendingChildSettlements: new Set(),
-		currentHooks: hooks,
 		stopped: false,
 		stopPromise: null,
 		stopComplete: false,
@@ -138,12 +186,12 @@ function policyGeneration(reloads: { count: number }): CodexWorkbenchGeneration 
 		state,
 		transport: transport as never,
 		gateway,
-		router: { route: () => undefined },
-		onNotification: () => undefined,
-		onExit: () => undefined,
-		replaceHooks: async () => void (reloads.count += 1),
-		stop: async () => undefined,
-		finishStop: () => undefined,
+		router: { route: slots.route },
+		onNotification: slots.onNotification,
+		onExit: slots.onExit,
+		replaceHooks: slots.replaceHooks,
+		stop: slots.stop,
+		finishStop: slots.finishStop,
 	};
 }
 
@@ -207,9 +255,25 @@ describe("production Codex workbench composition policy", () => {
 		if (runtimeState === null) throw new Error("The runtime state port was not retained.");
 		expect(Object.keys(runtimeState).toSorted()).toEqual([...RUNTIME_KEYS]);
 		for (const key of OWNER_SLOT_KEYS) expect(key in runtimeState).toBeFalse();
+		const originalGenerationSlots = runtimeState.generation?.current;
+		if (originalGenerationSlots === null || originalGenerationSlots === undefined)
+			throw new Error("The generation source slots were not retained.");
+		expect(Object.keys(runtimeState.generation ?? {}).toSorted()).toEqual([...GENERATION_KEYS]);
+		expect(Object.keys(originalGenerationSlots).toSorted()).toEqual([...GENERATION_SLOT_KEYS]);
+		expect(Object.keys(runtimeState.generation?.registrations ?? {}).toSorted()).toEqual([
+			...GENERATION_REGISTRATION_KEYS,
+		]);
+		Object.assign(originalGenerationSlots, { hiddenOwner: {} });
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
+		Reflect.deleteProperty(originalGenerationSlots, "hiddenOwner");
+		Object.assign(originalGenerationSlots.hooks, { hiddenOwner: {} });
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
+		Reflect.deleteProperty(originalGenerationSlots.hooks, "hiddenOwner");
+		Object.assign(runtimeState.generation?.registrations ?? {}, { hiddenOwner: null });
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
+		Reflect.deleteProperty(runtimeState.generation?.registrations ?? {}, "hiddenOwner");
 
-		const reloadHooks = runtimeState.generation?.ownerHooks;
-		if (reloadHooks === undefined) throw new Error("The generation hooks were not retained.");
+		const reloadHooks = policyHooks();
 		await stableWrappers.reload(reloadHooks);
 		expect(reloads.count).toBe(1);
 		expect(Object.keys(retained).toSorted()).toEqual([...RETAINED_KEYS]);
@@ -217,6 +281,8 @@ describe("production Codex workbench composition policy", () => {
 		expect(retained.control.wrappers).toBe(stableWrappers);
 		expect(retained.control.runtime).toBe(runtimeState);
 		expect(retained.control.current).not.toBe(firstSlots);
+		expect(runtimeState.generation?.current).not.toBe(originalGenerationSlots);
+		expect(runtimeState.generation?.current?.hooks).toBe(reloadHooks);
 		expect(Object.keys(retained.control.current ?? {}).toSorted()).toEqual([...OWNER_SLOT_KEYS]);
 		const currentSlots = retained.control.current;
 		if (currentSlots === null) throw new Error("Reload did not publish current source slots.");
@@ -227,6 +293,32 @@ describe("production Codex workbench composition policy", () => {
 					throw new Error(`poisoned retired ${key} slot executed`);
 				};
 		if (originalGeneration === null) throw new Error("The original generation was not captured.");
+		Object.assign(originalGenerationSlots.hooks.threadContext, {
+			contextForEvent: poisonOriginalGeneration,
+		});
+		for (const key of [
+			"installIdentityDecoders",
+			"installLifecycleSignals",
+			"installApprovalProjection",
+			"installBrowserGateway",
+			"initializeSession",
+			"stopBrowser",
+			"stopRealtime",
+			"stopQueue",
+			"cancelDynamicApprovalsAndWaits",
+			"settleOrdinaryRequests",
+		] as const)
+			Object.assign(originalGenerationSlots.hooks, { [key]: poisonOriginalGeneration });
+		Object.assign(originalGenerationSlots, {
+			onChildExitStart: poisonOriginalGeneration,
+			onChildExitFinished: poisonOriginalGeneration,
+			route: poisonOriginalGeneration,
+			onNotification: poisonOriginalGeneration,
+			onExit: poisonOriginalGeneration,
+			replaceHooks: poisonOriginalGeneration,
+			stop: poisonOriginalGeneration,
+			finishStop: poisonOriginalGeneration,
+		});
 		Object.assign(originalGeneration, {
 			router: { route: poisonOriginalGeneration },
 			onNotification: poisonOriginalGeneration,

@@ -8,7 +8,10 @@ export {
 export type {
 	CodexWorkbenchGenerationInput,
 	CodexWorkbenchGeneration,
+	CodexWorkbenchGenerationRegistrations,
+	CodexWorkbenchGenerationSlots,
 	CodexWorkbenchGenerationState,
+	CodexWorkbenchGenerationSourceInput,
 	CodexWorkbenchHooksFactory,
 	CodexWorkbenchOwner,
 	CodexWorkbenchOwnerOptions,

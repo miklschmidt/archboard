@@ -13,6 +13,10 @@ import {
 } from "../codex-workbench-generation.js";
 
 type ExitListener = Parameters<CodexWorkbenchComponents["transport"]["onExit"]>[0];
+type RequestListener = Parameters<CodexWorkbenchComponents["transport"]["onServerRequest"]>[0];
+type NotificationListener = Parameters<
+	CodexWorkbenchComponents["transport"]["onServerNotification"]
+>[0];
 
 function poisonRetiredGeneration(): never {
 	throw new Error("retired production generation executed");
@@ -21,6 +25,9 @@ function poisonRetiredGeneration(): never {
 test("the production generation creates every owner once before readiness and shuts down in order", async () => {
 	const events: string[] = [];
 	const unsubscribers: Array<() => void> = [];
+	const requestListeners: RequestListener[] = [];
+	const notificationListeners: NotificationListener[] = [];
+	const exitListeners: ExitListener[] = [];
 	let exitListener: ExitListener | null = null;
 	let resolveChildRetirement!: () => void;
 	const childRetirement = new Promise<void>((resolve) => {
@@ -33,14 +40,16 @@ test("the production generation creates every owner once before readiness and sh
 		transport: {
 			registerDynamicDispatcher: (registration: { readonly namespace: string }) =>
 				void events.push(`dynamic:install:${registration.namespace}`),
-			onServerRequest: () => {
+			onServerRequest: (listener: RequestListener) => {
 				events.push("router:install");
+				requestListeners.push(listener);
 				const unsubscribe = () => void events.push("router:remove");
 				unsubscribers.push(unsubscribe);
 				return unsubscribe;
 			},
-			onServerNotification: () => {
+			onServerNotification: (listener: NotificationListener) => {
 				events.push("notifications:install");
+				notificationListeners.push(listener);
 				const unsubscribe = () => void events.push("notifications:remove");
 				unsubscribers.push(unsubscribe);
 				return unsubscribe;
@@ -48,6 +57,7 @@ test("the production generation creates every owner once before readiness and sh
 			onExit: (listener: ExitListener) => {
 				events.push("child-exit:install");
 				exitListener = listener;
+				exitListeners.push(listener);
 				const unsubscribe = () => void events.push("child-exit:remove");
 				unsubscribers.push(unsubscribe);
 				return unsubscribe;
@@ -137,7 +147,7 @@ test("the production generation creates every owner once before readiness and sh
 			},
 		]),
 	) as unknown as CodexWorkbenchComponentFactories;
-	const hooks: CodexWorkbenchGenerationHooks = {
+	const makeHooks = (): CodexWorkbenchGenerationHooks => ({
 		threadContext: { contextForEvent: () => ({}) as never },
 		installIdentityDecoders: () => void events.push("identity:install"),
 		installLifecycleSignals: () => {
@@ -160,7 +170,8 @@ test("the production generation creates every owner once before readiness and sh
 			void events.push(`dynamic:cancel:${cause}`),
 		settleOrdinaryRequests: async (_approvals, cause) =>
 			void events.push(`ordinary:settle:${cause}`),
-	};
+	});
+	const hooks = makeHooks();
 
 	const generation = await composeCodexWorkbenchGeneration({
 		factories,
@@ -180,6 +191,8 @@ test("the production generation creates every owner once before readiness and sh
 	expect(events.indexOf("router:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("approval-projection:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("browser:install")).toBeLessThan(events.indexOf("ready"));
+	const originalSlots = generation.state.current;
+	if (originalSlots === null) throw new Error("The production generation was not current.");
 	const originalSource = {
 		route: generation.router.route,
 		onNotification: generation.onNotification,
@@ -189,19 +202,87 @@ test("the production generation creates every owner once before readiness and sh
 		finishStop: generation.finishStop,
 	};
 	const reloaded = await reloadCodexWorkbenchGeneration(generation.state, {
-		...hooks,
-		stopBrowser: async () => void events.push("reload:browser-stop"),
-		stopRealtime: async () => void events.push("reload:realtime-stop"),
-		stopQueue: () => void events.push("reload:queue-stop"),
-		cancelDynamicApprovalsAndWaits: async () => void events.push("reload:dynamic-cancel"),
-		settleOrdinaryRequests: async () => void events.push("reload:ordinary-settle"),
+		hooks: {
+			threadContext: { contextForEvent: () => ({}) as never },
+			installIdentityDecoders: () => void events.push("reload:identity-install"),
+			installLifecycleSignals: () => {
+				events.push("reload:lifecycle-install");
+				return () => void events.push("reload:lifecycle-remove");
+			},
+			installApprovalProjection: () => {
+				events.push("reload:approval-projection-install");
+				return () => void events.push("reload:approval-projection-remove");
+			},
+			installBrowserGateway: () => {
+				events.push("reload:browser-install");
+				return () => void events.push("reload:browser-remove");
+			},
+			initializeSession: async () => void events.push("reload:ready"),
+			stopBrowser: async () => void events.push("reload:browser-stop"),
+			stopRealtime: async () => void events.push("reload:realtime-stop"),
+			stopQueue: () => void events.push("reload:queue-stop"),
+			cancelDynamicApprovalsAndWaits: async () => void events.push("reload:dynamic-cancel"),
+			settleOrdinaryRequests: async () => void events.push("reload:ordinary-settle"),
+		},
+		onChildExitStart: () => void events.push("reload:child-retirement:start"),
+		onChildExitFinished: () => {
+			events.push("reload:child-retirement:finish");
+			resolveChildRetirement();
+		},
 	});
+	const reloadedSlots = generation.state.current;
+	if (reloadedSlots === null) throw new Error("The reloaded generation was not current.");
+	expect(reloadedSlots).not.toBe(originalSlots);
+	expect(reloadedSlots.hooks).not.toBe(originalSlots.hooks);
+	expect(reloadedSlots.onChildExitStart).not.toBe(originalSlots.onChildExitStart);
+	expect(reloadedSlots.onChildExitFinished).not.toBe(originalSlots.onChildExitFinished);
+	expect(reloadedSlots.hooks.threadContext).not.toBe(originalSlots.hooks.threadContext);
+	expect(reloadedSlots.hooks.threadContext.contextForEvent).not.toBe(
+		originalSlots.hooks.threadContext.contextForEvent,
+	);
+	for (const key of [
+		"installIdentityDecoders",
+		"installLifecycleSignals",
+		"installApprovalProjection",
+		"installBrowserGateway",
+		"initializeSession",
+		"stopBrowser",
+		"stopRealtime",
+		"stopQueue",
+		"cancelDynamicApprovalsAndWaits",
+		"settleOrdinaryRequests",
+	] as const)
+		expect(reloadedSlots.hooks[key], key).not.toBe(originalSlots.hooks[key]);
 	expect(reloaded.router.route).not.toBe(originalSource.route);
 	expect(reloaded.onNotification).not.toBe(originalSource.onNotification);
 	expect(reloaded.onExit).not.toBe(originalSource.onExit);
 	expect(reloaded.replaceHooks).not.toBe(originalSource.replaceHooks);
 	expect(reloaded.stop).not.toBe(originalSource.stop);
 	expect(reloaded.finishStop).not.toBe(originalSource.finishStop);
+	Object.assign(originalSlots.hooks.threadContext, { contextForEvent: poisonRetiredGeneration });
+	for (const key of [
+		"installIdentityDecoders",
+		"installLifecycleSignals",
+		"installApprovalProjection",
+		"installBrowserGateway",
+		"initializeSession",
+		"stopBrowser",
+		"stopRealtime",
+		"stopQueue",
+		"cancelDynamicApprovalsAndWaits",
+		"settleOrdinaryRequests",
+	] as const)
+		Object.assign(originalSlots.hooks, { [key]: poisonRetiredGeneration });
+	Object.assign(originalSlots, {
+		onChildExitStart: poisonRetiredGeneration,
+		onChildExitFinished: poisonRetiredGeneration,
+		route: poisonRetiredGeneration,
+		onNotification: poisonRetiredGeneration,
+		onExit: poisonRetiredGeneration,
+		replaceHooks: poisonRetiredGeneration,
+		stop: poisonRetiredGeneration,
+		finishStop: poisonRetiredGeneration,
+	});
 	Object.assign(generation, {
 		router: { route: poisonRetiredGeneration },
 		onNotification: poisonRetiredGeneration,
@@ -210,28 +291,44 @@ test("the production generation creates every owner once before readiness and sh
 		stop: poisonRetiredGeneration,
 		finishStop: poisonRetiredGeneration,
 	});
+	expect(() => requestListeners[0]?.({} as never)).not.toThrow();
+	expect(() => notificationListeners[0]?.({} as never)).not.toThrow();
+	expect(() =>
+		exitListeners[0]?.({
+			child: "retired-child" as never,
+			epoch: "retired-epoch" as never,
+			code: 0,
+			signal: null,
+		}),
+	).not.toThrow();
 
 	await reloaded.stop("shutdown");
 	reloaded.finishStop();
 	await childRetirement;
-	expect(events.indexOf("gateway:dispose")).toBeLessThan(events.indexOf("realtime:stop"));
-	expect(events.indexOf("realtime:stop")).toBeLessThan(events.indexOf("queue:stop"));
-	expect(events.indexOf("queue:stop")).toBeLessThan(events.indexOf("dynamic:cancel:host_shutdown"));
-	expect(events.indexOf("dynamic:cancel:host_shutdown")).toBeLessThan(
-		events.indexOf("ordinary:settle:host_shutdown"),
+	expect(events.indexOf("reload:browser-stop")).toBeLessThan(
+		events.indexOf("reload:realtime-stop"),
 	);
-	expect(events.some((event) => event.startsWith("reload:") && event.endsWith("stop"))).toBeFalse();
-	expect(events).not.toContain("reload:dynamic-cancel");
-	expect(events).not.toContain("reload:ordinary-settle");
+	expect(events.indexOf("reload:realtime-stop")).toBeLessThan(events.indexOf("reload:queue-stop"));
+	expect(events.indexOf("reload:queue-stop")).toBeLessThan(events.indexOf("reload:dynamic-cancel"));
+	expect(events.indexOf("reload:dynamic-cancel")).toBeLessThan(
+		events.indexOf("reload:ordinary-settle"),
+	);
 	expect(events.indexOf("transport:shutdown")).toBeLessThan(events.lastIndexOf("router:remove"));
 	expect(events.lastIndexOf("router:remove")).toBeLessThan(events.indexOf("epoch:close"));
-	expect(events).toContain("child-retirement:start");
-	expect(events).toContain("child-retirement:finish");
+	expect(events).not.toContain("child-retirement:start");
+	expect(events).not.toContain("child-retirement:finish");
+	expect(events).toContain("reload:child-retirement:start");
+	expect(events).toContain("reload:child-retirement:finish");
 	expect(events.filter((event) => event === "approval-projection:install")).toHaveLength(1);
 	expect(events.filter((event) => event === "approval-projection:remove")).toHaveLength(1);
+	expect(events.filter((event) => event === "reload:approval-projection-install")).toHaveLength(1);
+	expect(events.filter((event) => event === "reload:approval-projection-remove")).toHaveLength(1);
 
 	events.length = 0;
-	const childExitGeneration = await composeCodexWorkbenchGeneration({ factories, hooks });
+	const childExitGeneration = await composeCodexWorkbenchGeneration({
+		factories,
+		hooks: makeHooks(),
+	});
 	await childExitGeneration.stop("child_exit");
 	childExitGeneration.finishStop();
 	expect(events).toContain("dynamic:cancel:child_disconnected");
@@ -263,9 +360,9 @@ test("the production generation creates every owner once before readiness and sh
 					: () => parts[name],
 			]),
 		) as unknown as CodexWorkbenchComponentFactories;
-		expect(composeCodexWorkbenchGeneration({ factories: failing, hooks })).rejects.toThrow(
-			`create:${failedName}:failed`,
-		);
+		expect(
+			composeCodexWorkbenchGeneration({ factories: failing, hooks: makeHooks() }),
+		).rejects.toThrow(`create:${failedName}:failed`);
 		for (const acquired of order.slice(0, failedIndex)) {
 			const expected = cleanupEvent.get(acquired);
 			if (expected !== undefined)

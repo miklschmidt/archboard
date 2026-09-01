@@ -6,7 +6,10 @@ import type {
 import { CODEX_SESSION_CONTROL } from "../../../../runtime/codex-session/index.js";
 import type { CodexWorkbenchGateway } from "../../../codex-workbench/index.js";
 import type { CodexWorkbenchGenerationHooks } from "../../codex-workbench-generation.js";
-import type { CodexWorkbenchGeneration } from "../../codex-workbench-owner.js";
+import type {
+	CodexWorkbenchGeneration,
+	CodexWorkbenchGenerationSlots,
+} from "../../codex-workbench-owner.js";
 
 export function fakeProcess(events: string[]): CodexProcess {
 	const child = { pid: 14314 } as CodexProcessChild;
@@ -53,7 +56,7 @@ export function fakeProcess(events: string[]): CodexProcess {
 
 export function fakeGeneration(events: string[], number: number): CodexWorkbenchGeneration {
 	const hooks = {
-		threadContext: {},
+		threadContext: { contextForEvent: () => ({}) },
 		installIdentityDecoders: () => undefined,
 		installLifecycleSignals: () => () => void events.push(`generation:${number}:finish-stop`),
 		installApprovalProjection: () => () => undefined,
@@ -109,17 +112,31 @@ export function fakeGeneration(events: string[], number: number): CodexWorkbench
 		callbacks: disposable,
 		gateway,
 	} as unknown as CodexWorkbenchGeneration["state"]["components"];
-	const state: CodexWorkbenchGeneration["state"] = {
+	let state!: CodexWorkbenchGeneration["state"];
+	const slots: CodexWorkbenchGenerationSlots = {
+		hooks,
+		onChildExitStart: null,
+		onChildExitFinished: null,
+		route: () => undefined,
+		onNotification: () => undefined,
+		onExit: () => undefined,
+		replaceHooks: async () => void events.push(`generation:${number}:replace-hooks`),
+		stop: async (reason) => void events.push(`generation:${number}:stop:${reason}`),
+		finishStop: () => void events.push(`generation:${number}:finish-stop`),
+	};
+	state = {
 		components,
 		owners: { approvals, dynamicTools, coordinatorTools, session } as never,
-		ownerHooks: hooks,
-		onChildExitStart: undefined,
-		onChildExitFinished: undefined,
-		transportUnsubscribers: [],
-		hookUnsubscribers: [],
-		approvalProjectionUnsubscribe: null,
+		current: slots,
+		registrations: {
+			transportRequest: null,
+			transportNotification: null,
+			transportExit: null,
+			lifecycleSignals: null,
+			browserGateway: null,
+			approvalProjection: null,
+		},
 		pendingChildSettlements: new Set(),
-		currentHooks: hooks,
 		stopped: false,
 		stopPromise: null,
 		stopComplete: false,
@@ -129,11 +146,11 @@ export function fakeGeneration(events: string[], number: number): CodexWorkbench
 		state,
 		transport: transport as never,
 		gateway: gateway as unknown as CodexWorkbenchGateway,
-		router: { route: () => undefined },
-		onNotification: () => undefined,
-		onExit: () => undefined,
-		replaceHooks: async () => void events.push(`generation:${number}:replace-hooks`),
-		stop: async (reason) => void events.push(`generation:${number}:stop:${reason}`),
-		finishStop: () => void events.push(`generation:${number}:finish-stop`),
+		router: { route: slots.route },
+		onNotification: slots.onNotification,
+		onExit: slots.onExit,
+		replaceHooks: slots.replaceHooks,
+		stop: slots.stop,
+		finishStop: slots.finishStop,
 	};
 }
