@@ -913,7 +913,6 @@ export interface ChangeFeedResponse {
 	truncated?: boolean;
 	message?: string;
 	feed?: Record<string, unknown>;
-	injection?: Record<string, unknown>;
 }
 
 export async function getChanges(params: {
@@ -928,26 +927,6 @@ export async function getChanges(params: {
 	if (params.coalesce) query.set("coalesce", "1");
 	if (params.detail) query.set("detail", "1");
 	return requestJson<ChangeFeedResponse>(`/api/changes?${query.toString()}`);
-}
-
-export interface InjectionReport {
-	success: boolean;
-	[key: string]: unknown;
-}
-
-export async function getInjection(): Promise<InjectionReport> {
-	return requestJson<InjectionReport>("/api/injection");
-}
-
-export async function postInjectionTest(params: {
-	text?: string;
-	loud?: boolean;
-}): Promise<InjectionReport> {
-	return requestJson<InjectionReport>("/api/injection/test", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(params),
-	});
 }
 
 // ---- Strict CRUD variants (throw on failure) ----

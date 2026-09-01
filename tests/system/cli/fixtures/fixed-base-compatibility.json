@@ -33,9 +33,6 @@
 		"changes",
 		"claim",
 		"release",
-		"inject",
-		"inject status",
-		"inject test",
 		"describe",
 		"screenshot",
 		"export",
@@ -82,7 +79,6 @@
 		"changes": "e34fa7f1fb379bf3fcb519a0258c6b4b2810c3878efd810a7595c4b29f4bfe46",
 		"claim": "86d286cc7891d34e4cea087e3b98e765469dc4ef78c75e4efabda794d711801f",
 		"release": "6468662ce9d219481697f5e5d1318db86b8614f4634d4d7492595f4817aee4a7",
-		"inject": "0271761e3cfe641fabf7022dcbe39254c234ec19a9da3a30bd9571b852f0d3ee",
 		"describe": "7575d8bc236ed3d36af9968fa4db062eb3a7b8578f502531549b22e45c4e43c2",
 		"screenshot": "4a434d73cfd206fad18e59001a26b59c7ffafc3b7cd5f4eaf97e35ab3b730c7d",
 		"export": "e95409866ba216cc7e7a8c8848b49cef3a670b7fe7a42988b7870193f23738cc",
@@ -364,31 +360,6 @@
 			"heldState": null,
 			"prerequisiteContacts": ["GET /health"],
 			"restEffects": ["GET /api/elements"],
-			"localEffects": [],
-			"artifactCommits": []
-		},
-		{
-			"name": "inject-unknown-option-shaped-subcommand",
-			"fixture": "mock-server",
-			"argv": ["inject", "--wat"],
-			"normalizations": [],
-			"stdout": "",
-			"stderr": "Error: unknown inject subcommand \"--wat\" — try `inject status` or `inject test`\nUsage: archboard inject status | inject test [--note \"...\"] [--loud]\n\n  Board changes reach a running Codex thread through the app-server control socket, quietly:\n  `thread/inject_items` appends to the thread's history without starting a turn, so the agent\n  sees the change next time it speaks and nothing is interrupted.\n\n  OFF unless the canvas server was started with ARCHBOARD_INJECT=1, and off regardless when the\n  canvas is bound to anything but loopback — anything that can reach the canvas could otherwise\n  drive the coding agent (ADR 0005). Both are decided at server start; there is nothing to turn\n  on from here. `status` says which of those applies, and which thread would be told.\n\n  `test` injects a message that says it is a test, for checking the wiring without touching a\n  board. --loud sends it through `turn/steer` instead, for that one probe.\n",
-			"mergedEvents": [
-				{
-					"kind": "stderr-bytes",
-					"value": "Error: unknown inject subcommand \"--wat\" — try `inject status` or `inject test`\n"
-				},
-				{
-					"kind": "stderr-bytes",
-					"value": "Usage: archboard inject status | inject test [--note \"...\"] [--loud]\n\n  Board changes reach a running Codex thread through the app-server control socket, quietly:\n  `thread/inject_items` appends to the thread's history without starting a turn, so the agent\n  sees the change next time it speaks and nothing is interrupted.\n\n  OFF unless the canvas server was started with ARCHBOARD_INJECT=1, and off regardless when the\n  canvas is bound to anything but loopback — anything that can reach the canvas could otherwise\n  drive the coding agent (ADR 0005). Both are decided at server start; there is nothing to turn\n  on from here. `status` says which of those applies, and which thread would be told.\n\n  `test` injects a message that says it is a test, for checking the wiring without touching a\n  board. --loud sends it through `turn/steer` instead, for that one probe.\n"
-				},
-				{ "kind": "exit", "value": 2 }
-			],
-			"exit": 2,
-			"heldState": null,
-			"prerequisiteContacts": [],
-			"restEffects": [],
 			"localEffects": [],
 			"artifactCommits": []
 		}

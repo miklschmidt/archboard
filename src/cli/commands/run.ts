@@ -40,7 +40,6 @@ import { compareContract } from "./compare.js";
 import { checkContract } from "./check.js";
 import { changesContract } from "./changes.js";
 import { claimContract, releaseContract } from "./claim.js";
-import { injectContract, injectStatusContract, injectTestContract } from "./inject.js";
 import {
 	ARRANGE_FLAG_SPEC,
 	arrangeAlignContract,
@@ -387,31 +386,6 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"  Ends the claim. The board goes back to being taken one write at a time, and everything you",
 			"  wrote stays where it is. Releasing a claim that has expired, or that somebody took back, is",
 			"  not an error — it answers `released: false`.",
-		].join("\n"),
-	},
-	inject: {
-		owner: contract(injectContract, "src/cli/commands/inject.ts"),
-		children: {
-			status: child(contract(injectStatusContract, "src/cli/commands/inject.ts")),
-			test: child(contract(injectTestContract, "src/cli/commands/inject.ts")),
-		},
-		bare: { kind: "default", child: "status", withLeadingOptions: false },
-		summary:
-			"Whether the canvas can push board changes into a live Codex thread, and a probe to prove it",
-		usage: [
-			'inject status | inject test [--note "..."] [--loud]',
-			"",
-			"  Board changes reach a running Codex thread through the app-server control socket, quietly:",
-			"  `thread/inject_items` appends to the thread's history without starting a turn, so the agent",
-			"  sees the change next time it speaks and nothing is interrupted.",
-			"",
-			"  OFF unless the canvas server was started with ARCHBOARD_INJECT=1, and off regardless when the",
-			"  canvas is bound to anything but loopback — anything that can reach the canvas could otherwise",
-			"  drive the coding agent (ADR 0005). Both are decided at server start; there is nothing to turn",
-			"  on from here. `status` says which of those applies, and which thread would be told.",
-			"",
-			"  `test` injects a message that says it is a test, for checking the wiring without touching a",
-			"  board. --loud sends it through `turn/steer` instead, for that one probe.",
 		].join("\n"),
 	},
 	describe: {
@@ -793,7 +767,13 @@ export async function runCli(argv: string[]): Promise<void> {
 
 	const command = COMMANDS[name];
 	if (!command) {
-		process.stderr.write(`Unknown command "${name}". Run \`archboard help\` for the list.\n`);
+		const migration =
+			name === "inject"
+				? " Board changes now reach the linked Codex workbench; inspect or test the connection there."
+				: "";
+		process.stderr.write(
+			`Unknown command "${name}".${migration} Run \`archboard help\` for the list.\n`,
+		);
 		process.exitCode = 2;
 		return;
 	}

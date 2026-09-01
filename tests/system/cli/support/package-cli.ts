@@ -83,11 +83,6 @@ const clearedEnvironment = {
 	LOCALAPPDATA: undefined,
 	EXPRESS_SERVER_URL: undefined,
 	ENABLE_CANVAS_SYNC: undefined,
-	ARCHBOARD_INJECT: undefined,
-	ARCHBOARD_INJECT_LOUD: undefined,
-	ARCHBOARD_INJECT_THREAD: undefined,
-	ARCHBOARD_INJECT_DEBOUNCE_MS: undefined,
-	ARCHBOARD_INJECT_MIN_INTERVAL_MS: undefined,
 	ARCHBOARD_SETTLE_MS: undefined,
 	ARCHBOARD_SETTLE_MAX_MS: undefined,
 } as const;
