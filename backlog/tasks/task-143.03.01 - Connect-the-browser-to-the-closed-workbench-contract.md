@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-01 16:45'
+updated_date: '2026-09-01 16:58'
 labels: []
 dependencies:
   - TASK-143.01.14
@@ -50,11 +50,11 @@ Delegation profile: gpt-5.6-luna, max.
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Fourth remediation plan (finding 8, authorized canvas composition scope):
+Fifth remediation plan (findings 1 and 2, authorized canvas composition scope):
 
-1. Reuse the existing immediate pane report path as the registration promise for each WebSocket generation; preserve normal debounce/settling and publish registration failures through the existing canvas status without adding a retry timer.
-2. Gate the sole workbench attach on registered=true, recheck socket identity and generation, and invalidate stale registration completions on socket close or replacement.
-3. Extend directly owned canvas/composition tests and the real production socket owner to cover zero subscribe before registration, one subscribe after registration, stale registration isolation, visible failure and recovery, shared transport/media identity, and socket-close ownership.
+1. Separate the per-generation pane-registration latch from repeatable pane-health publication: the latch may release one attach only once, while every current authoritative pane-report success, negative acknowledgement, or rejection updates connected/read-only status and stale generations remain inert.
+2. Preserve the existing pane-report debounce/settling path, transport/media identity, one subscribe, command non-replay, close ownership, and recovery without introducing timers or transport resets.
+3. Make the real production socket owner start attachCanvasWorkbenchAfterRegistration before /api/panes, assert the gate is pending with zero subscribe, feed the actual registration result, and exercise failed-then-successful same-generation recovery with one attach/subscribe.
 4. Preserve all previously closed findings and leave acceptance criteria, task status, and final summary unchanged.
 5. Run bounded canvas, production-socket, transport/media, policy, TypeScript, build, lint, format, and diff validation; omit known aggregate OOM and serial-browser lanes.
 <!-- SECTION:PLAN:END -->
@@ -77,4 +77,12 @@ Fourth remediation (2026-09-01): finding 8 is fixed within the authorized canvas
 Added focused runtime coverage for failed-registration recovery, stale-generation isolation, one subscribe, shared transport/media ownership, and no socket closure. The production socket owner now attaches its adapter before /api/panes registration, asserts zero subscribe before registration, then verifies registered=true, one subscribe, a ready snapshot, reducer/media behavior, and an open raw socket after owner disposal.
 
 Fourth remediation evidence: bun test --isolate src/ui/canvas/tests — 38 pass, 0 fail, 181 expect calls; bun test --isolate src/ui/workbench-transport/tests src/ui/codex-workbench-media/tests — 29 pass, 0 fail, 364 expect calls; bun test --isolate tests/system/canvas-state/codex-workbench-application-sockets.test.ts — 2 pass, 0 fail, 23 expect calls; targeted composition and dynamic-approval policy owners — 15 pass, 0 fail, 388 expect calls; bun run type-check, bun run build, bun run lint, bun run fmt:check, and git diff --check pass. Aggregate test:modules, test:repository, repository-boundary owner, and serial browser lane remain intentionally unrun because prior bounded attempts were OOM-killed or prerequisites were unavailable; no checks were weakened. Acceptance criteria remain unchecked and the task remains In Progress for parent review.
+
+Fifth remediation (2026-09-01): addressed review findings 1 and 2 within the authorized canvas composition scope. Pane registration now has two explicit responsibilities: the per-WebSocket-generation acknowledgement remains a one-shot attach latch, while updatePaneConnectionHealth independently applies every current authoritative pane-report result. A registered=true result after a prior failure restores connected=true/read/write status even when the attach latch already fired; a rejection or registered=false result remains visible as disconnected and does not reset the retained transport. Current socket identity and generation checks prevent stale responses from changing health, freshness, or attaching a replacement. No second attach, subscribe, command replay, timer, or transport reset was introduced.
+
+The production canvas-socket owner now starts attachCanvasWorkbenchAfterRegistration before the real /api/panes POST. Its real WebSocket adapter proves the gate remains pending with zero subscribe through a failed acknowledgement, feeds the actual registered=true response, then verifies one attach, one subscribe, and a connected readiness snapshot. The same-generation latch is exercised again after attach and remains a no-op, while the retained transport/media path and open raw socket remain intact.
+
+Fifth remediation evidence: bun test --isolate src/ui/canvas/tests — 38 pass, 0 fail, 181 expect calls; bun test --isolate src/ui/workbench-transport/tests src/ui/codex-workbench-media/tests — 29 pass, 0 fail, 364 expect calls; bun test --isolate tests/system/canvas-state/codex-workbench-application-sockets.test.ts — 2 pass, 0 fail, 23 expect calls; targeted composition and dynamic-approval policy owners — 15 pass, 0 fail, 388 expect calls; bun run type-check, bun run build, bun run lint, bun run fmt:check, and git diff --check pass. Aggregate test:modules, test:repository, repository-boundary owner, and serial browser lane remain intentionally unrun because prior bounded attempts were OOM-killed or prerequisites were unavailable; no checks were weakened. Acceptance criteria remain unchecked and the task remains In Progress for parent review.
+
+Correction to fifth evidence counts (2026-09-01): the final canvas suite completed with 38 pass, 0 fail, 184 expect calls; the earlier 181-count line was from the pre-final assertion set.
 <!-- SECTION:NOTES:END -->

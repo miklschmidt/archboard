@@ -6,7 +6,11 @@ import { WebSocket } from "ws";
 
 import { createBrowserWorkbenchMediaOwner } from "../../../src/ui/codex-workbench-media/index.js";
 import type { BrowserWorkbenchSocket } from "../../../src/ui/workbench-transport/index.js";
-import { createCanvasWorkbenchSocketOwner } from "../../../src/ui/canvas/workbench-socket.js";
+import {
+	attachCanvasWorkbenchAfterRegistration,
+	createCanvasPaneRegistration,
+	createCanvasWorkbenchSocketOwner,
+} from "../../../src/ui/canvas/workbench-socket.js";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 
@@ -234,11 +238,30 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 		const sent: Record<string, unknown>[] = [];
 		try {
 			application = await openApplicationSocket(canvas.base, clientId);
-			adapter = new TransportSocketAdapter(application.socket, sent);
-			// A real canvas socket is open before the first pane report. The workbench
-			// owner must remain silent until that authoritative registration succeeds.
+			const socketAdapter = new TransportSocketAdapter(application.socket, sent);
+			adapter = socketAdapter;
+			const registrationGate = createCanvasPaneRegistration(socketAdapter, 1);
+			let attachCount = 0;
+			const attachPromise = attachCanvasWorkbenchAfterRegistration({
+				registration: registrationGate,
+				isCurrent: () => true,
+				attach: () => {
+					attachCount += 1;
+					return owner.attach(socketAdapter);
+				},
+			});
+			// A real canvas socket is open before the first pane report. The production
+			// gate is already waiting, but the workbench owner must remain silent until
+			// that authoritative registration succeeds.
+			await Bun.sleep(0);
 			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(0);
-			const registration = await request<{ registered: boolean }>("/api/panes", {
+			expect(owner.current()).toBeNull();
+			// A failed authoritative acknowledgement does not settle the attach gate;
+			// the same generation can recover on the next pane report.
+			expect(registrationGate.acknowledge(false)).toBeFalse();
+			await Bun.sleep(0);
+			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(0);
+			const registrationReply = await request<{ registered: boolean }>("/api/panes", {
 				method: "POST",
 				doing: false,
 				body: {
@@ -252,13 +275,21 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 					viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
 				},
 			});
-			expect(registration.body.registered).toBeTrue();
-			await owner.attach(adapter);
+			expect(registrationReply.body.registered).toBeTrue();
+			expect(registrationGate.acknowledge(registrationReply.body.registered)).toBeTrue();
+			expect(await attachPromise).toMatchObject({ kind: "readiness", connection: "connected" });
+			expect(attachCount).toBe(1);
 			const generation = owner.current();
 			if (generation === null)
 				throw new Error("the canvas socket owner did not retain a generation");
 			const transport = generation.transport;
 			expect(sent.filter((message) => message.action === "connect")).toHaveLength(0);
+			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(1);
+			// Later health reports must not reopen the attach path: the latch is
+			// deliberately one-shot even though useCanvasSession reports health again.
+			expect(registrationGate.acknowledge(false)).toBeFalse();
+			expect(registrationGate.acknowledge(true)).toBeFalse();
+			expect(attachCount).toBe(1);
 			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(1);
 			expect(transport.snapshot()).not.toBeNull();
 			const baselineSequence = transport.sequence();

@@ -551,6 +551,15 @@ export function useCanvasSession({
 		});
 	}, [clientId, paneId]);
 
+	const updatePaneConnectionHealth = useCallback(
+		(registered: boolean): void => {
+			connectedRef.current = registered;
+			setConnected(registered);
+			publishCurrentStatus();
+		},
+		[publishCurrentStatus],
+	);
+
 	const schedulePaneReport = useCallback(
 		(immediate = false): void => {
 			// A pane being removed has nothing to say about its displayed scene.
@@ -580,23 +589,17 @@ export function useCanvasSession({
 							registration?.socket === reportSocket &&
 							registration?.generation === reportGeneration &&
 							isCurrentReport;
+						if (isCurrentRegistration) {
+							// The first positive result releases the one-shot attach latch;
+							// connection health follows every current pane report instead.
+							if (result.registered) registration?.acknowledge(true);
+							updatePaneConnectionHealth(result.registered);
+						}
 						if (!result.registered) {
 							// Keep the existing pane-report path as the recovery path. A failed
 							// registration must be visible, but adding a private retry loop here
 							// would race the normal debounce and make the socket lifecycle opaque.
-							if (isCurrentRegistration) {
-								registration?.acknowledge(false);
-								connectedRef.current = false;
-								setConnected(false);
-								publishCurrentStatus();
-							}
 							if (isCurrentReport) publishedPaneRef.current = "";
-						} else if (isCurrentRegistration && registration?.acknowledge(true)) {
-							// This is the one authoritative acknowledgement that releases the
-							// workbench attach for this exact canvas socket generation.
-							connectedRef.current = true;
-							setConnected(true);
-							publishCurrentStatus();
 						}
 						// The server refuses a pane whose socket is gone. Forget that we sent
 						// this, so a reconnection re-announces rather than assuming it stuck.
@@ -625,9 +628,7 @@ export function useCanvasSession({
 							registration?.generation === reportGeneration &&
 							isCurrentReport;
 						if (isCurrentRegistration) {
-							connectedRef.current = false;
-							setConnected(false);
-							publishCurrentStatus();
+							updatePaneConnectionHealth(false);
 						}
 						// Nothing is lost by a failed report except its freshness, and the next
 						// change resends — but only if this one is not remembered as sent.
@@ -638,7 +639,7 @@ export function useCanvasSession({
 			if (immediate) send();
 			else paneTimerRef.current = setTimeout(send, PANE_DEBOUNCE_MS);
 		},
-		[paneReport, publishCurrentStatus],
+		[paneReport, updatePaneConnectionHealth],
 	);
 
 	useEffect(() => {
