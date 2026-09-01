@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.09
 title: Classify and bind current-epoch thread links
-status: Done
+status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-08-31 14:01'
+updated_date: '2026-09-01 19:10'
 labels: []
 dependencies:
   - TASK-143.01.05
@@ -32,10 +32,10 @@ Delegation profile: gpt-5.6-luna, max.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 The classifier exhausts thread/list and thread/loaded/list, joins loaded IDs to Thread rows by exact ThreadId, and never infers membership from recency, status, or a partial page.
-- [x] #2 Execution requires current child/epoch, literal top-level source cli|vscode|exec|appServer, loaded membership, and canAcceptDirectInput === true; custom/subAgent/unknown sources and false/null capability have distinct refusal reasons.
-- [x] #3 Persisted-not-loaded, notLoaded, systemError, stale child, prior epoch, unknown provenance/source, absent join row, and outcome-unknown creation remain inspect-only with actionable reasons.
-- [x] #4 Bindings compare-and-swap pane/link identity and tests cover cursor exhaustion, repeated cursors, disappearing rows, duplicate IDs, stale responses, all four allowed sources, all refused source variants, and every refusal.
+- [ ] #1 The classifier exhausts thread/list and thread/loaded/list, joins loaded IDs to Thread rows by exact ThreadId, and never infers membership from recency, status, or a partial page.
+- [ ] #2 Execution requires current child/epoch, literal top-level source cli|vscode|exec|appServer, loaded membership, and canAcceptDirectInput === true; custom/subAgent/unknown sources and false/null capability have distinct refusal reasons.
+- [ ] #3 Persisted-not-loaded, notLoaded, systemError, stale child, prior epoch, unknown provenance/source, absent join row, and outcome-unknown creation remain inspect-only with actionable reasons.
+- [ ] #4 Bindings compare-and-swap pane/link identity and tests cover cursor exhaustion, repeated cursors, disappearing rows, duplicate IDs, stale responses, all four allowed sources, all refused source variants, and every refusal.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -45,6 +45,8 @@ Delegation profile: gpt-5.6-luna, max.
 2. Implement deterministic full-page discovery for thread/list and thread/loaded/list with repeated-cursor detection, exact ThreadId joins, duplicate/disappearing-row refusal, and frozen refusal precedence; expose inspect-only outcomes for all non-executable cases.
 3. Add compare-and-swap pane/link binding keyed by captured child epoch, pane identity, and link identity, with stale-response refusal and no recency inference.
 4. Add focused module tests for pagination/cursor failure, exact joins, source/status/direct-input matrix, epoch/provenance/outcome-unknown cases, and binding CAS races; run only named capped focused validation and record evidence.
+
+Reopened remediation: expose one authoritative exhausted current-candidate result from the existing classifier and binding authority so UI discovery consumes persisted and loaded pagination without inventing a second classifier; add public-contract and hostile cursor or stale-epoch coverage.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -57,10 +59,6 @@ Remediation commit ec844d52 seals executable adoption: the public binding store 
 Final remediation follow-up commit f7c281c: thread/start outcome-unknown classification now depends only on validated durable status=inspect_only, outcome=outcome_unknown, and rpc=thread/start; arbitrary diagnostics such as "response was lost" and "settlement lost" are accepted, while create/fork initial-turn turn/start records remain authored unknown_provenance. The root CodexThreadLinkOptions now requires ThreadLinkEpochAuthority, the observation-only classifier retains optional authority modes, and createCodexThreadLinkBinding is parameterless with no static-snapshot or injected-store option. Compile fixtures enforce missing epoch, snapshot-only, injection, executable-bind, and valid downstream shapes. Added deterministic between-pass hostiles for source, status, direct-input capability, target provenance, and durable current-record changes. Validation under named systemd cgroups (MemoryMax=6G, MemorySwapMax=1G; cgroup paths printed): oxfmt check passed at 31.2M, tsc --noEmit passed at 1.6G, oxlint passed with 0 warnings/errors at 607.8M, and 35 focused tests passed with 120 expectations at 48.5M. Heavy policy lane was not run.
 
 Finalization evidence: two independent reviews were clean for e53d27a7..f7c281c3. AC1 is proven by the exhausted paginated exact-join and cursor-failure tests; AC2 by the four allowed-source, status, capability, durable-epoch, and live classify-and-bind tests; AC3 by the persisted-not-loaded, stale/prior, provenance, arbitrary thread/start diagnostic, and turn/start countercase tests; AC4 by the 35-test binding/classifier/precedence/type lane plus formatter, linter, TypeScript, and diff checks. No Definition-of-Done items were defined.
+
+Reopened with user approval after TASK-143.03.03 proved that no public authoritative candidate-discovery result reaches the browser consumer.
 <!-- SECTION:NOTES:END -->
-
-## Final Summary
-
-<!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Implemented and verified current-epoch thread-link classification and proof-checked pane binding. The module exhausts and joins both session lists, derives all 15 refusals from the authored policy, preserves durable provenance and transitive immutability, and requires a live epoch authority for executable adoption. Verified by 35 focused tests/120 expectations, passing TypeScript, oxlint, oxfmt, diff checks, and two clean independent reviews across e53d27a7..f7c281c3; the known heavy repository lane was intentionally not rerun.
-<!-- SECTION:FINAL_SUMMARY:END -->

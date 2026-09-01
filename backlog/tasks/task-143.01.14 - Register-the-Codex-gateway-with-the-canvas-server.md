@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.14
 title: Compose the production Codex workbench graph
-status: Done
+status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 10:31'
+updated_date: '2026-09-01 19:10'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -99,10 +99,10 @@ Own the one production composition root in the canvas server. It instantiates ev
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 The composition instantiates process, identity and OperationId authority, epoch and session, workhorse transaction, realtime, seven-family approval broker, general dispatcher with all five injected adapters, coordinator dispatcher, semantic delivery, coordinator, queue, callbacks, spoken gate, and browser gateway exactly once.
-- [x] #2 One exhaustive router handles all eleven generated server request variants: seven broker families, item/tool/call, currentTime/read, token refresh, and attestation. Each reaches its sole owner or reviewed protocol error, dynamic approval never enters the seven-family broker, and no default branch responds generically.
-- [x] #3 kept() stores only version-neutral serializable state, stable process handles, and replaceable closures; no generation-bound class instance, decoder, route handler, callback, approval decision, effect authority, or UI adapter survives reload.
-- [x] #4 Startup installs identity decoders, dynamic dispatcher registrations, lifecycle signals, router, approval projection, and browser gateway before readiness. Shutdown stops browser, realtime, and queue, cancels dynamic approvals and waits, settles ordinary requests, closes JSON-RPC, TERM or KILLs the child, and removes listeners; browser disconnect and child exit cannot leave resumable authority, and duplicate owner registration refuses.
+- [ ] #1 The composition instantiates process, identity and OperationId authority, epoch and session, workhorse transaction, realtime, seven-family approval broker, general dispatcher with all five injected adapters, coordinator dispatcher, semantic delivery, coordinator, queue, callbacks, spoken gate, and browser gateway exactly once.
+- [ ] #2 One exhaustive router handles all eleven generated server request variants: seven broker families, item/tool/call, currentTime/read, token refresh, and attestation. Each reaches its sole owner or reviewed protocol error, dynamic approval never enters the seven-family broker, and no default branch responds generically.
+- [ ] #3 kept() stores only version-neutral serializable state, stable process handles, and replaceable closures; no generation-bound class instance, decoder, route handler, callback, approval decision, effect authority, or UI adapter survives reload.
+- [ ] #4 Startup installs identity decoders, dynamic dispatcher registrations, lifecycle signals, router, approval projection, and browser gateway before readiness. Shutdown stops browser, realtime, and queue, cancels dynamic approvals and waits, settles ordinary requests, closes JSON-RPC, TERM or KILLs the child, and removes listeners; browser disconnect and child exit cannot leave resumable authority, and duplicate owner registration refuses.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -274,6 +274,8 @@ Own the one production composition root in the canvas server. It instantiates ev
 87. Replace the fake shutdown-order owner with a public owner whose createGeneration returns composeCodexWorkbenchGeneration over that real fixture, and assert real ordinary settlement then transport shutdown then fake-process stop.
 
 88. Mutation-check early process stop and non-delegating generation-factory stop, restore production byte-for-byte, run the requested capped sequential gates, update evidence, commit, and callback the fixed-base parent.
+
+Reopened remediation: wire the remediated approval and voice public contracts into the sole production composition and browser projection. Prove a production consumer exists for exact approval lifecycle and media state without adding another owner.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -392,10 +394,6 @@ AC3 evidence: complete-range structural review and retained-state policy prove t
 AC4 evidence: direct generation and application owners prove registration before readiness and ordered teardown across browser, realtime, queue, dynamic approvals, ordinary requests, session and JSON-RPC transport, process, projections, and final listeners. Lifecycle owners cover child-exit races, duplicate refusal, failure aggregation, terminal release, and exact promise/error replay. The integrated public owner observes real generation ordinary settlement, then transport shutdown, then the sole fake-process stop, each once. Moving process stop ahead of graph cleanup and replacing the generation factory with a non-delegating stop both failed for the intended ordering or missing-event reason.
 
 Final validation evidence: repository inventory passed 39 tests with 69 assertions; both TypeScript projects pass; full Oxlint reports 0 warnings and 0 errors; oxfmt and complete fixed-base diff checks pass. Known broad OOM lanes were intentionally not rerun, and no aggregate pass is claimed. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6.
+
+Reopened with user approval after TASK-143.03.07 and TASK-143.04.01 showed that authoritative approval and voice state stop before the production browser composition.
 <!-- SECTION:NOTES:END -->
-
-## Final Summary
-
-<!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Completed the production Codex workbench graph. The canvas owns one process-lifetime kernel and composes each generation's routing, session, approvals, five dynamic adapters, context, queue, realtime, callbacks, and browser gateway exactly once. Reload replaces generation authority, and terminal lifecycle boundaries prevent stale publication and keep ordinary request settlement and transport shutdown ahead of process stop. Independent fixed-range review is REVIEW_CLEAN; composition policy passed 4 tests with 49 assertions, integrated generation and application owners passed 22 tests with 204 assertions, inventory passed 39 tests with 69 assertions, and both TypeScript projects, Oxlint with 0 warnings/errors, oxfmt, and fixed-base diff checks pass. Known broad OOM lanes were not rerun and no aggregate pass is claimed.
-<!-- SECTION:FINAL_SUMMARY:END -->

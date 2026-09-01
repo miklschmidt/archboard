@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.01
 title: Connect the browser to the closed workbench contract
-status: Done
+status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-01 17:23'
+updated_date: '2026-09-01 19:10'
 labels: []
 dependencies:
   - TASK-143.01.14
@@ -41,10 +41,10 @@ Delegation profile: gpt-daybreak-blue-latest, low.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 The client obtains one versioned full snapshot then applies strictly sequenced deltas from the production gateway; reconnect requests a new snapshot and never replays a command automatically.
-- [x] #2 Commands carry browser lease, pane, link, child epoch, and command identity and retain their original target across focus/navigation changes.
-- [x] #3 Stopped/backoff, initialized, storage mismatch, login-capable/signed-out/login pending, account-ready, thread-capable, reconnecting, stale snapshot, and incompatible-contract states are represented without enabling unsupported commands.
-- [x] #4 Transport tests use the final composed gateway public contract and prove duplicate/out-of-order messages, lost responses, late results, lease expiry, close, and recovery.
+- [ ] #1 The client obtains one versioned full snapshot then applies strictly sequenced deltas from the production gateway; reconnect requests a new snapshot and never replays a command automatically.
+- [ ] #2 Commands carry browser lease, pane, link, child epoch, and command identity and retain their original target across focus/navigation changes.
+- [ ] #3 Stopped/backoff, initialized, storage mismatch, login-capable/signed-out/login pending, account-ready, thread-capable, reconnecting, stale snapshot, and incompatible-contract states are represented without enabling unsupported commands.
+- [ ] #4 Transport tests use the final composed gateway public contract and prove duplicate/out-of-order messages, lost responses, late results, lease expiry, close, and recovery.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -57,6 +57,8 @@ Sixth remediation plan (same-generation pane-report ordering, authorized canvas 
 3. Add behavior-level deferred-response regressions for newer-success/older-rejection, newer-success/older-negative, older-success-after-newer-failure, current failure/recovery, one attach/subscribe, and stale socket-generation isolation.
 4. Make the real production socket owner retain the pre-registration gate coverage and verify superseded responses cannot affect its current transport.
 5. Preserve all previously closed findings and leave acceptance criteria, task status, and final summary unchanged; run bounded canvas, production-socket, transport/media, policy, TypeScript, build, lint, format, and diff validation while omitting known aggregate OOM and serial-browser lanes.
+
+Reopened remediation: carry authoritative candidate-list generation and identity through transport, expose one subscribable media snapshot with detailed voice phases and diagnostics, and bind semantic callbacks through the production transport. Preserve one socket, one subscribe, strict sequencing, and no command replay.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -91,10 +93,6 @@ Sixth remediation (2026-09-01): fixed same-generation pane-report response order
 Added behavior-level deferred-response regressions in pane-report-sequencing.test.ts for newer-success/older-rejection, newer-success/older-negative, older-success-after-newer-failure, later current recovery, success-failure-success health updates, one attach/subscribe, and stale socket-generation isolation. The real production canvas socket owner retains the pre-registration gate and now also proves a superseded same-generation response cannot disturb its retained transport.
 
 Sixth remediation evidence: bun test --isolate src/ui/canvas/tests — 41 pass, 0 fail, 223 expect calls; bun test --isolate tests/system/canvas-state/codex-workbench-application-sockets.test.ts — 2 pass, 0 fail, 40 expect calls; bun test --isolate src/ui/workbench-transport/tests src/ui/codex-workbench-media/tests — 29 pass, 0 fail, 364 expect calls; targeted composition and dynamic-approval policy owners — 15 pass, 0 fail, 388 expect calls; bun run type-check (both TypeScript programs), bun run build, bun run lint, bun run fmt:check, and git diff --check pass. Aggregate test:modules, test:repository, repository-boundary owner, and serial browser lane remain intentionally omitted because prior bounded attempts were OOM-killed or prerequisites were unavailable; no checks were weakened. Acceptance criteria remain unchecked and the task remains In Progress for parent review.
+
+Reopened with user approval after TASK-143.03.03 and TASK-143.04.01 showed missing list-generation identity and no public subscribable voice/media binding.
 <!-- SECTION:NOTES:END -->
-
-## Final Summary
-
-<!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Connected the browser to the final workbench gateway with one versioned snapshot followed by strictly ordered deltas; reconnect obtains a fresh snapshot without replaying commands. Commands freeze command, pane, lease, link, child, and epoch identity before dispatch. Explicit stopped, backoff, readiness, stale-snapshot, and incompatible-contract states keep unsupported actions disabled. Generation-scoped pane-report sequencing makes the latest dispatched request authoritative, ignores stale same-generation results, and permits later current reports to recover health and release registration once. Focused validation passed: canvas 41/41, transport and media 29/29, production socket 2/2, policy 15/15, both TypeScript projects, build, lint, format, and diff checks.
-<!-- SECTION:FINAL_SUMMARY:END -->
