@@ -234,7 +234,11 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 		const sent: Record<string, unknown>[] = [];
 		try {
 			application = await openApplicationSocket(canvas.base, clientId);
-			await request("/api/panes", {
+			adapter = new TransportSocketAdapter(application.socket, sent);
+			// A real canvas socket is open before the first pane report. The workbench
+			// owner must remain silent until that authoritative registration succeeds.
+			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(0);
+			const registration = await request<{ registered: boolean }>("/api/panes", {
 				method: "POST",
 				doing: false,
 				body: {
@@ -248,7 +252,7 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 					viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
 				},
 			});
-			adapter = new TransportSocketAdapter(application.socket, sent);
+			expect(registration.body.registered).toBeTrue();
 			await owner.attach(adapter);
 			const generation = owner.current();
 			if (generation === null)

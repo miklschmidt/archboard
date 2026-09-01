@@ -11,6 +11,60 @@ export interface CanvasWorkbenchSocketGeneration {
 	readonly transport: BrowserWorkbenchTransport;
 }
 
+/**
+ * The authoritative pane registration acknowledgement for one canvas socket.
+ * A negative acknowledgement deliberately leaves the promise pending: the
+ * existing pane-report path can recover it on a later report without creating
+ * a second retry loop or a second socket subscription.
+ */
+export interface CanvasPaneRegistration {
+	readonly socket: BrowserWorkbenchSocket;
+	readonly generation: number;
+	readonly promise: Promise<void>;
+	readonly acknowledge: (registered: boolean) => boolean;
+}
+
+export interface CanvasWorkbenchAttachAfterRegistrationOptions {
+	readonly registration: CanvasPaneRegistration;
+	readonly isCurrent: () => boolean;
+	readonly attach: () => Promise<BrowserWorkbenchState>;
+}
+
+export function createCanvasPaneRegistration(
+	socket: BrowserWorkbenchSocket,
+	generation: number,
+): CanvasPaneRegistration {
+	let resolveRegistration!: () => void;
+	let acknowledged = false;
+	const promise = new Promise<void>((resolve) => {
+		resolveRegistration = resolve;
+	});
+	return Object.freeze({
+		socket,
+		generation,
+		promise,
+		acknowledge: (registered: boolean): boolean => {
+			if (!registered || acknowledged) return false;
+			acknowledged = true;
+			resolveRegistration();
+			return true;
+		},
+	});
+}
+
+/**
+ * Release a workbench attach only after pane registration, with the generation
+ * check immediately before the owner is called. The callback is synchronous at
+ * that point, so an old completion cannot attach a replacement socket.
+ */
+export function attachCanvasWorkbenchAfterRegistration({
+	registration,
+	isCurrent,
+	attach,
+}: CanvasWorkbenchAttachAfterRegistrationOptions): Promise<BrowserWorkbenchState | null> {
+	return registration.promise.then(() => (isCurrent() ? attach() : null));
+}
+
 export interface CanvasWorkbenchSocketOwner {
 	readonly current: () => CanvasWorkbenchSocketGeneration | null;
 	readonly attach: (socket: BrowserWorkbenchSocket) => Promise<BrowserWorkbenchState>;

@@ -78,7 +78,10 @@ import {
 	type BrowserWorkbenchMediaOwner,
 } from "../codex-workbench-media";
 import {
+	attachCanvasWorkbenchAfterRegistration,
+	createCanvasPaneRegistration,
 	createCanvasWorkbenchSocketOwner,
+	type CanvasPaneRegistration,
 	type CanvasWorkbenchSocketOwner,
 } from "./workbench-socket.js";
 import type { BrowserWorkbenchTransport } from "../workbench-transport/index.js";
@@ -377,6 +380,8 @@ export function useCanvasSession({
 
 	const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
 	const socketRef = useRef<WebSocket | null>(null);
+	const socketGenerationRef = useRef(0);
+	const paneRegistrationRef = useRef<CanvasPaneRegistration | null>(null);
 	const closedRef = useRef(false);
 	const [realtime] = useState<BrowserWorkbenchMediaOwner>(() => createBrowserWorkbenchMediaOwner());
 	const [workbenchSockets] = useState<CanvasWorkbenchSocketOwner>(() =>
@@ -531,6 +536,21 @@ export function useCanvasSession({
 		};
 	}, [clientId, paneId]);
 
+	const publishCurrentStatus = useCallback((): void => {
+		statusRef.current({
+			paneId,
+			clientId,
+			connected: connectedRef.current,
+			board: boardRef.current,
+			boardKey: boardKeyRef.current,
+			elementCount: apiRef.current?.getSceneElements().length ?? 0,
+			lastChangeAt: lastChangeAtRef.current,
+			hold: holdRef.current,
+			writtenElsewhere: writtenElsewhereRef.current,
+			doing: doingRef.current,
+		});
+	}, [clientId, paneId]);
+
 	const schedulePaneReport = useCallback(
 		(immediate = false): void => {
 			// A pane being removed has nothing to say about its displayed scene.
@@ -548,34 +568,77 @@ export function useCanvasSession({
 				const key = JSON.stringify(report, (_k, v) => (typeof v === "number" ? Math.round(v) : v));
 				if (key === publishedPaneRef.current) return;
 				publishedPaneRef.current = key;
+				const reportSocket = socketRef.current;
+				const reportGeneration = socketGenerationRef.current;
 				void reportPane(report)
 					.then((result) => {
+						const isCurrentReport =
+							reportSocket === socketRef.current &&
+							reportGeneration === socketGenerationRef.current;
+						const registration = paneRegistrationRef.current;
+						const isCurrentRegistration =
+							registration?.socket === reportSocket &&
+							registration?.generation === reportGeneration &&
+							isCurrentReport;
+						if (!result.registered) {
+							// Keep the existing pane-report path as the recovery path. A failed
+							// registration must be visible, but adding a private retry loop here
+							// would race the normal debounce and make the socket lifecycle opaque.
+							if (isCurrentRegistration) {
+								registration?.acknowledge(false);
+								connectedRef.current = false;
+								setConnected(false);
+								publishCurrentStatus();
+							}
+							if (isCurrentReport) publishedPaneRef.current = "";
+						} else if (isCurrentRegistration && registration?.acknowledge(true)) {
+							// This is the one authoritative acknowledgement that releases the
+							// workbench attach for this exact canvas socket generation.
+							connectedRef.current = true;
+							setConnected(true);
+							publishCurrentStatus();
+						}
 						// The server refuses a pane whose socket is gone. Forget that we sent
 						// this, so a reconnection re-announces rather than assuming it stuck.
-						if (!result.registered) publishedPaneRef.current = "";
 						// Somebody rebuilt the frontend while this tab was open, so this tab is
 						// running old code. Said here, at the pane's own pulse, rather than
 						// discovered ten seconds later by a command timing out on a tab that
 						// does not know how to answer it (TASK-056). Once per build: this
-						// fires on every scroll otherwise.
-						const stale = result.staleFrontend;
-						if (stale?.message && staleBuildRef.current !== stale.current) {
-							staleBuildRef.current = stale.current ?? "";
-							void stale;
+						// fires on every scroll otherwise. An old generation's response is not
+						// allowed to update the current tab's freshness marker.
+						if (isCurrentReport) {
+							const stale = result.staleFrontend;
+							if (stale?.message && staleBuildRef.current !== stale.current) {
+								staleBuildRef.current = stale.current ?? "";
+								void stale;
+							}
 						}
 						return result;
 					})
 					.catch((error) => {
+						const isCurrentReport =
+							reportSocket === socketRef.current &&
+							reportGeneration === socketGenerationRef.current;
+						const registration = paneRegistrationRef.current;
+						const isCurrentRegistration =
+							registration?.socket === reportSocket &&
+							registration?.generation === reportGeneration &&
+							isCurrentReport;
+						if (isCurrentRegistration) {
+							connectedRef.current = false;
+							setConnected(false);
+							publishCurrentStatus();
+						}
 						// Nothing is lost by a failed report except its freshness, and the next
 						// change resends — but only if this one is not remembered as sent.
-						publishedPaneRef.current = "";
+						if (isCurrentReport) publishedPaneRef.current = "";
 						void error;
 					});
 			};
 			if (immediate) send();
 			else paneTimerRef.current = setTimeout(send, PANE_DEBOUNCE_MS);
 		},
-		[paneReport],
+		[paneReport, publishCurrentStatus],
 	);
 
 	useEffect(() => {
@@ -599,20 +662,9 @@ export function useCanvasSession({
 	);
 
 	const publishStatus = useCallback((): void => {
-		statusRef.current({
-			paneId,
-			clientId,
-			connected: connectedRef.current,
-			board: boardRef.current,
-			boardKey: boardKeyRef.current,
-			elementCount: apiRef.current?.getSceneElements().length ?? 0,
-			lastChangeAt: lastChangeAtRef.current,
-			hold: holdRef.current,
-			writtenElsewhere: writtenElsewhereRef.current,
-			doing: doingRef.current,
-		});
+		publishCurrentStatus();
 		schedulePaneReport();
-	}, [clientId, paneId, schedulePaneReport]);
+	}, [publishCurrentStatus, schedulePaneReport]);
 
 	const setBoardIdentity = useCallback((identity: BoardIdentity | null): void => {
 		boardRef.current = identity;
@@ -1591,17 +1643,46 @@ export function useCanvasSession({
 			const socket = new WebSocket(
 				`${protocol}//${window.location.host}/?clientId=${encodeURIComponent(clientId)}`,
 			);
+			const generation = ++socketGenerationRef.current;
+			const registration = createCanvasPaneRegistration(socket, generation);
 			socketRef.current = socket;
+			paneRegistrationRef.current = registration;
 
 			socket.addEventListener("open", () => {
-				void workbenchSockets
-					.attach(socket)
+				if (
+					closedRef.current ||
+					socketRef.current !== socket ||
+					socketGenerationRef.current !== generation
+				)
+					return;
+				// The existing immediate pane report resolves this promise only after the
+				// server has accepted this socket's authoritative pane registration. A
+				// workbench subscription before that point is refused by the gateway.
+				void attachCanvasWorkbenchAfterRegistration({
+					registration,
+					isCurrent: () =>
+						!closedRef.current &&
+						socketRef.current === socket &&
+						socketGenerationRef.current === generation &&
+						paneRegistrationRef.current === registration,
+					attach: () => workbenchSockets.attach(socket),
+				})
 					.then(() => {
-						if (socketRef.current === socket) publishStatus();
+						if (
+							!closedRef.current &&
+							socketRef.current === socket &&
+							socketGenerationRef.current === generation
+						)
+							publishStatus();
 						return undefined;
 					})
 					.catch((error) => {
-						if (socketRef.current === socket) publishStatus();
+						if (
+							!closedRef.current &&
+							socketRef.current === socket &&
+							socketGenerationRef.current === generation
+						)
+							publishStatus();
 						void error;
 					});
 				connectedRef.current = true;
@@ -1622,13 +1703,23 @@ export function useCanvasSession({
 				}
 			});
 			socket.addEventListener("close", (event) => {
+				const isCurrentSocket =
+					socketRef.current === socket && socketGenerationRef.current === generation;
+				if (isCurrentSocket) paneRegistrationRef.current = null;
 				void workbenchSockets.detach(socket).catch(() => undefined);
+				if (!isCurrentSocket) return;
 				connectedRef.current = false;
 				setConnected(false);
 				publishStatus();
 				if (event.code !== 1000 && !closedRef.current) setTimeout(connect, SOCKET_RECONNECT_MS);
 			});
 			socket.addEventListener("error", () => {
+				if (
+					closedRef.current ||
+					socketRef.current !== socket ||
+					socketGenerationRef.current !== generation
+				)
+					return;
 				connectedRef.current = false;
 				setConnected(false);
 				publishStatus();
@@ -1651,6 +1742,8 @@ export function useCanvasSession({
 		return () => {
 			window.removeEventListener("pagehide", flush);
 			closedRef.current = true;
+			paneRegistrationRef.current = null;
+			socketGenerationRef.current += 1;
 			dispatchReporting({ type: "reports_cancelled" });
 			if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
 			if (paneTimerRef.current) clearTimeout(paneTimerRef.current);
