@@ -175,7 +175,6 @@ export function createCanvasCodexWorkbenchApplication(
 			// A rejected prepare has no snapshot value, so its exact promise is terminal-safe.
 			shutdownPromise = operation as unknown as Promise<void>;
 			options.state.installed = false;
-			options.state.phase = "stopped";
 			options.state.shutdown = shutdown;
 		};
 		operation = (async (): Promise<CodexWorkbenchSnapshot> => {

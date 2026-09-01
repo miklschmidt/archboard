@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 09:26'
+updated_date: '2026-09-01 09:42'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -250,6 +250,12 @@ Own the one production composition root in the canvas server. It instantiates ev
 75. Publish the exact recovery prepare operation as stopped terminal ownership before throwing either its startup error or combined startup and teardown AggregateError.
 
 76. Run the exact owner first, then sequential capped focused non-hot and static gates, update evidence, commit above 2be7641a, and callback the parent.
+
+77. Extend the gated recovery owner with a queued replacement prepare between asynchronous failure publication and the owning finalizer; prove that attempt is refused and cannot acquire partial ownership.
+
+78. Keep asynchronous recovery failure in stopping until its own finally clears preparePromise and performs the sole stopped transition, while retaining the exact recovery promise and shutdown owner.
+
+79. Run the exact stale-finalizer owner first, then sequential capped application, focused non-hot, production, inventory, and static gates; commit above 746a4bcf and callback the parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -348,10 +354,12 @@ Eighth rejection remediation above fb3b05f5 keeps the settled terminal result in
 Post-settlement success and rejection owners prove exact promise and error identity across replacement source construction, one teardown, no reload, no extra start, and one fresh ownership cycle after explicit recovery. A failed-recovery owner proves synchronous authority replacement, exact failed-prepare replay through a third source, no teardown during startup failure, and a later clean recovery with a distinct shutdown promise. Final named 6 GiB/1 GiB validation: exact application owner 8 pass, 0 fail, 79 assertions; focused non-hot canvas and transport owners 65 pass, 0 fail, 431 assertions; production system owners 8 pass, 0 fail, 118 assertions. Both TypeScript projects, lint with 0 warnings and errors, formatting, and diff checks pass. No known OOM fingerprint was rerun. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
 
 Ninth rejection remediation above 2be7641a fixes the combined recovery schedule. When recovery startup fails after concurrent teardown, the application publishes the exact recovery prepare operation as stopped terminal ownership before throwing. This applies to the original startup error and the combined startup plus teardown AggregateError. The final transition retains that owner. Same-source and replacement-source shutdown calls replay the exact promise and reason without another install, reload, or teardown. One gated owner runs both fulfilled and rejected concurrent teardown schedules, checks B, C, and D promise identity, holds counters at two installs, two starts, zero reloads, and two teardowns, then proves one later explicit recovery cycle. Final named 6 GiB/1 GiB validation: exact application owners 9 pass, 0 fail, 114 assertions; focused non-hot canvas and transport owners 66 pass, 0 fail, 466 assertions; production system owners 8 pass, 0 fail, 118 assertions; repository inventory 39 pass, 0 fail, 69 assertions. Both TypeScript projects, lint with 0 warnings and errors, formatting, and diff checks pass. No known OOM fingerprint was rerun. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
+
+Tenth rejection remediation above 746a4bcf closes the stale-finalizer window with one production-line deletion. Asynchronous recovery failure still publishes the exact recovery promise and shutdown owner, but it leaves the shared phase non-recoverable until the owning outer finally clears preparePromise and performs the sole stopped transition. A queued replacement prepare therefore observes stopping and refuses before it can install or publish. The synchronous failure path is unchanged because it has no pending finalizer. The public gated owner uses promise reaction order to place source D between failure publication and B finalization. Rejected head reproduced three installs and three starts in that window. The fixed owner runs fulfilled and rejected concurrent teardown schedules, proves D observes stopping and refuses, preserves B's exact startup or AggregateError terminal result across B, C, and D, then starts one later D cycle and proves source E tears D down exactly once. Final named 6 GiB/1 GiB validation: application owners 9 pass, 0 fail, 132 assertions; focused non-hot canvas and transport owners 66 pass, 0 fail, 484 assertions; production system owners 8 pass, 0 fail, 118 assertions; repository inventory 39 pass, 0 fail, 69 assertions. Both TypeScript projects, lint with 0 warnings and errors, formatting, and diff checks pass. No known OOM fingerprint was rerun. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Made failed recovery preparation supersede any concurrent teardown result with its exact promise and exact startup or aggregate rejection. Gated success and failure schedules, prior application owners, focused non-hot, production, inventory, type, lint, format, and diff checks pass. Task status and acceptance criteria remain unchanged for parent rereview.
+Kept asynchronous recovery failure non-recoverable until its owning finalizer publishes stopped, preventing a queued replacement prepare and stale owner overwrite. Public gated fulfillment and rejection schedules, application, focused non-hot, production, inventory, type, lint, format, and diff checks pass. Task status and acceptance criteria remain unchanged for parent rereview.
 <!-- SECTION:FINAL_SUMMARY:END -->

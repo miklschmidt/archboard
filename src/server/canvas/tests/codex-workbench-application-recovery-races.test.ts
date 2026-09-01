@@ -19,8 +19,12 @@ async function runFailedRecoveryRace(teardownFailure: Error | null): Promise<voi
 		shutdown: null,
 	};
 	const startupFailure = new Error("recovery startup rejected");
-	let releaseRecoveryStart!: () => void;
-	const recoveryStartGate = new Promise<void>((resolve) => void (releaseRecoveryStart = resolve));
+	let rejectRecoveryStart!: (error: Error) => void;
+	const recoveryStart = new Promise<never>((_, reject) => void (rejectRecoveryStart = reject));
+	let releaseLaterStart!: () => void;
+	const laterStart = new Promise<{ readonly ready: true }>(
+		(resolve) => void (releaseLaterStart = () => resolve({ ready: true })),
+	);
 	let releaseConcurrentTeardown!: () => void;
 	const concurrentTeardownGate = new Promise<void>(
 		(resolve) => void (releaseConcurrentTeardown = resolve),
@@ -33,13 +37,11 @@ async function runFailedRecoveryRace(teardownFailure: Error | null): Promise<voi
 		installProductionCodexWorkbench: () => {
 			installs++;
 			return {
-				start: async () => {
+				start: () => {
 					starts++;
-					if (starts === 2) {
-						await recoveryStartGate;
-						throw startupFailure;
-					}
-					return { ready: true };
+					if (starts === 2) return recoveryStart;
+					if (starts === 3) return laterStart;
+					return Promise.resolve({ ready: true });
 				},
 			} as never;
 		},
@@ -79,11 +81,24 @@ async function runFailedRecoveryRace(teardownFailure: Error | null): Promise<voi
 	});
 	expect(sourceC.shutdown()).toBe(concurrentTeardown);
 	expect(state).toMatchObject({ installed: false, phase: "stopping", shutdown: sourceB.shutdown });
+	const sourceD = createCanvasCodexWorkbenchApplication({
+		state,
+		module,
+		installation: () => ({}) as never,
+	});
+	let queuedDPhase!: CanvasCodexWorkbenchApplicationState["phase"];
+	let queuedDResult!: Promise<unknown>;
+	void recoveryStart.catch(() => {
+		queueMicrotask(() => {
+			queuedDPhase = state.phase;
+			queuedDResult = rejected(sourceD.prepare());
+		});
+	});
 
 	releaseConcurrentTeardown();
 	expect(await rejected(concurrentTeardown)).toBe(teardownFailure);
 	expect(state.phase).toBe("stopping");
-	releaseRecoveryStart();
+	rejectRecoveryStart(startupFailure);
 	const terminalReason = await rejected(failedRecovery);
 	if (teardownFailure === null) {
 		expect(terminalReason).toBe(startupFailure);
@@ -91,28 +106,40 @@ async function runFailedRecoveryRace(teardownFailure: Error | null): Promise<voi
 		expect(terminalReason).toBeInstanceOf(AggregateError);
 		expect((terminalReason as AggregateError).errors).toEqual([startupFailure, teardownFailure]);
 	}
+	expect([installs, starts, reloads, teardowns]).toEqual([2, 2, 0, 2]);
+	expect(queuedDPhase).toBe("stopping");
+	const queuedDRefusal = await queuedDResult;
+	expect(queuedDRefusal).toBeInstanceOf(Error);
+	expect((queuedDRefusal as Error).message).toContain("shutdown to finish");
 	expect(state).toMatchObject({ installed: false, phase: "stopped", shutdown: sourceB.shutdown });
 
-	const sourceD = createCanvasCodexWorkbenchApplication({
-		state,
-		module,
-		installation: () => ({}) as never,
-	});
 	for (const replay of [sourceB.shutdown(), sourceC.shutdown(), sourceD.shutdown()]) {
 		expect(replay as unknown).toBe(failedRecovery);
 		expect(await rejected(replay)).toBe(terminalReason);
 	}
 	expect([installs, starts, reloads, teardowns]).toEqual([2, 2, 0, 2]);
 
-	await sourceD.prepare();
+	const laterRecovery = sourceD.prepare();
+	expect(state).toMatchObject({ installed: false, phase: "preparing", shutdown: sourceD.shutdown });
 	expect([installs, starts, reloads, teardowns]).toEqual([3, 3, 0, 2]);
-	const laterShutdown = sourceD.shutdown();
+	releaseLaterStart();
+	await laterRecovery;
+	expect(state).toMatchObject({ installed: true, phase: "installed", shutdown: sourceD.shutdown });
+	const sourceE = createCanvasCodexWorkbenchApplication({
+		state,
+		module,
+		installation: () => ({}) as never,
+	});
+	const laterShutdown = sourceE.shutdown();
 	expect(laterShutdown as unknown).not.toBe(failedRecovery);
+	expect(sourceD.shutdown()).toBe(laterShutdown);
+	expect(state).toMatchObject({ installed: false, phase: "stopping", shutdown: sourceD.shutdown });
 	await laterShutdown;
+	expect(state).toMatchObject({ installed: false, phase: "stopped", shutdown: sourceD.shutdown });
 	expect([installs, starts, reloads, teardowns]).toEqual([3, 3, 0, 3]);
 }
 
-test("failed recovery supersedes its settled concurrent teardown result", async () => {
+test("failed recovery finalization cannot overwrite a queued later source", async () => {
 	await runFailedRecoveryRace(null);
 	await runFailedRecoveryRace(new Error("concurrent teardown rejected"));
 });
