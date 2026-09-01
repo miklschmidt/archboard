@@ -80,6 +80,7 @@ import {
 import {
 	attachCanvasWorkbenchAfterRegistration,
 	createCanvasPaneRegistration,
+	createCanvasPaneReportSequencer,
 	createCanvasWorkbenchSocketOwner,
 	type CanvasPaneRegistration,
 	type CanvasWorkbenchSocketOwner,
@@ -387,6 +388,7 @@ export function useCanvasSession({
 	const [workbenchSockets] = useState<CanvasWorkbenchSocketOwner>(() =>
 		createCanvasWorkbenchSocketOwner({ media: realtime }),
 	);
+	const [paneReportSequencer] = useState(() => createCanvasPaneReportSequencer());
 
 	const [connected, setConnected] = useState(false);
 	const connectedRef = useRef(false);
@@ -579,67 +581,76 @@ export function useCanvasSession({
 				publishedPaneRef.current = key;
 				const reportSocket = socketRef.current;
 				const reportGeneration = socketGenerationRef.current;
+				const reportRequest = paneReportSequencer.begin(reportGeneration);
 				void reportPane(report)
 					.then((result) => {
-						const isCurrentReport =
-							reportSocket === socketRef.current &&
-							reportGeneration === socketGenerationRef.current;
-						const registration = paneRegistrationRef.current;
-						const isCurrentRegistration =
-							registration?.socket === reportSocket &&
-							registration?.generation === reportGeneration &&
-							isCurrentReport;
-						if (isCurrentRegistration) {
-							// The first positive result releases the one-shot attach latch;
-							// connection health follows every current pane report instead.
-							if (result.registered) registration?.acknowledge(true);
-							updatePaneConnectionHealth(result.registered);
-						}
-						if (!result.registered) {
-							// Keep the existing pane-report path as the recovery path. A failed
-							// registration must be visible, but adding a private retry loop here
-							// would race the normal debounce and make the socket lifecycle opaque.
-							if (isCurrentReport) publishedPaneRef.current = "";
-						}
-						// The server refuses a pane whose socket is gone. Forget that we sent
-						// this, so a reconnection re-announces rather than assuming it stuck.
-						// Somebody rebuilt the frontend while this tab was open, so this tab is
-						// running old code. Said here, at the pane's own pulse, rather than
-						// discovered ten seconds later by a command timing out on a tab that
-						// does not know how to answer it (TASK-056). Once per build: this
-						// fires on every scroll otherwise. An old generation's response is not
-						// allowed to update the current tab's freshness marker.
-						if (isCurrentReport) {
-							const stale = result.staleFrontend;
-							if (stale?.message && staleBuildRef.current !== stale.current) {
-								staleBuildRef.current = stale.current ?? "";
-								void stale;
-							}
-						}
-						return result;
+						paneReportSequencer.settle(
+							reportRequest,
+							socketGenerationRef.current,
+							result,
+							(currentResult) => {
+								const isCurrentReport = reportSocket === socketRef.current;
+								const registration = paneRegistrationRef.current;
+								const isCurrentRegistration =
+									registration?.socket === reportSocket &&
+									registration?.generation === reportGeneration &&
+									isCurrentReport;
+								if (isCurrentRegistration) {
+									// The first positive result releases the one-shot attach latch;
+									// connection health follows every current pane report instead.
+									if (currentResult.registered) registration?.acknowledge(true);
+									updatePaneConnectionHealth(currentResult.registered);
+								}
+								if (!currentResult.registered) {
+									// Keep the existing pane-report path as the recovery path. A failed
+									// registration must be visible, but adding a private retry loop here
+									// would race the normal debounce and make the socket lifecycle opaque.
+									if (isCurrentReport) publishedPaneRef.current = "";
+								}
+								// The server refuses a pane whose socket is gone. Forget that we sent
+								// this, so a reconnection re-announces rather than assuming it stuck.
+								// Somebody rebuilt the frontend while this tab was open, so this tab is
+								// running old code. Said here, at the pane's own pulse, rather than
+								// discovered ten seconds later by a command timing out on a tab that
+								// does not know how to answer it (TASK-056). Once per build: this
+								// fires on every scroll otherwise. An old generation's response is not
+								// allowed to update the current tab's freshness marker.
+								if (isCurrentReport) {
+									const stale = currentResult.staleFrontend;
+									if (stale?.message && staleBuildRef.current !== stale.current) {
+										staleBuildRef.current = stale.current ?? "";
+										void stale;
+									}
+								}
+							},
+						);
+						return undefined;
 					})
 					.catch((error) => {
-						const isCurrentReport =
-							reportSocket === socketRef.current &&
-							reportGeneration === socketGenerationRef.current;
-						const registration = paneRegistrationRef.current;
-						const isCurrentRegistration =
-							registration?.socket === reportSocket &&
-							registration?.generation === reportGeneration &&
-							isCurrentReport;
-						if (isCurrentRegistration) {
-							updatePaneConnectionHealth(false);
-						}
-						// Nothing is lost by a failed report except its freshness, and the next
-						// change resends — but only if this one is not remembered as sent.
-						if (isCurrentReport) publishedPaneRef.current = "";
+						paneReportSequencer.settle(
+							reportRequest,
+							socketGenerationRef.current,
+							undefined,
+							() => {
+								const isCurrentReport = reportSocket === socketRef.current;
+								const registration = paneRegistrationRef.current;
+								const isCurrentRegistration =
+									registration?.socket === reportSocket &&
+									registration?.generation === reportGeneration &&
+									isCurrentReport;
+								if (isCurrentRegistration) updatePaneConnectionHealth(false);
+								// Nothing is lost by a failed report except its freshness, and the next
+								// change resends — but only if this one is not remembered as sent.
+								if (isCurrentReport) publishedPaneRef.current = "";
+							},
+						);
 						void error;
 					});
 			};
 			if (immediate) send();
 			else paneTimerRef.current = setTimeout(send, PANE_DEBOUNCE_MS);
 		},
-		[paneReport, updatePaneConnectionHealth],
+		[paneReport, paneReportSequencer, updatePaneConnectionHealth],
 	);
 
 	useEffect(() => {
