@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type {
+	BrowserConnectionInstance,
 	BrowserGatewayMessage,
 	BrowserWorkbenchConnection,
 	CodexWorkbenchGateway,
@@ -34,11 +35,12 @@ export interface CanvasCodexBrowserSocketOwnerOptions {
 
 export interface CanvasCodexBrowserSocketOwner {
 	readonly handle: (
+		instance: BrowserConnectionInstance,
 		browserId: string,
 		input: unknown,
 		transport: CanvasCodexBrowserSocketSend,
 	) => Promise<void>;
-	readonly close: (browserId: string) => Promise<void>;
+	readonly close: (instance: BrowserConnectionInstance, browserId: string) => Promise<void>;
 	/** Reload removes subscriptions but does not release browser lease authority. */
 	readonly disposeForReload: () => void;
 }
@@ -65,21 +67,24 @@ function sendResult(
 export function createCanvasCodexBrowserSocketOwner(
 	options: CanvasCodexBrowserSocketOwnerOptions,
 ): CanvasCodexBrowserSocketOwner {
-	const subscriptions = new Map<string, () => void>();
-	const connections = new Map<string, BrowserWorkbenchConnection>();
+	const subscriptions = new Map<BrowserConnectionInstance, () => void>();
+	const connections = new Map<BrowserConnectionInstance, BrowserWorkbenchConnection>();
 	let disposed = false;
 
-	const connectionFor = (browserId: string): BrowserWorkbenchConnection => {
+	const connectionFor = (
+		instance: BrowserConnectionInstance,
+		browserId: string,
+	): BrowserWorkbenchConnection => {
 		if (disposed) throw new Error("The Codex browser socket owner is reloading.");
 		const paneId = options.paneForBrowser(browserId);
 		if (paneId === null)
 			throw new Error("The browser has not registered an authoritative canvas pane.");
-		const previous = connections.get(browserId);
+		const previous = connections.get(instance);
 		if (previous?.paneId === paneId) return previous;
-		subscriptions.get(browserId)?.();
-		subscriptions.delete(browserId);
-		const connection = options.gateway.connect(browserId, paneId);
-		connections.set(browserId, connection);
+		subscriptions.get(instance)?.();
+		subscriptions.delete(instance);
+		const connection = options.gateway.connect(browserId, paneId, instance);
+		connections.set(instance, connection);
 		return connection;
 	};
 
@@ -98,6 +103,7 @@ export function createCanvasCodexBrowserSocketOwner(
 		});
 
 	const handle = async (
+		instance: BrowserConnectionInstance,
 		browserId: string,
 		input: unknown,
 		transport: CanvasCodexBrowserSocketSend,
@@ -109,7 +115,7 @@ export function createCanvasCodexBrowserSocketOwner(
 		}
 		const request = parsed.data;
 		try {
-			const connection = connectionFor(browserId);
+			const connection = connectionFor(instance, browserId);
 			switch (request.action) {
 				case "connect":
 					sendResult(transport, request, connection.snapshot());
@@ -133,16 +139,16 @@ export function createCanvasCodexBrowserSocketOwner(
 					sendResult(transport, request, await connection.command(request.command));
 					return;
 				case "subscribe": {
-					subscriptions.get(browserId)?.();
+					subscriptions.get(instance)?.();
 					const unsubscribe = connection.subscribe((message: BrowserGatewayMessage) => {
 						transport.send({ type: "codex_workbench_event", message });
 					});
-					subscriptions.set(browserId, unsubscribe);
+					subscriptions.set(instance, unsubscribe);
 					sendResult(transport, request, connection.snapshot());
 					return;
 				}
 				case "close":
-					await close(browserId);
+					await close(instance, browserId);
 					sendResult(transport, request, null);
 					return;
 			}
@@ -151,11 +157,12 @@ export function createCanvasCodexBrowserSocketOwner(
 		}
 	};
 
-	const close = async (browserId: string): Promise<void> => {
-		subscriptions.get(browserId)?.();
-		subscriptions.delete(browserId);
-		connections.delete(browserId);
-		await options.gateway.closeBrowser(browserId);
+	const close = async (instance: BrowserConnectionInstance, _browserId: string): Promise<void> => {
+		subscriptions.get(instance)?.();
+		subscriptions.delete(instance);
+		const connection = connections.get(instance);
+		connections.delete(instance);
+		await connection?.close();
 	};
 
 	const disposeForReload = (): void => {

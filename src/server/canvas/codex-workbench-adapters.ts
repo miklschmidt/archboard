@@ -1,20 +1,27 @@
+export { createCanvasBrowserGatewayOptions } from "./lib/codex-workbench-browser-gateway.js";
+export type { CanvasBrowserBindingState } from "./lib/codex-workbench-browser-gateway.js";
+export { createCanvasDynamicApprovalOwner } from "./lib/codex-workbench-approvals.js";
+export type {
+	CanvasDynamicApprovalOwner,
+	CanvasDynamicApprovalOwnerOptions,
+} from "./lib/codex-workbench-approvals.js";
+export { createCanvasDynamicAuthorityAdapters } from "./lib/codex-workbench-authority.js";
+export type {
+	CanvasDynamicAuthorityAdapters,
+	CanvasDynamicAuthorityOptions,
+} from "./lib/codex-workbench-authority.js";
+export {
+	createCanvasDynamicLifecycleOwner,
+	createCanvasDynamicOperationIdAdapter,
+} from "./lib/codex-workbench-operation-lifecycle.js";
+export type {
+	CanvasDynamicLifecycleOwner,
+	CanvasDynamicLifecycleOwnerOptions,
+} from "./lib/codex-workbench-operation-lifecycle.js";
+export { createCanvasCanonicalTextActions } from "./lib/codex-workbench-text-actions.js";
+export { createCanvasRealtimeActions } from "./lib/codex-workbench-realtime-actions.js";
 export {
 	bindThreadContextToReadyWorkhorse,
 	clearCanvasThreadContextForLease,
-	createCanvasBrowserGatewayOptions,
-	createCanvasCanonicalTextActions,
-	createCanvasDynamicApprovalOwner,
-	createCanvasDynamicAuthorityAdapters,
-	createCanvasDynamicLifecycleOwner,
-	createCanvasDynamicOperationIdAdapter,
 	createCanvasThreadLinkActions,
-} from "./lib/codex-workbench-adapters.js";
-export type {
-	CanvasBrowserBindingState,
-	CanvasDynamicApprovalOwner,
-	CanvasDynamicApprovalOwnerOptions,
-	CanvasDynamicAuthorityAdapters,
-	CanvasDynamicAuthorityOptions,
-	CanvasDynamicLifecycleOwner,
-	CanvasDynamicLifecycleOwnerOptions,
-} from "./lib/codex-workbench-adapters.js";
+} from "./lib/codex-workbench-thread-links.js";

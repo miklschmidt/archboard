@@ -33,6 +33,7 @@ import {
 	type BrowserApprovalCommand,
 	type CodexWorkbenchGateway,
 	type BrowserConnectionId,
+	type BrowserConnectionInstance,
 	type BrowserDisconnectReason,
 	type BrowserUnsubscribe,
 	type CodexWorkbenchGatewayOptions,
@@ -53,6 +54,7 @@ export const BROWSER_SETTLED_COMMAND_LIMIT = 64;
 interface ConnectionState {
 	readonly browserId: BrowserConnectionId;
 	readonly paneId: string;
+	readonly instance: BrowserConnectionInstance;
 	readonly listeners: Set<(message: BrowserGatewayMessage) => void>;
 	sequence: number;
 	lastSnapshot: BrowserSnapshot | null;
@@ -65,6 +67,7 @@ interface CachedCommand {
 	readonly fingerprint: string;
 	readonly browserId: BrowserConnectionId;
 	readonly paneId: string;
+	readonly connection: BrowserConnectionInstance;
 	readonly result: Promise<BrowserGatewayCommandResult>;
 }
 
@@ -319,6 +322,8 @@ export function createCodexWorkbenchGateway(
 			}
 		};
 		const settlement = Promise.allSettled([
+			invoke(options.actions.threadLinks.onBrowserDisconnect),
+			invoke(options.actions.realtime.onBrowserDisconnect),
 			invoke(options.actions.ordinaryApprovals.onBrowserDisconnect),
 			invoke(options.actions.dynamicApprovals.onBrowserDisconnect),
 		]).then(() => undefined);
@@ -378,12 +383,21 @@ export function createCodexWorkbenchGateway(
 		}
 	};
 
-	const stateFor = (browserId: string, paneId: string): ConnectionState => {
+	const stateFor = (
+		browserId: string,
+		paneId: string,
+		instance?: BrowserConnectionInstance,
+	): ConnectionState => {
 		if (disposed)
 			throw new CodexWorkbenchGatewayError("disposed", "The browser gateway is disposed.");
 		const state = connections.get(connectionKey(browserId, paneId));
 		if (state === undefined || state.closed)
 			throw new CodexWorkbenchGatewayError("invalid_input", "The browser connection is closed.");
+		if (instance !== undefined && state.instance !== instance)
+			throw new CodexWorkbenchGatewayError(
+				"invalid_input",
+				"The browser socket instance was replaced.",
+			);
 		return state;
 	};
 
@@ -397,7 +411,11 @@ export function createCodexWorkbenchGateway(
 	const leaseForSnapshot = (state: ConnectionState): BrowserCommandLease | null => {
 		expireLeaseIfDue();
 		const current = leaseManager.current();
-		if (current?.binding.browserId === state.browserId && current.binding.paneId === state.paneId)
+		if (
+			current?.binding.browserId === state.browserId &&
+			current.binding.paneId === state.paneId &&
+			current.binding.connection === state.instance
+		)
 			return current.lease;
 		return state.lease;
 	};
@@ -637,7 +655,11 @@ export function createCodexWorkbenchGateway(
 				command.commandId,
 				disconnectReasons.get(command.commandId),
 			);
-			if (record.binding.browserId !== state.browserId || record.binding.paneId !== command.paneId)
+			if (
+				record.binding.browserId !== state.browserId ||
+				record.binding.paneId !== command.paneId ||
+				record.binding.connection !== state.instance
+			)
 				throw new CodexWorkbenchGatewayError("lease_transferred", "The lease owner changed.", {
 					commandId: command.commandId,
 				});
@@ -758,6 +780,9 @@ export function createCodexWorkbenchGateway(
 				...(command.command === "realtimeStart" && actionResult?.realtimeAnswer
 					? { realtimeAnswer: actionResult.realtimeAnswer }
 					: {}),
+				...(command.command === "realtimeStart" && actionResult?.realtimeSessionHandle
+					? { realtimeSessionHandle: actionResult.realtimeSessionHandle }
+					: {}),
 			});
 		} catch (error) {
 			if (actionStarted && leaseManager.current()?.lease.commandId !== command.commandId)
@@ -772,6 +797,7 @@ export function createCodexWorkbenchGateway(
 		browserId: BrowserConnectionId,
 		value: unknown,
 		paneIdOverride?: string,
+		instance?: BrowserConnectionInstance,
 	): Promise<BrowserGatewayCommandResult> => {
 		const paneId =
 			paneIdOverride ?? (isRecord(value) && typeof value.paneId === "string" ? value.paneId : null);
@@ -780,7 +806,7 @@ export function createCodexWorkbenchGateway(
 				"invalid_input",
 				"A browser command must identify its pane.",
 			);
-		const state = stateFor(browserId, paneId);
+		const state = stateFor(browserId, paneId, instance);
 		let parsed: BrowserCommand;
 		try {
 			parsed = model.BrowserCommandSchema.parse(value);
@@ -792,7 +818,11 @@ export function createCodexWorkbenchGateway(
 			inFlightCommands.get(parsed.commandId) ?? settledCommands.get(parsed.commandId);
 		if (existing !== undefined) {
 			if (existing.fingerprint === fingerprint) {
-				if (existing.browserId !== browserId || existing.paneId !== paneId)
+				if (
+					existing.browserId !== browserId ||
+					existing.paneId !== paneId ||
+					existing.connection !== state.instance
+				)
 					return refusal(state, parsed.commandId, "lease_transferred");
 				return existing.result;
 			}
@@ -803,6 +833,7 @@ export function createCodexWorkbenchGateway(
 			fingerprint,
 			browserId,
 			paneId,
+			connection: state.instance,
 			result,
 		};
 		if (leaseManager.current()?.lease.commandId === parsed.commandId) {
@@ -828,8 +859,9 @@ export function createCodexWorkbenchGateway(
 	const accountRead = async (
 		browserId: BrowserConnectionId,
 		paneId: string,
+		instance?: BrowserConnectionInstance,
 	): Promise<BrowserGatewayAccountReadResult> => {
-		const state = stateFor(browserId, paneId);
+		const state = stateFor(browserId, paneId, instance);
 		try {
 			ensureAccountReadiness(snapshotFor(state));
 			const outcome = actionOutcome(await options.actions.account.read({ browserId, paneId }));
@@ -856,8 +888,12 @@ export function createCodexWorkbenchGateway(
 		}
 	};
 
-	const claimLease = (browserId: string, paneId: string): BrowserCommandLease => {
-		const state = stateFor(browserId, paneId);
+	const claimLease = (
+		browserId: string,
+		paneId: string,
+		instance?: BrowserConnectionInstance,
+	): BrowserCommandLease => {
+		const state = stateFor(browserId, paneId, instance);
 		expireLeaseIfDue();
 		ensureAccountReadiness(snapshotFor(state));
 		const previous = leaseManager.current();
@@ -865,11 +901,12 @@ export function createCodexWorkbenchGateway(
 			const released = leaseManager.release(
 				previous.binding.browserId,
 				previous.binding.paneId,
+				previous.binding.connection,
 				previous.lease.commandId,
 			);
 			if (released !== null) void notifyDisconnect(released, "lease_transferred");
 		}
-		const record = leaseManager.claim(browserId, paneId, readBinding(paneId));
+		const record = leaseManager.claim(browserId, paneId, state.instance, readBinding(paneId));
 		state.lease = record.lease;
 		return record.lease;
 	};
@@ -877,8 +914,9 @@ export function createCodexWorkbenchGateway(
 	const renewLease = (
 		browserId: string,
 		lease: Pick<BrowserCommandLease, "commandId" | "paneId" | "childId" | "epoch">,
+		instance?: BrowserConnectionInstance,
 	): BrowserCommandLease => {
-		stateFor(browserId, lease.paneId);
+		stateFor(browserId, lease.paneId, instance);
 		expireLeaseIfDue();
 		const record = currentLeaseOrThrow(
 			leaseManager,
@@ -897,38 +935,68 @@ export function createCodexWorkbenchGateway(
 			throw new CodexWorkbenchGatewayError("lease_transferred", "The lease target changed.", {
 				commandId: lease.commandId,
 			});
-		ensureLeaseBinding(stateFor(browserId, lease.paneId), record);
-		const renewed = leaseManager.renew(browserId, {
+		const state = stateFor(browserId, lease.paneId, instance);
+		if (record.binding.connection !== state.instance)
+			throw new CodexWorkbenchGatewayError("lease_transferred", "The socket owner changed.", {
+				commandId: lease.commandId,
+			});
+		ensureLeaseBinding(state, record);
+		const renewed = leaseManager.renew(browserId, state.instance, {
 			...record.lease,
 			...lease,
 			state: "active",
 			expiresAtMs: record.lease.expiresAtMs,
 		});
-		const state = stateFor(browserId, lease.paneId);
 		state.lease = renewed.lease;
 		return renewed.lease;
 	};
 
-	const releaseLease = (browserId: string, paneId: string, commandId?: BrowserCommandId) => {
-		const state = stateFor(browserId, paneId);
+	const releaseLease = (
+		browserId: string,
+		paneId: string,
+		commandId?: BrowserCommandId,
+		instance?: BrowserConnectionInstance,
+	) => {
+		const state = stateFor(browserId, paneId, instance);
 		expireLeaseIfDue();
 		if (commandId === undefined) commandId = state.lease?.commandId;
-		const record = leaseManager.release(browserId, paneId, commandId);
+		const record = leaseManager.release(browserId, paneId, state.instance, commandId);
 		if (record?.lease.state === "released") void notifyDisconnect(record, "browser_disconnected");
 		return record?.lease ?? null;
 	};
 
-	const connect = (browserId: string, paneId: string): BrowserWorkbenchConnection => {
+	const connect = (
+		browserId: string,
+		paneId: string,
+		providedInstance?: BrowserConnectionInstance,
+	): BrowserWorkbenchConnection => {
 		if (disposed)
 			throw new CodexWorkbenchGatewayError("disposed", "The browser gateway is disposed.");
 		assertOpaqueName(browserId, "browserId");
 		assertOpaqueName(paneId, "paneId");
 		const key = connectionKey(browserId, paneId);
 		const existing = connections.get(key);
-		if (existing !== undefined && !existing.closed) return connectionFor(existing);
+		const instance = providedInstance ?? Object.freeze({});
+		if (existing !== undefined && !existing.closed && existing.instance === instance)
+			return connectionFor(existing);
+		if (existing !== undefined && !existing.closed) {
+			existing.closed = true;
+			existing.listeners.clear();
+			const current = leaseManager.current();
+			if (current?.binding.connection === existing.instance) {
+				const released = leaseManager.release(
+					existing.browserId,
+					existing.paneId,
+					existing.instance,
+					current.lease.commandId,
+				);
+				if (released !== null) void notifyDisconnect(released, "browser_disconnected");
+			}
+		}
 		const state: ConnectionState = {
 			browserId,
 			paneId,
+			instance,
 			listeners: new Set(),
 			sequence: 0,
 			lastSnapshot: null,
@@ -942,6 +1010,25 @@ export function createCodexWorkbenchGateway(
 
 	const terminate = (reason: BrowserDisconnectReason): void => {
 		if (disposed) return;
+		for (const state of connections.values()) {
+			if (state.lastSnapshot === null) continue;
+			state.sequence += 1;
+			const voice = Object.freeze({
+				...state.lastSnapshot.voice,
+				state: "unavailable" as const,
+				realtimeSessionId: null,
+				reason:
+					reason === "child_disconnected"
+						? "The Codex child disconnected."
+						: "The Codex workbench shut down.",
+			});
+			state.lastSnapshot = Object.freeze({ ...state.lastSnapshot, voice });
+			emit(state.listeners, {
+				kind: "delta",
+				sequence: state.sequence,
+				delta: { voice },
+			});
+		}
 		disposed = true;
 		const current = leaseManager.current();
 		let released: BrowserLeaseRecord | null = null;
@@ -960,27 +1047,39 @@ export function createCodexWorkbenchGateway(
 		if (released !== null) void notifyDisconnect(released, reason);
 	};
 
-	const closeBrowser = async (browserId: string): Promise<void> => {
-		if (disposed) {
+	const closeConnection = async (state: ConnectionState): Promise<void> => {
+		if (disposed || state.closed) {
 			await drainSettlements();
 			return;
 		}
-		for (const [key, state] of connections) {
-			if (state.browserId !== browserId) continue;
-			state.closed = true;
-			state.listeners.clear();
-			connections.delete(key);
-		}
+		state.closed = true;
+		state.listeners.clear();
+		const key = connectionKey(state.browserId, state.paneId);
+		if (connections.get(key) === state) connections.delete(key);
 		const current = leaseManager.current();
-		if (current?.binding.browserId === browserId) {
+		if (current?.binding.connection === state.instance) {
 			const released = leaseManager.release(
-				browserId,
-				current.binding.paneId,
+				state.browserId,
+				state.paneId,
+				state.instance,
 				current.lease.commandId,
 			);
 			if (released !== null) void notifyDisconnect(released, "browser_disconnected");
 		}
 		await drainSettlements();
+	};
+
+	const closeBrowser = async (browserId: string): Promise<void> => {
+		if (disposed) {
+			await drainSettlements();
+			return;
+		}
+		const owned: ConnectionState[] = [];
+		for (const state of connections.values()) {
+			if (state.browserId !== browserId) continue;
+			owned.push(state);
+		}
+		for (const state of owned) await closeConnection(state);
 	};
 
 	const childExit = async (childId: ChildId, epoch: ChildEpoch): Promise<void> => {
@@ -1006,8 +1105,9 @@ export function createCodexWorkbenchGateway(
 		browserId: string,
 		paneId: string,
 		listener: (message: BrowserGatewayMessage) => void,
+		instance?: BrowserConnectionInstance,
 	): BrowserUnsubscribe => {
-		const state = stateFor(browserId, paneId);
+		const state = stateFor(browserId, paneId, instance);
 		state.listeners.add(listener);
 		return () => state.listeners.delete(listener);
 	};
@@ -1016,24 +1116,25 @@ export function createCodexWorkbenchGateway(
 		Object.freeze({
 			browserId: state.browserId,
 			paneId: state.paneId,
+			instance: state.instance,
 			snapshot: () => {
-				const current = stateFor(state.browserId, state.paneId);
+				const current = stateFor(state.browserId, state.paneId, state.instance);
 				return updateSnapshot(current);
 			},
-			claimLease: () => claimLease(state.browserId, state.paneId),
+			claimLease: () => claimLease(state.browserId, state.paneId, state.instance),
 			renewLease: () => {
-				stateFor(state.browserId, state.paneId);
+				stateFor(state.browserId, state.paneId, state.instance);
 				expireLeaseIfDue();
 				if (state.lease === null)
 					throw new CodexWorkbenchGatewayError("lease_required", "No command lease is active.");
-				return renewLease(state.browserId, state.lease);
+				return renewLease(state.browserId, state.lease, state.instance);
 			},
-			releaseLease: () => releaseLease(state.browserId, state.paneId),
-			accountRead: () => accountRead(state.browserId, state.paneId),
-			command: (value: unknown) => command(state.browserId, value, state.paneId),
+			releaseLease: () => releaseLease(state.browserId, state.paneId, undefined, state.instance),
+			accountRead: () => accountRead(state.browserId, state.paneId, state.instance),
+			command: (value: unknown) => command(state.browserId, value, state.paneId, state.instance),
 			subscribe: (listener: (message: BrowserGatewayMessage) => void) =>
-				subscribe(state.browserId, state.paneId, listener),
-			close: () => closeBrowser(state.browserId),
+				subscribe(state.browserId, state.paneId, listener, state.instance),
+			close: () => closeConnection(state),
 		});
 
 	if (options.projection.onChange !== undefined)

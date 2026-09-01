@@ -8,6 +8,7 @@ import type {
 } from "../../../src/runtime/codex-process/index.js";
 import type { CodexWorkbenchGateway } from "../../../src/server/codex-workbench/index.js";
 import {
+	assertCodexWorkbenchRetainedState,
 	emptyCodexWorkbenchRetainedState,
 	installCodexWorkbenchOwner,
 	type CodexWorkbenchGeneration,
@@ -112,5 +113,32 @@ describe("production Codex workbench composition policy", () => {
 		expect(Object.keys(retained).toSorted()).toEqual([...RETAINED_KEYS]);
 		expect(Object.values(retained)).not.toContain(owner.gateway());
 		await owner.shutdown();
+	});
+
+	test("rejects generation owners hidden in retained process and closure slots", () => {
+		const forbidden = [
+			["session", { initialize: () => undefined, threadRead: () => undefined }],
+			["gateway", { connect: () => undefined, childExit: () => undefined }],
+			["decoder", { parseThreadId: () => undefined, adoptThreadId: () => undefined }],
+			["routeHandler", { route: () => undefined }],
+			["callback", { onNotification: () => undefined }],
+			["approvalDecision", { outcome: "approved", effectHash: "hash", decidedAtMs: 1 }],
+			["effectAuthority", { issuer: {}, validator: {}, decoder: {} }],
+			["uiMediaAdapter", { createOffer: () => undefined, attachRemoteMedia: () => undefined }],
+		] as const;
+		for (const [name, value] of forbidden) {
+			const retained = emptyCodexWorkbenchRetainedState();
+			// eslint-disable-next-line unicorn/consistent-function-scoping -- each mutation owner needs an isolated callable.
+			const closure = () => Promise.resolve({} as never);
+			Object.defineProperty(closure, name, { value, enumerable: false });
+			retained.startCurrentGeneration = closure;
+			expect(() => assertCodexWorkbenchRetainedState(retained), name).toThrow(
+				"attached generation-defined value",
+			);
+		}
+
+		const retained = emptyCodexWorkbenchRetainedState();
+		retained.process = Object.assign(policyProcess(), { session: forbidden[0][1] });
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
 	});
 });

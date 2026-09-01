@@ -32,6 +32,8 @@ import type {
 import type { AnswerSdp } from "../../../shared/codex-realtime-host/index.js";
 
 export type BrowserConnectionId = string;
+/** Exact process-local WebSocket ownership. Reusable browser ids never substitute for it. */
+export type BrowserConnectionInstance = object;
 export type BrowserUnsubscribe = () => void;
 
 export type BrowserApprovalCommand = Extract<
@@ -93,6 +95,7 @@ export type BrowserRealtimeStopCommand = Extract<
 
 export interface BrowserLeaseBinding {
 	readonly browserId: BrowserConnectionId;
+	readonly connection: BrowserConnectionInstance;
 	readonly paneId: string;
 	readonly commandId: BrowserCommandId;
 	readonly childId: ChildId;
@@ -147,6 +150,8 @@ export type BrowserActionResult = void | {
 	readonly message?: string;
 	/** The browser applies this answer to its local peer and owns remote media attachment. */
 	readonly realtimeAnswer?: AnswerSdp;
+	/** Stable opaque handle returned by start and echoed by append/stop. */
+	readonly realtimeSessionHandle?: string;
 };
 
 export interface BrowserAccountActions {
@@ -181,6 +186,10 @@ export interface BrowserThreadLinkActions {
 		command: BrowserThreadLinkTargetCommand,
 		context: BrowserActionContext,
 	) => Promise<BrowserActionResult>;
+	readonly onBrowserDisconnect?: (
+		context: BrowserActionContext,
+		reason: BrowserDisconnectReason,
+	) => Promise<void> | void;
 }
 
 export interface BrowserTextActions {
@@ -234,6 +243,10 @@ export interface BrowserRealtimeActions {
 		command: BrowserRealtimeStopCommand,
 		context: BrowserActionContext,
 	) => Promise<BrowserActionResult>;
+	readonly onBrowserDisconnect?: (
+		context: BrowserActionContext,
+		reason: BrowserDisconnectReason,
+	) => Promise<void> | void;
 }
 
 export interface BrowserOrdinaryApprovalActions {
@@ -358,6 +371,7 @@ export interface BrowserGatewayCommandResult {
 	readonly message: string | null;
 	readonly snapshot: BrowserSnapshot;
 	readonly realtimeAnswer?: AnswerSdp;
+	readonly realtimeSessionHandle?: string;
 }
 
 export interface BrowserGatewayAccountReadResult {
@@ -383,6 +397,7 @@ export interface BrowserGatewayApplyResult {
 export interface BrowserWorkbenchConnection {
 	readonly browserId: BrowserConnectionId;
 	readonly paneId: string;
+	readonly instance: BrowserConnectionInstance;
 	readonly snapshot: () => BrowserGatewaySnapshotMessage;
 	readonly claimLease: () => BrowserCommandLease;
 	readonly renewLease: () => BrowserCommandLease;
@@ -394,7 +409,11 @@ export interface BrowserWorkbenchConnection {
 }
 
 export interface CodexWorkbenchGateway {
-	readonly connect: (browserId: BrowserConnectionId, paneId: string) => BrowserWorkbenchConnection;
+	readonly connect: (
+		browserId: BrowserConnectionId,
+		paneId: string,
+		instance?: BrowserConnectionInstance,
+	) => BrowserWorkbenchConnection;
 	readonly snapshot: (
 		browserId: BrowserConnectionId,
 		paneId: string,

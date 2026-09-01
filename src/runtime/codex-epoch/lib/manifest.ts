@@ -13,6 +13,7 @@ export const CODEX_EPOCH_MANIFEST_SCHEMA = 1 as const;
 const THREAD_PROVENANCE_KINDS = new Set([
 	"link",
 	"thread_link",
+	"attached",
 	"create",
 	"create_thread",
 	"thread_create",
