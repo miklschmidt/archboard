@@ -43,6 +43,7 @@ const SOURCE_ALIAS_PREFIX = "@/";
 const ASSISTANT_UI_PACKAGE = "@assistant-ui/react";
 const ASSISTANT_UI_AUXILIARY_PACKAGES = new Set(["assistant-cloud", "assistant-stream"]);
 const ASSISTANT_UI_OWNERS = new Map([
+	["src/ui/workbench-runtime/tests/provider-context-observer.ts", new Set(["useAui"])],
 	[
 		"src/ui/workbench-runtime",
 		new Set([
