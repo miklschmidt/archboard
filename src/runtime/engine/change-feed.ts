@@ -4,8 +4,8 @@
 // next door (changes.ts) decides *what*. The split matters because the two
 // consumers want different things from the same events:
 //
-//   · the injection client (TASK-019) subscribes in-process and wants each
-//     event once, as it happens, already narrated;
+//   · the linked-workhorse semantic publisher subscribes in-process and wants
+//     each event once, as it happens, already narrated;
 //   · a UserPromptSubmit hook runs as a separate short-lived process once per
 //     turn, holds a cursor of what it last reported, and wants everything
 //     since that cursor as ONE diff — not a replay of six events it would have
@@ -102,8 +102,8 @@ interface BoardWatch {
 	 * TASK-048, TASK-052). A branch or a snapshot that shares objects hands back
 	 * visibly wrong data. A baseline that shares them hands back silence: the
 	 * board moves, the baseline moves with it, the diff finds nothing and nobody
-	 * learns there was anything to look at. That silence reaches the agent too,
-	 * because this feed is what injection pushes into a live thread.
+	 * learns there was anything to look at. That silence reaches the linked
+	 * workhorse too, because its semantic publisher reads this feed.
 	 */
 	baseline: ServerElement[];
 	baselineAt: string;
@@ -368,7 +368,7 @@ class ChangeFeed extends EventEmitter {
 // One feed per canvas process, like the board store: the canvas is a single
 // place, and a per-connection feed would give every reader a different history.
 // One feed per canvas process, and the same one across a hot reload: cursors
-// and baselines are what a hook and the injector hold between turns, and a feed
+// and baselines are what hooks and the semantic publisher hold between turns, and a feed
 // that started over would report the whole board as new (src/runtime/engine/hot.ts).
 //
 // Keeping the instance means keeping its methods too, so an edit to this file

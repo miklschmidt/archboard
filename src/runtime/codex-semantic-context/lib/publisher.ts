@@ -307,7 +307,13 @@ export function createSemanticContextPublisher(
 		);
 		const eventAt = textValue(event.at, "change.at", SEMANTIC_CONTEXT_LIMITS.reasonBytes);
 		const capture = dateCapture(eventAt.value, clock);
-		const context = options.contextForChange(event);
+		let context: SemanticContextInput;
+		try {
+			context = options.contextForChange(event);
+		} catch (error) {
+			recordListenerFailure("settled_change", "settled_change", 0, error);
+			return;
+		}
 		const staleReasons =
 			context.board.key === eventBoard.value
 				? []
