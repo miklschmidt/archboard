@@ -342,7 +342,10 @@ export function createCanvasCodexWorkbenchInstallation(
 				},
 				retireEpoch: () => requireCreated(created, "epoch").close(),
 			}),
-			coordinator: () => ({ checkoutRoot: host.checkoutRoot }),
+			coordinator: () => ({
+				checkoutRoot: host.checkoutRoot,
+				persisted: input.adoptedCoordinator,
+			}),
 			queue: (created) => ({
 				currentBinding: () => {
 					const workhorse = created.workhorse?.snapshot();

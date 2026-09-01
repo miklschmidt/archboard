@@ -78,10 +78,26 @@ export function createCanvasDynamicApprovalOwner(
 				initialTurnOperationId: effect.initialTurnOperationId,
 				visualSummary: effect.visualSummary,
 			});
+		const threadId = options.identity.identity.decoder.adoptThreadId(effect.arguments.threadId);
+		if (effect.tool === "fork_thread") {
+			const beforeTurnId =
+				effect.arguments.beforeTurnId === null
+					? null
+					: options.identity.identity.decoder.adoptTurnId(effect.arguments.beforeTurnId);
+			return model.BrowserDynamicApprovalEffectSchema.parse({
+				tool: effect.tool,
+				arguments: { ...effect.arguments, threadId, beforeTurnId },
+				target: threadId,
+				effectiveBoundary: effect.effectiveBoundary,
+				mutationOperationId: effect.mutationOperationId,
+				initialTurnOperationId: effect.initialTurnOperationId,
+				visualSummary: effect.visualSummary,
+			});
+		}
 		return model.BrowserDynamicApprovalEffectSchema.parse({
 			tool: effect.tool,
-			arguments: effect.arguments,
-			target: effect.arguments.threadId,
+			arguments: { ...effect.arguments, threadId },
+			target: threadId,
 			effectiveBoundary: effect.effectiveBoundary,
 			mutationOperationId: effect.mutationOperationId,
 			initialTurnOperationId: effect.initialTurnOperationId,
