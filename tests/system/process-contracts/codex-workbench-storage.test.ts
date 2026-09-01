@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -8,6 +8,7 @@ import {
 	type WorkbenchResult,
 } from "../canvas-state/support/codex-production.ts";
 import { createRequester, waitFor } from "../canvas-state/support/http.ts";
+import { processExists } from "../support/owned-canvas.ts";
 import {
 	extendFixture,
 	type FixtureRecord,
@@ -15,11 +16,10 @@ import {
 	records,
 	snapshot,
 	startHotCanvas,
+	type StorageMode,
 } from "./support/codex-workbench-lifecycle.ts";
 
-async function expectStorageRefusal(
-	mode: "env-only" | "null" | "redirected" | "symlink" | "conflicting",
-): Promise<void> {
+async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 	const resources = new AsyncDisposableStack();
 	try {
 		const staging = join(
@@ -51,7 +51,16 @@ async function expectStorageRefusal(
 			else if (mode === "redirected")
 				expect(initialization.result?.codexHome, mode).toContain("/sqlite-home");
 			else if (mode === "symlink") expect(reported, mode).toContain("/sqlite-alias");
-			else expect(reported, mode).toContain("/conflicting-sqlite");
+			else if (mode === "requirements-conflict") {
+				const requirements = records(fixture.logPath).find(
+					(entry) => entry.kind === "response" && entry.method === "configRequirements/read",
+				) as FixtureRecord & {
+					readonly result?: { readonly requirements?: { readonly sqliteHome?: unknown } };
+				};
+				expect(requirements.result?.requirements?.sqliteHome, mode).toContain(
+					"/conflicting-sqlite",
+				);
+			} else expect(reported, mode).toContain("/conflicting-sqlite");
 			return;
 		}
 		const canvas = startup.canvas;
@@ -97,9 +106,99 @@ async function expectStorageRefusal(
 }
 describe.serial("composed Codex process lifecycle", () => {
 	test("refuses env-only, null, redirected, symlinked, and conflicting stores", async () => {
-		for (const mode of ["env-only", "null", "redirected", "symlink", "conflicting"] as const)
+		for (const mode of [
+			"env-only",
+			"null",
+			"redirected",
+			"symlink",
+			"conflicting",
+			"requirements-conflict",
+		] as const)
 			await expectStorageRefusal(mode);
-	}, 40_000);
+	}, 45_000);
+
+	test("accepts and preserves the exact managed sqlite requirement", async () => {
+		const resources = new AsyncDisposableStack();
+		let canvas: Awaited<ReturnType<typeof startHotCanvas>> | null = null;
+		try {
+			const staging = join(
+				process.env.TMPDIR ?? "/tmp",
+				`archboard-lifecycle-requirements-${process.pid}`,
+			);
+			rmSync(staging, { recursive: true, force: true });
+			mkdirSync(staging, { recursive: true });
+			resources.defer(() => rmSync(staging, { recursive: true, force: true }));
+			const fixture = prepareProductionFixture(
+				resources,
+				extendFixture(staging, "requirements-match"),
+			);
+			canvas = await startHotCanvas(fixture);
+			const ownedCanvas = canvas;
+			resources.defer(() => ownedCanvas.dispose());
+			const clientId = "managed-requirements";
+			const socket = await openApplicationSocket(canvas.base, clientId);
+			resources.defer(() => socket.close());
+			const request = createRequester({ base: canvas.base, assertRunning: async () => undefined });
+			expect(
+				(
+					await request("/api/panes", {
+						method: "POST",
+						doing: false,
+						body: { ...pane(clientId), paneId: `${clientId}-pane` },
+					})
+				).status,
+			).toBe(200);
+			await waitFor(async () => {
+				const result = await socket.request("connect");
+				return result.ok ? result : undefined;
+			}, "managed-requirement workbench readiness");
+			const state = snapshot(await socket.request("snapshot"));
+			expect(state.readiness).toMatchObject({ state: "thread_capable" });
+			const root = join(fixture.root, "state/excalidraw-canvas/codex-workbench");
+			const codexHome = join(root, "codex-home");
+			const sqliteHome = join(root, "sqlite-home");
+			const configPath = join(codexHome, "config.toml");
+			const configBytes = `sqlite_home = ${JSON.stringify(sqliteHome)}\n`;
+			expect(readFileSync(configPath, "utf8")).toBe(configBytes);
+			const publishedAt = statSync(configPath).mtimeMs;
+			const initialize = records(fixture.logPath).find(
+				(entry) => entry.kind === "response" && entry.method === "initialize",
+			) as FixtureRecord & { readonly result?: Record<string, unknown> };
+			const config = records(fixture.logPath).find(
+				(entry) => entry.kind === "response" && entry.method === "config/read",
+			) as FixtureRecord & { readonly result?: Record<string, unknown> };
+			const requirements = records(fixture.logPath).find(
+				(entry) => entry.kind === "response" && entry.method === "configRequirements/read",
+			) as FixtureRecord & {
+				readonly result?: { readonly requirements?: Record<string, unknown> };
+			};
+			expect(initialize.result?.codexHome).toBe(codexHome);
+			expect(config.result).toMatchObject({
+				config: { sqlite_home: sqliteHome },
+				origins: { sqlite_home: { name: { type: "user", file: configPath, profile: null } } },
+			});
+			const managed = requirements.result?.requirements;
+			expect(managed?.sqliteHome).toBe(sqliteHome);
+			expect(Object.keys(managed ?? {})).toHaveLength(30);
+			expect(
+				Object.entries(managed ?? {}).every(
+					([key, value]) => key === "sqliteHome" || value === null,
+				),
+			).toBeTrue();
+			const childPid = records(fixture.logPath).find(
+				(entry) => entry.kind === "app_server_spawn",
+			)?.pid;
+			if (childPid === undefined) throw new Error("The managed-requirement child did not start.");
+			await canvas.dispose();
+			canvas = null;
+			expect(processExists(childPid)).toBeFalse();
+			expect(readFileSync(configPath, "utf8")).toBe(configBytes);
+			expect(statSync(configPath).mtimeMs).toBe(publishedAt);
+		} finally {
+			await canvas?.dispose();
+			await resources.disposeAsync();
+		}
+	}, 30_000);
 
 	test("isolates two live production homes and child processes", async () => {
 		const resources = new AsyncDisposableStack();
