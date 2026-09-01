@@ -10,6 +10,8 @@ import { forbiddenRealtimeModuleFinding } from "./support/codex-realtime-depende
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const moduleRoot = path.join(repoRoot, "src/ui/codex-realtime");
 const indexPath = path.join(moduleRoot, "index.ts");
+const workbenchMediaOwnerPath = path.join(moduleRoot, "lib/workbench-media-owner.ts");
+const workbenchBrowserModelSpecifier = "../../../shared/codex-browser-model/index.js";
 const packagePath = path.join(repoRoot, "package.json"),
 	nestedPackagePath = path.join(moduleRoot, "package.json");
 const SOURCE_LIKE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mts", ".cts"]);
@@ -21,13 +23,13 @@ const rootEntries = (root: string): string[] =>
 		.map((entry) => entry.name)
 		.toSorted();
 const VALUE_EXPORTS = new Set(
-	"assertRealtimeTransition canTransitionRealtimeState INITIAL_REALTIME_STATE REALTIME_PHASES REALTIME_TRANSITIONS transitionRealtimeState createRealtimeMediaSession REALTIME_MEDIA_FEATURE".split(
+	"assertRealtimeTransition canTransitionRealtimeState INITIAL_REALTIME_STATE REALTIME_PHASES REALTIME_TRANSITIONS transitionRealtimeState createRealtimeMediaSession REALTIME_MEDIA_FEATURE createBrowserWorkbenchMediaOwner".split(
 		" ",
 	),
 );
 const CONTRACT_MODULE = "./lib/contract.js";
 const TYPE_EXPORTS = new Set(
-	"AnswerSdp AppendNotDeliveredReason AppendOutcome AppendOutcomeReason AppendOutcomeUnknownReason AppendSpeechRequest AppendTextRequest CommandNotDeliveredReason CommandOutcome CommandOutcomeReason CommandOutcomeUnknownReason CreateOfferSdp RealtimeCommandRequest RealtimeCorrelation RealtimeCorrelationId RealtimeDiagnosticCode RealtimeHost RealtimeItemId RealtimePhase RealtimeRecoverableErrorReason RealtimeSemanticEvent RealtimeSemanticEventListener RealtimeSessionId RealtimeState RealtimeTerminalErrorReason RealtimeTranscriptRecord RealtimeTranscriptRole RealtimeTranscriptStatus RealtimeTransitionReason RealtimeUnsubscribe RecoveryRequest RemoteMediaAttachment StopRequest RealtimeMediaListener RealtimeMediaSession RealtimeMediaSnapshot".split(
+	"AnswerSdp AppendNotDeliveredReason AppendOutcome AppendOutcomeReason AppendOutcomeUnknownReason AppendSpeechRequest AppendTextRequest CommandNotDeliveredReason CommandOutcome CommandOutcomeReason CommandOutcomeUnknownReason CreateOfferSdp RealtimeCommandRequest RealtimeCorrelation RealtimeCorrelationId RealtimeDiagnosticCode RealtimeHost RealtimeItemId RealtimePhase RealtimeRecoverableErrorReason RealtimeSemanticEvent RealtimeSemanticEventListener RealtimeSessionId RealtimeState RealtimeTerminalErrorReason RealtimeTranscriptRecord RealtimeTranscriptRole RealtimeTranscriptStatus RealtimeTransitionReason RealtimeUnsubscribe RecoveryRequest RemoteMediaAttachment StopRequest RealtimeMediaListener RealtimeMediaSession RealtimeMediaSnapshot BrowserWorkbenchMediaOwner BrowserWorkbenchMediaState".split(
 		" ",
 	),
 );
@@ -35,6 +37,7 @@ const VALUE_EXPORT_SOURCES = new Map([
 	...[...VALUE_EXPORTS].slice(0, 6).map((name) => [name, CONTRACT_MODULE] as const),
 	["createRealtimeMediaSession", "./lib/media-session.js"],
 	["REALTIME_MEDIA_FEATURE", "./lib/media-session.js"],
+	["createBrowserWorkbenchMediaOwner", "./lib/workbench-media-owner.js"],
 ]);
 const TYPE_EXPORT_SOURCES = new Map([
 	...[...TYPE_EXPORTS]
@@ -43,6 +46,8 @@ const TYPE_EXPORT_SOURCES = new Map([
 	["RealtimeMediaListener", "./lib/media-session.js"],
 	["RealtimeMediaSession", "./lib/media-session.js"],
 	["RealtimeMediaSnapshot", "./lib/media-session.js"],
+	["BrowserWorkbenchMediaOwner", "./lib/workbench-media-owner.js"],
+	["BrowserWorkbenchMediaState", "./lib/workbench-media-owner.js"],
 ]);
 const PRIVATE_PACKAGE_KEYS =
 	"exports files workspaces publishConfig main module types typesVersions unpkg jsdelivr browser".split(
@@ -161,7 +166,10 @@ function moduleReferences(source: ts.SourceFile): ModuleReference[] {
 			if (specifier)
 				references.push({
 					specifier,
-					kind: ts.isImportDeclaration(node) ? "static import" : "static import",
+					kind:
+						ts.isImportDeclaration(node) && node.getText(source).startsWith("import type")
+							? "type import"
+							: "static import",
 				});
 		}
 		if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) {
@@ -243,10 +251,20 @@ function deepImportFindings(file: string, source: ts.SourceFile): Finding[] {
 		}));
 }
 
+const isWorkbenchBrowserModelTypeEdge = (file: string, reference: ModuleReference): boolean =>
+	file === workbenchMediaOwnerPath &&
+	reference.kind === "type import" &&
+	reference.specifier === workbenchBrowserModelSpecifier;
 function forbiddenApiFindings(file: string, source: ts.SourceFile): Finding[] {
 	const findings: Finding[] = [];
 	const visit = (node: ts.Node): void => {
-		if (ts.isIdentifier(node) && ALTERNATE_REALTIME_APIS.has(node.text.toLowerCase()))
+		if (
+			ts.isIdentifier(node) &&
+			ALTERNATE_REALTIME_APIS.has(node.text.toLowerCase()) &&
+			(file !== workbenchMediaOwnerPath ||
+				!["socket", "websocket"].includes(node.text.toLowerCase()) ||
+				(ts.isNewExpression(node.parent) && node.parent.expression === node))
+		)
 			findings.push({
 				file,
 				reason: "alternate transport API",
@@ -257,7 +275,6 @@ function forbiddenApiFindings(file: string, source: ts.SourceFile): Finding[] {
 	visit(source);
 	return findings;
 }
-
 function realtimeGraphFindings(
 	entry: string,
 	parsed: ReadonlyMap<string, ts.SourceFile>,
@@ -274,12 +291,14 @@ function realtimeGraphFindings(
 		const references = moduleReferences(source);
 		findings.push(
 			...references.flatMap((reference) => {
+				if (isWorkbenchBrowserModelTypeEdge(file, reference)) return [];
 				const dependency = forbiddenRealtimeModuleFinding(file, reference, repoRoot);
 				return dependency ? [dependency] : [];
 			}),
 		);
 		findings.push(...forbiddenApiFindings(file, source));
 		for (const reference of references) {
+			if (isWorkbenchBrowserModelTypeEdge(file, reference)) continue;
 			queue.push(...parsedTargets(file, reference.specifier, parsed));
 		}
 	}

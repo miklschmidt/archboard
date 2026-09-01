@@ -16,6 +16,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { WebSocket } from "ws";
 
 import { waitForProcessExit } from "../support/owned-canvas.ts";
+import * as hot from "./support/hot-reload-proof.ts";
 import { createRequester, sleep, waitFor } from "./support/http.ts";
 import { reversibleCheckoutEdit } from "./support/reversible-checkout-edit.ts";
 
@@ -24,16 +25,6 @@ const executable = join(repoRoot, "bin/canvas");
 const SETTLE_MS = 300;
 const PROBE_ROUTE =
 	"\napp.get('/__reload_probe', (_req: Request, res: Response) => { res.json({ probe: 'live' }); });\n";
-const hotBox = (label: string, x: number) => ({
-	type: "rectangle",
-	x,
-	y: 40,
-	width: 160,
-	height: 80,
-	label: { text: label },
-	customData: { archboard: { node: label.toLowerCase(), kind: "service", name: label } },
-});
-
 interface Health {
 	pid: number;
 	reloadable: boolean;
@@ -331,8 +322,9 @@ describe.serial("hot reload", () => {
 				viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
 			},
 		});
-		await request(`/api/elements?board=${board}`, { method: "POST", body: hotBox("Auth", 0) });
-		await request(`/api/elements?board=${board}`, { method: "POST", body: hotBox("Orders", 400) });
+		const codexLease = await hot.claimCodexLease(socket);
+		await request(`/api/elements?board=${board}`, { method: "POST", body: hot.box("Auth", 0) });
+		await request(`/api/elements?board=${board}`, { method: "POST", body: hot.box("Orders", 400) });
 		const panesBefore = (
 			await request<{ panes: Array<{ paneId: string; board: string }> }>("/api/panes")
 		).body;
@@ -402,6 +394,7 @@ describe.serial("hot reload", () => {
 		expect(reloadLog).not.toContain("THE RELOAD BROKE");
 		expect(closeCode).toBeUndefined();
 		expect(after.websocket_clients).toBe(socketsBefore);
+		await hot.renewCodexLease(socket, codexLease);
 		const elementsAfter = (
 			await request<{ count: number; elements: Array<{ id: string }> }>(
 				`/api/elements?board=${board}`,
@@ -423,7 +416,7 @@ describe.serial("hot reload", () => {
 		expect(feedAfter.cursor).toBe(feedBefore.cursor);
 		expect(feedAfter.events).toEqual([]);
 		const beforeBroadcast = events.length;
-		await request(`/api/elements?board=${board}`, { method: "POST", body: hotBox("Ledger", 800) });
+		await request(`/api/elements?board=${board}`, { method: "POST", body: hot.box("Ledger", 800) });
 		await sleep(400);
 		const writes = events.slice(beforeBroadcast).filter(({ type }) => type === "elements_changed");
 		expect(writes).toHaveLength(1);

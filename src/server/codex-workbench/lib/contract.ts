@@ -109,6 +109,8 @@ export interface BrowserProjectionContext {
 	readonly paneId: string;
 	readonly binding: ThreadLinkBindingSnapshot;
 	readonly lease: BrowserCommandLease | null;
+	/** The exact socket has installed a usable browser-local media owner. */
+	readonly mediaReady: boolean;
 }
 
 /**
@@ -140,9 +142,6 @@ export interface BrowserActionContext extends BrowserLeaseBinding {}
 export type BrowserDisconnectReason =
 	| "browser_disconnected"
 	| "child_disconnected"
-	| "lease_expired"
-	| "lease_transferred"
-	| "link_changed"
 	| "gateway_shutdown";
 
 export type BrowserActionResult = void | {
@@ -402,6 +401,7 @@ export interface BrowserWorkbenchConnection {
 	readonly claimLease: () => BrowserCommandLease;
 	readonly renewLease: () => BrowserCommandLease;
 	readonly releaseLease: () => BrowserCommandLease | null;
+	readonly setMediaReady: (ready: boolean) => BrowserGatewaySnapshotMessage;
 	readonly accountRead: () => Promise<BrowserGatewayAccountReadResult>;
 	readonly command: (command: unknown) => Promise<BrowserGatewayCommandResult>;
 	readonly subscribe: (listener: (message: BrowserGatewayMessage) => void) => BrowserUnsubscribe;
@@ -441,7 +441,11 @@ export interface CodexWorkbenchGateway {
 		paneId: string,
 		listener: (message: BrowserGatewayMessage) => void,
 	) => BrowserUnsubscribe;
-	readonly closeBrowser: (browserId: BrowserConnectionId) => Promise<void>;
+	readonly closeConnection: (
+		browserId: BrowserConnectionId,
+		paneId: string,
+		instance: BrowserConnectionInstance,
+	) => Promise<void>;
 	readonly childExit: (childId: ChildId, epoch: ChildEpoch) => Promise<void>;
 	readonly dispose: () => Promise<void>;
 }

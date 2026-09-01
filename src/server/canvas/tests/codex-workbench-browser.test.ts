@@ -36,6 +36,10 @@ test("the public socket owner routes the complete gateway workflow through serve
 			calls.push("release");
 			return null;
 		},
+		setMediaReady: (ready) => {
+			calls.push(`media:${String(ready)}`);
+			return { kind: "snapshot", sequence: 2, snapshot: {} } as never;
+		},
 		accountRead: async () => {
 			calls.push("account");
 			return { kind: "account_read" } as never;
@@ -68,9 +72,8 @@ test("the public socket owner routes the complete gateway workflow through serve
 		accountRead: () => connection.accountRead(),
 		command: (_browserId, command) => connection.command(command),
 		subscribe: (_browserId, _paneId, next) => connection.subscribe(next),
-		closeBrowser: async (browserId) => {
-			calls.push(`close:${browserId}`);
-		},
+		closeConnection: async (browserId, paneId, closingInstance) =>
+			void calls.push(`close:${browserId}:${paneId}:${String(closingInstance === instance)}`),
 		childExit: async () => undefined,
 		dispose: async () => undefined,
 	};
@@ -87,7 +90,8 @@ test("the public socket owner routes the complete gateway workflow through serve
 		["5", "renewLease", {}],
 		["6", "accountRead", {}],
 		["7", "command", { command: { command: "approvalRespond" } }],
-		["8", "releaseLease", {}],
+		["8", "mediaReady", { ready: true }],
+		["9", "releaseLease", {}],
 	] as const) {
 		await owner.handle(
 			instance,
@@ -100,9 +104,15 @@ test("the public socket owner routes the complete gateway workflow through serve
 	await owner.handle(
 		instance,
 		"browser-1",
-		{ type: "codex_workbench_request", requestId: "9", action: "close" },
+		{ type: "codex_workbench_request", requestId: "10", action: "close" },
 		send,
 	);
+	owner.disposeForReload();
+	const reloadedOwner = createCanvasCodexBrowserSocketOwner({
+		gateway,
+		paneForBrowser: () => "pane-authoritative",
+	});
+	await reloadedOwner.close(instance, "browser-1");
 
 	expect(calls).toEqual([
 		"connect:browser-1:pane-authoritative",
@@ -114,9 +124,11 @@ test("the public socket owner routes the complete gateway workflow through serve
 		"renew",
 		"account",
 		'command:{"command":"approvalRespond"}',
+		"media:true",
 		"release",
 		"unsubscribe",
 		"connection-close",
+		"close:browser-1:pane-authoritative:true",
 	]);
 	expect(messages).toContainEqual({
 		type: "codex_workbench_event",
@@ -158,7 +170,7 @@ test("the socket owner refuses missing pane authority and reload only removes su
 		subscribe: () => {
 			throw new Error("must not subscribe");
 		},
-		closeBrowser: async (browserId: string) => void calls.push(browserId),
+		closeConnection: async (browserId: string) => void calls.push(browserId),
 		childExit: async () => undefined,
 		dispose: async () => undefined,
 	};
@@ -192,6 +204,7 @@ test("the public request crosses a real WebSocket transport and returns the gate
 		claimLease: () => ({}) as never,
 		renewLease: () => ({}) as never,
 		releaseLease: () => null,
+		setMediaReady: () => connection.snapshot(),
 		accountRead: async () => ({}) as never,
 		command: async () => ({}) as never,
 		subscribe: () => () => undefined,
@@ -206,7 +219,7 @@ test("the public request crosses a real WebSocket transport and returns the gate
 		accountRead: () => connection.accountRead(),
 		command: (_browserId, command) => connection.command(command),
 		subscribe: (_browserId, _paneId, listener) => connection.subscribe(listener),
-		closeBrowser: async () => undefined,
+		closeConnection: async () => undefined,
 		childExit: async () => undefined,
 		dispose: async () => undefined,
 	};

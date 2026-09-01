@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 02:58'
+updated_date: '2026-09-01 03:44'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -137,6 +137,20 @@ Own the one production composition root in the canvas server. It instantiates ev
 21. Split the adapter implementation by behavior and strengthen retained-state value enforcement with negative mutation owners.
 
 22. Add a production application WebSocket proof crossing the real gateway and approval owner, run capped validation, update Backlog evidence, commit, and callback the parent.
+
+23. Make the canvas application retain one exact current socket per client id. Let stale closes retire only their own socket and Codex bridge state; gate selection, hold, pane, note-open, and semantic cleanup on exact current ownership.
+
+24. Split command-lease retirement from durable browser-connection teardown. Keep binding and realtime authority across release, expiry, and reacquire; invoke disconnect hooks exactly once only for socket close or replacement, child exit, and host shutdown.
+
+25. Replace retained generation-capturing lifecycle closures with one plain control cell and stable wrappers. Put current generation operations in explicit replaceable slots, poison old slots in tests, and remove impossible lexical-capture claims in favor of structural and behavioral policy.
+
+26. Move the browser workbench media owner into src/ui/codex-realtime/lib behind a narrow module entrypoint. Add an explicit media installation/readiness handshake and closed unavailable or negotiation_failed outcomes for missing APIs, permission failure, SDP failure, replacement, and success.
+
+27. Move cross-module WebSocket coverage to tests/system. Start the actual canvas application, drive its real socket decoder and production gateway/approval owner through overlap, stale close, lease release/reacquire, approval at-most-once, reload, and terminal cleanup, with cleanup registered before acquisition.
+
+28. Keep module tests on module-root contracts and add focused regressions for each reachable race, poisoned reload slot, nested or prototype retention path, and media readiness state. Remove the fake module proof that overstates production coverage.
+
+29. Run only the requested focused capped owners, both TypeScript projects, lint, format, inventory, boundary, and diff checks; append evidence through Backlog CLI, keep TASK-143.01.14 In Progress with AC unchecked, commit above f01cc33a, verify the protected hash, and callback the parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -173,4 +187,14 @@ Validation: focused remediation owners 151 pass / 0 fail / 791 assertions; publi
 Protected artifact evidence correction: the authoritative protected file is /home/msc/Projects/archboard/src-DlBR1tzg.js and its SHA-256 is 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. The prior 3ffcfa2c2a07af83f4074c7e785a87aa1bb1df7a81bdbce58385525d2159cccb statement referred to the wrong tracked design document and is superseded. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked for parent review.
 
 Fresh implementation ownership from checkpoint 56001eb2fb3d724d822aa658c8abecbbb7a6c2b5 resolves the ten fixed-base review findings without changing task lifecycle state. The browser gateway now binds leases, cached commands, realtime sessions, public socket ownership, and disconnect cleanup to the exact WebSocket instance, so replacement and out-of-order close cannot revoke current authority and hot reload can reuse the one retained live instance. Realtime start, append, and stop share one opaque session handle; the browser owns the existing WebRTC and microphone media session and cleans it on terminal disconnect, replacement, failure, unavailable, and disposal. Thread create, attach, relink, and disconnect use the exact post-CAS controller token; attach records durable current-child attached provenance before authoritative classification. Operation context is captured from the exact lease-bound pane rather than focus or first-pane fallback. Dynamic approval and generation cleanup preserve exact host_shutdown and child_disconnected terminal causes. Retained-state enforcement now checks the exact root shape and rejects hidden generation owners on processes, closures, routes, callbacks, approvals, effects, decoders, sessions, gateways, and UI media. The old catch-all adapter implementation was replaced by narrow behavior modules and named public exports. A real loopback WebSocket proof crosses the canvas socket owner, production gateway, approval broker, lease replacement, realtime lifecycle, terminal unavailable delta, and cleanup. Fresh production installation now creates its state root before constructing CodexProcess, which restores startup from an empty XDG state directory. Verification under the required 6 GiB memory and 1 GiB swap cgroups: both TypeScript projects pass; full Oxlint and oxfmt checks pass; focused remediation and policy owners pass 63 tests with 476 assertions; application and installation owners pass 12 tests with 35 assertions; inventory policy passes 39 tests with 69 assertions; fresh hot reload passes 4 tests with 66 assertions. The broader affected module lane and isolated full module-scope policy were attempted under the cap and were OOM-killed near the ceiling, so no aggregate pass is claimed for those lanes. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Fixed base is 7f37c1a903492bbd7d02699df069f2d2bc3dccba. Status remains In Progress and all acceptance criteria remain unchecked for parent review.
+
+Fresh remediation above f01cc33a addresses all eight parent findings. Application cleanup is exact-socket owned: stale closes cannot erase the replacement pane, selection, hold, note-open state, or gateway lease, and reload-time close uses the exact browser/pane/socket tuple even before any post-reload request. Lease release, transfer, and expiry now retire only command authority; durable semantic/realtime/approval teardown runs once only for exact socket replacement/close, child exit, or host shutdown.
+
+Retained ownership now uses one plain control cell with stable wrappers and a replaceable current-slot record. Reload severs the retired slot record, replaces the generation facade, and policy tests poison retired snapshot/gateway slots while exercising the current wrappers; nested root/control/process/slot and custom prototype attachments fail closed without claiming impossible lexical closure introspection.
+
+The browser media owner moved into src/ui/codex-realtime/lib behind the sole reviewed index entrypoint. Attach returns explicit ready/unavailable state, exact sockets publish media readiness, replacement resets readiness, and missing APIs, permission denial, SDP failure, attach failure, success, and cleanup are covered. The canvas hook is a thin consumer and no visual contract changed.
+
+Cross-module WebSocket proof moved to tests/system. One system owner crosses real WebSocket framing, gateway, approval broker, at-most-once approval response, replacement, media handshake, realtime start/append/stop, and terminal cleanup. A second starts src/server.ts and proves overlapping application sockets preserve pane/selection/hold/gateway authority through stale close and retire them on exact close. The existing real bun --hot owner now proves connect/claim/reload/renew on the retained application socket.
+
+Validation under named systemd user scopes with MemoryMax=6G and MemorySwapMax=1G: final lint 0 warnings/errors; oxfmt check passes; both TypeScript projects pass; focused behavioral/system lane 64 pass / 0 fail / 314 assertions; hot reload 4 pass / 0 fail; inventory 39 pass / 0 fail; isolated deep-import/test-owner boundary 1 pass / 0 fail; isolated realtime sole-entrypoint contract 1 pass / 0 fail. The aggregate boundary owner and the isolated realtime dependency-graph and real module-scope owners were attempted but OOM-killed at the fixed cgroup ceiling, so no pass is claimed for those aggregates. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Status remains In Progress and all AC remain unchecked for parent review.
 <!-- SECTION:NOTES:END -->

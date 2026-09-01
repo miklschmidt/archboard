@@ -2,17 +2,20 @@ import { expect, test } from "bun:test";
 import { createServer } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 
-import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
+import { createCodexApprovalBroker } from "../../../src/runtime/codex-approvals/index.js";
 import type {
 	ReverseResponse,
 	TransportServerRequest,
-} from "../../../runtime/codex-transport/server-requests.js";
-import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
-import type { BrowserProjection, BrowserWorkbenchActions } from "../../codex-workbench/index.js";
-import { createCodexWorkbenchGateway } from "../../codex-workbench/index.js";
-import { createCanvasRealtimeActions } from "../codex-workbench-adapters.js";
-import { createCanvasCodexBrowserSocketOwner } from "../codex-workbench-browser.js";
+} from "../../../src/runtime/codex-transport/server-requests.js";
+import { createCodexBrowserModel } from "../../../src/shared/codex-browser-model/index.js";
+import { createIdentityAuthorities } from "../../../src/shared/codex-workbench-identity/index.js";
+import type {
+	BrowserProjection,
+	BrowserWorkbenchActions,
+} from "../../../src/server/codex-workbench/index.js";
+import { createCodexWorkbenchGateway } from "../../../src/server/codex-workbench/index.js";
+import { createCanvasRealtimeActions } from "../../../src/server/canvas/codex-workbench-adapters.js";
+import { createCanvasCodexBrowserSocketOwner } from "../../../src/server/canvas/codex-workbench-browser.js";
 
 async function delivered() {
 	return { outcome: "delivered" as const };
@@ -295,6 +298,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 		await new Promise<void>((resolve) => first.client.once("close", resolve));
 		const renewed = await replacement.request("renewLease");
 		expect(renewed).toMatchObject({ ok: true, value: { commandId: replacementLease.commandId } });
+		expect(await replacement.request("mediaReady", { ready: true })).toMatchObject({ ok: true });
 
 		const startLease = (await replacement.request("claimLease")).value as Record<string, unknown>;
 		const start = await replacement.request("command", {

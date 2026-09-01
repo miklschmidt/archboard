@@ -15,17 +15,9 @@ import {
 } from "../../../src/server/canvas/codex-workbench-owner.js";
 import type { CodexWorkbenchGenerationHooks } from "../../../src/server/canvas/codex-workbench-generation.js";
 
-const RETAINED_KEYS = [
-	"failure",
-	"generation",
-	"owner",
-	"process",
-	"readCurrentSnapshot",
-	"reloadCurrentGeneration",
-	"shutdownCurrentGeneration",
-	"startCurrentGeneration",
-	"state",
-] as const;
+const RETAINED_KEYS = ["control", "failure", "generation", "owner", "process", "state"] as const;
+
+const OWNER_SLOT_KEYS = ["gateway", "reload", "shutdown", "snapshot", "start"] as const;
 
 function policyProcess(): CodexProcess {
 	const child = { pid: 14314 } as CodexProcessChild;
@@ -82,18 +74,18 @@ describe("production Codex workbench composition policy", () => {
 			expect(existsSync(path.join(root, entrypoint)), entrypoint).toBeTrue();
 	});
 
-	test("starts with only scalar state, a process slot, and lifecycle closure slots", () => {
-		expect(emptyCodexWorkbenchRetainedState()).toEqual({
+	test("starts with scalar state, a process slot, and one plain control cell", () => {
+		const retained = emptyCodexWorkbenchRetainedState();
+		expect(retained).toMatchObject({
 			owner: null,
 			generation: 0,
 			state: "idle",
 			failure: null,
 			process: null,
-			startCurrentGeneration: null,
-			reloadCurrentGeneration: null,
-			shutdownCurrentGeneration: null,
-			readCurrentSnapshot: null,
+			control: { current: null },
 		});
+		expect(Object.keys(retained.control).toSorted()).toEqual(["current", "wrappers"]);
+		expect(Object.keys(retained.control.wrappers).toSorted()).toEqual([...OWNER_SLOT_KEYS]);
 	});
 
 	test("keeps the exact retained allowlist across install and source-hook reload", async () => {
@@ -107,38 +99,58 @@ describe("production Codex workbench composition policy", () => {
 		await owner.start();
 		expect(Object.keys(retained).toSorted()).toEqual([...RETAINED_KEYS]);
 		expect(Object.values(retained)).not.toContain(owner.gateway());
+		const generationGateway = owner.gateway();
+		const stableWrappers = retained.control.wrappers;
+		const firstSlots = retained.control.current;
 
 		await owner.reload({} as CodexWorkbenchGenerationHooks);
 		expect(reloads.count).toBe(1);
 		expect(Object.keys(retained).toSorted()).toEqual([...RETAINED_KEYS]);
 		expect(Object.values(retained)).not.toContain(owner.gateway());
+		expect(retained.control.wrappers).toBe(stableWrappers);
+		expect(retained.control.current).not.toBe(firstSlots);
+		expect(Object.keys(retained.control.current ?? {}).toSorted()).toEqual([...OWNER_SLOT_KEYS]);
+		if (firstSlots === null) throw new Error("The first generation did not publish owner slots.");
+		(firstSlots as unknown as { snapshot: () => never }).snapshot = () => {
+			throw new Error("poisoned retired snapshot slot executed");
+		};
+		(firstSlots as unknown as { gateway: () => never }).gateway = () => {
+			throw new Error("poisoned retired gateway slot executed");
+		};
+		expect(retained.control.wrappers.snapshot().generation).toBe(2);
+		expect(retained.control.wrappers.gateway()).toBe(generationGateway);
 		await owner.shutdown();
+		expect(retained.control.current).toBeNull();
 	});
 
-	test("rejects generation owners hidden in retained process and closure slots", () => {
-		const forbidden = [
-			["session", { initialize: () => undefined, threadRead: () => undefined }],
-			["gateway", { connect: () => undefined, childExit: () => undefined }],
-			["decoder", { parseThreadId: () => undefined, adoptThreadId: () => undefined }],
-			["routeHandler", { route: () => undefined }],
-			["callback", { onNotification: () => undefined }],
-			["approvalDecision", { outcome: "approved", effectHash: "hash", decidedAtMs: 1 }],
-			["effectAuthority", { issuer: {}, validator: {}, decoder: {} }],
-			["uiMediaAdapter", { createOffer: () => undefined, attachRemoteMedia: () => undefined }],
-		] as const;
-		for (const [name, value] of forbidden) {
-			const retained = emptyCodexWorkbenchRetainedState();
-			// eslint-disable-next-line unicorn/consistent-function-scoping -- each mutation owner needs an isolated callable.
-			const closure = () => Promise.resolve({} as never);
-			Object.defineProperty(closure, name, { value, enumerable: false });
-			retained.startCurrentGeneration = closure;
-			expect(() => assertCodexWorkbenchRetainedState(retained), name).toThrow(
-				"attached generation-defined value",
-			);
-		}
-
+	test("rejects nested, prototype, process-method, and extra-slot attachments", () => {
 		const retained = emptyCodexWorkbenchRetainedState();
-		retained.process = Object.assign(policyProcess(), { session: forbidden[0][1] });
+		retained.process = Object.assign(policyProcess(), { session: { initialize: () => undefined } });
 		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
+
+		const prototypeAttachment = emptyCodexWorkbenchRetainedState();
+		Object.setPrototypeOf(prototypeAttachment.control, { decoder: {} });
+		expect(() => assertCodexWorkbenchRetainedState(prototypeAttachment)).toThrow(
+			"retained prototype attachment",
+		);
+
+		const processMethodAttachment = emptyCodexWorkbenchRetainedState();
+		processMethodAttachment.process = policyProcess();
+		Object.setPrototypeOf(
+			processMethodAttachment.process.start,
+			Object.create(Function.prototype, { session: { value: {} } }),
+		);
+		expect(() => assertCodexWorkbenchRetainedState(processMethodAttachment)).toThrow(
+			"plain callable slot",
+		);
+
+		const slotAttachment = emptyCodexWorkbenchRetainedState();
+		slotAttachment.control.current = Object.assign(
+			{ ...slotAttachment.control.wrappers },
+			{
+				gatewaySession: {},
+			},
+		);
+		expect(() => assertCodexWorkbenchRetainedState(slotAttachment)).toThrow("retained allowlist");
 	});
 });
