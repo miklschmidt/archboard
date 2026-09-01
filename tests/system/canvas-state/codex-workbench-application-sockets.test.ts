@@ -4,6 +4,11 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { WebSocket } from "ws";
 
+import { createBrowserWorkbenchMediaOwner } from "../../../src/ui/codex-workbench-media/index.js";
+import {
+	createBrowserWorkbenchTransport,
+	type BrowserWorkbenchSocket,
+} from "../../../src/ui/workbench-transport/index.js";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 
@@ -19,6 +24,45 @@ interface ApplicationSocket {
 	readonly socket: WebSocket;
 	request(action: string, extra?: Record<string, unknown>): Promise<WorkbenchResult>;
 	close(): Promise<void>;
+}
+
+class TransportSocketAdapter extends EventTarget implements BrowserWorkbenchSocket {
+	private readonly socket: WebSocket;
+	readonly sent: Record<string, unknown>[];
+
+	constructor(socket: WebSocket, sent: Record<string, unknown>[]) {
+		super();
+		this.socket = socket;
+		this.sent = sent;
+		socket.on("message", this.onMessage);
+		socket.on("close", this.onClose);
+		socket.on("open", this.onOpen);
+	}
+
+	get readyState(): number {
+		return this.socket.readyState;
+	}
+
+	send(raw: string): void {
+		this.sent.push(JSON.parse(raw) as Record<string, unknown>);
+		this.socket.send(raw);
+	}
+
+	dispose(): void {
+		this.socket.off("message", this.onMessage);
+		this.socket.off("close", this.onClose);
+		this.socket.off("open", this.onOpen);
+	}
+
+	private readonly onMessage = (raw: WebSocket.RawData): void => {
+		this.dispatchEvent(new MessageEvent("message", { data: raw.toString() }));
+	};
+	private readonly onClose = (): void => {
+		this.dispatchEvent(new Event("close"));
+	};
+	private readonly onOpen = (): void => {
+		this.dispatchEvent(new Event("open"));
+	};
 }
 
 async function openApplicationSocket(base: string, clientId: string): Promise<ApplicationSocket> {
@@ -153,6 +197,80 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 		} finally {
 			await first?.close();
 			await replacement?.close();
+			await canvas.dispose();
+			rmSync(root, { recursive: true, force: true });
+		}
+	}, 60_000);
+
+	test("the production canvas socket composes one transport reducer with media behavior", async () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-codex-composed-socket-"));
+		const canvas = await startOwnedCanvas({
+			serverPath: join(repoRoot, "src/server.ts"),
+			vault: join(root, "vault"),
+		});
+		const request = createRequester(canvas);
+		const clientId = "composed-codex-pane";
+		let application: ApplicationSocket | null = null;
+		let adapter: TransportSocketAdapter | null = null;
+		const transport = createBrowserWorkbenchTransport();
+		let stopCount = 0;
+		const media = createBrowserWorkbenchMediaOwner({
+			createMediaSession: () =>
+				({
+					getSnapshot: () =>
+						({
+							correlation: null,
+							state: { phase: "listening", reason: "negotiation_succeeded" },
+							inputLevel: 0,
+						}) as never,
+					subscribe: () => () => undefined,
+					start: async () => ({}) as never,
+					appendText: async () => ({}) as never,
+					stop: async () => {
+						stopCount += 1;
+						return {} as never;
+					},
+					dispose: async () => undefined,
+				}) as never,
+		});
+		const sent: Record<string, unknown>[] = [];
+		try {
+			application = await openApplicationSocket(canvas.base, clientId);
+			await request("/api/panes", {
+				method: "POST",
+				doing: false,
+				body: {
+					clientId,
+					paneId: clientId,
+					primary: true,
+					focused: true,
+					elementCount: 0,
+					board: "scratch",
+					rect: { x: 0, y: 0, width: 1280, height: 800 },
+					viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
+				},
+			});
+			adapter = new TransportSocketAdapter(application.socket, sent);
+			await transport.attach(adapter);
+			await media.attach(transport);
+			expect(sent.filter((message) => message.action === "connect")).toHaveLength(0);
+			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(1);
+			expect(transport.snapshot()).not.toBeNull();
+			const baselineSequence = transport.sequence();
+			await transport.setMediaReady(true);
+			await transport.setMediaReady(false);
+			await Bun.sleep(0);
+			expect(transport.sequence()).toBeGreaterThan(baselineSequence ?? -1);
+			expect(transport.snapshot()?.voice.state).toBe("unavailable");
+			expect(stopCount).toBe(1);
+			expect(application.socket.readyState).toBe(WebSocket.OPEN);
+			await media.dispose();
+			expect(application.socket.readyState).toBe(WebSocket.OPEN);
+		} finally {
+			await media.dispose();
+			await transport.dispose();
+			adapter?.dispose();
+			await application?.close();
 			await canvas.dispose();
 			rmSync(root, { recursive: true, force: true });
 		}

@@ -1,25 +1,19 @@
 import { afterEach, expect, test } from "bun:test";
 
+import type {
+	BrowserCommandDraft,
+	BrowserWorkbenchCommandResult,
+	BrowserWorkbenchCommandTarget,
+	BrowserWorkbenchSnapshotMessage,
+	BrowserWorkbenchState,
+	BrowserWorkbenchTransport,
+} from "../../workbench-transport/index.js";
+import type {
+	BrowserCommandLease,
+	BrowserSnapshot,
+} from "../../../shared/codex-browser-model/index.js";
 import { createBrowserWorkbenchMediaOwner } from "../index.js";
 import { FakeBrowser, restoreFakeBrowsers } from "./support/browser-media-fake.js";
-
-class FakeSocket extends EventTarget {
-	readonly sent: unknown[] = [];
-	readyState: number = WebSocket.OPEN;
-	constructor(readonly respond: (request: Record<string, unknown>) => unknown) {
-		super();
-	}
-	send(raw: string): void {
-		const request = JSON.parse(raw) as Record<string, unknown>;
-		this.sent.push(request);
-		const response = this.respond(request);
-		this.dispatchEvent(new MessageEvent("message", { data: JSON.stringify(response) }));
-	}
-	close(): void {
-		this.readyState = WebSocket.CLOSED;
-		this.dispatchEvent(new Event("close"));
-	}
-}
 
 class FakeAudioElement {
 	autoplay = false;
@@ -41,88 +35,164 @@ class FakeAudioElement {
 	}
 }
 
-function unavailableResponse(request: Record<string, unknown>) {
+function workbenchSnapshot(voice: "ready" | "unavailable" = "ready"): BrowserSnapshot {
 	return {
-		type: "codex_workbench_result",
-		requestId: request.requestId,
-		action: request.action,
-		ok: true,
-		value: { kind: "snapshot", sequence: 1, snapshot: { voice: { state: "unavailable" } } },
-	};
-}
-
-function mediaSocket() {
-	const mediaReady: boolean[] = [];
-	let lease = 0;
-	const snapshot = {
 		threadLink: { state: "executable", threadId: "thread-media" },
-		voice: { state: "ready" },
-	};
-	const socket = new FakeSocket((request) => {
-		const action = String(request.action);
-		let value: unknown;
-		if (action === "connect" || action === "subscribe")
-			value = { kind: "snapshot", sequence: 1, snapshot };
-		else if (action === "mediaReady") {
-			mediaReady.push(request.ready === true);
-			value = { kind: "snapshot", sequence: mediaReady.length + 1, snapshot };
-		} else if (action === "claimLease") {
-			lease += 1;
-			value = {
-				kind: "command_lease",
-				commandId: `media-state-${lease}`,
-				paneId: "pane-media",
-				childId: "child-media",
-				epoch: "epoch-media",
-				state: "active",
-				expiresAtMs: 999_999,
-			};
-		} else throw new Error(`unexpected action: ${action}`);
+		voice: { state: voice },
+	} as unknown as BrowserSnapshot;
+}
+
+class FakeTransport implements BrowserWorkbenchTransport {
+	readonly mediaReady: boolean[] = [];
+	readonly commands: BrowserCommandDraft[] = [];
+	private readonly listeners = new Set<() => void>();
+	private currentSequence = 1;
+	private currentSnapshot = workbenchSnapshot();
+	private currentLease: BrowserCommandLease | null = null;
+	private currentState: BrowserWorkbenchState = this.readinessState();
+	disposeCount = 0;
+
+	private readinessState(): BrowserWorkbenchState {
 		return {
-			type: "codex_workbench_result",
-			requestId: request.requestId,
-			action,
-			ok: true,
-			value,
-		};
-	});
-	return { socket, mediaReady };
-}
-
-async function waitForSent(socket: FakeSocket, action: string): Promise<Record<string, unknown>> {
-	for (let attempt = 0; attempt < 50; attempt += 1) {
-		const request = socket.sent.find(
-			(candidate) => (candidate as Record<string, unknown>).action === action,
-		) as Record<string, unknown> | undefined;
-		if (request !== undefined) return request;
-		await Bun.sleep(1);
+			kind: "readiness",
+			state: "thread_capable",
+			connection: "connected",
+			snapshot: this.currentSnapshot,
+			sequence: this.currentSequence,
+		} as BrowserWorkbenchState;
 	}
-	throw new Error(`The socket did not send ${action}.`);
+
+	attach(): Promise<BrowserWorkbenchState> {
+		return Promise.resolve(this.currentState);
+	}
+	detach(): Promise<void> {
+		return Promise.resolve();
+	}
+	close(): Promise<void> {
+		return Promise.resolve();
+	}
+	refresh(): Promise<BrowserWorkbenchSnapshotMessage> {
+		return Promise.resolve(this.snapshotMessage());
+	}
+	setMediaReady(ready: boolean): Promise<BrowserWorkbenchSnapshotMessage> {
+		this.mediaReady.push(ready);
+		return Promise.resolve(this.snapshotMessage());
+	}
+	claimLease(): Promise<BrowserCommandLease> {
+		const commandId = `media-lease-${this.mediaReady.length + this.commands.length + 1}`;
+		this.currentLease = {
+			kind: "command_lease",
+			commandId,
+			paneId: "pane-media",
+			childId: "child-media",
+			epoch: "epoch-media",
+			state: "active",
+			expiresAtMs: Date.now() + 60_000,
+		} as BrowserCommandLease;
+		this.currentSnapshot = { ...this.currentSnapshot, lease: this.currentLease } as BrowserSnapshot;
+		this.currentState = this.readinessState();
+		this.notify();
+		return Promise.resolve(this.currentLease);
+	}
+	renewLease(): Promise<BrowserCommandLease> {
+		if (this.currentLease === null) return Promise.reject(new Error("no lease"));
+		return this.claimLease();
+	}
+	releaseLease(): Promise<BrowserCommandLease | null> {
+		return Promise.resolve(this.currentLease);
+	}
+	accountRead(): Promise<never> {
+		return Promise.reject(new Error("not used"));
+	}
+	command(draft: BrowserCommandDraft): Promise<BrowserWorkbenchCommandResult> {
+		this.commands.push(draft);
+		const commandId = this.currentLease?.commandId ?? null;
+		const value: BrowserWorkbenchCommandResult = {
+			kind: "command_result",
+			commandId,
+			outcome: "delivered",
+			code: null,
+			message: null,
+			snapshot: this.currentSnapshot,
+		};
+		if (draft.command === "realtimeStart")
+			return Promise.resolve({
+				...value,
+				realtimeSessionHandle: String(commandId),
+				realtimeAnswer: {
+					sessionId: String(commandId),
+					correlationId: String(commandId),
+					sdp: "v=0\\r\\na=answer",
+				},
+			} as BrowserWorkbenchCommandResult);
+		return Promise.resolve(value);
+	}
+	captureCommandTarget(): BrowserWorkbenchCommandTarget {
+		if (this.currentLease === null) throw new Error("no lease");
+		return {
+			...this.currentLease,
+			capturedThreadLink: this.currentSnapshot.threadLink,
+		};
+	}
+	snapshot(): BrowserSnapshot {
+		return this.currentSnapshot;
+	}
+	sequence(): number {
+		return this.currentSequence;
+	}
+	lease(): BrowserCommandLease | null {
+		return this.currentLease;
+	}
+	state(): BrowserWorkbenchState {
+		return this.currentState;
+	}
+	capabilities(): never {
+		throw new Error("not used");
+	}
+	subscribe(listener: () => void): () => void {
+		this.listeners.add(listener);
+		return () => this.listeners.delete(listener);
+	}
+	dispose(): Promise<void> {
+		this.disposeCount += 1;
+		return Promise.resolve();
+	}
+
+	emitVoice(state: "ready" | "unavailable"): void {
+		this.currentSnapshot = {
+			...this.currentSnapshot,
+			voice: { state },
+		} as BrowserSnapshot;
+		this.currentState = this.readinessState();
+		this.notify();
+	}
+	emitSocketClosed(): void {
+		this.currentState = {
+			kind: "connection",
+			state: "stopped",
+			connection: "stopped",
+			snapshot: null,
+			sequence: null,
+			reason: "socket closed",
+		};
+		this.currentSnapshot = null as unknown as BrowserSnapshot;
+		this.notify();
+	}
+
+	private snapshotMessage(): BrowserWorkbenchSnapshotMessage {
+		return {
+			kind: "snapshot",
+			sequence: this.currentSequence,
+			snapshot: this.currentSnapshot,
+		};
+	}
+	private notify(): void {
+		for (const listener of this.listeners) listener();
+	}
 }
 
-function reply(
-	socket: FakeSocket,
-	request: Record<string, unknown>,
-	input: { readonly ok: boolean; readonly value?: unknown; readonly error?: string },
-): void {
-	socket.dispatchEvent(
-		new MessageEvent("message", {
-			data: JSON.stringify({
-				type: "codex_workbench_result",
-				requestId: request.requestId,
-				action: request.action,
-				...input,
-			}),
-		}),
-	);
-}
-
-afterEach(restoreFakeBrowsers);
-
-test("the browser workbench media owner negotiates and cleans one socket-bound local session", async () => {
-	const environment = new FakeBrowser();
-	const audio: FakeAudioElement[] = [];
-	const documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, "document");
+function installDocument(audio: FakeAudioElement[]): PropertyDescriptor | undefined {
+	const descriptor = Object.getOwnPropertyDescriptor(globalThis, "document");
 	Object.defineProperty(globalThis, "document", {
 		configurable: true,
 		value: {
@@ -134,309 +204,114 @@ test("the browser workbench media owner negotiates and cleans one socket-bound l
 			body: { append: () => undefined },
 		},
 	});
-	const snapshot = {
-		threadLink: {
-			state: "executable",
-			threadId: "thread-media",
-		},
-		voice: { state: "ready" },
-	};
-	let leaseNumber = 0;
-	const commands: Record<string, unknown>[] = [];
-	const socket = new FakeSocket((request) => {
-		const action = String(request.action);
-		let value: unknown;
-		if (action === "connect" || action === "subscribe" || action === "mediaReady")
-			value = { kind: "snapshot", sequence: 1, snapshot };
-		else if (action === "claimLease") {
-			leaseNumber += 1;
-			value = {
-				kind: "command_lease",
-				commandId: `media-lease-${leaseNumber}`,
-				paneId: "pane-media",
-				childId: "child-media",
-				epoch: "epoch-media",
-				state: "active",
-				expiresAtMs: 999_999,
-			};
-		} else if (action === "command") {
-			const command = request.command as Record<string, unknown>;
-			commands.push(command);
-			value = {
-				kind: "command_result",
-				outcome: "delivered",
-				snapshot,
-				...(command.command === "realtimeStart"
-					? {
-							realtimeSessionHandle: command.commandId,
-							realtimeAnswer: {
-								sessionId: command.commandId,
-								correlationId: command.commandId,
-								sdp: "v=0\r\na=answer",
-							},
-						}
-					: {}),
-			};
-		} else throw new Error(`unexpected action: ${action}`);
-		return {
-			type: "codex_workbench_result",
-			requestId: request.requestId,
-			action,
-			ok: true,
-			value,
-		};
-	});
+	return descriptor;
+}
+
+function restoreDocument(descriptor: PropertyDescriptor | undefined): void {
+	if (descriptor) Object.defineProperty(globalThis, "document", descriptor);
+	else Reflect.deleteProperty(globalThis, "document");
+}
+
+afterEach(restoreFakeBrowsers);
+
+test("the media owner delegates leases, commands, readiness, and snapshots to one transport", async () => {
+	const environment = new FakeBrowser();
+	const audio: FakeAudioElement[] = [];
+	const documentDescriptor = installDocument(audio);
+	const transport = new FakeTransport();
 	const owner = createBrowserWorkbenchMediaOwner();
 	try {
-		await owner.attach(socket as unknown as WebSocket);
+		await owner.attach(transport);
 		expect(owner.state()).toEqual({ state: "ready" });
 		const started = await owner.start();
-		expect(started.state).toMatchObject({ phase: "listening" });
 		await owner.appendText("continue the same voice turn");
 		const stopped = await owner.stop();
+		expect(started.state).toMatchObject({ phase: "listening" });
 		expect(stopped.state).toEqual({ phase: "closed", reason: "stopped" });
-		expect(commands.map((command) => command.command)).toEqual([
+		expect(transport.commands.map((command) => command.command)).toEqual([
 			"realtimeStart",
 			"realtimeAppendText",
 			"realtimeStop",
 		]);
-		expect(commands[1]?.realtimeSessionHandle).toBe(commands[0]?.commandId);
-		expect(commands[2]?.realtimeSessionHandle).toBe(commands[0]?.commandId);
+		expect(transport.mediaReady).toEqual([true, true, true]);
 		expect(audio).toHaveLength(1);
 		expect(audio[0]).toMatchObject({ removed: true, srcObject: null });
 		environment.assertReleased();
 	} finally {
 		await owner.dispose();
-		if (documentDescriptor) Object.defineProperty(globalThis, "document", documentDescriptor);
-		else Reflect.deleteProperty(globalThis, "document");
+		restoreDocument(documentDescriptor);
 	}
 });
 
-test("socket replacement disposes browser media before adopting the new socket", async () => {
-	const owner = createBrowserWorkbenchMediaOwner();
-	const first = new FakeSocket(unavailableResponse);
-	const second = new FakeSocket(unavailableResponse);
-	await owner.attach(first as unknown as WebSocket);
-	await owner.attach(second as unknown as WebSocket);
-	await owner.detach(first as unknown as WebSocket);
-	expect(second.sent.map((request) => (request as { action: string }).action)).toEqual([
-		"connect",
-		"subscribe",
-		"mediaReady",
-	]);
+test("replacing or disposing media never disposes an externally-owned transport", async () => {
+	let disposedSessions = 0;
+	const owner = createBrowserWorkbenchMediaOwner({
+		createMediaSession: () =>
+			({
+				getSnapshot: () => null,
+				subscribe: () => () => undefined,
+				start: async () => ({}) as never,
+				stop: async () => ({}) as never,
+				appendText: async () => ({}) as never,
+				dispose: async () => {
+					disposedSessions += 1;
+				},
+			}) as never,
+	});
+	const first = new FakeTransport();
+	const second = new FakeTransport();
+	await owner.attach(first);
+	await owner.attach(second);
+	await owner.detach(first);
+	expect(disposedSessions).toBe(1);
+	expect(first.disposeCount).toBe(0);
+	expect(second.disposeCount).toBe(0);
+	await owner.dispose();
+	expect(disposedSessions).toBe(2);
+	expect(second.disposeCount).toBe(0);
+});
+
+test("authoritative transport closure revokes media without closing or disposing the transport", async () => {
+	let disposedSessions = 0;
+	const transport = new FakeTransport();
+	const owner = createBrowserWorkbenchMediaOwner({
+		createMediaSession: () =>
+			({
+				getSnapshot: () => null,
+				subscribe: () => () => undefined,
+				start: async () => ({}) as never,
+				stop: async () => ({}) as never,
+				appendText: async () => ({}) as never,
+				dispose: async () => {
+					disposedSessions += 1;
+				},
+			}) as never,
+	});
+	await owner.attach(transport);
+	transport.emitSocketClosed();
+	await Bun.sleep(0);
+	expect(owner.state()).toMatchObject({ state: "unavailable", reason: "socket_closed" });
+	expect(disposedSessions).toBe(1);
+	expect(transport.disposeCount).toBe(0);
 	await owner.dispose();
 });
 
-test("the newest of three replacements wins before delayed prior disposal settles", async () => {
-	for (const lateDisposal of ["resolve", "reject"] as const) {
-		let resolveDisposal!: () => void;
-		let rejectDisposal!: (error: Error) => void;
-		const disposal = new Promise<void>((resolve, reject) => {
-			resolveDisposal = resolve;
-			rejectDisposal = reject;
-		});
-		let sessions = 0;
-		const owner = createBrowserWorkbenchMediaOwner({
-			createMediaSession: () => {
-				const session = ++sessions;
-				return {
-					getSnapshot: () => null,
-					subscribe: () => () => undefined,
-					start: async () => ({}) as never,
-					appendText: async () => ({}) as never,
-					stop: async () => ({}) as never,
-					dispose: () => (session === 1 ? disposal : Promise.resolve()),
-				} as never;
-			},
-		});
-		const first = new FakeSocket(unavailableResponse);
-		const second = new FakeSocket(unavailableResponse);
-		const newest = new FakeSocket(unavailableResponse);
-		try {
-			await owner.attach(first as unknown as WebSocket);
-			let secondSettled = false;
-			const replacing = owner
-				.attach(second as unknown as WebSocket)
-				.finally(() => void (secondSettled = true));
-			const newestAttach = owner.attach(newest as unknown as WebSocket);
-			await newestAttach;
-			expect(secondSettled).toBeFalse();
-			expect(second.sent).toHaveLength(0);
-			expect(newest.sent.map((value) => (value as { action: string }).action)).toEqual([
-				"connect",
-				"subscribe",
-				"mediaReady",
-			]);
-			if (lateDisposal === "resolve") resolveDisposal();
-			else rejectDisposal(new Error("late prior media disposal failed"));
-			await replacing;
-			expect(owner.state()).toMatchObject({
-				state: "unavailable",
-				reason: "media_api_unavailable",
-			});
-			expect(owner.snapshot()).toBeNull();
-		} finally {
-			resolveDisposal();
-			await owner.dispose();
-		}
-	}
-});
-
-test("overlapping attach ignores the replaced run's late success and rejection", async () => {
-	for (const late of [
-		{ ok: true, value: { kind: "snapshot", sequence: 1, snapshot: {} } },
-		{ ok: false, error: "late refusal" },
-	] as const) {
-		const owner = createBrowserWorkbenchMediaOwner();
-		const first = new FakeSocket(() => undefined);
-		const replacement = new FakeSocket(unavailableResponse);
-		try {
-			const firstAttach = owner.attach(first as unknown as WebSocket);
-			const firstConnect = await waitForSent(first, "connect");
-			const replacementAttach = owner.attach(replacement as unknown as WebSocket);
-			reply(first, firstConnect, late);
-			await Promise.all([firstAttach, replacementAttach]);
-			expect(owner.state()).toMatchObject({
-				state: "unavailable",
-				reason: "media_api_unavailable",
-			});
-		} finally {
-			await owner.dispose();
-		}
-	}
-});
-
-test("an overlapping start cannot overwrite the replacement socket state", async () => {
-	const environment = new FakeBrowser();
-	const documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, "document");
-	Object.defineProperty(globalThis, "document", {
-		configurable: true,
-		value: {
-			createElement: () => new FakeAudioElement(),
-			body: { append: () => undefined },
-		},
-	});
-	const snapshot = {
-		threadLink: { state: "executable", threadId: "thread-overlap" },
-		voice: { state: "ready" },
-	};
-	let lease = 0;
-	const first = new FakeSocket((request) => {
-		if (request.action === "command") return undefined;
-		if (request.action === "claimLease") {
-			lease += 1;
-			return {
-				type: "codex_workbench_result",
-				requestId: request.requestId,
-				action: request.action,
-				ok: true,
-				value: {
-					kind: "command_lease",
-					commandId: `overlap-${lease}`,
-					paneId: "pane-overlap",
-					childId: "child-overlap",
-					epoch: "epoch-overlap",
-					state: "active",
-					expiresAtMs: 999_999,
-				},
-			};
-		}
-		return {
-			type: "codex_workbench_result",
-			requestId: request.requestId,
-			action: request.action,
-			ok: true,
-			value: { kind: "snapshot", sequence: 1, snapshot },
-		};
-	});
-	const replacement = new FakeSocket(unavailableResponse);
+test("missing browser media APIs publish unavailable through the transport port", async () => {
 	const owner = createBrowserWorkbenchMediaOwner();
-	try {
-		await owner.attach(first as unknown as WebSocket);
-		const starting = owner.start();
-		const command = await waitForSent(first, "command");
-		await owner.attach(replacement as unknown as WebSocket);
-		reply(first, command, {
-			ok: true,
-			value: {
-				kind: "command_result",
-				outcome: "delivered",
-				snapshot,
-				realtimeSessionHandle: "overlap-1",
-				realtimeAnswer: {
-					sessionId: "overlap-1",
-					correlationId: "overlap-1",
-					sdp: "v=0\r\na=late-answer",
-				},
-			},
-		});
-		const startFailure = await starting.then(
-			() => null,
-			(error: unknown) => error,
-		);
-		expect(startFailure).toBeInstanceOf(Error);
-		expect(owner.state()).toEqual({ state: "ready" });
-	} finally {
-		await owner.dispose();
-		environment.restore();
-		if (documentDescriptor) Object.defineProperty(globalThis, "document", documentDescriptor);
-		else Reflect.deleteProperty(globalThis, "document");
-	}
-});
-
-test("a failed socket subscription leaves no run and a later socket can recover", async () => {
-	const owner = createBrowserWorkbenchMediaOwner();
-	const failed = new FakeSocket((request) =>
-		request.action === "connect"
-			? unavailableResponse(request)
-			: {
-					type: "codex_workbench_result",
-					requestId: request.requestId,
-					action: request.action,
-					ok: false,
-					error: "subscription refused",
-				},
-	);
-	expect(await owner.attach(failed as unknown as WebSocket)).toEqual({
-		state: "unavailable",
-		reason: "attach_failed",
-		message: "subscription refused",
-	});
-	expect(owner.snapshot()).toBeNull();
-
-	const recovered = new FakeSocket(unavailableResponse);
-	await owner.attach(recovered as unknown as WebSocket);
-	expect(recovered.sent.map((request) => (request as { action: string }).action)).toEqual([
-		"connect",
-		"subscribe",
-		"mediaReady",
-	]);
-	await owner.dispose();
-});
-
-test("missing browser media APIs publish an explicit unavailable socket state", async () => {
-	const owner = createBrowserWorkbenchMediaOwner();
-	const { socket, mediaReady } = mediaSocket();
-	expect(await owner.attach(socket as unknown as WebSocket)).toEqual({
+	const transport = new FakeTransport();
+	expect(await owner.attach(transport)).toEqual({
 		state: "unavailable",
 		reason: "media_api_unavailable",
 		message: "This browser cannot install realtime microphone and audio support.",
 	});
-	expect(mediaReady).toEqual([false]);
+	expect(transport.mediaReady).toEqual([false]);
 	await owner.dispose();
 });
 
 test("permission and SDP failures revoke voice readiness before returning", async () => {
 	for (const failure of ["permission", "sdp"] as const) {
 		const environment = new FakeBrowser();
-		const documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, "document");
-		Object.defineProperty(globalThis, "document", {
-			configurable: true,
-			value: {
-				createElement: () => new FakeAudioElement(),
-				body: { append: () => undefined },
-			},
-		});
+		const documentDescriptor = installDocument([]);
 		if (failure === "permission")
 			Object.defineProperty(environment, "getUserMedia", {
 				configurable: true,
@@ -444,21 +319,20 @@ test("permission and SDP failures revoke voice readiness before returning", asyn
 			});
 		else environment.fail = "createOffer";
 		const owner = createBrowserWorkbenchMediaOwner();
-		const { socket, mediaReady } = mediaSocket();
+		const transport = new FakeTransport();
 		try {
-			await owner.attach(socket as unknown as WebSocket);
+			await owner.attach(transport);
 			const snapshot = await owner.start();
 			expect(snapshot.state.phase).toMatch(/error/);
 			expect(owner.state()).toMatchObject({
 				state: "unavailable",
 				reason: failure === "permission" ? "permission_denied" : "negotiation_failed",
 			});
-			expect(mediaReady).toEqual([true, true, false]);
+			expect(transport.mediaReady).toEqual([true, true, false]);
 		} finally {
 			await owner.dispose();
 			environment.restore();
-			if (documentDescriptor) Object.defineProperty(globalThis, "document", documentDescriptor);
-			else Reflect.deleteProperty(globalThis, "document");
+			restoreDocument(documentDescriptor);
 		}
 	}
 });
