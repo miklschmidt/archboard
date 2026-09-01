@@ -18,6 +18,7 @@ export interface FixtureRecord {
 	readonly id?: string;
 	readonly method?: string;
 	readonly pid?: number;
+	readonly scenario?: string;
 	readonly params?: Record<string, unknown>;
 	readonly frame?: {
 		readonly id?: unknown;
@@ -32,6 +33,15 @@ export interface HotCanvas {
 	output(): string;
 	dispose(signal?: NodeJS.Signals): Promise<void>;
 }
+
+export type StorageMode =
+	| "env-only"
+	| "null"
+	| "redirected"
+	| "symlink"
+	| "conflicting"
+	| "requirements-match"
+	| "requirements-conflict";
 
 const sleep = (ms: number): Promise<void> => new Promise((done) => setTimeout(done, ms));
 
@@ -183,10 +193,7 @@ export async function startHotCanvas(options: {
 	return canvas;
 }
 
-export function extendFixture(
-	root: string,
-	storageMode?: "env-only" | "null" | "redirected" | "symlink" | "conflicting",
-): string {
+export function extendFixture(root: string, storageMode?: StorageMode): string {
 	const source = readFileSync(fixtureSource, "utf8")
 		.replace(
 			'import { appendFileSync, readFileSync } from "node:fs";',
@@ -195,18 +202,32 @@ export function extendFixture(
 		.replace(
 			"const configResponse = () => ({",
 			String.raw`const storageMode = process.env.ARCHBOARD_TEST_STORAGE_MODE;
-const redirectedSqliteHome = storageMode === "conflicting"
+const redirectedSqliteHome = storageMode === "conflicting" || storageMode === "requirements-conflict"
 	? String(process.env.CODEX_SQLITE_HOME) + "/../conflicting-sqlite"
 	: storageMode === "symlink"
 		? String(process.env.CODEX_SQLITE_HOME) + "/../sqlite-alias"
 		: process.env.CODEX_SQLITE_HOME;
-if (storageMode === "conflicting" && redirectedSqliteHome !== undefined)
+if ((storageMode === "conflicting" || storageMode === "requirements-conflict") && redirectedSqliteHome !== undefined)
 	mkdirSync(redirectedSqliteHome, { recursive: true, mode: 0o700 });
 if (storageMode === "symlink" && redirectedSqliteHome !== undefined && process.env.CODEX_SQLITE_HOME !== undefined) {
 	try { symlinkSync(process.env.CODEX_SQLITE_HOME, redirectedSqliteHome, "dir"); } catch (error) {
 		if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
 	}
 }
+
+const managedRequirementKeys = [
+	"cliAuthCredentialsStore", "chatgptBaseUrl", "additionalDeveloperInstructions",
+	"allowedApprovalPolicies", "allowedApprovalsReviewers", "allowedSandboxModes",
+	"allowedWindowsSandboxImplementations", "allowedPermissionProfiles", "defaultPermissions",
+	"allowedWebSearchModes", "allowManagedHooksOnly", "allowBrowserAndComputerUse", "allowAppshots",
+	"allowRemoteControl", "computerUse", "browserUse", "inAppBrowser", "featureRequirements", "hooks",
+	"enforceResidency", "network", "autoReview", "models", "logDir", "modelCatalogJson",
+	"checkForUpdateOnStartup", "allowLoginShell", "feedback", "windowsSandboxPrivateDesktop",
+] as const;
+const managedRequirements = (sqliteHome: string) => ({
+	...Object.fromEntries(managedRequirementKeys.map((key) => [key, null])),
+	sqliteHome,
+});
 
 const configResponse = () => ({`,
 		)
@@ -217,6 +238,10 @@ const configResponse = () => ({`,
 		.replace(
 			"codexHome: process.env.CODEX_HOME,",
 			'codexHome: storageMode === "redirected" ? process.env.CODEX_SQLITE_HOME : process.env.CODEX_HOME,',
+		)
+		.replace(
+			"respond(frame as never, { requirements: null });",
+			'respond(frame as never, { requirements: storageMode === "requirements-match" ? managedRequirements(String(process.env.CODEX_SQLITE_HOME)) : storageMode === "requirements-conflict" ? managedRequirements(String(process.env.CODEX_SQLITE_HOME) + "/../conflicting-sqlite") : null });',
 		)
 		.replace(
 			"const storageMode = process.env.ARCHBOARD_TEST_STORAGE_MODE;",
@@ -244,12 +269,20 @@ const emitLifecycleRequests = (): void => {
 	request("session-time", "currentTime/read", { threadId });
 	request("session-token", "account/chatgptAuthTokens/refresh", { reason: "unauthorized", previousAccountId: null });
 	request("session-attestation", "attestation/generate", {});
-	registerDynamicCall("general-list", "list_threads", { limit: 10 });
-	registerDynamicCall("general-read", "read_thread", { threadId, turnLimit: 2, includeOutputs: true });
-	registerDynamicCall("general-wait", "wait_threads", { threadIds: ["thread-1"], timeoutMs: 0 });
-	request("general-list", "item/tool/call", { threadId, turnId, callId: "general-list", namespace: "archboard_app", tool: "list_threads", arguments: { limit: 10 } });
-	request("general-read", "item/tool/call", { threadId, turnId, callId: "general-read", namespace: "archboard_app", tool: "read_thread", arguments: { threadId, turnLimit: 2, includeOutputs: true } });
-	request("general-wait", "item/tool/call", { threadId, turnId, callId: "general-wait", namespace: "archboard_app", tool: "wait_threads", arguments: { threadIds: ["thread-1"], timeoutMs: 0 } });
+};
+
+const generalQueryItems = [
+	{ type: "dynamicToolCall", id: "general-list", namespace: "archboard_app", tool: "list_threads", arguments: { limit: 10 }, status: "inProgress", contentItems: null, success: null, durationMs: null },
+	{ type: "dynamicToolCall", id: "general-read", namespace: "archboard_app", tool: "read_thread", arguments: { threadId: "thread-3", turnLimit: 2, includeOutputs: true }, status: "inProgress", contentItems: null, success: null, durationMs: null },
+	{ type: "dynamicToolCall", id: "general-wait", namespace: "archboard_app", tool: "wait_threads", arguments: { threadIds: ["thread-3"], timeoutMs: 0 }, status: "inProgress", contentItems: null, success: null, durationMs: null },
+];
+const emitGeneralQuery = (tool: "list_threads" | "read_thread" | "wait_threads"): void => {
+	if (workhorseThreadId === null) return;
+	const id = "general-" + tool.split("_")[0];
+	const argumentsValue = tool === "list_threads" ? { limit: 10 } : tool === "read_thread" ? { threadId: "thread-3", turnLimit: 2, includeOutputs: true } : { threadIds: ["thread-3"], timeoutMs: 0 };
+	const item = ((threads.get(workhorseThreadId)?.turns[0]?.items as Record<string, unknown>[] | undefined) ?? []).find((candidate) => candidate.id === id);
+	if (item !== undefined) notify("item/started", { threadId: workhorseThreadId, turnId: "turn-1", item, startedAtMs: Date.now() });
+	request(id, "item/tool/call", { threadId: workhorseThreadId, turnId: "turn-1", callId: id, namespace: "archboard_app", tool, arguments: argumentsValue });
 };
 
 let reloadBatchSent = false;
@@ -282,6 +315,11 @@ const emitPostReload = (): void => {
 	if (postReloadSent || workhorseThreadId === null) return;
 	postReloadSent = true;
 	request("post-reload-time", "currentTime/read", { threadId: workhorseThreadId });
+};
+
+const completeReloadWait = (): void => {
+	const target = threads.get("thread-3");
+	if (target !== undefined) target.status = { type: "idle" };
 };
 
 let forkSent = false;
@@ -346,7 +384,15 @@ const invalidateStale = (): void => {
 		"const handle = (frame: WireFrame): void => {",
 		`${extraRequests}\nconst handle = (frame: WireFrame): void => {`,
 	);
-	const withEmission = withRequests.replace(
+	const withGeneralList = withRequests.replace(
+		"data: [...threads.values()],",
+		'data: params.limit === 10 ? [threads.get("thread-3")].filter(Boolean) : [...threads.values()],',
+	);
+	const withGeneralItems = withGeneralList.replace(
+		"items: isWorkhorse ? [dynamicItem] : [],",
+		"items: isWorkhorse ? [dynamicItem, ...generalQueryItems] : [],",
+	);
+	const withEmission = withGeneralItems.replace(
 		"if (isWorkhorse) setTimeout(emitReverseRequests, 10);",
 		"if (isWorkhorse) { setTimeout(emitReverseRequests, 10); setTimeout(emitLifecycleRequests, 10); }",
 	);
@@ -356,15 +402,17 @@ const invalidateStale = (): void => {
 	);
 	const withCoordinatorRetirement = withFork.replace(
 		'\t\trecord({ kind: "reverse_response", frame });\n\t\treturn;',
-		'\t\trecord({ kind: "reverse_response", frame });\n\t\tif (frame.id === "coordinator-inspect") { const coordinator = threads.get("thread-1"); if (coordinator !== undefined) { coordinator.status = { type: "idle" }; coordinator.turns = []; } }\n\t\treturn;',
+		'\t\trecord({ kind: "reverse_response", frame });\n\t\tfor (const thread of threads.values()) for (const turn of thread.turns) for (const item of (turn.items as Record<string, unknown>[] | undefined) ?? []) if (item.id === frame.id) { const returned = frame.result as { contentItems?: unknown; success?: unknown } | undefined; Object.assign(item, { status: "completed", contentItems: returned?.contentItems ?? [], success: returned?.success ?? false, durationMs: 1 }); }\n\t\tif (frame.id === "coordinator-inspect") { const coordinator = threads.get("thread-1"); if (coordinator !== undefined) { coordinator.status = { type: "idle" }; coordinator.turns = []; } }\n\t\treturn;',
 	);
 	const withReload = withCoordinatorRetirement.replace(
 		"if (control.exit === true) process.exit(17);",
-		'if ((control as { emit?: unknown }).emit === "fork") emitFork();\n\t\tif ((control as { emit?: unknown }).emit === "send") emitSend();\n\t\tif ((control as { emit?: unknown }).emit === "coordinator") emitCoordinatorCall();\n\t\tif ((control as { emit?: unknown }).emit === "decline") emitDecline();\n\t\tif ((control as { emit?: unknown }).emit === "stale") emitStale();\n\t\tif ((control as { emit?: unknown }).emit === "invalidate_stale") invalidateStale();\n\t\tif ((control as { emit?: unknown }).emit === "reload") emitReloadBatch();\n\t\tif ((control as { emit?: unknown }).emit === "post_reload") emitPostReload();\n\t\tif ((control as { emit?: unknown }).emit === "disconnect") emitDisconnectBatch();\n\t\tif (control.exit === true) process.exit(17);',
+		'if ((control as { emit?: unknown }).emit === "list") emitGeneralQuery("list_threads");\n\t\tif ((control as { emit?: unknown }).emit === "read") emitGeneralQuery("read_thread");\n\t\tif ((control as { emit?: unknown }).emit === "wait") emitGeneralQuery("wait_threads");\n\t\tif ((control as { emit?: unknown }).emit === "fork") emitFork();\n\t\tif ((control as { emit?: unknown }).emit === "send") emitSend();\n\t\tif ((control as { emit?: unknown }).emit === "coordinator") emitCoordinatorCall();\n\t\tif ((control as { emit?: unknown }).emit === "decline") emitDecline();\n\t\tif ((control as { emit?: unknown }).emit === "stale") emitStale();\n\t\tif ((control as { emit?: unknown }).emit === "invalidate_stale") invalidateStale();\n\t\tif ((control as { emit?: unknown }).emit === "reload") emitReloadBatch();\n\t\tif ((control as { emit?: unknown }).emit === "complete_wait") completeReloadWait();\n\t\tif ((control as { emit?: unknown }).emit === "post_reload") emitPostReload();\n\t\tif ((control as { emit?: unknown }).emit === "disconnect") emitDisconnectBatch();\n\t\tif (control.exit === true) process.exit(17);',
 	);
 	if (
 		withRequests === source ||
-		withEmission === withRequests ||
+		withGeneralList === withRequests ||
+		withGeneralItems === withGeneralList ||
+		withEmission === withGeneralItems ||
 		withFork === withEmission ||
 		withCoordinatorRetirement === withFork ||
 		withReload === withCoordinatorRetirement

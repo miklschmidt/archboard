@@ -176,7 +176,12 @@ export function createCanvasDynamicAuthorityAdapters(
 		caller: DynamicCallerAuthority,
 		value: unknown,
 	): Promise<DynamicTargetAuthority> => {
-		const threadId = options.identity.identity.decoder.adoptThreadId(value);
+		let threadId: ThreadId;
+		try {
+			threadId = options.identity.identity.decoder.parseThreadId(value);
+		} catch {
+			threadId = options.identity.identity.decoder.resolveThreadId(value);
+		}
 		const facts = await targetFacts(threadId);
 		return Object.freeze({
 			...facts.base,

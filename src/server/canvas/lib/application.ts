@@ -4425,11 +4425,13 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 	};
 
 	const waitForTargets: CanvasCodexWorkbenchHost["waitForTargets"] = async (input) => {
-		if (active === null) throw new Error("The Codex workbench is not ready to observe targets.");
+		const workbench = active;
+		if (workbench === null) throw new Error("The Codex workbench is not ready to observe targets.");
 		const deadline = Date.now() + input.timeoutMs;
 		do {
 			for (const threadId of input.owner.sortedTargetThreadIds) {
-				const pendingApproval = active.approvals.inspect().some((snapshot) => {
+				const wireThreadId = workbench.identity.identity.decoder.serializeCodexIdentity(threadId);
+				const pendingApproval = workbench.approvals.inspect().some((snapshot) => {
 					const identity = snapshot.identity;
 					const targetThreadId =
 						identity.kind === "legacy" ? identity.conversationId : identity.threadId;
@@ -4438,23 +4440,23 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				if (pendingApproval)
 					return {
 						event: "attention",
-						threadId,
+						threadId: wireThreadId,
 						sequence: input.previousSequence + 1,
 						cursor: input.cursor,
 						targetOwned: true,
 					};
-				const result = await active.session.threadRead({ threadId, includeTurns: false });
+				const result = await workbench.session.threadRead({ threadId, includeTurns: false });
 				if (result.thread.status.type === "systemError")
 					return {
 						event: "attention",
-						threadId,
+						threadId: wireThreadId,
 						sequence: input.previousSequence + 1,
 						cursor: input.cursor,
 					};
 				if (result.thread.status.type === "idle")
 					return {
 						event: "completed",
-						threadId,
+						threadId: wireThreadId,
 						sequence: input.previousSequence + 1,
 						cursor: input.cursor,
 					};
