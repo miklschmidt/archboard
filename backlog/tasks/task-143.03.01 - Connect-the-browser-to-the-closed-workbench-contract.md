@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.01
 title: Connect the browser to the closed workbench contract
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-01 17:18'
+updated_date: '2026-09-01 17:23'
 labels: []
 dependencies:
   - TASK-143.01.14
@@ -36,15 +36,15 @@ ordinal: 198000
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Connect the browser to the closed workbench gateway produced by the final server composition root. Own transport/reconnect/sequence behavior only; never instantiate a process, session, coordinator, queue, approval, semantic, or realtime owner in the UI.
 
-Delegation profile: gpt-5.6-luna, max.
+Delegation profile: gpt-daybreak-blue-latest, low.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The client obtains one versioned full snapshot then applies strictly sequenced deltas from the production gateway; reconnect requests a new snapshot and never replays a command automatically.
-- [ ] #2 Commands carry browser lease, pane, link, child epoch, and command identity and retain their original target across focus/navigation changes.
-- [ ] #3 Stopped/backoff, initialized, storage mismatch, login-capable/signed-out/login pending, account-ready, thread-capable, reconnecting, stale snapshot, and incompatible-contract states are represented without enabling unsupported commands.
-- [ ] #4 Transport tests use the final composed gateway public contract and prove duplicate/out-of-order messages, lost responses, late results, lease expiry, close, and recovery.
+- [x] #1 The client obtains one versioned full snapshot then applies strictly sequenced deltas from the production gateway; reconnect requests a new snapshot and never replays a command automatically.
+- [x] #2 Commands carry browser lease, pane, link, child epoch, and command identity and retain their original target across focus/navigation changes.
+- [x] #3 Stopped/backoff, initialized, storage mismatch, login-capable/signed-out/login pending, account-ready, thread-capable, reconnecting, stale snapshot, and incompatible-contract states are represented without enabling unsupported commands.
+- [x] #4 Transport tests use the final composed gateway public contract and prove duplicate/out-of-order messages, lost responses, late results, lease expiry, close, and recovery.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -92,3 +92,9 @@ Added behavior-level deferred-response regressions in pane-report-sequencing.tes
 
 Sixth remediation evidence: bun test --isolate src/ui/canvas/tests — 41 pass, 0 fail, 223 expect calls; bun test --isolate tests/system/canvas-state/codex-workbench-application-sockets.test.ts — 2 pass, 0 fail, 40 expect calls; bun test --isolate src/ui/workbench-transport/tests src/ui/codex-workbench-media/tests — 29 pass, 0 fail, 364 expect calls; targeted composition and dynamic-approval policy owners — 15 pass, 0 fail, 388 expect calls; bun run type-check (both TypeScript programs), bun run build, bun run lint, bun run fmt:check, and git diff --check pass. Aggregate test:modules, test:repository, repository-boundary owner, and serial browser lane remain intentionally omitted because prior bounded attempts were OOM-killed or prerequisites were unavailable; no checks were weakened. Acceptance criteria remain unchecked and the task remains In Progress for parent review.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Connected the browser to the final workbench gateway with one versioned snapshot followed by strictly ordered deltas; reconnect obtains a fresh snapshot without replaying commands. Commands freeze command, pane, lease, link, child, and epoch identity before dispatch. Explicit stopped, backoff, readiness, stale-snapshot, and incompatible-contract states keep unsupported actions disabled. Generation-scoped pane-report sequencing makes the latest dispatched request authoritative, ignores stale same-generation results, and permits later current reports to recover health and release registration once. Focused validation passed: canvas 41/41, transport and media 29/29, production socket 2/2, policy 15/15, both TypeScript projects, build, lint, format, and diff checks.
+<!-- SECTION:FINAL_SUMMARY:END -->
