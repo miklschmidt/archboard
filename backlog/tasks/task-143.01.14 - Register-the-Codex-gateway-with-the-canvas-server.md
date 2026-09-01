@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.14
 title: Compose the production Codex workbench graph
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 10:23'
+updated_date: '2026-09-01 10:31'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -99,10 +99,10 @@ Own the one production composition root in the canvas server. It instantiates ev
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The composition instantiates process, identity and OperationId authority, epoch and session, workhorse transaction, realtime, seven-family approval broker, general dispatcher with all five injected adapters, coordinator dispatcher, semantic delivery, coordinator, queue, callbacks, spoken gate, and browser gateway exactly once.
-- [ ] #2 One exhaustive router handles all eleven generated server request variants: seven broker families, item/tool/call, currentTime/read, token refresh, and attestation. Each reaches its sole owner or reviewed protocol error, dynamic approval never enters the seven-family broker, and no default branch responds generically.
-- [ ] #3 kept() stores only version-neutral serializable state, stable process handles, and replaceable closures; no generation-bound class instance, decoder, route handler, callback, approval decision, effect authority, or UI adapter survives reload.
-- [ ] #4 Startup installs identity decoders, dynamic dispatcher registrations, lifecycle signals, router, approval projection, and browser gateway before readiness. Shutdown stops browser, realtime, and queue, cancels dynamic approvals and waits, settles ordinary requests, closes JSON-RPC, TERM or KILLs the child, and removes listeners; browser disconnect and child exit cannot leave resumable authority, and duplicate owner registration refuses.
+- [x] #1 The composition instantiates process, identity and OperationId authority, epoch and session, workhorse transaction, realtime, seven-family approval broker, general dispatcher with all five injected adapters, coordinator dispatcher, semantic delivery, coordinator, queue, callbacks, spoken gate, and browser gateway exactly once.
+- [x] #2 One exhaustive router handles all eleven generated server request variants: seven broker families, item/tool/call, currentTime/read, token refresh, and attestation. Each reaches its sole owner or reviewed protocol error, dynamic approval never enters the seven-family broker, and no default branch responds generically.
+- [x] #3 kept() stores only version-neutral serializable state, stable process handles, and replaceable closures; no generation-bound class instance, decoder, route handler, callback, approval decision, effect authority, or UI adapter survives reload.
+- [x] #4 Startup installs identity decoders, dynamic dispatcher registrations, lifecycle signals, router, approval projection, and browser gateway before readiness. Shutdown stops browser, realtime, and queue, cancels dynamic approvals and waits, settles ordinary requests, closes JSON-RPC, TERM or KILLs the child, and removes listeners; browser disconnect and child exit cannot leave resumable authority, and duplicate owner registration refuses.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -380,10 +380,22 @@ Eleventh rereview remediation above 1fd13fb8 is test-only. A new public synchron
 Twelfth rereview remediation above 59da30d3 is test-only. The generation owner no longer appends a synthetic process-stop marker or claims an ordering relation it cannot observe; it retains exact transport-shutdown cardinality and ordinary-settlement-before-transport enforcement. A new public production-owner shutdown test uses the existing fake process and a deferred generation cleanup, then proves ordinary settlement, transport shutdown, and the real process stop each occur once and in that order. Moving stopProcess ahead of graph cleanup produced the intended red result: the owner lane reported 10 pass, 1 fail, 43 assertions, with transport at event index 4 after process stop at index 2. Production was restored byte-for-byte. Final sequential named 6 GiB memory / 1 GiB swap validation: focused application/generation owners 22 pass, 0 fail, 204 assertions; repository inventory 39 pass, 0 fail, 69 assertions; both TypeScript projects, lint with 0 warnings/errors, formatting, and fixed-base diff check pass. No known OOM fingerprint was rerun. No production file differs from 59da30d3. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
 
 Thirteenth rereview remediation above 07738c3d is test-only. The public owner shutdown-order proof now passes one actual composeCodexWorkbenchGeneration result through installCodexWorkbenchOwner. Its stable kernel uses the shared generation component fixture and fakeProcess remains the sole source of process:stop. Only public owner.start() and owner.shutdown() drive the assertion path; real generation hooks emit ordinary:settle:host_shutdown and the real fixture transport emits transport:shutdown. The direct generation owner reuses the same extracted fixture and retains component cardinality, router, cleanup-order, exact transport count, and deletion protection. Moving stopProcess before awaited graph cleanup produced the intended red result: 10 pass, 1 fail, 43 assertions, with process stop at event index 34 before transport shutdown at 47. Replacing the factory seam's composed generation stop with a non-delegating stop produced the intended red result: 10 pass, 1 fail, 39 assertions, with zero ordinary-settlement events. Both mutations were reversed and production is byte-for-byte unchanged from 07738c3d. Final sequential named 6 GiB memory / 1 GiB swap validation: integrated owner, direct generation, and application owners 22 pass, 0 fail, 204 assertions; repository inventory 39 pass, 0 fail, 69 assertions; both TypeScript projects, lint with 0 warnings/errors, formatting, and the complete fixed-base diff check pass. No known OOM fingerprint was rerun. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
+
+Final acceptance evidence recorded after independent REVIEW_CLEAN of 7f37c1a903492bbd7d02699df069f2d2bc3dccba..42dc62ed6a87abd496b52608220766d609602573.
+
+AC1 evidence: complete-range inspection found one production composition root and one construction site for every required owner, including the five dynamic adapters. The independent composition policy passed 4 tests with 49 assertions. The integrated public owner and direct generation owner are included in the focused 22-test, 204-assertion pass and exercise one complete composed graph.
+
+AC2 evidence: the direct generation owner drives the installed transport listener through all seven ordinary approval families, both item/tool/call owners, and the three session-owned methods. Complete-range review confirmed the private exhaustive eleven-variant router, sole reviewed owners, separation of dynamic approval from the seven-family broker, and no generic fallback.
+
+AC3 evidence: complete-range structural review and retained-state policy prove that kept state contains only the process-lifetime kernel, serializable state, and replaceable dispatch. Lifecycle and application owners cover fresh generation identities, reload replacement, poisoned retired callables, stale-finalizer refusal, exact stopped-recovery promise and error replay, and clean later recovery. The focused integrated, generation, application, and recovery lane passed 22 tests with 204 assertions.
+
+AC4 evidence: direct generation and application owners prove registration before readiness and ordered teardown across browser, realtime, queue, dynamic approvals, ordinary requests, session and JSON-RPC transport, process, projections, and final listeners. Lifecycle owners cover child-exit races, duplicate refusal, failure aggregation, terminal release, and exact promise/error replay. The integrated public owner observes real generation ordinary settlement, then transport shutdown, then the sole fake-process stop, each once. Moving process stop ahead of graph cleanup and replacing the generation factory with a non-delegating stop both failed for the intended ordering or missing-event reason.
+
+Final validation evidence: repository inventory passed 39 tests with 69 assertions; both TypeScript projects pass; full Oxlint reports 0 warnings and 0 errors; oxfmt and complete fixed-base diff checks pass. Known broad OOM lanes were intentionally not rerun, and no aggregate pass is claimed. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Replaced the fake shutdown ledger with one integrated public owner proof over the actual composed generation and shared the existing component fixture with the direct generation owner. Early process stop and non-delegating factory mutations both fail; restored tests, inventory, types, lint, format, and fixed-base diff checks pass. Task status and acceptance criteria remain unchanged for parent rereview.
+Completed the production Codex workbench graph. The canvas owns one process-lifetime kernel and composes each generation's routing, session, approvals, five dynamic adapters, context, queue, realtime, callbacks, and browser gateway exactly once. Reload replaces generation authority, and terminal lifecycle boundaries prevent stale publication and keep ordinary request settlement and transport shutdown ahead of process stop. Independent fixed-range review is REVIEW_CLEAN; composition policy passed 4 tests with 49 assertions, integrated generation and application owners passed 22 tests with 204 assertions, inventory passed 39 tests with 69 assertions, and both TypeScript projects, Oxlint with 0 warnings/errors, oxfmt, and fixed-base diff checks pass. Known broad OOM lanes were not rerun and no aggregate pass is claimed.
 <!-- SECTION:FINAL_SUMMARY:END -->
