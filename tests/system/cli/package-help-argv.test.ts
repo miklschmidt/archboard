@@ -73,6 +73,10 @@ const fixedBaseGeneralHelp = (value: string) =>
 			/^  render-findings\s+Render deterministic PNG close-ups for persisted board findings\n/m,
 			"",
 		)
+		.replace(
+			/^  release\s+Give back a board you claimed\n/m,
+			"$&  inject         Whether the canvas can push board changes into a live Codex thread, and a probe to prove it\n",
+		)
 		.replace(/^               check only: 6 warnings, 7 errors, 8 indeterminate coverage\.\n/m, "");
 
 describe("package bin and help", () => {
@@ -86,7 +90,7 @@ describe("package bin and help", () => {
 			[
 				"src/cli/command-contract/tests/fixed-base-compatibility.json",
 				compatibilityPath,
-				"7ef7c5a38e165b7cf37c1a774618841766cdf35b917239d95399c4a127f763de",
+				"1bc34609ff3ed18214f088006e96919ba8f415281fc6a3b50831d49b192baf95",
 			],
 		] as const;
 		for (const [oldRelative, owned, digest] of pairs) {
@@ -117,6 +121,7 @@ describe("package bin and help", () => {
 		expect(result.stdout.match(/^  check\s/gm), diagnostic).toHaveLength(1);
 		expect(result.stdout.match(/^  bridge\s/gm), diagnostic).toHaveLength(1);
 		expect(result.stdout.match(/^  render-findings\s/gm), diagnostic).toHaveLength(1);
+		expect(result.stdout, diagnostic).not.toMatch(/^  inject\s/m);
 		expect(result.stdout, diagnostic).toContain(
 			"               check only: 6 warnings, 7 errors, 8 indeterminate coverage.",
 		);

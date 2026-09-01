@@ -53,7 +53,7 @@ const fixedBaseCompatibilitySchema = z.object({
 	fixedBase: z.string().regex(/^[0-9a-f]{40}$/),
 	publicPaths: z.array(z.string()),
 	helpStdoutSha256ByCommand: z.record(z.string(), z.string().regex(/^[0-9a-f]{64}$/)),
-	orderedCases: z.array(compatibilityRecordSchema).length(11),
+	orderedCases: z.array(compatibilityRecordSchema).length(10),
 });
 const compatibility = fixedBaseCompatibilitySchema.parse(compatibilityJson);
 type CompatibilityRecord = z.infer<typeof compatibilityRecordSchema>;
@@ -176,6 +176,14 @@ async function runContext(
 }
 
 describe("fixed-base package CLI compatibility", () => {
+	test("contains no retired injection compatibility entry", () => {
+		expect(
+			compatibility.publicPaths.filter((path) => path === "inject" || path.startsWith("inject ")),
+		).toEqual([]);
+		expect("inject" in compatibility.helpStdoutSha256ByCommand).toBeFalse();
+		expect(compatibility.orderedCases.some((record) => record.argv[0] === "inject")).toBeFalse();
+	});
+
 	for (const record of compatibility.orderedCases) {
 		test(
 			record.name,
