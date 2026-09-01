@@ -46,14 +46,13 @@ export function createCanvasCodexWorkbenchApplication(
 		if (!shutdownSettled || preparePromise !== null) return;
 		options.state.installed = false;
 		options.state.phase = "stopped";
-		options.state.shutdown = null;
+		options.state.shutdown = shutdown;
 	};
 
 	const shutdown = (): Promise<void> => {
 		shutdownRequested = true;
 		if (
 			options.state.phase !== "idle" &&
-			options.state.phase !== "stopped" &&
 			options.state.shutdown !== null &&
 			options.state.shutdown !== shutdown
 		)
@@ -65,10 +64,14 @@ export function createCanvasCodexWorkbenchApplication(
 			);
 		}
 		if (shutdownPromise !== null) return shutdownPromise;
-		if (options.state.phase === "idle" || options.state.phase === "stopped") {
+		if (options.state.phase === "stopped")
+			return Promise.reject(
+				new Error("The stopped Codex application has no terminal shutdown result."),
+			);
+		if (options.state.phase === "idle") {
 			options.state.installed = false;
 			options.state.phase = "stopped";
-			options.state.shutdown = null;
+			options.state.shutdown = shutdown;
 			shutdownSettled = true;
 			shutdownPromise = Promise.resolve();
 			return shutdownPromise;
@@ -108,6 +111,7 @@ export function createCanvasCodexWorkbenchApplication(
 
 	const prepare = (): Promise<CodexWorkbenchSnapshot> => {
 		const phase = options.state.phase;
+		const recoveringFromStopped = phase === "stopped";
 		if (phase === "stopping")
 			return Promise.reject(
 				new Error(
@@ -147,12 +151,24 @@ export function createCanvasCodexWorkbenchApplication(
 				? options.module.reloadProductionCodexWorkbench(installation)
 				: options.module.installProductionCodexWorkbench(installation).start();
 		} catch (error) {
+			if (recoveringFromStopped) {
+				const failure = Promise.reject(error) as Promise<CodexWorkbenchSnapshot>;
+				shutdownRequested = true;
+				shutdownSettled = true;
+				// This promise only rejects, so it is both the failed prepare and terminal result.
+				shutdownPromise = failure as unknown as Promise<void>;
+				options.state.installed = false;
+				options.state.phase = "stopped";
+				options.state.shutdown = shutdown;
+				return failure;
+			}
 			options.state.phase = wasInstalled ? "installed" : "idle";
 			options.state.shutdown = wasInstalled ? shutdown : null;
 			return Promise.reject(error);
 		}
 
-		const operation = (async (): Promise<CodexWorkbenchSnapshot> => {
+		let operation!: Promise<CodexWorkbenchSnapshot>;
+		operation = (async (): Promise<CodexWorkbenchSnapshot> => {
 			let result: CodexWorkbenchSnapshot | null = null;
 			let startupFailure: Error | null = null;
 			try {
@@ -180,8 +196,17 @@ export function createCanvasCodexWorkbenchApplication(
 			}
 			if (startupFailure !== null) {
 				options.state.installed = false;
-				options.state.phase = "idle";
-				options.state.shutdown = null;
+				if (recoveringFromStopped) {
+					shutdownRequested = true;
+					shutdownSettled = true;
+					// A rejected prepare has no snapshot value, so its exact promise is terminal-safe.
+					shutdownPromise = operation as unknown as Promise<void>;
+					options.state.phase = "stopped";
+					options.state.shutdown = shutdown;
+				} else {
+					options.state.phase = "idle";
+					options.state.shutdown = null;
+				}
 				throw startupFailure;
 			}
 			options.state.installed = true;
