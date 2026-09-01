@@ -1,11 +1,12 @@
-import type {
-	BrowserAccount,
-	BrowserCommandLease,
-	BrowserLogin,
-	BrowserReadiness,
-	BrowserSnapshot,
-	BrowserThreadLink,
+import { z } from "zod";
+
+import {
+	createCodexBrowserModel,
+	type BrowserCommandLease,
+	type BrowserSnapshot,
+	type IdentityContext,
 } from "../../../shared/codex-browser-model/index.js";
+import type { AnswerSdp } from "../../../shared/codex-realtime-host/index.js";
 import type {
 	BrowserGatewayErrorCode,
 	BrowserWorkbenchAccountReadResult,
@@ -15,25 +16,6 @@ import type {
 	BrowserWorkbenchSnapshotDelta,
 	BrowserWorkbenchSnapshotMessage,
 } from "./contract.js";
-
-const SNAPSHOT_KEYS = [
-	"kind",
-	"version",
-	"readiness",
-	"account",
-	"login",
-	"threadLink",
-	"timeline",
-	"queue",
-	"settings",
-	"approvals",
-	"dynamicApprovals",
-	"semantic",
-	"coordinator",
-	"voice",
-	"lease",
-	"operation",
-] as const;
 
 const DELTA_KEYS = new Set([
 	"readiness",
@@ -73,19 +55,8 @@ const GATEWAY_ERROR_CODES = new Set<BrowserGatewayErrorCode>([
 	"outcome_unknown",
 ]);
 
-const READINESS_KEYS: Record<BrowserReadiness["state"], readonly string[]> = {
-	stopped: ["kind", "state", "reason"],
-	backoff: ["kind", "state", "retryAtMs", "reason"],
-	initialized: ["kind", "state"],
-	storage_mismatch: ["kind", "state", "reason"],
-	login_capable: ["kind", "state"],
-	signed_out: ["kind", "state"],
-	login_pending: ["kind", "state", "loginId"],
-	account_ready: ["kind", "state"],
-	thread_capable: ["kind", "state"],
-	reconnecting: ["kind", "state", "reason"],
-	incompatible_contract: ["kind", "state", "reason"],
-};
+const WIRE_IDENTITY_MAX_BYTES = 16_384;
+const WIRE_VALUE_MAX_BYTES = 16_384;
 
 export class BrowserWorkbenchWireError extends Error {
 	override readonly name = "BrowserWorkbenchWireError";
@@ -104,13 +75,29 @@ function fail(message: string): never {
 	throw new BrowserWorkbenchWireError(message);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function record(value: unknown, message: string): Record<string, unknown> {
-	if (value === null || typeof value !== "object" || Array.isArray(value)) fail(message);
-	return value as Record<string, unknown>;
+	if (!isRecord(value)) fail(message);
+	return value;
 }
 
 function nonEmptyString(value: unknown, message: string): asserts value is string {
 	if (typeof value !== "string" || value.length === 0) fail(message);
+}
+
+function boundedString(
+	value: unknown,
+	message: string,
+	maximum = WIRE_VALUE_MAX_BYTES,
+	allowEmpty = false,
+): asserts value is string {
+	if (typeof value !== "string" || (!allowEmpty && value.length === 0)) fail(message);
+	if (value.includes("\0") || value.trim() !== value)
+		fail(`${message} (the value is not a valid wire string)`);
+	if (new TextEncoder().encode(value).byteLength > maximum) fail(message);
 }
 
 function nonNegativeSafeInteger(value: unknown, message: string): asserts value is number {
@@ -135,193 +122,89 @@ function assertOptionalKeys(
 	for (const key of Object.keys(value)) if (!keys.includes(key)) fail(message);
 }
 
-function parseReadiness(value: unknown): BrowserReadiness {
-	const parsed = record(value, "The Codex workbench readiness is malformed.");
-	if (parsed.kind !== "readiness") fail("The Codex workbench readiness kind is invalid.");
-	const state = parsed.state;
-	if (typeof state !== "string" || !(state in READINESS_KEYS))
-		fail("The Codex workbench readiness state is invalid.");
-	assertExactKeys(
-		parsed,
-		READINESS_KEYS[state as BrowserReadiness["state"]],
-		"The Codex workbench readiness fields are invalid.",
+function parseIdentity(value: unknown, domain: string): string {
+	boundedString(
+		value,
+		`The Codex workbench ${domain} identity is invalid.`,
+		WIRE_IDENTITY_MAX_BYTES,
 	);
-	if (state === "backoff")
-		nonNegativeSafeInteger(parsed.retryAtMs, "The Codex workbench retry time is invalid.");
-	if (
-		state === "stopped" ||
-		state === "storage_mismatch" ||
-		state === "reconnecting" ||
-		state === "incompatible_contract"
-	)
-		nonEmptyString(parsed.reason, "The Codex workbench readiness reason is invalid.");
-	if (state === "login_pending")
-		nonEmptyString(parsed.loginId, "The Codex workbench login id is invalid.");
-	return parsed as unknown as BrowserReadiness;
+	return value;
 }
 
-function parseAccount(value: unknown): BrowserAccount {
-	const parsed = record(value, "The Codex workbench account is malformed.");
-	if (parsed.kind !== "account") fail("The Codex workbench account kind is invalid.");
-	switch (parsed.state) {
-		case "unknown":
-			assertExactKeys(
-				parsed,
-				["kind", "state", "reason"],
-				"The Codex workbench account fields are invalid.",
-			);
-			nonEmptyString(parsed.reason, "The Codex workbench account reason is invalid.");
-			break;
-		case "signed_out":
-			assertExactKeys(parsed, ["kind", "state"], "The Codex workbench account fields are invalid.");
-			break;
-		case "login_pending":
-			assertExactKeys(
-				parsed,
-				["kind", "state", "loginId", "variant"],
-				"The Codex workbench account fields are invalid.",
-			);
-			nonEmptyString(parsed.loginId, "The Codex workbench account login id is invalid.");
-			nonEmptyString(parsed.variant, "The Codex workbench account variant is invalid.");
-			break;
-		case "ready":
-			assertExactKeys(
-				parsed,
-				["kind", "state", "accountType"],
-				"The Codex workbench account fields are invalid.",
-			);
-			nonEmptyString(parsed.accountType, "The Codex workbench account type is invalid.");
-			break;
-		case "failed":
-			assertExactKeys(
-				parsed,
-				["kind", "state", "reason"],
-				"The Codex workbench account fields are invalid.",
-			);
-			nonEmptyString(parsed.reason, "The Codex workbench account reason is invalid.");
-			break;
-		default:
-			fail("The Codex workbench account state is invalid.");
+function parseOperationIdentity(value: unknown): string {
+	return parseIdentity(value, "operation");
+}
+
+/*
+ * The browser receives identities already issued by the server, but it does
+ * not own the server's issuance ledger. This inert context lets the public
+ * shared browser model validate every closed DTO while leaving authority and
+ * current-epoch checks to the gateway. It deliberately validates strings and
+ * preserves the model's exact object, enum, cross-field, and bounded-text
+ * checks instead of copying those schemas into the UI.
+ */
+const wireIdentityContext = {
+	validator: {
+		childId: "wire-child",
+		epoch: "wire-epoch",
+		assertCurrentEpoch: () => undefined,
+	},
+	decoder: {
+		parseChildId: (value: unknown) => parseIdentity(value, "child"),
+		parseChildEpoch: (value: unknown) => parseIdentity(value, "epoch"),
+		parseBrowserCommandId: (value: unknown) => parseIdentity(value, "browser-command"),
+		parseThreadId: (value: unknown) => parseIdentity(value, "thread"),
+		parseTurnId: (value: unknown) => parseIdentity(value, "turn"),
+		parseItemId: (value: unknown) => parseIdentity(value, "item"),
+		parseQueuedSubmissionId: (value: unknown) => parseIdentity(value, "queued-submission"),
+		parseLoginId: (value: unknown) => parseIdentity(value, "login"),
+		parseJsonRpcRequestId: (value: unknown) => parseIdentity(value, "json-rpc-request"),
+		parseDynamicToolCallId: (value: unknown) => parseIdentity(value, "dynamic-tool-call"),
+		parseRealtimeSessionId: (value: unknown) => parseIdentity(value, "realtime-session"),
+		parseApprovalId: (value: unknown) => parseIdentity(value, "approval"),
+	},
+	operation: {
+		decoder: { parseOperationId: parseOperationIdentity },
+		validator: { assertCurrentOperationId: () => undefined },
+	},
+} as unknown as IdentityContext;
+
+const browserModel = createCodexBrowserModel(wireIdentityContext);
+
+function cloneImmutable<T>(value: T): T {
+	if (Array.isArray(value))
+		return Object.freeze(value.map((entry) => cloneImmutable(entry))) as unknown as T;
+	if (isRecord(value)) {
+		const clone: Record<string, unknown> = {};
+		for (const [key, entry] of Object.entries(value)) clone[key] = cloneImmutable(entry);
+		return Object.freeze(clone) as T;
 	}
-	return parsed as unknown as BrowserAccount;
+	return value;
 }
 
-function parseLogin(value: unknown): BrowserLogin {
-	const parsed = record(value, "The Codex workbench login is malformed.");
-	if (parsed.kind !== "login") fail("The Codex workbench login kind is invalid.");
-	switch (parsed.state) {
-		case "idle":
-			assertExactKeys(parsed, ["kind", "state"], "The Codex workbench login fields are invalid.");
-			break;
-		case "pending":
-			assertExactKeys(
-				parsed,
-				["kind", "state", "loginId", "variant"],
-				"The Codex workbench login fields are invalid.",
-			);
-			nonEmptyString(parsed.loginId, "The Codex workbench login id is invalid.");
-			nonEmptyString(parsed.variant, "The Codex workbench login variant is invalid.");
-			break;
-		case "completed":
-		case "cancelled":
-			assertExactKeys(
-				parsed,
-				["kind", "state", "loginId"],
-				"The Codex workbench login fields are invalid.",
-			);
-			nonEmptyString(parsed.loginId, "The Codex workbench login id is invalid.");
-			break;
-		case "failed":
-			assertExactKeys(
-				parsed,
-				["kind", "state", "loginId", "reason"],
-				"The Codex workbench login fields are invalid.",
-			);
-			if (parsed.loginId !== null)
-				nonEmptyString(parsed.loginId, "The Codex workbench login id is invalid.");
-			nonEmptyString(parsed.reason, "The Codex workbench login reason is invalid.");
-			break;
-		default:
-			fail("The Codex workbench login state is invalid.");
+function parseModel<T>(description: string, parse: () => T): T {
+	try {
+		return parse();
+	} catch (error) {
+		if (error instanceof BrowserWorkbenchWireError) throw error;
+		const detail = error instanceof Error ? error.message : "the value failed validation";
+		fail(`${description}: ${detail}`);
 	}
-	return parsed as unknown as BrowserLogin;
 }
 
-function parseThreadLink(value: unknown): BrowserThreadLink {
-	const parsed = record(value, "The Codex workbench thread link is malformed.");
-	if (parsed.kind !== "thread_link") fail("The Codex workbench thread link kind is invalid.");
-	if (
-		parsed.state !== "unbound" &&
-		parsed.state !== "inspect_only" &&
-		parsed.state !== "executable"
-	)
-		fail("The Codex workbench thread link state is invalid.");
-	assertExactKeys(
-		parsed,
-		[
-			"kind",
-			"state",
-			"childId",
-			"epoch",
-			"threadId",
-			"source",
-			"status",
-			"loaded",
-			"canAcceptDirectInput",
-			"reason",
-		],
-		"The Codex workbench thread link fields are invalid.",
+export function parseBrowserSnapshot(value: unknown): BrowserSnapshot {
+	const parsed = parseModel("The Codex workbench snapshot is malformed", () =>
+		browserModel.BrowserSnapshotSchema.parse(value),
 	);
-	if (parsed.state === "unbound") {
-		if (
-			parsed.childId !== null ||
-			parsed.epoch !== null ||
-			parsed.threadId !== null ||
-			parsed.source !== null
-		)
-			fail("The unbound workbench thread link contains a target.");
-		if (
-			parsed.status !== "notLoaded" ||
-			parsed.loaded !== false ||
-			parsed.canAcceptDirectInput !== false
-		)
-			fail("The unbound workbench thread link flags are invalid.");
-	}
-	if (parsed.state === "inspect_only") {
-		if (parsed.childId !== null || parsed.epoch !== null || typeof parsed.threadId !== "string")
-			fail("The inspect-only workbench thread link target is invalid.");
-		if (parsed.loaded !== true && parsed.loaded !== false)
-			fail("The inspect-only workbench thread link load flag is invalid.");
-		if (parsed.canAcceptDirectInput !== false)
-			fail("The inspect-only workbench thread link input flag is invalid.");
-	}
-	if (parsed.state === "executable") {
-		nonEmptyString(parsed.childId, "The executable workbench child id is invalid.");
-		nonEmptyString(parsed.epoch, "The executable workbench epoch is invalid.");
-		nonEmptyString(parsed.threadId, "The executable workbench thread id is invalid.");
-		if (parsed.loaded !== true || parsed.canAcceptDirectInput !== true)
-			fail("The executable workbench thread link flags are invalid.");
-	}
-	return parsed as unknown as BrowserThreadLink;
+	return cloneImmutable(parsed) as BrowserSnapshot;
 }
 
 export function parseBrowserCommandLease(value: unknown): BrowserCommandLease | null {
 	if (value === null) return null;
-	const parsed = record(value, "The Codex workbench lease is malformed.");
-	assertExactKeys(
-		parsed,
-		["kind", "commandId", "paneId", "childId", "epoch", "state", "expiresAtMs"],
-		"The Codex workbench lease fields are invalid.",
+	const parsed = parseModel("The Codex workbench lease is malformed", () =>
+		browserModel.BrowserCommandLeaseSchema.parse(value),
 	);
-	if (parsed.kind !== "command_lease") fail("The Codex workbench lease kind is invalid.");
-	nonEmptyString(parsed.commandId, "The Codex workbench lease command id is invalid.");
-	nonEmptyString(parsed.paneId, "The Codex workbench lease pane id is invalid.");
-	nonEmptyString(parsed.childId, "The Codex workbench lease child id is invalid.");
-	nonEmptyString(parsed.epoch, "The Codex workbench lease epoch is invalid.");
-	if (parsed.state !== "active" && parsed.state !== "expired" && parsed.state !== "released")
-		fail("The Codex workbench lease state is invalid.");
-	nonNegativeSafeInteger(parsed.expiresAtMs, "The Codex workbench lease expiry is invalid.");
-	return parsed as unknown as BrowserCommandLease;
+	return cloneImmutable(parsed) as BrowserCommandLease;
 }
 
 export function parseRequiredBrowserCommandLease(value: unknown): BrowserCommandLease {
@@ -330,71 +213,41 @@ export function parseRequiredBrowserCommandLease(value: unknown): BrowserCommand
 	return parsed;
 }
 
-function assertSnapshotShape(value: Record<string, unknown>): void {
-	assertExactKeys(value, SNAPSHOT_KEYS, "The Codex workbench snapshot fields are invalid.");
-	if (value.kind !== "snapshot" || value.version !== 1)
-		fail("The Codex workbench snapshot version is incompatible.");
-	parseReadiness(value.readiness);
-	parseAccount(value.account);
-	parseLogin(value.login);
-	parseThreadLink(value.threadLink);
-	if (value.timeline !== null) record(value.timeline, "The Codex workbench timeline is malformed.");
-	record(value.queue, "The Codex workbench queue is malformed.");
-	if (!Array.isArray(value.settings)) fail("The Codex workbench settings are malformed.");
-	if (!Array.isArray(value.approvals)) fail("The Codex workbench approvals are malformed.");
-	if (!Array.isArray(value.dynamicApprovals))
-		fail("The Codex workbench dynamic approvals are malformed.");
-	if (value.semantic !== null)
-		record(value.semantic, "The Codex workbench semantic state is malformed.");
-	record(value.coordinator, "The Codex workbench coordinator is malformed.");
-	record(value.voice, "The Codex workbench voice state is malformed.");
-	parseBrowserCommandLease(value.lease);
-	if (value.operation !== null)
-		record(value.operation, "The Codex workbench operation is malformed.");
-}
-
-export function parseBrowserSnapshot(value: unknown): BrowserSnapshot {
-	const parsed = record(value, "The Codex workbench snapshot is malformed.");
-	assertSnapshotShape(parsed);
-	return parsed as unknown as BrowserSnapshot;
-}
-
 function parseDeltaValue(key: string, value: unknown): unknown {
-	if (value === undefined) fail("The Codex workbench delta cannot contain undefined.");
-	switch (key) {
-		case "readiness":
-			return parseReadiness(value);
-		case "account":
-			return parseAccount(value);
-		case "login":
-			return parseLogin(value);
-		case "threadLink":
-			return parseThreadLink(value);
-		case "timeline":
-			if (value !== null) record(value, "The Codex workbench timeline delta is malformed.");
-			return value;
-		case "queue":
-			return record(value, "The Codex workbench queue delta is malformed.");
-		case "settings":
-		case "approvals":
-		case "dynamicApprovals":
-			if (!Array.isArray(value)) fail(`The Codex workbench ${key} delta is malformed.`);
-			return value;
-		case "semantic":
-			if (value !== null) record(value, "The Codex workbench semantic delta is malformed.");
-			return value;
-		case "coordinator":
-			return record(value, "The Codex workbench coordinator delta is malformed.");
-		case "voice":
-			return record(value, "The Codex workbench voice delta is malformed.");
-		case "lease":
-			return parseBrowserCommandLease(value);
-		case "operation":
-			if (value !== null) record(value, "The Codex workbench operation delta is malformed.");
-			return value;
-		default:
-			fail(`The Codex workbench delta key ${JSON.stringify(key)} is invalid.`);
-	}
+	return parseModel(`The Codex workbench ${key} delta is malformed`, () => {
+		switch (key) {
+			case "readiness":
+				return browserModel.BrowserReadinessSchema.parse(value);
+			case "account":
+				return browserModel.BrowserAccountSchema.parse(value);
+			case "login":
+				return browserModel.BrowserLoginSchema.parse(value);
+			case "threadLink":
+				return browserModel.BrowserThreadLinkSchema.parse(value);
+			case "timeline":
+				return browserModel.BrowserTimelineSchema.nullable().parse(value);
+			case "queue":
+				return browserModel.BrowserQueueSchema.parse(value);
+			case "settings":
+				return z.array(browserModel.BrowserSettingsSchema).parse(value);
+			case "approvals":
+				return z.array(browserModel.BrowserApprovalSchema).parse(value);
+			case "dynamicApprovals":
+				return z.array(browserModel.BrowserDynamicApprovalSchema).parse(value);
+			case "semantic":
+				return browserModel.BrowserSemanticDeliverySchema.nullable().parse(value);
+			case "coordinator":
+				return browserModel.BrowserCoordinatorSchema.parse(value);
+			case "voice":
+				return browserModel.BrowserVoiceSchema.parse(value);
+			case "lease":
+				return browserModel.BrowserCommandLeaseSchema.nullable().parse(value);
+			case "operation":
+				return browserModel.BrowserOperationOutcomeSchema.nullable().parse(value);
+			default:
+				return fail(`The Codex workbench delta key ${JSON.stringify(key)} is invalid.`);
+		}
+	});
 }
 
 export function parseBrowserGatewayMessage(value: unknown): BrowserWorkbenchGatewayMessage {
@@ -408,7 +261,7 @@ export function parseBrowserGatewayMessage(value: unknown): BrowserWorkbenchGate
 			["kind", "sequence", "snapshot"],
 			"The Codex workbench snapshot message fields are invalid.",
 		);
-		return Object.freeze({
+		return cloneImmutable({
 			kind: "snapshot",
 			sequence: parsed.sequence,
 			snapshot: parseBrowserSnapshot(parsed.snapshot),
@@ -424,9 +277,10 @@ export function parseBrowserGatewayMessage(value: unknown): BrowserWorkbenchGate
 	for (const key of Object.keys(deltaRecord)) {
 		if (!DELTA_KEYS.has(key))
 			fail(`The Codex workbench delta key ${JSON.stringify(key)} is invalid.`);
+		if (deltaRecord[key] === undefined) fail("The Codex workbench delta cannot contain undefined.");
 		delta[key] = parseDeltaValue(key, deltaRecord[key]);
 	}
-	return Object.freeze({
+	return cloneImmutable({
 		kind: "delta",
 		sequence: parsed.sequence,
 		delta: delta as BrowserWorkbenchSnapshotDelta,
@@ -452,6 +306,19 @@ function parseGatewayCode(value: unknown): BrowserGatewayErrorCode | null {
 	return value as BrowserGatewayErrorCode;
 }
 
+function parseRealtimeAnswer(value: unknown): AnswerSdp {
+	const parsed = record(value, "The Codex workbench realtime answer is malformed.");
+	assertExactKeys(
+		parsed,
+		["sessionId", "correlationId", "sdp"],
+		"The Codex workbench realtime answer fields are invalid.",
+	);
+	boundedString(parsed.sessionId, "The Codex workbench realtime session id is invalid.");
+	boundedString(parsed.correlationId, "The Codex workbench realtime correlation id is invalid.");
+	boundedString(parsed.sdp, "The Codex workbench realtime SDP is invalid.");
+	return cloneImmutable(parsed) as unknown as AnswerSdp;
+}
+
 export function parseBrowserCommandResult(value: unknown): BrowserWorkbenchCommandResult {
 	const parsed = record(value, "The Codex workbench command result is malformed.");
 	assertOptionalKeys(
@@ -469,19 +336,24 @@ export function parseBrowserCommandResult(value: unknown): BrowserWorkbenchComma
 		"The Codex workbench command result fields are invalid.",
 	);
 	if (parsed.kind !== "command_result") fail("The Codex workbench command result kind is invalid.");
-	if (parsed.commandId !== null)
-		nonEmptyString(parsed.commandId, "The Codex workbench command result id is invalid.");
+	if (parsed.commandId !== null) parseIdentity(parsed.commandId, "browser-command");
 	if (!parseDeliveryOutcome(parsed.outcome))
 		fail("The Codex workbench command result outcome is invalid.");
 	parseGatewayCode(parsed.code);
-	if (parsed.message !== null && typeof parsed.message !== "string")
-		fail("The Codex workbench command result message is invalid.");
+	if (parsed.message !== null)
+		boundedString(
+			parsed.message,
+			"The Codex workbench command result message is invalid.",
+			16_384,
+			true,
+		);
 	const snapshot = parseBrowserSnapshot(parsed.snapshot);
-	if (Object.hasOwn(parsed, "realtimeSessionHandle"))
-		nonEmptyString(parsed.realtimeSessionHandle, "The Codex workbench realtime handle is invalid.");
+	const result: Record<string, unknown> = { ...parsed, snapshot };
 	if (Object.hasOwn(parsed, "realtimeAnswer"))
-		record(parsed.realtimeAnswer, "The Codex workbench realtime answer is malformed.");
-	return { ...parsed, snapshot } as unknown as BrowserWorkbenchCommandResult;
+		result.realtimeAnswer = parseRealtimeAnswer(parsed.realtimeAnswer);
+	if (Object.hasOwn(parsed, "realtimeSessionHandle"))
+		parseIdentity(parsed.realtimeSessionHandle, "browser-command");
+	return cloneImmutable(result) as unknown as BrowserWorkbenchCommandResult;
 }
 
 export function parseBrowserAccountReadResult(value: unknown): BrowserWorkbenchAccountReadResult {
@@ -495,12 +367,17 @@ export function parseBrowserAccountReadResult(value: unknown): BrowserWorkbenchA
 	if (!parseDeliveryOutcome(parsed.outcome))
 		fail("The Codex workbench account result outcome is invalid.");
 	parseGatewayCode(parsed.code);
-	if (parsed.message !== null && typeof parsed.message !== "string")
-		fail("The Codex workbench account result message is invalid.");
-	return {
+	if (parsed.message !== null)
+		boundedString(
+			parsed.message,
+			"The Codex workbench account result message is invalid.",
+			16_384,
+			true,
+		);
+	return cloneImmutable({
 		...parsed,
 		snapshot: parseBrowserSnapshot(parsed.snapshot),
-	} as unknown as BrowserWorkbenchAccountReadResult;
+	}) as BrowserWorkbenchAccountReadResult;
 }
 
 export function parseBrowserResponse(value: unknown): BrowserWorkbenchResponseEnvelope {
@@ -517,7 +394,7 @@ export function parseBrowserResponse(value: unknown): BrowserWorkbenchResponseEn
 			["type", "requestId", "action", "ok", "value"],
 			"The Codex workbench success response fields are invalid.",
 		);
-		return parsed as unknown as BrowserWorkbenchResponseEnvelope;
+		return cloneImmutable(parsed) as unknown as BrowserWorkbenchResponseEnvelope;
 	}
 	if (parsed.ok === false) {
 		assertExactKeys(
@@ -526,7 +403,7 @@ export function parseBrowserResponse(value: unknown): BrowserWorkbenchResponseEn
 			"The Codex workbench failure response fields are invalid.",
 		);
 		nonEmptyString(parsed.error, "The Codex workbench failure message is invalid.");
-		return parsed as unknown as BrowserWorkbenchResponseEnvelope;
+		return cloneImmutable(parsed) as unknown as BrowserWorkbenchResponseEnvelope;
 	}
 	fail("The Codex workbench response success flag is invalid.");
 }

@@ -1,4 +1,4 @@
-import { SOCKET_RECONNECT_MS } from "../../../shared/timing/timing.js";
+import { CODEX_REQUEST_SETTLEMENT_MS, SOCKET_RECONNECT_MS } from "../../../shared/timing/timing.js";
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
@@ -63,6 +63,7 @@ interface PendingRequest {
 	readonly commandId: BrowserCommandLease["commandId"] | null;
 	readonly resolve: (value: unknown) => void;
 	readonly reject: (error: BrowserWorkbenchTransportError) => void;
+	timer: ReturnType<typeof setTimeout> | null;
 }
 
 interface SocketRun {
@@ -89,6 +90,48 @@ function messageOf(error: unknown, fallback: string): string {
 
 function socketOpen(socket: BrowserWorkbenchSocket): boolean {
 	return socket.readyState === SOCKET_OPEN;
+}
+
+function clearPendingTimer(pending: PendingRequest): void {
+	if (pending.timer !== null) {
+		clearTimeout(pending.timer);
+		pending.timer = null;
+	}
+}
+
+function sameLeaseTarget(
+	left: Pick<BrowserCommandLease, "commandId" | "paneId" | "childId" | "epoch">,
+	right: Pick<BrowserCommandLease, "commandId" | "paneId" | "childId" | "epoch">,
+): boolean {
+	return (
+		left.commandId === right.commandId &&
+		left.paneId === right.paneId &&
+		left.childId === right.childId &&
+		left.epoch === right.epoch
+	);
+}
+
+function dynamicCommandMatchesTarget(
+	draft: BrowserCommandDraft,
+	target: BrowserWorkbenchCommandTarget,
+): boolean {
+	if (!isRecord(draft)) return false;
+	const draftRecord = draft as unknown as Record<string, unknown>;
+	const capturedLink = draftRecord.capturedLink;
+	if (!isRecord(capturedLink)) return false;
+	if (
+		capturedLink.threadId !== target.capturedThreadLink.threadId ||
+		capturedLink.childId !== target.capturedThreadLink.childId ||
+		capturedLink.epoch !== target.capturedThreadLink.epoch
+	)
+		return false;
+	const identity = draftRecord.identity;
+	return (
+		isRecord(identity) &&
+		identity.child === target.childId &&
+		identity.epoch === target.epoch &&
+		identity.threadId === target.capturedThreadLink.threadId
+	);
 }
 
 function transportFailure(
@@ -166,6 +209,7 @@ export function createBrowserWorkbenchTransport(
 		message: string,
 	): void => {
 		for (const [requestId, pending] of active.pending) {
+			clearPendingTimer(pending);
 			pending.reject(
 				transportFailure(code, message, pending, {
 					requestId,
@@ -271,13 +315,29 @@ export function createBrowserWorkbenchTransport(
 			action,
 			...extra,
 		};
+		let pending!: PendingRequest;
 		const result = new Promise<unknown>((resolve, reject) => {
-			active.pending.set(requestId, { action, kind, commandId, resolve, reject });
+			pending = { action, kind, commandId, resolve, reject, timer: null };
+			active.pending.set(requestId, pending);
+			pending.timer = setTimeout(() => {
+				if (active.pending.get(requestId) !== pending) return;
+				active.pending.delete(requestId);
+				pending.timer = null;
+				pending.reject(
+					transportFailure(
+						"response_lost",
+						"The Codex workbench response did not arrive before the settlement deadline.",
+						pending,
+						{ requestId, outcome: "outcome_unknown" },
+					),
+				);
+			}, CODEX_REQUEST_SETTLEMENT_MS);
 		});
 		try {
 			active.socket.send(JSON.stringify(request));
 		} catch (error) {
-			active.pending.delete(requestId);
+			if (active.pending.get(requestId) === pending) active.pending.delete(requestId);
+			clearPendingTimer(pending);
 			return Promise.reject(
 				transportFailure(
 					"socket_unavailable",
@@ -424,6 +484,7 @@ export function createBrowserWorkbenchTransport(
 				);
 		} catch (error) {
 			active.pending.delete(requestId);
+			clearPendingTimer(pending);
 			const failure = transportFailure(
 				"incompatible_contract",
 				messageOf(error, "The Codex workbench response is incompatible."),
@@ -435,6 +496,7 @@ export function createBrowserWorkbenchTransport(
 			return;
 		}
 		active.pending.delete(requestId);
+		clearPendingTimer(pending);
 		if (!response.ok) {
 			pending.reject(
 				transportFailure(
@@ -535,11 +597,6 @@ export function createBrowserWorkbenchTransport(
 	};
 
 	const handshake = async (active: SocketRun): Promise<void> => {
-		const connected = parseBrowserSnapshotMessage(
-			await sendRequest(active, "connect", {}, "snapshot"),
-		);
-		if (!isCurrent(active)) return;
-		applyMessage(active, connected, true);
 		const subscribed = parseBrowserSnapshotMessage(
 			await sendRequest(active, "subscribe", {}, "snapshot"),
 		);
@@ -630,6 +687,12 @@ export function createBrowserWorkbenchTransport(
 				},
 			);
 		}
+		if (commandName === "dynamicApprovalRespond" && !dynamicCommandMatchesTarget(draft, target))
+			throw transportFailure(
+				"link_changed",
+				"The dynamic approval target no longer matches the captured workbench link.",
+				{ commandId: target.commandId },
+			);
 		const fullCommand = {
 			...(draft as unknown as Record<string, unknown>),
 			kind: "browser_command",
@@ -656,6 +719,18 @@ export function createBrowserWorkbenchTransport(
 				{
 					commandId: target.commandId,
 				},
+				{ outcome: "outcome_unknown", cause: error },
+			);
+		}
+		if (result.commandId !== target.commandId) {
+			const error = new BrowserWorkbenchWireError(
+				"The Codex workbench command result identity does not match its request.",
+			);
+			incompatible(active, error);
+			throw transportFailure(
+				"incompatible_contract",
+				error.message,
+				{ commandId: target.commandId },
 				{ outcome: "outcome_unknown", cause: error },
 			);
 		}
@@ -832,6 +907,18 @@ export function createBrowserWorkbenchTransport(
 				{ outcome: "outcome_unknown", cause: error },
 			);
 		}
+		if (!sameLeaseTarget(renewed, lease)) {
+			const error = new BrowserWorkbenchWireError(
+				"The renewed workbench lease identity does not match the active lease.",
+			);
+			incompatible(active, error);
+			throw transportFailure(
+				"incompatible_contract",
+				error.message,
+				{ commandId: lease.commandId },
+				{ outcome: "outcome_unknown", cause: error },
+			);
+		}
 		if (isCurrent(active)) {
 			currentLease = renewed;
 			notify();
@@ -858,6 +945,18 @@ export function createBrowserWorkbenchTransport(
 				{
 					commandId: existing.commandId,
 				},
+				{ outcome: "outcome_unknown", cause: error },
+			);
+		}
+		if (released !== null && !sameLeaseTarget(released, existing)) {
+			const error = new BrowserWorkbenchWireError(
+				"The released workbench lease identity does not match the active lease.",
+			);
+			incompatible(active, error);
+			throw transportFailure(
+				"incompatible_contract",
+				error.message,
+				{ commandId: existing.commandId },
 				{ outcome: "outcome_unknown", cause: error },
 			);
 		}

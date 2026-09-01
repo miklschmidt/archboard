@@ -130,7 +130,7 @@ test("transport and media owner share one pane socket and both receive gateway e
 	try {
 		await media.attach(socket as unknown as WebSocket);
 		await transport.attach(socket);
-		expect(socket.sent.filter((request) => request.action === "connect")).toHaveLength(2);
+		expect(socket.sent.filter((request) => request.action === "connect")).toHaveLength(1);
 		expect(socket.sent.filter((request) => request.action === "subscribe")).toHaveLength(2);
 
 		sequence = 3;
