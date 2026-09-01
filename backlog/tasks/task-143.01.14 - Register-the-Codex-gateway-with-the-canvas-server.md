@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 09:58'
+updated_date: '2026-09-01 10:10'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -262,6 +262,12 @@ Own the one production composition root in the canvas server. It instantiates ev
 81. Extend the existing production generation shutdown event owner to require one transport shutdown after ordinary settlement and before the caller's process-stop boundary.
 
 82. Mutation-check each owner against its protected production branch, restore unchanged production through patches, then run sequential capped focused, inventory, type, lint, format, and fixed-base diff gates before commit and callback.
+
+83. Keep generation-level transport count and ordinary-before-transport enforcement, but remove the caller-inserted process marker and its synthetic order claim.
+
+84. Add one public installed-owner shutdown owner using the existing fake process and a deferred fake generation cleanup to prove ordinary settlement, transport shutdown, and process stop order through terminalShutdown.
+
+85. Mutation-check early stopProcess ordering, restore production by reverse patch, then run sequential capped focused owners, inventory, static gates, complete fixed-base diff, commit above 59da30d3, and callback the parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -364,10 +370,12 @@ Ninth rejection remediation above 2be7641a fixes the combined recovery schedule.
 Tenth rejection remediation above 746a4bcf closes the stale-finalizer window with one production-line deletion. Asynchronous recovery failure still publishes the exact recovery promise and shutdown owner, but it leaves the shared phase non-recoverable until the owning outer finally clears preparePromise and performs the sole stopped transition. A queued replacement prepare therefore observes stopping and refuses before it can install or publish. The synchronous failure path is unchanged because it has no pending finalizer. The public gated owner uses promise reaction order to place source D between failure publication and B finalization. Rejected head reproduced three installs and three starts in that window. The fixed owner runs fulfilled and rejected concurrent teardown schedules, proves D observes stopping and refuses, preserves B's exact startup or AggregateError terminal result across B, C, and D, then starts one later D cycle and proves source E tears D down exactly once. Final named 6 GiB/1 GiB validation: application owners 9 pass, 0 fail, 132 assertions; focused non-hot canvas and transport owners 66 pass, 0 fail, 484 assertions; production system owners 8 pass, 0 fail, 118 assertions; repository inventory 39 pass, 0 fail, 69 assertions. Both TypeScript projects, lint with 0 warnings and errors, formatting, and diff checks pass. No known OOM fingerprint was rerun. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
 
 Eleventh rereview remediation above 1fd13fb8 is test-only. A new public synchronous recovery owner throws from installation after an initial cycle has stopped. It proves the failed prepare remains stopped under the recovery source, same-source and replacement-source shutdown replay the exact promise and error, setup stops before install and start, and one later clean recovery creates a distinct cycle. Removing the synchronous recoveringFromStopped catch produced the intended red result: phase idle and shutdown null instead of stopped exact ownership. The catch was restored byte-for-byte. The existing generation shutdown owner now requires one transport shutdown after ordinary settlement and before the caller advances to process stop. Removing the lifecycle transport shutdown call produced zero transport events and failed the owner; the line was restored byte-for-byte. Final named 6 GiB/1 GiB validation: focused application and generation owners 11 pass, 0 fail, 162 assertions; repository inventory 39 pass, 0 fail, 69 assertions. Both TypeScript projects, lint with 0 warnings and errors, formatting, and the complete fixed-base diff check pass. No known OOM fingerprint was rerun. No production file differs from 1fd13fb8. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
+
+Twelfth rereview remediation above 59da30d3 is test-only. The generation owner no longer appends a synthetic process-stop marker or claims an ordering relation it cannot observe; it retains exact transport-shutdown cardinality and ordinary-settlement-before-transport enforcement. A new public production-owner shutdown test uses the existing fake process and a deferred generation cleanup, then proves ordinary settlement, transport shutdown, and the real process stop each occur once and in that order. Moving stopProcess ahead of graph cleanup produced the intended red result: the owner lane reported 10 pass, 1 fail, 43 assertions, with transport at event index 4 after process stop at index 2. Production was restored byte-for-byte. Final sequential named 6 GiB memory / 1 GiB swap validation: focused application/generation owners 22 pass, 0 fail, 204 assertions; repository inventory 39 pass, 0 fail, 69 assertions; both TypeScript projects, lint with 0 warnings/errors, formatting, and fixed-base diff check pass. No known OOM fingerprint was rerun. No production file differs from 59da30d3. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Added test-only enforcement for synchronous stopped-recovery ownership and normal shutdown transport ordering. Both mutation checks fail at their protected lines; restored production passes focused application and generation, inventory, type, lint, format, and fixed-base diff checks. Task status and acceptance criteria remain unchanged for parent rereview.
+Replaced the synthetic shutdown-order assertion with a public owner-path test that observes the existing fake process. The early-process-stop mutation fails the new owner; restored production passes focused owners, inventory, type, lint, format, and fixed-base diff checks. Task status and acceptance criteria remain unchanged for parent rereview.
 <!-- SECTION:FINAL_SUMMARY:END -->
