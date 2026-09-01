@@ -85,6 +85,7 @@ export function createTransportEvents(): TransportEvents {
 	const issueListeners = new Set<Listener<TransportIssue>>();
 	const stderrListeners = new Set<Listener<TransportStderrChunk>>();
 	const exitListeners = new Set<Listener<TransportExit>>();
+	let terminalExit: TransportExit | null = null;
 
 	const recordIssue = (issue: TransportIssue): void => {
 		if (issues.length >= CODEX_APP_SERVER_CAPACITY.retention.issues) issues.shift();
@@ -190,14 +191,23 @@ export function createTransportEvents(): TransportEvents {
 		emitServerNotification: (event: TransportServerNotification) =>
 			emitTo(notificationListeners, event, "notification"),
 		emitStderr,
-		emitExit: (event: TransportExit) => emitTo(exitListeners, event, "stdout"),
+		emitExit: (event: TransportExit) => {
+			if (terminalExit !== null) return;
+			terminalExit = event;
+			emitTo(exitListeners, terminalExit, "stdout");
+			exitListeners.clear();
+		},
 		onServerRequest: (listener: Listener<TransportServerRequest>) =>
 			subscribe(requestListeners, listener),
 		onServerNotification: (listener: Listener<TransportServerNotification>) =>
 			subscribe(notificationListeners, listener),
 		onIssue: (listener: Listener<TransportIssue>) => subscribe(issueListeners, listener),
 		onStderr: (listener: Listener<TransportStderrChunk>) => subscribe(stderrListeners, listener),
-		onExit: (listener: Listener<TransportExit>) => subscribe(exitListeners, listener),
+		onExit: (listener: Listener<TransportExit>) => {
+			if (terminalExit === null) return subscribe(exitListeners, listener);
+			emitTo(new Set([listener]), terminalExit, "stdout");
+			return () => undefined;
+		},
 		inspectIssues: () => Object.freeze([...issues]),
 		inspectStderr: (): TransportStderrSnapshot =>
 			Object.freeze({

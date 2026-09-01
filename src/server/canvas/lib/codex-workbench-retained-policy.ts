@@ -36,7 +36,7 @@ const RUNTIME_KEYS = Object.freeze([
 	"sessionInitialized",
 	"accountReady",
 	"released",
-	"exit",
+	"exitBridge",
 ] satisfies readonly (keyof CodexWorkbenchOwnerRuntime)[]);
 const TRANSPORT_KEYS = Object.freeze([
 	"replaceIdentity",
@@ -227,27 +227,28 @@ export function assertCodexWorkbenchRetainedState(retained: CodexWorkbenchRetain
 				"invalid_retained_state",
 				"The retained Codex coordination state contains a hidden descendant.",
 			);
-	assertPlainRecord(runtime.exit, "The retained Codex child-exit observer");
-	exactOwnKeys(
-		runtime.exit,
-		["event", "listener", "unsubscribe"],
-		"The retained Codex child-exit observer",
-	);
-	assertStableFunction(runtime.exit.listener, "The retained Codex child-exit listener");
-	if (runtime.exit.unsubscribe !== null)
-		assertStableFunction(runtime.exit.unsubscribe, "The retained Codex child-exit disposer");
-	if (runtime.exit.event !== null) {
-		assertPlainRecord(runtime.exit.event, "The retained Codex child-exit event");
+	assertPlainRecord(runtime.exitBridge, "The retained Codex child-exit bridge");
+	exactOwnKeys(runtime.exitBridge, ["event", "handler"], "The retained Codex child-exit bridge");
+	if (runtime.exitBridge.handler !== null)
+		assertCallableRecord(
+			runtime.exitBridge.handler,
+			["handle"],
+			"The retained Codex replaceable child-exit handler",
+		);
+	if (runtime.exitBridge.event !== null) {
+		assertPlainRecord(runtime.exitBridge.event, "The retained Codex child-exit event");
 		exactOwnKeys(
-			runtime.exit.event,
+			runtime.exitBridge.event,
 			["child", "epoch", "code", "signal"],
 			"The retained Codex child-exit event",
 		);
 		if (
-			typeof runtime.exit.event.child !== "string" ||
-			typeof runtime.exit.event.epoch !== "string" ||
-			(runtime.exit.event.code !== null && !Number.isSafeInteger(runtime.exit.event.code)) ||
-			(runtime.exit.event.signal !== null && typeof runtime.exit.event.signal !== "string")
+			typeof runtime.exitBridge.event.child !== "string" ||
+			typeof runtime.exitBridge.event.epoch !== "string" ||
+			(runtime.exitBridge.event.code !== null &&
+				!Number.isSafeInteger(runtime.exitBridge.event.code)) ||
+			(runtime.exitBridge.event.signal !== null &&
+				typeof runtime.exitBridge.event.signal !== "string")
 		)
 			throw new CodexWorkbenchCompositionError(
 				"invalid_retained_state",

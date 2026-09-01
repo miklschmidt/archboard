@@ -85,6 +85,8 @@ export interface RealtimeHarness {
 }
 
 class PublicChildBridge extends EventEmitter implements CodexTransportChild {
+	exitCode: number | null = null;
+	signalCode: NodeJS.Signals | null = null;
 	readonly stdin: CodexProcessChild["stdin"];
 	readonly stdout: CodexProcessChild["stdout"];
 	readonly stderr: CodexProcessChild["stderr"];

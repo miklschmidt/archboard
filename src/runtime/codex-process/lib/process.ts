@@ -112,6 +112,8 @@ export interface CodexProcessSnapshot {
 
 export interface CodexProcessChild {
 	readonly pid: number;
+	readonly exitCode: number | null;
+	readonly signalCode: NodeJS.Signals | null;
 	readonly stdin: Writable;
 	readonly stdout: Readable;
 	readonly stderr: Readable;
@@ -510,6 +512,12 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 	function publicChild(record: ChildRecord): CodexProcessChild {
 		const child: CodexProcessChild = {
 			pid: record.child.pid!,
+			get exitCode() {
+				return record.child.exitCode;
+			},
+			get signalCode() {
+				return record.child.signalCode;
+			},
 			stdin: record.child.stdin,
 			stdout: record.child.stdout,
 			stderr: record.child.stderr,

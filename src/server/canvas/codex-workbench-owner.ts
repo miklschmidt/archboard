@@ -7,6 +7,7 @@ export {
 } from "./lib/codex-workbench.js";
 export type {
 	CodexWorkbenchGenerationInput,
+	CodexWorkbenchKernelAcquisition,
 	CodexWorkbenchGeneration,
 	CodexWorkbenchGenerationFactory,
 	CodexWorkbenchOwner,
