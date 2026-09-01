@@ -223,11 +223,17 @@ test("the production generation creates every owner once before readiness and sh
 	for (const listener of notificationListeners) listener({} as never);
 	await stopping;
 	generation.finishStop();
+	events.push("process:stop");
 	expect(events.indexOf("browser:remove")).toBeLessThan(events.indexOf("gateway:dispose"));
 	expect(events.indexOf("gateway:dispose")).toBeLessThan(events.indexOf("realtime:stop"));
 	expect(events.indexOf("realtime:stop")).toBeLessThan(events.indexOf("queue:stop"));
 	expect(events).toContain("dynamic:cancel:host_shutdown");
 	expect(events).toContain("ordinary:settle:host_shutdown");
+	expect(events.filter((event) => event === "transport:shutdown")).toHaveLength(1);
+	expect(events.indexOf("ordinary:settle:host_shutdown")).toBeLessThan(
+		events.indexOf("transport:shutdown"),
+	);
+	expect(events.indexOf("transport:shutdown")).toBeLessThan(events.indexOf("process:stop"));
 	expect(events.filter((event) => event === "approval-projection:remove")).toHaveLength(1);
 	expect(events.filter((event) => event === "epoch:close")).toHaveLength(1);
 });
