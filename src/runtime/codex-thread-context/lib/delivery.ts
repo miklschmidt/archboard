@@ -533,8 +533,9 @@ async function deliverOne(
 	return outcome(event, options, "delivered", null, true, payload);
 }
 
-export function createCodexThreadContextDelivery(
+function createDelivery(
 	options: CodexThreadContextDeliveryOptions,
+	subscribe: boolean,
 ): CodexThreadContextDelivery {
 	const pending = new Map<string, Promise<CodexThreadContextDeliveryOutcome>>();
 	const settled = new Map<string, CodexThreadContextDeliveryOutcome>();
@@ -576,9 +577,11 @@ export function createCodexThreadContextDelivery(
 		return promise;
 	};
 
-	const unsubscribe = options.publisher.subscribeSettledChange((event) => {
-		void deliver(event);
-	});
+	const unsubscribe = subscribe
+		? options.publisher.subscribeSettledChange((event) => {
+				void deliver(event);
+			})
+		: () => undefined;
 
 	return Object.freeze({
 		deliver,
@@ -596,4 +599,17 @@ export function createCodexThreadContextDelivery(
 			unsubscribe();
 		},
 	});
+}
+
+export function createCodexThreadContextDelivery(
+	options: CodexThreadContextDeliveryOptions,
+): CodexThreadContextDelivery {
+	return createDelivery(options, true);
+}
+
+/** Module-internal leaf for the process-lifetime binding controller's sole subscription. */
+export function createUnsubscribedCodexThreadContextDelivery(
+	options: CodexThreadContextDeliveryOptions,
+): CodexThreadContextDelivery {
+	return createDelivery(options, false);
 }
