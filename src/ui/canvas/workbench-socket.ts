@@ -21,6 +21,7 @@ export interface CanvasPaneRegistration {
 	readonly socket: BrowserWorkbenchSocket;
 	readonly generation: number;
 	readonly promise: Promise<void>;
+	/** Release the one-shot attach latch; pane health is tracked separately. */
 	readonly acknowledge: (registered: boolean) => boolean;
 }
 

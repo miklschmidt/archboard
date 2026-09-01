@@ -261,8 +261,13 @@ test("useCanvasSession delegates socket generations to the canvas owner", () => 
 	expect(source).toMatch(
 		/attachCanvasWorkbenchAfterRegistration\(\{[\s\S]*?attach: \(\) => workbenchSockets\s*\.attach\(socket\)/,
 	);
+	expect(source).toContain("const updatePaneConnectionHealth");
 	expect(source).toContain("registration?.acknowledge(true)");
-	expect(source).toContain("registration?.acknowledge(false)");
+	expect(source).not.toContain("registration?.acknowledge(false)");
+	expect(source).toMatch(
+		/if \(isCurrentRegistration\) \{[\s\S]*?if \(result\.registered\) registration\?\.acknowledge\(true\);[\s\S]*?updatePaneConnectionHealth\(result\.registered\);/,
+	);
+	expect(source).toContain("updatePaneConnectionHealth(false)");
 	expect(source).toContain("if (!result.registered)");
 	expect(source).toContain("paneRegistrationRef.current === registration");
 	expect(source).toContain("socketGenerationRef.current !== generation");
