@@ -117,7 +117,9 @@ describe("workbench runtime projection", () => {
 		expect(view.messages[0]?.id).toBe("turn-a");
 		expect(view.messages[0]?.metadata.custom.archboard.turnId).toBe("turn-a");
 		expect("isOptimistic" in (view.messages[0]?.metadata ?? {})).toBe(false);
-		expect(view.messages[0]?.content).toEqual([{ type: "text", text: "Authoritative response" }]);
+		expect(view.messages[0]?.content).toEqual([
+			{ type: "text", itemId, text: "Authoritative response" },
+		]);
 	});
 
 	test("maps an unsupported item to an explicit recoverable record", () => {
@@ -133,6 +135,7 @@ describe("workbench runtime projection", () => {
 		expect(view.messages[0]?.content).toEqual([
 			{
 				type: "data",
+				itemId: "item-future" as typeof itemId,
 				name: "archboard-unsupported-item",
 				data: {
 					itemId: "item-future",

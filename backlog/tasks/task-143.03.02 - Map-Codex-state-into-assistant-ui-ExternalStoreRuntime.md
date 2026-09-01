@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-01 17:35'
+updated_date: '2026-09-01 17:49'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -41,11 +41,12 @@ Delegation profile: gpt-daybreak-blue-latest, low.
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Define the src/ui/workbench-runtime public provider contract around BrowserWorkbenchTransport and BrowserSnapshot, retaining the transport as the only subscription, reconnect, and command owner. This improves the operator workbench workflow by making the executable current workhorse available to assistant-ui consumers without duplicating app-server state.
-2. Convert each authoritative timeline turn into a stable turn-keyed assistant message record, map supported timeline items deterministically, and render unsupported, stale, disconnected, and runtime-failure paths as explicit recoverable or inspect-only records with no optimistic placeholders.
-3. Bind only executable current-epoch workhorses to useExternalStoreRuntime plus AssistantRuntimeProvider. Bind coordinator and inspect-only or prior-epoch histories to ReadonlyThreadProvider, with no assistant-ui transport, thread-list, queue, tools, voice, edit, reload, delete, setMessages, or extra state owner.
-4. Add module tests through the public provider contract for stable identity, runtime failure, unsupported item mapping, stale turn, teardown, and reconnect. Assert the transport retains one authoritative subscription and command targeting.
-5. Run focused module and policy tests, test inventory, both TypeScript projects, frontend build, lint, format, and diff checks sequentially under named 6G/1G transient services. Classify any fixed-base or unavailable-browser failures, self-review the fixed range, commit only owned paths, and leave the task In Progress with unchecked criteria and no final summary.
+Remediation plan after fixed-range review:
+1. Replace the Promise<void> submit callback with a closed delivered/not_delivered/outcome_unknown result. Translate only not_delivered to MessageNotSentError; expose outcome_unknown without replay, and confirm delivered turnId against the current authoritative transport snapshot before showing success.
+2. Add a typed provider render context carrying the actual assistant runtime identity for executable workhorses plus one semantic status contract for ready, read-only, failure, reconnect, stale, and submission outcomes. Render an accessible named role=status fallback with concrete recovery wording.
+3. Preserve authoritative itemId on every mapped message part, reject missing or duplicate item identities across one timeline, and cover all seven media arms plus all four turn statuses through the public provider.
+4. Replace helper-only lifecycle evidence with a mounted React client test using a module-owned minimal DOM harness and a child observer inside the real AssistantRuntimeProvider. Verify one subscription, stable runtime identity, reconnect, runtime failure, unsupported item, stale link/turn, transport replacement, teardown, no post-unmount render, and all onNew outcomes.
+5. Run focused module/mounted tests, assistant-ui policy, relevant transport/socket/composition regressions, inventory, both TypeScript projects, build, lint, format, and diff checks sequentially under 6G/1G; record evidence and commit only owned paths plus the task record.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -54,4 +55,8 @@ Delegation profile: gpt-daybreak-blue-latest, low.
 Implemented src/ui/workbench-runtime as the sole assistant-ui runtime adapter. Each authoritative Codex turn maps to one deterministic assistant record keyed by turnId with no optimistic metadata. Supported text/reasoning/item states map losslessly into Archboard-owned parts; unknown items and duplicate identities become explicit recoverable records. Only a connected, thread-capable executable link mounts useExternalStoreRuntime under AssistantRuntimeProvider. Coordinator, inspect-only, prior-epoch, stale, reconnecting, unavailable, and runtime-failure histories use ReadonlyThreadProvider. The existing BrowserWorkbenchTransport remains the only snapshot subscription, reconnect, and command owner.
 
 Validation under named transient user services with WorkingDirectory fixed to this checkout, MemoryMax=6G, and MemorySwapMax=1G: focused module 8 tests/26 assertions passed; assistant-ui import/dependency policy 12 tests/282 assertions passed; test inventory 39 tests/69 assertions passed; root and frontend TypeScript passed; frontend build passed; full Oxlint passed on 909 files; repository Oxfmt check passed on 991 files; git diff check passed. The repository boundary owner reproducibly reached the 6G memory and 1G swap caps after its first six cases passed, both alone and in the initial combined policy invocation; it was not retried. Existing task records document the same aggregate repository-policy OOM class at higher caps, so this is classified as a fixed-base resource failure, not a product assertion. No browser lane was claimed because TASK-143.03.13 owns rendered integration and this leaf adds no final shell composition.
+
+Remediation 1 resolves the four accepted fixed-range findings. (1) WorkbenchRuntimeProvider.onSubmit now returns the closed delivered/not_delivered/outcome_unknown union. One onNew boundary throws MessageNotSentError only after producing not_delivered, publishes outcome_unknown with explicit inspect-before-resend guidance, never replays, and shows delivered only when the returned branded turnId exists in the current authoritative transport snapshot. Thrown callback errors become outcome_unknown. (2) Added a mounted React client owner using a module-owned minimal DOM harness and a render observer inside the actual AssistantRuntimeProvider. It proves one transport subscription, stable assistant runtime identity across snapshot updates and executable transport replacement, reconnect/stale/inspect-only demotion, replacement teardown, final unsubscribe, no post-unmount render, and all submission outcomes, including real composer draft restoration only for not_delivered. (3) Every mapped media part now carries the browser contract branded ItemId; duplicate item IDs fail across the whole timeline. Mounted coverage drives all seven media arms and all four turn statuses. (4) The provider now exposes a typed render context and always renders a named role=status message with visible state and concrete recovery wording; tests assert its accessible name and recovery text.
+
+Remediation validation under 6G/1G named transient services: workbench-runtime 11 tests/53 assertions passed; workbench-transport 22/334; canvas workbench socket 5/63; production application sockets 2/40; composition policy 4/49; assistant-ui policy 12/282; inventory 39/69; root and frontend TypeScript passed; frontend build passed; full Oxlint passed on 911 files; repository Oxfmt passed on 993 files. The previously classified repository boundary owner OOM was not rerun. No browser inventory owner was added or claimed.
 <!-- SECTION:NOTES:END -->
