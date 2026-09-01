@@ -28,6 +28,7 @@ import type {
 	SettledChangeSourceEvent,
 	SettledSemanticChangeEvent,
 } from "../../../runtime/codex-semantic-context/index.js";
+import { canonicalSemanticCursorToken } from "../../../runtime/codex-thread-context/index.js";
 import type { DynamicWaitEvent } from "../../../runtime/codex-dynamic-tools/index.js";
 import type { CodexWorkbenchComponents } from "../codex-workbench-generation.js";
 import {
@@ -150,7 +151,6 @@ import {
 	REPORT_PROGRESS_MS,
 } from "../../../shared/timing/timing.js";
 import { narrateChange } from "../../../runtime/engine/changes.js";
-import { injectTest, injectionStatus, startInjection } from "../../../runtime/engine/injection.js";
 import { readLibrary, writeLibrary } from "../../../runtime/engine/library.js";
 import type { LibraryItem } from "../../../runtime/engine/library.js";
 import { overlapsRegion } from "../../../runtime/engine/geometry.js";
@@ -1039,7 +1039,6 @@ const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
 		/^\/api\/code-targets\/open$/,
 		"reads canonical board state and launches a process but writes no note",
 	],
-	[/^\/api\/injection/, "not about a board"],
 	[/^\/api\/reload$/, "not about a board"],
 ];
 
@@ -2169,39 +2168,12 @@ app.get("/api/changes", (req: Request, res: Response) => {
 			cursor: changeFeed.cursor,
 			events: changeFeed.since(since, board).map(strip),
 			feed: changeFeed.status(),
-			injection: injectionStatus(),
 		});
 	} catch (error) {
 		logger.error("Error reading the change feed:", error);
 		res.status(400).json({ success: false, error: (error as Error).message });
 	}
 });
-
-// ─── Injection (push to a live Codex thread) ──────────────────
-//
-// Read-only status, plus a probe. Arming is NOT a request the canvas can
-// serve: it happens at startup, from ARCHBOARD_INJECT and the bound address,
-// because an HTTP endpoint that could switch it on would be exactly the hole
-// ADR 0005 is about.
-app.get("/api/injection", (_req: Request, res: Response) => {
-	res.json({ success: true, ...injectionStatus() });
-});
-
-app.post(
-	"/api/injection/test",
-	asyncEndpoint(async (req: Request, res: Response) => {
-		try {
-			const note = typeof req.body?.note === "string" ? req.body.note : undefined;
-			const loud = req.body?.loud === true ? true : req.body?.loud === false ? false : undefined;
-			const result = await injectTest(note, loud);
-			res.json({ success: true, ...result });
-		} catch (error) {
-			res
-				.status(409)
-				.json({ success: false, error: (error as Error).message, status: injectionStatus() });
-		}
-	}),
-);
 
 // ─── Selection ────────────────────────────────────────────────
 //
@@ -4329,7 +4301,7 @@ function canonicalContextFromBrief(
 		board: {
 			note: brief.board.note,
 			version: brief.version ?? 0,
-			cursor: brief.cursor === null ? null : JSON.stringify(brief.cursor),
+			cursor: brief.cursor === null ? null : canonicalSemanticCursorToken(brief.cursor),
 		},
 		threadLink: brief.threadLink,
 		child: { id: brief.child.id, epoch: brief.child.epoch },
@@ -4629,9 +4601,9 @@ async function prepareCodexWorkbench(): Promise<void> {
 async function startServer(): Promise<void> {
 	// A hot reload re-runs this file, entry point and all, inside a process that
 	// is already serving. Everything that had to happen once has happened: the
-	// port is bound, the pidfile is written, injection is armed or refused, and
-	// the tabs are connected to sockets we have just re-pointed at the new
-	// handlers. Binding again would fail against ourselves, and the loopback
+	// port is bound, the pidfile is written, and the tabs are connected to
+	// sockets we have just re-pointed at the new handlers. Binding again would
+	// fail against ourselves, and the loopback
 	// guard below would read that as a second canvas and exit — taking the boards
 	// with it.
 	if (wiring.listening) {
@@ -4698,11 +4670,6 @@ async function startServer(): Promise<void> {
 		// server that never came up; lets `archboard stop` find us.
 		writePidFile(PORT, process.pid);
 		ownsPidFile = true;
-
-		// Injection is armed here, with the address actually bound, and only here:
-		// whether the canvas may drive a coding agent depends on where it can be
-		// reached from, which is not known before this point (ADR 0005).
-		startInjection(HOST);
 	});
 
 	const shutdown = (signal: NodeJS.Signals): void => {

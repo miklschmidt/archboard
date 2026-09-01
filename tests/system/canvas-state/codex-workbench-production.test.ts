@@ -69,6 +69,9 @@ describe.serial("actual production Codex composition", () => {
 					serverPath,
 					vault,
 					env: {
+						ARCHBOARD_INJECT: "1",
+						ARCHBOARD_INJECT_LOUD: "1",
+						ARCHBOARD_INJECT_THREAD: "legacy-thread",
 						ARCHBOARD_TEST_CODEX_EXECUTABLE: executablePath,
 						ARCHBOARD_TEST_CODEX_LOG: logPath,
 						ARCHBOARD_TEST_CODEX_CONTROL: controlPath,
@@ -84,6 +87,26 @@ describe.serial("actual production Codex composition", () => {
 			}
 			resources.defer(() => canvas.dispose());
 			const request = createRequester(canvas);
+			const removedStatus = await request("/api/injection");
+			const unknownStatus = await request("/api/unknown-route-contract");
+			expect(removedStatus.status).toBe(404);
+			expect(removedStatus.text.replace("/api/injection", "<path>")).toBe(
+				unknownStatus.text.replace("/api/unknown-route-contract", "<path>"),
+			);
+			const removedProbe = await request("/api/injection/test", {
+				method: "POST",
+				doing: false,
+				body: { note: "legacy probe", loud: true },
+			});
+			const unknownProbe = await request("/api/unknown-route-contract", {
+				method: "POST",
+				doing: false,
+				body: { note: "ordinary unknown route" },
+			});
+			expect(removedProbe.status).toBe(404);
+			expect(removedProbe.text.replace("/api/injection/test", "<path>")).toBe(
+				unknownProbe.text.replace("/api/unknown-route-contract", "<path>"),
+			);
 			const first = await openApplicationSocket(canvas.base, "bound-client");
 			resources.defer(() => first.close());
 			const focused = await openApplicationSocket(canvas.base, "focused-client");
@@ -156,7 +179,9 @@ describe.serial("actual production Codex composition", () => {
 				},
 			});
 			expect(changed.status).toBe(200);
-			await request("/api/changes?board=scratch&since=0");
+			const settled = await request<Record<string, unknown>>("/api/changes?board=scratch&since=0");
+			expect(settled.status).toBe(200);
+			expect("injection" in settled.body).toBeFalse();
 
 			const startLease = await current.request("claimLease");
 			const started = await current.request("command", {
@@ -190,6 +215,60 @@ describe.serial("actual production Codex composition", () => {
 			expect(archboardContext.paneId).toBe("bound-pane");
 			expect(archboardContext.focus.paneId).toBeNull();
 			expect(semanticBrief.pane).toEqual({ paneId: "bound-pane", focused: false });
+
+			const followup = await request("/api/elements/changes?board=scratch", {
+				method: "POST",
+				doing: false,
+				body: {
+					upserts: [{ ...seeded.body.element, x: 180 }],
+					deletes: [],
+					origin: "human",
+					clientId: "bound-client",
+				},
+			});
+			expect(followup.status).toBe(200);
+			await request("/api/changes?board=scratch&since=1");
+			const semanticState = await waitFor(async () => {
+				const snapshot = snapshots(await current!.request("snapshot"));
+				return snapshot.semantic as Record<string, unknown> | null;
+			}, "the linked workhorse semantic outcome");
+			expect(semanticState).toMatchObject({
+				kind: "semantic_delivery",
+				threadId: threadLink.threadId,
+				delivery: "delivered",
+				reason: null,
+			});
+			const semanticDelivery = records(logPath).find(
+				(entry) => entry.kind === "semantic_injection",
+			);
+			if (semanticDelivery === undefined) throw new Error("The semantic delivery was not logged.");
+			expect(semanticDelivery.params).toMatchObject({
+				threadId: semanticStart.params?.threadId,
+				items: [
+					{
+						type: "message",
+						role: "developer",
+						content: [{ type: "input_text" }],
+					},
+				],
+			});
+			expect(records(logPath).filter((entry) => entry.kind === "semantic_injection")).toHaveLength(
+				1,
+			);
+			const agentOnly = await request("/api/elements/changes?board=scratch", {
+				method: "POST",
+				doing: "moving the box through the agent write boundary",
+				body: {
+					upserts: [{ ...seeded.body.element, x: 220 }],
+					deletes: [],
+					origin: "agent",
+				},
+			});
+			expect(agentOnly.status).toBe(200);
+			await request("/api/changes?board=scratch&since=2");
+			expect(records(logPath).filter((entry) => entry.kind === "semantic_injection")).toHaveLength(
+				1,
+			);
 
 			const pending = await waitFor(async () => {
 				const snapshot = snapshots(await current!.request("snapshot"));
