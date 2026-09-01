@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-09-01 14:41'
+updated_date: '2026-09-01 15:30'
 labels: []
 dependencies:
   - TASK-143.01.14
@@ -13,12 +13,18 @@ references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
   - docs/design/codex-workbench-authored-contracts.md
 modified_files:
+  - src/server/canvas/lib/application.ts
   - src/server/canvas/lib/codex-workbench-approvals.ts
+  - src/server/canvas/lib/codex-workbench-authority.ts
   - src/server/canvas/lib/codex-workbench-lifecycle.ts
   - src/server/canvas/lib/codex-workbench-production.ts
   - tests/system/process-contracts/codex-workbench-lifecycle.test.ts
   - tests/system/process-contracts/codex-workbench-storage.test.ts
+  - tests/system/process-contracts/codex-workbench-outcomes.test.ts
+  - tests/system/process-contracts/codex-workbench-termination.test.ts
   - tests/system/process-contracts/support/codex-workbench-lifecycle.ts
+  - tests/system/process-contracts/support/codex-workbench-outcomes.ts
+  - tests/system/process-contracts/support/codex-workbench-result-assertions.ts
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -42,10 +48,10 @@ Own the one real-process lifecycle and protocol owner for the production Codex c
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Add one self-contained real-process owner at tests/system/process-contracts/codex-workbench-lifecycle.test.ts. Drive the production Codex installation against controlled 0.151.0 executables and isolated restrictive homes; prove accepted storage setup and refusal of every conflicting store shape through public startup.
-2. Exercise the installed production transport router and public gateway across all eleven reverse-request variants, general and coordinator dynamic calls, ordinary and dynamic approval outcomes, and exact one-response ownership. Reuse existing production contracts and helpers; do not create an alternate composition graph.
-3. Exercise reload and terminal boundaries with RPC, approvals, waits, disconnect, child exit, signals, and normal close in flight. Assert one retained child/kernel, fresh volatile handlers, complete settlement, no late mutation, and no leaked process or temporary state.
-4. Run the new owner first, then sequential memory-capped type, lint, formatting, inventory, boundary, and diff checks. Self-review the fixed-base range, record objective evidence, commit task-owned changes, and finalize only after every acceptance criterion is proven.
+1. Extend the controlled 0.151.0 executable with deterministic requirement, mutation-outcome, approval-terminalization, reload-activation, and teardown controls. Keep every observable in the public process log or application socket projection.
+2. Split the system owners by storage/requirements, process results/approvals, and reload/teardown so each remains under repository size limits while all reuse the real production composition. Assert exact response envelopes, remote effect counts, retained owner identities, terminal settlement, frozen logs, and orphan absence.
+3. Run each new process owner first in its named 6 GiB systemd scope, then existing production and module regressions, repository inventory, cheaper targeted boundary enforcement, both TypeScript projects, full lint, formatting, and fixed-base diff checks.
+4. Commit remediation on top of fb1dc801, update only implementation notes and modified files through Backlog CLI, and return the complete 88e7643a..new-head range for independent rereview. Leave status, AC, description, and final summary untouched.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -56,4 +62,10 @@ Scope correction from direct verification: the true Bun reload owner exposed two
 The real-process owner is split into lifecycle, storage/isolation, and shared controlled-fixture files so the repository max-lines rule remains enforced. It still drives the one production composition graph and creates all derived fixture executables only under temporary roots.
 
 Validation evidence before review: composed owner 3 pass/83 expectations; targeted lifecycle, coordinator reuse, and browser model modules 45 pass/241 expectations; existing production composition and cleanup 6 pass/95 expectations; main and frontend TypeScript pass; full lint and format check pass; repository inventory 39 pass. The standalone generic and Codex boundary policy owners exceeded their 6 GiB memory scope and were OOM-killed; the full lint boundary enforcement passed, and no rule was disabled or weakened.
+
+Independent review rejected fb1dc801 for missing direct public-process evidence in AC1, AC3, and AC4. Remediation will add the named process cases rather than citing module matrices. The three production fixes were reviewed as correct and remain stable unless a new process case proves otherwise.
+
+Remediation adds direct real-process evidence for managed configRequirements match/conflict, exact success values for all six general tools, partial and outcome-unknown mutation results, visual approval expiry, reload-carried waits, browser disconnect, SIGINT, SIGTERM, child exit, and frozen terminal logs. The stronger process owner exposed and fixes two production identity defects: target classification no longer re-adopts already-issued thread IDs, and wait events serialize retained internal identities back to raw wire thread IDs.
+
+Remediation validation: composed process owners 7 pass / 165 expectations (including the real 90-second expiry); Codex workbench module regressions 135 pass / 1306 expectations; production system regressions 8 pass / 118 expectations; targeted repository policies 59 pass / 488 expectations; both TypeScript projects, full lint, formatting, and diff checks pass. The standalone module-scope policy analyzer was also attempted in a 6 GiB scope and was OOM-killed (exit 143); no policy, test, lint, or type rule was weakened. Task remains In Progress and acceptance criteria remain unchecked pending independent rereview.
 <!-- SECTION:NOTES:END -->
