@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 01:57'
+updated_date: '2026-09-01 02:05'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -123,6 +123,20 @@ Own the one production composition root in the canvas server. It instantiates ev
 14. Restore behavioral retained-state policy by installing and reloading with caller-supplied retained state, asserting the exact allowlist and rejecting generation-bound values. Add multi-pane, honestly-unbound, session-boundary, queue lifecycle, remote-media, WebSocket, reload, and stale-CAS owners.
 
 15. Run capped sequential focused, type, lint, formatting, policy, live WebSocket, and safe reload verification. Correct the protected artifact evidence through Backlog CLI, keep status and AC unchanged, commit on top of b9ef7228, and callback the parent with the fixed-base range.
+
+16. Replace focus-based semantic capture with one exact pane-bound snapshot and prove two-pane lease isolation.
+
+17. Give thread-link mutation and disconnect cleanup one post-mutation controller token, and implement genuine current-child attach/relink through authoritative classification.
+
+18. Add opaque WebSocket instance ownership so reconnect replacement and out-of-order close cannot revoke the new logical browser.
+
+19. Add one continuous browser realtime session identity across start, append, and stop, then implement the browser-local peer/media owner and terminal cleanup.
+
+20. Preserve exact dynamic approval termination causes for child exit, host shutdown, replacement, and reload.
+
+21. Split the adapter implementation by behavior and strengthen retained-state value enforcement with negative mutation owners.
+
+22. Add a production application WebSocket proof crossing the real gateway and approval owner, run capped validation, update Backlog evidence, commit, and callback the parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
