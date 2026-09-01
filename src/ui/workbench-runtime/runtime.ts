@@ -4,7 +4,15 @@ import {
 	ReadonlyThreadProvider,
 	useExternalStoreRuntime,
 } from "@assistant-ui/react";
-import { createElement, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import {
+	createElement,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	useSyncExternalStore,
+	type ReactNode,
+} from "react";
 
 import type { BrowserSnapshot, BrowserTimeline } from "../../shared/codex-browser-model/index.js";
 import type {
@@ -12,12 +20,23 @@ import type {
 	BrowserWorkbenchTransport,
 } from "../workbench-transport/index.js";
 
-type WorkbenchMessagePart =
-	| { readonly type: "text"; readonly text: string }
-	| { readonly type: "reasoning"; readonly text: string }
+export type WorkbenchItemId = BrowserTimeline["turns"][number]["items"][number]["itemId"];
+
+type WorkbenchMappedPart =
+	| { readonly type: "text"; readonly itemId: WorkbenchItemId; readonly text: string }
+	| { readonly type: "reasoning"; readonly itemId: WorkbenchItemId; readonly text: string }
 	| {
 			readonly type: "data";
+			readonly itemId: WorkbenchItemId;
 			readonly name: string;
+			readonly data: Record<string, unknown>;
+	  };
+
+export type WorkbenchMessagePart =
+	| WorkbenchMappedPart
+	| {
+			readonly type: "data";
+			readonly name: "archboard-runtime-failure";
 			readonly data: Record<string, unknown>;
 	  };
 
@@ -80,28 +99,32 @@ function itemRecord(value: unknown): Record<string, unknown> | null {
 	return value as Record<string, unknown>;
 }
 
-function mapItem(value: unknown): WorkbenchMessagePart {
+function mapItem(value: unknown): WorkbenchMappedPart {
 	const item = itemRecord(value);
 	const media = item?.media;
-	const itemId = typeof item?.itemId === "string" ? item.itemId : "unsupported";
+	if (typeof item?.itemId !== "string")
+		throw new Error("A Codex item has no authoritative identity.");
+	const itemId = item.itemId as WorkbenchItemId;
 	if (media === "text" && typeof item?.text === "string") {
-		return { type: "text", text: item.text };
+		return { type: "text", itemId, text: item.text };
 	}
 	if (media === "reasoning" && typeof item?.text === "string") {
-		return { type: "reasoning", text: item.text };
+		return { type: "reasoning", itemId, text: item.text };
 	}
 	if (media === "plan" && typeof item?.text === "string") {
 		return {
 			type: "data",
+			itemId,
 			name: "archboard-plan",
 			data: { itemId, media, text: item.text },
 		};
 	}
 	if (media === "tool" || media === "command" || media === "fileChange" || media === "approval") {
-		return { type: "data", name: `archboard-${media}`, data: { ...item, itemId } };
+		return { type: "data", itemId, name: `archboard-${media}`, data: { ...item, itemId } };
 	}
 	return {
 		type: "data",
+		itemId,
 		name: "archboard-unsupported-item",
 		data: {
 			itemId,
@@ -130,15 +153,26 @@ function mapStatus(status: BrowserTimeline["turns"][number]["status"]): Workbenc
 }
 
 function mapTimeline(timeline: BrowserTimeline): readonly WorkbenchAssistantMessage[] {
-	const seen = new Set<string>();
+	const seenTurns = new Set<string>();
+	const seenItems = new Set<string>();
 	return timeline.turns.map((turn) => {
-		if (seen.has(turn.turnId)) throw new Error(`Duplicate Codex turn identity: ${turn.turnId}`);
-		seen.add(turn.turnId);
+		if (seenTurns.has(turn.turnId)) {
+			throw new Error(`Duplicate Codex turn identity: ${turn.turnId}`);
+		}
+		seenTurns.add(turn.turnId);
+		const content = turn.items.map((item) => {
+			const part = mapItem(item);
+			if (seenItems.has(part.itemId)) {
+				throw new Error(`Duplicate Codex item identity: ${part.itemId}`);
+			}
+			seenItems.add(part.itemId);
+			return part;
+		});
 		return {
 			id: turn.turnId,
 			role: "assistant",
 			createdAt: new Date(0),
-			content: turn.items.map(mapItem),
+			content,
 			status: mapStatus(turn.status),
 			metadata: {
 				unstable_state: null,
@@ -281,13 +315,85 @@ export function projectWorkbenchRuntime(state: BrowserWorkbenchState): Workbench
 
 export interface ReadonlyWorkbenchThreadProviderProps {
 	readonly view: Extract<WorkbenchRuntimeView, { readonly mode: "readonly" }>;
+	readonly render?: WorkbenchRuntimeRenderer;
 	readonly children?: ReactNode;
+}
+
+export interface WorkbenchVisibleStatus {
+	readonly role: "status";
+	readonly label: "Codex workbench status";
+	readonly state: WorkbenchRuntimeView["state"] | "delivered" | "not_delivered" | "outcome_unknown";
+	readonly message: string;
+	readonly recovery: string | null;
+}
+
+type AssistantRuntime = ReturnType<typeof useExternalStoreRuntime>;
+
+export type WorkbenchRuntimeRenderContext =
+	| {
+			readonly mode: "executable";
+			readonly view: Extract<WorkbenchRuntimeView, { readonly mode: "executable" }>;
+			readonly assistantRuntime: AssistantRuntime;
+			readonly status: WorkbenchVisibleStatus;
+	  }
+	| {
+			readonly mode: "readonly";
+			readonly view: Extract<WorkbenchRuntimeView, { readonly mode: "readonly" }>;
+			readonly assistantRuntime: null;
+			readonly status: WorkbenchVisibleStatus;
+	  };
+
+export type WorkbenchRuntimeRenderer = (context: WorkbenchRuntimeRenderContext) => ReactNode;
+
+function readonlyStatus(
+	view: Extract<WorkbenchRuntimeView, { readonly mode: "readonly" }>,
+): WorkbenchVisibleStatus {
+	const recovery =
+		view.state === "reconnecting"
+			? "Wait for Codex to reconnect. This history remains available for inspection."
+			: view.state === "stale"
+				? "Wait for a fresh Codex snapshot before sending another command."
+				: view.state === "runtime_failure"
+					? "Inspect the reported item, then reconnect or reload the workbench."
+					: "Inspect this history or select a current executable workhorse.";
+	return {
+		role: "status",
+		label: "Codex workbench status",
+		state: view.state,
+		message: view.reason,
+		recovery,
+	};
+}
+
+function renderStatus(status: WorkbenchVisibleStatus): ReactNode {
+	return createElement(
+		"p",
+		{ role: status.role, "aria-label": status.label },
+		status.message,
+		status.recovery === null ? null : createElement("span", null, ` ${status.recovery}`),
+	);
+}
+
+function renderChildren(
+	render: WorkbenchRuntimeRenderer | undefined,
+	children: ReactNode,
+	context: WorkbenchRuntimeRenderContext,
+): ReactNode {
+	return render === undefined ? children : render(context);
 }
 
 export function ReadonlyWorkbenchThreadProvider({
 	view,
+	render,
 	children,
 }: ReadonlyWorkbenchThreadProviderProps): ReactNode {
+	const status = readonlyStatus(view);
+	const context: WorkbenchRuntimeRenderContext = {
+		mode: "readonly",
+		view,
+		assistantRuntime: null,
+		status,
+	};
 	return createElement(
 		"div",
 		{
@@ -295,13 +401,22 @@ export function ReadonlyWorkbenchThreadProvider({
 			"data-workbench-state": view.state,
 			"data-workbench-reason": view.reason,
 		},
-		createElement(ReadonlyThreadProvider, { messages: view.messages }, children),
+		renderStatus(status),
+		createElement(
+			ReadonlyThreadProvider,
+			{ messages: view.messages },
+			renderChildren(render, children, context),
+		),
 	);
 }
 
 interface ExecutableProviderProps {
 	readonly view: Extract<WorkbenchRuntimeView, { readonly mode: "executable" }>;
-	readonly onSubmit?: (submission: WorkbenchRuntimeSubmission) => Promise<void>;
+	readonly transport: BrowserWorkbenchTransport;
+	readonly onSubmit?: (
+		submission: WorkbenchRuntimeSubmission,
+	) => Promise<WorkbenchSubmissionResult>;
+	readonly render?: WorkbenchRuntimeRenderer;
 	readonly children?: ReactNode;
 }
 
@@ -316,36 +431,131 @@ function submissionText(message: unknown): string | null {
 	return text.length === 0 ? null : text;
 }
 
-function ExecutableProvider({ view, onSubmit, children }: ExecutableProviderProps): ReactNode {
+function readyStatus(): WorkbenchVisibleStatus {
+	return {
+		role: "status",
+		label: "Codex workbench status",
+		state: "ready",
+		message: "The current Codex workhorse is ready.",
+		recovery: null,
+	};
+}
+
+function turnIsAuthoritative(transport: BrowserWorkbenchTransport, turnId: string): boolean {
+	return (
+		transport.state().snapshot?.timeline?.turns.some((turn) => turn.turnId === turnId) ?? false
+	);
+}
+
+function ExecutableProvider({
+	view,
+	transport,
+	onSubmit,
+	render,
+	children,
+}: ExecutableProviderProps): ReactNode {
+	const [status, setStatus] = useState<WorkbenchVisibleStatus>(readyStatus);
+	const mounted = useRef(true);
+	useEffect(() => {
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+		};
+	}, []);
+	const publishStatus = (next: WorkbenchVisibleStatus): void => {
+		if (mounted.current) setStatus(next);
+	};
 	const runtime = useExternalStoreRuntime({
 		messages: view.messages,
 		onNew: async (message) => {
 			const text = submissionText(message);
+			let result: WorkbenchSubmissionResult;
 			if (onSubmit === undefined) {
-				throw new MessageNotSentError("The workbench composer has no command owner.");
+				result = {
+					outcome: "not_delivered",
+					reason: "The workbench composer has no command owner.",
+				};
+			} else if (text === null) {
+				result = {
+					outcome: "not_delivered",
+					reason: "The workbench accepts non-empty text submissions only.",
+				};
+			} else {
+				try {
+					result = await onSubmit({ text });
+				} catch (error) {
+					result = {
+						outcome: "outcome_unknown",
+						reason: error instanceof Error ? error.message : "The command outcome is unknown.",
+					};
+				}
 			}
-			if (text === null) {
-				throw new MessageNotSentError("The workbench accepts non-empty text submissions only.");
+			if (result.outcome === "not_delivered") {
+				publishStatus({
+					role: "status",
+					label: "Codex workbench status",
+					state: "not_delivered",
+					message: result.reason,
+					recovery: "The draft was restored. Correct the problem and send it again.",
+				});
+				throw new MessageNotSentError(result.reason);
 			}
-			await onSubmit({ text });
+			if (result.outcome === "outcome_unknown" || !turnIsAuthoritative(transport, result.turnId)) {
+				publishStatus({
+					role: "status",
+					label: "Codex workbench status",
+					state: "outcome_unknown",
+					message:
+						result.outcome === "outcome_unknown"
+							? result.reason
+							: "Codex reported delivery, but the authoritative turn has not appeared.",
+					recovery: "Inspect the current workhorse before deciding whether to send again.",
+				});
+				return;
+			}
+			publishStatus({
+				role: "status",
+				label: "Codex workbench status",
+				state: "delivered",
+				message: "Codex accepted the submission and published its authoritative turn.",
+				recovery: null,
+			});
 		},
 	});
+	const context: WorkbenchRuntimeRenderContext = {
+		mode: "executable",
+		view,
+		assistantRuntime: runtime,
+		status,
+	};
 	return createElement(
 		"div",
 		{ "data-workbench-runtime": "executable", "data-workbench-state": view.state },
-		createElement(AssistantRuntimeProvider, { runtime }, children),
+		renderStatus(status),
+		createElement(AssistantRuntimeProvider, { runtime }, renderChildren(render, children, context)),
 	);
 }
 
 export interface WorkbenchRuntimeProviderProps {
 	readonly transport: BrowserWorkbenchTransport;
-	readonly onSubmit?: (submission: WorkbenchRuntimeSubmission) => Promise<void>;
+	readonly onSubmit?: (
+		submission: WorkbenchRuntimeSubmission,
+	) => Promise<WorkbenchSubmissionResult>;
+	readonly render?: WorkbenchRuntimeRenderer;
 	readonly children?: ReactNode;
 }
 
 export interface WorkbenchRuntimeSubmission {
 	readonly text: string;
 }
+
+export type WorkbenchSubmissionResult =
+	| {
+			readonly outcome: "delivered";
+			readonly turnId: BrowserTimeline["turns"][number]["turnId"];
+	  }
+	| { readonly outcome: "not_delivered"; readonly reason: string }
+	| { readonly outcome: "outcome_unknown"; readonly reason: string };
 
 export interface WorkbenchRuntimeStore {
 	readonly getSnapshot: () => BrowserWorkbenchState;
@@ -364,13 +574,14 @@ export function createWorkbenchRuntimeStore(
 export function WorkbenchRuntimeProvider({
 	transport,
 	onSubmit,
+	render,
 	children,
 }: WorkbenchRuntimeProviderProps): ReactNode {
 	const store = useMemo(() => createWorkbenchRuntimeStore(transport), [transport]);
 	const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 	const view = projectWorkbenchRuntime(state);
 	if (view.mode === "readonly") {
-		return createElement(ReadonlyWorkbenchThreadProvider, { view }, children);
+		return createElement(ReadonlyWorkbenchThreadProvider, { view, render }, children);
 	}
-	return createElement(ExecutableProvider, { view, onSubmit }, children);
+	return createElement(ExecutableProvider, { view, transport, onSubmit, render }, children);
 }

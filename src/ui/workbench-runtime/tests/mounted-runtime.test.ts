@@ -1,0 +1,430 @@
+import { describe, expect, test } from "bun:test";
+import { act, createElement } from "react";
+import { createRoot, type Root } from "react-dom/client";
+
+import type {
+	BrowserSnapshot,
+	BrowserTimeline,
+} from "../../../shared/codex-browser-model/index.js";
+import type {
+	BrowserWorkbenchState,
+	BrowserWorkbenchTransport,
+} from "../../workbench-transport/index.js";
+import {
+	WorkbenchRuntimeProvider,
+	type WorkbenchRuntimeRenderContext,
+	type WorkbenchSubmissionResult,
+} from "../index.js";
+import { installMinimalDom, type TestElement } from "./minimal-dom.js";
+
+const threadId = "mounted-thread" as BrowserTimeline["threadId"];
+const turnId = "mounted-turn" as BrowserTimeline["turns"][number]["turnId"];
+type TimelineItem = BrowserTimeline["turns"][number]["items"][number];
+type ExecutableLink = Extract<BrowserSnapshot["threadLink"], { readonly state: "executable" }>;
+
+function timeline(items: readonly TimelineItem[] = []): BrowserTimeline {
+	return {
+		kind: "timeline",
+		threadId,
+		turns: [
+			{
+				turnId,
+				status: "completed",
+				items: [...items],
+				summary: "Mounted authoritative turn",
+				outputsIncluded: true,
+				outputsTruncated: false,
+			},
+		],
+		nextCursor: null,
+	};
+}
+
+function snapshot(timelineValue: BrowserTimeline = timeline()): BrowserSnapshot {
+	return {
+		kind: "snapshot",
+		version: 1,
+		readiness: { kind: "readiness", state: "thread_capable" },
+		account: { kind: "account", state: "ready", accountType: "chatgpt" },
+		login: { kind: "login", state: "idle" },
+		threadLink: {
+			kind: "thread_link",
+			state: "executable",
+			childId: "mounted-child" as ExecutableLink["childId"],
+			epoch: "mounted-epoch" as ExecutableLink["epoch"],
+			threadId,
+			source: "appServer",
+			status: "idle",
+			loaded: true,
+			canAcceptDirectInput: true,
+			reason: null,
+		},
+		timeline: timelineValue,
+		queue: { kind: "queue", status: "empty", entries: [] },
+		settings: [],
+		approvals: [],
+		dynamicApprovals: [],
+		semantic: null,
+		coordinator: {
+			kind: "coordinator",
+			state: "ready",
+			threadId: "mounted-coordinator" as BrowserSnapshot["coordinator"]["threadId"],
+			activeTurnId: null,
+			model: null,
+			effort: null,
+			serviceTier: null,
+			reason: null,
+		},
+		voice: {
+			kind: "voice",
+			state: "unavailable",
+			realtimeSessionId: null,
+			transcript: [],
+			delivery: null,
+			reason: "Voice is unavailable.",
+		},
+		lease: null,
+		operation: null,
+	};
+}
+
+function connected(value = snapshot()): BrowserWorkbenchState {
+	return {
+		kind: "readiness",
+		state: "thread_capable",
+		connection: "connected",
+		snapshot: value,
+		sequence: 1,
+	};
+}
+
+class MutableTransport {
+	current: BrowserWorkbenchState;
+	readonly listeners = new Set<() => void>();
+	subscriptions = 0;
+	teardowns = 0;
+
+	constructor(state = connected()) {
+		this.current = state;
+	}
+
+	readonly state = (): BrowserWorkbenchState => this.current;
+	readonly subscribe = (listener: () => void): (() => void) => {
+		this.subscriptions += 1;
+		this.listeners.add(listener);
+		return () => {
+			this.teardowns += 1;
+			this.listeners.delete(listener);
+		};
+	};
+
+	publish(state: BrowserWorkbenchState): void {
+		this.current = state;
+		for (const listener of this.listeners) listener();
+	}
+
+	asTransport(): BrowserWorkbenchTransport {
+		return this as unknown as BrowserWorkbenchTransport;
+	}
+}
+
+interface MountedProvider {
+	readonly container: TestElement;
+	readonly root: Root;
+	readonly contexts: WorkbenchRuntimeRenderContext[];
+	readonly render: (
+		transport: MutableTransport,
+		onSubmit?: (text: string) => Promise<WorkbenchSubmissionResult>,
+	) => Promise<void>;
+	readonly close: () => Promise<void>;
+}
+
+async function mountProvider(): Promise<MountedProvider> {
+	const dom = installMinimalDom();
+	const root = createRoot(dom.container as unknown as Element);
+	const contexts: WorkbenchRuntimeRenderContext[] = [];
+	const render = async (
+		transport: MutableTransport,
+		onSubmit?: (text: string) => Promise<WorkbenchSubmissionResult>,
+	): Promise<void> => {
+		await act(async () => {
+			root.render(
+				createElement(WorkbenchRuntimeProvider, {
+					transport: transport.asTransport(),
+					onSubmit: onSubmit === undefined ? undefined : async ({ text }) => await onSubmit(text),
+					render: (context) => {
+						contexts.push(context);
+						if (context.assistantRuntime !== null) {
+							context.assistantRuntime.thread.getState();
+						}
+						return createElement("span", { "data-observer": context.mode }, context.status.state);
+					},
+				}),
+			);
+		});
+	};
+	return {
+		container: dom.container,
+		root,
+		contexts,
+		render,
+		close: async () => {
+			await act(async () => root.unmount());
+			dom.restore();
+		},
+	};
+}
+
+function latestExecutable(contexts: readonly WorkbenchRuntimeRenderContext[]) {
+	const context = contexts.findLast((candidate) => candidate.mode === "executable");
+	if (context?.mode !== "executable") throw new Error("Expected executable runtime context");
+	return context;
+}
+
+describe("mounted workbench runtime provider", () => {
+	test("keeps one live subscription and stable assistant runtime across updates and replacement", async () => {
+		const first = new MutableTransport();
+		const second = new MutableTransport();
+		const mounted = await mountProvider();
+		try {
+			await mounted.render(first);
+			expect(first.subscriptions).toBe(1);
+			const runtime = latestExecutable(mounted.contexts).assistantRuntime;
+
+			await act(async () => first.publish(connected(snapshot(timeline()))));
+			expect(latestExecutable(mounted.contexts).assistantRuntime).toBe(runtime);
+
+			await mounted.render(second);
+			expect(first.teardowns).toBe(1);
+			expect(second.subscriptions).toBe(1);
+			expect(latestExecutable(mounted.contexts).assistantRuntime).toBe(runtime);
+		} finally {
+			await mounted.close();
+		}
+		expect(second.teardowns).toBe(1);
+		expect(second.listeners.size).toBe(0);
+	});
+
+	test("renders reconnect, stale-link, unsupported-item, and runtime-failure recovery", async () => {
+		const transport = new MutableTransport();
+		const mounted = await mountProvider();
+		try {
+			await mounted.render(transport);
+			expect(mounted.container.queryByRole("status")?.getAttribute("aria-label")).toBe(
+				"Codex workbench status",
+			);
+			await act(async () =>
+				transport.publish({
+					kind: "stream",
+					state: "stale_snapshot",
+					connection: "connected",
+					snapshot: snapshot(),
+					sequence: 1,
+					expectedSequence: 2,
+					receivedSequence: 3,
+					reason: "The active turn snapshot is stale.",
+				}),
+			);
+			expect(mounted.container.queryByRole("status")?.textContent).toContain(
+				"Wait for a fresh Codex snapshot",
+			);
+			await act(async () =>
+				transport.publish({
+					kind: "connection",
+					state: "reconnecting",
+					connection: "reconnecting",
+					snapshot: snapshot(),
+					sequence: 1,
+					reason: "Codex connection was lost.",
+				}),
+			);
+			expect(mounted.container.queryByRole("status")?.textContent).toContain(
+				"Wait for Codex to reconnect",
+			);
+
+			const stale = snapshot();
+			await act(async () =>
+				transport.publish(
+					connected({
+						...stale,
+						threadLink: {
+							kind: "thread_link",
+							state: "inspect_only",
+							childId: null,
+							epoch: null,
+							threadId,
+							source: "unknown",
+							status: "active",
+							loaded: true,
+							canAcceptDirectInput: false,
+							reason: "The active turn belongs to a prior Codex process.",
+						},
+					}),
+				),
+			);
+			expect(mounted.container.queryByRole("status")?.textContent).toContain(
+				"select a current executable workhorse",
+			);
+
+			const futureItem = {
+				media: "future",
+				itemId: "future-item",
+			} as unknown as TimelineItem;
+			await act(async () => transport.publish(connected(snapshot(timeline([futureItem])))));
+			expect(latestExecutable(mounted.contexts).view.messages[0]?.content[0]).toMatchObject({
+				itemId: "future-item",
+				name: "archboard-unsupported-item",
+			});
+
+			const allMedia = [
+				{ media: "text", itemId: "media-text", text: "text" },
+				{ media: "reasoning", itemId: "media-reasoning", text: "reasoning" },
+				{ media: "plan", itemId: "media-plan", text: "plan" },
+				{ media: "tool", itemId: "media-tool", name: "tool", status: "completed" },
+				{ media: "command", itemId: "media-command", command: "cmd", status: "failed" },
+				{ media: "fileChange", itemId: "media-file", status: "declined" },
+				{
+					media: "approval",
+					itemId: "media-approval",
+					approvalId: "approval-a",
+					status: "pending",
+				},
+			] as unknown as TimelineItem[];
+			const baseTurn = timeline().turns[0]!;
+			const statusTimeline = {
+				...timeline(),
+				turns: [
+					{ ...baseTurn, turnId: "status-running", status: "inProgress", items: allMedia },
+					{ ...baseTurn, turnId: "status-complete", status: "completed", items: [] },
+					{ ...baseTurn, turnId: "status-interrupted", status: "interrupted", items: [] },
+					{ ...baseTurn, turnId: "status-failed", status: "failed", items: [] },
+				],
+			} as unknown as BrowserTimeline;
+			await act(async () => transport.publish(connected(snapshot(statusTimeline))));
+			const mapped = latestExecutable(mounted.contexts).view.messages;
+			expect(mapped[0]?.content.map((part) => ("itemId" in part ? part.itemId : null))).toEqual(
+				allMedia.map((item) => item.itemId),
+			);
+			expect(mapped.map((message) => message.status.type)).toEqual([
+				"running",
+				"complete",
+				"incomplete",
+				"incomplete",
+			]);
+
+			const duplicate = timeline([
+				{ media: "text", itemId: "same" as TimelineItem["itemId"], text: "one" },
+				{ media: "reasoning", itemId: "same" as TimelineItem["itemId"], text: "two" },
+			]);
+			await act(async () => transport.publish(connected(snapshot(duplicate))));
+			expect(mounted.container.queryByRole("status")?.textContent).toContain(
+				"Duplicate Codex item identity",
+			);
+			expect(mounted.container.queryByRole("status")?.textContent).toContain("reconnect or reload");
+		} finally {
+			await mounted.close();
+		}
+	});
+
+	test("translates submission outcomes without replay and ignores completion after teardown", async () => {
+		const transport = new MutableTransport();
+		const mounted = await mountProvider();
+		try {
+			await mounted.render(transport, async () => ({
+				outcome: "not_delivered",
+				reason: "Offline",
+			}));
+			const notDeliveredComposer = latestExecutable(mounted.contexts).assistantRuntime.thread
+				.composer;
+			await act(async () => {
+				notDeliveredComposer.setText("retry me");
+				notDeliveredComposer.send();
+				await Promise.resolve();
+			});
+			expect(mounted.container.queryByRole("status")?.textContent).toContain("draft was restored");
+			expect(notDeliveredComposer.getState().text).toBe("retry me");
+
+			await mounted.render(transport, async () => ({
+				outcome: "outcome_unknown",
+				reason: "The response was lost.",
+			}));
+			const unknownComposer = latestExecutable(mounted.contexts).assistantRuntime.thread.composer;
+			await act(async () => {
+				unknownComposer.setText("do not replay");
+				unknownComposer.send();
+				await Promise.resolve();
+			});
+			expect(mounted.container.queryByRole("status")?.textContent).toContain(
+				"Inspect the current workhorse",
+			);
+			expect(unknownComposer.getState().text).toBe("");
+
+			await mounted.render(transport, async () => ({ outcome: "delivered", turnId }));
+			const deliveredComposer = latestExecutable(mounted.contexts).assistantRuntime.thread.composer;
+			await act(async () => {
+				deliveredComposer.setText("confirmed");
+				deliveredComposer.send();
+				await Promise.resolve();
+			});
+			expect(mounted.container.queryByRole("status")?.textContent).toContain(
+				"published its authoritative turn",
+			);
+			expect(deliveredComposer.getState().text).toBe("");
+
+			await mounted.render(transport, async () => ({
+				outcome: "delivered",
+				turnId: "not-yet-authoritative" as BrowserTimeline["turns"][number]["turnId"],
+			}));
+			await act(async () => {
+				latestExecutable(mounted.contexts).assistantRuntime.thread.append({
+					role: "user",
+					content: [{ type: "text", text: "unconfirmed" }],
+				});
+				await Promise.resolve();
+			});
+			expect(mounted.container.queryByRole("status")?.textContent).toContain(
+				"authoritative turn has not appeared",
+			);
+
+			await mounted.render(transport, async () => {
+				throw new Error("Transport result was lost.");
+			});
+			await act(async () => {
+				latestExecutable(mounted.contexts).assistantRuntime.thread.append({
+					role: "user",
+					content: [{ type: "text", text: "thrown outcome" }],
+				});
+				await Promise.resolve();
+			});
+			expect(mounted.container.queryByRole("status")?.textContent).toContain(
+				"Transport result was lost",
+			);
+			expect(mounted.container.queryByRole("status")?.textContent).toContain(
+				"before deciding whether to send again",
+			);
+		} finally {
+			await mounted.close();
+		}
+
+		const deferredTransport = new MutableTransport();
+		const deferredMounted = await mountProvider();
+		let resolve!: (result: WorkbenchSubmissionResult) => void;
+		const pending = new Promise<WorkbenchSubmissionResult>((done) => {
+			resolve = done;
+		});
+		await deferredMounted.render(deferredTransport, async () => await pending);
+		await act(async () => {
+			latestExecutable(deferredMounted.contexts).assistantRuntime.thread.append({
+				role: "user",
+				content: [{ type: "text", text: "pending" }],
+			});
+			await Promise.resolve();
+		});
+		const rendersBeforeClose = deferredMounted.contexts.length;
+		await deferredMounted.close();
+		resolve({ outcome: "outcome_unknown", reason: "Late result" });
+		await Promise.resolve();
+		expect(deferredMounted.contexts).toHaveLength(rendersBeforeClose);
+		expect(deferredTransport.listeners.size).toBe(0);
+	});
+});
