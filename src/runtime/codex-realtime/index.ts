@@ -3,4 +3,5 @@ export type {
 	CodexRealtimeAdapter,
 	CodexRealtimeAdapterOptions,
 	CodexRealtimeBinding,
+	CodexRealtimeGeneration,
 } from "./lib/contract.js";

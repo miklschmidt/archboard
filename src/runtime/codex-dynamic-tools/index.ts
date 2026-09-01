@@ -4,6 +4,7 @@ export {
 	CodexDynamicOperationTerminalizationError,
 	CodexDynamicToolsError,
 } from "./lib/contract.js";
+export { createDynamicAuthorityTokenIssuer } from "./lib/contract.js";
 export {
 	assertMutationTargetAllowed,
 	assertWaitTargetAllowed,
@@ -22,6 +23,7 @@ export type {
 	DynamicApprovalIdentity,
 	DynamicApprovalOutcome,
 	DynamicAuthorityToken,
+	DynamicAuthorityTokenIssuer,
 	DynamicCallerAuthority,
 	DynamicCatalogueDependency,
 	DynamicContextAuthority,
