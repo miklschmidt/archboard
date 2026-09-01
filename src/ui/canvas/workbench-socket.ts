@@ -11,6 +11,52 @@ export interface CanvasWorkbenchSocketGeneration {
 	readonly transport: BrowserWorkbenchTransport;
 }
 
+export interface CanvasPaneReportRequest {
+	readonly generation: number;
+	readonly requestId: number;
+}
+
+export interface CanvasPaneReportSequencer {
+	readonly begin: (generation: number) => CanvasPaneReportRequest;
+	readonly settle: <T>(
+		request: CanvasPaneReportRequest,
+		currentGeneration: number,
+		value: T,
+		apply: (value: T) => void,
+	) => void;
+}
+
+/**
+ * Make pane-report responses last-dispatched-wins within a socket generation.
+ * The report itself still uses the existing debounce path; this only prevents
+ * an older HTTP response from changing health, registration, or freshness.
+ */
+export function createCanvasPaneReportSequencer(): CanvasPaneReportSequencer {
+	let nextRequestId = 0;
+	let latest: CanvasPaneReportRequest | null = null;
+	const begin = (generation: number): CanvasPaneReportRequest => {
+		const request = Object.freeze({ generation, requestId: ++nextRequestId });
+		latest = request;
+		return request;
+	};
+	const settle = <T>(
+		request: CanvasPaneReportRequest,
+		currentGeneration: number,
+		value: T,
+		apply: (value: T) => void,
+	): void => {
+		if (
+			latest === null ||
+			latest.generation !== request.generation ||
+			latest.requestId !== request.requestId ||
+			request.generation !== currentGeneration
+		)
+			return;
+		apply(value);
+	};
+	return Object.freeze({ begin, settle });
+}
+
 /**
  * The authoritative pane registration acknowledgement for one canvas socket.
  * A negative acknowledgement deliberately leaves the promise pending: the
