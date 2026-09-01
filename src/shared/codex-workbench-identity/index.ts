@@ -3,6 +3,7 @@ export {
 	OPERATION_ID_MAX_BYTES,
 	createIdentityAuthorities,
 	createIdentityAuthority,
+	createIdentityLedger,
 	restoreIdentityAuthorities,
 	restoreIdentityAuthority,
 } from "./lib/identity.js";
@@ -19,6 +20,7 @@ export type {
 	DynamicToolCallId,
 	IdentityAuthority,
 	IdentityAuthorities,
+	IdentityLedger,
 	IdentityDomain,
 	IdentityIssuer,
 	IdentityValidationCode,

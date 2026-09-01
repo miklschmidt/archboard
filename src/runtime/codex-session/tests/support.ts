@@ -50,7 +50,7 @@ export class FakeTransport implements CodexTransport {
 	readonly notifications: string[] = [];
 	readonly reverseResponses: ReverseResponseRecord[] = [];
 	private readonly responseQueues = new Map<ResponseMethod, ResponseValue[]>();
-	private readonly identity: IdentityAuthority;
+	private identity: IdentityAuthority;
 	private notificationListener: ((event: TransportServerNotification) => void) | undefined;
 	private requestListener: ((request: TransportServerRequest) => void) | undefined;
 	beforeRequest: ((method: ResponseMethod, params: unknown) => void) | undefined;
@@ -58,6 +58,10 @@ export class FakeTransport implements CodexTransport {
 	nextResponseCorrelation: WireRequestCorrelation | undefined;
 
 	constructor(identity: IdentityAuthority) {
+		this.identity = identity;
+	}
+
+	replaceIdentity(identity: IdentityAuthority): void {
 		this.identity = identity;
 	}
 

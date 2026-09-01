@@ -117,9 +117,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	const lifecycle = options.lifecycle;
 	const notificationSink = options.onNotification;
 	const now = options.now ?? Date.now;
-	let phase: SessionPhase = "transport-connected";
-	let accountReady = false;
-	let notificationsPublished = false;
+	let phase: SessionPhase = options.adoptedReadiness ?? "transport-connected";
+	let accountReady = options.adoptedReadiness === "thread-capable";
+	let notificationsPublished = options.adoptedReadiness !== undefined;
 	let notificationsStopped = false;
 	let publishingNotifications = false;
 	const bufferedNotifications: TransportServerNotification[] = [];

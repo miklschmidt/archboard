@@ -14,6 +14,7 @@ import type {
 } from "../../../runtime/codex-semantic-context/index.js";
 import type { LogicalToolCallCorrelation } from "../../../shared/codex-workbench-identity/index.js";
 import type { WorkhorseOperationBinding } from "../../../runtime/codex-workhorse-operations/index.js";
+import type { BrowserLeaseLedger } from "../../codex-workbench/index.js";
 import { stateDir } from "../../../runtime/engine/state-dir.js";
 import type {
 	CodexWorkbenchComponents,
@@ -71,7 +72,8 @@ export interface CanvasCodexWorkbenchHost {
 	readonly installIdentityDecoders: (identity: CodexWorkbenchComponents["identity"]) => void;
 	readonly installLifecycleSignals: (components: CodexWorkbenchComponents) => () => void;
 	readonly installBrowserGateway: (gateway: CodexWorkbenchComponents["gateway"]) => () => void;
-	readonly stopBrowser: (gateway: CodexWorkbenchComponents["gateway"]) => Promise<void>;
+	readonly browserLeaseLedger: BrowserLeaseLedger;
+	readonly stopBrowser: CodexWorkbenchGenerationHooks["stopBrowser"];
 	readonly stopRealtime: (realtime: CodexWorkbenchComponents["realtime"]) => Promise<void>;
 	readonly stopQueue: (queue: CodexWorkbenchComponents["queue"]) => Promise<void> | void;
 	readonly onFatal: (error: unknown) => void;
@@ -477,6 +479,7 @@ export function createCanvasCodexWorkbenchInstallation(
 					components: created,
 					dynamicApprovals: dynamic,
 					state: owners.browserState,
+					leaseLedger: host.browserLeaseLedger,
 					checkoutRoot: host.checkoutRoot,
 					contextForOperation: (context, operation) =>
 						host.contextForOperation(
@@ -515,22 +518,25 @@ export function createCanvasCodexWorkbenchInstallation(
 		},
 		installBrowserGateway: host.installBrowserGateway,
 		initializeSession: async (session, components) => {
-			const epochSnapshot = components.epoch.snapshot();
-			components.epoch.startEpoch({
-				childId: components.identity.identity.validator.childId,
-				epoch: components.identity.identity.validator.epoch,
-				operationId: components.identity.operation.issuer.mintOperationId(),
-				kind: "epoch_start",
-				rpc: "epoch/start",
-				workspaceRoot: host.checkoutRoot,
-				// Epoch ownership has no remote instruction or tool-manifest effect.
-				instructionHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-				manifestHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-				...(epochSnapshot.manifest.activeEpoch === null ? {} : { expected: epochSnapshot.cas }),
-			});
-			await session.initialize();
-			input.child.lifecycle.markAppServerReady();
+			if (input.adoptedSession === null) {
+				const epochSnapshot = components.epoch.snapshot();
+				components.epoch.startEpoch({
+					childId: components.identity.identity.validator.childId,
+					epoch: components.identity.identity.validator.epoch,
+					operationId: components.identity.operation.issuer.mintOperationId(),
+					kind: "epoch_start",
+					rpc: "epoch/start",
+					workspaceRoot: host.checkoutRoot,
+					// Epoch ownership has no remote instruction or tool-manifest effect.
+					instructionHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+					manifestHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+					...(epochSnapshot.manifest.activeEpoch === null ? {} : { expected: epochSnapshot.cas }),
+				});
+				await session.initialize();
+				input.child.lifecycle.markAppServerReady();
+			}
 			const account = await session.accountRead();
+			input.markSessionReady(account.account !== null);
 			const owners = ownersFor(input);
 			owners.browserState.account =
 				account.account === null
@@ -556,7 +562,7 @@ export function createCanvasCodexWorkbenchInstallation(
 		stopQueue: host.stopQueue,
 		cancelDynamicApprovalsAndWaits: async (_components, cause) => {
 			const owners = ownersFor(input);
-			owners.approval?.settleAll(cause);
+			owners.approval?.settleAll(cause === "source_reload" ? "host_shutdown" : cause);
 			await owners.lifecycle?.shutdown();
 			owners.authority?.dispose();
 			owners.dynamicProjectionUnsubscribe?.();
@@ -568,7 +574,11 @@ export function createCanvasCodexWorkbenchInstallation(
 				if (snapshot.state === "pending")
 					await approvals.cancel(
 						snapshot.requestId,
-						cause === "host_shutdown" ? "host shutdown" : "child disconnected",
+						cause === "host_shutdown"
+							? "host shutdown"
+							: cause === "source_reload"
+								? "source reload"
+								: "child disconnected",
 					);
 			}
 		},

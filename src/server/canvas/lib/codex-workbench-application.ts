@@ -1,5 +1,4 @@
 import type {
-	CodexWorkbenchHooksFactory,
 	CodexWorkbenchOwner,
 	CodexWorkbenchSnapshot,
 	InstallProductionCodexWorkbenchOptions,
@@ -10,7 +9,7 @@ export interface CanvasCodexWorkbenchModule {
 		options: InstallProductionCodexWorkbenchOptions,
 	) => CodexWorkbenchOwner;
 	readonly reloadProductionCodexWorkbench: (
-		hooks: CodexWorkbenchHooksFactory,
+		options: InstallProductionCodexWorkbenchOptions,
 	) => Promise<CodexWorkbenchSnapshot>;
 	readonly shutdownProductionCodexWorkbench: () => Promise<CodexWorkbenchSnapshot>;
 }
@@ -39,7 +38,7 @@ export function createCanvasCodexWorkbenchApplication(
 		const module = await options.load();
 		const installation = options.installation();
 		const snapshot = options.state.installed
-			? await module.reloadProductionCodexWorkbench(installation.hooks)
+			? await module.reloadProductionCodexWorkbench(installation)
 			: await module.installProductionCodexWorkbench(installation).start();
 		options.state.installed = true;
 		options.state.shutdown = shutdown;

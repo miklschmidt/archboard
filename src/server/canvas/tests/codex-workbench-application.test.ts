@@ -20,10 +20,10 @@ test("the canvas awaits initial graph readiness, replaces hooks on reload, and s
 					return { ready: true } as never;
 				},
 			}) as never,
-		reloadProductionCodexWorkbench: async (
-			hooks: (input: CodexWorkbenchGenerationInput) => unknown,
-		) => {
-			hooks({ generation: 1 } as CodexWorkbenchGenerationInput);
+		reloadProductionCodexWorkbench: async (installation: {
+			readonly hooks: (input: CodexWorkbenchGenerationInput) => unknown;
+		}) => {
+			installation.hooks({ generation: 1 } as CodexWorkbenchGenerationInput);
 			events.push("reload");
 			return { ready: true } as never;
 		},

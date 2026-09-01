@@ -1,14 +1,9 @@
 import { CodexWorkbenchCompositionError } from "./codex-workbench-error.js";
-import { CODEX_GENERATION_REGISTRATION_KEYS } from "./codex-workbench-generation-contract.js";
 import type {
-	CodexWorkbenchGenerationHooks,
-	CodexWorkbenchGenerationRegistrations,
-	CodexWorkbenchGenerationSlots,
-	CodexWorkbenchGenerationState,
 	CodexWorkbenchOwnerRuntime,
 	CodexWorkbenchOwnerSlots,
 	CodexWorkbenchRetainedState,
-} from "./codex-workbench.js";
+} from "./codex-workbench-lifecycle.js";
 
 const RETAINED_STATE_KEYS = Object.freeze([
 	"owner",
@@ -18,7 +13,7 @@ const RETAINED_STATE_KEYS = Object.freeze([
 	"process",
 	"control",
 ] satisfies readonly (keyof CodexWorkbenchRetainedState)[]);
-const RETAINED_PROCESS_KEYS = Object.freeze([
+const PROCESS_KEYS = Object.freeze([
 	"start",
 	"stop",
 	"snapshot",
@@ -33,58 +28,33 @@ const OWNER_SLOT_KEYS = Object.freeze([
 	"snapshot",
 	"gateway",
 ] satisfies readonly (keyof CodexWorkbenchOwnerSlots)[]);
-const OWNER_RUNTIME_KEYS = Object.freeze([
+const RUNTIME_KEYS = Object.freeze([
 	"process",
-	"generation",
-	"child",
-	"startPromise",
-	"shutdownPromise",
-	"childRetiring",
+	"identityLedger",
+	"transport",
+	"operation",
+	"sessionInitialized",
+	"accountReady",
 	"released",
 ] satisfies readonly (keyof CodexWorkbenchOwnerRuntime)[]);
-const GENERATION_STATE_KEYS = Object.freeze([
-	"components",
-	"owners",
-	"current",
-	"registrations",
-	"pendingChildSettlements",
-	"stopped",
-	"stopPromise",
-	"stopComplete",
-	"stopFinished",
-] satisfies readonly (keyof CodexWorkbenchGenerationState)[]);
-const GENERATION_SLOT_KEYS = Object.freeze([
-	"hooks",
-	"onChildExitStart",
-	"onChildExitFinished",
-	"route",
-	"onNotification",
+const TRANSPORT_KEYS = Object.freeze([
+	"replaceIdentity",
+	"request",
+	"sendNotification",
+	"registerDynamicDispatcher",
+	"ownsPendingReverseRequest",
+	"respond",
+	"onServerRequest",
+	"onServerNotification",
+	"onIssue",
+	"onStderr",
 	"onExit",
-	"replaceHooks",
-	"stop",
-	"finishStop",
-] satisfies readonly (keyof CodexWorkbenchGenerationSlots)[]);
-const GENERATION_HOOK_KEYS = Object.freeze([
-	"threadContext",
-	"installIdentityDecoders",
-	"installLifecycleSignals",
-	"installApprovalProjection",
-	"installBrowserGateway",
-	"initializeSession",
-	"stopBrowser",
-	"stopRealtime",
-	"stopQueue",
-	"cancelDynamicApprovalsAndWaits",
-	"settleOrdinaryRequests",
-] satisfies readonly (keyof CodexWorkbenchGenerationHooks)[]);
-const GENERATION_SLOT_FUNCTION_KEYS = Object.freeze([
-	"route",
-	"onNotification",
-	"onExit",
-	"replaceHooks",
-	"stop",
-	"finishStop",
-] satisfies readonly (keyof CodexWorkbenchGenerationSlots)[]);
+	"inspect",
+	"inspectLateResponses",
+	"inspectIssues",
+	"inspectStderr",
+	"shutdown",
+] as const);
 const FUNCTION_INTRINSIC_KEYS: readonly PropertyKey[] = Object.freeze([
 	"length",
 	"name",
@@ -96,14 +66,15 @@ const FUNCTION_PROTOTYPE = Function.prototype;
 const ASYNC_FUNCTION_PROTOTYPE = Object.getPrototypeOf(async function () {});
 const GENERATOR_FUNCTION_PROTOTYPE = Object.getPrototypeOf(function* () {});
 const ASYNC_GENERATOR_FUNCTION_PROTOTYPE = Object.getPrototypeOf(async function* () {});
-const FUNCTION_PROTOTYPE_KEYS = Object.freeze(Reflect.ownKeys(FUNCTION_PROTOTYPE));
-const ASYNC_FUNCTION_PROTOTYPE_KEYS = Object.freeze(Reflect.ownKeys(ASYNC_FUNCTION_PROTOTYPE));
-const GENERATOR_FUNCTION_PROTOTYPE_KEYS = Object.freeze(
-	Reflect.ownKeys(GENERATOR_FUNCTION_PROTOTYPE),
-);
-const ASYNC_GENERATOR_FUNCTION_PROTOTYPE_KEYS = Object.freeze(
-	Reflect.ownKeys(ASYNC_GENERATOR_FUNCTION_PROTOTYPE),
-);
+const PROTOTYPE_KEYS = new Map<object, readonly (string | symbol)[]>([
+	[FUNCTION_PROTOTYPE, Object.freeze(Reflect.ownKeys(FUNCTION_PROTOTYPE))],
+	[ASYNC_FUNCTION_PROTOTYPE, Object.freeze(Reflect.ownKeys(ASYNC_FUNCTION_PROTOTYPE))],
+	[GENERATOR_FUNCTION_PROTOTYPE, Object.freeze(Reflect.ownKeys(GENERATOR_FUNCTION_PROTOTYPE))],
+	[
+		ASYNC_GENERATOR_FUNCTION_PROTOTYPE,
+		Object.freeze(Reflect.ownKeys(ASYNC_GENERATOR_FUNCTION_PROTOTYPE)),
+	],
+]);
 
 function exactOwnKeys(value: object, expected: readonly (string | symbol)[], label: string): void {
 	const actual = Reflect.ownKeys(value);
@@ -127,22 +98,13 @@ function assertStableFunction(
 	label: string,
 ): asserts value is (...args: never[]) => unknown {
 	const prototype = typeof value === "function" ? Object.getPrototypeOf(value) : null;
-	const prototypeKeys =
-		prototype === FUNCTION_PROTOTYPE
-			? FUNCTION_PROTOTYPE_KEYS
-			: prototype === ASYNC_FUNCTION_PROTOTYPE
-				? ASYNC_FUNCTION_PROTOTYPE_KEYS
-				: prototype === GENERATOR_FUNCTION_PROTOTYPE
-					? GENERATOR_FUNCTION_PROTOTYPE_KEYS
-					: prototype === ASYNC_GENERATOR_FUNCTION_PROTOTYPE
-						? ASYNC_GENERATOR_FUNCTION_PROTOTYPE_KEYS
-						: null;
-	if (typeof value !== "function" || prototypeKeys === null)
+	const expected = prototype === null ? undefined : PROTOTYPE_KEYS.get(prototype);
+	if (typeof value !== "function" || expected === undefined)
 		throw new CodexWorkbenchCompositionError(
 			"invalid_retained_state",
 			`${label} is not a plain callable slot.`,
 		);
-	exactOwnKeys(prototype, prototypeKeys, `${label}'s intrinsic callable prototype`);
+	exactOwnKeys(prototype, expected, `${label}'s intrinsic callable prototype`);
 	const attached = Reflect.ownKeys(value).filter(
 		(property) => !FUNCTION_INTRINSIC_KEYS.includes(property),
 	);
@@ -153,95 +115,118 @@ function assertStableFunction(
 		);
 }
 
-function assertGenerationSlots(slots: CodexWorkbenchGenerationSlots): void {
-	assertPlainRecord(slots, "The retained Codex current generation slots");
-	exactOwnKeys(slots, GENERATION_SLOT_KEYS, "The retained Codex current generation slots");
-	for (const key of GENERATION_SLOT_FUNCTION_KEYS)
-		assertStableFunction(slots[key], `The retained Codex generation member ${key}`);
-	for (const [key, callback] of [
-		["onChildExitStart", slots.onChildExitStart],
-		["onChildExitFinished", slots.onChildExitFinished],
-	] as const)
-		if (callback !== null)
-			assertStableFunction(callback, `The retained Codex generation callback ${key}`);
-
-	assertPlainRecord(slots.hooks, "The retained Codex generation hooks");
-	exactOwnKeys(slots.hooks, GENERATION_HOOK_KEYS, "The retained Codex generation hooks");
-	for (const key of GENERATION_HOOK_KEYS)
-		if (key !== "threadContext")
-			assertStableFunction(slots.hooks[key], `The retained Codex generation hook ${key}`);
-	assertPlainRecord(slots.hooks.threadContext, "The retained Codex thread-context hooks");
-	exactOwnKeys(
-		slots.hooks.threadContext,
-		["contextForEvent"],
-		"The retained Codex thread-context hooks",
-	);
-	assertStableFunction(
-		slots.hooks.threadContext.contextForEvent,
-		"The retained Codex thread-context hook contextForEvent",
-	);
+function assertCallableRecord(value: object, keys: readonly string[], label: string): void {
+	assertPlainRecord(value, label);
+	exactOwnKeys(value, keys, label);
+	for (const key of keys)
+		assertStableFunction((value as Record<string, unknown>)[key], `${label} member ${key}`);
 }
 
-function assertGenerationRegistrations(registrations: CodexWorkbenchGenerationRegistrations): void {
-	assertPlainRecord(registrations, "The retained Codex generation registrations");
-	exactOwnKeys(
-		registrations,
-		CODEX_GENERATION_REGISTRATION_KEYS,
-		"The retained Codex generation registrations",
-	);
-	for (const key of CODEX_GENERATION_REGISTRATION_KEYS) {
-		const cleanup = registrations[key];
-		if (cleanup !== null)
-			assertStableFunction(cleanup, `The retained Codex generation cleanup ${key}`);
+function assertIdentityLedger(runtime: CodexWorkbenchOwnerRuntime): void {
+	const ledger = runtime.identityLedger;
+	if (ledger === null) {
+		if (runtime.transport !== null)
+			throw new CodexWorkbenchCompositionError(
+				"invalid_retained_state",
+				"The retained Codex transport has no identity ledger.",
+			);
+		return;
 	}
+	assertPlainRecord(ledger, "The retained Codex identity ledger");
+	exactOwnKeys(
+		ledger,
+		["childId", "epoch", "issued", "rawByIdentity"],
+		"The retained Codex identity ledger",
+	);
+	if (typeof ledger.childId !== "string" || typeof ledger.epoch !== "string")
+		throw new CodexWorkbenchCompositionError(
+			"invalid_retained_state",
+			"The retained Codex identity coordinates are not plain data.",
+		);
+	if (Object.getPrototypeOf(ledger.issued) !== Map.prototype)
+		throw new CodexWorkbenchCompositionError(
+			"invalid_retained_state",
+			"The retained Codex issuance ledger has a prototype attachment.",
+		);
+	exactOwnKeys(ledger.issued, [], "The retained Codex issuance ledger");
+	for (const [domain, values] of ledger.issued) {
+		if (typeof domain !== "string" || Object.getPrototypeOf(values) !== Set.prototype)
+			throw new CodexWorkbenchCompositionError(
+				"invalid_retained_state",
+				"The retained Codex issuance ledger contains a hidden descendant.",
+			);
+		exactOwnKeys(values, [], "The retained Codex issuance set");
+		for (const value of values)
+			if (typeof value !== "string")
+				throw new CodexWorkbenchCompositionError(
+					"invalid_retained_state",
+					"The retained Codex issuance ledger contains a hidden descendant.",
+				);
+	}
+	if (Object.getPrototypeOf(ledger.rawByIdentity) !== Map.prototype)
+		throw new CodexWorkbenchCompositionError(
+			"invalid_retained_state",
+			"The retained Codex wire ledger has a prototype attachment.",
+		);
+	exactOwnKeys(ledger.rawByIdentity, [], "The retained Codex wire ledger");
+	for (const [identity, raw] of ledger.rawByIdentity)
+		if (
+			typeof identity !== "string" ||
+			(typeof raw !== "string" && (typeof raw !== "number" || !Number.isSafeInteger(raw)))
+		)
+			throw new CodexWorkbenchCompositionError(
+				"invalid_retained_state",
+				"The retained Codex wire ledger contains a hidden descendant.",
+			);
 }
 
-/** Fail closed if a retained slot hides a source-generation owner or attached capability. */
+/** Enforce the entire reachable retained shape; volatile graphs have no structural slot. */
 export function assertCodexWorkbenchRetainedState(retained: CodexWorkbenchRetainedState): void {
-	exactOwnKeys(retained, RETAINED_STATE_KEYS, "The Codex retained state");
 	assertPlainRecord(retained, "The Codex retained state");
+	exactOwnKeys(retained, RETAINED_STATE_KEYS, "The Codex retained state");
 	if (!Number.isSafeInteger(retained.generation) || retained.generation < 0)
 		throw new CodexWorkbenchCompositionError(
 			"invalid_retained_state",
 			"The Codex retained generation is not version-neutral plain data.",
 		);
-	if (retained.process !== null) {
-		exactOwnKeys(retained.process, RETAINED_PROCESS_KEYS, "The retained Codex process handle");
-		assertPlainRecord(retained.process, "The retained Codex process handle");
-		for (const key of RETAINED_PROCESS_KEYS)
-			assertStableFunction(retained.process[key], `The retained Codex process member ${key}`);
-	}
+	if (retained.process !== null)
+		assertCallableRecord(retained.process, PROCESS_KEYS, "The retained Codex process handle");
+
 	assertPlainRecord(retained.control, "The retained Codex control cell");
 	exactOwnKeys(
 		retained.control,
 		["current", "runtime", "wrappers"],
 		"The retained Codex control cell",
 	);
-	if (retained.control.runtime !== null) {
-		const runtime = retained.control.runtime;
-		assertPlainRecord(runtime, "The retained Codex process-lifetime state port");
-		exactOwnKeys(runtime, OWNER_RUNTIME_KEYS, "The retained Codex process-lifetime state port");
-		if (runtime.process !== retained.process)
+	assertCallableRecord(retained.control.wrappers, OWNER_SLOT_KEYS, "The Codex stable wrappers");
+	if (retained.control.current !== null)
+		assertCallableRecord(
+			retained.control.current,
+			OWNER_SLOT_KEYS,
+			"The Codex replaceable current source slots",
+		);
+
+	const runtime = retained.control.runtime;
+	if (runtime === null) return;
+	assertPlainRecord(runtime, "The retained Codex process-lifetime state port");
+	exactOwnKeys(runtime, RUNTIME_KEYS, "The retained Codex process-lifetime state port");
+	if (runtime.process !== retained.process)
+		throw new CodexWorkbenchCompositionError(
+			"invalid_retained_state",
+			"The retained Codex runtime does not reference the exact retained process handle.",
+		);
+	if (!Number.isSafeInteger(runtime.operation) || runtime.operation < 0)
+		throw new CodexWorkbenchCompositionError(
+			"invalid_retained_state",
+			"The retained Codex lifecycle ticket is not plain coordination state.",
+		);
+	for (const value of [runtime.sessionInitialized, runtime.accountReady, runtime.released])
+		if (typeof value !== "boolean")
 			throw new CodexWorkbenchCompositionError(
 				"invalid_retained_state",
-				"The retained Codex runtime does not reference the exact retained process handle.",
+				"The retained Codex coordination state contains a hidden descendant.",
 			);
-		if (runtime.generation !== null) {
-			const generation = runtime.generation;
-			assertPlainRecord(generation, "The retained Codex generation state port");
-			exactOwnKeys(generation, GENERATION_STATE_KEYS, "The retained Codex generation state port");
-			if (generation.current !== null) assertGenerationSlots(generation.current);
-			assertGenerationRegistrations(generation.registrations);
-		}
-	}
-	for (const [label, slots] of [
-		["stable wrappers", retained.control.wrappers],
-		["current generation slots", retained.control.current],
-	] as const) {
-		if (slots === null) continue;
-		assertPlainRecord(slots, `The Codex ${label}`);
-		exactOwnKeys(slots, OWNER_SLOT_KEYS, `The Codex ${label}`);
-		for (const key of OWNER_SLOT_KEYS)
-			assertStableFunction(slots[key], `The Codex ${label} member ${key}`);
-	}
+	assertIdentityLedger(runtime);
+	if (runtime.transport !== null)
+		assertCallableRecord(runtime.transport, TRANSPORT_KEYS, "The retained Codex transport handle");
 }
