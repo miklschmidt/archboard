@@ -34,6 +34,7 @@ import {
 	createCanvasCodexBrowserSocketOwner,
 	type BrowserConnectionInstance,
 } from "../codex-workbench-browser.js";
+import { requireExactSemanticPane } from "./codex-workbench-semantic-pane.js";
 import type { CanvasCodexWorkbenchHost } from "./codex-workbench-production.js";
 import {
 	buildPanesReport,
@@ -232,6 +233,7 @@ interface Wiring {
 	codex: {
 		installed: boolean;
 		shutdown: (() => Promise<void>) | null;
+		acceptBrowser: ((instance: BrowserConnectionInstance, browserId: string) => void) | null;
 		closeBrowser:
 			| ((instance: BrowserConnectionInstance, browserId: string) => Promise<void>)
 			| null;
@@ -253,6 +255,7 @@ const wiring = kept<Wiring>("http", () => {
 		codex: {
 			installed: false,
 			shutdown: null,
+			acceptBrowser: null,
 			closeBrowser: null,
 			handleBrowserMessage: null,
 		},
@@ -846,6 +849,13 @@ wss.on("connection", (ws: WebSocket, req) => {
 	// because a reconnect must not undo a user's scene arrangement.
 	const startingKey = clientId ? boardForNewPane(clientId) : SCRATCH_KEY;
 	if (clientId) paneBoards.set(clientId, startingKey);
+	if (clientId) {
+		try {
+			wiring.codex.acceptBrowser?.(codexSocketInstance, clientId);
+		} catch (error) {
+			logger.error("Codex browser acceptance failed:", error);
+		}
+	}
 	const board = boards.get(startingKey)!;
 	// Read out of the note, like everything else that sends a pane a whole board.
 	// Scratch is registered before the listener binds. If its legacy note is
@@ -902,14 +912,18 @@ wss.on("connection", (ws: WebSocket, req) => {
 			message.type !== "codex_workbench_request"
 		)
 			return;
+		const requestId =
+			"requestId" in message && typeof message.requestId === "string" ? message.requestId : null;
+		const action =
+			"action" in message && typeof message.action === "string" ? message.action : null;
 		const send = (response: unknown): void => {
 			if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(response));
 		};
 		if (!clientId) {
 			send({
 				type: "codex_workbench_result",
-				requestId: null,
-				action: null,
+				requestId,
+				action,
 				ok: false,
 				error: "The Codex workbench requires an authoritative browser connection identity.",
 			});
@@ -919,8 +933,8 @@ wss.on("connection", (ws: WebSocket, req) => {
 		if (handle === null) {
 			send({
 				type: "codex_workbench_result",
-				requestId: null,
-				action: null,
+				requestId,
+				action,
 				ok: false,
 				error: "The Codex workbench is unavailable.",
 			});
@@ -4335,37 +4349,17 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 	let active: CodexWorkbenchComponents | null = null;
 	let installedIdentity: CodexWorkbenchComponents["identity"] | null = null;
 
-	const paneFor = (requestedBoard?: string): PaneRegistration | null => {
-		const ordered = panesInOrder(Array.from(panes.values()));
-		return (
-			ordered.find(
-				(entry) =>
-					entry.pane.focused &&
-					(requestedBoard === undefined ||
-						(paneBoards.get(entry.pane.clientId) ?? entry.pane.board) === requestedBoard),
-			)?.pane ??
-			ordered.find(
-				(entry) =>
-					requestedBoard === undefined ||
-					(paneBoards.get(entry.pane.clientId) ?? entry.pane.board) === requestedBoard,
-			)?.pane ??
-			null
-		);
-	};
-
 	const semanticInput = (
 		contextBoard: string,
 		cursor: SemanticContextInput["cursor"],
-		exactPaneId?: string,
+		exactPaneId: string,
 	): SemanticContextInput => {
 		const pane =
-			exactPaneId === undefined
-				? paneFor(contextBoard)
-				: (Array.from(panes.values()).find(
-						(candidate) =>
-							candidate.paneId === exactPaneId &&
-							(paneBoards.get(candidate.clientId) ?? candidate.board) === contextBoard,
-					) ?? null);
+			Array.from(panes.values()).find(
+				(candidate) =>
+					candidate.paneId === exactPaneId &&
+					(paneBoards.get(candidate.clientId) ?? candidate.board) === contextBoard,
+			) ?? null;
 		if (pane === null)
 			throw new Error(
 				`The Codex context board has no authoritative browser pane: ${contextBoard}.`,
@@ -4441,6 +4435,16 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 		};
 	};
 
+	const currentSemanticPane = (contextBoard?: string): PaneRegistration => {
+		const binding = active?.semanticDelivery.snapshot().binding ?? null;
+		return requireExactSemanticPane({
+			bindingPaneId: binding?.paneId ?? null,
+			contextBoard,
+			panes: panes.values(),
+			boardForPane: (pane) => paneBoards.get(pane.clientId) ?? pane.board,
+		});
+	};
+
 	const waitForTargets: CanvasCodexWorkbenchHost["waitForTargets"] = async (input) => {
 		if (active === null) throw new Error("The Codex workbench is not ready to observe targets.");
 		const deadline = Date.now() + input.timeoutMs;
@@ -4495,13 +4499,19 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			feedId: changeFeed.status().feedId,
 			fresh: {
 				read: () => {
-					const pane = paneFor();
-					const key = pane ? (paneBoards.get(pane.clientId) ?? pane.board) : SCRATCH_KEY;
-					return semanticInput(key, null);
+					const pane = currentSemanticPane();
+					const key = paneBoards.get(pane.clientId) ?? pane.board;
+					return semanticInput(key, null, pane.paneId);
 				},
 			},
-			contextForChange: (event: SettledChangeSourceEvent) =>
-				semanticInput(event.board, { feedId: changeFeed.status().feedId, sequence: event.cursor }),
+			contextForChange: (event: SettledChangeSourceEvent) => {
+				const pane = currentSemanticPane(event.board);
+				return semanticInput(
+					event.board,
+					{ feedId: changeFeed.status().feedId, sequence: event.cursor },
+					pane.paneId,
+				);
+			},
 		},
 		paneIds: () => panesInOrder(Array.from(panes.values())).map(({ pane }) => pane.paneId),
 		contextForEvent: (event, paneId, operation) =>
@@ -4558,10 +4568,12 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			});
 			wiring.codex.handleBrowserMessage = (instance, browserId, input, send) =>
 				socketOwner.handle(instance, browserId, input, { send });
+			wiring.codex.acceptBrowser = socketOwner.accept;
 			wiring.codex.closeBrowser = socketOwner.close;
 			return () => {
 				socketOwner.disposeForReload();
 				wiring.codex.handleBrowserMessage = null;
+				wiring.codex.acceptBrowser = null;
 				wiring.codex.closeBrowser = null;
 			};
 		},

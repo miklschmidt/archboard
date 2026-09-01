@@ -35,6 +35,12 @@ export interface CanvasCodexBrowserSocketOwnerOptions {
 }
 
 export interface CanvasCodexBrowserSocketOwner {
+	/**
+	 * Establish replacement ownership at socket acceptance, before the retired
+	 * instance can deliver its close event. A first-time pane may still defer
+	 * connection until it has registered its authoritative pane id.
+	 */
+	readonly accept: (instance: BrowserConnectionInstance, browserId: string) => void;
 	readonly handle: (
 		instance: BrowserConnectionInstance,
 		browserId: string,
@@ -87,6 +93,12 @@ export function createCanvasCodexBrowserSocketOwner(
 		const connection = options.gateway.connect(browserId, paneId, instance);
 		connections.set(instance, connection);
 		return connection;
+	};
+
+	const accept = (instance: BrowserConnectionInstance, browserId: string): void => {
+		if (disposed) throw new Error("The Codex browser socket owner is reloading.");
+		if (options.paneForBrowser(browserId) === null) return;
+		connectionFor(instance, browserId);
 	};
 
 	const failure = (
@@ -182,5 +194,5 @@ export function createCanvasCodexBrowserSocketOwner(
 		connections.clear();
 	};
 
-	return Object.freeze({ handle, close, disposeForReload });
+	return Object.freeze({ accept, handle, close, disposeForReload });
 }

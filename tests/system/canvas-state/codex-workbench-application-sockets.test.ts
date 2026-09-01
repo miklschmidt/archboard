@@ -100,11 +100,13 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 			expect(await first.request("claimLease")).toMatchObject({ ok: true });
 
 			replacement = await openApplicationSocket(canvas.base, clientId);
+			// Acceptance, not the first workbench request, transfers exact gateway
+			// ownership. The retired close may therefore arrive before B speaks.
+			await first.close();
+			first = null;
 			expect(await replacement.request("connect")).toMatchObject({ ok: true });
 			const replacementLease = await replacement.request("claimLease");
 			expect(replacementLease).toMatchObject({ ok: true });
-			await first.close();
-			first = null;
 
 			expect(await replacement.request("renewLease")).toMatchObject({
 				ok: true,

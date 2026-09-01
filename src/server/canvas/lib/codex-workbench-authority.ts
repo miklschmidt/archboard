@@ -108,7 +108,7 @@ export function createCanvasDynamicAuthorityAdapters(
 			classification,
 			base: {
 				threadId,
-				wireThreadId: String(threadId),
+				wireThreadId: options.identity.identity.decoder.serializeCodexIdentity(threadId),
 				childId: record?.correlation.childId ?? null,
 				epoch: record?.correlation.epoch ?? null,
 				epochState,
@@ -127,6 +127,13 @@ export function createCanvasDynamicAuthorityAdapters(
 			},
 		};
 	};
+	const isLogicalCallItem = (
+		item: NonNullable<ThreadLinkClassification["thread"]>["turns"][number]["items"][number],
+		callId: DynamicServerRequest["logicalCall"]["callId"],
+	): boolean =>
+		item.type === "dynamicToolCall" &&
+		options.identity.identity.decoder.serializeCodexIdentity(item.id) ===
+			options.identity.identity.decoder.serializeCodexIdentity(callId);
 	const resolveCaller = async (request: DynamicServerRequest): Promise<DynamicCallerAuthority> => {
 		options.identity.identity.validator.assertCurrentEpoch(request.child, request.epoch);
 		const facts = await targetFacts(request.logicalCall.threadId);
@@ -140,10 +147,7 @@ export function createCanvasDynamicAuthorityAdapters(
 		const turn = facts.classification.thread?.turns.find(
 			(candidate) => candidate.id === request.logicalCall.turnId,
 		);
-		const call = turn?.items.find(
-			(item) =>
-				item.type === "dynamicToolCall" && String(item.id) === String(request.logicalCall.callId),
-		);
+		const call = turn?.items.find((item) => isLogicalCallItem(item, request.logicalCall.callId));
 		if (
 			facts.base.status !== "active" ||
 			call?.type !== "dynamicToolCall" ||
@@ -162,7 +166,9 @@ export function createCanvasDynamicAuthorityAdapters(
 			linkClassification: facts.classification,
 			role: "caller",
 			turnId: request.logicalCall.turnId,
-			wireTurnId: String(request.logicalCall.turnId),
+			wireTurnId: options.identity.identity.decoder.serializeCodexIdentity(
+				request.logicalCall.turnId,
+			),
 			executing: true,
 		});
 	};
@@ -215,9 +221,7 @@ export function createCanvasDynamicAuthorityAdapters(
 			const turn = facts.classification.thread?.turns.find(
 				(candidate) => candidate.id === logicalCall.turnId,
 			);
-			const call = turn?.items.find(
-				(item) => item.type === "dynamicToolCall" && String(item.id) === String(logicalCall.callId),
-			);
+			const call = turn?.items.find((item) => isLogicalCallItem(item, logicalCall.callId));
 			if (
 				facts.base.status !== "active" ||
 				call?.type !== "dynamicToolCall" ||

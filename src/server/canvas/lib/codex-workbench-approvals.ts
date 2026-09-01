@@ -35,7 +35,7 @@ interface DynamicApprovalBinding {
 
 interface PendingDynamicApproval {
 	readonly request: DynamicToolApprovalRequest;
-	readonly binding: DynamicApprovalBinding;
+	binding: DynamicApprovalBinding;
 	readonly decision: Promise<DynamicToolApprovalDecision>;
 	readonly resolve: (decision: DynamicToolApprovalDecision) => void;
 	readonly timer: ReturnType<typeof setTimeout>;
@@ -45,6 +45,8 @@ interface PendingDynamicApproval {
 export interface CanvasDynamicApprovalOwner {
 	readonly port: DynamicToolApprovalPort;
 	readonly browser: BrowserDynamicApprovalActions;
+	/** Rebind pending presentation to the exact current lease for its pane. */
+	readonly bindLease: (paneId: string, commandId: BrowserCommandId) => void;
 	readonly subscribe: (listener: () => void) => () => void;
 	readonly settleAll: (cause: "host_shutdown" | "child_disconnected") => void;
 }
@@ -203,6 +205,12 @@ export function createCanvasDynamicApprovalOwner(
 	return Object.freeze({
 		port,
 		browser,
+		bindLease: (paneId: string, commandId: BrowserCommandId) => {
+			for (const entry of pending.values()) {
+				if (entry.binding.paneId !== paneId || entry.binding.commandId === commandId) continue;
+				entry.binding = Object.freeze({ ...entry.binding, commandId });
+			}
+		},
 		subscribe: browser.onChange!,
 		settleAll: (cause: "host_shutdown" | "child_disconnected") => {
 			for (const entry of pending.values())

@@ -82,9 +82,9 @@ describe("production Codex workbench composition policy", () => {
 			state: "idle",
 			failure: null,
 			process: null,
-			control: { current: null },
+			control: { current: null, runtime: null },
 		});
-		expect(Object.keys(retained.control).toSorted()).toEqual(["current", "wrappers"]);
+		expect(Object.keys(retained.control).toSorted()).toEqual(["current", "runtime", "wrappers"]);
 		expect(Object.keys(retained.control.wrappers).toSorted()).toEqual([...OWNER_SLOT_KEYS]);
 	});
 
@@ -102,25 +102,30 @@ describe("production Codex workbench composition policy", () => {
 		const generationGateway = owner.gateway();
 		const stableWrappers = retained.control.wrappers;
 		const firstSlots = retained.control.current;
+		const lifecyclePort = retained.control.runtime;
 
 		await owner.reload({} as CodexWorkbenchGenerationHooks);
 		expect(reloads.count).toBe(1);
 		expect(Object.keys(retained).toSorted()).toEqual([...RETAINED_KEYS]);
 		expect(Object.values(retained)).not.toContain(owner.gateway());
 		expect(retained.control.wrappers).toBe(stableWrappers);
+		expect(retained.control.runtime).toBe(lifecyclePort);
 		expect(retained.control.current).not.toBe(firstSlots);
 		expect(Object.keys(retained.control.current ?? {}).toSorted()).toEqual([...OWNER_SLOT_KEYS]);
 		if (firstSlots === null) throw new Error("The first generation did not publish owner slots.");
-		(firstSlots as unknown as { snapshot: () => never }).snapshot = () => {
-			throw new Error("poisoned retired snapshot slot executed");
-		};
-		(firstSlots as unknown as { gateway: () => never }).gateway = () => {
-			throw new Error("poisoned retired gateway slot executed");
-		};
+		const currentSlots = retained.control.current;
+		if (currentSlots === null) throw new Error("Reload did not publish current source slots.");
+		for (const key of OWNER_SLOT_KEYS) expect(currentSlots[key]).not.toBe(firstSlots[key]);
+		for (const key of OWNER_SLOT_KEYS)
+			(firstSlots as unknown as Record<(typeof OWNER_SLOT_KEYS)[number], () => never>)[key] =
+				() => {
+					throw new Error(`poisoned retired ${key} slot executed`);
+				};
 		expect(retained.control.wrappers.snapshot().generation).toBe(2);
 		expect(retained.control.wrappers.gateway()).toBe(generationGateway);
-		await owner.shutdown();
+		await retained.control.wrappers.shutdown();
 		expect(retained.control.current).toBeNull();
+		expect(retained.control.runtime).toBeNull();
 	});
 
 	test("rejects nested, prototype, process-method, and extra-slot attachments", () => {
@@ -152,5 +157,36 @@ describe("production Codex workbench composition policy", () => {
 			},
 		);
 		expect(() => assertCodexWorkbenchRetainedState(slotAttachment)).toThrow("retained allowlist");
+
+		const spoofedPrototype = emptyCodexWorkbenchRetainedState();
+		spoofedPrototype.process = policyProcess();
+		Object.setPrototypeOf(spoofedPrototype.process.start, {
+			[Symbol.toStringTag]: "AsyncFunction",
+		});
+		expect(() => assertCodexWorkbenchRetainedState(spoofedPrototype)).toThrow(
+			"plain callable slot",
+		);
+
+		const functionAttachment = emptyCodexWorkbenchRetainedState();
+		functionAttachment.process = policyProcess();
+		Object.assign(functionAttachment.process.stop, { session: {} });
+		expect(() => assertCodexWorkbenchRetainedState(functionAttachment)).toThrow(
+			"reachable attached value",
+		);
+
+		const intrinsicAttachment = emptyCodexWorkbenchRetainedState();
+		intrinsicAttachment.process = policyProcess();
+		const asyncPrototype = Object.getPrototypeOf(intrinsicAttachment.process.start) as Record<
+			PropertyKey,
+			unknown
+		>;
+		try {
+			asyncPrototype.archboardOwner = {};
+			expect(() => assertCodexWorkbenchRetainedState(intrinsicAttachment)).toThrow(
+				"intrinsic callable prototype",
+			);
+		} finally {
+			Reflect.deleteProperty(asyncPrototype, "archboardOwner");
+		}
 	});
 });

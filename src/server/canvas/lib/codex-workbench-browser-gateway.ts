@@ -2,9 +2,11 @@ import type {
 	BrowserActionContext,
 	BrowserActionResult,
 	BrowserProjection,
+	BrowserOrdinaryApprovalActions,
 	BrowserWorkbenchActions,
 	CodexWorkbenchGatewayOptions,
 } from "../../codex-workbench/index.js";
+import type { CodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
 import {
 	createCodexBrowserModel,
 	type BrowserQueue,
@@ -23,6 +25,53 @@ export interface CanvasBrowserBindingState {
 	account: BrowserProjection["account"];
 	login: BrowserProjection["login"];
 	queue: BrowserQueue;
+}
+
+/** Bind all seven ordinary approval families to one exact pane lifecycle. */
+export function createCanvasOrdinaryApprovalActions(
+	approvals: CodexApprovalBroker,
+): BrowserOrdinaryApprovalActions {
+	const actions: BrowserOrdinaryApprovalActions = {
+		pending: (requestId) => {
+			try {
+				return approvals.toBrowserApproval(requestId);
+			} catch {
+				return null;
+			}
+		},
+		resolve: async (command) => {
+			await approvals.resolve({
+				requestId: command.requestId,
+				approvalId: command.approvalId,
+				response: command.response,
+			});
+			return { outcome: "delivered" };
+		},
+		onBrowserDisconnect: async (context, reason) => {
+			if (context.link.state !== "executable") return;
+			const authoredReason =
+				reason === "gateway_shutdown"
+					? "host shutdown"
+					: reason === "child_disconnected"
+						? "child disconnected"
+						: "browser disconnected";
+			const exactPaneLink = `pane:${context.paneId}`;
+			const pending = approvals
+				.inspect()
+				.filter(
+					(snapshot) =>
+						snapshot.state === "pending" &&
+						snapshot.child === context.childId &&
+						snapshot.epoch === context.epoch &&
+						snapshot.threadId === context.link.threadId &&
+						snapshot.binding.link === exactPaneLink,
+				);
+			await Promise.all(
+				pending.map((snapshot) => approvals.cancel(snapshot.requestId, authoredReason)),
+			);
+		},
+	};
+	return Object.freeze(actions);
 }
 
 /** Closed browser projection/actions over the already-created runtime owners. */
@@ -185,33 +234,25 @@ export function createCanvasBrowserGatewayOptions(input: {
 				),
 		},
 		realtime: createCanvasRealtimeActions(components),
-		ordinaryApprovals: {
-			pending: (requestId) => {
-				try {
-					return components.approvals.toBrowserApproval(requestId);
-				} catch {
-					return null;
-				}
-			},
-			resolve: (command) =>
-				run(() =>
-					components.approvals.resolve({
-						requestId: command.requestId,
-						approvalId: command.approvalId,
-						response: command.response,
-					}),
-				),
-		},
+		ordinaryApprovals: createCanvasOrdinaryApprovalActions(components.approvals),
 		dynamicApprovals: dynamicApprovals.browser,
 	};
 	const projection = {
 		read: (
 			context: Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0],
 		): BrowserProjection => {
+			if (context.lease?.state === "active")
+				dynamicApprovals.bindLease(context.paneId, context.lease.commandId);
 			const coordinator = components.coordinator.snapshot();
 			const workhorse = components.workhorse.snapshot();
 			const semantic = components.semanticDelivery.inspect().at(-1);
-			const freshSemantic = components.semanticPublisher.freshBrief();
+			const semanticBinding = components.semanticDelivery.snapshot().binding;
+			const freshSemantic =
+				semantic?.targetThreadId === undefined ||
+				semantic.targetThreadId === null ||
+				semanticBinding === null
+					? null
+					: components.semanticPublisher.freshBrief();
 			const realtimeGeneration = components.realtime.generation();
 			return {
 				readiness: state.readiness,
@@ -263,7 +304,9 @@ export function createCanvasBrowserGatewayOptions(input: {
 					),
 				dynamicApprovals: dynamicApprovals.browser.pending(),
 				semantic:
-					semantic?.targetThreadId === undefined || semantic.targetThreadId === null
+					semantic?.targetThreadId === undefined ||
+					semantic.targetThreadId === null ||
+					freshSemantic === null
 						? null
 						: {
 								kind: "semantic_delivery",
