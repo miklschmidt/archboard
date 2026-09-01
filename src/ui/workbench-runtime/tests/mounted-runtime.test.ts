@@ -1,197 +1,19 @@
 import { describe, expect, test } from "bun:test";
-import { act, createElement, useSyncExternalStore } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { act } from "react";
 
-import type {
-	BrowserSnapshot,
-	BrowserTimeline,
-} from "../../../shared/codex-browser-model/index.js";
-import type {
-	BrowserWorkbenchState,
-	BrowserWorkbenchTransport,
-} from "../../workbench-transport/index.js";
+import type { BrowserTimeline } from "../../../shared/codex-browser-model/index.js";
+import type { WorkbenchSubmissionResult } from "../index.js";
 import {
-	WorkbenchRuntimeProvider,
-	type WorkbenchRuntimeRenderContext,
-	type WorkbenchSubmissionResult,
-} from "../index.js";
-import { installMinimalDom, type TestElement } from "./minimal-dom.js";
-
-const threadId = "mounted-thread" as BrowserTimeline["threadId"];
-const turnId = "mounted-turn" as BrowserTimeline["turns"][number]["turnId"];
-type TimelineItem = BrowserTimeline["turns"][number]["items"][number];
-type ExecutableLink = Extract<BrowserSnapshot["threadLink"], { readonly state: "executable" }>;
-function timeline(items: readonly TimelineItem[] = []): BrowserTimeline {
-	return {
-		kind: "timeline",
-		threadId,
-		turns: [
-			{
-				turnId,
-				status: "completed",
-				items: [...items],
-				summary: "Mounted authoritative turn",
-				outputsIncluded: true,
-				outputsTruncated: false,
-			},
-		],
-		nextCursor: null,
-	};
-}
-function snapshot(timelineValue: BrowserTimeline = timeline()): BrowserSnapshot {
-	return {
-		kind: "snapshot",
-		version: 1,
-		readiness: { kind: "readiness", state: "thread_capable" },
-		account: { kind: "account", state: "ready", accountType: "chatgpt" },
-		login: { kind: "login", state: "idle" },
-		threadLink: {
-			kind: "thread_link",
-			state: "executable",
-			childId: "mounted-child" as ExecutableLink["childId"],
-			epoch: "mounted-epoch" as ExecutableLink["epoch"],
-			threadId,
-			source: "appServer",
-			status: "idle",
-			loaded: true,
-			canAcceptDirectInput: true,
-			reason: null,
-		},
-		timeline: timelineValue,
-		queue: { kind: "queue", status: "empty", entries: [] },
-		settings: [],
-		approvals: [],
-		dynamicApprovals: [],
-		semantic: null,
-		coordinator: {
-			kind: "coordinator",
-			state: "ready",
-			threadId: "mounted-coordinator" as BrowserSnapshot["coordinator"]["threadId"],
-			activeTurnId: null,
-			model: null,
-			effort: null,
-			serviceTier: null,
-			reason: null,
-		},
-		voice: {
-			kind: "voice",
-			state: "unavailable",
-			realtimeSessionId: null,
-			transcript: [],
-			delivery: null,
-			reason: "Voice is unavailable.",
-		},
-		lease: null,
-		operation: null,
-	};
-}
-export function connected(value = snapshot()): BrowserWorkbenchState {
-	return {
-		kind: "readiness",
-		state: "thread_capable",
-		connection: "connected",
-		snapshot: value,
-		sequence: 1,
-	};
-}
-export class MutableTransport {
-	current: BrowserWorkbenchState;
-	readonly listeners = new Set<() => void>();
-	subscriptions = 0;
-	teardowns = 0;
-
-	constructor(state = connected()) {
-		this.current = state;
-	}
-
-	readonly state = (): BrowserWorkbenchState => this.current;
-	readonly subscribe = (listener: () => void): (() => void) => {
-		this.subscriptions += 1;
-		this.listeners.add(listener);
-		return () => {
-			this.teardowns += 1;
-			this.listeners.delete(listener);
-		};
-	};
-
-	publish(state: BrowserWorkbenchState): void {
-		this.current = state;
-		for (const listener of this.listeners) listener();
-	}
-
-	asTransport(): BrowserWorkbenchTransport {
-		return this as unknown as BrowserWorkbenchTransport;
-	}
-}
-export interface MountedProvider {
-	readonly container: TestElement;
-	readonly root: Root;
-	readonly contexts: WorkbenchRuntimeRenderContext[];
-	readonly observedThreads: ObservedThread[];
-	readonly render: (
-		transport: MutableTransport,
-		onSubmit?: (text: string) => Promise<WorkbenchSubmissionResult>,
-	) => Promise<void>;
-	readonly close: () => Promise<void>;
-}
-
-type ExecutableContext = Extract<WorkbenchRuntimeRenderContext, { readonly mode: "executable" }>;
-type ObservedThread = ReturnType<ExecutableContext["assistantRuntime"]["thread"]["getState"]>;
-
-export async function mountProvider(): Promise<MountedProvider> {
-	const dom = installMinimalDom();
-	const root = createRoot(dom.container as unknown as Element);
-	const contexts: WorkbenchRuntimeRenderContext[] = [];
-	const observedThreads: ObservedThread[] = [];
-	function ExecutableRuntimeObserver({ context }: { readonly context: ExecutableContext }) {
-		const thread = context.assistantRuntime.thread;
-		const observed = useSyncExternalStore(
-			(listener) => thread.subscribe(listener),
-			() => thread.getState(),
-			() => thread.getState(),
-		);
-		observedThreads.push(observed);
-		return createElement("span", { "data-observer": context.mode }, context.status.state);
-	}
-	function RuntimeObserver(context: WorkbenchRuntimeRenderContext) {
-		contexts.push(context);
-		if (context.assistantRuntime !== null) {
-			return createElement(ExecutableRuntimeObserver, { context });
-		}
-		return createElement("span", { "data-observer": context.mode }, context.status.state);
-	}
-	const render = async (
-		transport: MutableTransport,
-		onSubmit?: (text: string) => Promise<WorkbenchSubmissionResult>,
-	): Promise<void> => {
-		await act(async () => {
-			root.render(
-				createElement(WorkbenchRuntimeProvider, {
-					transport: transport.asTransport(),
-					onSubmit: onSubmit === undefined ? undefined : async ({ text }) => await onSubmit(text),
-					render: RuntimeObserver,
-				}),
-			);
-		});
-	};
-	return {
-		container: dom.container,
-		root,
-		contexts,
-		observedThreads,
-		render,
-		close: async () => {
-			await act(async () => root.unmount());
-			dom.restore();
-		},
-	};
-}
-
-export function latestExecutable(contexts: readonly WorkbenchRuntimeRenderContext[]) {
-	const context = contexts.findLast((candidate) => candidate.mode === "executable");
-	if (context?.mode !== "executable") throw new Error("Expected executable runtime context");
-	return context;
-}
+	connected,
+	latestExecutable,
+	mountProvider,
+	MutableTransport,
+	snapshot,
+	threadId,
+	timeline,
+	turnId,
+	type TimelineItem,
+} from "./mounted-support.js";
 
 describe("mounted workbench runtime provider", () => {
 	test("keeps one live subscription and stable assistant runtime across updates and replacement", async () => {
@@ -205,12 +27,36 @@ describe("mounted workbench runtime provider", () => {
 
 			await act(async () => first.publish(connected(snapshot(timeline()))));
 			expect(latestExecutable(mounted.contexts).assistantRuntime).toBe(runtime);
-			expect(mounted.observedThreads).not.toBeEmpty();
+			const providerClient = mounted.observations.at(-1)?.client;
+			expect(providerClient).toBeDefined();
+			expect(mounted.observations.at(-1)?.thread.messages[0]?.id).toBe(turnId);
 
 			await mounted.render(second);
 			expect(first.teardowns).toBe(1);
 			expect(second.subscriptions).toBe(1);
 			expect(latestExecutable(mounted.contexts).assistantRuntime).toBe(runtime);
+
+			const control = await mountProvider();
+			try {
+				const sourceTimeline = timeline();
+				const wrongTimeline = {
+					...sourceTimeline,
+					turns: [
+						{
+							...sourceTimeline.turns[0]!,
+							turnId: "wrong-provider-turn" as BrowserTimeline["turns"][number]["turnId"],
+						},
+					],
+				};
+				await control.render(new MutableTransport(connected(snapshot(wrongTimeline))));
+				const wrongRuntime = latestExecutable(control.contexts).assistantRuntime;
+				expect(wrongRuntime).not.toBe(runtime);
+				expect(control.observations.at(-1)?.client).not.toBe(providerClient);
+				expect(control.observations.at(-1)?.thread.messages[0]?.id).toBe("wrong-provider-turn");
+				expect(mounted.observations.at(-1)?.client).toBe(providerClient);
+			} finally {
+				await control.close();
+			}
 		} finally {
 			await mounted.close();
 		}
@@ -366,7 +212,7 @@ describe("mounted workbench runtime provider", () => {
 				"incomplete",
 				"incomplete",
 			]);
-			const observed = mounted.observedThreads.at(-1);
+			const observed = mounted.observations.at(-1)?.thread;
 			expect(observed?.messages.map((message) => message.id)).toEqual([
 				"status-running",
 				"status-complete",
