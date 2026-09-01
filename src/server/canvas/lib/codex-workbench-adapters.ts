@@ -4,6 +4,8 @@ import type {
 	BrowserDisconnectReason,
 	BrowserDynamicApprovalActions,
 	BrowserProjection,
+	BrowserTextActions,
+	BrowserThreadLinkActions,
 	BrowserWorkbenchActions,
 	CodexWorkbenchGatewayOptions,
 } from "../../codex-workbench/index.js";
@@ -50,9 +52,14 @@ import type { DynamicServerRequest } from "../../../runtime/codex-transport/serv
 import type { CodexEpochStore, EpochOperationRecord } from "../../../runtime/codex-epoch/index.js";
 import type {
 	CodexThreadLinkPort,
+	ThreadLinkBindingSnapshot,
 	ThreadLinkClassification,
 } from "../../../runtime/codex-thread-link/index.js";
-import type { ArchboardContext } from "../../../runtime/codex-instructions/index.js";
+import {
+	createTurnStartParams,
+	createTurnSteerParams,
+	type ArchboardContext,
+} from "../../../runtime/codex-instructions/index.js";
 import type { CodexWorkhorseStart } from "../../../runtime/codex-workhorse-start/index.js";
 import type { CodexThreadContextController } from "../../../runtime/codex-thread-context/index.js";
 import type { CodexWorkbenchComponents } from "./codex-workbench.js";
@@ -727,6 +734,194 @@ export function bindThreadContextToReadyWorkhorse(
 	});
 }
 
+function replaceThreadContextBinding(
+	controller: Pick<CodexThreadContextController, "snapshot" | "compareAndSwap">,
+	workhorse: ReturnType<CodexWorkhorseStart["snapshot"]>,
+	link: ThreadLinkBindingSnapshot,
+): void {
+	if (
+		workhorse.state !== "ready" ||
+		workhorse.threadId === null ||
+		workhorse.childId === null ||
+		workhorse.epoch === null ||
+		workhorse.operationId === null ||
+		link.link.state !== "executable" ||
+		link.link.threadId !== workhorse.threadId ||
+		link.link.childId !== workhorse.childId ||
+		link.link.epoch !== workhorse.epoch
+	)
+		throw new Error("Thread context requires the exact adopted workhorse link proof.");
+	controller.compareAndSwap({
+		expected: controller.snapshot().token,
+		next: {
+			paneId: link.paneId,
+			target: {
+				threadId: workhorse.threadId,
+				childId: workhorse.childId,
+				epoch: workhorse.epoch,
+				operationId: workhorse.operationId,
+			},
+			link,
+		},
+	});
+}
+
+export function clearCanvasThreadContextForLease(
+	controller: Pick<CodexThreadContextController, "snapshot" | "compareAndSwap">,
+	context: BrowserActionContext,
+): void {
+	const current = controller.snapshot();
+	const binding = current.binding;
+	if (
+		binding === null ||
+		binding.paneId !== context.paneId ||
+		binding.link.revision !== context.linkRevision ||
+		binding.target.threadId !== context.link.threadId ||
+		binding.target.childId !== context.link.childId ||
+		binding.target.epoch !== context.link.epoch
+	)
+		return;
+	controller.compareAndSwap({ expected: current.token, next: null });
+}
+
+function expectedBrowserLink(context: BrowserActionContext) {
+	return {
+		revision: context.linkRevision,
+		paneId: context.paneId,
+		childId: context.link.childId,
+		epoch: context.link.epoch,
+		threadId: context.link.threadId,
+	};
+}
+
+function browserLeaseThreadId(context: BrowserActionContext): ThreadId {
+	if (context.link.threadId === null)
+		throw new Error("A text command requires the exact executable lease thread.");
+	return context.link.threadId;
+}
+
+export function createCanvasThreadLinkActions(options: {
+	readonly workhorse: CodexWorkbenchComponents["workhorse"];
+	readonly threadLink: CodexWorkbenchComponents["threadLink"];
+	readonly semanticDelivery: CodexWorkbenchComponents["semanticDelivery"];
+}): BrowserThreadLinkActions {
+	const adoptCurrentWorkhorse = async (
+		threadId: string,
+		context: BrowserActionContext,
+	): Promise<BrowserActionResult> => {
+		const workhorse = options.workhorse.snapshot();
+		if (
+			workhorse.state !== "ready" ||
+			workhorse.threadId !== threadId ||
+			workhorse.childId !== context.childId ||
+			workhorse.epoch !== context.epoch ||
+			workhorse.operationId === null
+		)
+			throw new Error("The link action requires the exact current created-workhorse target proof.");
+		const binding = await options.threadLink.classifyAndBind(
+			context.paneId,
+			expectedBrowserLink(context),
+			{
+				threadId: workhorse.threadId,
+				childId: workhorse.childId,
+				epoch: workhorse.epoch,
+				operationId: workhorse.operationId,
+			},
+		);
+		replaceThreadContextBinding(options.semanticDelivery, workhorse, binding);
+		return { outcome: "delivered" };
+	};
+	return Object.freeze({
+		create: async (_command, context) => {
+			const started = await options.workhorse.start({
+				paneId: context.paneId,
+				expected: expectedBrowserLink(context),
+			});
+			if (started.binding === null)
+				throw new Error("The created workhorse did not return its adopted pane link.");
+			replaceThreadContextBinding(options.semanticDelivery, started, started.binding);
+			return { outcome: "delivered" };
+		},
+		attach: (command, context) => adoptCurrentWorkhorse(command.threadId, context),
+		relink: (command, context) => adoptCurrentWorkhorse(command.threadId, context),
+	} satisfies BrowserThreadLinkActions);
+}
+
+export function createCanvasCanonicalTextActions(options: {
+	readonly identity: CodexWorkbenchComponents["identity"];
+	readonly session: Pick<
+		CodexWorkbenchComponents["session"],
+		"threadRead" | "turnStart" | "turnSteer" | "turnInterrupt"
+	>;
+	readonly contextForOperation: (
+		context: BrowserActionContext,
+		operation: {
+			readonly id: string;
+			readonly kind: "composer_message";
+			readonly rpc: "turn/start" | "turn/steer";
+		},
+	) => ArchboardContext;
+}): BrowserTextActions {
+	const issue = (): { readonly operationId: OperationId; readonly wire: string } => {
+		const operationId = options.identity.operation.issuer.mintOperationId();
+		return {
+			operationId,
+			wire: options.identity.operation.decoder.serializeOperationId(operationId),
+		};
+	};
+	return Object.freeze({
+		start: async (command, context) => {
+			const threadId = browserLeaseThreadId(context);
+			const { wire } = issue();
+			const canonical = createTurnStartParams({
+				threadId,
+				clientUserMessageId: wire,
+				prompt: command.prompt,
+				context: options.contextForOperation(context, {
+					id: wire,
+					kind: "composer_message",
+					rpc: "turn/start",
+				}),
+			});
+			await options.session.turnStart({ ...canonical, threadId });
+			return { outcome: "delivered" };
+		},
+		steer: async (command, context) => {
+			const threadId = browserLeaseThreadId(context);
+			const thread = await options.session.threadRead({ threadId, includeTurns: true });
+			const activeTurns = thread.thread.turns.filter((turn) => turn.status === "inProgress");
+			const activeTurn = activeTurns[0];
+			if (activeTurns.length !== 1 || activeTurn === undefined || activeTurn.id !== command.turnId)
+				throw new Error("Steering requires the exact current authoritative turn.");
+			const { wire } = issue();
+			const canonical = createTurnSteerParams({
+				threadId,
+				expectedTurnId: activeTurn.id,
+				clientUserMessageId: wire,
+				prompt: command.prompt,
+				context: options.contextForOperation(context, {
+					id: wire,
+					kind: "composer_message",
+					rpc: "turn/steer",
+				}),
+			});
+			await options.session.turnSteer({
+				...canonical,
+				threadId,
+				expectedTurnId: activeTurn.id,
+			});
+			return { outcome: "delivered" };
+		},
+		interrupt: async (command) => {
+			await options.session.turnInterrupt({
+				threadId: command.threadId,
+				turnId: command.turnId,
+			});
+			return { outcome: "delivered" };
+		},
+	} satisfies BrowserTextActions);
+}
+
 export interface CanvasBrowserBindingState {
 	readiness: BrowserProjection["readiness"];
 	account: BrowserProjection["account"];
@@ -740,6 +935,14 @@ export function createCanvasBrowserGatewayOptions(input: {
 	readonly dynamicApprovals: CanvasDynamicApprovalOwner;
 	readonly state: CanvasBrowserBindingState;
 	readonly onChange: (listener: () => void) => () => void;
+	readonly contextForOperation: (
+		context: BrowserActionContext,
+		operation: {
+			readonly id: string;
+			readonly kind: "composer_message";
+			readonly rpc: "turn/start" | "turn/steer";
+		},
+	) => ArchboardContext;
 }): Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink"> {
 	const { components, dynamicApprovals, state } = input;
 	const model = createCodexBrowserModel(components.identity);
@@ -770,15 +973,6 @@ export function createCanvasBrowserGatewayOptions(input: {
 		await operation();
 		return { outcome: "delivered" };
 	};
-	// Kept beside the actions whose lease evidence it projects.
-	// eslint-disable-next-line unicorn/consistent-function-scoping
-	const expectedLink = (context: BrowserActionContext) => ({
-		revision: context.linkRevision,
-		paneId: context.paneId,
-		childId: context.link.childId,
-		epoch: context.link.epoch,
-		threadId: context.link.threadId,
-	});
 	const actions: BrowserWorkbenchActions = {
 		account: {
 			read: async () => {
@@ -830,58 +1024,16 @@ export function createCanvasBrowserGatewayOptions(input: {
 					state.readiness = { kind: "readiness", state: "signed_out" };
 				}),
 		},
-		threadLinks: {
-			create: async (_command, context) => {
-				await components.workhorse.start({
-					paneId: context.paneId,
-					expected: expectedLink(context),
-				});
-				bindThreadContextToReadyWorkhorse(components.workhorse, components.semanticDelivery);
-				return { outcome: "delivered" };
-			},
-			attach: async (command, context) => {
-				await components.threadLink.classifyAndBind(context.paneId, expectedLink(context), {
-					threadId: command.threadId,
-					childId: context.childId,
-					epoch: context.epoch,
-				});
-				return { outcome: "delivered" };
-			},
-			relink: async (command, context) => {
-				await components.threadLink.classifyAndBind(context.paneId, expectedLink(context), {
-					threadId: command.threadId,
-					childId: context.childId,
-					epoch: context.epoch,
-				});
-				return { outcome: "delivered" };
-			},
-		},
-		text: {
-			start: (command) =>
-				run(() =>
-					components.session.turnStart({
-						threadId: command.threadId,
-						input: [{ type: "text", text: command.prompt, text_elements: [] }],
-					}),
-				),
-			steer: (command) =>
-				run(() =>
-					components.session.turnSteer({
-						threadId: command.threadId,
-						expectedTurnId: command.turnId,
-						clientUserMessageId: String(command.commandId),
-						input: [{ type: "text", text: command.prompt, text_elements: [] }],
-						additionalContext: {},
-					}),
-				),
-			interrupt: (command) =>
-				run(() =>
-					components.session.turnInterrupt({
-						threadId: command.threadId,
-						turnId: command.turnId,
-					}),
-				),
-		},
+		threadLinks: createCanvasThreadLinkActions({
+			workhorse: components.workhorse,
+			threadLink: components.threadLink,
+			semanticDelivery: components.semanticDelivery,
+		}),
+		text: createCanvasCanonicalTextActions({
+			identity: components.identity,
+			session: components.session,
+			contextForOperation: input.contextForOperation,
+		}),
 		queue: {
 			add: (command) =>
 				run(
@@ -933,14 +1085,14 @@ export function createCanvasBrowserGatewayOptions(input: {
 				),
 		},
 		realtime: {
-			start: (command) =>
-				run(() =>
-					components.realtime.createOffer({
-						sessionId: parseRealtimeSessionId(String(command.commandId)),
-						correlationId: parseRealtimeCorrelationId(String(command.commandId)),
-						sdp: command.sdp,
-					}),
-				),
+			start: async (command) => {
+				const realtimeAnswer = await components.realtime.createOffer({
+					sessionId: parseRealtimeSessionId(String(command.commandId)),
+					correlationId: parseRealtimeCorrelationId(String(command.commandId)),
+					sdp: command.sdp,
+				});
+				return { outcome: "delivered", realtimeAnswer };
+			},
 			appendText: (command) =>
 				run(() =>
 					components.realtime.appendText({
@@ -973,6 +1125,9 @@ export function createCanvasBrowserGatewayOptions(input: {
 						response: command.response,
 					}),
 				),
+			onBrowserDisconnect: (context) => {
+				clearCanvasThreadContextForLease(components.semanticDelivery, context);
+			},
 		},
 		dynamicApprovals: dynamicApprovals.browser,
 	};

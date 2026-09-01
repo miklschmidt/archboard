@@ -129,7 +129,6 @@ function harness(): Harness {
 		identity,
 		freshSemanticBrief: () => semanticBrief(),
 		currentBinding: () => bindingState.binding,
-		attachRemoteMedia: () => undefined,
 	});
 	recordReducerCheckedEvents(adapter, events, transitionFailures);
 	return {

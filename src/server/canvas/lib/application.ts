@@ -29,8 +29,8 @@ import type {
 	SettledSemanticChangeEvent,
 } from "../../../runtime/codex-semantic-context/index.js";
 import type { DynamicWaitEvent } from "../../../runtime/codex-dynamic-tools/index.js";
-import type { RemoteMediaAttachment } from "../../../shared/codex-realtime-host/index.js";
-import type { CodexWorkbenchComponents } from "../codex-workbench.js";
+import type { CodexWorkbenchComponents } from "../codex-workbench-generation.js";
+import { createCanvasCodexBrowserSocketOwner } from "../codex-workbench-browser.js";
 import type { CanvasCodexWorkbenchHost } from "./codex-workbench-production.js";
 import {
 	buildPanesReport,
@@ -230,6 +230,9 @@ interface Wiring {
 		installed: boolean;
 		shutdown: (() => Promise<void>) | null;
 		closeBrowser: ((browserId: string) => Promise<void>) | null;
+		handleBrowserMessage:
+			| ((browserId: string, input: unknown, send: (message: unknown) => void) => Promise<void>)
+			| null;
 	};
 }
 
@@ -237,7 +240,12 @@ const wiring = kept<Wiring>("http", () => {
 	const state = {
 		listening: false,
 		signalsBound: false,
-		codex: { installed: false, shutdown: null, closeBrowser: null },
+		codex: {
+			installed: false,
+			shutdown: null,
+			closeBrowser: null,
+			handleBrowserMessage: null,
+		},
 	} as Wiring;
 	state.server = createServer((req, res) => state.app(req, res));
 	state.wss = new WebSocketServer({ server: state.server });
@@ -853,6 +861,49 @@ wss.on("connection", (ws: WebSocket, req) => {
 	// connected, so a tab that has just arrived — or come back from a dropped
 	// socket — is told outright rather than left assuming the board is free.
 	if (clientId) tellPaneAboutLock(clientId, startingKey);
+
+	ws.on("message", (raw) => {
+		let message: unknown;
+		try {
+			message = JSON.parse(raw.toString()) as unknown;
+		} catch {
+			return;
+		}
+		if (
+			typeof message !== "object" ||
+			message === null ||
+			!("type" in message) ||
+			message.type !== "codex_workbench_request"
+		)
+			return;
+		const send = (response: unknown): void => {
+			if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(response));
+		};
+		if (!clientId) {
+			send({
+				type: "codex_workbench_result",
+				requestId: null,
+				action: null,
+				ok: false,
+				error: "The Codex workbench requires an authoritative browser connection identity.",
+			});
+			return;
+		}
+		const handle = wiring.codex.handleBrowserMessage;
+		if (handle === null) {
+			send({
+				type: "codex_workbench_result",
+				requestId: null,
+				action: null,
+				ok: false,
+				error: "The Codex workbench is unavailable.",
+			});
+			return;
+		}
+		void handle(clientId, message, send).catch((error) =>
+			logger.error("Codex browser request failed:", error),
+		);
+	});
 
 	ws.on("close", () => {
 		clients.delete(ws);
@@ -4270,7 +4321,11 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 		cursor: SemanticContextInput["cursor"],
 	): SemanticContextInput => {
 		const pane = paneFor(contextBoard);
-		const paneId = pane?.paneId ?? "headless";
+		if (pane === null)
+			throw new Error(
+				`The Codex context board has no authoritative browser pane: ${contextBoard}.`,
+			);
+		const paneId = pane.paneId;
 		const board = boards.get(contextBoard);
 		if (board === undefined)
 			throw new Error(`The Codex context board is not open: ${contextBoard}.`);
@@ -4408,9 +4463,6 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				outcome: null,
 			});
 		},
-		attachRemoteMedia: (_attachment: RemoteMediaAttachment) => {
-			throw new Error("Remote media must be attached by the browser media host.");
-		},
 		waitForTargets,
 		installIdentityDecoders: (identity) => {
 			installedIdentity = identity;
@@ -4424,8 +4476,16 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			};
 		},
 		installBrowserGateway: (gateway) => {
-			wiring.codex.closeBrowser = (browserId) => gateway.closeBrowser(browserId);
+			const socketOwner = createCanvasCodexBrowserSocketOwner({
+				gateway,
+				paneForBrowser: (browserId) => panes.get(browserId)?.paneId ?? null,
+			});
+			wiring.codex.handleBrowserMessage = (browserId, input, send) =>
+				socketOwner.handle(browserId, input, { send });
+			wiring.codex.closeBrowser = socketOwner.close;
 			return () => {
+				socketOwner.disposeForReload();
+				wiring.codex.handleBrowserMessage = null;
 				wiring.codex.closeBrowser = null;
 			};
 		},
@@ -4439,22 +4499,20 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			});
 		},
 		stopQueue: async (queue) => {
-			if (active?.workhorse.snapshot().state !== "ready") return;
-			await queue.list();
+			await queue.shutdown();
 		},
 		onFatal: (error) => logger.error("Fatal Codex workbench fault:", error),
 	};
 }
 
 async function prepareCodexWorkbench(): Promise<void> {
-	const [applicationModule, workbenchModule, productionModule] = await Promise.all([
-		import("./codex-workbench-application.js"),
-		import("../codex-workbench.js"),
-		import("./codex-workbench-production.js"),
+	const [applicationModule, productionModule] = await Promise.all([
+		import("../codex-workbench-application.js"),
+		import("../codex-workbench-production.js"),
 	]);
 	const application = applicationModule.createCanvasCodexWorkbenchApplication({
 		state: wiring.codex,
-		load: async () => workbenchModule,
+		load: async () => productionModule,
 		installation: () =>
 			productionModule.createCanvasCodexWorkbenchInstallation(createCodexWorkbenchHost()),
 	});

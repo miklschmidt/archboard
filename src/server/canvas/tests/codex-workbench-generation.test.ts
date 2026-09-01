@@ -9,7 +9,7 @@ import {
 	type CodexWorkbenchComponentFactories,
 	type CodexWorkbenchComponents,
 	type CodexWorkbenchGenerationHooks,
-} from "../codex-workbench.js";
+} from "../codex-workbench-generation.js";
 
 type ExitListener = Parameters<CodexWorkbenchComponents["transport"]["onExit"]>[0];
 

@@ -3,7 +3,6 @@ import type {
 	RealtimeCorrelationId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
 	RealtimeTranscriptRecord,
-	RemoteMediaAttachment,
 } from "../../../shared/codex-realtime-host/index.js";
 import type {
 	ChildEpoch,
@@ -40,10 +39,10 @@ export interface CodexRealtimeAdapterOptions {
 	readonly identity: IdentityAuthority;
 	readonly freshSemanticBrief: () => FreshSemanticBrief["brief"];
 	readonly currentBinding: () => CodexRealtimeBinding | null;
-	readonly attachRemoteMedia: (attachment: RemoteMediaAttachment) => void;
 }
 
-export interface CodexRealtimeAdapter extends RealtimeHost {
+/** Server-owned protocol half; remote MediaStream attachment remains browser-local. */
+export interface CodexRealtimeAdapter extends Omit<RealtimeHost, "attachRemoteMedia"> {
 	readonly onNotification: SessionNotificationHandler;
 	readonly transcript: () => readonly RealtimeTranscriptRecord[];
 	readonly generation: () => CodexRealtimeGeneration | null;

@@ -97,8 +97,13 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	options: WorkhorseQueueOptions<OperationIdValue>,
 ): CodexWorkhorseQueue<OperationIdValue> {
 	let commandTail: Promise<void> = Promise.resolve();
+	let closed = false;
 
 	const enqueue = <Value>(work: () => Promise<Value>): Promise<Value> => {
+		if (closed)
+			return Promise.reject(
+				queueError("closed", "The workhorse queue is closed and accepts no further work."),
+			);
 		const result = commandTail.then(work, work);
 		commandTail = result.then(
 			() => undefined,
@@ -463,5 +468,10 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 			});
 		});
 
-	return Object.freeze({ list, add, update, delete: remove, reorder, start });
+	const shutdown = async (): Promise<void> => {
+		closed = true;
+		await commandTail;
+	};
+
+	return Object.freeze({ list, add, update, delete: remove, reorder, start, shutdown });
 }

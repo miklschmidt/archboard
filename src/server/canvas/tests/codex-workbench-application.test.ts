@@ -1,9 +1,7 @@
 import { expect, test } from "bun:test";
 
-import {
-	createCanvasCodexWorkbenchApplication,
-	type CodexWorkbenchGenerationInput,
-} from "../codex-workbench.js";
+import { createCanvasCodexWorkbenchApplication } from "../codex-workbench-application.js";
+import type { CodexWorkbenchGenerationInput } from "../codex-workbench-owner.js";
 
 test("the canvas awaits initial graph readiness, replaces hooks on reload, and shuts down once", async () => {
 	const events: string[] = [];

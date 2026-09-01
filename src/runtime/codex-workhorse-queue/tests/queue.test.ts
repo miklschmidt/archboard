@@ -30,6 +30,7 @@ describe("Codex workhorse queue contract", () => {
 			"delete",
 			"reorder",
 			"start",
+			"shutdown",
 		]);
 		expect(Object.keys(fixtureValue.queue)).not.toContain("revision");
 	});

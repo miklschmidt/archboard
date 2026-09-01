@@ -8,7 +8,6 @@ import type {
 	SemanticContextPublisherOptions,
 	SettledSemanticChangeEvent,
 } from "../../../runtime/codex-semantic-context/index.js";
-import type { RemoteMediaAttachment } from "../../../shared/codex-realtime-host/index.js";
 import type { LogicalToolCallCorrelation } from "../../../shared/codex-workbench-identity/index.js";
 import type { WorkhorseOperationBinding } from "../../../runtime/codex-workhorse-operations/index.js";
 import { stateDir } from "../../../runtime/engine/state-dir.js";
@@ -50,7 +49,6 @@ export interface CanvasCodexWorkbenchHost {
 			"outcome"
 		>,
 	) => ArchboardContext;
-	readonly attachRemoteMedia: (attachment: RemoteMediaAttachment) => void;
 	readonly waitForTargets: Parameters<
 		typeof createCanvasDynamicLifecycleOwner
 	>[0]["waitForTargets"];
@@ -271,7 +269,6 @@ export function createCanvasCodexWorkbenchInstallation(
 						coordinatorThreadId: coordinator.threadId,
 					};
 				},
-				attachRemoteMedia: host.attachRemoteMedia,
 			}),
 			approvals: () => ({
 				onError: host.onFatal,
@@ -329,12 +326,16 @@ export function createCanvasCodexWorkbenchInstallation(
 			operations: (created) => ({
 				currentBinding: () => currentOperationBinding(created),
 				currentCoordinatorCall: () => owners.currentCoordinatorCall,
-				contextFor: (operation) =>
-					host.contextForOperation(host.paneIds()[0] ?? "headless", {
+				contextFor: (operation) => {
+					const workhorse = requireCreated(created, "workhorse").snapshot();
+					if (workhorse.state !== "ready" || workhorse.paneId === null)
+						throw new Error("A workhorse operation has no exact proven pane target.");
+					return host.contextForOperation(workhorse.paneId, {
 						id: operation.operationId,
 						kind: operation.kind,
 						rpc: operation.rpc,
-					}),
+					});
+				},
 			}),
 			spokenApproval: (created) => ({
 				currentRealtime: () => {
@@ -422,6 +423,8 @@ export function createCanvasCodexWorkbenchInstallation(
 					components: created,
 					dynamicApprovals: dynamic,
 					state: owners.browserState,
+					contextForOperation: (context, operation) =>
+						host.contextForOperation(context.paneId, operation),
 					onChange: (listener) => {
 						owners.projectionListeners.add(listener);
 						return () => void owners.projectionListeners.delete(listener);

@@ -11,6 +11,10 @@ import {
 	type CommandFactory,
 } from "./helpers.js";
 import { createGatewayHarness, type GatewayHarness } from "./support.js";
+import {
+	parseRealtimeCorrelationId,
+	parseRealtimeSessionId,
+} from "../../../shared/codex-realtime-host/index.js";
 
 const openHarnesses: GatewayHarness[] = [];
 
@@ -79,6 +83,31 @@ describe("Codex workbench browser command owners", () => {
 				outcome: "not_delivered",
 			});
 		}
+	});
+
+	test("returns the negotiated SDP answer for browser-local remote media attachment", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const command = realtimeCommand(value, connection.claimLease(), "realtimeStart");
+		const realtimeAnswer = {
+			sessionId: parseRealtimeSessionId(String(command.commandId)),
+			correlationId: parseRealtimeCorrelationId(String(command.commandId)),
+			sdp: "v=0\r\na=answer",
+		};
+		value.setActionResult({ outcome: "delivered", realtimeAnswer });
+
+		const result = await connection.command(command);
+		expect(result).toMatchObject({ outcome: "delivered", realtimeAnswer });
+	});
+
+	test("reports realtime negotiation unavailability as an explicit command refusal", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		value.setActionError(new Error("Browser realtime media is unavailable."));
+		const result = await connection.command(
+			realtimeCommand(value, connection.claimLease(), "realtimeStart"),
+		);
+		expect(result).toMatchObject({ outcome: "not_delivered", code: "command_failed" });
 	});
 
 	test("requires the exact executable link for text, queue, and realtime commands", async () => {

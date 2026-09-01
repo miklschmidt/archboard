@@ -101,6 +101,10 @@ export class FakeQueue implements CodexWorkhorseQueue<OperationId> {
 		});
 	}
 
+	async shutdown(): Promise<void> {
+		this.calls.push("shutdown");
+	}
+
 	private target(id: SessionQueuedSubmission["id"]): SessionQueuedSubmission | null {
 		return this.state.find((item) => item.id === id) ?? null;
 	}
