@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-09-01 17:08'
+updated_date: '2026-09-01 17:14'
 labels: []
 dependencies:
   - TASK-143.01.14
@@ -59,11 +59,11 @@ Own the one real-process lifecycle and protocol owner for the production Codex c
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Add focused approval-owner and wait-owner notification tests that vary child, epoch, thread, turn, call, and unrelated method independently, then prove one exact settlement and duplicate idempotence.
-2. Extend the controlled process fixture with recorded wrong-call and wrong-turn terminal notifications that do not consume the exact pending call.
-3. Strengthen the interruption process owner to assert approval and wait remain pending, responses and mutation effects stay at zero after each mismatch, then retain the exact authored terminal settlement checks.
-4. Run focused and prior lifecycle regressions, both TypeScript projects, lint, formatting, and fixed-base diff checks in sequential named 6 GiB systemd scopes. Do not rerun the known module-scope OOM analyzer.
-5. Update Backlog notes and modified files through the CLI, commit a new immutable successor to f83ea660, leave status/AC/final summary untouched, and send the required remediation-3 callback for complete 88e7643a..new-head rereview.
+1. Add a decoded turn/completed helper and focused approval-owner cases for wrong thread, wrong turn, and non-interrupted terminal status.
+2. Add the same focused active-wait matrix, proving pending graph ownership, exact interrupted settlement, and duplicate idempotence.
+3. Retain the existing public-process wrong-turn case unchanged and run its interruption owner without adding another process case.
+4. Run focused and terminal lifecycle regressions, both TypeScript projects, lint, formatting, inventory, and diff checks in sequential named 6 GiB systemd scopes.
+5. Record remediation-4 evidence through Backlog, commit an immutable successor to b2972e49, leave status/AC/final summary untouched, and callback the parent for complete 88e7643a..new-head rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -96,4 +96,10 @@ Third remediation adds only automated enforcement; production code is unchanged.
 The public-process interruption owner now injects recorded wrong-call and wrong-turn terminal events before each exact call_cancelled and caller_turn_interrupted event. After each mismatch it proves the dynamic approval is still projected, both reverse responses remain absent, mutation count is unchanged, and a fresh target thread/read proves the wait loop remains active. Exact authored classification and one response remain unchanged.
 
 Remediation-3 validation in sequential 6 GiB systemd scopes: focused seam plus process owners 5 pass / 78 expectations; prior reload, normal-close, and composed lifecycle owners 4 pass / 145 expectations; terminal/process lifecycle regressions 40 pass / 168 expectations; signal and real 90-second expiry owner 2 pass / 33 expectations; repository test inventory 39 pass / 69 expectations; both TypeScript projects, full lint, full format check, and diff checks pass. The known module-scope OOM analyzer was not rerun. Task remains In Progress with AC unchecked and final summary empty for complete fixed-base rereview.
+
+Fourth remediation starts from clean immutable head b2972e49. Scope is the distinct turn/completed correlation branch only: decoded focused-owner tests will prove wrong thread, wrong turn, and non-interrupted terminal status are inert before one exact interrupted settlement and duplicate idempotence. Production and the existing public-process case remain unchanged unless focused evidence exposes a defect.
+
+Fourth remediation adds decoded turn/completed owner enforcement only; production and the public-process fixture remain unchanged. For both dynamic approval and active wait owners, wrong-thread interrupted, matching-thread/wrong-turn interrupted, and matching-thread/turn completed notifications preserve the pending owner with zero settlement; the wait also retains one graph edge with zero abort. The exact matching interrupted event settles once as caller_turn_interrupted/interruption, and a duplicate exact event produces no second settlement, abort, projection change, or graph mutation.
+
+Remediation-4 validation in sequential named 6 GiB scopes: focused correlation plus retained public interruption owners 7 pass / 90 expectations; process and terminal lifecycle regressions 40 pass / 168 expectations; signal and authored real-90-second expiry owner 2 pass / 33 expectations; repository inventory 39 pass / 69 expectations; both TypeScript projects, full lint, full format check, and diff checks pass. The known module-scope OOM analyzer was not rerun. Task status, acceptance criteria, and final summary remain untouched for complete fixed-base rereview.
 <!-- SECTION:NOTES:END -->
