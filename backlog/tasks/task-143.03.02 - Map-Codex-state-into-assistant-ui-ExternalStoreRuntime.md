@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.02
 title: Adapt Codex state with assistant-ui runtime providers
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-01 18:15'
+updated_date: '2026-09-01 18:17'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -32,10 +32,10 @@ Delegation profile: gpt-daybreak-blue-latest, low.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Only the executable current workhorse uses named root imports useExternalStoreRuntime and AssistantRuntimeProvider; coordinator and persisted/prior-epoch histories use ReadonlyThreadProvider, and MessageNotSentError is the sole additional runtime member.
-- [ ] #2 No namespace/default/subpath import, assistant transport, thread-list, queue, tool handler, setMessages, edit/reload/delete control, assistant voice adapter, or unassigned export is used.
-- [ ] #3 A canonical turn-keyed assistant record is created immediately from authoritative command/turn identity; there is no optimistic placeholder message that can become competing truth.
-- [ ] #4 Module tests cover runtime failure, unsupported item mapping, stale turn, provider teardown, and reconnect, proving app-server authority is preserved and each path renders an explicit recoverable or inspect-only state.
+- [x] #1 Only the executable current workhorse uses named root imports useExternalStoreRuntime and AssistantRuntimeProvider; coordinator and persisted/prior-epoch histories use ReadonlyThreadProvider, and MessageNotSentError is the sole additional runtime member.
+- [x] #2 No namespace/default/subpath import, assistant transport, thread-list, queue, tool handler, setMessages, edit/reload/delete control, assistant voice adapter, or unassigned export is used.
+- [x] #3 A canonical turn-keyed assistant record is created immediately from authoritative command/turn identity; there is no optimistic placeholder message that can become competing truth.
+- [x] #4 Module tests cover runtime failure, unsupported item mapping, stale turn, provider teardown, and reconnect, proving app-server authority is preserved and each path renders an explicit recoverable or inspect-only state.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -72,3 +72,9 @@ Remediation 3 replaces the prop-fed test observer with a dedicated useAui descen
 
 Remediation 4 corrects the mounted readiness matrix only. MatrixReadiness is derived from BrowserReadiness and excludes thread_capable plus the transport-unreachable connected incompatible_contract arm. Concrete readiness values are passed without manufacturing casts; branded login identity is created through the shared identity authority and browser schema. The real connected readiness reconnecting arm now asserts exact snapshot reason, reconnect recovery, retained history, read-only mode, null runtime, and no provider observation. The separate connection-level incompatible_contract owner remains. Focused runtime/policy tests, 33-registration uniqueness audit, both TypeScript projects, full lint, repository format, frontend build, and diff checks passed under 6G/1G services.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Completed the Archboard-owned assistant-ui runtime adapter while preserving BrowserWorkbenchTransport as the sole subscription, reconnect, and command authority. Only executable current workhorses mount useExternalStoreRuntime with AssistantRuntimeProvider; coordinator, inspect-only, prior-epoch, reconnecting, stale, terminal, and failure histories use ReadonlyThreadProvider with exact visible recovery. Authoritative TurnId and ItemId records map without optimistic competing truth. Submission results distinguish delivered, not delivered, and unknown outcomes; transport-generation fencing prevents replaced or unmounted completions from changing the current composer or status. Mounted tests verify the real useAui provider context, lifecycle, delivery behavior, all media/status mappings, and the typed reachable-state matrix. Repository policy enforces the exact production assistant-ui import surface and the single test-only context observer. Verified by the focused 33-test unique-registration suite, assistant-ui policy owners, transport/socket/composition/inventory regressions, both TypeScript projects, frontend build, full lint, repository format, and independent REVIEW_CLEAN across the complete range.
+<!-- SECTION:FINAL_SUMMARY:END -->
