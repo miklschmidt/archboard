@@ -33,9 +33,11 @@ export function createCanvasCodexWorkbenchApplication(
 	readonly shutdown: () => Promise<void>;
 } {
 	let shutdownPromise: Promise<void> | null = null;
+	let loadedModule: CanvasCodexWorkbenchModule | null = null;
 
 	const prepare = async (): Promise<CodexWorkbenchSnapshot> => {
 		const module = await options.load();
+		loadedModule = module;
 		const installation = options.installation();
 		const snapshot = options.state.installed
 			? await module.reloadProductionCodexWorkbench(installation)
@@ -47,12 +49,25 @@ export function createCanvasCodexWorkbenchApplication(
 
 	const shutdown = (): Promise<void> => {
 		if (shutdownPromise !== null) return shutdownPromise;
+		if (!options.state.installed) return Promise.resolve();
+		const module = loadedModule;
+		if (module === null)
+			return Promise.reject(
+				new Error("The installed Codex workbench has no synchronously available shutdown owner."),
+			);
+		// The production shutdown call revokes every retained dispatch slot before
+		// returning its cleanup promise.
+		let cleanup: Promise<CodexWorkbenchSnapshot>;
+		try {
+			cleanup = module.shutdownProductionCodexWorkbench();
+		} catch (error) {
+			return Promise.reject(error);
+		}
 		const operation = (async (): Promise<void> => {
-			if (!options.state.installed) return;
-			const module = await options.load();
-			await module.shutdownProductionCodexWorkbench();
+			await cleanup;
 			options.state.installed = false;
 			options.state.shutdown = null;
+			loadedModule = null;
 		})();
 		shutdownPromise = operation;
 		return operation;

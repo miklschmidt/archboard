@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import type {
@@ -25,6 +25,7 @@ const CONTROL_KEYS = ["current", "runtime", "wrappers"];
 const OWNER_SLOT_KEYS = ["gateway", "reload", "shutdown", "snapshot", "start"];
 const RUNTIME_KEYS = [
 	"accountReady",
+	"exit",
 	"identityLedger",
 	"operation",
 	"process",
@@ -81,7 +82,7 @@ function fakeGeneration(events: string[], generation: number): CodexWorkbenchGen
 		onIssue: () => () => undefined,
 		onStderr: () => () => undefined,
 		onExit: () => () => undefined,
-		inspect: () => ({}) as never,
+		inspect: () => ({ state: "open" }) as never,
 		inspectLateResponses: () => [],
 		inspectIssues: () => [],
 		inspectStderr: () => ({}) as never,
@@ -96,6 +97,7 @@ function fakeGeneration(events: string[], generation: number): CodexWorkbenchGen
 		gateway: gateway as unknown as CodexWorkbenchGateway,
 		activate: async () => void events.push(`generation:${generation}:activate`),
 		deactivate: () => void events.push(`generation:${generation}:deactivate`),
+		retireChild: async () => undefined,
 		stop: async (reason) => {
 			if (stopped) return;
 			stopped = true;
@@ -120,6 +122,20 @@ describe("production Codex workbench composition policy", () => {
 			expect(existsSync(path.join(root, entrypoint)), entrypoint).toBeTrue();
 		expect(existsSync(path.join(root, "codex-workbench-lifecycle.ts"))).toBeFalse();
 		expect(existsSync(path.join(root, "lib/codex-workbench-lifecycle.ts"))).toBeTrue();
+	});
+
+	test("only the private lifecycle owner imports the private request router", async () => {
+		const root = path.resolve(import.meta.dir, "../../../src/server/canvas");
+		const importers: string[] = [];
+		for await (const file of new Bun.Glob("**/*.ts").scan({ cwd: root })) {
+			if (file === "lib/codex-workbench-routing.ts") continue;
+			const source = readFileSync(path.join(root, file), "utf8");
+			if (source.includes("codex-workbench-routing.js")) importers.push(file);
+		}
+		expect(importers.toSorted()).toEqual(["lib/codex-workbench-lifecycle.ts"]);
+		expect(readFileSync(path.join(root, "codex-workbench-generation.ts"), "utf8")).not.toContain(
+			"createCodexWorkbenchRequestRouter",
+		);
 	});
 
 	test("retains only scalar coordination, stable kernel handles, and replaceable slots", async () => {
@@ -216,6 +232,14 @@ describe("production Codex workbench composition policy", () => {
 		Object.assign(runtime.transport, { coordinator: {} });
 		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
 		Reflect.deleteProperty(runtime.transport, "coordinator");
+
+		Object.assign(runtime.exit, { generationCallback: () => undefined });
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
+		Reflect.deleteProperty(runtime.exit, "generationCallback");
+
+		runtime.exit.event = { child: {} } as never;
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
+		runtime.exit.event = null;
 
 		Object.assign(retained.control.current ?? {}, { approval: {} });
 		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");

@@ -113,11 +113,6 @@ import {
 import { CodexWorkbenchCompositionError } from "./codex-workbench-error.js";
 import { assertCodexWorkbenchRetainedState } from "./codex-workbench-retained-policy.js";
 import {
-	createCodexWorkbenchRequestRouter,
-	type CodexWorkbenchRequestOwners,
-	type CodexWorkbenchRequestRouter,
-} from "./codex-workbench-routing.js";
-import {
 	CODEX_WORKBENCH_OWNER,
 	createCodexWorkbenchGenerationLifecycle,
 	emptyCodexWorkbenchRetainedState,
@@ -142,7 +137,6 @@ import {
 export {
 	CodexWorkbenchCompositionError,
 	assertCodexWorkbenchRetainedState,
-	createCodexWorkbenchRequestRouter,
 	CODEX_WORKBENCH_OWNER,
 	emptyCodexWorkbenchRetainedState,
 };
@@ -156,8 +150,6 @@ export type {
 	CodexWorkbenchOwnerOptions,
 	CodexWorkbenchOwnerRuntime,
 	CodexWorkbenchOwnerSlots,
-	CodexWorkbenchRequestOwners,
-	CodexWorkbenchRequestRouter,
 	CodexWorkbenchRetainedControl,
 	CodexWorkbenchRetainedState,
 	CodexWorkbenchSnapshot,
@@ -196,8 +188,7 @@ export interface ComposeCodexWorkbenchGenerationOptions {
 	readonly ownsTransport?: boolean;
 	readonly activate?: boolean;
 	readonly hooks: CodexWorkbenchGenerationHooks;
-	readonly onChildExitStart?: () => void;
-	readonly onChildExitFinished?: (failure: Error | null) => Promise<void> | void;
+	readonly assertActivationCurrent?: () => void;
 }
 
 type ComponentBuilder<Value> = (created: Readonly<Partial<CodexWorkbenchComponents>>) => Value;
@@ -585,8 +576,7 @@ export async function composeCodexWorkbenchGeneration(
 		components,
 		identityLedger: options.identityLedger,
 		hooks: options.hooks,
-		onChildExitStart: options.onChildExitStart ?? (() => undefined),
-		onChildExitFinished: options.onChildExitFinished ?? (() => undefined),
+		assertActivationCurrent: options.assertActivationCurrent ?? (() => undefined),
 	});
 	if (options.activate !== false) await source.activate();
 	return source;
@@ -619,8 +609,7 @@ function productionGenerationFactory(
 			ownsTransport: input.kernel === null,
 			activate: false,
 			hooks: options.hooks(input),
-			onChildExitStart: input.onChildExitStart,
-			onChildExitFinished: input.onChildExitFinished,
+			assertActivationCurrent: input.assertActivationCurrent,
 		});
 	};
 }
