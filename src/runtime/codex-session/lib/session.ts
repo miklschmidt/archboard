@@ -24,7 +24,9 @@ import type {
 import {
 	CodexSessionError,
 	CodexSessionMutationError,
+	CODEX_SESSION_CONTROL,
 	type CodexSession,
+	type ControlledCodexSession,
 	type CodexSessionOptions,
 	type SessionParams,
 	type SessionServerRequest,
@@ -109,7 +111,7 @@ function authoredSessionInitializeParams(): ClientRequestParams<"initialize"> {
 	};
 }
 
-export function createCodexSession(options: CodexSessionOptions): CodexSession {
+export function createCodexSession(options: CodexSessionOptions): ControlledCodexSession {
 	const transport: CodexTransport = options.transport;
 	const identity = options.identity;
 	const lifecycle = options.lifecycle;
@@ -121,6 +123,8 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 	let notificationsStopped = false;
 	let publishingNotifications = false;
 	const bufferedNotifications: TransportServerNotification[] = [];
+	const unsubscribers: Array<() => void> = [];
+	let disposed = false;
 	const requestIdentitySerializers = {
 		threadId: (value: unknown) =>
 			identity.decoder.serializeCodexIdentity(identity.decoder.parseThreadId(value)),
@@ -192,7 +196,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 	};
 
 	const onNotification = (event: TransportServerNotification): void => {
-		if (notificationsStopped) return;
+		if (disposed || notificationsStopped) return;
 		if (!notificationsPublished || publishingNotifications) {
 			bufferedNotifications.push(event);
 			return;
@@ -424,6 +428,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 	};
 
 	const onServerRequest = (request: TransportServerRequest): void => {
+		if (disposed) return;
 		if (request.owner !== "codex-session") return;
 		const operation =
 			request.method === "currentTime/read"
@@ -436,8 +441,18 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		});
 	};
 
-	transport.onServerNotification(onNotification);
-	transport.onServerRequest(onServerRequest);
+	const dispose = (): void => {
+		if (disposed) return;
+		disposed = true;
+		notificationsStopped = true;
+		bufferedNotifications.length = 0;
+		for (const unsubscribe of unsubscribers.splice(0).toReversed()) unsubscribe();
+	};
+
+	if ((options.listenerOwnership ?? "self") === "self") {
+		unsubscribers.push(transport.onServerNotification(onNotification));
+		unsubscribers.push(transport.onServerRequest(onServerRequest));
+	}
 
 	const initialize = async (): Promise<SessionResponsePayloads["initialize"]> => {
 		if (phase !== "transport-connected")
@@ -572,6 +587,7 @@ export function createCodexSession(options: CodexSessionOptions): CodexSession {
 		read("thread/timeline/list", params, "thread-capable");
 
 	return Object.freeze({
+		[CODEX_SESSION_CONTROL]: Object.freeze({ onNotification, onServerRequest, dispose }),
 		initialize,
 		configRead,
 		accountRead,

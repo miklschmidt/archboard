@@ -473,7 +473,10 @@ export function createCodexApprovalBroker(
 		}
 	};
 
-	if (options.transport.onServerRequest !== undefined) {
+	if (
+		(options.listenerOwnership ?? "self") === "self" &&
+		options.transport.onServerRequest !== undefined
+	) {
 		unsubscribers.push(
 			options.transport.onServerRequest((request) => {
 				if (request.owner !== "codex-approvals") return;
@@ -485,7 +488,7 @@ export function createCodexApprovalBroker(
 			}),
 		);
 	}
-	if (options.transport.onExit !== undefined) {
+	if ((options.listenerOwnership ?? "self") === "self" && options.transport.onExit !== undefined) {
 		unsubscribers.push(
 			options.transport.onExit((exit) => {
 				void childExit(exit).catch((error) => reportError(error));

@@ -12,9 +12,11 @@ import {
 	createCodexWorkbenchRequestRouter,
 	emptyCodexWorkbenchRetainedState,
 	installCodexWorkbenchOwner,
+	type CodexWorkbenchGenerationHooks,
 	type CODEX_WORKBENCH_OWNER,
 	type CodexWorkbenchGeneration,
-} from "../index.js";
+	type CodexWorkbenchGenerationInput,
+} from "../codex-workbench.js";
 
 const HUMAN_METHODS = [
 	"item/commandExecution/requestApproval",
@@ -148,13 +150,33 @@ function fakeGeneration(events: string[], number: number): CodexWorkbenchGenerat
 		transport: {} as never,
 		gateway: { marker: number } as unknown as CodexWorkbenchGateway,
 		router: { route: () => undefined },
+		replaceHooks: async () => void events.push(`generation:${number}:replace-hooks`),
 		stop: async (reason) => void events.push(`generation:${number}:stop:${reason}`),
 		finishStop: () => void events.push(`generation:${number}:finish-stop`),
 	};
 }
 
 describe("production Codex owner installation", () => {
-	test("retains one process while replacing generation closures on reload", async () => {
+	test("releases registration when process-owner construction fails", () => {
+		const retained = emptyCodexWorkbenchRetainedState();
+		expect(() =>
+			installCodexWorkbenchOwner(retained, {
+				createProcess: () => {
+					throw new Error("process construction failed");
+				},
+				createGeneration: async () => fakeGeneration([], 1),
+			}),
+		).toThrow("could not be created");
+		expect(retained).toMatchObject({ owner: null, process: null, state: "failed" });
+		expect(() =>
+			installCodexWorkbenchOwner(retained, {
+				createProcess: () => fakeProcess([]),
+				createGeneration: async () => fakeGeneration([], 1),
+			}),
+		).not.toThrow();
+	});
+
+	test("retains one process and generation while replacing only source hooks", async () => {
 		const events: string[] = [];
 		const retained = emptyCodexWorkbenchRetainedState();
 		let processCreates = 0;
@@ -170,24 +192,29 @@ describe("production Codex owner installation", () => {
 		};
 		const first = installCodexWorkbenchOwner(retained, options);
 		expect((await first.start()).ready).toBeTrue();
-		const second = installCodexWorkbenchOwner(retained, options);
-		expect((await second.start()).generation).toBe(2);
+		await first.reload({} as CodexWorkbenchGenerationHooks);
 		expect(processCreates).toBe(1);
-		expect(events).toEqual([
-			"process:start",
-			"generation:1:create",
-			"generation:1:stop:reload",
-			"generation:1:finish-stop",
-			"process:start",
-			"generation:2:create",
-		]);
-		expect((second.gateway() as unknown as { marker: number }).marker).toBe(2);
-		expect((await second.shutdown()).state).toBe("idle");
+		expect(events).toEqual(["process:start", "generation:1:create", "generation:1:replace-hooks"]);
+		expect((first.gateway() as unknown as { marker: number }).marker).toBe(1);
+		expect(first.snapshot().generation).toBe(2);
+		expect((await first.shutdown()).state).toBe("idle");
 		expect(events.slice(-3)).toEqual([
-			"generation:2:stop:shutdown",
+			"generation:1:stop:shutdown",
 			"process:stop",
-			"generation:2:finish-stop",
+			"generation:1:finish-stop",
 		]);
+	});
+
+	test("refuses every second active registration, including the same owner", () => {
+		const retained = emptyCodexWorkbenchRetainedState();
+		const options = {
+			createProcess: () => fakeProcess([]),
+			createGeneration: async () => fakeGeneration([], 1),
+		};
+		installCodexWorkbenchOwner(retained, options);
+		expect(() => installCodexWorkbenchOwner(retained, options)).toThrow(
+			CodexWorkbenchCompositionError,
+		);
 	});
 
 	test("refuses a different retained owner without replacing it", () => {
@@ -199,6 +226,42 @@ describe("production Codex owner installation", () => {
 				createGeneration: async () => fakeGeneration([], 1),
 			}),
 		).toThrow(CodexWorkbenchCompositionError);
+	});
+
+	test("retires readiness synchronously on child exit and permits registration after cleanup", async () => {
+		const events: string[] = [];
+		const retained = emptyCodexWorkbenchRetainedState();
+		let input: CodexWorkbenchGenerationInput | null = null;
+		const options = {
+			createProcess: () => fakeProcess(events),
+			createGeneration: async (value: CodexWorkbenchGenerationInput) => {
+				input = value;
+				return fakeGeneration(events, value.generation);
+			},
+		};
+		const owner = installCodexWorkbenchOwner(retained, options);
+		await owner.start();
+		const captured = input as CodexWorkbenchGenerationInput | null;
+		if (captured === null) throw new Error("generation input was not captured");
+		captured.onChildExitStart();
+		expect(owner.snapshot()).toMatchObject({ state: "stopping", ready: false });
+		await captured.onChildExitFinished();
+		expect(owner.snapshot()).toMatchObject({ state: "idle", ready: false });
+		expect(() => installCodexWorkbenchOwner(retained, options)).not.toThrow();
+	});
+
+	test("terminal shutdown is idempotent and permits one later registration", async () => {
+		const events: string[] = [];
+		const retained = emptyCodexWorkbenchRetainedState();
+		const options = {
+			createProcess: () => fakeProcess(events),
+			createGeneration: async () => fakeGeneration(events, 1),
+		};
+		const owner = installCodexWorkbenchOwner(retained, options);
+		await owner.start();
+		await Promise.all([owner.shutdown(), owner.shutdown()]);
+		expect(events.filter((event) => event === "process:stop")).toHaveLength(1);
+		expect(() => installCodexWorkbenchOwner(retained, options)).not.toThrow();
 	});
 
 	test("stops the owned child when generation startup fails", async () => {
@@ -217,5 +280,26 @@ describe("production Codex owner installation", () => {
 		}
 		expect(owner.snapshot().state).toBe("failed");
 		expect(events).toEqual(["process:start", "process:stop"]);
+	});
+
+	test("does not wait forever when process start fails before publishing a child", async () => {
+		const retained = emptyCodexWorkbenchRetainedState();
+		const process = fakeProcess([]);
+		const owner = installCodexWorkbenchOwner(retained, {
+			createProcess: () => ({
+				...process,
+				start: () => Promise.reject(new Error("spawn failed")),
+			}),
+			createGeneration: async () => fakeGeneration([], 1),
+		});
+
+		try {
+			await owner.start();
+			expect.unreachable("startup should fail");
+		} catch (error) {
+			expect(error).toBeInstanceOf(CodexWorkbenchCompositionError);
+			expect((error as Error).message).toContain("did not become ready");
+		}
+		expect(retained.owner).toBeNull();
 	});
 });

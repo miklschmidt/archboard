@@ -1,5 +1,5 @@
 export { createCodexSession } from "./lib/session.js";
-export { SESSION_METHODS } from "./lib/contract.js";
+export { CODEX_SESSION_CONTROL, SESSION_METHODS } from "./lib/contract.js";
 export {
 	CodexSessionError,
 	CodexSessionMutationError,
@@ -8,6 +8,8 @@ export {
 export type {
 	BedrockSetupParams,
 	CodexSession,
+	CodexSessionControl,
+	ControlledCodexSession,
 	CodexSessionOptions,
 	CodexSessionStorage,
 	CodexSessionErrorCode,

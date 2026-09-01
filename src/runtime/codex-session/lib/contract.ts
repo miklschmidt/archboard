@@ -77,6 +77,18 @@ export interface CodexSessionStorage {
 
 export type SessionNotificationHandler = (event: TransportServerNotification) => void;
 
+export const CODEX_SESSION_CONTROL: unique symbol = Symbol("codex-session-control");
+
+export interface CodexSessionControl {
+	readonly onNotification: (event: TransportServerNotification) => void;
+	readonly onServerRequest: (request: TransportServerRequest) => void;
+	readonly dispose: () => void;
+}
+
+export type ControlledCodexSession = CodexSession & {
+	readonly [CODEX_SESSION_CONTROL]: CodexSessionControl;
+};
+
 export interface CodexSessionOptions {
 	readonly transport: CodexTransport;
 	readonly identity: IdentityAuthority;
@@ -85,6 +97,8 @@ export interface CodexSessionOptions {
 	readonly checkoutRoot: string;
 	readonly lifecycle?: CodexProcessLifecycle;
 	readonly onNotification?: SessionNotificationHandler;
+	/** Composition owns the sole listener cohort; standalone consumers keep legacy self-registration. */
+	readonly listenerOwnership?: "self" | "composition";
 	readonly now?: () => number;
 }
 

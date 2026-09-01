@@ -291,6 +291,8 @@ export interface CodexApprovalBrokerOptions {
 	readonly getSpokenEligibilityFacts?: (request: ApprovalRequest) => SpokenEligibilityFacts;
 	readonly onChange?: (snapshot: ApprovalSnapshot) => void;
 	readonly onError?: (error: unknown, request?: TransportServerRequest) => void;
+	/** Composition owns the sole request and exit listener cohort. */
+	readonly listenerOwnership?: "self" | "composition";
 }
 
 export type CodexApprovalErrorCode =
