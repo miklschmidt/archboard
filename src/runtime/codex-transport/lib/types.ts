@@ -31,7 +31,7 @@ import type {
 /** The subset of the Node child-process contract that the transport needs. */
 export type CodexTransportChild = Pick<
 	ChildProcessWithoutNullStreams,
-	"stdin" | "stdout" | "stderr"
+	"stdin" | "stdout" | "stderr" | "exitCode" | "signalCode"
 > & {
 	on<E extends "error" | "exit">(
 		event: E,

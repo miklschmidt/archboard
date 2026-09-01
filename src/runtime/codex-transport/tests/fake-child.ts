@@ -68,8 +68,12 @@ export class FakeChild extends EventEmitter implements CodexTransportChild {
 	readonly stdin = new FakeStdin();
 	readonly stdout = new PassThrough();
 	readonly stderr = new PassThrough();
+	exitCode: number | null = null;
+	signalCode: NodeJS.Signals | null = null;
 
 	exit(code: number | null = 0, signal: NodeJS.Signals | null = null): void {
+		this.exitCode = code;
+		this.signalCode = signal;
 		this.emit("exit", code, signal);
 	}
 

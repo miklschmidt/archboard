@@ -28,6 +28,8 @@ class CapturingStdin extends Writable {
 }
 
 class TransportSessionChild extends EventEmitter implements CodexTransportChild {
+	exitCode: number | null = null;
+	signalCode: NodeJS.Signals | null = null;
 	readonly stdin = new CapturingStdin();
 	readonly stdout = new PassThrough();
 	readonly stderr = new PassThrough();

@@ -233,6 +233,7 @@ interface Wiring {
 	signalsBound: boolean;
 	codex: {
 		installed: boolean;
+		phase: "idle" | "preparing" | "installed" | "stopping" | "stopped";
 		shutdown: (() => Promise<void>) | null;
 		acceptBrowser: ((instance: BrowserConnectionInstance, browserId: string) => void) | null;
 		closeBrowser:
@@ -255,6 +256,7 @@ const wiring = kept<Wiring>("http", () => {
 		signalsBound: false,
 		codex: {
 			installed: false,
+			phase: "idle",
 			shutdown: null,
 			acceptBrowser: null,
 			closeBrowser: null,
@@ -4617,7 +4619,7 @@ async function prepareCodexWorkbench(): Promise<void> {
 	]);
 	const application = applicationModule.createCanvasCodexWorkbenchApplication({
 		state: wiring.codex,
-		load: async () => productionModule,
+		module: productionModule,
 		installation: () =>
 			productionModule.createCanvasCodexWorkbenchInstallation(createCodexWorkbenchHost()),
 	});

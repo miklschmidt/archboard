@@ -478,30 +478,34 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	child.on("error", onChildError);
 	child.on("exit", onChildExit);
 	childListenersAttached = true;
-	streamAttachment = attachCodexStreamReader(child.stdout, child.stderr, {
-		onLine: router.handleLine,
-		onIssue: events.emitIssue,
-		onFrameTooLarge: () => closeTransport("frame-too-large"),
-		onStdoutError: () => {
-			emitIssue({
-				kind: "read-error",
-				direction: "stdout",
-				detail: "Codex stdout emitted an error",
-			});
-			closeTransport("stdout-error");
-		},
-		onStdoutEnd: () => closeTransport(state === "closing" ? "shutdown" : "stdout-error"),
-		onStderr: events.emitStderr,
-		onStderrError: () =>
-			emitIssue({
-				kind: "stderr-error",
-				direction: "stderr",
-				detail: "Codex stderr emitted an error",
-			}),
-	});
+	if (child.exitCode !== null || child.signalCode !== null)
+		onChildExit(child.exitCode, child.signalCode);
+	if (state === "open")
+		streamAttachment = attachCodexStreamReader(child.stdout, child.stderr, {
+			onLine: router.handleLine,
+			onIssue: events.emitIssue,
+			onFrameTooLarge: () => closeTransport("frame-too-large"),
+			onStdoutError: () => {
+				emitIssue({
+					kind: "read-error",
+					direction: "stdout",
+					detail: "Codex stdout emitted an error",
+				});
+				closeTransport("stdout-error");
+			},
+			onStdoutEnd: () => closeTransport(state === "closing" ? "shutdown" : "stdout-error"),
+			onStderr: events.emitStderr,
+			onStderrError: () =>
+				emitIssue({
+					kind: "stderr-error",
+					direction: "stderr",
+					detail: "Codex stderr emitted an error",
+				}),
+		});
 
-	for (const registration of options.dynamicDispatchers ?? [])
-		registerDynamicDispatcher(registration);
+	if (state === "open")
+		for (const registration of options.dynamicDispatchers ?? [])
+			registerDynamicDispatcher(registration);
 
 	return Object.freeze({
 		replaceIdentity,

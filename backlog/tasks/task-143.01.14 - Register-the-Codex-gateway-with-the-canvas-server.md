@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 08:04'
+updated_date: '2026-09-01 08:41'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -221,6 +221,16 @@ Own the one production composition root in the canvas server. It instantiates ev
 61. Give the canvas application a synchronously available production shutdown handle and remove the request router from every root entrypoint. Add repository policy that only the private lifecycle implementation may import the private router.
 
 62. Run the new adversarial owners first, then the focused non-hot lanes and viable repository gates sequentially in named 6 GiB memory and 1 GiB swap units. Keep status and AC unchanged, preserve the protected hash, commit above 0b0f9cab, and callback the parent with finding-by-finding evidence.
+
+63. Replace the retained exit listener/disposer record with an exact replaying terminal-event bridge and one replaceable source handler; attach it at stable-kernel acquisition and poison the retired handler after reload.
+
+64. Acquire the first identity ledger and transport synchronously from the exact spawned child before awaiting generation construction; cover exit-before-transport-listener, exit-during-factory, and exit-before-activation schedules with one-shot cleanup and deterministic recovery.
+
+65. Replace the canvas application installed boolean protocol with explicit idle/preparing/installed/stopping/stopped ownership, publish synchronous shutdown authority before start awaits, and aggregate concurrent startup/shutdown failures.
+
+66. Run the three adversarial owners first, then the requested focused non-hot module and production owners plus sequential static gates under named 6 GiB/1 GiB systemd scopes; do not rerun documented OOM aggregates.
+
+67. Preserve the protected artifact, task status, and unchecked AC, commit above 91991bce, and send the fixed-base parent the required finding-by-finding callback before local final.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -299,10 +309,18 @@ Production initialization now receives the lifecycle transaction guard. Session 
 The request router is private again. codex-workbench-generation.ts and the composition root no longer export it. Generation behavior still drives all seven ordinary families, both item/tool/call owners, and the three session methods through the installed transport listener. Repository policy scans the module and permits only lib/codex-workbench-lifecycle.ts to import the private router. The composition root remains smaller than the accepted split at 643 lines.
 
 Final sequential named 6 GiB memory / 1 GiB swap validation: adversarial lifecycle, production initialization, application revocation, and policy lane 32 pass, 0 fail, 150 assertions; focused transport/session/identity/gateway/canvas module lane 161 pass, 0 fail, 1,454 assertions; actual src/server.ts composition, application socket, real first-socket failure recovery, startup cleanup, and stale-socket system lane 8 pass, 0 fail, 118 assertions; inventory 39 pass, 0 fail, 69 assertions. Both TypeScript projects, full lint with 0 warnings/errors, formatting check, frontend build, targeted module-scope analysis with zero findings/waivers, and diff check pass. The documented complete module and aggregate boundary OOM fingerprints were not rerun and no pass is claimed for them. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and every acceptance criterion remains unchecked for parent rereview.
+
+Sixth rejection remediation above 91991bce resolves the three rereview findings. The retained child-exit observer/disposer was replaced by an exact two-field process-lifetime bridge: one terminal event latch and one replaceable source-handler record. The sole transport listener closes only over that bridge, records the exact child/epoch event before dispatch, and has no retained listener or disposer slot. Every ready or rollback publication installs a fresh handler identity; an adversarial reload poisons the retired handler and proves the stable listener reaches only the replacement. Retained policy enforces the exact bridge/handler shapes and rejects attached callbacks and authority descendants.
+
+Initial startup now acquires the exact identity ledger, identity authority, and transport synchronously from the published child before awaiting generation construction. Transport exit events are one-shot, replayable, and cleared after delivery; transport construction also detects a child whose exitCode/signalCode was already terminal. The startup owner covers exit before bridge subscription, while the factory waits, and after factory return during activation. Each schedule leaves no current slots, does not remain starting, owns one listener, cleans each partial graph once, stops the process once, and permits a clean subsequent install.
+
+The canvas application now has explicit idle/preparing/installed/stopping/stopped phases. It receives the already-loaded production module, publishes its shutdown owner before installation/start can await, invokes production revocation exactly once during preparation, treats shutdown as terminal intent, waits cleanup, never republishes installed state afterward, and preserves simultaneous startup and shutdown failures in one AggregateError. A clean reinstall after that aggregate failure is proven.
+
+Final named 6 GiB memory / 1 GiB swap validation: required adversarial owners 18 pass, 0 fail, 116 assertions; focused process/transport/session/identity/gateway owners 161 pass, 0 fail, 1,480 assertions; focused canvas/transport owners 62 pass, 0 fail, 378 assertions; actual src/server.ts production, application socket, real first-socket recovery, startup cleanup, and stale-socket owners 8 pass, 0 fail, 118 assertions; inventory 39 pass, 0 fail, 69 assertions. Both TypeScript projects, full lint with 0 warnings/errors, formatting check, frontend build, protected diff check, and direct module-scope analysis of every changed production module pass with zero findings or waivers. The repository-wide module-scope aggregate was attempted once and OOM-killed at the fixed cgroup ceiling; it was not retried and no aggregate pass is claimed. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and every acceptance criterion remains unchecked for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Corrected the Codex workbench lifecycle around one owned reload transaction, a lossless process-lifetime exit observer, guarded production initialization, and synchronous application revocation. Exact stale cleanup, rollback, activation, exit-gap, and reinstall schedules now preserve replacement authority and clean every live graph once. The router has one private construction seam. Focused module and production system lanes, types, lint, format, build, inventory, policy, and module-scope checks pass; known capped OOM aggregates remain unclaimed. Task status and acceptance criteria are unchanged for parent rereview.
+Replaced the retained exit closure with a replaying version-neutral bridge, closed every initial child-exit gap by acquiring the exact kernel before generation awaits, and made application preparation/shutdown an explicit terminal state machine. Adversarial, focused module, real production system, inventory, type, lint, format, build, targeted hot-state, and diff checks pass; the capped repository-wide module-scope OOM remains unclaimed. Task status and acceptance criteria are unchanged for parent rereview.
 <!-- SECTION:FINAL_SUMMARY:END -->

@@ -10,8 +10,14 @@ import {
 import type { CodexWorkbenchGateway } from "../../../codex-workbench/index.js";
 import type {
 	CodexWorkbenchGeneration,
+	CodexWorkbenchGenerationInput,
+	CodexWorkbenchKernelAcquisition,
+	CodexWorkbenchOwner,
+	CodexWorkbenchOwnerOptions,
+	CodexWorkbenchRetainedState,
 	CodexWorkbenchStopReason,
 } from "../../codex-workbench-owner.js";
+import { installCodexWorkbenchOwner } from "../../codex-workbench-owner.js";
 
 export function fakeProcess(events: string[]): CodexProcess {
 	const child = { pid: 14314 } as CodexProcessChild;
@@ -125,4 +131,41 @@ export function fakeGeneration(
 			events.push(`generation:${number}:finish-stop`);
 		},
 	};
+}
+
+export function fakeKernelAcquisition(): CodexWorkbenchKernelAcquisition {
+	const source = fakeGeneration([], 0);
+	return {
+		kernel: { identityLedger: source.identityLedger, transport: source.transport },
+		identity: source.components.identity,
+	};
+}
+
+export function adoptFakeKernel(
+	input: CodexWorkbenchGenerationInput,
+	candidate: CodexWorkbenchGeneration,
+): CodexWorkbenchGeneration {
+	if (input.kernel === null || input.initialIdentity === null)
+		throw new Error("The fake initial generation has no acquired kernel.");
+	Object.assign(candidate, {
+		identityLedger: input.kernel.identityLedger,
+		transport: input.kernel.transport,
+	});
+	Object.assign(candidate.components, {
+		identity: input.initialIdentity,
+		transport: input.kernel.transport,
+	});
+	return candidate;
+}
+
+export function installFakeCodexWorkbenchOwner(
+	retained: CodexWorkbenchRetainedState,
+	options: Omit<CodexWorkbenchOwnerOptions, "createKernel">,
+): CodexWorkbenchOwner {
+	return installCodexWorkbenchOwner(retained, {
+		...options,
+		createKernel: fakeKernelAcquisition,
+		createGeneration: async (input) =>
+			adoptFakeKernel(input, await options.createGeneration(input)),
+	});
 }

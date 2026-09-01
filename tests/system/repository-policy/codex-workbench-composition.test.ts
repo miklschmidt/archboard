@@ -18,6 +18,8 @@ import {
 	emptyCodexWorkbenchRetainedState,
 	installCodexWorkbenchOwner,
 	type CodexWorkbenchGeneration,
+	type CodexWorkbenchOwnerOptions,
+	type CodexWorkbenchRetainedState,
 } from "../../../src/server/canvas/codex-workbench-owner.js";
 
 const RETAINED_KEYS = ["control", "failure", "generation", "owner", "process", "state"];
@@ -25,7 +27,7 @@ const CONTROL_KEYS = ["current", "runtime", "wrappers"];
 const OWNER_SLOT_KEYS = ["gateway", "reload", "shutdown", "snapshot", "start"];
 const RUNTIME_KEYS = [
 	"accountReady",
-	"exit",
+	"exitBridge",
 	"identityLedger",
 	"operation",
 	"process",
@@ -33,6 +35,36 @@ const RUNTIME_KEYS = [
 	"sessionInitialized",
 	"transport",
 ];
+
+function installFakeOwner(
+	retained: CodexWorkbenchRetainedState,
+	options: Omit<CodexWorkbenchOwnerOptions, "createKernel">,
+) {
+	return installCodexWorkbenchOwner(retained, {
+		...options,
+		createKernel: () => {
+			const source = fakeGeneration([], 0);
+			return {
+				kernel: { identityLedger: source.identityLedger, transport: source.transport },
+				identity: source.components.identity,
+			};
+		},
+		createGeneration: async (input) => {
+			const source = await options.createGeneration(input);
+			if (input.kernel === null || input.initialIdentity === null)
+				throw new Error("missing fake kernel");
+			Object.assign(source, {
+				identityLedger: input.kernel.identityLedger,
+				transport: input.kernel.transport,
+			});
+			Object.assign(source.components, {
+				identity: input.initialIdentity,
+				transport: input.kernel.transport,
+			});
+			return source;
+		},
+	});
+}
 
 function fakeProcess(events: string[]): CodexProcess {
 	const child = { pid: 14314 } as CodexProcessChild;
@@ -141,7 +173,7 @@ describe("production Codex workbench composition policy", () => {
 	test("retains only scalar coordination, stable kernel handles, and replaceable slots", async () => {
 		const retained = Object.seal(emptyCodexWorkbenchRetainedState());
 		const created: CodexWorkbenchGeneration[] = [];
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeOwner(retained, {
 			createProcess: () => fakeProcess([]),
 			createGeneration: async ({ generation }) => {
 				const source = fakeGeneration([], generation);
@@ -160,6 +192,9 @@ describe("production Codex workbench composition policy", () => {
 		expect(Object.keys(retained.control.wrappers).toSorted()).toEqual(OWNER_SLOT_KEYS);
 		expect(Object.keys(retained.control.current ?? {}).toSorted()).toEqual(OWNER_SLOT_KEYS);
 		expect(Object.keys(runtime).toSorted()).toEqual(RUNTIME_KEYS);
+		expect(Object.keys(runtime.exitBridge).toSorted()).toEqual(["event", "handler"]);
+		expect("listener" in runtime.exitBridge).toBeFalse();
+		expect("unsubscribe" in runtime.exitBridge).toBeFalse();
 		for (const forbidden of [
 			"generation",
 			"components",
@@ -178,6 +213,7 @@ describe("production Codex workbench composition policy", () => {
 
 		const first = created[0]!;
 		const firstSlots = retained.control.current;
+		const firstExitHandler = runtime.exitBridge.handler;
 		await owner.reload(async ({ generation, kernel }) => {
 			expect(kernel?.identityLedger).toBe(stableLedger);
 			expect(kernel?.transport).toBe(stableTransport);
@@ -192,6 +228,7 @@ describe("production Codex workbench composition policy", () => {
 		});
 		expect(created).toHaveLength(2);
 		expect(retained.control.current).not.toBe(firstSlots);
+		expect(runtime.exitBridge.handler).not.toBe(firstExitHandler);
 		expect(retained.control.runtime).toBe(runtime);
 		expect(runtime.identityLedger).toBe(created[1]!.identityLedger);
 		expect(runtime.transport).toBe(created[1]!.transport);
@@ -208,7 +245,7 @@ describe("production Codex workbench composition policy", () => {
 
 	test("rejects hostile descendants at every retained structural boundary", async () => {
 		const retained = emptyCodexWorkbenchRetainedState();
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeOwner(retained, {
 			createProcess: () => fakeProcess([]),
 			createGeneration: async ({ generation }) => fakeGeneration([], generation),
 		});
@@ -233,13 +270,16 @@ describe("production Codex workbench composition policy", () => {
 		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
 		Reflect.deleteProperty(runtime.transport, "coordinator");
 
-		Object.assign(runtime.exit, { generationCallback: () => undefined });
+		Object.assign(runtime.exitBridge, { generationCallback: () => undefined });
 		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
-		Reflect.deleteProperty(runtime.exit, "generationCallback");
+		Reflect.deleteProperty(runtime.exitBridge, "generationCallback");
+		Object.assign(runtime.exitBridge.handler ?? {}, { authority: {} });
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
+		Reflect.deleteProperty(runtime.exitBridge.handler ?? {}, "authority");
 
-		runtime.exit.event = { child: {} } as never;
+		runtime.exitBridge.event = { child: {} } as never;
 		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
-		runtime.exit.event = null;
+		runtime.exitBridge.event = null;
 
 		Object.assign(retained.control.current ?? {}, { approval: {} });
 		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
