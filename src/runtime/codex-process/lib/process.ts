@@ -1,5 +1,6 @@
 import {
 	spawn as nodeSpawn,
+	type ChildProcessEventMap,
 	type ChildProcessByStdio,
 	type SpawnOptions,
 } from "node:child_process";
@@ -116,6 +117,14 @@ export interface CodexProcessChild {
 	readonly stderr: Readable;
 	/** Opaque capability bound to this exact child generation. */
 	readonly lifecycle: CodexProcessLifecycle;
+	on<Event extends "error" | "exit">(
+		event: Event,
+		listener: (...args: ChildProcessEventMap[Event]) => void,
+	): CodexProcessChild;
+	removeListener<Event extends "error" | "exit">(
+		event: Event,
+		listener: (...args: ChildProcessEventMap[Event]) => void,
+	): CodexProcessChild;
 }
 
 export interface CodexProcessLifecycle {
@@ -499,13 +508,22 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 	}
 
 	function publicChild(record: ChildRecord): CodexProcessChild {
-		return Object.freeze({
+		const child: CodexProcessChild = {
 			pid: record.child.pid!,
 			stdin: record.child.stdin,
 			stdout: record.child.stdout,
 			stderr: record.child.stderr,
 			lifecycle: childLifecycle(record),
-		});
+			on(event, listener) {
+				record.child.on(event, listener);
+				return child;
+			},
+			removeListener(event, listener) {
+				record.child.removeListener(event, listener);
+				return child;
+			},
+		};
+		return Object.freeze(child);
 	}
 
 	function releaseStorage(): CodexProcessError | undefined {

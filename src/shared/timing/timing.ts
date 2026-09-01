@@ -246,6 +246,9 @@ export const CODEX_TERM_GRACE_MS = 5_000;
 /** Composed-shutdown cap classification. Pulls against realtime stop plus TERM grace. */
 export const CODEX_COMPOSED_SHUTDOWN_MS = 10_000;
 
+/** Bounds dynamic wait detection latency against app-server thread status reads. */
+export const CODEX_WAIT_TARGET_POLL_MS = 250;
+
 // ── One writer at a time (ADR 0016) ───────────────────────────────────────
 //
 // `src/runtime/engine/board-lock.ts` is the only thing that reads these. It was built
