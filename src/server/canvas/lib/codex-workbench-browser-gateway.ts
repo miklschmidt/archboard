@@ -205,11 +205,14 @@ export function createCanvasBrowserGatewayOptions(input: {
 		dynamicApprovals: dynamicApprovals.browser,
 	};
 	const projection = {
-		read: (): BrowserProjection => {
+		read: (
+			context: Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0],
+		): BrowserProjection => {
 			const coordinator = components.coordinator.snapshot();
 			const workhorse = components.workhorse.snapshot();
 			const semantic = components.semanticDelivery.inspect().at(-1);
 			const freshSemantic = components.semanticPublisher.freshBrief();
+			const realtimeGeneration = components.realtime.generation();
 			return {
 				readiness: state.readiness,
 				account: state.account,
@@ -282,13 +285,16 @@ export function createCanvasBrowserGatewayOptions(input: {
 				},
 				voice: model.BrowserVoiceSchema.parse({
 					kind: "voice",
-					state:
-						components.realtime.generation() !== null
+					state: !context.mediaReady
+						? "unavailable"
+						: realtimeGeneration !== null
 							? "active"
 							: coordinator.state === "ready"
 								? "ready"
 								: "unavailable",
-					realtimeSessionId: components.realtime.generation()?.browserSessionId ?? null,
+					realtimeSessionId: context.mediaReady
+						? (realtimeGeneration?.browserSessionId ?? null)
+						: null,
 					transcript: components.realtime.transcript().map((record) => ({
 						itemId: record.itemId,
 						sequence: record.sequence,
@@ -297,7 +303,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 						final: record.status === "final",
 					})),
 					delivery: null,
-					reason: null,
+					reason: context.mediaReady ? null : "Browser audio is unavailable for this socket.",
 				}),
 			};
 		},

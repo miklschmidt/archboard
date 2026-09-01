@@ -361,6 +361,13 @@ const clients = kept("ws-clients", () => new Set<WebSocket>());
 // same id is sent with every selection post, which is what lets a disconnect
 // retire that client's selection.
 const clientIds = kept("ws-client-ids", () => new Map<WebSocket, string>());
+// The exact socket currently presenting one pane identity. A reconnect may
+// overlap the prior transport; only this map's value owns client-id keyed pane,
+// selection, hold, and note-open state.
+const currentSocketsByClient = kept(
+	"ws-current-sockets-by-client",
+	() => new Map<string, WebSocket>(),
+);
 const codexSocketInstances = kept(
 	"ws-codex-instances",
 	() => new Map<WebSocket, BrowserConnectionInstance>(),
@@ -827,7 +834,10 @@ wss.on("connection", (ws: WebSocket, req) => {
 	// reading (ADR 0016).
 	syncLockWatch();
 	const clientId = new URL(req.url ?? "/", "http://localhost").searchParams.get("clientId");
-	if (clientId) clientIds.set(ws, clientId);
+	if (clientId) {
+		clientIds.set(ws, clientId);
+		currentSocketsByClient.set(clientId, ws);
+	}
 	logger.info(`New WebSocket connection established${clientId ? ` (client ${clientId})` : ""}`);
 
 	// Which board this pane gets, and it is a board *for this pane* — not "the"
@@ -927,13 +937,21 @@ wss.on("connection", (ws: WebSocket, req) => {
 		clientIds.delete(ws);
 		const closingCodexInstance = codexSocketInstances.get(ws);
 		codexSocketInstances.delete(ws);
-		// A closed or reloaded tab must not leave a selection standing: whatever it
-		// had picked is no longer on anyone's screen.
+		// Exact Codex cleanup is safe for a replaced socket. Client-id keyed canvas
+		// state is not: a replacement may already own that pane identity.
 		if (closingId) {
 			if (closingCodexInstance !== undefined)
 				void wiring.codex
 					.closeBrowser?.(closingCodexInstance, closingId)
 					.catch((error) => logger.error("Codex browser cleanup failed:", error));
+			if (currentSocketsByClient.get(closingId) !== ws) {
+				syncLockWatch();
+				logger.info(`Replaced WebSocket connection closed (client ${closingId})`);
+				return;
+			}
+			currentSocketsByClient.delete(closingId);
+			// A closed or reloaded tab must not leave a selection standing: whatever it
+			// had picked is no longer on anyone's screen.
 			selectionState.byClient.delete(closingId);
 			// A hold this pane had goes with it. The lease would have lapsed on its
 			// own within LOCK_LEASE_MS, which is what makes a killed tab survivable;

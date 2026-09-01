@@ -76,7 +76,7 @@ import type { WorkbenchTakeBackResult } from "../workbench-board-status/contract
 import {
 	createBrowserWorkbenchMediaOwner,
 	type BrowserWorkbenchMediaOwner,
-} from "./codex-workbench-media-owner";
+} from "../codex-realtime";
 
 // Messages that say what is on a board, as opposed to messages about the board.
 // A pane that must send a full report ignores the first kind and acts on the
@@ -1584,7 +1584,10 @@ export function useCanvasSession({
 			socketRef.current = socket;
 
 			socket.addEventListener("open", () => {
-				void realtime.attach(socket).catch(() => undefined);
+				void realtime.attach(socket).then(() => {
+					if (socketRef.current === socket) publishStatus();
+					return undefined;
+				});
 				connectedRef.current = true;
 				setConnected(true);
 				// The server retires a pane when its socket closes, so a reconnection has

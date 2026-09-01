@@ -156,8 +156,6 @@ test("stale handles and replacement sockets cannot append to the active realtime
 	).rejects.toThrow("handle is stale");
 	expect(value.calls.map((call) => call.name)).toEqual(["start"]);
 
-	await actions.onBrowserDisconnect?.(value.context, "lease_transferred");
-	expect(value.calls.map((call) => call.name)).toEqual(["start"]);
 	await actions.onBrowserDisconnect?.(value.context, "browser_disconnected");
 	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop"]);
 });

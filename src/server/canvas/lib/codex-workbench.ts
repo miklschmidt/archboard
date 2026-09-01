@@ -917,14 +917,45 @@ export interface CodexWorkbenchRetainedState {
 	state: CodexWorkbenchState;
 	failure: string | null;
 	process: CodexProcess | null;
-	startCurrentGeneration: (() => Promise<CodexWorkbenchSnapshot>) | null;
-	reloadCurrentGeneration:
-		| ((
-				hooks: CodexWorkbenchGenerationHooks | CodexWorkbenchHooksFactory,
-		  ) => Promise<CodexWorkbenchSnapshot>)
-		| null;
-	shutdownCurrentGeneration: (() => Promise<CodexWorkbenchSnapshot>) | null;
-	readCurrentSnapshot: (() => CodexWorkbenchSnapshot) | null;
+	control: CodexWorkbenchRetainedControl;
+}
+
+export interface CodexWorkbenchOwnerSlots {
+	readonly start: () => Promise<CodexWorkbenchSnapshot>;
+	readonly reload: (
+		hooks: CodexWorkbenchGenerationHooks | CodexWorkbenchHooksFactory,
+	) => Promise<CodexWorkbenchSnapshot>;
+	readonly shutdown: () => Promise<CodexWorkbenchSnapshot>;
+	readonly snapshot: () => CodexWorkbenchSnapshot;
+	readonly gateway: () => CodexWorkbenchGateway;
+}
+
+export interface CodexWorkbenchRetainedControl {
+	current: CodexWorkbenchOwnerSlots | null;
+	readonly wrappers: CodexWorkbenchOwnerSlots;
+}
+
+function emptyCodexWorkbenchRetainedControl(): CodexWorkbenchRetainedControl {
+	const control = { current: null } as CodexWorkbenchRetainedControl;
+	const current = (): CodexWorkbenchOwnerSlots => {
+		if (control.current === null)
+			throw new CodexWorkbenchCompositionError(
+				"not_started",
+				"The production Codex workbench has no active retained owner.",
+			);
+		return control.current;
+	};
+	Object.defineProperty(control, "wrappers", {
+		enumerable: true,
+		value: Object.freeze({
+			start: () => current().start(),
+			reload: (hooks) => current().reload(hooks),
+			shutdown: () => current().shutdown(),
+			snapshot: () => current().snapshot(),
+			gateway: () => current().gateway(),
+		} satisfies CodexWorkbenchOwnerSlots),
+	});
+	return control;
 }
 
 export function emptyCodexWorkbenchRetainedState(): CodexWorkbenchRetainedState {
@@ -934,10 +965,7 @@ export function emptyCodexWorkbenchRetainedState(): CodexWorkbenchRetainedState 
 		state: "idle",
 		failure: null,
 		process: null,
-		startCurrentGeneration: null,
-		reloadCurrentGeneration: null,
-		shutdownCurrentGeneration: null,
-		readCurrentSnapshot: null,
+		control: emptyCodexWorkbenchRetainedControl(),
 	};
 }
 
@@ -947,10 +975,7 @@ const RETAINED_STATE_KEYS = Object.freeze([
 	"state",
 	"failure",
 	"process",
-	"startCurrentGeneration",
-	"reloadCurrentGeneration",
-	"shutdownCurrentGeneration",
-	"readCurrentSnapshot",
+	"control",
 ] satisfies readonly (keyof CodexWorkbenchRetainedState)[]);
 const RETAINED_PROCESS_KEYS = Object.freeze([
 	"start",
@@ -960,6 +985,13 @@ const RETAINED_PROCESS_KEYS = Object.freeze([
 	"onChild",
 	"subscribe",
 ] satisfies readonly (keyof CodexProcess)[]);
+const OWNER_SLOT_KEYS = Object.freeze([
+	"start",
+	"reload",
+	"shutdown",
+	"snapshot",
+	"gateway",
+] satisfies readonly (keyof CodexWorkbenchOwnerSlots)[]);
 const FUNCTION_INTRINSIC_KEYS: readonly PropertyKey[] = Object.freeze([
 	"length",
 	"name",
@@ -977,9 +1009,45 @@ function exactOwnKeys(value: object, expected: readonly (string | symbol)[], lab
 		);
 }
 
+function assertPlainRecord(value: object, label: string): void {
+	if (Object.getPrototypeOf(value) !== Object.prototype)
+		throw new CodexWorkbenchCompositionError(
+			"invalid_retained_state",
+			`${label} has a retained prototype attachment.`,
+		);
+}
+
+function assertStableFunction(
+	value: unknown,
+	label: string,
+): asserts value is (...args: never[]) => unknown {
+	const prototype = typeof value === "function" ? Object.getPrototypeOf(value) : null;
+	const intrinsicCallablePrototype =
+		prototype === Function.prototype ||
+		(prototype !== null &&
+			Object.getPrototypeOf(prototype) === Function.prototype &&
+			["AsyncFunction", "GeneratorFunction", "AsyncGeneratorFunction"].includes(
+				prototype?.[Symbol.toStringTag] as string,
+			));
+	if (typeof value !== "function" || !intrinsicCallablePrototype)
+		throw new CodexWorkbenchCompositionError(
+			"invalid_retained_state",
+			`${label} is not a plain callable slot.`,
+		);
+	const attached = Reflect.ownKeys(value).filter(
+		(property) => !FUNCTION_INTRINSIC_KEYS.includes(property),
+	);
+	if (attached.length > 0)
+		throw new CodexWorkbenchCompositionError(
+			"invalid_retained_state",
+			`${label} has a reachable attached value.`,
+		);
+}
+
 /** Fail closed if a retained slot hides a source-generation owner or attached capability. */
 export function assertCodexWorkbenchRetainedState(retained: CodexWorkbenchRetainedState): void {
 	exactOwnKeys(retained, RETAINED_STATE_KEYS, "The Codex retained state");
+	assertPlainRecord(retained, "The Codex retained state");
 	if (!Number.isSafeInteger(retained.generation) || retained.generation < 0)
 		throw new CodexWorkbenchCompositionError(
 			"invalid_retained_state",
@@ -987,34 +1055,21 @@ export function assertCodexWorkbenchRetainedState(retained: CodexWorkbenchRetain
 		);
 	if (retained.process !== null) {
 		exactOwnKeys(retained.process, RETAINED_PROCESS_KEYS, "The retained Codex process handle");
+		assertPlainRecord(retained.process, "The retained Codex process handle");
 		for (const key of RETAINED_PROCESS_KEYS)
-			if (typeof retained.process[key] !== "function")
-				throw new CodexWorkbenchCompositionError(
-					"invalid_retained_state",
-					`The retained Codex process member ${key} is not a stable function.`,
-				);
+			assertStableFunction(retained.process[key], `The retained Codex process member ${key}`);
 	}
-	for (const key of [
-		"startCurrentGeneration",
-		"reloadCurrentGeneration",
-		"shutdownCurrentGeneration",
-		"readCurrentSnapshot",
+	assertPlainRecord(retained.control, "The retained Codex control cell");
+	exactOwnKeys(retained.control, ["current", "wrappers"], "The retained Codex control cell");
+	for (const [label, slots] of [
+		["stable wrappers", retained.control.wrappers],
+		["current generation slots", retained.control.current],
 	] as const) {
-		const closure = retained[key];
-		if (closure === null) continue;
-		if (typeof closure !== "function")
-			throw new CodexWorkbenchCompositionError(
-				"invalid_retained_state",
-				`The retained Codex ${key} slot is not a replaceable closure.`,
-			);
-		const attached = Reflect.ownKeys(closure).filter(
-			(property) => !FUNCTION_INTRINSIC_KEYS.includes(property),
-		);
-		if (attached.length > 0)
-			throw new CodexWorkbenchCompositionError(
-				"invalid_retained_state",
-				`The retained Codex ${key} closure has an attached generation-defined value.`,
-			);
+		if (slots === null) continue;
+		assertPlainRecord(slots, `The Codex ${label}`);
+		exactOwnKeys(slots, OWNER_SLOT_KEYS, `The Codex ${label}`);
+		for (const key of OWNER_SLOT_KEYS)
+			assertStableFunction(slots[key], `The Codex ${label} member ${key}`);
 	}
 }
 
@@ -1043,28 +1098,26 @@ export function installProductionCodexWorkbench(
 export function reloadProductionCodexWorkbench(
 	hooks: CodexWorkbenchHooksFactory,
 ): Promise<CodexWorkbenchSnapshot> {
-	const reload = retainedWorkbench.reloadCurrentGeneration;
-	if (reload === null)
+	if (retainedWorkbench.control.current === null)
 		return Promise.reject(
 			new CodexWorkbenchCompositionError(
 				"not_started",
 				"The production Codex workbench has no active owner to reload.",
 			),
 		);
-	return reload(hooks);
+	return retainedWorkbench.control.wrappers.reload(hooks);
 }
 
 /** Stop the active production owner without importing its generation graph elsewhere. */
 export function shutdownProductionCodexWorkbench(): Promise<CodexWorkbenchSnapshot> {
-	const shutdown = retainedWorkbench.shutdownCurrentGeneration;
-	if (shutdown === null)
+	if (retainedWorkbench.control.current === null)
 		return Promise.reject(
 			new CodexWorkbenchCompositionError(
 				"not_started",
 				"The production Codex workbench has no active owner to shut down.",
 			),
 		);
-	return shutdown();
+	return retainedWorkbench.control.wrappers.shutdown();
 }
 
 function failureMessage(error: unknown): string {
@@ -1079,9 +1132,9 @@ function appendFailure(current: Error | null, next: unknown, message: string): E
 /**
  * Install the one process-lifetime graph behind replaceable source hooks.
  *
- * Only the process owner and plain scalar state remain in `retained`. Every
- * generation object stays in this invocation's closure and the next install
- * replaces the three closures that can reach it.
+ * The retained root contains only plain control records plus the stable process
+ * owner. Source-generation lifecycle functions are published as one replaceable
+ * slot record, so a reload can sever the previous record in one assignment.
  */
 export function installCodexWorkbenchOwner(
 	retained: CodexWorkbenchRetainedState,
@@ -1206,8 +1259,18 @@ export function installCodexWorkbenchOwner(
 				"not_started",
 				"The production Codex workbench is not ready for source-hook replacement.",
 			);
-		await generation.replaceHooks(typeof hooks === "function" ? hooks(generationInput) : hooks);
+		const previous = generation;
+		await previous.replaceHooks(typeof hooks === "function" ? hooks(generationInput) : hooks);
+		generation = Object.freeze({
+			transport: previous.transport,
+			gateway: previous.gateway,
+			router: previous.router,
+			replaceHooks: previous.replaceHooks,
+			stop: previous.stop,
+			finishStop: previous.finishStop,
+		});
 		retained.generation += 1;
+		publishSlots();
 		return snapshot();
 	};
 
@@ -1245,10 +1308,7 @@ export function installCodexWorkbenchOwner(
 		retained.failure = failure;
 		retained.owner = null;
 		retained.process = null;
-		retained.startCurrentGeneration = null;
-		retained.reloadCurrentGeneration = null;
-		retained.shutdownCurrentGeneration = null;
-		retained.readCurrentSnapshot = null;
+		retained.control.current = null;
 	}
 
 	function beginChildRetirement(): void {
@@ -1306,10 +1366,13 @@ export function installCodexWorkbenchOwner(
 		return generation.gateway;
 	};
 
-	retained.startCurrentGeneration = start;
-	retained.reloadCurrentGeneration = reload;
-	retained.shutdownCurrentGeneration = shutdown;
-	retained.readCurrentSnapshot = snapshot;
+	function publishSlots(): CodexWorkbenchOwnerSlots {
+		const slots = { start, reload, shutdown, snapshot, gateway };
+		retained.control.current = slots;
+		return slots;
+	}
+
+	const initialSlots = publishSlots();
 	assertCodexWorkbenchRetainedState(retained);
-	return Object.freeze({ start, reload, snapshot, gateway, shutdown });
+	return initialSlots;
 }

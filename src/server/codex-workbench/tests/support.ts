@@ -45,6 +45,11 @@ export interface GatewayHarness {
 	readonly disconnects: string[];
 	readonly disconnectReasons: BrowserDisconnectReason[];
 	readonly disconnectSettled: string[];
+	readonly durableDisconnects: string[];
+	readonly durableState: () => {
+		readonly semanticBound: boolean;
+		readonly realtimeActive: boolean;
+	};
 	readonly advance: (milliseconds: number) => void;
 	readonly setReadiness: (state: BrowserReadiness["state"]) => void;
 	readonly setLink: (link: ThreadLinkSnapshot) => void;
@@ -162,6 +167,9 @@ export function createGatewayHarness(
 	const disconnects: string[] = [];
 	const disconnectReasons: BrowserDisconnectReason[] = [];
 	const disconnectSettled: string[] = [];
+	const durableDisconnects: string[] = [];
+	let semanticBound = true;
+	let realtimeActive = false;
 	const projectionListeners = new Set<() => void>();
 
 	const run = async (name: string): Promise<BrowserActionResult> => {
@@ -194,6 +202,10 @@ export function createGatewayHarness(
 			create: action("threadLink.create"),
 			attach: action("threadLink.attach"),
 			relink: action("threadLink.relink"),
+			onBrowserDisconnect: (_context, reason) => {
+				durableDisconnects.push(`semantic:${reason}`);
+				semanticBound = false;
+			},
 		},
 		text: {
 			start: action("text.start"),
@@ -208,9 +220,21 @@ export function createGatewayHarness(
 			start: action("queue.start"),
 		},
 		realtime: {
-			start: action("realtime.start"),
+			start: async (..._args) => {
+				const result = await run("realtime.start");
+				realtimeActive = true;
+				return result;
+			},
 			appendText: action("realtime.appendText"),
-			stop: action("realtime.stop"),
+			stop: async (..._args) => {
+				const result = await run("realtime.stop");
+				realtimeActive = false;
+				return result;
+			},
+			onBrowserDisconnect: (_context, reason) => {
+				durableDisconnects.push(`realtime:${reason}`);
+				realtimeActive = false;
+			},
 		},
 		ordinaryApprovals: {
 			pending: (candidate) => (candidate === requestId ? ordinaryApproval : null),
@@ -234,7 +258,7 @@ export function createGatewayHarness(
 		},
 	};
 	const projection: BrowserProjectionPort = {
-		read: (): BrowserProjection => ({
+		read: ({ mediaReady }): BrowserProjection => ({
 			readiness,
 			account,
 			login: { kind: "login", state: "idle" },
@@ -254,14 +278,23 @@ export function createGatewayHarness(
 				serviceTier: null,
 				reason: null,
 			},
-			voice: {
-				kind: "voice",
-				state: "unavailable",
-				realtimeSessionId: null,
-				transcript: [],
-				delivery: null,
-				reason: null,
-			},
+			voice: mediaReady
+				? {
+						kind: "voice",
+						state: "ready",
+						realtimeSessionId: null,
+						transcript: [],
+						delivery: null,
+						reason: null,
+					}
+				: {
+						kind: "voice",
+						state: "unavailable",
+						realtimeSessionId: null,
+						transcript: [],
+						delivery: null,
+						reason: "Browser audio is unavailable for this socket.",
+					},
 		}),
 		onChange: (listener) => {
 			projectionListeners.add(listener);
@@ -375,6 +408,8 @@ export function createGatewayHarness(
 		disconnects,
 		disconnectReasons,
 		disconnectSettled,
+		durableDisconnects,
+		durableState: () => ({ semanticBound, realtimeActive }),
 		advance: (milliseconds) => {
 			clock += milliseconds;
 		},

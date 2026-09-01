@@ -50,3 +50,9 @@ export type {
 	RealtimeMediaSession,
 	RealtimeMediaSnapshot,
 } from "./lib/media-session.js";
+
+export { createBrowserWorkbenchMediaOwner } from "./lib/workbench-media-owner.js";
+export type {
+	BrowserWorkbenchMediaOwner,
+	BrowserWorkbenchMediaState,
+} from "./lib/workbench-media-owner.js";

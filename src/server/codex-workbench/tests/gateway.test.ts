@@ -81,6 +81,18 @@ describe("Codex workbench browser gateway readiness", () => {
 		expect(result.outcome).toBe("delivered");
 		expect(value.calls).toContain("account.logout");
 	});
+
+	test("advertises voice only for the exact socket that owns ready browser media", () => {
+		const value = harness();
+		const first = value.gateway.connect(value.browserId, value.paneId);
+		expect(first.snapshot().snapshot.voice).toMatchObject({ state: "unavailable" });
+		expect(first.setMediaReady(true).snapshot.voice).toMatchObject({ state: "ready" });
+
+		const replacement = value.gateway.connect(value.browserId, value.paneId);
+		expect(replacement.snapshot().snapshot.voice).toMatchObject({ state: "unavailable" });
+		expect(() => first.setMediaReady(true)).toThrow("replaced");
+		expect(replacement.setMediaReady(true).snapshot.voice).toMatchObject({ state: "ready" });
+	});
 });
 
 describe("Codex workbench browser command leases", () => {
@@ -91,8 +103,8 @@ describe("Codex workbench browser command leases", () => {
 		const firstLease = first.claimLease();
 		const secondLease = second.claimLease();
 		expect(secondLease.commandId).not.toBe(firstLease.commandId);
-		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
-		expect(value.disconnectReasons).toEqual(["lease_transferred", "lease_transferred"]);
+		expect(value.disconnects).toEqual([]);
+		expect(value.disconnectReasons).toEqual([]);
 		const result = await first.command(startCommand(value, firstLease));
 		expect(result).toMatchObject({ code: "lease_transferred", outcome: "not_delivered" });
 		expect(value.calls).not.toContain("text.start");
@@ -110,8 +122,8 @@ describe("Codex workbench browser command leases", () => {
 			operationId: lease.commandId,
 			outcome: "not_delivered",
 		});
-		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
-		expect(value.disconnectReasons).toEqual(["lease_expired", "lease_expired"]);
+		expect(value.disconnects).toEqual([]);
+		expect(value.disconnectReasons).toEqual([]);
 		const recovered = connection.claimLease();
 		expect(recovered.commandId).not.toBe(lease.commandId);
 	});

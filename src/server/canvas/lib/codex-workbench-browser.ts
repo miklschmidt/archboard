@@ -15,6 +15,7 @@ const BrowserRequestSchema = z.discriminatedUnion("action", [
 	z.object({ ...RequestBase, action: z.literal("claimLease") }).strict(),
 	z.object({ ...RequestBase, action: z.literal("renewLease") }).strict(),
 	z.object({ ...RequestBase, action: z.literal("releaseLease") }).strict(),
+	z.object({ ...RequestBase, action: z.literal("mediaReady"), ready: z.boolean() }).strict(),
 	z.object({ ...RequestBase, action: z.literal("accountRead") }).strict(),
 	z.object({ ...RequestBase, action: z.literal("command"), command: z.unknown() }).strict(),
 	z.object({ ...RequestBase, action: z.literal("subscribe") }).strict(),
@@ -132,6 +133,9 @@ export function createCanvasCodexBrowserSocketOwner(
 				case "releaseLease":
 					sendResult(transport, request, connection.releaseLease());
 					return;
+				case "mediaReady":
+					sendResult(transport, request, connection.setMediaReady(request.ready));
+					return;
 				case "accountRead":
 					sendResult(transport, request, await connection.accountRead());
 					return;
@@ -157,12 +161,17 @@ export function createCanvasCodexBrowserSocketOwner(
 		}
 	};
 
-	const close = async (instance: BrowserConnectionInstance, _browserId: string): Promise<void> => {
+	const close = async (instance: BrowserConnectionInstance, browserId: string): Promise<void> => {
 		subscriptions.get(instance)?.();
 		subscriptions.delete(instance);
 		const connection = connections.get(instance);
 		connections.delete(instance);
-		await connection?.close();
+		if (connection !== undefined) {
+			await connection.close();
+			return;
+		}
+		const paneId = options.paneForBrowser(browserId);
+		if (paneId !== null) await options.gateway.closeConnection(browserId, paneId, instance);
 	};
 
 	const disposeForReload = (): void => {

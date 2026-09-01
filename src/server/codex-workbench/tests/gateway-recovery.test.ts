@@ -394,7 +394,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 		expect(value.disconnectSettled).toEqual(["dynamic"]);
 	});
 
-	test("drains transfer settlement work that predates shutdown", async () => {
+	test("lease transfer and release do not run durable disconnect settlement", async () => {
 		const value = harness();
 		const first = value.gateway.connect(value.browserId, value.paneId);
 		const second = value.gateway.connect("browser-two", "pane-two");
@@ -412,10 +412,10 @@ describe("Codex workbench browser recovery and delivery", () => {
 		});
 		expect(disposed).toBeFalse();
 		expect(value.disconnectReasons).toEqual([
-			"lease_transferred",
-			"lease_transferred",
-			"browser_disconnected",
-			"browser_disconnected",
+			"gateway_shutdown",
+			"gateway_shutdown",
+			"gateway_shutdown",
+			"gateway_shutdown",
 		]);
 		ordinary.resolve();
 		dynamic.resolve();
@@ -424,7 +424,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 		expect(value.disconnectSettled).toHaveLength(4);
 	});
 
-	test("drains expiry settlement work that predates shutdown", async () => {
+	test("lease expiry does not run durable disconnect settlement", async () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);
 		const lease = connection.claimLease();
@@ -435,7 +435,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 		value.advance(150_001);
 		const expired = await connection.command(startCommand(value, lease));
 		expect(expired).toMatchObject({ code: "lease_expired", outcome: "not_delivered" });
-		expect(value.disconnectReasons).toEqual(["lease_expired", "lease_expired"]);
+		expect(value.disconnectReasons).toEqual([]);
 		let disposed = false;
 		const disposing = value.gateway.dispose().then(() => {
 			disposed = true;
