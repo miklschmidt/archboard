@@ -69,6 +69,33 @@ describe("production Codex owner lifecycle", () => {
 		expect(events).toContain("generation:2:stop:shutdown");
 	});
 
+	test("normal shutdown finishes generation transport before stopping the process", async () => {
+		const events: string[] = [];
+		const retained = emptyCodexWorkbenchRetainedState();
+		const owner = installFakeCodexWorkbenchOwner(retained, {
+			createProcess: () => fakeProcess(events),
+			createGeneration: async ({ generation }) =>
+				fakeGeneration(events, generation, {
+					stop: async (reason) => {
+						if (reason !== "shutdown") return;
+						await Promise.resolve();
+						events.push("ordinary:settle:host_shutdown");
+						events.push("transport:shutdown");
+					},
+				}),
+		});
+		await owner.start();
+		await owner.shutdown();
+
+		expect(events.filter((event) => event === "ordinary:settle:host_shutdown")).toHaveLength(1);
+		expect(events.filter((event) => event === "transport:shutdown")).toHaveLength(1);
+		expect(events.filter((event) => event === "process:stop")).toHaveLength(1);
+		expect(events.indexOf("ordinary:settle:host_shutdown")).toBeLessThan(
+			events.indexOf("transport:shutdown"),
+		);
+		expect(events.indexOf("transport:shutdown")).toBeLessThan(events.indexOf("process:stop"));
+	});
+
 	test("revokes every public wrapper synchronously before a deferred disposer resolves", async () => {
 		const retained = emptyCodexWorkbenchRetainedState();
 		const events: string[] = [];
