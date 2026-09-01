@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 04:50'
+updated_date: '2026-09-01 05:38'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -169,6 +169,18 @@ Own the one production composition root in the canvas server. It instantiates ev
 37. Run focused public-boundary owners and repository checks without repeating the documented OOM aggregates; record any unavailable prerequisites explicitly.
 
 38. Re-review the complete remediation diff, preserve the protected artifact hash, commit on the rejected head, and send the parent a finding-by-finding callback.
+
+39. Replace reload forwarding wrappers with a fresh source-generation operation record. Stable kept wrappers dispatch only through the current control cell, and tests poison the retired generation methods while asserting every callable identity changes.
+
+40. Make terminal shutdown continue through every teardown stage, aggregate actionable failures, clear retained slots and authority in a final guarantee, release registration, and allow a later clean install after each injected failure.
+
+41. Publish a new media replacement ticket before awaiting any old-run disposal. Fence every attach, start, and continuation by that ticket and prove an A/B/C delayed-disposal race in adversarial completion order.
+
+42. Register production system cleanup before temp-root and fixture acquisition. Track partial sockets, servers, children, and roots in reverse order, and inject failures at setup, listen, first socket open, and child start.
+
+43. Run the focused reload identity, terminal failure matrix, media triple-overlap, production setup cleanup, actual production server, inventory, boundary, type, lint, format, and diff owners under named 6 GiB systemd scopes without repeating known OOM fingerprints.
+
+44. Keep status and AC unchanged, commit above f3948b7a, verify the protected artifact, and send the parent the required four-finding rereview callback.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -217,10 +229,12 @@ Cross-module WebSocket proof moved to tests/system. One system owner crosses rea
 Validation under named systemd user scopes with MemoryMax=6G and MemorySwapMax=1G: final lint 0 warnings/errors; oxfmt check passes; both TypeScript projects pass; focused behavioral/system lane 64 pass / 0 fail / 314 assertions; hot reload 4 pass / 0 fail; inventory 39 pass / 0 fail; isolated deep-import/test-owner boundary 1 pass / 0 fail; isolated realtime sole-entrypoint contract 1 pass / 0 fail. The aggregate boundary owner and the isolated realtime dependency-graph and real module-scope owners were attempted but OOM-killed at the fixed cgroup ceiling, so no pass is claimed for those aggregates. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Status remains In Progress and all AC remain unchecked for parent review.
 
 Fresh rejection remediation above 4d24d3ba closes all nine review findings. Replacement socket authority transfers at acceptance before the retired close. All seven ordinary approval families cancel once on exact browser, child, or host teardown. Semantic capture uses only the controller current exact pane. Reload publishes new lifecycle callable identities over the reviewed stable lifecycle port. Browser media is a separate codex-workbench-media module with exact-run guards after asynchronous boundaries, leaving codex-realtime policy unchanged. Retained-state policy rejects spoofed callable prototypes, intrinsic mutations, and attached values. The actual src/server.ts production owner now proves initialization, epoch/coordinator readiness, pre-request reconnect, gateway decoder, lease release/reacquire, exact same-board semantic context, real ordinary and dynamic approvals with one response each, media ready/unavailable, dynamic thread creation, child exit, and terminal gateway cleanup. System cleanup is registered before first acquisition. Validation: focused module/runtime lane 108 pass, 0 fail, 718 assertions; actual production server owner 1 pass, 0 fail, 29 assertions; application WebSocket system owners 2 pass, 0 fail, 23 assertions; lint, formatting check, both TypeScript projects, frontend build, test inventory, diff check, and restored realtime boundary byte comparison pass. The realtime dependency-graph policy aggregate was attempted under the required 6 GiB memory and 1 GiB swap scope and OOM-killed after its first two assertions; its source is byte-identical to f01cc33a and no aggregate pass is claimed. Protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Status remains In Progress and every AC remains unchecked for parent rereview.
+
+Second rejection remediation above f3948b7a addresses all four rereview findings. Reload now rebuilds fresh route, notification, exit, replaceHooks, stop, finishStop, and five owner-slot identities; retained state holds only the reviewed process/generation state ports, while stable wrappers dispatch through the current control cell. Tests poison both installation/current owner slots and the complete original generation facade before exercising the replacement. Terminal cleanup attempts graph, process, realtime, queue, listener, projection, approvals, and epoch stages independently, aggregates simultaneous failures, clears current/runtime and authority in a final release, clears the shutdown-promise cache, and permits a clean reinstall after every injected failure. Browser media publishes the new run and start-operation tickets before any await, fences every continuation by exact run/operation identity, and an A/B/C race proves C remains active for delayed A disposal resolve or reject. The actual production system owner registers root, canvas, sockets, and children before later acquisition, cleans them in reverse order, closes partial sockets on open error/timeout, and proves root setup, fixture setup, listen, first-socket, and child-start failures leave no process, listener, socket, or directory leak. Final named 6 GiB/1 GiB validation: canvas/media modules 45 pass, 0 fail, 385 assertions; actual production/hot-reload/socket/setup system owners 12 pass, 0 fail, 135 assertions; composition policy 4 pass, 0 fail, 46 assertions; repository inventory passed its complete real-checkout assertions; lint has 0 warnings/errors; formatting, both TypeScript projects, frontend build, and diff check pass. The realtime and protocol dependency-boundary owners were attempted separately and hit the documented cgroup OOM fingerprint at 6 GiB, so no pass is claimed for those two owners. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Status remains In Progress and all AC remain unchecked for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Remediation for the nine rejected gateway lifecycle findings is implemented and directly verified through the actual production server, focused public contracts, and application WebSocket owners; task lifecycle remains In Progress pending parent rereview.
+The four rereview findings are remediated and directly verified: reload publishes poison-tested fresh source callables, terminal failures aggregate while releasing all authority and permitting reinstall, ticketed A/B/C media replacement is deterministic, and production setup cleans every reachable partial-acquisition failure. Task remains In Progress with all acceptance criteria unchecked for parent rereview.
 <!-- SECTION:FINAL_SUMMARY:END -->

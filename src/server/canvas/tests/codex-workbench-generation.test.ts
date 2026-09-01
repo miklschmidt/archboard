@@ -6,12 +6,17 @@ import {
 } from "../../../runtime/codex-session/index.js";
 import {
 	composeCodexWorkbenchGeneration,
+	reloadCodexWorkbenchGeneration,
 	type CodexWorkbenchComponentFactories,
 	type CodexWorkbenchComponents,
 	type CodexWorkbenchGenerationHooks,
 } from "../codex-workbench-generation.js";
 
 type ExitListener = Parameters<CodexWorkbenchComponents["transport"]["onExit"]>[0];
+
+function poisonRetiredGeneration(): never {
+	throw new Error("retired production generation executed");
+}
 
 test("the production generation creates every owner once before readiness and shuts down in order", async () => {
 	const events: string[] = [];
@@ -175,7 +180,15 @@ test("the production generation creates every owner once before readiness and sh
 	expect(events.indexOf("router:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("approval-projection:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("browser:install")).toBeLessThan(events.indexOf("ready"));
-	await generation.replaceHooks({
+	const originalSource = {
+		route: generation.router.route,
+		onNotification: generation.onNotification,
+		onExit: generation.onExit,
+		replaceHooks: generation.replaceHooks,
+		stop: generation.stop,
+		finishStop: generation.finishStop,
+	};
+	const reloaded = await reloadCodexWorkbenchGeneration(generation.state, {
 		...hooks,
 		stopBrowser: async () => void events.push("reload:browser-stop"),
 		stopRealtime: async () => void events.push("reload:realtime-stop"),
@@ -183,9 +196,23 @@ test("the production generation creates every owner once before readiness and sh
 		cancelDynamicApprovalsAndWaits: async () => void events.push("reload:dynamic-cancel"),
 		settleOrdinaryRequests: async () => void events.push("reload:ordinary-settle"),
 	});
+	expect(reloaded.router.route).not.toBe(originalSource.route);
+	expect(reloaded.onNotification).not.toBe(originalSource.onNotification);
+	expect(reloaded.onExit).not.toBe(originalSource.onExit);
+	expect(reloaded.replaceHooks).not.toBe(originalSource.replaceHooks);
+	expect(reloaded.stop).not.toBe(originalSource.stop);
+	expect(reloaded.finishStop).not.toBe(originalSource.finishStop);
+	Object.assign(generation, {
+		router: { route: poisonRetiredGeneration },
+		onNotification: poisonRetiredGeneration,
+		onExit: poisonRetiredGeneration,
+		replaceHooks: poisonRetiredGeneration,
+		stop: poisonRetiredGeneration,
+		finishStop: poisonRetiredGeneration,
+	});
 
-	await generation.stop("shutdown");
-	generation.finishStop();
+	await reloaded.stop("shutdown");
+	reloaded.finishStop();
 	await childRetirement;
 	expect(events.indexOf("gateway:dispose")).toBeLessThan(events.indexOf("realtime:stop"));
 	expect(events.indexOf("realtime:stop")).toBeLessThan(events.indexOf("queue:stop"));
@@ -196,8 +223,8 @@ test("the production generation creates every owner once before readiness and sh
 	expect(events.some((event) => event.startsWith("reload:") && event.endsWith("stop"))).toBeFalse();
 	expect(events).not.toContain("reload:dynamic-cancel");
 	expect(events).not.toContain("reload:ordinary-settle");
-	expect(events.indexOf("transport:shutdown")).toBeLessThan(events.indexOf("router:remove"));
-	expect(events.indexOf("router:remove")).toBeLessThan(events.indexOf("epoch:close"));
+	expect(events.indexOf("transport:shutdown")).toBeLessThan(events.lastIndexOf("router:remove"));
+	expect(events.lastIndexOf("router:remove")).toBeLessThan(events.indexOf("epoch:close"));
 	expect(events).toContain("child-retirement:start");
 	expect(events).toContain("child-retirement:finish");
 	expect(events.filter((event) => event === "approval-projection:install")).toHaveLength(1);
