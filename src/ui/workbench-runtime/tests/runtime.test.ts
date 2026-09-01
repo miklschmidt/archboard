@@ -200,7 +200,7 @@ describe("workbench runtime projection", () => {
 		});
 		expect(view).toMatchObject({
 			mode: "readonly",
-			state: "unavailable",
+			state: "account_ready",
 			reason: "Codex is account ready; direct workhorse input is unavailable.",
 		});
 	});
