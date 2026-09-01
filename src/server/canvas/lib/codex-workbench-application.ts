@@ -168,6 +168,16 @@ export function createCanvasCodexWorkbenchApplication(
 		}
 
 		let operation!: Promise<CodexWorkbenchSnapshot>;
+		const publishRecoveryFailure = (): void => {
+			if (!recoveringFromStopped) return;
+			shutdownRequested = true;
+			shutdownSettled = true;
+			// A rejected prepare has no snapshot value, so its exact promise is terminal-safe.
+			shutdownPromise = operation as unknown as Promise<void>;
+			options.state.installed = false;
+			options.state.phase = "stopped";
+			options.state.shutdown = shutdown;
+		};
 		operation = (async (): Promise<CodexWorkbenchSnapshot> => {
 			let result: CodexWorkbenchSnapshot | null = null;
 			let startupFailure: Error | null = null;
@@ -183,12 +193,18 @@ export function createCanvasCodexWorkbenchApplication(
 				} catch (error) {
 					shutdownFailure = asError(error);
 				}
-				if (startupFailure !== null && shutdownFailure !== null)
-					throw new AggregateError(
+				if (startupFailure !== null && shutdownFailure !== null) {
+					const failure = new AggregateError(
 						[startupFailure, shutdownFailure],
 						"Codex startup and concurrent application shutdown both failed.",
 					);
-				if (startupFailure !== null) throw startupFailure;
+					publishRecoveryFailure();
+					throw failure;
+				}
+				if (startupFailure !== null) {
+					publishRecoveryFailure();
+					throw startupFailure;
+				}
 				if (shutdownFailure !== null) throw shutdownFailure;
 				throw new Error(
 					"The Codex workbench was shut down while application readiness was pending.",
@@ -197,12 +213,7 @@ export function createCanvasCodexWorkbenchApplication(
 			if (startupFailure !== null) {
 				options.state.installed = false;
 				if (recoveringFromStopped) {
-					shutdownRequested = true;
-					shutdownSettled = true;
-					// A rejected prepare has no snapshot value, so its exact promise is terminal-safe.
-					shutdownPromise = operation as unknown as Promise<void>;
-					options.state.phase = "stopped";
-					options.state.shutdown = shutdown;
+					publishRecoveryFailure();
 				} else {
 					options.state.phase = "idle";
 					options.state.shutdown = null;
