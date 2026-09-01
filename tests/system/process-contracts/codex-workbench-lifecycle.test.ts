@@ -94,6 +94,7 @@ describe.serial("composed Codex process lifecycle", () => {
 			expect(linked).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 			const linkedSnapshot = snapshot(await socket.request("snapshot"));
 			const threadLink = linkedSnapshot.threadLink as Record<string, unknown>;
+			const currentTimeLowerBound = Math.floor(Date.now() / 1000);
 			const startLease = await socket.request("claimLease");
 			expect(
 				await socket.request("command", {
@@ -238,8 +239,11 @@ describe.serial("composed Codex process lifecycle", () => {
 			const time = reverseResponses(fixture.logPath, "session-time")[0]?.frame?.result as {
 				readonly currentTimeAt?: unknown;
 			};
+			const currentTimeUpperBound = Math.floor(Date.now() / 1000);
 			expect(typeof time.currentTimeAt).toBe("number");
 			expect(Number.isInteger(time.currentTimeAt)).toBeTrue();
+			expect(Number(time.currentTimeAt)).toBeGreaterThanOrEqual(currentTimeLowerBound);
+			expect(Number(time.currentTimeAt)).toBeLessThanOrEqual(currentTimeUpperBound);
 			for (const [id, message] of [
 				["session-token", "Client-managed ChatGPT token refresh is not supported"],
 				["session-attestation", "Attestation is not supported by this client"],

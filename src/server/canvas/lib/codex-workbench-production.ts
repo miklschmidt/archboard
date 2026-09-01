@@ -255,6 +255,7 @@ export function createCanvasCodexWorkbenchInstallation(
 			}
 			if (owners.lifecycle === null) {
 				owners.lifecycle = createCanvasDynamicLifecycleOwner({
+					identity: requireCreated(created, "identity"),
 					waitGraph,
 					waitForTargets: host.waitForTargets,
 					shutdownEpoch: async (child, epoch) => {
@@ -507,6 +508,11 @@ export function createCanvasCodexWorkbenchInstallation(
 	const hooks = (input: CodexWorkbenchGenerationInput): CodexWorkbenchGenerationHooks => ({
 		threadContext: {
 			contextForEvent: (event, binding) => host.contextForEvent(event, binding.paneId),
+		},
+		onNotification: (event) => {
+			const owners = ownersFor(input);
+			owners.approval?.onNotification(event);
+			owners.lifecycle?.onNotification(event);
 		},
 		installIdentityDecoders: host.installIdentityDecoders,
 		installLifecycleSignals: host.installLifecycleSignals,

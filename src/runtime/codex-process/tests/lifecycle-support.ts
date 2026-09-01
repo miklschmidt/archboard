@@ -92,6 +92,10 @@ export function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
 		dependencies,
 		signals,
 		child: () => child,
+		markGroupQuiescent: () => {
+			groupStatus = "quiescent";
+		},
+		closeChild: () => child?.emit("close", null, "SIGKILL"),
 		quiesce: () => {
 			groupStatus = "quiescent";
 			child?.emit("close", null, "SIGKILL");

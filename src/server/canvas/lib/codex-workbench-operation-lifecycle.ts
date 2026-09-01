@@ -20,6 +20,7 @@ import type {
 } from "../../../runtime/codex-dynamic-tools/index.js";
 import type { CodexWaitGraph, WaitOwner } from "../../../runtime/codex-wait-graph/index.js";
 import type { DynamicServerRequest } from "../../../runtime/codex-transport/server-requests.js";
+import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
 
 /** The shared OperationId authority plus exact once-only terminal disposition. */
 export function createCanvasDynamicOperationIdAdapter(
@@ -73,13 +74,19 @@ function quarantineKey(identity: DynamicMutationQuarantineIdentity): string {
 	return JSON.stringify([identity.child, identity.epoch, identity.callId]);
 }
 
+function waitKey(owner: DynamicWaitOwner): string {
+	return JSON.stringify([owner.child, owner.epoch, owner.caller, owner.turn, owner.call]);
+}
+
 export interface CanvasDynamicLifecycleOwnerOptions {
+	readonly identity: IdentityAuthorities;
 	readonly waitGraph: CodexWaitGraph;
 	readonly waitForTargets: (input: {
 		readonly owner: DynamicWaitOwner;
 		readonly cursor: string | null;
 		readonly timeoutMs: number;
 		readonly previousSequence: number;
+		readonly signal: AbortSignal;
 	}) => Promise<DynamicWaitEvent>;
 	readonly shutdownEpoch: (child: ChildId, epoch: ChildEpoch) => Promise<DynamicEpochTeardownProof>;
 	readonly onFatal: (fault: DynamicFatalLifecycleFault) => void;
@@ -87,6 +94,7 @@ export interface CanvasDynamicLifecycleOwnerOptions {
 
 export interface CanvasDynamicLifecycleOwner {
 	readonly port: DynamicToolLifecyclePort;
+	readonly onNotification: (event: TransportServerNotification) => void;
 	readonly childExit: (child: ChildId, epoch: ChildEpoch) => Promise<void>;
 	readonly shutdown: () => Promise<void>;
 }
@@ -95,6 +103,14 @@ export interface CanvasDynamicLifecycleOwner {
 export function createCanvasDynamicLifecycleOwner(
 	options: CanvasDynamicLifecycleOwnerOptions,
 ): CanvasDynamicLifecycleOwner {
+	const activeWaits = new Map<
+		string,
+		{
+			readonly owner: DynamicWaitOwner;
+			readonly controller: AbortController;
+			readonly reject: (error: Error & { readonly code: string }) => void;
+		}
+	>();
 	const quarantines = new Map<
 		string,
 		{
@@ -173,9 +189,67 @@ export function createCanvasDynamicLifecycleOwner(
 			teardown: options.shutdownEpoch(child, epoch),
 		}),
 		reportFatalLifecycleFault: options.onFatal,
-		waitForTargets: options.waitForTargets,
+		waitForTargets: (input: Parameters<DynamicToolLifecyclePort["waitForTargets"]>[0]) => {
+			const key = waitKey(input.owner);
+			if (activeWaits.has(key)) throw new Error("The dynamic wait is already active.");
+			const controller = new AbortController();
+			let reject!: (error: Error & { readonly code: string }) => void;
+			const cancellation = new Promise<never>((_resolve, next) => {
+				reject = next;
+			});
+			activeWaits.set(key, { owner: input.owner, controller, reject });
+			return Promise.race([
+				options.waitForTargets({ ...input, signal: controller.signal }),
+				cancellation,
+			]).finally(() => activeWaits.delete(key));
+		},
 	});
+	const onNotification = (event: TransportServerNotification): void => {
+		if (
+			event.correlation.child !== options.identity.identity.validator.childId ||
+			event.correlation.epoch !== options.identity.identity.validator.epoch
+		)
+			return;
+		const { method, params } = event.notification;
+		for (const active of activeWaits.values()) {
+			const owner = active.owner;
+			const threadId = options.identity.identity.decoder.serializeCodexIdentity(owner.caller);
+			const turnId = options.identity.identity.decoder.serializeCodexIdentity(owner.turn);
+			const callId = options.identity.identity.decoder.serializeCodexIdentity(owner.call);
+			const itemCancelled =
+				method === "item/completed" &&
+				params.threadId === threadId &&
+				params.turnId === turnId &&
+				params.item.type === "dynamicToolCall" &&
+				params.item.id === callId;
+			const turnInterrupted =
+				method === "turn/completed" &&
+				params.threadId === threadId &&
+				params.turn.id === turnId &&
+				params.turn.status === "interrupted";
+			if (!itemCancelled && !turnInterrupted) continue;
+			active.controller.abort();
+			const error = Object.assign(
+				new Error(
+					itemCancelled
+						? "The dynamic wait call completed before host settlement."
+						: "The caller turn was interrupted before host settlement.",
+				),
+				{ code: itemCancelled ? "cancellation" : "interruption" },
+			);
+			active.reject(error);
+		}
+	};
 	const childExit = async (child: ChildId, epoch: ChildEpoch): Promise<void> => {
+		for (const active of activeWaits.values()) {
+			if (active.owner.child !== child || active.owner.epoch !== epoch) continue;
+			active.controller.abort();
+			active.reject(
+				Object.assign(new Error("The dynamic wait child disconnected."), {
+					code: "child_disconnected",
+				}),
+			);
+		}
 		for (const entry of quarantines.values()) {
 			if (entry.identity.child !== child || entry.identity.epoch !== epoch) continue;
 			try {
@@ -189,6 +263,7 @@ export function createCanvasDynamicLifecycleOwner(
 	};
 	return Object.freeze({
 		port,
+		onNotification,
 		childExit,
 		shutdown: async () => {
 			if (stopped) return;

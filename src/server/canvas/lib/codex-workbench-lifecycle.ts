@@ -74,6 +74,7 @@ export interface CodexWorkbenchComponents {
 
 export interface CodexWorkbenchGenerationHooks {
 	readonly threadContext: Parameters<CodexThreadContextController["replaceHooks"]>[0];
+	readonly onNotification: Parameters<CodexTransport["onServerNotification"]>[0];
 	readonly installIdentityDecoders: (identity: IdentityAuthorities) => void;
 	readonly installLifecycleSignals: (components: CodexWorkbenchComponents) => () => void;
 	readonly installApprovalProjection: (components: CodexWorkbenchComponents) => () => void;
@@ -281,6 +282,7 @@ export function createCodexWorkbenchGenerationLifecycle(
 
 	const onNotification: Parameters<CodexTransport["onServerNotification"]>[0] = (event) => {
 		if (!state.active || state.stopped) return;
+		state.hooks.onNotification(event);
 		components.session[CODEX_SESSION_CONTROL].onNotification(event);
 		components.coordinator.onNotification(event);
 		components.operations.onNotification(event);
