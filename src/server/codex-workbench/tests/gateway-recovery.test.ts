@@ -89,6 +89,35 @@ describe("Codex workbench browser recovery and delivery", () => {
 		expect(value.calls.filter((call) => call === "text.start")).toHaveLength(1);
 	});
 
+	test("an out-of-order close from a replaced socket cannot revoke the replacement lease", async () => {
+		const value = harness();
+		const firstSocket = Object.freeze({ socket: 1 });
+		const replacementSocket = Object.freeze({ socket: 2 });
+		const stale = value.gateway.connect(value.browserId, value.paneId, firstSocket);
+		stale.claimLease();
+		const current = value.gateway.connect(value.browserId, value.paneId, replacementSocket);
+		const currentLease = current.claimLease();
+
+		await stale.close();
+
+		expect(current.renewLease()).toMatchObject({
+			commandId: currentLease.commandId,
+			state: "active",
+		});
+		expectGatewayError(() => stale.snapshot(), "invalid_input");
+	});
+
+	test("a source reload reuses the exact live socket instance without replacing its lease", () => {
+		const value = harness();
+		const socket = Object.freeze({ socket: "stable" });
+		const beforeReload = value.gateway.connect(value.browserId, value.paneId, socket);
+		const lease = beforeReload.claimLease();
+		const afterReload = value.gateway.connect(value.browserId, value.paneId, socket);
+
+		expect(afterReload.instance).toBe(socket);
+		expect(afterReload.renewLease()).toMatchObject({ commandId: lease.commandId, state: "active" });
+	});
+
 	test("replays a settled command while retained and refuses a fingerprint conflict", async () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);

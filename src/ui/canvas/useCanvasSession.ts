@@ -73,6 +73,10 @@ import {
 } from "./api";
 import type { ChangeReportReply, PaneReport } from "./api";
 import type { WorkbenchTakeBackResult } from "../workbench-board-status/contract";
+import {
+	createBrowserWorkbenchMediaOwner,
+	type BrowserWorkbenchMediaOwner,
+} from "./codex-workbench-media-owner";
 
 // Messages that say what is on a board, as opposed to messages about the board.
 // A pane that must send a full report ignores the first kind and acts on the
@@ -346,6 +350,8 @@ export interface CanvasSession {
 	 * and a person watching boxes move should see the reason either way.
 	 */
 	doing: DoingEntry[];
+	/** Browser-local WebRTC and media owner for this exact pane socket. */
+	realtime: BrowserWorkbenchMediaOwner;
 }
 
 export function useCanvasSession({
@@ -365,6 +371,7 @@ export function useCanvasSession({
 	const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
 	const socketRef = useRef<WebSocket | null>(null);
 	const closedRef = useRef(false);
+	const [realtime] = useState<BrowserWorkbenchMediaOwner>(() => createBrowserWorkbenchMediaOwner());
 
 	const [connected, setConnected] = useState(false);
 	const connectedRef = useRef(false);
@@ -1577,6 +1584,7 @@ export function useCanvasSession({
 			socketRef.current = socket;
 
 			socket.addEventListener("open", () => {
+				void realtime.attach(socket).catch(() => undefined);
 				connectedRef.current = true;
 				setConnected(true);
 				// The server retires a pane when its socket closes, so a reconnection has
@@ -1595,6 +1603,7 @@ export function useCanvasSession({
 				}
 			});
 			socket.addEventListener("close", (event) => {
+				void realtime.detach(socket).catch(() => undefined);
 				connectedRef.current = false;
 				setConnected(false);
 				publishStatus();
@@ -1606,7 +1615,7 @@ export function useCanvasSession({
 				publishStatus();
 			});
 		},
-		[clientId, handleMessage, publishStatus],
+		[clientId, handleMessage, publishStatus, realtime],
 	);
 
 	const attachExcalidraw = useCallback(
@@ -1642,8 +1651,9 @@ export function useCanvasSession({
 			// unsplit pane is no longer displayed, and the server drops it on the
 			// close.
 			socketRef.current?.close(1000);
+			void realtime.dispose();
 		};
-	}, [clientId, dispatchReporting, flushWithBeacon]);
+	}, [clientId, dispatchReporting, flushWithBeacon, realtime]);
 
 	const handleChange = useCallback(
 		(elements: readonly Partial<ExcalidrawElement>[], appState: unknown): void => {
@@ -1682,5 +1692,6 @@ export function useCanvasSession({
 		heldBy,
 		takeBack,
 		doing,
+		realtime,
 	};
 }

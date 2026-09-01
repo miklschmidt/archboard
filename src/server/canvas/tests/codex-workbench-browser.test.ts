@@ -12,12 +12,14 @@ import { createCanvasCodexBrowserSocketOwner } from "../codex-workbench-browser.
 test("the public socket owner routes the complete gateway workflow through server-owned identity", async () => {
 	const calls: string[] = [];
 	const messages: unknown[] = [];
+	const instance = Object.freeze({});
 	const listener: { current: ((message: BrowserGatewayMessage) => void) | null } = {
 		current: null,
 	};
 	const connection: BrowserWorkbenchConnection = {
 		browserId: "browser-1",
 		paneId: "pane-authoritative",
+		instance,
 		snapshot: () => {
 			calls.push("snapshot");
 			return { kind: "snapshot", sequence: 1, snapshot: {} } as never;
@@ -88,6 +90,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 		["8", "releaseLease", {}],
 	] as const) {
 		await owner.handle(
+			instance,
 			"browser-1",
 			{ type: "codex_workbench_request", requestId, action, ...extra },
 			send,
@@ -95,6 +98,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 	}
 	listener.current?.({ kind: "delta", sequence: 2, delta: {} } as never);
 	await owner.handle(
+		instance,
 		"browser-1",
 		{ type: "codex_workbench_request", requestId: "9", action: "close" },
 		send,
@@ -112,7 +116,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 		'command:{"command":"approvalRespond"}',
 		"release",
 		"unsubscribe",
-		"close:browser-1",
+		"connection-close",
 	]);
 	expect(messages).toContainEqual({
 		type: "codex_workbench_event",
@@ -161,6 +165,7 @@ test("the socket owner refuses missing pane authority and reload only removes su
 	const owner = createCanvasCodexBrowserSocketOwner({ gateway, paneForBrowser: () => null });
 	const messages: unknown[] = [];
 	await owner.handle(
+		Object.freeze({}),
 		"browser-1",
 		{ type: "codex_workbench_request", requestId: "missing", action: "connect" },
 		{ send: (message) => messages.push(message) },
@@ -177,9 +182,11 @@ test("the socket owner refuses missing pane authority and reload only removes su
 });
 
 test("the public request crosses a real WebSocket transport and returns the gateway snapshot", async () => {
+	const instance = Object.freeze({});
 	const connection: BrowserWorkbenchConnection = {
 		browserId: "browser-live",
 		paneId: "pane-live",
+		instance,
 		snapshot: () =>
 			({ kind: "snapshot", sequence: 3, snapshot: { kind: "browser_snapshot" } }) as never,
 		claimLease: () => ({}) as never,
@@ -211,7 +218,7 @@ test("the public request crosses a real WebSocket transport and returns the gate
 	const sockets = new WebSocketServer({ server });
 	sockets.on("connection", (socket) => {
 		socket.on("message", (raw) => {
-			void owner.handle("browser-live", JSON.parse(raw.toString()), {
+			void owner.handle(instance, "browser-live", JSON.parse(raw.toString()), {
 				send: (message) => socket.send(JSON.stringify(message)),
 			});
 		});

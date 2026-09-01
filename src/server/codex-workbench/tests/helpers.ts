@@ -143,6 +143,7 @@ export function realtimeCommand(
 	harnessValue: GatewayHarness,
 	lease: ReturnType<GatewayHarness["gateway"]["claimLease"]>,
 	command: "realtimeStart" | "realtimeAppendText" | "realtimeStop",
+	realtimeSessionHandle = lease.commandId,
 ): BrowserCommand {
 	const target = commandTarget(lease);
 	if (command === "realtimeStart")
@@ -157,12 +158,14 @@ export function realtimeCommand(
 			...target,
 			command,
 			threadId: harnessValue.threadId,
+			realtimeSessionHandle,
 			text: "bounded speech",
 		});
 	return harnessValue.model.BrowserCommandSchema.parse({
 		...target,
 		command,
 		threadId: harnessValue.threadId,
+		realtimeSessionHandle,
 	});
 }
 

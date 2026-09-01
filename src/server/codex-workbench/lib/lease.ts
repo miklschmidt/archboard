@@ -7,7 +7,11 @@ import type {
 } from "../../../shared/codex-workbench-identity/index.js";
 import type { BrowserCommandLease } from "../../../shared/codex-browser-model/index.js";
 import type { ThreadLinkBindingSnapshot } from "../../../runtime/codex-thread-link/index.js";
-import type { BrowserConnectionId, BrowserLeaseBinding } from "./contract.js";
+import type {
+	BrowserConnectionId,
+	BrowserConnectionInstance,
+	BrowserLeaseBinding,
+} from "./contract.js";
 
 const RETIRED_LEASE_LIMIT = 64;
 
@@ -25,15 +29,18 @@ export interface BrowserLeaseManager {
 	readonly claim: (
 		browserId: BrowserConnectionId,
 		paneId: string,
+		connection: BrowserConnectionInstance,
 		binding: ThreadLinkBindingSnapshot,
 	) => BrowserLeaseRecord;
 	readonly renew: (
 		browserId: BrowserConnectionId,
+		connection: BrowserConnectionInstance,
 		lease: BrowserCommandLease,
 	) => BrowserLeaseRecord;
 	readonly release: (
 		browserId: BrowserConnectionId,
 		paneId: string,
+		connection: BrowserConnectionInstance,
 		commandId?: BrowserCommandId,
 	) => BrowserLeaseRecord | null;
 	readonly invalidate: (
@@ -149,6 +156,7 @@ export function createBrowserLeaseManager(options: {
 	const claim = (
 		browserId: BrowserConnectionId,
 		paneId: string,
+		connection: BrowserConnectionInstance,
 		capturedLink: ThreadLinkBindingSnapshot,
 	): BrowserLeaseRecord => {
 		if (disposed) throw new Error("the browser gateway is disposed");
@@ -172,6 +180,7 @@ export function createBrowserLeaseManager(options: {
 			},
 			binding: {
 				browserId,
+				connection,
 				paneId,
 				commandId,
 				childId,
@@ -189,12 +198,17 @@ export function createBrowserLeaseManager(options: {
 
 	const renew = (
 		browserId: BrowserConnectionId,
+		connection: BrowserConnectionInstance,
 		lease: BrowserCommandLease,
 	): BrowserLeaseRecord => {
 		if (disposed) throw new Error("the browser gateway is disposed");
 		const record = requireActive(lease.commandId);
 		if (record.lease.state !== "active") return record;
-		if (record.binding.browserId !== browserId || !sameLeaseTarget(record.lease, lease))
+		if (
+			record.binding.browserId !== browserId ||
+			record.binding.connection !== connection ||
+			!sameLeaseTarget(record.lease, lease)
+		)
 			throw new Error("the browser command lease belongs to another browser or pane");
 		const expiresAtMs = assertTime(options.now()) + CODEX_BROWSER_COMMAND_LEASE_MS;
 		const renewed = freezeRecord({ ...record, lease: { ...record.lease, expiresAtMs } });
@@ -207,11 +221,16 @@ export function createBrowserLeaseManager(options: {
 	const release = (
 		browserId: BrowserConnectionId,
 		paneId: string,
+		connection: BrowserConnectionInstance,
 		commandId?: BrowserCommandId,
 	): BrowserLeaseRecord | null => {
 		if (active === null) return commandId === undefined ? null : (retired.get(commandId) ?? null);
 		if (assertTime(options.now()) >= active.lease.expiresAtMs) return finish(active, "expired");
-		if (active.binding.browserId !== browserId || active.binding.paneId !== paneId) {
+		if (
+			active.binding.browserId !== browserId ||
+			active.binding.paneId !== paneId ||
+			active.binding.connection !== connection
+		) {
 			return commandId === undefined ? null : (retired.get(commandId) ?? null);
 		}
 		if (commandId !== undefined && active.lease.commandId !== commandId)

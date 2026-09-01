@@ -95,6 +95,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 	});
 	const context = {
 		browserId: "browser-1",
+		connection: Object.freeze({}),
 		paneId: "pane-exact",
 		commandId: authorities.identity.issuer.mintBrowserCommandId(),
 		childId: authorities.identity.validator.childId,
@@ -195,6 +196,7 @@ test("browser steering rejects a stale requested turn at the authoritative sessi
 	const commandId = authorities.identity.issuer.mintBrowserCommandId();
 	const context = {
 		browserId: "browser-1",
+		connection: Object.freeze({}),
 		paneId: "pane-1",
 		commandId,
 		childId: authorities.identity.validator.childId,
@@ -293,15 +295,45 @@ test("create, attach, and relink replace controller authority with the exact ret
 			snapshot: () => workhorseSnapshot(nextBinding),
 		} as never,
 		threadLink: {
+			classify: async () => ({}) as never,
 			classifyAndBind: async (_paneId: string, _expected: unknown, target: unknown) => {
 				classifiedTargets.push(target);
 				return nextBinding;
 			},
 		} as never,
 		semanticDelivery: semanticDelivery as never,
+		epoch: {
+			snapshot: () =>
+				({
+					cas: { revision: 1, bytesHash: "hash" },
+					manifest: {
+						activeEpoch: {
+							childId: authorities.identity.validator.childId,
+							epoch: authorities.identity.validator.epoch,
+							operationId,
+						},
+						records: [
+							{
+								status: "committed",
+								correlation: {
+									childId: authorities.identity.validator.childId,
+									epoch: authorities.identity.validator.epoch,
+									operationId,
+								},
+								operation: { id: operationId, kind: "create_thread", rpc: "thread/start" },
+								provenance: { threadId },
+							},
+						],
+					},
+				}) as never,
+			assertCurrent: () => ({}) as never,
+		} as never,
+		identity: authorities,
+		checkoutRoot: "/workspace/archboard",
 	});
 	const context = {
 		browserId: "browser-1",
+		connection: Object.freeze({}),
 		paneId: "pane-1",
 		commandId: authorities.identity.issuer.mintBrowserCommandId(),
 		childId: authorities.identity.validator.childId,
@@ -326,7 +358,7 @@ test("create, attach, and relink replace controller authority with the exact ret
 	]);
 });
 
-test("a stale browser disconnect cannot clear a newer controller binding", () => {
+test("a stale browser disconnect token cannot clear a newer controller binding", () => {
 	const authorities = createIdentityAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-current");
 	const binding = {
@@ -348,18 +380,8 @@ test("a stale browser disconnect cannot clear a newer controller binding", () =>
 			return { token: { revision: 9 }, binding: null };
 		},
 	};
-	const context = (linkRevision: number) =>
-		({
-			paneId: "pane-1",
-			linkRevision,
-			link: {
-				threadId,
-				childId: authorities.identity.validator.childId,
-				epoch: authorities.identity.validator.epoch,
-			},
-		}) as never;
-	clearCanvasThreadContextForLease(controller as never, context(3));
+	clearCanvasThreadContextForLease(controller as never, { revision: 7 });
 	expect(clears).toBe(0);
-	clearCanvasThreadContextForLease(controller as never, context(4));
+	clearCanvasThreadContextForLease(controller as never, { revision: 8 });
 	expect(clears).toBe(1);
 });
