@@ -8,15 +8,17 @@ import type {
 import type { TransportServerRequest } from "../../../runtime/codex-transport/server-requests.js";
 import type { CodexWorkbenchGateway } from "../../codex-workbench/index.js";
 import {
-	CodexWorkbenchCompositionError,
 	createCodexWorkbenchRequestRouter,
+	type CodexWorkbenchGenerationHooks,
+} from "../codex-workbench-generation.js";
+import {
+	CodexWorkbenchCompositionError,
 	emptyCodexWorkbenchRetainedState,
 	installCodexWorkbenchOwner,
-	type CodexWorkbenchGenerationHooks,
 	type CODEX_WORKBENCH_OWNER,
 	type CodexWorkbenchGeneration,
 	type CodexWorkbenchGenerationInput,
-} from "../codex-workbench.js";
+} from "../codex-workbench-owner.js";
 
 const HUMAN_METHODS = [
 	"item/commandExecution/requestApproval",

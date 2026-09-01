@@ -2,7 +2,13 @@ import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { createDynamicAuthorityTokenIssuer } from "../../../runtime/codex-dynamic-tools/index.js";
-import { createCanvasDynamicOperationIdAdapter } from "../codex-workbench.js";
+import { ArchboardContextSchema } from "../../../runtime/codex-instructions/index.js";
+import {
+	clearCanvasThreadContextForLease,
+	createCanvasCanonicalTextActions,
+	createCanvasDynamicOperationIdAdapter,
+	createCanvasThreadLinkActions,
+} from "../codex-workbench-adapters.js";
 
 test("the production dynamic authority token issuer retires exact opaque capabilities", () => {
 	const issuer = createDynamicAuthorityTokenIssuer();
@@ -38,4 +44,322 @@ test("the production operation adapter shares authority and terminalizes exactly
 	expect(() =>
 		adapter.terminalizeCanonicalOperationId({ operationId, disposition: "retired" }),
 	).toThrow("different terminal disposition");
+});
+
+test("browser start and steer emit canonical authored bodies from lease-bound context", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("thread-1");
+	const turnId = authorities.identity.decoder.adoptTurnId("turn-current");
+	const starts: unknown[] = [];
+	const steers: unknown[] = [];
+	const contexts: unknown[] = [];
+	const session = {
+		turnStart: async (params: unknown) => {
+			starts.push(params);
+			return {} as never;
+		},
+		threadRead: async () =>
+			({ thread: { turns: [{ id: turnId, status: "inProgress" }] } }) as never,
+		turnSteer: async (params: unknown) => {
+			steers.push(params);
+			return { turnId } as never;
+		},
+		turnInterrupt: async () => ({}) as never,
+	};
+	const actions = createCanvasCanonicalTextActions({
+		identity: authorities,
+		session,
+		contextForOperation: (action, operation) => {
+			contexts.push({ paneId: action.paneId, operation });
+			return ArchboardContextSchema.parse({
+				schema: 1,
+				paneId: action.paneId,
+				board: { note: "board.excalidraw.md", version: 7, cursor: "feed:3" },
+				threadLink: { state: "executable", reason: null },
+				child: { id: action.childId, epoch: action.epoch },
+				workhorse: { threadId: action.link.threadId, turnId: null },
+				coordinator: { threadId: null, realtimeSessionId: null },
+				semantic: {
+					brief: "selected service",
+					capturedAtMs: 10,
+					freshUntilMs: 20,
+					truncated: false,
+				},
+				focus: { paneId: action.paneId, capturedAtMs: 10 },
+				selection: { elementIds: ["node-1"], capturedAtMs: 10 },
+				claim: { holder: "human", doing: "steering current work" },
+				ambiguity: [],
+				operation: { ...operation, outcome: null },
+			});
+		},
+	});
+	const context = {
+		browserId: "browser-1",
+		paneId: "pane-exact",
+		commandId: authorities.identity.issuer.mintBrowserCommandId(),
+		childId: authorities.identity.validator.childId,
+		epoch: authorities.identity.validator.epoch,
+		linkRevision: 3,
+		link: {
+			kind: "thread_link",
+			state: "executable",
+			childId: authorities.identity.validator.childId,
+			epoch: authorities.identity.validator.epoch,
+			threadId,
+			source: "appServer",
+			status: "idle",
+			loaded: true,
+			canAcceptDirectInput: true,
+			reason: null,
+		},
+	} as const;
+	await actions.start(
+		{
+			kind: "browser_command",
+			command: "start",
+			commandId: context.commandId,
+			paneId: context.paneId,
+			childId: context.childId,
+			epoch: context.epoch,
+			threadId,
+			prompt: "Start from the selected service.",
+		},
+		context,
+	);
+	await actions.steer(
+		{
+			kind: "browser_command",
+			command: "steer",
+			commandId: context.commandId,
+			paneId: context.paneId,
+			childId: context.childId,
+			epoch: context.epoch,
+			threadId,
+			turnId,
+			prompt: "Keep the same target.",
+		},
+		context,
+	);
+
+	expect(starts).toHaveLength(1);
+	expect(starts[0]).toMatchObject({
+		threadId,
+		turnTrigger: "archboard",
+		input: [{ type: "text", text: "Start from the selected service.", text_elements: [] }],
+		additionalContext: { archboard: { kind: "application" } },
+	});
+	expect(steers).toHaveLength(1);
+	expect(steers[0]).toMatchObject({
+		threadId,
+		expectedTurnId: turnId,
+		input: [{ type: "text", text: "Keep the same target.", text_elements: [] }],
+		additionalContext: { archboard: { kind: "application" } },
+	});
+	const startBody = starts[0] as {
+		clientUserMessageId: unknown;
+		additionalContext: { archboard: { value: unknown } };
+	};
+	const steerBody = steers[0] as typeof startBody;
+	expect(typeof startBody.clientUserMessageId).toBe("string");
+	expect(typeof startBody.additionalContext.archboard.value).toBe("string");
+	expect(typeof steerBody.clientUserMessageId).toBe("string");
+	expect(typeof steerBody.additionalContext.archboard.value).toBe("string");
+	expect(contexts).toEqual([
+		{ paneId: "pane-exact", operation: expect.objectContaining({ rpc: "turn/start" }) },
+		{ paneId: "pane-exact", operation: expect.objectContaining({ rpc: "turn/steer" }) },
+	]);
+});
+
+test("browser steering rejects a stale requested turn at the authoritative session boundary", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("thread-1");
+	const currentTurnId = authorities.identity.decoder.adoptTurnId("turn-current");
+	let steerCalls = 0;
+	const actions = createCanvasCanonicalTextActions({
+		identity: authorities,
+		session: {
+			turnStart: async () => ({}) as never,
+			threadRead: async () =>
+				({ thread: { turns: [{ id: currentTurnId, status: "inProgress" }] } }) as never,
+			turnSteer: async () => {
+				steerCalls += 1;
+				return {} as never;
+			},
+			turnInterrupt: async () => ({}) as never,
+		},
+		contextForOperation: () => {
+			throw new Error("stale turn must fail before context capture");
+		},
+	});
+	const staleTurnId = authorities.identity.decoder.adoptTurnId("turn-stale");
+	const commandId = authorities.identity.issuer.mintBrowserCommandId();
+	const context = {
+		browserId: "browser-1",
+		paneId: "pane-1",
+		commandId,
+		childId: authorities.identity.validator.childId,
+		epoch: authorities.identity.validator.epoch,
+		linkRevision: 1,
+		link: {
+			kind: "thread_link",
+			state: "executable",
+			childId: authorities.identity.validator.childId,
+			epoch: authorities.identity.validator.epoch,
+			threadId,
+			source: "appServer",
+			status: "active",
+			loaded: true,
+			canAcceptDirectInput: true,
+			reason: null,
+		},
+	} as const;
+	expect(
+		actions.steer(
+			{
+				kind: "browser_command",
+				command: "steer",
+				commandId,
+				paneId: "pane-1",
+				childId: context.childId,
+				epoch: context.epoch,
+				threadId,
+				turnId: staleTurnId,
+				prompt: "stale",
+			},
+			context,
+		),
+	).rejects.toThrow("exact current authoritative turn");
+	expect(steerCalls).toBe(0);
+});
+
+test("create, attach, and relink replace controller authority with the exact returned CAS proof", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("thread-exact");
+	const operationId = authorities.operation.issuer.mintOperationId();
+	const link = (revision: number) =>
+		({
+			paneId: "pane-1",
+			revision,
+			link: {
+				kind: "thread_link",
+				state: "executable",
+				childId: authorities.identity.validator.childId,
+				epoch: authorities.identity.validator.epoch,
+				threadId,
+				source: "appServer",
+				status: "idle",
+				loaded: true,
+				canAcceptDirectInput: true,
+				reason: null,
+			},
+			cas: {
+				revision,
+				paneId: "pane-1",
+				childId: authorities.identity.validator.childId,
+				epoch: authorities.identity.validator.epoch,
+				threadId,
+			},
+		}) as const;
+	const workhorseSnapshot = (binding: ReturnType<typeof link>) => ({
+		kind: "codex_workhorse",
+		state: "ready",
+		paneId: "pane-1",
+		childId: authorities.identity.validator.childId,
+		epoch: authorities.identity.validator.epoch,
+		threadId,
+		operationId,
+		outcome: "delivered",
+		start: null,
+		binding,
+		cleanup: null,
+		reason: null,
+	});
+	let current = { token: { revision: 0 }, binding: null as unknown };
+	const replacements: unknown[] = [];
+	const semanticDelivery = {
+		snapshot: () => current,
+		compareAndSwap: (transition: { expected: { revision: number }; next: unknown }) => {
+			expect(transition.expected).toEqual(current.token);
+			replacements.push(transition.next);
+			current = { token: { revision: current.token.revision + 1 }, binding: transition.next };
+			return current;
+		},
+	};
+	let nextBinding = link(2);
+	const classifiedTargets: unknown[] = [];
+	const actions = createCanvasThreadLinkActions({
+		workhorse: {
+			start: async () => workhorseSnapshot(link(1)),
+			snapshot: () => workhorseSnapshot(nextBinding),
+		} as never,
+		threadLink: {
+			classifyAndBind: async (_paneId: string, _expected: unknown, target: unknown) => {
+				classifiedTargets.push(target);
+				return nextBinding;
+			},
+		} as never,
+		semanticDelivery: semanticDelivery as never,
+	});
+	const context = {
+		browserId: "browser-1",
+		paneId: "pane-1",
+		commandId: authorities.identity.issuer.mintBrowserCommandId(),
+		childId: authorities.identity.validator.childId,
+		epoch: authorities.identity.validator.epoch,
+		linkRevision: 1,
+		link: link(1).link,
+	} as const;
+	await actions.create({ command: "threadLinkCreate" } as never, context);
+	await actions.attach({ command: "threadLinkAttach", threadId } as never, context);
+	nextBinding = link(3);
+	await actions.relink({ command: "threadLinkRelink", threadId } as never, context);
+
+	expect(replacements).toHaveLength(3);
+	expect(replacements).toEqual([
+		expect.objectContaining({ paneId: "pane-1", link: link(1) }),
+		expect.objectContaining({ paneId: "pane-1", link: link(2) }),
+		expect.objectContaining({ paneId: "pane-1", link: link(3) }),
+	]);
+	expect(classifiedTargets).toEqual([
+		expect.objectContaining({ threadId, operationId }),
+		expect.objectContaining({ threadId, operationId }),
+	]);
+});
+
+test("a stale browser disconnect cannot clear a newer controller binding", () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("thread-current");
+	const binding = {
+		paneId: "pane-1",
+		target: {
+			threadId,
+			childId: authorities.identity.validator.childId,
+			epoch: authorities.identity.validator.epoch,
+			operationId: String(authorities.operation.issuer.mintOperationId()),
+		},
+		link: { revision: 4 },
+	};
+	let clears = 0;
+	const controller = {
+		snapshot: () => ({ token: { revision: 8 }, binding }),
+		compareAndSwap: (transition: { next: unknown }) => {
+			clears += 1;
+			expect(transition.next).toBeNull();
+			return { token: { revision: 9 }, binding: null };
+		},
+	};
+	const context = (linkRevision: number) =>
+		({
+			paneId: "pane-1",
+			linkRevision,
+			link: {
+				threadId,
+				childId: authorities.identity.validator.childId,
+				epoch: authorities.identity.validator.epoch,
+			},
+		}) as never;
+	clearCanvasThreadContextForLease(controller as never, context(3));
+	expect(clears).toBe(0);
+	clearCanvasThreadContextForLease(controller as never, context(4));
+	expect(clears).toBe(1);
 });

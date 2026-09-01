@@ -92,7 +92,6 @@ function raceHarness(): RaceHarness {
 		identity,
 		currentBinding: () => binding,
 		freshSemanticBrief: () => '{"source":"race"}',
-		attachRemoteMedia: () => undefined,
 		session: {
 			realtimeStart: (params) => {
 				starts.push(params);
