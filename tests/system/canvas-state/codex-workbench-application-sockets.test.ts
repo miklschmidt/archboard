@@ -5,10 +5,8 @@ import { join, resolve } from "node:path";
 import { WebSocket } from "ws";
 
 import { createBrowserWorkbenchMediaOwner } from "../../../src/ui/codex-workbench-media/index.js";
-import {
-	createBrowserWorkbenchTransport,
-	type BrowserWorkbenchSocket,
-} from "../../../src/ui/workbench-transport/index.js";
+import type { BrowserWorkbenchSocket } from "../../../src/ui/workbench-transport/index.js";
+import { createCanvasWorkbenchSocketOwner } from "../../../src/ui/canvas/workbench-socket.js";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 
@@ -212,7 +210,6 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 		const clientId = "composed-codex-pane";
 		let application: ApplicationSocket | null = null;
 		let adapter: TransportSocketAdapter | null = null;
-		const transport = createBrowserWorkbenchTransport();
 		let stopCount = 0;
 		const media = createBrowserWorkbenchMediaOwner({
 			createMediaSession: () =>
@@ -233,6 +230,7 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 					dispose: async () => undefined,
 				}) as never,
 		});
+		const owner = createCanvasWorkbenchSocketOwner({ media });
 		const sent: Record<string, unknown>[] = [];
 		try {
 			application = await openApplicationSocket(canvas.base, clientId);
@@ -251,8 +249,11 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 				},
 			});
 			adapter = new TransportSocketAdapter(application.socket, sent);
-			await transport.attach(adapter);
-			await media.attach(transport);
+			await owner.attach(adapter);
+			const generation = owner.current();
+			if (generation === null)
+				throw new Error("the canvas socket owner did not retain a generation");
+			const transport = generation.transport;
 			expect(sent.filter((message) => message.action === "connect")).toHaveLength(0);
 			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(1);
 			expect(transport.snapshot()).not.toBeNull();
@@ -264,11 +265,10 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 			expect(transport.snapshot()?.voice.state).toBe("unavailable");
 			expect(stopCount).toBe(1);
 			expect(application.socket.readyState).toBe(WebSocket.OPEN);
-			await media.dispose();
+			await owner.dispose();
 			expect(application.socket.readyState).toBe(WebSocket.OPEN);
 		} finally {
-			await media.dispose();
-			await transport.dispose();
+			await owner.dispose();
 			adapter?.dispose();
 			await application?.close();
 			await canvas.dispose();

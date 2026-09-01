@@ -1,8 +1,6 @@
 import type { BrowserCommandLease } from "../../../shared/codex-browser-model/index.js";
 import {
-	createBrowserWorkbenchTransport,
 	type BrowserCommandDraft,
-	type BrowserWorkbenchSocket,
 	type BrowserWorkbenchTransport,
 } from "../../workbench-transport/index.js";
 import {
@@ -18,11 +16,8 @@ import {
 	type RealtimeMediaSession,
 	type RealtimeMediaSnapshot,
 } from "../../codex-realtime/index.js";
-export type BrowserWorkbenchMediaSource = BrowserWorkbenchTransport | BrowserWorkbenchSocket;
 interface MediaRun {
-	readonly source: BrowserWorkbenchMediaSource;
 	readonly transport: BrowserWorkbenchTransport;
-	readonly ownsTransport: boolean;
 	remove: () => void;
 	media: RealtimeMediaSession | null;
 	handle: string | null;
@@ -41,13 +36,14 @@ export type BrowserWorkbenchMediaState =
 				| "socket_closed"
 				| "media_api_unavailable"
 				| "permission_denied"
-				| "negotiation_failed"
-				| "attach_failed";
+				| "negotiation_failed";
 			readonly message: string;
 	  };
+/** The media boundary accepts the shared transport, never a raw socket. */
+export type BrowserWorkbenchMediaSource = BrowserWorkbenchTransport;
 export interface BrowserWorkbenchMediaOwner {
-	readonly attach: (source: BrowserWorkbenchMediaSource) => Promise<BrowserWorkbenchMediaState>;
-	readonly detach: (source: BrowserWorkbenchMediaSource) => Promise<void>;
+	readonly attach: (transport: BrowserWorkbenchTransport) => Promise<BrowserWorkbenchMediaState>;
+	readonly detach: (transport: BrowserWorkbenchTransport) => Promise<void>;
 	readonly start: () => Promise<RealtimeMediaSnapshot>;
 	readonly appendText: (text: string) => Promise<AppendOutcome>;
 	readonly stop: () => Promise<RealtimeMediaSnapshot>;
@@ -57,13 +53,6 @@ export interface BrowserWorkbenchMediaOwner {
 }
 export interface BrowserWorkbenchMediaOwnerOptions {
 	readonly createMediaSession?: typeof createRealtimeMediaSession;
-}
-function isTransport(source: BrowserWorkbenchMediaSource): source is BrowserWorkbenchTransport {
-	return (
-		typeof (source as BrowserWorkbenchTransport).command === "function" &&
-		typeof (source as BrowserWorkbenchTransport).setMediaReady === "function" &&
-		typeof (source as BrowserWorkbenchTransport).subscribe === "function"
-	);
 }
 function capabilityFailure(): BrowserWorkbenchMediaState | null {
 	if (
@@ -277,11 +266,7 @@ export function createBrowserWorkbenchMediaOwner(
 		active.handle = null;
 		active.startOperation = null;
 		removeAudioElements(active);
-		try {
-			await media?.dispose();
-		} finally {
-			if (active.ownsTransport) await active.transport.dispose();
-		}
+		await media?.dispose();
 	};
 
 	const transportLost = (active: MediaRun): void => {
@@ -298,15 +283,11 @@ export function createBrowserWorkbenchMediaOwner(
 
 	const attachTransport = async (
 		transport: BrowserWorkbenchTransport,
-		source: BrowserWorkbenchMediaSource,
-		ownsTransport: boolean,
 	): Promise<BrowserWorkbenchMediaState> => {
 		if (run?.transport === transport && !run.closed) return ownerState;
 		const previous = run;
 		const active: MediaRun = {
-			source,
 			transport,
-			ownsTransport,
 			remove: () => undefined,
 			media: null,
 			handle: null,
@@ -348,11 +329,18 @@ export function createBrowserWorkbenchMediaOwner(
 			requireCurrent(active);
 			if (transport.snapshot() === null) {
 				const state = transport.state();
-				throw new Error(
-					state.kind === "connection"
-						? state.reason
-						: "The Codex workbench transport has no full snapshot.",
-				);
+				await closeRun(active);
+				if (run === active) run = null;
+				ownerState = {
+					state: "unavailable",
+					reason:
+						state.kind === "connection" && state.state !== "stopped" ? "socket_closed" : "detached",
+					message:
+						state.kind === "connection"
+							? state.reason
+							: "The Codex workbench transport has no full snapshot.",
+				};
+				return ownerState;
 			}
 			active.media = createMediaSession(host(active));
 			const unavailable = capabilityFailure();
@@ -368,7 +356,10 @@ export function createBrowserWorkbenchMediaOwner(
 			run = null;
 			ownerState = {
 				state: "unavailable",
-				reason: "attach_failed",
+				reason:
+					transport.state().kind === "connection" && transport.state().state !== "stopped"
+						? "socket_closed"
+						: "negotiation_failed",
 				message: error instanceof Error ? error.message : "Media attachment failed.",
 			};
 			return ownerState;
@@ -376,30 +367,16 @@ export function createBrowserWorkbenchMediaOwner(
 	};
 
 	const attach = async (
-		source: BrowserWorkbenchMediaSource,
+		transport: BrowserWorkbenchTransport,
 	): Promise<BrowserWorkbenchMediaState> => {
 		if (disposed) return ownerState;
-		if (run?.source === source && !run.closed) return ownerState;
-		if (isTransport(source)) return attachTransport(source, source, false);
-		const transport = createBrowserWorkbenchTransport();
-		const state = await transport.attach(source);
-		if (transport.snapshot() === null) {
-			await transport.dispose();
-			return {
-				state: "unavailable",
-				reason: "attach_failed",
-				message:
-					state.kind === "connection"
-						? state.reason
-						: "The Codex workbench transport did not produce a full snapshot.",
-			};
-		}
-		return attachTransport(transport, source, true);
+		if (run?.transport === transport && !run.closed) return ownerState;
+		return attachTransport(transport);
 	};
 
-	const detach = async (source: BrowserWorkbenchMediaSource): Promise<void> => {
+	const detach = async (transport: BrowserWorkbenchTransport): Promise<void> => {
 		const active = run;
-		if (active === null || active.source !== source) return;
+		if (active === null || active.transport !== transport) return;
 		await closeRun(active);
 		if (run !== active || disposed) return;
 		run = null;
