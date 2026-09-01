@@ -3,9 +3,12 @@ import { describe, expect, test } from "bun:test";
 import {
 	CodexWorkbenchCompositionError,
 	emptyCodexWorkbenchRetainedState,
-	installCodexWorkbenchOwner,
 } from "../codex-workbench-owner.js";
-import { fakeGeneration, fakeProcess } from "./support/codex-workbench-owner-fake.js";
+import {
+	fakeGeneration,
+	fakeProcess,
+	installFakeCodexWorkbenchOwner,
+} from "./support/codex-workbench-owner-fake.js";
 
 function messages(value: unknown): string[] {
 	if (!(value instanceof Error)) return [];
@@ -22,7 +25,7 @@ describe("production Codex owner terminal cleanup", () => {
 			const events: string[] = [];
 			const retained = emptyCodexWorkbenchRetainedState();
 			const baseProcess = fakeProcess(events);
-			const owner = installCodexWorkbenchOwner(retained, {
+			const owner = installFakeCodexWorkbenchOwner(retained, {
 				createProcess: () =>
 					stage === "process"
 						? {
@@ -59,7 +62,7 @@ describe("production Codex owner terminal cleanup", () => {
 			expect(events).toContain("process:stop");
 			expect(retained).toMatchObject({ owner: null, process: null, state: "failed" });
 			expect(retained.control).toMatchObject({ current: null, runtime: null });
-			const replacement = installCodexWorkbenchOwner(retained, {
+			const replacement = installFakeCodexWorkbenchOwner(retained, {
 				createProcess: () => fakeProcess([]),
 				createGeneration: async () => fakeGeneration([], 3),
 			});
@@ -70,7 +73,7 @@ describe("production Codex owner terminal cleanup", () => {
 	test("aggregates simultaneous graph, process, and final failures", async () => {
 		const retained = emptyCodexWorkbenchRetainedState();
 		const process = fakeProcess([]);
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => ({
 				...process,
 				stop: async () => {

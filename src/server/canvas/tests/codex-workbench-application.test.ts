@@ -1,16 +1,28 @@
 import { expect, test } from "bun:test";
 
-import { createCanvasCodexWorkbenchApplication } from "../codex-workbench-application.js";
+import {
+	createCanvasCodexWorkbenchApplication,
+	type CanvasCodexWorkbenchApplicationState,
+} from "../codex-workbench-application.js";
 import {
 	emptyCodexWorkbenchRetainedState,
 	installCodexWorkbenchOwner,
 	type CodexWorkbenchGenerationInput,
 } from "../codex-workbench-owner.js";
-import { fakeGeneration, fakeProcess } from "./support/codex-workbench-owner-fake.js";
+import {
+	adoptFakeKernel,
+	fakeGeneration,
+	fakeKernelAcquisition,
+	fakeProcess,
+} from "./support/codex-workbench-owner-fake.js";
+
+function applicationState(): CanvasCodexWorkbenchApplicationState {
+	return { installed: false, phase: "idle", shutdown: null };
+}
 
 test("the canvas awaits initial graph readiness, replaces hooks on reload, and shuts down once", async () => {
 	const events: string[] = [];
-	const state = { installed: false, shutdown: null };
+	const state = applicationState();
 	let releaseStart!: () => void;
 	const startGate = new Promise<void>((resolve) => {
 		releaseStart = resolve;
@@ -39,7 +51,7 @@ test("the canvas awaits initial graph readiness, replaces hooks on reload, and s
 	};
 	const application = createCanvasCodexWorkbenchApplication({
 		state,
-		load: async () => module,
+		module,
 		installation: () => ({
 			process: {} as never,
 			bindings: () => ({}) as never,
@@ -66,17 +78,17 @@ test("the canvas awaits initial graph readiness, replaces hooks on reload, and s
 });
 
 test("failed startup never publishes an installed owner and delegates graph cleanup", async () => {
-	const state = { installed: false, shutdown: null };
+	const state = applicationState();
 	const application = createCanvasCodexWorkbenchApplication({
 		state,
-		load: async () => ({
+		module: {
 			installProductionCodexWorkbench: () =>
 				({
 					start: () => Promise.reject(new Error("initialization failed")),
 				}) as never,
 			reloadProductionCodexWorkbench: async () => ({}) as never,
 			shutdownProductionCodexWorkbench: async () => ({}) as never,
-		}),
+		},
 		installation: () => ({}) as never,
 	});
 
@@ -90,38 +102,111 @@ test("failed startup never publishes an installed owner and delegates graph clea
 	expect(state.shutdown).toBeNull();
 });
 
-test("shutdown invokes retained revocation before its first await", async () => {
-	const state = { installed: false, shutdown: null };
+test("shutdown during initial preparation revokes once before startup is released", async () => {
+	const state = applicationState();
 	let revoked = false;
+	let shutdownCalls = 0;
+	let releaseStart!: () => void;
+	const startGate = new Promise<void>((resolve) => void (releaseStart = resolve));
 	let releaseCleanup!: () => void;
 	const cleanupGate = new Promise<void>((resolve) => void (releaseCleanup = resolve));
 	const module = {
-		installProductionCodexWorkbench: () => ({ start: async () => ({ ready: true }) }) as never,
+		installProductionCodexWorkbench: () =>
+			({
+				start: async () => {
+					await startGate;
+					return { ready: true };
+				},
+			}) as never,
 		reloadProductionCodexWorkbench: async () => ({ ready: true }) as never,
 		shutdownProductionCodexWorkbench: () => {
 			revoked = true;
+			shutdownCalls++;
 			return cleanupGate.then(() => ({ ready: false }) as never);
 		},
 	};
-	let loads = 0;
-	let releaseSecondLoad!: () => void;
-	const secondLoadGate = new Promise<void>((resolve) => void (releaseSecondLoad = resolve));
 	const application = createCanvasCodexWorkbenchApplication({
 		state,
-		load: async () => {
-			loads++;
-			if (loads > 1) await secondLoadGate;
-			return module;
-		},
+		module,
 		installation: () => ({}) as never,
 	});
-	await application.prepare();
+	const preparing = application.prepare();
+	expect(state.phase).toBe("preparing");
+	expect(state.shutdown).toBe(application.shutdown);
 
 	const shutdown = application.shutdown();
 	expect(revoked).toBeTrue();
-	releaseSecondLoad();
+	expect(shutdownCalls).toBe(1);
+	expect(state.phase).toBe("stopping");
+	releaseStart();
 	releaseCleanup();
 	await shutdown;
+	expect(
+		await preparing.then(
+			() => null,
+			(error: unknown) => error,
+		),
+	).toBeInstanceOf(Error);
+	expect(state).toMatchObject({ installed: false, phase: "stopped", shutdown: null });
+});
+
+test("concurrent startup and shutdown failures are preserved together", async () => {
+	const state = applicationState();
+	let releaseStart!: () => void;
+	const startGate = new Promise<void>((resolve) => void (releaseStart = resolve));
+	let releaseShutdown!: () => void;
+	const shutdownGate = new Promise<void>((resolve) => void (releaseShutdown = resolve));
+	const application = createCanvasCodexWorkbenchApplication({
+		state,
+		module: {
+			installProductionCodexWorkbench: () =>
+				({
+					start: async () => {
+						await startGate;
+						throw new Error("startup failed");
+					},
+				}) as never,
+			reloadProductionCodexWorkbench: async () => ({}) as never,
+			shutdownProductionCodexWorkbench: async () => {
+				await shutdownGate;
+				throw new Error("shutdown failed");
+			},
+		},
+		installation: () => ({}) as never,
+	});
+	const preparing = application.prepare();
+	const stopping = application.shutdown();
+	releaseStart();
+	releaseShutdown();
+	expect(
+		await stopping.then(
+			() => null,
+			(error: unknown) => error,
+		),
+	).toBeInstanceOf(Error);
+	const failure = await preparing.then(
+		() => null,
+		(error: unknown) => error,
+	);
+	expect(failure).toBeInstanceOf(AggregateError);
+	expect((failure as AggregateError).errors.map((error) => (error as Error).message)).toEqual([
+		"startup failed",
+		"shutdown failed",
+	]);
+	expect(state).toMatchObject({ installed: false, phase: "stopped", shutdown: null });
+
+	const recovery = createCanvasCodexWorkbenchApplication({
+		state,
+		module: {
+			installProductionCodexWorkbench: () => ({ start: async () => ({ ready: true }) }) as never,
+			reloadProductionCodexWorkbench: async () => ({ ready: true }) as never,
+			shutdownProductionCodexWorkbench: async () => ({ ready: false }) as never,
+		},
+		installation: () => ({}) as never,
+	});
+	await recovery.prepare();
+	expect(state).toMatchObject({ installed: true, phase: "installed" });
+	await recovery.shutdown();
 });
 
 test("application shutdown revokes every retained wrapper before deferred graph cleanup", async () => {
@@ -132,22 +217,26 @@ test("application shutdown revokes every retained wrapper before deferred graph 
 	const cleanupGate = new Promise<void>((resolve) => void (releaseCleanup = resolve));
 	const owner = installCodexWorkbenchOwner(retained, {
 		createProcess: () => fakeProcess([]),
-		createGeneration: async () =>
-			fakeGeneration([], 1, {
-				stop: async () => {
-					cleanupEntered();
-					await cleanupGate;
-				},
-			}),
+		createKernel: fakeKernelAcquisition,
+		createGeneration: async (input) =>
+			adoptFakeKernel(
+				input,
+				fakeGeneration([], 1, {
+					stop: async () => {
+						cleanupEntered();
+						await cleanupGate;
+					},
+				}),
+			),
 	});
-	const state = { installed: false, shutdown: null };
+	const state = applicationState();
 	const application = createCanvasCodexWorkbenchApplication({
 		state,
-		load: async () => ({
+		module: {
 			installProductionCodexWorkbench: () => owner,
 			reloadProductionCodexWorkbench: async () => ({}) as never,
 			shutdownProductionCodexWorkbench: owner.shutdown,
-		}),
+		},
 		installation: () => ({}) as never,
 	});
 	await application.prepare();

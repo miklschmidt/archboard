@@ -122,6 +122,7 @@ import {
 	type CodexWorkbenchGenerationFactory,
 	type CodexWorkbenchGenerationHooks,
 	type CodexWorkbenchGenerationInput,
+	type CodexWorkbenchKernelAcquisition,
 	type CodexWorkbenchOwner,
 	type CodexWorkbenchOwnerOptions,
 	type CodexWorkbenchOwnerRuntime,
@@ -146,6 +147,7 @@ export type {
 	CodexWorkbenchGenerationFactory,
 	CodexWorkbenchGenerationHooks,
 	CodexWorkbenchGenerationInput,
+	CodexWorkbenchKernelAcquisition,
 	CodexWorkbenchOwner,
 	CodexWorkbenchOwnerOptions,
 	CodexWorkbenchOwnerRuntime,
@@ -293,9 +295,10 @@ export function createProductionCodexWorkbenchFactories(
 	kernel: CodexWorkbenchStableKernel | null = null,
 	adoptedSession: CodexWorkbenchGenerationInput["adoptedSession"] = null,
 	identityLedger: IdentityLedger = kernel?.identityLedger ?? createIdentityLedger(),
+	initialIdentity: IdentityAuthorities | null = null,
 ): CodexWorkbenchComponentFactories {
 	return Object.freeze({
-		identity: () => createIdentityAuthorities(identityLedger),
+		identity: () => initialIdentity ?? createIdentityAuthorities(identityLedger),
 		epoch: (created) => createCodexEpochStore(bindings.epoch(created)),
 		transport: (created) => {
 			const identity = requireComponent(created, "identity").identity;
@@ -604,6 +607,7 @@ function productionGenerationFactory(
 				input.kernel,
 				input.adoptedSession,
 				identityLedger,
+				input.initialIdentity,
 			),
 			identityLedger,
 			ownsTransport: input.kernel === null,
@@ -614,12 +618,32 @@ function productionGenerationFactory(
 	};
 }
 
+function productionKernelFactory(
+	options: InstallProductionCodexWorkbenchOptions,
+): NonNullable<CodexWorkbenchOwnerOptions["createKernel"]> {
+	return (input) => {
+		const identityLedger = createIdentityLedger();
+		const identity = createIdentityAuthorities(identityLedger);
+		const bindings = options.bindings(input);
+		const transport = createCodexTransport({
+			...bindings.transport({ identity }),
+			identity: identity.identity,
+		});
+		if (transport.inspect().state === "open") installDynamicRegistrations(transport);
+		return Object.freeze({
+			kernel: Object.freeze({ identityLedger, transport }),
+			identity,
+		});
+	};
+}
+
 /** Install the mandatory production owner over the retained process port. */
 export function installProductionCodexWorkbench(
 	options: InstallProductionCodexWorkbenchOptions,
 ): CodexWorkbenchOwner {
 	return installCodexWorkbenchOwner(retainedWorkbench, {
 		createProcess: () => createCodexProcess(options.process),
+		createKernel: productionKernelFactory(options),
 		createGeneration: productionGenerationFactory(options),
 	});
 }

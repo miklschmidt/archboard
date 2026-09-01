@@ -37,7 +37,7 @@ export const CODEX_WORKBENCH_OWNER = "archboard-canvas-codex-workbench" as const
 
 export type CodexWorkbenchState = "idle" | "starting" | "ready" | "stopping" | "failed";
 export type CodexWorkbenchStopReason = "reload" | "shutdown" | "child_exit";
-type CodexTransportExit = Parameters<Parameters<CodexTransport["onExit"]>[0]>[0];
+export type CodexTransportExit = Parameters<Parameters<CodexTransport["onExit"]>[0]>[0];
 
 export interface CodexWorkbenchSnapshot {
 	readonly owner: typeof CODEX_WORKBENCH_OWNER;
@@ -416,11 +416,17 @@ export interface CodexWorkbenchStableKernel {
 	readonly transport: CodexTransport;
 }
 
+export interface CodexWorkbenchKernelAcquisition {
+	readonly kernel: CodexWorkbenchStableKernel;
+	readonly identity: IdentityAuthorities;
+}
+
 export interface CodexWorkbenchGenerationInput {
 	readonly generation: number;
 	readonly child: CodexProcessChild;
 	readonly process: CodexProcess;
 	readonly kernel: CodexWorkbenchStableKernel | null;
+	readonly initialIdentity: IdentityAuthorities | null;
 	readonly adoptedSession: "login-capable" | "thread-capable" | null;
 	readonly assertActivationCurrent: () => void;
 	readonly markSessionReady: (accountReady: boolean) => void;
@@ -432,6 +438,7 @@ export type CodexWorkbenchGenerationFactory = (
 
 export interface CodexWorkbenchOwnerOptions {
 	readonly createProcess: () => CodexProcess;
+	readonly createKernel: (input: CodexWorkbenchGenerationInput) => CodexWorkbenchKernelAcquisition;
 	readonly createGeneration: CodexWorkbenchGenerationFactory;
 }
 
@@ -447,10 +454,13 @@ export interface CodexWorkbenchOwner {
 
 export type CodexWorkbenchOwnerSlots = CodexWorkbenchOwner;
 
-interface CodexWorkbenchExitObserver {
+export interface CodexWorkbenchExitHandler {
+	handle: (event: CodexTransportExit) => void;
+}
+
+export interface CodexWorkbenchExitBridge {
 	event: CodexTransportExit | null;
-	readonly listener: Parameters<CodexTransport["onExit"]>[0];
-	unsubscribe: (() => void) | null;
+	handler: CodexWorkbenchExitHandler | null;
 }
 
 export interface CodexWorkbenchOwnerRuntime {
@@ -461,7 +471,7 @@ export interface CodexWorkbenchOwnerRuntime {
 	sessionInitialized: boolean;
 	accountReady: boolean;
 	released: boolean;
-	readonly exit: CodexWorkbenchExitObserver;
+	readonly exitBridge: CodexWorkbenchExitBridge;
 }
 
 export interface CodexWorkbenchRetainedControl {
@@ -565,6 +575,7 @@ function releaseRegistration(
 ): void {
 	if (runtime.released) return;
 	runtime.released = true;
+	runtime.exitBridge.handler = null;
 	runtime.identityLedger = null;
 	runtime.transport = null;
 	if (retained.control.runtime !== runtime) return;
@@ -576,13 +587,21 @@ function releaseRegistration(
 	retained.control.runtime = null;
 }
 
-async function stopProcess(runtime: CodexWorkbenchOwnerRuntime): Promise<Error | null> {
-	try {
-		await runtime.process.stop();
-		return null;
-	} catch (error) {
-		return error instanceof Error ? error : new Error(String(error));
-	}
+function stopProcess(
+	local: OwnerLocalState,
+	runtime: CodexWorkbenchOwnerRuntime,
+): Promise<Error | null> {
+	if (local.processStopPromise !== null) return local.processStopPromise;
+	const operation = (async (): Promise<Error | null> => {
+		try {
+			await runtime.process.stop();
+			return null;
+		} catch (error) {
+			return error instanceof Error ? error : new Error(String(error));
+		}
+	})();
+	local.processStopPromise = operation;
+	return operation;
 }
 
 interface CandidateReadiness {
@@ -618,6 +637,7 @@ interface OwnerLocalState {
 	readonly cleanupHistory: WeakMap<CodexWorkbenchGeneration, Promise<Error | null>>;
 	startPromise: Promise<CodexWorkbenchSnapshot> | null;
 	shutdownPromise: Promise<CodexWorkbenchSnapshot> | null;
+	processStopPromise: Promise<Error | null> | null;
 }
 
 function ownsProcessChild(process: CodexProcess, child: CodexProcessChild): boolean {
@@ -643,7 +663,7 @@ function ownsTransaction(
 		transaction.phase === "committed" ||
 		!ownsTicket(retained, runtime, transaction.ticket) ||
 		retained.state !== "starting" ||
-		runtime.exit.event !== null ||
+		runtime.exitBridge.event !== null ||
 		!ownsProcessChild(runtime.process, transaction.child)
 	)
 		return false;
@@ -718,26 +738,20 @@ function beginGenerationCleanup(
 	return cleanup;
 }
 
-function detachExitObserver(runtime: CodexWorkbenchOwnerRuntime): Error | null {
-	const unsubscribe = runtime.exit.unsubscribe;
-	runtime.exit.unsubscribe = null;
-	if (unsubscribe === null) return null;
-	try {
-		unsubscribe();
-		return null;
-	} catch (error) {
-		return error instanceof Error ? error : new Error(String(error));
-	}
-}
-
-function attachExitObserver(runtime: CodexWorkbenchOwnerRuntime, transport: CodexTransport): void {
+function attachExitBridge(runtime: CodexWorkbenchOwnerRuntime, transport: CodexTransport): void {
 	if (runtime.transport !== transport)
 		throw new CodexWorkbenchCompositionError(
 			"startup_failed",
-			"The retained child-exit observer does not own the candidate transport.",
+			"The retained child-exit bridge does not own the acquired transport.",
 		);
-	if (runtime.exit.unsubscribe !== null) return;
-	runtime.exit.unsubscribe = transport.onExit(runtime.exit.listener);
+	const bridge = runtime.exitBridge;
+	// This is the only process-lifetime listener. Its closure reaches exactly the
+	// terminal latch and replaceable source handler, never lifecycle authority.
+	transport.onExit((event) => {
+		if (bridge.event !== null) return;
+		bridge.event = Object.freeze({ ...event });
+		bridge.handler?.handle(bridge.event);
+	});
 }
 
 function generationInput(
@@ -748,6 +762,7 @@ function generationInput(
 	generation: number,
 	child: CodexProcessChild,
 	readiness: CandidateReadiness,
+	initialIdentity: IdentityAuthorities | null = null,
 ): CodexWorkbenchGenerationInput {
 	const kernel =
 		runtime.identityLedger === null || runtime.transport === null
@@ -758,6 +773,7 @@ function generationInput(
 		child,
 		process: runtime.process,
 		kernel,
+		initialIdentity,
 		adoptedSession: runtime.sessionInitialized
 			? runtime.accountReady
 				? "thread-capable"
@@ -795,15 +811,9 @@ function terminalShutdown(
 	reserveTicket(runtime);
 	invalidateTransaction(local);
 	revokePublicDispatch(retained, runtime);
+	runtime.exitBridge.handler = null;
 	if (isCurrentRuntime(retained, runtime)) retained.state = "stopping";
 	let synchronousFailure = priorFailure;
-	const observerFailure = detachExitObserver(runtime);
-	if (observerFailure !== null)
-		synchronousFailure = appendFailure(
-			synchronousFailure,
-			observerFailure,
-			"Codex child-exit observer cleanup failed.",
-		);
 	local.currentGeneration = null;
 	// Each stop call revokes one graph before this function reaches its first await.
 	const graphCleanups = Array.from(local.resources.keys(), (generation) =>
@@ -816,7 +826,7 @@ function terminalShutdown(
 			if (cleanupFailure !== null)
 				failure = appendFailure(failure, cleanupFailure, "Codex graph shutdown failed.");
 		}
-		const processFailure = await stopProcess(runtime);
+		const processFailure = await stopProcess(local, runtime);
 		if (processFailure !== null)
 			failure = appendFailure(failure, processFailure, "Codex process shutdown failed.");
 		releaseRegistration(
@@ -846,15 +856,15 @@ function observeChildExit(
 	local: OwnerLocalState,
 	exit: CodexTransportExit,
 ): void {
-	if (!isCurrentRuntime(retained, runtime) || runtime.exit.event !== null) return;
+	if (!isCurrentRuntime(retained, runtime) || runtime.exitBridge.event !== exit) return;
 	const ledger = runtime.identityLedger;
 	if (ledger === null || exit.child !== ledger.childId || exit.epoch !== ledger.epoch) return;
-	runtime.exit.event = Object.freeze({ ...exit });
 	reserveTicket(runtime);
 	invalidateTransaction(local);
 	revokePublicDispatch(retained, runtime);
+	runtime.exitBridge.handler = null;
 	retained.state = "stopping";
-	let failure = detachExitObserver(runtime);
+	let failure: Error | null = null;
 	const settlementOwner = local.currentGeneration;
 	local.currentGeneration = null;
 	let settlement: Promise<void> = Promise.resolve();
@@ -879,7 +889,7 @@ function observeChildExit(
 			if (cleanupFailure !== null)
 				failure = appendFailure(failure, cleanupFailure, "Codex child graph cleanup failed.");
 		}
-		const processFailure = await stopProcess(runtime);
+		const processFailure = await stopProcess(local, runtime);
 		if (processFailure !== null)
 			failure = appendFailure(failure, processFailure, "Codex child process cleanup failed.");
 		releaseRegistration(
@@ -900,6 +910,18 @@ function observeChildExit(
 	});
 	local.shutdownPromise = operation;
 	void operation.catch(() => undefined);
+}
+
+function replaceExitHandler(
+	retained: CodexWorkbenchRetainedState,
+	runtime: CodexWorkbenchOwnerRuntime,
+	local: OwnerLocalState,
+): CodexWorkbenchExitHandler {
+	const handler: CodexWorkbenchExitHandler = {
+		handle: (event) => observeChildExit(retained, runtime, local, event),
+	};
+	runtime.exitBridge.handler = handler;
+	return handler;
 }
 
 function publishReadySlots(
@@ -1124,6 +1146,7 @@ function publishReadySlots(
 		},
 	};
 	retained.control.current = slots;
+	replaceExitHandler(retained, runtime, local);
 	return slots;
 }
 
@@ -1162,14 +1185,13 @@ export function installCodexWorkbenchOwnerLifecycle(
 		cleanupHistory: new WeakMap(),
 		startPromise: null,
 		shutdownPromise: null,
+		processStopPromise: null,
 	};
-	let runtime!: CodexWorkbenchOwnerRuntime;
-	const exit: CodexWorkbenchExitObserver = {
+	const exitBridge: CodexWorkbenchExitBridge = {
 		event: null,
-		listener: (event) => observeChildExit(retained, runtime, local, event),
-		unsubscribe: null,
+		handler: null,
 	};
-	runtime = {
+	const runtime: CodexWorkbenchOwnerRuntime = {
 		process: processOwner,
 		identityLedger: null,
 		transport: null,
@@ -1177,9 +1199,10 @@ export function installCodexWorkbenchOwnerLifecycle(
 		sessionInitialized: false,
 		accountReady: false,
 		released: false,
-		exit,
+		exitBridge,
 	};
 	retained.control.runtime = runtime;
+	replaceExitHandler(retained, runtime, local);
 
 	const initialSlots: CodexWorkbenchOwnerSlots = {
 		start: () => {
@@ -1198,32 +1221,71 @@ export function installCodexWorkbenchOwnerLifecycle(
 			const readiness: CandidateReadiness = { initialized: false, accountReady: false };
 			const operation = (async (): Promise<CodexWorkbenchSnapshot> => {
 				let candidate: CodexWorkbenchGeneration | null = null;
-				let resolveChild!: (child: CodexProcessChild) => void;
+				let resolveChild!: (prepared: {
+					readonly child: CodexProcessChild;
+					readonly transaction: LifecycleTransaction;
+					readonly initialIdentity: IdentityAuthorities;
+				}) => void;
 				let rejectChild!: (error: unknown) => void;
-				const childReady = new Promise<CodexProcessChild>((resolve, reject) => {
+				const childReady = new Promise<{
+					readonly child: CodexProcessChild;
+					readonly transaction: LifecycleTransaction;
+					readonly initialIdentity: IdentityAuthorities;
+				}>((resolve, reject) => {
 					resolveChild = resolve;
 					rejectChild = reject;
 				});
-				const unsubscribe = runtime.process.onChild(resolveChild);
+				let acceptedChild = false;
+				const unsubscribe = runtime.process.onChild((child) => {
+					if (acceptedChild) return;
+					acceptedChild = true;
+					try {
+						if (!ownsTicket(retained, runtime, ticket) || !ownsProcessChild(runtime.process, child))
+							throw new CodexWorkbenchCompositionError(
+								"not_started",
+								"A retired Codex startup cannot acquire a child kernel.",
+							);
+						const transaction: LifecycleTransaction = {
+							ticket,
+							child,
+							phase: "starting",
+							transport: null,
+						};
+						local.transaction = transaction;
+						const acquisition = options.createKernel(
+							generationInput(
+								retained,
+								runtime,
+								local,
+								transaction,
+								generationNumber,
+								child,
+								readiness,
+							),
+						);
+						runtime.identityLedger = acquisition.kernel.identityLedger;
+						runtime.transport = acquisition.kernel.transport;
+						transaction.transport = acquisition.kernel.transport;
+						attachExitBridge(runtime, acquisition.kernel.transport);
+						resolveChild({ child, transaction, initialIdentity: acquisition.identity });
+					} catch (error) {
+						rejectChild(error);
+					}
+				});
 				try {
 					const processStart = runtime.process.start().catch((error) => {
 						rejectChild(error);
 						throw error;
 					});
 					void processStart.catch(() => undefined);
-					const child = await childReady;
-					if (!ownsTicket(retained, runtime, ticket) || !ownsProcessChild(runtime.process, child))
-						throw new CodexWorkbenchCompositionError(
-							"not_started",
-							"A retired Codex startup cannot publish a child.",
-						);
-					const transaction: LifecycleTransaction = {
-						ticket,
-						child,
-						phase: "starting",
-						transport: null,
-					};
-					local.transaction = transaction;
+					const { child, transaction, initialIdentity } = await childReady;
+					assertTransaction(
+						retained,
+						runtime,
+						local,
+						transaction,
+						"A retired Codex startup cannot construct a generation.",
+					);
 					candidate = await options.createGeneration(
 						generationInput(
 							retained,
@@ -1233,10 +1295,10 @@ export function installCodexWorkbenchOwnerLifecycle(
 							generationNumber,
 							child,
 							readiness,
+							initialIdentity,
 						),
 					);
 					ownGeneration(local, candidate);
-					transaction.transport = candidate.transport;
 					assertTransaction(
 						retained,
 						runtime,
@@ -1244,9 +1306,14 @@ export function installCodexWorkbenchOwnerLifecycle(
 						transaction,
 						"A retired Codex startup cannot install child-exit observation.",
 					);
-					runtime.identityLedger = candidate.identityLedger;
-					runtime.transport = candidate.transport;
-					attachExitObserver(runtime, candidate.transport);
+					if (
+						runtime.identityLedger !== candidate.identityLedger ||
+						runtime.transport !== candidate.transport
+					)
+						throw new CodexWorkbenchCompositionError(
+							"startup_failed",
+							"The first Codex generation did not adopt its synchronously acquired kernel.",
+						);
 					assertTransaction(
 						retained,
 						runtime,
@@ -1292,14 +1359,8 @@ export function installCodexWorkbenchOwnerLifecycle(
 								"Codex startup and cleanup both failed.",
 							);
 					}
-					const observerFailure = detachExitObserver(runtime);
-					if (observerFailure !== null)
-						failure = appendFailure(
-							failure,
-							observerFailure,
-							"Codex startup observer cleanup failed.",
-						);
-					const processFailure = await stopProcess(runtime);
+					runtime.exitBridge.handler = null;
+					const processFailure = await stopProcess(local, runtime);
 					if (processFailure !== null)
 						failure = appendFailure(
 							failure,

@@ -3,12 +3,15 @@ import { describe, expect, test } from "bun:test";
 import {
 	CodexWorkbenchCompositionError,
 	emptyCodexWorkbenchRetainedState,
-	installCodexWorkbenchOwner,
 	type CODEX_WORKBENCH_OWNER,
 	type CodexWorkbenchGenerationFactory,
 	type CodexWorkbenchGenerationInput,
 } from "../codex-workbench-owner.js";
-import { fakeGeneration, fakeProcess } from "./support/codex-workbench-owner-fake.js";
+import {
+	fakeGeneration,
+	fakeProcess,
+	installFakeCodexWorkbenchOwner,
+} from "./support/codex-workbench-owner-fake.js";
 
 function rejected(operation: Promise<unknown>): Promise<unknown> {
 	return operation.then(
@@ -21,7 +24,7 @@ describe("production Codex owner lifecycle", () => {
 	test("releases registration when process-owner construction fails", () => {
 		const retained = emptyCodexWorkbenchRetainedState();
 		expect(() =>
-			installCodexWorkbenchOwner(retained, {
+			installFakeCodexWorkbenchOwner(retained, {
 				createProcess: () => {
 					throw new Error("process construction failed");
 				},
@@ -45,7 +48,7 @@ describe("production Codex owner lifecycle", () => {
 				});
 			return source;
 		};
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => {
 				processCreates++;
 				return fakeProcess(events);
@@ -71,7 +74,7 @@ describe("production Codex owner lifecycle", () => {
 		const events: string[] = [];
 		let releaseStop!: () => void;
 		const stopGate = new Promise<void>((resolve) => void (releaseStop = resolve));
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess(events),
 			createGeneration: async ({ generation }) =>
 				fakeGeneration(events, generation, {
@@ -103,7 +106,7 @@ describe("production Codex owner lifecycle", () => {
 		const oldEvents: string[] = [];
 		let releaseGeneration!: () => void;
 		const generationGate = new Promise<void>((resolve) => void (releaseGeneration = resolve));
-		const oldOwner = installCodexWorkbenchOwner(retained, {
+		const oldOwner = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess(oldEvents),
 			createGeneration: async () => {
 				await generationGate;
@@ -113,7 +116,7 @@ describe("production Codex owner lifecycle", () => {
 		const staleStart = oldOwner.start();
 		await Promise.resolve();
 		await oldOwner.shutdown();
-		const replacement = installCodexWorkbenchOwner(retained, {
+		const replacement = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess([]),
 			createGeneration: async () => fakeGeneration([], 9),
 		});
@@ -135,7 +138,7 @@ describe("production Codex owner lifecycle", () => {
 		const activationEntered = new Promise<void>((resolve) => void (enterActivation = resolve));
 		let releaseActivation!: () => void;
 		const activationGate = new Promise<void>((resolve) => void (releaseActivation = resolve));
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess(events),
 			createGeneration: async ({ generation }) =>
 				fakeGeneration(events, generation, {
@@ -158,7 +161,7 @@ describe("production Codex owner lifecycle", () => {
 	test("shutdown remains callable while a replacement factory is awaiting", async () => {
 		const retained = emptyCodexWorkbenchRetainedState();
 		const events: string[] = [];
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess(events),
 			createGeneration: async ({ generation }) =>
 				fakeGeneration(events, generation, {
@@ -197,7 +200,7 @@ describe("production Codex owner lifecycle", () => {
 				await cleanupGate;
 			},
 		});
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess(oldEvents),
 			createGeneration: async () => original,
 		});
@@ -216,7 +219,7 @@ describe("production Codex owner lifecycle", () => {
 		releaseOldCleanup();
 		await shutdown;
 
-		const replacement = installCodexWorkbenchOwner(retained, {
+		const replacement = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess([]),
 			createGeneration: async () => fakeGeneration([], 9),
 		});
@@ -239,30 +242,32 @@ describe("production Codex owner lifecycle", () => {
 			createGeneration: async (value: CodexWorkbenchGenerationInput) =>
 				fakeGeneration([], value.generation),
 		};
-		const owner = installCodexWorkbenchOwner(retained, options);
-		expect(() => installCodexWorkbenchOwner(retained, options)).toThrow(
+		const owner = installFakeCodexWorkbenchOwner(retained, options);
+		expect(() => installFakeCodexWorkbenchOwner(retained, options)).toThrow(
 			CodexWorkbenchCompositionError,
 		);
 		await owner.start();
 		const runtime = retained.control.runtime;
 		if (runtime?.identityLedger == null) throw new Error("missing retained identity ledger");
-		runtime.exit.listener({
+		const exit = Object.freeze({
 			child: runtime.identityLedger.childId,
 			epoch: runtime.identityLedger.epoch,
 			code: 1,
 			signal: null,
 		});
+		runtime.exitBridge.event = exit;
+		runtime.exitBridge.handler?.handle(exit);
 		expect(retained).toMatchObject({ state: "stopping" });
 		expect(retained.control.current).toBeNull();
 		for (let turn = 0; turn < 20 && retained.owner !== null; turn++) await Promise.resolve();
 		expect(retained).toMatchObject({ state: "idle", owner: null, process: null });
-		expect(() => installCodexWorkbenchOwner(retained, options)).not.toThrow();
+		expect(() => installFakeCodexWorkbenchOwner(retained, options)).not.toThrow();
 	});
 
 	test("stops the owned child when generation startup fails", async () => {
 		const events: string[] = [];
 		const retained = emptyCodexWorkbenchRetainedState();
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess(events),
 			createGeneration: () => Promise.reject(new Error("session initialization failed")),
 		});
@@ -274,7 +279,7 @@ describe("production Codex owner lifecycle", () => {
 		const retained = emptyCodexWorkbenchRetainedState();
 		retained.owner = "another-owner" as typeof CODEX_WORKBENCH_OWNER;
 		expect(() =>
-			installCodexWorkbenchOwner(retained, {
+			installFakeCodexWorkbenchOwner(retained, {
 				createProcess: () => fakeProcess([]),
 				createGeneration: async () => fakeGeneration([], 1),
 			}),

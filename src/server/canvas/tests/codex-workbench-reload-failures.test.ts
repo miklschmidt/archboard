@@ -8,7 +8,11 @@ import {
 	type CodexWorkbenchGeneration,
 	type CodexWorkbenchGenerationInput,
 } from "../codex-workbench-owner.js";
-import { fakeGeneration, fakeProcess } from "./support/codex-workbench-owner-fake.js";
+import {
+	fakeGeneration,
+	fakeProcess,
+	installFakeCodexWorkbenchOwner,
+} from "./support/codex-workbench-owner-fake.js";
 
 function rejected(operation: Promise<unknown>): Promise<unknown> {
 	return operation.then(
@@ -40,6 +44,10 @@ describe("production Codex generation replacement failures", () => {
 		let candidateIdentity: unknown;
 		const owner = installCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess([]),
+			createKernel: () => ({
+				kernel: { identityLedger: original.identityLedger, transport: original.transport },
+				identity: original.components.identity,
+			}),
 			createGeneration: async () => original,
 		});
 		await owner.start();
@@ -66,7 +74,7 @@ describe("production Codex generation replacement failures", () => {
 		const retained = emptyCodexWorkbenchRetainedState();
 		const originalFactory: CodexWorkbenchGenerationFactory = async ({ generation }) =>
 			fakeGeneration(events, generation);
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess(events),
 			createGeneration: originalFactory,
 		});
@@ -96,7 +104,7 @@ describe("production Codex generation replacement failures", () => {
 
 	test("a removal failure terminally releases authority and permits reinstall", async () => {
 		const retained = emptyCodexWorkbenchRetainedState();
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess([]),
 			createGeneration: async ({ generation }) =>
 				fakeGeneration([], generation, {
@@ -110,7 +118,7 @@ describe("production Codex generation replacement failures", () => {
 		expect(failure).toBeInstanceOf(CodexWorkbenchCompositionError);
 		expect(retained).toMatchObject({ owner: null, process: null, state: "failed" });
 		expect(retained.control).toMatchObject({ current: null, runtime: null });
-		const replacement = installCodexWorkbenchOwner(retained, {
+		const replacement = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess([]),
 			createGeneration: async () => fakeGeneration([], 3),
 		});
@@ -120,7 +128,7 @@ describe("production Codex generation replacement failures", () => {
 	test("a rollback failure aggregates both causes and never publishes a mixed graph", async () => {
 		const retained = emptyCodexWorkbenchRetainedState();
 		let activations = 0;
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess([]),
 			createGeneration: async ({ generation }) =>
 				fakeGeneration([], generation, {
@@ -164,7 +172,7 @@ describe("production Codex generation replacement failures", () => {
 				await rollbackGate;
 			},
 		});
-		const owner = installCodexWorkbenchOwner(retained, {
+		const owner = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess([]),
 			createGeneration: async () => original,
 		});
@@ -183,7 +191,7 @@ describe("production Codex generation replacement failures", () => {
 		await entered;
 		await owner.shutdown();
 
-		const replacement = installCodexWorkbenchOwner(retained, {
+		const replacement = installFakeCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess([]),
 			createGeneration: async () => fakeGeneration([], 9),
 		});
@@ -208,7 +216,7 @@ describe("production Codex generation replacement failures", () => {
 			let releaseActivation!: () => void;
 			const activationGate = new Promise<void>((resolve) => void (releaseActivation = resolve));
 			const original = fakeGeneration(events, 1);
-			const owner = installCodexWorkbenchOwner(retained, {
+			const owner = installFakeCodexWorkbenchOwner(retained, {
 				createProcess: () => fakeProcess(events),
 				createGeneration: async () => original,
 			});
