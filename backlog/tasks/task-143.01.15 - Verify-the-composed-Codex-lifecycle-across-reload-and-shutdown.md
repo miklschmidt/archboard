@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.15
 title: Verify the composed Codex lifecycle across reload and shutdown
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-09-01 17:14'
+updated_date: '2026-09-01 17:16'
 labels: []
 dependencies:
   - TASK-143.01.14
@@ -45,15 +45,15 @@ ordinal: 245000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the one real-process lifecycle and protocol owner for the production Codex composition seam. It tests public server behavior against controlled exact-version and clean-home processes; it does not instantiate an alternate graph. Delegation profile: gpt-5.6-sol, medium.
+Own the one real-process lifecycle and protocol owner for the production Codex composition seam. It tests public server behavior against controlled exact-version and clean-home processes; it does not instantiate an alternate graph. Delegation profile: gpt-daybreak-blue-latest, medium.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A clean restrictive home proves config.toml materialization, initialize.codexHome, config origin and sqlite_home, managed-requirement reconciliation, account readiness, one executable link, and canonical OperationId issuance; env-only or null, redirected, symlink, and conflicting stores refuse.
-- [ ] #2 The process owner drives all eleven server-request variants through the exhaustive production router, including whole-second currentTime/read and exact token-refresh and attestation errors, with no dropped or double response.
-- [ ] #3 Through public ports it covers all six general tools, their confirmed, partial, and uncertain results, two-home isolation, general and coordinator dynamic calls, seven ordinary approval families, and fresh create, fork, and send visual approvals across approve, decline, expiry, cancellation, browser disconnect, stale revalidation, and terminal approval_required without resume. Module owners retain exhaustive fake-port matrices.
-- [ ] #4 Reload during in-flight RPC, ordinary reverse requests, dynamic approval, and wait preserves one child, listener, coordinator, queue, broker, gate, and replaceable handler set. Browser disconnect, child exit, signals, and normal close settle or classify every request, release wait edges, invalidate effect authority, and leave no orphan or later mutation.
+- [x] #1 A clean restrictive home proves config.toml materialization, initialize.codexHome, config origin and sqlite_home, managed-requirement reconciliation, account readiness, one executable link, and canonical OperationId issuance; env-only or null, redirected, symlink, and conflicting stores refuse.
+- [x] #2 The process owner drives all eleven server-request variants through the exhaustive production router, including whole-second currentTime/read and exact token-refresh and attestation errors, with no dropped or double response.
+- [x] #3 Through public ports it covers all six general tools, their confirmed, partial, and uncertain results, two-home isolation, general and coordinator dynamic calls, seven ordinary approval families, and fresh create, fork, and send visual approvals across approve, decline, expiry, cancellation, browser disconnect, stale revalidation, and terminal approval_required without resume. Module owners retain exhaustive fake-port matrices.
+- [x] #4 Reload during in-flight RPC, ordinary reverse requests, dynamic approval, and wait preserves one child, listener, coordinator, queue, broker, gate, and replaceable handler set. Browser disconnect, child exit, signals, and normal close settle or classify every request, release wait edges, invalidate effect authority, and leave no orphan or later mutation.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -103,3 +103,11 @@ Fourth remediation adds decoded turn/completed owner enforcement only; productio
 
 Remediation-4 validation in sequential named 6 GiB scopes: focused correlation plus retained public interruption owners 7 pass / 90 expectations; process and terminal lifecycle regressions 40 pass / 168 expectations; signal and authored real-90-second expiry owner 2 pass / 33 expectations; repository inventory 39 pass / 69 expectations; both TypeScript projects, full lint, full format check, and diff checks pass. The known module-scope OOM analyzer was not rerun. Task status, acceptance criteria, and final summary remain untouched for complete fixed-base rereview.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Completed the production Codex app-server lifecycle owner. Real-process tests cover restrictive-home setup, all server request variants and general tools, dynamic approvals and mutation outcomes, reload-preserved in-flight work, and browser disconnect, child exit, signals, normal close, and overlapping shutdown. Focused and public-process terminal-correlation matrices prove mismatched and duplicate terminal events cannot settle, abort, respond, or mutate the wrong owner.
+
+Final evidence: composed process owners 7 pass / 165 expectations; second-remediation owners 6 / 96; focused correlation plus public interruption owners 7 / 90; terminal and process lifecycle regressions 40 / 168; signal plus real 90-second expiry 2 / 33; repository inventory 39 / 69. Both TypeScript projects, full lint, full format check, and fixed-base diff checks passed. Independent review of 88e7643a..1e9d812f returned REVIEW_CLEAN after five rounds. The documented module-scope analyzer OOM remains outside the green evidence; no test, lint, type, or policy rule was weakened.
+<!-- SECTION:FINAL_SUMMARY:END -->
