@@ -1,11 +1,11 @@
 ---
 id: TASK-143.06.05
 title: Remove the legacy injection CLI and public contract
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:29'
-updated_date: '2026-09-01 17:12'
+updated_date: '2026-09-01 17:16'
 labels: []
 dependencies:
   - TASK-143.06.04
@@ -35,15 +35,15 @@ ordinal: 250000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Remove the inject command/help/schemas/client calls and fixed compatibility entries after the server surface is gone. This task owns the public CLI seam only. Delegation profile: gpt-5.6-sol, medium.
+Remove the inject command/help/schemas/client calls and fixed compatibility entries after the server surface is gone. This task owns the public CLI seam only. Delegation profile: gpt-daybreak-blue-latest, medium.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Help/dispatch no longer exposes inject status/test or ARCHBOARD_INJECT guidance, and canvas-client exports no injection DTO/request.
-- [ ] #2 CLI schemas, docs/design/cli-command-audit.json, and fixed contracts remove exactly the retired inject status/test entries while preserving stable ordering and behavior for every remaining command.
-- [ ] #3 The old command follows the ordinary unknown-command path with migration text pointing to the linked workbench, not a compatibility transport.
-- [ ] #4 All named CLI system owners, support fixtures, and tests/system/cli/command-contract-audit.test.ts assertions are atomically updated; live-registry comparison and fixed-base tests pass without an injection fixture, hidden alias, dead schema, or second HTTP route.
+- [x] #1 Help/dispatch no longer exposes inject status/test or ARCHBOARD_INJECT guidance, and canvas-client exports no injection DTO/request.
+- [x] #2 CLI schemas, docs/design/cli-command-audit.json, and fixed contracts remove exactly the retired inject status/test entries while preserving stable ordering and behavior for every remaining command.
+- [x] #3 The old command follows the ordinary unknown-command path with migration text pointing to the linked workbench, not a compatibility transport.
+- [x] #4 All named CLI system owners, support fixtures, and tests/system/cli/command-contract-audit.test.ts assertions are atomically updated; live-registry comparison and fixed-base tests pass without an injection fixture, hidden alias, dead schema, or second HTTP route.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -67,3 +67,9 @@ Green capped evidence, each in a named transient user scope with the exact check
 
 The complete CLI directory reached 70 passing tests before three failures. Two task-owned stale expectations were then corrected and passed: deterministic artifact hashes and the 58-route count. The remaining failure is outside this leaf: install-source-policy rejects src/runtime/codex-coordinator-callbacks/tests/__snapshots__/encoding.test.ts.snap, which is already tracked at the fixed base. A later combined artifact/workflow rerun also hit two existing 5-second workflow subprocess timeouts after the artifact owner passed; those same workflow tests passed in the complete CLI run, and the changed count passed alone. No test, lint, type, inventory, boundary, browser, or CI rule was weakened. Current documentation, process-contract cleanup, injection timings, and the app-server-control module remain assigned to TASK-143.06.08, TASK-143.06.06, TASK-143.06.07, and TASK-143.06.03.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Removed the public inject command family, help and environment guidance, injection schemas, canvas-client DTO and requests, CLI HTTP fixtures, and fixed compatibility entries. Retired invocations now exit through the ordinary unknown-command path, direct users to the linked Codex workbench, and make no HTTP request. Focused module and CLI owners, generated contract artifacts, the 58-route registry, inventory, boundaries, both TypeScript projects, Oxlint, Oxfmt, fixed-base structural comparisons, and independent fixed-range review passed.
+<!-- SECTION:FINAL_SUMMARY:END -->
