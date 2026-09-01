@@ -1,7 +1,10 @@
 import type { CodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
 import type { CoordinatorCallbacks } from "../../../runtime/codex-coordinator-callbacks/index.js";
 import type { CoordinatorToolDispatcher } from "../../../runtime/codex-coordinator-tools/index.js";
-import type { CodexCoordinator } from "../../../runtime/codex-coordinator/index.js";
+import type {
+	CodexCoordinator,
+	CoordinatorPersistedState,
+} from "../../../runtime/codex-coordinator/index.js";
 import type { CodexDynamicTools } from "../../../runtime/codex-dynamic-tools/index.js";
 import type { CodexEpochStore } from "../../../runtime/codex-epoch/index.js";
 import type { CodexProcess, CodexProcessChild } from "../../../runtime/codex-process/index.js";
@@ -428,6 +431,7 @@ export interface CodexWorkbenchGenerationInput {
 	readonly kernel: CodexWorkbenchStableKernel | null;
 	readonly initialIdentity: IdentityAuthorities | null;
 	readonly adoptedSession: "login-capable" | "thread-capable" | null;
+	readonly adoptedCoordinator: CoordinatorPersistedState | null;
 	readonly assertActivationCurrent: () => void;
 	readonly markSessionReady: (accountReady: boolean) => void;
 }
@@ -763,6 +767,7 @@ function generationInput(
 	child: CodexProcessChild,
 	readiness: CandidateReadiness,
 	initialIdentity: IdentityAuthorities | null = null,
+	adoptedCoordinator: CoordinatorPersistedState | null = null,
 ): CodexWorkbenchGenerationInput {
 	const kernel =
 		runtime.identityLedger === null || runtime.transport === null
@@ -779,6 +784,7 @@ function generationInput(
 				? "thread-capable"
 				: "login-capable"
 			: null,
+		adoptedCoordinator,
 		assertActivationCurrent: () =>
 			assertTransaction(
 				retained,
@@ -988,7 +994,17 @@ function publishReadySlots(
 				try {
 					if (removalFailure !== null) throw removalFailure;
 					candidate = await createGeneration(
-						generationInput(retained, runtime, local, transaction, nextNumber, child, readiness),
+						generationInput(
+							retained,
+							runtime,
+							local,
+							transaction,
+							nextNumber,
+							child,
+							readiness,
+							null,
+							generation.components.coordinator?.persisted() ?? null,
+						),
 					);
 					ownGeneration(local, candidate);
 					transaction.transport = candidate.transport;
