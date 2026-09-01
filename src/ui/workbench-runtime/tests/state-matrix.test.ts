@@ -1,4 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import type {
+	BrowserReadiness,
+	BrowserSnapshot,
+} from "../../../shared/codex-browser-model/index.js";
+import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
+import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 import type { BrowserWorkbenchState } from "../../workbench-transport/index.js";
 import { mountProvider, MutableTransport, snapshot } from "./mounted-support.js";
 
@@ -12,6 +18,71 @@ interface StateCase {
 }
 
 const retained = snapshot();
+const snapshotVariants: readonly (BrowserSnapshot | null)[] = [null, retained];
+const identity = createIdentityAuthority();
+const loginId = createCodexBrowserModel(identity).LoginIdSchema.parse(
+	identity.decoder.adoptLoginId("matrix-login"),
+);
+
+function retainedConnectionCase(
+	state: "backoff" | "reconnecting" | "stale_snapshot",
+	value: BrowserSnapshot | null,
+	index: number,
+): StateCase {
+	if (state === "backoff") {
+		return {
+			name: `backoff ${value === null ? "without" : "with"} snapshot`,
+			state: {
+				kind: "connection",
+				state,
+				connection: "reconnecting",
+				snapshot: value,
+				sequence: value === null ? null : 1,
+				retryAtMs: 10,
+				reason: "Backoff exactly.",
+			},
+			projectedState: "backoff",
+			reason: "Backoff exactly.",
+			recovery: "Wait until Codex retries, or restart the Codex workbench.",
+			messages: index,
+		};
+	}
+	if (state === "reconnecting") {
+		return {
+			name: `reconnecting ${value === null ? "without" : "with"} snapshot`,
+			state: {
+				kind: "connection",
+				state,
+				connection: "reconnecting",
+				snapshot: value,
+				sequence: value === null ? null : 1,
+				reason: "Reconnect exactly.",
+			},
+			projectedState: "reconnecting",
+			reason: "Reconnect exactly.",
+			recovery: "Wait for Codex to reconnect. This history remains available for inspection.",
+			messages: index,
+		};
+	}
+	return {
+		name: `stale ${value === null ? "without" : "with"} snapshot`,
+		state: {
+			kind: "stream",
+			state,
+			connection: "connected",
+			snapshot: value,
+			sequence: value === null ? null : 1,
+			expectedSequence: 2,
+			receivedSequence: 3,
+			reason: "Stale exactly.",
+		},
+		projectedState: "stale",
+		reason: "Stale exactly.",
+		recovery: "Wait for a fresh Codex snapshot before sending another command.",
+		messages: index,
+	};
+}
+
 const connectionCases: readonly StateCase[] = [
 	{
 		name: "stopped without snapshot",
@@ -43,89 +114,34 @@ const connectionCases: readonly StateCase[] = [
 		recovery: "Update Archboard or Codex so their workbench protocol versions match.",
 		messages: 0,
 	},
-	...([null, retained] as const).map((value, index) => ({
-		name: `backoff ${value === null ? "without" : "with"} snapshot`,
-		state: {
-			kind: "connection",
-			state: "backoff",
-			connection: "reconnecting",
-			snapshot: value,
-			sequence: value === null ? null : 1,
-			retryAtMs: 10,
-			reason: "Backoff exactly.",
-		} as BrowserWorkbenchState,
-		projectedState: "backoff",
-		reason: "Backoff exactly.",
-		recovery: "Wait until Codex retries, or restart the Codex workbench.",
-		messages: index,
-	})),
-	...([null, retained] as const).map((value, index) => ({
-		name: `reconnecting ${value === null ? "without" : "with"} snapshot`,
-		state: {
-			kind: "connection",
-			state: "reconnecting",
-			connection: "reconnecting",
-			snapshot: value,
-			sequence: value === null ? null : 1,
-			reason: "Reconnect exactly.",
-		} as BrowserWorkbenchState,
-		projectedState: "reconnecting",
-		reason: "Reconnect exactly.",
-		recovery: "Wait for Codex to reconnect. This history remains available for inspection.",
-		messages: index,
-	})),
-	...([null, retained] as const).map((value, index) => ({
-		name: `stale ${value === null ? "without" : "with"} snapshot`,
-		state: {
-			kind: "stream",
-			state: "stale_snapshot",
-			connection: "connected",
-			snapshot: value,
-			sequence: value === null ? null : 1,
-			expectedSequence: 2,
-			receivedSequence: 3,
-			reason: "Stale exactly.",
-		} as BrowserWorkbenchState,
-		projectedState: "stale",
-		reason: "Stale exactly.",
-		recovery: "Wait for a fresh Codex snapshot before sending another command.",
-		messages: index,
-	})),
+	...snapshotVariants.map((value, index) => retainedConnectionCase("backoff", value, index)),
+	...snapshotVariants.map((value, index) => retainedConnectionCase("reconnecting", value, index)),
+	...snapshotVariants.map((value, index) => retainedConnectionCase("stale_snapshot", value, index)),
 ];
 
-function readinessCase(
-	state: Exclude<
-		BrowserWorkbenchState["state"],
-		"stale_snapshot" | "thread_capable" | "reconnecting"
-	>,
-	reason: string,
-	recovery: string,
-): StateCase {
+type MatrixReadiness = Exclude<
+	BrowserReadiness,
+	{ readonly state: "thread_capable" | "incompatible_contract" }
+>;
+
+function readinessCase(readiness: MatrixReadiness, recovery: string): StateCase {
 	const base = snapshot();
-	const reasonBearing = new Set([
-		"stopped",
-		"backoff",
-		"storage_mismatch",
-		"incompatible_contract",
-	]);
-	const readiness = reasonBearing.has(state)
-		? ({
-				kind: "readiness",
-				state,
-				reason,
-				...(state === "backoff" ? { retryAtMs: 10 } : {}),
-			} as typeof base.readiness)
-		: state === "login_pending"
-			? ({ kind: "readiness", state, loginId: "login-1" } as typeof base.readiness)
-			: ({ kind: "readiness", state } as typeof base.readiness);
-	const value = { ...base, readiness } as typeof base;
+	const value: BrowserSnapshot = { ...base, readiness };
+	const reason =
+		"reason" in readiness
+			? readiness.reason
+			: `Codex is ${readiness.state.replaceAll("_", " ")}; direct workhorse input is unavailable.`;
 	return {
-		name: `readiness ${state}`,
-		state: { kind: "readiness", state, connection: "connected", snapshot: value, sequence: 1 },
-		projectedState: state,
-		reason: reasonBearing.has(state)
-			? reason
-			: `Codex is ${state.replaceAll("_", " ")}; direct workhorse input is unavailable.`,
+		name: `readiness ${readiness.state}`,
+		state: {
+			kind: "readiness",
+			state: readiness.state,
+			connection: "connected",
+			snapshot: value,
+			sequence: 1,
+		},
+		projectedState: readiness.state,
+		reason,
 		recovery,
 		messages: 1,
 	};
@@ -133,43 +149,42 @@ function readinessCase(
 
 const readinessCases = [
 	readinessCase(
-		"stopped",
-		"Readiness stopped exactly.",
+		{ kind: "readiness", state: "stopped", reason: "Readiness stopped exactly." },
 		"Restart the Codex workbench, then retry.",
 	),
 	readinessCase(
-		"backoff",
-		"Readiness backoff exactly.",
+		{ kind: "readiness", state: "backoff", retryAtMs: 10, reason: "Readiness backoff exactly." },
 		"Wait until Codex retries, or restart the Codex workbench.",
 	),
 	readinessCase(
-		"storage_mismatch",
-		"Storage mismatch exactly.",
+		{ kind: "readiness", state: "storage_mismatch", reason: "Storage mismatch exactly." },
 		"Correct the Codex storage configuration, then restart the workbench.",
 	),
 	readinessCase(
-		"incompatible_contract",
-		"Readiness protocol mismatch exactly.",
-		"Update Archboard or Codex so their workbench protocol versions match.",
+		{ kind: "readiness", state: "reconnecting", reason: "Readiness reconnect exactly." },
+		"Wait for Codex to reconnect. This history remains available for inspection.",
 	),
 	readinessCase(
-		"initialized",
-		"",
+		{ kind: "readiness", state: "initialized" },
 		"Wait for Codex to finish preparing a thread-capable workhorse.",
 	),
 	readinessCase(
-		"account_ready",
-		"",
+		{ kind: "readiness", state: "account_ready" },
 		"Wait for Codex to finish preparing a thread-capable workhorse.",
 	),
-	readinessCase("login_capable", "", "Sign in to Codex before selecting an executable workhorse."),
-	readinessCase("signed_out", "", "Sign in to Codex before selecting an executable workhorse."),
 	readinessCase(
-		"login_pending",
-		"",
+		{ kind: "readiness", state: "login_capable" },
+		"Sign in to Codex before selecting an executable workhorse.",
+	),
+	readinessCase(
+		{ kind: "readiness", state: "signed_out" },
+		"Sign in to Codex before selecting an executable workhorse.",
+	),
+	readinessCase(
+		{ kind: "readiness", state: "login_pending", loginId },
 		"Complete or cancel the pending Codex sign-in before continuing.",
 	),
-] as const;
+];
 
 describe("mounted workbench state matrix", () => {
 	for (const entry of [...connectionCases, ...readinessCases]) {
