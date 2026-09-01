@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 08:41'
+updated_date: '2026-09-01 08:57'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -231,6 +231,12 @@ Own the one production composition root in the canvas server. It instantiates ev
 66. Run the three adversarial owners first, then the requested focused non-hot module and production owners plus sequential static gates under named 6 GiB/1 GiB systemd scopes; do not rerun documented OOM aggregates.
 
 67. Preserve the protected artifact, task status, and unchecked AC, commit above 91991bce, and send the fixed-base parent the required finding-by-finding callback before local final.
+
+68. Refuse prepare deterministically in stopping before touching terminal ownership; clear terminal intent only when a new prepare begins from idle or fully stopped.
+
+69. Publish the exact shutdown promise and clear installed ownership before invoking production teardown, then return that promise to every concurrent shutdown caller through success or rejection.
+
+70. Add installed-overlap and cleanup-rejection owners first, run focused non-hot capped validation without known OOM aggregates, preserve protected state, commit above 127e5cad, and callback the parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -317,10 +323,16 @@ Initial startup now acquires the exact identity ledger, identity authority, and 
 The canvas application now has explicit idle/preparing/installed/stopping/stopped phases. It receives the already-loaded production module, publishes its shutdown owner before installation/start can await, invokes production revocation exactly once during preparation, treats shutdown as terminal intent, waits cleanup, never republishes installed state afterward, and preserves simultaneous startup and shutdown failures in one AggregateError. A clean reinstall after that aggregate failure is proven.
 
 Final named 6 GiB memory / 1 GiB swap validation: required adversarial owners 18 pass, 0 fail, 116 assertions; focused process/transport/session/identity/gateway owners 161 pass, 0 fail, 1,480 assertions; focused canvas/transport owners 62 pass, 0 fail, 378 assertions; actual src/server.ts production, application socket, real first-socket recovery, startup cleanup, and stale-socket owners 8 pass, 0 fail, 118 assertions; inventory 39 pass, 0 fail, 69 assertions. Both TypeScript projects, full lint with 0 warnings/errors, formatting check, frontend build, protected diff check, and direct module-scope analysis of every changed production module pass with zero findings or waivers. The repository-wide module-scope aggregate was attempted once and OOM-killed at the fixed cgroup ceiling; it was not retried and no aggregate pass is claimed. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and every acceptance criterion remains unchecked for parent rereview.
+
+Seventh rejection remediation above 127e5cad closes the stopping/prepare overlap in the application state machine only. prepare now branches on every phase before mutating local or retained ownership. A call during stopping refuses with an actionable wait-then-prepare error; it cannot clear terminal intent, replace the shutdown promise, mark preparing, start, or reload. A replacement source instance sees the same shared stopping phase and refuses too.
+
+Shutdown now creates and publishes its exact promise before invoking production teardown, marks installed ownership false and phase stopping synchronously, and returns that same promise through every same-source or replacement-source caller. Cleanup success or rejection is cached until an explicit prepare begins from stopped. If shutdown finishes while an earlier preparation still awaits readiness, phase remains stopping and blocks reinstall until that preparation settles; only then does the owner publish stopped. A new prepare from stopped clears the prior terminal ownership and starts one clean installation.
+
+The exact overlap owners start installed, block cleanup, call shutdown A, call prepare from a replacement source, and call shutdown B. Before release they prove A===B, shutdownCalls=1, reloadCalls=0, installed=false, phase=stopping, and retained shutdown authority unchanged. Success and rejection variants prove stable settlement, concurrent refusal, no cached-state corruption, and explicit clean reinstall. Final sequential named 6 GiB/1 GiB validation: application overlap owner 7 pass, 0 fail, 57 assertions; focused non-hot canvas/transport owners 64 pass, 0 fail, 409 assertions; actual src/server.ts production/application socket/setup cleanup/stale-socket owners 8 pass, 0 fail, 118 assertions. Both TypeScript projects, lint with 0 warnings/errors, formatting check, and diff check pass. No known OOM fingerprint was rerun. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all AC remain unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Replaced the retained exit closure with a replaying version-neutral bridge, closed every initial child-exit gap by acquiring the exact kernel before generation awaits, and made application preparation/shutdown an explicit terminal state machine. Adversarial, focused module, real production system, inventory, type, lint, format, build, targeted hot-state, and diff checks pass; the capped repository-wide module-scope OOM remains unclaimed. Task status and acceptance criteria are unchanged for parent rereview.
+Made Codex application stopping ownership exact: prepare refuses without mutation, shutdown clears installed ownership before teardown, every caller receives the same cached shutdown promise, and only an explicit prepare from fully stopped can recover. Exact overlap, focused non-hot, real production system, type, lint, format, and diff checks pass. Task status and acceptance criteria remain unchanged for parent rereview.
 <!-- SECTION:FINAL_SUMMARY:END -->
