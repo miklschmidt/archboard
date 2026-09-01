@@ -177,6 +177,7 @@ export function createCodexWorkbenchGenerationFixture(
 	) as unknown as CodexWorkbenchComponentFactories;
 	const hooks: CodexWorkbenchGenerationHooks = {
 		threadContext: { contextForEvent: () => ({}) as never },
+		onNotification: () => undefined,
 		installIdentityDecoders: () => void events.push("identity:install"),
 		installLifecycleSignals: () => {
 			events.push("lifecycle:install");

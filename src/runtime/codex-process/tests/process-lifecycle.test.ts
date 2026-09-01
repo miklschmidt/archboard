@@ -301,6 +301,27 @@ describe("Codex process lifecycle", () => {
 		}
 	});
 
+	test("releases a group observed quiescent before the child close callback", async () => {
+		const root = temporaryRoot();
+		let owner: ReturnType<typeof createCodexProcess> | undefined;
+		try {
+			const lifecycle = fakeLifecycle();
+			const executable = fixture(root, `process.stdin.resume();`);
+			owner = createCodexProcess({
+				...options(root, executable),
+				dependencies: lifecycle.dependencies,
+			});
+			await startReady(owner);
+			lifecycle.markGroupQuiescent();
+			const stopping = owner.stop();
+			lifecycle.closeChild();
+			expect((await driveManual(stopping, lifecycle.clock)).state).toBe("stopped");
+		} finally {
+			if (owner) await owner.stop().catch(() => undefined);
+			removeRoot(root);
+		}
+	});
+
 	test("lets an active terminal failure finish owned shutdown before stopped", async () => {
 		const root = temporaryRoot();
 		let owner: ReturnType<typeof createCodexProcess> | undefined;

@@ -22,6 +22,7 @@ import type {
 	DynamicToolApprovalPort,
 	DynamicToolApprovalRequest,
 } from "../../../runtime/codex-dynamic-tools/index.js";
+import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
 
 interface DynamicApprovalBinding {
 	readonly commandId: BrowserCommandId;
@@ -48,6 +49,7 @@ export interface CanvasDynamicApprovalOwner {
 	/** Rebind pending presentation to the exact current lease for its pane. */
 	readonly bindLease: (paneId: string, commandId: BrowserCommandId) => void;
 	readonly subscribe: (listener: () => void) => () => void;
+	readonly onNotification: (event: TransportServerNotification) => void;
 	readonly settleAll: (cause: "host_shutdown" | "child_disconnected") => void;
 }
 
@@ -228,6 +230,38 @@ export function createCanvasDynamicApprovalOwner(
 			}
 		},
 		subscribe: browser.onChange!,
+		onNotification: (event: TransportServerNotification) => {
+			if (
+				event.correlation.child !== options.identity.identity.validator.childId ||
+				event.correlation.epoch !== options.identity.identity.validator.epoch
+			)
+				return;
+			const { method, params } = event.notification;
+			for (const entry of pending.values()) {
+				const identity = entry.request.identity;
+				const threadId = options.identity.identity.decoder.serializeCodexIdentity(
+					identity.threadId,
+				);
+				const turnId = options.identity.identity.decoder.serializeCodexIdentity(identity.turnId);
+				if (method === "item/completed") {
+					const item = params.item;
+					if (
+						params.threadId === threadId &&
+						params.turnId === turnId &&
+						item.type === "dynamicToolCall" &&
+						item.id === options.identity.identity.decoder.serializeCodexIdentity(identity.callId)
+					)
+						terminal(entry, "cancelled", "call_cancelled");
+				} else if (
+					method === "turn/completed" &&
+					params.threadId === threadId &&
+					params.turn.id === turnId &&
+					params.turn.status === "interrupted"
+				) {
+					terminal(entry, "cancelled", "caller_turn_interrupted");
+				}
+			}
+		},
 		settleAll: (cause: "host_shutdown" | "child_disconnected") => {
 			for (const entry of pending.values())
 				terminal(entry, cause === "host_shutdown" ? "cancelled" : "disconnected", cause);

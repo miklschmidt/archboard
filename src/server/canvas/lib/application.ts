@@ -4429,6 +4429,10 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 		if (workbench === null) throw new Error("The Codex workbench is not ready to observe targets.");
 		const deadline = Date.now() + input.timeoutMs;
 		do {
+			if (input.signal.aborted)
+				throw Object.assign(new Error("The dynamic wait was cancelled."), {
+					code: "cancellation",
+				});
 			for (const threadId of input.owner.sortedTargetThreadIds) {
 				const wireThreadId = workbench.identity.identity.decoder.serializeCodexIdentity(threadId);
 				const pendingApproval = workbench.approvals.inspect().some((snapshot) => {

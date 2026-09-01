@@ -8,7 +8,6 @@ import {
 	type WorkbenchResult,
 } from "../../canvas-state/support/codex-production.ts";
 import { waitFor } from "../../canvas-state/support/http.ts";
-
 const repoRoot = resolve(import.meta.dir, "../../../..");
 const fixtureSource = join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production.ts");
 const devCanvas = join(repoRoot, "src/dev-canvas.ts");
@@ -31,6 +30,7 @@ export interface HotCanvas {
 	readonly base: string;
 	readonly pid: number;
 	output(): string;
+	normalClose(): Promise<void>;
 	dispose(signal?: NodeJS.Signals): Promise<void>;
 }
 
@@ -42,9 +42,7 @@ export type StorageMode =
 	| "conflicting"
 	| "requirements-match"
 	| "requirements-conflict";
-
 const sleep = (ms: number): Promise<void> => new Promise((done) => setTimeout(done, ms));
-
 export const records = (path: string): FixtureRecord[] => {
 	const contents = readFileSync(path, "utf8");
 	const lines = contents.split("\n");
@@ -54,7 +52,6 @@ export const records = (path: string): FixtureRecord[] => {
 
 export const reverseResponses = (path: string, id: string): FixtureRecord[] =>
 	records(path).filter((entry) => entry.kind === "reverse_response" && entry.frame?.id === id);
-
 export const snapshot = (result: WorkbenchResult): Record<string, unknown> => {
 	if (!result.ok) throw new Error(result.error ?? "The workbench snapshot failed.");
 	const value = result.value as { readonly snapshot?: Record<string, unknown> } | undefined;
@@ -72,7 +69,6 @@ export const target = (result: WorkbenchResult): Record<string, unknown> => {
 		epoch: result.value.epoch,
 	};
 };
-
 export const pane = (clientId: string) => ({
 	clientId,
 	paneId: "lifecycle-pane",
@@ -83,7 +79,6 @@ export const pane = (clientId: string) => ({
 	rect: { x: 0, y: 0, width: 1280, height: 800 },
 	viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
 });
-
 async function freePort(): Promise<number> {
 	const server = createServer();
 	await new Promise<void>((done, reject) => {
@@ -97,7 +92,6 @@ async function freePort(): Promise<number> {
 	);
 	return address.port;
 }
-
 export async function startHotCanvas(options: {
 	readonly root: string;
 	readonly vault: string;
@@ -110,11 +104,31 @@ export async function startHotCanvas(options: {
 	const base = `http://127.0.0.1:${port}`;
 	const wrapper = join(options.root, "hot-production-server.ts");
 	const executableModule = join(repoRoot, "src/runtime/codex-process/executable.ts");
+	const productionModule = join(repoRoot, "src/server/canvas/codex-workbench-production.ts");
 	writeFileSync(
 		wrapper,
-		`import { mock } from "bun:test";\n` +
+		`import { appendFileSync, readFileSync } from "node:fs";\n` +
+			`import { mock } from "bun:test";\n` +
 			`mock.module(${JSON.stringify(executableModule)}, () => ({ resolveProjectCodexExecutable: () => process.env.ARCHBOARD_TEST_CODEX_EXECUTABLE }));\n` +
-			`await import(${JSON.stringify(devCanvas)});\n`,
+			`await import(${JSON.stringify(devCanvas)});\n` +
+			`let normalCloseStarted = false;\n` +
+			`const closeTimer = setInterval(async () => {\n` +
+			`  if (normalCloseStarted) return;\n` +
+			`  try {\n` +
+			`    const control = JSON.parse(readFileSync(${JSON.stringify(options.controlPath)}, "utf8"));\n` +
+			`    if (control.normalClose !== true) return;\n` +
+			`    normalCloseStarted = true;\n` +
+			`    appendFileSync(${JSON.stringify(options.logPath)}, JSON.stringify({ kind: "host_normal_close", state: "started" }) + "\\n");\n` +
+			`    const production = await import(${JSON.stringify(productionModule)});\n` +
+			`    await production.shutdownProductionCodexWorkbench();\n` +
+			`    appendFileSync(${JSON.stringify(options.logPath)}, JSON.stringify({ kind: "host_normal_close", state: "completed" }) + "\\n");\n` +
+			`    process.exit(0);\n` +
+			`  } catch (error) {\n` +
+			`    appendFileSync(${JSON.stringify(options.logPath)}, JSON.stringify({ kind: "host_normal_close", state: "failed", message: error instanceof Error ? error.stack : String(error), cause: String((error as { cause?: unknown }).cause) }) + "\\n");\n` +
+			`    process.exit(21);\n` +
+			`  }\n` +
+			`}, 10);\n` +
+			`closeTimer.unref();\n`,
 	);
 	const child = spawn(process.execPath, ["--hot", wrapper], {
 		cwd: repoRoot,
@@ -148,6 +162,12 @@ export async function startHotCanvas(options: {
 		base,
 		pid: child.pid,
 		output: () => output,
+		async normalClose() {
+			if (exited) return;
+			writeFileSync(options.controlPath, JSON.stringify({ normalClose: true }));
+			if (!(await Promise.race([exit.then(() => true), sleep(5_000).then(() => false)])))
+				throw new Error(`Hot canvas ${child.pid} did not close normally.\n${output}`);
+		},
 		async dispose(signal = "SIGTERM") {
 			if (!exited) {
 				try {
@@ -270,7 +290,6 @@ const emitLifecycleRequests = (): void => {
 	request("session-token", "account/chatgptAuthTokens/refresh", { reason: "unauthorized", previousAccountId: null });
 	request("session-attestation", "attestation/generate", {});
 };
-
 const generalQueryItems = [
 	{ type: "dynamicToolCall", id: "general-list", namespace: "archboard_app", tool: "list_threads", arguments: { limit: 10 }, status: "inProgress", contentItems: null, success: null, durationMs: null },
 	{ type: "dynamicToolCall", id: "general-read", namespace: "archboard_app", tool: "read_thread", arguments: { threadId: "thread-3", turnLimit: 2, includeOutputs: true }, status: "inProgress", contentItems: null, success: null, durationMs: null },

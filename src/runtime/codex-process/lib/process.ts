@@ -775,7 +775,10 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 	}
 
 	function ensureGroupCleanup(record: ChildRecord, deadlineAtMs: number): Promise<void> {
-		if (record.groupQuiescent) return Promise.resolve();
+		if (record.groupQuiescent) {
+			markGroupQuiescent(record);
+			return Promise.resolve();
+		}
 		if (record.groupCleanup) return record.groupCleanup;
 		const pending = cleanupGroup(record, deadlineAtMs);
 		record.groupCleanup = pending;
