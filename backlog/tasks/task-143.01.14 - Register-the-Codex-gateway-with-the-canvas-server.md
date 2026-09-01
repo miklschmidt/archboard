@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 10:10'
+updated_date: '2026-09-01 10:23'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -268,6 +268,12 @@ Own the one production composition root in the canvas server. It instantiates ev
 84. Add one public installed-owner shutdown owner using the existing fake process and a deferred fake generation cleanup to prove ordinary settlement, transport shutdown, and process stop order through terminalShutdown.
 
 85. Mutation-check early stopProcess ordering, restore production by reverse patch, then run sequential capped focused owners, inventory, static gates, complete fixed-base diff, commit above 59da30d3, and callback the parent.
+
+86. Extract the existing composed-generation component/event fixture into one shared test-support helper, preserving the direct generation cardinality and router owner.
+
+87. Replace the fake shutdown-order owner with a public owner whose createGeneration returns composeCodexWorkbenchGeneration over that real fixture, and assert real ordinary settlement then transport shutdown then fake-process stop.
+
+88. Mutation-check early process stop and non-delegating generation-factory stop, restore production byte-for-byte, run the requested capped sequential gates, update evidence, commit, and callback the fixed-base parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -372,10 +378,12 @@ Tenth rejection remediation above 746a4bcf closes the stale-finalizer window wit
 Eleventh rereview remediation above 1fd13fb8 is test-only. A new public synchronous recovery owner throws from installation after an initial cycle has stopped. It proves the failed prepare remains stopped under the recovery source, same-source and replacement-source shutdown replay the exact promise and error, setup stops before install and start, and one later clean recovery creates a distinct cycle. Removing the synchronous recoveringFromStopped catch produced the intended red result: phase idle and shutdown null instead of stopped exact ownership. The catch was restored byte-for-byte. The existing generation shutdown owner now requires one transport shutdown after ordinary settlement and before the caller advances to process stop. Removing the lifecycle transport shutdown call produced zero transport events and failed the owner; the line was restored byte-for-byte. Final named 6 GiB/1 GiB validation: focused application and generation owners 11 pass, 0 fail, 162 assertions; repository inventory 39 pass, 0 fail, 69 assertions. Both TypeScript projects, lint with 0 warnings and errors, formatting, and the complete fixed-base diff check pass. No known OOM fingerprint was rerun. No production file differs from 1fd13fb8. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
 
 Twelfth rereview remediation above 59da30d3 is test-only. The generation owner no longer appends a synthetic process-stop marker or claims an ordering relation it cannot observe; it retains exact transport-shutdown cardinality and ordinary-settlement-before-transport enforcement. A new public production-owner shutdown test uses the existing fake process and a deferred generation cleanup, then proves ordinary settlement, transport shutdown, and the real process stop each occur once and in that order. Moving stopProcess ahead of graph cleanup produced the intended red result: the owner lane reported 10 pass, 1 fail, 43 assertions, with transport at event index 4 after process stop at index 2. Production was restored byte-for-byte. Final sequential named 6 GiB memory / 1 GiB swap validation: focused application/generation owners 22 pass, 0 fail, 204 assertions; repository inventory 39 pass, 0 fail, 69 assertions; both TypeScript projects, lint with 0 warnings/errors, formatting, and fixed-base diff check pass. No known OOM fingerprint was rerun. No production file differs from 59da30d3. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
+
+Thirteenth rereview remediation above 07738c3d is test-only. The public owner shutdown-order proof now passes one actual composeCodexWorkbenchGeneration result through installCodexWorkbenchOwner. Its stable kernel uses the shared generation component fixture and fakeProcess remains the sole source of process:stop. Only public owner.start() and owner.shutdown() drive the assertion path; real generation hooks emit ordinary:settle:host_shutdown and the real fixture transport emits transport:shutdown. The direct generation owner reuses the same extracted fixture and retains component cardinality, router, cleanup-order, exact transport count, and deletion protection. Moving stopProcess before awaited graph cleanup produced the intended red result: 10 pass, 1 fail, 43 assertions, with process stop at event index 34 before transport shutdown at 47. Replacing the factory seam's composed generation stop with a non-delegating stop produced the intended red result: 10 pass, 1 fail, 39 assertions, with zero ordinary-settlement events. Both mutations were reversed and production is byte-for-byte unchanged from 07738c3d. Final sequential named 6 GiB memory / 1 GiB swap validation: integrated owner, direct generation, and application owners 22 pass, 0 fail, 204 assertions; repository inventory 39 pass, 0 fail, 69 assertions; both TypeScript projects, lint with 0 warnings/errors, formatting, and the complete fixed-base diff check pass. No known OOM fingerprint was rerun. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Replaced the synthetic shutdown-order assertion with a public owner-path test that observes the existing fake process. The early-process-stop mutation fails the new owner; restored production passes focused owners, inventory, type, lint, format, and fixed-base diff checks. Task status and acceptance criteria remain unchanged for parent rereview.
+Replaced the fake shutdown ledger with one integrated public owner proof over the actual composed generation and shared the existing component fixture with the direct generation owner. Early process stop and non-delegating factory mutations both fail; restored tests, inventory, types, lint, format, and fixed-base diff checks pass. Task status and acceptance criteria remain unchanged for parent rereview.
 <!-- SECTION:FINAL_SUMMARY:END -->

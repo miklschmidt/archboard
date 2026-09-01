@@ -3,10 +3,13 @@ import { describe, expect, test } from "bun:test";
 import {
 	CodexWorkbenchCompositionError,
 	emptyCodexWorkbenchRetainedState,
+	installCodexWorkbenchOwner,
 	type CODEX_WORKBENCH_OWNER,
 	type CodexWorkbenchGenerationFactory,
 	type CodexWorkbenchGenerationInput,
 } from "../codex-workbench-owner.js";
+import { composeCodexWorkbenchGeneration } from "../codex-workbench-generation.js";
+import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
 import {
 	fakeGeneration,
 	fakeProcess,
@@ -72,17 +75,28 @@ describe("production Codex owner lifecycle", () => {
 	test("normal shutdown finishes generation transport before stopping the process", async () => {
 		const events: string[] = [];
 		const retained = emptyCodexWorkbenchRetainedState();
-		const owner = installFakeCodexWorkbenchOwner(retained, {
+		const fixture = createCodexWorkbenchGenerationFixture(events);
+		const owner = installCodexWorkbenchOwner(retained, {
 			createProcess: () => fakeProcess(events),
-			createGeneration: async ({ generation }) =>
-				fakeGeneration(events, generation, {
-					stop: async (reason) => {
-						if (reason !== "shutdown") return;
-						await Promise.resolve();
-						events.push("ordinary:settle:host_shutdown");
-						events.push("transport:shutdown");
-					},
-				}),
+			createKernel: () => ({
+				kernel: {
+					identityLedger: fixture.identityLedger,
+					transport: fixture.components.transport,
+				},
+				identity: fixture.components.identity,
+			}),
+			createGeneration: async (input) => {
+				if (input.kernel === null)
+					throw new Error("The integrated generation owner did not acquire its stable kernel.");
+				return composeCodexWorkbenchGeneration({
+					identityLedger: input.kernel.identityLedger,
+					factories: fixture.factories,
+					hooks: fixture.hooks,
+					ownsTransport: false,
+					activate: false,
+					assertActivationCurrent: input.assertActivationCurrent,
+				});
+			},
 		});
 		await owner.start();
 		await owner.shutdown();
