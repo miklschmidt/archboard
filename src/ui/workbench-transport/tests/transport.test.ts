@@ -255,8 +255,7 @@ test("handshake uses the composed gateway envelope and exposes readiness capabil
 	await attachWithSnapshot(transport, socket, snapshot(), 7);
 
 	expect(socket.sent).toEqual([
-		{ type: "codex_workbench_request", requestId: "request-1", action: "connect" },
-		{ type: "codex_workbench_request", requestId: "request-2", action: "subscribe" },
+		{ type: "codex_workbench_request", requestId: "request-1", action: "subscribe" },
 	]);
 	expect(transport.state()).toMatchObject({
 		kind: "readiness",
@@ -353,9 +352,9 @@ test("commands capture the lease target before focus or navigation changes", asy
 	expect(String(transport.snapshot()?.threadLink.threadId)).toBe("thread-b");
 	currentSnapshot = snapshot({ threadId: "thread-c" });
 	currentSequence = 4;
-	socket.event(deltaMessage(4, { threadLink: currentSnapshot.threadLink }));
+	socket.event(deltaMessage(4, { queue: currentSnapshot.queue }));
 	expect(transport.sequence()).toBe(4);
-	expect(String(transport.snapshot()?.threadLink.threadId)).toBe("thread-c");
+	expect(transport.snapshot()?.queue.status).toBe("empty");
 });
 
 test("lost command responses become outcome-unknown and are never replayed after replacement", async () => {
@@ -381,7 +380,7 @@ test("lost command responses become outcome-unknown and are never replayed after
 	const second = new FakeSocket();
 	await attachWithSnapshot(transport, second, snapshot(), 9);
 	first.reply(sentRequest, commandResult(snapshot({ lease: activeLease })));
-	expect(second.sent.map((request) => request.action)).toEqual(["connect", "subscribe"]);
+	expect(second.sent.map((request) => request.action)).toEqual(["subscribe"]);
 });
 
 test("lease expiry blocks commands locally and readiness states do not unlock unsupported actions", async () => {
