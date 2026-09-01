@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 
-import { createBrowserWorkbenchMediaOwner } from "../../canvas/codex-workbench-media-owner.js";
+import { createBrowserWorkbenchMediaOwner } from "../index.js";
 import { FakeBrowser, restoreFakeBrowsers } from "./support/media-session-fakes.js";
 
 class FakeSocket extends EventTarget {
@@ -51,6 +51,44 @@ function unavailableResponse(request: Record<string, unknown>) {
 	};
 }
 
+function mediaSocket() {
+	const mediaReady: boolean[] = [];
+	let lease = 0;
+	const snapshot = {
+		threadLink: { state: "executable", threadId: "thread-media" },
+		voice: { state: "ready" },
+	};
+	const socket = new FakeSocket((request) => {
+		const action = String(request.action);
+		let value: unknown;
+		if (action === "connect" || action === "subscribe")
+			value = { kind: "snapshot", sequence: 1, snapshot };
+		else if (action === "mediaReady") {
+			mediaReady.push(request.ready === true);
+			value = { kind: "snapshot", sequence: mediaReady.length + 1, snapshot };
+		} else if (action === "claimLease") {
+			lease += 1;
+			value = {
+				kind: "command_lease",
+				commandId: `media-state-${lease}`,
+				paneId: "pane-media",
+				childId: "child-media",
+				epoch: "epoch-media",
+				state: "active",
+				expiresAtMs: 999_999,
+			};
+		} else throw new Error(`unexpected action: ${action}`);
+		return {
+			type: "codex_workbench_result",
+			requestId: request.requestId,
+			action,
+			ok: true,
+			value,
+		};
+	});
+	return { socket, mediaReady };
+}
+
 afterEach(restoreFakeBrowsers);
 
 test("the browser workbench media owner negotiates and cleans one socket-bound local session", async () => {
@@ -80,7 +118,7 @@ test("the browser workbench media owner negotiates and cleans one socket-bound l
 	const socket = new FakeSocket((request) => {
 		const action = String(request.action);
 		let value: unknown;
-		if (action === "connect" || action === "subscribe")
+		if (action === "connect" || action === "subscribe" || action === "mediaReady")
 			value = { kind: "snapshot", sequence: 1, snapshot };
 		else if (action === "claimLease") {
 			leaseNumber += 1;
@@ -123,6 +161,7 @@ test("the browser workbench media owner negotiates and cleans one socket-bound l
 	const owner = createBrowserWorkbenchMediaOwner();
 	try {
 		await owner.attach(socket as unknown as WebSocket);
+		expect(owner.state()).toEqual({ state: "ready" });
 		const started = await owner.start();
 		expect(started.state).toMatchObject({ phase: "listening" });
 		await owner.appendText("continue the same voice turn");
@@ -155,6 +194,7 @@ test("socket replacement disposes browser media before adopting the new socket",
 	expect(second.sent.map((request) => (request as { action: string }).action)).toEqual([
 		"connect",
 		"subscribe",
+		"mediaReady",
 	]);
 	await owner.dispose();
 });
@@ -172,7 +212,11 @@ test("a failed socket subscription leaves no run and a later socket can recover"
 					error: "subscription refused",
 				},
 	);
-	expect(owner.attach(failed as unknown as WebSocket)).rejects.toThrow("subscription refused");
+	expect(await owner.attach(failed as unknown as WebSocket)).toEqual({
+		state: "unavailable",
+		reason: "attach_failed",
+		message: "subscription refused",
+	});
 	expect(owner.snapshot()).toBeNull();
 
 	const recovered = new FakeSocket(unavailableResponse);
@@ -180,6 +224,56 @@ test("a failed socket subscription leaves no run and a later socket can recover"
 	expect(recovered.sent.map((request) => (request as { action: string }).action)).toEqual([
 		"connect",
 		"subscribe",
+		"mediaReady",
 	]);
 	await owner.dispose();
+});
+
+test("missing browser media APIs publish an explicit unavailable socket state", async () => {
+	const owner = createBrowserWorkbenchMediaOwner();
+	const { socket, mediaReady } = mediaSocket();
+	expect(await owner.attach(socket as unknown as WebSocket)).toEqual({
+		state: "unavailable",
+		reason: "media_api_unavailable",
+		message: "This browser cannot install realtime microphone and audio support.",
+	});
+	expect(mediaReady).toEqual([false]);
+	await owner.dispose();
+});
+
+test("permission and SDP failures revoke voice readiness before returning", async () => {
+	for (const failure of ["permission", "sdp"] as const) {
+		const environment = new FakeBrowser();
+		const documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, "document");
+		Object.defineProperty(globalThis, "document", {
+			configurable: true,
+			value: {
+				createElement: () => new FakeAudioElement(),
+				body: { append: () => undefined },
+			},
+		});
+		if (failure === "permission")
+			Object.defineProperty(environment, "getUserMedia", {
+				configurable: true,
+				value: () => Promise.reject(new DOMException("denied", "NotAllowedError")),
+			});
+		else environment.fail = "createOffer";
+		const owner = createBrowserWorkbenchMediaOwner();
+		const { socket, mediaReady } = mediaSocket();
+		try {
+			await owner.attach(socket as unknown as WebSocket);
+			const snapshot = await owner.start();
+			expect(snapshot.state.phase).toMatch(/error/);
+			expect(owner.state()).toMatchObject({
+				state: "unavailable",
+				reason: failure === "permission" ? "permission_denied" : "negotiation_failed",
+			});
+			expect(mediaReady).toEqual([true, true, false]);
+		} finally {
+			await owner.dispose();
+			environment.restore();
+			if (documentDescriptor) Object.defineProperty(globalThis, "document", documentDescriptor);
+			else Reflect.deleteProperty(globalThis, "document");
+		}
+	}
 });

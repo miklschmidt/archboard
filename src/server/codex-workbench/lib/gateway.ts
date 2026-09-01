@@ -48,7 +48,7 @@ const ACCOUNT_READINESS = new Set([
 	"thread_capable",
 ]);
 const THREAD_READINESS = new Set(["thread_capable"]);
-const DISCONNECT_MEMORY_LIMIT = 128;
+const LEASE_REASON_MEMORY_LIMIT = 128;
 export const BROWSER_SETTLED_COMMAND_LIMIT = 64;
 
 interface ConnectionState {
@@ -60,6 +60,9 @@ interface ConnectionState {
 	lastSnapshot: BrowserSnapshot | null;
 	operation: BrowserOperationOutcome | null;
 	lease: BrowserCommandLease | null;
+	binding: BrowserActionContext | null;
+	mediaReady: boolean;
+	disconnectNotified: boolean;
 	closed: boolean;
 }
 
@@ -193,7 +196,7 @@ function executableLink(snapshot: BrowserSnapshot): BrowserSnapshot["threadLink"
 function currentLeaseOrThrow(
 	manager: BrowserLeaseManager,
 	commandId: BrowserCommandId,
-	terminalReason?: BrowserDisconnectReason,
+	terminalReason?: CodexWorkbenchGatewayError["code"],
 ): BrowserLeaseRecord {
 	const current = manager.current();
 	const found = manager.find(commandId);
@@ -208,11 +211,9 @@ function currentLeaseOrThrow(
 		throw new CodexWorkbenchGatewayError(
 			terminalReason === "link_changed"
 				? "link_changed"
-				: terminalReason === "child_disconnected"
-					? "child_disconnected"
-					: terminalReason === "lease_transferred"
-						? "lease_transferred"
-						: "lease_released",
+				: terminalReason === "lease_transferred"
+					? "lease_transferred"
+					: "lease_released",
 			"The command lease was released.",
 			{ commandId },
 		);
@@ -257,8 +258,7 @@ export function createCodexWorkbenchGateway(
 	const connections = new Map<string, ConnectionState>();
 	const inFlightCommands = new Map<BrowserCommandId, CachedCommand>();
 	const settledCommands = new Map<BrowserCommandId, CachedCommand>();
-	const disconnectNotified = new Set<BrowserCommandId>();
-	const disconnectReasons = new Map<BrowserCommandId, BrowserDisconnectReason>();
+	const leaseReasons = new Map<BrowserCommandId, CodexWorkbenchGatewayError["code"]>();
 	const pendingSettlements = new Set<Promise<void>>();
 	const now = options.now ?? Date.now;
 	let disposed = false;
@@ -285,25 +285,32 @@ export function createCodexWorkbenchGateway(
 		while (pendingSettlements.size > 0) await Promise.allSettled(Array.from(pendingSettlements));
 	};
 
-	const notifyDisconnect = (
+	const rememberLeaseReason = (
 		record: BrowserLeaseRecord,
+		reason: CodexWorkbenchGatewayError["code"],
+	): void => {
+		inFlightCommands.delete(record.lease.commandId);
+		settledCommands.delete(record.lease.commandId);
+		leaseReasons.delete(record.lease.commandId);
+		leaseReasons.set(record.lease.commandId, reason);
+		for (const state of connections.values())
+			if (state.lease?.commandId === record.lease.commandId) state.lease = record.lease;
+		while (leaseReasons.size > LEASE_REASON_MEMORY_LIMIT) {
+			const oldest = leaseReasons.keys().next().value;
+			if (oldest === undefined) break;
+			leaseReasons.delete(oldest);
+		}
+	};
+
+	const notifyDisconnect = (
+		state: ConnectionState,
 		reason: BrowserDisconnectReason,
 	): Promise<void> => {
-		const commandId = record.lease.commandId;
-		if (disconnectNotified.has(commandId)) return Promise.resolve();
-		disconnectNotified.add(commandId);
-		disconnectReasons.set(commandId, reason);
-		inFlightCommands.delete(commandId);
-		for (const state of connections.values()) {
-			if (state.lease?.commandId === commandId) state.lease = record.lease;
-		}
-		while (disconnectNotified.size > DISCONNECT_MEMORY_LIMIT) {
-			const oldest = disconnectNotified.values().next().value;
-			if (oldest === undefined) break;
-			disconnectNotified.delete(oldest);
-			disconnectReasons.delete(oldest);
-		}
-		const context = record.binding satisfies BrowserActionContext;
+		if (state.disconnectNotified || state.binding === null) return Promise.resolve();
+		state.disconnectNotified = true;
+		for (const [commandId, entry] of inFlightCommands)
+			if (entry.connection === state.instance) inFlightCommands.delete(commandId);
+		const context = state.binding;
 		// Approval teardown is best effort. Both owners get a chance to settle,
 		// and lifecycle methods resolve after all settlement promises finish.
 		const invoke = (
@@ -355,10 +362,11 @@ export function createCodexWorkbenchGateway(
 	const finishLease = (
 		record: BrowserLeaseRecord,
 		state: "expired" | "released",
+		reason: CodexWorkbenchGatewayError["code"],
 	): BrowserLeaseRecord | null => {
 		if (leaseManager.current()?.lease.commandId !== record.lease.commandId) return null;
 		const result = leaseManager.invalidate(record.lease.childId, record.lease.epoch, state);
-		if (result !== null) void notifyDisconnect(result, "link_changed");
+		if (result !== null) rememberLeaseReason(result, reason);
 		return result;
 	};
 
@@ -405,7 +413,7 @@ export function createCodexWorkbenchGateway(
 		const current = leaseManager.current();
 		if (current === null || now() < current.lease.expiresAtMs) return;
 		const expired = leaseManager.invalidate(current.lease.childId, current.lease.epoch, "expired");
-		if (expired !== null) void notifyDisconnect(expired, "lease_expired");
+		if (expired !== null) rememberLeaseReason(expired, "lease_expired");
 	};
 
 	const leaseForSnapshot = (state: ConnectionState): BrowserCommandLease | null => {
@@ -429,6 +437,7 @@ export function createCodexWorkbenchGateway(
 				paneId: state.paneId,
 				binding,
 				lease: leaseForSnapshot(state),
+				mediaReady: state.mediaReady,
 			});
 		} catch (error) {
 			throw new CodexWorkbenchGatewayError(
@@ -446,6 +455,7 @@ export function createCodexWorkbenchGateway(
 					paneId: state.paneId,
 					binding,
 					lease: leaseForSnapshot(state),
+					mediaReady: state.mediaReady,
 				},
 				operation: state.operation,
 			});
@@ -520,7 +530,7 @@ export function createCodexWorkbenchGateway(
 	leaseManager = createBrowserLeaseManager({
 		identity,
 		now,
-		onFinish: (record) => notifyDisconnect(record, "lease_expired"),
+		onFinish: (record) => rememberLeaseReason(record, "lease_expired"),
 		onChange: publishAll,
 	});
 
@@ -543,7 +553,7 @@ export function createCodexWorkbenchGateway(
 			binding.revision !== record.binding.linkRevision ||
 			!sameWireValue(binding.link, record.binding.link)
 		) {
-			finishLease(record, "released");
+			finishLease(record, "released", "link_changed");
 			throw new CodexWorkbenchGatewayError(
 				"link_changed",
 				"The pane link changed during lease ownership.",
@@ -653,7 +663,7 @@ export function createCodexWorkbenchGateway(
 			const record = currentLeaseOrThrow(
 				leaseManager,
 				command.commandId,
-				disconnectReasons.get(command.commandId),
+				leaseReasons.get(command.commandId),
 			);
 			if (
 				record.binding.browserId !== state.browserId ||
@@ -904,10 +914,11 @@ export function createCodexWorkbenchGateway(
 				previous.binding.connection,
 				previous.lease.commandId,
 			);
-			if (released !== null) void notifyDisconnect(released, "lease_transferred");
+			if (released !== null) rememberLeaseReason(released, "lease_transferred");
 		}
 		const record = leaseManager.claim(browserId, paneId, state.instance, readBinding(paneId));
 		state.lease = record.lease;
+		state.binding = record.binding;
 		return record.lease;
 	};
 
@@ -921,7 +932,7 @@ export function createCodexWorkbenchGateway(
 		const record = currentLeaseOrThrow(
 			leaseManager,
 			lease.commandId,
-			disconnectReasons.get(lease.commandId),
+			leaseReasons.get(lease.commandId),
 		);
 		if (record.binding.browserId !== browserId)
 			throw new CodexWorkbenchGatewayError("lease_transferred", "The lease owner changed.", {
@@ -961,8 +972,20 @@ export function createCodexWorkbenchGateway(
 		expireLeaseIfDue();
 		if (commandId === undefined) commandId = state.lease?.commandId;
 		const record = leaseManager.release(browserId, paneId, state.instance, commandId);
-		if (record?.lease.state === "released") void notifyDisconnect(record, "browser_disconnected");
+		if (record?.lease.state === "released") {
+			state.lease = record.lease;
+			rememberLeaseReason(record, "lease_released");
+		}
 		return record?.lease ?? null;
+	};
+
+	const setMediaReady = (state: ConnectionState, ready: boolean): BrowserGatewaySnapshotMessage => {
+		stateFor(state.browserId, state.paneId, state.instance);
+		if (state.mediaReady !== ready) {
+			state.mediaReady = ready;
+			publishConnection(state);
+		}
+		return updateSnapshot(state);
 	};
 
 	const connect = (
@@ -990,8 +1013,9 @@ export function createCodexWorkbenchGateway(
 					existing.instance,
 					current.lease.commandId,
 				);
-				if (released !== null) void notifyDisconnect(released, "browser_disconnected");
+				if (released !== null) rememberLeaseReason(released, "lease_transferred");
 			}
+			void notifyDisconnect(existing, "browser_disconnected");
 		}
 		const state: ConnectionState = {
 			browserId,
@@ -1002,6 +1026,9 @@ export function createCodexWorkbenchGateway(
 			lastSnapshot: null,
 			operation: null,
 			lease: null,
+			binding: null,
+			mediaReady: false,
+			disconnectNotified: false,
 			closed: false,
 		};
 		connections.set(key, state);
@@ -1031,20 +1058,24 @@ export function createCodexWorkbenchGateway(
 		}
 		disposed = true;
 		const current = leaseManager.current();
-		let released: BrowserLeaseRecord | null = null;
 		if (current !== null) {
-			released = leaseManager.invalidate(current.lease.childId, current.lease.epoch, "released");
+			const released = leaseManager.invalidate(
+				current.lease.childId,
+				current.lease.epoch,
+				"released",
+			);
+			if (released !== null) rememberLeaseReason(released, "lease_released");
 		}
 		leaseManager.dispose();
 		for (const unsubscribe of sourceUnsubscribers.splice(0)) unsubscribe();
 		for (const state of connections.values()) {
+			void notifyDisconnect(state, reason);
 			state.closed = true;
 			state.listeners.clear();
 		}
 		connections.clear();
 		inFlightCommands.clear();
 		settledCommands.clear();
-		if (released !== null) void notifyDisconnect(released, reason);
 	};
 
 	const closeConnection = async (state: ConnectionState): Promise<void> => {
@@ -1064,22 +1095,27 @@ export function createCodexWorkbenchGateway(
 				state.instance,
 				current.lease.commandId,
 			);
-			if (released !== null) void notifyDisconnect(released, "browser_disconnected");
+			if (released !== null) rememberLeaseReason(released, "lease_released");
 		}
+		void notifyDisconnect(state, "browser_disconnected");
 		await drainSettlements();
 	};
 
-	const closeBrowser = async (browserId: string): Promise<void> => {
+	const closeConnectionInstance = async (
+		browserId: string,
+		paneId: string,
+		instance: BrowserConnectionInstance,
+	): Promise<void> => {
 		if (disposed) {
 			await drainSettlements();
 			return;
 		}
-		const owned: ConnectionState[] = [];
-		for (const state of connections.values()) {
-			if (state.browserId !== browserId) continue;
-			owned.push(state);
+		const state = connections.get(connectionKey(browserId, paneId));
+		if (state === undefined || state.instance !== instance) {
+			await drainSettlements();
+			return;
 		}
-		for (const state of owned) await closeConnection(state);
+		await closeConnection(state);
 	};
 
 	const childExit = async (childId: ChildId, epoch: ChildEpoch): Promise<void> => {
@@ -1130,6 +1166,7 @@ export function createCodexWorkbenchGateway(
 				return renewLease(state.browserId, state.lease, state.instance);
 			},
 			releaseLease: () => releaseLease(state.browserId, state.paneId, undefined, state.instance),
+			setMediaReady: (ready: boolean) => setMediaReady(state, ready),
 			accountRead: () => accountRead(state.browserId, state.paneId, state.instance),
 			command: (value: unknown) => command(state.browserId, value, state.paneId, state.instance),
 			subscribe: (listener: (message: BrowserGatewayMessage) => void) =>
@@ -1160,7 +1197,7 @@ export function createCodexWorkbenchGateway(
 		accountRead,
 		command,
 		subscribe,
-		closeBrowser,
+		closeConnection: closeConnectionInstance,
 		childExit,
 		dispose,
 	});
