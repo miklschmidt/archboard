@@ -9,7 +9,9 @@ import type { BrowserWorkbenchSocket } from "../../../src/ui/workbench-transport
 import {
 	attachCanvasWorkbenchAfterRegistration,
 	createCanvasPaneRegistration,
+	createCanvasPaneReportSequencer,
 	createCanvasWorkbenchSocketOwner,
+	type CanvasPaneReportRequest,
 } from "../../../src/ui/canvas/workbench-socket.js";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createRequester, waitFor } from "./support/http.ts";
@@ -20,6 +22,19 @@ interface WorkbenchResult {
 	readonly ok: boolean;
 	readonly value?: Record<string, unknown>;
 	readonly error?: string;
+}
+
+interface Deferred<T> {
+	promise: Promise<T>;
+	resolve: (value: T) => void;
+}
+
+function deferred<T>(): Deferred<T> {
+	let resolveDeferred!: (value: T) => void;
+	const promise = new Promise<T>((accept) => {
+		resolveDeferred = accept;
+	});
+	return { promise, resolve: resolveDeferred };
 }
 
 interface ApplicationSocket {
@@ -292,6 +307,39 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 			expect(attachCount).toBe(1);
 			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(1);
 			expect(transport.snapshot()).not.toBeNull();
+			// A later pane report is allowed to refresh health, but an older response
+			// from the same generation cannot disturb the retained production transport.
+			const reportSequencer = createCanvasPaneReportSequencer();
+			const reportHealth: boolean[] = [];
+			const reportFreshness: string[] = [];
+			const olderReport = deferred<{ registered: boolean }>();
+			const newerReport = deferred<{ registered: boolean }>();
+			const settleReport = (
+				paneRequest: CanvasPaneReportRequest,
+				result: { registered: boolean },
+			): void => {
+				reportSequencer.settle(paneRequest, 1, result, (currentResult) => {
+					expect(owner.current()?.socket).toBe(socketAdapter);
+					if (currentResult.registered) {
+						expect(registrationGate.acknowledge(true)).toBeFalse();
+					}
+					reportHealth.push(currentResult.registered);
+					reportFreshness.push(currentResult.registered ? "published" : "cleared");
+				});
+			};
+			const olderRequest = reportSequencer.begin(1);
+			const newerRequest = reportSequencer.begin(1);
+			const olderSettled = olderReport.promise.then((result) => settleReport(olderRequest, result));
+			const newerSettled = newerReport.promise.then((result) => settleReport(newerRequest, result));
+			newerReport.resolve({ registered: true });
+			await newerSettled;
+			olderReport.resolve({ registered: false });
+			await olderSettled;
+			expect(reportHealth).toEqual([true]);
+			expect(reportFreshness).toEqual(["published"]);
+			expect(attachCount).toBe(1);
+			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(1);
+			expect(owner.current()?.transport).toBe(transport);
 			const baselineSequence = transport.sequence();
 			await transport.setMediaReady(true);
 			await transport.setMediaReady(false);
