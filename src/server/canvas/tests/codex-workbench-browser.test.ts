@@ -3,11 +3,83 @@ import { createServer } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 
 import type {
+	BrowserConnectionInstance,
 	BrowserGatewayMessage,
 	BrowserWorkbenchConnection,
 	CodexWorkbenchGateway,
 } from "../../codex-workbench/index.js";
 import { createCanvasCodexBrowserSocketOwner } from "../codex-workbench-browser.js";
+
+test("socket acceptance transfers gateway ownership before the retired socket closes", async () => {
+	let current: BrowserConnectionInstance | null = null;
+	const connection = (instance: BrowserConnectionInstance): BrowserWorkbenchConnection => ({
+		browserId: "browser-reconnect",
+		paneId: "pane-reconnect",
+		instance,
+		snapshot: () => ({ kind: "snapshot", sequence: 1, snapshot: {} }) as never,
+		claimLease: () => {
+			if (current !== instance) throw new Error("The stale socket cannot claim authority.");
+			return { kind: "command_lease", commandId: "replacement-command" } as never;
+		},
+		renewLease: () => ({}) as never,
+		releaseLease: () => null,
+		setMediaReady: () => ({}) as never,
+		accountRead: async () => ({}) as never,
+		command: async () => ({}) as never,
+		subscribe: () => () => undefined,
+		close: async () => {
+			if (current === instance) current = null;
+		},
+	});
+	const gateway = {
+		connect: (_browserId: string, _paneId: string, instance: BrowserConnectionInstance) => {
+			current = instance;
+			return connection(instance);
+		},
+		closeConnection: async (
+			_browserId: string,
+			_paneId: string,
+			instance: BrowserConnectionInstance,
+		) => {
+			if (current === instance) current = null;
+		},
+	} as unknown as CodexWorkbenchGateway;
+	const owner = createCanvasCodexBrowserSocketOwner({
+		gateway,
+		paneForBrowser: () => "pane-reconnect",
+	});
+	const first = Object.freeze({ socket: "first" });
+	const replacement = Object.freeze({ socket: "replacement" });
+	const messages: unknown[] = [];
+	try {
+		await owner.handle(
+			first,
+			"browser-reconnect",
+			{ type: "codex_workbench_request", requestId: "first", action: "connect" },
+			{ send: (message) => messages.push(message) },
+		);
+		owner.accept(replacement, "browser-reconnect");
+		expect(current === replacement).toBeTrue();
+
+		await owner.close(first, "browser-reconnect");
+		expect(current === replacement).toBeTrue();
+		await owner.handle(
+			replacement,
+			"browser-reconnect",
+			{ type: "codex_workbench_request", requestId: "replacement", action: "claimLease" },
+			{ send: (message) => messages.push(message) },
+		);
+		expect(messages).toContainEqual(
+			expect.objectContaining({
+				type: "codex_workbench_result",
+				requestId: "replacement",
+				ok: true,
+			}),
+		);
+	} finally {
+		owner.disposeForReload();
+	}
+});
 
 test("the public socket owner routes the complete gateway workflow through server-owned identity", async () => {
 	const calls: string[] = [];

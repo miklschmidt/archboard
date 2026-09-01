@@ -266,7 +266,10 @@ export interface CodexWorkbenchGenerationHooks {
 	readonly installLifecycleSignals: (components: CodexWorkbenchComponents) => () => void;
 	readonly installApprovalProjection: (components: CodexWorkbenchComponents) => () => void;
 	readonly installBrowserGateway: (gateway: CodexWorkbenchGateway) => () => void;
-	readonly initializeSession: (session: CodexSession) => Promise<void>;
+	readonly initializeSession: (
+		session: CodexSession,
+		components: CodexWorkbenchComponents,
+	) => Promise<void>;
 	readonly stopBrowser: (gateway: CodexWorkbenchGateway) => Promise<void>;
 	readonly stopRealtime: (realtime: CodexRealtimeAdapter) => Promise<void>;
 	readonly stopQueue: (queue: CodexWorkhorseQueue<OperationId>) => Promise<void> | void;
@@ -765,7 +768,7 @@ export async function composeCodexWorkbenchGeneration(
 		);
 		installHooks(currentHooks);
 		approvalProjectionUnsubscribe = ownerHooks.installApprovalProjection(components);
-		await ownerHooks.initializeSession(session);
+		await ownerHooks.initializeSession(session, components);
 	} catch (error) {
 		let failure = error instanceof Error ? error : new Error(String(error));
 		try {
@@ -932,11 +935,13 @@ export interface CodexWorkbenchOwnerSlots {
 
 export interface CodexWorkbenchRetainedControl {
 	current: CodexWorkbenchOwnerSlots | null;
+	/** Reviewed process-lifetime lifecycle port; public source callables never expose it. */
+	runtime: CodexWorkbenchOwnerSlots | null;
 	readonly wrappers: CodexWorkbenchOwnerSlots;
 }
 
 function emptyCodexWorkbenchRetainedControl(): CodexWorkbenchRetainedControl {
-	const control = { current: null } as CodexWorkbenchRetainedControl;
+	const control = { current: null, runtime: null } as CodexWorkbenchRetainedControl;
 	const current = (): CodexWorkbenchOwnerSlots => {
 		if (control.current === null)
 			throw new CodexWorkbenchCompositionError(
@@ -956,6 +961,25 @@ function emptyCodexWorkbenchRetainedControl(): CodexWorkbenchRetainedControl {
 		} satisfies CodexWorkbenchOwnerSlots),
 	});
 	return control;
+}
+
+/** Publish callables created by the module source generation executing this function. */
+function publishRetainedFacade(control: CodexWorkbenchRetainedControl): CodexWorkbenchOwnerSlots {
+	const runtime = control.runtime;
+	if (runtime === null)
+		throw new CodexWorkbenchCompositionError(
+			"not_started",
+			"The production Codex workbench has no active lifecycle port.",
+		);
+	const facade: CodexWorkbenchOwnerSlots = {
+		start: () => runtime.start(),
+		reload: (hooks) => runtime.reload(hooks),
+		shutdown: () => runtime.shutdown(),
+		snapshot: () => runtime.snapshot(),
+		gateway: () => runtime.gateway(),
+	};
+	control.current = facade;
+	return facade;
 }
 
 export function emptyCodexWorkbenchRetainedState(): CodexWorkbenchRetainedState {
@@ -999,6 +1023,18 @@ const FUNCTION_INTRINSIC_KEYS: readonly PropertyKey[] = Object.freeze([
 	"arguments",
 	"caller",
 ]);
+const FUNCTION_PROTOTYPE = Function.prototype;
+const ASYNC_FUNCTION_PROTOTYPE = Object.getPrototypeOf(async function () {});
+const GENERATOR_FUNCTION_PROTOTYPE = Object.getPrototypeOf(function* () {});
+const ASYNC_GENERATOR_FUNCTION_PROTOTYPE = Object.getPrototypeOf(async function* () {});
+const FUNCTION_PROTOTYPE_KEYS = Object.freeze(Reflect.ownKeys(FUNCTION_PROTOTYPE));
+const ASYNC_FUNCTION_PROTOTYPE_KEYS = Object.freeze(Reflect.ownKeys(ASYNC_FUNCTION_PROTOTYPE));
+const GENERATOR_FUNCTION_PROTOTYPE_KEYS = Object.freeze(
+	Reflect.ownKeys(GENERATOR_FUNCTION_PROTOTYPE),
+);
+const ASYNC_GENERATOR_FUNCTION_PROTOTYPE_KEYS = Object.freeze(
+	Reflect.ownKeys(ASYNC_GENERATOR_FUNCTION_PROTOTYPE),
+);
 
 function exactOwnKeys(value: object, expected: readonly (string | symbol)[], label: string): void {
 	const actual = Reflect.ownKeys(value);
@@ -1022,18 +1058,22 @@ function assertStableFunction(
 	label: string,
 ): asserts value is (...args: never[]) => unknown {
 	const prototype = typeof value === "function" ? Object.getPrototypeOf(value) : null;
-	const intrinsicCallablePrototype =
-		prototype === Function.prototype ||
-		(prototype !== null &&
-			Object.getPrototypeOf(prototype) === Function.prototype &&
-			["AsyncFunction", "GeneratorFunction", "AsyncGeneratorFunction"].includes(
-				prototype?.[Symbol.toStringTag] as string,
-			));
-	if (typeof value !== "function" || !intrinsicCallablePrototype)
+	const prototypeKeys =
+		prototype === FUNCTION_PROTOTYPE
+			? FUNCTION_PROTOTYPE_KEYS
+			: prototype === ASYNC_FUNCTION_PROTOTYPE
+				? ASYNC_FUNCTION_PROTOTYPE_KEYS
+				: prototype === GENERATOR_FUNCTION_PROTOTYPE
+					? GENERATOR_FUNCTION_PROTOTYPE_KEYS
+					: prototype === ASYNC_GENERATOR_FUNCTION_PROTOTYPE
+						? ASYNC_GENERATOR_FUNCTION_PROTOTYPE_KEYS
+						: null;
+	if (typeof value !== "function" || prototypeKeys === null)
 		throw new CodexWorkbenchCompositionError(
 			"invalid_retained_state",
 			`${label} is not a plain callable slot.`,
 		);
+	exactOwnKeys(prototype, prototypeKeys, `${label}'s intrinsic callable prototype`);
 	const attached = Reflect.ownKeys(value).filter(
 		(property) => !FUNCTION_INTRINSIC_KEYS.includes(property),
 	);
@@ -1060,9 +1100,14 @@ export function assertCodexWorkbenchRetainedState(retained: CodexWorkbenchRetain
 			assertStableFunction(retained.process[key], `The retained Codex process member ${key}`);
 	}
 	assertPlainRecord(retained.control, "The retained Codex control cell");
-	exactOwnKeys(retained.control, ["current", "wrappers"], "The retained Codex control cell");
+	exactOwnKeys(
+		retained.control,
+		["current", "runtime", "wrappers"],
+		"The retained Codex control cell",
+	);
 	for (const [label, slots] of [
 		["stable wrappers", retained.control.wrappers],
+		["stable lifecycle port", retained.control.runtime],
 		["current generation slots", retained.control.current],
 	] as const) {
 		if (slots === null) continue;
@@ -1098,19 +1143,24 @@ export function installProductionCodexWorkbench(
 export function reloadProductionCodexWorkbench(
 	hooks: CodexWorkbenchHooksFactory,
 ): Promise<CodexWorkbenchSnapshot> {
-	if (retainedWorkbench.control.current === null)
+	const runtime = retainedWorkbench.control.runtime;
+	if (runtime === null)
 		return Promise.reject(
 			new CodexWorkbenchCompositionError(
 				"not_started",
 				"The production Codex workbench has no active owner to reload.",
 			),
 		);
-	return retainedWorkbench.control.wrappers.reload(hooks);
+	return runtime.reload(hooks).then((snapshot) => {
+		publishRetainedFacade(retainedWorkbench.control);
+		assertCodexWorkbenchRetainedState(retainedWorkbench);
+		return snapshot;
+	});
 }
 
 /** Stop the active production owner without importing its generation graph elsewhere. */
 export function shutdownProductionCodexWorkbench(): Promise<CodexWorkbenchSnapshot> {
-	if (retainedWorkbench.control.current === null)
+	if (retainedWorkbench.control.runtime === null)
 		return Promise.reject(
 			new CodexWorkbenchCompositionError(
 				"not_started",
@@ -1260,17 +1310,23 @@ export function installCodexWorkbenchOwner(
 				"The production Codex workbench is not ready for source-hook replacement.",
 			);
 		const previous = generation;
-		await previous.replaceHooks(typeof hooks === "function" ? hooks(generationInput) : hooks);
+		const transport = previous.transport;
+		const gatewayPort = previous.gateway;
+		const route = previous.router.route;
+		const replaceHooks = previous.replaceHooks;
+		const stopGeneration = previous.stop;
+		const finishGenerationStop = previous.finishStop;
+		await replaceHooks(typeof hooks === "function" ? hooks(generationInput) : hooks);
 		generation = Object.freeze({
-			transport: previous.transport,
-			gateway: previous.gateway,
-			router: previous.router,
-			replaceHooks: previous.replaceHooks,
-			stop: previous.stop,
-			finishStop: previous.finishStop,
+			transport,
+			gateway: gatewayPort,
+			router: Object.freeze({ route: (request: TransportServerRequest) => route(request) }),
+			replaceHooks: (nextHooks: CodexWorkbenchGenerationHooks) => replaceHooks(nextHooks),
+			stop: (reason: "shutdown" | "child_exit") => stopGeneration(reason),
+			finishStop: () => finishGenerationStop(),
 		});
 		retained.generation += 1;
-		publishSlots();
+		publishRetainedFacade(retained.control);
 		return snapshot();
 	};
 
@@ -1309,6 +1365,7 @@ export function installCodexWorkbenchOwner(
 		retained.owner = null;
 		retained.process = null;
 		retained.control.current = null;
+		retained.control.runtime = null;
 	}
 
 	function beginChildRetirement(): void {
@@ -1368,8 +1425,8 @@ export function installCodexWorkbenchOwner(
 
 	function publishSlots(): CodexWorkbenchOwnerSlots {
 		const slots = { start, reload, shutdown, snapshot, gateway };
-		retained.control.current = slots;
-		return slots;
+		retained.control.runtime = slots;
+		return publishRetainedFacade(retained.control);
 	}
 
 	const initialSlots = publishSlots();

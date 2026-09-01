@@ -329,9 +329,11 @@ export function createCodexWorkbenchGateway(
 			}
 		};
 		const settlement = Promise.allSettled([
+			// Ordinary approvals capture the still-current exact pane binding before
+			// thread-link teardown clears that controller token.
+			invoke(options.actions.ordinaryApprovals.onBrowserDisconnect),
 			invoke(options.actions.threadLinks.onBrowserDisconnect),
 			invoke(options.actions.realtime.onBrowserDisconnect),
-			invoke(options.actions.ordinaryApprovals.onBrowserDisconnect),
 			invoke(options.actions.dynamicApprovals.onBrowserDisconnect),
 		]).then(() => undefined);
 		trackSettlement(settlement);

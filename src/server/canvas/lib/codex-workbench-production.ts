@@ -4,7 +4,10 @@ import { mkdirSync } from "node:fs";
 import { resolveProjectCodexExecutable } from "../../../runtime/codex-process/executable.js";
 import { createCodexWaitGraph } from "../../../runtime/codex-wait-graph/index.js";
 import { createCoordinatorCallbackRealtimePort } from "../../../runtime/codex-coordinator-callbacks/index.js";
-import type { ArchboardContext } from "../../../runtime/codex-instructions/index.js";
+import {
+	ArchboardContextSchema,
+	type ArchboardContext,
+} from "../../../runtime/codex-instructions/index.js";
 import type {
 	SemanticContextPublisherOptions,
 	SettledSemanticChangeEvent,
@@ -200,8 +203,8 @@ export function createCanvasCodexWorkbenchInstallation(
 					epoch: created.epoch,
 					threadLink: created.threadLink,
 					paneIds: host.paneIds,
-					contextFor: (context) =>
-						host.contextForOperation(
+					contextFor: (context) => {
+						const captured = host.contextForOperation(
 							{
 								paneId: context.authority.paneId,
 								childId: context.authority.childId,
@@ -213,7 +216,15 @@ export function createCanvasCodexWorkbenchInstallation(
 								kind: context.kind,
 								rpc: "turn/start",
 							},
-						),
+						);
+						return ArchboardContextSchema.parse({
+							...captured,
+							workhorse: {
+								threadId: context.caller.wireThreadId,
+								turnId: context.caller.wireTurnId,
+							},
+						});
+					},
 				});
 			}
 			if (owners.approval === null) {
@@ -292,8 +303,14 @@ export function createCanvasCodexWorkbenchInstallation(
 					};
 				},
 			}),
-			approvals: () => ({
+			approvals: (created) => ({
 				onError: host.onFatal,
+				getCurrentBinding: (request) => {
+					const binding = created.semanticDelivery?.snapshot().binding ?? null;
+					return binding?.target.threadId === request.threadId
+						? { link: `pane:${binding.paneId}` }
+						: { link: null };
+				},
 				onChange: () => {
 					if (!owners.approvalProjectionInstalled) return;
 					for (const listener of owners.projectionListeners) listener();
@@ -497,7 +514,20 @@ export function createCanvasCodexWorkbenchInstallation(
 			};
 		},
 		installBrowserGateway: host.installBrowserGateway,
-		initializeSession: async (session) => {
+		initializeSession: async (session, components) => {
+			const epochSnapshot = components.epoch.snapshot();
+			components.epoch.startEpoch({
+				childId: components.identity.identity.validator.childId,
+				epoch: components.identity.identity.validator.epoch,
+				operationId: components.identity.operation.issuer.mintOperationId(),
+				kind: "epoch_start",
+				rpc: "epoch/start",
+				workspaceRoot: host.checkoutRoot,
+				// Epoch ownership has no remote instruction or tool-manifest effect.
+				instructionHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				manifestHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				...(epochSnapshot.manifest.activeEpoch === null ? {} : { expected: epochSnapshot.cas }),
+			});
 			await session.initialize();
 			input.child.lifecycle.markAppServerReady();
 			const account = await session.accountRead();
@@ -510,7 +540,16 @@ export function createCanvasCodexWorkbenchInstallation(
 				account.account === null
 					? { kind: "readiness", state: "signed_out" }
 					: { kind: "readiness", state: "thread_capable" };
-			if (account.account !== null) input.child.lifecycle.markAccountReady();
+			if (account.account !== null) {
+				input.child.lifecycle.markAccountReady();
+				const coordinator = await components.coordinator.ensure({
+					operationId: components.identity.operation.issuer.mintOperationId(),
+				});
+				if (coordinator.state !== "ready")
+					throw new Error(
+						coordinator.reason ?? "The production Codex coordinator did not become ready.",
+					);
+			}
 		},
 		stopBrowser: host.stopBrowser,
 		stopRealtime: host.stopRealtime,
