@@ -143,3 +143,67 @@ test("failed recovery finalization cannot overwrite a queued later source", asyn
 	await runFailedRecoveryRace(null);
 	await runFailedRecoveryRace(new Error("concurrent teardown rejected"));
 });
+
+test("synchronous recovery setup failure becomes the exact stopped result", async () => {
+	const state: CanvasCodexWorkbenchApplicationState = {
+		installed: false,
+		phase: "idle",
+		shutdown: null,
+	};
+	const setupFailure = new Error("recovery setup failed");
+	let failSetup = false;
+	let setups = 0;
+	let installs = 0;
+	let starts = 0;
+	let reloads = 0;
+	let teardowns = 0;
+	const module = {
+		installProductionCodexWorkbench: () => {
+			installs++;
+			return {
+				start: async () => {
+					starts++;
+					return { ready: true };
+				},
+			} as never;
+		},
+		reloadProductionCodexWorkbench: async () => {
+			reloads++;
+			return { ready: true } as never;
+		},
+		shutdownProductionCodexWorkbench: async () => {
+			teardowns++;
+			return { ready: false } as never;
+		},
+	};
+	const installation = () => {
+		setups++;
+		if (failSetup) throw setupFailure;
+		return {} as never;
+	};
+	const sourceA = createCanvasCodexWorkbenchApplication({ state, module, installation });
+	await sourceA.prepare();
+	await sourceA.shutdown();
+
+	failSetup = true;
+	const sourceB = createCanvasCodexWorkbenchApplication({ state, module, installation });
+	const failedRecovery = sourceB.prepare();
+	expect(state).toMatchObject({ installed: false, phase: "stopped", shutdown: sourceB.shutdown });
+	expect(await rejected(failedRecovery)).toBe(setupFailure);
+	expect(sourceB.shutdown() as unknown).toBe(failedRecovery);
+
+	const sourceC = createCanvasCodexWorkbenchApplication({ state, module, installation });
+	const replayedFailure = sourceC.shutdown();
+	expect(replayedFailure as unknown).toBe(failedRecovery);
+	expect(await rejected(replayedFailure)).toBe(setupFailure);
+	expect([setups, installs, starts, reloads, teardowns]).toEqual([2, 1, 1, 0, 1]);
+
+	failSetup = false;
+	await sourceC.prepare();
+	expect(state).toMatchObject({ installed: true, phase: "installed", shutdown: sourceC.shutdown });
+	expect([setups, installs, starts, reloads, teardowns]).toEqual([3, 2, 2, 0, 1]);
+	const cleanShutdown = sourceC.shutdown();
+	expect(cleanShutdown as unknown).not.toBe(failedRecovery);
+	await cleanShutdown;
+	expect([setups, installs, starts, reloads, teardowns]).toEqual([3, 2, 2, 0, 2]);
+});

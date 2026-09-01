@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 09:42'
+updated_date: '2026-09-01 09:58'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -256,6 +256,12 @@ Own the one production composition root in the canvas server. It instantiates ev
 78. Keep asynchronous recovery failure in stopping until its own finally clears preparePromise and performs the sole stopped transition, while retaining the exact recovery promise and shutdown owner.
 
 79. Run the exact stale-finalizer owner first, then sequential capped application, focused non-hot, production, inventory, and static gates; commit above 746a4bcf and callback the parent.
+
+80. Add a public synchronous stopped-recovery setup owner using installation throw, exact promise and error replay across sources, stable call counters, and one clean later cycle.
+
+81. Extend the existing production generation shutdown event owner to require one transport shutdown after ordinary settlement and before the caller's process-stop boundary.
+
+82. Mutation-check each owner against its protected production branch, restore unchanged production through patches, then run sequential capped focused, inventory, type, lint, format, and fixed-base diff gates before commit and callback.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -356,10 +362,12 @@ Post-settlement success and rejection owners prove exact promise and error ident
 Ninth rejection remediation above 2be7641a fixes the combined recovery schedule. When recovery startup fails after concurrent teardown, the application publishes the exact recovery prepare operation as stopped terminal ownership before throwing. This applies to the original startup error and the combined startup plus teardown AggregateError. The final transition retains that owner. Same-source and replacement-source shutdown calls replay the exact promise and reason without another install, reload, or teardown. One gated owner runs both fulfilled and rejected concurrent teardown schedules, checks B, C, and D promise identity, holds counters at two installs, two starts, zero reloads, and two teardowns, then proves one later explicit recovery cycle. Final named 6 GiB/1 GiB validation: exact application owners 9 pass, 0 fail, 114 assertions; focused non-hot canvas and transport owners 66 pass, 0 fail, 466 assertions; production system owners 8 pass, 0 fail, 118 assertions; repository inventory 39 pass, 0 fail, 69 assertions. Both TypeScript projects, lint with 0 warnings and errors, formatting, and diff checks pass. No known OOM fingerprint was rerun. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
 
 Tenth rejection remediation above 746a4bcf closes the stale-finalizer window with one production-line deletion. Asynchronous recovery failure still publishes the exact recovery promise and shutdown owner, but it leaves the shared phase non-recoverable until the owning outer finally clears preparePromise and performs the sole stopped transition. A queued replacement prepare therefore observes stopping and refuses before it can install or publish. The synchronous failure path is unchanged because it has no pending finalizer. The public gated owner uses promise reaction order to place source D between failure publication and B finalization. Rejected head reproduced three installs and three starts in that window. The fixed owner runs fulfilled and rejected concurrent teardown schedules, proves D observes stopping and refuses, preserves B's exact startup or AggregateError terminal result across B, C, and D, then starts one later D cycle and proves source E tears D down exactly once. Final named 6 GiB/1 GiB validation: application owners 9 pass, 0 fail, 132 assertions; focused non-hot canvas and transport owners 66 pass, 0 fail, 484 assertions; production system owners 8 pass, 0 fail, 118 assertions; repository inventory 39 pass, 0 fail, 69 assertions. Both TypeScript projects, lint with 0 warnings and errors, formatting, and diff checks pass. No known OOM fingerprint was rerun. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
+
+Eleventh rereview remediation above 1fd13fb8 is test-only. A new public synchronous recovery owner throws from installation after an initial cycle has stopped. It proves the failed prepare remains stopped under the recovery source, same-source and replacement-source shutdown replay the exact promise and error, setup stops before install and start, and one later clean recovery creates a distinct cycle. Removing the synchronous recoveringFromStopped catch produced the intended red result: phase idle and shutdown null instead of stopped exact ownership. The catch was restored byte-for-byte. The existing generation shutdown owner now requires one transport shutdown after ordinary settlement and before the caller advances to process stop. Removing the lifecycle transport shutdown call produced zero transport events and failed the owner; the line was restored byte-for-byte. Final named 6 GiB/1 GiB validation: focused application and generation owners 11 pass, 0 fail, 162 assertions; repository inventory 39 pass, 0 fail, 69 assertions. Both TypeScript projects, lint with 0 warnings and errors, formatting, and the complete fixed-base diff check pass. No known OOM fingerprint was rerun. No production file differs from 1fd13fb8. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Kept asynchronous recovery failure non-recoverable until its owning finalizer publishes stopped, preventing a queued replacement prepare and stale owner overwrite. Public gated fulfillment and rejection schedules, application, focused non-hot, production, inventory, type, lint, format, and diff checks pass. Task status and acceptance criteria remain unchanged for parent rereview.
+Added test-only enforcement for synchronous stopped-recovery ownership and normal shutdown transport ordering. Both mutation checks fail at their protected lines; restored production passes focused application and generation, inventory, type, lint, format, and fixed-base diff checks. Task status and acceptance criteria remain unchanged for parent rereview.
 <!-- SECTION:FINAL_SUMMARY:END -->
