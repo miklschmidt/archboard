@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 03:44'
+updated_date: '2026-09-01 04:50'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -151,6 +151,24 @@ Own the one production composition root in the canvas server. It instantiates ev
 28. Keep module tests on module-root contracts and add focused regressions for each reachable race, poisoned reload slot, nested or prototype retention path, and media readiness state. Remove the fake module proof that overstates production coverage.
 
 29. Run only the requested focused capped owners, both TypeScript projects, lint, format, inventory, boundary, and diff checks; append evidence through Backlog CLI, keep TASK-143.01.14 In Progress with AC unchecked, commit above f01cc33a, verify the protected hash, and callback the parent.
+
+30. Establish a replacement socket in the gateway at WebSocket acceptance, before any prior instance can close, and prove the no-request reconnect race.
+
+31. Bind every ordinary approval family to the exact browser link lifecycle and settle browser disconnect, child exit, and shutdown exactly once without disturbing release, transfer, expiry, or link changes.
+
+32. Capture settled semantic input from the thread-context controller current exact pane binding and reject stale or cleared bindings instead of selecting focus.
+
+33. Publish fresh lifecycle and gateway-facing callable identities from each source generation while retaining only reviewed stable process ports.
+
+34. Split browser WebSocket/media ownership out of codex-realtime and guard every post-await media write by exact run identity.
+
+35. Harden retained-state structural validation against prototype spoofing, intrinsic mutation, and nested or attached methods.
+
+36. Make the cross-module system owner fail-safe from its first acquisition and extend the real server proof across all production seams named by review.
+
+37. Run focused public-boundary owners and repository checks without repeating the documented OOM aggregates; record any unavailable prerequisites explicitly.
+
+38. Re-review the complete remediation diff, preserve the protected artifact hash, commit on the rejected head, and send the parent a finding-by-finding callback.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -197,4 +215,12 @@ The browser media owner moved into src/ui/codex-realtime/lib behind the sole rev
 Cross-module WebSocket proof moved to tests/system. One system owner crosses real WebSocket framing, gateway, approval broker, at-most-once approval response, replacement, media handshake, realtime start/append/stop, and terminal cleanup. A second starts src/server.ts and proves overlapping application sockets preserve pane/selection/hold/gateway authority through stale close and retire them on exact close. The existing real bun --hot owner now proves connect/claim/reload/renew on the retained application socket.
 
 Validation under named systemd user scopes with MemoryMax=6G and MemorySwapMax=1G: final lint 0 warnings/errors; oxfmt check passes; both TypeScript projects pass; focused behavioral/system lane 64 pass / 0 fail / 314 assertions; hot reload 4 pass / 0 fail; inventory 39 pass / 0 fail; isolated deep-import/test-owner boundary 1 pass / 0 fail; isolated realtime sole-entrypoint contract 1 pass / 0 fail. The aggregate boundary owner and the isolated realtime dependency-graph and real module-scope owners were attempted but OOM-killed at the fixed cgroup ceiling, so no pass is claimed for those aggregates. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Status remains In Progress and all AC remain unchecked for parent review.
+
+Fresh rejection remediation above 4d24d3ba closes all nine review findings. Replacement socket authority transfers at acceptance before the retired close. All seven ordinary approval families cancel once on exact browser, child, or host teardown. Semantic capture uses only the controller current exact pane. Reload publishes new lifecycle callable identities over the reviewed stable lifecycle port. Browser media is a separate codex-workbench-media module with exact-run guards after asynchronous boundaries, leaving codex-realtime policy unchanged. Retained-state policy rejects spoofed callable prototypes, intrinsic mutations, and attached values. The actual src/server.ts production owner now proves initialization, epoch/coordinator readiness, pre-request reconnect, gateway decoder, lease release/reacquire, exact same-board semantic context, real ordinary and dynamic approvals with one response each, media ready/unavailable, dynamic thread creation, child exit, and terminal gateway cleanup. System cleanup is registered before first acquisition. Validation: focused module/runtime lane 108 pass, 0 fail, 718 assertions; actual production server owner 1 pass, 0 fail, 29 assertions; application WebSocket system owners 2 pass, 0 fail, 23 assertions; lint, formatting check, both TypeScript projects, frontend build, test inventory, diff check, and restored realtime boundary byte comparison pass. The realtime dependency-graph policy aggregate was attempted under the required 6 GiB memory and 1 GiB swap scope and OOM-killed after its first two assertions; its source is byte-identical to f01cc33a and no aggregate pass is claimed. Protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Status remains In Progress and every AC remains unchecked for parent rereview.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Remediation for the nine rejected gateway lifecycle findings is implemented and directly verified through the actual production server, focused public contracts, and application WebSocket owners; task lifecycle remains In Progress pending parent rereview.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createHarness, flushStreams, type FakeChild } from "./fake-child.js";
+import { captureRejection, createHarness, flushStreams, type FakeChild } from "./fake-child.js";
 
 function expectChildDisposed(child: FakeChild): void {
 	expect(child.stdin.destroyed).toBeTrue();
@@ -54,5 +54,29 @@ describe("Codex app-server test transport cleanup", () => {
 		await write;
 		expect(harness.child.stdin.finalizations).toBe(1);
 		expect(harness.child.stdin.writableLength).toBe(0);
+	});
+
+	test("emits one terminal exit when stdout ends before the child exit event", async () => {
+		const { child, transport, close } = createHarness();
+		try {
+			const exits: unknown[] = [];
+			transport.onExit((event) => exits.push(event));
+			const pending = transport.request("turn/steer", {});
+			child.stdout.end();
+			expect(await captureRejection(pending)).toMatchObject({
+				reason: "stdout-error",
+				outcome: "outcome_unknown",
+				accepted: true,
+			});
+			await flushStreams();
+			expect(exits).toHaveLength(1);
+			expect(exits[0]).toMatchObject({ code: null, signal: null });
+			child.exit(17, "SIGTERM");
+			await flushStreams();
+			expect(exits).toHaveLength(1);
+			expect(transport.inspect().state).toBe("closed");
+		} finally {
+			await close();
+		}
 	});
 });

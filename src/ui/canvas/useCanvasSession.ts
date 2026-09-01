@@ -76,7 +76,7 @@ import type { WorkbenchTakeBackResult } from "../workbench-board-status/contract
 import {
 	createBrowserWorkbenchMediaOwner,
 	type BrowserWorkbenchMediaOwner,
-} from "../codex-realtime";
+} from "../codex-workbench-media";
 
 // Messages that say what is on a board, as opposed to messages about the board.
 // A pane that must send a full report ignores the first kind and acts on the

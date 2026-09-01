@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 
 import { createBrowserWorkbenchMediaOwner } from "../index.js";
-import { FakeBrowser, restoreFakeBrowsers } from "./support/media-session-fakes.js";
+import { FakeBrowser, restoreFakeBrowsers } from "./support/browser-media-fake.js";
 
 class FakeSocket extends EventTarget {
 	readonly sent: unknown[] = [];
@@ -87,6 +87,34 @@ function mediaSocket() {
 		};
 	});
 	return { socket, mediaReady };
+}
+
+async function waitForSent(socket: FakeSocket, action: string): Promise<Record<string, unknown>> {
+	for (let attempt = 0; attempt < 50; attempt += 1) {
+		const request = socket.sent.find(
+			(candidate) => (candidate as Record<string, unknown>).action === action,
+		) as Record<string, unknown> | undefined;
+		if (request !== undefined) return request;
+		await Bun.sleep(1);
+	}
+	throw new Error(`The socket did not send ${action}.`);
+}
+
+function reply(
+	socket: FakeSocket,
+	request: Record<string, unknown>,
+	input: { readonly ok: boolean; readonly value?: unknown; readonly error?: string },
+): void {
+	socket.dispatchEvent(
+		new MessageEvent("message", {
+			data: JSON.stringify({
+				type: "codex_workbench_result",
+				requestId: request.requestId,
+				action: request.action,
+				...input,
+			}),
+		}),
+	);
 }
 
 afterEach(restoreFakeBrowsers);
@@ -197,6 +225,108 @@ test("socket replacement disposes browser media before adopting the new socket",
 		"mediaReady",
 	]);
 	await owner.dispose();
+});
+
+test("overlapping attach ignores the replaced run's late success and rejection", async () => {
+	for (const late of [
+		{ ok: true, value: { kind: "snapshot", sequence: 1, snapshot: {} } },
+		{ ok: false, error: "late refusal" },
+	] as const) {
+		const owner = createBrowserWorkbenchMediaOwner();
+		const first = new FakeSocket(() => undefined);
+		const replacement = new FakeSocket(unavailableResponse);
+		try {
+			const firstAttach = owner.attach(first as unknown as WebSocket);
+			const firstConnect = await waitForSent(first, "connect");
+			const replacementAttach = owner.attach(replacement as unknown as WebSocket);
+			reply(first, firstConnect, late);
+			await Promise.all([firstAttach, replacementAttach]);
+			expect(owner.state()).toMatchObject({
+				state: "unavailable",
+				reason: "media_api_unavailable",
+			});
+		} finally {
+			await owner.dispose();
+		}
+	}
+});
+
+test("an overlapping start cannot overwrite the replacement socket state", async () => {
+	const environment = new FakeBrowser();
+	const documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, "document");
+	Object.defineProperty(globalThis, "document", {
+		configurable: true,
+		value: {
+			createElement: () => new FakeAudioElement(),
+			body: { append: () => undefined },
+		},
+	});
+	const snapshot = {
+		threadLink: { state: "executable", threadId: "thread-overlap" },
+		voice: { state: "ready" },
+	};
+	let lease = 0;
+	const first = new FakeSocket((request) => {
+		if (request.action === "command") return undefined;
+		if (request.action === "claimLease") {
+			lease += 1;
+			return {
+				type: "codex_workbench_result",
+				requestId: request.requestId,
+				action: request.action,
+				ok: true,
+				value: {
+					kind: "command_lease",
+					commandId: `overlap-${lease}`,
+					paneId: "pane-overlap",
+					childId: "child-overlap",
+					epoch: "epoch-overlap",
+					state: "active",
+					expiresAtMs: 999_999,
+				},
+			};
+		}
+		return {
+			type: "codex_workbench_result",
+			requestId: request.requestId,
+			action: request.action,
+			ok: true,
+			value: { kind: "snapshot", sequence: 1, snapshot },
+		};
+	});
+	const replacement = new FakeSocket(unavailableResponse);
+	const owner = createBrowserWorkbenchMediaOwner();
+	try {
+		await owner.attach(first as unknown as WebSocket);
+		const starting = owner.start();
+		const command = await waitForSent(first, "command");
+		await owner.attach(replacement as unknown as WebSocket);
+		reply(first, command, {
+			ok: true,
+			value: {
+				kind: "command_result",
+				outcome: "delivered",
+				snapshot,
+				realtimeSessionHandle: "overlap-1",
+				realtimeAnswer: {
+					sessionId: "overlap-1",
+					correlationId: "overlap-1",
+					sdp: "v=0\r\na=late-answer",
+				},
+			},
+		});
+		const startFailure = await starting.then(
+			() => null,
+			(error: unknown) => error,
+		);
+		expect(startFailure).toBeInstanceOf(Error);
+		expect(owner.state()).toEqual({ state: "ready" });
+	} finally {
+		await owner.dispose();
+		environment.restore();
+		if (documentDescriptor) Object.defineProperty(globalThis, "document", documentDescriptor);
+		else Reflect.deleteProperty(globalThis, "document");
+	}
 });
 
 test("a failed socket subscription leaves no run and a later socket can recover", async () => {

@@ -8,7 +8,26 @@ import {
 	createCanvasCanonicalTextActions,
 	createCanvasDynamicOperationIdAdapter,
 	createCanvasThreadLinkActions,
+	requireExactSemanticPane,
 } from "../codex-workbench-adapters.js";
+
+test("semantic capture follows the controller pane across same-board focus and rebinds", () => {
+	const panes = [
+		{ paneId: "pane-focused", clientId: "focused", board: "shared", focused: true },
+		{ paneId: "pane-bound", clientId: "bound", board: "shared", focused: false },
+	];
+	const select = (bindingPaneId: string | null, contextBoard = "shared") =>
+		requireExactSemanticPane({
+			bindingPaneId,
+			contextBoard,
+			panes,
+			boardForPane: (pane) => pane.board,
+		});
+	expect(select("pane-bound")).toBe(panes[1]!);
+	expect(select("pane-focused")).toBe(panes[0]!);
+	expect(() => select(null)).toThrow("no current thread-context binding");
+	expect(() => select("pane-bound", "stale-board")).toThrow("does not own board stale-board");
+});
 
 test("the production dynamic authority token issuer retires exact opaque capabilities", () => {
 	const issuer = createDynamicAuthorityTokenIssuer();

@@ -1,4 +1,7 @@
-export { createCanvasBrowserGatewayOptions } from "./lib/codex-workbench-browser-gateway.js";
+export {
+	createCanvasBrowserGatewayOptions,
+	createCanvasOrdinaryApprovalActions,
+} from "./lib/codex-workbench-browser-gateway.js";
 export type { CanvasBrowserBindingState } from "./lib/codex-workbench-browser-gateway.js";
 export { createCanvasDynamicApprovalOwner } from "./lib/codex-workbench-approvals.js";
 export type {
@@ -20,6 +23,7 @@ export type {
 } from "./lib/codex-workbench-operation-lifecycle.js";
 export { createCanvasCanonicalTextActions } from "./lib/codex-workbench-text-actions.js";
 export { createCanvasRealtimeActions } from "./lib/codex-workbench-realtime-actions.js";
+export { requireExactSemanticPane } from "./lib/codex-workbench-semantic-pane.js";
 export {
 	bindThreadContextToReadyWorkhorse,
 	clearCanvasThreadContextForLease,

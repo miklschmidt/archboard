@@ -247,14 +247,30 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		shutdownTimer = undefined;
 		resolve();
 	};
+	const emitExitOnce = (code: number | null, signal: NodeJS.Signals | null): void => {
+		if (exitEmitted) return;
+		exitEmitted = true;
+		events.emitExit(
+			Object.freeze({
+				child: identity.validator.childId,
+				epoch: identity.validator.epoch,
+				code,
+				signal,
+			}),
+		);
+	};
 
 	const closeTransport = (
 		reason: Extract<
 			CodexRequestFailureReason,
 			"child-exit" | "stdout-error" | "write-error" | "shutdown" | "frame-too-large"
 		>,
+		exit?: { readonly code: number | null; readonly signal: NodeJS.Signals | null },
 	): void => {
-		if (state === "closed") return;
+		if (state === "closed") {
+			if (exit !== undefined) emitExitOnce(exit.code, exit.signal);
+			return;
+		}
 		state = "closed";
 		if (shutdownTimer !== undefined) clearTimeout(shutdownTimer);
 		shutdownTimer = undefined;
@@ -273,6 +289,8 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		pendingReverseBytes = 0;
 		clearEpochRetention();
 		resolveShutdownIfWaiting();
+		if (reason !== "shutdown" || exit !== undefined)
+			emitExitOnce(exit?.code ?? null, exit?.signal ?? null);
 	};
 
 	const finishShutdown = (): void => {
@@ -377,18 +395,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		closeTransport("child-exit");
 	};
 	const onChildExit = (code: number | null, signal: NodeJS.Signals | null): void => {
-		if (state === "closed") return;
-		closeTransport(state === "closing" ? "shutdown" : "child-exit");
-		if (exitEmitted) return;
-		exitEmitted = true;
-		events.emitExit(
-			Object.freeze({
-				child: identity.validator.childId,
-				epoch: identity.validator.epoch,
-				code,
-				signal,
-			}),
-		);
+		closeTransport(state === "closing" ? "shutdown" : "child-exit", { code, signal });
 	};
 
 	writer = createFrameWriter(
