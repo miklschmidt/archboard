@@ -36,6 +36,7 @@ const RUNTIME_KEYS = Object.freeze([
 	"sessionInitialized",
 	"accountReady",
 	"released",
+	"exit",
 ] satisfies readonly (keyof CodexWorkbenchOwnerRuntime)[]);
 const TRANSPORT_KEYS = Object.freeze([
 	"replaceIdentity",
@@ -226,6 +227,33 @@ export function assertCodexWorkbenchRetainedState(retained: CodexWorkbenchRetain
 				"invalid_retained_state",
 				"The retained Codex coordination state contains a hidden descendant.",
 			);
+	assertPlainRecord(runtime.exit, "The retained Codex child-exit observer");
+	exactOwnKeys(
+		runtime.exit,
+		["event", "listener", "unsubscribe"],
+		"The retained Codex child-exit observer",
+	);
+	assertStableFunction(runtime.exit.listener, "The retained Codex child-exit listener");
+	if (runtime.exit.unsubscribe !== null)
+		assertStableFunction(runtime.exit.unsubscribe, "The retained Codex child-exit disposer");
+	if (runtime.exit.event !== null) {
+		assertPlainRecord(runtime.exit.event, "The retained Codex child-exit event");
+		exactOwnKeys(
+			runtime.exit.event,
+			["child", "epoch", "code", "signal"],
+			"The retained Codex child-exit event",
+		);
+		if (
+			typeof runtime.exit.event.child !== "string" ||
+			typeof runtime.exit.event.epoch !== "string" ||
+			(runtime.exit.event.code !== null && !Number.isSafeInteger(runtime.exit.event.code)) ||
+			(runtime.exit.event.signal !== null && typeof runtime.exit.event.signal !== "string")
+		)
+			throw new CodexWorkbenchCompositionError(
+				"invalid_retained_state",
+				"The retained Codex child-exit event contains a hidden descendant.",
+			);
+	}
 	assertIdentityLedger(runtime);
 	if (runtime.transport !== null)
 		assertCallableRecord(runtime.transport, TRANSPORT_KEYS, "The retained Codex transport handle");

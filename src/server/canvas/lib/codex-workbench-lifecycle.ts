@@ -37,6 +37,7 @@ export const CODEX_WORKBENCH_OWNER = "archboard-canvas-codex-workbench" as const
 
 export type CodexWorkbenchState = "idle" | "starting" | "ready" | "stopping" | "failed";
 export type CodexWorkbenchStopReason = "reload" | "shutdown" | "child_exit";
+type CodexTransportExit = Parameters<Parameters<CodexTransport["onExit"]>[0]>[0];
 
 export interface CodexWorkbenchSnapshot {
 	readonly owner: typeof CODEX_WORKBENCH_OWNER;
@@ -97,7 +98,6 @@ export interface CodexWorkbenchGenerationHooks {
 interface GenerationRegistrations {
 	transportRequest: (() => void) | null;
 	transportNotification: (() => void) | null;
-	transportExit: (() => void) | null;
 	lifecycleSignals: (() => void) | null;
 	browserGateway: (() => void) | null;
 	approvalProjection: (() => void) | null;
@@ -107,8 +107,7 @@ interface GenerationState {
 	readonly components: CodexWorkbenchComponents;
 	readonly owners: CodexWorkbenchRequestOwners;
 	readonly hooks: CodexWorkbenchGenerationHooks;
-	readonly onChildExitStart: () => void;
-	readonly onChildExitFinished: (failure: Error | null) => Promise<void> | void;
+	readonly assertActivationCurrent: () => void;
 	registrations: GenerationRegistrations;
 	active: boolean;
 	initialized: boolean;
@@ -116,7 +115,7 @@ interface GenerationState {
 	stopPromise: Promise<void> | null;
 	stopComplete: boolean;
 	finishComplete: boolean;
-	readonly pendingChildSettlements: Set<Promise<unknown>>;
+	childSettlement: Promise<void> | null;
 }
 
 export interface CodexWorkbenchGeneration {
@@ -126,6 +125,7 @@ export interface CodexWorkbenchGeneration {
 	readonly gateway: CodexWorkbenchGateway;
 	readonly activate: () => Promise<void>;
 	readonly deactivate: () => void;
+	readonly retireChild: (exit: CodexTransportExit) => Promise<void>;
 	readonly stop: (reason: CodexWorkbenchStopReason) => Promise<void>;
 	readonly finishStop: () => void;
 }
@@ -134,8 +134,7 @@ export interface CreateCodexWorkbenchGenerationLifecycleOptions {
 	readonly components: CodexWorkbenchComponents;
 	readonly identityLedger: IdentityLedger;
 	readonly hooks: CodexWorkbenchGenerationHooks;
-	readonly onChildExitStart: () => void;
-	readonly onChildExitFinished: (failure: Error | null) => Promise<void> | void;
+	readonly assertActivationCurrent: () => void;
 }
 
 class GenerationInstallError extends Error {
@@ -172,7 +171,6 @@ function emptyRegistrations(): GenerationRegistrations {
 	return {
 		transportRequest: null,
 		transportNotification: null,
-		transportExit: null,
 		lifecycleSignals: null,
 		browserGateway: null,
 		approvalProjection: null,
@@ -193,14 +191,6 @@ function releaseRegistrations(registrations: GenerationRegistrations, label: str
 		}
 	}
 	return failure;
-}
-
-function trackSettlement(state: GenerationState, promise: Promise<unknown>): void {
-	state.pendingChildSettlements.add(promise);
-	void promise.then(
-		() => state.pendingChildSettlements.delete(promise),
-		() => state.pendingChildSettlements.delete(promise),
-	);
 }
 
 async function settleChildExit(
@@ -231,7 +221,6 @@ function installRegistrations(
 	state: GenerationState,
 	router: CodexWorkbenchRequestRouter,
 	onNotification: Parameters<CodexTransport["onServerNotification"]>[0],
-	onExit: Parameters<CodexTransport["onExit"]>[0],
 ): GenerationRegistrations {
 	const registrations = emptyRegistrations();
 	let stage = "transportRequest";
@@ -240,8 +229,6 @@ function installRegistrations(
 		stage = "transportNotification";
 		registrations.transportNotification =
 			state.components.transport.onServerNotification(onNotification);
-		stage = "transportExit";
-		registrations.transportExit = state.components.transport.onExit(onExit);
 		stage = "threadContext";
 		state.components.semanticDelivery.replaceHooks(state.hooks.threadContext);
 		stage = "identityDecoders";
@@ -278,8 +265,7 @@ export function createCodexWorkbenchGenerationLifecycle(
 		components,
 		owners,
 		hooks: options.hooks,
-		onChildExitStart: options.onChildExitStart,
-		onChildExitFinished: options.onChildExitFinished,
+		assertActivationCurrent: options.assertActivationCurrent,
 		registrations: emptyRegistrations(),
 		active: false,
 		initialized: false,
@@ -287,7 +273,7 @@ export function createCodexWorkbenchGenerationLifecycle(
 		stopPromise: null,
 		stopComplete: false,
 		finishComplete: false,
-		pendingChildSettlements: new Set(),
+		childSettlement: null,
 	};
 
 	const onNotification: Parameters<CodexTransport["onServerNotification"]>[0] = (event) => {
@@ -304,30 +290,6 @@ export function createCodexWorkbenchGenerationLifecycle(
 			router.route(request);
 		},
 	};
-	const onExit: Parameters<CodexTransport["onExit"]>[0] = ({ child, epoch }) => {
-		if (!state.active || state.stopped) return;
-		state.onChildExitStart();
-		const settlement = settleChildExit(state, child, epoch);
-		trackSettlement(state, settlement);
-		const retirement = (async (): Promise<void> => {
-			let failure: Error | null = null;
-			for (const operation of [() => settlement, () => stop("child_exit"), () => finishStop()]) {
-				try {
-					await Promise.resolve(operation());
-				} catch (error) {
-					failure = appendFailure(failure, error, "Codex child retirement failed.");
-				}
-			}
-			try {
-				await state.onChildExitFinished(failure);
-			} catch (error) {
-				failure = appendFailure(failure, error, "Codex child retirement failed.");
-			}
-			if (failure !== null) throw failure;
-		})();
-		void retirement.catch(() => undefined);
-	};
-
 	const deactivate = (): void => {
 		state.active = false;
 		const registrations = state.registrations;
@@ -336,17 +298,24 @@ export function createCodexWorkbenchGenerationLifecycle(
 		if (failure !== null) throw failure;
 	};
 	const activate = async (): Promise<void> => {
+		state.assertActivationCurrent();
 		if (state.stopped)
 			throw new CodexWorkbenchCompositionError(
 				"not_started",
 				"A retired Codex generation cannot be activated.",
 			);
 		if (state.active) return;
-		state.registrations = installRegistrations(state, activeRouter, onNotification, onExit);
+		state.registrations = installRegistrations(state, activeRouter, onNotification);
 		state.active = true;
 		if (state.initialized) return;
 		try {
 			await state.hooks.initializeSession(components.session, components);
+			state.assertActivationCurrent();
+			if (state.stopped)
+				throw new CodexWorkbenchCompositionError(
+					"not_started",
+					"A retired Codex generation cannot publish initialized readiness.",
+				);
 			state.initialized = true;
 		} catch (error) {
 			let failure: Error = error instanceof Error ? error : new Error(String(error));
@@ -357,6 +326,12 @@ export function createCodexWorkbenchGenerationLifecycle(
 			}
 			throw failure;
 		}
+	};
+	const retireChild = (exit: CodexTransportExit): Promise<void> => {
+		if (state.childSettlement !== null) return state.childSettlement;
+		const settlement = settleChildExit(state, exit.child, exit.epoch);
+		state.childSettlement = settlement;
+		return settlement;
 	};
 
 	const stop = (reason: CodexWorkbenchStopReason): Promise<void> => {
@@ -383,6 +358,8 @@ export function createCodexWorkbenchGenerationLifecycle(
 					failure = appendFailure(failure, error, "Codex workbench shutdown failed.");
 				}
 			};
+			const childSettlement = state.childSettlement;
+			if (reason === "child_exit" && childSettlement !== null) await attempt(() => childSettlement);
 			await attempt(() => state.hooks.stopBrowser(components.gateway, reason));
 			await attempt(() => state.hooks.stopRealtime(components.realtime));
 			await attempt(() => components.realtime.dispose());
@@ -397,8 +374,7 @@ export function createCodexWorkbenchGenerationLifecycle(
 			await attempt(() => components.coordinatorTools.dispose());
 			await attempt(() => components.dynamicTools.dispose());
 			if (reason === "shutdown") await attempt(() => components.transport.shutdown());
-			if (reason !== "reload")
-				await attempt(() => Promise.allSettled(Array.from(state.pendingChildSettlements)));
+			if (reason === "shutdown" && childSettlement !== null) await attempt(() => childSettlement);
 			if (failure !== null) throw failure;
 		})().finally(() => {
 			state.stopPromise = null;
@@ -429,6 +405,7 @@ export function createCodexWorkbenchGenerationLifecycle(
 		gateway: components.gateway,
 		activate,
 		deactivate,
+		retireChild,
 		stop,
 		finishStop,
 	});
@@ -445,9 +422,8 @@ export interface CodexWorkbenchGenerationInput {
 	readonly process: CodexProcess;
 	readonly kernel: CodexWorkbenchStableKernel | null;
 	readonly adoptedSession: "login-capable" | "thread-capable" | null;
+	readonly assertActivationCurrent: () => void;
 	readonly markSessionReady: (accountReady: boolean) => void;
-	readonly onChildExitStart: () => void;
-	readonly onChildExitFinished: (failure: Error | null) => Promise<void>;
 }
 
 export type CodexWorkbenchGenerationFactory = (
@@ -471,6 +447,12 @@ export interface CodexWorkbenchOwner {
 
 export type CodexWorkbenchOwnerSlots = CodexWorkbenchOwner;
 
+interface CodexWorkbenchExitObserver {
+	event: CodexTransportExit | null;
+	readonly listener: Parameters<CodexTransport["onExit"]>[0];
+	unsubscribe: (() => void) | null;
+}
+
 export interface CodexWorkbenchOwnerRuntime {
 	readonly process: CodexProcess;
 	identityLedger: IdentityLedger | null;
@@ -479,6 +461,7 @@ export interface CodexWorkbenchOwnerRuntime {
 	sessionInitialized: boolean;
 	accountReady: boolean;
 	released: boolean;
+	readonly exit: CodexWorkbenchExitObserver;
 }
 
 export interface CodexWorkbenchRetainedControl {
@@ -593,25 +576,6 @@ function releaseRegistration(
 	retained.control.runtime = null;
 }
 
-async function cleanupGeneration(
-	generation: CodexWorkbenchGeneration | null,
-	reason: CodexWorkbenchStopReason,
-): Promise<Error | null> {
-	if (generation === null) return null;
-	let failure: Error | null = null;
-	try {
-		await generation.stop(reason);
-	} catch (error) {
-		failure = appendFailure(failure, error, "Codex graph shutdown failed.");
-	}
-	try {
-		generation.finishStop();
-	} catch (error) {
-		failure = appendFailure(failure, error, "Codex final listener cleanup failed.");
-	}
-	return failure;
-}
-
 async function stopProcess(runtime: CodexWorkbenchOwnerRuntime): Promise<Error | null> {
 	try {
 		await runtime.process.stop();
@@ -626,14 +590,164 @@ interface CandidateReadiness {
 	accountReady: boolean;
 }
 
+type LifecycleTransactionPhase =
+	| "starting"
+	| "candidate_activation"
+	| "candidate_cleanup"
+	| "old_cleanup"
+	| "rollback_activation"
+	| "committed"
+	| "invalidated";
+
+interface LifecycleTransaction {
+	readonly ticket: number;
+	readonly child: CodexProcessChild;
+	phase: LifecycleTransactionPhase;
+	transport: CodexTransport | null;
+}
+
+interface GenerationResource {
+	readonly generation: CodexWorkbenchGeneration;
+	cleanup: Promise<Error | null> | null;
+}
+
+interface OwnerLocalState {
+	currentGeneration: CodexWorkbenchGeneration | null;
+	transaction: LifecycleTransaction | null;
+	readonly resources: Map<CodexWorkbenchGeneration, GenerationResource>;
+	readonly cleanupHistory: WeakMap<CodexWorkbenchGeneration, Promise<Error | null>>;
+	startPromise: Promise<CodexWorkbenchSnapshot> | null;
+	shutdownPromise: Promise<CodexWorkbenchSnapshot> | null;
+}
+
+function ownsProcessChild(process: CodexProcess, child: CodexProcessChild): boolean {
+	const current = process.currentChild();
+	return (
+		current !== null &&
+		current.pid === child.pid &&
+		current.stdin === child.stdin &&
+		current.stdout === child.stdout &&
+		current.stderr === child.stderr
+	);
+}
+
+function ownsTransaction(
+	retained: CodexWorkbenchRetainedState,
+	runtime: CodexWorkbenchOwnerRuntime,
+	local: OwnerLocalState,
+	transaction: LifecycleTransaction,
+): boolean {
+	if (
+		local.transaction !== transaction ||
+		transaction.phase === "invalidated" ||
+		transaction.phase === "committed" ||
+		!ownsTicket(retained, runtime, transaction.ticket) ||
+		retained.state !== "starting" ||
+		runtime.exit.event !== null ||
+		!ownsProcessChild(runtime.process, transaction.child)
+	)
+		return false;
+	const transport = transaction.transport;
+	if (transport === null) return true;
+	try {
+		return transport.inspect().state === "open";
+	} catch {
+		return false;
+	}
+}
+
+function assertTransaction(
+	retained: CodexWorkbenchRetainedState,
+	runtime: CodexWorkbenchOwnerRuntime,
+	local: OwnerLocalState,
+	transaction: LifecycleTransaction,
+	message: string,
+): void {
+	if (!ownsTransaction(retained, runtime, local, transaction))
+		throw new CodexWorkbenchCompositionError("not_started", message);
+}
+
+function invalidateTransaction(local: OwnerLocalState): void {
+	if (local.transaction !== null) local.transaction.phase = "invalidated";
+	local.transaction = null;
+}
+
+function ownGeneration(
+	local: OwnerLocalState,
+	generation: CodexWorkbenchGeneration,
+): GenerationResource {
+	const existing = local.resources.get(generation);
+	if (existing !== undefined) return existing;
+	const resource: GenerationResource = { generation, cleanup: null };
+	local.resources.set(generation, resource);
+	return resource;
+}
+
+function beginGenerationCleanup(
+	local: OwnerLocalState,
+	generation: CodexWorkbenchGeneration,
+	reason: CodexWorkbenchStopReason,
+): Promise<Error | null> {
+	const completed = local.cleanupHistory.get(generation);
+	if (completed !== undefined) return completed;
+	const resource = ownGeneration(local, generation);
+	if (resource.cleanup !== null) return resource.cleanup;
+	let stop: Promise<void>;
+	try {
+		stop = generation.stop(reason);
+	} catch (error) {
+		stop = Promise.reject(error);
+	}
+	const cleanup = (async (): Promise<Error | null> => {
+		let failure: Error | null = null;
+		try {
+			await stop;
+		} catch (error) {
+			failure = appendFailure(failure, error, "Codex graph shutdown failed.");
+		}
+		try {
+			generation.finishStop();
+		} catch (error) {
+			failure = appendFailure(failure, error, "Codex final listener cleanup failed.");
+		}
+		local.resources.delete(generation);
+		return failure;
+	})();
+	resource.cleanup = cleanup;
+	local.cleanupHistory.set(generation, cleanup);
+	return cleanup;
+}
+
+function detachExitObserver(runtime: CodexWorkbenchOwnerRuntime): Error | null {
+	const unsubscribe = runtime.exit.unsubscribe;
+	runtime.exit.unsubscribe = null;
+	if (unsubscribe === null) return null;
+	try {
+		unsubscribe();
+		return null;
+	} catch (error) {
+		return error instanceof Error ? error : new Error(String(error));
+	}
+}
+
+function attachExitObserver(runtime: CodexWorkbenchOwnerRuntime, transport: CodexTransport): void {
+	if (runtime.transport !== transport)
+		throw new CodexWorkbenchCompositionError(
+			"startup_failed",
+			"The retained child-exit observer does not own the candidate transport.",
+		);
+	if (runtime.exit.unsubscribe !== null) return;
+	runtime.exit.unsubscribe = transport.onExit(runtime.exit.listener);
+}
+
 function generationInput(
 	retained: CodexWorkbenchRetainedState,
 	runtime: CodexWorkbenchOwnerRuntime,
-	ticket: number,
+	local: OwnerLocalState,
+	transaction: LifecycleTransaction,
 	generation: number,
 	child: CodexProcessChild,
 	readiness: CandidateReadiness,
-	onRetire: (failure: Error | null) => Promise<void>,
 ): CodexWorkbenchGenerationInput {
 	const kernel =
 		runtime.identityLedger === null || runtime.transport === null
@@ -649,75 +763,62 @@ function generationInput(
 				? "thread-capable"
 				: "login-capable"
 			: null,
+		assertActivationCurrent: () =>
+			assertTransaction(
+				retained,
+				runtime,
+				local,
+				transaction,
+				"A retired Codex activation cannot mutate production readiness.",
+			),
 		markSessionReady: (accountReady: boolean) => {
+			assertTransaction(
+				retained,
+				runtime,
+				local,
+				transaction,
+				"A retired Codex activation cannot publish session readiness.",
+			);
 			readiness.initialized = true;
 			readiness.accountReady = accountReady;
 		},
-		onChildExitStart: () => {
-			if (!ownsTicket(retained, runtime, ticket)) return;
-			reserveTicket(runtime);
-			revokePublicDispatch(retained, runtime);
-			retained.state = "stopping";
-		},
-		onChildExitFinished: onRetire,
 	});
-}
-
-async function finishChildRetirement(
-	retained: CodexWorkbenchRetainedState,
-	runtime: CodexWorkbenchOwnerRuntime,
-	priorFailure: Error | null,
-): Promise<void> {
-	let failure = priorFailure;
-	const processFailure = await stopProcess(runtime);
-	if (processFailure !== null)
-		failure = appendFailure(failure, processFailure, "Codex child-exit process cleanup failed.");
-	releaseRegistration(
-		retained,
-		runtime,
-		failure === null ? "idle" : "failed",
-		failure === null ? null : failureMessage(failure),
-	);
-	if (failure !== null) throw failure;
-}
-
-interface OwnerLocalState {
-	currentGeneration: CodexWorkbenchGeneration | null;
-	startPromise: Promise<CodexWorkbenchSnapshot> | null;
-	shutdownPromise: Promise<CodexWorkbenchSnapshot> | null;
 }
 
 function terminalShutdown(
 	retained: CodexWorkbenchRetainedState,
 	runtime: CodexWorkbenchOwnerRuntime,
 	local: OwnerLocalState,
+	priorFailure: Error | null = null,
 ): Promise<CodexWorkbenchSnapshot> {
 	if (local.shutdownPromise !== null) return local.shutdownPromise;
 	reserveTicket(runtime);
+	invalidateTransaction(local);
 	revokePublicDispatch(retained, runtime);
 	if (isCurrentRuntime(retained, runtime)) retained.state = "stopping";
-	const generation = local.currentGeneration;
+	let synchronousFailure = priorFailure;
+	const observerFailure = detachExitObserver(runtime);
+	if (observerFailure !== null)
+		synchronousFailure = appendFailure(
+			synchronousFailure,
+			observerFailure,
+			"Codex child-exit observer cleanup failed.",
+		);
 	local.currentGeneration = null;
-	// stop() revokes route, notification, exit, and hook registrations before
-	// returning its first promise.
-	const graphStop = generation?.stop("shutdown") ?? Promise.resolve();
+	// Each stop call revokes one graph before this function reaches its first await.
+	const graphCleanups = Array.from(local.resources.keys(), (generation) =>
+		beginGenerationCleanup(local, generation, "shutdown"),
+	);
 	const operation = (async (): Promise<CodexWorkbenchSnapshot> => {
-		let failure: Error | null = null;
-		try {
-			await graphStop;
-		} catch (error) {
-			failure = appendFailure(failure, error, "Codex graph shutdown failed.");
+		let failure = synchronousFailure;
+		for (const cleanup of graphCleanups) {
+			const cleanupFailure = await cleanup;
+			if (cleanupFailure !== null)
+				failure = appendFailure(failure, cleanupFailure, "Codex graph shutdown failed.");
 		}
 		const processFailure = await stopProcess(runtime);
 		if (processFailure !== null)
 			failure = appendFailure(failure, processFailure, "Codex process shutdown failed.");
-		if (generation !== null) {
-			try {
-				generation.finishStop();
-			} catch (error) {
-				failure = appendFailure(failure, error, "Codex final listener cleanup failed.");
-			}
-		}
 		releaseRegistration(
 			retained,
 			runtime,
@@ -732,10 +833,73 @@ function terminalShutdown(
 			);
 		return snapshot(retained, runtime);
 	})().finally(() => {
+		synchronousFailure = null;
 		local.shutdownPromise = null;
 	});
 	local.shutdownPromise = operation;
 	return operation;
+}
+
+function observeChildExit(
+	retained: CodexWorkbenchRetainedState,
+	runtime: CodexWorkbenchOwnerRuntime,
+	local: OwnerLocalState,
+	exit: CodexTransportExit,
+): void {
+	if (!isCurrentRuntime(retained, runtime) || runtime.exit.event !== null) return;
+	const ledger = runtime.identityLedger;
+	if (ledger === null || exit.child !== ledger.childId || exit.epoch !== ledger.epoch) return;
+	runtime.exit.event = Object.freeze({ ...exit });
+	reserveTicket(runtime);
+	invalidateTransaction(local);
+	revokePublicDispatch(retained, runtime);
+	retained.state = "stopping";
+	let failure = detachExitObserver(runtime);
+	const settlementOwner = local.currentGeneration;
+	local.currentGeneration = null;
+	let settlement: Promise<void> = Promise.resolve();
+	if (settlementOwner !== null) {
+		try {
+			settlement = settlementOwner.retireChild(exit);
+		} catch (error) {
+			settlement = Promise.reject(error);
+		}
+	}
+	const graphCleanups = Array.from(local.resources.keys(), (generation) =>
+		beginGenerationCleanup(local, generation, "child_exit"),
+	);
+	const operation = (async (): Promise<CodexWorkbenchSnapshot> => {
+		try {
+			await settlement;
+		} catch (error) {
+			failure = appendFailure(failure, error, "Codex child settlement failed.");
+		}
+		for (const cleanup of graphCleanups) {
+			const cleanupFailure = await cleanup;
+			if (cleanupFailure !== null)
+				failure = appendFailure(failure, cleanupFailure, "Codex child graph cleanup failed.");
+		}
+		const processFailure = await stopProcess(runtime);
+		if (processFailure !== null)
+			failure = appendFailure(failure, processFailure, "Codex child process cleanup failed.");
+		releaseRegistration(
+			retained,
+			runtime,
+			failure === null ? "idle" : "failed",
+			failure === null ? null : failureMessage(failure),
+		);
+		if (failure !== null)
+			throw new CodexWorkbenchCompositionError(
+				"shutdown_failed",
+				"The exited Codex child did not retire cleanly.",
+				failure,
+			);
+		return snapshot(retained, runtime);
+	})().finally(() => {
+		local.shutdownPromise = null;
+	});
+	local.shutdownPromise = operation;
+	void operation.catch(() => undefined);
 }
 
 function publishReadySlots(
@@ -756,7 +920,21 @@ function publishReadySlots(
 						"The production Codex workbench is not ready for generation replacement.",
 					),
 				);
-			const ticket = reserveTicket(runtime);
+			const child = runtime.process.currentChild();
+			if (child === null)
+				return Promise.reject(
+					new CodexWorkbenchCompositionError(
+						"not_started",
+						"The Codex child disappeared before generation replacement.",
+					),
+				);
+			const transaction: LifecycleTransaction = {
+				ticket: reserveTicket(runtime),
+				child,
+				phase: "starting",
+				transport: runtime.transport,
+			};
+			local.transaction = transaction;
 			const nextNumber = ++retained.generation;
 			retained.state = "starting";
 			let operation!: Promise<CodexWorkbenchSnapshot>;
@@ -780,90 +958,153 @@ function publishReadySlots(
 			}
 			operation = (async (): Promise<CodexWorkbenchSnapshot> => {
 				let candidate: CodexWorkbenchGeneration | null = null;
+				let oldCleanupStarted = false;
 				const readiness: CandidateReadiness = {
 					initialized: runtime.sessionInitialized,
 					accountReady: runtime.accountReady,
 				};
 				try {
 					if (removalFailure !== null) throw removalFailure;
-					const child = runtime.process.currentChild();
-					if (child === null)
-						throw new CodexWorkbenchCompositionError(
-							"not_started",
-							"The Codex child disappeared before generation replacement.",
-						);
 					candidate = await createGeneration(
-						generationInput(retained, runtime, ticket, nextNumber, child, readiness, (failure) =>
-							finishChildRetirement(retained, runtime, failure),
-						),
+						generationInput(retained, runtime, local, transaction, nextNumber, child, readiness),
 					);
-					if (!ownsTicket(retained, runtime, ticket)) {
-						await cleanupGeneration(candidate, "reload");
+					ownGeneration(local, candidate);
+					transaction.transport = candidate.transport;
+					assertTransaction(
+						retained,
+						runtime,
+						local,
+						transaction,
+						"A retired Codex generation cannot activate a replacement.",
+					);
+					if (runtime.transport !== candidate.transport)
 						throw new CodexWorkbenchCompositionError(
-							"not_started",
-							"A retired Codex generation cannot publish replacement readiness.",
+							"reload_failed",
+							"A replacement Codex generation did not reuse the exact retained transport.",
 						);
-					}
+					transaction.phase = "candidate_activation";
 					local.currentGeneration = candidate;
-					try {
-						await candidate.activate();
-					} catch (error) {
-						if (local.currentGeneration === candidate) local.currentGeneration = generation;
-						throw error;
-					}
-					if (!ownsTicket(retained, runtime, ticket)) {
-						await cleanupGeneration(candidate, "reload");
+					await candidate.activate();
+					assertTransaction(
+						retained,
+						runtime,
+						local,
+						transaction,
+						"A retired Codex generation cannot continue replacement activation.",
+					);
+					transaction.phase = "old_cleanup";
+					oldCleanupStarted = true;
+					const oldFailure = await beginGenerationCleanup(local, generation, "reload");
+					assertTransaction(
+						retained,
+						runtime,
+						local,
+						transaction,
+						"A retired Codex reload cannot publish after old-generation cleanup.",
+					);
+					if (oldFailure !== null)
 						throw new CodexWorkbenchCompositionError(
-							"not_started",
-							"A retired Codex generation cannot publish replacement readiness.",
+							"reload_failed",
+							"The retired Codex generation did not clean up completely.",
+							oldFailure,
 						);
-					}
-					const oldFailure = await cleanupGeneration(generation, "reload");
-					if (oldFailure !== null) throw oldFailure;
+					assertTransaction(
+						retained,
+						runtime,
+						local,
+						transaction,
+						"A retired Codex reload cannot publish replacement state.",
+					);
 					runtime.identityLedger = candidate.identityLedger;
 					runtime.transport = candidate.transport;
 					runtime.sessionInitialized = readiness.initialized;
 					runtime.accountReady = readiness.accountReady;
 					retained.state = "ready";
 					retained.failure = null;
+					local.currentGeneration = candidate;
+					transaction.phase = "committed";
+					local.transaction = null;
 					publishReadySlots(retained, runtime, local, candidate);
 					return snapshot(retained, runtime);
 				} catch (error) {
+					let failure = error instanceof Error ? error : new Error(String(error));
 					if (candidate !== null) {
-						await cleanupGeneration(candidate, "reload");
-						if (local.currentGeneration === candidate) local.currentGeneration = generation;
-					}
-					if (ownsTicket(retained, runtime, ticket) && removalFailure === null) {
-						try {
-							runtime.transport?.replaceIdentity(generation.components.identity.identity);
-							await generation.activate();
+						if (ownsTransaction(retained, runtime, local, transaction)) {
+							transaction.phase = "candidate_cleanup";
 							local.currentGeneration = generation;
-							retained.state = "ready";
-							retained.control.current = publishReadySlots(retained, runtime, local, generation);
-						} catch (rollbackError) {
-							const failure = new AggregateError(
-								[error, rollbackError],
-								"Codex generation replacement and rollback both failed.",
-							);
-							await terminalShutdown(retained, runtime, local).catch(() => undefined);
-							throw new CodexWorkbenchCompositionError(
-								"reload_failed",
-								"The production Codex workbench could not replace or restore its generation.",
-								failure,
-							);
 						}
+						const cleanupFailure = await beginGenerationCleanup(local, candidate, "reload");
+						if (cleanupFailure !== null)
+							failure = appendFailure(
+								failure,
+								cleanupFailure,
+								"Codex replacement and candidate cleanup both failed.",
+							);
 					}
-					if (ownsTicket(retained, runtime, ticket) && removalFailure !== null) {
-						await terminalShutdown(retained, runtime, local).catch(() => undefined);
-						retained.state = "failed";
-						retained.failure = failureMessage(removalFailure);
+					if (!ownsTransaction(retained, runtime, local, transaction))
+						throw new CodexWorkbenchCompositionError(
+							"not_started",
+							"A retired Codex reload cannot restore or publish generation state.",
+							failure,
+						);
+					if (removalFailure !== null || oldCleanupStarted || failure instanceof AggregateError) {
+						await terminalShutdown(retained, runtime, local, failure).catch(() => undefined);
 						throw new CodexWorkbenchCompositionError(
 							"reload_failed",
-							"The production Codex workbench could not remove its retired generation cleanly.",
-							removalFailure,
+							"The production Codex workbench could not complete generation replacement.",
+							failure,
 						);
 					}
-					throw error;
+					transaction.phase = "rollback_activation";
+					assertTransaction(
+						retained,
+						runtime,
+						local,
+						transaction,
+						"A retired Codex reload cannot restore transport identity.",
+					);
+					try {
+						runtime.transport?.replaceIdentity(generation.components.identity.identity);
+						assertTransaction(
+							retained,
+							runtime,
+							local,
+							transaction,
+							"A retired Codex reload cannot reactivate its previous generation.",
+						);
+						await generation.activate();
+						assertTransaction(
+							retained,
+							runtime,
+							local,
+							transaction,
+							"A retired Codex rollback cannot publish reactivated state.",
+						);
+						local.currentGeneration = generation;
+						retained.state = "ready";
+						retained.failure = null;
+						transaction.phase = "committed";
+						local.transaction = null;
+						publishReadySlots(retained, runtime, local, generation);
+					} catch (rollbackError) {
+						if (!ownsTransaction(retained, runtime, local, transaction))
+							throw new CodexWorkbenchCompositionError(
+								"not_started",
+								"A retired Codex rollback cannot mutate replacement state.",
+								rollbackError,
+							);
+						failure = new AggregateError(
+							[failure, rollbackError],
+							"Codex generation replacement and rollback both failed.",
+						);
+						await terminalShutdown(retained, runtime, local, failure).catch(() => undefined);
+						throw new CodexWorkbenchCompositionError(
+							"reload_failed",
+							"The production Codex workbench could not replace or restore its generation.",
+							failure,
+						);
+					}
+					throw failure;
 				}
 			})().finally(() => {
 				reloadPromise = null;
@@ -914,7 +1155,21 @@ export function installCodexWorkbenchOwnerLifecycle(
 			error,
 		);
 	}
-	const runtime: CodexWorkbenchOwnerRuntime = {
+	const local: OwnerLocalState = {
+		currentGeneration: null,
+		transaction: null,
+		resources: new Map(),
+		cleanupHistory: new WeakMap(),
+		startPromise: null,
+		shutdownPromise: null,
+	};
+	let runtime!: CodexWorkbenchOwnerRuntime;
+	const exit: CodexWorkbenchExitObserver = {
+		event: null,
+		listener: (event) => observeChildExit(retained, runtime, local, event),
+		unsubscribe: null,
+	};
+	runtime = {
 		process: processOwner,
 		identityLedger: null,
 		transport: null,
@@ -922,11 +1177,7 @@ export function installCodexWorkbenchOwnerLifecycle(
 		sessionInitialized: false,
 		accountReady: false,
 		released: false,
-	};
-	const local: OwnerLocalState = {
-		currentGeneration: null,
-		startPromise: null,
-		shutdownPromise: null,
+		exit,
 	};
 	retained.control.runtime = runtime;
 
@@ -961,56 +1212,78 @@ export function installCodexWorkbenchOwnerLifecycle(
 					});
 					void processStart.catch(() => undefined);
 					const child = await childReady;
-					if (!ownsTicket(retained, runtime, ticket))
+					if (!ownsTicket(retained, runtime, ticket) || !ownsProcessChild(runtime.process, child))
 						throw new CodexWorkbenchCompositionError(
 							"not_started",
 							"A retired Codex startup cannot publish a child.",
 						);
+					const transaction: LifecycleTransaction = {
+						ticket,
+						child,
+						phase: "starting",
+						transport: null,
+					};
+					local.transaction = transaction;
 					candidate = await options.createGeneration(
 						generationInput(
 							retained,
 							runtime,
-							ticket,
+							local,
+							transaction,
 							generationNumber,
 							child,
 							readiness,
-							(failure) => finishChildRetirement(retained, runtime, failure),
 						),
 					);
-					if (!ownsTicket(retained, runtime, ticket)) {
-						await cleanupGeneration(candidate, "shutdown");
-						throw new CodexWorkbenchCompositionError(
-							"not_started",
-							"A retired Codex startup cannot publish generation readiness.",
-						);
-					}
-					local.currentGeneration = candidate;
-					try {
-						await candidate.activate();
-					} catch (error) {
-						if (local.currentGeneration === candidate) local.currentGeneration = null;
-						throw error;
-					}
-					await processStart;
-					if (!ownsTicket(retained, runtime, ticket)) {
-						await cleanupGeneration(candidate, "shutdown");
-						throw new CodexWorkbenchCompositionError(
-							"not_started",
-							"A retired Codex startup cannot publish readiness.",
-						);
-					}
+					ownGeneration(local, candidate);
+					transaction.transport = candidate.transport;
+					assertTransaction(
+						retained,
+						runtime,
+						local,
+						transaction,
+						"A retired Codex startup cannot install child-exit observation.",
+					);
 					runtime.identityLedger = candidate.identityLedger;
 					runtime.transport = candidate.transport;
+					attachExitObserver(runtime, candidate.transport);
+					assertTransaction(
+						retained,
+						runtime,
+						local,
+						transaction,
+						"A retired Codex startup cannot activate a generation.",
+					);
+					transaction.phase = "candidate_activation";
+					local.currentGeneration = candidate;
+					await candidate.activate();
+					assertTransaction(
+						retained,
+						runtime,
+						local,
+						transaction,
+						"A retired Codex startup cannot continue after activation.",
+					);
+					await processStart;
+					assertTransaction(
+						retained,
+						runtime,
+						local,
+						transaction,
+						"A retired Codex startup cannot publish readiness.",
+					);
 					runtime.sessionInitialized = readiness.initialized;
 					runtime.accountReady = readiness.accountReady;
 					retained.state = "ready";
+					transaction.phase = "committed";
+					local.transaction = null;
 					publishReadySlots(retained, runtime, local, candidate);
 					assertRetained(retained);
 					return snapshot(retained, runtime);
 				} catch (error) {
 					let failure = error instanceof Error ? error : new Error(String(error));
 					if (candidate !== null) {
-						const cleanupFailure = await cleanupGeneration(candidate, "shutdown");
+						const cleanupFailure = await beginGenerationCleanup(local, candidate, "shutdown");
 						if (local.currentGeneration === candidate) local.currentGeneration = null;
 						if (cleanupFailure !== null)
 							failure = appendFailure(
@@ -1019,6 +1292,13 @@ export function installCodexWorkbenchOwnerLifecycle(
 								"Codex startup and cleanup both failed.",
 							);
 					}
+					const observerFailure = detachExitObserver(runtime);
+					if (observerFailure !== null)
+						failure = appendFailure(
+							failure,
+							observerFailure,
+							"Codex startup observer cleanup failed.",
+						);
 					const processFailure = await stopProcess(runtime);
 					if (processFailure !== null)
 						failure = appendFailure(
@@ -1026,8 +1306,10 @@ export function installCodexWorkbenchOwnerLifecycle(
 							processFailure,
 							"Codex startup process cleanup failed.",
 						);
-					if (ownsTicket(retained, runtime, ticket))
+					if (ownsTicket(retained, runtime, ticket)) {
+						invalidateTransaction(local);
 						releaseRegistration(retained, runtime, "failed", failureMessage(failure));
+					}
 					throw new CodexWorkbenchCompositionError(
 						"startup_failed",
 						"The production Codex workbench did not become ready.",

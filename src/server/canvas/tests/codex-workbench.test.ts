@@ -1,7 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import type { TransportServerRequest } from "../../../runtime/codex-transport/server-requests.js";
-import { createCodexWorkbenchRequestRouter } from "../codex-workbench-generation.js";
 import {
 	CodexWorkbenchCompositionError,
 	emptyCodexWorkbenchRetainedState,
@@ -12,89 +10,12 @@ import {
 } from "../codex-workbench-owner.js";
 import { fakeGeneration, fakeProcess } from "./support/codex-workbench-owner-fake.js";
 
-const HUMAN_METHODS = [
-	"item/commandExecution/requestApproval",
-	"item/fileChange/requestApproval",
-	"item/tool/requestUserInput",
-	"mcpServer/elicitation/request",
-	"item/permissions/requestApproval",
-	"applyPatchApproval",
-	"execCommandApproval",
-] as const;
-
-function request(method: string, owner: string): TransportServerRequest {
-	return { method, owner } as unknown as TransportServerRequest;
-}
-
 function rejected(operation: Promise<unknown>): Promise<unknown> {
 	return operation.then(
 		() => null,
 		(error: unknown) => error,
 	);
 }
-
-describe("production Codex request router", () => {
-	test("routes all seven ordinary families and keeps both dynamic owners separate", async () => {
-		const routed: string[] = [];
-		const router = createCodexWorkbenchRequestRouter({
-			approvals: {
-				receive: (value) => {
-					routed.push(`approval:${value.method}`);
-					return {} as never;
-				},
-			},
-			dynamicTools: {
-				dispatch: async (value) => {
-					routed.push(`general:${value.method}`);
-					return {} as never;
-				},
-			},
-			coordinatorTools: {
-				onServerRequest: (value) => routed.push(`coordinator:${value.method}`),
-			},
-			session: {
-				respondCurrentTime: async (value) => void routed.push(`session:${value.method}`),
-				respondUnsupportedTokenRefresh: async (value) =>
-					void routed.push(`session:${value.method}`),
-				respondUnsupportedAttestation: async (value) => void routed.push(`session:${value.method}`),
-			},
-		});
-
-		for (const method of HUMAN_METHODS) router.route(request(method, "codex-approvals"));
-		router.route(request("item/tool/call", "codex-dynamic-tools"));
-		router.route(request("item/tool/call", "codex-coordinator-tools"));
-		await Promise.resolve();
-
-		expect(routed).toEqual([
-			...HUMAN_METHODS.map((method) => `approval:${method}`),
-			"general:item/tool/call",
-			"coordinator:item/tool/call",
-		]);
-	});
-
-	test("routes the three auxiliary requests to their reviewed session responses", async () => {
-		const routed: string[] = [];
-		const router = createCodexWorkbenchRequestRouter({
-			approvals: { receive: () => ({}) as never },
-			dynamicTools: { dispatch: async () => ({}) as never },
-			coordinatorTools: { onServerRequest: () => undefined },
-			session: {
-				respondCurrentTime: async (value) => void routed.push(value.method),
-				respondUnsupportedTokenRefresh: async (value) => void routed.push(value.method),
-				respondUnsupportedAttestation: async (value) => void routed.push(value.method),
-			},
-		});
-		router.route(request("currentTime/read", "codex-session"));
-		router.route(request("account/chatgptAuthTokens/refresh", "codex-session"));
-		router.route(request("attestation/generate", "codex-session"));
-		await Promise.resolve();
-		expect(routed).toEqual([
-			"currentTime/read",
-			"account/chatgptAuthTokens/refresh",
-			"attestation/generate",
-		]);
-	});
-});
 
 describe("production Codex owner lifecycle", () => {
 	test("releases registration when process-owner construction fails", () => {
@@ -262,27 +183,78 @@ describe("production Codex owner lifecycle", () => {
 		expect(await rejected(reload)).toBeInstanceOf(CodexWorkbenchCompositionError);
 	});
 
+	test("a stale reload cannot publish after shutdown and reinstall during old cleanup", async () => {
+		const retained = emptyCodexWorkbenchRetainedState();
+		const oldEvents: string[] = [];
+		let oldCleanupEntered!: () => void;
+		const cleanupEntered = new Promise<void>((resolve) => void (oldCleanupEntered = resolve));
+		let releaseOldCleanup!: () => void;
+		const cleanupGate = new Promise<void>((resolve) => void (releaseOldCleanup = resolve));
+		const original = fakeGeneration(oldEvents, 1, {
+			stop: async (reason) => {
+				if (reason !== "reload") return;
+				oldCleanupEntered();
+				await cleanupGate;
+			},
+		});
+		const owner = installCodexWorkbenchOwner(retained, {
+			createProcess: () => fakeProcess(oldEvents),
+			createGeneration: async () => original,
+		});
+		await owner.start();
+		const staleReload = owner.reload(async ({ generation, kernel }) => {
+			const candidate = fakeGeneration(oldEvents, generation);
+			if (kernel !== null)
+				Object.assign(candidate, {
+					identityLedger: kernel.identityLedger,
+					transport: kernel.transport,
+				});
+			return candidate;
+		});
+		await cleanupEntered;
+		const shutdown = owner.shutdown();
+		releaseOldCleanup();
+		await shutdown;
+
+		const replacement = installCodexWorkbenchOwner(retained, {
+			createProcess: () => fakeProcess([]),
+			createGeneration: async () => fakeGeneration([], 9),
+		});
+		await replacement.start();
+		const replacementRuntime = retained.control.runtime;
+		const replacementSlots = retained.control.current;
+
+		expect(await rejected(staleReload)).toBeInstanceOf(CodexWorkbenchCompositionError);
+		expect(retained.control.runtime).toBe(replacementRuntime);
+		expect(retained.control.current).toBe(replacementSlots);
+		expect(replacement.snapshot()).toMatchObject({ state: "ready", ready: true });
+		expect((replacement.gateway() as unknown as { marker: number }).marker).toBe(9);
+		await replacement.shutdown();
+	});
+
 	test("refuses duplicate active registration and releases after child retirement", async () => {
 		const retained = emptyCodexWorkbenchRetainedState();
-		let input: CodexWorkbenchGenerationInput | null = null;
 		const options = {
 			createProcess: () => fakeProcess([]),
-			createGeneration: async (value: CodexWorkbenchGenerationInput) => {
-				input = value;
-				return fakeGeneration([], value.generation);
-			},
+			createGeneration: async (value: CodexWorkbenchGenerationInput) =>
+				fakeGeneration([], value.generation),
 		};
 		const owner = installCodexWorkbenchOwner(retained, options);
 		expect(() => installCodexWorkbenchOwner(retained, options)).toThrow(
 			CodexWorkbenchCompositionError,
 		);
 		await owner.start();
-		const captured = input as CodexWorkbenchGenerationInput | null;
-		if (captured === null) throw new Error("generation input was not captured");
-		captured.onChildExitStart();
+		const runtime = retained.control.runtime;
+		if (runtime?.identityLedger == null) throw new Error("missing retained identity ledger");
+		runtime.exit.listener({
+			child: runtime.identityLedger.childId,
+			epoch: runtime.identityLedger.epoch,
+			code: 1,
+			signal: null,
+		});
 		expect(retained).toMatchObject({ state: "stopping" });
 		expect(retained.control.current).toBeNull();
-		await captured.onChildExitFinished(null);
+		for (let turn = 0; turn < 20 && retained.owner !== null; turn++) await Promise.resolve();
 		expect(retained).toMatchObject({ state: "idle", owner: null, process: null });
 		expect(() => installCodexWorkbenchOwner(retained, options)).not.toThrow();
 	});

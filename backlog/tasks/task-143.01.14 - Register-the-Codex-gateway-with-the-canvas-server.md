@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 07:21'
+updated_date: '2026-09-01 08:04'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -209,6 +209,18 @@ Own the one production composition root in the canvas server. It instantiates ev
 54. Add hostile-descendant retained-policy owners, public-wrapper shutdown revocation coverage, and a delayed createGeneration/shutdown/replacement race proving a stale start cannot overwrite or release the replacement runtime.
 55. Replace synthetic socket emission cases with real loopback peers for refused/reset connection, accepted early close, and accepted withheld WebSocket upgrade timeout, then prove the next actual src/server.ts start recovers without socket, listener, process, authority, or root leaks.
 56. Run the focused and complete viable validation lanes sequentially in named transient systemd user units capped at 6 GiB memory and 1 GiB swap; preserve the protected artifact hash, keep status and all acceptance criteria unchanged, commit above c55d5594, and callback the fixed-base parent with finding-by-finding evidence.
+
+57. Add failing adversarial owners for stale reload publication after old cleanup, stale rollback publication after reactivation, shutdown during candidate activation, child exit in each reload gap, guarded production initialization, synchronous application revocation, and router privacy.
+
+58. Replace the single currentGeneration pointer with one lifecycle transaction and an exact live-generation resource ledger. Let shutdown invalidate the transaction and synchronously stop every owned member before any await; fence every continuation and publication by runtime, ticket, phase, child, transport, and transaction ownership.
+
+59. Move transport exit observation to one process-lifetime retained observer and terminal latch. Remove generation-owned exit registration, consume the exact event through the current private lifecycle dispatch, and forbid ready publication without an open transport and exact current child.
+
+60. Pass a transaction activation guard into production initialization. Check it after every await and before epoch, lifecycle, readiness, browser-state, and coordinator mutations, staging account-derived publication until coordinator readiness is proven.
+
+61. Give the canvas application a synchronously available production shutdown handle and remove the request router from every root entrypoint. Add repository policy that only the private lifecycle implementation may import the private router.
+
+62. Run the new adversarial owners first, then the focused non-hot lanes and viable repository gates sequentially in named 6 GiB memory and 1 GiB swap units. Keep status and AC unchanged, preserve the protected hash, commit above 0b0f9cab, and callback the parent with finding-by-finding evidence.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -277,10 +289,20 @@ A private lifecycle unit now owns reservation tickets, activation publication fe
 Production reload constructs a fresh runtime graph while reusing only the reviewed process, identity, transport, and browser-lease ledgers. Exact transport identity is replaced and restored on rollback; the browser connection and command lease survive a clean reload through the current gateway without retaining a generation-bound gateway. Synthetic socket.emit failure injection was removed. Real loopback peers now exercise connection refusal, accepted early close, and a withheld WebSocket upgrade timeout; each partial socket is closed and listener-free, followed by a successful actual src/server.ts recovery that connects, claims, and releases authority.
 
 Final named 6 GiB memory / 1 GiB swap validation: lifecycle owner matrix 22 pass, 0 fail, 108 assertions; Codex transport/session/identity/canvas/gateway lane 150 pass, 0 fail, 1,404 assertions; hot-reload, actual production server, real network cleanup, and application socket lane 11 pass, 0 fail, 174 assertions; inventory 39 pass, 0 fail, 69 assertions; full lint 0 warnings/errors; formatting check, both TypeScript projects, frontend build, targeted module-scope policy, and diff check pass. The complete module aggregate was attempted once and OOM-killed at the fixed 6 GiB memory plus 1 GiB swap ceiling; it was not retried and no aggregate pass is claimed. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and every acceptance criterion remains unchecked for parent rereview.
+
+Fifth rejection remediation above 0b0f9cab resolves the six lifecycle findings as one transaction boundary. Reload now owns an explicit transaction plus a live-generation ledger covering the old graph, candidate, and rollback graph. Shutdown increments the exact runtime ticket, invalidates the transaction, revokes retained dispatch, detaches the stable exit observer, and synchronously calls stop on every owned graph before its first await. Every create, activate, candidate cleanup, old cleanup, rollback, and final publication continuation rechecks the exact retained runtime, ticket, phase, process child identity, open transport, terminal latch, and transaction owner. Deferred old-cleanup and rollback-activation schedules prove a stale continuation cannot overwrite a replacement runtime, state, gateway, or slots.
+
+Child exit moved out of source generations into one process-lifetime retained observer with an exact terminal-event latch. Generation activation no longer removes exit observation. An exit during a waiting factory, candidate activation, or old cleanup revokes authority synchronously, selects the exact current settlement owner, and cleans every live graph once. Ready publication requires the same child PID and stdio handles plus an open transport. Shutdown-during-candidate owners cover success, activation failure, and cleanup failure and prove the old graph stops and finalizes exactly once.
+
+Production initialization now receives the lifecycle transaction guard. Session initialization, account read, and coordinator ensure check it before their side effects and after every await; account-derived session, browser, child, and coordinator readiness publishes only after the complete staged result remains current. Three deferred owners retire initialization at each await and prove no later readiness mutation occurs. The canvas application caches the loaded production module during prepare and invokes its shutdown entrypoint synchronously, so every retained wrapper refuses before deferred graph cleanup or any later await.
+
+The request router is private again. codex-workbench-generation.ts and the composition root no longer export it. Generation behavior still drives all seven ordinary families, both item/tool/call owners, and the three session methods through the installed transport listener. Repository policy scans the module and permits only lib/codex-workbench-lifecycle.ts to import the private router. The composition root remains smaller than the accepted split at 643 lines.
+
+Final sequential named 6 GiB memory / 1 GiB swap validation: adversarial lifecycle, production initialization, application revocation, and policy lane 32 pass, 0 fail, 150 assertions; focused transport/session/identity/gateway/canvas module lane 161 pass, 0 fail, 1,454 assertions; actual src/server.ts composition, application socket, real first-socket failure recovery, startup cleanup, and stale-socket system lane 8 pass, 0 fail, 118 assertions; inventory 39 pass, 0 fail, 69 assertions. Both TypeScript projects, full lint with 0 warnings/errors, formatting check, frontend build, targeted module-scope analysis with zero findings/waivers, and diff check pass. The documented complete module and aggregate boundary OOM fingerprints were not rerun and no pass is claimed for them. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and every acceptance criterion remains unchecked for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Rebuilt the Codex workbench reload boundary around a minimal retained process kernel, fresh source generations, synchronous shutdown revocation, and exact lifecycle tickets. Extracted private lifecycle and exhaustive routing units, replaced synthetic socket failures with real loopback peers, and verified production recovery plus focused runtime, policy, type, lint, format, build, inventory, and hot-reload owners. The capped complete module aggregate OOM remains explicitly unclaimed; task status and acceptance criteria are unchanged for parent rereview.
+Corrected the Codex workbench lifecycle around one owned reload transaction, a lossless process-lifetime exit observer, guarded production initialization, and synchronous application revocation. Exact stale cleanup, rollback, activation, exit-gap, and reinstall schedules now preserve replacement authority and clean every live graph once. The router has one private construction seam. Focused module and production system lanes, types, lint, format, build, inventory, policy, and module-scope checks pass; known capped OOM aggregates remain unclaimed. Task status and acceptance criteria are unchanged for parent rereview.
 <!-- SECTION:FINAL_SUMMARY:END -->

@@ -518,8 +518,10 @@ export function createCanvasCodexWorkbenchInstallation(
 		},
 		installBrowserGateway: host.installBrowserGateway,
 		initializeSession: async (session, components) => {
+			input.assertActivationCurrent();
 			if (input.adoptedSession === null) {
 				const epochSnapshot = components.epoch.snapshot();
+				input.assertActivationCurrent();
 				components.epoch.startEpoch({
 					childId: components.identity.identity.validator.childId,
 					epoch: components.identity.identity.validator.epoch,
@@ -532,11 +534,28 @@ export function createCanvasCodexWorkbenchInstallation(
 					manifestHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 					...(epochSnapshot.manifest.activeEpoch === null ? {} : { expected: epochSnapshot.cas }),
 				});
+				input.assertActivationCurrent();
 				await session.initialize();
+				input.assertActivationCurrent();
 				input.child.lifecycle.markAppServerReady();
 			}
+			input.assertActivationCurrent();
 			const account = await session.accountRead();
+			input.assertActivationCurrent();
+			if (account.account !== null) {
+				input.assertActivationCurrent();
+				const coordinator = await components.coordinator.ensure({
+					operationId: components.identity.operation.issuer.mintOperationId(),
+				});
+				input.assertActivationCurrent();
+				if (coordinator.state !== "ready")
+					throw new Error(
+						coordinator.reason ?? "The production Codex coordinator did not become ready.",
+					);
+			}
+			input.assertActivationCurrent();
 			input.markSessionReady(account.account !== null);
+			input.assertActivationCurrent();
 			const owners = ownersFor(input);
 			owners.browserState.account =
 				account.account === null
@@ -547,14 +566,8 @@ export function createCanvasCodexWorkbenchInstallation(
 					? { kind: "readiness", state: "signed_out" }
 					: { kind: "readiness", state: "thread_capable" };
 			if (account.account !== null) {
+				input.assertActivationCurrent();
 				input.child.lifecycle.markAccountReady();
-				const coordinator = await components.coordinator.ensure({
-					operationId: components.identity.operation.issuer.mintOperationId(),
-				});
-				if (coordinator.state !== "ready")
-					throw new Error(
-						coordinator.reason ?? "The production Codex coordinator did not become ready.",
-					);
 			}
 		},
 		stopBrowser: host.stopBrowser,
