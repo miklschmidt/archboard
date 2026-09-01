@@ -755,6 +755,9 @@ export function createCodexWorkbenchGateway(
 				code,
 				message,
 				snapshot: nextSnapshot,
+				...(command.command === "realtimeStart" && actionResult?.realtimeAnswer
+					? { realtimeAnswer: actionResult.realtimeAnswer }
+					: {}),
 			});
 		} catch (error) {
 			if (actionStarted && leaseManager.current()?.lease.commandId !== command.commandId)

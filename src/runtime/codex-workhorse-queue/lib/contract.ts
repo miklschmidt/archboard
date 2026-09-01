@@ -149,6 +149,7 @@ export type WorkhorseQueueResult<OperationIdValue extends string> =
 	| QueueStartResult<OperationIdValue>;
 
 export type WorkhorseQueueErrorCode =
+	| "closed"
 	| "not_ready"
 	| "stale_link"
 	| "invalid_input"
@@ -202,4 +203,6 @@ export interface CodexWorkhorseQueue<OperationIdValue extends string> {
 	readonly start: (
 		request: QueueStartRequest<OperationIdValue>,
 	) => Promise<QueueStartResult<OperationIdValue>>;
+	/** Close admission and wait for every operation accepted before this call. */
+	readonly shutdown: () => Promise<void>;
 }

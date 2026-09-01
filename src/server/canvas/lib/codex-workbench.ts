@@ -379,7 +379,7 @@ function requireComponent<Name extends ComponentName>(
 			"startup_failed",
 			`The Codex workbench tried to create ${name} before its dependency was ready.`,
 		);
-	return value as CodexWorkbenchComponents[Name];
+	return created[name]!;
 }
 
 /** Bind the reviewed runtime constructors to one production generation. */
@@ -635,7 +635,26 @@ export async function composeCodexWorkbenchGeneration(
 		}
 		throw failure;
 	}
-	const components = Object.freeze(created as CodexWorkbenchComponents);
+	const components = Object.freeze({
+		identity,
+		epoch,
+		transport,
+		session,
+		threadLink,
+		workhorse,
+		semanticPublisher,
+		realtime,
+		approvals,
+		dynamicTools,
+		semanticDelivery,
+		coordinator,
+		queue,
+		operations,
+		spokenApproval,
+		coordinatorTools,
+		callbacks,
+		gateway,
+	} satisfies CodexWorkbenchComponents);
 	const router = createCodexWorkbenchRequestRouter({
 		approvals,
 		dynamicTools,

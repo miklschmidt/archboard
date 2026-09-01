@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 01:22'
+updated_date: '2026-09-01 01:57'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -20,6 +20,9 @@ references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
   - docs/design/codex-workbench-authored-contracts.md
 modified_files:
+  - >-
+    backlog/tasks/task-143.01.14 -
+    Register-the-Codex-gateway-with-the-canvas-server.md
   - src/runtime/codex-approvals/lib/broker.ts
   - src/runtime/codex-approvals/lib/contract.ts
   - src/runtime/codex-approvals/tests/listener-ownership.test.ts
@@ -31,6 +34,8 @@ modified_files:
   - src/runtime/codex-realtime/index.ts
   - src/runtime/codex-realtime/lib/adapter.ts
   - src/runtime/codex-realtime/lib/contract.ts
+  - src/runtime/codex-realtime/tests/adapter-races.test.ts
+  - src/runtime/codex-realtime/tests/adapter.test.ts
   - src/runtime/codex-session/index.ts
   - src/runtime/codex-session/lib/contract.ts
   - src/runtime/codex-session/lib/session.ts
@@ -42,17 +47,34 @@ modified_files:
   - src/runtime/codex-thread-context/lib/delivery.ts
   - src/runtime/codex-thread-context/tests/controller.test.ts
   - src/runtime/codex-thread-context/tests/delivery-support.ts
+  - src/runtime/codex-workhorse-operations/tests/queue-support.ts
+  - src/runtime/codex-workhorse-queue/lib/contract.ts
+  - src/runtime/codex-workhorse-queue/lib/queue.ts
+  - src/runtime/codex-workhorse-queue/tests/queue.test.ts
+  - src/runtime/codex-workhorse-queue/tests/shutdown.test.ts
+  - src/server/canvas/codex-workbench-adapters.ts
+  - src/server/canvas/codex-workbench-application.ts
+  - src/server/canvas/codex-workbench-browser.ts
+  - src/server/canvas/codex-workbench-generation.ts
+  - src/server/canvas/codex-workbench-owner.ts
+  - src/server/canvas/codex-workbench-production.ts
   - src/server/canvas/codex-workbench.ts
   - src/server/canvas/lib/application.ts
-  - src/server/canvas/lib/codex-workbench.ts
   - src/server/canvas/lib/codex-workbench-adapters.ts
   - src/server/canvas/lib/codex-workbench-application.ts
+  - src/server/canvas/lib/codex-workbench-browser.ts
   - src/server/canvas/lib/codex-workbench-production.ts
+  - src/server/canvas/lib/codex-workbench.ts
   - src/server/canvas/tests/codex-workbench-adapters.test.ts
   - src/server/canvas/tests/codex-workbench-application.test.ts
+  - src/server/canvas/tests/codex-workbench-browser.test.ts
   - src/server/canvas/tests/codex-workbench-generation.test.ts
   - src/server/canvas/tests/codex-workbench.test.ts
+  - src/server/codex-workbench/lib/contract.ts
+  - src/server/codex-workbench/lib/gateway.ts
+  - src/server/codex-workbench/tests/gateway-command-owners.test.ts
   - src/shared/timing/timing.ts
+  - tests/system/process-contracts/fixtures/codex-realtime-process.ts
   - tests/system/repository-policy/codex-workbench-composition.test.ts
 parent_task_id: TASK-143.01
 priority: high
@@ -89,6 +111,18 @@ Own the one production composition root in the canvas server. It instantiates ev
 8. Implement the concrete canvas host owner in the application seam: one semantic publisher/context source, dynamic visual-approval owner, exact caller/target/context/operation/lifecycle adapters, browser projection/actions, and reviewed runtime bindings. Dynamically install the narrow workbench entrypoint before HTTP listen, replace only hooks on reload, and await exact shutdown/failure cleanup.
 
 9. Add direct production-application owners for construction cardinality, readiness ordering, sole routing, reload identity, shutdown/child-exit/startup-failure cleanup, and duplicate refusal; then run capped validation and callback the fixed-base parent.
+
+10. Wire the concrete Codex browser protocol through the existing canvas WebSocket connection owner. Decode connect, snapshot, lease, command, and subscribe requests at the application boundary; send gateway messages on that socket; retire the exact browser/pane connection on close and reload; and prove the public socket workflow including approval resolution.
+
+11. Replace browser-authored turn payloads with codex-instructions constructors using the lease-bound pane, child, epoch, thread link, operation identity, board, and semantic context. Bind semantic delivery through exact CAS on create, attach, relink, stale disconnect, and child exit without selecting a fallback pane.
+
+12. Add the smallest queue lifecycle authority needed to gate new work, cancel or drain accepted work, and revoke binding authority during shutdown and child exit. Bind realtime remote media to the authoritative browser connection and return the existing explicit unavailable result when no media owner is attached.
+
+13. Replace the mutable partial component assembly with an explicit complete object checked by satisfies. Split the broad canvas workbench entrypoint into production application, production composition, and test-only entrypoints while preserving deep-module boundaries.
+
+14. Restore behavioral retained-state policy by installing and reloading with caller-supplied retained state, asserting the exact allowlist and rejecting generation-bound values. Add multi-pane, honestly-unbound, session-boundary, queue lifecycle, remote-media, WebSocket, reload, and stale-CAS owners.
+
+15. Run capped sequential focused, type, lint, formatting, policy, live WebSocket, and safe reload verification. Correct the protected artifact evidence through Backlog CLI, keep status and AC unchanged, commit on top of b9ef7228, and callback the parent with the fixed-base range.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -115,4 +149,12 @@ Production application remediation complete and ready for fixed-base review. The
 Direct verification: a fresh empty-vault server remained running after the graph reached readiness, /health returned healthy, and SIGINT shut the process down cleanly. Final focused composition/application/adapter/protocol owners passed; both TypeScript projects passed; scoped Oxlint and oxfmt passed. The broader relevant runtime lane passed 192 owners except for one entrypoint-policy failure caused by an over-broad export, which was reverted and its isolated owner then passed. The full repository owner was OOM-killed at the required 6 GiB memory / 1 GiB swap ceiling after boundary checks; its isolated inventory owner passed. The previously recorded fresh hot-reload owner remains 4/4 and was not rerun.
 
 Protected artifact is unchanged from fixed base 7f37c1a903492bbd7d02699df069f2d2bc3dccba and current HEAD (git object f56a8a8364ee677027f1e5eb31fb0644a18d338b); its actual SHA-256 is 3ffcfa2c2a07af83f4074c7e785a87aa1bb1df7a81bdbce58385525d2159cccb. The earlier 22f897... note was stale evidence, not a file change. AC remains unchecked for parent review.
+
+Fixed-base remediation after b9ef7228 addresses all ten rejection findings. The retained canvas WebSocket server now owns the public Codex request bridge (connect, snapshot, lease claim/renew/release, account read, command, subscribe, close), derives browser and pane identity from server-owned registration, and was exercised over a real loopback WebSocket. Text start and steer use the canonical codex-instructions constructors with host-issued clientUserMessageId values, turnTrigger archboard, exact lease-bound context, and an authoritative in-progress turn read. Create, attach, and relink replace the semantic controller with the exact returned thread-link CAS proof; stale disconnects cannot clear a newer binding. Production no longer selects paneIds()[0] or fabricates a headless pane.
+
+Queue shutdown closes admission and drains accepted work before composition cancels dynamic approvals and waits and continues authority teardown. The realtime server adapter is explicitly the protocol half rather than a false DOM host; realtimeStart returns the typed SDP answer through the browser command result for browser-local peer/media attachment, while negotiation failure is an explicit not_delivered command refusal. Component assembly is a complete object checked with satisfies. The catch-all canvas workbench barrel was removed in favor of narrow application, generation, owner, production, adapter, and browser entrypoints. A behavioral repository-policy owner installs and reloads through a sealed caller-supplied retained object and enforces the exact retained-key allowlist.
+
+Validation: focused remediation owners 151 pass / 0 fail / 791 assertions; public socket owners including a real loopback WebSocket 3 pass / 0 fail; realtime process contract 4 pass / 0 fail / 65 assertions; both TypeScript projects pass; full Oxlint passes; full oxfmt check passes. The broad module lane passed the affected owners and continued near the end before its outer runner received SIGTERM, so no complete-lane pass is claimed. The repository aggregate again received the known polite-termination/OOM-family behavior after boundary owners; its relevant composition policy is included in the green focused lane and no aggregate pass is claimed.
+
+Protected artifact evidence correction: the authoritative protected file is /home/msc/Projects/archboard/src-DlBR1tzg.js and its SHA-256 is 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. The prior 3ffcfa2c2a07af83f4074c7e785a87aa1bb1df7a81bdbce58385525d2159cccb statement referred to the wrong tracked design document and is superseded. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked for parent review.
 <!-- SECTION:NOTES:END -->

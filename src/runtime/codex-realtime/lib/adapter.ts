@@ -13,7 +13,6 @@ import {
 	type RealtimeSemanticEventListener,
 	type RealtimeSessionId as BrowserRealtimeSessionId,
 	type RealtimeTranscriptRecord,
-	type RemoteMediaAttachment,
 } from "../../../shared/codex-realtime-host/index.js";
 import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 import type { CodexRealtimeAdapter, CodexRealtimeAdapterOptions } from "./contract.js";
@@ -471,7 +470,6 @@ export function createCodexRealtimeAdapter(
 
 	return Object.freeze({
 		createOffer,
-		attachRemoteMedia: (attachment: RemoteMediaAttachment) => options.attachRemoteMedia(attachment),
 		onSemanticEvent: (listener: RealtimeSemanticEventListener) => {
 			listeners.add(listener);
 			return () => listeners.delete(listener);

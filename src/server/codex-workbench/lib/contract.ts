@@ -29,6 +29,7 @@ import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
 } from "../../../runtime/codex-thread-link/index.js";
+import type { AnswerSdp } from "../../../shared/codex-realtime-host/index.js";
 
 export type BrowserConnectionId = string;
 export type BrowserUnsubscribe = () => void;
@@ -144,6 +145,8 @@ export type BrowserDisconnectReason =
 export type BrowserActionResult = void | {
 	readonly outcome: DeliveryOutcome;
 	readonly message?: string;
+	/** The browser applies this answer to its local peer and owns remote media attachment. */
+	readonly realtimeAnswer?: AnswerSdp;
 };
 
 export interface BrowserAccountActions {
@@ -354,6 +357,7 @@ export interface BrowserGatewayCommandResult {
 	readonly code: BrowserGatewayErrorCode | null;
 	readonly message: string | null;
 	readonly snapshot: BrowserSnapshot;
+	readonly realtimeAnswer?: AnswerSdp;
 }
 
 export interface BrowserGatewayAccountReadResult {

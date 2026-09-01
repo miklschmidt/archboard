@@ -256,7 +256,6 @@ export async function createHarness(
 			identity,
 			freshSemanticBrief: () => '{"source":"fresh-process-brief","board":"Architecture"}',
 			currentBinding: () => (current === generation && !closed ? binding : null),
-			attachRemoteMedia: () => undefined,
 		});
 		Object.assign(generation, { adapter });
 		adapter.onSemanticEvent((event) => events.push(event));
