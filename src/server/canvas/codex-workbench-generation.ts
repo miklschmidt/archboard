@@ -2,7 +2,6 @@ export {
 	CODEX_WORKBENCH_OWNER,
 	CodexWorkbenchCompositionError,
 	composeCodexWorkbenchGeneration,
-	createCodexWorkbenchRequestRouter,
 	createProductionCodexWorkbenchFactories,
 } from "./lib/codex-workbench.js";
 export type {
@@ -12,8 +11,6 @@ export type {
 	CodexWorkbenchDynamicAdapterFactories,
 	CodexWorkbenchGeneration,
 	CodexWorkbenchGenerationHooks,
-	CodexWorkbenchRequestOwners,
-	CodexWorkbenchRequestRouter,
 	ComposeCodexWorkbenchGenerationOptions,
 	ProductionCodexWorkbenchBindings,
 	CodexWorkbenchStopReason,

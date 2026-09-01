@@ -59,6 +59,7 @@ export function fakeProcess(events: string[]): CodexProcess {
 export interface FakeGenerationControl {
 	readonly activate?: () => Promise<void>;
 	readonly deactivate?: () => void;
+	readonly retireChild?: () => Promise<void>;
 	readonly stop?: (reason: CodexWorkbenchStopReason) => Promise<void>;
 	readonly finishStop?: () => void;
 }
@@ -70,6 +71,7 @@ export function fakeGeneration(
 ): CodexWorkbenchGeneration {
 	const identityLedger = createIdentityLedger();
 	const identity = createIdentityAuthorities(identityLedger);
+	let transportState: "open" | "closed" = "open";
 	const transport = {
 		replaceIdentity: () => undefined,
 		request: async () => ({}) as never,
@@ -82,11 +84,11 @@ export function fakeGeneration(
 		onIssue: () => () => undefined,
 		onStderr: () => () => undefined,
 		onExit: () => () => undefined,
-		inspect: () => ({}) as never,
+		inspect: () => ({ state: transportState }) as never,
 		inspectLateResponses: () => [],
 		inspectIssues: () => [],
 		inspectStderr: () => ({}) as never,
-		shutdown: async () => undefined,
+		shutdown: async () => void (transportState = "closed"),
 	};
 	const gateway = { marker: number, dispose: async () => undefined };
 	const components = {
@@ -95,6 +97,7 @@ export function fakeGeneration(
 		gateway,
 	} as unknown as CodexWorkbenchGeneration["components"];
 	let stopped = false;
+	let finished = false;
 	return {
 		components,
 		identityLedger,
@@ -108,6 +111,7 @@ export function fakeGeneration(
 			control.deactivate?.();
 			events.push(`generation:${number}:deactivate`);
 		},
+		retireChild: async () => control.retireChild?.(),
 		stop: async (reason) => {
 			if (stopped) return;
 			stopped = true;
@@ -115,6 +119,8 @@ export function fakeGeneration(
 			events.push(`generation:${number}:stop:${reason}`);
 		},
 		finishStop: () => {
+			if (finished) return;
+			finished = true;
 			control.finishStop?.();
 			events.push(`generation:${number}:finish-stop`);
 		},

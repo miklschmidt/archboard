@@ -23,7 +23,6 @@ test("the production generation creates every owner once before readiness and sh
 	const unsubscribers: Array<() => void> = [];
 	const requestListeners: RequestListener[] = [];
 	const notificationListeners: NotificationListener[] = [];
-	const exitListeners: ExitListener[] = [];
 	let exitListener: ExitListener | null = null;
 	const disposable = (name: string) => ({ dispose: () => void events.push(`${name}:dispose`) });
 	const parts = {
@@ -49,7 +48,6 @@ test("the production generation creates every owner once before readiness and sh
 			onExit: (listener: ExitListener) => {
 				events.push("child-exit:install");
 				exitListener = listener;
-				exitListeners.push(listener);
 				const unsubscribe = () => void events.push("child-exit:remove");
 				unsubscribers.push(unsubscribe);
 				return unsubscribe;
@@ -65,9 +63,12 @@ test("the production generation creates every owner once before readiness and sh
 			},
 		},
 		session: {
-			respondCurrentTime: async () => undefined,
-			respondUnsupportedTokenRefresh: async () => undefined,
-			respondUnsupportedAttestation: async () => undefined,
+			respondCurrentTime: async (value: { readonly method: string }) =>
+				void events.push(`session:${value.method}`),
+			respondUnsupportedTokenRefresh: async (value: { readonly method: string }) =>
+				void events.push(`session:${value.method}`),
+			respondUnsupportedAttestation: async (value: { readonly method: string }) =>
+				void events.push(`session:${value.method}`),
 			[CODEX_SESSION_CONTROL]: {
 				onNotification: () => undefined,
 				onServerRequest: () => undefined,
@@ -80,10 +81,19 @@ test("the production generation creates every owner once before readiness and sh
 		realtime: { ...disposable("realtime"), onNotification: () => undefined },
 		approvals: {
 			...disposable("approvals"),
-			receive: () => ({}),
+			receive: (value: { readonly method: string }) => {
+				events.push(`approval:${value.method}`);
+				return {};
+			},
 			childExit: async () => [],
 		},
-		dynamicTools: { ...disposable("dynamic"), dispatch: async () => ({}) },
+		dynamicTools: {
+			...disposable("dynamic"),
+			dispatch: async (value: { readonly method: string }) => {
+				events.push(`dynamic:${value.method}`);
+				return {};
+			},
+		},
 		semanticDelivery: {
 			...disposable("semantic"),
 			replaceHooks: () => void events.push("semantic:hooks"),
@@ -99,7 +109,8 @@ test("the production generation creates every owner once before readiness and sh
 		},
 		coordinatorTools: {
 			...disposable("coordinator-tools"),
-			onServerRequest: () => undefined,
+			onServerRequest: (value: { readonly method: string }) =>
+				void events.push(`coordinator:${value.method}`),
 			onChildExit: () => undefined,
 		},
 		callbacks: disposable("callbacks"),
@@ -169,23 +180,47 @@ test("the production generation creates every owner once before readiness and sh
 		identityLedger: createIdentityLedger(),
 		factories,
 		hooks,
-		onChildExitStart: () => void events.push("child-retirement:start"),
-		onChildExitFinished: () => {
-			events.push("child-retirement:finish");
-		},
 	});
 	expect(Object.fromEntries(calls)).toEqual(Object.fromEntries(order.map((name) => [name, 1])));
 	expect(events.indexOf("identity:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("router:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("approval-projection:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("browser:install")).toBeLessThan(events.indexOf("ready"));
+	const route = requestListeners.at(-1);
+	if (route === undefined) throw new Error("missing private production router");
+	for (const method of [
+		"item/commandExecution/requestApproval",
+		"item/fileChange/requestApproval",
+		"item/tool/requestUserInput",
+		"mcpServer/elicitation/request",
+		"item/permissions/requestApproval",
+		"applyPatchApproval",
+		"execCommandApproval",
+	] as const)
+		route({ method, owner: "codex-approvals" } as never);
+	route({ method: "item/tool/call", owner: "codex-dynamic-tools" } as never);
+	route({ method: "item/tool/call", owner: "codex-coordinator-tools" } as never);
+	for (const method of [
+		"currentTime/read",
+		"account/chatgptAuthTokens/refresh",
+		"attestation/generate",
+	] as const)
+		route({ method, owner: "codex-session" } as never);
+	await Promise.resolve();
+	expect(events.filter((event) => event.startsWith("approval:"))).toHaveLength(7);
+	expect(events).toContain("dynamic:item/tool/call");
+	expect(events).toContain("coordinator:item/tool/call");
+	expect(events.filter((event) => event.startsWith("session:"))).toHaveLength(3);
+	await generation.retireChild({
+		child: "child" as never,
+		epoch: "epoch" as never,
+		code: 1,
+		signal: null,
+	});
+	expect(events).toContain("semantic:child-exit");
 	const stopping = generation.stop("shutdown");
 	for (const listener of requestListeners) listener({} as never);
 	for (const listener of notificationListeners) listener({} as never);
-	for (const listener of exitListeners)
-		listener({ child: "retired" as never, epoch: "retired" as never, code: 1, signal: null });
-	expect(events).not.toContain("child-retirement:start");
-	expect(events).not.toContain("semantic:child-exit");
 	await stopping;
 	generation.finishStop();
 	expect(events.indexOf("browser:remove")).toBeLessThan(events.indexOf("gateway:dispose"));
