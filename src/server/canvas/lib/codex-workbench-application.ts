@@ -40,17 +40,50 @@ export function createCanvasCodexWorkbenchApplication(
 	let preparePromise: Promise<CodexWorkbenchSnapshot> | null = null;
 	let shutdownPromise: Promise<void> | null = null;
 	let shutdownRequested = false;
+	let shutdownSettled = false;
+
+	const publishStoppedIfSettled = (): void => {
+		if (!shutdownSettled || preparePromise !== null) return;
+		options.state.installed = false;
+		options.state.phase = "stopped";
+		options.state.shutdown = null;
+	};
 
 	const shutdown = (): Promise<void> => {
 		shutdownRequested = true;
+		if (
+			options.state.phase !== "idle" &&
+			options.state.phase !== "stopped" &&
+			options.state.shutdown !== null &&
+			options.state.shutdown !== shutdown
+		)
+			return options.state.shutdown();
+		if (options.state.phase === "stopping") {
+			if (shutdownPromise !== null) return shutdownPromise;
+			return Promise.reject(
+				new Error("Codex application shutdown is in progress without an owned cleanup promise."),
+			);
+		}
 		if (shutdownPromise !== null) return shutdownPromise;
 		if (options.state.phase === "idle" || options.state.phase === "stopped") {
 			options.state.installed = false;
 			options.state.phase = "stopped";
 			options.state.shutdown = null;
-			return Promise.resolve();
+			shutdownSettled = true;
+			shutdownPromise = Promise.resolve();
+			return shutdownPromise;
 		}
+		let resolveShutdown!: () => void;
+		let rejectShutdown!: (error: unknown) => void;
+		const operation = new Promise<void>((resolve, reject) => {
+			resolveShutdown = resolve;
+			rejectShutdown = reject;
+		});
+		shutdownPromise = operation;
+		shutdownSettled = false;
+		options.state.installed = false;
 		options.state.phase = "stopping";
+		options.state.shutdown = shutdown;
 		let cleanup: Promise<CodexWorkbenchSnapshot>;
 		try {
 			// Production revokes retained dispatch synchronously before returning cleanup.
@@ -58,21 +91,51 @@ export function createCanvasCodexWorkbenchApplication(
 		} catch (error) {
 			cleanup = Promise.reject(error);
 		}
-		const operation = cleanup
-			.then(() => undefined)
-			.finally(() => {
-				options.state.installed = false;
-				options.state.phase = "stopped";
-				options.state.shutdown = null;
-			});
-		shutdownPromise = operation;
+		void cleanup.then(
+			() => {
+				shutdownSettled = true;
+				publishStoppedIfSettled();
+				return resolveShutdown();
+			},
+			(error: unknown) => {
+				shutdownSettled = true;
+				publishStoppedIfSettled();
+				return rejectShutdown(error);
+			},
+		);
 		return operation;
 	};
 
 	const prepare = (): Promise<CodexWorkbenchSnapshot> => {
-		if (preparePromise !== null) return preparePromise;
-		shutdownRequested = false;
-		shutdownPromise = null;
+		const phase = options.state.phase;
+		if (phase === "stopping")
+			return Promise.reject(
+				new Error(
+					"Cannot prepare the Codex workbench while application shutdown is in progress. Wait for shutdown to finish, then call prepare() again.",
+				),
+			);
+		if (phase === "preparing") {
+			if (preparePromise !== null) return preparePromise;
+			return Promise.reject(
+				new Error("Codex application preparation is already owned by another source instance."),
+			);
+		}
+		if (phase === "idle" || phase === "stopped") {
+			if (options.state.installed)
+				return Promise.reject(
+					new Error(`Codex application phase ${phase} cannot retain installed ownership.`),
+				);
+			shutdownRequested = false;
+			shutdownPromise = null;
+			shutdownSettled = false;
+		} else if (phase === "installed") {
+			if (!options.state.installed)
+				return Promise.reject(
+					new Error("The installed Codex application phase has no installed owner."),
+				);
+		} else {
+			return Promise.reject(new Error(`Unsupported Codex application phase: ${String(phase)}.`));
+		}
 		const wasInstalled = options.state.installed;
 		options.state.phase = "preparing";
 		// Publish terminal authority before installation or readiness can await.
@@ -127,6 +190,7 @@ export function createCanvasCodexWorkbenchApplication(
 			return result!;
 		})().finally(() => {
 			preparePromise = null;
+			publishStoppedIfSettled();
 		});
 		preparePromise = operation;
 		return operation;
