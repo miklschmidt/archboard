@@ -227,6 +227,61 @@ test("socket replacement disposes browser media before adopting the new socket",
 	await owner.dispose();
 });
 
+test("the newest of three replacements wins before delayed prior disposal settles", async () => {
+	for (const lateDisposal of ["resolve", "reject"] as const) {
+		let resolveDisposal!: () => void;
+		let rejectDisposal!: (error: Error) => void;
+		const disposal = new Promise<void>((resolve, reject) => {
+			resolveDisposal = resolve;
+			rejectDisposal = reject;
+		});
+		let sessions = 0;
+		const owner = createBrowserWorkbenchMediaOwner({
+			createMediaSession: () => {
+				const session = ++sessions;
+				return {
+					getSnapshot: () => null,
+					subscribe: () => () => undefined,
+					start: async () => ({}) as never,
+					appendText: async () => ({}) as never,
+					stop: async () => ({}) as never,
+					dispose: () => (session === 1 ? disposal : Promise.resolve()),
+				} as never;
+			},
+		});
+		const first = new FakeSocket(unavailableResponse);
+		const second = new FakeSocket(unavailableResponse);
+		const newest = new FakeSocket(unavailableResponse);
+		try {
+			await owner.attach(first as unknown as WebSocket);
+			let secondSettled = false;
+			const replacing = owner
+				.attach(second as unknown as WebSocket)
+				.finally(() => void (secondSettled = true));
+			const newestAttach = owner.attach(newest as unknown as WebSocket);
+			await newestAttach;
+			expect(secondSettled).toBeFalse();
+			expect(second.sent).toHaveLength(0);
+			expect(newest.sent.map((value) => (value as { action: string }).action)).toEqual([
+				"connect",
+				"subscribe",
+				"mediaReady",
+			]);
+			if (lateDisposal === "resolve") resolveDisposal();
+			else rejectDisposal(new Error("late prior media disposal failed"));
+			await replacing;
+			expect(owner.state()).toMatchObject({
+				state: "unavailable",
+				reason: "media_api_unavailable",
+			});
+			expect(owner.snapshot()).toBeNull();
+		} finally {
+			resolveDisposal();
+			await owner.dispose();
+		}
+	}
+});
+
 test("overlapping attach ignores the replaced run's late success and rejection", async () => {
 	for (const late of [
 		{ ok: true, value: { kind: "snapshot", sequence: 1, snapshot: {} } },

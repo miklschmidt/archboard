@@ -41,6 +41,7 @@ interface WorkbenchCommandResult {
 }
 
 interface SocketRun {
+	readonly ticket: number;
 	readonly socket: WebSocket;
 	readonly pending: Map<
 		string,
@@ -51,7 +52,7 @@ interface SocketRun {
 	sequence: number;
 	media: RealtimeMediaSession | null;
 	handle: string | null;
-	startLease: BrowserCommandLease | null;
+	startOperation: { readonly ticket: number; lease: BrowserCommandLease | null } | null;
 	readonly audioElements: Set<HTMLAudioElement>;
 	closed: boolean;
 }
@@ -80,6 +81,10 @@ export interface BrowserWorkbenchMediaOwner {
 	readonly snapshot: () => RealtimeMediaSnapshot | null;
 	readonly state: () => BrowserWorkbenchMediaState;
 	readonly dispose: () => Promise<void>;
+}
+
+export interface BrowserWorkbenchMediaOwnerOptions {
+	readonly createMediaSession?: typeof createRealtimeMediaSession;
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -194,8 +199,12 @@ function removeAudioElements(active: SocketRun): void {
 }
 
 /** Own one exact browser socket, RTCPeerConnection, microphone, and remote audio attachment. */
-export function createBrowserWorkbenchMediaOwner(): BrowserWorkbenchMediaOwner {
+export function createBrowserWorkbenchMediaOwner(
+	options: BrowserWorkbenchMediaOwnerOptions = {},
+): BrowserWorkbenchMediaOwner {
+	const createMediaSession = options.createMediaSession ?? createRealtimeMediaSession;
 	let run: SocketRun | null = null;
+	let ticketSequence = 0;
 	let disposed = false;
 	let ownerState: BrowserWorkbenchMediaState = {
 		state: "unavailable",
@@ -205,6 +214,14 @@ export function createBrowserWorkbenchMediaOwner(): BrowserWorkbenchMediaOwner {
 	const isCurrent = (active: SocketRun): boolean => !disposed && run === active && !active.closed;
 	const requireCurrent = (active: SocketRun): void => {
 		if (!isCurrent(active)) throw new Error("The Codex browser media run was replaced.");
+	};
+	const requireCurrentStart = (
+		active: SocketRun,
+		operation: NonNullable<SocketRun["startOperation"]>,
+	): void => {
+		requireCurrent(active);
+		if (active.startOperation !== operation)
+			throw new Error("The Codex browser media start was replaced.");
 	};
 
 	const claim = async (active: SocketRun): Promise<BrowserCommandLease> => {
@@ -239,8 +256,16 @@ export function createBrowserWorkbenchMediaOwner(): BrowserWorkbenchMediaOwner {
 	const host = (active: SocketRun): RealtimeHost => ({
 		createOffer: async (offer) => {
 			requireCurrent(active);
-			const lease = active.startLease;
+			const operation = active.startOperation;
+			if (operation === null) throw new Error("The realtime start operation is absent.");
+			requireCurrentStart(active, operation);
+			const lease = operation.lease;
 			if (lease === null) throw new Error("The realtime start lease is absent.");
+			if (
+				String(lease.commandId) !== String(offer.sessionId) ||
+				String(lease.commandId) !== String(offer.correlationId)
+			)
+				throw new Error("The realtime offer does not belong to the current start operation.");
 			const value = commandResult(
 				await sendWorkbenchRequest(active, "command", {
 					command: {
@@ -251,7 +276,7 @@ export function createBrowserWorkbenchMediaOwner(): BrowserWorkbenchMediaOwner {
 					},
 				}),
 			);
-			requireCurrent(active);
+			requireCurrentStart(active, operation);
 			active.snapshot = value.snapshot;
 			if (
 				value.outcome !== "delivered" ||
@@ -348,7 +373,7 @@ export function createBrowserWorkbenchMediaOwner(): BrowserWorkbenchMediaOwner {
 		const media = active.media;
 		active.media = null;
 		active.handle = null;
-		active.startLease = null;
+		active.startOperation = null;
 		removeAudioElements(active);
 		await media?.dispose();
 	};
@@ -356,7 +381,7 @@ export function createBrowserWorkbenchMediaOwner(): BrowserWorkbenchMediaOwner {
 	const attach = async (socket: WebSocket): Promise<BrowserWorkbenchMediaState> => {
 		if (disposed) return ownerState;
 		if (run?.socket === socket && !run.closed) return ownerState;
-		if (run !== null) await closeRun(run);
+		const previous = run;
 		const pending = new Map<
 			string,
 			{ resolve: (value: unknown) => void; reject: (error: Error) => void }
@@ -428,6 +453,7 @@ export function createBrowserWorkbenchMediaOwner(): BrowserWorkbenchMediaOwner {
 		socket.addEventListener("message", onMessage);
 		socket.addEventListener("close", onClose);
 		active = {
+			ticket: ++ticketSequence,
 			socket,
 			pending,
 			remove: () => {
@@ -438,13 +464,15 @@ export function createBrowserWorkbenchMediaOwner(): BrowserWorkbenchMediaOwner {
 			sequence: 0,
 			media: null,
 			handle: null,
-			startLease: null,
+			startOperation: null,
 			audioElements: new Set(),
 			closed: false,
 		};
 		run = active;
 		ownerState = { state: "attaching" };
 		try {
+			if (previous !== null) await closeRun(previous);
+			requireCurrent(active);
 			const connected = record(
 				await sendWorkbenchRequest(active, "connect"),
 			) as unknown as WorkbenchSnapshotEnvelope;
@@ -452,7 +480,7 @@ export function createBrowserWorkbenchMediaOwner(): BrowserWorkbenchMediaOwner {
 			if (connected.kind !== "snapshot")
 				throw new Error("The Codex workbench connect result is invalid.");
 			active.snapshot = connected.snapshot;
-			active.media = createRealtimeMediaSession(host(active));
+			active.media = createMediaSession(host(active));
 			const subscribed = record(
 				await sendWorkbenchRequest(active, "subscribe"),
 			) as unknown as WorkbenchSnapshotEnvelope & { readonly sequence: number };
@@ -500,33 +528,41 @@ export function createBrowserWorkbenchMediaOwner(): BrowserWorkbenchMediaOwner {
 			const media = active?.media;
 			if (active === null || active.closed || media === null || media === undefined)
 				throw new Error("The Codex browser media owner has no active socket.");
-			const unavailable = capabilityFailure();
-			if (unavailable !== null) await publishUnavailable(active, unavailable);
-			else await publishMediaReady(active, true);
-			const startLease = await claim(active);
-			requireCurrent(active);
-			active.startLease = startLease;
-			const correlation = {
-				sessionId: parseRealtimeSessionId(String(startLease.commandId)),
-				correlationId: parseRealtimeCorrelationId(String(startLease.commandId)),
+			const operation: NonNullable<SocketRun["startOperation"]> = {
+				ticket: ++ticketSequence,
+				lease: null,
 			};
+			active.startOperation = operation;
 			try {
-				removeAudioElements(active);
-				const snapshot = await media.start(correlation);
-				requireCurrent(active);
-				if (snapshot.state.phase === "listening") ownerState = { state: "ready" };
-				else await publishUnavailable(active, unavailableFromSnapshot(snapshot));
-				return snapshot;
-			} catch (error) {
-				if (isCurrent(active))
-					await publishUnavailable(active, {
-						state: "unavailable",
-						reason: "negotiation_failed",
-						message: error instanceof Error ? error.message : "Realtime negotiation failed.",
-					});
-				throw error;
+				const unavailable = capabilityFailure();
+				if (unavailable !== null) await publishUnavailable(active, unavailable);
+				else await publishMediaReady(active, true);
+				requireCurrentStart(active, operation);
+				const startLease = await claim(active);
+				requireCurrentStart(active, operation);
+				operation.lease = startLease;
+				const correlation = {
+					sessionId: parseRealtimeSessionId(String(startLease.commandId)),
+					correlationId: parseRealtimeCorrelationId(String(startLease.commandId)),
+				};
+				try {
+					removeAudioElements(active);
+					const snapshot = await media.start(correlation);
+					requireCurrentStart(active, operation);
+					if (snapshot.state.phase === "listening") ownerState = { state: "ready" };
+					else await publishUnavailable(active, unavailableFromSnapshot(snapshot));
+					return snapshot;
+				} catch (error) {
+					if (isCurrent(active) && active.startOperation === operation)
+						await publishUnavailable(active, {
+							state: "unavailable",
+							reason: "negotiation_failed",
+							message: error instanceof Error ? error.message : "Realtime negotiation failed.",
+						});
+					throw error;
+				}
 			} finally {
-				if (isCurrent(active) && active.startLease === startLease) active.startLease = null;
+				if (isCurrent(active) && active.startOperation === operation) active.startOperation = null;
 			}
 		},
 		appendText: async (text: string) => {

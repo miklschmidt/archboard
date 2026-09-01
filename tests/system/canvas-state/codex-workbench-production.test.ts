@@ -1,26 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { WebSocket } from "ws";
 
 import { processExists, startOwnedCanvas } from "../support/owned-canvas.ts";
+import {
+	openApplicationSocket,
+	prepareProductionFixture,
+	type WorkbenchResult,
+} from "./support/codex-production.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 
 const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
-
-interface WorkbenchResult {
-	readonly ok: boolean;
-	readonly value?: Record<string, unknown>;
-	readonly error?: string;
-}
-
-interface ApplicationSocket {
-	readonly socket: WebSocket;
-	request(action: string, extra?: Record<string, unknown>): Promise<WorkbenchResult>;
-	close(): Promise<void>;
-}
 
 interface FixtureRecord {
 	readonly kind?: string;
@@ -55,43 +46,6 @@ const leaseTarget = (result: WorkbenchResult): Record<string, unknown> => {
 	};
 };
 
-async function openApplicationSocket(base: string, clientId: string): Promise<ApplicationSocket> {
-	const endpoint = new URL(base);
-	endpoint.protocol = "ws:";
-	endpoint.searchParams.set("clientId", clientId);
-	const socket = new WebSocket(endpoint);
-	const pending = new Map<string, (value: WorkbenchResult) => void>();
-	let sequence = 0;
-	socket.on("message", (raw) => {
-		const message = JSON.parse(raw.toString()) as WorkbenchResult & { requestId?: unknown };
-		if (typeof message.requestId !== "string") return;
-		pending.get(message.requestId)?.(message);
-		pending.delete(message.requestId);
-	});
-	await new Promise<void>((resolveOpen, reject) => {
-		socket.once("open", resolveOpen);
-		socket.once("error", reject);
-	});
-	return {
-		socket,
-		request(action, extra = {}) {
-			const requestId = `production-${++sequence}`;
-			const result = new Promise<WorkbenchResult>((resolveResult) => {
-				pending.set(requestId, resolveResult);
-			});
-			socket.send(JSON.stringify({ type: "codex_workbench_request", requestId, action, ...extra }));
-			return result;
-		},
-		async close() {
-			if (socket.readyState === WebSocket.CLOSED) return;
-			await new Promise<void>((resolveClose) => {
-				socket.once("close", resolveClose);
-				socket.close();
-			});
-		},
-	};
-}
-
 const pane = (clientId: string, paneId: string, focused: boolean, primary: boolean) => ({
 	clientId,
 	paneId,
@@ -105,29 +59,15 @@ const pane = (clientId: string, paneId: string, focused: boolean, primary: boole
 
 describe.serial("actual production Codex composition", () => {
 	test("src/server.ts crosses every browser, protocol, semantic, approval, and cleanup seam", async () => {
-		const root = mkdtempSync(join(tmpdir(), "archboard-codex-production-"));
-		const logPath = join(root, "codex.ndjson");
-		const controlPath = join(root, "control.json");
-		const executablePath = join(root, "codex-fixture");
-		writeFileSync(logPath, "");
-		writeFileSync(controlPath, JSON.stringify({ exit: false }));
-		writeFileSync(
-			executablePath,
-			readFileSync(executableSource, "utf8")
-				.replace(/^#!.*\n/, `#!${process.execPath}\n`)
-				.replaceAll("__ARCHBOARD_TEST_CODEX_LOG__", logPath)
-				.replaceAll("__ARCHBOARD_TEST_CODEX_CONTROL__", controlPath),
-		);
-		chmodSync(executablePath, 0o700);
-		let canvas: Awaited<ReturnType<typeof startOwnedCanvas>> | null = null;
-		let first: ApplicationSocket | null = null;
-		let current: ApplicationSocket | null = null;
-		let focused: ApplicationSocket | null = null;
+		const resources = new AsyncDisposableStack();
 		try {
+			const fixture = prepareProductionFixture(resources, executableSource);
+			const { controlPath, executablePath, logPath, root, vault } = fixture;
+			let canvas: Awaited<ReturnType<typeof startOwnedCanvas>>;
 			try {
 				canvas = await startOwnedCanvas({
 					serverPath,
-					vault: join(root, "vault"),
+					vault,
 					env: {
 						ARCHBOARD_TEST_CODEX_EXECUTABLE: executablePath,
 						ARCHBOARD_TEST_CODEX_LOG: logPath,
@@ -142,9 +82,12 @@ describe.serial("actual production Codex composition", () => {
 					{ cause: error },
 				);
 			}
+			resources.defer(() => canvas.dispose());
 			const request = createRequester(canvas);
-			first = await openApplicationSocket(canvas.base, "bound-client");
-			focused = await openApplicationSocket(canvas.base, "focused-client");
+			const first = await openApplicationSocket(canvas.base, "bound-client");
+			resources.defer(() => first.close());
+			const focused = await openApplicationSocket(canvas.base, "focused-client");
+			resources.defer(() => focused.close());
 			const boundPane = await request("/api/panes", {
 				method: "POST",
 				doing: false,
@@ -160,9 +103,9 @@ describe.serial("actual production Codex composition", () => {
 
 			expect(await first.request("connect")).toMatchObject({ ok: true });
 			expect(await first.request("claimLease")).toMatchObject({ ok: true });
-			current = await openApplicationSocket(canvas.base, "bound-client");
+			const current = await openApplicationSocket(canvas.base, "bound-client");
+			resources.defer(() => current.close());
 			await first.close();
-			first = null;
 			expect(await current.request("connect")).toMatchObject({ ok: true });
 
 			const initialLease = await current.request("claimLease");
@@ -329,11 +272,7 @@ describe.serial("actual production Codex composition", () => {
 			expect(retired.error).toContain("unavailable");
 			await canvas.assertRunning();
 		} finally {
-			await first?.close();
-			await current?.close();
-			await focused?.close();
-			await canvas?.dispose();
-			rmSync(root, { recursive: true, force: true });
+			await resources.disposeAsync();
 		}
 	}, 60_000);
 });
