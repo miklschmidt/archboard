@@ -17,7 +17,15 @@ function errorMessages(value: unknown): string[] {
 }
 
 describe("production Codex owner terminal cleanup", () => {
-	for (const stage of ["graph", "process", "realtime", "queue", "listener", "final"] as const) {
+	for (const stage of [
+		"graph",
+		"process",
+		"realtime",
+		"queue",
+		"projection",
+		"listener",
+		"final",
+	] as const) {
 		test(`terminal ${stage} failure revokes retained authority and permits reinstall`, async () => {
 			const events: string[] = [];
 			const retained = emptyCodexWorkbenchRetainedState();
@@ -36,10 +44,11 @@ describe("production Codex owner terminal cleanup", () => {
 				},
 				createGeneration: async () => {
 					const generation = fakeGeneration(events, 1);
-					generation.state.transportUnsubscribers.push(() => void events.push("listener:after"));
+					generation.state.registrations.transportRequest = () =>
+						void events.push("listener:after");
 					if (stage === "graph")
 						(
-							generation.state.ownerHooks as unknown as {
+							generation.state.current!.hooks as unknown as {
 								stopBrowser: () => Promise<void>;
 							}
 						).stopBrowser = async () => {
@@ -48,7 +57,7 @@ describe("production Codex owner terminal cleanup", () => {
 						};
 					if (stage === "realtime")
 						(
-							generation.state.ownerHooks as unknown as {
+							generation.state.current!.hooks as unknown as {
 								stopRealtime: () => Promise<void>;
 							}
 						).stopRealtime = async () => {
@@ -57,18 +66,24 @@ describe("production Codex owner terminal cleanup", () => {
 						};
 					if (stage === "queue")
 						(
-							generation.state.ownerHooks as unknown as {
+							generation.state.current!.hooks as unknown as {
 								stopQueue: () => void;
 							}
 						).stopQueue = () => {
 							events.push("queue:failed");
 							throw new Error("queue cleanup failed");
 						};
+					if (stage === "projection")
+						generation.state.registrations.approvalProjection = () => {
+							expect(generation.state.registrations.approvalProjection).toBeNull();
+							events.push("projection:failed");
+							throw new Error("projection cleanup failed");
+						};
 					if (stage === "listener")
-						generation.state.transportUnsubscribers.push(() => {
+						generation.state.registrations.transportNotification = () => {
 							events.push("listener:failed");
 							throw new Error("listener cleanup failed");
-						});
+						};
 					if (stage === "final") {
 						(generation.state.components.approvals as unknown as { dispose: () => void }).dispose =
 							() => {
@@ -96,6 +111,7 @@ describe("production Codex owner terminal cleanup", () => {
 			if (stage === "graph") expect(events).toContain("graph:failed");
 			if (stage === "realtime") expect(events).toContain("realtime:failed");
 			if (stage === "queue") expect(events).toContain("queue:failed");
+			if (stage === "projection") expect(events).toContain("projection:failed");
 			if (stage === "listener") expect(events).toContain("listener:failed");
 			if (stage === "final") expect(events.slice(-2)).toEqual(["final:failed", "final:after"]);
 			expect((await owner.shutdown()).state).toBe("failed");
@@ -121,7 +137,7 @@ describe("production Codex owner terminal cleanup", () => {
 			}),
 			createGeneration: async () => {
 				const generation = fakeGeneration(events, 1);
-				const hooks = generation.state.ownerHooks as unknown as {
+				const hooks = generation.state.current!.hooks as unknown as {
 					stopBrowser: () => Promise<void>;
 					stopRealtime: () => Promise<void>;
 					stopQueue: () => void;
@@ -135,12 +151,10 @@ describe("production Codex owner terminal cleanup", () => {
 				hooks.stopQueue = () => {
 					throw new Error("queue cleanup failed");
 				};
-				generation.state.transportUnsubscribers.push(
-					() => void events.push("listener:after"),
-					() => {
-						throw new Error("listener cleanup failed");
-					},
-				);
+				generation.state.registrations.transportRequest = () => void events.push("listener:after");
+				generation.state.registrations.transportNotification = () => {
+					throw new Error("listener cleanup failed");
+				};
 				(generation.state.components.approvals as unknown as { dispose: () => void }).dispose =
 					() => {
 						throw new Error("final cleanup failed");

@@ -131,7 +131,7 @@ describe("production Codex owner installation", () => {
 		};
 		const first = installCodexWorkbenchOwner(retained, options);
 		expect((await first.start()).ready).toBeTrue();
-		const reloadHooks = retained.control.runtime?.generation?.ownerHooks;
+		const reloadHooks = fakeGeneration(events, 2).state.current?.hooks;
 		if (reloadHooks === undefined) throw new Error("The reload hooks were not retained.");
 		await first.reload(reloadHooks);
 		expect(processCreates).toBe(1);
@@ -140,9 +140,9 @@ describe("production Codex owner installation", () => {
 		expect(first.snapshot().generation).toBe(2);
 		expect((await first.shutdown()).state).toBe("idle");
 		expect(events.slice(-3)).toEqual([
-			"generation:1:stop:shutdown",
+			"generation:2:stop:shutdown",
 			"process:stop",
-			"generation:1:finish-stop",
+			"generation:2:finish-stop",
 		]);
 	});
 

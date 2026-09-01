@@ -117,25 +117,12 @@ import {
 	type CodexWorkbenchGateway,
 	type CodexWorkbenchGatewayOptions,
 } from "../../codex-workbench/index.js";
+import { CodexWorkbenchCompositionError } from "./codex-workbench-error.js";
+import { assertCodexWorkbenchRetainedState } from "./codex-workbench-retained-policy.js";
+
+export { CodexWorkbenchCompositionError, assertCodexWorkbenchRetainedState };
 
 export const CODEX_WORKBENCH_OWNER = "archboard-canvas-codex-workbench" as const;
-
-export class CodexWorkbenchCompositionError extends Error {
-	override readonly name = "CodexWorkbenchCompositionError";
-
-	constructor(
-		readonly code:
-			| "duplicate_owner"
-			| "invalid_retained_state"
-			| "not_started"
-			| "startup_failed"
-			| "shutdown_failed",
-		message: string,
-		override readonly cause?: unknown,
-	) {
-		super(message);
-	}
-}
 
 export interface CodexWorkbenchRequestOwners {
 	readonly approvals: Pick<CodexApprovalBroker, "receive">;
@@ -230,22 +217,44 @@ export interface CodexWorkbenchGeneration {
 	readonly router: CodexWorkbenchRequestRouter;
 	readonly onNotification: Parameters<CodexTransport["onServerNotification"]>[0];
 	readonly onExit: Parameters<CodexTransport["onExit"]>[0];
-	readonly replaceHooks: (hooks: CodexWorkbenchGenerationHooks) => Promise<void>;
+	readonly replaceHooks: (source: CodexWorkbenchGenerationSourceInput) => Promise<void>;
 	readonly stop: (reason: "shutdown" | "child_exit") => Promise<void>;
 	readonly finishStop: () => void;
+}
+
+export interface CodexWorkbenchGenerationSourceInput {
+	readonly hooks: CodexWorkbenchGenerationHooks;
+	readonly onChildExitStart?: () => void;
+	readonly onChildExitFinished?: (failure: Error | null) => Promise<void> | void;
+}
+
+export interface CodexWorkbenchGenerationSlots {
+	readonly hooks: CodexWorkbenchGenerationHooks;
+	readonly onChildExitStart: (() => void) | null;
+	readonly onChildExitFinished: ((failure: Error | null) => Promise<void> | void) | null;
+	readonly route: CodexWorkbenchRequestRouter["route"];
+	readonly onNotification: Parameters<CodexTransport["onServerNotification"]>[0];
+	readonly onExit: Parameters<CodexTransport["onExit"]>[0];
+	readonly replaceHooks: (source: CodexWorkbenchGenerationSourceInput) => Promise<void>;
+	readonly stop: (reason: "shutdown" | "child_exit") => Promise<void>;
+	readonly finishStop: () => void;
+}
+
+export interface CodexWorkbenchGenerationRegistrations {
+	transportRequest: (() => void) | null;
+	transportNotification: (() => void) | null;
+	transportExit: (() => void) | null;
+	lifecycleSignals: (() => void) | null;
+	browserGateway: (() => void) | null;
+	approvalProjection: (() => void) | null;
 }
 
 export interface CodexWorkbenchGenerationState {
 	readonly components: CodexWorkbenchComponents;
 	readonly owners: CodexWorkbenchRequestOwners;
-	readonly ownerHooks: CodexWorkbenchGenerationHooks;
-	onChildExitStart?: () => void;
-	onChildExitFinished?: (failure: Error | null) => Promise<void> | void;
-	transportUnsubscribers: Array<() => void>;
-	hookUnsubscribers: Array<() => void>;
-	approvalProjectionUnsubscribe: (() => void) | null;
+	current: CodexWorkbenchGenerationSlots | null;
+	registrations: CodexWorkbenchGenerationRegistrations;
 	readonly pendingChildSettlements: Set<Promise<unknown>>;
-	currentHooks: CodexWorkbenchGenerationHooks;
 	stopped: boolean;
 	stopPromise: Promise<void> | null;
 	stopComplete: boolean;
@@ -582,44 +591,114 @@ export function createProductionCodexWorkbenchFactories(
 	});
 }
 
-function installGenerationHooks(
-	state: CodexWorkbenchGenerationState,
-	hooks: CodexWorkbenchGenerationHooks,
-): void {
-	state.components.semanticDelivery.replaceHooks(hooks.threadContext);
-	hooks.installIdentityDecoders(state.components.identity);
-	const installed: Array<() => void> = [];
-	try {
-		installed.push(hooks.installLifecycleSignals(state.components));
-		installed.push(hooks.installBrowserGateway(state.components.gateway));
-		state.hookUnsubscribers = installed;
-	} catch (error) {
-		for (const unsubscribe of installed.toReversed()) unsubscribe();
-		throw error;
+const GENERATION_REGISTRATION_RELEASE_ORDER = Object.freeze([
+	"approvalProjection",
+	"browserGateway",
+	"lifecycleSignals",
+	"transportExit",
+	"transportNotification",
+	"transportRequest",
+] satisfies readonly (keyof CodexWorkbenchGenerationRegistrations)[]);
+
+class CodexWorkbenchGenerationInstallError extends Error {
+	override readonly name = "CodexWorkbenchGenerationInstallError";
+	override readonly cause: unknown;
+
+	constructor(
+		readonly stage: string,
+		readonly cleanupFailure: Error | null,
+		installCause: unknown,
+	) {
+		super(`Codex generation installation failed at ${stage}.`);
+		const causeError =
+			installCause instanceof Error ? installCause : new Error(String(installCause));
+		this.cause =
+			cleanupFailure === null
+				? causeError
+				: new AggregateError(
+						[causeError, cleanupFailure],
+						"Codex generation installation and partial cleanup both failed.",
+					);
 	}
 }
 
-function removeGenerationHooks(state: CodexWorkbenchGenerationState): void {
-	for (const unsubscribe of state.hookUnsubscribers.splice(0).toReversed()) unsubscribe();
+class CodexWorkbenchGenerationReplacementError extends Error {
+	override readonly name = "CodexWorkbenchGenerationReplacementError";
+
+	constructor(
+		readonly recovered: boolean,
+		readonly terminalSlots: CodexWorkbenchGenerationSlots,
+		override readonly cause: unknown,
+	) {
+		super(
+			recovered
+				? "Codex generation replacement failed; the previous generation was restored."
+				: "Codex generation replacement failed and retired the active generation.",
+		);
+	}
 }
 
-function removeGenerationSource(state: CodexWorkbenchGenerationState): void {
-	for (const unsubscribe of state.transportUnsubscribers.splice(0).toReversed()) unsubscribe();
+function emptyGenerationRegistrations(): CodexWorkbenchGenerationRegistrations {
+	return {
+		transportRequest: null,
+		transportNotification: null,
+		transportExit: null,
+		lifecycleSignals: null,
+		browserGateway: null,
+		approvalProjection: null,
+	};
 }
 
-function installGenerationSource(
+/** Clear ownership before invoking each cleanup so a throwing disposer cannot remain reachable. */
+function releaseGenerationRegistrations(
+	registrations: CodexWorkbenchGenerationRegistrations,
+	label: string,
+): Error | null {
+	let failure: Error | null = null;
+	for (const key of GENERATION_REGISTRATION_RELEASE_ORDER) {
+		const cleanup = registrations[key];
+		registrations[key] = null;
+		if (cleanup === null) continue;
+		try {
+			cleanup();
+		} catch (error) {
+			failure = appendFailure(failure, error, `${label} ${key} cleanup failed.`);
+		}
+	}
+	return failure;
+}
+
+function installGenerationRegistrations(
 	state: CodexWorkbenchGenerationState,
-	source: CodexWorkbenchGeneration,
-): void {
-	const installed: Array<() => void> = [];
+	slots: CodexWorkbenchGenerationSlots,
+): CodexWorkbenchGenerationRegistrations {
+	const registrations = emptyGenerationRegistrations();
+	let stage = "transportRequest";
 	try {
-		installed.push(state.components.transport.onServerRequest(source.router.route));
-		installed.push(state.components.transport.onServerNotification(source.onNotification));
-		installed.push(state.components.transport.onExit(source.onExit));
-		state.transportUnsubscribers = installed;
+		registrations.transportRequest = state.components.transport.onServerRequest(slots.route);
+		stage = "transportNotification";
+		registrations.transportNotification = state.components.transport.onServerNotification(
+			slots.onNotification,
+		);
+		stage = "transportExit";
+		registrations.transportExit = state.components.transport.onExit(slots.onExit);
+		stage = "threadContext";
+		state.components.semanticDelivery.replaceHooks(slots.hooks.threadContext);
+		stage = "identityDecoders";
+		slots.hooks.installIdentityDecoders(state.components.identity);
+		stage = "lifecycleSignals";
+		registrations.lifecycleSignals = slots.hooks.installLifecycleSignals(state.components);
+		stage = "browserGateway";
+		registrations.browserGateway = slots.hooks.installBrowserGateway(state.components.gateway);
+		stage = "approvalProjection";
+		registrations.approvalProjection = slots.hooks.installApprovalProjection(state.components);
+		return registrations;
 	} catch (error) {
-		for (const unsubscribe of installed.toReversed()) unsubscribe();
-		throw error;
+		throw new CodexWorkbenchGenerationInstallError(
+			stage,
+			releaseGenerationRegistrations(registrations, "Partial Codex generation"),
+			error,
+		);
 	}
 }
 
@@ -659,42 +738,64 @@ async function settleGenerationChildExit(
 
 async function replaceGenerationSource(
 	state: CodexWorkbenchGenerationState,
-	source: CodexWorkbenchGeneration,
-	rollbackSource: CodexWorkbenchGeneration,
-	hooks: CodexWorkbenchGenerationHooks,
-): Promise<void> {
-	if (state.stopped)
+	previous: CodexWorkbenchGenerationSlots,
+	input: CodexWorkbenchGenerationSourceInput,
+): Promise<CodexWorkbenchGenerationSlots> {
+	if (state.stopped || state.current !== previous)
 		throw new CodexWorkbenchCompositionError(
 			"not_started",
-			"The production Codex workbench cannot reload after terminal teardown.",
+			"The production Codex workbench cannot reload a retired source generation.",
 		);
-	const previousHooks = state.currentHooks;
-	removeGenerationHooks(state);
-	removeGenerationSource(state);
+	const next = createCodexWorkbenchGenerationSlots(state, input);
+	const previousRegistrations = state.registrations;
+	state.current = null;
+	state.registrations = emptyGenerationRegistrations();
+	const removalFailure = releaseGenerationRegistrations(
+		previousRegistrations,
+		"Retired Codex generation",
+	);
+	if (removalFailure !== null)
+		throw new CodexWorkbenchGenerationReplacementError(false, next, removalFailure);
+
+	let nextRegistrations: CodexWorkbenchGenerationRegistrations;
 	try {
-		installGenerationSource(state, source);
-		installGenerationHooks(state, hooks);
-		state.currentHooks = hooks;
+		nextRegistrations = installGenerationRegistrations(state, next);
 	} catch (error) {
+		const installError = error as CodexWorkbenchGenerationInstallError;
+		if (installError.cleanupFailure !== null)
+			throw new CodexWorkbenchGenerationReplacementError(false, next, installError);
 		try {
-			removeGenerationHooks(state);
-			removeGenerationSource(state);
-			installGenerationSource(state, rollbackSource);
-			installGenerationHooks(state, previousHooks);
+			state.registrations = installGenerationRegistrations(state, previous);
+			state.current = previous;
 		} catch (rollbackError) {
-			throw new Error(
-				`Codex source replacement (${failureMessage(error)}) and rollback both failed.`,
-				{ cause: rollbackError },
+			throw new CodexWorkbenchGenerationReplacementError(
+				false,
+				next,
+				new AggregateError(
+					[error, rollbackError],
+					"Codex generation installation and rollback both failed.",
+				),
 			);
 		}
-		throw error;
+		throw new CodexWorkbenchGenerationReplacementError(true, previous, error);
 	}
+	state.registrations = nextRegistrations;
+	state.current = next;
+	return next;
 }
 
 function stopGeneration(
 	state: CodexWorkbenchGenerationState,
+	slots: CodexWorkbenchGenerationSlots,
 	reason: "shutdown" | "child_exit",
 ): Promise<void> {
+	if (state.current !== null && state.current !== slots)
+		return Promise.reject(
+			new CodexWorkbenchCompositionError(
+				"not_started",
+				"A retired Codex generation cannot stop the active workbench.",
+			),
+		);
 	if (state.stopComplete) return Promise.resolve();
 	if (state.stopPromise !== null) return state.stopPromise;
 	state.stopped = true;
@@ -722,13 +823,13 @@ function stopGeneration(
 				failure = appendFailure(failure, error, "Codex workbench shutdown failed.");
 			}
 		};
-		await attempt(() => state.ownerHooks.stopBrowser(gateway));
-		await attempt(() => state.ownerHooks.stopRealtime(realtime));
+		await attempt(() => slots.hooks.stopBrowser(gateway));
+		await attempt(() => slots.hooks.stopRealtime(realtime));
 		await attempt(() => realtime.dispose());
 		await attempt(() => semanticPublisher.dispose());
-		await attempt(() => state.ownerHooks.stopQueue(queue));
-		await attempt(() => state.ownerHooks.cancelDynamicApprovalsAndWaits(state.components, cause));
-		await attempt(() => state.ownerHooks.settleOrdinaryRequests(approvals, cause));
+		await attempt(() => slots.hooks.stopQueue(queue));
+		await attempt(() => slots.hooks.cancelDynamicApprovalsAndWaits(state.components, cause));
+		await attempt(() => slots.hooks.settleOrdinaryRequests(approvals, cause));
 		await attempt(() => session[CODEX_SESSION_CONTROL].dispose());
 		await attempt(() => callbacks.dispose());
 		await attempt(() => spokenApproval.dispose());
@@ -747,30 +848,21 @@ function stopGeneration(
 	return operation;
 }
 
-function finishGenerationStop(state: CodexWorkbenchGenerationState): void {
+function finishGenerationStop(
+	state: CodexWorkbenchGenerationState,
+	slots: CodexWorkbenchGenerationSlots,
+): void {
+	if (state.current !== null && state.current !== slots)
+		throw new CodexWorkbenchCompositionError(
+			"not_started",
+			"A retired Codex generation cannot finish the active workbench stop.",
+		);
 	if (state.stopFinished) return;
 	state.stopFinished = true;
-	let failure: Error | null = null;
-	for (const unsubscribe of state.hookUnsubscribers.splice(0).toReversed()) {
-		try {
-			unsubscribe();
-		} catch (error) {
-			failure = appendFailure(failure, error, "Codex generation-hook cleanup failed.");
-		}
-	}
-	try {
-		state.approvalProjectionUnsubscribe?.();
-		state.approvalProjectionUnsubscribe = null;
-	} catch (error) {
-		failure = appendFailure(failure, error, "Codex approval-projection cleanup failed.");
-	}
-	for (const unsubscribe of state.transportUnsubscribers.splice(0).toReversed()) {
-		try {
-			unsubscribe();
-		} catch (error) {
-			failure = appendFailure(failure, error, "Codex listener cleanup failed.");
-		}
-	}
+	if (state.current === slots) state.current = null;
+	const registrations = state.registrations;
+	state.registrations = emptyGenerationRegistrations();
+	let failure = releaseGenerationRegistrations(registrations, "Terminal Codex generation");
 	for (const dispose of [
 		() => state.components.approvals.dispose(),
 		() => state.components.epoch.close(),
@@ -785,16 +877,19 @@ function finishGenerationStop(state: CodexWorkbenchGenerationState): void {
 }
 
 /** Construct every callable owned by the currently executing source generation. */
-function createCodexWorkbenchGenerationSource(
+function createCodexWorkbenchGenerationSlots(
 	state: CodexWorkbenchGenerationState,
-): CodexWorkbenchGeneration {
+	input: CodexWorkbenchGenerationSourceInput,
+): CodexWorkbenchGenerationSlots {
 	const router = createCodexWorkbenchRequestRouter(state.owners);
-	let source!: CodexWorkbenchGeneration;
-	source = {
-		state,
-		transport: state.components.transport,
-		gateway: state.components.gateway,
-		router: { route: router.route },
+	let slots!: CodexWorkbenchGenerationSlots;
+	slots = {
+		hooks: input.hooks,
+		onChildExitStart: input.onChildExitStart ?? null,
+		onChildExitFinished: input.onChildExitFinished ?? null,
+		route: (request) => {
+			if (state.current === slots) router.route(request);
+		},
 		onNotification: (
 			event: Parameters<CodexTransport["onServerNotification"]>[0] extends (
 				value: infer Value,
@@ -802,6 +897,7 @@ function createCodexWorkbenchGenerationSource(
 				? Value
 				: never,
 		) => {
+			if (state.current !== slots) return;
 			state.components.session[CODEX_SESSION_CONTROL].onNotification(event);
 			state.components.coordinator.onNotification(event);
 			state.components.operations.onNotification(event);
@@ -812,15 +908,16 @@ function createCodexWorkbenchGenerationSource(
 			child,
 			epoch: childEpoch,
 		}: Parameters<Parameters<CodexTransport["onExit"]>[0]>[0]) => {
-			state.onChildExitStart?.();
+			if (state.current !== slots) return;
+			slots.onChildExitStart?.();
 			const settlement = settleGenerationChildExit(state, child, childEpoch);
 			trackGenerationChildSettlement(state, settlement);
 			const retirement = (async (): Promise<void> => {
 				let failure: Error | null = null;
 				for (const operation of [
 					() => settlement,
-					() => source.stop("child_exit"),
-					() => source.finishStop(),
+					() => slots.stop("child_exit"),
+					() => slots.finishStop(),
 				]) {
 					try {
 						await Promise.resolve(operation());
@@ -829,7 +926,7 @@ function createCodexWorkbenchGenerationSource(
 					}
 				}
 				try {
-					await state.onChildExitFinished?.(failure);
+					await slots.onChildExitFinished?.(failure);
 				} catch (error) {
 					failure = appendFailure(failure, error, "Codex child retirement failed.");
 				}
@@ -837,22 +934,45 @@ function createCodexWorkbenchGenerationSource(
 			})();
 			void retirement.catch(() => undefined);
 		},
-		replaceHooks: (hooks: CodexWorkbenchGenerationHooks) =>
-			replaceGenerationSource(state, source, createCodexWorkbenchGenerationSource(state), hooks),
-		stop: (reason: "shutdown" | "child_exit") => stopGeneration(state, reason),
-		finishStop: () => finishGenerationStop(state),
+		replaceHooks: async (source: CodexWorkbenchGenerationSourceInput) => {
+			await replaceGenerationSource(state, slots, source);
+		},
+		stop: (reason: "shutdown" | "child_exit") => stopGeneration(state, slots, reason),
+		finishStop: () => finishGenerationStop(state, slots),
 	};
-	return source;
+	return slots;
+}
+
+function createCodexWorkbenchGenerationFacade(
+	state: CodexWorkbenchGenerationState,
+	slots: CodexWorkbenchGenerationSlots,
+): CodexWorkbenchGeneration {
+	return {
+		state,
+		transport: state.components.transport,
+		gateway: state.components.gateway,
+		router: { route: slots.route },
+		onNotification: slots.onNotification,
+		onExit: slots.onExit,
+		replaceHooks: slots.replaceHooks,
+		stop: slots.stop,
+		finishStop: slots.finishStop,
+	};
 }
 
 /** Replace listeners and hooks with callables constructed by this source generation. */
 export async function reloadCodexWorkbenchGeneration(
 	state: CodexWorkbenchGenerationState,
-	hooks: CodexWorkbenchGenerationHooks,
+	source: CodexWorkbenchGenerationSourceInput,
 ): Promise<CodexWorkbenchGeneration> {
-	const source = createCodexWorkbenchGenerationSource(state);
-	await source.replaceHooks(hooks);
-	return source;
+	const previous = state.current;
+	if (previous === null)
+		throw new CodexWorkbenchCompositionError(
+			"not_started",
+			"The production Codex workbench has no source generation to reload.",
+		);
+	const next = await replaceGenerationSource(state, previous, source);
+	return createCodexWorkbenchGenerationFacade(state, next);
 }
 
 /** Build and activate the one complete child-generation graph. */
@@ -972,26 +1092,21 @@ export async function composeCodexWorkbenchGeneration(
 	const state: CodexWorkbenchGenerationState = {
 		components,
 		owners,
-		ownerHooks: options.hooks,
-		onChildExitStart: options.onChildExitStart,
-		onChildExitFinished: options.onChildExitFinished,
-		transportUnsubscribers: [],
-		hookUnsubscribers: [],
-		approvalProjectionUnsubscribe: null,
+		current: null,
+		registrations: emptyGenerationRegistrations(),
 		pendingChildSettlements: new Set(),
-		currentHooks: options.hooks,
 		stopped: false,
 		stopPromise: null,
 		stopComplete: false,
 		stopFinished: false,
 	};
-	const source = createCodexWorkbenchGenerationSource(state);
+	const slots = createCodexWorkbenchGenerationSlots(state, options);
+	const source = createCodexWorkbenchGenerationFacade(state, slots);
 
 	try {
-		installGenerationSource(state, source);
-		installGenerationHooks(state, state.currentHooks);
-		state.approvalProjectionUnsubscribe = state.ownerHooks.installApprovalProjection(components);
-		await state.ownerHooks.initializeSession(session, components);
+		state.registrations = installGenerationRegistrations(state, slots);
+		state.current = slots;
+		await slots.hooks.initializeSession(session, components);
 	} catch (error) {
 		let failure = error instanceof Error ? error : new Error(String(error));
 		try {
@@ -1111,173 +1226,6 @@ export function emptyCodexWorkbenchRetainedState(): CodexWorkbenchRetainedState 
 		process: null,
 		control: emptyCodexWorkbenchRetainedControl(),
 	};
-}
-
-const RETAINED_STATE_KEYS = Object.freeze([
-	"owner",
-	"generation",
-	"state",
-	"failure",
-	"process",
-	"control",
-] satisfies readonly (keyof CodexWorkbenchRetainedState)[]);
-const RETAINED_PROCESS_KEYS = Object.freeze([
-	"start",
-	"stop",
-	"snapshot",
-	"currentChild",
-	"onChild",
-	"subscribe",
-] satisfies readonly (keyof CodexProcess)[]);
-const OWNER_SLOT_KEYS = Object.freeze([
-	"start",
-	"reload",
-	"shutdown",
-	"snapshot",
-	"gateway",
-] satisfies readonly (keyof CodexWorkbenchOwnerSlots)[]);
-const OWNER_RUNTIME_KEYS = Object.freeze([
-	"process",
-	"generation",
-	"child",
-	"startPromise",
-	"shutdownPromise",
-	"childRetiring",
-	"released",
-] satisfies readonly (keyof CodexWorkbenchOwnerRuntime)[]);
-const GENERATION_STATE_KEYS = Object.freeze([
-	"components",
-	"owners",
-	"ownerHooks",
-	"onChildExitStart",
-	"onChildExitFinished",
-	"transportUnsubscribers",
-	"hookUnsubscribers",
-	"approvalProjectionUnsubscribe",
-	"pendingChildSettlements",
-	"currentHooks",
-	"stopped",
-	"stopPromise",
-	"stopComplete",
-	"stopFinished",
-] satisfies readonly (keyof CodexWorkbenchGenerationState)[]);
-const FUNCTION_INTRINSIC_KEYS: readonly PropertyKey[] = Object.freeze([
-	"length",
-	"name",
-	"prototype",
-	"arguments",
-	"caller",
-]);
-const FUNCTION_PROTOTYPE = Function.prototype;
-const ASYNC_FUNCTION_PROTOTYPE = Object.getPrototypeOf(async function () {});
-const GENERATOR_FUNCTION_PROTOTYPE = Object.getPrototypeOf(function* () {});
-const ASYNC_GENERATOR_FUNCTION_PROTOTYPE = Object.getPrototypeOf(async function* () {});
-const FUNCTION_PROTOTYPE_KEYS = Object.freeze(Reflect.ownKeys(FUNCTION_PROTOTYPE));
-const ASYNC_FUNCTION_PROTOTYPE_KEYS = Object.freeze(Reflect.ownKeys(ASYNC_FUNCTION_PROTOTYPE));
-const GENERATOR_FUNCTION_PROTOTYPE_KEYS = Object.freeze(
-	Reflect.ownKeys(GENERATOR_FUNCTION_PROTOTYPE),
-);
-const ASYNC_GENERATOR_FUNCTION_PROTOTYPE_KEYS = Object.freeze(
-	Reflect.ownKeys(ASYNC_GENERATOR_FUNCTION_PROTOTYPE),
-);
-
-function exactOwnKeys(value: object, expected: readonly (string | symbol)[], label: string): void {
-	const actual = Reflect.ownKeys(value);
-	if (actual.length !== expected.length || expected.some((key) => !actual.includes(key)))
-		throw new CodexWorkbenchCompositionError(
-			"invalid_retained_state",
-			`${label} contains a value outside its retained allowlist.`,
-		);
-}
-
-function assertPlainRecord(value: object, label: string): void {
-	if (Object.getPrototypeOf(value) !== Object.prototype)
-		throw new CodexWorkbenchCompositionError(
-			"invalid_retained_state",
-			`${label} has a retained prototype attachment.`,
-		);
-}
-
-function assertStableFunction(
-	value: unknown,
-	label: string,
-): asserts value is (...args: never[]) => unknown {
-	const prototype = typeof value === "function" ? Object.getPrototypeOf(value) : null;
-	const prototypeKeys =
-		prototype === FUNCTION_PROTOTYPE
-			? FUNCTION_PROTOTYPE_KEYS
-			: prototype === ASYNC_FUNCTION_PROTOTYPE
-				? ASYNC_FUNCTION_PROTOTYPE_KEYS
-				: prototype === GENERATOR_FUNCTION_PROTOTYPE
-					? GENERATOR_FUNCTION_PROTOTYPE_KEYS
-					: prototype === ASYNC_GENERATOR_FUNCTION_PROTOTYPE
-						? ASYNC_GENERATOR_FUNCTION_PROTOTYPE_KEYS
-						: null;
-	if (typeof value !== "function" || prototypeKeys === null)
-		throw new CodexWorkbenchCompositionError(
-			"invalid_retained_state",
-			`${label} is not a plain callable slot.`,
-		);
-	exactOwnKeys(prototype, prototypeKeys, `${label}'s intrinsic callable prototype`);
-	const attached = Reflect.ownKeys(value).filter(
-		(property) => !FUNCTION_INTRINSIC_KEYS.includes(property),
-	);
-	if (attached.length > 0)
-		throw new CodexWorkbenchCompositionError(
-			"invalid_retained_state",
-			`${label} has a reachable attached value.`,
-		);
-}
-
-/** Fail closed if a retained slot hides a source-generation owner or attached capability. */
-export function assertCodexWorkbenchRetainedState(retained: CodexWorkbenchRetainedState): void {
-	exactOwnKeys(retained, RETAINED_STATE_KEYS, "The Codex retained state");
-	assertPlainRecord(retained, "The Codex retained state");
-	if (!Number.isSafeInteger(retained.generation) || retained.generation < 0)
-		throw new CodexWorkbenchCompositionError(
-			"invalid_retained_state",
-			"The Codex retained generation is not version-neutral plain data.",
-		);
-	if (retained.process !== null) {
-		exactOwnKeys(retained.process, RETAINED_PROCESS_KEYS, "The retained Codex process handle");
-		assertPlainRecord(retained.process, "The retained Codex process handle");
-		for (const key of RETAINED_PROCESS_KEYS)
-			assertStableFunction(retained.process[key], `The retained Codex process member ${key}`);
-	}
-	assertPlainRecord(retained.control, "The retained Codex control cell");
-	exactOwnKeys(
-		retained.control,
-		["current", "runtime", "wrappers"],
-		"The retained Codex control cell",
-	);
-	if (retained.control.runtime !== null) {
-		const runtime = retained.control.runtime;
-		assertPlainRecord(runtime, "The retained Codex process-lifetime state port");
-		exactOwnKeys(runtime, OWNER_RUNTIME_KEYS, "The retained Codex process-lifetime state port");
-		if (runtime.process !== retained.process)
-			throw new CodexWorkbenchCompositionError(
-				"invalid_retained_state",
-				"The retained Codex runtime does not reference the exact retained process handle.",
-			);
-		if (runtime.generation !== null) {
-			assertPlainRecord(runtime.generation, "The retained Codex generation state port");
-			exactOwnKeys(
-				runtime.generation,
-				GENERATION_STATE_KEYS,
-				"The retained Codex generation state port",
-			);
-		}
-	}
-	for (const [label, slots] of [
-		["stable wrappers", retained.control.wrappers],
-		["current generation slots", retained.control.current],
-	] as const) {
-		if (slots === null) continue;
-		assertPlainRecord(slots, `The Codex ${label}`);
-		exactOwnKeys(slots, OWNER_SLOT_KEYS, `The Codex ${label}`);
-		for (const key of OWNER_SLOT_KEYS)
-			assertStableFunction(slots[key], `The Codex ${label} member ${key}`);
-	}
 }
 
 const retainedWorkbench = kept<CodexWorkbenchRetainedState>(
@@ -1422,15 +1370,18 @@ function codexWorkbenchGenerationInput(
 	});
 }
 
-async function terminalStopCodexWorkbench(runtime: CodexWorkbenchOwnerRuntime): Promise<void> {
+async function terminalStopCodexWorkbench(
+	runtime: CodexWorkbenchOwnerRuntime,
+	terminalSlots?: CodexWorkbenchGenerationSlots,
+): Promise<void> {
 	const state = runtime.generation;
 	runtime.generation = null;
 	runtime.child = null;
-	const source = state === null ? null : createCodexWorkbenchGenerationSource(state);
+	const slots = terminalSlots ?? state?.current ?? null;
 	let failure: Error | null = null;
-	if (source !== null) {
+	if (state !== null && slots !== null) {
 		try {
-			await source.stop("shutdown");
+			await stopGeneration(state, slots, "shutdown");
 		} catch (error) {
 			failure = appendFailure(failure, error, "Codex graph shutdown failed.");
 		}
@@ -1440,9 +1391,9 @@ async function terminalStopCodexWorkbench(runtime: CodexWorkbenchOwnerRuntime): 
 	} catch (error) {
 		failure = appendFailure(failure, error, "Codex process shutdown failed.");
 	}
-	if (source !== null) {
+	if (state !== null && slots !== null) {
 		try {
-			source.finishStop();
+			finishGenerationStop(state, slots);
 		} catch (error) {
 			failure = appendFailure(failure, error, "Codex final listener cleanup failed.");
 		}
@@ -1544,9 +1495,34 @@ async function reloadCodexWorkbenchRuntime(
 		);
 	const generationNumber = retained.generation + 1;
 	const input = codexWorkbenchGenerationInput(retained, runtime, generationNumber, child);
-	state.onChildExitStart = input.onChildExitStart;
-	state.onChildExitFinished = input.onChildExitFinished;
-	await reloadCodexWorkbenchGeneration(state, typeof hooks === "function" ? hooks(input) : hooks);
+	const source = {
+		hooks: typeof hooks === "function" ? hooks(input) : hooks,
+		onChildExitStart: input.onChildExitStart,
+		onChildExitFinished: input.onChildExitFinished,
+	};
+	try {
+		await reloadCodexWorkbenchGeneration(state, source);
+	} catch (error) {
+		if (!(error instanceof CodexWorkbenchGenerationReplacementError) || error.recovered)
+			throw error;
+		retained.state = "stopping";
+		let failure: Error = error;
+		try {
+			await terminalStopCodexWorkbench(runtime, error.terminalSlots);
+		} catch (cleanupError) {
+			failure = new AggregateError(
+				[error, cleanupError],
+				"Codex generation replacement and terminal cleanup both failed.",
+			);
+		} finally {
+			releaseCodexWorkbenchRegistration(retained, runtime, "failed", failureMessage(failure));
+		}
+		throw new CodexWorkbenchCompositionError(
+			"reload_failed",
+			"The production Codex workbench could not replace or restore its source generation.",
+			failure,
+		);
+	}
 	retained.generation = generationNumber;
 	publishCodexWorkbenchSource(retained, runtime);
 	assertCodexWorkbenchRetainedState(retained);

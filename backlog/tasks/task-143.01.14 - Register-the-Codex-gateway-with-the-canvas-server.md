@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 05:38'
+updated_date: '2026-09-01 06:22'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -76,6 +76,14 @@ modified_files:
   - src/shared/timing/timing.ts
   - tests/system/process-contracts/fixtures/codex-realtime-process.ts
   - tests/system/repository-policy/codex-workbench-composition.test.ts
+  - src/server/canvas/lib/codex-workbench-error.ts
+  - src/server/canvas/lib/codex-workbench-generation-contract.ts
+  - src/server/canvas/lib/codex-workbench-retained-policy.ts
+  - src/server/canvas/tests/codex-workbench-reload-failures.test.ts
+  - src/server/canvas/tests/codex-workbench-terminal-cleanup.test.ts
+  - src/server/canvas/tests/support/codex-workbench-owner-fake.ts
+  - tests/system/canvas-state/codex-workbench-production-cleanup.test.ts
+  - tests/system/canvas-state/support/codex-production.ts
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -181,6 +189,20 @@ Own the one production composition root in the canvas server. It instantiates ev
 43. Run the focused reload identity, terminal failure matrix, media triple-overlap, production setup cleanup, actual production server, inventory, boundary, type, lint, format, and diff owners under named 6 GiB systemd scopes without repeating known OOM fingerprints.
 
 44. Keep status and AC unchanged, commit above f3948b7a, verify the protected artifact, and send the parent the required four-finding rereview callback.
+
+45. Replace retained ownerHooks, child callbacks, and loose cleanup arrays with one exact current generation source record and named registration ledger. Refresh the complete record on reload, validate its nested shape, and poison every retired callback in behavioral owners.
+
+46. Make generation registration removal and installation failure-isolated. Publish the new complete set only after full installation, restore the old complete set only after clean rollback, and terminally release the owner when removal, partial cleanup, or rollback cannot prove a complete set.
+
+47. Make projection and every named cleanup terminally idempotent by clearing ownership before invocation. Add removal, install, partial-cleanup, rollback, projection, aggregate-error, shutdown-cache, and reinstall matrices without weakening any existing owner.
+
+48. Arm production socket cleanup before the post-construction hook and add actual src/server.ts system cases for hook throw, socket error, early close, and timeout. Prove partial sockets and listeners close, a same-client reconnect can claim and release authority, processes exit, roots disappear, and observable cleanup order is reversed.
+
+49. Reassess the 1,654-line composition module after the lifecycle fix. Extract only a cohesive private lifecycle unit if it reduces concepts without a cycle or new public contract; otherwise record the concrete boundary reason and retain the advisory as review risk.
+
+50. Run the focused generation, reload, terminal, media, production cleanup, actual server, hot-reload, socket, inventory, lint, formatting, both TypeScript projects, frontend build, and diff owners in sequential named 6 GiB systemd scopes. Do not retry documented OOM fingerprints.
+
+51. Keep TASK-143.01.14 In Progress with AC unchecked, verify the protected hash, commit above de56927d, and send the required six-finding callback to parent thread 01a053f2-e36f-7911-9859-09d259b86aea.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -231,6 +253,16 @@ Validation under named systemd user scopes with MemoryMax=6G and MemorySwapMax=1
 Fresh rejection remediation above 4d24d3ba closes all nine review findings. Replacement socket authority transfers at acceptance before the retired close. All seven ordinary approval families cancel once on exact browser, child, or host teardown. Semantic capture uses only the controller current exact pane. Reload publishes new lifecycle callable identities over the reviewed stable lifecycle port. Browser media is a separate codex-workbench-media module with exact-run guards after asynchronous boundaries, leaving codex-realtime policy unchanged. Retained-state policy rejects spoofed callable prototypes, intrinsic mutations, and attached values. The actual src/server.ts production owner now proves initialization, epoch/coordinator readiness, pre-request reconnect, gateway decoder, lease release/reacquire, exact same-board semantic context, real ordinary and dynamic approvals with one response each, media ready/unavailable, dynamic thread creation, child exit, and terminal gateway cleanup. System cleanup is registered before first acquisition. Validation: focused module/runtime lane 108 pass, 0 fail, 718 assertions; actual production server owner 1 pass, 0 fail, 29 assertions; application WebSocket system owners 2 pass, 0 fail, 23 assertions; lint, formatting check, both TypeScript projects, frontend build, test inventory, diff check, and restored realtime boundary byte comparison pass. The realtime dependency-graph policy aggregate was attempted under the required 6 GiB memory and 1 GiB swap scope and OOM-killed after its first two assertions; its source is byte-identical to f01cc33a and no aggregate pass is claimed. Protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Status remains In Progress and every AC remains unchecked for parent rereview.
 
 Second rejection remediation above f3948b7a addresses all four rereview findings. Reload now rebuilds fresh route, notification, exit, replaceHooks, stop, finishStop, and five owner-slot identities; retained state holds only the reviewed process/generation state ports, while stable wrappers dispatch through the current control cell. Tests poison both installation/current owner slots and the complete original generation facade before exercising the replacement. Terminal cleanup attempts graph, process, realtime, queue, listener, projection, approvals, and epoch stages independently, aggregates simultaneous failures, clears current/runtime and authority in a final release, clears the shutdown-promise cache, and permits a clean reinstall after every injected failure. Browser media publishes the new run and start-operation tickets before any await, fences every continuation by exact run/operation identity, and an A/B/C race proves C remains active for delayed A disposal resolve or reject. The actual production system owner registers root, canvas, sockets, and children before later acquisition, cleans them in reverse order, closes partial sockets on open error/timeout, and proves root setup, fixture setup, listen, first-socket, and child-start failures leave no process, listener, socket, or directory leak. Final named 6 GiB/1 GiB validation: canvas/media modules 45 pass, 0 fail, 385 assertions; actual production/hot-reload/socket/setup system owners 12 pass, 0 fail, 135 assertions; composition policy 4 pass, 0 fail, 46 assertions; repository inventory passed its complete real-checkout assertions; lint has 0 warnings/errors; formatting, both TypeScript projects, frontend build, and diff check pass. The realtime and protocol dependency-boundary owners were attempted separately and hit the documented cgroup OOM fingerprint at 6 GiB, so no pass is claimed for those two owners. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. Status remains In Progress and all AC remain unchecked for parent rereview.
+
+Third rejection remediation above de56927d resolves all six rereview findings. Retained generation state now has one exact current source record and one named registration ledger. Successful reload constructs fresh hook, child-retirement, route, notification, exit, replacement, stop, and finalization callables; old listeners are inert by exact-current dispatch, and behavioral owners poison every retired hook and callback before exercising leaked listeners and terminal shutdown. The nested retained-state policy validates the exact generation, registration, hook, callback, and callable shapes.
+
+Reload is transactional and failure-isolated. Every registration clears ownership before cleanup; all removal failures are aggregated; a new generation publishes only after complete installation; a prior generation is restored only after clean partial cleanup and complete rollback; otherwise the owner terminally releases authority. The removal, new-install, rollback, partial-cleanup, projection, cached-shutdown, aggregate-error, and reinstall matrices cover every reachable named stage. Projection cleanup specifically proves its slot is null before a throwing disposer executes and that later cleanup still runs.
+
+The production socket helper now arms message, error, open, close, timeout, and pending-request cleanup before invoking the post-construction hook. The actual src/server.ts cleanup owner injects hook throw, socket error, early close, and timeout; each partial socket closes with zero listeners, a same-client recovery socket connects and claims/releases the lease, and teardown is observed in socket, canvas, root order with all recorded processes stopped.
+
+The composition root was reassessed rather than left larger. A private retained-policy module plus private error and registration contract extracted structural enforcement without changing public entrypoints or creating a runtime mode. src/server/canvas/lib/codex-workbench.ts is now 1,631 lines, below the rejected 1,654-line version, and targeted module-scope analysis reports zero findings or waivers.
+
+Final named 6 GiB/1 GiB validation: focused generation/reload/terminal/owner/policy owners 47 pass, 0 fail, 459 assertions; production canvas workbench system owners 8 pass, 0 fail, 116 assertions; hot reload 4 pass, 0 fail, 66 assertions; media 8 pass, 0 fail, 34 assertions; inventory 39 pass, 0 fail, 69 assertions; the complete module lane exited successfully; actual frontend build, full lint, formatting check, both TypeScript projects, protected diff check, and targeted module-scope analysis pass. The aggregate boundary owner was attempted once and OOM-killed at the documented cgroup ceiling after six passing cases; it was not retried and no aggregate pass is claimed. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress with all AC unchecked for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
