@@ -7,94 +7,47 @@ import {
 } from "../codex-workbench-owner.js";
 import { fakeGeneration, fakeProcess } from "./support/codex-workbench-owner-fake.js";
 
-function errorMessages(value: unknown): string[] {
+function messages(value: unknown): string[] {
 	if (!(value instanceof Error)) return [];
 	return [
 		value.message,
-		...(value instanceof AggregateError ? value.errors.flatMap(errorMessages) : []),
-		...errorMessages(value.cause),
+		...(value instanceof AggregateError ? value.errors.flatMap(messages) : []),
+		...messages(value.cause),
 	];
 }
 
 describe("production Codex owner terminal cleanup", () => {
-	for (const stage of [
-		"graph",
-		"process",
-		"realtime",
-		"queue",
-		"projection",
-		"listener",
-		"final",
-	] as const) {
-		test(`terminal ${stage} failure revokes retained authority and permits reinstall`, async () => {
+	for (const stage of ["graph", "process", "final"] as const) {
+		test(`${stage} failure revokes retained authority and permits reinstall`, async () => {
 			const events: string[] = [];
 			const retained = emptyCodexWorkbenchRetainedState();
+			const baseProcess = fakeProcess(events);
 			const owner = installCodexWorkbenchOwner(retained, {
-				createProcess: () => {
-					const process = fakeProcess(events);
-					return stage === "process"
+				createProcess: () =>
+					stage === "process"
 						? {
-								...process,
+								...baseProcess,
 								stop: async () => {
-									await process.stop();
+									await baseProcess.stop();
 									throw new Error("process cleanup failed");
 								},
 							}
-						: process;
-				},
-				createGeneration: async () => {
-					const generation = fakeGeneration(events, 1);
-					generation.state.registrations.transportRequest = () =>
-						void events.push("listener:after");
-					if (stage === "graph")
-						(
-							generation.state.current!.hooks as unknown as {
-								stopBrowser: () => Promise<void>;
-							}
-						).stopBrowser = async () => {
-							events.push("graph:failed");
-							throw new Error("graph cleanup failed");
-						};
-					if (stage === "realtime")
-						(
-							generation.state.current!.hooks as unknown as {
-								stopRealtime: () => Promise<void>;
-							}
-						).stopRealtime = async () => {
-							events.push("realtime:failed");
-							throw new Error("realtime cleanup failed");
-						};
-					if (stage === "queue")
-						(
-							generation.state.current!.hooks as unknown as {
-								stopQueue: () => void;
-							}
-						).stopQueue = () => {
-							events.push("queue:failed");
-							throw new Error("queue cleanup failed");
-						};
-					if (stage === "projection")
-						generation.state.registrations.approvalProjection = () => {
-							expect(generation.state.registrations.approvalProjection).toBeNull();
-							events.push("projection:failed");
-							throw new Error("projection cleanup failed");
-						};
-					if (stage === "listener")
-						generation.state.registrations.transportNotification = () => {
-							events.push("listener:failed");
-							throw new Error("listener cleanup failed");
-						};
-					if (stage === "final") {
-						(generation.state.components.approvals as unknown as { dispose: () => void }).dispose =
-							() => {
-								events.push("final:failed");
-								throw new Error("final cleanup failed");
-							};
-						(generation.state.components.epoch as unknown as { close: () => void }).close = () =>
-							void events.push("final:after");
-					}
-					return generation;
-				},
+						: baseProcess,
+				createGeneration: async ({ generation }) =>
+					fakeGeneration(events, generation, {
+						stop:
+							stage === "graph"
+								? async () => {
+										throw new Error("graph cleanup failed");
+									}
+								: undefined,
+						finishStop:
+							stage === "final"
+								? () => {
+										throw new Error("final cleanup failed");
+									}
+								: undefined,
+					}),
 			});
 			await owner.start();
 			const failure = await owner.shutdown().then(
@@ -102,31 +55,21 @@ describe("production Codex owner terminal cleanup", () => {
 				(error: unknown) => error,
 			);
 			expect(failure).toBeInstanceOf(CodexWorkbenchCompositionError);
-			expect(retained).toMatchObject({ owner: null, process: null, state: "failed" });
-			expect(retained.failure).toContain(`${stage} cleanup failed`);
-			expect(retained.control.current).toBeNull();
-			expect(retained.control.runtime).toBeNull();
+			expect(messages(failure)).toContain(`${stage} cleanup failed`);
 			expect(events).toContain("process:stop");
-			expect(events).toContain("listener:after");
-			if (stage === "graph") expect(events).toContain("graph:failed");
-			if (stage === "realtime") expect(events).toContain("realtime:failed");
-			if (stage === "queue") expect(events).toContain("queue:failed");
-			if (stage === "projection") expect(events).toContain("projection:failed");
-			if (stage === "listener") expect(events).toContain("listener:failed");
-			if (stage === "final") expect(events.slice(-2)).toEqual(["final:failed", "final:after"]);
-			expect((await owner.shutdown()).state).toBe("failed");
+			expect(retained).toMatchObject({ owner: null, process: null, state: "failed" });
+			expect(retained.control).toMatchObject({ current: null, runtime: null });
 			const replacement = installCodexWorkbenchOwner(retained, {
 				createProcess: () => fakeProcess([]),
-				createGeneration: async () => fakeGeneration([], 2),
+				createGeneration: async () => fakeGeneration([], 3),
 			});
 			await replacement.shutdown();
 		});
 	}
 
-	test("aggregates simultaneous failures and still runs the last cleanup", async () => {
-		const events: string[] = [];
+	test("aggregates simultaneous graph, process, and final failures", async () => {
 		const retained = emptyCodexWorkbenchRetainedState();
-		const process = fakeProcess(events);
+		const process = fakeProcess([]);
 		const owner = installCodexWorkbenchOwner(retained, {
 			createProcess: () => ({
 				...process,
@@ -135,46 +78,27 @@ describe("production Codex owner terminal cleanup", () => {
 					throw new Error("process cleanup failed");
 				},
 			}),
-			createGeneration: async () => {
-				const generation = fakeGeneration(events, 1);
-				const hooks = generation.state.current!.hooks as unknown as {
-					stopBrowser: () => Promise<void>;
-					stopRealtime: () => Promise<void>;
-					stopQueue: () => void;
-				};
-				hooks.stopBrowser = async () => {
-					throw new Error("graph cleanup failed");
-				};
-				hooks.stopRealtime = async () => {
-					throw new Error("realtime cleanup failed");
-				};
-				hooks.stopQueue = () => {
-					throw new Error("queue cleanup failed");
-				};
-				generation.state.registrations.transportRequest = () => void events.push("listener:after");
-				generation.state.registrations.transportNotification = () => {
-					throw new Error("listener cleanup failed");
-				};
-				(generation.state.components.approvals as unknown as { dispose: () => void }).dispose =
-					() => {
+			createGeneration: async ({ generation }) =>
+				fakeGeneration([], generation, {
+					stop: async () => {
+						throw new Error("graph cleanup failed");
+					},
+					finishStop: () => {
 						throw new Error("final cleanup failed");
-					};
-				(generation.state.components.epoch as unknown as { close: () => void }).close = () =>
-					void events.push("final:after");
-				return generation;
-			},
+					},
+				}),
 		});
 		await owner.start();
 		const failure = await owner.shutdown().then(
 			() => null,
 			(error: unknown) => error,
 		);
-		const messages = errorMessages(failure);
-		for (const stage of ["graph", "realtime", "queue", "process", "listener", "final"])
-			expect(messages).toContain(`${stage} cleanup failed`);
-		expect(events).toContain("listener:after");
-		expect(events).toContain("final:after");
+		for (const message of [
+			"graph cleanup failed",
+			"process cleanup failed",
+			"final cleanup failed",
+		])
+			expect(messages(failure)).toContain(message);
 		expect(retained.control).toMatchObject({ current: null, runtime: null });
-		expect(retained.owner).toBeNull();
 	});
 });

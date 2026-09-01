@@ -34,6 +34,7 @@ import {
 	createCanvasCodexBrowserSocketOwner,
 	type BrowserConnectionInstance,
 } from "../codex-workbench-browser.js";
+import { createBrowserLeaseLedger, type BrowserLeaseLedger } from "../../codex-workbench/index.js";
 import { requireExactSemanticPane } from "./codex-workbench-semantic-pane.js";
 import type { CanvasCodexWorkbenchHost } from "./codex-workbench-production.js";
 import {
@@ -374,6 +375,10 @@ const currentSocketsByClient = kept(
 const codexSocketInstances = kept(
 	"ws-codex-instances",
 	() => new Map<WebSocket, BrowserConnectionInstance>(),
+);
+const browserLeaseLedger = kept<BrowserLeaseLedger>(
+	"codex-browser-lease-ledger",
+	createBrowserLeaseLedger,
 );
 
 // What is on screen right now, one entry per pane, keyed by the same client id.
@@ -4550,6 +4555,7 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			);
 		},
 		waitForTargets,
+		browserLeaseLedger,
 		installIdentityDecoders: (identity) => {
 			installedIdentity = identity;
 		},
@@ -4566,18 +4572,29 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				gateway,
 				paneForBrowser: (browserId) => panes.get(browserId)?.paneId ?? null,
 			});
-			wiring.codex.handleBrowserMessage = (instance, browserId, input, send) =>
-				socketOwner.handle(instance, browserId, input, { send });
-			wiring.codex.acceptBrowser = socketOwner.accept;
-			wiring.codex.closeBrowser = socketOwner.close;
-			return () => {
+			const remove = (): void => {
 				socketOwner.disposeForReload();
 				wiring.codex.handleBrowserMessage = null;
 				wiring.codex.acceptBrowser = null;
 				wiring.codex.closeBrowser = null;
 			};
+			wiring.codex.handleBrowserMessage = (instance, browserId, input, send) =>
+				socketOwner.handle(instance, browserId, input, { send });
+			wiring.codex.acceptBrowser = socketOwner.accept;
+			wiring.codex.closeBrowser = socketOwner.close;
+			try {
+				for (const [browserId, socket] of currentSocketsByClient) {
+					const instance = codexSocketInstances.get(socket);
+					if (instance !== undefined) socketOwner.accept(instance, browserId);
+				}
+			} catch (error) {
+				remove();
+				throw error;
+			}
+			return remove;
 		},
-		stopBrowser: (gateway) => gateway.dispose(),
+		stopBrowser: (gateway, reason) =>
+			reason === "reload" ? gateway.disposeForReload() : gateway.dispose(),
 		stopRealtime: async (realtime) => {
 			const generation = realtime.generation();
 			if (generation === null) return;

@@ -9,7 +9,7 @@ export {
 	readBrowserProjection,
 	readBrowserSnapshot,
 } from "./lib/projection.js";
-export { createBrowserLeaseManager } from "./lib/lease.js";
+export { createBrowserLeaseLedger, createBrowserLeaseManager } from "./lib/lease.js";
 export { CodexWorkbenchGatewayError } from "./lib/contract.js";
 
 export type {
@@ -57,6 +57,8 @@ export type {
 	BrowserGatewayMessage,
 	BrowserGatewaySnapshotMessage,
 	BrowserLeaseBinding,
+	BrowserLeaseLedger,
+	BrowserLeaseRecord,
 	BrowserLifecyclePort,
 	BrowserOrdinaryApprovalActions,
 	BrowserProjection,

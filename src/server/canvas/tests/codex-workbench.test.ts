@@ -7,6 +7,7 @@ import {
 	emptyCodexWorkbenchRetainedState,
 	installCodexWorkbenchOwner,
 	type CODEX_WORKBENCH_OWNER,
+	type CodexWorkbenchGenerationFactory,
 	type CodexWorkbenchGenerationInput,
 } from "../codex-workbench-owner.js";
 import { fakeGeneration, fakeProcess } from "./support/codex-workbench-owner-fake.js";
@@ -23,6 +24,13 @@ const HUMAN_METHODS = [
 
 function request(method: string, owner: string): TransportServerRequest {
 	return { method, owner } as unknown as TransportServerRequest;
+}
+
+function rejected(operation: Promise<unknown>): Promise<unknown> {
+	return operation.then(
+		() => null,
+		(error: unknown) => error,
+	);
 }
 
 describe("production Codex request router", () => {
@@ -45,15 +53,10 @@ describe("production Codex request router", () => {
 				onServerRequest: (value) => routed.push(`coordinator:${value.method}`),
 			},
 			session: {
-				respondCurrentTime: async (value) => {
-					routed.push(`session:${value.method}`);
-				},
-				respondUnsupportedTokenRefresh: async (value) => {
-					routed.push(`session:${value.method}`);
-				},
-				respondUnsupportedAttestation: async (value) => {
-					routed.push(`session:${value.method}`);
-				},
+				respondCurrentTime: async (value) => void routed.push(`session:${value.method}`),
+				respondUnsupportedTokenRefresh: async (value) =>
+					void routed.push(`session:${value.method}`),
+				respondUnsupportedAttestation: async (value) => void routed.push(`session:${value.method}`),
 			},
 		});
 
@@ -81,12 +84,10 @@ describe("production Codex request router", () => {
 				respondUnsupportedAttestation: async (value) => void routed.push(value.method),
 			},
 		});
-
 		router.route(request("currentTime/read", "codex-session"));
 		router.route(request("account/chatgptAuthTokens/refresh", "codex-session"));
 		router.route(request("attestation/generate", "codex-session"));
 		await Promise.resolve();
-
 		expect(routed).toEqual([
 			"currentTime/read",
 			"account/chatgptAuthTokens/refresh",
@@ -95,7 +96,7 @@ describe("production Codex request router", () => {
 	});
 });
 
-describe("production Codex owner installation", () => {
+describe("production Codex owner lifecycle", () => {
 	test("releases registration when process-owner construction fails", () => {
 		const retained = emptyCodexWorkbenchRetainedState();
 		expect(() =>
@@ -107,55 +108,194 @@ describe("production Codex owner installation", () => {
 			}),
 		).toThrow("could not be created");
 		expect(retained).toMatchObject({ owner: null, process: null, state: "failed" });
-		expect(() =>
-			installCodexWorkbenchOwner(retained, {
-				createProcess: () => fakeProcess([]),
-				createGeneration: async () => fakeGeneration([], 1),
-			}),
-		).not.toThrow();
 	});
 
-	test("retains one process and generation while replacing only source hooks", async () => {
+	test("keeps one process while rebuilding the complete volatile graph", async () => {
 		const events: string[] = [];
 		const retained = emptyCodexWorkbenchRetainedState();
 		let processCreates = 0;
-		const options = {
+		const createGeneration: CodexWorkbenchGenerationFactory = async ({ generation, kernel }) => {
+			events.push(`generation:${generation}:create`);
+			const source = fakeGeneration(events, generation);
+			if (kernel !== null)
+				Object.assign(source, {
+					identityLedger: kernel.identityLedger,
+					transport: kernel.transport,
+				});
+			return source;
+		};
+		const owner = installCodexWorkbenchOwner(retained, {
 			createProcess: () => {
 				processCreates++;
 				return fakeProcess(events);
 			},
-			createGeneration: async ({ generation }: { readonly generation: number }) => {
-				events.push(`generation:${generation}:create`);
-				return fakeGeneration(events, generation);
-			},
-		};
-		const first = installCodexWorkbenchOwner(retained, options);
-		expect((await first.start()).ready).toBeTrue();
-		const reloadHooks = fakeGeneration(events, 2).state.current?.hooks;
-		if (reloadHooks === undefined) throw new Error("The reload hooks were not retained.");
-		await first.reload(reloadHooks);
+			createGeneration,
+		});
+		await owner.start();
+		const originalLedger = retained.control.runtime?.identityLedger;
+		const originalTransport = retained.control.runtime?.transport;
+		await owner.reload(createGeneration);
 		expect(processCreates).toBe(1);
-		expect(events).toEqual(["process:start", "generation:1:create", "generation:1:replace-hooks"]);
-		expect((first.gateway() as unknown as { marker: number }).marker).toBe(1);
-		expect(first.snapshot().generation).toBe(2);
-		expect((await first.shutdown()).state).toBe("idle");
-		expect(events.slice(-3)).toEqual([
-			"generation:2:stop:shutdown",
-			"process:stop",
-			"generation:2:finish-stop",
-		]);
+		expect(owner.snapshot()).toMatchObject({ generation: 2, ready: true });
+		expect((owner.gateway() as unknown as { marker: number }).marker).toBe(2);
+		expect(retained.control.runtime?.identityLedger).toBe(originalLedger);
+		expect(retained.control.runtime?.transport).toBe(originalTransport);
+		expect(events).toContain("generation:1:stop:reload");
+		await owner.shutdown();
+		expect(events).toContain("generation:2:stop:shutdown");
 	});
 
-	test("refuses every second active registration, including the same owner", () => {
+	test("revokes every public wrapper synchronously before a deferred disposer resolves", async () => {
 		const retained = emptyCodexWorkbenchRetainedState();
+		const events: string[] = [];
+		let releaseStop!: () => void;
+		const stopGate = new Promise<void>((resolve) => void (releaseStop = resolve));
+		const owner = installCodexWorkbenchOwner(retained, {
+			createProcess: () => fakeProcess(events),
+			createGeneration: async ({ generation }) =>
+				fakeGeneration(events, generation, {
+					stop: async () => {
+						events.push("owner:stop:entered");
+						await stopGate;
+					},
+				}),
+		});
+		await owner.start();
+		const wrappers = retained.control.wrappers;
+		const shutdown = owner.shutdown();
+		expect(events).toContain("owner:stop:entered");
+		for (const dispatch of [
+			() => wrappers.start(),
+			() => wrappers.reload(async () => fakeGeneration([], 3)),
+			() => wrappers.shutdown(),
+			() => wrappers.snapshot(),
+			() => wrappers.gateway(),
+		])
+			expect(dispatch).toThrow("no active retained owner dispatch");
+		expect(events.filter((event) => event === "owner:stop:entered")).toHaveLength(1);
+		releaseStop();
+		await shutdown;
+	});
+
+	test("a stale delayed start cleans only itself and cannot overwrite a replacement owner", async () => {
+		const retained = emptyCodexWorkbenchRetainedState();
+		const oldEvents: string[] = [];
+		let releaseGeneration!: () => void;
+		const generationGate = new Promise<void>((resolve) => void (releaseGeneration = resolve));
+		const oldOwner = installCodexWorkbenchOwner(retained, {
+			createProcess: () => fakeProcess(oldEvents),
+			createGeneration: async () => {
+				await generationGate;
+				return fakeGeneration(oldEvents, 1);
+			},
+		});
+		const staleStart = oldOwner.start();
+		await Promise.resolve();
+		await oldOwner.shutdown();
+		const replacement = installCodexWorkbenchOwner(retained, {
+			createProcess: () => fakeProcess([]),
+			createGeneration: async () => fakeGeneration([], 9),
+		});
+		await replacement.start();
+		const replacementRuntime = retained.control.runtime;
+		releaseGeneration();
+		expect(await rejected(staleStart)).toBeInstanceOf(CodexWorkbenchCompositionError);
+		expect(retained.control.runtime).toBe(replacementRuntime);
+		expect(retained.control.current).not.toBeNull();
+		expect((replacement.gateway() as unknown as { marker: number }).marker).toBe(9);
+		expect(replacement.snapshot()).toMatchObject({ ready: true, generation: 2 });
+		await replacement.shutdown();
+	});
+
+	test("shutdown synchronously stops an activating startup graph", async () => {
+		const retained = emptyCodexWorkbenchRetainedState();
+		const events: string[] = [];
+		let enterActivation!: () => void;
+		const activationEntered = new Promise<void>((resolve) => void (enterActivation = resolve));
+		let releaseActivation!: () => void;
+		const activationGate = new Promise<void>((resolve) => void (releaseActivation = resolve));
+		const owner = installCodexWorkbenchOwner(retained, {
+			createProcess: () => fakeProcess(events),
+			createGeneration: async ({ generation }) =>
+				fakeGeneration(events, generation, {
+					activate: async () => {
+						enterActivation();
+						await activationGate;
+					},
+					stop: async () => void events.push("generation:stop:entered"),
+				}),
+		});
+		const start = owner.start();
+		await activationEntered;
+		const shutdown = owner.shutdown();
+		expect(events).toContain("generation:stop:entered");
+		releaseActivation();
+		await shutdown;
+		expect(await rejected(start)).toBeInstanceOf(CodexWorkbenchCompositionError);
+	});
+
+	test("shutdown remains callable while a replacement factory is awaiting", async () => {
+		const retained = emptyCodexWorkbenchRetainedState();
+		const events: string[] = [];
+		const owner = installCodexWorkbenchOwner(retained, {
+			createProcess: () => fakeProcess(events),
+			createGeneration: async ({ generation }) =>
+				fakeGeneration(events, generation, {
+					stop: async () => void events.push("generation:stop:entered"),
+				}),
+		});
+		await owner.start();
+		let enterReplacement!: () => void;
+		const replacementEntered = new Promise<void>((resolve) => void (enterReplacement = resolve));
+		let releaseReplacement!: () => void;
+		const replacementGate = new Promise<void>((resolve) => void (releaseReplacement = resolve));
+		const reload = owner.reload(async ({ generation }) => {
+			enterReplacement();
+			await replacementGate;
+			return fakeGeneration(events, generation);
+		});
+		await replacementEntered;
+		const shutdown = owner.shutdown();
+		expect(events).toContain("generation:stop:entered");
+		releaseReplacement();
+		await shutdown;
+		expect(await rejected(reload)).toBeInstanceOf(CodexWorkbenchCompositionError);
+	});
+
+	test("refuses duplicate active registration and releases after child retirement", async () => {
+		const retained = emptyCodexWorkbenchRetainedState();
+		let input: CodexWorkbenchGenerationInput | null = null;
 		const options = {
 			createProcess: () => fakeProcess([]),
-			createGeneration: async () => fakeGeneration([], 1),
+			createGeneration: async (value: CodexWorkbenchGenerationInput) => {
+				input = value;
+				return fakeGeneration([], value.generation);
+			},
 		};
-		installCodexWorkbenchOwner(retained, options);
+		const owner = installCodexWorkbenchOwner(retained, options);
 		expect(() => installCodexWorkbenchOwner(retained, options)).toThrow(
 			CodexWorkbenchCompositionError,
 		);
+		await owner.start();
+		const captured = input as CodexWorkbenchGenerationInput | null;
+		if (captured === null) throw new Error("generation input was not captured");
+		captured.onChildExitStart();
+		expect(retained).toMatchObject({ state: "stopping" });
+		expect(retained.control.current).toBeNull();
+		await captured.onChildExitFinished(null);
+		expect(retained).toMatchObject({ state: "idle", owner: null, process: null });
+		expect(() => installCodexWorkbenchOwner(retained, options)).not.toThrow();
+	});
+
+	test("stops the owned child when generation startup fails", async () => {
+		const events: string[] = [];
+		const retained = emptyCodexWorkbenchRetainedState();
+		const owner = installCodexWorkbenchOwner(retained, {
+			createProcess: () => fakeProcess(events),
+			createGeneration: () => Promise.reject(new Error("session initialization failed")),
+		});
+		expect(await rejected(owner.start())).toBeInstanceOf(CodexWorkbenchCompositionError);
+		expect(events).toEqual(["process:start", "process:stop"]);
 	});
 
 	test("refuses a different retained owner without replacing it", () => {
@@ -167,80 +307,5 @@ describe("production Codex owner installation", () => {
 				createGeneration: async () => fakeGeneration([], 1),
 			}),
 		).toThrow(CodexWorkbenchCompositionError);
-	});
-
-	test("retires readiness synchronously on child exit and permits registration after cleanup", async () => {
-		const events: string[] = [];
-		const retained = emptyCodexWorkbenchRetainedState();
-		let input: CodexWorkbenchGenerationInput | null = null;
-		const options = {
-			createProcess: () => fakeProcess(events),
-			createGeneration: async (value: CodexWorkbenchGenerationInput) => {
-				input = value;
-				return fakeGeneration(events, value.generation);
-			},
-		};
-		const owner = installCodexWorkbenchOwner(retained, options);
-		await owner.start();
-		const captured = input as CodexWorkbenchGenerationInput | null;
-		if (captured === null) throw new Error("generation input was not captured");
-		captured.onChildExitStart();
-		expect(owner.snapshot()).toMatchObject({ state: "stopping", ready: false });
-		await captured.onChildExitFinished(null);
-		expect(owner.snapshot()).toMatchObject({ state: "idle", ready: false });
-		expect(() => installCodexWorkbenchOwner(retained, options)).not.toThrow();
-	});
-
-	test("terminal shutdown is idempotent and permits one later registration", async () => {
-		const events: string[] = [];
-		const retained = emptyCodexWorkbenchRetainedState();
-		const options = {
-			createProcess: () => fakeProcess(events),
-			createGeneration: async () => fakeGeneration(events, 1),
-		};
-		const owner = installCodexWorkbenchOwner(retained, options);
-		await owner.start();
-		await Promise.all([owner.shutdown(), owner.shutdown()]);
-		expect(events.filter((event) => event === "process:stop")).toHaveLength(1);
-		expect(() => installCodexWorkbenchOwner(retained, options)).not.toThrow();
-	});
-
-	test("stops the owned child when generation startup fails", async () => {
-		const events: string[] = [];
-		const retained = emptyCodexWorkbenchRetainedState();
-		const owner = installCodexWorkbenchOwner(retained, {
-			createProcess: () => fakeProcess(events),
-			createGeneration: () => Promise.reject(new Error("session initialization failed")),
-		});
-
-		try {
-			await owner.start();
-			expect.unreachable("startup should fail");
-		} catch (error) {
-			expect(error).toBeInstanceOf(CodexWorkbenchCompositionError);
-		}
-		expect(owner.snapshot().state).toBe("failed");
-		expect(events).toEqual(["process:start", "process:stop"]);
-	});
-
-	test("does not wait forever when process start fails before publishing a child", async () => {
-		const retained = emptyCodexWorkbenchRetainedState();
-		const process = fakeProcess([]);
-		const owner = installCodexWorkbenchOwner(retained, {
-			createProcess: () => ({
-				...process,
-				start: () => Promise.reject(new Error("spawn failed")),
-			}),
-			createGeneration: async () => fakeGeneration([], 1),
-		});
-
-		try {
-			await owner.start();
-			expect.unreachable("startup should fail");
-		} catch (error) {
-			expect(error).toBeInstanceOf(CodexWorkbenchCompositionError);
-			expect((error as Error).message).toContain("did not become ready");
-		}
-		expect(retained.owner).toBeNull();
 	});
 });

@@ -15,11 +15,7 @@ import type {
 	ChildId,
 	IdentityAuthorities,
 } from "../../../shared/codex-workbench-identity/index.js";
-import {
-	createBrowserLeaseManager,
-	type BrowserLeaseManager,
-	type BrowserLeaseRecord,
-} from "./lease.js";
+import { createBrowserLeaseManager, type BrowserLeaseManager } from "./lease.js";
 import {
 	CodexWorkbenchGatewayError,
 	type BrowserActionContext,
@@ -35,6 +31,7 @@ import {
 	type BrowserConnectionId,
 	type BrowserConnectionInstance,
 	type BrowserDisconnectReason,
+	type BrowserLeaseRecord,
 	type BrowserUnsubscribe,
 	type CodexWorkbenchGatewayOptions,
 } from "./contract.js";
@@ -532,6 +529,7 @@ export function createCodexWorkbenchGateway(
 	leaseManager = createBrowserLeaseManager({
 		identity,
 		now,
+		...(options.leaseLedger === undefined ? {} : { ledger: options.leaseLedger }),
 		onFinish: (record) => rememberLeaseReason(record, "lease_expired"),
 		onChange: publishAll,
 	});
@@ -1033,6 +1031,15 @@ export function createCodexWorkbenchGateway(
 			disconnectNotified: false,
 			closed: false,
 		};
+		const retainedLease = leaseManager.current();
+		if (
+			retainedLease?.binding.browserId === browserId &&
+			retainedLease.binding.paneId === paneId &&
+			retainedLease.binding.connection === instance
+		) {
+			state.lease = retainedLease.lease;
+			state.binding = retainedLease.binding;
+		}
 		connections.set(key, state);
 		return connectionFor(state);
 	};
@@ -1138,6 +1145,23 @@ export function createCodexWorkbenchGateway(
 		terminate("gateway_shutdown");
 		await drainSettlements();
 	};
+	const disposeForReload = async (): Promise<void> => {
+		if (disposed) {
+			await drainSettlements();
+			return;
+		}
+		disposed = true;
+		leaseManager.detach();
+		for (const unsubscribe of sourceUnsubscribers.splice(0)) unsubscribe();
+		for (const state of connections.values()) {
+			state.closed = true;
+			state.listeners.clear();
+		}
+		connections.clear();
+		inFlightCommands.clear();
+		settledCommands.clear();
+		await drainSettlements();
+	};
 
 	const subscribe = (
 		browserId: string,
@@ -1202,5 +1226,6 @@ export function createCodexWorkbenchGateway(
 		closeConnection: closeConnectionInstance,
 		childExit,
 		dispose,
+		disposeForReload,
 	});
 }

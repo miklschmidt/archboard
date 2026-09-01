@@ -4,6 +4,7 @@ import type {
 	BrowserProjection,
 	BrowserOrdinaryApprovalActions,
 	BrowserWorkbenchActions,
+	BrowserLeaseLedger,
 	CodexWorkbenchGatewayOptions,
 } from "../../codex-workbench/index.js";
 import type { CodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
@@ -79,6 +80,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 	readonly components: Omit<CodexWorkbenchComponents, "gateway">;
 	readonly dynamicApprovals: CanvasDynamicApprovalOwner;
 	readonly state: CanvasBrowserBindingState;
+	readonly leaseLedger: BrowserLeaseLedger;
 	readonly onChange: (listener: () => void) => () => void;
 	readonly checkoutRoot: string;
 	readonly contextForOperation: (
@@ -352,5 +354,5 @@ export function createCanvasBrowserGatewayOptions(input: {
 		},
 		onChange: input.onChange,
 	};
-	return { projection, actions };
+	return { projection, actions, leaseLedger: input.leaseLedger };
 }

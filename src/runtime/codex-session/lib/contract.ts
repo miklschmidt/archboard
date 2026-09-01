@@ -99,6 +99,11 @@ export interface CodexSessionOptions {
 	readonly onNotification?: SessionNotificationHandler;
 	/** Composition owns the sole listener cohort; standalone consumers keep legacy self-registration. */
 	readonly listenerOwnership?: "self" | "composition";
+	/**
+	 * A replacement source generation may adopt the already-completed handshake
+	 * on the exact same transport and child epoch.
+	 */
+	readonly adoptedReadiness?: "login-capable" | "thread-capable";
 	readonly now?: () => number;
 }
 

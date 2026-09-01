@@ -36,6 +36,18 @@ export type BrowserConnectionId = string;
 export type BrowserConnectionInstance = object;
 export type BrowserUnsubscribe = () => void;
 
+export interface BrowserLeaseRecord {
+	readonly lease: BrowserCommandLease;
+	readonly binding: BrowserLeaseBinding;
+	readonly capturedLink: ThreadLinkBindingSnapshot;
+}
+
+/** Process-lifetime lease authority retained while a source generation is replaced. */
+export interface BrowserLeaseLedger {
+	active: BrowserLeaseRecord | null;
+	readonly retired: Map<BrowserCommandId, BrowserLeaseRecord>;
+}
+
 export type BrowserApprovalCommand = Extract<
 	BrowserCommand,
 	{ readonly command: "approvalRespond" }
@@ -299,6 +311,7 @@ export interface CodexWorkbenchGatewayOptions {
 	readonly threadLink: Pick<CodexThreadLinkPort, "read">;
 	readonly actions: BrowserWorkbenchActions;
 	readonly lifecycle?: BrowserLifecyclePort;
+	readonly leaseLedger?: BrowserLeaseLedger;
 	readonly now?: () => number;
 }
 
@@ -448,6 +461,7 @@ export interface CodexWorkbenchGateway {
 	) => Promise<void>;
 	readonly childExit: (childId: ChildId, epoch: ChildEpoch) => Promise<void>;
 	readonly dispose: () => Promise<void>;
+	readonly disposeForReload: () => Promise<void>;
 }
 
 export type { BrowserCommandLease, BrowserSnapshot, BrowserThreadLink, ThreadLinkBindingSnapshot };

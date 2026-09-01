@@ -3,12 +3,14 @@ import type {
 	CodexProcessChild,
 	CodexProcessSnapshot,
 } from "../../../../runtime/codex-process/index.js";
-import { CODEX_SESSION_CONTROL } from "../../../../runtime/codex-session/index.js";
+import {
+	createIdentityAuthorities,
+	createIdentityLedger,
+} from "../../../../shared/codex-workbench-identity/index.js";
 import type { CodexWorkbenchGateway } from "../../../codex-workbench/index.js";
-import type { CodexWorkbenchGenerationHooks } from "../../codex-workbench-generation.js";
 import type {
 	CodexWorkbenchGeneration,
-	CodexWorkbenchGenerationSlots,
+	CodexWorkbenchStopReason,
 } from "../../codex-workbench-owner.js";
 
 export function fakeProcess(events: string[]): CodexProcess {
@@ -54,103 +56,67 @@ export function fakeProcess(events: string[]): CodexProcess {
 	};
 }
 
-export function fakeGeneration(events: string[], number: number): CodexWorkbenchGeneration {
-	const hooks = {
-		threadContext: { contextForEvent: () => ({}) },
-		installIdentityDecoders: () => undefined,
-		installLifecycleSignals: () => () => void events.push(`generation:${number}:finish-stop`),
-		installApprovalProjection: () => () => undefined,
-		installBrowserGateway: () => () => undefined,
-		initializeSession: async () => undefined,
-		stopBrowser: async () => void events.push(`generation:${number}:stop:shutdown`),
-		stopRealtime: async () => undefined,
-		stopQueue: () => undefined,
-		cancelDynamicApprovalsAndWaits: async () => undefined,
-		settleOrdinaryRequests: async () => undefined,
-	} as unknown as CodexWorkbenchGenerationHooks;
-	const disposable = { dispose: () => undefined };
+export interface FakeGenerationControl {
+	readonly activate?: () => Promise<void>;
+	readonly deactivate?: () => void;
+	readonly stop?: (reason: CodexWorkbenchStopReason) => Promise<void>;
+	readonly finishStop?: () => void;
+}
+
+export function fakeGeneration(
+	events: string[],
+	number: number,
+	control: FakeGenerationControl = {},
+): CodexWorkbenchGeneration {
+	const identityLedger = createIdentityLedger();
+	const identity = createIdentityAuthorities(identityLedger);
 	const transport = {
+		replaceIdentity: () => undefined,
+		request: async () => ({}) as never,
+		sendNotification: async () => undefined,
+		registerDynamicDispatcher: () => undefined,
+		ownsPendingReverseRequest: () => false,
+		respond: async () => undefined,
 		onServerRequest: () => () => undefined,
 		onServerNotification: () => () => undefined,
+		onIssue: () => () => undefined,
+		onStderr: () => () => undefined,
 		onExit: () => () => undefined,
+		inspect: () => ({}) as never,
+		inspectLateResponses: () => [],
+		inspectIssues: () => [],
+		inspectStderr: () => ({}) as never,
 		shutdown: async () => undefined,
-	};
-	const session = {
-		respondCurrentTime: async () => undefined,
-		respondUnsupportedTokenRefresh: async () => undefined,
-		respondUnsupportedAttestation: async () => undefined,
-		[CODEX_SESSION_CONTROL]: { onNotification: () => undefined, dispose: () => undefined },
-	};
-	const approvals = { ...disposable, receive: () => undefined };
-	const dynamicTools = { ...disposable, dispatch: async () => undefined };
-	const coordinatorTools = {
-		...disposable,
-		onServerRequest: () => undefined,
-		onChildExit: () => undefined,
 	};
 	const gateway = { marker: number, dispose: async () => undefined };
 	const components = {
-		identity: {},
-		epoch: { close: () => undefined },
+		identity,
 		transport,
-		session,
-		threadLink: {},
-		workhorse: {},
-		semanticPublisher: disposable,
-		realtime: { ...disposable, onNotification: () => undefined },
-		approvals,
-		dynamicTools,
-		semanticDelivery: {
-			...disposable,
-			replaceHooks: () => void events.push(`generation:${number}:replace-hooks`),
-		},
-		coordinator: { onNotification: () => undefined },
-		queue: {},
-		operations: { onNotification: () => undefined },
-		spokenApproval: { ...disposable, onNotification: () => undefined },
-		coordinatorTools,
-		callbacks: disposable,
 		gateway,
-	} as unknown as CodexWorkbenchGeneration["state"]["components"];
-	let state!: CodexWorkbenchGeneration["state"];
-	const slots: CodexWorkbenchGenerationSlots = {
-		hooks,
-		onChildExitStart: null,
-		onChildExitFinished: null,
-		route: () => undefined,
-		onNotification: () => undefined,
-		onExit: () => undefined,
-		replaceHooks: async () => void events.push(`generation:${number}:replace-hooks`),
-		stop: async (reason) => void events.push(`generation:${number}:stop:${reason}`),
-		finishStop: () => void events.push(`generation:${number}:finish-stop`),
-	};
-	state = {
-		components,
-		owners: { approvals, dynamicTools, coordinatorTools, session } as never,
-		current: slots,
-		registrations: {
-			transportRequest: null,
-			transportNotification: null,
-			transportExit: null,
-			lifecycleSignals: null,
-			browserGateway: null,
-			approvalProjection: null,
-		},
-		pendingChildSettlements: new Set(),
-		stopped: false,
-		stopPromise: null,
-		stopComplete: false,
-		stopFinished: false,
-	};
+	} as unknown as CodexWorkbenchGeneration["components"];
+	let stopped = false;
 	return {
-		state,
-		transport: transport as never,
+		components,
+		identityLedger,
+		transport,
 		gateway: gateway as unknown as CodexWorkbenchGateway,
-		router: { route: slots.route },
-		onNotification: slots.onNotification,
-		onExit: slots.onExit,
-		replaceHooks: slots.replaceHooks,
-		stop: slots.stop,
-		finishStop: slots.finishStop,
+		activate: async () => {
+			await control.activate?.();
+			events.push(`generation:${number}:activate`);
+		},
+		deactivate: () => {
+			control.deactivate?.();
+			events.push(`generation:${number}:deactivate`);
+		},
+		stop: async (reason) => {
+			if (stopped) return;
+			stopped = true;
+			await control.stop?.(reason);
+			events.push(`generation:${number}:stop:${reason}`);
+		},
+		finishStop: () => {
+			control.finishStop?.();
+			events.push(`generation:${number}:finish-stop`);
+		},
 	};
 }

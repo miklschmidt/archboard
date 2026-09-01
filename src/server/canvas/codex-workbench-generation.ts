@@ -4,7 +4,6 @@ export {
 	composeCodexWorkbenchGeneration,
 	createCodexWorkbenchRequestRouter,
 	createProductionCodexWorkbenchFactories,
-	reloadCodexWorkbenchGeneration,
 } from "./lib/codex-workbench.js";
 export type {
 	CodexWorkbenchComponentFactories,
@@ -12,13 +11,10 @@ export type {
 	CodexWorkbenchCoordinatorCallOwner,
 	CodexWorkbenchDynamicAdapterFactories,
 	CodexWorkbenchGeneration,
-	CodexWorkbenchGenerationRegistrations,
-	CodexWorkbenchGenerationSlots,
-	CodexWorkbenchGenerationState,
 	CodexWorkbenchGenerationHooks,
-	CodexWorkbenchGenerationSourceInput,
 	CodexWorkbenchRequestOwners,
 	CodexWorkbenchRequestRouter,
 	ComposeCodexWorkbenchGenerationOptions,
 	ProductionCodexWorkbenchBindings,
+	CodexWorkbenchStopReason,
 } from "./lib/codex-workbench.js";

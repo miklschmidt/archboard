@@ -29,7 +29,7 @@ import type { NotificationJob, PendingRequest, RequestJob, WriteJob } from "./in
 import { isRecord, jsonLine, wireKey } from "./wire.js";
 
 export interface OutboundOperationsOptions {
-	readonly identity: IdentityAuthority;
+	readonly identity: () => IdentityAuthority;
 	readonly state: () => "open" | "closing" | "closed";
 	readonly pendingRequests: Map<string, PendingRequest>;
 	readonly removeQueuedJob: (job: FrameWriterJob<WriteJob>) => boolean;
@@ -98,10 +98,12 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 					`pending Codex requests are limited to ${CODEX_APP_SERVER_CAPACITY.outbound.pendingRequests}`,
 				),
 			);
-		const wireId = options.identity.issuer.mintJsonRpcRequestId();
-		const rawId = options.identity.decoder.serializeJsonRpcRequestId(wireId);
-		const correlation: WireRequestCorrelation =
-			options.identity.decoder.createWireRequestCorrelation({ requestId: wireId });
+		const identity = options.identity();
+		const wireId = identity.issuer.mintJsonRpcRequestId();
+		const rawId = identity.decoder.serializeJsonRpcRequestId(wireId);
+		const correlation: WireRequestCorrelation = identity.decoder.createWireRequestCorrelation({
+			requestId: wireId,
+		});
 		let frame: Buffer;
 		try {
 			frame = jsonLine(

@@ -8,7 +8,7 @@ import { cloneAndFreeze } from "./public-values.js";
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 
 export interface ReverseResponderOptions {
-	readonly identity: IdentityAuthority;
+	readonly identity: () => IdentityAuthority;
 	readonly reverseRequests: Map<string, ReverseRecord>;
 	readonly reverseHandles: WeakMap<TransportServerRequest, ReverseRecord>;
 	readonly removePendingBytes: (bytes: number) => void;
@@ -25,8 +25,6 @@ export interface ReverseResponder {
 }
 
 export function createReverseResponder(options: ReverseResponderOptions): ReverseResponder {
-	const model = createCodexBrowserModel(options.identity);
-
 	const respond = (
 		request: TransportServerRequest,
 		owner: ResponseOwner,
@@ -53,6 +51,7 @@ export function createReverseResponder(options: ReverseResponderOptions): Revers
 		let hasResult: boolean;
 		let canonical: Record<string, unknown>;
 		try {
+			const model = createCodexBrowserModel(options.identity());
 			hasResult = hasOwn(response, "result");
 			const hasError = hasOwn(response, "error");
 			if (

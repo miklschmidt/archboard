@@ -31,7 +31,7 @@ const ignoreTerminalStreamError = (_error: Error): void => {};
 
 export function createCodexTransport(options: CodexTransportOptions): CodexTransport {
 	const child: CodexTransportChild = options.child;
-	const identity: IdentityAuthority = options.identity;
+	let identity: IdentityAuthority = options.identity;
 	let state: "open" | "closing" | "closed" = "open";
 	let inputEndStarted = false;
 	let inputFinished = false;
@@ -411,7 +411,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	);
 
 	const outbound = createOutboundOperations({
-		identity,
+		identity: () => identity,
 		state: () => state,
 		pendingRequests,
 		removeQueuedJob,
@@ -419,7 +419,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		enqueue: (job, pending) => enqueue(job, pending, "regular"),
 	});
 	const router = createInboundRouter({
-		identity,
+		identity: () => identity,
 		state: () => state,
 		pendingRequests,
 		tombstones,
@@ -448,6 +448,16 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		if (state !== "open")
 			throw new CodexTransportClosedError(state === "closing" ? "shutdown" : "transport-closed");
 		router.registerDynamicDispatcher(registration);
+	};
+	const replaceIdentity = (replacement: IdentityAuthority): void => {
+		if (
+			replacement.validator.childId !== identity.validator.childId ||
+			replacement.validator.epoch !== identity.validator.epoch
+		)
+			throw new TypeError(
+				"A Codex transport identity replacement must keep the exact child epoch.",
+			);
+		identity = replacement;
 	};
 	const ownsPendingReverseRequest = (
 		request: TransportServerRequest,
@@ -494,6 +504,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		registerDynamicDispatcher(registration);
 
 	return Object.freeze({
+		replaceIdentity,
 		request: outbound.request,
 		sendNotification: outbound.sendNotification,
 		registerDynamicDispatcher,

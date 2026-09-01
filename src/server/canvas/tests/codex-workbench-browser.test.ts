@@ -148,6 +148,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 			void calls.push(`close:${browserId}:${paneId}:${String(closingInstance === instance)}`),
 		childExit: async () => undefined,
 		dispose: async () => undefined,
+		disposeForReload: async () => undefined,
 	};
 	const owner = createCanvasCodexBrowserSocketOwner({
 		gateway,
@@ -245,6 +246,7 @@ test("the socket owner refuses missing pane authority and reload only removes su
 		closeConnection: async (browserId: string) => void calls.push(browserId),
 		childExit: async () => undefined,
 		dispose: async () => undefined,
+		disposeForReload: async () => undefined,
 	};
 	const owner = createCanvasCodexBrowserSocketOwner({ gateway, paneForBrowser: () => null });
 	const messages: unknown[] = [];
@@ -294,6 +296,7 @@ test("the public request crosses a real WebSocket transport and returns the gate
 		closeConnection: async () => undefined,
 		childExit: async () => undefined,
 		dispose: async () => undefined,
+		disposeForReload: async () => undefined,
 	};
 	const owner = createCanvasCodexBrowserSocketOwner({
 		gateway,

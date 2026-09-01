@@ -1,103 +1,57 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import path from "node:path";
+
 import type {
 	CodexProcess,
 	CodexProcessChild,
 	CodexProcessSnapshot,
 } from "../../../src/runtime/codex-process/index.js";
-import { CODEX_SESSION_CONTROL } from "../../../src/runtime/codex-session/index.js";
+import {
+	createIdentityAuthorities,
+	createIdentityLedger,
+} from "../../../src/shared/codex-workbench-identity/index.js";
 import type { CodexWorkbenchGateway } from "../../../src/server/codex-workbench/index.js";
+
 import {
 	assertCodexWorkbenchRetainedState,
 	emptyCodexWorkbenchRetainedState,
 	installCodexWorkbenchOwner,
 	type CodexWorkbenchGeneration,
-	type CodexWorkbenchGenerationSlots,
 } from "../../../src/server/canvas/codex-workbench-owner.js";
-import type { CodexWorkbenchGenerationHooks } from "../../../src/server/canvas/codex-workbench-generation.js";
 
-const RETAINED_KEYS = ["control", "failure", "generation", "owner", "process", "state"] as const;
-
-const OWNER_SLOT_KEYS = ["gateway", "reload", "shutdown", "snapshot", "start"] as const;
+const RETAINED_KEYS = ["control", "failure", "generation", "owner", "process", "state"];
+const CONTROL_KEYS = ["current", "runtime", "wrappers"];
+const OWNER_SLOT_KEYS = ["gateway", "reload", "shutdown", "snapshot", "start"];
 const RUNTIME_KEYS = [
-	"child",
-	"childRetiring",
-	"generation",
+	"accountReady",
+	"identityLedger",
+	"operation",
 	"process",
 	"released",
-	"shutdownPromise",
-	"startPromise",
-] as const;
-const GENERATION_KEYS = [
-	"components",
-	"current",
-	"owners",
-	"pendingChildSettlements",
-	"registrations",
-	"stopComplete",
-	"stopFinished",
-	"stopPromise",
-	"stopped",
-] as const;
-const GENERATION_SLOT_KEYS = [
-	"finishStop",
-	"hooks",
-	"onChildExitFinished",
-	"onChildExitStart",
-	"onExit",
-	"onNotification",
-	"replaceHooks",
-	"route",
-	"stop",
-] as const;
-const GENERATION_REGISTRATION_KEYS = [
-	"approvalProjection",
-	"browserGateway",
-	"lifecycleSignals",
-	"transportExit",
-	"transportNotification",
-	"transportRequest",
-] as const;
+	"sessionInitialized",
+	"transport",
+];
 
-const noop = () => undefined;
-
-function poisonOriginalGeneration(): never {
-	throw new Error("poisoned original source-generation method executed");
-}
-
-function policyHooks(): CodexWorkbenchGenerationHooks {
-	return {
-		threadContext: { contextForEvent: () => ({}) as never },
-		installIdentityDecoders: noop,
-		installLifecycleSignals: () => noop,
-		installApprovalProjection: () => noop,
-		installBrowserGateway: () => noop,
-		initializeSession: async () => undefined,
-		stopBrowser: async () => undefined,
-		stopRealtime: async () => undefined,
-		stopQueue: noop,
-		cancelDynamicApprovalsAndWaits: async () => undefined,
-		settleOrdinaryRequests: async () => undefined,
-	};
-}
-
-function policyProcess(): CodexProcess {
+function fakeProcess(events: string[]): CodexProcess {
 	const child = { pid: 14314 } as CodexProcessChild;
-	const listeners = new Set<(value: CodexProcessChild) => void>();
+	const listeners = new Set<(child: CodexProcessChild) => void>();
 	let running = false;
-	const snapshot = () =>
+	const snapshot = (): CodexProcessSnapshot =>
 		({
 			state: running ? "running" : "stopped",
 			pid: running ? child.pid : null,
+			ready: running,
 		}) as CodexProcessSnapshot;
 	return {
 		start: async () => {
+			events.push("process:start");
 			running = true;
 			for (const listener of listeners) listener(child);
 			return snapshot();
 		},
 		stop: async () => {
+			events.push("process:stop");
 			running = false;
 			return snapshot();
 		},
@@ -105,98 +59,54 @@ function policyProcess(): CodexProcess {
 		currentChild: () => (running ? child : null),
 		onChild: (listener) => {
 			listeners.add(listener);
+			if (running) listener(child);
 			return () => listeners.delete(listener);
 		},
 		subscribe: () => () => undefined,
 	};
 }
 
-function policyGeneration(reloads: { count: number }): CodexWorkbenchGeneration {
-	const disposable = { dispose: noop };
+function fakeGeneration(events: string[], generation: number): CodexWorkbenchGeneration {
+	const identityLedger = createIdentityLedger();
+	const identity = createIdentityAuthorities(identityLedger);
 	const transport = {
-		onServerRequest: () => noop,
-		onServerNotification: () => noop,
-		onExit: () => noop,
+		replaceIdentity: () => undefined,
+		request: async () => ({}) as never,
+		sendNotification: async () => undefined,
+		registerDynamicDispatcher: () => undefined,
+		ownsPendingReverseRequest: () => false,
+		respond: async () => undefined,
+		onServerRequest: () => () => undefined,
+		onServerNotification: () => () => undefined,
+		onIssue: () => () => undefined,
+		onStderr: () => () => undefined,
+		onExit: () => () => undefined,
+		inspect: () => ({}) as never,
+		inspectLateResponses: () => [],
+		inspectIssues: () => [],
+		inspectStderr: () => ({}) as never,
 		shutdown: async () => undefined,
 	};
-	const session = {
-		respondCurrentTime: async () => undefined,
-		respondUnsupportedTokenRefresh: async () => undefined,
-		respondUnsupportedAttestation: async () => undefined,
-		[CODEX_SESSION_CONTROL]: { onNotification: noop, dispose: noop },
-	};
-	const approvals = { ...disposable, receive: noop };
-	const dynamicTools = { ...disposable, dispatch: async () => undefined };
-	const coordinatorTools = { ...disposable, onServerRequest: noop, onChildExit: noop };
-	const gateway = { dispose: async () => undefined } as CodexWorkbenchGateway;
-	const hooks = policyHooks();
-	const components = {
-		identity: {},
-		epoch: { close: noop },
-		transport,
-		session,
-		threadLink: {},
-		workhorse: {},
-		semanticPublisher: disposable,
-		realtime: { ...disposable, onNotification: noop },
-		approvals,
-		dynamicTools,
-		semanticDelivery: {
-			...disposable,
-			replaceHooks: () => void (reloads.count += 1),
-		},
-		coordinator: { onNotification: noop },
-		queue: {},
-		operations: { onNotification: noop },
-		spokenApproval: { ...disposable, onNotification: noop },
-		coordinatorTools,
-		callbacks: disposable,
-		gateway,
-	} as unknown as CodexWorkbenchGeneration["state"]["components"];
-	const slots: CodexWorkbenchGenerationSlots = {
-		hooks,
-		onChildExitStart: () => undefined,
-		onChildExitFinished: async () => undefined,
-		route: noop,
-		onNotification: noop,
-		onExit: noop,
-		replaceHooks: async () => void (reloads.count += 1),
-		stop: async () => undefined,
-		finishStop: noop,
-	};
-	const state: CodexWorkbenchGeneration["state"] = {
-		components,
-		owners: { approvals, dynamicTools, coordinatorTools, session } as never,
-		current: slots,
-		registrations: {
-			transportRequest: null,
-			transportNotification: null,
-			transportExit: null,
-			lifecycleSignals: null,
-			browserGateway: null,
-			approvalProjection: null,
-		},
-		pendingChildSettlements: new Set(),
-		stopped: false,
-		stopPromise: null,
-		stopComplete: false,
-		stopFinished: false,
-	};
+	const gateway = { marker: generation, dispose: async () => undefined };
+	let stopped = false;
 	return {
-		state,
+		components: { identity, transport, gateway } as never,
+		identityLedger,
 		transport: transport as never,
-		gateway,
-		router: { route: slots.route },
-		onNotification: slots.onNotification,
-		onExit: slots.onExit,
-		replaceHooks: slots.replaceHooks,
-		stop: slots.stop,
-		finishStop: slots.finishStop,
+		gateway: gateway as unknown as CodexWorkbenchGateway,
+		activate: async () => void events.push(`generation:${generation}:activate`),
+		deactivate: () => void events.push(`generation:${generation}:deactivate`),
+		stop: async (reason) => {
+			if (stopped) return;
+			stopped = true;
+			events.push(`generation:${generation}:stop:${reason}`);
+		},
+		finishStop: () => void events.push(`generation:${generation}:finish-stop`),
 	};
 }
 
 describe("production Codex workbench composition policy", () => {
-	test("publishes narrow canvas workbench entrypoints instead of one catch-all barrel", () => {
+	test("publishes narrow entrypoints and keeps lifecycle implementation private", () => {
 		const root = path.resolve(import.meta.dir, "../../../src/server/canvas");
 		expect(existsSync(path.join(root, "codex-workbench.ts"))).toBeFalse();
 		for (const entrypoint of [
@@ -208,191 +118,114 @@ describe("production Codex workbench composition policy", () => {
 			"codex-workbench-production.ts",
 		])
 			expect(existsSync(path.join(root, entrypoint)), entrypoint).toBeTrue();
+		expect(existsSync(path.join(root, "codex-workbench-lifecycle.ts"))).toBeFalse();
+		expect(existsSync(path.join(root, "lib/codex-workbench-lifecycle.ts"))).toBeTrue();
 	});
 
-	test("starts with scalar state, a process slot, and one plain control cell", () => {
-		const retained = emptyCodexWorkbenchRetainedState();
-		expect(retained).toMatchObject({
-			owner: null,
-			generation: 0,
-			state: "idle",
-			failure: null,
-			process: null,
-			control: { current: null, runtime: null },
-		});
-		expect(Object.keys(retained.control).toSorted()).toEqual(["current", "runtime", "wrappers"]);
-		expect(Object.keys(retained.control.wrappers).toSorted()).toEqual([...OWNER_SLOT_KEYS]);
-	});
-
-	test("keeps the exact retained allowlist across install and source-hook reload", async () => {
+	test("retains only scalar coordination, stable kernel handles, and replaceable slots", async () => {
 		const retained = Object.seal(emptyCodexWorkbenchRetainedState());
-		const reloads = { count: 0 };
-		let originalGeneration: CodexWorkbenchGeneration | null = null;
+		const created: CodexWorkbenchGeneration[] = [];
 		const owner = installCodexWorkbenchOwner(retained, {
-			createProcess: policyProcess,
-			createGeneration: async () => {
-				originalGeneration = policyGeneration(reloads);
-				return originalGeneration;
+			createProcess: () => fakeProcess([]),
+			createGeneration: async ({ generation }) => {
+				const source = fakeGeneration([], generation);
+				created.push(source);
+				return source;
 			},
 		});
-		const installationSlots = retained.control.current;
-		if (installationSlots === null) throw new Error("Installation did not publish source slots.");
-
 		await owner.start();
-		expect(Object.keys(retained).toSorted()).toEqual([...RETAINED_KEYS]);
-		const generationGateway = owner.gateway();
-		expect(Object.values(retained)).not.toContain(generationGateway);
-		const stableWrappers = retained.control.wrappers;
-		const firstSlots = retained.control.current;
-		if (firstSlots === null) throw new Error("Start did not publish source slots.");
-		for (const key of OWNER_SLOT_KEYS) expect(firstSlots[key]).not.toBe(installationSlots[key]);
-		for (const key of OWNER_SLOT_KEYS)
-			(installationSlots as unknown as Record<(typeof OWNER_SLOT_KEYS)[number], () => never>)[key] =
-				() => {
-					throw new Error(`poisoned installation ${key} slot executed`);
-				};
-		const runtimeState = retained.control.runtime;
-		if (runtimeState === null) throw new Error("The runtime state port was not retained.");
-		expect(Object.keys(runtimeState).toSorted()).toEqual([...RUNTIME_KEYS]);
-		for (const key of OWNER_SLOT_KEYS) expect(key in runtimeState).toBeFalse();
-		const originalGenerationSlots = runtimeState.generation?.current;
-		if (originalGenerationSlots === null || originalGenerationSlots === undefined)
-			throw new Error("The generation source slots were not retained.");
-		expect(Object.keys(runtimeState.generation ?? {}).toSorted()).toEqual([...GENERATION_KEYS]);
-		expect(Object.keys(originalGenerationSlots).toSorted()).toEqual([...GENERATION_SLOT_KEYS]);
-		expect(Object.keys(runtimeState.generation?.registrations ?? {}).toSorted()).toEqual([
-			...GENERATION_REGISTRATION_KEYS,
-		]);
-		Object.assign(originalGenerationSlots, { hiddenOwner: {} });
-		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
-		Reflect.deleteProperty(originalGenerationSlots, "hiddenOwner");
-		Object.assign(originalGenerationSlots.hooks, { hiddenOwner: {} });
-		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
-		Reflect.deleteProperty(originalGenerationSlots.hooks, "hiddenOwner");
-		Object.assign(runtimeState.generation?.registrations ?? {}, { hiddenOwner: null });
-		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
-		Reflect.deleteProperty(runtimeState.generation?.registrations ?? {}, "hiddenOwner");
+		const runtime = retained.control.runtime;
+		if (runtime?.identityLedger == null || runtime.transport == null)
+			throw new Error("missing retained runtime kernel");
+		const stableLedger = runtime.identityLedger;
+		const stableTransport = runtime.transport;
+		expect(Object.keys(retained).toSorted()).toEqual(RETAINED_KEYS);
+		expect(Object.keys(retained.control).toSorted()).toEqual(CONTROL_KEYS);
+		expect(Object.keys(retained.control.wrappers).toSorted()).toEqual(OWNER_SLOT_KEYS);
+		expect(Object.keys(retained.control.current ?? {}).toSorted()).toEqual(OWNER_SLOT_KEYS);
+		expect(Object.keys(runtime).toSorted()).toEqual(RUNTIME_KEYS);
+		for (const forbidden of [
+			"generation",
+			"components",
+			"owners",
+			"session",
+			"coordinator",
+			"realtime",
+			"gateway",
+			"router",
+			"callbacks",
+			"approvals",
+			"decoder",
+		])
+			expect(forbidden in runtime, forbidden).toBeFalse();
+		assertCodexWorkbenchRetainedState(retained);
 
-		const reloadHooks = policyHooks();
-		await stableWrappers.reload(reloadHooks);
-		expect(reloads.count).toBe(1);
-		expect(Object.keys(retained).toSorted()).toEqual([...RETAINED_KEYS]);
-		expect(Object.values(retained)).not.toContain(generationGateway);
-		expect(retained.control.wrappers).toBe(stableWrappers);
-		expect(retained.control.runtime).toBe(runtimeState);
+		const first = created[0]!;
+		const firstSlots = retained.control.current;
+		await owner.reload(async ({ generation, kernel }) => {
+			expect(kernel?.identityLedger).toBe(stableLedger);
+			expect(kernel?.transport).toBe(stableTransport);
+			const source = fakeGeneration([], generation);
+			if (kernel !== null)
+				Object.assign(source, {
+					identityLedger: kernel.identityLedger,
+					transport: kernel.transport,
+				});
+			created.push(source);
+			return source;
+		});
+		expect(created).toHaveLength(2);
 		expect(retained.control.current).not.toBe(firstSlots);
-		expect(runtimeState.generation?.current).not.toBe(originalGenerationSlots);
-		expect(runtimeState.generation?.current?.hooks).toBe(reloadHooks);
-		expect(Object.keys(retained.control.current ?? {}).toSorted()).toEqual([...OWNER_SLOT_KEYS]);
-		const currentSlots = retained.control.current;
-		if (currentSlots === null) throw new Error("Reload did not publish current source slots.");
-		for (const key of OWNER_SLOT_KEYS) expect(currentSlots[key]).not.toBe(firstSlots[key]);
-		for (const key of OWNER_SLOT_KEYS)
-			(firstSlots as unknown as Record<(typeof OWNER_SLOT_KEYS)[number], () => never>)[key] =
-				() => {
-					throw new Error(`poisoned retired ${key} slot executed`);
-				};
-		if (originalGeneration === null) throw new Error("The original generation was not captured.");
-		Object.assign(originalGenerationSlots.hooks.threadContext, {
-			contextForEvent: poisonOriginalGeneration,
-		});
-		for (const key of [
-			"installIdentityDecoders",
-			"installLifecycleSignals",
-			"installApprovalProjection",
-			"installBrowserGateway",
-			"initializeSession",
-			"stopBrowser",
-			"stopRealtime",
-			"stopQueue",
-			"cancelDynamicApprovalsAndWaits",
-			"settleOrdinaryRequests",
-		] as const)
-			Object.assign(originalGenerationSlots.hooks, { [key]: poisonOriginalGeneration });
-		Object.assign(originalGenerationSlots, {
-			onChildExitStart: poisonOriginalGeneration,
-			onChildExitFinished: poisonOriginalGeneration,
-			route: poisonOriginalGeneration,
-			onNotification: poisonOriginalGeneration,
-			onExit: poisonOriginalGeneration,
-			replaceHooks: poisonOriginalGeneration,
-			stop: poisonOriginalGeneration,
-			finishStop: poisonOriginalGeneration,
-		});
-		Object.assign(originalGeneration, {
-			router: { route: poisonOriginalGeneration },
-			onNotification: poisonOriginalGeneration,
-			onExit: poisonOriginalGeneration,
-			replaceHooks: poisonOriginalGeneration,
-			stop: poisonOriginalGeneration,
-			finishStop: poisonOriginalGeneration,
-		});
-		expect(retained.control.wrappers.snapshot().generation).toBe(2);
-		expect(retained.control.wrappers.gateway()).toBe(generationGateway);
-		await retained.control.wrappers.shutdown();
-		expect(retained.control.current).toBeNull();
-		expect(retained.control.runtime).toBeNull();
+		expect(retained.control.runtime).toBe(runtime);
+		expect(runtime.identityLedger).toBe(created[1]!.identityLedger);
+		expect(runtime.transport).toBe(created[1]!.transport);
+		for (const key of ["activate", "deactivate", "stop", "finishStop"] as const)
+			Object.assign(first, {
+				[key]: () => {
+					throw new Error(`retired ${key} executed`);
+				},
+			});
+		expect(retained.control.wrappers.snapshot()).toMatchObject({ ready: true, generation: 2 });
+		expect(retained.control.wrappers.gateway()).toBe(created[1]!.gateway);
+		await owner.shutdown();
 	});
 
-	test("rejects nested, prototype, process-method, and extra-slot attachments", () => {
+	test("rejects hostile descendants at every retained structural boundary", async () => {
 		const retained = emptyCodexWorkbenchRetainedState();
-		retained.process = Object.assign(policyProcess(), { session: { initialize: () => undefined } });
-		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
+		const owner = installCodexWorkbenchOwner(retained, {
+			createProcess: () => fakeProcess([]),
+			createGeneration: async ({ generation }) => fakeGeneration([], generation),
+		});
+		await owner.start();
+		const runtime = retained.control.runtime;
+		if (runtime?.identityLedger == null || runtime.transport == null)
+			throw new Error("missing retained kernel");
 
-		const prototypeAttachment = emptyCodexWorkbenchRetainedState();
-		Object.setPrototypeOf(prototypeAttachment.control, { decoder: {} });
-		expect(() => assertCodexWorkbenchRetainedState(prototypeAttachment)).toThrow(
+		Object.assign(runtime, { session: {} });
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
+		Reflect.deleteProperty(runtime, "session");
+
+		Object.assign(runtime.identityLedger.issued, { decoder: {} });
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("issuance ledger");
+		Reflect.deleteProperty(runtime.identityLedger.issued, "decoder");
+
+		runtime.identityLedger.issued.set("thread", new Set([{} as never]));
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("hidden descendant");
+		runtime.identityLedger.issued.delete("thread");
+
+		Object.assign(runtime.transport, { coordinator: {} });
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
+		Reflect.deleteProperty(runtime.transport, "coordinator");
+
+		Object.assign(retained.control.current ?? {}, { approval: {} });
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow("retained allowlist");
+		Reflect.deleteProperty(retained.control.current ?? {}, "approval");
+
+		Object.setPrototypeOf(runtime.identityLedger, { authority: {} });
+		expect(() => assertCodexWorkbenchRetainedState(retained)).toThrow(
 			"retained prototype attachment",
 		);
-
-		const processMethodAttachment = emptyCodexWorkbenchRetainedState();
-		processMethodAttachment.process = policyProcess();
-		Object.setPrototypeOf(
-			processMethodAttachment.process.start,
-			Object.create(Function.prototype, { session: { value: {} } }),
-		);
-		expect(() => assertCodexWorkbenchRetainedState(processMethodAttachment)).toThrow(
-			"plain callable slot",
-		);
-
-		const slotAttachment = emptyCodexWorkbenchRetainedState();
-		slotAttachment.control.current = Object.assign(
-			{ ...slotAttachment.control.wrappers },
-			{
-				gatewaySession: {},
-			},
-		);
-		expect(() => assertCodexWorkbenchRetainedState(slotAttachment)).toThrow("retained allowlist");
-
-		const spoofedPrototype = emptyCodexWorkbenchRetainedState();
-		spoofedPrototype.process = policyProcess();
-		Object.setPrototypeOf(spoofedPrototype.process.start, {
-			[Symbol.toStringTag]: "AsyncFunction",
-		});
-		expect(() => assertCodexWorkbenchRetainedState(spoofedPrototype)).toThrow(
-			"plain callable slot",
-		);
-
-		const functionAttachment = emptyCodexWorkbenchRetainedState();
-		functionAttachment.process = policyProcess();
-		Object.assign(functionAttachment.process.stop, { session: {} });
-		expect(() => assertCodexWorkbenchRetainedState(functionAttachment)).toThrow(
-			"reachable attached value",
-		);
-
-		const intrinsicAttachment = emptyCodexWorkbenchRetainedState();
-		intrinsicAttachment.process = policyProcess();
-		const asyncPrototype = Object.getPrototypeOf(intrinsicAttachment.process.start) as Record<
-			PropertyKey,
-			unknown
-		>;
-		try {
-			asyncPrototype.archboardOwner = {};
-			expect(() => assertCodexWorkbenchRetainedState(intrinsicAttachment)).toThrow(
-				"intrinsic callable prototype",
-			);
-		} finally {
-			Reflect.deleteProperty(asyncPrototype, "archboardOwner");
-		}
+		Object.setPrototypeOf(runtime.identityLedger, Object.prototype);
+		await owner.shutdown();
 	});
 });

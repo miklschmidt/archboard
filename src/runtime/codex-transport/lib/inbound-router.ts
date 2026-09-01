@@ -51,7 +51,7 @@ const REVERSE_ERROR_MESSAGES = Object.freeze({
 });
 
 export interface InboundRouterOptions {
-	readonly identity: IdentityAuthority;
+	readonly identity: () => IdentityAuthority;
 	readonly state: () => "open" | "closing" | "closed";
 	readonly pendingRequests: Map<string, PendingRequest>;
 	readonly tombstones: Map<string, RequestTombstone>;
@@ -160,9 +160,11 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 		decoded: DecodedServerRequest,
 		rawId: WireId,
 	): TransportServerRequest => {
-		const requestId = options.identity.decoder.adoptJsonRpcRequestId(rawId);
-		const correlation: WireRequestCorrelation =
-			options.identity.decoder.createWireRequestCorrelation({ requestId });
+		const identity = options.identity();
+		const requestId = identity.decoder.adoptJsonRpcRequestId(rawId);
+		const correlation: WireRequestCorrelation = identity.decoder.createWireRequestCorrelation({
+			requestId,
+		});
 		if (isInList(HUMAN_APPROVAL_METHODS, decoded.method))
 			return {
 				child: correlation.child,
@@ -181,10 +183,10 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 			if (!registration)
 				throw new CodexTransportUsageError("no dynamic dispatcher owns the requested namespace");
 			const logicalCall: LogicalToolCallCorrelation =
-				options.identity.decoder.createLogicalToolCallCorrelation({
-					threadId: options.identity.decoder.adoptThreadId(params.threadId),
-					turnId: options.identity.decoder.adoptTurnId(params.turnId),
-					callId: options.identity.decoder.adoptDynamicToolCallId(params.callId),
+				identity.decoder.createLogicalToolCallCorrelation({
+					threadId: identity.decoder.adoptThreadId(params.threadId),
+					turnId: identity.decoder.adoptTurnId(params.turnId),
+					callId: identity.decoder.adoptDynamicToolCallId(params.callId),
 					namespace: params.namespace,
 					tool: params.tool,
 					manifestHash: registration.manifestHash,
@@ -210,7 +212,7 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 				method: decoded.method,
 				params: {
 					...params,
-					threadId: options.identity.decoder.resolveThreadId(params.threadId),
+					threadId: identity.decoder.resolveThreadId(params.threadId),
 				},
 				owner: "codex-session",
 			} as TransportServerRequest;
@@ -373,8 +375,8 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 		try {
 			const notification = cloneAndFreeze(decodeServerNotification(value));
 			const correlation = Object.freeze({
-				child: options.identity.validator.childId,
-				epoch: options.identity.validator.epoch,
+				child: options.identity().validator.childId,
+				epoch: options.identity().validator.epoch,
 				requestId: null,
 			});
 			options.emitServerNotification(Object.freeze({ correlation, notification }));
