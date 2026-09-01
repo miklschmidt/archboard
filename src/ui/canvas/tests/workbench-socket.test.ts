@@ -19,6 +19,8 @@ import type {
 } from "../../../shared/codex-browser-model/index.js";
 import type { BrowserWorkbenchMediaState } from "../../codex-workbench-media/index.js";
 import {
+	attachCanvasWorkbenchAfterRegistration,
+	createCanvasPaneRegistration,
 	createCanvasWorkbenchSocketOwner,
 	type CanvasWorkbenchSocketOwner,
 } from "../workbench-socket.js";
@@ -255,12 +257,63 @@ function ownerWith(
 test("useCanvasSession delegates socket generations to the canvas owner", () => {
 	const source = readFileSync(resolve(import.meta.dir, "../useCanvasSession.ts"), "utf8");
 	expect(source).toContain("createCanvasWorkbenchSocketOwner({ media: realtime })");
-	expect(source).toMatch(/workbenchSockets\s*\.attach\(socket\)/);
+	expect(source).toContain("createCanvasPaneRegistration(socket, generation)");
+	expect(source).toMatch(
+		/attachCanvasWorkbenchAfterRegistration\(\{[\s\S]*?attach: \(\) => workbenchSockets\s*\.attach\(socket\)/,
+	);
+	expect(source).toContain("registration?.acknowledge(true)");
+	expect(source).toContain("registration?.acknowledge(false)");
+	expect(source).toContain("if (!result.registered)");
+	expect(source).toContain("paneRegistrationRef.current === registration");
+	expect(source).toContain("socketGenerationRef.current !== generation");
 	expect(source).toContain("workbenchSockets.detach(socket)");
 	expect(source).toContain("workbenchSockets.dispose()");
 	expect(source).not.toContain("realtime.attach(");
 	expect(source).not.toContain("realtime.detach(");
 	expect(source).not.toContain("realtime.dispose(");
+});
+
+test("pane registration failure recovers once and stale generations cannot attach", async () => {
+	const media = new FakeMedia();
+	const transports: FakeTransport[] = [];
+	const owner = ownerWith(media, transports);
+	const firstSocket = new FakeSocket();
+	const currentSocket = new FakeSocket();
+	const firstRegistration = createCanvasPaneRegistration(firstSocket, 1);
+	const currentRegistration = createCanvasPaneRegistration(currentSocket, 2);
+	let currentRegistrationForSocket = firstRegistration;
+
+	const firstAttach = attachCanvasWorkbenchAfterRegistration({
+		registration: firstRegistration,
+		isCurrent: () => currentRegistrationForSocket === firstRegistration,
+		attach: () => owner.attach(firstSocket),
+	});
+	await Bun.sleep(0);
+	expect(transports).toHaveLength(0);
+	expect(firstRegistration.acknowledge(false)).toBeFalse();
+	await Bun.sleep(0);
+	expect(transports).toHaveLength(0);
+
+	currentRegistrationForSocket = currentRegistration;
+	expect(firstRegistration.acknowledge(true)).toBeTrue();
+	expect(await firstAttach).toBeNull();
+	expect(transports).toHaveLength(0);
+
+	const currentAttach = attachCanvasWorkbenchAfterRegistration({
+		registration: currentRegistration,
+		isCurrent: () => currentRegistrationForSocket === currentRegistration,
+		attach: () => owner.attach(currentSocket),
+	});
+	expect(currentRegistration.acknowledge(false)).toBeFalse();
+	await Bun.sleep(0);
+	expect(transports).toHaveLength(0);
+	expect(currentRegistration.acknowledge(true)).toBeTrue();
+	expect(await currentAttach).toMatchObject({ state: "thread_capable" });
+	expect(transports).toHaveLength(1);
+	expect(transports[0]?.subscribeCount.value).toBe(1);
+	expect(firstSocket.closeCount).toBe(0);
+	expect(currentSocket.closeCount).toBe(0);
+	await owner.dispose();
 });
 
 test("the canvas socket owner shares one transport and retires it without closing sockets", async () => {
