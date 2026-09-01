@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-01 17:49'
+updated_date: '2026-09-01 18:01'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -47,6 +47,8 @@ Remediation plan after fixed-range review:
 3. Preserve authoritative itemId on every mapped message part, reject missing or duplicate item identities across one timeline, and cover all seven media arms plus all four turn statuses through the public provider.
 4. Replace helper-only lifecycle evidence with a mounted React client test using a module-owned minimal DOM harness and a child observer inside the real AssistantRuntimeProvider. Verify one subscription, stable runtime identity, reconnect, runtime failure, unsupported item, stale link/turn, transport replacement, teardown, no post-unmount render, and all onNew outcomes.
 5. Run focused module/mounted tests, assistant-ui policy, relevant transport/socket/composition regressions, inventory, both TypeScript projects, build, lint, format, and diff checks sequentially under 6G/1G; record evidence and commit only owned paths plus the task record.
+
+6. Remediation 2: fence every async submission to the exact transport generation; preserve stopped, incompatible_contract, backoff, reconnecting, and stale states/reasons; mount renderer observers as real provider descendants and assert public runtime state, identity, capabilities, TurnId, and ItemId; validate focused and repository gates without reopening the classified boundary OOM.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -59,4 +61,6 @@ Validation under named transient user services with WorkingDirectory fixed to th
 Remediation 1 resolves the four accepted fixed-range findings. (1) WorkbenchRuntimeProvider.onSubmit now returns the closed delivered/not_delivered/outcome_unknown union. One onNew boundary throws MessageNotSentError only after producing not_delivered, publishes outcome_unknown with explicit inspect-before-resend guidance, never replays, and shows delivered only when the returned branded turnId exists in the current authoritative transport snapshot. Thrown callback errors become outcome_unknown. (2) Added a mounted React client owner using a module-owned minimal DOM harness and a render observer inside the actual AssistantRuntimeProvider. It proves one transport subscription, stable assistant runtime identity across snapshot updates and executable transport replacement, reconnect/stale/inspect-only demotion, replacement teardown, final unsubscribe, no post-unmount render, and all submission outcomes, including real composer draft restoration only for not_delivered. (3) Every mapped media part now carries the browser contract branded ItemId; duplicate item IDs fail across the whole timeline. Mounted coverage drives all seven media arms and all four turn statuses. (4) The provider now exposes a typed render context and always renders a named role=status message with visible state and concrete recovery wording; tests assert its accessible name and recovery text.
 
 Remediation validation under 6G/1G named transient services: workbench-runtime 11 tests/53 assertions passed; workbench-transport 22/334; canvas workbench socket 5/63; production application sockets 2/40; composition policy 4/49; assistant-ui policy 12/282; inventory 39/69; root and frontend TypeScript passed; frontend build passed; full Oxlint passed on 911 files; repository Oxfmt passed on 993 files. The previously classified repository boundary owner OOM was not rerun. No browser inventory owner was added or claimed.
+
+Remediation 2 fences every asynchronous submission settlement to a memoized transport-generation token updated at the layout boundary. A late result from replaced transport A returns before status publication or MessageNotSentError, so it cannot alter B's status or composer; mounted coverage exercises delivered, not_delivered, and outcome_unknown while retaining stable runtime identity. Snapshot-null stopped, incompatible_contract, and backoff preserve concrete state and exact reason; connected non-thread-capable readiness states also retain their state and reason when present, with state-specific recovery wording. The renderer is now mounted as a React component descendant of AssistantRuntimeProvider; its observer subscribes through the public assistant runtime and asserts observed messages, capabilities, authoritative TurnIds and ItemIds, plus stable/replaced runtime behavior. Focused runtime, exact assistant-ui policy, transport/socket/composition/inventory regressions, both TypeScript projects, frontend build, full lint, and repository format passed under named 6G/1G services.
 <!-- SECTION:NOTES:END -->

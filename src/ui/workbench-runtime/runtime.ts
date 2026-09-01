@@ -7,10 +7,12 @@ import {
 import {
 	createElement,
 	useEffect,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
 	useSyncExternalStore,
+	type ComponentType,
 	type ReactNode,
 } from "react";
 
@@ -80,6 +82,11 @@ export type ReadonlyWorkbenchSource =
 	| "stale"
 	| "runtime_failure";
 
+type ReadonlyWorkbenchState =
+	| ReadonlyWorkbenchSource
+	| Exclude<BrowserWorkbenchState["state"], "stale_snapshot" | "thread_capable">
+	| "unavailable";
+
 export type WorkbenchRuntimeView =
 	| {
 			readonly mode: "executable";
@@ -89,7 +96,7 @@ export type WorkbenchRuntimeView =
 	  }
 	| {
 			readonly mode: "readonly";
-			readonly state: ReadonlyWorkbenchSource | "unavailable";
+			readonly state: ReadonlyWorkbenchState;
 			readonly reason: string;
 			readonly messages: readonly WorkbenchAssistantMessage[];
 	  };
@@ -251,7 +258,7 @@ export function createReadonlyWorkbenchView(
 function snapshotView(
 	snapshot: BrowserSnapshot,
 	mode: "executable" | "readonly",
-	state: ReadonlyWorkbenchSource | "unavailable" = "unavailable",
+	state: ReadonlyWorkbenchState = "unavailable",
 	reason = "This Codex history is inspect-only.",
 ): WorkbenchRuntimeView {
 	const timeline = snapshot.timeline;
@@ -281,6 +288,17 @@ export function projectWorkbenchRuntime(state: BrowserWorkbenchState): Workbench
 			? { mode: "readonly", state: "stale", reason: state.reason, messages: [] }
 			: snapshotView(snapshot, "readonly", "stale", state.reason);
 	}
+	if (
+		state.kind === "connection" &&
+		(state.state === "stopped" || state.state === "incompatible_contract")
+	) {
+		return { mode: "readonly", state: state.state, reason: state.reason, messages: [] };
+	}
+	if (state.kind === "connection" && state.state === "backoff") {
+		return snapshot === null
+			? { mode: "readonly", state: "backoff", reason: state.reason, messages: [] }
+			: snapshotView(snapshot, "readonly", "backoff", state.reason);
+	}
 	if (state.connection === "reconnecting") {
 		return snapshot === null
 			? { mode: "readonly", state: "reconnecting", reason: state.reason, messages: [] }
@@ -303,12 +321,11 @@ export function projectWorkbenchRuntime(state: BrowserWorkbenchState): Workbench
 		);
 	}
 	if (state.state !== "thread_capable") {
-		return snapshotView(
-			snapshot,
-			"readonly",
-			"unavailable",
-			`Codex is ${state.state.replaceAll("_", " ")}; direct workhorse input is unavailable.`,
-		);
+		const reason =
+			"reason" in snapshot.readiness
+				? snapshot.readiness.reason
+				: `Codex is ${state.state.replaceAll("_", " ")}; direct workhorse input is unavailable.`;
+		return snapshotView(snapshot, "readonly", state.state, reason);
 	}
 	return snapshotView(snapshot, "executable");
 }
@@ -343,19 +360,12 @@ export type WorkbenchRuntimeRenderContext =
 			readonly status: WorkbenchVisibleStatus;
 	  };
 
-export type WorkbenchRuntimeRenderer = (context: WorkbenchRuntimeRenderContext) => ReactNode;
+export type WorkbenchRuntimeRenderer = ComponentType<WorkbenchRuntimeRenderContext>;
 
 function readonlyStatus(
 	view: Extract<WorkbenchRuntimeView, { readonly mode: "readonly" }>,
 ): WorkbenchVisibleStatus {
-	const recovery =
-		view.state === "reconnecting"
-			? "Wait for Codex to reconnect. This history remains available for inspection."
-			: view.state === "stale"
-				? "Wait for a fresh Codex snapshot before sending another command."
-				: view.state === "runtime_failure"
-					? "Inspect the reported item, then reconnect or reload the workbench."
-					: "Inspect this history or select a current executable workhorse.";
+	const recovery = readonlyRecovery(view.state);
 	return {
 		role: "status",
 		label: "Codex workbench status",
@@ -363,6 +373,39 @@ function readonlyStatus(
 		message: view.reason,
 		recovery,
 	};
+}
+
+function readonlyRecovery(state: ReadonlyWorkbenchState): string {
+	switch (state) {
+		case "reconnecting":
+			return "Wait for Codex to reconnect. This history remains available for inspection.";
+		case "backoff":
+			return "Wait until Codex retries, or restart the Codex workbench.";
+		case "stopped":
+			return "Restart the Codex workbench, then retry.";
+		case "incompatible_contract":
+			return "Update Archboard or Codex so their workbench protocol versions match.";
+		case "stale":
+			return "Wait for a fresh Codex snapshot before sending another command.";
+		case "runtime_failure":
+			return "Inspect the reported item, then reconnect or reload the workbench.";
+		case "storage_mismatch":
+			return "Correct the Codex storage configuration, then restart the workbench.";
+		case "login_capable":
+		case "signed_out":
+			return "Sign in to Codex before selecting an executable workhorse.";
+		case "login_pending":
+			return "Complete or cancel the pending Codex sign-in before continuing.";
+		case "initialized":
+		case "account_ready":
+			return "Wait for Codex to finish preparing a thread-capable workhorse.";
+		case "coordinator":
+		case "inspect_only":
+		case "prior_epoch":
+			return "Inspect this history or select a current executable workhorse.";
+		case "unavailable":
+			return "Reconnect the Codex workbench, then select an executable workhorse.";
+	}
 }
 
 function renderStatus(status: WorkbenchVisibleStatus): ReactNode {
@@ -379,7 +422,7 @@ function renderChildren(
 	children: ReactNode,
 	context: WorkbenchRuntimeRenderContext,
 ): ReactNode {
-	return render === undefined ? children : render(context);
+	return render === undefined ? children : createElement(render, context);
 }
 
 export function ReadonlyWorkbenchThreadProvider({
@@ -454,8 +497,17 @@ function ExecutableProvider({
 	render,
 	children,
 }: ExecutableProviderProps): ReactNode {
-	const [status, setStatus] = useState<WorkbenchVisibleStatus>(readyStatus);
+	const boundary = useMemo(() => ({ transport }), [transport]);
+	const [publication, setPublication] = useState<{
+		readonly boundary: typeof boundary;
+		readonly status: WorkbenchVisibleStatus;
+	} | null>(null);
+	const status = publication?.boundary === boundary ? publication.status : readyStatus();
 	const mounted = useRef(true);
+	const currentBoundary = useRef(boundary);
+	useLayoutEffect(() => {
+		currentBoundary.current = boundary;
+	}, [boundary]);
 	useEffect(() => {
 		mounted.current = true;
 		return () => {
@@ -463,7 +515,7 @@ function ExecutableProvider({
 		};
 	}, []);
 	const publishStatus = (next: WorkbenchVisibleStatus): void => {
-		if (mounted.current) setStatus(next);
+		if (mounted.current) setPublication({ boundary, status: next });
 	};
 	const runtime = useExternalStoreRuntime({
 		messages: view.messages,
@@ -490,6 +542,7 @@ function ExecutableProvider({
 					};
 				}
 			}
+			if (!mounted.current || currentBoundary.current !== boundary) return;
 			if (result.outcome === "not_delivered") {
 				publishStatus({
 					role: "status",
@@ -500,7 +553,10 @@ function ExecutableProvider({
 				});
 				throw new MessageNotSentError(result.reason);
 			}
-			if (result.outcome === "outcome_unknown" || !turnIsAuthoritative(transport, result.turnId)) {
+			if (
+				result.outcome === "outcome_unknown" ||
+				!turnIsAuthoritative(boundary.transport, result.turnId)
+			) {
 				publishStatus({
 					role: "status",
 					label: "Codex workbench status",

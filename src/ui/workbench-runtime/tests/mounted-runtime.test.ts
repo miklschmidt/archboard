@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { act, createElement } from "react";
+import { act, createElement, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
 import type {
@@ -21,7 +21,6 @@ const threadId = "mounted-thread" as BrowserTimeline["threadId"];
 const turnId = "mounted-turn" as BrowserTimeline["turns"][number]["turnId"];
 type TimelineItem = BrowserTimeline["turns"][number]["items"][number];
 type ExecutableLink = Extract<BrowserSnapshot["threadLink"], { readonly state: "executable" }>;
-
 function timeline(items: readonly TimelineItem[] = []): BrowserTimeline {
 	return {
 		kind: "timeline",
@@ -39,7 +38,6 @@ function timeline(items: readonly TimelineItem[] = []): BrowserTimeline {
 		nextCursor: null,
 	};
 }
-
 function snapshot(timelineValue: BrowserTimeline = timeline()): BrowserSnapshot {
 	return {
 		kind: "snapshot",
@@ -87,8 +85,7 @@ function snapshot(timelineValue: BrowserTimeline = timeline()): BrowserSnapshot 
 		operation: null,
 	};
 }
-
-function connected(value = snapshot()): BrowserWorkbenchState {
+export function connected(value = snapshot()): BrowserWorkbenchState {
 	return {
 		kind: "readiness",
 		state: "thread_capable",
@@ -97,8 +94,7 @@ function connected(value = snapshot()): BrowserWorkbenchState {
 		sequence: 1,
 	};
 }
-
-class MutableTransport {
+export class MutableTransport {
 	current: BrowserWorkbenchState;
 	readonly listeners = new Set<() => void>();
 	subscriptions = 0;
@@ -127,11 +123,11 @@ class MutableTransport {
 		return this as unknown as BrowserWorkbenchTransport;
 	}
 }
-
-interface MountedProvider {
+export interface MountedProvider {
 	readonly container: TestElement;
 	readonly root: Root;
 	readonly contexts: WorkbenchRuntimeRenderContext[];
+	readonly observedThreads: ObservedThread[];
 	readonly render: (
 		transport: MutableTransport,
 		onSubmit?: (text: string) => Promise<WorkbenchSubmissionResult>,
@@ -139,10 +135,31 @@ interface MountedProvider {
 	readonly close: () => Promise<void>;
 }
 
-async function mountProvider(): Promise<MountedProvider> {
+type ExecutableContext = Extract<WorkbenchRuntimeRenderContext, { readonly mode: "executable" }>;
+type ObservedThread = ReturnType<ExecutableContext["assistantRuntime"]["thread"]["getState"]>;
+
+export async function mountProvider(): Promise<MountedProvider> {
 	const dom = installMinimalDom();
 	const root = createRoot(dom.container as unknown as Element);
 	const contexts: WorkbenchRuntimeRenderContext[] = [];
+	const observedThreads: ObservedThread[] = [];
+	function ExecutableRuntimeObserver({ context }: { readonly context: ExecutableContext }) {
+		const thread = context.assistantRuntime.thread;
+		const observed = useSyncExternalStore(
+			(listener) => thread.subscribe(listener),
+			() => thread.getState(),
+			() => thread.getState(),
+		);
+		observedThreads.push(observed);
+		return createElement("span", { "data-observer": context.mode }, context.status.state);
+	}
+	function RuntimeObserver(context: WorkbenchRuntimeRenderContext) {
+		contexts.push(context);
+		if (context.assistantRuntime !== null) {
+			return createElement(ExecutableRuntimeObserver, { context });
+		}
+		return createElement("span", { "data-observer": context.mode }, context.status.state);
+	}
 	const render = async (
 		transport: MutableTransport,
 		onSubmit?: (text: string) => Promise<WorkbenchSubmissionResult>,
@@ -152,13 +169,7 @@ async function mountProvider(): Promise<MountedProvider> {
 				createElement(WorkbenchRuntimeProvider, {
 					transport: transport.asTransport(),
 					onSubmit: onSubmit === undefined ? undefined : async ({ text }) => await onSubmit(text),
-					render: (context) => {
-						contexts.push(context);
-						if (context.assistantRuntime !== null) {
-							context.assistantRuntime.thread.getState();
-						}
-						return createElement("span", { "data-observer": context.mode }, context.status.state);
-					},
+					render: RuntimeObserver,
 				}),
 			);
 		});
@@ -167,6 +178,7 @@ async function mountProvider(): Promise<MountedProvider> {
 		container: dom.container,
 		root,
 		contexts,
+		observedThreads,
 		render,
 		close: async () => {
 			await act(async () => root.unmount());
@@ -175,7 +187,7 @@ async function mountProvider(): Promise<MountedProvider> {
 	};
 }
 
-function latestExecutable(contexts: readonly WorkbenchRuntimeRenderContext[]) {
+export function latestExecutable(contexts: readonly WorkbenchRuntimeRenderContext[]) {
 	const context = contexts.findLast((candidate) => candidate.mode === "executable");
 	if (context?.mode !== "executable") throw new Error("Expected executable runtime context");
 	return context;
@@ -193,6 +205,7 @@ describe("mounted workbench runtime provider", () => {
 
 			await act(async () => first.publish(connected(snapshot(timeline()))));
 			expect(latestExecutable(mounted.contexts).assistantRuntime).toBe(runtime);
+			expect(mounted.observedThreads).not.toBeEmpty();
 
 			await mounted.render(second);
 			expect(first.teardowns).toBe(1);
@@ -204,7 +217,49 @@ describe("mounted workbench runtime provider", () => {
 		expect(second.teardowns).toBe(1);
 		expect(second.listeners.size).toBe(0);
 	});
+	test("preserves stopped and incompatible contract reasons with state-specific recovery", async () => {
+		const stoppedReason = "The workbench socket was intentionally stopped.";
+		const incompatibleReason = "Expected protocol 7 but Codex supplied protocol 6.";
+		const transport = new MutableTransport({
+			kind: "connection",
+			state: "stopped",
+			connection: "stopped",
+			snapshot: null,
+			sequence: null,
+			reason: stoppedReason,
+		});
+		const mounted = await mountProvider();
+		try {
+			await mounted.render(transport);
+			const stopped = mounted.contexts.at(-1);
+			expect(stopped?.view.state).toBe("stopped");
+			expect(stopped?.view.reason).toBe(stoppedReason);
+			expect(mounted.container.queryByRole("status")?.textContent).toBe(
+				`${stoppedReason} Restart the Codex workbench, then retry.`,
+			);
 
+			await act(async () =>
+				transport.publish({
+					kind: "connection",
+					state: "incompatible_contract",
+					connection: "stopped",
+					snapshot: null,
+					sequence: null,
+					reason: incompatibleReason,
+				}),
+			);
+			const incompatible = mounted.contexts.at(-1);
+			expect(incompatible?.view.state).toBe("incompatible_contract");
+			expect(incompatible?.view.reason).toBe(incompatibleReason);
+			const visible = mounted.container.queryByRole("status")?.textContent;
+			expect(visible).toBe(
+				`${incompatibleReason} Update Archboard or Codex so their workbench protocol versions match.`,
+			);
+			expect(visible).not.toContain("select a current executable workhorse");
+		} finally {
+			await mounted.close();
+		}
+	});
 	test("renders reconnect, stale-link, unsupported-item, and runtime-failure recovery", async () => {
 		const transport = new MutableTransport();
 		const mounted = await mountProvider();
@@ -311,6 +366,21 @@ describe("mounted workbench runtime provider", () => {
 				"incomplete",
 				"incomplete",
 			]);
+			const observed = mounted.observedThreads.at(-1);
+			expect(observed?.messages.map((message) => message.id)).toEqual([
+				"status-running",
+				"status-complete",
+				"status-interrupted",
+				"status-failed",
+			]);
+			expect(
+				observed?.messages[0]?.content.map((part) => ("itemId" in part ? part.itemId : null)),
+			).toEqual(allMedia.map((item) => item.itemId));
+			expect(observed?.capabilities).toMatchObject({
+				edit: false,
+				reload: false,
+				delete: false,
+			});
 
 			const duplicate = timeline([
 				{ media: "text", itemId: "same" as TimelineItem["itemId"], text: "one" },
@@ -325,7 +395,6 @@ describe("mounted workbench runtime provider", () => {
 			await mounted.close();
 		}
 	});
-
 	test("translates submission outcomes without replay and ignores completion after teardown", async () => {
 		const transport = new MutableTransport();
 		const mounted = await mountProvider();
