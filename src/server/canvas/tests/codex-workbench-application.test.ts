@@ -27,6 +27,13 @@ function rejected(operation: Promise<unknown>): Promise<unknown> {
 	);
 }
 
+function expectStopped(
+	state: CanvasCodexWorkbenchApplicationState,
+	shutdown: () => Promise<void>,
+): void {
+	expect(state).toMatchObject({ installed: false, phase: "stopped", shutdown });
+}
+
 test("the canvas awaits initial graph readiness, replaces hooks on reload, and shuts down once", async () => {
 	const events: string[] = [];
 	const state = applicationState();
@@ -158,7 +165,7 @@ test("shutdown during initial preparation revokes once before startup is release
 		),
 	).toBeInstanceOf(Error);
 	expect(await prepareBeforeReadinessSettles).toBeInstanceOf(Error);
-	expect(state).toMatchObject({ installed: false, phase: "stopped", shutdown: null });
+	expectStopped(state, application.shutdown);
 });
 
 test("concurrent startup and shutdown failures are preserved together", async () => {
@@ -204,7 +211,7 @@ test("concurrent startup and shutdown failures are preserved together", async ()
 		"startup failed",
 		"shutdown failed",
 	]);
-	expect(state).toMatchObject({ installed: false, phase: "stopped", shutdown: null });
+	expectStopped(state, application.shutdown);
 
 	const recovery = createCanvasCodexWorkbenchApplication({
 		state,
@@ -268,13 +275,27 @@ test("prepare refuses while one installed shutdown owns the application", async 
 	const refusal = await prepareWhileStopping;
 	expect(refusal).toBeInstanceOf(Error);
 	expect((refusal as Error).message).toContain("shutdown to finish");
-	expect(state).toMatchObject({ installed: false, phase: "stopped", shutdown: null });
+	expectStopped(state, application.shutdown);
+	const settledReplacementSource = createCanvasCodexWorkbenchApplication({
+		state,
+		module,
+		installation: () => ({}) as never,
+	});
+	const shutdownAfterReplacement = settledReplacementSource.shutdown();
+	expect(shutdownAfterReplacement).toBe(shutdownA);
+	await shutdownAfterReplacement;
+	expect(shutdownCalls).toBe(1);
+	expect(installs).toBe(1);
+	expect(reloads).toBe(0);
 
-	await replacementSource.prepare();
+	await settledReplacementSource.prepare();
 	expect(installs).toBe(2);
 	expect(reloads).toBe(0);
 	expect(state).toMatchObject({ installed: true, phase: "installed" });
-	await replacementSource.shutdown();
+	const recoveredShutdown = settledReplacementSource.shutdown();
+	expect(recoveredShutdown).not.toBe(shutdownA);
+	await recoveredShutdown;
+	expect(shutdownCalls).toBe(2);
 });
 
 test("rejecting shutdown remains exact under concurrent prepare and shutdown calls", async () => {
@@ -285,26 +306,27 @@ test("rejecting shutdown remains exact under concurrent prepare and shutdown cal
 	let shutdownCalls = 0;
 	let releaseCleanup!: () => void;
 	const cleanupGate = new Promise<void>((resolve) => void (releaseCleanup = resolve));
+	const applicationModule = {
+		installProductionCodexWorkbench: () => {
+			installs++;
+			return { start: async () => ({ ready: true }) } as never;
+		},
+		reloadProductionCodexWorkbench: async () => {
+			reloads++;
+			return { ready: true } as never;
+		},
+		shutdownProductionCodexWorkbench: async () => {
+			shutdownCalls++;
+			if (shutdownCalls === 1) {
+				await cleanupGate;
+				throw cleanupFailure;
+			}
+			return { ready: false } as never;
+		},
+	};
 	const application = createCanvasCodexWorkbenchApplication({
 		state,
-		module: {
-			installProductionCodexWorkbench: () => {
-				installs++;
-				return { start: async () => ({ ready: true }) } as never;
-			},
-			reloadProductionCodexWorkbench: async () => {
-				reloads++;
-				return { ready: true } as never;
-			},
-			shutdownProductionCodexWorkbench: async () => {
-				shutdownCalls++;
-				if (shutdownCalls === 1) {
-					await cleanupGate;
-					throw cleanupFailure;
-				}
-				return { ready: false } as never;
-			},
-		},
+		module: applicationModule,
 		installation: () => ({}) as never,
 	});
 	await application.prepare();
@@ -325,15 +347,100 @@ test("rejecting shutdown remains exact under concurrent prepare and shutdown cal
 		expect(refusal).toBeInstanceOf(Error);
 		expect((refusal as Error).message).toContain("shutdown to finish");
 	}
-	expect(state).toMatchObject({ installed: false, phase: "stopped", shutdown: null });
+	expectStopped(state, application.shutdown);
 	expect(application.shutdown()).toBe(shutdownA);
+	const settledReplacementSource = createCanvasCodexWorkbenchApplication({
+		state,
+		module: applicationModule,
+		installation: () => ({}) as never,
+	});
+	const shutdownAfterReplacement = settledReplacementSource.shutdown();
+	expect(shutdownAfterReplacement).toBe(shutdownA);
+	expect(await rejected(shutdownAfterReplacement)).toBe(cleanupFailure);
+	expect(shutdownCalls).toBe(1);
+	expect(installs).toBe(1);
+	expect(reloads).toBe(0);
 
-	await application.prepare();
+	await settledReplacementSource.prepare();
 	expect(installs).toBe(2);
 	expect(reloads).toBe(0);
 	expect(state).toMatchObject({ installed: true, phase: "installed" });
-	await application.shutdown();
+	const recoveredShutdown = settledReplacementSource.shutdown();
+	expect(recoveredShutdown).not.toBe(shutdownA);
+	await recoveredShutdown;
 	expect(shutdownCalls).toBe(2);
+});
+
+test("a failed recovery prepare becomes the exact new stopped result", async () => {
+	const state = applicationState();
+	const recoveryFailure = new Error("recovery startup rejected");
+	let failStartup = false;
+	let installs = 0;
+	let starts = 0;
+	let reloads = 0;
+	let shutdownCalls = 0;
+	const module = {
+		installProductionCodexWorkbench: () => {
+			installs++;
+			return {
+				start: async () => {
+					starts++;
+					if (failStartup) throw recoveryFailure;
+					return { ready: true };
+				},
+			} as never;
+		},
+		reloadProductionCodexWorkbench: async () => {
+			reloads++;
+			return { ready: true } as never;
+		},
+		shutdownProductionCodexWorkbench: async () => {
+			shutdownCalls++;
+			return { ready: false } as never;
+		},
+	};
+	const sourceA = createCanvasCodexWorkbenchApplication({
+		state,
+		module,
+		installation: () => ({}) as never,
+	});
+	await sourceA.prepare();
+	const shutdownA = sourceA.shutdown();
+	await shutdownA;
+
+	failStartup = true;
+	const sourceB = createCanvasCodexWorkbenchApplication({
+		state,
+		module,
+		installation: () => ({}) as never,
+	});
+	const failedRecovery = sourceB.prepare();
+	expect(state).toMatchObject({
+		installed: false,
+		phase: "preparing",
+		shutdown: sourceB.shutdown,
+	});
+	expect(await rejected(failedRecovery)).toBe(recoveryFailure);
+	expectStopped(state, sourceB.shutdown);
+	expect(sourceB.shutdown() as unknown).toBe(failedRecovery);
+
+	const sourceC = createCanvasCodexWorkbenchApplication({
+		state,
+		module,
+		installation: () => ({}) as never,
+	});
+	const replayedFailure = sourceC.shutdown();
+	expect(replayedFailure as unknown).toBe(failedRecovery);
+	expect(await rejected(replayedFailure)).toBe(recoveryFailure);
+	expect([installs, starts, reloads, shutdownCalls]).toEqual([2, 2, 0, 1]);
+
+	failStartup = false;
+	await sourceC.prepare();
+	const recoveredShutdown = sourceC.shutdown();
+	expect(recoveredShutdown).not.toBe(shutdownA);
+	expect(recoveredShutdown).not.toBe(failedRecovery);
+	await recoveredShutdown;
+	expect([installs, starts, reloads, shutdownCalls]).toEqual([3, 3, 0, 2]);
 });
 
 test("application shutdown revokes every retained wrapper before deferred graph cleanup", async () => {

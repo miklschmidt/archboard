@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 08:57'
+updated_date: '2026-09-01 09:14'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -237,6 +237,12 @@ Own the one production composition root in the canvas server. It instantiates ev
 69. Publish the exact shutdown promise and clear installed ownership before invoking production teardown, then return that promise to every concurrent shutdown caller through success or rejection.
 
 70. Add installed-overlap and cleanup-rejection owners first, run focused non-hot capped validation without known OOM aggregates, preserve protected state, commit above 127e5cad, and callback the parent.
+
+71. Preserve the settled shutdown authority through stopped so same-source and replacement-source shutdown calls return the exact cached success or rejection promise.
+
+72. Replace terminal authority synchronously when recovery prepare begins, define failed recovery ownership without reviving the retired installation, and prove it with focused owners.
+
+73. Run exact replacement-source owners first, then sequential capped focused non-hot gates, update evidence, commit above fb3b05f5, and callback the parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -329,10 +335,12 @@ Seventh rejection remediation above 127e5cad closes the stopping/prepare overlap
 Shutdown now creates and publishes its exact promise before invoking production teardown, marks installed ownership false and phase stopping synchronously, and returns that same promise through every same-source or replacement-source caller. Cleanup success or rejection is cached until an explicit prepare begins from stopped. If shutdown finishes while an earlier preparation still awaits readiness, phase remains stopping and blocks reinstall until that preparation settles; only then does the owner publish stopped. A new prepare from stopped clears the prior terminal ownership and starts one clean installation.
 
 The exact overlap owners start installed, block cleanup, call shutdown A, call prepare from a replacement source, and call shutdown B. Before release they prove A===B, shutdownCalls=1, reloadCalls=0, installed=false, phase=stopping, and retained shutdown authority unchanged. Success and rejection variants prove stable settlement, concurrent refusal, no cached-state corruption, and explicit clean reinstall. Final sequential named 6 GiB/1 GiB validation: application overlap owner 7 pass, 0 fail, 57 assertions; focused non-hot canvas/transport owners 64 pass, 0 fail, 409 assertions; actual src/server.ts production/application socket/setup cleanup/stale-socket owners 8 pass, 0 fail, 118 assertions. Both TypeScript projects, lint with 0 warnings/errors, formatting check, and diff check pass. No known OOM fingerprint was rerun. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all AC remain unchecked.
+
+Eighth rejection remediation above fb3b05f5 keeps the settled terminal result in shared application ownership. The stopped phase retains the retiring source shutdown function, so same-source and replacement-source calls return the original promise object after either fulfillment or rejection. A recovery prepare replaces that function before installation begins. If recovery startup fails, its exact rejected prepare promise becomes the new stopped result; later shutdown calls replay it until another explicit recovery begins. The retired installed owner never returns and teardown does not repeat.\n\nPost-settlement success and rejection owners prove exact promise and error identity across replacement source construction, one teardown, no reload, no extra start, and one fresh ownership cycle after explicit recovery. A failed-recovery owner proves synchronous authority replacement, exact failed-prepare replay through a third source, no teardown during startup failure, and a later clean recovery with a distinct shutdown promise. Final named 6 GiB/1 GiB validation: exact application owner 8 pass, 0 fail, 79 assertions; focused non-hot canvas and transport owners 65 pass, 0 fail, 431 assertions; production system owners 8 pass, 0 fail, 118 assertions. Both TypeScript projects, lint with 0 warnings and errors, formatting, and diff checks pass. No known OOM fingerprint was rerun. The protected artifact remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and all acceptance criteria remain unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Made Codex application stopping ownership exact: prepare refuses without mutation, shutdown clears installed ownership before teardown, every caller receives the same cached shutdown promise, and only an explicit prepare from fully stopped can recover. Exact overlap, focused non-hot, real production system, type, lint, format, and diff checks pass. Task status and acceptance criteria remain unchanged for parent rereview.
+Preserved exact shutdown promise ownership after settlement across replacement source instances. Recovery replaces terminal authority synchronously, and a failed recovery becomes the exact new terminal rejection. Exact, focused non-hot, production, type, lint, format, and diff checks pass. Task status and acceptance criteria remain unchanged for parent rereview.
 <!-- SECTION:FINAL_SUMMARY:END -->
