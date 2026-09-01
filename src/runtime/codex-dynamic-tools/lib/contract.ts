@@ -30,6 +30,7 @@ import type {
 	ThreadId,
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
+import { randomUUID } from "node:crypto";
 import type {
 	ArchboardAppNamespaceSpec,
 	GeneralThreadToolName,
@@ -43,6 +44,28 @@ declare const dynamicAuthorityBrand: unique symbol;
 export type DynamicAuthorityToken = string & {
 	readonly [dynamicAuthorityBrand]: "dynamic-authority";
 };
+
+export interface DynamicAuthorityTokenIssuer {
+	readonly issue: () => DynamicAuthorityToken;
+	readonly owns: (token: DynamicAuthorityToken) => boolean;
+	readonly retire: (token: DynamicAuthorityToken) => void;
+	readonly retireAll: () => void;
+}
+
+/** Process-local opaque authority; only the owning production adapter can validate it. */
+export function createDynamicAuthorityTokenIssuer(): DynamicAuthorityTokenIssuer {
+	const live = new Set<string>();
+	return Object.freeze({
+		issue: () => {
+			const token = `dynamic-authority:${randomUUID()}`;
+			live.add(token);
+			return token as DynamicAuthorityToken;
+		},
+		owns: (token: DynamicAuthorityToken) => live.has(token),
+		retire: (token: DynamicAuthorityToken) => void live.delete(token),
+		retireAll: () => live.clear(),
+	});
+}
 
 export type DynamicToolName = GeneralThreadToolName;
 export type DynamicMutationToolName = "create_thread" | "fork_thread" | "send_message_to_thread";

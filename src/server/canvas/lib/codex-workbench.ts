@@ -58,6 +58,11 @@ import {
 	type CodexRealtimeAdapterOptions,
 } from "../../../runtime/codex-realtime/index.js";
 import {
+	createSemanticContextPublisher,
+	type SemanticContextPublisher,
+	type SemanticContextPublisherOptions,
+} from "../../../runtime/codex-semantic-context/index.js";
+import {
 	createCodexSpokenApprovalGate,
 	type CodexSpokenApprovalGate,
 	type CodexSpokenApprovalGateOptions,
@@ -161,6 +166,12 @@ function assertUnreachable(value: never): never {
 	throw new TypeError(`Unreachable Codex server request: ${String(value)}`);
 }
 
+function isCoordinatorToolRequest(
+	request: TransportServerRequest,
+): request is Parameters<CoordinatorToolDispatcher["dispatch"]>[0] {
+	return request.method === "item/tool/call" && request.owner === "codex-coordinator-tools";
+}
+
 /** Route every generated app-server request to its sole response owner. */
 export function createCodexWorkbenchRequestRouter(
 	owners: CodexWorkbenchRequestOwners,
@@ -222,6 +233,7 @@ export interface CodexWorkbenchComponents {
 	readonly session: ControlledCodexSession;
 	readonly threadLink: CodexThreadLinkPort;
 	readonly workhorse: CodexWorkhorseStart;
+	readonly semanticPublisher: SemanticContextPublisher;
 	readonly realtime: CodexRealtimeAdapter;
 	readonly approvals: CodexApprovalBroker;
 	readonly dynamicTools: CodexDynamicTools;
@@ -284,6 +296,13 @@ export interface CodexWorkbenchDynamicAdapterFactories {
 	readonly lifecycle: ComponentBuilder<DynamicToolLifecyclePort>;
 }
 
+export interface CodexWorkbenchCoordinatorCallOwner {
+	readonly run: <Value>(
+		request: DynamicServerRequest,
+		operation: () => Promise<Value>,
+	) => Promise<Value>;
+}
+
 export interface ProductionCodexWorkbenchBindings {
 	readonly epoch: ComponentBuilder<CodexEpochStoreOptions>;
 	readonly transport: ComponentBuilder<Omit<CodexTransportOptions, "identity">>;
@@ -294,6 +313,7 @@ export interface ProductionCodexWorkbenchBindings {
 	readonly workhorse: ComponentBuilder<
 		Omit<CodexWorkhorseStartOptions, "session" | "threadLink" | "epoch" | "identity" | "operation">
 	>;
+	readonly semanticPublisher: ComponentBuilder<SemanticContextPublisherOptions>;
 	readonly realtime: ComponentBuilder<Omit<CodexRealtimeAdapterOptions, "session" | "identity">>;
 	readonly approvals: ComponentBuilder<
 		Omit<CodexApprovalBrokerOptions, "transport" | "identity" | "listenerOwnership">
@@ -340,10 +360,13 @@ export interface ProductionCodexWorkbenchBindings {
 			"identity" | "operation" | "operations" | "spokenApproval" | "transport"
 		>
 	>;
+	readonly coordinatorCall: CodexWorkbenchCoordinatorCallOwner;
 	readonly callbacks: ComponentBuilder<
 		Omit<CoordinatorCallbackOptions, "operations" | "session" | "threadLink">
 	>;
-	readonly gateway: ComponentBuilder<Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink">>;
+	readonly gateway: (
+		created: Readonly<Omit<CodexWorkbenchComponents, "gateway">>,
+	) => Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink">;
 }
 
 function requireComponent<Name extends ComponentName>(
@@ -393,6 +416,8 @@ export function createProductionCodexWorkbenchFactories(
 				identity: requireComponent(created, "identity").identity,
 				operation: requireComponent(created, "identity").operation,
 			}),
+		semanticPublisher: (created) =>
+			createSemanticContextPublisher(bindings.semanticPublisher(created)),
 		realtime: (created) =>
 			createCodexRealtimeAdapter({
 				...bindings.realtime(created),
@@ -466,15 +491,26 @@ export function createProductionCodexWorkbenchFactories(
 				session: requireComponent(created, "session"),
 				identity: requireComponent(created, "identity").identity,
 			}),
-		coordinatorTools: (created) =>
-			createCodexCoordinatorTools({
+		coordinatorTools: (created) => {
+			const dispatcher = createCodexCoordinatorTools({
 				...bindings.coordinatorTools(created),
 				identity: requireComponent(created, "identity").identity,
 				operation: requireComponent(created, "identity").operation,
 				operations: requireComponent(created, "operations"),
 				spokenApproval: requireComponent(created, "spokenApproval"),
 				transport: requireComponent(created, "transport"),
-			}),
+			});
+			const dispatch: CoordinatorToolDispatcher["dispatch"] = (request) =>
+				bindings.coordinatorCall.run(request, () => dispatcher.dispatch(request));
+			return Object.freeze({
+				...dispatcher,
+				dispatch,
+				onServerRequest: (request: TransportServerRequest) => {
+					if (!isCoordinatorToolRequest(request)) return;
+					void dispatch(request).catch(() => undefined);
+				},
+			});
+		},
 		callbacks: (created) =>
 			createCodexCoordinatorCallbacks({
 				...bindings.callbacks(created),
@@ -482,12 +518,32 @@ export function createProductionCodexWorkbenchFactories(
 				session: requireComponent(created, "session"),
 				threadLink: requireComponent(created, "threadLink"),
 			}),
-		gateway: (created) =>
-			createCodexWorkbenchGateway({
-				...bindings.gateway(created),
+		gateway: (created) => {
+			const dependencies = {
+				identity: requireComponent(created, "identity"),
+				epoch: requireComponent(created, "epoch"),
+				transport: requireComponent(created, "transport"),
+				session: requireComponent(created, "session"),
+				threadLink: requireComponent(created, "threadLink"),
+				workhorse: requireComponent(created, "workhorse"),
+				semanticPublisher: requireComponent(created, "semanticPublisher"),
+				realtime: requireComponent(created, "realtime"),
+				approvals: requireComponent(created, "approvals"),
+				dynamicTools: requireComponent(created, "dynamicTools"),
+				semanticDelivery: requireComponent(created, "semanticDelivery"),
+				coordinator: requireComponent(created, "coordinator"),
+				queue: requireComponent(created, "queue"),
+				operations: requireComponent(created, "operations"),
+				spokenApproval: requireComponent(created, "spokenApproval"),
+				coordinatorTools: requireComponent(created, "coordinatorTools"),
+				callbacks: requireComponent(created, "callbacks"),
+			};
+			return createCodexWorkbenchGateway({
+				...bindings.gateway(dependencies),
 				identity: requireComponent(created, "identity"),
 				threadLink: requireComponent(created, "threadLink"),
-			}),
+			});
+		},
 	});
 }
 
@@ -506,6 +562,7 @@ export async function composeCodexWorkbenchGeneration(
 	let session!: ControlledCodexSession;
 	let threadLink!: CodexThreadLinkPort;
 	let workhorse!: CodexWorkhorseStart;
+	let semanticPublisher!: SemanticContextPublisher;
 	let realtime!: CodexRealtimeAdapter;
 	let approvals!: CodexApprovalBroker;
 	let dynamicTools!: CodexDynamicTools;
@@ -534,6 +591,9 @@ export async function composeCodexWorkbenchGeneration(
 		created.threadLink = threadLink;
 		workhorse = options.factories.workhorse(created);
 		created.workhorse = workhorse;
+		semanticPublisher = options.factories.semanticPublisher(created);
+		created.semanticPublisher = semanticPublisher;
+		constructionCleanups.push(() => semanticPublisher.dispose());
 		realtime = options.factories.realtime(created);
 		created.realtime = realtime;
 		constructionCleanups.push(() => realtime.dispose());
@@ -584,11 +644,13 @@ export async function composeCodexWorkbenchGeneration(
 	});
 	const transportUnsubscribers: Array<() => void> = [];
 	let hookUnsubscribers: Array<() => void> = [];
+	let approvalProjectionUnsubscribe: (() => void) | null = null;
 	const pendingChildSettlements = new Set<Promise<unknown>>();
 	let stopped = false;
 	let stopPromise: Promise<void> | null = null;
 	let stopFinished = false;
 	let currentHooks = options.hooks;
+	const ownerHooks = options.hooks;
 
 	const installHooks = (hooks: CodexWorkbenchGenerationHooks): void => {
 		semanticDelivery.replaceHooks(hooks.threadContext);
@@ -596,7 +658,6 @@ export async function composeCodexWorkbenchGeneration(
 		const installed: Array<() => void> = [];
 		try {
 			installed.push(hooks.installLifecycleSignals(components));
-			installed.push(hooks.installApprovalProjection(components));
 			installed.push(hooks.installBrowserGateway(gateway));
 			hookUnsubscribers = installed;
 		} catch (error) {
@@ -673,7 +734,8 @@ export async function composeCodexWorkbenchGeneration(
 			}),
 		);
 		installHooks(currentHooks);
-		await currentHooks.initializeSession(session);
+		approvalProjectionUnsubscribe = ownerHooks.installApprovalProjection(components);
+		await ownerHooks.initializeSession(session);
 	} catch (error) {
 		let failure = error instanceof Error ? error : new Error(String(error));
 		try {
@@ -727,12 +789,13 @@ export async function composeCodexWorkbenchGeneration(
 					failure = appendFailure(failure, error, "Codex workbench shutdown failed.");
 				}
 			};
-			await attempt(() => currentHooks.stopBrowser(gateway));
-			await attempt(() => currentHooks.stopRealtime(realtime));
+			await attempt(() => ownerHooks.stopBrowser(gateway));
+			await attempt(() => ownerHooks.stopRealtime(realtime));
 			await attempt(() => realtime.dispose());
-			await attempt(() => currentHooks.stopQueue(queue));
-			await attempt(() => currentHooks.cancelDynamicApprovalsAndWaits(components));
-			await attempt(() => currentHooks.settleOrdinaryRequests(approvals));
+			await attempt(() => semanticPublisher.dispose());
+			await attempt(() => ownerHooks.stopQueue(queue));
+			await attempt(() => ownerHooks.cancelDynamicApprovalsAndWaits(components));
+			await attempt(() => ownerHooks.settleOrdinaryRequests(approvals));
 			await attempt(() => session[CODEX_SESSION_CONTROL].dispose());
 			await attempt(() => callbacks.dispose());
 			await attempt(() => spokenApproval.dispose());
@@ -756,6 +819,12 @@ export async function composeCodexWorkbenchGeneration(
 			removeHooks();
 		} catch (error) {
 			failure = appendFailure(failure, error, "Codex generation-hook cleanup failed.");
+		}
+		try {
+			approvalProjectionUnsubscribe?.();
+			approvalProjectionUnsubscribe = null;
+		} catch (error) {
+			failure = appendFailure(failure, error, "Codex approval-projection cleanup failed.");
 		}
 		for (const unsubscribe of transportUnsubscribers.splice(0).toReversed()) {
 			try {
@@ -799,6 +868,10 @@ export interface InstallProductionCodexWorkbenchOptions {
 	readonly hooks: (input: CodexWorkbenchGenerationInput) => CodexWorkbenchGenerationHooks;
 }
 
+export type CodexWorkbenchHooksFactory = (
+	input: CodexWorkbenchGenerationInput,
+) => CodexWorkbenchGenerationHooks;
+
 export interface CodexWorkbenchOwner {
 	readonly start: () => Promise<CodexWorkbenchSnapshot>;
 	readonly reload: (hooks: CodexWorkbenchGenerationHooks) => Promise<CodexWorkbenchSnapshot>;
@@ -815,7 +888,9 @@ export interface CodexWorkbenchRetainedState {
 	process: CodexProcess | null;
 	startCurrentGeneration: (() => Promise<CodexWorkbenchSnapshot>) | null;
 	reloadCurrentGeneration:
-		| ((hooks: CodexWorkbenchGenerationHooks) => Promise<CodexWorkbenchSnapshot>)
+		| ((
+				hooks: CodexWorkbenchGenerationHooks | CodexWorkbenchHooksFactory,
+		  ) => Promise<CodexWorkbenchSnapshot>)
 		| null;
 	shutdownCurrentGeneration: (() => Promise<CodexWorkbenchSnapshot>) | null;
 	readCurrentSnapshot: (() => CodexWorkbenchSnapshot) | null;
@@ -858,7 +933,7 @@ export function installProductionCodexWorkbench(
 
 /** Replace only source-generation hooks on the one active production graph. */
 export function reloadProductionCodexWorkbench(
-	hooks: CodexWorkbenchGenerationHooks,
+	hooks: CodexWorkbenchHooksFactory,
 ): Promise<CodexWorkbenchSnapshot> {
 	const reload = retainedWorkbench.reloadCurrentGeneration;
 	if (reload === null)
@@ -1011,13 +1086,15 @@ export function installCodexWorkbenchOwner(
 		return operation;
 	};
 
-	const reload = async (hooks: CodexWorkbenchGenerationHooks): Promise<CodexWorkbenchSnapshot> => {
+	const reload = async (
+		hooks: CodexWorkbenchGenerationHooks | CodexWorkbenchHooksFactory,
+	): Promise<CodexWorkbenchSnapshot> => {
 		if (generation === null || generationInput === null || retained.state !== "ready")
 			throw new CodexWorkbenchCompositionError(
 				"not_started",
 				"The production Codex workbench is not ready for source-hook replacement.",
 			);
-		await generation.replaceHooks(hooks);
+		await generation.replaceHooks(typeof hooks === "function" ? hooks(generationInput) : hooks);
 		retained.generation += 1;
 		return snapshot();
 	};

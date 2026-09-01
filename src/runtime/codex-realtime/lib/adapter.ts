@@ -482,6 +482,15 @@ export function createCodexRealtimeAdapter(
 		recover,
 		onNotification,
 		transcript: () => (active ? orderedRecords(active) : retainedTranscript),
+		generation: () =>
+			active === null
+				? null
+				: Object.freeze({
+						...active.binding,
+						browserSessionId: active.browserSessionId,
+						browserCorrelationId: active.correlationId,
+						wireSessionId: active.wireSessionId,
+					}),
 		dispose: () => {
 			disposed = true;
 			listeners.clear();

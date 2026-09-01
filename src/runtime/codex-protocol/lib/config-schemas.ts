@@ -50,7 +50,8 @@ export const ConfigLayerSchema = looseObject({
 	name: ConfigLayerSourceSchema,
 	version: z.string(),
 	config: JsonValueSchema,
-	disabledReason: z.string().nullable(),
+	/** Current app-server omits this field for enabled layers. */
+	disabledReason: z.string().nullable().optional(),
 });
 
 export const SandboxWorkspaceWriteSchema = looseObject({

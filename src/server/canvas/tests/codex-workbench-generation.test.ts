@@ -69,6 +69,7 @@ test("the production generation creates every owner once before readiness and sh
 		} as unknown as ControlledCodexSession,
 		threadLink: {},
 		workhorse: {},
+		semanticPublisher: disposable("publisher"),
 		realtime: { ...disposable("realtime"), onNotification: () => undefined },
 		approvals: {
 			...disposable("approvals"),
@@ -107,6 +108,7 @@ test("the production generation creates every owner once before readiness and sh
 		"session",
 		"threadLink",
 		"workhorse",
+		"semanticPublisher",
 		"realtime",
 		"approvals",
 		"dynamicTools",
@@ -171,6 +173,14 @@ test("the production generation creates every owner once before readiness and sh
 	expect(events.indexOf("router:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("approval-projection:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("browser:install")).toBeLessThan(events.indexOf("ready"));
+	await generation.replaceHooks({
+		...hooks,
+		stopBrowser: async () => void events.push("reload:browser-stop"),
+		stopRealtime: async () => void events.push("reload:realtime-stop"),
+		stopQueue: () => void events.push("reload:queue-stop"),
+		cancelDynamicApprovalsAndWaits: async () => void events.push("reload:dynamic-cancel"),
+		settleOrdinaryRequests: async () => void events.push("reload:ordinary-settle"),
+	});
 
 	await generation.stop("shutdown");
 	generation.finishStop();
@@ -179,15 +189,21 @@ test("the production generation creates every owner once before readiness and sh
 	expect(events.indexOf("realtime:stop")).toBeLessThan(events.indexOf("queue:stop"));
 	expect(events.indexOf("queue:stop")).toBeLessThan(events.indexOf("dynamic:cancel"));
 	expect(events.indexOf("dynamic:cancel")).toBeLessThan(events.indexOf("ordinary:settle"));
+	expect(events.some((event) => event.startsWith("reload:") && event.endsWith("stop"))).toBeFalse();
+	expect(events).not.toContain("reload:dynamic-cancel");
+	expect(events).not.toContain("reload:ordinary-settle");
 	expect(events.indexOf("transport:shutdown")).toBeLessThan(events.indexOf("router:remove"));
 	expect(events.indexOf("router:remove")).toBeLessThan(events.indexOf("epoch:close"));
 	expect(events).toContain("child-retirement:start");
 	expect(events).toContain("child-retirement:finish");
+	expect(events.filter((event) => event === "approval-projection:install")).toHaveLength(1);
+	expect(events.filter((event) => event === "approval-projection:remove")).toHaveLength(1);
 
 	const cleanupEvent = new Map<string, string>([
 		["epoch", "epoch:close"],
 		["transport", "transport:shutdown"],
 		["session", "session:dispose"],
+		["semanticPublisher", "publisher:dispose"],
 		["realtime", "realtime:dispose"],
 		["approvals", "approvals:dispose"],
 		["dynamicTools", "dynamic:dispose"],

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 00:35'
+updated_date: '2026-09-01 01:22'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -23,6 +23,14 @@ modified_files:
   - src/runtime/codex-approvals/lib/broker.ts
   - src/runtime/codex-approvals/lib/contract.ts
   - src/runtime/codex-approvals/tests/listener-ownership.test.ts
+  - src/runtime/codex-dynamic-tools/index.ts
+  - src/runtime/codex-dynamic-tools/lib/contract.ts
+  - src/runtime/codex-process/lib/process.ts
+  - src/runtime/codex-protocol/lib/config-schemas.ts
+  - src/runtime/codex-protocol/tests/config-layers.test.ts
+  - src/runtime/codex-realtime/index.ts
+  - src/runtime/codex-realtime/lib/adapter.ts
+  - src/runtime/codex-realtime/lib/contract.ts
   - src/runtime/codex-session/index.ts
   - src/runtime/codex-session/lib/contract.ts
   - src/runtime/codex-session/lib/session.ts
@@ -34,11 +42,17 @@ modified_files:
   - src/runtime/codex-thread-context/lib/delivery.ts
   - src/runtime/codex-thread-context/tests/controller.test.ts
   - src/runtime/codex-thread-context/tests/delivery-support.ts
-  - src/server/canvas/index.ts
   - src/server/canvas/codex-workbench.ts
+  - src/server/canvas/lib/application.ts
   - src/server/canvas/lib/codex-workbench.ts
+  - src/server/canvas/lib/codex-workbench-adapters.ts
+  - src/server/canvas/lib/codex-workbench-application.ts
+  - src/server/canvas/lib/codex-workbench-production.ts
+  - src/server/canvas/tests/codex-workbench-adapters.test.ts
+  - src/server/canvas/tests/codex-workbench-application.test.ts
   - src/server/canvas/tests/codex-workbench-generation.test.ts
   - src/server/canvas/tests/codex-workbench.test.ts
+  - src/shared/timing/timing.ts
   - tests/system/repository-policy/codex-workbench-composition.test.ts
 parent_task_id: TASK-143.01
 priority: high
@@ -71,6 +85,10 @@ Own the one production composition root in the canvas server. It instantiates ev
 6. Run the requested capped sequential validation lanes, including one fresh hot-reload owner after removing the eager import, then update task notes without checking AC and commit on top of 8de971a0 for independent fixed-base review.
 
 7. Add the approved process-lifetime unbound binding controller in src/runtime/codex-thread-context. Preserve the immutable fixed-target leaf, own one subscription and one child/session event ledger across exact CAS bind/rebind/clear transitions, and integrate its proven workhorse binding into production composition before application readiness.
+
+8. Implement the concrete canvas host owner in the application seam: one semantic publisher/context source, dynamic visual-approval owner, exact caller/target/context/operation/lifecycle adapters, browser projection/actions, and reviewed runtime bindings. Dynamically install the narrow workbench entrypoint before HTTP listen, replace only hooks on reload, and await exact shutdown/failure cleanup.
+
+9. Add direct production-application owners for construction cardinality, readiness ordering, sole routing, reload identity, shutdown/child-exit/startup-failure cleanup, and duplicate refusal; then run capped validation and callback the fixed-base parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -91,4 +109,10 @@ Architecture decision: preserve createCodexThreadContextDelivery as the immutabl
 Remediation checkpoint: fixed listener ownership, retained graph reload, synchronous child retirement, construction/start failure cleanup, strict duplicate-owner refusal, and narrow canvas export. Added the approved process-lifetime thread-context controller with one subscription, a lifetime event ledger, exact CAS bind/rebind/clear, replaceable hooks, and child-exit revocation. Focused validation is green (46 tests / 272 assertions), both TypeScript projects pass, scoped Oxlint and oxfmt pass, and the protected artifact hash is unchanged.
 
 Remaining blocker: the real canvas application still does not construct the full production host bindings/five dynamic adapters or await installation before HTTP readiness. That seam requires the concrete browser action/projection, semantic publisher/context capture, dynamic visual-approval, exact caller/target authority, and wait/lifecycle owners; landing only a lifecycle shell would violate the explicit no-placeholder/no-lazy-install direction. Reviewer finding 1 therefore remains open and TASK-143.01.14 is not ready for final review or AC completion.
+
+Production application remediation complete and ready for fixed-base review. The real canvas application now creates the concrete semantic, visual-approval, caller/target/context/operation/lifecycle, browser projection/action, process, realtime, queue, and thread-context bindings; dynamically installs the narrow workbench entrypoint before HTTP listen; replaces only generation source hooks on reload; and awaits ordered terminal cleanup on startup failure, child exit, browser disconnect, signals, and server bind failure. All seven review findings are addressed.
+
+Direct verification: a fresh empty-vault server remained running after the graph reached readiness, /health returned healthy, and SIGINT shut the process down cleanly. Final focused composition/application/adapter/protocol owners passed; both TypeScript projects passed; scoped Oxlint and oxfmt passed. The broader relevant runtime lane passed 192 owners except for one entrypoint-policy failure caused by an over-broad export, which was reverted and its isolated owner then passed. The full repository owner was OOM-killed at the required 6 GiB memory / 1 GiB swap ceiling after boundary checks; its isolated inventory owner passed. The previously recorded fresh hot-reload owner remains 4/4 and was not rerun.
+
+Protected artifact is unchanged from fixed base 7f37c1a903492bbd7d02699df069f2d2bc3dccba and current HEAD (git object f56a8a8364ee677027f1e5eb31fb0644a18d338b); its actual SHA-256 is 3ffcfa2c2a07af83f4074c7e785a87aa1bb1df7a81bdbce58385525d2159cccb. The earlier 22f897... note was stale evidence, not a file change. AC remains unchecked for parent review.
 <!-- SECTION:NOTES:END -->

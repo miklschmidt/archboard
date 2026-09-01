@@ -18,6 +18,20 @@ import type {
 } from "../../../runtime/engine/types.js";
 import { mintId } from "../../../shared/ids/ids.js";
 import { buildSelectionReport } from "../../../runtime/engine/describe.js";
+import { describeScene } from "../../../runtime/engine/describe.js";
+import {
+	ArchboardContextSchema,
+	type ArchboardContext,
+} from "../../../runtime/codex-instructions/index.js";
+import type {
+	SemanticContextInput,
+	SettledChangeSourceEvent,
+	SettledSemanticChangeEvent,
+} from "../../../runtime/codex-semantic-context/index.js";
+import type { DynamicWaitEvent } from "../../../runtime/codex-dynamic-tools/index.js";
+import type { RemoteMediaAttachment } from "../../../shared/codex-realtime-host/index.js";
+import type { CodexWorkbenchComponents } from "../codex-workbench.js";
+import type { CanvasCodexWorkbenchHost } from "./codex-workbench-production.js";
 import {
 	buildPanesReport,
 	MAX_PANES,
@@ -124,6 +138,8 @@ import { changeFeed } from "../../../runtime/engine/change-feed.js";
 import type { ChangeEvent } from "../../../runtime/engine/change-feed.js";
 import {
 	BROWSER_EXPORT_TIMEOUT_MS,
+	CODEX_COMPOSED_SHUTDOWN_MS,
+	CODEX_WAIT_TARGET_POLL_MS,
 	PANE_LAYOUT_TIMEOUT_MS,
 	PANE_SETTLE_CAP_MS,
 	REPORT_PROGRESS_MS,
@@ -210,10 +226,19 @@ interface Wiring {
 	listening: boolean;
 	/** Set once the signal and exit handlers are on `process`. */
 	signalsBound: boolean;
+	codex: {
+		installed: boolean;
+		shutdown: (() => Promise<void>) | null;
+		closeBrowser: ((browserId: string) => Promise<void>) | null;
+	};
 }
 
 const wiring = kept<Wiring>("http", () => {
-	const state = { listening: false, signalsBound: false } as Wiring;
+	const state = {
+		listening: false,
+		signalsBound: false,
+		codex: { installed: false, shutdown: null, closeBrowser: null },
+	} as Wiring;
 	state.server = createServer((req, res) => state.app(req, res));
 	state.wss = new WebSocketServer({ server: state.server });
 	return state;
@@ -836,6 +861,9 @@ wss.on("connection", (ws: WebSocket, req) => {
 		// A closed or reloaded tab must not leave a selection standing: whatever it
 		// had picked is no longer on anyone's screen.
 		if (closingId) {
+			void wiring.codex
+				.closeBrowser?.(closingId)
+				.catch((error) => logger.error("Codex browser cleanup failed:", error));
 			selectionState.byClient.delete(closingId);
 			// A hold this pane had goes with it. The lease would have lapsed on its
 			// own within LOCK_LEASE_MS, which is what makes a killed tab survivable;
@@ -4115,7 +4143,15 @@ server.on("error", (error: NodeJS.ErrnoException) => {
 	} else {
 		logger.error("Failed to start canvas server:", error);
 	}
-	process.exit(1);
+	void (async () => {
+		try {
+			await wiring.codex.shutdown?.();
+		} catch (shutdownError) {
+			logger.error("Codex workbench cleanup after server failure failed:", shutdownError);
+		} finally {
+			process.exit(1);
+		}
+	})();
 });
 
 /**
@@ -4165,6 +4201,266 @@ function adoptScratchBoard(): void {
 	}
 }
 
+function sleepFor(ms: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function canonicalContextFromBrief(
+	brief:
+		| SettledSemanticChangeEvent
+		| ReturnType<CodexWorkbenchComponents["semanticPublisher"]["freshBrief"]>,
+	paneId: string,
+	operation: ArchboardContext["operation"],
+): ArchboardContext {
+	if (brief.child.id === null || brief.child.epoch === null)
+		throw new Error("Canonical Codex context requires the active child epoch.");
+	return ArchboardContextSchema.parse({
+		schema: 1,
+		paneId,
+		board: {
+			note: brief.board.note,
+			version: brief.version ?? 0,
+			cursor: brief.cursor === null ? null : JSON.stringify(brief.cursor),
+		},
+		threadLink: brief.threadLink,
+		child: { id: brief.child.id, epoch: brief.child.epoch },
+		workhorse: brief.workhorse,
+		coordinator: brief.coordinator,
+		semantic: {
+			brief: brief.brief,
+			capturedAtMs: brief.freshness.capturedAtMs,
+			freshUntilMs: brief.freshness.freshUntilMs,
+			truncated: brief.truncated,
+		},
+		focus: {
+			paneId: brief.pane.focused ? brief.pane.paneId : null,
+			capturedAtMs: brief.freshness.capturedAtMs,
+		},
+		selection: { elementIds: brief.selection, capturedAtMs: brief.freshness.capturedAtMs },
+		claim: brief.claim,
+		ambiguity: brief.ambiguity,
+		operation,
+	});
+}
+
+function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
+	let active: CodexWorkbenchComponents | null = null;
+	let installedIdentity: CodexWorkbenchComponents["identity"] | null = null;
+
+	const paneFor = (requestedBoard?: string): PaneRegistration | null => {
+		const ordered = panesInOrder(Array.from(panes.values()));
+		return (
+			ordered.find(
+				(entry) =>
+					entry.pane.focused &&
+					(requestedBoard === undefined ||
+						(paneBoards.get(entry.pane.clientId) ?? entry.pane.board) === requestedBoard),
+			)?.pane ??
+			ordered.find(
+				(entry) =>
+					requestedBoard === undefined ||
+					(paneBoards.get(entry.pane.clientId) ?? entry.pane.board) === requestedBoard,
+			)?.pane ??
+			null
+		);
+	};
+
+	const semanticInput = (
+		contextBoard: string,
+		cursor: SemanticContextInput["cursor"],
+	): SemanticContextInput => {
+		const pane = paneFor(contextBoard);
+		const paneId = pane?.paneId ?? "headless";
+		const board = boards.get(contextBoard);
+		if (board === undefined)
+			throw new Error(`The Codex context board is not open: ${contextBoard}.`);
+		let description: string;
+		let version: number | null;
+		let stale = false;
+		let staleReasons: readonly string[] = [];
+		try {
+			const content = readBoardContent(board);
+			description = describeScene(Array.from(content.elements.values()));
+			version = content.version ?? null;
+		} catch (error) {
+			description = `The board note could not be read: ${(error as Error).message}`;
+			version = null;
+			stale = true;
+			staleReasons = ["board_note_unreadable"];
+		}
+		const link = active?.threadLink.read(paneId).link;
+		const workhorse = active?.workhorse.snapshot();
+		const coordinator = active?.coordinator.snapshot();
+		const realtime = active?.realtime.generation();
+		const selection = pane ? selectionState.byClient.get(pane.clientId) : null;
+		const holder = boardLockState(contextBoard);
+		const doing = recentDoing(contextBoard).at(-1)?.doing ?? null;
+		return {
+			repository: path.resolve(moduleDir, ".."),
+			child: {
+				id: workhorse?.childId ?? coordinator?.childId ?? null,
+				epoch: workhorse?.epoch ?? coordinator?.epoch ?? null,
+			},
+			threadLink: {
+				state: link?.state ?? "unbound",
+				reason: link?.reason ?? null,
+			},
+			workhorse: {
+				threadId: workhorse?.threadId ?? null,
+				turnId: null,
+			},
+			coordinator: {
+				threadId: coordinator?.threadId ?? null,
+				realtimeSessionId: realtime?.wireSessionId ?? null,
+			},
+			board: {
+				key: contextBoard,
+				note: board.file ?? vaultPathFor(board.identity),
+				version,
+			},
+			pane: { paneId, focused: pane?.focused ?? false },
+			selection: selection?.elementIds ?? [],
+			claim: { holder: holder?.kind ?? "none", doing: holder?.reason ?? doing },
+			doing,
+			cursor,
+			description,
+			ambiguity: [],
+			stale,
+			staleReasons,
+		};
+	};
+
+	const waitForTargets: CanvasCodexWorkbenchHost["waitForTargets"] = async (input) => {
+		if (active === null) throw new Error("The Codex workbench is not ready to observe targets.");
+		const deadline = Date.now() + input.timeoutMs;
+		do {
+			for (const threadId of input.owner.sortedTargetThreadIds) {
+				const pendingApproval = active.approvals.inspect().some((snapshot) => {
+					const identity = snapshot.identity;
+					const targetThreadId =
+						identity.kind === "legacy" ? identity.conversationId : identity.threadId;
+					return snapshot.state === "pending" && targetThreadId === threadId;
+				});
+				if (pendingApproval)
+					return {
+						event: "attention",
+						threadId,
+						sequence: input.previousSequence + 1,
+						cursor: input.cursor,
+						targetOwned: true,
+					};
+				const result = await active.session.threadRead({ threadId, includeTurns: false });
+				if (result.thread.status.type === "systemError")
+					return {
+						event: "attention",
+						threadId,
+						sequence: input.previousSequence + 1,
+						cursor: input.cursor,
+					};
+				if (result.thread.status.type === "idle")
+					return {
+						event: "completed",
+						threadId,
+						sequence: input.previousSequence + 1,
+						cursor: input.cursor,
+					};
+			}
+			const remaining = deadline - Date.now();
+			if (remaining > 0) await sleepFor(Math.min(remaining, CODEX_WAIT_TARGET_POLL_MS));
+		} while (Date.now() < deadline);
+		return {
+			event: "timeout",
+			threadId: null,
+			sequence: input.previousSequence + 1,
+			cursor: input.cursor,
+		} satisfies DynamicWaitEvent;
+	};
+
+	const checkoutRoot = path.resolve(moduleDir, "..");
+	return {
+		checkoutRoot,
+		semanticPublisher: {
+			feed: changeFeed,
+			feedId: changeFeed.status().feedId,
+			fresh: {
+				read: () => {
+					const pane = paneFor();
+					const key = pane ? (paneBoards.get(pane.clientId) ?? pane.board) : SCRATCH_KEY;
+					return semanticInput(key, null);
+				},
+			},
+			contextForChange: (event: SettledChangeSourceEvent) =>
+				semanticInput(event.board, { feedId: changeFeed.status().feedId, sequence: event.cursor }),
+		},
+		paneIds: () => panesInOrder(Array.from(panes.values())).map(({ pane }) => pane.paneId),
+		contextForEvent: (event, paneId, operation) =>
+			canonicalContextFromBrief(
+				event,
+				paneId,
+				operation === undefined
+					? { id: null, kind: null, rpc: null, outcome: null }
+					: { ...operation, outcome: null },
+			),
+		contextForOperation: (paneId, operation) => {
+			if (active === null) throw new Error("The Codex workbench context is not ready.");
+			return canonicalContextFromBrief(active.semanticPublisher.freshBrief(), paneId, {
+				...operation,
+				outcome: null,
+			});
+		},
+		attachRemoteMedia: (_attachment: RemoteMediaAttachment) => {
+			throw new Error("Remote media must be attached by the browser media host.");
+		},
+		waitForTargets,
+		installIdentityDecoders: (identity) => {
+			installedIdentity = identity;
+		},
+		installLifecycleSignals: (components) => {
+			if (installedIdentity !== components.identity)
+				throw new Error("The installed identity decoders do not match the active graph.");
+			active = components;
+			return () => {
+				if (active === components) active = null;
+			};
+		},
+		installBrowserGateway: (gateway) => {
+			wiring.codex.closeBrowser = (browserId) => gateway.closeBrowser(browserId);
+			return () => {
+				wiring.codex.closeBrowser = null;
+			};
+		},
+		stopBrowser: (gateway) => gateway.dispose(),
+		stopRealtime: async (realtime) => {
+			const generation = realtime.generation();
+			if (generation === null) return;
+			await realtime.stop({
+				sessionId: generation.browserSessionId,
+				correlationId: generation.browserCorrelationId,
+			});
+		},
+		stopQueue: async (queue) => {
+			if (active?.workhorse.snapshot().state !== "ready") return;
+			await queue.list();
+		},
+		onFatal: (error) => logger.error("Fatal Codex workbench fault:", error),
+	};
+}
+
+async function prepareCodexWorkbench(): Promise<void> {
+	const [applicationModule, workbenchModule, productionModule] = await Promise.all([
+		import("./codex-workbench-application.js"),
+		import("../codex-workbench.js"),
+		import("./codex-workbench-production.js"),
+	]);
+	const application = applicationModule.createCanvasCodexWorkbenchApplication({
+		state: wiring.codex,
+		load: async () => workbenchModule,
+		installation: () =>
+			productionModule.createCanvasCodexWorkbenchInstallation(createCodexWorkbenchHost()),
+	});
+	await application.prepare();
+}
+
 async function startServer(): Promise<void> {
 	// A hot reload re-runs this file, entry point and all, inside a process that
 	// is already serving. Everything that had to happen once has happened: the
@@ -4174,6 +4470,7 @@ async function startServer(): Promise<void> {
 	// guard below would read that as a second canvas and exit — taking the boards
 	// with it.
 	if (wiring.listening) {
+		await prepareCodexWorkbench();
 		// Straight to stderr, not through the logger: this is only ever printed
 		// under `bun run dev:canvas`, where somebody is watching a terminal and
 		// needs to know their edit is live. The logger's console transport carries
@@ -4217,6 +4514,9 @@ async function startServer(): Promise<void> {
 	// Before the port opens, so the first request cannot arrive at a scratch
 	// board that is about to be filled in from a note.
 	adoptScratchBoard();
+	// The Codex graph and every reverse-request/browser owner are ready before
+	// the HTTP socket can advertise this canvas as ready.
+	await prepareCodexWorkbench();
 
 	// Only the process that actually wrote the pidfile may remove it —
 	// a concurrent-start loser exiting on EADDRINUSE must not delete the
@@ -4243,9 +4543,17 @@ async function startServer(): Promise<void> {
 	const shutdown = (signal: NodeJS.Signals): void => {
 		logger.info(`Received ${signal}, shutting down canvas server`);
 		if (ownsPidFile) removePidFile(PORT);
-		server.close(() => process.exit(0));
+		void (async () => {
+			try {
+				await wiring.codex.shutdown?.();
+			} catch (error) {
+				logger.error("Codex workbench shutdown failed:", error);
+			} finally {
+				server.close(() => process.exit(0));
+			}
+		})();
 		// Force-exit if open sockets keep the server from closing promptly
-		setTimeout(() => process.exit(0), 2000).unref();
+		setTimeout(() => process.exit(0), CODEX_COMPOSED_SHUTDOWN_MS).unref();
 	};
 	// Once per process. Handlers live on `process`, which no reload touches, so
 	// registering them again would only stack duplicates.
