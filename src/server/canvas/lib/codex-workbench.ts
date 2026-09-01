@@ -124,7 +124,12 @@ export class CodexWorkbenchCompositionError extends Error {
 	override readonly name = "CodexWorkbenchCompositionError";
 
 	constructor(
-		readonly code: "duplicate_owner" | "not_started" | "startup_failed" | "shutdown_failed",
+		readonly code:
+			| "duplicate_owner"
+			| "invalid_retained_state"
+			| "not_started"
+			| "startup_failed"
+			| "shutdown_failed",
 		message: string,
 		override readonly cause?: unknown,
 	) {
@@ -265,8 +270,14 @@ export interface CodexWorkbenchGenerationHooks {
 	readonly stopBrowser: (gateway: CodexWorkbenchGateway) => Promise<void>;
 	readonly stopRealtime: (realtime: CodexRealtimeAdapter) => Promise<void>;
 	readonly stopQueue: (queue: CodexWorkhorseQueue<OperationId>) => Promise<void> | void;
-	readonly cancelDynamicApprovalsAndWaits: (components: CodexWorkbenchComponents) => Promise<void>;
-	readonly settleOrdinaryRequests: (approvals: CodexApprovalBroker) => Promise<void>;
+	readonly cancelDynamicApprovalsAndWaits: (
+		components: CodexWorkbenchComponents,
+		cause: "host_shutdown" | "child_disconnected",
+	) => Promise<void>;
+	readonly settleOrdinaryRequests: (
+		approvals: CodexApprovalBroker,
+		cause: "host_shutdown" | "child_disconnected",
+	) => Promise<void>;
 }
 
 function installDynamicRegistrations(transport: CodexTransport): void {
@@ -800,6 +811,7 @@ export async function composeCodexWorkbenchGeneration(
 		if (stopPromise !== null) return stopPromise;
 		stopped = true;
 		const operation = (async (): Promise<void> => {
+			const cause = reason === "shutdown" ? "host_shutdown" : "child_disconnected";
 			let failure: Error | null = null;
 			const attempt = async (cleanup: () => Promise<unknown> | void): Promise<void> => {
 				try {
@@ -813,8 +825,8 @@ export async function composeCodexWorkbenchGeneration(
 			await attempt(() => realtime.dispose());
 			await attempt(() => semanticPublisher.dispose());
 			await attempt(() => ownerHooks.stopQueue(queue));
-			await attempt(() => ownerHooks.cancelDynamicApprovalsAndWaits(components));
-			await attempt(() => ownerHooks.settleOrdinaryRequests(approvals));
+			await attempt(() => ownerHooks.cancelDynamicApprovalsAndWaits(components, cause));
+			await attempt(() => ownerHooks.settleOrdinaryRequests(approvals, cause));
 			await attempt(() => session[CODEX_SESSION_CONTROL].dispose());
 			await attempt(() => callbacks.dispose());
 			await attempt(() => spokenApproval.dispose());
@@ -929,6 +941,83 @@ export function emptyCodexWorkbenchRetainedState(): CodexWorkbenchRetainedState 
 	};
 }
 
+const RETAINED_STATE_KEYS = Object.freeze([
+	"owner",
+	"generation",
+	"state",
+	"failure",
+	"process",
+	"startCurrentGeneration",
+	"reloadCurrentGeneration",
+	"shutdownCurrentGeneration",
+	"readCurrentSnapshot",
+] satisfies readonly (keyof CodexWorkbenchRetainedState)[]);
+const RETAINED_PROCESS_KEYS = Object.freeze([
+	"start",
+	"stop",
+	"snapshot",
+	"currentChild",
+	"onChild",
+	"subscribe",
+] satisfies readonly (keyof CodexProcess)[]);
+const FUNCTION_INTRINSIC_KEYS: readonly PropertyKey[] = Object.freeze([
+	"length",
+	"name",
+	"prototype",
+	"arguments",
+	"caller",
+]);
+
+function exactOwnKeys(value: object, expected: readonly (string | symbol)[], label: string): void {
+	const actual = Reflect.ownKeys(value);
+	if (actual.length !== expected.length || expected.some((key) => !actual.includes(key)))
+		throw new CodexWorkbenchCompositionError(
+			"invalid_retained_state",
+			`${label} contains a value outside its retained allowlist.`,
+		);
+}
+
+/** Fail closed if a retained slot hides a source-generation owner or attached capability. */
+export function assertCodexWorkbenchRetainedState(retained: CodexWorkbenchRetainedState): void {
+	exactOwnKeys(retained, RETAINED_STATE_KEYS, "The Codex retained state");
+	if (!Number.isSafeInteger(retained.generation) || retained.generation < 0)
+		throw new CodexWorkbenchCompositionError(
+			"invalid_retained_state",
+			"The Codex retained generation is not version-neutral plain data.",
+		);
+	if (retained.process !== null) {
+		exactOwnKeys(retained.process, RETAINED_PROCESS_KEYS, "The retained Codex process handle");
+		for (const key of RETAINED_PROCESS_KEYS)
+			if (typeof retained.process[key] !== "function")
+				throw new CodexWorkbenchCompositionError(
+					"invalid_retained_state",
+					`The retained Codex process member ${key} is not a stable function.`,
+				);
+	}
+	for (const key of [
+		"startCurrentGeneration",
+		"reloadCurrentGeneration",
+		"shutdownCurrentGeneration",
+		"readCurrentSnapshot",
+	] as const) {
+		const closure = retained[key];
+		if (closure === null) continue;
+		if (typeof closure !== "function")
+			throw new CodexWorkbenchCompositionError(
+				"invalid_retained_state",
+				`The retained Codex ${key} slot is not a replaceable closure.`,
+			);
+		const attached = Reflect.ownKeys(closure).filter(
+			(property) => !FUNCTION_INTRINSIC_KEYS.includes(property),
+		);
+		if (attached.length > 0)
+			throw new CodexWorkbenchCompositionError(
+				"invalid_retained_state",
+				`The retained Codex ${key} closure has an attached generation-defined value.`,
+			);
+	}
+}
+
 const retainedWorkbench = kept<CodexWorkbenchRetainedState>(
 	"codex-workbench-owner",
 	emptyCodexWorkbenchRetainedState,
@@ -998,6 +1087,7 @@ export function installCodexWorkbenchOwner(
 	retained: CodexWorkbenchRetainedState,
 	options: CodexWorkbenchOwnerOptions,
 ): CodexWorkbenchOwner {
+	assertCodexWorkbenchRetainedState(retained);
 	if (retained.owner !== null)
 		throw new CodexWorkbenchCompositionError(
 			"duplicate_owner",
@@ -1008,6 +1098,7 @@ export function installCodexWorkbenchOwner(
 	try {
 		processOwner = options.createProcess();
 		retained.process = processOwner;
+		assertCodexWorkbenchRetainedState(retained);
 	} catch (error) {
 		retained.owner = null;
 		retained.process = null;
@@ -1026,8 +1117,9 @@ export function installCodexWorkbenchOwner(
 	let childRetiring = false;
 	let released = false;
 
-	const snapshot = (): CodexWorkbenchSnapshot =>
-		Object.freeze({
+	const snapshot = (): CodexWorkbenchSnapshot => {
+		assertCodexWorkbenchRetainedState(retained);
+		return Object.freeze({
 			owner: CODEX_WORKBENCH_OWNER,
 			state: retained.state,
 			generation: retained.generation,
@@ -1035,6 +1127,7 @@ export function installCodexWorkbenchOwner(
 			ready: retained.state === "ready" && generation !== null && !childRetiring,
 			failure: retained.failure,
 		});
+	};
 
 	const start = (): Promise<CodexWorkbenchSnapshot> => {
 		if (startPromise !== null) return startPromise;
@@ -1217,5 +1310,6 @@ export function installCodexWorkbenchOwner(
 	retained.reloadCurrentGeneration = reload;
 	retained.shutdownCurrentGeneration = shutdown;
 	retained.readCurrentSnapshot = snapshot;
+	assertCodexWorkbenchRetainedState(retained);
 	return Object.freeze({ start, reload, snapshot, gateway, shutdown });
 }

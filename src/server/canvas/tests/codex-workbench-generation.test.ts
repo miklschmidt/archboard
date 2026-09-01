@@ -151,8 +151,10 @@ test("the production generation creates every owner once before readiness and sh
 		stopBrowser: async (gateway) => gateway.dispose(),
 		stopRealtime: async () => void events.push("realtime:stop"),
 		stopQueue: () => void events.push("queue:stop"),
-		cancelDynamicApprovalsAndWaits: async () => void events.push("dynamic:cancel"),
-		settleOrdinaryRequests: async () => void events.push("ordinary:settle"),
+		cancelDynamicApprovalsAndWaits: async (_components, cause) =>
+			void events.push(`dynamic:cancel:${cause}`),
+		settleOrdinaryRequests: async (_approvals, cause) =>
+			void events.push(`ordinary:settle:${cause}`),
 	};
 
 	const generation = await composeCodexWorkbenchGeneration({
@@ -187,8 +189,10 @@ test("the production generation creates every owner once before readiness and sh
 	await childRetirement;
 	expect(events.indexOf("gateway:dispose")).toBeLessThan(events.indexOf("realtime:stop"));
 	expect(events.indexOf("realtime:stop")).toBeLessThan(events.indexOf("queue:stop"));
-	expect(events.indexOf("queue:stop")).toBeLessThan(events.indexOf("dynamic:cancel"));
-	expect(events.indexOf("dynamic:cancel")).toBeLessThan(events.indexOf("ordinary:settle"));
+	expect(events.indexOf("queue:stop")).toBeLessThan(events.indexOf("dynamic:cancel:host_shutdown"));
+	expect(events.indexOf("dynamic:cancel:host_shutdown")).toBeLessThan(
+		events.indexOf("ordinary:settle:host_shutdown"),
+	);
 	expect(events.some((event) => event.startsWith("reload:") && event.endsWith("stop"))).toBeFalse();
 	expect(events).not.toContain("reload:dynamic-cancel");
 	expect(events).not.toContain("reload:ordinary-settle");
@@ -198,6 +202,14 @@ test("the production generation creates every owner once before readiness and sh
 	expect(events).toContain("child-retirement:finish");
 	expect(events.filter((event) => event === "approval-projection:install")).toHaveLength(1);
 	expect(events.filter((event) => event === "approval-projection:remove")).toHaveLength(1);
+
+	events.length = 0;
+	const childExitGeneration = await composeCodexWorkbenchGeneration({ factories, hooks });
+	await childExitGeneration.stop("child_exit");
+	childExitGeneration.finishStop();
+	expect(events).toContain("dynamic:cancel:child_disconnected");
+	expect(events).toContain("ordinary:settle:child_disconnected");
+	expect(events).not.toContain("transport:shutdown");
 
 	const cleanupEvent = new Map<string, string>([
 		["epoch", "epoch:close"],

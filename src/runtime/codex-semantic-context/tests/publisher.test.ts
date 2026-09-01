@@ -299,6 +299,27 @@ describe("semantic context publisher", () => {
 		expect(first.bytes).toBe(utf8(first.brief));
 	});
 
+	test("builds an operation brief from the exact supplied pane instead of focused state", () => {
+		const h = harness();
+		const exact = context(h.ids, {
+			board: { key: "ledger", note: "boards/ledger.excalidraw.md", version: 11 },
+			pane: { paneId: "pane-b", focused: false },
+			selection: ["ledger-node"],
+		});
+		const operationBrief = h.publisher.freshBriefFor(exact);
+		const focusedBrief = h.publisher.freshBrief();
+		expect(operationBrief).toMatchObject({
+			board: { key: "ledger", note: "boards/ledger.excalidraw.md" },
+			pane: { paneId: "pane-b", focused: false },
+			selection: ["ledger-node"],
+		});
+		expect(focusedBrief).toMatchObject({
+			board: { key: "payments" },
+			pane: { paneId: "pane-a", focused: true },
+		});
+		expect([operationBrief.version, h.state.freshReads]).toEqual([11, 1]);
+	});
+
 	test("fits hostile valid maxima into one deterministic UTF-8 budget", () => {
 		const h = harness();
 		const selection = Array.from(

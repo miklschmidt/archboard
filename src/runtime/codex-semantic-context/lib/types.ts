@@ -268,6 +268,8 @@ export interface SemanticContextPublisher {
 	readonly publishPaneFocus: (input: SemanticContextInput) => PaneFocusEvent;
 	readonly publishPaneSelection: (input: SemanticContextInput) => PaneSelectionEvent;
 	readonly freshBrief: () => FreshSemanticBrief;
+	/** Build the same canonical brief from one already-captured exact pane snapshot. */
+	readonly freshBriefFor: (input: SemanticContextInput) => FreshSemanticBrief;
 	/** Returns and clears the oldest bounded failures and the dropped count. */
 	readonly drainListenerFailures: () => SemanticListenerFailureBatch;
 	readonly dispose: () => void;

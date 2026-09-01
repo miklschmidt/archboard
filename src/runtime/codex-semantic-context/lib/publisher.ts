@@ -279,15 +279,19 @@ export function createSemanticContextPublisher(
 		return event;
 	}
 
-	function freshBrief(): FreshSemanticBrief {
+	function freshBriefFor(input: SemanticContextInput): FreshSemanticBrief {
 		ensureLive();
 		const capturedAtMs = clock();
-		const fields = buildSemanticBrief(options.fresh.read(), feedId, clock, {
+		const fields = buildSemanticBrief(input, feedId, clock, {
 			source: "fresh_brief",
 			origin: null,
 			capturedAtMs,
 		});
 		return withKind(fields, "fresh_brief") as FreshSemanticBrief;
+	}
+
+	function freshBrief(): FreshSemanticBrief {
+		return freshBriefFor(options.fresh.read());
 	}
 
 	const onSettledChange = (event: SettledChangeSourceEvent): void => {
@@ -392,6 +396,7 @@ export function createSemanticContextPublisher(
 		publishPaneFocus,
 		publishPaneSelection,
 		freshBrief,
+		freshBriefFor,
 		drainListenerFailures,
 		dispose,
 	});

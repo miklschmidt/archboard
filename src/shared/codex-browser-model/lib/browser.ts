@@ -843,6 +843,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 				...BrowserCommandBase,
 				command: z.literal("realtimeAppendText"),
 				threadId: ThreadIdSchema,
+				realtimeSessionHandle: BrowserCommandIdSchema,
 				text: boundedText(4096),
 			})
 			.strict(),
@@ -851,6 +852,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 				...BrowserCommandBase,
 				command: z.literal("realtimeStop"),
 				threadId: ThreadIdSchema,
+				realtimeSessionHandle: BrowserCommandIdSchema,
 			})
 			.strict(),
 		z

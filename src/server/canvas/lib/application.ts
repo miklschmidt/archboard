@@ -30,7 +30,10 @@ import type {
 } from "../../../runtime/codex-semantic-context/index.js";
 import type { DynamicWaitEvent } from "../../../runtime/codex-dynamic-tools/index.js";
 import type { CodexWorkbenchComponents } from "../codex-workbench-generation.js";
-import { createCanvasCodexBrowserSocketOwner } from "../codex-workbench-browser.js";
+import {
+	createCanvasCodexBrowserSocketOwner,
+	type BrowserConnectionInstance,
+} from "../codex-workbench-browser.js";
 import type { CanvasCodexWorkbenchHost } from "./codex-workbench-production.js";
 import {
 	buildPanesReport,
@@ -229,9 +232,16 @@ interface Wiring {
 	codex: {
 		installed: boolean;
 		shutdown: (() => Promise<void>) | null;
-		closeBrowser: ((browserId: string) => Promise<void>) | null;
+		closeBrowser:
+			| ((instance: BrowserConnectionInstance, browserId: string) => Promise<void>)
+			| null;
 		handleBrowserMessage:
-			| ((browserId: string, input: unknown, send: (message: unknown) => void) => Promise<void>)
+			| ((
+					instance: BrowserConnectionInstance,
+					browserId: string,
+					input: unknown,
+					send: (message: unknown) => void,
+			  ) => Promise<void>)
 			| null;
 	};
 }
@@ -351,6 +361,10 @@ const clients = kept("ws-clients", () => new Set<WebSocket>());
 // same id is sent with every selection post, which is what lets a disconnect
 // retire that client's selection.
 const clientIds = kept("ws-client-ids", () => new Map<WebSocket, string>());
+const codexSocketInstances = kept(
+	"ws-codex-instances",
+	() => new Map<WebSocket, BrowserConnectionInstance>(),
+);
 
 // What is on screen right now, one entry per pane, keyed by the same client id.
 // A pane is in here only while its socket is open: closing a tab or unsplitting
@@ -807,6 +821,8 @@ function boardForNewPane(clientId: string): string {
 wss.removeAllListeners("connection");
 wss.on("connection", (ws: WebSocket, req) => {
 	clients.add(ws);
+	const codexSocketInstance = Object.freeze({});
+	codexSocketInstances.set(ws, codexSocketInstance);
 	// There is a screen again, so the lock files of what is on it are worth
 	// reading (ADR 0016).
 	syncLockWatch();
@@ -900,7 +916,7 @@ wss.on("connection", (ws: WebSocket, req) => {
 			});
 			return;
 		}
-		void handle(clientId, message, send).catch((error) =>
+		void handle(codexSocketInstance, clientId, message, send).catch((error) =>
 			logger.error("Codex browser request failed:", error),
 		);
 	});
@@ -909,12 +925,15 @@ wss.on("connection", (ws: WebSocket, req) => {
 		clients.delete(ws);
 		const closingId = clientIds.get(ws);
 		clientIds.delete(ws);
+		const closingCodexInstance = codexSocketInstances.get(ws);
+		codexSocketInstances.delete(ws);
 		// A closed or reloaded tab must not leave a selection standing: whatever it
 		// had picked is no longer on anyone's screen.
 		if (closingId) {
-			void wiring.codex
-				.closeBrowser?.(closingId)
-				.catch((error) => logger.error("Codex browser cleanup failed:", error));
+			if (closingCodexInstance !== undefined)
+				void wiring.codex
+					.closeBrowser?.(closingCodexInstance, closingId)
+					.catch((error) => logger.error("Codex browser cleanup failed:", error));
 			selectionState.byClient.delete(closingId);
 			// A hold this pane had goes with it. The lease would have lapsed on its
 			// own within LOCK_LEASE_MS, which is what makes a killed tab survivable;
@@ -4319,8 +4338,16 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 	const semanticInput = (
 		contextBoard: string,
 		cursor: SemanticContextInput["cursor"],
+		exactPaneId?: string,
 	): SemanticContextInput => {
-		const pane = paneFor(contextBoard);
+		const pane =
+			exactPaneId === undefined
+				? paneFor(contextBoard)
+				: (Array.from(panes.values()).find(
+						(candidate) =>
+							candidate.paneId === exactPaneId &&
+							(paneBoards.get(candidate.clientId) ?? candidate.board) === contextBoard,
+					) ?? null);
 		if (pane === null)
 			throw new Error(
 				`The Codex context board has no authoritative browser pane: ${contextBoard}.`,
@@ -4343,29 +4370,40 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			stale = true;
 			staleReasons = ["board_note_unreadable"];
 		}
-		const link = active?.threadLink.read(paneId).link;
+		const linkBinding = active?.threadLink.read(paneId);
+		const link = linkBinding?.link;
 		const workhorse = active?.workhorse.snapshot();
 		const coordinator = active?.coordinator.snapshot();
-		const realtime = active?.realtime.generation();
+		const linkedThreadId = link?.state === "executable" ? link.threadId : null;
+		const linkedCreatedWorkhorse =
+			linkedThreadId !== null && workhorse?.threadId === linkedThreadId ? workhorse : null;
+		const linkedCoordinator = linkedCreatedWorkhorse === null ? null : coordinator;
+		const realtime = linkedCreatedWorkhorse === null ? null : active?.realtime.generation();
 		const selection = pane ? selectionState.byClient.get(pane.clientId) : null;
 		const holder = boardLockState(contextBoard);
 		const doing = recentDoing(contextBoard).at(-1)?.doing ?? null;
 		return {
 			repository: path.resolve(moduleDir, ".."),
 			child: {
-				id: workhorse?.childId ?? coordinator?.childId ?? null,
-				epoch: workhorse?.epoch ?? coordinator?.epoch ?? null,
+				id:
+					link?.state === "executable"
+						? link.childId
+						: (workhorse?.childId ?? coordinator?.childId ?? null),
+				epoch:
+					link?.state === "executable"
+						? link.epoch
+						: (workhorse?.epoch ?? coordinator?.epoch ?? null),
 			},
 			threadLink: {
 				state: link?.state ?? "unbound",
 				reason: link?.reason ?? null,
 			},
 			workhorse: {
-				threadId: workhorse?.threadId ?? null,
+				threadId: linkedThreadId,
 				turnId: null,
 			},
 			coordinator: {
-				threadId: coordinator?.threadId ?? null,
+				threadId: linkedCoordinator?.threadId ?? null,
 				realtimeSessionId: realtime?.wireSessionId ?? null,
 			},
 			board: {
@@ -4456,12 +4494,32 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 					? { id: null, kind: null, rpc: null, outcome: null }
 					: { ...operation, outcome: null },
 			),
-		contextForOperation: (paneId, operation) => {
+		contextForOperation: (authority, operation) => {
 			if (active === null) throw new Error("The Codex workbench context is not ready.");
-			return canonicalContextFromBrief(active.semanticPublisher.freshBrief(), paneId, {
-				...operation,
-				outcome: null,
-			});
+			const pane = Array.from(panes.values()).find(
+				(candidate) => candidate.paneId === authority.paneId,
+			);
+			if (pane === undefined)
+				throw new Error(`The Codex context pane is not open: ${authority.paneId}.`);
+			const exactBoardKey = paneBoards.get(pane.clientId) ?? pane.board;
+			const binding = active.threadLink.read(authority.paneId);
+			if (
+				binding.link.state !== "executable" ||
+				binding.link.threadId !== authority.threadId ||
+				binding.link.childId !== authority.childId ||
+				binding.link.epoch !== authority.epoch ||
+				(authority.linkRevision !== undefined && binding.revision !== authority.linkRevision)
+			)
+				throw new Error("The lease-bound Codex pane context changed before capture.");
+			const exactInput = semanticInput(exactBoardKey, null, authority.paneId);
+			return canonicalContextFromBrief(
+				active.semanticPublisher.freshBriefFor(exactInput),
+				authority.paneId,
+				{
+					...operation,
+					outcome: null,
+				},
+			);
 		},
 		waitForTargets,
 		installIdentityDecoders: (identity) => {
@@ -4480,8 +4538,8 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				gateway,
 				paneForBrowser: (browserId) => panes.get(browserId)?.paneId ?? null,
 			});
-			wiring.codex.handleBrowserMessage = (browserId, input, send) =>
-				socketOwner.handle(browserId, input, { send });
+			wiring.codex.handleBrowserMessage = (instance, browserId, input, send) =>
+				socketOwner.handle(instance, browserId, input, { send });
 			wiring.codex.closeBrowser = socketOwner.close;
 			return () => {
 				socketOwner.disposeForReload();
