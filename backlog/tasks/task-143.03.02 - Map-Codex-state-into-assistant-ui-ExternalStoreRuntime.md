@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-01 18:11'
+updated_date: '2026-09-01 18:15'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -51,6 +51,8 @@ Remediation plan after fixed-range review:
 6. Remediation 2: fence every async submission to the exact transport generation; preserve stopped, incompatible_contract, backoff, reconnecting, and stale states/reasons; mount renderer observers as real provider descendants and assert public runtime state, identity, capabilities, TurnId, and ItemId; validate focused and repository gates without reopening the classified boundary OOM.
 
 7. Remediation 3: extract mounted harnesses into non-test support, use a narrowly policy-allowed test-only useAui descendant to prove provider client wiring and wrong-provider controls, cover rejected stale submissions and a table-driven authority/state/reason/recovery matrix, audit test registration counts, and rerun all requested 6G/1G gates.
+
+8. Remediation 4: type the mounted readiness matrix directly from BrowserReadiness, remove manufactured readiness incompatibility and casts, add real connected readiness reconnecting evidence, and rerun focused/policy/type/lint/format/build gates.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -67,4 +69,6 @@ Remediation validation under 6G/1G named transient services: workbench-runtime 1
 Remediation 2 fences every asynchronous submission settlement to a memoized transport-generation token updated at the layout boundary. A late result from replaced transport A returns before status publication or MessageNotSentError, so it cannot alter B's status or composer; mounted coverage exercises delivered, not_delivered, and outcome_unknown while retaining stable runtime identity. Snapshot-null stopped, incompatible_contract, and backoff preserve concrete state and exact reason; connected non-thread-capable readiness states also retain their state and reason when present, with state-specific recovery wording. The renderer is now mounted as a React component descendant of AssistantRuntimeProvider; its observer subscribes through the public assistant runtime and asserts observed messages, capabilities, authoritative TurnIds and ItemIds, plus stable/replaced runtime behavior. Focused runtime, exact assistant-ui policy, transport/socket/composition/inventory regressions, both TypeScript projects, frontend build, full lint, and repository format passed under named 6G/1G services.
 
 Remediation 3 replaces the prop-fed test observer with a dedicated useAui descendant that reads the provider client's thread state and subscription. Mounted controls prove the provider client remains stable across transport replacement and a separately supplied runtime exposes a distinct client and authoritative turn. The production runtime import list is unchanged; Oxlint grants useAui only to the exact test observer path, with an isolated policy owner proving sibling and production imports remain rejected. Shared DOM, transport, snapshot, and mount helpers now live in mounted-support.ts, so no *.test.ts imports another owner; an audit observed exactly 33 unique registered focused tests. Rejected submissions after replacement and after unmount cannot publish status, change B's composer, or render. A table-driven mounted matrix verifies exact state/reason/recovery, history retention, and null runtime authority for snapshot-null/retained backoff, stopped, incompatible, reconnecting, stale, and every non-thread-capable readiness arm. All requested 6G/1G gates passed.
+
+Remediation 4 corrects the mounted readiness matrix only. MatrixReadiness is derived from BrowserReadiness and excludes thread_capable plus the transport-unreachable connected incompatible_contract arm. Concrete readiness values are passed without manufacturing casts; branded login identity is created through the shared identity authority and browser schema. The real connected readiness reconnecting arm now asserts exact snapshot reason, reconnect recovery, retained history, read-only mode, null runtime, and no provider observation. The separate connection-level incompatible_contract owner remains. Focused runtime/policy tests, 33-registration uniqueness audit, both TypeScript projects, full lint, repository format, frontend build, and diff checks passed under 6G/1G services.
 <!-- SECTION:NOTES:END -->
