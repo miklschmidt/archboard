@@ -9,9 +9,11 @@ export function extendTerminalFixture(root: string): string {
 	const source = readFileSync(base, "utf8");
 	const support = String.raw`
 type TerminalCause = "call_cancelled" | "caller_turn_interrupted";
+type TerminalMismatch = "wrong_call" | "wrong_turn";
 const heldAccountReads: WireFrame[] = [];
 const terminalBatches = new Set<TerminalCause>();
 const terminalizedBatches = new Set<TerminalCause>();
+const terminalMismatches = new Set<string>();
 const ownershipBatches = new Set<string>();
 const queuedSubmissions: Record<string, unknown>[] = [];
 
@@ -62,6 +64,18 @@ const terminalizeBatch = (cause: TerminalCause): void => {
 		notify("turn/completed", { threadId: workhorseThreadId, turn: { id: "turn-1", items: [controlledDynamicItem(mutationId, "create_thread", { prompt: "Do not execute the caller_turn_interrupted effect." }, "failed"), controlledDynamicItem(waitId, "wait_threads", { threadIds: ["thread-3"], timeoutMs: 120000 }, "failed")], itemsView: "full", status: "interrupted", error: null, startedAt: Date.now(), completedAt: Date.now(), durationMs: 1 } });
 	}
 	record({ kind: "terminal_notification", cause });
+};
+
+const emitTerminalMismatch = (cause: TerminalCause, mismatch: TerminalMismatch): void => {
+	const key = cause + ":" + mismatch;
+	if (terminalMismatches.has(key) || workhorseThreadId === null) return;
+	terminalMismatches.add(key);
+	if (mismatch === "wrong_call") {
+		notify("item/completed", { threadId: workhorseThreadId, turnId: "turn-1", item: controlledDynamicItem(cause + "-wrong-call", "create_thread", { prompt: "Wrong call must do nothing." }, "completed"), completedAtMs: Date.now() });
+	} else {
+		notify("turn/completed", { threadId: workhorseThreadId, turn: { id: "wrong-turn", items: [], itemsView: "full", status: "interrupted", error: null, startedAt: Date.now(), completedAt: Date.now(), durationMs: 1 } });
+	}
+	record({ kind: "terminal_mismatch", cause, mismatch });
 };
 
 const emitChildExitBatch = (): void => {
@@ -140,7 +154,7 @@ const emitBoundedTime = (): void => {
 	);
 	const withControls = withQueue.replace(
 		"if (control.exit === true) process.exit(17);",
-		'if ((control as { emit?: unknown }).emit === "call_cancelled") emitTerminalBatch("call_cancelled");\n\t\tif ((control as { emit?: unknown }).emit === "caller_turn_interrupted") emitTerminalBatch("caller_turn_interrupted");\n\t\tif ((control as { terminal?: unknown }).terminal === "call_cancelled") terminalizeBatch("call_cancelled");\n\t\tif ((control as { terminal?: unknown }).terminal === "caller_turn_interrupted") terminalizeBatch("caller_turn_interrupted");\n\t\tif ((control as { emit?: unknown }).emit === "child_exit") emitChildExitBatch();\n\t\tif ((control as { emit?: unknown }).emit === "ownership_before") emitOwnershipBatch("ownership-before");\n\t\tif ((control as { emit?: unknown }).emit === "ownership_after") emitOwnershipBatch("ownership-after");\n\t\tif ((control as { emit?: unknown }).emit === "complete_target") completeTarget();\n\t\tif ((control as { emit?: unknown }).emit === "release_client_rpc") releaseHeldAccountRead();\n\t\tif ((control as { emit?: unknown }).emit === "bounded_time") emitBoundedTime();\n\t\tif (control.exit === true) process.exit(17);',
+		'if ((control as { emit?: unknown }).emit === "call_cancelled") emitTerminalBatch("call_cancelled");\n\t\tif ((control as { emit?: unknown }).emit === "caller_turn_interrupted") emitTerminalBatch("caller_turn_interrupted");\n\t\tif ((control as { terminalCause?: unknown }).terminalCause === "call_cancelled" && (control as { terminalMismatch?: unknown }).terminalMismatch === "wrong_call") emitTerminalMismatch("call_cancelled", "wrong_call");\n\t\tif ((control as { terminalCause?: unknown }).terminalCause === "call_cancelled" && (control as { terminalMismatch?: unknown }).terminalMismatch === "wrong_turn") emitTerminalMismatch("call_cancelled", "wrong_turn");\n\t\tif ((control as { terminalCause?: unknown }).terminalCause === "caller_turn_interrupted" && (control as { terminalMismatch?: unknown }).terminalMismatch === "wrong_call") emitTerminalMismatch("caller_turn_interrupted", "wrong_call");\n\t\tif ((control as { terminalCause?: unknown }).terminalCause === "caller_turn_interrupted" && (control as { terminalMismatch?: unknown }).terminalMismatch === "wrong_turn") emitTerminalMismatch("caller_turn_interrupted", "wrong_turn");\n\t\tif ((control as { terminal?: unknown }).terminal === "call_cancelled") terminalizeBatch("call_cancelled");\n\t\tif ((control as { terminal?: unknown }).terminal === "caller_turn_interrupted") terminalizeBatch("caller_turn_interrupted");\n\t\tif ((control as { emit?: unknown }).emit === "child_exit") emitChildExitBatch();\n\t\tif ((control as { emit?: unknown }).emit === "ownership_before") emitOwnershipBatch("ownership-before");\n\t\tif ((control as { emit?: unknown }).emit === "ownership_after") emitOwnershipBatch("ownership-after");\n\t\tif ((control as { emit?: unknown }).emit === "complete_target") completeTarget();\n\t\tif ((control as { emit?: unknown }).emit === "release_client_rpc") releaseHeldAccountRead();\n\t\tif ((control as { emit?: unknown }).emit === "bounded_time") emitBoundedTime();\n\t\tif (control.exit === true) process.exit(17);',
 	);
 	const withCoordinatorRetirement = withControls.replace(
 		'if (frame.id === "coordinator-inspect") {',

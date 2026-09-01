@@ -53,6 +53,47 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 				);
 				expect(reverseResponses(fixture.logPath, `${cause}-dynamic`)).toHaveLength(0);
 				expect(reverseResponses(fixture.logPath, `${cause}-wait`)).toHaveLength(0);
+				for (const terminalMismatch of ["wrong_call", "wrong_turn"] as const) {
+					const targetPollsBefore = records(fixture.logPath).filter(
+						(entry) =>
+							entry.kind === "frame" &&
+							entry.method === "thread/read" &&
+							entry.params?.threadId === "thread-3",
+					).length;
+					writeFileSync(
+						fixture.controlPath,
+						JSON.stringify({ terminalCause: cause, terminalMismatch }),
+					);
+					await waitFor(
+						() =>
+							records(fixture.logPath).some(
+								(entry) =>
+									entry.kind === "terminal_mismatch" &&
+									(entry as { readonly cause?: unknown }).cause === cause &&
+									(entry as { readonly mismatch?: unknown }).mismatch === terminalMismatch,
+							)
+								? true
+								: undefined,
+						`${cause} ${terminalMismatch} barrier`,
+					);
+					await waitFor(
+						() =>
+							records(fixture.logPath).filter(
+								(entry) =>
+									entry.kind === "frame" &&
+									entry.method === "thread/read" &&
+									entry.params?.threadId === "thread-3",
+							).length > targetPollsBefore
+								? true
+								: undefined,
+						`${cause} ${terminalMismatch} retained wait poll`,
+					);
+					const stillPending = snapshot(await socket.request("snapshot"));
+					expect(stillPending.dynamicApprovals).toHaveLength(1);
+					expect(reverseResponses(fixture.logPath, `${cause}-dynamic`)).toHaveLength(0);
+					expect(reverseResponses(fixture.logPath, `${cause}-wait`)).toHaveLength(0);
+					expect(mutationCount(fixture.logPath)).toBe(effectsBefore);
+				}
 
 				writeFileSync(fixture.controlPath, JSON.stringify({ terminal: cause }));
 				for (const suffix of ["dynamic", "wait"] as const)

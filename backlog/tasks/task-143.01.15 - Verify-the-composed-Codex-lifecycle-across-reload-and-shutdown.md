@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:25'
-updated_date: '2026-09-01 15:59'
+updated_date: '2026-09-01 17:08'
 labels: []
 dependencies:
   - TASK-143.01.14
@@ -22,6 +22,7 @@ modified_files:
   - src/server/canvas/lib/codex-workbench-lifecycle.ts
   - src/server/canvas/lib/codex-workbench-operation-lifecycle.ts
   - src/server/canvas/lib/codex-workbench-production.ts
+  - src/server/canvas/tests/codex-workbench-terminal-correlation.test.ts
   - src/server/canvas/tests/support/codex-workbench-generation-fixture.ts
   - tests/system/process-contracts/codex-workbench-interruptions.test.ts
   - tests/system/process-contracts/codex-workbench-lifecycle.test.ts
@@ -58,11 +59,11 @@ Own the one real-process lifecycle and protocol owner for the production Codex c
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Add a bounded controlled-process fixture for item cancellation, turn interruption, held account/read responses, clean workbench shutdown, and child exit with ordinary, dynamic, wait, and outgoing RPC work pending. Record each barrier and terminal event in the fixture log.
-2. Add separate real-process owners for cancellation/child disconnect and reload/normal-close ownership. Assert exact envelopes, one response or delivery classification, zero mutation effects, late-action rejection, released wait authority, retained identities across reload, fresh replacement behavior, frozen logs, and no surviving processes.
-3. Route decoded item/completed and interrupted turn/completed notifications to the pending dynamic approval owner only if the new public-process cancellation cases fail without that route. Keep the mapping exact to the current child, epoch, thread, turn, and call.
-4. Tighten currentTime/read with lower and upper Unix-second bounds. Run focused process owners first, then the prior process suite, module and production regressions, targeted repository policies, both TypeScript projects, full lint, formatting, and fixed-base diff checks in sequential 6 GiB systemd scopes. Do not rerun the known module-scope OOM analyzer.
-5. Update task notes and modified files through Backlog CLI, commit a new successor to bcbf119a, leave status and AC untouched, and send the complete 88e7643a..new-head range to the parent for independent rereview.
+1. Add focused approval-owner and wait-owner notification tests that vary child, epoch, thread, turn, call, and unrelated method independently, then prove one exact settlement and duplicate idempotence.
+2. Extend the controlled process fixture with recorded wrong-call and wrong-turn terminal notifications that do not consume the exact pending call.
+3. Strengthen the interruption process owner to assert approval and wait remain pending, responses and mutation effects stay at zero after each mismatch, then retain the exact authored terminal settlement checks.
+4. Run focused and prior lifecycle regressions, both TypeScript projects, lint, formatting, and fixed-base diff checks in sequential named 6 GiB systemd scopes. Do not rerun the known module-scope OOM analyzer.
+5. Update Backlog notes and modified files through the CLI, commit a new immutable successor to f83ea660, leave status/AC/final summary untouched, and send the required remediation-3 callback for complete 88e7643a..new-head rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -87,4 +88,12 @@ Second remediation direct evidence is implemented. Exact item/completed and inte
 Those owners exposed a reachable process-group cleanup race: group quiescence could be recorded before the child close callback, after which the retained group entry was never removed. The process owner now reconciles the already-quiescent record on the close path, with a deterministic unit regression. currentTime/read is bounded between wall-clock Unix seconds captured before and after the real response.
 
 Second-remediation validation in sequential 6 GiB systemd scopes: new process owners 6 pass / 96 expectations; prior composed lifecycle 1 pass / 86 expectations; signal and authored-expiry termination owner 2 pass / 33 expectations; process lifecycle 10 pass / 44 expectations; canvas lifecycle/reload/exit/cleanup owners 30 pass / 124 expectations; both TypeScript projects pass; targeted lint, formatting, and diff checks pass. The known module-scope OOM analyzer was not rerun. Status remains In Progress, acceptance criteria remain unchecked, and final summary remains empty for independent rereview.
+
+Third remediation begins from clean immutable head f83ea660. Scope is automated negative correlation evidence only. Production terminal routing remains protected unless a new mismatch test proves a reachable defect.
+
+Third remediation adds only automated enforcement; production code is unchanged. Focused approval and wait owner tests independently vary child, epoch, thread, turn, call, and an unrelated notification. Every mismatch retains the pending owner with zero settlement, then the exact event settles once and a duplicate exact event leaves settlement, abort, pending projection, and wait edges unchanged.
+
+The public-process interruption owner now injects recorded wrong-call and wrong-turn terminal events before each exact call_cancelled and caller_turn_interrupted event. After each mismatch it proves the dynamic approval is still projected, both reverse responses remain absent, mutation count is unchanged, and a fresh target thread/read proves the wait loop remains active. Exact authored classification and one response remain unchanged.
+
+Remediation-3 validation in sequential 6 GiB systemd scopes: focused seam plus process owners 5 pass / 78 expectations; prior reload, normal-close, and composed lifecycle owners 4 pass / 145 expectations; terminal/process lifecycle regressions 40 pass / 168 expectations; signal and real 90-second expiry owner 2 pass / 33 expectations; repository test inventory 39 pass / 69 expectations; both TypeScript projects, full lint, full format check, and diff checks pass. The known module-scope OOM analyzer was not rerun. Task remains In Progress with AC unchecked and final summary empty for complete fixed-base rereview.
 <!-- SECTION:NOTES:END -->
