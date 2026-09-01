@@ -10,7 +10,8 @@ import type { ThreadLinkBindingSnapshot } from "../../../runtime/codex-thread-li
 import type {
 	BrowserConnectionId,
 	BrowserConnectionInstance,
-	BrowserLeaseBinding,
+	BrowserLeaseLedger,
+	BrowserLeaseRecord,
 } from "./contract.js";
 
 const RETIRED_LEASE_LIMIT = 64;
@@ -49,12 +50,12 @@ export interface BrowserLeaseManager {
 		state?: "expired" | "released",
 	) => BrowserLeaseRecord | null;
 	readonly dispose: () => void;
+	/** Detach generation callbacks and timers without invalidating the active lease. */
+	readonly detach: () => void;
 }
 
-export interface BrowserLeaseRecord {
-	readonly lease: BrowserCommandLease;
-	readonly binding: BrowserLeaseBinding;
-	readonly capturedLink: ThreadLinkBindingSnapshot;
+export function createBrowserLeaseLedger(): BrowserLeaseLedger {
+	return { active: null, retired: new Map() };
 }
 
 function freezeRecord(record: BrowserLeaseRecord): BrowserLeaseRecord {
@@ -84,13 +85,19 @@ function assertTime(value: number): number {
 export function createBrowserLeaseManager(options: {
 	readonly identity: IdentityAuthorities;
 	readonly now: () => number;
+	readonly ledger?: BrowserLeaseLedger;
 	readonly onChange?: () => void;
 	readonly onFinish?: (record: BrowserLeaseRecord) => void;
 }): BrowserLeaseManager {
-	let active: BrowserLeaseRecord | null = null;
+	const ledger = options.ledger ?? createBrowserLeaseLedger();
+	let active: BrowserLeaseRecord | null = ledger.active;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let disposed = false;
-	const retired = new Map<BrowserCommandId, BrowserLeaseRecord>();
+	const retired = ledger.retired;
+	const setActive = (record: BrowserLeaseRecord | null): void => {
+		active = record;
+		ledger.active = record;
+	};
 
 	const notify = (): void => {
 		options.onChange?.();
@@ -119,7 +126,7 @@ export function createBrowserLeaseManager(options: {
 			...record,
 			lease: { ...record.lease, state },
 		});
-		if (active?.lease.commandId === record.lease.commandId) active = null;
+		if (active?.lease.commandId === record.lease.commandId) setActive(null);
 		remember(terminal);
 		clearTimer();
 		if (state === "expired") options.onFinish?.(terminal);
@@ -190,7 +197,7 @@ export function createBrowserLeaseManager(options: {
 			},
 			capturedLink,
 		});
-		active = record;
+		setActive(record);
 		schedule(record);
 		notify();
 		return record;
@@ -212,7 +219,7 @@ export function createBrowserLeaseManager(options: {
 			throw new Error("the browser command lease belongs to another browser or pane");
 		const expiresAtMs = assertTime(options.now()) + CODEX_BROWSER_COMMAND_LEASE_MS;
 		const renewed = freezeRecord({ ...record, lease: { ...record.lease, expiresAtMs } });
-		active = renewed;
+		setActive(renewed);
 		schedule(renewed);
 		notify();
 		return renewed;
@@ -253,7 +260,14 @@ export function createBrowserLeaseManager(options: {
 		disposed = true;
 		clearTimer();
 		if (active !== null) finish(active, "released");
+		retired.clear();
 	};
+	const detach = (): void => {
+		if (disposed) return;
+		disposed = true;
+		clearTimer();
+	};
+	if (active !== null) schedule(active);
 
 	return Object.freeze({
 		current: () => active,
@@ -264,5 +278,6 @@ export function createBrowserLeaseManager(options: {
 		release,
 		invalidate,
 		dispose,
+		detach,
 	});
 }

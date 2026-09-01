@@ -517,6 +517,17 @@ export interface IdentityAuthorities {
 	readonly operation: OperationAuthority;
 }
 
+/**
+ * Process-lifetime identity facts and issuance history. The ledger is data only;
+ * every source generation builds fresh validators, issuers, and decoders over it.
+ */
+export interface IdentityLedger {
+	readonly childId: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly issued: Map<IdentityDomain, Set<string>>;
+	readonly rawByIdentity: Map<string, JsonRpcRequestIdWireValue>;
+}
+
 type AdoptableDomain =
 	| "thread"
 	| "turn"
@@ -527,9 +538,8 @@ type AdoptableDomain =
 	| "dynamic-tool-call"
 	| "approval";
 
-function createAuthority(childId: ChildId, epoch: ChildEpoch): IdentityAuthorities {
-	const issued = new Map<IdentityDomain, Set<string>>();
-	const rawByIdentity = new Map<string, JsonRpcRequestIdWireValue>();
+function createAuthority(ledger: IdentityLedger): IdentityAuthorities {
+	const { childId, epoch, issued, rawByIdentity } = ledger;
 
 	const issue = <Domain extends IdentityDomain>(
 		domain: Domain,
@@ -852,9 +862,20 @@ function parseLogicalToolCallCorrelationValue(
 	});
 }
 
-export function createIdentityAuthorities(): IdentityAuthorities {
+export function createIdentityLedger(): IdentityLedger {
 	const childId = mintHostValue("child");
-	return createAuthority(childId, mintEpochValue(childId));
+	return {
+		childId,
+		epoch: mintEpochValue(childId),
+		issued: new Map(),
+		rawByIdentity: new Map(),
+	};
+}
+
+export function createIdentityAuthorities(
+	ledger: IdentityLedger = createIdentityLedger(),
+): IdentityAuthorities {
+	return createAuthority(ledger);
 }
 
 export function createIdentityAuthority(): IdentityAuthority {
@@ -867,7 +888,7 @@ export function restoreIdentityAuthorities(input: {
 }): IdentityAuthorities {
 	const childId = parseValue(input.childId, "child");
 	const epoch = parseEpochValue(input.epoch, childId);
-	return createAuthority(childId, epoch);
+	return createAuthority({ childId, epoch, issued: new Map(), rawByIdentity: new Map() });
 }
 
 export function restoreIdentityAuthority(input: {

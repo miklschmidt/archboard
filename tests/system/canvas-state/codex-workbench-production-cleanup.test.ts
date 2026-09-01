@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
+import {
+	createServer as createNetServer,
+	type Server as NetServer,
+	type Socket as NetSocket,
+} from "node:net";
 import { join } from "node:path";
 import { WebSocket } from "ws";
 
@@ -9,7 +14,6 @@ import {
 	openApplicationSocket,
 	prepareProductionFixture,
 	type FixtureSetupFailure,
-	type SocketOpenFailure,
 } from "./support/codex-production.ts";
 import { createRequester } from "./support/http.ts";
 
@@ -49,6 +53,52 @@ async function closeServer(server: Server): Promise<void> {
 				: resolve(),
 		),
 	);
+}
+
+interface LoopbackPeer {
+	readonly base: string;
+	readonly server: NetServer;
+	readonly close: () => Promise<void>;
+}
+
+function baseFor(server: NetServer): string {
+	const address = server.address();
+	if (address === null || typeof address === "string")
+		throw new Error("The loopback peer has no TCP port.");
+	return `http://127.0.0.1:${address.port}`;
+}
+
+async function listenLoopbackPeer(
+	onConnection: (socket: NetSocket) => void,
+): Promise<LoopbackPeer> {
+	const sockets = new Set<NetSocket>();
+	const server = createNetServer((socket) => {
+		sockets.add(socket);
+		socket.once("close", () => sockets.delete(socket));
+		onConnection(socket);
+	});
+	await new Promise<void>((resolve, reject) => {
+		server.once("error", reject);
+		server.listen({ host: "127.0.0.1", port: 0, exclusive: true }, resolve);
+	});
+	return {
+		base: baseFor(server),
+		server,
+		close: async () => {
+			for (const socket of sockets) socket.destroy();
+			if (!server.listening) return;
+			await new Promise<void>((resolve, reject) =>
+				server.close((error) => (error === undefined ? resolve() : reject(error))),
+			);
+		},
+	};
+}
+
+async function closedLoopbackEndpoint(): Promise<string> {
+	const reservation = await listenLoopbackPeer((socket) => socket.destroy());
+	const base = reservation.base;
+	await reservation.close();
+	return base;
 }
 
 const pane = (clientId: string, primary: boolean, focused: boolean) => ({
@@ -130,7 +180,7 @@ describe.serial("production Codex setup cleanup", () => {
 		await assertProcessesStopped(records);
 	}, 20_000);
 
-	test("every first-socket failure closes listeners and preserves production recovery", async () => {
+	test("real first-socket failures close listeners and preserve production recovery", async () => {
 		const resources = new AsyncDisposableStack();
 		let root = "";
 		let canvasPid: number | null = null;
@@ -159,33 +209,36 @@ describe.serial("production Codex setup cleanup", () => {
 			});
 			const focusedSocket = await openApplicationSocket(canvas.base, "focused-client");
 			resources.defer(() => focusedSocket.close());
-			for (const scenario of [
-				{ name: "hook_throw", failAt: undefined },
-				{ name: "socket_error", failAt: "socket_error" },
-				{ name: "early_close", failAt: "early_close" },
-				{ name: "timeout", failAt: "timeout" },
-			] as const satisfies readonly {
-				readonly name: string;
-				readonly failAt: SocketOpenFailure | undefined;
-			}[]) {
+			for (const scenario of ["hook_throw", "socket_error", "early_close", "timeout"] as const) {
+				const peer =
+					scenario === "early_close"
+						? await listenLoopbackPeer((socket) => socket.destroy())
+						: scenario === "timeout"
+							? await listenLoopbackPeer((socket) => socket.resume())
+							: null;
+				const failureBase =
+					scenario === "socket_error"
+						? await closedLoopbackEndpoint()
+						: (peer?.base ?? canvas.base);
 				let socket: WebSocket | null = null;
-				const failure = await openApplicationSocket(canvas.base, "bound-client", {
-					...(scenario.failAt === undefined ? {} : { failAt: scenario.failAt }),
-					timeoutMs: 20,
+				const failure = await openApplicationSocket(failureBase, "bound-client", {
+					timeoutMs: scenario === "timeout" ? 25 : 2_000,
 					onSocket: (value) => {
 						socket = value;
-						if (scenario.name === "hook_throw") throw new Error("injected socket hook failure");
+						if (scenario === "hook_throw") throw new Error("injected socket hook failure");
 					},
 				}).then(
 					() => null,
 					(error: unknown) => error,
 				);
-				expect(failure, scenario.name).toBeInstanceOf(Error);
+				expect(failure, scenario).toBeInstanceOf(Error);
 				const partialSocket = socket as WebSocket | null;
 				if (partialSocket === null) throw new Error("The partial socket was not captured.");
-				expect(partialSocket.readyState, scenario.name).toBe(WebSocket.CLOSED);
+				expect(partialSocket.readyState, scenario).toBe(WebSocket.CLOSED);
 				for (const event of ["message", "open", "error", "close"])
-					expect(partialSocket.listenerCount(event), `${scenario.name}:${event}`).toBe(0);
+					expect(partialSocket.listenerCount(event), `${scenario}:${event}`).toBe(0);
+				await peer?.close();
+				if (peer !== null) expect(peer.server.listening, scenario).toBeFalse();
 
 				const recovery = await openApplicationSocket(canvas.base, "bound-client");
 				for (const paneRegistration of [
@@ -197,11 +250,11 @@ describe.serial("production Codex setup cleanup", () => {
 						doing: false,
 						body: paneRegistration,
 					});
-					expect(registered.status, scenario.name).toBe(200);
+					expect(registered.status, scenario).toBe(200);
 				}
-				expect(await recovery.request("connect"), scenario.name).toMatchObject({ ok: true });
-				expect(await recovery.request("claimLease"), scenario.name).toMatchObject({ ok: true });
-				expect(await recovery.request("releaseLease"), scenario.name).toMatchObject({ ok: true });
+				expect(await recovery.request("connect"), scenario).toMatchObject({ ok: true });
+				expect(await recovery.request("claimLease"), scenario).toMatchObject({ ok: true });
+				expect(await recovery.request("releaseLease"), scenario).toMatchObject({ ok: true });
 				await recovery.close();
 			}
 			const finalSocket = await openApplicationSocket(canvas.base, "cleanup-order");

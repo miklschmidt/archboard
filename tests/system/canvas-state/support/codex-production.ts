@@ -24,7 +24,6 @@ export interface ProductionFixture {
 }
 
 export type FixtureSetupFailure = "root_setup" | "fixture_setup";
-export type SocketOpenFailure = "after_create" | "socket_error" | "early_close" | "timeout";
 
 export function prepareProductionFixture(
 	resources: AsyncDisposableStack,
@@ -86,11 +85,22 @@ async function closeSocket(socket: WebSocket): Promise<void> {
 	});
 }
 
+function socketError(value: unknown): Error {
+	if (value instanceof Error) return value;
+	if (
+		value !== null &&
+		typeof value === "object" &&
+		"message" in value &&
+		typeof value.message === "string"
+	)
+		return new Error(value.message, { cause: value });
+	return new Error("The production workbench socket failed.", { cause: value });
+}
+
 export async function openApplicationSocket(
 	base: string,
 	clientId: string,
 	options: {
-		readonly failAt?: SocketOpenFailure;
 		readonly onSocket?: (socket: WebSocket) => void;
 		readonly timeoutMs?: number;
 	} = {},
@@ -115,7 +125,7 @@ export async function openApplicationSocket(
 		pending.clear();
 	};
 	socket.on("message", onMessage);
-	const onSocketError = (error: Error): void => rejectPending(error.message);
+	const onSocketError = (error: unknown): void => rejectPending(socketError(error).message);
 	socket.on("error", onSocketError);
 	let timeout: ReturnType<typeof setTimeout>;
 	const cleanupOpening = (): void => {
@@ -125,13 +135,12 @@ export async function openApplicationSocket(
 		socket.off("close", onEarlyClose);
 	};
 	const onOpen = (): void => {
-		if (options.failAt === "timeout") return;
 		cleanupOpening();
 		resolveOpening();
 	};
-	const onOpenError = (error: Error): void => {
+	const onOpenError = (error: unknown): void => {
 		cleanupOpening();
-		rejectOpening(error);
+		rejectOpening(socketError(error));
 	};
 	const onEarlyClose = (): void => {
 		cleanupOpening();
@@ -153,10 +162,6 @@ export async function openApplicationSocket(
 	void opening.catch(() => undefined);
 	try {
 		options.onSocket?.(socket);
-		if (options.failAt === "after_create") throw new Error("injected first socket open failure");
-		if (options.failAt === "socket_error")
-			queueMicrotask(() => socket.emit("error", new Error("injected socket error")));
-		if (options.failAt === "early_close") queueMicrotask(() => socket.emit("close"));
 		await opening;
 	} catch (error) {
 		cleanupOpening();

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 06:22'
+updated_date: '2026-09-01 07:21'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -203,6 +203,12 @@ Own the one production composition root in the canvas server. It instantiates ev
 50. Run the focused generation, reload, terminal, media, production cleanup, actual server, hot-reload, socket, inventory, lint, formatting, both TypeScript projects, frontend build, and diff owners in sequential named 6 GiB systemd scopes. Do not retry documented OOM fingerprints.
 
 51. Keep TASK-143.01.14 In Progress with AC unchecked, verify the protected hash, commit above de56927d, and send the required six-finding callback to parent thread 01a053f2-e36f-7911-9859-09d259b86aea.
+
+52. Replace the retained generation graph with a minimal process-lifetime runtime containing only the stable process owner and lifecycle tickets; keep every assembled generation, owner, decoder, adapter, route, callback, approval, and authority exclusively behind the replaceable current source slot.
+53. Extract private routing and lifecycle modules. The lifecycle unit owns ticket reservation, startup publication fences, synchronous dispatch revocation, rollback, child retirement, and terminal teardown; the composition root owns factory assembly and public wiring.
+54. Add hostile-descendant retained-policy owners, public-wrapper shutdown revocation coverage, and a delayed createGeneration/shutdown/replacement race proving a stale start cannot overwrite or release the replacement runtime.
+55. Replace synthetic socket emission cases with real loopback peers for refused/reset connection, accepted early close, and accepted withheld WebSocket upgrade timeout, then prove the next actual src/server.ts start recovers without socket, listener, process, authority, or root leaks.
+56. Run the focused and complete viable validation lanes sequentially in named transient systemd user units capped at 6 GiB memory and 1 GiB swap; preserve the protected artifact hash, keep status and all acceptance criteria unchanged, commit above c55d5594, and callback the fixed-base parent with finding-by-finding evidence.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -263,10 +269,18 @@ The production socket helper now arms message, error, open, close, timeout, and 
 The composition root was reassessed rather than left larger. A private retained-policy module plus private error and registration contract extracted structural enforcement without changing public entrypoints or creating a runtime mode. src/server/canvas/lib/codex-workbench.ts is now 1,631 lines, below the rejected 1,654-line version, and targeted module-scope analysis reports zero findings or waivers.
 
 Final named 6 GiB/1 GiB validation: focused generation/reload/terminal/owner/policy owners 47 pass, 0 fail, 459 assertions; production canvas workbench system owners 8 pass, 0 fail, 116 assertions; hot reload 4 pass, 0 fail, 66 assertions; media 8 pass, 0 fail, 34 assertions; inventory 39 pass, 0 fail, 69 assertions; the complete module lane exited successfully; actual frontend build, full lint, formatting check, both TypeScript projects, protected diff check, and targeted module-scope analysis pass. The aggregate boundary owner was attempted once and OOM-killed at the documented cgroup ceiling after six passing cases; it was not retried and no aggregate pass is claimed. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress with all AC unchecked for parent rereview.
+
+Fourth rejection remediation above c55d5594 resolves the six retained-lifecycle and recovery findings. The retained runtime is now an exact process-lifetime kernel containing the stable process, identity ledger, transport, operation ticket, readiness flags, and release state; assembled generations, owners, routes, decoders, callbacks, approvals, authorities, sessions, gateways, and UI adapters exist only behind the replaceable current source. The structural policy enforces exact root and kernel shapes and recursively rejects hostile Map/Set entries, callable attachments, prototype spoofing, and intrinsic mutation.
+
+A private lifecycle unit now owns reservation tickets, activation publication fences, synchronous public and internal dispatch revocation before the first shutdown await, transactional reload and rollback, exact stale-start cleanup, child retirement, and terminal release. A private exhaustive router owns the eleven generated request variants. The composition root now owns only graph assembly and public wiring and is 654 lines. Delayed start, replacement, reload, rollback, leaked-listener, and shutdown-during-activation owners prove stale work cannot publish over or release the current runtime.
+
+Production reload constructs a fresh runtime graph while reusing only the reviewed process, identity, transport, and browser-lease ledgers. Exact transport identity is replaced and restored on rollback; the browser connection and command lease survive a clean reload through the current gateway without retaining a generation-bound gateway. Synthetic socket.emit failure injection was removed. Real loopback peers now exercise connection refusal, accepted early close, and a withheld WebSocket upgrade timeout; each partial socket is closed and listener-free, followed by a successful actual src/server.ts recovery that connects, claims, and releases authority.
+
+Final named 6 GiB memory / 1 GiB swap validation: lifecycle owner matrix 22 pass, 0 fail, 108 assertions; Codex transport/session/identity/canvas/gateway lane 150 pass, 0 fail, 1,404 assertions; hot-reload, actual production server, real network cleanup, and application socket lane 11 pass, 0 fail, 174 assertions; inventory 39 pass, 0 fail, 69 assertions; full lint 0 warnings/errors; formatting check, both TypeScript projects, frontend build, targeted module-scope policy, and diff check pass. The complete module aggregate was attempted once and OOM-killed at the fixed 6 GiB memory plus 1 GiB swap ceiling; it was not retried and no aggregate pass is claimed. Protected artifact /home/msc/Projects/archboard/src-DlBR1tzg.js remains SHA-256 22f897b2af2cf20f0252a8283db930e03a321ef2ad2916d714acd421c83540a6. TASK-143.01.14 remains In Progress and every acceptance criterion remains unchecked for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-The four rereview findings are remediated and directly verified: reload publishes poison-tested fresh source callables, terminal failures aggregate while releasing all authority and permitting reinstall, ticketed A/B/C media replacement is deterministic, and production setup cleans every reachable partial-acquisition failure. Task remains In Progress with all acceptance criteria unchecked for parent rereview.
+Rebuilt the Codex workbench reload boundary around a minimal retained process kernel, fresh source generations, synchronous shutdown revocation, and exact lifecycle tickets. Extracted private lifecycle and exhaustive routing units, replaced synthetic socket failures with real loopback peers, and verified production recovery plus focused runtime, policy, type, lint, format, build, inventory, and hot-reload owners. The capped complete module aggregate OOM remains explicitly unclaimed; task status and acceptance criteria are unchanged for parent rereview.
 <!-- SECTION:FINAL_SUMMARY:END -->

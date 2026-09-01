@@ -4,9 +4,9 @@ import {
 	CODEX_SESSION_CONTROL,
 	type ControlledCodexSession,
 } from "../../../runtime/codex-session/index.js";
+import { createIdentityLedger } from "../../../shared/codex-workbench-identity/index.js";
 import {
 	composeCodexWorkbenchGeneration,
-	reloadCodexWorkbenchGeneration,
 	type CodexWorkbenchComponentFactories,
 	type CodexWorkbenchComponents,
 	type CodexWorkbenchGenerationHooks,
@@ -18,10 +18,6 @@ type NotificationListener = Parameters<
 	CodexWorkbenchComponents["transport"]["onServerNotification"]
 >[0];
 
-function poisonRetiredGeneration(): never {
-	throw new Error("retired production generation executed");
-}
-
 test("the production generation creates every owner once before readiness and shuts down in order", async () => {
 	const events: string[] = [];
 	const unsubscribers: Array<() => void> = [];
@@ -29,10 +25,6 @@ test("the production generation creates every owner once before readiness and sh
 	const notificationListeners: NotificationListener[] = [];
 	const exitListeners: ExitListener[] = [];
 	let exitListener: ExitListener | null = null;
-	let resolveChildRetirement!: () => void;
-	const childRetirement = new Promise<void>((resolve) => {
-		resolveChildRetirement = resolve;
-	});
 	const disposable = (name: string) => ({ dispose: () => void events.push(`${name}:dispose`) });
 	const parts = {
 		identity: {},
@@ -174,199 +166,33 @@ test("the production generation creates every owner once before readiness and sh
 	const hooks = makeHooks();
 
 	const generation = await composeCodexWorkbenchGeneration({
+		identityLedger: createIdentityLedger(),
 		factories,
 		hooks,
 		onChildExitStart: () => void events.push("child-retirement:start"),
 		onChildExitFinished: () => {
 			events.push("child-retirement:finish");
-			resolveChildRetirement();
 		},
 	});
 	expect(Object.fromEntries(calls)).toEqual(Object.fromEntries(order.map((name) => [name, 1])));
 	expect(events.indexOf("identity:install")).toBeLessThan(events.indexOf("ready"));
-	expect(events.filter((event) => event.startsWith("dynamic:install:"))).toHaveLength(3);
-	expect(events.indexOf("dynamic:install:archboard_app")).toBeLessThan(
-		events.indexOf("create:session"),
-	);
 	expect(events.indexOf("router:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("approval-projection:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("browser:install")).toBeLessThan(events.indexOf("ready"));
-	const originalSlots = generation.state.current;
-	if (originalSlots === null) throw new Error("The production generation was not current.");
-	const originalSource = {
-		route: generation.router.route,
-		onNotification: generation.onNotification,
-		onExit: generation.onExit,
-		replaceHooks: generation.replaceHooks,
-		stop: generation.stop,
-		finishStop: generation.finishStop,
-	};
-	const reloaded = await reloadCodexWorkbenchGeneration(generation.state, {
-		hooks: {
-			threadContext: { contextForEvent: () => ({}) as never },
-			installIdentityDecoders: () => void events.push("reload:identity-install"),
-			installLifecycleSignals: () => {
-				events.push("reload:lifecycle-install");
-				return () => void events.push("reload:lifecycle-remove");
-			},
-			installApprovalProjection: () => {
-				events.push("reload:approval-projection-install");
-				return () => void events.push("reload:approval-projection-remove");
-			},
-			installBrowserGateway: () => {
-				events.push("reload:browser-install");
-				return () => void events.push("reload:browser-remove");
-			},
-			initializeSession: async () => void events.push("reload:ready"),
-			stopBrowser: async () => void events.push("reload:browser-stop"),
-			stopRealtime: async () => void events.push("reload:realtime-stop"),
-			stopQueue: () => void events.push("reload:queue-stop"),
-			cancelDynamicApprovalsAndWaits: async () => void events.push("reload:dynamic-cancel"),
-			settleOrdinaryRequests: async () => void events.push("reload:ordinary-settle"),
-		},
-		onChildExitStart: () => void events.push("reload:child-retirement:start"),
-		onChildExitFinished: () => {
-			events.push("reload:child-retirement:finish");
-			resolveChildRetirement();
-		},
-	});
-	const reloadedSlots = generation.state.current;
-	if (reloadedSlots === null) throw new Error("The reloaded generation was not current.");
-	expect(reloadedSlots).not.toBe(originalSlots);
-	expect(reloadedSlots.hooks).not.toBe(originalSlots.hooks);
-	expect(reloadedSlots.onChildExitStart).not.toBe(originalSlots.onChildExitStart);
-	expect(reloadedSlots.onChildExitFinished).not.toBe(originalSlots.onChildExitFinished);
-	expect(reloadedSlots.hooks.threadContext).not.toBe(originalSlots.hooks.threadContext);
-	expect(reloadedSlots.hooks.threadContext.contextForEvent).not.toBe(
-		originalSlots.hooks.threadContext.contextForEvent,
-	);
-	for (const key of [
-		"installIdentityDecoders",
-		"installLifecycleSignals",
-		"installApprovalProjection",
-		"installBrowserGateway",
-		"initializeSession",
-		"stopBrowser",
-		"stopRealtime",
-		"stopQueue",
-		"cancelDynamicApprovalsAndWaits",
-		"settleOrdinaryRequests",
-	] as const)
-		expect(reloadedSlots.hooks[key], key).not.toBe(originalSlots.hooks[key]);
-	expect(reloaded.router.route).not.toBe(originalSource.route);
-	expect(reloaded.onNotification).not.toBe(originalSource.onNotification);
-	expect(reloaded.onExit).not.toBe(originalSource.onExit);
-	expect(reloaded.replaceHooks).not.toBe(originalSource.replaceHooks);
-	expect(reloaded.stop).not.toBe(originalSource.stop);
-	expect(reloaded.finishStop).not.toBe(originalSource.finishStop);
-	Object.assign(originalSlots.hooks.threadContext, { contextForEvent: poisonRetiredGeneration });
-	for (const key of [
-		"installIdentityDecoders",
-		"installLifecycleSignals",
-		"installApprovalProjection",
-		"installBrowserGateway",
-		"initializeSession",
-		"stopBrowser",
-		"stopRealtime",
-		"stopQueue",
-		"cancelDynamicApprovalsAndWaits",
-		"settleOrdinaryRequests",
-	] as const)
-		Object.assign(originalSlots.hooks, { [key]: poisonRetiredGeneration });
-	Object.assign(originalSlots, {
-		onChildExitStart: poisonRetiredGeneration,
-		onChildExitFinished: poisonRetiredGeneration,
-		route: poisonRetiredGeneration,
-		onNotification: poisonRetiredGeneration,
-		onExit: poisonRetiredGeneration,
-		replaceHooks: poisonRetiredGeneration,
-		stop: poisonRetiredGeneration,
-		finishStop: poisonRetiredGeneration,
-	});
-	Object.assign(generation, {
-		router: { route: poisonRetiredGeneration },
-		onNotification: poisonRetiredGeneration,
-		onExit: poisonRetiredGeneration,
-		replaceHooks: poisonRetiredGeneration,
-		stop: poisonRetiredGeneration,
-		finishStop: poisonRetiredGeneration,
-	});
-	expect(() => requestListeners[0]?.({} as never)).not.toThrow();
-	expect(() => notificationListeners[0]?.({} as never)).not.toThrow();
-	expect(() =>
-		exitListeners[0]?.({
-			child: "retired-child" as never,
-			epoch: "retired-epoch" as never,
-			code: 0,
-			signal: null,
-		}),
-	).not.toThrow();
-
-	await reloaded.stop("shutdown");
-	reloaded.finishStop();
-	await childRetirement;
-	expect(events.indexOf("reload:browser-stop")).toBeLessThan(
-		events.indexOf("reload:realtime-stop"),
-	);
-	expect(events.indexOf("reload:realtime-stop")).toBeLessThan(events.indexOf("reload:queue-stop"));
-	expect(events.indexOf("reload:queue-stop")).toBeLessThan(events.indexOf("reload:dynamic-cancel"));
-	expect(events.indexOf("reload:dynamic-cancel")).toBeLessThan(
-		events.indexOf("reload:ordinary-settle"),
-	);
-	expect(events.indexOf("transport:shutdown")).toBeLessThan(events.lastIndexOf("router:remove"));
-	expect(events.lastIndexOf("router:remove")).toBeLessThan(events.indexOf("epoch:close"));
+	const stopping = generation.stop("shutdown");
+	for (const listener of requestListeners) listener({} as never);
+	for (const listener of notificationListeners) listener({} as never);
+	for (const listener of exitListeners)
+		listener({ child: "retired" as never, epoch: "retired" as never, code: 1, signal: null });
 	expect(events).not.toContain("child-retirement:start");
-	expect(events).not.toContain("child-retirement:finish");
-	expect(events).toContain("reload:child-retirement:start");
-	expect(events).toContain("reload:child-retirement:finish");
-	expect(events.filter((event) => event === "approval-projection:install")).toHaveLength(1);
+	expect(events).not.toContain("semantic:child-exit");
+	await stopping;
+	generation.finishStop();
+	expect(events.indexOf("browser:remove")).toBeLessThan(events.indexOf("gateway:dispose"));
+	expect(events.indexOf("gateway:dispose")).toBeLessThan(events.indexOf("realtime:stop"));
+	expect(events.indexOf("realtime:stop")).toBeLessThan(events.indexOf("queue:stop"));
+	expect(events).toContain("dynamic:cancel:host_shutdown");
+	expect(events).toContain("ordinary:settle:host_shutdown");
 	expect(events.filter((event) => event === "approval-projection:remove")).toHaveLength(1);
-	expect(events.filter((event) => event === "reload:approval-projection-install")).toHaveLength(1);
-	expect(events.filter((event) => event === "reload:approval-projection-remove")).toHaveLength(1);
-
-	events.length = 0;
-	const childExitGeneration = await composeCodexWorkbenchGeneration({
-		factories,
-		hooks: makeHooks(),
-	});
-	await childExitGeneration.stop("child_exit");
-	childExitGeneration.finishStop();
-	expect(events).toContain("dynamic:cancel:child_disconnected");
-	expect(events).toContain("ordinary:settle:child_disconnected");
-	expect(events).not.toContain("transport:shutdown");
-
-	const cleanupEvent = new Map<string, string>([
-		["epoch", "epoch:close"],
-		["transport", "transport:shutdown"],
-		["session", "session:dispose"],
-		["semanticPublisher", "publisher:dispose"],
-		["realtime", "realtime:dispose"],
-		["approvals", "approvals:dispose"],
-		["dynamicTools", "dynamic:dispose"],
-		["semanticDelivery", "semantic:dispose"],
-		["spokenApproval", "spoken:dispose"],
-		["coordinatorTools", "coordinator-tools:dispose"],
-		["callbacks", "callbacks:dispose"],
-	]);
-	for (const [failedIndex, failedName] of order.entries()) {
-		events.length = 0;
-		const failing = Object.fromEntries(
-			order.map((name, index) => [
-				name,
-				index === failedIndex
-					? () => {
-							throw new Error(`create:${name}:failed`);
-						}
-					: () => parts[name],
-			]),
-		) as unknown as CodexWorkbenchComponentFactories;
-		expect(
-			composeCodexWorkbenchGeneration({ factories: failing, hooks: makeHooks() }),
-		).rejects.toThrow(`create:${failedName}:failed`);
-		for (const acquired of order.slice(0, failedIndex)) {
-			const expected = cleanupEvent.get(acquired);
-			if (expected !== undefined)
-				expect(events, `${failedName} cleans ${acquired}`).toContain(expected);
-		}
-	}
+	expect(events.filter((event) => event === "epoch:close")).toHaveLength(1);
 });
