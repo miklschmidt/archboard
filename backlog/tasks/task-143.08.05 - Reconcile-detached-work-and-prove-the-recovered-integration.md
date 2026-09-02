@@ -4,12 +4,9 @@ title: Reconcile detached work and prove the recovered integration
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 02:02'
+updated_date: '2026-09-02 02:14'
 labels: []
 dependencies:
-  - TASK-143.08.04
-  - TASK-143.08.06.05
-  - TASK-143.06.03
   - TASK-143.06.08
 references:
   - codex/task-143-144-workbench@ba1aacee
@@ -39,6 +36,7 @@ Reconcile the frozen detached descendants only after the OOM, generated-type, co
 - [ ] #6 The recovered branch preserves all integrated ba1aacee product behavior that still satisfies the corrected contracts, preserves main-only task records during later reconciliation, passes the complete applicable check under recorded memory limits with no orphan, and receives an independent fixed-range review.
 - [ ] #7 Only after this task is Done are paused TASK-143 and TASK-144 leaves reassigned and given fresh implementation plans. This recovery does not implement the missing timeline, composer, queue, approvals, or voice UI.
 - [ ] #8 The final recovered integration includes TASK-143.08.06.05 evidence: named board work and server rendering pass with zero browser clients, live-session control exists only under `archboard browser`, and the canonical tracked skill teaches that separation before paused feature leaves resume.
+- [ ] #9 At execution time the inventory is regenerated from every worktree registered with Git, not only the audited maximal descendants. Integrated ancestors, review worktrees, unrelated task worktrees, and dirty worktrees are explicitly classified as preserve and untouched when they are not recovery inputs, so no registered worktree is silently omitted.
 <!-- AC:END -->
 
 ## Comments

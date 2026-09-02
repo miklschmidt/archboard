@@ -4,7 +4,7 @@ title: Compose the production Codex workbench graph
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-02 01:39'
+updated_date: '2026-09-02 02:13'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -94,21 +94,21 @@ ordinal: 241000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Own the one production composition root in the canvas server. It instantiates every accepted runtime port and dynamic approval, authority, context, operation-ID, and lifecycle adapter once, routes every server request exhaustively, supplies replaceable closures to kept state, and registers the closed browser contract. It contains no protocol reducer, approval lookalike, identity minting rule, or target-selection policy. Delegation profile: gpt-5.6-sol, medium.
+Own the one feature composition root in the canvas server after recovery. It receives the generated contract and normalized adapters from TASK-143.08.02 and the complete process and application lifecycle owner from TASK-143.08.04, then instantiates each remaining runtime port and feature owner once and registers the browser-only model. It contains no protocol reducer, approval lookalike, identity minting rule, target-selection policy, process lifecycle, reload state machine, restart policy, or cleanup implementation.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The composition instantiates process, identity and OperationId authority, epoch and session, workhorse transaction, realtime, seven-family approval broker, general dispatcher with all five injected adapters, coordinator dispatcher, semantic delivery, coordinator, queue, callbacks, spoken gate, and browser gateway exactly once.
-- [ ] #2 One exhaustive router handles all eleven generated server request variants: seven broker families, item/tool/call, currentTime/read, token refresh, and attestation. Each reaches its sole owner or reviewed protocol error, dynamic approval never enters the seven-family broker, and no default branch responds generically.
-- [ ] #3 kept() stores only version-neutral serializable state, stable process handles, and replaceable closures; no generation-bound class instance, decoder, route handler, callback, approval decision, effect authority, or UI adapter survives reload.
-- [ ] #4 Startup installs identity decoders, dynamic dispatcher registrations, lifecycle signals, router, approval projection, and browser gateway before readiness. Shutdown stops browser, realtime, and queue, cancels dynamic approvals and waits, settles ordinary requests, closes JSON-RPC, TERM or KILLs the child, and removes listeners; browser disconnect and child exit cannot leave resumable authority, and duplicate owner registration refuses.
+- [ ] #1 The composition receives the recovered process and application lifecycle owner and instantiates identity and OperationId authority, epoch and session, workhorse transaction, realtime, approval broker, general and coordinator dispatchers, semantic delivery, coordinator, queue, callbacks, spoken gate, and browser gateway exactly once.
+- [ ] #2 One exhaustive router consumes the generated server-request union and sends each reachable approval, item, tool, call, time, token, and attestation variant to its sole reviewed feature owner; dynamic approval never enters the ordinary broker and no default branch responds generically.
+- [ ] #3 The composition adds no process-lifetime retained state. Feature dispatch closures installed into the recovered kept owner are replaceable as one generation, and no generation-bound decoder, route handler, callback, approval decision, effect authority, or UI adapter survives reload.
+- [ ] #4 Startup, shutdown, child exit, restart, reaping, reload, and failed-start cleanup delegate unchanged to TASK-143.08.04. This task only registers and revokes feature owners through that lifecycle and cannot create another child, application phase, cleanup order, or recovery path.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Paused by TASK-143.08. Reopen only after TASK-143.08.05 is Done. Plan the production graph anew from the recovered generated protocol, single validation seams, retained owner matrix, and mandatory atomic startup contract. Do not merge the detached composition chain or carry forward its handwritten browser contracts and repeated remediation scaffolding.
+Paused by TASK-143.08. Reopen only after TASK-143.08.05 is Done. Plan only the feature composition that consumes the recovered generated contract, retained-owner matrix, and mandatory process/application lifecycle. Do not change or reimplement child startup, application phases, reload, restart, reaping, teardown, or failed-start cleanup.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes

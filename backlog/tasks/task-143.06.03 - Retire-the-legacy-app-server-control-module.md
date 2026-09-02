@@ -4,10 +4,9 @@ title: Delete the legacy app-server control client
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-09-02 01:39'
+updated_date: '2026-09-02 02:12'
 labels: []
 dependencies:
-  - TASK-143.06.04
   - TASK-143.08.01
 references:
   - docs/adr/0005-push-to-codex-via-app-server.md
