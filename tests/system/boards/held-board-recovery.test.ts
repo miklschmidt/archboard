@@ -8,6 +8,7 @@ import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { expandElements } from "../../../src/runtime/engine/expand-elements.ts";
 import { createJsonRequester } from "./support/http.ts";
 import { openTestPane, type TestPane } from "./support/pane-websocket.ts";
+import { waitFor } from "../canvas-state/support/http.ts";
 
 interface HeldReport {
 	board: string;
@@ -106,6 +107,42 @@ async function stopSaving(
 }
 
 describe("held board recovery", () => {
+	test("signal shutdown refuses a held board and keeps write admission open", async () => {
+		await stopSaving("hold-stop", "theirs-stop");
+		const canvasPid = canvas.pid;
+		if (canvasPid === null) throw new Error("The held-board canvas has no pid.");
+		process.kill(canvasPid, "SIGTERM");
+		const health = (await waitFor(async () => {
+			try {
+				const response = await fetch(`${canvas.base}/health`);
+				const body = (await response.json()) as {
+					application?: { phase?: unknown; acceptingWrites?: unknown };
+					held_boards?: Array<{ board?: unknown }>;
+				};
+				return body.application?.phase === "running" &&
+					body.application.acceptingWrites === true &&
+					body.held_boards?.some((hold) => hold.board === "hold-stop")
+					? body
+					: undefined;
+			} catch {
+				return undefined;
+			}
+		}, "held-board signal refusal"))!;
+		expect(health.application).toMatchObject({ phase: "running", acceptingWrites: true });
+		const continued = await request<WriteBody>("/api/elements?board=hold-stop", {
+			method: "POST",
+			body: { id: "after-refusal", type: "rectangle", x: 2, y: 2, width: 20, height: 20 },
+		});
+		expect(continued.status).toBe(200);
+		expect(continued.body.held?.writes).toBe(1);
+		const recovered = await request<WriteBody>("/api/boards/open", {
+			method: "POST",
+			body: { board: "hold-stop", reload: true },
+		});
+		expect(recovered.status).toBe(200);
+		expect(recovered.body.held).toBeUndefined();
+	});
+
 	test("keeps foreign-note baselines independent between boards", async () => {
 		for (const board of ["baseline-a", "baseline-b"]) {
 			await request("/api/boards/new", { method: "POST", body: { board } });

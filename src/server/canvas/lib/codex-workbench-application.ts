@@ -37,24 +37,34 @@ export function createCanvasCodexWorkbenchApplication(
 	const shutdown = (): Promise<void> => {
 		shutdownRequested = true;
 		if (shutdownPromise !== null) return shutdownPromise;
-		shutdownPromise = (async () => {
-			if (preparePromise !== null) {
-				try {
-					await preparePromise;
-				} catch {
-					// Startup owns its partial cleanup; shutdown still publishes stopped.
-				}
-			}
+		const preparing = preparePromise;
+		const stoppingOwner = owner;
+		let stopped = false;
+		const operation = (async () => {
 			options.state.installed = false;
 			options.state.phase = "stopping";
-			try {
-				await owner?.shutdown();
-			} finally {
-				owner = null;
-				options.state.phase = "stopped";
-				options.state.shutdown = shutdown;
+			// Do not wait for readiness before stopping. The owner invalidates its
+			// startup ticket, rejects readiness, and TERM/KILL-reaps the process
+			// group. Waiting for prepare here would make a pre-readiness signal
+			// unable to reach the child it needs to stop.
+			await stoppingOwner?.shutdown();
+			if (preparing !== null) {
+				try {
+					await preparing;
+				} catch {
+					// Cancellation is the expected completion of startup during stop.
+				}
 			}
+			stopped = true;
+			owner = null;
+			options.state.phase = "stopped";
+			options.state.shutdown = shutdown;
 		})();
+		shutdownPromise = operation.finally(() => {
+			// A failed verified stop keeps its owner reachable so a force/retry
+			// call can finish reaping it. Successful shutdown stays idempotent.
+			if (!stopped) shutdownPromise = null;
+		});
 		return shutdownPromise;
 	};
 
@@ -72,8 +82,6 @@ export function createCanvasCodexWorkbenchApplication(
 				owner = options.module.installProductionCodexWorkbench(options.installation());
 				const snapshot = await owner.start();
 				if (shutdownRequested) {
-					await owner.shutdown();
-					owner = null;
 					throw new Error("The Codex workbench was stopped during startup.");
 				}
 				options.state.installed = true;
@@ -82,9 +90,27 @@ export function createCanvasCodexWorkbenchApplication(
 			} catch (error) {
 				options.state.installed = false;
 				if (!shutdownRequested) {
-					owner = null;
-					options.state.phase = "idle";
-					options.state.shutdown = null;
+					let cleanupFailure: unknown = null;
+					try {
+						await owner?.shutdown();
+					} catch (cleanupError) {
+						cleanupFailure = cleanupError;
+					}
+					if (cleanupFailure !== null) {
+						options.state.phase = "stopping";
+						options.state.shutdown = shutdown;
+						throw new AggregateError(
+							[error, cleanupFailure],
+							"Codex workbench startup and terminal cleanup both failed.",
+							{ cause: error },
+						);
+					}
+					// A concurrent shutdown owns the final publication once requested.
+					if (!shutdownRequested) {
+						owner = null;
+						options.state.phase = "idle";
+						options.state.shutdown = null;
+					}
 				}
 				throw error;
 			} finally {

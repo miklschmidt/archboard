@@ -196,6 +196,15 @@ export const DEFAULT_INJECT_DEBOUNCE_MS = 4000;
  */
 export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000;
 
+// ── Canvas application shutdown (ADR 0021) ────────────────────────────────
+
+/**
+ * Grace for existing HTTP connections after write admission closes. It stays
+ * below the CLI health probe so a stuck keep-alive is forced closed before the
+ * next stop observation. WebSocket clients close in their own earlier owner.
+ */
+export const CANVAS_HTTP_STOP_GRACE_MS = 250;
+
 // ── Codex workbench policy (ADR 0019) ─────────────────────────────────────
 //
 // These are authored policy values, not consumer defaults. Their expiry
