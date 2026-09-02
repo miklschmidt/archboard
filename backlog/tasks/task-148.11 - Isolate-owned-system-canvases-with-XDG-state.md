@@ -1,11 +1,11 @@
 ---
 id: TASK-148.11
 title: Isolate owned system canvases with XDG state
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 23:00'
-updated_date: '2026-09-02 23:44'
+updated_date: '2026-09-02 23:48'
 labels: []
 dependencies: []
 references:
@@ -29,10 +29,10 @@ startOwnedCanvas does not forward an isolated XDG_STATE_HOME, so concurrent work
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every owned system canvas resolves Codex workbench state under its own disposable XDG_STATE_HOME rather than ~/.local/state.
-- [ ] #2 Two focused owners can run concurrently without Dedicated Codex roots locked/colliding errors, and cleanup removes each namespace on success, failure, and interruption.
-- [ ] #3 Production stateDir behavior remains unchanged; only test ownership injects isolation.
-- [ ] #4 The system lane's forced max-concurrency=1 is not removed in this task without separate measured evidence.
+- [x] #1 Every owned system canvas resolves Codex workbench state under its own disposable XDG_STATE_HOME rather than ~/.local/state.
+- [x] #2 Two focused owners can run concurrently without Dedicated Codex roots locked/colliding errors, and cleanup removes each namespace on success, failure, and interruption.
+- [x] #3 Production stateDir behavior remains unchanged; only test ownership injects isolation.
+- [x] #4 The system lane's forced max-concurrency=1 is not removed in this task without separate measured evidence.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -67,4 +67,16 @@ startOwnedCanvas does not forward an isolated XDG_STATE_HOME, so concurrent work
 - Direct owner passed in archboard-task14811-direct-20260903e.service: 10 tests, 65 expectations, 6.11s Bun time, 6.130s service runtime, 163.7 MB peak.
 - Final process-group owner passed in archboard-task14811-group-20260903e.service: 8 tests, 70 expectations, 9.12s Bun time, 9.140s service runtime, 647.5 MB peak. The concurrent case passed in 1,060.40 ms, so the earlier 33 ms miss did not recur without assertion or timing padding. The replacement-marker timeout passed in 3,187.29 ms and the injected missing-marker watchdog passed in 2,003.59 ms.
 - Every validation service used KillMode=control-group, a 20-second start cap, and a 5-second stop cap. Final audits showed MainPID=0, empty ControlGroup, no cgroup path or descendants, and empty exact /tmp scans for archboard-owned-canvas-XXXXXX namespaces and archboard-lifecycle-child-XXXXXX vaults. All final services exited successfully with no OOM or residue. Production stateDir, browser/system serialization, and max-concurrency=1 remain unchanged.
+
+2026-09-03 integration finalization:
+- Landed reviewed commits 18162d87e33878d2bd88992e26ef05bf95f64718 and 6e0db7d8c3d7cd13141ebb5773440c4c2ecb6f43 onto bd2a5d59e52a064b33791dcdd67d7344aa76fa8b as 63175cd76a66986e19f8c0884881ebc9ea9ad00e and f0fbaf65f0d82e7e6343fa0940a34831f053d0e8.
+- Independent Standards and Spec rereviews reported REVIEW_CLEAN for bd2a5d59e52a064b33791dcdd67d7344aa76fa8b...6e0db7d8c3d7cd13141ebb5773440c4c2ecb6f43.
+- Recorded focused evidence: OxFmt and OxLint passed for the three implementation/test files in 0.450s; direct owner passed 10 tests, 65 expectations in 6.11s Bun and 6.130s service time, 163.7MB peak; process-group owner passed 8 tests, 70 expectations in 9.12s Bun and 9.140s service time, 647.5MB peak. Replacement-marker case took 3.187s and missing-marker case 2.004s.
+- Each final service was inactive/dead with MainPID=0, empty ControlGroup, no cgroup paths or namespace/vault roots, no OOM, no 124/125, and no process fan-out. Static integration inspection confirms production stateDir, workbench composition, and browser-lane max-concurrency=1 are unchanged.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Isolated each owned system canvas in a disposable HOME, XDG_CONFIG_HOME, XDG_STATE_HOME, and TMPDIR namespace, preventing Codex workbench-lock collisions without changing production state or system-lane serialization. Focused direct and process-group owners passed, with cleanup verified across success, failure, interruption, timeout, and replacement lifecycle paths.
+<!-- SECTION:FINAL_SUMMARY:END -->
