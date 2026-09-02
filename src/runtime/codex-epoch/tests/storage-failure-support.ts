@@ -100,10 +100,14 @@ export function input(
 	};
 }
 
-export function failingFileSystem(state: TestState, options: FailureOptions): CodexEpochFileSystem {
+export function injectedFileSystem(
+	state: TestState,
+	options?: FailureOptions,
+): CodexEpochFileSystem {
 	const descriptors = new Map<number, string>();
-	const targetPath = join(state.root, `epoch-${options.target}.json`);
-	const targetTempPrefix = join(state.root, `.epoch-${options.target}.`);
+	const target = options?.target;
+	const targetPath = target === undefined ? "" : join(state.root, `epoch-${target}.json`);
+	const targetTempPrefix = target === undefined ? "" : join(state.root, `.epoch-${target}.`);
 	let publishedTarget: string | null = null;
 	let injected = false;
 	let cleanupInjected = false;
@@ -111,63 +115,59 @@ export function failingFileSystem(state: TestState, options: FailureOptions): Co
 	const shouldFail = (condition: boolean): void => {
 		if (condition && !injected) {
 			injected = true;
-			throw new Error(`injected ${options.phase} failure`);
+			throw new Error(`injected ${options?.phase} failure`);
 		}
 	};
 	const isTargetTemp = (path: string): boolean =>
-		path.startsWith(targetTempPrefix) && path.endsWith(".tmp");
+		target !== undefined && path.startsWith(targetTempPrefix) && path.endsWith(".tmp");
 	return {
 		...defaultCodexEpochFileSystem,
 		lstatSync: (path) => {
 			if (path === targetPath) {
 				targetStatReads++;
-				shouldFail(options.phase === "target_stat" && targetStatReads >= 2);
+				shouldFail(options?.phase === "target_stat" && targetStatReads >= 2);
 			}
 			return defaultCodexEpochFileSystem.lstatSync(path);
 		},
 		openSync: (path, flags, mode) => {
-			shouldFail(options.phase === "temp_open" && isTargetTemp(path));
+			shouldFail(options?.phase === "temp_open" && isTargetTemp(path));
 			shouldFail(
-				options.phase === "directory_open" &&
-					path === state.root &&
-					publishedTarget === options.target,
+				options?.phase === "directory_open" && path === state.root && publishedTarget === target,
 			);
 			const descriptor = defaultCodexEpochFileSystem.openSync(path, flags, mode);
 			descriptors.set(descriptor, path);
 			return descriptor;
 		},
 		writeSync: (descriptor, data, offset, length) => {
-			shouldFail(options.phase === "temp_write" && isTargetTemp(descriptors.get(descriptor) ?? ""));
+			shouldFail(
+				options?.phase === "temp_write" && isTargetTemp(descriptors.get(descriptor) ?? ""),
+			);
 			return defaultCodexEpochFileSystem.writeSync(descriptor, data, offset, length);
 		},
 		fsyncSync: (descriptor) => {
 			const path = descriptors.get(descriptor) ?? "";
-			shouldFail(options.phase === "temp_fsync" && isTargetTemp(path));
+			shouldFail(options?.phase === "temp_fsync" && isTargetTemp(path));
 			shouldFail(
-				options.phase === "directory_fsync" &&
-					path === state.root &&
-					publishedTarget === options.target,
+				options?.phase === "directory_fsync" && path === state.root && publishedTarget === target,
 			);
-			return defaultCodexEpochFileSystem.fsyncSync(descriptor);
+			// The matrix owns phase behavior. epoch.test.ts owns real fsync and publish ordering.
 		},
 		closeSync: (descriptor) => {
 			const path = descriptors.get(descriptor) ?? "";
-			shouldFail(options.phase === "temp_close" && isTargetTemp(path));
-			shouldFail(
-				options.phase === "directory_close" &&
-					path === state.root &&
-					publishedTarget === options.target,
-			);
 			defaultCodexEpochFileSystem.closeSync(descriptor);
 			descriptors.delete(descriptor);
+			shouldFail(options?.phase === "temp_close" && isTargetTemp(path));
+			shouldFail(
+				options?.phase === "directory_close" && path === state.root && publishedTarget === target,
+			);
 		},
 		renameSync: (oldPath, newPath) => {
-			shouldFail(options.phase === "publish" && newPath === targetPath);
+			shouldFail(options?.phase === "publish" && newPath === targetPath);
 			defaultCodexEpochFileSystem.renameSync(oldPath, newPath);
-			if (newPath === targetPath) publishedTarget = options.target;
+			if (newPath === targetPath) publishedTarget = target ?? null;
 		},
 		unlinkSync: (path) => {
-			if (options.failCleanup === true && isTargetTemp(path) && !cleanupInjected) {
+			if (options?.failCleanup === true && isTargetTemp(path) && !cleanupInjected) {
 				cleanupInjected = true;
 				throw new Error("injected temp cleanup failure");
 			}
