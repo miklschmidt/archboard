@@ -2,7 +2,7 @@ import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { WebSocketServer } from "ws";
-import { createServer, type IncomingMessage } from "http";
+import type { IncomingMessage } from "http";
 import net from "net";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -90,6 +90,7 @@ import {
 import type { BoardContent, LoadedBoard } from "../../../runtime/engine/board-io.js";
 import {
 	BoardHeldError,
+	BoardLockCancelledError,
 	boardLockState,
 	claimBoard,
 	claimWriterId,
@@ -153,14 +154,18 @@ import type { ChangeEvent } from "../../../runtime/engine/change-feed.js";
 import {
 	BROWSER_EXPORT_TIMEOUT_MS,
 	CANVAS_HTTP_STOP_GRACE_MS,
+	CANVAS_MUTATION_DRAIN_TIMEOUT_MS,
 	CODEX_WAIT_TARGET_POLL_MS,
 	PANE_LAYOUT_TIMEOUT_MS,
 	PANE_SETTLE_CAP_MS,
 	REPORT_PROGRESS_MS,
 } from "../../../shared/timing/timing.js";
 import {
+	CanvasApplicationBusyError,
 	CanvasApplicationHeldError,
 	createCanvasApplicationLifetime,
+	createCanvasMutationAdmission,
+	type CanvasMutationLease,
 } from "./application-lifetime.js";
 import { narrateChange } from "../../../runtime/engine/changes.js";
 import { readLibrary, writeLibrary } from "../../../runtime/engine/library.js";
@@ -201,6 +206,7 @@ import {
 	createCodeOpenerRouter,
 	isCodeOpenerBodyRoute,
 } from "../../code-opener/index.js";
+import { createCanvasHttpServer } from "./http-server.js";
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -212,13 +218,38 @@ const moduleDir = path.resolve(path.dirname(moduleFile), "../../..");
 
 const app = express();
 
-type AsyncEndpoint = (req: Request, res: Response, next: NextFunction) => Promise<unknown>;
+const mutationAdmission = createCanvasMutationAdmission({
+	drainTimeoutMs: CANVAS_MUTATION_DRAIN_TIMEOUT_MS,
+});
+const admittedMutations = new WeakMap<Request, CanvasMutationLease>();
+
+function trackMutationWork<T>(
+	req: Request,
+	name: string,
+	work: (signal: AbortSignal) => Promise<T> | T,
+): Promise<T> {
+	const lease = admittedMutations.get(req);
+	if (!lease) return Promise.reject(new Error(`${req.method} ${req.path} has no mutation lease.`));
+	return lease.track(name, work);
+}
+
+type AsyncEndpoint = (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+	signal: AbortSignal,
+) => Promise<unknown>;
 
 function asyncEndpoint(
 	handler: AsyncEndpoint,
 ): (req: Request, res: Response, next: NextFunction) => void {
 	return (req, res, next) => {
-		void handler(req, res, next).catch((error) => setImmediate(next, error));
+		void trackMutationWork(req, `${req.method} ${req.path} handler`, (signal) =>
+			handler(req, res, next, signal),
+		).catch((error) => {
+			if (req.aborted || res.destroyed) return;
+			setImmediate(next, error);
+		});
 	};
 }
 
@@ -242,7 +273,7 @@ interface Wiring {
 	};
 }
 
-const server = createServer(app);
+const server = createCanvasHttpServer(app);
 let wss: WebSocketServer | null = null;
 let canvasLifetime: ReturnType<typeof createCanvasApplicationLifetime> | null = null;
 const wiring: Wiring = {
@@ -258,48 +289,16 @@ const wiring: Wiring = {
 
 // Middleware
 app.use(cors());
-app.use(createCodeOpenerPreguard());
-const mutationAdmission = (() => {
-	let accepting = true;
-	let active = 0;
-	const drained = new Set<() => void>();
-	const settle = (): void => {
-		if (active !== 0) return;
-		for (const resolve of drained) resolve();
-		drained.clear();
-	};
-	return Object.freeze({
-		admit: (): (() => void) | null => {
-			if (!accepting) return null;
-			active++;
-			let finished = false;
-			return () => {
-				if (finished) return;
-				finished = true;
-				active--;
-				settle();
-			};
-		},
-		quiesce: (): Promise<void> => {
-			accepting = false;
-			if (active === 0) return Promise.resolve();
-			return new Promise((resolve) => drained.add(resolve));
-		},
-		resume: (): void => {
-			accepting = true;
-		},
-		accepting: (): boolean => accepting,
-		active: (): number => active,
-	});
-})();
 
-// Stop admission before the final held-board check. A request admitted here is
-// counted until its response settles, including time spent waiting for the
-// board lock. Once quiesce resolves, no route can create a new held copy.
+// Admission precedes every mutation-specific guard and body parser. Parsing is
+// one request lease; explicit async route and board-lock work takes a second
+// lease so disconnecting the response cannot make unfinished mutation work
+// disappear from shutdown's authoritative drain.
 app.use((req: Request, res: Response, next: NextFunction) => {
 	if (req.method === "GET" || req.method === "HEAD" || !req.path.startsWith("/api/")) return next();
-	const complete = mutationAdmission.admit();
-	if (complete === null) {
+	const name = `${req.method} ${req.path}`;
+	const lease = mutationAdmission.admit(name);
+	if (lease === null) {
 		res.setHeader("Retry-After", "1");
 		res.status(503).json({
 			success: false,
@@ -310,10 +309,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 		});
 		return;
 	}
-	res.once("finish", complete);
-	res.once("close", complete);
+	admittedMutations.set(req, lease);
+	req.once("aborted", () => lease.abort(new Error(`${name} request body was aborted.`)));
+	res.once("finish", lease.finish);
+	res.once("close", () => {
+		if (res.writableFinished) lease.finish();
+		else lease.abort(new Error(`${name} response disconnected.`));
+	});
 	next();
 });
+
+app.use(createCodeOpenerPreguard());
 
 const globalJson = express.json({ limit: "10mb" });
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -1217,8 +1223,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 		});
 	}
 
-	void (async () => {
-		const hold = await holdBoard({ board: key, holder: writer });
+	void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, async (signal) => {
+		const hold = await holdBoard({ board: key, holder: writer, signal });
 		// Under the lock, so no other archboard writer can land between the
 		// version being read and the note being written; before `next()`, so a
 		// refusal writes nothing (TASK-091). The board is given straight back:
@@ -1259,12 +1265,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 			res.on("close", give);
 		}
 		next();
-	})().catch((error) => {
+	}).catch((error) => {
+		if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) return;
 		answerBoardError(res, error);
 	});
 });
 
-app.use(createCodeOpenerRouter());
+app.use(
+	createCodeOpenerRouter({
+		runMutation: (req, name, work) => trackMutationWork(req, name, work),
+	}),
+);
 
 /**
  * A person has started changing this board, and wants it.
@@ -1307,11 +1318,22 @@ app.post("/api/boards/hold", (req: Request, res: Response) => {
 		// that has claimed a board for ten minutes must not be able to make the
 		// pane reject that user's edits (ADR 0016). Only a
 		// claim: an unclaimed agent hold is one write and is waited out above.
-		void holdBoard({ board: key, holder, waitMs: REPORT_PROGRESS_MS, revokeClaim: true })
+		void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, (signal) =>
+			holdBoard({
+				board: key,
+				holder,
+				waitMs: REPORT_PROGRESS_MS,
+				revokeClaim: true,
+				signal,
+			}),
+		)
 			.then((hold) =>
 				res.json({ success: true, board: key, holder: hold.holder, created: hold.created }),
 			)
-			.catch((error) => answerBoardError(res, error));
+			.catch((error) => {
+				if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) return;
+				answerBoardError(res, error);
+			});
 	} catch (error) {
 		answerBoardError(res, error);
 	}
@@ -1378,11 +1400,12 @@ app.post("/api/boards/claim", (req: Request, res: Response) => {
 
 		const forMs =
 			typeof body.forMs === "number" && Number.isFinite(body.forMs) ? body.forMs : undefined;
-		void (async () => {
+		void trackMutationWork(req, `${req.method} ${req.path} claim wait`, async (signal) => {
 			const { claim, created } = await claimBoard({
 				board: key,
 				reason,
 				...(forMs !== undefined ? { forMs } : {}),
+				signal,
 			});
 			// Taking the board is the first thing the canvas tells this agent about
 			// it, so it is where the record of what the agent has seen starts
@@ -1396,7 +1419,10 @@ app.post("/api/boards/claim", (req: Request, res: Response) => {
 					? versionOfNoteAt(file)
 					: null;
 			res.json({ success: true, board: key, claim, created, version });
-		})().catch((error) => answerBoardError(res, error));
+		}).catch((error) => {
+			if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) return;
+			answerBoardError(res, error);
+		});
 	} catch (error) {
 		answerBoardError(res, error);
 	}
@@ -2688,87 +2714,95 @@ interface PendingFindingExport {
 const pendingFindingExports = new Map<string, PendingFindingExport>();
 
 // Focused finding export: one persisted snapshot, one immutable browser payload.
-app.post("/api/export/findings", (req: Request, res: Response) => {
-	try {
-		const key = boardOfRequest(req);
-		if (!key) {
-			return res
-				.status(400)
-				.json({ success: false, error: "Rendering findings requires a board." });
-		}
-		const policy = InspectionPolicyInputSchema.parse(req.body?.policy ?? {});
-		const snapshot = readBoardInspectionSnapshot(key);
-		const report = inspectBoard(snapshot.elements, policy);
-		const requests = report.findings.flatMap((finding, findingIndex) =>
-			finding.focusBBox ? [{ findingIndex, focusBBox: finding.focusBBox }] : [],
-		);
-		const base = {
-			board: key,
-			sourceFingerprint: snapshot.fingerprint,
-			report,
-			sourceRenderable: snapshot.renderScene !== null,
-		};
-		if (!snapshot.renderScene || requests.length === 0) return res.json({ ...base, results: [] });
+app.post(
+	"/api/export/findings",
+	asyncEndpoint(async (req: Request, res: Response) => {
+		try {
+			const key = boardOfRequest(req);
+			if (!key) {
+				return res
+					.status(400)
+					.json({ success: false, error: "Rendering findings requires a board." });
+			}
+			const policy = InspectionPolicyInputSchema.parse(req.body?.policy ?? {});
+			const snapshot = readBoardInspectionSnapshot(key);
+			const report = inspectBoard(snapshot.elements, policy);
+			const requests = report.findings.flatMap((finding, findingIndex) =>
+				finding.focusBBox ? [{ findingIndex, focusBBox: finding.focusBBox }] : [],
+			);
+			const base = {
+				board: key,
+				sourceFingerprint: snapshot.fingerprint,
+				report,
+				sourceRenderable: snapshot.renderScene !== null,
+			};
+			if (!snapshot.renderScene || requests.length === 0) return res.json({ ...base, results: [] });
 
-		const answering = primaryPane();
-		if (!answering) return res.status(503).json(noBrowserBody("Rendering board findings"));
-		const requestId = mintId(pendingFindingExports);
-		const expected = new Set(requests.map(({ findingIndex }) => findingIndex));
-		const completed = new Promise<
-			Array<{
-				findingIndex: number;
-				data?: string;
-				failure?: "browser-export-failed" | "browser-timeout";
-			}>
-		>((resolve) => {
-			const timeout = setTimeout(() => {
-				const pending = pendingFindingExports.get(requestId);
-				if (!pending) return;
-				pendingFindingExports.delete(requestId);
-				resolve(
-					[...pending.expected]
-						.map(
-							(findingIndex) =>
-								pending.results.get(findingIndex) ?? {
-									findingIndex,
-									failure: "browser-timeout" as const,
-								},
-						)
-						.toSorted((left, right) => left.findingIndex - right.findingIndex),
-				);
-			}, BROWSER_EXPORT_TIMEOUT_MS);
-			pendingFindingExports.set(requestId, {
-				expected,
-				results: new Map(),
-				resolve,
-				timeout,
+			const answering = primaryPane();
+			if (!answering) return res.status(503).json(noBrowserBody("Rendering board findings"));
+			const requestId = mintId(pendingFindingExports);
+			const expected = new Set(requests.map(({ findingIndex }) => findingIndex));
+			const completed = new Promise<
+				Array<{
+					findingIndex: number;
+					data?: string;
+					failure?: "browser-export-failed" | "browser-timeout";
+				}>
+			>((resolve) => {
+				const timeout = setTimeout(() => {
+					const pending = pendingFindingExports.get(requestId);
+					if (!pending) return;
+					pendingFindingExports.delete(requestId);
+					resolve(
+						[...pending.expected]
+							.map(
+								(findingIndex) =>
+									pending.results.get(findingIndex) ?? {
+										findingIndex,
+										failure: "browser-timeout" as const,
+									},
+							)
+							.toSorted((left, right) => left.findingIndex - right.findingIndex),
+					);
+				}, BROWSER_EXPORT_TIMEOUT_MS);
+				pendingFindingExports.set(requestId, {
+					expected,
+					results: new Map(),
+					resolve,
+					timeout,
+				});
 			});
-		});
 
-		const paneBoard = paneBoardKey(answering);
-		const delivered = sendToPane(
-			answering.clientId,
-			{
-				type: "export_findings_request",
-				requestId,
-				sourceBoard: key,
-				elements: presentElements(snapshot.renderScene.elements, { boardKey: key }),
-				files: snapshot.renderScene.files,
-				findings: requests,
-			},
-			paneBoard,
-		);
-		if (!delivered) {
-			const pending = pendingFindingExports.get(requestId);
-			if (pending) clearTimeout(pending.timeout);
-			pendingFindingExports.delete(requestId);
-			return res.status(503).json(noBrowserBody("Rendering board findings"));
+			const paneBoard = paneBoardKey(answering);
+			const delivered = sendToPane(
+				answering.clientId,
+				{
+					type: "export_findings_request",
+					requestId,
+					sourceBoard: key,
+					elements: presentElements(snapshot.renderScene.elements, { boardKey: key }),
+					files: snapshot.renderScene.files,
+					findings: requests,
+				},
+				paneBoard,
+			);
+			if (!delivered) {
+				const pending = pendingFindingExports.get(requestId);
+				if (pending) clearTimeout(pending.timeout);
+				pendingFindingExports.delete(requestId);
+				return res.status(503).json(noBrowserBody("Rendering board findings"));
+			}
+			const results = await trackMutationWork(
+				req,
+				`${req.method} ${req.path} browser findings`,
+				() => completed,
+			);
+			if (!res.destroyed) res.json({ ...base, results });
+		} catch (error) {
+			if (!res.destroyed) answerBoardError(res, error, "Error rendering board findings");
 		}
-		void completed.then((results) => res.json({ ...base, results }));
-	} catch (error) {
-		answerBoardError(res, error, "Error rendering board findings");
-	}
-});
+	}),
+);
 
 app.post("/api/export/findings/result", (req: Request, res: Response) => {
 	try {
@@ -4136,6 +4170,11 @@ app.get("/health", (req: Request, res: Response) => {
 			phase: canvasLifetime?.phase() ?? "idle",
 			acceptingWrites: mutationAdmission.accepting(),
 			activeWrites: mutationAdmission.active(),
+			activeMutations: mutationAdmission.activeMutations().map((entry) => ({
+				name: entry.name,
+				kind: entry.kind,
+				activeMs: Math.max(0, Date.now() - entry.startedAt),
+			})),
 		},
 		held_boards: heldBoardKeys().map((board) => reportHold(board, holdOn(board)!)),
 		// Whether this process is running the source that is on disk now, and
@@ -4166,6 +4205,7 @@ app.get("/api/sync/status", (req: Request, res: Response) => {
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
 	logger.error("Unhandled error:", err);
+	if (res.headersSent || res.destroyed) return;
 	res.status(500).json({
 		success: false,
 		error: "Internal server error",
@@ -4210,27 +4250,29 @@ async function findExistingLoopbackListener(port: number): Promise<string | null
 	return null;
 }
 
-// Replaced, not added, for the same reason as the connection listener above.
-server.removeAllListeners("error");
-server.on("error", (error: NodeJS.ErrnoException) => {
+function logHttpServerError(error: NodeJS.ErrnoException): void {
 	if (error.code === "EADDRINUSE") {
 		const address = (error as NodeJS.ErrnoException & { address?: string }).address || HOST;
 		logger.error(`Canvas server port ${PORT} is already in use on ${formatHostForUrl(address)}.`);
 	} else if (error.code === "EACCES") {
 		logger.error(`Canvas server cannot bind ${formatHostForUrl(HOST)}:${PORT}: permission denied.`);
 	} else {
-		logger.error("Failed to start canvas server:", error);
+		logger.error("Canvas HTTP server failed:", error);
 	}
-	void (async () => {
-		try {
-			await wiring.codex.shutdown?.();
-		} catch (shutdownError) {
-			logger.error("Codex workbench cleanup after server failure failed:", shutdownError);
-		} finally {
-			process.exit(1);
-		}
-	})();
-});
+}
+
+function isRecoverableCanvasStopError(error: unknown): boolean {
+	return error instanceof CanvasApplicationHeldError || error instanceof CanvasApplicationBusyError;
+}
+
+function reportCanvasStopError(error: unknown): void {
+	const message = `Canvas shutdown refused or failed: ${(error as Error).message}`;
+	if (isRecoverableCanvasStopError(error)) logger.error(message);
+	else {
+		process.stderr.write(message + "\n");
+		process.exitCode = 1;
+	}
+}
 
 /**
  * Take the scratch board's note, if there is one.
@@ -4738,19 +4780,35 @@ async function startServer(): Promise<void> {
 	// winner's pidfile.
 	let ownsPidFile = false;
 	let lifetime!: ReturnType<typeof createCanvasApplicationLifetime>;
+	let httpErrorListener: ((error: NodeJS.ErrnoException) => void) | null = null;
+	let httpPhase: "idle" | "starting" | "running" | "failed" | "stopping" = "idle";
+	let runtimeServerStop: Promise<void> | null = null;
+	const stopCanvasAfterHttpError = async (): Promise<void> => {
+		try {
+			await lifetime.stop("server-error");
+			process.exitCode = 1;
+		} catch (error) {
+			reportCanvasStopError(error);
+		} finally {
+			if (lifetime.phase() === "running") runtimeServerStop = null;
+		}
+	};
+	const stopAfterServerError = (error: NodeJS.ErrnoException): void => {
+		logHttpServerError(error);
+		if (runtimeServerStop !== null) return;
+		runtimeServerStop = stopCanvasAfterHttpError();
+	};
+	const stopCanvasAfterSignal = async (signal: NodeJS.Signals): Promise<void> => {
+		try {
+			await lifetime.stop(signal);
+			if (process.exitCode === undefined) process.exitCode = 0;
+		} catch (error) {
+			reportCanvasStopError(error);
+		}
+	};
 	const shutdown = (signal: NodeJS.Signals): void => {
 		logger.info(`Received ${signal}, shutting down canvas server`);
-		void lifetime.stop(signal).then(
-			() => process.exit(0),
-			(error) => {
-				const message = `Canvas shutdown refused or failed: ${(error as Error).message}`;
-				if (error instanceof CanvasApplicationHeldError) logger.error(message);
-				else {
-					process.stderr.write(message + "\n");
-					process.exitCode = 1;
-				}
-			},
-		);
+		void stopCanvasAfterSignal(signal);
 	};
 	const onTerm = (): void => shutdown("SIGTERM");
 	const onInterrupt = (): void => shutdown("SIGINT");
@@ -4814,20 +4872,48 @@ async function startServer(): Promise<void> {
 			},
 			{
 				name: "http-server",
-				start: () =>
+				start: (signal) =>
 					new Promise<void>((resolve, reject) => {
-						const onError = (error: Error): void => reject(error);
-						server.once("error", onError);
-						server.listen(PORT, HOST, () => {
-							server.off("error", onError);
-							const hostForUrl = formatHostForUrl(HOST);
-							logger.info(`POC server running on http://${hostForUrl}:${PORT}`);
-							writePidFile(PORT, process.pid);
-							ownsPidFile = true;
-							resolve();
-						});
+						httpPhase = "starting";
+						let settled = false;
+						const settleStart = (error?: Error): void => {
+							if (settled) return;
+							settled = true;
+							signal.removeEventListener("abort", onAbort);
+							if (error) {
+								httpPhase = "failed";
+								reject(error);
+							} else resolve();
+						};
+						const onAbort = (): void => settleStart(new Error("Canvas HTTP startup was canceled."));
+						httpErrorListener = (error) => {
+							if (httpPhase === "starting") {
+								logHttpServerError(error);
+								settleStart(error);
+							} else if (httpPhase === "running") stopAfterServerError(error);
+						};
+						server.on("error", httpErrorListener);
+						signal.addEventListener("abort", onAbort, { once: true });
+						try {
+							server.listen(PORT, HOST, () => {
+								if (settled) return;
+								httpPhase = "running";
+								const hostForUrl = formatHostForUrl(HOST);
+								logger.info(`POC server running on http://${hostForUrl}:${PORT}`);
+								writePidFile(PORT, process.pid);
+								ownsPidFile = true;
+								settleStart();
+							});
+						} catch (error) {
+							settleStart(error as Error);
+						}
 					}),
 				stop: async () => {
+					httpPhase = "stopping";
+					if (httpErrorListener !== null) {
+						server.off("error", httpErrorListener);
+						httpErrorListener = null;
+					}
 					if (ownsPidFile) {
 						removePidFile(PORT);
 						ownsPidFile = false;

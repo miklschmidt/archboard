@@ -57,6 +57,11 @@ export interface CodeOpenerRouteDependencies {
 	bindingForElement(board: string, element: string): BindingLookup;
 	resolveTarget(binding: CodeBinding): LocalCodeTargetResult;
 	launch(command: { executable: string; argv: string[] }): Promise<LaunchResult>;
+	runMutation<T>(
+		request: Request,
+		name: string,
+		work: (signal: AbortSignal) => Promise<T> | T,
+	): Promise<T>;
 }
 
 function canonicalBinding(boardKey: string, elementId: string): BindingLookup {
@@ -84,6 +89,7 @@ const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
 	bindingForElement: canonicalBinding,
 	resolveTarget: resolveLocalCodeTarget,
 	launch: launchOpener,
+	runMutation: async (_request, _name, work) => work(new AbortController().signal),
 };
 
 function guard(kind: BrowserCsrfKind) {
@@ -247,65 +253,69 @@ export function createCodeOpenerRouter(
 
 	router.post(
 		"/api/settings/opener/test",
-		asyncEndpoint(async (request, response) => {
-			const current = readOpenerSelection();
-			if (!current.ok) return sendFailure(response, current);
-			const parsed = OpenerSettingsTestRequestSchema.safeParse(request.body);
-			if (!parsed.success) {
-				return sendFailure(
-					response,
-					{ code: "REQUEST_INVALID", error: "The opener test is invalid." },
-					400,
+		asyncEndpoint((request, response) =>
+			dependencies.runMutation(request, "POST /api/settings/opener/test launch", async () => {
+				const current = readOpenerSelection();
+				if (!current.ok) return sendFailure(response, current);
+				const parsed = OpenerSettingsTestRequestSchema.safeParse(request.body);
+				if (!parsed.success) {
+					return sendFailure(
+						response,
+						{ code: "REQUEST_INVALID", error: "The opener test is invalid." },
+						400,
+					);
+				}
+				const checkout = resolveRegisteredCheckout(parsed.data.repository);
+				if (!checkout.ok) return sendFailure(response, checkout);
+				const launched = await planAndLaunch(
+					parsed.data.selection,
+					checkout.root,
+					dependencies.launch,
 				);
-			}
-			const checkout = resolveRegisteredCheckout(parsed.data.repository);
-			if (!checkout.ok) return sendFailure(response, checkout);
-			const launched = await planAndLaunch(
-				parsed.data.selection,
-				checkout.root,
-				dependencies.launch,
-			);
-			if (!launched.ok) return sendFailure(response, launched);
-			response.json({ success: true, code: "OPENER_TESTED", repository: checkout.repository });
-		}),
+				if (!launched.ok) return sendFailure(response, launched);
+				response.json({ success: true, code: "OPENER_TESTED", repository: checkout.repository });
+			}),
+		),
 	);
 
 	router.post(
 		"/api/code-targets/open",
-		asyncEndpoint(async (request, response) => {
-			if (request.url.includes("?")) {
-				return sendFailure(
-					response,
-					{ code: "REQUEST_INVALID", error: "Activation query parameters are not accepted." },
-					400,
-				);
-			}
-			const parsed = CodeTargetOpenRequestSchema.safeParse(request.body);
-			if (!parsed.success) {
-				return sendFailure(
-					response,
-					{ code: "REQUEST_INVALID", error: "The activation request is invalid." },
-					400,
-				);
-			}
-			const found = dependencies.bindingForElement(parsed.data.board, parsed.data.element);
-			if (!found.ok) return sendFailure(response, found);
-			const target = dependencies.resolveTarget(found.binding);
-			if (!target.ok) return sendFailure(response, target, statusFor(target.code), found.binding);
-			const current = readOpenerSelection();
-			if (!current.ok)
-				return sendFailure(response, current, statusFor(current.code), found.binding);
-			const launched = await planAndLaunch(current.selection, target.target, dependencies.launch);
-			if (!launched.ok)
-				return sendFailure(response, launched, statusFor(launched.code), found.binding);
-			response.json({
-				success: true,
-				code: "CODE_TARGET_OPENED",
-				repository: target.repository,
-				path: target.path,
-				kind: target.kind,
-			});
-		}),
+		asyncEndpoint((request, response) =>
+			dependencies.runMutation(request, "POST /api/code-targets/open launch", async () => {
+				if (request.url.includes("?")) {
+					return sendFailure(
+						response,
+						{ code: "REQUEST_INVALID", error: "Activation query parameters are not accepted." },
+						400,
+					);
+				}
+				const parsed = CodeTargetOpenRequestSchema.safeParse(request.body);
+				if (!parsed.success) {
+					return sendFailure(
+						response,
+						{ code: "REQUEST_INVALID", error: "The activation request is invalid." },
+						400,
+					);
+				}
+				const found = dependencies.bindingForElement(parsed.data.board, parsed.data.element);
+				if (!found.ok) return sendFailure(response, found);
+				const target = dependencies.resolveTarget(found.binding);
+				if (!target.ok) return sendFailure(response, target, statusFor(target.code), found.binding);
+				const current = readOpenerSelection();
+				if (!current.ok)
+					return sendFailure(response, current, statusFor(current.code), found.binding);
+				const launched = await planAndLaunch(current.selection, target.target, dependencies.launch);
+				if (!launched.ok)
+					return sendFailure(response, launched, statusFor(launched.code), found.binding);
+				response.json({
+					success: true,
+					code: "CODE_TARGET_OPENED",
+					repository: target.repository,
+					path: target.path,
+					kind: target.kind,
+				});
+			}),
+		),
 	);
 
 	return router;

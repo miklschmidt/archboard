@@ -11,8 +11,9 @@ const repoRoot = resolve(import.meta.dir, "../../..");
 test("preguards opener bodies before parsing and handles activation after the write boundary", () => {
 	const application = readFileSync(join(repoRoot, "src/server/canvas/lib/application.ts"), "utf8");
 	const cors = application.indexOf("app.use(cors());");
+	const admission = application.indexOf("const lease = mutationAdmission.admit(name);");
 	const preguards = [...application.matchAll(/app\.use\(createCodeOpenerPreguard\(\)\);/g)];
-	const openerMounts = [...application.matchAll(/app\.use\(createCodeOpenerRouter\(\)\);/g)];
+	const openerMount = application.indexOf("createCodeOpenerRouter({");
 	const globalJson = application.indexOf('const globalJson = express.json({ limit: "10mb" });');
 	const bypass = application.indexOf(
 		"if (isCodeOpenerBodyRoute(req.method, req.path)) return next();",
@@ -23,14 +24,16 @@ test("preguards opener bodies before parsing and handles activation after the wr
 	);
 
 	expect(cors).toBeGreaterThanOrEqual(0);
+	expect(admission).toBeGreaterThan(cors);
 	expect(preguards).toHaveLength(1);
-	expect(openerMounts).toHaveLength(1);
+	expect(openerMount).toBeGreaterThanOrEqual(0);
 	expect(globalJson).toBeGreaterThan(cors);
+	expect(admission).toBeLessThan(preguards[0]?.index ?? -1);
 	expect(preguards[0]?.index).toBeGreaterThan(cors);
 	expect(preguards[0]?.index).toBeLessThan(globalJson);
 	expect(bypass).toBeGreaterThan(globalJson);
 	expect(bypass).toBeLessThan(boundary);
-	expect(openerMounts[0]?.index).toBeGreaterThan(boundary);
+	expect(openerMount).toBeGreaterThan(boundary);
 });
 
 test("the public activation reaches its exemption before its handler", async () => {
@@ -103,8 +106,8 @@ test("all note-changing routes cross the sole lock and write boundary", () => {
 	const boundary = application.slice(middleware, firstRoute);
 	expect(boundary).toContain('if (req.method === "GET" || req.method === "HEAD") return next();');
 	expect(boundary).toContain("NOT_A_BOARD_WRITE.some(([pattern]) => pattern.test(req.path))");
-	expect(boundary.match(/holdBoard\(\{ board: key, holder: writer \}\)/g)).toHaveLength(1);
-	expect(boundary.indexOf("holdBoard({ board: key, holder: writer })")).toBeLessThan(
+	expect(boundary.match(/holdBoard\(\{ board: key, holder: writer, signal \}\)/g)).toHaveLength(1);
+	expect(boundary.indexOf("holdBoard({ board: key, holder: writer, signal })")).toBeLessThan(
 		boundary.lastIndexOf("next();"),
 	);
 	const routeMatches = [...application.matchAll(/app\.(post|put|delete)\("([^"]+)"/g)];

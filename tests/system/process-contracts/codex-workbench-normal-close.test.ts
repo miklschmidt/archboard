@@ -53,12 +53,14 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			if (typeof note !== "string") throw new Error("Scratch did not report its note path.");
 			appendFileSync(note, "\nforeign edit before shutdown\n");
 
-			const blockerBody = JSON.stringify({ clientId: "drain-blocker", elementIds: [] });
-			const blocker = httpRequest(`${canvas.base}/api/selection`, {
-				method: "POST",
+			const blockerBody = JSON.stringify({ version: 1, kind: "platform" });
+			const blocker = httpRequest(`${canvas.base}/api/settings/opener`, {
+				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
 					"Content-Length": Buffer.byteLength(blockerBody),
+					Origin: canvas.base,
+					"Sec-Fetch-Site": "same-origin",
 				},
 			});
 			resources.defer(() => {
@@ -76,7 +78,7 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 				const response = await fetch(`${canvas.base}/health`);
 				const health = (await response.json()) as { application?: { activeWrites?: unknown } };
 				return health.application?.activeWrites === 1 ? true : undefined;
-			}, "admitted write awaiting its request body");
+			}, "admitted opener write awaiting its request body");
 
 			// The partial admitted request holds the drain before browser cleanup.
 			// The later request would conflict with the foreign note if it crossed
@@ -110,9 +112,101 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 				held_boards?: unknown[];
 			};
 			expect(afterRace.held_boards).toEqual([]);
+			await waitFor(async () => {
+				const response = await fetch(`${canvas.base}/health`);
+				if (!response.ok) return undefined;
+				const health = (await response.json()) as {
+					application?: {
+						phase?: unknown;
+						acceptingWrites?: unknown;
+						activeMutations?: Array<{ name?: unknown; kind?: unknown }>;
+					};
+				};
+				return health.application?.phase === "running" &&
+					health.application.acceptingWrites === true &&
+					health.application.activeMutations?.some(
+						(entry) => entry.name === "PUT /api/settings/opener" && entry.kind === "request",
+					)
+					? true
+					: undefined;
+			}, "bounded opener-body refusal restored the live canvas");
 			blocker.end(blockerBody.slice(-1));
 			expect(await blockerResponse).toBe(200);
-			await closing;
+
+			expect(
+				(
+					await request("/api/boards/hold?board=scratch", {
+						method: "POST",
+						doing: false,
+						body: { clientId: "disconnect-holder" },
+					})
+				).status,
+			).toBe(200);
+			const lateBody = JSON.stringify({
+				id: "must-not-land",
+				type: "rectangle",
+				x: 12,
+				y: 12,
+				width: 10,
+				height: 10,
+			});
+			const waiting = httpRequest(
+				`${canvas.base}/api/elements?board=scratch&doing=disconnected%20write`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"Content-Length": Buffer.byteLength(lateBody),
+					},
+				},
+			);
+			resources.defer(() => {
+				waiting.destroy();
+			});
+			const waitingSettled = new Promise<void>((resolve) => {
+				waiting.once("error", () => resolve());
+				waiting.once("response", (response) => {
+					response.resume();
+					response.once("end", resolve);
+				});
+			});
+			waiting.end(lateBody);
+			await waitFor(async () => {
+				const health = (await (await fetch(`${canvas.base}/health`)).json()) as {
+					application?: { activeMutations?: Array<{ kind?: unknown; name?: unknown }> };
+				};
+				return health.application?.activeMutations?.some(
+					(entry) => entry.kind === "work" && String(entry.name).includes("board-lock wait"),
+				)
+					? true
+					: undefined;
+			}, "mutation waiting for the board lock");
+			waiting.destroy();
+			await waitingSettled;
+			await waitFor(async () => {
+				const health = (await (await fetch(`${canvas.base}/health`)).json()) as {
+					application?: { activeWrites?: unknown };
+				};
+				return health.application?.activeWrites === 0 ? true : undefined;
+			}, "disconnected board-lock work cancellation");
+			expect(
+				(
+					await request("/api/boards/hold/release?board=scratch", {
+						method: "POST",
+						doing: false,
+						body: { clientId: "disconnect-holder" },
+					})
+				).status,
+			).toBe(200);
+			const afterDisconnect = await request("/api/elements?board=scratch");
+			expect(
+				(afterDisconnect.body as { elements?: Array<{ id?: unknown }> }).elements?.some(
+					(element) => element.id === "must-not-land",
+				),
+			).toBeFalse();
+
+			const retryClose = canvas.normalClose();
+			await Promise.all([closing, retryClose]);
 			await held;
 			expect(processExists(canvas.pid)).toBeFalse();
 			expect(processExists(childPid)).toBeFalse();

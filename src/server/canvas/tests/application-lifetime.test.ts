@@ -4,7 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import winston from "winston";
 
-import { CanvasApplicationHeldError, createCanvasApplicationLifetime } from "../index.js";
+import {
+	CanvasApplicationBusyError,
+	CanvasApplicationHeldError,
+	createCanvasApplicationLifetime,
+	createCanvasMutationAdmission,
+} from "../index.js";
 import { closeLogger } from "../../../runtime/engine/logger.js";
 
 describe("canvas application lifetime", () => {
@@ -245,6 +250,70 @@ describe("canvas application lifetime", () => {
 		await lifetime.stop("test");
 		expect(quiesces).toBe(2);
 		expect(lifetime.phase()).toBe("stopped");
+	});
+
+	test("tracks mutation work beyond response settlement", async () => {
+		const admission = createCanvasMutationAdmission({ drainTimeoutMs: 100 });
+		const lease = admission.admit("POST /api/board-write");
+		if (lease === null) throw new Error("The first mutation was not admitted.");
+		let release!: () => void;
+		const gate = new Promise<void>((resolve) => void (release = resolve));
+		const work = lease.track("POST /api/board-write board-lock wait", () => gate);
+		lease.finish();
+		expect(admission.active()).toBe(1);
+
+		const draining = admission.quiesce();
+		expect(admission.accepting()).toBeFalse();
+		release();
+		await work;
+		await draining;
+		expect(admission.active()).toBe(0);
+	});
+
+	test("bounded mutation refusal is shared, named, resumed, and retryable", async () => {
+		const admission = createCanvasMutationAdmission({ drainTimeoutMs: 5 });
+		const lease = admission.admit("POST /api/selection");
+		if (lease === null) throw new Error("The first mutation was not admitted.");
+		const lifetime = createCanvasApplicationLifetime({
+			resources: [{ name: "engine", stop: () => undefined }],
+			quiesce: admission.quiesce,
+			resume: admission.resume,
+		});
+		await lifetime.start();
+
+		const first = lifetime.stop("SIGTERM");
+		const concurrent = lifetime.stop("SIGINT");
+		expect(concurrent).toBe(first);
+		const refusal = await first.catch((error: unknown) => error);
+		expect(refusal).toBeInstanceOf(CanvasApplicationBusyError);
+		expect((refusal as CanvasApplicationBusyError).code).toBe("CANVAS_BUSY");
+		expect((refusal as Error).message).toContain("POST /api/selection");
+		expect(lifetime.phase()).toBe("running");
+		expect(admission.accepting()).toBeTrue();
+
+		lease.finish();
+		await lifetime.stop("test");
+		expect(lifetime.phase()).toBe("stopped");
+	});
+
+	test("disconnect aborts waitable work and releases request admission", async () => {
+		const admission = createCanvasMutationAdmission({ drainTimeoutMs: 100 });
+		const lease = admission.admit("POST /api/elements/changes");
+		if (lease === null) throw new Error("The first mutation was not admitted.");
+		let observed: AbortSignal | null = null;
+		const work = lease
+			.track("POST /api/elements/changes board-lock wait", async (signal) => {
+				observed = signal;
+				await new Promise<void>((_resolve, reject) =>
+					signal.addEventListener("abort", () => reject(signal.reason), { once: true }),
+				);
+			})
+			.catch((error: unknown) => error);
+		lease.abort(new Error("client disconnected"));
+		expect((observed as AbortSignal | null)?.aborted).toBeTrue();
+		expect(await work).toBeInstanceOf(Error);
+		await admission.quiesce();
+		expect(admission.active()).toBe(0);
 	});
 
 	test("startup unwind closes a real logger transport owned before the failure", async () => {
