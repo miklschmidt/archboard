@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 23:00'
-updated_date: '2026-09-02 23:10'
+updated_date: '2026-09-02 23:16'
 labels: []
 dependencies: []
 references:
@@ -15,6 +15,7 @@ references:
   - package-limits.test.ts
 modified_files:
   - docs/agents/test-suite.md
+  - src/runtime/board-inspection/diagnostics.ts
   - src/runtime/board-inspection/lib/detectors.ts
   - src/runtime/board-inspection/tests/comparison-limits.test.ts
   - src/runtime/board-inspection/tests/fixtures/limit-cases.ts
@@ -53,4 +54,6 @@ Developers need the 2,000,000-comparison production ceiling preserved without sp
 Implemented the detector-only comparisonLimit seam with the production default unchanged at BROAD_PHASE_COMPARISON_LIMIT = 2_000_000. The module owner now uses a 2,000-comparison matrix for below-limit, attempted comparison 2,001, deterministic findings, public schema literals, and completed zero-length findings. Removed the duplicate package comparison traversal and generated fixture data while retaining the real package input-limit strict/non-strict, JSON schema, and text-rendering contract. Removed the two now-unused 40s/90s timing constants and updated the test-suite inventory.
 
 Accepted before evidence: roughly 41 seconds for four production-sized traversals. Final focused evidence: `bun test src/runtime/board-inspection/tests/comparison-limits.test.ts` passed 3 tests in 84ms, transient service runtime 103ms; `bun test tests/system/board-inspection/package-limits.test.ts` passed 1 test in 442ms, transient service runtime 473ms. Combined service runtime: 576ms. Each unit reported inactive afterward and its cgroup no longer existed. Frozen dependency materialization took 162ms, and package.json/bun.lock hashes remained unchanged.
+
+Review remediation after maintenance rebase e7453ec1 -> 3731a8b9: moved the representative comparison-budget probe behind the module-root diagnostics.ts entrypoint, so comparison-limits.test.ts no longer imports private lib modules and the production inspectBoard API remains unchanged. Removed the unused terminalComparisonBoard parameters and kept 20 nodes, 60 connectors, and 20 labels inside the fixture. Focused rerun: comparison-limits passed 3 tests in 110ms, service runtime 140ms; package-limits passed 1 test in 451ms, service runtime 468ms. Both transient units reported inactive and had no remaining cgroup.
 <!-- SECTION:NOTES:END -->
