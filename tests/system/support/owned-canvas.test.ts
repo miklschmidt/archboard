@@ -127,12 +127,30 @@ if (process.env.ARCHBOARD_FAILED_REAP_CHILD === "1") {
 	process.exit(0);
 }
 
-const { processExists, startOwnedCanvas, waitForProcessExit } = await import("./owned-canvas.ts");
+const { isOwnedCanvasNamespaceRoot, processExists, startOwnedCanvas, waitForProcessExit } =
+	await import("./owned-canvas.ts");
 
 describe("owned canvas direct lifecycle", () => {
 	const emergencyVaults = new Set<string>();
 	afterAll(() => {
 		for (const vault of emergencyVaults) fs.rmSync(vault, { recursive: true, force: true });
+	});
+
+	test("only accepts exact disposable namespace roots for emergency removal", () => {
+		const temporary = path.resolve(os.tmpdir());
+		expect(
+			isOwnedCanvasNamespaceRoot(path.join(temporary, "archboard-owned-canvas-Ab3xY9")),
+		).toBeTrue();
+		for (const unsafe of [
+			path.join(temporary, "archboard-owned-canvas-"),
+			path.join(temporary, "archboard-owned-canvas-abcde"),
+			path.join(temporary, "archboard-owned-canvas-abcdefg"),
+			path.join(temporary, "archboard-owned-canvasx-abcdef"),
+			path.join(temporary, "archboard-owned-canvas-ab_cde"),
+			path.join(temporary, "nested", "archboard-owned-canvas-abcdef"),
+		]) {
+			expect(isOwnedCanvasNamespaceRoot(unsafe)).toBeFalse();
+		}
 	});
 
 	test("observes a retained short-lived child until delayed disappearance", async () => {
@@ -257,13 +275,16 @@ describe("owned canvas direct lifecycle", () => {
 			for (const canvas of [first, second]) {
 				namespaceRoots.push(canvas.paths.root);
 				namespaces.push(
-					(await fetch(`${canvas.base}/namespace`).then((response) => response.json())) as (typeof namespaces)[number],
+					(await fetch(`${canvas.base}/namespace`).then((response) =>
+						response.json(),
+					)) as (typeof namespaces)[number],
 				);
 			}
 			expect(new Set(namespaces.map(({ xdgState }) => xdgState)).size).toBe(2);
 			expect(new Set(namespaces.map(({ lock }) => lock)).size).toBe(2);
 			for (const [index, namespace] of namespaces.entries()) {
 				const paths = [first, second][index]!.paths;
+				const workbench = path.join(paths.xdgState, "excalidraw-canvas", "codex-workbench");
 				expect(namespace).toMatchObject({
 					home: paths.home,
 					xdgConfig: paths.xdgConfig,
@@ -274,6 +295,10 @@ describe("owned canvas direct lifecycle", () => {
 				expect(namespace).not.toContainValue(callerPaths.xdgConfig);
 				expect(namespace).not.toContainValue(callerPaths.xdgState);
 				expect(namespace).not.toContainValue(callerPaths.temporary);
+				expect(namespace.workbench).toBe(workbench);
+				expect(namespace.lock).toBe(
+					path.join(workbench, "codex-home", ".archboard-codex-process.lock"),
+				);
 				expect(fs.existsSync(namespace.lock)).toBeTrue();
 			}
 		} finally {
@@ -401,6 +426,9 @@ describe("owned canvas direct lifecycle", () => {
 		};
 		expect(result.spawnCount).toBe(2);
 		expect(result.surfaced).toContain("did not exit after SIGKILL");
+		expect(result.surfaced).toMatch(
+			/"cleanup":"Owned canvas generation 2 did not exit after SIGKILL\.\\nOwned canvas paths: \{/,
+		);
 		expect(result.surfaced).toContain("refusing to start another");
 		expect(result.retainedPid).toBe(1_002);
 		expect(result.disposed).toBeTrue();

@@ -14,7 +14,12 @@ import {
 	TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS,
 	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
-import { processExists, startOwnedCanvas, type OwnedCanvas } from "./owned-canvas.ts";
+import {
+	isOwnedCanvasNamespaceRoot,
+	processExists,
+	startOwnedCanvas,
+	type OwnedCanvas,
+} from "./owned-canvas.ts";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const serverPath = path.join(repoRoot, "src/server.ts");
@@ -69,7 +74,6 @@ interface OwnedRecord {
 	namespaceRoot: string;
 	at: number;
 }
-
 interface ReplacementRecord {
 	marker: "replacement-canvas";
 	mode: string;
@@ -77,12 +81,6 @@ interface ReplacementRecord {
 	vault: string;
 	base: string;
 }
-
-interface RetiredRecord {
-	marker: "retired-canvas";
-	base: string;
-}
-
 const childMode = process.env.ARCHBOARD_LIFECYCLE_CHILD;
 if (childMode) {
 	const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
@@ -116,12 +114,7 @@ if (childMode) {
 			await owned.restart({
 				async whileStopped() {
 					// oxlint-disable-next-line no-console -- JSON lines coordinate the external listener.
-					console.log(
-						JSON.stringify({
-							marker: "retired-canvas",
-							base: owned!.base,
-						} satisfies RetiredRecord),
-					);
+					console.log(JSON.stringify({ marker: "retired-canvas", base: owned!.base }));
 					const deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
 					while (!(await listenerAnswers(owned!.base)) && Date.now() < deadline) {
 						await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
@@ -224,14 +217,20 @@ interface ChildResult {
 	owned?: OwnedRecord;
 	replacement?: ReplacementRecord;
 }
-
 interface LifecycleTimeoutError extends Error {
 	records: Array<Record<string, unknown>>;
+	harnessPid: number;
 	owned?: OwnedRecord;
 	replacement?: ReplacementRecord;
 	signals: string[];
 }
-
+interface LifecycleChildOptions {
+	timeoutMs?: number;
+	releaseAt?: number;
+	onRecord?: (record: Record<string, unknown>) => void;
+	timeoutAfterRecord?: string;
+	spawnWatchdogMs?: number;
+}
 const parseRecords = (stdout: string): Array<Record<string, unknown>> =>
 	stdout
 		.trim()
@@ -244,13 +243,15 @@ const parseRecords = (stdout: string): Array<Record<string, unknown>> =>
 				return [];
 			}
 		});
-
 async function runLifecycleChild(
 	mode: string,
-	timeoutMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
-	releaseAt?: number,
-	onRecord?: (record: Record<string, unknown>) => void,
-	timeoutAfterRecord?: string,
+	{
+		timeoutMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+		releaseAt,
+		onRecord,
+		timeoutAfterRecord,
+		spawnWatchdogMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+	}: LifecycleChildOptions = {},
 ): Promise<ChildResult> {
 	const child = spawn(process.execPath, [thisFile], {
 		detached: true,
@@ -267,8 +268,16 @@ async function runLifecycleChild(
 	let recordBuffer = "";
 	let stderr = "";
 	let interrupted = false;
-	let timeoutRecordSeen = false;
-	let startTimeout = (): void => undefined;
+	const timedOut = Symbol("lifecycle-timeout");
+	let timeout: Timer | undefined;
+	let resolveTimeout!: (outcome: typeof timedOut) => void;
+	const timeoutOutcome = new Promise<typeof timedOut>((resolve) => (resolveTimeout = resolve));
+	let markerTimeoutArmed = timeoutAfterRecord === undefined;
+	const armTimeout = (delayMs: number): void => {
+		clearTimeout(timeout);
+		timeout = setTimeout(() => resolveTimeout(timedOut), delayMs);
+	};
+	armTimeout(markerTimeoutArmed ? timeoutMs : spawnWatchdogMs);
 	child.stdout.on("data", (chunk: Buffer) => {
 		const text = chunk.toString();
 		stdout += text;
@@ -281,9 +290,9 @@ async function runLifecycleChild(
 			try {
 				const record = JSON.parse(line) as Record<string, unknown>;
 				onRecord?.(record);
-				if (record.marker === timeoutAfterRecord) {
-					timeoutRecordSeen = true;
-					startTimeout();
+				if (!markerTimeoutArmed && record.marker === timeoutAfterRecord) {
+					markerTimeoutArmed = true;
+					armTimeout(timeoutMs);
 				}
 			} catch {
 				/* stderr retains malformed child protocol diagnostics */
@@ -295,15 +304,6 @@ async function runLifecycleChild(
 		}
 	});
 	child.stderr.on("data", (chunk: Buffer) => (stderr += chunk.toString()));
-	const timedOut = Symbol("lifecycle-timeout");
-	let timeout: Timer | undefined;
-	const timeoutOutcome = new Promise<typeof timedOut>((resolve) => {
-		startTimeout = () => {
-			if (timeout !== undefined) return;
-			timeout = setTimeout(() => resolve(timedOut), timeoutMs);
-		};
-		if (timeoutAfterRecord === undefined || timeoutRecordSeen) startTimeout();
-	});
 	const outcome = await Promise.race([
 		new Promise<number | null>((resolve) => child.once("exit", resolve)),
 		timeoutOutcome,
@@ -347,15 +347,13 @@ async function runLifecycleChild(
 		if (reaped && recordedVault?.startsWith(path.join(os.tmpdir(), "archboard-lifecycle-child-"))) {
 			fs.rmSync(recordedVault, { recursive: true, force: true });
 		}
-		if (
-			reaped &&
-			owned?.namespaceRoot.startsWith(path.join(os.tmpdir(), "archboard-owned-canvas-"))
-		) {
+		if (reaped && owned && isOwnedCanvasNamespaceRoot(owned.namespaceRoot)) {
 			fs.rmSync(owned.namespaceRoot, { recursive: true, force: true });
 		}
 		const detail = reaped ? "did not exit before timeout" : "did not reap after owned group kill";
 		throw Object.assign(new Error(`Lifecycle child ${mode} pid ${child.pid} ${detail}.`), {
 			records,
+			harnessPid: ownedGroup,
 			owned,
 			replacement,
 			signals,
@@ -391,7 +389,7 @@ describe("owned canvas lifecycle", () => {
 		const releaseAt = Date.now() + TEST_CANVAS_CONCURRENT_RELEASE_DELAY_MS;
 		const results = await Promise.all(
 			["concurrent", "concurrent", "concurrent-failure", "concurrent-failure"].map((mode) =>
-				runLifecycleChild(mode, undefined, releaseAt),
+				runLifecycleChild(mode, { releaseAt }),
 			),
 		);
 		const owned = results.map((result) => result.owned!);
@@ -445,11 +443,9 @@ describe("owned canvas lifecycle", () => {
 		let failure: LifecycleTimeoutError | undefined;
 		let foreign: ReturnType<typeof Bun.serve> | undefined;
 		try {
-			await runLifecycleChild(
-				"timeout",
-				TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
-				undefined,
-				(record) => {
+			await runLifecycleChild("timeout", {
+				timeoutMs: TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
+				onRecord(record) {
 					if (record.marker !== "retired-canvas") return;
 					const base = String(record.base);
 					foreign = Bun.serve({
@@ -458,8 +454,8 @@ describe("owned canvas lifecycle", () => {
 						fetch: () => Response.json({ pid: process.pid }),
 					});
 				},
-				"replacement-canvas",
-			);
+				timeoutAfterRecord: "replacement-canvas",
+			});
 		} catch (error) {
 			failure = error as LifecycleTimeoutError;
 		}
@@ -474,26 +470,31 @@ describe("owned canvas lifecycle", () => {
 		expect(replacement.pid).not.toBe(owned.pid);
 		expect(failure!.signals).toEqual(["harness:SIGTERM", "group:SIGKILL"]);
 		expect(failure!.signals.some((target) => target.includes(String(owned.pid)))).toBeFalse();
-		expect(processExists(owned.pid)).toBeFalse();
-		expect(processExists(replacement.pid)).toBeFalse();
+		expect([owned.pid, replacement.pid].map(processExists)).toEqual([false, false]);
 		expect(await listenerAnswers(replacement.base)).toBeFalse();
 		expect(fs.existsSync(owned.vault)).toBeFalse();
+		expect(fs.existsSync(owned.namespaceRoot)).toBeFalse();
 		expect(foreign).toBeDefined();
 		expect(foreignSurvived).toBeTrue();
 	});
 
-	test("escalates and reaps before any replacement record exists", async () => {
+	test("keeps the spawn watchdog when the scenario marker never arrives", async () => {
 		let failure: LifecycleTimeoutError | undefined;
 		try {
-			await runLifecycleChild("timeout-before-replacement", TEST_CANVAS_SHUTDOWN_TIMEOUT_MS);
+			await runLifecycleChild("timeout-before-replacement", {
+				timeoutAfterRecord: "replacement-canvas",
+				spawnWatchdogMs: TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
+			});
 		} catch (error) {
 			failure = error as LifecycleTimeoutError;
 		}
 		const owned = failure!.owned!;
+		expect(failure?.message).toContain("did not exit");
 		expect(failure?.replacement).toBeUndefined();
 		expect(failure?.signals).toEqual(["harness:SIGTERM", "group:SIGKILL"]);
-		expect(processExists(owned.pid)).toBeFalse();
+		expect([failure!.harnessPid, owned.pid].map(processExists)).toEqual([false, false]);
 		expect(await listenerAnswers(owned.base)).toBeFalse();
 		expect(fs.existsSync(owned.vault)).toBeFalse();
+		expect(fs.existsSync(owned.namespaceRoot)).toBeFalse();
 	});
 });

@@ -89,6 +89,8 @@ const activeCanvases = new Set<Registration>();
 let handlersInstalled = false;
 let interruptionInProgress = false;
 const MAX_START_ATTEMPTS = 8;
+const ownedCanvasNamespacePrefix = "archboard-owned-canvas-";
+const ownedCanvasNamespacePattern = /^archboard-owned-canvas-[A-Za-z0-9]{6}$/;
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const processExists = (pid: number): boolean => {
@@ -174,8 +176,16 @@ const exitDescription = (exit: Exit | null): string =>
 	exit?.signal ? `signal ${exit.signal}` : `exit ${exit?.code ?? "unknown"}`;
 const tail = (text: string): string => text.trim().split("\n").slice(-20).join("\n");
 
+export function isOwnedCanvasNamespaceRoot(candidate: string): boolean {
+	const resolved = path.resolve(candidate);
+	return (
+		path.dirname(resolved) === path.resolve(os.tmpdir()) &&
+		ownedCanvasNamespacePattern.test(path.basename(resolved))
+	);
+}
+
 function createOwnedCanvasPaths(): OwnedCanvasPaths {
-	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-owned-canvas-"));
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), ownedCanvasNamespacePrefix));
 	const paths = {
 		root,
 		home: path.join(root, "home"),
@@ -265,7 +275,10 @@ export async function startOwnedCanvas({
 			}
 		}
 		if (!generation.exit) {
-			throw new Error(`Owned canvas generation ${generation.number} did not exit after SIGKILL.`);
+			throw new Error(
+				`Owned canvas generation ${generation.number} did not exit after SIGKILL.` +
+					pathsDiagnostic,
+			);
 		}
 		if (currentGeneration === generation) currentGeneration = null;
 	};
@@ -400,9 +413,7 @@ export async function startOwnedCanvas({
 				if (!error.retryable || explicitPort !== undefined) {
 					const diagnostic = tail(failed?.stderr ?? "");
 					throw new Error(
-						error.message +
-							(diagnostic ? `\nCanvas stderr:\n${diagnostic}` : "") +
-							pathsDiagnostic,
+						error.message + (diagnostic ? `\nCanvas stderr:\n${diagnostic}` : "") + pathsDiagnostic,
 						{ cause },
 					);
 				}
