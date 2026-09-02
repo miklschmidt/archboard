@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { z } from "zod";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { createJsonRequester } from "../boards/support/http.ts";
-import { openTestPane } from "../boards/support/pane-websocket.ts";
+import { openTestPane, waitForPaneMessage } from "../boards/support/pane-websocket.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { replaceScene } from "./fixtures/import-scenes.ts";
 import { nonReadRecords, startCountingProxy } from "./support/counting-proxy.ts";
@@ -105,8 +105,9 @@ test("image replace persists one canonical batch before its frames", async () =>
 			base: proxy.base,
 			args: ["import", file, "--replace", "--board", "replace", "--doing", "replacing scene"],
 		});
-		await Bun.sleep(80);
+		const delta = await waitForPaneMessage(pane, start, "elements_changed");
 		observe = false;
+		expect(delta).toMatchObject({ board: "replace" });
 		expect(result.status).toBe(0);
 		expect(parseCliJson(result, ReceiptSchema)).toEqual({
 			success: true,

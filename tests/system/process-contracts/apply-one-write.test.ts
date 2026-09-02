@@ -317,9 +317,10 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 			method: "POST",
 			body: { clientId: "blocking" },
 		});
+		await proxy.reset();
 		let answered = false;
 		const pending = fetch(
-			`${canvas.base}/api/elements/changes?board=scratch&doing=waiting+for+persistence`,
+			`${proxy.base}/api/elements/changes?board=scratch&doing=waiting+for+persistence`,
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -332,7 +333,13 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 			answered = true;
 			return response.json() as Promise<Record<string, unknown>>;
 		});
-		await Bun.sleep(150);
+		const pendingWrites = nonReadRecords(await proxy.snapshot());
+		expect(pendingWrites).toHaveLength(1);
+		expect(pendingWrites[0]).toMatchObject({
+			method: "POST",
+			pathname: "/api/elements/changes",
+			query: "?board=scratch&doing=waiting+for+persistence",
+		});
 		expect(answered).toBeFalse();
 		await request("/api/boards/hold/release?board=scratch", {
 			method: "POST",

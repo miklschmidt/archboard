@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { z } from "zod";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { createJsonRequester } from "../boards/support/http.ts";
-import { openTestPane } from "../boards/support/pane-websocket.ts";
+import { openTestPane, waitForPaneMessage } from "../boards/support/pane-websocket.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { snapshotElements } from "./fixtures/snapshot-scenes.ts";
 import { nonReadRecords, startCountingProxy } from "./support/counting-proxy.ts";
@@ -138,7 +138,9 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 				"restore snapshot",
 			],
 		});
-		await Bun.sleep(80);
+		expect(await waitForPaneMessage(pane, frameStart, "elements_changed")).toMatchObject({
+			board: "target",
+		});
 		expect(restored.status).toBe(0);
 		expect(parseCliJson(restored, RestoreSchema)).toEqual({
 			success: true,
