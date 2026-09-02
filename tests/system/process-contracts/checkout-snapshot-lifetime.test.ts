@@ -1,45 +1,18 @@
 import { expect, test } from "bun:test";
-import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { WebSocket } from "ws";
 
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { completeElement } from "../code-targets/support/elements.ts";
+import {
+	createDelayedCheckoutOwner as fixture,
+	expectPidAbsent,
+	waitForRecordedPid,
+	waitForRecordedPids,
+} from "./support/delayed-checkout-owner.ts";
 
 const SERVER_PATH = fileURLToPath(new URL("../../../src/server.ts", import.meta.url));
-
-async function waitForRecordedPid(file: string): Promise<number> {
-	const deadline = Date.now() + 2_000;
-	while (!existsSync(file) || readFileSync(file, "utf8").trim().length === 0) {
-		if (Date.now() >= deadline) throw new Error("Delayed Git process did not start.");
-		await Bun.sleep(5);
-	}
-	return Number(readFileSync(file, "utf8").trim().split(/\s+/u).at(-1));
-}
-
-async function waitForRecordedPids(file: string, count: number): Promise<number[]> {
-	const deadline = Date.now() + 2_000;
-	for (;;) {
-		const pids = existsSync(file)
-			? readFileSync(file, "utf8")
-					.trim()
-					.split("\n")
-					.filter(Boolean)
-					.map((line) => Number(line.split(/\s+/u)[0]))
-			: [];
-		if (new Set(pids).size >= count) return [...new Set(pids)];
-		if (Date.now() >= deadline) throw new Error(`Expected ${count} delayed Git processes.`);
-		await Bun.sleep(5);
-	}
-}
-
-async function expectPidAbsent(pid: number): Promise<void> {
-	const deadline = Date.now() + 1_000;
-	while (existsSync(`/proc/${pid}`) && Date.now() < deadline) await Bun.sleep(5);
-	expect(existsSync(`/proc/${pid}`), `Git pid ${pid} survived canvas teardown`).toBeFalse();
-}
 
 async function waitForMessage(
 	messages: Array<Record<string, unknown>>,
@@ -52,56 +25,6 @@ async function waitForMessage(
 		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${type}.`);
 		await Bun.sleep(5);
 	}
-}
-
-function fixture(name: string, checkoutCount = 1) {
-	const root = join(tmpdir(), `archboard-checkout-lifetime-${name}-${crypto.randomUUID()}`);
-	const vault = join(root, "vault");
-	const checkouts = Array.from({ length: checkoutCount }, (_, index) =>
-		join(root, `checkout-${index}`),
-	);
-	const bin = join(root, "bin");
-	const pids = join(root, "git-pids");
-	const release = join(root, "release-git");
-	const realGit = Bun.which("git");
-	if (!realGit) throw new Error("Git is required for checkout lifetime coverage.");
-	mkdirSync(vault, { recursive: true });
-	for (const checkout of checkouts) mkdirSync(checkout);
-	mkdirSync(bin);
-	const git = join(bin, "git");
-	writeFileSync(
-		git,
-		`#!/bin/sh
-case "$*" in
-  *rev-parse*|*remote\\ get-url*)
-    echo "$$ $*" >> "${pids}"
-    while [ ! -e "${release}" ]; do sleep 1; done
-    exec ${JSON.stringify(realGit)} "$@"
-    ;;
-  *) exec ${JSON.stringify(realGit)} "$@" ;;
-esac
-`,
-	);
-	chmodSync(git, 0o700);
-	const registry = join(root, "repos.json");
-	const entries = JSON.stringify(
-		checkouts.map((checkout, index) => ({
-			repo: `github.com/acme/delayed-${index}`,
-			root: checkout,
-			source: "declared",
-			addedAt: "2026-09-02T00:00:00.000Z",
-		})),
-	);
-	writeFileSync(registry, "[]");
-	return {
-		root,
-		vault,
-		pids,
-		release: () => writeFileSync(release, "release\n"),
-		env: { ARCHBOARD_REPOS: registry, PATH: `${bin}:${process.env.PATH ?? ""}` },
-		enable: () => writeFileSync(registry, entries),
-		dispose: () => rmSync(root, { recursive: true, force: true }),
-	};
 }
 
 test("canvas teardown cancels and reaps delayed GET checkout work", async () => {
@@ -210,6 +133,11 @@ test("a delayed WebSocket receives a fresh initial scene before any concurrent d
 			y: 20,
 			width: 100,
 			height: 50,
+			customData: {
+				archboard: {
+					binding: { repo: "github.com/acme/delayed-0", path: "src/concurrent.ts" },
+				},
+			},
 		});
 		const changed = await fetch(`${canvas.base}/api/elements/changes?board=scratch`, {
 			method: "POST",
@@ -227,7 +155,11 @@ test("a delayed WebSocket receives a fresh initial scene before any concurrent d
 		const initial = await waitForMessage(messages, "initial_elements");
 		expect(messages[0]?.type).toBe("initial_elements");
 		expect(
-			(initial.elements as Array<{ id: string }>).some((element) => element.id === "concurrent"),
+			(initial.elements as Array<{ id: string; link?: string }>).some(
+				(element) =>
+					element.id === "concurrent" &&
+					element.link === "/api/code-targets/open?board=scratch&element=concurrent",
+			),
 		).toBeTrue();
 		await canvas.dispose();
 	} finally {

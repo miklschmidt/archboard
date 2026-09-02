@@ -60,8 +60,24 @@ test.each([
 		"discarded child ownership",
 		'void Bun["spawn"](["git"]); const child = { exited: Promise.resolve(0) }; void child["exited"];\n',
 	],
+	[
+		"aliased synchronous child imports",
+		'import { spawnSync as run } from "node:child_process"; void run;\n',
+	],
+	["retained synchronous child references", "const run = Bun.spawnSync; void run;\n"],
+	[
+		"assigned children without an exit owner",
+		'const child = Bun.spawn(["git"]); export { child };\n',
+	],
 ] as const)("type-unaware Git lifecycle lint rejects %s", (_name, source) => {
 	const result = lintGitFixture(source);
 	expect(result.exitCode, result.output).not.toBe(0);
 	expect(result.output).toContain("archboard(git-process-lifecycle)");
+});
+
+test("type-unaware Git lifecycle lint accepts an explicitly owned child exit", () => {
+	const result = lintGitFixture(
+		'const child = Bun.spawn(["git"]); const exited = child.exited; await exited;\n',
+	);
+	expect(result.exitCode, result.output).toBe(0);
 });
