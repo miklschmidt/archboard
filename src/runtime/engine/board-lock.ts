@@ -146,6 +146,16 @@ export class BoardHeldError extends Error {
 	}
 }
 
+/** A request disconnected before its wait could enter the write boundary. */
+export class BoardLockCancelledError extends Error {
+	readonly code = "BOARD_LOCK_CANCELLED";
+
+	constructor(readonly board: string) {
+		super(`Waiting to write "${board}" was canceled because the request disconnected.`);
+		this.name = "BoardLockCancelledError";
+	}
+}
+
 /** What `holdBoard` gives back: who holds it, and whether this call is what took it. */
 export interface LockHold {
 	holder: LockHolder;
@@ -189,6 +199,8 @@ export interface LockRequest {
 	 * touched, because a write is in the note and revoking is not undoing.
 	 */
 	revokeClaim?: boolean;
+	/** Cancel waiting before the synchronous write critical section begins. */
+	signal?: AbortSignal;
 }
 
 /** Where the news goes: the board, and who holds it now, or null for free. */
@@ -242,7 +254,12 @@ export async function holdBoard(request: LockRequest): Promise<LockHold> {
 	let attemptsPastDeadline = 0;
 
 	for (;;) {
+		if (request.signal?.aborted) throw new BoardLockCancelledError(request.board);
 		const result = await attempt(board, request.holder, leaseMs, request.revokeClaim === true);
+		if (request.signal?.aborted) {
+			if (result.ok && result.created) releaseHold(board, request.holder.id);
+			throw new BoardLockCancelledError(request.board);
+		}
 		if (result.ok) return { holder: result.holder, created: result.created };
 		// `null` means the file moved under us rather than that somebody has it:
 		// worth another go, and worth not reporting as a holder.
@@ -253,7 +270,11 @@ export async function holdBoard(request: LockRequest): Promise<LockHold> {
 			attemptsPastDeadline += 1;
 			continue;
 		}
-		await sleep(Math.min(LOCK_POLL_MS, Math.max(1, deadline - Date.now())));
+		await waitForLockPoll(
+			request.board,
+			Math.min(LOCK_POLL_MS, Math.max(1, deadline - Date.now())),
+			request.signal,
+		);
 	}
 
 	throw new BoardHeldError(request.board, blocker, Date.now() - startedAt);
@@ -342,6 +363,7 @@ export async function claimBoard(request: {
 	reason: string;
 	forMs?: number;
 	waitMs?: number;
+	signal?: AbortSignal;
 }): Promise<{ claim: Claim; created: boolean }> {
 	const board = normalizeBoardKey(request.board);
 	const forMs = Math.min(Math.max(request.forMs ?? CLAIM_DEFAULT_MS, CLAIM_LEASE_MS), CLAIM_MAX_MS);
@@ -353,6 +375,7 @@ export async function claimBoard(request: {
 		holder: { id, kind: "agent", reason: request.reason, claimed: true },
 		leaseMs: CLAIM_LEASE_MS,
 		...(request.waitMs !== undefined ? { waitMs: request.waitMs } : {}),
+		...(request.signal !== undefined ? { signal: request.signal } : {}),
 	});
 
 	const entry: ClaimEntry = {
@@ -947,6 +970,25 @@ const watcher = (): typeof processWatcher => processWatcher;
 export function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => {
 		setTimeout(resolve, ms);
+	});
+}
+
+function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promise<void> {
+	if (signal?.aborted) return Promise.reject(new BoardLockCancelledError(board));
+	return new Promise((resolve, reject) => {
+		let timer: ReturnType<typeof setTimeout> | null = null;
+		const settle = (cancelled: boolean): void => {
+			if (timer === null) return;
+			clearTimeout(timer);
+			timer = null;
+			signal?.removeEventListener("abort", onAbort);
+			if (cancelled) reject(new BoardLockCancelledError(board));
+			else resolve();
+		};
+		const onAbort = (): void => settle(true);
+		timer = setTimeout(() => settle(false), ms);
+		signal?.addEventListener("abort", onAbort, { once: true });
+		if (signal?.aborted) settle(true);
 	});
 }
 

@@ -105,6 +105,26 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		await advanceLockTime(250);
 		expect(await waitingTakeover).toMatchObject({ created: true, holder: { id: "patient" } });
 
+		const cancelled = "cancelled";
+		boards.add(cancelled);
+		await lock.holdBoard({ board: cancelled, holder: human("user"), leaseMs: 2_000, waitMs: 0 });
+		const controller = new AbortController();
+		const cancelTimer = setTimeout(() => controller.abort(), 25);
+		timers.add(cancelTimer);
+		const cancelStart = Date.now();
+		const cancellation = await lock
+			.holdBoard({
+				board: cancelled,
+				holder: agent("later"),
+				waitMs: 2_000,
+				signal: controller.signal,
+			})
+			.catch((error: unknown) => error);
+		expect(cancellation).toBeInstanceOf(lock.BoardLockCancelledError);
+		expect(Date.now() - cancelStart).toBeLessThan(500);
+		expect(lock.boardLockState(cancelled)?.id).toBe("user");
+		expect(lock.releaseHold(cancelled, "user")).toBeTrue();
+
 		boards.add("Payments");
 		await lock.holdBoard({ board: "Payments", holder: agent("upper"), waitMs: 0 });
 		const canonicalRefusal = await lock

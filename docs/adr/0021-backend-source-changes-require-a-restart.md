@@ -36,9 +36,14 @@ exception because its refused edits exist only in the running process. The
 ordinary stop and restart path checks for holds before it sends a signal. It
 refuses while any hold exists and names the boards and available recovery
 actions. After a signal, the application stops admitting HTTP writes, drains
-the writes it already admitted, and checks holds again before it closes a
-browser or server. A refused stop restores write admission. Source-freshness
-guidance uses that same guarded restart path.
+both admitted request bodies and the explicit asynchronous mutation work they
+entered, and checks holds again before it closes a browser or server. A client
+disconnect cancels a board-lock wait before it can resume into a write. The
+drain is bounded: work that does not settle refuses the stop, names what is
+still active, restores write admission, and leaves every resource intact for a
+later retry. Listen failures unwind the owners already entered, and a runtime
+HTTP server error enters this same guarded stop instead of running a separate
+exit path. Source-freshness guidance uses that same guarded restart path.
 
 Frontend Vite HMR may remain. It belongs to the browser bundle process and does
 not replace modules inside the Archboard server. Backend and frontend
