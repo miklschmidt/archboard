@@ -271,7 +271,7 @@ test("real process probes the pinned binary before spawn and rejects a wrong ver
 	const harness = await createHarness({}, { version: "codex-cli 0.150.0" });
 	try {
 		const startFailure = harness.owner.start();
-		expect(startFailure).rejects.toMatchObject({ code: "binary_wrong_version" });
+		await expect(startFailure).rejects.toMatchObject({ code: "binary_wrong_version" });
 		await waitFor(() => harness.owner.snapshot().failure?.code === "binary_wrong_version");
 		const records = readRecords(harness);
 		const versionProbe = records.findIndex((entry) => entry.kind === "version_probe");

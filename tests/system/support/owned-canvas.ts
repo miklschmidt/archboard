@@ -158,9 +158,7 @@ async function disposeForSignal(signal: "SIGINT" | "SIGTERM"): Promise<void> {
 function onSigint(): void {
 	void disposeForSignal("SIGINT");
 }
-function onSigterm(): void {
-	void disposeForSignal("SIGTERM");
-}
+const onSigterm = (): void => void disposeForSignal("SIGTERM");
 function onExit(): void {
 	for (const canvas of activeCanvases) canvas.disposeSync();
 }
@@ -200,6 +198,41 @@ function createOwnedCanvasPaths(): OwnedCanvasPaths {
 	} catch (error) {
 		fs.rmSync(root, { recursive: true, force: true });
 		throw error;
+	}
+}
+
+async function discardHeldBoards(generation: Generation): Promise<void> {
+	if (generation.exit !== null) return;
+	let response: Response;
+	try {
+		response = await fetch(`${generation.base}/health`, {
+			signal: AbortSignal.timeout(TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS),
+		});
+	} catch {
+		return;
+	}
+	if (!response.ok) return;
+	const health = (await response.json()) as {
+		pid?: unknown;
+		held_boards?: Array<{ board?: unknown }>;
+	};
+	if (health.pid !== generation.pid) return;
+	for (const hold of health.held_boards ?? []) {
+		if (typeof hold.board !== "string")
+			throw new Error("Canvas health returned a held board without a string board identity.");
+		const recovery = await fetch(
+			`${generation.base}/api/boards/open?doing=${encodeURIComponent("disposing the test-owned canvas")}`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ board: hold.board, reload: true }),
+				signal: AbortSignal.timeout(TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS),
+			},
+		);
+		if (!recovery.ok)
+			throw new Error(
+				`Could not discard held board ${JSON.stringify(hold.board)} before test canvas disposal: HTTP ${recovery.status}.`,
+			);
 	}
 }
 
@@ -283,6 +316,8 @@ export async function startOwnedCanvas({
 		if (currentGeneration === generation) currentGeneration = null;
 	};
 	const startAttempt = async (candidate: number): Promise<Generation> => {
+		const generationStateHome =
+			generatedStateHome === null ? null : join(generatedStateHome, `generation-${nextGeneration}`);
 		const child = spawn(process.execPath, [serverPath], {
 			env: {
 				...process.env,
@@ -471,8 +506,27 @@ export async function startOwnedCanvas({
 			if (disposalPromise) return disposalPromise;
 			disposed = true;
 			disposalPromise = enqueue(async () => {
+				let failure: unknown;
 				try {
-					if (currentGeneration) await stopGeneration(currentGeneration);
+					if (currentGeneration) {
+						const generation = currentGeneration;
+						try {
+							await discardHeldBoards(generation);
+						} catch (error) {
+							if (generation.exit === null) failure = error;
+						}
+						try {
+							await stopGeneration(generation);
+						} catch (error) {
+							failure =
+								failure === undefined
+									? error
+									: new AggregateError(
+											[failure, error],
+											"Held-board recovery and canvas process cleanup both failed.",
+										);
+						}
+					}
 				} finally {
 					try {
 						removeOwnedFileSystem();
@@ -481,6 +535,7 @@ export async function startOwnedCanvas({
 						uninstallHandlers();
 					}
 				}
+				if (failure !== undefined) throw failure;
 			});
 			return disposalPromise;
 		},

@@ -234,7 +234,7 @@ test("browser steering rejects a stale requested turn at the authoritative sessi
 			reason: null,
 		},
 	} as const;
-	expect(
+	await expect(
 		actions.steer(
 			{
 				kind: "browser_command",

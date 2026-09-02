@@ -26,6 +26,7 @@ const textExtensions = new Set([
 	".toml",
 	".txt",
 	".svg",
+	".snap",
 ]);
 const binaryExtensions = new Set([
 	".avif",

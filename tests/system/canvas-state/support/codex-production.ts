@@ -126,7 +126,9 @@ export async function openApplicationSocket(
 	};
 	socket.on("message", onMessage);
 	const onSocketError = (error: unknown): void => rejectPending(socketError(error).message);
+	const onSocketClose = (): void => rejectPending("The production workbench socket closed.");
 	socket.on("error", onSocketError);
+	socket.on("close", onSocketClose);
 	let timeout: ReturnType<typeof setTimeout>;
 	const cleanupOpening = (): void => {
 		clearTimeout(timeout);
@@ -166,6 +168,7 @@ export async function openApplicationSocket(
 	} catch (error) {
 		cleanupOpening();
 		socket.off("message", onMessage);
+		socket.off("close", onSocketClose);
 		rejectPending("The production workbench socket failed before opening.");
 		await closeSocket(socket);
 		socket.off("error", onSocketError);
@@ -190,9 +193,10 @@ export async function openApplicationSocket(
 		},
 		async close() {
 			socket.off("message", onMessage);
-			socket.off("error", onSocketError);
 			rejectPending("The production workbench socket closed.");
 			await closeSocket(socket);
+			socket.off("error", onSocketError);
+			socket.off("close", onSocketClose);
 		},
 	};
 }

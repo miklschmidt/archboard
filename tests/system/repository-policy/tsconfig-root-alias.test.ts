@@ -1,9 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { aliasResolutions, configuredAliases } from "./support/codex-protocol-aliases.js";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const configPath = join(repoRoot, "tsconfig.json");
@@ -92,28 +91,17 @@ describe("root TypeScript source alias", () => {
 		expect(gitStatus()).toBe(before);
 	});
 
-	test("keeps root TypeScript, frontend TypeScript, and Vite on one source target", async () => {
-		const aliases = await configuredAliases(repoRoot);
-		const sourceTarget = join(repoRoot, "src", "ui", "types");
-		const canonicalViteAliases = aliases.vite.filter((alias) => alias.find === "@");
+	test("keeps root TypeScript, frontend TypeScript, and Vite on one source target", () => {
+		const rootPaths = (rootConfig().compilerOptions as JsonObject).paths;
+		const frontend = tsc(join(repoRoot, "tsconfig.frontend.json"), true);
+		expect(frontend.exitCode, frontend.output).toBe(0);
+		const frontendPaths = (JSON.parse(frontend.output) as { compilerOptions: JsonObject })
+			.compilerOptions.paths;
+		const vite = readFileSync(join(repoRoot, "vite.config.js"), "utf8");
 
-		expect(aliases.errors).toEqual([]);
-		expect(aliases.root).toEqual([
-			{ find: "@/*", targets: [join(repoRoot, "src", "*")], kind: "tsconfig" },
-		]);
-		expect(aliases.frontend).toEqual([
-			{ find: "@/*", targets: [join(repoRoot, "src", "*")], kind: "tsconfig" },
-		]);
-		expect(canonicalViteAliases).toEqual([
-			{ find: "@", targets: [join(repoRoot, "src")], kind: "vite" },
-		]);
-		expect(canonicalViteAliases).toHaveLength(1);
-		expect(aliasResolutions(aliases, "src/server/index.ts", "@/ui/types")).toEqual([
-			{ kind: "tsconfig", target: sourceTarget },
-		]);
-		expect(aliasResolutions(aliases, "src/ui/index.ts", "@/ui/types")).toEqual([
-			{ kind: "tsconfig", target: sourceTarget },
-			{ kind: "vite", target: sourceTarget },
-		]);
+		expect(rootPaths).toEqual({ "@/*": ["./src/*"] });
+		expect(frontendPaths).toEqual(rootPaths);
+		expect(vite).toContain('new URL("./src", import.meta.url)');
+		expect(vite).toContain('"@": sourceRoot');
 	});
 });

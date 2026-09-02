@@ -17,7 +17,7 @@ import {
 	resolveDynamic,
 	reverseResponses,
 	snapshot,
-	startHotCanvas,
+	startCanvas,
 	target,
 } from "./support/codex-workbench-lifecycle.ts";
 
@@ -34,7 +34,7 @@ async function pendingShutdownBatch(
 	mkdirSync(staging, { recursive: true });
 	resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 	const fixture = prepareProductionFixture(resources, extendFixture(staging));
-	const canvas = await startHotCanvas(fixture);
+	const canvas = await startCanvas(fixture);
 	resources.defer(() => canvas.dispose());
 	const clientId = `termination-${label}`;
 	const socket = await openApplicationSocket(canvas.base, clientId);
@@ -86,7 +86,7 @@ async function pendingShutdownBatch(
 		`${label} initial mutation`,
 	);
 	if (emitShutdownBatch) {
-		writeFileSync(fixture.controlPath, JSON.stringify({ emit: "reload" }));
+		writeFileSync(fixture.controlPath, JSON.stringify({ emit: "shutdown" }));
 		await waitFor(async () => {
 			const state = snapshot(await socket.request("snapshot"));
 			return (state.approvals as unknown[]).length === 1 &&
@@ -112,21 +112,21 @@ describe.serial("composed Codex terminal process lifecycle", () => {
 				await canvas.dispose(signal);
 				expect(processExists(canvas.pid), signal).toBeFalse();
 				expect(processExists(childPid), signal).toBeFalse();
-				for (const id of ["reload-ordinary", "reload-dynamic", "reload-wait"])
+				for (const id of ["shutdown-ordinary", "shutdown-dynamic", "shutdown-wait"])
 					expect(reverseResponses(fixture.logPath, id), `${signal}:${id}`).toHaveLength(1);
-				expect(reverseResponses(fixture.logPath, "reload-ordinary")[0]?.frame).toEqual({
-					id: "reload-ordinary",
+				expect(reverseResponses(fixture.logPath, "shutdown-ordinary")[0]?.frame).toEqual({
+					id: "shutdown-ordinary",
 					result: { decision: "cancel" },
 				});
 				const dynamic = parseDynamicToolCallResponse(
 					"create_thread",
-					reverseResponses(fixture.logPath, "reload-dynamic")[0]?.frame?.result,
+					reverseResponses(fixture.logPath, "shutdown-dynamic")[0]?.frame?.result,
 				).envelope;
 				if (dynamic.tag !== "approval_required")
 					throw new Error(`${signal} did not terminalize the dynamic approval safely.`);
-				expect(dynamic.summary).toBe("Create thread: This authority must not survive reload.");
-				expect(reverseResponses(fixture.logPath, "reload-wait")[0]?.frame).toEqual({
-					id: "reload-wait",
+				expect(dynamic.summary).toBe("Create thread: This authority must end at shutdown.");
+				expect(reverseResponses(fixture.logPath, "shutdown-wait")[0]?.frame).toEqual({
+					id: "shutdown-wait",
 					error: { code: -32603, message: "Codex transport is shutting down." },
 				});
 				expect(

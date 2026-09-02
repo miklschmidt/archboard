@@ -31,7 +31,6 @@
 // which is why the pane marks it continuously rather than mentioning it once,
 // and why the mark says what it is waiting for.
 
-import { kept } from "./hot.js";
 import type { BoardContent } from "./board-io.js";
 import type { BoardWriteConflict } from "./board-version.js";
 
@@ -65,10 +64,9 @@ export interface BoardHold {
 	fromScreen?: boolean;
 }
 
-// Keyed by board address. In kept() because a hot reload rebuilds module scope
-// and this is the only copy of work a person can see in the scene — exactly
-// what kept() is for (ADR 0014).
-const holds = kept("board-holds", () => new Map<string, BoardHold>());
+// Keyed by board address. The canvas lifetime refuses to stop while this map
+// contains work because the held copy exists only in this process.
+const holds = new Map<string, BoardHold>();
 
 export function holdOn(key: string): BoardHold | undefined {
 	return holds.get(key);

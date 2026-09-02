@@ -39,7 +39,7 @@ import {
 export const CODEX_WORKBENCH_OWNER = "archboard-canvas-codex-workbench" as const;
 
 export type CodexWorkbenchState = "idle" | "starting" | "ready" | "stopping" | "failed";
-export type CodexWorkbenchStopReason = "reload" | "shutdown" | "child_exit";
+export type CodexWorkbenchStopReason = "shutdown" | "child_exit";
 export type CodexTransportExit = Parameters<Parameters<CodexTransport["onExit"]>[0]>[0];
 
 export interface CodexWorkbenchSnapshot {
@@ -91,11 +91,11 @@ export interface CodexWorkbenchGenerationHooks {
 	readonly stopQueue: (queue: CodexWorkhorseQueue<OperationId>) => Promise<void> | void;
 	readonly cancelDynamicApprovalsAndWaits: (
 		components: CodexWorkbenchComponents,
-		cause: "host_shutdown" | "child_disconnected" | "source_reload",
+		cause: "host_shutdown" | "child_disconnected",
 	) => Promise<void>;
 	readonly settleOrdinaryRequests: (
 		approvals: CodexApprovalBroker,
-		cause: "host_shutdown" | "child_disconnected" | "source_reload",
+		cause: "host_shutdown" | "child_disconnected",
 	) => Promise<void>;
 }
 
@@ -349,12 +349,7 @@ export function createCodexWorkbenchGenerationLifecycle(
 		} catch (error) {
 			failure = appendFailure(failure, error, "Codex dispatch revocation failed.");
 		}
-		const cause =
-			reason === "shutdown"
-				? "host_shutdown"
-				: reason === "child_exit"
-					? "child_disconnected"
-					: "source_reload";
+		const cause = reason === "shutdown" ? "host_shutdown" : "child_disconnected";
 		const operation = (async (): Promise<void> => {
 			const attempt = async (cleanup: () => Promise<unknown> | void): Promise<void> => {
 				try {
@@ -450,9 +445,6 @@ export interface CodexWorkbenchOwnerOptions {
 
 export interface CodexWorkbenchOwner {
 	readonly start: () => Promise<CodexWorkbenchSnapshot>;
-	readonly reload: (
-		createGeneration: CodexWorkbenchGenerationFactory,
-	) => Promise<CodexWorkbenchSnapshot>;
 	readonly snapshot: () => CodexWorkbenchSnapshot;
 	readonly gateway: () => CodexWorkbenchGateway;
 	readonly shutdown: () => Promise<CodexWorkbenchSnapshot>;
@@ -511,7 +503,6 @@ function emptyRetainedControl(): CodexWorkbenchRetainedControl {
 		enumerable: true,
 		value: Object.freeze({
 			start: () => current().start(),
-			reload: (factory: CodexWorkbenchGenerationFactory) => current().reload(factory),
 			shutdown: () => current().shutdown(),
 			snapshot: () => current().snapshot(),
 			gateway: () => current().gateway(),
@@ -615,14 +606,7 @@ interface CandidateReadiness {
 	accountReady: boolean;
 }
 
-type LifecycleTransactionPhase =
-	| "starting"
-	| "candidate_activation"
-	| "candidate_cleanup"
-	| "old_cleanup"
-	| "rollback_activation"
-	| "committed"
-	| "invalidated";
+type LifecycleTransactionPhase = "starting" | "candidate_activation" | "committed" | "invalidated";
 
 interface LifecycleTransaction {
 	readonly ticket: number;
@@ -938,220 +922,8 @@ function publishReadySlots(
 	local: OwnerLocalState,
 	generation: CodexWorkbenchGeneration,
 ): CodexWorkbenchOwnerSlots {
-	let reloadPromise: Promise<CodexWorkbenchSnapshot> | null = null;
 	const slots: CodexWorkbenchOwnerSlots = {
 		start: () => Promise.resolve(snapshot(retained, runtime)),
-		reload: (createGeneration) => {
-			if (reloadPromise !== null) return reloadPromise;
-			if (!isCurrentRuntime(retained, runtime) || local.currentGeneration !== generation)
-				return Promise.reject(
-					new CodexWorkbenchCompositionError(
-						"not_started",
-						"The production Codex workbench is not ready for generation replacement.",
-					),
-				);
-			const child = runtime.process.currentChild();
-			if (child === null)
-				return Promise.reject(
-					new CodexWorkbenchCompositionError(
-						"not_started",
-						"The Codex child disappeared before generation replacement.",
-					),
-				);
-			const transaction: LifecycleTransaction = {
-				ticket: reserveTicket(runtime),
-				child,
-				phase: "starting",
-				transport: runtime.transport,
-			};
-			local.transaction = transaction;
-			const nextNumber = ++retained.generation;
-			retained.state = "starting";
-			let operation!: Promise<CodexWorkbenchSnapshot>;
-			retained.control.current = {
-				start: () => Promise.resolve(snapshot(retained, runtime)),
-				reload: () => operation,
-				shutdown: () => terminalShutdown(retained, runtime, local),
-				snapshot: () => snapshot(retained, runtime),
-				gateway: () => {
-					throw new CodexWorkbenchCompositionError(
-						"not_started",
-						"The production Codex workbench browser gateway is being replaced.",
-					);
-				},
-			};
-			let removalFailure: Error | null = null;
-			try {
-				generation.deactivate();
-			} catch (error) {
-				removalFailure = appendFailure(removalFailure, error, "Codex generation removal failed.");
-			}
-			operation = (async (): Promise<CodexWorkbenchSnapshot> => {
-				let candidate: CodexWorkbenchGeneration | null = null;
-				let oldCleanupStarted = false;
-				const readiness: CandidateReadiness = {
-					initialized: runtime.sessionInitialized,
-					accountReady: runtime.accountReady,
-				};
-				try {
-					if (removalFailure !== null) throw removalFailure;
-					candidate = await createGeneration(
-						generationInput(
-							retained,
-							runtime,
-							local,
-							transaction,
-							nextNumber,
-							child,
-							readiness,
-							null,
-							generation.components.coordinator?.persisted() ?? null,
-						),
-					);
-					ownGeneration(local, candidate);
-					transaction.transport = candidate.transport;
-					assertTransaction(
-						retained,
-						runtime,
-						local,
-						transaction,
-						"A retired Codex generation cannot activate a replacement.",
-					);
-					if (runtime.transport !== candidate.transport)
-						throw new CodexWorkbenchCompositionError(
-							"reload_failed",
-							"A replacement Codex generation did not reuse the exact retained transport.",
-						);
-					transaction.phase = "candidate_activation";
-					local.currentGeneration = candidate;
-					await candidate.activate();
-					assertTransaction(
-						retained,
-						runtime,
-						local,
-						transaction,
-						"A retired Codex generation cannot continue replacement activation.",
-					);
-					transaction.phase = "old_cleanup";
-					oldCleanupStarted = true;
-					const oldFailure = await beginGenerationCleanup(local, generation, "reload");
-					assertTransaction(
-						retained,
-						runtime,
-						local,
-						transaction,
-						"A retired Codex reload cannot publish after old-generation cleanup.",
-					);
-					if (oldFailure !== null)
-						throw new CodexWorkbenchCompositionError(
-							"reload_failed",
-							"The retired Codex generation did not clean up completely.",
-							oldFailure,
-						);
-					assertTransaction(
-						retained,
-						runtime,
-						local,
-						transaction,
-						"A retired Codex reload cannot publish replacement state.",
-					);
-					runtime.identityLedger = candidate.identityLedger;
-					runtime.transport = candidate.transport;
-					runtime.sessionInitialized = readiness.initialized;
-					runtime.accountReady = readiness.accountReady;
-					retained.state = "ready";
-					retained.failure = null;
-					local.currentGeneration = candidate;
-					transaction.phase = "committed";
-					local.transaction = null;
-					publishReadySlots(retained, runtime, local, candidate);
-					return snapshot(retained, runtime);
-				} catch (error) {
-					let failure = error instanceof Error ? error : new Error(String(error));
-					if (candidate !== null) {
-						if (ownsTransaction(retained, runtime, local, transaction)) {
-							transaction.phase = "candidate_cleanup";
-							local.currentGeneration = generation;
-						}
-						const cleanupFailure = await beginGenerationCleanup(local, candidate, "reload");
-						if (cleanupFailure !== null)
-							failure = appendFailure(
-								failure,
-								cleanupFailure,
-								"Codex replacement and candidate cleanup both failed.",
-							);
-					}
-					if (!ownsTransaction(retained, runtime, local, transaction))
-						throw new CodexWorkbenchCompositionError(
-							"not_started",
-							"A retired Codex reload cannot restore or publish generation state.",
-							failure,
-						);
-					if (removalFailure !== null || oldCleanupStarted || failure instanceof AggregateError) {
-						await terminalShutdown(retained, runtime, local, failure).catch(() => undefined);
-						throw new CodexWorkbenchCompositionError(
-							"reload_failed",
-							"The production Codex workbench could not complete generation replacement.",
-							failure,
-						);
-					}
-					transaction.phase = "rollback_activation";
-					assertTransaction(
-						retained,
-						runtime,
-						local,
-						transaction,
-						"A retired Codex reload cannot restore transport identity.",
-					);
-					try {
-						runtime.transport?.replaceIdentity(generation.components.identity.identity);
-						assertTransaction(
-							retained,
-							runtime,
-							local,
-							transaction,
-							"A retired Codex reload cannot reactivate its previous generation.",
-						);
-						await generation.activate();
-						assertTransaction(
-							retained,
-							runtime,
-							local,
-							transaction,
-							"A retired Codex rollback cannot publish reactivated state.",
-						);
-						local.currentGeneration = generation;
-						retained.state = "ready";
-						retained.failure = null;
-						transaction.phase = "committed";
-						local.transaction = null;
-						publishReadySlots(retained, runtime, local, generation);
-					} catch (rollbackError) {
-						if (!ownsTransaction(retained, runtime, local, transaction))
-							throw new CodexWorkbenchCompositionError(
-								"not_started",
-								"A retired Codex rollback cannot mutate replacement state.",
-								rollbackError,
-							);
-						failure = new AggregateError(
-							[failure, rollbackError],
-							"Codex generation replacement and rollback both failed.",
-						);
-						await terminalShutdown(retained, runtime, local, failure).catch(() => undefined);
-						throw new CodexWorkbenchCompositionError(
-							"reload_failed",
-							"The production Codex workbench could not replace or restore its generation.",
-							failure,
-						);
-					}
-					throw failure;
-				}
-			})().finally(() => {
-				reloadPromise = null;
-			});
-			reloadPromise = operation;
-			return operation;
-		},
 		shutdown: () => terminalShutdown(retained, runtime, local),
 		snapshot: () => snapshot(retained, runtime),
 		gateway: () => {
@@ -1402,13 +1174,6 @@ export function installCodexWorkbenchOwnerLifecycle(
 			local.startPromise = operation;
 			return operation;
 		},
-		reload: () =>
-			Promise.reject(
-				new CodexWorkbenchCompositionError(
-					"not_started",
-					"The production Codex workbench is still starting.",
-				),
-			),
 		shutdown: () => terminalShutdown(retained, runtime, local),
 		snapshot: () => snapshot(retained, runtime),
 		gateway: () => {

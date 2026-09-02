@@ -79,11 +79,10 @@ function expectRule(result: CommandResult, rule: string, guidance?: string): voi
 
 describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 	test("pins the diagnostic formatter in the owned Oxlint argv", () => {
-		expect(lintCommand(["src/domain/widget/index.ts"], ["--type-aware"])).toEqual([
+		expect(lintCommand(["src/domain/widget/index.ts"])).toEqual([
 			oxlint,
 			"--config=.oxlintrc.jsonc",
 			"--format=default",
-			"--type-aware",
 			"src/domain/widget/index.ts",
 		]);
 	});
@@ -157,6 +156,11 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 					'import { privateValue } from "../target/lib?raw";\nexport { privateValue };\n',
 				"src/domain/importer/require.ts":
 					'const privateValue = require("../target/lib");\nexport { privateValue };\n',
+				"src/runtime/codex-protocol/index.ts": "export type ClientRequest = unknown;\n",
+				"src/runtime/codex-protocol/generated/ClientRequest.ts":
+					"export type ClientRequest = unknown;\n",
+				"src/runtime/codex-session/index.ts":
+					'import type { ClientRequest } from "../codex-protocol/generated/ClientRequest.js";\nexport type Request = ClientRequest;\n',
 			},
 			(root) => {
 				for (const file of ["extensionless.ts", "raw.ts"]) {
@@ -165,6 +169,11 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 				const required = lint(root, ["src/domain/importer/require.ts"]);
 				expectRule(required, "archboard(module-entrypoints)");
 				expect(required.output).toContain("typescript(no-require-imports)");
+				expectRule(
+					lint(root, ["src/runtime/codex-session/index.ts"]),
+					"archboard(module-entrypoints)",
+					"root entrypoint",
+				);
 			},
 		);
 	});
@@ -269,7 +278,7 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 		);
 	});
 
-	test("assigns both test owners to type-aware lint and TypeScript", async () => {
+	test("assigns both test owners to lint and TypeScript", async () => {
 		await withProject(
 			{
 				"src/domain/widget/index.ts": "export const value = 1;\n",
@@ -284,7 +293,7 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 				const assigned = lint(
 					root,
 					["src/domain/widget/tests/widget.test.ts", "tests/system/policy/system.test.ts"],
-					["--type-aware", "--debug=files"],
+					["--debug=files"],
 				);
 				expectPass(assigned);
 				expect(assigned.output).toContain("src/domain/widget/tests/widget.test.ts");

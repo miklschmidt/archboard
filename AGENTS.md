@@ -13,7 +13,7 @@ Where things are written down:
 - Domain language: `CONTEXT.md`
 - Deep-module directory and import rules: `docs/agents/boundaries.md`
 - Decisions: `docs/adr/` — read the ADR before touching what it decides
-- Measured investigations (write costs, text metrics, hot reload,
+- Measured investigations (write costs, text metrics,
   statelessness): `docs/design/`
 - Using the canvas: the `archboard` skill. Working on this repo's own
   source: the `archboard-dev` skill — procedures, and a list of things that
@@ -65,19 +65,17 @@ never `npx`. **A canvas with no vault refuses to start** (ADR 0015) — set
 `ARCHBOARD_VAULT` (or put it in `.env`) before the server starts.
 
 **Editing source changes behaviour on the next CLI command, but not in a
-server that is already running** — that needs a restart, or a reload:
+server that is already running** — restart it through the guarded lifecycle:
 
 ```bash
-bun run dev:canvas    # the canvas, reloadable (bun run dev adds vite on :5173)
-bun run reload        # reloads it in place, keeping tabs, panes and the feed
+./bin/canvas stop
+./bin/canvas start
 ```
 
-Saving a file reloads nothing; the command is the trigger, and a canvas from
-`canvas start` cannot reload at all. **State that must survive a reload lives
-in `kept()`** (`src/runtime/engine/hot.ts`), never in module scope, which a reload
-rebuilds — `bun test tests/system/repository-policy/module-scope-policy.test.ts` enforces it; waive a false positive
-with `// hot-safe: <reason>`. Mechanics and costs:
-`docs/design/hot-reload-under-bun.md` and the archboard-dev skill.
+Saving a backend file reloads nothing. Stop refuses while any held board has
+work that exists only in process memory and names each board's reload,
+overwrite, and save-elsewhere recovery choices. `bun run dev` starts the same
+backend plus an independent Vite frontend with browser HMR.
 
 **Running the complete local suite needs `agent-browser` on PATH**: one typed
 serial browser lane drives 16 real-browser owners and exits 2 when prerequisites

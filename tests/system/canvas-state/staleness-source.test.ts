@@ -85,8 +85,6 @@ describe.serial("source staleness", () => {
 		expect(loud.json.stale?.changedFile).toBe("src/runtime/engine/compare.ts");
 		expect(loud.stderr).toMatch(/answering from the older code/);
 		expect(loud.stderr).toMatch(/archboard stop && archboard start/);
-		expect(loud.stderr).not.toMatch(/bun run reload/);
-		expect(loud.stderr).toMatch(/the panes on screen/);
-		expect(loud.stderr).toMatch(/in the vault/);
+		expect(loud.stderr).toMatch(/Stop refuses while a board has held work/);
 	}, 30_000);
 });

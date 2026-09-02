@@ -182,7 +182,7 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		);
 		expect(fixture.transportResponses).toHaveLength(0);
 		fixture.operationIds.terminalFaults.push("before", "before");
-		expect(fixture.lifecycle.retryQuarantine()).rejects.toMatchObject({
+		await expect(fixture.lifecycle.retryQuarantine()).rejects.toMatchObject({
 			retryEligible: false,
 		});
 		expect(tools.inspectMutationQuarantine()).toMatchObject({
@@ -310,7 +310,7 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		await reachQuarantine(tools);
 
 		fixture.lifecycle.exitQuarantine();
-		expect(pending).rejects.toMatchObject({
+		await expect(pending).rejects.toMatchObject({
 			code: "system_error",
 			retryEligible: false,
 		});
@@ -352,7 +352,7 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		expect(await settledAfterMicrotasks(pending)).toBe(false);
 
 		tools.dispose();
-		expect(pending).rejects.toMatchObject({ retryEligible: false });
+		await expect(pending).rejects.toMatchObject({ retryEligible: false });
 	});
 
 	test("dispose rejects and clears every retained owner without inventing a response", async () => {
@@ -370,7 +370,7 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		await reachQuarantine(tools);
 
 		tools.dispose();
-		expect(pending).rejects.toMatchObject({
+		await expect(pending).rejects.toMatchObject({
 			code: "system_error",
 			retryEligible: false,
 		});
