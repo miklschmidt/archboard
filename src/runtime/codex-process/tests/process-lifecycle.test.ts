@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { CodexProcessError } from "../process.js";
 import { createCodexProcessForTesting as createCodexProcess } from "../testing.js";
-import { CODEX_COMPOSED_SHUTDOWN_MS, CODEX_TERM_GRACE_MS } from "../../../shared/timing/timing.js";
+import { CODEX_TERM_GRACE_MS } from "../../../shared/timing/timing.js";
 import {
 	fixture,
 	processOptions as options,
@@ -12,7 +12,7 @@ import {
 	startReady,
 	temporaryRoot,
 } from "./support.js";
-import { driveManual, fakeLifecycle } from "./lifecycle-support.js";
+import { driveManual, fakeLifecycle, manualScheduler } from "./lifecycle-support.js";
 
 describe("Codex process lifecycle", () => {
 	test("keeps start pending until the typed app-server readiness acknowledgement", async () => {
@@ -223,63 +223,71 @@ describe("Codex process lifecycle", () => {
 		}
 	});
 
-	test(
-		"retains group ownership after a leader exits and kills its TERM-resistant descendant",
-		async () => {
-			const root = temporaryRoot();
-			let owner: ReturnType<typeof createCodexProcess> | undefined;
-			let descendantPid: number | undefined;
+	test("retains group ownership after a leader exits and kills its TERM-resistant descendant", async () => {
+		const root = temporaryRoot();
+		let owner: ReturnType<typeof createCodexProcess> | undefined;
+		let descendantPid: number | undefined;
+		try {
+			const clock = manualScheduler();
+			const executable = fixture(
+				root,
+				`const { spawn } = require("node:child_process"); const descendant = spawn(process.execPath, ["-e", "process.on(\\"SIGTERM\\", () => {}); setInterval(() => {}, 1000);"], { stdio: "ignore" }); process.stdout.write(String(descendant.pid)); process.exit(17);`,
+			);
+			owner = createCodexProcess({
+				...options(root, executable),
+				dependencies: {
+					now: clock.now,
+					schedule: clock.schedule,
+					cancel: clock.cancel,
+				},
+			});
+			const descendant = new Promise<number>((resolve) => {
+				owner!.onChild((child) => {
+					child.stdout.once("data", (chunk) => resolve(Number(chunk.toString())));
+				});
+			});
+			const started = owner.start();
+			const cleanup = await new Promise<ReturnType<typeof owner.snapshot>>((resolve) => {
+				const unsubscribe = owner!.subscribe((snapshot) => {
+					if (snapshot.state !== "group_cleanup") return;
+					unsubscribe();
+					resolve(snapshot);
+				});
+			});
+			descendantPid = await descendant;
+			await started.catch(() => undefined);
+			expect(cleanup.ready).toBe(false);
+			expect(cleanup.failure).toBeNull();
+			expect(cleanup.pid).toBeNull();
+			const stopped = await driveManual(owner.stop(), clock, {
+				yieldToProcessEvents: true,
+			});
+			expect(stopped.state).toBe("stopped");
+			expect(stopped.lastExit?.classification).toBe("early_exit");
+			expect(clock.now()).toBe(CODEX_TERM_GRACE_MS);
+			let descendantState: string | undefined;
 			try {
-				const executable = fixture(
-					root,
-					`const { spawn } = require("node:child_process"); const descendant = spawn(process.execPath, ["-e", "process.on(\\"SIGTERM\\", () => {}); setInterval(() => {}, 1000);"], { stdio: "ignore" }); process.stdout.write(String(descendant.pid)); process.exit(17);`,
-				);
-				owner = createCodexProcess(options(root, executable));
-				const descendant = new Promise<number>((resolve) => {
-					owner!.onChild((child) => {
-						child.stdout.once("data", (chunk) => resolve(Number(chunk.toString())));
-					});
-				});
-				const started = owner.start();
-				const cleanup = await new Promise<ReturnType<typeof owner.snapshot>>((resolve) => {
-					const unsubscribe = owner!.subscribe((snapshot) => {
-						if (snapshot.state !== "group_cleanup") return;
-						unsubscribe();
-						resolve(snapshot);
-					});
-				});
-				descendantPid = await descendant;
-				await started.catch(() => undefined);
-				expect(cleanup.ready).toBe(false);
-				expect(cleanup.failure).toBeNull();
-				const stopped = await owner.stop();
-				expect(stopped.state).toBe("stopped");
-				expect(stopped.lastExit?.classification).toBe("early_exit");
-				let descendantState: string | undefined;
-				try {
-					const stat = fs.readFileSync(`/proc/${descendantPid}/stat`, "utf8");
-					descendantState = stat
-						.slice(stat.lastIndexOf(")") + 2)
-						.trim()
-						.split(/\s+/u)[0];
-				} catch {
-					descendantState = undefined;
-				}
-				expect([undefined, "Z", "X"]).toContain(descendantState);
-			} finally {
-				if (descendantPid !== undefined) {
-					try {
-						process.kill(descendantPid, "SIGKILL");
-					} catch {
-						/* The group cleanup already killed the fixture. */
-					}
-				}
-				if (owner) await owner.stop().catch(() => undefined);
-				removeRoot(root);
+				const stat = fs.readFileSync(`/proc/${descendantPid}/stat`, "utf8");
+				descendantState = stat
+					.slice(stat.lastIndexOf(")") + 2)
+					.trim()
+					.split(/\s+/u)[0];
+			} catch {
+				descendantState = undefined;
 			}
-		},
-		CODEX_COMPOSED_SHUTDOWN_MS + CODEX_TERM_GRACE_MS,
-	);
+			expect([undefined, "Z", "X"]).toContain(descendantState);
+		} finally {
+			if (descendantPid !== undefined) {
+				try {
+					process.kill(descendantPid, "SIGKILL");
+				} catch {
+					/* The group cleanup already killed the fixture. */
+				}
+			}
+			if (owner) await owner.stop().catch(() => undefined);
+			removeRoot(root);
+		}
+	});
 
 	test("sends TERM, then KILL, to a child that refuses TERM", async () => {
 		const root = temporaryRoot();

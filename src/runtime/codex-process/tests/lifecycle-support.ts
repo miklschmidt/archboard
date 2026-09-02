@@ -107,7 +107,11 @@ export function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
 	});
 }
 
-export async function driveManual<T>(promise: Promise<T>, clock: ManualScheduler): Promise<T> {
+export async function driveManual<T>(
+	promise: Promise<T>,
+	clock: ManualScheduler,
+	options: { readonly yieldToProcessEvents?: boolean } = {},
+): Promise<T> {
 	let settled = false;
 	void promise.then(
 		() => {
@@ -128,6 +132,7 @@ export async function driveManual<T>(promise: Promise<T>, clock: ManualScheduler
 		await Promise.resolve();
 		if (settled) break;
 		clock.runNext();
+		if (options.yieldToProcessEvents) await new Promise<void>((resolve) => setImmediate(resolve));
 	}
 	return promise;
 }
