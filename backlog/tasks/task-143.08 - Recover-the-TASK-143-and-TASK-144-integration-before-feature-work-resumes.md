@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:35'
-updated_date: '2026-09-02 02:20'
+updated_date: '2026-09-02 02:21'
 labels: []
 dependencies: []
 references:
@@ -48,6 +48,17 @@ Stop the audited integration at ba1aacee and recover it before any text, voice, 
 4. Complete the single current-documentation leaf TASK-143.06.08 after legacy cleanup, lifecycle recovery, and browser-independent board work.
 5. Run TASK-143.08.05 as the terminal reconciliation, bounded validation, and fixed-range review gate before resuming feature leaves.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Orchestration queue at base 71a3e6bf:
+- Ready: TASK-143.08.01 only. It is the exclusive implementation gate.
+- Running or initializing: implementation client-new-thread:57c51449-5216-4552-b604-119f06d1af54; read-only leak audit client-new-thread:b954c2e9-d1ee-499e-892a-c0e2f7449960; read-only policy audit client-new-thread:ae19df9b-0015-48ec-9d41-8461baf78518.
+- Review: none.
+- Blocked by TASK-143.08.01: TASK-143.08.02, TASK-143.08.06.01, TASK-143.06.03, TASK-143.06.06, and every transitive descendant.
+- Integrated: planning commit 71a3e6bf only.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
