@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, jest, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,14 +8,26 @@ const vault = mkdtempSync(join(tmpdir(), "archboard-board-claim-"));
 process.env.ARCHBOARD_VAULT = vault;
 const lock = await import("../board-lock.ts");
 const logger = (await import("../logger.ts")).default;
-const { CLAIM_LEASE_MS, LOCK_LEASE_MS } = await import("../../../shared/timing/timing.ts");
+const { CLAIM_LEASE_MS, LOCK_LEASE_MS, LOCK_POLL_MS, LOCK_STEAL_GUARD_MS } =
+	await import("../../../shared/timing/timing.ts");
 const originalWarn = logger.warn;
 const boards = new Set<string>();
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const agent = (id: string) => ({ id, kind: "agent" as const });
 const human = (id: string) => ({ id, kind: "human" as const });
 
+async function advanceLockTime(ms: number): Promise<void> {
+	let elapsed = 0;
+	while (elapsed < ms) {
+		const step = Math.min(LOCK_POLL_MS, ms - elapsed);
+		jest.advanceTimersByTime(step);
+		await Promise.resolve();
+		await Promise.resolve();
+		elapsed += step;
+	}
+}
+
 test("claims keep one hold, renew, expire, and report both lapsed takeovers once", async () => {
+	jest.useFakeTimers();
 	try {
 		const board = "claimed";
 		boards.add(board);
@@ -61,12 +73,14 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			.catch((error: unknown) => error);
 		expect(camera).toBeInstanceOf(lock.BoardHeldError);
 		expect(lock.claimOn(board)).not.toBeNull();
-		const takeover = await lock.holdBoard({
+		const takeoverRequest = lock.holdBoard({
 			board,
 			holder: human("person"),
 			waitMs: 0,
 			revokeClaim: true,
 		});
+		await advanceLockTime(LOCK_STEAL_GUARD_MS);
+		const takeover = await takeoverRequest;
 		expect(takeover.holder.id).toBe("person");
 		expect(lock.claimOn(board)).toBeNull();
 		expect(lock.takeClaimRevocation(board)).toMatchObject({
@@ -86,12 +100,14 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 				record.until = new Date(Date.now() - 1_000).toISOString();
 				writeFileSync(file, JSON.stringify(record));
 			} else rmSync(file);
-			const taken = await lock.holdBoard({
+			const lapsedTakeover = lock.holdBoard({
 				board: lapsed,
 				holder: human("person"),
 				waitMs: 0,
 				revokeClaim: true,
 			});
+			if (mode === "expired") await advanceLockTime(LOCK_STEAL_GUARD_MS);
+			const taken = await lapsedTakeover;
 			expect(taken.holder.id).toBe("person");
 			expect(lock.claimOn(lapsed)).toBeNull();
 			expect(lock.takeClaimRevocation(lapsed)).toMatchObject({
@@ -105,7 +121,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		const idle = "idle";
 		boards.add(idle);
 		const idleClaim = await lock.claimBoard({ board: idle, reason: "reading", forMs: 60_000 });
-		await sleep(LOCK_LEASE_MS + 250);
+		jest.advanceTimersByTime(LOCK_LEASE_MS + 250);
 		expect(lock.boardLockState(idle)?.id).toBe(idleClaim.claim.holder.id);
 		expect(lock.boardLockState(idle)?.since).toBe(idleClaim.claim.holder.since);
 		expect(lock.releaseClaim(idle)).not.toBeNull();
@@ -113,8 +129,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		const brief = "brief";
 		boards.add(brief);
 		await lock.claimBoard({ board: brief, reason: "a moment", forMs: CLAIM_LEASE_MS });
-		const deadline = Date.now() + CLAIM_LEASE_MS + 2_000;
-		while (lock.boardLockState(brief) && Date.now() < deadline) await sleep(50);
+		jest.advanceTimersByTime(CLAIM_LEASE_MS);
 		expect(lock.boardLockState(brief)).toBeNull();
 		expect(lock.claimOn(brief)).toBeNull();
 		expect(lock.releaseClaim(brief)).toBeNull();
@@ -122,7 +137,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		const plain = "plain";
 		boards.add(plain);
 		await lock.holdBoard({ board: plain, holder: agent("one-write"), waitMs: 0 });
-		const plainRefusal = await lock
+		const refusal = lock
 			.holdBoard({
 				board: plain,
 				holder: human("person"),
@@ -130,6 +145,8 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 				revokeClaim: true,
 			})
 			.catch((error: unknown) => error);
+		await advanceLockTime(100);
+		const plainRefusal = await refusal;
 		expect(plainRefusal).toBeInstanceOf(lock.BoardHeldError);
 		expect(lock.takeClaimRevocation(plain)).toBeNull();
 	} finally {
@@ -141,6 +158,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			for (const id of ["person", "camera", "one-write"]) lock.releaseHold(board, id);
 		}
 		lock.forgetLockAnnouncements();
+		jest.useRealTimers();
 		logger.warn = originalWarn;
 		if (previousVault === undefined) delete process.env.ARCHBOARD_VAULT;
 		else process.env.ARCHBOARD_VAULT = previousVault;

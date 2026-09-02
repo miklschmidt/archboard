@@ -11,7 +11,6 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { LOCK_LEASE_MS } from "../../../src/shared/timing/timing.ts";
 import {
 	RawLockReadySchema,
 	ResourceReadySchema,
@@ -24,6 +23,7 @@ import { plantStaticProbes } from "./support/static-probes.ts";
 const repoRoot = resolve(import.meta.dir, "../../..");
 const fixture = join(import.meta.dir, "fixtures/process-resource-owner.ts");
 const lockFileFor = (vault: string) => join(vault, ".archboard/locks/resource-cleanup.lock");
+const TEST_TERM_TO_KILL_MAX_MS = 4_000;
 
 test("direct assertion cleanup reaps every registered resource", async () => {
 	await using resources = new AsyncDisposableStack();
@@ -265,10 +265,14 @@ test("TERM-resistant peer is killed through its handle and its lease is recovera
 		const started = Date.now();
 		await stubborn.dispose();
 		expect(Date.now() - started).toBeGreaterThanOrEqual(1_900);
-		expect(Date.now() - started).toBeLessThan(4_000);
+		expect(Date.now() - started).toBeLessThan(TEST_TERM_TO_KILL_MAX_MS);
 		expect(await stubborn.exit).toEqual({ code: null, signal: "SIGKILL" });
 		expect(await portIsReusable(port)).toBeTrue();
-		await Bun.sleep(LOCK_LEASE_MS + 100);
+		const staleLock = JSON.parse(readFileSync(stubborn.ready.lockFile, "utf8")) as {
+			until: string;
+		};
+		staleLock.until = new Date(Date.now() - 1).toISOString();
+		writeFileSync(stubborn.ready.lockFile, JSON.stringify(staleLock));
 
 		const recovery = await startOwnedPeer({
 			argv: [process.execPath, fixture],

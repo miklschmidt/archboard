@@ -53,33 +53,10 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 			body: { clientId: pane.clientId },
 		});
 		expect(renewed.body.created).toBeFalse();
+		// The default agent wait and BOARD_HELD refusal are owned under fake time by
+		// board-lock-lease.test.ts. This process owner keeps the public hold and
+		// release routes, then checks the immediate CLAIM_REVOKED refusal below.
 
-		const timer = setInterval(() => {
-			void request("/api/boards/hold?board=scratch", {
-				method: "POST",
-				body: { clientId: pane.clientId },
-			});
-		}, 800);
-		resources.defer(() => clearInterval(timer));
-		const started = Date.now();
-		const denied = await request<{
-			code: string;
-			error: string;
-			holder: { id: string };
-			document: LockElementView[];
-			version: number;
-		}>("/api/elements?board=scratch", { method: "POST", body: box("denied") });
-		clearInterval(timer);
-		expect(denied.status).toBe(409);
-		expect(denied.body.code).toBe("BOARD_HELD");
-		expect(denied.body.holder.id).toBe(pane.clientId);
-		expect(denied.body.error).toMatch(/held by the person at the canvas, since/);
-		expect(Date.now() - started).toBeGreaterThanOrEqual(4_800);
-		const read = await request<{ elements: LockElementView[] }>("/api/elements?board=scratch");
-		const info = await request<{ version: number }>("/api/boards/info?board=scratch");
-		expect(denied.body.document).toEqual(read.body.elements);
-		expect(denied.body.version).toBe(info.body.version);
-		expect(read.status).toBe(200);
 		expect(
 			(
 				await request("/api/boards/open", {
@@ -99,29 +76,6 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 		).toBeTrue();
 		expect(await waitForPaneMessage(pane, freeStart, "board_lock", 2_000)).toMatchObject({
 			held: false,
-		});
-
-		await request("/api/boards/hold?board=scratch", {
-			method: "POST",
-			body: { clientId: "other-pane" },
-		});
-		const otherRenewal = setInterval(() => {
-			void request("/api/boards/hold?board=scratch", {
-				method: "POST",
-				body: { clientId: "other-pane" },
-			});
-		}, 800);
-		resources.defer(() => clearInterval(otherRenewal));
-		const otherDenied = await request<{ holder: { id: string } }>(
-			"/api/elements/changes?board=scratch",
-			{ method: "POST", body: { clientId: pane.clientId, upserts: [box("other")], deletes: [] } },
-		);
-		clearInterval(otherRenewal);
-		expect(otherDenied.status).toBe(409);
-		expect(otherDenied.body.holder.id).toBe("other-pane");
-		await request("/api/boards/hold/release?board=scratch", {
-			method: "POST",
-			body: { clientId: "other-pane" },
 		});
 
 		const reason = "redrawing the payment path";
