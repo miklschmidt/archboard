@@ -95,10 +95,24 @@ export interface Fixture {
 	readonly cleanup: () => void;
 }
 
+export interface PreparedFixture {
+	readonly coordinatorProof: EpochExecutionProof;
+	readonly workhorseProof: EpochExecutionProof;
+	readonly attachedWorkhorseProof: EpochExecutionProof;
+}
+
 export function fixture(
 	initialStatus: "idle" | "active" = "idle",
 	authorities: IdentityAuthorities = createIdentityAuthorities(),
 ): Fixture {
+	const group = createStandaloneFixture(initialStatus, authorities);
+	return group.fixture;
+}
+
+function createStandaloneFixture(
+	initialStatus: "idle" | "active",
+	authorities: IdentityAuthorities,
+): { readonly fixture: Fixture } {
 	const identity = authorities.identity;
 	const parent = mkdtempSync(join("/tmp", "archboard-workhorse-operations-"));
 	const epochRoot = join(parent, "epoch");
@@ -113,37 +127,75 @@ export function fixture(
 		sqliteHome,
 		now: () => 100,
 	});
+	const prepared = prepareFixture(epoch, identity);
+	let closed = false;
+	const cleanup = (): void => {
+		if (closed) return;
+		closed = true;
+		epoch.close();
+		rmSync(parent, { recursive: true, force: true });
+	};
+	return {
+		fixture: buildFixture(initialStatus, authorities, epoch, prepared, cleanup),
+	};
+}
+
+export function prepareFixture(
+	epoch: CodexEpochStore,
+	identity: IdentityAuthority,
+): PreparedFixture {
+	const coordinatorThreadId = identity.decoder.adoptThreadId("coordinator");
+	const workhorseThreadId = identity.decoder.adoptThreadId("workhorse");
+	epoch.startEpoch(input(identity, "epoch-start", "epoch_start", "epoch/start"));
+	return Object.freeze({
+		coordinatorProof: Object.freeze(
+			committedProof(
+				epoch,
+				identity,
+				"coordinator-link",
+				"link",
+				coordinatorThreadId,
+				"appServer",
+				"turn/start",
+			),
+		),
+		workhorseProof: Object.freeze(
+			committedProof(
+				epoch,
+				identity,
+				"workhorse-create",
+				"create_thread",
+				workhorseThreadId,
+				"archboard",
+				"thread/start",
+			),
+		),
+		attachedWorkhorseProof: Object.freeze(
+			committedProof(
+				epoch,
+				identity,
+				"workhorse-attach",
+				"link",
+				workhorseThreadId,
+				"attached",
+				"thread/link",
+			),
+		),
+	});
+}
+
+export function buildFixture(
+	initialStatus: "idle" | "active",
+	authorities: IdentityAuthorities,
+	epoch: CodexEpochStore,
+	prepared: PreparedFixture,
+	cleanup: () => void,
+): Fixture {
+	const identity = authorities.identity;
+	const { coordinatorProof, workhorseProof, attachedWorkhorseProof } = prepared;
 	const coordinatorThreadId = identity.decoder.adoptThreadId("coordinator");
 	const workhorseThreadId = identity.decoder.adoptThreadId("workhorse");
 	const coordinatorTurnId = identity.decoder.adoptTurnId("coordinator-turn");
-	epoch.startEpoch(input(identity, "epoch-start", "epoch_start", "epoch/start"));
-	const coordinatorProof = committedProof(
-		epoch,
-		identity,
-		"coordinator-link",
-		"link",
-		coordinatorThreadId,
-		"appServer",
-		"turn/start",
-	);
-	const workhorseProof = committedProof(
-		epoch,
-		identity,
-		"workhorse-create",
-		"create_thread",
-		workhorseThreadId,
-		"archboard",
-		"thread/start",
-	);
-	const attachedWorkhorseProof = committedProof(
-		epoch,
-		identity,
-		"workhorse-attach",
-		"link",
-		workhorseThreadId,
-		"attached",
-		"thread/link",
-	);
 	const binding: WorkhorseOperationBinding = {
 		childId: identity.validator.childId,
 		epoch: identity.validator.epoch,
@@ -307,10 +359,7 @@ export function fixture(
 		setBeforeContext: (hook) => {
 			beforeContext = hook;
 		},
-		cleanup: () => {
-			epoch.close();
-			rmSync(parent, { recursive: true, force: true });
-		},
+		cleanup,
 	};
 }
 
