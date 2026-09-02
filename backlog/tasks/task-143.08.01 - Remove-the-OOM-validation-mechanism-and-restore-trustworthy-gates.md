@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 02:39'
+updated_date: '2026-09-02 02:40'
 labels: []
 dependencies: []
 references:
@@ -61,6 +61,8 @@ Read-only leak audit 01a05feb-6061-7cf3-a6ae-1fba244af2bc completed at fixed bas
 HOLD, 2026-09-02 user decision: reject @babel/parser, @babel/types, custom TypeScript AST walking, and source scanning as the generated Codex contract authority. Do not integrate, rewrite, reset, clean, or discard the current implementation worktree. The implementation worker has been ordered to stop and preserve it unchanged. Resume only after the user decides whether to remove only the AST-based module-scope policy or remove the hot-reload and kept() lifecycle entirely. Generated Codex contracts must later be enforced by importing generated types into ordinary product type-checking.
 
 OOM incident, 2026-09-02 04:32:18: rejected worker task 01a05feb-6020-71b0-82fc-1b2fcb6918b4 ran bun run test:repository without a memory cap. Its new type-aware Oxlint promise-expectations policy invoked tsgolint PID 3860572 against the root graph. Kernel evidence reports about 32,082,352 KiB anonymous RSS with swap exhausted before the OOM killer terminated it. The worker is stopped. Its detached b6e0 worktree remains at 71a3e6bf with unstaged evidence and no commit. Integrate none of it.
+
+Verified legacy scope cleanup, 2026-09-02: before stopping it, the parent re-resolved archboard-task143-r2-reload-owner-4.scope and confirmed its sole task was PID 2996816 running bun --hot /tmp/archboard-codex-production-WKF70O/hot-production-server.ts. The scope had been active about ten hours and reported 17.5 MiB current memory, 250.1 MiB peak, and 181 MiB swap. The parent stopped that exact transient scope. Follow-up state was ActiveState=inactive, SubState=dead, with no MainPID or tasks. /tmp/archboard-codex-production-WKF70O remains in place and must be removed only by the fresh implementation after another exact identity check.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
