@@ -283,9 +283,10 @@ patterns are not supported.
 The repository already runs the npm package through Bun, not the standalone binary.
 That distinction matters: Oxfmt's [quick start](https://oxc.rs/docs/guide/usage/formatter/quickstart)
 says the standalone binary does not support Tailwind sorting, while the package does.
-Keep `bun run fmt:check` as the enforcement command. Add a small formatter fixture for
-`className` and `cn` before relying on the option, so a future Oxfmt upgrade
-cannot silently stop sorting the forms used by this codebase.
+Keep `bun run fmt:check` as the enforcement command. The formatter configuration is
+the canonical record of the stylesheet and helper names. When Oxfmt changes, review
+its output on the application source instead of maintaining a disposable repository
+fixture that recreates formatter process and cleanup behavior.
 
 The inspected Oxfmt 0.65.0 schema names the width option `printWidth`; the current
 configuration's `lineWidth` spelling should be corrected in the same formatter
@@ -323,8 +324,8 @@ duplicate normalization.
 
 Complete static class strings and exhaustive typed variant maps remain the coding
 contract because Tailwind cannot discover interpolated fragments. Enforce that
-first through the named class-composition module, focused module tests, formatter
-fixtures, code review, and rendered behavior. Add a custom repository rule later
+first through the named class-composition module, focused module tests, the normal
+formatter lane, code review, and rendered behavior. Add a custom repository rule later
 only after a concrete recurring failure demonstrates that the rule removes more
 maintenance than it creates.
 
@@ -394,13 +395,11 @@ owner may be disabled to admit Tailwind or copied source.
    with the chosen Base UI option; `bun run type-check` passes for both TypeScript
    configs; and `bun run build:frontend` succeeds from the repository root.
 2. **CSS compiler gate.** There is one canonical Tailwind entrypoint, its configured
-   `@theme inline` aliases compile, a fixture utility appears in the built CSS, and
-   the build contains no accidental duplicate entrypoint. If Preflight is enabled,
-   the fixture and browser regression explicitly cover its reset effects.
-3. **Formatter gate.** Oxfmt's configured Tailwind sorter changes a deliberately
-   misordered `className` and `cn` fixture; `bun run fmt:check` rejects the
-   unformatted fixture and accepts the formatted result. The package implementation,
-   not a standalone Oxfmt binary, must be used.
+   `@theme inline` aliases compile, and the build contains no accidental duplicate
+   entrypoint. If Preflight is enabled, a browser regression covers its reset effects.
+3. **Formatter gate.** `bun run fmt:check` applies Oxfmt's configured Tailwind sorter
+   to the application source using the canonical stylesheet and helper names. The
+   package implementation, not a standalone Oxfmt binary, must be used.
 4. **Native lint gate.** New and copied source passes the repository's existing
    strict, type-aware Oxlint React and JSX accessibility baseline without a new
    Tailwind-specific rule, override, warning allowance, or second lint lane.
