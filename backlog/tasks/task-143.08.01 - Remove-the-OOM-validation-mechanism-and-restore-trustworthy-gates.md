@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 02:20'
+updated_date: '2026-09-02 02:24'
 labels: []
 dependencies: []
 references:
@@ -47,6 +47,12 @@ This is the first and exclusive recovery gate. Replace repository checks that re
 5. Run focused checks, then run the affected repository lane twice in fresh transient units with MemoryMax=6G and MemorySwapMax=1G; record peak memory, OOM status, exit state, and descendant cleanup.
 6. Obtain an independent fixed-range review, remediate findings with the same worker, and repeat review until clean before finalizing the leaf.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Read-only policy audit 01a05feb-6467-7e80-83ed-ee37b5c0d676 completed at fixed base 71a3e6bf. Confirmed: CODEX_WAIT_TARGET_POLL_MS needs a machine-checked relation to CODEX_REQUEST_SETTLEMENT_MS; dynamic-tools must consume capacity through codex-transport/index.ts; the vendor alias detector must narrow by board-ingress context rather than allowlist two legitimate workhorse files; the compiler-worker fingerprint/mirror/alias unit can be deleted while retaining direct ignored-path and adapter/deep-import boundary checks; codex-realtime contract owners also import the forbidden async compiler helper and must be replaced or removed for AC #1. No files changed and no validation ran.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
