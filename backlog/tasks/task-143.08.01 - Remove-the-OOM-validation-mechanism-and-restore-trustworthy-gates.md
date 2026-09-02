@@ -1,10 +1,11 @@
 ---
 id: TASK-143.08.01
 title: Remove the OOM validation mechanism and restore trustworthy gates
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 01:43'
+updated_date: '2026-09-02 02:20'
 labels: []
 dependencies: []
 references:
@@ -35,6 +36,17 @@ This is the first and exclusive recovery gate. Replace repository checks that re
 - [ ] #5 The owned archboard-task143-r2-reload-owner-4.scope and its exact temporary root are retired after identity verification; unrelated processes and user work remain untouched.
 - [ ] #6 No timeout increase, skip, warning allowance, test deletion without retained behavior evidence, lint/type relaxation, or broad memory increase is used to obtain a pass.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Inventory the OOM-producing TypeScript analysis, fingerprint, mirror, alias, promise-assertion, timing, quarantine-boundary, and vendor-field owners without running broad gates.
+2. Delete the generated fingerprint and async whole-project analysis mechanisms; retain the cheapest direct ignored-generated-path and production-contract checks.
+3. Repair the identified deterministic repository failures and await or reap every affected promise, compiler, child, timer, server, and process group.
+4. Verify and retire only the named leaked systemd scope and exact temporary root, preserving every unrelated process and path.
+5. Run focused checks, then run the affected repository lane twice in fresh transient units with MemoryMax=6G and MemorySwapMax=1G; record peak memory, OOM status, exit state, and descendant cleanup.
+6. Obtain an independent fixed-range review, remediate findings with the same worker, and repeat review until clean before finalizing the leaf.
+<!-- SECTION:PLAN:END -->
 
 ## Comments
 
