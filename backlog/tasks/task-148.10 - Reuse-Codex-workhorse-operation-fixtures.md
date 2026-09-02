@@ -1,11 +1,11 @@
 ---
 id: TASK-148.10
 title: Reuse Codex workhorse operation fixtures
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 23:00'
-updated_date: '2026-09-02 23:13'
+updated_date: '2026-09-02 23:19'
 labels: []
 dependencies: []
 references:
@@ -29,9 +29,9 @@ Three workhorse test files create roughly 29 fsync-backed fixtures although the 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 All operation and outcome contracts remain covered, including state isolation between cases.
-- [ ] #2 Durable fixture setup occurs once per compatible group rather than once per outcome iteration, with explicit reset/clone semantics preventing cross-case leakage.
-- [ ] #3 The focused three-file owner improves materially from the recorded 19.3 seconds and cleans all temporary state.
+- [x] #1 All operation and outcome contracts remain covered, including state isolation between cases.
+- [x] #2 Durable fixture setup occurs once per compatible group rather than once per outcome iteration, with explicit reset/clone semantics preventing cross-case leakage.
+- [x] #3 The focused three-file owner improves materially from the recorded 19.3 seconds and cleans all temporary state.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -50,4 +50,12 @@ Blocked before validation. The only focused owner attempt ran in transient user 
 Resumed after the parent authorized frozen dependency materialization. bun install --frozen-lockfile completed in transient unit archboard-task14810-install-20260903a in 151 ms; package.json, bun.lock, and tracked source were unchanged. The final implementation prepares one frozen proof set and durable epoch baseline per owner file, clones only the two finished epoch files into a unique case root, and rebuilds every identity ledger, queue, session, operation instance, subscriber set, call counter, status, and hook. The custom current-epoch identity case retains its distinct standalone fixture. The queue outcome matrix now checks every clone starts with no queue calls, delivered as its default outcome, and exactly the four prepared epoch records.
 
 Final exact three-file owner: 28 pass, 0 fail, 177 assertions in 5.543 s wall time and 5.52 s Bun time, versus the accepted 19.3 s baseline. This is 13.757 s faster, a 71.3% reduction. Focused Oxlint passed with 0 warnings and 0 errors. Focused Oxfmt check passed. Every transient unit was inactive with an empty ControlGroup before the next command. The final temp-root audit found no /tmp/archboard-workhorse-operations-* directories. package.json and bun.lock remained unchanged, and no debug instrumentation remains.
+
+Direct integration finalization: accepted the reviewed focused-owner evidence (28 pass, 177 assertions, 5.543 s versus 19.3 s baseline), focused Oxlint/Oxfmt pass, and empty temporary-root audit. Static inspection of reviewed commit ff3128b1f1212da5f66f2a4b2b04317eb4142a69 confirms one lifecycle-bound prepared fixture group per compatible owner, per-case cloned epoch files with rebuilt mutable ports/state, and teardown that removes group and case roots.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Reused immutable committed workhorse epoch proofs through lifecycle-bound fixture groups and isolated per-case clones. The focused three-file owner passed 28 tests and 177 assertions in 5.543 s (71.3% faster than the 19.3 s baseline); focused lint and formatting passed, and the temporary-root audit was clean.
+<!-- SECTION:FINAL_SUMMARY:END -->
