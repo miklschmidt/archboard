@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 02:24'
+updated_date: '2026-09-02 02:25'
 labels: []
 dependencies: []
 references:
@@ -52,6 +52,8 @@ This is the first and exclusive recovery gate. Replace repository checks that re
 
 <!-- SECTION:NOTES:BEGIN -->
 Read-only policy audit 01a05feb-6467-7e80-83ed-ee37b5c0d676 completed at fixed base 71a3e6bf. Confirmed: CODEX_WAIT_TARGET_POLL_MS needs a machine-checked relation to CODEX_REQUEST_SETTLEMENT_MS; dynamic-tools must consume capacity through codex-transport/index.ts; the vendor alias detector must narrow by board-ingress context rather than allowlist two legitimate workhorse files; the compiler-worker fingerprint/mirror/alias unit can be deleted while retaining direct ignored-path and adapter/deep-import boundary checks; codex-realtime contract owners also import the forbidden async compiler helper and must be replaced or removed for AC #1. No files changed and no validation ran.
+
+Read-only leak audit 01a05feb-6061-7cf3-a6ae-1fba244af2bc completed at fixed base 71a3e6bf. It found four forbidden whole-project async compiler import sites: scripts/typescript-analysis.ts, support/codex-protocol-aliases.ts, codex-protocol-fingerprint-corpus.test.ts, and src/ui/codex-realtime/tests/contract.test.ts. Three discard close operations; the fourth still violates the no-worker criterion. It also found 16 unawaited Bun rejects assertions across canvas adapters, realtime, dynamic-tools, wait, quarantine, and process-contract owners. The affected Vite and Oxfmt helpers showed no additional confirmed leak. Recommended enforcement is one bounded repository policy that rejects the async compiler import and floating resolves/rejects assertions without loading TypeScript project graphs. No files changed and no broad validation ran.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
