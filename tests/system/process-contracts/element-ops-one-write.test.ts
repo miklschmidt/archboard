@@ -240,7 +240,6 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 		).toBeTrue();
 		expect(elements.find((element) => element.id === "box-0")?.groupIds).toContain("existing");
 
-		await Bun.sleep(1_000);
 		const beforeHuman = await request<ChangeFeed>("/api/changes?board=scratch&since=0");
 		await request("/api/elements/changes?board=scratch", {
 			method: "POST",
@@ -259,7 +258,6 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 				deletes: [],
 			},
 		});
-		await Bun.sleep(1_000);
 		const beforeAgent = await request<ChangeFeed>(
 			`/api/changes?board=scratch&since=${beforeHuman.body.cursor}`,
 		);
@@ -287,7 +285,6 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 			.body.elements;
 		expect(authored.find((element) => element.id === "human-box")?.source).toBe("frontend_sync");
 		expect(authored.find((element) => element.id === "box-0")?.source).toBeUndefined();
-		await Bun.sleep(1_000);
 		const agentFeed = await request<ChangeFeed>(
 			`/api/changes?board=scratch&since=${beforeAgent.body.cursor}`,
 		);
