@@ -589,7 +589,7 @@ function stopProcess(
 	runtime: CodexWorkbenchOwnerRuntime,
 ): Promise<Error | null> {
 	if (local.processStopPromise !== null) return local.processStopPromise;
-	const operation = (async (): Promise<Error | null> => {
+	const attempt = (async (): Promise<Error | null> => {
 		try {
 			await runtime.process.stop();
 			return null;
@@ -597,6 +597,13 @@ function stopProcess(
 			return error instanceof Error ? error : new Error(String(error));
 		}
 	})();
+	const operation = attempt.then((result) => {
+		// A failed verified stop keeps the process owner reachable. A later
+		// application force pass must perform a fresh TERM/KILL-and-observe
+		// attempt rather than replay the first failure forever.
+		if (result !== null && local.processStopPromise === operation) local.processStopPromise = null;
+		return result;
+	});
 	local.processStopPromise = operation;
 	return operation;
 }
@@ -1185,5 +1192,13 @@ export function installCodexWorkbenchOwnerLifecycle(
 	};
 	retained.control.current = initialSlots;
 	assertRetained(retained);
-	return retained.control.wrappers;
+	return Object.freeze({
+		start: () => retained.control.wrappers.start(),
+		// Keep terminal ownership in this returned handle after public dispatch
+		// is revoked. The Canvas lifetime may need one force retry to prove the
+		// detached process group is gone.
+		shutdown: () => terminalShutdown(retained, runtime, local),
+		snapshot: () => retained.control.wrappers.snapshot(),
+		gateway: () => retained.control.wrappers.gateway(),
+	});
 }

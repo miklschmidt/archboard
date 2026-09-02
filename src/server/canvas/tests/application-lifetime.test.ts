@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import winston from "winston";
 
 import { CanvasApplicationHeldError, createCanvasApplicationLifetime } from "../index.js";
+import { closeLogger } from "../../../runtime/engine/logger.js";
 
 describe("canvas application lifetime", () => {
 	test("starts in order and stops every owner in reverse order", async () => {
@@ -59,7 +64,7 @@ describe("canvas application lifetime", () => {
 
 		await expect(failed.start()).rejects.toThrow("codex failed");
 		expect(failed.phase()).toBe("failed");
-		expect(actions).toEqual(["stop:engine"]);
+		expect(actions).toEqual(["stop:codex", "stop:engine"]);
 
 		const replacement = createCanvasApplicationLifetime({
 			resources: [{ name: "engine", stop: () => undefined }],
@@ -133,6 +138,7 @@ describe("canvas application lifetime", () => {
 		const first = lifetime.stop("test");
 		const concurrent = lifetime.stop("SIGTERM");
 		expect(concurrent).toBe(first);
+		await new Promise<void>((resolve) => setImmediate(resolve));
 		expect(stops).toBe(1);
 		release();
 		await first;
@@ -141,22 +147,130 @@ describe("canvas application lifetime", () => {
 		expect(stops).toBe(1);
 	});
 
-	test("bounds the complete reverse teardown and still invokes later owners", async () => {
+	test("forces a timed owner and waits for its original stop to settle", async () => {
 		const actions: string[] = [];
+		let release!: () => void;
+		const gate = new Promise<void>((resolve) => void (release = resolve));
 		const lifetime = createCanvasApplicationLifetime({
-			stopTimeoutMs: 5,
-			resources: ["engine", "http"].map((name) => ({
-				name,
-				stop: () => {
-					actions.push(name);
-					return new Promise<void>(() => undefined);
+			observe: ({ action, resource }) => {
+				if (resource !== null && (action === "force" || action === "forced"))
+					actions.push(`${action}:${resource}`);
+			},
+			resources: [
+				{
+					name: "http",
+					stopGraceMs: 5,
+					stop: async () => {
+						actions.push("stop:http");
+						await gate;
+						actions.push("settled:http");
+					},
+					forceStop: () => {
+						actions.push("force-action:http");
+						release();
+					},
 				},
-			})),
+			],
 		});
 		await lifetime.start();
 
-		await expect(lifetime.stop("test")).rejects.toThrow("application shutdown cap");
-		expect(actions).toEqual(["http", "engine"]);
-		expect(lifetime.phase()).toBe("failed");
+		await lifetime.stop("test");
+		expect(actions).toEqual([
+			"stop:http",
+			"force:http",
+			"force-action:http",
+			"settled:http",
+			"forced:http",
+		]);
+		expect(lifetime.phase()).toBe("stopped");
+	});
+
+	test("cancels a partially started owner and unwinds every entered owner", async () => {
+		const actions: string[] = [];
+		let release!: () => void;
+		const gate = new Promise<void>((resolve) => void (release = resolve));
+		const lifetime = createCanvasApplicationLifetime({
+			resources: [
+				{
+					name: "signals",
+					stop: () => {
+						actions.push("stop:signals");
+					},
+				},
+				{
+					name: "codex",
+					start: async (signal) => {
+						actions.push("start:codex");
+						signal.addEventListener("abort", release, { once: true });
+						await gate;
+						throw new Error("codex startup canceled");
+					},
+					stop: () => {
+						actions.push("stop:codex");
+						release();
+					},
+				},
+			],
+		});
+
+		const starting = lifetime.start();
+		expect(lifetime.phase()).toBe("starting");
+		await lifetime.stop("SIGTERM");
+		await expect(starting).rejects.toThrow("codex startup canceled");
+		expect(actions).toEqual(["start:codex", "stop:codex", "stop:signals"]);
+		expect(lifetime.phase()).toBe("stopped");
+	});
+
+	test("drains admitted writes, rechecks holds, and resumes after refusal", async () => {
+		let held: string[] = [];
+		let quiesces = 0;
+		let resumes = 0;
+		const lifetime = createCanvasApplicationLifetime({
+			resources: [{ name: "engine", stop: () => undefined }],
+			heldBoards: () => held,
+			quiesce: () => {
+				quiesces++;
+				if (quiesces === 1) held = ["late-hold"];
+			},
+			resume: () => {
+				resumes++;
+			},
+		});
+		await lifetime.start();
+
+		await expect(lifetime.stop("test")).rejects.toThrow('"late-hold"');
+		expect(lifetime.phase()).toBe("running");
+		expect(resumes).toBe(1);
+		held = [];
+		await lifetime.stop("test");
+		expect(quiesces).toBe(2);
+		expect(lifetime.phase()).toBe("stopped");
+	});
+
+	test("startup unwind closes a real logger transport owned before the failure", async () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-lifetime-logger-failure-"));
+		const transport = new winston.transports.File({ filename: join(root, "startup.log") });
+		const owner = winston.createLogger({ transports: [transport] });
+		try {
+			const lifetime = createCanvasApplicationLifetime({
+				resources: [
+					{ name: "logger", stop: () => closeLogger(owner) },
+					{
+						name: "failing-owner",
+						start: () => {
+							throw new Error("startup failed after logger creation");
+						},
+						stop: () => undefined,
+					},
+				],
+			});
+
+			await expect(lifetime.start()).rejects.toThrow("startup failed after logger creation");
+			expect(owner.transports).toEqual([]);
+			expect(transport.listenerCount("finish")).toBe(0);
+		} finally {
+			if (!owner.destroyed && !owner.writableFinished) owner.destroy();
+			rmSync(root, { recursive: true, force: true });
+		}
 	});
 });

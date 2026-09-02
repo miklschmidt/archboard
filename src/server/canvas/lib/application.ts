@@ -2,12 +2,12 @@ import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { WebSocketServer } from "ws";
-import { createServer } from "http";
+import { createServer, type IncomingMessage } from "http";
 import net from "net";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import logger from "../../../runtime/engine/logger.js";
+import logger, { closeLogger, forceCloseLogger } from "../../../runtime/engine/logger.js";
 import { snapshots, selectionState } from "../../../runtime/engine/types.js";
 import type {
 	ServerElement,
@@ -38,6 +38,7 @@ import {
 import { createBrowserLeaseLedger, type BrowserLeaseLedger } from "../../codex-workbench/index.js";
 import { requireExactSemanticPane } from "./codex-workbench-semantic-pane.js";
 import type { CanvasCodexWorkbenchHost } from "./codex-workbench-production.js";
+import type { createCanvasCodexWorkbenchApplication } from "./codex-workbench-application.js";
 import {
 	buildPanesReport,
 	MAX_PANES,
@@ -151,7 +152,7 @@ import { changeFeed } from "../../../runtime/engine/change-feed.js";
 import type { ChangeEvent } from "../../../runtime/engine/change-feed.js";
 import {
 	BROWSER_EXPORT_TIMEOUT_MS,
-	CODEX_COMPOSED_SHUTDOWN_MS,
+	CANVAS_HTTP_STOP_GRACE_MS,
 	CODEX_WAIT_TARGET_POLL_MS,
 	PANE_LAYOUT_TIMEOUT_MS,
 	PANE_SETTLE_CAP_MS,
@@ -222,8 +223,6 @@ function asyncEndpoint(
 }
 
 interface Wiring {
-	server: ReturnType<typeof createServer>;
-	wss: WebSocketServer;
 	codex: {
 		installed: boolean;
 		phase: "idle" | "preparing" | "installed" | "stopping" | "stopped";
@@ -244,10 +243,9 @@ interface Wiring {
 }
 
 const server = createServer(app);
-const wss = new WebSocketServer({ server });
+let wss: WebSocketServer | null = null;
+let canvasLifetime: ReturnType<typeof createCanvasApplicationLifetime> | null = null;
 const wiring: Wiring = {
-	server,
-	wss,
 	codex: {
 		installed: false,
 		phase: "idle",
@@ -261,6 +259,62 @@ const wiring: Wiring = {
 // Middleware
 app.use(cors());
 app.use(createCodeOpenerPreguard());
+const mutationAdmission = (() => {
+	let accepting = true;
+	let active = 0;
+	const drained = new Set<() => void>();
+	const settle = (): void => {
+		if (active !== 0) return;
+		for (const resolve of drained) resolve();
+		drained.clear();
+	};
+	return Object.freeze({
+		admit: (): (() => void) | null => {
+			if (!accepting) return null;
+			active++;
+			let finished = false;
+			return () => {
+				if (finished) return;
+				finished = true;
+				active--;
+				settle();
+			};
+		},
+		quiesce: (): Promise<void> => {
+			accepting = false;
+			if (active === 0) return Promise.resolve();
+			return new Promise((resolve) => drained.add(resolve));
+		},
+		resume: (): void => {
+			accepting = true;
+		},
+		accepting: (): boolean => accepting,
+		active: (): number => active,
+	});
+})();
+
+// Stop admission before the final held-board check. A request admitted here is
+// counted until its response settles, including time spent waiting for the
+// board lock. Once quiesce resolves, no route can create a new held copy.
+app.use((req: Request, res: Response, next: NextFunction) => {
+	if (req.method === "GET" || req.method === "HEAD" || !req.path.startsWith("/api/")) return next();
+	const complete = mutationAdmission.admit();
+	if (complete === null) {
+		res.setHeader("Retry-After", "1");
+		res.status(503).json({
+			success: false,
+			code: "CANVAS_STOPPING",
+			error:
+				"The canvas is checking whether it can stop and is not accepting writes. " +
+				"If the canvas remains running, retry after resolving any held board it reports.",
+		});
+		return;
+	}
+	res.once("finish", complete);
+	res.once("close", complete);
+	next();
+});
+
 const globalJson = express.json({ limit: "10mb" });
 app.use((req: Request, res: Response, next: NextFunction) => {
 	if (isCodeOpenerBodyRoute(req.method, req.path)) return next();
@@ -805,8 +859,9 @@ function boardForNewPane(clientId: string): string {
 	return key && boards.has(key) ? key : SCRATCH_KEY;
 }
 
-// WebSocket connection handling.
-wss.on("connection", (ws: WebSocket, req) => {
+// WebSocket connection handling. The lifecycle creates and closes the server;
+// this function owns one accepted socket only.
+function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): void {
 	clients.add(ws);
 	const codexSocketInstance = Object.freeze({});
 	codexSocketInstances.set(ws, codexSocketInstance);
@@ -971,7 +1026,7 @@ wss.on("connection", (ws: WebSocket, req) => {
 		logger.error("WebSocket error:", error);
 		clients.delete(ws);
 	});
-});
+}
 
 // ─── One writer at a time ─────────────────────────────────────
 //
@@ -4077,6 +4132,11 @@ app.get("/health", (req: Request, res: Response) => {
 		// from a stale pidfile or an unrelated app squatting on the port.
 		service: "mcp-excalidraw-canvas",
 		pid: process.pid,
+		application: {
+			phase: canvasLifetime?.phase() ?? "idle",
+			acceptingWrites: mutationAdmission.accepting(),
+			activeWrites: mutationAdmission.active(),
+		},
 		held_boards: heldBoardKeys().map((board) => reportHold(board, holdOn(board)!)),
 		// Whether this process is running the source that is on disk now, and
 		// which build the frontend has been rebuilt to. A long-lived process has no
@@ -4526,23 +4586,69 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 	};
 }
 
-async function prepareCodexWorkbench(): Promise<void> {
+let codexApplication: ReturnType<typeof createCanvasCodexWorkbenchApplication> | null = null;
+
+async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	const [applicationModule, productionModule] = await Promise.all([
 		import("../codex-workbench-application.js"),
 		import("../codex-workbench-production.js"),
 	]);
+	if (signal.aborted) throw new Error("Codex startup was canceled before installation.");
 	const application = applicationModule.createCanvasCodexWorkbenchApplication({
 		state: wiring.codex,
 		module: productionModule,
 		installation: () =>
 			productionModule.createCanvasCodexWorkbenchInstallation(createCodexWorkbenchHost()),
 	});
-	await application.prepare();
+	codexApplication = application;
+	const cancel = (): void => {
+		void application.shutdown().catch(() => undefined);
+	};
+	signal.addEventListener("abort", cancel, { once: true });
+	try {
+		const preparing = application.prepare();
+		if (signal.aborted) cancel();
+		await preparing;
+	} finally {
+		signal.removeEventListener("abort", cancel);
+	}
 }
 
+let httpClosePromise: Promise<void> | null = null;
 function closeHttpServer(): Promise<void> {
-	return new Promise((resolve, reject) => {
+	if (httpClosePromise !== null) return httpClosePromise;
+	if (!server.listening) return Promise.resolve();
+	httpClosePromise = new Promise((resolve, reject) => {
 		server.close((error) => (error ? reject(error) : resolve()));
+	});
+	return httpClosePromise;
+}
+
+async function forceCloseHttpServer(): Promise<void> {
+	server.closeAllConnections();
+	await closeHttpServer();
+}
+
+function startWebSocketServer(): void {
+	if (wss !== null) throw new Error("The WebSocket server is already installed.");
+	const owner = new WebSocketServer({ server });
+	owner.on("connection", acceptWebSocketConnection);
+	wss = owner;
+}
+
+function closeWebSocketServer(): Promise<void> {
+	const owner = wss;
+	if (owner === null) return Promise.resolve();
+	return new Promise((resolve, reject) => {
+		owner.close((error) => {
+			if (error) {
+				reject(error);
+				return;
+			}
+			owner.removeAllListeners();
+			if (wss === owner) wss = null;
+			resolve();
+		});
 	});
 }
 
@@ -4637,8 +4743,12 @@ async function startServer(): Promise<void> {
 		void lifetime.stop(signal).then(
 			() => process.exit(0),
 			(error) => {
-				logger.error(`Canvas shutdown refused or failed: ${(error as Error).message}`);
-				if (!(error instanceof CanvasApplicationHeldError)) process.exit(1);
+				const message = `Canvas shutdown refused or failed: ${(error as Error).message}`;
+				if (error instanceof CanvasApplicationHeldError) logger.error(message);
+				else {
+					process.stderr.write(message + "\n");
+					process.exitCode = 1;
+				}
 			},
 		);
 	};
@@ -4648,12 +4758,35 @@ async function startServer(): Promise<void> {
 		if (ownsPidFile) removePidFile(PORT);
 	};
 	lifetime = createCanvasApplicationLifetime({
-		stopTimeoutMs: CODEX_COMPOSED_SHUTDOWN_MS,
 		heldBoards: heldBoardKeys,
+		quiesce: mutationAdmission.quiesce,
+		resume: mutationAdmission.resume,
 		observe: ({ action, resource }) => {
-			if (resource !== null) logger.debug(`Canvas lifetime ${action}: ${resource}`);
+			// The logger cannot report its own terminal transition after its
+			// writable stream has ended.
+			if (resource === null || resource === "logger-transports") return;
+			if (action === "force") logger.warn(`Canvas lifetime forcing stop: ${resource}`);
+			else logger.debug(`Canvas lifetime ${action}: ${resource}`);
 		},
 		resources: [
+			{
+				name: "logger-transports",
+				stop: () => closeLogger(),
+				forceStop: () => forceCloseLogger(),
+			},
+			{
+				name: "process-signals",
+				start: () => {
+					process.on("SIGTERM", onTerm);
+					process.on("SIGINT", onInterrupt);
+					process.on("exit", onExit);
+				},
+				stop: () => {
+					process.off("SIGTERM", onTerm);
+					process.off("SIGINT", onInterrupt);
+					process.off("exit", onExit);
+				},
+			},
 			{
 				name: "engine-state",
 				start: () => adoptScratchBoard(),
@@ -4676,10 +4809,11 @@ async function startServer(): Promise<void> {
 			{
 				name: "codex-workbench",
 				start: prepareCodexWorkbench,
-				stop: async () => wiring.codex.shutdown?.(),
+				stop: async () => codexApplication?.shutdown(),
+				forceStop: async () => codexApplication?.shutdown(),
 			},
 			{
-				name: "http-and-websocket",
+				name: "http-server",
 				start: () =>
 					new Promise<void>((resolve, reject) => {
 						const onError = (error: Error): void => reject(error);
@@ -4688,7 +4822,6 @@ async function startServer(): Promise<void> {
 							server.off("error", onError);
 							const hostForUrl = formatHostForUrl(HOST);
 							logger.info(`POC server running on http://${hostForUrl}:${PORT}`);
-							logger.info(`WebSocket server running on ws://${hostForUrl}:${PORT}`);
 							writePidFile(PORT, process.pid);
 							ownsPidFile = true;
 							resolve();
@@ -4701,23 +4834,21 @@ async function startServer(): Promise<void> {
 					}
 					await closeHttpServer();
 				},
+				stopGraceMs: CANVAS_HTTP_STOP_GRACE_MS,
+				forceStop: forceCloseHttpServer,
+			},
+			{
+				name: "websocket-server",
+				start: () => {
+					startWebSocketServer();
+					logger.info(`WebSocket server running on ws://${formatHostForUrl(HOST)}:${PORT}`);
+				},
+				stop: closeWebSocketServer,
 			},
 			{ name: "browser-and-pending-operations", stop: closeBrowserOwners },
-			{
-				name: "process-signals",
-				start: () => {
-					process.on("SIGTERM", onTerm);
-					process.on("SIGINT", onInterrupt);
-					process.on("exit", onExit);
-				},
-				stop: () => {
-					process.off("SIGTERM", onTerm);
-					process.off("SIGINT", onInterrupt);
-					process.off("exit", onExit);
-				},
-			},
 		],
 	});
+	canvasLifetime = lifetime;
 	await lifetime.start();
 }
 

@@ -23,16 +23,22 @@ Runtime state has ordinary process lifetime. The Canvas application owns every
 resource that needs ordered construction or teardown. That includes the HTTP
 and WebSocket servers, the Codex child, browser sockets and pane leases,
 pending operations, lock and claim timers, note watches, and change-feed
-settlement. It starts each owner once and tears them down in a documented
-order. Harmless caches may stay module-local when they own no timer, handle,
-listener, child, or process-only user work.
+settlement. It installs signal ownership before any fallible child startup,
+starts each owner once, and tears them down in reverse order. A timed owner has
+its own grace and force action; after forcing, the lifetime still waits for the
+original stop operation to settle. It never reports an abandoned cleanup as a
+completed shutdown. Harmless caches may stay module-local when they own no
+timer, handle, listener, child, or process-only user work.
 
 A restart disconnects live browser sessions and clears process-only state.
 Persisted boards remain in their notes under ADR 0015. A held board is the
 exception because its refused edits exist only in the running process. The
 ordinary stop and restart path checks for holds before it sends a signal. It
 refuses while any hold exists and names the boards and available recovery
-actions. Source-freshness guidance uses that same guarded restart path.
+actions. After a signal, the application stops admitting HTTP writes, drains
+the writes it already admitted, and checks holds again before it closes a
+browser or server. A refused stop restores write admission. Source-freshness
+guidance uses that same guarded restart path.
 
 Frontend Vite HMR may remain. It belongs to the browser bundle process and does
 not replace modules inside the Archboard server. Backend and frontend
