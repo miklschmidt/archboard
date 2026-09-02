@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, jest, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -10,9 +10,9 @@ const lock = await import("../board-lock.ts");
 const logger = (await import("../logger.ts")).default;
 const { LOCK_FREE_LINGER_MS, LOCK_WATCH_MS } = await import("../../../shared/timing/timing.ts");
 const originalWarn = logger.warn;
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 test("announcements isolate passenger failure and coalesce free news", async () => {
+	jest.useFakeTimers();
 	try {
 		const warnings: unknown[][] = [];
 		logger.warn = (...args: unknown[]) => {
@@ -23,7 +23,7 @@ test("announcements isolate passenger failure and coalesce free news", async () 
 			throw new Error("note-watch fixture failed");
 		});
 		lock.watchBoardLocks(() => ["passenger"]);
-		await sleep(LOCK_WATCH_MS + 100);
+		jest.advanceTimersByTime(LOCK_WATCH_MS);
 		expect(
 			warnings.some(([message]) => String(message).includes("lock watch continues")),
 		).toBeTrue();
@@ -49,7 +49,7 @@ test("announcements isolate passenger failure and coalesce free news", async () 
 		expect(news.length).toBe(beforeRenew);
 		lock.releaseHold("broadcast", "pane");
 		expect(news.at(-1)?.held).toBeTrue();
-		await sleep(LOCK_FREE_LINGER_MS + 150);
+		jest.advanceTimersByTime(LOCK_FREE_LINGER_MS);
 		expect(news.at(-1)?.held).toBeFalse();
 
 		const start = news.length;
@@ -58,9 +58,8 @@ test("announcements isolate passenger failure and coalesce free news", async () 
 				{ board: "broadcast", holder: { id: `fan-${index}`, kind: "agent" } },
 				() => undefined,
 			);
-			await sleep(5);
 		}
-		await sleep(LOCK_FREE_LINGER_MS + 150);
+		jest.advanceTimersByTime(LOCK_FREE_LINGER_MS);
 		const sequence = news.slice(start);
 		const flips = sequence.filter(
 			(item, index) => index > 0 && item.held !== sequence[index - 1]?.held,
@@ -74,6 +73,7 @@ test("announcements isolate passenger failure and coalesce free news", async () 
 		lock.releaseHold("broadcast", "pane");
 		lock.releaseClaim("broadcast");
 		lock.forgetLockAnnouncements();
+		jest.useRealTimers();
 		logger.warn = originalWarn;
 		if (previousVault === undefined) delete process.env.ARCHBOARD_VAULT;
 		else process.env.ARCHBOARD_VAULT = previousVault;
