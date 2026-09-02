@@ -21,7 +21,7 @@
 import fs from "fs";
 import path from "path";
 import { writeFileAtomic } from "./atomic-write.js";
-import { repoIdentityAt, repoRootOf } from "./git.js";
+import { inspectCheckout } from "./git.js";
 import { stateDir } from "./state-dir.js";
 
 export type RepoSource = "declared" | "observed";
@@ -149,21 +149,24 @@ export class RepoRegistryError extends Error {}
  * the same clone differently is the one thing that would make the address
  * space useless, and git already has an answer that is the same everywhere.
  */
-export async function declareRepo(dir: string): Promise<RegisteredRepo> {
+export async function declareRepo(
+	dir: string,
+	options: { signal?: AbortSignal } = {},
+): Promise<RegisteredRepo> {
 	const target = path.resolve(dir);
 	if (!isCheckout(target)) {
 		throw new RepoRegistryError(`${target} is not a directory on this machine.`);
 	}
-	const root = await repoRootOf(target);
-	if (!root) {
+	const checkout = await inspectCheckout(target, options);
+	if (!checkout) {
 		throw new RepoRegistryError(
 			`${target} is not inside a git repository, so there is no repository identity to register it under. ` +
 				"A binding names a repo plus a path inside it; a bare directory cannot be either.",
 		);
 	}
 	const entry: RegisteredRepo = {
-		repo: await repoIdentityAt(root),
-		root,
+		repo: checkout.identity,
+		root: checkout.root,
 		source: "declared",
 		addedAt: new Date().toISOString(),
 	};

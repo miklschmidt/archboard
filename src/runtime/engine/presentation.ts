@@ -1,8 +1,4 @@
-import {
-	CodeBindingSchema,
-	parseInternalCodeTargetUrl,
-	type CodeBinding,
-} from "../../shared/code-target/index.js";
+import { CodeBindingSchema, type CodeBinding } from "../../shared/code-target/index.js";
 import {
 	resolveLocalCodeTarget,
 	resolveLocalCodeTargets,
@@ -94,15 +90,6 @@ export function codeBindingsOf(elements: Iterable<ServerElement>): CodeBinding[]
 	});
 }
 
-function exactInternalTarget(
-	value: string,
-	element: ServerElement,
-	context: PresentationContext,
-): boolean {
-	const parsed = parseInternalCodeTargetUrl(value);
-	return parsed?.board === context.boardKey && parsed.element === element.id;
-}
-
 function isDerivedTarget(
 	element: ServerElement,
 	incoming: unknown,
@@ -110,7 +97,6 @@ function isDerivedTarget(
 ): boolean {
 	if (typeof incoming !== "string") return false;
 	if (!bindingOf(element)) return false;
-	if (exactInternalTarget(incoming, element, context)) return true;
 	const marker = markerOf(element);
 	if (
 		marker?.board === context.boardKey &&
@@ -144,12 +130,12 @@ export function presentElement(
 	const binding = bindingOf(element);
 	if (!binding) return element;
 	const opaque = targetFor(element, context);
-	if (opaque !== undefined) return withLink(element, opaque, context.boardKey);
-	const target = presentationTargetForBinding(
+	const fresh = presentationTargetForBinding(
 		binding,
 		{ board: context.boardKey, element: element.id },
 		resolveLocalCodeTarget(binding, context.checkoutSnapshot ?? EMPTY_CHECKOUT_SNAPSHOT),
 	);
+	const target = opaque === fresh ? opaque : fresh;
 	return target ? withLink(element, target, context.boardKey) : element;
 }
 
@@ -169,13 +155,13 @@ export function presentElements(
 		const binding = bindingOf(element);
 		if (!binding) return element;
 		const local = locals[index++]!;
-		const target =
-			targetFor(element, context) ??
-			presentationTargetForBinding(
-				binding,
-				{ board: context.boardKey, element: element.id },
-				local,
-			);
+		const fresh = presentationTargetForBinding(
+			binding,
+			{ board: context.boardKey, element: element.id },
+			local,
+		);
+		const opaque = targetFor(element, context);
+		const target = opaque === fresh ? opaque : fresh;
 		return target ? withLink(element, target, context.boardKey) : element;
 	});
 }

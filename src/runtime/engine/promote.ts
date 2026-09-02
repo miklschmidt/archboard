@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { ServerElement } from "./types.js";
-import { git, repoIdentityAt, repoRootOf } from "./git.js";
+import { inspectCheckout } from "./git.js";
 import { checkoutFor, knownRepoNames, rememberRepo } from "./repo-registry.js";
 import {
 	DEFAULT_FILL_STYLE,
@@ -160,6 +160,7 @@ export interface ResolvedBinding {
 export async function resolveBinding(
 	request: BindingRequest,
 	origin: BindingOrigin,
+	options: { signal?: AbortSignal } = {},
 ): Promise<ResolvedBinding> {
 	const confirmedAt = new Date().toISOString();
 	const raw = request.path.trim();
@@ -211,10 +212,10 @@ export async function resolveBinding(
 	}
 
 	const absolute = path.resolve(baseDir, raw);
-	const root = await repoRootOf(absolute);
+	const checkout = await inspectCheckout(absolute, options);
 	const exists = fs.existsSync(absolute);
 
-	if (!root) {
+	if (!checkout) {
 		const where = resolvedFrom === "cwd" ? ` (looked in the working directory ${baseDir})` : "";
 		return {
 			address: asStated(),
@@ -226,7 +227,7 @@ export async function resolveBinding(
 		};
 	}
 
-	const found = await repoIdentityAt(root);
+	const { root, identity: found } = checkout;
 
 	// A registry entry that now points at some other repository. The path just
 	// resolved into the wrong checkout, so nothing here is trustworthy: say so
@@ -252,8 +253,8 @@ export async function resolveBinding(
 	// is still worth saying out loud.
 	const repo = named ?? found;
 	const relative = path.relative(root, absolute) || ".";
-	const branch = request.branch ?? (await git(root, ["rev-parse", "--abbrev-ref", "HEAD"]));
-	const commit = request.commit ?? (await git(root, ["rev-parse", "HEAD"]));
+	const branch = request.branch ?? checkout.branch;
+	const commit = request.commit ?? checkout.commit;
 
 	const notes: string[] = [];
 	if (resolvedFrom === "cwd") {

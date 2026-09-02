@@ -336,6 +336,7 @@ export const promoteContract = defineCommand({
 						...(input.commit ? { commit: input.commit } : {}),
 					},
 					{ kind: "cwd", dir: process.cwd() },
+					{ signal: context.signal },
 				)
 			: undefined;
 		const identity = await getBoardInfo();

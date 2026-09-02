@@ -6,7 +6,7 @@ import {
 	openBoard,
 	type BoardListResponse,
 } from "../../runtime/engine/canvas-client.js";
-import { repoIdentityAt, repoRootOf } from "../../runtime/engine/git.js";
+import { inspectCheckout } from "../../runtime/engine/git.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 import {
 	BoardIdentityStateSchema,
@@ -96,13 +96,13 @@ export const boardContract = defineCommand({
 	},
 });
 
-async function repoIdentityHere(): Promise<string> {
-	const root = await repoRootOf(process.cwd());
-	if (!root)
+async function repoIdentityHere(signal: AbortSignal): Promise<string> {
+	const checkout = await inspectCheckout(process.cwd(), { signal });
+	if (!checkout)
 		throw new CliUsageError(
 			`${process.cwd()} is not inside a git repository, so there is no repository to look for. Name one with --repo <host/owner/name>, or drop the filter to list every board.`,
 		);
-	return repoIdentityAt(root);
+	return checkout.identity;
 }
 function boardListText(result: BoardListResponse): string {
 	if (result.repo) {
@@ -215,7 +215,7 @@ export const boardListContract = defineCommand({
 		const stage = context.parse(BoardListStageSchema, input.tokens);
 		let repo: string | undefined;
 		if (stage.flags.here) {
-			repo = await repoIdentityHere();
+			repo = await repoIdentityHere(context.signal);
 			context.diagnostic(`Standing in ${repo}.`);
 		} else if (typeof stage.flags.repo === "string") repo = stage.flags.repo;
 		const result = await listBoardsOnCanvas(repo);

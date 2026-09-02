@@ -120,6 +120,7 @@ export interface CommandExecution<Result> {
 }
 
 export interface CommandContext {
+	readonly signal: AbortSignal;
 	require(prerequisite: RuntimePrerequisite, description: string): Promise<void>;
 	readStdin(): Promise<string>;
 	readTextFile(path: string): string;

@@ -60,6 +60,12 @@ export interface CodeOpenerRouteDependencies {
 		signal?: AbortSignal,
 	): Promise<LocalCodeTargetResult> | LocalCodeTargetResult;
 	launch(command: { executable: string; argv: string[] }): Promise<LaunchResult>;
+	runCheckout<T>(
+		request: Request,
+		response: Response,
+		name: string,
+		work: (signal: AbortSignal) => Promise<T>,
+	): Promise<T>;
 	runMutation<T>(
 		request: Request,
 		name: string,
@@ -93,6 +99,7 @@ const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
 	resolveTarget: async (binding, signal) =>
 		resolveLocalCodeTarget(binding, await snapshotCheckoutAccess({ signal, bindings: [binding] })),
 	launch: launchOpener,
+	runCheckout: async (_request, _response, _name, work) => work(new AbortController().signal),
 	runMutation: async (_request, _name, work) => work(new AbortController().signal),
 };
 
@@ -198,7 +205,7 @@ export function createCodeOpenerRouter(
 
 	router.get(
 		"/api/settings/opener",
-		asyncEndpoint(async (_request, response) => {
+		asyncEndpoint(async (request, response) => {
 			const current = readOpenerSelection();
 			if (!current.ok) return sendFailure(response, current);
 			const plannedCurrent = planOpenerCommand(current.selection, "{path}");
@@ -211,7 +218,12 @@ export function createCodeOpenerRouter(
 				if (!planned.ok) throw new Error(planned.error);
 				return { preset, command: planned.command };
 			});
-			const snapshot = await snapshotCheckoutAccess();
+			const snapshot = await dependencies.runCheckout(
+				request,
+				response,
+				"GET /api/settings/opener checkout snapshot",
+				(signal) => snapshotCheckoutAccess({ signal }),
+			);
 			const repositories = snapshot.entries.map((entry) => {
 				const resolved = resolveRegisteredCheckout(entry.repo, snapshot);
 				return {
