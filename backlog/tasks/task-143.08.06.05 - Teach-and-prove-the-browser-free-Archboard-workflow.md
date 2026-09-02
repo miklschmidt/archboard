@@ -4,6 +4,7 @@ title: Teach and prove the browser-free Archboard workflow
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:58'
+updated_date: '2026-09-02 02:02'
 labels: []
 dependencies:
   - TASK-143.08.06.04
@@ -16,6 +17,7 @@ references:
   - TESTING.md
   - INSTALL.md
   - docs/agents/test-suite.md
+  - docs/adr/0020-board-work-never-depends-on-a-browser-session.md
 parent_task_id: TASK-143.08.06
 priority: high
 type: task

@@ -4,6 +4,7 @@ title: Hard-cut live session control into the browser command surface
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:58'
+updated_date: '2026-09-02 02:02'
 labels: []
 dependencies:
   - TASK-143.08.06.02
@@ -14,6 +15,7 @@ references:
   - docs/design/cli-command-audit.json
   - docs/adr/0008-cli-is-the-default-surface.md
   - docs/adr/0009-every-call-names-its-board.md
+  - docs/adr/0020-board-work-never-depends-on-a-browser-session.md
 parent_task_id: TASK-143.08.06
 priority: high
 type: enhancement

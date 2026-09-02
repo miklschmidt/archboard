@@ -1,8 +1,12 @@
 ---
-status: accepted
+status: superseded by ADR-0020
 ---
 
 # Every call names its board; there is no active board
+
+Superseded by [ADR 0020](0020-board-work-never-depends-on-a-browser-session.md).
+ADR 0020 retains explicit board naming and replaces the display and rendering
+model recorded here.
 
 A pane is a slot holding its own canvas, and a canvas holds one board
 (CONTEXT.md). Two panes therefore hold two boards, which is the entire reason

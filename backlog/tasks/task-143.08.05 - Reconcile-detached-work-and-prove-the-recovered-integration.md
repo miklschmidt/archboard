@@ -4,7 +4,7 @@ title: Reconcile detached work and prove the recovered integration
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 01:59'
+updated_date: '2026-09-02 02:02'
 labels: []
 dependencies:
   - TASK-143.08.04
@@ -16,6 +16,7 @@ references:
   - docs/agents/test-suite.md
   - docs/agents/boundaries.md
   - skills/archboard/SKILL.md
+  - docs/adr/0020-board-work-never-depends-on-a-browser-session.md
 parent_task_id: TASK-143.08
 priority: high
 type: task

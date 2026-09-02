@@ -4,7 +4,7 @@ title: Recover the TASK-143 and TASK-144 integration before feature work resumes
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:35'
-updated_date: '2026-09-02 01:59'
+updated_date: '2026-09-02 02:02'
 labels: []
 dependencies: []
 references:
@@ -14,6 +14,7 @@ references:
   - codex/task-143-144-workbench@ba1aacee
   - docs/adr/0009-every-call-names-its-board.md
   - skills/archboard/SKILL.md
+  - docs/adr/0020-board-work-never-depends-on-a-browser-session.md
 parent_task_id: TASK-143
 priority: high
 type: task

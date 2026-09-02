@@ -4,14 +4,15 @@ title: Make all board work independent of browser sessions
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:57'
-updated_date: '2026-09-02 01:59'
+updated_date: '2026-09-02 02:02'
 labels: []
 dependencies:
   - TASK-143.08.01
 references:
   - docs/adr/0008-cli-is-the-default-surface.md
   - docs/adr/0009-every-call-names-its-board.md
-  - docs/adr/0015-the-note-is-the-board.md
+  - docs/adr/0015-the-vault-is-the-truth-and-the-agent-shape-is-input.md
+  - docs/adr/0020-board-work-never-depends-on-a-browser-session.md
   - src/cli/command-contract/contract.ts
   - src/runtime/engine/board-store.ts
   - skills/archboard/SKILL.md
