@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 02:48'
+updated_date: '2026-09-02 02:53'
 labels: []
 dependencies: []
 references:
@@ -75,6 +75,10 @@ Plan review task 01a05ffc-6487-7022-aa56-f825422d7c6b returned PLAN_FINDINGS on 
 Plan rereview task 01a05ffc-6487-7022-aa56-f825422d7c6b found that the first correction still qualified the type-aware lint ban. The root accepted the finding. The task and ADR now require removing every repository --type-aware Oxlint and tsgolint invocation and the direct oxlint-tsgolint dependency, while retaining boundary and type behavior through ordinary TypeScript and bounded type-unaware tests.
 
 New parent safety requirement, 2026-09-02: the replacement worker is command-capped for its entire lifetime, not merely during validation. Every external command must enter through one root-provided and preverified wrapper that serializes fresh 6G RAM plus 1G swap transient user units, contains all descendants, waits for cleanup, and fails closed on OOM or residual tasks. The worker may use apply_patch for file edits, but may not run an unwrapped helper, checker, formatter, git, Backlog, search, build, package, test, or probe command. The earlier rereview range is superseded until this operational requirement is committed and independently approved.
+
+Plan review gate passed. Independent xhigh daybreak reviewer task 01a05ffc-6487-7022-aa56-f825422d7c6b returned REVIEW_OK for the complete fixed range 16d5e23c..a6c8ca6f. It confirmed the worker-wide wrapper contract, delayed restoration of uncapped development, unconditional type-aware lint and tsgolint removal, transitive frontend tooling exception, Canvas application ownership and teardown, held-board restart refusal, lifecycle coverage, and corrected ADR 0014 guidance. No broad or type-aware validation ran during review.
+
+Root-provided wrapper /home/msc/.codex/task-143.08.01/capped-command was preverified before worker dispatch at SHA-256 3c5f4f09f6f916514988471838848a714479536e009d047c111412ff4f4cb858. Direct probes confirmed MemoryMax=6442450944, MemorySwapMax=1073741824, OOMPolicy=kill, KillMode=control-group, MemoryAccounting=yes, TasksAccounting=yes, current directory and environment propagation, exact nonzero exit propagation, descendant reaping, serialized concurrent invocations, fail-closed SIGKILL status 124, syntax, mode 700 ownership, and no residual unit or cgroup.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
