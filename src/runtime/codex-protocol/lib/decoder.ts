@@ -35,7 +35,7 @@ export type ProtocolDirection =
 	| "json-rpc-error";
 
 export const PROTOCOL_RECOVERY_ACTION =
-	"regenerate the ignored 0.151.0 bindings with the recorded Codex binary, verify the manifest digest, and reconnect the session";
+	"confirm the child runs Codex 0.151.0, review the incompatible payload, and reconnect the session";
 
 export interface ProtocolDecodeErrorInit {
 	readonly method: string;
@@ -267,7 +267,7 @@ export function decodeResponse(method: string, payload: unknown): unknown {
 				direction: "response",
 				issues: [{ path: ["userAgent"], message: `expected Codex ${CODEX_PROTOCOL_VERSION}` }],
 				recoveryAction:
-					"stop the child, run the recorded Codex binary, regenerate the ignored bindings, and reconnect",
+					"stop the child, run the recorded Codex 0.151.0 binary, and reconnect after reviewing the incompatible payload",
 			});
 	}
 	return decoded;
