@@ -1,5 +1,5 @@
 import { inspectBoard } from "./index.js";
-import type { InspectionPolicyInput, InspectionReport } from "./schemas.js";
+import type { InspectionFinding, InspectionPolicyInput, InspectionReport } from "./schemas.js";
 import { decodeRecords } from "./lib/decode.js";
 import { detectBoard } from "./lib/detectors.js";
 import { snapshotInspectionInput } from "./lib/input-snapshot.js";
@@ -45,6 +45,11 @@ export interface SweepCompatibilityDiagnostics {
 	work: SweepWork;
 }
 
+export interface ComparisonBudgetDiagnostics {
+	findings: readonly InspectionFinding[];
+	broadPhaseComparisons: number;
+}
+
 /** Pure development probe for semantic pair enumeration and coarse work scaling. */
 export function diagnoseSweepCompatibility(input: {
 	left: readonly SweepDiagnosticInterval[];
@@ -82,6 +87,26 @@ export function diagnoseSweepCompatibility(input: {
 		{ work },
 	);
 	return { pairs, work };
+}
+
+/** Pure development probe for comparison-limit behavior at a representative budget. */
+export function diagnoseComparisonBudget(
+	records: readonly unknown[],
+	comparisonLimit: number,
+): ComparisonBudgetDiagnostics {
+	const snapshot = snapshotInspectionInput(records);
+	if (snapshot.limit) throw new Error("Comparison diagnostics require input below the snapshot limit.");
+	const detection = detectBoard(
+		decodeRecords(snapshot.records, snapshot.blockedSourceIndexes),
+		inspectBoard([]).policy,
+		[],
+		[],
+		{ comparisonLimit },
+	);
+	return {
+		findings: detection.findings,
+		broadPhaseComparisons: detection.broadPhaseComparisons,
+	};
 }
 
 /** Pure module-root development evidence; product report bytes contain no work counters. */

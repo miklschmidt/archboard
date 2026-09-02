@@ -1,19 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_INSPECTION_POLICY, InspectionFindingSchema } from "../index.js";
-import { decodeRecords } from "../lib/decode.js";
-import { BROAD_PHASE_COMPARISON_LIMIT, detectBoard } from "../lib/detectors.js";
+import { diagnoseComparisonBudget } from "../diagnostics.js";
+import { BROAD_PHASE_COMPARISON_LIMIT, InspectionFindingSchema } from "../index.js";
 import { performanceBoard, terminalComparisonBoard } from "./fixtures/limit-cases.js";
 
 const REPRESENTATIVE_COMPARISON_LIMIT = 2_000;
 
 function detectWithRepresentativeLimit(records: ReturnType<typeof performanceBoard>) {
-	return detectBoard(
-		decodeRecords(records as Parameters<typeof decodeRecords>[0], new Set()),
-		DEFAULT_INSPECTION_POLICY,
-		[],
-		[],
-		{ comparisonLimit: REPRESENTATIVE_COMPARISON_LIMIT },
-	);
+	return diagnoseComparisonBudget(records, REPRESENTATIVE_COMPARISON_LIMIT);
 }
 
 describe("comparison limits", () => {
