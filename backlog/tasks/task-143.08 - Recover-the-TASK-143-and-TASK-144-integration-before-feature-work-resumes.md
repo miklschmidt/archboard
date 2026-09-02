@@ -1,10 +1,11 @@
 ---
 id: TASK-143.08
 title: Recover the TASK-143 and TASK-144 integration before feature work resumes
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-09-02 01:35'
-updated_date: '2026-09-02 02:14'
+updated_date: '2026-09-02 02:20'
 labels: []
 dependencies: []
 references:
@@ -37,6 +38,16 @@ Stop the audited integration at ba1aacee and recover it before any text, voice, 
 - [ ] #6 The exact Codex package is a runtime dependency, and one Archboard server owns at most one live or starting codex app-server instance; any crash replacement is serialized after complete reaping, with no reload or concurrent-start overlap.
 - [ ] #7 Persisted-board commands are browser-independent and resolve named vault notes directly; all live pane, selection, camera, displayed-board, and user-session control is isolated beneath the explicit `archboard browser` surface, with server-owned rendering and matching canonical skill guidance.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Complete TASK-143.08.01 as the exclusive first recovery leaf and obtain an independent clean review.
+2. Run TASK-143.08.02 through TASK-143.08.04 serially; after .08.01, allow the disjoint .08.06.01 renderer investigation and eligible legacy cleanup.
+3. After .08.04 and .08.06.01, run .08.06.02 through .08.06.05 in dependency order.
+4. Complete the single current-documentation leaf TASK-143.06.08 after legacy cleanup, lifecycle recovery, and browser-independent board work.
+5. Run TASK-143.08.05 as the terminal reconciliation, bounded validation, and fixed-range review gate before resuming feature leaves.
+<!-- SECTION:PLAN:END -->
 
 ## Comments
 
