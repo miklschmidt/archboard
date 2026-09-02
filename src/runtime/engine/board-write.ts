@@ -43,6 +43,7 @@ import { type ChangeOrigin, changeFeed } from "./change-feed.js";
 import { presentElements, stripBindingPresentationLinks } from "./presentation.js";
 import { usableDrawnFiles } from "./embedded-files.js";
 import logger from "./logger.js";
+import { EMPTY_CHECKOUT_SNAPSHOT, type CheckoutSnapshot } from "../code-target/index.js";
 
 export type WrittenNote = ReturnType<typeof writeBoardContent>;
 
@@ -99,6 +100,7 @@ export interface BoardWriteAnswerContext<T> {
 	delta: BoardWriteDelta;
 	written: WrittenNote | null;
 	appliedAt: string;
+	checkoutSnapshot: CheckoutSnapshot;
 }
 
 export interface BoardWriteRequest<T> {
@@ -114,6 +116,7 @@ export interface BoardWriteRequest<T> {
 	};
 	afterPersist?: (context: BoardWriteAnswerContext<T>) => void;
 	answer: (context: BoardWriteAnswerContext<T>) => Record<string, unknown>;
+	checkoutSnapshot?: CheckoutSnapshot;
 }
 
 export type TellPanes = (message: WebSocketMessage, board: string) => void;
@@ -269,11 +272,12 @@ function tellPanesAboutWrite(
 	delta: BoardWriteDelta,
 	clientId: string | null,
 	timestamp: string,
+	checkoutSnapshot: CheckoutSnapshot,
 ): void {
 	const message: ElementsChangedMessage = {
 		type: "elements_changed",
-		created: presentElements(delta.created, { boardKey: target.key }),
-		updated: presentElements(delta.updated, { boardKey: target.key }),
+		created: presentElements(delta.created, { boardKey: target.key, checkoutSnapshot }),
+		updated: presentElements(delta.updated, { boardKey: target.key, checkoutSnapshot }),
 		deleted: delta.deleted,
 		origin: clientId,
 		timestamp,
@@ -330,6 +334,7 @@ export function writeBoard<T>(
 	const delta = completeDelta(mutation.delta);
 	const shouldWrite = mutation.write ?? true;
 	const appliedAt = new Date().toISOString();
+	const checkoutSnapshot = request.checkoutSnapshot ?? EMPTY_CHECKOUT_SNAPSHOT;
 
 	// Element input owns its conversion stage and exposes the pane-intended
 	// document from immediately before repair. Other mutation kinds retain the
@@ -359,6 +364,7 @@ export function writeBoard<T>(
 		delta,
 		written,
 		appliedAt,
+		checkoutSnapshot,
 	};
 
 	if (shouldWrite) {
@@ -368,7 +374,14 @@ export function writeBoard<T>(
 		// canonical side effect of the persisted document as well: repaired arrow
 		// back-references, dependent labels, and deletions outside that input.
 		const broadcast = notificationDelta(destinationBefore.elements, content.elements, delta);
-		tellPanesAboutWrite(tellPanes, target, broadcast, request.clientId ?? null, appliedAt);
+		tellPanesAboutWrite(
+			tellPanes,
+			target,
+			broadcast,
+			request.clientId ?? null,
+			appliedAt,
+			checkoutSnapshot,
+		);
 	}
 
 	return request.answer(context);
@@ -391,12 +404,19 @@ export function canonicalCorrections(
 	submitted: Iterable<ServerElement>,
 	canonical: Iterable<ServerElement>,
 	boardKey: string,
+	checkoutSnapshot: CheckoutSnapshot = EMPTY_CHECKOUT_SNAPSHOT,
 ): CanonicalCorrections {
 	const before = new Map(
-		presentElements(submitted, { boardKey }).map((element) => [element.id, element]),
+		presentElements(submitted, { boardKey, checkoutSnapshot }).map((element) => [
+			element.id,
+			element,
+		]),
 	);
 	const after = new Map(
-		presentElements(canonical, { boardKey }).map((element) => [element.id, element]),
+		presentElements(canonical, { boardKey, checkoutSnapshot }).map((element) => [
+			element.id,
+			element,
+		]),
 	);
 	const deletes = [...before.keys()].filter((id) => !after.has(id));
 	const upserts: ServerElement[] = [];
@@ -412,12 +432,22 @@ export function humanWriteAnswer(
 	context: BoardWriteAnswerContext<unknown>,
 	wantsFullDocument: boolean,
 ): Record<string, unknown> {
-	const { source, content, submittedElements, written } = context;
+	const { source, content, submittedElements, written, checkoutSnapshot } = context;
 	return {
-		corrections: canonicalCorrections(submittedElements, content.elements.values(), source.key),
+		corrections: canonicalCorrections(
+			submittedElements,
+			content.elements.values(),
+			source.key,
+			checkoutSnapshot,
+		),
 		fingerprint: boardFingerprint(source.board, content, written),
 		...(wantsFullDocument
-			? { document: presentElements(content.elements.values(), { boardKey: source.key }) }
+			? {
+					document: presentElements(content.elements.values(), {
+						boardKey: source.key,
+						checkoutSnapshot,
+					}),
+				}
 			: {}),
 	};
 }
@@ -430,12 +460,13 @@ export function agentWriteAnswer(
 	touched: ServerElement[],
 	wantsDocument: boolean,
 	written?: WrittenNote | null,
+	checkoutSnapshot: CheckoutSnapshot = EMPTY_CHECKOUT_SNAPSHOT,
 ): Record<string, unknown> {
 	return {
-		elements: presentElements(touched, { boardKey }),
+		elements: presentElements(touched, { boardKey, checkoutSnapshot }),
 		fingerprint: boardFingerprint(board, content, written),
 		...(wantsDocument
-			? { document: presentElements(content.elements.values(), { boardKey }) }
+			? { document: presentElements(content.elements.values(), { boardKey, checkoutSnapshot }) }
 			: {}),
 	};
 }

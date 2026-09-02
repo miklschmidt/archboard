@@ -183,7 +183,7 @@ export const repoAddContract = defineCommand({
 	async handler(input, context) {
 		let entry;
 		try {
-			entry = declareRepo(context.resolvePath(input.dir ?? process.cwd()));
+			entry = await declareRepo(context.resolvePath(input.dir ?? process.cwd()));
 		} catch (error) {
 			if (error instanceof RepoRegistryError) throw new CliUsageError(error.message);
 			throw error;

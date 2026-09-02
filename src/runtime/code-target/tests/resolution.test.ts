@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { join, win32 } from "node:path";
 
-import { isPathWithin, resolveLocalCodeTarget, resolveRegisteredCheckout } from "../index.ts";
+import {
+	isPathWithin,
+	resolveLocalCodeTarget,
+	resolveRegisteredCheckout,
+	snapshotCheckoutAccess,
+} from "../index.ts";
 import { createResolverFixture, type ResolverFixture } from "./support.ts";
 
 let fixture: ResolverFixture;
@@ -20,22 +25,26 @@ afterEach(() => {
 });
 
 describe("registered checkout", () => {
-	test("re-reads and verifies the canonical checkout identity", () => {
-		expect(resolveRegisteredCheckout(fixture.repository)).toEqual({
+	test("re-reads and verifies the canonical checkout identity", async () => {
+		expect(resolveRegisteredCheckout(fixture.repository, await snapshotCheckoutAccess())).toEqual({
 			ok: true,
 			repository: fixture.repository,
 			root: fixture.checkout,
 		});
 	});
 
-	test("refuses a changed origin identity", () => {
+	test("refuses a changed origin identity", async () => {
+		const before = await snapshotCheckoutAccess();
+		expect(resolveRegisteredCheckout(fixture.repository, before).ok).toBeTrue();
 		Bun.spawnSync(["git", "remote", "set-url", "origin", "https://github.com/other/repo.git"], {
 			cwd: fixture.checkout,
 		});
-		expect(resolveRegisteredCheckout(fixture.repository)).toMatchObject({
+		const after = await snapshotCheckoutAccess();
+		expect(resolveRegisteredCheckout(fixture.repository, after)).toMatchObject({
 			ok: false,
 			code: "CHECKOUT_IDENTITY_CHANGED",
 		});
+		expect(resolveRegisteredCheckout(fixture.repository, before).ok).toBeTrue();
 	});
 });
 
@@ -51,8 +60,13 @@ describe("local code target containment", () => {
 		["src/nested", "directory", fixturePath("src/nested")],
 		["src/inside-file.ts", "file", fixturePath("src/index.ts")],
 		["src/inside-directory", "directory", fixturePath("src/nested")],
-	] as const)("accepts %s as an in-root %s", (relative, kind, expected) => {
-		expect(resolveLocalCodeTarget({ repo: fixture.repository, path: relative })).toEqual({
+	] as const)("accepts %s as an in-root %s", async (relative, kind, expected) => {
+		expect(
+			resolveLocalCodeTarget(
+				{ repo: fixture.repository, path: relative },
+				await snapshotCheckoutAccess(),
+			),
+		).toEqual({
 			ok: true,
 			repository: fixture.repository,
 			root: fixture.checkout,
@@ -64,8 +78,13 @@ describe("local code target containment", () => {
 
 	test.each(["src/outside-file.ts", "src/outside-directory"])(
 		"rejects the realpath escape %s",
-		(relative) => {
-			expect(resolveLocalCodeTarget({ repo: fixture.repository, path: relative })).toMatchObject({
+		async (relative) => {
+			expect(
+				resolveLocalCodeTarget(
+					{ repo: fixture.repository, path: relative },
+					await snapshotCheckoutAccess(),
+				),
+			).toMatchObject({
 				ok: false,
 				code: "TARGET_OUTSIDE_CHECKOUT",
 			});
@@ -74,17 +93,25 @@ describe("local code target containment", () => {
 
 	test.each(["../outside/secret.ts", "/tmp/absolute", "C:\\absolute\\file.ts"])(
 		"rejects lexical or absolute escape %s",
-		(relative) => {
-			expect(resolveLocalCodeTarget({ repo: fixture.repository, path: relative })).toMatchObject({
+		async (relative) => {
+			expect(
+				resolveLocalCodeTarget(
+					{ repo: fixture.repository, path: relative },
+					await snapshotCheckoutAccess(),
+				),
+			).toMatchObject({
 				ok: false,
 				code: "TARGET_OUTSIDE_CHECKOUT",
 			});
 		},
 	);
 
-	test("rejects a missing target", () => {
+	test("rejects a missing target", async () => {
 		expect(
-			resolveLocalCodeTarget({ repo: fixture.repository, path: "src/missing.ts" }),
+			resolveLocalCodeTarget(
+				{ repo: fixture.repository, path: "src/missing.ts" },
+				await snapshotCheckoutAccess(),
+			),
 		).toMatchObject({
 			ok: false,
 			code: "TARGET_UNAVAILABLE",

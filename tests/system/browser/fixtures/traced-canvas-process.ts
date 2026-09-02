@@ -18,9 +18,38 @@ export function readFsyncTrace(traceFile: string): FsyncTraceEvidence {
 	const successfulFsync = /\bfsync\(\d+\)\s+=\s+0$/;
 	const lifecycle =
 		/^(?:(?:\[pid\s+)?\d+\]?\s+)?(?:\+\+\+ (?:exited with \d+|killed by SIG[A-Z0-9]+) \+\+\+|--- SIG[A-Z0-9]+ .* ---)$/;
+	const unfinishedFsync = /^(?:\[pid\s+)?(\d+)\]?\s+fsync\(\d+\s+<unfinished \.\.\.>$/;
+	const resumedFsync = /^(?:\[pid\s+)?(\d+)\]?\s+<\.\.\. fsync resumed>\)\s+=\s+(0|\?)$/;
+	const calls: string[] = [];
+	const incomplete: string[] = [];
+	const pending = new Map<string, string[]>();
+	for (const line of lines) {
+		if (successfulFsync.test(line)) {
+			calls.push(line);
+			continue;
+		}
+		const started = unfinishedFsync.exec(line);
+		if (started) {
+			const pid = started[1]!;
+			pending.set(pid, [...(pending.get(pid) ?? []), line]);
+			continue;
+		}
+		const resumed = resumedFsync.exec(line);
+		if (resumed) {
+			const pid = resumed[1]!;
+			const starts = pending.get(pid);
+			const start = starts?.shift();
+			if (!start) incomplete.push(line);
+			else if (resumed[2] === "0") calls.push(`${start} ${line}`);
+			if (starts?.length === 0) pending.delete(pid);
+			continue;
+		}
+		if (!lifecycle.test(line)) incomplete.push(line);
+	}
+	for (const starts of pending.values()) incomplete.push(...starts);
 	return {
-		calls: lines.filter((line) => successfulFsync.test(line)),
-		incomplete: lines.filter((line) => !successfulFsync.test(line) && !lifecycle.test(line)),
+		calls,
+		incomplete,
 	};
 }
 
