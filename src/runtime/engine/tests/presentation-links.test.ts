@@ -107,19 +107,34 @@ test("demotion preserves a human-authored file link on a bound node", () => {
 	expect(plan.updates).toEqual([{ id: "bound", customData: {} }]);
 });
 
-test("only exact internal and request-owned opaque echoes restore the canonical link", () => {
+test("only marker-backed and request-owned echoes restore the canonical link", async () => {
 	const canonical = bound(humanLink);
 	const internal = "/api/code-targets/open?board=system%2Farchboard&element=bound";
 	const github = "https://github.com/acme/payments/tree/HEAD/src/index.ts";
 	const opaque = "opaque:replacement-owned-elsewhere";
 	const legacy = pathToFileURL(`${fixture.checkout}/src/index.ts`).href;
-	expect(canonicalLinkAfterPresentationEcho(canonical, internal, context)).toBe(humanLink);
+	expect(canonicalLinkAfterPresentationEcho(canonical, internal, context)).toBe(internal);
+	expect(
+		canonicalLinkAfterPresentationEcho(canonical, internal, {
+			...context,
+			opaqueTarget: internal,
+		}),
+	).toBe(humanLink);
 	for (const incoming of [github, legacy])
 		expect(canonicalLinkAfterPresentationEcho(canonical, incoming, context)).toBe(incoming);
 	expect(
 		canonicalLinkAfterPresentationEcho(canonical, opaque, { ...context, opaqueTarget: opaque }),
 	).toBe(humanLink);
-	expect(stripBindingPresentationLink({ ...canonical, link: internal }, context).link).toBeNull();
+	expect(stripBindingPresentationLink({ ...canonical, link: internal }, context).link).toBe(
+		internal,
+	);
+	const marked = presentElement(canonical, {
+		...context,
+		checkoutSnapshot: await snapshotCheckoutAccess({
+			bindings: [{ repo: fixture.repository, path: "src/index.ts" }],
+		}),
+	});
+	expect(stripBindingPresentationLink(marked, context).link).toBeNull();
 	expect(stripBindingPresentationLink({ ...canonical, link: github }, context).link).toBe(github);
 	expect(stripBindingPresentationLink({ ...canonical, link: legacy }, context).link).toBe(legacy);
 });
@@ -152,11 +167,22 @@ test("a legacy file value is human-authored when its checkout is unavailable", (
 	expect(stripBindingPresentationLink({ ...canonical, link: legacy }, context).link).toBe(legacy);
 });
 
-test("opaque presentation is explicit and never mutates the canonical element", () => {
-	const opaqueTarget = "opaque:replacement-owned-elsewhere";
-	const canonical = bound(null, { repo: "other.example/acme/repo", path: "missing" });
-	const presented = presentElement(canonical, { ...context, opaqueTarget });
+test("opaque presentation is reused only while fresh checkout authority agrees", async () => {
+	const binding = { repo: fixture.repository, path: "src/index.ts" };
+	const canonical = bound(null, binding);
+	const authorized = await snapshotCheckoutAccess({ bindings: [binding] });
+	const opaqueTarget = "/api/code-targets/open?board=system%2Farchboard&element=bound";
+	const presented = presentElement(canonical, {
+		...context,
+		opaqueTarget,
+		checkoutSnapshot: authorized,
+	});
 	expect(presented.link).toBe(opaqueTarget);
 	expect(canonical.link).toBeNull();
 	expect(stripBindingPresentationLink(presented, { ...context, opaqueTarget }).link).toBeNull();
+	writeFileSync(fixture.registry, "[]\n");
+	const unavailable = await snapshotCheckoutAccess({ bindings: [binding] });
+	expect(
+		presentElement(canonical, { ...context, opaqueTarget, checkoutSnapshot: unavailable }).link,
+	).toBe("https://github.com/acme/payments/tree/HEAD/src/index.ts");
 });

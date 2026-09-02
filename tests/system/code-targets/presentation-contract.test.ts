@@ -27,6 +27,7 @@ import { createJsonRequester } from "../boards/support/http.ts";
 import { openTestPane, waitForPaneMessage } from "../boards/support/pane-websocket.ts";
 import { findingElements } from "../browser/fixtures/fixed-point-scene.ts";
 import { completeElement } from "./support/elements.ts";
+import { assertIntroducedBindingPresentation } from "./support/presentation-routes.ts";
 
 const repoRoot = join(import.meta.dir, "../../..");
 const serverPath = join(repoRoot, "src/server.ts");
@@ -127,6 +128,15 @@ test(
 				height: 80,
 				link: "file:///human-authored.ts",
 			}),
+			completeElement({
+				id: "unmarked-internal",
+				type: "rectangle",
+				x: 420,
+				y: 20,
+				width: 160,
+				height: 80,
+				link: "/api/code-targets/open?board=human&element=kept",
+			}),
 			...(expandElements([...findingElements], { forStore: true }) as ServerElement[]),
 		] as ServerElement[];
 		const note = vaultPathFor(identity, vault);
@@ -189,6 +199,16 @@ test(
 		expect(presented.get("other-host")?.link).toBeNull();
 		expect(presented.get("bound-human")?.link).toBe("https://human.example/bound");
 		expect(presented.get("unbound-human")?.link).toBe("file:///human-authored.ts");
+		expect(presented.get("unmarked-internal")?.link).toBe(
+			"/api/code-targets/open?board=human&element=kept",
+		);
+
+		await assertIntroducedBindingPresentation({
+			api,
+			base: canvas.base,
+			vault,
+			binding: { repo: localRepository, path: "src/index.ts" },
+		});
 
 		await expectTransitionLeavesNoteUntouched(
 			() => writeFileSync(registry, "[]\n"),
@@ -246,6 +266,7 @@ test(
 			escape: "/api/code-targets/open?board=targets&element=other",
 			"bound-human": "https://human.example/bound",
 			"unbound-human": "file:///human-authored.ts",
+			"unmarked-internal": "/api/code-targets/open?board=human&element=kept",
 		} as const;
 		const echoCases = [
 			["local-file", exactInternal],
@@ -326,7 +347,7 @@ test(
 		const peerChange = await waitForPaneMessage(peerPane, peerStart, "elements_changed");
 		const peerUpdated = (peerChange?.updated as ServerElement[] | undefined) ?? [];
 		expect(peerUpdated.find((element) => element.id === "local-file")?.link).toBe(
-			"/api/code-targets/open?board=targets&element=local-file",
+			"https://github.com/acme/local/tree/HEAD/src/index.ts",
 		);
 		const activationResponse = await fetch(new URL("/api/code-targets/open", canvas.base), {
 			method: "POST",
@@ -340,6 +361,31 @@ test(
 		});
 		const activationBody = await activationResponse.text();
 		expect(activationResponse.status, activationBody).toBe(200);
+		writeFileSync(registry, "[]\n");
+		const stalePeerStart = peerPane.since();
+		const stalePeerChange = await api(`/api/elements/changes?board=targets`, {
+			method: "POST",
+			body: {
+				origin: "human",
+				clientId: humanPane.clientId,
+				upserts: [
+					{
+						id: humanPresented.id,
+						x: humanPresented.x + 3,
+						link: humanPresented.link,
+						customData: humanPresented.customData,
+					},
+				],
+				deletes: [],
+			},
+		});
+		expect(stalePeerChange.status).toBe(200);
+		const stalePeerMessage = await waitForPaneMessage(peerPane, stalePeerStart, "elements_changed");
+		const stalePeerElements = (stalePeerMessage?.updated as ServerElement[] | undefined) ?? [];
+		expect(stalePeerElements.find(({ id }) => id === "local-file")?.link).toBe(
+			"https://github.com/acme/local/tree/HEAD/src/index.ts",
+		);
+		writeFileSync(registry, JSON.stringify([registryEntry]));
 		await humanPane.close();
 		await peerPane.close();
 

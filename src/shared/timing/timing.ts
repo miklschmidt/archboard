@@ -240,6 +240,20 @@ export const GIT_PROCESS_GROUP_CLEANUP_MS = CANVAS_MUTATION_DRAIN_TIMEOUT_MS;
 /** Observation cadence while proving a killed Git process group is absent. */
 export const GIT_PROCESS_GROUP_POLL_MS = 10;
 
+/**
+ * External bound for the exact Git lifecycle plus opener regression sequence.
+ * It is four ordinary Git command bounds: enough for the serial owners while
+ * still diagnosing a retained child or pipe well inside the repository lane.
+ */
+export const TEST_GIT_OPENER_WATCHDOG_MS = 4 * GIT_COMMAND_TIMEOUT_MS;
+
+/**
+ * Bun's case deadline includes the watchdog plus two cleanup grace windows:
+ * one to kill and drain the child group, and one for the owner to report it.
+ */
+export const TEST_GIT_OPENER_CASE_TIMEOUT_MS =
+	TEST_GIT_OPENER_WATCHDOG_MS + 2 * GIT_PROCESS_GROUP_CLEANUP_MS;
+
 // ── Codex workbench policy (ADR 0019) ─────────────────────────────────────
 //
 // These are authored policy values, not consumer defaults. Their expiry
