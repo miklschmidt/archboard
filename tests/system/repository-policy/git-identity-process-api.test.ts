@@ -12,10 +12,16 @@ test("Git identity never blocks Bun's child-process supervisor", () => {
 		"spawnSync",
 		"sleepSync",
 		"Atomics.wait",
+		"Bun.sleep",
+		".unref(",
+		"setInterval(",
+		"void Bun.spawn",
+		"void child.exited",
 		"while (child.exitCode",
+		"while (child.signalCode",
 	]) {
-		expect(source, `${forbidden} blocks or polls child completion`).not.toContain(forbidden);
+		expect(source, `${forbidden} blocks, polls, or detaches child ownership`).not.toContain(
+			forbidden,
+		);
 	}
-	expect(source).toContain("child.exited");
-	expect(source).toContain("Promise.all([child.exited, stdout, stderr])");
 });

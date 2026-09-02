@@ -1,6 +1,12 @@
 import fs from "fs";
 import path from "path";
 
+import {
+	GIT_COMMAND_TIMEOUT_MS,
+	GIT_PROCESS_GROUP_CLEANUP_MS,
+	GIT_PROCESS_GROUP_POLL_MS,
+} from "../../shared/timing/timing.js";
+
 // The little bit of git archboard needs: what repository a directory belongs
 // to, and what that repository is called in a way that is the same on every
 // machine.
@@ -9,10 +15,9 @@ import path from "path";
 // and keeping the checkout registry (ADR 0011). The registry cannot import
 // promotion without a cycle.
 
-const GIT_TIMEOUT_MS = 5_000;
 const GIT_OUTPUT_LIMIT_BYTES = 64 * 1024;
 
-export type GitFailure = "aborted" | "exit" | "output" | "spawn" | "timeout";
+export type GitFailure = "aborted" | "cleanup" | "exit" | "output" | "signal" | "spawn" | "timeout";
 
 export class GitCommandError extends Error {
 	constructor(
@@ -25,49 +30,101 @@ export class GitCommandError extends Error {
 	}
 }
 
-async function drainBounded(
-	stream: ReadableStream<Uint8Array>,
-): Promise<{ bytes: Uint8Array; exceeded: boolean }> {
+interface BoundedDrain {
+	readonly result: Promise<{ bytes: Uint8Array; exceeded: boolean; error?: Error }>;
+	cancel(reason: Error): Promise<void>;
+}
+
+function drainBounded(stream: ReadableStream<Uint8Array>, onExcess: () => void): BoundedDrain {
 	const reader = stream.getReader();
-	const chunks: Uint8Array[] = [];
-	let kept = 0;
-	let seen = 0;
-	let exceeded = false;
-	try {
-		for (;;) {
-			const { done, value } = await reader.read();
-			if (done) break;
-			seen += value.byteLength;
-			if (kept < GIT_OUTPUT_LIMIT_BYTES) {
-				const remaining = GIT_OUTPUT_LIMIT_BYTES - kept;
-				const chunk = value.byteLength <= remaining ? value : value.slice(0, remaining);
-				chunks.push(chunk);
-				kept += chunk.byteLength;
+	const result = (async (): Promise<{
+		bytes: Uint8Array;
+		exceeded: boolean;
+		error?: Error;
+	}> => {
+		const chunks: Uint8Array[] = [];
+		let kept = 0;
+		let seen = 0;
+		let exceeded = false;
+		let error: Error | undefined;
+		try {
+			for (;;) {
+				const { done, value } = await reader.read();
+				if (done) break;
+				seen += value.byteLength;
+				if (kept < GIT_OUTPUT_LIMIT_BYTES) {
+					const remaining = GIT_OUTPUT_LIMIT_BYTES - kept;
+					const chunk = value.byteLength <= remaining ? value : value.slice(0, remaining);
+					chunks.push(chunk);
+					kept += chunk.byteLength;
+				}
+				if (!exceeded && seen > GIT_OUTPUT_LIMIT_BYTES) {
+					exceeded = true;
+					onExcess();
+				}
 			}
-			exceeded = seen > GIT_OUTPUT_LIMIT_BYTES;
+		} catch (cause) {
+			error = cause instanceof Error ? cause : new Error(String(cause));
+		} finally {
+			reader.releaseLock();
 		}
-	} finally {
-		reader.releaseLock();
+		const bytes = new Uint8Array(kept);
+		let offset = 0;
+		for (const chunk of chunks) {
+			bytes.set(chunk, offset);
+			offset += chunk.byteLength;
+		}
+		return { bytes, exceeded, ...(error ? { error } : {}) };
+	})();
+	return {
+		result,
+		cancel: async (reason: Error): Promise<void> => {
+			try {
+				await reader.cancel(reason);
+			} catch {
+				// The reader may already have settled; `result` remains the authority.
+			}
+		},
+	};
+}
+
+function processGroupExists(pgid: number): boolean {
+	try {
+		process.kill(-pgid, 0);
+		return true;
+	} catch (cause) {
+		if ((cause as NodeJS.ErrnoException).code === "ESRCH") return false;
+		throw cause;
 	}
-	const bytes = new Uint8Array(kept);
-	let offset = 0;
-	for (const chunk of chunks) {
-		bytes.set(chunk, offset);
-		offset += chunk.byteLength;
+}
+
+function signalProcessGroup(pgid: number): void {
+	try {
+		process.kill(-pgid, "SIGKILL");
+	} catch (cause) {
+		if ((cause as NodeJS.ErrnoException).code !== "ESRCH") throw cause;
 	}
-	return { bytes, exceeded };
+}
+
+async function processGroupDisappeared(pgid: number): Promise<boolean> {
+	const deadline = Date.now() + GIT_PROCESS_GROUP_CLEANUP_MS;
+	for (;;) {
+		if (!processGroupExists(pgid)) return true;
+		if (Date.now() >= deadline) return false;
+		await new Promise((resolve) => setTimeout(resolve, GIT_PROCESS_GROUP_POLL_MS));
+	}
 }
 
 /** Run one bounded Git command without ever blocking Bun's process supervisor. */
 export async function git(
 	cwd: string,
 	args: readonly string[],
-	options: { signal?: AbortSignal; timeoutMs?: number } = {},
+	options: { signal?: AbortSignal; timeoutMs?: number; executable?: string } = {},
 ): Promise<string | undefined> {
 	if (options.signal?.aborted) throw new GitCommandError("aborted", "Git command was cancelled.");
 	let child: ReturnType<typeof Bun.spawn>;
 	try {
-		child = Bun.spawn(["git", ...args], {
+		child = Bun.spawn([options.executable ?? "git", ...args], {
 			cwd,
 			detached: true,
 			stdin: "ignore",
@@ -77,34 +134,105 @@ export async function git(
 	} catch (error) {
 		throw new GitCommandError("spawn", `Could not start Git: ${(error as Error).message}`);
 	}
-	const stdout = drainBounded(child.stdout as ReadableStream<Uint8Array>);
-	const stderr = drainBounded(child.stderr as ReadableStream<Uint8Array>);
-	let termination: GitFailure | undefined;
-	const terminate = (failure: GitFailure): void => {
+	let termination: { failure: GitFailure; cause?: Error } | undefined;
+	let groupSignalError: Error | undefined;
+	let terminationStarted!: () => void;
+	const terminationSignal = new Promise<void>((resolve) => {
+		terminationStarted = resolve;
+	});
+	const terminate = (failure: GitFailure, cause?: unknown): void => {
 		if (termination) return;
-		termination = failure;
-		if (child.exitCode !== null) return;
+		termination = {
+			failure,
+			...(cause === undefined
+				? {}
+				: { cause: cause instanceof Error ? cause : new Error(String(cause)) }),
+		};
+		terminationStarted();
 		try {
-			process.kill(-child.pid, "SIGKILL");
-		} catch {
-			child.kill("SIGKILL");
+			signalProcessGroup(child.pid);
+		} catch (error) {
+			groupSignalError = error instanceof Error ? error : new Error(String(error));
+			// Reap the leader as well as diagnosing the failed group signal. This is
+			// never accepted as proof that descendants are gone.
+			try {
+				child.kill("SIGKILL");
+			} catch {
+				// Group cleanup below remains the terminal proof.
+			}
 		}
 	};
-	const timeout = setTimeout(() => terminate("timeout"), options.timeoutMs ?? GIT_TIMEOUT_MS);
+	const stdout = drainBounded(child.stdout as ReadableStream<Uint8Array>, () =>
+		terminate("output"),
+	);
+	const stderr = drainBounded(child.stderr as ReadableStream<Uint8Array>, () =>
+		terminate("output"),
+	);
+	const timeout = setTimeout(
+		() => terminate("timeout"),
+		options.timeoutMs ?? GIT_COMMAND_TIMEOUT_MS,
+	);
 	const abort = (): void => terminate("aborted");
 	options.signal?.addEventListener("abort", abort, { once: true });
 	let exitCode: number;
-	let out: Awaited<ReturnType<typeof drainBounded>>;
-	let err: Awaited<ReturnType<typeof drainBounded>>;
+	let out: Awaited<typeof stdout.result>;
+	let err: Awaited<typeof stderr.result>;
+	let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
 	try {
-		[exitCode, out, err] = await Promise.all([child.exited, stdout, stderr]);
+		const complete = Promise.all([child.exited, stdout.result, stderr.result]);
+		const cleanupExpired = terminationSignal.then(
+			() =>
+				new Promise<null>((resolve) => {
+					cleanupTimer = setTimeout(() => resolve(null), GIT_PROCESS_GROUP_CLEANUP_MS);
+				}),
+		);
+		let settled = await Promise.race([complete, cleanupExpired]);
+		if (settled === null) {
+			try {
+				signalProcessGroup(child.pid);
+			} catch (error) {
+				groupSignalError ??= error instanceof Error ? error : new Error(String(error));
+			}
+			try {
+				child.kill("SIGKILL");
+			} catch {
+				// The leader may already have been reaped.
+			}
+			const cancellation = new Error("Git process-group cleanup exceeded its grace.");
+			await Promise.all([stdout.cancel(cancellation), stderr.cancel(cancellation)]);
+			settled = await complete;
+			termination ??= { failure: "cleanup", cause: cancellation };
+		}
+		[exitCode, out, err] = settled;
 	} finally {
 		clearTimeout(timeout);
 		options.signal?.removeEventListener("abort", abort);
 	}
-	if (termination) throw new GitCommandError(termination, `Git command ${termination}.`, exitCode);
-	if (out.exceeded || err.exceeded)
-		throw new GitCommandError("output", "Git command output exceeded 64 KiB.", exitCode);
+	if (out.error || err.error) terminate("cleanup", out.error ?? err.error);
+	if (!termination && processGroupExists(child.pid)) {
+		terminate("cleanup", new Error("Git exited while its detached process group remained live."));
+	}
+	if (termination) {
+		const gone = await processGroupDisappeared(child.pid);
+		if (cleanupTimer !== undefined) clearTimeout(cleanupTimer);
+		if (groupSignalError || !gone) {
+			const detail = groupSignalError?.message ?? "the detached process group remained live";
+			throw new GitCommandError(
+				"cleanup",
+				`Git command cleanup failed after ${termination.failure}: ${detail}.`,
+				exitCode,
+			);
+		}
+		if (termination.failure === "output")
+			throw new GitCommandError("output", "Git command output exceeded 64 KiB.", exitCode);
+		throw new GitCommandError(
+			termination.failure,
+			termination.cause?.message ?? `Git command ${termination.failure}.`,
+			exitCode,
+		);
+	}
+	if (child.signalCode !== null)
+		throw new GitCommandError("signal", `Git exited from ${child.signalCode}.`, exitCode);
 	if (exitCode !== 0) {
 		const detail = new TextDecoder().decode(err.bytes).trim();
 		throw new GitCommandError("exit", detail || `Git exited with status ${exitCode}.`, exitCode);

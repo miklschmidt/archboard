@@ -652,15 +652,9 @@ export function planDemotion(targets: ServerElement[], board: ServerElement[]): 
 				el.customData && typeof el.customData === "object" ? el.customData : {}
 			) as Record<string, unknown>;
 			const { archboard: _archboard, ...rest } = custom;
-			const ourBinding = readElementMetadata(el).archboard?.binding;
-			// Older notes may still contain the file presentation promotion used to
-			// store. Do not mistake an unrelated human-authored web link for ours.
-			const linkWasOurs =
-				typeof el.link === "string" && el.link.startsWith("file://") && !!ourBinding;
 			updates.push({
 				id: el.id,
 				customData: rest,
-				...(linkWasOurs ? { link: null } : {}),
 			});
 		}
 	}

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import {
+	chmodSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
@@ -70,6 +71,9 @@ test(
 		mkdirSync(outside);
 		mkdirSync(vault);
 		mkdirSync(join(root, "state"));
+		mkdirSync(join(root, "machine", "captures"), { recursive: true });
+		writeFileSync(openerExecutable, "#!/bin/sh\nexit 0\n");
+		chmodSync(openerExecutable, 0o700);
 		writeFileSync(join(checkout, "src", "index.ts"), "export {};\n");
 		writeFileSync(join(outside, "secret.ts"), "secret\n");
 		symlinkSync(join(outside, "secret.ts"), join(checkout, "src", "escape.ts"));
@@ -249,19 +253,95 @@ test(
 			["local-directory", exactLegacyDirectory],
 			...Object.entries(preservedEchoes),
 		] as const;
+		const presentedEchoes = await read();
 		for (const [index, [id, link]] of echoCases.entries()) {
+			const presentedElement = presentedEchoes.get(id);
 			const changed = await api(`/api/elements/changes?board=targets`, {
 				method: "POST",
-				body: { clientId: "echo-matrix", upserts: [{ id, link, x: 30 + index }], deletes: [] },
+				body: {
+					clientId: "echo-matrix",
+					upserts: [{ id, link, x: 30 + index, customData: presentedElement?.customData }],
+					deletes: [],
+				},
 			});
 			expect(changed.status, `${id}: ${JSON.stringify(changed.body)}`).toBe(200);
 		}
 		let raw = readFileSync(note, "utf8");
-		const stored = new Map(extractSceneElements(raw).map((element) => [element.id, element]));
+		let stored = new Map(extractSceneElements(raw).map((element) => [element.id, element]));
 		for (const id of ["local-file", "commit"]) expect(stored.get(id)?.link, id).toBeNull();
 		expect(stored.get("local-directory")?.link).toBe(exactLegacyDirectory);
 		for (const [id, link] of Object.entries(preservedEchoes))
 			expect(stored.get(id)?.link, id).toBe(link);
+		const agentPresented = (await read()).get("commit")!;
+		const agentEcho = await api(`/api/elements/changes?board=targets`, {
+			method: "POST",
+			body: {
+				origin: "agent",
+				upserts: [
+					{
+						id: agentPresented.id,
+						x: agentPresented.x + 1,
+						link: agentPresented.link,
+						customData: agentPresented.customData,
+					},
+				],
+				deletes: [],
+			},
+		});
+		expect(agentEcho.status).toBe(200);
+		raw = readFileSync(note, "utf8");
+		stored = new Map(extractSceneElements(raw).map((element) => [element.id, element]));
+		expect(stored.get("commit")?.link).toBeNull();
+		expect(stored.get("bound-human")?.link).toBe("https://human.example/bound");
+		expect(raw).not.toContain("presentationTarget");
+
+		const humanPane = await openTestPane(canvas.base, api, "presentation-human", 0, {
+			board: "targets",
+			primary: true,
+		});
+		const peerPane = await openTestPane(canvas.base, api, "presentation-peer", 640, {
+			board: "targets",
+		});
+		resources.defer(() => humanPane.close());
+		resources.defer(() => peerPane.close());
+		const humanPresented = (await read()).get("local-file")!;
+		const peerStart = peerPane.since();
+		const humanChange = await api(`/api/elements/changes?board=targets`, {
+			method: "POST",
+			body: {
+				origin: "human",
+				clientId: humanPane.clientId,
+				upserts: [
+					{
+						id: humanPresented.id,
+						x: humanPresented.x + 2,
+						link: humanPresented.link,
+						customData: humanPresented.customData,
+					},
+				],
+				deletes: [],
+			},
+		});
+		expect(humanChange.status).toBe(200);
+		const peerChange = await waitForPaneMessage(peerPane, peerStart, "elements_changed");
+		const peerUpdated = (peerChange?.updated as ServerElement[] | undefined) ?? [];
+		expect(peerUpdated.find((element) => element.id === "local-file")?.link).toBe(
+			"/api/code-targets/open?board=targets&element=local-file",
+		);
+		const activationResponse = await fetch(new URL("/api/code-targets/open", canvas.base), {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Host: new URL(canvas.base).host,
+				Origin: canvas.base,
+				"Sec-Fetch-Site": "same-origin",
+			},
+			body: JSON.stringify({ board: "targets", element: "local-file" }),
+		});
+		const activationBody = await activationResponse.text();
+		expect(activationResponse.status, activationBody).toBe(200);
+		await humanPane.close();
+		await peerPane.close();
 
 		const beforeExportBytes = readFileSync(note);
 		const beforeExportMtime = statSync(note, { bigint: true }).mtimeNs;

@@ -8,6 +8,7 @@ import {
 	presentElement,
 	stripBindingPresentationLink,
 } from "../presentation.js";
+import { planDemotion } from "../promote.js";
 import { snapshotCheckoutAccess } from "../../code-target/index.js";
 import { completeElement } from "./support/elements.js";
 
@@ -76,7 +77,11 @@ function boardIdentityIsRequired() {
 void boardIdentityIsRequired;
 
 test("local and GitHub presentations use exact current targets", async () => {
-	const current = { ...context, checkoutSnapshot: await snapshotCheckoutAccess() };
+	const binding = { repo: fixture.repository, path: "src/index.ts" };
+	const current = {
+		...context,
+		checkoutSnapshot: await snapshotCheckoutAccess({ bindings: [binding] }),
+	};
 	expect(presentElement(bound(humanLink), current).link).toBe(
 		"/api/code-targets/open?board=system%2Farchboard&element=bound",
 	);
@@ -86,6 +91,20 @@ test("local and GitHub presentations use exact current targets", async () => {
 			current,
 		).link,
 	).toBe("https://github.com/acme/remote/tree/HEAD/src/a%20b.ts");
+});
+
+test("demotion preserves a human-authored file link on a bound node", () => {
+	const element = bound("file:///human-authored.ts") as ReturnType<typeof bound>;
+	element.customData = {
+		archboard: {
+			node: "bound-node",
+			kind: "service",
+			name: "Bound node",
+			binding: { repo: fixture.repository, path: "src/index.ts" },
+		},
+	};
+	const plan = planDemotion([element], [element]);
+	expect(plan.updates).toEqual([{ id: "bound", customData: {} }]);
 });
 
 test("only exact internal and request-owned opaque echoes restore the canonical link", () => {

@@ -40,7 +40,11 @@ import {
 import { type BoardState, copyElements } from "./board-store.js";
 import { hashBoardBytes } from "./board.js";
 import { type ChangeOrigin, changeFeed } from "./change-feed.js";
-import { presentElements, stripBindingPresentationLinks } from "./presentation.js";
+import {
+	presentElements,
+	stripBindingPresentationLinks,
+	type PresentationContext,
+} from "./presentation.js";
 import { usableDrawnFiles } from "./embedded-files.js";
 import logger from "./logger.js";
 import { EMPTY_CHECKOUT_SNAPSHOT, type CheckoutSnapshot } from "../code-target/index.js";
@@ -117,6 +121,8 @@ export interface BoardWriteRequest<T> {
 	afterPersist?: (context: BoardWriteAnswerContext<T>) => void;
 	answer: (context: BoardWriteAnswerContext<T>) => Record<string, unknown>;
 	checkoutSnapshot?: CheckoutSnapshot;
+	/** Exact request-echo targets that can be reused for peer presentation without filesystem work. */
+	presentationLinks?: ReadonlyMap<string, PresentationContext>;
 }
 
 export type TellPanes = (message: WebSocketMessage, board: string) => void;
@@ -273,11 +279,27 @@ function tellPanesAboutWrite(
 	clientId: string | null,
 	timestamp: string,
 	checkoutSnapshot: CheckoutSnapshot,
+	presentationLinks: ReadonlyMap<string, PresentationContext> | undefined,
 ): void {
+	const opaqueTargets = presentationLinks
+		? new Map(
+				[...presentationLinks].flatMap(([id, context]) =>
+					context.opaqueTarget === undefined ? [] : [[id, context.opaqueTarget] as const],
+				),
+			)
+		: undefined;
 	const message: ElementsChangedMessage = {
 		type: "elements_changed",
-		created: presentElements(delta.created, { boardKey: target.key, checkoutSnapshot }),
-		updated: presentElements(delta.updated, { boardKey: target.key, checkoutSnapshot }),
+		created: presentElements(delta.created, {
+			boardKey: target.key,
+			checkoutSnapshot,
+			opaqueTargets,
+		}),
+		updated: presentElements(delta.updated, {
+			boardKey: target.key,
+			checkoutSnapshot,
+			opaqueTargets,
+		}),
 		deleted: delta.deleted,
 		origin: clientId,
 		timestamp,
@@ -381,6 +403,7 @@ export function writeBoard<T>(
 			request.clientId ?? null,
 			appliedAt,
 			checkoutSnapshot,
+			request.presentationLinks,
 		);
 	}
 

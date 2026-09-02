@@ -39,7 +39,7 @@ test("code-target diagnostics and resolver core stay behind their module roots",
 	).toEqual([]);
 });
 
-test("resolver filesystem views stay derived from Node and change reports keep one batch", () => {
+test("resolver filesystem views stay derived from Node and change reports reuse request provenance", () => {
 	const core = readFileSync(join(repoRoot, "src/runtime/code-target/lib/resolver-core.ts"), "utf8");
 	expect(core).toMatch(/import type \{ Stats \} from "node:fs";/);
 	expect(core).toMatch(/stat\(candidate: string\): Pick<Stats, "isDirectory" \| "isFile">;/);
@@ -51,5 +51,7 @@ test("resolver filesystem views stay derived from Node and change reports keep o
 	expect(nextRoute).toBeGreaterThan(routeStart);
 	const changeReportRoute = application.slice(routeStart, nextRoute);
 	expect(changeReportRoute).not.toMatch(/\bpresentElement\s*\(/);
-	expect(changeReportRoute.match(/\bpresentElements\s*\(/g)).toHaveLength(1);
+	expect(changeReportRoute).not.toMatch(/\bpresentElements\s*\(/);
+	expect(changeReportRoute).not.toMatch(/\bsnapshotCheckoutAccess\s*\(/);
+	expect(changeReportRoute.match(/\bpresentationContextFromElement\s*\(/g)).toHaveLength(1);
 });
