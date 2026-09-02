@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
@@ -13,8 +13,8 @@ import type {
 } from "../index.js";
 import {
 	ATOMIC_PHASES,
-	failingFileSystem,
 	input,
+	injectedFileSystem,
 	makeStore,
 	sentinel,
 	withState,
@@ -40,12 +40,20 @@ const TRANSITIONS: readonly Transition[] = ["stage", "commit", "rollback", "outc
 describe("codex epoch durability boundaries", () => {
 	for (const transition of TRANSITIONS) {
 		test(`${transition} covers both twin targets and every atomic boundary`, () => {
-			const order = orderFor(transition);
-			for (const [targetIndex, target] of targetsFor(order).entries()) {
-				for (const phase of ATOMIC_PHASES) {
-					withState((state) => exerciseFailure(state, transition, phase, targetIndex, target));
+			withState((state) => {
+				const scenario = prepareScenario(state, transition);
+				const beforeBytes = stateBytes(state);
+				const beforeCodex = sentinel(state.codexHome);
+				const beforeSqlite = sentinel(state.sqliteHome);
+				for (const [targetIndex, target] of targetsFor(scenario.order).entries()) {
+					for (const phase of ATOMIC_PHASES) {
+						restoreState(state, beforeBytes);
+						exerciseFailure(state, scenario, phase, targetIndex, target, beforeBytes);
+						expect(sentinel(state.codexHome)).toEqual(beforeCodex);
+						expect(sentinel(state.sqliteHome)).toEqual(beforeSqlite);
+					}
 				}
-			}
+			});
 		});
 	}
 
@@ -54,7 +62,11 @@ describe("codex epoch durability boundaries", () => {
 			const authority = createIdentityAuthority();
 			const store = makeStore(
 				state,
-				failingFileSystem(state, { phase: "temp_fsync", target: "records", failCleanup: true }),
+				injectedFileSystem(state, {
+					phase: "temp_fsync",
+					target: "records",
+					failCleanup: true,
+				}),
 			);
 			const failure = captureFailure(() =>
 				store.stageEpoch(input(authority, "cleanup-failure", "epoch_start")),
@@ -67,29 +79,24 @@ describe("codex epoch durability boundaries", () => {
 
 function exerciseFailure(
 	state: TestState,
-	transition: Transition,
+	scenario: Scenario,
 	phase: AtomicPhase,
 	targetIndex: number,
 	target: StateTarget,
+	beforeBytes: StateBytes,
 ): void {
-	const scenario = prepareScenario(state, transition);
-	const beforeCodex = sentinel(state.codexHome);
-	const beforeSqlite = sentinel(state.sqliteHome);
-	const beforeBytes = stateBytes(state);
-	const store = makeStore(state, failingFileSystem(state, { phase, target }));
+	const store = makeStore(state, injectedFileSystem(state, { phase, target }));
 	const failure = captureFailure(() => scenario.action(store));
 	expect(failure).toMatchObject({ code: "durability_failed" });
 	expect(() =>
 		store.stageEpoch(input(createIdentityAuthority(), "quarantine", "epoch_start")),
 	).toThrowError(expect.objectContaining({ code: "durability_failed" }));
 	assertRestart(state, scenario, expectedRestart(targetIndex, phase), beforeBytes);
-	expect(sentinel(state.codexHome)).toEqual(beforeCodex);
-	expect(sentinel(state.sqliteHome)).toEqual(beforeSqlite);
 }
 
 function prepareScenario(state: TestState, transition: Transition): Scenario {
 	const authority = createIdentityAuthority();
-	const prepared = makeStore(state);
+	const prepared = makeStore(state, injectedFileSystem(state));
 	if (transition === "stage") {
 		return {
 			before: prepared.snapshot(),
@@ -144,10 +151,6 @@ function transitionKind(transition: Transition): string {
 	return "other";
 }
 
-function orderFor(transition: Transition): Scenario["order"] {
-	return transition === "stage" ? "records-first" : "manifest-first";
-}
-
 function targetsFor(order: Scenario["order"]): readonly StateTarget[] {
 	return order === "records-first" ? ["records", "manifest"] : ["manifest", "records"];
 }
@@ -173,6 +176,22 @@ function stateBytes(state: TestState): StateBytes {
 
 function readOptional(path: string): string | null {
 	return existsSync(path) ? readFileSync(path, "utf8") : null;
+}
+
+function restoreState(state: TestState, baseline: StateBytes): void {
+	const stateFiles = new Set(["epoch-manifest.json", "epoch-records.json"]);
+	expect(readdirSync(state.root).filter((entry) => !stateFiles.has(entry))).toEqual([]);
+	restoreFile(join(state.root, "epoch-manifest.json"), baseline.manifest);
+	restoreFile(join(state.root, "epoch-records.json"), baseline.records);
+	expect(stateBytes(state)).toEqual(baseline);
+}
+
+function restoreFile(path: string, contents: string | null): void {
+	if (contents === null) {
+		if (existsSync(path)) unlinkSync(path);
+		return;
+	}
+	writeFileSync(path, contents, { mode: 0o600 });
 }
 
 function assertRestart(

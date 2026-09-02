@@ -1,14 +1,19 @@
 ---
 id: TASK-148.09
 title: Reuse Codex epoch storage-failure scaffolding
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-09-02 23:00'
+updated_date: '2026-09-02 23:08'
 labels: []
 dependencies: []
 references:
   - codex-epoch/tests/storage-failure.test.ts
   - storage-failure-support.ts
+modified_files:
+  - src/runtime/codex-epoch/tests/storage-failure.test.ts
+  - src/runtime/codex-epoch/tests/storage-failure-support.ts
 parent_task_id: TASK-148
 ordinal: 281000
 ---
@@ -25,3 +30,22 @@ The storage failure matrix rebuilds 72 fsync-backed temporary roots although onl
 - [ ] #2 Durable root creation and fsync-backed epoch setup are reused or replaced by the cheapest credible injected boundary; the test no longer creates a complete durable root for every matrix row.
 - [ ] #3 The focused owner improves materially from the recorded 7.17 seconds and leaves no temp roots or process residue.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Build each transition scenario once inside one owned temporary root through the injected filesystem seam, capture its immutable manifest and records bytes, and explicitly restore those bytes before every target/phase row.
+2. Make the failure filesystem skip real fsync work while preserving all nine injection points, and report close failures only after closing the real descriptor so the focused owner leaves no descriptor residue.
+3. Keep every transition, twin target, restart, quarantine, and Codex-store sentinel assertion; retain the cleanup-precedence case in its own owned state.
+4. Run only the exact focused owner in the required transient service, measure elapsed time against 7.17 seconds, audit its service cgroup and /tmp roots, then record the evidence and commit.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented reusable storage-failure setup. Each transition now owns one temporary root and captures one immutable manifest/records baseline. Every target/phase row rejects unexpected lock or temp entries, restores the exact baseline bytes, and then exercises the injected failure. The matrix still covers 4 transitions x 2 targets x 9 phases, store quarantine, restart before/corrupt/after outcomes, both external-store sentinels, and primary-error preservation when cleanup also fails.
+
+Focused evidence: `bun test src/runtime/codex-epoch/tests/storage-failure.test.ts` passed after formatting with 5 tests and 590 assertions. Measured shell elapsed time was 0.103 seconds and service runtime was 129 ms, compared with the supplied 7.17-second baseline. The passing unit finished inactive with an empty cgroup, no live descendants, and no `/tmp/archboard-codex-failure-*` roots.
+
+Validation gap: a separate focused `bun x oxlint` attempt could not run because this checkout lacks the `tsgolint` executable. The service exited 1 with `Failed to find tsgolint executable`; its cgroup was empty and it left no descendants. No lint or type rule was changed, bypassed, or disabled. Per parent direction, no further lint, type-check, test, formatter, or broad command was run.
+<!-- SECTION:NOTES:END -->
