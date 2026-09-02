@@ -1,11 +1,10 @@
 ---
 id: TASK-143.01.14
 title: Compose the production Codex workbench graph
-status: In Progress
-assignee:
-  - '@codex'
+status: To Do
+assignee: []
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-01 19:10'
+updated_date: '2026-09-02 01:39'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -16,6 +15,7 @@ dependencies:
   - TASK-143.07.04
   - TASK-143.07.06
   - TASK-143.01.16
+  - TASK-143.08.05
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
   - docs/design/codex-workbench-authored-contracts.md
@@ -108,174 +108,7 @@ Own the one production composition root in the canvas server. It instantiates ev
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Remove the broad canvas-index export and add one narrow production entrypoint imported only by the canvas application. Wire start before HTTP readiness and exact async shutdown into the existing signal path.
-2. Refactor transport/session/approval ownership so the composed workbench installs the sole eleven-variant reverse-request listener. Keep standalone auto-registration only through an explicit supported option and prove one receive/respond attempt per family with real constructors.
-3. Redesign retained ownership around one stable child/transport boundary. Reload replaces generation-bound listeners and owners without closing stdin; terminal shutdown closes transport and process once. Reject every duplicate active install and release registration only after failure, child exit, or shutdown.
-4. Replace ad hoc teardown with a staged cleanup ledger active before the first constructor. Use it for constructor, registration, hook, initialization, child-exit, browser-disconnect, reload, and shutdown paths so every acquired owner retires even when another cleanup step fails.
-5. Add direct application, real-factory routing, two-generation reload, failure-injection, child-exit race, duplicate-owner, and stable policy tests. Remove source-regex tests that duplicate behavioral proof.
-6. Run the requested capped sequential validation lanes, including one fresh hot-reload owner after removing the eager import, then update task notes without checking AC and commit on top of 8de971a0 for independent fixed-base review.
-
-7. Add the approved process-lifetime unbound binding controller in src/runtime/codex-thread-context. Preserve the immutable fixed-target leaf, own one subscription and one child/session event ledger across exact CAS bind/rebind/clear transitions, and integrate its proven workhorse binding into production composition before application readiness.
-
-8. Implement the concrete canvas host owner in the application seam: one semantic publisher/context source, dynamic visual-approval owner, exact caller/target/context/operation/lifecycle adapters, browser projection/actions, and reviewed runtime bindings. Dynamically install the narrow workbench entrypoint before HTTP listen, replace only hooks on reload, and await exact shutdown/failure cleanup.
-
-9. Add direct production-application owners for construction cardinality, readiness ordering, sole routing, reload identity, shutdown/child-exit/startup-failure cleanup, and duplicate refusal; then run capped validation and callback the fixed-base parent.
-
-10. Wire the concrete Codex browser protocol through the existing canvas WebSocket connection owner. Decode connect, snapshot, lease, command, and subscribe requests at the application boundary; send gateway messages on that socket; retire the exact browser/pane connection on close and reload; and prove the public socket workflow including approval resolution.
-
-11. Replace browser-authored turn payloads with codex-instructions constructors using the lease-bound pane, child, epoch, thread link, operation identity, board, and semantic context. Bind semantic delivery through exact CAS on create, attach, relink, stale disconnect, and child exit without selecting a fallback pane.
-
-12. Add the smallest queue lifecycle authority needed to gate new work, cancel or drain accepted work, and revoke binding authority during shutdown and child exit. Bind realtime remote media to the authoritative browser connection and return the existing explicit unavailable result when no media owner is attached.
-
-13. Replace the mutable partial component assembly with an explicit complete object checked by satisfies. Split the broad canvas workbench entrypoint into production application, production composition, and test-only entrypoints while preserving deep-module boundaries.
-
-14. Restore behavioral retained-state policy by installing and reloading with caller-supplied retained state, asserting the exact allowlist and rejecting generation-bound values. Add multi-pane, honestly-unbound, session-boundary, queue lifecycle, remote-media, WebSocket, reload, and stale-CAS owners.
-
-15. Run capped sequential focused, type, lint, formatting, policy, live WebSocket, and safe reload verification. Correct the protected artifact evidence through Backlog CLI, keep status and AC unchanged, commit on top of b9ef7228, and callback the parent with the fixed-base range.
-
-16. Replace focus-based semantic capture with one exact pane-bound snapshot and prove two-pane lease isolation.
-
-17. Give thread-link mutation and disconnect cleanup one post-mutation controller token, and implement genuine current-child attach/relink through authoritative classification.
-
-18. Add opaque WebSocket instance ownership so reconnect replacement and out-of-order close cannot revoke the new logical browser.
-
-19. Add one continuous browser realtime session identity across start, append, and stop, then implement the browser-local peer/media owner and terminal cleanup.
-
-20. Preserve exact dynamic approval termination causes for child exit, host shutdown, replacement, and reload.
-
-21. Split the adapter implementation by behavior and strengthen retained-state value enforcement with negative mutation owners.
-
-22. Add a production application WebSocket proof crossing the real gateway and approval owner, run capped validation, update Backlog evidence, commit, and callback the parent.
-
-23. Make the canvas application retain one exact current socket per client id. Let stale closes retire only their own socket and Codex bridge state; gate selection, hold, pane, note-open, and semantic cleanup on exact current ownership.
-
-24. Split command-lease retirement from durable browser-connection teardown. Keep binding and realtime authority across release, expiry, and reacquire; invoke disconnect hooks exactly once only for socket close or replacement, child exit, and host shutdown.
-
-25. Replace retained generation-capturing lifecycle closures with one plain control cell and stable wrappers. Put current generation operations in explicit replaceable slots, poison old slots in tests, and remove impossible lexical-capture claims in favor of structural and behavioral policy.
-
-26. Move the browser workbench media owner into src/ui/codex-realtime/lib behind a narrow module entrypoint. Add an explicit media installation/readiness handshake and closed unavailable or negotiation_failed outcomes for missing APIs, permission failure, SDP failure, replacement, and success.
-
-27. Move cross-module WebSocket coverage to tests/system. Start the actual canvas application, drive its real socket decoder and production gateway/approval owner through overlap, stale close, lease release/reacquire, approval at-most-once, reload, and terminal cleanup, with cleanup registered before acquisition.
-
-28. Keep module tests on module-root contracts and add focused regressions for each reachable race, poisoned reload slot, nested or prototype retention path, and media readiness state. Remove the fake module proof that overstates production coverage.
-
-29. Run only the requested focused capped owners, both TypeScript projects, lint, format, inventory, boundary, and diff checks; append evidence through Backlog CLI, keep TASK-143.01.14 In Progress with AC unchecked, commit above f01cc33a, verify the protected hash, and callback the parent.
-
-30. Establish a replacement socket in the gateway at WebSocket acceptance, before any prior instance can close, and prove the no-request reconnect race.
-
-31. Bind every ordinary approval family to the exact browser link lifecycle and settle browser disconnect, child exit, and shutdown exactly once without disturbing release, transfer, expiry, or link changes.
-
-32. Capture settled semantic input from the thread-context controller current exact pane binding and reject stale or cleared bindings instead of selecting focus.
-
-33. Publish fresh lifecycle and gateway-facing callable identities from each source generation while retaining only reviewed stable process ports.
-
-34. Split browser WebSocket/media ownership out of codex-realtime and guard every post-await media write by exact run identity.
-
-35. Harden retained-state structural validation against prototype spoofing, intrinsic mutation, and nested or attached methods.
-
-36. Make the cross-module system owner fail-safe from its first acquisition and extend the real server proof across all production seams named by review.
-
-37. Run focused public-boundary owners and repository checks without repeating the documented OOM aggregates; record any unavailable prerequisites explicitly.
-
-38. Re-review the complete remediation diff, preserve the protected artifact hash, commit on the rejected head, and send the parent a finding-by-finding callback.
-
-39. Replace reload forwarding wrappers with a fresh source-generation operation record. Stable kept wrappers dispatch only through the current control cell, and tests poison the retired generation methods while asserting every callable identity changes.
-
-40. Make terminal shutdown continue through every teardown stage, aggregate actionable failures, clear retained slots and authority in a final guarantee, release registration, and allow a later clean install after each injected failure.
-
-41. Publish a new media replacement ticket before awaiting any old-run disposal. Fence every attach, start, and continuation by that ticket and prove an A/B/C delayed-disposal race in adversarial completion order.
-
-42. Register production system cleanup before temp-root and fixture acquisition. Track partial sockets, servers, children, and roots in reverse order, and inject failures at setup, listen, first socket open, and child start.
-
-43. Run the focused reload identity, terminal failure matrix, media triple-overlap, production setup cleanup, actual production server, inventory, boundary, type, lint, format, and diff owners under named 6 GiB systemd scopes without repeating known OOM fingerprints.
-
-44. Keep status and AC unchanged, commit above f3948b7a, verify the protected artifact, and send the parent the required four-finding rereview callback.
-
-45. Replace retained ownerHooks, child callbacks, and loose cleanup arrays with one exact current generation source record and named registration ledger. Refresh the complete record on reload, validate its nested shape, and poison every retired callback in behavioral owners.
-
-46. Make generation registration removal and installation failure-isolated. Publish the new complete set only after full installation, restore the old complete set only after clean rollback, and terminally release the owner when removal, partial cleanup, or rollback cannot prove a complete set.
-
-47. Make projection and every named cleanup terminally idempotent by clearing ownership before invocation. Add removal, install, partial-cleanup, rollback, projection, aggregate-error, shutdown-cache, and reinstall matrices without weakening any existing owner.
-
-48. Arm production socket cleanup before the post-construction hook and add actual src/server.ts system cases for hook throw, socket error, early close, and timeout. Prove partial sockets and listeners close, a same-client reconnect can claim and release authority, processes exit, roots disappear, and observable cleanup order is reversed.
-
-49. Reassess the 1,654-line composition module after the lifecycle fix. Extract only a cohesive private lifecycle unit if it reduces concepts without a cycle or new public contract; otherwise record the concrete boundary reason and retain the advisory as review risk.
-
-50. Run the focused generation, reload, terminal, media, production cleanup, actual server, hot-reload, socket, inventory, lint, formatting, both TypeScript projects, frontend build, and diff owners in sequential named 6 GiB systemd scopes. Do not retry documented OOM fingerprints.
-
-51. Keep TASK-143.01.14 In Progress with AC unchecked, verify the protected hash, commit above de56927d, and send the required six-finding callback to parent thread 01a053f2-e36f-7911-9859-09d259b86aea.
-
-52. Replace the retained generation graph with a minimal process-lifetime runtime containing only the stable process owner and lifecycle tickets; keep every assembled generation, owner, decoder, adapter, route, callback, approval, and authority exclusively behind the replaceable current source slot.
-53. Extract private routing and lifecycle modules. The lifecycle unit owns ticket reservation, startup publication fences, synchronous dispatch revocation, rollback, child retirement, and terminal teardown; the composition root owns factory assembly and public wiring.
-54. Add hostile-descendant retained-policy owners, public-wrapper shutdown revocation coverage, and a delayed createGeneration/shutdown/replacement race proving a stale start cannot overwrite or release the replacement runtime.
-55. Replace synthetic socket emission cases with real loopback peers for refused/reset connection, accepted early close, and accepted withheld WebSocket upgrade timeout, then prove the next actual src/server.ts start recovers without socket, listener, process, authority, or root leaks.
-56. Run the focused and complete viable validation lanes sequentially in named transient systemd user units capped at 6 GiB memory and 1 GiB swap; preserve the protected artifact hash, keep status and all acceptance criteria unchanged, commit above c55d5594, and callback the fixed-base parent with finding-by-finding evidence.
-
-57. Add failing adversarial owners for stale reload publication after old cleanup, stale rollback publication after reactivation, shutdown during candidate activation, child exit in each reload gap, guarded production initialization, synchronous application revocation, and router privacy.
-
-58. Replace the single currentGeneration pointer with one lifecycle transaction and an exact live-generation resource ledger. Let shutdown invalidate the transaction and synchronously stop every owned member before any await; fence every continuation and publication by runtime, ticket, phase, child, transport, and transaction ownership.
-
-59. Move transport exit observation to one process-lifetime retained observer and terminal latch. Remove generation-owned exit registration, consume the exact event through the current private lifecycle dispatch, and forbid ready publication without an open transport and exact current child.
-
-60. Pass a transaction activation guard into production initialization. Check it after every await and before epoch, lifecycle, readiness, browser-state, and coordinator mutations, staging account-derived publication until coordinator readiness is proven.
-
-61. Give the canvas application a synchronously available production shutdown handle and remove the request router from every root entrypoint. Add repository policy that only the private lifecycle implementation may import the private router.
-
-62. Run the new adversarial owners first, then the focused non-hot lanes and viable repository gates sequentially in named 6 GiB memory and 1 GiB swap units. Keep status and AC unchanged, preserve the protected hash, commit above 0b0f9cab, and callback the parent with finding-by-finding evidence.
-
-63. Replace the retained exit listener/disposer record with an exact replaying terminal-event bridge and one replaceable source handler; attach it at stable-kernel acquisition and poison the retired handler after reload.
-
-64. Acquire the first identity ledger and transport synchronously from the exact spawned child before awaiting generation construction; cover exit-before-transport-listener, exit-during-factory, and exit-before-activation schedules with one-shot cleanup and deterministic recovery.
-
-65. Replace the canvas application installed boolean protocol with explicit idle/preparing/installed/stopping/stopped ownership, publish synchronous shutdown authority before start awaits, and aggregate concurrent startup/shutdown failures.
-
-66. Run the three adversarial owners first, then the requested focused non-hot module and production owners plus sequential static gates under named 6 GiB/1 GiB systemd scopes; do not rerun documented OOM aggregates.
-
-67. Preserve the protected artifact, task status, and unchecked AC, commit above 91991bce, and send the fixed-base parent the required finding-by-finding callback before local final.
-
-68. Refuse prepare deterministically in stopping before touching terminal ownership; clear terminal intent only when a new prepare begins from idle or fully stopped.
-
-69. Publish the exact shutdown promise and clear installed ownership before invoking production teardown, then return that promise to every concurrent shutdown caller through success or rejection.
-
-70. Add installed-overlap and cleanup-rejection owners first, run focused non-hot capped validation without known OOM aggregates, preserve protected state, commit above 127e5cad, and callback the parent.
-
-71. Preserve the settled shutdown authority through stopped so same-source and replacement-source shutdown calls return the exact cached success or rejection promise.
-
-72. Replace terminal authority synchronously when recovery prepare begins, define failed recovery ownership without reviving the retired installation, and prove it with focused owners.
-
-73. Run exact replacement-source owners first, then sequential capped focused non-hot gates, update evidence, commit above fb3b05f5, and callback the parent.
-
-74. Add one gated recovery owner that overlaps blocked startup with same-source and replacement-source shutdown, then proves the failed recovery promise replaces the settled teardown result.
-
-75. Publish the exact recovery prepare operation as stopped terminal ownership before throwing either its startup error or combined startup and teardown AggregateError.
-
-76. Run the exact owner first, then sequential capped focused non-hot and static gates, update evidence, commit above 2be7641a, and callback the parent.
-
-77. Extend the gated recovery owner with a queued replacement prepare between asynchronous failure publication and the owning finalizer; prove that attempt is refused and cannot acquire partial ownership.
-
-78. Keep asynchronous recovery failure in stopping until its own finally clears preparePromise and performs the sole stopped transition, while retaining the exact recovery promise and shutdown owner.
-
-79. Run the exact stale-finalizer owner first, then sequential capped application, focused non-hot, production, inventory, and static gates; commit above 746a4bcf and callback the parent.
-
-80. Add a public synchronous stopped-recovery setup owner using installation throw, exact promise and error replay across sources, stable call counters, and one clean later cycle.
-
-81. Extend the existing production generation shutdown event owner to require one transport shutdown after ordinary settlement and before the caller's process-stop boundary.
-
-82. Mutation-check each owner against its protected production branch, restore unchanged production through patches, then run sequential capped focused, inventory, type, lint, format, and fixed-base diff gates before commit and callback.
-
-83. Keep generation-level transport count and ordinary-before-transport enforcement, but remove the caller-inserted process marker and its synthetic order claim.
-
-84. Add one public installed-owner shutdown owner using the existing fake process and a deferred fake generation cleanup to prove ordinary settlement, transport shutdown, and process stop order through terminalShutdown.
-
-85. Mutation-check early stopProcess ordering, restore production by reverse patch, then run sequential capped focused owners, inventory, static gates, complete fixed-base diff, commit above 59da30d3, and callback the parent.
-
-86. Extract the existing composed-generation component/event fixture into one shared test-support helper, preserving the direct generation cardinality and router owner.
-
-87. Replace the fake shutdown-order owner with a public owner whose createGeneration returns composeCodexWorkbenchGeneration over that real fixture, and assert real ordinary settlement then transport shutdown then fake-process stop.
-
-88. Mutation-check early process stop and non-delegating generation-factory stop, restore production byte-for-byte, run the requested capped sequential gates, update evidence, commit, and callback the fixed-base parent.
-
-Reopened remediation: wire the remediated approval and voice public contracts into the sole production composition and browser projection. Prove a production consumer exists for exact approval lifecycle and media state without adding another owner.
+Paused by TASK-143.08. Reopen only after TASK-143.08.05 is Done. Plan the production graph anew from the recovered generated protocol, single validation seams, retained owner matrix, and mandatory atomic startup contract. Do not merge the detached composition chain or carry forward its handwritten browser contracts and repeated remediation scaffolding.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -397,3 +230,12 @@ Final validation evidence: repository inventory passed 39 tests with 69 assertio
 
 Reopened with user approval after TASK-143.03.07 and TASK-143.04.01 showed that authoritative approval and voice state stop before the production browser composition.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-09-02 01:39
+---
+Course correction, 2026-09-02: maximal head 0ac9ef2d and ancestor 70263cf7 depend on rejected contract and validation choices. Preserve their observable approval, realtime, and browser-projection behavior as evidence, then rebuild it on the recovered base rather than merging either head.
+---
+<!-- COMMENTS:END -->

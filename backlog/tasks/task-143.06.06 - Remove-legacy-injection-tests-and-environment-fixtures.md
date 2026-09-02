@@ -1,14 +1,14 @@
 ---
 id: TASK-143.06.06
 title: Remove remaining legacy injection environment sanitization
-status: In Progress
-assignee:
-  - '@codex'
+status: To Do
+assignee: []
 created_date: '2026-08-30 16:29'
-updated_date: '2026-09-01 19:10'
+updated_date: '2026-09-02 01:39'
 labels: []
 dependencies:
   - TASK-143.06.05
+  - TASK-143.08.01
 references:
   - docs/adr/0005-push-to-codex-via-app-server.md
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
@@ -37,7 +37,7 @@ Remove obsolete ARCHBOARD_INJECT environment handling from the remaining process
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Preserve the review-clean removal of legacy injection sanitization. 2. Rebase or replay it onto the reopened canonical base. 3. Run focused process-contract and repository-policy owners for the touched helper. 4. Compare any broader-lane failures with the fixed base and accept only no-new-failure evidence. 5. Send the complete fixed-base range to independent review before finalization.
+Paused until the OOM recovery gate TASK-143.08.01 is Done. Then inspect the narrow fixed-range change at 0e74cbaf, write a fresh bounded plan, and replay only the verified removal of remaining executable ARCHBOARD_INJECT environment handling. Do not reuse broad validation commands or unrelated detached history.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -45,3 +45,12 @@ Remove obsolete ARCHBOARD_INJECT environment handling from the remaining process
 <!-- SECTION:NOTES:BEGIN -->
 User approved replacing the impossible all-green AC #4 with fixed-base non-regression because the complete process, system, and repository lanes were already red before this task's change.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-09-02 01:39
+---
+Course correction, 2026-09-02: 0e74cbaf is the strongest selective-replay candidate because it is a narrow cleanup above ba1aacee. Keep its head durably referenced, but do not replay or validate it until TASK-143.08.01 removes the OOM mechanism.
+---
+<!-- COMMENTS:END -->

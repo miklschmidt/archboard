@@ -4,9 +4,10 @@ title: Build the live voice UI and end-to-end recovery
 status: To Do
 assignee: []
 created_date: '2026-08-30 11:44'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-09-02 01:40'
 labels: []
-dependencies: []
+dependencies:
+  - TASK-143.08.05
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md

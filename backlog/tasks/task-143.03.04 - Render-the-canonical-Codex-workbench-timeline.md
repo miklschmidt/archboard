@@ -4,11 +4,12 @@ title: Render the canonical Codex workbench timeline
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-08-30 17:27'
+updated_date: '2026-09-02 01:39'
 labels: []
 dependencies:
   - TASK-143.03.02
   - TASK-144.14
+  - TASK-143.08.05
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
@@ -33,3 +34,12 @@ Render the complete decoded Codex 0.151.0 ThreadItem union as bounded, escaped, 
 - [ ] #3 The timeline is a named focusable role=log with aria-relevant additions and aria-busy only while streaming; token deltas do not cause repeated live announcements or steal focus.
 - [ ] #4 Unknown item variants, malformed markdown/media, long output, streaming completion, delayed arrival, and prior-epoch history have safe deterministic renderers and module tests.
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-09-02 01:39
+---
+Course correction, 2026-09-02: this not-yet-started UI leaf is frozen behind TASK-143.08.05 so it cannot build on the rejected protocol and browser contracts.
+---
+<!-- COMMENTS:END -->
