@@ -117,8 +117,8 @@ The canvas used to serve the whole of `dist` to the browser, so that copy was
 reachable over http by path; TASK-058 narrowed the mount to `dist/frontend`, and
 `bun run test:bind` plants a file in `dist/` and fails if it is served.
 
-Reloading is a maintainer's act, so it is not on the command line an agent or a
-user sees. It belongs with the other things that need the checkout.
+The maintainer-only reload command described above was removed by ADR 0021.
+Backend source changes now require an explicit server restart.
 
 Measurements behind all of this, including what bun re-evaluates and what the
 source check cannot see, are in `docs/design/hot-reload-under-bun.md`, which is
