@@ -328,7 +328,7 @@ export const promoteContract = defineCommand({
 		const targets = await targetElements(ids, board, "promote");
 		context.parse(PromotionBindingStageSchema, input);
 		const binding = input.path
-			? resolveBinding(
+			? await resolveBinding(
 					{
 						path: input.path,
 						...(input.repo ? { repo: input.repo } : {}),

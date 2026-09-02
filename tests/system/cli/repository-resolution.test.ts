@@ -79,10 +79,10 @@ describe("repository binding resolution", () => {
 				await import("../../../src/runtime/engine/promote.ts");
 			const { declareRepo, checkoutFor, listRepos } =
 				await import("../../../src/runtime/engine/repo-registry.ts");
-			declareRepo(alpha);
+			await declareRepo(alpha);
 			let refused: unknown;
 			try {
-				resolveBinding({ path: "src/service.ts" }, { kind: "none", surface: "this caller" });
+				await resolveBinding({ path: "src/service.ts" }, { kind: "none", surface: "this caller" });
 			} catch (error) {
 				refused = error;
 			}
@@ -92,7 +92,7 @@ describe("repository binding resolution", () => {
 			expect(refusal).toContain("absolute path");
 			expect(refusal).toContain("repository");
 			expect(refusal).toContain(alphaIdentity);
-			const absolute = resolveBinding(
+			const absolute = await resolveBinding(
 				{ path: join(beta, "src/service.ts") },
 				{ kind: "none", surface: "this caller" },
 			);
@@ -104,20 +104,20 @@ describe("repository binding resolution", () => {
 			expect(absolute.address.commit).toMatch(/^[0-9a-f]{40}$/);
 			expect(checkoutFor(betaIdentity)).toBe(beta);
 			expect(listRepos().find((entry) => entry.repo === betaIdentity)?.source).toBe("observed");
-			const named = resolveBinding(
+			const named = await resolveBinding(
 				{ path: "src/service.ts", repo: betaIdentity },
 				{ kind: "none", surface: "this caller" },
 			);
 			expect(named).toMatchObject({ resolved: true, resolvedFrom: "registry" });
 			expect(named).not.toHaveProperty("link");
-			const ambient = resolveBinding({ path: "src/service.ts" }, { kind: "cwd", dir: alpha });
+			const ambient = await resolveBinding({ path: "src/service.ts" }, { kind: "cwd", dir: alpha });
 			expect(ambient).toMatchObject({
 				resolved: true,
 				resolvedFrom: "cwd",
 				address: { repo: alphaIdentity },
 			});
 			expect(ambient.note).toContain("You named no repository");
-			const namedOverAmbient = resolveBinding(
+			const namedOverAmbient = await resolveBinding(
 				{ path: "src/service.ts", repo: betaIdentity },
 				{ kind: "cwd", dir: alpha },
 			);
@@ -128,14 +128,14 @@ describe("repository binding resolution", () => {
 			});
 			expect(namedOverAmbient).not.toHaveProperty("link");
 
-			const missing = resolveBinding({ path: "src/nope.ts" }, { kind: "cwd", dir: alpha });
+			const missing = await resolveBinding({ path: "src/nope.ts" }, { kind: "cwd", dir: alpha });
 			expect(missing).toMatchObject({
 				resolved: true,
 				address: { repo: alphaIdentity, path: "src/nope.ts" },
 			});
 			expect(missing).not.toHaveProperty("link");
 
-			const outside = resolveBinding(
+			const outside = await resolveBinding(
 				{ path: "src/service.ts" },
 				{ kind: "cwd", dir: fixture.nowhere },
 			);
@@ -153,7 +153,7 @@ describe("repository binding resolution", () => {
 		process.env.ARCHBOARD_REPOS = fixture.registry;
 		try {
 			const { resolveBinding } = await import("../../../src/runtime/engine/promote.ts");
-			const unknown = resolveBinding(
+			const unknown = await resolveBinding(
 				{ path: "src/service.ts", repo: "github.com/acme/never-cloned" },
 				{ kind: "none", surface: "this caller" },
 			);
@@ -191,7 +191,7 @@ describe("repository binding resolution", () => {
 				),
 			);
 			const { resolveBinding } = await import("../../../src/runtime/engine/promote.ts");
-			const stale = resolveBinding(
+			const stale = await resolveBinding(
 				{ path: "src/service.ts", repo: "github.com/acme/moved" },
 				{ kind: "none", surface: "this caller" },
 			);

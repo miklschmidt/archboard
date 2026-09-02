@@ -42,6 +42,34 @@ async function cleanup(): Promise<void> {
 	rmSync(vault, { recursive: true, force: true });
 }
 
+test("post-attempt cancellation preserves a reentrant claim for explicit release", async () => {
+	const board = "cancelled-reentrant-claim";
+	boards.add(board);
+	const originalClaim = await lock.claimBoard({
+		board,
+		reason: "Keep the original claim",
+		waitMs: 0,
+	});
+	try {
+		const controller = new AbortController();
+		const cancelledRenewal = lock.claimBoard({
+			board,
+			reason: "This renewal is canceled after its reentrant attempt",
+			waitMs: 0,
+			signal: controller.signal,
+		});
+		controller.abort();
+		await expect(cancelledRenewal).rejects.toBeInstanceOf(lock.BoardLockCancelledError);
+		expect(lock.claimOn(board)?.holder.id).toBe(originalClaim.claim.holder.id);
+		expect(lock.boardLockState(board)?.id).toBe(originalClaim.claim.holder.id);
+		expect(lock.releaseClaim(board)?.holder.id).toBe(originalClaim.claim.holder.id);
+		expect(lock.claimOn(board)).toBeNull();
+		expect(lock.boardLockState(board)).toBeNull();
+	} finally {
+		lock.releaseClaim(board);
+	}
+});
+
 test("lease interface excludes, renews, expires, and normalizes", async () => {
 	jest.useFakeTimers();
 	try {

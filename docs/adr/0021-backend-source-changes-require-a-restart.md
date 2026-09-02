@@ -43,7 +43,9 @@ drain is bounded: work that does not settle refuses the stop, names what is
 still active, restores write admission, and leaves every resource intact for a
 later retry. Listen failures unwind the owners already entered, and a runtime
 HTTP server error enters this same guarded stop instead of running a separate
-exit path. Source-freshness guidance uses that same guarded restart path.
+exit path. The HTTP listener receives the startup abort signal directly, and
+teardown waits until a pending listen has closed or failed before it reports a
+terminal stop. Source-freshness guidance uses that same guarded restart path.
 
 Frontend Vite HMR may remain. It belongs to the browser bundle process and does
 not replace modules inside the Archboard server. Backend and frontend

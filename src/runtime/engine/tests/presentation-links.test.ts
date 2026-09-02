@@ -8,6 +8,7 @@ import {
 	presentElement,
 	stripBindingPresentationLink,
 } from "../presentation.js";
+import { snapshotCheckoutAccess } from "../../code-target/index.js";
 import { completeElement } from "./support/elements.js";
 
 const context = { boardKey: "system/archboard" } as const;
@@ -74,31 +75,34 @@ function boardIdentityIsRequired() {
 }
 void boardIdentityIsRequired;
 
-test("local and GitHub presentations use exact current targets", () => {
-	expect(presentElement(bound(humanLink), context).link).toBe(
+test("local and GitHub presentations use exact current targets", async () => {
+	const current = { ...context, checkoutSnapshot: await snapshotCheckoutAccess() };
+	expect(presentElement(bound(humanLink), current).link).toBe(
 		"/api/code-targets/open?board=system%2Farchboard&element=bound",
 	);
 	expect(
 		presentElement(
 			bound(humanLink, { repo: "github.com/acme/remote", path: "src/a b.ts" }),
-			context,
+			current,
 		).link,
 	).toBe("https://github.com/acme/remote/tree/HEAD/src/a%20b.ts");
 });
 
-test("exact internal, GitHub, opaque, and live legacy echoes restore the canonical link", () => {
+test("only exact internal and request-owned opaque echoes restore the canonical link", () => {
 	const canonical = bound(humanLink);
 	const internal = "/api/code-targets/open?board=system%2Farchboard&element=bound";
 	const github = "https://github.com/acme/payments/tree/HEAD/src/index.ts";
 	const opaque = "opaque:replacement-owned-elsewhere";
 	const legacy = pathToFileURL(`${fixture.checkout}/src/index.ts`).href;
-	for (const incoming of [internal, github, legacy])
-		expect(canonicalLinkAfterPresentationEcho(canonical, incoming, context)).toBe(humanLink);
+	expect(canonicalLinkAfterPresentationEcho(canonical, internal, context)).toBe(humanLink);
+	for (const incoming of [github, legacy])
+		expect(canonicalLinkAfterPresentationEcho(canonical, incoming, context)).toBe(incoming);
 	expect(
 		canonicalLinkAfterPresentationEcho(canonical, opaque, { ...context, opaqueTarget: opaque }),
 	).toBe(humanLink);
 	expect(stripBindingPresentationLink({ ...canonical, link: internal }, context).link).toBeNull();
-	expect(stripBindingPresentationLink({ ...canonical, link: github }, context).link).toBeNull();
+	expect(stripBindingPresentationLink({ ...canonical, link: github }, context).link).toBe(github);
+	expect(stripBindingPresentationLink({ ...canonical, link: legacy }, context).link).toBe(legacy);
 });
 
 test("near misses and ordinary links remain byte-for-byte", () => {

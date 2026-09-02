@@ -182,6 +182,7 @@ test(
 			serverPath: tracedServer,
 			vault,
 			env: canvasTestEnvironment({
+				ARCHBOARD_REPOS: path.join(ownerRoot, "repos.json"),
 				ARCHBOARD_TEST_SERVER_ENTRY: realServer,
 				ARCHBOARD_TEST_FSYNC_TRACE: traceFile,
 				LOG_FILE_PATH: path.join(ownerRoot, "canvas.log"),

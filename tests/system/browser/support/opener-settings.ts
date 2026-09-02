@@ -160,9 +160,9 @@ export async function validationSnapshot(
 
 export async function noticeSnapshot(browser: AgentBrowserSession): Promise<NoticeSnapshot> {
 	return browser.eval<NoticeSnapshot>(`(() => {
-		const dialog = document.querySelector('[role="dialog"]');
-		const notice = [...document.querySelectorAll('[role="alert"], [role="status"]')]
-			.find(node => !dialog?.contains(node));
+		const notice = document.querySelector(
+			'.notice-shell[role="alert"], .notice-shell[role="status"]'
+		);
 		const settings = [...(notice?.querySelectorAll('button') ?? [])]
 			.find(node => node.textContent?.trim() === 'Opener settings');
 		const github = [...(notice?.querySelectorAll('a') ?? [])]
