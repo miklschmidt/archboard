@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 23:00'
-updated_date: '2026-09-02 23:12'
+updated_date: '2026-09-02 23:44'
 labels: []
 dependencies: []
 references:
@@ -58,4 +58,13 @@ startOwnedCanvas does not forward an isolated XDG_STATE_HOME, so concurrent work
 - Cause: the one-second intentional hang timer began at child spawn, before the initial isolated state setup, retired-port collision, automatic port replacement, and replacement-canvas precondition. The new clean state made that precondition exceed the timer. The test now arms the unchanged TEST_CANVAS_SHUTDOWN_TIMEOUT_MS only when replacement-canvas is observed. No timeout increased, sleep added, or cleanup assertion relaxed.
 - Exact case passed in archboard-task14811-exact-20260903b: 1 test, 12 expectations, 3,209.79ms. Final direct owner archboard-task14811-direct-20260903d passed 9 tests/53 expectations in 5.68s. Final process-group owner archboard-task14811-group-20260903c passed 8 tests/68 expectations in 9.78s. Each ran in a fresh 20-second unit and was verified inactive/dead with empty ControlGroup/cgroup.procs absent. A strict six-character namespace-root scan was empty after every final owner.
 - Scope remains the owned system-test harness and its two focused owners. Production stateDir, workbench production composition, max-concurrency=1, and browser serialization are unchanged.
+
+2026-09-03 fresh remediation and focused validation:
+- Root cause: marker-bound lifecycle cases installed TEST_CANVAS_SHUTDOWN_TIMEOUT_MS from spawn, so the one-second scenario deadline could expire during namespace setup, retired-port replacement, and replacement-canvas preconditions. runLifecycleChild now keeps a distinct TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS spawn watchdog. That existing 20,000 ms timing-authority value already names the full spawn-through-cleanup pull. The first matching marker clears it and arms the one-second scenario deadline exactly once. No timing-authority edit was needed.
+- The missing-marker owner injects TEST_CANVAS_SHUTDOWN_TIMEOUT_MS as a one-second spawn watchdog while leaving the normal 20-second scenario/default bound intact. It proves the no-marker path quickly without a new sleep or a long production-style wait, then asserts the harness and canvas PIDs are gone and the exact vault and namespace root are absent.
+- Preserved the strict namespace-root predicate, exact workbench/lock relationships, SIGKILL path diagnostics, and both timeout cleanup assertions. The concurrent release deadline and its strict pre-release timestamp assertion remain unchanged.
+- Focused formatting and Oxlint passed in archboard-task14811-static-20260903e.service: three changed files, 0 warnings and 0 errors, 0.450s service runtime.
+- Direct owner passed in archboard-task14811-direct-20260903e.service: 10 tests, 65 expectations, 6.11s Bun time, 6.130s service runtime, 163.7 MB peak.
+- Final process-group owner passed in archboard-task14811-group-20260903e.service: 8 tests, 70 expectations, 9.12s Bun time, 9.140s service runtime, 647.5 MB peak. The concurrent case passed in 1,060.40 ms, so the earlier 33 ms miss did not recur without assertion or timing padding. The replacement-marker timeout passed in 3,187.29 ms and the injected missing-marker watchdog passed in 2,003.59 ms.
+- Every validation service used KillMode=control-group, a 20-second start cap, and a 5-second stop cap. Final audits showed MainPID=0, empty ControlGroup, no cgroup path or descendants, and empty exact /tmp scans for archboard-owned-canvas-XXXXXX namespaces and archboard-lifecycle-child-XXXXXX vaults. All final services exited successfully with no OOM or residue. Production stateDir, browser/system serialization, and max-concurrency=1 remain unchanged.
 <!-- SECTION:NOTES:END -->
