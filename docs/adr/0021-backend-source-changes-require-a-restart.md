@@ -42,7 +42,10 @@ Generated Codex contracts are unrelated to source scanning. Ordinary product
 type-checking imports the exact generated types through their module root and
 reports incompatible assumptions through TypeScript. Fingerprints, mirror
 detectors, alias corpora, Babel parsing, custom TypeScript AST walking, and
-type-aware lint policies are not substitutes for that dependency.
+type-aware lint policies are not substitutes for that dependency. Repository
+validation does not invoke Oxlint with `--type-aware` or run `tsgolint`, and
+Archboard has no direct `oxlint-tsgolint` dependency. Boundary behavior remains
+covered by ordinary TypeScript compilation and bounded type-unaware tests.
 
 ## Rejected alternatives
 
