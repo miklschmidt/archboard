@@ -4,6 +4,9 @@ status: accepted
 
 # A save writes a file, and does not move a pane
 
+ADR 0020 supersedes this ADR's scratch-save pane movement exception. The main
+decision remains: saving or branching a board never changes browser state.
+
 `board save --board payments --variant option-a` used to take every pane that
 was holding `payments` and repoint it at `payments@option-a`. So the obvious
 way to start a proposal took the architecture that exists off screen, and the

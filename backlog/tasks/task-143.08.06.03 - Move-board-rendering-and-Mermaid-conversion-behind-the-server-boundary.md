@@ -4,6 +4,7 @@ title: Move board rendering and Mermaid conversion behind the server boundary
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:58'
+updated_date: '2026-09-02 02:02'
 labels: []
 dependencies:
   - TASK-143.08.06.01
@@ -12,7 +13,8 @@ references:
   - src/cli/commands/scene.ts
   - src/ui/canvas/mermaidConverter.ts
   - src/runtime/board-inspection
-  - docs/adr/0015-the-note-is-the-board.md
+  - docs/adr/0015-the-vault-is-the-truth-and-the-agent-shape-is-input.md
+  - docs/adr/0020-board-work-never-depends-on-a-browser-session.md
   - >-
     backlog/tasks/task-121 -
     Render-deterministic-close-ups-for-board-findings.md
