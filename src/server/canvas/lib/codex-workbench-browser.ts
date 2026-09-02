@@ -79,6 +79,7 @@ export function createCanvasCodexBrowserSocketOwner(
 	const connections = new Map<BrowserConnectionInstance, BrowserWorkbenchConnection>();
 	const closePromises = new WeakMap<BrowserConnectionInstance, Promise<void>>();
 	const activeCloses = new Set<Promise<void>>();
+	const closeFailures: unknown[] = [];
 	let disposed = false;
 
 	const connectionFor = (
@@ -195,13 +196,22 @@ export function createCanvasCodexBrowserSocketOwner(
 		activeCloses.add(owned);
 		void owned.then(
 			() => activeCloses.delete(owned),
-			() => activeCloses.delete(owned),
+			(error) => {
+				activeCloses.delete(owned);
+				closeFailures.push(error);
+			},
 		);
 		return owned;
 	};
 
 	const drain = async (): Promise<void> => {
 		while (activeCloses.size > 0) await Promise.allSettled(activeCloses);
+		if (closeFailures.length === 0) return;
+		const failures = closeFailures.splice(0);
+		throw new AggregateError(
+			failures,
+			`Codex browser cleanup failed: ${failures.map(errorMessage).join("; ")}`,
+		);
 	};
 
 	const dispose = (): void => {

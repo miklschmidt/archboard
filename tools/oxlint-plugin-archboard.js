@@ -118,7 +118,7 @@ const ASSISTANT_UI_FORBIDDEN_APIS = new Set([
 const GIT_PROCESS_OWNER = "src/runtime/engine/git.ts";
 const SYNC_CHILD_APIS = new Set(["execFileSync", "execSync", "spawnSync"]);
 const PROMISE_CONTINUATION_MEMBERS = new Set(["then", "catch", "finally"]);
-const PROMISE_AGGREGATE_MEMBERS = new Set(["all", "allSettled", "any", "race"]);
+const PROMISE_AGGREGATE_MEMBERS = new Set(["all", "allSettled"]);
 const LEXICAL_SCOPE_TYPES = new Set([
 	"Program",
 	"BlockStatement",
@@ -888,6 +888,34 @@ function assignedIdentifier(node) {
 	return undefined;
 }
 
+function boundIdentifiers(pattern, identifiers = []) {
+	if (!pattern) return identifiers;
+	switch (pattern.type) {
+		case "Identifier":
+			identifiers.push(pattern);
+			break;
+		case "AssignmentPattern":
+			boundIdentifiers(pattern.left, identifiers);
+			break;
+		case "RestElement":
+			boundIdentifiers(pattern.argument, identifiers);
+			break;
+		case "ArrayPattern":
+			for (const element of pattern.elements ?? []) boundIdentifiers(element, identifiers);
+			break;
+		case "ObjectPattern":
+			for (const property of pattern.properties ?? []) {
+				if (property.type === "Property") boundIdentifiers(property.value, identifiers);
+				else boundIdentifiers(property.argument, identifiers);
+			}
+			break;
+		case "TSParameterProperty":
+			boundIdentifiers(pattern.parameter, identifiers);
+			break;
+	}
+	return identifiers;
+}
+
 function expressionSink(node) {
 	let expression = node;
 	for (;;) {
@@ -973,14 +1001,51 @@ const gitProcessLifecycle = createRule(
 		const declarations = [];
 		const identifiers = [];
 		const exitedMembers = [];
+		const groupProofs = [];
+		const declare = (pattern, scope, declaration = pattern) => {
+			if (!scope) return;
+			for (const identifier of boundIdentifiers(pattern))
+				declarations.push({ identifier, scope, declaration });
+		};
+		const declareFunctionParameters = (node) => {
+			for (const parameter of node.params ?? []) declare(parameter, node);
+		};
 
 		return {
 			VariableDeclarator(node) {
-				if (node.id?.type === "Identifier") declarations.push(node);
+				const kind = node.parent?.kind === "var" ? "var" : "lexical";
+				declare(node.id, enclosingScope(node.parent?.parent, kind), node);
 			},
 			ImportSpecifier(node) {
 				const imported = node.imported?.name ?? node.imported?.value;
 				if (SYNC_CHILD_APIS.has(imported)) report(context, node, "noSyncChild");
+				declare(node.local, enclosingScope(node), node);
+			},
+			ImportDefaultSpecifier(node) {
+				declare(node.local, enclosingScope(node), node);
+			},
+			ImportNamespaceSpecifier(node) {
+				declare(node.local, enclosingScope(node), node);
+			},
+			FunctionDeclaration(node) {
+				declare(node.id, enclosingScope(node.parent), node);
+				declareFunctionParameters(node);
+			},
+			FunctionExpression(node) {
+				declare(node.id, node, node);
+				declareFunctionParameters(node);
+			},
+			ArrowFunctionExpression(node) {
+				declareFunctionParameters(node);
+			},
+			CatchClause(node) {
+				declare(node.param, node, node);
+			},
+			ClassDeclaration(node) {
+				declare(node.id, enclosingScope(node.parent), node);
+			},
+			ClassExpression(node) {
+				declare(node.id, node, node);
 			},
 			Identifier(node) {
 				identifiers.push(node);
@@ -1012,6 +1077,15 @@ const gitProcessLifecycle = createRule(
 					}
 					spawnCalls.push({ node, identifier: owner });
 				}
+				if (direct === "processGroupDisappeared") {
+					const pid = unwrapExpression(node.arguments[0]);
+					if (
+						pid?.type === "MemberExpression" &&
+						staticMemberName(pid) === "pid" &&
+						unwrapExpression(pid.object)?.type === "Identifier"
+					)
+						groupProofs.push({ node, identifier: unwrapExpression(pid.object) });
+				}
 			},
 			MemberExpression(node) {
 				const member = staticMemberName(node);
@@ -1035,14 +1109,15 @@ const gitProcessLifecycle = createRule(
 				const bindingsByScope = new Map();
 				const declarationBindings = new Map();
 				for (const declaration of declarations) {
-					const kind = declaration.parent?.kind === "var" ? "var" : "lexical";
-					const scope = enclosingScope(declaration.parent?.parent, kind);
-					if (!scope) continue;
-					const binding = { name: declaration.id.name, scope, declaration };
-					const scoped = bindingsByScope.get(scope) ?? new Map();
+					const binding = {
+						name: declaration.identifier.name,
+						scope: declaration.scope,
+						declaration: declaration.declaration,
+					};
+					const scoped = bindingsByScope.get(binding.scope) ?? new Map();
 					scoped.set(binding.name, binding);
-					bindingsByScope.set(scope, scoped);
-					declarationBindings.set(declaration.id, binding);
+					bindingsByScope.set(binding.scope, scoped);
+					declarationBindings.set(declaration.identifier, binding);
 				}
 				const resolveBinding = (identifier) => {
 					if (declarationBindings.has(identifier)) return declarationBindings.get(identifier);
@@ -1066,6 +1141,11 @@ const gitProcessLifecycle = createRule(
 					bound.add(owner);
 					spawnOwners.set(binding, bound);
 				}
+				const reusedSpawnBindings = new Set(
+					Array.from(spawnOwners, ([binding, bound]) =>
+						bound.size > 1 ? binding : undefined,
+					).filter(Boolean),
+				);
 				const promiseOwners = new Map();
 				const transfers = [];
 				const consumed = new Set();
@@ -1079,7 +1159,7 @@ const gitProcessLifecycle = createRule(
 					if (objectNode?.type !== "Identifier") continue;
 					const childBinding = resolveBinding(objectNode);
 					const sourceOwners = childBinding ? spawnOwners.get(childBinding) : undefined;
-					if (!sourceOwners) continue;
+					if (!sourceOwners || reusedSpawnBindings.has(childBinding)) continue;
 					const sink = expressionSink(member);
 					if (sink.kind === "consumed") {
 						for (const owner of sourceOwners) owner.exitOwned = true;
@@ -1087,6 +1167,17 @@ const gitProcessLifecycle = createRule(
 						const target = resolveBinding(sink.identifier);
 						if (target) addPromiseOwners(target, sourceOwners);
 					}
+				}
+				for (const proof of groupProofs) {
+					const childBinding = resolveBinding(proof.identifier);
+					const sourceOwners = childBinding ? spawnOwners.get(childBinding) : undefined;
+					if (
+						!sourceOwners ||
+						reusedSpawnBindings.has(childBinding) ||
+						expressionSink(proof.node).kind !== "consumed"
+					)
+						continue;
+					for (const owner of sourceOwners) owner.exitOwned = true;
 				}
 				for (const identifier of identifiers) {
 					const source = resolveBinding(identifier);

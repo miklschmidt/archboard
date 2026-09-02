@@ -14,8 +14,8 @@ describe("package inspection text and exits", () => {
 		try {
 			owner.startVault();
 			owner.writeBoard("clean", cleanScene());
-			const json = JSON.parse(owner.runInspection("clean").stdout);
-			expect(owner.runInspection("clean", ["--text"]).stdout).toBe(
+			const json = JSON.parse((await owner.runInspection("clean")).stdout);
+			expect((await owner.runInspection("clean", ["--text"])).stdout).toBe(
 				`${formatInspectionText(json)}\n`,
 			);
 			for (const option of [
@@ -23,8 +23,8 @@ describe("package inspection text and exits", () => {
 				"--intersection-tolerance",
 				"--overlap-tolerance",
 			]) {
-				expect(owner.runInspection("clean", [option, ""])).toEqual(
-					owner.runInspection("clean", [option, "0"]),
+				expect(await owner.runInspection("clean", [option, ""])).toEqual(
+					await owner.runInspection("clean", [option, "0"]),
 				);
 			}
 		} finally {
@@ -42,7 +42,7 @@ describe("package inspection text and exits", () => {
 				["unknown", indeterminateScene, 8],
 			] as const) {
 				owner.writeBoard(board, scene());
-				const result = owner.runInspection(board, ["--strict"]);
+				const result = await owner.runInspection(board, ["--strict"]);
 				expect(result.status).toBe(status);
 				expect(result.stdout.length).toBeGreaterThan(0);
 				expect(result.stderr).toBe("");
@@ -56,15 +56,15 @@ describe("package inspection text and exits", () => {
 		const owner = createPackageInspectionOwner();
 		try {
 			owner.startVault();
-			expect(owner.runBinary(["check"])).toMatchObject({
+			expect(await owner.runBinary(["check"])).toMatchObject({
 				status: 2,
 				stdout: "",
 			});
-			expect(owner.runInspection("missing")).toMatchObject({
+			expect(await owner.runInspection("missing")).toMatchObject({
 				status: 1,
 				stdout: "",
 			});
-			expect(owner.runInspection("missing", ["--overlap-tolerance", "bad"])).toMatchObject({
+			expect(await owner.runInspection("missing", ["--overlap-tolerance", "bad"])).toMatchObject({
 				status: 2,
 				stdout: "",
 			});
@@ -77,7 +77,7 @@ describe("package inspection text and exits", () => {
 		const owner = createPackageInspectionOwner();
 		try {
 			owner.startVaultFile();
-			const result = owner.runInspection("missing", ["--overlap-tolerance", "bad"]);
+			const result = await owner.runInspection("missing", ["--overlap-tolerance", "bad"]);
 			expect(result).toEqual({
 				status: 2,
 				stdout: "",

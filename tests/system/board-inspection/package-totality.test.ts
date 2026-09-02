@@ -16,8 +16,8 @@ import { createPackageInspectionOwner } from "./support/package-inspection.js";
 
 type Owner = ReturnType<typeof createPackageInspectionOwner>;
 
-const parse = (owner: Owner, board: string, status = 8) => {
-	const result = owner.runInspection(board, ["--strict"]);
+const parse = async (owner: Owner, board: string, status = 8) => {
+	const result = await owner.runInspection(board, ["--strict"]);
 	expect(result).toMatchObject({ status, stderr: "" });
 	return CheckResultSchema.parse(JSON.parse(result.stdout));
 };
@@ -209,7 +209,7 @@ describe("package inspection totality", () => {
 				];
 			});
 			owner.writeBoard("incoming-types", elements);
-			const report = parse(owner, "incoming-types");
+			const report = await parse(owner, "incoming-types");
 			expect(report.coverage).toBe("indeterminate");
 			expect(
 				report.findings.filter(
@@ -234,7 +234,7 @@ describe("package inspection totality", () => {
 			];
 			for (const [name, marker] of modeCases) {
 				owner.writeBoard(`${name}-clean`, [persistedConnector(connectorInput(name, marker))]);
-				const clean = parse(owner, `${name}-clean`, 0);
+				const clean = await parse(owner, `${name}-clean`, 0);
 				expect(clean.coverage).toBe("complete");
 				expect(clean.clean).toBe(true);
 				expect(clean.findings.some((finding) => finding.reason === "rounded-or-elbowed")).toBe(
@@ -242,7 +242,7 @@ describe("package inspection totality", () => {
 				);
 				const collisionInput = connectorInput(name, { ...marker, y: 50 });
 				owner.writeBoard(`${name}-collision`, persistedInteractionScene(collisionInput));
-				const collision = parse(owner, `${name}-collision`, 7);
+				const collision = await parse(owner, `${name}-collision`, 7);
 				expect(collision.coverage).toBe("complete");
 				for (const code of [
 					"CONNECTOR_PENETRATES_NODE",
@@ -270,7 +270,7 @@ describe("package inspection totality", () => {
 				),
 			);
 			owner.writeBoard("endpoint-specials", endpointElements);
-			const endpointReport = parse(owner, "endpoint-specials", 0);
+			const endpointReport = await parse(owner, "endpoint-specials", 0);
 			expect(endpointReport.coverage).toBe("complete");
 			expect(endpointReport.clean).toBe(true);
 			for (const coordinate of [1_000_000, -1_000_000] as const) {
@@ -288,7 +288,7 @@ describe("package inspection totality", () => {
 						}),
 					),
 				]);
-				const report = parse(owner, `boundary-${coordinate}`, 0);
+				const report = await parse(owner, `boundary-${coordinate}`, 0);
 				expect(report.coverage).toBe("complete");
 				expect(report.findings.some((finding) => finding.reason === "rounded-or-elbowed")).toBe(
 					false,
@@ -308,7 +308,7 @@ describe("package inspection totality", () => {
 					y: 50,
 				});
 				owner.writeBoard(id, persistedInteractionScene(rejectedInput, coordinate < 0 ? -1 : 1));
-				const report = parse(owner, id, 8);
+				const report = await parse(owner, id, 8);
 				expect(report.coverage).toBe("indeterminate");
 				const refusal = report.findings.find(
 					(finding) =>
@@ -341,7 +341,7 @@ describe("package inspection totality", () => {
 						coordinate < 0 ? -1 : 1,
 					),
 				);
-				const control = parse(owner, controlId, 7);
+				const control = await parse(owner, controlId, 7);
 				for (const code of [
 					"CONNECTOR_PENETRATES_NODE",
 					"CONNECTOR_PENETRATES_OBSTACLE",
@@ -358,7 +358,7 @@ describe("package inspection totality", () => {
 				["fixed", { fixedSegments: [] }],
 			] as const) {
 				owner.writeBoard(name, negativeInteractionScene(name, marker));
-				const report = parse(owner, name, 8);
+				const report = await parse(owner, name, 8);
 				expect(
 					report.findings.some(
 						(finding) =>
@@ -417,7 +417,7 @@ describe("package inspection totality", () => {
 					for (const reverse of [false, true]) {
 						const board = `label-pair-${label}-${reverse}`;
 						writeExactBoard(owner, board, labelPairBoard(pairs, reverse), pairs.flat());
-						const result = owner.runInspection(board, ["--strict"]);
+						const result = await owner.runInspection(board, ["--strict"]);
 						expect(result).toMatchObject({ status: 7, stderr: "" });
 						const report = CheckResultSchema.parse(JSON.parse(result.stdout));
 						expect(
@@ -470,7 +470,7 @@ describe("package inspection totality", () => {
 							],
 							[...ids],
 						);
-						const result = owner.runInspection(board);
+						const result = await owner.runInspection(board);
 						expect(result).toMatchObject({ status: 0, stderr: "" });
 						const report = CheckResultSchema.parse(JSON.parse(result.stdout));
 						expect(

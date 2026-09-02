@@ -445,6 +445,7 @@ function codeBindingsInValue(value: unknown): CodeBinding[] {
 interface PreparedBoardOpen {
 	readonly key: string;
 	readonly loaded: LoadedBoard | null;
+	readonly reload: boolean;
 }
 
 function unopenedBoardBindings(req: Request, res: Response): CodeBinding[] {
@@ -459,7 +460,11 @@ function unopenedBoardBindings(req: Request, res: Response): CodeBinding[] {
 		const key = boardKey(identity);
 		if (boards.has(key) && !parsed.data.reload) return [];
 		const loaded = readBoardFile(identity);
-		res.locals.preparedBoardOpen = { key, loaded } satisfies PreparedBoardOpen;
+		res.locals.preparedBoardOpen = {
+			key,
+			loaded,
+			reload: parsed.data.reload === true,
+		} satisfies PreparedBoardOpen;
 		return loaded ? codeBindingsInValue(JSON.parse(loaded.sceneJson)) : [];
 	} catch {
 		// The route remains the authority for malformed or unavailable board input.
@@ -515,7 +520,7 @@ async function prepareCheckoutSnapshot(
 	res.locals.checkoutSnapshot = await capture(bindings);
 	const prepared = res.locals.preparedBoardOpen as PreparedBoardOpen | undefined;
 	const installed = prepared ? boards.get(prepared.key) : undefined;
-	if (installed !== undefined) {
+	if (installed !== undefined && prepared?.reload === false) {
 		let installedBindings = codeBindingsOf(readBoardContent(installed).elements.values());
 		for (;;) {
 			res.locals.checkoutSnapshot = await capture(installedBindings);
@@ -630,6 +635,9 @@ const clientIds = new Map<WebSocket, string>();
 // overlap the prior transport; only this map's value owns client-id keyed pane,
 // selection, hold, and note-open state.
 const currentSocketsByClient = new Map<string, WebSocket>();
+// Initialization may finish out of acceptance order. One token per accepted
+// client generation keeps a slower predecessor from taking authority back.
+const latestSocketAcceptanceByClient = new Map<string, object>();
 const codexSocketInstances = new Map<WebSocket, BrowserConnectionInstance>();
 const browserLeaseLedger: BrowserLeaseLedger = createBrowserLeaseLedger();
 
@@ -1094,8 +1102,10 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 	const codexSocketInstance = Object.freeze({});
 	codexSocketInstances.set(ws, codexSocketInstance);
 	const clientId = new URL(req.url ?? "/", "http://localhost").searchParams.get("clientId");
+	const acceptanceToken = clientId ? Object.freeze({}) : null;
 	if (clientId) {
 		clientIds.set(ws, clientId);
+		latestSocketAcceptanceByClient.set(clientId, acceptanceToken!);
 	}
 	const checkoutController = new AbortController();
 	ws.on("close", () => {
@@ -1108,6 +1118,8 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		// Exact Codex cleanup is safe for a replaced socket. Client-id keyed canvas
 		// state is not: a replacement may already own that pane identity.
 		if (closingId) {
+			if (latestSocketAcceptanceByClient.get(closingId) === acceptanceToken)
+				latestSocketAcceptanceByClient.delete(closingId);
 			if (closingCodexInstance !== undefined)
 				void wiring.codex
 					.closeBrowser?.(closingCodexInstance, closingId)
@@ -1197,8 +1209,19 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		}),
 		...boardFilesMessage(content),
 	};
-	ws.send(JSON.stringify(initialMessage));
+	await new Promise<void>((resolve, reject) => {
+		try {
+			ws.send(JSON.stringify(initialMessage), (error) => (error ? reject(error) : resolve()));
+		} catch (error) {
+			reject(error);
+		}
+	});
+	if (ws.readyState !== WebSocket.OPEN) return;
 	if (clientId) {
+		if (latestSocketAcceptanceByClient.get(clientId) !== acceptanceToken) {
+			ws.terminate();
+			return;
+		}
 		const previous = currentSocketsByClient.get(clientId);
 		paneBoards.set(clientId, startingKey);
 		currentSocketsByClient.set(clientId, ws);
@@ -4999,17 +5022,33 @@ function closeWebSocketServer(): Promise<void> {
 }
 
 async function closeBrowserOwners(): Promise<void> {
+	const cleanupFailures: unknown[] = [];
+	const retainedFailures = new Set<unknown>();
+	const retainFailure = (error: unknown): void => {
+		if (error instanceof AggregateError) {
+			for (const nested of error.errors) retainFailure(nested);
+			return;
+		}
+		if (retainedFailures.has(error)) return;
+		retainedFailures.add(error);
+		cleanupFailures.push(error);
+	};
 	for (const socket of acceptedSockets) socket.terminate();
 	const closeBrowser = wiring.codex.closeBrowser;
 	if (closeBrowser !== null) {
-		await Promise.allSettled(
+		const settled = await Promise.allSettled(
 			Array.from(codexSocketInstances, ([socket, instance]) => {
 				const browserId = clientIds.get(socket);
 				return browserId ? closeBrowser(instance, browserId) : Promise.resolve();
 			}),
 		);
+		for (const result of settled) if (result.status === "rejected") retainFailure(result.reason);
 	}
-	await wiring.codex.drainBrowsers?.();
+	try {
+		await wiring.codex.drainBrowsers?.();
+	} catch (error) {
+		retainFailure(error);
+	}
 	for (const pending of pendingPaneOpens) {
 		clearTimeout(pending.timeout);
 		pending.reject(new Error("Canvas stopped before the pane opened."));
@@ -5045,6 +5084,7 @@ async function closeBrowserOwners(): Promise<void> {
 	clients.clear();
 	clientIds.clear();
 	currentSocketsByClient.clear();
+	latestSocketAcceptanceByClient.clear();
 	codexSocketInstances.clear();
 	panes.clear();
 	paneBoards.clear();
@@ -5052,6 +5092,12 @@ async function closeBrowserOwners(): Promise<void> {
 	browserLeaseLedger.retired.clear();
 	selectionState.current = null;
 	selectionState.byClient.clear();
+	if (cleanupFailures.length > 0) {
+		const detail = cleanupFailures
+			.map((error) => (error instanceof Error ? error.message : String(error)))
+			.join("; ");
+		throw new AggregateError(cleanupFailures, `Browser cleanup failed: ${detail}`);
+	}
 }
 
 async function startServer(): Promise<void> {

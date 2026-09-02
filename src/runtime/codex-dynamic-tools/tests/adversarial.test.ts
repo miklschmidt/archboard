@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { parseDynamicToolCallResponse } from "../../codex-thread-tools/index.js";
 import { CodexSessionMutationError } from "../../codex-session/index.js";
+import { CODEX_APPROVAL_EXPIRY_MS } from "../../../shared/timing/timing.js";
 import { createCodexDynamicTools } from "../index.js";
 import {
 	CHECKOUT_ROOT,
@@ -124,8 +125,15 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		);
 		const parsed = parseDynamicToolCallResponse("create_thread", response);
 
-		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "expired" });
+		expect(parsed.envelope).toEqual({
+			tag: "refused",
+			reason: "expired",
+			message: "The visual approval expired before the effect could run.",
+		});
 		expect(response.success).toBe(true);
+		expect(
+			approval.settled[0]!.request.expiresAtMs - approval.settled[0]!.request.createdAtMs,
+		).toBe(CODEX_APPROVAL_EXPIRY_MS);
 		expect(approval.settled[0]?.decision).toMatchObject({
 			outcome: "expired",
 			cause: "deadline_reached",

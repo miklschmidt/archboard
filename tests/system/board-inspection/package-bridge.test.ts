@@ -74,7 +74,7 @@ describe("package bridge inspection", () => {
 			owner.startVault();
 			const { elements } = bridged();
 			owner.writeBoard("valid", elements);
-			const result = owner.runInspection("valid", ["--strict"]);
+			const result = await owner.runInspection("valid", ["--strict"]);
 			expect(result.status).toBe(0);
 			expect(CheckResultSchema.parse(JSON.parse(result.stdout)).clean).toBe(true);
 			owner.writeBoard("one-unmarked", [
@@ -93,7 +93,7 @@ describe("package bridge inspection", () => {
 				},
 			]);
 			const oneUnmarked = CheckResultSchema.parse(
-				JSON.parse(owner.runInspection("one-unmarked", ["--strict"]).stdout),
+				JSON.parse((await owner.runInspection("one-unmarked", ["--strict"])).stdout),
 			);
 			expect(
 				oneUnmarked.findings.filter(
@@ -148,7 +148,7 @@ describe("package bridge inspection", () => {
 			}
 			for (const [name, elements] of cases) {
 				owner.writeBoard(name, elements);
-				const result = owner.runInspection(name, ["--strict"]);
+				const result = await owner.runInspection(name, ["--strict"]);
 				const report = CheckResultSchema.parse(JSON.parse(result.stdout));
 				expect(result.status).toBe(8);
 				expect({

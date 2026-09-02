@@ -127,6 +127,47 @@ test("normal browser close and teardown share one delayed close owner", async ()
 	owner.dispose();
 });
 
+test("teardown drains every normal close and preserves a delayed close failure", async () => {
+	const failedInstance = Object.freeze({ socket: "failed-close" });
+	const healthyInstance = Object.freeze({ socket: "healthy-close" });
+	let release!: () => void;
+	const gate = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const closed: string[] = [];
+	const gateway = {
+		connect: (_browserId: string, paneId: string, instance: BrowserConnectionInstance) =>
+			({
+				browserId: "browser-close-failure",
+				paneId,
+				instance,
+				close: async () => {
+					closed.push(String((instance as { socket: string }).socket));
+					await gate;
+					if (instance === failedInstance) throw new Error("delayed browser close failed");
+				},
+			}) as unknown as BrowserWorkbenchConnection,
+		closeConnection: async () => undefined,
+	} as unknown as CodexWorkbenchGateway;
+	const owner = createCanvasCodexBrowserSocketOwner({
+		gateway,
+		paneForBrowser: (browserId) => `pane-${browserId}`,
+	});
+	owner.accept(failedInstance, "failed");
+	owner.accept(healthyInstance, "healthy");
+	const failedClose = owner.close(failedInstance, "failed");
+	void failedClose.catch(() => undefined);
+	const healthyClose = owner.close(healthyInstance, "healthy");
+	const teardown = owner.drain();
+	void teardown.catch(() => undefined);
+	release();
+	await healthyClose;
+	await expect(failedClose).rejects.toThrow("delayed browser close failed");
+	await expect(teardown).rejects.toThrow("delayed browser close failed");
+	expect(closed.toSorted()).toEqual(["failed-close", "healthy-close"]);
+	owner.dispose();
+});
+
 test("the public socket owner routes the complete gateway workflow through server-owned identity", async () => {
 	const calls: string[] = [];
 	const messages: unknown[] = [];
