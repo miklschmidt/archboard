@@ -12,10 +12,25 @@ import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
 	createDelayedCheckoutOwner,
 	expectPidAbsent,
+	expectRecordedPidsAbsent,
+	recordedPids,
 	waitForRecordedPid,
+	waitForRecordedPids,
 } from "./support/delayed-checkout-owner.ts";
 
 const SERVER_PATH = fileURLToPath(new URL("../../../src/server.ts", import.meta.url));
+
+test("delayed checkout records validate every process identity", () => {
+	const owner = createDelayedCheckoutOwner("pid-records");
+	try {
+		writeFileSync(owner.pids, "101 rev-parse --show-toplevel\n102 remote get-url origin\n");
+		expect(recordedPids(owner.pids)).toEqual([101, 102]);
+		writeFileSync(owner.pids, "101 rev-parse --show-toplevel\nnot-a-pid remote get-url origin\n");
+		expect(() => recordedPids(owner.pids)).toThrow("Malformed delayed Git PID record");
+	} finally {
+		owner.dispose();
+	}
+});
 
 function boundElement(id: string, path = "src/original.ts", checkout = 0) {
 	return completeElement({
@@ -140,6 +155,93 @@ test("first-open presents the exact note load whose checkout authority it captur
 		owner.release();
 		await pane?.close();
 		await canvas?.dispose();
+		await expectRecordedPidsAbsent(owner.pids);
+		owner.dispose();
+	}
+});
+
+test("concurrent first opens pair the installed scene with recaptured authority", async () => {
+	const owner = createDelayedCheckoutOwner("concurrent-first-open");
+	const board = "concurrent-first-open";
+	writeBoundBoard(owner.vault, board, {
+		id: "oldbound",
+		path: "src/original.ts",
+		checkout: 0,
+	});
+	let canvas: Awaited<ReturnType<typeof startOwnedCanvas>> | undefined;
+	let firstPane: Awaited<ReturnType<typeof openTestPane>> | undefined;
+	let secondPane: Awaited<ReturnType<typeof openTestPane>> | undefined;
+	try {
+		canvas = await startOwnedCanvas({
+			serverPath: SERVER_PATH,
+			vault: owner.vault,
+			env: owner.env,
+		});
+		const request = createJsonRequester(canvas);
+		firstPane = await openTestPane(canvas.base, request, "first-open-a", 0);
+		secondPane = await openTestPane(canvas.base, request, "first-open-b", 640);
+		owner.enable();
+		const firstStart = firstPane.since();
+		const firstOpening = request<{ source: string }>("/api/boards/open", {
+			method: "POST",
+			body: { board, pane: firstPane.clientId },
+		});
+		const [firstRoot] = await waitForRecordedPids(owner.pids, 1);
+		writeBoundBoard(owner.vault, board, {
+			id: "newbound",
+			path: "src/replacement.ts",
+			checkout: 0,
+		});
+		const secondStart = secondPane.since();
+		const secondOpening = request<{ source: string }>("/api/boards/open", {
+			method: "POST",
+			body: { board, pane: secondPane.clientId },
+		});
+		const roots = await waitForRecordedPids(owner.pids, 2);
+		const secondRoot = roots.find((pid) => pid !== firstRoot);
+		if (firstRoot === undefined || secondRoot === undefined)
+			throw new Error("The two first-open snapshots did not start independently.");
+		owner.releasePid(firstRoot);
+		const firstCommands = await waitForRecordedPids(owner.pids, 3);
+		const firstRemote = firstCommands.find((pid) => !roots.includes(pid));
+		if (firstRemote === undefined)
+			throw new Error("The first checkout remote probe did not start.");
+		owner.releasePid(firstRemote);
+		const first = await firstOpening;
+		expect(first.status, JSON.stringify(first.body)).toBe(200);
+		expect(first.body.source).toBe("vault");
+		const firstSwitched = await waitForPaneMessage(firstPane, firstStart, "board_switched");
+		const firstElements = (firstSwitched?.elements as Array<{ id: string }> | undefined) ?? [];
+		expect(firstElements.some((element) => element.id === "oldbound")).toBeTrue();
+
+		writeBoundBoard(owner.vault, board, {
+			id: "oldbound",
+			path: "src/original.ts",
+			checkout: 0,
+		});
+		owner.releasePid(secondRoot);
+		const secondCommands = await waitForRecordedPids(owner.pids, 4);
+		const secondRemote = secondCommands.find((pid) => !firstCommands.includes(pid));
+		if (secondRemote === undefined)
+			throw new Error("The second checkout remote probe did not start.");
+		owner.releasePid(secondRemote);
+		owner.release();
+		const second = await secondOpening;
+		expect(second.status, JSON.stringify(second.body)).toBe(200);
+		expect(second.body.source).toBe("memory");
+		const secondSwitched = await waitForPaneMessage(secondPane, secondStart, "board_switched");
+		const elements =
+			(secondSwitched?.elements as Array<{ id: string; link?: string }> | undefined) ?? [];
+		expect(elements.find((element) => element.id === "oldbound")?.link).toBe(
+			"/api/code-targets/open?board=concurrent-first-open&element=oldbound",
+		);
+		expect(elements.some((element) => element.id === "newbound")).toBeFalse();
+	} finally {
+		owner.release();
+		await firstPane?.close();
+		await secondPane?.close();
+		await canvas?.dispose();
+		await expectRecordedPidsAbsent(owner.pids);
 		owner.dispose();
 	}
 });
@@ -227,6 +329,7 @@ test("a provisional duplicate socket cannot retire the live pane authority", asy
 		original?.terminate();
 		replacement?.terminate();
 		await canvas?.dispose();
+		await expectRecordedPidsAbsent(owner.pids);
 		owner.dispose();
 	}
 });
@@ -254,6 +357,7 @@ test("canvas stop terminates a noncooperative provisional WebSocket", async () =
 		owner.enable();
 		socket = await openRawWebSocketPeer(canvas.base, "raw-provisional-pane");
 		const gitPid = await waitForRecordedPid(owner.pids);
+		expect(Number.isSafeInteger(gitPid)).toBeTrue();
 		const closed = new Promise<void>((resolve) => socket!.once("close", () => resolve()));
 		await canvas.dispose();
 		await closed;
@@ -263,6 +367,7 @@ test("canvas stop terminates a noncooperative provisional WebSocket", async () =
 		owner.release();
 		socket?.destroy();
 		await canvas?.dispose();
+		await expectRecordedPidsAbsent(owner.pids);
 		owner.dispose();
 	}
 });

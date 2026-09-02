@@ -4,34 +4,56 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 export async function waitForRecordedPid(file: string): Promise<number> {
-	const deadline = Date.now() + 2_000;
-	while (!existsSync(file) || readFileSync(file, "utf8").trim().length === 0) {
-		if (Date.now() >= deadline) throw new Error("Delayed Git process did not start.");
-		await Bun.sleep(5);
-	}
-	return Number(readFileSync(file, "utf8").trim().split(/\s+/u).at(-1));
+	const [pid] = await waitForRecordedPids(file, 1);
+	if (pid === undefined) throw new Error("Delayed Git process did not start.");
+	return pid;
+}
+
+export function recordedPids(file: string): number[] {
+	if (!existsSync(file)) return [];
+	const lines = readFileSync(file, "utf8").trim().split("\n").filter(Boolean);
+	const pids = lines.map((line) => {
+		const token = line.trim().split(/\s+/u)[0];
+		const pid = Number(token);
+		if (!token || !Number.isSafeInteger(pid) || pid <= 0)
+			throw new Error(`Malformed delayed Git PID record: ${JSON.stringify(line)}.`);
+		return pid;
+	});
+	return [...new Set(pids)];
 }
 
 export async function waitForRecordedPids(file: string, count: number): Promise<number[]> {
 	const deadline = Date.now() + 2_000;
 	for (;;) {
-		const pids = existsSync(file)
-			? readFileSync(file, "utf8")
-					.trim()
-					.split("\n")
-					.filter(Boolean)
-					.map((line) => Number(line.split(/\s+/u)[0]))
-			: [];
-		if (new Set(pids).size >= count) return [...new Set(pids)];
+		const pids = recordedPids(file);
+		if (pids.length >= count) return pids;
 		if (Date.now() >= deadline) throw new Error(`Expected ${count} delayed Git processes.`);
 		await Bun.sleep(5);
 	}
 }
 
 export async function expectPidAbsent(pid: number): Promise<void> {
+	if (!Number.isSafeInteger(pid) || pid <= 0)
+		throw new Error(`Cannot verify malformed delayed Git PID ${String(pid)}.`);
 	const deadline = Date.now() + 1_000;
 	while (existsSync(`/proc/${pid}`) && Date.now() < deadline) await Bun.sleep(5);
-	expect(existsSync(`/proc/${pid}`), `Git pid ${pid} survived canvas teardown`).toBeFalse();
+	const remains = existsSync(`/proc/${pid}`);
+	const detail = remains ? readFileSync(`/proc/${pid}/stat`, "utf8") : "absent";
+	expect(remains, `Git pid ${pid} survived canvas teardown: ${detail}`).toBeFalse();
+}
+
+export async function expectRecordedPidsAbsent(file: string): Promise<void> {
+	const pids = recordedPids(file);
+	if (pids.length === 0) throw new Error("No delayed Git PID was recorded for cleanup proof.");
+	for (const pid of pids) {
+		try {
+			await expectPidAbsent(pid);
+		} catch (cause) {
+			throw new Error(`Delayed Git records were not fully reaped:\n${readFileSync(file, "utf8")}`, {
+				cause,
+			});
+		}
+	}
 }
 
 export function createDelayedCheckoutOwner(name: string, checkoutCount = 1) {
@@ -66,7 +88,7 @@ export function createDelayedCheckoutOwner(name: string, checkoutCount = 1) {
 case "$*" in
   *rev-parse*|*remote\\ get-url*)
     echo "$$ $*" >> "${pids}"
-    while [ ! -e "${release}" ]; do sleep 1; done
+    while [ ! -e "${release}" ] && [ ! -e "${release}.$$" ]; do sleep 1; done
     exec ${JSON.stringify(realGit)} "$@"
     ;;
   *) exec ${JSON.stringify(realGit)} "$@" ;;
@@ -89,6 +111,7 @@ esac
 		vault,
 		pids,
 		release: () => writeFileSync(release, "release\n"),
+		releasePid: (pid: number) => writeFileSync(`${release}.${pid}`, "release\n"),
 		env: { ARCHBOARD_REPOS: registry, PATH: `${bin}:${process.env.PATH ?? ""}` },
 		enable: () => writeFileSync(registry, entries),
 		dispose: () => rmSync(root, { recursive: true, force: true }),

@@ -69,15 +69,39 @@ test.each([
 		"assigned children without an exit owner",
 		'const child = Bun.spawn(["git"]); export { child };\n',
 	],
+	[
+		"stored but unconsumed exit promises",
+		'const child = Bun.spawn(["git"]); export const exited = child.exited;\n',
+	],
+	[
+		"same-named children in distinct lexical scopes",
+		'function leaked() { const child = Bun.spawn(["git"]); return child; } async function owned() { const child = Bun.spawn(["git"]); await child.exited; } void leaked; void owned;\n',
+	],
+	[
+		"retained asynchronous spawn aliases",
+		'const spawn = Bun.spawn; const child = spawn(["git"]); await child.exited;\n',
+	],
 ] as const)("type-unaware Git lifecycle lint rejects %s", (_name, source) => {
 	const result = lintGitFixture(source);
 	expect(result.exitCode, result.output).not.toBe(0);
 	expect(result.output).toContain("archboard(git-process-lifecycle)");
 });
 
-test("type-unaware Git lifecycle lint accepts an explicitly owned child exit", () => {
-	const result = lintGitFixture(
+test.each([
+	["direct await", 'const child = Bun.spawn(["git"]); await child.exited;\n'],
+	[
+		"returned exit",
+		'function run() { const child = Bun.spawn(["git"]); return child.exited; } await run();\n',
+	],
+	[
+		"stored and awaited exit",
 		'const child = Bun.spawn(["git"]); const exited = child.exited; await exited;\n',
-	);
+	],
+	[
+		"stored and awaited continuation",
+		'const child = Bun.spawn(["git"]); const exited = child.exited.finally(() => undefined); await exited;\n',
+	],
+] as const)("type-unaware Git lifecycle lint accepts %s ownership", (_name, source) => {
+	const result = lintGitFixture(source);
 	expect(result.exitCode, result.output).toBe(0);
 });

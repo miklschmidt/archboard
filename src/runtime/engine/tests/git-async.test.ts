@@ -11,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { GIT_PROCESS_GROUP_CLEANUP_MS } from "../../../shared/timing/timing.ts";
 import { git } from "../git.js";
 
 const FAKE_GIT = `#!/bin/sh
@@ -82,6 +83,42 @@ async function withFaultingFirstReader<T>(delayMs: number, work: () => Promise<T
 	} as typeof prototype.getReader;
 	try {
 		return await work();
+	} finally {
+		prototype.getReader = original;
+	}
+}
+
+function withStalledFirstReader<T>(work: () => Promise<T>): {
+	readonly result: Promise<T>;
+	readonly release: () => void;
+} {
+	const prototype = ReadableStream.prototype;
+	const original = prototype.getReader as () => ReadableStreamDefaultReader<unknown>;
+	let injected = false;
+	let release!: () => void;
+	const gate = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	prototype.getReader = function (this: ReadableStream<unknown>) {
+		const reader = original.call(this);
+		if (injected) return reader;
+		injected = true;
+		return {
+			get closed() {
+				return reader.closed;
+			},
+			async read() {
+				await gate;
+				return { done: true, value: undefined };
+			},
+			async cancel() {
+				await gate;
+			},
+			releaseLock: () => reader.releaseLock(),
+		} as ReadableStreamDefaultReader<unknown>;
+	} as typeof prototype.getReader;
+	try {
+		return { result: work(), release };
 	} finally {
 		prototype.getReader = original;
 	}
@@ -178,3 +215,31 @@ test("Git lifecycle owns overflow, cancellation, signals, descendants, and spawn
 		rmSync(root, { recursive: true, force: true });
 	}
 });
+
+test("Git cleanup remains bounded when reader cancellation never settles", async () => {
+	const root = mkdtempSync(join(tmpdir(), "archboard-git-stalled-cancel-"));
+	const executable = join(root, "git");
+	const marker = join(root, "stalled");
+	writeFileSync(executable, FAKE_GIT);
+	chmodSync(executable, 0o700);
+	const stalled = withStalledFirstReader(() =>
+		git(root, ["wait", marker], { executable, timeoutMs: 10 }),
+	);
+	try {
+		await waitForFile(`${marker}.leader`);
+		const outcome = await Promise.race([
+			stalled.result.then(
+				() => ({ kind: "resolved" as const }),
+				(error: unknown) => ({ kind: "rejected" as const, error }),
+			),
+			Bun.sleep(3 * GIT_PROCESS_GROUP_CLEANUP_MS).then(() => ({ kind: "deadline" as const })),
+		]);
+		expect(outcome.kind).toBe("rejected");
+		if (outcome.kind === "rejected") expect(outcome.error).toMatchObject({ failure: "timeout" });
+		await expectPidAbsent(recordedPid(`${marker}.leader`));
+	} finally {
+		stalled.release();
+		await stalled.result.catch(() => undefined);
+		rmSync(root, { recursive: true, force: true });
+	}
+}, 10_000);

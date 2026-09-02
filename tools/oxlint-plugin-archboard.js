@@ -118,6 +118,22 @@ const ASSISTANT_UI_FORBIDDEN_APIS = new Set([
 const GIT_PROCESS_OWNER = "src/runtime/engine/git.ts";
 const SYNC_CHILD_APIS = new Set(["execFileSync", "execSync", "spawnSync"]);
 const PROMISE_CONTINUATION_MEMBERS = new Set(["then", "catch", "finally"]);
+const PROMISE_AGGREGATE_MEMBERS = new Set(["all", "allSettled", "any", "race"]);
+const LEXICAL_SCOPE_TYPES = new Set([
+	"Program",
+	"BlockStatement",
+	"StaticBlock",
+	"CatchClause",
+	"ForStatement",
+	"ForInStatement",
+	"ForOfStatement",
+	"SwitchStatement",
+]);
+const FUNCTION_SCOPE_TYPES = new Set([
+	"FunctionDeclaration",
+	"FunctionExpression",
+	"ArrowFunctionExpression",
+]);
 
 function createRule(messages, create) {
 	return {
@@ -849,7 +865,7 @@ function isDiscardedExpression(node) {
 	);
 }
 
-function assignedIdentifierName(node) {
+function assignedIdentifier(node) {
 	let expression = node;
 	let parent = expression.parent;
 	while (
@@ -864,15 +880,15 @@ function assignedIdentifierName(node) {
 		parent = parent.parent;
 	}
 	if (parent?.type === "VariableDeclarator" && parent.init === expression) {
-		return parent.id?.type === "Identifier" ? parent.id.name : undefined;
+		return parent.id?.type === "Identifier" ? parent.id : undefined;
 	}
 	if (parent?.type === "AssignmentExpression" && parent.right === expression) {
-		return parent.left?.type === "Identifier" ? parent.left.name : undefined;
+		return parent.left?.type === "Identifier" ? parent.left : undefined;
 	}
 	return undefined;
 }
 
-function exitPromiseHasOwner(node) {
+function expressionSink(node) {
 	let expression = node;
 	for (;;) {
 		let parent = expression.parent;
@@ -887,17 +903,18 @@ function exitPromiseHasOwner(node) {
 			expression = parent;
 			parent = parent.parent;
 		}
-		if (parent?.type === "AwaitExpression" && parent.argument === expression) return true;
-		if (
-			(parent?.type === "VariableDeclarator" &&
-				parent.init === expression &&
-				parent.id?.type === "Identifier") ||
-			(parent?.type === "AssignmentExpression" &&
-				parent.right === expression &&
-				parent.left?.type === "Identifier") ||
-			(parent?.type === "ReturnStatement" && parent.argument === expression)
-		)
-			return true;
+		if (parent?.type === "AwaitExpression" && parent.argument === expression)
+			return { kind: "consumed" };
+		if (parent?.type === "ReturnStatement" && parent.argument === expression)
+			return { kind: "consumed" };
+		if (parent?.type === "VariableDeclarator" && parent.init === expression)
+			return parent.id?.type === "Identifier"
+				? { kind: "binding", identifier: parent.id }
+				: { kind: "none" };
+		if (parent?.type === "AssignmentExpression" && parent.right === expression)
+			return parent.left?.type === "Identifier"
+				? { kind: "binding", identifier: parent.left }
+				: { kind: "none" };
 		if (
 			parent?.type === "MemberExpression" &&
 			parent.object === expression &&
@@ -908,8 +925,36 @@ function exitPromiseHasOwner(node) {
 			expression = parent.parent;
 			continue;
 		}
-		return false;
+		if (parent?.type === "ArrayExpression" && parent.elements.includes(expression)) {
+			expression = parent;
+			continue;
+		}
+		if (
+			parent?.type === "CallExpression" &&
+			parent.arguments.includes(expression) &&
+			staticObjectName(unwrapExpression(parent.callee)) === "Promise" &&
+			PROMISE_AGGREGATE_MEMBERS.has(staticMemberName(unwrapExpression(parent.callee)))
+		) {
+			expression = parent;
+			continue;
+		}
+		return { kind: "none" };
 	}
+}
+
+function enclosingScope(node, variableKind = "lexical") {
+	let current = node;
+	while (current) {
+		if (current.type === "Program") return current;
+		if (FUNCTION_SCOPE_TYPES.has(current.type)) return current;
+		if (variableKind !== "var" && LEXICAL_SCOPE_TYPES.has(current.type)) return current;
+		current = current.parent;
+	}
+	return undefined;
+}
+
+function parentScope(scope) {
+	return enclosingScope(scope?.parent);
 }
 
 const gitProcessLifecycle = createRule(
@@ -924,14 +969,21 @@ const gitProcessLifecycle = createRule(
 	},
 	(context) => {
 		if (getRepoRelativePath(context) !== GIT_PROCESS_OWNER) return {};
-		const spawnOwners = new Map();
+		const spawnCalls = [];
+		const declarations = [];
+		const identifiers = [];
+		const exitedMembers = [];
 
 		return {
+			VariableDeclarator(node) {
+				if (node.id?.type === "Identifier") declarations.push(node);
+			},
 			ImportSpecifier(node) {
 				const imported = node.imported?.name ?? node.imported?.value;
 				if (SYNC_CHILD_APIS.has(imported)) report(context, node, "noSyncChild");
 			},
 			Identifier(node) {
+				identifiers.push(node);
 				if (SYNC_CHILD_APIS.has(node.name)) report(context, node, "noSyncChild");
 			},
 			CallExpression(node) {
@@ -953,36 +1005,115 @@ const gitProcessLifecycle = createRule(
 					return;
 				}
 				if (object === "Bun" && member === "spawn") {
-					const owner = assignedIdentifierName(node);
+					const owner = assignedIdentifier(node);
 					if (!owner || isDiscardedExpression(node)) {
 						report(context, node, "noFireAndForget");
 						return;
 					}
-					const owners = spawnOwners.get(owner) ?? [];
-					owners.push({ node, exitOwned: false });
-					spawnOwners.set(owner, owners);
+					spawnCalls.push({ node, identifier: owner });
 				}
 			},
 			MemberExpression(node) {
 				const member = staticMemberName(node);
+				const object = staticObjectName(node);
 				if (SYNC_CHILD_APIS.has(member)) report(context, node, "noSyncChild");
+				if (
+					object === "Bun" &&
+					member === "spawn" &&
+					!(node.parent?.type === "CallExpression" && unwrapExpression(node.parent.callee) === node)
+				)
+					report(context, node, "noFireAndForget");
 				if ((member === "exitCode" || member === "signalCode") && hasLoopAncestor(node)) {
 					report(context, node, "noPolling");
 				}
 				if (member === "exited") {
-					const object = unwrapExpression(node.object);
-					if (object?.type === "Identifier" && exitPromiseHasOwner(node)) {
-						for (const owner of spawnOwners.get(object.name) ?? []) owner.exitOwned = true;
-					}
+					exitedMembers.push(node);
 					if (isDiscardedExpression(node)) report(context, node, "noFireAndForget");
 				}
 			},
 			"Program:exit"() {
-				for (const owners of spawnOwners.values()) {
-					for (const owner of owners) {
-						if (!owner.exitOwned) report(context, owner.node, "noFireAndForget");
+				const bindingsByScope = new Map();
+				const declarationBindings = new Map();
+				for (const declaration of declarations) {
+					const kind = declaration.parent?.kind === "var" ? "var" : "lexical";
+					const scope = enclosingScope(declaration.parent?.parent, kind);
+					if (!scope) continue;
+					const binding = { name: declaration.id.name, scope, declaration };
+					const scoped = bindingsByScope.get(scope) ?? new Map();
+					scoped.set(binding.name, binding);
+					bindingsByScope.set(scope, scoped);
+					declarationBindings.set(declaration.id, binding);
+				}
+				const resolveBinding = (identifier) => {
+					if (declarationBindings.has(identifier)) return declarationBindings.get(identifier);
+					for (let scope = enclosingScope(identifier); scope; scope = parentScope(scope)) {
+						const binding = bindingsByScope.get(scope)?.get(identifier.name);
+						if (binding) return binding;
+					}
+					return undefined;
+				};
+				const spawnOwners = new Map();
+				const owners = [];
+				for (const spawn of spawnCalls) {
+					const binding = resolveBinding(spawn.identifier);
+					if (!binding) {
+						report(context, spawn.node, "noFireAndForget");
+						continue;
+					}
+					const owner = { node: spawn.node, exitOwned: false };
+					owners.push(owner);
+					const bound = spawnOwners.get(binding) ?? new Set();
+					bound.add(owner);
+					spawnOwners.set(binding, bound);
+				}
+				const promiseOwners = new Map();
+				const transfers = [];
+				const consumed = new Set();
+				const addPromiseOwners = (binding, sourceOwners) => {
+					const bound = promiseOwners.get(binding) ?? new Set();
+					for (const owner of sourceOwners) bound.add(owner);
+					promiseOwners.set(binding, bound);
+				};
+				for (const member of exitedMembers) {
+					const objectNode = unwrapExpression(member.object);
+					if (objectNode?.type !== "Identifier") continue;
+					const childBinding = resolveBinding(objectNode);
+					const sourceOwners = childBinding ? spawnOwners.get(childBinding) : undefined;
+					if (!sourceOwners) continue;
+					const sink = expressionSink(member);
+					if (sink.kind === "consumed") {
+						for (const owner of sourceOwners) owner.exitOwned = true;
+					} else if (sink.kind === "binding") {
+						const target = resolveBinding(sink.identifier);
+						if (target) addPromiseOwners(target, sourceOwners);
 					}
 				}
+				for (const identifier of identifiers) {
+					const source = resolveBinding(identifier);
+					if (!source) continue;
+					const sink = expressionSink(identifier);
+					if (sink.kind === "consumed") consumed.add(source);
+					else if (sink.kind === "binding") {
+						const target = resolveBinding(sink.identifier);
+						if (target && target !== source) transfers.push([source, target]);
+					}
+				}
+				let changed = true;
+				while (changed) {
+					changed = false;
+					for (const [source, target] of transfers) {
+						const sourceOwners = promiseOwners.get(source);
+						if (!sourceOwners) continue;
+						const before = promiseOwners.get(target)?.size ?? 0;
+						addPromiseOwners(target, sourceOwners);
+						if ((promiseOwners.get(target)?.size ?? 0) !== before) changed = true;
+					}
+				}
+				for (const binding of consumed) {
+					for (const owner of promiseOwners.get(binding) ?? []) owner.exitOwned = true;
+				}
+				for (const owner of owners)
+					if (!owner.exitOwned) report(context, owner.node, "noFireAndForget");
 			},
 		};
 	},

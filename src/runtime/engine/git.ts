@@ -196,9 +196,8 @@ export async function git(
 	);
 	const abort = (): void => terminate("aborted");
 	options.signal?.addEventListener("abort", abort, { once: true });
-	let exitCode: number;
-	let out: Awaited<typeof stdout.result>;
-	let err: Awaited<typeof stderr.result>;
+	let settled: [number, Awaited<typeof stdout.result>, Awaited<typeof stderr.result>] | undefined;
+	let secondCleanupExpired = false;
 	let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
 	try {
 		const complete = Promise.all([leaderExited, stdout.result, stderr.result]);
@@ -208,8 +207,8 @@ export async function git(
 					cleanupTimer = setTimeout(() => resolve(null), GIT_PROCESS_GROUP_CLEANUP_MS);
 				}),
 		);
-		let settled = await Promise.race([complete, cleanupExpired]);
-		if (settled === null) {
+		let raced = await Promise.race([complete, cleanupExpired]);
+		if (raced === null) {
 			try {
 				signalProcessGroup(child.pid);
 			} catch (error) {
@@ -221,18 +220,39 @@ export async function git(
 				// The leader may already have been reaped.
 			}
 			const cancellation = new Error("Git process-group cleanup exceeded its grace.");
-			await Promise.all([stdout.cancel(cancellation), stderr.cancel(cancellation)]);
-			settled = await complete;
 			termination ??= { failure: "cleanup", cause: cancellation };
+			let secondTimer: ReturnType<typeof setTimeout> | undefined;
+			try {
+				raced = await Promise.race([
+					Promise.all([stdout.cancel(cancellation), stderr.cancel(cancellation)]).then(
+						() => complete,
+					),
+					new Promise<null>((resolve) => {
+						secondTimer = setTimeout(() => resolve(null), GIT_PROCESS_GROUP_CLEANUP_MS);
+					}),
+				]);
+				if (raced === null) secondCleanupExpired = true;
+			} finally {
+				if (secondTimer !== undefined) clearTimeout(secondTimer);
+			}
 		}
-		[exitCode, out, err] = settled;
+		if (raced !== null) settled = raced;
 	} finally {
 		clearTimeout(timeout);
 		options.signal?.removeEventListener("abort", abort);
 	}
-	if (out.error || err.error) terminate("cleanup", out.error ?? err.error);
+	const exitCode = settled?.[0];
+	const out = settled?.[1];
+	const err = settled?.[2];
+	if (out?.error || err?.error) terminate("cleanup", out?.error ?? err?.error);
 	if (!termination && processGroupExists(child.pid)) {
 		terminate("cleanup", new Error("Git exited while its detached process group remained live."));
+	}
+	if (!termination && settled === undefined) {
+		termination = {
+			failure: "cleanup",
+			cause: new Error("Git leader or output pipes did not settle within the cleanup deadline."),
+		};
 	}
 	if (termination) {
 		const gone = await processGroupDisappeared(child.pid);
@@ -247,19 +267,28 @@ export async function git(
 		}
 		if (termination.failure === "output")
 			throw new GitCommandError("output", "Git command output exceeded 64 KiB.", exitCode);
+		const secondDeadline = secondCleanupExpired
+			? " Reader cancellation and leader/pipe settlement exceeded the second cleanup deadline."
+			: "";
 		throw new GitCommandError(
 			termination.failure,
-			termination.cause?.message ?? `Git command ${termination.failure}.`,
+			(termination.cause?.message ?? `Git command ${termination.failure}.`) + secondDeadline,
 			exitCode,
 		);
 	}
+	if (!settled) throw new GitCommandError("cleanup", "Git command did not settle.");
+	const [settledExitCode, settledOut, settledErr] = settled;
 	if (child.signalCode !== null)
-		throw new GitCommandError("signal", `Git exited from ${child.signalCode}.`, exitCode);
-	if (exitCode !== 0) {
-		const detail = new TextDecoder().decode(err.bytes).trim();
-		throw new GitCommandError("exit", detail || `Git exited with status ${exitCode}.`, exitCode);
+		throw new GitCommandError("signal", `Git exited from ${child.signalCode}.`, settledExitCode);
+	if (settledExitCode !== 0) {
+		const detail = new TextDecoder().decode(settledErr.bytes).trim();
+		throw new GitCommandError(
+			"exit",
+			detail || `Git exited with status ${settledExitCode}.`,
+			settledExitCode,
+		);
 	}
-	return new TextDecoder().decode(out.bytes).trim() || undefined;
+	return new TextDecoder().decode(settledOut.bytes).trim() || undefined;
 }
 
 // Turn a git remote URL into a stable identity: host/owner/name, with the

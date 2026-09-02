@@ -120,7 +120,7 @@ async function openApplicationSocket(base: string, clientId: string): Promise<Ap
 }
 
 describe.serial("production canvas Codex WebSocket ownership", () => {
-	test("a stale close cannot erase the replacement pane, selection, hold, or gateway lease", async () => {
+	test("a successful replacement retires the prior transport without erasing current authority", async () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-codex-application-sockets-"));
 		const canvas = await startOwnedCanvas({
 			serverPath: join(repoRoot, "src/server.ts"),
@@ -160,12 +160,14 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 			expect(await first.request("connect")).toMatchObject({ ok: true });
 			expect(await first.request("claimLease")).toMatchObject({ ok: true });
 
+			const retired = first;
 			replacement = await openApplicationSocket(canvas.base, clientId);
-			// Acceptance, not the first workbench request, transfers exact gateway
-			// ownership. The retired close may therefore arrive before B speaks.
-			await first.close();
-			first = null;
 			expect(await replacement.request("connect")).toMatchObject({ ok: true });
+			await waitFor(
+				() => (retired.socket.readyState === WebSocket.CLOSED ? true : undefined),
+				"successful replacement initialization to retire the prior transport",
+			);
+			first = null;
 			const replacementLease = await replacement.request("claimLease");
 			expect(replacementLease).toMatchObject({ ok: true });
 

@@ -8,6 +8,10 @@ import {
 	RepoListJsonResultSchema,
 } from "../../../src/cli/commands/repo.ts";
 import {
+	GIT_PROCESS_GROUP_CLEANUP_MS,
+	GIT_PROCESS_GROUP_POLL_MS,
+} from "../../../src/shared/timing/timing.ts";
+import {
 	createRepositoryFixture,
 	repositoryFailure,
 	type RepositorySpawn,
@@ -30,6 +34,58 @@ function decodeRepository<T>(result: RepositorySpawn, schema: ZodType<T>): T {
 
 const alphaIdentity = "github.com/acme/alpha";
 const betaIdentity = "github.com/acme/beta";
+
+function processExists(pid: number): boolean {
+	return existsSync(`/proc/${pid}`);
+}
+
+function processGroupExists(pgid: number): boolean {
+	try {
+		process.kill(-pgid, 0);
+		return true;
+	} catch (cause) {
+		if ((cause as NodeJS.ErrnoException).code === "ESRCH") return false;
+		throw cause;
+	}
+}
+
+async function within<T>(promise: Promise<T>, message: string): Promise<T> {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	try {
+		return await Promise.race([
+			promise,
+			new Promise<never>((_resolve, reject) => {
+				timer = setTimeout(() => reject(new Error(message)), GIT_PROCESS_GROUP_CLEANUP_MS);
+			}),
+		]);
+	} finally {
+		if (timer !== undefined) clearTimeout(timer);
+	}
+}
+
+async function waitForProcessAbsence(pid: number): Promise<void> {
+	const deadline = Date.now() + GIT_PROCESS_GROUP_CLEANUP_MS;
+	while (processExists(pid)) {
+		if (Date.now() >= deadline) throw new Error(`process ${pid} survived`);
+		await Bun.sleep(GIT_PROCESS_GROUP_POLL_MS);
+	}
+}
+
+async function waitForGroupAbsence(pgid: number): Promise<void> {
+	const deadline = Date.now() + GIT_PROCESS_GROUP_CLEANUP_MS;
+	while (processGroupExists(pgid)) {
+		if (Date.now() >= deadline) throw new Error(`process group ${pgid} survived`);
+		await Bun.sleep(GIT_PROCESS_GROUP_POLL_MS);
+	}
+}
+
+function killGroup(pgid: number): void {
+	try {
+		process.kill(-pgid, "SIGKILL");
+	} catch (cause) {
+		if ((cause as NodeJS.ErrnoException).code !== "ESRCH") throw cause;
+	}
+}
 describe("repository registry package behavior", () => {
 	test("adds, lists, and forgets an isolated checkout", () => {
 		using fixture = createRepositoryFixture();
@@ -254,10 +310,24 @@ test("an interrupted repository command reaps its detached Git group", async () 
 	const checkout = fixture.repository("interrupt", "https://github.com/acme/interrupt.git");
 	const bin = join(fixture.root, "bin");
 	const marker = join(fixture.root, "git-pids");
+	const descendantMarker = `${marker}.descendant`;
+	const helperReady = `${marker}.helper-ready`;
+	const setsid = Bun.which("setsid");
+	if (!setsid) throw new Error("setsid is required for leader-exited cleanup coverage.");
 	mkdirSync(bin);
 	writeFileSync(
 		join(bin, "git"),
-		`#!/bin/sh\nsleep 60 &\ndescendant=$!\necho "$$ $descendant" > ${JSON.stringify(marker)}\nwait\n`,
+		`#!/bin/sh
+(
+  sleep 60 </dev/null >/dev/null 2>&1 &
+  echo "$!" > ${JSON.stringify(descendantMarker)}
+  exec ${JSON.stringify(setsid)} /bin/sh -c ${JSON.stringify(`echo ready > ${JSON.stringify(helperReady)}; sleep 60`)}
+) &
+helper=$!
+while [ ! -e ${JSON.stringify(descendantMarker)} ] || [ ! -e ${JSON.stringify(helperReady)} ]; do sleep 0.01; done
+echo "$$ $(cat ${JSON.stringify(descendantMarker)}) $helper" > ${JSON.stringify(marker)}
+exit 0
+`,
 	);
 	chmodSync(join(bin, "git"), 0o700);
 	const child = Bun.spawn([packageBin, "repo", "add", checkout], {
@@ -276,6 +346,8 @@ test("an interrupted repository command reaps its detached Git group", async () 
 		new Response(child.stderr).text(),
 	]);
 	let gitPids: number[] = [];
+	let primaryFailure: unknown;
+	let cleanupFailure: unknown;
 	try {
 		const deadline = Date.now() + 2_000;
 		while (!existsSync(marker)) {
@@ -283,20 +355,68 @@ test("an interrupted repository command reaps its detached Git group", async () 
 			await Bun.sleep(5);
 		}
 		gitPids = readFileSync(marker, "utf8").trim().split(/\s+/u).map(Number);
+		const [leader, descendant, helper] = gitPids;
+		if (leader === undefined || descendant === undefined || helper === undefined)
+			throw new Error(`Malformed fake Git process record: ${JSON.stringify(gitPids)}`);
+		await waitForProcessAbsence(leader);
+		expect(
+			processExists(descendant),
+			"the redirected Git descendant residue must outlive its leader",
+		).toBeTrue();
+		expect(
+			processGroupExists(leader),
+			"the leader-exited Git group must remain observable",
+		).toBeTrue();
+		let cliExited = false;
+		void child.exited.then(() => {
+			cliExited = true;
+			return undefined;
+		});
 		process.kill(child.pid, "SIGTERM");
-		await child.exited;
-		await output;
-		for (const pid of gitPids)
-			expect(
-				existsSync(`/proc/${pid}`),
-				`Git process ${pid} remained when the interrupted CLI exited`,
-			).toBeFalse();
+		await Bun.sleep(Math.floor(GIT_PROCESS_GROUP_CLEANUP_MS / 2));
+		expect(cliExited, "the CLI exited before the post-leader Git group proof settled").toBeFalse();
+		expect(processGroupExists(leader)).toBeTrue();
+		killGroup(helper);
+		await within(child.exited, "the interrupted CLI leader did not settle");
+		await within(
+			output.then(() => undefined),
+			"the interrupted CLI pipes did not settle",
+		);
+		await waitForGroupAbsence(leader);
+		for (const pid of gitPids) {
+			expect(processExists(pid), `Git process ${pid} remained when the CLI exited`).toBeFalse();
+		}
+	} catch (cause) {
+		primaryFailure = cause;
 	} finally {
-		for (const pid of [...gitPids, child.pid]) {
-			if (pid === undefined || !existsSync(`/proc/${pid}`)) continue;
+		try {
+			const groups = new Set(
+				[gitPids[0], gitPids[2], child.pid].filter((pid): pid is number => pid !== undefined),
+			);
+			for (const pgid of groups) killGroup(pgid);
 			try {
-				process.kill(-pid, "SIGKILL");
+				child.kill("SIGKILL");
 			} catch {}
+			await within(
+				Promise.allSettled([child.exited, output]).then(() => undefined),
+				"the interrupted CLI owner did not settle during cleanup",
+			);
+			for (const pgid of groups) await waitForGroupAbsence(pgid);
+			for (const pid of gitPids) await waitForProcessAbsence(pid);
+		} catch (cause) {
+			cleanupFailure = cause;
 		}
 	}
+	if (primaryFailure !== undefined) {
+		if (cleanupFailure !== undefined)
+			throw new AggregateError(
+				[primaryFailure, cleanupFailure],
+				"CLI interrupt failed and cleanup failed",
+				{
+					cause: primaryFailure,
+				},
+			);
+		throw primaryFailure;
+	}
+	if (cleanupFailure !== undefined) throw cleanupFailure;
 }, 10_000);
