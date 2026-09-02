@@ -117,6 +117,7 @@ const ASSISTANT_UI_FORBIDDEN_APIS = new Set([
 ]);
 const GIT_PROCESS_OWNER = "src/runtime/engine/git.ts";
 const SYNC_CHILD_APIS = new Set(["execFileSync", "execSync", "spawnSync"]);
+const PROMISE_CONTINUATION_MEMBERS = new Set(["then", "catch", "finally"]);
 
 function createRule(messages, create) {
 	return {
@@ -848,6 +849,69 @@ function isDiscardedExpression(node) {
 	);
 }
 
+function assignedIdentifierName(node) {
+	let expression = node;
+	let parent = expression.parent;
+	while (
+		parent?.type === "ChainExpression" ||
+		parent?.type === "TSAsExpression" ||
+		parent?.type === "TSTypeAssertion" ||
+		parent?.type === "TSNonNullExpression" ||
+		parent?.type === "TSSatisfiesExpression" ||
+		parent?.type === "ParenthesizedExpression"
+	) {
+		expression = parent;
+		parent = parent.parent;
+	}
+	if (parent?.type === "VariableDeclarator" && parent.init === expression) {
+		return parent.id?.type === "Identifier" ? parent.id.name : undefined;
+	}
+	if (parent?.type === "AssignmentExpression" && parent.right === expression) {
+		return parent.left?.type === "Identifier" ? parent.left.name : undefined;
+	}
+	return undefined;
+}
+
+function exitPromiseHasOwner(node) {
+	let expression = node;
+	for (;;) {
+		let parent = expression.parent;
+		while (
+			parent?.type === "ChainExpression" ||
+			parent?.type === "TSAsExpression" ||
+			parent?.type === "TSTypeAssertion" ||
+			parent?.type === "TSNonNullExpression" ||
+			parent?.type === "TSSatisfiesExpression" ||
+			parent?.type === "ParenthesizedExpression"
+		) {
+			expression = parent;
+			parent = parent.parent;
+		}
+		if (parent?.type === "AwaitExpression" && parent.argument === expression) return true;
+		if (
+			(parent?.type === "VariableDeclarator" &&
+				parent.init === expression &&
+				parent.id?.type === "Identifier") ||
+			(parent?.type === "AssignmentExpression" &&
+				parent.right === expression &&
+				parent.left?.type === "Identifier") ||
+			(parent?.type === "ReturnStatement" && parent.argument === expression)
+		)
+			return true;
+		if (
+			parent?.type === "MemberExpression" &&
+			parent.object === expression &&
+			PROMISE_CONTINUATION_MEMBERS.has(staticMemberName(parent)) &&
+			parent.parent?.type === "CallExpression" &&
+			parent.parent.callee === parent
+		) {
+			expression = parent.parent;
+			continue;
+		}
+		return false;
+	}
+}
+
 const gitProcessLifecycle = createRule(
 	{
 		noSyncChild:
@@ -860,17 +924,21 @@ const gitProcessLifecycle = createRule(
 	},
 	(context) => {
 		if (getRepoRelativePath(context) !== GIT_PROCESS_OWNER) return {};
+		const spawnOwners = new Map();
 
 		return {
+			ImportSpecifier(node) {
+				const imported = node.imported?.name ?? node.imported?.value;
+				if (SYNC_CHILD_APIS.has(imported)) report(context, node, "noSyncChild");
+			},
+			Identifier(node) {
+				if (SYNC_CHILD_APIS.has(node.name)) report(context, node, "noSyncChild");
+			},
 			CallExpression(node) {
 				const callee = unwrapExpression(node.callee);
 				const direct = callee?.type === "Identifier" ? callee.name : undefined;
 				const member = staticMemberName(callee);
 				const object = staticObjectName(callee);
-				if (SYNC_CHILD_APIS.has(direct) || SYNC_CHILD_APIS.has(member)) {
-					report(context, node, "noSyncChild");
-					return;
-				}
 				if (member === "unref") {
 					report(context, node, "noUnref");
 					return;
@@ -884,17 +952,36 @@ const gitProcessLifecycle = createRule(
 					report(context, node, "noPolling");
 					return;
 				}
-				if (object === "Bun" && member === "spawn" && isDiscardedExpression(node)) {
-					report(context, node, "noFireAndForget");
+				if (object === "Bun" && member === "spawn") {
+					const owner = assignedIdentifierName(node);
+					if (!owner || isDiscardedExpression(node)) {
+						report(context, node, "noFireAndForget");
+						return;
+					}
+					const owners = spawnOwners.get(owner) ?? [];
+					owners.push({ node, exitOwned: false });
+					spawnOwners.set(owner, owners);
 				}
 			},
 			MemberExpression(node) {
 				const member = staticMemberName(node);
+				if (SYNC_CHILD_APIS.has(member)) report(context, node, "noSyncChild");
 				if ((member === "exitCode" || member === "signalCode") && hasLoopAncestor(node)) {
 					report(context, node, "noPolling");
 				}
-				if (member === "exited" && isDiscardedExpression(node)) {
-					report(context, node, "noFireAndForget");
+				if (member === "exited") {
+					const object = unwrapExpression(node.object);
+					if (object?.type === "Identifier" && exitPromiseHasOwner(node)) {
+						for (const owner of spawnOwners.get(object.name) ?? []) owner.exitOwned = true;
+					}
+					if (isDiscardedExpression(node)) report(context, node, "noFireAndForget");
+				}
+			},
+			"Program:exit"() {
+				for (const owners of spawnOwners.values()) {
+					for (const owner of owners) {
+						if (!owner.exitOwned) report(context, owner.node, "noFireAndForget");
+					}
 				}
 			},
 		};

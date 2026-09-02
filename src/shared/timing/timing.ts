@@ -241,6 +241,15 @@ export const GIT_PROCESS_GROUP_CLEANUP_MS = CANVAS_MUTATION_DRAIN_TIMEOUT_MS;
 export const GIT_PROCESS_GROUP_POLL_MS = 10;
 
 /**
+ * Outer grace before an interrupted CLI restores the signal's default action.
+ * Git may spend one cleanup grace terminating and cancelling its leader and
+ * pipes, then another proving the detached group is absent. A third grace is
+ * reserved for that settled failure to cross the command runner before the CLI
+ * re-signals itself; the outer owner must never pre-empt either inner proof.
+ */
+export const CLI_INTERRUPT_CLEANUP_MS = 3 * GIT_PROCESS_GROUP_CLEANUP_MS;
+
+/**
  * External bound for the exact Git lifecycle plus opener regression sequence.
  * It is four ordinary Git command bounds: enough for the serial owners while
  * still diagnosing a retained child or pipe well inside the repository lane.

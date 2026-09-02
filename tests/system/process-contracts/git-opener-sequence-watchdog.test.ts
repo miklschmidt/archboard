@@ -34,64 +34,141 @@ async function waitForGroupAbsence(pgid: number, timeoutMs: number): Promise<voi
 	}
 }
 
+async function within<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	try {
+		return await Promise.race([
+			promise,
+			new Promise<never>((_resolve, reject) => {
+				timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+			}),
+		]);
+	} finally {
+		if (timer !== undefined) clearTimeout(timer);
+	}
+}
+
+async function cleanupOwnedChild(
+	child: ReturnType<typeof Bun.spawn>,
+	streams: readonly Promise<unknown>[],
+): Promise<void> {
+	const failures: unknown[] = [];
+	try {
+		process.kill(-child.pid, "SIGKILL");
+	} catch (cause) {
+		if ((cause as NodeJS.ErrnoException).code !== "ESRCH") failures.push(cause);
+	}
+	try {
+		child.kill("SIGKILL");
+	} catch {
+		// The exact leader may already have been reaped by the group signal.
+	}
+	try {
+		await within(
+			Promise.allSettled([child.exited, ...streams]).then(() => undefined),
+			GIT_PROCESS_GROUP_CLEANUP_MS,
+			`process group ${child.pid} pipes or leader did not settle`,
+		);
+	} catch (cause) {
+		failures.push(cause);
+	}
+	try {
+		await waitForGroupAbsence(child.pid, GIT_PROCESS_GROUP_CLEANUP_MS);
+	} catch (cause) {
+		failures.push(cause);
+	}
+	if (failures.length > 0)
+		throw new AggregateError(failures, `process group ${child.pid} cleanup failed`);
+}
+
+async function runOwnedDetached(
+	command: readonly string[],
+	options: {
+		env?: Record<string, string | undefined>;
+		afterSpawn?: (child: ReturnType<typeof Bun.spawn>) => Promise<void> | void;
+	} = {},
+): Promise<{ exitCode: number; out: string; err: string }> {
+	const child = Bun.spawn([...command], {
+		cwd: ROOT,
+		detached: true,
+		stdin: "ignore",
+		stdout: "pipe",
+		stderr: "pipe",
+		...(options.env ? { env: options.env } : {}),
+	});
+	let primaryFailure: unknown;
+	let failed = false;
+	let result: { exitCode: number; out: string; err: string } | undefined;
+	let cleanupFailure: unknown;
+	const streams: Promise<unknown>[] = [];
+	try {
+		const stdout = new Response(child.stdout).text();
+		const stderr = new Response(child.stderr).text();
+		streams.push(stdout, stderr);
+		const lifecycle = Promise.all([child.exited, stdout, stderr]).then(([exitCode, out, err]) => ({
+			exitCode,
+			out,
+			err,
+		}));
+		await options.afterSpawn?.(child);
+		result = await within(
+			lifecycle,
+			TEST_GIT_OPENER_WATCHDOG_MS,
+			`watchdog expired for process group ${child.pid}`,
+		);
+	} catch (cause) {
+		failed = true;
+		primaryFailure = cause;
+	} finally {
+		try {
+			await cleanupOwnedChild(child, streams);
+		} catch (cause) {
+			cleanupFailure = cause;
+		}
+	}
+	if (failed) {
+		if (cleanupFailure !== undefined)
+			throw new AggregateError(
+				[primaryFailure, cleanupFailure],
+				`process group ${child.pid} failed after its primary error`,
+				{ cause: primaryFailure },
+			);
+		throw primaryFailure;
+	}
+	if (cleanupFailure !== undefined) throw cleanupFailure;
+	return result!;
+}
+
 test(
 	"Git lifecycle and the former opener deadlock sequence settle under an external watchdog",
 	async () => {
-		const child = Bun.spawn(
+		const settled = await runOwnedDetached(
 			[process.execPath, "test", "--isolate", "--max-concurrency=1", ...OWNERS],
-			{
-				cwd: ROOT,
-				detached: true,
-				stdin: "ignore",
-				stdout: "pipe",
-				stderr: "pipe",
-				env: { ...process.env, ARCHBOARD_REPOS: resolve(ROOT, ".absent-watchdog-repos.json") },
-			},
+			{ env: { ...process.env, ARCHBOARD_REPOS: resolve(ROOT, ".absent-watchdog-repos.json") } },
 		);
-		const stdout = new Response(child.stdout).text();
-		const stderr = new Response(child.stderr).text();
-		const lifecycle = Promise.all([child.exited, stdout, stderr]).then(
-			async ([exitCode, out, err]) => {
-				await waitForGroupAbsence(child.pid, GIT_PROCESS_GROUP_CLEANUP_MS);
-				return { exitCode, out, err };
-			},
-		);
-		let timer: ReturnType<typeof setTimeout> | undefined;
-		const result = await Promise.race([
-			lifecycle.then((value) => ({ ...value, timedOut: false as const })),
-			new Promise<{ timedOut: true }>((resolveTimeout) => {
-				timer = setTimeout(() => resolveTimeout({ timedOut: true }), TEST_GIT_OPENER_WATCHDOG_MS);
-			}),
-		]);
-		if (timer !== undefined) clearTimeout(timer);
-		if (result.timedOut) {
-			try {
-				process.kill(-child.pid, "SIGKILL");
-			} catch (cause) {
-				if ((cause as NodeJS.ErrnoException).code !== "ESRCH") throw cause;
-			}
-			try {
-				child.kill("SIGKILL");
-			} catch {
-				// The group signal remains authoritative when the leader already exited.
-			}
-			let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
-			const cleaned = await Promise.race([
-				lifecycle.then(() => true),
-				new Promise<false>((resolveCleanup) => {
-					cleanupTimer = setTimeout(() => resolveCleanup(false), GIT_PROCESS_GROUP_CLEANUP_MS);
-				}),
-			]);
-			if (cleanupTimer !== undefined) clearTimeout(cleanupTimer);
-			expect(cleaned, `watchdog cleanup did not settle for process group ${child.pid}`).toBeTrue();
-		}
-		const settled = result.timedOut ? await lifecycle : result;
 		const { out, err } = settled;
 		const output = `${out}\n${err}`;
-		expect(result.timedOut, `watchdog expired\nstdout:\n${out}\nstderr:\n${err}`).toBeFalse();
 		expect(settled.exitCode, `stdout:\n${out}\nstderr:\n${err}`).toBe(0);
 		for (const owner of OWNERS) expect(output).toContain(owner);
-		await waitForGroupAbsence(child.pid, GIT_PROCESS_GROUP_CLEANUP_MS);
 	},
 	TEST_GIT_OPENER_CASE_TIMEOUT_MS,
 );
+
+test("a rejected watchdog lifecycle preserves its error after reaping the exact group", async () => {
+	const failure = new Error("forced watchdog lifecycle rejection");
+	let pgid: number | undefined;
+	let rejected: unknown;
+	try {
+		await runOwnedDetached([process.execPath, "-e", "setInterval(() => {}, 1000)"], {
+			afterSpawn: (child) => {
+				pgid = child.pid;
+				throw failure;
+			},
+		});
+	} catch (cause) {
+		rejected = cause;
+	}
+	expect(rejected).toBe(failure);
+	expect(pgid).toBeDefined();
+	expect(groupExists(pgid!)).toBeFalse();
+});
