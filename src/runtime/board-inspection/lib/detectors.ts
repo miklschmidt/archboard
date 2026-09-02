@@ -1588,6 +1588,13 @@ interface PairItem<T> {
 	semantics: SweepPartition;
 }
 
+interface ComparisonCounter {
+	value: number;
+	limited: boolean;
+	pass: CollisionPass | null;
+	comparisonLimit: number;
+}
+
 const partitioned = <T>(
 	items: readonly PairItem<T>[],
 	semantics: (value: T) => SweepPartition,
@@ -1605,7 +1612,7 @@ function pairSweep<A, B>(
 	right: readonly PairItem<B>[],
 	sameSet: boolean,
 	visit: (a: A, b: B) => void,
-	counter: { value: number; limited: boolean; pass: CollisionPass | null },
+	counter: ComparisonCounter,
 	work: SweepWork,
 	pass: CollisionPass,
 ): void {
@@ -1635,7 +1642,7 @@ function pairSweep<A, B>(
 			const a = aInterval.value;
 			const b = bInterval.value;
 			counter.value += 1;
-			if (counter.value > BROAD_PHASE_COMPARISON_LIMIT) {
+			if (counter.value > counter.comparisonLimit) {
 				counter.limited = true;
 				counter.pass = pass;
 				return false;
@@ -1668,12 +1675,14 @@ function collisionFindings(
 	policy: InspectionPolicy,
 	result: CollisionResult,
 	validBridges: readonly ValidBridgeDecoration[],
+	comparisonLimit: number,
 ): CollisionResult {
 	const findings = result.findings;
-	const counter: { value: number; limited: boolean; pass: CollisionPass | null } = {
+	const counter: ComparisonCounter = {
 		value: 0,
 		limited: false,
 		pass: null,
+		comparisonLimit,
 	};
 	const sweepWork = result.sweepWork;
 	const byId = model.byId;
@@ -2169,6 +2178,7 @@ export function detectBoard(
 	policy: InspectionPolicy,
 	initialFindings: readonly InspectionFinding[] = [],
 	validBridges: readonly ValidBridgeDecoration[] = [],
+	options: { comparisonLimit?: number } = {},
 ): DetectionResult {
 	const findings = [...initialFindings];
 	findings.push(...renderFindings(records), ...identityFindings(records));
@@ -2188,6 +2198,7 @@ export function detectBoard(
 			terminalLimit: null,
 		},
 		validBridges,
+		options.comparisonLimit ?? BROAD_PHASE_COMPARISON_LIMIT,
 	);
 	findings.push(...collisions.findings);
 	findings.push(...coordinateSpanFindings(records, model, findings));

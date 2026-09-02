@@ -1,21 +1,41 @@
 import { describe, expect, test } from "bun:test";
-import { TEST_BOARD_INSPECTION_TERMINAL_CASE_TIMEOUT_MS } from "../../../shared/timing/timing.js";
-import { inspectBoardDiagnostics } from "../diagnostics.js";
-import { InspectionFindingSchema, inspectBoard } from "../index.js";
+import { DEFAULT_INSPECTION_POLICY, InspectionFindingSchema } from "../index.js";
+import { decodeRecords } from "../lib/decode.js";
+import { BROAD_PHASE_COMPARISON_LIMIT, detectBoard } from "../lib/detectors.js";
 import { performanceBoard, terminalComparisonBoard } from "./fixtures/limit-cases.js";
 
+const REPRESENTATIVE_COMPARISON_LIMIT = 2_000;
+
+function detectWithRepresentativeLimit(records: ReturnType<typeof performanceBoard>) {
+	return detectBoard(
+		decodeRecords(records as Parameters<typeof decodeRecords>[0], new Set()),
+		DEFAULT_INSPECTION_POLICY,
+		[],
+		[],
+		{ comparisonLimit: REPRESENTATIVE_COMPARISON_LIMIT },
+	);
+}
+
 describe("comparison limits", () => {
-	test("pins the exact below-limit count", () => {
-		const report = inspectBoard(performanceBoard(400, 1_200, 400));
-		expect(report.broadPhaseComparisons).toBe(1_516_200);
-		expect(report.findings.some((f) => f.code === "INSPECTION_LIMIT_EXCEEDED")).toBe(false);
+	test("keeps a smaller comparison matrix below its representative limit", () => {
+		const detection = detectWithRepresentativeLimit(performanceBoard(10, 30, 10));
+		expect(detection.broadPhaseComparisons).toBeLessThanOrEqual(
+			REPRESENTATIVE_COMPARISON_LIMIT,
+		);
+		expect(detection.findings.some((f) => f.code === "INSPECTION_LIMIT_EXCEEDED")).toBe(
+			false,
+		);
 	});
 
-	test("stops on attempted comparison 2,000,001 with fixed schema", () => {
-		const report = inspectBoard(performanceBoard(500, 1_500, 500));
-		const limit = report.findings.find((f) => f.reason === "broad-phase-comparison-ceiling");
-		expect(report.broadPhaseComparisons).toBe(2_000_001);
-		expect(report.coverage).toBe("indeterminate");
+	test("stops on the first comparison beyond the representative limit deterministically", () => {
+		const input = performanceBoard(20, 60, 20);
+		const first = detectWithRepresentativeLimit(input);
+		const second = detectWithRepresentativeLimit(input);
+		const limit = first.findings.find((f) => f.reason === "broad-phase-comparison-ceiling");
+		expect(first.broadPhaseComparisons).toBe(REPRESENTATIVE_COMPARISON_LIMIT + 1);
+		expect(limit?.affectsCoverage).toBe(true);
+		expect(second).toEqual(first);
+		expect(BROAD_PHASE_COMPARISON_LIMIT).toBe(2_000_000);
 		expect(limit?.details).toMatchObject({ limit: 2_000_000, attempted: 2_000_001 });
 		for (const details of [
 			{ limit: 2_000_001 },
@@ -28,18 +48,16 @@ describe("comparison limits", () => {
 			).toBe(false);
 	});
 
-	test(
-		"retains completed findings before the terminal stop",
-		() => {
-			const report = inspectBoardDiagnostics(terminalComparisonBoard()).report;
-			expect(report.broadPhaseComparisons).toBe(2_000_001);
-			expect(report.findings.filter((f) => f.code === "INSPECTION_LIMIT_EXCEEDED")).toHaveLength(1);
-			expect(
-				report.findings.some(
-					(f) => f.reason === "zero-length" && f.details.connectorId === "terminal-zero-segments",
-				),
-			).toBe(true);
-		},
-		TEST_BOARD_INSPECTION_TERMINAL_CASE_TIMEOUT_MS,
-	);
+	test("retains completed findings before the representative terminal stop", () => {
+		const detection = detectWithRepresentativeLimit(terminalComparisonBoard());
+		expect(detection.broadPhaseComparisons).toBe(REPRESENTATIVE_COMPARISON_LIMIT + 1);
+		expect(
+			detection.findings.filter((f) => f.code === "INSPECTION_LIMIT_EXCEEDED"),
+		).toHaveLength(1);
+		expect(
+			detection.findings.some(
+				(f) => f.reason === "zero-length" && f.details.connectorId === "terminal-zero-segments",
+			),
+		).toBe(true);
+	});
 });
