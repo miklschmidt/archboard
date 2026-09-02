@@ -81,6 +81,52 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 	}
 });
 
+test("normal browser close and teardown share one delayed close owner", async () => {
+	const instance = Object.freeze({ socket: "delayed-close" });
+	let release!: () => void;
+	const gate = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	let closeCalls = 0;
+	const connection = {
+		browserId: "browser-delayed",
+		paneId: "pane-delayed",
+		instance,
+		close: async () => {
+			closeCalls += 1;
+			await gate;
+		},
+	} as unknown as BrowserWorkbenchConnection;
+	const gateway = {
+		connect: () => connection,
+		closeConnection: async () => {
+			closeCalls += 1;
+			await gate;
+		},
+	} as unknown as CodexWorkbenchGateway;
+	const owner = createCanvasCodexBrowserSocketOwner({
+		gateway,
+		paneForBrowser: () => "pane-delayed",
+	});
+	owner.accept(instance, "browser-delayed");
+	const normalClose = owner.close(instance, "browser-delayed");
+	const repeatedClose = owner.close(instance, "browser-delayed");
+	expect(repeatedClose).toBe(normalClose);
+	let drained = false;
+	const stopping = owner.drain().then(() => {
+		drained = true;
+		return undefined;
+	});
+	await Bun.sleep(0);
+	expect(closeCalls).toBe(1);
+	expect(drained).toBeFalse();
+	release();
+	await Promise.all([normalClose, repeatedClose, stopping]);
+	expect(closeCalls).toBe(1);
+	expect(drained).toBeTrue();
+	owner.dispose();
+});
+
 test("the public socket owner routes the complete gateway workflow through server-owned identity", async () => {
 	const calls: string[] = [];
 	const messages: unknown[] = [];

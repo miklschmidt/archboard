@@ -48,6 +48,8 @@ export interface CanvasCodexBrowserSocketOwner {
 		transport: CanvasCodexBrowserSocketSend,
 	) => Promise<void>;
 	readonly close: (instance: BrowserConnectionInstance, browserId: string) => Promise<void>;
+	/** Wait for every normal-close or teardown close already owned by this generation. */
+	readonly drain: () => Promise<void>;
 	readonly dispose: () => void;
 }
 
@@ -75,6 +77,8 @@ export function createCanvasCodexBrowserSocketOwner(
 ): CanvasCodexBrowserSocketOwner {
 	const subscriptions = new Map<BrowserConnectionInstance, () => void>();
 	const connections = new Map<BrowserConnectionInstance, BrowserWorkbenchConnection>();
+	const closePromises = new WeakMap<BrowserConnectionInstance, Promise<void>>();
+	const activeCloses = new Set<Promise<void>>();
 	let disposed = false;
 
 	const connectionFor = (
@@ -172,17 +176,32 @@ export function createCanvasCodexBrowserSocketOwner(
 		}
 	};
 
-	const close = async (instance: BrowserConnectionInstance, browserId: string): Promise<void> => {
-		subscriptions.get(instance)?.();
-		subscriptions.delete(instance);
-		const connection = connections.get(instance);
-		connections.delete(instance);
-		if (connection !== undefined) {
-			await connection.close();
-			return;
-		}
-		const paneId = options.paneForBrowser(browserId);
-		if (paneId !== null) await options.gateway.closeConnection(browserId, paneId, instance);
+	const close = (instance: BrowserConnectionInstance, browserId: string): Promise<void> => {
+		const existing = closePromises.get(instance);
+		if (existing !== undefined) return existing;
+		const owned = (async (): Promise<void> => {
+			subscriptions.get(instance)?.();
+			subscriptions.delete(instance);
+			const connection = connections.get(instance);
+			connections.delete(instance);
+			if (connection !== undefined) {
+				await connection.close();
+				return;
+			}
+			const paneId = options.paneForBrowser(browserId);
+			if (paneId !== null) await options.gateway.closeConnection(browserId, paneId, instance);
+		})();
+		closePromises.set(instance, owned);
+		activeCloses.add(owned);
+		void owned.then(
+			() => activeCloses.delete(owned),
+			() => activeCloses.delete(owned),
+		);
+		return owned;
+	};
+
+	const drain = async (): Promise<void> => {
+		while (activeCloses.size > 0) await Promise.allSettled(activeCloses);
 	};
 
 	const dispose = (): void => {
@@ -193,5 +212,5 @@ export function createCanvasCodexBrowserSocketOwner(
 		connections.clear();
 	};
 
-	return Object.freeze({ accept, handle, close, dispose });
+	return Object.freeze({ accept, handle, close, drain, dispose });
 }

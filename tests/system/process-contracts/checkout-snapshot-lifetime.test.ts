@@ -8,6 +8,7 @@ import { completeElement } from "../code-targets/support/elements.ts";
 import {
 	createDelayedCheckoutOwner as fixture,
 	expectPidAbsent,
+	expectRecordedPidsAbsent,
 	waitForRecordedPid,
 	waitForRecordedPids,
 } from "./support/delayed-checkout-owner.ts";
@@ -41,6 +42,7 @@ test("canvas teardown cancels and reaps delayed GET checkout work", async () => 
 		await canvas.dispose();
 		await request.catch(() => undefined);
 		for (const pid of pids) await expectPidAbsent(pid);
+		await expectRecordedPidsAbsent(owner.pids);
 	} finally {
 		owner.dispose();
 	}
@@ -77,6 +79,7 @@ test("opener settings checkout work is canceled by disconnect and awaited by can
 		await canvas.dispose();
 		await stopping;
 		for (const pid of pids) await expectPidAbsent(pid);
+		await expectRecordedPidsAbsent(owner.pids);
 	} finally {
 		owner.dispose();
 	}
@@ -101,6 +104,7 @@ test("a WebSocket is owned before delayed checkout presentation and closes with 
 		await canvas.dispose();
 		await closed;
 		await expectPidAbsent(pid);
+		await expectRecordedPidsAbsent(owner.pids);
 	} finally {
 		owner.dispose();
 	}
@@ -162,6 +166,7 @@ test("a delayed WebSocket receives a fresh initial scene before any concurrent d
 			),
 		).toBeTrue();
 		await canvas.dispose();
+		await expectRecordedPidsAbsent(owner.pids);
 	} finally {
 		socket?.close();
 		owner.dispose();
@@ -215,6 +220,7 @@ test("human reports spawn no Git work while agent reports capture fresh authorit
 		await canvas.dispose();
 		await agent;
 		await expectPidAbsent(pid);
+		await expectRecordedPidsAbsent(owner.pids);
 	} finally {
 		owner.dispose();
 	}
