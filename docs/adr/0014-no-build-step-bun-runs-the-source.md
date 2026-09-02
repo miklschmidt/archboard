@@ -52,6 +52,9 @@ that is a build again, and this is the decision to reopen.
 
 ## Reloading a running canvas
 
+> Superseded by ADR 0021. The direct-TypeScript and no-build decision above
+> remains accepted.
+
 A canvas holds work: boards somebody has drawn on and not yet saved, panes
 arranged on a wall, a change feed whose cursor a hook may have recorded.
 Restarting it to pick up a change throws all of that away, and the unsaved
