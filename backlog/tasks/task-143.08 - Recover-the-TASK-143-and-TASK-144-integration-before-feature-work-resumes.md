@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:35'
-updated_date: '2026-09-02 02:21'
+updated_date: '2026-09-02 02:31'
 labels: []
 dependencies: []
 references:
@@ -58,6 +58,8 @@ Orchestration queue at base 71a3e6bf:
 - Review: none.
 - Blocked by TASK-143.08.01: TASK-143.08.02, TASK-143.08.06.01, TASK-143.06.03, TASK-143.06.06, and every transitive descendant.
 - Integrated: planning commit 71a3e6bf only.
+
+Queue hold after user decision: TASK-143.08.01 implementation is stopped pending a choice between removing only the AST-based module-scope policy and removing the full hot-reload plus kept() lifecycle. Babel, custom TypeScript AST walking, and generated-contract source scanning are rejected. No TASK-143.08 descendant or legacy cleanup leaf may start. The current implementation worktree is preserved and must not be integrated or altered.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
