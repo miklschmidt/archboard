@@ -228,8 +228,8 @@ note archboard did not write. About fifteen seconds.
 
 ## Source boundary check
 
-- `bun test tests/system/repository-policy/boundaries.test.ts` creates disposable projects outside the checkout and
-  invokes real Oxlint subprocesses with the repository's custom plugin. It proves
+- `bun test tests/system/repository-policy/boundaries.test.ts` creates disposable source fixtures outside the checkout and
+  invokes syntax-only Oxlint subprocesses with the repository's custom plugin. It proves
   allowed module-root imports and thin process entrypoints pass, while root
   entrypoint implementation, domain-to-transformer imports, flat
   area files, extensionless directory deep imports and Vite resource-query deep
@@ -238,6 +238,9 @@ note archboard did not write. About fifteen seconds.
   entrypoint rule, co-located test files are rejected, and test/spec files under
   a module's `tests/` directory are accepted. Each assertion removes its
   temporary project even when the assertion fails.
+- `bun test tests/system/repository-policy/tsconfig-gate-scope.test.ts` reads the two canonical TypeScript configs without
+  invoking the compiler. It pins `noEmit` and the exact root and frontend source sets because TypeScript exits cleanly
+  when a source tree containing errors disappears from `include`.
 
 ## Board inspection check
 

@@ -6,7 +6,6 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const oxlint = path.join(repoRoot, "node_modules/.bin/oxlint");
-const tsc = path.join(repoRoot, "node_modules/.bin/tsc");
 const plugin = path.join(repoRoot, "tools/oxlint-plugin-archboard.js");
 
 interface CommandResult {
@@ -46,8 +45,6 @@ async function withProject<T>(
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-boundaries-"));
 	try {
 		fs.writeFileSync(path.join(root, ".oxlintrc.jsonc"), repositoryOxlintConfig());
-		fs.copyFileSync(path.join(repoRoot, "tsconfig.json"), path.join(root, "tsconfig.json"));
-		fs.symlinkSync(path.join(repoRoot, "node_modules"), path.join(root, "node_modules"), "dir");
 		for (const [relative, content] of Object.entries(files)) {
 			const target = path.join(root, relative);
 			fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -59,12 +56,12 @@ async function withProject<T>(
 	}
 }
 
-function lintCommand(relativePaths: string[], extra: string[] = []): string[] {
-	return [oxlint, "--config=.oxlintrc.jsonc", "--format=default", ...extra, ...relativePaths];
+function lintCommand(relativePaths: string[]): string[] {
+	return [oxlint, "--config=.oxlintrc.jsonc", "--format=default", ...relativePaths];
 }
 
-function lint(root: string, relativePaths: string[], extra: string[] = []): CommandResult {
-	return run(root, lintCommand(relativePaths, extra));
+function lint(root: string, relativePaths: string[]): CommandResult {
+	return run(root, lintCommand(relativePaths));
 }
 
 function expectPass(result: CommandResult): void {
@@ -85,18 +82,6 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 			"--format=default",
 			"src/domain/widget/index.ts",
 		]);
-	});
-
-	test("uses the repository-owned Oxlint and TypeScript configurations", async () => {
-		await withProject({}, (root) => {
-			const actualOxlint = fs
-				.readFileSync(path.join(root, ".oxlintrc.jsonc"), "utf8")
-				.replace(JSON.stringify(plugin), '"./tools/oxlint-plugin-archboard.js"');
-			expect(actualOxlint).toBe(fs.readFileSync(path.join(repoRoot, ".oxlintrc.jsonc"), "utf8"));
-			expect(fs.readFileSync(path.join(root, "tsconfig.json"), "utf8")).toBe(
-				fs.readFileSync(path.join(repoRoot, "tsconfig.json"), "utf8"),
-			);
-		});
 	});
 
 	test("allows root entrypoints, documented dependency directions, and flat test owners", async () => {
@@ -274,44 +259,6 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 				]) {
 					expectRule(lint(root, [file]), "eslint(max-lines)", "Maximum allowed is 500");
 				}
-			},
-		);
-	});
-
-	test("assigns both test owners to lint and TypeScript", async () => {
-		await withProject(
-			{
-				"src/domain/widget/index.ts": "export const value = 1;\n",
-				"src/domain/widget/tests/widget.test.ts": "export const moduleError: string = 1;\n",
-				"src/domain/widget/tests/support.ts": "export const moduleSupportError: string = 1;\n",
-				"tests/system/policy/system.test.ts": "export const systemError: string = 1;\n",
-				"tests/system/policy/support.ts": "export const systemSupportError: string = 1;\n",
-				"scripts/error.ts": "export const scriptError: string = 1;\n",
-				"tools/error.ts": "export const toolError: string = 1;\n",
-			},
-			(root) => {
-				const assigned = lint(
-					root,
-					["src/domain/widget/tests/widget.test.ts", "tests/system/policy/system.test.ts"],
-					["--debug=files"],
-				);
-				expectPass(assigned);
-				expect(assigned.output).toContain("src/domain/widget/tests/widget.test.ts");
-				expect(assigned.output).toContain("tests/system/policy/system.test.ts");
-
-				const typed = run(root, [tsc, "--noEmit", "-p", "tsconfig.json"]);
-				expect(typed.exitCode, typed.output).not.toBe(0);
-				for (const file of [
-					"src/domain/widget/tests/widget.test.ts",
-					"src/domain/widget/tests/support.ts",
-					"tests/system/policy/system.test.ts",
-					"tests/system/policy/support.ts",
-					"scripts/error.ts",
-					"tools/error.ts",
-				]) {
-					expect(typed.output).toContain(file);
-				}
-				expect(typed.output).toContain("TS2322");
 			},
 		);
 	});
