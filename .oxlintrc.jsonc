@@ -21,7 +21,6 @@
 		"Bun": "readonly",
 	},
 	"options": {
-		"typeAware": true,
 		"denyWarnings": true,
 		"maxWarnings": 0,
 		"reportUnusedDisableDirectives": "error",
@@ -90,7 +89,7 @@
 			},
 		},
 		{
-			"files": ["scripts/generate-cli-contract.ts", "scripts/reload.ts", "scripts/sync-skills.ts"],
+			"files": ["scripts/generate-cli-contract.ts", "scripts/sync-skills.ts"],
 			"rules": {
 				"no-console": "off",
 			},

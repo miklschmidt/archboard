@@ -9,7 +9,6 @@ import fs from "node:fs";
 
 import type { BoardIdentity } from "./board.js";
 import { CURRENT_VARIANT, boardDisplayName, boardKey } from "./board.js";
-import { kept } from "./hot.js";
 import { readFrontmatterValue, setFrontmatterValue } from "./obsidian-md.js";
 
 const FRONTMATTER_VERSION = "version";
@@ -257,8 +256,10 @@ export function statedVersion(raw: unknown, writer: "human" | "agent"): StatedVe
 	return { ok: true, expected: stated === 0 ? null : stated };
 }
 
+const processRememberedVersions = new Map<string, number | null>();
+
 function rememberedVersions(): Map<string, number | null> {
-	return kept("board-version-remembered", () => new Map<string, number | null>());
+	return processRememberedVersions;
 }
 
 export function rememberedVersion(writer: string | undefined): number | null | undefined {

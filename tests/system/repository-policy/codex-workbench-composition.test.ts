@@ -24,7 +24,7 @@ import {
 
 const RETAINED_KEYS = ["control", "failure", "generation", "owner", "process", "state"];
 const CONTROL_KEYS = ["current", "runtime", "wrappers"];
-const OWNER_SLOT_KEYS = ["gateway", "reload", "shutdown", "snapshot", "start"];
+const OWNER_SLOT_KEYS = ["gateway", "shutdown", "snapshot", "start"];
 const RUNTIME_KEYS = [
 	"accountReady",
 	"exitBridge",
@@ -170,7 +170,7 @@ describe("production Codex workbench composition policy", () => {
 		);
 	});
 
-	test("retains only scalar coordination, stable kernel handles, and replaceable slots", async () => {
+	test("retains only scalar coordination, stable kernel handles, and terminal slots", async () => {
 		const retained = Object.seal(emptyCodexWorkbenchRetainedState());
 		const created: CodexWorkbenchGeneration[] = [];
 		const owner = installFakeOwner(retained, {
@@ -211,35 +211,12 @@ describe("production Codex workbench composition policy", () => {
 			expect(forbidden in runtime, forbidden).toBeFalse();
 		assertCodexWorkbenchRetainedState(retained);
 
-		const first = created[0]!;
-		const firstSlots = retained.control.current;
-		const firstExitHandler = runtime.exitBridge.handler;
-		await owner.reload(async ({ generation, kernel }) => {
-			expect(kernel?.identityLedger).toBe(stableLedger);
-			expect(kernel?.transport).toBe(stableTransport);
-			const source = fakeGeneration([], generation);
-			if (kernel !== null)
-				Object.assign(source, {
-					identityLedger: kernel.identityLedger,
-					transport: kernel.transport,
-				});
-			created.push(source);
-			return source;
-		});
-		expect(created).toHaveLength(2);
-		expect(retained.control.current).not.toBe(firstSlots);
-		expect(runtime.exitBridge.handler).not.toBe(firstExitHandler);
+		expect(created).toHaveLength(1);
 		expect(retained.control.runtime).toBe(runtime);
-		expect(runtime.identityLedger).toBe(created[1]!.identityLedger);
-		expect(runtime.transport).toBe(created[1]!.transport);
-		for (const key of ["activate", "deactivate", "stop", "finishStop"] as const)
-			Object.assign(first, {
-				[key]: () => {
-					throw new Error(`retired ${key} executed`);
-				},
-			});
-		expect(retained.control.wrappers.snapshot()).toMatchObject({ ready: true, generation: 2 });
-		expect(retained.control.wrappers.gateway()).toBe(created[1]!.gateway);
+		expect(runtime.identityLedger).toBe(stableLedger);
+		expect(runtime.transport).toBe(stableTransport);
+		expect(retained.control.wrappers.snapshot()).toMatchObject({ ready: true, generation: 1 });
+		expect(retained.control.wrappers.gateway()).toBe(created[0]!.gateway);
 		await owner.shutdown();
 	});
 

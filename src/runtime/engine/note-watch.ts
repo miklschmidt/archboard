@@ -46,7 +46,6 @@ import { type ForeignWrite, foreignWriteTo } from "./board-io.js";
 import { boards } from "./board-store.js";
 import { normalizeBoardKey } from "./board.js";
 import { type VersionMove, describeVersionMove } from "./board-version.js";
-import { kept } from "./hot.js";
 
 /**
  * A board whose note has been written by something that is not archboard.
@@ -95,13 +94,12 @@ interface Looked {
 	answer: NoteWrittenElsewhere | null;
 }
 
-// Both in kept(), because a hot reload must not make the canvas forget what it
-// has already said: re-announcing a mark that is already up is a message every
-// pane has, and forgetting one that is up is a mark that never comes down
-// (src/runtime/engine/hot.ts).
-const looks = () => kept("note-watch:looks", () => new Map<string, Looked>());
-const announced = () => kept("note-watch:announced", () => new Map<string, string | null>());
-const sinkHolder = () => kept("note-watch:sink", () => ({ notify: null as NoteSink | null }));
+const processLooks = new Map<string, Looked>();
+const processAnnounced = new Map<string, string | null>();
+const processSink = { notify: null as NoteSink | null };
+const looks = () => processLooks;
+const announced = () => processAnnounced;
+const sinkHolder = () => processSink;
 
 /**
  * Who wrote this note last, if it was not archboard.

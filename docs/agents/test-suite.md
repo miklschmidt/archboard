@@ -7,7 +7,7 @@ changing tests or CI, or when a browser check fails.
 
 - `test:modules`: isolated module-owned tests discovered under `src/`;
 - `test:system`: system owners under the eight explicit non-browser directories,
-  with `--max-concurrency=1` because they own real processes and hot-reload source edits;
+  with `--max-concurrency=1` because they own real processes and shared local ports;
 - `test:repository`: isolated repository-policy tests, including inventory and no-MJS policy;
 - `test:serial-browser`: the 19 canonical browser owners through the strict adapter.
 
@@ -46,10 +46,7 @@ bun test --isolate --max-concurrency=1 tests/system/support tests/system/boards 
 bun tests/system/browser/run-browser-lane.ts tests/system/browser/human-edit-performance.test.ts tests/system/browser/fixed-point-document.test.ts tests/system/browser/malformed-geometry-recovery.test.ts tests/system/browser/pane-telemetry-recovery.test.ts tests/system/browser/arrow-binding-differential.test.ts tests/system/browser/finding-export.test.ts tests/system/browser/shell-layout.test.ts tests/system/browser/board-navigator.test.ts tests/system/browser/fullscreen-presentation.test.ts tests/system/browser/typed-text.test.ts tests/system/browser/live-session-convergence.test.ts tests/system/browser/server-update-ordering.test.ts tests/system/browser/hold-generation.test.ts tests/system/browser/human-hold-persistence.test.ts tests/system/browser/claim-interaction.test.ts tests/system/browser/selection-inspector.test.ts tests/system/browser/connected-path-focus.test.ts tests/system/browser/opener-settings.test.ts tests/system/browser/code-target-activation.test.ts
 ```
 
-The module-scope owner mutates source fixtures only inside its repository-policy
-test. The hot-reload owner temporarily edits real source and restores bytes and
-mtimes in `finally`; keep both isolated from formatter, type checker, browser,
-and other hot-reload processes. System and browser owners must reap children,
+System and browser owners must reap children,
 listeners, sockets, vaults, and temporary roots on success, failure, or signal.
 
 ## Former check inventory
@@ -58,14 +55,14 @@ Every transitional package check now has one final owner lane:
 
 | Former key                                                                     | Final lane         | Native owner selector                                                                                                |
 | ------------------------------------------------------------------------------ | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| `test:suites`, `test:boundaries`, `test:module-scope`                          | repository         | `tests/system/repository-policy/`                                                                                    |
+| `test:suites`, `test:boundaries`                                               | repository         | `tests/system/repository-policy/`                                                                                    |
 | `test:contracts`                                                               | modules and system | `src/cli/command-contract/tests/`, `src/cli/finding-rendering/tests/`, `tests/system/cli/`                           |
 | `test:inspection`                                                              | modules and system | `src/runtime/board-inspection/tests/`, `tests/system/board-inspection/`                                              |
 | `test:bind`                                                                    | system             | `tests/system/process-contracts/`                                                                                    |
 | `test:obsidian`, `test:changes`, `test:reporting`, `test:lock`, `test:version` | modules and system | `src/runtime/engine/tests/`, `src/ui/canvas/tests/`, `tests/system/canvas-state/`, `tests/system/process-contracts/` |
 | `test:cli`, `test:install`, `test:repos`                                       | system             | `tests/system/cli/`                                                                                                  |
 | `test:one-write`                                                               | system             | `tests/system/process-contracts/*one-write.test.ts`, `write-boundary-policy.test.ts`                                 |
-| `test:doing`, `test:branch`, `test:side-by-side`, `test:staleness`, `test:hot` | system             | `tests/system/canvas-state/`                                                                                         |
+| `test:doing`, `test:branch`, `test:side-by-side`, `test:staleness`             | system             | `tests/system/canvas-state/`                                                                                         |
 | `test:geometry`, `test:labels`                                                 | modules and system | `src/runtime/engine/tests/`, `tests/system/label-geometry/`                                                          |
 | `test:text`, `test:library`                                                    | modules            | `src/runtime/engine/tests/`                                                                                          |
 | `test:boards`                                                                  | system             | `tests/system/support/`, `tests/system/boards/`                                                                      |
@@ -228,24 +225,6 @@ it, through the same `derivedId` the server would have called. Reverting the
 withhold fails 9 of its checks and reverting the pane's rename fails 2.
 `settleBlockIds` and the note writer's own rename stay, as the backstop for a
 note archboard did not write. About fifteen seconds.
-
-## Hot reload checks
-
-- `bun test tests/system/repository-policy/module-scope-policy.test.ts` parses the canvas's import graph and fails on
-  module-scope state: a `new` that is not a frozen lookup table, a literal
-  something writes to, a timer, a listener added without a paired removal, a
-  bind, or a write to long-lived state with no presence guard. Waive a false
-  positive with `// hot-safe: <reason>`. Both TASK-057 bugs are parser fixtures
-  under `tests/system/repository-policy/fixtures/module-scope/`, so the test
-  proves itself on every run.
-- Every reload in dev mode runs a canary (`src/runtime/engine/reload-canary.ts`) that
-  compares which boards are open and where each one's note is, the pane
-  registrations, the socket count and the feed's id and cursor across the
-  reload, and shouts to the terminal **and** every open tab if anything moved.
-  `bun test tests/system/canvas-state/hot-reload.test.ts` breaks a reload on purpose to prove it fires. It does not
-  count elements — a count is a fact about the vault, which a reload cannot
-  touch — with one exception kept from TASK-079: a board that has stopped
-  saving is the one board whose elements are in this process and in no note.
 
 ## Source boundary check
 

@@ -51,6 +51,7 @@ export function createBrowserPreflightFixture(): {
 		fs.mkdirSync(temporary);
 		fs.symlinkSync(process.execPath, path.join(bin, "bun"));
 		fs.symlinkSync(process.execPath, path.join(bin, "bunx"));
+		fs.symlinkSync(process.execPath, path.join(bin, "node"));
 		const browserExecutable = path.join(root, "chrome");
 		fs.writeFileSync(browserExecutable, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
 		return {

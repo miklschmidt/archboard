@@ -462,6 +462,7 @@ describe("browser executable adapter boundary", () => {
 		);
 		expect(result.exitCode).toBe(1);
 		expect(fs.existsSync(ownerMarker)).toBeFalse();
+		expect(fs.existsSync(result.fixture.ownerPathMarker), result.stderr).toBeTrue();
 		expect(fs.readFileSync(result.fixture.ownerPathMarker, "utf8")).toBe(fixture.browserExecutable);
 	});
 
@@ -485,8 +486,10 @@ describe("browser executable adapter boundary", () => {
 			resources,
 		);
 		expect(ordinary.exitCode).toBe(1);
+		expect(fs.existsSync(ordinary.fixture.ownerOperationTimeoutMarker), ordinary.stderr).toBeTrue();
 		expect(fs.readFileSync(ordinary.fixture.ownerOperationTimeoutMarker, "utf8")).toBe("absent");
 		expect(human.exitCode).toBe(1);
+		expect(fs.existsSync(human.fixture.ownerOperationTimeoutMarker), human.stderr).toBeTrue();
 		expect(fs.readFileSync(human.fixture.ownerOperationTimeoutMarker, "utf8")).toBe(
 			`present:${TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS}`,
 		);

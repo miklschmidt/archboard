@@ -113,6 +113,6 @@ describe("codex dynamic host operation terminalization", () => {
 				fixture.operationIds.validateCurrentUnconsumedOperationId(operationId),
 			).not.toThrow();
 		tools.dispose();
-		expect(pending).rejects.toMatchObject({ code: "system_error", retryEligible: false });
+		await expect(pending).rejects.toMatchObject({ code: "system_error", retryEligible: false });
 	});
 });

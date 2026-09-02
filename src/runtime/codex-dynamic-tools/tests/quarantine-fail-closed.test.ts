@@ -171,7 +171,9 @@ describe("codex dynamic quarantine fail-closed ownership", () => {
 			.catch((error: unknown) => error);
 		await reachQuarantine(tools);
 
-		expect(fixture.lifecycle.retryQuarantine()).rejects.toMatchObject({ retryEligible: false });
+		await expect(fixture.lifecycle.retryQuarantine()).rejects.toMatchObject({
+			retryEligible: false,
+		});
 		expect(writeAttempts).toBe(1);
 		expect(fixture.lifecycle.shutdownInputs).toEqual([
 			expect.objectContaining({ reason: "response_write_failed" }),

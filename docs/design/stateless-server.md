@@ -39,9 +39,8 @@ that window is a whole session, and on 2026-08-20 it was a whole day.
 
 ## 1. What the server holds today
 
-Every holder in the canvas server process, read out of the source rather than
-guessed. The `kept()` names are the registry keys in `src/core/hot.ts`, which
-is the complete list of things a hot reload deliberately preserves.
+Historical inventory from before ADR 0021. The current canvas uses ordinary
+process lifetime with explicit application ownership and no reload registry.
 
 | What                                | Where                            | Holds                                                                                                                           |
 | ----------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -414,7 +413,7 @@ change, writes the note.
   Invisible to a human.
 - **Buys.** The whole class of bugs behind TASK-042, TASK-048 and TASK-052 stops
   existing, because there are no long-lived in-memory element objects to share.
-  TASK-059's main hazard evaporates: a hot reload cannot lose a board that lives
+  TASK-059's main hazard evaporates: a restart cannot lose a board that lives
   on disk. There is exactly one place to look when the canvas and the vault
   disagree, because they cannot.
 - **Breaks.** ADR 0006 loses two of its three outcomes and can only offer

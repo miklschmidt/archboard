@@ -142,7 +142,7 @@ test("wait rejects a transitive cycle before lifecycle registration", async () =
 		targets: [caller.threadId],
 	});
 
-	expect(waitCall(request, fixture, [otherTarget.wireThreadId])).rejects.toMatchObject({
+	await expect(waitCall(request, fixture, [otherTarget.wireThreadId])).rejects.toMatchObject({
 		code: "cycle",
 	});
 	expect(fixture.lifecycle.registered).toHaveLength(0);
@@ -160,7 +160,7 @@ test("child exit removes every wait owner exactly once", async () => {
 		threadIds: [otherTarget.wireThreadId],
 	});
 
-	expect(waitCall(request, fixture, [otherTarget.wireThreadId])).rejects.toMatchObject({
+	await expect(waitCall(request, fixture, [otherTarget.wireThreadId])).rejects.toMatchObject({
 		code: "stale_child",
 	});
 	expect(fixture.lifecycle.registered).toHaveLength(1);
@@ -183,7 +183,7 @@ test("attention requires target ownership and cursor queries cannot be changed",
 	const request = requestFor(authorities, caller, "wait_threads", {
 		threadIds: [otherTarget.wireThreadId],
 	});
-	expect(waitCall(request, fixture, [otherTarget.wireThreadId])).rejects.toMatchObject({
+	await expect(waitCall(request, fixture, [otherTarget.wireThreadId])).rejects.toMatchObject({
 		code: "invalid_call",
 	});
 	expect(fixture.lifecycle.releases.map(({ cause }) => cause)).toEqual(["cancellation"]);
@@ -203,7 +203,7 @@ test("attention requires target ownership and cursor queries cannot be changed",
 		threadIds: [otherTarget.wireThreadId],
 		cursor: mismatchedCursor,
 	});
-	expect(
+	await expect(
 		waitCall(mismatchRequest, mismatchFixture, [otherTarget.wireThreadId], mismatchedCursor),
 	).rejects.toMatchObject({ code: "invalid_call" });
 	expect(mismatchFixture.lifecycle.registered).toHaveLength(0);

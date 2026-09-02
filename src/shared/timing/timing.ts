@@ -246,7 +246,11 @@ export const CODEX_TERM_GRACE_MS = 5_000;
 /** Composed-shutdown cap classification. Pulls against realtime stop plus TERM grace. */
 export const CODEX_COMPOSED_SHUTDOWN_MS = 10_000;
 
-/** Bounds dynamic wait detection latency against app-server thread status reads. */
+/**
+ * Bounds dynamic wait detection latency against app-server thread status
+ * reads. Request uncertainty must contain a whole number of polls so the last
+ * observation cannot cross the settlement boundary.
+ */
 export const CODEX_WAIT_TARGET_POLL_MS = 250;
 
 // ── One writer at a time (ADR 0016) ───────────────────────────────────────
@@ -479,27 +483,6 @@ export const TEST_CANVAS_CONCURRENT_RELEASE_DELAY_MS = TEST_CANVAS_SHUTDOWN_TIME
  * case receive rejection, assert it, and dispose a retained generation.
  */
 export const TEST_CANVAS_CASE_TIMEOUT_MARGIN_MS = 2 * TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
-
-/**
- * Extra outer-case room for the callback hot-reload owner after its inner
- * waits. It covers setup, generation write, parsing/assertions, signal
- * dispatch, failure diagnostics, and temporary-directory cleanup.
- */
-export const TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_MARGIN_MS = 2 * TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
-
-/**
- * Outer threshold for the callback hot-reload owner.
- *
- * The owner has two sequential record waits, then may spend one shutdown
- * interval on SIGTERM and one on SIGKILL observation. Two health-poll
- * intervals cover the waits' polling overshoots; the explicit case margin
- * reserves time for setup and cleanup outside those inner waits.
- */
-export const TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_TIMEOUT_MS =
-	2 * TEST_CANVAS_STARTUP_TIMEOUT_MS +
-	2 * TEST_CANVAS_SHUTDOWN_TIMEOUT_MS +
-	2 * TEST_CANVAS_HEALTH_POLL_MS +
-	TEST_CANVAS_CALLBACK_HOT_RELOAD_CASE_MARGIN_MS;
 
 /**
  * Cap for the post-cleanup health probe.

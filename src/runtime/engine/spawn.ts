@@ -193,6 +193,17 @@ export async function stopCanvas(): Promise<StopResult> {
 	if (pid === null) {
 		throw foreignServiceError();
 	}
+	if (health.held_boards && health.held_boards.length > 0) {
+		const boards = health.held_boards.map((hold) => `"${hold.board}"`).join(", ");
+		const error = new Error(
+			[
+				`Canvas shutdown refused because held work exists only in process memory on ${boards}.`,
+				...health.held_boards.map((hold) => hold.message),
+			].join("\n\n"),
+		);
+		(error as Error & { code?: string }).code = "CANVAS_HELD";
+		throw error;
+	}
 
 	try {
 		process.kill(pid, "SIGTERM");

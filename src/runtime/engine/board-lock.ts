@@ -65,7 +65,6 @@ import os from "node:os";
 import path from "node:path";
 
 import { VAULT_STATE_DIR, normalizeBoardKey, requireVaultRoot } from "./board.js";
-import { kept } from "./hot.js";
 import { forgetRememberedVersion } from "./board-version.js";
 import logger from "./logger.js";
 import {
@@ -923,47 +922,25 @@ function announce(board: string, holder: LockHolder | null): void {
 }
 
 // ── Process-lived state ───────────────────────────────────────────────────
-//
-// In `kept()` rather than module scope: a hot reload rebuilds module scope, and
-// a linger timer left behind by the old copy would fire into a sink the new
-// copy has replaced (ADR 0014, `src/runtime/engine/hot.ts`).
 
-function announced(): Map<string, string> {
-	return kept("board-lock-announced", () => new Map<string, string>());
-}
-
-function lingers(): Map<string, ReturnType<typeof setTimeout>> {
-	return kept("board-lock-lingers", () => new Map<string, ReturnType<typeof setTimeout>>());
-}
-
-function sinkHolder(): { notify: LockSink | null } {
-	return kept("board-lock-sink", () => ({ notify: null as LockSink | null }));
-}
-
-function sweepHolder(): { also: ((board: string) => void) | null } {
-	return kept("board-lock-sweep", () => ({ also: null as ((board: string) => void) | null }));
-}
-
-// A claim outlives a reload by definition: it is minutes long, and a reload is
-// how this canvas's code changes under it. Losing the registry would leave the
-// lock file renewed by nobody and the board free in three seconds, mid-redraw.
-function claims(): Map<string, ClaimEntry> {
-	return kept("board-lock-claims", () => new Map<string, ClaimEntry>());
-}
-
-function revocations(): Map<string, ClaimRevocation> {
-	return kept("board-lock-revocations", () => new Map<string, ClaimRevocation>());
-}
-
-function watcher(): {
+const processAnnounced = new Map<string, string>();
+const processLingers = new Map<string, ReturnType<typeof setTimeout>>();
+const processSink = { notify: null as LockSink | null };
+const processSweep = { also: null as ((board: string) => void) | null };
+const processClaims = new Map<string, ClaimEntry>();
+const processRevocations = new Map<string, ClaimRevocation>();
+const processWatcher: {
 	boards: (() => string[]) | null;
 	timer: ReturnType<typeof setInterval> | null;
-} {
-	return kept("board-lock-watch", () => ({
-		boards: null as (() => string[]) | null,
-		timer: null as ReturnType<typeof setInterval> | null,
-	}));
-}
+} = { boards: null, timer: null };
+
+const announced = (): Map<string, string> => processAnnounced;
+const lingers = (): Map<string, ReturnType<typeof setTimeout>> => processLingers;
+const sinkHolder = (): { notify: LockSink | null } => processSink;
+const sweepHolder = (): { also: ((board: string) => void) | null } => processSweep;
+const claims = (): Map<string, ClaimEntry> => processClaims;
+const revocations = (): Map<string, ClaimRevocation> => processRevocations;
+const watcher = (): typeof processWatcher => processWatcher;
 
 // ── Small things ──────────────────────────────────────────────────────────
 

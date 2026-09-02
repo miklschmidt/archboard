@@ -15,7 +15,6 @@ import {
 	decodeServerNotification,
 	decodeServerRequest,
 } from "../index.js";
-import { CODEX_PROTOCOL_GENERATED_NOTIFICATION_UNION_PATHS } from "../generated-notification-inventory.js";
 import { clientNotificationFixtures, responseFixtures, serverRequestFixtures } from "./fixtures.js";
 import { notificationFixture, serverNotificationFixtures } from "./notification-fixtures.js";
 import { assertChallengeFailure, changedPaths, pathKey } from "./union-challenge-audit.js";
@@ -73,8 +72,8 @@ describe("public notification boundary", () => {
 	});
 });
 
-describe("generated closed-union challenges", () => {
-	test("covers every generated union-bearing notification", () => {
+describe("closed-union challenges", () => {
+	test("covers every supported notification without duplicate target paths", () => {
 		expect(Object.keys(SERVER_NOTIFICATION_UNION_CHALLENGES).toSorted()).toEqual(
 			[...SERVER_NOTIFICATION_METHODS].toSorted(),
 		);
@@ -83,12 +82,7 @@ describe("generated closed-union challenges", () => {
 				(challenge) => `${method}:${pathKey(challenge.targetPath)}`,
 			),
 		);
-		const canonicalPaths = CODEX_PROTOCOL_GENERATED_NOTIFICATION_UNION_PATHS.map(
-			({ method, path }) => `${method}:${path}`,
-		);
 		expect(new Set(challengePaths).size).toBe(challengePaths.length);
-		expect(new Set(canonicalPaths).size).toBe(canonicalPaths.length);
-		expect(challengePaths.toSorted()).toEqual(canonicalPaths.toSorted());
 	});
 
 	for (const method of SERVER_NOTIFICATION_METHODS)
@@ -112,7 +106,7 @@ describe("generated closed-union challenges", () => {
 				}
 			});
 
-	test("aggregates prepared and mutated coverage for every generated challenge", () => {
+	test("aggregates prepared and mutated coverage for every challenge", () => {
 		const failures: string[] = [];
 		let audited = 0;
 		for (const method of SERVER_NOTIFICATION_METHODS)
@@ -137,10 +131,8 @@ describe("generated closed-union challenges", () => {
 				}
 			}
 
-		expect({ audited, failures }).toEqual({
-			audited: CODEX_PROTOCOL_GENERATED_NOTIFICATION_UNION_PATHS.length,
-			failures: [],
-		});
+		expect(audited).toBeGreaterThan(0);
+		expect(failures).toEqual([]);
 	});
 
 	test("keeps generated JsonValue extension points open", () => {

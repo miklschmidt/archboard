@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
+const AUTHORED_GIT_CAPTURE_MAX_BYTES = 4 * 1024 * 1024;
 export const componentsPath = path.join(repoRoot, "components.json");
 export const pinnedCommit = "b4a618b97e35f5dadf3a00d51f410c84a2567d4d";
 
@@ -160,6 +161,7 @@ export function probeSnapshot(): ProbeSnapshot {
 	const diff = spawnSync("git", ["diff", "--binary", "HEAD", "--"], {
 		cwd: repoRoot,
 		encoding: "buffer",
+		maxBuffer: AUTHORED_GIT_CAPTURE_MAX_BYTES,
 	});
 	if (diff.status !== 0) throw new Error(diff.stderr?.toString() || "git binary diff failed");
 	return {

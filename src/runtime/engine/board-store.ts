@@ -29,7 +29,6 @@
 // single place every board-blind caller funnelled through, which is why the
 // refusal only had to be written once.
 
-import { kept } from "./hot.js";
 import { type ServerElement } from "./types.js";
 import { BoardRequiredError } from "./board-target.js";
 import {
@@ -78,11 +77,9 @@ export interface BoardState {
 	savedAt?: string;
 }
 
-// The boards this canvas has open. Kept across a hot reload, because which
-// board each pane is holding must not change under somebody at a wall display
-// (src/runtime/engine/hot.ts, ADR 0014). What is on those boards is in the vault and is
-// re-read per request, so a reload cannot lose it.
-export const boards = kept("boards", () => new Map<string, BoardState>());
+// The boards this canvas process has open. Which board each pane is holding
+// must not change under somebody at a wall display.
+export const boards = new Map<string, BoardState>();
 
 function newBoardState(identity: BoardIdentity): BoardState {
 	return { identity };
@@ -98,8 +95,7 @@ function newBoardState(identity: BoardIdentity): BoardState {
 // The path is not resolved here, because this module is loaded by processes
 // that have no vault and no business demanding one.
 export const SCRATCH_KEY = boardKey(makeIdentity({ board: SCRATCH_BOARD }));
-// Only when it is missing. A hot reload re-runs this line with the scratch
-// board already open, and setting it again would throw away the note path the
+// Only when it is missing. Setting it again would throw away the note path the
 // server resolved for it at startup.
 if (!boards.has(SCRATCH_KEY)) {
 	boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD })));

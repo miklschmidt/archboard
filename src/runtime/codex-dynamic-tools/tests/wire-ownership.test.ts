@@ -26,7 +26,7 @@ describe("codex dynamic ordinary wire ownership", () => {
 		]);
 		expect(fixture.transportResponses).toHaveLength(1);
 		expect(tools.inspectMutationQuarantine().ordinaryInFlightWireCount).toBe(0);
-		expect(tools.dispatch({ ...request })).rejects.toMatchObject({ retryEligible: false });
+		await expect(tools.dispatch({ ...request })).rejects.toMatchObject({ retryEligible: false });
 		expect(fixture.session.calls).toHaveLength(2);
 		expect(fixture.transportResponses).toHaveLength(1);
 	});

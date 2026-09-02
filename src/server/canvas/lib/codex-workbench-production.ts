@@ -584,7 +584,7 @@ export function createCanvasCodexWorkbenchInstallation(
 		stopQueue: host.stopQueue,
 		cancelDynamicApprovalsAndWaits: async (_components, cause) => {
 			const owners = ownersFor(input);
-			owners.approval?.settleAll(cause === "source_reload" ? "host_shutdown" : cause);
+			owners.approval?.settleAll(cause);
 			await owners.lifecycle?.shutdown();
 			owners.authority?.dispose();
 			owners.dynamicProjectionUnsubscribe?.();
@@ -596,11 +596,7 @@ export function createCanvasCodexWorkbenchInstallation(
 				if (snapshot.state === "pending")
 					await approvals.cancel(
 						snapshot.requestId,
-						cause === "host_shutdown"
-							? "host shutdown"
-							: cause === "source_reload"
-								? "source reload"
-								: "child disconnected",
+						cause === "host_shutdown" ? "host shutdown" : "child disconnected",
 					);
 			}
 		},

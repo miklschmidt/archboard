@@ -1,4 +1,3 @@
-import { kept } from "../../runtime/engine/hot.js";
 import {
 	type ArrowElement,
 	type BoardElementType,
@@ -288,10 +287,8 @@ export interface Snapshot {
 // second truth and writing it to disk would invent a second one. Losing it
 // costs the ability to go back and costs no work.
 //
-// Kept across a hot reload, along with every other holder in this file: a
-// snapshot is taken to protect work, so a file save must not be what loses it
-// (src/runtime/engine/hot.ts).
-export const snapshots = kept("snapshots", () => new Map<string, Snapshot>());
+// Snapshots last for one canvas application lifetime.
+export const snapshots = new Map<string, Snapshot>();
 
 // The current selection, or null when nothing is selected. A mutable holder so
 // the server can swap the value while importers keep a single reference.
@@ -304,7 +301,7 @@ export const snapshots = kept("snapshots", () => new Map<string, Snapshot>());
 export const selectionState: {
 	current: CanvasSelection | null;
 	byClient: Map<string, CanvasSelection>;
-} = kept("selection", () => ({ current: null, byClient: new Map() }));
+} = { current: null, byClient: new Map() };
 
 // One image an element draws (Excalidraw BinaryFiles), keyed by the `fileId`
 // the element carries.

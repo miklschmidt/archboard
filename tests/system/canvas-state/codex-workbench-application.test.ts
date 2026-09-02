@@ -392,7 +392,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 			await new Promise<void>((resolve, reject) =>
 				server?.close((error) => (error ? reject(error) : resolve())),
 			);
-		owner?.disposeForReload();
+		owner?.dispose();
 		if (gateway !== null) await gateway.dispose();
 		approvals?.dispose();
 	}

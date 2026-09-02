@@ -50,10 +50,9 @@ const clock = (at: string): string => new Date(at).toLocaleTimeString();
 function staleSource(health: Awaited<ReturnType<typeof getHealth>>) {
 	const source = health.source;
 	if (!source?.stale || !source.newestFile || !source.newestAt) return null;
-	const remedy = health.reloadable
-		? "Pick it up with `bun run reload`, which keeps every board and pane on screen."
-		: "Restart it to pick that up: `archboard stop && archboard start`. " +
-			"The boards are in the vault, so what a restart costs is the panes on screen.";
+	const remedy =
+		"Restart it to pick that up: `archboard stop && archboard start`. " +
+		"Stop refuses while a board has held work that exists only in this process; resolve every reported hold first.";
 	return {
 		startedAt: source.evaluatedAt,
 		changedFile: source.newestFile,

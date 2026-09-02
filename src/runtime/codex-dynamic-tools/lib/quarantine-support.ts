@@ -1,11 +1,13 @@
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 import type { JsonRpcRequestId } from "../../../shared/codex-workbench-identity/index.js";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
 	type DynamicToolCallResponse,
 } from "../../codex-thread-tools/index.js";
-import type { DynamicServerRequest } from "../../codex-transport/server-requests.js";
+import {
+	CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP,
+	type DynamicServerRequest,
+} from "../../codex-transport/index.js";
 import {
 	type CodexDynamicToolsOptions,
 	type DynamicEpochTeardownProof,
@@ -19,8 +21,7 @@ import type { DynamicOperationSettlement } from "./effects.js";
 import { validateDynamicCall } from "./classification.js";
 import { invalidDynamicResponse } from "./response.js";
 
-export const DYNAMIC_QUARANTINE_WIRE_CAP =
-	CODEX_APP_SERVER_CAPACITY.outbound.pendingReverseRequests;
+export const DYNAMIC_QUARANTINE_WIRE_CAP = CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP;
 
 export interface Deferred<Value> {
 	readonly promise: Promise<Value>;

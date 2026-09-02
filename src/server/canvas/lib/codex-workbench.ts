@@ -104,7 +104,6 @@ import {
 	type IdentityLedger,
 	type OperationId,
 } from "../../../shared/codex-workbench-identity/index.js";
-import { kept } from "../../../runtime/engine/hot.js";
 import {
 	createCodexWorkbenchGateway,
 	type CodexWorkbenchGateway,
@@ -591,11 +590,6 @@ export interface InstallProductionCodexWorkbenchOptions {
 	readonly hooks: (input: CodexWorkbenchGenerationInput) => CodexWorkbenchGenerationHooks;
 }
 
-const retainedWorkbench = kept<CodexWorkbenchRetainedState>(
-	"codex-workbench-owner",
-	emptyCodexWorkbenchRetainedState,
-);
-
 function productionGenerationFactory(
 	options: InstallProductionCodexWorkbenchOptions,
 ): CodexWorkbenchGenerationFactory {
@@ -637,26 +631,15 @@ function productionKernelFactory(
 	};
 }
 
-/** Install the mandatory production owner over the retained process port. */
+/** Install the mandatory production owner for one canvas application lifetime. */
 export function installProductionCodexWorkbench(
 	options: InstallProductionCodexWorkbenchOptions,
 ): CodexWorkbenchOwner {
-	return installCodexWorkbenchOwner(retainedWorkbench, {
+	return installCodexWorkbenchOwner(emptyCodexWorkbenchRetainedState(), {
 		createProcess: () => createCodexProcess(options.process),
 		createKernel: productionKernelFactory(options),
 		createGeneration: productionGenerationFactory(options),
 	});
-}
-
-/** Replace the entire volatile production graph while keeping its exact process kernel. */
-export function reloadProductionCodexWorkbench(
-	options: InstallProductionCodexWorkbenchOptions,
-): Promise<CodexWorkbenchSnapshot> {
-	return retainedWorkbench.control.wrappers.reload(productionGenerationFactory(options));
-}
-
-export function shutdownProductionCodexWorkbench(): Promise<CodexWorkbenchSnapshot> {
-	return retainedWorkbench.control.wrappers.shutdown();
 }
 
 export function installCodexWorkbenchOwner(

@@ -148,10 +148,10 @@ test("stale handles and replacement sockets cannot append to the active realtime
 			},
 			context,
 		);
-	expect(append(value.identity.identity.issuer.mintBrowserCommandId())).rejects.toThrow(
+	await expect(append(value.identity.identity.issuer.mintBrowserCommandId())).rejects.toThrow(
 		"handle is stale",
 	);
-	expect(
+	await expect(
 		append(startId, { ...value.context, connection: Object.freeze({ socket: "replacement" }) }),
 	).rejects.toThrow("handle is stale");
 	expect(value.calls.map((call) => call.name)).toEqual(["start"]);

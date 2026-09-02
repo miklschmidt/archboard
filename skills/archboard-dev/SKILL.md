@@ -30,32 +30,19 @@ already went to its note (ADR 0015). The one exception is a _held_ board
 its changes since live in the canvas process and in no note, and `board list`
 shows a `held` block for it. Check for one before restarting. What a restart
 does drop is the tabs' sockets, the panes and the change feed's cursor, so
-when you are working on the server itself, reload instead:
+when you are working on the server itself, use the guarded restart:
 
 ```bash
-bun run dev:canvas     # the canvas, reloadable
-bun run reload    # and this is what reloads it
+./bin/canvas stop
+./bin/canvas start
 ```
 
-A reload re-evaluates modules inside the running process, so the port, the open
-tabs, the panes and the change feed's cursor all survive. It is not
-`--watch`, which restarts and takes them with it.
-
-**Saving a file does not reload anything.** `bun --hot` re-evaluates the whole
-module graph on any change, so the trigger is narrowed to a command: the entry
-bun watches (`src/dev-canvas.ts`) re-imports the canvas only when
-`bun run reload` moves a reload token. A canvas from `canvas start` cannot
-reload at all and says so.
-
-Anything long-lived you add to the server has to go through `kept()` in
-`src/runtime/engine/hot.ts`, or a reload will quietly replace it while the tabs stay
-connected. Two things catch that so you do not have to remember it:
-
-- `bun test tests/system/repository-policy/module-scope-policy.test.ts` refuses module-scope state in the canvas's import
-  graph. Waive a false positive with `// hot-safe: <reason>`.
-- Every reload compares boards, panes, sockets and the feed cursor across it,
-  and shouts to the terminal and to every open tab if anything moved.
-  `bun test tests/system/canvas-state/hot-reload.test.ts` breaks a reload on purpose to prove that works.
+**Saving a backend file does not reload anything.** The server never runs with
+`--hot`, `--watch`, or restart-on-save. The Canvas application lifetime owns
+construction and reverse-order teardown of process resources. Stop refuses if
+a held board contains work that exists only in memory and names all three
+recovery choices. `bun run dev` adds an independent Vite process; only the
+frontend bundle uses browser HMR.
 
 This box has node + bun but **no npm/npx**. The `package.json` scripts shell out
 to bun, so use `bun run <script>` — never `npm run`. `bun install` intermittently

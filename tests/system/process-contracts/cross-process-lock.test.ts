@@ -67,7 +67,7 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 		const second = await startOwnedCanvas({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
-			env,
+			env: { ...env, XDG_STATE_HOME: join(root, "second-state") },
 		});
 		resources.defer(() => second.dispose());
 		const requestSecond = createJsonRequester(second);

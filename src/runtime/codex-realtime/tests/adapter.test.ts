@@ -486,7 +486,7 @@ describe("Codex realtime adapter", () => {
 			version: "v2",
 		});
 		h.adapter.dispose();
-		expect(pending).rejects.toThrow("disposed");
+		await expect(pending).rejects.toThrow("disposed");
 		expect(h.adapter.transcript()).toEqual([]);
 	});
 });

@@ -21,23 +21,13 @@
 import fs from "fs";
 import path from "path";
 
-// When this module graph was last evaluated. Module scope on purpose, and the
-// one thing in the canvas that must NOT go in kept(): `bun --hot` re-evaluates
-// every module in the graph, so a reload moves this forward, and that is the
-// whole point. After a reload the canvas really is running the source as of
-// that moment, and the warning has to clear by itself.
+// When this server process loaded its module graph. A guarded restart moves it
+// forward; editing source in a running process does not.
 const evaluatedAt = Date.now();
 
-// Every source file this evaluation has been seen to load. Accumulated rather
-// than read fresh each time, because bun's registry is not a stable list under
-// `bun --hot`: re-evaluating the watched entry drops the canvas's own modules
-// out of it, and a canvas whose module list had just collapsed to one file
-// would report itself current at the exact moment it had gone behind. Measured,
-// not assumed — docs/design/hot-reload-under-bun.md.
-//
-// Emptied by a reload along with the rest of module scope, which is correct:
-// after a reload the graph is re-imported and repopulates it.
-const loaded = new Set<string>(); // hot-safe: a cache of which files this evaluation loaded, refilled from the module registry on the next call, and stale by definition after a reload
+// Every source file this process has loaded, retained so a status request can
+// compare its timestamp with what is now on disk.
+const loaded = new Set<string>();
 
 const srcDir = path.join(__dirname, "..", "..");
 const repoRoot = path.join(__dirname, "..", "..", "..");

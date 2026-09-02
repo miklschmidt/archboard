@@ -12,7 +12,7 @@ const SIDE_EFFECT_IMPORTS = new Set([
 	"fs/promises",
 ]);
 
-const ROOT_SOURCE_ENTRYPOINTS = new Set(["src/bin.ts", "src/dev-canvas.ts", "src/server.ts"]);
+const ROOT_SOURCE_ENTRYPOINTS = new Set(["src/bin.ts", "src/server.ts"]);
 
 const MODULE_AREAS = new Set([
 	"cli",

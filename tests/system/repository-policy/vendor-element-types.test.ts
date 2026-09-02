@@ -91,7 +91,10 @@ function handwrittenViolations(file: string, source: string): Violation[] {
 
 function aliasReadViolations(file: string, source: string): Violation[] {
 	if (inputIngressAllowlist.has(file)) return [];
-	if (!file.startsWith("src/runtime/") && !file.startsWith("src/ui/")) return [];
+	// These aliases are board-ingress spellings. Codex/runtime modules use words
+	// such as `start`, `end`, and `label` for unrelated protocols, so inspecting
+	// the entire runtime turns ordinary domain code into false positives.
+	if (!file.startsWith("src/runtime/engine/") && !file.startsWith("src/ui/canvas/")) return [];
 	const patterns = [
 		{
 			reason: "runtime input alias read",
@@ -153,7 +156,7 @@ describe("vendor-derived board element policy", () => {
 			expect(handwrittenViolations("synthetic.ts", source)).not.toEqual([]);
 	});
 
-	test("rejects runtime input-alias reads outside the named ingress owners", () => {
+	test("rejects board-ingress alias reads outside the named ingress owners", () => {
 		for (const source of [
 			`const value = element.label;`,
 			`const value = element

@@ -19,7 +19,6 @@ import { fileURLToPath } from "url";
 import { VAULT_STATE_DIR } from "./board.js";
 import { writeFileAtomic } from "./atomic-write.js";
 import { ARCHBOARD_VAULT } from "./config.js";
-import { kept } from "./hot.js";
 import logger from "./logger.js";
 
 // The v2 library item, which is what both this store and Excalidraw speak.
@@ -157,10 +156,8 @@ export function curatedSets(): Array<{ name: string; items: LibraryItem[] }> {
 // long as the process does — the same deal boards get, minus the refusal, since
 // there is no wrong file to be written here.
 
-// Kept across a hot reload. With no vault configured this is not a cache at
-// all, it is the library, so rebuilding it on a file save would empty the
-// palette (src/runtime/engine/hot.ts).
-const cache = kept("library", () => ({ state: null as LibraryState | null }));
+// With no vault configured this is not a cache at all; it is process state.
+const cache = { state: null as LibraryState | null };
 
 function emptyState(): LibraryState {
 	const file = libraryFilePath();

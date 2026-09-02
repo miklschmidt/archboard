@@ -13,13 +13,13 @@ import {
 	approveOrdinary,
 	extendFixture,
 	type FixtureRecord,
-	type HotCanvas,
+	type CanvasProcess,
 	pane,
 	records,
 	resolveDynamic,
 	reverseResponses,
 	snapshot,
-	startHotCanvas,
+	startCanvas,
 	target,
 } from "./support/codex-workbench-lifecycle.ts";
 import {
@@ -28,9 +28,9 @@ import {
 } from "./support/codex-workbench-result-assertions.ts";
 
 describe.serial("composed Codex process lifecycle", () => {
-	test("owns exact storage, the closed reverse router, reload, disconnect, and terminal cleanup", async () => {
+	test("owns exact storage, the closed reverse router, disconnect, and terminal cleanup", async () => {
 		const resources = new AsyncDisposableStack();
-		let canvas: HotCanvas | null = null;
+		let canvas: CanvasProcess | null = null;
 		try {
 			const staging = join(
 				process.env.TMPDIR ?? "/tmp",
@@ -41,7 +41,7 @@ describe.serial("composed Codex process lifecycle", () => {
 			resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 			const extendedSource = extendFixture(staging);
 			const fixture = prepareProductionFixture(resources, extendedSource);
-			canvas = await startHotCanvas(fixture);
+			canvas = await startCanvas(fixture);
 			const ownedCanvas = canvas;
 			resources.defer(() => ownedCanvas.dispose());
 			const request = createRequester({ base: canvas.base, assertRunning: async () => undefined });
@@ -334,150 +334,6 @@ describe.serial("composed Codex process lifecycle", () => {
 				}),
 			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 
-			writeFileSync(fixture.controlPath, JSON.stringify({ emit: "reload" }));
-			const mutationCountBeforeReload = records(fixture.logPath).filter(
-				(entry) => entry.kind === "frame" && entry.method === "thread/start",
-			).length;
-			await waitFor(
-				() =>
-					records(fixture.logPath).filter(
-						(entry) =>
-							entry.kind === "server_request" &&
-							["reload-ordinary", "reload-dynamic", "reload-wait"].includes(String(entry.id)),
-					).length === 3
-						? true
-						: undefined,
-				"the controlled reload batch",
-			);
-			let reloadSnapshot: Record<string, unknown> | undefined;
-			await waitFor(async () => {
-				reloadSnapshot = snapshot(await socket.request("snapshot"));
-				return (reloadSnapshot.approvals as unknown[]).length === 1 &&
-					(reloadSnapshot.dynamicApprovals as unknown[]).length === 1
-					? reloadSnapshot
-					: undefined;
-			}, "reload to overlap one ordinary request, one dynamic approval, and one wait").catch(
-				(error: unknown) => {
-					throw new Error(`Reload batch did not stay pending: ${JSON.stringify(reloadSnapshot)}`, {
-						cause: error,
-					});
-				},
-			);
-			if (reloadSnapshot === undefined) throw new Error("The pre-reload projection disappeared.");
-			const retainedBeforeReload = {
-				coordinator: reloadSnapshot.coordinator,
-				queue: reloadSnapshot.queue,
-			};
-			const linkedBeforeReload = reloadSnapshot.threadLink;
-
-			const beforeReload = records(fixture.logPath).filter(
-				(entry) => entry.kind === "app_server_spawn",
-			).length;
-			const reload = await request("/api/reload", { method: "POST", doing: false });
-			expect(reload.status).toBe(200);
-			const reloadGeneration = (reload.body as { readonly generation?: unknown }).generation;
-			expect(typeof reloadGeneration).toBe("number");
-			await waitFor(
-				() =>
-					canvas!.output().includes(`canvas reload ${String(reloadGeneration)} cost nothing`)
-						? true
-						: undefined,
-				"the hot reload generation to finish",
-			);
-			await waitFor(async () => {
-				const result = await socket.request("connect");
-				return result.ok ? result : undefined;
-			}, "the replacement workbench connection").catch((error: unknown) => {
-				throw new Error(`Replacement connection failed.\n${canvas!.output()}`, { cause: error });
-			});
-			const retainedAfterReload = await waitFor(async () => {
-				const value = await socket.request("snapshot");
-				return value.ok ? snapshot(value) : undefined;
-			}, "the replacement workbench gateway");
-			if (retainedAfterReload === undefined)
-				throw new Error("The replacement gateway did not return a projection.");
-			expect({
-				coordinator: retainedAfterReload.coordinator,
-				queue: retainedAfterReload.queue,
-			}).toEqual(retainedBeforeReload);
-			const replacementAttachLease = await socket.request("claimLease");
-			expect(
-				await socket.request("command", {
-					command: {
-						kind: "browser_command",
-						command: "threadLinkAttach",
-						...target(replacementAttachLease),
-						threadId: threadLink.threadId,
-					},
-				}),
-			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
-			const relinked = await waitFor(async () => {
-				const value = await socket.request("snapshot");
-				if (!value.ok) return undefined;
-				const state = snapshot(value);
-				return (state.threadLink as Record<string, unknown>).state === "executable"
-					? state
-					: undefined;
-			}, "the retained workhorse link after replacement");
-			if (relinked === undefined) throw new Error("The retained workhorse link did not return.");
-			expect(relinked.threadLink).toEqual(linkedBeforeReload);
-			expect(
-				records(fixture.logPath).filter((entry) => entry.kind === "app_server_spawn"),
-			).toHaveLength(beforeReload);
-			expect(processExists(childPid)).toBeTrue();
-			expect(await socket.request("snapshot")).toMatchObject({ ok: true });
-			for (const id of ["reload-ordinary", "reload-dynamic"])
-				await waitFor(
-					() => (reverseResponses(fixture.logPath, id).length === 1 ? true : undefined),
-					`${id} settlement during reload`,
-				);
-			expect(reverseResponses(fixture.logPath, "reload-wait")).toHaveLength(0);
-			const reloadDynamic = reverseResponses(fixture.logPath, "reload-dynamic")[0]?.frame
-				?.result as { readonly contentItems?: readonly { readonly text?: string }[] };
-			expect(reloadDynamic.contentItems?.[0]?.text).toContain('"tag":"approval_required"');
-			expect(reverseResponses(fixture.logPath, "reload-ordinary")[0]?.frame).toEqual({
-				id: "reload-ordinary",
-				result: { decision: "cancel" },
-			});
-			const reloadedDynamic = parseDynamicToolCallResponse("create_thread", reloadDynamic).envelope;
-			if (reloadedDynamic.tag !== "approval_required")
-				throw new Error("The reloaded dynamic approval did not terminalize safely.");
-			expect(reloadedDynamic).toEqual({
-				tag: "approval_required",
-				operationId: reloadedDynamic.operationId,
-				summary: "Create thread: This authority must not survive reload.",
-			});
-			writeFileSync(fixture.controlPath, JSON.stringify({ emit: "complete_wait" }));
-			await waitFor(
-				() => (reverseResponses(fixture.logPath, "reload-wait").length === 1 ? true : undefined),
-				"retained wait settlement through the replacement generation",
-			);
-			const retainedWait = parseDynamicToolCallResponse(
-				"wait_threads",
-				reverseResponses(fixture.logPath, "reload-wait")[0]?.frame?.result,
-			).envelope;
-			if (retainedWait.tag !== "ok") throw new Error("The retained reload wait did not settle.");
-			const retainedWaitValue = retainedWait.value as { readonly cursor: string | null };
-			expect(retainedWait).toEqual({
-				tag: "ok",
-				operationId: retainedWait.operationId,
-				value: {
-					event: "completed",
-					threadId: "thread-3",
-					cursor: retainedWaitValue.cursor,
-				},
-			});
-			expect(
-				records(fixture.logPath).filter(
-					(entry) => entry.kind === "frame" && entry.method === "thread/start",
-				).length,
-			).toBe(mutationCountBeforeReload);
-			writeFileSync(fixture.controlPath, JSON.stringify({ emit: "post_reload" }));
-			await waitFor(
-				() =>
-					reverseResponses(fixture.logPath, "post-reload-time").length === 1 ? true : undefined,
-				"a request through the replacement handler set",
-			);
 			writeFileSync(fixture.controlPath, JSON.stringify({ exit: true }));
 			await waitFor(() => (!processExists(childPid) ? true : undefined), "controlled child exit");
 			const terminalLog = readFileSync(fixture.logPath, "utf8");

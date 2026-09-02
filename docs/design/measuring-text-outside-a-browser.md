@@ -179,8 +179,7 @@ Speed, on this box, same numbers under both runtimes:
 
 Against stage 8's budget of 6.21 ms to read, apply and write a 55-element note,
 a few microseconds per text element is nothing. The one-off parse belongs behind
-a lazy cache, and under `kept()` rather than module scope, or `bun run
-test:module-scope` will fail it.
+a process-local lazy cache.
 
 ## What stage 5 should do
 

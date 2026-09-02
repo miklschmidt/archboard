@@ -52,8 +52,6 @@ import { RenderGeometryError } from "../../../runtime/engine/geometry.js";
 import { NativeElementValidationError } from "../../../runtime/engine/native-element.js";
 import { z } from "zod";
 import { WebSocket } from "ws";
-import { kept } from "../../../runtime/engine/hot.js";
-import { askForReload, reloadIsAskable } from "../../../runtime/engine/reload-token.js";
 import { writePidFile, removePidFile } from "../../../runtime/engine/pidfile.js";
 import fs from "fs";
 import {
@@ -75,6 +73,7 @@ import {
 	releaseHold as clearHold,
 	reportHold,
 	writesBoardNote,
+	heldBoardKeys,
 } from "../../../runtime/engine/board-hold.js";
 import type { HoldReport } from "../../../runtime/engine/board-hold.js";
 import {
@@ -96,6 +95,7 @@ import {
 	holdBoard,
 	onBoardLockChanged,
 	onBoardSweep,
+	forgetLockAnnouncements,
 	releaseClaim,
 	releaseHold,
 	sleep,
@@ -103,7 +103,12 @@ import {
 	watchBoardLocks,
 } from "../../../runtime/engine/board-lock.js";
 import type { LockHolder } from "../../../runtime/engine/board-lock.js";
-import { checkDoing, recentDoing, recordDoing } from "../../../runtime/engine/board-doing.js";
+import {
+	checkDoing,
+	forgetDoing,
+	recentDoing,
+	recordDoing,
+} from "../../../runtime/engine/board-doing.js";
 import type { DoingEntry } from "../../../runtime/engine/board-doing.js";
 import {
 	CURRENT_VARIANT,
@@ -124,6 +129,7 @@ import {
 import type { BoardIdentity } from "../../../runtime/engine/board.js";
 import {
 	checkBoardVersion,
+	forgetRememberedVersions,
 	rememberVersion,
 	rememberVersionAt,
 	statedVersion,
@@ -133,6 +139,7 @@ import {
 	noteWrittenElsewhere,
 	onNoteWrittenElsewhere,
 	refreshNoteWatch,
+	forgetNoteWatch,
 } from "../../../runtime/engine/note-watch.js";
 import type { NoteWrittenElsewhere } from "../../../runtime/engine/note-watch.js";
 import { ARCHBOARD_VAULT, noVaultMessage } from "../../../runtime/engine/config.js";
@@ -150,6 +157,10 @@ import {
 	PANE_SETTLE_CAP_MS,
 	REPORT_PROGRESS_MS,
 } from "../../../shared/timing/timing.js";
+import {
+	CanvasApplicationHeldError,
+	createCanvasApplicationLifetime,
+} from "./application-lifetime.js";
 import { narrateChange } from "../../../runtime/engine/changes.js";
 import { readLibrary, writeLibrary } from "../../../runtime/engine/library.js";
 import type { LibraryItem } from "../../../runtime/engine/library.js";
@@ -210,27 +221,9 @@ function asyncEndpoint(
 	};
 }
 
-// The port and the sockets on it are made once per process and reused across a
-// hot reload; the routes and handlers on them are replaced every time this file
-// is re-evaluated (ADR 0014).
-//
-// That split is the whole trick. A tab's WebSocket belongs to `wss`, which
-// belongs to `server`, so rebuilding either would disconnect every browser
-// pane — and a pane that reconnects has to be told what it holds all over
-// again. Binding again would fail on EADDRINUSE against ourselves, which the
-// loopback guard would read as a second canvas and exit over.
-//
-// So `server` is created with a dispatcher that looks up the current express
-// app rather than receiving one, and each reload points `wiring.app` at the
-// app it just built.
 interface Wiring {
-	app: express.Express;
 	server: ReturnType<typeof createServer>;
 	wss: WebSocketServer;
-	/** Set once the port is bound, so a reload does not try to bind it again. */
-	listening: boolean;
-	/** Set once the signal and exit handlers are on `process`. */
-	signalsBound: boolean;
 	codex: {
 		installed: boolean;
 		phase: "idle" | "preparing" | "installed" | "stopping" | "stopped";
@@ -250,26 +243,20 @@ interface Wiring {
 	};
 }
 
-const wiring = kept<Wiring>("http", () => {
-	const state = {
-		listening: false,
-		signalsBound: false,
-		codex: {
-			installed: false,
-			phase: "idle",
-			shutdown: null,
-			acceptBrowser: null,
-			closeBrowser: null,
-			handleBrowserMessage: null,
-		},
-	} as Wiring;
-	state.server = createServer((req, res) => state.app(req, res));
-	state.wss = new WebSocketServer({ server: state.server });
-	return state;
-});
-wiring.app = app;
-const server = wiring.server;
-const wss = wiring.wss;
+const server = createServer(app);
+const wss = new WebSocketServer({ server });
+const wiring: Wiring = {
+	server,
+	wss,
+	codex: {
+		installed: false,
+		phase: "idle",
+		shutdown: null,
+		acceptBrowser: null,
+		closeBrowser: null,
+		handleBrowserMessage: null,
+	},
+};
 
 // Middleware
 app.use(cors());
@@ -358,36 +345,23 @@ app.use(
 //
 // Nothing else. Anything that answers "what is on this board" is the note.
 //
-// Everything from here to `paneBoards` is kept across a hot reload, because it
-// describes what is on screen right now: the sockets themselves, which pane is
-// which, and what each one holds. A reload that rebuilt these would leave the
-// tabs connected to a server that had forgotten them.
-const clients = kept("ws-clients", () => new Set<WebSocket>());
+const clients = new Set<WebSocket>();
 // Browser client id per socket, taken from the ?clientId= connect param. The
 // same id is sent with every selection post, which is what lets a disconnect
 // retire that client's selection.
-const clientIds = kept("ws-client-ids", () => new Map<WebSocket, string>());
+const clientIds = new Map<WebSocket, string>();
 // The exact socket currently presenting one pane identity. A reconnect may
 // overlap the prior transport; only this map's value owns client-id keyed pane,
 // selection, hold, and note-open state.
-const currentSocketsByClient = kept(
-	"ws-current-sockets-by-client",
-	() => new Map<string, WebSocket>(),
-);
-const codexSocketInstances = kept(
-	"ws-codex-instances",
-	() => new Map<WebSocket, BrowserConnectionInstance>(),
-);
-const browserLeaseLedger = kept<BrowserLeaseLedger>(
-	"codex-browser-lease-ledger",
-	createBrowserLeaseLedger,
-);
+const currentSocketsByClient = new Map<string, WebSocket>();
+const codexSocketInstances = new Map<WebSocket, BrowserConnectionInstance>();
+const browserLeaseLedger: BrowserLeaseLedger = createBrowserLeaseLedger();
 
 // What is on screen right now, one entry per pane, keyed by the same client id.
 // A pane is in here only while its socket is open: closing a tab or unsplitting
 // takes the registration with it, so `panes` can never report a pane that is no
 // longer in front of anybody. Empty is the normal headless state.
-const panes = kept("panes", () => new Map<string, PaneRegistration>());
+const panes = new Map<string, PaneRegistration>();
 
 // Which board each pane has been pointed at, keyed by client id.
 //
@@ -400,7 +374,7 @@ const panes = kept("panes", () => new Map<string, PaneRegistration>());
 // Entries outlive the socket on purpose. A dropped connection reconnects with
 // the same client id, and a pane that came back showing a different board than
 // it had a second ago would undo a user's scene arrangement.
-const paneBoards = kept("pane-boards", () => new Map<string, string>());
+const paneBoards = new Map<string, string>();
 
 /** What each pane holds, in reading order. */
 function boardsOnScreen(): Array<{ paneId: string; place: string; board: string }> {
@@ -832,10 +806,6 @@ function boardForNewPane(clientId: string): string {
 }
 
 // WebSocket connection handling.
-//
-// The listener is replaced rather than added, because `wss` outlives a hot
-// reload and a second registration would answer every connection twice.
-wss.removeAllListeners("connection");
 wss.on("connection", (ws: WebSocket, req) => {
 	clients.add(ws);
 	const codexSocketInstance = Object.freeze({});
@@ -1039,7 +1009,6 @@ const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
 		/^\/api\/code-targets\/open$/,
 		"reads canonical board state and launches a process but writes no note",
 	],
-	[/^\/api\/reload$/, "not about a board"],
 ];
 
 /**
@@ -2357,7 +2326,7 @@ interface PendingPaneOpen {
 	/** The panes that already existed, so the new one can be told from them. */
 	known: Set<string>;
 }
-const pendingPaneOpens = kept("pending-pane-opens", () => new Set<PendingPaneOpen>());
+const pendingPaneOpens = new Set<PendingPaneOpen>();
 
 interface PendingPaneClose {
 	clientId: string;
@@ -2365,7 +2334,7 @@ interface PendingPaneClose {
 	reject: (error: Error) => void;
 	timeout: ReturnType<typeof setTimeout>;
 }
-const pendingPaneCloses = kept("pending-pane-closes", () => new Set<PendingPaneClose>());
+const pendingPaneCloses = new Set<PendingPaneClose>();
 
 function notePaneOpened(registration: PaneRegistration): void {
 	for (const pending of pendingPaneOpens) {
@@ -2661,10 +2630,7 @@ interface PendingFindingExport {
 	) => void;
 	timeout: ReturnType<typeof setTimeout>;
 }
-const pendingFindingExports = kept(
-	"pending-finding-exports",
-	() => new Map<string, PendingFindingExport>(),
-);
+const pendingFindingExports = new Map<string, PendingFindingExport>();
 
 // Focused finding export: one persisted snapshot, one immutable browser payload.
 app.post("/api/export/findings", (req: Request, res: Response) => {
@@ -2792,7 +2758,7 @@ interface PendingExport {
 	collectionTimeout: ReturnType<typeof setTimeout> | null;
 	bestResult: { format: string; data: string } | null;
 }
-const pendingExports = kept("pending-exports", () => new Map<string, PendingExport>());
+const pendingExports = new Map<string, PendingExport>();
 
 app.post("/api/export/image", (req: Request, res: Response) => {
 	try {
@@ -2965,7 +2931,7 @@ interface PendingViewport {
 	reject: (error: Error) => void;
 	timeout: ReturnType<typeof setTimeout>;
 }
-const pendingViewports = kept("pending-viewports", () => new Map<string, PendingViewport>());
+const pendingViewports = new Map<string, PendingViewport>();
 
 const viewportRequestSchema = z
 	.object({
@@ -4111,42 +4077,13 @@ app.get("/health", (req: Request, res: Response) => {
 		// from a stale pidfile or an unrelated app squatting on the port.
 		service: "mcp-excalidraw-canvas",
 		pid: process.pid,
-		// Whether this canvas can be told to reload. True only under
-		// `bun run dev:canvas`; a canvas started any other way watches nothing
-		// (ADR 0014).
-		reloadable: reloadIsAskable(),
+		held_boards: heldBoardKeys().map((board) => reportHold(board, holdOn(board)!)),
 		// Whether this process is running the source that is on disk now, and
 		// which build the frontend has been rebuilt to. A long-lived process has no
 		// symptom of its own for either, so it has to be asked (TASK-056).
 		source: sourceState(),
 		frontendBuild: frontendState(null).current,
 	});
-});
-
-// Ask the canvas to re-evaluate its source.
-//
-// This is the whole trigger, and it is a request rather than a file save on
-// purpose: a reload re-runs every module in the graph inside a process holding
-// unsaved boards and open sockets, so it happens at a moment somebody chose
-// (ADR 0014). Writing the reload token is all this does; bun notices the new
-// bytes and `src/dev-canvas.ts` does the rest, canary included.
-app.post("/api/reload", (req: Request, res: Response) => {
-	if (!reloadIsAskable()) {
-		res.status(409).json({
-			success: false,
-			error:
-				"This canvas cannot reload: it was not started with `bun run dev:canvas`. " +
-				"Restart it that way, or restart the canvas to pick up your changes, " +
-				"which drops every unsaved board, so save first.",
-		});
-		return;
-	}
-	try {
-		const generation = askForReload();
-		res.json({ success: true, generation, pid: process.pid });
-	} catch (error) {
-		res.status(500).json({ success: false, error: (error as Error).message });
-	}
 });
 
 // Sync status endpoint
@@ -4553,7 +4490,7 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				paneForBrowser: (browserId) => panes.get(browserId)?.paneId ?? null,
 			});
 			const remove = (): void => {
-				socketOwner.disposeForReload();
+				socketOwner.dispose();
 				wiring.codex.handleBrowserMessage = null;
 				wiring.codex.acceptBrowser = null;
 				wiring.codex.closeBrowser = null;
@@ -4573,8 +4510,7 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			}
 			return remove;
 		},
-		stopBrowser: (gateway, reason) =>
-			reason === "reload" ? gateway.disposeForReload() : gateway.dispose(),
+		stopBrowser: (gateway) => gateway.dispose(),
 		stopRealtime: async (realtime) => {
 			const generation = realtime.generation();
 			if (generation === null) return;
@@ -4604,30 +4540,67 @@ async function prepareCodexWorkbench(): Promise<void> {
 	await application.prepare();
 }
 
-async function startServer(): Promise<void> {
-	// A hot reload re-runs this file, entry point and all, inside a process that
-	// is already serving. Everything that had to happen once has happened: the
-	// port is bound, the pidfile is written, and the tabs are connected to
-	// sockets we have just re-pointed at the new handlers. Binding again would
-	// fail against ourselves, and the loopback
-	// guard below would read that as a second canvas and exit — taking the boards
-	// with it.
-	if (wiring.listening) {
-		await prepareCodexWorkbench();
-		// Straight to stderr, not through the logger: this is only ever printed
-		// under `bun run dev:canvas`, where somebody is watching a terminal and
-		// needs to know their edit is live. The logger's console transport carries
-		// warnings and errors only, and a reload is neither.
-		//
-		// It says what it did and nothing about what survived. The reload canary
-		// is what checks that, afterwards, and it once followed a line here
-		// claiming "same boards" onto a report that the board had been emptied.
-		process.stderr.write(
-			`Canvas server source re-evaluated in place; the port was already bound (pid ${process.pid}).\n`,
-		);
-		return;
-	}
+function closeHttpServer(): Promise<void> {
+	return new Promise((resolve, reject) => {
+		server.close((error) => (error ? reject(error) : resolve()));
+	});
+}
 
+async function closeBrowserOwners(): Promise<void> {
+	const closeBrowser = wiring.codex.closeBrowser;
+	if (closeBrowser !== null) {
+		await Promise.allSettled(
+			Array.from(codexSocketInstances, ([socket, instance]) => {
+				const browserId = clientIds.get(socket);
+				return browserId ? closeBrowser(instance, browserId) : Promise.resolve();
+			}),
+		);
+	}
+	for (const pending of pendingPaneOpens) {
+		clearTimeout(pending.timeout);
+		pending.reject(new Error("Canvas stopped before the pane opened."));
+	}
+	for (const pending of pendingPaneCloses) {
+		clearTimeout(pending.timeout);
+		pending.reject(new Error("Canvas stopped before the pane closed."));
+	}
+	for (const pending of pendingFindingExports.values()) {
+		clearTimeout(pending.timeout);
+		pending.resolve(
+			[...pending.expected].map((findingIndex) => ({
+				findingIndex,
+				failure: "browser-timeout" as const,
+			})),
+		);
+	}
+	for (const pending of pendingExports.values()) {
+		clearTimeout(pending.timeout);
+		if (pending.collectionTimeout !== null) clearTimeout(pending.collectionTimeout);
+		pending.reject(new Error("Canvas stopped before the export completed."));
+	}
+	for (const pending of pendingViewports.values()) {
+		clearTimeout(pending.timeout);
+		pending.reject(new Error("Canvas stopped before the viewport move completed."));
+	}
+	pendingPaneOpens.clear();
+	pendingPaneCloses.clear();
+	pendingFindingExports.clear();
+	pendingExports.clear();
+	pendingViewports.clear();
+	for (const socket of clients) socket.terminate();
+	clients.clear();
+	clientIds.clear();
+	currentSocketsByClient.clear();
+	codexSocketInstances.clear();
+	panes.clear();
+	paneBoards.clear();
+	browserLeaseLedger.active = null;
+	browserLeaseLedger.retired.clear();
+	selectionState.current = null;
+	selectionState.byClient.clear();
+}
+
+async function startServer(): Promise<void> {
 	// No vault, no canvas (ADR 0015). Every board is a note, so a canvas without
 	// a vault has nowhere to put anything, and the failure it used to produce
 	// came later and cost more: the canvas opened, somebody drew on it, and the
@@ -4654,55 +4627,98 @@ async function startServer(): Promise<void> {
 		}
 	}
 
-	// Before the port opens, so the first request cannot arrive at a scratch
-	// board that is about to be filled in from a note.
-	adoptScratchBoard();
-	// The Codex graph and every reverse-request/browser owner are ready before
-	// the HTTP socket can advertise this canvas as ready.
-	await prepareCodexWorkbench();
-
 	// Only the process that actually wrote the pidfile may remove it —
 	// a concurrent-start loser exiting on EADDRINUSE must not delete the
 	// winner's pidfile.
 	let ownsPidFile = false;
-
-	server.listen(PORT, HOST, () => {
-		wiring.listening = true;
-		const hostForUrl = formatHostForUrl(HOST);
-		logger.info(`POC server running on http://${hostForUrl}:${PORT}`);
-		logger.info(`WebSocket server running on ws://${hostForUrl}:${PORT}`);
-
-		// Written only after listen succeeds so stale files can't shadow a
-		// server that never came up; lets `archboard stop` find us.
-		writePidFile(PORT, process.pid);
-		ownsPidFile = true;
-	});
-
+	let lifetime!: ReturnType<typeof createCanvasApplicationLifetime>;
 	const shutdown = (signal: NodeJS.Signals): void => {
 		logger.info(`Received ${signal}, shutting down canvas server`);
-		if (ownsPidFile) removePidFile(PORT);
-		void (async () => {
-			try {
-				await wiring.codex.shutdown?.();
-			} catch (error) {
-				logger.error("Codex workbench shutdown failed:", error);
-			} finally {
-				server.close(() => process.exit(0));
-			}
-		})();
-		// Force-exit if open sockets keep the server from closing promptly
-		setTimeout(() => process.exit(0), CODEX_COMPOSED_SHUTDOWN_MS).unref();
+		void lifetime.stop(signal).then(
+			() => process.exit(0),
+			(error) => {
+				logger.error(`Canvas shutdown refused or failed: ${(error as Error).message}`);
+				if (!(error instanceof CanvasApplicationHeldError)) process.exit(1);
+			},
+		);
 	};
-	// Once per process. Handlers live on `process`, which no reload touches, so
-	// registering them again would only stack duplicates.
-	if (!wiring.signalsBound) {
-		wiring.signalsBound = true;
-		process.on("SIGTERM", () => shutdown("SIGTERM"));
-		process.on("SIGINT", () => shutdown("SIGINT"));
-		process.on("exit", () => {
-			if (ownsPidFile) removePidFile(PORT);
-		});
-	}
+	const onTerm = (): void => shutdown("SIGTERM");
+	const onInterrupt = (): void => shutdown("SIGINT");
+	const onExit = (): void => {
+		if (ownsPidFile) removePidFile(PORT);
+	};
+	lifetime = createCanvasApplicationLifetime({
+		stopTimeoutMs: CODEX_COMPOSED_SHUTDOWN_MS,
+		heldBoards: heldBoardKeys,
+		observe: ({ action, resource }) => {
+			if (resource !== null) logger.debug(`Canvas lifetime ${action}: ${resource}`);
+		},
+		resources: [
+			{
+				name: "engine-state",
+				start: () => adoptScratchBoard(),
+				stop: () => {
+					watchBoardLocks(null);
+					onBoardLockChanged(null);
+					onBoardSweep(null);
+					forgetLockAnnouncements();
+					onNoteWrittenElsewhere(null);
+					forgetNoteWatch();
+					changeFeed.dispose();
+					forgetDoing();
+					forgetRememberedVersions("");
+					snapshots.clear();
+					boards.clear();
+					selectionState.current = null;
+					selectionState.byClient.clear();
+				},
+			},
+			{
+				name: "codex-workbench",
+				start: prepareCodexWorkbench,
+				stop: async () => wiring.codex.shutdown?.(),
+			},
+			{
+				name: "http-and-websocket",
+				start: () =>
+					new Promise<void>((resolve, reject) => {
+						const onError = (error: Error): void => reject(error);
+						server.once("error", onError);
+						server.listen(PORT, HOST, () => {
+							server.off("error", onError);
+							const hostForUrl = formatHostForUrl(HOST);
+							logger.info(`POC server running on http://${hostForUrl}:${PORT}`);
+							logger.info(`WebSocket server running on ws://${hostForUrl}:${PORT}`);
+							writePidFile(PORT, process.pid);
+							ownsPidFile = true;
+							resolve();
+						});
+					}),
+				stop: async () => {
+					if (ownsPidFile) {
+						removePidFile(PORT);
+						ownsPidFile = false;
+					}
+					await closeHttpServer();
+				},
+			},
+			{ name: "browser-and-pending-operations", stop: closeBrowserOwners },
+			{
+				name: "process-signals",
+				start: () => {
+					process.on("SIGTERM", onTerm);
+					process.on("SIGINT", onInterrupt);
+					process.on("exit", onExit);
+				},
+				stop: () => {
+					process.off("SIGTERM", onTerm);
+					process.off("SIGINT", onInterrupt);
+					process.off("exit", onExit);
+				},
+			},
+		],
+	});
+	await lifetime.start();
 }
 
 export { startServer };
