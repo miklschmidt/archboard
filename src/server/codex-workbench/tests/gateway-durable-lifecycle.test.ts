@@ -10,7 +10,7 @@ afterEach(async () => {
 });
 
 describe("Codex workbench durable browser lifecycle", () => {
-	test("exact close after reload ignores a stale socket and retires the current socket", async () => {
+	test("exact close after socket replacement ignores stale ownership", async () => {
 		const value = createGatewayHarness();
 		openHarnesses.push(value);
 		const staleInstance = Object.freeze({ socket: "stale" });

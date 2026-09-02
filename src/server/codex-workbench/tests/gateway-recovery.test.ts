@@ -107,15 +107,15 @@ describe("Codex workbench browser recovery and delivery", () => {
 		expectGatewayError(() => stale.snapshot(), "invalid_input");
 	});
 
-	test("a source reload reuses the exact live socket instance without replacing its lease", () => {
+	test("reconnecting the exact live socket instance preserves its lease", () => {
 		const value = harness();
 		const socket = Object.freeze({ socket: "stable" });
-		const beforeReload = value.gateway.connect(value.browserId, value.paneId, socket);
-		const lease = beforeReload.claimLease();
-		const afterReload = value.gateway.connect(value.browserId, value.paneId, socket);
+		const first = value.gateway.connect(value.browserId, value.paneId, socket);
+		const lease = first.claimLease();
+		const reconnected = value.gateway.connect(value.browserId, value.paneId, socket);
 
-		expect(afterReload.instance).toBe(socket);
-		expect(afterReload.renewLease()).toMatchObject({ commandId: lease.commandId, state: "active" });
+		expect(reconnected.instance).toBe(socket);
+		expect(reconnected.renewLease()).toMatchObject({ commandId: lease.commandId, state: "active" });
 	});
 
 	test("replays a settled command while retained and refuses a fingerprint conflict", async () => {

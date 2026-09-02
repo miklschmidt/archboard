@@ -1145,23 +1145,6 @@ export function createCodexWorkbenchGateway(
 		terminate("gateway_shutdown");
 		await drainSettlements();
 	};
-	const disposeForReload = async (): Promise<void> => {
-		if (disposed) {
-			await drainSettlements();
-			return;
-		}
-		disposed = true;
-		leaseManager.detach();
-		for (const unsubscribe of sourceUnsubscribers.splice(0)) unsubscribe();
-		for (const state of connections.values()) {
-			state.closed = true;
-			state.listeners.clear();
-		}
-		connections.clear();
-		inFlightCommands.clear();
-		settledCommands.clear();
-		await drainSettlements();
-	};
 
 	const subscribe = (
 		browserId: string,
@@ -1226,6 +1209,5 @@ export function createCodexWorkbenchGateway(
 		closeConnection: closeConnectionInstance,
 		childExit,
 		dispose,
-		disposeForReload,
 	});
 }

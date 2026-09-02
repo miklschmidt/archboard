@@ -461,7 +461,6 @@ export interface CodexWorkbenchGateway {
 	) => Promise<void>;
 	readonly childExit: (childId: ChildId, epoch: ChildEpoch) => Promise<void>;
 	readonly dispose: () => Promise<void>;
-	readonly disposeForReload: () => Promise<void>;
 }
 
 export type { BrowserCommandLease, BrowserSnapshot, BrowserThreadLink, ThreadLinkBindingSnapshot };

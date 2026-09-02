@@ -30,7 +30,6 @@
 // worse. So the line is capped and the list is short, and both caps are here
 // rather than in the middleware, the pane and the injector separately.
 
-import { kept } from "./hot.js";
 import { normalizeBoardKey } from "./board.js";
 import type { HolderKind } from "./board-lock.js";
 
@@ -69,10 +68,8 @@ interface Store {
 	byBoard: Map<string, DoingEntry[]>;
 }
 
-// Kept, so a hot reload does not wipe the last thing an agent said off a wall
-// somebody is reading (ADR 0014).
-const store = (): Store =>
-	kept("board-doing", () => ({ byBoard: new Map<string, DoingEntry[]>() }));
+const processStore: Store = { byBoard: new Map<string, DoingEntry[]>() };
+const store = (): Store => processStore;
 
 /** A line as it must arrive, or the reason it is refused. */
 export type DoingCheck = { ok: true; doing: string } | { ok: false; problem: string };

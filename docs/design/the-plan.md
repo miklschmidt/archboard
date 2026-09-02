@@ -266,8 +266,7 @@ only width needs measuring.
 Width costs more than the constants do. The measurer is about 750 lines — a
 woff2 reader, enough OpenType layout for kerning and ligatures, and glue — with
 no new package, against fonts already on disk. Call the stage a day plus the
-constants rather than a morning. The parse cache belongs in `kept()`, or
-`test:module-scope` will refuse it.
+constants rather than a morning. The parse cache belongs in process-local module state.
 
 One thing has to be fixed here or this stage cannot be shown to have worked.
 `scripts/check-fixed-point.mjs` waits for fonts by asking `document.fonts.check`,

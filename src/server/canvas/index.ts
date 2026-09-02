@@ -1,6 +1,5 @@
-import type * as CanvasApplication from "./lib/application.js";
-
-/** Load one canvas application generation without caching a previous reload. */
-export async function loadCanvasApplication(cacheKey = ""): Promise<typeof CanvasApplication> {
-	return import(`./lib/application.js${cacheKey}`);
-}
+export { default, startServer } from "./lib/application.js";
+export {
+	CanvasApplicationHeldError,
+	createCanvasApplicationLifetime,
+} from "./lib/application-lifetime.js";

@@ -120,6 +120,6 @@ reachable over http by path; TASK-058 narrowed the mount to `dist/frontend`, and
 The maintainer-only reload command described above was removed by ADR 0021.
 Backend source changes now require an explicit server restart.
 
-Measurements behind all of this, including what bun re-evaluates and what the
-source check cannot see, are in `docs/design/hot-reload-under-bun.md`, which is
-dated and expected to age.
+ADR 0021 removed the reload implementation, its analyzer, and its supporting
+measurements. This ADR continues to govern running backend TypeScript source
+directly and building only the frontend.

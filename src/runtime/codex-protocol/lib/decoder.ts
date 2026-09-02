@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CODEX_PROTOCOL_VERSION, isSupportedCodexUserAgent } from "../manifest.js";
+import { CODEX_PROTOCOL_VERSION, isSupportedCodexUserAgent } from "./version.js";
 import {
 	CLIENT_REQUEST_PARAM_SCHEMAS,
 	type ClientRequestParams,

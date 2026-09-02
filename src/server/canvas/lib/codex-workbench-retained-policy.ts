@@ -23,7 +23,6 @@ const PROCESS_KEYS = Object.freeze([
 ] satisfies readonly (keyof NonNullable<CodexWorkbenchRetainedState["process"]>)[]);
 const OWNER_SLOT_KEYS = Object.freeze([
 	"start",
-	"reload",
 	"shutdown",
 	"snapshot",
 	"gateway",

@@ -15,7 +15,7 @@ import {
 	pane,
 	records,
 	snapshot,
-	startHotCanvas,
+	startCanvas,
 	type StorageMode,
 } from "./support/codex-workbench-lifecycle.ts";
 
@@ -30,7 +30,7 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 		mkdirSync(staging, { recursive: true });
 		resources.defer(() => rmSync(staging, { recursive: true, force: true }));
 		const fixture = prepareProductionFixture(resources, extendFixture(staging, mode));
-		const startup = await startHotCanvas({ ...fixture, readinessTimeoutMs: 3_000 }).then(
+		const startup = await startCanvas({ ...fixture, readinessTimeoutMs: 3_000 }).then(
 			(canvas) => ({ canvas, error: null }),
 			(error: unknown) => ({ canvas: null, error }),
 		);
@@ -119,7 +119,7 @@ describe.serial("composed Codex process lifecycle", () => {
 
 	test("accepts and preserves the exact managed sqlite requirement", async () => {
 		const resources = new AsyncDisposableStack();
-		let canvas: Awaited<ReturnType<typeof startHotCanvas>> | null = null;
+		let canvas: Awaited<ReturnType<typeof startCanvas>> | null = null;
 		try {
 			const staging = join(
 				process.env.TMPDIR ?? "/tmp",
@@ -132,7 +132,7 @@ describe.serial("composed Codex process lifecycle", () => {
 				resources,
 				extendFixture(staging, "requirements-match"),
 			);
-			canvas = await startHotCanvas(fixture);
+			canvas = await startCanvas(fixture);
 			const ownedCanvas = canvas;
 			resources.defer(() => ownedCanvas.dispose());
 			const clientId = "managed-requirements";
@@ -215,7 +215,7 @@ describe.serial("composed Codex process lifecycle", () => {
 				prepareProductionFixture(resources, extendedSource),
 				prepareProductionFixture(resources, extendedSource),
 			] as const;
-			const canvases = await Promise.all(fixtures.map((fixture) => startHotCanvas(fixture)));
+			const canvases = await Promise.all(fixtures.map((fixture) => startCanvas(fixture)));
 			for (const canvas of canvases) resources.defer(() => canvas.dispose());
 			const childPids = fixtures.map(
 				(fixture) =>

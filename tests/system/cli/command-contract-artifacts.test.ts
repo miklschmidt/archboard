@@ -28,7 +28,7 @@ const proofSchema = z.object({
 });
 const expectedHashes: Readonly<Record<(typeof artifactNames)[number], string>> = {
 	"cli-command-audit.md": "71b1409e135bd31964a72d70406ead6634e7ea850825ec3c31c00ae24f57bd87",
-	"command-contract-proof.json": "5ba0518df1f67cd76bfd6f540582b209a324e777c647d6be365f2c88f2f84ab8",
+	"command-contract-proof.json": "89d8400473fbaf7873c991fe8cf74a4fca7e8e4ce1455459beeda82b14eefc02",
 	"command-contract-proof.md": "4a39f17452ac254ceeb3714c8a98d6a3e08120cd755c106c1ae4c3e1408d4c5b",
 };
 const auditSchema = z.object({

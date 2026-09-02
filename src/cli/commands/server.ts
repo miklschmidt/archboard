@@ -127,7 +127,15 @@ export const stopContract = defineCommand({
 	},
 	prerequisites: [],
 	effects: ["local-write"],
-	refusals: [],
+	refusals: [
+		{
+			code: "CANVAS_HELD",
+			exit: 1,
+			stream: "stderr",
+			description:
+				"A board has conflict-held work that exists only in this process; resolve every reported hold before stopping.",
+		},
+	],
 	relationships: [
 		{
 			method: "GET",

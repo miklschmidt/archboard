@@ -25,7 +25,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { kept } from "./hot.js";
 import { parseFont, type ParsedFont } from "./font-file.js";
 import { buildGpos, buildGsub, type Kerning, type Substitutions } from "./font-layout.js";
 
@@ -225,14 +224,10 @@ function readRegistry(): Map<string, FamilyDescriptor> {
 	return registry;
 }
 
-/**
- * The registry, read once.
- *
- * In `kept()` because a reload rebuilds module scope, and because re-reading a
- * six-megabyte bundle on every save is a cost with nothing to show for it.
- */
+/** The registry, read once per process. */
+const registry = readRegistry();
 export function fontRegistry(): Map<string, FamilyDescriptor> {
-	return kept("fonts:registry", readRegistry);
+	return registry;
 }
 
 /** The family a `fontFamily` number names, or undefined for a number nothing uses. */
@@ -256,10 +251,10 @@ export function familyOf(fontFamily: number): FamilyDescriptor | undefined {
 export function faceStack(fontFamily: number): FaceDescriptor[][] {
 	const family = familyOf(fontFamily);
 	if (!family) return [];
-	const registry = fontRegistry();
+	const availableFamilies = fontRegistry();
 	const stack = [family.faces];
 	for (const fallback of FALLBACKS[family.name] ?? []) {
-		const next = registry.get(fallback);
+		const next = availableFamilies.get(fallback);
 		if (next) stack.push(next.faces);
 	}
 	return stack;
@@ -296,6 +291,8 @@ export interface LoadedFace {
 	gsub: Substitutions | null;
 }
 
+const faceCache = new Map<string, LoadedFace>();
+
 /**
  * One woff2 file, parsed once per process.
  *
@@ -305,8 +302,7 @@ export interface LoadedFace {
  * with no CJK on it parses none of them.
  */
 export function loadFace(file: string): LoadedFace {
-	const cache = kept("fonts:faces", () => new Map<string, LoadedFace>());
-	const already = cache.get(file);
+	const already = faceCache.get(file);
 	if (already) return already;
 	const font = parseFont(file);
 	const face: LoadedFace = {
@@ -314,6 +310,6 @@ export function loadFace(file: string): LoadedFace {
 		gpos: font.gpos ? buildGpos(font.gpos) : null,
 		gsub: font.gsub ? buildGsub(font.gsub) : null,
 	};
-	cache.set(file, face);
+	faceCache.set(file, face);
 	return face;
 }

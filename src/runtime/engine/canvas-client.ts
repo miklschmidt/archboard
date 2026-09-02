@@ -465,18 +465,6 @@ export async function removeBridge(bridgeId: string): Promise<BridgeRemovalRespo
 	});
 }
 
-// Ask the canvas to re-evaluate its source, keeping everything on screen.
-// Refused unless it was started with `bun run dev:canvas` (ADR 0014).
-export async function reloadCanvas(): Promise<{
-	success: boolean;
-	generation: number;
-	pid: number;
-}> {
-	return requestJson<{ success: boolean; generation: number; pid: number }>("/api/reload", {
-		method: "POST",
-	});
-}
-
 // What a human currently has picked on the board. Ids plus enough semantic
 // detail (label, node-ness, kind, binding) to act on without a scene fetch.
 export async function getSelection(): Promise<SelectionReport & { success: boolean }> {
@@ -1142,8 +1130,7 @@ export interface HealthStatus {
 	// Identity fields (v1.1+); `stop` requires both before signaling anything
 	service?: string;
 	pid?: number;
-	/** True only under `bun run dev:canvas` (ADR 0014). */
-	reloadable?: boolean;
+	held_boards?: HoldReport[];
 	/** Whether the canvas is running the source on disk now (TASK-056). */
 	source?: {
 		evaluatedAt: string;

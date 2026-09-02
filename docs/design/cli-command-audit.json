@@ -110,7 +110,12 @@
 			"nextFields": ["stopped", "pid"],
 			"workflow": "necessary composition",
 			"effects": ["local-write"],
-			"refusals": []
+			"refusals": [
+				{
+					"code": "CANVAS_HELD",
+					"exit": 1
+				}
+			]
 		},
 		{
 			"path": "status",

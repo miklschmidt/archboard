@@ -77,7 +77,7 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 			}),
 		);
 	} finally {
-		owner.disposeForReload();
+		owner.dispose();
 	}
 });
 
@@ -148,7 +148,6 @@ test("the public socket owner routes the complete gateway workflow through serve
 			void calls.push(`close:${browserId}:${paneId}:${String(closingInstance === instance)}`),
 		childExit: async () => undefined,
 		dispose: async () => undefined,
-		disposeForReload: async () => undefined,
 	};
 	const owner = createCanvasCodexBrowserSocketOwner({
 		gateway,
@@ -180,12 +179,12 @@ test("the public socket owner routes the complete gateway workflow through serve
 		{ type: "codex_workbench_request", requestId: "10", action: "close" },
 		send,
 	);
-	owner.disposeForReload();
-	const reloadedOwner = createCanvasCodexBrowserSocketOwner({
+	owner.dispose();
+	const replacementOwner = createCanvasCodexBrowserSocketOwner({
 		gateway,
 		paneForBrowser: () => "pane-authoritative",
 	});
-	await reloadedOwner.close(instance, "browser-1");
+	await replacementOwner.close(instance, "browser-1");
 
 	expect(calls).toEqual([
 		"connect:browser-1:pane-authoritative",
@@ -216,7 +215,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 	});
 });
 
-test("the socket owner refuses missing pane authority and reload only removes subscriptions", async () => {
+test("the socket owner refuses missing pane authority and disposal only removes subscriptions", async () => {
 	const calls: string[] = [];
 	const gateway: CodexWorkbenchGateway = {
 		connect: () => {
@@ -246,7 +245,6 @@ test("the socket owner refuses missing pane authority and reload only removes su
 		closeConnection: async (browserId: string) => void calls.push(browserId),
 		childExit: async () => undefined,
 		dispose: async () => undefined,
-		disposeForReload: async () => undefined,
 	};
 	const owner = createCanvasCodexBrowserSocketOwner({ gateway, paneForBrowser: () => null });
 	const messages: unknown[] = [];
@@ -256,7 +254,7 @@ test("the socket owner refuses missing pane authority and reload only removes su
 		{ type: "codex_workbench_request", requestId: "missing", action: "connect" },
 		{ send: (message) => messages.push(message) },
 	);
-	owner.disposeForReload();
+	owner.dispose();
 	expect(messages).toContainEqual({
 		type: "codex_workbench_result",
 		requestId: "missing",
@@ -296,7 +294,6 @@ test("the public request crosses a real WebSocket transport and returns the gate
 		closeConnection: async () => undefined,
 		childExit: async () => undefined,
 		dispose: async () => undefined,
-		disposeForReload: async () => undefined,
 	};
 	const owner = createCanvasCodexBrowserSocketOwner({
 		gateway,

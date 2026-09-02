@@ -248,7 +248,7 @@ export type SemanticBrief =
 
 export interface SemanticContextPublisherOptions {
 	readonly feed: SettledChangeSource;
-	/** Feed identity makes a cursor from one process distinct after reload. */
+	/** Feed identity makes a cursor from one process distinct after restart. */
 	readonly feedId: string;
 	readonly fresh: FreshBriefSource;
 	/** Must provide scalar state only; it must not read or retain board elements. */

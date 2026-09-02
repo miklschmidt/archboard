@@ -48,8 +48,7 @@ export interface CanvasCodexBrowserSocketOwner {
 		transport: CanvasCodexBrowserSocketSend,
 	) => Promise<void>;
 	readonly close: (instance: BrowserConnectionInstance, browserId: string) => Promise<void>;
-	/** Reload removes subscriptions but does not release browser lease authority. */
-	readonly disposeForReload: () => void;
+	readonly dispose: () => void;
 }
 
 function errorMessage(error: unknown): string {
@@ -82,7 +81,7 @@ export function createCanvasCodexBrowserSocketOwner(
 		instance: BrowserConnectionInstance,
 		browserId: string,
 	): BrowserWorkbenchConnection => {
-		if (disposed) throw new Error("The Codex browser socket owner is reloading.");
+		if (disposed) throw new Error("The Codex browser socket owner is stopped.");
 		const paneId = options.paneForBrowser(browserId);
 		if (paneId === null)
 			throw new Error("The browser has not registered an authoritative canvas pane.");
@@ -96,7 +95,7 @@ export function createCanvasCodexBrowserSocketOwner(
 	};
 
 	const accept = (instance: BrowserConnectionInstance, browserId: string): void => {
-		if (disposed) throw new Error("The Codex browser socket owner is reloading.");
+		if (disposed) throw new Error("The Codex browser socket owner is stopped.");
 		if (options.paneForBrowser(browserId) === null) return;
 		connectionFor(instance, browserId);
 	};
@@ -186,7 +185,7 @@ export function createCanvasCodexBrowserSocketOwner(
 		if (paneId !== null) await options.gateway.closeConnection(browserId, paneId, instance);
 	};
 
-	const disposeForReload = (): void => {
+	const dispose = (): void => {
 		if (disposed) return;
 		disposed = true;
 		for (const unsubscribe of subscriptions.values()) unsubscribe();
@@ -194,5 +193,5 @@ export function createCanvasCodexBrowserSocketOwner(
 		connections.clear();
 	};
 
-	return Object.freeze({ accept, handle, close, disposeForReload });
+	return Object.freeze({ accept, handle, close, dispose });
 }

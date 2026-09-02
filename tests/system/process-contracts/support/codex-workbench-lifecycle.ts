@@ -10,7 +10,7 @@ import {
 import { waitFor } from "../../canvas-state/support/http.ts";
 const repoRoot = resolve(import.meta.dir, "../../../..");
 const fixtureSource = join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production.ts");
-const devCanvas = join(repoRoot, "src/dev-canvas.ts");
+const serverEntry = join(repoRoot, "src/server.ts");
 
 export interface FixtureRecord {
 	readonly kind?: string;
@@ -26,7 +26,7 @@ export interface FixtureRecord {
 	};
 }
 
-export interface HotCanvas {
+export interface CanvasProcess {
 	readonly base: string;
 	readonly pid: number;
 	output(): string;
@@ -92,45 +92,26 @@ async function freePort(): Promise<number> {
 	);
 	return address.port;
 }
-export async function startHotCanvas(options: {
+export async function startCanvas(options: {
 	readonly root: string;
 	readonly vault: string;
 	readonly executablePath: string;
 	readonly logPath: string;
 	readonly controlPath: string;
 	readonly readinessTimeoutMs?: number;
-}): Promise<HotCanvas> {
+}): Promise<CanvasProcess> {
 	const port = await freePort();
 	const base = `http://127.0.0.1:${port}`;
-	const wrapper = join(options.root, "hot-production-server.ts");
+	const wrapper = join(options.root, "production-server.ts");
 	const executableModule = join(repoRoot, "src/runtime/codex-process/executable.ts");
-	const productionModule = join(repoRoot, "src/server/canvas/codex-workbench-production.ts");
 	writeFileSync(
 		wrapper,
-		`import { appendFileSync, readFileSync } from "node:fs";\n` +
-			`import { mock } from "bun:test";\n` +
+		`import { mock } from "bun:test";\n` +
 			`mock.module(${JSON.stringify(executableModule)}, () => ({ resolveProjectCodexExecutable: () => process.env.ARCHBOARD_TEST_CODEX_EXECUTABLE }));\n` +
-			`await import(${JSON.stringify(devCanvas)});\n` +
-			`let normalCloseStarted = false;\n` +
-			`const closeTimer = setInterval(async () => {\n` +
-			`  if (normalCloseStarted) return;\n` +
-			`  try {\n` +
-			`    const control = JSON.parse(readFileSync(${JSON.stringify(options.controlPath)}, "utf8"));\n` +
-			`    if (control.normalClose !== true) return;\n` +
-			`    normalCloseStarted = true;\n` +
-			`    appendFileSync(${JSON.stringify(options.logPath)}, JSON.stringify({ kind: "host_normal_close", state: "started" }) + "\\n");\n` +
-			`    const production = await import(${JSON.stringify(productionModule)});\n` +
-			`    await production.shutdownProductionCodexWorkbench();\n` +
-			`    appendFileSync(${JSON.stringify(options.logPath)}, JSON.stringify({ kind: "host_normal_close", state: "completed" }) + "\\n");\n` +
-			`    process.exit(0);\n` +
-			`  } catch (error) {\n` +
-			`    appendFileSync(${JSON.stringify(options.logPath)}, JSON.stringify({ kind: "host_normal_close", state: "failed", message: error instanceof Error ? error.stack : String(error), cause: String((error as { cause?: unknown }).cause) }) + "\\n");\n` +
-			`    process.exit(21);\n` +
-			`  }\n` +
-			`}, 10);\n` +
-			`closeTimer.unref();\n`,
+			`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
+			`await startServer();\n`,
 	);
-	const child = spawn(process.execPath, ["--hot", wrapper], {
+	const child = spawn(process.execPath, [wrapper], {
 		cwd: repoRoot,
 		detached: true,
 		env: {
@@ -147,7 +128,7 @@ export async function startHotCanvas(options: {
 		},
 		stdio: ["ignore", "pipe", "pipe"],
 	});
-	if (child.pid === undefined) throw new Error("The hot canvas has no pid.");
+	if (child.pid === undefined) throw new Error("The canvas has no pid.");
 	let output = "";
 	child.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()));
 	child.stderr.on("data", (chunk: Buffer) => (output += chunk.toString()));
@@ -158,15 +139,15 @@ export async function startHotCanvas(options: {
 			done();
 		}),
 	);
-	const canvas: HotCanvas = {
+	const canvas: CanvasProcess = {
 		base,
 		pid: child.pid,
 		output: () => output,
 		async normalClose() {
 			if (exited) return;
-			writeFileSync(options.controlPath, JSON.stringify({ normalClose: true }));
+			child.kill("SIGTERM");
 			if (!(await Promise.race([exit.then(() => true), sleep(5_000).then(() => false)])))
-				throw new Error(`Hot canvas ${child.pid} did not close normally.\n${output}`);
+				throw new Error(`Canvas ${child.pid} did not close normally.\n${output}`);
 		},
 		async dispose(signal = "SIGTERM") {
 			if (!exited) {
@@ -184,7 +165,7 @@ export async function startHotCanvas(options: {
 					await Promise.race([exit, sleep(5_000)]);
 				}
 			}
-			if (!exited) throw new Error(`Hot canvas ${child.pid} did not exit.\n${output}`);
+			if (!exited) throw new Error(`Canvas ${child.pid} did not exit.\n${output}`);
 		},
 	};
 	try {
@@ -193,22 +174,19 @@ export async function startHotCanvas(options: {
 				try {
 					const response = await fetch(`${base}/health`);
 					if (!response.ok) return undefined;
-					const health = (await response.json()) as {
-						readonly pid?: unknown;
-						readonly reloadable?: unknown;
-					};
-					return health.pid === child.pid && health.reloadable === true ? health : undefined;
+					const health = (await response.json()) as { readonly pid?: unknown };
+					return health.pid === child.pid ? health : undefined;
 				} catch {
-					if (exited) throw new Error(`Hot canvas startup failed.\n${output}`);
+					if (exited) throw new Error(`Canvas startup failed.\n${output}`);
 					return undefined;
 				}
 			},
-			"reloadable production canvas readiness",
+			"production canvas readiness",
 			{ timeoutMs: options.readinessTimeoutMs },
 		);
 	} catch (error) {
 		await canvas.dispose();
-		throw new Error(`Hot canvas did not become ready.\n${output}`, { cause: error });
+		throw new Error(`Canvas did not become ready.\n${output}`, { cause: error });
 	}
 	return canvas;
 }
@@ -304,20 +282,20 @@ const emitGeneralQuery = (tool: "list_threads" | "read_thread" | "wait_threads")
 	request(id, "item/tool/call", { threadId: workhorseThreadId, turnId: "turn-1", callId: id, namespace: "archboard_app", tool, arguments: argumentsValue });
 };
 
-let reloadBatchSent = false;
-const emitReloadBatch = (): void => {
-	if (reloadBatchSent || workhorseThreadId === null) return;
-	reloadBatchSent = true;
+let shutdownBatchSent = false;
+const emitShutdownBatch = (): void => {
+	if (shutdownBatchSent || workhorseThreadId === null) return;
+	shutdownBatchSent = true;
 	const waitTarget = threads.get("thread-3");
 	if (waitTarget !== undefined) {
 		waitTarget.status = { type: "active", activeFlags: [] };
-		waitTarget.turns = [{ id: "reload-target-turn", items: [], itemsView: "full", status: "inProgress", error: null, startedAt: Date.now(), completedAt: null, durationMs: null }];
+		waitTarget.turns = [{ id: "shutdown-target-turn", items: [], itemsView: "full", status: "inProgress", error: null, startedAt: Date.now(), completedAt: null, durationMs: null }];
 	}
-	registerDynamicCall("reload-dynamic", "create_thread", { prompt: "This authority must not survive reload." });
-	registerDynamicCall("reload-wait", "wait_threads", { threadIds: ["thread-3"], timeoutMs: 120000 });
-	request("reload-ordinary", "item/commandExecution/requestApproval", { threadId: workhorseThreadId, turnId: "turn-1", itemId: "reload-item", kind: "command", startedAtMs: Date.now(), approvalId: "reload-approval", environmentId: null, reason: "reload ordinary", networkApprovalContext: null, command: "true", cwd: process.cwd(), commandActions: null, additionalPermissions: null, proposedExecpolicyAmendment: null, proposedNetworkPolicyAmendments: null, availableDecisions: ["accept", "decline", "cancel"] });
-	request("reload-dynamic", "item/tool/call", { threadId: workhorseThreadId, turnId: "turn-1", callId: "reload-dynamic", namespace: "archboard_app", tool: "create_thread", arguments: { prompt: "This authority must not survive reload." } });
-	request("reload-wait", "item/tool/call", { threadId: workhorseThreadId, turnId: "turn-1", callId: "reload-wait", namespace: "archboard_app", tool: "wait_threads", arguments: { threadIds: ["thread-3"], timeoutMs: 120000 } });
+	registerDynamicCall("shutdown-dynamic", "create_thread", { prompt: "This authority must end at shutdown." });
+	registerDynamicCall("shutdown-wait", "wait_threads", { threadIds: ["thread-3"], timeoutMs: 120000 });
+	request("shutdown-ordinary", "item/commandExecution/requestApproval", { threadId: workhorseThreadId, turnId: "turn-1", itemId: "shutdown-item", kind: "command", startedAtMs: Date.now(), approvalId: "shutdown-approval", environmentId: null, reason: "shutdown ordinary", networkApprovalContext: null, command: "true", cwd: process.cwd(), commandActions: null, additionalPermissions: null, proposedExecpolicyAmendment: null, proposedNetworkPolicyAmendments: null, availableDecisions: ["accept", "decline", "cancel"] });
+	request("shutdown-dynamic", "item/tool/call", { threadId: workhorseThreadId, turnId: "turn-1", callId: "shutdown-dynamic", namespace: "archboard_app", tool: "create_thread", arguments: { prompt: "This authority must end at shutdown." } });
+	request("shutdown-wait", "item/tool/call", { threadId: workhorseThreadId, turnId: "turn-1", callId: "shutdown-wait", namespace: "archboard_app", tool: "wait_threads", arguments: { threadIds: ["thread-3"], timeoutMs: 120000 } });
 };
 
 let disconnectBatchSent = false;
@@ -327,18 +305,6 @@ const emitDisconnectBatch = (): void => {
 	registerDynamicCall("disconnect-dynamic", "create_thread", { prompt: "This authority must end with the browser." });
 	request("disconnect-ordinary", "item/fileChange/requestApproval", { threadId: workhorseThreadId, turnId: "turn-1", itemId: "disconnect-file", startedAtMs: Date.now(), reason: "disconnect ordinary", grantRoot: process.cwd() });
 	request("disconnect-dynamic", "item/tool/call", { threadId: workhorseThreadId, turnId: "turn-1", callId: "disconnect-dynamic", namespace: "archboard_app", tool: "create_thread", arguments: { prompt: "This authority must end with the browser." } });
-};
-
-let postReloadSent = false;
-const emitPostReload = (): void => {
-	if (postReloadSent || workhorseThreadId === null) return;
-	postReloadSent = true;
-	request("post-reload-time", "currentTime/read", { threadId: workhorseThreadId });
-};
-
-const completeReloadWait = (): void => {
-	const target = threads.get("thread-3");
-	if (target !== undefined) target.status = { type: "idle" };
 };
 
 let forkSent = false;
@@ -423,9 +389,9 @@ const invalidateStale = (): void => {
 		'\t\trecord({ kind: "reverse_response", frame });\n\t\treturn;',
 		'\t\trecord({ kind: "reverse_response", frame });\n\t\tfor (const thread of threads.values()) for (const turn of thread.turns) for (const item of (turn.items as Record<string, unknown>[] | undefined) ?? []) if (item.id === frame.id) { const returned = frame.result as { contentItems?: unknown; success?: unknown } | undefined; Object.assign(item, { status: "completed", contentItems: returned?.contentItems ?? [], success: returned?.success ?? false, durationMs: 1 }); }\n\t\tif (frame.id === "coordinator-inspect") { const coordinator = threads.get("thread-1"); if (coordinator !== undefined) { coordinator.status = { type: "idle" }; coordinator.turns = []; } }\n\t\treturn;',
 	);
-	const withReload = withCoordinatorRetirement.replace(
+	const withShutdown = withCoordinatorRetirement.replace(
 		"if (control.exit === true) process.exit(17);",
-		'if ((control as { emit?: unknown }).emit === "list") emitGeneralQuery("list_threads");\n\t\tif ((control as { emit?: unknown }).emit === "read") emitGeneralQuery("read_thread");\n\t\tif ((control as { emit?: unknown }).emit === "wait") emitGeneralQuery("wait_threads");\n\t\tif ((control as { emit?: unknown }).emit === "fork") emitFork();\n\t\tif ((control as { emit?: unknown }).emit === "send") emitSend();\n\t\tif ((control as { emit?: unknown }).emit === "coordinator") emitCoordinatorCall();\n\t\tif ((control as { emit?: unknown }).emit === "decline") emitDecline();\n\t\tif ((control as { emit?: unknown }).emit === "stale") emitStale();\n\t\tif ((control as { emit?: unknown }).emit === "invalidate_stale") invalidateStale();\n\t\tif ((control as { emit?: unknown }).emit === "reload") emitReloadBatch();\n\t\tif ((control as { emit?: unknown }).emit === "complete_wait") completeReloadWait();\n\t\tif ((control as { emit?: unknown }).emit === "post_reload") emitPostReload();\n\t\tif ((control as { emit?: unknown }).emit === "disconnect") emitDisconnectBatch();\n\t\tif (control.exit === true) process.exit(17);',
+		'if ((control as { emit?: unknown }).emit === "list") emitGeneralQuery("list_threads");\n\t\tif ((control as { emit?: unknown }).emit === "read") emitGeneralQuery("read_thread");\n\t\tif ((control as { emit?: unknown }).emit === "wait") emitGeneralQuery("wait_threads");\n\t\tif ((control as { emit?: unknown }).emit === "fork") emitFork();\n\t\tif ((control as { emit?: unknown }).emit === "send") emitSend();\n\t\tif ((control as { emit?: unknown }).emit === "coordinator") emitCoordinatorCall();\n\t\tif ((control as { emit?: unknown }).emit === "decline") emitDecline();\n\t\tif ((control as { emit?: unknown }).emit === "stale") emitStale();\n\t\tif ((control as { emit?: unknown }).emit === "invalidate_stale") invalidateStale();\n\t\tif ((control as { emit?: unknown }).emit === "shutdown") emitShutdownBatch();\n\t\tif ((control as { emit?: unknown }).emit === "disconnect") emitDisconnectBatch();\n\t\tif (control.exit === true) process.exit(17);',
 	);
 	if (
 		withRequests === source ||
@@ -434,11 +400,11 @@ const invalidateStale = (): void => {
 		withEmission === withGeneralItems ||
 		withFork === withEmission ||
 		withCoordinatorRetirement === withFork ||
-		withReload === withCoordinatorRetirement
+		withShutdown === withCoordinatorRetirement
 	)
 		throw new Error("The controlled production fixture injection point drifted.");
 	const path = join(root, "fake-codex-lifecycle.ts");
-	writeFileSync(path, withReload);
+	writeFileSync(path, withShutdown);
 	chmodSync(path, 0o700);
 	return path;
 }
