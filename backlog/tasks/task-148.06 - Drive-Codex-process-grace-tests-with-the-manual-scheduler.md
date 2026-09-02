@@ -1,11 +1,11 @@
 ---
 id: TASK-148.06
 title: Drive Codex process grace tests with the manual scheduler
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 21:36'
-updated_date: '2026-09-02 21:51'
+updated_date: '2026-09-02 21:55'
 labels: []
 dependencies: []
 modified_files:
@@ -25,9 +25,9 @@ Codex process tests retain real child and process-group behavior while their mod
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Module tests use the existing injected now, schedule, and cancel dependencies plus the manual scheduler instead of waiting the full CODEX_TERM_GRACE_MS.
-- [ ] #2 Focused coverage retains resistant descendant TERM-to-KILL escalation, stream and leader settlement, and exact cleanup.
-- [ ] #3 Focused duration evidence confirms the eliminated five-second grace wait without changing production grace behavior.
+- [x] #1 Module tests use the existing injected now, schedule, and cancel dependencies plus the manual scheduler instead of waiting the full CODEX_TERM_GRACE_MS.
+- [x] #2 Focused coverage retains resistant descendant TERM-to-KILL escalation, stream and leader settlement, and exact cleanup.
+- [x] #3 Focused duration evidence confirms the eliminated five-second grace wait without changing production grace behavior.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -51,4 +51,12 @@ Verification: focused owner 0.179 s; 10 repeated focused runs completed in 0.704
 Standards-review amendment: kept the manual clock in scope for finally and changed the real resistant-descendant owner to drive owner.stop() with yieldToProcessEvents during every teardown route. Added a real-process regression that injects a failure before the main stop path, then proves stopped owner state, null current child, destroyed leader stdout, terminal/absent leader and descendant states, removed temporary root, and exactly 5,000 ms of virtual TERM grace. A controlled mutation back to direct owner.stop() made this regression time out at 5.000 s (5.105 s command wall); restoring driven teardown passed in 101.87 ms.
 
 Amendment validation: both real-process owners passed 20/20 across ten repeated file runs in 1.454 s, bodies 57.94-84.60 ms. Process lifecycle plus generation passed 14/14 with 68 assertions in 0.683 s. Focused oxfmt and oxlint, backend tsc --noEmit, and git diff --check pass. Deliberate red-run roots were removed by exact path; no new temporary root or codex-fixture process remains.
+
+Integration validation: cherry-picked reviewed commits 7c976b549c0f832d39bc55fe2126423ee21574e4 and 90106d84ecec41b10d71f2d08e4dab660d81f133 onto 09e24cc33a6fef743dae32e31c2f393907eb6f2b. bun test src/runtime/codex-process/tests/process-lifecycle.test.ts src/runtime/codex-process/tests/process-generation.test.ts passed 14/14 in 446 ms. It retained the real leader and TERM-resistant descendant, pre-main-stop cleanup, stream/group/root cleanup, and virtual 5,000 ms grace assertions without a five-second wall wait. git diff --check 09e24cc33a6fef743dae32e31c2f393907eb6f2b HEAD passed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Moved Codex process grace coverage to the injected manual scheduler while retaining real-process escalation and failure cleanup. Reviewed integration passed the two focused owners, 14 tests in 446 ms, plus git diff --check.
+<!-- SECTION:FINAL_SUMMARY:END -->
