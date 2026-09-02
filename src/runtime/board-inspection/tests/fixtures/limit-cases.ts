@@ -48,13 +48,20 @@ export function inputBoundaryRecord(idLength: number): RawElement {
 	return { id: "x".repeat(idLength), type: "rectangle", x: 0, y: 0, width: 1, height: 1 };
 }
 
-export function terminalComparisonBoard(): RawElement[] {
+export function terminalComparisonBoard(
+	nodeCount = 20,
+	connectorCount = 60,
+	labelCount = 20,
+): RawElement[] {
 	return [
-		...performanceBoard(500, 1_500, 500),
+		...performanceBoard(nodeCount, connectorCount, labelCount),
 		connector({
 			id: "terminal-zero-segments",
 			x: 20_000,
-			points: Array.from({ length: 10_001 }, () => [0, 0]),
+			points: [
+				[0, 0],
+				[0, 0],
+			],
 		}),
 	];
 }
