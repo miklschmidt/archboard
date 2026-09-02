@@ -19,12 +19,20 @@ restart-on-save process. It has no backend reload command, endpoint, token,
 canary, global `kept()` registry, or source policy that parses a TypeScript
 project to make module replacement safe.
 
-Runtime state has ordinary process lifetime. Modules may own state directly,
-or the canvas application may own it when construction and teardown need an
-explicit boundary. A restart disconnects live browser sessions and clears
-process-only state. Persisted boards remain in their notes under ADR 0015. A
-held board is the exception because its refused edits exist only in the
-running process, so the operator must resolve every hold before restarting.
+Runtime state has ordinary process lifetime. The Canvas application owns every
+resource that needs ordered construction or teardown. That includes the HTTP
+and WebSocket servers, the Codex child, browser sockets and pane leases,
+pending operations, lock and claim timers, note watches, and change-feed
+settlement. It starts each owner once and tears them down in a documented
+order. Harmless caches may stay module-local when they own no timer, handle,
+listener, child, or process-only user work.
+
+A restart disconnects live browser sessions and clears process-only state.
+Persisted boards remain in their notes under ADR 0015. A held board is the
+exception because its refused edits exist only in the running process. The
+ordinary stop and restart path checks for holds before it sends a signal. It
+refuses while any hold exists and names the boards and available recovery
+actions. Source-freshness guidance uses that same guarded restart path.
 
 Frontend Vite HMR may remain. It belongs to the browser bundle process and does
 not replace modules inside the Archboard server. Backend and frontend
@@ -54,6 +62,8 @@ still run TypeScript source directly with Bun, the browser bundle still has a
 build step, and type-checking remains an explicit required gate.
 
 Backend development has one lifecycle: start, run, stop. Source-freshness
-diagnostics tell the operator to restart. Tests exercise startup, shutdown,
-state construction, and cleanup instead of module replacement. The repository
-no longer needs hot-reload fixtures or a special global lifetime model.
+diagnostics tell the operator to use the guarded restart path. Tests exercise
+startup failure, held-board refusal, recovery, shutdown with and without
+connected browsers, pending-operation settlement, child and timer cleanup,
+signals, timeouts, and a second fresh application start. The repository no
+longer needs hot-reload fixtures or a special global lifetime model.
