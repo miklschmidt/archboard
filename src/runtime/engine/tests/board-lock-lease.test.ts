@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, jest, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,10 +13,19 @@ const originalWarn = logger.warn;
 const agent = (id: string) => ({ id, kind: "agent" as const });
 const human = (id: string) => ({ id, kind: "human" as const });
 const boards = new Set<string>();
-const timers = new Set<ReturnType<typeof setTimeout>>();
+
+async function advanceLockTime(ms: number): Promise<void> {
+	let elapsed = 0;
+	while (elapsed < ms) {
+		const step = Math.min(timing.LOCK_POLL_MS, ms - elapsed);
+		jest.advanceTimersByTime(step);
+		await Promise.resolve();
+		await Promise.resolve();
+		elapsed += step;
+	}
+}
 
 async function cleanup(): Promise<void> {
-	for (const timer of timers) clearTimeout(timer);
 	lock.watchBoardLocks(null);
 	lock.onBoardSweep(null);
 	lock.onBoardLockChanged(null);
@@ -26,6 +35,7 @@ async function cleanup(): Promise<void> {
 			lock.releaseHold(board, id);
 	}
 	lock.forgetLockAnnouncements();
+	jest.useRealTimers();
 	logger.warn = originalWarn;
 	if (previousVault === undefined) delete process.env.ARCHBOARD_VAULT;
 	else process.env.ARCHBOARD_VAULT = previousVault;
@@ -33,24 +43,33 @@ async function cleanup(): Promise<void> {
 }
 
 test("lease interface excludes, renews, expires, and normalizes", async () => {
+	jest.useFakeTimers();
 	try {
 		const board = "interface";
 		boards.add(board);
 		let writes = 0;
 		expect(await lock.withBoardLock({ board, holder: agent("first") }, () => ++writes)).toBe(1);
 		expect(lock.boardLockState(board)).toBeNull();
-		const held = await lock.holdBoard({ board, holder: human("user"), waitMs: 0 });
+		const held = await lock.holdBoard({
+			board,
+			holder: human("user"),
+			leaseMs: timing.LOCK_WAIT_CAP_MS + timing.LOCK_LEASE_MS,
+			waitMs: 0,
+		});
 		expect(held.created).toBeTrue();
-		const started = Date.now();
-		const refused = await lock
-			.holdBoard({ board, holder: agent("later"), waitMs: 120 })
+		const refusal = lock
+			.holdBoard({ board, holder: agent("later") })
 			.catch((error: unknown) => error);
+		await advanceLockTime(timing.LOCK_WAIT_CAP_MS);
+		const refused = await refusal;
 		expect(refused).toBeInstanceOf(lock.BoardHeldError);
 		if (!(refused instanceof lock.BoardHeldError)) throw new Error("Expected BoardHeldError.");
+		expect(refused.code).toBe("BOARD_HELD");
+		expect(refused.board).toBe(board);
 		expect(refused.holder).toMatchObject({ id: "user", kind: "human" });
 		expect(refused.message).toMatch(/held by the person at the canvas, since/);
-		expect(refused.waitedMs).toBeGreaterThanOrEqual(100);
-		expect(Date.now() - started).toBeGreaterThanOrEqual(100);
+		expect(refused.waitedMs).toBe(timing.LOCK_WAIT_CAP_MS);
+		jest.advanceTimersByTime(1);
 		const renewed = await lock.holdBoard({ board, holder: human("user"), waitMs: 0 });
 		expect(renewed.created).toBeFalse();
 		expect(renewed.holder.since).toBe(held.holder.since);
@@ -64,20 +83,27 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		const expired = "expired";
 		boards.add(expired);
 		await lock.holdBoard({ board: expired, holder: agent("departed"), leaseMs: 100, waitMs: 0 });
-		expect(
-			await lock.holdBoard({ board: expired, holder: agent("later"), waitMs: 1_000 }),
-		).toMatchObject({ created: true, holder: { id: "later" } });
+		const expiredTakeover = lock.holdBoard({
+			board: expired,
+			holder: agent("later"),
+			waitMs: 1_000,
+		});
+		await advanceLockTime(100 + timing.LOCK_STEAL_GUARD_MS);
+		expect(await expiredTakeover).toMatchObject({ created: true, holder: { id: "later" } });
 		expect(timing.LOCK_LEASE_MS).toBeGreaterThanOrEqual(timing.REPORT_IDLE_SETTLE_MS * 2);
 		expect(timing.LOCK_WAIT_CAP_MS).toBeGreaterThan(timing.LOCK_LEASE_MS);
 
 		const waiting = "waiting";
 		boards.add(waiting);
 		await lock.holdBoard({ board: waiting, holder: human("user"), leaseMs: 2_000, waitMs: 0 });
-		const timer = setTimeout(() => lock.releaseHold(waiting, "user"), 250);
-		timers.add(timer);
-		const waitStart = Date.now();
-		await lock.holdBoard({ board: waiting, holder: agent("patient"), waitMs: 2_000 });
-		expect(Date.now() - waitStart).toBeWithin(200, 1_200);
+		setTimeout(() => lock.releaseHold(waiting, "user"), 250);
+		const waitingTakeover = lock.holdBoard({
+			board: waiting,
+			holder: agent("patient"),
+			waitMs: 2_000,
+		});
+		await advanceLockTime(250);
+		expect(await waitingTakeover).toMatchObject({ created: true, holder: { id: "patient" } });
 
 		boards.add("Payments");
 		await lock.holdBoard({ board: "Payments", holder: agent("upper"), waitMs: 0 });
@@ -96,9 +122,13 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		const file = join(vault, ".archboard/locks/unreadable.lock");
 		mkdirSync(join(vault, ".archboard/locks"), { recursive: true });
 		writeFileSync(file, "{ half a record");
-		expect(
-			await lock.holdBoard({ board: unreadable, holder: agent("later"), waitMs: 0 }),
-		).toMatchObject({ created: true });
+		const unreadableTakeover = lock.holdBoard({
+			board: unreadable,
+			holder: agent("later"),
+			waitMs: 0,
+		});
+		await advanceLockTime(timing.LOCK_STEAL_GUARD_MS);
+		expect(await unreadableTakeover).toMatchObject({ created: true });
 	} finally {
 		await cleanup();
 	}
