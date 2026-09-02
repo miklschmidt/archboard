@@ -7,6 +7,7 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 
 import { TEST_CANVAS_HEALTH_POLL_MS } from "../../../src/shared/timing/timing.ts";
+import { stateDir } from "../../../src/runtime/engine/state-dir.ts";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const serverPath = path.join(repoRoot, "src/server.ts");
@@ -33,6 +34,36 @@ if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "collision") {
 	// oxlint-disable-next-line no-console -- child stderr is the collision diagnostic fixture.
 	console.error(`EADDRINUSE fixture on ${process.env.PORT}`);
 	process.exit(98);
+}
+
+if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "namespace") {
+	const home = process.env.HOME!;
+	const xdgConfig = process.env.XDG_CONFIG_HOME!;
+	const xdgState = process.env.XDG_STATE_HOME!;
+	const temporary = process.env.TMPDIR!;
+	const workbench = path.join(stateDir(), "codex-workbench");
+	const lock = path.join(workbench, "codex-home", ".archboard-codex-process.lock");
+	try {
+		fs.mkdirSync(path.dirname(lock), { recursive: true, mode: 0o700 });
+		fs.writeFileSync(lock, `${process.pid}\n`, { flag: "wx", mode: 0o600 });
+	} catch (error) {
+		// oxlint-disable-next-line no-console -- child stderr is the production collision symptom.
+		console.error(
+			`Dedicated Codex roots are locked or colliding at ${path.dirname(lock)}. ` +
+				"Stop the other owner before retrying.",
+			error,
+		);
+		process.exit(97);
+	}
+	Bun.serve({
+		hostname: "127.0.0.1",
+		port: Number(process.env.PORT),
+		fetch(request) {
+			if (new URL(request.url).pathname === "/health") return Response.json({ pid: process.pid });
+			return Response.json({ home, xdgConfig, xdgState, temporary, workbench, lock });
+		},
+	});
+	await new Promise(() => undefined);
 }
 
 if (process.env.ARCHBOARD_FAILED_REAP_CHILD === "1") {
@@ -181,6 +212,78 @@ describe("owned canvas direct lifecycle", () => {
 		}
 	});
 
+	test("keeps two live canvases out of the same Codex workbench lock", async () => {
+		const callerRoot = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-shared-caller-"));
+		emergencyVaults.add(callerRoot);
+		const callerPaths = {
+			home: path.join(callerRoot, "home"),
+			xdgConfig: path.join(callerRoot, "xdg-config"),
+			xdgState: path.join(callerRoot, "xdg-state"),
+			temporary: path.join(callerRoot, "tmp"),
+		};
+		for (const directory of Object.values(callerPaths))
+			fs.mkdirSync(directory, { recursive: true });
+		const sentinel = path.join(callerRoot, "caller-owned");
+		fs.writeFileSync(sentinel, "keep\n");
+		const env = {
+			ARCHBOARD_LIFECYCLE_SERVER: "namespace",
+			HOME: callerPaths.home,
+			XDG_CONFIG_HOME: callerPaths.xdgConfig,
+			XDG_STATE_HOME: callerPaths.xdgState,
+			TMPDIR: callerPaths.temporary,
+		};
+		let first: Awaited<ReturnType<typeof startOwnedCanvas>> | undefined;
+		let second: Awaited<ReturnType<typeof startOwnedCanvas>> | undefined;
+		const namespaceRoots: string[] = [];
+		const namespaces: Array<{
+			home: string;
+			xdgConfig: string;
+			xdgState: string;
+			temporary: string;
+			workbench: string;
+			lock: string;
+		}> = [];
+		try {
+			first = await startOwnedCanvas({
+				serverPath: thisFile,
+				vault: path.join(callerRoot, "vault-first"),
+				env,
+			});
+			second = await startOwnedCanvas({
+				serverPath: thisFile,
+				vault: path.join(callerRoot, "vault-second"),
+				env,
+			});
+			for (const canvas of [first, second]) {
+				namespaceRoots.push(canvas.paths.root);
+				namespaces.push(
+					(await fetch(`${canvas.base}/namespace`).then((response) => response.json())) as (typeof namespaces)[number],
+				);
+			}
+			expect(new Set(namespaces.map(({ xdgState }) => xdgState)).size).toBe(2);
+			expect(new Set(namespaces.map(({ lock }) => lock)).size).toBe(2);
+			for (const [index, namespace] of namespaces.entries()) {
+				const paths = [first, second][index]!.paths;
+				expect(namespace).toMatchObject({
+					home: paths.home,
+					xdgConfig: paths.xdgConfig,
+					xdgState: paths.xdgState,
+					temporary: paths.temporary,
+				});
+				expect(namespace).not.toContainValue(callerPaths.home);
+				expect(namespace).not.toContainValue(callerPaths.xdgConfig);
+				expect(namespace).not.toContainValue(callerPaths.xdgState);
+				expect(namespace).not.toContainValue(callerPaths.temporary);
+				expect(fs.existsSync(namespace.lock)).toBeTrue();
+			}
+		} finally {
+			await Promise.allSettled([second?.dispose(), first?.dispose()]);
+		}
+		for (const root of namespaceRoots) expect(fs.existsSync(root)).toBeFalse();
+		expect(fs.existsSync(sentinel)).toBeTrue();
+		fs.rmSync(callerRoot, { recursive: true, force: true });
+	});
+
 	test("reallocates an automatic port stolen after the retired generation exits", async () => {
 		const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
 		emergencyVaults.add(vault);
@@ -235,6 +338,11 @@ describe("owned canvas direct lifecycle", () => {
 		expect(failure?.message.match(/^\d+\. \{/gm)).toHaveLength(8);
 		expect(failure?.message.match(/EADDRINUSE fixture/g)).toHaveLength(8);
 		expect(failure?.message.match(/"cleanup":"reaped"/g)).toHaveLength(8);
+		const paths = JSON.parse(
+			/^Owned canvas paths: (.+)$/m.exec(failure?.message ?? "")?.[1] ?? "null",
+		) as { root?: string } | null;
+		expect(paths?.root).toStartWith(path.join(os.tmpdir(), "archboard-owned-canvas-"));
+		expect(fs.existsSync(paths!.root!)).toBeFalse();
 		expect(fs.existsSync(vault)).toBeFalse();
 	});
 
