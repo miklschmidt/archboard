@@ -1,0 +1,41 @@
+---
+id: TASK-143.08.06.05
+title: Teach and prove the browser-free Archboard workflow
+status: To Do
+assignee: []
+created_date: '2026-09-02 01:58'
+labels: []
+dependencies:
+  - TASK-143.08.06.04
+references:
+  - skills/archboard/SKILL.md
+  - skills/archboard/references/architecture-workflow.md
+  - skills/archboard/references/cli-workflows.md
+  - skills/archboard/evals/evals.json
+  - skills/archboard-dev/SKILL.md
+  - TESTING.md
+  - INSTALL.md
+  - docs/agents/test-suite.md
+parent_task_id: TASK-143.08.06
+priority: high
+type: task
+ordinal: 269000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+Make the browser-independent contract impossible to miss for agents, maintainers, and users, and verify it through the interfaces they actually use. Rewrite the canonical tracked Archboard skill package so board work is the unconditional main path and live browser collaboration is a clearly disclosed optional branch. Align repository guidance and replace skill eval assumptions that currently require panes for Mermaid, ordinary drawing, completion screenshots, or board status. Finish with focused zero-client and explicit-browser production workflows; real-browser fixed-point tests remain for actual browser fidelity, not as a product prerequisite.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 The tracked `skills/archboard/SKILL.md` main path begins with an explicit named board and works start to finish without discovering, opening, or capturing a pane; live human-session reading and control appear in one clearly triggered `archboard browser` branch.
+- [ ] #2 `skills/archboard/references/architecture-workflow.md`, `cli-workflows.md`, and `cheatsheet.md` consistently distinguish persisted-board inspection and server rendering from browser panes, selection, camera, and capture; Mermaid is described as server conversion and no completion gate requires a browser unless the requested evidence is specifically about the live session.
+- [ ] #3 The Archboard skill evals include a zero-browser workflow that creates and changes a board, converts Mermaid, renders board evidence, inspects, saves, and exports it, plus a separate browser-collaboration workflow that deliberately exercises the `browser` namespace; no eval accidentally treats a pane as a board prerequisite.
+- [ ] #4 AGENTS.md, TESTING.md, INSTALL.md, CLI help, and the tracked archboard-dev guidance state that only `archboard browser` workflows and real-browser fidelity checks require a connected browser, while screenshots or renders of named board content are server-owned.
+- [ ] #5 Running the documented skill synchronization reproduces generated `.agents` and `.claude` copies from `skills/` without treating those derived copies or rendered proof artifacts as authored files.
+- [ ] #6 A production-interface workflow with a configured vault and zero WebSocket clients creates a board, writes elements, converts Mermaid, renders PNG and SVG, renders live findings when present, inspects, branches or snapshots, exports, and reads the final note without an open/load/show prerequisite.
+- [ ] #7 A separate real-browser workflow proves that browser commands inspect or manipulate only the explicit live target and do not change note bytes, while an ordinary board write still becomes visible in panes already showing that board without depending on their acknowledgement.
+- [ ] #8 Focused repository, contract, system, and retained real-browser fidelity checks pass under the memory-safe validation mechanism established by TASK-143.08.01; failures are fixed rather than bypassed or weakened.
+<!-- AC:END -->

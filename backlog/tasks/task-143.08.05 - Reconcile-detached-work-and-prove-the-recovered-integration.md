@@ -4,26 +4,28 @@ title: Reconcile detached work and prove the recovered integration
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 01:43'
+updated_date: '2026-09-02 01:59'
 labels: []
 dependencies:
   - TASK-143.08.04
+  - TASK-143.08.06.05
   - TASK-143.06.03
   - TASK-143.06.08
 references:
   - codex/task-143-144-workbench@ba1aacee
   - docs/agents/test-suite.md
   - docs/agents/boundaries.md
+  - skills/archboard/SKILL.md
 parent_task_id: TASK-143.08
 priority: high
 type: task
-ordinal: 263000
+ordinal: 270000
 ---
 
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Reconcile the frozen detached descendants only after the OOM, generated-type, contract, and startup recovery is complete and the existing legacy-injection cleanup tasks have finished. Preserve maximal heads until their unique behavior is accounted for. Port behavior onto the recovered integration tip; never merge a detached head wholesale or revive the rejected type and test designs. Preserve main-only TASK-145, TASK-146, and TASK-147 when the integration branch is later reconciled with main.
+Reconcile the frozen detached descendants only after the OOM, generated-type, contract, mandatory-startup, browser-independent board-work, and existing legacy-injection recovery streams have finished. Preserve maximal heads until their unique behavior is accounted for. Port behavior onto the recovered integration tip; never merge a detached head wholesale or revive the rejected type, test, board-session, or browser-rendering designs. Preserve main-only TASK-145, TASK-146, and TASK-147 when the integration branch is later reconciled with main.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -35,6 +37,7 @@ Reconcile the frozen detached descendants only after the OOM, generated-type, co
 - [ ] #5 No worktree is removed until its maximal head has a durable ref and the user approves removal. The untracked src-DlBR1tzg.js bundle and unrelated worktree changes remain untouched.
 - [ ] #6 The recovered branch preserves all integrated ba1aacee product behavior that still satisfies the corrected contracts, preserves main-only task records during later reconciliation, passes the complete applicable check under recorded memory limits with no orphan, and receives an independent fixed-range review.
 - [ ] #7 Only after this task is Done are paused TASK-143 and TASK-144 leaves reassigned and given fresh implementation plans. This recovery does not implement the missing timeline, composer, queue, approvals, or voice UI.
+- [ ] #8 The final recovered integration includes TASK-143.08.06.05 evidence: named board work and server rendering pass with zero browser clients, live-session control exists only under `archboard browser`, and the canonical tracked skill teaches that separation before paused feature leaves resume.
 <!-- AC:END -->
 
 ## Comments
