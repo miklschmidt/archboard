@@ -4,6 +4,7 @@ title: Resolve named vault boards without open-session state
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:58'
+updated_date: '2026-09-02 02:02'
 labels: []
 dependencies:
   - TASK-143.08.06.01
@@ -11,8 +12,9 @@ references:
   - src/runtime/engine/board-store.ts
   - src/runtime/engine/board-io.ts
   - src/runtime/engine/board-target.ts
-  - docs/adr/0015-the-note-is-the-board.md
+  - docs/adr/0015-the-vault-is-the-truth-and-the-agent-shape-is-input.md
   - docs/adr/0016-one-writer-at-a-time-per-board.md
+  - docs/adr/0020-board-work-never-depends-on-a-browser-session.md
 parent_task_id: TASK-143.08.06
 priority: high
 type: enhancement

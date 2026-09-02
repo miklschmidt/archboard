@@ -47,6 +47,30 @@ no architectural meaning until it is on a board and promoted, and it stops
 being a stencil the moment it is dragged onto one.
 _Avoid_: symbol, icon, template, component, widget
 
+### Commands
+
+**Board operation**:
+An action whose subject is an explicitly named Board. It resolves the Board's
+Note directly and needs no live Canvas, Pane, selection, camera, or connected
+browser.
+_Avoid_: canvas command, pane command, headless command
+
+**Browser operation**:
+An action whose subject is a live Archboard browser session, such as displaying
+a Board, reading selection, moving a camera, or capturing a Pane. It never
+changes a Board's Note.
+_Avoid_: view command, board command, pane command
+
+**Board render**:
+An image produced by the server from one named Board snapshot, independent of
+any live Pane or Canvas camera.
+_Avoid_: screenshot, browser capture, pane export
+
+**Browser capture**:
+An image of what a named live browser target shows, including its Pane and
+camera state.
+_Avoid_: board render, export, unqualified screenshot
+
 ### Meaning
 
 **Kind**:
