@@ -17,6 +17,7 @@ import type {
 	Snapshot,
 } from "../../../runtime/engine/types.js";
 import { mintId } from "../../../shared/ids/ids.js";
+import { CodeBindingSchema, type CodeBinding } from "../../../shared/code-target/index.js";
 import { buildSelectionReport } from "../../../runtime/engine/describe.js";
 import { describeScene } from "../../../runtime/engine/describe.js";
 import {
@@ -187,8 +188,10 @@ import {
 import { drawnFileIds, usableEmbeddedFile } from "../../../runtime/engine/embedded-files.js";
 import type { BoardWriteRequest, BoardWriteTarget } from "../../../runtime/engine/board-write.js";
 import {
+	codeBindingsOf,
 	presentElement,
 	presentElements,
+	presentationContextFromElement,
 	stripBindingPresentationLinks,
 } from "../../../runtime/engine/presentation.js";
 import {
@@ -227,6 +230,48 @@ const mutationAdmission = createCanvasMutationAdmission({
 	drainTimeoutMs: CANVAS_MUTATION_DRAIN_TIMEOUT_MS,
 });
 const admittedMutations = new WeakMap<Request, CanvasMutationLease>();
+
+interface CheckoutWork {
+	readonly controller: AbortController;
+	promise: Promise<unknown> | null;
+}
+
+let acceptingCheckoutWork = true;
+const activeCheckoutWork = new Set<CheckoutWork>();
+
+function trackCheckoutWork<T>(
+	name: string,
+	externalSignal: AbortSignal | undefined,
+	work: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
+	if (!acceptingCheckoutWork)
+		return Promise.reject(new Error(`Canvas checkout work is stopping; ${name} was not admitted.`));
+	const controller = new AbortController();
+	const cancel = (): void =>
+		controller.abort(externalSignal?.reason ?? new Error(`${name} canceled.`));
+	externalSignal?.addEventListener("abort", cancel, { once: true });
+	if (externalSignal?.aborted) cancel();
+	const owner: CheckoutWork = { controller, promise: null };
+	activeCheckoutWork.add(owner);
+	const promise = (async (): Promise<T> => {
+		try {
+			controller.signal.throwIfAborted();
+			return await work(controller.signal);
+		} finally {
+			externalSignal?.removeEventListener("abort", cancel);
+			activeCheckoutWork.delete(owner);
+		}
+	})();
+	owner.promise = promise;
+	return promise;
+}
+
+async function stopCheckoutWork(): Promise<void> {
+	acceptingCheckoutWork = false;
+	const active = [...activeCheckoutWork];
+	for (const owner of active) owner.controller.abort(new Error("Canvas checkout work stopped."));
+	await Promise.allSettled(active.flatMap((owner) => (owner.promise ? [owner.promise] : [])));
+}
 
 function trackMutationWork<T>(
 	req: Request,
@@ -336,6 +381,18 @@ const PROCESS_FREE_HUMAN_ROUTES = new Set([
 	"/api/selection",
 ]);
 
+function openBoardBindings(): ReturnType<typeof codeBindingsOf> {
+	const bindings: ReturnType<typeof codeBindingsOf> = [];
+	for (const board of boards.values()) {
+		try {
+			bindings.push(...codeBindingsOf(readBoardContent(board).elements.values()));
+		} catch {
+			// A malformed board remains the route's own visible refusal.
+		}
+	}
+	return bindings;
+}
+
 // Resolve machine-local checkout authority before any board lock is taken.
 // Code-opener routes make their own snapshot at activation time, so settings
 // and activation can never share authority accidentally.
@@ -349,11 +406,32 @@ async function prepareCheckoutSnapshot(
 	if (req.path.startsWith("/api/settings/opener") || req.path === "/api/code-targets/open") {
 		return next();
 	}
-	res.locals.checkoutSnapshot = await (req.method === "GET" || req.method === "HEAD"
-		? snapshotCheckoutAccess()
-		: trackMutationWork(req, `${req.method} ${req.path} checkout snapshot`, (signal) =>
-				snapshotCheckoutAccess({ signal }),
-			));
+	const bindings = openBoardBindings();
+	if (req.method === "GET" || req.method === "HEAD") {
+		const request = new AbortController();
+		const cancel = (): void => request.abort(new Error(`${req.method} ${req.path} disconnected.`));
+		req.once("aborted", cancel);
+		res.once("close", cancel);
+		try {
+			res.locals.checkoutSnapshot = await trackCheckoutWork(
+				`${req.method} ${req.path} checkout snapshot`,
+				request.signal,
+				(signal) => snapshotCheckoutAccess({ signal, bindings }),
+			);
+		} finally {
+			req.off("aborted", cancel);
+			res.off("close", cancel);
+		}
+	} else {
+		res.locals.checkoutSnapshot = await trackMutationWork(
+			req,
+			`${req.method} ${req.path} checkout snapshot`,
+			(signal) =>
+				trackCheckoutWork(`${req.method} ${req.path} checkout snapshot`, signal, (ownedSignal) =>
+					snapshotCheckoutAccess({ signal: ownedSignal, bindings }),
+				),
+		);
+	}
 	next();
 }
 
@@ -367,6 +445,50 @@ const globalJson = express.json({ limit: "10mb" });
 app.use((req: Request, res: Response, next: NextFunction) => {
 	if (isCodeOpenerBodyRoute(req.method, req.path)) return next();
 	globalJson(req, res, next);
+});
+
+function bindingsFromAgentChange(body: unknown): CodeBinding[] {
+	if (!body || typeof body !== "object" || Array.isArray(body)) return [];
+	const upserts = (body as Record<string, unknown>).upserts;
+	if (!Array.isArray(upserts)) return [];
+	return upserts.flatMap((upsert) => {
+		if (!upsert || typeof upsert !== "object" || Array.isArray(upsert)) return [];
+		const custom = (upsert as Record<string, unknown>).customData;
+		if (!custom || typeof custom !== "object" || Array.isArray(custom)) return [];
+		const archboard = (custom as Record<string, unknown>).archboard;
+		if (!archboard || typeof archboard !== "object" || Array.isArray(archboard)) return [];
+		const parsed = CodeBindingSchema.safeParse((archboard as Record<string, unknown>).binding);
+		return parsed.success ? [parsed.data] : [];
+	});
+}
+
+async function prepareAgentChangeSnapshot(
+	req: Request,
+	res: Response,
+	next: NextFunction,
+): Promise<void> {
+	if (
+		req.method !== "POST" ||
+		req.path !== "/api/elements/changes" ||
+		!req.body ||
+		typeof req.body !== "object" ||
+		(req.body as Record<string, unknown>).origin !== "agent"
+	)
+		return next();
+	const bindings = [...openBoardBindings(), ...bindingsFromAgentChange(req.body)];
+	res.locals.checkoutSnapshot = await trackMutationWork(
+		req,
+		"POST /api/elements/changes checkout snapshot",
+		(signal) =>
+			trackCheckoutWork("POST /api/elements/changes checkout snapshot", signal, (ownedSignal) =>
+				snapshotCheckoutAccess({ signal: ownedSignal, bindings }),
+			),
+	);
+	next();
+}
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+	void prepareAgentChangeSnapshot(req, res, next).catch((error) => setImmediate(next, error));
 });
 
 // A board that has stopped saving says so in every answer about it.
@@ -917,18 +1039,57 @@ function boardForNewPane(clientId: string): string {
 // WebSocket connection handling. The lifecycle creates and closes the server;
 // this function owns one accepted socket only.
 async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): Promise<void> {
-	const checkoutSnapshot = await snapshotCheckoutAccess();
 	clients.add(ws);
 	const codexSocketInstance = Object.freeze({});
 	codexSocketInstances.set(ws, codexSocketInstance);
-	// There is a screen again, so the lock files of what is on it are worth
-	// reading (ADR 0016).
-	syncLockWatch();
 	const clientId = new URL(req.url ?? "/", "http://localhost").searchParams.get("clientId");
 	if (clientId) {
 		clientIds.set(ws, clientId);
 		currentSocketsByClient.set(clientId, ws);
 	}
+	const checkoutController = new AbortController();
+	ws.on("close", () => {
+		checkoutController.abort(new Error("WebSocket closed during checkout presentation."));
+		clients.delete(ws);
+		const closingId = clientIds.get(ws);
+		clientIds.delete(ws);
+		const closingCodexInstance = codexSocketInstances.get(ws);
+		codexSocketInstances.delete(ws);
+		// Exact Codex cleanup is safe for a replaced socket. Client-id keyed canvas
+		// state is not: a replacement may already own that pane identity.
+		if (closingId) {
+			if (closingCodexInstance !== undefined)
+				void wiring.codex
+					.closeBrowser?.(closingCodexInstance, closingId)
+					.catch((error) => logger.error("Codex browser cleanup failed:", error));
+			if (currentSocketsByClient.get(closingId) !== ws) {
+				syncLockWatch();
+				logger.info(`Replaced WebSocket connection closed (client ${closingId})`);
+				return;
+			}
+			currentSocketsByClient.delete(closingId);
+			selectionState.byClient.delete(closingId);
+			const held = paneBoards.get(closingId);
+			if (held) releaseHold(held, closingId);
+			panes.delete(closingId);
+			notePaneClosed(closingId);
+		}
+		if (closingId && selectionState.current?.clientId === closingId) {
+			selectionState.current = null;
+			broadcastSelection();
+			logger.info(`Selection cleared: owning client ${closingId} disconnected`);
+		}
+		syncLockWatch();
+		logger.info("WebSocket connection closed");
+	});
+	ws.on("error", (error) => {
+		checkoutController.abort(error);
+		logger.error("WebSocket error:", error);
+		clients.delete(ws);
+	});
+	// There is a screen again, so the lock files of what is on it are worth
+	// reading (ADR 0016).
+	syncLockWatch();
 	logger.info(`New WebSocket connection established${clientId ? ` (client ${clientId})` : ""}`);
 
 	// Which board this pane gets, and it is a board *for this pane* — not "the"
@@ -959,6 +1120,13 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		content = emptyContent();
 		renderError = error;
 	}
+	const checkoutSnapshot = await trackCheckoutWork(
+		"WebSocket checkout presentation",
+		checkoutController.signal,
+		(signal) =>
+			snapshotCheckoutAccess({ signal, bindings: codeBindingsOf(content.elements.values()) }),
+	);
+	if (ws.readyState !== WebSocket.OPEN) return;
 	const initialMessage: InitialElementsMessage & {
 		files?: Record<string, ExcalidrawFile>;
 		identity: BoardIdentity;
@@ -1034,56 +1202,6 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		void handle(codexSocketInstance, clientId, message, send).catch((error) =>
 			logger.error("Codex browser request failed:", error),
 		);
-	});
-
-	ws.on("close", () => {
-		clients.delete(ws);
-		const closingId = clientIds.get(ws);
-		clientIds.delete(ws);
-		const closingCodexInstance = codexSocketInstances.get(ws);
-		codexSocketInstances.delete(ws);
-		// Exact Codex cleanup is safe for a replaced socket. Client-id keyed canvas
-		// state is not: a replacement may already own that pane identity.
-		if (closingId) {
-			if (closingCodexInstance !== undefined)
-				void wiring.codex
-					.closeBrowser?.(closingCodexInstance, closingId)
-					.catch((error) => logger.error("Codex browser cleanup failed:", error));
-			if (currentSocketsByClient.get(closingId) !== ws) {
-				syncLockWatch();
-				logger.info(`Replaced WebSocket connection closed (client ${closingId})`);
-				return;
-			}
-			currentSocketsByClient.delete(closingId);
-			// A closed or reloaded tab must not leave a selection standing: whatever it
-			// had picked is no longer on anyone's screen.
-			selectionState.byClient.delete(closingId);
-			// A hold this pane had goes with it. The lease would have lapsed on its
-			// own within LOCK_LEASE_MS, which is what makes a killed tab survivable;
-			// this is only so a tab closed politely does not leave an agent waiting
-			// three seconds for a user who has left (ADR 0016).
-			const held = paneBoards.get(closingId);
-			if (held) releaseHold(held, closingId);
-			// The pane itself is gone for the same reason — a closed tab, or a pane
-			// taken out of the shell. Reporting it would be reporting a ghost.
-			panes.delete(closingId);
-			// And if somebody asked for that pane to go, this is the proof it did.
-			notePaneClosed(closingId);
-		}
-		if (closingId && selectionState.current?.clientId === closingId) {
-			selectionState.current = null;
-			broadcastSelection();
-			logger.info(`Selection cleared: owning client ${closingId} disconnected`);
-		}
-		// The last tab going costs the lock watch: nothing is rendering, so no
-		// pane can be wrong about who holds a board.
-		syncLockWatch();
-		logger.info("WebSocket connection closed");
-	});
-
-	ws.on("error", (error) => {
-		logger.error("WebSocket error:", error);
-		clients.delete(ws);
 	});
 }
 
@@ -2106,17 +2224,26 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 		const source = boardTargetFromRequest(req, "A change report");
 		const { upserts, deletes, origin, clientId, timestamp, fullReport } =
 			ElementChangesSchema.parse(req.body ?? {});
+		const presentationLinks = new Map(
+			upserts.flatMap((upsert) => {
+				if (typeof upsert.id !== "string") return [];
+				const context = presentationContextFromElement(upsert, source.key);
+				return context ? ([[upsert.id, context]] as const) : [];
+			}),
+		);
 		const input: ElementInputRequest =
 			origin === "agent"
 				? {
 						origin,
 						upserts: upserts.map((upsert) => AgentElementInputSchema.parse(upsert)),
 						deletes,
+						presentationLinks,
 					}
 				: {
 						origin,
 						upserts: upserts.map((upsert) => HumanElementChangeSchema.parse(upsert)),
 						deletes,
+						presentationLinks,
 						...(timestamp === undefined ? {} : { timestamp }),
 					};
 		const writerKind = res.locals.boardWriterKind as "human" | "agent";
@@ -2124,7 +2251,8 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 			source,
 			origin,
 			clientId,
-			mutation: elementMutation<null>((_content) => {
+			presentationLinks,
+			mutation: elementMutation<null>(() => {
 				// A pane may send its whole screen only while this board is held. The
 				// check and the clear both happen inside the isolated mutation, before
 				// any note can be written.
@@ -2141,39 +2269,8 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 							"Report a delta against what this pane has been sent.",
 					);
 				}
-				const existing =
-					input.upserts?.flatMap((upsert) => {
-						if (typeof upsert.id !== "string") return [];
-						const element = _content.elements.get(upsert.id);
-						return element ? [element] : [];
-					}) ?? [];
-				const presented = presentElements(existing, {
-					boardKey: source.key,
-					checkoutSnapshot: checkoutSnapshotFor(res),
-				});
-				const writeInput: ElementInputRequest =
-					input.origin === "human"
-						? {
-								...input,
-								presentationLinks: new Map(
-									existing.flatMap((element, index) =>
-										presented[index]?.link !== element.link
-											? [
-													[
-														element.id,
-														{
-															boardKey: source.key,
-															opaqueTarget: presented[index]?.link ?? undefined,
-														},
-													] as const,
-												]
-											: [],
-									),
-								),
-							}
-						: input;
 				return {
-					input: writeInput,
+					input,
 					wholeScene: fullReport,
 					value: () => null,
 				};
@@ -5077,6 +5174,13 @@ async function startServer(): Promise<void> {
 				stop: closeWebSocketServer,
 			},
 			{ name: "browser-and-pending-operations", stop: closeBrowserOwners },
+			{
+				name: "checkout-snapshot-work",
+				start: () => {
+					acceptingCheckoutWork = true;
+				},
+				stop: stopCheckoutWork,
+			},
 		],
 	});
 	canvasLifetime = lifetime;
