@@ -266,6 +266,24 @@ function trackCheckoutWork<T>(
 	return promise;
 }
 
+async function trackRequestCheckoutWork<T>(
+	req: Request,
+	res: Response,
+	name: string,
+	work: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
+	const request = new AbortController();
+	const cancel = (): void => request.abort(new Error(`${req.method} ${req.path} disconnected.`));
+	req.once("aborted", cancel);
+	res.once("close", cancel);
+	try {
+		return await trackCheckoutWork(name, request.signal, work);
+	} finally {
+		req.off("aborted", cancel);
+		res.off("close", cancel);
+	}
+}
+
 async function stopCheckoutWork(): Promise<void> {
 	acceptingCheckoutWork = false;
 	const active = [...activeCheckoutWork];
@@ -376,7 +394,6 @@ function checkoutSnapshotFor(res: Response): CheckoutSnapshot {
 const PROCESS_FREE_HUMAN_ROUTES = new Set([
 	"/api/boards/hold",
 	"/api/boards/hold/release",
-	"/api/elements/changes",
 	"/api/panes",
 	"/api/selection",
 ]);
@@ -393,6 +410,51 @@ function openBoardBindings(): ReturnType<typeof codeBindingsOf> {
 	return bindings;
 }
 
+function codeBindingsInValue(value: unknown): CodeBinding[] {
+	const bindings: CodeBinding[] = [];
+	const pending: unknown[] = [value];
+	const seen = new Set<object>();
+	while (pending.length > 0) {
+		const candidate = pending.pop();
+		if (!candidate || typeof candidate !== "object" || seen.has(candidate)) continue;
+		seen.add(candidate);
+		if (!Array.isArray(candidate)) {
+			const custom = (candidate as Record<string, unknown>).customData;
+			if (custom && typeof custom === "object" && !Array.isArray(custom)) {
+				const archboard = (custom as Record<string, unknown>).archboard;
+				if (archboard && typeof archboard === "object" && !Array.isArray(archboard)) {
+					const parsed = CodeBindingSchema.safeParse(
+						(archboard as Record<string, unknown>).binding,
+					);
+					if (parsed.success) bindings.push(parsed.data);
+				}
+			}
+		}
+		pending.push(...(Array.isArray(candidate) ? candidate : Object.values(candidate)));
+	}
+	return bindings;
+}
+
+function unopenedBoardBindings(req: Request): CodeBinding[] {
+	if (req.method !== "POST" || req.path !== "/api/boards/open") return [];
+	const parsed = BoardAddressSchema.extend({
+		reload: z.boolean().optional(),
+		pane: z.string().optional(),
+	}).safeParse(req.body ?? {});
+	if (!parsed.success) return [];
+	try {
+		const loaded = readBoardFile(identityFromParams(parsed.data));
+		return loaded ? codeBindingsInValue(JSON.parse(loaded.sceneJson)) : [];
+	} catch {
+		// The route remains the authority for malformed or unavailable board input.
+		return [];
+	}
+}
+
+function requestCheckoutBindings(req: Request): CodeBinding[] {
+	return [...openBoardBindings(), ...codeBindingsInValue(req.body), ...unopenedBoardBindings(req)];
+}
+
 // Resolve machine-local checkout authority before any board lock is taken.
 // Code-opener routes make their own snapshot at activation time, so settings
 // and activation can never share authority accidentally.
@@ -403,25 +465,25 @@ async function prepareCheckoutSnapshot(
 ): Promise<void> {
 	if (!req.path.startsWith("/api/")) return next();
 	if (req.method !== "GET" && PROCESS_FREE_HUMAN_ROUTES.has(req.path)) return next();
+	if (
+		req.method === "POST" &&
+		req.path === "/api/elements/changes" &&
+		(!req.body ||
+			typeof req.body !== "object" ||
+			(req.body as Record<string, unknown>).origin !== "agent")
+	)
+		return next();
 	if (req.path.startsWith("/api/settings/opener") || req.path === "/api/code-targets/open") {
 		return next();
 	}
-	const bindings = openBoardBindings();
+	const bindings = requestCheckoutBindings(req);
 	if (req.method === "GET" || req.method === "HEAD") {
-		const request = new AbortController();
-		const cancel = (): void => request.abort(new Error(`${req.method} ${req.path} disconnected.`));
-		req.once("aborted", cancel);
-		res.once("close", cancel);
-		try {
-			res.locals.checkoutSnapshot = await trackCheckoutWork(
-				`${req.method} ${req.path} checkout snapshot`,
-				request.signal,
-				(signal) => snapshotCheckoutAccess({ signal, bindings }),
-			);
-		} finally {
-			req.off("aborted", cancel);
-			res.off("close", cancel);
-		}
+		res.locals.checkoutSnapshot = await trackRequestCheckoutWork(
+			req,
+			res,
+			`${req.method} ${req.path} checkout snapshot`,
+			(signal) => snapshotCheckoutAccess({ signal, bindings }),
+		);
 	} else {
 		res.locals.checkoutSnapshot = await trackMutationWork(
 			req,
@@ -435,10 +497,6 @@ async function prepareCheckoutSnapshot(
 	next();
 }
 
-app.use((req: Request, res: Response, next: NextFunction) => {
-	void prepareCheckoutSnapshot(req, res, next).catch((error) => setImmediate(next, error));
-});
-
 app.use(createCodeOpenerPreguard());
 
 const globalJson = express.json({ limit: "10mb" });
@@ -447,48 +505,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	globalJson(req, res, next);
 });
 
-function bindingsFromAgentChange(body: unknown): CodeBinding[] {
-	if (!body || typeof body !== "object" || Array.isArray(body)) return [];
-	const upserts = (body as Record<string, unknown>).upserts;
-	if (!Array.isArray(upserts)) return [];
-	return upserts.flatMap((upsert) => {
-		if (!upsert || typeof upsert !== "object" || Array.isArray(upsert)) return [];
-		const custom = (upsert as Record<string, unknown>).customData;
-		if (!custom || typeof custom !== "object" || Array.isArray(custom)) return [];
-		const archboard = (custom as Record<string, unknown>).archboard;
-		if (!archboard || typeof archboard !== "object" || Array.isArray(archboard)) return [];
-		const parsed = CodeBindingSchema.safeParse((archboard as Record<string, unknown>).binding);
-		return parsed.success ? [parsed.data] : [];
-	});
-}
-
-async function prepareAgentChangeSnapshot(
-	req: Request,
-	res: Response,
-	next: NextFunction,
-): Promise<void> {
-	if (
-		req.method !== "POST" ||
-		req.path !== "/api/elements/changes" ||
-		!req.body ||
-		typeof req.body !== "object" ||
-		(req.body as Record<string, unknown>).origin !== "agent"
-	)
-		return next();
-	const bindings = [...openBoardBindings(), ...bindingsFromAgentChange(req.body)];
-	res.locals.checkoutSnapshot = await trackMutationWork(
-		req,
-		"POST /api/elements/changes checkout snapshot",
-		(signal) =>
-			trackCheckoutWork("POST /api/elements/changes checkout snapshot", signal, (ownedSignal) =>
-				snapshotCheckoutAccess({ signal: ownedSignal, bindings }),
-			),
-	);
-	next();
-}
-
 app.use((req: Request, res: Response, next: NextFunction) => {
-	void prepareAgentChangeSnapshot(req, res, next).catch((error) => setImmediate(next, error));
+	void prepareCheckoutSnapshot(req, res, next).catch((error) => setImmediate(next, error));
 });
 
 // A board that has stopped saving says so in every answer about it.
@@ -1039,7 +1057,6 @@ function boardForNewPane(clientId: string): string {
 // WebSocket connection handling. The lifecycle creates and closes the server;
 // this function owns one accepted socket only.
 async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): Promise<void> {
-	clients.add(ws);
 	const codexSocketInstance = Object.freeze({});
 	codexSocketInstances.set(ws, codexSocketInstance);
 	const clientId = new URL(req.url ?? "/", "http://localhost").searchParams.get("clientId");
@@ -1087,46 +1104,49 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		logger.error("WebSocket error:", error);
 		clients.delete(ws);
 	});
-	// There is a screen again, so the lock files of what is on it are worth
-	// reading (ADR 0016).
-	syncLockWatch();
-	logger.info(`New WebSocket connection established${clientId ? ` (client ${clientId})` : ""}`);
-
 	// Which board this pane gets, and it is a board *for this pane* — not "the"
 	// board, which no longer exists as a single thing. A pane that has been here
 	// before (a dropped socket, not a new tab) resumes what it was holding,
 	// because a reconnect must not undo a user's scene arrangement.
 	const startingKey = clientId ? boardForNewPane(clientId) : SCRATCH_KEY;
 	if (clientId) paneBoards.set(clientId, startingKey);
-	if (clientId) {
-		try {
-			wiring.codex.acceptBrowser?.(codexSocketInstance, clientId);
-		} catch (error) {
-			logger.error("Codex browser acceptance failed:", error);
-		}
-	}
 	const board = boards.get(startingKey)!;
 	// Read out of the note, like everything else that sends a pane a whole board.
 	// Scratch is registered before the listener binds. If its legacy note is
 	// malformed, start with no scene rather than sending any of those elements
 	// to Excalidraw, then put the refusal on screen. The note stays untouched.
+	let snapshotContent: BoardContent;
+	try {
+		snapshotContent = readBoardContent(board);
+	} catch (error) {
+		if (!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError))
+			throw error;
+		snapshotContent = emptyContent();
+	}
+	const checkoutSnapshot = await trackCheckoutWork(
+		"WebSocket checkout presentation",
+		checkoutController.signal,
+		(signal) =>
+			snapshotCheckoutAccess({
+				signal,
+				bindings: codeBindingsOf(snapshotContent.elements.values()),
+			}),
+	);
+	if (ws.readyState !== WebSocket.OPEN) return;
+	// Writes may land while checkout authority is being captured. This socket is
+	// not yet in the broadcast set, so refresh the canonical scene before its
+	// first message rather than sending the older pre-await copy.
 	let content: BoardContent;
-	let renderError: RenderGeometryError | NativeElementValidationError | null = null;
+	let renderError: RenderGeometryError | NativeElementValidationError | null;
 	try {
 		content = readBoardContent(board);
+		renderError = null;
 	} catch (error) {
 		if (!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError))
 			throw error;
 		content = emptyContent();
 		renderError = error;
 	}
-	const checkoutSnapshot = await trackCheckoutWork(
-		"WebSocket checkout presentation",
-		checkoutController.signal,
-		(signal) =>
-			snapshotCheckoutAccess({ signal, bindings: codeBindingsOf(content.elements.values()) }),
-	);
-	if (ws.readyState !== WebSocket.OPEN) return;
 	const initialMessage: InitialElementsMessage & {
 		files?: Record<string, ExcalidrawFile>;
 		identity: BoardIdentity;
@@ -1141,6 +1161,21 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		...boardFilesMessage(content),
 	};
 	ws.send(JSON.stringify(initialMessage));
+	// Ownership is registered before the checkout await, but content admission
+	// begins only after the initial scene is on the wire. A concurrent delta can
+	// therefore never overtake initialization and then be replaced by it.
+	clients.add(ws);
+	if (clientId) {
+		try {
+			wiring.codex.acceptBrowser?.(codexSocketInstance, clientId);
+		} catch (error) {
+			logger.error("Codex browser acceptance failed:", error);
+		}
+	}
+	// There is a screen again, so the lock files of what is on it are worth
+	// reading (ADR 0016).
+	syncLockWatch();
+	logger.info(`New WebSocket connection established${clientId ? ` (client ${clientId})` : ""}`);
 	if (renderError) {
 		ws.send(
 			JSON.stringify({
@@ -1444,6 +1479,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.use(
 	createCodeOpenerRouter({
+		runCheckout: (req, res, name, work) => trackRequestCheckoutWork(req, res, name, work),
 		runMutation: (req, name, work) => trackMutationWork(req, name, work),
 	}),
 );

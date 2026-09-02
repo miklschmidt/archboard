@@ -55,6 +55,38 @@ async function expectPidAbsent(pid: number): Promise<void> {
 	expect(existsSync(`/proc/${pid}`), `pid ${pid} must be reaped`).toBeFalse();
 }
 
+async function withFaultingFirstReader<T>(delayMs: number, work: () => Promise<T>): Promise<T> {
+	const prototype = ReadableStream.prototype;
+	const original = prototype.getReader as () => ReadableStreamDefaultReader<unknown>;
+	let injected = false;
+	prototype.getReader = function (this: ReadableStream<unknown>) {
+		const reader = original.call(this);
+		if (injected) return reader;
+		injected = true;
+		let first = true;
+		return {
+			get closed() {
+				return reader.closed;
+			},
+			async read() {
+				if (first) {
+					first = false;
+					await Bun.sleep(delayMs);
+					throw new Error("injected Git output read failure");
+				}
+				return reader.read();
+			},
+			cancel: (reason?: unknown) => reader.cancel(reason),
+			releaseLock: () => reader.releaseLock(),
+		} as ReadableStreamDefaultReader<unknown>;
+	} as typeof prototype.getReader;
+	try {
+		return await work();
+	} finally {
+		prototype.getReader = original;
+	}
+}
+
 test("real Git commands settle for success and nonzero exit", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-git-real-"));
 	try {
@@ -105,12 +137,36 @@ test("Git lifecycle owns overflow, cancellation, signals, descendants, and spawn
 		).rejects.toMatchObject({ failure: "aborted" });
 
 		const descendantMarker = join(root, "descendant");
-		await expect(
-			git(root, ["descendant", descendantMarker], { timeoutMs: 50, executable }),
-		).rejects.toMatchObject({ failure: "timeout" });
+		const descendantStarted = performance.now();
+		await expect(git(root, ["descendant", descendantMarker], { executable })).rejects.toMatchObject(
+			{ failure: "cleanup" },
+		);
+		expect(performance.now() - descendantStarted).toBeLessThan(1_000);
 		await waitForFile(`${descendantMarker}.descendant`);
 		await expectPidAbsent(recordedPid(`${descendantMarker}.leader`));
 		await expectPidAbsent(recordedPid(`${descendantMarker}.descendant`));
+
+		for (const [name, delayMs, timeoutMs, abortFirst, failure] of [
+			["read-failure", 25, 5_000, false, "cleanup"],
+			["abort-before-read-failure", 50, 5_000, true, "aborted"],
+			["timeout-before-read-failure", 50, 10, false, "timeout"],
+		] as const) {
+			const marker = join(root, name);
+			const faultController = new AbortController();
+			const started = performance.now();
+			const failed = withFaultingFirstReader(delayMs, () =>
+				git(root, ["wait", marker], {
+					executable,
+					timeoutMs,
+					signal: faultController.signal,
+				}),
+			);
+			await waitForFile(`${marker}.leader`);
+			if (abortFirst) faultController.abort();
+			await expect(failed).rejects.toMatchObject({ failure });
+			expect(performance.now() - started).toBeLessThan(1_000);
+			await expectPidAbsent(recordedPid(`${marker}.leader`));
+		}
 
 		await expect(git(root, ["signal", join(root, "signal")], { executable })).rejects.toMatchObject(
 			{ failure: "signal" },

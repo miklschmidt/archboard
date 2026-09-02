@@ -15,6 +15,7 @@ import {
 	setWriteDoing,
 } from "../../runtime/engine/canvas-client.js";
 import { packageVersion } from "../../runtime/engine/package-version.js";
+import { GIT_PROCESS_GROUP_CLEANUP_MS } from "../../shared/timing/timing.js";
 import { startContract, stopContract } from "./server.js";
 import { addContract, applyContract, deleteContract, getContract } from "./elements.js";
 import * as scene from "./scene.js";
@@ -744,6 +745,37 @@ function takeGlobalFlag(argv: string[], name: string): string | null {
 	return null;
 }
 
+async function runInterruptibleCommand(
+	commandContract: AnyCommandContract,
+	argv: readonly string[],
+): Promise<void> {
+	const controller = new AbortController();
+	let interrupted: NodeJS.Signals | undefined;
+	let forceTimer: ReturnType<typeof setTimeout> | undefined;
+	const remove = (): void => {
+		process.off("SIGINT", interrupt);
+		process.off("SIGTERM", interrupt);
+	};
+	const interrupt = (signal: NodeJS.Signals): void => {
+		if (interrupted) return;
+		interrupted = signal;
+		controller.abort(new Error(`CLI interrupted by ${signal}.`));
+		forceTimer = setTimeout(() => {
+			remove();
+			process.kill(process.pid, signal);
+		}, GIT_PROCESS_GROUP_CLEANUP_MS);
+	};
+	process.on("SIGINT", interrupt);
+	process.on("SIGTERM", interrupt);
+	try {
+		await runCommand(commandContract, argv, controller.signal);
+	} finally {
+		remove();
+		if (forceTimer !== undefined) clearTimeout(forceTimer);
+		if (interrupted) process.kill(process.pid, interrupted);
+	}
+}
+
 export async function runCli(argv: string[]): Promise<void> {
 	const [name, ...rest] = argv;
 
@@ -786,7 +818,7 @@ export async function runCli(argv: string[]): Promise<void> {
 		const dispatched = dispatchedCommand(name, rest)!;
 		selected = dispatched.selected;
 		const commandArgv = dispatched.argv;
-		await runCommand(selected.contract, commandArgv);
+		await runInterruptibleCommand(selected.contract, commandArgv);
 	} catch (error) {
 		if (!(error as Error & { quiet?: boolean }).quiet) {
 			process.stderr.write(`Error: ${formatBoardRefusal(error) ?? (error as Error).message}\n`);

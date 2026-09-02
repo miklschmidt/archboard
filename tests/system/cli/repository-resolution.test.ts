@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ZodType } from "zod";
 import {
@@ -12,6 +12,7 @@ import {
 	repositoryFailure,
 	type RepositorySpawn,
 } from "./support/repository-fixture.ts";
+import { packageBin } from "./support/package-cli.ts";
 
 function decodeRepository<T>(result: RepositorySpawn, schema: ZodType<T>): T {
 	const diagnostic = repositoryFailure(result);
@@ -68,6 +69,48 @@ describe("repository registry package behavior", () => {
 });
 
 describe("repository binding resolution", () => {
+	test("one frozen checkout inspection does not follow later origin or HEAD changes", async () => {
+		using fixture = createRepositoryFixture();
+		const alpha = fixture.repository("alpha", "git@github.com:acme/alpha.git");
+		const { inspectCheckout } = await import("../../../src/runtime/engine/git.ts");
+		const before = await inspectCheckout(alpha);
+		expect(before).toBeDefined();
+		expect(Object.isFrozen(before)).toBeTrue();
+		const prior = { ...before! };
+		for (const args of [
+			["remote", "set-url", "origin", "https://github.com/acme/changed.git"],
+			["checkout", "-qb", "changed"],
+		] as const) {
+			const result = Bun.spawnSync(["git", ...args], { cwd: alpha, stderr: "pipe" });
+			expect(result.exitCode, result.stderr.toString()).toBe(0);
+		}
+		const after = await inspectCheckout(alpha);
+		expect(before).toEqual(prior);
+		expect(after).toMatchObject({
+			identity: "github.com/acme/changed",
+			branch: "changed",
+			commit: prior.commit,
+		});
+	});
+
+	test("inspects an unborn checkout without inventing a commit", async () => {
+		using fixture = createRepositoryFixture();
+		const checkout = join(fixture.root, "unborn");
+		mkdirSync(checkout);
+		for (const args of [
+			["init", "-q"],
+			["remote", "add", "origin", "https://github.com/acme/unborn.git"],
+		] as const) {
+			const result = Bun.spawnSync(["git", ...args], { cwd: checkout, stderr: "pipe" });
+			expect(result.exitCode, result.stderr.toString()).toBe(0);
+		}
+		const { inspectCheckout } = await import("../../../src/runtime/engine/git.ts");
+		expect(await inspectCheckout(checkout)).toEqual({
+			root: checkout,
+			identity: "github.com/acme/unborn",
+		});
+	});
+
 	test("resolves absolute, named, and ambient paths in declared order", async () => {
 		using fixture = createRepositoryFixture();
 		const previous = process.env.ARCHBOARD_REPOS;
@@ -205,3 +248,53 @@ describe("repository binding resolution", () => {
 		}
 	});
 });
+
+test("an interrupted repository command reaps its detached Git group", async () => {
+	using fixture = createRepositoryFixture();
+	const checkout = fixture.repository("interrupt", "https://github.com/acme/interrupt.git");
+	const bin = join(fixture.root, "bin");
+	const marker = join(fixture.root, "git-pid");
+	mkdirSync(bin);
+	writeFileSync(join(bin, "git"), `#!/bin/sh\necho $$ > ${JSON.stringify(marker)}\nsleep 60\n`);
+	chmodSync(join(bin, "git"), 0o700);
+	const child = Bun.spawn([packageBin, "repo", "add", checkout], {
+		cwd: fixture.nowhere,
+		detached: true,
+		stdin: "ignore",
+		stdout: "pipe",
+		stderr: "pipe",
+		env: {
+			...fixture.serverEnvironment,
+			PATH: `${bin}:${process.env.PATH ?? ""}`,
+		},
+	});
+	const output = Promise.all([
+		new Response(child.stdout).text(),
+		new Response(child.stderr).text(),
+	]);
+	let gitPid: number | undefined;
+	try {
+		const deadline = Date.now() + 2_000;
+		while (!existsSync(marker)) {
+			if (Date.now() >= deadline) throw new Error("The fake Git child did not start.");
+			await Bun.sleep(5);
+		}
+		gitPid = Number(readFileSync(marker, "utf8").trim());
+		process.kill(child.pid, "SIGTERM");
+		await child.exited;
+		await output;
+		const cleanupDeadline = Date.now() + 2_000;
+		while (existsSync(`/proc/${gitPid}`) && Date.now() < cleanupDeadline) await Bun.sleep(5);
+		expect(
+			existsSync(`/proc/${gitPid}`),
+			`Git pid ${gitPid} survived CLI interruption`,
+		).toBeFalse();
+	} finally {
+		for (const pid of [gitPid, child.pid]) {
+			if (pid === undefined || !existsSync(`/proc/${pid}`)) continue;
+			try {
+				process.kill(-pid, "SIGKILL");
+			} catch {}
+		}
+	}
+}, 10_000);

@@ -49,7 +49,7 @@ export async function snapshotCheckoutAccess(
 	options: { signal?: AbortSignal; bindings?: readonly CodeBinding[] } = {},
 ): Promise<CheckoutSnapshot> {
 	const entries = listRepos().map((entry) => Object.freeze({ ...entry }));
-	const inspected = await Promise.all(
+	const settled = await Promise.allSettled(
 		entries.map(async (entry): Promise<readonly [string, CheckoutInspection]> => {
 			try {
 				const registeredRoot = fs.realpathSync.native(entry.root);
@@ -71,6 +71,13 @@ export async function snapshotCheckoutAccess(
 				return [entry.repo, Object.freeze({})];
 			}
 		}),
+	);
+	const failed = settled.find(
+		(result): result is PromiseRejectedResult => result.status === "rejected",
+	);
+	if (failed) throw failed.reason;
+	const inspected = settled.map(
+		(result) => (result as PromiseFulfilledResult<readonly [string, CheckoutInspection]>).value,
 	);
 	const inspections = new Map(inspected);
 	const paths = new Map<string, PathInspection>();

@@ -115,6 +115,8 @@ const ASSISTANT_UI_FORBIDDEN_APIS = new Set([
 	"CodeDiff",
 	"ReviewableDiff",
 ]);
+const GIT_PROCESS_OWNER = "src/runtime/engine/git.ts";
+const SYNC_CHILD_APIS = new Set(["execFileSync", "execSync", "spawnSync"]);
 
 function createRule(messages, create) {
 	return {
@@ -189,6 +191,43 @@ function unwrapExpression(expression) {
 	)
 		expression = expression.expression;
 	return expression;
+}
+
+function staticMemberName(expression) {
+	const member = unwrapExpression(expression);
+	if (member?.type !== "MemberExpression") return undefined;
+	if (!member.computed && member.property?.type === "Identifier") return member.property.name;
+	if (member.computed && member.property?.type === "Literal") {
+		return typeof member.property.value === "string" ? member.property.value : undefined;
+	}
+	return undefined;
+}
+
+function staticObjectName(expression) {
+	const member = unwrapExpression(expression);
+	if (member?.type !== "MemberExpression") return undefined;
+	const object = unwrapExpression(member.object);
+	return object?.type === "Identifier" ? object.name : undefined;
+}
+
+function hasLoopAncestor(node) {
+	for (let parent = node.parent; parent; parent = parent.parent) {
+		if (
+			parent.type === "FunctionDeclaration" ||
+			parent.type === "FunctionExpression" ||
+			parent.type === "ArrowFunctionExpression"
+		)
+			return false;
+		if (
+			parent.type === "WhileStatement" ||
+			parent.type === "DoWhileStatement" ||
+			parent.type === "ForStatement" ||
+			parent.type === "ForInStatement" ||
+			parent.type === "ForOfStatement"
+		)
+			return true;
+	}
+	return false;
 }
 
 const assistantUiImports = createRule(
@@ -794,6 +833,74 @@ const moduleEntrypoints = createRule(
 	},
 );
 
+function isDiscardedExpression(node) {
+	let parent = node.parent;
+	while (
+		parent?.type === "ChainExpression" ||
+		parent?.type === "TSAsExpression" ||
+		parent?.type === "TSNonNullExpression" ||
+		parent?.type === "ParenthesizedExpression"
+	)
+		parent = parent.parent;
+	return (
+		parent?.type === "ExpressionStatement" ||
+		(parent?.type === "UnaryExpression" && parent.operator === "void")
+	);
+}
+
+const gitProcessLifecycle = createRule(
+	{
+		noSyncChild:
+			"Git identity must use the awaited asynchronous child owner; synchronous child APIs can deadlock Bun's supervisor.",
+		noUnref:
+			"Git identity must retain and await every child; unref would detach cleanup authority.",
+		noPolling:
+			"Git identity must observe promises and signals; do not poll child exit state or schedule polling intervals.",
+		noFireAndForget: "Git identity must retain and await spawned children and their exit promises.",
+	},
+	(context) => {
+		if (getRepoRelativePath(context) !== GIT_PROCESS_OWNER) return {};
+
+		return {
+			CallExpression(node) {
+				const callee = unwrapExpression(node.callee);
+				const direct = callee?.type === "Identifier" ? callee.name : undefined;
+				const member = staticMemberName(callee);
+				const object = staticObjectName(callee);
+				if (SYNC_CHILD_APIS.has(direct) || SYNC_CHILD_APIS.has(member)) {
+					report(context, node, "noSyncChild");
+					return;
+				}
+				if (member === "unref") {
+					report(context, node, "noUnref");
+					return;
+				}
+				if (
+					direct === "setInterval" ||
+					member === "setInterval" ||
+					(object === "Bun" && member === "sleep") ||
+					(object === "Atomics" && member === "wait")
+				) {
+					report(context, node, "noPolling");
+					return;
+				}
+				if (object === "Bun" && member === "spawn" && isDiscardedExpression(node)) {
+					report(context, node, "noFireAndForget");
+				}
+			},
+			MemberExpression(node) {
+				const member = staticMemberName(node);
+				if ((member === "exitCode" || member === "signalCode") && hasLoopAncestor(node)) {
+					report(context, node, "noPolling");
+				}
+				if (member === "exited" && isDiscardedExpression(node)) {
+					report(context, node, "noFireAndForget");
+				}
+			},
+		};
+	},
+);
+
 const noCatchAllExports = createRule(
 	{
 		noCatchAllExport:
@@ -863,6 +970,7 @@ const plugin = {
 	rules: {
 		"no-anonymous-jsx-handlers": noAnonymousJsxHandlers,
 		"assistant-ui-imports": assistantUiImports,
+		"git-process-lifecycle": gitProcessLifecycle,
 		"no-catch-all-exports": noCatchAllExports,
 		"no-compatibility-identifiers": noCompatibilityIdentifiers,
 		"no-generic-buckets": noGenericBuckets,

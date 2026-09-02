@@ -35,7 +35,11 @@ interface BoundedDrain {
 	cancel(reason: Error): Promise<void>;
 }
 
-function drainBounded(stream: ReadableStream<Uint8Array>, onExcess: () => void): BoundedDrain {
+function drainBounded(
+	stream: ReadableStream<Uint8Array>,
+	onExcess: () => void,
+	onFailure: (error: Error) => void,
+): BoundedDrain {
 	const reader = stream.getReader();
 	const result = (async (): Promise<{
 		bytes: Uint8Array;
@@ -65,6 +69,7 @@ function drainBounded(stream: ReadableStream<Uint8Array>, onExcess: () => void):
 			}
 		} catch (cause) {
 			error = cause instanceof Error ? cause : new Error(String(cause));
+			onFailure(error);
 		} finally {
 			reader.releaseLock();
 		}
@@ -162,12 +167,29 @@ export async function git(
 			}
 		}
 	};
-	const stdout = drainBounded(child.stdout as ReadableStream<Uint8Array>, () =>
-		terminate("output"),
+	const stdout = drainBounded(
+		child.stdout as ReadableStream<Uint8Array>,
+		() => terminate("output"),
+		(error) => terminate("cleanup", error),
 	);
-	const stderr = drainBounded(child.stderr as ReadableStream<Uint8Array>, () =>
-		terminate("output"),
+	const stderr = drainBounded(
+		child.stderr as ReadableStream<Uint8Array>,
+		() => terminate("output"),
+		(error) => terminate("cleanup", error),
 	);
+	const leaderExited = child.exited.then((exitCode) => {
+		try {
+			if (processGroupExists(child.pid)) {
+				terminate(
+					"cleanup",
+					new Error("Git exited while its detached process group remained live."),
+				);
+			}
+		} catch (error) {
+			terminate("cleanup", error);
+		}
+		return exitCode;
+	});
 	const timeout = setTimeout(
 		() => terminate("timeout"),
 		options.timeoutMs ?? GIT_COMMAND_TIMEOUT_MS,
@@ -179,7 +201,7 @@ export async function git(
 	let err: Awaited<typeof stderr.result>;
 	let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
 	try {
-		const complete = Promise.all([child.exited, stdout.result, stderr.result]);
+		const complete = Promise.all([leaderExited, stdout.result, stderr.result]);
 		const cleanupExpired = terminationSignal.then(
 			() =>
 				new Promise<null>((resolve) => {
@@ -299,4 +321,51 @@ export async function repoIdentityAt(
 		else throw error;
 	}
 	return remote ? repoIdentityFromRemote(remote) : path.basename(root);
+}
+
+export interface CheckoutGitInspection {
+	readonly root: string;
+	readonly identity: string;
+	readonly branch?: string;
+	readonly commit?: string;
+}
+
+async function optionalGit(
+	root: string,
+	args: string[],
+	options: { signal?: AbortSignal },
+): Promise<string | undefined> {
+	try {
+		return await git(root, args, options);
+	} catch (error) {
+		if (error instanceof GitCommandError && error.failure === "exit") return undefined;
+		throw error;
+	}
+}
+
+/** Capture one immutable view of the Git facts a top-level operation consumes. */
+export async function inspectCheckout(
+	anyPath: string,
+	options: { signal?: AbortSignal } = {},
+): Promise<Readonly<CheckoutGitInspection> | undefined> {
+	const root = await repoRootOf(anyPath, options);
+	if (!root) return undefined;
+	const settled = await Promise.allSettled([
+		repoIdentityAt(root, options),
+		optionalGit(root, ["rev-parse", "--abbrev-ref", "HEAD"], options),
+		optionalGit(root, ["rev-parse", "HEAD"], options),
+	]);
+	const failed = settled.find(
+		(result): result is PromiseRejectedResult => result.status === "rejected",
+	);
+	if (failed) throw failed.reason;
+	const [identity, branch, commit] = settled.map(
+		(result) => (result as PromiseFulfilledResult<string | undefined>).value,
+	);
+	return Object.freeze({
+		root,
+		identity: identity as string,
+		...(branch ? { branch } : {}),
+		...(commit ? { commit } : {}),
+	});
 }
