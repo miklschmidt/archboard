@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
-import { resolve } from "node:path";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 import {
 	GIT_PROCESS_GROUP_CLEANUP_MS,
@@ -116,6 +118,8 @@ async function runOwnedDetached(
 			TEST_GIT_OPENER_WATCHDOG_MS,
 			`watchdog expired for process group ${child.pid}`,
 		);
+		if (groupExists(child.pid))
+			throw new Error(`process group ${child.pid} survived normal completion`);
 	} catch (cause) {
 		failed = true;
 		primaryFailure = cause;
@@ -171,4 +175,25 @@ test("a rejected watchdog lifecycle preserves its error after reaping the exact 
 	expect(rejected).toBe(failure);
 	expect(pgid).toBeDefined();
 	expect(groupExists(pgid!)).toBeFalse();
+});
+
+test("a normal-looking leader exit reports and reaps its redirected descendant", async () => {
+	const root = mkdtempSync(join(tmpdir(), "archboard-watchdog-descendant-"));
+	const marker = join(root, "descendant-pid");
+	let rejected: unknown;
+	try {
+		await runOwnedDetached([
+			"/bin/sh",
+			"-c",
+			'sleep 60 </dev/null >/dev/null 2>&1 & echo "$!" > "$0"; exit 0',
+			marker,
+		]);
+	} catch (cause) {
+		rejected = cause;
+	}
+	const descendant = Number(readFileSync(marker, "utf8").trim());
+	expect(rejected).toBeInstanceOf(Error);
+	expect(String(rejected)).toContain("survived normal completion");
+	expect(existsSync(`/proc/${descendant}`)).toBeFalse();
+	rmSync(root, { recursive: true, force: true });
 });

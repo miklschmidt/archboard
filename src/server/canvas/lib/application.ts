@@ -284,10 +284,15 @@ async function trackRequestCheckoutWork<T>(
 	}
 }
 
-async function stopCheckoutWork(): Promise<void> {
+function quiesceCheckoutWork(): void {
 	acceptingCheckoutWork = false;
+	for (const owner of activeCheckoutWork)
+		owner.controller.abort(new Error("Canvas checkout work stopped."));
+}
+
+async function stopCheckoutWork(): Promise<void> {
+	quiesceCheckoutWork();
 	const active = [...activeCheckoutWork];
-	for (const owner of active) owner.controller.abort(new Error("Canvas checkout work stopped."));
 	await Promise.allSettled(active.flatMap((owner) => (owner.promise ? [owner.promise] : [])));
 }
 
@@ -330,6 +335,7 @@ interface Wiring {
 		closeBrowser:
 			| ((instance: BrowserConnectionInstance, browserId: string) => Promise<void>)
 			| null;
+		drainBrowsers: (() => Promise<void>) | null;
 		handleBrowserMessage:
 			| ((
 					instance: BrowserConnectionInstance,
@@ -351,6 +357,7 @@ const wiring: Wiring = {
 		shutdown: null,
 		acceptBrowser: null,
 		closeBrowser: null,
+		drainBrowsers: null,
 		handleBrowserMessage: null,
 	},
 };
@@ -436,6 +443,7 @@ function codeBindingsInValue(value: unknown): CodeBinding[] {
 }
 
 interface PreparedBoardOpen {
+	readonly key: string;
 	readonly loaded: LoadedBoard | null;
 }
 
@@ -448,9 +456,10 @@ function unopenedBoardBindings(req: Request, res: Response): CodeBinding[] {
 	if (!parsed.success) return [];
 	try {
 		const identity = identityFromParams(parsed.data);
-		if (boards.has(boardKey(identity)) && !parsed.data.reload) return [];
+		const key = boardKey(identity);
+		if (boards.has(key) && !parsed.data.reload) return [];
 		const loaded = readBoardFile(identity);
-		res.locals.preparedBoardOpen = { loaded } satisfies PreparedBoardOpen;
+		res.locals.preparedBoardOpen = { key, loaded } satisfies PreparedBoardOpen;
 		return loaded ? codeBindingsInValue(JSON.parse(loaded.sceneJson)) : [];
 	} catch {
 		// The route remains the authority for malformed or unavailable board input.
@@ -488,22 +497,32 @@ async function prepareCheckoutSnapshot(
 		return next();
 	}
 	const bindings = requestCheckoutBindings(req, res);
-	if (req.method === "GET" || req.method === "HEAD") {
-		res.locals.checkoutSnapshot = await trackRequestCheckoutWork(
-			req,
-			res,
-			`${req.method} ${req.path} checkout snapshot`,
-			(signal) => snapshotCheckoutAccess({ signal, bindings }),
+	const capture = (captureBindings: readonly CodeBinding[]): Promise<CheckoutSnapshot> => {
+		if (req.method === "GET" || req.method === "HEAD") {
+			return trackRequestCheckoutWork(
+				req,
+				res,
+				`${req.method} ${req.path} checkout snapshot`,
+				(signal) => snapshotCheckoutAccess({ signal, bindings: captureBindings }),
+			);
+		}
+		return trackMutationWork(req, `${req.method} ${req.path} checkout snapshot`, (signal) =>
+			trackCheckoutWork(`${req.method} ${req.path} checkout snapshot`, signal, (ownedSignal) =>
+				snapshotCheckoutAccess({ signal: ownedSignal, bindings: captureBindings }),
+			),
 		);
-	} else {
-		res.locals.checkoutSnapshot = await trackMutationWork(
-			req,
-			`${req.method} ${req.path} checkout snapshot`,
-			(signal) =>
-				trackCheckoutWork(`${req.method} ${req.path} checkout snapshot`, signal, (ownedSignal) =>
-					snapshotCheckoutAccess({ signal: ownedSignal, bindings }),
-				),
-		);
+	};
+	res.locals.checkoutSnapshot = await capture(bindings);
+	const prepared = res.locals.preparedBoardOpen as PreparedBoardOpen | undefined;
+	const installed = prepared ? boards.get(prepared.key) : undefined;
+	if (installed !== undefined) {
+		let installedBindings = codeBindingsOf(readBoardContent(installed).elements.values());
+		for (;;) {
+			res.locals.checkoutSnapshot = await capture(installedBindings);
+			const refreshed = codeBindingsOf(readBoardContent(installed).elements.values());
+			if (JSON.stringify(refreshed) === JSON.stringify(installedBindings)) break;
+			installedBindings = refreshed;
+		}
 	}
 	next();
 }
@@ -1180,8 +1199,10 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 	};
 	ws.send(JSON.stringify(initialMessage));
 	if (clientId) {
+		const previous = currentSocketsByClient.get(clientId);
 		paneBoards.set(clientId, startingKey);
 		currentSocketsByClient.set(clientId, ws);
+		if (previous !== undefined && previous !== ws) previous.terminate();
 	}
 	// Ownership is registered before the checkout await, but content admission
 	// begins only after the initial scene is on the wire. A concurrent delta can
@@ -4870,11 +4891,13 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				wiring.codex.handleBrowserMessage = null;
 				wiring.codex.acceptBrowser = null;
 				wiring.codex.closeBrowser = null;
+				wiring.codex.drainBrowsers = null;
 			};
 			wiring.codex.handleBrowserMessage = (instance, browserId, input, send) =>
 				socketOwner.handle(instance, browserId, input, { send });
 			wiring.codex.acceptBrowser = socketOwner.accept;
 			wiring.codex.closeBrowser = socketOwner.close;
+			wiring.codex.drainBrowsers = socketOwner.drain;
 			try {
 				for (const [browserId, socket] of currentSocketsByClient) {
 					const instance = codexSocketInstances.get(socket);
@@ -4976,6 +4999,7 @@ function closeWebSocketServer(): Promise<void> {
 }
 
 async function closeBrowserOwners(): Promise<void> {
+	for (const socket of acceptedSockets) socket.terminate();
 	const closeBrowser = wiring.codex.closeBrowser;
 	if (closeBrowser !== null) {
 		await Promise.allSettled(
@@ -4985,6 +5009,7 @@ async function closeBrowserOwners(): Promise<void> {
 			}),
 		);
 	}
+	await wiring.codex.drainBrowsers?.();
 	for (const pending of pendingPaneOpens) {
 		clearTimeout(pending.timeout);
 		pending.reject(new Error("Canvas stopped before the pane opened."));
@@ -5016,7 +5041,6 @@ async function closeBrowserOwners(): Promise<void> {
 	pendingFindingExports.clear();
 	pendingExports.clear();
 	pendingViewports.clear();
-	for (const socket of acceptedSockets) socket.terminate();
 	acceptedSockets.clear();
 	clients.clear();
 	clientIds.clear();
@@ -5100,8 +5124,14 @@ async function startServer(): Promise<void> {
 	};
 	lifetime = createCanvasApplicationLifetime({
 		heldBoards: heldBoardKeys,
-		quiesce: mutationAdmission.quiesce,
-		resume: mutationAdmission.resume,
+		quiesce: async () => {
+			quiesceCheckoutWork();
+			await mutationAdmission.quiesce();
+		},
+		resume: () => {
+			acceptingCheckoutWork = true;
+			mutationAdmission.resume();
+		},
 		observe: ({ action, resource }) => {
 			// The logger cannot report its own terminal transition after its
 			// writable stream has ended.
