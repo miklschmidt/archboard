@@ -4,7 +4,10 @@ import { createTextUserInput } from "../../codex-instructions/index.js";
 import { CodexSessionMutationError } from "../../codex-session/index.js";
 import { CodexWorkhorseQueueError } from "../../codex-workhorse-queue/index.js";
 import { flush, notification, rawTurn, rejected } from "./evidence.js";
-import { fixture, turn } from "./support.js";
+import { useFixtureGroup } from "./fixture-group.js";
+import { turn } from "./support.js";
+
+const fixture = useFixtureGroup();
 
 describe("codex workhorse operation delivery", () => {
 	test("rejects a coordinator call for the wrong operation before touching a port", async () => {

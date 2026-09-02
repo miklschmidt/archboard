@@ -4,7 +4,10 @@ import { createTextUserInput } from "../../codex-instructions/index.js";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 import type { ManageWorkhorseQueueRequest, WorkhorseOperationEvent } from "../index.js";
 import { notification, rawTurn, rejected } from "./evidence.js";
-import { fixture, turn, type Fixture } from "./support.js";
+import { useFixtureGroup } from "./fixture-group.js";
+import { turn, type Fixture } from "./support.js";
+
+const fixture = useFixtureGroup();
 
 function queuedItem(fixtureValue: Fixture, id = "queue-target") {
 	return {
@@ -474,6 +477,9 @@ describe("codex workhorse operation authority and correlation", () => {
 			for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const) {
 				const fixtureValue = fixture();
 				try {
+					expect(fixtureValue.queue.calls).toEqual([]);
+					expect(fixtureValue.queue.nextOutcome).toBe("delivered");
+					expect(fixtureValue.epoch.snapshot().manifest.records).toHaveLength(4);
 					if (operation !== "add") fixtureValue.queue.state = [queuedItem(fixtureValue)];
 					fixtureValue.queue.nextOutcome = outcome;
 					if (operation === "start" && outcome === "outcome_unknown")
