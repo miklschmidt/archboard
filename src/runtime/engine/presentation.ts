@@ -1,5 +1,3 @@
-import { pathToFileURL } from "node:url";
-
 import {
 	CodeBindingSchema,
 	parseInternalCodeTargetUrl,
@@ -8,15 +6,17 @@ import {
 import {
 	resolveLocalCodeTarget,
 	resolveLocalCodeTargets,
-	type LocalCodeTargetResult,
+	EMPTY_CHECKOUT_SNAPSHOT,
+	type CheckoutSnapshot,
 } from "../code-target/index.js";
-import { githubUrlForBinding, presentationTargetForBinding } from "../code-target/presentation.js";
+import { presentationTargetForBinding } from "../code-target/presentation.js";
 import { readElementMetadata } from "./metadata.js";
 import { type ServerElement } from "./types.js";
 
 export interface PresentationContext {
 	boardKey: string;
 	opaqueTarget?: string;
+	checkoutSnapshot?: CheckoutSnapshot;
 }
 
 function withLink(element: ServerElement, link: string | null): ServerElement {
@@ -41,16 +41,11 @@ function isDerivedTarget(
 	element: ServerElement,
 	incoming: unknown,
 	context: PresentationContext,
-	local?: LocalCodeTargetResult,
 ): boolean {
 	if (typeof incoming !== "string") return false;
-	const binding = bindingOf(element);
-	if (!binding) return false;
+	if (!bindingOf(element)) return false;
 	if (exactInternalTarget(incoming, element, context)) return true;
-	if (incoming === githubUrlForBinding(binding)) return true;
-	if (context.opaqueTarget !== undefined && incoming === context.opaqueTarget) return true;
-	const current = local ?? resolveLocalCodeTarget(binding);
-	return current.ok && incoming === pathToFileURL(current.target).href;
+	return context.opaqueTarget !== undefined && incoming === context.opaqueTarget;
 }
 
 export function stripBindingPresentationLink(
@@ -65,20 +60,7 @@ export function stripBindingPresentationLinks(
 	context: PresentationContext,
 ): ServerElement[] {
 	const values = Array.from(elements);
-	const bindings = values.flatMap((element) => {
-		const binding = bindingOf(element);
-		return binding ? [binding] : [];
-	});
-	if (bindings.length === 0) return values;
-	const locals = resolveLocalCodeTargets(bindings);
-	let index = 0;
-	return values.map((element) => {
-		const binding = bindingOf(element);
-		if (!binding) return element;
-		return isDerivedTarget(element, element.link, context, locals[index++])
-			? withLink(element, null)
-			: element;
-	});
+	return values.map((element) => stripBindingPresentationLink(element, context));
 }
 
 export function presentElement(
@@ -91,7 +73,7 @@ export function presentElement(
 	const target = presentationTargetForBinding(
 		binding,
 		{ board: context.boardKey, element: element.id },
-		resolveLocalCodeTarget(binding),
+		resolveLocalCodeTarget(binding, context.checkoutSnapshot ?? EMPTY_CHECKOUT_SNAPSHOT),
 	);
 	return target ? withLink(element, target) : element;
 }
@@ -106,7 +88,10 @@ export function presentElements(
 		return binding ? [binding] : [];
 	});
 	if (bindings.length === 0) return values;
-	const locals = resolveLocalCodeTargets(bindings);
+	const locals = resolveLocalCodeTargets(
+		bindings,
+		context.checkoutSnapshot ?? EMPTY_CHECKOUT_SNAPSHOT,
+	);
 	let index = 0;
 	return values.map((element) => {
 		const binding = bindingOf(element);

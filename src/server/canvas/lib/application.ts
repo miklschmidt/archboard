@@ -191,6 +191,11 @@ import {
 	presentElements,
 	stripBindingPresentationLinks,
 } from "../../../runtime/engine/presentation.js";
+import {
+	EMPTY_CHECKOUT_SNAPSHOT,
+	snapshotCheckoutAccess,
+	type CheckoutSnapshot,
+} from "../../../runtime/code-target/index.js";
 import { frontendState, sourceState } from "../../../runtime/engine/staleness.js";
 import {
 	BridgeRefusal,
@@ -317,6 +322,43 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 		else lease.abort(new Error(`${name} response disconnected.`));
 	});
 	next();
+});
+
+function checkoutSnapshotFor(res: Response): CheckoutSnapshot {
+	return (res.locals.checkoutSnapshot as CheckoutSnapshot | undefined) ?? EMPTY_CHECKOUT_SNAPSHOT;
+}
+
+const PROCESS_FREE_HUMAN_ROUTES = new Set([
+	"/api/boards/hold",
+	"/api/boards/hold/release",
+	"/api/elements/changes",
+	"/api/panes",
+	"/api/selection",
+]);
+
+// Resolve machine-local checkout authority before any board lock is taken.
+// Code-opener routes make their own snapshot at activation time, so settings
+// and activation can never share authority accidentally.
+async function prepareCheckoutSnapshot(
+	req: Request,
+	res: Response,
+	next: NextFunction,
+): Promise<void> {
+	if (!req.path.startsWith("/api/")) return next();
+	if (req.method !== "GET" && PROCESS_FREE_HUMAN_ROUTES.has(req.path)) return next();
+	if (req.path.startsWith("/api/settings/opener") || req.path === "/api/code-targets/open") {
+		return next();
+	}
+	res.locals.checkoutSnapshot = await (req.method === "GET" || req.method === "HEAD"
+		? snapshotCheckoutAccess()
+		: trackMutationWork(req, `${req.method} ${req.path} checkout snapshot`, (signal) =>
+				snapshotCheckoutAccess({ signal }),
+			));
+	next();
+}
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+	void prepareCheckoutSnapshot(req, res, next).catch((error) => setImmediate(next, error));
 });
 
 app.use(createCodeOpenerPreguard());
@@ -787,19 +829,25 @@ function boardErrorStatus(error: unknown): number {
 }
 
 /** The note state an agent receives with a write-boundary refusal. */
-function refusalDocument(board: string): { document: ServerElement[]; version: number | null } {
+function refusalDocument(
+	board: string,
+	checkoutSnapshot: CheckoutSnapshot = EMPTY_CHECKOUT_SNAPSHOT,
+): { document: ServerElement[]; version: number | null } {
 	const state = boards.get(board);
 	if (!state) throw new Error(`Board "${board}" is not open`);
 	const content = readBoardContent(state);
 	return {
-		document: presentElements(content.elements.values(), { boardKey: board }),
+		document: presentElements(content.elements.values(), { boardKey: board, checkoutSnapshot }),
 		version: content.version ?? null,
 	};
 }
 
 // The refusal, as a body. Carries the open boards as data so a caller can act
 // on it without parsing the sentence.
-function boardErrorBody(error: unknown): Record<string, unknown> {
+function boardErrorBody(
+	error: unknown,
+	checkoutSnapshot: CheckoutSnapshot = EMPTY_CHECKOUT_SNAPSHOT,
+): Record<string, unknown> {
 	const base = { success: false, error: (error as Error).message };
 	if (error instanceof BoardRequiredError) {
 		return { ...base, code: error.code, open: error.open };
@@ -818,7 +866,7 @@ function boardErrorBody(error: unknown): Record<string, unknown> {
 			board: error.board,
 			holder: error.holder,
 			waitedMs: error.waitedMs,
-			...refusalDocument(error.board),
+			...refusalDocument(error.board, checkoutSnapshot),
 		};
 	}
 	if (error instanceof BoardMutationError && error.code) return { ...base, code: error.code };
@@ -827,7 +875,7 @@ function boardErrorBody(error: unknown): Record<string, unknown> {
 
 function answerBoardError(res: Response, error: unknown, what?: string): void {
 	if (what) logger.error(what, error);
-	res.status(boardErrorStatus(error)).json(boardErrorBody(error));
+	res.status(boardErrorStatus(error)).json(boardErrorBody(error, checkoutSnapshotFor(res)));
 }
 
 /** Send one board-write answer and retain the version it already produced. */
@@ -837,6 +885,7 @@ function answerBoardWrite<T>(res: Response, request: BoardWriteRequest<T>): void
 		writeBoard(
 			{
 				...request,
+				checkoutSnapshot: checkoutSnapshotFor(res),
 				afterPersist: (context) => {
 					if (context.written) res.locals.writtenBoardVersion = context.written.version;
 					afterPersist?.(context);
@@ -867,7 +916,8 @@ function boardForNewPane(clientId: string): string {
 
 // WebSocket connection handling. The lifecycle creates and closes the server;
 // this function owns one accepted socket only.
-function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): void {
+async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): Promise<void> {
+	const checkoutSnapshot = await snapshotCheckoutAccess();
 	clients.add(ws);
 	const codexSocketInstance = Object.freeze({});
 	codexSocketInstances.set(ws, codexSocketInstance);
@@ -916,7 +966,10 @@ function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): void {
 		type: "initial_elements",
 		board: startingKey,
 		identity: board.identity,
-		elements: presentElements(content.elements.values(), { boardKey: startingKey }),
+		elements: presentElements(content.elements.values(), {
+			boardKey: startingKey,
+			checkoutSnapshot,
+		}),
 		...boardFilesMessage(content),
 	};
 	ws.send(JSON.stringify(initialMessage));
@@ -1139,7 +1192,7 @@ function refuseRevokedClaim(res: Response, board: string): boolean {
 		board,
 		claim: lost.claim,
 		revokedBy: lost.by,
-		...refusalDocument(board),
+		...refusalDocument(board, checkoutSnapshotFor(res)),
 	});
 	return true;
 }
@@ -1246,7 +1299,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 				code: "BOARD_VERSION_CONFLICT",
 				error: conflict.message,
 				versionConflict: conflict,
-				...refusalDocument(key),
+				...refusalDocument(key, checkoutSnapshotFor(res)),
 			});
 			if (hold.created) releaseHold(key, hold.holder.id);
 			return;
@@ -1452,7 +1505,10 @@ app.post("/api/boards/claim/release", (req: Request, res: Response) => {
 app.get("/api/elements", (req: Request, res: Response) => {
 	try {
 		const { key, content } = boardFromRequest(req, "Listing elements");
-		const elementsArray = presentElements(content.elements.values(), { boardKey: key });
+		const elementsArray = presentElements(content.elements.values(), {
+			boardKey: key,
+			checkoutSnapshot: checkoutSnapshotFor(res),
+		});
 		res.json({
 			success: true,
 			board: key,
@@ -1478,10 +1534,10 @@ app.post("/api/elements", (req: Request, res: Response) => {
 			afterPersist: ({ value }) => {
 				logger.info("Creating element via API", { type: value.stored.type, board: source.key });
 			},
-			answer: ({ content, value, delta, written }) => ({
+			answer: ({ content, value, delta, written, checkoutSnapshot }) => ({
 				success: true,
 				board: source.key,
-				element: presentElement(value.stored, { boardKey: source.key }),
+				element: presentElement(value.stored, { boardKey: source.key, checkoutSnapshot }),
 				// `element` is what the caller asked for; `elements` is what the board
 				// became, label and z-order included (TASK-075).
 				...agentWriteAnswer(
@@ -1491,6 +1547,7 @@ app.post("/api/elements", (req: Request, res: Response) => {
 					[...delta.created, ...delta.updated],
 					wantsDocument(req),
 					written,
+					checkoutSnapshot,
 				),
 			}),
 		});
@@ -1534,7 +1591,7 @@ app.post("/api/bridges", (req: Request, res: Response) => {
 					value: (applied) => ({ plan, generated: applied.named }),
 				};
 			}),
-			answer: ({ content, value, written }) => ({
+			answer: ({ content, value, written, checkoutSnapshot }) => ({
 				success: true,
 				board: source.key,
 				bridgeId: value.plan.bridgeId,
@@ -1543,7 +1600,15 @@ app.post("/api/bridges", (req: Request, res: Response) => {
 				overSegmentIndex: value.plan.overSegmentIndex,
 				underSegmentIndex: value.plan.underSegmentIndex,
 				crossing: value.plan.crossing,
-				...agentWriteAnswer(source.key, source.board, content, value.generated, false, written),
+				...agentWriteAnswer(
+					source.key,
+					source.board,
+					content,
+					value.generated,
+					false,
+					written,
+					checkoutSnapshot,
+				),
 			}),
 		});
 	} catch (error) {
@@ -1573,12 +1638,20 @@ app.delete("/api/bridges/:id", (req: Request, res: Response) => {
 					value: () => ({ deleted }),
 				};
 			}),
-			answer: ({ content, value, written }) => ({
+			answer: ({ content, value, written, checkoutSnapshot }) => ({
 				success: true,
 				board: source.key,
 				bridgeId,
 				deleted: value.deleted,
-				...agentWriteAnswer(source.key, source.board, content, [], false, written),
+				...agentWriteAnswer(
+					source.key,
+					source.board,
+					content,
+					[],
+					false,
+					written,
+					checkoutSnapshot,
+				),
 			}),
 		});
 	} catch (error) {
@@ -1618,11 +1691,12 @@ app.put("/api/elements/:id", (req: Request, res: Response) => {
 					},
 				};
 			}),
-			answer: ({ content, value, written }) => ({
+			answer: ({ content, value, written, checkoutSnapshot }) => ({
 				success: true,
 				board: source.key,
 				element: presentElement(content.elements.get(id) as ServerElement, {
 					boardKey: source.key,
+					checkoutSnapshot,
 				}),
 				...agentWriteAnswer(
 					source.key,
@@ -1631,6 +1705,7 @@ app.put("/api/elements/:id", (req: Request, res: Response) => {
 					value.touched,
 					wantsDocument(req),
 					written,
+					checkoutSnapshot,
 				),
 			}),
 		});
@@ -1708,7 +1783,7 @@ app.delete("/api/elements/:id", (req: Request, res: Response) => {
 					value: (applied) => ({ deleted: applied.deleted }),
 				};
 			}),
-			answer: ({ content, value, delta, written }) => ({
+			answer: ({ content, value, delta, written, checkoutSnapshot }) => ({
 				success: true,
 				board: source.key,
 				message: `Element ${id} deleted successfully`,
@@ -1720,6 +1795,7 @@ app.delete("/api/elements/:id", (req: Request, res: Response) => {
 					delta.updated,
 					wantsDocument(req),
 					written,
+					checkoutSnapshot,
 				),
 			}),
 		});
@@ -1764,7 +1840,10 @@ app.get("/api/elements/search", (req: Request, res: Response) => {
 
 		res.json({
 			success: true,
-			elements: presentElements(results, { boardKey: key }),
+			elements: presentElements(results, {
+				boardKey: key,
+				checkoutSnapshot: checkoutSnapshotFor(res),
+			}),
 			count: results.length,
 		});
 	} catch (error) {
@@ -1797,7 +1876,10 @@ app.get("/api/elements/:id", (req: Request, res: Response) => {
 
 		res.json({
 			success: true,
-			element: presentElement(element, { boardKey: key }),
+			element: presentElement(element, {
+				boardKey: key,
+				checkoutSnapshot: checkoutSnapshotFor(res),
+			}),
 		});
 	} catch (error) {
 		answerBoardError(res, error, "Error fetching element:");
@@ -1834,7 +1916,7 @@ app.post("/api/elements/batch", (req: Request, res: Response) => {
 				value: (applied) => ({ count: applied.created.length }),
 			})),
 			...(replacesScene ? { afterPersist: () => clearSelectionForBoard(source.key) } : {}),
-			answer: ({ content, value, delta, written }) => ({
+			answer: ({ content, value, delta, written, checkoutSnapshot }) => ({
 				success: true,
 				board: source.key,
 				count: value.count,
@@ -1847,6 +1929,7 @@ app.post("/api/elements/batch", (req: Request, res: Response) => {
 					[...delta.created, ...delta.updated],
 					wantsDocument(req),
 					written,
+					checkoutSnapshot,
 				),
 			}),
 		});
@@ -2064,7 +2147,10 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 						const element = _content.elements.get(upsert.id);
 						return element ? [element] : [];
 					}) ?? [];
-				const presented = presentElements(existing, { boardKey: source.key });
+				const presented = presentElements(existing, {
+					boardKey: source.key,
+					checkoutSnapshot: checkoutSnapshotFor(res),
+				});
 				const writeInput: ElementInputRequest =
 					input.origin === "human"
 						? {
@@ -2072,7 +2158,15 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 								presentationLinks: new Map(
 									existing.flatMap((element, index) =>
 										presented[index]?.link !== element.link
-											? [[element.id, { boardKey: source.key }] as const]
+											? [
+													[
+														element.id,
+														{
+															boardKey: source.key,
+															opaqueTarget: presented[index]?.link ?? undefined,
+														},
+													] as const,
+												]
 											: [],
 									),
 								),
@@ -2113,6 +2207,7 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 								[...delta.created, ...delta.updated],
 								wantsDocument(req),
 								written,
+								context.checkoutSnapshot,
 							)
 						: humanWriteAnswer(context, fullReport)),
 				};
@@ -2291,7 +2386,12 @@ app.get("/api/selection", (_req: Request, res: Response) => {
 	const board = boards.get(key);
 	const report = buildSelectionReport(
 		selectionState.current,
-		board ? presentElements(boardElements(board), { boardKey: key }) : [],
+		board
+			? presentElements(boardElements(board), {
+					boardKey: key,
+					checkoutSnapshot: checkoutSnapshotFor(res),
+				})
+			: [],
 		clients.size,
 	);
 	res.json({ success: true, board: key, ...report });
@@ -2374,7 +2474,12 @@ app.get("/api/panes", (_req: Request, res: Response) => {
 		identity: (key) => boards.get(key)?.identity ?? null,
 		elements: (key) => {
 			const board = boards.get(key);
-			return board ? presentElements(boardElements(board), { boardKey: key }) : [];
+			return board
+				? presentElements(boardElements(board), {
+						boardKey: key,
+						checkoutSnapshot: checkoutSnapshotFor(res),
+					})
+				: [];
 		},
 		selection: (clientId) => selectionState.byClient.get(clientId) ?? null,
 		canvasUrl: `http://${formatHostForUrl(HOST)}:${PORT}`,
@@ -2780,7 +2885,10 @@ app.post(
 					type: "export_findings_request",
 					requestId,
 					sourceBoard: key,
-					elements: presentElements(snapshot.renderScene.elements, { boardKey: key }),
+					elements: presentElements(snapshot.renderScene.elements, {
+						boardKey: key,
+						checkoutSnapshot: checkoutSnapshotFor(res),
+					}),
 					files: snapshot.renderScene.files,
 					findings: requests,
 				},
@@ -2919,7 +3027,10 @@ app.post("/api/export/image", (req: Request, res: Response) => {
 				type: "initial_elements",
 				board: exportKey,
 				identity: exportBoard.identity,
-				elements: presentElements(exportContent.elements.values(), { boardKey: exportKey }),
+				elements: presentElements(exportContent.elements.values(), {
+					boardKey: exportKey,
+					checkoutSnapshot: checkoutSnapshotFor(res),
+				}),
 				...boardFilesMessage(exportContent),
 			} as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> },
 			exportKey,
@@ -3267,7 +3378,10 @@ app.get("/api/snapshots/:name", (req: Request, res: Response) => {
 			success: true,
 			snapshot: {
 				...snapshot,
-				elements: presentElements(snapshot.elements, { boardKey: snapshot.board }),
+				elements: presentElements(snapshot.elements, {
+					boardKey: snapshot.board,
+					checkoutSnapshot: checkoutSnapshotFor(res),
+				}),
 			},
 		});
 	} catch (error) {
@@ -3355,6 +3469,7 @@ function switchPaneTo(
 	pane: PaneRegistration | null,
 	key: string,
 	known?: BoardContent,
+	checkoutSnapshot: CheckoutSnapshot = EMPTY_CHECKOUT_SNAPSHOT,
 ): BoardState {
 	const board = boards.get(key);
 	if (!board) throw new Error(`Board "${key}" is not open`);
@@ -3391,7 +3506,10 @@ function switchPaneTo(
 		{
 			type: "board_switched",
 			identity: board.identity,
-			elements: presentElements(content.elements.values(), { boardKey: key }),
+			elements: presentElements(content.elements.values(), {
+				boardKey: key,
+				checkoutSnapshot,
+			}),
 			...boardFilesMessage(content),
 			timestamp: new Date().toISOString(),
 		},
@@ -3622,7 +3740,7 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 		// whatever is there now, which is what lets writes resume after a refusal.
 		if (boards.has(key) && !params.reload) {
 			const pane = paneFromRequest(params.pane);
-			const board = switchPaneTo(pane, key);
+			const board = switchPaneTo(pane, key, undefined, checkoutSnapshotFor(res));
 			return res.json({
 				success: true,
 				...identityResponse(key, board),
@@ -3678,7 +3796,7 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 		// the moment everything drawn since the board stopped saving is gone
 		// (TASK-079). It costs what the human was told it costs.
 		const ended = params.reload ? releaseBoardHold(openedKey, "reload") : null;
-		switchPaneTo(pane, openedKey, content);
+		switchPaneTo(pane, openedKey, content, checkoutSnapshotFor(res));
 		// On a reload, every pane holding it — not only the one this was addressed
 		// to. The others are showing the copy that was just discarded, and a pane
 		// left showing it would report the discarded work straight back as a fresh
@@ -3687,7 +3805,7 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 			for (const other of panes.values()) {
 				if (other.clientId === pane?.clientId) continue;
 				if ((paneBoards.get(other.clientId) ?? other.board) !== openedKey) continue;
-				switchPaneTo(other, openedKey, content);
+				switchPaneTo(other, openedKey, content, checkoutSnapshotFor(res));
 			}
 		}
 
@@ -3754,7 +3872,7 @@ app.post("/api/boards/new", (req: Request, res: Response) => {
 		const { key: newKey, board } = getOrCreateBoard(identity);
 		board.file = vaultPathFor(identity);
 		const content = emptyContent();
-		switchPaneTo(pane, newKey, content);
+		switchPaneTo(pane, newKey, content, checkoutSnapshotFor(res));
 		logger.info(`Board created: "${newKey}" (empty, no note yet)`);
 		res.json({
 			success: true,
@@ -3853,7 +3971,7 @@ app.post("/api/boards/save", (req: Request, res: Response) => {
 				};
 			},
 			afterPersist: ({ content, written }) => {
-				for (const pane of moved) switchPaneTo(pane, targetKey, content);
+				for (const pane of moved) switchPaneTo(pane, targetKey, content, checkoutSnapshotFor(res));
 				logger.info(
 					`Board saved: "${targetKey}" (${written?.elementCount ?? content.elements.size} elements) -> ${file}` +
 						(kind === "same-board" ? "" : ` [${kind}]`) +
@@ -4674,7 +4792,12 @@ async function forceCloseHttpServer(): Promise<void> {
 function startWebSocketServer(): void {
 	if (wss !== null) throw new Error("The WebSocket server is already installed.");
 	const owner = new WebSocketServer({ server });
-	owner.on("connection", acceptWebSocketConnection);
+	owner.on("connection", (socket, request) => {
+		void acceptWebSocketConnection(socket, request).catch((error) => {
+			logger.error("WebSocket checkout presentation failed:", error);
+			socket.close();
+		});
+	});
 	wss = owner;
 }
 
@@ -4782,6 +4905,7 @@ async function startServer(): Promise<void> {
 	let lifetime!: ReturnType<typeof createCanvasApplicationLifetime>;
 	let httpErrorListener: ((error: NodeJS.ErrnoException) => void) | null = null;
 	let httpPhase: "idle" | "starting" | "running" | "failed" | "stopping" = "idle";
+	let httpStartPromise: Promise<void> | null = null;
 	let runtimeServerStop: Promise<void> | null = null;
 	const stopCanvasAfterHttpError = async (): Promise<void> => {
 		try {
@@ -4872,20 +4996,30 @@ async function startServer(): Promise<void> {
 			},
 			{
 				name: "http-server",
-				start: (signal) =>
-					new Promise<void>((resolve, reject) => {
+				start: (signal) => {
+					const cancellation = new Error("Canvas HTTP startup was canceled.");
+					const listenController = new AbortController();
+					httpStartPromise = new Promise<void>((resolve, reject) => {
 						httpPhase = "starting";
 						let settled = false;
+						const cancelListen = (): void => listenController.abort(signal.reason);
+						const onClose = (): void => {
+							settleStart(
+								signal.aborted
+									? cancellation
+									: new Error("Canvas HTTP server closed before startup completed."),
+							);
+						};
 						const settleStart = (error?: Error): void => {
 							if (settled) return;
 							settled = true;
-							signal.removeEventListener("abort", onAbort);
+							signal.removeEventListener("abort", cancelListen);
+							server.off("close", onClose);
 							if (error) {
 								httpPhase = "failed";
 								reject(error);
 							} else resolve();
 						};
-						const onAbort = (): void => settleStart(new Error("Canvas HTTP startup was canceled."));
 						httpErrorListener = (error) => {
 							if (httpPhase === "starting") {
 								logHttpServerError(error);
@@ -4893,10 +5027,16 @@ async function startServer(): Promise<void> {
 							} else if (httpPhase === "running") stopAfterServerError(error);
 						};
 						server.on("error", httpErrorListener);
-						signal.addEventListener("abort", onAbort, { once: true });
+						server.once("close", onClose);
+						signal.addEventListener("abort", cancelListen, { once: true });
+						if (signal.aborted) {
+							cancelListen();
+							settleStart(cancellation);
+							return;
+						}
 						try {
-							server.listen(PORT, HOST, () => {
-								if (settled) return;
+							server.listen({ port: PORT, host: HOST, signal: listenController.signal }, () => {
+								if (settled || signal.aborted) return;
 								httpPhase = "running";
 								const hostForUrl = formatHostForUrl(HOST);
 								logger.info(`POC server running on http://${hostForUrl}:${PORT}`);
@@ -4907,8 +5047,13 @@ async function startServer(): Promise<void> {
 						} catch (error) {
 							settleStart(error as Error);
 						}
-					}),
+					});
+					return httpStartPromise;
+				},
 				stop: async () => {
+					if (httpPhase === "running") httpPhase = "stopping";
+					await closeHttpServer();
+					if (httpStartPromise !== null) await httpStartPromise.catch(() => undefined);
 					httpPhase = "stopping";
 					if (httpErrorListener !== null) {
 						server.off("error", httpErrorListener);

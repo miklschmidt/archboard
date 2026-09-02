@@ -149,12 +149,12 @@ export class RepoRegistryError extends Error {}
  * the same clone differently is the one thing that would make the address
  * space useless, and git already has an answer that is the same everywhere.
  */
-export function declareRepo(dir: string): RegisteredRepo {
+export async function declareRepo(dir: string): Promise<RegisteredRepo> {
 	const target = path.resolve(dir);
 	if (!isCheckout(target)) {
 		throw new RepoRegistryError(`${target} is not a directory on this machine.`);
 	}
-	const root = repoRootOf(target);
+	const root = await repoRootOf(target);
 	if (!root) {
 		throw new RepoRegistryError(
 			`${target} is not inside a git repository, so there is no repository identity to register it under. ` +
@@ -162,7 +162,7 @@ export function declareRepo(dir: string): RegisteredRepo {
 		);
 	}
 	const entry: RegisteredRepo = {
-		repo: repoIdentityAt(root),
+		repo: await repoIdentityAt(root),
 		root,
 		source: "declared",
 		addedAt: new Date().toISOString(),

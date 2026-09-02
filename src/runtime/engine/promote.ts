@@ -157,7 +157,10 @@ export interface ResolvedBinding {
  * *cannot* resolve by intent: a relative path on a surface with no working
  * directory, where any answer would be an accident.
  */
-export function resolveBinding(request: BindingRequest, origin: BindingOrigin): ResolvedBinding {
+export async function resolveBinding(
+	request: BindingRequest,
+	origin: BindingOrigin,
+): Promise<ResolvedBinding> {
 	const confirmedAt = new Date().toISOString();
 	const raw = request.path.trim();
 	const named =
@@ -208,7 +211,7 @@ export function resolveBinding(request: BindingRequest, origin: BindingOrigin): 
 	}
 
 	const absolute = path.resolve(baseDir, raw);
-	const root = repoRootOf(absolute);
+	const root = await repoRootOf(absolute);
 	const exists = fs.existsSync(absolute);
 
 	if (!root) {
@@ -223,7 +226,7 @@ export function resolveBinding(request: BindingRequest, origin: BindingOrigin): 
 		};
 	}
 
-	const found = repoIdentityAt(root);
+	const found = await repoIdentityAt(root);
 
 	// A registry entry that now points at some other repository. The path just
 	// resolved into the wrong checkout, so nothing here is trustworthy: say so
@@ -249,8 +252,8 @@ export function resolveBinding(request: BindingRequest, origin: BindingOrigin): 
 	// is still worth saying out loud.
 	const repo = named ?? found;
 	const relative = path.relative(root, absolute) || ".";
-	const branch = request.branch ?? git(root, ["rev-parse", "--abbrev-ref", "HEAD"]);
-	const commit = request.commit ?? git(root, ["rev-parse", "HEAD"]);
+	const branch = request.branch ?? (await git(root, ["rev-parse", "--abbrev-ref", "HEAD"]));
+	const commit = request.commit ?? (await git(root, ["rev-parse", "HEAD"]));
 
 	const notes: string[] = [];
 	if (resolvedFrom === "cwd") {

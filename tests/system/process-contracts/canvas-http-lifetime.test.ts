@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { join, resolve as resolvePath } from "node:path";
 import { WebSocket } from "ws";
@@ -20,6 +20,7 @@ import { records } from "./support/codex-workbench-lifecycle.ts";
 const repoRoot = resolvePath(import.meta.dir, "../../..");
 const fixtureSource = join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production.ts");
 const serverEntry = join(repoRoot, "src/server.ts");
+type HttpFailureMode = "bind-race" | "runtime-error" | "delayed-listen-cancel";
 
 async function freePort(): Promise<number> {
 	const server = createServer();
@@ -48,11 +49,15 @@ function wrapperSource(fixture: ProductionFixture, mode: "bind-race" | "runtime-
 		`  ownedServer = createRealServer(handler);\n` +
 		(bindRace
 			? `  const realListen = ownedServer.listen.bind(ownedServer);\n` +
-				`  ownedServer.listen = (port, host, listening) => {\n` +
+				`  ownedServer.listen = (...args) => {\n` +
+				`    const options = args[0];\n` +
+				`    const port = options && typeof options === "object" ? options.port : options;\n` +
+				`    const host = options && typeof options === "object" ? options.host : args[1];\n` +
+				`    const listening = args.findLast((value) => typeof value === "function");\n` +
 				`    rivalServer = createRealServer();\n` +
 				`    rivalServer.listen(port, host, () => {\n` +
 				`      ownedServer.once("error", () => rivalServer.close());\n` +
-				`      realListen(port, host, listening);\n` +
+				`      realListen(...args);\n` +
 				`    });\n` +
 				`    return ownedServer;\n` +
 				`  };\n`
@@ -68,14 +73,82 @@ function wrapperSource(fixture: ProductionFixture, mode: "bind-race" | "runtime-
 	);
 }
 
+function delayedListenWrapperSource(
+	fixture: ProductionFixture,
+	pendingPath: string,
+	outcomePath: string,
+): string {
+	const executableModule = join(repoRoot, "src/runtime/codex-process/executable.ts");
+	const httpFactoryModule = join(repoRoot, "src/server/canvas/lib/http-server.ts");
+	return (
+		`import { writeFileSync } from "node:fs";\n` +
+		`import { mock } from "bun:test";\n` +
+		`const { createServer: createRealServer } = process.getBuiltinModule("http");\n` +
+		`let ownedServer;\n` +
+		`let pending = false;\n` +
+		`let lateListen = () => {};\n` +
+		`mock.module(${JSON.stringify(httpFactoryModule)}, () => ({ createCanvasHttpServer: (handler) => {\n` +
+		`  ownedServer = createRealServer(handler);\n` +
+		`  const realListen = ownedServer.listen.bind(ownedServer);\n` +
+		`  ownedServer.listen = (...args) => {\n` +
+		`    const options = args[0];\n` +
+		`    const listening = args.findLast((value) => typeof value === "function");\n` +
+		`    pending = true;\n` +
+		`    writeFileSync(${JSON.stringify(pendingPath)}, "pending");\n` +
+		`    lateListen = () => {\n` +
+		`      if (options && typeof options === "object") {\n` +
+		`        const { signal: _signal, ...withoutSignal } = options;\n` +
+		`        realListen(withoutSignal, listening);\n` +
+		`      } else {\n` +
+		`        realListen(...args);\n` +
+		`      }\n` +
+		`    };\n` +
+		`    if (options && typeof options === "object" && options.signal) {\n` +
+		`      options.signal.addEventListener("abort", () => {\n` +
+		`        pending = false;\n` +
+		`        ownedServer.emit("close");\n` +
+		`      }, { once: true });\n` +
+		`    }\n` +
+		`    return ownedServer;\n` +
+		`  };\n` +
+		`  return ownedServer;\n` +
+		`} }));\n` +
+		`mock.module(${JSON.stringify(executableModule)}, () => ({ resolveProjectCodexExecutable: () => ${JSON.stringify(fixture.executablePath)} }));\n` +
+		`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
+		`try {\n` +
+		`  await startServer();\n` +
+		`} catch {\n` +
+		`  if (!pending) {\n` +
+		`    writeFileSync(${JSON.stringify(outcomePath)}, "listen-cancelled");\n` +
+		`  } else {\n` +
+		`    await new Promise((resolve, reject) => {\n` +
+		`      ownedServer.once("error", reject);\n` +
+		`      ownedServer.once("listening", () => {\n` +
+		`        writeFileSync(${JSON.stringify(outcomePath)}, "late-bind-after-stop");\n` +
+		`        ownedServer.close((error) => error ? reject(error) : resolve());\n` +
+		`      });\n` +
+		`      lateListen();\n` +
+		`    });\n` +
+		`  }\n` +
+		`}\n`
+	);
+}
+
 async function spawnCanvas(
 	resources: AsyncDisposableStack,
 	fixture: ProductionFixture,
-	mode: "bind-race" | "runtime-error",
+	mode: HttpFailureMode,
 ) {
 	const port = await freePort();
 	const wrapper = join(fixture.root, `${mode}-server.ts`);
-	writeFileSync(wrapper, wrapperSource(fixture, mode));
+	const pendingPath = join(fixture.root, `${mode}.pending`);
+	const outcomePath = join(fixture.root, `${mode}.outcome`);
+	writeFileSync(
+		wrapper,
+		mode === "delayed-listen-cancel"
+			? delayedListenWrapperSource(fixture, pendingPath, outcomePath)
+			: wrapperSource(fixture, mode),
+	);
 	const child = spawn(process.execPath, [wrapper], {
 		cwd: repoRoot,
 		detached: true,
@@ -110,8 +183,68 @@ async function spawnCanvas(
 		}
 		await exit;
 	});
-	return { base: `http://127.0.0.1:${port}`, child, exit, output: () => output, pid };
+	return {
+		base: `http://127.0.0.1:${port}`,
+		child,
+		exit,
+		outcomePath,
+		output: () => output,
+		pendingPath,
+		pid,
+		port,
+	};
 }
+
+test(
+	"startup cancellation settles a delayed listen before lifetime stop completes",
+	async () => {
+		const resources = new AsyncDisposableStack();
+		try {
+			const fixture = prepareProductionFixture(resources, fixtureSource);
+			const canvas = await spawnCanvas(resources, fixture, "delayed-listen-cancel");
+			await waitFor(
+				async () => (existsSync(canvas.pendingPath) ? true : undefined),
+				"delayed HTTP listen",
+				{ timeoutMs: TEST_CANVAS_STARTUP_TIMEOUT_MS },
+			);
+			canvas.child.kill("SIGTERM");
+			const result = await Promise.race([
+				canvas.exit,
+				new Promise<never>((_resolve, reject) =>
+					setTimeout(
+						() => reject(new Error(`Delayed-listen canvas did not exit.\n${canvas.output()}`)),
+						TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+					),
+				),
+			]);
+			expect(result).toEqual({ code: 0, signal: null });
+			expect(readFileSync(canvas.outcomePath, "utf8")).toBe("listen-cancelled");
+
+			const childPid = records(fixture.logPath).find(
+				(entry) => entry.kind === "app_server_spawn",
+			)?.pid;
+			if (childPid === undefined)
+				throw new Error(`The delayed-listen Codex owner never started.\n${canvas.output()}`);
+			await waitForProcessExit(childPid);
+			expect(processExists(childPid)).toBeFalse();
+
+			const probe = createServer();
+			resources.defer(async () => {
+				if (!probe.listening) return;
+				await new Promise<void>((resolve, reject) =>
+					probe.close((error) => (error ? reject(error) : resolve())),
+				);
+			});
+			await new Promise<void>((resolve, reject) => {
+				probe.once("error", reject);
+				probe.listen({ host: "127.0.0.1", port: canvas.port, exclusive: true }, resolve);
+			});
+		} finally {
+			await resources.disposeAsync();
+		}
+	},
+	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
+);
 
 test(
 	"an HTTP bind race rejects startup and unwinds the entered Codex owner once",

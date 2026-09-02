@@ -20,13 +20,13 @@ import {
 import {
 	resolveLocalCodeTarget,
 	resolveRegisteredCheckout,
+	snapshotCheckoutAccess,
 	type LocalCodeTargetResult,
 } from "../../../runtime/code-target/index.js";
 import { githubUrlForBinding } from "../../../runtime/code-target/presentation.js";
 import { readBoardContent } from "../../../runtime/engine/board-io.js";
 import { resolveBoard } from "../../../runtime/engine/board-store.js";
 import { readElementMetadata } from "../../../runtime/engine/metadata.js";
-import { listRepos } from "../../../runtime/engine/repo-registry.js";
 import { checkBrowserCsrf, type BrowserCsrfKind } from "./browser-csrf.js";
 import { readOpenerSelection, resetOpenerSelection, saveOpenerSelection } from "./configuration.js";
 import { launchOpener, resolveOpenerCommand, type LaunchResult } from "./launch.js";
@@ -55,7 +55,10 @@ const pass: RequestHandler = (_request, _response, next) => next();
 
 export interface CodeOpenerRouteDependencies {
 	bindingForElement(board: string, element: string): BindingLookup;
-	resolveTarget(binding: CodeBinding): LocalCodeTargetResult;
+	resolveTarget(
+		binding: CodeBinding,
+		signal?: AbortSignal,
+	): Promise<LocalCodeTargetResult> | LocalCodeTargetResult;
 	launch(command: { executable: string; argv: string[] }): Promise<LaunchResult>;
 	runMutation<T>(
 		request: Request,
@@ -87,7 +90,8 @@ function canonicalBinding(boardKey: string, elementId: string): BindingLookup {
 
 const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
 	bindingForElement: canonicalBinding,
-	resolveTarget: resolveLocalCodeTarget,
+	resolveTarget: async (binding, signal) =>
+		resolveLocalCodeTarget(binding, await snapshotCheckoutAccess({ signal })),
 	launch: launchOpener,
 	runMutation: async (_request, _name, work) => work(new AbortController().signal),
 };
@@ -192,40 +196,44 @@ export function createCodeOpenerRouter(
 	const dependencies = { ...DEFAULT_DEPENDENCIES, ...overrides };
 	const router = Router();
 
-	router.get("/api/settings/opener", (_request, response) => {
-		const current = readOpenerSelection();
-		if (!current.ok) return sendFailure(response, current);
-		const plannedCurrent = planOpenerCommand(current.selection, "{path}");
-		const effective = plannedCurrent.ok
-			? resolveOpenerCommand(plannedCurrent.command)
-			: plannedCurrent;
-		const native = planOpenerCommand({ version: 1, kind: "platform" }, "{path}");
-		const presets = (["vscode", "cursor", "zed"] as const).map((preset) => {
-			const planned = planOpenerCommand({ version: 1, kind: "preset", preset }, "{path}");
-			if (!planned.ok) throw new Error(planned.error);
-			return { preset, command: planned.command };
-		});
-		const repositories = listRepos().map((entry) => {
-			const resolved = resolveRegisteredCheckout(entry.repo);
-			return {
-				repository: entry.repo,
-				root: entry.root,
-				exists: entry.exists,
-				identityMatches: resolved.ok,
-			};
-		});
-		response.json({
-			success: true,
-			selection: current.selection,
-			effectiveCommand: effective.ok ? effective.command : null,
-			availability: effective.ok
-				? { available: true }
-				: { available: false, code: effective.code, error: effective.error },
-			platformDefault: native.ok ? native.command : null,
-			presets,
-			repositories,
-		});
-	});
+	router.get(
+		"/api/settings/opener",
+		asyncEndpoint(async (_request, response) => {
+			const current = readOpenerSelection();
+			if (!current.ok) return sendFailure(response, current);
+			const plannedCurrent = planOpenerCommand(current.selection, "{path}");
+			const effective = plannedCurrent.ok
+				? resolveOpenerCommand(plannedCurrent.command)
+				: plannedCurrent;
+			const native = planOpenerCommand({ version: 1, kind: "platform" }, "{path}");
+			const presets = (["vscode", "cursor", "zed"] as const).map((preset) => {
+				const planned = planOpenerCommand({ version: 1, kind: "preset", preset }, "{path}");
+				if (!planned.ok) throw new Error(planned.error);
+				return { preset, command: planned.command };
+			});
+			const snapshot = await snapshotCheckoutAccess();
+			const repositories = snapshot.entries.map((entry) => {
+				const resolved = resolveRegisteredCheckout(entry.repo, snapshot);
+				return {
+					repository: entry.repo,
+					root: entry.root,
+					exists: entry.exists,
+					identityMatches: resolved.ok,
+				};
+			});
+			response.json({
+				success: true,
+				selection: current.selection,
+				effectiveCommand: effective.ok ? effective.command : null,
+				availability: effective.ok
+					? { available: true }
+					: { available: false, code: effective.code, error: effective.error },
+				platformDefault: native.ok ? native.command : null,
+				presets,
+				repositories,
+			});
+		}),
+	);
 
 	router.put("/api/settings/opener", (request, response) => {
 		const current = readOpenerSelection();
@@ -254,7 +262,7 @@ export function createCodeOpenerRouter(
 	router.post(
 		"/api/settings/opener/test",
 		asyncEndpoint((request, response) =>
-			dependencies.runMutation(request, "POST /api/settings/opener/test launch", async () => {
+			dependencies.runMutation(request, "POST /api/settings/opener/test launch", async (signal) => {
 				const current = readOpenerSelection();
 				if (!current.ok) return sendFailure(response, current);
 				const parsed = OpenerSettingsTestRequestSchema.safeParse(request.body);
@@ -265,7 +273,10 @@ export function createCodeOpenerRouter(
 						400,
 					);
 				}
-				const checkout = resolveRegisteredCheckout(parsed.data.repository);
+				const checkout = resolveRegisteredCheckout(
+					parsed.data.repository,
+					await snapshotCheckoutAccess({ signal }),
+				);
 				if (!checkout.ok) return sendFailure(response, checkout);
 				const launched = await planAndLaunch(
 					parsed.data.selection,
@@ -281,7 +292,7 @@ export function createCodeOpenerRouter(
 	router.post(
 		"/api/code-targets/open",
 		asyncEndpoint((request, response) =>
-			dependencies.runMutation(request, "POST /api/code-targets/open launch", async () => {
+			dependencies.runMutation(request, "POST /api/code-targets/open launch", async (signal) => {
 				if (request.url.includes("?")) {
 					return sendFailure(
 						response,
@@ -299,7 +310,7 @@ export function createCodeOpenerRouter(
 				}
 				const found = dependencies.bindingForElement(parsed.data.board, parsed.data.element);
 				if (!found.ok) return sendFailure(response, found);
-				const target = dependencies.resolveTarget(found.binding);
+				const target = await dependencies.resolveTarget(found.binding, signal);
 				if (!target.ok) return sendFailure(response, target, statusFor(target.code), found.binding);
 				const current = readOpenerSelection();
 				if (!current.ok)

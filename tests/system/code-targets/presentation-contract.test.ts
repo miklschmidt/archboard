@@ -54,7 +54,7 @@ function node(
 }
 
 test(
-	"every public presentation is fresh, portable, and board-addressed",
+	"every public presentation is fresh, provenance-safe, and board-addressed",
 	async () => {
 		await using resources = new AsyncDisposableStack();
 		const root = mkdtempSync(join(tmpdir(), "archboard-presentation-contract-"));
@@ -258,8 +258,8 @@ test(
 		}
 		let raw = readFileSync(note, "utf8");
 		const stored = new Map(extractSceneElements(raw).map((element) => [element.id, element]));
-		for (const id of ["local-file", "commit", "local-directory"])
-			expect(stored.get(id)?.link, id).toBeNull();
+		for (const id of ["local-file", "commit"]) expect(stored.get(id)?.link, id).toBeNull();
+		expect(stored.get("local-directory")?.link).toBe(exactLegacyDirectory);
 		for (const [id, link] of Object.entries(preservedEchoes))
 			expect(stored.get(id)?.link, id).toBe(link);
 
@@ -322,13 +322,13 @@ test(
 		];
 		const legacyCandidates = [
 			pathToFileURL(join(checkout, "src", "index.ts")).href,
-			exactLegacyDirectory,
 			pathToFileURL(join(checkout, "src", "later.ts")).href,
 		];
 		for (const derived of [...internalCandidates, ...githubCandidates, ...legacyCandidates])
 			expect(raw).not.toContain(`"link": ${JSON.stringify(derived)}`);
-		for (const machineValue of [checkout, registry, openerConfig, openerExecutable, ...openerArgv])
+		for (const machineValue of [registry, openerConfig, openerExecutable, ...openerArgv])
 			expect(raw).not.toContain(machineValue);
+		expect(raw).toContain(exactLegacyDirectory);
 		for (const human of Object.values(preservedEchoes)) expect(raw).toContain(human);
 	},
 	TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS,

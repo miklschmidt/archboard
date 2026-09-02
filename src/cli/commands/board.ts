@@ -96,8 +96,8 @@ export const boardContract = defineCommand({
 	},
 });
 
-function repoIdentityHere(): string {
-	const root = repoRootOf(process.cwd());
+async function repoIdentityHere(): Promise<string> {
+	const root = await repoRootOf(process.cwd());
 	if (!root)
 		throw new CliUsageError(
 			`${process.cwd()} is not inside a git repository, so there is no repository to look for. Name one with --repo <host/owner/name>, or drop the filter to list every board.`,
@@ -215,7 +215,7 @@ export const boardListContract = defineCommand({
 		const stage = context.parse(BoardListStageSchema, input.tokens);
 		let repo: string | undefined;
 		if (stage.flags.here) {
-			repo = repoIdentityHere();
+			repo = await repoIdentityHere();
 			context.diagnostic(`Standing in ${repo}.`);
 		} else if (typeof stage.flags.repo === "string") repo = stage.flags.repo;
 		const result = await listBoardsOnCanvas(repo);
