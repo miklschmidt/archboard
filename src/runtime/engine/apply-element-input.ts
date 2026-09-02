@@ -18,7 +18,6 @@ import { mintId } from "../../shared/ids/ids.js";
 import { recentreBoundTexts } from "./labels.js";
 import type { LegacyElementIngress } from "../../shared/board-elements/index.js";
 import { validatePersistedBoardElement } from "./lib/native-element.js";
-import { canonicalLinkAfterPresentationEcho } from "./presentation.js";
 import { stripUntrustedTrackingClaims } from "./metadata.js";
 export {
 	AgentElementInputSchema,
@@ -43,13 +42,19 @@ import {
 	wellFormAgentStatement,
 	withAgentLabelIntent,
 } from "./lib/agent-element-input.js";
-import type { PresentationContext } from "./presentation.js";
+import {
+	canonicalLinkAfterPresentationEcho,
+	stripPresentationMarker,
+	type PresentationContext,
+} from "./presentation.js";
 
 export type ElementInputRequest =
 	| {
 			origin: "agent";
 			upserts?: AgentElementInput[];
 			deletes?: string[];
+			/** Exact outbound presentation values echoed by this operation. */
+			presentationLinks?: ReadonlyMap<string, PresentationContext>;
 	  }
 	| {
 			origin: "human";
@@ -358,6 +363,7 @@ interface PreparedElementInput {
 function applyAgentInput(
 	board: Map<string, ServerElement>,
 	upserts: AgentElementInput[],
+	presentationLinks: ReadonlyMap<string, PresentationContext> = new Map(),
 ): PreparedElementInput {
 	const created: ServerElement[] = [];
 	const updated = new Map<string, ServerElement>();
@@ -375,9 +381,18 @@ function applyAgentInput(
 	const inputSquareIds = new Set<string>();
 	const taken = { has: (id: string) => board.has(id) || statedIds.has(id) || minted.has(id) };
 
-	for (const raw of upserts) {
-		const rawId = typeof raw.id === "string" && raw.id.length > 0 ? raw.id : undefined;
+	for (const input of upserts) {
+		const rawId = typeof input.id === "string" && input.id.length > 0 ? input.id : undefined;
 		const existing = rawId ? board.get(rawId) : undefined;
+		const presentation = rawId ? presentationLinks.get(rawId) : undefined;
+		const stripped = stripPresentationMarker(input);
+		const raw =
+			presentation && existing
+				? {
+						...stripped,
+						link: canonicalLinkAfterPresentationEcho(existing, stripped.link, presentation),
+					}
+				: stripped;
 		if (existing) {
 			const merge = mergeElementUpdate(existing, raw);
 			const expanded = expandForBoard([merge.statement], board);
@@ -443,7 +458,9 @@ function applyHumanInput(
 	const newStatements: LegacyElementIngress[] = [];
 	const now = new Date().toISOString();
 	for (const raw of upserts) {
-		const sanitized = stripUntrustedTrackingClaims(raw);
+		const sanitized = stripUntrustedTrackingClaims(
+			stripPresentationMarker(raw) as unknown as Record<string, unknown>,
+		);
 		const {
 			board: _board,
 			id: rawId,
@@ -530,7 +547,7 @@ export function applyElementInput(
 	const deletes = request.deletes ?? [];
 	const prepared =
 		request.origin === "agent"
-			? applyAgentInput(working, request.upserts ?? [])
+			? applyAgentInput(working, request.upserts ?? [], request.presentationLinks)
 			: applyHumanInput(
 					working,
 					request.upserts ?? [],

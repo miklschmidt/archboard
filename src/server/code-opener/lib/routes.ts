@@ -91,7 +91,7 @@ function canonicalBinding(boardKey: string, elementId: string): BindingLookup {
 const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
 	bindingForElement: canonicalBinding,
 	resolveTarget: async (binding, signal) =>
-		resolveLocalCodeTarget(binding, await snapshotCheckoutAccess({ signal })),
+		resolveLocalCodeTarget(binding, await snapshotCheckoutAccess({ signal, bindings: [binding] })),
 	launch: launchOpener,
 	runMutation: async (_request, _name, work) => work(new AbortController().signal),
 };

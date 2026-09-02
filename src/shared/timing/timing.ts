@@ -218,6 +218,28 @@ export const CANVAS_MUTATION_DRAIN_TIMEOUT_MS = 1_000;
  */
 export const CANVAS_HTTP_STOP_GRACE_MS = 250;
 
+// ── Git checkout inspection ───────────────────────────────────────────────
+
+/**
+ * Outer bound for one Git identity probe while an operation captures its
+ * checkout snapshot. Snapshot work runs before a board lock or synchronous
+ * note write, so this never extends either critical section. It is longer
+ * than the canvas mutation-drain refusal window: stop may refuse and keep the
+ * application intact while a slow probe is still cancellable by its request
+ * or application owner.
+ */
+export const GIT_COMMAND_TIMEOUT_MS = 5_000;
+
+/**
+ * Grace after Git termination for the detached group, leader and both output
+ * pipes to disappear. It matches the mutation-drain window so failed cleanup
+ * is diagnosed promptly rather than hiding behind the command timeout.
+ */
+export const GIT_PROCESS_GROUP_CLEANUP_MS = CANVAS_MUTATION_DRAIN_TIMEOUT_MS;
+
+/** Observation cadence while proving a killed Git process group is absent. */
+export const GIT_PROCESS_GROUP_POLL_MS = 10;
+
 // ── Codex workbench policy (ADR 0019) ─────────────────────────────────────
 //
 // These are authored policy values, not consumer defaults. Their expiry
