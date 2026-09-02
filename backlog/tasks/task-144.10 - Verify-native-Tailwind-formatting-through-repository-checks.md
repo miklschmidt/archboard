@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-08-31 03:04'
+updated_date: '2026-09-02 22:50'
 labels: []
 dependencies:
   - TASK-144.06
@@ -77,6 +77,8 @@ P1 rereview remediation: stopOwner now SIGSTOPs and confirms a timed-out owner b
 Evidence correction: the earlier note's broad test:repository (140) and test:modules (1042) counts were not reproduced in this remediation and are not authoritative; broad lanes remain intentionally skipped under the durable OOM constraint. Authoritative P1 validation: reader suite 7/7 with 15 assertions; real owner suite 8/8 with 322 assertions; fallback test 5 consecutive passes; SIGTERM fmt-owner test 10 consecutive passes; bun run type-check passed; scoped oxlint and oxfmt passed; git diff --check passed; no formatter processes or temporary fixture roots remained. Code commit: 2c4256f (separate from Backlog evidence).
 
 Independent same-reviewer rereview returned REVIEW_CLEAN for the complete fixed range after independently reproducing 10/10 parent-fallback and 10/10 SIGTERM runs. Root capped validation passed in archboard-task14410-focused-6a222d2.service (15 tests, 337 expectations, 1,019.8 MB peak, 0 swap under 6 GB/1 GB caps) and archboard-task14410-repository-6a222d2.service (235 tests, 1,951 expectations, 2.2 GB peak, 0 swap under 12 GB/2 GB caps); neither cap was hit.
+
+Historical note, 2026-09-03: TASK-143.08.07 removed this task's repository fixture cluster after its process ownership, signal, polling, and cleanup machinery outweighed the Tailwind sorting behavior it checked. This task remains the implementation history. No replacement wiring test was added, and normal Oxfmt configuration plus fmt/fmt:check remain.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 00:44'
+updated_date: '2026-09-02 22:50'
 labels: []
 dependencies:
   - TASK-144.03
@@ -63,6 +63,8 @@ Remediation after independent review: replaced unsupported `lineWidth` with sche
 Remediation validation: `bun run fmt:check`, `bun run type-check`, `bun run lint`, `bun run test:repository` (130 pass, 0 fail), `bun run test:modules` (1042 pass, 0 fail), `bun run build:frontend`, and `git diff --check` all passed.
 
 Parent integration at 902f298: independent final review returned REVIEW_CLEAN after proving printWidth is active, the canonical stylesheet/functions/native className contract is exact, preserveDuplicates retains the deliberate cn duplicate fixture without inhibiting sorting, dynamic/template/data expressions remain untouched, and TASK-144.10 remains the fixture owner. Parent validation passed: Oxfmt on 528 files; repository 137/1177; modules 1042/7632; both TypeScript graphs; Oxlint; frontend build; git diff/status clean.
+
+Historical note, 2026-09-03: TASK-143.08.07 removed the disposable Oxfmt/Tailwind fixture enforcement as disproportionate and obsolete. The canonical Oxfmt configuration and normal fmt/fmt:check commands remain; no sorting rule or formatter setting was weakened.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

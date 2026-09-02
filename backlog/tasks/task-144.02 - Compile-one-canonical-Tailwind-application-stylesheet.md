@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:11'
-updated_date: '2026-08-31 02:32'
+updated_date: '2026-09-02 22:50'
 labels: []
 dependencies:
   - TASK-144.01
@@ -87,6 +87,8 @@ Root integration and finalization evidence (2026-08-31):
 - Capped frontend build passed in archboard-task14402-build-25532ee.service: 2,446 modules transformed, exit 0, peak 1.4G, swap 0, no limit hit.
 - git diff --check and clean worktree status passed. The combined repository lane separately exposed one failure in active TASK-144.10, not in this task-owned scope; every TASK-144.02 owner passed and no exception was added.
 - Production rendered proof remains explicitly owned by TASK-144.11, TASK-144.13, and TASK-144.14.
+
+Historical note, 2026-09-03: TASK-143.08.07 removed the disposable Vite/Tailwind contract, allocation, cleanup, and frontend-style-entry fixtures. Their self-testing process machinery had become disproportionate to the wiring it guarded. The canonical package pins, Vite configuration, application stylesheet, and normal frontend build remain.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
