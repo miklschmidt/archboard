@@ -1,19 +1,19 @@
 ---
 id: TASK-143.08.01
-title: Remove the OOM validation mechanism and restore trustworthy gates
+title: Remove OOM validation and backend hot reload
 status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 02:31'
+updated_date: '2026-09-02 02:39'
 labels: []
 dependencies: []
 references:
+  - docs/adr/0014-no-build-step-bun-runs-the-source.md
+  - docs/adr/0021-backend-source-changes-require-a-restart.md
+  - src/runtime/engine/hot.ts
+  - src/dev-canvas.ts
   - scripts/typescript-analysis.ts
-  - tests/system/repository-policy/codex-protocol-boundary.test.ts
-  - >-
-    tests/system/repository-policy/support/codex-protocol-fingerprint-corpus.json
-  - src/shared/timing/timing.ts
   - docs/agents/test-suite.md
 parent_task_id: TASK-143.08
 priority: high
@@ -24,28 +24,31 @@ ordinal: 259000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-This is the first and exclusive recovery gate. Replace repository checks that repeatedly start TypeScript 7 async whole-project compiler workers and leave compiler closure unawaited. Delete the generated fingerprint, mirror, and alias corpus instead of optimizing it. Restore bounded repository validation, repair the audit's deterministic gate failures and false-positive async assertions, and retire only the exactly identified leaked test process and temporary root. Do not begin generated-type, contract, startup, worktree, or feature work until this task is Done.
+This remains the first and exclusive recovery gate. A 2026-09-02 uncapped repository run in the rejected implementation invoked type-aware Oxlint and tsgolint against the root graph; the kernel killed tsgolint after it reached about 32 GiB anonymous RSS with swap exhausted. Remove the backend hot-reload feature and its kept() lifetime model rather than replacing the analyzer. Delete the async compiler, fingerprint, mirror, alias, and source-scanning contract machinery. Fix the concrete promise and deterministic policy failures directly. Generated Codex type authority begins later in TASK-143.08.02 through ordinary product imports, never source scanning. No later recovery, legacy cleanup, or feature implementation starts until this task passes bounded validation and independent review.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 No repository test, test support, or script imports typescript/unstable/async, opens a whole-project compiler worker per case, or maintains the generated fingerprint, mirror, or alias corpus; the ordinary boundary owner retains one direct ignored-generated-path assertion.
-- [ ] #2 Every promise assertion is awaited and every compiler, child, test server, timer, and process group started by an affected owner is awaited or synchronously reaped on success, failure, signal, and timeout; the cheapest stable lint or repository check prevents recurrence.
-- [ ] #3 The timing policy includes CODEX_WAIT_TARGET_POLL_MS with its documented relationship, quarantine capacity crosses a module-root entrypoint, and vendor-element detection accepts the two legitimate workbench files without a file allowlist or weakened native-field rule.
-- [ ] #4 The affected repository lane passes twice in fresh transient user units with MemoryMax=6G and MemorySwapMax=1G, stays below the limit, reports no OOM kill, and leaves each unit with no tasks or descendant processes after exit.
-- [ ] #5 The owned archboard-task143-r2-reload-owner-4.scope and its exact temporary root are retired after identity verification; unrelated processes and user work remain untouched.
-- [ ] #6 No timeout increase, skip, warning allowance, test deletion without retained behavior evidence, lint/type relaxation, or broad memory increase is used to obtain a pass.
+- [ ] #1 Backend production has no bun hot/watch entry, reload command or endpoint, reload token, reload canary, global kept() registry, module-scope analyzer, or reload fixture/test; backend source changes require an explicit restart, while Vite HMR remains frontend-only and independent.
+- [ ] #2 No repository test, support module, script, linter, or dependency uses typescript/unstable/async, @babel/parser, @babel/types, custom TypeScript AST walking, type-aware Oxlint/tsgolint policy, or generated-contract source scanning; the fingerprint, mirror, alias, digest, and method-inventory corpus is deleted, and TASK-143.08.02 owns generated type authority through ordinary imports.
+- [ ] #3 Every identified promise assertion is awaited, and every affected compiler, child, test server, timer, and process group is awaited or synchronously reaped on success, failure, signal, and timeout. Add automated enforcement only if it is stable and bounded without parsing TypeScript or loading a type graph; otherwise record the required manual review and why another analyzer would be worse.
+- [ ] #4 The timing policy includes CODEX_WAIT_TARGET_POLL_MS with its documented relationship, quarantine capacity crosses a module-root entrypoint, and vendor-element detection accepts the two legitimate workbench files without a file allowlist or weakened native-field rule.
+- [ ] #5 Before any repository lane, a small red-capable reproduction proves the OOM mechanism is gone. Every potentially type-aware process in the first post-fix repository run, including descendants, runs inside the same fresh transient user unit with MemoryMax=6G and MemorySwapMax=1G. The affected repository lane then passes twice in fresh units, stays below the limit, reports no OOM kill, and leaves no tasks or descendants.
+- [ ] #6 The rejected worktree /home/msc/.codex/worktrees/b6e0/archboard remains untouched as incident evidence and none of its changes are integrated. The owned archboard-task143-r2-reload-owner-4.scope and /tmp/archboard-codex-production-WKF70O are retired only after fresh identity verification; every unrelated process, worktree, and path remains untouched.
+- [ ] #7 No timeout increase, skip, warning allowance, lint or type relaxation, uncapped broad gate, or broad memory increase obtains a pass. A fixed-range independent review is clean before the task is finalized and before any dependent implementation starts.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Inventory the OOM-producing TypeScript analysis, fingerprint, mirror, alias, promise-assertion, timing, quarantine-boundary, and vendor-field owners without running broad gates.
-2. Delete the generated fingerprint and async whole-project analysis mechanisms; retain the cheapest direct ignored-generated-path and production-contract checks.
-3. Repair the identified deterministic repository failures and await or reap every affected promise, compiler, child, timer, server, and process group.
-4. Verify and retire only the named leaked systemd scope and exact temporary root, preserving every unrelated process and path.
-5. Run focused checks, then run the affected repository lane twice in fresh transient units with MemoryMax=6G and MemorySwapMax=1G; record peak memory, OOM status, exit state, and descendant cleanup.
-6. Obtain an independent fixed-range review, remediate findings with the same worker, and repeat review until clean before finalizing the leaf.
+1. Preserve the rejected b6e0 worktree and record the OOM command, process, memory, and kernel evidence. Do not run another command there.
+2. Add ADR 0021 and inventory every backend reload, kept(), module-scope policy, generated-contract scanner, test, script, command, route, timing, and current-doc owner. Keep frontend Vite HMR only where it is independent.
+3. Write a small red-capable reproduction for the specific unbounded analysis path. It must run inside a transient user unit that contains every descendant and enforces MemoryMax=6G and MemorySwapMax=1G. Do not run the repository lane yet.
+4. Remove backend hot reload, the kept() registry, reload token/canary/dev entry, module-scope analyzer and fixtures, and their commands, routes, tests, timings, and current guidance. Convert retained runtime state to ordinary module or application ownership with explicit startup and teardown.
+5. Delete the async compiler and generated fingerprint, mirror, alias, digest, inventory, and source-scanning machinery. Add no replacement parser, custom AST walk, or type-aware lint policy. Leave generated contract enforcement to TASK-143.08.02 through imports in ordinary type-checking.
+6. Await the concrete floating promise assertions and repair the timing, quarantine-boundary, and vendor-field failures through their production contracts. Use a bounded no-parser enforcement only if it remains simpler than manual review.
+7. Run focused tests inside capped units. Then run the affected repository lane twice, each in a fresh 6G RAM plus 1G swap unit that contains all descendants; record command, exit, MemoryPeak, OOM counters, task state, and descendant cleanup.
+8. Obtain an independent fixed-range review, return valid findings to the same fresh worker, and repeat until clean. Finalize TASK-143.08.01 only after the review and capped evidence pass.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -56,6 +59,8 @@ Read-only policy audit 01a05feb-6467-7e80-83ed-ee37b5c0d676 completed at fixed b
 Read-only leak audit 01a05feb-6061-7cf3-a6ae-1fba244af2bc completed at fixed base 71a3e6bf. It found four forbidden whole-project async compiler import sites: scripts/typescript-analysis.ts, support/codex-protocol-aliases.ts, codex-protocol-fingerprint-corpus.test.ts, and src/ui/codex-realtime/tests/contract.test.ts. Three discard close operations; the fourth still violates the no-worker criterion. It also found 16 unawaited Bun rejects assertions across canvas adapters, realtime, dynamic-tools, wait, quarantine, and process-contract owners. The affected Vite and Oxfmt helpers showed no additional confirmed leak. Recommended enforcement is one bounded repository policy that rejects the async compiler import and floating resolves/rejects assertions without loading TypeScript project graphs. No files changed and no broad validation ran.
 
 HOLD, 2026-09-02 user decision: reject @babel/parser, @babel/types, custom TypeScript AST walking, and source scanning as the generated Codex contract authority. Do not integrate, rewrite, reset, clean, or discard the current implementation worktree. The implementation worker has been ordered to stop and preserve it unchanged. Resume only after the user decides whether to remove only the AST-based module-scope policy or remove the hot-reload and kept() lifecycle entirely. Generated Codex contracts must later be enforced by importing generated types into ordinary product type-checking.
+
+OOM incident, 2026-09-02 04:32:18: rejected worker task 01a05feb-6020-71b0-82fc-1b2fcb6918b4 ran bun run test:repository without a memory cap. Its new type-aware Oxlint promise-expectations policy invoked tsgolint PID 3860572 against the root graph. Kernel evidence reports about 32,082,352 KiB anonymous RSS with swap exhausted before the OOM killer terminated it. The worker is stopped. Its detached b6e0 worktree remains at 71a3e6bf with unstaged evidence and no commit. Integrate none of it.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:35'
-updated_date: '2026-09-02 02:31'
+updated_date: '2026-09-02 02:39'
 labels: []
 dependencies: []
 references:
@@ -16,6 +16,7 @@ references:
   - docs/adr/0009-every-call-names-its-board.md
   - skills/archboard/SKILL.md
   - docs/adr/0020-board-work-never-depends-on-a-browser-session.md
+  - docs/adr/0021-backend-source-changes-require-a-restart.md
 parent_task_id: TASK-143
 priority: high
 type: task
@@ -60,6 +61,8 @@ Orchestration queue at base 71a3e6bf:
 - Integrated: planning commit 71a3e6bf only.
 
 Queue hold after user decision: TASK-143.08.01 implementation is stopped pending a choice between removing only the AST-based module-scope policy and removing the full hot-reload plus kept() lifecycle. Babel, custom TypeScript AST walking, and generated-contract source scanning are rejected. No TASK-143.08 descendant or legacy cleanup leaf may start. The current implementation worktree is preserved and must not be integrated or altered.
+
+User decision and incident update: backend hot reload and kept() will be removed in TASK-143.08.01. The rejected b6e0 implementation recreated an OOM through an uncapped type-aware Oxlint/tsgolint run and is evidence only. Babel, custom TypeScript AST walking, type-aware lint policy, and generated-contract source scanning are forbidden replacements. The ready queue remains empty until the revised plan and ADR receive independent high-stakes review.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
