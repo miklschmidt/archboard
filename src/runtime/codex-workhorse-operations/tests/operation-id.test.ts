@@ -7,7 +7,10 @@ import {
 	type OperationId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import { rejected } from "./evidence.js";
-import { fixture, turn } from "./support.js";
+import { useFixtureGroup } from "./fixture-group.js";
+import { fixture as standaloneFixture, turn } from "./support.js";
+
+const fixture = useFixtureGroup();
 
 function operationWire(value: ReturnType<typeof fixture>, operationId: OperationId): string {
 	return value.operation.decoder.serializeOperationId(operationId);
@@ -90,7 +93,7 @@ describe("workhorse host-issued operation identity", () => {
 			childId: current.identity.validator.childId,
 			epoch: current.identity.validator.epoch,
 		}).operation.issuer.mintOperationId();
-		const value = fixture("idle", current);
+		const value = standaloneFixture("idle", current);
 		try {
 			const crossDomain = value.identity.decoder.adoptJsonRpcRequestId("wrong-domain");
 			for (const candidate of [crossDomain as unknown as OperationId, unissued, staleOperation]) {
