@@ -2,6 +2,7 @@ export type CanvasApplicationPhase =
 	| "idle"
 	| "starting"
 	| "running"
+	| "quiescing"
 	| "stopping"
 	| "stopped"
 	| "failed";
@@ -10,21 +11,38 @@ export type CanvasApplicationStopReason = NodeJS.Signals | "startup-failed" | "t
 
 export interface CanvasApplicationResource {
 	readonly name: string;
-	readonly start?: () => Promise<void> | void;
+	/** A resource that starts asynchronously must settle when this signal aborts. */
+	readonly start?: (signal: AbortSignal) => Promise<void> | void;
+	/** Resolve only after the resource has reached its terminal state. */
 	readonly stop: (reason: CanvasApplicationStopReason) => Promise<void> | void;
+	/** Grace before forceStop runs. A timed resource must provide forceStop. */
+	readonly stopGraceMs?: number;
+	/** Force terminal state, then allow the original stop promise to settle. */
+	readonly forceStop?: (reason: CanvasApplicationStopReason) => Promise<void> | void;
 }
 
 export interface CanvasApplicationEvent {
 	readonly phase: CanvasApplicationPhase;
 	readonly resource: string | null;
-	readonly action: "phase" | "start" | "started" | "stop" | "stopped" | "failed";
+	readonly action:
+		| "phase"
+		| "start"
+		| "started"
+		| "stop"
+		| "stopped"
+		| "force"
+		| "forced"
+		| "failed";
 }
 
 export interface CanvasApplicationLifetimeOptions {
 	readonly resources: readonly CanvasApplicationResource[];
 	readonly heldBoards?: () => readonly string[];
+	/** Stop admitting writes and settle every admitted write. */
+	readonly quiesce?: () => Promise<void> | void;
+	/** Restore write admission when the authoritative hold check refuses stop. */
+	readonly resume?: () => Promise<void> | void;
 	readonly observe?: (event: CanvasApplicationEvent) => void;
-	readonly stopTimeoutMs?: number;
 }
 
 export class CanvasApplicationHeldError extends Error {
@@ -41,120 +59,219 @@ export class CanvasApplicationHeldError extends Error {
 	}
 }
 
+export class CanvasApplicationStartupCancelledError extends Error {
+	constructor(readonly reason: CanvasApplicationStopReason) {
+		super(`Canvas application startup was canceled by ${reason}.`);
+		this.name = "CanvasApplicationStartupCancelledError";
+	}
+}
+
+const failure = (error: unknown): Error =>
+	error instanceof Error ? error : new Error(String(error));
+
 /**
  * Own one canvas process generation.
  *
- * Resources start in declaration order and always stop in reverse order. A
- * partial startup is unwound before its error escapes, and shutdown continues
- * after individual cleanup failures so one bad owner cannot strand the rest.
+ * Resources enter ownership before start is invoked, start in declaration
+ * order, and stop in reverse order. A signal can therefore stop an owner that
+ * has acquired only part of its startup state. A timed stop is not abandoned:
+ * its force action must make the original stop promise settle before teardown
+ * advances to the next owner.
  */
 export function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptions) {
+	for (const resource of options.resources) {
+		if (resource.stopGraceMs === undefined) continue;
+		if (!Number.isFinite(resource.stopGraceMs) || resource.stopGraceMs < 0)
+			throw new Error(`${resource.name} has an invalid stop grace.`);
+		if (resource.forceStop === undefined)
+			throw new Error(`${resource.name} has a stop grace but no forceStop action.`);
+	}
+
 	let phase: CanvasApplicationPhase = "idle";
+	let startPromise: Promise<void> | null = null;
 	let stopPromise: Promise<void> | null = null;
-	const started: CanvasApplicationResource[] = [];
+	let unwindPromise: Promise<void> | null = null;
+	const startup = new AbortController();
+	const entered: CanvasApplicationResource[] = [];
 	const emit = (action: CanvasApplicationEvent["action"], resource: string | null = null): void =>
 		options.observe?.({ phase, action, resource });
 	const setPhase = (next: CanvasApplicationPhase): void => {
 		phase = next;
 		emit("phase");
 	};
+	const holds = (): string[] => [...(options.heldBoards?.() ?? [])].toSorted();
+
 	const stopResource = async (
 		resource: CanvasApplicationResource,
 		reason: CanvasApplicationStopReason,
-		deadline: number | null,
 	): Promise<void> => {
-		if (deadline === null) return void (await resource.stop(reason));
-		const remainingMs = Math.max(0, deadline - Date.now());
-		let timeout: ReturnType<typeof setTimeout> | null = null;
-		try {
-			await Promise.race([
-				resource.stop(reason),
-				new Promise<never>((_resolve, reject) => {
-					timeout = setTimeout(
-						() =>
-							reject(
-								new Error(
-									`${resource.name} did not stop within the ${options.stopTimeoutMs}ms application shutdown cap.`,
-								),
-							),
-						remainingMs,
-					);
-				}),
-			]);
-		} finally {
-			if (timeout !== null) clearTimeout(timeout);
+		let stopFailure: Error | null = null;
+		let stopSettled = false;
+		const graceful = Promise.resolve()
+			.then(() => resource.stop(reason))
+			.then(
+				() => {
+					stopSettled = true;
+					return undefined;
+				},
+				(error: unknown) => {
+					stopSettled = true;
+					stopFailure = failure(error);
+					return undefined;
+				},
+			);
+
+		if (resource.stopGraceMs !== undefined) {
+			let timeout: ReturnType<typeof setTimeout> | null = null;
+			try {
+				await Promise.race([
+					graceful,
+					new Promise<void>((resolve) => {
+						timeout = setTimeout(resolve, resource.stopGraceMs);
+					}),
+				]);
+			} finally {
+				if (timeout !== null) clearTimeout(timeout);
+			}
+		} else {
+			await graceful;
+		}
+
+		if (!stopSettled || stopFailure !== null) {
+			if (resource.forceStop === undefined) throw stopFailure;
+			emit("force", resource.name);
+			let forceFailure: Error | null = null;
+			try {
+				await resource.forceStop(reason);
+			} catch (error) {
+				forceFailure = failure(error);
+			}
+			// forceStop terminalizes the resource. The graceful owner still has to
+			// settle so no cleanup work is left running after this boundary.
+			await graceful;
+			if (forceFailure !== null) throw forceFailure;
+			emit("forced", resource.name);
 		}
 	};
 
-	const unwind = async (reason: CanvasApplicationStopReason): Promise<void> => {
-		const failures: Error[] = [];
-		const deadline =
-			options.stopTimeoutMs === undefined ? null : Date.now() + options.stopTimeoutMs;
-		for (const resource of started.toReversed()) {
-			emit("stop", resource.name);
-			try {
-				await stopResource(resource, reason, deadline);
-				emit("stopped", resource.name);
-			} catch (error) {
-				const failure = error instanceof Error ? error : new Error(String(error));
-				failures.push(failure);
-				emit("failed", resource.name);
+	const unwind = (reason: CanvasApplicationStopReason): Promise<void> => {
+		if (unwindPromise !== null) return unwindPromise;
+		unwindPromise = (async () => {
+			const failures: Error[] = [];
+			for (const resource of entered.toReversed()) {
+				emit("stop", resource.name);
+				try {
+					await stopResource(resource, reason);
+					emit("stopped", resource.name);
+				} catch (error) {
+					failures.push(failure(error));
+					emit("failed", resource.name);
+				}
 			}
-		}
-		started.length = 0;
-		if (failures.length > 0)
-			throw new AggregateError(
-				failures,
-				`Canvas application cleanup failed: ${failures.map((failure) => failure.message).join(" ")}`,
-			);
+			entered.length = 0;
+			if (failures.length > 0)
+				throw new AggregateError(
+					failures,
+					`Canvas application cleanup failed: ${failures.map((item) => item.message).join(" ")}`,
+				);
+		})();
+		return unwindPromise;
+	};
+
+	const stopStarting = (reason: CanvasApplicationStopReason): Promise<void> => {
+		startup.abort(reason);
+		setPhase("stopping");
+		stopPromise = unwind(reason).then(
+			() => setPhase("stopped"),
+			(error) => {
+				setPhase("failed");
+				throw error;
+			},
+		);
+		return stopPromise;
 	};
 
 	return Object.freeze({
 		phase: (): CanvasApplicationPhase => phase,
-		start: async (): Promise<void> => {
-			if (phase !== "idle") throw new Error(`Canvas application cannot start from ${phase}.`);
+		start: (): Promise<void> => {
+			if (startPromise !== null) return startPromise;
+			if (phase !== "idle")
+				return Promise.reject(new Error(`Canvas application cannot start from ${phase}.`));
 			setPhase("starting");
-			try {
-				for (const resource of options.resources) {
-					emit("start", resource.name);
-					await resource.start?.();
-					started.push(resource);
-					emit("started", resource.name);
-				}
-				setPhase("running");
-			} catch (startupError) {
-				let failure =
-					startupError instanceof Error ? startupError : new Error(String(startupError));
+			startPromise = (async () => {
 				try {
-					await unwind("startup-failed");
-				} catch (cleanupError) {
-					failure = new AggregateError(
-						[failure, cleanupError],
-						"Canvas application startup and cleanup failed.",
-					);
+					for (const resource of options.resources) {
+						if (startup.signal.aborted)
+							throw new CanvasApplicationStartupCancelledError(
+								(startup.signal.reason as CanvasApplicationStopReason | undefined) ?? "test",
+							);
+						emit("start", resource.name);
+						entered.push(resource);
+						const starting = resource.start?.(startup.signal);
+						if (starting !== undefined) await starting;
+						emit("started", resource.name);
+					}
+					setPhase("running");
+				} catch (startupError) {
+					if (stopPromise !== null) {
+						await stopPromise;
+						throw startupError;
+					}
+					let combined = failure(startupError);
+					startup.abort("startup-failed");
+					setPhase("stopping");
+					try {
+						await unwind("startup-failed");
+					} catch (cleanupError) {
+						combined = new AggregateError(
+							[combined, cleanupError],
+							"Canvas application startup and cleanup failed.",
+						);
+					}
+					setPhase("failed");
+					throw combined;
 				}
-				setPhase("failed");
-				throw failure;
-			}
+			})();
+			return startPromise;
 		},
 		stop: (reason: CanvasApplicationStopReason): Promise<void> => {
 			if (stopPromise !== null) return stopPromise;
 			if (phase === "stopped") return Promise.resolve();
+			if (phase === "starting") return stopStarting(reason);
 			if (phase !== "running")
 				return Promise.reject(new Error(`Canvas application cannot stop from ${phase}.`));
-			const held = [...(options.heldBoards?.() ?? [])].toSorted();
-			if (held.length > 0) return Promise.reject(new CanvasApplicationHeldError(held));
-			setPhase("stopping");
-			stopPromise = (async () => {
+
+			const preflight = holds();
+			if (preflight.length > 0) return Promise.reject(new CanvasApplicationHeldError(preflight));
+
+			let teardownStarted = false;
+			setPhase("quiescing");
+			const attempt = (async () => {
 				try {
+					await options.quiesce?.();
+					const authoritative = holds();
+					if (authoritative.length > 0) throw new CanvasApplicationHeldError(authoritative);
+					teardownStarted = true;
+					startup.abort(reason);
+					setPhase("stopping");
 					await unwind(reason);
 					setPhase("stopped");
 				} catch (error) {
-					setPhase("failed");
+					if (!teardownStarted) {
+						try {
+							await options.resume?.();
+						} finally {
+							setPhase("running");
+							stopPromise = null;
+						}
+					} else {
+						setPhase("failed");
+					}
 					throw error;
 				}
 			})();
-			return stopPromise;
+			stopPromise = attempt;
+			return attempt;
 		},
 	});
 }

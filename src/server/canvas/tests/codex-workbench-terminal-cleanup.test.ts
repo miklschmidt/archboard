@@ -104,4 +104,26 @@ describe("production Codex owner terminal cleanup", () => {
 			expect(messages(failure)).toContain(message);
 		expect(retained.control).toMatchObject({ current: null, runtime: null });
 	});
+
+	test("a failed process stop can perform one fresh terminal retry", async () => {
+		const retained = emptyCodexWorkbenchRetainedState();
+		const process = fakeProcess([]);
+		let stops = 0;
+		const owner = installFakeCodexWorkbenchOwner(retained, {
+			createProcess: () => ({
+				...process,
+				stop: async () => {
+					stops++;
+					if (stops === 1) throw new Error("process was not terminal");
+					return process.stop();
+				},
+			}),
+			createGeneration: async ({ generation }) => fakeGeneration([], generation),
+		});
+		await owner.start();
+
+		await expect(owner.shutdown()).rejects.toThrow("did not shut down cleanly");
+		await owner.shutdown();
+		expect(stops).toBe(2);
+	});
 });

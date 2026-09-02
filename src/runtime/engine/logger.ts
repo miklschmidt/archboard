@@ -75,4 +75,33 @@ const logger: winston.Logger = winston.createLogger({
 	],
 });
 
+/** Flush every queued record and close each transport before process exit. */
+export async function closeLogger(target: winston.Logger = logger): Promise<void> {
+	if (target.writableFinished || target.destroyed) {
+		target.close();
+		return;
+	}
+	await new Promise<void>((resolve, reject) => {
+		const finished = (): void => {
+			target.off("error", failed);
+			resolve();
+		};
+		const failed = (error: Error): void => {
+			target.off("finish", finished);
+			reject(error);
+		};
+		target.once("finish", finished);
+		target.once("error", failed);
+		target.end();
+	});
+	target.close();
+}
+
+/** Terminal fallback for a logger whose normal stream finalization failed. */
+export function forceCloseLogger(target: winston.Logger = logger): void {
+	for (const transport of target.transports) transport.destroy();
+	target.destroy();
+	target.close();
+}
+
 export default logger;

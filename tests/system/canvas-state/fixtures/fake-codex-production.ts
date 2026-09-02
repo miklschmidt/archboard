@@ -247,7 +247,14 @@ const handle = (frame: WireFrame): void => {
 	}
 	const params = frame.params ?? {};
 	switch (frame.method) {
-		case "initialize":
+		case "initialize": {
+			const control = JSON.parse(readFileSync(controlPath, "utf8")) as {
+				holdInitialize?: unknown;
+			};
+			if (control.holdInitialize === true) {
+				record({ kind: "initialize_held" });
+				return;
+			}
 			respond(frame as never, {
 				userAgent: "Codex Desktop/0.151.0",
 				codexHome: process.env.CODEX_HOME,
@@ -255,6 +262,7 @@ const handle = (frame: WireFrame): void => {
 				platformOs: "linux",
 			});
 			return;
+		}
 		case "initialized":
 			return;
 		case "configRequirements/read":
