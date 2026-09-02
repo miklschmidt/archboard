@@ -4,9 +4,10 @@ title: Keep the linked workhorse current with semantic board changes
 status: To Do
 assignee: []
 created_date: '2026-08-30 13:34'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-09-02 01:40'
 labels: []
-dependencies: []
+dependencies:
+  - TASK-143.08.01
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
   - docs/design/codex-workbench-delivery-map.md

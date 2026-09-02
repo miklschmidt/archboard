@@ -1,14 +1,14 @@
 ---
 id: TASK-143.01.02
 title: Define the closed Codex browser contract
-status: In Progress
-assignee:
-  - '@codex'
+status: To Do
+assignee: []
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-01 19:10'
+updated_date: '2026-09-02 01:39'
 labels: []
 dependencies:
   - TASK-143.01.01
+  - TASK-143.08.05
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
   - docs/design/codex-workbench-authored-contracts.md
@@ -23,27 +23,21 @@ ordinal: 172000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Define the closed browser DTOs plus the exhaustive host-side server-request contract that the final composition routes. Generated protocol types do not cross this shared boundary. Delegation profile: gpt-5.6-luna, xhigh.
+Define the browser-facing DTOs and exhaustive host request contract at the public shared boundary. Every wire-backed field derives from the authoritative generated Codex 0.151.0 module supplied by TASK-143.08.02; browser-only and domain-only additions cross one named adapter. Vendor-private paths do not cross this boundary, but generated vendor types remain the source of truth.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The browser DTO union covers readiness, account/login, thread links, timelines, queue, settings, approvals/forms, text commands, semantic delivery, coordinator, voice, command leases, and delivered/not_delivered/outcome_unknown without generated imports.
-- [ ] #2 A closed host request union covers all eleven 0.151.0 variants: seven broker families, item/tool/call, currentTime/read, account/chatgptAuthTokens/refresh, and attestation/generate; no default/unknown branch can silently drop a request.
-- [ ] #3 The contract imports the literal InitializeCapabilities object and six-login support/refusal table from the reviewed authored contract, including exact extensions, notification opt-outs, time response, and protocol-error policies.
-- [ ] #4 Round-trip/schema fixtures reject unknown identities, methods, result media, status, capability, login variant, browser command, or server request and keep secrets out of browser snapshots.
+- [ ] #1 The browser DTO union covers the reachable readiness, account/login, thread-link, timeline, queue, settings, approval/form, text-command, semantic-delivery, coordinator, voice, command-lease, and delivery-outcome states; every wire-backed member is derived from the generated shared module or converted at one named seam.
+- [ ] #2 The exhaustive host request union and its results derive from the exact generated 0.151.0 reverse-request variants, so an added or changed vendor member fails ordinary type-checking at the owning switch or adapter rather than a fingerprint or handwritten method inventory.
+- [ ] #3 Runtime schemas validate only untrusted app-server and browser ingress, infer their local TypeScript types, and carry compile-time input and output conformance to the generated type; no parallel literal table, mirror schema, digest, or generated-import-free lookalike acts as authority.
+- [ ] #4 Focused contract tests cover reachable accepted and refused behavior, secret exclusion, the object-shaped BrowserUseOriginPolicy, and the shared i64 normalization seam without duplicating tool, formatter, linter, alias, fixture-cleanup, or prose checks.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Add the public src/shared/codex-browser-model/index.ts entrypoint and private implementation modules with closed, strict Zod schemas and inferred browser DTO types; represent the complete browser snapshot/command/event surface for readiness, account/login, thread links, timelines, queue, settings, approvals/forms, text commands, semantic delivery, coordinator, voice, leases, and delivered/not_delivered/outcome_unknown outcomes.
-2. Define the exhaustive host-side server-request union for the exact eleven Codex 0.151.0 reverse-request methods, using only the shared identity root types and local JSON-safe DTOs; provide strict parsers that reject unknown methods, fields, identities, and result media without importing generated protocol bindings.
-3. Freeze the reviewed InitializeCapabilities object, six login policies, current-time response, unsupported token-refresh/attestation errors, and browser-safe dynamic-tool/result envelopes as literal readonly contracts; ensure secret-bearing login fields are accepted only at the host boundary and never appear in browser DTOs or snapshots.
-4. Add module-owned schema/round-trip and compile-time exhaustiveness fixtures covering accepted discriminators and rejection of unknown identities, methods, media, statuses, capabilities, login variants, browser commands, and server requests; enforce root-only imports and generated-protocol independence.
-5. Run focused module/type/lint/format and repository policy checks, audit BASE..HEAD paths and diff whitespace, record validation notes on TASK-143.01.02, and commit only the owned module plus its Backlog record.
-
-Reopened remediation: extend only the shared browser DTOs proven absent by TASK-143.03.07, preserving the closed generated-import-free boundary; add exact lifecycle, permission-profile, elicitation-constraint, binding, and spoken-eligibility fixtures required by reachable production projections.
+Paused by TASK-143.08. Do not continue or review the generated-import-free implementation. Reopen only after TASK-143.08.05 is Done, then replace this pause with a fresh plan based on the generated shared module and the retained-owner matrix. Port only observable behavior from the detached work; do not merge its contract or test scaffolding.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -69,3 +63,12 @@ Parent integration validation at 99870de: focused browser-model suite 9 tests / 
 
 Reopened with user approval after downstream TASK-143.03.07 showed that the finalized browser model cannot represent authoritative approval lifecycle, exact permission profiles, full elicitation constraints, binding, and spoken eligibility.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-09-02 01:39
+---
+Course correction, 2026-09-02: the generated-import-free contract is rejected because it contradicts repository boundaries and already drifted from Codex 0.151.0. Preserve maximal head b0938164 and ancestor 54643b59 only as behavior evidence; rebuild this leaf after TASK-143.08.05 and do not merge that chain.
+---
+<!-- COMMENTS:END -->

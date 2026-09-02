@@ -1,11 +1,10 @@
 ---
 id: TASK-143.01.10
 title: Expose the Codex workbench browser gateway
-status: In Progress
-assignee:
-  - '@codex'
+status: To Do
+assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-01 19:10'
+updated_date: '2026-09-02 01:39'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -13,6 +12,7 @@ dependencies:
   - TASK-143.01.09
   - TASK-143.01.16
   - TASK-143.01.21
+  - TASK-143.08.05
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
 modified_files:
@@ -40,13 +40,7 @@ Expose the closed browser gateway for account and session readiness, thread link
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Define the server-root gateway contract and narrow injected ports for lifecycle/readiness, session operations, current thread-link CAS, ordinary approvals, dynamic coordination approvals, queue, semantic, coordinator, and realtime projections; keep browser DTO validation at the shared model boundary and expose only bounded JSON-safe results. 2. Implement app-global browser connection and renewable command-lease ownership, binding each lease to browser, pane, captured link, current child epoch, and command id; enforce exact lease/link/capability checks, deterministic expiry/refusal, duplicate and late-command handling, and lease transfer/close recovery without retargeting pending approvals. 3. Compose readiness/account/thread/timeline/settings/queue/approval/dynamic/semantic/coordinator/voice projections on demand from injected owners, route account commands before account readiness, gate all thread-scoped operations on thread capability plus exact current link, and preserve dynamic OperationId/logical-call/effect-hash DTOs through pending-aware response validation. 4. Add focused gateway tests for all reachable readiness and recovery states, command and lease races, ordinary and dynamic approval lifecycles, bounded snapshots/sequenced idempotent deltas, stale and duplicate inputs, child/browser disconnect, lost/late outcomes, and exact capability/link enforcement. 5. Run scoped gateway tests, strict TypeScript, Oxlint, Oxfmt, diff and path audits under sequential named 6G/1G transient user units; record evidence and commit only src/server/codex-workbench plus the Backlog record, leaving acceptance criteria unchecked for independent review.
-
-6. Make exact child exit terminal for this gateway: revoke the old lease and reject all later connections and commands under the captured authority; test recovery only through a newly constructed gateway with genuinely different child and epoch authorities. 7. Expand owner tests across terminal approval_required and late responses, lost outcomes, renewal, logout, all thread-link, text, queue, and realtime commands, capability/link matrices, and hostile lifecycle recovery. 8. Make gateway message validation strict at the wrapper arm and retain only bounded settled command results while in-flight deduplication remains shared; evicted command IDs must still fail through retired lease authority and never execute again. 9. Rerun both type graphs, focused gateway tests, scoped lint/format, repository inventory, diff/path audits, clean-tree and protected-hash checks, then commit remediation without checking acceptance criteria.
-
-10. Make disconnect settlement async-aware: revoke lease and local authority before callbacks, invoke both approval owners independently, track only pending settlement promises, and await a failure-isolated drain from browser close, child exit, dispose, expiry, and transfer. 11. Add deferred-owner tests for close, exact child exit, dispose, transfer, expiry, rejection isolation, and authority refusal during the wait. 12. Rerun focused gateway tests, both type graphs, scoped lint/format, inventory, diff/path, clean-tree, and protected-hash audits, then commit this remediation with acceptance criteria unchecked.
-
-Reopened remediation: project authoritative thread candidates, queue lifecycle and operation identity, semantic delivery outcomes, and ordinary or dynamic approval state through the existing gateway. Remove hardcoded queued, null-operation, delivered, and pending-only projections; add public gateway behavior tests.
+Paused by TASK-143.08. Reopen only after TASK-143.08.05 is Done. Replace this pause with a fresh plan that consumes the recovered generated-derived browser contract, one gateway owner, and the retained reachable-behavior matrix; do not restore duplicate state, schema, or remediation-test owners.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -60,3 +54,12 @@ Finalization evidence: AC #1 is proved by the closed readiness and capability-ga
 
 Reopened with user approval after TASK-143.03.03, TASK-143.03.06, and TASK-143.03.07 exposed hardcoded or missing browser projections in the production gateway.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-09-02 01:39
+---
+Course correction, 2026-09-02: 8bac86bf is a Backlog-only blocker record with no unique product change. Fold its useful context into recovery and drop it after its head is durably referenced; it receives no replay.
+---
+<!-- COMMENTS:END -->

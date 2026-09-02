@@ -4,10 +4,11 @@ title: Delete the legacy app-server control client
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:08'
-updated_date: '2026-08-30 16:58'
+updated_date: '2026-09-02 01:39'
 labels: []
 dependencies:
   - TASK-143.06.04
+  - TASK-143.08.01
 references:
   - docs/adr/0005-push-to-codex-via-app-server.md
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
@@ -34,3 +35,12 @@ Delegation profile: gpt-5.6-luna, high.
 - [ ] #3 Historical ADR/research references may name the removed module but current architecture/docs cannot present it as runnable behavior.
 - [ ] #4 Type, module, process, and repository tests pass without a compatibility shim or dead export.
 <!-- AC:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-09-02 01:39
+---
+Course correction, 2026-09-02: this cleanup may resume only after the OOM gate is Done; its focused validation must use the recovered bounded test path.
+---
+<!-- COMMENTS:END -->

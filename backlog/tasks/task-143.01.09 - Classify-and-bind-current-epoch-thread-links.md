@@ -1,16 +1,16 @@
 ---
 id: TASK-143.01.09
 title: Classify and bind current-epoch thread links
-status: In Progress
-assignee:
-  - '@codex'
+status: To Do
+assignee: []
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-01 19:10'
+updated_date: '2026-09-02 01:39'
 labels: []
 dependencies:
   - TASK-143.01.05
   - TASK-143.01.08
   - TASK-143.01.17
+  - TASK-143.08.05
 references:
   - docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md
   - docs/design/codex-workbench-authored-contracts.md
@@ -41,12 +41,7 @@ Delegation profile: gpt-5.6-luna, max.
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Define the thread-link public contract around the typed CodexSession page results, current child/epoch provenance, and authored additional-context reason/source/status rules.
-2. Implement deterministic full-page discovery for thread/list and thread/loaded/list with repeated-cursor detection, exact ThreadId joins, duplicate/disappearing-row refusal, and frozen refusal precedence; expose inspect-only outcomes for all non-executable cases.
-3. Add compare-and-swap pane/link binding keyed by captured child epoch, pane identity, and link identity, with stale-response refusal and no recency inference.
-4. Add focused module tests for pagination/cursor failure, exact joins, source/status/direct-input matrix, epoch/provenance/outcome-unknown cases, and binding CAS races; run only named capped focused validation and record evidence.
-
-Reopened remediation: expose one authoritative exhausted current-candidate result from the existing classifier and binding authority so UI discovery consumes persisted and loaded pagination without inventing a second classifier; add public-contract and hostile cursor or stale-epoch coverage.
+Paused by TASK-143.08. Reopen only after TASK-143.08.05 is Done. Write a fresh plan against the recovered generated type seam and reuse the existing classifier and binding authority; preserve candidate-discovery behavior without adding a second classifier or replaying detached test scaffolding.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -62,3 +57,12 @@ Finalization evidence: two independent reviews were clean for e53d27a7..f7c281c3
 
 Reopened with user approval after TASK-143.03.03 proved that no public authoritative candidate-discovery result reaches the browser consumer.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-09-02 01:39
+---
+Course correction, 2026-09-02: duplicate worktrees at maximal head 3e1670af contain candidate-discovery behavior worth preserving, but no detached head may merge before recovery. Reimplement that behavior on the recovered base; the duplicate worktree receives no separate replay.
+---
+<!-- COMMENTS:END -->

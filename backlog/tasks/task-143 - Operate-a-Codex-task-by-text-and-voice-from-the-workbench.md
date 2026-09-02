@@ -4,7 +4,7 @@ title: Operate Codex threads by text and voice from the workbench
 status: To Do
 assignee: []
 created_date: '2026-08-30 11:43'
-updated_date: '2026-08-30 16:36'
+updated_date: '2026-09-02 01:44'
 labels: []
 dependencies:
   - TASK-140
@@ -26,13 +26,14 @@ ordinal: 162000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Deliver one coherent Codex workbench on merged TASK-140 and TASK-144. A pane links to one current-epoch workhorse on Archboard’s owned 0.151.0 stdio app-server child; a capable persistent coordinator supports voice, semantic context, bounded direct actions, delegation, queueing, callbacks, and state-gated spoken approvals. Seven milestones and 64 active implementation leaves own the complete module/test/config DAG; archived TASK-143.04.08 is superseded by self-registering browser owners.
+Deliver one coherent Codex workbench on merged TASK-140 and TASK-144 only after TASK-143.08 recovers the audited integration. A pane links to one current-epoch workhorse on Archboard's exact owned app-server child; a capable persistent coordinator supports text, voice, semantic context, bounded direct actions, delegation, queueing, callbacks, and state-gated spoken approvals. Completed leaf records remain historical. Current product authority comes from the generated-derived protocol seam, production interfaces, and rendered workflows.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The dependency graph delivers one exact-version owned app-server session, explicit current-epoch thread links, text/tool/queue/approval control, semantic context, capable coordinator, and browser-native live voice without Desktop/shared-daemon attachment or a second protocol.
-- [ ] #2 Each of 64 active leaves names one deep module, test/document owner, or explicitly serialized integration seam, its public contract, reachable states, dependencies, direct verification, and delegation class; Luna can implement the majority without resolving cross-module architecture.
-- [ ] #3 The rendered desktop workbench follows merged TASK-140 plus TASK-144, preserves claim/doing/take-back, keeps workhorse/coordinator histories distinct, and covers one/two-pane, collapsed, fullscreen, keyboard, screen-reader, themes, reduced-motion, and Samsung Flip touch.
-- [ ] #4 Acceptance requires exact 0.151.0 process/protocol conformance, literal authored contracts, two-home isolation, generated drift/boundary checks, final production composition, module/process/browser owners, controlled voice coverage, and a clean-process real text/voice smoke.
+- [ ] #1 One exact-version owned app-server session, explicit current-epoch thread links, text, tool, queue, approval, semantic-context, coordinator, and browser-native live-voice behavior compose through one recovered production graph without Desktop or shared-daemon attachment.
+- [ ] #2 Every used Codex wire assumption derives from the exact generated vendor types during ordinary compilation; runtime schemas prove conformance at untrusted ingress, and browser or domain additions convert once at a named seam.
+- [ ] #3 The rendered desktop workbench follows TASK-140 and TASK-144, preserves claim, doing, and take-back, keeps workhorse and coordinator histories distinct, and directly verifies the reachable desktop, fullscreen, keyboard, screen-reader, theme, reduced-motion, and Samsung Flip touch states.
+- [ ] #4 TASK-143.08 completes before feature work resumes, redundant tests and validation paths are absent, mandatory startup failures are actionable and leak-free, and final module, process, repository, and serial-browser owners plus clean real text and voice smokes pass.
+- [ ] #5 Each Archboard server owns at most one live or starting package-local codex app-server instance; reload preserves that instance and any crash recovery is a serialized replacement after the prior process group is fully gone.
 <!-- AC:END -->
