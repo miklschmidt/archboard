@@ -435,7 +435,11 @@ function codeBindingsInValue(value: unknown): CodeBinding[] {
 	return bindings;
 }
 
-function unopenedBoardBindings(req: Request): CodeBinding[] {
+interface PreparedBoardOpen {
+	readonly loaded: LoadedBoard | null;
+}
+
+function unopenedBoardBindings(req: Request, res: Response): CodeBinding[] {
 	if (req.method !== "POST" || req.path !== "/api/boards/open") return [];
 	const parsed = BoardAddressSchema.extend({
 		reload: z.boolean().optional(),
@@ -443,7 +447,10 @@ function unopenedBoardBindings(req: Request): CodeBinding[] {
 	}).safeParse(req.body ?? {});
 	if (!parsed.success) return [];
 	try {
-		const loaded = readBoardFile(identityFromParams(parsed.data));
+		const identity = identityFromParams(parsed.data);
+		if (boards.has(boardKey(identity)) && !parsed.data.reload) return [];
+		const loaded = readBoardFile(identity);
+		res.locals.preparedBoardOpen = { loaded } satisfies PreparedBoardOpen;
 		return loaded ? codeBindingsInValue(JSON.parse(loaded.sceneJson)) : [];
 	} catch {
 		// The route remains the authority for malformed or unavailable board input.
@@ -451,8 +458,12 @@ function unopenedBoardBindings(req: Request): CodeBinding[] {
 	}
 }
 
-function requestCheckoutBindings(req: Request): CodeBinding[] {
-	return [...openBoardBindings(), ...codeBindingsInValue(req.body), ...unopenedBoardBindings(req)];
+function requestCheckoutBindings(req: Request, res: Response): CodeBinding[] {
+	return [
+		...openBoardBindings(),
+		...codeBindingsInValue(req.body),
+		...unopenedBoardBindings(req, res),
+	];
 }
 
 // Resolve machine-local checkout authority before any board lock is taken.
@@ -476,7 +487,7 @@ async function prepareCheckoutSnapshot(
 	if (req.path.startsWith("/api/settings/opener") || req.path === "/api/code-targets/open") {
 		return next();
 	}
-	const bindings = requestCheckoutBindings(req);
+	const bindings = requestCheckoutBindings(req, res);
 	if (req.method === "GET" || req.method === "HEAD") {
 		res.locals.checkoutSnapshot = await trackRequestCheckoutWork(
 			req,
@@ -588,6 +599,10 @@ app.use(
 // Nothing else. Anything that answers "what is on this board" is the note.
 //
 const clients = new Set<WebSocket>();
+// Accepted transport ownership begins before checkout presentation. A socket
+// is broadcast-admitted only after initial_elements, but teardown must be able
+// to terminate a peer that never reaches that point or ignores a close frame.
+const acceptedSockets = new Set<WebSocket>();
 // Browser client id per socket, taken from the ?clientId= connect param. The
 // same id is sent with every selection post, which is what lets a disconnect
 // retire that client's selection.
@@ -1062,7 +1077,6 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 	const clientId = new URL(req.url ?? "/", "http://localhost").searchParams.get("clientId");
 	if (clientId) {
 		clientIds.set(ws, clientId);
-		currentSocketsByClient.set(clientId, ws);
 	}
 	const checkoutController = new AbortController();
 	ws.on("close", () => {
@@ -1109,43 +1123,47 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 	// before (a dropped socket, not a new tab) resumes what it was holding,
 	// because a reconnect must not undo a user's scene arrangement.
 	const startingKey = clientId ? boardForNewPane(clientId) : SCRATCH_KEY;
-	if (clientId) paneBoards.set(clientId, startingKey);
 	const board = boards.get(startingKey)!;
 	// Read out of the note, like everything else that sends a pane a whole board.
 	// Scratch is registered before the listener binds. If its legacy note is
 	// malformed, start with no scene rather than sending any of those elements
 	// to Excalidraw, then put the refusal on screen. The note stays untouched.
 	let snapshotContent: BoardContent;
-	try {
-		snapshotContent = readBoardContent(board);
-	} catch (error) {
-		if (!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError))
-			throw error;
-		snapshotContent = emptyContent();
-	}
-	const checkoutSnapshot = await trackCheckoutWork(
-		"WebSocket checkout presentation",
-		checkoutController.signal,
-		(signal) =>
-			snapshotCheckoutAccess({
-				signal,
-				bindings: codeBindingsOf(snapshotContent.elements.values()),
-			}),
-	);
-	if (ws.readyState !== WebSocket.OPEN) return;
-	// Writes may land while checkout authority is being captured. This socket is
-	// not yet in the broadcast set, so refresh the canonical scene before its
-	// first message rather than sending the older pre-await copy.
-	let content: BoardContent;
 	let renderError: RenderGeometryError | NativeElementValidationError | null;
 	try {
-		content = readBoardContent(board);
+		snapshotContent = readBoardContent(board);
 		renderError = null;
 	} catch (error) {
 		if (!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError))
 			throw error;
-		content = emptyContent();
+		snapshotContent = emptyContent();
 		renderError = error;
+	}
+	let content = snapshotContent;
+	let bindings = codeBindingsOf(content.elements.values());
+	let checkoutSnapshot: CheckoutSnapshot;
+	for (;;) {
+		checkoutSnapshot = await trackCheckoutWork(
+			"WebSocket checkout presentation",
+			checkoutController.signal,
+			(signal) => snapshotCheckoutAccess({ signal, bindings }),
+		);
+		if (ws.readyState !== WebSocket.OPEN) return;
+		// Reads and broadcasts share this event loop. Once the binding set is
+		// stable across the async checkout capture, read, send, authority transfer,
+		// and broadcast admission form one synchronous sequence with no lost delta.
+		try {
+			content = readBoardContent(board);
+			renderError = null;
+		} catch (error) {
+			if (!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError))
+				throw error;
+			content = emptyContent();
+			renderError = error;
+		}
+		const refreshedBindings = codeBindingsOf(content.elements.values());
+		if (JSON.stringify(refreshedBindings) === JSON.stringify(bindings)) break;
+		bindings = refreshedBindings;
 	}
 	const initialMessage: InitialElementsMessage & {
 		files?: Record<string, ExcalidrawFile>;
@@ -1161,6 +1179,10 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		...boardFilesMessage(content),
 	};
 	ws.send(JSON.stringify(initialMessage));
+	if (clientId) {
+		paneBoards.set(clientId, startingKey);
+		currentSocketsByClient.set(clientId, ws);
+	}
 	// Ownership is registered before the checkout await, but content admission
 	// begins only after the initial scene is on the wire. A concurrent delta can
 	// therefore never overtake initialization and then be replaced by it.
@@ -3888,7 +3910,8 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 		// sends them off to add a --pane and meet a second, different refusal
 		// (TASK-055). Reading the note changes nothing, so the pane is still
 		// resolved before anything is created.
-		const loaded = readBoardFile(asked);
+		const prepared = res.locals.preparedBoardOpen as PreparedBoardOpen | undefined;
+		const loaded = prepared ? prepared.loaded : readBoardFile(asked);
 		if (!loaded) {
 			return res.status(404).json({
 				success: false,
@@ -4926,9 +4949,11 @@ function startWebSocketServer(): void {
 	if (wss !== null) throw new Error("The WebSocket server is already installed.");
 	const owner = new WebSocketServer({ server });
 	owner.on("connection", (socket, request) => {
+		acceptedSockets.add(socket);
+		socket.once("close", () => acceptedSockets.delete(socket));
 		void acceptWebSocketConnection(socket, request).catch((error) => {
 			logger.error("WebSocket checkout presentation failed:", error);
-			socket.close();
+			socket.terminate();
 		});
 	});
 	wss = owner;
@@ -4991,7 +5016,8 @@ async function closeBrowserOwners(): Promise<void> {
 	pendingFindingExports.clear();
 	pendingExports.clear();
 	pendingViewports.clear();
-	for (const socket of clients) socket.terminate();
+	for (const socket of acceptedSockets) socket.terminate();
+	acceptedSockets.clear();
 	clients.clear();
 	clientIds.clear();
 	currentSocketsByClient.clear();

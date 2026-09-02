@@ -15,7 +15,7 @@ import {
 	setWriteDoing,
 } from "../../runtime/engine/canvas-client.js";
 import { packageVersion } from "../../runtime/engine/package-version.js";
-import { GIT_PROCESS_GROUP_CLEANUP_MS } from "../../shared/timing/timing.js";
+import { CLI_INTERRUPT_CLEANUP_MS } from "../../shared/timing/timing.js";
 import { startContract, stopContract } from "./server.js";
 import { addContract, applyContract, deleteContract, getContract } from "./elements.js";
 import * as scene from "./scene.js";
@@ -763,7 +763,7 @@ async function runInterruptibleCommand(
 		forceTimer = setTimeout(() => {
 			remove();
 			process.kill(process.pid, signal);
-		}, GIT_PROCESS_GROUP_CLEANUP_MS);
+		}, CLI_INTERRUPT_CLEANUP_MS);
 	};
 	process.on("SIGINT", interrupt);
 	process.on("SIGTERM", interrupt);

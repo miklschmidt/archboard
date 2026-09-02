@@ -253,9 +253,12 @@ test("an interrupted repository command reaps its detached Git group", async () 
 	using fixture = createRepositoryFixture();
 	const checkout = fixture.repository("interrupt", "https://github.com/acme/interrupt.git");
 	const bin = join(fixture.root, "bin");
-	const marker = join(fixture.root, "git-pid");
+	const marker = join(fixture.root, "git-pids");
 	mkdirSync(bin);
-	writeFileSync(join(bin, "git"), `#!/bin/sh\necho $$ > ${JSON.stringify(marker)}\nsleep 60\n`);
+	writeFileSync(
+		join(bin, "git"),
+		`#!/bin/sh\nsleep 60 &\ndescendant=$!\necho "$$ $descendant" > ${JSON.stringify(marker)}\nwait\n`,
+	);
 	chmodSync(join(bin, "git"), 0o700);
 	const child = Bun.spawn([packageBin, "repo", "add", checkout], {
 		cwd: fixture.nowhere,
@@ -272,25 +275,24 @@ test("an interrupted repository command reaps its detached Git group", async () 
 		new Response(child.stdout).text(),
 		new Response(child.stderr).text(),
 	]);
-	let gitPid: number | undefined;
+	let gitPids: number[] = [];
 	try {
 		const deadline = Date.now() + 2_000;
 		while (!existsSync(marker)) {
 			if (Date.now() >= deadline) throw new Error("The fake Git child did not start.");
 			await Bun.sleep(5);
 		}
-		gitPid = Number(readFileSync(marker, "utf8").trim());
+		gitPids = readFileSync(marker, "utf8").trim().split(/\s+/u).map(Number);
 		process.kill(child.pid, "SIGTERM");
 		await child.exited;
 		await output;
-		const cleanupDeadline = Date.now() + 2_000;
-		while (existsSync(`/proc/${gitPid}`) && Date.now() < cleanupDeadline) await Bun.sleep(5);
-		expect(
-			existsSync(`/proc/${gitPid}`),
-			`Git pid ${gitPid} survived CLI interruption`,
-		).toBeFalse();
+		for (const pid of gitPids)
+			expect(
+				existsSync(`/proc/${pid}`),
+				`Git process ${pid} remained when the interrupted CLI exited`,
+			).toBeFalse();
 	} finally {
-		for (const pid of [gitPid, child.pid]) {
+		for (const pid of [...gitPids, child.pid]) {
 			if (pid === undefined || !existsSync(`/proc/${pid}`)) continue;
 			try {
 				process.kill(-pid, "SIGKILL");
