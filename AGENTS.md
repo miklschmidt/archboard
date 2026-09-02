@@ -207,6 +207,23 @@ running server's pidfile). Neither is printed by any command.
 - Triage labels, the five canonical role strings — `docs/agents/triage-labels.md`
 - Domain docs, `CONTEXT.md` and `docs/adr/`, created lazily — `docs/agents/domain.md`
 
+## Test policy
+
+Give each non-obvious regression one cheapest credible owner. Before adding or
+keeping a test, name the regression and the cheapest stable interface that
+catches it. Use types, lint, or static checks for structural rules; focused unit
+or integration owners for hidden behaviour; rendered or browser owners for
+visible workflows; and process or system owners only when the bug needs that
+boundary.
+
+A cheap test can still be worthless. Remove or merge an owner when normal use
+makes its failure obvious, another owner catches the same regression, or it
+mostly simulates upstream tools rather than Archboard. Count runtime,
+subprocesses, fixtures, cleanup states, false failures, maintenance, and slower
+agent iteration as costs. Prove narrow facts narrowly: inspect the real
+user-facing interface when it makes the result obvious instead of launching a
+broad toolchain or constructing a larger simulation.
+
 <!-- BACKLOG.MD GUIDELINES START -->
 <!-- backlog.md-instructions-version: 1.50.1 -->
 
