@@ -12,8 +12,8 @@ describe("package inspection limits", () => {
 		try {
 			owner.startVault();
 			owner.writeBoard("input-limit", inputLimitedScene());
-			const normal = owner.runInspection("input-limit");
-			const strict = owner.runInspection("input-limit", ["--strict"]);
+			const normal = await owner.runInspection("input-limit");
+			const strict = await owner.runInspection("input-limit", ["--strict"]);
 			expect([normal.status, strict.status]).toEqual([0, 8]);
 			expect(strict.stdout).toBe(normal.stdout);
 			const report = CheckResultSchema.parse(JSON.parse(normal.stdout));
@@ -22,7 +22,7 @@ describe("package inspection limits", () => {
 					(f) => f.reason === "input-complexity-ceiling" && f.details.attempted === 1_000_001,
 				),
 			).toBe(true);
-			expect(owner.runInspection("input-limit", ["--text"]).stdout).toBe(
+			expect((await owner.runInspection("input-limit", ["--text"])).stdout).toBe(
 				`${formatInspectionText(report)}\n`,
 			);
 		} finally {

@@ -205,6 +205,11 @@ describe.serial("composed Codex process lifecycle", () => {
 			expect(coordinatorResult.contentItems).toHaveLength(1);
 			for (const outcome of ["decline", "stale"] as const) {
 				const id = `general-${outcome}`;
+				const mutationCountBefore = records(fixture.logPath).filter(
+					(entry) =>
+						entry.kind === "frame" &&
+						(entry.method === "thread/start" || entry.method === "turn/start"),
+				).length;
 				writeFileSync(fixture.controlPath, JSON.stringify({ emit: outcome }));
 				const approval = await waitFor(async () => {
 					const value = snapshot(await socket.request("snapshot"));
@@ -235,6 +240,15 @@ describe.serial("composed Codex process lifecycle", () => {
 				expect(result.contentItems?.[0]?.text, outcome).toContain(
 					outcome === "decline" ? '"reason":"approval_declined"' : '"reason":"unknown_provenance"',
 				);
+				if (outcome === "decline") {
+					expect(
+						records(fixture.logPath).filter(
+							(entry) =>
+								entry.kind === "frame" &&
+								(entry.method === "thread/start" || entry.method === "turn/start"),
+						).length,
+					).toBe(mutationCountBefore);
+				}
 			}
 			const time = reverseResponses(fixture.logPath, "session-time")[0]?.frame?.result as {
 				readonly currentTimeAt?: unknown;
@@ -333,6 +347,7 @@ describe.serial("composed Codex process lifecycle", () => {
 					},
 				}),
 			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
+			expect(reverseResponses(fixture.logPath, "general-decline")).toHaveLength(1);
 
 			writeFileSync(fixture.controlPath, JSON.stringify({ exit: true }));
 			await waitFor(() => (!processExists(childPid) ? true : undefined), "controlled child exit");

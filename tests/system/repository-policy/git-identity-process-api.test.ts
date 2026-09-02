@@ -81,6 +81,30 @@ test.each([
 		"retained asynchronous spawn aliases",
 		'const spawn = Bun.spawn; const child = spawn(["git"]); await child.exited;\n',
 	],
+	[
+		"partial Promise.race exit observation",
+		'const child = Bun.spawn(["git"]); await Promise.race([child.exited, Promise.resolve()]);\n',
+	],
+	[
+		"partial Promise.any exit observation",
+		'const child = Bun.spawn(["git"]); await Promise.any([child.exited, Promise.resolve()]);\n',
+	],
+	[
+		"reused child bindings with one observed generation",
+		'let child; child = Bun.spawn(["git"]); child = Bun.spawn(["git"]); await child.exited;\n',
+	],
+	[
+		"function-parameter shadowing of an exit promise",
+		'const child = Bun.spawn(["git"]); const exited = child.exited; async function observe(exited) { await exited; } void observe;\n',
+	],
+	[
+		"catch-parameter shadowing of an exit promise",
+		'const child = Bun.spawn(["git"]); const exited = child.exited; try {} catch (exited) { await exited; }\n',
+	],
+	[
+		"imported destructuring shadowing of an exit promise",
+		'const child = Bun.spawn(["git"]); const exited = child.exited; async function observe() { const { exited } = await import("./fixture.js"); await exited; } void observe;\n',
+	],
 ] as const)("type-unaware Git lifecycle lint rejects %s", (_name, source) => {
 	const result = lintGitFixture(source);
 	expect(result.exitCode, result.output).not.toBe(0);
@@ -100,6 +124,10 @@ test.each([
 	[
 		"stored and awaited continuation",
 		'const child = Bun.spawn(["git"]); const exited = child.exited.finally(() => undefined); await exited;\n',
+	],
+	[
+		"bounded race with an explicit process-group disappearance proof",
+		'async function processGroupDisappeared(_pid: number) { return true; } const child = Bun.spawn(["git"]); await Promise.race([child.exited, Promise.resolve()]); await processGroupDisappeared(child.pid);\n',
 	],
 ] as const)("type-unaware Git lifecycle lint accepts %s ownership", (_name, source) => {
 	const result = lintGitFixture(source);

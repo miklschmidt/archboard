@@ -500,6 +500,18 @@ export const LOCK_WATCH_MS = LOCK_RENEW_MS;
 /** Bun lifecycle failure thresholds, not hang ceilings or SLAs, clear hosted sweep 5.274s and totality 5,003.69ms at roughly 3x. */
 export const TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS = 15_000;
 export const TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS = 15_000;
+/** One packaged inspection stays below the required 20-second per-child diagnostic ceiling. */
+export const TEST_BOARD_INSPECTION_PACKAGE_COMMAND_TIMEOUT_MS = 18_000;
+/** TERM, KILL, and leader/pipe settlement phases together stay below the 5-second cleanup cap. */
+export const TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS = 1_000;
+/** Observation cadence while proving a packaged inspection's detached group is absent. */
+export const TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_POLL_MS = 10;
+/** The local HTTP sentinel must publish its ephemeral port before a package inspection starts. */
+export const TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS = 5_000;
+/** Lets the process-group fixture publish descendant readiness before its forced failure. */
+export const TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS = 1_000;
+/** Covers 80 real sentinel lifecycles plus one complete bounded process-group cleanup. */
+export const TEST_BOARD_INSPECTION_PACKAGE_LIFECYCLE_CASE_TIMEOUT_MS = 15_000;
 // ── Canvas subprocesses owned by checks (TASK-086) ───────────────────────
 
 /** Canvas identity startup stays below TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS with bounded shutdown room. */

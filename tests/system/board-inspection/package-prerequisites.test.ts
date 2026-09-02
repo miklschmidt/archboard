@@ -239,7 +239,7 @@ describe("persisted package prerequisites", () => {
 			];
 			const note = owner.writeBoard("prerequisite-totality", elements);
 			writeFileSync(note, readFileSync(note, "utf8").replace('"OVERFLOW"', "1e400"));
-			const result = owner.runInspection("prerequisite-totality", ["--strict"]);
+			const result = await owner.runInspection("prerequisite-totality", ["--strict"]);
 			expect(result).toMatchObject({ status: 8, stderr: "" });
 			const report = CheckResultSchema.parse(JSON.parse(result.stdout));
 
