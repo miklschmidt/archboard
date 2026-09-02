@@ -7,6 +7,7 @@ import { z } from "zod";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 import { createJsonRequester } from "../boards/support/http.ts";
+import { waitFor } from "../canvas-state/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { nonReadRecords, startCountingProxy } from "./support/counting-proxy.ts";
 import {
@@ -319,21 +320,32 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 		});
 		await proxy.reset();
 		let answered = false;
+		const pendingBody = JSON.stringify({
+			upserts: [{ id: "agent", type: "rectangle", x: 40, y: 100, width: 20, height: 20 }],
+			deletes: [],
+		});
 		const pending = fetch(
 			`${proxy.base}/api/elements/changes?board=scratch&doing=waiting+for+persistence`,
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					upserts: [{ id: "agent", type: "rectangle", x: 40, y: 100, width: 20, height: 20 }],
-					deletes: [],
-				}),
+				body: pendingBody,
 			},
 		).then(async (response) => {
 			answered = true;
 			return response.json() as Promise<Record<string, unknown>>;
 		});
-		const pendingWrites = nonReadRecords(await proxy.snapshot());
+		const pendingWrites = (await waitFor(async () => {
+			const observedWrites = nonReadRecords(await proxy.snapshot());
+			return observedWrites.some(
+				(record) =>
+					record.method === "POST" &&
+					record.pathname === "/api/elements/changes" &&
+					record.query === "?board=scratch&doing=waiting+for+persistence",
+			)
+				? observedWrites
+				: undefined;
+		}, "held agent write to reach the counting proxy"))!;
 		expect(pendingWrites).toHaveLength(1);
 		expect(pendingWrites[0]).toMatchObject({
 			method: "POST",
@@ -348,6 +360,9 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 		const agent = await pending;
 		expect(agent.elements).toBeDefined();
 		expect(agent.corrections).toBeUndefined();
+		const completedWrites = nonReadRecords(await proxy.snapshot());
+		expect(completedWrites).toHaveLength(1);
+		expect(Buffer.from(completedWrites[0]!.bodyBase64, "base64").toString()).toBe(pendingBody);
 	} finally {
 		await resources.disposeAsync();
 	}
