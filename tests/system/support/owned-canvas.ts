@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import { spawn, type ChildProcessByStdio } from "node:child_process";
 import { createServer } from "node:net";
+import os from "node:os";
+import path from "node:path";
 import type { Readable } from "node:stream";
 
 import {
@@ -27,9 +29,18 @@ export interface RestartOwnedCanvasOptions {
 	whileStopped?: () => void | Promise<void>;
 }
 
+export interface OwnedCanvasPaths {
+	readonly root: string;
+	readonly home: string;
+	readonly xdgConfig: string;
+	readonly xdgState: string;
+	readonly temporary: string;
+}
+
 export interface OwnedCanvas {
 	readonly base: string;
 	readonly vault: string;
+	readonly paths: OwnedCanvasPaths;
 	readonly pid: number | null;
 	readonly stderr: string;
 	assertRunning(cause?: unknown): Promise<void>;
@@ -163,12 +174,33 @@ const exitDescription = (exit: Exit | null): string =>
 	exit?.signal ? `signal ${exit.signal}` : `exit ${exit?.code ?? "unknown"}`;
 const tail = (text: string): string => text.trim().split("\n").slice(-20).join("\n");
 
+function createOwnedCanvasPaths(): OwnedCanvasPaths {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-owned-canvas-"));
+	const paths = {
+		root,
+		home: path.join(root, "home"),
+		xdgConfig: path.join(root, "xdg-config"),
+		xdgState: path.join(root, "xdg-state"),
+		temporary: path.join(root, "tmp"),
+	};
+	try {
+		for (const directory of [paths.home, paths.xdgConfig, paths.xdgState, paths.temporary])
+			fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+		return paths;
+	} catch (error) {
+		fs.rmSync(root, { recursive: true, force: true });
+		throw error;
+	}
+}
+
 export async function startOwnedCanvas({
 	serverPath,
 	port: explicitPort,
 	vault,
 	env = {},
 }: StartOwnedCanvasOptions): Promise<OwnedCanvas> {
+	const paths = createOwnedCanvasPaths();
+	const pathsDiagnostic = `\nOwned canvas paths: ${JSON.stringify(paths)}`;
 	let currentGeneration: Generation | null = null;
 	let visibleBase = explicitPort ? `http://127.0.0.1:${explicitPort}` : "";
 	let nextGeneration = 1;
@@ -194,7 +226,8 @@ export async function startOwnedCanvas({
 		const diagnostic = tail(stderr);
 		const error = new Error(
 			`Owned canvas pid ${generation?.pid ?? "unknown"} died (${detail}).` +
-				(diagnostic ? `\nCanvas stderr:\n${diagnostic}` : ""),
+				(diagnostic ? `\nCanvas stderr:\n${diagnostic}` : "") +
+				pathsDiagnostic,
 			{ cause },
 		) as Error & { code: string };
 		error.code = "CANVAS_PROCESS_DIED";
@@ -241,6 +274,10 @@ export async function startOwnedCanvas({
 			env: {
 				...process.env,
 				...env,
+				HOME: paths.home,
+				XDG_CONFIG_HOME: paths.xdgConfig,
+				XDG_STATE_HOME: paths.xdgState,
+				TMPDIR: paths.temporary,
 				PORT: String(candidate),
 				HOST: "127.0.0.1",
 				ARCHBOARD_VAULT: vault,
@@ -355,28 +392,43 @@ export async function startOwnedCanvas({
 				if (failure.cleanupError !== undefined) {
 					throw new Error(
 						`${error.message}\nFailed to reap the exact owned canvas generation; refusing to start another.\n` +
-							`Attempt: ${JSON.stringify(failure.attempt)}`,
+							`Attempt: ${JSON.stringify(failure.attempt)}` +
+							pathsDiagnostic,
 						{ cause },
 					);
 				}
 				if (!error.retryable || explicitPort !== undefined) {
 					const diagnostic = tail(failed?.stderr ?? "");
-					throw new Error(error.message + (diagnostic ? `\nCanvas stderr:\n${diagnostic}` : ""), {
-						cause,
-					});
+					throw new Error(
+						error.message +
+							(diagnostic ? `\nCanvas stderr:\n${diagnostic}` : "") +
+							pathsDiagnostic,
+						{ cause },
+					);
 				}
 			}
 		}
 		throw new Error(
 			`Owned canvas exhausted ${MAX_START_ATTEMPTS} collision-safe start attempts.\n` +
-				attempts.map((attempt, index) => `${index + 1}. ${JSON.stringify(attempt)}`).join("\n"),
+				attempts.map((attempt, index) => `${index + 1}. ${JSON.stringify(attempt)}`).join("\n") +
+				pathsDiagnostic,
 		);
+	};
+	const removeOwnedFileSystem = (): void => {
+		try {
+			fs.rmSync(vault, { recursive: true, force: true });
+		} finally {
+			fs.rmSync(paths.root, { recursive: true, force: true });
+		}
 	};
 	const disposeSync = (): void => {
 		disposed = true;
 		currentGeneration?.child.kill("SIGKILL");
-		fs.rmSync(vault, { recursive: true, force: true });
-		activeCanvases.delete(registration);
+		try {
+			removeOwnedFileSystem();
+		} finally {
+			activeCanvases.delete(registration);
+		}
 	};
 
 	const handle: OwnedCanvas = {
@@ -384,6 +436,7 @@ export async function startOwnedCanvas({
 			return visibleBase;
 		},
 		vault,
+		paths,
 		get pid() {
 			return currentGeneration?.pid ?? null;
 		},
@@ -410,9 +463,12 @@ export async function startOwnedCanvas({
 				try {
 					if (currentGeneration) await stopGeneration(currentGeneration);
 				} finally {
-					fs.rmSync(vault, { recursive: true, force: true });
-					activeCanvases.delete(registration);
-					uninstallHandlers();
+					try {
+						removeOwnedFileSystem();
+					} finally {
+						activeCanvases.delete(registration);
+						uninstallHandlers();
+					}
 				}
 			});
 			return disposalPromise;
