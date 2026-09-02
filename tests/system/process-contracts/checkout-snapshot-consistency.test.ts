@@ -160,6 +160,79 @@ test("first-open presents the exact note load whose checkout authority it captur
 	}
 });
 
+test("held-board reload presents disk bytes with authority from the same prepared load", async () => {
+	const owner = createDelayedCheckoutOwner("held-reload", 2);
+	const board = "held-reload-authority";
+	writeBoundBoard(owner.vault, board, {
+		id: "heldbound",
+		path: "src/original.ts",
+		checkout: 0,
+	});
+	let canvas: Awaited<ReturnType<typeof startOwnedCanvas>> | undefined;
+	let pane: Awaited<ReturnType<typeof openTestPane>> | undefined;
+	try {
+		canvas = await startOwnedCanvas({
+			serverPath: SERVER_PATH,
+			vault: owner.vault,
+			env: owner.env,
+		});
+		const request = createJsonRequester(canvas);
+		pane = await openTestPane(canvas.base, request, "held-reload-pane", 0);
+		const opened = await request("/api/boards/open", {
+			method: "POST",
+			body: { board, pane: pane.clientId },
+		});
+		expect(opened.status, JSON.stringify(opened.body)).toBe(200);
+		writeBoundBoard(owner.vault, board, {
+			id: "foreignbound",
+			path: "src/original.ts",
+			checkout: 0,
+		});
+		const held = await request<{ held?: { board?: string } }>(`/api/elements?board=${board}`, {
+			method: "POST",
+			body: boundElement("heldonly", "src/original.ts", 0),
+		});
+		expect(held.status, JSON.stringify(held.body)).toBe(409);
+		expect(held.body.held?.board).toBe(board);
+		const heldWrite = await request<{ held?: { writes?: number } }>(
+			`/api/elements?board=${board}`,
+			{
+				method: "POST",
+				body: boundElement("heldsecond", "src/original.ts", 0),
+			},
+		);
+		expect(heldWrite.status, JSON.stringify(heldWrite.body)).toBe(200);
+		expect(heldWrite.body.held?.writes).toBe(1);
+		writeBoundBoard(owner.vault, board, {
+			id: "diskbound",
+			path: "src/replacement.ts",
+			checkout: 1,
+		});
+		owner.enable();
+		const start = pane.since();
+		const reloading = request("/api/boards/open", {
+			method: "POST",
+			body: { board, pane: pane.clientId, reload: true },
+		});
+		await waitForRecordedPid(owner.pids);
+		owner.release();
+		const reloaded = await reloading;
+		expect(reloaded.status, JSON.stringify(reloaded.body)).toBe(200);
+		const switched = await waitForPaneMessage(pane, start, "board_switched");
+		const elements = (switched?.elements as Array<{ id: string; link?: string }> | undefined) ?? [];
+		expect(elements.find((element) => element.id === "diskbound")?.link).toBe(
+			"/api/code-targets/open?board=held-reload-authority&element=diskbound",
+		);
+		expect(elements.some((element) => element.id === "heldbound")).toBeFalse();
+	} finally {
+		owner.release();
+		await pane?.close();
+		await canvas?.dispose();
+		await expectRecordedPidsAbsent(owner.pids);
+		owner.dispose();
+	}
+});
+
 test("concurrent first opens pair the installed scene with recaptured authority", async () => {
 	const owner = createDelayedCheckoutOwner("concurrent-first-open");
 	const board = "concurrent-first-open";

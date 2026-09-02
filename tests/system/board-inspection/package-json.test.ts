@@ -16,7 +16,7 @@ describe("package inspection JSON", () => {
 		try {
 			owner.startVault();
 			owner.writeBoard("clean", cleanScene());
-			const result = owner.runInspection("clean");
+			const result = await owner.runInspection("clean");
 			expect(result).toMatchObject({ status: 0, stderr: "" });
 			const parsed = CheckResultSchema.parse(JSON.parse(result.stdout));
 			expect(parsed).toMatchObject({
@@ -35,7 +35,7 @@ describe("package inspection JSON", () => {
 		try {
 			owner.startVault();
 			owner.writeBoard("malformed", malformedScene());
-			const result = owner.runInspection("malformed", ["--strict"]);
+			const result = await owner.runInspection("malformed", ["--strict"]);
 			expect(result.status).toBe(8);
 			const parsed = CheckResultSchema.parse(JSON.parse(result.stdout));
 			expect(parsed.findings.some((finding) => finding.reason === "invalid-element-identity")).toBe(
@@ -121,7 +121,7 @@ describe("package inspection JSON", () => {
 			expect(["\\u0000", "\\u0001", "\\ud800"].every((escape) => bytes.includes(escape))).toBe(
 				true,
 			);
-			const result = owner.runInspection("exact-order-controls");
+			const result = await owner.runInspection("exact-order-controls");
 			expect(result).toMatchObject({ status: 0, stderr: "" });
 			const parsed = CheckResultSchema.parse(JSON.parse(result.stdout));
 			expect(
@@ -153,7 +153,7 @@ describe("package inspection JSON", () => {
 			owner.startVault();
 			owner.writeBoard("labels", duplicateLabelScene());
 			const parsed = CheckResultSchema.parse(
-				JSON.parse(owner.runInspection("labels", ["--strict"]).stdout),
+				JSON.parse((await owner.runInspection("labels", ["--strict"])).stdout),
 			);
 			const duplicate = parsed.findings.find((finding) => finding.reason === "duplicate");
 			expect(duplicate?.details).toMatchObject({
@@ -174,7 +174,7 @@ describe("package inspection JSON", () => {
 				["coverage", "rotation"],
 			] as const) {
 				owner.writeBoard(mode, groupApplicabilityScene(mode));
-				const result = owner.runInspection(mode, ["--strict"]);
+				const result = await owner.runInspection(mode, ["--strict"]);
 				const report = CheckResultSchema.parse(JSON.parse(result.stdout));
 				expect(result.status).toBe(8);
 				expect(report.findings.some((finding) => finding.reason === reason)).toBe(true);

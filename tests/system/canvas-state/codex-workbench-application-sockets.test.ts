@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { WebSocket } from "ws";
@@ -88,9 +88,14 @@ async function openApplicationSocket(base: string, clientId: string): Promise<Ap
 	endpoint.searchParams.set("clientId", clientId);
 	const socket = new WebSocket(endpoint);
 	const pending = new Map<string, (value: WorkbenchResult) => void>();
+	const initial = deferred<void>();
 	let sequence = 0;
 	socket.on("message", (raw) => {
-		const message = JSON.parse(raw.toString()) as WorkbenchResult & { requestId?: unknown };
+		const message = JSON.parse(raw.toString()) as WorkbenchResult & {
+			requestId?: unknown;
+			type?: unknown;
+		};
+		if (message.type === "initial_elements") initial.resolve();
 		if (typeof message.requestId !== "string") return;
 		pending.get(message.requestId)?.(message);
 		pending.delete(message.requestId);
@@ -99,6 +104,7 @@ async function openApplicationSocket(base: string, clientId: string): Promise<Ap
 		socket.once("open", resolveOpen);
 		socket.once("error", reject);
 	});
+	await initial.promise;
 	return {
 		socket,
 		request(action, extra = {}) {
@@ -216,6 +222,66 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 		} finally {
 			await first?.close();
 			await replacement?.close();
+			await canvas.dispose();
+			rmSync(root, { recursive: true, force: true });
+		}
+	}, 60_000);
+
+	test("a failed replacement initial send leaves the live original authoritative", async () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-codex-initial-send-failure-"));
+		const sendLog = join(root, "initial-send.log");
+		const canvas = await startOwnedCanvas({
+			serverPath: join(
+				repoRoot,
+				"tests/system/canvas-state/fixtures/initial-send-failure-server.ts",
+			),
+			vault: join(root, "vault"),
+			env: { ARCHBOARD_TEST_INITIAL_SEND_LOG: sendLog },
+		});
+		const request = createRequester(canvas);
+		const clientId = "failed-initial-send-pane";
+		let original: ApplicationSocket | null = null;
+		let replacement: WebSocket | null = null;
+		try {
+			original = await openApplicationSocket(canvas.base, clientId);
+			await request("/api/panes", {
+				method: "POST",
+				doing: false,
+				body: {
+					clientId,
+					paneId: clientId,
+					primary: true,
+					focused: true,
+					elementCount: 0,
+					board: "scratch",
+					rect: { x: 0, y: 0, width: 1280, height: 800 },
+					viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
+				},
+			});
+			expect(await original.request("connect")).toMatchObject({ ok: true });
+			replacement = new WebSocket(
+				`${canvas.base.replace(/^http/u, "ws")}?clientId=${encodeURIComponent(clientId)}`,
+			);
+			replacement.on("error", () => undefined);
+			const replacementClosed = new Promise<void>((resolveClosed) =>
+				replacement!.once("close", () => resolveClosed()),
+			);
+			const sendRecords = await waitFor(() => {
+				if (!existsSync(sendLog)) return undefined;
+				const records = readFileSync(sendLog, "utf8").trim().split("\n");
+				return records.length >= 2 ? records : undefined;
+			}, "the replacement initial send attempt");
+			expect(JSON.parse(sendRecords![1]!) as { count?: unknown; callback?: unknown }).toEqual({
+				count: 2,
+				callback: true,
+			});
+			await replacementClosed;
+			replacement = null;
+			expect(original.socket.readyState).toBe(WebSocket.OPEN);
+			expect(await original.request("connect")).toMatchObject({ ok: true });
+		} finally {
+			await original?.close();
+			replacement?.terminate();
 			await canvas.dispose();
 			rmSync(root, { recursive: true, force: true });
 		}

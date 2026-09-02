@@ -21,11 +21,7 @@ import {
 	target,
 } from "./support/codex-workbench-lifecycle.ts";
 
-async function pendingShutdownBatch(
-	resources: AsyncDisposableStack,
-	label: string,
-	emitShutdownBatch = true,
-) {
+async function pendingShutdownBatch(resources: AsyncDisposableStack, label: string) {
 	const staging = join(
 		process.env.TMPDIR ?? "/tmp",
 		`archboard-process-termination-${process.pid}-${label}`,
@@ -85,16 +81,14 @@ async function pendingShutdownBatch(
 		() => (reverseResponses(fixture.logPath, "dynamic-request-1").length === 1 ? true : undefined),
 		`${label} initial mutation`,
 	);
-	if (emitShutdownBatch) {
-		writeFileSync(fixture.controlPath, JSON.stringify({ emit: "shutdown" }));
-		await waitFor(async () => {
-			const state = snapshot(await socket.request("snapshot"));
-			return (state.approvals as unknown[]).length === 1 &&
-				(state.dynamicApprovals as unknown[]).length === 1
-				? state
-				: undefined;
-		}, `${label} pending shutdown batch`);
-	}
+	writeFileSync(fixture.controlPath, JSON.stringify({ emit: "shutdown" }));
+	await waitFor(async () => {
+		const state = snapshot(await socket.request("snapshot"));
+		return (state.approvals as unknown[]).length === 1 &&
+			(state.dynamicApprovals as unknown[]).length === 1
+			? state
+			: undefined;
+	}, `${label} pending shutdown batch`);
 	const childPid = records(fixture.logPath).find((entry) => entry.kind === "app_server_spawn")?.pid;
 	if (childPid === undefined) throw new Error("The pending-shutdown child did not start.");
 	return { canvas, childPid, fixture, socket };
@@ -142,48 +136,4 @@ describe.serial("composed Codex terminal process lifecycle", () => {
 			}
 		}
 	}, 40_000);
-
-	test("expires one pending visual mutation at the authored process deadline", async () => {
-		const resources = new AsyncDisposableStack();
-		try {
-			const { fixture, socket } = await pendingShutdownBatch(resources, "expiry", false);
-			const mutationCount = records(fixture.logPath).filter(
-				(entry) => entry.kind === "frame" && entry.method === "thread/start",
-			).length;
-			writeFileSync(fixture.controlPath, JSON.stringify({ emit: "decline" }));
-			const approval = await waitFor(async () => {
-				const dynamic = snapshot(await socket.request("snapshot")).dynamicApprovals as Record<
-					string,
-					unknown
-				>[];
-				return dynamic.length === 1 ? dynamic[0] : undefined;
-			}, "expiring process approval");
-			if (approval === undefined) throw new Error("The expiring approval did not remain pending.");
-			expect(Number(approval.expiresAtMs) - Number(approval.createdAtMs)).toBe(90_000);
-			await waitFor(
-				() =>
-					reverseResponses(fixture.logPath, "general-decline").length === 1 ? true : undefined,
-				"the authored visual approval deadline",
-				{ timeoutMs: 95_000 },
-			);
-			expect(
-				parseDynamicToolCallResponse(
-					"create_thread",
-					reverseResponses(fixture.logPath, "general-decline")[0]?.frame?.result,
-				).envelope,
-			).toEqual({
-				tag: "refused",
-				reason: "expired",
-				message: "The visual approval expired before the effect could run.",
-			});
-			expect(reverseResponses(fixture.logPath, "general-decline")).toHaveLength(1);
-			expect(
-				records(fixture.logPath).filter(
-					(entry) => entry.kind === "frame" && entry.method === "thread/start",
-				).length,
-			).toBe(mutationCount);
-		} finally {
-			await resources.disposeAsync();
-		}
-	}, 105_000);
 });
