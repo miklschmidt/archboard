@@ -7,7 +7,142 @@ export type CanvasApplicationPhase =
 	| "stopped"
 	| "failed";
 
-export type CanvasApplicationStopReason = NodeJS.Signals | "startup-failed" | "test";
+export type CanvasApplicationStopReason =
+	| NodeJS.Signals
+	| "server-error"
+	| "startup-failed"
+	| "test";
+
+export interface CanvasMutationLease {
+	readonly signal: AbortSignal;
+	abort(reason?: unknown): void;
+	finish(): void;
+	track<T>(name: string, work: (signal: AbortSignal) => Promise<T> | T): Promise<T>;
+}
+
+export interface CanvasMutationAdmissionOptions {
+	readonly drainTimeoutMs: number;
+}
+
+export interface CanvasActiveMutation {
+	readonly name: string;
+	readonly kind: "request" | "work";
+	readonly startedAt: number;
+}
+
+export class CanvasApplicationBusyError extends Error {
+	readonly code = "CANVAS_BUSY";
+
+	constructor(
+		readonly timeoutMs: number,
+		readonly active: readonly CanvasActiveMutation[],
+	) {
+		const now = Date.now();
+		const details = active
+			.map(
+				(entry) => `${entry.name} (${entry.kind}, active ${Math.max(0, now - entry.startedAt)} ms)`,
+			)
+			.join("; ");
+		super(
+			`Canvas shutdown refused because mutation work did not settle within ${timeoutMs} ms: ${details}. ` +
+				"No resource was torn down; the canvas resumed write admission. Finish or cancel the named work, then retry stop.",
+		);
+		this.name = "CanvasApplicationBusyError";
+	}
+}
+
+/**
+ * Admit request parsing separately from mutation work that can outlive a
+ * response. A disconnected request aborts waitable work, while work already in
+ * a synchronous critical section remains counted until that section returns.
+ */
+export function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) {
+	if (!Number.isFinite(options.drainTimeoutMs) || options.drainTimeoutMs < 0)
+		throw new Error("Canvas mutation drain timeout must be a non-negative finite duration.");
+
+	let accepting = true;
+	let nextId = 0;
+	const active = new Map<number, CanvasActiveMutation>();
+	const drained = new Set<() => void>();
+	const settle = (): void => {
+		if (active.size !== 0) return;
+		for (const resolve of drained) resolve();
+		drained.clear();
+	};
+	const enter = (entry: CanvasActiveMutation): (() => void) => {
+		const id = nextId++;
+		active.set(id, entry);
+		let finished = false;
+		return () => {
+			if (finished) return;
+			finished = true;
+			active.delete(id);
+			settle();
+		};
+	};
+
+	return Object.freeze({
+		admit: (name: string): CanvasMutationLease | null => {
+			if (!accepting) return null;
+			const controller = new AbortController();
+			const finishRequest = enter({ name, kind: "request", startedAt: Date.now() });
+			return Object.freeze({
+				signal: controller.signal,
+				abort: (reason?: unknown): void => {
+					if (!controller.signal.aborted)
+						controller.abort(reason ?? new Error(`${name} disconnected.`));
+					finishRequest();
+				},
+				finish: finishRequest,
+				track: async <T>(
+					workName: string,
+					work: (signal: AbortSignal) => Promise<T> | T,
+				): Promise<T> => {
+					const finishWork = enter({ name: workName, kind: "work", startedAt: Date.now() });
+					try {
+						controller.signal.throwIfAborted();
+						return await work(controller.signal);
+					} finally {
+						finishWork();
+					}
+				},
+			});
+		},
+		quiesce: async (): Promise<void> => {
+			accepting = false;
+			if (active.size === 0) return;
+
+			let timeout: ReturnType<typeof setTimeout> | null = null;
+			let onDrain!: () => void;
+			const settled = await Promise.race([
+				new Promise<true>((resolve) => {
+					onDrain = () => resolve(true);
+					drained.add(onDrain);
+				}),
+				new Promise<false>((resolve) => {
+					timeout = setTimeout(() => resolve(false), options.drainTimeoutMs);
+				}),
+			]);
+			if (timeout !== null) clearTimeout(timeout);
+			drained.delete(onDrain);
+			if (settled || active.size === 0) return;
+			throw new CanvasApplicationBusyError(
+				options.drainTimeoutMs,
+				[...active.values()].toSorted((left, right) =>
+					left.startedAt === right.startedAt
+						? left.name.localeCompare(right.name)
+						: left.startedAt - right.startedAt,
+				),
+			);
+		},
+		resume: (): void => {
+			accepting = true;
+		},
+		accepting: (): boolean => accepting,
+		active: (): number => active.size,
+		activeMutations: (): readonly CanvasActiveMutation[] => [...active.values()],
+	});
+}
 
 export interface CanvasApplicationResource {
 	readonly name: string;

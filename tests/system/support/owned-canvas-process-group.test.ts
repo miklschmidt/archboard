@@ -8,7 +8,6 @@ import { fileURLToPath } from "node:url";
 import {
 	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
 	TEST_CANVAS_CASE_TIMEOUT_MARGIN_MS,
-	TEST_CANVAS_CONCURRENT_RELEASE_DELAY_MS,
 	TEST_CANVAS_EARLY_DEATH_DELAY_MS,
 	TEST_CANVAS_HEALTH_POLL_MS,
 	TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS,
@@ -107,7 +106,9 @@ if (childMode) {
 		);
 		if (childMode === "interrupt") await new Promise(() => undefined);
 		if (childMode === "concurrent" || childMode === "concurrent-failure") {
-			await Bun.sleep(Math.max(0, Number(process.env.ARCHBOARD_LIFECYCLE_RELEASE_AT) - Date.now()));
+			const releaseFile = process.env.ARCHBOARD_LIFECYCLE_RELEASE_FILE;
+			if (!releaseFile) throw new Error("Concurrent lifecycle child has no release file.");
+			while (!fs.existsSync(releaseFile)) await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
 			if (childMode === "concurrent-failure") throw new Error("intentional concurrent failure");
 		}
 		if (childMode === "timeout") {
@@ -226,7 +227,7 @@ interface LifecycleTimeoutError extends Error {
 }
 interface LifecycleChildOptions {
 	timeoutMs?: number;
-	releaseAt?: number;
+	releaseFile?: string;
 	onRecord?: (record: Record<string, unknown>) => void;
 	timeoutAfterRecord?: string;
 	spawnWatchdogMs?: number;
@@ -247,7 +248,7 @@ async function runLifecycleChild(
 	mode: string,
 	{
 		timeoutMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
-		releaseAt,
+		releaseFile,
 		onRecord,
 		timeoutAfterRecord,
 		spawnWatchdogMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
@@ -258,7 +259,7 @@ async function runLifecycleChild(
 		env: {
 			...process.env,
 			ARCHBOARD_LIFECYCLE_CHILD: mode,
-			...(releaseAt === undefined ? {} : { ARCHBOARD_LIFECYCLE_RELEASE_AT: String(releaseAt) }),
+			...(releaseFile === undefined ? {} : { ARCHBOARD_LIFECYCLE_RELEASE_FILE: releaseFile }),
 		},
 		stdio: ["ignore", "pipe", "pipe"],
 	});
@@ -386,10 +387,21 @@ describe("owned canvas lifecycle", () => {
 	});
 
 	test("cleans mixed concurrent success and forced failure processes", async () => {
-		const releaseAt = Date.now() + TEST_CANVAS_CONCURRENT_RELEASE_DELAY_MS;
+		await using resources = new AsyncDisposableStack();
+		const coordinationRoot = fs.mkdtempSync(
+			path.join(os.tmpdir(), "archboard-lifecycle-concurrent-"),
+		);
+		resources.defer(() => fs.rmSync(coordinationRoot, { recursive: true, force: true }));
+		const releaseFile = path.join(coordinationRoot, "release");
+		const ready = new Set<string>();
+		const releaseWhenAllAreOwned = (record: Record<string, unknown>): void => {
+			if (record.marker !== "owned-canvas" || typeof record.base !== "string") return;
+			ready.add(record.base);
+			if (ready.size === 4) fs.writeFileSync(releaseFile, "release\n");
+		};
 		const results = await Promise.all(
 			["concurrent", "concurrent", "concurrent-failure", "concurrent-failure"].map((mode) =>
-				runLifecycleChild(mode, { releaseAt }),
+				runLifecycleChild(mode, { releaseFile, onRecord: releaseWhenAllAreOwned }),
 			),
 		);
 		const owned = results.map((result) => result.owned!);
@@ -397,7 +409,8 @@ describe("owned canvas lifecycle", () => {
 			0, 0, 1, 1,
 		]);
 		expect(new Set(owned.map((record) => record.base)).size).toBe(4);
-		expect(Math.max(...owned.map((record) => record.at))).toBeLessThan(releaseAt);
+		expect(ready.size).toBe(4);
+		expect(fs.existsSync(releaseFile)).toBeTrue();
 		for (const record of owned) {
 			expect(processExists(record.pid)).toBeFalse();
 			expect(await listenerAnswers(record.base)).toBeFalse();

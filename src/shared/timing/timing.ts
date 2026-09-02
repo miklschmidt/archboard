@@ -199,6 +199,19 @@ export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000;
 // ── Canvas application shutdown (ADR 0021) ────────────────────────────────
 
 /**
+ * Longest a stop attempt waits for admitted request parsing and explicit
+ * mutation work to settle before refusing teardown and restoring admission.
+ *
+ * It stays below the CLI's five-second stop observation window, so a stuck
+ * request produces a healthy, inspectable refusal rather than looking like a
+ * dead server. It is longer than REPORT_IDLE_SETTLE_MS, allowing an ordinary
+ * human edit and trailing report to drain without turning stop into a refusal.
+ * A disconnected board-lock waiter does not spend this budget: its request
+ * signal cancels the LOCK_POLL_MS wait immediately.
+ */
+export const CANVAS_MUTATION_DRAIN_TIMEOUT_MS = 1_000;
+
+/**
  * Grace for existing HTTP connections after write admission closes. It stays
  * below the CLI health probe so a stuck keep-alive is forced closed before the
  * next stop observation. WebSocket clients close in their own earlier owner.
@@ -483,9 +496,6 @@ export const TEST_CANVAS_SHUTDOWN_TIMEOUT_MS = 1_000;
  * fails with its PID and mode instead of hanging the whole board suite.
  */
 export const TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS = 20_000;
-
-/** One shutdown interval keeps concurrent children live until every verified base is reported. */
-export const TEST_CANVAS_CONCURRENT_RELEASE_DELAY_MS = TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
 
 /**
  * Two shutdown intervals beyond TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS let the Bun
