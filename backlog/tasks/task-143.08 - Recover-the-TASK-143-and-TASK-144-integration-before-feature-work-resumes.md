@@ -4,7 +4,7 @@ title: Recover the TASK-143 and TASK-144 integration before feature work resumes
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:35'
-updated_date: '2026-09-02 02:02'
+updated_date: '2026-09-02 02:14'
 labels: []
 dependencies: []
 references:
@@ -45,5 +45,11 @@ author: @codex
 created: 2026-09-02 01:59
 ---
 Recovery release order, 2026-09-02: TASK-143.08.01 remains the exclusive first action. Once its memory-safe gate is Done, the Codex recovery chain and TASK-143.08.06 may proceed within explicit isolated ownership. TASK-143.08.05 is the terminal reconciliation gate despite its lower numeric suffix and cannot start until TASK-143.08.04, TASK-143.08.06.05, TASK-143.06.03, and TASK-143.06.08 are Done.
+---
+
+author: @codex
+created: 2026-09-02 02:14
+---
+Post-review release-order correction: TASK-143.08.01 remains the only implementation allowed first. After it is Done, TASK-143.08.02 through TASK-143.08.04 form the serialized Codex recovery chain while TASK-143.08.06.01 may investigate the renderer boundary. TASK-143.08.06.02 waits for both TASK-143.08.06.01 and TASK-143.08.04, then TASK-143.08.06.03 through TASK-143.08.06.05 run in order. TASK-143.06.08 is the single final current-documentation gate after the remaining legacy leaves, recovered lifecycle, and browser-independent board work. TASK-143.08.05 waits only on that transitive gate and is terminal. This comment supersedes comment #1 where its dependency list differs.
 ---
 <!-- COMMENTS:END -->

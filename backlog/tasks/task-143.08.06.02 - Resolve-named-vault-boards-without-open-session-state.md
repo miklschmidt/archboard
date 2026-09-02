@@ -4,10 +4,11 @@ title: Resolve named vault boards without open-session state
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-02 02:02'
+updated_date: '2026-09-02 02:12'
 labels: []
 dependencies:
   - TASK-143.08.06.01
+  - TASK-143.08.04
 references:
   - src/runtime/engine/board-store.ts
   - src/runtime/engine/board-io.ts
@@ -35,4 +36,5 @@ Make the persisted note, not transient server or browser registration, sufficien
 - [ ] #4 Each board write still performs one synchronous locked read-modify-write against the note and returns the committed result; transient caches or registries cannot become an authority or create a second board document.
 - [ ] #5 After commit, panes already showing the board can receive the resulting document, while no connected, disconnected, slow, or failing pane changes transaction success, ordering, latency bounds, or the persisted bytes.
 - [ ] #6 Production-interface tests start with a vault-only note and zero browser clients, exercise the reachable success and failure states, and prove that direct board access preserves version, conflict, locking, and one-request-one-write invariants.
+- [ ] #7 Changes at the canvas application boundary consume the recovered TASK-143.08.04 lifecycle owner unchanged; they add no Codex child startup, reload, restart, reaping, teardown, or application-phase logic, and application integration is serialized after that recovery task.
 <!-- AC:END -->

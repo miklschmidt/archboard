@@ -4,6 +4,7 @@ title: Make generated Codex 0.151.0 types authoritative
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:36'
+updated_date: '2026-09-02 02:13'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -33,4 +34,5 @@ Replace the rejected handwritten protocol ownership model with one dependency-ne
 - [ ] #4 Each handwritten Zod ingress parser has compile-time input and output conformance to the generated type it accepts, inferred local TypeScript comes from the schema, and a Codex dependency change names every incompatible assumption during ordinary type-checking.
 - [ ] #5 The real seven-field BrowserUseOriginPolicy object decodes and round-trips, and all ts-rs i64 or bigint differences pass through one named normalization adapter with focused boundary coverage.
 - [ ] #6 Version, generation, missing-tree, and compiler diagnostics are actionable without a digest, method-name inventory, fingerprint corpus, or mirror detector acting as the contract authority.
+- [ ] #7 This recovery task is the sole owner of vendor-derived wire views, reverse-request variants, app-server ingress conformance, BrowserUseOriginPolicy handling, and i64 normalization. TASK-143.01.02 may consume its normalized exports only for browser-only state and user-intent projection.
 <!-- AC:END -->

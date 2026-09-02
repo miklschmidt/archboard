@@ -4,11 +4,9 @@ title: Remove legacy injection timing constants
 status: To Do
 assignee: []
 created_date: '2026-08-30 16:29'
-updated_date: '2026-08-30 17:58'
+updated_date: '2026-09-02 02:12'
 labels: []
 dependencies:
-  - TASK-143.01.16
-  - TASK-143.06.04
   - TASK-143.06.06
 references:
   - docs/adr/0005-push-to-codex-via-app-server.md

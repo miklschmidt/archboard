@@ -1,10 +1,10 @@
 ---
 id: TASK-143.01.02
-title: Define the closed Codex browser contract
+title: Define the browser-only Codex workbench model
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-02 01:39'
+updated_date: '2026-09-02 02:13'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -23,21 +23,21 @@ ordinal: 172000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Define the browser-facing DTOs and exhaustive host request contract at the public shared boundary. Every wire-backed field derives from the authoritative generated Codex 0.151.0 module supplied by TASK-143.08.02; browser-only and domain-only additions cross one named adapter. Vendor-private paths do not cross this boundary, but generated vendor types remain the source of truth.
+Define only the browser-facing workbench state and user-intent model that has no Codex vendor equivalent. Consume the generated, normalized wire views, reverse-request handling, and ingress boundaries owned by TASK-143.08.02 and TASK-143.08.03. This leaf does not define, validate, normalize, or mirror a Codex request, response, notification, policy, integer, or private path.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The browser DTO union covers the reachable readiness, account/login, thread-link, timeline, queue, settings, approval/form, text-command, semantic-delivery, coordinator, voice, command-lease, and delivery-outcome states; every wire-backed member is derived from the generated shared module or converted at one named seam.
-- [ ] #2 The exhaustive host request union and its results derive from the exact generated 0.151.0 reverse-request variants, so an added or changed vendor member fails ordinary type-checking at the owning switch or adapter rather than a fingerprint or handwritten method inventory.
-- [ ] #3 Runtime schemas validate only untrusted app-server and browser ingress, infer their local TypeScript types, and carry compile-time input and output conformance to the generated type; no parallel literal table, mirror schema, digest, or generated-import-free lookalike acts as authority.
-- [ ] #4 Focused contract tests cover reachable accepted and refused behavior, secret exclusion, the object-shaped BrowserUseOriginPolicy, and the shared i64 normalization seam without duplicating tool, formatter, linter, alias, fixture-cleanup, or prose checks.
+- [ ] #1 The browser-only model covers the reachable readiness, account, thread-link, timeline, queue, settings, approval, text-command, semantic-delivery, coordinator, voice, command-lease, and delivery-outcome states needed by the workbench; every Codex-origin value is imported from the recovered normalized module rather than copied into a browser DTO.
+- [ ] #2 One projection adapter maps recovered protocol and domain outputs into browser-only states, handles every reachable producer outcome, excludes secrets and vendor-private paths, and contains no app-server ingress parser or reverse-request router.
+- [ ] #3 The browser action and result union describes only user intents issued by the workbench and maps each intent to one existing host owner; it consumes recovered generated request or result types where they apply and refuses unsupported actions explicitly.
+- [ ] #4 Focused tests cover browser projection, secret exclusion, domain-only state, and public action results. They do not repeat generated-type conformance, app-server ingress validation, BrowserUseOriginPolicy, i64 normalization, tool resolution, formatter, linter, alias, fixture-cleanup, or prose checks.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Paused by TASK-143.08. Do not continue or review the generated-import-free implementation. Reopen only after TASK-143.08.05 is Done, then replace this pause with a fresh plan based on the generated shared module and the retained-owner matrix. Port only observable behavior from the detached work; do not merge its contract or test scaffolding.
+Paused by TASK-143.08. Reopen only after TASK-143.08.05 is Done, then plan the browser-only projection and user-intent model against the recovered exports. Do not add wire types, reverse-request schemas, app-server ingress validators, BrowserUseOriginPolicy handling, i64 normalization, or replacement contract authority.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes

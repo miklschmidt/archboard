@@ -4,7 +4,7 @@ title: Make mandatory Codex startup actionable and leak-free
 status: To Do
 assignee: []
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 01:44'
+updated_date: '2026-09-02 02:13'
 labels: []
 dependencies:
   - TASK-143.08.03
@@ -33,6 +33,7 @@ Keep ADR 0019's mandatory private Codex child. Exactly one package-local codex a
 - [ ] #4 A signed-out exact child starts successfully, exposes the account and sign-in state, and keeps thread-scoped actions disabled without treating authentication as startup failure.
 - [ ] #5 Public-command and process-contract tests exercise success and every reachable failure through ./bin/canvas start, verify cleanup against exact attempt identities, and preserve pre-existing persistent Codex state.
 - [ ] #6 Initial prepare, reload, concurrent start, child crash/backoff, serial restart, and shutdown process-census tests prove that an Archboard server never owns more than one live or starting codex app-server child or process group; reload never spawns a child, and restart begins only after the prior exact group has zero tasks.
+- [ ] #7 This recovery task is the sole owner of Codex child startup, application phases, reload behavior, crash replacement, process reaping, teardown ordering, and failed-start cleanup. TASK-143.01.14 consumes its lifecycle interface and cannot add a second implementation of those behaviors.
 <!-- AC:END -->
 
 ## Comments
