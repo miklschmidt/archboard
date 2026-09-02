@@ -264,18 +264,20 @@ note archboard did not write. About fifteen seconds.
 
 - The board-inspection owners under `src/runtime/board-inspection/tests/` and
   `tests/system/board-inspection/` drive the pure raw-record inspector and the real package binary. They pin
-  the dense whole-board reroute, the exact 1,516,200 below-limit comparison count, and the
-  2,000,001 limit attempt. Its package checks run with no canvas process, parse JSON through the
+  the dense whole-board reroute and run the comparison-limit behavior matrix against an internal
+  2,000-comparison detector budget while production code and public schemas stay pinned to 2,000,000.
+  Its package checks run with no canvas process, parse JSON through the
   exported schema, cover text and strict exits 6/7/8, and compare vault paths, bytes, and mtimes
   before and after every read. The inert input snapshot matrix covers proxies, revoked proxies,
   accessors, cycles, custom prototypes, unsafe scalar values, holes, sparse arrays, exact string and
   array boundaries, and large supported paths. The module-root `diagnostics.ts` entrypoint supplies
   coarse noncontractual algorithm counters for focused regressions. Alternating exact-exclusion and
   hierarchy fixtures retain their pair-set, ordering, and semantic-exclusion checks without claiming
-  a general complexity bound. Direct and persisted package cases prove the input and broad-phase
-  comparison limit findings, strict/non-strict exits, deterministic rendering, preservation of
-  completed findings at the comparison stop, and the absence of diagnostic counters from product
-  output. TASK-120 adds the schema-v2 bridge matrix: strict metadata, incomplete/stale provenance,
+  a general complexity bound. The module comparison case proves the boundary stop, deterministic
+  findings, and preservation of completed findings without production-sized work. The persisted
+  package case proves the input limit's strict/non-strict exits and text rendering, while other
+  package owners prove the absence of diagnostic counters from product output. TASK-120 adds the
+  schema-v2 bridge matrix: strict metadata, incomplete/stale provenance,
   exact one-crossing suppression, a second unmarked crossing, and unchanged architecture/compare/
   describe bytes for valid decoration parts.
 

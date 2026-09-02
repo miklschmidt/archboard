@@ -426,12 +426,9 @@ export const CLAIM_LEASE_MS = LOCK_LEASE_MS;
  */
 export const LOCK_WATCH_MS = LOCK_RENEW_MS;
 
-/** Bun lifecycle failure thresholds—not hang ceilings/SLAs—clear hosted sweep 5.274s, totality 5,003.69ms (~3x at 15s), and terminal 27.094s; package +10_000 ms covers below-limit/setup. */
+/** Bun lifecycle failure thresholds, not hang ceilings or SLAs, clear hosted sweep 5.274s and totality 5,003.69ms at roughly 3x. */
 export const TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS = 15_000;
 export const TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS = 15_000;
-export const TEST_BOARD_INSPECTION_TERMINAL_CASE_TIMEOUT_MS = 40_000;
-export const TEST_BOARD_INSPECTION_PACKAGE_CASE_TIMEOUT_MS =
-	2 * TEST_BOARD_INSPECTION_TERMINAL_CASE_TIMEOUT_MS + 10_000;
 // ── Canvas subprocesses owned by checks (TASK-086) ───────────────────────
 
 /** Canvas identity startup stays below TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS with bounded shutdown room. */
