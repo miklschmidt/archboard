@@ -4,9 +4,10 @@ title: Expose typed thread-coordination tools to Archboard-created Codex agents
 status: To Do
 assignee: []
 created_date: '2026-08-30 13:07'
-updated_date: '2026-08-30 17:27'
+updated_date: '2026-09-02 01:40'
 labels: []
-dependencies: []
+dependencies:
+  - TASK-143.08.05
 references:
   - docs/design/desktop-app-server-sharing-research.md
   - docs/design/codex-workbench-delivery-map.md

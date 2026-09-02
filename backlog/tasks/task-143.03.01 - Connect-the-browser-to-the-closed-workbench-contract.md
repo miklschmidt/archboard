@@ -1,14 +1,14 @@
 ---
 id: TASK-143.03.01
 title: Connect the browser to the closed workbench contract
-status: In Progress
-assignee:
-  - '@codex'
+status: To Do
+assignee: []
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-01 19:10'
+updated_date: '2026-09-02 01:39'
 labels: []
 dependencies:
   - TASK-143.01.14
+  - TASK-143.08.05
 references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
@@ -50,15 +50,7 @@ Delegation profile: gpt-daybreak-blue-latest, low.
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Sixth remediation plan (same-generation pane-report ordering, authorized canvas scope):
-
-1. Add a monotonically increasing pane-report request identity scoped to each raw socket generation, allocated before every existing reportPane dispatch, and make only the newest relevant request authoritative for health, registration acknowledgement, and report freshness/failure state.
-2. Preserve the one-shot attach latch, current raw socket/generation guards, debounce/settling, transport/media identity, one subscribe, no command replay, and close ownership; do not add another retry/status owner or report path.
-3. Add behavior-level deferred-response regressions for newer-success/older-rejection, newer-success/older-negative, older-success-after-newer-failure, current failure/recovery, one attach/subscribe, and stale socket-generation isolation.
-4. Make the real production socket owner retain the pre-registration gate coverage and verify superseded responses cannot affect its current transport.
-5. Preserve all previously closed findings and leave acceptance criteria, task status, and final summary unchanged; run bounded canvas, production-socket, transport/media, policy, TypeScript, build, lint, format, and diff validation while omitting known aggregate OOM and serial-browser lanes.
-
-Reopened remediation: carry authoritative candidate-list generation and identity through transport, expose one subscribable media snapshot with detailed voice phases and diagnostics, and bind semantic callbacks through the production transport. Preserve one socket, one subscribe, strict sequencing, and no command replay.
+Paused by TASK-143.08. Reopen only after TASK-143.08.05 is Done. Write a fresh browser-transport plan against the recovered gateway and one browser ingress validator. Retain strict sequence, socket-generation, command-target, media, and recovery behavior while deleting duplicate full-snapshot reparsing and remediation-test scaffolding.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -96,3 +88,12 @@ Sixth remediation evidence: bun test --isolate src/ui/canvas/tests — 41 pass, 
 
 Reopened with user approval after TASK-143.03.03 and TASK-143.04.01 showed missing list-generation identity and no public subscribable voice/media binding.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-09-02 01:39
+---
+Course correction, 2026-09-02: maximal head 4e93e729 and ancestor 6438d02e contain browser realtime and media behavior but depend on the rejected contract and excess test structure. Rebuild the useful behavior after recovery; do not merge the chain.
+---
+<!-- COMMENTS:END -->
