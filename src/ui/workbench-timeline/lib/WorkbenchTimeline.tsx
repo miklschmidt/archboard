@@ -1,4 +1,4 @@
-import { createElement, useId, useMemo, type ReactNode } from "react";
+import { createElement, useId, useMemo, type ComponentProps, type ReactNode } from "react";
 
 import { cn } from "../../ui-classnames/index.js";
 import { workbenchRuntimeMessageId } from "../../workbench-runtime/index.js";
@@ -11,46 +11,59 @@ import { RenderTimelineItem, TurnTerminalState } from "./render-item.js";
 
 const { MessagePartPrimitive, MessagePrimitive, ThreadPrimitive } = assistantTimelinePrimitives;
 
-function fallbackIdentity(type: string, itemId: unknown): string {
-	return typeof itemId === "string" && itemId.length > 0 ? itemId : `runtime-${type}`;
+type RuntimeContentComponents = NonNullable<
+	Extract<
+		ComponentProps<typeof assistantTimelinePrimitives.MessagePrimitive.Content>,
+		{ readonly children?: never }
+	>["components"]
+>;
+type RuntimeTextRenderer = NonNullable<RuntimeContentComponents["Text"]>;
+type RuntimeTextRendererProps = ComponentProps<RuntimeTextRenderer>;
+type RuntimeReasoningRenderer = NonNullable<RuntimeContentComponents["Reasoning"]>;
+type RuntimeReasoningRendererProps = ComponentProps<RuntimeReasoningRenderer>;
+type RuntimeDataRenderer = NonNullable<NonNullable<RuntimeContentComponents["data"]>["Fallback"]>;
+type RuntimeDataRendererProps = ComponentProps<RuntimeDataRenderer>;
+
+function runtimeItemIdentity(type: string): string {
+	return `runtime-${type}`;
 }
 
-function RuntimeTextPart(props: { readonly text: string; readonly itemId?: string }): ReactNode {
-	return createElement(
-		"article",
-		{
-			className: "border-b border-border-subtle py-control font-sans last:border-b-0",
-			"aria-label": "Assistant message",
-			"data-item-id": fallbackIdentity("text", props.itemId),
-			"data-item-type": "agentMessage",
-		},
-		createElement(
-			"h3",
-			{ className: "m-0 mb-compact text-kicker font-semibold text-muted-foreground" },
-			"Assistant message",
-		),
-		createElement(MessagePartPrimitive.Text, {
-			className: "whitespace-pre-wrap font-sans text-body break-words text-foreground",
-			component: "p",
-			smooth: false,
-		}),
-	);
-}
-
-function RuntimeReasoningPart(props: {
-	readonly text: string;
-	readonly itemId?: string;
-}): ReactNode {
-	const identity = fallbackIdentity("reasoning", props.itemId);
-	const item: TimelineItem = {
-		identity,
-		itemId: identity,
-		label: "Reasoning",
-		type: "reasoning",
-		value: { type: "reasoning", id: identity, summary: [props.text], content: [] },
-		malformed: false,
+function createRuntimeTextPart(itemId: string): RuntimeTextRenderer {
+	return function RuntimeTextPart(_props: RuntimeTextRendererProps): ReactNode {
+		return createElement(
+			"article",
+			{
+				className: "border-b border-border-subtle py-control font-sans last:border-b-0",
+				"aria-label": "Assistant message",
+				"data-item-id": itemId,
+				"data-item-type": "agentMessage",
+			},
+			createElement(
+				"h3",
+				{ className: "m-0 mb-compact text-kicker font-semibold text-muted-foreground" },
+				"Assistant message",
+			),
+			createElement(MessagePartPrimitive.Text, {
+				className: "whitespace-pre-wrap font-sans text-body break-words text-foreground",
+				component: "p",
+				smooth: false,
+			}),
+		);
 	};
-	return createElement(RenderTimelineItem, { item });
+}
+
+function createRuntimeReasoningPart(itemId: string): RuntimeReasoningRenderer {
+	return function RuntimeReasoningPart(props: RuntimeReasoningRendererProps): ReactNode {
+		const item: TimelineItem = {
+			identity: itemId,
+			itemId,
+			label: "Reasoning",
+			type: "reasoning",
+			value: { type: "reasoning", id: itemId, summary: [props.text], content: [] },
+			malformed: false,
+		};
+		return createElement(RenderTimelineItem, { item });
+	};
 }
 
 function dataItem(name: string, data: unknown): TimelineItem {
@@ -87,15 +100,15 @@ function dataItem(name: string, data: unknown): TimelineItem {
 	};
 }
 
-function RuntimeDataPart(props: { readonly name: string; readonly data: unknown }): ReactNode {
+function RuntimeDataPart(props: RuntimeDataRendererProps): ReactNode {
 	return createElement(RenderTimelineItem, { item: dataItem(props.name, props.data) });
 }
 
 const PART_RENDERERS = {
-	Text: RuntimeTextPart,
-	Reasoning: RuntimeReasoningPart,
+	Text: createRuntimeTextPart(runtimeItemIdentity("text")),
+	Reasoning: createRuntimeReasoningPart(runtimeItemIdentity("reasoning")),
 	data: { Fallback: RuntimeDataPart },
-};
+} satisfies RuntimeContentComponents;
 
 function renderTurn(turn: TimelineTurn | undefined, messageId: string): ReactNode {
 	const turnId = turn?.turnId ?? messageId;
@@ -214,7 +227,6 @@ export function WorkbenchTimeline(props: WorkbenchTimelineProps): ReactNode {
 						),
 					),
 					createElement(TimelineMessageList, {
-						component: ThreadPrimitive.Messages,
 						render: (messageId) => renderTurn(runtimeTurns.get(messageId), messageId),
 					}),
 				),
