@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.02
 title: Define the browser-only Codex workbench model
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 22:09'
+updated_date: '2026-09-03 22:25'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -278,6 +278,8 @@ Combined drain enforcement:
 - Added one focused owner with two distinguishable subscribed event-send failures and one connection-close failure. The single drain AggregateError contains the close failure and only the first contextual event failure; the later event failure is absent, and a second drain resolves.
 - The owner passed immediately against d07c6694, confirming the authored bounded first-failure production contract. Production code did not change.
 - Exact evidence: the publication owner passed 5/5 with 23 assertions. Root and frontend TypeScript, exact file Oxlint/Oxfmt, and git diff checks passed. No other test lane ran. Topology remains one server, one child, one user. TASK-143.01.02 remains In Progress for parent rereview.
+
+Canonical post-review remediation integration replayed all seven REVIEW_CLEAN commits onto 70765655 with exact range-diff equality, ending at c8a482a2 before this Backlog-only record update. Validation passed: 42 focused publication, gateway, approval, socket, and lifecycle tests; 65 boundary, inventory, and composition policy tests; both TypeScript projects; scoped Oxlint and Oxfmt; git diff checks. The two real WebSocket owners required local-listen permission after sandbox EPERM. No broad, full browser/system, stress, capacity, performance, tooling, topology, or concurrency lane ran.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
