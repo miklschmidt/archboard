@@ -56,11 +56,9 @@ function drainBounded(
 	let exceeded = false;
 	let finished = false;
 	let finish!: (value: { bytes: Uint8Array; exceeded: boolean; error?: Error }) => void;
-	const result = new Promise<{ bytes: Uint8Array; exceeded: boolean; error?: Error }>(
-		(resolve) => {
-			finish = resolve;
-		},
-	);
+	const result = new Promise<{ bytes: Uint8Array; exceeded: boolean; error?: Error }>((resolve) => {
+		finish = resolve;
+	});
 	const outcome = (error?: Error): { bytes: Uint8Array; exceeded: boolean; error?: Error } => {
 		const bytes = new Uint8Array(kept);
 		let offset = 0;
@@ -169,9 +167,7 @@ export async function git(
 	});
 	let child: ReturnType<typeof Bun.spawn>;
 	try {
-		child = Bun.spawn(
-			[process.execPath, GIT_PROCESS_OWNER, options.executable ?? "git", ...args],
-			{
+		child = Bun.spawn([process.execPath, GIT_PROCESS_OWNER, options.executable ?? "git", ...args], {
 			cwd,
 			detached: true,
 			ipc: (message) => {
@@ -181,8 +177,7 @@ export async function git(
 			stdin: "ignore",
 			stdout: "pipe",
 			stderr: "pipe",
-			},
-		);
+		});
 	} catch (error) {
 		throw new GitCommandError("spawn", `Could not start Git: ${(error as Error).message}`);
 	}
