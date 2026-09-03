@@ -119,6 +119,9 @@ export function createCanvasCodexBrowserSocketOwner(
 	const activeCloses = new Set<Promise<void>>();
 	const activePublications = new Set<Promise<void>>();
 	const closeFailures: unknown[] = [];
+	// One event failure is enough to fail drain. Retaining only the first keeps a
+	// broken socket from growing an error history before teardown observes it.
+	let publicationFailure: Error | null = null;
 	let disposed = false;
 
 	const connectionFor = (
@@ -144,11 +147,21 @@ export function createCanvasCodexBrowserSocketOwner(
 		connectionFor(instance, browserId);
 	};
 
-	const trackPublication = (publication: Promise<void>): void => {
+	const trackPublication = (
+		publication: Promise<void>,
+		connection: BrowserWorkbenchConnection,
+		message: BrowserGatewayMessage,
+	): void => {
 		activePublications.add(publication);
 		void publication.then(
 			() => activePublications.delete(publication),
-			() => activePublications.delete(publication),
+			(error) => {
+				activePublications.delete(publication);
+				publicationFailure ??= new Error(
+					`Codex browser event publication failed for browser ${JSON.stringify(connection.browserId)}, pane ${JSON.stringify(connection.paneId)}, ${message.kind} sequence ${message.sequence}: ${errorMessage(error)}`,
+					{ cause: error },
+				);
+			},
 		);
 	};
 
@@ -222,7 +235,7 @@ export function createCanvasCodexBrowserSocketOwner(
 							await transport.send({ type: "codex_workbench_event", message });
 							connection.confirmPublished(message);
 						})();
-						trackPublication(publication);
+						trackPublication(publication, connection, message);
 					});
 					subscriptions.set(instance, unsubscribe);
 					await sendPublishedResult(transport, request, connection, connection.snapshot());
@@ -268,11 +281,15 @@ export function createCanvasCodexBrowserSocketOwner(
 	const drain = async (): Promise<void> => {
 		while (activeCloses.size > 0 || activePublications.size > 0)
 			await Promise.allSettled([...activeCloses, ...activePublications]);
-		if (closeFailures.length === 0) return;
 		const failures = closeFailures.splice(0);
+		if (publicationFailure !== null) {
+			failures.push(publicationFailure);
+			publicationFailure = null;
+		}
+		if (failures.length === 0) return;
 		throw new AggregateError(
 			failures,
-			`Codex browser cleanup failed: ${failures.map(errorMessage).join("; ")}`,
+			`Codex browser drain failed: ${failures.map(errorMessage).join("; ")}`,
 		);
 	};
 
