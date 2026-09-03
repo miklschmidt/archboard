@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+import {
+	CodexFileChangeApprovalDecisionSchema,
+	CodexThreadStatusTypeSchema,
+	CodexTurnStatusSchema,
+	createCodexCommandExecutionApprovalDecisionSchema,
+} from "../../codex-app-server-contract/index.js";
+
 import { SupportedLoginAccountParamsSchema } from "./authored.js";
 import { createDynamicApprovalSchemas } from "./dynamic-approval.js";
 import {
@@ -149,7 +156,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			.strict(),
 	]);
 
-	const ThreadStatusSchema = z.enum(["notLoaded", "idle", "systemError", "active"]);
+	const ThreadLinkStatusSchema = CodexThreadStatusTypeSchema;
 	const ExecutableThreadSourceSchema = z.enum(["cli", "vscode", "exec", "appServer"]);
 	const SubAgentSourceSchema = z.union([
 		z.enum(["review", "compact", "memory_consolidation"]),
@@ -196,7 +203,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			epoch: z.null(),
 			threadId: ThreadIdSchema,
 			source: InspectOnlyThreadSourceSchema,
-			status: ThreadStatusSchema,
+			status: ThreadLinkStatusSchema,
 			loaded: z.boolean(),
 			canAcceptDirectInput: z.literal(false),
 			reason: NullableReasonSchema,
@@ -210,7 +217,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			epoch: ChildEpochSchema,
 			threadId: ThreadIdSchema,
 			source: ExecutableThreadSourceSchema,
-			status: z.enum(["idle", "systemError", "active"]),
+			status: ThreadLinkStatusSchema.exclude(["notLoaded"]),
 			loaded: z.literal(true),
 			canAcceptDirectInput: z.literal(true),
 			reason: NullableReasonSchema,
@@ -273,7 +280,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 	const BrowserTimelineTurnSchema = z
 		.object({
 			turnId: TurnIdSchema,
-			status: z.enum(["inProgress", "completed", "interrupted", "failed"]),
+			status: CodexTurnStatusSchema,
 			items: z.array(BrowserTimelineItemSchema),
 			summary: boundedText(512),
 			outputsIncluded: z.boolean(),
@@ -380,27 +387,10 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		expiresAtMs: TimestampSchema,
 	};
 	const ApprovalReason = { reason: NullableReasonSchema };
-	const ApprovalDecisionSchema = z.union([
-		z.enum(["accept", "acceptForSession", "decline", "cancel"]),
-		z
-			.object({
-				acceptWithExecpolicyAmendment: z
-					.object({ execpolicy_amendment: z.array(boundedText(16_384)) })
-					.strict(),
-			})
-			.strict(),
-		z
-			.object({
-				applyNetworkPolicyAmendment: z
-					.object({
-						network_policy_amendment: z
-							.object({ host: boundedText(2048), action: z.enum(["allow", "deny"]) })
-							.strict(),
-					})
-					.strict(),
-			})
-			.strict(),
-	]);
+	const ApprovalDecisionSchema = createCodexCommandExecutionApprovalDecisionSchema({
+		text: boundedText(16_384),
+		host: boundedText(2048),
+	});
 	const BrowserApprovalSchema = z.discriminatedUnion("approvalKind", [
 		z
 			.object({
@@ -420,7 +410,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 				...ApprovalEnvelope,
 				...ApprovalReason,
 				grantRoot: boundedText(16_384).nullable(),
-				availableDecisions: z.array(z.enum(["accept", "acceptForSession", "decline", "cancel"])),
+				availableDecisions: z.array(CodexFileChangeApprovalDecisionSchema),
 			})
 			.strict(),
 		z
@@ -716,7 +706,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		z
 			.object({
 				approvalKind: z.literal("file_change"),
-				decision: z.enum(["accept", "acceptForSession", "decline", "cancel"]),
+				decision: CodexFileChangeApprovalDecisionSchema,
 			})
 			.strict(),
 		z

@@ -1,4 +1,7 @@
-import type { JsonRpcRequestId } from "../../../shared/codex-workbench-identity/index.js";
+import {
+	logicalToolCallKey,
+	type JsonRpcRequestId,
+} from "../../../shared/codex-workbench-identity/index.js";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
@@ -154,16 +157,7 @@ export function mutationIdentity(
 }
 
 export function logicalKey(identity: DynamicMutationQuarantineIdentity): string {
-	return JSON.stringify([
-		identity.child,
-		identity.epoch,
-		identity.threadId,
-		identity.turnId,
-		identity.callId,
-		identity.namespace,
-		identity.tool,
-		identity.manifestHash,
-	]);
+	return logicalToolCallKey(identity);
 }
 
 export function epochKey(child: unknown, epoch: unknown): string | null {

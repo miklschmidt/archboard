@@ -11,12 +11,14 @@ import type {
 } from "./generated/current/index.js";
 import type {
 	CommandExecutionRequestApprovalResponse,
+	CommandExecutionApprovalDecision,
 	CancelLoginAccountResponse,
 	ConfigReadResponse,
 	ConfigRequirementsReadResponse,
 	CurrentTimeReadResponse,
 	DynamicToolCallResponse,
 	FileChangeRequestApprovalResponse,
+	FileChangeApprovalDecision,
 	GetAccountResponse,
 	LoginAccountResponse,
 	LogoutAccountResponse,
@@ -44,9 +46,11 @@ import type {
 	ThreadStartResponse,
 	ThreadTimelineListResponse,
 	ThreadTurnsListResponse,
+	ThreadStatus,
 	TurnInterruptResponse,
 	TurnStartResponse,
 	TurnSteerResponse,
+	TurnStatus,
 	ToolRequestUserInputResponse,
 } from "./generated/current/v2/index.js";
 
@@ -106,6 +110,120 @@ export type CodexInitializeCapabilities = NonNullable<
 	CodexClientRequestParamsByMethod["initialize"]["capabilities"]
 >;
 export type CodexLoginAccountParams = CodexClientRequestParamsByMethod["account/login/start"];
+export type CodexThreadStatus = CodexJsonWire<ThreadStatus>;
+export type CodexTurnStatus = CodexJsonWire<TurnStatus>;
+export type CodexCommandExecutionApprovalDecision = CodexJsonWire<CommandExecutionApprovalDecision>;
+export type CodexFileChangeApprovalDecision = CodexJsonWire<FileChangeApprovalDecision>;
+
+/** Client requests Archboard implements, checked against the generated request union. */
+export const CODEX_CLIENT_REQUEST_METHODS = [
+	"initialize",
+	"config/read",
+	"configRequirements/read",
+	"account/read",
+	"account/login/start",
+	"account/login/cancel",
+	"account/logout",
+	"model/list",
+	"thread/start",
+	"thread/fork",
+	"thread/list",
+	"thread/loaded/list",
+	"thread/read",
+	"thread/turns/list",
+	"thread/items/list",
+	"thread/delete",
+	"thread/settings/update",
+	"turn/start",
+	"turn/steer",
+	"turn/interrupt",
+	"thread/queue/add",
+	"thread/queue/list",
+	"thread/queue/update",
+	"thread/queue/delete",
+	"thread/queue/reorder",
+	"thread/queue/start",
+	"thread/inject_items",
+	"thread/realtime/start",
+	"thread/realtime/appendText",
+	"thread/realtime/appendSpeech",
+	"thread/realtime/stop",
+	"thread/timeline/list",
+] as const satisfies readonly (keyof CodexClientRequestParamsByMethod)[];
+
+/** Reverse requests Archboard implements, checked against the generated request union. */
+export const CODEX_SERVER_REQUEST_METHODS = [
+	"item/commandExecution/requestApproval",
+	"item/fileChange/requestApproval",
+	"item/tool/requestUserInput",
+	"mcpServer/elicitation/request",
+	"item/permissions/requestApproval",
+	"item/tool/call",
+	"account/chatgptAuthTokens/refresh",
+	"attestation/generate",
+	"currentTime/read",
+	"applyPatchApproval",
+	"execCommandApproval",
+] as const satisfies readonly (keyof CodexServerRequestParamsByMethod)[];
+
+export const CodexThreadStatusSchema = z.discriminatedUnion("type", [
+	z.looseObject({ type: z.literal("notLoaded") }),
+	z.looseObject({ type: z.literal("idle") }),
+	z.looseObject({ type: z.literal("systemError") }),
+	z.looseObject({
+		type: z.literal("active"),
+		activeFlags: z.array(z.enum(["waitingOnApproval", "waitingOnUserInput"])),
+	}),
+]) satisfies z.ZodType<CodexThreadStatus>;
+
+export const CodexThreadStatusTypeSchema = z.enum([
+	"notLoaded",
+	"idle",
+	"systemError",
+	"active",
+] satisfies readonly CodexThreadStatus["type"][]);
+
+export const CodexTurnStatusSchema = z.enum([
+	"completed",
+	"interrupted",
+	"failed",
+	"inProgress",
+] satisfies readonly CodexTurnStatus[]);
+
+export function createCodexCommandExecutionApprovalDecisionSchema(
+	options: {
+		readonly text?: z.ZodType<string>;
+		readonly host?: z.ZodType<string>;
+	} = {},
+) {
+	const text = options.text ?? z.string();
+	const host = options.host ?? text;
+	return z.union([
+		z.enum(["accept", "acceptForSession", "decline", "cancel"]),
+		z.strictObject({
+			acceptWithExecpolicyAmendment: z.strictObject({
+				execpolicy_amendment: z.array(text),
+			}),
+		}),
+		z.strictObject({
+			applyNetworkPolicyAmendment: z.strictObject({
+				network_policy_amendment: z.strictObject({
+					host,
+					action: z.enum(["allow", "deny"]),
+				}),
+			}),
+		}),
+	]) satisfies z.ZodType<CodexCommandExecutionApprovalDecision>;
+}
+
+export const CodexCommandExecutionApprovalDecisionSchema =
+	createCodexCommandExecutionApprovalDecisionSchema();
+export const CodexFileChangeApprovalDecisionSchema = z.enum([
+	"accept",
+	"acceptForSession",
+	"decline",
+	"cancel",
+] satisfies readonly CodexFileChangeApprovalDecision[]);
 
 export interface CodexResponseByMethod {
 	readonly initialize: CodexJsonWire<InitializeResponse>;

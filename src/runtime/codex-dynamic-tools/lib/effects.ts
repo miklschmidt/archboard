@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-
 import type {
 	ChildEpoch,
 	ChildId,
@@ -7,6 +5,10 @@ import type {
 	OperationId,
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
+import {
+	canonicalDynamicApprovalJson,
+	dynamicApprovalHashForCanonicalJson,
+} from "../../../shared/codex-browser-model/index.js";
 import { CODEX_APPROVAL_EXPIRY_MS } from "../../../shared/timing/timing.js";
 import {
 	CodexDynamicOperationTerminalizationError,
@@ -26,18 +28,6 @@ import {
 	type DynamicToolApprovalDecision,
 } from "./contract.js";
 import type { DynamicServerRequest } from "../../codex-transport/server-requests.js";
-
-const EFFECT_KEYS = Object.freeze([
-	"tool",
-	"arguments",
-	"callerAuthority",
-	"targetAuthority",
-	"contextAuthority",
-	"effectiveBoundary",
-	"mutationOperationId",
-	"initialTurnOperationId",
-	"visualSummary",
-] as const);
 
 export interface DynamicIssuedOperations {
 	readonly resultOperationId: OperationId;
@@ -126,19 +116,11 @@ function identityFor(
 	});
 }
 
-function effectHash(identity: DynamicApprovalIdentity, effect: DynamicImmutableEffect): string {
-	const orderedEffect: Record<string, unknown> = {};
-	for (const key of EFFECT_KEYS) orderedEffect[key] = effect[key];
-	const input = JSON.stringify({ identity, effect: orderedEffect });
-	if (input === undefined) throw new Error("dynamic effect was not JSON serializable");
-	return `sha256:${createHash("sha256").update(input, "utf8").digest("hex")}`;
-}
-
 export function dynamicEffectHash(
 	identity: DynamicApprovalIdentity,
 	effect: DynamicImmutableEffect,
 ): string {
-	return effectHash(identity, effect);
+	return dynamicApprovalHashForCanonicalJson(canonicalDynamicApprovalJson({ identity, effect }));
 }
 
 function summaryFor(
@@ -530,7 +512,7 @@ export function prepareMutation(
 			}),
 		});
 	}
-	const hash = effectHash(identity, effect);
+	const hash = dynamicEffectHash(identity, effect);
 	const requestValue: DynamicToolApprovalRequest = freezeDeep({
 		identity,
 		effect,

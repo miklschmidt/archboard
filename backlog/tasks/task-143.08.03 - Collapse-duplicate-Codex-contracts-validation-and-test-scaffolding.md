@@ -1,9 +1,11 @@
 ---
 id: TASK-143.08.03
 title: 'Collapse duplicate Codex contracts, validation, and test scaffolding'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-09-02 01:36'
+updated_date: '2026-09-03 02:52'
 labels: []
 dependencies:
   - TASK-143.08.02
@@ -34,3 +36,53 @@ Deepen the recovered Codex protocol and browser modules after generated types be
 - [ ] #5 Only identical call identity, effect hash, error construction, child/session fake, socket fake, or deep-freeze behavior is shared. Differently constrained isRecord, boundedText, and lifecycle helpers stay local unless the deletion test proves one module owns the same semantics.
 - [ ] #6 The resulting production and test tree has fewer concepts, validation passes, cases, and lines than ba1aacee, with focused and broad checks proving retained behavior and no weakened rule, timeout, assertion, or browser gate.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Make src/shared/codex-app-server-contract the sole generated-derived owner of Codex method sets and wire status/decision views; remove production literal copies while keeping app-server runtime decoding in codex-protocol and local browser projections in codex-browser-model.
+2. Delete the unused server-side browser sequence parser and change the live UI transport to validate each untrusted delta field once, then merge the already parsed delta without reparsing the complete snapshot. Retain full validation for initial and recovery snapshots.
+3. Apply the retained-owner matrix recorded in implementation notes. Delete duplicate reload, shutdown, exit-race, approval, remediation, state-matrix, submission-fencing, Tailwind compiler, Oxlint alias, copied authored-contract, fixture-cleanup, and tool-resolution owners; fold any unique reachable product assertion into the retained module owner before removal.
+4. Share only implementations proven byte-for-byte or behaviorally identical. Prefer deletion and direct generated-derived types over adapters; keep distinct bounded text, record predicates, and lifecycle helpers local. Do not edit active-owner paths from TASK-143.06.06 or TASK-143.08.06.01.
+5. Run focused retained owners, both contained TypeScript graphs, focused lint/format, the real Vite production build, and the smallest bounded repository/module evidence needed. Record before/after concepts, validation passes, cases, and lines; commit coherent slices and leave finalization to the parent.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Pre-change audit at exact base a5146446a07efc127a2c02930f90bbaf64ab8560: dependency TASK-143.08.02 is Done; checkout is tracked-clean and detached at the requested commit. ba1aacee has 260,645 authored src/tests/scripts/tools lines, 1,687 test()/it() cases, and 259 production .parse/.safeParse call sites. The current base has 226,542 lines, 1,626 cases, and 261 production parse sites. Two reachable delta paths still reparse a complete merged BrowserSnapshot after validating changed fields. Nineteen production files define or repeat one of the audited status, decision, method, queue, call-identity, or effect-hash concepts.
+
+Retained-owner matrix before deletion:
+- App-server success and empty responses: src/runtime/codex-session/tests/response-workflows.test.ts through the codex-session interface.
+- App-server progress notifications and malformed/failure ingress: src/runtime/codex-protocol/tests/protocol.test.ts through decodeServerNotification/decodeServerRequest/decodeResponse.
+- Transport partial writes, late responses, and shutdown recovery: src/runtime/codex-transport/tests/transport.test.ts plus cleanup.test.ts only where process/write ownership differs.
+- Ordinary approval success, refusal, expiry, and disconnect recovery: src/runtime/codex-approvals/tests/broker.test.ts through the broker interface.
+- Dynamic approval identity, effect hash, replay refusal, and terminal recovery: src/shared/codex-browser-model/tests/dynamic.test.ts for browser contract and src/runtime/codex-dynamic-tools/tests/dispatch.test.ts for execution.
+- Gateway snapshot success, empty projection, partial sequenced delta, gap, and recovery: src/ui/workbench-transport/tests/transport.test.ts through the live browser ingress.
+- Read-only/executable timeline progress, empty history, unsupported partial item, mapping failure, and recovery presentation: src/ui/workbench-runtime/tests/runtime.test.ts.
+- Process startup/shutdown and child exit behavior remains owned by TASK-143.08.04 and its process-contract owners; .08.03 deletes only duplicate module-level simulations outside active TASK-143.06.06 paths.
+- Real browser opener behavior remains tests/system/browser/opener-settings.test.ts; the Vite production build and src/ui/theme/app.css directly prove build/style integration.
+- Module directions remain tests/system/repository-policy/boundaries.test.ts; tests/system/repository-policy/tsconfig-gate-scope.test.ts is the one narrow stable TypeScript graph ownership check.
+
+Implementation result before parent review:
+- Generated-derived ownership now lives in src/shared/codex-app-server-contract for supported method sets, ThreadStatus, TurnStatus, and approval decisions. Codex protocol and browser projections consume those schemas. Exact queue wire schemas now live only in codex-protocol and are re-exported by the coordinator tool contract.
+- App-server reverse-request ingress remains codex-protocol/transport. codex-browser-model now owns only outbound reverse-response validation; its parallel 686-line request decoder was removed. The unused server-side sequence reducer was deleted. UI deltas retain per-field browser validation and merge once without reparsing a full snapshot; initial and recovery snapshots remain fully validated.
+- Shared canonical dynamic-effect serialization/hash and logical call identity replaced duplicate implementations. Differently constrained browser/protocol text and record schemas remain local.
+- Applied the retained-owner matrix: removed duplicate shutdown, canvas exit/approval simulations, runtime state-matrix/submission-fencing cases, theme/tool-resolution fixtures, and copied authored-contract/remediation policy scaffolding while preserving transport, broker, gateway, runtime, repository boundary/inventory, production build, and opener owners.
+
+Measured result (same commands at base/current): authored src/tests/scripts/tools lines 226,542 -> 220,087 (-6,455; ba1aacee was 260,645); test()/it() sites 1,754 -> 1,677 (-77; ba1aacee 1,833); production .parse/.safeParse sites 261 -> 245 (-16; ba1aacee 259); complete merged-snapshot delta reparses 2 -> 0. Exact queue schema definition sets 2 -> 1; repeated production ThreadStatus/TurnStatus enum definitions 3 -> 0 outside the shared generated-derived owner.
+
+Validation:
+- focused Codex protocol/dynamic/gateway/browser/runtime retained owners: 567 pass, 0 fail.
+- transport reverse-response and adversarial owners: 16 pass, 0 fail.
+- queue/protocol/thread-tool contract owners: 38 pass, 0 fail.
+- repository boundaries, TypeScript gate scope, and inventory: 47 pass, 0 fail.
+- frontend TypeScript graph: pass. Root TypeScript graph has only the same 13 diagnostics in active-owner engine/board-inspection files present at the exact base; no new diagnostic.
+- real Vite production build: pass (2,614 modules).
+- focused Oxfmt/Oxlint: pass. Whole-repository lint reports only four exact-base diagnostics in active-owner engine/board-inspection files; no changed-file diagnostic.
+- git diff --check: pass.
+
+No active-owner path, package.json, bun.lock, CONTEXT.md, ADR/rendering proof path, or protected checkout was modified. Acceptance checkmarks, final summary, and Done transition remain for the parent.
+
+Measurement clarification: the canonical test-case count used in the pre-change audit is lines beginning with test( or it(. On that same measure, ba1aacee/base/current are 1,687 / 1,626 / 1,556, so this change removes 70 cases. The 1,833 / 1,754 / 1,677 figures above are a deliberately broader cross-check that also matches nested references; they are not the canonical case measure.
+<!-- SECTION:NOTES:END -->

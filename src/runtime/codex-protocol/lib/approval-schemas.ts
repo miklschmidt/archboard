@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+import {
+	CodexCommandExecutionApprovalDecisionSchema,
+	CodexFileChangeApprovalDecisionSchema,
+} from "../../../shared/codex-app-server-contract/index.js";
+
 import { FileChangeSchema } from "./item-schemas.js";
 import { CodexSafeI64Schema, JsonValueSchema, NonNegativeIntegerSchema } from "./scalars.js";
 
@@ -21,19 +26,8 @@ export const NetworkPolicyAmendmentSchema = z.strictObject({
 });
 export const ExecPolicyAmendmentSchema = z.array(z.string());
 
-export const CommandExecutionApprovalDecisionSchema = z.union([
-	z.enum(["accept", "acceptForSession", "decline", "cancel"]),
-	z.strictObject({
-		acceptWithExecpolicyAmendment: z.strictObject({
-			execpolicy_amendment: ExecPolicyAmendmentSchema,
-		}),
-	}),
-	z.strictObject({
-		applyNetworkPolicyAmendment: z.strictObject({
-			network_policy_amendment: NetworkPolicyAmendmentSchema,
-		}),
-	}),
-]);
+export const CommandExecutionApprovalDecisionSchema = CodexCommandExecutionApprovalDecisionSchema;
+export const FileChangeApprovalDecisionSchema = CodexFileChangeApprovalDecisionSchema;
 
 export const AdditionalNetworkPermissionsSchema = z.strictObject({
 	enabled: z.boolean().nullable(),

@@ -476,17 +476,10 @@ export function createBrowserWorkbenchTransport(
 			markStale(active, message.sequence, "A workbench delta skipped a sequence.");
 			return "gap";
 		}
-		let candidate: BrowserSnapshot;
-		try {
-			candidate = parseBrowserSnapshotMessage({
-				kind: "snapshot",
-				sequence: message.sequence,
-				snapshot: { ...active.snapshot, ...message.delta },
-			}).snapshot;
-		} catch (error) {
-			incompatible(active, error);
-			return "stale";
-		}
+		const candidate = Object.freeze({
+			...active.snapshot,
+			...message.delta,
+		}) as BrowserSnapshot;
 		if (message.sequence < active.sequence) {
 			markStale(active, message.sequence, "A stale workbench delta arrived.");
 			return "stale";

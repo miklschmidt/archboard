@@ -4,6 +4,7 @@ export {
 	createIdentityAuthorities,
 	createIdentityAuthority,
 	createIdentityLedger,
+	logicalToolCallKey,
 	restoreIdentityAuthorities,
 	restoreIdentityAuthority,
 } from "./lib/identity.js";

@@ -1,13 +1,9 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import type { BrowserGatewayClientState, BrowserGatewayMessage } from "../index.js";
-import {
-	applyBrowserGatewayMessage,
-	BROWSER_SETTLED_COMMAND_LIMIT,
-	browserGatewayMessageSchema,
-} from "../index.js";
+import type { BrowserGatewayMessage } from "../index.js";
+import { BROWSER_SETTLED_COMMAND_LIMIT } from "../index.js";
 import { dynamicResponse, expectGatewayError, expectRejected, startCommand } from "./helpers.js";
-import { createGatewayHarness, latestDelta, type GatewayHarness } from "./support.js";
+import { createGatewayHarness, type GatewayHarness } from "./support.js";
 
 const openHarnesses: GatewayHarness[] = [];
 
@@ -177,54 +173,6 @@ describe("Codex workbench browser recovery and delivery", () => {
 		const message = messages.at(-1);
 		expect(message?.kind).toBe("snapshot");
 		if (message?.kind === "snapshot") expect(message.sequence).toBeGreaterThan(0);
-	});
-
-	test("applies snapshots, rejects gaps, and treats duplicate or stale messages idempotently", () => {
-		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
-		const first = connection.snapshot();
-		let state: BrowserGatewayClientState | null = applyBrowserGatewayMessage(
-			value.model,
-			first,
-			null,
-		).state;
-		expect(state).not.toBeNull();
-		const messages: BrowserGatewayMessage[] = [];
-		const unsubscribe = connection.subscribe((message) => messages.push(message));
-		value.setReadiness("account_ready");
-		const delta = latestDelta(messages);
-		expect(delta).toBeDefined();
-		const applied = applyBrowserGatewayMessage(value.model, delta, state);
-		expect(applied.status).toBe("applied");
-		state = applied.state;
-		expect(state).not.toBeNull();
-		expect(applyBrowserGatewayMessage(value.model, delta, state).status).toBe("duplicate");
-		expect(
-			applyBrowserGatewayMessage(value.model, { ...delta!, sequence: delta!.sequence - 1 }, state)
-				.status,
-		).toBe("stale");
-		expect(
-			applyBrowserGatewayMessage(value.model, { ...delta!, sequence: state!.sequence + 2 }, state)
-				.status,
-		).toBe("gap");
-		unsubscribe();
-	});
-
-	test("rejects unexpected or wrong-arm wrapper fields", () => {
-		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
-		const snapshot = connection.snapshot();
-		const schema = browserGatewayMessageSchema(value.model);
-		expect(() => schema.parse({ ...snapshot, delta: {} })).toThrow();
-		expect(() => schema.parse({ ...snapshot, unexpected: true })).toThrow();
-		expect(() =>
-			schema.parse({
-				kind: "delta",
-				sequence: snapshot.sequence + 1,
-				delta: {},
-				snapshot: snapshot.snapshot,
-			}),
-		).toThrow();
 	});
 
 	test("makes child exit terminal and recovers through a new gateway authority", async () => {

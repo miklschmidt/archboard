@@ -8,7 +8,7 @@ import {
 	NullableNonNegativeIntegerSchema,
 	SafeUrlSchema,
 } from "./lib/scalars.js";
-import { createServerRequestSchemas, SERVER_REQUEST_METHODS } from "./lib/server-requests.js";
+import { createServerResponseSchemas } from "./lib/server-responses.js";
 import type { IdentityAuthorities } from "../codex-workbench-identity/index.js";
 import type { IdentityContext } from "./lib/scalars.js";
 
@@ -39,7 +39,6 @@ export {
 	boundedText,
 	boundedWireText,
 };
-export { SERVER_REQUEST_METHODS };
 export {
 	createDynamicApprovalSchemas,
 	canonicalDynamicApprovalJson,
@@ -58,7 +57,7 @@ export function createCodexBrowserModel(context: IdentityContext | IdentityAutho
 	return {
 		...identity,
 		...createBrowserSchemas(identity, normalizedContext),
-		...createServerRequestSchemas(identity),
+		...createServerResponseSchemas(),
 	};
 }
 
@@ -119,14 +118,6 @@ export type {
 	IdentitySchemas,
 	JsonValue,
 } from "./lib/scalars.js";
-
-export type {
-	CodexServerRequest,
-	ServerRequest,
-	ServerRequestMethod,
-	ServerRequestResult,
-	ServerRequestSchemas,
-} from "./lib/server-requests.js";
 
 export type {
 	BedrockSetupParams,

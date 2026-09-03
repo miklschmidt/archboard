@@ -33,7 +33,10 @@ import type {
 	LogicalToolCallCorrelation,
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
-import { IdentityValidationError } from "../../../shared/codex-workbench-identity/index.js";
+import {
+	IdentityValidationError,
+	logicalToolCallKey,
+} from "../../../shared/codex-workbench-identity/index.js";
 import {
 	type WorkhorseCoordinatorCall,
 	type WorkhorseOperationBinding,
@@ -402,14 +405,5 @@ export function callKey(request: DynamicServerRequest): string {
 }
 
 export function logicalCallKey(call: LogicalToolCallCorrelation): string {
-	return [
-		call.child,
-		call.epoch,
-		call.threadId,
-		call.turnId,
-		call.callId,
-		call.namespace,
-		call.tool,
-		call.manifestHash,
-	].join("\u0000");
+	return logicalToolCallKey(call);
 }
