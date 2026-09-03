@@ -503,6 +503,8 @@ export const LOCK_WATCH_MS = LOCK_RENEW_MS;
 
 /** Actual elapsed ceiling for a test with no reviewed source-local real-time declaration. */
 export const TEST_WALL_CLOCK_BUDGET_MS = 20_000;
+/** One controlled Bun child runs three millisecond fixtures and must settle well below the repository budget. */
+export const TEST_WALL_CLOCK_PRELOAD_LIFECYCLE_TIMEOUT_MS = 5_000;
 /** Bun lifecycle failure thresholds, not hang ceilings or SLAs, clear hosted sweep 5.274s and totality 5,003.69ms at roughly 3x. */
 export const TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS = 15_000;
 export const TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS = 15_000;

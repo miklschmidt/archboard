@@ -1,4 +1,5 @@
 import { parse } from "@babel/parser";
+import { VISITOR_KEYS, type Node, type ObjectExpression } from "@babel/types";
 import path from "node:path";
 
 const DECLARATION = "declareTestWallClockBudget";
@@ -6,33 +7,30 @@ const PRELOAD = "./tests/system/repository-policy/support/test-preload.ts";
 const HELPER = "tests/system/repository-policy/support/test-wall-clock.ts";
 const REQUIRED_FIELDS = ["test", "reason", "outerBoundMs", "task", "evidence"] as const;
 
-interface AstNode {
-	readonly type: string;
-	readonly [key: string]: unknown;
-}
-
 export interface TestWallClockPolicyInput {
 	readonly bunfig: string;
 	readonly sources: ReadonlyMap<string, string>;
 }
 
-function isNode(value: unknown): value is AstNode {
-	return typeof value === "object" && value !== null && typeof (value as AstNode).type === "string";
+function isNode(value: unknown): value is Node {
+	if (typeof value !== "object" || value === null) return false;
+	const type: unknown = Reflect.get(value, "type");
+	return typeof type === "string" && Object.hasOwn(VISITOR_KEYS, type);
 }
 
-function children(node: AstNode): AstNode[] {
-	const found: AstNode[] = [];
-	for (const [key, value] of Object.entries(node)) {
-		if (key === "loc" || key === "start" || key === "end") continue;
+function children(node: Node): Node[] {
+	const found: Node[] = [];
+	for (const key of VISITOR_KEYS[node.type] ?? []) {
+		const value: unknown = Reflect.get(node, key);
 		if (isNode(value)) found.push(value);
 		else if (Array.isArray(value)) for (const item of value) if (isNode(item)) found.push(item);
 	}
 	return found;
 }
 
-function walk(node: AstNode, visit: (node: AstNode, ancestors: readonly AstNode[]) => void): void {
-	const ancestors: AstNode[] = [];
-	const descend = (current: AstNode): void => {
+function walk(node: Node, visit: (node: Node, ancestors: readonly Node[]) => void): void {
+	const ancestors: Node[] = [];
+	const descend = (current: Node): void => {
 		visit(current, ancestors);
 		ancestors.push(current);
 		for (const child of children(current)) descend(child);
@@ -76,10 +74,14 @@ function preloadErrors(bunfig: string): string[] {
 	return [];
 }
 
-function declarationObjectErrors(file: string, object: AstNode, testName: string): string[] {
+function declarationObjectErrors(
+	file: string,
+	object: ObjectExpression,
+	testName: string,
+): string[] {
 	const errors: string[] = [];
 	const properties = Array.isArray(object.properties) ? object.properties : [];
-	const fields = new Map<string, AstNode>();
+	const fields = new Map<string, Node>();
 	for (const property of properties) {
 		if (
 			!isNode(property) ||
@@ -123,19 +125,19 @@ function declarationObjectErrors(file: string, object: AstNode, testName: string
 }
 
 function declarationErrors(file: string, source: string): string[] {
-	let ast: AstNode;
+	let ast: ReturnType<typeof parse>;
 	try {
 		ast = parse(source, {
 			sourceType: "module",
 			plugins: ["typescript", "jsx", "explicitResourceManagement"],
-		}) as unknown as AstNode;
+		});
 	} catch (error) {
 		return [
 			`${file}: cannot parse declaration owner: ${error instanceof Error ? error.message : String(error)}`,
 		];
 	}
 	const errors: string[] = [];
-	const allowedIdentifiers = new Set<AstNode>();
+	const allowedIdentifiers = new Set<Node>();
 	let canonicalImport = false;
 	if (file === HELPER)
 		walk(ast, (node) => {
