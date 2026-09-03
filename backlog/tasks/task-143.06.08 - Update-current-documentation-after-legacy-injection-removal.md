@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:29'
-updated_date: '2026-09-03 10:55'
+updated_date: '2026-09-03 10:57'
 labels: []
 dependencies:
   - TASK-143.06.03
@@ -59,6 +59,8 @@ Update current user, agent, test, and architecture documents only after the rema
 7. Standards remediation: make DESIGN.md's bound app-server section the sole full semantic contract; reduce AGENTS.md, README.md, and TESTING.md to audience-specific facts and direct pointers. Expand the existing policy owner across non-test src TS/TSX with concept-level retired route/module detection and replace prose snapshots with structural section/link/domain-identifier checks.
 
 8. Final Standards remediation: add block-level negative guards inside the existing current-document policy for positive same/existing-workhorse voice guidance and actionable control-socket guidance, with explicit retirement/negative exemptions; run only the requested focused owner, file-scoped format/lint, and diff checks.
+
+9. Accepted matcher correction: detect observed shared-thread voice guidance without requiring workhorse, classify control-socket guidance sentence by sentence, and add four boundary expectations inside the existing current-document test case; rerun only the focused owner and file-scoped checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -77,4 +79,8 @@ The existing retirement owner now scans every non-test TS/TSX file under src and
 Final capped remediation evidence: the exact retirement owner passed 4/4 tests and 64 expectations in 0.112s, using one Bun process under one timeout supervisor and starting zero product/server/app-server/browser processes. Scoped Oxfmt checked 5 files in 0.274s using one formatter process under one timeout supervisor and 24 worker threads. The local-link check resolved all links in 4 affected docs in 0.008s using one Bun process under one timeout supervisor. Historical comparison, git diff --check, and scoped static searches passed; ADR 0005 and docs/design/stateless-server.md remain byte-identical to the fixed base. Root typecheck, full repository/system/browser lanes, servers, and browsers were not run.
 
 Final Standards remediation at 77d0118e adds two negative, block-scoped structural guards to the existing legacy-injection retirement owner. Current documents now reject actionable guidance that attaches, connects, uses, or runs voice on the same/existing workhorse thread, while allowing explicitly negated guidance; they also reject actionable arm/connect/enable/open/run/start/use control-socket guidance, while allowing retirement, unavailability, supersession, removal, no-socket, and explicit non-use statements. Validation: focused owner 4 tests / 66 expectations in 0.063s (one Bun process); Oxfmt check 0.107s (one process); Oxlint 0.091s (one process); git diff --check passed. Added cost: zero new test cases, files, process owners, browser owners, or server/runtime lanes.
+
+Accepted matcher correction at 906fe680: the shared-thread guard now evaluates sentences and rejects voice plus attach/connect/use/run plus same/existing plus thread without requiring workhorse; explicit cannot/do-not/does-not/never and direct target negations remain allowed. The control-socket guard now evaluates each sentence independently, so a retired historical sentence cannot mask a later positive action sentence. Four expectations inside the existing current-document test establish the observed former shared-thread sentence, a mixed retired-plus-use block, an allowed retired statement, and an allowed cannot-connect statement. Final focused evidence: 4 tests / 70 expectations in 0.067s using one Bun test process under one timeout supervisor; Oxfmt check 0.101s using one formatter process; Oxlint 0.124s using one lint process; git diff --check passed. Added cost remains zero new test cases, files, process owners, browser owners, server owners, or runtime lanes.
+
+Final rerun after restoring the exact former TESTING wording in the boundary example supersedes the preceding timing: focused owner 4 tests / 70 expectations in 0.078s; Oxfmt check 0.112s; Oxlint 0.120s; git diff --check passed. Process and added-cost counts are unchanged.
 <!-- SECTION:NOTES:END -->
