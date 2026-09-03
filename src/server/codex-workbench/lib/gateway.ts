@@ -36,6 +36,7 @@ import {
 	type BrowserDisconnectReason,
 	type BrowserLeaseRecord,
 	type BrowserPresenterContext,
+	type BrowserPublishedPayload,
 	type BrowserUnsubscribe,
 	type CodexWorkbenchGatewayOptions,
 } from "./contract.js";
@@ -272,23 +273,25 @@ function currentLeaseOrThrow(
 function emit(
 	listeners: Set<(message: BrowserGatewayMessage) => void>,
 	message: BrowserGatewayMessage,
-): boolean {
-	if (listeners.size === 0) return false;
-	let published = true;
+): void {
 	for (const listener of listeners) {
 		try {
 			listener(message);
 		} catch {
-			published = false;
 			// A broken browser subscriber cannot block other subscribers or the
 			// owner projection from advancing.
 		}
 	}
-	return published;
 }
 
-function publishedTerminalIds(snapshot: BrowserSnapshot): readonly JsonRpcRequestId[] {
-	return snapshot.approvals.flatMap((approval) =>
+function publishedTerminalIds(payload: BrowserPublishedPayload): readonly JsonRpcRequestId[] {
+	const approvals =
+		"delta" in payload
+			? (payload.delta.approvals ?? [])
+			: "snapshot" in payload
+				? payload.snapshot.approvals
+				: payload.approvals;
+	return approvals.flatMap((approval) =>
 		approval.lifecycle.state === "staged" || approval.lifecycle.state === "pending"
 			? []
 			: [approval.requestId],
@@ -590,22 +593,22 @@ export function createCodexWorkbenchGateway(
 			for (const requestId of requestIds) state.publishedTerminals.delete(requestId);
 	};
 
-	const confirmPublished = (state: ConnectionState, snapshot: BrowserSnapshot): void => {
+	const confirmPublished = (state: ConnectionState, payload: BrowserPublishedPayload): void => {
 		if (state.closed || connections.get(connectionKey(state.browserId, state.paneId)) !== state)
 			return;
-		for (const requestId of publishedTerminalIds(snapshot)) state.publishedTerminals.add(requestId);
+		for (const requestId of publishedTerminalIds(payload)) state.publishedTerminals.add(requestId);
 		acknowledgeReadyTerminals();
 	};
 
-	const publishConnection = (state: ConnectionState): readonly JsonRpcRequestId[] => {
-		if (state.closed || state.lastSnapshot === null) return [];
+	const publishConnection = (state: ConnectionState): void => {
+		if (state.closed || state.lastSnapshot === null) return;
 		const snapshot = snapshotFor(state);
 		try {
 			const delta = diffBrowserSnapshots(state.lastSnapshot, snapshot);
-			if (delta === null) return [];
+			if (delta === null) return;
 			state.sequence += 1;
 			state.lastSnapshot = snapshot;
-			const published = emit(
+			emit(
 				state.listeners,
 				Object.freeze({
 					kind: "delta",
@@ -613,16 +616,14 @@ export function createCodexWorkbenchGateway(
 					delta,
 				}),
 			);
-			return published ? publishedTerminalIds(snapshot) : [];
 		} catch (error) {
 			if (!isOversizedDelta(error)) throw error;
 			state.sequence += 1;
 			state.lastSnapshot = snapshot;
-			const published = emit(
+			emit(
 				state.listeners,
 				Object.freeze({ kind: "snapshot", sequence: state.sequence, snapshot }),
 			);
-			return published ? publishedTerminalIds(snapshot) : [];
 		}
 	};
 
@@ -640,8 +641,7 @@ export function createCodexWorkbenchGateway(
 			}
 			do {
 				publishQueued = false;
-				for (const state of connections.values())
-					for (const requestId of publishConnection(state)) state.publishedTerminals.add(requestId);
+				for (const state of connections.values()) publishConnection(state);
 			} while (publishQueued);
 			acknowledgeReadyTerminals();
 		} finally {
@@ -1199,6 +1199,7 @@ export function createCodexWorkbenchGateway(
 			state.listeners.clear();
 		}
 		connections.clear();
+		acknowledgeReadyTerminals();
 		inFlightCommands.clear();
 		settledCommands.clear();
 	};
@@ -1283,7 +1284,7 @@ export function createCodexWorkbenchGateway(
 				const current = stateFor(state.browserId, state.paneId, state.instance);
 				return updateSnapshot(current);
 			},
-			confirmPublished: (snapshot: BrowserSnapshot) => confirmPublished(state, snapshot),
+			confirmPublished: (payload: BrowserPublishedPayload) => confirmPublished(state, payload),
 			claimLease: () => claimLease(state.browserId, state.paneId, state.instance),
 			renewLease: () => {
 				stateFor(state.browserId, state.paneId, state.instance);
