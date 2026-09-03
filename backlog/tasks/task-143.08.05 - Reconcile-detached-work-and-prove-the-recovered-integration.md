@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 11:13'
+updated_date: '2026-09-03 11:16'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -114,6 +114,13 @@ Durable-ref and main-record implementation evidence:
 - Removed, moved, and deleted no ref or worktree.
 - Cherry-picked only main commit 7b20864889202ea4f0e849d225626f3604639844. Detached implementation commit b043f2f4 adds exactly TASK-145, TASK-146, and TASK-147.
 - A path-limited commit comparison reports no difference between those three b043f2f4 blobs and main. backlog task view resolves all three. They remain byte-for-byte main records and were not edited.
+
+Complete-gate failure and remediation history before the next frozen head:
+- Attempt 1 used unit archboard-task143-worker-command-MVGDEHyY.service and exited 127 after 51 ms because the fresh worktree had no node_modules/.bin/oxlint. CPU was 32 ms; memory peak was 4.8M with 0B swap. The exact unit was inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path was absent. No OOM, SIGKILL, or cleanup diagnostic occurred.
+- Remediation installed the lockfile-pinned dependencies with bun install --frozen-lockfile. The postinstall generator completed, 737 packages were installed, and tracked plus staged diffs remained empty.
+- Attempt 2 used unit archboard-task143-worker-command-MpZ72EGw.service and exited 1 in lint after 789 ms. CPU was 1.919s; memory peak was 368M with 0B swap. Oxlint found an unused process-group capture import, two undefined raw signal calls in tests/system/board-inspection/support/package-process.ts, and an undefined timers variable in src/runtime/engine/tests/board-lock-lease.test.ts. The exact unit was inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path was absent. No OOM, SIGKILL, or cleanup diagnostic occurred.
+- Remediation captures the detached inspection group once, routes TERM/KILL through signalOwnedProcessGroup with the existing identity override seam, and uses that recorded group for lifecycle checks. The lock cancellation owner now starts the wait, advances its fake clock to the abort, then awaits the cancellation result. It no longer references an undefined timer set.
+- No lint rule, type rule, test owner, timeout, or assertion was weakened. No focused validation ran. The next check is one fresh complete gate after this remediation is committed.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
