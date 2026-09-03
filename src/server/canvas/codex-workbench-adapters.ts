@@ -21,6 +21,11 @@ export type {
 	CanvasDynamicLifecycleOwner,
 	CanvasDynamicLifecycleOwnerOptions,
 } from "./lib/codex-workbench-operation-lifecycle.js";
+export { createCanvasTimelineOwner } from "./lib/codex-workbench-timeline.js";
+export type {
+	CanvasTimelineOwner,
+	CanvasTimelineOwnerOptions,
+} from "./lib/codex-workbench-timeline.js";
 export { createCanvasCanonicalTextActions } from "./lib/codex-workbench-text-actions.js";
 export { createCanvasRealtimeActions } from "./lib/codex-workbench-realtime-actions.js";
 export { requireExactSemanticPane } from "./lib/codex-workbench-semantic-pane.js";

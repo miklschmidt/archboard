@@ -44,6 +44,7 @@ import {
 	createCanvasDynamicOperationIdAdapter,
 	type CanvasDynamicLifecycleOwner,
 } from "./codex-workbench-operation-lifecycle.js";
+import { createCanvasTimelineOwner, type CanvasTimelineOwner } from "./codex-workbench-timeline.js";
 
 export interface CanvasCodexWorkbenchHost {
 	readonly checkoutRoot: string;
@@ -93,6 +94,7 @@ interface GenerationOwners {
 	approvalProjectionInstalled: boolean;
 	projectionListeners: Set<() => void>;
 	dynamicProjectionUnsubscribe: (() => void) | null;
+	timeline: CanvasTimelineOwner | null;
 }
 
 function requireCreated<Name extends keyof CodexWorkbenchComponents>(
@@ -183,6 +185,7 @@ export function createCanvasCodexWorkbenchInstallation(
 				approvalProjectionInstalled: false,
 				projectionListeners: new Set(),
 				dynamicProjectionUnsubscribe: null,
+				timeline: null,
 				browserState: {
 					readiness: { kind: "readiness", state: "initialized" },
 					account: {
@@ -488,9 +491,21 @@ export function createCanvasCodexWorkbenchInstallation(
 			}),
 			gateway: (created) => {
 				const dynamic = requireOwners(created).approval;
+				if (owners.timeline === null) {
+					owners.timeline = createCanvasTimelineOwner({
+						session: requireCreated(created, "session"),
+						identity: requireCreated(created, "identity").identity.decoder,
+						approvals: requireCreated(created, "approvals"),
+						onChange: () => {
+							if (!owners.approvalProjectionInstalled) return;
+							for (const listener of owners.projectionListeners) listener();
+						},
+					});
+				}
 				return createCanvasBrowserGatewayOptions({
 					components: created,
 					dynamicApprovals: dynamic,
+					timeline: owners.timeline,
 					state: owners.browserState,
 					leaseLedger: host.browserLeaseLedger,
 					checkoutRoot: host.checkoutRoot,
@@ -520,6 +535,7 @@ export function createCanvasCodexWorkbenchInstallation(
 		},
 		onNotification: (event) => {
 			const owners = ownersFor(input);
+			owners.timeline?.onNotification(event);
 			owners.approval?.onNotification(event);
 			owners.lifecycle?.onNotification(event);
 		},
@@ -590,6 +606,8 @@ export function createCanvasCodexWorkbenchInstallation(
 		stopQueue: host.stopQueue,
 		cancelDynamicApprovalsAndWaits: async (_components, cause) => {
 			const owners = ownersFor(input);
+			owners.timeline?.dispose();
+			owners.timeline = null;
 			owners.approval?.settleAll(cause);
 			await owners.lifecycle?.shutdown();
 			owners.authority?.dispose();
