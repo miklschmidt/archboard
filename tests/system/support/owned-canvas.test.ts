@@ -60,7 +60,15 @@ if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "namespace") {
 		port: Number(process.env.PORT),
 		fetch(request) {
 			if (new URL(request.url).pathname === "/health") return Response.json({ pid: process.pid });
-			return Response.json({ home, xdgConfig, xdgState, temporary, workbench, lock });
+			return Response.json({
+				home,
+				xdgConfig,
+				xdgState,
+				temporary,
+				workbench,
+				lock,
+				ambientSentinel: process.env.ARCHBOARD_TEST_AMBIENT_SENTINEL,
+			});
 		},
 	});
 	await new Promise(() => undefined);
@@ -250,6 +258,9 @@ describe("owned canvas direct lifecycle", () => {
 			XDG_STATE_HOME: callerPaths.xdgState,
 			TMPDIR: callerPaths.temporary,
 		};
+		const ambientSentinelName = "ARCHBOARD_TEST_AMBIENT_SENTINEL";
+		const priorAmbientSentinel = process.env[ambientSentinelName];
+		process.env[ambientSentinelName] = "ambient-only";
 		let first: Awaited<ReturnType<typeof startOwnedCanvas>> | undefined;
 		let second: Awaited<ReturnType<typeof startOwnedCanvas>> | undefined;
 		const namespaceRoots: string[] = [];
@@ -260,6 +271,7 @@ describe("owned canvas direct lifecycle", () => {
 			temporary: string;
 			workbench: string;
 			lock: string;
+			ambientSentinel?: string;
 		}> = [];
 		try {
 			first = await startOwnedCanvas({
@@ -299,10 +311,13 @@ describe("owned canvas direct lifecycle", () => {
 				expect(namespace.lock).toBe(
 					path.join(workbench, "codex-home", ".archboard-codex-process.lock"),
 				);
+				expect(namespace.ambientSentinel).toBeUndefined();
 				expect(fs.existsSync(namespace.lock)).toBeTrue();
 			}
 		} finally {
 			await Promise.allSettled([second?.dispose(), first?.dispose()]);
+			if (priorAmbientSentinel === undefined) delete process.env[ambientSentinelName];
+			else process.env[ambientSentinelName] = priorAmbientSentinel;
 		}
 		for (const root of namespaceRoots) expect(fs.existsSync(root)).toBeFalse();
 		expect(fs.existsSync(sentinel)).toBeTrue();
