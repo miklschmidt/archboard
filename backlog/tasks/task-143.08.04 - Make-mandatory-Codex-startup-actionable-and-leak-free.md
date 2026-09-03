@@ -1,10 +1,11 @@
 ---
 id: TASK-143.08.04
 title: Make mandatory Codex startup actionable and leak-free
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 02:13'
+updated_date: '2026-09-03 03:40'
 labels: []
 dependencies:
   - TASK-143.08.03
@@ -35,6 +36,27 @@ Keep ADR 0019's mandatory private Codex child. Exactly one package-local codex a
 - [ ] #6 Initial prepare, reload, concurrent start, child crash/backoff, serial restart, and shutdown process-census tests prove that an Archboard server never owns more than one live or starting codex app-server child or process group; reload never spawns a child, and restart begins only after the prior exact group has zero tasks.
 - [ ] #7 This recovery task is the sole owner of Codex child startup, application phases, reload behavior, crash replacement, process reaping, teardown ordering, and failed-start cleanup. TASK-143.01.14 consumes its lifecycle interface and cannot add a second implementation of those behaviors.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Make codex-process the single child and process-group owner. Distinguish executable proof timeout, close the post-spawn group-capture leak, and retain the existing rule that restart scheduling begins only after the exact prior group is quiescent and reaped.
+2. Make the public start path prove the exact package-local runtime before spawning a canvas, observe the detached server child until readiness, and forward one bounded typed startup refusal when the child exits. Add one server-process error formatter so missing, wrong-version, non-file, unexecutable, proof-timeout, and early-exit failures have concise recovery text without stacks.
+3. Change the Codex workbench lifecycle to keep one process-child subscription for the application lifetime. Retire the failed generation, wait for its cleanup, then activate the replacement child emitted by codex-process without spawning from the workbench. Keep public dispatch unavailable during recovery, invalidate old links, preserve signed-out readiness, and make concurrent start or duplicate installation reuse or refuse without spawning.
+4. Keep application lifetime as the outer startup and reverse-teardown owner. Remove attempt-local Codex wiring on failed prepare or shutdown while preserving existing persistent Codex files, and ensure HTTP, pidfile, WebSocket, browser, gateway, queue, approval, realtime, epoch, timers, child, and group ownership is terminal before a failed start returns.
+5. Fold regression coverage into the existing executable, process lifecycle, workbench owner, production cleanup, and composed process-contract owners. Drive the public ./bin/canvas start failure matrix with isolated homes and immediate injected proof outcomes, use fake time for proof timeout and backoff, assert exact attempt PIDs/groups and residue, cover signed-out success, initial/concurrent/reload/crash/restart/shutdown census, and keep one minimal real process-group seam.
+6. Run only the focused changed owners, focused formatting/lint/type checks that fit the assigned scope, and git diff checks. Commit coherent conventional slices and leave every acceptance criterion unchecked with TASK-143.08.04 In Progress for parent review.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Diagnosis at exact base 3f2f5ab49a2b7f10ff87798b9ed9b1a0fa29ca22: hiding only the package-local native Codex runtime makes ./bin/canvas start exit 3 after 8 seconds with a generic health-timeout message. The server log contains the real workbench failure; the foreground detached spawn discards it. Reverse application teardown removes listeners and the child, but createCanvasCodexWorkbenchInstallation has already created the workbench root. codex-process itself serializes group cleanup before backoff, while installCodexWorkbenchOwnerLifecycle turns every transport exit into terminal process.stop(), so production never consumes the safe replacement. The smallest resulting product keeps application lifetime as outer owner and codex-process as the only child/group owner; public startup observes those owners instead of adding a second supervisor.
+
+Implemented the mandatory-start lifecycle on 2026-09-03. Public start now preflights the package-local runtime, observes the detached server, forwards one bounded refusal, and TERM/KILL-observes a failed server before returning. The server formats typed startup failures without stacks and resets attempt-local Codex wiring only after verified shutdown. Codex-process now distinguishes --version proof timeout and retains/reaps a post-spawn child whose group capture fails. The workbench keeps one process-child subscription, revokes dispatch on exit, cleans the retired graph, and activates only the replacement emitted after codex-process group cleanup. The real 0.151.0 signed-out handshake required accepting its omitted enabled-layer disabledReason field.
+
+Focused evidence: 52 module/repository owners passed serially; all 8 production cleanup owners passed through ./bin/canvas start, including the six failure forms, two concurrent starts sharing one child, signed-out readiness/thread denial, reload no-respawn, and shutdown census. A bounded real-process crash probe observed old pid 2992884 gone before replacement pid 2992905 and exactly two generation spawns. Focused oxlint, oxfmt --check, and git diff --check passed. The pre-existing broad codex-workbench-production owner is not claimed as validation because it already fails at the unrelated threadLinkCreate expectation on the fixed base.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 

@@ -635,6 +635,10 @@ interface OwnerLocalState {
 	startPromise: Promise<CodexWorkbenchSnapshot> | null;
 	shutdownPromise: Promise<CodexWorkbenchSnapshot> | null;
 	processStopPromise: Promise<Error | null> | null;
+	nextChild: ((child: CodexProcessChild) => void) | null;
+	processChildUnsubscribe: (() => void) | null;
+	recoveryBarrier: Promise<Error | null>;
+	restart: (() => void) | null;
 }
 
 function ownsProcessChild(process: CodexProcess, child: CodexProcessChild): boolean {
@@ -811,6 +815,10 @@ function terminalShutdown(
 	invalidateTransaction(local);
 	revokePublicDispatch(retained, runtime);
 	runtime.exitBridge.handler = null;
+	local.nextChild = null;
+	const processChildUnsubscribe = local.processChildUnsubscribe;
+	local.processChildUnsubscribe = null;
+	processChildUnsubscribe?.();
 	if (isCurrentRuntime(retained, runtime)) retained.state = "stopping";
 	let synchronousFailure = priorFailure;
 	local.currentGeneration = null;
@@ -861,8 +869,8 @@ function observeChildExit(
 	reserveTicket(runtime);
 	invalidateTransaction(local);
 	revokePublicDispatch(retained, runtime);
-	runtime.exitBridge.handler = null;
-	retained.state = "stopping";
+	retained.state = "starting";
+	retained.failure = null;
 	let failure: Error | null = null;
 	const settlementOwner = local.currentGeneration;
 	local.currentGeneration = null;
@@ -877,7 +885,7 @@ function observeChildExit(
 	const graphCleanups = Array.from(local.resources.keys(), (generation) =>
 		beginGenerationCleanup(local, generation, "child_exit"),
 	);
-	const operation = (async (): Promise<CodexWorkbenchSnapshot> => {
+	const operation = (async (): Promise<Error | null> => {
 		try {
 			await settlement;
 		} catch (error) {
@@ -888,27 +896,15 @@ function observeChildExit(
 			if (cleanupFailure !== null)
 				failure = appendFailure(failure, cleanupFailure, "Codex child graph cleanup failed.");
 		}
-		const processFailure = await stopProcess(local, runtime);
-		if (processFailure !== null)
-			failure = appendFailure(failure, processFailure, "Codex child process cleanup failed.");
-		releaseRegistration(
-			retained,
-			runtime,
-			failure === null ? "idle" : "failed",
-			failure === null ? null : failureMessage(failure),
-		);
-		if (failure !== null)
-			throw new CodexWorkbenchCompositionError(
-				"shutdown_failed",
-				"The exited Codex child did not retire cleanly.",
-				failure,
-			);
-		return snapshot(retained, runtime);
-	})().finally(() => {
-		local.shutdownPromise = null;
-	});
-	local.shutdownPromise = operation;
-	void operation.catch(() => undefined);
+		return failure;
+	})();
+	local.recoveryBarrier = operation;
+	runtime.identityLedger = null;
+	runtime.transport = null;
+	runtime.sessionInitialized = false;
+	runtime.accountReady = false;
+	runtime.exitBridge.event = null;
+	local.restart?.();
 }
 
 function replaceExitHandler(
@@ -983,6 +979,10 @@ export function installCodexWorkbenchOwnerLifecycle(
 		startPromise: null,
 		shutdownPromise: null,
 		processStopPromise: null,
+		nextChild: null,
+		processChildUnsubscribe: null,
+		recoveryBarrier: Promise.resolve(null),
+		restart: null,
 	};
 	const exitBridge: CodexWorkbenchExitBridge = {
 		event: null,
@@ -1000,6 +1000,7 @@ export function installCodexWorkbenchOwnerLifecycle(
 	};
 	retained.control.runtime = runtime;
 	replaceExitHandler(retained, runtime, local);
+	local.processChildUnsubscribe = runtime.process.onChild((child) => local.nextChild?.(child));
 
 	const initialSlots: CodexWorkbenchOwnerSlots = {
 		start: () => {
@@ -1033,7 +1034,7 @@ export function installCodexWorkbenchOwnerLifecycle(
 					rejectChild = reject;
 				});
 				let acceptedChild = false;
-				const unsubscribe = runtime.process.onChild((child) => {
+				const receiveChild = (child: CodexProcessChild) => {
 					if (acceptedChild) return;
 					acceptedChild = true;
 					try {
@@ -1068,7 +1069,8 @@ export function installCodexWorkbenchOwnerLifecycle(
 					} catch (error) {
 						rejectChild(error);
 					}
-				});
+				};
+				local.nextChild = receiveChild;
 				try {
 					const processStart = runtime.process.start().catch((error) => {
 						rejectChild(error);
@@ -1076,6 +1078,8 @@ export function installCodexWorkbenchOwnerLifecycle(
 					});
 					void processStart.catch(() => undefined);
 					const { child, transaction, initialIdentity } = await childReady;
+					const recoveryFailure = await local.recoveryBarrier;
+					if (recoveryFailure !== null) throw recoveryFailure;
 					assertTransaction(
 						retained,
 						runtime,
@@ -1156,15 +1160,19 @@ export function installCodexWorkbenchOwnerLifecycle(
 								"Codex startup and cleanup both failed.",
 							);
 					}
-					runtime.exitBridge.handler = null;
-					const processFailure = await stopProcess(local, runtime);
-					if (processFailure !== null)
-						failure = appendFailure(
-							failure,
-							processFailure,
-							"Codex startup process cleanup failed.",
-						);
 					if (ownsTicket(retained, runtime, ticket)) {
+						runtime.exitBridge.handler = null;
+						local.nextChild = null;
+						const processChildUnsubscribe = local.processChildUnsubscribe;
+						local.processChildUnsubscribe = null;
+						processChildUnsubscribe?.();
+						const processFailure = await stopProcess(local, runtime);
+						if (processFailure !== null)
+							failure = appendFailure(
+								failure,
+								processFailure,
+								"Codex startup process cleanup failed.",
+							);
 						invalidateTransaction(local);
 						releaseRegistration(retained, runtime, "failed", failureMessage(failure));
 					}
@@ -1174,7 +1182,7 @@ export function installCodexWorkbenchOwnerLifecycle(
 						failure,
 					);
 				} finally {
-					unsubscribe();
+					if (local.nextChild === receiveChild) local.nextChild = null;
 					local.startPromise = null;
 				}
 			})();
@@ -1191,6 +1199,11 @@ export function installCodexWorkbenchOwnerLifecycle(
 		},
 	};
 	retained.control.current = initialSlots;
+	local.restart = () => {
+		if (!isCurrentRuntime(retained, runtime) || runtime.released) return;
+		retained.control.current = initialSlots;
+		void initialSlots.start().catch(() => undefined);
+	};
 	assertRetained(retained);
 	return Object.freeze({
 		start: () => retained.control.wrappers.start(),
