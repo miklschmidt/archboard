@@ -215,6 +215,7 @@ describe("command contract audit", () => {
 			| undefined;
 		expect(compare?.properties?.from?.properties).not.toHaveProperty("source");
 		expect(compare?.properties?.from?.properties).not.toHaveProperty("onScreen");
+		expect(compare?.properties?.from?.properties).not.toHaveProperty("loadedAt");
 	});
 
 	test("derives family child discovery from parser flag specs", () => {

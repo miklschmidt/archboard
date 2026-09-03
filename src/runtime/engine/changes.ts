@@ -360,8 +360,8 @@ export function diffBoardStates(
 	const pairs = identityPairs(beforeNodes, afterNodes);
 
 	const detail = compareBoards(
-		{ key, identity, elements: applyIdentityPairs(beforeNodes, pairs), source: "memory" },
-		{ key, identity, elements: afterNodes, source: "memory" },
+		{ key, identity, elements: applyIdentityPairs(beforeNodes, pairs) },
+		{ key, identity, elements: afterNodes },
 	);
 
 	// Read each pair back out of the diff, which now holds it as one node that

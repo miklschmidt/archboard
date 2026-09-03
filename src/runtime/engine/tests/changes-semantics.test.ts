@@ -90,8 +90,8 @@ describe("semantic board changes", () => {
 		expect(description).toMatch(/customData: .*kind=service/);
 
 		const comparison = compareBoards(
-			{ key: "payments", identity, elements: [], source: "memory" },
-			{ key: "payments", identity, elements: flat, source: "memory" },
+			{ key: "payments", identity, elements: [] },
+			{ key: "payments", identity, elements: flat },
 		);
 		expect(comparison.to.nodeCount).toBe(0);
 		expect(comparison.to.plainCount).toBe(1);

@@ -114,7 +114,6 @@ const sideSummaryOf = (input: CompareSideInput, model: BoardModel): SideSummary 
 	identity: input.identity,
 	...(input.file ? { file: input.file } : {}),
 	...(input.savedAt ? { savedAt: input.savedAt } : {}),
-	...(input.loadedAt ? { loadedAt: input.loadedAt } : {}),
 	elementCount: input.elements.length,
 	nodeCount: model.nodes.size,
 	edgeCount: model.edges.length,
@@ -152,7 +151,6 @@ export interface CompareSideInput {
 	elements: ServerElement[];
 	file?: string;
 	savedAt?: string;
-	loadedAt?: string;
 }
 
 export interface SideSummary {
@@ -160,7 +158,6 @@ export interface SideSummary {
 	identity: BoardIdentity;
 	file?: string;
 	savedAt?: string;
-	loadedAt?: string;
 	elementCount: number;
 	nodeCount: number;
 	edgeCount: number;

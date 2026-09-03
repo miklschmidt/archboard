@@ -3941,7 +3941,8 @@ function paneResponse(pane: PaneRegistration | null): Record<string, unknown> {
 	return { pane: pane ? paneRef(pane) : null };
 }
 
-// What exists: every board in the vault, plus the ones open in this process.
+// What exists in the vault. Live pane and process state belongs to /api/panes
+// and never enters this persisted-board inventory (ADR 0020).
 //
 // With ?repo=<identity>, the answer is narrowed to the boards that describe
 // that repository: the ones with nodes bound to it, each listing which nodes

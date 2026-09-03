@@ -964,7 +964,7 @@
 			"relationships": ["GET /api/boards/compare"],
 			"semantics": "read only across board notes",
 			"ordering": "resolve variants before diff",
-			"nextFields": ["nodes", "edges", "layout", "sources"],
+			"nextFields": ["from", "to", "summary", "nodes", "edges", "layout", "warnings"],
 			"workflow": "necessary composition",
 			"effects": ["read"],
 			"refusals": [

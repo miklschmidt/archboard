@@ -106,7 +106,7 @@ export function ConflictDialog({
 				</button>
 				<span className="choice-why">
 					{hold
-						? "Keep both. This canvas goes to a note of its own and the panes follow it; this board goes back to the version on disk."
+						? "Keep both. The held canvas goes to a note of its own; this pane stays on the source board and returns to the version on disk."
 						: "Keep both, under another name. Nothing is lost."}
 				</span>
 
