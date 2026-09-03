@@ -1,5 +1,214 @@
-import type { BrowserSnapshot } from "../../../shared/codex-browser-model/index.js";
+import type {
+	BrowserAccount,
+	BrowserCoordinator,
+	BrowserQueue,
+	BrowserSemanticDelivery,
+	BrowserSettings,
+	BrowserSnapshot,
+	BrowserSchemas,
+} from "../../../shared/codex-browser-model/index.js";
 import type { BrowserSnapshotDelta } from "./contract.js";
+import type {
+	BrowserProjectionInput,
+	BrowserProjectionResult,
+	CodexCoordinatorProjectionInput,
+	CodexQueueProjectionInput,
+	CodexSemanticProjectionInput,
+	CodexSettingsProjectionInput,
+	CodexVoiceProjectionInput,
+} from "./projection-contract.js";
+import { projectApproval } from "./approval-projection.js";
+
+type CodexAccountType = NonNullable<
+	Extract<
+		BrowserProjectionInput["account"],
+		{ readonly kind: "codex_account_response" }
+	>["response"]["account"]
+>["type"];
+
+const BROWSER_ACCOUNT_TYPE_BY_CODEX_TYPE = {
+	apiKey: "apiKey",
+	chatgpt: "chatgpt",
+	amazonBedrock: "amazonBedrock",
+} as const satisfies Record<CodexAccountType, string>;
+
+const SECRET_KEYS = new Set([
+	"apiKey",
+	"accessToken",
+	"secretAccessKey",
+	"sessionToken",
+	"password",
+	"refreshToken",
+]);
+
+function containsSecretKey(value: unknown, seen = new Set<object>()): boolean {
+	if (value === null || typeof value !== "object") return false;
+	if (seen.has(value)) return false;
+	seen.add(value);
+	if (Array.isArray(value)) return value.some((entry) => containsSecretKey(entry, seen));
+	for (const [key, entry] of Object.entries(value)) {
+		if (SECRET_KEYS.has(key) || containsSecretKey(entry, seen)) return true;
+	}
+	return false;
+}
+
+function projectAccount(input: BrowserProjectionInput["account"]): BrowserAccount {
+	if (input.kind !== "codex_account_response") return input;
+	const account = input.response.account;
+	if (account === null) return { kind: "account", state: "signed_out" };
+	return {
+		kind: "account",
+		state: "ready",
+		accountType: BROWSER_ACCOUNT_TYPE_BY_CODEX_TYPE[account.type],
+	};
+}
+
+function projectSettings(input: CodexSettingsProjectionInput): BrowserSettings {
+	const settings = input.settings;
+	return {
+		kind: "settings",
+		owner: input.owner,
+		model: settings.model,
+		effort: settings.effort,
+		serviceTier: settings.serviceTier,
+		approvalPolicy: settings.approvalPolicy,
+		approvalsReviewer: settings.approvalsReviewer,
+		sandbox: projectSandbox(settings.sandboxPolicy),
+		activePermissionProfile: settings.activePermissionProfile,
+	};
+}
+
+function projectSandbox(
+	policy: CodexSettingsProjectionInput["settings"]["sandboxPolicy"],
+): BrowserSettings["sandbox"] {
+	switch (policy.type) {
+		case "dangerFullAccess":
+			return { mode: "full_access", network: "unspecified" };
+		case "readOnly":
+			return { mode: "read_only", network: policy.networkAccess ? "enabled" : "restricted" };
+		case "externalSandbox":
+			return { mode: "external", network: policy.networkAccess };
+		case "workspaceWrite":
+			return {
+				mode: "workspace_write",
+				network: policy.networkAccess ? "enabled" : "restricted",
+			};
+	}
+	const unhandled: never = policy;
+	return unhandled;
+}
+
+function projectQueue(input: CodexQueueProjectionInput): BrowserQueue {
+	if (input.submissions === null) return { kind: "queue", status: "unavailable", entries: [] };
+	return {
+		kind: "queue",
+		status: input.submissions.length === 0 ? "empty" : "queued",
+		entries: input.submissions.map((entry) => {
+			const textInput = entry.input.find((item) => item.type === "text");
+			return {
+				submissionId: entry.id,
+				prompt:
+					textInput?.type === "text" && typeof textInput.text === "string"
+						? textInput.text
+						: "[non-text input]",
+				status: "queued" as const,
+				operationId: null,
+			};
+		}),
+	};
+}
+
+function projectSemantic(input: CodexSemanticProjectionInput): BrowserSemanticDelivery | null {
+	if (input.outcome === null || input.outcome.targetThreadId === null || input.freshness === null)
+		return null;
+	return {
+		kind: "semantic_delivery",
+		threadId: input.outcome.targetThreadId,
+		delivery: input.outcome.outcome,
+		capturedAtMs: input.freshness.capturedAtMs,
+		freshUntilMs: input.freshness.freshUntilMs,
+		reason: input.outcome.reason,
+	};
+}
+
+function projectCoordinator(input: CodexCoordinatorProjectionInput): BrowserCoordinator {
+	return {
+		kind: "coordinator",
+		state: input.state === "inspect_only" ? "failed" : input.state,
+		threadId: input.threadId,
+		activeTurnId: null,
+		configuredModel: input.configured?.model ?? null,
+		configuredEffort: input.configured?.effort ?? null,
+		model: input.effective?.model ?? null,
+		effort: input.effective?.effort ?? null,
+		serviceTier: input.effective?.serviceTier ?? null,
+		reason: input.reason,
+	};
+}
+
+function projectVoice(input: CodexVoiceProjectionInput) {
+	return {
+		kind: "voice",
+		state: !input.mediaReady
+			? "unavailable"
+			: input.generation !== null
+				? "active"
+				: input.coordinatorState === "ready"
+					? "ready"
+					: "unavailable",
+		realtimeSessionId: input.mediaReady ? (input.generation?.browserSessionId ?? null) : null,
+		transcript: input.transcript.map((record) => ({
+			itemId: record.itemId,
+			sequence: record.sequence,
+			speaker: record.role,
+			text: record.text,
+			final: record.status === "final",
+		})),
+		delivery: null,
+		reason: input.mediaReady ? null : "Browser audio is unavailable for this socket.",
+	};
+}
+
+export function projectCodexBrowserState(
+	model: Pick<BrowserSchemas, "BrowserSnapshotSchema">,
+	input: BrowserProjectionInput,
+): BrowserProjectionResult {
+	if (containsSecretKey(input))
+		return Object.freeze({
+			tag: "refused",
+			reason: "secret_input",
+			message: "The browser projection contains a secret-bearing field.",
+		});
+
+	try {
+		const parsed = model.BrowserSnapshotSchema.safeParse({
+			kind: "snapshot",
+			version: 1,
+			readiness: input.readiness,
+			account: projectAccount(input.account),
+			login: input.login,
+			threadLink: input.threadLink,
+			timeline: input.timeline,
+			queue: projectQueue(input.queue),
+			settings: input.settings.map(projectSettings),
+			approvals: input.approvals.map(projectApproval),
+			dynamicApprovals: input.dynamicApprovals,
+			semantic: projectSemantic(input.semantic),
+			coordinator: projectCoordinator(input.coordinator),
+			voice: projectVoice(input.voice),
+			lease: input.lease,
+			operation: input.operation,
+		});
+		if (!parsed.success) throw new Error("The browser snapshot schema rejected owner state.");
+		return Object.freeze({ tag: "projected", snapshot: deepFreeze(parsed.data) });
+	} catch {
+		return Object.freeze({
+			tag: "refused",
+			reason: "invalid_projection",
+			message: "The normalized owner state cannot be represented by the browser contract.",
+		});
+	}
+}
 
 export const BROWSER_SNAPSHOT_MAX_BYTES = 1_048_576;
 export const BROWSER_DELTA_MAX_BYTES = 262_144;

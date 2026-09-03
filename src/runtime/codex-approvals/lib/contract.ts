@@ -1,7 +1,4 @@
-import type {
-	BrowserApproval,
-	BrowserApprovalResponse,
-} from "../../../shared/codex-browser-model/index.js";
+import type { CodexServerResponseByMethod } from "../../../shared/codex-app-server-contract/index.js";
 import type {
 	ApprovalId,
 	ChildEpoch,
@@ -42,6 +39,22 @@ export type ApprovalState =
 
 export type ApprovalOutcome = "delivered" | "not_delivered" | "outcome_unknown";
 export type TerminalApprovalState = Exclude<ApprovalState, "staged" | "pending">;
+export type ApprovalDecision = "approved" | "declined" | "cancelled";
+
+type ApprovalResponseFor<
+	Kind extends ApprovalFamily,
+	Method extends HumanApprovalMethod,
+> = Readonly<{ approvalKind: Kind }> & CodexServerResponseByMethod[Method];
+
+/** The generated reverse-response values accepted by the approval owner. */
+export type ApprovalResponse =
+	| ApprovalResponseFor<"command_execution", "item/commandExecution/requestApproval">
+	| ApprovalResponseFor<"file_change", "item/fileChange/requestApproval">
+	| ApprovalResponseFor<"user_input", "item/tool/requestUserInput">
+	| ApprovalResponseFor<"elicitation", "mcpServer/elicitation/request">
+	| ApprovalResponseFor<"permissions", "item/permissions/requestApproval">
+	| ApprovalResponseFor<"apply_patch", "applyPatchApproval">
+	| ApprovalResponseFor<"exec_command", "execCommandApproval">;
 
 export interface ApprovalBinding {
 	readonly child: ChildId;
@@ -214,7 +227,16 @@ export interface ApprovalSnapshot {
 	readonly expiresAtMs: number;
 	readonly state: ApprovalState;
 	readonly outcome: ApprovalOutcome | null;
+	readonly decision: ApprovalDecision | null;
 	readonly reason: string | null;
+}
+
+/** Normalized request plus owner settlement state, before browser presentation. */
+export interface ApprovalOwnerView {
+	readonly kind: "approval_owner";
+	readonly request: ApprovalRequest;
+	readonly snapshot: ApprovalSnapshot;
+	readonly spoken: SpokenEligibility;
 }
 
 /**
@@ -232,7 +254,7 @@ export type SpokenApprovalEffectPresentation = Pick<
 export interface ApprovalResolveInput {
 	readonly requestId: JsonRpcRequestId;
 	readonly approvalId?: ApprovalId | null;
-	readonly response: BrowserApprovalResponse;
+	readonly response: ApprovalResponse;
 	/** Evidence captured with the card. A mismatch is a stale ownership result. */
 	readonly binding?: ApprovalBindingInput;
 }
@@ -328,7 +350,8 @@ export interface CodexApprovalBroker {
 	readonly get: (requestId: JsonRpcRequestId) => ApprovalSnapshot | undefined;
 	readonly getRequest: (requestId: JsonRpcRequestId) => ApprovalRequest | undefined;
 	readonly inspect: () => readonly ApprovalSnapshot[];
-	readonly toBrowserApproval: (requestId: JsonRpcRequestId) => BrowserApproval;
+	readonly view: (requestId: JsonRpcRequestId) => ApprovalOwnerView;
+	readonly inspectViews: () => readonly ApprovalOwnerView[];
 	/** Removes one terminal card after the browser command result carried it. */
 	readonly acknowledge: (requestId: JsonRpcRequestId) => void;
 	readonly spokenEffectPresentation: (

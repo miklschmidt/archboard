@@ -6,10 +6,6 @@ import {
 	CodexTurnStatusSchema,
 	createCodexCommandExecutionApprovalDecisionSchema,
 } from "../../codex-app-server-contract/index.js";
-import type {
-	CodexResponseByMethod,
-	CodexServerRequestParamsByMethod,
-} from "../../codex-app-server-contract/index.js";
 
 import { SupportedLoginAccountParamsSchema } from "./authored.js";
 import { createDynamicApprovalSchemas } from "./dynamic-approval.js";
@@ -24,14 +20,11 @@ import type { IdentityContext, IdentitySchemas } from "./scalars.js";
 
 const TimestampSchema = z.number().int().nonnegative();
 export const DeliveryOutcomeSchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
-export type CodexAccountType = NonNullable<
-	CodexResponseByMethod["account/read"]["account"]
->["type"];
-export const BROWSER_ACCOUNT_TYPE_BY_CODEX_TYPE = {
-	apiKey: "apiKey",
-	chatgpt: "chatgpt",
-	amazonBedrock: "amazonBedrock",
-} as const satisfies Record<CodexAccountType, string>;
+export const BROWSER_PERMISSION_FILE_ACCESS = {
+	deny: "deny",
+	read: "read",
+	write: "write",
+} as const;
 
 export interface BrowserSnapshotRelationshipIssue {
 	readonly path: readonly string[];
@@ -154,7 +147,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		"amazonBedrock",
 		"amazonBedrockAccessKeys",
 	]);
-	const CodexAccountTypeSchema = z.enum(Object.values(BROWSER_ACCOUNT_TYPE_BY_CODEX_TYPE));
+	const CodexAccountTypeSchema = z.enum(["apiKey", "chatgpt", "amazonBedrock"]);
 	const BrowserAccountSchema = z.union([
 		z
 			.object({ kind: z.literal("account"), state: z.literal("unknown"), reason: boundedText(512) })
@@ -533,25 +526,14 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 					message: "elicitation item bounds are contradictory",
 				});
 		});
-	type CodexRequestedPermissionProfile =
-		CodexServerRequestParamsByMethod["item/permissions/requestApproval"]["permissions"];
-	type CodexNetworkPermission = NonNullable<CodexRequestedPermissionProfile["network"]>["enabled"];
-	type CodexFileAccess = NonNullable<
-		NonNullable<CodexRequestedPermissionProfile["fileSystem"]>["entries"]
-	>[number]["access"];
-	const BrowserFileAccessByCodexAccess = {
-		read: "read",
-		write: "write",
-		deny: "deny",
-	} as const satisfies Record<CodexFileAccess, string>;
 	interface BrowserRequestedPermissionScope {
-		readonly network: CodexNetworkPermission | null;
-		readonly fileAccess: readonly (typeof BrowserFileAccessByCodexAccess)[CodexFileAccess][];
+		readonly network: boolean | null;
+		readonly fileAccess: readonly (typeof BROWSER_PERMISSION_FILE_ACCESS)[keyof typeof BROWSER_PERMISSION_FILE_ACCESS][];
 	}
 	const BrowserRequestedPermissionScopeSchema = z
 		.object({
 			network: z.boolean().nullable(),
-			fileAccess: z.array(z.enum(Object.values(BrowserFileAccessByCodexAccess))).max(3),
+			fileAccess: z.array(z.enum(Object.values(BROWSER_PERMISSION_FILE_ACCESS))).max(3),
 		})
 		.strict() satisfies z.ZodType<BrowserRequestedPermissionScope>;
 	const BrowserApprovalSchema = z
@@ -618,7 +600,6 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 					approvalKind: z.literal("permissions"),
 					...ApprovalEnvelope,
 					...ApprovalReason,
-					cwd: boundedText(16_384),
 					requestedScope: BrowserRequestedPermissionScopeSchema,
 				})
 				.strict(),
