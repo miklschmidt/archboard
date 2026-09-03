@@ -130,6 +130,9 @@ Complete-gate failure and remediation history before the next frozen head:
 
 - Attempt 5 used unit archboard-task143-worker-command-Lx3xeynw.service and exited 1 in lint after 766 ms. CPU was 1.930s; memory peak was 371.5M with 0B swap. The repository module-entrypoint rule correctly rejected the React owner after it was renamed to .tsx because every test-owned JavaScript-like source must remain a root-tsconfig-owned .ts file. The exact unit is inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path is absent. No OOM, SIGKILL, or cleanup diagnostic occurred.
 - Remediation restores the .ts owner and follows the existing UI-test boundary: load the TSX component through a runtime URL, validate its public export, and apply a local typed component contract. This preserves the rendered markup assertion while keeping the owner in the root type inventory. No lint or type scope changes.
+
+- Attempt 6 used unit archboard-task143-worker-command-dJQfauV8.service. Lint passed, then formatting exited 1 after 1.499s on scripts/probe-server-rendering-emulation.ts and src/ui/shell/tests/board-dialog.test.ts. CPU was 12.110s; memory peak was 1.4G with 0B swap. The exact unit is inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path is absent. No OOM, SIGKILL, or cleanup diagnostic occurred.
+- Remediation ran pinned Oxfmt in write mode on exactly those two files. The formatter only collapsed the dynamic import and wrapped the typed component cast. git diff --check passes. No focused validation ran; the next check is one fresh complete gate.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

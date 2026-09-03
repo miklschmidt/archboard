@@ -9,7 +9,8 @@ const loadedModule: unknown = await import(new URL("../BoardDialog.tsx", import.
 if (typeof loadedModule !== "object" || loadedModule === null) {
 	throw new Error("Board dialog module did not load as an object.");
 }
-const BoardDialog = (loadedModule as Readonly<Record<string, unknown>>).BoardDialog as ComponentType<{
+const BoardDialog = (loadedModule as Readonly<Record<string, unknown>>)
+	.BoardDialog as ComponentType<{
 	mode: BoardDialogMode;
 	current: null;
 	panes: Pane[];
