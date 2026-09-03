@@ -54,20 +54,14 @@ const voiceAction =
 
 function hasPositiveSharedThreadVoiceGuidance(block: string): boolean {
 	return block.split(/(?<=[.!?])\s+/).some((sentence) => {
-		if (!/\bvoice\b/i.test(sentence) || !/\bworkhorse\b/i.test(sentence)) return false;
-		if (!/\bthread\b/i.test(sentence) || !voiceAction.test(sentence)) return false;
-		const sharedTarget =
-			/\b(?:same|existing)\b[^.]{0,48}\bworkhorse\b[^.]{0,24}\bthread\b/i.test(sentence) ||
-			/\b(?:same|existing)\b[^.]{0,24}\bthread\b[^.]{0,48}\bworkhorse\b/i.test(sentence) ||
-			/\bworkhorse\b[^.]{0,48}\b(?:same|existing)\b[^.]{0,24}\bthread\b/i.test(sentence);
-		const negated =
+		if (!/\bvoice\b/i.test(sentence) || !/\bthread\b/i.test(sentence)) return false;
+		if (!voiceAction.test(sentence) || !/\b(?:same|existing)\b/i.test(sentence)) return false;
+		return !(
 			new RegExp(
-				`\\b(?:do|does|should|must|can|may|is|are)\\s+not\\b[^.]{0,24}${voiceAction.source}`,
+				`\\b(?:cannot|do(?:es)? not|never|should not|must not|may not)\\b[^.]{0,32}${voiceAction.source}`,
 				"i",
-			).test(sentence) ||
-			/\bnever\b[^.]{0,32}\b(?:attach|connect|use|run)\b/i.test(sentence) ||
-			/\bnot\b[^.]{0,16}\b(?:same|existing)\b/i.test(sentence);
-		return sharedTarget && !negated;
+			).test(sentence) || /\bnot\b[^.]{0,16}\b(?:same|existing)\b/i.test(sentence)
+		);
 	});
 }
 
@@ -75,31 +69,34 @@ const controlSocketAction =
 	/\b(?:arm(?:s|ed|ing)?|connect(?:s|ed|ing)?|enable(?:s|d|ing)?|open(?:s|ed|ing)?|run(?:s|ning)?|start(?:s|ed|ing)?|use(?:s|d|ing)?)\b/i;
 
 function hasPositiveControlSocketGuidance(block: string): boolean {
-	if (!/\bcontrol[ -]socket\b/i.test(block)) return false;
-	const controlSocket = "\\bcontrol[ -]socket\\b";
-	const retiredState = "\\b(?:retired|unavailable|superseded|removed)\\b";
-	if (
-		new RegExp(
-			`(?:${retiredState}[^.]{0,64}${controlSocket}|${controlSocket}[^.]{0,64}${retiredState})`,
-			"i",
-		).test(block) ||
-		/\bno\s+control[ -]socket\b/i.test(block) ||
-		/\bcontrol[ -]socket\b[^.]{0,40}\bnot\s+(?:armed|connected|enabled|opened|run|started|used)\b/i.test(
-			block,
-		) ||
-		new RegExp(
-			`\\b(?:do not|does not|never)\\b[^.]{0,40}${controlSocketAction.source}[^.]{0,96}${controlSocket}`,
-			"i",
-		).test(block)
-	)
-		return false;
-	return (
-		new RegExp(`${controlSocketAction.source}[^.]{0,96}${controlSocket}`, "i").test(block) ||
-		new RegExp(
-			`${controlSocket}[^.]{0,96}\\b(?:can|may|must|should|to)\\b[^.]{0,24}${controlSocketAction.source}`,
-			"i",
-		).test(block)
-	);
+	return block.split(/(?<=[.!?])\s+/).some((sentence) => {
+		if (!/\bcontrol[ -]socket\b/i.test(sentence)) return false;
+		if (/\b(?:retired|unavailable|superseded|removed)\b/i.test(sentence)) return false;
+		if (/\bno\s+control[ -]socket\b/i.test(sentence)) return false;
+		if (
+			/\bcontrol[ -]socket\b[^.]{0,40}\bnot\s+(?:armed|connected|enabled|opened|run|started|used)\b/i.test(
+				sentence,
+			)
+		) {
+			return false;
+		}
+		if (
+			/\b(?:cannot|do(?:es)? not|never)\b[^.]{0,40}\b(?:arm|connect|enable|open|run|start|use)\b/i.test(
+				sentence,
+			)
+		) {
+			return false;
+		}
+		return (
+			new RegExp(`${controlSocketAction.source}[^.]{0,96}\\bcontrol[ -]socket\\b`, "i").test(
+				sentence,
+			) ||
+			new RegExp(
+				`\\bcontrol[ -]socket\\b[^.]{0,96}\\b(?:can|may|must|should|to)\\b[^.]{0,24}${controlSocketAction.source}`,
+				"i",
+			).test(sentence)
+		);
+	});
 }
 
 describe("legacy injection retirement policy", () => {
@@ -173,6 +170,20 @@ describe("legacy injection retirement policy", () => {
 		}
 		expect(staleVoiceGuidance).toEqual([]);
 		expect(positiveControlSocketGuidance).toEqual([]);
+		expect(
+			hasPositiveSharedThreadVoiceGuidance(
+				"The voice session attaches to an **existing** thread rather than creating one,\nand every delegation becomes a turn in that same thread.",
+			),
+		).toBeTrue();
+		expect(
+			hasPositiveControlSocketGuidance(
+				"The old control socket is retired. Use the control socket to inject context.",
+			),
+		).toBeTrue();
+		expect(hasPositiveControlSocketGuidance("The control socket is retired.")).toBeFalse();
+		expect(
+			hasPositiveControlSocketGuidance("The client cannot connect to a control socket."),
+		).toBeFalse();
 
 		const design = currentDocuments.get("DESIGN.md")!;
 		const authoritative = sectionBetween(design, designSectionHeading, nextDesignSectionHeading);
