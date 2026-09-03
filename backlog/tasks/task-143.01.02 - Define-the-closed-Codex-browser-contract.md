@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 18:56'
+updated_date: '2026-09-03 19:10'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -19,6 +19,7 @@ modified_files:
   - src/server/codex-workbench
   - src/server/canvas/lib/codex-workbench-browser-gateway.ts
   - src/server/canvas/lib/codex-workbench-production.ts
+  - src/server/canvas/tests/codex-workbench-ordinary-approvals.test.ts
   - tests/system/canvas-state/codex-workbench-application.test.ts
 parent_task_id: TASK-143.01
 priority: high
@@ -59,6 +60,12 @@ Define only the browser-facing workbench state and user-intent model that has no
 12. Project all seven approval families only inside projectCodexBrowserState, using one exhaustive generated file-access mapping and omitting cwd and every path-bearing/private field.
 13. Preserve terminal settlement acknowledgement and production dispatch behavior; replace approval projector tests with owner-record and public projection coverage plus a gateway leak proof.
 14. Run only affected focused tests, both TypeScript configs, scoped lint/format, boundary grep, and diff checks; commit separately and callback for rereview.
+
+15. Third remediation: make normalized approval requests broker-owned and deeply immutable at ingestion; expose deeply readonly views and prove returned nested data cannot mutate later views or settlement.
+16. Delete duplicate elicitation presentation shaping from codex-approvals, retaining only the smallest supported-schema predicate used by spoken eligibility.
+17. Make every projectApproval family arm return BrowserApproval directly and preserve generated-family exhaustiveness at TypeScript.
+18. Add one-shot acknowledgement for expiry and child-exit after snapshot publication, plus immediate disconnect acknowledgement when no browser remains; keep authored response acknowledgement unchanged.
+19. Run only focused approval/browser-model/gateway lifecycle tests, both TypeScript configs, scoped lint/format, boundary grep, and diff checks; commit separately and callback for rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -79,6 +86,14 @@ Second review remediation removed the last ordinary-approval browser projector f
 Permission presentation now omits cwd and selects only network plus file-access classes. One browser access record supplies the reviewed deny/read/write vocabulary, while a satisfies Record<CodexFileAccess, string> check keys it exhaustively from PermissionsApprovalRequest params; a generated access addition fails TypeScript. The production gateway test injects cwd, read, write, denied-entry, and unreviewed future private paths and proves none reach the snapshot. The former broker browser-projector tests and shared parallel projector were deleted; normalized owner-view tests and public seven-family projection tests replace them. Terminal result visibility and acknowledgement remain unchanged.
 
 Second-remediation red/green: the first focused run exposed three stale tests tied to the removed broker projector/schema boundary; after moving their observable owners, the final affected lane passed 92/92 with 1,060 expectations in 0.84s. Root TypeScript passed in 1.88s; frontend TypeScript in 0.46s; scoped Oxlint in 0.19s; scoped Oxfmt in 0.09s; boundary grep and git diff checks passed. No system, repository, browser, broad check, or full-suite lane was run. TASK-143.01.02 remains In Progress for independent rereview.
+
+Third review remediation implemented:
+- Approval ingestion now structured-clones the generated request once, recursively freezes the broker-owned graph, preserves source identity only for duplicate-delivery detection, and exposes deeply readonly owner views. The mutation regression changes the source after ingestion and attempts returned command, decision-array, and binding-object mutations; later views and settlement retain the canonical request.
+- codex-approvals deleted elicitation field projection helpers and retains only supportsSpokenFormSchema for spoken eligibility. Browser field shaping remains solely in codex-workbench approval-projection.
+- projectApproval now returns BrowserApproval directly. Every family constructs mutable browser-owned arrays/objects where generated owner data is deeply readonly, while the existing browser boundary parse remains.
+- Terminal delivery intent distinguishes authored_response from after_publish. Gateway publication gathers terminal IDs only after emitting each changed snapshot, then the canvas adapter acknowledges spontaneous terminals. Authored response terminals remain through the command result and are acknowledged afterward. Browser disconnect cancels and immediately acknowledges because no browser can receive that card.
+- Focused regressions cover immutable nested ownership, expiry/child-exit after-publish intent, one-snapshot expiry/stale publication, authored response visibility and late refusal, and disconnect no-retention.
+Validation: 103 focused approval/browser-model/workbench gateway/canvas browser tests passed (1094 assertions); root and frontend tsc passed; oxlint passed; full format check passed; git diff --check passed. Broad system, serial-browser, module, repository, and check lanes were intentionally not run.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -111,5 +126,17 @@ author: @codex
 created: 2026-09-03 18:56
 ---
 Second approval-authority remediation is green at the permitted focused boundaries. Preparing its separate commit and parent rereview callback; task remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 19:02
+---
+Third review remediation started at eb487758. The task remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 19:09
+---
+Third review remediation is implemented and focused validation is green. TASK-143.01.02 remains In Progress pending parent re-review.
 ---
 <!-- COMMENTS:END -->

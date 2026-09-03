@@ -245,6 +245,37 @@ describe("Codex workbench browser command routing", () => {
 		expect(stale).toMatchObject({ code: "approval_not_pending", outcome: "not_delivered" });
 	});
 
+	for (const terminal of [
+		{ name: "expiry", state: "expired", reason: "The approval expired." },
+		{ name: "child exit", state: "stale", reason: "The Codex child exited." },
+	] as const)
+		test(`publishes a spontaneous ${terminal.name} terminal exactly once`, () => {
+			const value = harness();
+			const connection = value.gateway.connect(value.browserId, value.paneId);
+			const approval = value.makeOrdinaryApproval();
+			value.setOrdinaryApproval(approval);
+			connection.snapshot();
+			const messages: unknown[] = [];
+			connection.subscribe((message) => messages.push(message));
+
+			value.setOrdinaryApproval({
+				...approval,
+				terminalDelivery: "after_publish",
+				snapshot: {
+					...approval.snapshot,
+					state: terminal.state,
+					decision: "cancelled",
+					outcome: "delivered",
+					reason: terminal.reason,
+				},
+				spoken: { eligible: false, reason: "not_pending" },
+			});
+
+			expect(messages).toHaveLength(1);
+			expect(JSON.stringify(messages[0])).toContain(`"state":"${terminal.state}"`);
+			expect(connection.snapshot().snapshot.approvals).toEqual([]);
+		});
+
 	test("preserves dynamic identity and effect hash through pending-aware response validation", async () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);

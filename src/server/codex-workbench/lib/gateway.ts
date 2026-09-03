@@ -14,6 +14,7 @@ import type {
 	ChildEpoch,
 	ChildId,
 	IdentityAuthorities,
+	JsonRpcRequestId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import { createBrowserLeaseManager, type BrowserLeaseManager } from "./lease.js";
 import {
@@ -258,6 +259,14 @@ function emit(
 	}
 }
 
+function publishedTerminalIds(snapshot: BrowserSnapshot): readonly JsonRpcRequestId[] {
+	return snapshot.approvals.flatMap((approval) =>
+		approval.lifecycle.state === "staged" || approval.lifecycle.state === "pending"
+			? []
+			: [approval.requestId],
+	);
+}
+
 export function createCodexWorkbenchGateway(
 	options: CodexWorkbenchGatewayOptions,
 ): CodexWorkbenchGateway {
@@ -491,12 +500,12 @@ export function createCodexWorkbenchGateway(
 		return Object.freeze({ kind: "snapshot", sequence: state.sequence, snapshot });
 	};
 
-	const publishConnection = (state: ConnectionState): void => {
-		if (state.closed || state.lastSnapshot === null) return;
+	const publishConnection = (state: ConnectionState): readonly JsonRpcRequestId[] => {
+		if (state.closed || state.lastSnapshot === null) return [];
 		const snapshot = snapshotFor(state);
 		try {
 			const delta = diffBrowserSnapshots(state.lastSnapshot, snapshot);
-			if (delta === null) return;
+			if (delta === null) return [];
 			state.sequence += 1;
 			state.lastSnapshot = snapshot;
 			emit(
@@ -507,6 +516,7 @@ export function createCodexWorkbenchGateway(
 					delta,
 				}),
 			);
+			return publishedTerminalIds(snapshot);
 		} catch (error) {
 			if (!isOversizedDelta(error)) throw error;
 			state.sequence += 1;
@@ -515,6 +525,7 @@ export function createCodexWorkbenchGateway(
 				state.listeners,
 				Object.freeze({ kind: "snapshot", sequence: state.sequence, snapshot }),
 			);
+			return publishedTerminalIds(snapshot);
 		}
 	};
 
@@ -525,11 +536,15 @@ export function createCodexWorkbenchGateway(
 			return;
 		}
 		publishing = true;
+		const terminalIds = new Set<JsonRpcRequestId>();
 		try {
 			do {
 				publishQueued = false;
-				for (const state of connections.values()) publishConnection(state);
+				for (const state of connections.values())
+					for (const requestId of publishConnection(state)) terminalIds.add(requestId);
 			} while (publishQueued);
+			if (terminalIds.size > 0)
+				options.actions.ordinaryApprovals.acknowledgePublished([...terminalIds]);
 		} finally {
 			publishing = false;
 		}

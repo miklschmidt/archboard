@@ -55,3 +55,65 @@ test("the approval owner view carries generated permission authority without bro
 		closeBroker(fixture.broker);
 	}
 });
+
+test("nested owner-view mutation cannot alter later views or settlement", async () => {
+	const fixture = testBroker();
+	try {
+		const source = commandRequest(fixture.identity, "immutable-owner");
+		const pending = fixture.broker.receive(source);
+		const mutableSource = source as unknown as {
+			params: { command: string; availableDecisions: string[] };
+		};
+		mutableSource.params.command = "echo source-tampered";
+		mutableSource.params.availableDecisions.push("cancel");
+		const view = fixture.broker.view(pending.requestId);
+		const mutable = view as unknown as {
+			request: {
+				params: { command: string; availableDecisions: string[] };
+				binding: { target: string };
+			};
+		};
+		expect(() => (mutable.request.params.command = "echo tampered")).toThrow();
+		expect(() => mutable.request.params.availableDecisions.push("cancel")).toThrow();
+		expect(() => (mutable.request.binding.target = "tampered-target")).toThrow();
+
+		const laterView = fixture.broker.view(pending.requestId);
+		expect(laterView.request).toMatchObject({
+			params: {
+				command: "echo immutable-owner",
+				availableDecisions: ["accept", "decline"],
+			},
+		});
+		expect(laterView.request.binding.target).toBe(view.request.binding.target);
+		const settlement = await fixture.broker.resolve({
+			requestId: pending.requestId,
+			approvalId: pending.approvalId,
+			response: { approvalKind: "command_execution", decision: "accept" },
+		});
+		expect(settlement).toMatchObject({ state: "settled", outcome: "delivered" });
+		expect(fixture.port.responses[0]?.response).toEqual({ result: { decision: "accept" } });
+	} finally {
+		closeBroker(fixture.broker);
+	}
+});
+
+test("expiry and child exit mark terminals for acknowledgement after publication", async () => {
+	const fixture = testBroker();
+	try {
+		const expired = fixture.broker.receive(commandRequest(fixture.identity, "expiry-delivery"));
+		await fixture.broker.expire(expired.requestId);
+		expect(fixture.broker.view(expired.requestId)).toMatchObject({
+			snapshot: { state: "expired" },
+			terminalDelivery: "after_publish",
+		});
+
+		const stale = fixture.broker.receive(commandRequest(fixture.identity, "child-delivery"));
+		await fixture.broker.childExit({ child: stale.child, epoch: stale.epoch });
+		expect(fixture.broker.view(stale.requestId)).toMatchObject({
+			snapshot: { state: "stale" },
+			terminalDelivery: "after_publish",
+		});
+	} finally {
+		closeBroker(fixture.broker);
+	}
+});
