@@ -462,7 +462,12 @@ test(
 			(live) => live.length === 0,
 			"the traced canvas descendant to disappear",
 		);
-		expect(readFsyncTrace(traceFile).incomplete).toEqual([]);
+		const completeTrace = await pollUntil(
+			() => readFsyncTrace(traceFile),
+			(trace) => trace.incomplete.length === 0,
+			"the fsync tracer to flush its final record",
+		);
+		expect(completeTrace.incomplete).toEqual([]);
 	},
 	TEST_HUMAN_EDIT_PERFORMANCE_CASE_TIMEOUT_MS,
 );
