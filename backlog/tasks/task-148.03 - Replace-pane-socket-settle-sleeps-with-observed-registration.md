@@ -1,11 +1,11 @@
 ---
 id: TASK-148.03
 title: Replace pane socket settle sleeps with observed registration
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 21:36'
-updated_date: '2026-09-03 14:19'
+updated_date: '2026-09-03 14:26'
 labels: []
 dependencies: []
 parent_task_id: TASK-148
@@ -22,10 +22,10 @@ Pane tests wait for an observable registration contract rather than a fixed sock
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 openTestPane and its 15 consumers replace the fixed 80 ms settle delay with deterministic readiness acknowledgement or observed registration.
-- [ ] #2 The scope covers pane-websocket.ts, canvas-state/support/pane-session.ts, and applicable direct post-open sleeps.
-- [ ] #3 Focused coverage preserves open and close behavior, multi-pane isolation, and cleanup.
-- [ ] #4 Measured aggregate duration is materially lower than the fixed-delay baseline.
+- [x] #1 openTestPane and its 15 consumers replace the fixed 80 ms settle delay with deterministic readiness acknowledgement or observed registration.
+- [x] #2 The scope covers pane-websocket.ts, canvas-state/support/pane-session.ts, and applicable direct post-open sleeps.
+- [x] #3 Focused coverage preserves open and close behavior, multi-pane isolation, and cleanup.
+- [x] #4 Measured aggregate duration is materially lower than the fixed-delay baseline.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -53,4 +53,12 @@ Independent-review remediation: bounded pane registration and each registry read
 Remediation validation: observed-pane.test.ts passed 4/4 in 28 ms. The directly affected doing-activity, pane-addressing, and branching-pane-effects owners passed 11/11 in 7.08 s. Exact-file Oxfmt and Oxlint passed.
 
 Narrow type remediation: pane-websocket.ts now reuses the exported JsonRequestOptions contract, so AbortSignal is accepted without an excess-property error. Exact-file Oxfmt/Oxlint passed; pane-addressing passed 7/7 in 4.05 s.
+
+Integration evidence: cherry-picked f1233a05, 08639dfc, and de2a6902 onto eb128292. Independent rereview reported REVIEW_CLEAN. bun test --isolate tests/system/support/observed-pane.test.ts passed 4/4 in 36 ms. bun test --isolate tests/system/boards/pane-addressing.test.ts passed 7/7 in 4.03 s. The task's prior focused 16-owner aggregate measured 61.83 s versus a 65.76 s baseline, a 3.93 s or 6.0% reduction.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced fixed pane socket settle waits with observed registration and cleanup. Integrated the three reviewed commits and verified with observed-pane 4/4 plus pane-addressing 7/7; the recorded focused aggregate fell from 65.76 s to 61.83 s, a 6.0% reduction.
+<!-- SECTION:FINAL_SUMMARY:END -->
