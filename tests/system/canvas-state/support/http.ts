@@ -13,6 +13,7 @@ export interface RequestOptions {
 	body?: unknown;
 	doing?: string | false;
 	headers?: Record<string, string>;
+	signal?: AbortSignal;
 }
 
 export const sleep = (ms: number): Promise<void> =>
@@ -36,6 +37,7 @@ export function createRequester(canvas: RequestCanvas) {
 		try {
 			const response = await fetch(url, {
 				method,
+				signal: options.signal,
 				...(options.body === undefined
 					? { headers: options.headers }
 					: {
