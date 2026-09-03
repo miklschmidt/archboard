@@ -1,11 +1,11 @@
 ---
 id: TASK-143.06.06
 title: Remove remaining legacy injection environment sanitization
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:29'
-updated_date: '2026-09-03 02:41'
+updated_date: '2026-09-03 02:50'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -28,10 +28,10 @@ Remove obsolete ARCHBOARD_INJECT environment handling from the remaining process
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Process-contract support no longer sets, clears, forwards, or documents ARCHBOARD_INJECT* or a Desktop/shared-daemon control socket.
-- [ ] #2 Current CODEX_HOME, CODEX_SQLITE_HOME, binary, and owned app-server environment isolation remains explicit and unchanged.
-- [ ] #3 Repository search distinguishes historical ADR/research text from executable environment handling and finds no remaining test helper that can connect to the retired socket.
-- [ ] #4 Against the fixed implementation base, focused process-contract and repository-policy owners for the touched support stay green and broader process/system/repository lanes introduce no new failure attributable to this change; pre-existing unrelated failures are recorded rather than reclassified as task failures.
+- [x] #1 Process-contract support no longer sets, clears, forwards, or documents ARCHBOARD_INJECT* or a Desktop/shared-daemon control socket.
+- [x] #2 Current CODEX_HOME, CODEX_SQLITE_HOME, binary, and owned app-server environment isolation remains explicit and unchanged.
+- [x] #3 Repository search distinguishes historical ADR/research text from executable environment handling and finds no remaining test helper that can connect to the retired socket.
+- [x] #4 Against the fixed implementation base, focused process-contract and repository-policy owners for the touched support stay green and broader process/system/repository lanes introduce no new failure attributable to this change; pre-existing unrelated failures are recorded rather than reclassified as task failures.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -68,3 +68,9 @@ created: 2026-09-02 01:39
 Course correction, 2026-09-02: 0e74cbaf is the strongest selective-replay candidate because it is a narrow cleanup above ba1aacee. Keep its head durably referenced, but do not replay or validate it until TASK-143.08.01 removes the OOM mechanism.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Removed the retired injection environment path and closed every owned real-canvas spawn boundary. Accepted focused evidence: lifecycle 1/1, HTTP lifetime 3/3, startup signal 1/1, owned canvas 10/10, resource cleanup 8/8, and legacy policy 2/2; focused lint, format, diff, and targeted audits passed. Root typecheck retains only documented unrelated baseline errors. Broad lanes were not rerun under the accepted fixed-base non-regression rule.
+<!-- SECTION:FINAL_SUMMARY:END -->
