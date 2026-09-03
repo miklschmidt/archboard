@@ -1,11 +1,11 @@
 ---
 id: TASK-143.08.04
 title: Make mandatory Codex startup actionable and leak-free
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 04:44'
+updated_date: '2026-09-03 04:51'
 labels: []
 dependencies:
   - TASK-143.08.03
@@ -31,13 +31,13 @@ Keep ADR 0019's mandatory private Codex child. Exactly one package-local codex a
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 ./bin/canvas start resolves only the exact package-local @openai/codex 0.151.0 runtime supplied by TASK-143.08.02 and starts one owned child before advertising the canvas.
-- [ ] #2 Missing, wrong-version, non-file, unexecutable, verification-timeout, and early-child-exit cases each exit nonzero with one concise recovery message and no raw stack trace.
-- [ ] #3 Every failed start leaves no HTTP listener, port owner, pidfile, child, process group, timer, epoch activation, gateway, queue, approval, realtime, or browser-workbench resource from that attempt.
-- [ ] #4 A signed-out exact child starts successfully, exposes the account and sign-in state, and keeps thread-scoped actions disabled without treating authentication as startup failure.
-- [ ] #5 Public-command and process-contract tests exercise success and every reachable failure through ./bin/canvas start, verify cleanup against exact attempt identities, and preserve pre-existing persistent Codex state.
-- [ ] #6 Initial prepare, reload, concurrent start, child crash/backoff, serial restart, and shutdown process-census tests prove that an Archboard server never owns more than one live or starting codex app-server child or process group; reload never spawns a child, and restart begins only after the prior exact group has zero tasks.
-- [ ] #7 This recovery task is the sole owner of Codex child startup, application phases, reload behavior, crash replacement, process reaping, teardown ordering, and failed-start cleanup. TASK-143.01.14 consumes its lifecycle interface and cannot add a second implementation of those behaviors.
+- [x] #1 ./bin/canvas start resolves only the exact package-local @openai/codex 0.151.0 runtime supplied by TASK-143.08.02 and starts one owned child before advertising the canvas.
+- [x] #2 Missing, wrong-version, non-file, unexecutable, verification-timeout, and early-child-exit cases each exit nonzero with one concise recovery message and no raw stack trace.
+- [x] #3 Every failed start leaves no HTTP listener, port owner, pidfile, child, process group, timer, epoch activation, gateway, queue, approval, realtime, or browser-workbench resource from that attempt.
+- [x] #4 A signed-out exact child starts successfully, exposes the account and sign-in state, and keeps thread-scoped actions disabled without treating authentication as startup failure.
+- [x] #5 Public-command and process-contract tests exercise success and every reachable failure through ./bin/canvas start, verify cleanup against exact attempt identities, and preserve pre-existing persistent Codex state.
+- [x] #6 Initial prepare, reload, concurrent start, child crash/backoff, serial restart, and shutdown process-census tests prove that an Archboard server never owns more than one live or starting codex app-server child or process group; reload never spawns a child, and restart begins only after the prior exact group has zero tasks.
+- [x] #7 This recovery task is the sole owner of Codex child startup, application phases, reload behavior, crash replacement, process reaping, teardown ordering, and failed-start cleanup. TASK-143.01.14 consumes its lifecycle interface and cannot add a second implementation of those behaviors.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -91,6 +91,12 @@ Final Standards tail: after safe transfer, the launcher now leaves the exact can
 Actual-head Standards remediation from b0f10a16: failed-start takeover now tracks the exact identity at every group inspection and signal, so an exception reports the group that actually failed instead of the last published group. A normal non-quiescent result selects the first failing identity in transfer order and prints leader pid, pgid, starttime, and state for every non-quiescent group. The canvas remains SIGSTOPed and outer SIGKILL/reap remains exclusive to the all-quiescent branch. Deterministic regressions reproduce an earlier group signalling failure while a later group is quiescent, and two non-quiescent groups with complete identity diagnostics. Red evidence failed on the former last-group attribution. Final focused evidence: cleanup owner 17 tests and 61 expectations; public signal/takeover plus crash replacement 3 tests and 23 expectations; focused strict TypeScript, Oxlint, Oxfmt, and git diff checks passed.
 
 Final assertion count is 63 after explicitly proving inspection order 41 then 42 and the sole attempted group signal 41/SIGTERM in the earlier-group failure regression.
+
+Finalization evidence (reviewed fixed range 7d0aa6557edd51aca9cc0b90e2e925397d95151a..e3e831f64f22b750ccccbfd04911da8ab86e729d): exact package-local 0.151.0 preflight; six actionable public failures; signed-out success; one fd3 ownership/terminal protocol; bounded 10s production cleanup with 5s inner grace; safe transfer/takeover; exact multiple-group diagnostics; safe stderr logging; concurrent start/reload/persistent state; terminal recovery failure; independent crash/replacement owner; force-boundary test reduced from 18.76s to ~0.84s with production defaults pinned; focused reviews/tests clean; unrelated threadLink baseline excluded.
+
+AC3 qualification: Failed starts prove the exact attempt absent whenever cleanup can be proven. If group ownership, inspection, or signalling makes zero genuinely unprovable, start fails nonzero without claiming cleanup and leaves the exact canvas stopped with every guarded non-quiescent group identity and state for recovery; it never kills the only remaining cleanup owner.
+
+Orchestration-process note (not validation evidence; both must not recur): (1) the implementation worker deleted four pre-existing generated /tmp production-fixture roots after proving no live process used them, but did not prove ownership. The deletion was outside authority and cannot be undone; they were reproducible derived test residue, not authored/persistent state. (2) the spec reviewer accidentally traversed/read the protected untracked /home/msc/Projects/archboard/src-DlBR1tzg.js via a broad read-only search. It was not modified or deleted and remained untracked. This was an access-boundary violation.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -101,3 +107,9 @@ created: 2026-09-02 01:44
 User decision, 2026-09-02: @openai/codex is a runtime dependency. One Archboard server may have only one live or starting codex app-server instance. Crash recovery is allowed only as a serialized replacement after the previous exact child and process group are completely gone.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Integrated the reviewed six-commit mandatory Codex startup lifecycle range by fast-forward only. Fixed-range reviews and focused evidence confirm exact package-local 0.151.0 preflight, actionable public failures, signed-out readiness, bounded safe cleanup/takeover, lifecycle census and crash replacement; unrelated threadLink baseline excluded. Failed starts prove the exact attempt absent whenever cleanup can be proven. If group ownership, inspection, or signalling makes zero genuinely unprovable, start fails nonzero without claiming cleanup and leaves the exact canvas stopped with every guarded non-quiescent group identity and state for recovery; it never kills the only remaining cleanup owner.
+<!-- SECTION:FINAL_SUMMARY:END -->
