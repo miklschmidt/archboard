@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import type { CodexServerNotificationParamsByMethod } from "../../../shared/codex-app-server-contract/index.js";
 import {
 	AuthModeSchema,
 	PlanTypeSchema,
@@ -42,6 +43,7 @@ import {
 } from "./notification-support-schemas.js";
 import { FiniteNumberSchema, JsonObjectSchema, RequestIdSchema, looseObject } from "./scalars.js";
 import { ThreadSchema, TurnSchema } from "./thread-schemas.js";
+import { codexIngressSchemas } from "./vendor-schema.js";
 
 const ThreadIdSchema = looseObject({ threadId: z.string() });
 const ThreadTurnSchema = looseObject({ threadId: z.string(), turn: TurnSchema });
@@ -52,7 +54,9 @@ const TextDeltaSchema = looseObject({
 	delta: z.string(),
 });
 
-const SERVER_NOTIFICATION_SCHEMAS = {
+const SERVER_NOTIFICATION_SCHEMAS = codexIngressSchemas<
+	Pick<CodexServerNotificationParamsByMethod, ServerNotificationMethod>
+>()({
 	error: looseObject({
 		error: TurnErrorSchema,
 		willRetry: z.boolean(),
@@ -276,7 +280,7 @@ const SERVER_NOTIFICATION_SCHEMAS = {
 		error: z.string().nullable(),
 	}),
 	"account/login/completed": AccountLoginCompletedSchema,
-} as const satisfies Record<ServerNotificationMethod, z.ZodTypeAny>;
+} as const);
 
 export { SERVER_NOTIFICATION_SCHEMAS };
 

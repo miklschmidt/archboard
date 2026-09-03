@@ -32,6 +32,7 @@
 		".agents/**",
 		".claude/**",
 		"docs/design/vendor/**",
+		"src/shared/codex-app-server-contract/generated/**",
 	],
 	"settings": {
 		"react": {
@@ -89,7 +90,11 @@
 			},
 		},
 		{
-			"files": ["scripts/generate-cli-contract.ts", "scripts/sync-skills.ts"],
+			"files": [
+				"scripts/generate-cli-contract.ts",
+				"scripts/generate-codex-app-server-contract.ts",
+				"scripts/sync-skills.ts",
+			],
 			"rules": {
 				"no-console": "off",
 			},

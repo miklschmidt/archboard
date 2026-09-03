@@ -147,7 +147,7 @@ function responseItemBranch(type: string): JsonRecord | undefined {
 		case "custom_tool_call_output":
 			return { type, call_id: "call-1", output: [{ type: "input_text", text: "fixture" }] };
 		case "web_search_call":
-			return { type, action: { type: "search", query: null, queries: null } };
+			return { type, action: { type: "search", query: "fixture" } };
 	}
 	return undefined;
 }
