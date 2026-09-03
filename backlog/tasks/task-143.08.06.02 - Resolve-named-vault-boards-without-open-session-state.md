@@ -1,11 +1,11 @@
 ---
 id: TASK-143.08.06.02
 title: Resolve named vault boards without open-session state
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 05:51'
+updated_date: '2026-09-03 05:56'
 labels: []
 dependencies:
   - TASK-143.08.06.01
@@ -31,13 +31,13 @@ Make the persisted note, not transient server or browser registration, sufficien
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 With zero WebSocket clients and no prior board-open request, each existing named vault board is directly usable through representative read, query, change, inspection, branch, snapshot, import, export, and comparison production interfaces.
-- [ ] #2 Creating a board atomically creates its canonical empty note, returns its persisted identity, and neither creates, selects, repoints, nor otherwise changes a browser pane.
-- [ ] #3 A missing, ambiguous, malformed, or conflicting named note produces the same actionable domain refusal regardless of browser state; no command tells the caller to open a pane or board first.
-- [ ] #4 Each board write still performs one synchronous locked read-modify-write against the note and returns the committed result; transient caches or registries cannot become an authority or create a second board document.
-- [ ] #5 After commit, panes already showing the board can receive the resulting document, while no connected, disconnected, slow, or failing pane changes transaction success, ordering, latency bounds, or the persisted bytes.
-- [ ] #6 Production-interface tests start with a vault-only note and zero browser clients, exercise the reachable success and failure states, and prove that direct board access preserves version, conflict, locking, and one-request-one-write invariants.
-- [ ] #7 Changes at the canvas application boundary consume the recovered TASK-143.08.04 lifecycle owner unchanged; they add no Codex child startup, reload, restart, reaping, teardown, or application-phase logic, and application integration is serialized after that recovery task.
+- [x] #1 With zero WebSocket clients and no prior board-open request, each existing named vault board is directly usable through representative read, query, change, inspection, branch, snapshot, import, export, and comparison production interfaces.
+- [x] #2 Creating a board atomically creates its canonical empty note, returns its persisted identity, and neither creates, selects, repoints, nor otherwise changes a browser pane.
+- [x] #3 A missing, ambiguous, malformed, or conflicting named note produces the same actionable domain refusal regardless of browser state; no command tells the caller to open a pane or board first.
+- [x] #4 Each board write still performs one synchronous locked read-modify-write against the note and returns the committed result; transient caches or registries cannot become an authority or create a second board document.
+- [x] #5 After commit, panes already showing the board can receive the resulting document, while no connected, disconnected, slow, or failing pane changes transaction success, ordering, latency bounds, or the persisted bytes.
+- [x] #6 Production-interface tests start with a vault-only note and zero browser clients, exercise the reachable success and failure states, and prove that direct board access preserves version, conflict, locking, and one-request-one-write invariants.
+- [x] #7 Changes at the canvas application boundary consume the recovered TASK-143.08.04 lifecycle owner unchanged; they add no Codex child startup, reload, restart, reaping, teardown, or application-phase logic, and application integration is serialized after that recovery task.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -84,4 +84,12 @@ Final Spec rereview repair:
 Red/green evidence: with the previous throwing recordLockCommit body restored, the focused post-commit assertion failed at the injected lease rename after note persistence; restoring best-effort handling made it pass. Final focused validation: write/proof owner 4 tests/60 assertions in 0.29s; vault-only H0-H1-H2 owner 6/61 in 2.06s; note-conflict owner 8/47 in 0.34s; focused Oxlint and Oxfmt check; git diff --check. Total focused wall time was about 2.3s in parallel. The 16.9s legacy lock lane was not run. Task remains In Progress with all ACs unchecked for parent review.
 
 Clarification: an absent or unreadable current lease keeps the existing silent false result from readRecord. The new catch logs auxiliary mkdir, temp-write, and rename exceptions. The injected regression is the reviewed post-commit rename failure.
+
+Finalization evidence: independent Standards and Spec reviews of b96e33da4081bb3f7832c77e35429ffd51c94fe1..c41f83203ab8bde379a821aaea5c10067f2b93eb both reported REVIEW_CLEAN. Focused production evidence proves direct persisted-note addressing without browser clients across read/query/change/inspection/branch/snapshot/import/export/compare; atomic normalized creation; truthful browser-independent refusals; locked synchronous writes and safe post-response FIFO observers; and unchanged recovered lifecycle ownership. Final repair focused owners: write/proof 4 tests/60 assertions (0.29s), vault-only H0-H1-H2 6/61 (2.06s), note-conflict 8/47 (0.34s), focused Oxlint/Oxfmt, and git diff --check. The legacy 16.9s lock owner was not required for the final repair and was not rerun by reviewers.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Resolved persisted named boards independently of open browser sessions. Integrated the reviewed linear four-commit range and verified all acceptance criteria from focused production-interface, lock/proof, observer, refusal, and recovered-lifecycle evidence; the final repair did not rerun the legacy 16.9s lock owner.
+<!-- SECTION:FINAL_SUMMARY:END -->
