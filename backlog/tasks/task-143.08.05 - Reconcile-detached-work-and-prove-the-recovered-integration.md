@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 13:48'
+updated_date: '2026-09-03 14:14'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -26,6 +26,15 @@ modified_files:
   - tests/system/browser/fixtures/traced-canvas-process.ts
   - tests/system/browser/human-edit-performance.test.ts
   - tests/system/browser/selection-inspector.test.ts
+  - src/ui/shell/board-dialog-contract.ts
+  - src/ui/shell/BoardDialog.tsx
+  - src/ui/shell/Shell.tsx
+  - src/ui/shell/tests/board-dialog.test.ts
+  - tests/system/board-inspection/support/package-process.ts
+  - tests/system/board-inspection/package-read-only.test.ts
+  - src/runtime/engine/tests/board-write-observers.test.ts
+  - src/runtime/engine/board-io.ts
+  - tests/system/cli/command-workflows.test.ts
 parent_task_id: TASK-143.08
 priority: high
 type: task
@@ -73,6 +82,15 @@ Reconcile the frozen detached descendants only after the OOM, generated-type, co
 9. Accept the complete gate only on exit 0, never wrapper status 124 or 125, with no OOM, SIGKILL, cleanup diagnostic, residual unit, or residual cgroup. Record the wrapper path, hash, effective limits, unit identity, exit, wall time, and cleanup evidence. Record memory or process peaks only if unchanged wrapper output exposes them. Do not follow a successful gate with duplicate focused reruns. Focused commands are diagnosis only after a failure. For one precisely identified suspected spinning child, the only time boundary is the verified wrapper around timeout --signal=TERM --kill-after=5s 20s followed by the exact child command. After remediation, run one fresh complete gate.
 
 10. After the gate, run only cheap authored-state checks: Backlog parsing, exact ref and tree checks, the path-limited main blob comparison, git diff --check, and tracked/staged dirty audits. Keep generated contracts, frontend output, logs, and inventory scratch data reproducible and ignored or temporary. Author no derived inventory file. Freeze and report HEAD without further tracked mutation. Ask the parent for an independent gpt-daybreak-blue-latest medium review over c2d86ef92b5c902bcf459ce801e75e0dcf7d59cd..HEAD. Do not check ACs, write the final summary, mark Done, integrate canonical, remove worktrees, or push.
+
+Review remediation:
+- Restore BoardDialog typing through a module-root TypeScript contract shared by the component and its render test.
+- Make detached package-process ownership capture failure kill and fully drain the exact spawned child before surfacing the startup error.
+- Exercise failed lock proof stamping only through the public board-lock acquisition result, removing private lock-path assertions and forged receipts.
+- Distinguish live deferred trace tails from settled evidence; after tracer exit reject every nonempty tail except the exact terminal tracer-noise spelling.
+- Centralize held-content copying in board-io.
+- Remove the command-workflow timeout allowance and return the three owners to ordinary test().
+- Run only the focused owners for these interfaces; do not run broad type, system, browser, or full gates under the remediation policy.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -218,6 +236,15 @@ Authoritative gate A24 at c6429184: lint, formatting, both type checks, frontend
 The parser now classifies only the exact undecodable unfinished-syscall spelling as tracer lifecycle noise. This is not successful fsync evidence and cannot affect the retained complete-fsync count bounds; completed unknown, failed, malformed, unmatched resumed, and newline-terminated unfinished fsync records remain explicit incomplete evidence. The deterministic parser case covers deferred unterminated bytes, rejection once a malformed record terminates, and isolation of the exact terminal tracer record; it passed under capped unit archboard-task143-worker-command-kPdxr0sR.service. The complete 10,000-element owner then passed three consecutive real shutdown repetitions under capped unit archboard-task143-worker-command-40N2zHhH.service in 3m46.516s with 5.4G peak and 0B swap. No product behavior, fsync count bound, cleanup assertion, browser inventory, timeout, lint rule, or type rule was weakened.
 
 During this remediation the canonical codex/task-143-144-workbench ref advanced from c2d86ef92b5c902bcf459ce801e75e0dcf7d59cd to 7d55ebebf8198409e6082287aef907676375300e. The coordinator identified that commit as documentation-only TASK-148.12 completion and directed this fixed-base validation to continue. This checkout remains based on the approved c2d86ef9 target; final handoff will explicitly preserve 7d55ebeb for parent integration after review.
+
+Independent-review remediation at fixed base c2d86ef92b5c902bcf459ce801e75e0dcf7d59cd:
+- BoardDialogMode, BoardDialogPane, and BoardDialogProps now live in the shell module-root board-dialog-contract.ts and are imported by BoardDialog, Shell, and the render owner. The runtime TSX load remains dynamic, but its cast uses the authored shared contract; the test redeclares no component contract. This is type-boundary-only UI work with no rendered, state, or styling change.
+- Package inspection now separates spawn from process-group capture. A capture failure kills the exact spawned child and awaits leader exit plus both pipe drains through Promise.allSettled before rejecting. The focused owner injects that failure and proves the captured process identity is gone when rejection returns.
+- Board observer coverage no longer constructs or inspects the private handoff path or forges receipt files. Failed stamp proof is observed through a successor hold with predecessorHash undefined, followed by public release.
+- Fsync trace parsing now has an explicit settled mode. Live reads defer a non-newline writer tail; after tracer exit, every nonempty tail is incomplete except the exact terminal ???( <unfinished ...> tracer spelling. The real owner performs one settled read after tracer process identities disappear.
+- board-io uses one copyHeldContent helper for both resolved and direct held-board reads.
+- TEST_CLI_WORKFLOW_CASE_TIMEOUT_MS and workflowTest were removed; all three subprocess workflow owners again use ordinary test().
+Focused validation only, per remediation policy: BoardDialog 1/1; board-write observers 4/4 (45 expectations); package read-only 12/12 (258 expectations, including capture failure); held-board recovery 8/8 (76 expectations); CLI workflows 4/4 (95 expectations); exact fsync parser browser-adapter case exit 0; module boundaries 7/7 (66 expectations); lock-source policy 1/1 (4 expectations). Focused Oxfmt check and Oxlint over all 12 touched source/test files passed. No complete check, typecheck, complete system lane, or complete browser lane was run.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

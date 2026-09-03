@@ -15,7 +15,6 @@ import { assembleFindingArtifacts } from "../../../src/cli/finding-rendering/ind
 import { cliContractRegistry } from "../../../src/cli/commands/run.ts";
 import { inspectBoard } from "../../../src/runtime/board-inspection/index.ts";
 import { findingRasterDimensions } from "../../../src/shared/finding-raster/index.ts";
-import { TEST_CLI_WORKFLOW_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 import { checkoutRoot } from "./support/package-cli.ts";
 
 const guidePath = join(checkoutRoot, "skills/archboard/references/cli-workflows.md");
@@ -51,9 +50,6 @@ const runSync = (
 		stdout: result.stdout.toString(),
 		stderr: result.stderr.toString(),
 	};
-};
-const workflowTest = (name: string, body: () => void): void => {
-	test(name, body, TEST_CLI_WORKFLOW_CASE_TIMEOUT_MS);
 };
 const element = (id: string, type = "rectangle", x = 0, y = 0) => ({ id, type, x, y });
 const fingerprint = { elements: 2, note: "a".repeat(64), version: 17 };
@@ -235,7 +231,7 @@ const workflowCases = {
 } as const;
 
 describe("documented CLI workflows", () => {
-	workflowTest("runs every marked jq producer through its public result schema", () => {
+	test("runs every marked jq producer through its public result schema", () => {
 		const blocks = new Map<string, string>();
 		const pattern = /<!-- tested-jq: ([a-z0-9-]+) -->\s*```jq\n([\s\S]*?)\n```/g;
 		for (const match of guide.matchAll(pattern)) blocks.set(match[1]!, match[2]!);
@@ -257,7 +253,7 @@ describe("documented CLI workflows", () => {
 		}
 	});
 
-	workflowTest("captures strict exits 6, 7, and 8 without publishing other failures", () => {
+	test("captures strict exits 6, 7, and 8 without publishing other failures", () => {
 		const match = guide.match(
 			/<!-- tested-shell: strict-check-capture -->\s*```bash\n([\s\S]*?)\n```/,
 		);
@@ -308,7 +304,7 @@ describe("documented CLI workflows", () => {
 		}
 	});
 
-	workflowTest("syncs the authored workflow guide in a disposable repository", () => {
+	test("syncs the authored workflow guide in a disposable repository", () => {
 		const statusBefore = runSync(["git", "status", "--porcelain", "--untracked-files=all"], {
 			cwd: checkoutRoot,
 		});

@@ -30,7 +30,8 @@ import type { PaneSelectionSnapshot, SelectionProjection } from "../selection-in
 import type { PanePathFocusSnapshot, PathFocusController, PathFocusSnapshot } from "../path-focus";
 import { BoardBar } from "./BoardBar";
 import { BoardNavigator } from "./BoardNavigator";
-import { BoardDialog, type BoardDialogMode } from "./BoardDialog";
+import { BoardDialog } from "./BoardDialog";
+import type { BoardDialogMode } from "./board-dialog-contract";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { ConflictDialog } from "./ConflictDialog";
 import { InstallLibraryDialog } from "./InstallLibraryDialog";

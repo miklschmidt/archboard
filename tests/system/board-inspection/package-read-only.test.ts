@@ -17,12 +17,17 @@ import {
 	type PackageProcessGroupIdentity,
 	type ProcessIdentity,
 } from "./support/package-inspection.js";
-import { forcePackageProcessGroupGone } from "./support/package-process.js";
+import {
+	forcePackageProcessGroupGone,
+	processIdentity,
+	runReadOnlyPackageProcess,
+} from "./support/package-process.js";
 
 const repeatedLifecycleCount = 80;
 const signalOwnerEntry = fileURLToPath(
 	new URL("./fixtures/package-signal-owner.ts", import.meta.url),
 );
+const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const ownedVaultPrefix = `${tmpdir()}/archboard-task-130-05-package-`;
 const ownedHttpPrefix = `${tmpdir()}/archboard-task-130-05-http-`;
 
@@ -133,6 +138,33 @@ test("package inspection timeout reaps its exact process group", async () => {
 	expect(artifacts).toContain(vault);
 	expect(artifacts).toHaveLength(2);
 	for (const artifact of artifacts) expect(existsSync(artifact)).toBe(false);
+});
+
+test("package inspection reaps and drains a child when ownership capture fails", async () => {
+	const owner = createPackageInspectionOwner();
+	const vault = owner.startVault();
+	let leader: ProcessIdentity | undefined;
+	try {
+		await expect(
+			runReadOnlyPackageProcess(
+				repoRoot,
+				vault,
+				[process.execPath, "-e", "process.stdout.write('owned'); setInterval(() => {}, 1000)"],
+				{},
+				() => [],
+				{
+					captureProcessGroup: (pid) => {
+						leader = processIdentity(pid);
+						throw new Error("injected ownership capture failure");
+					},
+				},
+			),
+		).rejects.toThrow("Could not start package inspection: injected ownership capture failure");
+		expect(leader).toBeDefined();
+		expect(processIdentityExists(leader!)).toBeFalse();
+	} finally {
+		await owner.dispose();
+	}
 });
 
 test("package inspection waits for every owner after an injected drain failure", async () => {
