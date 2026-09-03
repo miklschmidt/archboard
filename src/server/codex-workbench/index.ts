@@ -61,6 +61,7 @@ export type {
 	BrowserOrdinaryApprovalActions,
 	BrowserProjectionContext,
 	BrowserProjectionPort,
+	BrowserPresenterContext,
 	BrowserQueueActions,
 	BrowserRealtimeActions,
 	BrowserSnapshotDelta,

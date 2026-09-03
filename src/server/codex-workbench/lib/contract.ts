@@ -129,6 +129,8 @@ export interface BrowserProjectionPort {
 
 export interface BrowserActionContext extends BrowserLeaseBinding {}
 
+export type BrowserPresenterContext = Omit<BrowserLeaseBinding, "commandId">;
+
 export type BrowserDisconnectReason =
 	| "browser_disconnected"
 	| "child_disconnected"
@@ -249,10 +251,12 @@ export interface BrowserOrdinaryApprovalActions {
 		context: BrowserActionContext,
 	) => Promise<BrowserActionResult>;
 	readonly acknowledge: (requestId: JsonRpcRequestId) => void;
+	/** Spontaneous terminals that have no live browser connection to present them. */
+	readonly unpresentedTerminals: () => readonly JsonRpcRequestId[];
 	/** Retires spontaneous terminals only after every live browser received the published snapshot. */
 	readonly acknowledgePublished: (requestIds: readonly JsonRpcRequestId[]) => void;
 	readonly onBrowserDisconnect?: (
-		context: BrowserActionContext,
+		context: BrowserPresenterContext,
 		reason: BrowserDisconnectReason,
 	) => Promise<void> | void;
 	readonly onChange?: (listener: () => void) => BrowserUnsubscribe;

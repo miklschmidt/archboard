@@ -276,6 +276,52 @@ describe("Codex workbench browser command routing", () => {
 			expect(connection.snapshot().snapshot.approvals).toEqual([]);
 		});
 
+	test("retires a spontaneous terminal immediately when no browser can receive it", () => {
+		const value = harness();
+		const approval = value.makeOrdinaryApproval();
+		value.setOrdinaryApproval({
+			...approval,
+			terminalDelivery: "after_publish",
+			snapshot: {
+				...approval.snapshot,
+				state: "expired",
+				decision: "cancelled",
+				outcome: "delivered",
+				reason: "The approval expired.",
+			},
+			spoken: { eligible: false, reason: "not_pending" },
+		});
+
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		expect(connection.snapshot().snapshot.approvals).toEqual([]);
+	});
+
+	test("returns an initial spontaneous terminal once before acknowledging it", () => {
+		const value = harness();
+		const approval = value.makeOrdinaryApproval();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		value.setOrdinaryApproval({
+			...approval,
+			terminalDelivery: "after_publish",
+			snapshot: {
+				...approval.snapshot,
+				state: "expired",
+				decision: "cancelled",
+				outcome: "delivered",
+				reason: "The approval expired.",
+			},
+			spoken: { eligible: false, reason: "not_pending" },
+		});
+
+		expect(connection.snapshot().snapshot.approvals).toEqual([
+			expect.objectContaining({
+				requestId: approval.request.requestId,
+				lifecycle: expect.objectContaining({ state: "expired", outcome: "delivered" }),
+			}),
+		]);
+		expect(connection.snapshot().snapshot.approvals).toEqual([]);
+	});
+
 	test("preserves dynamic identity and effect hash through pending-aware response validation", async () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);

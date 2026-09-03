@@ -268,6 +268,8 @@ export function createGatewayHarness(
 			acknowledge: (candidate) => {
 				if (candidate === requestId) ordinaryApproval = null;
 			},
+			unpresentedTerminals: () =>
+				ordinaryApproval?.terminalDelivery === "after_publish" ? [requestId] : [],
 			acknowledgePublished: (candidates) => {
 				if (
 					ordinaryApproval?.terminalDelivery === "after_publish" &&

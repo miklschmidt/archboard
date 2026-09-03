@@ -95,7 +95,7 @@ describe("Codex approval broker", () => {
 					state: "pending",
 					family: expect.any(String),
 				});
-				const normalized = fixture.broker.getRequest(pending.requestId)!;
+				const normalized = fixture.broker.view(pending.requestId).request;
 				expect(normalized.identity).toBeDefined();
 				if (entry.name === "legacy patch" || entry.name === "legacy exec") {
 					expect(normalized.turnId).toBeNull();

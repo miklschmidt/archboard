@@ -211,11 +211,11 @@ async function settleChildExit(
 		state.components;
 	let failure: Error | null = null;
 	for (const operation of [
+		() => approvals.childExit({ child, epoch }),
 		() => semanticDelivery.childExit(child, epoch),
-		() => gateway.childExit(child, epoch),
 		() => spokenApproval.onChildExit({ child, epoch }),
 		() => coordinatorTools.onChildExit({ child, epoch }),
-		() => approvals.childExit({ child, epoch }),
+		() => gateway.childExit(child, epoch),
 	]) {
 		try {
 			await Promise.resolve().then(operation);

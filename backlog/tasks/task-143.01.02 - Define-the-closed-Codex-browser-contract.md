@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 19:10'
+updated_date: '2026-09-03 19:25'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -18,8 +18,11 @@ modified_files:
   - src/runtime/codex-approvals
   - src/server/codex-workbench
   - src/server/canvas/lib/codex-workbench-browser-gateway.ts
+  - src/server/canvas/lib/codex-workbench-lifecycle.ts
   - src/server/canvas/lib/codex-workbench-production.ts
   - src/server/canvas/tests/codex-workbench-ordinary-approvals.test.ts
+  - src/server/canvas/tests/codex-workbench-composed-approval-lifecycle.test.ts
+  - src/server/canvas/tests/support/codex-workbench-generation-fixture.ts
   - tests/system/canvas-state/codex-workbench-application.test.ts
 parent_task_id: TASK-143.01
 priority: high
@@ -66,6 +69,12 @@ Define only the browser-facing workbench state and user-intent model that has no
 17. Make every projectApproval family arm return BrowserApproval directly and preserve generated-family exhaustiveness at TypeScript.
 18. Add one-shot acknowledgement for expiry and child-exit after snapshot publication, plus immediate disconnect acknowledgement when no browser remains; keep authored response acknowledgement unchanged.
 19. Run only focused approval/browser-model/gateway lifecycle tests, both TypeScript configs, scoped lint/format, boundary grep, and diff checks; commit separately and callback for rereview.
+
+20. Fourth remediation: gate pane-bound disconnect cancellation on the final live connection whose authoritative pane link still matches the closing presenter.
+21. Settle approval child-exit first in the composed lifecycle, publish its final decision and transport outcome while connections remain live, then terminate gateway connections.
+22. Route initial and delta snapshots through one post-construction spontaneous-terminal acknowledgement helper; retire owner-reported spontaneous terminals immediately when the connection registry is empty.
+23. Export DeepReadonlyApprovalRequest, use it for every approval request callback/view exposure, and remove the test-only getRequest method.
+24. Add deterministic final-presenter, zero-connection, initial-snapshot, and real broker-to-gateway child-exit owners. Run only the requested focused tests and static gates, commit separately, and callback the parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -94,6 +103,13 @@ Third review remediation implemented:
 - Terminal delivery intent distinguishes authored_response from after_publish. Gateway publication gathers terminal IDs only after emitting each changed snapshot, then the canvas adapter acknowledges spontaneous terminals. Authored response terminals remain through the command result and are acknowledged afterward. Browser disconnect cancels and immediately acknowledges because no browser can receive that card.
 - Focused regressions cover immutable nested ownership, expiry/child-exit after-publish intent, one-snapshot expiry/stale publication, authored response visibility and late refusal, and disconnect no-retention.
 Validation: 103 focused approval/browser-model/workbench gateway/canvas browser tests passed (1094 assertions); root and frontend tsc passed; oxlint passed; full format check passed; git diff --check passed. Broad system, serial-browser, module, repository, and check lanes were intentionally not run.
+
+Fourth review remediation:
+- Disconnect cleanup now derives an ordinary approval presenter context from the current pane binding, independent of command lease ownership. It checks the existing connection registry for another live connection with the same pane, link revision, and link value. The first of two presenters leaves the approval pending and usable; the final presenter cancels and acknowledges it.
+- The composed child-exit order now settles ordinary approvals first and terminates the gateway last. Spontaneous broker terminals publish only after transport outcome is known. The real broker-to-gateway owner observes one stale terminal with cancelled decision and delivered outcome, then acknowledgement and connection disposal.
+- Initial and delta snapshots use the same terminal-ID collector and acknowledgement action. A constructed initial snapshot carries a spontaneous terminal once; the next snapshot omits it. With no live connections, the gateway asks the owner for after-publish terminals and retires them immediately.
+- codex-approvals exports DeepReadonly and DeepReadonlyApprovalRequest. ApprovalOwnerView, getCurrentBinding, and getSpokenEligibilityFacts use the deep readonly request. The unused getRequest method was removed. TypeScript expectation checks reject nested mutation at each public seam.
+Red evidence against d15914f2: the focused base archive failed zero-connection retirement, initial-snapshot acknowledgement, and final-presenter preservation; the composed base archive separately failed to publish the child-exit terminal. Both disposable archives were removed. Green evidence: 93 focused approval, gateway, and composed lifecycle tests passed with 1002 assertions. Root and frontend tsc, oxlint, full format check, boundary probes, and git diff check passed. Broad system, browser, module, repository, full test, and check lanes were not run.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -138,5 +154,17 @@ author: @codex
 created: 2026-09-03 19:09
 ---
 Third review remediation is implemented and focused validation is green. TASK-143.01.02 remains In Progress pending parent re-review.
+---
+
+author: @codex
+created: 2026-09-03 19:17
+---
+Fourth review remediation started at d15914f2. TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 19:25
+---
+Fourth review remediation is green at every requested focused boundary. TASK-143.01.02 remains In Progress for parent rereview.
 ---
 <!-- COMMENTS:END -->

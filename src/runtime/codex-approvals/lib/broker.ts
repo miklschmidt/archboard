@@ -198,7 +198,7 @@ export function createCodexApprovalBroker(
 			);
 
 		record.terminalClaimed = true;
-		record.terminalDelivery = terminalDelivery;
+		record.terminalDelivery = terminalDelivery === "authored_response" ? "authored_response" : null;
 		if (record.timer !== undefined) clearTimeout(record.timer);
 		record.timer = undefined;
 
@@ -219,7 +219,7 @@ export function createCodexApprovalBroker(
 			record.settlementResolve = resolve;
 		});
 		record.settlementPromise = settlementPromise;
-		notify(record);
+		if (terminalDelivery === "authored_response") notify(record);
 
 		let serverResponse: ReturnType<typeof toServerResponse>;
 		try {
@@ -252,6 +252,7 @@ export function createCodexApprovalBroker(
 		function finish(outcome: ApprovalOutcome, error?: unknown): void {
 			if (record.outcome !== null) return;
 			record.outcome = outcome;
+			record.terminalDelivery = terminalDelivery;
 			if (outcome === "outcome_unknown") {
 				record.state = "outcome_unknown";
 				record.reason = `${finalReason} The response write outcome is unknown.`;
@@ -433,14 +434,6 @@ export function createCodexApprovalBroker(
 		}
 	};
 
-	const getRequest = (requestId: JsonRpcRequestId): ApprovalRequest | undefined => {
-		try {
-			return records.get(requireRequestId(requestId))?.request;
-		} catch {
-			return undefined;
-		}
-	};
-
 	const inspect = (): readonly ApprovalSnapshot[] =>
 		Object.freeze(Array.from(records.values(), snapshotOf));
 
@@ -571,7 +564,6 @@ export function createCodexApprovalBroker(
 		receive,
 		pending,
 		get,
-		getRequest,
 		inspect,
 		view,
 		inspectViews,

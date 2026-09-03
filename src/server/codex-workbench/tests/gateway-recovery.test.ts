@@ -241,6 +241,30 @@ describe("Codex workbench browser recovery and delivery", () => {
 		expect(recovered.claimLease().state).toBe("active");
 	});
 
+	test("only the final live presenter cancels a pane-bound approval", async () => {
+		const value = harness();
+		const first = value.gateway.connect(value.browserId, value.paneId);
+		const second = value.gateway.connect("browser-two", value.paneId);
+		first.claimLease();
+		const approval = value.makeOrdinaryApproval();
+		value.setOrdinaryApproval(approval);
+		first.snapshot();
+		second.snapshot();
+
+		await first.close();
+
+		expect(value.disconnects.filter((owner) => owner === "ordinary")).toEqual([]);
+		expect(second.snapshot().snapshot.approvals).toEqual([
+			expect.objectContaining({ requestId: approval.request.requestId }),
+		]);
+
+		await second.close();
+
+		expect(value.disconnects.filter((owner) => owner === "ordinary")).toEqual(["ordinary"]);
+		const recovered = value.gateway.connect("browser-three", value.paneId);
+		expect(recovered.snapshot().snapshot.approvals).toEqual([]);
+	});
+
 	test("waits for both close settlements after revoking browser authority", async () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);

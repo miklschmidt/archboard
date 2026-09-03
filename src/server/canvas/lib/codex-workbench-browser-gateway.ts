@@ -30,6 +30,17 @@ function queueOwnerView(queue: readonly SessionQueuedSubmission[]): CodexQueuePr
 	return { kind: "codex_queue", submissions: queue };
 }
 
+function visibleApprovalViews(approvals: CodexApprovalBroker) {
+	return approvals
+		.inspectViews()
+		.filter(
+			(view) =>
+				view.snapshot.state === "staged" ||
+				view.snapshot.state === "pending" ||
+				view.terminalDelivery !== null,
+		);
+}
+
 /** Bind all seven ordinary approval families to one exact pane lifecycle. */
 export function createCanvasOrdinaryApprovalActions(
 	approvals: CodexApprovalBroker,
@@ -52,6 +63,11 @@ export function createCanvasOrdinaryApprovalActions(
 			return { outcome: "delivered" };
 		},
 		acknowledge: (requestId) => approvals.acknowledge(requestId),
+		unpresentedTerminals: () =>
+			approvals
+				.inspectViews()
+				.filter((view) => view.terminalDelivery === "after_publish")
+				.map((view) => view.request.requestId),
 		acknowledgePublished: (requestIds) => {
 			for (const requestId of new Set(requestIds)) {
 				try {
@@ -84,7 +100,8 @@ export function createCanvasOrdinaryApprovalActions(
 			await Promise.all(
 				pending.map(async (snapshot) => {
 					await approvals.cancel(snapshot.requestId, authoredReason);
-					approvals.acknowledge(snapshot.requestId);
+					if (approvals.get(snapshot.requestId) !== undefined)
+						approvals.acknowledge(snapshot.requestId);
 				}),
 			);
 		},
@@ -300,7 +317,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 								},
 							]),
 				],
-				approvals: components.approvals.inspectViews(),
+				approvals: visibleApprovalViews(components.approvals),
 				dynamicApprovals: dynamicApprovals.browser.pending(),
 				semantic: {
 					kind: "codex_semantic",
