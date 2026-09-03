@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 20:46'
+updated_date: '2026-09-03 20:59'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -122,6 +122,11 @@ Define only the browser-facing workbench state and user-intent model that has no
 48. Remove the gateway pre-projection browser parse and add focused subagent/custom projection owners proving useful categories while agent_path, nicknames, roles, parent identities, and arbitrary custom/private strings remain absent.
 49. Restrict effective turn-boundary adoption to IdentityValidationError code invalid-shape; rethrow wrong-domain and unissued canonical identities. Add valid issued, genuine raw, wrong-domain, and foreign-unissued owners.
 50. Run only focused thread-link, dynamic projection/gateway, both TypeScript projects, exact scoped lint/format/boundary/diff checks; commit separately and callback the parent for rereview.
+
+51. Twelfth remediation: replace BrowserTimeline projection input with a readonly CodexTimelineProjectionInput derived from branded SessionTurn identity/status, the generated timeline cursor, and the owner-selected item presentation union; keep the future producer out of this leaf.
+52. Rebuild the timeline, every item arm, each turn, and output metadata inside projectCodexBrowserState so private extensions cannot cross the browser boundary. Add one focused non-null command-item owner with top-level, turn, item, and domain-turn extensions.
+53. Project granular approval-policy booleans and active permission profile id/extends explicitly. Add decoded loose-object extensions at both nested settings records and prove projection success, omission, public values, and deep freeze.
+54. Run only focused timeline/settings projection and affected browser/gateway/type owners, both TypeScript projects, exact scoped lint/format/boundary/diff checks; commit separately and callback the parent for rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -202,6 +207,13 @@ Eleventh review remediation:
 - Effective fork-boundary fallback is limited by IdentityValidationError.code to invalid-shape. Canonical wrong-domain and foreign-unissued turn identities rethrow into invalid_projection; an issued self boundary and a genuine raw other-thread boundary still project.
 
 Red evidence against 1869aec0: the new thread-link owner received no sourcePresentation and the canonical wrong-domain/unissued boundary owner projected both invalid identities. Green evidence: 105 focused browser-model, projection, gateway, dynamic owner/correlation, transport, and runtime tests passed with 950 assertions in 0.70s. Root TypeScript passed in 1.84s and frontend TypeScript in 0.43s. Exact scoped Oxlint/Oxfmt, source-boundary probes, and git diff checks passed. No broad module, system, repository, browser, full-test, or check lane ran. Topology is unchanged; no known remediation residue remains. TASK-143.01.02 remains In Progress for parent rereview.
+
+Twelfth review remediation:
+- BrowserProjectionInput.timeline now accepts CodexTimelineProjectionInput, a readonly owner selection with branded SessionTurn id/status and the generated thread/timeline/list cursor. projectCodexBrowserState rebuilds the timeline, each turn, and all seven item presentation arms field by field. No live producer, history store, protocol mirror, or second adapter was added; TASK-143.01.10 retains producer ownership.
+- projectSettings now rebuilds granular approvalPolicy from its five reviewed booleans and activePermissionProfile from id/extends. Loose normalized extension members remain accepted at the protocol boundary but cannot enter the strict browser DTO.
+- The timeline and nested-settings owners live in projection-closure.test.ts after scoped Oxlint correctly rejected growing projection.test.ts past the 500-line limit. The original file is 420 lines, the new file is 244 lines, and the focused inventory owner proves the new module owner runs exactly once through test:modules. No lint rule or lane was changed.
+
+Red evidence against c95ac1fe: both the non-null timeline with private extensions and valid loose nested settings records returned invalid_projection. Green evidence: 50 focused projection, browser-model, gateway, transport, and runtime tests passed with 293 assertions in 0.50s; the focused test-inventory owner passed 39/39 with 69 assertions. Root TypeScript passed in 1.87s and frontend TypeScript in 0.46s. Exact scoped Oxlint/Oxfmt, closure probes, and git diff checks passed. No broad module, system, repository, browser, full-test, or check lane ran. No known remediation residue remains; future live timeline production stays explicitly deferred to TASK-143.01.10. TASK-143.01.02 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -342,5 +354,17 @@ author: @codex
 created: 2026-09-03 20:46
 ---
 Eleventh remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 20:55
+---
+Twelfth review remediation started at c95ac1fe for timeline and nested-settings closure. TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 20:59
+---
+Twelfth timeline/settings remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
 ---
 <!-- COMMENTS:END -->
