@@ -29,8 +29,9 @@ import { dragPageElement, EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene
 const repoRoot = resolve(import.meta.dir, "../../..");
 const BOARD = LIVE_SESSION_BOARD;
 const RECOVERY_BOARD = "held-recovery-source";
+const RECOVERY_SENTINEL_ID = "recovery-auth";
 const RECOVERY_SEED = [
-	{ id: "auth", type: "rectangle", x: 100, y: 100, width: 220, height: 90 },
+	{ id: RECOVERY_SENTINEL_ID, type: "rectangle", x: 100, y: 100, width: 220, height: 90 },
 ] as const;
 const IGNORED_FIELDS = new Set([
 	"version",
@@ -102,6 +103,7 @@ async function prepareBoard(
 	board: string,
 	seed: readonly Record<string, unknown>[],
 	expectedElements: number,
+	sentinelId: string,
 ): Promise<void> {
 	const { browser, paneClient, request } = fixture;
 	expect(
@@ -134,9 +136,12 @@ async function prepareBoard(
 		{ timeoutMs: 3_000 },
 	);
 	await pollUntil(
-		() => pageElement(browser, "auth"),
-		(value) => value !== null,
-		"the pane to render the seeded board",
+		async () => ({
+			boardTitle: await focusedBoardTitle(browser),
+			sentinel: await pageElement(browser, sentinelId),
+		}),
+		(value) => value.boardTitle?.includes(board) === true && value.sentinel !== null,
+		`the focused pane to render ${board} and its sentinel`,
 		{ timeoutMs: 3_000 },
 	);
 	await browser.run(["click", ".excalidraw"]);
@@ -167,6 +172,9 @@ const pageElement = (browser: AgentBrowserSession, id: string): Promise<Excalidr
 			.find(candidate => candidate.id === ${JSON.stringify(id)});
 		return element ? { ...element } : null;
 	})()`);
+
+const focusedBoardTitle = (browser: AgentBrowserSession): Promise<string | null> =>
+	browser.eval('document.querySelector(".pane-tab.focused")?.textContent ?? null');
 
 const pageElements = (browser: AgentBrowserSession): Promise<ExcalidrawElement[]> =>
 	browser.eval(`(() => {
@@ -215,7 +223,7 @@ test(
 	"human work stays visible through concurrent broadcasts",
 	async () => {
 		const { browser, paneClient, request } = fixture;
-		await prepareBoard(BOARD, LIVE_SESSION_SEED, 8);
+		await prepareBoard(BOARD, LIVE_SESSION_SEED, 8, "auth");
 		expect(paneClient.length).toBeGreaterThan(0);
 
 		// Keep the first hold promise pending after the server grants it. This leaves
@@ -285,7 +293,7 @@ test(
 
 test("save-elsewhere recovery releases the old holder and queues a trusted drag", async () => {
 	const { browser, paneClient, request } = fixture;
-	await prepareBoard(RECOVERY_BOARD, RECOVERY_SEED, 1);
+	await prepareBoard(RECOVERY_BOARD, RECOVERY_SEED, 1, RECOVERY_SENTINEL_ID);
 	const heldByPane = await request(`/api/boards/hold?board=${RECOVERY_BOARD}`, {
 		method: "POST",
 		body: { clientId: paneClient },
@@ -293,7 +301,7 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 	expect(heldByPane.status).toBe(200);
 	const authBefore = (
 		await request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`)
-	).body.elements.find((element) => element.id === "auth")!;
+	).body.elements.find((element) => element.id === RECOVERY_SENTINEL_ID)!;
 	const noteFile = (await request<{ file: string }>(`/api/boards/info?board=${RECOVERY_BOARD}`))
 		.body.file;
 	const foreign = {
@@ -305,8 +313,8 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 	writeFileSync(
 		noteFile,
 		readFileSync(noteFile, "utf8").replace(
-			'"id": "auth"',
-			`${JSON.stringify(foreign).slice(1, -1)}}, {"id": "auth"`,
+			`"id": "${RECOVERY_SENTINEL_ID}"`,
+			`${JSON.stringify(foreign).slice(1, -1)}}, {"id": "${RECOVERY_SENTINEL_ID}"`,
 		),
 	);
 	const conflict = await request(`/api/elements/changes?board=${RECOVERY_BOARD}`, {
@@ -424,11 +432,7 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 	expect(
 		panes.body.panes.some((pane) => pane.clientId === paneClient && pane.board === RECOVERY_BOARD),
 	).toBe(true);
-	expect(
-		await browser.eval<string | null>(
-			'document.querySelector(".pane-tab.focused")?.textContent ?? null',
-		),
-	).toContain(RECOVERY_BOARD);
+	expect(await focusedBoardTitle(browser)).toContain(RECOVERY_BOARD);
 	expect(
 		await browser.eval<string | null>('document.querySelector(".chip-held")?.textContent ?? null'),
 	).toBeNull();
@@ -437,18 +441,18 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 	const countsBefore = await readHoldCounters(browser);
 	const beforeDelayed = (
 		await request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`)
-	).body.elements.find((element) => element.id === "auth")!;
-	await dragPageElement(browser, "auth", 23, 0);
+	).body.elements.find((element) => element.id === RECOVERY_SENTINEL_ID)!;
+	await dragPageElement(browser, RECOVERY_SENTINEL_ID, 23, 0);
 	const firstLoss = await pollUntil(
 		() => readHoldCounters(browser),
 		(value) => value.holdDone > countsBefore.holdDone,
 		"the first human hold attempt to lose to the authoritative mutex",
 		{ timeoutMs: 3_000 },
 	);
-	const localDelayed = await pageElement(browser, "auth");
+	const localDelayed = await pageElement(browser, RECOVERY_SENTINEL_ID);
 	const serverDelayed = (
 		await request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`)
-	).body.elements.find((element) => element.id === "auth")!;
+	).body.elements.find((element) => element.id === RECOVERY_SENTINEL_ID)!;
 	expect(firstLoss.holds - countsBefore.holds).toBe(1);
 	expect(localDelayed!.x).toBeCloseTo(beforeDelayed.x + 23, 3);
 	expect(serverDelayed.x).toBeCloseTo(beforeDelayed.x, 3);
@@ -475,7 +479,7 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 	);
 	expect(
 		(await request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`)).body.elements.find(
-			(element) => element.id === "auth",
+			(element) => element.id === RECOVERY_SENTINEL_ID,
 		)!.x,
 	).toBeCloseTo(beforeDelayed.x + 23, 3);
 	const [finished, finalPanes] = await Promise.all([

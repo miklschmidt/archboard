@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-28 15:35'
-updated_date: '2026-09-03 09:45'
+updated_date: '2026-09-03 10:01'
 labels: []
 dependencies:
   - TASK-130.11
@@ -126,8 +126,6 @@ Never overlap browser, hot-reload, or opener process owners. Audit live children
 The TASK-137 handoff contract is explicit: consume the exact builder/parser and Zod wire schemas from src/shared/code-target, the canonical resolver from src/runtime/code-target, POST only board/element to the protected activation route, and use the typed CanvasPane handler/notice action boundary. TASK-137 alone replaces eligible file:// presentation with the reserved identity URL, supplies validated GitHub actions, and proves real binding clicks for file and directory targets, ordinary links remain ordinary, and two browser panes use a changed setting on their next activations. It must not accept client paths, duplicate containment/identity checks, cache opener state, or broaden the exact intercepted URL shape.
 
 13. Current fixed-base tranche. Implementation base is aea77fac92c35c960e66e8aadc26e47a12c81a6d, which contains the review-clean TASK-130.11 selectors recorded in step 11. While TASK-134 performs the semantic element-type cutover, this tranche owns only disjoint shared code-target schemas, runtime resolver and containment, server opener configuration/planning/launcher/CSRF/routes, their module tests, and tests/system/code-targets support and non-browser contracts. It must not edit CanvasPane, Shell, UI integration, src/server/canvas/lib/application.ts, package.json, browser inventory/adapter/path lists, docs/agents/test-suite.md, or any TASK-134-owned file. Route mounting, package/browser inventory registration, UI work, and full/browser lanes stay serialized for the post-TASK-134 reconciliation. Focused owners may exercise an isolated Express router through its public HTTP contract, but they do not claim production mounting before that reconciliation.
-
-13. Make focused recovery validation deterministic: wait for the requested board to be adopted by the exact pane before checking its scene; add a fail-closed --test-name exact selector limited to one --focus owner; document and parser-test the contract; then run only the extracted recovery test once through the supervised adapter.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -222,8 +220,6 @@ Validation:
 - Final process audit found no fake opener, launcher owner, opener process, canvas server, or browser-lane process. No task-owned opener/code-target/browser temporary root remains. The unrelated pre-existing /tmp/archboard-browser-7ds9lJ dated 2026-08-26 remains untouched.
 
 TASK-137 handoff is unchanged: it alone replaces eligible file presentation URLs and owns real binding file/directory clicks, ordinary-link coexistence, GitHub action derivation, and two-pane activation. It consumes the exact shared schemas/parser/builder, canonical resolver, board/element-only POST, and typed notice boundary without broadening the URL, accepting client paths, duplicating policy, or caching opener state. TASK-136 remains In Progress for independent rereview; all seven acceptance criteria and finalSummary remain untouched.
-
-Focused browser extraction follow-up: the adapter now accepts only `--focus <one canonical owner> --test-name <exact name>`, anchors and regex-escapes the Bun filter, preserves the complete 18-owner package lane, and documents the invocation. A pure repository owner passes 3 selector/forwarding tests; selector plus existing inventory pass 42 tests / 75 assertions. `prepareBoard` now waits for the exact pane to adopt the requested board before checking the scene. The canonical adapter ran only the recovery test twice after an initial timer-wrapper miss that launched nothing: each output reported 1 filtered out, 1 owner, 1 canvas/browser session, 0 builds, and adapter cleanup retained no owned resources. Run 1 failed after 17 assertions in 2.889s because an injected element had null ordering index; run 2 failed after 17 assertions in 2.668s because the attempted `a1` index followed `auth` while its note position preceded it. The fixture is corrected to the observed predecessor index `Zz`, but the allowed rerun budget is exhausted, so browser-green confirmation remains for rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
