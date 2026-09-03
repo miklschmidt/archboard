@@ -1,4 +1,4 @@
-export { BROWSER_SETTLED_COMMAND_LIMIT, createCodexWorkbenchGateway } from "./lib/gateway.js";
+export { createCodexWorkbenchGateway } from "./lib/gateway.js";
 export {
 	BROWSER_DELTA_MAX_BYTES,
 	BROWSER_SNAPSHOT_MAX_BYTES,
@@ -13,7 +13,6 @@ export { CodexWorkbenchGatewayError } from "./lib/contract.js";
 export type {
 	BrowserAccount,
 	BrowserApproval,
-	BrowserApprovalResponse,
 	BrowserCommand,
 	BrowserCommandLease,
 	BrowserCoordinator,

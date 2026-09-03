@@ -1,16 +1,14 @@
 import {
+	decodeClientRequestParams,
+	decodeResponse,
 	INITIALIZE_CAPABILITIES,
 	InitializeCapabilitiesSchema,
+	isClientRequestMethodWithoutParams,
 	LOGIN_POLICIES,
+	ProtocolDecodeError,
 	SupportedLoginAccountParamsSchema,
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
-} from "../../../shared/codex-browser-model/index.js";
-import {
-	decodeClientRequestParams,
-	decodeResponse,
-	isClientRequestMethodWithoutParams,
-	ProtocolDecodeError,
 	type ClientRequestMethod,
 	type ClientRequestParams,
 	type ResponseMethod,

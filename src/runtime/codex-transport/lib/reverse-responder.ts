@@ -1,5 +1,4 @@
-import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
-import type { IdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import { CodexServerResponseSchema } from "../../codex-protocol/index.js";
 import { CodexTransportOwnershipError, CodexTransportUsageError } from "./errors.js";
 import type { ReverseRecord, ReverseResponseJob, WriteJob } from "./internals.js";
 import type { ResponseOwner, ReverseResponse, TransportServerRequest } from "./types.js";
@@ -8,7 +7,6 @@ import { cloneAndFreeze } from "./public-values.js";
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 
 export interface ReverseResponderOptions {
-	readonly identity: () => IdentityAuthority;
 	readonly reverseRequests: Map<string, ReverseRecord>;
 	readonly reverseHandles: WeakMap<TransportServerRequest, ReverseRecord>;
 	readonly removePendingBytes: (bytes: number) => void;
@@ -51,7 +49,6 @@ export function createReverseResponder(options: ReverseResponderOptions): Revers
 		let hasResult: boolean;
 		let canonical: Record<string, unknown>;
 		try {
-			const model = createCodexBrowserModel(options.identity());
 			hasResult = hasOwn(response, "result");
 			const hasError = hasOwn(response, "error");
 			if (
@@ -66,7 +63,7 @@ export function createReverseResponder(options: ReverseResponderOptions): Revers
 			const candidate = hasResult
 				? { method: record.request.method, result: response.result }
 				: { method: record.request.method, error: response.error };
-			const parsed = model.ServerRequestResultSchema.safeParse(candidate);
+			const parsed = CodexServerResponseSchema.safeParse(candidate);
 			if (!parsed.success)
 				return Promise.reject(
 					new CodexTransportUsageError(

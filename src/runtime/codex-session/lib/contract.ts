@@ -5,8 +5,10 @@ import type {
 } from "../../codex-transport/server-requests.js";
 import type { CodexTransport } from "../../codex-transport/index.js";
 import type {
+	BedrockSetupParams,
 	ClientRequestMethod,
 	CodexSessionRequestParams,
+	LoginAccountParams,
 	ResponseMethod,
 } from "../../codex-protocol/index.js";
 import type {
@@ -14,13 +16,9 @@ import type {
 	ThreadId,
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
-import type {
-	BedrockSetupParams,
-	LoginAccountParams,
-} from "../../../shared/codex-browser-model/index.js";
 import type { SessionResponsePayloads } from "./results.js";
 
-export type { BedrockSetupParams } from "../../../shared/codex-browser-model/index.js";
+export type { BedrockSetupParams } from "../../codex-protocol/index.js";
 
 /** The public methods of one reviewed Codex app-server session. */
 export const SESSION_METHODS = Object.freeze([

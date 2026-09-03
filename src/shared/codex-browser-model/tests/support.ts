@@ -109,7 +109,6 @@ const approval = {
 	spoken: { eligible: true, reason: "eligible" as const },
 	reason: null,
 	command: "bun test",
-	cwd: "/repo",
 	availableDecisions: ["accept", "decline"] as const,
 };
 const semantic = {
