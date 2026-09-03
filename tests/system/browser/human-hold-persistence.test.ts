@@ -21,7 +21,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { installHoldRecorder, readHoldCounters } from "./support/human-hold-recorder.ts";
-import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
+import { dragPageElement, EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const BOARD = LIVE_SESSION_BOARD;
@@ -406,16 +406,10 @@ test(
 			return app?.state.viewModeEnabled === true;
 		})()`),
 		).toBe(false);
-		const claimedAfterRecovery = await pollUntil(
-			() =>
-				request(`/api/boards/hold?board=${BOARD}`, {
-					method: "POST",
-					body: { clientId: "another-writer" },
-				}),
-			(response) => response.status === 200,
-			"the recovered pane to release the board mutex",
-			{ timeoutMs: LOCK_FREE_LINGER_MS + TEST_BROWSER_COMMAND_TIMEOUT_MS },
-		);
+		const claimedAfterRecovery = await request(`/api/boards/hold?board=${BOARD}`, {
+			method: "POST",
+			body: { clientId: "another-writer" },
+		});
 		expect(claimedAfterRecovery.status).toBe(200);
 		const renewal = setInterval(() => {
 			void request(`/api/boards/hold?board=${BOARD}`, {
@@ -428,7 +422,7 @@ test(
 		const beforeDelayed = (
 			await request<ElementsBody>(`/api/elements?board=${BOARD}`)
 		).body.elements.find((element) => element.id === "auth")!;
-		expect((await move(browser, "auth", 23, 0)).ok).toBe(true);
+		await dragPageElement(browser, "auth", 23, 0);
 		const firstLoss = await pollUntil(
 			() => readHoldCounters(browser),
 			(value) => value.holdDone > countsBefore.holdDone,

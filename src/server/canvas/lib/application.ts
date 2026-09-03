@@ -1100,10 +1100,15 @@ function answerBoardError(res: Response, error: unknown, what?: string): void {
 /** Send one board-write answer and retain the version it already produced. */
 function answerBoardWrite<T>(res: Response, request: BoardWriteRequest<T>): void {
 	const afterPersist = request.afterPersist;
+	const sourceLockHolder =
+		res.locals.boardLockKey === request.source.key
+			? (res.locals.boardLockHolder as LockHolder | undefined)
+			: undefined;
 	res.json(
 		writeBoard(
 			{
 				...request,
+				sourceLockHolder,
 				checkoutSnapshot: checkoutSnapshotFor(res),
 				afterPersist: (context) => {
 					if (context.written) {
@@ -1663,6 +1668,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 		const hold = await holdBoard({ board: key, holder: writer, signal });
 		res.locals.boardLockKey = key;
 		res.locals.boardLockToken = hold.leaseToken;
+		res.locals.boardLockHolder = hold.holder;
 		try {
 			(req as Request & { resolvedBoardWrite?: ResolvedBoard }).resolvedBoardWrite =
 				resolveInstalledBoard(key, "A write", {
