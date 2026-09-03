@@ -8,7 +8,7 @@ export type WorkbenchTimelineRuntime = BrowserTimeline;
 
 export interface WorkbenchTimelineProps {
 	/** Stable app-server thread identity shared with the mounted assistant runtime. */
-	readonly threadId: string;
+	readonly threadId: CodexWorkbenchThread["id"];
 	/** Complete decoded app-server turns. The assistant runtime supplies their mounted order. */
 	readonly turns: readonly CodexWorkbenchTurn[];
 	/** Browser projection used for approval events and terminal state while turns stream. */
