@@ -3,6 +3,8 @@ import { WebSocket } from "ws";
 
 import type {
 	BrowserGatewayMessage,
+	BrowserGatewaySnapshotMessage,
+	BrowserSnapshot,
 	BrowserWorkbenchConnection,
 	CodexWorkbenchGateway,
 } from "../../codex-workbench/index.js";
@@ -165,6 +167,99 @@ describe("canvas Codex publication boundary", () => {
 
 			expect(messages).toContainEqual(expect.objectContaining({ requestId: "media", ok: false }));
 			expect(published).toEqual([event]);
+		} finally {
+			owner.dispose();
+		}
+	});
+
+	test("a failed event send is reported once and a later snapshot republishes it", async () => {
+		const instance = Object.freeze({ socket: "event-recovery" });
+		const browserId = "browser-event-recovery";
+		const paneId = "pane-event-recovery";
+		const terminal = { requestId: "terminal-event-recovery" };
+		const event = {
+			kind: "delta",
+			sequence: 4,
+			delta: { approvals: [terminal] },
+		} as unknown as BrowserGatewayMessage;
+		const recovered: BrowserGatewaySnapshotMessage = {
+			kind: "snapshot",
+			sequence: 5,
+			snapshot: { approvals: [terminal] } as unknown as BrowserSnapshot,
+		};
+		const empty: BrowserGatewaySnapshotMessage = {
+			kind: "snapshot",
+			sequence: 3,
+			snapshot: { approvals: [] } as unknown as BrowserSnapshot,
+		};
+		let terminalPending = false;
+		const listeners = new Set<(message: BrowserGatewayMessage) => void>();
+		const confirmed: unknown[] = [];
+		const connection = {
+			browserId,
+			paneId,
+			instance,
+			snapshot: () => (terminalPending ? recovered : empty),
+			confirmPublished: (payload: unknown) => {
+				confirmed.push(payload);
+				if (payload === recovered.snapshot) terminalPending = false;
+			},
+			subscribe: (next: (message: BrowserGatewayMessage) => void) => {
+				listeners.add(next);
+				return () => listeners.delete(next);
+			},
+		} as unknown as BrowserWorkbenchConnection;
+		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
+		const owner = createCanvasCodexBrowserSocketOwner({ gateway, paneForBrowser: () => paneId });
+		const eventSendFailure = new Error("event write callback failed");
+		const transport = createCanvasCodexBrowserSocketSend({
+			readyState: WebSocket.OPEN,
+			send: (raw, callback) => {
+				const message = JSON.parse(raw) as { type?: unknown };
+				queueMicrotask(() =>
+					message.type === "codex_workbench_event" ? callback(eventSendFailure) : callback(),
+				);
+			},
+		});
+		try {
+			await owner.handle(
+				instance,
+				browserId,
+				{ type: "codex_workbench_request", requestId: "subscribe", action: "subscribe" },
+				transport,
+			);
+			confirmed.length = 0;
+			terminalPending = true;
+			for (const next of listeners) next(event);
+
+			let drainFailure: unknown = null;
+			try {
+				await owner.drain();
+			} catch (error) {
+				drainFailure = error;
+			}
+			expect(drainFailure).toBeInstanceOf(AggregateError);
+			expect(drainFailure).toMatchObject({
+				message: expect.stringContaining("Codex browser drain failed"),
+			});
+			const failures = (drainFailure as AggregateError).errors;
+			expect(failures).toHaveLength(1);
+			expect(failures[0]).toMatchObject({
+				message: `Codex browser event publication failed for browser "${browserId}", pane "${paneId}", delta sequence 4: event write callback failed`,
+				cause: eventSendFailure,
+			});
+			expect(confirmed).toEqual([]);
+			expect(terminalPending).toBeTrue();
+			await owner.drain();
+
+			await owner.handle(
+				instance,
+				browserId,
+				{ type: "codex_workbench_request", requestId: "recover", action: "snapshot" },
+				transport,
+			);
+			expect(confirmed).toEqual([recovered.snapshot]);
+			expect(terminalPending).toBeFalse();
 		} finally {
 			owner.dispose();
 		}
