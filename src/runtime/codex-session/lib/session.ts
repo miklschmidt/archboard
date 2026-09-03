@@ -174,10 +174,15 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	): ClientRequestParams<Method> => {
 		if (isClientRequestMethodWithoutParams(method)) return value as ClientRequestParams<Method>;
 		const params = requestParams(value);
+		const serialized = Object.fromEntries(
+			Object.entries(params).filter(([, fieldValue]) => fieldValue !== undefined),
+		);
 		const fields = SESSION_PROTOCOL_METHODS[method].requestIdentities;
-		if (fields.length === 0) return params as ClientRequestParams<Method>;
-		const serialized = { ...params };
-		for (const field of fields) serialized[field] = serializeIdentityField(field, params[field]);
+		for (const field of fields) {
+			if (Object.hasOwn(serialized, field)) {
+				serialized[field] = serializeIdentityField(field, serialized[field]);
+			}
+		}
 		return serialized as ClientRequestParams<Method>;
 	};
 

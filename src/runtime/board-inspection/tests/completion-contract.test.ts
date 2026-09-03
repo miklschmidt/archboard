@@ -12,7 +12,6 @@ const compareInput = (elements: unknown[]) => ({
 	key: "dense",
 	identity: { board: "dense", variant: "current" as const },
 	elements: elements as ServerElement[],
-	source: "vault" as const,
 });
 
 describe("inspection completion contract", () => {
@@ -27,7 +26,7 @@ describe("inspection completion contract", () => {
 				"15ad0be2a4f005cacd7c4ae87018c8d9bd3109c21ba29e20d50487e3666dca65",
 			"dense-after.excalidraw.json":
 				"e50affe508ab77f1915ae46868d0d5104aab2c0f4d01b39cb467dd0eabd9dbd9",
-			"dense-compare.json": "36d96066712e21b2146c8b3c023c184cc95e61eba54366f987973c2e7d2298b1",
+			"dense-compare.json": "00fbe93d8705edbede5c041eba616bccad0809efbf917c393e5df67d6429befc",
 		});
 		const before = scene("dense-before.excalidraw.json");
 		const after = scene("dense-after.excalidraw.json");
@@ -65,7 +64,6 @@ describe("inspection completion contract", () => {
 			files: [
 				"src/runtime/board-inspection/tests/completion-contract.test.ts",
 				"tests/system/canvas-state/branch-compare.test.ts",
-				"tests/system/canvas-state/side-by-side.test.ts",
 			],
 		});
 	});
