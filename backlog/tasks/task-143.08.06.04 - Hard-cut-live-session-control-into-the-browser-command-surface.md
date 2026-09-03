@@ -1,11 +1,11 @@
 ---
 id: TASK-143.08.06.04
 title: Hard-cut live session control into the browser command surface
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 10:01'
+updated_date: '2026-09-03 10:05'
 labels: []
 dependencies:
   - TASK-143.08.06.02
@@ -31,41 +31,20 @@ Make the public command boundary teach the architecture. Persisted-board work re
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The released command inventory classifies every path as a board operation, browser operation, or neither, and only paths beneath `archboard browser` may require a connected browser client or inspect or manipulate pane, selection, focus, viewport, or displayed-board state.
-- [ ] #2 Pane inventory and lifecycle, displayed-board changes, live selection reads, camera control, and capture of the current rendered session are available only through coherent `archboard browser ...` subcommands; their help states the connected-session prerequisite and visible effect.
-- [ ] #3 Named-board rendering is a board operation that explicitly names the board and has no pane or camera option; browser capture explicitly names its live target and cannot be mistaken for persisted-board rendering.
-- [ ] #4 No `board` command opens, selects, repoints, or creates a pane. Showing a named board is an explicit browser command, while creating and later addressing the board remain browser-free.
-- [ ] #5 Every board write that targets elements requires explicit stable element identities or another board-domain selector. Promotion and demotion no longer fall back to live selection; `browser selection` exposes identities that callers may deliberately pass to a later board command.
-- [ ] #6 Board inventory reports persisted-board facts only. Browser inventory reports panes and what they display; no `onScreen` or equivalent session field leaks into the board result contract.
-- [ ] #7 Old top-level pane, panes, selection, viewport, and session-screenshot spellings and pane-changing board options are removed rather than aliased, and every removal produces concise replacement guidance.
-- [ ] #8 The CommandContract registry and generated command audit enforce the classification: no board command carries a browser prerequisite or session input, no browser command writes a note, and all browser-requiring commands live under the browser namespace.
+- [x] #1 The released command inventory classifies every path as a board operation, browser operation, or neither, and only paths beneath `archboard browser` may require a connected browser client or inspect or manipulate pane, selection, focus, viewport, or displayed-board state.
+- [x] #2 Pane inventory and lifecycle, displayed-board changes, live selection reads, camera control, and capture of the current rendered session are available only through coherent `archboard browser ...` subcommands; their help states the connected-session prerequisite and visible effect.
+- [x] #3 Named-board rendering is a board operation that explicitly names the board and has no pane or camera option; browser capture explicitly names its live target and cannot be mistaken for persisted-board rendering.
+- [x] #4 No `board` command opens, selects, repoints, or creates a pane. Showing a named board is an explicit browser command, while creating and later addressing the board remain browser-free.
+- [x] #5 Every board write that targets elements requires explicit stable element identities or another board-domain selector. Promotion and demotion no longer fall back to live selection; `browser selection` exposes identities that callers may deliberately pass to a later board command.
+- [x] #6 Board inventory reports persisted-board facts only. Browser inventory reports panes and what they display; no `onScreen` or equivalent session field leaks into the board result contract.
+- [x] #7 Old top-level pane, panes, selection, viewport, and session-screenshot spellings and pane-changing board options are removed rather than aliased, and every removal produces concise replacement guidance.
+- [x] #8 The CommandContract registry and generated command audit enforce the classification: no board command carries a browser prerequisite or session input, no browser command writes a note, and all browser-requiring commands live under the browser namespace.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Add an explicit board/browser/neither classification to every flattened CommandContract registry entry, validate namespace, prerequisite, effect, and session-option invariants, and emit the classification in the canonical audit and generated views.
-2. Replace the old live-session paths with `browser panes`, `browser open`, `browser close`, `browser show`, `browser selection`, `browser viewport`, and `browser capture`. Require an explicit pane for show and capture, make help state the connected-browser requirement and visible effect, and provide concise migration errors for every removed spelling.
-3. Remove `board open` and all pane/session fields from board inventory and board help. Keep `board new`, named rendering, and other persisted-board commands browser-free; keep browser show/capture read-only with respect to notes.
-4. Require non-empty `--ids` for promote and demote, delete the selection fallback and its HTTP relationship, and make `browser selection` return the board plus stable element identities for deliberate reuse.
-5. Update the authored command audit, derived contract expectations, focused CLI/board owners, and directly contradicted guidance. Delete obsolete alias and pane-coupled assertions instead of preserving compatibility.
-6. Run only focused command-contract, package CLI, board-inventory, and live-session owners plus scoped Oxlint, Oxfmt, and diff checks. Record exact wall times and child/browser counts, leave all acceptance criteria unchecked, and commit the reviewable cut.
-
-7. Rereview repair: make comparison side metadata and one-sided address discovery persisted-note-only; remove the stale browser-open board relationship; make the cheap registry/audit owner compare REST relationships; replace its duplicated architecture assertions with narrow render/capture and compare contract checks; and rerun only the two affected focused owners plus scoped formatting and lint.
-
-8. Standards-review repair: resynchronize source panes from the persisted note after save-elsewhere, restore direct replacement/same-board observer assertions, keep persisted draft boards reachable in the navigator, make nested help resolve the selected contract in process with one package smoke, and correct zero-client renderer/Mermaid guidance.
-
-9. Final-spec repair: remove obsolete source/loadedAt fields from all exact compare callers and public shapes; recompose navigator inventory whenever authoritative pane state changes so first-pane scratch is deterministic; correct persisted-only comments/audit fields; and rerun only focused compare owners, zero-client shape owner, scoped UI/static checks, and one capped navigator owner.
-
-10. Resolve the confirmed save-elsewhere release race by carrying the exact human source holder through terminal hold resolution, releasing that holder synchronously after target persistence and before board_released/save completion, and keeping the browser release idempotent. Add the exact browser-free next-writer ordering assertion, replace the post-adoption synthetic move with trusted pointer input in the existing browser owner, then run only the affected owner slices and scoped static checks.
-
-11. Extract the save-elsewhere recovery and post-adoption contention proof into its own exact-name browser case with a fresh owned canvas/browser. Keep the original broadcast-convergence case and delete the moved setup/assertions from it. The extracted case will create only the source scene needed for a note hold, assert source adoption and no repoint, acquire writer B directly after save, exercise the queued edit with a trusted pointer drag, and prove persistence after B releases. Run that exact case once under the 20-second TERM / 5-second KILL cap, then run only exact-file lint, format, and diff checks.
-
-12. Keep the extraction under one file-level owned canvas/browser fixture so full-file execution still has one startup. Give each exact-name case its own board, reset only the browser fetch counters between cases, and cap every recovery wait at three seconds. The first case retains broadcast convergence; the second owns note-hold, save-elsewhere adoption, exact-holder release, and trusted-pointer queue persistence.
-
-13. Record the exact adopted source note as the source board conflict baseline during successful save-elsewhere recovery, before releasing its human lease or queueing board_released. Extend the existing held-board recovery case with an immediate identified-human source write, then validate that exact API case and the exact recovery browser case once.
-
-14. Close the shared browser-fixture adoption race by requiring the focused rendered board identity and that board's unique scene sentinel before resetting hold counters. Restore TASK-136 plan and notes to their fixed-base contents through Backlog CLI, then run the complete two-case browser owner once through the canonical adapter and keep TASK-143.08.06.04 In Progress with all criteria unchecked.
+Hard-cut browser-session behavior into `archboard browser`, retain explicit named-board operations, remove compatibility spellings and pane-changing board options, and enforce the boundary through CommandContract/audit and focused contracts, HTTP, observer, and browser tests.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -94,4 +73,12 @@ Focused execution did not complete. Attempt 1 failed in 123 ms before browser st
 Save-elsewhere baseline repair at pre-commit HEAD: after target persistence succeeds, terminal held-source recovery reads the authoritative source note, requires its exact source file/hash/version, records that tuple through board-store recordBaseline, then releases the exact human source lease and queues board_released. The existing held-board recovery case now immediately submits an identified-human source write and proves 200, no held response, and persistence through both source-note bytes and public GET. Focused API proof: 1 pass, 7 filtered, 20 assertions, 1.215s wall, no browser owner. Exact browser proof through the canonical adapter: 1 pass, 1 filtered, 38 assertions, 4.505s wall; 1 frontend build, 1 Bun owner, 1 canvas, 1 browser session, and the adapter cleanup audit retained 0 owned processes/listeners/sockets. Exact-file Oxfmt, Oxlint, and diff checks pass. TASK remains In Progress and all acceptance criteria remain unchecked.
 
 Final standards repair at pre-commit HEAD: prepareBoard now waits first for authoritative server pane state, then for the focused rendered pane title to name the requested board together with that board's expected scene sentinel. The recovery board uses unique sentinel `recovery-auth`, so the prior live-session scene cannot satisfy the client-adoption condition; hold counters reset only afterward. The complete focused human-hold browser owner passed both cases in sequence: 2 tests, 57 assertions, 4.835s wall, 0 frontend builds, 1 Bun owner, 1 canvas, 1 browser session, and 0 retained owned processes/listeners/sockets after adapter audit. TASK-136 contamination was removed through Backlog CLI by restoring its plan and notes from fixed base dfb589bd; it remains Done with all 7 ACs checked and its final summary unchanged. TASK-143.08.06.04 remains In Progress with all 8 ACs unchecked.
+
+Finalized against reviewed range dfb589bd..f93fe79e. Two independent final Standards and Spec reviews were REVIEW_CLEAN. Accepted verification: 59 classified command paths; browser prerequisites/session relationships only under browser; browser commands make no note writes and board commands consume no session state; focused command/package/contracts, production HTTP, observer, module/static owners passed; zero-client compare/render/Mermaid and persisted-only inventory contracts passed; API save-elsewhere baseline 1 pass/20 assertions (1.215s); exact recovery browser selector 1 pass/1 filtered/38 assertions (4.505s); shared-fixture browser owner 2 pass/57 assertions (4.835s), one owner/canvas/browser, no build or retained resources. Scoped lint/format/diff clean. Broad root TSC, whole suites, and full browser lane intentionally not rerun.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Hard-cut live-session commands into `archboard browser` while keeping named-board work browser-free, removing legacy spellings, and enforcing the boundary in the command audit. Verified by accepted focused contracts/HTTP/observer checks, zero-client and persisted-inventory contracts, targeted recovery and shared-fixture browser evidence, and independent clean Standards and Spec reviews.
+<!-- SECTION:FINAL_SUMMARY:END -->
