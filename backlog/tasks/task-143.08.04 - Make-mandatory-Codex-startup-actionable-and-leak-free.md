@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 04:29'
+updated_date: '2026-09-03 04:38'
 labels: []
 dependencies:
   - TASK-143.08.03
@@ -56,6 +56,8 @@ Keep ADR 0019's mandatory private Codex child. Exactly one package-local codex a
 10. Move the unique production crash/replacement census out of the unrelated composed thread workflow into one narrow independent process-contract owner, preserving dispatch revocation, exact prior-group-zero-before-replacement, and clean shutdown assertions.
 
 11. Re-run the prior focused public refusal, signed-out, concurrency, reload, logging, lifecycle, and process owners serially; audit exact process identities and residue before rereview.
+
+12. Keep the exact canvas SIGSTOPed whenever any transferred group remains owned, reused, unproven, or errors during inspection/signalling. Reap the outer pid only after every transferred group is proven quiescent, and name the outer pid plus latest leader pid, pgid, starttime, and state in the refusal.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -80,6 +82,8 @@ The public cleanup-error owner now injects a 350 ms readiness bound, 150 ms appl
 Moved crash/replacement evidence out of the unrelated composed thread workflow. The independent production owner passes in 1.68 s, observes dispatch revocation, records an empty prior-group census inside the replacement process at its spawn boundary, observes one replacement, and proves its exact group empty on shutdown. The known threadLinkCreate not_delivered baseline remains untouched and is not validation evidence.
 
 Final focused serial validation: 79 tests and 461 expectations passed across the cleanup state machine, codex-process lifecycle, application/workbench lifecycle, production initialization, all public executable refusals, concurrent start, signed-out/logged-error state, reload and persistent-state preservation, HTTP lifetime, startup signal cleanup, and crash replacement. Focused strict type checking for the new protocol/state machine passed. Focused Oxlint, Oxfmt, and git diff checks passed before the final audit.
+
+Final Standards tail: after safe transfer, the launcher now leaves the exact canvas SIGSTOPed whenever group inspection or signalling errors, or any transferred group remains owned, reused, or unproven at the single deadline. Only the all-quiescent branch can SIGKILL and reap the outer canvas. Each refusal names the canvas pid, latest leader pid, pgid, starttime, and terminal state. The existing state-machine owner now covers all five non-quiescent classes and proves no outer SIGKILL. It passed 15 tests and 57 expectations in 24 ms. The successful public takeover stayed green at 836 ms, and independent crash replacement stayed green at 1.70 s. Focused type, lint, format, and diff checks passed.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
