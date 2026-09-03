@@ -1,10 +1,10 @@
 ---
 id: TASK-148.07
 title: Enforce an actual per-test wall-clock budget
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-09-02 21:36'
-updated_date: '2026-09-03 17:09'
+updated_date: '2026-09-03 17:16'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -44,11 +44,11 @@ The repository gate rejects unapproved slow test owners based on actual elapsed 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A monotonic clock captured before fake timers enforces a 20,000 ms unapproved per-test elapsed-time budget; declared timeout caps that do not win do not fail.
-- [ ] #2 Static policy pins preload coverage and validates source-local structured declarations only. It does not ban timeout values or imports.
-- [ ] #3 A true real-time owner has a source-local structured reason, TEST_* outer bound, task reference, and evidence; no central filename allowlist or wildcard waiver exists.
-- [ ] #4 Positive and negative policy fixtures pass, the old 91-second approval-expiry shape fails, and the legitimate 14.816-second contention owner does not fail.
-- [ ] #5 The repository gate enforces the policy.
+- [x] #1 A monotonic clock captured before fake timers enforces a 20,000 ms unapproved per-test elapsed-time budget; declared timeout caps that do not win do not fail.
+- [x] #2 Static policy pins preload coverage and validates source-local structured declarations only. It does not ban timeout values or imports.
+- [x] #3 A true real-time owner has a source-local structured reason, TEST_* outer bound, task reference, and evidence; no central filename allowlist or wildcard waiver exists.
+- [x] #4 Positive and negative policy fixtures pass, the old 91-second approval-expiry shape fails, and the legitimate 14.816-second contention owner does not fail.
+- [x] #5 The repository gate enforces the policy.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -78,4 +78,12 @@ The real lifecycle owner uses one controlled Bun child and no sleep. A clock pre
 Remediation mutation RED: disconnecting onTestFinished made the lifecycle owner fail in 31 ms because the unapproved neighbor passed. Raising TEST_WALL_CLOCK_BUDGET_MS to 100,000 made both the exact 91,000 ms fixture and real preload lifecycle owner fail in 48 ms. Both mutations were restored. Final focused run passed 14 tests and 26 assertions across the policy and real-preload owners in 81 ms. Focused Oxlint, Oxfmt, bun install --frozen-lockfile, and git diff --check passed. No real browser owner, tsc, broad lane, old wrapper, or production-duration wait ran.
 
 Final narrow Standards remediation: replaced the hand-written AstNode vendor shape and parse(... as unknown as AstNode) with @babel/types published Node/ObjectExpression types plus VISITOR_KEYS traversal; @babel/types 7.29.8 is now an exact direct dev dependency. Added TEST_WALL_CLOCK_PRELOAD_LIFECYCLE_TIMEOUT_MS = 5,000 with its three-fixture controlled-child constraint and used it for both the child and Bun case bounds. Focused final validation passed 14 tests / 26 assertions in 125 ms, focused Oxlint and Oxfmt passed, bun install --frozen-lockfile reported no changes in 185 ms, and git diff --check passed. No browser, tsc, broad lane, real wait, or old wrapper ran.
+
+Canonical integration: cherry-picked reviewed commits bb554660b8b3dfd9c2444192b1972a3d0850e5c3, f3748679f68c182be49855fc5c14eaa24419fb63, and a6a9e9b4103de0704bc3092cd640860e4b2197e5. Focused integration validation passed: bun test --isolate ./tests/system/repository-policy/test-wall-clock-budget.test.ts ./tests/system/repository-policy/test-wall-clock-preload.test.ts — 14 tests, 26 assertions, 0 failures (121 ms). Per integration scope, no broad lanes were run.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Enforced the per-test 20,000 ms wall-clock policy with source-local approved real-time bounds and AST-backed policy validation. Verified by the focused repository-policy and preload suite: 14 tests, 26 assertions, 0 failures.
+<!-- SECTION:FINAL_SUMMARY:END -->
