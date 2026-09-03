@@ -237,7 +237,7 @@ export function createCodexApprovalBroker(
 		try {
 			writeAttempted = true;
 			responsePromise = Promise.resolve(
-				options.transport.respond(record.request.request, "codex-approvals", serverResponse),
+				options.transport.respond(record.sourceRequest, "codex-approvals", serverResponse),
 			);
 		} catch (error) {
 			responsePromise = Promise.reject(error);
