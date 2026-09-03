@@ -69,9 +69,6 @@ describe.serial("actual production Codex composition", () => {
 					serverPath,
 					vault,
 					env: {
-						ARCHBOARD_INJECT: "1",
-						ARCHBOARD_INJECT_LOUD: "1",
-						ARCHBOARD_INJECT_THREAD: "legacy-thread",
 						ARCHBOARD_TEST_CODEX_EXECUTABLE: executablePath,
 						ARCHBOARD_TEST_CODEX_LOG: logPath,
 						ARCHBOARD_TEST_CODEX_CONTROL: controlPath,
