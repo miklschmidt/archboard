@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { join, resolve as resolvePath } from "node:path";
 import { WebSocket } from "ws";
@@ -14,7 +14,11 @@ import {
 	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
 	TEST_CANVAS_STARTUP_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
-import { processExists, waitForProcessExit } from "../support/owned-canvas.ts";
+import {
+	buildOwnedCanvasEnvironment,
+	processExists,
+	waitForProcessExit,
+} from "../support/owned-canvas.ts";
 import { records } from "./support/codex-workbench-lifecycle.ts";
 
 const repoRoot = resolvePath(import.meta.dir, "../../..");
@@ -143,6 +147,14 @@ async function spawnCanvas(
 	const wrapper = join(fixture.root, `${mode}-server.ts`);
 	const pendingPath = join(fixture.root, `${mode}.pending`);
 	const outcomePath = join(fixture.root, `${mode}.outcome`);
+	const paths = {
+		home: join(fixture.root, `${mode}-home`),
+		xdgConfig: join(fixture.root, `${mode}-xdg-config`),
+		xdgState: join(fixture.root, `${mode}-state`),
+		temporary: join(fixture.root, `${mode}-tmp`),
+	};
+	for (const directory of Object.values(paths))
+		mkdirSync(directory, { recursive: true, mode: 0o700 });
 	writeFileSync(
 		wrapper,
 		mode === "delayed-listen-cancel"
@@ -152,17 +164,16 @@ async function spawnCanvas(
 	const child = spawn(process.execPath, [wrapper], {
 		cwd: repoRoot,
 		detached: true,
-		env: {
-			...process.env,
-			PORT: String(port),
-			HOST: "127.0.0.1",
-			ARCHBOARD_VAULT: fixture.vault,
-			ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
-			ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
-			ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
-			XDG_STATE_HOME: join(fixture.root, `${mode}-state`),
-			LOG_LEVEL: "error",
-		},
+		env: buildOwnedCanvasEnvironment({
+			paths,
+			port,
+			vault: fixture.vault,
+			env: {
+				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
+				ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
+				ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
+			},
+		}),
 		stdio: ["ignore", "pipe", "pipe"],
 	});
 	if (child.pid === undefined) throw new Error(`${mode} canvas has no pid.`);
