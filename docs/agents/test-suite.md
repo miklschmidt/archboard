@@ -42,6 +42,7 @@ Run browser diagnosis only through the adapter:
 
 ```bash
 bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canonical-owner>.test.ts
+bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canonical-owner>.test.ts --test-name "<exact test name>"
 ```
 
 The code-target system owners run after `tests/system/process-contracts`; the final browser owners cover selection inspection, connected path focus, opener settings, and code-target activation:
@@ -107,9 +108,11 @@ bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canon
 
 One `--focus` may name multiple canonical owners in canonical order. Missing,
 duplicate, reordered, unknown, recursive, changed-only, random, shard, and
-extra arguments are rejected before prerequisites or build. Do not invoke an
-owner directly: the adapter is what makes browser work serial, headless, and
-clean after failures or interruption.
+extra arguments are rejected before prerequisites or build. `--test-name` is
+the only focused-owner option: it requires one canonical owner and matches the
+complete test name exactly. Do not invoke an owner directly: the adapter is
+what makes browser work serial, headless, and clean after failures or
+interruption.
 
 The full order is human edit performance; fixed-point document; malformed
 geometry recovery; pane telemetry recovery; arrow-binding differential;

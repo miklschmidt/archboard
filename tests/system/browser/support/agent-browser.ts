@@ -37,6 +37,7 @@ const CI_EXCLUDED_BROWSER_OWNERS_VALUE = "all";
 export interface BrowserSelection {
 	mode: "package" | "focus";
 	files: BrowserTestPath[];
+	testName?: string;
 }
 export interface BrowserTestRoots {
 	laneRoot: string;
@@ -83,7 +84,7 @@ const CLEARED_CANVAS_ENV = [
 function selectionError(message: string): never {
 	throw new Error(
 		`${message}\nUse the complete package command or ` +
-			`bun ${BROWSER_ADAPTER_PATH} --focus <canonical test path> [...].`,
+			`bun ${BROWSER_ADAPTER_PATH} --focus <canonical test path> [--test-name <exact test name>].`,
 	);
 }
 
@@ -93,7 +94,27 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 	}
 	const tail = argv.slice(2);
 	const mode = tail[0] === "--focus" ? "focus" : "package";
-	const selected = mode === "focus" ? tail.slice(1) : tail;
+	const focusArguments = mode === "focus" ? tail.slice(1) : tail;
+	const testNameIndex = focusArguments.indexOf("--test-name");
+	let selected = focusArguments;
+	let testName: string | undefined;
+	if (testNameIndex !== -1) {
+		if (mode !== "focus") selectionError("--test-name is valid only with --focus.");
+		if (focusArguments.lastIndexOf("--test-name") !== testNameIndex) {
+			selectionError("Focused browser lane repeats --test-name.");
+		}
+		if (testNameIndex + 2 !== focusArguments.length) {
+			selectionError("--test-name requires one exact test name as the final argument.");
+		}
+		testName = focusArguments[testNameIndex + 1];
+		if (!testName || testName.startsWith("-")) {
+			selectionError("--test-name requires a non-empty exact test name.");
+		}
+		selected = focusArguments.slice(0, testNameIndex);
+		if (selected.length !== 1) {
+			selectionError("--test-name requires exactly one focused browser owner.");
+		}
+	}
 	if (mode === "focus" && selected.length === 0) selectionError("Focused browser lane is empty.");
 	if (selected.some((token) => token.startsWith("-"))) {
 		selectionError("Browser lane accepts no extra flags.");
@@ -117,7 +138,21 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 			`Package browser lane must name all ${BROWSER_TEST_PATHS.length} canonical paths in order.`,
 		);
 	}
-	return { mode, files: selected as BrowserTestPath[] };
+	return { mode, files: selected as BrowserTestPath[], ...(testName ? { testName } : {}) };
+}
+
+export function browserOwnerCommandArguments(file: BrowserTestPath, testName?: string): string[] {
+	const exactPattern = testName
+		? `^${testName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`
+		: undefined;
+	return [
+		"test",
+		"--no-orphans",
+		"--isolate",
+		"--max-concurrency=1",
+		...(exactPattern ? ["--test-name-pattern", exactPattern] : []),
+		file,
+	];
 }
 
 export function applyCiBrowserOwnerExclusion(
