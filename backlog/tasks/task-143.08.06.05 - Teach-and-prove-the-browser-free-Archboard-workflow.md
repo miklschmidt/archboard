@@ -1,10 +1,11 @@
 ---
 id: TASK-143.08.06.05
 title: Teach and prove the browser-free Archboard workflow
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-02 02:02'
+updated_date: '2026-09-03 10:18'
 labels: []
 dependencies:
   - TASK-143.08.06.04
@@ -41,3 +42,20 @@ Make the browser-independent contract impossible to miss for agents, maintainers
 - [ ] #7 A separate real-browser workflow proves that browser commands inspect or manipulate only the explicit live target and do not change note bytes, while an ordinary board write still becomes visible in panes already showing that board without depending on their acknowledgement.
 - [ ] #8 Focused repository, contract, system, and retained real-browser fidelity checks pass under the memory-safe validation mechanism established by TASK-143.08.01; failures are fixed rather than bypassed or weakened.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Rewrite the tracked archboard skill main path and references so an explicit named board proceeds through create, write, Mermaid conversion, server rendering, inspection, save or branch, and export without a pane; isolate all live observation and control in one clearly triggered browser-collaboration branch.
+2. Replace the stale eval workflows with one explicit zero-browser production workflow and one separate browser-collaboration workflow, then align AGENTS.md, TESTING.md, INSTALL.md, CLI help, archboard-dev guidance, and test-suite ownership language.
+3. Deepen the existing vault-only production-interface owner for the complete zero-client flow. Add browser-command target and note-byte assertions to the existing two-pane browser owner, and add acknowledgement-independent board-update visibility to the existing server-update owner without creating another browser owner or browser start. Add only the cheapest repository assertion needed to keep the skill/eval split explicit.
+4. Build only the renderer prerequisite, run focused repository/contract/system owners and exact retained browser test selectors, apply scoped formatting and lint, run the documented skill sync, and audit that derived skill copies and proof artifacts remain untracked and reproducible. Record exact test/runtime/process counts and leave all acceptance criteria unchecked.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented the browser-free teaching and verification cut. Canonical skills/ now starts with an explicit named-board workflow and isolates live panes under one browser-collaboration branch; evals tag one zero-browser workflow and one browser-collaboration workflow. Aligned AGENTS.md, TESTING.md, INSTALL.md, archboard-dev guidance, test-suite ownership, and root CLI help.
+Verification reuses existing owners: one new repository-policy assertion, an expanded vault-only system case, and added assertions inside the existing selection-inspector and server-update-ordering browser owners. No new browser owner or browser start was added. The zero-client case uses one server, one retained renderer, 11 supervised CLI invocations, and zero WebSocket clients; it passed in 4.71s. Exact retained browser selectors passed in 12.55s and 8.29s. CLI help passed in 3.63s; skill policy passed in 0.08s; browser-selector policy passed in 0.04s. Scoped Oxlint, Oxfmt, and diff checks pass.
+The documented skill sync reproduced .agents/skills/archboard and the .claude symlink byte-for-byte from skills/archboard. Both derived trees and dist/frontend are ignored and untracked. No proof artifact is authored. Acceptance criteria remain unchecked as requested.
+<!-- SECTION:NOTES:END -->

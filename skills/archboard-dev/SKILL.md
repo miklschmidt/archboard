@@ -48,10 +48,12 @@ This box has node + bun but **no npm/npx**. The `package.json` scripts shell out
 to bun, so use `bun run <script>` — never `npm run`. `bun install` intermittently
 fails extracting a tarball — run it again.
 
-## Verify a canvas change actually works
+## Verify the boundary that changed
 
-Do not trust a green build. The round-trip is the thing that breaks, and it
-only breaks with a browser attached.
+Named-board work is browser-free. Exercise reads, writes, Mermaid conversion,
+PNG/SVG rendering, finding close-ups, inspection, snapshots, branches, and
+exports against a configured vault with zero WebSocket clients. Do not open a
+pane as setup for those checks.
 
 ```bash
 ./bin/canvas clear --board scratch --yes --doing "emptying scratch for a probe"
@@ -77,17 +79,19 @@ because the Obsidian plugin writes its own top-level keys. The explicit
 TASK-009 a shape gets a fill on its own (`src/shared/appearance/appearance.ts`), which is
 what makes its interior tappable.
 
-Then open <http://127.0.0.1:3000>, **drag the box**, and re-run `query`. The
-position, `customData`, and any human-authored link must survive. A bound code
-link is different: `query` may present one derived from the portable binding
-and this machine's checkout registry, but the note must never store it. That
-frontend round-trip is where metadata gets silently dropped or presentation
-data leaks into persistence; a headless test will not catch it.
+Open <http://127.0.0.1:3000> only when the change concerns a live browser
+workflow or Excalidraw round-trip fidelity. Then **drag the box** and re-run
+`query`. The position, `customData`, and any human-authored link must survive.
+A bound code link is different: `query` may present one derived from the
+portable binding and this machine's checkout registry, but the note must never
+store it. That frontend round-trip is where metadata gets silently dropped or
+presentation data leaks into persistence; the retained real-browser checks own
+it.
 
 Elements that came back through the browser are tagged
 `"source": "frontend_sync"`.
 
-To exercise the full interaction, click the box in the browser and then:
+To exercise explicit live interaction, click the box in the browser and then:
 
 ```bash
 ./bin/canvas browser selection --pane <spec> --text # what the human picked

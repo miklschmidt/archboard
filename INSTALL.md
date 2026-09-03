@@ -147,12 +147,19 @@ between two repos that each keep their own boards.
 
 ## Working in a repo
 
-Start the canvas from anywhere and open a board:
+Start the canvas from anywhere and create or address a board:
 
 ```bash
 archboard board new payments --level service
-archboard browser show payments --pane primary
+archboard add --board payments --doing "drawing the payment path" elements.json
+archboard render --board payments --out payments.png
 ```
+
+Those commands use the named vault note through the server and need no browser
+connection. Mermaid conversion, finding close-ups, inspection, snapshots,
+branches, and export have the same boundary. Open the canvas URL and use
+`archboard browser ...` only when a person wants to observe or control a live
+pane, or when a real-browser fidelity check is the work.
 
 **Name the repository and use a repo-relative path.** Register each checkout
 once, then the same portable address works wherever the command is run:
@@ -182,7 +189,7 @@ With a shared vault the boards do not belong to the repo and are not committed
 to it. If you want a diagram in the repo as well, export one:
 
 ```bash
-archboard export --out docs/architecture.excalidraw
+archboard export --board payments --out docs/architecture.excalidraw
 ```
 
 ## On macOS
