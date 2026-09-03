@@ -22,6 +22,14 @@ function requirePreflight(): void {
 	}
 }
 
+function ownedOutputDirectory(argv: readonly string[]): string {
+	if (argv.length > 0)
+		throw new Error(
+			"This proof owns its output. Run without arguments; it creates one disposable report directory under the system temporary root.",
+		);
+	return mkdtempSync(join(tmpdir(), "archboard-server-rendering-emulation-proof-"));
+}
+
 function exportFiles(files: Record<string, unknown>): BinaryFiles {
 	for (const [id, raw] of Object.entries(files)) {
 		if (!raw || typeof raw !== "object") throw new Error(`Persisted file ${id} is invalid.`);
@@ -259,7 +267,7 @@ function installDom(
 	};
 }
 
-const output = mkdtempSync(join(tmpdir(), "archboard-server-rendering-emulation-proof-"));
+const output = ownedOutputDirectory(Bun.argv.slice(2));
 const dependencyRoot = join(output, "dependencies");
 const reportPath = join(output, "report.json");
 let report: Record<string, unknown> = {
