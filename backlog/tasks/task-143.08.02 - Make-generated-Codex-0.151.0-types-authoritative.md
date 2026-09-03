@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 02:16'
+updated_date: '2026-09-03 02:23'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -58,6 +58,10 @@ Replace the rejected handwritten protocol ownership model with one dependency-ne
 10. Publish every successful fresh generation as a new immutable target named by exact Codex version, tracked recipe revision, and generation id. Store completion and active-owner state inside that target only for safe bounded retirement, never to accept it as the next generated contract. Keep the current target plus one predecessor, ignore active or unidentified artifacts, and remove only completed inactive retired versions after an atomic current switch. This makes a missing generated file self-repair on the next run and lets a recipe revision create a new target at the same vendor version without digest or inventory authority.
 
 11. Make the public bun run type-check command invoke the existing contract generator exactly once before both TypeScript graphs. A missing tree then self-materializes, and missing, wrong, or escaped local package state fails with the generator recovery diagnostic before TypeScript emits raw module errors. Keep direct bunx tsc available only as the existing low-level diagnostic path.
+
+12. Replace per-run version churn and retirement with one stable target per exact Codex version and tracked recipe revision. Generate fresh authority into an owned staging directory, atomically install a complete absent target or repair an existing target through same-recipe per-file atomic replacements without deleting the directory, publish compatibility entrypoints and completion state last, and leave older recipe targets reader-safe. Make public type-check generate once, run both configured TypeScript graphs even when either compiler fails, preserve both diagnostics, and aggregate their status.
+
+13. Keep the stable target self-describing through its version-and-recipe path only; do not persist completion or liveness markers. Initial publication is a complete directory rename, repair publishes leaf files and then index entrypoints, and current is the only publication state.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
