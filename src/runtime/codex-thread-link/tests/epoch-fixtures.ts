@@ -69,9 +69,9 @@ export function realEpochFixture(
 			epochInput(
 				authority,
 				operationId,
-				options.kind ?? "link",
+				options.kind ?? "create_thread",
 				store.snapshot().cas,
-				options.rpc === undefined ? "turn/start" : options.rpc,
+				options.rpc === undefined ? "thread/start" : options.rpc,
 			),
 		);
 		const record =

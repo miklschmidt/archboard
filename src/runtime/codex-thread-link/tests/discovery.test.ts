@@ -3,7 +3,30 @@ import { describe, expect, test } from "bun:test";
 import { CodexThreadLinkError, createCodexThreadLink } from "../index.ts";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.ts";
 import { loadedPage, session, thread, threadPage } from "./fixtures.ts";
-import { realEpochFixture } from "./epoch-fixtures.ts";
+import { realEpochFixture, type RealEpochFixture } from "./epoch-fixtures.ts";
+
+function commitThreadOperation(
+	fixture: RealEpochFixture,
+	operationId: string,
+	kind: string,
+	rpc: string,
+): void {
+	const transaction = fixture.store.stageOperation({
+		childId: fixture.authority.validator.childId,
+		epoch: fixture.authority.validator.epoch,
+		operationId,
+		kind,
+		rpc,
+		workspaceRoot: "/workspace/archboard",
+		instructionHash: "9".repeat(64),
+		manifestHash: "a".repeat(64),
+		expected: fixture.store.snapshot().cas,
+	});
+	fixture.store.commitOperation(transaction, {
+		threadId: fixture.target.threadId,
+		threadSource: "appServer",
+	});
+}
 
 describe("codex thread-link candidate discovery", () => {
 	test("publishes one frozen exact join after exhausting both typed inventories", async () => {
@@ -314,6 +337,58 @@ describe("codex thread-link candidate discovery", () => {
 			});
 		} finally {
 			stale.cleanup();
+		}
+	});
+
+	test("keeps valid ownership when a later committed read names the same thread", async () => {
+		const fixture = realEpochFixture();
+		try {
+			commitThreadOperation(fixture, "later-read", "read", "thread/read");
+			const row = thread(fixture.authority, "target");
+			const port = createCodexThreadLink({
+				epoch: fixture.store,
+				session: session(
+					new Map([[null, threadPage([row])]]),
+					new Map([[null, loadedPage([row.id])]]),
+				),
+			});
+			const candidate = (await port.discoverCandidates()).candidates[0]!;
+
+			expect(candidate).toMatchObject({ state: "executable", reason: null });
+			const bound = await port.bindCandidate("pane-a", null, candidate.selectionId);
+			expect(bound.link).toMatchObject({ state: "executable", threadId: row.id });
+		} finally {
+			fixture.cleanup();
+		}
+	});
+
+	test("keeps an unrelated-only committed record inspect-only and unable to bind executable", async () => {
+		const fixture = realEpochFixture(createIdentityAuthority(), {
+			kind: "read",
+			rpc: "thread/read",
+		});
+		try {
+			const row = thread(fixture.authority, "target");
+			const port = createCodexThreadLink({
+				epoch: fixture.store,
+				session: session(
+					new Map([[null, threadPage([row])]]),
+					new Map([[null, loadedPage([row.id])]]),
+				),
+			});
+			const candidate = (await port.discoverCandidates()).candidates[0]!;
+
+			expect(candidate).toMatchObject({
+				state: "inspect_only",
+				reason: "unknown_provenance",
+			});
+			const bound = await port.bindCandidate("pane-a", null, candidate.selectionId);
+			expect(bound.link).toMatchObject({
+				state: "inspect_only",
+				reason: "unknown_provenance",
+			});
+		} finally {
+			fixture.cleanup();
 		}
 	});
 

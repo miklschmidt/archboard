@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
 	CodexEpochError,
+	resolveThreadOwnershipProvenance,
 	type EpochExecutionProof,
 	type EpochOperationRecord,
 } from "../../codex-epoch/index.js";
@@ -774,19 +775,6 @@ function epochFromSnapshot(
 	return active === null ? null : { childId: active.childId, epoch: active.epoch };
 }
 
-function candidateRecord(
-	manifest: ReturnType<ThreadLinkEpochAuthority["snapshot"]>["manifest"],
-	threadId: ThreadLinkTarget["threadId"],
-): EpochOperationRecord | null {
-	return (
-		manifest.records.findLast(
-			(record) =>
-				(record.status === "committed" || record.status === "inspect_only") &&
-				record.provenance.threadId === threadId,
-		) ?? null
-	);
-}
-
 function candidateSource(source: ThreadLinkSource): ThreadLinkCandidateSource {
 	if (typeof source === "string") return source;
 	if (Object.hasOwn(source, "custom")) return "custom";
@@ -855,7 +843,8 @@ export async function discoverCodexThreadLinkCandidates(
 	>();
 	const candidates: ThreadLinkCandidate[] = [...new Set(persisted.map(({ id }) => id))].map(
 		(threadId) => {
-			const record = candidateRecord(exhaustedSnapshot.manifest, threadId);
+			const record =
+				resolveThreadOwnershipProvenance(exhaustedSnapshot.manifest, threadId)?.record ?? null;
 			const target: ThreadLinkTarget = Object.freeze({
 				threadId,
 				childId: record?.correlation.childId ?? exhaustedEpoch?.childId ?? null,
