@@ -22,11 +22,12 @@ interface FixtureRecord {
 	readonly frame?: { readonly id?: unknown; readonly result?: unknown; readonly error?: unknown };
 }
 
-const records = (path: string): FixtureRecord[] =>
-	readFileSync(path, "utf8")
-		.split("\n")
-		.filter(Boolean)
-		.map((line) => JSON.parse(line) as FixtureRecord);
+const records = (path: string): FixtureRecord[] => {
+	const contents = readFileSync(path, "utf8");
+	const lines = contents.split("\n");
+	if (!contents.endsWith("\n")) lines.pop();
+	return lines.filter(Boolean).map((line) => JSON.parse(line) as FixtureRecord);
+};
 
 const snapshots = (result: WorkbenchResult): Record<string, unknown> => {
 	if (!result.ok) throw new Error(result.error ?? "The workbench snapshot failed.");
