@@ -192,8 +192,8 @@ export async function git(
 		}
 		await Promise.all([
 			child.exited,
-			new Response(child.stdout).arrayBuffer(),
-			new Response(child.stderr).arrayBuffer(),
+			new Response(child.stdout as ReadableStream<Uint8Array>).arrayBuffer(),
+			new Response(child.stderr as ReadableStream<Uint8Array>).arrayBuffer(),
 		]);
 		throw new GitCommandError(
 			"cleanup",

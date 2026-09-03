@@ -83,7 +83,7 @@ function withFailingLockRename<T>(action: () => T): T {
 		if (String(to).endsWith(".lock")) throw new Error("injected lease stamp rename failure");
 		return originalRename(from, to);
 	});
-	const warnSpy = spyOn(logger, "warn").mockImplementation(() => undefined);
+	const warnSpy = spyOn(logger, "warn").mockImplementation(() => logger);
 	try {
 		const result = action();
 		expect(warnSpy).toHaveBeenCalledTimes(1);
@@ -208,6 +208,8 @@ describe.serial("post-commit pane observers", () => {
 			holder: { id: holderId, kind: "agent" },
 			waitMs: 0,
 		});
+		const boardFile = owned.board.file;
+		if (!boardFile) throw new Error("Owned observer fixture has no board file.");
 		atomicWriteSpy.mockClear();
 		const result = withFailingLockRename(() =>
 			write("committed", () => undefined, {
@@ -221,26 +223,31 @@ describe.serial("post-commit pane observers", () => {
 		);
 		expect(result).toEqual({ success: true, version: 2 });
 		expect(atomicWriteSpy).toHaveBeenCalledTimes(1);
-		const committed = readFileSync(owned.board.file);
+		const committed = readFileSync(boardFile);
 		expect(committed.toString()).toMatch(/^version: 2$/m);
 		expect(committed.toString()).toContain('"id": "committed"');
 		expect(lockModule.releaseHold(owned.key, holderId)).toBeTrue();
 		expect(existsSync(handoffPath(owned.key))).toBeFalse();
 
-		storeModule.recordBaseline(owned.board, owned.board.file, beforeHash, beforeVersion);
+		storeModule.recordBaseline(owned.board, boardFile, beforeHash, beforeVersion);
 		expect(() =>
 			ioModule.writeBoardContent(owned.board, ioModule.readBoardContent(owned.board), {
 				saveCommand: "board save",
 			}),
 		).toThrow(ioModule.BoardWriteConflictError);
 		expect(atomicWriteSpy).toHaveBeenCalledTimes(1);
-		expect(readFileSync(owned.board.file)).toEqual(committed);
+		expect(readFileSync(boardFile)).toEqual(committed);
 	});
 
 	test("rejects unproven, stale, and replayed lease receipts", async () => {
 		jest.useFakeTimers();
 		try {
-			const rejectionTable = [
+			const rejectionTable: ReadonlyArray<{
+				name: string;
+				hash?: string;
+				failStamp?: boolean;
+				rewriteReceipt?: (file: string) => void;
+			}> = [
 				{ name: "absent" },
 				{
 					name: "malformed",
@@ -255,7 +262,7 @@ describe.serial("post-commit pane observers", () => {
 					},
 				},
 				{ name: "stamp-failure", hash: "unrecorded-hash", failStamp: true },
-			] as const;
+			];
 			for (const proofCase of rejectionTable) {
 				const successor = await acquireAfterObservedPredecessor({
 					board: `proof-${proofCase.name}`,
@@ -274,19 +281,21 @@ describe.serial("post-commit pane observers", () => {
 				{ elements: new Map([["archboard", boxElement("archboard")]]), files: new Map() },
 				{ saveCommand: "board save" },
 			);
+			const boardFile = owned.board.file;
+			if (!boardFile) throw new Error("Owned external-write fixture has no board file.");
 			storeModule.recordBaseline(owned.board, baseline.file, baseline.hash, baseline.version);
 			const hashMismatch = await acquireAfterObservedPredecessor({
 				board: owned.key,
 				hash: committed.hash,
 			});
-			const external = `${readFileSync(owned.board.file, "utf8")}\n<!-- external -->\n`;
-			writeFileSync(owned.board.file, external);
+			const external = `${readFileSync(boardFile, "utf8")}\n<!-- external -->\n`;
+			writeFileSync(boardFile, external);
 			ioModule.materializeResolvedBoard(ioModule.resolveBoardNote(owned.key), {
 				write: true,
 				trustedPredecessorHash: hashMismatch.hold.predecessorHash,
 			});
 			expect(owned.board.baseline).toMatchObject(baseline);
-			expect(readFileSync(owned.board.file, "utf8")).toBe(external);
+			expect(readFileSync(boardFile, "utf8")).toBe(external);
 			expect(hashMismatch.release()).toBeTrue();
 
 			const replay = await acquireAfterObservedPredecessor({
