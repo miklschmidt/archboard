@@ -1,10 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	CodexThreadLinkError,
-	createCodexThreadLink,
-	discoverCodexThreadLinkCandidates,
-} from "../index.ts";
+import { CodexThreadLinkError, createCodexThreadLink } from "../index.ts";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.ts";
 import { loadedPage, session, thread, threadPage } from "./fixtures.ts";
 import { realEpochFixture } from "./epoch-fixtures.ts";
@@ -31,37 +27,31 @@ describe("codex thread-link candidate discovery", () => {
 				epoch: fixture.store,
 			}).discoverCandidates();
 
-			expect(discovery.authority).toEqual({
-				childId: fixture.authority.validator.childId,
-				epoch: fixture.authority.validator.epoch,
-				manifestRevision: fixture.store.snapshot().manifest.revision,
-				manifestBytesHash: fixture.store.snapshot().cas.bytesHash,
-			});
 			expect(
-				discovery.candidates.map(({ target, classification }) => ({
-					threadId: target.threadId,
-					operationId: target.operationId ?? null,
-					state: classification.link.state,
-					reason: classification.link.reason,
-					persistedRows: classification.observation.persistedRows,
-					loadedOccurrences: classification.observation.loadedOccurrences,
+				discovery.candidates.map(({ threadId, state, reason, source, status, loaded }) => ({
+					threadId,
+					state,
+					reason,
+					source,
+					status,
+					loaded,
 				})),
 			).toEqual([
 				{
 					threadId: attachable.id,
-					operationId: null,
 					state: "inspect_only",
 					reason: "unknown_provenance",
-					persistedRows: 1,
-					loadedOccurrences: 1,
+					source: "appServer",
+					status: "idle",
+					loaded: true,
 				},
 				{
 					threadId: owned.id,
-					operationId: fixture.record.correlation.operationId,
 					state: "executable",
 					reason: null,
-					persistedRows: 1,
-					loadedOccurrences: 1,
+					source: "appServer",
+					status: "idle",
+					loaded: true,
 				},
 			]);
 			expect(pages.threadListRequests.map((request) => request?.cursor)).toEqual([
@@ -74,7 +64,77 @@ describe("codex thread-link candidate discovery", () => {
 			]);
 			expect(Object.isFrozen(discovery)).toBe(true);
 			expect(Object.isFrozen(discovery.candidates)).toBe(true);
-			expect(Object.isFrozen(discovery.candidates[0]?.classification)).toBe(true);
+			expect(Object.isFrozen(discovery.candidates[0])).toBe(true);
+		} finally {
+			fixture.cleanup();
+		}
+	});
+
+	test("publishes only the closed browser-safe candidate projection", async () => {
+		const fixture = realEpochFixture();
+		try {
+			const privateRow = {
+				...thread(fixture.authority, "target", { source: { custom: "private-custom" } }),
+				title: "private-title",
+				cwd: "/private/cwd",
+				gitInfo: { origin: "private-repository" },
+				turns: [
+					{
+						id: fixture.authority.decoder.adoptTurnId("private-turn-id"),
+						items: [{ type: "userMessage", content: [{ type: "text", text: "private-turn" }] }],
+					},
+				],
+			} as never;
+			const discovery = await createCodexThreadLink({
+				epoch: fixture.store,
+				session: session(
+					new Map([[null, threadPage([privateRow])]]),
+					new Map([[null, loadedPage([fixture.target.threadId])]]),
+				),
+			}).discoverCandidates();
+			const candidate = discovery.candidates[0]!;
+
+			expect(Object.keys(discovery)).toEqual(["candidates"]);
+			expect(Object.keys(candidate).toSorted()).toEqual([
+				"canAcceptDirectInput",
+				"loaded",
+				"reason",
+				"selectionId",
+				"source",
+				"state",
+				"status",
+				"threadId",
+			]);
+			expect(candidate).toMatchObject({
+				threadId: fixture.target.threadId,
+				state: "inspect_only",
+				reason: "thread_source_custom",
+				source: "custom",
+				status: "idle",
+				loaded: true,
+				canAcceptDirectInput: true,
+			});
+			expect(candidate.selectionId).toMatch(/^[0-9a-f-]{36}$/);
+			const serialized = JSON.stringify(discovery);
+			for (const forbidden of [
+				"target",
+				"classification",
+				"proof",
+				"provenance",
+				"turns",
+				"cwd",
+				"workspaceRoot",
+				"instructionHash",
+				"manifestHash",
+				"private-custom",
+				"private-title",
+				"/private/cwd",
+				"private-repository",
+				"private-turn",
+				"/workspace/archboard",
+			]) {
+				expect(serialized).not.toContain(forbidden);
+			}
 		} finally {
 			fixture.cleanup();
 		}
@@ -102,10 +162,10 @@ describe("codex thread-link candidate discovery", () => {
 			] as const;
 
 			for (const pages of cases) {
-				const result = discoverCodexThreadLinkCandidates({
+				const result = createCodexThreadLink({
 					epoch: fixture.store,
 					session: session(pages.threads, pages.loaded),
-				});
+				}).discoverCandidates();
 				await expect(result).rejects.toMatchObject({ code: "repeated_cursor" });
 			}
 		} finally {
@@ -143,7 +203,7 @@ describe("codex thread-link candidate discovery", () => {
 						new Map([[null, loadedPage([row.id])]]),
 					),
 				}).discoverCandidates();
-				expect(discovery.candidates[0]?.classification.link).toMatchObject({
+				expect(discovery.candidates[0]).toMatchObject({
 					state: "inspect_only",
 					reason,
 				});
@@ -158,9 +218,9 @@ describe("codex thread-link candidate discovery", () => {
 				),
 			}).discoverCandidates();
 			expect(discovery.candidates).toHaveLength(1);
-			expect(discovery.candidates[0]?.classification).toMatchObject({
-				link: { state: "inspect_only", reason: "thread_list_ambiguous" },
-				observation: { persistedRows: 2, loadedOccurrences: 2 },
+			expect(discovery.candidates[0]).toMatchObject({
+				state: "inspect_only",
+				reason: "thread_list_ambiguous",
 			});
 		} finally {
 			fixture.cleanup();
@@ -172,7 +232,7 @@ describe("codex thread-link candidate discovery", () => {
 		try {
 			const row = thread(fixture.authority, "target");
 			let changed = false;
-			const result = discoverCodexThreadLinkCandidates({
+			const result = createCodexThreadLink({
 				epoch: fixture.store,
 				session: {
 					threadListPage: async () => threadPage([row]),
@@ -194,7 +254,7 @@ describe("codex thread-link candidate discovery", () => {
 						return loadedPage([row.id]);
 					},
 				},
-			});
+			}).discoverCandidates();
 
 			await expect(result).rejects.toBeInstanceOf(CodexThreadLinkError);
 			await expect(result).rejects.toMatchObject({ code: "conflict" });
@@ -205,7 +265,7 @@ describe("codex thread-link candidate discovery", () => {
 
 	test("retains stale and outcome-unknown durable provenance as inspect-only", async () => {
 		const uncertain = realEpochFixture(createIdentityAuthority(), {
-			unknownReason: "the thread/start response was lost",
+			unknownReason: "private-diagnostic",
 			rpc: "thread/start",
 		});
 		try {
@@ -217,10 +277,11 @@ describe("codex thread-link candidate discovery", () => {
 					new Map([[null, loadedPage([row.id])]]),
 				),
 			}).discoverCandidates();
-			expect(discovery.candidates[0]?.classification.link).toMatchObject({
+			expect(discovery.candidates[0]).toMatchObject({
 				state: "inspect_only",
 				reason: "thread_start_outcome_unknown",
 			});
+			expect(JSON.stringify(discovery)).not.toContain("private-diagnostic");
 		} finally {
 			uncertain.cleanup();
 		}
@@ -247,7 +308,7 @@ describe("codex thread-link candidate discovery", () => {
 					new Map([[null, loadedPage([row.id])]]),
 				),
 			}).discoverCandidates();
-			expect(discovery.candidates[0]?.classification.link).toMatchObject({
+			expect(discovery.candidates[0]).toMatchObject({
 				state: "inspect_only",
 				reason: "stale_child",
 			});
@@ -272,12 +333,12 @@ describe("codex thread-link candidate discovery", () => {
 				},
 			});
 			const candidate = (await port.discoverCandidates()).candidates[0];
-			expect(candidate?.classification.link.state).toBe("executable");
+			expect(candidate?.state).toBe("executable");
 
-			const bound = await port.classifyAndBind(
+			const bound = await port.bindCandidate(
 				"pane-a",
 				port.snapshot("pane-a").cas,
-				candidate!.target,
+				candidate!.selectionId,
 			);
 
 			expect(bound.link).toMatchObject({
@@ -286,6 +347,58 @@ describe("codex thread-link candidate discovery", () => {
 				threadId: row.id,
 			});
 			expect(bound.cas).toMatchObject({ paneId: "pane-a", threadId: row.id });
+		} finally {
+			fixture.cleanup();
+		}
+	});
+
+	test("scopes opaque selections to one port and generation and consumes them once", async () => {
+		const fixture = realEpochFixture();
+		try {
+			const row = thread(fixture.authority, "target");
+			const pages = session(
+				new Map([[null, threadPage([row])]]),
+				new Map([[null, loadedPage([row.id])]]),
+			);
+			const firstPort = createCodexThreadLink({ epoch: fixture.store, session: pages });
+			const otherPort = createCodexThreadLink({ epoch: fixture.store, session: pages });
+			const firstSelection = (await firstPort.discoverCandidates()).candidates[0]!.selectionId;
+
+			for (const attempt of [
+				() => otherPort.bindCandidate("pane-a", null, firstSelection),
+				() => firstPort.bindCandidate("pane-a", null, "forged-selection"),
+			]) {
+				await expect(attempt()).rejects.toMatchObject({
+					code: "conflict",
+					message: expect.stringContaining("unknown, stale, or already used"),
+				});
+			}
+
+			fixture.store.stageOperation({
+				childId: fixture.authority.validator.childId,
+				epoch: fixture.authority.validator.epoch,
+				operationId: "after-discovery",
+				kind: "read",
+				rpc: "thread/read",
+				workspaceRoot: "/workspace/archboard",
+				instructionHash: "7".repeat(64),
+				manifestHash: "8".repeat(64),
+				expected: fixture.store.snapshot().cas,
+			});
+			await expect(firstPort.bindCandidate("pane-a", null, firstSelection)).rejects.toMatchObject({
+				code: "conflict",
+			});
+
+			const generationSelection = (await firstPort.discoverCandidates()).candidates[0]!.selectionId;
+			const currentSelection = (await firstPort.discoverCandidates()).candidates[0]!.selectionId;
+			await expect(
+				firstPort.bindCandidate("pane-a", null, generationSelection),
+			).rejects.toMatchObject({ code: "conflict" });
+			const bound = await firstPort.bindCandidate("pane-a", null, currentSelection);
+			expect(bound.link).toMatchObject({ state: "executable", threadId: row.id });
+			await expect(
+				firstPort.bindCandidate("pane-a", bound.cas, currentSelection),
+			).rejects.toMatchObject({ code: "conflict" });
 		} finally {
 			fixture.cleanup();
 		}
