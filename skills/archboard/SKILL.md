@@ -125,7 +125,7 @@ before using words such as "left", "right", or "this one".
 
 ```bash
 archboard browser panes --text
-archboard browser selection --pane left --text
+archboard browser selection --pane primary --text
 archboard browser open
 archboard browser show payments@option-a --pane right
 archboard browser viewport --pane right --fit
