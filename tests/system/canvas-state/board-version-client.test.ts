@@ -90,19 +90,19 @@ describe.serial("board version client state", () => {
 				method: "POST",
 				body: { board: "claimed", reason: "redrawing the claimed board" },
 			});
-			expect(claim.body.version).toBe(1);
+			expect(claim.body.version).toBe(2);
 
 			const underClaim = await request<VersionAnswer>("/api/elements?board=claimed", {
 				method: "POST",
 				body: box("eleven", 200),
 			});
 			expect(underClaim.status).toBe(200);
-			expect(underClaim.body.fingerprint?.version).toBe(2);
+			expect(underClaim.body.fingerprint?.version).toBe(3);
 
 			const claimedBytes = readFileSync(claimedFile, "utf8");
 			writeFileSync(
 				claimedFile,
-				claimedBytes.replace(/^version: 2$/m, "version: 4").replace('"x": 200', '"x": 260'),
+				claimedBytes.replace(/^version: 3$/m, "version: 5").replace('"x": 200', '"x": 260'),
 			);
 			const staleClaim = await request<VersionAnswer>("/api/elements?board=claimed", {
 				method: "POST",
@@ -110,11 +110,11 @@ describe.serial("board version client state", () => {
 			});
 			expect(staleClaim.status).toBe(409);
 			expect(staleClaim.body.code).toBe("BOARD_VERSION_CONFLICT");
-			expect(staleClaim.body.versionConflict).toMatchObject({ expected: 2, actual: 4 });
+			expect(staleClaim.body.versionConflict).toMatchObject({ expected: 3, actual: 5 });
 			expect(staleClaim.body.error).toMatch(/only one you get/);
 
 			const afterTelling = await request<VersionAnswer>(
-				"/api/elements?board=claimed&expectVersion=4",
+				"/api/elements?board=claimed&expectVersion=5",
 				{ method: "POST", body: box("thirteen", 500) },
 			);
 			expect([200, 409]).toContain(afterTelling.status);
@@ -132,14 +132,14 @@ describe.serial("board version client state", () => {
 			const rememberedFile = join(vault, "remembered.excalidraw.md");
 
 			const first = await client.applyElementChanges({ upserts: [box("r1", 10)] });
-			expect(first.fingerprint?.version).toBe(1);
+			expect(first.fingerprint?.version).toBe(2);
 			const second = await client.applyElementChanges({ upserts: [box("r2", 200)] });
-			expect(second.fingerprint?.version).toBe(2);
+			expect(second.fingerprint?.version).toBe(3);
 
 			const rememberedBytes = readFileSync(rememberedFile, "utf8");
 			writeFileSync(
 				rememberedFile,
-				rememberedBytes.replace(/^version: 2$/m, "version: 6").replace('"x": 200', '"x": 280'),
+				rememberedBytes.replace(/^version: 3$/m, "version: 6").replace('"x": 200', '"x": 280'),
 			);
 			let clientError: unknown;
 			try {
@@ -183,7 +183,7 @@ describe.serial("board version client state", () => {
 			const foreign = Buffer.concat([ours, Buffer.from("\n<!-- Obsidian was here -->\n")]);
 			writeFileSync(sharedFile, foreign);
 			const hashRefusal = await request<VersionAnswer>(
-				"/api/elements?board=shared&expectVersion=1",
+				"/api/elements?board=shared&expectVersion=2",
 				{ method: "POST", body: box("nine", 200) },
 			);
 			expect(hashRefusal.status).toBe(409);
