@@ -1,17 +1,22 @@
 import fs from "node:fs";
 import { spawn, type ChildProcessByStdio } from "node:child_process";
 import { createServer } from "node:net";
-import os from "node:os";
-import path from "node:path";
 import type { Readable } from "node:stream";
 
 import {
-	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
 	TEST_CANVAS_HEALTH_POLL_MS,
 	TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS,
 	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
 	TEST_CANVAS_STARTUP_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
+import { createOwnedCanvasPaths, type OwnedCanvasPaths } from "./owned-canvas-ownership.ts";
+
+export {
+	isOwnedCanvasNamespaceRoot,
+	processExists,
+	waitForProcessExit,
+} from "./owned-canvas-ownership.ts";
+export type { OwnedCanvasPaths } from "./owned-canvas-ownership.ts";
 
 type Exit = { code: number | null; signal: NodeJS.Signals | null; expected: boolean };
 type Environment = Readonly<Record<string, string | undefined>>;
@@ -27,14 +32,6 @@ export interface StartOwnedCanvasOptions {
 export interface RestartOwnedCanvasOptions {
 	signal?: NodeJS.Signals;
 	whileStopped?: () => void | Promise<void>;
-}
-
-export interface OwnedCanvasPaths {
-	readonly root: string;
-	readonly home: string;
-	readonly xdgConfig: string;
-	readonly xdgState: string;
-	readonly temporary: string;
 }
 
 export interface OwnedCanvas {
@@ -89,39 +86,7 @@ const activeCanvases = new Set<Registration>();
 let handlersInstalled = false;
 let interruptionInProgress = false;
 const MAX_START_ATTEMPTS = 8;
-const ownedCanvasNamespacePrefix = "archboard-owned-canvas-";
-const ownedCanvasNamespacePattern = /^archboard-owned-canvas-[A-Za-z0-9]{6}$/;
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-
-export const processExists = (pid: number): boolean => {
-	try {
-		process.kill(pid, 0);
-		return true;
-	} catch (error) {
-		const failure = error as NodeJS.ErrnoException;
-		if (failure.code === "ESRCH") return false;
-		throw new Error(
-			`Process ${pid} observation failed (${failure.code ?? "unknown"}): ${failure.message}`,
-			{ cause: error },
-		);
-	}
-};
-
-export async function waitForProcessExit(
-	pid: number,
-	timeoutMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
-): Promise<void> {
-	const deadline = Date.now() + timeoutMs;
-	// Signal zero only observes; PID reuse may prolong this audit but never authorizes cleanup.
-	while (processExists(pid)) {
-		if (Date.now() >= deadline) {
-			throw new Error(
-				`Process ${pid} remained observable after ${timeoutMs.toLocaleString("en-US")}ms; it may be live, zombie, or recycled.`,
-			);
-		}
-		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
-	}
-}
 
 async function automaticPort(): Promise<number> {
 	const probe = createServer();
@@ -173,33 +138,6 @@ function installHandlers(): void {
 const exitDescription = (exit: Exit | null): string =>
 	exit?.signal ? `signal ${exit.signal}` : `exit ${exit?.code ?? "unknown"}`;
 const tail = (text: string): string => text.trim().split("\n").slice(-20).join("\n");
-
-export function isOwnedCanvasNamespaceRoot(candidate: string): boolean {
-	const resolved = path.resolve(candidate);
-	return (
-		path.dirname(resolved) === path.resolve(os.tmpdir()) &&
-		ownedCanvasNamespacePattern.test(path.basename(resolved))
-	);
-}
-
-function createOwnedCanvasPaths(): OwnedCanvasPaths {
-	const root = fs.mkdtempSync(path.join(os.tmpdir(), ownedCanvasNamespacePrefix));
-	const paths = {
-		root,
-		home: path.join(root, "home"),
-		xdgConfig: path.join(root, "xdg-config"),
-		xdgState: path.join(root, "xdg-state"),
-		temporary: path.join(root, "tmp"),
-	};
-	try {
-		for (const directory of [paths.home, paths.xdgConfig, paths.xdgState, paths.temporary])
-			fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
-		return paths;
-	} catch (error) {
-		fs.rmSync(root, { recursive: true, force: true });
-		throw error;
-	}
-}
 
 async function discardHeldBoards(generation: Generation): Promise<void> {
 	if (generation.exit !== null) return;
@@ -316,8 +254,6 @@ export async function startOwnedCanvas({
 		if (currentGeneration === generation) currentGeneration = null;
 	};
 	const startAttempt = async (candidate: number): Promise<Generation> => {
-		const generationStateHome =
-			generatedStateHome === null ? null : join(generatedStateHome, `generation-${nextGeneration}`);
 		const child = spawn(process.execPath, [serverPath], {
 			env: {
 				...process.env,
