@@ -1,11 +1,11 @@
 ---
 id: TASK-143.08.02
 title: Make generated Codex 0.151.0 types authoritative
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 02:35'
+updated_date: '2026-09-03 02:41'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -29,13 +29,13 @@ Replace the rejected handwritten protocol ownership model with one dependency-ne
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 @openai/codex 0.151.0 is an exact runtime dependency, and a clean frozen bun install materializes the experimental generated tree deterministically before ordinary type-checking.
-- [ ] #2 The ignored generated tree lives inside one src/shared module with a tracked root entrypoint; runtime and UI consumers import only that entrypoint, and generated source is excluded from authored formatting and lint while remaining inside both required type graphs.
-- [ ] #3 Every used request, response, server request, notification, item, config, thread, turn, queue, session, and realtime view derives from generated exports with Extract, Pick, Omit, Partial, intersections, or a named conversion at one seam; no lookalike vendor base type remains.
-- [ ] #4 Each handwritten Zod ingress parser has compile-time input and output conformance to the generated type it accepts, inferred local TypeScript comes from the schema, and a Codex dependency change names every incompatible assumption during ordinary type-checking.
-- [ ] #5 The real seven-field BrowserUseOriginPolicy object decodes and round-trips, and all ts-rs i64 or bigint differences pass through one named normalization adapter with focused boundary coverage.
-- [ ] #6 Version, generation, missing-tree, and compiler diagnostics are actionable without a digest, method-name inventory, fingerprint corpus, or mirror detector acting as the contract authority.
-- [ ] #7 This recovery task is the sole owner of vendor-derived wire views, reverse-request variants, app-server ingress conformance, BrowserUseOriginPolicy handling, and i64 normalization. TASK-143.01.02 may consume its normalized exports only for browser-only state and user-intent projection.
+- [x] #1 @openai/codex 0.151.0 is an exact runtime dependency, and a clean frozen bun install materializes the experimental generated tree deterministically before ordinary type-checking.
+- [x] #2 The ignored generated tree lives inside one src/shared module with a tracked root entrypoint; runtime and UI consumers import only that entrypoint, and generated source is excluded from authored formatting and lint while remaining inside both required type graphs.
+- [x] #3 Every used request, response, server request, notification, item, config, thread, turn, queue, session, and realtime view derives from generated exports with Extract, Pick, Omit, Partial, intersections, or a named conversion at one seam; no lookalike vendor base type remains.
+- [x] #4 Each handwritten Zod ingress parser has compile-time input and output conformance to the generated type it accepts, inferred local TypeScript comes from the schema, and a Codex dependency change names every incompatible assumption during ordinary type-checking.
+- [x] #5 The real seven-field BrowserUseOriginPolicy object decodes and round-trips, and all ts-rs i64 or bigint differences pass through one named normalization adapter with focused boundary coverage.
+- [x] #6 Version, generation, missing-tree, and compiler diagnostics are actionable without a digest, method-name inventory, fingerprint corpus, or mirror detector acting as the contract authority.
+- [x] #7 This recovery task is the sole owner of vendor-derived wire views, reverse-request variants, app-server ingress conformance, BrowserUseOriginPolicy handling, and i64 normalization. TASK-143.01.02 may consume its normalized exports only for browser-only state and user-intent projection.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -99,3 +99,9 @@ An instrumented actual public command counted one generator, one root compiler, 
 
 Concurrent missing-subdirectory remediation implemented in 52156109. requireOwnedDirectory now treats EEXIST as a lost creation race, re-lstats the winner, and proceeds only for a real directory; files, symlinks, and unreadable winners keep the generated-tree reset diagnostic. In a fresh disposable checkout, removing stable v2 and launching eight generators produced eight zero exits, a complete Config.ts/current tree, one recipe target, zero normal staging, and zero pointer residue. Missing-file repair remained byte-identical; symlink and file impostors each failed with the reset remedy and cleaned their staging. The actual public type-check counted one generator, one root compiler, and one frontend compiler and reported only the 13 established root diagnostics. The four focused owners passed 533 tests, the frontend graph passed, and focused Oxlint, Oxfmt, and diff checks passed. Disposable roots were removed; acceptance criteria remain unchecked and the task stays In Progress.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Made the generated @openai/codex 0.151.0 contract authoritative through one shared entrypoint, generated locally during install and public type checking. Reviewed evidence covers generated-derived wire views, Zod ingress conformance, seven-field BrowserUseOriginPolicy and safe-i64 normalization, actionable containment diagnostics, reader-safe publication and eight-writer repair, plus 533 focused passing owners, frontend type checking, formatting and lint. The root graph retains only the 13 accepted pre-existing errors.
+<!-- SECTION:FINAL_SUMMARY:END -->
