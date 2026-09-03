@@ -27,6 +27,7 @@ import {
 	HUMAN_PERFORMANCE_BROWSER_OWNER,
 	applyCiBrowserOwnerExclusion,
 	browserCleanupObservationMs,
+	browserOwnerCommandArguments,
 	pollUntil,
 	type BrowserSelection,
 	type BrowserTestPath,
@@ -75,6 +76,7 @@ interface OwnerAuditSample {
 	sockets: string[];
 	listeners: string[];
 }
+type OwnerEnvironment = Record<string, string>;
 
 function ownerIsClean(state: OwnerAuditSample): boolean {
 	return (
@@ -144,10 +146,6 @@ function verifyPrerequisites(selection: BrowserSelection): string | undefined {
 	return browserExecutable;
 }
 
-function childName(index: number): string {
-	return String(index + 1).padStart(2, "0");
-}
-
 function ownerEnvironment(
 	file: BrowserTestPath,
 	laneRoot: string,
@@ -180,8 +178,8 @@ function ownerEnvironment(
 	return env;
 }
 
-function spawnOwner(file: BrowserTestPath, env: Record<string, string>): OwnedChild {
-	const child = spawn("bun", ["test", "--no-orphans", "--isolate", "--max-concurrency=1", file], {
+function spawnOwner(file: BrowserTestPath, env: OwnerEnvironment, testName?: string): OwnedChild {
+	const child = spawn("bun", browserOwnerCommandArguments(file, testName), {
 		cwd: repoRoot,
 		detached: true,
 		env,
@@ -438,11 +436,11 @@ async function runSelection(
 		if (interruptionSignal()) await raiseInterruption();
 		for (const [index, file] of selection.files.entries()) {
 			if (interrupted) throw new InterruptedError(interrupted);
-			const name = childName(index);
+			const name = String(index + 1).padStart(2, "0");
 			const ownerRoot = join(laneRoot, name);
 			mkdirSync(join(ownerRoot, "tmp"), { recursive: true });
 			const env = ownerEnvironment(file, laneRoot, ownerRoot, browserExecutable);
-			current = spawnOwner(file, env);
+			current = spawnOwner(file, env, selection.testName);
 			const processGroup = current.pid;
 			try {
 				await finishChild(current, `Browser owner ${file}`);

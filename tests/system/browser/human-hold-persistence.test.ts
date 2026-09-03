@@ -128,6 +128,12 @@ async function prepareBoard(
 		).status,
 	).toBe(200);
 	await pollUntil(
+		async () => (await request<PaneList>("/api/panes")).body.panes,
+		(panes) => panes.some((pane) => pane.clientId === paneClient && pane.board === board),
+		`pane ${paneClient} to adopt ${board}`,
+		{ timeoutMs: 3_000 },
+	);
+	await pollUntil(
 		() => pageElement(browser, "auth"),
 		(value) => value !== null,
 		"the pane to render the seeded board",
@@ -290,10 +296,12 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 	).body.elements.find((element) => element.id === "auth")!;
 	const noteFile = (await request<{ file: string }>(`/api/boards/info?board=${RECOVERY_BOARD}`))
 		.body.file;
-	const foreign = expandElements(
-		[{ id: "theirs", type: "rectangle", x: 20, y: 20, width: 40, height: 40 }],
-		{ forStore: true },
-	)[0]!;
+	const foreign = {
+		...expandElements([{ id: "theirs", type: "rectangle", x: 20, y: 20, width: 40, height: 40 }], {
+			forStore: true,
+		})[0]!,
+		index: "Zz",
+	};
 	writeFileSync(
 		noteFile,
 		readFileSync(noteFile, "utf8").replace(
