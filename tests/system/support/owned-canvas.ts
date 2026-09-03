@@ -254,9 +254,11 @@ export async function startOwnedCanvas({
 		if (currentGeneration === generation) currentGeneration = null;
 	};
 	const startAttempt = async (candidate: number): Promise<Generation> => {
+		const toolEnvironment: Environment =
+			process.env.PATH === undefined ? {} : { PATH: process.env.PATH };
 		const child = spawn(process.execPath, [serverPath], {
 			env: {
-				...process.env,
+				...toolEnvironment,
 				...env,
 				HOME: paths.home,
 				XDG_CONFIG_HOME: paths.xdgConfig,
