@@ -45,6 +45,7 @@ import {
 } from "./change-reporting";
 import { replaceCanvasFiles } from "./files";
 import { ownsHoldAttempt, type HoldAttempt } from "./hold-attempt";
+import { createHoldRenewalDeadline, createPaneReportDeadline } from "./canvas-deadlines";
 import {
 	beaconChanges,
 	BoardConflictError,
@@ -123,7 +124,6 @@ async function blobBase64(blob: Blob): Promise<string> {
 // reasons for the numbers are there too.
 import {
 	LOCK_RENEW_MS,
-	PANE_DEBOUNCE_MS,
 	SELECTION_DEBOUNCE_MS,
 	SOCKET_RECONNECT_MS,
 } from "../../shared/timing/timing";
@@ -380,7 +380,7 @@ export function useCanvasSession({
 	const lastHoldAtRef = useRef(0);
 	const holdAttemptRef = useRef<HoldAttempt | null>(null);
 	const holdAttemptGenerationRef = useRef(0);
-	const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [holdRenewalDeadline] = useState(() => createHoldRenewalDeadline());
 	/**
 	 * Who is writing this board, if it is not us. Non-null means read-only.
 	 *
@@ -410,7 +410,7 @@ export function useCanvasSession({
 	}, [primary]);
 	const focusedRef = useRef(focused);
 
-	const paneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [paneReportDeadline] = useState(() => createPaneReportDeadline());
 	const publishedPaneRef = useRef("");
 	// The navigator only depends on which board this accepted pane contributes,
 	// not on its camera. Do not re-read the vault for every pan or resize.
@@ -511,9 +511,7 @@ export function useCanvasSession({
 			// Excalidraw can fire a last onChange after our teardown, and reporting
 			// that would put the pane back in front of an agent after it was gone.
 			if (closedRef.current) return;
-			if (paneTimerRef.current) clearTimeout(paneTimerRef.current);
 			const send = (): void => {
-				paneTimerRef.current = null;
 				if (closedRef.current) return;
 				const report = paneReport();
 				if (!report) return;
@@ -598,10 +596,15 @@ export function useCanvasSession({
 						void error;
 					});
 			};
-			if (immediate) send();
-			else paneTimerRef.current = setTimeout(send, PANE_DEBOUNCE_MS);
+			paneReportDeadline.schedule(send, immediate);
 		},
-		[paneReport, paneReportSequencer, updatePaneConnectionHealth, onPaneStateAccepted],
+		[
+			onPaneStateAccepted,
+			paneReport,
+			paneReportDeadline,
+			paneReportSequencer,
+			updatePaneConnectionHealth,
+		],
 	);
 
 	useEffect(() => {
@@ -963,11 +966,8 @@ export function useCanvasSession({
 				);
 			};
 			const retryOrRenew = (delayMs: number): void => {
-				if (holdTimerRef.current || !pending() || boardKeyRef.current !== target) return;
-				holdTimerRef.current = setTimeout(() => {
-					holdTimerRef.current = null;
-					takeHold();
-				}, delayMs);
+				if (!pending() || boardKeyRef.current !== target) return;
+				holdRenewalDeadline.schedule(delayMs, takeHold);
 			};
 
 			const now = Date.now();
@@ -1030,7 +1030,7 @@ export function useCanvasSession({
 			attempt.promise = promise;
 			holdAttemptRef.current = attempt;
 		},
-		[clientId, currentScene, currentWithheldIds],
+		[clientId, currentScene, currentWithheldIds, holdRenewalDeadline],
 	);
 	useEffect(() => {
 		takeHoldRef.current = takeHold;
@@ -1071,11 +1071,10 @@ export function useCanvasSession({
 		if (!holdingRef.current) return;
 		const state = reportingRef.current.state;
 		if (!reportsSettled(state)) return;
-		if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-		holdTimerRef.current = null;
+		holdRenewalDeadline.cancel();
 		holdingRef.current = false;
 		releaseBoard(boardKeyRef.current, clientId);
-	}, [clientId]);
+	}, [clientId, holdRenewalDeadline]);
 	useEffect(() => {
 		releaseIfIdleRef.current = releaseIfIdle;
 	}, [releaseIfIdle]);
@@ -1160,8 +1159,7 @@ export function useCanvasSession({
 			if (boardKeyRef.current !== key) {
 				// Reports scheduled for the previous board cannot run on the next board.
 				dispatchReporting({ type: "board_adopted" });
-				if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-				holdTimerRef.current = null;
+				holdRenewalDeadline.cancel();
 				// Invalidate the attempt by generation rather than erasing its identity.
 				// If this board name returns before the old promise settles, the older
 				// attempt must remain distinguishable from the new one.
@@ -1188,7 +1186,15 @@ export function useCanvasSession({
 			// a third of a second.
 			schedulePaneReport(true);
 		},
-		[clientId, dispatchReporting, publishStatus, schedulePaneReport, setBoardIdentity, setHeldBy],
+		[
+			clientId,
+			dispatchReporting,
+			holdRenewalDeadline,
+			publishStatus,
+			schedulePaneReport,
+			setBoardIdentity,
+			setHeldBy,
+		],
 	);
 
 	// Re-read THIS pane's board. Deliberately not "what board is the server on":
@@ -1292,13 +1298,12 @@ export function useCanvasSession({
 		holdRef.current = null;
 		// Recovery terminates the held gesture. Cancel a queued renewal and
 		// invalidate any answer still in flight before releasing this pane's holder.
-		if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-		holdTimerRef.current = null;
+		holdRenewalDeadline.cancel();
 		holdAttemptGenerationRef.current += 1;
 		holdingRef.current = false;
 		releaseBoard(boardKeyRef.current, clientId);
 		publishStatus();
-	}, [clientId, publishStatus]);
+	}, [clientId, holdRenewalDeadline, publishStatus]);
 
 	const handleMessage = useCallback(
 		async (data: WebSocketMessage): Promise<void> => {
@@ -1646,9 +1651,8 @@ export function useCanvasSession({
 			socketGenerationRef.current += 1;
 			dispatchReporting({ type: "reports_cancelled" });
 			if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
-			if (paneTimerRef.current) clearTimeout(paneTimerRef.current);
-			if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-			holdTimerRef.current = null;
+			paneReportDeadline.cancel();
+			holdRenewalDeadline.cancel();
 			holdAttemptGenerationRef.current += 1;
 			holdAttemptRef.current = null;
 			// A pane closing while it holds the board. The lease would
@@ -1664,7 +1668,14 @@ export function useCanvasSession({
 			// close.
 			void workbenchSockets.dispose().finally(() => socketRef.current?.close(1000));
 		};
-	}, [clientId, dispatchReporting, flushWithBeacon, workbenchSockets]);
+	}, [
+		clientId,
+		dispatchReporting,
+		flushWithBeacon,
+		holdRenewalDeadline,
+		paneReportDeadline,
+		workbenchSockets,
+	]);
 
 	const handleChange = useCallback(
 		(elements: readonly Partial<ExcalidrawElement>[], appState: unknown): void => {

@@ -158,6 +158,9 @@ describe("delivery around server scene application", () => {
 		expect(harness.server.requests[0]?.report.upserts).toContainEqual(
 			expect.objectContaining({ id: "a", x: 15 }),
 		);
+		harness.accept();
+		harness.clock.advance(REPORT_IDLE_SETTLE_MS);
+		expect(harness.server.requests).toHaveLength(0);
 	});
 });
 

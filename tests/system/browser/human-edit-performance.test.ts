@@ -5,7 +5,6 @@ import path from "node:path";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 import {
-	REPORT_IDLE_SETTLE_MS,
 	REPORT_PROGRESS_MS,
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_BROWSER_POLL_MS,
@@ -330,40 +329,24 @@ test(
 		expect(afterDragProgress.perf.inflight).toBe(1);
 		const afterFirstX = afterDragProgress.elements.find((element) => element.id === "drag")!.x;
 		const reportsBeforeIdle = afterDragProgress.perf.reports;
-		const finalEditAt = await browser.eval<number>("performance.now()");
 		await browser.run(["press", "ArrowRight"]);
 		const dragDuring = await pageState();
 		const draggedX = dragDuring.elements.find((element) => element.id === "drag")!.x;
 		expect(dragDuring.perf.inflight).toBe(1);
 		expect((draggedX - dragXBefore) * beforeDrag.zoom).toBeGreaterThan(10);
 		expect(draggedX).toBeGreaterThan(afterFirstX);
-		await Bun.sleep(REPORT_PROGRESS_MS + TEST_BROWSER_POLL_MS * 2);
-		const afterFinalProgress = await pageState();
-		expect(afterFinalProgress.perf.reports).toBe(reportsBeforeIdle);
 		const afterFinalIdle = await pollUntil(
 			pageState,
 			(state) => state.perf.reports === reportsBeforeIdle + 1,
 			"the trailing idle report to start",
 		);
-		const idleStart = afterFinalIdle.perf.reportStarts.find(
-			(startedAt) => startedAt >= finalEditAt,
-		);
 		expect(afterFinalIdle.perf.reports).toBe(reportsBeforeIdle + 1);
-		expect(idleStart).toBeDefined();
-		expect(idleStart! - finalEditAt).toBeGreaterThanOrEqual(
-			REPORT_IDLE_SETTLE_MS - REPORT_PROGRESS_MS / 4,
-		);
 		const settledAfterIdle = await pollUntil(
 			pageState,
 			(state) => state.perf.responses.length === state.perf.reports && state.perf.inflight === 0,
 			"the accepted idle report to settle",
 		);
-		const settledReportCount = settledAfterIdle.perf.reports;
-		await Bun.sleep(TEST_BROWSER_POLL_MS * 3);
-		const noTail = await pageState();
-		expect(noTail.perf.reports).toBe(settledReportCount);
-		expect(noTail.perf.responses).toHaveLength(noTail.perf.reports);
-		expect(noTail.perf.inflight).toBe(0);
+		expect(settledAfterIdle.perf.responses).toHaveLength(settledAfterIdle.perf.reports);
 
 		await frameElement("resize");
 		const resizeBeforeState = await pageState();

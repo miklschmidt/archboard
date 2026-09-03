@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-
 import type { PanesReport } from "../../../src/runtime/engine/panes.ts";
 import { PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
@@ -15,7 +14,6 @@ import {
 	registerCanvasBase,
 } from "./support/agent-browser.ts";
 import type { NavigatorContract } from "./support/shell-contract-types.ts";
-
 type PanesBody = PanesReport & { success: boolean };
 type Requester = ReturnType<typeof createJsonRequester>;
 type HealthBody = { websocket_clients: number };
@@ -32,10 +30,8 @@ interface PreviewView {
 	src?: string;
 	state?: string;
 }
-
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
-
 async function createBoard(
 	request: Requester,
 	board: string,
@@ -57,7 +53,6 @@ async function createBoard(
 	}
 	return key;
 }
-
 async function addBox(request: Requester, board: string, id: string, label: string): Promise<void> {
 	expect(
 		(
@@ -273,7 +268,7 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 
 	expect(
 		await browser.eval<boolean>(
-			`(() => { window.__previewProbe = { requests: [], failBoard: null, delayBoard: null }; window.__previewNativeFetch = window.fetch.bind(window); window.fetch = async (input, init) => { const requestUrl = typeof input === 'string' ? input : input.url; const url = new URL(requestUrl, location.href); if (url.pathname !== '/api/boards/preview') return window.__previewNativeFetch(input, init); const board = url.searchParams.get('board'); window.__previewProbe.requests.push({ board, method: (init?.method || 'GET').toUpperCase() }); if (window.__previewProbe.failBoard === board) return new Response('{}', { status: 503 }); if (window.__previewProbe.delayBoard === board) await new Promise(resolve => setTimeout(resolve, 350)); return window.__previewNativeFetch(input, init); }; return true; })()`,
+			`(() => { window.__previewProbe = { requests: [], failBoard: null, holdBoard: null, pending: [], release(board) { const index = this.pending.findIndex(request => request.board === board); if (index < 0) return false; this.pending.splice(index, 1)[0].resolve(); return true; } }; window.__previewNativeFetch = window.fetch.bind(window); window.fetch = async (input, init) => { const requestUrl = typeof input === 'string' ? input : input.url; const url = new URL(requestUrl, location.href); if (url.pathname !== '/api/boards/preview') return window.__previewNativeFetch(input, init); const board = url.searchParams.get('board'); const record = { board, method: (init?.method || 'GET').toUpperCase(), completed: false }; window.__previewProbe.requests.push(record); try { if (window.__previewProbe.failBoard === board) return new Response('{}', { status: 503 }); if (window.__previewProbe.holdBoard === board) await new Promise(resolve => window.__previewProbe.pending.push({ board, resolve })); return await window.__previewNativeFetch(input, init); } finally { record.completed = true; } }; return true; })()`,
 		),
 	).toBe(true);
 	const before = {
@@ -347,7 +342,6 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		"the failed preview to recover on the next disclosure",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-
 	const optionLight = vaultPreview.src;
 	await browser.eval<boolean>(
 		`(() => { document.querySelector('[data-board-key=${JSON.stringify(option)}]')?.focus(); document.querySelector('[aria-label="Use dark theme"]')?.click(); return true; })()`,
@@ -359,9 +353,8 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 	expect(optionDark.src).toMatch(/^blob:/);
-
 	await browser.eval<boolean>(
-		`(() => { window.__previewProbe.delayBoard = 'gamma'; document.querySelector('[data-board-key="gamma"]')?.focus(); return true; })()`,
+		`(() => { window.__previewProbe.holdBoard = 'gamma'; document.querySelector('[data-board-key="gamma"]')?.focus(); return true; })()`,
 	);
 	await pollUntil(
 		readPreview,
@@ -381,7 +374,16 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		"a later disclosure to win over the delayed completion",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	await Bun.sleep(400);
+	expect(await browser.eval<boolean>("window.__previewProbe.release('gamma')")).toBe(true);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				"Boolean(window.__previewProbe.requests.find(request => request.board === 'gamma' && request.completed))",
+			),
+		Boolean,
+		"the stale gamma preview request to finish",
+		{ timeoutMs: PANE_SETTLE_CAP_MS },
+	);
 	expect((await readPreview()).board).not.toBe("gamma");
 	await browser.eval<void>(
 		`{
@@ -393,13 +395,17 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	);
 	await pollUntil(readPreview, (view) => !view.board, "intentional list scroll dismissal");
 	expect(
-		await browser.eval<Array<{ board: string; method: string }>>("window.__previewProbe.requests"),
+		await browser.eval<Array<{ board: string; method: string; completed: boolean }>>(
+			"window.__previewProbe.requests",
+		),
 	).toSatisfy(
-		(requests) => requests.length >= 5 && requests.every(({ method }) => method === "GET"),
+		(requests) =>
+			requests.length >= 5 &&
+			requests.every(({ method }) => method === "GET") &&
+			requests.some(({ board, completed }) => board === "gamma" && completed),
 	);
-
 	await browser.eval<boolean>(
-		`(() => { window.__previewProbe.delayBoard = null; document.querySelector('[data-board-key=${JSON.stringify(primary)}]')?.focus(); return true; })()`,
+		`(() => { window.__previewProbe.holdBoard = null; document.querySelector('[data-board-key=${JSON.stringify(primary)}]')?.focus(); return true; })()`,
 	);
 	const beforeInvalidation = await pollUntil(
 		readPreview,
