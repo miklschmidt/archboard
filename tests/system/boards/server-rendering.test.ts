@@ -9,7 +9,7 @@ import { isBlockId } from "../../../src/shared/ids/ids.ts";
 import {
 	LOCK_LEASE_MS,
 	TEST_SERVER_RENDERING_CASE_TIMEOUT_MS,
-	TEST_SERVER_RENDERING_WRITE_LEASE_MS,
+	TEST_SERVER_RENDERING_HOLD_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
 import { findingElements, findingFile } from "../browser/fixtures/fixed-point-scene.ts";
 import { processExists, startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
@@ -33,6 +33,7 @@ interface HealthBody {
 	websocket_clients: number;
 	renderer: RendererStatus;
 	application: { activeMutations: Array<{ name: string; kind: string }> };
+	held_boards: Array<{ board: string }>;
 }
 
 interface RenderBody {
@@ -135,14 +136,7 @@ beforeAll(async () => {
 	);
 	note("missing-file", fixture.replace('"fileId": "pixel"', '"fileId": "absent"'));
 	note("missing-font", fixture.replaceAll('"fontFamily": 5', '"fontFamily": 99'));
-	canvas = await startOwnedCanvas({
-		serverPath: join(root, "src/server.ts"),
-		vault,
-		env: {
-			ARCHBOARD_TEST_OWNED_CANVAS: "1",
-			ARCHBOARD_TEST_WRITE_LEASE_MS: String(TEST_SERVER_RENDERING_WRITE_LEASE_MS),
-		},
-	});
+	canvas = await startOwnedCanvas({ serverPath: join(root, "src/server.ts"), vault });
 	request = createJsonRequester(canvas);
 });
 
@@ -338,13 +332,15 @@ describe.serial("server-owned board rendering", () => {
 						"/api/elements/from-mermaid?board=mermaid",
 						{ method: "POST", body: { mermaidDiagram: source } },
 					);
-					await waitForHealth(
+					const activeHealth = await waitForHealth(
 						(health) => health.renderer.active,
 						"the stopped renderer to own the Mermaid job",
 					);
+					expect(activeHealth.held_boards.some(({ board }) => board === "mermaid")).toBeFalse();
 					const holdResponse = await request("/api/boards/hold?board=mermaid", {
 						method: "POST",
 						body: { board: "mermaid", clientId: holder },
+						signal: AbortSignal.timeout(TEST_SERVER_RENDERING_HOLD_TIMEOUT_MS),
 					});
 					const concurrentWrite = await request("/api/elements/changes?board=mermaid", {
 						method: "POST",
