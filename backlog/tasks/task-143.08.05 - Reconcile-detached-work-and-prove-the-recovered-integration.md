@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 14:18'
+updated_date: '2026-09-03 14:23'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -18,6 +18,7 @@ references:
 modified_files:
   - src/runtime/codex-process/lib/storage.ts
   - src/shared/timing/timing.ts
+  - src/runtime/engine/board-lock.ts
   - src/runtime/engine/tests/git-async.test.ts
   - tests/system/canvas-state/codex-workbench-production-cleanup.test.ts
   - tests/system/canvas-state/codex-workbench-production.test.ts
@@ -249,6 +250,8 @@ Focused validation only, per remediation policy: BoardDialog 1/1; board-write ob
 User-directed anti-over-testing remediation: deleted the complete 80-iteration owner "repeats the real sentinel lifecycle beyond the prior 67-timer failure" and its repeatedLifecycleCount constant. The loop spent about 11.23 seconds and roughly 160 child launches proving a historical Bun/runtime stress threshold, not an Archboard product contract. Existing single-lifecycle and focused timeout, drain, sentinel, delayed-startup, signal, identity, and cleanup owners remain unchanged. Expected complete system-lane saving is approximately 11 seconds; no replacement stress coverage was added.
 
 Focused post-deletion validation: bun test tests/system/board-inspection/package-read-only.test.ts passed 11/11 with 98 expectations in 9.97 seconds (command wall time 9.83 seconds). Exact-file Oxfmt check and Oxlint passed. Compared with the prior 21.22-second focused run, removal saved about 11.4 seconds while retaining every direct product success, failure, identity, signal, and cleanup owner.
+
+Final narrow rereview remediation: board-lock.ts now owns injectLockHandoffFaultForTest, a controlled module-root seam with only malformed and wrong-token variants. It keeps the handoff path and receipt schema private while letting board-write-observers drive the real readHandoff parser and predecessor token matcher through normal successor acquisition. The malformed and wrong-token cases are restored without private filesystem spelling or assertions. The package lifecycle timeout comment now describes the two retained parent-SIGTERM owners rather than the deleted 80-cycle stress loop. Focused board-write-observers passed 4/4 with 53 expectations; exact-file Oxfmt and Oxlint passed. Package read-only was not rerun because its code did not change.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

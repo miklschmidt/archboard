@@ -94,6 +94,7 @@ async function acquireAfterObservedPredecessor(options: {
 	board: string;
 	hash?: string;
 	failStamp?: boolean;
+	handoffFault?: "malformed" | "wrong-token";
 }) {
 	const predecessorId = `${options.board}-predecessor`;
 	const successorId = `${options.board}-successor`;
@@ -124,6 +125,9 @@ async function acquireAfterObservedPredecessor(options: {
 		).toBeTrue();
 	}
 	expect(lockModule.releaseHold(options.board, predecessorId)).toBeTrue();
+	if (options.handoffFault) {
+		lockModule.injectLockHandoffFaultForTest(options.board, options.handoffFault);
+	}
 	jest.advanceTimersByTime(timingModule.LOCK_POLL_MS);
 	await flushLockTurns();
 	const successor = await waiting;
@@ -244,8 +248,11 @@ describe.serial("post-commit pane observers", () => {
 				name: string;
 				hash?: string;
 				failStamp?: boolean;
+				handoffFault?: "malformed" | "wrong-token";
 			}> = [
 				{ name: "absent" },
+				{ name: "malformed", hash: "committed-hash", handoffFault: "malformed" },
+				{ name: "identity", hash: "committed-hash", handoffFault: "wrong-token" },
 				{ name: "stamp-failure", hash: "unrecorded-hash", failStamp: true },
 			];
 			for (const proofCase of rejectionTable) {
@@ -253,6 +260,7 @@ describe.serial("post-commit pane observers", () => {
 					board: `proof-${proofCase.name}`,
 					...(proofCase.hash ? { hash: proofCase.hash } : {}),
 					...(proofCase.failStamp ? { failStamp: true } : {}),
+					...(proofCase.handoffFault ? { handoffFault: proofCase.handoffFault } : {}),
 				});
 				expect(successor.hold.predecessorHash, proofCase.name).toBeUndefined();
 				expect(successor.release(), proofCase.name).toBeTrue();
