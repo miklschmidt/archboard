@@ -191,7 +191,7 @@ export function createCanvasCodexWorkbenchInstallation(
 						reason: "Account state has not been read.",
 					},
 					login: { kind: "login", state: "idle" },
-					queue: { kind: "queue", status: "unavailable", entries: [] },
+					queue: { kind: "codex_queue", submissions: null },
 				},
 			};
 			byGeneration.set(input.generation, owners);
@@ -575,10 +575,7 @@ export function createCanvasCodexWorkbenchInstallation(
 			input.markSessionReady(account.account !== null);
 			input.assertActivationCurrent();
 			const owners = ownersFor(input);
-			owners.browserState.account =
-				account.account === null
-					? { kind: "account", state: "signed_out" }
-					: { kind: "account", state: "ready", accountType: account.account.type };
+			owners.browserState.account = { kind: "codex_account_response", response: account };
 			owners.browserState.readiness =
 				account.account === null
 					? { kind: "readiness", state: "signed_out" }

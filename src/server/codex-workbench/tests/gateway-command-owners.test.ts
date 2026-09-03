@@ -29,6 +29,14 @@ function harness(): GatewayHarness {
 }
 
 describe("Codex workbench browser command owners", () => {
+	test("refuses an unsupported action through the production dispatch boundary", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const result = await connection.command({ paneId: value.paneId, command: "thread/delete" });
+		expect(result).toMatchObject({ code: "unsupported_command", outcome: "not_delivered" });
+		expect(value.calls).toEqual([]);
+	});
+
 	test("routes every thread, queue, text, and realtime command through its owner", async () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);

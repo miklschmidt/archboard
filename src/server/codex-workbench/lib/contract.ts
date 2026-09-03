@@ -1,20 +1,12 @@
 import type {
-	BrowserAccount,
 	BrowserApproval,
 	BrowserCommand,
 	BrowserCommandLease,
-	BrowserCoordinator,
 	BrowserDynamicApproval,
 	BrowserDynamicApprovalResponse,
-	BrowserLogin,
-	BrowserQueue,
-	BrowserReadiness,
-	BrowserSemanticDelivery,
-	BrowserSettings,
+	BrowserProjectionInput,
 	BrowserSnapshot,
 	BrowserThreadLink,
-	BrowserTimeline,
-	BrowserVoice,
 	DeliveryOutcome,
 } from "../../../shared/codex-browser-model/index.js";
 import type {
@@ -129,22 +121,13 @@ export interface BrowserProjectionContext {
  * A projection is read from the owners that already hold Codex state. The
  * gateway does not retain any of these values as a second domain store.
  */
-export interface BrowserProjection {
-	readonly readiness: BrowserReadiness;
-	readonly account: BrowserAccount;
-	readonly login: BrowserLogin;
-	readonly timeline: BrowserTimeline | null;
-	readonly queue: BrowserQueue;
-	readonly settings: readonly BrowserSettings[];
-	readonly approvals: readonly BrowserApproval[];
-	readonly dynamicApprovals: readonly BrowserDynamicApproval[];
-	readonly semantic: BrowserSemanticDelivery | null;
-	readonly coordinator: BrowserCoordinator;
-	readonly voice: BrowserVoice;
-}
+export type BrowserOwnerProjection = Omit<
+	BrowserProjectionInput,
+	"threadLink" | "lease" | "operation"
+>;
 
 export interface BrowserProjectionPort {
-	readonly read: (context: BrowserProjectionContext) => BrowserProjection;
+	readonly read: (context: BrowserProjectionContext) => BrowserOwnerProjection;
 	/** One owner notification source may fan out all projection changes. */
 	readonly onChange?: (listener: () => void) => BrowserUnsubscribe;
 }
@@ -156,6 +139,10 @@ export type BrowserDisconnectReason =
 	| "child_disconnected"
 	| "gateway_shutdown";
 
+/**
+ * Browser-only host settlement. Typed Codex request and result values end at
+ * their session owner; the gateway never mirrors them into a second result.
+ */
 export type BrowserActionResult = void | {
 	readonly outcome: DeliveryOutcome;
 	readonly message?: string;
@@ -266,6 +253,7 @@ export interface BrowserOrdinaryApprovalActions {
 		command: BrowserApprovalCommand,
 		context: BrowserActionContext,
 	) => Promise<BrowserActionResult>;
+	readonly acknowledge: (requestId: JsonRpcRequestId) => void;
 	readonly onBrowserDisconnect?: (
 		context: BrowserActionContext,
 		reason: BrowserDisconnectReason,

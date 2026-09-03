@@ -426,6 +426,18 @@ export function createCodexApprovalBroker(
 	const inspect = (): readonly ApprovalSnapshot[] =>
 		Object.freeze(Array.from(records.values(), snapshotOf));
 
+	const acknowledge = (requestId: JsonRpcRequestId): void => {
+		const record = requireRecord(requestId);
+		if (!isTerminal(record.state))
+			throw new ApprovalError(
+				"invalid_state",
+				"Only a terminal approval may be acknowledged.",
+				requestId,
+			);
+		if (record.timer !== undefined) clearTimeout(record.timer);
+		records.delete(requestId);
+	};
+
 	const spokenForRecord = (record: ApprovalRecord): SpokenEligibility => {
 		if (record.state !== "pending") return { eligible: false, reason: "not_pending" };
 		const live = currentBinding(record);
@@ -561,6 +573,7 @@ export function createCodexApprovalBroker(
 		getRequest,
 		inspect,
 		toBrowserApproval: browserApproval,
+		acknowledge,
 		spokenEffectPresentation: spokenPresentation,
 		spokenEligibility: spoken,
 		resolve,

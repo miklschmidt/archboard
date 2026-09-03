@@ -1,10 +1,9 @@
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import type {
-	BrowserAccount,
 	BrowserApproval,
 	BrowserDynamicApproval,
-	BrowserProjection,
+	BrowserOwnerProjection,
 	BrowserReadiness,
 	BrowserSnapshot,
 	BrowserWorkbenchActions,
@@ -126,6 +125,14 @@ function readinessFor(
 	return { kind: "readiness", state };
 }
 
+const readyAccount = (): BrowserOwnerProjection["account"] => ({
+	kind: "codex_account_response",
+	response: {
+		account: { type: "chatgpt", email: "gateway@example.test", planType: "plus" },
+		requiresOpenaiAuth: true,
+	},
+});
+
 export function createGatewayHarness(
 	authorities: IdentityAuthorities = createIdentityAuthorities(),
 	lifecycle?: BrowserLifecyclePort,
@@ -151,7 +158,7 @@ export function createGatewayHarness(
 	const paneId = "pane-one";
 	let clock = CLOCK_START;
 	let readiness: BrowserReadiness = readinessFor("thread_capable", loginId);
-	let account: BrowserAccount = { kind: "account", state: "ready", accountType: "chatgpt" };
+	let account: BrowserOwnerProjection["account"] = readyAccount();
 	let link: ThreadLinkSnapshot = executableLink(childId, epoch, threadId);
 	let revision = 0;
 	let ordinaryApproval: BrowserApproval | null = null;
@@ -237,8 +244,28 @@ export function createGatewayHarness(
 			},
 		},
 		ordinaryApprovals: {
-			pending: (candidate) => (candidate === requestId ? ordinaryApproval : null),
-			resolve: action("approval.resolve"),
+			pending: (candidate) =>
+				candidate === requestId && ordinaryApproval?.lifecycle.state === "pending"
+					? ordinaryApproval
+					: null,
+			resolve: async () => {
+				const result = await run("approval.resolve");
+				if (ordinaryApproval !== null)
+					ordinaryApproval = {
+						...ordinaryApproval,
+						lifecycle: {
+							state: "settled",
+							decision: "approved",
+							outcome: "delivered",
+							reason: "The approval settled.",
+						},
+						spoken: { eligible: false, reason: "not_pending" },
+					};
+				return result;
+			},
+			acknowledge: (candidate) => {
+				if (candidate === requestId) ordinaryApproval = null;
+			},
 			onBrowserDisconnect: (_context, reason) => {
 				disconnects.push("ordinary");
 				disconnectReasons.push(reason);
@@ -258,45 +285,31 @@ export function createGatewayHarness(
 		},
 	};
 	const projection: BrowserProjectionPort = {
-		read: ({ mediaReady }): BrowserProjection => ({
+		read: ({ mediaReady }): BrowserOwnerProjection => ({
 			readiness,
 			account,
 			login: { kind: "login", state: "idle" },
 			timeline: null,
-			queue: { kind: "queue", status: "empty", entries: [] },
+			queue: { kind: "codex_queue", submissions: [] },
 			settings: [],
 			approvals: ordinaryApproval === null ? [] : [ordinaryApproval],
 			dynamicApprovals,
-			semantic: null,
+			semantic: { kind: "codex_semantic", outcome: null, freshness: null },
 			coordinator: {
-				kind: "coordinator",
+				kind: "codex_coordinator",
 				state: "unbound",
 				threadId: null,
-				activeTurnId: null,
-				configuredModel: null,
-				configuredEffort: null,
-				model: null,
-				effort: null,
-				serviceTier: null,
+				configured: null,
+				effective: null,
 				reason: null,
 			},
-			voice: mediaReady
-				? {
-						kind: "voice",
-						state: "ready",
-						realtimeSessionId: null,
-						transcript: [],
-						delivery: null,
-						reason: null,
-					}
-				: {
-						kind: "voice",
-						state: "unavailable",
-						realtimeSessionId: null,
-						transcript: [],
-						delivery: null,
-						reason: "Browser audio is unavailable for this socket.",
-					},
+			voice: {
+				kind: "codex_voice",
+				mediaReady,
+				generation: null,
+				coordinatorState: "ready",
+				transcript: [],
+			},
 		}),
 		onChange: (listener) => {
 			projectionListeners.add(listener);
@@ -320,7 +333,7 @@ export function createGatewayHarness(
 		readiness = readinessFor(state, loginId);
 		account =
 			state === "account_ready" || state === "thread_capable"
-				? { kind: "account", state: "ready", accountType: "chatgpt" }
+				? readyAccount()
 				: { kind: "account", state: "signed_out" };
 		emitProjectionChange();
 	};

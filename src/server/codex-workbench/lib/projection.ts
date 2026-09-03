@@ -1,16 +1,5 @@
-import type { CodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
-import { projectCodexBrowserState } from "../../../shared/codex-browser-model/index.js";
-import type {
-	BrowserSnapshot,
-	BrowserCommandLease,
-	BrowserOperationOutcome,
-} from "../../../shared/codex-browser-model/index.js";
-import type { ThreadLinkBindingSnapshot } from "../../../runtime/codex-thread-link/index.js";
-import type {
-	BrowserProjection,
-	BrowserProjectionContext,
-	BrowserSnapshotDelta,
-} from "./contract.js";
+import type { BrowserSnapshot } from "../../../shared/codex-browser-model/index.js";
+import type { BrowserSnapshotDelta } from "./contract.js";
 
 export const BROWSER_SNAPSHOT_MAX_BYTES = 1_048_576;
 export const BROWSER_DELTA_MAX_BYTES = 262_144;
@@ -49,66 +38,6 @@ function wireBytes(value: unknown): number {
 
 function assertBounded(value: unknown, limit: number, kind: string): void {
 	if (wireBytes(value) > limit) throw new Error(`the browser ${kind} exceeds its wire-size bound`);
-}
-
-function parseProjection(
-	model: CodexBrowserModel,
-	projection: BrowserProjection,
-	binding: ThreadLinkBindingSnapshot,
-	lease: BrowserCommandLease | null,
-	operation: BrowserOperationOutcome | null,
-): BrowserSnapshot {
-	const result = projectCodexBrowserState(model, {
-		readiness: projection.readiness,
-		account: projection.account,
-		login: projection.login,
-		threadLink: binding.link,
-		timeline: projection.timeline,
-		queue: projection.queue,
-		settings: projection.settings,
-		approvals: projection.approvals,
-		dynamicApprovals: projection.dynamicApprovals,
-		semantic: projection.semantic,
-		coordinator: projection.coordinator,
-		voice: projection.voice,
-		lease,
-		operation,
-	});
-	if (result.tag === "refused") throw new Error(result.message);
-	const parsed = result.snapshot;
-	assertBounded(parsed, BROWSER_SNAPSHOT_MAX_BYTES, "snapshot");
-	return deepFreeze(parsed);
-}
-
-export function readBrowserSnapshot(options: {
-	readonly model: CodexBrowserModel;
-	readonly projection: BrowserProjection;
-	readonly binding: ThreadLinkBindingSnapshot;
-	readonly lease: BrowserCommandLease | null;
-	readonly operation: BrowserOperationOutcome | null;
-}): BrowserSnapshot {
-	return parseProjection(
-		options.model,
-		options.projection,
-		options.binding,
-		options.lease,
-		options.operation,
-	);
-}
-
-export function readBrowserProjection(options: {
-	readonly model: CodexBrowserModel;
-	readonly projection: BrowserProjection;
-	readonly context: BrowserProjectionContext;
-	readonly operation: BrowserOperationOutcome | null;
-}): BrowserSnapshot {
-	return readBrowserSnapshot({
-		model: options.model,
-		projection: options.projection,
-		binding: options.context.binding,
-		lease: options.context.lease,
-		operation: options.operation,
-	});
 }
 
 function sameWireValue(left: unknown, right: unknown): boolean {
