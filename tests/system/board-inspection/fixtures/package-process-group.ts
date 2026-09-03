@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 interface ProcessIdentity {
@@ -42,21 +42,40 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 	process.on(signal, () => undefined);
 }
 
-if (process.argv[2] === "descendant") {
+if (process.argv[2] === "inherited-descendant") {
+	writeFileSync(process.argv[3]!, JSON.stringify(identity(process.pid)));
+	holdOpen();
+} else if (process.argv[2] === "descendant") {
 	process.stdout.write(`${JSON.stringify(identity(process.pid))}\n`);
 	holdOpen();
 } else {
 	const marker = process.env.ARCHBOARD_PACKAGE_PROCESS_READY;
 	if (!marker) throw new Error("ARCHBOARD_PACKAGE_PROCESS_READY is required.");
 	const entry = fileURLToPath(import.meta.url);
-	const descendant = Bun.spawn([process.execPath, entry, "descendant"], {
-		stdin: "ignore",
-		stdout: "pipe",
-		stderr: "pipe",
-	});
-	const reader = descendant.stdout.getReader();
-	const descendantIdentity = JSON.parse(await readLine(reader)) as ProcessIdentity;
-	reader.releaseLock();
+	const inheritPipes = process.env.ARCHBOARD_PACKAGE_PROCESS_DESCENDANT_INHERITS_PIPES === "1";
+	const descendantMarker = `${marker}.descendant`;
+	const descendant = Bun.spawn(
+		[
+			process.execPath,
+			entry,
+			inheritPipes ? "inherited-descendant" : "descendant",
+			descendantMarker,
+		],
+		{
+			stdin: "ignore",
+			stdout: inheritPipes ? "inherit" : "pipe",
+			stderr: inheritPipes ? "inherit" : "pipe",
+		},
+	);
+	let descendantIdentity: ProcessIdentity;
+	if (inheritPipes) {
+		while (!existsSync(descendantMarker)) await Bun.sleep(1);
+		descendantIdentity = JSON.parse(readFileSync(descendantMarker, "utf8")) as ProcessIdentity;
+	} else {
+		const reader = (descendant.stdout as ReadableStream<Uint8Array>).getReader();
+		descendantIdentity = JSON.parse(await readLine(reader)) as ProcessIdentity;
+		reader.releaseLock();
+	}
 	if (descendantIdentity.pid !== descendant.pid) {
 		throw new Error(
 			`Package process descendant reported ${descendantIdentity.pid}, expected ${descendant.pid}.`,

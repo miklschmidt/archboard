@@ -48,7 +48,7 @@ interface TerminationReason {
 export interface ReadOnlyRunOptions {
 	timeoutMs?: number;
 	signal?: AbortSignal;
-	captureProcessGroup?: (pid: number) => ProcessGroupIdentity;
+	captureProcessGroup?: (pid: number) => ProcessGroupIdentity | Promise<ProcessGroupIdentity>;
 	drainStdout?: (stream: ReadableStream<Uint8Array>) => Promise<string>;
 	drainStderr?: (stream: ReadableStream<Uint8Array>) => Promise<string>;
 	onSpawn?: (group: number) => void;
@@ -256,6 +256,26 @@ function rejectedSettlement(settlements: InspectionSettlements): Error | undefin
 	return undefined;
 }
 
+async function terminateFreshDetachedGroup(
+	group: number,
+	settlements: Promise<InspectionSettlements>,
+): Promise<void> {
+	try {
+		process.kill(-group, "SIGKILL");
+	} catch (cause) {
+		if ((cause as NodeJS.ErrnoException).code !== "ESRCH") throw cause;
+	}
+	const completed = await withinCleanup(Promise.all([processGroupDisappeared(group), settlements]));
+	if (completed === undefined) {
+		throw new Error(
+			`Fresh package inspection process group ${group} left live members or unsettled pipes.`,
+		);
+	}
+	if (!completed[0]) {
+		throw new Error(`Fresh package inspection process group ${group} survived SIGKILL.`);
+	}
+}
+
 export async function runReadOnlyPackageProcess(
 	root: string,
 	vault: string,
@@ -302,26 +322,6 @@ export async function runReadOnlyPackageProcess(
 			cause,
 		});
 	}
-	let groupIdentity: ProcessGroupIdentity;
-	try {
-		groupIdentity = (options.captureProcessGroup ?? captureDetachedProcessGroup)(child.pid);
-	} catch (cause) {
-		try {
-			child.kill("SIGKILL");
-		} catch {
-			// The exact spawned child may already have exited.
-		}
-		await Promise.allSettled([
-			child.exited,
-			new Response(child.stdout as ReadableStream<Uint8Array>).arrayBuffer(),
-			new Response(child.stderr as ReadableStream<Uint8Array>).arrayBuffer(),
-		]);
-		throw new Error(`Could not start package inspection: ${(cause as Error).message}`, {
-			cause,
-		});
-	}
-	options.signal?.addEventListener("abort", onAbort, { once: true });
-	if (options.signal?.aborted) onAbort();
 	const recordSettlement = (name: OwnedSettlementName): void => options.onSettlement?.(name);
 	const stdoutStream = child.stdout as ReadableStream<Uint8Array>;
 	const stderrStream = child.stderr as ReadableStream<Uint8Array>;
@@ -344,6 +344,40 @@ export async function runReadOnlyPackageProcess(
 		recordSettlement,
 		(error) => requestTermination({ kind: "stream", error }),
 	);
+	const settlements = Promise.all([leader, stdout, stderr]).then(
+		([settledLeader, settledStdout, settledStderr]): InspectionSettlements => ({
+			leader: settledLeader,
+			stdout: settledStdout,
+			stderr: settledStderr,
+		}),
+	);
+	let groupIdentity: ProcessGroupIdentity;
+	try {
+		groupIdentity = await (options.captureProcessGroup ?? captureDetachedProcessGroup)(child.pid);
+	} catch (cause) {
+		let cleanupFailure: unknown;
+		try {
+			await terminateFreshDetachedGroup(child.pid, settlements);
+		} catch (error) {
+			cleanupFailure = error;
+		}
+		const startFailure = new Error(
+			`Could not start package inspection: ${(cause as Error).message}`,
+			{
+				cause,
+			},
+		);
+		if (cleanupFailure !== undefined) {
+			throw new AggregateError(
+				[startFailure, cleanupFailure],
+				`${startFailure.message}; detached process-group cleanup failed.`,
+				{ cause },
+			);
+		}
+		throw startFailure;
+	}
+	options.signal?.addEventListener("abort", onAbort, { once: true });
+	if (options.signal?.aborted) onAbort();
 	void leader.then((outcome) => {
 		if (outcome.status !== "fulfilled") return undefined;
 		try {
@@ -360,13 +394,6 @@ export async function runReadOnlyPackageProcess(
 		}
 		return undefined;
 	});
-	const settlements = Promise.all([leader, stdout, stderr]).then(
-		([settledLeader, settledStdout, settledStderr]): InspectionSettlements => ({
-			leader: settledLeader,
-			stdout: settledStdout,
-			stderr: settledStderr,
-		}),
-	);
 	try {
 		options.onSpawn?.(groupIdentity.group);
 	} catch (cause) {

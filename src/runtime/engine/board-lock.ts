@@ -910,21 +910,6 @@ function writeHandoff(board: string, record: LockRecord): void {
 	});
 }
 
-/** Test seam for corrupt external receipt states; the module keeps their path and shape private. */
-export function injectLockHandoffFaultForTest(
-	board: string,
-	fault: "malformed" | "wrong-token",
-): void {
-	const file = handoffPathFor(board);
-	if (fault === "malformed") {
-		fs.writeFileSync(file, "{broken");
-		return;
-	}
-	const handoff = readHandoff(file);
-	if (!handoff) throw new Error(`Board "${board}" has no valid handoff receipt to alter.`);
-	writeJsonRecord(file, { ...handoff, token: newToken() });
-}
-
 /** Consume every receipt, but trust it only when this acquirer saw its exact predecessor. */
 function takeHandoff(board: string, predecessor: LockRecord | null): string | undefined {
 	const file = handoffPathFor(board);

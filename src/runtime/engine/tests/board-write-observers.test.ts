@@ -11,6 +11,7 @@ import type * as BoardLockModule from "../board-lock.js";
 import type * as TimingModule from "../../../shared/timing/timing.js";
 import type * as LoggerModule from "../logger.js";
 import type { ServerElement } from "../types.js";
+import { withLockHandoffReadFault } from "./support/board-lock-test-adapter.js";
 
 const root = mkdtempSync(join(tmpdir(), "archboard-board-observers-"));
 const previousVault = process.env.ARCHBOARD_VAULT;
@@ -125,12 +126,14 @@ async function acquireAfterObservedPredecessor(options: {
 		).toBeTrue();
 	}
 	expect(lockModule.releaseHold(options.board, predecessorId)).toBeTrue();
-	if (options.handoffFault) {
-		lockModule.injectLockHandoffFaultForTest(options.board, options.handoffFault);
-	}
-	jest.advanceTimersByTime(timingModule.LOCK_POLL_MS);
-	await flushLockTurns();
-	const successor = await waiting;
+	const acquireSuccessor = async () => {
+		jest.advanceTimersByTime(timingModule.LOCK_POLL_MS);
+		await flushLockTurns();
+		return waiting;
+	};
+	const successor = options.handoffFault
+		? await withLockHandoffReadFault(predecessor.leaseToken, options.handoffFault, acquireSuccessor)
+		: await acquireSuccessor();
 	return { hold: successor, release: () => lockModule.releaseHold(options.board, successorId) };
 }
 

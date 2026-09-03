@@ -19,12 +19,15 @@ import {
 } from "./support/package-inspection.js";
 import {
 	forcePackageProcessGroupGone,
-	processIdentity,
 	runReadOnlyPackageProcess,
+	waitForPackageProcessFixtureIdentity,
 } from "./support/package-process.js";
 
 const signalOwnerEntry = fileURLToPath(
 	new URL("./fixtures/package-signal-owner.ts", import.meta.url),
+);
+const processGroupEntry = fileURLToPath(
+	new URL("./fixtures/package-process-group.ts", import.meta.url),
 );
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const ownedVaultPrefix = `${tmpdir()}/archboard-task-130-05-package-`;
@@ -142,26 +145,37 @@ test("package inspection timeout reaps its exact process group", async () => {
 test("package inspection reaps and drains a child when ownership capture fails", async () => {
 	const owner = createPackageInspectionOwner();
 	const vault = owner.startVault();
-	let leader: ProcessIdentity | undefined;
+	const marker = `${vault}/capture-failure.json`;
+	const settled = new Set<string>();
+	let identity: PackageProcessGroupIdentity | undefined;
 	try {
 		await expect(
 			runReadOnlyPackageProcess(
 				repoRoot,
 				vault,
-				[process.execPath, "-e", "process.stdout.write('owned'); setInterval(() => {}, 1000)"],
-				{},
+				[process.execPath, processGroupEntry],
+				{
+					ARCHBOARD_PACKAGE_PROCESS_READY: marker,
+					ARCHBOARD_PACKAGE_PROCESS_DESCENDANT_INHERITS_PIPES: "1",
+				},
 				() => [],
 				{
-					captureProcessGroup: (pid) => {
-						leader = processIdentity(pid);
+					captureProcessGroup: async () => {
+						identity = await waitForPackageProcessFixtureIdentity(
+							marker,
+							new AbortController().signal,
+						);
 						throw new Error("injected ownership capture failure");
 					},
+					onSettlement: (name) => settled.add(name),
 				},
 			),
 		).rejects.toThrow("Could not start package inspection: injected ownership capture failure");
-		expect(leader).toBeDefined();
-		expect(processIdentityExists(leader!)).toBeFalse();
+		expect(identity).toBeDefined();
+		expect([...settled].toSorted()).toEqual(["leader", "stderr", "stdout"]);
+		expectGroupGone(identity!);
 	} finally {
+		if (identity && processGroupExists(identity.group)) await forceGroupGone(identity.group);
 		await owner.dispose();
 	}
 });
