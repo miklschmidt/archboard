@@ -610,6 +610,13 @@ export const TEST_PANE_MESSAGE_POLL_MS = 20;
  * panes acknowledge callbacks directly and never render.
  */
 export const TEST_PANE_MESSAGE_TIMEOUT_MS = 2_000;
+/**
+ * TASK-148.04 measures each real cross-process lock-watch delivery from the
+ * completed ownership change to its matching board_lock frame. One sweep
+ * should deliver it; three sweeps are the outer bound for timer phase,
+ * loopback delivery, and a stressed system-test host.
+ */
+export const TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS = 3 * LOCK_WATCH_MS;
 /** Four LOCK_WATCH_MS sweeps cover a timestamp boundary and board_note delivery. */
 export const TEST_NOTE_WATCH_MESSAGE_TIMEOUT_MS = 4 * LOCK_WATCH_MS;
 /**
