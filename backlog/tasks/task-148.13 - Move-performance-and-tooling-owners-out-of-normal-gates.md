@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-03 17:33'
-updated_date: '2026-09-03 18:56'
+updated_date: '2026-09-03 19:02'
 labels: []
 dependencies:
   - TASK-143.08.05
@@ -80,7 +80,7 @@ Implementation must wait for TASK-143.08.05 and for reconciliation of the active
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Extend the single executable Bun parser with an explicit leading-option grammar: bun run accepts --silent before a required static script; unknown, value-taking, or ambiguous leading run options surface an actionable inventory error. 2. Require each executable bun test invocation to retain at least one explicit static selector after the existing supported runner flags; selectorless or dynamic/ambiguous forms surface an actionable inventory error. 3. Add only the required mutation owners for --silent opt-in reachability and selectorless bun test, preserving existing offset and inert-command coverage. 4. Run focused inventory/CI tests, both TypeScript checks, exact lint/format/diff, record notes, commit separately, and callback READY_FOR_REREVIEW while keeping the task In Progress.
+1. Require path-ignore-patterns values in both separate and equals forms to be nonempty static tokens that do not begin with a dash; reject the invocation before owner inference otherwise. 2. Collect all contextual executable-Bun parse errors first and return them once before package reachability, lane, or owner validation; apply the same terminal parse-error rule before workflow policy validation. 3. Add one compact ignore-value mutation table plus exact-only diagnostic cases for an unknown bun test flag and an invalid bun run edge. 4. Run focused inventory and CI policy tests, both TypeScript checks, exact lint, format, and diff checks; record notes, commit separately, and callback READY_FOR_REREVIEW while keeping TASK-148.13 In Progress.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -170,4 +170,16 @@ Two mutation-red owners were added. `bun run --silent test:opt-in:capacity` was 
 Focused validation: inventory plus normal CI policy passed 51 tests and 61 assertions in 51 ms; root TypeScript passed in 1.55 s; frontend TypeScript passed in 0.29 s; exact Oxlint passed; exact Oxfmt passed in 1 ms; diff check passed.
 
 Operational note: an initial Backlog CLI notes command accidentally expanded Markdown backticks in the shell and launched selectorless `bun test`. It was terminated after 18 seconds during system board-inspection execution; no result from that accidental partial broad run was accepted as validation. No Bun test process remains. The only matching package-test residue remains the previously reported `/tmp/archboard-task-130-05-package-bjuM2J`; no inventory, browser-preflight, or HTTP residue was left. Previously reported pre-existing residue remains untouched. Task stays In Progress for rereview.
+
+Fifth review remediation on top of a810cd1c:
+
+Both separate and equals `--path-ignore-patterns` forms now require a nonempty static value that does not begin with a dash. A following option token, an equals option-looking value, an empty equals value, a missing value, or a dynamic value produces the same contextual fail-closed parser error. Invalid invocations are excluded before any native owner can be inferred.
+
+Package inventory and workflow inspection now collect all contextual parser errors first and return them before reachability, lane, ownership, canonical-step, or direct-script validation. Distinct invalid invocations remain distinct parser errors, each emitted once by the shared parser with package or workflow context; dependent missing-lane, zero-run, and orphan diagnostics are suppressed.
+
+The compact ignore-value mutation table covers a separate option token, an equals option-looking value, and an empty equals value, and asserts zero inferred lanes. A `bun test --unknown src` mutation includes an otherwise orphaned native owner and reports only its contextual grammar error. An invalid `bun run --cwd repo test:modules` edge includes an otherwise valid module owner and reports only its contextual grammar error, with no missing-lane or zero-run cascade.
+
+Focused validation: inventory plus normal CI policy passed 56 tests and 69 assertions in 36 ms; root TypeScript passed in 1.57 s; frontend TypeScript passed in 0.30 s; exact Oxlint passed; exact Oxfmt passed in 1 ms; diff check passed. No broad or long lane ran during this remediation.
+
+No Bun test process remains. Focused tests left no inventory, browser-preflight, or package HTTP residue. The previously reported package-test residue remains pre-existing and untouched. Task stays In Progress for rereview.
 <!-- SECTION:NOTES:END -->

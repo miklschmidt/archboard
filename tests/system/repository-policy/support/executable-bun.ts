@@ -246,6 +246,10 @@ function staticArgument(argument: string): boolean {
 	return argument.length > 0 && !/[$`*?[\]{}()]/.test(argument);
 }
 
+function staticIgnoreValue(value: string | undefined): value is string {
+	return value !== undefined && !value.startsWith("-") && staticArgument(value);
+}
+
 function runInvocation(args: string[]): ExecutableBunInvocation {
 	let index = 0;
 	while (args[index] === "--silent") index += 1;
@@ -278,16 +282,23 @@ function testInvocation(args: string[]): ExecutableBunInvocation {
 		}
 		if (!hasSelector && argument === "--path-ignore-patterns") {
 			const value = args[++index];
-			if (value && staticArgument(value)) continue;
+			if (staticIgnoreValue(value)) continue;
 			return {
 				command: "test",
 				args,
-				error: "`bun test --path-ignore-patterns` requires one explicit static value",
+				error:
+					"`bun test --path-ignore-patterns` requires one explicit static value that does not start with `-`",
 			};
 		}
 		if (!hasSelector && argument.startsWith("--path-ignore-patterns=")) {
 			const value = argument.slice("--path-ignore-patterns=".length);
-			if (staticArgument(value)) continue;
+			if (staticIgnoreValue(value)) continue;
+			return {
+				command: "test",
+				args,
+				error:
+					"`bun test --path-ignore-patterns` requires one explicit static value that does not start with `-`",
+			};
 		}
 		if (argument.startsWith("-")) {
 			return {
