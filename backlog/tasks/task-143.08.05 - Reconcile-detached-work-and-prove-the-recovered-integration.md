@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 11:22'
+updated_date: '2026-09-03 11:24'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -136,6 +136,10 @@ Complete-gate failure and remediation history before the next frozen head:
 
 - Attempt 7 used unit archboard-task143-worker-command-BzX8J2Ts.service. Lint and formatting passed; type-check then exited 1 after 3.854s on one remaining optional IPC method: the process owner guarded connected but invoked optional process.disconnect directly. CPU was 26.244s; memory peak was 2G with 0B swap. The exact unit is inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path is absent. No OOM, SIGKILL, or cleanup diagnostic occurred.
 - Remediation captures disconnect once, refuses the impossible connected-without-disconnect state, and invokes the proven method with its process receiver. The IPC lifecycle remains fail-closed. No focused validation ran; the next check is one fresh complete gate.
+
+- Attempt 8 used unit archboard-task143-worker-command-IZoJosaB.service. Lint, formatting, both type checks, and the frontend build passed. The module lane then reported 1,894 passing and 8 failing tests after 50.372s: two inspection completion-contract expectations still described pre-browser-boundary compare/eval metadata, and six Codex-session workflows failed because request serialization added absent optional identity fields back as undefined before strict JSON normalization. CPU was 1m 18.774s; memory peak was 2G with 0B swap. The exact unit is inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path is absent. No OOM, SIGKILL, or cleanup diagnostic occurred.
+- One capped diagnostic run used unit archboard-task143-worker-command-U6Cl0Uik.service over the four primary failing owners. It reproduced the stale compare source bytes and eval file list, plus thread/fork and thread/list failures at the undefined lastTurnId and parentThreadId fields. It exited 1 with 5 passing and 7 failing tests after 190ms; CPU was 251ms and memory peak 71.3M with 0B swap. The exact diagnostic unit is inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path is absent.
+- Remediation removes the retired session-only source key from the dense compare golden and its input, updates the golden digest, matches the browser-free eval file list, and serializes public request objects with top-level undefined optionals omitted before branding only present identity fields. Strict JSON normalization remains unchanged and continues to reject nested or non-JSON undefined values. Existing failing owners provide the regression gate. Pinned Oxfmt was applied to the two TypeScript files; no focused validation ran after the fix.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

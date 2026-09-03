@@ -6,7 +6,6 @@
       "board": "dense",
       "variant": "current"
     },
-    "source": "vault",
     "elementCount": 15,
     "nodeCount": 6,
     "edgeCount": 0,
@@ -30,7 +29,6 @@
       "board": "dense",
       "variant": "current"
     },
-    "source": "vault",
     "elementCount": 15,
     "nodeCount": 6,
     "edgeCount": 0,
