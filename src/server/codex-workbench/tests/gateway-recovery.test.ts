@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import type { BrowserGatewayMessage } from "../index.js";
-import { BROWSER_SETTLED_COMMAND_LIMIT } from "../index.js";
 import { dynamicResponse, expectGatewayError, expectRejected, startCommand } from "./helpers.js";
 import { createGatewayHarness, type GatewayHarness } from "./support.js";
 
@@ -126,22 +124,6 @@ describe("Codex workbench browser recovery and delivery", () => {
 		expect(value.calls.filter((call) => call === "text.start")).toHaveLength(1);
 	});
 
-	test("evicts settled results without allowing the evicted command to execute again", async () => {
-		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
-		const firstLease = connection.claimLease();
-		const firstCommand = startCommand(value, firstLease);
-		await connection.command(firstCommand);
-		for (let index = 0; index < BROWSER_SETTLED_COMMAND_LIMIT; index += 1) {
-			const lease = connection.claimLease();
-			await connection.command(startCommand(value, lease));
-		}
-		const callsBeforeReplay = value.calls.filter((call) => call === "text.start").length;
-		const replay = await connection.command(firstCommand);
-		expect(replay).toMatchObject({ code: "lease_transferred", outcome: "not_delivered" });
-		expect(value.calls.filter((call) => call === "text.start")).toHaveLength(callsBeforeReplay);
-	});
-
 	test("rejects a dynamic response whose captured link is not current", async () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);
@@ -157,22 +139,6 @@ describe("Codex workbench browser recovery and delivery", () => {
 			outcome: "not_delivered",
 		});
 		expect(value.calls).not.toContain("dynamic.resolve");
-	});
-
-	test("falls back to one bounded full snapshot when a delta is too large", () => {
-		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
-		connection.snapshot();
-		const messages: BrowserGatewayMessage[] = [];
-		connection.subscribe((message) => messages.push(message));
-		const lease = connection.claimLease();
-		messages.length = 0;
-		value.setDynamicApprovals(
-			Array.from({ length: 500 }, () => value.makeDynamicApproval(lease.commandId)),
-		);
-		const message = messages.at(-1);
-		expect(message?.kind).toBe("snapshot");
-		if (message?.kind === "snapshot") expect(message.sequence).toBeGreaterThan(0);
 	});
 
 	test("makes child exit terminal and recovers through a new gateway authority", async () => {

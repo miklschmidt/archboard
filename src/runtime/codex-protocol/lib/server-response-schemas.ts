@@ -3,17 +3,13 @@ import { z } from "zod";
 import type {
 	CodexOutputConformance,
 	CodexServerResponseByMethod,
-} from "../../codex-app-server-contract/index.js";
+} from "../../../shared/codex-app-server-contract/index.js";
 import {
 	CodexCommandExecutionApprovalDecisionSchema,
 	CodexFileChangeApprovalDecisionSchema,
-} from "../../codex-app-server-contract/index.js";
-import {
-	CurrentTimeReadResponseSchema,
-	UNSUPPORTED_ATTESTATION_ERROR,
-	UNSUPPORTED_TOKEN_REFRESH_ERROR,
-} from "./authored.js";
-import { JsonValueSchema, boundedText } from "./server-request-scalars.js";
+} from "../../../shared/codex-app-server-contract/index.js";
+import { UNSUPPORTED_ATTESTATION_ERROR, UNSUPPORTED_TOKEN_REFRESH_ERROR } from "./authored.js";
+import { JsonValueSchema, NonNegativeIntegerSchema, boundedText } from "./scalars.js";
 
 function codexOutputSchema<Wire>() {
 	return <Schema extends z.ZodType>(
@@ -143,7 +139,7 @@ const FileChangeResponseSchema = codexOutputSchema<
 >()(z.object({ decision: CodexFileChangeApprovalDecisionSchema }).strict());
 const CurrentTimeResponseSchema = codexOutputSchema<
 	CodexServerResponseByMethod["currentTime/read"]
->()(CurrentTimeReadResponseSchema);
+>()(z.object({ currentTimeAt: NonNegativeIntegerSchema }).strict());
 const ApplyPatchResponseSchema = codexOutputSchema<
 	CodexServerResponseByMethod["applyPatchApproval"]
 >()(z.object({ decision: ReviewDecisionSchema }).strict());
@@ -208,7 +204,3 @@ export const CodexServerResponseSchema = z.discriminatedUnion("method", [
 		.object({ method: z.literal("execCommandApproval"), result: ExecCommandResponseSchema })
 		.strict(),
 ]);
-
-export function createServerResponseSchemas() {
-	return { ServerRequestResultSchema: CodexServerResponseSchema };
-}

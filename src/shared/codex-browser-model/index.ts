@@ -8,27 +8,8 @@ import {
 	NullableNonNegativeIntegerSchema,
 	SafeUrlSchema,
 } from "./lib/scalars.js";
-import { createServerResponseSchemas } from "./lib/server-responses.js";
 import type { IdentityAuthorities } from "../codex-workbench-identity/index.js";
 import type { IdentityContext } from "./lib/scalars.js";
-
-export {
-	BEDROCK_SETUP_POLICIES,
-	BedrockSetupParamsSchema,
-	CurrentTimeReadResponseSchema,
-	INITIALIZE_CAPABILITIES,
-	InitializeCapabilitiesSchema,
-	LoginAccountParamsSchema,
-	LoginPoliciesSchema,
-	LoginPolicySchema,
-	LoginVariantSchema,
-	LOGIN_POLICIES,
-	LOGIN_VARIANTS,
-	ProtocolErrorSchema,
-	SupportedLoginAccountParamsSchema,
-	UNSUPPORTED_ATTESTATION_ERROR,
-	UNSUPPORTED_TOKEN_REFRESH_ERROR,
-} from "./lib/authored.js";
 
 export {
 	BROWSER_PERMISSION_FILE_ACCESS,
@@ -61,7 +42,6 @@ export function createCodexBrowserModel(context: IdentityContext | IdentityAutho
 	return {
 		...identity,
 		...createBrowserSchemas(identity, normalizedContext),
-		...createServerResponseSchemas(),
 	};
 }
 
@@ -70,7 +50,6 @@ export type CodexBrowserModel = ReturnType<typeof createCodexBrowserModel>;
 export type {
 	BrowserAccount,
 	BrowserApproval,
-	BrowserApprovalResponse,
 	BrowserCommand,
 	BrowserCommandLease,
 	BrowserCoordinator,
@@ -121,13 +100,3 @@ export type {
 	IdentitySchemas,
 	JsonValue,
 } from "./lib/scalars.js";
-
-export type {
-	BedrockSetupParams,
-	CurrentTimeReadResponse,
-	InitializeCapabilities,
-	LoginAccountParams,
-	LoginPolicy,
-	LoginVariant,
-	SupportedLoginAccountParams,
-} from "./lib/authored.js";

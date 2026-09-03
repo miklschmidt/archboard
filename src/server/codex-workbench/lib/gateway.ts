@@ -16,6 +16,8 @@ import type {
 	IdentityAuthorities,
 	JsonRpcRequestId,
 } from "../../../shared/codex-workbench-identity/index.js";
+import { parseApprovalResponse } from "../../../runtime/codex-approvals/index.js";
+import { SupportedLoginAccountParamsSchema } from "../../../runtime/codex-protocol/index.js";
 import { createBrowserLeaseManager, type BrowserLeaseManager } from "./lease.js";
 import {
 	CodexWorkbenchGatewayError,
@@ -26,6 +28,7 @@ import {
 	type BrowserGatewayMessage,
 	type BrowserGatewaySnapshotMessage,
 	type BrowserWorkbenchConnection,
+	type BrowserAccountLoginCommand,
 	type BrowserApprovalCommand,
 	type CodexWorkbenchGateway,
 	type BrowserConnectionId,
@@ -52,7 +55,7 @@ const ACCOUNT_READINESS = new Set([
 ]);
 const THREAD_READINESS = new Set(["thread_capable"]);
 const LEASE_REASON_MEMORY_LIMIT = 128;
-export const BROWSER_SETTLED_COMMAND_LIMIT = 64;
+const BROWSER_SETTLED_COMMAND_LIMIT = 64;
 
 interface ConnectionState {
 	readonly browserId: BrowserConnectionId;
@@ -77,9 +80,14 @@ interface CachedCommand {
 	readonly result: Promise<BrowserGatewayCommandResult>;
 }
 
+type OwnedBrowserCommand =
+	| Exclude<BrowserCommand, { readonly command: "accountLogin" | "approvalRespond" }>
+	| BrowserAccountLoginCommand
+	| BrowserApprovalCommand;
+
 type BrowserActionDispatch = {
-	readonly [Name in BrowserCommand["command"]]: (
-		command: Extract<BrowserCommand, { readonly command: Name }>,
+	readonly [Name in OwnedBrowserCommand["command"]]: (
+		command: Extract<OwnedBrowserCommand, { readonly command: Name }>,
 		context: BrowserActionContext,
 	) => Promise<BrowserActionResult>;
 };
@@ -94,6 +102,20 @@ function sameWireValue(left: unknown, right: unknown): boolean {
 
 function fingerprintCommand(command: BrowserCommand): string {
 	return createHash("sha256").update(JSON.stringify(command)).digest("hex");
+}
+
+function normalizeBrowserCommand(command: BrowserCommand): OwnedBrowserCommand {
+	if (command.command === "accountLogin")
+		return {
+			...command,
+			login: SupportedLoginAccountParamsSchema.parse(command.login),
+		};
+	if (command.command === "approvalRespond")
+		return {
+			...command,
+			response: parseApprovalResponse(command.response),
+		};
+	return command;
 }
 
 function isDeliveryOutcome(value: unknown): value is DeliveryOutcome {
@@ -677,7 +699,7 @@ export function createCodexWorkbenchGateway(
 		realtimeStop: (command, context) => options.actions.realtime.stop(command, context),
 	} satisfies BrowserActionDispatch;
 
-	const invoke = <Command extends BrowserCommand>(
+	const invoke = <Command extends OwnedBrowserCommand>(
 		command: Command,
 		context: BrowserActionContext,
 	): Promise<BrowserActionResult> =>
@@ -715,7 +737,7 @@ export function createCodexWorkbenchGateway(
 
 	const execute = async (
 		state: ConnectionState,
-		command: BrowserCommand,
+		command: OwnedBrowserCommand,
 	): Promise<BrowserGatewayCommandResult> => {
 		let actionStarted = false;
 		try {
@@ -885,9 +907,9 @@ export function createCodexWorkbenchGateway(
 			!Object.hasOwn(dispatch, value.command)
 		)
 			return refusal(state, null, "unsupported_command");
-		let parsed: BrowserCommand;
+		let parsed: OwnedBrowserCommand;
 		try {
-			parsed = model.BrowserCommandSchema.parse(value);
+			parsed = normalizeBrowserCommand(model.BrowserCommandSchema.parse(value));
 		} catch {
 			return refusal(state, null, "invalid_command");
 		}

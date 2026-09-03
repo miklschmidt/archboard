@@ -7,7 +7,6 @@ import {
 	createCodexCommandExecutionApprovalDecisionSchema,
 } from "../../codex-app-server-contract/index.js";
 
-import { SupportedLoginAccountParamsSchema } from "./authored.js";
 import { createDynamicApprovalSchemas } from "./dynamic-approval.js";
 import {
 	assertCurrentTarget,
@@ -545,7 +544,6 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 					...ApprovalEnvelope,
 					...ApprovalReason,
 					command: boundedText(16_384).nullable(),
-					cwd: boundedText(16_384).nullable(),
 					availableDecisions: z.array(ApprovalDecisionSchema),
 				})
 				.strict(),
@@ -555,7 +553,6 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 					approvalKind: z.literal("file_change"),
 					...ApprovalEnvelope,
 					...ApprovalReason,
-					grantRoot: boundedText(16_384).nullable(),
 					availableDecisions: z.array(CodexFileChangeApprovalDecisionSchema),
 				})
 				.strict(),
@@ -609,7 +606,6 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 					approvalKind: z.literal("apply_patch"),
 					...ApprovalEnvelope,
 					...ApprovalReason,
-					grantRoot: boundedText(16_384).nullable(),
 					fileCount: z.number().int().nonnegative(),
 				})
 				.strict(),
@@ -620,7 +616,6 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 					...ApprovalEnvelope,
 					...ApprovalReason,
 					command: z.array(boundedText(16_384)),
-					cwd: boundedText(16_384),
 				})
 				.strict(),
 		])
@@ -783,127 +778,12 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 
 	const BrowserCommandBase = { kind: z.literal("browser_command"), ...TargetSchema };
 	const BrowserThreadIdCommand = { threadId: ThreadIdSchema };
-	const GrantedFileSystemSpecialPathSchema = z.discriminatedUnion("kind", [
-		z.object({ kind: z.literal("root") }).strict(),
-		z.object({ kind: z.literal("minimal") }).strict(),
-		z
-			.object({ kind: z.literal("project_roots"), subpath: boundedText(16_384).nullable() })
-			.strict(),
-		z.object({ kind: z.literal("tmpdir") }).strict(),
-		z.object({ kind: z.literal("slash_tmp") }).strict(),
-		z
-			.object({
-				kind: z.literal("unknown"),
-				path: boundedText(16_384),
-				subpath: boundedText(16_384).nullable(),
-			})
-			.strict(),
-	]);
-	const GrantedFileSystemPathSchema = z.discriminatedUnion("type", [
-		z.object({ type: z.literal("path"), path: boundedText(16_384) }).strict(),
-		z.object({ type: z.literal("glob_pattern"), pattern: boundedText(16_384) }).strict(),
-		z.object({ type: z.literal("special"), value: GrantedFileSystemSpecialPathSchema }).strict(),
-	]);
-	const GrantedPermissionProfileSchema = z
-		.object({
-			network: z.object({ enabled: z.boolean().nullable() }).strict().optional(),
-			fileSystem: z
-				.object({
-					read: z.array(boundedText(16_384)).nullable(),
-					write: z.array(boundedText(16_384)).nullable(),
-					globScanMaxDepth: z.number().int().optional(),
-					entries: z
-						.array(
-							z
-								.object({
-									path: GrantedFileSystemPathSchema,
-									access: z.enum(["read", "write", "deny"]),
-								})
-								.strict(),
-						)
-						.optional(),
-				})
-				.strict()
-				.optional(),
-		})
-		.strict();
-	const ReviewDecisionSchema = z.union([
-		z.literal("approved"),
-		z
-			.object({
-				approved_execpolicy_amendment: z
-					.object({ proposed_execpolicy_amendment: z.array(boundedText(16_384)) })
-					.strict(),
-			})
-			.strict(),
-		z.literal("approved_for_session"),
-		z.literal("approved_mcp_policy_amendment"),
-		z
-			.object({
-				network_policy_amendment: z
-					.object({
-						network_policy_amendment: z
-							.object({ host: boundedText(2048), action: z.enum(["allow", "deny"]) })
-							.strict(),
-					})
-					.strict(),
-			})
-			.strict(),
-		z.object({ denied: z.object({ rejection: boundedText(16_384) }).strict() }).strict(),
-		z.literal("timed_out"),
-		z.literal("abort"),
-	]);
-	const ApprovalResponseSchema = z.discriminatedUnion("approvalKind", [
-		z
-			.object({ approvalKind: z.literal("command_execution"), decision: ApprovalDecisionSchema })
-			.strict(),
-		z
-			.object({
-				approvalKind: z.literal("file_change"),
-				decision: CodexFileChangeApprovalDecisionSchema,
-			})
-			.strict(),
-		z
-			.object({
-				approvalKind: z.literal("user_input"),
-				answers: z.record(z.string(), z.object({ answers: z.array(boundedText(16_384)) }).strict()),
-			})
-			.strict(),
-		z
-			.object({
-				approvalKind: z.literal("elicitation"),
-				action: z.enum(["accept", "decline", "cancel"]),
-				content: JsonValueSchema.nullable(),
-				_meta: JsonValueSchema.nullable(),
-			})
-			.strict(),
-		z
-			.object({
-				approvalKind: z.literal("permissions"),
-				permissions: GrantedPermissionProfileSchema,
-				scope: z.enum(["turn", "session"]),
-				strictAutoReview: z.boolean().optional(),
-			})
-			.strict(),
-		z
-			.object({
-				approvalKind: z.literal("apply_patch"),
-				decision: ReviewDecisionSchema,
-			})
-			.strict(),
-		z
-			.object({
-				approvalKind: z.literal("exec_command"),
-				decision: ReviewDecisionSchema,
-			})
-			.strict(),
-	]);
 	const CommandArms = [
 		z
 			.object({
 				...BrowserCommandBase,
 				command: z.literal("accountLogin"),
-				login: SupportedLoginAccountParamsSchema,
+				login: JsonValueSchema,
 			})
 			.strict(),
 		z
@@ -971,7 +851,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 				command: z.literal("approvalRespond"),
 				requestId: JsonRpcRequestIdSchema,
 				approvalId: ApprovalIdSchema.nullable(),
-				response: ApprovalResponseSchema,
+				response: JsonValueSchema,
 			})
 			.strict(),
 		z
@@ -1092,7 +972,6 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		BrowserQueueSchema,
 		BrowserSettingsSchema,
 		BrowserApprovalSchema,
-		BrowserApprovalResponseSchema: ApprovalResponseSchema,
 		BrowserTextCommandSchema,
 		BrowserSemanticDeliverySchema,
 		BrowserCoordinatorSchema,
@@ -1115,7 +994,6 @@ export type BrowserTimeline = z.infer<BrowserSchemas["BrowserTimelineSchema"]>;
 export type BrowserQueue = z.infer<BrowserSchemas["BrowserQueueSchema"]>;
 export type BrowserSettings = z.infer<BrowserSchemas["BrowserSettingsSchema"]>;
 export type BrowserApproval = z.infer<BrowserSchemas["BrowserApprovalSchema"]>;
-export type BrowserApprovalResponse = z.infer<BrowserSchemas["BrowserApprovalResponseSchema"]>;
 export type BrowserTextCommand = z.infer<BrowserSchemas["BrowserTextCommandSchema"]>;
 export type BrowserSemanticDelivery = z.infer<BrowserSchemas["BrowserSemanticDeliverySchema"]>;
 export type BrowserCoordinator = z.infer<BrowserSchemas["BrowserCoordinatorSchema"]>;

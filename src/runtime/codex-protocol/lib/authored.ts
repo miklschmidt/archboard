@@ -5,13 +5,8 @@ import type {
 	CodexInitializeCapabilities,
 	CodexLoginAccountParams,
 	CodexOutputConformance,
-} from "../../codex-app-server-contract/index.js";
-import {
-	boundedText,
-	JsonValueSchema,
-	NonNegativeIntegerSchema,
-	optionalNullableText,
-} from "./scalars.js";
+} from "../../../shared/codex-app-server-contract/index.js";
+import { boundedText, JsonValueSchema, optionalNullableText } from "./scalars.js";
 
 function codexOutputSchema<Wire>() {
 	return <Schema extends z.ZodType>(
@@ -97,15 +92,6 @@ const ChatgptLoginSchema = z
 		appBrand: z.enum(["codex", "chatgpt"]).nullable().optional(),
 	})
 	.strict();
-const DeviceCodeLoginSchema = z.object({ type: z.literal("chatgptDeviceCode") }).strict();
-const AuthTokensLoginSchema = z
-	.object({
-		type: z.literal("chatgptAuthTokens"),
-		accessToken: boundedText(16_384),
-		chatgptAccountId: boundedText(256),
-		chatgptPlanType: optionalNullableText(256),
-	})
-	.strict();
 const BedrockApiKeyLoginSchema = z
 	.object({
 		type: z.literal("amazonBedrock"),
@@ -123,17 +109,7 @@ const BedrockAccessKeysLoginSchema = z
 	})
 	.strict();
 
-export const LoginAccountParamsSchema = codexIngressSchema<CodexLoginAccountParams>()(
-	z.discriminatedUnion("type", [
-		ApiKeyLoginSchema,
-		ChatgptLoginSchema,
-		DeviceCodeLoginSchema,
-		AuthTokensLoginSchema,
-		BedrockApiKeyLoginSchema,
-		BedrockAccessKeysLoginSchema,
-	]),
-);
-export type LoginAccountParams = z.infer<typeof LoginAccountParamsSchema>;
+export type LoginAccountParams = CodexLoginAccountParams;
 
 type SupportedLoginVariant = Extract<
 	(typeof LOGIN_POLICIES)[number],
@@ -182,11 +158,6 @@ export const ProtocolErrorSchema = z
 	.object({ code: z.literal(-32601), message: boundedText(256), data: JsonValueSchema.optional() })
 	.strict();
 
-export const CurrentTimeReadResponseSchema = z
-	.object({ currentTimeAt: NonNegativeIntegerSchema })
-	.strict();
-
 export type InitializeCapabilities = z.infer<typeof InitializeCapabilitiesSchema>;
 export type LoginVariant = z.infer<typeof LoginVariantSchema>;
 export type LoginPolicy = z.infer<typeof LoginPolicySchema>;
-export type CurrentTimeReadResponse = z.infer<typeof CurrentTimeReadResponseSchema>;

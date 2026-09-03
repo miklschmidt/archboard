@@ -13,7 +13,7 @@ import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capa
 import {
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
-} from "../../../shared/codex-browser-model/index.js";
+} from "../../codex-protocol/index.js";
 import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
 import {
 	captureRejection,

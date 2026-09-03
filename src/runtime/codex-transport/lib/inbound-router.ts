@@ -505,7 +505,6 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 		options.dynamicDispatchers.set(registration.namespace, Object.freeze({ ...registration }));
 	};
 	const responder = createReverseResponder({
-		identity: options.identity,
 		reverseRequests: options.reverseRequests,
 		reverseHandles: options.reverseHandles,
 		removePendingBytes: options.pendingReverseBytes.remove,

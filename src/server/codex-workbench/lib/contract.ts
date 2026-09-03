@@ -20,7 +20,11 @@ import type {
 	ThreadLinkSnapshot,
 } from "../../../runtime/codex-thread-link/index.js";
 import type { AnswerSdp } from "../../../shared/codex-realtime-host/index.js";
-import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+import type {
+	ApprovalOwnerView,
+	ApprovalResponse,
+} from "../../../runtime/codex-approvals/index.js";
+import type { SupportedLoginAccountParams } from "../../../runtime/codex-protocol/index.js";
 import type { BrowserOwnerProjection } from "./projection-contract.js";
 
 export type BrowserConnectionId = string;
@@ -40,14 +44,14 @@ export interface BrowserLeaseLedger {
 	readonly retired: Map<BrowserCommandId, BrowserLeaseRecord>;
 }
 
-export type BrowserApprovalCommand = Extract<
-	BrowserCommand,
-	{ readonly command: "approvalRespond" }
->;
-export type BrowserAccountLoginCommand = Extract<
-	BrowserCommand,
-	{ readonly command: "accountLogin" }
->;
+export type BrowserApprovalCommand = Omit<
+	Extract<BrowserCommand, { readonly command: "approvalRespond" }>,
+	"response"
+> & { readonly response: ApprovalResponse };
+export type BrowserAccountLoginCommand = Omit<
+	Extract<BrowserCommand, { readonly command: "accountLogin" }>,
+	"login"
+> & { readonly login: SupportedLoginAccountParams };
 export type BrowserAccountLoginCancelCommand = Extract<
 	BrowserCommand,
 	{ readonly command: "accountLoginCancel" }

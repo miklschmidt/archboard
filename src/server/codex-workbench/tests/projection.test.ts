@@ -39,6 +39,21 @@ function itemParams(label: string) {
 	return { threadId: `thread-${label}`, turnId: `turn-${label}`, itemId: `item-${label}` };
 }
 
+const PRIVATE_APPROVAL_PATHS = [
+	"/private/command-cwd",
+	"/private/file-grant",
+	"/private/user-input-internal",
+	"/private/elicitation-meta",
+	"/private/permission-cwd",
+	"/private/read",
+	"/private/write",
+	"/private/denied",
+	"/private/future",
+	"/private/apply-change.ts",
+	"/private/apply-grant",
+	"/private/exec-cwd",
+] as const;
+
 function approvalRequests(identity: IdentityAuthority): readonly TransportServerRequest[] {
 	const label = "all-families";
 	return [
@@ -54,7 +69,7 @@ function approvalRequests(identity: IdentityAuthority): readonly TransportServer
 				reason: "Run command",
 				networkApprovalContext: null,
 				command: "echo projection",
-				cwd: "/workspace",
+				cwd: PRIVATE_APPROVAL_PATHS[0],
 				commandActions: null,
 				additionalPermissions: null,
 				proposedExecpolicyAmendment: null,
@@ -66,7 +81,12 @@ function approvalRequests(identity: IdentityAuthority): readonly TransportServer
 		requestEnvelope(
 			identity,
 			"item/fileChange/requestApproval",
-			{ ...itemParams(label), startedAtMs: 10, reason: "Change file", grantRoot: "/workspace" },
+			{
+				...itemParams(label),
+				startedAtMs: 10,
+				reason: "Change file",
+				grantRoot: PRIVATE_APPROVAL_PATHS[1],
+			},
 			"file",
 		),
 		requestEnvelope(
@@ -81,7 +101,14 @@ function approvalRequests(identity: IdentityAuthority): readonly TransportServer
 						question: "Answer?",
 						isOther: false,
 						isSecret: false,
-						options: null,
+						options: [
+							{
+								label: "One",
+								description: "First option",
+								privatePath: PRIVATE_APPROVAL_PATHS[2],
+							},
+						],
+						privatePath: PRIVATE_APPROVAL_PATHS[2],
 					},
 				],
 				isBlocking: false,
@@ -97,7 +124,7 @@ function approvalRequests(identity: IdentityAuthority): readonly TransportServer
 				turnId: null,
 				serverName: "projection-server",
 				mode: "form",
-				_meta: null,
+				_meta: { privatePath: PRIVATE_APPROVAL_PATHS[3] },
 				message: "Provide a name",
 				requestedSchema: {
 					type: "object",
@@ -114,9 +141,11 @@ function approvalRequests(identity: IdentityAuthority): readonly TransportServer
 			{
 				conversationId: `thread-${label}`,
 				callId: "patch-call",
-				fileChanges: { "/workspace/file.ts": { type: "add", content: "export {};" } },
+				fileChanges: {
+					[PRIVATE_APPROVAL_PATHS[9]]: { type: "add", content: "export {};" },
+				},
 				reason: "Apply patch",
-				grantRoot: "/workspace",
+				grantRoot: PRIVATE_APPROVAL_PATHS[10],
 			},
 			"patch",
 		),
@@ -128,7 +157,7 @@ function approvalRequests(identity: IdentityAuthority): readonly TransportServer
 				callId: "exec-call",
 				approvalId: "exec-approval",
 				command: ["echo", "projection"],
-				cwd: "/workspace",
+				cwd: PRIVATE_APPROVAL_PATHS[11],
 				reason: "Run legacy command",
 				parsedCmd: [{ type: "unknown", cmd: "echo projection" }],
 			},
@@ -145,15 +174,15 @@ function permissionRequest(identity: IdentityAuthority, label: string): Transpor
 			...itemParams(label),
 			environmentId: null,
 			startedAtMs: 10,
-			cwd: "/private/permission-cwd",
+			cwd: PRIVATE_APPROVAL_PATHS[4],
 			reason: "Grant permission",
 			permissions: {
 				network: { enabled: true },
 				fileSystem: {
-					read: ["/private/read"],
-					write: ["/private/write"],
-					entries: [{ path: { type: "path", path: "/private/denied" }, access: "deny" }],
-					futurePrivateField: "/private/future",
+					read: [PRIVATE_APPROVAL_PATHS[5]],
+					write: [PRIVATE_APPROVAL_PATHS[6]],
+					entries: [{ path: { type: "path", path: PRIVATE_APPROVAL_PATHS[7] }, access: "deny" }],
+					futurePrivateField: PRIVATE_APPROVAL_PATHS[8],
 				},
 			},
 		},
@@ -219,7 +248,7 @@ test("the sole public projection owns all seven ordinary approval presentations"
 		transport: { respond: () => Promise.resolve() },
 	});
 	try {
-		const projectedFamilies: string[] = [];
+		const projectedApprovals = [];
 		for (const request of approvalRequests(authorities.identity)) {
 			const pending = broker.receive(request);
 			const result = projectCodexBrowserState(
@@ -228,9 +257,9 @@ test("the sole public projection owns all seven ordinary approval presentations"
 			);
 			expect(result.tag).toBe("projected");
 			if (result.tag !== "projected") throw new Error("approval projection was refused");
-			projectedFamilies.push(result.snapshot.approvals[0]!.approvalKind);
+			projectedApprovals.push(result.snapshot.approvals[0]!);
 		}
-		expect(projectedFamilies).toEqual([
+		expect(projectedApprovals.map((approval) => approval.approvalKind)).toEqual([
 			"command_execution",
 			"file_change",
 			"user_input",
@@ -239,6 +268,8 @@ test("the sole public projection owns all seven ordinary approval presentations"
 			"apply_patch",
 			"exec_command",
 		]);
+		const wire = JSON.stringify(projectedApprovals);
+		for (const privatePath of PRIVATE_APPROVAL_PATHS) expect(wire).not.toContain(privatePath);
 	} finally {
 		broker.dispose();
 	}
