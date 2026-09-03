@@ -63,6 +63,7 @@ export type {
 	BrowserSnapshot,
 	BrowserTextCommand,
 	BrowserThreadLink,
+	BrowserThreadLinkSourcePresentation,
 	BrowserTimeline,
 	BrowserVoice,
 	BrowserSchemas,

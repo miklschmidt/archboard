@@ -200,29 +200,11 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 	]);
 
 	const ThreadLinkStatusSchema = CodexThreadStatusTypeSchema;
-	const ExecutableThreadSourceSchema = z.enum(["cli", "vscode", "exec", "appServer"]);
-	const SubAgentSourceSchema = z.union([
-		z.enum(["review", "compact", "memory_consolidation"]),
-		z
-			.object({
-				thread_spawn: z
-					.object({
-						parent_thread_id: ThreadIdSchema,
-						depth: z.number().int(),
-						agent_path: z.string().nullable(),
-						agent_nickname: z.string().nullable(),
-						agent_role: z.string().nullable(),
-					})
-					.strict(),
-			})
-			.strict(),
-		z.object({ other: z.string() }).strict(),
-	]);
-	const InspectOnlyThreadSourceSchema = z.union([
-		ExecutableThreadSourceSchema,
-		z.object({ custom: z.string() }).strict(),
-		z.object({ subAgent: SubAgentSourceSchema }).strict(),
-		z.literal("unknown"),
+	const BrowserThreadLinkSourcePresentationSchema = z.enum([
+		"standard",
+		"subagent",
+		"custom",
+		"unknown",
 	]);
 	const UnboundThreadLinkSchema = z
 		.object({
@@ -231,7 +213,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			childId: z.null(),
 			epoch: z.null(),
 			threadId: z.null(),
-			source: z.null(),
+			sourcePresentation: z.null(),
 			status: z.literal("notLoaded"),
 			loaded: z.literal(false),
 			canAcceptDirectInput: z.literal(false),
@@ -245,7 +227,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			childId: z.null(),
 			epoch: z.null(),
 			threadId: ThreadIdSchema,
-			source: InspectOnlyThreadSourceSchema,
+			sourcePresentation: BrowserThreadLinkSourcePresentationSchema,
 			status: ThreadLinkStatusSchema,
 			loaded: z.boolean(),
 			canAcceptDirectInput: z.literal(false),
@@ -259,7 +241,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			childId: ChildIdSchema,
 			epoch: ChildEpochSchema,
 			threadId: ThreadIdSchema,
-			source: ExecutableThreadSourceSchema,
+			sourcePresentation: z.literal("standard"),
 			status: ThreadLinkStatusSchema.exclude(["notLoaded"]),
 			loaded: z.literal(true),
 			canAcceptDirectInput: z.literal(true),
@@ -983,6 +965,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		BrowserReadinessSchema,
 		BrowserAccountSchema,
 		BrowserLoginSchema,
+		BrowserThreadLinkSourcePresentationSchema,
 		BrowserThreadLinkSchema,
 		BrowserTimelineSchema,
 		BrowserQueueSchema,
@@ -1005,6 +988,9 @@ export type BrowserSchemas = ReturnType<typeof createBrowserSchemas>;
 export type BrowserReadiness = z.infer<BrowserSchemas["BrowserReadinessSchema"]>;
 export type BrowserAccount = z.infer<BrowserSchemas["BrowserAccountSchema"]>;
 export type BrowserLogin = z.infer<BrowserSchemas["BrowserLoginSchema"]>;
+export type BrowserThreadLinkSourcePresentation = z.infer<
+	BrowserSchemas["BrowserThreadLinkSourcePresentationSchema"]
+>;
 export type BrowserThreadLink = z.infer<BrowserSchemas["BrowserThreadLinkSchema"]>;
 export type BrowserTimeline = z.infer<BrowserSchemas["BrowserTimelineSchema"]>;
 export type BrowserQueue = z.infer<BrowserSchemas["BrowserQueueSchema"]>;

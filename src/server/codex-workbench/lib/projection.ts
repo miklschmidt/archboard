@@ -8,6 +8,8 @@ import type {
 	BrowserSettings,
 	BrowserSnapshot,
 	BrowserSchemas,
+	BrowserThreadLink,
+	BrowserThreadLinkSourcePresentation,
 } from "../../../shared/codex-browser-model/index.js";
 import {
 	IdentityValidationError,
@@ -126,6 +128,72 @@ function projectQueue(input: CodexQueueProjectionInput): BrowserQueue {
 	};
 }
 
+function projectThreadLinkSource(
+	source: Exclude<BrowserProjectionInput["threadLink"]["source"], null>,
+): BrowserThreadLinkSourcePresentation {
+	if (typeof source === "string") {
+		switch (source) {
+			case "cli":
+			case "vscode":
+			case "exec":
+			case "appServer":
+				return "standard";
+			case "unknown":
+				return "unknown";
+		}
+		const unhandled: never = source;
+		return unhandled;
+	}
+	if ("custom" in source) return "custom";
+	if ("subAgent" in source) return "subagent";
+	const unhandled: never = source;
+	return unhandled;
+}
+
+function projectThreadLink(input: BrowserProjectionInput["threadLink"]): BrowserThreadLink {
+	switch (input.state) {
+		case "unbound":
+			return {
+				kind: input.kind,
+				state: input.state,
+				childId: input.childId,
+				epoch: input.epoch,
+				threadId: input.threadId,
+				sourcePresentation: null,
+				status: input.status,
+				loaded: input.loaded,
+				canAcceptDirectInput: input.canAcceptDirectInput,
+				reason: input.reason,
+			};
+		case "inspect_only":
+			return {
+				kind: input.kind,
+				state: input.state,
+				childId: input.childId,
+				epoch: input.epoch,
+				threadId: input.threadId,
+				sourcePresentation: projectThreadLinkSource(input.source),
+				status: input.status,
+				loaded: input.loaded,
+				canAcceptDirectInput: input.canAcceptDirectInput,
+				reason: input.reason,
+			};
+		case "executable":
+			return {
+				kind: input.kind,
+				state: input.state,
+				childId: input.childId,
+				epoch: input.epoch,
+				threadId: input.threadId,
+				sourcePresentation: "standard",
+				status: input.status,
+				loaded: input.loaded,
+				canAcceptDirectInput: input.canAcceptDirectInput,
+				reason: input.reason,
+			};
+	}
+}
+
 function projectSemantic(input: CodexSemanticProjectionInput): BrowserSemanticDelivery | null {
 	if (input.outcome === null || input.outcome.targetThreadId === null || input.freshness === null)
 		return null;
@@ -192,7 +260,7 @@ function adoptBoundaryTurnId(identity: DynamicProjectionIdentity, value: string)
 	try {
 		return identity.parseTurnId(value);
 	} catch (error) {
-		if (!(error instanceof IdentityValidationError)) throw error;
+		if (!(error instanceof IdentityValidationError) || error.code !== "invalid-shape") throw error;
 		return identity.adoptTurnId(value);
 	}
 }
@@ -312,7 +380,7 @@ export function projectCodexBrowserState(
 			readiness: input.readiness,
 			account: projectAccount(input.account),
 			login: input.login,
-			threadLink: input.threadLink,
+			threadLink: projectThreadLink(input.threadLink),
 			timeline: input.timeline,
 			queue: projectQueue(input.queue),
 			settings: input.settings.map(projectSettings),

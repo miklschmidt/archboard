@@ -10,6 +10,7 @@ import {
 } from "../../../shared/codex-browser-model/index.js";
 import {
 	createIdentityAuthorities,
+	IdentityValidationError,
 	type IdentityAuthorities,
 } from "../../../shared/codex-workbench-identity/index.js";
 import {
@@ -113,7 +114,10 @@ function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalO
 			callerAuthority: authority.issue(),
 			targetAuthority: authority.issue(),
 			contextAuthority: authority.issue(),
-			effectiveBoundary: { relation: "other" as const, beforeTurnId: String(forkBefore) },
+			effectiveBoundary: {
+				relation: "other" as const,
+				beforeTurnId: authorities.identity.decoder.serializeCodexIdentity(forkBefore),
+			},
 			mutationOperationId: forkOperation,
 			initialTurnOperationId: String(authorities.operation.issuer.mintOperationId()),
 			visualSummary: "Fork one thread",
@@ -351,4 +355,55 @@ test("self-fork projection keeps the requested and effective boundaries distinct
 	});
 	expect(Object.isFrozen(effect.arguments)).toBe(true);
 	expect(Object.isFrozen(effect.effectiveBoundary)).toBe(true);
+});
+
+test("effective fork boundaries refuse canonical wrong-domain and unissued identities", () => {
+	const authorities = createIdentityAuthorities();
+	const model = createCodexBrowserModel(authorities);
+	const owner = ownerViews(authorities)[1]!;
+	const foreignAuthorities = createIdentityAuthorities();
+	const boundaries = [
+		{
+			value: String(authorities.identity.decoder.adoptThreadId("wrong-boundary-domain")),
+			code: "wrong-domain",
+		},
+		{
+			value: String(foreignAuthorities.identity.decoder.adoptTurnId("unissued-boundary")),
+			code: "unissued",
+		},
+	] as const;
+
+	for (const boundary of boundaries) {
+		try {
+			authorities.identity.decoder.parseTurnId(boundary.value);
+			throw new Error("invalid boundary unexpectedly parsed");
+		} catch (error) {
+			expect(error).toBeInstanceOf(IdentityValidationError);
+			if (!(error instanceof IdentityValidationError)) throw error;
+			expect(error.code).toBe(boundary.code);
+		}
+		if (owner.request.effect.tool !== "fork_thread")
+			throw new Error("other-fork fixture changed tools");
+		const invalidOwner: DynamicApprovalOwnerView = {
+			...owner,
+			request: {
+				...owner.request,
+				effect: {
+					...owner.request.effect,
+					arguments: { ...owner.request.effect.arguments, beforeTurnId: boundary.value },
+					effectiveBoundary: { relation: "other", beforeTurnId: boundary.value },
+				},
+			},
+		};
+		const result = projectCodexBrowserState(
+			model,
+			authorities.identity.decoder,
+			projectionInput([invalidOwner]),
+		);
+		expect(result).toEqual({
+			tag: "refused",
+			reason: "invalid_projection",
+			message: "The normalized owner state cannot be represented by the browser contract.",
+		});
+	}
 });

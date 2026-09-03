@@ -16,6 +16,69 @@ function harness(): GatewayHarness {
 }
 
 describe("Codex workbench browser gateway readiness", () => {
+	test("passes authoritative thread provenance through the sole closed projection", () => {
+		for (const source of [
+			{
+				presentation: "subagent",
+				reason: "thread_source_subagent",
+				value: (owner: GatewayHarness) => ({
+					subAgent: {
+						thread_spawn: {
+							parent_thread_id:
+								owner.authorities.identity.decoder.adoptThreadId("private-gateway-parent"),
+							depth: 2,
+							agent_path: "/private/gateway/agent",
+							agent_nickname: "private-gateway-nickname",
+							agent_role: "private-gateway-role",
+						},
+					},
+				}),
+			},
+			{
+				presentation: "custom",
+				reason: "thread_source_custom",
+				value: (_owner: GatewayHarness) => ({ custom: "private-gateway-custom" }),
+			},
+		] as const) {
+			const value = harness();
+			value.setLink({
+				kind: "thread_link",
+				state: "inspect_only",
+				childId: null,
+				epoch: null,
+				threadId: value.threadId,
+				source: source.value(value),
+				status: "idle",
+				loaded: true,
+				canAcceptDirectInput: false,
+				reason: source.reason,
+			});
+			const projected = value.gateway.connect(value.browserId, value.paneId).snapshot()
+				.snapshot.threadLink;
+			expect(projected.sourcePresentation).toBe(source.presentation);
+			expect(Object.keys(projected).toSorted()).toEqual([
+				"canAcceptDirectInput",
+				"childId",
+				"epoch",
+				"kind",
+				"loaded",
+				"reason",
+				"sourcePresentation",
+				"state",
+				"status",
+				"threadId",
+			]);
+			for (const privateDetail of [
+				"private-gateway-parent",
+				"/private/gateway/agent",
+				"private-gateway-nickname",
+				"private-gateway-role",
+				"private-gateway-custom",
+			])
+				expect(JSON.stringify(projected)).not.toContain(privateDetail);
+		}
+	});
+
 	test("publishes every readiness state and keeps commands disabled before login capability", () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);

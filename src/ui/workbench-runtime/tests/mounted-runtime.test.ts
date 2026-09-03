@@ -224,7 +224,7 @@ describe("mounted workbench runtime provider", () => {
 							childId: null,
 							epoch: null,
 							threadId,
-							source: "unknown",
+							sourcePresentation: "unknown",
 							status: "active",
 							loaded: true,
 							canAcceptDirectInput: false,
