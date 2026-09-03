@@ -219,6 +219,11 @@ describe.serial("vault-only production interfaces", () => {
 		}
 
 		putNote("waited-write");
+		const waiterOpened = await otherRequest<{ source: string }>("/api/boards/open", {
+			method: "POST",
+			body: { board: "waited-write" },
+		});
+		expect(waiterOpened).toMatchObject({ status: 200, body: { source: "vault" } });
 		const held = await request("/api/boards/hold?board=waited-write", {
 			method: "POST",
 			body: { clientId: "baseline-holder" },

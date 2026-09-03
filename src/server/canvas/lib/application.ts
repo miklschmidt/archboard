@@ -106,6 +106,7 @@ import {
 	onBoardLockChanged,
 	onBoardSweep,
 	forgetLockAnnouncements,
+	recordLockCommit,
 	releaseClaim,
 	releaseHold,
 	sleep,
@@ -1107,7 +1108,18 @@ function answerBoardWrite<T>(res: Response, request: BoardWriteRequest<T>): void
 				...request,
 				checkoutSnapshot: checkoutSnapshotFor(res),
 				afterPersist: (context) => {
-					if (context.written) res.locals.writtenBoardVersion = context.written.version;
+					if (context.written) {
+						res.locals.writtenBoardVersion = context.written.version;
+						const lockKey = res.locals.boardLockKey;
+						const leaseToken = res.locals.boardLockToken;
+						if (
+							typeof lockKey === "string" &&
+							typeof leaseToken === "string" &&
+							context.target.key === lockKey
+						) {
+							recordLockCommit(lockKey, leaseToken, context.written.hash);
+						}
+					}
 					afterPersist?.(context);
 				},
 			},
@@ -1540,9 +1552,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 	void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, async (signal) => {
 		const hold = await holdBoard({ board: key, holder: writer, signal });
+		res.locals.boardLockKey = key;
+		res.locals.boardLockToken = hold.leaseToken;
 		try {
 			(req as Request & { resolvedBoardWrite?: ResolvedBoard }).resolvedBoardWrite =
-				resolveInstalledBoard(key, "A write", { write: true });
+				resolveInstalledBoard(key, "A write", {
+					write: true,
+					...(hold.predecessorHash !== undefined
+						? { trustedPredecessorHash: hold.predecessorHash }
+						: {}),
+				});
 		} catch (error) {
 			if (hold.created) releaseHold(key, hold.holder.id);
 			answerBoardError(res, error);

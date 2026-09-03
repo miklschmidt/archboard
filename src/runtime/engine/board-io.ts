@@ -368,6 +368,8 @@ export interface ResolvedBoard extends BoardAccess {
 export interface InstallBoardOptions {
 	/** Establish a missing baseline from this exact load while the caller holds the board lock. */
 	write?: boolean;
+	/** A waiter may accept only this exact hash from the released lease it observed. */
+	trustedPredecessorHash?: string;
 }
 
 function availableBoardKeys(root: string): string[] {
@@ -476,7 +478,15 @@ export function materializeResolvedBoard(
 	const content = contentFromLoadedBoard(loaded);
 	const { board } = getOrCreateBoard(loaded.identity);
 	board.file = loaded.file;
-	if (options.write && (!board.baseline || board.baseline.file !== loaded.file)) {
+	const followsTrustedPredecessor =
+		options.write &&
+		options.trustedPredecessorHash === loaded.hash &&
+		board.baseline?.file === loaded.file &&
+		board.baseline.hash !== loaded.hash;
+	if (
+		options.write &&
+		(!board.baseline || board.baseline.file !== loaded.file || followsTrustedPredecessor)
+	) {
 		recordBaseline(board, loaded.file, loaded.hash, loaded.version);
 	}
 	return { key, board, content, loaded };
