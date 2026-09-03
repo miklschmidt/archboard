@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 12:24'
+updated_date: '2026-09-03 12:27'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -169,6 +169,8 @@ The partial line was not an unmatched fsync and the same owner had passed A13, s
 Authoritative gate A15 at b1262780a6b541f1344a86e315266be256f23fb1: lint, formatting, both type checks, frontend build, and 1,902/1,902 module tests passed. The full-run-only subprocess stall reproduced in the serial system lane: the jq and guide-sync workflow cases each hit Bun implicit 5,000 ms case timeout while the intervening strict-exit case passed in 29.19 ms; after those forced child terminations the repository-session owner timed out at 30,000 ms and the runner stopped producing output with no child processes. I stopped only exact unit QYMD5rXL. It exited 143/SIGTERM after 4m1.586s, CPU 4m50.672s, 1.9G peak, and 0B swap; it ended MainPID=0, empty ControlGroup, and absent cgroup. This second full-run reproduction, together with green isolated and complete system-lane runs, shows the implicit aggregate test default is the unstable boundary and the later repository failure is cascade damage after Bun terminates a workflow child.
 
 Remediation adds TEST_CLI_WORKFLOW_CASE_TIMEOUT_MS=15,000 in the shared timing authority and applies it only to the three command-workflow cases that launch subprocesses. Normal focused timings remain 21.18 ms, 41.13 ms, and 21.53 ms; 15 seconds is a finite 3x margin over the observed nested-run stall, not a product SLA. All result, signal, stdout, stderr, schema, file, and repository assertions remain unchanged, and the non-subprocess registry test retains the default. Focused unit toDG9ECj passed 4/4 with 95 assertions in 233 ms (279 ms runtime, 332 ms CPU, 96.4M peak, 0B swap). No product timeout, test inventory, behavior assertion, lint, or type rule was weakened.
+
+Authoritative gate A16 at ca50b7a4947546a94dac3931880ffa574a884cc3 did not reach the remediated system owner. Lint, formatting, both type checks, and frontend build passed, then unrelated module subprocess owners began intermittently hitting the same 5,000 ms Bun default: presentation-link Git setup and several Codex process lifecycle fixtures timed out while adjacent cases completed at normal tens-of-milliseconds timings. Live exact-unit evidence during the failure showed MemoryCurrent=398,729,216, MemoryPeak=2,229,714,944, MemorySwapCurrent=0, TasksCurrent=34, zero low/high/max/OOM events, and zero cgroup memory pressure. Host memory pressure was also zero; CPU and I/O pressure were negligible. I stopped only exact unit ZYod8Qaj after the failures cascaded. It exited 143/SIGTERM after 1m55.709s, CPU 2m19.535s, 2G peak, and 0B swap, ending MainPID=0, empty ControlGroup, and absent cgroup. No tracked code implicated this earlier cross-module stall, and broad timeout changes would hide rather than correct unrelated owners, so no additional product or test mutation is justified from this run. The committed CLI aggregate budget remains to be exercised by a fresh full gate.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
