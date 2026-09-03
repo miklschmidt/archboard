@@ -99,6 +99,10 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 			"/api/elements?board=source",
 		);
 		await request("/api/boards/new", { method: "POST", body: { board: "target" } });
+		await request("/api/boards/open", {
+			method: "POST",
+			body: { board: "target", pane: pane.clientId },
+		});
 		await pane.adopt("target");
 		await request("/api/elements/batch?board=target", {
 			method: "POST",
@@ -152,7 +156,7 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 		expect(restoreRecords).toHaveLength(1);
 		const restoreRecord = restoreRecords[0]!;
 		expect(restoreRecord).toMatchObject({ method: "POST", pathname: "/api/elements/batch" });
-		expect(restoreRecord.query).toBe("?board=target&doing=restore%20snapshot&expectVersion=1");
+		expect(restoreRecord.query).toBe("?board=target&doing=restore%20snapshot&expectVersion=2");
 		expect(Buffer.from(restoreRecord.bodyBase64, "base64").toString()).toBe(
 			JSON.stringify({
 				elements: sourceDocument.body.elements,
@@ -226,7 +230,7 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 		expect(repeatedRecords[0]).toMatchObject({
 			method: "POST",
 			pathname: "/api/elements/batch",
-			query: "?board=target&doing=repeat%20restore&expectVersion=3",
+			query: "?board=target&doing=repeat%20restore&expectVersion=4",
 		});
 		expect(Buffer.from(repeatedRecords[0]!.bodyBase64, "base64").toString()).toBe(
 			JSON.stringify({
@@ -334,7 +338,7 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 		expect(heldRecords[0]).toMatchObject({
 			method: "POST",
 			pathname: "/api/elements/batch",
-			query: "?board=held-target&doing=held%20snapshot%20restore&expectVersion=2",
+			query: "?board=held-target&doing=held%20snapshot%20restore&expectVersion=3",
 		});
 		expect(Buffer.from(heldRecords[0]!.bodyBase64, "base64").toString()).toBe(
 			JSON.stringify({

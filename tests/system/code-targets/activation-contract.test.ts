@@ -12,10 +12,9 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import type * as BoardModule from "../../../src/runtime/engine/board.ts";
-import type * as StoreModule from "../../../src/runtime/engine/board-store.ts";
 import { CodeTargetOpenReplySchema } from "../../../src/shared/code-target/index.ts";
 import type * as ElementSupport from "./support/elements.ts";
 import type * as OpenerSupport from "./support/opener-fixture.ts";
@@ -30,16 +29,15 @@ process.env.ARCHBOARD_VAULT = ownerVault;
 let configuredVault: string | undefined;
 let makeIdentity: typeof BoardModule.makeIdentity;
 let renderBoardNote: typeof BoardModule.renderBoardNote;
-let boards: typeof StoreModule.boards;
-let getOrCreateBoard: typeof StoreModule.getOrCreateBoard;
+let vaultPathFor: typeof BoardModule.vaultPathFor;
 let completeElement: typeof ElementSupport.completeElement;
 let createOpenerFixture: typeof OpenerSupport.createOpenerFixture;
 let jsonBody: typeof OpenerSupport.jsonBody;
 
 beforeAll(async () => {
 	({ createOpenerFixture, jsonBody } = await import("./support/opener-fixture.ts"));
-	({ makeIdentity, renderBoardNote } = await import("../../../src/runtime/engine/board.ts"));
-	({ boards, getOrCreateBoard } = await import("../../../src/runtime/engine/board-store.ts"));
+	({ makeIdentity, renderBoardNote, vaultPathFor } =
+		await import("../../../src/runtime/engine/board.ts"));
 	({ completeElement } = await import("./support/elements.ts"));
 	configuredVault = (await import("../../../src/runtime/engine/config.ts")).ARCHBOARD_VAULT;
 });
@@ -188,12 +186,9 @@ describe("public code-target activation contract", () => {
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
 		const identity = makeIdentity({ board: "system/payments" });
-		const { key, board } = getOrCreateBoard(identity);
-		resources.defer(() => {
-			boards.delete(key);
-		});
-		const note = join(fixture.root, "system-payments.excalidraw.md");
-		board.file = note;
+		const key = identity.board;
+		const note = vaultPathFor(identity, ownerVault);
+		mkdirSync(dirname(note), { recursive: true });
 		writeFileSync(
 			note,
 			renderBoardNote(
@@ -365,12 +360,9 @@ describe("public code-target activation contract", () => {
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
 		const identity = makeIdentity({ board: "system/payments" });
-		const { key, board } = getOrCreateBoard(identity);
-		resources.defer(() => {
-			boards.delete(key);
-		});
-		const note = join(fixture.root, "spawn-failure.excalidraw.md");
-		board.file = note;
+		const key = identity.board;
+		const note = vaultPathFor(identity, ownerVault);
+		mkdirSync(dirname(note), { recursive: true });
 		writeFileSync(
 			note,
 			renderBoardNote(
