@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 02:29'
+updated_date: '2026-09-03 02:33'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -62,6 +62,8 @@ Replace the rejected handwritten protocol ownership model with one dependency-ne
 12. Replace per-run version churn and retirement with one stable target per exact Codex version and tracked recipe revision. Generate fresh authority into an owned staging directory, atomically install a complete absent target or repair an existing target through same-recipe per-file atomic replacements without deleting the directory, publish compatibility entrypoints and completion state last, and leave older recipe targets reader-safe. Make public type-check generate once, run both configured TypeScript graphs even when either compiler fails, preserve both diagnostics, and aggregate their status.
 
 13. Keep the stable target self-describing through its version-and-recipe path only; do not persist completion or liveness markers. Initial publication is a complete directory rename, repair publishes leaf files and then index entrypoints, and current is the only publication state.
+
+14. Close the concurrent missing-subdirectory race in requireOwnedDirectory: when mkdir loses with EEXIST, re-lstat the winner and accept only a real directory. Keep the existing generated-tree reset diagnostic for a file, symlink, or unreadable winner, then prove eight concurrent repairs all succeed without residue.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
