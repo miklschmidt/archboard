@@ -21,8 +21,9 @@
 // holding its own canvas, so the number of boards on screen is the number of
 // panes.
 //
-// `resolveBoard()` lives beside note I/O. It resolves the explicit address from
-// the vault before it installs or reuses one of these records (ADR 0020).
+// Persisted resolution lives beside note I/O. A plain read leaves this map
+// alone; only explicit open, creation and write bookkeeping install a record
+// after resolving the vault note (ADR 0020).
 
 import { type ServerElement } from "./types.js";
 import { type BoardIdentity, boardKey, makeIdentity, SCRATCH_BOARD } from "./board.js";

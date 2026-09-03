@@ -18,13 +18,13 @@
 export class BoardRequiredError extends Error {
 	readonly code = "BOARD_REQUIRED";
 	readonly status = 400;
-	/** The boards this canvas has open, so the caller can pick one from here. */
-	readonly open: string[];
+	/** Persisted board keys the caller can choose from. */
+	readonly available: string[];
 
-	constructor(open: string[], what?: string) {
-		super(boardRequiredMessage(open, what));
+	constructor(available: string[], what?: string) {
+		super(boardRequiredMessage(available, what));
 		this.name = "BoardRequiredError";
-		this.open = open;
+		this.available = available;
 	}
 }
 
@@ -48,11 +48,11 @@ export class BoardResolutionError extends Error {
 	}
 }
 
-function boardRequiredMessage(open: string[], what?: string): string {
+function boardRequiredMessage(availableBoards: string[], what?: string): string {
 	const subject = what ? `${what} needs a board` : "This needs a board";
 	const available =
-		open.length > 0
-			? `The vault currently holds: ${open.join(", ")}.`
+		availableBoards.length > 0
+			? `The vault currently holds: ${availableBoards.join(", ")}.`
 			: "The vault currently holds no named board.";
 	return (
 		`${subject}, and none was named. Nothing was done. ` +

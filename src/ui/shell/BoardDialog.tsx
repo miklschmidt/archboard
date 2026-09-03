@@ -63,8 +63,8 @@ export function BoardDialog({
 	const [name, setName] = useState(mode === "open" ? "" : (current?.board ?? ""));
 	const [variant, setVariant] = useState("current");
 	const [level, setLevel] = useState(current?.level ?? "");
-	// Only ever asked about when it could be wrong: one pane, no question.
-	const asksForPane = mode !== "save-as" && panes.length > 1;
+	// Placement is an opening decision. Creation only publishes a vault note.
+	const asksForPane = mode === "open" && panes.length > 1;
 	const [pane, setPane] = useState(defaultPane ?? panes[0]?.clientId ?? "");
 
 	useEffect(() => {
@@ -113,7 +113,6 @@ export function BoardDialog({
 						board,
 						variant: variant.trim() || "current",
 						...(level.trim() ? { level: level.trim() } : {}),
-						...intoPane,
 					},
 		);
 	}, [filter, name, mode, onSubmit, variant, level, intoPane]);

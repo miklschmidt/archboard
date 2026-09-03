@@ -50,7 +50,6 @@ import {
 	type BoardState,
 	baselineForFile,
 	getOrCreateBoard,
-	openBoardKeys,
 	recordBaseline,
 } from "./board-store.js";
 import { BoardRequiredError, BoardResolutionError } from "./board-target.js";
@@ -366,8 +365,8 @@ export interface ResolvedBoard extends BoardAccess {
 	loaded: LoadedBoard;
 }
 
-export interface ResolveBoardOptions {
-	/** Establish the first write baseline before the request takes the board lock. */
+export interface InstallBoardOptions {
+	/** Establish a missing baseline from this exact load while the caller holds the board lock. */
 	write?: boolean;
 }
 
@@ -378,7 +377,7 @@ function availableBoardKeys(root: string): string[] {
 			.filter((key, index, all) => all.indexOf(key) === index)
 			.toSorted();
 	} catch {
-		return openBoardKeys();
+		return [];
 	}
 }
 
@@ -460,18 +459,18 @@ export function resolveBoardNote(asked?: string | null, what?: string): Resolved
 }
 
 /** Resolve one explicit address to exactly one valid persisted note. */
-export function resolveBoard(
-	asked?: string | null,
-	what?: string,
-	options: ResolveBoardOptions = {},
-): ResolvedBoard {
-	return materializeResolvedBoard(resolveBoardNote(asked, what), options);
+export function resolveBoard(asked?: string | null, what?: string): ResolvedBoard {
+	const resolution = resolveBoardNote(asked, what);
+	const { key, loaded } = resolution;
+	const content = contentFromLoadedBoard(loaded);
+	const board: BoardState = { identity: loaded.identity, file: loaded.file };
+	return { key, board, content, loaded };
 }
 
-/** Materialize one already-resolved load without reading or resolving it again. */
+/** Install one already-resolved load for explicit open/create/write bookkeeping. */
 export function materializeResolvedBoard(
 	resolution: ResolvedBoardNote,
-	options: ResolveBoardOptions = {},
+	options: InstallBoardOptions = {},
 ): ResolvedBoard {
 	const { key, loaded } = resolution;
 	const content = contentFromLoadedBoard(loaded);
@@ -481,6 +480,15 @@ export function materializeResolvedBoard(
 		recordBaseline(board, loaded.file, loaded.hash, loaded.version);
 	}
 	return { key, board, content, loaded };
+}
+
+/** Resolve and install a board only for an operation that needs session bookkeeping. */
+export function resolveInstalledBoard(
+	asked?: string | null,
+	what?: string,
+	options: InstallBoardOptions = {},
+): ResolvedBoard {
+	return materializeResolvedBoard(resolveBoardNote(asked, what), options);
 }
 
 /** Publish and register a canonical empty board without touching browser state. */

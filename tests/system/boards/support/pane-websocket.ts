@@ -114,3 +114,18 @@ export async function waitForPaneMessage(
 	}
 	return undefined;
 }
+
+export async function waitForPaneMessageWhere(
+	pane: TestPane,
+	start: number,
+	match: (message: PaneMessage) => boolean,
+	timeoutMs = TEST_PANE_MESSAGE_TIMEOUT_MS,
+): Promise<PaneMessage | undefined> {
+	const deadline = Date.now() + timeoutMs;
+	while (Date.now() < deadline) {
+		const found = pane.seen.slice(start).find(match);
+		if (found) return found;
+		await sleep(TEST_PANE_MESSAGE_POLL_MS);
+	}
+	return undefined;
+}

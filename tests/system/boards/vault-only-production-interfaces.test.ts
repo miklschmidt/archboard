@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
-import { parseBoardKey, renderBoardNote } from "../../../src/runtime/engine/board.ts";
+import { listBoards, parseBoardKey, renderBoardNote } from "../../../src/runtime/engine/board.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 
@@ -13,6 +13,7 @@ const root = mkdtempSync(join(tmpdir(), "archboard-vault-only-"));
 const vault = join(root, "vault");
 let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
+const additionalCanvases: OwnedCanvas[] = [];
 
 const emptyScene = {
 	type: "excalidraw",
@@ -50,7 +51,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	try {
-		await canvas?.dispose();
+		await Promise.allSettled([
+			canvas.dispose(),
+			...additionalCanvases.map((owned) => owned.dispose()),
+		]);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -77,6 +81,8 @@ describe.serial("vault-only production interfaces", () => {
 			expect(result.status, name).toBe(200);
 			expect(result.body.success, name).not.toBeFalse();
 		}
+		const afterReads = await request<{ open: Array<{ key: string }> }>("/api/boards");
+		expect(afterReads.body.open.map((entry) => entry.key)).not.toContain("payments");
 
 		const changed = await request<{ fingerprint: { version: number } }>(
 			"/api/elements?board=payments",
@@ -158,7 +164,7 @@ describe.serial("vault-only production interfaces", () => {
 			pane?: unknown;
 		}>("/api/boards/new", {
 			method: "POST",
-			body: { board: "Created", level: "service", pane: "right" },
+			body: { board: "Created", level: "service" },
 		});
 		expect(created).toMatchObject({
 			status: 200,
@@ -174,6 +180,96 @@ describe.serial("vault-only production interfaces", () => {
 			),
 		).toBeFalse();
 		expect(await request("/api/panes")).toEqual(before);
+
+		const retiredPane = await request<Refusal>("/api/boards/new", {
+			method: "POST",
+			body: { board: "RetiredPane", pane: "right" },
+		});
+		expect(retiredPane.status).toBe(400);
+		expect(retiredPane.body.error).toContain('Unrecognized key: "pane"');
+		expect(listBoards(vault).some((entry) => entry.key === "retiredpane")).toBeFalse();
+	});
+
+	test("keeps a read-only resolution out of open-session state", async () => {
+		putNote("read-then-open");
+		expect((await request("/api/elements?board=read-then-open")).status).toBe(200);
+		const beforeOpen = await request<{ open: Array<{ key: string }> }>("/api/boards");
+		expect(beforeOpen.body.open.map((entry) => entry.key)).not.toContain("read-then-open");
+		const opened = await request<{ source: string }>("/api/boards/open", {
+			method: "POST",
+			body: { board: "read-then-open" },
+		});
+		expect(opened).toMatchObject({ status: 200, body: { source: "vault" } });
+	});
+
+	test("serializes normalized creation and establishes a waiting baseline under lock", async () => {
+		const other = await startOwnedCanvas({ serverPath: join(repoRoot, "src/server.ts"), vault });
+		additionalCanvases.push(other);
+		const otherRequest = createJsonRequester(other);
+		for (const [first, second, key] of [
+			["CaseRace", "caserace", "caserace"],
+			["Cafe\u0301", "Café", "café"],
+		] as const) {
+			const outcomes = await Promise.all([
+				request("/api/boards/new", { method: "POST", body: { board: first } }),
+				otherRequest("/api/boards/new", { method: "POST", body: { board: second } }),
+			]);
+			expect(outcomes.map((outcome) => outcome.status).toSorted()).toEqual([200, 409]);
+			expect(listBoards(vault).filter((entry) => entry.key === key)).toHaveLength(1);
+		}
+
+		putNote("waited-write");
+		const held = await request("/api/boards/hold?board=waited-write", {
+			method: "POST",
+			body: { clientId: "baseline-holder" },
+		});
+		expect(held.status).toBe(200);
+		const waiting = otherRequest<{ fingerprint?: { version: number }; code?: string }>(
+			"/api/elements?board=waited-write",
+			{
+				method: "POST",
+				body: { id: "waiter", type: "rectangle", x: 60, y: 0, width: 40, height: 40 },
+			},
+		);
+		let admitted = false;
+		for (let attempt = 0; attempt < 100 && !admitted; attempt += 1) {
+			const health = await otherRequest<{
+				application: { activeMutations: Array<{ name: string }> };
+			}>("/health");
+			admitted = health.body.application.activeMutations.some((entry) =>
+				entry.name.includes("board-lock wait"),
+			);
+		}
+		expect(admitted).toBeTrue();
+		const holderWrite = await request<{ fingerprint: { version: number } }>(
+			"/api/elements?board=waited-write",
+			{
+				method: "POST",
+				body: {
+					id: "holder",
+					type: "rectangle",
+					x: 0,
+					y: 0,
+					width: 40,
+					height: 40,
+					clientId: "baseline-holder",
+				},
+			},
+		);
+		expect(holderWrite.body.fingerprint.version).toBe(1);
+		await request("/api/boards/hold/release?board=waited-write", {
+			method: "POST",
+			body: { clientId: "baseline-holder" },
+		});
+		const waited = await waiting;
+		expect(waited).toMatchObject({ status: 200, body: { fingerprint: { version: 2 } } });
+		const document = await otherRequest<{ elements: Array<{ id: string }> }>(
+			"/api/elements?board=waited-write",
+		);
+		expect(document.body.elements.map((element) => element.id).toSorted()).toEqual([
+			"holder",
+			"waiter",
+		]);
 	});
 
 	test("returns one browser-independent resolution refusal family", async () => {

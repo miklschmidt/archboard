@@ -12,7 +12,8 @@ import { openTestPane, type TestPane } from "./support/pane-websocket.ts";
 interface Refusal {
 	code?: string;
 	error?: string;
-	open?: string[];
+	available?: string[];
+	reason?: string;
 }
 
 interface BoardsBody {
@@ -70,7 +71,7 @@ describe("public HTTP refusals", () => {
 		expect(unnamed.body.code).toBe("BOARD_REQUIRED");
 		expect(unnamed.body.error).toContain("Nothing was done");
 		expect(unnamed.body.error).toContain("--board <key>");
-		expect(Array.isArray(unnamed.body.open)).toBeTrue();
+		expect(Array.isArray(unnamed.body.available)).toBeTrue();
 		expect(unnamed.body.error).toContain("board list");
 
 		const unopened = await request<Refusal>("/api/elements?board=nope");
@@ -78,6 +79,26 @@ describe("public HTTP refusals", () => {
 		expect(unopened.body.code).toBe("BOARD_RESOLUTION_FAILED");
 		expect(unopened.body.error).toContain('Board "nope" was not found');
 		expect(unopened.body.error).not.toMatch(/open it first|open a pane/i);
+	});
+
+	test("keeps compare resolution refusals identical with zero or one pane", async () => {
+		await request("/api/boards/new", { method: "POST", body: { board: "compare-present" } });
+		const url = "/api/boards/compare?from=compare-missing&to=compare-present";
+		const withoutPane = await request<Refusal>(url);
+		const pane = await openTestPane(canvas.base, request, "compare-refusal-pane", 0);
+		try {
+			const withPane = await request<Refusal>(url);
+			for (const result of [withoutPane, withPane]) {
+				expect(result.status).toBe(404);
+				expect(result.body).toMatchObject({
+					code: "BOARD_RESOLUTION_FAILED",
+					reason: "missing",
+				});
+			}
+			expect(withPane.body).toEqual(withoutPane.body);
+		} finally {
+			await pane.close();
+		}
 	});
 
 	test("refuses every destructive board-blind route without changing state", async () => {

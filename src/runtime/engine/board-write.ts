@@ -125,14 +125,51 @@ export interface BoardWriteRequest<T> {
 	presentationLinks?: ReadonlyMap<string, PresentationContext>;
 }
 
-export type TellPanes = (message: WebSocketMessage, board: string) => void;
+export type TellPanes = (message: WebSocketMessage, board: string) => void | PromiseLike<void>;
+
+interface PendingPaneNotification {
+	tellPanes: TellPanes;
+	message: WebSocketMessage;
+}
+
+const paneNotificationQueues = new Map<string, PendingPaneNotification[]>();
+const scheduledPaneNotifications = new Set<string>();
+
+function reportPaneNotificationFailure(board: string, error: unknown): void {
+	logger.warn(`Board "${board}" pane notification failed after the write boundary`, error);
+}
+
+function flushPaneNotifications(board: string): void {
+	scheduledPaneNotifications.delete(board);
+	const pending = paneNotificationQueues.get(board)?.splice(0) ?? [];
+	if (pending.length === 0) {
+		paneNotificationQueues.delete(board);
+		return;
+	}
+	for (const notification of pending) {
+		try {
+			Promise.resolve(notification.tellPanes(notification.message, board)).catch((error) =>
+				reportPaneNotificationFailure(board, error),
+			);
+		} catch (error) {
+			reportPaneNotificationFailure(board, error);
+		}
+	}
+	if ((paneNotificationQueues.get(board)?.length ?? 0) > 0) schedulePaneNotificationFlush(board);
+	else paneNotificationQueues.delete(board);
+}
+
+function schedulePaneNotificationFlush(board: string): void {
+	if (scheduledPaneNotifications.has(board)) return;
+	scheduledPaneNotifications.add(board);
+	queueMicrotask(() => flushPaneNotifications(board));
+}
 
 function tellPanesBestEffort(tellPanes: TellPanes, message: WebSocketMessage, board: string): void {
-	try {
-		tellPanes(message, board);
-	} catch (error) {
-		logger.warn(`Board "${board}" committed, but a pane notification failed`, error);
-	}
+	const queue = paneNotificationQueues.get(board) ?? [];
+	if (!paneNotificationQueues.has(board)) paneNotificationQueues.set(board, queue);
+	queue.push({ tellPanes, message });
+	schedulePaneNotificationFlush(board);
 }
 
 export class BoardMutationError extends Error {

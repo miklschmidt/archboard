@@ -87,6 +87,7 @@ import {
 	readBoardInspectionSnapshot,
 	renderContent,
 	resolveBoard,
+	resolveInstalledBoard,
 	resolveBoardNote,
 } from "../../../runtime/engine/board-io.js";
 import type {
@@ -109,6 +110,7 @@ import {
 	releaseHold,
 	sleep,
 	takeClaimRevocation,
+	withBoardLock,
 	watchBoardLocks,
 } from "../../../runtime/engine/board-lock.js";
 import type { LockHolder } from "../../../runtime/engine/board-lock.js";
@@ -986,8 +988,12 @@ function boardFromRequest(
 
 /** Resolve a write's board without reading its note ahead of the write entry. */
 function boardTargetFromRequest(req: Request, what?: string): BoardWriteTarget {
-	const { key, board } = resolveBoard(boardOfRequest(req), what, { write: true });
-	return { key, board };
+	const prepared = (req as Request & { resolvedBoardWrite?: ResolvedBoard }).resolvedBoardWrite;
+	const asked = boardOfRequest(req);
+	const key = asked ? boardKey(parseBoardKey(asked)) : "";
+	if (prepared && prepared.key === key) return { key: prepared.key, board: prepared.board };
+	const { key: resolvedKey, board } = resolveInstalledBoard(asked, what, { write: true });
+	return { key: resolvedKey, board };
 }
 
 // Which board a request says it is about, before anything resolves its note.
@@ -1004,6 +1010,7 @@ function boardOfRequest(req: Request): string | undefined {
 // A board that was not named, or whose address cannot resolve, is a client
 // error rather than a server fault.
 function boardErrorStatus(error: unknown): number {
+	if (error instanceof z.ZodError) return 400;
 	if (error instanceof BoardRequiredError) return error.status;
 	if (error instanceof BoardResolutionError) return error.status;
 	if (error instanceof BoardMutationError) return error.status;
@@ -1039,15 +1046,21 @@ function refusalDocument(
 	};
 }
 
-// The refusal, as a body. Carries the open boards as data so a caller can act
-// on it without parsing the sentence.
+// The refusal, as a body. Carries persisted choices as data so a caller can
+// act on it without parsing the sentence.
 function boardErrorBody(
 	error: unknown,
 	checkoutSnapshot: CheckoutSnapshot = EMPTY_CHECKOUT_SNAPSHOT,
 ): Record<string, unknown> {
-	const base = { success: false, error: (error as Error).message };
+	const base = {
+		success: false,
+		error:
+			error instanceof z.ZodError
+				? error.issues.map((issue) => issue.message).join("; ")
+				: (error as Error).message,
+	};
 	if (error instanceof BoardRequiredError) {
-		return { ...base, code: error.code, open: error.open };
+		return { ...base, code: error.code, available: error.available };
 	}
 	if (error instanceof BoardResolutionError) {
 		return {
@@ -1066,13 +1079,14 @@ function boardErrorBody(
 	// Who has the board and since when, as data as well as a sentence, so a voice
 	// session has something to say and a client has something to act on.
 	if (error instanceof BoardHeldError) {
+		const document = boards.has(error.board) ? refusalDocument(error.board, checkoutSnapshot) : {};
 		return {
 			...base,
 			code: error.code,
 			board: error.board,
 			holder: error.holder,
 			waitedMs: error.waitedMs,
-			...refusalDocument(error.board, checkoutSnapshot),
+			...document,
 		};
 	}
 	if (error instanceof BoardMutationError && error.code) return { ...base, code: error.code };
@@ -1454,10 +1468,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 	let key: string;
 	try {
-		key = resolveBoard(boardOfRequest(req), "A write", { write: true }).key;
+		const asked = boardOfRequest(req);
+		if (!asked) throw new BoardRequiredError([], "A write");
+		key = boardKey(parseBoardKey(asked));
 	} catch {
-		// No board named, or the address does not resolve to one valid vault note.
-		// The handler refuses better than this can: it knows the operation's name.
+		// No board named, or the address itself is malformed. The handler refuses
+		// better than this can: it knows the operation's name.
 		return next();
 	}
 
@@ -1524,6 +1540,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 	void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, async (signal) => {
 		const hold = await holdBoard({ board: key, holder: writer, signal });
+		try {
+			(req as Request & { resolvedBoardWrite?: ResolvedBoard }).resolvedBoardWrite =
+				resolveInstalledBoard(key, "A write", { write: true });
+		} catch (error) {
+			if (hold.created) releaseHold(key, hold.holder.id);
+			answerBoardError(res, error);
+			return;
+		}
 		// Under the lock, so no other archboard writer can land between the
 		// version being read and the note being written; before `next()`, so a
 		// refusal writes nothing (TASK-091). The board is given straight back:
@@ -1534,7 +1558,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 			writer.kind === "agent" && claimWriterId(key) === writer.id ? writer.id : undefined;
 		const conflict = checkBoardVersion({
 			board: key,
-			file: boards.get(key)?.file,
+			file: (req as Request & { resolvedBoardWrite?: ResolvedBoard }).resolvedBoardWrite?.board
+				.file,
 			writesNote: writesBoardNote(key),
 			...(stated.expected !== undefined ? { stated: stated.expected } : {}),
 			...(rememberedBy ? { rememberedBy } : {}),
@@ -3929,7 +3954,7 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 		const { board, content } =
 			prepared?.key === key && !alreadyRegistered
 				? materializeResolvedBoard(prepared.resolution)
-				: resolveBoard(key, "Opening a board");
+				: resolveInstalledBoard(key, "Opening a board");
 		if (asked.level) board.identity = { ...board.identity, level: asked.level };
 		const pane = paneFromRequest(params.pane);
 		// The bytes just read are what the panes are about to be shown, so they are
@@ -3971,19 +3996,31 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 	}
 });
 
+const BoardNewAddressSchema = BoardAddressSchema.strict();
+
 // Start a new, empty board by atomically publishing its canonical note.
 app.post("/api/boards/new", (req: Request, res: Response) => {
 	try {
-		const params = BoardAddressSchema.parse(req.body ?? {});
+		const params = BoardNewAddressSchema.parse(req.body ?? {});
 		const identity = identityFromParams(params);
-		const { key, board, content } = createBoard(identity);
-		logger.info(`Board created: "${key}" as ${board.file}`);
-		res.json({
-			success: true,
-			...identityResponse(key, board, content),
-			created: true,
-			saved: true,
-		});
+		const key = boardKey(identity);
+		const holder = holderFromRequest(req, key);
+		void trackMutationWork(req, `${req.method} ${req.path} board-create wait`, (signal) =>
+			withBoardLock({ board: key, holder, signal }, () => createBoard(identity)),
+		)
+			.then(({ key: createdKey, board, content }) => {
+				logger.info(`Board created: "${createdKey}" as ${board.file}`);
+				return res.json({
+					success: true,
+					...identityResponse(createdKey, board, content),
+					created: true,
+					saved: true,
+				});
+			})
+			.catch((error) => {
+				if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) return;
+				answerBoardError(res, error, "Error creating board:");
+			});
 	} catch (error) {
 		answerBoardError(res, error, "Error creating board:");
 	}
@@ -4127,15 +4164,9 @@ app.post("/api/boards/save", (req: Request, res: Response) => {
 // — or one that only exists in the vault. Reported per side, because they can
 // differ and the human needs to know which they were told about.
 
-function loadSideForCompare(key: string): CompareSideInput | null {
+function loadSideForCompare(key: string): CompareSideInput {
 	const registered = boards.has(key);
-	let resolved: ResolvedBoard;
-	try {
-		resolved = resolveBoard(key, "Comparing boards");
-	} catch (error) {
-		if (error instanceof BoardResolutionError && error.reason === "missing") return null;
-		throw error;
-	}
+	const resolved = resolveBoard(key, "Comparing boards");
 	return {
 		key,
 		identity: resolved.board.identity,
@@ -4224,25 +4255,8 @@ app.get("/api/boards/compare", (req: Request, res: Response) => {
 			});
 		}
 
-		const missing: string[] = [];
 		const from = loadSideForCompare(fromKey);
-		if (!from) missing.push(fromKey);
 		const to = loadSideForCompare(toKey);
-		if (!to) missing.push(toKey);
-		if (missing.length > 0 || !from || !to) {
-			const board = missing[0] ? parseBoardKey(missing[0]).board : fromIdentity.board;
-			const available = addressesFor(board);
-			return res.status(404).json({
-				success: false,
-				error:
-					`No board ${missing.map((m) => `"${m}"`).join(" or ")} in the vault at ${requireVaultRoot()}` +
-					(available.length
-						? `. What exists under "${board}": ${available.join(", ")}.`
-						: `, and nothing exists under "${board}" at all.`) +
-					" Run `board list` to see everything.",
-				missing,
-			});
-		}
 
 		const result = compareBoards(from, to);
 		if (from.identity.board !== to.identity.board) {
