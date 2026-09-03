@@ -26,10 +26,21 @@ import { createJsonRequester } from "../boards/support/http.ts";
 import { openTestPane, waitForPaneMessage } from "../boards/support/pane-websocket.ts";
 import { completeElement } from "./support/elements.ts";
 import { assertIntroducedBindingPresentation } from "./support/presentation-routes.ts";
+import { declareTestWallClockBudget } from "../../support/test-wall-clock.ts";
 
 const repoRoot = join(import.meta.dir, "../../..");
 const serverPath = join(repoRoot, "src/server.ts");
 const localRepository = "github.com/acme/local";
+
+declareTestWallClockBudget({
+	test: "every public presentation is fresh, provenance-safe, and board-addressed",
+	reason:
+		"The owner starts a real canvas and exercises every public code-target presentation route.",
+	outerBoundMs: TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS,
+	task: "TASK-138",
+	evidence:
+		"GitHub Actions run 33281484674 completed this owner in 14,815.78 ms under the recorded one-CPU contention fixture.",
+});
 
 function git(cwd: string, ...args: string[]): void {
 	const result = Bun.spawnSync(["git", ...args], { cwd, stderr: "pipe" });

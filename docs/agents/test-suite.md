@@ -35,6 +35,16 @@ bun test path/to/owner.test.ts
 bun test path/to/owner.test.ts --test-name-pattern "part of the test name"
 ```
 
+`tests/test-preload.ts` measures each Bun case with a monotonic clock. An unapproved
+case gets 20,000 ms of actual elapsed time. A larger timeout argument only tells Bun
+how long it may wait; it does not fail a case that finishes inside the wall-clock
+budget.
+
+Keep a real-time exception beside its test. Call `declareTestWallClockBudget` with
+the exact test name, a concrete reason, a `TEST_*` outer bound, the task that owns
+the choice, and recorded duration evidence. Repository policy checks that shape and
+the preload entry. There is no separate filename list to update.
+
 The focused server-rendering owners load `dist/frontend/renderer.html`. Run
 `bun run build:frontend` first in a clean checkout. The package `test` command
 already runs that build before its native lanes.

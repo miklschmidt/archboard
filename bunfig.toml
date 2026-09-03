@@ -11,3 +11,6 @@
 # rule holds for dependencies added later without anybody remembering it.
 [install]
 exact = true
+
+[test]
+preload = ["./tests/test-preload.ts"]
