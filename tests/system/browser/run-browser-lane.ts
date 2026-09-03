@@ -440,7 +440,7 @@ async function runSelection(
 			if (interrupted) throw new InterruptedError(interrupted);
 			const name = childName(index);
 			const ownerRoot = join(laneRoot, name);
-			mkdirSync(ownerRoot);
+			mkdirSync(join(ownerRoot, "tmp"), { recursive: true });
 			const env = ownerEnvironment(file, laneRoot, ownerRoot, browserExecutable);
 			current = spawnOwner(file, env);
 			const processGroup = current.pid;
