@@ -114,10 +114,19 @@ export interface BrowserLeaseBinding {
 export interface BrowserProjectionContext {
 	readonly browserId: BrowserConnectionId;
 	readonly paneId: string;
+	/** Exact process-local socket identity; never serialized to the browser. */
+	readonly connection: BrowserConnectionInstance;
 	readonly binding: ThreadLinkBindingSnapshot;
 	readonly lease: BrowserCommandLease | null;
 	/** The exact socket has installed a usable browser-local media owner. */
 	readonly mediaReady: boolean;
+}
+
+export interface BrowserProjectionDisconnectContext {
+	readonly browserId: BrowserConnectionId;
+	readonly paneId: string;
+	/** Exact process-local socket identity; reusable browser ids are insufficient. */
+	readonly connection: BrowserConnectionInstance;
 }
 
 /**
@@ -128,6 +137,11 @@ export interface BrowserProjectionPort {
 	readonly read: (context: BrowserProjectionContext) => BrowserOwnerProjection;
 	/** One owner notification source may fan out all projection changes. */
 	readonly onChange?: (listener: () => void) => BrowserUnsubscribe;
+	/** Retire projection state at the gateway's authoritative connection seam. */
+	readonly onBrowserDisconnect?: (
+		context: BrowserProjectionDisconnectContext,
+		reason: BrowserDisconnectReason,
+	) => void;
 }
 
 export interface BrowserActionContext extends BrowserLeaseBinding {}

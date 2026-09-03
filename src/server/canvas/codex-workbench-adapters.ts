@@ -23,6 +23,7 @@ export type {
 } from "./lib/codex-workbench-operation-lifecycle.js";
 export { createCanvasTimelineOwner } from "./lib/codex-workbench-timeline.js";
 export type {
+	CanvasTimelineBudget,
 	CanvasTimelineOwner,
 	CanvasTimelineOwnerOptions,
 } from "./lib/codex-workbench-timeline.js";

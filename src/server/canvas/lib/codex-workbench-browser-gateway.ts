@@ -3,6 +3,7 @@ import type {
 	BrowserActionResult,
 	BrowserAccountProjectionInput,
 	BrowserOwnerProjection,
+	BrowserProjectionPort,
 	BrowserOrdinaryApprovalActions,
 	BrowserWorkbenchActions,
 	BrowserLeaseLedger,
@@ -257,7 +258,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 		ordinaryApprovals: createCanvasOrdinaryApprovalActions(components.approvals),
 		dynamicApprovals: dynamicApprovals.browser,
 	};
-	const projection = {
+	const projection: BrowserProjectionPort = {
 		read: (
 			context: Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0],
 		): BrowserOwnerProjection => {
@@ -283,6 +284,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 					context.binding.revision,
 					context.binding.link,
 					state.readiness.state === "thread_capable",
+					context.connection,
 				),
 				queue: state.queue,
 				settings: [
@@ -356,6 +358,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 			};
 		},
 		onChange: input.onChange,
+		onBrowserDisconnect: ({ paneId, connection }) => input.timeline.retire(paneId, connection),
 	};
 	return { projection, actions, leaseLedger: input.leaseLedger };
 }
