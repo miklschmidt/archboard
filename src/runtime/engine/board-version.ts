@@ -144,7 +144,7 @@ export function describeWriteConflict(input: {
 }): BoardWriteConflict {
 	const key = boardKey(input.target);
 	const outcomes = {
-		reload: `board open ${key} --reload`,
+		reload: `browser show ${key} --pane <spec> --reload`,
 		overwrite: `${input.saveCommand} --force`,
 		saveAs: `board save --as ${suggestSaveAsName(input.target)}`,
 	};

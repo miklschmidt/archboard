@@ -387,7 +387,9 @@ test("a provisional duplicate socket cannot retire the live pane authority", asy
 		await replacementClosed;
 		owner.release();
 		expect((await request<{ paneCount: number }>("/api/panes")).body.paneCount).toBe(1);
-		expect((await request<{ clientId: string }>("/api/selection")).body.clientId).toBe(clientId);
+		expect(
+			(await request<{ clientId: string }>(`/api/selection?pane=${clientId}`)).body.clientId,
+		).toBe(clientId);
 		expect(
 			(
 				await request<{ created: boolean }>("/api/boards/hold?board=scratch", {

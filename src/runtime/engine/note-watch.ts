@@ -35,7 +35,7 @@
 //
 // AND IT HASHES ALMOST NOTHING. A note is only read when its size or its
 // modification time has moved, or when archboard's own baseline for it has —
-// the second one because taking the note (`board open --reload`) changes what
+// the second one because taking the note (`browser show --reload`) changes what
 // the comparison is against without touching the file, and a gate that watched
 // only the file would leave the mark up after the thing that clears it.
 
@@ -229,7 +229,7 @@ function describe(board: string, foreign: ForeignWrite | null): NoteWrittenElsew
 			describeVersionMove(foreign.versionMove, foreign.expectedVersion, foreign.actualVersion),
 			"Nothing has been written and nothing is lost: the next change to this board will be refused " +
 				"rather than saved over theirs.",
-			`Take the note with \`board open ${board} --reload\`, which discards what is on this canvas, ` +
+			`Take the note with \`browser show ${board} --pane <spec> --reload\`, which discards what is on this canvas, ` +
 				"or carry on drawing and choose when you are asked.",
 			"Keep a board open in one editor at a time.",
 		].join("\n"),

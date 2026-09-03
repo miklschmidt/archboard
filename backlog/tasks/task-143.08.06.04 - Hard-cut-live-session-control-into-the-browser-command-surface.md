@@ -1,10 +1,11 @@
 ---
 id: TASK-143.08.06.04
 title: Hard-cut live session control into the browser command surface
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-02 02:02'
+updated_date: '2026-09-03 08:28'
 labels: []
 dependencies:
   - TASK-143.08.06.02
@@ -39,3 +40,24 @@ Make the public command boundary teach the architecture. Persisted-board work re
 - [ ] #7 Old top-level pane, panes, selection, viewport, and session-screenshot spellings and pane-changing board options are removed rather than aliased, and every removal produces concise replacement guidance.
 - [ ] #8 The CommandContract registry and generated command audit enforce the classification: no board command carries a browser prerequisite or session input, no browser command writes a note, and all browser-requiring commands live under the browser namespace.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Add an explicit board/browser/neither classification to every flattened CommandContract registry entry, validate namespace, prerequisite, effect, and session-option invariants, and emit the classification in the canonical audit and generated views.
+2. Replace the old live-session paths with `browser panes`, `browser open`, `browser close`, `browser show`, `browser selection`, `browser viewport`, and `browser capture`. Require an explicit pane for show and capture, make help state the connected-browser requirement and visible effect, and provide concise migration errors for every removed spelling.
+3. Remove `board open` and all pane/session fields from board inventory and board help. Keep `board new`, named rendering, and other persisted-board commands browser-free; keep browser show/capture read-only with respect to notes.
+4. Require non-empty `--ids` for promote and demote, delete the selection fallback and its HTTP relationship, and make `browser selection` return the board plus stable element identities for deliberate reuse.
+5. Update the authored command audit, derived contract expectations, focused CLI/board owners, and directly contradicted guidance. Delete obsolete alias and pane-coupled assertions instead of preserving compatibility.
+6. Run only focused command-contract, package CLI, board-inventory, and live-session owners plus scoped Oxlint, Oxfmt, and diff checks. Record exact wall times and child/browser counts, leave all acceptance criteria unchecked, and commit the reviewable cut.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation handoff (2026-09-03): hard-cut all live session operations beneath browser (panes/open/close/show/selection/viewport/capture); removed top-level spellings and board open with migration guidance; added board/browser/neither registry classification and executable architecture assertions; made promotion/demotion require explicit ids; made board inventory persisted-only; removed pane movement and session fields from board-save responses; and adapted the shell to compose persisted inventory with /api/panes locally. Canonical audit reviewedBase is dfb589bd28f6dc95289f5271ba389bfcc48bafbe; derived proof artifacts remain ignored and reproducible.
+
+Focused validation: 43 command-contract/package owners passed in 26.84s (0 real-browser children); side-by-side, vault-only inventory, public refusals, checkout consistency, socket ownership, branching pane effects, pane addressing, repository session, held save-elsewhere, and 12 shell unit checks passed in focused runs. Scoped Oxfmt, Oxlint, git diff --check, and untracked-file audit passed. No broad suite, root type-check, build, or real-browser lane was run, per delegation. Rendered navigator verification therefore remains for integration review. Additional unrelated owner failures observed while probing were the existing held-copy reread inconsistency, a Codex startup lock collision in the forced-death scratch owner, and malformed legacy open returning 422 where its owner expects 400.
+
+Clarification: those three probe failures are outside this task surface; this delegation did not rerun the fixed base, so their baseline status is unconfirmed.
+<!-- SECTION:NOTES:END -->

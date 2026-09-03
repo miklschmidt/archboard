@@ -7,13 +7,7 @@ import path from "node:path";
 import { TEST_PANE_SOCKET_SETTLE_MS } from "../../../src/shared/timing/timing.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
-import {
-	openTestPane,
-	waitForPaneMessage,
-	waitForPaneMessageWhere,
-	type PaneMessage,
-	type TestPane,
-} from "./support/pane-websocket.ts";
+import { openTestPane, type TestPane } from "./support/pane-websocket.ts";
 
 interface Element {
 	id: string;
@@ -29,11 +23,6 @@ interface ElementsBody {
 interface SaveBody {
 	savedFrom?: string;
 	saveKind?: string;
-	panes?: {
-		moved: Array<{ place: string }>;
-		kept: Array<{ place: string }>;
-		onScreen: Array<{ place: string; board: string }>;
-	};
 }
 
 interface PanesBody {
@@ -129,12 +118,7 @@ describe("branching pane effects", () => {
 		});
 		expect(branch.body.saveKind).toBe("branch");
 		expect(branch.body.savedFrom).toBe("pane-ledger");
-		expect(branch.body.panes?.moved).toEqual([]);
-		expect(branch.body.panes?.kept.map((entry) => entry.place)).toEqual(["left"]);
-		expect(branch.body.panes?.onScreen.map((entry) => `${entry.place}:${entry.board}`)).toEqual([
-			"left:pane-ledger",
-			"right:pane-ledger@option-a",
-		]);
+		expect(branch.body).not.toHaveProperty("panes");
 		expect(left.board()).toBe("pane-ledger");
 		expect(right.board()).toBe("pane-ledger@option-a");
 		expect(
@@ -152,7 +136,7 @@ describe("branching pane effects", () => {
 		).toBeTrue();
 	});
 
-	test("refreshes an on-screen save-as destination with an exact replacement delta", async () => {
+	test("writes over an on-screen destination without switching its browser session", async () => {
 		await closePanes();
 		await request("/api/boards/new", { method: "POST", body: { board: "save-source" } });
 		await request("/api/boards/new", { method: "POST", body: { board: "save-destination" } });
@@ -185,46 +169,28 @@ describe("branching pane effects", () => {
 		await right.adopt("save-destination");
 		const sourceStart = left.since();
 		const destinationStart = right.since();
-		const acknowledgeViewport = async (message: PaneMessage): Promise<void> => {
-			if (message.type !== "set_viewport") return;
-			await request("/api/viewport/result", {
-				method: "POST",
-				body: { requestId: message.requestId, success: true },
-			});
-		};
-		left.socket.on("message", (data) => {
-			void acknowledgeViewport(JSON.parse(data.toString()) as PaneMessage);
-		});
 		const saved = await request<SaveBody>("/api/boards/save?board=save-source", {
 			method: "POST",
 			body: { name: "save-destination" },
 		});
-		const replacement = await waitForPaneMessage(right, destinationStart, "elements_changed");
+		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 		const persistedReplacement = await request<ElementsBody>(
 			"/api/elements?board=save-destination",
 		);
-		const replacementById = new Map(
-			persistedReplacement.body.elements.map((element) => [element.id, element]),
-		);
-		const barrierStart = left.since();
-		const sourceBarrier = await request("/api/viewport", {
-			method: "POST",
-			body: { scrollToContent: true, pane: "left" },
-		});
-		const sourceBarrierMessage = await waitForPaneMessage(left, barrierStart, "set_viewport");
 		const authoritative = await request<PanesBody>("/api/panes");
 		expect(saved.status, JSON.stringify(saved.body)).toBe(200);
-		expect(replacement?.board).toBe("save-destination");
-		expect((replacement?.created ?? []) as Element[]).toEqual([replacementById.get("created")!]);
-		expect((replacement?.updated ?? []) as Element[]).toEqual([replacementById.get("same")!]);
-		expect(replacement?.deleted).toEqual(["deleted"]);
-		expect(sourceBarrier.status).toBe(200);
-		expect(sourceBarrierMessage).toBeDefined();
+		expect(saved.body).not.toHaveProperty("panes");
+		expect(persistedReplacement.body.elements.map((element) => element.id).toSorted()).toEqual([
+			"created",
+			"same",
+		]);
 		expect(left.board()).toBe("save-source");
 		expect(
 			left.seen.slice(sourceStart).every((message) => message.type !== "board_switched"),
 		).toBeTrue();
-		expect(saved.body.panes?.moved).toHaveLength(0);
+		expect(
+			right.seen.slice(destinationStart).every((message) => message.type !== "board_switched"),
+		).toBeTrue();
 		expect(
 			authoritative.body.panes.find((pane) => pane.clientId === "replacement-left")?.board,
 		).toBe("save-source");
@@ -234,7 +200,7 @@ describe("branching pane effects", () => {
 		expect(right.board()).toBe("save-destination");
 	});
 
-	test("reports branch capacity, moves named scratch, and notifies same-board saves", async () => {
+	test("reports saves without moving displayed boards", async () => {
 		await closePanes();
 		await request("/api/boards/new", { method: "POST", body: { board: "response-source" } });
 		await request("/api/elements?board=response-source", {
@@ -265,23 +231,16 @@ describe("branching pane effects", () => {
 			method: "POST",
 			body: { name: "response-sketch", level: "module" },
 		});
-		expect(named.body).toMatchObject({ saveKind: "named", panes: { kept: [] } });
-		expect(named.body.panes?.moved.map((entry) => entry.place)).toEqual(["right"]);
-		expect(right.board()).toBe("response-sketch");
+		expect(named.body).toMatchObject({ saveKind: "named" });
+		expect(named.body).not.toHaveProperty("panes");
+		expect(right.board()).toBe("scratch");
 		expect(left.board()).toBe("response-source");
 
-		const sameStart = left.since();
 		const same = await request<SaveBody>("/api/boards/save?board=response-source", {
 			method: "POST",
 		});
-		expect(same.body).toMatchObject({ saveKind: "same-board", panes: { moved: [], kept: [] } });
-		expect(
-			await waitForPaneMessageWhere(
-				left,
-				sameStart,
-				(message) => message.type === "elements_changed" && message.board === "response-source",
-			),
-		).toBeDefined();
+		expect(same.body).toMatchObject({ saveKind: "same-board" });
+		expect(same.body).not.toHaveProperty("panes");
 
 		const full = await runCli([
 			"board",
@@ -292,9 +251,8 @@ describe("branching pane effects", () => {
 			"option-full",
 		]);
 		expect(full.code).toBe(0);
-		expect(full.stderr).toMatch(/board open response-source@option-full --pane left/);
-		expect(full.stderr).toMatch(/--pane left` replaces "response-source"/);
-		expect(full.stderr).toMatch(/--pane right` replaces "response-sketch"/);
+		expect(full.stderr).toMatch(/browser show response-source@option-full --pane <spec>/);
+		expect(full.stderr).toMatch(/without changing the browser/);
 
 		await right.close();
 		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
@@ -307,8 +265,7 @@ describe("branching pane effects", () => {
 			"option-room",
 		]);
 		expect(room.code).toBe(0);
-		expect(room.stderr).toMatch(/pane open --board response-source@option-room/);
-		expect(room.stderr).not.toMatch(/board open/);
-		expect(room.stderr).toMatch(/the only pane still holds "response-source"/);
+		expect(room.stderr).toMatch(/browser show response-source@option-room --pane <spec>/);
+		expect(room.stderr).toMatch(/without changing the browser/);
 	});
 });

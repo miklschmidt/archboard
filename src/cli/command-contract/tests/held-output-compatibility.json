@@ -4,8 +4,8 @@
 	"held": { "board": "held", "message": "held board diagnostic", "writes": 1 },
 	"cases": [
 		{
-			"name": "selection-text",
-			"path": "selection",
+			"name": "browser-selection-text",
+			"path": "browser selection",
 			"outputCase": "text",
 			"result": "fixed text",
 			"stdout": "fixed text\n",
@@ -13,8 +13,8 @@
 			"events": ["stdout:fixed text\n"]
 		},
 		{
-			"name": "panes-text",
-			"path": "panes",
+			"name": "browser-panes-text",
+			"path": "browser panes",
 			"outputCase": "text",
 			"result": "fixed text",
 			"stdout": "fixed text\n",
@@ -76,8 +76,8 @@
 			"events": ["stdout:fixed text\n"]
 		},
 		{
-			"name": "screenshot-raw-svg",
-			"path": "screenshot",
+			"name": "browser-capture-raw-svg",
+			"path": "browser capture",
 			"outputCase": "raw-svg",
 			"result": "<svg/>",
 			"stdout": "<svg/>\n",
@@ -85,8 +85,8 @@
 			"events": ["stdout:<svg/>\n"]
 		},
 		{
-			"name": "screenshot-file",
-			"path": "screenshot",
+			"name": "browser-capture-file",
+			"path": "browser capture",
 			"outputCase": "file",
 			"result": { "success": true, "file": "{{ARTIFACT}}", "format": "svg" },
 			"artifact": { "path": "{{ARTIFACT}}", "content": "<svg/>", "encoding": "utf8" },

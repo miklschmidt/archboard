@@ -151,7 +151,7 @@ Start the canvas from anywhere and open a board:
 
 ```bash
 archboard board new payments --level service
-archboard board open payments
+archboard browser show payments --pane primary
 ```
 
 **Name the repository and use a repo-relative path.** Register each checkout
@@ -220,7 +220,7 @@ Fill it in once the repo has a board:
 ### Boards for this repo
 
 - Boards: `payments` is the architecture as it stands, `payments@*` are
-  proposals. Open with `archboard board open payments`.
+  proposals. Show with `archboard browser show payments --pane primary`.
 - Level vocabulary: `service` means one deployable here, not one class.
 - Conventions and gotchas: the worker boxes are drawn from the queue's side,
   because that is how the on-call runbook reads.
