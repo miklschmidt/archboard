@@ -1,0 +1,9 @@
+{
+	"name": "archboard-server-rendering-emulation-proof",
+	"private": true,
+	"dependencies": {
+		"@napi-rs/canvas": "1.0.8",
+		"happy-dom": "20.13.2"
+	},
+	"packageManager": "bun@1.4.0"
+}
