@@ -1,11 +1,11 @@
 ---
 id: TASK-143.06.08
 title: Update current documentation after legacy injection removal
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:29'
-updated_date: '2026-09-03 10:57'
+updated_date: '2026-09-03 11:00'
 labels: []
 dependencies:
   - TASK-143.06.03
@@ -39,10 +39,10 @@ Update current user, agent, test, and architecture documents only after the rema
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Current setup, help, and testing docs remove ARCHBOARD_INJECT*, shared-daemon injection commands and routes, and claims that users can arm legacy injection.
-- [ ] #2 Current architecture describes exact thread-link semantic delivery, one private stdio session, outcomes, controlled and real tests, and the executable browser-owner inventory reported by the repository at execution time; TESTING.md says Archboard owns dedicated CODEX_HOME, CODEX_SQLITE_HOME, config, and app-server state rather than user-global configuration, with coordinator voice separate from the linked workhorse.
-- [ ] #3 DESIGN.md permits spoken approval only from one matching final user item after the effect prompt and never from an assistant transcript; ADR 0005 and historical research remain unchanged or explicitly superseded, links stay valid, and no current document advertises a control socket.
-- [ ] #4 tests/system/repository-policy/legacy-injection-retirement.test.ts rejects retired user-global, shared-thread, assistant-transcript, control-socket, and stale current-doc claims; any browser-owner agreement is derived from the executable inventory rather than an unexplained historical count; CLI audit, README, TESTING, DESIGN, AGENTS, executable routes, commands, and tests agree.
+- [x] #1 Current setup, help, and testing docs remove ARCHBOARD_INJECT*, shared-daemon injection commands and routes, and claims that users can arm legacy injection.
+- [x] #2 Current architecture describes exact thread-link semantic delivery, one private stdio session, outcomes, controlled and real tests, and the executable browser-owner inventory reported by the repository at execution time; TESTING.md says Archboard owns dedicated CODEX_HOME, CODEX_SQLITE_HOME, config, and app-server state rather than user-global configuration, with coordinator voice separate from the linked workhorse.
+- [x] #3 DESIGN.md permits spoken approval only from one matching final user item after the effect prompt and never from an assistant transcript; ADR 0005 and historical research remain unchanged or explicitly superseded, links stay valid, and no current document advertises a control socket.
+- [x] #4 tests/system/repository-policy/legacy-injection-retirement.test.ts rejects retired user-global, shared-thread, assistant-transcript, control-socket, and stale current-doc claims; any browser-owner agreement is derived from the executable inventory rather than an unexplained historical count; CLI audit, README, TESTING, DESIGN, AGENTS, executable routes, commands, and tests agree.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -83,4 +83,12 @@ Final Standards remediation at 77d0118e adds two negative, block-scoped structur
 Accepted matcher correction at 906fe680: the shared-thread guard now evaluates sentences and rejects voice plus attach/connect/use/run plus same/existing plus thread without requiring workhorse; explicit cannot/do-not/does-not/never and direct target negations remain allowed. The control-socket guard now evaluates each sentence independently, so a retired historical sentence cannot mask a later positive action sentence. Four expectations inside the existing current-document test establish the observed former shared-thread sentence, a mixed retired-plus-use block, an allowed retired statement, and an allowed cannot-connect statement. Final focused evidence: 4 tests / 70 expectations in 0.067s using one Bun test process under one timeout supervisor; Oxfmt check 0.101s using one formatter process; Oxlint 0.124s using one lint process; git diff --check passed. Added cost remains zero new test cases, files, process owners, browser owners, server owners, or runtime lanes.
 
 Final rerun after restoring the exact former TESTING wording in the boundary example supersedes the preceding timing: focused owner 4 tests / 70 expectations in 0.078s; Oxfmt check 0.112s; Oxlint 0.120s; git diff --check passed. Process and added-cost counts are unchanged.
+
+Final verification reused exact-head accepted evidence: legacy-injection-retirement owner passed 4/4 cases, 70 expectations, in 0.078s under one Bun process and one timeout supervisor; scoped format/lint/link/history/diff checks passed; historical ADR 0005 and docs/design/stateless-server.md were preserved; independent Standards and Spec reviews were both REVIEW_CLEAN at 7dfce85c. Post-fast-forward git diff --check passed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Removed legacy injection claims from current documentation and added executable retirement-policy coverage; verified by the focused 4/4, 70-expectation owner plus scoped checks and two clean independent reviews.
+<!-- SECTION:FINAL_SUMMARY:END -->
