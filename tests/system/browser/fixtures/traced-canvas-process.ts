@@ -10,8 +10,9 @@ export interface FsyncTraceEvidence {
 
 export function readFsyncTrace(traceFile: string): FsyncTraceEvidence {
 	if (!fs.existsSync(traceFile)) return { calls: [], incomplete: [] };
-	const lines = fs
-		.readFileSync(traceFile, "utf8")
+	const text = fs.readFileSync(traceFile, "utf8");
+	const completeText = text.endsWith("\n") ? text : text.slice(0, text.lastIndexOf("\n") + 1);
+	const lines = completeText
 		.split("\n")
 		.map((line) => line.trim())
 		.filter(Boolean);

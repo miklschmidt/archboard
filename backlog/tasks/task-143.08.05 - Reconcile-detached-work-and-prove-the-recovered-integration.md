@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 13:05'
+updated_date: '2026-09-03 13:15'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -23,6 +23,8 @@ modified_files:
   - tests/system/canvas-state/codex-workbench-production.test.ts
   - tests/system/process-contracts/support/delayed-checkout-owner.ts
   - tests/system/browser/board-navigator.test.ts
+  - tests/system/browser/fixtures/traced-canvas-process.ts
+  - tests/system/browser/human-edit-performance.test.ts
 parent_task_id: TASK-143.08
 priority: high
 type: task
@@ -197,6 +199,10 @@ Authoritative gate A20 at 90f1693d: lint, formatting, both type checks, frontend
 Diagnosis found two test-only ordering assumptions. The test waited for pane registration before observing a loading state whose fixed delay had already begun, and React StrictMode can start the board-list effect twice, so a one-request gate allowed the second request to settle the list. An initial explicit-release diagnostic proved the loading state but then reached the next assertion before all five controls had settled under capped unit archboard-task143-worker-command-zqzvnoM2.service. A second diagnostic exposed the duplicate-effect escape under unit archboard-task143-worker-command-cg1cwrcm.service. The init fixture now holds every pre-release /api/boards request on one explicit barrier, the test observes the visible Reading the vault state, releases every pending request, and waits for the complete five-control empty-state contract before retaining the same size, labels, scratch, retry, and recovery assertions. No UI implementation changed and no fixed sleep replaced an observable condition. The exact browser case passed under capped unit archboard-task143-worker-command-cG42PeYp.service; the complete two-case board-navigator owner then passed with 64 assertions under capped unit archboard-task143-worker-command-Ofaime9o.service. No browser inventory, visible-state assertion, product timing, lint rule, or type rule was weakened.
 
 The final formatted board-navigator owner remains at the repository 500-line ceiling. Its pollUntil predicate itself accepts only the exact Reading the vault text, so the duplicate scalar assertion was removed without changing the visible condition. The compact final case passed again with 11 explicit expectations under capped unit archboard-task143-worker-command-G6FMsudf.service.
+
+Authoritative gate A21 at 459e2114: lint, formatting, both type checks, frontend build, 1,902/1,902 module tests, 356/356 serial system tests, and 152/152 repository-policy tests passed. The first browser owner completed its application measurements, then the trace reader repeatedly treated strace’s unterminated final writer fragment as a malformed completed record. Exact unit archboard-task143-worker-command-22DjwibH.service exited from the command with status 1 after 6m51.513s, consumed 7m31.067s CPU, peaked at 5.4G with 0B swap, and cleanup left the unit inactive/dead with MainPID=0, empty ControlGroup, and an absent cgroup.
+
+The trace reader now consumes only newline-terminated records. An in-progress final fragment is deferred, while the same bytes become explicit incomplete evidence once newline-terminated; completed successful, unfinished/resumed, lifecycle, and malformed-line semantics remain unchanged. A deterministic parser case passed under capped unit archboard-task143-worker-command-n9SjuDf6.service. The complete 10,000-element human-edit owner then passed its real strace shutdown path with 64 expectations under capped unit archboard-task143-worker-command-lsCi5WJ9.service in 74.838s, with 5.4G peak and 0B swap. No product behavior, fsync count bound, cleanup assertion, browser inventory, lint rule, type rule, or timeout was weakened.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
