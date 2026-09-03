@@ -37,7 +37,7 @@
 		"fmt:check": "oxfmt --check . '!dist/**' '!node_modules/**' '!backlog/**' '!src/shared/codex-app-server-contract/generated/**'",
 		"check": "bun run lint && bun run fmt:check && bun run test",
 		"test": "bun run type-check && bun run test:modules && bun run test:system && bun run test:repository && bun run test:serial-browser",
-		"type-check": "bun run generate:codex-contract && bunx tsc --noEmit && bunx tsc --noEmit -p tsconfig.frontend.json",
+		"type-check": "bun run generate:codex-contract && (root_typecheck_status=0; bunx tsc --noEmit || root_typecheck_status=$?; frontend_typecheck_status=0; bunx tsc --noEmit -p tsconfig.frontend.json || frontend_typecheck_status=$?; [ \"$root_typecheck_status\" -eq 0 ] && [ \"$frontend_typecheck_status\" -eq 0 ])",
 		"test:modules": "bun test --isolate src",
 		"test:system": "bun test --isolate --max-concurrency=1 tests/system/support tests/system/boards tests/system/label-geometry tests/system/cli tests/system/board-inspection tests/system/canvas-state tests/system/process-contracts tests/system/code-targets",
 		"test:repository": "bun test --isolate tests/system/repository-policy",
