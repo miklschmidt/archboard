@@ -51,7 +51,11 @@ export const ConfigLayerSchema = looseObject({
 	version: z.string(),
 	config: JsonValueSchema,
 	// Codex 0.151.0 omits this nullable generated field when the layer is enabled.
-	disabledReason: z.string().nullable().optional(),
+	disabledReason: z
+		.string()
+		.nullable()
+		.optional()
+		.transform((value) => value ?? null),
 });
 
 export const SandboxWorkspaceWriteSchema = looseObject({

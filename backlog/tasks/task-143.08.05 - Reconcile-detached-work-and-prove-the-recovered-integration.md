@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 11:16'
+updated_date: '2026-09-03 11:20'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -124,6 +124,9 @@ Complete-gate failure and remediation history before the next frozen head:
 
 - Attempt 3 used unit archboard-task143-worker-command-ijJjozS0.service. Lint passed, then the formatter gate exited 1 after 1.466s because four recovered files were not in canonical Oxfmt form: src/runtime/board-inspection/diagnostics.ts, src/runtime/board-inspection/tests/comparison-limits.test.ts, src/runtime/engine/git.ts, and tests/system/board-inspection/support/package-process.ts. CPU was 12.210s; memory peak was 1.5G with 0B swap. The exact unit was inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path was absent. No OOM, SIGKILL, or cleanup diagnostic occurred.
 - Remediation ran pinned Oxfmt in write mode on exactly those four files. The diff changes only formatter-selected line wrapping, 14 insertions and 28 deletions. git diff --check passes. No focused validation ran; the next check is one fresh complete gate after this formatting commit.
+
+- Attempt 4 used unit archboard-task143-worker-command-Smhc87QP.service. Lint and formatting passed, then type-check exited 1 after 3.758s on recovered integration drift: the emulation proof still named the deleted UI Mermaid converter; the config-layer schema tolerated an omitted generated field without normalizing its output; Bun IPC and piped-process values had lost their concrete narrowing; recovered observer fixtures did not prove optional paths or heterogeneous case fields; a renderer fixture lacked the Excalidraw angle brand; a React owner remained under the backend .ts inventory; and one nullable help lookup was passed as a string. CPU was 26.398s; memory peak was 1.9G with 0B swap. The exact unit is inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path is absent. No OOM, SIGKILL, or cleanup diagnostic occurred.
+- Remediation points the proof at the server-owned Mermaid configuration, normalizes an omitted disabledReason to the generated null wire value, retains concrete pipe/IPC stream types, makes fixture preconditions and case shapes explicit, brands the synthetic zero angle from the target property, moves the React test into the frontend .tsx inventory, and refuses a missing registry help entry explicitly. No lint rule, type rule, test owner, timeout, or assertion is weakened. No focused validation ran; the next check is one fresh complete gate after this remediation is committed.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

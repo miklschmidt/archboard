@@ -23,8 +23,9 @@ const onMessage = (message: unknown): void => {
 process.on("message", onMessage);
 
 function report(result: GitOwnerResult): void {
-	if (!process.send) throw new Error("Git process owner requires its Bun IPC channel.");
-	process.send(result);
+	const send = process.send;
+	if (!send) throw new Error("Git process owner requires its Bun IPC channel.");
+	send(result);
 }
 
 const command = process.argv.slice(2);

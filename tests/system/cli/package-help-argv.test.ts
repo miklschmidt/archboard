@@ -140,7 +140,9 @@ describe("package bin and help", () => {
 		const owner = resources.use(createPackageCliOwner());
 		const smoke = await owner.run(["help", "browser", "capture"]);
 		expect(smoke, packageFailure(smoke)).toMatchObject({ status: 0, stderr: "" });
-		expect(smoke.stdout, packageFailure(smoke)).toBe(commandHelp(["browser", "capture"]));
+		const expected = commandHelp(["browser", "capture"]);
+		if (expected === null) throw new Error("browser capture help is absent from the CLI registry.");
+		expect(smoke.stdout, packageFailure(smoke)).toBe(expected);
 	});
 });
 

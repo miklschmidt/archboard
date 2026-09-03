@@ -71,7 +71,7 @@ function findingFrame(
 		y: spec.frame.y,
 		width: spec.frame.width,
 		height: spec.frame.height,
-		angle: 0,
+		angle: 0 as ExcalidrawFrameLikeElement["angle"],
 		strokeColor: "transparent",
 		backgroundColor: "transparent",
 		fillStyle: "solid",
