@@ -12,6 +12,7 @@ import {
 	availablePort,
 	HealthSchema,
 	ReadySchema,
+	runCli,
 	sanitizedEnvironment,
 } from "./support/process-http.ts";
 import { plantStaticProbes } from "./support/static-probes.ts";
@@ -142,6 +143,46 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 		});
 		expect(cli.status).toBe(3);
 		expect(cli.stderr).toContain("install-skill");
+	} finally {
+		await resources.disposeAsync();
+	}
+}, 20_000);
+
+test("stop reports a hold that appears after the signal and leaves the canvas running", async () => {
+	await using resources = new AsyncDisposableStack();
+	const root = mkdtempSync(join(tmpdir(), "archboard-local-bind-late-hold-"));
+	resources.defer(() => rmSync(root, { recursive: true, force: true }));
+	const vault = join(root, "vault");
+	const port = await availablePort();
+	const canvas = await startOwnedPeer({
+		argv: [process.execPath, healthFixture],
+		env: {
+			...sanitizedEnvironment(root, vault),
+			PORT: String(port),
+			ARCHBOARD_TEST_LATE_HELD_BOARD: "late-hold",
+		},
+		readySchema: HealthResponderReadySchema,
+	});
+	resources.defer(() => canvas.dispose());
+	const base = `http://127.0.0.1:${port}`;
+	const result = runCli({ repoRoot, root, vault, base, args: ["stop"] });
+	const diagnostic = JSON.stringify(result, null, 2);
+	try {
+		expect(result.status, diagnostic).toBe(1);
+		expect(result.signal, diagnostic).toBeNull();
+		expect(result.stdout, diagnostic).toBe("");
+		expect(result.stderr, diagnostic).toContain(
+			'Canvas shutdown refused because held work exists only in process memory on "late-hold".',
+		);
+		expect(result.stderr, diagnostic).toContain("archboard board open late-hold --reload");
+		expect(result.stderr, diagnostic).toContain("archboard board save --board late-hold --force");
+		expect(result.stderr, diagnostic).toContain(
+			"archboard board save --board late-hold --name <new-name>",
+		);
+		const health = HealthSchema.parse(
+			await fetch(`${base}/health`).then((response) => response.json()),
+		);
+		expect(health.pid).toBe(canvas.ready.pid);
 	} finally {
 		await resources.disposeAsync();
 	}
