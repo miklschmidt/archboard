@@ -15,6 +15,7 @@ import {
 import {
 	projectCodexBrowserState,
 	type BrowserProjectionInput,
+	type DynamicApprovalOwnerRequest,
 	type DynamicApprovalOwnerView,
 } from "../index.js";
 
@@ -22,11 +23,27 @@ const PRIVATE_PATHS = [
 	"/private/dynamic-create",
 	"/private/dynamic-fork",
 	"/private/dynamic-send",
+	"/private/dynamic-identity",
 ] as const;
 
 function ownerRequest(value: DynamicToolApprovalRequest): DynamicToolApprovalRequest {
 	return value;
 }
+
+function compileDeepReadonlyDynamicOwner(view: DynamicApprovalOwnerView): void {
+	const request: DynamicApprovalOwnerRequest = view.request;
+	void request;
+	if (view.request.effect.tool === "create_thread") {
+		// @ts-expect-error Dynamic owner arguments are recursively readonly.
+		view.request.effect.arguments.prompt = "mutated";
+	}
+	if (view.request.effect.tool === "fork_thread") {
+		// @ts-expect-error Dynamic owner boundaries are recursively readonly.
+		view.request.effect.effectiveBoundary.beforeTurnId = "mutated";
+	}
+}
+
+void compileDeepReadonlyDynamicOwner;
 
 function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalOwnerView[] {
 	const authority = createDynamicAuthorityTokenIssuer();
@@ -58,6 +75,7 @@ function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalO
 		tool,
 		manifestHash: "projection-manifest",
 		operationId,
+		futurePrivateIdentity: PRIVATE_PATHS[3],
 	});
 	const createOperation = String(authorities.operation.issuer.mintOperationId());
 	const createSource = {
@@ -199,6 +217,21 @@ test("the sole public projection closes all three dynamic approval presentations
 		"send_message_to_thread",
 	]);
 	expect(projected.map((approval) => approval.state)).toEqual(["pending", "pending", "pending"]);
+	const identityKeys = [
+		"callId",
+		"child",
+		"epoch",
+		"manifestHash",
+		"namespace",
+		"operationId",
+		"threadId",
+		"tool",
+		"turnId",
+	];
+	for (const approval of projected) {
+		expect(Object.keys(approval.identity).toSorted()).toEqual(identityKeys);
+		expect(Object.isFrozen(approval.identity)).toBe(true);
+	}
 	expect(Object.keys(projected[0]!).toSorted()).toEqual([
 		"binding",
 		"createdAtMs",
@@ -235,6 +268,7 @@ test("the sole public projection closes all three dynamic approval presentations
 	if (fork.tool !== "fork_thread" || send.tool !== "send_message_to_thread")
 		throw new Error("dynamic effect order changed");
 	expect(fork.target).toBe(fork.arguments.threadId);
+	expect(fork.effectiveBoundary.beforeTurnId).toBe(fork.arguments.beforeTurnId);
 	expect(send.target).toBe(send.arguments.threadId);
 	const wire = JSON.stringify(projected);
 	for (const privatePath of PRIVATE_PATHS) expect(wire).not.toContain(privatePath);

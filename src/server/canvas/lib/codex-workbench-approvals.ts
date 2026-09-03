@@ -5,6 +5,7 @@ import type {
 	BrowserDynamicApprovalActions,
 	BrowserDynamicApprovalResponse,
 	DynamicApprovalOwnerBinding,
+	DynamicApprovalOwnerRequest,
 	DynamicApprovalOwnerView,
 } from "../../codex-workbench/index.js";
 import type {
@@ -20,7 +21,7 @@ import type {
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
 
 interface PendingDynamicApproval {
-	readonly request: DynamicToolApprovalRequest;
+	readonly request: DynamicApprovalOwnerRequest;
 	binding: DynamicApprovalOwnerBinding;
 	readonly decision: Promise<DynamicToolApprovalDecision>;
 	readonly resolve: (decision: DynamicToolApprovalDecision) => void;
@@ -46,7 +47,19 @@ export interface CanvasDynamicApprovalOwnerOptions {
 }
 
 function keyFor(request: Pick<DynamicToolApprovalRequest, "identity" | "effectHash">): string {
-	return JSON.stringify([request.identity, request.effectHash]);
+	const { identity, effectHash } = request;
+	return JSON.stringify([
+		identity.child,
+		identity.epoch,
+		identity.threadId,
+		identity.turnId,
+		identity.callId,
+		identity.namespace,
+		identity.tool,
+		identity.manifestHash,
+		identity.operationId,
+		effectHash,
+	]);
 }
 
 function immutableBinding(binding: DynamicApprovalOwnerBinding): DynamicApprovalOwnerBinding {
@@ -59,6 +72,19 @@ function immutableBinding(binding: DynamicApprovalOwnerBinding): DynamicApproval
 			epoch: binding.capturedLink.epoch,
 		}),
 	});
+}
+
+function freezeGraph(value: unknown, seen = new WeakSet<object>()): void {
+	if (value === null || typeof value !== "object" || seen.has(value)) return;
+	seen.add(value);
+	for (const key of Reflect.ownKeys(value)) freezeGraph(Reflect.get(value, key), seen);
+	Object.freeze(value);
+}
+
+function ownImmutableRequest(request: DynamicToolApprovalRequest): DynamicApprovalOwnerRequest {
+	const owned = structuredClone(request);
+	freezeGraph(owned);
+	return owned as DynamicApprovalOwnerRequest;
 }
 
 /** One real visual-approval owner shared by the dispatcher and browser gateway. */
@@ -92,21 +118,22 @@ export function createCanvasDynamicApprovalOwner(
 		notify();
 	};
 	const present = (request: DynamicToolApprovalRequest): void => {
-		const key = keyFor(request);
+		const ownedRequest = ownImmutableRequest(request);
+		const key = keyFor(ownedRequest);
 		if (pending.has(key)) throw new Error("The dynamic approval is already pending.");
 		let resolve!: (decision: DynamicToolApprovalDecision) => void;
 		const decision = new Promise<DynamicToolApprovalDecision>((next) => {
 			resolve = next;
 		});
 		const entry: PendingDynamicApproval = {
-			request,
-			binding: immutableBinding(options.bindingForCaller(request.identity.threadId)),
+			request: ownedRequest,
+			binding: immutableBinding(options.bindingForCaller(ownedRequest.identity.threadId)),
 			decision,
 			resolve,
 			settled: false,
 			timer: setTimeout(
 				() => terminal(entry, "expired", "deadline_reached"),
-				Math.max(0, request.expiresAtMs - options.now()),
+				Math.max(0, ownedRequest.expiresAtMs - options.now()),
 			),
 		};
 		entry.timer.unref();
@@ -142,7 +169,7 @@ export function createCanvasDynamicApprovalOwner(
 			command: BrowserDynamicApprovalResponse,
 			_context: BrowserActionContext,
 		): Promise<BrowserActionResult> => {
-			const entry = pending.get(JSON.stringify([command.identity, command.effectHash]));
+			const entry = pending.get(keyFor(command));
 			if (entry === undefined) throw new Error("The dynamic approval is no longer pending.");
 			if (
 				command.commandId !== entry.binding.commandId ||

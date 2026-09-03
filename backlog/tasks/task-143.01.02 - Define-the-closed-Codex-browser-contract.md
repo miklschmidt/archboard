@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 20:21'
+updated_date: '2026-09-03 20:30'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -103,6 +103,14 @@ Define only the browser-facing workbench state and user-intent model that has no
 38. Add one focused projection owner covering create_thread, fork_thread, and send_message_to_thread with private authority/path exclusion and stable closed output. Delete the unused server-request-scalars module without replacement.
 
 39. Run only focused dynamic approval, projection, gateway, owner, both TypeScript, scoped lint/format, boundary/import, and diff checks. Commit separately and callback the parent for rereview.
+
+40. Ninth remediation: capture each presented DynamicToolApprovalRequest as a structured-cloned, recursively frozen owner graph and expose it as a DeepReadonly-derived request view without a parallel semantic type.
+
+41. Project the nine public dynamic identity fields explicitly and reuse the adopted fork beforeTurnId for its effective boundary, so future identity descendants are omitted instead of rejected.
+
+42. Extend the focused owner and three-family projection proofs with source-alias mutation, runtime deep freeze, compile-time nested readonly, exact identity keys, and private identity omission.
+
+43. Run only focused dynamic owner/projection/gateway/settlement tests, type probes, both TypeScript configs, scoped lint/format, boundary/import, and diff checks. Commit separately and callback the parent for rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -164,6 +172,13 @@ Eighth review remediation:
 - The DTO-only terminal gateway fixture was deleted because the real owner removes terminal dynamic approvals at settlement and cannot expose that state. The unused server-request-scalars module had no consumers and was deleted without relocation.
 
 Red evidence: the first root TypeScript run after changing the contract failed at every stale DTO seam (old browser.pending consumers, DTO projection inputs, and two-argument projection calls). Green evidence: 76 focused dynamic model/projection/gateway/canvas tests passed with 458 assertions; the new three-family projection owner passed with exact closed keys, identity targets, private-path/authority omission, and frozen output. Root and frontend TypeScript, exact scoped Oxlint/Oxfmt, 46 boundary/inventory tests with 135 assertions, import/retirement probes, and git diff checks passed. No broad module, system, browser, full-test, or check lane ran. TASK-143.01.02 remains In Progress for parent rereview.
+
+Ninth review remediation:
+- DynamicApprovalOwnerRequest is a type-only DeepReadonly<DynamicToolApprovalRequest> derivation. The canvas owner structured-clones each presented request, recursively freezes the owned graph, and discards the caller alias; no second semantic request model was added. Correlation selects the nine authored identity fields plus effectHash, so omitted future identity descendants cannot break response lookup.
+- projectCodexBrowserState now constructs the exact nine-field browser identity and reuses the already-adopted fork beforeTurnId for effectiveBoundary. A structurally valid futurePrivateIdentity field is deliberately omitted, not passed into strict-schema refusal.
+- Compile-time probes reject nested argument and boundary mutation. The runtime owner proof mutates the caller argument after presentation, rejects retained-graph mutation, preserves the original projected request, and settles expiry with the original identity and hash.
+
+Red evidence: before implementation, the exact three-family projection owner failed 0/1 because the future identity field made the adapter return refused. Green evidence: the focused dynamic model/projection/gateway/canvas lane passed 76/76 with 473 assertions. Root and frontend TypeScript, exact scoped Oxlint/Oxfmt, the 7 boundary-policy tests with 66 assertions, import residue probes, and git diff checks passed. No broad module, system, browser, topology, stress, capacity, performance, full-test, or check lane ran. TASK-143.01.02 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -268,5 +283,17 @@ author: @codex
 created: 2026-09-03 20:21
 ---
 Eighth review remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 20:27
+---
+Ninth review remediation started at 302e170f. The exact three-family projection owner is red because a future identity field currently reaches strict-schema refusal. TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 20:30
+---
+Ninth review remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
 ---
 <!-- COMMENTS:END -->

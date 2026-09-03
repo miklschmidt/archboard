@@ -87,5 +87,6 @@ export type {
 	CodexSettingsProjectionInput,
 	CodexVoiceProjectionInput,
 	DynamicApprovalOwnerBinding,
+	DynamicApprovalOwnerRequest,
 	DynamicApprovalOwnerView,
 } from "./lib/projection-contract.js";

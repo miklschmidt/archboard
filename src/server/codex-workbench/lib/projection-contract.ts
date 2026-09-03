@@ -21,7 +21,7 @@ import type {
 	CodexResponseByMethod,
 	CodexServerNotificationParamsByMethod,
 } from "../../../shared/codex-app-server-contract/index.js";
-import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+import type { ApprovalOwnerView, DeepReadonly } from "../../../runtime/codex-approvals/index.js";
 import type { DynamicToolApprovalRequest } from "../../../runtime/codex-dynamic-tools/index.js";
 import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
 import type { RealtimeTranscriptRecord } from "../../../shared/codex-realtime-host/index.js";
@@ -112,8 +112,10 @@ export interface DynamicApprovalOwnerBinding {
 }
 
 /** The dynamic owner exposes authoritative state; browser presentation is projected elsewhere. */
+export type DynamicApprovalOwnerRequest = DeepReadonly<DynamicToolApprovalRequest>;
+
 export interface DynamicApprovalOwnerView {
-	readonly request: DynamicToolApprovalRequest;
+	readonly request: DynamicApprovalOwnerRequest;
 	readonly binding: DynamicApprovalOwnerBinding;
 }
 
