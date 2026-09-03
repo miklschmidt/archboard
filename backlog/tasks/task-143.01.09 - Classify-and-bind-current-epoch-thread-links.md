@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.09
 title: Classify and bind current-epoch thread links
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-03 18:27'
+updated_date: '2026-09-03 18:32'
 labels: []
 dependencies:
   - TASK-143.01.05
@@ -33,10 +33,10 @@ Delegation profile: gpt-5.6-luna, max.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The classifier exhausts thread/list and thread/loaded/list, joins loaded IDs to Thread rows by exact ThreadId, and never infers membership from recency, status, or a partial page.
-- [ ] #2 Execution requires current child/epoch, literal top-level source cli|vscode|exec|appServer, loaded membership, and canAcceptDirectInput === true; custom/subAgent/unknown sources and false/null capability have distinct refusal reasons.
-- [ ] #3 Persisted-not-loaded, notLoaded, systemError, stale child, prior epoch, unknown provenance/source, absent join row, and outcome-unknown creation remain inspect-only with actionable reasons.
-- [ ] #4 Bindings compare-and-swap pane/link identity and tests cover cursor exhaustion, repeated cursors, disappearing rows, duplicate IDs, stale responses, all four allowed sources, all refused source variants, and every refusal.
+- [x] #1 The classifier exhausts thread/list and thread/loaded/list, joins loaded IDs to Thread rows by exact ThreadId, and never infers membership from recency, status, or a partial page.
+- [x] #2 Execution requires current child/epoch, literal top-level source cli|vscode|exec|appServer, loaded membership, and canAcceptDirectInput === true; custom/subAgent/unknown sources and false/null capability have distinct refusal reasons.
+- [x] #3 Persisted-not-loaded, notLoaded, systemError, stale child, prior epoch, unknown provenance/source, absent join row, and outcome-unknown creation remain inspect-only with actionable reasons.
+- [x] #4 Bindings compare-and-swap pane/link identity and tests cover cursor exhaustion, repeated cursors, disappearing rows, duplicate IDs, stale responses, all four allowed sources, all refused source variants, and every refusal.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -86,6 +86,8 @@ The focused browser-safe seam owner asserts the public discovery and candidate k
 Focused validation: bun test src/runtime/codex-thread-link/tests passed 43 tests and 167 assertions in 7.64s; root bunx tsc --noEmit --pretty false passed in 1.79s; exact-file oxlint passed in 0.15s; exact-file oxfmt check passed in 0.09s; git diff --check against 9c94a7ae passed. No broad module, system, repository, browser, check, stress, performance, or tooling suite ran.
 
 Second independent-review remediation: candidate discovery now delegates ownership provenance to the epoch-owned resolveThreadOwnershipProvenance query. Its exact authored contracts are create_thread/thread/start and fork_thread/thread/fork as created ownership, plus thread_link/thread/read as attached ownership; all other kind/RPC pairs are ignored. The resolver scans backward for the latest ownership-establishing committed or inspect-only record, so a later read that merely names the thread cannot shadow valid authority. An unrelated-only record leaves the candidate unknown_provenance and its opaque selection cannot bind executable. The real thread-link fixture now defaults to canonical create_thread/thread/start. Focused validation: bun test src/runtime/codex-thread-link/tests passed 45 tests and 171 assertions in 9.40s; the affected epoch owners passed 11 tests and 49 assertions in 1.50s; root bunx tsc --noEmit --pretty false passed in 1.79s; exact-file oxlint passed with no findings in 0.12s; exact-file oxfmt check passed in 0.09s; git diff --check passed. No broad module, system, repository, browser, check, stress, performance, or tooling suite ran. Task remains In Progress for parent review.
+
+Final integration on codex/task-143-144-workbench: cherry-picked the independently review-clean source range (9c94a7a, f77e5f3, f06920f) as canonical 01c4b36, 44f7f1d, 710fa39. Focused evidence: bun test src/runtime/codex-thread-link/tests (45 pass, 171 expectations, 9.221s); bun test src/runtime/codex-epoch/tests/thread-ownership.test.ts (1 pass, 4 expectations, 0.098s); generate:codex-contract and tsc --noEmit passed; exact source-tree diff and whitespace checks passed. TASK-143.03.03 UI wiring remains intentionally deferred.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -96,3 +98,9 @@ created: 2026-09-02 01:39
 Course correction, 2026-09-02: duplicate worktrees at maximal head 3e1670af contain candidate-discovery behavior worth preserving, but no detached head may merge before recovery. Reimplement that behavior on the recovered base; the duplicate worktree receives no separate replay.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Completed authoritative thread-candidate discovery with browser-safe opaque selections and the epoch-owned, three-contract ownership-provenance resolver. Verified through focused thread-link and epoch-ownership tests, contract generation, TypeScript, and exact source-tree checks. TASK-143.03.03 UI wiring remains deferred.
+<!-- SECTION:FINAL_SUMMARY:END -->
