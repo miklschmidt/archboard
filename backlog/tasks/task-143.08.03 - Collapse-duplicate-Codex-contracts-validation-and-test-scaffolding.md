@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 03:03'
+updated_date: '2026-09-03 03:07'
 labels: []
 dependencies:
   - TASK-143.08.02
@@ -47,6 +47,8 @@ Deepen the recovered Codex protocol and browser modules after generated types be
 5. Run focused retained owners, both contained TypeScript graphs, focused lint/format, the real Vite production build, and the smallest bounded repository/module evidence needed. Record before/after concepts, validation passes, cases, and lines; commit coherent slices and leave finalization to the parent.
 
 6. Repair standards-review gaps without restoring standalone suites: expose browser snapshot relationship validation for post-merge deltas; fold unique shutdown schedules into retained transport/adversarial tests; fold transport-replacement and readiness rendering tables into mounted-runtime; restore the discriminated dynamic-effect boundary; correct tracked-file metrics; run only affected owners and commit the repair.
+
+7. Rereview repair: extract the existing workbench FakeSocket test fixture into typed support, then restore the three unique handshake, duplicate-sequence, and incompatible-refresh assertions without exceeding the 500-line owner limit.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -100,4 +102,8 @@ Standards-review repair at d8488f76:
 Metric correction: the earlier 220,087 figure incorrectly applied a diff delta to a baseline collected with different file-selection behavior. The reproducible command is `git grep -I -n "^" <ref> -- src tests scripts tools ":!src/shared/codex-app-server-contract/generated/**" | wc -l`, run independently for each ref. It reports 226,542 at a5146446 and 220,301 at d8488f76, a reduction of 6,241 lines including the 214-line server-responses.ts replacement.
 
 Repair validation: affected transport/UI owners 23 pass; status/dynamic/canvas owners 56 pass; repository boundaries/inventory 46 pass; frontend TypeScript passes; production Vite build passes. Root TypeScript still reports only the same 13 fixed-base diagnostics in protected active-owner files. Focused Oxfmt/Oxlint and git diff checks pass.
+
+Rereview source-head check passed: tracked-clean at 9b8d4db77d61b3eedff1e1ff93cd78ce5694d22c before editing.
+
+Final rereview repair: moved the unchanged typed FakeSocket from transport.test.ts into tests/fake-socket.ts, leaving the retained behavioral owner at 449 lines and the support fixture at 56. Restored the exact handshake state/sequence 7 assertion, sequence 5 after the duplicated delta, and socket_unavailable refresh refusal after incompatible_contract. Validation: workbench-transport 9 pass; repository boundaries and inventory 46 pass; frontend TypeScript, focused Oxfmt/Oxlint, and diff check pass.
 <!-- SECTION:NOTES:END -->
