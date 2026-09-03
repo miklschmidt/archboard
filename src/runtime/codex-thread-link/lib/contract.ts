@@ -127,6 +127,24 @@ export interface ThreadLinkClassification {
 	readonly proof: EpochExecutionProof | null;
 }
 
+/** The durable child generation that owns one complete candidate inventory. */
+export interface ThreadLinkDiscoveryAuthority extends ThreadLinkCurrentEpoch {
+	readonly manifestRevision: number;
+	readonly manifestBytesHash: string | null;
+}
+
+/** One persisted thread row group joined to exact loaded membership and epoch provenance. */
+export interface ThreadLinkCandidate {
+	readonly target: ThreadLinkTarget;
+	readonly classification: ThreadLinkClassification;
+}
+
+/** One authoritative inventory. No member comes from a partial page or another generation. */
+export interface ThreadLinkCandidateDiscovery {
+	readonly authority: ThreadLinkDiscoveryAuthority | null;
+	readonly candidates: readonly ThreadLinkCandidate[];
+}
+
 export type ThreadLinkClassificationErrorCode =
 	| "invalid_input"
 	| "invalid_result"
@@ -195,6 +213,8 @@ export interface CodexThreadLinkClassifier {
 }
 
 export interface CodexThreadLinkPort extends CodexThreadLinkClassifier, ThreadLinkBindingStore {
+	/** Exhaust and classify the candidates browser consumers may offer for explicit binding. */
+	readonly discoverCandidates: () => Promise<ThreadLinkCandidateDiscovery>;
 	/** Classify twice through the live authorities, then adopt the fresh result by CAS. */
 	readonly classifyAndBind: (
 		paneId: string,

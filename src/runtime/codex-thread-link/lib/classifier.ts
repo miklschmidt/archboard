@@ -11,6 +11,7 @@ import type {
 	SessionThreadPageResult,
 } from "../../codex-session/index.js";
 import { CODEX_THREAD_STATUS_TYPES } from "../../../shared/codex-app-server-contract/index.js";
+import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
 import {
 	cloneAndFreeze,
 	deepEqual,
@@ -23,8 +24,10 @@ import {
 	type CodexThreadLinkClassifier,
 	type CodexThreadLinkClassifierOptions,
 	type ThreadLinkClassification,
+	type ThreadLinkCandidateDiscovery,
 	type ThreadLinkCondition,
 	type ThreadLinkCurrentEpoch,
+	type ThreadLinkEpochAuthority,
 	type ThreadLinkAllowedSource,
 	type ThreadLinkExecutableStatus,
 	type ThreadLinkObservation,
@@ -243,8 +246,8 @@ async function exhaustThreadList(session: ThreadListSession): Promise<readonly S
 	}
 }
 
-async function exhaustLoadedList(session: ThreadListSession): Promise<readonly string[]> {
-	const ids: string[] = [];
+async function exhaustLoadedList(session: ThreadListSession): Promise<readonly ThreadId[]> {
+	const ids: ThreadId[] = [];
 	const seenCursors = new Set<string>();
 	let cursor: string | null = null;
 	while (true) {
@@ -710,30 +713,161 @@ export function createCodexThreadLinkClassifier(
 		const persisted = await exhaustThreadList(session);
 		const loaded = await exhaustLoadedList(session);
 		const ended = currentEpochOf(options);
-		const evidence = durableEvidence(options, target);
-		const matchingThreads = persisted.filter((thread) => thread.id === target.threadId);
-		const matchingLoaded = loaded.filter((threadId) => threadId === target.threadId);
-		const thread = matchingThreads.length === 1 ? cloneAndFreeze(matchingThreads[0]!) : null;
-		const observation = observationFor(thread, matchingLoaded.length, matchingThreads.length);
-		const refusal = classifyReason(
-			target,
-			started,
-			ended,
-			evidence.record,
-			evidence.reason,
-			matchingThreads.length,
-			matchingLoaded.length,
-			thread,
-		);
-		return Object.freeze({
-			link: linkFor(target, ended, observation, refusal),
-			thread,
-			observation,
-			currentEpoch: ended,
-			proof: evidence.proof,
-		});
+		return classifyFromExhausted(options, target, persisted, loaded, started, ended);
 	};
 	return Object.freeze({ classify });
+}
+
+function classifyFromExhausted(
+	options: CodexThreadLinkClassifierOptions,
+	target: ThreadLinkTarget,
+	persisted: readonly SessionThread[],
+	loaded: readonly ThreadId[],
+	started: ThreadLinkCurrentEpoch | null,
+	ended: ThreadLinkCurrentEpoch | null,
+): ThreadLinkClassification {
+	validateTarget(target);
+	const evidence = durableEvidence(options, target);
+	const matchingThreads = persisted.filter((thread) => thread.id === target.threadId);
+	const matchingLoaded = loaded.filter((threadId) => threadId === target.threadId);
+	const thread = matchingThreads.length === 1 ? cloneAndFreeze(matchingThreads[0]!) : null;
+	const observation = observationFor(thread, matchingLoaded.length, matchingThreads.length);
+	const refusal = classifyReason(
+		target,
+		started,
+		ended,
+		evidence.record,
+		evidence.reason,
+		matchingThreads.length,
+		matchingLoaded.length,
+		thread,
+	);
+	return Object.freeze({
+		link: linkFor(target, ended, observation, refusal),
+		thread,
+		observation,
+		currentEpoch: ended,
+		proof: evidence.proof,
+	});
+}
+
+function sameEpoch(
+	left: ThreadLinkCurrentEpoch | null,
+	right: ThreadLinkCurrentEpoch | null,
+): boolean {
+	return (
+		(left === null && right === null) ||
+		(left !== null &&
+			right !== null &&
+			left.childId === right.childId &&
+			left.epoch === right.epoch)
+	);
+}
+
+function epochFromSnapshot(
+	snapshot: ReturnType<ThreadLinkEpochAuthority["snapshot"]>,
+): ThreadLinkCurrentEpoch | null {
+	const active = snapshot.manifest.activeEpoch;
+	return active === null ? null : { childId: active.childId, epoch: active.epoch };
+}
+
+function candidateRecord(
+	manifest: ReturnType<ThreadLinkEpochAuthority["snapshot"]>["manifest"],
+	threadId: ThreadLinkTarget["threadId"],
+): EpochOperationRecord | null {
+	return (
+		manifest.records.findLast(
+			(record) =>
+				(record.status === "committed" || record.status === "inspect_only") &&
+				record.provenance.threadId === threadId,
+		) ?? null
+	);
+}
+
+function assertSameDiscoveryGeneration(
+	started: ReturnType<ThreadLinkEpochAuthority["snapshot"]>,
+	current: ReturnType<ThreadLinkEpochAuthority["snapshot"]>,
+	startedEpoch: ThreadLinkCurrentEpoch | null,
+	currentEpoch: ThreadLinkCurrentEpoch | null,
+	phase: "exhausted" | "classified",
+): void {
+	if (
+		!sameEpoch(startedEpoch, currentEpoch) ||
+		!sameEpoch(startedEpoch, epochFromSnapshot(started)) ||
+		!sameEpoch(currentEpoch, epochFromSnapshot(current)) ||
+		started.cas.revision !== current.cas.revision ||
+		started.cas.bytesHash !== current.cas.bytesHash
+	) {
+		throw new CodexThreadLinkError(
+			"conflict",
+			`The current Codex authority changed while thread candidates were being ${phase}; refresh the candidate list.`,
+		);
+	}
+}
+
+/** Publish one complete persisted/loaded join owned by one durable epoch generation. */
+export async function discoverCodexThreadLinkCandidates(
+	options: CodexThreadLinkClassifierOptions & { readonly epoch: ThreadLinkEpochAuthority },
+): Promise<ThreadLinkCandidateDiscovery> {
+	const startedSnapshot = options.epoch.snapshot();
+	const startedEpoch = epochFromSnapshot(startedSnapshot);
+	const persisted = await exhaustThreadList(options.session);
+	const loaded = await exhaustLoadedList(options.session);
+	const exhaustedSnapshot = options.epoch.snapshot();
+	const exhaustedEpoch = epochFromSnapshot(exhaustedSnapshot);
+	assertSameDiscoveryGeneration(
+		startedSnapshot,
+		exhaustedSnapshot,
+		startedEpoch,
+		exhaustedEpoch,
+		"exhausted",
+	);
+
+	const candidates = [...new Set(persisted.map(({ id }) => id))].map((threadId) => {
+		const record = candidateRecord(exhaustedSnapshot.manifest, threadId);
+		const target: ThreadLinkTarget = Object.freeze({
+			threadId,
+			childId: record?.correlation.childId ?? exhaustedEpoch?.childId ?? null,
+			epoch: record?.correlation.epoch ?? exhaustedEpoch?.epoch ?? null,
+			...(record === null
+				? {}
+				: {
+						operationId: record.correlation.operationId,
+						provenance: cloneAndFreeze(record),
+					}),
+		});
+		return Object.freeze({
+			target,
+			classification: classifyFromExhausted(
+				options,
+				target,
+				persisted,
+				loaded,
+				startedEpoch,
+				exhaustedEpoch,
+			),
+		});
+	});
+
+	const finishedSnapshot = options.epoch.snapshot();
+	assertSameDiscoveryGeneration(
+		exhaustedSnapshot,
+		finishedSnapshot,
+		exhaustedEpoch,
+		epochFromSnapshot(finishedSnapshot),
+		"classified",
+	);
+	return Object.freeze({
+		authority:
+			exhaustedEpoch === null
+				? null
+				: Object.freeze({
+						...exhaustedEpoch,
+						manifestRevision: exhaustedSnapshot.manifest.revision,
+						manifestBytesHash: exhaustedSnapshot.cas.bytesHash,
+					}),
+		candidates: Object.freeze(candidates),
+	});
 }
 
 export async function classifyCodexThreadLink(

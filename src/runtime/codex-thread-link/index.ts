@@ -1,5 +1,8 @@
 import { createCodexThreadLinkBindingController } from "./lib/binding.js";
-import { createCodexThreadLinkClassifier } from "./lib/classifier.js";
+import {
+	createCodexThreadLinkClassifier,
+	discoverCodexThreadLinkCandidates,
+} from "./lib/classifier.js";
 import type {
 	CodexThreadLinkClassifierOptions,
 	CodexThreadLinkPort,
@@ -7,7 +10,11 @@ import type {
 } from "./lib/contract.js";
 
 export { createCodexThreadLinkBinding } from "./lib/binding.js";
-export { classifyCodexThreadLink, createCodexThreadLinkClassifier } from "./lib/classifier.js";
+export {
+	classifyCodexThreadLink,
+	createCodexThreadLinkClassifier,
+	discoverCodexThreadLinkCandidates,
+} from "./lib/classifier.js";
 export { CodexThreadLinkConflictError, CodexThreadLinkError } from "./lib/contract.js";
 export type {
 	CodexThreadLinkClassifier,
@@ -28,10 +35,13 @@ export type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkCasToken,
 	ThreadLinkClassification,
+	ThreadLinkCandidate,
+	ThreadLinkCandidateDiscovery,
 	ThreadLinkClassificationErrorCode,
 	ThreadLinkCompareAndSwapInput,
 	ThreadLinkCurrentEpoch,
 	ThreadLinkCurrentEpochSource,
+	ThreadLinkDiscoveryAuthority,
 	ThreadLinkCondition,
 	ThreadLinkEpochProof,
 	ThreadLinkEpochAuthority,
@@ -68,6 +78,7 @@ export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThr
 	};
 	return Object.freeze({
 		classify: classifier.classify,
+		discoverCandidates: () => discoverCodexThreadLinkCandidates(options),
 		snapshot: binding.snapshot,
 		read: binding.read,
 		compareAndSwap: binding.compareAndSwap,

@@ -4,6 +4,7 @@ import {
 	createCodexThreadLink,
 	createCodexThreadLinkBinding,
 	createCodexThreadLinkClassifier,
+	discoverCodexThreadLinkCandidates,
 	type CodexThreadLinkClassifierOptions,
 	type CodexThreadLinkOptions,
 	type ThreadLinkEpochAuthority,
@@ -16,6 +17,8 @@ declare const publicBinding: ReturnType<typeof createCodexThreadLinkBinding>;
 function observationOnlyConstruction(): void {
 	const downstreamOptions = { session, epoch } satisfies CodexThreadLinkOptions;
 	createCodexThreadLink(downstreamOptions);
+	void createCodexThreadLink(downstreamOptions).discoverCandidates();
+	void discoverCodexThreadLinkCandidates(downstreamOptions);
 
 	const observationOnlyOptions = {
 		session,
@@ -27,6 +30,8 @@ function observationOnlyConstruction(): void {
 	} satisfies CodexThreadLinkClassifierOptions;
 	createCodexThreadLinkClassifier(observationOnlyOptions);
 	createCodexThreadLinkClassifier(observationWithAuthorityOptions);
+	// @ts-expect-error Candidate discovery requires durable epoch authority.
+	void discoverCodexThreadLinkCandidates(observationOnlyOptions);
 }
 
 function rejectedConstruction(): void {
