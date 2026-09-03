@@ -5,6 +5,7 @@ import {
 	BROWSER_ADAPTER_PATH,
 	validateBrowserSelection,
 } from "../../browser/support/agent-browser.ts";
+import { executableBunInvocations } from "./executable-bun.js";
 
 export interface InventoryInput {
 	repoRoot: string;
@@ -19,10 +20,6 @@ export interface InventoryResult {
 	reachableScripts: Map<string, number>;
 }
 
-const EXECUTABLE_RUN_SCRIPT = /\bbun\s+run\s+([\w:-]+)(?=\s|$|[;&|(){}`])/g;
-const ECHO_ONLY_PREFIX =
-	/^(?:(?:if|elif|while|until|then|else|do)\s+)?(?:(?:env\s+)?(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+)*|command\s+)?(?:echo|printf)\b/;
-const BUN_TEST = /\bbun\s+test\b([^&;|]*)/g;
 const NORMAL_TEST_LANES = new Set([
 	"test:modules",
 	"test:system",
@@ -68,182 +65,11 @@ function workflowRunCommands(workflow: string): { commands: string[]; error?: st
 	return { commands };
 }
 
-function startsShellComment(text: string, index: number, first = 0): boolean {
-	return text[index] === "#" && (index === first || /[\s;&|(){}`]/.test(text[index - 1] ?? ""));
-}
-
-function unquotedShellText(command: string): string {
-	let result = "";
-	let quote: "'" | '"' | undefined;
-	let escaped = false;
-	let comment = false;
-	for (let index = 0; index < command.length; index += 1) {
-		const character = command[index];
-		if (comment) {
-			if (character === "\n") {
-				comment = false;
-				result += "\n";
-			}
-			continue;
-		}
-		if (escaped) {
-			escaped = false;
-			result += character;
-			continue;
-		}
-		if (quote) {
-			if (character === "\\" && quote === '"') escaped = true;
-			else if (character === quote) quote = undefined;
-			result += character === "\n" ? "\n" : " ";
-			continue;
-		}
-		if (character === "\\") {
-			escaped = true;
-			result += character;
-			continue;
-		}
-		if (character === "'" || character === '"') {
-			quote = character;
-			result += " ";
-			continue;
-		}
-		if (startsShellComment(command, index)) {
-			comment = true;
-			continue;
-		}
-		result += character;
-	}
-	return result;
-}
-
-function dollarSubstitutionAt(
-	text: string,
-	start: number,
-): { body: string; end: number } | undefined {
-	if (text[start] !== "$" || text[start + 1] !== "(") return undefined;
-	let depth = 1;
-	let quote: "'" | '"' | "`" | undefined;
-	let escaped = false;
-	let comment = false;
-	for (let index = start + 2; index < text.length; index += 1) {
-		const character = text[index];
-		if (comment) {
-			if (character === "\n") comment = false;
-			continue;
-		}
-		if (escaped) {
-			escaped = false;
-			continue;
-		}
-		if (character === "\\" && quote !== "'") {
-			escaped = true;
-			continue;
-		}
-		if (quote) {
-			if (character === quote) quote = undefined;
-			continue;
-		}
-		if (startsShellComment(text, index, start + 2)) {
-			comment = true;
-			continue;
-		}
-		if (character === "'" || character === '"' || character === "`") {
-			quote = character;
-			continue;
-		}
-		if (character === "(") depth += 1;
-		if (character !== ")") continue;
-		depth -= 1;
-		if (depth === 0) return { body: text.slice(start + 2, index), end: index };
-	}
-	return { body: text.slice(start + 2), end: text.length - 1 };
-}
-
-function backtickSubstitutionAt(
-	text: string,
-	start: number,
-): { body: string; end: number } | undefined {
-	if (text[start] !== "`") return undefined;
-	let escaped = false;
-	for (let index = start + 1; index < text.length; index += 1) {
-		const character = text[index];
-		if (escaped) {
-			escaped = false;
-			continue;
-		}
-		if (character === "\\") {
-			escaped = true;
-			continue;
-		}
-		if (character === "`") return { body: text.slice(start + 1, index), end: index };
-	}
-	return { body: text.slice(start + 1), end: text.length - 1 };
-}
-
-function doubleQuotedSubstitutionBodies(command: string): string[] {
-	const bodies: string[] = [];
-	let quote: "'" | '"' | undefined;
-	let escaped = false;
-	let comment = false;
-	for (let index = 0; index < command.length; index += 1) {
-		const character = command[index];
-		if (comment) {
-			if (character === "\n") comment = false;
-			continue;
-		}
-		if (escaped) {
-			escaped = false;
-			continue;
-		}
-		if (character === "\\" && quote !== "'") {
-			escaped = true;
-			continue;
-		}
-		if (quote === "'") {
-			if (character === "'") quote = undefined;
-			continue;
-		}
-		if (quote === '"') {
-			if (character === '"') {
-				quote = undefined;
-				continue;
-			}
-			const substitution =
-				dollarSubstitutionAt(command, index) ?? backtickSubstitutionAt(command, index);
-			if (substitution) {
-				bodies.push(substitution.body);
-				index = substitution.end;
-			}
-			continue;
-		}
-		if (character === "'") quote = "'";
-		else if (character === '"') quote = '"';
-		else if (startsShellComment(command, index)) {
-			comment = true;
-		}
-	}
-	return bodies;
-}
-
-function echoOnly(text: string, invocationIndex: number): boolean {
-	let boundary = invocationIndex - 1;
-	while (boundary >= 0 && !/[\n;&|(){}`]/.test(text[boundary] ?? "")) boundary -= 1;
-	return ECHO_ONLY_PREFIX.test(text.slice(boundary + 1, invocationIndex).trim());
-}
-
 function executableRunScripts(command: string, unique = true): string[] {
-	const texts = [unquotedShellText(command)];
-	const pending = doubleQuotedSubstitutionBodies(command);
-	for (const body of pending) {
-		texts.push(unquotedShellText(body));
-		pending.push(...doubleQuotedSubstitutionBodies(body));
-	}
-	const scripts = texts.flatMap((text) =>
-		[...text.matchAll(EXECUTABLE_RUN_SCRIPT)]
-			.filter((match) => !echoOnly(text, match.index))
-			.map((match) => match[1])
-			.filter((script): script is string => script !== undefined),
-	);
+	const scripts = executableBunInvocations(command)
+		.filter((invocation) => invocation.command === "run")
+		.map((invocation) => invocation.args[0])
+		.filter((script): script is string => script !== undefined);
 	return unique ? [...new Set(scripts)] : scripts;
 }
 
@@ -312,16 +138,16 @@ function isTestFile(file: string): boolean {
 
 function testSelections(command: string): Array<{ selectors: string[]; ignores: string[] }> {
 	const selections: Array<{ selectors: string[]; ignores: string[] }> = [];
-	for (const match of command.matchAll(BUN_TEST)) {
+	for (const invocation of executableBunInvocations(command)) {
+		if (invocation.command !== "test") continue;
 		const selectors: string[] = [];
 		const ignores: string[] = [];
-		const segment = match[1] ?? "";
-		const tokens = segment.trim().split(/\s+/);
+		const tokens = invocation.args;
 		for (let index = 0; index < tokens.length; index += 1) {
-			const token = tokens[index]?.replace(/^['"]|['"]$/g, "") ?? "";
+			const token = tokens[index] ?? "";
 			if (!token) continue;
 			if (token === "--path-ignore-patterns") {
-				const ignored = tokens[++index]?.replace(/^['"]|['"]$/g, "");
+				const ignored = tokens[++index];
 				if (ignored) ignores.push(normalize(ignored));
 				continue;
 			}
