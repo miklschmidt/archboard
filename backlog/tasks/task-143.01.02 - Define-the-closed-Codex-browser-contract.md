@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 20:35'
+updated_date: '2026-09-03 20:46'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -117,6 +117,11 @@ Define only the browser-facing workbench state and user-intent model that has no
 45. Add one focused self-fork owner whose requested beforeTurnId is null while its effective boundary is the caller turn; preserve the existing other-fork assertions.
 
 46. Run only the exact dynamic projection red/green owner, directly affected gateway/owner checks, both TypeScript configs, scoped lint/format/diff, commit separately, and callback the parent.
+
+47. Eleventh remediation: accept the authoritative ThreadLinkSnapshot at the sole projection boundary and replace the browser vendor-source mirror with one closed sourcePresentation category that discloses only standard, subagent, custom, or unknown provenance.
+48. Remove the gateway pre-projection browser parse and add focused subagent/custom projection owners proving useful categories while agent_path, nicknames, roles, parent identities, and arbitrary custom/private strings remain absent.
+49. Restrict effective turn-boundary adoption to IdentityValidationError code invalid-shape; rethrow wrong-domain and unissued canonical identities. Add valid issued, genuine raw, wrong-domain, and foreign-unissued owners.
+50. Run only focused thread-link, dynamic projection/gateway, both TypeScript projects, exact scoped lint/format/boundary/diff checks; commit separately and callback the parent for rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -191,6 +196,12 @@ Tenth review remediation:
 - A focused self-fork owner models the reachable contract: requested beforeTurnId is null, effective relation is self, and the boundary is the caller identity turn. Projection accepts it, preserves the null argument, emits the caller turn boundary, and freezes both nested records. The existing other-fork equality owner remains unchanged.
 
 Red evidence against 595b48a7: the exact dynamic projection file passed the existing three-family owner and failed the new self-fork owner 1/2 because projection returned refused. Green evidence: 55 focused dynamic schema/projection/gateway/recovery/owner/correlation tests passed with 368 assertions. Root and frontend TypeScript, exact scoped Oxlint/Oxfmt, and git diff checks passed. No broad lane ran. Topology is unchanged and no known residue remains in this remediation. TASK-143.01.02 remains In Progress for parent rereview.
+
+Eleventh review remediation:
+- BrowserProjectionInput now accepts the authoritative ThreadLinkSnapshot. projectCodexBrowserState is the sole adapter and emits sourcePresentation only: standard, subagent, custom, unknown, or null for unbound. The BrowserThreadLink schema no longer contains the vendor source union, parent identity, agent path/nickname/role, or arbitrary custom detail; the gateway no longer pre-parses domain state as a browser DTO.
+- Effective fork-boundary fallback is limited by IdentityValidationError.code to invalid-shape. Canonical wrong-domain and foreign-unissued turn identities rethrow into invalid_projection; an issued self boundary and a genuine raw other-thread boundary still project.
+
+Red evidence against 1869aec0: the new thread-link owner received no sourcePresentation and the canonical wrong-domain/unissued boundary owner projected both invalid identities. Green evidence: 105 focused browser-model, projection, gateway, dynamic owner/correlation, transport, and runtime tests passed with 950 assertions in 0.70s. Root TypeScript passed in 1.84s and frontend TypeScript in 0.43s. Exact scoped Oxlint/Oxfmt, source-boundary probes, and git diff checks passed. No broad module, system, repository, browser, full-test, or check lane ran. Topology is unchanged; no known remediation residue remains. TASK-143.01.02 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -319,5 +330,17 @@ author: @codex
 created: 2026-09-03 20:35
 ---
 Tenth self-fork remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 20:41
+---
+Eleventh review remediation started at 1869aec0 for closed thread-source presentation and authoritative turn-boundary refusal. TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 20:46
+---
+Eleventh remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
 ---
 <!-- COMMENTS:END -->

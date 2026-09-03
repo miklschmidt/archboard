@@ -45,7 +45,7 @@ const threadLink = {
 	childId,
 	epoch,
 	threadId,
-	source: "appServer" as const,
+	sourcePresentation: "standard" as const,
 	status: "idle" as const,
 	loaded: true as const,
 	canAcceptDirectInput: true as const,

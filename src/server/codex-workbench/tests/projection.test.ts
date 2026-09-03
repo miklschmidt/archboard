@@ -314,6 +314,75 @@ test("the sole public projection owns all seven ordinary approval presentations"
 	}
 });
 
+test("thread-link projection discloses closed provenance without vendor source details", () => {
+	const authorities = createIdentityAuthorities();
+	const model = createCodexBrowserModel(authorities);
+	const broker = createCodexApprovalBroker({
+		identity: authorities.identity,
+		transport: { respond: () => Promise.resolve() },
+	});
+	try {
+		const pending = broker.receive(approvalRequests(authorities.identity)[0]!);
+		const input = projectionInput(broker.view(pending.requestId));
+		const parentThreadId = authorities.identity.decoder.adoptThreadId("private-parent-thread");
+		const sources = [
+			{
+				presentation: "subagent",
+				reason: "thread_source_subagent",
+				source: {
+					subAgent: {
+						thread_spawn: {
+							parent_thread_id: parentThreadId,
+							depth: 3,
+							agent_path: "/private/agents/reviewer",
+							agent_nickname: "private-reviewer",
+							agent_role: "private-role",
+						},
+					},
+				},
+			},
+			{
+				presentation: "custom",
+				reason: "thread_source_custom",
+				source: { custom: "private-custom-source" },
+			},
+		] as const;
+
+		for (const source of sources) {
+			const result = projectCodexBrowserState(model, authorities.identity.decoder, {
+				...input,
+				threadLink: {
+					kind: "thread_link",
+					state: "inspect_only",
+					childId: null,
+					epoch: null,
+					threadId: broker.view(pending.requestId).request.threadId,
+					source: source.source,
+					status: "idle",
+					loaded: true,
+					canAcceptDirectInput: false,
+					reason: source.reason,
+				},
+			});
+			expect(result.tag).toBe("projected");
+			if (result.tag !== "projected") throw new Error("thread-link projection was refused");
+			expect(result.snapshot.threadLink.sourcePresentation).toBe(source.presentation);
+			const wire = JSON.stringify(result.snapshot.threadLink);
+			for (const privateDetail of [
+				String(parentThreadId),
+				"/private/agents/reviewer",
+				"private-reviewer",
+				"private-role",
+				"private-custom-source",
+			])
+				expect(wire).not.toContain(privateDetail);
+			expect(wire).not.toContain("agent_path");
+		}
+	} finally {
+		broker.dispose();
+	}
+});
+
 test("the sole projection strips private account and settings fields and refuses secrets", () => {
 	const authorities = createIdentityAuthorities();
 	const model = createCodexBrowserModel(authorities);

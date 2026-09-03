@@ -59,7 +59,7 @@ function snapshot(): Record<string, unknown> {
 			childId: "child-a",
 			epoch: "epoch-a",
 			threadId: "thread-a",
-			source: "appServer",
+			sourcePresentation: "standard",
 			status: "idle",
 			loaded: true,
 			canAcceptDirectInput: true,

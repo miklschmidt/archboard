@@ -56,7 +56,7 @@ export function snapshot(timelineValue: BrowserTimeline = timeline()): BrowserSn
 			childId: "mounted-child" as ExecutableLink["childId"],
 			epoch: "mounted-epoch" as ExecutableLink["epoch"],
 			threadId,
-			source: "appServer",
+			sourcePresentation: "standard",
 			status: "idle",
 			loaded: true,
 			canAcceptDirectInput: true,
