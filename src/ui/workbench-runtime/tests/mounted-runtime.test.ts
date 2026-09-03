@@ -242,9 +242,12 @@ describe("mounted workbench runtime provider", () => {
 				itemId: "future-item",
 			} as unknown as TimelineItem;
 			await act(async () => transport.publish(connected(snapshot(timeline([futureItem])))));
-			expect(latestExecutable(mounted.contexts).view.messages[0]?.content[0]).toMatchObject({
+			expect(
+				latestExecutable(mounted.contexts).view.messages[0]?.metadata.custom.archboard.items[0],
+			).toMatchObject({
 				itemId: "future-item",
-				name: "archboard-unsupported-item",
+				kind: "future",
+				supported: false,
 			});
 
 			const allMedia = [
@@ -273,7 +276,7 @@ describe("mounted workbench runtime provider", () => {
 			} as unknown as BrowserTimeline;
 			await act(async () => transport.publish(connected(snapshot(statusTimeline))));
 			const mapped = latestExecutable(mounted.contexts).view.messages;
-			expect(mapped[0]?.content.map((part) => ("itemId" in part ? part.itemId : null))).toEqual(
+			expect(mapped[0]?.metadata.custom.archboard.items.map((item) => item.itemId)).toEqual(
 				allMedia.map((item) => item.itemId),
 			);
 			expect(mapped.map((message) => message.status.type)).toEqual([
@@ -289,9 +292,9 @@ describe("mounted workbench runtime provider", () => {
 				workbenchRuntimeMessageId(threadId, "status-interrupted"),
 				workbenchRuntimeMessageId(threadId, "status-failed"),
 			]);
-			expect(
-				observed?.messages[0]?.content.map((part) => ("itemId" in part ? part.itemId : null)),
-			).toEqual(allMedia.map((item) => item.itemId));
+			expect(observed?.messages[0]?.content).toEqual([
+				{ type: "text", text: "Mounted authoritative turn" },
+			]);
 			expect(observed?.capabilities).toMatchObject({
 				edit: false,
 				reload: false,
@@ -309,14 +312,20 @@ describe("mounted workbench runtime provider", () => {
 				},
 			]);
 			await act(async () => transport.publish(connected(snapshot(sharedIdentity))));
-			const sharedParts = mounted.observations.at(-1)?.thread.messages[0]?.content ?? [];
-			expect(sharedParts.map((part) => ("itemId" in part ? part.itemId : null))).toEqual([
-				sharedItemId,
-				sharedItemId,
+			const sharedItems = latestExecutable(mounted.contexts).view.messages[0]?.metadata.custom
+				.archboard.items;
+			expect(sharedItems?.map((item) => item.itemId)).toEqual([sharedItemId, sharedItemId]);
+			expect(sharedItems?.map((item) => item.kind)).toEqual(["command", "approval"]);
+
+			const duplicate = timeline([
+				{ media: "command", itemId: sharedItemId, command: "bun test", status: "completed" },
+				{ media: "command", itemId: sharedItemId, command: "bun test", status: "completed" },
 			]);
-			expect(
-				new Set(sharedParts.map((part) => ("runtimeId" in part ? part.runtimeId : null))).size,
-			).toBe(2);
+			await act(async () => transport.publish(connected(snapshot(duplicate))));
+			expect(mounted.contexts.at(-1)?.view.state).toBe("runtime_failure");
+			expect(mounted.container.queryByRole("status")?.textContent).toContain(
+				`Duplicate Codex item identity: ["${threadId}","${turnId}","${sharedItemId}","command"]`,
+			);
 		} finally {
 			await mounted.close();
 		}

@@ -24,32 +24,13 @@ import type {
 
 export type WorkbenchItemId = BrowserTimeline["turns"][number]["items"][number]["itemId"];
 
-interface WorkbenchPartIdentity {
-	/** Injective identity for assistant-runtime reconciliation. */
-	readonly runtimeId: string;
-	/** Authoritative Codex identity retained as domain metadata. */
+export interface WorkbenchCodexItemMetadata {
+	/** Authoritative Codex identity retained outside assistant-ui part reconciliation. */
 	readonly itemId: WorkbenchItemId;
+	readonly kind: string;
+	readonly supported: boolean;
+	readonly value: Readonly<Record<string, unknown>>;
 }
-
-type WorkbenchMappedPart = WorkbenchPartIdentity &
-	(
-		| { readonly type: "text"; readonly text: string }
-		| { readonly type: "reasoning"; readonly text: string }
-		| {
-				readonly type: "data";
-				readonly name: string;
-				readonly data: Record<string, unknown>;
-		  }
-	);
-
-export type WorkbenchMessagePart =
-	| WorkbenchMappedPart
-	| {
-			readonly type: "data";
-			readonly runtimeId: string;
-			readonly name: "archboard-runtime-failure";
-			readonly data: Record<string, unknown>;
-	  };
 
 type WorkbenchMessageStatus =
 	| { readonly type: "running" }
@@ -61,10 +42,12 @@ type WorkbenchMessageStatus =
 	  };
 
 export interface WorkbenchAssistantMessage {
+	/** Stable public ThreadMessageLike identity for one authoritative Codex turn. */
 	readonly id: string;
 	readonly role: "assistant";
 	readonly createdAt: Date;
-	readonly content: readonly WorkbenchMessagePart[];
+	/** One fixed summary part; variable timeline items remain in Archboard-owned metadata. */
+	readonly content: readonly [{ readonly type: "text"; readonly text: string }];
 	readonly status: WorkbenchMessageStatus;
 	readonly metadata: {
 		readonly unstable_state: null;
@@ -78,6 +61,7 @@ export interface WorkbenchAssistantMessage {
 				readonly summary: string;
 				readonly outputsIncluded: boolean;
 				readonly outputsTruncated: boolean;
+				readonly items: readonly WorkbenchCodexItemMetadata[];
 			};
 		};
 	};
@@ -119,68 +103,33 @@ export function workbenchRuntimeMessageId(threadId: string, turnId: string): str
 	return JSON.stringify(["message", threadId, turnId]);
 }
 
-function workbenchRuntimePartId(
-	threadId: string,
-	turnId: string,
-	itemId: WorkbenchItemId,
-	media: string,
-	occurrence: number,
-): string {
-	return JSON.stringify(["part", threadId, turnId, itemId, media, occurrence]);
-}
-
-function mapItem(
-	value: unknown,
-	threadId: string,
-	turnId: string,
-	occurrences: Map<string, number>,
-): WorkbenchMappedPart {
+function mapItem(value: unknown): WorkbenchCodexItemMetadata {
 	const item = itemRecord(value);
 	const media = item?.media;
 	if (typeof item?.itemId !== "string")
 		throw new Error("A Codex item has no authoritative identity.");
 	const itemId = item.itemId as WorkbenchItemId;
-	const mediaKind = typeof media === "string" ? media : "unknown";
-	const occurrenceKey = JSON.stringify([itemId, mediaKind]);
-	const occurrence = occurrences.get(occurrenceKey) ?? 0;
-	occurrences.set(occurrenceKey, occurrence + 1);
-	const runtimeId = workbenchRuntimePartId(threadId, turnId, itemId, mediaKind, occurrence);
-	if (media === "text" && typeof item?.text === "string") {
-		return { type: "text", runtimeId, itemId, text: item.text };
-	}
-	if (media === "reasoning" && typeof item?.text === "string") {
-		return { type: "reasoning", runtimeId, itemId, text: item.text };
-	}
-	if (media === "plan" && typeof item?.text === "string") {
-		return {
-			type: "data",
-			runtimeId,
-			itemId,
-			name: "archboard-plan",
-			data: { itemId, media, text: item.text },
-		};
-	}
-	if (media === "tool" || media === "command" || media === "fileChange" || media === "approval") {
-		return {
-			type: "data",
-			runtimeId,
-			itemId,
-			name: `archboard-${media}`,
-			data: { ...item, itemId },
-		};
-	}
 	return {
-		type: "data",
-		runtimeId,
 		itemId,
-		name: "archboard-unsupported-item",
-		data: {
-			itemId,
-			media: typeof media === "string" ? media : "unknown",
-			recoverable: true,
-			message: "This Codex item is not supported by the current workbench.",
-		},
+		kind: typeof media === "string" ? media : "unknown",
+		supported:
+			media === "text" ||
+			media === "reasoning" ||
+			media === "plan" ||
+			media === "tool" ||
+			media === "command" ||
+			media === "fileChange" ||
+			media === "approval",
+		value: { ...item, itemId },
 	};
+}
+
+function codexItemIdentity(
+	threadId: string,
+	turnId: string,
+	item: WorkbenchCodexItemMetadata,
+): string {
+	return JSON.stringify([threadId, turnId, item.itemId, item.kind]);
 }
 
 function mapStatus(status: BrowserTimeline["turns"][number]["status"]): WorkbenchMessageStatus {
@@ -202,32 +151,27 @@ function mapStatus(status: BrowserTimeline["turns"][number]["status"]): Workbenc
 
 function mapTimeline(timeline: BrowserTimeline): readonly WorkbenchAssistantMessage[] {
 	const seenTurns = new Set<string>();
-	const seenMessages = new Set<string>();
-	const seenParts = new Set<string>();
+	const seenItems = new Set<string>();
 	return timeline.turns.map((turn) => {
 		if (seenTurns.has(turn.turnId)) {
 			throw new Error(`Duplicate Codex turn identity: ${turn.turnId}`);
 		}
 		seenTurns.add(turn.turnId);
 		const messageId = workbenchRuntimeMessageId(timeline.threadId, turn.turnId);
-		if (seenMessages.has(messageId)) {
-			throw new Error(`Duplicate assistant runtime message identity: ${messageId}`);
-		}
-		seenMessages.add(messageId);
-		const occurrences = new Map<string, number>();
-		const content = turn.items.map((item) => {
-			const part = mapItem(item, timeline.threadId, turn.turnId, occurrences);
-			if (seenParts.has(part.runtimeId)) {
-				throw new Error(`Duplicate assistant runtime part identity: ${part.runtimeId}`);
+		const items = turn.items.map((item) => {
+			const metadata = mapItem(item);
+			const identity = codexItemIdentity(timeline.threadId, turn.turnId, metadata);
+			if (seenItems.has(identity)) {
+				throw new Error(`Duplicate Codex item identity: ${identity}`);
 			}
-			seenParts.add(part.runtimeId);
-			return part;
+			seenItems.add(identity);
+			return metadata;
 		});
 		return {
 			id: messageId,
 			role: "assistant",
 			createdAt: new Date(0),
-			content,
+			content: [{ type: "text", text: turn.summary || "Codex turn" }],
 			status: mapStatus(turn.status),
 			metadata: {
 				unstable_state: null,
@@ -241,6 +185,7 @@ function mapTimeline(timeline: BrowserTimeline): readonly WorkbenchAssistantMess
 						summary: turn.summary,
 						outputsIncluded: turn.outputsIncluded,
 						outputsTruncated: turn.outputsTruncated,
+						items,
 					},
 				},
 			},
@@ -254,20 +199,7 @@ function failureMessage(threadId: string, reason: string): WorkbenchAssistantMes
 		id: workbenchRuntimeMessageId(threadId, turnId),
 		role: "assistant",
 		createdAt: new Date(0),
-		content: [
-			{
-				type: "data",
-				runtimeId: workbenchRuntimePartId(
-					threadId,
-					turnId,
-					"runtime-failure" as WorkbenchItemId,
-					"data",
-					0,
-				),
-				name: "archboard-runtime-failure",
-				data: { recoverable: true, message: reason },
-			},
-		],
+		content: [{ type: "text", text: reason }],
 		status: { type: "incomplete", reason: "error", error: { message: reason } },
 		metadata: {
 			unstable_state: null,
@@ -281,6 +213,7 @@ function failureMessage(threadId: string, reason: string): WorkbenchAssistantMes
 					summary: reason,
 					outputsIncluded: false,
 					outputsTruncated: false,
+					items: [],
 				},
 			},
 		},

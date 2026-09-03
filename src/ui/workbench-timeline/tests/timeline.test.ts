@@ -10,17 +10,15 @@ import {
 } from "../../workbench-runtime/index.js";
 import {
 	CODEX_THREAD_ITEM_LABELS,
+	WorkbenchTimeline,
 	boundedDetails,
 	boundedText,
 	normalizeTimeline,
 	safeHttpUrl,
-} from "../adapter.js";
-import type {
-	CodexWorkbenchItem,
-	CodexWorkbenchTurn,
-	WorkbenchTimelineProps,
-} from "../contract.js";
-import { WorkbenchTimeline } from "../index.tsx";
+	type CodexWorkbenchItem,
+	type CodexWorkbenchTurn,
+	type WorkbenchTimelineProps,
+} from "../index.tsx";
 
 const threadId = "thread-timeline" as BrowserTimeline["threadId"];
 const turnId = "turn-timeline" as BrowserTimeline["turns"][number]["turnId"];
@@ -255,7 +253,13 @@ describe("workbench timeline", () => {
 			props({ turns: [turn("inProgress")], runtimeTimeline: runtimeTimeline("inProgress") }),
 		);
 		expect(running.streaming).toBe(true);
-		const empty = normalizeTimeline(props({ turns: [] }));
+		const runtimeOnly = normalizeTimeline(props({ turns: [] }));
+		expect(runtimeOnly.turns.get(turnId)?.items.map((item) => item.type)).toEqual([
+			"commandExecution",
+			"approval",
+			"agentMessage",
+		]);
+		const empty = normalizeTimeline(props({ turns: [], runtimeTimeline: null }));
 		const complete = normalizeTimeline(props());
 		expect(empty.turns.size).toBe(0);
 		expect(complete.streaming).toBe(false);
@@ -324,17 +328,13 @@ describe("workbench timeline", () => {
 		if (view.state === "runtime_failure") throw new Error(view.reason);
 		expect(view.state).toBe("coordinator");
 		expect(view.messages[0]?.id).toBe(workbenchRuntimeMessageId(threadId, turnId));
-		const runtimeParts = view.messages[0]?.content ?? [];
-		expect(runtimeParts.map((part) => ("itemId" in part ? part.itemId : null))).toEqual([
+		const runtimeItems = view.messages[0]?.metadata.custom.archboard.items ?? [];
+		expect(runtimeItems.map((item) => item.itemId)).toEqual([
 			approvalItemId,
 			approvalItemId,
 			laterItemId,
 		]);
-		expect(runtimeParts.map((part) => part.runtimeId)).toEqual([
-			JSON.stringify(["part", threadId, turnId, approvalItemId, "command", 0]),
-			JSON.stringify(["part", threadId, turnId, approvalItemId, "approval", 0]),
-			JSON.stringify(["part", threadId, turnId, laterItemId, "text", 0]),
-		]);
+		expect(runtimeItems.map((item) => item.kind)).toEqual(["command", "approval", "text"]);
 		const items = normalizeTimeline(mixedProps).turns.get(turnId)?.items ?? [];
 		expect(items.map((item) => item.type)).toEqual([
 			"commandExecution",

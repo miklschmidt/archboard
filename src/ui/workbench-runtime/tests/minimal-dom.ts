@@ -97,6 +97,10 @@ export class TestElement extends TestNode {
 		return this.attributes.get(name) ?? null;
 	}
 
+	matches(): boolean {
+		return false;
+	}
+
 	queryByRole(role: string): TestElement | null {
 		if (this.getAttribute("role") === role) return this;
 		for (const child of this.childNodes) {
