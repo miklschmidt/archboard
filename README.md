@@ -92,9 +92,10 @@ Two rules make collaboration visible and unambiguous:
 2. Every write includes a short present-tense `--doing` message, which appears
    on the canvas while the change lands.
 
-Run `./bin/canvas --help` for the complete command surface. Most JSON
-operations work without a browser tab; screenshots, Mermaid conversion, image
-export, viewport control, and panes require one.
+Run `./bin/canvas --help` for the complete command surface. Named-board Mermaid
+conversion and PNG/SVG rendering are server-owned and work with zero browser
+clients. Live-pane capture, viewport control, and pane operations require a
+connected browser session.
 
 ## Use it from another repository
 

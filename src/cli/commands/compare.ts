@@ -41,7 +41,6 @@ export type CompareRequestStage = z.infer<typeof CompareRequestStageSchema>;
 const CompareSideSchema = z.looseObject({
 	board: z.string(),
 	identity: BoardAddressSchema,
-	source: z.enum(["memory", "vault"]),
 	elementCount: z.number().int().nonnegative(),
 	nodeCount: z.number().int().nonnegative(),
 	edgeCount: z.number().int().nonnegative(),

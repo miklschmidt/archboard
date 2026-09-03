@@ -126,13 +126,19 @@ describe.serial("vault-only production interfaces", () => {
 		});
 		expect(readFileSync(branched.body.file, "utf8")).toContain("board: payments");
 
-		const comparison = await request<{ success: boolean; from: { board: string } }>(
-			"/api/boards/compare?from=payments&to=payments@review",
-		);
+		const comparison = await request<{
+			success: boolean;
+			from: { board: string };
+			to: { board: string };
+		}>("/api/boards/compare?from=payments&to=payments@review");
 		expect(comparison).toMatchObject({
 			status: 200,
 			body: { success: true, from: { board: "payments" } },
 		});
+		for (const side of [comparison.body.from, comparison.body.to]) {
+			expect(side).not.toHaveProperty("source");
+			expect(side).not.toHaveProperty("onScreen");
+		}
 
 		const inspection = spawnSync(
 			"timeout",
