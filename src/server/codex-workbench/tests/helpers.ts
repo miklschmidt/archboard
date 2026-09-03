@@ -1,11 +1,7 @@
 import { expect } from "bun:test";
 
 import { CodexWorkbenchGatewayError } from "../index.js";
-import type {
-	BrowserCommand,
-	BrowserDynamicApproval,
-	BrowserDynamicApprovalResponse,
-} from "../index.js";
+import type { BrowserCommand, BrowserDynamicApprovalResponse } from "../index.js";
 import { commandTarget, type GatewayHarness } from "./support.js";
 
 export function expectGatewayError(
@@ -190,34 +186,13 @@ export function dynamicResponse(
 	return harnessValue.model.BrowserDynamicApprovalResponseSchema.parse({
 		kind: "browser_command",
 		command: "dynamicApprovalRespond",
-		commandId: approval.binding!.commandId,
-		paneId: approval.binding!.paneId,
+		commandId: approval.binding.commandId,
+		paneId: approval.binding.paneId,
 		childId: harnessValue.childId,
 		epoch: harnessValue.epoch,
-		capturedLink: approval.binding!.capturedLink,
-		identity: approval.identity,
-		effectHash: approval.effectHash,
+		capturedLink: approval.binding.capturedLink,
+		identity: approval.request.identity,
+		effectHash: approval.request.effectHash,
 		decision,
-	});
-}
-
-export function terminalDynamicApproval(
-	harnessValue: GatewayHarness,
-	approval: BrowserDynamicApproval,
-): BrowserDynamicApproval {
-	return harnessValue.model.BrowserDynamicApprovalSchema.parse({
-		...approval,
-		state: "cancelled",
-		decision: {
-			outcome: "cancelled",
-			identity: approval.identity,
-			effectHash: approval.effectHash,
-			decidedAtMs: approval.createdAtMs + 1,
-			cause: "call_cancelled",
-		},
-		delivery: null,
-		toolResult: "approval_required",
-		binding: null,
-		resumable: false,
 	});
 }

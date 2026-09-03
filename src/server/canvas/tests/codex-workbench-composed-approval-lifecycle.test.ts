@@ -61,7 +61,7 @@ test("composed child exit publishes one settled approval before closing presente
 		},
 		realtime: { start: delivered, appendText: delivered, stop: delivered },
 		ordinaryApprovals: createCanvasOrdinaryApprovalActions(approvals),
-		dynamicApprovals: { pending: () => [], resolve: delivered },
+		dynamicApprovals: { resolve: delivered },
 	};
 	const projection = {
 		read: ({ mediaReady }: { readonly mediaReady: boolean }): BrowserOwnerProjection => ({

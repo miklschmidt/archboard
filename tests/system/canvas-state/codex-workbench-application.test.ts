@@ -177,7 +177,6 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 				acknowledgePublished: () => undefined,
 			},
 			dynamicApprovals: {
-				pending: () => [],
 				resolve: async () => ({ outcome: "not_delivered" }),
 			},
 		};

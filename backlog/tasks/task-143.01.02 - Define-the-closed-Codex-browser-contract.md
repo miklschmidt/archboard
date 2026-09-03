@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 20:04'
+updated_date: '2026-09-03 20:21'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -95,6 +95,14 @@ Define only the browser-facing workbench state and user-intent model that has no
 33. Seventh remediation: delete the complete ordinary transport test that fills configured queued-frame and stderr-retention limits. Retain no replacement because existing transport/adversarial ownership already covers stderr delivery and rejection behavior; leave repository-wide opt-in classification to TASK-148.13.
 34. Derive the browser network-policy decision arm from the generated decision with Extract and Pick<host | action>. Project those two fields explicitly, and extend the existing seven-family path owner with a structurally valid future private field that fails against the current spread.
 35. Run only the exact projection red/green owner, affected browser-model/transport/projection tests, both TypeScript projects, scoped Oxlint/Oxfmt, the relevant test-inventory policy, and diff checks. Commit separately and callback the parent.
+
+36. Eighth remediation: expose immutable dynamic-approval owner views composed from the existing DynamicToolApprovalRequest and lease binding, and remove browser DTO production from the canvas approval owner.
+
+37. Make projectCodexBrowserState the sole dynamic approval effect/card projector. Validate dynamic response commands against the projected snapshot, retain exact owner settlement checks, and delete BrowserDynamicApprovalActions.pending.
+
+38. Add one focused projection owner covering create_thread, fork_thread, and send_message_to_thread with private authority/path exclusion and stable closed output. Delete the unused server-request-scalars module without replacement.
+
+39. Run only focused dynamic approval, projection, gateway, owner, both TypeScript, scoped lint/format, boundary/import, and diff checks. Commit separately and callback the parent for rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -149,6 +157,13 @@ Seventh review remediation:
 - Browser command network-policy decisions now name a generated-derived presentation type: Extract selects the generated network-policy arm and Pick limits its amendment to host and action. projectCommandDecision selects those fields explicitly. The existing seven-family projection owner adds a structurally valid future privatePath to the owner decision, asserts the exact projected host/action value, and proves the private field never enters browser JSON.
 
 Red evidence against 4b94dff6: the exact seven-family projection test returned refused when the future network-policy field crossed through the spread. Green evidence: the exact owner passed with 22 assertions. Final focused protocol, transport, browser-model, projection, and gateway validation passed 596/596 tests with 3,634 assertions in 0.85s. Root and frontend TypeScript, exact scoped Oxlint/Oxfmt, boundary probes, and git diff checks passed. No broad module, system, repository, browser, full-test, or check lane ran. TASK-143.01.02 remains In Progress for parent rereview.
+
+Eighth review remediation:
+- CanvasDynamicApprovalOwner now exposes immutable authoritative request/binding views and no longer imports codex-browser-model or constructs BrowserDynamicApproval/BrowserDynamicApprovalEffect values. BrowserDynamicApprovalActions no longer carries a parallel pending DTO reader.
+- projectCodexBrowserState is the sole dynamic-card/effect projector. It explicitly selects each create, fork, and send field, adopts raw target identities through the trusted decoder, omits authority tokens and private descendants, and produces the closed schema-validated snapshot. Gateway pending validation reads that projected snapshot; the owner retains an exact current-binding comparison before settlement.
+- The DTO-only terminal gateway fixture was deleted because the real owner removes terminal dynamic approvals at settlement and cannot expose that state. The unused server-request-scalars module had no consumers and was deleted without relocation.
+
+Red evidence: the first root TypeScript run after changing the contract failed at every stale DTO seam (old browser.pending consumers, DTO projection inputs, and two-argument projection calls). Green evidence: 76 focused dynamic model/projection/gateway/canvas tests passed with 458 assertions; the new three-family projection owner passed with exact closed keys, identity targets, private-path/authority omission, and frozen output. Root and frontend TypeScript, exact scoped Oxlint/Oxfmt, 46 boundary/inventory tests with 135 assertions, import/retirement probes, and git diff checks passed. No broad module, system, browser, full-test, or check lane ran. TASK-143.01.02 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -241,5 +256,17 @@ author: @codex
 created: 2026-09-03 20:04
 ---
 Seventh review remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 20:13
+---
+Eighth review remediation started at cd1826d5. The task remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 20:21
+---
+Eighth review remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
 ---
 <!-- COMMENTS:END -->

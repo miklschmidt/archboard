@@ -2,7 +2,6 @@ import type {
 	BrowserAccount,
 	BrowserCommandLease,
 	BrowserCoordinator,
-	BrowserDynamicApproval,
 	BrowserLogin,
 	BrowserOperationOutcome,
 	BrowserReadiness,
@@ -13,10 +12,17 @@ import type {
 	BrowserTimeline,
 } from "../../../shared/codex-browser-model/index.js";
 import type {
+	BrowserCommandId,
+	ChildEpoch,
+	ChildId,
+	ThreadId,
+} from "../../../shared/codex-workbench-identity/index.js";
+import type {
 	CodexResponseByMethod,
 	CodexServerNotificationParamsByMethod,
 } from "../../../shared/codex-app-server-contract/index.js";
 import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+import type { DynamicToolApprovalRequest } from "../../../runtime/codex-dynamic-tools/index.js";
 import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
 import type { RealtimeTranscriptRecord } from "../../../shared/codex-realtime-host/index.js";
 
@@ -95,6 +101,22 @@ export interface CodexVoiceProjectionInput {
 	>[];
 }
 
+export interface DynamicApprovalOwnerBinding {
+	readonly commandId: BrowserCommandId;
+	readonly paneId: string;
+	readonly capturedLink: {
+		readonly threadId: ThreadId;
+		readonly childId: ChildId;
+		readonly epoch: ChildEpoch;
+	};
+}
+
+/** The dynamic owner exposes authoritative state; browser presentation is projected elsewhere. */
+export interface DynamicApprovalOwnerView {
+	readonly request: DynamicToolApprovalRequest;
+	readonly binding: DynamicApprovalOwnerBinding;
+}
+
 export interface BrowserProjectionInput {
 	readonly readiness: BrowserReadiness;
 	readonly account: BrowserAccountProjectionInput;
@@ -104,7 +126,7 @@ export interface BrowserProjectionInput {
 	readonly queue: CodexQueueProjectionInput;
 	readonly settings: readonly CodexSettingsProjectionInput[];
 	readonly approvals: readonly ApprovalOwnerView[];
-	readonly dynamicApprovals: readonly BrowserDynamicApproval[];
+	readonly dynamicApprovals: readonly DynamicApprovalOwnerView[];
 	readonly semantic: CodexSemanticProjectionInput;
 	readonly coordinator: CodexCoordinatorProjectionInput;
 	readonly voice: CodexVoiceProjectionInput;

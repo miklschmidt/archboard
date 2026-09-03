@@ -3,17 +3,12 @@ import type {
 	BrowserActionResult,
 	BrowserDisconnectReason,
 	BrowserDynamicApprovalActions,
+	BrowserDynamicApprovalResponse,
+	DynamicApprovalOwnerBinding,
+	DynamicApprovalOwnerView,
 } from "../../codex-workbench/index.js";
-import {
-	createCodexBrowserModel,
-	type BrowserDynamicApproval,
-	type BrowserDynamicApprovalEffect,
-	type BrowserDynamicApprovalResponse,
-} from "../../../shared/codex-browser-model/index.js";
 import type {
 	BrowserCommandId,
-	ChildEpoch,
-	ChildId,
 	IdentityAuthorities,
 	ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
@@ -24,19 +19,9 @@ import type {
 } from "../../../runtime/codex-dynamic-tools/index.js";
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
 
-interface DynamicApprovalBinding {
-	readonly commandId: BrowserCommandId;
-	readonly paneId: string;
-	readonly capturedLink: {
-		readonly threadId: ThreadId;
-		readonly childId: ChildId;
-		readonly epoch: ChildEpoch;
-	};
-}
-
 interface PendingDynamicApproval {
 	readonly request: DynamicToolApprovalRequest;
-	binding: DynamicApprovalBinding;
+	binding: DynamicApprovalOwnerBinding;
 	readonly decision: Promise<DynamicToolApprovalDecision>;
 	readonly resolve: (decision: DynamicToolApprovalDecision) => void;
 	readonly timer: ReturnType<typeof setTimeout>;
@@ -46,6 +31,7 @@ interface PendingDynamicApproval {
 export interface CanvasDynamicApprovalOwner {
 	readonly port: DynamicToolApprovalPort;
 	readonly browser: BrowserDynamicApprovalActions;
+	readonly pending: () => readonly DynamicApprovalOwnerView[];
 	/** Rebind pending presentation to the exact current lease for its pane. */
 	readonly bindLease: (paneId: string, commandId: BrowserCommandId) => void;
 	readonly subscribe: (listener: () => void) => () => void;
@@ -56,56 +42,29 @@ export interface CanvasDynamicApprovalOwner {
 export interface CanvasDynamicApprovalOwnerOptions {
 	readonly identity: IdentityAuthorities;
 	readonly now: () => number;
-	readonly bindingForCaller: (threadId: ThreadId) => DynamicApprovalBinding;
+	readonly bindingForCaller: (threadId: ThreadId) => DynamicApprovalOwnerBinding;
 }
 
 function keyFor(request: Pick<DynamicToolApprovalRequest, "identity" | "effectHash">): string {
 	return JSON.stringify([request.identity, request.effectHash]);
 }
 
+function immutableBinding(binding: DynamicApprovalOwnerBinding): DynamicApprovalOwnerBinding {
+	return Object.freeze({
+		commandId: binding.commandId,
+		paneId: binding.paneId,
+		capturedLink: Object.freeze({
+			threadId: binding.capturedLink.threadId,
+			childId: binding.capturedLink.childId,
+			epoch: binding.capturedLink.epoch,
+		}),
+	});
+}
+
 /** One real visual-approval owner shared by the dispatcher and browser gateway. */
 export function createCanvasDynamicApprovalOwner(
 	options: CanvasDynamicApprovalOwnerOptions,
 ): CanvasDynamicApprovalOwner {
-	const model = createCodexBrowserModel(options.identity);
-	const browserEffect = (request: DynamicToolApprovalRequest): BrowserDynamicApprovalEffect => {
-		const effect = request.effect;
-		if (effect.tool === "create_thread")
-			return model.BrowserDynamicApprovalEffectSchema.parse({
-				tool: effect.tool,
-				arguments: effect.arguments,
-				target: null,
-				effectiveBoundary: effect.effectiveBoundary,
-				mutationOperationId: effect.mutationOperationId,
-				initialTurnOperationId: effect.initialTurnOperationId,
-				visualSummary: effect.visualSummary,
-			});
-		const threadId = options.identity.identity.decoder.adoptThreadId(effect.arguments.threadId);
-		if (effect.tool === "fork_thread") {
-			const beforeTurnId =
-				effect.arguments.beforeTurnId === null
-					? null
-					: options.identity.identity.decoder.adoptTurnId(effect.arguments.beforeTurnId);
-			return model.BrowserDynamicApprovalEffectSchema.parse({
-				tool: effect.tool,
-				arguments: { ...effect.arguments, threadId, beforeTurnId },
-				target: threadId,
-				effectiveBoundary: effect.effectiveBoundary,
-				mutationOperationId: effect.mutationOperationId,
-				initialTurnOperationId: effect.initialTurnOperationId,
-				visualSummary: effect.visualSummary,
-			});
-		}
-		return model.BrowserDynamicApprovalEffectSchema.parse({
-			tool: effect.tool,
-			arguments: { ...effect.arguments, threadId },
-			target: threadId,
-			effectiveBoundary: effect.effectiveBoundary,
-			mutationOperationId: effect.mutationOperationId,
-			initialTurnOperationId: effect.initialTurnOperationId,
-			visualSummary: effect.visualSummary,
-		});
-	};
 	const pending = new Map<string, PendingDynamicApproval>();
 	const decisions = new Map<string, DynamicToolApprovalDecision>();
 	const listeners = new Set<() => void>();
@@ -141,7 +100,7 @@ export function createCanvasDynamicApprovalOwner(
 		});
 		const entry: PendingDynamicApproval = {
 			request,
-			binding: options.bindingForCaller(request.identity.threadId),
+			binding: immutableBinding(options.bindingForCaller(request.identity.threadId)),
 			decision,
 			resolve,
 			settled: false,
@@ -154,21 +113,6 @@ export function createCanvasDynamicApprovalOwner(
 		pending.set(key, entry);
 		notify();
 	};
-	const toBrowser = (entry: PendingDynamicApproval): BrowserDynamicApproval =>
-		model.BrowserDynamicApprovalSchema.parse({
-			kind: "dynamic_approval",
-			state: "pending",
-			identity: entry.request.identity,
-			effect: browserEffect(entry.request),
-			effectHash: entry.request.effectHash,
-			createdAtMs: entry.request.createdAtMs,
-			expiresAtMs: entry.request.expiresAtMs,
-			decision: null,
-			delivery: null,
-			toolResult: null,
-			binding: entry.binding,
-			resumable: false,
-		});
 	const port: DynamicToolApprovalPort = Object.freeze({
 		presentImmutableRequest: present,
 		awaitOneExactVisualDecision: (request: DynamicToolApprovalRequest) => {
@@ -194,18 +138,24 @@ export function createCanvasDynamicApprovalOwner(
 		},
 	});
 	const browser: BrowserDynamicApprovalActions = Object.freeze({
-		pending: () => Object.freeze([...pending.values()].map(toBrowser)),
 		resolve: async (
 			command: BrowserDynamicApprovalResponse,
 			_context: BrowserActionContext,
 		): Promise<BrowserActionResult> => {
 			const entry = pending.get(JSON.stringify([command.identity, command.effectHash]));
 			if (entry === undefined) throw new Error("The dynamic approval is no longer pending.");
-			const response = model.parsePendingDynamicApprovalResponse(toBrowser(entry), command);
+			if (
+				command.commandId !== entry.binding.commandId ||
+				command.paneId !== entry.binding.paneId ||
+				command.capturedLink.threadId !== entry.binding.capturedLink.threadId ||
+				command.capturedLink.childId !== entry.binding.capturedLink.childId ||
+				command.capturedLink.epoch !== entry.binding.capturedLink.epoch
+			)
+				throw new Error("The dynamic approval binding is stale.");
 			terminal(
 				entry,
-				response.decision === "approve" ? "approved" : "declined",
-				response.decision === "approve" ? "person_approved" : "person_declined",
+				command.decision === "approve" ? "approved" : "declined",
+				command.decision === "approve" ? "person_approved" : "person_declined",
 			);
 			return { outcome: "delivered" };
 		},
@@ -223,10 +173,16 @@ export function createCanvasDynamicApprovalOwner(
 	return Object.freeze({
 		port,
 		browser,
+		pending: () =>
+			Object.freeze(
+				[...pending.values()].map((entry) =>
+					Object.freeze({ request: entry.request, binding: entry.binding }),
+				),
+			),
 		bindLease: (paneId: string, commandId: BrowserCommandId) => {
 			for (const entry of pending.values()) {
 				if (entry.binding.paneId !== paneId || entry.binding.commandId === commandId) continue;
-				entry.binding = Object.freeze({ ...entry.binding, commandId });
+				entry.binding = immutableBinding({ ...entry.binding, commandId });
 			}
 		},
 		subscribe: browser.onChange!,

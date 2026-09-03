@@ -1,12 +1,16 @@
 import type {
 	BrowserAccount,
 	BrowserCoordinator,
+	BrowserDynamicApproval,
+	BrowserDynamicApprovalEffect,
 	BrowserQueue,
 	BrowserSemanticDelivery,
 	BrowserSettings,
 	BrowserSnapshot,
 	BrowserSchemas,
 } from "../../../shared/codex-browser-model/index.js";
+import type { TrustedIdentityDecoder } from "../../../shared/codex-workbench-identity/index.js";
+import type { DynamicToolApprovalRequest } from "../../../runtime/codex-dynamic-tools/index.js";
 import type { BrowserSnapshotDelta } from "./contract.js";
 import type {
 	BrowserProjectionInput,
@@ -16,6 +20,7 @@ import type {
 	CodexSemanticProjectionInput,
 	CodexSettingsProjectionInput,
 	CodexVoiceProjectionInput,
+	DynamicApprovalOwnerView,
 } from "./projection-contract.js";
 import { projectApproval } from "./approval-projection.js";
 
@@ -169,8 +174,98 @@ function projectVoice(input: CodexVoiceProjectionInput) {
 	};
 }
 
+type DynamicProjectionModel = Pick<
+	BrowserSchemas,
+	"BrowserDynamicApprovalEffectSchema" | "BrowserDynamicApprovalSchema" | "BrowserSnapshotSchema"
+>;
+
+type DynamicProjectionIdentity = Pick<TrustedIdentityDecoder, "adoptThreadId" | "adoptTurnId">;
+
+function projectDynamicApprovalEffect(
+	model: DynamicProjectionModel,
+	identity: DynamicProjectionIdentity,
+	request: DynamicToolApprovalRequest,
+): BrowserDynamicApprovalEffect {
+	const effect = request.effect;
+	if (effect.tool === "create_thread")
+		return model.BrowserDynamicApprovalEffectSchema.parse({
+			tool: effect.tool,
+			arguments: { prompt: effect.arguments.prompt },
+			target: null,
+			effectiveBoundary: null,
+			mutationOperationId: effect.mutationOperationId,
+			initialTurnOperationId: effect.initialTurnOperationId,
+			visualSummary: effect.visualSummary,
+		});
+
+	const threadId = identity.adoptThreadId(effect.arguments.threadId);
+	if (effect.tool === "fork_thread") {
+		const beforeTurnId =
+			effect.arguments.beforeTurnId === null
+				? null
+				: identity.adoptTurnId(effect.arguments.beforeTurnId);
+		return model.BrowserDynamicApprovalEffectSchema.parse({
+			tool: effect.tool,
+			arguments: {
+				threadId,
+				beforeTurnId,
+				prompt: effect.arguments.prompt,
+			},
+			target: threadId,
+			effectiveBoundary: {
+				relation: effect.effectiveBoundary.relation,
+				beforeTurnId: effect.effectiveBoundary.beforeTurnId,
+			},
+			mutationOperationId: effect.mutationOperationId,
+			initialTurnOperationId: effect.initialTurnOperationId,
+			visualSummary: effect.visualSummary,
+		});
+	}
+
+	return model.BrowserDynamicApprovalEffectSchema.parse({
+		tool: effect.tool,
+		arguments: { threadId, prompt: effect.arguments.prompt },
+		target: threadId,
+		effectiveBoundary: null,
+		mutationOperationId: effect.mutationOperationId,
+		initialTurnOperationId: null,
+		visualSummary: effect.visualSummary,
+	});
+}
+
+function projectDynamicApproval(
+	model: DynamicProjectionModel,
+	identity: DynamicProjectionIdentity,
+	owner: DynamicApprovalOwnerView,
+): BrowserDynamicApproval {
+	const { request, binding } = owner;
+	return model.BrowserDynamicApprovalSchema.parse({
+		kind: "dynamic_approval",
+		state: "pending",
+		identity: request.identity,
+		effect: projectDynamicApprovalEffect(model, identity, request),
+		effectHash: request.effectHash,
+		createdAtMs: request.createdAtMs,
+		expiresAtMs: request.expiresAtMs,
+		decision: null,
+		delivery: null,
+		toolResult: null,
+		binding: {
+			commandId: binding.commandId,
+			paneId: binding.paneId,
+			capturedLink: {
+				threadId: binding.capturedLink.threadId,
+				childId: binding.capturedLink.childId,
+				epoch: binding.capturedLink.epoch,
+			},
+		},
+		resumable: false,
+	});
+}
+
 export function projectCodexBrowserState(
-	model: Pick<BrowserSchemas, "BrowserSnapshotSchema">,
+	model: DynamicProjectionModel,
+	identity: DynamicProjectionIdentity,
 	input: BrowserProjectionInput,
 ): BrowserProjectionResult {
 	if (containsSecretKey(input))
@@ -192,7 +287,9 @@ export function projectCodexBrowserState(
 			queue: projectQueue(input.queue),
 			settings: input.settings.map(projectSettings),
 			approvals: input.approvals.map(projectApproval),
-			dynamicApprovals: input.dynamicApprovals,
+			dynamicApprovals: input.dynamicApprovals.map((owner) =>
+				projectDynamicApproval(model, identity, owner),
+			),
 			semantic: projectSemantic(input.semantic),
 			coordinator: projectCoordinator(input.coordinator),
 			voice: projectVoice(input.voice),

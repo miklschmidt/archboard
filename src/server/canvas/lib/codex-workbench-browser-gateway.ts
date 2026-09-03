@@ -318,7 +318,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 							]),
 				],
 				approvals: visibleApprovalViews(components.approvals),
-				dynamicApprovals: dynamicApprovals.browser.pending(),
+				dynamicApprovals: dynamicApprovals.pending(),
 				semantic: {
 					kind: "codex_semantic",
 					outcome:
