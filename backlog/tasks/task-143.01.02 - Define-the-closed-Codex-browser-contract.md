@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 20:30'
+updated_date: '2026-09-03 20:35'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -111,6 +111,12 @@ Define only the browser-facing workbench state and user-intent model that has no
 42. Extend the focused owner and three-family projection proofs with source-alias mutation, runtime deep freeze, compile-time nested readonly, exact identity keys, and private identity omission.
 
 43. Run only focused dynamic owner/projection/gateway/settlement tests, type probes, both TypeScript configs, scoped lint/format, boundary/import, and diff checks. Commit separately and callback the parent for rereview.
+
+44. Tenth remediation: normalize fork arguments.beforeTurnId and effect.effectiveBoundary.beforeTurnId independently, preserving an already-issued authority boundary and adopting a raw boundary when needed.
+
+45. Add one focused self-fork owner whose requested beforeTurnId is null while its effective boundary is the caller turn; preserve the existing other-fork assertions.
+
+46. Run only the exact dynamic projection red/green owner, directly affected gateway/owner checks, both TypeScript configs, scoped lint/format/diff, commit separately, and callback the parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -179,6 +185,12 @@ Ninth review remediation:
 - Compile-time probes reject nested argument and boundary mutation. The runtime owner proof mutates the caller argument after presentation, rejects retained-graph mutation, preserves the original projected request, and settles expiry with the original identity and hash.
 
 Red evidence: before implementation, the exact three-family projection owner failed 0/1 because the future identity field made the adapter return refused. Green evidence: the focused dynamic model/projection/gateway/canvas lane passed 76/76 with 473 assertions. Root and frontend TypeScript, exact scoped Oxlint/Oxfmt, the 7 boundary-policy tests with 66 assertions, import residue probes, and git diff checks passed. No broad module, system, browser, topology, stress, capacity, performance, full-test, or check lane ran. TASK-143.01.02 remains In Progress for parent rereview.
+
+Tenth review remediation:
+- Fork projection now treats requested and effective turn boundaries as separate authority values. arguments.beforeTurnId is adopted from the authored request. effectiveBoundary.beforeTurnId resolves an already-issued turn first and adopts only a raw boundary fallback.
+- A focused self-fork owner models the reachable contract: requested beforeTurnId is null, effective relation is self, and the boundary is the caller identity turn. Projection accepts it, preserves the null argument, emits the caller turn boundary, and freezes both nested records. The existing other-fork equality owner remains unchanged.
+
+Red evidence against 595b48a7: the exact dynamic projection file passed the existing three-family owner and failed the new self-fork owner 1/2 because projection returned refused. Green evidence: 55 focused dynamic schema/projection/gateway/recovery/owner/correlation tests passed with 368 assertions. Root and frontend TypeScript, exact scoped Oxlint/Oxfmt, and git diff checks passed. No broad lane ran. Topology is unchanged and no known residue remains in this remediation. TASK-143.01.02 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -295,5 +307,17 @@ author: @codex
 created: 2026-09-03 20:30
 ---
 Ninth review remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 20:34
+---
+Tenth review remediation started at 595b48a7 for the reachable self-fork boundary case. TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 20:35
+---
+Tenth self-fork remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
 ---
 <!-- COMMENTS:END -->

@@ -9,7 +9,11 @@ import type {
 	BrowserSnapshot,
 	BrowserSchemas,
 } from "../../../shared/codex-browser-model/index.js";
-import type { TrustedIdentityDecoder } from "../../../shared/codex-workbench-identity/index.js";
+import {
+	IdentityValidationError,
+	type TrustedIdentityDecoder,
+	type TurnId,
+} from "../../../shared/codex-workbench-identity/index.js";
 import type { BrowserSnapshotDelta } from "./contract.js";
 import type {
 	BrowserProjectionInput,
@@ -178,7 +182,20 @@ type DynamicProjectionModel = Pick<
 	"BrowserDynamicApprovalEffectSchema" | "BrowserDynamicApprovalSchema" | "BrowserSnapshotSchema"
 >;
 
-type DynamicProjectionIdentity = Pick<TrustedIdentityDecoder, "adoptThreadId" | "adoptTurnId">;
+type DynamicProjectionIdentity = Pick<
+	TrustedIdentityDecoder,
+	"adoptThreadId" | "adoptTurnId" | "parseTurnId"
+>;
+
+/** Dynamic boundaries may already carry an authority-issued turn; request arguments stay raw. */
+function adoptBoundaryTurnId(identity: DynamicProjectionIdentity, value: string): TurnId {
+	try {
+		return identity.parseTurnId(value);
+	} catch (error) {
+		if (!(error instanceof IdentityValidationError)) throw error;
+		return identity.adoptTurnId(value);
+	}
+}
 
 function projectDynamicApprovalEffect(
 	model: DynamicProjectionModel,
@@ -199,21 +216,25 @@ function projectDynamicApprovalEffect(
 
 	const threadId = identity.adoptThreadId(effect.arguments.threadId);
 	if (effect.tool === "fork_thread") {
-		const beforeTurnId =
+		const requestedBeforeTurnId =
 			effect.arguments.beforeTurnId === null
 				? null
 				: identity.adoptTurnId(effect.arguments.beforeTurnId);
+		const effectiveBeforeTurnId =
+			effect.effectiveBoundary.beforeTurnId === null
+				? null
+				: adoptBoundaryTurnId(identity, effect.effectiveBoundary.beforeTurnId);
 		return model.BrowserDynamicApprovalEffectSchema.parse({
 			tool: effect.tool,
 			arguments: {
 				threadId,
-				beforeTurnId,
+				beforeTurnId: requestedBeforeTurnId,
 				prompt: effect.arguments.prompt,
 			},
 			target: threadId,
 			effectiveBoundary: {
 				relation: effect.effectiveBoundary.relation,
-				beforeTurnId,
+				beforeTurnId: effectiveBeforeTurnId,
 			},
 			mutationOperationId: effect.mutationOperationId,
 			initialTurnOperationId: effect.initialTurnOperationId,
