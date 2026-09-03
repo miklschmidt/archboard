@@ -203,10 +203,7 @@ describe.serial("production Codex setup cleanup", () => {
 				runPublicCanvasAsync("start", environment),
 				runPublicCanvasAsync("start", environment),
 			]);
-			expect(
-				starts.map(({ status }) => status),
-				starts.map(({ stderr }, index) => `start ${index + 1}: ${stderr}`).join("\n"),
-			).toEqual([0, 0]);
+			expect(starts.map(({ status }) => status)).toEqual([0, 0]);
 			spawned = processRecords(fixture.logPath).filter(
 				(record) => record.kind === "app_server_spawn",
 			);
