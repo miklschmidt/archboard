@@ -72,7 +72,6 @@ async function addBox(request: Requester, board: string, id: string, label: stri
 		).status,
 	).toBe(200);
 }
-
 test("the operator strip keeps empty, loading, retry, and scratch naming states actionable", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
@@ -92,7 +91,6 @@ test("the operator strip keeps empty, loading, retry, and scratch naming states 
 		initScript,
 		`{ const nativeFetch = window.fetch.bind(window); let released = false; const pending = []; window.fetch = (input, init) => { const requestUrl = typeof input === 'string' ? input : input.url; const url = new URL(requestUrl, location.href); if (!released && url.pathname === '/api/boards') return new Promise((resolve, reject) => { pending.push(() => nativeFetch(input, init).then(resolve, reject)); window.__releaseBoardListing = () => { released = true; delete window.__releaseBoardListing; for (const start of pending.splice(0)) start(); return true; }; }); return nativeFetch(input, init); }; }`,
 	);
-
 	await browser.run(["--init-script", initScript, "open", canvas.base]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
 	await browser.run(["set", "viewport", "1440", "900"]);
@@ -117,7 +115,6 @@ test("the operator strip keeps empty, loading, retry, and scratch naming states 
 		"the real empty named-board state",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-
 	const empty = await pollUntil(
 		() =>
 			browser.eval<{
@@ -137,7 +134,6 @@ test("the operator strip keeps empty, loading, retry, and scratch naming states 
 	expect(empty.targets.every(({ width, height }) => width >= 43.5 && height >= 43.5)).toBe(true);
 	expect(empty.currentScratch).toBe(true);
 	expect(empty.pageFits).toBe(true);
-
 	await browser.run(["click", ".name-button"]);
 	await pollUntil(
 		() =>
@@ -149,7 +145,6 @@ test("the operator strip keeps empty, loading, retry, and scratch naming states 
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 	await browser.run(["click", '.modal-close[aria-label="Close dialog"]']);
-
 	expect(
 		await browser.eval<boolean>(
 			`(() => { if (window.__archboardNativeFetch) return false; window.__archboardNativeFetch = window.fetch; window.fetch = async (input, init) => { const requestUrl = typeof input === 'string' ? input : input.url; const url = new URL(requestUrl, location.href); if (url.pathname === '/api/boards') return new Response(JSON.stringify({ success: false, error: 'forced board-list failure' }), { status: 503, headers: { 'Content-Type': 'application/json' } }); return window.__archboardNativeFetch(input, init); }; document.querySelector('.board-nav-tools [aria-label="Refresh boards"]')?.click(); return true; })()`,
@@ -180,7 +175,6 @@ test("the operator strip keeps empty, loading, retry, and scratch naming states 
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 }, 20_000);
-
 test("the strip keeps every real board reachable and replaces the focused pane", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
@@ -203,7 +197,6 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	await addBox(request, "gamma", "gbox", "Gamma service");
 	await canvas.restart();
 	await createBoard(request, "draft-probe", { save: false });
-
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", canvas.base]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
