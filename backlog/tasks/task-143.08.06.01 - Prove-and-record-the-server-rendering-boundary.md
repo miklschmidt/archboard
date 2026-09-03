@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - "@codex"
 created_date: "2026-09-02 01:57"
-updated_date: "2026-09-03 03:53"
+updated_date: "2026-09-03 04:08"
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -79,4 +79,10 @@ Validation: cgroup-contained `bun scripts/probe-server-rendering-emulation.ts`; 
 2026-09-03 architecture rereview remediation: Chromium now acquires profile, loopback port, Chromium group, and output pipes through one owner that self-cleans before exposing a session. The Vite fixture similarly owns and closes server/watcher resources before returning. Direct injected seams covered before-profile, after-profile, after-port, after-spawn, before-vite-create, after-vite-create, and after-vite-listen; every audit had no survivors, removed profile, rebindable port, and (where created) a closed non-listening Vite server with zero watched paths.
 
 The timeout oracle now requires the causal `CdpTimeoutError` for `Runtime.evaluate` at exactly 20,000 ms, the fixture `intentional-timeout` phase, and 19,800–21,000 ms monotonic elapsed time. The normal proof observed 20,005.3 ms; an injected immediate evaluation failure was rejected by the oracle in 1.2 ms. A contained emulation run and one complete Chromium run passed. ACs remain unchecked and task remains In Progress.
+
+2026-09-03 final architecture rereview remediation: The negative timeout control now stages the same `intentional-timeout` job and fixture phase before issuing an immediate CDP evaluation error. The timeout oracle records typed rejection reasons, and the control proves its only mismatch is a non-`CdpTimeoutError` cause. The positive bound remains 20,000 ms with the existing 19,800–21,000 ms monotonic window.
+
+Chromium cleanup now captures the dedicated process-group identity at spawn, confirms absence with `kill(-pgid, 0)`, and uses the repository guard to refuse a reused or unproven group. It sends TERM and then KILL while the group remains live even if the leader exited. Cleanup reports `groupAbsent`, leader settlement, stdout/stderr and combined pipe settlement, profile removal, and port rebindability. The after-spawn injection, normal timeout session, child-exit session, and replacement session all require these facts to be clean.
+
+Validation: one final cgroup-contained Chromium probe passed in 27.9 s. It recorded a 20,005.24 ms `Runtime.evaluate` timeout at the named phase, plus a 2.01 ms same-phase immediate failure rejected for `cause` alone. Injected after-spawn, primary, child-exit, and replacement audits all reported group absent, leader and pipes settled, profile removed, and port released. Focused `oxfmt`, `oxlint`, and `git diff --check` passed. Emulation was not rerun. ACs remain unchecked and the task remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
