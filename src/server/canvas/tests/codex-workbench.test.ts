@@ -12,6 +12,7 @@ import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench
 import {
 	fakeGeneration,
 	fakeProcess,
+	fakeRestartingProcess,
 	installFakeCodexWorkbenchOwner,
 } from "./support/codex-workbench-owner-fake.js";
 
@@ -162,12 +163,14 @@ describe("production Codex owner lifecycle", () => {
 		expect(await rejected(start)).toBeInstanceOf(CodexWorkbenchCompositionError);
 	});
 
-	test("refuses duplicate active registration and releases after child retirement", async () => {
+	test("refuses duplicate registration and replaces a retired child only after recovery", async () => {
 		const retained = emptyCodexWorkbenchRetainedState();
+		const events: string[] = [];
+		const process = fakeRestartingProcess(events);
 		const options = {
-			createProcess: () => fakeProcess([]),
+			createProcess: () => process.process,
 			createGeneration: async (value: CodexWorkbenchGenerationInput) =>
-				fakeGeneration([], value.generation),
+				fakeGeneration(events, value.generation),
 		};
 		const owner = installFakeCodexWorkbenchOwner(retained, options);
 		expect(() => installFakeCodexWorkbenchOwner(retained, options)).toThrow(
@@ -184,11 +187,21 @@ describe("production Codex owner lifecycle", () => {
 		});
 		runtime.exitBridge.event = exit;
 		runtime.exitBridge.handler?.handle(exit);
-		expect(retained).toMatchObject({ state: "stopping" });
-		expect(retained.control.current).toBeNull();
-		for (let turn = 0; turn < 20 && retained.owner !== null; turn++) await Promise.resolve();
-		expect(retained).toMatchObject({ state: "idle", owner: null, process: null });
-		expect(() => installFakeCodexWorkbenchOwner(retained, options)).not.toThrow();
+		process.crash();
+		expect(retained).toMatchObject({
+			state: "starting",
+			owner: "archboard-canvas-codex-workbench",
+		});
+		expect(() => owner.gateway()).toThrow("not ready");
+		expect(events).not.toContain("process:stop");
+		process.restart();
+		for (let turn = 0; turn < 30 && !owner.snapshot().ready; turn++) await Promise.resolve();
+		expect(owner.snapshot()).toMatchObject({ state: "ready", ready: true, generation: 2 });
+		expect((owner.gateway() as unknown as { marker: number }).marker).toBe(2);
+		expect(events.indexOf("generation:1:finish-stop")).toBeLessThan(
+			events.indexOf("generation:2:activate"),
+		);
+		await owner.shutdown();
 	});
 
 	test("stops the owned child when generation startup fails", async () => {

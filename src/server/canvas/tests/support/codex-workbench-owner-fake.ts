@@ -62,6 +62,62 @@ export function fakeProcess(events: string[]): CodexProcess {
 	};
 }
 
+export interface FakeRestartingProcess {
+	readonly process: CodexProcess;
+	readonly crash: () => void;
+	readonly restart: () => void;
+}
+
+export function fakeRestartingProcess(events: string[]): FakeRestartingProcess {
+	const listeners = new Set<(child: CodexProcessChild) => void>();
+	let nextPid = 14314;
+	let child: CodexProcessChild | null = null;
+	let started = false;
+	const emitChild = (): void => {
+		child = { pid: nextPid++ } as CodexProcessChild;
+		for (const listener of listeners) listener(child);
+	};
+	const snapshot = (): CodexProcessSnapshot =>
+		({
+			state: child === null ? (started ? "backoff" : "stopped") : "running",
+			pid: child?.pid ?? null,
+			ready: child !== null,
+		}) as CodexProcessSnapshot;
+	return {
+		process: {
+			start: async () => {
+				events.push("process:start");
+				if (!started) {
+					started = true;
+					emitChild();
+				}
+				return snapshot();
+			},
+			stop: async () => {
+				events.push("process:stop");
+				child = null;
+				return snapshot();
+			},
+			snapshot,
+			currentChild: () => child,
+			onChild: (listener) => {
+				listeners.add(listener);
+				if (child !== null) listener(child);
+				return () => listeners.delete(listener);
+			},
+			subscribe: () => () => undefined,
+		},
+		crash: () => {
+			events.push("process:crash");
+			child = null;
+		},
+		restart: () => {
+			events.push("process:restart");
+			emitChild();
+		},
+	};
+}
+
 export interface FakeGenerationControl {
 	readonly activate?: () => Promise<void>;
 	readonly deactivate?: () => void;

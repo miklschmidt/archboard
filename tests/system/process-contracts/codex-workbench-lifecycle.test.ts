@@ -351,12 +351,28 @@ describe.serial("composed Codex process lifecycle", () => {
 
 			writeFileSync(fixture.controlPath, JSON.stringify({ exit: true }));
 			await waitFor(() => (!processExists(childPid) ? true : undefined), "controlled child exit");
-			const terminalLog = readFileSync(fixture.logPath, "utf8");
 			await waitFor(async () => {
 				const result = await socket.request("snapshot");
 				return result.ok ? undefined : result;
 			}, "gateway authority retirement after child exit");
-			expect(readFileSync(fixture.logPath, "utf8")).toBe(terminalLog);
+			writeFileSync(fixture.controlPath, JSON.stringify({ exit: false }));
+			const replacementPid = await waitFor(() => {
+				const replacements = records(fixture.logPath).filter(
+					(entry) => entry.kind === "app_server_spawn",
+				);
+				return replacements.length === 2 ? replacements[1]?.pid : undefined;
+			}, "serialized replacement after child exit");
+			if (replacementPid === undefined)
+				throw new Error("The replacement child did not log its pid.");
+			expect(replacementPid).not.toBe(childPid);
+			expect(processExists(replacementPid)).toBeTrue();
+			await waitFor(async () => {
+				const result = await socket.request("connect");
+				return result.ok ? result : undefined;
+			}, "replacement generation readiness");
+			expect(
+				records(fixture.logPath).filter((entry) => entry.kind === "app_server_spawn"),
+			).toHaveLength(2);
 
 			await canvas.dispose("SIGTERM");
 			canvas = null;
