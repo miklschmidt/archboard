@@ -1,11 +1,11 @@
 ---
 id: TASK-143.08.06.05
 title: Teach and prove the browser-free Archboard workflow
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 10:33'
+updated_date: '2026-09-03 10:36'
 labels: []
 dependencies:
   - TASK-143.08.06.04
@@ -33,14 +33,14 @@ Make the browser-independent contract impossible to miss for agents, maintainers
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The tracked `skills/archboard/SKILL.md` main path begins with an explicit named board and works start to finish without discovering, opening, or capturing a pane; live human-session reading and control appear in one clearly triggered `archboard browser` branch.
-- [ ] #2 `skills/archboard/references/architecture-workflow.md`, `cli-workflows.md`, and `cheatsheet.md` consistently distinguish persisted-board inspection and server rendering from browser panes, selection, camera, and capture; Mermaid is described as server conversion and no completion gate requires a browser unless the requested evidence is specifically about the live session.
-- [ ] #3 The Archboard skill evals include a zero-browser workflow that creates and changes a board, converts Mermaid, renders board evidence, inspects, saves, and exports it, plus a separate browser-collaboration workflow that deliberately exercises the `browser` namespace; no eval accidentally treats a pane as a board prerequisite.
-- [ ] #4 AGENTS.md, TESTING.md, INSTALL.md, CLI help, and the tracked archboard-dev guidance state that only `archboard browser` workflows and real-browser fidelity checks require a connected browser, while screenshots or renders of named board content are server-owned.
-- [ ] #5 Running the documented skill synchronization reproduces generated `.agents` and `.claude` copies from `skills/` without treating those derived copies or rendered proof artifacts as authored files.
-- [ ] #6 A production-interface workflow with a configured vault and zero WebSocket clients creates a board, writes elements, converts Mermaid, renders PNG and SVG, renders live findings when present, inspects, branches or snapshots, exports, and reads the final note without an open/load/show prerequisite.
-- [ ] #7 A separate real-browser workflow proves that browser commands inspect or manipulate only the explicit live target and do not change note bytes, while an ordinary board write still becomes visible in panes already showing that board without depending on their acknowledgement.
-- [ ] #8 Focused repository, contract, system, and retained real-browser fidelity checks pass under the memory-safe validation mechanism established by TASK-143.08.01; failures are fixed rather than bypassed or weakened.
+- [x] #1 The tracked `skills/archboard/SKILL.md` main path begins with an explicit named board and works start to finish without discovering, opening, or capturing a pane; live human-session reading and control appear in one clearly triggered `archboard browser` branch.
+- [x] #2 `skills/archboard/references/architecture-workflow.md`, `cli-workflows.md`, and `cheatsheet.md` consistently distinguish persisted-board inspection and server rendering from browser panes, selection, camera, and capture; Mermaid is described as server conversion and no completion gate requires a browser unless the requested evidence is specifically about the live session.
+- [x] #3 The Archboard skill evals include a zero-browser workflow that creates and changes a board, converts Mermaid, renders board evidence, inspects, saves, and exports it, plus a separate browser-collaboration workflow that deliberately exercises the `browser` namespace; no eval accidentally treats a pane as a board prerequisite.
+- [x] #4 AGENTS.md, TESTING.md, INSTALL.md, CLI help, and the tracked archboard-dev guidance state that only `archboard browser` workflows and real-browser fidelity checks require a connected browser, while screenshots or renders of named board content are server-owned.
+- [x] #5 Running the documented skill synchronization reproduces generated `.agents` and `.claude` copies from `skills/` without treating those derived copies or rendered proof artifacts as authored files.
+- [x] #6 A production-interface workflow with a configured vault and zero WebSocket clients creates a board, writes elements, converts Mermaid, renders PNG and SVG, renders live findings when present, inspects, branches or snapshots, exports, and reads the final note without an open/load/show prerequisite.
+- [x] #7 A separate real-browser workflow proves that browser commands inspect or manipulate only the explicit live target and do not change note bytes, while an ordinary board write still becomes visible in panes already showing that board without depending on their acknowledgement.
+- [x] #8 Focused repository, contract, system, and retained real-browser fidelity checks pass under the memory-safe validation mechanism established by TASK-143.08.01; failures are fixed rather than bypassed or weakened.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -81,3 +81,9 @@ Final documentation correction after e4d277b4 is complete. The pre-split selecti
 
 No production code or tests changed. Added cost is zero runtime behavior, zero tests, zero browser launches, and zero product processes. Focused skill policy passed 8/8 in 0.093s. Scoped Oxfmt and git diff --check pass. No browser or process owner ran. Task remains In Progress with every AC unchecked.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Completed the browser-free Archboard workflow across canonical skills, guidance, evals, CLI help, and focused contract owners. Direct evidence: zero-WebSocket-client configured-vault production flow passed in 4.71s; skill policy 8/8; package help/argv 6/6; retained selection-inspector 1/1 with 71 assertions in 8.701s; acknowledgement/update owner passed; documented skill sync reproduced only derived copies; scoped formatting, lint, and diff checks passed. The exact four-commit implementation range received independent clean Spec and Standards reviews at 293f1ba04cb00923b68951a28b1309bb955aa39c.
+<!-- SECTION:FINAL_SUMMARY:END -->
