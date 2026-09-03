@@ -14,13 +14,7 @@ const SETTINGS = {
 	serviceTier: "priority",
 	approvalPolicy: "on-request",
 	approvalsReviewer: "guardian_subagent",
-	sandboxPolicy: {
-		type: "workspaceWrite",
-		writableRoots: ["/workspace"],
-		networkAccess: true,
-		excludeTmpdirEnvVar: false,
-		excludeSlashTmp: false,
-	},
+	sandbox: { mode: "workspace_write", network: "enabled" },
 	activePermissionProfile: { id: "archboard", extends: "default" },
 } as const satisfies BrowserSnapshot["settings"][number];
 
@@ -49,7 +43,7 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 			childId: "child-a" as ExecutableThreadLink["childId"],
 			epoch: "epoch-a" as ExecutableThreadLink["epoch"],
 			threadId: "workhorse-a" as ExecutableThreadLink["threadId"],
-			source: "appServer",
+			sourcePresentation: "standard",
 			status: "idle",
 			loaded: true,
 			canAcceptDirectInput: true,
@@ -132,9 +126,7 @@ describe("workbench coordinator projection", () => {
 		expect(textByLabel(state, "Effective service tier")).toBe("priority");
 		expect(textByLabel(state, "Approval policy")).toBe("on request");
 		expect(textByLabel(state, "Approvals reviewer")).toBe("guardian subagent");
-		expect(textByLabel(state, "Sandbox policy")).toBe(
-			"Workspace write, 1 writable root, network enabled",
-		);
+		expect(textByLabel(state, "Sandbox policy")).toBe("Workspace write, network enabled");
 		expect(textByLabel(state, "Active permission profile")).toBe("archboard, extends default");
 		expect(textByLabel(state, "Coordinator identity")).toBe("coordinator-a");
 		expect(textByLabel(state, "Coordinator history")).toContain(
