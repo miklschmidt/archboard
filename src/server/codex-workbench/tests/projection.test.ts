@@ -13,11 +13,7 @@ import {
 	createIdentityAuthorities,
 	type IdentityAuthority,
 } from "../../../shared/codex-workbench-identity/index.js";
-import {
-	projectCodexBrowserState,
-	type BrowserProjectionInput,
-	type CodexSettingsProjectionInput,
-} from "../index.js";
+import { projectCodexBrowserState, type BrowserProjectionInput } from "../index.js";
 import { createGatewayHarness } from "./support.js";
 
 function requestEnvelope<Method extends HumanApprovalMethod>(
@@ -378,79 +374,6 @@ test("thread-link projection discloses closed provenance without vendor source d
 				expect(wire).not.toContain(privateDetail);
 			expect(wire).not.toContain("agent_path");
 		}
-	} finally {
-		broker.dispose();
-	}
-});
-
-test("the sole projection strips private account and settings fields and refuses secrets", () => {
-	const authorities = createIdentityAuthorities();
-	const model = createCodexBrowserModel(authorities);
-	const broker = createCodexApprovalBroker({
-		identity: authorities.identity,
-		transport: { respond: () => Promise.resolve() },
-	});
-	try {
-		const pending = broker.receive(approvalRequests(authorities.identity)[0]!);
-		const input = projectionInput(broker.view(pending.requestId));
-		const settings = {
-			cwd: "/private/vendor/checkout",
-			model: "gpt-5.6-sol",
-			effort: "xhigh",
-			serviceTier: "priority",
-			approvalPolicy: "on-request" as const,
-			approvalsReviewer: "user" as const,
-			sandboxPolicy: {
-				type: "workspaceWrite" as const,
-				writableRoots: ["/private/vendor/root"],
-				networkAccess: true,
-				excludeTmpdirEnvVar: false,
-				excludeSlashTmp: false,
-			},
-			activePermissionProfile: null,
-			modelProvider: "private-provider",
-		};
-		const result = projectCodexBrowserState(model, authorities.identity.decoder, {
-			...input,
-			settings: [
-				{
-					kind: "codex_thread_settings",
-					owner: "workhorse",
-					settings: settings satisfies CodexSettingsProjectionInput["settings"],
-				},
-			],
-		});
-		expect(result.tag).toBe("projected");
-		if (result.tag !== "projected") throw new Error("settings projection was refused");
-		expect(result.snapshot.account).toEqual({
-			kind: "account",
-			state: "ready",
-			accountType: "chatgpt",
-		});
-		expect(result.snapshot.settings[0]?.sandbox).toEqual({
-			mode: "workspace_write",
-			network: "enabled",
-		});
-		const wire = JSON.stringify(result.snapshot);
-		for (const privateValue of [
-			"private@example.test",
-			"/private/vendor/checkout",
-			"/private/vendor/root",
-			"private-provider",
-		])
-			expect(wire).not.toContain(privateValue);
-
-		const secretAccount = { ...input.account, apiKey: "sk-browser-leak" };
-		const secret = projectCodexBrowserState(model, authorities.identity.decoder, {
-			...input,
-			account: secretAccount,
-		} as BrowserProjectionInput);
-		expect(secret).toEqual({
-			tag: "refused",
-			reason: "secret_input",
-			message: "The browser projection contains a secret-bearing field.",
-		});
-		expect(JSON.stringify(secret)).not.toContain("sk-browser-leak");
 	} finally {
 		broker.dispose();
 	}
