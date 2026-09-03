@@ -2,12 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-
-import {
-	PANE_DEBOUNCE_MS,
-	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-	TEST_PANE_DEBOUNCE_MARGIN_MS,
-} from "../../../src/shared/timing/timing.ts";
+import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { LIVE_SESSION_BOARD, LIVE_SESSION_SEED } from "./fixtures/live-session-scene.ts";
@@ -32,7 +27,6 @@ import {
 	WORKBENCH_SNAPSHOT_EXPRESSION,
 	type WorkbenchSnapshot,
 } from "./support/workbench-metrics.ts";
-
 const repoRoot = resolve(import.meta.dir, "../../..");
 const BOARD = LIVE_SESSION_BOARD;
 interface ElementsBody {
@@ -40,8 +34,14 @@ interface ElementsBody {
 }
 interface PaneList {
 	paneCount: number;
-	panes: Array<{ board: string; clientId: string }>;
+	panes: Array<{
+		board: string;
+		clientId: string;
+		viewport: { x: number; y: number; width: number; height: number; zoom: number };
+	}>;
 }
+const paneViewport = (report: PaneList, clientId: string) =>
+	report.panes.find((pane) => pane.clientId === clientId)?.viewport;
 interface WriteBody {
 	code?: string;
 	element?: ExcalidrawElement;
@@ -232,6 +232,8 @@ test(
 		expect(claimed.headerClaim?.labelType[0]).toContain("archboard onest");
 		expect(claimed.headerClaim?.idType[0]).toContain("archboard dm mono");
 		const beforeCamera = await claimCounts(browser);
+		const cameraBefore = paneViewport((await request<PaneList>("/api/panes")).body, clientId);
+		expect(cameraBefore).toBeDefined();
 		expect(
 			await browser.eval<boolean>(`(() => {
 				const app = ${EXCALIDRAW_APP_EXPRESSION};
@@ -247,7 +249,12 @@ test(
 				return true;
 			})()`),
 		).toBe(true);
-		await Bun.sleep(PANE_DEBOUNCE_MS + TEST_PANE_DEBOUNCE_MARGIN_MS);
+		const cameraAfter = await pollUntil(
+			async () => paneViewport((await request<PaneList>("/api/panes")).body, clientId),
+			(viewport) => viewport !== undefined && viewport.zoom !== cameraBefore?.zoom,
+			"the camera-only change to reach the pane registry",
+		);
+		expect(cameraAfter?.zoom).toBeGreaterThan(cameraBefore?.zoom ?? 0);
 		const afterCamera = await claimCounts(browser);
 		expect(afterCamera.holds - beforeCamera.holds).toBe(0);
 		expect(afterCamera.sent - beforeCamera.sent).toBe(0);
@@ -295,6 +302,14 @@ test(
 			(
 				await request("/api/boards/new", {
 					method: "POST",
+					body: { board: "workbench-other", level: "service" },
+				})
+			).status,
+		).toBe(200);
+		expect(
+			(
+				await request("/api/boards/open", {
+					method: "POST",
 					body: { board: "workbench-other", pane: secondClientId },
 				})
 			).status,
@@ -324,7 +339,6 @@ test(
 			(value) => value.pane === "Pane A" && value.reason === claimWhy,
 			"the surviving pane to regain workbench focus",
 		);
-
 		const takeoverId = claimedWrite.body.elements?.[0]?.id ?? claimedWrite.body.element?.id;
 		expect(typeof takeoverId).toBe("string");
 		const framed = await request("/api/viewport", {
@@ -356,7 +370,6 @@ test(
 			"the claimed element to be framed inside the canvas",
 		);
 		expect(dragPoint.inside).toBe(true);
-
 		const serverBefore = (
 			await request<ElementsBody>(`/api/elements?board=${BOARD}`)
 		).body.elements.find((element) => element.id === takeoverId)!;
@@ -397,7 +410,6 @@ test(
 			"the local pointer edit to converge with persistence",
 		);
 		expect(converged.server!.x).toBeCloseTo(converged.local!.x, 3);
-
 		const contentRevoked = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
 			method: "POST",
 			body: { type: "rectangle", x: 880, y: 880, width: 20, height: 20 },
@@ -409,7 +421,6 @@ test(
 			body: { type: "rectangle", x: 880, y: 900, width: 20, height: 20 },
 		});
 		expect(contentToldOnce.status).toBe(200);
-
 		const noteBeforePresentation = await verifyBoardStatusPresentation({
 			board: BOARD,
 			browser,

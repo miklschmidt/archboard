@@ -316,6 +316,14 @@ export async function verifyPaneScopedTakeBack(options: {
 		(
 			await request("/api/boards/new", {
 				method: "POST",
+				body: { board: `${board}-take-back-other`, level: "service" },
+			})
+		).status,
+	).toBe(200);
+	expect(
+		(
+			await request("/api/boards/open", {
+				method: "POST",
 				body: { board: `${board}-take-back-other`, pane: secondClientId },
 			})
 		).status,
