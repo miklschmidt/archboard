@@ -1,6 +1,9 @@
-import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import type { AppState, BinaryFiles } from "@excalidraw/excalidraw/types";
+import type { ExcalidrawElementSkeleton } from "@excalidraw/excalidraw/data/transform";
+import type { BinaryFiles } from "@excalidraw/excalidraw/types";
 import type { MermaidConfig } from "@excalidraw/mermaid-to-excalidraw";
+import type { parseMermaidToExcalidraw } from "@excalidraw/mermaid-to-excalidraw";
+
+import type { BoardRenderSnapshot } from "../../../shared/board-rendering/index.js";
 
 export const DEFAULT_MERMAID_CONFIG: MermaidConfig = {
 	startOnLoad: false,
@@ -10,11 +13,10 @@ export const DEFAULT_MERMAID_CONFIG: MermaidConfig = {
 	maxTextSize: 50_000,
 };
 
-export interface BoardRenderSnapshot {
-	readonly elements: readonly ExcalidrawElement[];
-	readonly files: BinaryFiles;
-	readonly appState: Pick<AppState, "viewBackgroundColor">;
-}
+export type { BoardRenderSnapshot } from "../../../shared/board-rendering/index.js";
+
+export type MermaidParserResult = Awaited<ReturnType<typeof parseMermaidToExcalidraw>>;
+export type MermaidSkeleton = ExcalidrawElementSkeleton;
 
 export interface FullBoardRenderSpec {
 	readonly id: string;
@@ -73,7 +75,7 @@ export interface BoardRenderJobResult {
 
 export interface MermaidRenderJobResult {
 	readonly kind: "mermaid";
-	readonly elements: readonly ExcalidrawElement[];
+	readonly elements: readonly MermaidSkeleton[];
 	readonly files: BinaryFiles;
 	readonly error?: string;
 }

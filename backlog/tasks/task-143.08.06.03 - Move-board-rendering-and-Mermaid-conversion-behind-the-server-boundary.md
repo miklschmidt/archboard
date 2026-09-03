@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 06:38'
+updated_date: '2026-09-03 07:19'
 labels: []
 dependencies:
   - TASK-143.08.06.01
@@ -57,24 +57,35 @@ Give Archboard one server-owned visual conversion boundary for persisted board s
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Keep `src/server/board-rendering` as the only production rendering module. Its root interface accepts copied persisted-board snapshots or Mermaid source; private code owns one lazy persistent Vite fixture, one isolated setsid Chromium/profile/loopback CDP session, a serialized job queue, phase diagnostics, deadlines, and idempotent process-group/profile/port/watcher cleanup. Register that owner as one Canvas application resource without changing Codex lifecycle phases.
-2. Extend the inspection snapshot projection only with its resolved board and persisted render app state. Render a named board as PNG/SVG and render every finding close-up from the same single snapshot. Use explicit full-board padding, scale and background options, bundled-font and embedded-file checks, fixed focused-raster dimensions, and CLI-owned output paths. Replace the browser-specific finding failure vocabulary with documented manifest schema v2.
-3. Replace pane-mediated Mermaid conversion with one async server conversion followed by the existing write-boundary middleware and one synchronous `writeBoard`/`elementMutation` commit. Deterministically remap renderer ids through `derivedId` against the current board, preserve endpoint references, pass every element through `applyElementInput`, return committed ids, and reject invalid or empty output before writing.
-4. Delete findings and Mermaid WebSocket messages, result routes, browser handlers, timers, and pending maps. Rename the retained live-pane image request/result transport as browser capture so it remains distinct from named-board rendering; leave the public command-namespace hard cut to TASK-143.08.06.04.
-5. Update CLI contracts and client wrappers: add the named-board `render` command, remove browser prerequisites and diagnostics from `render-findings` and Mermaid, keep `screenshot` as live browser capture, and update the authored CLI audit plus generated-artifact checks without committing reproducible generated outputs.
-6. Replace pane-routing tests with compact zero-client production owners. Public tests cover PNG/SVG dimensions, pixels, labels, embedded images and arrows; focused finding output and note immutability; exact Mermaid connectivity, stable ids and one version increment; malformed Mermaid and missing file/font failures; concurrent requests; public startup failure; retry after renderer death; active/queued shutdown; and the complete cleanup audit. Remove superseded browser finding coverage rather than duplicate it.
+1. Keep src/server/board-rendering as the sole production visual boundary. Build a dedicated renderer entry with the frontend and serve only that entry plus dist/frontend/assets from a private loopback Bun fixture; retain one lazy serialized Chromium/CDP session.
+
+2. Project validated persisted notes into the shared BoardRenderSnapshot contract. Render named boards and every focused finding from copied snapshots with explicit sizing, background, padding, font, image, and artifact behavior.
+
+3. Render and validate Mermaid before acquiring the board lease. Freeze one canonical skeleton result on the request, propagate request cancellation through queue and active work, then map ids against the current under-lock note and perform one synchronous canonical write.
+
+4. Own one temporary root per renderer session, including TMPDIR and profile. Capture bounded process tails, keep failures typed as BOARD_RENDERER_FAILED, and remove the full root only after group, process, leader, and pipe settlement.
+
+5. Make fixture and session acquisition retryable without publishing partial state. Close the static fixture and both ports on shutdown; expose the cumulative Chromium start count and resource identity through health.
+
+6. Remove superseded Mermaid/finding browser transport and redundant browser owners, retain live pane capture as a separate Browser operation, and align AGENTS.md, test-suite guidance, the design record, CLI contracts, and generated checks.
+
+7. Enforce the browser renderer in the frontend TypeScript gate and retain focused owners for real rendering, lease ordering, cancellation, replacement, startup and cleanup failure, output atomicity, zero-client behavior, and shutdown. Use measured sub-10/12-second owner timeouts.
+
+8. Leave the task In Progress with acceptance criteria unchecked for parent review; do not run the root TypeScript gate, broad suite, serial browser lane, or standalone probes in this remediation.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Implemented the production server-owned rendering boundary in `src/server/board-rendering`: one lazy Vite fixture and retained isolated Chromium/CDP session, serialized jobs, copied immutable inputs, phase/cause diagnostics, process-group termination, observed-process and pipe settlement, profile removal, port release, fixture closure, and retry with a replacement session after process death.
+Remediation replaced the production Vite fixture with a dedicated built renderer entry and narrow Bun static host. Fixture state is published only after successful listen and a failed partial acquisition closes its port before a clean retry. The browser renderer resets DOM and job state around every run.
 
-Added named-board PNG/SVG rendering plus the `archboard render --out` file contract. `render-findings` now inspects and renders all focused PNGs from one persisted snapshot with no browser client and publishes documented manifest schema v2. Mermaid now renders on the server, remaps deterministic block ids, passes through the sole inbound converter, adds generated files, and reaches the note as one locked version increment. Invalid or empty Mermaid output does not write.
+Mermaid now renders and validates before the lease, stores a recursively frozen canonical skeleton result on the request, propagates AbortSignal through queued and active renderer work, then maps ids and endpoints against the current under-lock board through typed ElementInputRequest inputs and one synchronous write. A public owner held rendering beyond the 3000 ms lease, landed a concurrent human collision, proved remapping against the live note, and proved post-render cancellation leaves the version unchanged.
 
-Removed the Mermaid and finding WebSocket messages, frontend handlers, pending maps, callback routes, and browser finding owner. Renamed the retained live-pane image transport to `/api/browser/capture`; the top-level command namespace remains for TASK-143.08.06.04. Updated the authored CLI audit, generated-artifact hashes, rendering-boundary design record, browser-owner inventory, and the probe fixture import.
+Each session owns one short temporary root containing TMPDIR and profile data. Startup stdout/stderr tails are bounded, startup-plus-cleanup and job-plus-cleanup failures remain BoardRendererError values, and root removal waits for process-group absence plus leader and pipe settlement. Health reports cumulative Chromium starts. Production boundary casts were removed in favor of exact Mermaid/parser, renderer-result, page-state, and BoardRenderSnapshot validation.
 
-Focused verification passed: real-renderer public system owners (5 tests, 61 expectations); renderer death/retry plus active/queued shutdown cleanup owner (10 expectations); CLI render/findings package owner (7 tests, 91 expectations); command audit/artifact/workflow owners (16 tests, 943 expectations); rendering/finding module owners (9 tests, 37 expectations); change-feed/write/file owners (20 tests, 99 expectations); code-target presentation owner (1 test, 130 expectations); side-by-side live capture owner (1 test, 46 expectations); repository boundary, inventory, hosted-browser-policy, and legacy-removal owners; focused image persistence and HTTP refusal owners; Oxlint; Oxfmt check; `git diff --check`; and the Vite frontend build. The public real-renderer owner proves zero WebSocket clients, repeated 566x417 output, expected PNG colour regions, SVG label/image/arrow semantics, focused-finding dimensions and unchanged note bytes, missing font/file refusals, concurrent requests, exact Mermaid graph and one version increment, malformed Mermaid without a write, public renderer startup failure, and shutdown profile removal. The module owner additionally proves replacement after killed Chromium and the full group/process/pipes/profile/port/fixture cleanup report.
+Final focused evidence: frontend build 0.582 s; module renderer owner 2 tests/31 expectations in 1.916 s with exactly 2 Chromium starts and clean replacement/root/group/process/pipe/profile/port/fixture census; public real-renderer owner 4 tests/79 expectations in 6.740 s with exactly 1 retained start and 0 survivors after shutdown; public missing-executable failure 1 test/5 expectations in 0.874 s with 0 Chromium starts and fixture port rebound; presentation contract 1 test/125 expectations in 2.598 s with no renderer call; artifact atomicity 9 tests/38 expectations in 0.288 s; undescribed-write boundary 1 test/33 expectations in 3.089 s; repository boundary/inventory/TypeScript-scope policy 47 tests/139 expectations in 7.884 s. Scoped Oxlint, Oxfmt, frontend TypeScript, renderer-root TypeScript, git diff check, and final live-process/temp-root census pass.
 
-Per the delegation constraints, root TypeScript checking, the full suite/check command, the serial browser lane, and standalone probe scripts were not run. The task intentionally remains In Progress and every acceptance criterion remains unchecked for parent review.
+The root TypeScript gate, broad suite, serial browser lane, standalone probes, and the 20-second proof scenario were intentionally not run. The requested writing-for-agents skill is unavailable in this checkout; repository documentation rules and the plain-language fallback were applied. Task remains In Progress, assigned to @codex, with all acceptance criteria unchecked.
+
+Final post-format module rerun supersedes the earlier module wall time: 2 tests and 31 expectations passed in 1.781 s, still with exactly 2 Chromium starts. The final live renderer process and recent temp-root census was empty.
 <!-- SECTION:NOTES:END -->

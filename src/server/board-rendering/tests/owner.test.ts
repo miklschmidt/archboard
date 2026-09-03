@@ -1,57 +1,171 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync } from "node:fs";
+import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
-import { TEST_BOARD_RENDERING_CASE_TIMEOUT_MS } from "../../../shared/timing/timing.ts";
-import { createBoardRenderingOwner, DEFAULT_MERMAID_CONFIG } from "../index.ts";
+import { projectBoardRenderSnapshot } from "../../../runtime/engine/board-io.ts";
+import { extractSceneJsonFromObsidianMd } from "../../../runtime/engine/obsidian-md.ts";
+import {
+	TEST_BOARD_RENDERER_OWNER_TIMEOUT_MS,
+	TEST_BOARD_RENDERER_STARTUP_FAILURE_TIMEOUT_MS,
+} from "../../../shared/timing/timing.ts";
+import {
+	BoardRendererError,
+	createBoardRenderingOwner,
+	DEFAULT_MERMAID_CONFIG,
+	type BoardRenderSnapshot,
+} from "../index.ts";
+
+const repositoryRoot = resolve(import.meta.dir, "../../../..");
+
+function renderSnapshot(): BoardRenderSnapshot {
+	const note = readFileSync(
+		join(repositoryRoot, "docs/design/server-rendering-boundary-fixtures/board.excalidraw.md"),
+		"utf8",
+	);
+	const scene: unknown = JSON.parse(extractSceneJsonFromObsidianMd(note));
+	const snapshot = projectBoardRenderSnapshot(scene);
+	if (!snapshot) throw new Error("Render fixture does not project to a renderer snapshot.");
+	return snapshot;
+}
+
+async function waitFor(predicate: () => boolean, what: string): Promise<void> {
+	const deadline = Date.now() + 1_000;
+	while (!predicate()) {
+		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${what}.`);
+		await Bun.sleep(10);
+	}
+}
+
+async function loopbackPortIsFree(port: number): Promise<boolean> {
+	let server: ReturnType<typeof Bun.serve> | null = null;
+	try {
+		server = Bun.serve({ hostname: "127.0.0.1", port, fetch: () => new Response("probe") });
+		return true;
+	} catch {
+		return false;
+	} finally {
+		if (server) await server.stop(true);
+	}
+}
+
+const mermaidJob = {
+	kind: "mermaid" as const,
+	source: "graph TD; A --> B;",
+	config: DEFAULT_MERMAID_CONFIG,
+};
 
 describe("board renderer owner", () => {
 	test(
-		"shutdown rejects active and queued work and proves complete owned-resource cleanup",
+		"retries partial fixture acquisition and proves typed failure, cancellation, and cleanup",
 		async () => {
-			const owner = createBoardRenderingOwner();
+			let fixtureStarts = 0;
+			let failedFixturePort = 0;
+			let injectCleanupFailure = true;
+			let block = false;
+			let releaseBlock!: () => void;
+			const blocked = new Promise<void>((resolveBlock) => {
+				releaseBlock = resolveBlock;
+			});
+			const chromiumStarts: number[] = [];
+			const roots: string[] = [];
+			const owner = createBoardRenderingOwner({
+				testHooks: {
+					afterListen(fixture) {
+						fixtureStarts += 1;
+						if (fixtureStarts === 1) {
+							failedFixturePort = fixture.port;
+							throw new Error("injected fixture listen failure");
+						}
+					},
+					onChromiumStart: (pid) => chromiumStarts.push(pid),
+					onTempRoot: (root) => roots.push(root),
+					adjustSessionCleanup(cleanup) {
+						if (!injectCleanupFailure) return cleanup;
+						injectCleanupFailure = false;
+						return {
+							...cleanup,
+							clean: false,
+							errors: [...cleanup.errors, "injected cleanup audit failure"],
+						};
+					},
+					beforeRun: () => (block ? blocked : undefined),
+				},
+			});
 			owner.start();
-			await owner.execute({
-				kind: "mermaid",
-				source: "graph TD; A --> B;",
-				config: DEFAULT_MERMAID_CONFIG,
-			});
-			const identity = owner.status();
-			if (!identity.chromiumPid || !identity.profile || !identity.controlPort)
-				throw new Error("The renderer did not expose its owned resource identity.");
-			process.kill(-identity.chromiumPid, "SIGTERM");
-			await expect(
-				owner.execute({
-					kind: "mermaid",
-					source: "graph TD; A --> B;",
-					config: DEFAULT_MERMAID_CONFIG,
-				}),
-			).rejects.toThrow("Board renderer");
-			expect(existsSync(identity.profile)).toBeFalse();
-			await owner.execute({
-				kind: "mermaid",
-				source: "graph TD; A --> B;",
-				config: DEFAULT_MERMAID_CONFIG,
-			});
-			const replacement = owner.status();
-			expect(replacement.chromiumPid).not.toBe(identity.chromiumPid);
-			expect(replacement.profile).not.toBe(identity.profile);
 
-			const active = owner.execute({
-				kind: "mermaid",
-				source: "graph TD; A --> B; B --> C; C --> D; D --> E;",
-				config: DEFAULT_MERMAID_CONFIG,
-			});
-			await Promise.resolve();
-			expect(owner.status().active).toBeTrue();
-			const queued = owner.execute({
-				kind: "mermaid",
-				source: "graph TD; Q --> R;",
-				config: DEFAULT_MERMAID_CONFIG,
-			});
-			const settlement = Promise.allSettled([active, queued]);
+			await expect(owner.execute(mermaidJob)).rejects.toBeInstanceOf(BoardRendererError);
+			expect(fixtureStarts).toBe(1);
+			expect(await loopbackPortIsFree(failedFixturePort)).toBeTrue();
+			expect(chromiumStarts).toHaveLength(0);
+
+			await owner.execute(mermaidJob);
+			const first = owner.status();
+			if (!first.chromiumPid || !first.tempRoot || !first.profile || !first.controlPort)
+				throw new Error("The renderer did not expose its owned resource identity.");
+			expect(first.profile.startsWith(`${first.tempRoot}/`)).toBeTrue();
+			const failed = await owner
+				.execute({
+					kind: "render",
+					snapshot: renderSnapshot(),
+					outputs: [
+						{
+							id: "complete-first",
+							kind: "full",
+							format: "svg",
+							background: true,
+							padding: 16,
+							scale: 1,
+						},
+						{
+							id: "fail-second",
+							kind: "focus",
+							format: "png",
+							background: true,
+							frame: { x: 0, y: 0, width: 1, height: 1 },
+							width: 0,
+							height: 0,
+							scale: 1,
+						},
+					],
+				})
+				.catch((error: unknown) => error);
+			expect(failed).toBeInstanceOf(BoardRendererError);
+			expect(failed).toHaveProperty("code", "BOARD_RENDERER_FAILED");
+			expect(failed).toHaveProperty(
+				"message",
+				expect.stringContaining("injected cleanup audit failure"),
+			);
+			expect(existsSync(first.tempRoot)).toBeFalse();
+
+			await owner.execute(mermaidJob);
+			const replacement = owner.status();
+			if (!replacement.chromiumPid || !replacement.tempRoot)
+				throw new Error("The replacement renderer did not expose its owned identity.");
+			expect(replacement.chromiumPid).not.toBe(first.chromiumPid);
+			expect(replacement.tempRoot).not.toBe(first.tempRoot);
+
+			block = true;
+			const activeController = new AbortController();
+			const active = owner.execute(mermaidJob, activeController.signal);
+			await waitFor(() => owner.status().active, "active renderer work");
+			const queuedController = new AbortController();
+			const queued = owner.execute(mermaidJob, queuedController.signal);
+			expect(owner.status().queued).toBe(1);
+			queuedController.abort(new Error("cancel queued conversion"));
+			await expect(queued).rejects.toThrow("cancel queued conversion");
+			expect(owner.status().queued).toBe(0);
+			activeController.abort(new Error("cancel active conversion"));
+			await expect(active).rejects.toThrow("cancel active conversion");
+			releaseBlock();
+			block = false;
+			expect(owner.status().chromiumPid).toBe(replacement.chromiumPid);
+
 			const cleanup = await owner.stop();
-			const settled = await settlement;
-			expect(settled.every(({ status }) => status === "rejected")).toBeTrue();
+			expect(fixtureStarts).toBe(2);
+			expect(chromiumStarts).toHaveLength(2);
+			expect(owner.status().chromiumStarts).toBe(2);
+			expect(roots).toHaveLength(2);
 			expect(cleanup).toEqual({
 				clean: true,
 				pids: expect.any(Array),
@@ -62,14 +176,49 @@ describe("board renderer owner", () => {
 				stdoutSettled: true,
 				stderrSettled: true,
 				profileRemoved: true,
+				tempRootRemoved: true,
 				portReleased: true,
 				fixtureClosed: true,
 				errors: [],
 			});
-			expect(existsSync(identity.profile)).toBeFalse();
+			for (const root of roots) expect(existsSync(root)).toBeFalse();
 			expect(owner.lastCleanup()).toEqual(cleanup);
 			expect(await owner.stop()).toEqual(cleanup);
 		},
-		TEST_BOARD_RENDERING_CASE_TIMEOUT_MS,
+		TEST_BOARD_RENDERER_OWNER_TIMEOUT_MS,
+	);
+
+	test(
+		"startup diagnostics include bounded process output and remove the exact temp root",
+		async () => {
+			const directory = mkdtempSync(join(tmpdir(), "archboard-renderer-startup-failure-"));
+			try {
+				const executable = join(directory, "failing-chromium");
+				writeFileSync(
+					executable,
+					"#!/bin/sh\nprintf 'renderer-startup-tail\\n' >&2\nsleep 0.2\nexit 23\n",
+				);
+				chmodSync(executable, 0o700);
+				let root = "";
+				const owner = createBoardRenderingOwner({
+					chromiumPath: executable,
+					startupTimeoutMs: 1_000,
+					cleanupTimeoutMs: 1_000,
+					testHooks: { onTempRoot: (value) => (root = value) },
+				});
+				owner.start();
+				const failed = await owner.execute(mermaidJob).catch((error: unknown) => error);
+				expect(failed).toBeInstanceOf(BoardRendererError);
+				expect(failed).toHaveProperty("message", expect.stringContaining("renderer-startup-tail"));
+				expect(root).not.toBe("");
+				expect(existsSync(root)).toBeFalse();
+				const cleanup = await owner.stop();
+				expect(cleanup.tempRootRemoved).toBeTrue();
+				expect(cleanup.fixtureClosed).toBeTrue();
+			} finally {
+				rmSync(directory, { recursive: true, force: true });
+			}
+		},
+		TEST_BOARD_RENDERER_STARTUP_FAILURE_TIMEOUT_MS,
 	);
 });

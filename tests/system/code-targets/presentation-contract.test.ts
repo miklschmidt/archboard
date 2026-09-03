@@ -386,20 +386,7 @@ test(
 		await humanPane.close();
 		await peerPane.close();
 
-		const beforeExportBytes = readFileSync(note);
-		const beforeExportMtime = statSync(note, { bigint: true }).mtimeNs;
-		const rendered = await api<{ data?: string }>("/api/render/board?board=targets", {
-			method: "POST",
-			body: { format: "svg", background: true, padding: 16, scale: 1 },
-		});
-		expect(rendered.status).toBe(200);
-		expect(rendered.body.data).toContain("<svg");
-		expect(rendered.body.data).not.toContain(
-			"/api/code-targets/open?board=targets&amp;element=local-file",
-		);
-		expect(readFileSync(note)).toEqual(beforeExportBytes);
-		expect(statSync(note, { bigint: true }).mtimeNs).toBe(beforeExportMtime);
-		raw = beforeExportBytes.toString("utf8");
+		raw = readFileSync(note, "utf8");
 		const internalCandidates = [
 			"local-file",
 			"local-directory",

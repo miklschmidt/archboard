@@ -78,6 +78,7 @@ import {
 } from "./board-version.js";
 import { validateRenderGeometry } from "./geometry.js";
 import { derivedId, isBlockId } from "../../shared/ids/ids.js";
+import type { BoardRenderSnapshot } from "../../shared/board-rendering/index.js";
 import { isObsidianExcalidrawMd, renameElementId } from "./obsidian-md.js";
 import { stripBindingPresentationLinks } from "./presentation.js";
 import { buildScene } from "./scene-document.js";
@@ -563,19 +564,17 @@ export interface BoardInspectionSnapshot {
 	board: string;
 	elements: readonly unknown[];
 	fingerprint: string;
-	renderScene: {
-		elements: readonly ServerElement[];
-		files: Readonly<Record<string, ExcalidrawFile>>;
-		appState: { readonly viewBackgroundColor: string };
-	} | null;
+	renderScene: BoardRenderSnapshot | null;
 }
 
-function strictRenderScene(scene: unknown): BoardInspectionSnapshot["renderScene"] {
-	const sceneRecord =
-		!Array.isArray(scene) && scene && typeof scene === "object"
-			? (scene as Record<string, unknown>)
-			: null;
-	const elements = Array.isArray(scene) ? scene : sceneRecord?.elements;
+/** Validate and project one persisted scene for the browser renderer. */
+export function projectBoardRenderSnapshot(scene: unknown): BoardInspectionSnapshot["renderScene"] {
+	const sceneRecord = !Array.isArray(scene) && scene && typeof scene === "object" ? scene : null;
+	const elements = Array.isArray(scene)
+		? scene
+		: sceneRecord
+			? Reflect.get(sceneRecord, "elements")
+			: undefined;
 	if (!Array.isArray(elements)) return null;
 	const ids = new Set<string>();
 	const projected: ServerElement[] = [];
@@ -594,33 +593,35 @@ function strictRenderScene(scene: unknown): BoardInspectionSnapshot["renderScene
 	} catch {
 		return null;
 	}
-	const rawFiles = sceneRecord?.files ?? {};
+	const rawFiles = sceneRecord ? (Reflect.get(sceneRecord, "files") ?? {}) : {};
 	if (!rawFiles || typeof rawFiles !== "object" || Array.isArray(rawFiles)) return null;
 	const files: Record<string, ExcalidrawFile> = {};
 	for (const [id, raw] of Object.entries(rawFiles)) {
 		if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-		const file = raw as Record<string, unknown>;
+		const fileId = Reflect.get(raw, "id");
+		const dataURL = Reflect.get(raw, "dataURL");
+		const mimeType = Reflect.get(raw, "mimeType");
+		const created = Reflect.get(raw, "created");
 		if (
-			file.id !== id ||
-			typeof file.dataURL !== "string" ||
-			typeof file.mimeType !== "string" ||
-			typeof file.created !== "number" ||
-			!Number.isFinite(file.created)
+			fileId !== id ||
+			typeof dataURL !== "string" ||
+			typeof mimeType !== "string" ||
+			typeof created !== "number" ||
+			!Number.isFinite(created)
 		)
 			return null;
-		files[id] = raw as unknown as ExcalidrawFile;
+		files[id] = { id, dataURL, mimeType, created };
 	}
-	const rawAppState = sceneRecord?.appState;
-	const appState =
+	const rawAppState = sceneRecord ? Reflect.get(sceneRecord, "appState") : undefined;
+	const background =
 		rawAppState && typeof rawAppState === "object" && !Array.isArray(rawAppState)
-			? (rawAppState as Record<string, unknown>)
-			: {};
+			? Reflect.get(rawAppState, "viewBackgroundColor")
+			: undefined;
 	return {
 		elements: projected,
 		files,
 		appState: {
-			viewBackgroundColor:
-				typeof appState.viewBackgroundColor === "string" ? appState.viewBackgroundColor : "#ffffff",
+			viewBackgroundColor: typeof background === "string" ? background : "#ffffff",
 		},
 	};
 }
@@ -658,7 +659,7 @@ export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapsho
 	const file = note.file;
 	const scene = parseLoadedScene(note);
 	if (Array.isArray(scene)) {
-		const renderScene = strictRenderScene(scene);
+		const renderScene = projectBoardRenderSnapshot(scene);
 		return {
 			board: resolvedKey,
 			elements: scene,
@@ -666,17 +667,14 @@ export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapsho
 			renderScene,
 		};
 	}
-	if (
-		!scene ||
-		typeof scene !== "object" ||
-		!Array.isArray((scene as Record<string, unknown>).elements)
-	) {
+	const elements = scene && typeof scene === "object" ? Reflect.get(scene, "elements") : undefined;
+	if (!Array.isArray(elements)) {
 		throw new Error(`${file} has no elements array in its Drawing payload.`);
 	}
-	const renderScene = strictRenderScene(scene);
+	const renderScene = projectBoardRenderSnapshot(scene);
 	return {
 		board: resolvedKey,
-		elements: (scene as { elements: unknown[] }).elements,
+		elements,
 		fingerprint: renderSnapshotFingerprint(note.hash, scene),
 		renderScene,
 	};
@@ -738,7 +736,7 @@ export function renderContent(
 			Array.from(content.elements.values(), (element) => packElementTracking(element)),
 			{ boardKey: boardKey(identity) },
 		),
-		files as unknown as Record<string, unknown>,
+		files,
 		{ keepServerFields: true },
 	);
 	// expandElements normalizes a missing link to null, so apply the same

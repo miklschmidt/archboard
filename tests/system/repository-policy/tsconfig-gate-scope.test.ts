@@ -22,7 +22,12 @@ test("keeps product sources in both TypeScript gates because tsc passes when exc
 		},
 		{
 			path: "tsconfig.frontend.json",
-			include: ["frontend/main.tsx", "src/ui/**/*.ts", "src/ui/**/*.tsx"],
+			include: [
+				"frontend/main.tsx",
+				"src/server/board-rendering/lib/browser.ts",
+				"src/ui/**/*.ts",
+				"src/ui/**/*.tsx",
+			],
 		},
 	] as const;
 

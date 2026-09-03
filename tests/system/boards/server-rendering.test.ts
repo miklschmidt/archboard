@@ -2,29 +2,37 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { inflateSync } from "node:zlib";
 
 import { readPngDimensions } from "../../../src/cli/finding-rendering/index.ts";
 import { findingRasterDimensions } from "../../../src/shared/finding-raster/index.ts";
 import { isBlockId } from "../../../src/shared/ids/ids.ts";
-import { TEST_BOARD_RENDERING_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import {
+	LOCK_LEASE_MS,
+	TEST_SERVER_RENDERING_CASE_TIMEOUT_MS,
+	TEST_SERVER_RENDERING_LEASE_CASE_TIMEOUT_MS,
+} from "../../../src/shared/timing/timing.ts";
 import { findingElements, findingFile } from "../browser/fixtures/fixed-point-scene.ts";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { processExists, startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
+import { pngRgbCounts } from "./support/png-colors.ts";
 
 interface RendererStatus {
 	started: boolean;
 	accepting: boolean;
 	active: boolean;
 	queued: number;
+	chromiumStarts: number;
 	chromiumPid: number | null;
+	tempRoot: string | null;
 	profile: string | null;
 	controlPort: number | null;
+	fixturePort: number | null;
 }
 
 interface HealthBody {
 	websocket_clients: number;
 	renderer: RendererStatus;
+	application: { activeMutations: Array<{ name: string; kind: string }> };
 }
 
 interface RenderBody {
@@ -86,71 +94,41 @@ function render(board: string, body: Record<string, unknown>) {
 	});
 }
 
-function paeth(left: number, above: number, upperLeft: number): number {
-	const estimate = left + above - upperLeft;
-	const leftDistance = Math.abs(estimate - left);
-	const aboveDistance = Math.abs(estimate - above);
-	const cornerDistance = Math.abs(estimate - upperLeft);
-	return leftDistance <= aboveDistance && leftDistance <= cornerDistance
-		? left
-		: aboveDistance <= cornerDistance
-			? above
-			: upperLeft;
+async function expectLoopbackPortReleased(port: number): Promise<void> {
+	let probe: ReturnType<typeof Bun.serve> | null = null;
+	try {
+		probe = Bun.serve({
+			hostname: "127.0.0.1",
+			port,
+			fetch: () => new Response("released"),
+		});
+		expect(probe.port).toBe(port);
+	} finally {
+		if (probe) await probe.stop(true);
+	}
 }
 
-function pngRgbCounts(bytes: Uint8Array): Map<string, number> {
-	const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-	const width = view.getUint32(16);
-	const height = view.getUint32(20);
-	const colorType = bytes[25];
-	const channels = colorType === 6 ? 4 : colorType === 2 ? 3 : 0;
-	if (bytes[24] !== 8 || channels === 0)
-		throw new Error(`Expected an 8-bit RGB/RGBA PNG, received colour type ${String(colorType)}.`);
-	const chunks: Uint8Array[] = [];
-	for (let offset = 8; offset < bytes.length;) {
-		const length = view.getUint32(offset);
-		const type = String.fromCharCode(...bytes.slice(offset + 4, offset + 8));
-		if (type === "IDAT") chunks.push(bytes.slice(offset + 8, offset + 8 + length));
-		offset += length + 12;
+async function waitForHealth(
+	predicate: (health: HealthBody) => boolean,
+	what: string,
+): Promise<HealthBody> {
+	const deadline = Date.now() + 1_500;
+	for (;;) {
+		const health = (await request<HealthBody>("/health")).body;
+		if (predicate(health)) return health;
+		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${what}.`);
+		await Bun.sleep(20);
 	}
-	const compressed = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
-	const filtered = inflateSync(compressed);
-	const stride = width * channels;
-	const pixels = new Uint8Array(stride * height);
-	for (let y = 0; y < height; y += 1) {
-		const filter = filtered[y * (stride + 1)]!;
-		for (let x = 0; x < stride; x += 1) {
-			const raw = filtered[y * (stride + 1) + x + 1]!;
-			const index = y * stride + x;
-			const left = x >= channels ? pixels[index - channels]! : 0;
-			const above = y > 0 ? pixels[index - stride]! : 0;
-			const upperLeft = y > 0 && x >= channels ? pixels[index - stride - channels]! : 0;
-			pixels[index] =
-				filter === 0
-					? raw
-					: filter === 1
-						? raw + left
-						: filter === 2
-							? raw + above
-							: filter === 3
-								? raw + Math.floor((left + above) / 2)
-								: filter === 4
-									? raw + paeth(left, above, upperLeft)
-									: (() => {
-											throw new Error(`Unsupported PNG row filter ${filter}.`);
-										})();
-		}
-	}
-	const counts = new Map<string, number>();
-	for (let offset = 0; offset < pixels.length; offset += channels) {
-		const color = `${pixels[offset]},${pixels[offset + 1]},${pixels[offset + 2]}`;
-		counts.set(color, (counts.get(color) ?? 0) + 1);
-	}
-	return counts;
 }
 
 beforeAll(async () => {
-	note("render-proof", fixture);
+	note(
+		"render-proof",
+		fixture.replace(
+			'"customData": { "archboard": { "kind": "service" } }',
+			'"customData": { "archboard": { "kind": "service", "binding": { "repo": "github.com/acme/render", "path": "src/service.ts" } } }',
+		),
+	);
 	note("missing-file", fixture.replace('"fileId": "pixel"', '"fileId": "absent"'));
 	note("missing-font", fixture.replaceAll('"fontFamily": 5', '"fontFamily": 99'));
 	canvas = await startOwnedCanvas({ serverPath: join(root, "src/server.ts"), vault });
@@ -170,7 +148,9 @@ describe.serial("server-owned board rendering", () => {
 			expect(before.body.renderer).toMatchObject({
 				started: true,
 				accepting: true,
+				chromiumStarts: 0,
 				chromiumPid: null,
+				tempRoot: null,
 			});
 
 			const [png, svg] = await Promise.all([
@@ -215,7 +195,16 @@ describe.serial("server-owned board rendering", () => {
 			expect(svg.body.data).toContain("Service API");
 			expect(svg.body.data).toContain("data:image/png;base64");
 			expect(svg.body.data).toContain("#dbeafe");
+			expect(svg.body.data).not.toContain("/api/code-targets/open");
 			expect(svg.body.data.match(/stroke="#334155"/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
+			const alternate = await render("render-proof", {
+				format: "png",
+				background: false,
+				padding: 4,
+				scale: 0.5,
+			});
+			expect(alternate.status).toBe(200);
+			expect(alternate.body.data).not.toBe(png.body.data);
 			const repeated = await render("render-proof", {
 				format: "png",
 				background: true,
@@ -240,9 +229,14 @@ describe.serial("server-owned board rendering", () => {
 			expect(after.body.renderer).toMatchObject({ active: false, queued: 0 });
 			expect(after.body.renderer.chromiumPid).toBeNumber();
 			ownedRenderer = after.body.renderer;
+			expect(after.body.renderer.chromiumStarts).toBe(1);
+			expect(after.body.renderer.tempRoot).toContain("/archboard-board-renderer-");
 			expect(after.body.renderer.profile).toContain("/archboard-board-renderer-");
+			expect(
+				after.body.renderer.profile?.startsWith(`${after.body.renderer.tempRoot}/`),
+			).toBeTrue();
 		},
-		TEST_BOARD_RENDERING_CASE_TIMEOUT_MS,
+		TEST_SERVER_RENDERING_CASE_TIMEOUT_MS,
 	);
 
 	test(
@@ -301,31 +295,88 @@ describe.serial("server-owned board rendering", () => {
 			expect(readFileSync(boardNote)).toEqual(before);
 			expect(statSync(boardNote, { bigint: true }).mtimeNs).toBe(beforeMtime);
 		},
-		TEST_BOARD_RENDERING_CASE_TIMEOUT_MS,
+		TEST_SERVER_RENDERING_CASE_TIMEOUT_MS,
 	);
 
 	test(
-		"converts valid Mermaid through one write and rejects malformed input without a write",
+		"renders before the lease, maps against the locked board, and discards canceled writes",
 		async () => {
-			await request("/api/boards/new", { method: "POST", body: { board: "mermaid" } });
-			const before = await request<{ version: number }>("/api/boards/info?board=mermaid");
-			const converted = await request<{ board: string; count: number; ids: string[] }>(
-				"/api/elements/from-mermaid?board=mermaid",
+			const source = "graph TD; A[Client] --> B[API]; B --> C[Store];";
+			await request("/api/boards/new", { method: "POST", body: { board: "mermaid-seed" } });
+			const seed = await request<{ board: string; count: number; ids: string[] }>(
+				"/api/elements/from-mermaid?board=mermaid-seed",
 				{
 					method: "POST",
-					body: { mermaidDiagram: "graph TD; A[Client] --> B[API]; B --> C[Store];" },
+					body: { mermaidDiagram: source },
 				},
 			);
-			expect(converted.status).toBe(200);
-			expect(converted.body.board).toBe("mermaid");
-			expect(converted.body.count).toBe(8);
-			expect(converted.body.ids).toHaveLength(8);
-			expect(converted.body.ids.every(isBlockId)).toBeTrue();
+			expect(seed.status).toBe(200);
+			const collision = seed.body.ids[0];
+			if (!collision) throw new Error("The seed conversion returned no stable id.");
+
+			await request("/api/boards/new", { method: "POST", body: { board: "mermaid" } });
+			const before = await request<{ version: number }>("/api/boards/info?board=mermaid");
+			const renderer = (await request<HealthBody>("/health")).body.renderer;
+			if (!renderer.chromiumPid) throw new Error("The retained renderer has no process id.");
+			process.kill(-renderer.chromiumPid, "SIGSTOP");
+			const converted = request<{ board: string; count: number; ids: string[] }>(
+				"/api/elements/from-mermaid?board=mermaid",
+				{ method: "POST", body: { mermaidDiagram: source } },
+			);
+			await waitForHealth(
+				(health) => health.renderer.active,
+				"the stopped renderer to own the Mermaid job",
+			);
+			await Bun.sleep(LOCK_LEASE_MS + 100);
+			const holder = "mermaid-concurrent-writer";
+			expect(
+				(
+					await request("/api/boards/hold?board=mermaid", {
+						method: "POST",
+						body: { board: "mermaid", clientId: holder },
+					})
+				).status,
+			).toBe(200);
+			const concurrent = await request("/api/elements/changes?board=mermaid", {
+				method: "POST",
+				body: {
+					origin: "human",
+					clientId: holder,
+					upserts: [{ id: collision, type: "rectangle", x: 10, y: 10, width: 80, height: 40 }],
+					deletes: [],
+				},
+			});
+			expect(concurrent.status).toBe(200);
+			const afterConcurrent = await request<{ version: number }>("/api/boards/info?board=mermaid");
+			expect(afterConcurrent.body.version).toBe(before.body.version + 1);
+			process.kill(-renderer.chromiumPid, "SIGCONT");
+			let conversionSettled = false;
+			void converted.finally(() => {
+				conversionSettled = true;
+			});
+			await Bun.sleep(200);
+			expect(conversionSettled).toBeFalse();
+			expect(
+				(
+					await request("/api/boards/hold/release?board=mermaid", {
+						method: "POST",
+						body: { board: "mermaid", clientId: holder },
+					})
+				).status,
+			).toBe(200);
+			const conversion = await converted;
+			expect(conversion.status).toBe(200);
+			expect(conversion.body.board).toBe("mermaid");
+			expect(conversion.body.count).toBe(8);
+			expect(conversion.body.ids).toHaveLength(8);
+			expect(conversion.body.ids.every(isBlockId)).toBeTrue();
+			expect(conversion.body.ids).not.toContain(collision);
 			const after = await request<{ version: number }>("/api/boards/info?board=mermaid");
-			expect(after.body.version).toBe(before.body.version + 1);
+			expect(after.body.version).toBe(afterConcurrent.body.version + 1);
 
 			const scene = await request<{ elements: MermaidElement[] }>("/api/elements?board=mermaid");
-			expect(scene.body.elements.filter(({ type }) => type === "rectangle")).toHaveLength(3);
+			expect(scene.body.elements).toHaveLength(9);
+			expect(scene.body.elements.filter(({ type }) => type === "rectangle")).toHaveLength(4);
 			expect(scene.body.elements.filter(({ type }) => type === "arrow")).toHaveLength(2);
 			expect(
 				scene.body.elements
@@ -349,19 +400,79 @@ describe.serial("server-owned board rendering", () => {
 			expect(
 				(await request<{ version: number }>("/api/boards/info?board=mermaid")).body.version,
 			).toBe(invalidBefore);
+
+			await request("/api/boards/new", { method: "POST", body: { board: "mermaid-cancel" } });
+			const cancelBefore = await request<{ version: number }>(
+				"/api/boards/info?board=mermaid-cancel",
+			);
+			const cancelHolder = "mermaid-cancel-holder";
+			await request("/api/boards/hold?board=mermaid-cancel", {
+				method: "POST",
+				body: { board: "mermaid-cancel", clientId: cancelHolder },
+			});
+			const controller = new AbortController();
+			const canceled = fetch(
+				new URL(
+					`/api/elements/from-mermaid?board=mermaid-cancel&doing=${encodeURIComponent("checking canceled Mermaid conversion")}`,
+					canvas.base,
+				),
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ mermaidDiagram: source }),
+					signal: controller.signal,
+				},
+			);
+			await waitForHealth(
+				(health) =>
+					!health.renderer.active &&
+					health.application.activeMutations.some(({ name }) =>
+						name.includes("POST /api/elements/from-mermaid board-lock wait"),
+					),
+				"the prepared Mermaid request to wait for the board lock",
+			);
+			controller.abort(new Error("cancel after Mermaid render"));
+			await expect(canceled).rejects.toThrow();
+			await waitForHealth(
+				(health) =>
+					!health.application.activeMutations.some(({ name }) =>
+						name.includes("POST /api/elements/from-mermaid board-lock wait"),
+					),
+				"the canceled Mermaid request to leave the board-lock queue",
+			);
+			await request("/api/boards/hold/release?board=mermaid-cancel", {
+				method: "POST",
+				body: { board: "mermaid-cancel", clientId: cancelHolder },
+			});
+			expect(
+				(await request<{ version: number }>("/api/boards/info?board=mermaid-cancel")).body.version,
+			).toBe(cancelBefore.body.version);
 		},
-		TEST_BOARD_RENDERING_CASE_TIMEOUT_MS,
+		TEST_SERVER_RENDERING_LEASE_CASE_TIMEOUT_MS,
 	);
 
 	test(
 		"canvas shutdown removes the renderer profile before the server exits",
 		async () => {
-			if (!ownedRenderer?.chromiumPid || !ownedRenderer.profile || !ownedRenderer.controlPort)
+			if (
+				!ownedRenderer?.chromiumPid ||
+				!ownedRenderer.tempRoot ||
+				!ownedRenderer.profile ||
+				!ownedRenderer.controlPort ||
+				!ownedRenderer.fixturePort
+			)
 				throw new Error("The retained renderer did not expose its owned resource identity.");
-			const { profile } = ownedRenderer;
+			const { chromiumPid, controlPort, fixturePort, profile, tempRoot } = ownedRenderer;
+			const beforeShutdown = (await request<HealthBody>("/health")).body.renderer;
+			expect(beforeShutdown.chromiumStarts).toBe(1);
+			expect(beforeShutdown.chromiumPid).toBe(chromiumPid);
 			await canvas.dispose();
+			expect(processExists(chromiumPid)).toBeFalse();
 			expect(existsSync(profile)).toBeFalse();
+			expect(existsSync(tempRoot)).toBeFalse();
+			await expectLoopbackPortReleased(controlPort);
+			await expectLoopbackPortReleased(fixturePort);
 		},
-		TEST_BOARD_RENDERING_CASE_TIMEOUT_MS,
+		TEST_SERVER_RENDERING_CASE_TIMEOUT_MS,
 	);
 });

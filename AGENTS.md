@@ -89,8 +89,9 @@ owner and all 18 browser owners; repository policy pins both exceptions.
 duplicate, or unreachable tests. Changing tests or CI, or a browser owner
 failing → `docs/agents/test-suite.md`.
 
-Open <http://127.0.0.1:3000>. A browser tab is required for `screenshot`,
-`mermaid`, image export, and viewport control; pure JSON ops work headless.
+Open <http://127.0.0.1:3000>. Live pane capture and viewport control require a
+browser tab. Persisted Board PNG/SVG rendering, finding close-ups, Mermaid
+conversion, and pure JSON operations work headless through the server.
 
 ## Skills (after a fresh clone)
 

@@ -2,8 +2,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
 const sourceRoot = fileURLToPath(new URL("./src", import.meta.url));
+const frontendRoot = fileURLToPath(new URL("./frontend", import.meta.url));
 
 export default defineConfig({
 	root: "frontend",
@@ -17,6 +19,10 @@ export default defineConfig({
 		outDir: "../dist/frontend",
 		emptyOutDir: true,
 		rollupOptions: {
+			input: {
+				main: resolve(frontendRoot, "index.html"),
+				renderer: resolve(frontendRoot, "renderer.html"),
+			},
 			output: {
 				// Excalidraw's font subsetting worker looks for these files by their
 				// original (unhashed) names. Preserve them so the 404 doesn't break export.

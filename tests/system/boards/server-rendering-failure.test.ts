@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
-import { TEST_BOARD_RENDERING_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 
 const root = resolve(import.meta.dir, "../../..");
 const vault = mkdtempSync(join(tmpdir(), "archboard-server-rendering-failure-"));
@@ -31,7 +31,7 @@ afterAll(async () => {
 
 describe("server renderer failure", () => {
 	test(
-		"returns an actionable public failure and keeps no renderer resources",
+		"returns an actionable public failure and keeps no Chromium resources",
 		async () => {
 			const failed = await request<{ code?: string; error?: string }>(
 				"/api/render/board?board=render-proof",
@@ -44,17 +44,37 @@ describe("server renderer failure", () => {
 				renderer: {
 					active: boolean;
 					queued: number;
+					chromiumStarts: number;
 					chromiumPid: number | null;
+					tempRoot: string | null;
 					profile: string | null;
+					fixturePort: number | null;
 				};
 			}>("/health");
 			expect(health.body.renderer).toMatchObject({
 				active: false,
 				queued: 0,
+				chromiumStarts: 0,
 				chromiumPid: null,
+				tempRoot: null,
 				profile: null,
 			});
+			const fixturePort = health.body.renderer.fixturePort;
+			if (fixturePort === null)
+				throw new Error("The failed renderer did not expose its fixture port.");
+			await canvas.dispose();
+			let probe: ReturnType<typeof Bun.serve> | null = null;
+			try {
+				probe = Bun.serve({
+					hostname: "127.0.0.1",
+					port: fixturePort,
+					fetch: () => new Response("released"),
+				});
+				expect(probe.port).toBe(fixturePort);
+			} finally {
+				if (probe) await probe.stop(true);
+			}
 		},
-		TEST_BOARD_RENDERING_CASE_TIMEOUT_MS,
+		TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS,
 	);
 });
