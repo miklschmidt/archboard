@@ -1,7 +1,6 @@
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import type {
-	BrowserApproval,
 	BrowserDynamicApproval,
 	BrowserOwnerProjection,
 	BrowserReadiness,
@@ -27,6 +26,8 @@ import type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
 } from "../../../runtime/codex-thread-link/index.js";
+import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+import { commandApprovalOwnerFixture } from "./approval-owner-fixture.js";
 
 const CLOCK_START = 1_787_682_840_000;
 
@@ -52,7 +53,7 @@ export interface GatewayHarness {
 	readonly advance: (milliseconds: number) => void;
 	readonly setReadiness: (state: BrowserReadiness["state"]) => void;
 	readonly setLink: (link: ThreadLinkSnapshot) => void;
-	readonly setOrdinaryApproval: (approval: BrowserApproval | null) => void;
+	readonly setOrdinaryApproval: (approval: ApprovalOwnerView | null) => void;
 	readonly setDynamicApprovals: (approvals: readonly BrowserDynamicApproval[]) => void;
 	readonly emitProjectionChange: () => void;
 	readonly setActionError: (error: unknown) => void;
@@ -63,7 +64,7 @@ export interface GatewayHarness {
 	readonly setOrdinaryDisconnectError: (error: unknown) => void;
 	readonly setDynamicDisconnectError: (error: unknown) => void;
 	readonly binding: () => ThreadLinkBindingSnapshot;
-	readonly makeOrdinaryApproval: () => BrowserApproval;
+	readonly makeOrdinaryApproval: () => ApprovalOwnerView;
 	readonly makeDynamicApproval: (
 		commandId: BrowserCommandId,
 		targetThreadId?: ThreadId,
@@ -161,7 +162,7 @@ export function createGatewayHarness(
 	let account: BrowserOwnerProjection["account"] = readyAccount();
 	let link: ThreadLinkSnapshot = executableLink(childId, epoch, threadId);
 	let revision = 0;
-	let ordinaryApproval: BrowserApproval | null = null;
+	let ordinaryApproval: ApprovalOwnerView | null = null;
 	let dynamicApprovals: readonly BrowserDynamicApproval[] = [];
 	let actionError: unknown = null;
 	let actionResult: BrowserActionResult | undefined;
@@ -245,7 +246,7 @@ export function createGatewayHarness(
 		},
 		ordinaryApprovals: {
 			pending: (candidate) =>
-				candidate === requestId && ordinaryApproval?.lifecycle.state === "pending"
+				candidate === requestId && ordinaryApproval?.snapshot.state === "pending"
 					? ordinaryApproval
 					: null,
 			resolve: async () => {
@@ -253,7 +254,8 @@ export function createGatewayHarness(
 				if (ordinaryApproval !== null)
 					ordinaryApproval = {
 						...ordinaryApproval,
-						lifecycle: {
+						snapshot: {
+							...ordinaryApproval.snapshot,
 							state: "settled",
 							decision: "approved",
 							outcome: "delivered",
@@ -342,29 +344,18 @@ export function createGatewayHarness(
 		revision += 1;
 		emitProjectionChange();
 	};
-	const makeOrdinaryApproval = (): BrowserApproval => ({
-		kind: "approval",
-		approvalKind: "command_execution",
-		requestId,
-		threadId,
-		turnId,
-		itemId,
-		approvalId,
-		expiresAtMs: CLOCK_START + 90_000,
-		lifecycle: { state: "pending", decision: null, outcome: null, reason: null },
-		binding: {
-			child: childId,
+	const makeOrdinaryApproval = (): ApprovalOwnerView =>
+		commandApprovalOwnerFixture({
+			identity: authorities.identity,
+			childId,
 			epoch,
-			link: "gateway-link",
-			target: "gateway-thread",
-			effect: "run bun test",
-		},
-		spoken: { eligible: true, reason: "eligible" },
-		reason: null,
-		command: "bun test",
-		cwd: "/repo",
-		availableDecisions: ["accept", "decline"],
-	});
+			requestId,
+			threadId,
+			turnId,
+			itemId,
+			approvalId,
+			nowMs: CLOCK_START,
+		});
 	const makeDynamicApproval = (
 		commandId: BrowserCommandId,
 		targetThreadId = threadId,

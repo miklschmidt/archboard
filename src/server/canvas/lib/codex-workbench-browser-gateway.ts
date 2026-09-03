@@ -1,17 +1,15 @@
 import type {
 	BrowserActionContext,
 	BrowserActionResult,
+	BrowserAccountProjectionInput,
 	BrowserOwnerProjection,
 	BrowserOrdinaryApprovalActions,
 	BrowserWorkbenchActions,
 	BrowserLeaseLedger,
+	CodexQueueProjectionInput,
 	CodexWorkbenchGatewayOptions,
 } from "../../codex-workbench/index.js";
 import type { CodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
-import type {
-	BrowserAccountProjectionInput,
-	CodexQueueProjectionInput,
-} from "../../../shared/codex-browser-model/index.js";
 import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
 import type { OperationId } from "../../../shared/codex-workbench-identity/index.js";
 import type { ArchboardContext } from "../../../runtime/codex-instructions/index.js";
@@ -40,7 +38,7 @@ export function createCanvasOrdinaryApprovalActions(
 		pending: (requestId) => {
 			try {
 				if (approvals.get(requestId)?.state !== "pending") return null;
-				return approvals.toBrowserApproval(requestId);
+				return approvals.view(requestId);
 			} catch {
 				return null;
 			}
@@ -289,9 +287,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 								},
 							]),
 				],
-				approvals: components.approvals
-					.inspect()
-					.map((approval) => components.approvals.toBrowserApproval(approval.requestId)),
+				approvals: components.approvals.inspectViews(),
 				dynamicApprovals: dynamicApprovals.browser.pending(),
 				semantic: {
 					kind: "codex_semantic",

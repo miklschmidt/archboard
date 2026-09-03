@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 18:38'
+updated_date: '2026-09-03 18:56'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -54,6 +54,11 @@ Define only the browser-facing workbench state and user-intent model that has no
 8. Make the production gateway dispatch table the single exhaustive action authority with an explicit unsupported refusal and generated-derived owner request/result types where Codex methods apply.
 9. Retain terminal ordinary approvals until an existing authored acknowledgement boundary removes them. Replace shallow tests with focused projection, dispatch, and gateway lifecycle owners.
 10. Run only the affected browser-model, approval, gateway, scoped TypeScript, lint, format, contract, and diff checks. Commit remediation separately and callback the parent for rereview.
+
+11. Second remediation: expose generated-derived approval owner records from codex-approvals without BrowserApproval construction or browser-model dependencies.
+12. Project all seven approval families only inside projectCodexBrowserState, using one exhaustive generated file-access mapping and omitting cwd and every path-bearing/private field.
+13. Preserve terminal settlement acknowledgement and production dispatch behavior; replace approval projector tests with owner-record and public projection coverage plus a gateway leak proof.
+14. Run only affected focused tests, both TypeScript configs, scoped lint/format, boundary grep, and diff checks; commit separately and callback for rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -68,6 +73,12 @@ Focused red/green evidence: the affected gateway lane initially rejected its leg
 Review remediation replaces the raw permission profile with a generated-derived, path-free network/file-access summary; maps generated account types through an exhaustive record; and strips sandbox writable roots at the sole projectCodexBrowserState seam. Canvas now supplies normalized owner views, while the gateway owns one exhaustive dispatch table and explicit unsupported-command refusal. Terminal ordinary approvals survive in the command-result snapshot, then leave broker state through explicit acknowledgement; the next snapshot omits them. The redundant browser action-owner module and shallow mapping test were removed and replaced by projection, dispatch, and lifecycle checks.
 
 Remediation red/green: the focused lane first exposed two stale expectations (permission access and voice readiness), then passed 86/86 with 582 expectations in 1.12s. Root TypeScript passed in 1.78s; frontend TypeScript in 0.46s; scoped Oxlint in 0.18s; scoped Oxfmt in 0.08s; boundary grep and git diff checks passed. The system fixture was adapted only so root TypeScript covers the public port; no system, repository, browser, broad check, or full-suite lane was run. TASK-143.01.02 remains In Progress for independent rereview.
+
+Second review remediation removed the last ordinary-approval browser projector from codex-approvals. The broker now exposes ApprovalOwnerView: the generated-derived normalized request, owner settlement snapshot including decision, and spoken eligibility. BrowserProjectionPort carries those views unchanged. projectCodexBrowserState is now the only public owner-to-browser adapter; its private approval helper exhaustively maps all seven families. codex-approvals no longer imports codex-browser-model, and its response input is a generated CodexServerResponseByMethod-derived union.
+
+Permission presentation now omits cwd and selects only network plus file-access classes. One browser access record supplies the reviewed deny/read/write vocabulary, while a satisfies Record<CodexFileAccess, string> check keys it exhaustively from PermissionsApprovalRequest params; a generated access addition fails TypeScript. The production gateway test injects cwd, read, write, denied-entry, and unreviewed future private paths and proves none reach the snapshot. The former broker browser-projector tests and shared parallel projector were deleted; normalized owner-view tests and public seven-family projection tests replace them. Terminal result visibility and acknowledgement remain unchanged.
+
+Second-remediation red/green: the first focused run exposed three stale tests tied to the removed broker projector/schema boundary; after moving their observable owners, the final affected lane passed 92/92 with 1,060 expectations in 0.84s. Root TypeScript passed in 1.88s; frontend TypeScript in 0.46s; scoped Oxlint in 0.19s; scoped Oxfmt in 0.09s; boundary grep and git diff checks passed. No system, repository, browser, broad check, or full-suite lane was run. TASK-143.01.02 remains In Progress for independent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -88,5 +99,17 @@ author: @codex
 created: 2026-09-03 18:38
 ---
 Review remediation implemented and validated at the permitted focused boundaries. Preparing a separate commit and parent rereview callback; task remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 18:43
+---
+Second review remediation started at 07ad656d. Approval owner state will replace the remaining codex-approvals browser DTO projector; task remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 18:56
+---
+Second approval-authority remediation is green at the permitted focused boundaries. Preparing its separate commit and parent rereview callback; task remains In Progress.
 ---
 <!-- COMMENTS:END -->

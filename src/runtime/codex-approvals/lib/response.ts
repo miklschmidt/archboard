@@ -1,13 +1,8 @@
 import type {
-	BrowserApproval,
-	BrowserApprovalResponse,
-	CodexBrowserModel,
-} from "../../../shared/codex-browser-model/index.js";
-import { boundedWireText } from "../../../shared/codex-browser-model/index.js";
-import type {
 	ApprovalFamily,
 	CommandApprovalRequest,
 	ApprovalRequest,
+	ApprovalResponse,
 	ApprovalSettlement,
 	SpokenApprovalEffectPresentation,
 	SpokenEligibility,
@@ -27,7 +22,7 @@ function isRecord(value: unknown): value is RecordValue {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function responseFamilyMatches(family: ApprovalFamily, response: BrowserApprovalResponse): boolean {
+function responseFamilyMatches(family: ApprovalFamily, response: ApprovalResponse): boolean {
 	return (
 		(family === "command_execution" && response.approvalKind === "command_execution") ||
 		(family === "file_change" && response.approvalKind === "file_change") ||
@@ -54,7 +49,7 @@ function effectiveCommandDecisions(request: CommandApprovalRequest): readonly Co
 
 function decisionAllowed(
 	request: ApprovalRequest,
-	response: BrowserApprovalResponse,
+	response: ApprovalResponse,
 	respectAvailableDecisions: boolean,
 ): boolean {
 	if (
@@ -69,40 +64,31 @@ function decisionAllowed(
 	return true;
 }
 
-export function validateBrowserResponse(
-	model: CodexBrowserModel,
+export function validateApprovalResponse(
 	request: ApprovalRequest,
-	response: BrowserApprovalResponse,
+	response: ApprovalResponse,
 	options: { readonly respectAvailableDecisions?: boolean } = {},
-): BrowserApprovalResponse {
-	const parsed = model.BrowserApprovalResponseSchema.safeParse(response);
-	if (!parsed.success) {
-		throw new CodexApprovalError(
-			"invalid_response",
-			`The ${request.family} approval response does not match the browser contract.`,
-			request.requestId,
-		);
-	}
-	if (!responseFamilyMatches(request.family, parsed.data)) {
+): ApprovalResponse {
+	if (!responseFamilyMatches(request.family, response)) {
 		throw new CodexApprovalError(
 			"invalid_response",
 			`The approval response family does not match ${request.family}.`,
 			request.requestId,
 		);
 	}
-	if (!decisionAllowed(request, parsed.data, options.respectAvailableDecisions !== false)) {
+	if (!decisionAllowed(request, response, options.respectAvailableDecisions !== false)) {
 		throw new CodexApprovalError(
 			"invalid_response",
 			"The approval decision is not one of the decisions offered by Codex.",
 			request.requestId,
 		);
 	}
-	return parsed.data;
+	return response;
 }
 
 export function toServerResponse(
 	request: ApprovalRequest,
-	response: BrowserApprovalResponse,
+	response: ApprovalResponse,
 ): ReverseResponse {
 	switch (request.method) {
 		case "item/commandExecution/requestApproval":
@@ -154,7 +140,7 @@ function familyError(request: ApprovalRequest): CodexApprovalError {
 export function fallbackResponse(
 	request: ApprovalRequest,
 	state: TerminalApprovalState,
-): BrowserApprovalResponse {
+): ApprovalResponse {
 	switch (request.family) {
 		case "command_execution":
 			return { approvalKind: "command_execution", decision: "cancel" };
@@ -177,16 +163,6 @@ export function fallbackResponse(
 				decision: state === "expired" ? "timed_out" : "abort",
 			};
 	}
-}
-
-function safeUrl(value: string): string {
-	try {
-		const parsed = new URL(value);
-		if (parsed.protocol === "http:" || parsed.protocol === "https:") return value;
-	} catch {
-		// Fall through to the bounded, user-visible refusal.
-	}
-	throw new CodexApprovalError("unsafe_url", "Only http and https elicitation URLs are supported.");
 }
 
 function fieldType(value: unknown): "string" | "number" | "integer" | "boolean" | "enum" | null {
@@ -306,29 +282,11 @@ function formFields(schema: unknown): ProjectedElicitationField[] | null {
 	return fields;
 }
 
-function fileSystemAccesses(value: RecordValue | null): readonly ("read" | "write" | "deny")[] {
-	if (value === null) return [];
-	const requested = new Set<"read" | "write" | "deny">();
-	if (value.read !== null && value.read !== undefined) requested.add("read");
-	if (value.write !== null && value.write !== undefined) requested.add("write");
-	if (Array.isArray(value.entries))
-		for (const entry of value.entries) {
-			if (
-				isRecord(entry) &&
-				(entry.access === "read" || entry.access === "write" || entry.access === "deny")
-			)
-				requested.add(entry.access);
-		}
-	const order = ["deny", "read", "write"] as const;
-	return order.filter((access) => requested.has(access));
-}
-
 function spokenText(value: unknown): string | null {
 	if (typeof value !== "string") return null;
-	const parsed = boundedWireText(256).safeParse(value);
-	if (!parsed.success || parsed.data.length === 0) return null;
-	if (parsed.data.includes("\r") || parsed.data.includes("\n")) return null;
-	return parsed.data;
+	if (value.length === 0 || value.length > 256) return null;
+	if (value.includes("\r") || value.includes("\n")) return null;
+	return value;
 }
 
 function spokenCommandEffectSummary(request: CommandApprovalRequest): string {
@@ -393,106 +351,6 @@ export function toSpokenEffectPresentation(
 		binding: request.binding,
 		effectSummary: spokenCommandEffectSummary(request),
 	});
-}
-
-export function toBrowserApproval(
-	model: CodexBrowserModel,
-	request: ApprovalRequest,
-	projection: Pick<BrowserApproval, "lifecycle" | "spoken">,
-): BrowserApproval {
-	const envelope = {
-		kind: "approval" as const,
-		requestId: request.requestId,
-		threadId: request.threadId,
-		turnId: request.turnId,
-		itemId: request.itemId,
-		approvalId: request.approvalId,
-		expiresAtMs: request.expiresAtMs,
-		lifecycle: projection.lifecycle,
-		binding: request.binding,
-		spoken: projection.spoken,
-	};
-	let candidate: RecordValue;
-	switch (request.family) {
-		case "command_execution":
-			candidate = {
-				...envelope,
-				approvalKind: "command_execution",
-				reason: request.params.reason ?? null,
-				command: request.params.command ?? null,
-				cwd: request.params.cwd ?? null,
-				availableDecisions: effectiveCommandDecisions(request),
-			};
-			break;
-		case "file_change":
-			candidate = {
-				...envelope,
-				approvalKind: "file_change",
-				reason: request.params.reason ?? null,
-				grantRoot: request.params.grantRoot ?? null,
-				availableDecisions: ["accept", "acceptForSession", "decline", "cancel"],
-			};
-			break;
-		case "user_input":
-			candidate = {
-				...envelope,
-				approvalKind: "user_input",
-				questions: request.params.questions,
-			};
-			break;
-		case "elicitation": {
-			const url = request.params.mode === "url" ? safeUrl(request.params.url) : null;
-			candidate = {
-				...envelope,
-				approvalKind: "elicitation",
-				serverName: request.params.serverName,
-				mode: request.params.mode,
-				message: request.params.message,
-				url,
-				fields: request.params.mode === "url" ? null : formFields(request.params.requestedSchema),
-			};
-			break;
-		}
-		case "permissions":
-			candidate = {
-				...envelope,
-				approvalKind: "permissions",
-				reason: request.params.reason,
-				cwd: request.params.cwd,
-				requestedScope: {
-					network: request.params.permissions.network?.enabled ?? null,
-					fileAccess: fileSystemAccesses(request.params.permissions.fileSystem),
-				},
-			};
-			break;
-		case "apply_patch":
-			candidate = {
-				...envelope,
-				approvalKind: "apply_patch",
-				reason: request.params.reason,
-				grantRoot: request.params.grantRoot,
-				fileCount: Object.keys(request.params.fileChanges).length,
-			};
-			break;
-		case "exec_command":
-			candidate = {
-				...envelope,
-				approvalKind: "exec_command",
-				reason: request.params.reason,
-				command: request.params.command,
-				cwd: request.params.cwd,
-			};
-			break;
-	}
-	const parsed = model.BrowserApprovalSchema.safeParse(candidate);
-	if (!parsed.success) {
-		throw new CodexApprovalError(
-			"unsupported_schema",
-			`The ${request.family} approval cannot be represented safely in the browser contract.`,
-			request.requestId,
-		);
-	}
-	return parsed.data;
 }
 
 export function spokenEligibility(

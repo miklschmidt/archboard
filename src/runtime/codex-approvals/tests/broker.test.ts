@@ -1,10 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type {
-	ApprovalBinding,
-	BrowserApprovalResponse,
-	SpokenEligibilityReason,
-} from "../index.js";
+import type { ApprovalBinding, ApprovalResponse, SpokenEligibilityReason } from "../index.js";
 import type { IdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 import type { TransportServerRequest } from "../../codex-transport/server-requests.js";
 import {
@@ -34,7 +30,7 @@ describe("Codex approval broker", () => {
 		const cases: ReadonlyArray<{
 			readonly name: string;
 			readonly make: (identity: IdentityAuthority, label: string) => TransportServerRequest;
-			readonly response: BrowserApprovalResponse;
+			readonly response: ApprovalResponse;
 			readonly expected: unknown;
 		}> = [
 			{
@@ -93,6 +89,7 @@ describe("Codex approval broker", () => {
 				const staged = fixture.broker.stage(request);
 				expect(staged.state).toBe("staged");
 				const pending = fixture.broker.receive(request);
+				const family = pending.family;
 				expect(pending).toMatchObject({
 					kind: "approval",
 					state: "pending",
@@ -104,8 +101,8 @@ describe("Codex approval broker", () => {
 					expect(normalized.turnId).toBeNull();
 					expect(normalized.identity.kind).toBe("legacy");
 				}
-				const card = fixture.broker.toBrowserApproval(pending.requestId);
-				expect(card).toMatchObject({ kind: "approval" });
+				const view = fixture.broker.view(pending.requestId);
+				expect(view).toMatchObject({ kind: "approval_owner", request: { family } });
 				const settlement = await fixture.broker.resolve({
 					requestId: pending.requestId,
 					approvalId: pending.approvalId,
@@ -114,7 +111,7 @@ describe("Codex approval broker", () => {
 				expect(settlement).toMatchObject({
 					state: "settled",
 					outcome: "delivered",
-					family: pending.family,
+					family,
 				});
 				expect(expectSingleResponse(fixture.port)).toEqual({ result: entry.expected });
 			} finally {
@@ -361,42 +358,6 @@ describe("Codex approval presentation and spoken policy", () => {
 			});
 			expect(Object.isFrozen(presentation)).toBe(true);
 			expect(fixture.broker.spokenEffectPresentation(pending.requestId)).toBe(presentation);
-		} finally {
-			closeBroker(fixture.broker);
-		}
-	});
-
-	test("projects form and URL requests without exposing unsafe URLs", async () => {
-		const fixture = testBroker();
-		try {
-			const form = fixture.broker.receive(elicitationRequest(fixture.identity, "form", "form"));
-			expect(fixture.broker.toBrowserApproval(form.requestId)).toMatchObject({
-				approvalKind: "elicitation",
-				mode: "form",
-				fields: [
-					{ name: "name", type: "string", required: true },
-					{ name: "kind", type: "enum", required: false },
-				],
-			});
-			await fixture.broker.cancel(form.requestId);
-
-			const openai = fixture.broker.receive(
-				elicitationRequest(fixture.identity, "openai-form", "openai/form"),
-			);
-			expect(fixture.broker.toBrowserApproval(openai.requestId)).toMatchObject({
-				approvalKind: "elicitation",
-				mode: "openai/form",
-				fields: expect.any(Array),
-			});
-			await fixture.broker.cancel(openai.requestId);
-
-			const unsafe = fixture.broker.receive(
-				elicitationRequest(fixture.identity, "unsafe-url", "url", "file:///secret"),
-			);
-			expect(() => fixture.broker.toBrowserApproval(unsafe.requestId)).toThrowError(
-				expect.objectContaining({ code: "unsafe_url" }),
-			);
-			await fixture.broker.cancel(unsafe.requestId);
 		} finally {
 			closeBroker(fixture.broker);
 		}

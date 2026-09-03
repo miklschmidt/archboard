@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ApprovalBinding, BrowserApprovalResponse } from "../index.js";
+import type { ApprovalBinding, ApprovalResponse } from "../index.js";
 import type { IdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 import {
 	closeBroker,
@@ -21,14 +21,14 @@ async function rejected(promise: Promise<unknown>): Promise<unknown> {
 	}
 }
 
-const execpolicyResponse: BrowserApprovalResponse = {
+const execpolicyResponse: ApprovalResponse = {
 	approvalKind: "command_execution",
 	decision: {
 		acceptWithExecpolicyAmendment: { execpolicy_amendment: ["allow /workspace"] },
 	},
 };
 
-const networkResponse: BrowserApprovalResponse = {
+const networkResponse: ApprovalResponse = {
 	approvalKind: "command_execution",
 	decision: {
 		applyNetworkPolicyAmendment: {
@@ -174,8 +174,12 @@ describe("Codex approval remediation", () => {
 								entry.offered,
 							);
 				const pending = fixture.broker.receive(request);
-				const card = fixture.broker.toBrowserApproval(pending.requestId);
-				expect(card).toMatchObject({ availableDecisions: entry.expected });
+				const view = fixture.broker.view(pending.requestId);
+				if (view.request.family !== "command_execution")
+					throw new Error("command fixture lost its normalized family");
+				expect(
+					JSON.stringify(view.request.params.availableDecisions ?? ["accept", "decline", "cancel"]),
+				).toBe(JSON.stringify(entry.expected));
 				if (entry.name === "empty" || entry.name === "accept only") {
 					if (entry.name === "accept only") {
 						const settlement = await fixture.broker.resolve({
