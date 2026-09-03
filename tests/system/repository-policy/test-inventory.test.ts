@@ -14,6 +14,7 @@ import {
 	inspectTestInventory,
 	type InventoryInput,
 } from "./support/test-inventory.js";
+import { executableBunInvocations } from "./support/executable-bun.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const packageAdapter = `bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.join(" ")}`;
@@ -50,6 +51,20 @@ function expectInventoryError(fixture: InventoryInput, message: string): void {
 }
 
 describe("test inventory policy", () => {
+	test.each([
+		["after a full-line comment", "# note\nbun"],
+		["after a trailing comment and newline", "true # note\nbun"],
+	])("parses executable Bun args exactly %s", (_name, prefix) => {
+		expect(
+			executableBunInvocations(
+				`${prefix} run test:opt-in:capacity\n${prefix} test --isolate src/example.test.ts`,
+			),
+		).toEqual([
+			{ command: "run", args: ["test:opt-in:capacity"] },
+			{ command: "test", args: ["--isolate", "src/example.test.ts"] },
+		]);
+	});
+
 	test("accepts the final lanes", () => {
 		expect(inspectTestInventory(input()).errors).toEqual([]);
 	});
@@ -133,6 +148,15 @@ describe("test inventory policy", () => {
 	test("rejects an opt-in lane reached through whitespace-tolerant script edges", () => {
 		const fixture = input();
 		fixture.scripts.test += " && bun  run test:opt-in:capacity";
+		expectInventoryError(
+			fixture,
+			"opt-in package script `test:opt-in:capacity` is reachable from `check`",
+		);
+	});
+
+	test("rejects an opt-in lane after a full-line comment", () => {
+		const fixture = input();
+		fixture.scripts.test += "\n# retained offset\nbun run test:opt-in:capacity";
 		expectInventoryError(
 			fixture,
 			"opt-in package script `test:opt-in:capacity` is reachable from `check`",
