@@ -32,6 +32,7 @@ import {
 	type BrowserConnectionInstance,
 	type BrowserDisconnectReason,
 	type BrowserLeaseRecord,
+	type BrowserPresenterContext,
 	type BrowserUnsubscribe,
 	type CodexWorkbenchGatewayOptions,
 } from "./contract.js";
@@ -323,19 +324,53 @@ export function createCodexWorkbenchGateway(
 		state: ConnectionState,
 		reason: BrowserDisconnectReason,
 	): Promise<void> => {
-		if (state.disconnectNotified || state.binding === null) return Promise.resolve();
+		if (state.disconnectNotified) return Promise.resolve();
 		state.disconnectNotified = true;
 		for (const [commandId, entry] of inFlightCommands)
 			if (entry.connection === state.instance) inFlightCommands.delete(commandId);
-		const context = state.binding;
+		const disconnectActionContext = state.binding;
+		let presenterContext: BrowserPresenterContext | null = disconnectActionContext;
+		if (presenterContext === null) {
+			try {
+				const binding = readBinding(state.paneId);
+				const link = binding.link;
+				if (link.state === "executable" && link.childId !== null && link.epoch !== null)
+					presenterContext = {
+						browserId: state.browserId,
+						connection: state.instance,
+						paneId: state.paneId,
+						childId: link.childId,
+						epoch: link.epoch,
+						link,
+						linkRevision: binding.revision,
+					};
+			} catch {
+				// A pane binding that is already gone owns no approval cleanup.
+			}
+		}
+		const hasOtherPresenter = Array.from(connections.values()).some((candidate) => {
+			if (candidate === state || candidate.closed || candidate.paneId !== state.paneId)
+				return false;
+			if (presenterContext === null) return false;
+			try {
+				const binding = readBinding(candidate.paneId);
+				return (
+					binding.revision === presenterContext.linkRevision &&
+					sameWireValue(binding.link, presenterContext.link)
+				);
+			} catch {
+				return false;
+			}
+		});
 		// Approval teardown is best effort. Both owners get a chance to settle,
 		// and lifecycle methods resolve after all settlement promises finish.
-		const invoke = (
+		const invoke = <Context extends BrowserPresenterContext>(
 			callback:
-				| ((context: BrowserActionContext, reason: BrowserDisconnectReason) => Promise<void> | void)
+				| ((context: Context, reason: BrowserDisconnectReason) => Promise<void> | void)
 				| undefined,
+			context: Context | null,
 		): Promise<void> => {
-			if (callback === undefined) return Promise.resolve();
+			if (callback === undefined || context === null) return Promise.resolve();
 			try {
 				return Promise.resolve(callback(context, reason)).then(
 					() => undefined,
@@ -348,10 +383,12 @@ export function createCodexWorkbenchGateway(
 		const settlement = Promise.allSettled([
 			// Ordinary approvals capture the still-current exact pane binding before
 			// thread-link teardown clears that controller token.
-			invoke(options.actions.ordinaryApprovals.onBrowserDisconnect),
-			invoke(options.actions.threadLinks.onBrowserDisconnect),
-			invoke(options.actions.realtime.onBrowserDisconnect),
-			invoke(options.actions.dynamicApprovals.onBrowserDisconnect),
+			hasOtherPresenter
+				? Promise.resolve()
+				: invoke(options.actions.ordinaryApprovals.onBrowserDisconnect, presenterContext),
+			invoke(options.actions.threadLinks.onBrowserDisconnect, disconnectActionContext),
+			invoke(options.actions.realtime.onBrowserDisconnect, disconnectActionContext),
+			invoke(options.actions.dynamicApprovals.onBrowserDisconnect, disconnectActionContext),
 		]).then(() => undefined);
 		trackSettlement(settlement);
 		return settlement;
@@ -497,7 +534,21 @@ export function createCodexWorkbenchGateway(
 			}
 		}
 		state.lastSnapshot = snapshot;
-		return Object.freeze({ kind: "snapshot", sequence: state.sequence, snapshot });
+		const message = Object.freeze({
+			kind: "snapshot" as const,
+			sequence: state.sequence,
+			snapshot,
+		});
+		acknowledgeSnapshot(snapshot);
+		return message;
+	};
+
+	const acknowledgeRequestIds = (requestIds: readonly JsonRpcRequestId[]): void => {
+		if (requestIds.length > 0) options.actions.ordinaryApprovals.acknowledgePublished(requestIds);
+	};
+
+	const acknowledgeSnapshot = (snapshot: BrowserSnapshot): void => {
+		acknowledgeRequestIds(publishedTerminalIds(snapshot));
 	};
 
 	const publishConnection = (state: ConnectionState): readonly JsonRpcRequestId[] => {
@@ -538,13 +589,16 @@ export function createCodexWorkbenchGateway(
 		publishing = true;
 		const terminalIds = new Set<JsonRpcRequestId>();
 		try {
+			if (connections.size === 0) {
+				acknowledgeRequestIds(options.actions.ordinaryApprovals.unpresentedTerminals());
+				return;
+			}
 			do {
 				publishQueued = false;
 				for (const state of connections.values())
 					for (const requestId of publishConnection(state)) terminalIds.add(requestId);
 			} while (publishQueued);
-			if (terminalIds.size > 0)
-				options.actions.ordinaryApprovals.acknowledgePublished([...terminalIds]);
+			acknowledgeRequestIds([...terminalIds]);
 		} finally {
 			publishing = false;
 		}
@@ -1016,9 +1070,11 @@ export function createCodexWorkbenchGateway(
 		const key = connectionKey(browserId, paneId);
 		const existing = connections.get(key);
 		const instance = providedInstance ?? Object.freeze({});
+		let replaced: ConnectionState | null = null;
 		if (existing !== undefined && !existing.closed && existing.instance === instance)
 			return connectionFor(existing);
 		if (existing !== undefined && !existing.closed) {
+			replaced = existing;
 			existing.closed = true;
 			existing.listeners.clear();
 			const current = leaseManager.current();
@@ -1031,7 +1087,6 @@ export function createCodexWorkbenchGateway(
 				);
 				if (released !== null) rememberLeaseReason(released, "lease_transferred");
 			}
-			void notifyDisconnect(existing, "browser_disconnected");
 		}
 		const state: ConnectionState = {
 			browserId,
@@ -1057,6 +1112,7 @@ export function createCodexWorkbenchGateway(
 			state.binding = retainedLease.binding;
 		}
 		connections.set(key, state);
+		if (replaced !== null) void notifyDisconnect(replaced, "browser_disconnected");
 		return connectionFor(state);
 	};
 

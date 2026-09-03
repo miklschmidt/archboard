@@ -20,6 +20,8 @@ export type {
 	CodexApprovalBroker,
 	CodexApprovalBrokerOptions,
 	CodexApprovalErrorCode,
+	DeepReadonly,
+	DeepReadonlyApprovalRequest,
 	ElicitationApprovalRequest,
 	ExecCommandApprovalRequest,
 	FileApprovalRequest,

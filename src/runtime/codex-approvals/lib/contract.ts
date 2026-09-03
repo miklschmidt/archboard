@@ -222,6 +222,8 @@ export type ApprovalRequest =
 	| ApplyPatchApprovalRequest
 	| ExecCommandApprovalRequest;
 
+export type DeepReadonlyApprovalRequest = DeepReadonly<ApprovalRequest>;
+
 export interface ApprovalSnapshot {
 	readonly kind: "approval";
 	readonly family: ApprovalFamily;
@@ -245,7 +247,7 @@ export interface ApprovalSnapshot {
 /** Normalized request plus owner settlement state, before browser presentation. */
 export interface ApprovalOwnerView {
 	readonly kind: "approval_owner";
-	readonly request: DeepReadonly<ApprovalRequest>;
+	readonly request: DeepReadonlyApprovalRequest;
 	readonly snapshot: DeepReadonly<ApprovalSnapshot>;
 	readonly spoken: DeepReadonly<SpokenEligibility>;
 	readonly terminalDelivery: ApprovalTerminalDelivery;
@@ -321,8 +323,10 @@ export interface CodexApprovalBrokerOptions {
 	readonly transport: ApprovalResponsePort;
 	readonly identity: IdentityAuthority;
 	readonly now?: () => number;
-	readonly getCurrentBinding?: (request: ApprovalRequest) => ApprovalBindingInput;
-	readonly getSpokenEligibilityFacts?: (request: ApprovalRequest) => SpokenEligibilityFacts;
+	readonly getCurrentBinding?: (request: DeepReadonlyApprovalRequest) => ApprovalBindingInput;
+	readonly getSpokenEligibilityFacts?: (
+		request: DeepReadonlyApprovalRequest,
+	) => SpokenEligibilityFacts;
 	readonly onChange?: (snapshot: ApprovalSnapshot) => void;
 	readonly onError?: (error: unknown, request?: TransportServerRequest) => void;
 	/** Composition owns the sole request and exit listener cohort. */
@@ -360,7 +364,6 @@ export interface CodexApprovalBroker {
 	readonly receive: (request: TransportServerRequest) => ApprovalSnapshot;
 	readonly pending: (requestId: JsonRpcRequestId) => ApprovalSnapshot;
 	readonly get: (requestId: JsonRpcRequestId) => ApprovalSnapshot | undefined;
-	readonly getRequest: (requestId: JsonRpcRequestId) => ApprovalRequest | undefined;
 	readonly inspect: () => readonly ApprovalSnapshot[];
 	readonly view: (requestId: JsonRpcRequestId) => ApprovalOwnerView;
 	readonly inspectViews: () => readonly ApprovalOwnerView[];
