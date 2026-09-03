@@ -307,13 +307,20 @@ export async function holdBoard(request: LockRequest): Promise<LockHold> {
 	);
 }
 
-/** Attach a successful note commit to the exact lease that enclosed it. */
+/** Best-effort attachment of a successful note commit to the exact lease that enclosed it. */
 export function recordLockCommit(board: string, leaseToken: string, hash: string): boolean {
-	const file = lockPathFor(normalizeBoardKey(board));
-	const current = readRecord(file);
-	if (!current || current.token !== leaseToken || hash.length === 0) return false;
-	writeRecord(file, { ...current, committedHash: hash });
-	return true;
+	let key = board;
+	try {
+		key = normalizeBoardKey(board);
+		const file = lockPathFor(key);
+		const current = readRecord(file);
+		if (!current || current.token !== leaseToken || hash.length === 0) return false;
+		writeRecord(file, { ...current, committedHash: hash });
+		return true;
+	} catch (error) {
+		logger.warn(`Could not stamp the committed-note handoff for "${key}".`, { error });
+		return false;
+	}
 }
 
 /**

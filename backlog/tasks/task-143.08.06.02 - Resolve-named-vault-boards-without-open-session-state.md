@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 05:40'
+updated_date: '2026-09-03 05:51'
 labels: []
 dependencies:
   - TASK-143.08.06.01
@@ -43,12 +43,11 @@ Make the persisted note, not transient server or browser registration, sufficien
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Preserve direct vault resolution and strict note-authority behavior for installed boards.
-2. Keep the normalized board-key lock transaction as the single synchronous write boundary.
-3. Stamp the exact committed note hash on the held lease, emit a single-use predecessor handoff on release, and expose it only to a waiter that observed that exact lease.
-4. Reconcile an installed stale baseline only when the under-lock note hash exactly matches that proven predecessor; retain 409 behavior for every other foreign edit.
-5. Extend the vault-only two-canvas owner so the waiter opens H0 before contention, then commits H2 after A commits H1; retain the foreign-byte conflict owner.
-6. Run only focused vault/lock/write owners plus lint, format, diff checks, and a narrow type check if safe; commit cleanly and report to the parent without finalizing the task.
+1. Preserve the exact observed-predecessor handoff and H0 to H1 to H2 success path.
+2. Make the exported post-commit lease stamp best-effort: catch and log proof-metadata I/O failure without changing the committed response or note bytes.
+3. Exercise the existing public lock and board-I/O seams with fake time and local derived lock files; add no process lane or content authority.
+4. Add one consolidated negative table covering absent or malformed proof, identity mismatch, note-hash mismatch, replay, stamp failure, and an intermediate-acquirer window; every case must refuse proof or baseline adoption and consume derived metadata.
+5. Run only the compact proof owner, existing vault-only and note-conflict owners, focused lint and format, and diff checks. Keep the task In Progress with ACs unchecked, commit cleanly, and callback the parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -77,4 +76,12 @@ Second-review repair:
 - Write admission advances an already-installed baseline only when its under-lock note load exactly matches that proven predecessor hash. Missing or mismatched proof keeps the existing BOARD_VERSION_CONFLICT path, so external bytes before release or before the waiter load are not laundered.
 - The vault-only two-canvas owner now explicitly opens H0 in the waiting canvas before A holds and commits H1, then proves B commits H2 with both elements. The existing uncontended foreign-byte conflict remains 409 and preserves bytes.
 Focused validation: vault-only 6 tests/61 assertions in 2.29s; board-version note 8/47 in 0.39s; post-commit observers 2/9 in 0.25s; focused Oxlint; focused Oxfmt; git diff --check. The excluded 16.9s legacy lock owner was not rerun. Task remains In Progress with all ACs unchecked for parent review.
+
+Final Spec rereview repair:
+- recordLockCommit is now best-effort at its exported boundary. Any auxiliary lock-record read, temp write, or rename failure is logged and returns false after the canonical note commit; it cannot replace the successful committed answer with a 500. A missing stamp leaves no receipt and can only make a later writer take the existing safe conflict path.
+- The existing fast write owner injects a lock-record rename failure after one atomic version-2 note write. The answer remains successful, persisted version and bytes match, the proof write logs once, no receipt exists, and a stale baseline still receives BoardWriteConflictError without another atomic write or byte change.
+- One deterministic fake-time table covers seven concrete variants in six requested groups: absent and malformed receipts, lease-identity mismatch, external-byte hash mismatch, consumed receipt replay, stamp failure, and an intermediate acquirer. Invalid metadata is consumed or absent, different bytes are never adopted, and no process lane was added.
+Red/green evidence: with the previous throwing recordLockCommit body restored, the focused post-commit assertion failed at the injected lease rename after note persistence; restoring best-effort handling made it pass. Final focused validation: write/proof owner 4 tests/60 assertions in 0.29s; vault-only H0-H1-H2 owner 6/61 in 2.06s; note-conflict owner 8/47 in 0.34s; focused Oxlint and Oxfmt check; git diff --check. Total focused wall time was about 2.3s in parallel. The 16.9s legacy lock lane was not run. Task remains In Progress with all ACs unchecked for parent review.
+
+Clarification: an absent or unreadable current lease keeps the existing silent false result from readRecord. The new catch logs auxiliary mkdir, temp-write, and rename exceptions. The injected regression is the reviewed post-commit rename failure.
 <!-- SECTION:NOTES:END -->
