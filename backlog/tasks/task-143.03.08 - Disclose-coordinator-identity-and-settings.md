@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.08
 title: Disclose coordinator identity and settings
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-03 20:10'
+updated_date: '2026-09-03 20:20'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -34,10 +34,10 @@ Render read-only coordinator identity and host-selected configured/effective mod
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The read-only disclosure distinguishes loading, confirmed, stale coordinator, unavailable, and fallback when priority is not advertised; it has no saving, refused-save, or outcome_unknown edit state.
-- [ ] #2 It displays configured model gpt-5.6-luna, configured reasoning effort medium, effective service tier, approvalPolicy, approvalsReviewer, sandboxPolicy, and activePermissionProfile from authoritative host state.
-- [ ] #3 The module exposes no form fields, save control, browser command, settings/update call, or optimistic settings state; unavailable fields name the missing host fact and recovery.
-- [ ] #4 Workhorse and coordinator identity, history, and settings are labelled distinctly for visual and screen-reader users and never share a thread-link control.
+- [x] #1 The read-only disclosure distinguishes loading, confirmed, stale coordinator, unavailable, and fallback when priority is not advertised; it has no saving, refused-save, or outcome_unknown edit state.
+- [x] #2 It displays configured model gpt-5.6-luna, configured reasoning effort medium, effective service tier, approvalPolicy, approvalsReviewer, sandboxPolicy, and activePermissionProfile from authoritative host state.
+- [x] #3 The module exposes no form fields, save control, browser command, settings/update call, or optimistic settings state; unavailable fields name the missing host fact and recovery.
+- [x] #4 Workhorse and coordinator identity, history, and settings are labelled distinctly for visual and screen-reader users and never share a thread-link control.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -64,4 +64,12 @@ The projector distinguishes loading, confirmed, stale retained data, snapshotles
 Review remediation removed the private-source spelling test. Public export and SSR output tests retain the stable evidence for the two-function interface, distinct semantics, and absence of form/link controls.
 
 Red evidence: the coordinator owner failed configured/effective separation and starting recovery; the single-host production owner failed because configured fields were absent. Green evidence: final coordinator plus production projection run passed 6 tests/108 expectations; browser model and transport contract owners passed 28/423; runtime/timeline providers passed 26/212; live canvas socket plus production composition passed 2/51; server gateway module passed 41/208; boundary/import policy passed 20/353. Both TypeScript configs, exact changed-file Oxlint/Oxfmt, and diff checks passed. No browser or broad repository/check lane ran.
+
+Canonical integration replayed the two REVIEW_CLEAN source commits without changing their patch content. Focused serial validation passed 75 tests and 772 assertions across coordinator SSR/projection, browser-model, gateway/socket, transport/runtime, production host projection, and import-boundary owners. Both TypeScript configs passed. Oxlint and Oxfmt passed on the 19 changed TypeScript paths. Exact range checks passed: range-diff matched both replayed commits, changed paths matched the source range, and diff --check was clean.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Integrated the read-only coordinator disclosure and authority separation. Verified focused public and production owners, both TypeScript configs, scoped lint/format, and exact replay-range checks.
+<!-- SECTION:FINAL_SUMMARY:END -->
