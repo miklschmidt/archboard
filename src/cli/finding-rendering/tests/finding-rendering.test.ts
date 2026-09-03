@@ -139,7 +139,7 @@ describe("finding rendering", () => {
 		});
 	});
 
-	test("browser failures and missing callbacks produce an ordered partial manifest", () => {
+	test("renderer failures and missing outputs produce an ordered partial manifest", () => {
 		const twoFindingReport = inspectBoard([
 			{ id: "one", type: "rectangle", x: 10, y: 20, width: null, height: 40 },
 			{ id: "two", type: "rectangle", x: 200, y: 20, width: null, height: 40 },
@@ -150,14 +150,14 @@ describe("finding rendering", () => {
 				sourceFingerprint: "d".repeat(64),
 				report: twoFindingReport,
 				sourceRenderable: true,
-				results: [{ findingIndex: 0, failure: "browser-export-failed" }],
+				results: [{ findingIndex: 0, failure: "renderer-failed" }],
 			},
 			"/tmp/findings",
 		);
 		expect(assembled.manifest.complete).toBeFalse();
 		expect(
 			assembled.manifest.entries.map((entry) => entry.status === "failed" && entry.failure),
-		).toEqual(["browser-export-failed", "browser-timeout"]);
+		).toEqual(["renderer-failed", "renderer-failed"]);
 		expect(assembled.artifact.files).toHaveLength(0);
 	});
 
@@ -171,7 +171,7 @@ describe("finding rendering", () => {
 		};
 		expect(
 			FindingRenderManifestSchema.safeParse({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				board: "payments",
 				sourceFingerprint: "c".repeat(64),
 				report,
@@ -195,7 +195,7 @@ describe("finding rendering", () => {
 		]) {
 			expect(
 				FindingRenderManifestSchema.safeParse({
-					schemaVersion: 1,
+					schemaVersion: 2,
 					board: "payments",
 					sourceFingerprint: "c".repeat(64),
 					report,

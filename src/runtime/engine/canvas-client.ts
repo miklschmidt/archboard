@@ -606,12 +606,12 @@ export async function postFiles(files: unknown[]): Promise<void> {
 
 // A picture of one pane. `pane` names which — without it the pane that answers
 // for the browser is photographed, which with a single pane is that pane.
-export async function exportImage(
+export async function captureBrowser(
 	format: "png" | "svg",
 	background = true,
 	pane?: string,
 ): Promise<{ success: boolean; format: string; data: string }> {
-	return requestJson("/api/export/image", {
+	return requestJson("/api/browser/capture", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ format, background, ...(pane ? { pane } : {}) }),
@@ -626,7 +626,7 @@ export interface FindingExportResponse {
 	results: Array<{
 		findingIndex: number;
 		data?: string;
-		failure?: "browser-export-failed" | "browser-timeout";
+		failure?: "renderer-failed";
 	}>;
 }
 
@@ -637,6 +637,33 @@ export async function exportFindings(
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ policy }),
+	});
+}
+
+export interface BoardRenderResponse {
+	success: true;
+	board: string;
+	sourceFingerprint: string;
+	format: "png" | "svg";
+	data: string;
+	width: number;
+	height: number;
+	padding: number;
+	scale: number;
+	background: boolean;
+	backgroundColor: string;
+}
+
+export async function renderBoard(input: {
+	format: "png" | "svg";
+	background: boolean;
+	padding: number;
+	scale: number;
+}): Promise<BoardRenderResponse> {
+	return requestJson("/api/render/board", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
 	});
 }
 
@@ -877,7 +904,7 @@ export async function compareBoardsOnCanvas(params: {
 export async function sendMermaid(
 	mermaidDiagram: string,
 	config?: Record<string, unknown>,
-): Promise<ApiResponse & { board?: string; pane?: PaneRef | null }> {
+): Promise<ApiResponse & { board?: string; count?: number; ids?: string[] }> {
 	return requestJson("/api/elements/from-mermaid", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },

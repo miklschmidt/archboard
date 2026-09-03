@@ -27,9 +27,9 @@ const proofSchema = z.object({
 	contracts: z.array(z.object({ name: z.string() }).passthrough()),
 });
 const expectedHashes: Readonly<Record<(typeof artifactNames)[number], string>> = {
-	"cli-command-audit.md": "292cc5f0dc700a0c73079783b411cca38138654d1875276e472544762ff48a6b",
-	"command-contract-proof.json": "82d413146cdeef78edd30e89027a90364afc869a7bd4f4e4133663593bb8b602",
-	"command-contract-proof.md": "b77fac4a0ddb000bb5910b436ed2b2d3e2ac1abac456171c209ddb7dcdd643d1",
+	"cli-command-audit.md": "24bbdb698d8b8c745d6fe6f909c90c8c1595f9ce67a58058e1751cd8e8e9fd6c",
+	"command-contract-proof.json": "8c0aef6aa774ffdf0af8cf8804b976c28e52c09a55f4ddf4125caeb4a836d070",
+	"command-contract-proof.md": "59118f8ed32cd75da559080e4e9b22fdb8c584dd987e3add6ac48f11beadc11f",
 };
 const auditSchema = z.object({
 	entries: z.array(z.object({ path: z.string() }).passthrough()),

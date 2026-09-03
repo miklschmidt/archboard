@@ -1,0 +1,367 @@
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { inflateSync } from "node:zlib";
+
+import { readPngDimensions } from "../../../src/cli/finding-rendering/index.ts";
+import { findingRasterDimensions } from "../../../src/shared/finding-raster/index.ts";
+import { isBlockId } from "../../../src/shared/ids/ids.ts";
+import { TEST_BOARD_RENDERING_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { findingElements, findingFile } from "../browser/fixtures/fixed-point-scene.ts";
+import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { createJsonRequester } from "./support/http.ts";
+
+interface RendererStatus {
+	started: boolean;
+	accepting: boolean;
+	active: boolean;
+	queued: number;
+	chromiumPid: number | null;
+	profile: string | null;
+	controlPort: number | null;
+}
+
+interface HealthBody {
+	websocket_clients: number;
+	renderer: RendererStatus;
+}
+
+interface RenderBody {
+	success: boolean;
+	code?: string;
+	error?: string;
+	board: string;
+	sourceFingerprint: string;
+	format: "png" | "svg";
+	data: string;
+	width: number;
+	height: number;
+	backgroundColor: string;
+}
+
+interface MermaidElement {
+	id: string;
+	type: string;
+	text?: string;
+	containerId?: string | null;
+	startBinding?: { elementId: string } | null;
+	endBinding?: { elementId: string } | null;
+}
+
+interface FindingBody {
+	board: string;
+	sourceFingerprint: string;
+	sourceRenderable: boolean;
+	report: {
+		findings: Array<{
+			code: string;
+			focusBBox?: { x: number; y: number; width: number; height: number };
+		}>;
+	};
+	results: Array<{ findingIndex: number; data?: string; failure?: string }>;
+}
+
+const root = resolve(import.meta.dir, "../../..");
+const fixture = readFileSync(
+	join(root, "docs/design/server-rendering-boundary-fixtures/board.excalidraw.md"),
+	"utf8",
+);
+const vault = mkdtempSync(join(tmpdir(), "archboard-server-rendering-"));
+let canvas: OwnedCanvas;
+let request: ReturnType<typeof createJsonRequester>;
+let ownedRenderer: RendererStatus | null = null;
+
+function note(board: string, content: string): void {
+	writeFileSync(
+		join(vault, `${board}.excalidraw.md`),
+		content.replace("board: render-proof", `board: ${board}`),
+	);
+}
+
+function render(board: string, body: Record<string, unknown>) {
+	return request<RenderBody>(`/api/render/board?board=${encodeURIComponent(board)}`, {
+		method: "POST",
+		body,
+	});
+}
+
+function paeth(left: number, above: number, upperLeft: number): number {
+	const estimate = left + above - upperLeft;
+	const leftDistance = Math.abs(estimate - left);
+	const aboveDistance = Math.abs(estimate - above);
+	const cornerDistance = Math.abs(estimate - upperLeft);
+	return leftDistance <= aboveDistance && leftDistance <= cornerDistance
+		? left
+		: aboveDistance <= cornerDistance
+			? above
+			: upperLeft;
+}
+
+function pngRgbCounts(bytes: Uint8Array): Map<string, number> {
+	const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+	const width = view.getUint32(16);
+	const height = view.getUint32(20);
+	const colorType = bytes[25];
+	const channels = colorType === 6 ? 4 : colorType === 2 ? 3 : 0;
+	if (bytes[24] !== 8 || channels === 0)
+		throw new Error(`Expected an 8-bit RGB/RGBA PNG, received colour type ${String(colorType)}.`);
+	const chunks: Uint8Array[] = [];
+	for (let offset = 8; offset < bytes.length;) {
+		const length = view.getUint32(offset);
+		const type = String.fromCharCode(...bytes.slice(offset + 4, offset + 8));
+		if (type === "IDAT") chunks.push(bytes.slice(offset + 8, offset + 8 + length));
+		offset += length + 12;
+	}
+	const compressed = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
+	const filtered = inflateSync(compressed);
+	const stride = width * channels;
+	const pixels = new Uint8Array(stride * height);
+	for (let y = 0; y < height; y += 1) {
+		const filter = filtered[y * (stride + 1)]!;
+		for (let x = 0; x < stride; x += 1) {
+			const raw = filtered[y * (stride + 1) + x + 1]!;
+			const index = y * stride + x;
+			const left = x >= channels ? pixels[index - channels]! : 0;
+			const above = y > 0 ? pixels[index - stride]! : 0;
+			const upperLeft = y > 0 && x >= channels ? pixels[index - stride - channels]! : 0;
+			pixels[index] =
+				filter === 0
+					? raw
+					: filter === 1
+						? raw + left
+						: filter === 2
+							? raw + above
+							: filter === 3
+								? raw + Math.floor((left + above) / 2)
+								: filter === 4
+									? raw + paeth(left, above, upperLeft)
+									: (() => {
+											throw new Error(`Unsupported PNG row filter ${filter}.`);
+										})();
+		}
+	}
+	const counts = new Map<string, number>();
+	for (let offset = 0; offset < pixels.length; offset += channels) {
+		const color = `${pixels[offset]},${pixels[offset + 1]},${pixels[offset + 2]}`;
+		counts.set(color, (counts.get(color) ?? 0) + 1);
+	}
+	return counts;
+}
+
+beforeAll(async () => {
+	note("render-proof", fixture);
+	note("missing-file", fixture.replace('"fileId": "pixel"', '"fileId": "absent"'));
+	note("missing-font", fixture.replaceAll('"fontFamily": 5', '"fontFamily": 99'));
+	canvas = await startOwnedCanvas({ serverPath: join(root, "src/server.ts"), vault });
+	request = createJsonRequester(canvas);
+});
+
+afterAll(async () => {
+	await canvas?.dispose();
+});
+
+describe.serial("server-owned board rendering", () => {
+	test(
+		"renders one immutable named-board snapshot to PNG and SVG without a browser client",
+		async () => {
+			const before = await request<HealthBody>("/health");
+			expect(before.body.websocket_clients).toBe(0);
+			expect(before.body.renderer).toMatchObject({
+				started: true,
+				accepting: true,
+				chromiumPid: null,
+			});
+
+			const [png, svg] = await Promise.all([
+				render("render-proof", {
+					format: "png",
+					background: true,
+					padding: 16,
+					scale: 1,
+				}),
+				render("render-proof", {
+					format: "svg",
+					background: true,
+					padding: 16,
+					scale: 1,
+				}),
+			]);
+			expect(png.status, png.body.error).toBe(200);
+			expect(svg.status, svg.body.error).toBe(200);
+			expect(png.body).toMatchObject({
+				success: true,
+				board: "render-proof",
+				format: "png",
+				width: 566,
+				height: 417,
+				backgroundColor: "#f8fafc",
+			});
+			expect(svg.body).toMatchObject({
+				success: true,
+				board: "render-proof",
+				format: "svg",
+				width: 566,
+				height: 417,
+				backgroundColor: "#f8fafc",
+			});
+			expect(png.body.sourceFingerprint).toBe(svg.body.sourceFingerprint);
+			const pngBytes = Uint8Array.from(Buffer.from(png.body.data, "base64"));
+			expect(readPngDimensions(pngBytes)).toEqual({ width: 566, height: 417 });
+			const colors = pngRgbCounts(pngBytes);
+			for (const color of ["248,250,252", "219,234,254", "220,252,231", "254,243,199"])
+				expect(colors.get(color) ?? 0).toBeGreaterThan(100);
+			expect(svg.body.data).toContain("<svg");
+			expect(svg.body.data).toContain("Service API");
+			expect(svg.body.data).toContain("data:image/png;base64");
+			expect(svg.body.data).toContain("#dbeafe");
+			expect(svg.body.data.match(/stroke="#334155"/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
+			const repeated = await render("render-proof", {
+				format: "png",
+				background: true,
+				padding: 16,
+				scale: 1,
+			});
+			expect(repeated.status).toBe(200);
+			expect(repeated.body.data).toBe(png.body.data);
+
+			for (const [board, expected] of [
+				["missing-file", 'missing embedded file "absent"'],
+				["missing-font", "cannot resolve font family 99"],
+			] as const) {
+				const refused = await render(board, { format: "png" });
+				expect(refused.status).toBe(422);
+				expect(refused.body.code).toBe("BOARD_NOT_RENDERABLE");
+				expect(refused.body.error).toContain(expected);
+			}
+
+			const after = await request<HealthBody>("/health");
+			expect(after.body.websocket_clients).toBe(0);
+			expect(after.body.renderer).toMatchObject({ active: false, queued: 0 });
+			expect(after.body.renderer.chromiumPid).toBeNumber();
+			ownedRenderer = after.body.renderer;
+			expect(after.body.renderer.profile).toContain("/archboard-board-renderer-");
+		},
+		TEST_BOARD_RENDERING_CASE_TIMEOUT_MS,
+	);
+
+	test(
+		"renders every focused finding from one persisted snapshot without changing the note",
+		async () => {
+			await request("/api/boards/new", { method: "POST", body: { board: "findings" } });
+			expect(
+				(
+					await request("/api/elements/batch?board=findings", {
+						method: "POST",
+						body: { elements: findingElements },
+					})
+				).status,
+			).toBe(200);
+			expect(
+				(
+					await request("/api/files?board=findings", {
+						method: "POST",
+						body: { files: [findingFile] },
+					})
+				).status,
+			).toBe(200);
+			expect(
+				(
+					await request("/api/bridges?board=findings", {
+						method: "POST",
+						body: { over: "fover", under: "funder", background: "#ffffff" },
+					})
+				).status,
+			).toBe(200);
+			const boardNote = join(vault, "findings.excalidraw.md");
+			const before = readFileSync(boardNote);
+			const beforeMtime = statSync(boardNote, { bigint: true }).mtimeNs;
+			const rendered = await request<FindingBody>("/api/export/findings?board=findings", {
+				method: "POST",
+				body: { policy: {} },
+			});
+			expect(rendered.status).toBe(200);
+			expect(rendered.body).toMatchObject({ board: "findings", sourceRenderable: true });
+			expect(
+				rendered.body.report.findings.some(
+					({ code }) => code === "CONNECTOR_INTERSECTION_UNMARKED",
+				),
+			).toBeTrue();
+			const focusCount = rendered.body.report.findings.filter(({ focusBBox }) => focusBBox).length;
+			expect(rendered.body.results).toHaveLength(focusCount);
+			for (const result of rendered.body.results) {
+				const focus = rendered.body.report.findings[result.findingIndex]?.focusBBox;
+				if (!focus || !result.data) throw new Error("A focused finding did not return PNG data.");
+				const dimensions = findingRasterDimensions(focus);
+				expect(readPngDimensions(Uint8Array.from(Buffer.from(result.data, "base64")))).toEqual({
+					width: dimensions.width,
+					height: dimensions.height,
+				});
+			}
+			expect(readFileSync(boardNote)).toEqual(before);
+			expect(statSync(boardNote, { bigint: true }).mtimeNs).toBe(beforeMtime);
+		},
+		TEST_BOARD_RENDERING_CASE_TIMEOUT_MS,
+	);
+
+	test(
+		"converts valid Mermaid through one write and rejects malformed input without a write",
+		async () => {
+			await request("/api/boards/new", { method: "POST", body: { board: "mermaid" } });
+			const before = await request<{ version: number }>("/api/boards/info?board=mermaid");
+			const converted = await request<{ board: string; count: number; ids: string[] }>(
+				"/api/elements/from-mermaid?board=mermaid",
+				{
+					method: "POST",
+					body: { mermaidDiagram: "graph TD; A[Client] --> B[API]; B --> C[Store];" },
+				},
+			);
+			expect(converted.status).toBe(200);
+			expect(converted.body.board).toBe("mermaid");
+			expect(converted.body.count).toBe(8);
+			expect(converted.body.ids).toHaveLength(8);
+			expect(converted.body.ids.every(isBlockId)).toBeTrue();
+			const after = await request<{ version: number }>("/api/boards/info?board=mermaid");
+			expect(after.body.version).toBe(before.body.version + 1);
+
+			const scene = await request<{ elements: MermaidElement[] }>("/api/elements?board=mermaid");
+			expect(scene.body.elements.filter(({ type }) => type === "rectangle")).toHaveLength(3);
+			expect(scene.body.elements.filter(({ type }) => type === "arrow")).toHaveLength(2);
+			expect(
+				scene.body.elements
+					.filter(({ type }) => type === "text")
+					.map(({ text }) => text)
+					.toSorted(),
+			).toEqual(["API", "Client", "Store"]);
+			for (const arrow of scene.body.elements.filter(({ type }) => type === "arrow")) {
+				expect(isBlockId(arrow.startBinding?.elementId ?? "")).toBeTrue();
+				expect(isBlockId(arrow.endBinding?.elementId ?? "")).toBeTrue();
+			}
+
+			const invalidBefore = after.body.version;
+			const invalid = await request<{ code?: string; error?: string }>(
+				"/api/elements/from-mermaid?board=mermaid",
+				{ method: "POST", body: { mermaidDiagram: "graph TD; A -->" } },
+			);
+			expect(invalid.status).toBe(422);
+			expect(invalid.body.code).toBe("MERMAID_INVALID");
+			expect(invalid.body.error).toContain("Mermaid conversion failed");
+			expect(
+				(await request<{ version: number }>("/api/boards/info?board=mermaid")).body.version,
+			).toBe(invalidBefore);
+		},
+		TEST_BOARD_RENDERING_CASE_TIMEOUT_MS,
+	);
+
+	test(
+		"canvas shutdown removes the renderer profile before the server exits",
+		async () => {
+			if (!ownedRenderer?.chromiumPid || !ownedRenderer.profile || !ownedRenderer.controlPort)
+				throw new Error("The retained renderer did not expose its owned resource identity.");
+			const { profile } = ownedRenderer;
+			await canvas.dispose();
+			expect(existsSync(profile)).toBeFalse();
+		},
+		TEST_BOARD_RENDERING_CASE_TIMEOUT_MS,
+	);
+});

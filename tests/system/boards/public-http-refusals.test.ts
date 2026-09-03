@@ -243,7 +243,7 @@ describe("public HTTP refusals", () => {
 			method: "POST",
 			body: { scrollToContent: true },
 		});
-		const image = await request<Refusal>("/api/export/image", {
+		const image = await request<Refusal>("/api/browser/capture", {
 			method: "POST",
 			body: { format: "png" },
 		});

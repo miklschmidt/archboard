@@ -43,7 +43,7 @@ export interface PaneRegistration {
 	paneId: string;
 	/** Board key, e.g. `payments` or `payments@option-a`. */
 	board: string;
-	/** Does this pane answer export / viewport / mermaid requests? */
+	/** Is this the default pane for browser capture and viewport requests? */
 	primary: boolean;
 	/** Is this the pane the user last interacted with? */
 	focused: boolean;

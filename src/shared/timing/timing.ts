@@ -140,6 +140,30 @@ export const PANE_LAYOUT_TIMEOUT_MS = 10000;
 /** Outer cap for any browser-owned export request. The wait ends on correlation, not delay. */
 export const BROWSER_EXPORT_TIMEOUT_MS = 30000;
 
+// ── Server-owned board rendering (ADR 0020) ──────────────────────────────
+
+/**
+ * Bound for one serialized PNG, SVG, findings batch, or Mermaid job in the
+ * private renderer. This is intentionally half the proof harness's 20-second
+ * fault deadline. Product work renders one immutable request and reports its
+ * named page phase when this bound expires.
+ */
+export const BOARD_RENDER_JOB_TIMEOUT_MS = 10_000;
+
+/**
+ * Bound for the private Chromium control port, target, and renderer page to
+ * become ready. Startup is lazy, so this delay belongs to the first Board
+ * render rather than to every canvas launch.
+ */
+export const BOARD_RENDER_STARTUP_TIMEOUT_MS = 5_000;
+
+/**
+ * Shared deadline for renderer group termination, output-pipe settlement,
+ * profile removal, and fixture-server closure. Cleanup proves the dedicated
+ * process group absent before deleting its private profile.
+ */
+export const BOARD_RENDER_CLEANUP_MS = 5_000;
+
 // ── When a board is considered still ──────────────────────────────────────
 
 /**
@@ -608,3 +632,5 @@ export const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2_000 } as const;
 export const TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS = 20_000;
 /** Aggregate Bun case, not an operation cap/SLA: 20s clears hosted 5,034ms and stressed 14,815.78ms. */
 export const TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS = 20_000;
+/** Aggregate public render case: one lazy startup plus bounded serial jobs, capped at the child allowance. */
+export const TEST_BOARD_RENDERING_CASE_TIMEOUT_MS = 20_000;

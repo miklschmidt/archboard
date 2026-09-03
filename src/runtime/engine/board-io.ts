@@ -560,11 +560,13 @@ export function readRawBoardElementsForInspection(key: string): readonly unknown
 }
 
 export interface BoardInspectionSnapshot {
+	board: string;
 	elements: readonly unknown[];
 	fingerprint: string;
 	renderScene: {
 		elements: readonly ServerElement[];
 		files: Readonly<Record<string, ExcalidrawFile>>;
+		appState: { readonly viewBackgroundColor: string };
 	} | null;
 }
 
@@ -608,7 +610,19 @@ function strictRenderScene(scene: unknown): BoardInspectionSnapshot["renderScene
 			return null;
 		files[id] = raw as unknown as ExcalidrawFile;
 	}
-	return { elements: projected, files };
+	const rawAppState = sceneRecord?.appState;
+	const appState =
+		rawAppState && typeof rawAppState === "object" && !Array.isArray(rawAppState)
+			? (rawAppState as Record<string, unknown>)
+			: {};
+	return {
+		elements: projected,
+		files,
+		appState: {
+			viewBackgroundColor:
+				typeof appState.viewBackgroundColor === "string" ? appState.viewBackgroundColor : "#ffffff",
+		},
+	};
 }
 
 function hydratedFileFingerprintProjection(scene: unknown): readonly unknown[] {
@@ -640,12 +654,13 @@ function renderSnapshotFingerprint(noteHash: string, scene: unknown): string {
 
 /** One named note read shared by inspection and focused rendering. */
 export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapshot {
-	const { loaded: note } = resolveBoardNote(key, "Inspecting a board");
+	const { key: resolvedKey, loaded: note } = resolveBoardNote(key, "Inspecting a board");
 	const file = note.file;
 	const scene = parseLoadedScene(note);
 	if (Array.isArray(scene)) {
 		const renderScene = strictRenderScene(scene);
 		return {
+			board: resolvedKey,
 			elements: scene,
 			fingerprint: renderSnapshotFingerprint(note.hash, scene),
 			renderScene,
@@ -660,6 +675,7 @@ export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapsho
 	}
 	const renderScene = strictRenderScene(scene);
 	return {
+		board: resolvedKey,
 		elements: (scene as { elements: unknown[] }).elements,
 		fingerprint: renderSnapshotFingerprint(note.hash, scene),
 		renderScene,

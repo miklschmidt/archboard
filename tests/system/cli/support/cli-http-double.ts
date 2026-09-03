@@ -232,6 +232,22 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 					results: [{ findingIndex: 0, data: findingPng }],
 				});
 			}
+			if (request.method === "POST" && url.pathname === "/api/render/board") {
+				const format = record.format === "svg" ? "svg" : "png";
+				return Response.json({
+					success: true,
+					board: "contract",
+					sourceFingerprint: "c".repeat(64),
+					format,
+					data: format === "svg" ? '<svg width="320" height="180"></svg>' : findingPng,
+					width: 320,
+					height: 180,
+					padding: record.padding ?? 16,
+					scale: record.scale ?? 1,
+					background: record.background ?? true,
+					backgroundColor: "#ffffff",
+				});
+			}
 			if (request.method !== "GET" && !url.searchParams.get("doing"))
 				return Response.json(
 					{ success: false, code: "DOING_REQUIRED", error: "doing required" },

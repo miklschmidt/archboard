@@ -29,7 +29,7 @@ describe("legacy injection removal policy", () => {
 		expect(forbiddenImporters).toEqual([]);
 	});
 
-	test("keeps all 19 canonical browser owners", () => {
-		expect(BROWSER_TEST_PATHS).toHaveLength(19);
+	test("keeps all 18 canonical browser owners", () => {
+		expect(BROWSER_TEST_PATHS).toHaveLength(18);
 	});
 });

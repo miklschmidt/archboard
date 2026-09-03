@@ -405,6 +405,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"  pane is that pane — and with two is the one you may not have drawn in.",
 		].join("\n"),
 	},
+	render: {
+		owner: contract(scene.renderContract, "src/cli/commands/scene.ts"),
+	},
 	export: {
 		owner: contract(exportContract, "src/cli/command-contract/export.ts"),
 	},
@@ -415,9 +418,8 @@ const COMMANDS: Record<string, CommandRoute> = {
 	},
 	mermaid: {
 		owner: contract(scene.mermaidContract, "src/cli/commands/scene.ts"),
-		summary: "Render a Mermaid diagram onto the canvas (needs a browser tab)",
-		usage:
-			"mermaid [diagram.mmd|-] (or stdin)  (converts in the pane holding --board, so there is no --pane to pass; refused, converting nothing, when no pane is holding it)",
+		summary: "Convert Mermaid into one named persisted board",
+		usage: "mermaid [diagram.mmd|-] (or stdin)",
 	},
 	snapshot: {
 		owner: contract(snapshotContract, "src/cli/commands/snapshot.ts"),

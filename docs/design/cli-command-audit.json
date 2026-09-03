@@ -1,10 +1,10 @@
 {
 	"schemaVersion": 1,
-	"reviewedBase": "2c5a639ddb432447308f9dba557156aab1391c89",
+	"reviewedBase": "3c5c2be4e7d3a0543db8fda5eb9fb9aafc9e1af4",
 	"surface": {
-		"commands": 35,
+		"commands": 36,
 		"subcommands": 23,
-		"paths": 58
+		"paths": 59
 	},
 	"globalContract": {
 		"bootstrap": "src/bin.ts removes one --url before importing runtime configuration",
@@ -876,21 +876,20 @@
 			"path": "render-findings",
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/render-findings.ts",
-			"stdout": "schema-v1 JSON manifest after artifact commit",
+			"stdout": "schema-v2 JSON manifest after artifact commit",
 			"result": "source fingerprint, exact inspection report, ordered rendered or failed entries",
-			"diagnostics": "usage, server, browser, read, render, validation, and filesystem errors",
-			"exits": [0, 1, 2, 3, 4],
-			"prerequisites": ["server", "browser", "board"],
+			"diagnostics": "usage, server, renderer, read, validation, and filesystem errors",
+			"exits": [0, 1, 2, 3],
+			"prerequisites": ["server", "board"],
 			"relationships": ["one POST /api/export/findings"],
 			"semantics": "render exact TASK-119 focus boxes from one persisted snapshot",
 			"ordering": "validate policy and empty directory, render one snapshot, validate all artifacts, write PNGs, write manifest last, present stdout",
 			"nextFields": ["sourceFingerprint", "report", "complete", "entries"],
 			"workflow": "necessary composition",
-			"effects": ["read", "browser", "local-read", "local-write"],
+			"effects": ["read", "local-read", "local-write"],
 			"refusals": [
 				{ "code": "BOARD_REQUIRED", "exit": 2 },
-				{ "code": "CANVAS_UNREACHABLE", "exit": 3 },
-				{ "code": "BROWSER_REQUIRED", "exit": 4 }
+				{ "code": "CANVAS_UNREACHABLE", "exit": 3 }
 			],
 			"introducedBy": "TASK-121"
 		},
@@ -1015,8 +1014,8 @@
 			"diagnostics": "browser/held errors",
 			"exits": [0, 1, 2, 3, 4],
 			"prerequisites": ["server", "browser"],
-			"relationships": ["POST /api/export/image then optional local write"],
-			"semantics": "browser render, no board write",
+			"relationships": ["POST /api/browser/capture then optional local write"],
+			"semantics": "live browser pane capture, no board write",
 			"ordering": "format before server/browser, file after response",
 			"nextFields": ["file", "format"],
 			"workflow": "necessary composition",
@@ -1031,6 +1030,27 @@
 					"exit": 4
 				}
 			]
+		},
+		{
+			"path": "render",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/scene.ts",
+			"stdout": "json file receipt",
+			"result": "success,board,file,format,dimensions,render options,source fingerprint",
+			"diagnostics": "usage, server, board, renderer, and filesystem errors",
+			"exits": [0, 1, 2, 3],
+			"prerequisites": ["server", "board"],
+			"relationships": ["one POST /api/render/board then one local file write"],
+			"semantics": "server-owned immutable persisted-board render, no live browser state",
+			"ordering": "validate options and destination, render one named snapshot, write artifact, present receipt",
+			"nextFields": ["file", "format", "width", "height", "sourceFingerprint"],
+			"workflow": "necessary composition",
+			"effects": ["read", "local-write"],
+			"refusals": [
+				{ "code": "BOARD_REQUIRED", "exit": 2 },
+				{ "code": "CANVAS_UNREACHABLE", "exit": 3 }
+			],
+			"introducedBy": "TASK-143.08.06.03"
 		},
 		{
 			"path": "export",
@@ -1113,16 +1133,16 @@
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/scene.ts",
 			"stdout": "json object",
-			"result": "success,board,pane,message",
-			"diagnostics": "pane location note",
-			"exits": [0, 1, 2, 3, 4],
-			"prerequisites": ["server", "browser", "board", "doing"],
+			"result": "success,board,count,ids",
+			"diagnostics": "usage, server, renderer, conversion, and write refusals",
+			"exits": [0, 1, 2, 3, 5],
+			"prerequisites": ["server", "board", "doing"],
 			"relationships": ["POST /api/elements/from-mermaid"],
-			"semantics": "browser conversion followed by board write",
-			"ordering": "local diagram before server/browser",
-			"nextFields": ["board", "pane", "message"],
+			"semantics": "server-owned conversion and one locked board write",
+			"ordering": "local diagram before server; convert before one write",
+			"nextFields": ["board", "count", "ids"],
 			"workflow": "necessary composition",
-			"effects": ["local-read", "browser", "write"],
+			"effects": ["local-read", "write"],
 			"refusals": [
 				{
 					"code": "BOARD_REQUIRED",
@@ -1131,10 +1151,6 @@
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
-				},
-				{
-					"code": "BROWSER_REQUIRED",
-					"exit": 4
 				},
 				{
 					"code": "DOING_REQUIRED",

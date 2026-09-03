@@ -281,20 +281,8 @@ export function publishSelection(elementIds: readonly string[], clientId: string
 	return post<{ success: true }>("/api/selection", { elementIds, clientId });
 }
 
-export function postExportResult(requestId: string, payload: Record<string, unknown>) {
-	return post<{ success: true }>("/api/export/image/result", { requestId, ...payload });
-}
-
-export function postFindingExportResult(
-	requestId: string,
-	findingIndex: number,
-	payload: Record<string, unknown>,
-) {
-	return post<{ success: true }>("/api/export/findings/result", {
-		requestId,
-		findingIndex,
-		...payload,
-	});
+export function postBrowserCaptureResult(requestId: string, payload: Record<string, unknown>) {
+	return post<{ success: true }>("/api/browser/capture/result", { requestId, ...payload });
 }
 
 export function postViewportResult(requestId: string, payload: Record<string, unknown>) {
