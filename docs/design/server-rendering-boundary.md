@@ -5,130 +5,134 @@ implements: 0020
 
 # Server rendering boundary
 
-TASK-143.08.06.01 asked one narrow question: can the pinned Excalidraw export
-and Mermaid conversion packages run correctly with no Archboard browser client?
-The answer is split. Bun DOM and canvas emulation can export the tested board
-image. It silently loses a valid Mermaid diagram. An isolated, server-owned
-headless Chromium process handles both, so Chromium is the selected rendering
-backend for the browser-free board path.
+TASK-143.08.06.01 asks whether the pinned Excalidraw export and Mermaid
+conversion stack can render an Archboard board without an Archboard browser
+client. The answer is split: Bun DOM/canvas emulation renders the representative
+board but silently turns a valid Mermaid flowchart into no elements. An
+isolated, server-owned headless Chromium process renders the board and returns
+the complete graph, so Chromium is the selected backend for the browser-free
+Board render path.
 
-The measured stack is Bun 1.4.0, `@excalidraw/excalidraw` 0.18.1,
-`@excalidraw/mermaid-to-excalidraw` 2.2.2, and Mermaid 11.17.2. The selected
-renderer is Chromium 150.0.7871.186 on this Linux host.
+This is not a way to borrow a person's browser. The selected renderer owns a
+temporary profile, a loopback-only DevTools port, and its entire process group.
+It has no pane, selection, camera, or connected browser session.
 
-This is not a recommendation to use a person's browser in the background. The
-renderer owns a temporary profile, a loopback-only control port, and its own
-process group. It does not know about panes, selections, cameras, or connected
-browser sessions.
+The measurement host used Bun 1.4.0, `@excalidraw/excalidraw` 0.18.1,
+`@excalidraw/mermaid-to-excalidraw` 2.2.2, Mermaid 11.17.2, and Chromium
+150.0.7871.186.
 
-## Canonical inputs and repeatable proof
+## Canonical input and bounded probes
 
-The tracked inputs are deliberately small and inspectable:
+The proof starts from the persisted note, not a vendor-shaped scene file.
 
-- `docs/design/server-rendering-boundary-fixtures/board.json` has nine native
-  Excalidraw elements. It covers rectangle, ellipse, diamond, text, line,
-  freedraw, a bound label and arrow, fills, an embedded one-pixel image, and its
-  persisted file entry.
-- `docs/design/server-rendering-boundary-fixtures/diagram.mmd` has a three-node
-  Mermaid flowchart.
-- `docs/design/server-rendering-boundary-fixtures/chromium.html` calls the
-  pinned export and Mermaid APIs against those inputs.
-- `scripts/probe-server-rendering-chromium.ts` starts the disposable proof
-  renderer, checks the returned facts, and writes only a generated report to an
-  explicitly supplied empty directory.
+- `board.excalidraw.md` contains nine real persisted elements: rectangle,
+  ellipse, diamond, text, arrow, line, freedraw, image, a bound label, a bound
+  arrow, three fills, the background, and the embedded file record. Its ids are
+  valid one-to-eight-character Archboard block ids.
+- Both probes call `readNote`, then `projectPreviewSnapshot`, before rendering.
+  The Chromium probe also remaps the browser Mermaid result to Archboard ids
+  and runs the in-memory result through `applyElementInput`; no proof operation
+  writes a note.
+- `diagram.mmd` is a three-node, two-edge graph. Both probes import and pass
+  `DEFAULT_MERMAID_CONFIG`, the configuration used by the current browser
+  converter.
+- `emulation/package.json` and its Bun lock are the complete, pinned disposable
+  emulation dependency input. The emulation probe copies both into a unique
+  system-temporary directory and deletes that directory before returning.
 
-Run it with a temporary output directory. Do not keep that output in the
-repository.
+The copied root runs this exact install:
+
+`bun install --frozen-lockfile --ignore-scripts`
+
+Each probe owns its report directory below the system temporary root and
+rejects every argument. It therefore cannot write into a caller directory or
+the repository. Outputs are intentionally untracked.
 
 ```bash
-proof_root=$(mktemp -d /tmp/archboard-server-rendering-proof.XXXXXX)
-bun scripts/probe-server-rendering-chromium.ts --out "$proof_root"
+bun scripts/probe-server-rendering-emulation.ts
+bun scripts/probe-server-rendering-chromium.ts
 ```
 
-The script starts Vite only to serve the proof fixture's ESM imports. Vite is
-not part of the selected runtime. The renderer itself starts Chromium with a
-fresh temporary profile, `--headless=new`, a reserved loopback DevTools port,
-and a new process session. It drives one private target through DevTools, not a
-live Archboard browser. Each Chromium child has a 20 second limit. Cleanup has
-five seconds to prove that every process observed in its own process group is
-gone, then the script removes the temporary profile.
+The Chromium command is run twice for repeatability. One command starts one
+Chromium/profile and runs three serial normal jobs. It also exercises missing
+image, malformed Mermaid, timeout, child-exit, cleanup, and replacement paths.
+The per-job allowance is 20 seconds. Process cleanup receives TERM, then KILL
+within the same five-second cleanup allowance. Every failure includes the
+current fixture phase, page console/exception/network diagnostics, and the
+owned-process/profile audit.
 
 ## Emulation result
 
-The first attempt used Bun 1.4 with `happy-dom` 20.13.2 and
-`@napi-rs/canvas` 1.0.8. The canvas bridge registered the bundled Excalifont
-faces, supplied the DOM and canvas APIs Excalidraw imports, restored every
-installed global after a render, and cleared its font registry on exit. Those
-packages are not committed because this backend was rejected.
+The disposable harness uses `happy-dom` 20.13.2 and `@napi-rs/canvas` 1.0.8.
+It installs the required DOM, canvas, CSS, image, storage, event, and font
+globals only for the probe; it registers all seven bundled Excalifont WOFF2
+files with the native canvas font registry; it restores every global and clears
+that registry before returning. Runtime console diagnostics are a failure.
 
-The board fixture exported correctly twice with identical hashes:
+The harness exported a 20,408-byte PNG and a 13,458-byte SVG. The SVG included
+the bound `Service API` label and the embedded image. A malformed Mermaid
+source rejected with `Error`; the valid canonical graph returned zero elements.
+The fixture has a working DOM, native 2D canvas, registered fonts, an actual
+export result, and no runtime diagnostics, so the remaining defect is an
+inference about absent SVG layout geometry rather than a known starting
+polyfill. Supplying geometry estimates would be a second renderer with no
+Archboard contract. The silent empty success affects Mermaid conversion, a
+reachable board operation, and is sufficient to reject emulation.
 
-| Output |  Bytes | SHA-256                                                            |
-| ------ | -----: | ------------------------------------------------------------------ |
-| PNG    | 20,408 | `ccad6454b7ecda111308052b1e03c1e23e6967816f82261221e3891205d3e8bb` |
-| SVG    |  8,525 | `0b2f0ede57b63d8f911509fcefaf2e7c2c24bc56a7d9d3001c358c26b4965800` |
+## Chromium result
 
-The SVG contained the bound "Service API" label, the image data URI, the
-fixture colours, and `Excalifont` font-family declarations. The PNG had a valid
-PNG signature. The first emulated render moved process RSS from 82 MiB to 165
-MiB. A second isolated DOM render ended at 176 MiB.
+The Chromium probe serves only its local ESM fixture and an in-memory snapshot
+through an in-process Vite server. Vite is neither a renderer nor a child
+process. Chromium itself uses `--headless=new`, a fresh temporary profile, a
+reserved loopback DevTools port, and `setsid`; it never inspects an existing
+browser.
 
-Mermaid failed the bar. The valid flowchart returned `{ "elements": [] }` with
-no error. The malformed fixture did reject with Mermaid's parse error. A caller
-would therefore receive apparent conversion success and write nothing. The
-fault is reachable because Mermaid needs SVG layout geometry that this DOM and
-canvas pair does not provide. Adding local geometry estimates would create a
-second, unverified renderer. It is more complicated and less reliable than the
-fallback below.
+Two contained executions produced identical normal-job evidence:
 
-## Selected Chromium result
+| Fact                                      |                                                                  First execution |        Second execution |
+| ----------------------------------------- | -------------------------------------------------------------------------------: | ----------------------: |
+| PNG                                       | 43,462 bytes, `a6439911658614672830df4e4520c04380e08011dfdd634ea93c6310b6fc8bfc` |                    same |
+| SVG                                       | 13,458 bytes, `b654ec7a2295d9e5b6730280b21b8d78746200b937358942fed90a8388f45a3f` |                    same |
+| Startup / first job                       |                                                                  503 ms / 509 ms |         577 ms / 491 ms |
+| Process-tree RSS: startup / warm / steady |                                                          938 / 1,071 / 1,098 MiB | 937 / 1,070 / 1,099 MiB |
+| Serial maximum                            |                                                                            1 job |                   1 job |
+| Profile and observed process cleanup      |                                                                            clean |                   clean |
 
-The Chromium proof ran twice with no Archboard server and no connected browser
-client. Each run rendered the board, converted the Mermaid flowchart, and
-deliberately sent malformed Mermaid input.
+The probe decodes the PNG and verifies its signature, 554×405 dimensions,
+background, three fill colours, and the service/store/decision regions. It
+parses the SVG and verifies its root, background, fills, Excalifont text,
+loaded font, bound label, embedded image, and arrow visual. It checks exact
+Mermaid node labels and edge connectivity, then applies the raw browser result
+to the actual inbound converter and verifies three rectangles, three bound text
+elements, two bound arrows, valid ids, and stable converted output. Normal-job
+hash or semantic divergence fails the command, including a mismatch after
+replacement.
 
-| Fact                             |                                                                        First run |                                                                       Second run |
-| -------------------------------- | -------------------------------------------------------------------------------: | -------------------------------------------------------------------------------: |
-| PNG SHA-256                      | `a6439911658614672830df4e4520c04380e08011dfdd634ea93c6310b6fc8bfc`, 43,462 bytes | `a6439911658614672830df4e4520c04380e08011dfdd634ea93c6310b6fc8bfc`, 43,462 bytes |
-| SVG SHA-256                      | `a0c3acf4b77f1b4b1e01ae67ed328b387699fd654816159f04e0039c4abb76d1`, 13,478 bytes | `a0c3acf4b77f1b4b1e01ae67ed328b387699fd654816159f04e0039c4abb76d1`, 13,478 bytes |
-| Mermaid output                   |                                                                       5 elements |                                                                       5 elements |
-| Invalid Mermaid                  |                                                                          `Error` |                                                                          `Error` |
-| Renderer startup                 |                                                                           157 ms |                                                                           161 ms |
-| Render and conversion            |                                                                           875 ms |                                                                           369 ms |
-| Process-tree RSS at startup      |                                                                          641 MiB |                                                                          600 MiB |
-| Process-tree RSS after rendering |                                                                        1,068 MiB |                                                                          974 MiB |
-| Owned-process cleanup            |                                                                            clean |                                                                            clean |
+Malformed persisted input rejects with `Error`. Missing embedded-file data
+cannot pass the SVG semantic check. Malformed Mermaid rejects with `Error`.
+The intentional stalled job fails at the named `intentional-timeout` phase at
+20 seconds; the process is then cleaned and a replacement renders the same
+normal result. A separately terminated renderer rejects a subsequent job with
+the Chromium-exited error, and its process group/profile audit is clean. These
+are all direct report facts, rather than longer retry allowances.
 
-The exported SVG had both the bound label and the embedded image. Byte count
-and hash matched across runs for PNG and SVG. The report declared deterministic
-output. The script records the exact process ids it created, sends the session
-group a termination signal, waits for cleanup, and fails if an observed process
-remains. Its temporary profile is removed only after that check.
+The memory measurement rules out a process per Board render. The production
+implementation needs one application-owned renderer and a serialized request
+queue; it measures start, warm, and steady RSS for that persistent resource.
 
-The memory cost rules out one Chromium process per request. The production
-renderer needs one application-owned process and one request queue. It receives
-an immutable persisted-board snapshot, returns PNG, SVG, or converted Mermaid
-elements, and is killed and replaced after a timeout or failed health check.
-No request may attach to, switch, inspect, or capture a user browser.
+## Selected boundary
 
-## Failure contract for the follow-on implementation
+Board render takes an immutable named-board snapshot and returns PNG or SVG.
+Mermaid conversion takes text and, only on a non-empty valid result, sends it
+through the existing inbound converter and one normal locked write. Rendering
+does not write a note. A valid non-empty Mermaid source that yields no elements
+is a renderer failure, not a no-op.
 
-TASK-143.08.06.03 should give the server renderer these rules:
+Browser capture remains a distinct Browser operation: it captures a named live
+browser target and camera. Board render remains a Board operation: it reads the
+persisted snapshot and owns no pane. The selected Chromium renderer is a
+server resource, not an Archboard browser client.
 
-- Start and stop it with the Canvas application lifetime. Use only a private
-  profile and loopback control channel.
-- Serialize immutable render jobs. Return an error when the renderer exits,
-  times out, or produces invalid PNG or SVG data.
-- Treat a non-empty Mermaid input with no returned elements as a renderer
-  failure. Do not start the inbound converter or write the note in that case.
-- Send successful Mermaid elements through the existing inbound converter and
-  one normal locked write. Rendering itself never writes a note.
-- Keep Browser capture on the `archboard browser` path. It captures a named
-  live target and camera. A Board render reads a named snapshot and returns an
-  artifact.
-
-The proof does not claim pixel equality across every Chromium version or
-platform. It proves the pinned stack on this Linux host, with the current
-Archboard element types, and gives the selected owner a stable regression
-fixture. A future dependency or Chromium update must rerun this fixture before
-changing the renderer choice.
+The result is limited to this pinned stack on this Linux host and the supported
+fixture shapes. A Chromium, Excalidraw, Mermaid, or renderer-lifecycle change
+must rerun both bounded probes before changing this decision.

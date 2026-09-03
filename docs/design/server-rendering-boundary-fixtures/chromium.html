@@ -1,61 +1,220 @@
 <!doctype html>
 <html lang="en">
-	<body>
+	<body data-phase="bootstrap" data-state="idle">
 		Starting server-owned renderer probe.
 	</body>
+	<script>
+		window.__archboardRendererProof = {
+			phase: "bootstrap",
+			status: "idle",
+			active: false,
+			jobs: 0,
+			errors: [],
+		};
+		window.addEventListener(
+			"error",
+			(event) => {
+				window.__archboardRendererProof.errors.push({
+					type: "window.error",
+					message: event.message,
+					source: event.filename,
+					line: event.lineno,
+				});
+			},
+			true,
+		);
+		window.addEventListener("unhandledrejection", (event) => {
+			window.__archboardRendererProof.errors.push({
+				type: "window.unhandledrejection",
+				message: String(event.reason),
+			});
+		});
+	</script>
 	<script type="module">
 		import { exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
 		import { parseMermaidToExcalidraw } from "@excalidraw/mermaid-to-excalidraw";
+		import { DEFAULT_MERMAID_CONFIG } from "../../../src/ui/canvas/mermaidConverter.ts";
 
+		const proof = window.__archboardRendererProof;
+		const body = document.body;
+		const stage = (phase, status = "running") => {
+			proof.phase = phase;
+			proof.status = status;
+			body.dataset.phase = phase;
+			body.dataset.state = status;
+		};
 		const hash = async (bytes) => {
 			const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
 			return [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 		};
-
-		try {
-			const fixture = await fetch("./board.json").then((response) => response.json());
-			const diagram = await fetch("./diagram.mmd").then((response) => response.text());
-			const options = {
-				elements: fixture.elements,
-				appState: fixture.appState,
-				files: fixture.files,
-			};
-			const png = new Uint8Array(
-				await (await exportToBlob({ ...options, mimeType: "image/png" })).arrayBuffer(),
-			);
-			const svg = new XMLSerializer().serializeToString(await exportToSvg(options));
-			const mermaid = await parseMermaidToExcalidraw(diagram);
-			let invalidMermaid = null;
-			try {
-				await parseMermaidToExcalidraw("flowchart LR\n  invalid[");
-			} catch (error) {
-				invalidMermaid = error instanceof Error ? error.name : String(error);
+		const colorBounds = (pixels, width, color) => {
+			let count = 0;
+			let minX = width;
+			let minY = pixels.length / 4 / width;
+			let maxX = -1;
+			let maxY = -1;
+			for (let offset = 0; offset < pixels.length; offset += 4) {
+				if (
+					pixels[offset] !== color[0] ||
+					pixels[offset + 1] !== color[1] ||
+					pixels[offset + 2] !== color[2] ||
+					pixels[offset + 3] !== 255
+				)
+					continue;
+				const pixel = offset / 4;
+				const x = pixel % width;
+				const y = Math.floor(pixel / width);
+				count += 1;
+				minX = Math.min(minX, x);
+				minY = Math.min(minY, y);
+				maxX = Math.max(maxX, x);
+				maxY = Math.max(maxY, y);
 			}
-			document.body.textContent = JSON.stringify({
-				png: {
-					bytes: png.byteLength,
-					hash: await hash(png),
-					isPng: [137, 80, 78, 71, 13, 10, 26, 10].every((byte, index) => png[index] === byte),
+			return { count, minX, minY, maxX, maxY };
+		};
+		const inspectPng = async (png) => {
+			const bitmap = await createImageBitmap(new Blob([png], { type: "image/png" }));
+			const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+			const context = canvas.getContext("2d", { willReadFrequently: true });
+			context.drawImage(bitmap, 0, 0);
+			const pixels = context.getImageData(0, 0, bitmap.width, bitmap.height).data;
+			return {
+				width: bitmap.width,
+				height: bitmap.height,
+				colors: {
+					background: colorBounds(pixels, bitmap.width, [248, 250, 252]),
+					service: colorBounds(pixels, bitmap.width, [219, 234, 254]),
+					store: colorBounds(pixels, bitmap.width, [220, 252, 231]),
+					decision: colorBounds(pixels, bitmap.width, [254, 243, 199]),
 				},
-				svg: {
-					bytes: svg.length,
-					hash: await hash(new TextEncoder().encode(svg)),
-					hasBoundLabel: svg.includes("Service API"),
-					hasEmbeddedImage: svg.includes("data:image/png;base64"),
-				},
-				mermaid: {
-					elementCount: mermaid.elements.length,
-					fileCount: Object.keys(mermaid.files ?? {}).length,
-				},
-				invalidMermaid,
-			});
-			document.body.dataset.state = "done";
-		} catch (error) {
-			document.body.textContent = JSON.stringify({
-				error:
-					error instanceof Error ? { name: error.name, message: error.message } : String(error),
-			});
-			document.body.dataset.state = "failed";
-		}
+			};
+		};
+		const inspectSvg = (svg) => {
+			const attribute = (element, name) => element.getAttribute(name) ?? "";
+			const shapes = [...svg.querySelectorAll("rect, ellipse, path, text, image, marker")].map(
+				(element) => ({
+					tag: element.localName,
+					fill: attribute(element, "fill"),
+					stroke: attribute(element, "stroke"),
+					fontFamily: attribute(element, "font-family"),
+					markerEnd: attribute(element, "marker-end"),
+					href: attribute(element, "href") || attribute(element, "xlink:href"),
+					text: element.localName === "text" ? (element.textContent ?? "") : "",
+				}),
+			);
+			return {
+				root: svg.localName,
+				shapes,
+				background: shapes.some((shape) => shape.fill === "#f8fafc"),
+				fills: ["#dbeafe", "#dcfce7", "#fef3c7"].map((fill) => ({
+					fill,
+					present: shapes.some((shape) => shape.fill === fill),
+				})),
+				hasBoundLabel: shapes.some((shape) => shape.text === "Service API"),
+				hasExcalifont: shapes.some((shape) => shape.fontFamily.includes("Excalifont")),
+				fontLoaded: document.fonts.check("20px Excalifont"),
+				hasEmbeddedImage: shapes.some(
+					(shape) => shape.tag === "image" && shape.href.startsWith("data:image/png;base64,"),
+				),
+				hasArrowVisual:
+					shapes.filter((shape) => shape.tag === "path" && shape.stroke === "#334155").length >= 3,
+			};
+		};
+		const inspectMermaid = (mermaid) => {
+			const nodes = mermaid.elements
+				.filter((element) => element.type !== "arrow")
+				.map((element) => ({
+					id: element.id,
+					label: element.label?.text ?? "",
+					type: element.type,
+				}))
+				.toSorted((left, right) => left.label.localeCompare(right.label));
+			const labels = new Map(nodes.map((node) => [node.id, node.label]));
+			const edges = mermaid.elements
+				.filter((element) => element.type === "arrow")
+				.map((element) => ({
+					from: labels.get(element.start?.id) ?? "",
+					to: labels.get(element.end?.id) ?? "",
+				}))
+				.toSorted((left, right) =>
+					`${left.from}:${left.to}`.localeCompare(`${right.from}:${right.to}`),
+				);
+			return { nodes, edges };
+		};
+
+		window.runArchboardRendererProof = async (mode = "normal") => {
+			if (proof.active) throw new Error("Renderer proof does not permit concurrent jobs.");
+			proof.active = true;
+			proof.jobs += 1;
+			stage(mode === "stall" ? "intentional-timeout" : "load-fixtures");
+			try {
+				if (mode === "stall") return await new Promise(() => {});
+				const fixture = await fetch(
+					`./render-input.json${mode === "missing-image" ? "?case=missing-image" : ""}`,
+				).then((response) => {
+					if (!response.ok) throw new Error(`Board fixture failed: ${response.status}`);
+					return response.json();
+				});
+				const diagram = await fetch("./diagram.mmd").then((response) => {
+					if (!response.ok) throw new Error(`Mermaid fixture failed: ${response.status}`);
+					return response.text();
+				});
+				const options = {
+					elements: fixture.elements,
+					appState: fixture.appState,
+					files: fixture.files,
+				};
+				stage("export-png");
+				const png = new Uint8Array(
+					await (await exportToBlob({ ...options, mimeType: "image/png" })).arrayBuffer(),
+				);
+				stage("inspect-png");
+				const pngSemantics = await inspectPng(png);
+				stage("export-svg");
+				const svgElement = await exportToSvg(options);
+				const svg = new XMLSerializer().serializeToString(svgElement);
+				stage("inspect-svg");
+				const svgSemantics = inspectSvg(svgElement);
+				stage("convert-mermaid");
+				const mermaid = await parseMermaidToExcalidraw(diagram, DEFAULT_MERMAID_CONFIG);
+				let invalidMermaid = null;
+				try {
+					await parseMermaidToExcalidraw("flowchart LR\n  invalid[", DEFAULT_MERMAID_CONFIG);
+				} catch (error) {
+					invalidMermaid = error instanceof Error ? error.name : String(error);
+				}
+				stage("complete", "done");
+				proof.result = {
+					png: {
+						bytes: png.byteLength,
+						hash: await hash(png),
+						isPng: [137, 80, 78, 71, 13, 10, 26, 10].every((byte, index) => png[index] === byte),
+						semantics: pngSemantics,
+					},
+					svg: {
+						bytes: svg.length,
+						hash: await hash(new TextEncoder().encode(svg)),
+						semantics: svgSemantics,
+					},
+					mermaid: {
+						elementCount: mermaid.elements.length,
+						fileCount: Object.keys(mermaid.files ?? {}).length,
+						rawElements: mermaid.elements,
+						elements: inspectMermaid(mermaid),
+					},
+					invalidMermaid,
+				};
+				return proof.result;
+			} catch (error) {
+				proof.failure =
+					error instanceof Error ? { name: error.name, message: error.message } : String(error);
+				proof.errors.push({ type: "job.failure", value: proof.failure });
+				stage("failed", "failed");
+				return { error: proof.failure };
+			} finally {
+				proof.active = false;
+			}
+		};
+		stage("ready", "idle");
 	</script>
 </html>
