@@ -62,7 +62,14 @@ function completeItems(longOutput = "command output"): readonly CodexWorkbenchIt
 			exitCode: 0,
 			durationMs: 12,
 		},
-		{ type: "fileChange", id: "item-file", changes: [], status: "completed" },
+		{
+			type: "fileChange",
+			id: "item-file",
+			changes: [
+				{ path: "src/board.ts", kind: { type: "add" }, diff: "+export const board = true;" },
+			],
+			status: "completed",
+		},
 		{
 			type: "mcpToolCall",
 			id: "item-mcp",
@@ -123,7 +130,6 @@ function completeItems(longOutput = "command output"): readonly CodexWorkbenchIt
 		{ type: "contextCompaction", id: "item-compact" },
 	] satisfies readonly CodexWorkbenchItem[];
 }
-
 function turn(
 	status: CodexWorkbenchTurn["status"] = "completed",
 	items: readonly CodexWorkbenchItem[] = completeItems(),
@@ -147,7 +153,6 @@ function turn(
 		durationMs: status === "inProgress" ? null : 1_000,
 	};
 }
-
 function runtimeTimeline(status: BrowserTimeline["turns"][number]["status"]): BrowserTimeline {
 	return {
 		kind: "timeline",
@@ -179,15 +184,12 @@ function runtimeTimeline(status: BrowserTimeline["turns"][number]["status"]): Br
 		nextCursor: null,
 	};
 }
-
 function props(overrides: Partial<WorkbenchTimelineProps> = {}): WorkbenchTimelineProps {
 	return { threadId, turns: [turn()], runtimeTimeline: runtimeTimeline("completed"), ...overrides };
 }
-
 function expectedIdentity(itemId: string, occurrence = 0): string {
 	return JSON.stringify([threadId, turnId, itemId, occurrence]);
 }
-
 function renderTimeline(overrides: Partial<WorkbenchTimelineProps> = {}): string {
 	const timelineProps = props(overrides);
 	const runtime = timelineProps.runtimeTimeline ?? runtimeTimeline("completed");
@@ -202,7 +204,6 @@ function renderTimeline(overrides: Partial<WorkbenchTimelineProps> = {}): string
 		),
 	);
 }
-
 describe("workbench timeline", () => {
 	test("keeps a compile-time-complete label for every recovered ThreadItem arm", () => {
 		expect(Object.keys(CODEX_THREAD_ITEM_LABELS)).toEqual([
@@ -315,7 +316,6 @@ describe("workbench timeline", () => {
 		const items = normalizeTimeline(props({ turns: [hostile] })).turns.get(turnId)?.items ?? [];
 		expect(new Set(items.map((item) => item.identity)).size).toBe(items.length);
 	});
-
 	test("keeps a matching approval beside its canonical item before later activity", () => {
 		const command = completeItems().find((item) => item.type === "commandExecution");
 		if (command?.type !== "commandExecution") throw new Error("Expected a command fixture.");
@@ -349,7 +349,6 @@ describe("workbench timeline", () => {
 		]);
 		expect(items.map((item) => item.itemId)).toEqual([approvalItemId, approvalItemId, laterItemId]);
 		expect(items[0]?.identity).not.toBe(items[1]?.identity);
-
 		const markup = renderTimeline(mixedProps);
 		const commandIndex = markup.indexOf('data-item-type="commandExecution"');
 		const approvalIndex = markup.indexOf('data-item-type="approval"');
@@ -358,7 +357,6 @@ describe("workbench timeline", () => {
 		expect(commandIndex).toBeLessThan(approvalIndex);
 		expect(approvalIndex).toBeLessThan(laterIndex);
 	});
-
 	test("bounds inert details and accepts only HTTP media links", () => {
 		const cycle: Record<string, unknown> = { value: "x".repeat(20_000) };
 		cycle.self = cycle;
@@ -431,8 +429,10 @@ describe("workbench timeline", () => {
 		const linkClass = markup.match(/<a class="([^"]+)"/)?.[1];
 		expect(linkClass).toContain("inline-flex min-h-touch-target max-w-full items-center");
 		expect(markup).toContain('<span class="font-sans text-body break-words">Archboard</span>');
-		expect(markup).toContain('<span class="font-sans text-body break-words">0 files</span>');
+		expect(markup).toContain('<span class="font-sans text-body break-words">1 file</span>');
 		expect(markup).toContain('<span class="font-mono text-technical break-all">bun test</span>');
+		expect(markup).toContain('font-mono text-technical break-all">src/board.ts');
+		expect(markup).toContain('font-sans text-body break-words">+export const board = true;');
 		expect(markup).not.toContain('href="javascript:');
 		expect(markup).toContain("<details");
 		expect(markup).toContain("<summary");
