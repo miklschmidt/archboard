@@ -539,7 +539,7 @@ export const TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_POLL_MS = 10;
 export const TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS = 5_000;
 /** Lets the process-group fixture publish descendant readiness before its forced failure. */
 export const TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS = 1_000;
-/** Covers 80 real sentinel lifecycles plus one complete bounded process-group cleanup. */
+/** Bounds both retained parent-SIGTERM owners while they join cleanup before replaying the signal. */
 export const TEST_BOARD_INSPECTION_PACKAGE_LIFECYCLE_CASE_TIMEOUT_MS = 15_000;
 // ── Canvas subprocesses owned by checks (TASK-086) ───────────────────────
 
