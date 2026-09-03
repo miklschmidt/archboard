@@ -4214,15 +4214,11 @@ app.post("/api/boards/save", (req: Request, res: Response) => {
 // A structured semantic diff between two variants, joined on node identity
 // (src/runtime/engine/compare.ts). Read-only in the strictest sense: comparing two boards
 // must never disturb the one on screen, so this neither opens a board, nor
-// registers one in the store, nor records a baseline, nor moves the active
-// pointer. Both sides are read off disk, because that is where a board is
-// (ADR 0015); what `source` still distinguishes is whether the side is a board
-// this canvas has open — and therefore possibly on a pane in front of somebody
-// — or one that only exists in the vault. Reported per side, because they can
-// differ and the human needs to know which they were told about.
+// registers one in the store, nor records a baseline, nor consults pane state.
+// Both sides are read from their notes, because that is where a board is (ADR
+// 0015, ADR 0020).
 
 function loadSideForCompare(key: string): CompareSideInput {
-	const registered = boards.has(key);
 	const resolved = resolveBoard(key, "Comparing boards");
 	return {
 		key,
@@ -4230,28 +4226,17 @@ function loadSideForCompare(key: string): CompareSideInput {
 		elements: Array.from(resolved.content.elements.values()).filter(
 			(element) => !element.isDeleted,
 		),
-		source: registered ? "memory" : "vault",
 		file: resolved.board.file,
-		onScreen: boardsOnScreen().some((shown) => shown.board === key),
 	};
 }
 
-// Every address that exists for a board name — in the vault and in this
-// session — so a one-sided `compare payments` can find the other side and, when
-// it cannot, say what there was to choose from.
+// Every persisted address for a board name, so a one-sided `compare payments`
+// can find the other side without consulting transient session state.
 function addressesFor(boardName: string): string[] {
-	const keys = new Set<string>();
-	try {
-		for (const found of listBoards()) {
-			if (found.identity.board === boardName) keys.add(found.key);
-		}
-	} catch {
-		/* no vault: the open boards are still an answer */
-	}
-	for (const [key, state] of boards) {
-		if (state.identity.board === boardName) keys.add(key);
-	}
-	return [...keys].toSorted();
+	return listBoards()
+		.filter((found) => found.identity.board === boardName)
+		.map((found) => found.key)
+		.toSorted();
 }
 
 app.get("/api/boards/compare", (req: Request, res: Response) => {
@@ -4324,7 +4309,7 @@ app.get("/api/boards/compare", (req: Request, res: Response) => {
 			);
 		}
 		logger.info(
-			`Compared "${fromKey}" (${from.source}) against "${toKey}" (${to.source}): ` +
+			`Compared "${fromKey}" against "${toKey}": ` +
 				`+${result.summary.nodesAdded} -${result.summary.nodesRemoved} ~${result.summary.nodesChanged} nodes`,
 		);
 		res.json(result);

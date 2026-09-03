@@ -227,7 +227,6 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 			key: "geometry",
 			identity,
 			elements,
-			source: "memory",
 		};
 		const result = compareBoards(side, { ...side, key: "geometry@copy" });
 		const factsFor = (id: string) => result.nodes.unchanged.find((n) => n.node === id)?.facts;

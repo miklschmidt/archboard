@@ -292,8 +292,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"",
 			"  With one address the other side is found among that board's variants in the vault, and the",
 			'  "current" variant is always the from side. Neither board is opened, and both are read from',
-			"  their notes; `source` says whether a side is a board this canvas has open, and so possibly on",
-			"  screen in front of somebody, or one that only exists in the vault.",
+			"  their persisted notes. The result never depends on whether either board is open or on screen.",
 		].join("\n"),
 	},
 	check: {
@@ -495,7 +494,13 @@ export interface CliRegistryEntry {
 }
 
 const boardNamespaces = new Set(["board", "arrange", "snapshot", "compare"]);
-const sessionRelationships = ["/api/selection", "/api/panes", "/api/viewport", "/api/browser/"];
+const sessionRelationships = [
+	"/api/selection",
+	"/api/panes",
+	"/api/viewport",
+	"/api/browser/",
+	"/api/boards/open",
+];
 
 function commandClassification(command: AnyCommandContract): CliRegistryEntry["classification"] {
 	if (command.path[0] === "browser") return "browser";
@@ -573,6 +578,25 @@ export function cliContractRegistry(): CliRegistryEntry[] {
 	);
 	for (const entry of entries) assertCommandArchitecture(entry);
 	return entries;
+}
+
+/** Render one help topic from the same route and contract registry used for dispatch. */
+export function commandHelp(topic: readonly string[]): string | null {
+	const [name, childName, ...tail] = topic;
+	if (!name || tail.length > 0) return null;
+	const root = COMMANDS[name];
+	if (!root) return null;
+	const route = childName ? root.children?.[childName] : root;
+	if (!route) return null;
+	const base = `Usage: archboard ${commandUsage(route)}\n  ${commandSummary(route)}\n`;
+	if (!childName) return base;
+	const prerequisites = route.owner.contract.prerequisites.join(", ") || "none";
+	const effects = route.owner.contract.effects.join(", ") || "none";
+	return (
+		base +
+		`  ${route.owner.contract.description}\n` +
+		`  Prerequisites: ${prerequisites}. Effects: ${effects}.\n`
+	);
 }
 
 function dispatchedCommand(
@@ -790,12 +814,9 @@ export async function runCli(argv: string[]): Promise<void> {
 	const [name, ...rest] = argv;
 
 	if (!name || name === "help" || name === "--help" || name === "-h") {
-		const topic = name === "help" ? rest[0] : undefined;
-		if (topic && COMMANDS[topic]) {
-			const command = COMMANDS[topic];
-			process.stdout.write(
-				`Usage: archboard ${commandUsage(command)}\n  ${commandSummary(command)}\n`,
-			);
+		const help = name === "help" ? commandHelp(rest) : null;
+		if (help) {
+			process.stdout.write(help);
 		} else {
 			printHelp();
 		}

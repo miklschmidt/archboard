@@ -21,6 +21,7 @@ const auditSchema = z.object({
 				handlerOwner: z.string(),
 				parserOwner: z.string(),
 				prerequisites: z.array(z.string()),
+				relationships: z.array(z.string()),
 				effects: z.array(z.string()),
 				refusals: z.array(z.object({ code: z.string(), exit: z.number() })),
 				exits: z.array(z.number()),
@@ -147,7 +148,7 @@ describe("command contract audit", () => {
 		);
 	});
 
-	test("matches route owners, parents, prerequisites, effects, refusals, and exits", () => {
+	test("matches route owners, parents, prerequisites, relationships, effects, refusals, and exits", () => {
 		const auditByPath = new Map(audit.entries.map((entry) => [entry.path, entry]));
 		for (const entry of registry) {
 			const audited = auditByPath.get(entry.name)!;
@@ -161,6 +162,10 @@ describe("command contract audit", () => {
 			expect(JSON.stringify(entry.contract.prerequisites), entry.name).toBe(
 				JSON.stringify(audited.prerequisites),
 			);
+			expect(
+				entry.contract.relationships.map(({ method, path }) => `${method} ${path}`),
+				entry.name,
+			).toEqual(audited.relationships);
 			expect(JSON.stringify(entry.contract.effects), entry.name).toBe(
 				JSON.stringify(audited.effects),
 			);
@@ -184,32 +189,7 @@ describe("command contract audit", () => {
 		}
 	});
 
-	test("enforces the board and browser command split", () => {
-		for (const entry of registry) {
-			const browserPrerequisite = entry.contract.prerequisites.includes("browser");
-			const browserEffect = entry.contract.effects.includes("browser");
-			const boardWrite = entry.contract.effects.includes("write");
-			const paneInput = entry.contract.parameters.some(
-				(parameter) =>
-					"spellings" in parameter && parameter.spellings.some((spelling) => spelling === "--pane"),
-			);
-			if (entry.classification === "board") {
-				expect(browserPrerequisite, entry.name).toBeFalse();
-				expect(browserEffect, entry.name).toBeFalse();
-				expect(paneInput, entry.name).toBeFalse();
-			}
-			if (entry.classification === "browser") {
-				expect(
-					entry.name === "browser" || entry.name.startsWith("browser "),
-					entry.name,
-				).toBeTrue();
-				expect(boardWrite, entry.name).toBeFalse();
-			}
-			if (browserPrerequisite || browserEffect || paneInput) {
-				expect(entry.classification, entry.name).toBe("browser");
-			}
-		}
-
+	test("keeps named rendering separate from live-pane capture", () => {
 		const byName = new Map(registry.map((entry) => [entry.name, entry]));
 		expect(byName.get("render")?.classification).toBe("board");
 		expect(byName.get("render")?.contract.effects).not.toContain("browser");
@@ -229,6 +209,12 @@ describe("command contract audit", () => {
 					(parameter) => "spellings" in parameter && parameter.spellings.includes("--pane"),
 				),
 		).toBeTrue();
+
+		const compare = contracts.find((contract) => contract.name === "compare")?.result as
+			| { properties?: { from?: { properties?: Readonly<Record<string, unknown>> } } }
+			| undefined;
+		expect(compare?.properties?.from?.properties).not.toHaveProperty("source");
+		expect(compare?.properties?.from?.properties).not.toHaveProperty("onScreen");
 	});
 
 	test("derives family child discovery from parser flag specs", () => {
