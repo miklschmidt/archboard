@@ -164,6 +164,17 @@ function remaining(now: () => number, deadlineAtMs: number): number {
 	return Math.max(0, deadlineAtMs - now());
 }
 
+function stoppedCanvasGroup(
+	canvasPid: number,
+	identity: CanvasStartupProcessGroupIdentity,
+	state: CodexProcessGroupInspection | "inspection_error" | "signalling_error",
+): string {
+	return (
+		`Canvas pid ${canvasPid} remains stopped with Codex group leader pid ${identity.leaderPid}, ` +
+		`pgid ${identity.pgid}, starttime ${identity.leaderStartTime} in state ${state}.`
+	);
+}
+
 function validateTiming(timing: FailedCanvasCleanupTiming): void {
 	for (const [name, value] of Object.entries(timing)) {
 		if (!Number.isFinite(value) || value < 0)
@@ -214,13 +225,18 @@ async function takeCleanupOwnership(
 		readonly identity: CanvasStartupProcessGroupIdentity;
 		status: CodexProcessGroupInspection;
 	}>;
+	let operation: "inspection" | "signalling" = "inspection";
 	try {
 		states = identities.map((identity) => ({
 			identity,
 			status: operations.inspectGroup(identity),
 		}));
-		for (const state of states)
-			if (state.status === "owned") operations.signalGroup(state.identity, "SIGTERM");
+		for (const state of states) {
+			if (state.status !== "owned") continue;
+			operation = "signalling";
+			operations.signalGroup(state.identity, "SIGTERM");
+			operation = "inspection";
+		}
 		while (
 			states.some((state) => state.status === "owned") &&
 			operations.now() < applicationGraceAtMs
@@ -231,8 +247,12 @@ async function takeCleanupOwnership(
 			for (const state of states)
 				if (state.status === "owned") state.status = operations.inspectGroup(state.identity);
 		}
-		for (const state of states)
-			if (state.status === "owned") operations.signalGroup(state.identity, "SIGKILL");
+		for (const state of states) {
+			if (state.status !== "owned") continue;
+			operation = "signalling";
+			operations.signalGroup(state.identity, "SIGKILL");
+			operation = "inspection";
+		}
 		for (const state of states)
 			if (state.status === "owned") state.status = operations.inspectGroup(state.identity);
 		while (states.some((state) => state.status === "owned") && operations.now() < deadlineAtMs) {
@@ -241,22 +261,25 @@ async function takeCleanupOwnership(
 				if (state.status === "owned") state.status = operations.inspectGroup(state.identity);
 		}
 	} catch (error) {
-		await reapOuter(operations, deadlineAtMs);
 		return {
 			cleanup: "unproven",
 			owner: "unknown",
 			group: latest,
-			reason: `The launcher owned Codex group ${latest.pgid}, but cleanup failed: ${error instanceof Error ? error.message : String(error)}.`,
+			reason: `${stoppedCanvasGroup(options.canvasPid, latest, `${operation}_error`)} ${error instanceof Error ? error.message : String(error)}.`,
 		};
 	}
 	const unproven = states.filter((state) => state.status !== "quiescent");
 	if (unproven.length > 0) {
-		await reapOuter(operations, deadlineAtMs);
+		const latestState = states.find((state) => state.identity === latest)?.status ?? "unproven";
 		return {
 			cleanup: "unproven",
 			owner: "unknown",
 			group: latest,
-			reason: `The launcher could not prove the transferred Codex groups quiescent: ${unproven.map((state) => `${state.identity.pgid} (${state.status})`).join(", ")}.`,
+			reason:
+				stoppedCanvasGroup(options.canvasPid, latest, latestState) +
+				(unproven.length === 1 && unproven[0]?.identity === latest
+					? ""
+					: ` Non-quiescent transferred groups: ${unproven.map((state) => `${state.identity.pgid} (${state.status})`).join(", ")}.`),
 		};
 	}
 	if (!(await reapOuter(operations, deadlineAtMs))) {

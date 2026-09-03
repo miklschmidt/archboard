@@ -225,6 +225,82 @@ describe("failed public canvas cleanup", () => {
 		expect(liveGroups.size).toBe(0);
 	});
 
+	for (const terminalCase of [
+		{
+			name: "owned after TERM and KILL",
+			inspect: () => "owned" as const,
+			signalError: false,
+			expectedSignals: ["SIGTERM", "SIGKILL"] as const,
+			expectedState: "owned",
+			expectedError: null,
+		},
+		{
+			name: "reused",
+			inspect: () => "reused" as const,
+			signalError: false,
+			expectedSignals: [] as const,
+			expectedState: "reused",
+			expectedError: null,
+		},
+		{
+			name: "unproven",
+			inspect: () => "unproven" as const,
+			signalError: false,
+			expectedSignals: [] as const,
+			expectedState: "unproven",
+			expectedError: null,
+		},
+		{
+			name: "inspection error",
+			inspect: () => {
+				throw new Error("injected inspection failure");
+			},
+			signalError: false,
+			expectedSignals: [] as const,
+			expectedState: "inspection_error",
+			expectedError: "injected inspection failure",
+		},
+		{
+			name: "signalling error",
+			inspect: () => "owned" as const,
+			signalError: true,
+			expectedSignals: ["SIGTERM"] as const,
+			expectedState: "signalling_error",
+			expectedError: "injected signalling failure",
+		},
+	] as const) {
+		test(`keeps the stopped canvas after ${terminalCase.name}`, async () => {
+			const run = fixture([ownership(), terminal("unproven")]);
+			const groupSignals: NodeJS.Signals[] = [];
+			const result = await completeFailedCanvasCleanup({
+				canvasPid: 31,
+				protocol: run.protocol,
+				timing,
+				operations: {
+					...run.operations,
+					inspectGroup: terminalCase.inspect,
+					signalGroup: (_identity, signal) => {
+						groupSignals.push(signal);
+						if (terminalCase.signalError) throw new Error("injected signalling failure");
+					},
+				},
+			});
+
+			expect(result).toEqual({
+				cleanup: "unproven",
+				owner: "unknown",
+				group,
+				reason:
+					`Canvas pid 31 remains stopped with Codex group leader pid 41, pgid 41, ` +
+					`starttime 100 in state ${terminalCase.expectedState}.` +
+					(terminalCase.expectedError === null ? "" : ` ${terminalCase.expectedError}.`),
+			});
+			expect(run.canvasSignals).toEqual(["SIGTERM", "SIGSTOP"]);
+			expect(groupSignals).toEqual([...terminalCase.expectedSignals]);
+			expect(run.state().canvasLive).toBeTrue();
+		});
+	}
+
 	test("fails closed with exact outer identity when no group ownership arrived", async () => {
 		const run = fixture([terminal("unproven")]);
 		const result = await completeFailedCanvasCleanup({
