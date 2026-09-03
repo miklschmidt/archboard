@@ -14,16 +14,13 @@ const started = new Promise<void>((resolve) => {
 	startCommand = resolve;
 });
 
-process.on("message", (message: unknown) => {
-	if (
-		typeof message === "object" &&
-		message !== null &&
-		"kind" in message
-	) {
+const onMessage = (message: unknown): void => {
+	if (typeof message === "object" && message !== null && "kind" in message) {
 		if (message.kind === "start") startCommand();
 		if (message.kind === "release") releaseOwner();
 	}
-});
+};
+process.on("message", onMessage);
 
 function report(result: GitOwnerResult): void {
 	if (!process.send) throw new Error("Git process owner requires its Bun IPC channel.");
@@ -32,26 +29,27 @@ function report(result: GitOwnerResult): void {
 
 const command = process.argv.slice(2);
 await started;
-let child: ReturnType<typeof Bun.spawn>;
+let result: GitOwnerResult;
 try {
-	child = Bun.spawn(command, {
+	const child = Bun.spawn(command, {
 		stdin: "ignore",
 		stdout: "inherit",
 		stderr: "inherit",
 	});
+	const exitCode = await child.exited;
+	result = {
+		kind: "result",
+		exitCode,
+		...(child.signalCode === null ? {} : { signalCode: child.signalCode }),
+	};
 } catch (cause) {
-	report({
+	result = {
 		kind: "result",
 		spawnError: cause instanceof Error ? cause.message : String(cause),
-	});
-	await released;
-	process.exit(0);
+	};
 }
 
-const exitCode = await child.exited;
-report({
-	kind: "result",
-	exitCode,
-	...(child.signalCode === null ? {} : { signalCode: child.signalCode }),
-});
+report(result);
 await released;
+process.off("message", onMessage);
+if (process.connected) process.disconnect();

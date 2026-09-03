@@ -10,9 +10,12 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { GIT_PROCESS_GROUP_CLEANUP_MS } from "../../../shared/timing/timing.ts";
 import { git } from "../git.js";
+
+const GIT_PROCESS_OWNER = fileURLToPath(new URL("../git-process-owner.ts", import.meta.url));
 
 const FAKE_GIT = `#!/bin/sh
 mode="$1"
@@ -124,6 +127,46 @@ function withStalledFirstReader<T>(work: () => Promise<T>): {
 	}
 }
 
+test("Git process owner exits after one result and release", async () => {
+	let finishResult!: (value: unknown) => void;
+	const result = new Promise<unknown>((resolve) => {
+		finishResult = resolve;
+	});
+	const messages: unknown[] = [];
+	const owner = Bun.spawn([process.execPath, GIT_PROCESS_OWNER, process.execPath, "-e", ""], {
+		detached: true,
+		ipc: (message) => {
+			messages.push(message);
+			finishResult(message);
+		},
+		stdin: "ignore",
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	try {
+		owner.send({ kind: "start" });
+		const reported = await Promise.race([
+			result.then((value) => ({ kind: "result" as const, value })),
+			Bun.sleep(1_000).then(() => ({ kind: "deadline" as const })),
+		]);
+		expect(reported).toEqual({ kind: "result", value: { kind: "result", exitCode: 0 } });
+		owner.send({ kind: "release" });
+		const exited = await Promise.race([
+			owner.exited.then((exitCode) => ({ kind: "exit" as const, exitCode })),
+			Bun.sleep(1_000).then(() => ({ kind: "deadline" as const })),
+		]);
+		expect(exited).toEqual({ kind: "exit", exitCode: 0 });
+		expect(messages).toHaveLength(1);
+	} finally {
+		if (owner.exitCode === null) owner.kill("SIGKILL");
+		await owner.exited;
+		await Promise.all([
+			new Response(owner.stdout).arrayBuffer(),
+			new Response(owner.stderr).arrayBuffer(),
+		]);
+	}
+});
+
 test("real Git commands settle for success and nonzero exit", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-git-real-"));
 	try {
@@ -186,7 +229,7 @@ test("Git lifecycle owns overflow, cancellation, signals, descendants, and spawn
 		for (const [name, delayMs, timeoutMs, abortFirst, failure] of [
 			["read-failure", 25, 5_000, false, "cleanup"],
 			["abort-before-read-failure", 50, 5_000, true, "aborted"],
-			["timeout-before-read-failure", 50, 10, false, "timeout"],
+			["timeout-before-read-failure", 250, 100, false, "timeout"],
 		] as const) {
 			const marker = join(root, name);
 			const faultController = new AbortController();
@@ -197,10 +240,15 @@ test("Git lifecycle owns overflow, cancellation, signals, descendants, and spawn
 					timeoutMs,
 					signal: faultController.signal,
 				}),
+			).then(
+				(value) => ({ kind: "resolved" as const, value }),
+				(error: unknown) => ({ kind: "rejected" as const, error }),
 			);
 			await waitForFile(`${marker}.leader`);
 			if (abortFirst) faultController.abort();
-			await expect(failed).rejects.toMatchObject({ failure });
+			const outcome = await failed;
+			expect(outcome.kind).toBe("rejected");
+			if (outcome.kind === "rejected") expect(outcome.error).toMatchObject({ failure });
 			expect(performance.now() - started).toBeLessThan(1_000);
 			await expectPidAbsent(recordedPid(`${marker}.leader`));
 		}
@@ -223,15 +271,16 @@ test("Git cleanup remains bounded when reader cancellation never settles", async
 	writeFileSync(executable, FAKE_GIT);
 	chmodSync(executable, 0o700);
 	const stalled = withStalledFirstReader(() =>
-		git(root, ["wait", marker], { executable, timeoutMs: 10 }),
+		git(root, ["wait", marker], { executable, timeoutMs: 100 }),
+	);
+	const stalledOutcome = stalled.result.then(
+		() => ({ kind: "resolved" as const }),
+		(error: unknown) => ({ kind: "rejected" as const, error }),
 	);
 	try {
 		await waitForFile(`${marker}.leader`);
 		const outcome = await Promise.race([
-			stalled.result.then(
-				() => ({ kind: "resolved" as const }),
-				(error: unknown) => ({ kind: "rejected" as const, error }),
-			),
+			stalledOutcome,
 			Bun.sleep(3 * GIT_PROCESS_GROUP_CLEANUP_MS).then(() => ({ kind: "deadline" as const })),
 		]);
 		expect(outcome.kind).toBe("rejected");
