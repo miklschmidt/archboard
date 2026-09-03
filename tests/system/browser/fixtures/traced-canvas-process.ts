@@ -18,7 +18,7 @@ export function readFsyncTrace(traceFile: string): FsyncTraceEvidence {
 		.filter(Boolean);
 	const successfulFsync = /\bfsync\(\d+\)\s+=\s+0$/;
 	const lifecycle =
-		/^(?:(?:\[pid\s+)?\d+\]?\s+)?(?:\+\+\+ (?:exited with \d+|killed by SIG[A-Z0-9]+) \+\+\+|--- SIG[A-Z0-9]+ .* ---)$/;
+		/^(?:(?:\[pid\s+)?\d+\]?\s+)?(?:\+\+\+ (?:exited with \d+|killed by SIG[A-Z0-9]+) \+\+\+|--- SIG[A-Z0-9]+ .* ---|\?\?\?\( <unfinished \.\.\.>)$/;
 	const unfinishedFsync = /^(?:\[pid\s+)?(\d+)\]?\s+fsync\(\d+\s+<unfinished \.\.\.>$/;
 	const resumedFsync = /^(?:\[pid\s+)?(\d+)\]?\s+<\.\.\. fsync resumed>\)\s+=\s+(0|\?)$/;
 	const calls: string[] = [];
@@ -49,8 +49,8 @@ export function readFsyncTrace(traceFile: string): FsyncTraceEvidence {
 	}
 	for (const starts of pending.values()) incomplete.push(...starts);
 	return {
-		calls,
 		incomplete,
+		calls,
 	};
 }
 
