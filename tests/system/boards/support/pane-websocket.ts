@@ -1,10 +1,10 @@
-import { WebSocket } from "ws";
+import type { WebSocket } from "ws";
 
 import {
 	TEST_PANE_MESSAGE_POLL_MS,
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
-	TEST_PANE_SOCKET_SETTLE_MS,
 } from "../../../../src/shared/timing/timing.ts";
+import { openObservedPane } from "../../support/observed-pane.ts";
 import type { JsonResponse } from "./http.ts";
 
 export interface PaneMessage {
@@ -50,17 +50,6 @@ export async function openTestPane(
 	x: number,
 	options: { primary?: boolean; focused?: boolean; board?: string } = {},
 ): Promise<TestPane> {
-	const endpoint = new URL(base);
-	endpoint.protocol = "ws:";
-	endpoint.searchParams.set("clientId", clientId);
-	const socket = new WebSocket(endpoint);
-	const seen: PaneMessage[] = [];
-	socket.on("message", (data) => seen.push(JSON.parse(data.toString()) as PaneMessage));
-	await new Promise<void>((resolve, reject) => {
-		socket.once("open", () => resolve());
-		socket.once("error", reject);
-	});
-	await sleep(TEST_PANE_SOCKET_SETTLE_MS);
 	const registration: PaneRegistration = {
 		clientId,
 		paneId: clientId,
@@ -70,33 +59,26 @@ export async function openTestPane(
 		rect: { x, y: 0, width: 640, height: 800 },
 		viewport: { x: 0, y: 0, width: 640, height: 800, zoom: 1 },
 	};
-	const board = (): string | undefined =>
-		[...seen]
-			.toReversed()
-			.find((message) => message.type === "initial_elements" || message.type === "board_switched")
-			?.board;
-	const adopt = async (nextBoard: string): Promise<void> => {
-		await request("/api/panes", {
-			method: "POST",
-			body: { ...registration, board: nextBoard },
-		});
-	};
-	await adopt(options.board ?? board() ?? "scratch");
+	const pane = await openObservedPane<PaneMessage>({
+		base,
+		clientId,
+		preferredBoard: options.board,
+		register: (board) =>
+			request("/api/panes", {
+				method: "POST",
+				body: { ...registration, board },
+			}),
+		readPanes: () => request("/api/panes"),
+	});
 	return {
 		clientId,
-		socket,
-		seen,
+		socket: pane.socket,
+		seen: pane.events,
 		registration,
-		board,
-		since: () => seen.length,
-		adopt,
-		async close() {
-			if (socket.readyState === WebSocket.CLOSED) return;
-			await new Promise<void>((resolve) => {
-				socket.once("close", () => resolve());
-				socket.close();
-			});
-		},
+		board: pane.board,
+		since: () => pane.events.length,
+		adopt: pane.register,
+		close: pane.close,
 	};
 }
 
