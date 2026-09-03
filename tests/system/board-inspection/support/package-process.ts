@@ -353,7 +353,8 @@ export async function runReadOnlyPackageProcess(
 	);
 	let groupIdentity: ProcessGroupIdentity;
 	try {
-		groupIdentity = await (options.captureProcessGroup ?? captureDetachedProcessGroup)(child.pid);
+		const captured = (options.captureProcessGroup ?? captureDetachedProcessGroup)(child.pid);
+		groupIdentity = captured instanceof Promise ? await captured : captured;
 	} catch (cause) {
 		let cleanupFailure: unknown;
 		try {
