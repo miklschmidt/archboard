@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 13:15'
+updated_date: '2026-09-03 13:26'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -25,6 +25,7 @@ modified_files:
   - tests/system/browser/board-navigator.test.ts
   - tests/system/browser/fixtures/traced-canvas-process.ts
   - tests/system/browser/human-edit-performance.test.ts
+  - tests/system/browser/selection-inspector.test.ts
 parent_task_id: TASK-143.08
 priority: high
 type: task
@@ -203,6 +204,10 @@ The final formatted board-navigator owner remains at the repository 500-line cei
 Authoritative gate A21 at 459e2114: lint, formatting, both type checks, frontend build, 1,902/1,902 module tests, 356/356 serial system tests, and 152/152 repository-policy tests passed. The first browser owner completed its application measurements, then the trace reader repeatedly treated strace’s unterminated final writer fragment as a malformed completed record. Exact unit archboard-task143-worker-command-22DjwibH.service exited from the command with status 1 after 6m51.513s, consumed 7m31.067s CPU, peaked at 5.4G with 0B swap, and cleanup left the unit inactive/dead with MainPID=0, empty ControlGroup, and an absent cgroup.
 
 The trace reader now consumes only newline-terminated records. An in-progress final fragment is deferred, while the same bytes become explicit incomplete evidence once newline-terminated; completed successful, unfinished/resumed, lifecycle, and malformed-line semantics remain unchanged. A deterministic parser case passed under capped unit archboard-task143-worker-command-n9SjuDf6.service. The complete 10,000-element human-edit owner then passed its real strace shutdown path with 64 expectations under capped unit archboard-task143-worker-command-lsCi5WJ9.service in 74.838s, with 5.4G peak and 0B swap. No product behavior, fsync count bound, cleanup assertion, browser inventory, lint rule, type rule, or timeout was weakened.
+
+Authoritative gate A22 at 187fa523: lint, formatting, both type checks, frontend build, 1,902/1,902 module tests, 356/356 serial system tests, and 152/152 repository-policy tests passed. The repaired human-performance owner passed both cases and the next ten browser owners passed. The selection-inspector owner then reached its opener-recovery dialog, proved the enabled Cancel control had focus, issued an independent selector-and-coordinate click, and waited the full 30-second browser-command window without closure. Exact unit archboard-task143-worker-command-ttokKqOS.service exited from the command with status 1 after 8m42.452s, consumed 9m18.506s CPU, peaked at 5.5G with 0B swap, and cleanup left the unit inactive/dead with MainPID=0, empty ControlGroup, and an absent cgroup. The unchanged owner passed alone in 8.732s under capped unit archboard-task143-worker-command-b0BK8x8Q.service, identifying an intermittent input-driver action rather than a persistent product state failure.
+
+The cross-workflow owner now activates the already-proven focused and enabled Cancel control with Enter, eliminating a second selector lookup and coordinate click after the focus contract is established. The dedicated opener-settings browser owner still exercises pointer dismissal and the selection-inspector owner still proves the dialog opens, loads, focuses Cancel, dismisses, and closes before continuing. The complete selection-inspector owner passed five consecutive repetitions under capped unit archboard-task143-worker-command-5rdcXJpW.service in 42.906s with 745M peak and 0B swap. No product UI, visible assertion, browser inventory, lint rule, type rule, or timeout was weakened.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
