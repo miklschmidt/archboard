@@ -131,6 +131,34 @@ describe("Codex process lifecycle", () => {
 		}
 	});
 
+	test("does not reject a process-group capture failure until the exact child is reaped", async () => {
+		const root = temporaryRoot();
+		let owner: ReturnType<typeof createCodexProcess> | undefined;
+		try {
+			const lifecycle = fakeLifecycle();
+			lifecycle.failCapture();
+			const executable = fixture(root, `process.stdin.resume();`);
+			owner = createCodexProcess({
+				...options(root, executable),
+				dependencies: lifecycle.dependencies,
+			});
+			let failure: unknown;
+			try {
+				await owner.start();
+			} catch (cause) {
+				failure = cause;
+			}
+			expect(failure).toBeInstanceOf(CodexProcessError);
+			expect((failure as CodexProcessError).code).toBe("spawn_failed");
+			expect(owner.snapshot()).toMatchObject({ state: "terminal_failure", pid: null });
+			expect(owner.currentChild()).toBeNull();
+			expect((await driveManual(owner.stop(), lifecycle.clock)).state).toBe("stopped");
+		} finally {
+			if (owner) await owner.stop().catch(() => undefined);
+			removeRoot(root);
+		}
+	});
+
 	test("refuses to signal a process group after its identity is reported reused", async () => {
 		const root = temporaryRoot();
 		let owner: ReturnType<typeof createCodexProcess> | undefined;

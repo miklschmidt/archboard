@@ -1,7 +1,10 @@
 import path from "node:path";
 import { mkdirSync } from "node:fs";
 
-import { resolveProjectCodexExecutable } from "../../../runtime/codex-process/executable.js";
+import {
+	resolveProjectCodexExecutable,
+	verifyCodexExecutable,
+} from "../../../runtime/codex-process/executable.js";
 import { createCodexWaitGraph } from "../../../runtime/codex-wait-graph/index.js";
 import { createCoordinatorCallbackRealtimePort } from "../../../runtime/codex-coordinator-callbacks/index.js";
 import {
@@ -156,6 +159,10 @@ function currentRealtimeGeneration(created: Readonly<Partial<CodexWorkbenchCompo
 export function createCanvasCodexWorkbenchInstallation(
 	host: CanvasCodexWorkbenchHost,
 ): InstallProductionCodexWorkbenchOptions {
+	// Prove the mandatory runtime before creating any workbench storage. The
+	// process owner proves it again at each spawn so a later replacement cannot
+	// inherit a stale verification.
+	const executablePath = verifyCodexExecutable(resolveProjectCodexExecutable()).executablePath;
 	const root = path.join(stateDir(), "codex-workbench");
 	mkdirSync(root, { recursive: true, mode: 0o700 });
 	const codexHome = path.join(root, "codex-home");
@@ -604,7 +611,7 @@ export function createCanvasCodexWorkbenchInstallation(
 
 	return {
 		process: {
-			executablePath: resolveProjectCodexExecutable(),
+			executablePath,
 			checkoutRoot: host.checkoutRoot,
 			storage: { rootDirectory: root },
 		},

@@ -1,5 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import {
+	chmodSync,
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { createServer, type Server } from "node:http";
 import {
 	createServer as createNetServer,
@@ -7,6 +15,7 @@ import {
 	type Socket as NetSocket,
 } from "node:net";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { WebSocket } from "ws";
 
 import { processExists, startOwnedCanvas, waitForProcessExit } from "../support/owned-canvas.ts";
@@ -16,6 +25,13 @@ import {
 	type FixtureSetupFailure,
 } from "./support/codex-production.ts";
 import { createRequester } from "./support/http.ts";
+import {
+	canvasChildPids,
+	publicStartEnvironment,
+	runPublicCanvas,
+	runPublicCanvasAsync,
+	writePublicCodexExecutable,
+} from "./support/public-codex-startup.ts";
 
 const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
@@ -113,6 +129,181 @@ const pane = (clientId: string, primary: boolean, focused: boolean) => ({
 });
 
 describe.serial("production Codex setup cleanup", () => {
+	test("public start reports every executable refusal once and preserves prior Codex state", async () => {
+		for (const scenario of [
+			"missing",
+			"non-file",
+			"unexecutable",
+			"wrong-version",
+			"verification-timeout",
+			"early-exit",
+		] as const) {
+			const root = mkdtempSync(join(tmpdir(), `archboard-public-${scenario}-`));
+			try {
+				const base = await closedLoopbackEndpoint();
+				const executable = join(root, "codex");
+				const pidLog = join(root, "child.pid");
+				if (scenario === "non-file") mkdirSync(executable, { mode: 0o700 });
+				if (scenario === "unexecutable") {
+					writeFileSync(executable, "not executable");
+					chmodSync(executable, 0o600);
+				}
+				if (scenario === "wrong-version")
+					writePublicCodexExecutable(executable, 'console.log("codex-cli 0.150.0");');
+				if (scenario === "early-exit")
+					writePublicCodexExecutable(
+						executable,
+						`if (process.argv.includes("--version")) console.log("codex-cli 0.151.0"); else { require("node:fs").writeFileSync(${JSON.stringify(pidLog)}, String(process.pid)); process.exit(19); }`,
+					);
+				const environment = publicStartEnvironment(root, base, executable);
+				if (scenario === "verification-timeout")
+					environment.ARCHBOARD_TEST_PUBLIC_CODEX_PROOF_FAILURE = "verification_timeout";
+				const result = runPublicCanvas("start", environment);
+				expect(result.status, scenario).not.toBe(0);
+				const lines = result.stderr.split(/\r?\n/u).filter(Boolean);
+				expect(lines, scenario).toHaveLength(1);
+				expect(lines[0], scenario).toMatch(/Codex|canvas child/iu);
+				expect(lines[0], scenario).not.toMatch(/\bat\s+\S+|AggregateError/iu);
+				expect(
+					readFileSync(
+						join(root, "state/excalidraw-canvas/codex-workbench/pre-existing-sentinel"),
+						"utf8",
+					),
+				).toBe("preserve me");
+				if (existsSync(pidLog)) {
+					const pid = Number(readFileSync(pidLog, "utf8"));
+					expect(processExists(pid), `${scenario}:pid ${pid}`).toBeFalse();
+				}
+				const port = Number(new URL(base).port);
+				expect(
+					existsSync(join(root, `state/excalidraw-canvas/server-${port}.pid`)),
+					scenario,
+				).toBeFalse();
+				await expect(
+					fetch(`${base}/health`, { signal: AbortSignal.timeout(100) }),
+				).rejects.toThrow();
+			} finally {
+				rmSync(root, { recursive: true, force: true });
+			}
+		}
+	}, 20_000);
+
+	test("concurrent public starts share one Codex owner and one canvas", async () => {
+		const resources = new AsyncDisposableStack();
+		let environment: NodeJS.ProcessEnv | null = null;
+		let spawned: ProcessRecord[] = [];
+		try {
+			const fixture = prepareProductionFixture(resources, executableSource);
+			environment = publicStartEnvironment(
+				fixture.root,
+				await closedLoopbackEndpoint(),
+				fixture.executablePath,
+			);
+			const starts = await Promise.all([
+				runPublicCanvasAsync("start", environment),
+				runPublicCanvasAsync("start", environment),
+			]);
+			expect(starts.map(({ status }) => status)).toEqual([0, 0]);
+			spawned = processRecords(fixture.logPath).filter(
+				(record) => record.kind === "app_server_spawn",
+			);
+			expect(spawned).toHaveLength(1);
+			expect(runPublicCanvas("stop", environment).status).toBe(0);
+		} finally {
+			if (environment !== null) runPublicCanvas("stop", environment);
+			await resources.disposeAsync();
+		}
+		await assertProcessesStopped(spawned);
+	}, 20_000);
+
+	test("public start keeps the exact signed-out runtime running with thread actions disabled", async () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-public-signed-out-"));
+		let socket: Awaited<ReturnType<typeof openApplicationSocket>> | null = null;
+		let environment: NodeJS.ProcessEnv | null = null;
+		let canvasPid: number | null = null;
+		try {
+			const base = await closedLoopbackEndpoint();
+			environment = publicStartEnvironment(root, base);
+			const started = runPublicCanvas("start", environment);
+			expect(started.status).toBe(0);
+			const pidMatch = started.stdout.match(/"pid":\s*(\d+)/u);
+			if (pidMatch?.[1] === undefined)
+				throw new Error(`Public start returned no pid: ${started.stdout}`);
+			canvasPid = Number(pidMatch[1]);
+			expect(processExists(canvasPid)).toBeTrue();
+			const childPids = canvasChildPids(canvasPid);
+			expect(childPids).toHaveLength(1);
+			expect(processExists(childPids[0]!)).toBeTrue();
+
+			socket = await openApplicationSocket(base, "signed-out-client");
+			const request = createRequester({ base, assertRunning: async () => undefined });
+			expect(
+				(
+					await request("/api/panes", {
+						method: "POST",
+						doing: false,
+						body: pane("signed-out-client", true, true),
+					})
+				).status,
+			).toBe(200);
+			const connected = await socket.request("connect");
+			expect(connected).toMatchObject({ ok: true });
+			const snapshot = connected.value?.snapshot as Record<string, unknown> | undefined;
+			expect(snapshot?.account).toMatchObject({ state: "signed_out" });
+			expect(snapshot?.readiness).toMatchObject({ state: "signed_out" });
+			const lease = await socket.request("claimLease");
+			const target = lease.value ?? {};
+			const action = await socket.request("command", {
+				command: {
+					kind: "browser_command",
+					command: "threadLinkCreate",
+					commandId: target.commandId,
+					paneId: target.paneId,
+					childId: target.childId,
+					epoch: target.epoch,
+				},
+			});
+			expect(action.value).not.toMatchObject({ outcome: "delivered" });
+			await request("/api/elements?board=scratch", {
+				method: "POST",
+				doing: "persisting the reload census proof",
+				body: { type: "rectangle", x: 0, y: 0, width: 20, height: 20 },
+			});
+			expect(
+				(
+					await request("/api/boards/open", {
+						method: "POST",
+						doing: false,
+						body: { board: "scratch", pane: "signed-out-client", reload: true },
+					})
+				).status,
+			).toBe(200);
+			expect(canvasChildPids(canvasPid)).toEqual(childPids);
+
+			await socket.close();
+			socket = null;
+			const stopped = runPublicCanvas("stop", environment);
+			expect(stopped.status).toBe(0);
+			await waitForProcessExit(canvasPid);
+			await waitForProcessExit(childPids[0]!);
+			expect(processExists(canvasPid)).toBeFalse();
+			expect(processExists(childPids[0]!)).toBeFalse();
+			expect(
+				existsSync(
+					join(
+						root,
+						"state/excalidraw-canvas/codex-workbench/codex-home/.archboard-codex-process.lock",
+					),
+				),
+			).toBeFalse();
+		} finally {
+			await socket?.close();
+			if (environment !== null && canvasPid !== null && processExists(canvasPid))
+				runPublicCanvas("stop", environment);
+			rmSync(root, { recursive: true, force: true });
+		}
+	}, 20_000);
+
 	for (const failAt of [
 		"root_setup",
 		"fixture_setup",
