@@ -121,6 +121,7 @@ test("nested owner-view mutation cannot alter later views or settlement", async 
 			response: { approvalKind: "command_execution", decision: "accept" },
 		});
 		expect(settlement).toMatchObject({ state: "settled", outcome: "delivered" });
+		expect(fixture.port.responses[0]?.request).toBe(source);
 		expect(fixture.port.responses[0]?.response).toEqual({ result: { decision: "accept" } });
 	} finally {
 		closeBroker(fixture.broker);
