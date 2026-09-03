@@ -159,6 +159,56 @@ function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalO
 	];
 }
 
+function selfForkOwner(authorities: IdentityAuthorities): DynamicApprovalOwnerView {
+	const authority = createDynamicAuthorityTokenIssuer();
+	const threadId = authorities.identity.decoder.adoptThreadId("dynamic-self-fork");
+	const turnId = authorities.identity.decoder.adoptTurnId("dynamic-self-fork-turn");
+	const operationId = String(authorities.operation.issuer.mintOperationId());
+	const request = ownerRequest({
+		identity: {
+			child: authorities.identity.validator.childId,
+			epoch: authorities.identity.validator.epoch,
+			threadId,
+			turnId,
+			callId: authorities.identity.decoder.adoptDynamicToolCallId("dynamic-self-fork-call"),
+			namespace: "archboard_app",
+			tool: "fork_thread",
+			manifestHash: "projection-manifest",
+			operationId,
+		},
+		effect: {
+			tool: "fork_thread",
+			arguments: {
+				threadId: authorities.identity.decoder.serializeCodexIdentity(threadId),
+				beforeTurnId: null,
+				prompt: null,
+			},
+			callerAuthority: authority.issue(),
+			targetAuthority: authority.issue(),
+			contextAuthority: authority.issue(),
+			effectiveBoundary: { relation: "self", beforeTurnId: String(turnId) },
+			mutationOperationId: operationId,
+			initialTurnOperationId: null,
+			visualSummary: "Fork the caller before its active turn",
+		},
+		effectHash: `sha256:${"d".repeat(64)}`,
+		createdAtMs: 400,
+		expiresAtMs: 400 + CODEX_APPROVAL_EXPIRY_MS,
+	});
+	return {
+		request,
+		binding: {
+			commandId: authorities.identity.issuer.mintBrowserCommandId(),
+			paneId: "dynamic-pane",
+			capturedLink: {
+				threadId,
+				childId: authorities.identity.validator.childId,
+				epoch: authorities.identity.validator.epoch,
+			},
+		},
+	};
+}
+
 function projectionInput(owners: readonly DynamicApprovalOwnerView[]): BrowserProjectionInput {
 	const link = owners[0]!.binding.capturedLink;
 	return {
@@ -280,4 +330,25 @@ test("the sole public projection closes all three dynamic approval presentations
 	}
 	expect(Object.isFrozen(projected)).toBe(true);
 	expect(Object.isFrozen(projected[0]?.effect)).toBe(true);
+});
+
+test("self-fork projection keeps the requested and effective boundaries distinct", () => {
+	const authorities = createIdentityAuthorities();
+	const owner = selfForkOwner(authorities);
+	const result = projectCodexBrowserState(
+		createCodexBrowserModel(authorities),
+		authorities.identity.decoder,
+		projectionInput([owner]),
+	);
+	expect(result.tag).toBe("projected");
+	if (result.tag !== "projected") throw new Error("self-fork projection was refused");
+	const effect = result.snapshot.dynamicApprovals[0]?.effect;
+	if (effect?.tool !== "fork_thread") throw new Error("self-fork effect was not projected");
+	expect(effect.arguments.beforeTurnId).toBeNull();
+	expect(effect.effectiveBoundary).toEqual({
+		relation: "self",
+		beforeTurnId: owner.request.identity.turnId,
+	});
+	expect(Object.isFrozen(effect.arguments)).toBe(true);
+	expect(Object.isFrozen(effect.effectiveBoundary)).toBe(true);
 });
