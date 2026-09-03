@@ -1,11 +1,11 @@
 ---
 id: TASK-143.06.07
 title: Remove legacy injection timing constants
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:29'
-updated_date: '2026-09-03 02:59'
+updated_date: '2026-09-03 03:03'
 labels: []
 dependencies:
   - TASK-143.06.06
@@ -29,10 +29,10 @@ Remove only the superseded injection debounce/min-interval names after replaceme
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 DEFAULT_INJECT_DEBOUNCE_MS, DEFAULT_INJECT_MIN_INTERVAL_MS, their environment overrides, comments, and tests are removed after no source consumer remains.
-- [ ] #2 The existing change-feed settle timings and all new workbench process/RPC/lease/approval/semantic/realtime/shutdown bounds remain named and coupled as documented.
-- [ ] #3 Repository search and timing tests reject ARCHBOARD_INJECT timing names outside historical documents and show no local numeric replacement.
-- [ ] #4 The serialized diff after TASK-143.01.16 is formatting/lint/type clean and changes no accepted duration.
+- [x] #1 DEFAULT_INJECT_DEBOUNCE_MS, DEFAULT_INJECT_MIN_INTERVAL_MS, their environment overrides, comments, and tests are removed after no source consumer remains.
+- [x] #2 The existing change-feed settle timings and all new workbench process/RPC/lease/approval/semantic/realtime/shutdown bounds remain named and coupled as documented.
+- [x] #3 Repository search and timing tests reject ARCHBOARD_INJECT timing names outside historical documents and show no local numeric replacement.
+- [x] #4 The serialized diff after TASK-143.01.16 is formatting/lint/type clean and changes no accepted duration.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -52,4 +52,12 @@ Implemented against fixed HEAD ae401256ff98d7094526debdde679cba8e680cea. Deleted
 Validation under systemd-run --user --scope with MemoryMax=1G and TasksMax=256, with individual commands capped at 20s and 5s kill cleanup: focused timing owner passed 3/3 with 11 assertions; direct TypeScript graph check for timing.ts plus codex-workbench-policy.test.ts passed; focused Oxlint passed; focused Oxfmt --check passed for both files; git diff --check passed. Root tsc remains a pre-existing baseline failure (exit 1) in src/runtime/engine/git-process-owner.ts, src/runtime/engine/git.ts, src/runtime/engine/tests/board-lock-lease.test.ts, tests/system/board-inspection/support/package-process.ts, and tests/system/board-inspection/support/package-sentinel.ts; no touched file is reported. Acceptance criteria remain unchecked and task remains In Progress.
 
 Review repair: removed the three stale ARCHBOARD_INJECT, ARCHBOARD_INJECT_LOUD, and ARCHBOARD_INJECT_THREAD fixture properties from tests/system/canvas-state/codex-workbench-production.test.ts. The affected production owner was run under systemd-run --user --scope with MemoryMax=2G, TasksMax=512, and a 20s timeout with 5s kill cleanup; it failed at the existing threadLinkCreate delivery assertion on line 142 with outcome not_delivered after 12 assertions, before any later assertions. Since the repair only removes unused environment inputs and the retired names have no executable consumers, this is recorded as a remaining baseline/infrastructure risk, not repaired here. Focused Oxlint, Oxfmt --check, git diff --check, and tracked searches outside Backlog records passed. Task remains In Progress with ACs unchecked.
+
+Finalization evidence: both complete-range Standards and Spec rereviews reported REVIEW_CLEAN for ae401256ff98d7094526debdde679cba8e680cea..61e6a78ca8b51d7adac3c2dbb6dddeecb3cea58a. The final tracked search found no retired executable names outside historical Backlog, design, and ADR records. The full range deletes only the two legacy timing exports, their override comments, obsolete retention assertions, and three unused legacy fixture inputs. It preserves every current timing export, reviewed value, relationship, and active fixture control. No replacement mode, local numeric substitute, scanner, or compatibility abstraction was added. Focused timing owner passed 3/3 with 11 assertions; focused Oxlint, Oxfmt --check, and git diff --check passed. The production system owner still fails its pre-existing threadLinkCreate outcome=not_delivered assertion after 12 assertions. That outcome is unrelated to this cleanup and remains evidence for its owning recovery work, not a green result for this task.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Removed the retired injection timing exports, overrides, assertions, and unused fixture controls. Verified the complete reviewed range preserves the current workbench timing policy, has no executable retired names, and passes the focused timing, lint, format, and diff checks. The unrelated production threadLinkCreate not_delivered baseline remains with its recovery owner.
+<!-- SECTION:FINAL_SUMMARY:END -->
