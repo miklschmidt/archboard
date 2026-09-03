@@ -344,8 +344,7 @@ export type CodexApprovalErrorCode =
 	| "invalid_response"
 	| "identity_mismatch"
 	| "stale_ownership"
-	| "unsupported_schema"
-	| "unsafe_url";
+	| "unsupported_schema";
 
 export class CodexApprovalError extends Error {
 	override readonly name = "CodexApprovalError";

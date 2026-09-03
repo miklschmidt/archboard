@@ -8,7 +8,6 @@ import type {
 	BrowserSemanticDelivery,
 	BrowserSettings,
 	BrowserSnapshot,
-	BrowserTimeline,
 } from "../../../shared/codex-browser-model/index.js";
 import type {
 	BrowserCommandId,
@@ -20,11 +19,17 @@ import type {
 	CodexResponseByMethod,
 	CodexServerNotificationParamsByMethod,
 } from "../../../shared/codex-app-server-contract/index.js";
-import type { ApprovalOwnerView, DeepReadonly } from "../../../runtime/codex-approvals/index.js";
+import type {
+	ApprovalOwnerView,
+	ApprovalState,
+	DeepReadonly,
+	ItemApprovalIdentity,
+} from "../../../runtime/codex-approvals/index.js";
 import type { DynamicToolApprovalRequest } from "../../../runtime/codex-dynamic-tools/index.js";
 import type {
 	SessionQueuedSubmission,
 	SessionResponsePayloads,
+	SessionThreadItem,
 	SessionTurn,
 } from "../../../runtime/codex-session/index.js";
 import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
@@ -65,19 +70,86 @@ export interface CodexQueueProjectionInput {
 	readonly submissions: readonly Pick<SessionQueuedSubmission, "id" | "input">[] | null;
 }
 
-type BrowserTimelineTurn = BrowserTimeline["turns"][number];
+type SessionItem<Type extends SessionThreadItem["type"]> = Extract<
+	SessionThreadItem,
+	{ readonly type: Type }
+>;
+type TimelineSessionItem<
+	Type extends SessionThreadItem["type"],
+	Field extends keyof SessionItem<Type>,
+> = DeepReadonly<Pick<SessionItem<Type>, Field>> & Readonly<Record<string, unknown>>;
 
-/** One browser-safe item selection prepared by the future timeline owner. */
-export type CodexTimelineItemProjectionInput = DeepReadonly<BrowserTimelineTurn["items"][number]> &
+interface CodexTimelineAgentMessageProjectionInput extends Readonly<Record<string, unknown>> {
+	readonly kind: "agent_message";
+	readonly item: TimelineSessionItem<"agentMessage", "type" | "id" | "text">;
+}
+
+interface CodexTimelineToolProjectionInput extends Readonly<Record<string, unknown>> {
+	readonly kind: "tool_call";
+	readonly item: TimelineSessionItem<
+		"mcpToolCall" | "dynamicToolCall",
+		"type" | "id" | "tool" | "status"
+	>;
+}
+
+interface CodexTimelineCommandProjectionInput extends Readonly<Record<string, unknown>> {
+	readonly kind: "command_execution";
+	readonly item: TimelineSessionItem<"commandExecution", "type" | "id" | "command" | "status">;
+}
+
+interface CodexTimelineFileChangeProjectionInput extends Readonly<Record<string, unknown>> {
+	readonly kind: "file_change";
+	readonly item: TimelineSessionItem<"fileChange", "type" | "id" | "status">;
+}
+
+interface CodexTimelineReasoningProjectionInput extends Readonly<Record<string, unknown>> {
+	readonly kind: "reasoning_summary";
+	readonly item: TimelineSessionItem<"reasoning", "type" | "id">;
+	/** The future owner chooses the bounded reasoning presentation from generated arrays. */
+	readonly text: string;
+}
+
+interface CodexTimelinePlanProjectionInput extends Readonly<Record<string, unknown>> {
+	readonly kind: "plan";
+	readonly item: TimelineSessionItem<"plan", "type" | "id" | "text">;
+}
+
+type TimelineApprovalIdentity = DeepReadonly<
+	Omit<ItemApprovalIdentity, "approvalId"> & {
+		readonly approvalId: NonNullable<ItemApprovalIdentity["approvalId"]>;
+	}
+> &
 	Readonly<Record<string, unknown>>;
+
+interface CodexTimelineApprovalProjectionInput extends Readonly<Record<string, unknown>> {
+	readonly kind: "approval_request";
+	readonly identity: TimelineApprovalIdentity;
+	readonly state: Extract<ApprovalState, "pending" | "settled" | "cancelled">;
+}
+
+/** Independent readonly owner presentation; the sole adapter chooses browser media arms. */
+export type CodexTimelineItemProjectionInput =
+	| CodexTimelineAgentMessageProjectionInput
+	| CodexTimelineToolProjectionInput
+	| CodexTimelineCommandProjectionInput
+	| CodexTimelineFileChangeProjectionInput
+	| CodexTimelineReasoningProjectionInput
+	| CodexTimelinePlanProjectionInput
+	| CodexTimelineApprovalProjectionInput;
+
+interface CodexTimelineTurnPresentation extends Readonly<Record<string, unknown>> {
+	readonly summary: string;
+	readonly outputs: Readonly<{
+		included: boolean;
+		truncated: boolean;
+	}>;
+}
 
 export interface CodexTimelineTurnProjectionInput extends Readonly<Record<string, unknown>> {
 	readonly turn: DeepReadonly<Pick<SessionTurn, "id" | "status">> &
 		Readonly<Record<string, unknown>>;
 	readonly items: readonly CodexTimelineItemProjectionInput[];
-	readonly summary: BrowserTimelineTurn["summary"];
-	readonly outputsIncluded: BrowserTimelineTurn["outputsIncluded"];
-	readonly outputsTruncated: BrowserTimelineTurn["outputsTruncated"];
+	readonly presentation: CodexTimelineTurnPresentation;
 }
 
 /** Readonly owner view; TASK-143.01.10 owns the live producer. */
@@ -85,7 +157,7 @@ export interface CodexTimelineProjectionInput extends Readonly<Record<string, un
 	readonly kind: "codex_timeline";
 	readonly threadId: ThreadId;
 	readonly turns: readonly CodexTimelineTurnProjectionInput[];
-	readonly nextCursor: SessionResponsePayloads["thread/timeline/list"]["nextCursor"];
+	readonly cursor: SessionResponsePayloads["thread/timeline/list"]["nextCursor"];
 }
 
 export interface CodexSemanticProjectionInput {
