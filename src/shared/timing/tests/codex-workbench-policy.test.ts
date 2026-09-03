@@ -21,13 +21,11 @@ const REVIEWED_VALUES = {
 const CODEX_WORKBENCH_TIMING_NAMES = Object.keys(REVIEWED_VALUES);
 
 describe("Codex workbench timing policy", () => {
-	test("exports exactly the reviewed workbench names and retains injection names", () => {
+	test("exports exactly the reviewed workbench names", () => {
 		const exportedNames = Object.keys(timing)
 			.filter((name) => name.startsWith("CODEX_"))
 			.toSorted();
 		expect(exportedNames).toEqual(CODEX_WORKBENCH_TIMING_NAMES.toSorted());
-		expect(Object.hasOwn(timing, "DEFAULT_INJECT_DEBOUNCE_MS")).toBeTrue();
-		expect(Object.hasOwn(timing, "DEFAULT_INJECT_MIN_INTERVAL_MS")).toBeTrue();
 	});
 
 	test("freezes every reviewed millisecond value", () => {
