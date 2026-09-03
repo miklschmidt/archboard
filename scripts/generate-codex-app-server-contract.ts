@@ -6,11 +6,13 @@ import {
 	mkdtempSync,
 	readFileSync,
 	readlinkSync,
+	readdirSync,
 	realpathSync,
 	renameSync,
 	rmSync,
 	symlinkSync,
 	unlinkSync,
+	writeFileSync,
 } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,12 +24,24 @@ const generatedRoot = join(contractRoot, "generated");
 const versionsRoot = join(generatedRoot, "versions");
 const currentRoot = join(generatedRoot, "current");
 const expectedCodexVersion = "0.151.0";
-const canonicalVersionName = `version-${expectedCodexVersion}`;
-const canonicalVersionRoot = join(versionsRoot, canonicalVersionName);
+// Bump when this tracked recipe changes the generated layout or Codex arguments.
+const generationRecipeRevision = 1;
+const versionPrefix = `version-${expectedCodexVersion}-recipe-${generationRecipeRevision}-`;
+// Completion identifies safe cleanup candidates. It never validates or reuses a contract tree.
+const completionStateFileName = ".archboard-generation-complete.json";
+const activeOwnerFileName = ".archboard-generation-active";
+// Keep current plus one predecessor so a reader of the previous symlink target can finish.
+const retainedCompleteVersionCount = 2;
 const codexPackageRoot = join(repositoryRoot, "node_modules/@openai/codex");
 const codexManifestPath = join(codexPackageRoot, "package.json");
 const codexEntryPath = join(codexPackageRoot, "bin/codex.js");
 const expectedRealCodexPackageRoot = join(realRepositoryRoot, "node_modules/@openai/codex");
+
+interface GenerationCompletion {
+	readonly codexVersion: string;
+	readonly recipeRevision: number;
+	readonly generationId: string;
+}
 
 function errorCode(error: unknown): string | undefined {
 	return error instanceof Error && "code" in error && typeof error.code === "string"
@@ -146,59 +160,128 @@ function currentVersionName(): string | undefined {
 	return versionName;
 }
 
-function removeOwnedStaging(stagingRoot: string): void {
-	const name = basename(stagingRoot);
-	if (dirname(stagingRoot) !== versionsRoot || !name.startsWith(".staging-")) {
-		throw new Error(`Refusing to remove unowned generated entry ${name}`);
-	}
-	const entry = lstatSync(stagingRoot);
-	if (!entry.isDirectory() || entry.isSymbolicLink()) {
-		throw new Error(`Refusing to remove non-directory generated staging ${name}`);
-	}
-	if (realpathSync(dirname(stagingRoot)) !== realpathSync(versionsRoot)) {
-		throw new Error(
-			`Refusing to remove generated entry outside ${relative(repositoryRoot, versionsRoot)}`,
-		);
-	}
-	rmSync(stagingRoot, { recursive: true });
-}
-
-function canonicalVersionIsComplete(): boolean {
-	let version;
+function entryExists(target: string): boolean {
 	try {
-		version = lstatSync(canonicalVersionRoot);
+		lstatSync(target);
+		return true;
 	} catch (error) {
 		if (errorCode(error) === "ENOENT") return false;
 		throw error;
 	}
-	if (
-		!version.isDirectory() ||
-		version.isSymbolicLink() ||
-		!existsSync(join(canonicalVersionRoot, "index.ts"))
-	) {
-		throw new Error(
-			`${relative(repositoryRoot, canonicalVersionRoot)} is not a complete generated contract; remove the generated tree and retry.`,
-		);
-	}
-	return true;
 }
 
-function installCanonicalVersion(stagingRoot: string): void {
-	try {
-		renameSync(stagingRoot, canonicalVersionRoot);
-	} catch (error) {
-		if (!canonicalVersionIsComplete()) throw error;
-		removeOwnedStaging(stagingRoot);
-		return;
+function removeGeneratedDirectory(target: string, expectedName: string): void {
+	if (dirname(target) !== versionsRoot || basename(target) !== expectedName) {
+		throw new Error(`Refusing to remove unowned generated entry ${basename(target)}`);
 	}
-	if (!canonicalVersionIsComplete()) {
-		throw new Error("Codex contract generation did not install a complete version");
+	const entry = lstatSync(target);
+	if (!entry.isDirectory() || entry.isSymbolicLink()) {
+		throw new Error(`Refusing to remove non-directory generated entry ${expectedName}`);
+	}
+	if (realpathSync(dirname(target)) !== realpathSync(versionsRoot)) {
+		throw new Error(
+			`Refusing to remove generated entry outside ${relative(repositoryRoot, versionsRoot)}`,
+		);
+	}
+	rmSync(target, { recursive: true });
+}
+
+interface CompletedVersion extends GenerationCompletion {
+	readonly name: string;
+	readonly root: string;
+	readonly completedAtMs: number;
+	readonly active: boolean;
+}
+
+function readCompletedVersion(name: string): CompletedVersion | undefined {
+	const root = join(versionsRoot, name);
+	let versionEntry;
+	let completionEntry;
+	try {
+		versionEntry = lstatSync(root);
+		completionEntry = lstatSync(join(root, completionStateFileName));
+	} catch {
+		return undefined;
+	}
+	if (
+		!versionEntry.isDirectory() ||
+		versionEntry.isSymbolicLink() ||
+		!completionEntry.isFile() ||
+		completionEntry.isSymbolicLink()
+	) {
+		return undefined;
+	}
+
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(readFileSync(join(root, completionStateFileName), "utf8"));
+	} catch {
+		return undefined;
+	}
+	if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
+	const completion = parsed as Record<string, unknown>;
+	if (
+		typeof completion.codexVersion !== "string" ||
+		typeof completion.recipeRevision !== "number" ||
+		!Number.isSafeInteger(completion.recipeRevision) ||
+		typeof completion.generationId !== "string" ||
+		name !==
+			`version-${completion.codexVersion}-recipe-${completion.recipeRevision}-${completion.generationId}`
+	) {
+		return undefined;
+	}
+	return {
+		name,
+		root,
+		codexVersion: completion.codexVersion,
+		recipeRevision: completion.recipeRevision,
+		generationId: completion.generationId,
+		completedAtMs: completionEntry.mtimeMs,
+		active: entryExists(join(root, activeOwnerFileName)),
+	};
+}
+
+function removeCompletedInactiveVersion(version: CompletedVersion): void {
+	const latest = readCompletedVersion(version.name);
+	if (!latest || latest.active || currentVersionName() === latest.name) return;
+	const retiredName = `.retired-${randomUUID()}`;
+	const retiredRoot = join(versionsRoot, retiredName);
+	try {
+		renameSync(latest.root, retiredRoot);
+	} catch (error) {
+		if (errorCode(error) === "ENOENT") return;
+		throw error;
+	}
+	removeGeneratedDirectory(retiredRoot, retiredName);
+}
+
+function cleanupRetiredVersions(): void {
+	const current = currentVersionName();
+	const inactive = readdirSync(versionsRoot, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory() && !entry.isSymbolicLink())
+		.map((entry) => readCompletedVersion(entry.name))
+		.filter(
+			(version): version is CompletedVersion =>
+				version !== undefined && !version.active && version.name !== current,
+		)
+		.toSorted(
+			(left, right) =>
+				right.completedAtMs - left.completedAtMs || right.name.localeCompare(left.name),
+		);
+	for (const retired of inactive.slice(retainedCompleteVersionCount - 1)) {
+		removeCompletedInactiveVersion(retired);
 	}
 }
 
 async function generateContract(codexEntry: string): Promise<void> {
 	const stagingRoot = mkdtempSync(join(versionsRoot, ".staging-"));
+	const generationId = randomUUID();
+	const versionName = `${versionPrefix}${generationId}`;
+	const versionRoot = join(versionsRoot, versionName);
+	const activeOwnerPath = join(versionRoot, activeOwnerFileName);
 	let pointerCandidate: string | undefined;
+	let installed = false;
+	let published = false;
 	try {
 		const generated = Bun.spawn({
 			cmd: [
@@ -221,17 +304,31 @@ async function generateContract(codexEntry: string): Promise<void> {
 			throw new Error("Codex app-server type generation produced no index.ts");
 		}
 
-		installCanonicalVersion(stagingRoot);
+		writeFileSync(join(stagingRoot, activeOwnerFileName), generationId, { flag: "wx" });
+		writeFileSync(
+			join(stagingRoot, completionStateFileName),
+			JSON.stringify({
+				codexVersion: expectedCodexVersion,
+				recipeRevision: generationRecipeRevision,
+				generationId,
+			} satisfies GenerationCompletion),
+			{ flag: "wx" },
+		);
+		renameSync(stagingRoot, versionRoot);
+		installed = true;
 		pointerCandidate = join(generatedRoot, `.current-${randomUUID()}`);
-		symlinkSync(join("versions", canonicalVersionName), pointerCandidate, "dir");
+		symlinkSync(join("versions", versionName), pointerCandidate, "dir");
 		renameSync(pointerCandidate, currentRoot);
+		published = true;
 		pointerCandidate = undefined;
-		if (
-			currentVersionName() !== canonicalVersionName ||
-			!existsSync(join(currentRoot, "index.ts"))
-		) {
-			throw new Error("Generated Codex contract pointer switch did not complete");
+		try {
+			if (currentVersionName() === undefined || !existsSync(join(currentRoot, "index.ts"))) {
+				throw new Error("Generated Codex contract pointer switch did not complete");
+			}
+		} finally {
+			unlinkSync(activeOwnerPath);
 		}
+		cleanupRetiredVersions();
 	} catch (error) {
 		if (pointerCandidate !== undefined) {
 			try {
@@ -240,7 +337,11 @@ async function generateContract(codexEntry: string): Promise<void> {
 				if (errorCode(unlinkError) !== "ENOENT") throw unlinkError;
 			}
 		}
-		if (existsSync(stagingRoot)) removeOwnedStaging(stagingRoot);
+		if (entryExists(stagingRoot)) {
+			removeGeneratedDirectory(stagingRoot, basename(stagingRoot));
+		} else if (installed && !published && entryExists(versionRoot)) {
+			removeGeneratedDirectory(versionRoot, versionName);
+		}
 		throw error;
 	}
 }
