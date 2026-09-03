@@ -10,21 +10,35 @@ describe("legacy injection removal policy", () => {
 	test("keeps the retired owner absent and the control client unreachable", async () => {
 		for (const retired of [
 			"src/runtime/engine/injection.ts",
+			"src/runtime/engine/app-server-control.ts",
 			"tests/system/canvas-state/injection.test.ts",
 			"tests/system/canvas-state/support/injection-daemon.ts",
 		])
 			expect(existsSync(path.join(repoRoot, retired)), retired).toBeFalse();
 
-		const forbiddenImporters: string[] = [];
-		for (const area of ["src/server", "src/runtime"] as const) {
-			for await (const file of new Bun.Glob("**/*.ts").scan({ cwd: path.join(repoRoot, area) })) {
-				if (area === "src/runtime" && file === "engine/app-server-control.ts") continue;
+		const forbiddenProductionReferences: string[] = [];
+		const forbiddenTokens = [
+			"injection.js",
+			"app-server-control.js",
+			"app-server-control.ts",
+			"app-server-control.sock",
+			"CONTROL_SOCKET_DIR",
+			"CONTROL_SOCKET_FILE",
+			"controlSocketPath",
+			"ws+unix://",
+		] as const;
+		for (const area of ["src/server", "src/runtime", "src/ui"] as const) {
+			for await (const file of new Bun.Glob("**/*.{ts,tsx}").scan({
+				cwd: path.join(repoRoot, area),
+			})) {
 				const source = readFileSync(path.join(repoRoot, area, file), "utf8");
-				if (source.includes("injection.js") || source.includes("app-server-control.js"))
-					forbiddenImporters.push(`${area}/${file}`);
+				for (const token of forbiddenTokens) {
+					if (source.includes(token))
+						forbiddenProductionReferences.push(`${area}/${file}: ${token}`);
+				}
 			}
 		}
-		expect(forbiddenImporters).toEqual([]);
+		expect(forbiddenProductionReferences).toEqual([]);
 	});
 
 	test("keeps all 19 canonical browser owners", () => {
