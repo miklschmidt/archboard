@@ -1,10 +1,11 @@
 ---
 id: TASK-143.08.06.01
 title: Prove and record the server rendering boundary
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-09-02 01:57'
-updated_date: '2026-09-02 02:02'
+updated_date: '2026-09-03 02:42'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -35,3 +36,23 @@ Resolve the remaining implementation uncertainty under ADR 0020: whether the pin
 - [ ] #4 The measured result confirms ADR 0020 and records the selected rendering backend in a canonical design note. If the fallback is required, ADR 0020 is updated with the concrete emulation defect and the added lifecycle consequence.
 - [ ] #5 `CONTEXT.md` keeps the canonical Board operation, Browser operation, Board render, and Browser capture terms aligned with the proved boundary without introducing Pane or Canvas synonyms.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Map the current PNG, SVG, and Mermaid implementations plus their concrete browser, DOM, canvas, font, and file dependencies.
+2. Add only stable, canonical proof inputs needed to drive representative persisted board snapshots and Mermaid source.
+3. Exercise the actual server-side export and Mermaid stack under Bun or Node DOM and canvas emulation with no browser client, recording correctness, repeatability, memory, cleanup, isolation, and failure observations in a temporary evidence directory.
+4. Compare any reachable fidelity or reliability gaps against the cost of an isolated Chromium fallback, then write the measured decision and the four rendering terms into canonical documentation.
+5. Run focused public-interface verification, keep generated evidence ignored, record progress, and commit the spike while leaving acceptance criteria open for review.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-09-03 evidence: The tracked fixture and Chromium probe exercise the pinned Excalidraw export and Mermaid converter without an Archboard client. Bun with happy-dom 20.13.2 and @napi-rs/canvas 1.0.8 rendered PNG/SVG but returned an empty element list for valid Mermaid, so it was rejected. Isolated Chromium 150 returned five Mermaid elements, rejected malformed Mermaid, produced deterministic PNG/SVG SHA-256 outputs across two runs, and cleaned every owned process.
+
+Validation: bun scripts/probe-server-rendering-chromium.ts --out <empty-temp-dir>; focused no-emit TypeScript check of scripts/probe-server-rendering-chromium.ts under a 2 GiB cgroup limit; oxfmt; git diff --check. Generated reports stayed in /tmp and no temporary emulation dependencies were retained.
+
+Decision: ADR 0020 and docs/design/server-rendering-boundary.md select one private-profile, loopback-controlled Chromium renderer with serialized immutable snapshots, bounded requests, and cleanup. The follow-on implementation must reject non-empty Mermaid input that yields no elements before any note write. ACs remain unchecked for parent review.
+<!-- SECTION:NOTES:END -->

@@ -40,6 +40,23 @@ the user's browser session. A real browser remains valid evidence for browser
 behavior and Excalidraw round-trip fidelity, but it is not a runtime
 prerequisite for board work.
 
+TASK-143.08.06.01 measured `@excalidraw/excalidraw` 0.18.1,
+`@excalidraw/mermaid-to-excalidraw` 2.2.2, and Mermaid 11.17.2 on Bun 1.4.0.
+Bun with `happy-dom` 20.13.2 and `@napi-rs/canvas` 1.0.8 rendered the
+representative PNG and SVG fixture, but converted a valid three-node Mermaid
+flowchart into an empty element list. Its malformed-input path did reject, so
+this is a silent reachable-workflow loss rather than a clean unsupported case.
+An isolated Chromium 150.0.7871.186 process produced five Mermaid elements and
+identical PNG and SVG bytes in two zero-client runs. The full record, including
+memory and cleanup measurements, is `docs/design/server-rendering-boundary.md`.
+
+Archboard therefore selects one server-owned, isolated headless Chromium
+renderer for board rendering and Mermaid conversion. Its implementation must
+have one private profile, loopback-only control, bounded requests, process-group
+cleanup, and serialized immutable snapshots. It must fail a non-empty Mermaid
+input that produces no elements before any write reaches the note. Browser
+capture remains a separate operation against a live user browser.
+
 Live browser state has its own explicit `archboard browser` command family. It
 owns pane inventory and lifecycle, which board a pane displays, selection,
 camera control, and capture of what a live pane shows. These operations may
@@ -66,10 +83,11 @@ overlapping models and lets scripts continue to mix board and browser state.
 is connected and risks changing what the person sees in order to perform board
 work.
 
-**Make headless Chromium the default renderer.** It adds a browser process,
-startup cost, and lifecycle ownership before evidence says they are necessary.
-It remains a fallback because fidelity matters more than avoiding that cost
-when emulation is demonstrably wrong.
+**Make headless Chromium the renderer without proof.** It adds a browser
+process, startup cost, and lifecycle ownership before evidence says they are
+necessary. The measured Mermaid loss now satisfies the fallback condition: its
+lifecycle cost is lower than silently accepting a valid conversion that writes
+nothing. It remains server-owned rather than becoming a user's browser.
 
 ## Consequences
 

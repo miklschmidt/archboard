@@ -63,7 +63,8 @@ _Avoid_: view command, board command, pane command
 
 **Board render**:
 An image produced by the server from one named Board snapshot, independent of
-any live Pane or Canvas camera.
+any live Pane or Canvas camera. It uses a server-owned renderer and never
+attaches to a browser session.
 _Avoid_: screenshot, browser capture, pane export
 
 **Browser capture**:

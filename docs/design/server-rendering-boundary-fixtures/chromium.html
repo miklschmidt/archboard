@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+	<body>
+		Starting server-owned renderer probe.
+	</body>
+	<script type="module">
+		import { exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
+		import { parseMermaidToExcalidraw } from "@excalidraw/mermaid-to-excalidraw";
+
+		const hash = async (bytes) => {
+			const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+			return [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+		};
+
+		try {
+			const fixture = await fetch("./board.json").then((response) => response.json());
+			const diagram = await fetch("./diagram.mmd").then((response) => response.text());
+			const options = {
+				elements: fixture.elements,
+				appState: fixture.appState,
+				files: fixture.files,
+			};
+			const png = new Uint8Array(
+				await (await exportToBlob({ ...options, mimeType: "image/png" })).arrayBuffer(),
+			);
+			const svg = new XMLSerializer().serializeToString(await exportToSvg(options));
+			const mermaid = await parseMermaidToExcalidraw(diagram);
+			let invalidMermaid = null;
+			try {
+				await parseMermaidToExcalidraw("flowchart LR\n  invalid[");
+			} catch (error) {
+				invalidMermaid = error instanceof Error ? error.name : String(error);
+			}
+			document.body.textContent = JSON.stringify({
+				png: {
+					bytes: png.byteLength,
+					hash: await hash(png),
+					isPng: [137, 80, 78, 71, 13, 10, 26, 10].every((byte, index) => png[index] === byte),
+				},
+				svg: {
+					bytes: svg.length,
+					hash: await hash(new TextEncoder().encode(svg)),
+					hasBoundLabel: svg.includes("Service API"),
+					hasEmbeddedImage: svg.includes("data:image/png;base64"),
+				},
+				mermaid: {
+					elementCount: mermaid.elements.length,
+					fileCount: Object.keys(mermaid.files ?? {}).length,
+				},
+				invalidMermaid,
+			});
+			document.body.dataset.state = "done";
+		} catch (error) {
+			document.body.textContent = JSON.stringify({
+				error:
+					error instanceof Error ? { name: error.name, message: error.message } : String(error),
+			});
+			document.body.dataset.state = "failed";
+		}
+	</script>
+</html>
