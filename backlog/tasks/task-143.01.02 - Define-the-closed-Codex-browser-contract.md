@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 19:36'
+updated_date: '2026-09-03 19:56'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -83,6 +83,14 @@ Define only the browser-facing workbench state and user-intent model that has no
 27. Add a focused lease-then-relink regression that cancels and acknowledges the current-link approval while proving the old captured lease context cannot clear current durable link state.
 
 28. Run only focused projection, gateway, and approval owners plus both TypeScript configs, exact lint, format, boundary, and diff checks; commit separately and callback the parent.
+
+29. Sixth remediation: remove command cwd, file-change grantRoot, apply-patch grantRoot, and legacy exec cwd from BrowserApproval and projectApproval; extend the existing seven-family projection owner to reject every injected private path.
+
+30. Move authored session and reverse-response validators from codex-browser-model into codex-protocol. Make browser login and approval command schemas carry JSON only, derive their public intent types from generated contracts, and normalize them through codex-protocol and codex-approvals before dispatch.
+
+31. Delete the settled-cache capacity-fill and oversized-delta capacity tests from the ordinary gateway owner, and remove the now test-only public settled-limit export. Do not create an opt-in suite for two redundant implementation-capacity probes.
+
+32. Run only the affected browser-model, protocol, transport, session, approval, projection, and gateway owners, both TypeScript configs, scoped lint/format/diff and boundary probes; commit separately and callback the parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -124,6 +132,13 @@ Fifth review remediation derives queue projection submissions directly from Pick
 Disconnect now reads the current pane binding for BrowserPresenterContext every time. The lease-captured state.binding remains exclusive to thread-link, realtime, and dynamic teardown. The regression claims revision 0, relinks to revision 1, presents a current-thread approval, then closes the final presenter. Against c2150567 it failed because the approval remained; after the fix the approval is retired and the simulated durable current-link state remains bound.
 
 Validation: 94 focused approval, projection, gateway, and composed canvas lifecycle tests passed with 1005 assertions. Root and frontend tsc passed. Oxlint passed. The full format check passed across 1008 files. Derived-type boundary probes and git diff checks passed. No broad system, serial-browser, module, repository, full-test, or check lane ran.
+
+Sixth review remediation:
+- BrowserApproval no longer carries command cwd, file-change grantRoot, apply-patch grantRoot, or legacy exec cwd. The sole projection now selects user-input question and option fields explicitly. Its seven-family owner injects 12 private paths across command, file, user-input, elicitation, permissions, apply-patch, and exec inputs and proves none enter browser JSON.
+- Authored initialize/login policy and every reverse-response validator moved from codex-browser-model to codex-protocol. Browser command schemas retain only JSON ingress; UI intent types derive from generated public request/result contracts, while server actions consume SupportedLoginAccountParams and ApprovalResponse from their runtime owners. The gateway normalizes through those owners before dispatch, and focused tests prove unsupported login and malformed approval values never reach actions.
+- The two ordinary capacity probes (settled-cache fill and 500-approval oversized delta) were deleted instead of creating an opt-in suite for redundant implementation probes. The settled-cache limit is private again.
+
+Red evidence against bfc379f0: the seven-family projection owner failed before projection when a loose user-input extension reached the strict browser DTO. Green evidence: that exact owner passes 1/1 with 20 assertions, including every injected private path. Final affected module validation passed 685/685 tests with 4,853 assertions in 2.15s; composed canvas validation passed 4/4 with 29 assertions; focused repository inventory/composition/retirement policy passed 47/47 with 184 assertions. Root and frontend TypeScript, exact scoped Oxlint, exact scoped Oxfmt, boundary probes, and git diff checks passed. No broad module, system, browser, full-test, or check lane ran. TASK-143.01.02 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -192,5 +207,17 @@ author: @codex
 created: 2026-09-03 19:36
 ---
 Fifth review remediation is green at every requested focused boundary. TASK-143.01.02 remains In Progress for parent rereview.
+---
+
+author: @codex
+created: 2026-09-03 19:46
+---
+Sixth review remediation started at bfc379f0 for the three final Spec findings. TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 19:56
+---
+Sixth review remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
 ---
 <!-- COMMENTS:END -->

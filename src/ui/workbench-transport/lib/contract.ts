@@ -6,6 +6,10 @@ import type {
 	BrowserThreadLink,
 	DeliveryOutcome,
 } from "../../../shared/codex-browser-model/index.js";
+import type {
+	CodexLoginAccountParams,
+	CodexServerResponseByMethod,
+} from "../../../shared/codex-app-server-contract/index.js";
 import type { AnswerSdp } from "../../../shared/codex-realtime-host/index.js";
 
 export interface BrowserWorkbenchSocket extends EventTarget {
@@ -82,11 +86,39 @@ export interface BrowserWorkbenchAccountReadResult {
 	readonly snapshot: BrowserSnapshot;
 }
 
-export type BrowserCommandName = BrowserCommand["command"];
+type SupportedLoginVariant = "apiKey" | "chatgpt" | "amazonBedrock" | "amazonBedrockAccessKeys";
+type BrowserLoginParams = Extract<
+	CodexLoginAccountParams,
+	{ readonly type: SupportedLoginVariant }
+>;
+type BrowserApprovalKind = BrowserSnapshot["approvals"][number]["approvalKind"];
+type BrowserApprovalResponseFor<
+	Kind extends BrowserApprovalKind,
+	Method extends keyof CodexServerResponseByMethod,
+> = Readonly<{ approvalKind: Kind }> & CodexServerResponseByMethod[Method];
+type BrowserApprovalResponse =
+	| BrowserApprovalResponseFor<"command_execution", "item/commandExecution/requestApproval">
+	| BrowserApprovalResponseFor<"file_change", "item/fileChange/requestApproval">
+	| BrowserApprovalResponseFor<"user_input", "item/tool/requestUserInput">
+	| BrowserApprovalResponseFor<"elicitation", "mcpServer/elicitation/request">
+	| BrowserApprovalResponseFor<"permissions", "item/permissions/requestApproval">
+	| BrowserApprovalResponseFor<"apply_patch", "applyPatchApproval">
+	| BrowserApprovalResponseFor<"exec_command", "execCommandApproval">;
+
+type BrowserIntentCommand =
+	| Exclude<BrowserCommand, { readonly command: "accountLogin" | "approvalRespond" }>
+	| (Omit<Extract<BrowserCommand, { readonly command: "accountLogin" }>, "login"> & {
+			readonly login: BrowserLoginParams;
+	  })
+	| (Omit<Extract<BrowserCommand, { readonly command: "approvalRespond" }>, "response"> & {
+			readonly response: BrowserApprovalResponse;
+	  });
+
+export type BrowserCommandName = BrowserIntentCommand["command"];
 
 export type BrowserCommandDraft = {
 	[CommandName in BrowserCommandName]: Omit<
-		Extract<BrowserCommand, { readonly command: CommandName }>,
+		Extract<BrowserIntentCommand, { readonly command: CommandName }>,
 		"kind" | "commandId" | "paneId" | "childId" | "epoch"
 	>;
 }[BrowserCommandName];

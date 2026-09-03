@@ -4,6 +4,17 @@ export { CodexSafeI64Schema } from "../../../shared/codex-app-server-contract/in
 
 /** Use only where Codex's generated 0.151.0 contract deliberately says JsonValue. */
 export const JsonValueSchema = z.json();
+export const boundedText = (maximum: number) =>
+	z
+		.string()
+		.min(1)
+		.max(maximum)
+		.refine((value) => !value.includes("\0"), "NUL is not allowed")
+		.refine(
+			(value) => new TextEncoder().encode(value).byteLength <= maximum,
+			`text exceeds ${maximum} UTF-8 bytes`,
+		);
+export const optionalNullableText = (maximum: number) => boundedText(maximum).nullable().optional();
 export const StringRecordSchema = z.record(z.string(), z.string());
 /** A JSON object whose keys and values are intentionally supplied by Codex. */
 export const JsonObjectSchema = z.record(z.string(), JsonValueSchema);

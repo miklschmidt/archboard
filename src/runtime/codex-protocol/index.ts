@@ -5,6 +5,30 @@ export {
 } from "./lib/version.js";
 
 export {
+	BEDROCK_SETUP_POLICIES,
+	BedrockSetupParamsSchema,
+	INITIALIZE_CAPABILITIES,
+	InitializeCapabilitiesSchema,
+	LoginPoliciesSchema,
+	LoginPolicySchema,
+	LoginVariantSchema,
+	LOGIN_POLICIES,
+	LOGIN_VARIANTS,
+	ProtocolErrorSchema,
+	SupportedLoginAccountParamsSchema,
+	UNSUPPORTED_ATTESTATION_ERROR,
+	UNSUPPORTED_TOKEN_REFRESH_ERROR,
+} from "./lib/authored.js";
+export type {
+	BedrockSetupParams,
+	InitializeCapabilities,
+	LoginAccountParams,
+	LoginPolicy,
+	LoginVariant,
+	SupportedLoginAccountParams,
+} from "./lib/authored.js";
+
+export {
 	CLIENT_NOTIFICATION_METHODS,
 	CLIENT_REQUEST_METHODS,
 	CLIENT_REQUEST_METHODS_WITHOUT_PARAMS,
@@ -202,6 +226,8 @@ export {
 	TurnSteerResponseSchema,
 } from "./lib/response-schemas.js";
 export type { ResponseSchemas } from "./lib/response-schemas.js";
+
+export { CodexServerResponseSchema } from "./lib/server-response-schemas.js";
 
 export {
 	AccountReadParamsSchema,

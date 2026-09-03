@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+	BedrockSetupParamsSchema,
 	CLIENT_REQUEST_METHODS,
 	CLIENT_REQUEST_METHODS_WITHOUT_PARAMS,
 	CLIENT_REQUEST_PARAM_SCHEMAS,
@@ -9,7 +10,6 @@ import {
 	RESPONSE_METHODS,
 	type ClientRequestParams,
 } from "../index.js";
-import { BedrockSetupParamsSchema } from "../../../shared/codex-browser-model/index.js";
 import {
 	BEDROCK_SETUP_FIXTURES,
 	COMPLETE_CLIENT_REQUEST_FIXTURES,
@@ -72,15 +72,25 @@ describe("Codex generated client request params", () => {
 		expect(decodeClientRequestParams("thread/inject_items", params)).toEqual(params);
 	});
 
-	test("owns the public initialize wire decoder beyond the authored session policy", async () => {
+	test("owns generated initialize ingress beside the authored protocol policy", async () => {
 		const publicProtocol = await import("../index.js");
 		const generatedParams = {
 			clientInfo: { name: "archboard", title: null, version: "1" },
 			capabilities: null,
 		};
 		expect(publicProtocol).not.toHaveProperty("decodeInitializeParams");
-		expect(publicProtocol).not.toHaveProperty("InitializeCapabilitiesSchema");
 		expect(publicProtocol).not.toHaveProperty("InitializeParamsSchema");
+		const authoredCapabilities = {
+			experimentalApi: true as const,
+			requestAttestation: false as const,
+			mcpServerOpenaiFormElicitation: true as const,
+			optOutNotificationMethods: [] as [],
+			extensions: {},
+		};
+		expect(publicProtocol.InitializeCapabilitiesSchema.parse(authoredCapabilities)).toEqual(
+			authoredCapabilities,
+		);
+		expect(publicProtocol.INITIALIZE_CAPABILITIES).toEqual(authoredCapabilities);
 		expect(decodeClientRequestParams("initialize", generatedParams)).toEqual(generatedParams);
 	});
 

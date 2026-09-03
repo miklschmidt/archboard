@@ -11,6 +11,7 @@ import type {
 } from "./contract.js";
 import { CodexApprovalError } from "./contract.js";
 import type { ReverseResponse } from "../../codex-transport/server-requests.js";
+import { CodexServerResponseSchema } from "../../codex-protocol/index.js";
 import {
 	CodexTransportOwnershipError,
 	CodexTransportUsageError,
@@ -20,6 +21,40 @@ type RecordValue = Record<string, unknown>;
 
 function isRecord(value: unknown): value is RecordValue {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+export function parseApprovalResponse(value: unknown): ApprovalResponse {
+	if (!isRecord(value) || typeof value.approvalKind !== "string")
+		throw new CodexApprovalError("invalid_response", "The approval response is malformed.");
+
+	const { approvalKind, ...result } = value;
+	const method = (() => {
+		switch (approvalKind) {
+			case "command_execution":
+				return "item/commandExecution/requestApproval";
+			case "file_change":
+				return "item/fileChange/requestApproval";
+			case "user_input":
+				return "item/tool/requestUserInput";
+			case "elicitation":
+				return "mcpServer/elicitation/request";
+			case "permissions":
+				return "item/permissions/requestApproval";
+			case "apply_patch":
+				return "applyPatchApproval";
+			case "exec_command":
+				return "execCommandApproval";
+			default:
+				throw new CodexApprovalError(
+					"invalid_response",
+					"The approval response family is unsupported.",
+				);
+		}
+	})();
+	const parsed = CodexServerResponseSchema.safeParse({ method, result });
+	if (!parsed.success || !("result" in parsed.data))
+		throw new CodexApprovalError("invalid_response", "The approval response is malformed.");
+	return { approvalKind, ...parsed.data.result } as ApprovalResponse;
 }
 
 function responseFamilyMatches(family: ApprovalFamily, response: ApprovalResponse): boolean {

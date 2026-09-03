@@ -36,3 +36,4 @@ export type {
 	UserInputApprovalRequest,
 } from "./lib/contract.js";
 export { CodexApprovalError } from "./lib/contract.js";
+export { parseApprovalResponse } from "./lib/response.js";

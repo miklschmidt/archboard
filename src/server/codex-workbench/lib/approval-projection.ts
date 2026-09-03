@@ -216,7 +216,6 @@ export function projectApproval(view: ApprovalOwnerView): BrowserApproval {
 				approvalKind: request.family,
 				reason: request.params.reason ?? null,
 				command: request.params.command ?? null,
-				cwd: request.params.cwd ?? null,
 				availableDecisions: effectiveCommandDecisions(request).map(projectCommandDecision),
 			};
 		case "file_change":
@@ -224,7 +223,6 @@ export function projectApproval(view: ApprovalOwnerView): BrowserApproval {
 				...envelope,
 				approvalKind: request.family,
 				reason: request.params.reason ?? null,
-				grantRoot: request.params.grantRoot ?? null,
 				availableDecisions: ["accept", "acceptForSession", "decline", "cancel"],
 			};
 		case "user_input":
@@ -232,8 +230,16 @@ export function projectApproval(view: ApprovalOwnerView): BrowserApproval {
 				...envelope,
 				approvalKind: request.family,
 				questions: request.params.questions.map((question) => ({
-					...question,
-					options: question.options?.map((option) => ({ ...option })) ?? null,
+					id: question.id,
+					header: question.header,
+					question: question.question,
+					isOther: question.isOther,
+					isSecret: question.isSecret,
+					options:
+						question.options?.map((option) => ({
+							label: option.label,
+							description: option.description,
+						})) ?? null,
 				})),
 			};
 		case "elicitation":
@@ -261,7 +267,6 @@ export function projectApproval(view: ApprovalOwnerView): BrowserApproval {
 				...envelope,
 				approvalKind: request.family,
 				reason: request.params.reason,
-				grantRoot: request.params.grantRoot,
 				fileCount: Object.keys(request.params.fileChanges).length,
 			};
 		case "exec_command":
@@ -270,7 +275,6 @@ export function projectApproval(view: ApprovalOwnerView): BrowserApproval {
 				approvalKind: request.family,
 				reason: request.params.reason,
 				command: [...request.params.command],
-				cwd: request.params.cwd,
 			};
 	}
 }

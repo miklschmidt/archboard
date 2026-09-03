@@ -1,5 +1,4 @@
-import type { BedrockSetupParams } from "../../../shared/codex-browser-model/index.js";
-import type { ClientRequestParams, ClientRequestPayloads } from "../index.js";
+import type { BedrockSetupParams, ClientRequestParams, ClientRequestPayloads } from "../index.js";
 
 const textInput: Extract<ClientRequestParams<"turn/start">["input"][number], { type: "text" }> = {
 	type: "text",

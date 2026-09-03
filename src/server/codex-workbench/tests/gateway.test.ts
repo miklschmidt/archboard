@@ -82,6 +82,19 @@ describe("Codex workbench browser gateway readiness", () => {
 		expect(value.calls).toContain("account.logout");
 	});
 
+	test("normalizes account login through the protocol owner before dispatch", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const lease = connection.claimLease();
+		const result = await connection.command({
+			...commandTarget(lease),
+			command: "accountLogin",
+			login: { type: "chatgptDeviceCode" },
+		});
+		expect(result).toMatchObject({ code: "invalid_command", outcome: "not_delivered" });
+		expect(value.calls).not.toContain("account.login");
+	});
+
 	test("advertises voice only for the exact socket that owns ready browser media", () => {
 		const value = harness();
 		const first = value.gateway.connect(value.browserId, value.paneId);
@@ -243,6 +256,22 @@ describe("Codex workbench browser command routing", () => {
 			commandId: secondLease.commandId,
 		});
 		expect(stale).toMatchObject({ code: "approval_not_pending", outcome: "not_delivered" });
+	});
+
+	test("normalizes approval responses through the approval owner before dispatch", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const approval = value.makeOrdinaryApproval();
+		value.setOrdinaryApproval(approval);
+		const result = await connection.command({
+			...commandTarget(connection.claimLease()),
+			command: "approvalRespond",
+			requestId: approval.request.requestId,
+			approvalId: approval.request.approvalId,
+			response: { approvalKind: "command_execution", decision: "invented" },
+		});
+		expect(result).toMatchObject({ code: "invalid_command", outcome: "not_delivered" });
+		expect(value.calls).not.toContain("approval.resolve");
 	});
 
 	for (const terminal of [
