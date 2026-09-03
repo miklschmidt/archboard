@@ -56,18 +56,21 @@ Running `archboard` with no command shows CLI help. Canvas-driving commands
 auto-start the Express and WebSocket server; they do not start another agent
 transport.
 
-## 4. Enable the realtime voice feature
+## 4. Use the Archboard-owned Codex session
 
-GPT-Live is gated off by default in Codex — `Stage::UnderDevelopment`,
-`default_enabled: false`. In `~/.codex/config.toml`:
+Starting the canvas also starts one exact package-local Codex app-server child
+over stdio. Archboard owns the child's dedicated `CODEX_HOME`,
+`CODEX_SQLITE_HOME`, strict `config.toml`, epoch manifests, app-server state,
+and sign-in. On Linux they live below
+`$XDG_STATE_HOME/excalidraw-canvas/codex-workbench`, or below
+`~/.local/state/excalidraw-canvas/codex-workbench` when `XDG_STATE_HOME` is
+unset. Do not edit user-global Codex configuration to enable this integration.
+The coordinator's authored thread profile enables realtime for that thread.
 
-```toml
-[features]
-realtime_conversation = true
-```
-
-The voice session attaches to an **existing** thread rather than creating one,
-and every delegation becomes a turn in that same thread.
+A pane links to one workhorse. Voice attaches to a separate persistent
+coordinator for that link, never directly to the workhorse. The coordinator can
+answer quick questions and hand sustained work to the workhorse without mixing
+their histories.
 
 ## 5. A first session
 
@@ -122,6 +125,30 @@ Each command names its live target. None writes the board note. Pass selected
 ids explicitly to a later named-board write. A pane already showing the board
 receives committed writes, but its delivery or acknowledgement does not decide
 whether the write succeeds.
+
+## 6. Verify Codex semantic delivery
+
+The controlled module owners cover filtering, exact-link revalidation, the
+single developer-message payload, and all three outcomes:
+
+```bash
+bun test src/runtime/codex-semantic-context/tests \
+  src/runtime/codex-thread-context/tests
+```
+
+`delivered` means the one `thread/inject_items` request settled successfully.
+`not_delivered` records a refusal before or during that attempt and includes an
+inspectable reason. `outcome_unknown` means the request was attempted but its
+settlement was lost; do not retry it or choose another thread.
+
+The real composition owner starts the Canvas application and its owned child,
+links a workhorse, sends one human change through `thread/inject_items`, proves
+an agent-only change stays silent, and verifies the retired HTTP routes behave
+like ordinary unknown routes:
+
+```bash
+bun test tests/system/canvas-state/codex-workbench-production.test.ts
+```
 
 ## What to expect, and what not to
 

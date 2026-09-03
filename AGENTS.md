@@ -78,13 +78,15 @@ overwrite, and save-elsewhere recovery choices. `bun run dev` starts the same
 backend plus an independent Vite frontend with browser HMR.
 
 **Running the complete local suite needs `agent-browser` on PATH**: one typed
-serial browser lane drives 18 real-browser owners and exits 2 when prerequisites
-are absent; its human-edit performance owner also needs `strace`. It stays
-headless and runs one owner at a time. `bun run check` is the complete local
-gate. GitHub Actions invokes that command with two fail-closed hosted
-exceptions: `tests/system/code-targets/opener-persistence.test.ts` and the
-complete serial browser lane. TASK-141 and TASK-142 own restoring the system
-owner and all 18 browser owners; repository policy pins both exceptions.
+serial browser lane drives every path in the executable `BROWSER_TEST_PATHS`
+inventory and exits 2 when prerequisites are absent; its human-edit performance
+owner also needs `strace`. It stays headless and runs one owner at a time. The
+lane reports its current owner count at execution, so do not copy that count into
+documentation. `bun run check` is the complete local gate. GitHub Actions invokes
+that command with two fail-closed hosted exceptions:
+`tests/system/code-targets/opener-persistence.test.ts` and the complete serial
+browser lane. TASK-141 and TASK-142 own restoring the system owner and the full
+browser inventory; repository policy pins both exceptions.
 `bun run test:repository` includes the inventory that rejects missing,
 duplicate, or unreachable tests. Changing tests or CI, or a browser owner
 failing → `docs/agents/test-suite.md`.
@@ -192,9 +194,15 @@ that changed on disk under another editor is refused, never overwritten
 - **Keep a board open in one editor at a time.** The conflict check reads the
   file, not another app's memory, so two editors can still cross-write.
 - **Codex communication uses one private package-local app-server session over
-  stdio.** Semantic context uses the generated `thread/inject_items` protocol
-  path on that connection; there is no ambient daemon or environment-selected
-  target.
+  stdio.** Archboard owns its dedicated `CODEX_HOME`, `CODEX_SQLITE_HOME`, strict
+  config, epoch state, and sign-in. A pane's explicit thread link names one
+  workhorse. Settled human or mixed-origin context gets one guarded
+  `thread/inject_items` attempt on the owned connection; agent-only and cosmetic
+  changes stay silent. The recorded result is `delivered`, `not_delivered` with
+  a reason, or `outcome_unknown` after lost settlement. Never retry an unknown
+  outcome or choose another thread. Voice belongs to the linked coordinator,
+  whose history and role remain separate from the workhorse. The retired ambient
+  daemon, control client, and environment-selected target are unavailable.
 
 ## Names on the wire
 

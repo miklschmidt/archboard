@@ -24,12 +24,12 @@ rendering, mermaid conversion, and a command surface — was already solved
 there. Archboard retained the CLI and later deleted the duplicated MCP
 transport (ADR 0008). What the base does not give us:
 
-| Gap                                    | Why it blocks us                                                                                                 |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `describe` ignores `customData`/`link` | The agent's primary read path is blind to the semantic model                                                     |
-| No persistence                         | In-memory; "current vs proposed" work cannot survive a restart                                                   |
-| No multi-document                      | One global canvas; no variants, no per-project boards                                                            |
-| No change-event feed                   | Nothing to react to when the human draws — **since TASK-018/019 there is one, and it can push to a live thread** |
+| Gap                                    | Why it blocks us                                                                                                                     |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `describe` ignores `customData`/`link` | The agent's primary read path is blind to the semantic model                                                                         |
+| No persistence                         | In-memory; "current vs proposed" work cannot survive a restart                                                                       |
+| No multi-document                      | One global canvas; no variants, no per-project boards                                                                                |
+| No change-event feed                   | Nothing to react to when the human draws. The current feed can deliver a settled semantic change to one explicitly linked workhorse. |
 
 **We are not staying mergeable.** Archboard diverges for our use case without
 regard for whether upstream would accept the change. Restructure freely: rename
@@ -118,9 +118,10 @@ start and realtime adapters only choose when and where to deliver them.
 ### 2. Mid-conversation context — the bound app-server session
 
 The workbench owns one private stdio app-server child and one explicit thread
-link from a pane to its workhorse. That link is the only automatic target for semantic board
-updates. Archboard does not inspect recent activity, count loaded threads, read an
-environment-selected thread id, or connect a second client to a control socket.
+link from a pane to its workhorse. That link is the only automatic target for
+semantic board updates. Archboard does not inspect recent activity, count loaded
+threads, read an environment-selected thread id, or connect a second client.
+The former control-socket path is retired and unavailable.
 
 The child runs in an Archboard-only `CODEX_HOME` and `CODEX_SQLITE_HOME` with a
 separate supported sign-in. An epoch manifest outside Codex storage makes every
@@ -128,12 +129,17 @@ prior-child thread inspect-only. This avoids accidental cold resume of persisted
 dynamic tools and queued work; it is an operational boundary, not protection
 against a same-user process intentionally pointed at those private paths.
 
-The existing change feed still performs the valuable work: settle a person's
-gesture, discard visual noise, and narrate the semantic delta compactly. A human
-or mixed-origin update is delivered with `thread/inject_items` on the same owned
-connection, so it enters model-visible history without starting a turn. An
-agent-only update is discarded instead of being narrated back to its author.
-No controllable linked thread means no delivery and an inspectable reason.
+The existing change feed settles a person's gesture, discards visual noise, and
+renders a compact semantic delta. Immediately before delivery, Archboard
+revalidates the child, epoch, pane link, loaded membership, controllability,
+thread status, semantic cursor, and origin. A human or mixed-origin layout or
+structural update gets one `thread/inject_items` attempt on the same owned
+connection. The payload is one developer message with one `input_text` part, so
+it enters model-visible history without starting a turn. Agent-only and cosmetic
+updates are discarded. Each event settles once as `delivered`, `not_delivered`
+with a reason, or `outcome_unknown` after a lost response. Archboard never
+retries an unknown mutation, falls back to turn or steer, or selects another
+thread.
 
 Realtime voice attaches to a persistent fast coordinator thread linked to the
 pane's workhorse, not to the workhorse itself. This keeps low-latency questions,
@@ -147,13 +153,14 @@ refused until idle. App-server lifecycle events notify the coordinator without a
 blocking wait.
 
 Spoken approval is state-gated. Realtime V3 cannot emit a typed tool verdict, so
-the later ordinary coordinator turn classifies the delegated final reply and
-calls a dedicated typed resolver. A request blocking that coordinator remains
-visual-only. One immutable approval may be pending application-wide; target,
-effect, child epoch, realtime session, and expiry are compare-and-swapped before
-one-time execution. Version 0.151.0 cannot correlate `appendSpeech` completion
-with an item id, so Archboard arms the request from the expected session-scoped
-assistant transcript sequence and presents that residual voice race explicitly.
+a later ordinary coordinator turn classifies one host-bound final user reply and
+calls a dedicated typed resolver. After the effect prompt, only the next
+matching final user item from the same realtime session may arm the immutable
+request. Its item id and monotonic sequence are part of the authority.
+Assistant output, provisional user deltas, pre-prompt items, duplicates, and
+stale sessions cannot arm it. A request blocking that coordinator remains
+visual-only. Target, effect, child epoch, realtime session, and expiry are
+compare-and-swapped before one-time execution.
 
 Codex 0.151.0's experimental V3 contract provides startup context, role-bearing
 initial items, session instructions, realtime text append, and transcript-tail
@@ -168,9 +175,11 @@ switch, explicit thread environment variable, and loud-injection experiment.
 
 ### 3. On-demand query — CLI
 
-The agent pulls board state with `archboard describe`, `query`, `selection`,
-`panes`, `changes`, and `compare`. The CLI auto-starts the canvas server when a
-command needs it, while vault-direct commands remain usable without a browser.
+The agent pulls persisted board state with `archboard describe`, `query`,
+`changes`, and `compare`. Mermaid conversion, board rendering, inspection,
+snapshots, branches, and exports also need no browser. Only explicit
+`archboard browser` commands inspect or control live panes, selections, cameras,
+or pixels. The CLI auto-starts the canvas server when a command needs it.
 
 Archboard once maintained an MCP tool catalogue and dispatcher beside the CLI.
 Nothing in current use required a shell-less transport, and the duplicate
@@ -180,8 +189,9 @@ interface remains the application seam behind the CLI and browser.
 
 ## Security — read before wiring the workbench
 
-The private child removes the shared control socket, but not the authority of a
-workbench that can answer approvals, send turns, and expose coordination tools.
+The shared control-socket route is retired. The private child does not remove
+the authority of a workbench that can answer approvals, send turns, and expose
+coordination tools.
 The canvas server therefore remains loopback-only while the workbench is
 enabled. Its browser bridge requires an actual loopback peer, loopback Host, and
 same-origin HTTP and WebSocket requests. A browser lease owns interactive
