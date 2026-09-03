@@ -10,7 +10,6 @@ import {
 export const BROWSER_ADAPTER_PATH = "tests/system/browser/run-browser-lane.ts";
 
 export const BROWSER_TEST_PATHS = [
-	"tests/system/browser/human-edit-performance.test.ts",
 	"tests/system/browser/fixed-point-document.test.ts",
 	"tests/system/browser/malformed-geometry-recovery.test.ts",
 	"tests/system/browser/pane-telemetry-recovery.test.ts",
@@ -19,7 +18,6 @@ export const BROWSER_TEST_PATHS = [
 	"tests/system/browser/board-navigator.test.ts",
 	"tests/system/browser/fullscreen-presentation.test.ts",
 	"tests/system/browser/typed-text.test.ts",
-	"tests/system/browser/live-session-convergence.test.ts",
 	"tests/system/browser/server-update-ordering.test.ts",
 	"tests/system/browser/hold-generation.test.ts",
 	"tests/system/browser/human-hold-persistence.test.ts",
@@ -30,12 +28,19 @@ export const BROWSER_TEST_PATHS = [
 	"tests/system/browser/code-target-activation.test.ts",
 ] as const;
 
-export type BrowserTestPath = (typeof BROWSER_TEST_PATHS)[number];
-export const HUMAN_PERFORMANCE_BROWSER_OWNER = BROWSER_TEST_PATHS[0];
+export const OPT_IN_BROWSER_TEST_PATHS = [
+	"tests/system/browser/human-edit-performance.test.ts",
+	"tests/system/browser/live-session-convergence.test.ts",
+] as const;
+
+export type BrowserTestPath =
+	| (typeof BROWSER_TEST_PATHS)[number]
+	| (typeof OPT_IN_BROWSER_TEST_PATHS)[number];
+export const HUMAN_PERFORMANCE_BROWSER_OWNER = OPT_IN_BROWSER_TEST_PATHS[0];
 export const CI_EXCLUDED_BROWSER_OWNERS_ENV = "ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS";
 const CI_EXCLUDED_BROWSER_OWNERS_VALUE = "all";
 export interface BrowserSelection {
-	mode: "package" | "focus";
+	mode: "package" | "opt-in" | "focus" | "opt-in-focus";
 	files: BrowserTestPath[];
 	testName?: string;
 }
@@ -69,7 +74,10 @@ export function runCanvasCli(base: string, vault: string, args: string[]): strin
 	return result.stdout;
 }
 
-const PATH_INDEX = new Map<string, number>(BROWSER_TEST_PATHS.map((file, index) => [file, index]));
+const ALL_BROWSER_TEST_PATHS = [...BROWSER_TEST_PATHS, ...OPT_IN_BROWSER_TEST_PATHS] as const;
+const PATH_INDEX = new Map<string, number>(
+	ALL_BROWSER_TEST_PATHS.map((file, index) => [file, index]),
+);
 const REQUIRED_BROWSER_ENV = [
 	"PATH",
 	"HOME",
@@ -104,7 +112,7 @@ const CLEARED_CANVAS_ENV = [
 function selectionError(message: string): never {
 	throw new Error(
 		`${message}\nUse the complete package command or ` +
-			`bun ${BROWSER_ADAPTER_PATH} --focus <canonical test path> [--test-name <exact test name>].`,
+			`bun ${BROWSER_ADAPTER_PATH} [--opt-in] --focus <canonical test path> [--test-name <exact test name>].`,
 	);
 }
 
@@ -113,13 +121,16 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 		selectionError(`Browser lane must start with \`bun ${BROWSER_ADAPTER_PATH}\`.`);
 	}
 	const tail = argv.slice(2);
-	const mode = tail[0] === "--focus" ? "focus" : "package";
-	const focusArguments = mode === "focus" ? tail.slice(1) : tail;
+	const optIn = tail[0] === "--opt-in";
+	const scoped = optIn ? tail.slice(1) : tail;
+	const focused = scoped[0] === "--focus";
+	const mode = focused ? (optIn ? "opt-in-focus" : "focus") : optIn ? "opt-in" : "package";
+	const focusArguments = focused ? scoped.slice(1) : scoped;
 	const testNameIndex = focusArguments.indexOf("--test-name");
 	let selected = focusArguments;
 	let testName: string | undefined;
 	if (testNameIndex !== -1) {
-		if (mode !== "focus") selectionError("--test-name is valid only with --focus.");
+		if (!focused) selectionError("--test-name is valid only with --focus.");
 		if (focusArguments.lastIndexOf("--test-name") !== testNameIndex) {
 			selectionError("Focused browser lane repeats --test-name.");
 		}
@@ -135,7 +146,7 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 			selectionError("--test-name requires exactly one focused browser owner.");
 		}
 	}
-	if (mode === "focus" && selected.length === 0) selectionError("Focused browser lane is empty.");
+	if (focused && selected.length === 0) selectionError("Focused browser lane is empty.");
 	if (selected.some((token) => token.startsWith("-"))) {
 		selectionError("Browser lane accepts no extra flags.");
 	}
@@ -144,18 +155,24 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 	if (unknown) selectionError(`Browser lane names unknown path \`${unknown}\`.`);
 	const duplicate = selected.find((file, index) => selected.indexOf(file) !== index);
 	if (duplicate) selectionError(`Browser lane repeats \`${duplicate}\`.`);
+	const inventory = optIn ? OPT_IN_BROWSER_TEST_PATHS : BROWSER_TEST_PATHS;
+	if (selected.some((file) => !inventory.includes(file as never))) {
+		selectionError(
+			`${optIn ? "Opt-in" : "Normal"} browser lane names a path from the other inventory.`,
+		);
+	}
 	for (let index = 1; index < indices.length; index += 1) {
 		if ((indices[index - 1] ?? -1) >= (indices[index] ?? -1)) {
 			selectionError("Focused browser paths are not in canonical relative order.");
 		}
 	}
 	if (
-		mode === "package" &&
-		(selected.length !== BROWSER_TEST_PATHS.length ||
-			selected.some((file, index) => file !== BROWSER_TEST_PATHS[index]))
+		!focused &&
+		(selected.length !== inventory.length ||
+			selected.some((file, index) => file !== inventory[index]))
 	) {
 		selectionError(
-			`Package browser lane must name all ${BROWSER_TEST_PATHS.length} canonical paths in order.`,
+			`${optIn ? "Opt-in" : "Package"} browser lane must name all ${inventory.length} canonical paths in order.`,
 		);
 	}
 	return { mode, files: selected as BrowserTestPath[], ...(testName ? { testName } : {}) };

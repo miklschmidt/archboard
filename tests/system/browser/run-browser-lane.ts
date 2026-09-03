@@ -38,6 +38,7 @@ import { ensureFreshFrontend, type FrontendBuildRequest } from "./support/fronte
 export {
 	BROWSER_ADAPTER_PATH,
 	BROWSER_TEST_PATHS,
+	OPT_IN_BROWSER_TEST_PATHS,
 	CI_EXCLUDED_BROWSER_OWNERS_ENV,
 	HUMAN_PERFORMANCE_BROWSER_OWNER,
 	applyCiBrowserOwnerExclusion,

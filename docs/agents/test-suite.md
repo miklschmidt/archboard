@@ -3,25 +3,42 @@
 What each check proves, and the constraints on running them. Read this when
 changing tests or CI, or when a browser check fails.
 
-`bun run test` type-checks and runs `build:frontend`, then runs four native lanes
-in this order:
+`bun run test` type-checks and runs `build:frontend`, then runs four normal
+native lanes in this order:
 
-- `test:modules`: isolated module-owned tests discovered under `src/`;
-- `test:system`: system owners under the eight explicit non-browser directories,
-  with `--max-concurrency=1` because they own real processes and shared local ports;
+- `test:modules`: isolated module-owned product tests discovered under `src/`;
+- `test:system`: system product owners under the seven explicit non-browser
+  directories, with `--max-concurrency=1` because they own real processes and
+  shared local ports;
 - `test:repository`: isolated repository-policy tests, including inventory and no-MJS policy;
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
   inventory through the strict adapter.
 
-`bun run check` is the complete local gate: lint, formatting, both TypeScript
-projects, and that complete test chain. `.github/workflows/ci.yml` invokes the
+`bun run check` is the complete normal local gate: lint, formatting, both
+TypeScript projects, and that normal test chain. `.github/workflows/ci.yml` invokes the
 same command with two exact hosted-only exceptions after clean-runner stalls:
 `tests/system/code-targets/opener-persistence.test.ts` and the complete serial
-browser lane. All remain mandatory locally; TASK-141 and TASK-142 own restoring
-the system owner and the complete browser inventory to hosted coverage. Repository policy
-pins both exceptions and rejects a native test with no lane, more than one lane,
-no push path, a browser owner outside the serial adapter, recursive browser
-discovery, or any transitional `test:*` key.
+browser lane. All normal owners remain mandatory locally; TASK-141 and TASK-142
+own restoring the system owner and the normal browser inventory to hosted
+coverage. Repository policy pins both exceptions and rejects a native test with
+no declared lane, normal/opt-in overlap, an opt-in path reachable from `check`, a
+browser owner outside its typed serial inventory, or an undeclared `test:*` key.
+
+The supported normal topology is one Archboard server, one package-local bound
+Codex app-server, and one human editor. Short races inside that topology stay in
+their cheapest product owner. These commands contain everything outside it:
+
+| Command                                                                  | Concrete regressions and cheapest interface                                                                                                    |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run test:opt-in:capacity`                                           | Inspection scale ceilings, transport retention/frame capacity, and the frozen app-server capacity authority through focused module owners.     |
+| `bun run test:opt-in:tooling`                                            | Browser adapter, wall-clock preload, owned-process harness, renderer fixture, and external watchdog behavior through their real test adapters. |
+| `bun run test:opt-in:topology`                                           | The two-server same-vault lock handoff through its process boundary.                                                                           |
+| `bun run test:opt-in:browser-performance`                                | The 10,000-element human-edit measurement and 42-cycle convergence soak through the serial real-browser adapter.                               |
+| `bun run opt-in:renderer-chromium` / `bun run opt-in:renderer-emulation` | Manual renderer and upstream-emulation probes. They are never package test owners.                                                             |
+
+The normal/opt-in inventory is static and fail-closed. Every native owner is
+selected exactly once, every opt-in lane is unreachable from `check`, and
+hosted CI may invoke only `bun run check`.
 
 The whole chain's duration is machine-dependent. Browser owners run one at a
 time. Re-measure before making a timing claim.
@@ -47,9 +64,9 @@ outer bound, the task that owns the choice, and recorded duration evidence.
 Repository policy checks that AST shape and the parsed preload entry. There is no
 separate filename list to update.
 
-The focused server-rendering owners load `dist/frontend/renderer.html`. Run
-`bun run build:frontend` first in a clean checkout. The package `test` command
-already runs that build before its native lanes.
+The opt-in renderer-tooling owners load `dist/frontend/renderer.html`. Run
+`bun run build:frontend` first in a clean checkout. The normal package test
+still builds the frontend before product owners.
 
 `tests/system/boards/vault-only-production-interfaces.test.ts` owns the
 zero-client product workflow. It uses named persisted boards with no open,
@@ -62,6 +79,7 @@ Run browser diagnosis only through the adapter:
 ```bash
 bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canonical-owner>.test.ts
 bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canonical-owner>.test.ts --test-name "<exact test name>"
+bun tests/system/browser/run-browser-lane.ts --opt-in --focus tests/system/browser/<opt-in-owner>.test.ts
 ```
 
 The code-target system owners run after `tests/system/process-contracts`. The
@@ -69,15 +87,15 @@ browser runner checks the package command's paths and order against
 `BROWSER_TEST_PATHS`:
 
 ```bash
-bun test --isolate --max-concurrency=1 tests/system/support tests/system/boards tests/system/label-geometry tests/system/cli tests/system/board-inspection tests/system/canvas-state tests/system/process-contracts tests/system/code-targets
+bun run test:system
 bun run test:serial-browser
 ```
 
-Print the executable owner count and ordered paths without copying either into
+Print the normal and opt-in executable paths without copying their counts into
 documentation:
 
 ```bash
-bun -e 'import { BROWSER_TEST_PATHS } from "./tests/system/browser/support/agent-browser.ts"; console.log(BROWSER_TEST_PATHS.length); console.log(BROWSER_TEST_PATHS.join("\n"))'
+bun -e 'import { BROWSER_TEST_PATHS, OPT_IN_BROWSER_TEST_PATHS } from "./tests/system/browser/support/agent-browser.ts"; console.log(BROWSER_TEST_PATHS.join("\n")); console.log(OPT_IN_BROWSER_TEST_PATHS.join("\n"))'
 ```
 
 System and browser owners must reap children,
@@ -99,22 +117,22 @@ Every transitional package check now has one final owner lane:
 | `test:doing`, `test:branch`, `test:side-by-side`, `test:staleness`             | system             | `tests/system/canvas-state/`                                                                                         |
 | `test:geometry`, `test:labels`                                                 | modules and system | `src/runtime/engine/tests/`, `tests/system/label-geometry/`                                                          |
 | `test:text`, `test:library`                                                    | modules            | `src/runtime/engine/tests/`                                                                                          |
-| `test:boards`                                                                  | system             | `tests/system/support/`, `tests/system/boards/`                                                                      |
+| `test:boards`                                                                  | system             | `tests/system/boards/`                                                                                               |
 | `test:browser`                                                                 | serial-browser     | `BROWSER_TEST_PATHS`                                                                                                 |
 
 ## The serial browser lane
 
 Everything else in `scripts/` stands a WebSocket in for a pane, which cannot
 catch a renderer disagreeing with us: a socket holds whatever it was sent. The
-owners named by `BROWSER_TEST_PATHS` drive a real browser through one strict
-adapter for live-session behavior and Excalidraw fidelity. They are not a gate
+normal owners named by `BROWSER_TEST_PATHS` drive a real browser through one
+strict adapter for live-session behavior and Excalidraw fidelity. They are not a gate
 for named-board runtime operations. The lane:
 
 - refuses to claim a pass without `agent-browser` on PATH, or without `strace`
-  when human-edit performance is selected — it exits 2 before building or
-  starting an owner;
+  when the opt-in human-edit performance owner is selected. It exits 2 before
+  building or starting an owner;
 - asserts `navigator.userAgent` says headless, because a window that maps
-  steals focus under Hyprland; local runs exercise the complete executable inventory while hosted
+  steals focus under Hyprland; local normal runs exercise the normal inventory while hosted
   runs exclude the lane until TASK-142 restores it;
 - runs one literal file child at a time, never concurrently. TASK-097 records that two owners
   sharing the machine is how one of them fails for no reason: contention
@@ -129,7 +147,7 @@ for named-board runtime operations. The lane:
   environment, and audits all of them during cleanup. The code-target system
   owners also reap controlled fake processes and capture/release files.
 
-The package command is the canonical full lane. Focused diagnosis accepts only:
+The normal package command is the canonical normal lane. Focused diagnosis accepts:
 
 ```bash
 bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canonical-owner>.test.ts
@@ -143,11 +161,11 @@ complete test name exactly. Do not invoke an owner directly: the adapter is
 what makes browser work serial, headless, and clean after failures or
 interruption.
 
-`BROWSER_TEST_PATHS` is the full order. The runner reports its length at
-execution and rejects missing, duplicate, reordered, or unknown paths before it
-starts a browser.
+`BROWSER_TEST_PATHS` is the normal order. `OPT_IN_BROWSER_TEST_PATHS` is disjoint
+and requires the explicit `--opt-in` mode. The runner rejects mixed, missing,
+duplicate, reordered, or unknown paths before it starts a browser.
 
-### Human edit performance (TASK-118)
+### Opt-in human edit performance (TASK-118)
 
 Keeps the measured 10,000-element human-only reproduction that attributed the
 stall to a multi-megabyte normal response and its whole-document browser
@@ -224,6 +242,10 @@ cycle**, naming the element, the field, both values and the cycle a divergence
 first appeared on. That is what makes "the server is the truth" a property
 rather than a claim: the bugs it exists to catch — a label multiplying, a
 rename coming back — need a session to build up in. About forty seconds.
+
+That 42-cycle soak is opt-in. The normal browser lane keeps the short
+server-update ordering, hold-generation, hold-persistence, and claim owners that
+catch reachable single-session races without repeating the complete soak.
 
 It also probes the server-update ordering from TASK-099. A user edit must be in
 a report in flight or a report that is scheduled. The pane records a server
@@ -325,7 +347,8 @@ note archboard did not write. About fifteen seconds.
   structured refusal and usage exits, and CLI-owned import path resolution.
 - The one-write owners in `test:system` count writes on the wire through a proxy, so a
   loop cannot pass itself off as a batch (TASK-068).
-- The lock owners in `test:modules` and `test:system` prove exclusion with two processes over one vault,
+- Normal lock owners prove reachable one-server exclusion. The opt-in topology
+  owner proves two Archboard server processes cannot write one vault at once,
   which is the one thing an in-process mutex could not do (ADR 0016).
 - The repository-session owners in `test:system` use RepositoryFixture-owned HOME, XDG state, log,
   registry, and vault paths, isolated from the caller's user configuration.

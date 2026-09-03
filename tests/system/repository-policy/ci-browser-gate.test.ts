@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 import {
 	BROWSER_ADAPTER_PATH,
 	BROWSER_TEST_PATHS,
+	HUMAN_PERFORMANCE_BROWSER_OWNER,
+	type BrowserTestPath,
 	CI_EXCLUDED_BROWSER_OWNERS_ENV,
 	applyCiBrowserOwnerExclusion,
 	validateBrowserSelection,
@@ -13,9 +15,9 @@ import {
 import {
 	browserBundleSnapshot,
 	createBrowserPreflightFixture,
-	inspectWorkflow,
 	installFakeAgentBrowser,
-} from "./support/test-inventory.ts";
+} from "./support/browser-runner-fixtures.ts";
+import { inspectWorkflow } from "./support/test-inventory.ts";
 import { TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -79,7 +81,7 @@ function runAdapter(
 		withStrace?: boolean;
 		executablePath?: string;
 		ownerFixture?: string;
-		file?: (typeof BROWSER_TEST_PATHS)[number];
+		file?: BrowserTestPath;
 		packageSelection?: boolean;
 		hostedExclusion?: boolean;
 	},
@@ -105,10 +107,17 @@ function runAdapter(
 	if (options.ownerFixture !== undefined)
 		env.ARCHBOARD_TEST_BROWSER_OWNER_FIXTURE = options.ownerFixture;
 	if (options.hostedExclusion) Object.assign(env, HOSTED_BROWSER_EXCLUSION);
+	const focusedFile = options.file ?? BROWSER_TEST_PATHS[0];
 	const result = Bun.spawnSync({
 		cmd: options.packageSelection
 			? ["bun", BROWSER_ADAPTER_PATH, ...BROWSER_TEST_PATHS]
-			: ["bun", BROWSER_ADAPTER_PATH, "--focus", options.file ?? BROWSER_TEST_PATHS[1]],
+			: [
+					"bun",
+					BROWSER_ADAPTER_PATH,
+					...(focusedFile === HUMAN_PERFORMANCE_BROWSER_OWNER ? ["--opt-in"] : []),
+					"--focus",
+					focusedFile,
+				],
 		cwd: repoRoot,
 		env,
 		stdout: "pipe",
@@ -316,16 +325,6 @@ describe("CI executable workflow steps", () => {
 });
 
 describe("browser executable adapter boundary", () => {
-	test("local package selection retains all 18 browser owners", () => {
-		const selection = validateBrowserSelection([
-			"bun",
-			BROWSER_ADAPTER_PATH,
-			...BROWSER_TEST_PATHS,
-		]);
-		expect(applyCiBrowserOwnerExclusion(selection, {})).toBe(selection);
-		expect(selection.files).toEqual([...BROWSER_TEST_PATHS]);
-	});
-
 	test("the hosted package exception removes the complete browser lane", () => {
 		const selection = validateBrowserSelection([
 			"bun",
@@ -439,7 +438,7 @@ describe("browser executable adapter boundary", () => {
 			{
 				withAgentBrowser: true,
 				executablePath: fixture.browserExecutable,
-				file: BROWSER_TEST_PATHS[0],
+				file: HUMAN_PERFORMANCE_BROWSER_OWNER,
 			},
 			resources,
 		);
@@ -481,7 +480,7 @@ describe("browser executable adapter boundary", () => {
 				withStrace: true,
 				executablePath: fixture.browserExecutable,
 				ownerFixture,
-				file: BROWSER_TEST_PATHS[0],
+				file: HUMAN_PERFORMANCE_BROWSER_OWNER,
 			},
 			resources,
 		);

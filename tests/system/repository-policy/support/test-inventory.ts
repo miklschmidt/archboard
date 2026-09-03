@@ -19,88 +19,22 @@ export interface InventoryResult {
 	reachableScripts: Map<string, number>;
 }
 
-export function browserBundleSnapshot(repoRoot: string): {
-	exists: boolean;
-	mtimeMs?: number;
-	size?: number;
-} {
-	const bundle = path.join(repoRoot, "dist/frontend/index.html");
-	if (!fs.existsSync(bundle)) return { exists: false };
-	const stat = fs.statSync(bundle);
-	return { exists: true, mtimeMs: stat.mtimeMs, size: stat.size };
-}
-
-export function createBrowserPreflightFixture(): {
-	root: string;
-	bin: string;
-	temporary: string;
-	browserExecutable: string;
-	versionMarker: string;
-	ownerPathMarker: string;
-	ownerOperationTimeoutMarker: string;
-	canvasOperationTimeoutMarker: string;
-	unexpectedMarker: string;
-} {
-	const root = fs.mkdtempSync(
-		path.join(process.env.TMPDIR ?? "/tmp", "archboard-browser-preflight-"),
-	);
-	const bin = path.join(root, "bin");
-	const temporary = path.join(root, "tmp");
-	try {
-		fs.mkdirSync(bin);
-		fs.mkdirSync(temporary);
-		fs.symlinkSync(process.execPath, path.join(bin, "bun"));
-		fs.symlinkSync(process.execPath, path.join(bin, "bunx"));
-		fs.symlinkSync(process.execPath, path.join(bin, "node"));
-		const browserExecutable = path.join(root, "chrome");
-		fs.writeFileSync(browserExecutable, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
-		return {
-			root,
-			bin,
-			temporary,
-			browserExecutable,
-			versionMarker: path.join(root, "agent-browser-version"),
-			ownerPathMarker: path.join(root, "owner-browser-path"),
-			ownerOperationTimeoutMarker: path.join(root, "owner-operation-timeout"),
-			canvasOperationTimeoutMarker: path.join(root, "canvas-operation-timeout"),
-			unexpectedMarker: path.join(root, "agent-browser-unexpected"),
-		};
-	} catch (error) {
-		fs.rmSync(root, { recursive: true, force: true });
-		throw error;
-	}
-}
-
-export function installFakeAgentBrowser(
-	fixture: ReturnType<typeof createBrowserPreflightFixture>,
-): void {
-	const executable = path.join(fixture.bin, "agent-browser");
-	fs.writeFileSync(
-		executable,
-		`#!/bin/sh\nif [ "$1" = "--version" ]; then : > "${fixture.versionMarker}"; exit 0; fi\nprintf '%s' "$AGENT_BROWSER_EXECUTABLE_PATH" > "${fixture.ownerPathMarker}"\nif [ "\${AGENT_BROWSER_DEFAULT_TIMEOUT+x}" = x ]; then printf 'present:%s' "$AGENT_BROWSER_DEFAULT_TIMEOUT"; else printf 'absent'; fi > "${fixture.ownerOperationTimeoutMarker}"\n: > "${fixture.unexpectedMarker}"\nexit 97\n`,
-		{ mode: 0o755 },
-	);
-}
-
-export function processExists(pid: number): boolean {
-	try {
-		process.kill(pid, 0);
-		return true;
-	} catch {
-		return false;
-	}
-}
-
 const RUN_SCRIPT = /\bbun run ([\w:-]+)/g;
 const EXECUTABLE_RUN_SCRIPT = /\bbun\s+run\s+([\w:-]+)(?=\s|$|[;&|(){}`])/g;
 const ECHO_ONLY_PREFIX =
 	/^(?:(?:if|elif|while|until|then|else|do)\s+)?(?:(?:env\s+)?(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+)*|command\s+)?(?:echo|printf)\b/;
 const BUN_TEST = /\bbun test\b([^&;|]*)/g;
-const FINAL_TEST_LANES = new Set([
+const NORMAL_TEST_LANES = new Set([
 	"test:modules",
 	"test:system",
 	"test:repository",
 	"test:serial-browser",
+]);
+const OPT_IN_TEST_LANES = new Set([
+	"test:opt-in:capacity",
+	"test:opt-in:tooling",
+	"test:opt-in:topology",
+	"test:opt-in:browser-performance",
 ]);
 
 function workflowRunCommands(workflow: string): { commands: string[]; error?: string } {
@@ -377,16 +311,30 @@ function isTestFile(file: string): boolean {
 	return /(?:^|\/)[^/]+(?:\.|_)(?:test|spec)\.ts$/.test(file);
 }
 
-function selectors(command: string): string[] {
-	const found: string[] = [];
+function testSelections(command: string): Array<{ selectors: string[]; ignores: string[] }> {
+	const selections: Array<{ selectors: string[]; ignores: string[] }> = [];
 	for (const match of command.matchAll(BUN_TEST)) {
+		const selectors: string[] = [];
+		const ignores: string[] = [];
 		const segment = match[1] ?? "";
-		for (const token of segment.trim().split(/\s+/)) {
-			if (!token || token.startsWith("-")) continue;
-			found.push(normalize(token.replace(/^['"]|['"]$/g, "")));
+		const tokens = segment.trim().split(/\s+/);
+		for (let index = 0; index < tokens.length; index += 1) {
+			const token = tokens[index]?.replace(/^['"]|['"]$/g, "") ?? "";
+			if (!token) continue;
+			if (token === "--path-ignore-patterns") {
+				const ignored = tokens[++index]?.replace(/^['"]|['"]$/g, "");
+				if (ignored) ignores.push(normalize(ignored));
+				continue;
+			}
+			if (token.startsWith("--path-ignore-patterns=")) {
+				ignores.push(normalize(token.slice("--path-ignore-patterns=".length)));
+				continue;
+			}
+			if (!token.startsWith("-")) selectors.push(normalize(token));
 		}
+		selections.push({ selectors, ignores });
 	}
-	return found;
+	return selections;
 }
 
 function adapterFiles(command: string): { files: string[]; error?: string } {
@@ -411,7 +359,11 @@ function selected(testFile: string, selector: string): boolean {
 }
 
 export function discoverNativeTests(repoRoot: string): string[] {
-	const roots = [path.join(repoRoot, "src"), path.join(repoRoot, "tests", "system")];
+	const roots = [
+		path.join(repoRoot, "src"),
+		path.join(repoRoot, "tests", "system"),
+		path.join(repoRoot, "tests", "opt-in"),
+	];
 	const tests: string[] = [];
 	for (const root of roots) {
 		if (!fs.existsSync(root)) continue;
@@ -441,27 +393,39 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 	for (const suiteName of Object.keys(input.scripts).filter((candidate) =>
 		candidate.startsWith("test:"),
 	)) {
-		if (!FINAL_TEST_LANES.has(suiteName)) {
+		const normal = NORMAL_TEST_LANES.has(suiteName);
+		const optIn = OPT_IN_TEST_LANES.has(suiteName);
+		if (!normal && !optIn) {
 			errors.push(
-				`package test lane \`${suiteName}\` is transitional; only test:modules, test:system, test:repository, and test:serial-browser are allowed`,
+				`package test lane \`${suiteName}\` is undeclared; classify it as a normal or explicit opt-in lane`,
 			);
 		}
 		const count = reachability.counts.get(suiteName) ?? 0;
-		if (count === 0)
+		if (normal && count === 0)
 			errors.push(`package test lane \`${suiteName}\` is absent from \`${pushScript}\``);
-		if (count > 1) errors.push(`package test lane \`${suiteName}\` is reached ${count} times`);
+		if (normal && count > 1)
+			errors.push(`package test lane \`${suiteName}\` is reached ${count} times`);
+		if (optIn && count > 0)
+			errors.push(`opt-in test lane \`${suiteName}\` is reachable from \`${pushScript}\``);
 	}
 
 	const nativeLanes = new Map<string, string[]>();
 	for (const [name, command] of Object.entries(input.scripts)) {
-		const laneSelectors = selectors(command);
 		const adapter = adapterFiles(command);
 		if (adapter.error) errors.push(`browser adapter lane \`${name}\` is invalid: ${adapter.error}`);
 		const occurrences = [...adapter.files];
-		for (const selector of laneSelectors) {
-			for (const file of input.nativeTests) if (selected(file, selector)) occurrences.push(file);
+		for (const selection of testSelections(command)) {
+			for (const selector of selection.selectors) {
+				for (const file of input.nativeTests) {
+					if (
+						selected(file, selector) &&
+						!selection.ignores.some((ignored) => selected(file, ignored))
+					)
+						occurrences.push(file);
+				}
+			}
 		}
-		if (occurrences.length > 0) nativeLanes.set(name, occurrences);
+		if (occurrences.length > 0 && name.startsWith("test:")) nativeLanes.set(name, occurrences);
 	}
 
 	for (const file of input.nativeTests) {
@@ -472,12 +436,25 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 			}))
 			.filter((owner) => owner.occurrences > 0);
 		if (owners.length === 0) errors.push(`native test \`${file}\` belongs to no package lane`);
+		const optInOwners = owners.filter((owner) => OPT_IN_TEST_LANES.has(owner.name));
+		const normalOwners = owners.filter((owner) => NORMAL_TEST_LANES.has(owner.name));
+		if (optInOwners.length > 0 && normalOwners.length > 0) {
+			errors.push(
+				`native test \`${file}\` belongs to both normal and opt-in lanes: ${owners.map((owner) => owner.name).join(", ")}`,
+			);
+		}
+		const optInRuns = optInOwners.reduce((total, owner) => total + owner.occurrences, 0);
+		if (optInRuns > 1) {
+			errors.push(
+				`opt-in native test \`${file}\` is selected ${optInRuns} times through: ${optInOwners.map((owner) => owner.name).join(", ")}`,
+			);
+		}
 		const ownerRuns = owners.map((name) => ({
 			name: name.name,
 			count: (reachability.counts.get(name.name) ?? 0) * name.occurrences,
 		}));
 		const totalRuns = ownerRuns.reduce((total, owner) => total + owner.count, 0);
-		if (owners.length > 0 && totalRuns === 0) {
+		if (owners.length > 0 && totalRuns === 0 && optInRuns === 0) {
 			errors.push(
 				`native test \`${file}\` runs zero times from \`${pushScript}\`; matching package lanes: ${owners.map((owner) => owner.name).join(", ")}`,
 			);
