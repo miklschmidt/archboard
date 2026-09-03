@@ -72,16 +72,16 @@ function approvalPolicy(value: BrowserSettings["approvalPolicy"]): string {
 		: `Granular: ${enabled.join(", ")}`;
 }
 
-function sandboxPolicy(value: BrowserSettings["sandboxPolicy"]): string {
-	switch (value.type) {
-		case "dangerFullAccess":
+function sandboxPolicy(value: BrowserSettings["sandbox"]): string {
+	switch (value.mode) {
+		case "full_access":
 			return "Danger full access";
-		case "readOnly":
-			return `Read only, network ${value.networkAccess ? "enabled" : "blocked"}`;
-		case "externalSandbox":
-			return `External sandbox, network ${value.networkAccess}`;
-		case "workspaceWrite":
-			return `Workspace write, ${value.writableRoots.length} writable root${value.writableRoots.length === 1 ? "" : "s"}, network ${value.networkAccess ? "enabled" : "blocked"}`;
+		case "read_only":
+			return `Read only, network ${words(value.network)}`;
+		case "external":
+			return `External sandbox, network ${words(value.network)}`;
+		case "workspace_write":
+			return `Workspace write, network ${words(value.network)}`;
 	}
 }
 
@@ -147,7 +147,7 @@ function settingsFields(
 			: field("Effective service tier", effective.serviceTier),
 		field("Approval policy", approvalPolicy(settings.approvalPolicy)),
 		field("Approvals reviewer", words(settings.approvalsReviewer)),
-		field("Sandbox policy", sandboxPolicy(settings.sandboxPolicy)),
+		field("Sandbox policy", sandboxPolicy(settings.sandbox)),
 		field("Active permission profile", permissionProfile(settings.activePermissionProfile)),
 	];
 }

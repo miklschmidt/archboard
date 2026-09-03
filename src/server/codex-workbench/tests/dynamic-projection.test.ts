@@ -239,6 +239,7 @@ function projectionInput(owners: readonly DynamicApprovalOwnerView[]): BrowserPr
 			kind: "codex_coordinator",
 			state: "unbound",
 			threadId: null,
+			configured: null,
 			effective: null,
 			reason: null,
 		},
