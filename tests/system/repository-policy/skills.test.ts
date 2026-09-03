@@ -154,4 +154,41 @@ describe("skill repository policy", () => {
 		);
 		expect(errors).toEqual([]);
 	});
+
+	test("the Archboard skill keeps persisted-board and live-browser workflows separate", () => {
+		const skill = fs.readFileSync(path.join(repoRoot, "skills/archboard/SKILL.md"), "utf8");
+		const mainPath = skill.match(/\n## The main path\n([\s\S]*?)(?=\n## )/)?.[1];
+		const browserBranch = skill.match(
+			/\n## When the request is about a live browser session\n([\s\S]*?)(?=\n## )/,
+		)?.[1];
+		expect(mainPath).toBeDefined();
+		expect(mainPath).not.toMatch(/archboard browser\b/);
+		expect(mainPath).toMatch(/archboard board new "\$board"/);
+		expect(mainPath).toMatch(/archboard render --board "\$board"/);
+		expect(browserBranch).toMatch(/archboard browser panes/);
+		expect(browserBranch).toMatch(/archboard browser capture --pane/);
+
+		const evaluation = JSON.parse(
+			fs.readFileSync(path.join(repoRoot, "skills/archboard/evals/evals.json"), "utf8"),
+		) as {
+			evals: Array<{
+				workflow?: string;
+				prompt: string;
+				files: string[];
+			}>;
+		};
+		const zeroBrowser = evaluation.evals.filter((entry) => entry.workflow === "zero-browser");
+		const collaboration = evaluation.evals.filter(
+			(entry) => entry.workflow === "browser-collaboration",
+		);
+		expect(zeroBrowser).toHaveLength(1);
+		expect(zeroBrowser[0]?.prompt).not.toMatch(/archboard browser|browser (?:panes|capture|show)/);
+		expect(zeroBrowser[0]?.files).toContain(
+			"tests/system/boards/vault-only-production-interfaces.test.ts",
+		);
+		expect(collaboration).toHaveLength(1);
+		expect(collaboration[0]?.prompt).toMatch(/browser open/);
+		expect(collaboration[0]?.prompt).toMatch(/browser capture --pane/);
+		expect(collaboration[0]?.files).toContain("tests/system/browser/selection-inspector.test.ts");
+	});
 });

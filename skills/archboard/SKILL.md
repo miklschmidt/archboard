@@ -38,29 +38,36 @@ either contract from this skill.
 
 ## The main path
 
-Start by finding the named board and the pane that holds it. If the work is a
-proposal, branch the current board, then put the proposal in a new pane so the
-source stays where the human is reading it.
+Start with an explicit board name. A configured vault and the Archboard server
+are enough for this entire path. Do not discover, open, show, or capture a pane.
 
 ```bash
-archboard browser panes --text
-archboard board list
+board=payments
+archboard board new "$board" --level service
 archboard library list --text
 
-archboard board new payments --level service
-archboard add --board payments --doing "drawing the payment path" elements.json
-archboard promote --board payments --doing "calling the front door a gateway" \
+archboard add --board "$board" --doing "drawing the payment path" elements.json
+archboard promote --board "$board" --doing "calling the front door a gateway" \
   --ids gw --kind gateway --name "API Gateway"
+printf 'graph LR; Gateway --> Orders; Orders --> Store' | \
+  archboard mermaid --board "$board" --doing "adding the service flow"
 
-archboard board save --board payments --variant option-a \
+archboard render --board "$board" --out payments.png
+archboard render --board "$board" --out payments.svg --format svg
+archboard check --board "$board" --strict
+archboard describe --board "$board"
+archboard snapshot save before-option-a --board "$board"
+archboard board save --board "$board" --variant option-a \
   --doing "branching the cache proposal"
-archboard browser open
-archboard browser show payments@option-a --pane right
 archboard add --board payments@option-a --doing "adding the orders cache" cache.json
+archboard compare payments payments@option-a
+archboard export --board payments@option-a --out payments-option-a.excalidraw
 ```
 
 Every content write already persists the named board. `board save` belongs in
-this path only when it branches or renames a board.
+this path only when it branches or renames a board. `snapshot save` records a
+rollback point. PNG, SVG, Mermaid conversion, finding close-ups, inspection,
+and export all run against the named persisted note through the server.
 
 ## Completion gate
 
@@ -83,11 +90,8 @@ stencils, and unrelated content throughout.
 7. Release the claim when writes end. If the final report demands another
    substantial repair campaign, claim again for that campaign and repeat the
    gate.
-8. Confirm which pane holds the named board, then capture one fitted full-scene
-   overview as an index of the board's extent. When the board requires panning,
-   also capture enough working-zoom views to show its important paths and
-   labels. The pane camera only chooses what a person sees; inspection still
-   covers the whole named board.
+8. Render a named-board PNG or SVG when visual evidence helps. This is a
+   server-owned snapshot of the persisted board and needs no browser.
 
 Run `compare` only when the work concerns variants. It describes semantic
 change between boards. It proves neither connector routing nor rendered pixels.
@@ -111,21 +115,31 @@ shared architecture identity.
 `compare` reports semantic architecture differences. Absolute tidiness,
 connector routing, camera position, and rendered pixels belong to other owners.
 
-## Work with the human
+## When the request is about a live browser session
 
-The canvas is shared. A moved box, a new group, or a node pulled out of a zone
-may be a design decision. Begin a turn on an existing board by reading its pane
-and recent changes. Use `browser selection --pane <spec>` when the human says
-"this" or "these", then pass its returned ids explicitly to the board write.
-State your interpretation before turning their rearrangement into a larger edit.
+Use the `archboard browser` branch only when a person is currently collaborating
+in a browser, or when the requested evidence is specifically about that live
+session. Start by naming the live target. Never let focus choose it.
 
-Keep each write meaningful on screen. Add a replacement path before removing
-the old one. Move a subsystem in one patch instead of leaving a trail of
-half-moves. A claim prevents competing writes during a substantial campaign;
-it must never hide the work from the person at the board.
+```bash
+archboard browser panes --text
+archboard browser selection --pane left --text
+archboard browser open
+archboard browser show payments@option-a --pane right
+archboard browser viewport --pane right --fit
+archboard browser capture --pane right --out payments-live.png
+```
 
-Read [`references/architecture-workflow.md`](references/architecture-workflow.md)
-when building or refactoring codebase architecture with a human at the canvas.
+These commands inspect or control panes, selection, and cameras. They never
+write a board note. Pass selected ids explicitly to a later board command. An
+ordinary named-board write succeeds independently of browser delivery; a pane
+already showing that board observes the committed result.
+
+A moved box, a new group, or a node pulled out of a zone may be a design
+decision. Read recent board changes, state your interpretation, and ask before
+turning the person's rearrangement into a larger edit. Read
+[`references/architecture-workflow.md`](references/architecture-workflow.md)
+for the full human read-back loop.
 
 ## Architecture identity and stencils
 
@@ -194,11 +208,12 @@ wins without the human.
 - `check` inspects the whole persisted board deterministically.
 - `render-findings` renders close-ups for current findings from one named board
   snapshot.
-- `browser capture --pane <spec>` captures one pane's rendered view. Confirm that pane holds the
-  named board. A fitted full-scene overview indexes the board's extent; readable
-  working-zoom views prove the important paths and labels on a pannable board.
-- `browser viewport --pane <spec>` changes a pane's camera. It does not crop inspection or prove what
-  exists outside the visible area.
+- `render --board <key>` writes a PNG or SVG of the persisted board through the
+  server-owned renderer.
+- `browser capture --pane <spec>` records one explicit live pane only when the
+  request is about that session.
+- `browser viewport --pane <spec>` changes that pane's camera. It does not crop
+  inspection or prove what exists outside the visible area.
 - `export` writes a portable scene file. It does not prove the browser view or
   semantic difference.
 - `compare` describes semantic change between variants. It does not inspect

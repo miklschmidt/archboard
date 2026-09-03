@@ -3,8 +3,9 @@
 Supplement to `SKILL.md` for using the canvas to build, explore, and refactor
 **codebase architecture** with a human, typically on a large touchscreen.
 
-`SKILL.md` covers the boards, the panes, and how a proposal is branched off the
-architecture that exists. This covers the loop the two of you run inside that.
+`SKILL.md` covers persisted-board work first, then the separate live-browser
+branch. This file covers the loop a human and agent run when that branch is
+actually in use.
 
 ## What makes this different from drawing a diagram
 
@@ -15,9 +16,11 @@ belongs there." Read the layout, do not just write it.
 
 So the loop is always: **draw → look → read back → interpret → propose.**
 
-Never assume the canvas still looks the way you left it. Open any turn that
-touches an existing board with `browser panes --text`, so you know which board is where,
-and then read what moved.
+Begin every turn with the explicit persisted board name. `describe`, `changes`,
+`check`, Mermaid conversion, PNG or SVG rendering, finding close-ups, snapshots,
+branches, and exports need no pane. If a person is collaborating in a live
+browser, enter the branch in `SKILL.md`, run `browser panes --text`, and read
+what moved before interpreting their layout.
 
 ## Reading back a human's edits
 
@@ -132,11 +135,11 @@ The evidence tools answer different questions:
 - `check` decides whole-board structural and routing findings.
 - `render-findings` gives close-ups only while findings remain and a picture
   helps explain them.
-- A fitted full-scene `browser capture --pane <spec>` records the board's extent after confirming
-  that the pane holds it. It is an index, not proof that labels and paths read
-  well at working zoom. For a pannable board, capture enough working-zoom views
-  to verify the important paths and labels. The pane camera changes the view,
-  not inspection.
+- `render --board <key>` records the complete persisted board as PNG or SVG
+  through the server-owned renderer.
+- `browser capture --pane <spec>` records a live pane only when the requested
+  evidence concerns that session. The pane camera changes the view, not
+  inspection or the persisted note.
 - `export` writes a portable scene.
 - `compare` describes semantic change between variants. It proves neither
   routing nor rendered pixels.
@@ -190,9 +193,8 @@ Guidance that holds up on a big screen:
 - **Look in the library first.** `library list --text`. A stencil of a queue or
   a database drum reads from two metres away; a labelled rectangle does not.
 - **One concern per board.** Do not put the data model and the request path on
-  the same board. Make it a second board and, when they need to be read
-  together, put it beside the first with `browser open`, then point the new pane
-  with `browser show <name> --pane <spec>`.
+  the same board. Make it a second named board. If a live collaborator asks to
+  see both, use the browser branch to put them side by side.
 - **Layout carries meaning.** Left-to-right for flow, top-to-bottom for layers,
   containment for ownership. Be consistent — the human will read the geometry
   before the labels.
@@ -205,10 +207,9 @@ Guidance that holds up on a big screen:
   "unlabelled-rectangle" and any statement about what moved in or out of it
   degrades with it.
 - **Finish the whole board.** Run the completion gate from `SKILL.md`. Keep
-  finding close-ups conditional on live findings. After the strict report is
-  complete and clean, take one confirmed-board fitted overview and, for a
-  pannable board, enough working-zoom views to show its important paths and
-  labels.
+  finding close-ups conditional on current findings. After the strict report
+  is complete and clean, render the named board when a visual artifact helps.
+  Capture panes only for requested live-session evidence.
 
 ## Refactor discussions
 
