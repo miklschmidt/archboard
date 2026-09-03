@@ -177,20 +177,20 @@ describe("image persistence", () => {
 		const start = pane.since();
 		const otherStart = other.since();
 		const pending = request<{ success?: boolean; format?: string; data?: string }>(
-			"/api/export/image",
+			"/api/browser/capture",
 			{ method: "POST", body: { format: "png", pane: pane.clientId } },
 		);
-		const message = (await waitForPaneMessage(pane, start, "export_image_request")) as
+		const message = (await waitForPaneMessage(pane, start, "browser_capture_request")) as
 			| PaneMessage
 			| undefined;
 		expect(message?.requestId).toBeString();
 		expect(
-			pane.seen.slice(start).some((entry) => entry.type === "export_image_request"),
+			pane.seen.slice(start).some((entry) => entry.type === "browser_capture_request"),
 		).toBeTrue();
 		expect(
-			other.seen.slice(otherStart).some((entry) => entry.type === "export_image_request"),
+			other.seen.slice(otherStart).some((entry) => entry.type === "browser_capture_request"),
 		).toBeFalse();
-		const callback = await request("/api/export/image/result", {
+		const callback = await request("/api/browser/capture/result", {
 			method: "POST",
 			body: { requestId: message?.requestId, format: "png", data: "aGk=" },
 		});

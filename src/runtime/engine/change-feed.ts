@@ -136,7 +136,6 @@ class ChangeFeed extends EventEmitter {
 	private events: ChangeEvent[] = [];
 	private checkpoints: Checkpoint[] = [];
 	private nextCursor = 1;
-	private echoUntil = new Map<string, number>();
 
 	/** The cursor a caller starting now should use to mean "from here on". */
 	get cursor(): number {
@@ -167,19 +166,6 @@ class ChangeFeed extends EventEmitter {
 	}
 
 	/**
-	 * "Anything the browser reports on this board in the next `ms` is the
-	 * agent's own work coming back."
-	 *
-	 * One path genuinely needs this: `mermaid` renders in the browser and
-	 * returns through the same change report a human drag uses, so without it
-	 * the agent's own diagram reads as something the human drew — and gets
-	 * narrated back at the agent that drew it.
-	 */
-	expectAgentEcho(key: string, ms = 5000): void {
-		this.echoUntil.set(key, Date.now() + ms);
-	}
-
-	/**
 	 * Note that something changed on a board, without saying what.
 	 *
 	 * Deliberately cheap and deliberately ignorant of the mutation: the feed
@@ -191,8 +177,6 @@ class ChangeFeed extends EventEmitter {
 		read: () => ServerElement[],
 		origin: ChangeOrigin,
 	): void {
-		const echo = this.echoUntil.get(key);
-		if (origin === "human" && echo !== undefined && Date.now() < echo) origin = "agent";
 		let watch = this.watches.get(key);
 		if (!watch) {
 			// First sight of this board: its current state is the baseline minus the
@@ -371,7 +355,6 @@ class ChangeFeed extends EventEmitter {
 		this.watches.clear();
 		this.events = [];
 		this.checkpoints = [];
-		this.echoUntil.clear();
 		this.nextCursor = 1;
 		this.removeAllListeners();
 	}

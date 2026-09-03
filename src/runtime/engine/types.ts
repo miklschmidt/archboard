@@ -81,10 +81,8 @@ export type WebSocketMessageType =
 	| "element_deleted"
 	| "elements_batch_created"
 	| "elements_changed"
-	| "mermaid_convert"
 	| "canvas_cleared"
-	| "export_image_request"
-	| "export_findings_request"
+	| "browser_capture_request"
 	| "set_viewport"
 	| "files_added"
 	| "files_replaced"
@@ -186,37 +184,6 @@ export interface SelectionChangedMessage extends WebSocketMessage {
 	at: string;
 }
 
-export interface MermaidConvertMessage extends WebSocketMessage {
-	type: "mermaid_convert";
-	mermaidDiagram: string;
-	config?: MermaidConfig;
-	timestamp: string;
-}
-
-// Mermaid conversion types
-export interface MermaidConfig {
-	startOnLoad?: boolean;
-	flowchart?: {
-		curve?: "linear" | "basis";
-	};
-	themeVariables?: {
-		fontSize?: string;
-	};
-	maxEdges?: number;
-	maxTextSize?: number;
-}
-
-export interface MermaidConversionRequest {
-	mermaidDiagram: string;
-	config?: MermaidConfig;
-}
-
-export interface MermaidConversionResponse extends ApiResponse {
-	elements: ServerElement[];
-	files?: Record<string, unknown>;
-	count: number;
-}
-
 // Canvas cleared message
 export interface CanvasClearedMessage extends WebSocketMessage {
 	type: "canvas_cleared";
@@ -224,8 +191,8 @@ export interface CanvasClearedMessage extends WebSocketMessage {
 }
 
 // Image export types
-export interface ExportImageRequestMessage extends WebSocketMessage {
-	type: "export_image_request";
+export interface BrowserCaptureRequestMessage extends WebSocketMessage {
+	type: "browser_capture_request";
 	requestId: string;
 	format: "png" | "svg";
 	background?: boolean;

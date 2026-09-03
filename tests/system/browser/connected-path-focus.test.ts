@@ -323,7 +323,7 @@ test(
 		const noteBefore = readFileSync(saved.body.file);
 		const serverBefore = (await api<{ elements: unknown[] }>(`/api/elements?board=${board}`)).body;
 		const feedBefore = (await api<ChangeFeed>(`/api/changes?board=${board}&since=0`)).body;
-		const exportBefore = await api<ExportBody>("/api/export/image", {
+		const exportBefore = await api<ExportBody>("/api/browser/capture", {
 			method: "POST",
 			body: { format: "svg", background: true },
 		});
@@ -433,7 +433,7 @@ test(
 		const feedAfter = (
 			await api<ChangeFeed>(`/api/changes?board=${board}&since=${feedBefore.cursor}`)
 		).body;
-		const exportAfter = await api<ExportBody>("/api/export/image", {
+		const exportAfter = await api<ExportBody>("/api/browser/capture", {
 			method: "POST",
 			body: { format: "svg", background: true },
 		});

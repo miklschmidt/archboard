@@ -15,7 +15,6 @@ export const BROWSER_TEST_PATHS = [
 	"tests/system/browser/malformed-geometry-recovery.test.ts",
 	"tests/system/browser/pane-telemetry-recovery.test.ts",
 	"tests/system/browser/arrow-binding-differential.test.ts",
-	"tests/system/browser/finding-export.test.ts",
 	"tests/system/browser/shell-layout.test.ts",
 	"tests/system/browser/board-navigator.test.ts",
 	"tests/system/browser/fullscreen-presentation.test.ts",

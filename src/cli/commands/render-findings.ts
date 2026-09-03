@@ -4,11 +4,7 @@ import { z } from "zod";
 
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 import { PendingArtifactSchema } from "../command-contract/schemas.js";
-import {
-	boardRequiredRefusal,
-	browserRefusal,
-	serverRefusal,
-} from "../command-contract/refusals.js";
+import { boardRequiredRefusal, serverRefusal } from "../command-contract/refusals.js";
 import {
 	InspectionOptionsInputSchema,
 	inspectionOptionParameters,
@@ -45,7 +41,7 @@ export const renderFindingsContract = defineCommand({
 		"                [--intersection-tolerance <px>] [--overlap-tolerance <px>]",
 	].join("\n"),
 	description:
-		"Inspects one named note snapshot, renders its existing finding focus boxes in a browser, and commits validated PNGs plus manifest.json.",
+		"Inspects one named note snapshot, renders its finding focus boxes in the server-owned renderer, and commits validated PNGs plus manifest.json.",
 	examples: ["archboard render-findings --board payments --out ./finding-renders"],
 	parameters: [
 		{
@@ -80,9 +76,9 @@ export const renderFindingsContract = defineCommand({
 		],
 		select: () => "manifest",
 	},
-	prerequisites: ["server", "browser", "board"],
-	effects: ["read", "browser", "local-read", "local-write"],
-	refusals: [boardRequiredRefusal, serverRefusal, browserRefusal],
+	prerequisites: ["server", "board"],
+	effects: ["read", "local-read", "local-write"],
+	refusals: [boardRequiredRefusal, serverRefusal],
 	relationships: [
 		{
 			method: "POST",
@@ -100,7 +96,6 @@ export const renderFindingsContract = defineCommand({
 		requireEmptyDirectory(out);
 		const policy = inspectionPolicyOf(input);
 		await context.require("server", "Rendering board findings");
-		await context.require("browser", "Rendering board findings");
 		const rendered = await exportFindings(policy);
 		const { manifest, artifact } = assembleFindingArtifacts(rendered, out);
 		return { result: manifest, pendingArtifact: artifact };

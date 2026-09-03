@@ -34,8 +34,7 @@ The proof starts from the persisted note, not a vendor-shaped scene file.
   and runs the in-memory result through `applyElementInput`; no proof operation
   writes a note.
 - `diagram.mmd` is a three-node, two-edge graph. Both probes import and pass
-  `DEFAULT_MERMAID_CONFIG`, the configuration used by the current browser
-  converter.
+  `DEFAULT_MERMAID_CONFIG`, the production server converter configuration.
 - `emulation/package.json` and its Bun lock are the complete, pinned disposable
   emulation dependency input. The emulation probe copies both into a unique
   system-temporary directory and deletes that directory before returning.
@@ -157,3 +156,50 @@ server resource, not an Archboard browser client.
 The result is limited to this pinned stack on this Linux host and the supported
 fixture shapes. A Chromium, Excalidraw, Mermaid, or renderer-lifecycle change
 must rerun both bounded probes before changing this decision.
+
+## Production contract
+
+The selected boundary is implemented by `src/server/board-rendering/`. One
+application-owned, lazy Chromium session is retained behind a serial queue. Its
+Vite module fixture is loopback-only and has no file watcher; the Chromium
+process has a unique temporary profile, an owned process group, and a private
+loopback DevTools port. Canvas shutdown stops admission, rejects queued work,
+interrupts active DevTools work, sends TERM then KILL when necessary, waits for
+the leader, observed process tree, and both output pipes, removes the profile,
+releases the port, and closes the fixture. `/health` exposes only the
+renderer's inspectable ownership state.
+
+`POST /api/render/board?board=<key>` accepts `png` or `svg`, an explicit
+background choice, padding from 0 through 128 scene pixels, and a scale from
+0.25 through 4. The defaults are background on, 16 pixels of padding, and scale
+
+1. The route reads the persisted note once, copies that immutable scene, and
+   returns the artifact data, exact pixel or SVG dimensions, background colour,
+   and source fingerprint. `archboard render --board <key> --out <file>` is the
+   file-producing CLI. It never observes a pane, selection, camera, or connected
+   browser.
+
+Text render requires a known Excalidraw font family and a loadable face. Image
+render requires every live image element's file id to resolve to persisted
+embedded data. Missing fonts, invalid geometry, and missing files reject the
+named source without producing a partial full-board artifact. A renderer
+startup, runtime, timeout, or ownership failure is a distinct
+`BOARD_RENDERER_FAILED` service failure with its current phase and bounded
+diagnostics.
+
+`POST /api/export/findings` inspects and renders every focused PNG from the
+same copied scene in one queued renderer job. The public manifest is schema
+version 2: it records the persisted source fingerprint and reports
+`renderer-failed`, `source-not-renderable`, `focus-unavailable`, or
+`invalid-png`; browser callbacks and browser timeout states are not part of the
+contract.
+
+`POST /api/elements/from-mermaid` sends source text through the same retained
+renderer. Valid output receives deterministic Archboard ids, then passes
+through the sole inbound element converter and one ordinary locked note write.
+Malformed input and a non-empty source that yields no elements leave the board
+version unchanged.
+
+Live pane photography remains `POST /api/browser/capture`. That Browser
+operation is deliberately separate from persisted Board render and is the only
+one of these paths that requires a connected browser client.
