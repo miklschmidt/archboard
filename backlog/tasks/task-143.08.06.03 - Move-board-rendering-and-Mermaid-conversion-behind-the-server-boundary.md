@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 07:40'
+updated_date: '2026-09-03 07:49'
 labels: []
 dependencies:
   - TASK-143.08.06.01
@@ -82,6 +82,8 @@ Give Archboard one server-owned visual conversion boundary for persisted board s
 12. Correct the executable browser-owner order, focused renderer build prerequisite, INSTALL rebuild rule, and scale prose. Run only the direct fixture owner, shortened public renderer owner, same-start module owner, and exact static documentation checks before committing this rereview repair.
 
 13. Remove the production lease-test environment seam and its timing constant. Prove pre-render lock ordering through health held_boards plus an immediately successful concurrent hold under a short request timeout, then rerun only the focused public owner and scoped static checks.
+
+14. Canonicalize the frontend build, renderer entry, and asset root before fixture listen; reject top-level and inner symlink escapes through one typed fixture error and focused no-Chromium variants. Add a browser-specific module-root entrypoint, move the Vite and frontend TypeScript references to it, and document canonical-target authorization rather than raw URL spelling.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -106,4 +108,8 @@ Rereview containment and shutdown evidence: the private fixture now resolves onl
 Rereview documentation and static evidence: removed the retired finding-export browser owner from the documented 18-owner order, documented the focused renderer build prerequisite and package prebuild, fixed scale-1 prose, and made INSTALL require bun run build after pulls because renderer source is bundled. The writing-for-agents skill was found at /home/msc/Projects/archboard/.agents/skills/writing-for-agents/SKILL.md, read in full, and applied; this supersedes the earlier unavailable note. Inventory passed 39 tests/69 expectations in 5.453 s. Scoped Oxlint, Oxfmt, frontend TypeScript, isolated renderer-root TypeScript, static docs checks, and git diff check passed. Broad gates, root TypeScript, browser lane, and standalone probes remain intentionally unrun. Task remains In Progress under @codex with every acceptance criterion unchecked for parent review.
 
 Standards rereview supersedes the earlier injected-lease note. Removed ARCHBOARD_TEST_OWNED_CANVAS, ARCHBOARD_TEST_WRITE_LEASE_MS, injectedTestWriteLeaseMs, testWriteLeaseMs, TEST_SERVER_RENDERING_WRITE_LEASE_MS, and the holdBoard lease override; production has no test lease mode. The real public owner now pauses the retained renderer, proves /health has no Mermaid entry in held_boards while renderer.active, and requires the concurrent human hold to complete within 400 ms. It then preserves the concurrent write, under-lock collision remap, and canceled no-write proofs. Final focused result: 4 tests/80 expectations, ordering case 306.17 ms, owner 3.155 s, exactly 1 retained Chromium start. The prior seam run was 326.65 ms/3.488 s and the original full-lease run was 3601.35 ms/6.740 s. Scoped Oxlint, Oxfmt, frontend TypeScript, symbol-absence, and diff checks passed. No root TypeScript, broad suite, browser lane, or standalone probe ran. Task remains In Progress under @codex with every AC unchecked.
+
+Final Spec rereview: fixture startup now realpaths the frontend build, renderer entry, and asset root before listen. RendererFixtureError with code RENDERER_FIXTURE_INVALID_BUILD reports a missing, wrong-kind, or top-level escaping target. The entry and asset root must stay below the canonical build; each requested asset must stay below the canonical asset root and be a regular file. Top-level entry/assets escapes fail before afterListen, while successful fixtures close and release their exact ports. The HTTP contract authorizes canonical targets rather than raw URL spelling, so a client-normalized encoded path to renderer.html is allowed and decoded targets outside assets remain refused.
+
+The browser renderer now has the purpose-specific src/server/board-rendering/browser.ts root entrypoint, which exports browserRenderer and its BrowserRendererEntry/RendererPageState types. frontend/renderer.html and the frontend TypeScript gate use that root. Focused policy checks reject a return to the private lib path. Validation: build:frontend passed in 0.580 s; the direct fixture owner passed 3 tests/26 expectations in 0.084 s with zero Chromium starts; the focused TypeScript-gate owner passed 2 tests/6 expectations in 0.063 s; frontend TypeScript, scoped Oxlint, scoped Oxfmt, deep-import absence, raw-claim absence, and git diff checks passed. No public smoke was needed because the built renderer bytes were served by the direct owner and no runtime behavior changed. Final renderer process and recent temp-root censuses were empty. Task remains In Progress under @codex with every AC unchecked.
 <!-- SECTION:NOTES:END -->

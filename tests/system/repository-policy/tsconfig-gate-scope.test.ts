@@ -24,7 +24,7 @@ test("keeps product sources in both TypeScript gates because tsc passes when exc
 			path: "tsconfig.frontend.json",
 			include: [
 				"frontend/main.tsx",
-				"src/server/board-rendering/lib/browser.ts",
+				"src/server/board-rendering/browser.ts",
 				"src/ui/**/*.ts",
 				"src/ui/**/*.tsx",
 			],
@@ -36,4 +36,10 @@ test("keeps product sources in both TypeScript gates because tsc passes when exc
 		expect(config.compilerOptions?.noEmit, gate.path).toBe(true);
 		expect(config.include, gate.path).toEqual(gate.include);
 	}
+});
+
+test("the renderer host enters through the browser module root", () => {
+	const renderer = fs.readFileSync(path.join(repoRoot, "frontend/renderer.html"), "utf8");
+	expect(renderer).toContain('src="../src/server/board-rendering/browser.ts"');
+	expect(renderer).not.toContain("board-rendering/lib/");
 });

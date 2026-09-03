@@ -8,6 +8,7 @@ import type {
 	BoardRenderSpec,
 	BoardRendererJob,
 	BoardRendererJobResult,
+	BrowserRendererEntry,
 	MermaidParserResult,
 } from "./contract";
 
@@ -192,4 +193,5 @@ async function run(job: BoardRendererJob): Promise<BoardRendererJobResult> {
 	}
 }
 
-window.archboardBoardRenderer = { state, run };
+export const browserRenderer: BrowserRendererEntry = { state, run };
+window.archboardBoardRenderer = browserRenderer;

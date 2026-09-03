@@ -88,11 +88,13 @@ export interface RendererPageState {
 	readonly jobs: number;
 }
 
+export interface BrowserRendererEntry {
+	readonly state: RendererPageState;
+	run(job: BoardRendererJob): Promise<BoardRendererJobResult>;
+}
+
 declare global {
 	interface Window {
-		archboardBoardRenderer?: {
-			readonly state: RendererPageState;
-			run(job: BoardRendererJob): Promise<BoardRendererJobResult>;
-		};
+		archboardBoardRenderer?: BrowserRendererEntry;
 	}
 }
