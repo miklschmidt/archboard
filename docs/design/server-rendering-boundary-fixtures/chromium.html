@@ -43,6 +43,17 @@
 			body.dataset.phase = phase;
 			body.dataset.state = status;
 		};
+		window.stageArchboardRendererProof = (job, phase) => {
+			if (proof.active) throw new Error("Renderer proof does not permit concurrent jobs.");
+			proof.active = true;
+			proof.jobs += 1;
+			proof.job = job;
+			stage(phase);
+			return { job: proof.job, phase: proof.phase };
+		};
+		window.releaseArchboardRendererProof = () => {
+			proof.active = false;
+		};
 		const hash = async (bytes) => {
 			const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
 			return [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");

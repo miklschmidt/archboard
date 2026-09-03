@@ -8,6 +8,11 @@ import type { BinaryFiles } from "@excalidraw/excalidraw/types";
 import { projectPreviewSnapshot } from "../src/ui/board-preview/index.js";
 import { readNote } from "../src/runtime/engine/board-io.js";
 import { applyElementInput } from "../src/runtime/engine/apply-element-input.js";
+import { processGroupExists } from "../src/runtime/engine/process-group.js";
+import {
+	createCodexProcessGroupOperations,
+	type CodexProcessGroupIdentity,
+} from "../src/runtime/codex-process/process-group.js";
 import type { ServerElement } from "../src/runtime/engine/types.js";
 import { derivedId, isBlockId } from "../src/shared/ids/ids.js";
 
@@ -18,6 +23,8 @@ const chromium = "/run/current-system/sw/bin/chromium";
 const setsid = "/run/current-system/sw/bin/setsid";
 const jobTimeoutMs = 20_000;
 const cleanupTimeoutMs = 5_000;
+const cleanupPollMs = 50;
+const processGroups = createCodexProcessGroupOperations();
 
 type JsonRecord = Record<string, unknown>;
 type RendererJobMode = "normal" | "missing-image" | "stall" | "immediate-evaluation-failure";
@@ -153,6 +160,22 @@ class RendererJobError extends Error {
 	}
 }
 
+class TimeoutOracleRejectionError extends Error {
+	constructor(
+		readonly reason: "job" | "phase" | "cause" | "method" | "duration",
+		cause: unknown,
+	) {
+		const detail = cause instanceof Error ? `${cause.name}: ${cause.message}` : String(cause);
+		super(
+			`Intentional timeout oracle rejected the job because its ${reason} did not match: ${detail}`,
+			{
+				cause,
+			},
+		);
+		this.name = "TimeoutOracleRejectionError";
+	}
+}
+
 class Cdp {
 	readonly #pending = new Map<
 		number,
@@ -282,7 +305,13 @@ class Cdp {
 interface CleanupAudit {
 	pids: number[];
 	processGroup: number | null;
+	groupAbsent: boolean;
+	groupError: string | null;
 	survivors: number[];
+	leaderSettled: boolean;
+	stdoutSettled: boolean;
+	stderrSettled: boolean;
+	pipesSettled: boolean;
 	clean: boolean;
 	profile: string | null;
 	profileRemoved: boolean;
@@ -290,6 +319,58 @@ interface CleanupAudit {
 	portReleased: boolean;
 	stdout: string;
 	stderr: string;
+}
+
+async function settlesBefore(promise: Promise<unknown>, deadline: number): Promise<boolean> {
+	const remainingMs = Math.max(0, deadline - Date.now());
+	return await Promise.race([
+		promise.then(
+			() => true,
+			() => true,
+		),
+		Bun.sleep(remainingMs).then(() => false),
+	]);
+}
+
+async function waitForProcessGroupAbsence(
+	identity: CodexProcessGroupIdentity,
+	deadline: number,
+): Promise<boolean> {
+	while (processGroupExists(identity.pgid)) {
+		const ownership = processGroups.inspect(identity);
+		if (ownership === "reused" || ownership === "unproven") return false;
+		if (Date.now() >= deadline) return false;
+		await Bun.sleep(Math.min(cleanupPollMs, deadline - Date.now()));
+	}
+	return true;
+}
+
+async function captureRendererProcessGroup(leaderPid: number): Promise<CodexProcessGroupIdentity> {
+	const deadline = Date.now() + cleanupTimeoutMs;
+	let lastError: unknown;
+	while (Date.now() < deadline) {
+		try {
+			return processGroups.capture(leaderPid);
+		} catch (error) {
+			lastError = error;
+			await Bun.sleep(cleanupPollMs);
+		}
+	}
+	throw new Error(
+		`Chromium process ${leaderPid} did not establish its dedicated group: ${
+			lastError instanceof Error ? lastError.message : String(lastError)
+		}.`,
+		{ cause: lastError },
+	);
+}
+
+async function settledPipeText(promise: Promise<string> | null, settled: boolean): Promise<string> {
+	if (!settled) return "[pipe did not settle before cleanup deadline]";
+	try {
+		return snippet(await (promise ?? Promise.resolve("")));
+	} catch (error) {
+		return `[pipe failed: ${error instanceof Error ? error.message : String(error)}]`;
+	}
 }
 
 interface MemorySample {
@@ -320,6 +401,7 @@ class RendererSession {
 	#profile: string | null = null;
 	#port: number | null = null;
 	#child: Bun.Subprocess | null = null;
+	#processGroup: CodexProcessGroupIdentity | null = null;
 	#stdout: Promise<string> | null = null;
 	#stderr: Promise<string> | null = null;
 	#cdp: Cdp | null = null;
@@ -375,6 +457,7 @@ class RendererSession {
 				stdout: "pipe",
 				stderr: "pipe",
 			});
+			session.#processGroup = await captureRendererProcessGroup(session.child.pid);
 			session.observe(ownedProcessIds(session.child.pid));
 			session.#stdout = new Response(pipe(session.child.stdout)).text();
 			session.#stderr = new Response(pipe(session.child.stderr)).text();
@@ -443,7 +526,23 @@ class RendererSession {
 		this.#running = true;
 		this.#maxConcurrentJobs = Math.max(this.#maxConcurrentJobs, 1);
 		const startedAt = performance.now();
+		let stagedImmediateFailure = false;
 		try {
+			if (mode === "immediate-evaluation-failure") {
+				const staged = await cdp.evaluate(
+					`window.stageArchboardRendererProof?.(${JSON.stringify(name)}, "intentional-timeout")`,
+				);
+				if (
+					!staged ||
+					typeof staged !== "object" ||
+					(staged as JsonRecord).job !== name ||
+					(staged as JsonRecord).phase !== "intentional-timeout"
+				)
+					throw new Error(
+						`Immediate failure did not stage ${name} at intentional-timeout: ${JSON.stringify(staged)}.`,
+					);
+				stagedImmediateFailure = true;
+			}
 			const expression =
 				mode === "immediate-evaluation-failure"
 					? '(() => { throw new Error("intentional immediate evaluation failure"); })()'
@@ -462,6 +561,8 @@ class RendererSession {
 			const phase = await this.proofState().catch(() => ({ phase: "unavailable" }));
 			throw new RendererJobError(name, phase, cdp.diagnostics(), phase, error);
 		} finally {
+			if (stagedImmediateFailure)
+				await cdp.evaluate("window.releaseArchboardRendererProof?.()").catch(() => undefined);
 			this.#running = false;
 		}
 	}
@@ -476,50 +577,78 @@ class RendererSession {
 		return { maxConcurrentJobs: this.#maxConcurrentJobs };
 	}
 
+	terminateProcessGroupForProof(): void {
+		if (!this.#processGroup) throw new Error("Renderer process group is not acquired.");
+		if (processGroupExists(this.#processGroup.pgid))
+			processGroups.signal(this.#processGroup, "SIGTERM");
+	}
+
 	async shutdown(): Promise<CleanupAudit> {
 		this.#cdp?.close();
 		const child = this.#child;
+		const processGroup = this.#processGroup;
 		if (child) this.observe(ownedProcessIds(child.pid));
 		const pids = [...this.#observed].toSorted((left, right) => left - right);
 		const cleanupStartedAt = Date.now();
-		if (child?.exitCode === null) {
+		const deadline = cleanupStartedAt + cleanupTimeoutMs;
+		let groupAbsent = processGroup === null;
+		let groupError: string | null = null;
+		if (processGroup && processGroupExists(processGroup.pgid)) {
 			try {
-				globalThis.process.kill(-child.pid, "SIGTERM");
-			} catch {
-				// The group can exit between observation and termination.
-			}
-			await Promise.race([child.exited, Bun.sleep(Math.max(0, cleanupTimeoutMs - 1_000))]);
-			if (child.exitCode === null) {
-				try {
-					globalThis.process.kill(-child.pid, "SIGKILL");
-				} catch {
-					// The group can exit between escalation and the signal.
+				processGroups.signal(processGroup, "SIGTERM");
+				groupAbsent = await waitForProcessGroupAbsence(
+					processGroup,
+					cleanupStartedAt + Math.max(0, cleanupTimeoutMs - 1_000),
+				);
+				if (!groupAbsent && processGroupExists(processGroup.pgid)) {
+					processGroups.signal(processGroup, "SIGKILL");
+					groupAbsent = await waitForProcessGroupAbsence(processGroup, deadline);
 				}
-				await Promise.race([child.exited, Bun.sleep(1_000)]);
+			} catch (error) {
+				groupError = error instanceof Error ? error.message : String(error);
 			}
 		}
-		const deadline = cleanupStartedAt + cleanupTimeoutMs;
+		if (processGroup && groupError === null) groupAbsent = !processGroupExists(processGroup.pgid);
+		const [leaderSettled, stdoutSettled, stderrSettled] = await Promise.all([
+			settlesBefore(child?.exited ?? Promise.resolve(0), deadline),
+			settlesBefore(this.#stdout ?? Promise.resolve(""), deadline),
+			settlesBefore(this.#stderr ?? Promise.resolve(""), deadline),
+		]);
+		const pipesSettled = stdoutSettled && stderrSettled;
 		let survivors = pids.filter((pid) => existsSync(`/proc/${pid}`));
 		while (survivors.length > 0 && Date.now() < deadline) {
-			await Bun.sleep(50);
+			await Bun.sleep(cleanupPollMs);
 			survivors = pids.filter((pid) => existsSync(`/proc/${pid}`));
 		}
 		const processesGone = survivors.length === 0;
-		if (processesGone && this.#profile) rmSync(this.#profile, { recursive: true, force: true });
-		const profileRemoved = !this.#profile || (processesGone && !existsSync(this.#profile));
+		if (groupAbsent && this.#profile) rmSync(this.#profile, { recursive: true, force: true });
+		const profileRemoved = !this.#profile || (groupAbsent && !existsSync(this.#profile));
 		const portReleased = loopbackPortIsAvailable(this.#port);
-		const clean = processesGone && profileRemoved && portReleased;
+		const clean =
+			groupAbsent &&
+			groupError === null &&
+			processesGone &&
+			leaderSettled &&
+			pipesSettled &&
+			profileRemoved &&
+			portReleased;
 		return {
 			pids,
-			processGroup: child?.pid ?? null,
+			processGroup: processGroup?.pgid ?? null,
+			groupAbsent,
+			groupError,
 			survivors,
+			leaderSettled,
+			stdoutSettled,
+			stderrSettled,
+			pipesSettled,
 			clean,
 			profile: this.#profile,
 			profileRemoved,
 			port: this.#port,
 			portReleased,
-			stdout: snippet(await this.stdoutText()),
-			stderr: snippet(await this.stderrText()),
+			stdout: await settledPipeText(this.#stdout, stdoutSettled),
+			stderr: await settledPipeText(this.#stderr, stderrSettled),
 		};
 	}
 
@@ -994,30 +1123,17 @@ async function requireRuntimeEvaluateTimeout(
 		await session.runJob(name, mode);
 	} catch (error) {
 		const elapsedMs = performance.now() - startedAt;
-		if (
-			!(error instanceof RendererJobError) ||
-			error.job !== name ||
-			!(error.cause instanceof CdpTimeoutError) ||
-			error.cause.method !== "Runtime.evaluate" ||
-			error.cause.timeoutMs !== jobTimeoutMs
-		)
-			throw new Error(
-				`Intentional timeout oracle expected a Runtime.evaluate ${jobTimeoutMs} ms timeout, received ${
-					error instanceof Error ? error.message : String(error)
-				}.`,
-				{ cause: error },
-			);
+		if (!(error instanceof RendererJobError)) throw new TimeoutOracleRejectionError("job", error);
+		if (error.job !== name) throw new TimeoutOracleRejectionError("job", error);
 		if (error.phase.phase !== "intentional-timeout")
-			throw new Error(
-				`Intentional timeout did not preserve its fixture phase: ${JSON.stringify(error.phase)}.`,
-				{ cause: error },
-			);
+			throw new TimeoutOracleRejectionError("phase", error);
+		if (!(error.cause instanceof CdpTimeoutError))
+			throw new TimeoutOracleRejectionError("cause", error);
+		if (error.cause.method !== "Runtime.evaluate" || error.cause.timeoutMs !== jobTimeoutMs)
+			throw new TimeoutOracleRejectionError("method", error);
 		const bounds = timeoutBounds();
 		if (elapsedMs < bounds.earliestMs || elapsedMs > bounds.latestMs)
-			throw new Error(
-				`Runtime.evaluate timeout elapsed ${elapsedMs.toFixed(1)} ms outside ${bounds.earliestMs}-${bounds.latestMs} ms.`,
-				{ cause: error },
-			);
+			throw new TimeoutOracleRejectionError("duration", error);
 		return { elapsedMs, reason: error.cause.message, phase: error.phase };
 	}
 	throw new Error(`Intentional timeout job ${name} completed instead of timing out.`);
@@ -1025,24 +1141,41 @@ async function requireRuntimeEvaluateTimeout(
 
 async function proveImmediateFailureIsNotTimeout(session: RendererSession): Promise<JsonRecord> {
 	const startedAt = performance.now();
-	let rejection: string | null = null;
+	let rejection: TimeoutOracleRejectionError | null = null;
 	try {
 		await requireRuntimeEvaluateTimeout(
 			session,
-			"immediate-different-cause",
+			"intentional-timeout",
 			"immediate-evaluation-failure",
 		);
 	} catch (error) {
-		rejection = error instanceof Error ? error.message : String(error);
+		if (error instanceof TimeoutOracleRejectionError) rejection = error;
+		else throw error;
 	}
 	const elapsedMs = performance.now() - startedAt;
-	if (!rejection?.includes("Intentional timeout oracle expected a Runtime.evaluate"))
+	if (!rejection || rejection.reason !== "cause")
 		throw new Error(
-			`Immediate differently caused failure was accepted as a timeout: ${rejection ?? "no error"}`,
+			`Immediate failure did not prove a non-timeout cause: ${rejection?.reason ?? "no rejection"}.`,
+		);
+	if (
+		!(rejection.cause instanceof RendererJobError) ||
+		rejection.cause.job !== "intentional-timeout" ||
+		rejection.cause.phase.phase !== "intentional-timeout" ||
+		rejection.cause.cause instanceof CdpTimeoutError
+	)
+		throw new Error(
+			`Immediate failure did not match the timeout job and phase before its cause was rejected: ${JSON.stringify(
+				rejection.cause,
+			)}.`,
 		);
 	if (elapsedMs > Math.ceil(jobTimeoutMs * 0.05))
 		throw new Error(`Immediate differently caused failure took ${elapsedMs.toFixed(1)} ms.`);
-	return { elapsedMs, rejection };
+	return {
+		elapsedMs,
+		rejection: rejection.message,
+		phase: rejection.cause.phase,
+		cause: rejection.cause.cause instanceof Error ? rejection.cause.cause.name : "unknown",
+	};
 }
 
 async function provePartialAcquisitionCleanup(input: JsonRecord): Promise<JsonRecord> {
@@ -1181,7 +1314,7 @@ try {
 	let childExitActionFailure: unknown = null;
 	try {
 		const startup = await childExit.start(fixture.url);
-		globalThis.process.kill(-childExit.child.pid, "SIGTERM");
+		childExit.terminateProcessGroupForProof();
 		await Promise.race([childExit.child.exited, Bun.sleep(cleanupTimeoutMs)]);
 		if (childExit.child.exitCode === null)
 			throw new Error(`Renderer child did not exit within ${cleanupTimeoutMs} ms.`);
