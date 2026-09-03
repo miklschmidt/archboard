@@ -1,11 +1,11 @@
 ---
 id: TASK-143.06.03
 title: Delete the legacy app-server control client
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-09-03 02:27'
+updated_date: '2026-09-03 02:32'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -35,10 +35,10 @@ Delegation profile: gpt-5.6-luna, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The app-server-control module is deleted with no runtime/server/UI import, export, duplicate framing helper, or shared-daemon socket lookup remaining.
-- [ ] #2 The owned stdio session remains the only Codex JSON-RPC transport and repository policy rejects reintroducing control-socket production imports.
-- [ ] #3 Historical ADR/research references may name the removed module but current architecture/docs cannot present it as runnable behavior.
-- [ ] #4 Type, module, process, and repository tests pass without a compatibility shim or dead export.
+- [x] #1 The app-server-control module is deleted with no runtime/server/UI import, export, duplicate framing helper, or shared-daemon socket lookup remaining.
+- [x] #2 The owned stdio session remains the only Codex JSON-RPC transport and repository policy rejects reintroducing control-socket production imports.
+- [x] #3 Historical ADR/research references may name the removed module but current architecture/docs cannot present it as runnable behavior.
+- [x] #4 Type, module, process, and repository tests pass without a compatibility shim or dead export.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -67,3 +67,9 @@ created: 2026-09-02 01:39
 Course correction, 2026-09-02: this cleanup may resume only after the OOM gate is Done; its focused validation must use the recovered bounded test path.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Retired the legacy control client and current runnable guidance. Verified with the narrow legacy-removal owner (2/2), process and transport owners (80/80), stdio process owners (14/14), Oxfmt, Oxlint, and diff checks; exact-head typecheck reported only accepted unchanged baseline diagnostics outside this task's scope.
+<!-- SECTION:FINAL_SUMMARY:END -->
