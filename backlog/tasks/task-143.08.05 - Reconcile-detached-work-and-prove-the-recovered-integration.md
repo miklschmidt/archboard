@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 11:21'
+updated_date: '2026-09-03 11:22'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -133,6 +133,9 @@ Complete-gate failure and remediation history before the next frozen head:
 
 - Attempt 6 used unit archboard-task143-worker-command-dJQfauV8.service. Lint passed, then formatting exited 1 after 1.499s on scripts/probe-server-rendering-emulation.ts and src/ui/shell/tests/board-dialog.test.ts. CPU was 12.110s; memory peak was 1.4G with 0B swap. The exact unit is inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path is absent. No OOM, SIGKILL, or cleanup diagnostic occurred.
 - Remediation ran pinned Oxfmt in write mode on exactly those two files. The formatter only collapsed the dynamic import and wrapped the typed component cast. git diff --check passes. No focused validation ran; the next check is one fresh complete gate.
+
+- Attempt 7 used unit archboard-task143-worker-command-BzX8J2Ts.service. Lint and formatting passed; type-check then exited 1 after 3.854s on one remaining optional IPC method: the process owner guarded connected but invoked optional process.disconnect directly. CPU was 26.244s; memory peak was 2G with 0B swap. The exact unit is inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path is absent. No OOM, SIGKILL, or cleanup diagnostic occurred.
+- Remediation captures disconnect once, refuses the impossible connected-without-disconnect state, and invokes the proven method with its process receiver. The IPC lifecycle remains fail-closed. No focused validation ran; the next check is one fresh complete gate.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

@@ -53,4 +53,8 @@ try {
 report(result);
 await released;
 process.off("message", onMessage);
-if (process.connected) process.disconnect();
+const disconnect = process.disconnect;
+if (process.connected) {
+	if (!disconnect) throw new Error("Git process owner cannot close its Bun IPC channel.");
+	disconnect.call(process);
+}
