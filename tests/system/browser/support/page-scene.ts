@@ -226,6 +226,34 @@ export async function readPageScene(browser: PageEvaluator): Promise<PageSceneSn
 	return browser.eval<PageSceneSnapshot>(READ_PAGE_SCENE_EXPRESSION);
 }
 
+/** Drive the same trusted pointer path as a person dragging a rendered element. */
+export async function dragPageElement(
+	browser: AgentBrowserSession,
+	id: string,
+	dx: number,
+	dy: number,
+): Promise<void> {
+	const point = await browser.eval<{ x?: number; y?: number }>(
+		inExcalidrawApp(`
+		const element = app.scene.getElementsIncludingDeleted()
+			.find(candidate => candidate.id === ${JSON.stringify(id)});
+		if (!element) return {};
+		const zoom = app.state.zoom?.value ?? 1;
+		return {
+			x: Math.round((element.x + element.width / 2 + app.state.scrollX) * zoom + app.state.offsetLeft),
+			y: Math.round((element.y + element.height / 2 + app.state.scrollY) * zoom + app.state.offsetTop),
+		};
+	`),
+	);
+	if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+		throw new Error(`The rendered element ${id} has no pointer target.`);
+	}
+	await browser.run(["mouse", "move", String(point.x), String(point.y)]);
+	await browser.run(["mouse", "down"]);
+	await browser.run(["mouse", "move", String(point.x! + dx), String(point.y! + dy)]);
+	await browser.run(["mouse", "up"]);
+}
+
 export async function installLiveEditSupport(browser: PageEvaluator): Promise<unknown> {
 	return browser.eval(INSTALL_LIVE_EDIT_SUPPORT);
 }

@@ -25,10 +25,11 @@ import {
 	holdMessage,
 	holdWrite,
 	isHeld,
-	releaseHold,
+	releaseHold as releaseNoteHold,
 	reportHold,
 	writesBoardNote,
 } from "./board-hold.js";
+import { releaseHold as releaseBoardLock, type LockHolder } from "./board-lock.js";
 import {
 	boardFilesMessage,
 	type BoardContent,
@@ -114,6 +115,8 @@ export interface BoardWriteRequest<T> {
 	source: BoardWriteTarget;
 	origin: ChangeOrigin;
 	mutation: BoardMutation<T>;
+	/** The exact source lease observed by the write boundary; never inferred from pane state. */
+	sourceLockHolder?: LockHolder;
 	/** The pane that already has a human change on screen and must skip its echo. */
 	clientId?: string | null;
 	/** An explicit save writes this target and resolves any hold after persistence. */
@@ -319,7 +322,7 @@ function releaseSavedHold<T>(
 	tellPanes: TellPanes,
 ): void {
 	if (!request.save) return;
-	const hold = releaseHold(request.source.key);
+	const hold = releaseNoteHold(request.source.key);
 	if (!hold) return;
 	const outcome = target.key === request.source.key ? "overwrite" : "elsewhere";
 	const report = reportHold(request.source.key, hold);
@@ -340,6 +343,12 @@ function releaseSavedHold<T>(
 			}),
 			...boardFilesMessage(source),
 		};
+	}
+	// A successful terminal resolution must not leave the next source writer
+	// waiting on a pane callback. Only the authoritative human lease that entered
+	// this write may be released; an agent, claim, or replacement holder survives.
+	if (request.sourceLockHolder?.kind === "human") {
+		releaseBoardLock(request.source.key, request.sourceLockHolder.id);
 	}
 	tellPanesBestEffort(
 		tellPanes,
@@ -470,8 +479,8 @@ export function writeBoard<T>(
 	};
 
 	if (shouldWrite) {
-		if (written) releaseSavedHold(request, target, tellPanes);
 		request.afterPersist?.(context);
+		if (written) releaseSavedHold(request, target, tellPanes);
 		// The mutation delta describes what the caller named. Panes need every
 		// canonical side effect of the persisted document as well: repaired arrow
 		// back-references, dependent labels, and deletions outside that input.

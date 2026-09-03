@@ -89,6 +89,16 @@ async function stopSaving(
 		body: { id: "ours1", type: "rectangle", x: 10, y: 10, width: 50, height: 50 },
 	});
 	const file = (await request<BoardInfo>(`/api/boards/info?board=${board}`)).body.file;
+	writeForeignElement(file, theirId);
+	const refused = await request<WriteBody>(`/api/elements?board=${board}`, {
+		method: "POST",
+		body: { id: "lost1", type: "ellipse", x: 5, y: 5, width: 20, height: 20 },
+	});
+	expect(refused.status).toBe(409);
+	return { file, refusal: refused.body };
+}
+
+function writeForeignElement(file: string, theirId: string): void {
 	const note = fs.readFileSync(file, "utf8");
 	const foreign = expandElements(
 		[{ id: theirId, type: "rectangle", x: 800, y: 800, width: 999, height: 40 }],
@@ -98,12 +108,6 @@ async function stopSaving(
 		file,
 		note.replace('"id": "ours1"', `${JSON.stringify(foreign).slice(1, -1)}}, {"id": "ours1"`),
 	);
-	const refused = await request<WriteBody>(`/api/elements?board=${board}`, {
-		method: "POST",
-		body: { id: "lost1", type: "ellipse", x: 5, y: 5, width: 20, height: 20 },
-	});
-	expect(refused.status).toBe(409);
-	return { file, refusal: refused.body };
 }
 
 describe("held board recovery", () => {
@@ -341,6 +345,55 @@ describe("held board recovery", () => {
 		expect(
 			pane.seen.slice(resolutionStart).every((message) => message.type !== "board_switched"),
 		).toBeTrue();
+	});
+
+	test("save elsewhere releases the exact human source holder before answering", async () => {
+		const board = "hold-release-order";
+		const humanA = "hold-release-human-a";
+		const humanB = "hold-release-human-b";
+		await request("/api/boards/new", { method: "POST", body: { board } });
+		await request(`/api/elements?board=${board}`, {
+			method: "POST",
+			body: { id: "ours1", type: "rectangle", x: 10, y: 10, width: 50, height: 50 },
+		});
+		const heldByA = await request(`/api/boards/hold?board=${board}`, {
+			method: "POST",
+			body: { clientId: humanA },
+		});
+		expect(heldByA.status).toBe(200);
+		const file = (await request<BoardInfo>(`/api/boards/info?board=${board}`)).body.file;
+		writeForeignElement(file, "theirs-release-order");
+		const conflict = await request<WriteBody>(`/api/elements?board=${board}&clientId=${humanA}`, {
+			method: "POST",
+			body: { id: "conflicted", type: "ellipse", x: 5, y: 5, width: 20, height: 20 },
+		});
+		expect(conflict.status).toBe(409);
+		expect(conflict.body.held?.board).toBe(board);
+		const heldWrite = await request(`/api/elements?board=${board}&clientId=${humanA}`, {
+			method: "POST",
+			body: { id: "held", type: "rectangle", x: 80, y: 80, width: 30, height: 30 },
+		});
+		expect(heldWrite.status).toBe(200);
+
+		const saved = await request<WriteBody>("/api/boards/save", {
+			method: "POST",
+			body: { board, name: "hold-release-copy", clientId: humanA },
+		});
+		expect(saved.status).toBe(200);
+		expect(saved.body.resolvedHold).toMatchObject({ outcome: "elsewhere" });
+		const acquiredByB = await request(`/api/boards/hold?board=${board}`, {
+			method: "POST",
+			body: { clientId: humanB },
+		});
+		expect(acquiredByB.status).toBe(200);
+		expect(
+			(
+				await request(`/api/boards/hold/release?board=${board}`, {
+					method: "POST",
+					body: { clientId: humanB },
+				})
+			).status,
+		).toBe(200);
 	});
 
 	test("CLI held refusal exits 5 and the following held write succeeds", async () => {
