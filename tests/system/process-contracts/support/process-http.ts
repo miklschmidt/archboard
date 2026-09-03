@@ -9,28 +9,12 @@ export const ReadySchema = z.object({ pid: z.number().int().positive() }).passth
 
 export type ChildEnvironment = Record<string, string | undefined>;
 
-const CLEARED = new Set([
-	"LOCALAPPDATA",
-	"CODEX_HOME",
-	"EXPRESS_SERVER_URL",
-	"ENABLE_CANVAS_SYNC",
-	"ARCHBOARD_REPOS",
-	"ARCHBOARD_SETTLE_MS",
-	"ARCHBOARD_SETTLE_MAX_MS",
-	"HOST",
-	"PORT",
-	"EXCALIDRAW_NO_AUTOSTART",
-]);
-
 export function sanitizedEnvironment(
 	root: string,
 	vault: string,
 	inherited: ChildEnvironment = process.env,
 ): ChildEnvironment {
-	const env: ChildEnvironment = { ...inherited };
-	for (const key of Object.keys(env)) {
-		if (CLEARED.has(key)) delete env[key];
-	}
+	const env: ChildEnvironment = inherited.PATH === undefined ? {} : { PATH: inherited.PATH };
 	return {
 		...env,
 		HOME: join(root, "home"),

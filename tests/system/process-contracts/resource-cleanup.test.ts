@@ -167,14 +167,24 @@ test("outer pre-readiness failure and peer startup failure retain diagnostics an
 	}
 }, 20_000);
 
-test("sanitized child environments remove both settle overrides", () => {
+test("sanitized child environments retain only approved state", () => {
 	const env = sanitizedEnvironment("/owned/root", "/owned/vault", {
-		PATH: process.env.PATH,
+		PATH: "/owned/bin",
+		CODEX_HOME: "/ambient/codex-home",
+		CODEX_SQLITE_HOME: "/ambient/sqlite-home",
 		ARCHBOARD_SETTLE_MS: "1",
 		ARCHBOARD_SETTLE_MAX_MS: "2",
+		UNAPPROVED_INHERITED_KEY: "must-not-cross",
 	});
+	expect(env.PATH).toBe("/owned/bin");
+	expect(env.HOME).toBe("/owned/root/home");
+	expect(env.XDG_STATE_HOME).toBe("/owned/root/state");
+	expect(env.ARCHBOARD_VAULT).toBe("/owned/vault");
+	expect(env.CODEX_HOME).toBeUndefined();
+	expect(env.CODEX_SQLITE_HOME).toBeUndefined();
 	expect(env.ARCHBOARD_SETTLE_MS).toBeUndefined();
 	expect(env.ARCHBOARD_SETTLE_MAX_MS).toBeUndefined();
+	expect(env.UNAPPROVED_INHERITED_KEY).toBeUndefined();
 });
 
 test("every dynamic owner establishes lexical disposal before its first acquisition", () => {
