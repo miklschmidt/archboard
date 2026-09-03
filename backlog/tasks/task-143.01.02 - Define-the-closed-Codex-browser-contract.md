@@ -1,10 +1,11 @@
 ---
 id: TASK-143.01.02
 title: Define the browser-only Codex workbench model
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-02 02:13'
+updated_date: '2026-09-03 18:18'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -14,6 +15,9 @@ references:
   - docs/design/codex-workbench-authored-contracts.md
 modified_files:
   - src/shared/codex-browser-model
+  - src/runtime/codex-approvals
+  - src/server/codex-workbench/lib/projection.ts
+  - src/server/codex-workbench/tests/support.ts
 parent_task_id: TASK-143.01
 priority: high
 type: task
@@ -37,31 +41,21 @@ Define only the browser-facing workbench state and user-intent model that has no
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Paused by TASK-143.08. Reopen only after TASK-143.08.05 is Done, then plan the browser-only projection and user-intent model against the recovered exports. Do not add wire types, reverse-request schemas, app-server ingress validators, BrowserUseOriginPolicy handling, i64 normalization, or replacement contract authority.
+1. Replace the rejected generated-import-free browser package with one browser-only state, intent, and result contract derived from the recovered codex-app-server-contract and opaque identity exports. Remove app-server ingress, reverse-request, wire-policy, and vendor-private path ownership from this module.
+2. Add one projection adapter that accepts normalized producer views, returns the closed browser snapshot, excludes secrets and private paths by construction, and exhaustively maps every reachable readiness, account, link, timeline, queue, settings, approval, semantic, coordinator, voice, lease, and delivery outcome.
+3. Define a closed user-intent union with one explicit host owner per intent, generated request/result-derived payloads where applicable, and an explicit unsupported-action refusal. Preserve only compatibility needed by current browser/server consumers; move no protocol authority back into the browser package.
+4. Replace the old conformance-heavy suite with focused module tests for projection, secret/private-path exclusion, domain-only state, action ownership, supported results, and unsupported refusal.
+5. Run the exact focused module tests, affected TypeScript compilation, scoped Oxlint and Oxfmt checks, direct import/contract probes, and git diff checks. Record durations and execution notes, commit, leave the task In Progress, and stop for independent review.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Implemented the closed shared Codex browser contract under src/shared/codex-browser-model: strict browser DTOs, exhaustive Codex 0.151.0 reverse-request schemas, reviewed initialize/login/time/error policies, secret-free snapshots, and compile-time/runtime rejection fixtures. No generated protocol imports cross the boundary.
+Rebuilt the browser-facing contract against the recovered Codex 0.151.0 generated and normalized exports. The package now has one closed projection adapter, generated request/result-derived owner views, a complete 19-intent owner table, and explicit unsupported-action refusal. Projection selects only browser fields, rejects secret-bearing inputs, strips account email and thread-private settings, deep-freezes snapshots, and preserves domain-only identity authority.
 
-Validation passed: focused module type-check, Oxlint, Oxfmt, and 6 tests (59 expectations); bun run type-check; bun run lint; bun run fmt:check; bun run test:modules (447 tests, 0 failures); bun run test:repository (118 tests, 0 failures).
+Ordinary approval cards now retain authoritative lifecycle, decision and delivery outcome, current binding, spoken eligibility, exact requested permission profiles, and full elicitation constraints. The broker projects pending and terminal states from its single settlement record. The obsolete generated-conformance contract test and browser tool-result mirror were removed; focused projection, action, approval, and gateway owners remain.
 
-Remediation applied: identity-bearing schemas now require the authority decoder and current child/epoch validator; publishable BrowserDto excludes transient browser-command ingress; accountLogin is limited to the four supported variants; approval responses are strict seven-arm contracts; server requests/results mirror all nested 0.151.0 unions with typed MCP defaults and permission paths; login policy rows are exact and ordered. Added regression fixtures for unissued/wrong-domain/wrong-child/stale-epoch identities, link relations, approval arms, all MCP form members, invalid defaults, permission paths, and reachable recovery states.
-
-Remediation validation: bun test --isolate src/shared/codex-browser-model (8 pass, 129 expectations); bun run type-check; bun run lint; bun run fmt:check; bun run test:modules (449 pass, 0 failures); bun run test:repository (118 pass, 0 failures); git diff --check (pass).
-
-Second remediation applied: coordinator thread/turn identity is independent from the linked workhorse timeline and semantic thread; coordinator-local state is validated separately. Inspect-only thread links preserve the generated custom, subAgent, and unknown source families while executable links remain limited to the four authored source strings. Dynamic item/tool/call results now require exactly one non-empty inputText tuple. Host-generated server-request strings use NUL-safe wireText without undocumented size caps; authored dynamic-tool output retains its reviewed bounded text policy. Added fixtures for distinct coordinator identities, unissued coordinator IDs, inspect-only source families/unknown members, media/arity rejection, and >16K add/delete/unified-diff patch text round-trips.
-
-Second remediation validation: bun test --isolate src/shared/codex-browser-model (9 tests, 145 expectations); bun run type-check; bun run lint; bun run fmt:check; bun run test:modules (450 tests, 0 failures); bun run test:repository (118 tests, 0 failures); git diff --check (pass). Task remains In Progress for parent review.
-
-Third remediation applied: reverse-wire server request schemas now use ordinary z.string() fields without NUL rejection, including reason, cwd, command, MCP labels/defaults, and FileChange content. The reviewed browser-authored bounded projections and dynamic-tool envelope retain their existing safety checks. Added a JSON serialize/parse regression containing an actual U+0000 via String.fromCodePoint(0) in patch reason and FileChange content, and verified it round-trips.
-
-Third remediation validation: bun test --isolate src/shared/codex-browser-model (9 tests, 147 expectations); bun run type-check; bun run lint; bun run fmt:check; bun run test:modules (450 tests, 0 failures); bun run test:repository (118 tests, 0 failures); git diff --check (pass). Task remains In Progress for parent review.
-
-Parent integration validation at 99870de: focused browser-model suite 9 tests / 147 expectations; both TypeScript projects, Oxlint, Oxfmt, 468 module tests, 118 repository-policy tests, diff check, and clean-worktree audit passed. Independent fixed-base reviewer returned REVIEW_CLEAN at worker HEAD 60621075719cb1655108151d1aa862f11c46a8f4 after rerunning identity, request/result, secret, approval, state/source, large-patch, literal-policy, and actual U+0000 probes.
-
-Reopened with user approval after downstream TASK-143.03.07 showed that the finalized browser model cannot represent authoritative approval lifecycle, exact permission profiles, full elicitation constraints, binding, and spoken eligibility.
+Focused red/green evidence: the affected gateway lane initially rejected its legacy approval fixture as invalid_projection; after adding lifecycle, binding, and spoken authority, the exact test passed 1/1 and the affected test set passed 86/86 with 608 expectations in 1.17s. Scoped TypeScript passed in 0.77s, Oxlint in 0.17s, Oxfmt in 0.09s, boundary grep and git diff checks passed. No broad check, browser, repository, system, or full-suite command was run.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

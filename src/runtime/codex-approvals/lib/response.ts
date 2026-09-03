@@ -218,32 +218,89 @@ function fieldType(value: unknown): "string" | "number" | "integer" | "boolean" 
 		: null;
 }
 
-function formFields(schema: unknown): Array<{
+interface ProjectedElicitationField {
 	readonly name: string;
 	readonly type: "string" | "number" | "integer" | "boolean" | "enum";
 	readonly required: boolean;
 	readonly secret: boolean;
-}> | null {
+	readonly title: string | null;
+	readonly description: string | null;
+	readonly format: "email" | "uri" | "date" | "date-time" | null;
+	readonly minimum: number | null;
+	readonly maximum: number | null;
+	readonly minLength: number | null;
+	readonly maxLength: number | null;
+	readonly minimumItems: number | null;
+	readonly maximumItems: number | null;
+	readonly options: readonly string[] | null;
+	readonly defaultValue: unknown;
+}
+
+function stringValue(value: unknown): string | null {
+	return typeof value === "string" ? value : null;
+}
+
+function numberValue(value: unknown): number | null {
+	return typeof value === "number" ? value : null;
+}
+
+function enumOptions(definition: RecordValue): readonly string[] | null {
+	if (Array.isArray(definition.enum) && definition.enum.every((entry) => typeof entry === "string"))
+		return definition.enum;
+	if (Array.isArray(definition.oneOf))
+		return definition.oneOf.flatMap((entry) =>
+			isRecord(entry) && typeof entry.const === "string" ? [entry.const] : [],
+		);
+	if (definition.type === "array" && isRecord(definition.items)) {
+		if (
+			Array.isArray(definition.items.enum) &&
+			definition.items.enum.every((entry) => typeof entry === "string")
+		)
+			return definition.items.enum;
+		if (Array.isArray(definition.items.anyOf))
+			return definition.items.anyOf.flatMap((entry) =>
+				isRecord(entry) && typeof entry.const === "string" ? [entry.const] : [],
+			);
+	}
+	return null;
+}
+
+function formFields(schema: unknown): ProjectedElicitationField[] | null {
 	if (!isRecord(schema) || !isRecord(schema.properties)) return null;
 	const required = new Set(
 		Array.isArray(schema.required) && schema.required.every((entry) => typeof entry === "string")
 			? schema.required
 			: [],
 	);
-	const fields: Array<{
-		readonly name: string;
-		readonly type: "string" | "number" | "integer" | "boolean" | "enum";
-		readonly required: boolean;
-		readonly secret: boolean;
-	}> = [];
+	const fields: ProjectedElicitationField[] = [];
 	for (const [name, definition] of Object.entries(schema.properties)) {
 		const type = fieldType(definition);
-		if (type === null || name.length === 0 || name.includes("\0")) return null;
+		if (type === null || !isRecord(definition) || name.length === 0 || name.includes("\0"))
+			return null;
+		const secret = definition.secret === true;
+		const format =
+			definition.format === "email" ||
+			definition.format === "uri" ||
+			definition.format === "date" ||
+			definition.format === "date-time"
+				? definition.format
+				: null;
 		fields.push({
 			name,
 			type,
 			required: required.has(name),
-			secret: isRecord(definition) && definition.secret === true,
+			secret,
+			title: stringValue(definition.title),
+			description: stringValue(definition.description),
+			format,
+			minimum: numberValue(definition.minimum),
+			maximum: numberValue(definition.maximum),
+			minLength: numberValue(definition.minLength),
+			maxLength: numberValue(definition.maxLength),
+			minimumItems: numberValue(definition.minItems),
+			maximumItems: numberValue(definition.maxItems),
+			options: enumOptions(definition),
+			defaultValue: secret ? null : (definition.default ?? null),
 		});
 	}
 	return fields;
@@ -336,6 +393,7 @@ export function toSpokenEffectPresentation(
 export function toBrowserApproval(
 	model: CodexBrowserModel,
 	request: ApprovalRequest,
+	projection: Pick<BrowserApproval, "lifecycle" | "spoken">,
 ): BrowserApproval {
 	const envelope = {
 		kind: "approval" as const,
@@ -345,6 +403,9 @@ export function toBrowserApproval(
 		itemId: request.itemId,
 		approvalId: request.approvalId,
 		expiresAtMs: request.expiresAtMs,
+		lifecycle: projection.lifecycle,
+		binding: request.binding,
+		spoken: projection.spoken,
 	};
 	let candidate: RecordValue;
 	switch (request.family) {
@@ -395,6 +456,7 @@ export function toBrowserApproval(
 				cwd: request.params.cwd,
 				network: request.params.permissions.network?.enabled ?? null,
 				fileSystem: fileSystemMode(request.params.permissions.fileSystem),
+				requestedPermissions: request.params.permissions,
 			};
 			break;
 		case "apply_patch":

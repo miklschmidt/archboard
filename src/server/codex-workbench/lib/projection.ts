@@ -1,4 +1,5 @@
 import type { CodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
+import { projectCodexBrowserState } from "../../../shared/codex-browser-model/index.js";
 import type {
 	BrowserSnapshot,
 	BrowserCommandLease,
@@ -57,9 +58,7 @@ function parseProjection(
 	lease: BrowserCommandLease | null,
 	operation: BrowserOperationOutcome | null,
 ): BrowserSnapshot {
-	const parsed = model.BrowserSnapshotSchema.parse({
-		kind: "snapshot",
-		version: 1,
+	const result = projectCodexBrowserState(model, {
 		readiness: projection.readiness,
 		account: projection.account,
 		login: projection.login,
@@ -75,6 +74,8 @@ function parseProjection(
 		lease,
 		operation,
 	});
+	if (result.tag === "refused") throw new Error(result.message);
+	const parsed = result.snapshot;
 	assertBounded(parsed, BROWSER_SNAPSHOT_MAX_BYTES, "snapshot");
 	return deepFreeze(parsed);
 }

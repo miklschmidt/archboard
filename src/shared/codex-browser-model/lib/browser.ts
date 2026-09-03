@@ -6,6 +6,7 @@ import {
 	CodexTurnStatusSchema,
 	createCodexCommandExecutionApprovalDecisionSchema,
 } from "../../codex-app-server-contract/index.js";
+import type { CodexResponseByMethod } from "../../codex-app-server-contract/index.js";
 
 import { SupportedLoginAccountParamsSchema } from "./authored.js";
 import { createDynamicApprovalSchemas } from "./dynamic-approval.js";
@@ -142,6 +143,12 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		"amazonBedrock",
 		"amazonBedrockAccessKeys",
 	]);
+	type CodexAccountType = NonNullable<CodexResponseByMethod["account/read"]["account"]>["type"];
+	const CodexAccountTypeSchema = z.enum([
+		"apiKey",
+		"chatgpt",
+		"amazonBedrock",
+	] satisfies readonly CodexAccountType[]);
 	const BrowserAccountSchema = z.union([
 		z
 			.object({ kind: z.literal("account"), state: z.literal("unknown"), reason: boundedText(512) })
@@ -159,7 +166,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			.object({
 				kind: z.literal("account"),
 				state: z.literal("ready"),
-				accountType: z.enum(["apiKey", "chatgpt", "amazonBedrock", "amazonBedrockAccessKeys"]),
+				accountType: CodexAccountTypeSchema,
 			})
 			.strict(),
 		z
@@ -422,112 +429,227 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		itemId: ItemIdSchema.nullable(),
 		approvalId: ApprovalIdSchema.nullable(),
 		expiresAtMs: TimestampSchema,
+		lifecycle: z.discriminatedUnion("state", [
+			z
+				.object({
+					state: z.enum(["staged", "pending"]),
+					decision: z.null(),
+					outcome: z.null(),
+					reason: z.null(),
+				})
+				.strict(),
+			z
+				.object({
+					state: z.literal("settled"),
+					decision: z.enum(["approved", "declined", "cancelled"]),
+					outcome: z.enum(["delivered", "not_delivered"]).nullable(),
+					reason: boundedText(512),
+				})
+				.strict(),
+			z
+				.object({
+					state: z.enum(["expired", "cancelled", "stale"]),
+					decision: z.literal("cancelled"),
+					outcome: z.enum(["delivered", "not_delivered"]).nullable(),
+					reason: boundedText(512),
+				})
+				.strict(),
+			z
+				.object({
+					state: z.literal("outcome_unknown"),
+					decision: z.enum(["approved", "declined", "cancelled"]),
+					outcome: z.literal("outcome_unknown"),
+					reason: boundedText(512),
+				})
+				.strict(),
+		]),
+		binding: z
+			.object({
+				child: ChildIdSchema,
+				epoch: ChildEpochSchema,
+				link: boundedText(256).nullable(),
+				target: boundedText(512),
+				effect: boundedText(512),
+			})
+			.strict(),
+		spoken: z
+			.object({
+				eligible: z.boolean(),
+				reason: z.enum([
+					"eligible",
+					"not_pending",
+					"stale_ownership",
+					"secret",
+					"multi_question",
+					"form",
+					"url",
+					"permission_scope",
+					"coordinator_blocking",
+					"unsupported_schema",
+					"broader_grant",
+					"not_binary",
+				]),
+			})
+			.strict(),
 	};
 	const ApprovalReason = { reason: NullableReasonSchema };
 	const ApprovalDecisionSchema = createCodexCommandExecutionApprovalDecisionSchema({
 		text: boundedText(16_384),
 		host: boundedText(2048),
 	});
-	const BrowserApprovalSchema = z.discriminatedUnion("approvalKind", [
-		z
-			.object({
-				kind: z.literal("approval"),
-				approvalKind: z.literal("command_execution"),
-				...ApprovalEnvelope,
-				...ApprovalReason,
-				command: boundedText(16_384).nullable(),
-				cwd: boundedText(16_384).nullable(),
-				availableDecisions: z.array(ApprovalDecisionSchema),
-			})
-			.strict(),
-		z
-			.object({
-				kind: z.literal("approval"),
-				approvalKind: z.literal("file_change"),
-				...ApprovalEnvelope,
-				...ApprovalReason,
-				grantRoot: boundedText(16_384).nullable(),
-				availableDecisions: z.array(CodexFileChangeApprovalDecisionSchema),
-			})
-			.strict(),
-		z
-			.object({
-				kind: z.literal("approval"),
-				approvalKind: z.literal("user_input"),
-				...ApprovalEnvelope,
-				questions: z.array(
-					z
-						.object({
-							id: boundedText(256),
-							header: boundedText(256),
-							question: boundedText(4096),
-							isOther: z.boolean(),
-							isSecret: z.boolean(),
-							options: z
-								.array(
-									z.object({ label: boundedText(256), description: boundedText(2048) }).strict(),
-								)
-								.nullable(),
-						})
-						.strict(),
-				),
-			})
-			.strict(),
-		z
-			.object({
-				kind: z.literal("approval"),
-				approvalKind: z.literal("elicitation"),
-				...ApprovalEnvelope,
-				serverName: boundedText(256),
-				mode: z.enum(["form", "openai/form", "url"]),
-				message: boundedText(16_384),
-				url: SafeUrlSchema.nullable(),
-				fields: z
-					.array(
+	const ElicitationFieldSchema = z
+		.object({
+			name: boundedText(256),
+			type: z.enum(["string", "number", "integer", "boolean", "enum"]),
+			required: z.boolean(),
+			secret: z.boolean(),
+			title: boundedText(512).nullable(),
+			description: boundedText(4096).nullable(),
+			format: z.enum(["email", "uri", "date", "date-time"]).nullable(),
+			minimum: z.number().nullable(),
+			maximum: z.number().nullable(),
+			minLength: z.number().int().nonnegative().nullable(),
+			maxLength: z.number().int().nonnegative().nullable(),
+			minimumItems: z.number().int().nonnegative().nullable(),
+			maximumItems: z.number().int().nonnegative().nullable(),
+			options: z.array(boundedText(2048)).nullable(),
+			defaultValue: JsonValueSchema.nullable(),
+		})
+		.strict()
+		.superRefine((field, refinementContext) => {
+			if (field.secret && field.defaultValue !== null)
+				refinementContext.addIssue({
+					code: "custom",
+					path: ["defaultValue"],
+					message: "secret elicitation defaults are never projected",
+				});
+			if (field.minLength !== null && field.maxLength !== null && field.minLength > field.maxLength)
+				refinementContext.addIssue({
+					code: "custom",
+					path: ["maxLength"],
+					message: "elicitation text bounds are contradictory",
+				});
+			if (
+				field.minimumItems !== null &&
+				field.maximumItems !== null &&
+				field.minimumItems > field.maximumItems
+			)
+				refinementContext.addIssue({
+					code: "custom",
+					path: ["maximumItems"],
+					message: "elicitation item bounds are contradictory",
+				});
+		});
+	const BrowserApprovalSchema = z
+		.discriminatedUnion("approvalKind", [
+			z
+				.object({
+					kind: z.literal("approval"),
+					approvalKind: z.literal("command_execution"),
+					...ApprovalEnvelope,
+					...ApprovalReason,
+					command: boundedText(16_384).nullable(),
+					cwd: boundedText(16_384).nullable(),
+					availableDecisions: z.array(ApprovalDecisionSchema),
+				})
+				.strict(),
+			z
+				.object({
+					kind: z.literal("approval"),
+					approvalKind: z.literal("file_change"),
+					...ApprovalEnvelope,
+					...ApprovalReason,
+					grantRoot: boundedText(16_384).nullable(),
+					availableDecisions: z.array(CodexFileChangeApprovalDecisionSchema),
+				})
+				.strict(),
+			z
+				.object({
+					kind: z.literal("approval"),
+					approvalKind: z.literal("user_input"),
+					...ApprovalEnvelope,
+					questions: z.array(
 						z
 							.object({
-								name: boundedText(256),
-								type: z.enum(["string", "number", "integer", "boolean", "enum"]),
-								required: z.boolean(),
-								secret: z.boolean(),
+								id: boundedText(256),
+								header: boundedText(256),
+								question: boundedText(4096),
+								isOther: z.boolean(),
+								isSecret: z.boolean(),
+								options: z
+									.array(
+										z.object({ label: boundedText(256), description: boundedText(2048) }).strict(),
+									)
+									.nullable(),
 							})
 							.strict(),
-					)
-					.nullable(),
-			})
-			.strict(),
-		z
-			.object({
-				kind: z.literal("approval"),
-				approvalKind: z.literal("permissions"),
-				...ApprovalEnvelope,
-				...ApprovalReason,
-				cwd: boundedText(16_384),
-				network: z.boolean().nullable(),
-				fileSystem: z.enum(["read", "write", "deny"]).nullable(),
-			})
-			.strict(),
-		z
-			.object({
-				kind: z.literal("approval"),
-				approvalKind: z.literal("apply_patch"),
-				...ApprovalEnvelope,
-				...ApprovalReason,
-				grantRoot: boundedText(16_384).nullable(),
-				fileCount: z.number().int().nonnegative(),
-			})
-			.strict(),
-		z
-			.object({
-				kind: z.literal("approval"),
-				approvalKind: z.literal("exec_command"),
-				...ApprovalEnvelope,
-				...ApprovalReason,
-				command: z.array(boundedText(16_384)),
-				cwd: boundedText(16_384),
-			})
-			.strict(),
-	]);
+					),
+				})
+				.strict(),
+			z
+				.object({
+					kind: z.literal("approval"),
+					approvalKind: z.literal("elicitation"),
+					...ApprovalEnvelope,
+					serverName: boundedText(256),
+					mode: z.enum(["form", "openai/form", "url"]),
+					message: boundedText(16_384),
+					url: SafeUrlSchema.nullable(),
+					fields: z.array(ElicitationFieldSchema).nullable(),
+				})
+				.strict(),
+			z
+				.object({
+					kind: z.literal("approval"),
+					approvalKind: z.literal("permissions"),
+					...ApprovalEnvelope,
+					...ApprovalReason,
+					cwd: boundedText(16_384),
+					network: z.boolean().nullable(),
+					fileSystem: z.enum(["read", "write", "deny"]).nullable(),
+					requestedPermissions: JsonValueSchema,
+				})
+				.strict(),
+			z
+				.object({
+					kind: z.literal("approval"),
+					approvalKind: z.literal("apply_patch"),
+					...ApprovalEnvelope,
+					...ApprovalReason,
+					grantRoot: boundedText(16_384).nullable(),
+					fileCount: z.number().int().nonnegative(),
+				})
+				.strict(),
+			z
+				.object({
+					kind: z.literal("approval"),
+					approvalKind: z.literal("exec_command"),
+					...ApprovalEnvelope,
+					...ApprovalReason,
+					command: z.array(boundedText(16_384)),
+					cwd: boundedText(16_384),
+				})
+				.strict(),
+		])
+		.superRefine((approval, refinementContext) => {
+			if (approval.lifecycle.state !== "pending" && approval.spoken.eligible) {
+				refinementContext.addIssue({
+					code: "custom",
+					path: ["spoken", "eligible"],
+					message: "only pending approvals may be spoken eligible",
+				});
+			}
+			if (
+				approval.binding.child !== context.validator.childId ||
+				approval.binding.epoch !== context.validator.epoch
+			) {
+				refinementContext.addIssue({
+					code: "custom",
+					path: ["binding"],
+					message: "approval binding is not from the current child epoch",
+				});
+			}
+		});
 
 	const TargetSchema = {
 		commandId: BrowserCommandIdSchema,
@@ -949,14 +1071,6 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 					message: issue.message,
 				});
 		});
-	const BrowserToolResultSchema = z
-		.object({
-			contentItems: z.tuple([
-				z.object({ type: z.literal("inputText"), text: boundedText(16_384) }).strict(),
-			]),
-			success: z.boolean(),
-		})
-		.strict();
 	const BrowserDtoSchema = z.union([
 		BrowserSnapshotSchema,
 		BrowserReadinessSchema,
@@ -994,7 +1108,6 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		BrowserOperationOutcomeSchema,
 		BrowserCommandSchema,
 		BrowserSnapshotSchema,
-		BrowserToolResultSchema,
 		BrowserDtoSchema,
 		...dynamic,
 	};
@@ -1017,7 +1130,6 @@ export type BrowserVoice = z.infer<BrowserSchemas["BrowserVoiceSchema"]>;
 export type BrowserCommandLease = z.infer<BrowserSchemas["BrowserCommandLeaseSchema"]>;
 export type BrowserOperationOutcome = z.infer<BrowserSchemas["BrowserOperationOutcomeSchema"]>;
 export type BrowserCommand = z.infer<BrowserSchemas["BrowserCommandSchema"]>;
-export type BrowserToolResult = z.infer<BrowserSchemas["BrowserToolResultSchema"]>;
 export type BrowserSnapshot = z.infer<BrowserSchemas["BrowserSnapshotSchema"]>;
 export type BrowserDto = z.infer<BrowserSchemas["BrowserDtoSchema"]>;
 export type DeliveryOutcome = z.infer<typeof DeliveryOutcomeSchema>;

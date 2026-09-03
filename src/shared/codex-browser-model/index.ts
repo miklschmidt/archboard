@@ -31,6 +31,8 @@ export {
 } from "./lib/authored.js";
 
 export { browserSnapshotRelationshipIssues, DeliveryOutcomeSchema } from "./lib/browser.js";
+export { BROWSER_ACTION_OWNERS, resolveBrowserAction } from "./lib/actions.js";
+export { projectCodexBrowserState } from "./lib/projection.js";
 export {
 	JsonValueSchema,
 	NonNegativeIntegerSchema,
@@ -81,11 +83,25 @@ export type {
 	BrowserTextCommand,
 	BrowserThreadLink,
 	BrowserTimeline,
-	BrowserToolResult,
 	BrowserVoice,
 	BrowserSchemas,
 	DeliveryOutcome,
 } from "./lib/browser.js";
+
+export type {
+	BrowserActionName,
+	BrowserActionOwner,
+	BrowserActionResolution,
+	BrowserOwnerRequestViews,
+	BrowserOwnerResultViews,
+} from "./lib/actions.js";
+
+export type {
+	BrowserProjectionInput,
+	BrowserProjectionResult,
+	CodexAccountProjectionInput,
+	CodexSettingsProjectionInput,
+} from "./lib/projection.js";
 
 export type {
 	BrowserDynamicApproval,

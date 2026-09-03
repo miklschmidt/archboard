@@ -40,6 +40,7 @@ interface ApprovalRecord {
 	state: ApprovalState;
 	outcome: ApprovalOutcome | null;
 	reason: string | null;
+	decision: "approved" | "declined" | "cancelled" | null;
 	timer?: ReturnType<typeof setTimeout>;
 	settlementPromise?: Promise<ApprovalSettlement>;
 	settlementResolve?: (settlement: ApprovalSettlement) => void;
@@ -62,6 +63,30 @@ function sameBinding(left: ApprovalBinding, right: ApprovalBinding): boolean {
 
 function toError(error: unknown): Error {
 	return error instanceof Error ? error : new Error(String(error));
+}
+
+function browserDecision(response: BrowserApprovalResponse): "approved" | "declined" | "cancelled" {
+	switch (response.approvalKind) {
+		case "command_execution":
+		case "file_change":
+			if (response.decision === "decline") return "declined";
+			if (response.decision === "cancel") return "cancelled";
+			return "approved";
+		case "elicitation":
+			return response.action === "accept"
+				? "approved"
+				: response.action === "decline"
+					? "declined"
+					: "cancelled";
+		case "apply_patch":
+		case "exec_command":
+			if (typeof response.decision === "object" && "denied" in response.decision) return "declined";
+			if (response.decision === "timed_out" || response.decision === "abort") return "cancelled";
+			return "approved";
+		case "user_input":
+		case "permissions":
+			return "approved";
+	}
 }
 
 function snapshotOf(record: ApprovalRecord): ApprovalSnapshot {
@@ -184,6 +209,7 @@ export function createCodexApprovalBroker(
 
 		record.state = finalState;
 		record.reason = finalReason;
+		record.decision = finalState === "settled" ? browserDecision(finalResponse) : "cancelled";
 		const settlementPromise = new Promise<ApprovalSettlement>((resolve) => {
 			record.settlementResolve = resolve;
 		});
@@ -301,6 +327,7 @@ export function createCodexApprovalBroker(
 			state: "staged",
 			outcome: null,
 			reason: null,
+			decision: null,
 			terminalClaimed: false,
 		};
 		records.set(normalized.requestId, record);
@@ -399,9 +426,52 @@ export function createCodexApprovalBroker(
 	const inspect = (): readonly ApprovalSnapshot[] =>
 		Object.freeze(Array.from(records.values(), snapshotOf));
 
+	const spokenForRecord = (record: ApprovalRecord): SpokenEligibility => {
+		if (record.state !== "pending") return { eligible: false, reason: "not_pending" };
+		const live = currentBinding(record);
+		let facts;
+		try {
+			facts = options.getSpokenEligibilityFacts?.(record.request) ?? {};
+		} catch {
+			facts = { unsupportedSchema: true };
+		}
+		return assessSpokenEligibility(
+			record.request,
+			live !== null && sameBinding(live, record.request.binding),
+			facts,
+			record.spokenEffectPresentation,
+		);
+	};
+
 	const browserApproval = (requestId: JsonRpcRequestId) => {
 		const record = requireRecord(requestId);
-		return toBrowserApproval(model, record.request);
+		return toBrowserApproval(model, record.request, {
+			lifecycle: (() => {
+				if (record.state === "staged" || record.state === "pending")
+					return { state: record.state, decision: null, outcome: null, reason: null } as const;
+				if (record.state === "outcome_unknown")
+					return {
+						state: record.state,
+						decision: record.decision ?? "cancelled",
+						outcome: record.state,
+						reason: record.reason ?? "The approval outcome is unknown.",
+					} as const;
+				if (record.state === "settled")
+					return {
+						state: record.state,
+						decision: record.decision ?? "cancelled",
+						outcome: record.outcome === "outcome_unknown" ? null : record.outcome,
+						reason: record.reason ?? "The approval settled.",
+					} as const;
+				return {
+					state: record.state,
+					decision: "cancelled",
+					outcome: record.outcome === "outcome_unknown" ? null : record.outcome,
+					reason: record.reason ?? "The approval ended without an effect.",
+				} as const;
+			})(),
+			spoken: spokenForRecord(record),
+		});
 	};
 
 	const spokenPresentation = (requestId: JsonRpcRequestId) => {
@@ -417,20 +487,7 @@ export function createCodexApprovalBroker(
 
 	const spoken = (requestId: JsonRpcRequestId): SpokenEligibility => {
 		const record = requireRecord(requestId);
-		if (record.state !== "pending") return { eligible: false, reason: "not_pending" };
-		const live = currentBinding(record);
-		let facts;
-		try {
-			facts = options.getSpokenEligibilityFacts?.(record.request) ?? {};
-		} catch {
-			facts = { unsupportedSchema: true };
-		}
-		return assessSpokenEligibility(
-			record.request,
-			live !== null && sameBinding(live, record.request.binding),
-			facts,
-			record.spokenEffectPresentation,
-		);
+		return spokenForRecord(record);
 	};
 
 	const childExit = async (exit: {

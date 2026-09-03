@@ -300,8 +300,15 @@ export function elicitationRequest(
 					requestedSchema: {
 						type: "object",
 						properties: {
-							name: { type: "string" },
-							kind: { type: "string", enum: ["a", "b"] },
+							name: {
+								type: "string",
+								title: "Name",
+								description: "Display name",
+								minLength: 2,
+								maxLength: 40,
+								default: "Ada",
+							},
+							kind: { type: "string", enum: ["a", "b"], default: "a" },
 						},
 						required: ["name"],
 					},
