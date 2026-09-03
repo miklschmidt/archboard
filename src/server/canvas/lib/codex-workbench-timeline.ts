@@ -12,6 +12,7 @@ import type {
 	TrustedIdentityDecoder,
 } from "../../../shared/codex-workbench-identity/index.js";
 import type {
+	BrowserConnectionInstance,
 	CodexTimelineItemProjectionInput,
 	CodexTimelineProjectionInput,
 	CodexTimelineTurnProjectionInput,
@@ -19,26 +20,51 @@ import type {
 
 const TIMELINE_PAGE_LIMIT = 100;
 const TIMELINE_PAGE_LIMIT_MAX = 8;
-const TIMELINE_TURN_LIMIT = TIMELINE_PAGE_LIMIT * TIMELINE_PAGE_LIMIT_MAX;
 const TIMELINE_ITEM_LIMIT = 256;
 const TIMELINE_TEXT_LIMIT = 16_384;
 const TIMELINE_TOOL_LIMIT = 256;
 const TIMELINE_SUMMARY_LIMIT = 512;
 const TIMELINE_CURSOR_LIMIT = 1024;
+const TIMELINE_MAX_BYTES = 768 * 1024;
+const TIMELINE_REASONING_PART_LIMIT = 32;
 const textEncoder = new TextEncoder();
 
-type TimelineSession = Pick<CodexSession, "threadTurnsListPage"> &
-	Partial<Pick<CodexSession, "timelineListPage">>;
+type TimelineSession = Pick<CodexSession, "threadTurnsListPage" | "timelineListPage">;
+
+export interface CanvasTimelineBudget {
+	readonly maxTurns: number;
+	readonly maxItemsPerTurn: number;
+	readonly maxBytes: number;
+}
+
+const DEFAULT_TIMELINE_BUDGET: CanvasTimelineBudget = Object.freeze({
+	maxTurns: TIMELINE_PAGE_LIMIT * TIMELINE_PAGE_LIMIT_MAX,
+	maxItemsPerTurn: TIMELINE_ITEM_LIMIT,
+	maxBytes: TIMELINE_MAX_BYTES,
+});
+
+type TimelineItemData = {
+	readonly itemId: SessionThreadItem["id"];
+	readonly item: CodexTimelineItemProjectionInput | null;
+};
+
+interface TimelineTurnData {
+	readonly turn: Pick<SessionTurn, "id" | "status">;
+	readonly items: readonly TimelineItemData[];
+	readonly presentation: CodexTimelineTurnProjectionInput["presentation"];
+}
 
 interface TimelineData {
 	readonly threadId: ThreadId;
-	readonly turns: readonly SessionTurn[];
+	readonly turns: readonly TimelineTurnData[];
+	readonly truncated: boolean;
 	readonly cursor: string | null;
 }
 
 interface TimelinePaneState {
 	readonly paneId: string;
 	readonly key: string;
+	readonly connection: BrowserConnectionInstance;
 	readonly link: ThreadLinkSnapshot;
 	ready: boolean;
 	started: boolean;
@@ -60,8 +86,10 @@ export interface CanvasTimelineOwner {
 		revision: number,
 		link: ThreadLinkSnapshot,
 		threadCapable: boolean,
+		connection: BrowserConnectionInstance,
 	) => CodexTimelineProjectionInput | null;
 	readonly onNotification: (event: TransportServerNotification) => void;
+	readonly retire: (paneId: string, connection: BrowserConnectionInstance) => void;
 	readonly dispose: () => void;
 }
 
@@ -72,6 +100,7 @@ export interface CanvasTimelineOwnerOptions {
 		readonly inspectViews: () => readonly TimelineApprovalView[];
 	};
 	readonly onChange: () => void;
+	readonly budget?: Partial<CanvasTimelineBudget>;
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -83,31 +112,56 @@ function boundedText(
 	maximum: number,
 	fallback: string,
 ): { readonly value: string; readonly truncated: boolean } {
-	const clean = value.replaceAll("\0", "");
-	if (clean.length === 0) return { value: fallback, truncated: false };
-	if (textEncoder.encode(clean).byteLength <= maximum) return { value: clean, truncated: false };
 	const suffix = "…";
-	const budget = maximum - textEncoder.encode(suffix).byteLength;
-	const characters: string[] = [];
+	const suffixBytes = textEncoder.encode(suffix).byteLength;
+	const characters: { readonly value: string; readonly bytes: number }[] = [];
 	let bytes = 0;
-	for (const character of clean) {
+	let sawVisible = false;
+	let truncated = false;
+	for (const character of value) {
+		if (character === "\0") continue;
+		sawVisible = true;
 		const characterBytes = textEncoder.encode(character).byteLength;
-		if (bytes + characterBytes > budget) break;
-		characters.push(character);
+		if (bytes + characterBytes > maximum) {
+			truncated = true;
+			break;
+		}
+		characters.push({ value: character, bytes: characterBytes });
 		bytes += characterBytes;
 	}
-	return { value: `${characters.join("")}${suffix}`, truncated: true };
+	if (!sawVisible) return { value: fallback, truncated: false };
+	if (!truncated)
+		return {
+			value: characters.map(({ value: character }) => character).join(""),
+			truncated: false,
+		};
+	while (characters.length > 0 && bytes + suffixBytes > maximum)
+		bytes -= characters.pop()?.bytes ?? 0;
+	return {
+		value: `${characters.map(({ value: character }) => character).join("")}${suffix}`,
+		truncated: true,
+	};
 }
 
 function normalizedText(value: string): string {
 	return value.replace(/\s+/gu, " ").trim();
 }
 
+function boundedNormalizedText(value: string, maximum: number): string {
+	return normalizedText(boundedText(value, maximum, "").value);
+}
+
 function userText(item: SessionThreadItem): string | null {
 	if (item.type !== "userMessage") return null;
-	for (const content of item.content) {
+	for (
+		let index = 0;
+		index < Math.min(item.content.length, TIMELINE_REASONING_PART_LIMIT);
+		index += 1
+	) {
+		const content = item.content[index];
+		if (content === undefined) continue;
 		if (content.type !== "text") continue;
-		const text = normalizedText(content.text);
+		const text = boundedNormalizedText(content.text, TIMELINE_SUMMARY_LIMIT);
 		if (text.length > 0) return text;
 	}
 	return item.content.length === 0 ? null : "[media]";
@@ -115,16 +169,25 @@ function userText(item: SessionThreadItem): string | null {
 
 function assistantText(item: SessionThreadItem): string | null {
 	if (item.type !== "agentMessage") return null;
-	const text = normalizedText(item.text);
+	const text = boundedNormalizedText(item.text, TIMELINE_SUMMARY_LIMIT);
 	return text.length === 0 ? null : text;
 }
 
-function reasoningText(item: Extract<SessionThreadItem, { readonly type: "reasoning" }>): string {
+function reasoningText(item: Extract<SessionThreadItem, { readonly type: "reasoning" }>): {
+	readonly value: string;
+	readonly truncated: boolean;
+} {
 	const values = item.summary.length > 0 ? item.summary : item.content;
-	return values
-		.map(normalizedText)
-		.filter((value) => value.length > 0)
-		.join("\n");
+	const parts: string[] = [];
+	let truncated = values.length > TIMELINE_REASONING_PART_LIMIT;
+	for (let index = 0; index < Math.min(values.length, TIMELINE_REASONING_PART_LIMIT); index += 1) {
+		const value = values[index];
+		if (value === undefined) continue;
+		const part = boundedNormalizedText(value, TIMELINE_TEXT_LIMIT);
+		if (part.length > 0) parts.push(part);
+	}
+	const bounded = boundedText(parts.join("\n"), TIMELINE_TEXT_LIMIT, "Reasoning");
+	return { value: bounded.value, truncated: truncated || bounded.truncated };
 }
 
 type ProjectedItem = {
@@ -168,7 +231,7 @@ function projectItem(item: SessionThreadItem): ProjectedItem {
 				truncated: false,
 			};
 		case "reasoning": {
-			const text = boundedText(reasoningText(item), TIMELINE_TEXT_LIMIT, "Reasoning");
+			const text = reasoningText(item);
 			return {
 				item: {
 					kind: "reasoning_summary",
@@ -231,75 +294,152 @@ function approvalFor(
 	};
 }
 
-function turnSummary(
-	turn: SessionTurn,
-	truncated: boolean,
-): { readonly value: string; readonly truncated: boolean } {
+function projectTurnData(turn: SessionTurn, maxItems: number): TimelineTurnData {
+	const items: TimelineItemData[] = [];
 	let user: string | null = null;
 	let assistant: string | null = null;
-	for (const item of turn.items) {
-		if (user === null) user = userText(item);
-		const next = assistantText(item);
-		if (next !== null) assistant = next;
+	let truncated = turn.itemsView !== "full";
+	const itemCount = Math.min(turn.items.length, maxItems);
+	for (let index = 0; index < itemCount; index += 1) {
+		const source = turn.items[index];
+		if (source === undefined) continue;
+		if (user === null) user = userText(source);
+		const nextAssistant = assistantText(source);
+		if (nextAssistant !== null) assistant = nextAssistant;
+		const projected = projectItem(source);
+		truncated ||= projected.truncated;
+		items.push({ itemId: source.id, item: projected.item });
 	}
+	if (turn.items.length > itemCount) truncated = true;
 	const summary = boundedText(
 		`${turn.status} · user: ${user ?? "none"} · assistant: ${assistant ?? "none"}`,
 		TIMELINE_SUMMARY_LIMIT,
 		`Codex turn (${turn.status})`,
 	);
-	return { value: summary.value, truncated: truncated || summary.truncated };
-}
-
-function projectTurn(
-	threadId: ThreadId,
-	turn: SessionTurn,
-	approvals: readonly TimelineApprovalView[],
-): CodexTimelineTurnProjectionInput {
-	const items: CodexTimelineItemProjectionInput[] = [];
-	const matchedApprovals = new Set<number>();
-	let truncated = turn.itemsView !== "full";
-	for (const item of turn.items.slice(0, TIMELINE_ITEM_LIMIT)) {
-		const projected = projectItem(item);
-		truncated ||= projected.truncated;
-		if (projected.item !== null) items.push(projected.item);
-		for (const [index, approval] of approvals.entries()) {
-			if (matchedApprovals.has(index)) continue;
-			const projectedApproval = approvalFor(approval, threadId, turn.id, item.id);
-			if (projectedApproval === null) continue;
-			matchedApprovals.add(index);
-			items.push(projectedApproval);
-		}
-	}
-	if (turn.items.length > TIMELINE_ITEM_LIMIT) truncated = true;
-	for (const [index, approval] of approvals.entries()) {
-		if (matchedApprovals.has(index) || approval.snapshot.itemId === null) continue;
-		const projectedApproval = approvalFor(approval, threadId, turn.id, approval.snapshot.itemId);
-		if (projectedApproval !== null) {
-			matchedApprovals.add(index);
-			items.push(projectedApproval);
-		}
-	}
-	const summary = turnSummary(turn, truncated);
 	return {
 		turn: { id: turn.id, status: turn.status },
 		items,
 		presentation: {
 			summary: summary.value,
-			outputs: { included: turn.itemsView === "full", truncated: summary.truncated },
+			outputs: { included: turn.itemsView === "full", truncated: truncated || summary.truncated },
 		},
 	};
+}
+
+function projectTurn(
+	threadId: ThreadId,
+	turn: TimelineTurnData,
+	approvals: readonly TimelineApprovalView[],
+	maxItems: number,
+): CodexTimelineTurnProjectionInput {
+	const items: CodexTimelineItemProjectionInput[] = [];
+	const matchedApprovals = new Set<number>();
+	let truncated = turn.presentation.outputs.truncated;
+	const append = (item: CodexTimelineItemProjectionInput): void => {
+		if (items.length >= maxItems) {
+			truncated = true;
+			return;
+		}
+		items.push(item);
+	};
+	for (const source of turn.items) {
+		if (source.item !== null) append(source.item);
+		for (const [index, approval] of approvals.entries()) {
+			if (matchedApprovals.has(index)) continue;
+			const projected = approvalFor(approval, threadId, turn.turn.id, source.itemId);
+			if (projected === null) continue;
+			matchedApprovals.add(index);
+			append(projected);
+		}
+	}
+	for (const [index, approval] of approvals.entries()) {
+		if (matchedApprovals.has(index) || approval.snapshot.itemId === null) continue;
+		const projected = approvalFor(approval, threadId, turn.turn.id, approval.snapshot.itemId);
+		if (projected === null) continue;
+		matchedApprovals.add(index);
+		append(projected);
+	}
+	return {
+		turn: turn.turn,
+		items,
+		presentation: {
+			summary: turn.presentation.summary,
+			outputs: { ...turn.presentation.outputs, truncated },
+		},
+	};
+}
+
+function timelineBytes(
+	threadId: ThreadId,
+	turns: readonly CodexTimelineTurnProjectionInput[],
+	cursor: string | null,
+): number {
+	return textEncoder.encode(JSON.stringify({ kind: "codex_timeline", threadId, turns, cursor }))
+		.byteLength;
+}
+
+function markTruncated(turn: CodexTimelineTurnProjectionInput): CodexTimelineTurnProjectionInput {
+	if (turn.presentation.outputs.truncated) return turn;
+	return {
+		...turn,
+		presentation: {
+			...turn.presentation,
+			outputs: { ...turn.presentation.outputs, truncated: true },
+		},
+	};
+}
+
+function fitTurn(
+	threadId: ThreadId,
+	turns: readonly CodexTimelineTurnProjectionInput[],
+	candidate: CodexTimelineTurnProjectionInput,
+	cursor: string | null,
+	maxBytes: number,
+): CodexTimelineTurnProjectionInput | null {
+	let fitted = markTruncated(candidate);
+	while (
+		timelineBytes(threadId, turns.concat(fitted), cursor) > maxBytes &&
+		fitted.items.length > 0
+	)
+		fitted = Object.assign({}, fitted, { items: fitted.items.slice(0, -1) });
+	return timelineBytes(threadId, turns.concat(fitted), cursor) <= maxBytes ? fitted : null;
 }
 
 function projectData(
 	data: TimelineData,
 	approvals: readonly TimelineApprovalView[],
+	budget: CanvasTimelineBudget,
 ): CodexTimelineProjectionInput {
-	return {
-		kind: "codex_timeline",
-		threadId: data.threadId,
-		turns: data.turns.map((turn) => projectTurn(data.threadId, turn, approvals)),
-		cursor: data.cursor,
-	};
+	const turns: CodexTimelineTurnProjectionInput[] = [];
+	let truncated = data.truncated || data.turns.length > budget.maxTurns;
+	for (let index = 0; index < Math.min(data.turns.length, budget.maxTurns); index += 1) {
+		const source = data.turns[index];
+		if (source === undefined) continue;
+		const candidate = projectTurn(data.threadId, source, approvals, budget.maxItemsPerTurn);
+		if (timelineBytes(data.threadId, turns.concat(candidate), data.cursor) <= budget.maxBytes) {
+			turns.push(candidate);
+			continue;
+		}
+		const fitted = fitTurn(data.threadId, turns, candidate, data.cursor, budget.maxBytes);
+		if (fitted !== null) turns.push(fitted);
+		truncated = true;
+		break;
+	}
+	if (truncated && turns.length > 0) {
+		let last = turns.length - 1;
+		turns[last] = markTruncated(turns[last]!);
+		while (timelineBytes(data.threadId, turns, data.cursor) > budget.maxBytes && last >= 0) {
+			const current = turns[last]!;
+			if (current.items.length > 0) {
+				turns[last] = { ...markTruncated(current), items: current.items.slice(0, -1) };
+				continue;
+			}
+			turns.pop();
+			last -= 1;
+			if (last >= 0) turns[last] = markTruncated(turns[last]!);
+		}
+	}
+	return { kind: "codex_timeline", threadId: data.threadId, turns, cursor: data.cursor };
 }
 
 function bindingKey(
@@ -357,9 +497,11 @@ function isTimelineNotification(method: string): boolean {
 async function readTurnPages(
 	session: TimelineSession,
 	threadId: ThreadId,
-): Promise<{ readonly turns: readonly SessionTurn[]; readonly cursor: string | null }> {
-	const turns: SessionTurn[] = [];
+	budget: CanvasTimelineBudget,
+): Promise<{ readonly turns: readonly TimelineTurnData[]; readonly truncated: boolean }> {
+	const turns: TimelineTurnData[] = [];
 	const seenCursors = new Set<string>();
+	let retainedBytes = timelineBytes(threadId, [], "x".repeat(TIMELINE_CURSOR_LIMIT));
 	let cursor: string | null = null;
 	for (let pageNumber = 0; pageNumber < TIMELINE_PAGE_LIMIT_MAX; pageNumber += 1) {
 		const page: SessionThreadTurnPageResult = await session.threadTurnsListPage({
@@ -370,16 +512,22 @@ async function readTurnPages(
 			itemsView: "full",
 		});
 		const nextCursor = boundedCursor(page.nextCursor);
-		const remaining = TIMELINE_TURN_LIMIT - turns.length;
-		turns.push(...page.data.slice(0, Math.max(remaining, 0)));
-		if (nextCursor === null || turns.length >= TIMELINE_TURN_LIMIT)
-			return { turns, cursor: nextCursor };
+		for (const turn of page.data) {
+			if (turns.length >= budget.maxTurns) return { turns, truncated: true };
+			const projected = projectTurnData(turn, budget.maxItemsPerTurn);
+			const projectedBytes = textEncoder.encode(JSON.stringify(projected)).byteLength;
+			const nextBytes = retainedBytes + projectedBytes + (turns.length === 0 ? 0 : 1);
+			if (nextBytes > budget.maxBytes) return { turns, truncated: true };
+			turns.push(projected);
+			retainedBytes = nextBytes;
+		}
+		if (nextCursor === null) return { turns, truncated: false };
 		if (nextCursor === cursor || seenCursors.has(nextCursor))
 			throw new Error("The Codex timeline turn cursor repeated before its bound.");
 		seenCursors.add(nextCursor);
 		cursor = nextCursor;
 	}
-	return { turns, cursor };
+	return { turns, truncated: true };
 }
 
 function boundedCursor(cursor: string | null): string | null {
@@ -389,10 +537,37 @@ function boundedCursor(cursor: string | null): string | null {
 	return cursor;
 }
 
+function boundedBudgetValue(value: number | undefined, fallback: number, maximum: number): number {
+	return typeof value === "number" && Number.isSafeInteger(value) && value > 0
+		? Math.min(value, maximum)
+		: fallback;
+}
+
+function normalizedBudget(input: Partial<CanvasTimelineBudget> | undefined): CanvasTimelineBudget {
+	return Object.freeze({
+		maxTurns: boundedBudgetValue(
+			input?.maxTurns,
+			DEFAULT_TIMELINE_BUDGET.maxTurns,
+			DEFAULT_TIMELINE_BUDGET.maxTurns,
+		),
+		maxItemsPerTurn: boundedBudgetValue(
+			input?.maxItemsPerTurn,
+			DEFAULT_TIMELINE_BUDGET.maxItemsPerTurn,
+			DEFAULT_TIMELINE_BUDGET.maxItemsPerTurn,
+		),
+		maxBytes: boundedBudgetValue(
+			input?.maxBytes,
+			DEFAULT_TIMELINE_BUDGET.maxBytes,
+			DEFAULT_TIMELINE_BUDGET.maxBytes,
+		),
+	});
+}
+
 export function createCanvasTimelineOwner(
 	options: CanvasTimelineOwnerOptions,
 ): CanvasTimelineOwner {
 	const states = new Map<string, TimelinePaneState>();
+	const budget = normalizedBudget(options.budget);
 	let disposed = false;
 
 	const refresh = (state: TimelinePaneState): void => {
@@ -401,16 +576,17 @@ export function createCanvasTimelineOwner(
 		state.dirty = false;
 		const threadId = state.link.threadId;
 		const load = (async (): Promise<TimelineData> => {
-			const turns = await readTurnPages(options.session, threadId);
-			const cursorPage = options.session.timelineListPage;
-			const timeline =
-				cursorPage === undefined
-					? null
-					: await cursorPage({ threadId, cursor: null, limit: TIMELINE_PAGE_LIMIT });
+			const turns = await readTurnPages(options.session, threadId, budget);
+			const timeline = await options.session.timelineListPage({
+				threadId,
+				cursor: null,
+				limit: TIMELINE_PAGE_LIMIT,
+			});
 			return {
 				threadId,
 				turns: turns.turns,
-				cursor: boundedCursor(timeline?.nextCursor ?? turns.cursor),
+				truncated: turns.truncated,
+				cursor: boundedCursor(timeline.nextCursor),
 			};
 		})();
 		state.refresh = load.then(
@@ -436,13 +612,15 @@ export function createCanvasTimelineOwner(
 		revision,
 		link,
 		threadCapable,
+		connection,
 	): CodexTimelineProjectionInput | null => {
 		const key = bindingKey(paneId, revision, link, threadCapable);
 		let state = states.get(paneId);
-		if (state?.key !== key) {
+		if (state?.key !== key || state.connection !== connection) {
 			state = {
 				paneId,
 				key,
+				connection,
 				link,
 				ready: threadCapable,
 				started: false,
@@ -457,7 +635,7 @@ export function createCanvasTimelineOwner(
 		if (state.ready && state.link.threadId !== null && !state.started) refresh(state);
 		return state.data === null || !state.ready
 			? null
-			: projectData(state.data, options.approvals.inspectViews());
+			: projectData(state.data, options.approvals.inspectViews(), budget);
 	};
 
 	const onNotification = (event: TransportServerNotification): void => {
@@ -478,11 +656,21 @@ export function createCanvasTimelineOwner(
 		}
 	};
 
+	const retire = (paneId: string, connection: BrowserConnectionInstance): void => {
+		const state = states.get(paneId);
+		if (state === undefined || state.connection !== connection) return;
+		state.ready = false;
+		state.dirty = false;
+		state.data = null;
+		state.refresh = null;
+		states.delete(paneId);
+	};
+
 	const dispose = (): void => {
 		if (disposed) return;
 		disposed = true;
 		states.clear();
 	};
 
-	return Object.freeze({ read, onNotification, dispose });
+	return Object.freeze({ read, onNotification, retire, dispose });
 }

@@ -59,6 +59,7 @@ export type {
 	BrowserLifecyclePort,
 	BrowserOrdinaryApprovalActions,
 	BrowserProjectionContext,
+	BrowserProjectionDisconnectContext,
 	BrowserProjectionPort,
 	BrowserPresenterContext,
 	BrowserPublishedPayload,
