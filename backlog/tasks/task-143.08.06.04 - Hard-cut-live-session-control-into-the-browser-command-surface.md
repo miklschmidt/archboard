@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 09:08'
+updated_date: '2026-09-03 09:26'
 labels: []
 dependencies:
   - TASK-143.08.06.02
@@ -56,6 +56,8 @@ Make the public command boundary teach the architecture. Persisted-board work re
 8. Standards-review repair: resynchronize source panes from the persisted note after save-elsewhere, restore direct replacement/same-board observer assertions, keep persisted draft boards reachable in the navigator, make nested help resolve the selected contract in process with one package smoke, and correct zero-client renderer/Mermaid guidance.
 
 9. Final-spec repair: remove obsolete source/loadedAt fields from all exact compare callers and public shapes; recompose navigator inventory whenever authoritative pane state changes so first-pane scratch is deterministic; correct persisted-only comments/audit fields; and rerun only focused compare owners, zero-client shape owner, scoped UI/static checks, and one capped navigator owner.
+
+10. Resolve the confirmed save-elsewhere release race by carrying the exact human source holder through terminal hold resolution, releasing that holder synchronously after target persistence and before board_released/save completion, and keeping the browser release idempotent. Add the exact browser-free next-writer ordering assertion, replace the post-adoption synthetic move with trusted pointer input in the existing browser owner, then run only the affected owner slices and scoped static checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -72,4 +74,8 @@ Rereview remediation: comparison now reads and discovers only persisted notes an
 Review correction: parent standards review confirmed the held-copy reread, forced-death Codex lock collision, and malformed legacy open 422/400 failures are identical at immutable BASE and prior HEAD. They remain explicitly out of scope and untouched.
 
 Final-spec repair at pre-commit HEAD: removed remaining compare source/loadedAt session fields and corrected the audit schema; refreshes the navigator only after an authoritative pane board registration is accepted; restored held save-elsewhere source elements/files in the same pane without board_switched; resets the discarded reporting generation and releases the pane gesture lock on recovery; corrected operator copy and added real-browser source/destination assertions.\n\nFocused green: changes-semantics (6), metadata-tracking (1), geometry-consumers (1), vault-only-production-interfaces (6), command-contract-audit (9), command-contract-artifacts (4), change-reporting-holds-and-adoption (5), exact-file oxlint, exact-file oxfmt, and frontend build. Board navigator passed both browser cases (2 tests, 63 assertions) under the 20s cap, including the former first-pane race.\n\nBlocked evidence: the focused human-hold browser owner reached and passed the new save-elsewhere assertions (35 assertions before its later scenario), then its legacy post-recovery mutex scenario either returned 409 or exceeded the mandatory 20s cap. The focused held-board-recovery owner also had one unrelated held-copy visibility failure (6 pass, 1 fail). Browser retries were stopped; all retained run-owned browser processes were terminated and verified absent. Task remains In Progress; no ACs or DoD items were checked.
+
+Release-order remediation at 88cb018684fcd5c848cf940bd88b0c19bc7a950c: the write boundary now carries its exact source LockHolder through terminal held-board resolution, releases only that human holder after target persistence and commit stamping, then queues board_released; the pane release remains idempotent best effort. The browser-free ordering owner proves human B acquires the source immediately after human A receives a successful save-elsewhere response, with no polling or pane callback.
+
+Focused green: exact next-writer held-board owner (1 test, 8 assertions), existing save-elsewhere source-document owner (1 test, 16 assertions), board-write observer owner (4 tests, 60 assertions), and exact-file Oxlint/Oxfmt/diff checks. The one permitted real-browser run built the frontend and entered human-hold-persistence, then reached the mandatory 20-second TERM / 5-second KILL cap before emitting an assertion result (exit 137); it was not rerun. The capped run left 12 agent-browser/Chromium processes, all terminated; the exact /tmp/ab-lane-S4w69J namespace was removed. Task remains In Progress and all acceptance criteria remain unchecked.
 <!-- SECTION:NOTES:END -->
