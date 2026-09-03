@@ -179,8 +179,10 @@ function declarationErrors(file: string, source: string): string[] {
 		const callback = ancestors.at(-3);
 		const testCall = ancestors.at(-4);
 		const callArguments =
-			isNode(testCall) && Array.isArray(testCall.arguments) ? testCall.arguments : [];
-		const body = isNode(block) && Array.isArray(block.body) ? block.body : [];
+			testCall?.type === "CallExpression" && Array.isArray(testCall.arguments)
+				? testCall.arguments
+				: [];
+		const body = block?.type === "BlockStatement" && Array.isArray(block.body) ? block.body : [];
 		const exactOwner =
 			isNode(statement) &&
 			statement.type === "ExpressionStatement" &&

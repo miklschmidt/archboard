@@ -1,10 +1,10 @@
 ---
 id: TASK-148.07
 title: Enforce an actual per-test wall-clock budget
-status: Done
+status: In Progress
 assignee: []
 created_date: '2026-09-02 21:36'
-updated_date: '2026-09-03 17:16'
+updated_date: '2026-09-03 17:24'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -80,6 +80,10 @@ Remediation mutation RED: disconnecting onTestFinished made the lifecycle owner 
 Final narrow Standards remediation: replaced the hand-written AstNode vendor shape and parse(... as unknown as AstNode) with @babel/types published Node/ObjectExpression types plus VISITOR_KEYS traversal; @babel/types 7.29.8 is now an exact direct dev dependency. Added TEST_WALL_CLOCK_PRELOAD_LIFECYCLE_TIMEOUT_MS = 5,000 with its three-fixture controlled-child constraint and used it for both the child and Bun case bounds. Focused final validation passed 14 tests / 26 assertions in 125 ms, focused Oxlint and Oxfmt passed, bun install --frozen-lockfile reported no changes in 185 ms, and git diff --check passed. No browser, tsc, broad lane, real wait, or old wrapper ran.
 
 Canonical integration: cherry-picked reviewed commits bb554660b8b3dfd9c2444192b1972a3d0850e5c3, f3748679f68c182be49855fc5c14eaa24419fb63, and a6a9e9b4103de0704bc3092cd640860e4b2197e5. Focused integration validation passed: bun test --isolate ./tests/system/repository-policy/test-wall-clock-budget.test.ts ./tests/system/repository-policy/test-wall-clock-preload.test.ts — 14 tests, 26 assertions, 0 failures (121 ms). Per integration scope, no broad lanes were run.
+
+Canonical typecheck remediation (2026-09-03): reproduced four TS2339 diagnostics at test-wall-clock-policy.ts:182-183 because the custom isNode predicate narrows to Babel's broad published Node union, which does not expose CallExpression.arguments or BlockStatement.body. Replaced those broad checks with Babel Node discriminant narrowing for CallExpression and BlockStatement; no casts, vendor lookalikes, regex fallback, or rule weakening.
+
+Validation: the exact command bun run generate:codex-contract && bunx tsc --noEmit no longer reports test-wall-clock-policy.ts, but remains globally red on unrelated canonical diagnostics outside TASK-148.07. Focused policy/preload tests passed 14 tests, 26 assertions, 0 failures in 104 ms. Exact-file Oxlint, Oxfmt check, and git diff --check passed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
