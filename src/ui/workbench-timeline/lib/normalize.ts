@@ -51,12 +51,11 @@ type RuntimeApproval = Extract<
 	NonNullable<WorkbenchTimelineProps["runtimeTimeline"]>["turns"][number]["items"][number],
 	{ readonly media: "approval" }
 >;
-type RuntimeItem = NonNullable<
-	WorkbenchTimelineProps["runtimeTimeline"]
->["turns"][number]["items"][number];
+type RuntimeTurn = NonNullable<WorkbenchTimelineProps["runtimeTimeline"]>["turns"][number];
+type RuntimeItem = RuntimeTurn["items"][number];
 
 function itemIdentity(
-	threadId: string,
+	threadId: WorkbenchTimelineProps["threadId"],
 	turnId: string,
 	itemId: string,
 	occurrence: number,
@@ -65,7 +64,7 @@ function itemIdentity(
 }
 
 function normalizeItem(
-	threadId: string,
+	threadId: WorkbenchTimelineProps["threadId"],
 	turnId: string,
 	value: unknown,
 	occurrences: Map<string, number>,
@@ -88,7 +87,7 @@ function normalizeItem(
 }
 
 function normalizeApproval(
-	threadId: string,
+	threadId: WorkbenchTimelineProps["threadId"],
 	turnId: string,
 	item: RuntimeApproval,
 	occurrences: Map<string, number>,
@@ -175,7 +174,7 @@ function runtimeItemPresentation(item: RuntimeItem): {
 }
 
 function normalizeRuntimeItem(
-	threadId: string,
+	threadId: WorkbenchTimelineProps["threadId"],
 	turnId: string,
 	item: RuntimeItem,
 	occurrences: Map<string, number>,
@@ -191,6 +190,15 @@ function normalizeRuntimeItem(
 	};
 }
 
+function resolvedTurnStatus(decodedStatus: string, runtimeTurn: RuntimeTurn | undefined): string {
+	if (runtimeTurn === undefined) return decodedStatus;
+	const decodedIsTerminal =
+		decodedStatus === "completed" || decodedStatus === "interrupted" || decodedStatus === "failed";
+	return runtimeTurn.status === "inProgress" && decodedIsTerminal
+		? decodedStatus
+		: runtimeTurn.status;
+}
+
 export function normalizeTimeline(props: WorkbenchTimelineProps): NormalizedTimeline {
 	const turns = new Map<string, TimelineTurn>();
 	for (const candidate of props.turns as readonly unknown[]) {
@@ -200,10 +208,11 @@ export function normalizeTimeline(props: WorkbenchTimelineProps): NormalizedTime
 		if (turnId.length === 0 || turns.has(turnId)) continue;
 		const occurrences = new Map<string, number>();
 		const values = Array.isArray(turn.items) ? turn.items : [];
+		const runtimeTurn = props.runtimeTimeline?.turns.find(
+			(runtimeCandidate) => runtimeCandidate.turnId === turnId,
+		);
 		const runtimeApprovals =
-			props.runtimeTimeline?.turns
-				.find((runtimeTurn) => runtimeTurn.turnId === turnId)
-				?.items.filter((item): item is RuntimeApproval => item.media === "approval") ?? [];
+			runtimeTurn?.items.filter((item): item is RuntimeApproval => item.media === "approval") ?? [];
 		const matchedApprovals = new Set<number>();
 		const items: TimelineItem[] = [];
 		for (const value of values) {
@@ -220,7 +229,7 @@ export function normalizeTimeline(props: WorkbenchTimelineProps): NormalizedTime
 			if (matchedApprovals.has(approvalIndex)) continue;
 			items.push(normalizeApproval(props.threadId, turnId, approval, occurrences));
 		}
-		const status = textField(turn, "status") || "unknown";
+		const status = resolvedTurnStatus(textField(turn, "status") || "unknown", runtimeTurn);
 		turns.set(turnId, {
 			turnId,
 			status,
@@ -244,9 +253,7 @@ export function normalizeTimeline(props: WorkbenchTimelineProps): NormalizedTime
 	}
 	return {
 		turns,
-		streaming:
-			[...turns.values()].some((turn) => turn.streaming) ||
-			(props.runtimeTimeline?.turns.some((turn) => turn.status === "inProgress") ?? false),
+		streaming: [...turns.values()].some((turn) => turn.streaming),
 		priorEpoch: props.history === "prior_epoch",
 	};
 }

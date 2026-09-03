@@ -253,6 +253,13 @@ describe("workbench timeline", () => {
 			props({ turns: [turn("inProgress")], runtimeTimeline: runtimeTimeline("inProgress") }),
 		);
 		expect(running.streaming).toBe(true);
+		const runtimeSettledProps = props({
+			turns: [turn("inProgress")],
+			runtimeTimeline: runtimeTimeline("completed"),
+		});
+		const runtimeSettled = normalizeTimeline(runtimeSettledProps);
+		expect(runtimeSettled.turns.get(turnId)?.status).toBe("completed");
+		expect(renderTimeline(runtimeSettledProps)).not.toContain('aria-busy="true"');
 		const runtimeOnly = normalizeTimeline(props({ turns: [] }));
 		expect(runtimeOnly.turns.get(turnId)?.items.map((item) => item.type)).toEqual([
 			"commandExecution",
@@ -269,10 +276,14 @@ describe("workbench timeline", () => {
 	test("keeps prior-epoch and terminal states explicit", () => {
 		expect(normalizeTimeline(props({ history: "prior_epoch" })).priorEpoch).toBe(true);
 		expect(
-			normalizeTimeline(props({ turns: [turn("interrupted")] })).turns.get(turnId)?.status,
+			normalizeTimeline(
+				props({ turns: [turn("interrupted")], runtimeTimeline: runtimeTimeline("inProgress") }),
+			).turns.get(turnId)?.status,
 		).toBe("interrupted");
 		expect(
-			normalizeTimeline(props({ turns: [turn("failed")] })).turns.get(turnId)?.error,
+			normalizeTimeline(
+				props({ turns: [turn("failed")], runtimeTimeline: runtimeTimeline("failed") }),
+			).turns.get(turnId)?.error,
 		).toMatchObject({ message: "Turn failure" });
 	});
 
@@ -428,8 +439,62 @@ describe("workbench timeline", () => {
 		expect(markup).toContain("Raw details</summary>");
 		expect(markup).not.toContain('tabindex="-1"');
 
-		const interrupted = renderTimeline({ turns: [turn("interrupted")] });
+		const interrupted = renderTimeline({
+			turns: [turn("interrupted")],
+			runtimeTimeline: runtimeTimeline("interrupted"),
+		});
 		expect(interrupted).toContain('role="status"');
 		expect(interrupted).toContain("Turn interrupted");
+	});
+
+	test("bounds oversized visible collections while retaining explicit omitted counts", () => {
+		const indexes = Array.from({ length: 35 }, (_, index) => index);
+		const cases = [
+			{
+				type: "userMessage",
+				id: "bounded-user",
+				clientId: null,
+				content: indexes.map((index) => ({
+					type: "text" as const,
+					text: index < 32 ? `user-${index}` : "hidden-entry",
+					text_elements: [],
+				})),
+			},
+			{
+				type: "hookPrompt",
+				id: "bounded-hook",
+				fragments: indexes.map((index) => ({
+					text: index < 32 ? `hook-${index}` : "hidden-entry",
+					hookRunId: `run-${index}`,
+				})),
+			},
+			{
+				type: "reasoning",
+				id: "bounded-reasoning",
+				summary: indexes.slice(0, 17).map((index) => `summary-${index}`),
+				content: indexes
+					.slice(17)
+					.map((index) => (index < 32 ? `reasoning-content-${index - 17}` : "hidden-entry")),
+			},
+			{
+				type: "fileChange",
+				id: "bounded-files",
+				status: "completed",
+				changes: indexes.map((index) => ({
+					path: index < 32 ? `file-${index}.ts` : "hidden-entry",
+					kind: { type: "add" as const },
+					diff: `diff-${index}`,
+				})),
+			},
+		] satisfies readonly CodexWorkbenchItem[];
+		for (const item of cases) {
+			const authoritative = JSON.stringify(item);
+			const markup = renderTimeline({ turns: [turn("completed", [item])], runtimeTimeline: null });
+			const start = markup.indexOf(`data-item-id="${item.id}"`);
+			const visible = markup.slice(start, markup.indexOf("<details", start));
+			expect(visible).toContain('data-omitted-entries="3"');
+			expect(visible).not.toContain("hidden-entry");
+			expect(JSON.stringify(item)).toBe(authoritative);
+		}
 	});
 });
