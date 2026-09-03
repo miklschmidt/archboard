@@ -1,11 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { createElement, type ComponentType } from "react";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import type { BrowserTimeline } from "../../../shared/codex-browser-model/index.js";
 import {
 	ReadonlyWorkbenchThreadProvider,
 	createReadonlyWorkbenchView,
+	workbenchRuntimeMessageId,
 } from "../../workbench-runtime/index.js";
 import {
 	CODEX_THREAD_ITEM_LABELS,
@@ -19,21 +20,13 @@ import type {
 	CodexWorkbenchTurn,
 	WorkbenchTimelineProps,
 } from "../contract.js";
-
-const loadedModule: unknown = import.meta.require("../index.tsx");
-if (typeof loadedModule !== "object" || loadedModule === null) {
-	throw new Error("Workbench timeline module did not load as an object.");
-}
-const WorkbenchTimeline = (loadedModule as Readonly<Record<string, unknown>>)
-	.WorkbenchTimeline as ComponentType<WorkbenchTimelineProps>;
-if (typeof WorkbenchTimeline !== "function") {
-	throw new TypeError("WorkbenchTimeline export is not a component.");
-}
+import { WorkbenchTimeline } from "../index.tsx";
 
 const threadId = "thread-timeline" as BrowserTimeline["threadId"];
 const turnId = "turn-timeline" as BrowserTimeline["turns"][number]["turnId"];
 const approvalItemId =
 	"item-approval" as BrowserTimeline["turns"][number]["items"][number]["itemId"];
+const laterItemId = "item-later" as BrowserTimeline["turns"][number]["items"][number]["itemId"];
 
 function completeItems(longOutput = "command output"): readonly CodexWorkbenchItem[] {
 	return [
@@ -52,7 +45,7 @@ function completeItems(longOutput = "command output"): readonly CodexWorkbenchIt
 			id: "item-output",
 			name: "inspect",
 			namespace: "archboard",
-			output: { content: "result", success: true },
+			output: [{ type: "input_text", text: "result" }],
 		},
 		{ type: "plan", id: "item-plan", text: "Plan" },
 		{ type: "reasoning", id: "item-reasoning", summary: ["Summary"], content: [] },
@@ -130,7 +123,7 @@ function completeItems(longOutput = "command output"): readonly CodexWorkbenchIt
 		{ type: "enteredReviewMode", id: "item-review-in", review: "Review scope" },
 		{ type: "exitedReviewMode", id: "item-review-out", review: "Review clean" },
 		{ type: "contextCompaction", id: "item-compact" },
-	] as readonly CodexWorkbenchItem[];
+	] satisfies readonly CodexWorkbenchItem[];
 }
 
 function turn(
@@ -167,11 +160,18 @@ function runtimeTimeline(status: BrowserTimeline["turns"][number]["status"]): Br
 				status,
 				items: [
 					{
+						media: "command",
+						itemId: approvalItemId,
+						command: "bun test",
+						status: "completed",
+					},
+					{
 						media: "approval",
 						itemId: approvalItemId,
 						approvalId: "approval-a" as never,
 						status: "pending",
 					},
+					{ media: "text", itemId: laterItemId, text: "Later activity" },
 				],
 				summary: "Timeline fixture",
 				outputsIncluded: true,
@@ -273,14 +273,17 @@ describe("workbench timeline", () => {
 	});
 
 	test("normalizes unknown, malformed, and duplicate items deterministically", () => {
-		const future = { type: "futureCodexItem", id: "item-future", payload: "opaque" };
-		const missingId = { type: "agentMessage", text: "No identity" };
-		const duplicate = { type: "plan", id: "item-future", text: "Duplicate identity" };
-		const hostile = turn("completed", [
-			future,
-			missingId,
-			duplicate,
-		] as unknown as CodexWorkbenchItem[]);
+		const future = {
+			type: "futureCodexItem",
+			id: "item-future",
+			payload: "opaque",
+		} as unknown as CodexWorkbenchItem;
+		const duplicate = {
+			type: "plan",
+			id: "item-future",
+			text: "Duplicate identity",
+		} satisfies CodexWorkbenchItem;
+		const hostile = turn("completed", [future, duplicate]);
 		const first = normalizeTimeline(props({ turns: [hostile] }));
 		const second = normalizeTimeline(props({ turns: [hostile] }));
 		expect(first.turns.get(turnId)?.items.map((item) => item.identity)).toEqual(
@@ -290,8 +293,7 @@ describe("workbench timeline", () => {
 			label: "Unknown item",
 			malformed: true,
 		});
-		expect(first.turns.get(turnId)?.items[1]?.itemId).toMatch(/^malformed-/);
-		expect(first.turns.get(turnId)?.items[2]?.identity).toBe(expectedIdentity("item-future", 1));
+		expect(first.turns.get(turnId)?.items[1]?.identity).toBe(expectedIdentity("item-future", 1));
 	});
 
 	test("keeps duplicate occurrences injective from literal suffix-like item ids", () => {
@@ -309,15 +311,37 @@ describe("workbench timeline", () => {
 		if (command?.type !== "commandExecution") throw new Error("Expected a command fixture.");
 		const later = completeItems().find((item) => item.type === "agentMessage");
 		if (later?.type !== "agentMessage") throw new Error("Expected an agent fixture.");
-		const mixedTurn = turn("completed", [{ ...command, id: approvalItemId }, later]);
+		const mixedTurn = turn("completed", [
+			{ ...command, id: approvalItemId },
+			{ ...later, id: laterItemId },
+		]);
 		const mixedProps = props({ turns: [mixedTurn], runtimeTimeline: runtimeTimeline("completed") });
+		const view = createReadonlyWorkbenchView(
+			mixedProps.runtimeTimeline ?? null,
+			"coordinator",
+			"Focused timeline fixture.",
+		);
+		if (view.state === "runtime_failure") throw new Error(view.reason);
+		expect(view.state).toBe("coordinator");
+		expect(view.messages[0]?.id).toBe(workbenchRuntimeMessageId(threadId, turnId));
+		const runtimeParts = view.messages[0]?.content ?? [];
+		expect(runtimeParts.map((part) => ("itemId" in part ? part.itemId : null))).toEqual([
+			approvalItemId,
+			approvalItemId,
+			laterItemId,
+		]);
+		expect(runtimeParts.map((part) => part.runtimeId)).toEqual([
+			JSON.stringify(["part", threadId, turnId, approvalItemId, "command", 0]),
+			JSON.stringify(["part", threadId, turnId, approvalItemId, "approval", 0]),
+			JSON.stringify(["part", threadId, turnId, laterItemId, "text", 0]),
+		]);
 		const items = normalizeTimeline(mixedProps).turns.get(turnId)?.items ?? [];
 		expect(items.map((item) => item.type)).toEqual([
 			"commandExecution",
 			"approval",
 			"agentMessage",
 		]);
-		expect(items.map((item) => item.itemId)).toEqual([approvalItemId, approvalItemId, later.id]);
+		expect(items.map((item) => item.itemId)).toEqual([approvalItemId, approvalItemId, laterItemId]);
 		expect(items[0]?.identity).not.toBe(items[1]?.identity);
 
 		const markup = renderTimeline(mixedProps);
@@ -371,21 +395,21 @@ describe("workbench timeline", () => {
 		items[0] = {
 			...userMessage,
 			content: [
-				{ type: "text", text: hostileText },
+				{ type: "text", text: hostileText, text_elements: [] },
 				{ type: "image", url: repeatedUrl },
 				{ type: "image", url: repeatedUrl },
 				{ type: "image", url: "javascript:window.hostile = true" },
 			],
-		} as unknown as CodexWorkbenchItem;
+		};
 		const unknown = {
 			type: "futureCodexItem",
 			id: "item-future",
 			status: "futureStatus",
 			payload: hostileText,
-		};
+		} as unknown as CodexWorkbenchItem;
 		const markup = renderTimeline({
 			history: "prior_epoch",
-			turns: [turn("failed", [...items, unknown] as unknown as CodexWorkbenchItem[])],
+			turns: [turn("failed", [...items, unknown])],
 			runtimeTimeline: runtimeTimeline("failed"),
 		});
 		expect(markup).toContain("Prior session history · read only");

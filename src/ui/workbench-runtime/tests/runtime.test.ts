@@ -16,6 +16,7 @@ import {
 	createReadonlyWorkbenchView,
 	createWorkbenchRuntimeStore,
 	projectWorkbenchRuntime,
+	workbenchRuntimeMessageId,
 } from "../index.js";
 
 const threadId = "thread-a" as BrowserTimeline["threadId"];
@@ -24,6 +25,10 @@ const itemId = "item-a" as BrowserTimeline["turns"][number]["items"][number]["it
 type ExecutableLink = Extract<BrowserSnapshot["threadLink"], { readonly state: "executable" }>;
 const childId = "child-a" as ExecutableLink["childId"];
 const epoch = "epoch-a" as ExecutableLink["epoch"];
+
+function runtimePartId(media: string, occurrence = 0): string {
+	return JSON.stringify(["part", threadId, turnId, itemId, media, occurrence]);
+}
 
 function timeline(overrides: Partial<BrowserTimeline["turns"][number]> = {}): BrowserTimeline {
 	return {
@@ -114,11 +119,16 @@ describe("workbench runtime projection", () => {
 		const view = projectWorkbenchRuntime(connected());
 		expect(view.mode).toBe("executable");
 		expect(view.messages).toHaveLength(1);
-		expect(view.messages[0]?.id).toBe("turn-a");
+		expect(view.messages[0]?.id).toBe(workbenchRuntimeMessageId(threadId, turnId));
 		expect(view.messages[0]?.metadata.custom.archboard.turnId).toBe("turn-a");
 		expect("isOptimistic" in (view.messages[0]?.metadata ?? {})).toBe(false);
 		expect(view.messages[0]?.content).toEqual([
-			{ type: "text", itemId, text: "Authoritative response" },
+			{
+				type: "text",
+				runtimeId: runtimePartId("text"),
+				itemId,
+				text: "Authoritative response",
+			},
 		]);
 	});
 
@@ -135,6 +145,7 @@ describe("workbench runtime projection", () => {
 		expect(view.messages[0]?.content).toEqual([
 			{
 				type: "data",
+				runtimeId: JSON.stringify(["part", threadId, turnId, "item-future", "futureCodexItem", 0]),
 				itemId: "item-future" as typeof itemId,
 				name: "archboard-unsupported-item",
 				data: {
@@ -176,7 +187,7 @@ describe("workbench runtime projection", () => {
 			reason: "A timeline delta was missed.",
 		});
 		expect(stale).toMatchObject({ mode: "readonly", state: "stale" });
-		expect(stale.messages[0]?.id).toBe("turn-a");
+		expect(stale.messages[0]?.id).toBe(workbenchRuntimeMessageId(threadId, turnId));
 
 		const reconnecting = projectWorkbenchRuntime({
 			kind: "connection",

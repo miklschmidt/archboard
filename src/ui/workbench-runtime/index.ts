@@ -4,6 +4,7 @@ export {
 	createWorkbenchRuntimeStore,
 	createReadonlyWorkbenchView,
 	projectWorkbenchRuntime,
+	workbenchRuntimeMessageId,
 } from "./runtime.js";
 export type {
 	ReadonlyWorkbenchSource,

@@ -2,6 +2,7 @@
 	"compilerOptions": {
 		"target": "ES2023",
 		"module": "ESNext",
+		"jsx": "react-jsx",
 		"moduleDetection": "force",
 		"moduleResolution": "bundler",
 		"paths": {

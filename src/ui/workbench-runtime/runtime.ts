@@ -24,20 +24,29 @@ import type {
 
 export type WorkbenchItemId = BrowserTimeline["turns"][number]["items"][number]["itemId"];
 
-type WorkbenchMappedPart =
-	| { readonly type: "text"; readonly itemId: WorkbenchItemId; readonly text: string }
-	| { readonly type: "reasoning"; readonly itemId: WorkbenchItemId; readonly text: string }
-	| {
-			readonly type: "data";
-			readonly itemId: WorkbenchItemId;
-			readonly name: string;
-			readonly data: Record<string, unknown>;
-	  };
+interface WorkbenchPartIdentity {
+	/** Injective identity for assistant-runtime reconciliation. */
+	readonly runtimeId: string;
+	/** Authoritative Codex identity retained as domain metadata. */
+	readonly itemId: WorkbenchItemId;
+}
+
+type WorkbenchMappedPart = WorkbenchPartIdentity &
+	(
+		| { readonly type: "text"; readonly text: string }
+		| { readonly type: "reasoning"; readonly text: string }
+		| {
+				readonly type: "data";
+				readonly name: string;
+				readonly data: Record<string, unknown>;
+		  }
+	);
 
 export type WorkbenchMessagePart =
 	| WorkbenchMappedPart
 	| {
 			readonly type: "data";
+			readonly runtimeId: string;
 			readonly name: "archboard-runtime-failure";
 			readonly data: Record<string, unknown>;
 	  };
@@ -106,31 +115,63 @@ function itemRecord(value: unknown): Record<string, unknown> | null {
 	return value as Record<string, unknown>;
 }
 
-function mapItem(value: unknown): WorkbenchMappedPart {
+export function workbenchRuntimeMessageId(threadId: string, turnId: string): string {
+	return JSON.stringify(["message", threadId, turnId]);
+}
+
+function workbenchRuntimePartId(
+	threadId: string,
+	turnId: string,
+	itemId: WorkbenchItemId,
+	media: string,
+	occurrence: number,
+): string {
+	return JSON.stringify(["part", threadId, turnId, itemId, media, occurrence]);
+}
+
+function mapItem(
+	value: unknown,
+	threadId: string,
+	turnId: string,
+	occurrences: Map<string, number>,
+): WorkbenchMappedPart {
 	const item = itemRecord(value);
 	const media = item?.media;
 	if (typeof item?.itemId !== "string")
 		throw new Error("A Codex item has no authoritative identity.");
 	const itemId = item.itemId as WorkbenchItemId;
+	const mediaKind = typeof media === "string" ? media : "unknown";
+	const occurrenceKey = JSON.stringify([itemId, mediaKind]);
+	const occurrence = occurrences.get(occurrenceKey) ?? 0;
+	occurrences.set(occurrenceKey, occurrence + 1);
+	const runtimeId = workbenchRuntimePartId(threadId, turnId, itemId, mediaKind, occurrence);
 	if (media === "text" && typeof item?.text === "string") {
-		return { type: "text", itemId, text: item.text };
+		return { type: "text", runtimeId, itemId, text: item.text };
 	}
 	if (media === "reasoning" && typeof item?.text === "string") {
-		return { type: "reasoning", itemId, text: item.text };
+		return { type: "reasoning", runtimeId, itemId, text: item.text };
 	}
 	if (media === "plan" && typeof item?.text === "string") {
 		return {
 			type: "data",
+			runtimeId,
 			itemId,
 			name: "archboard-plan",
 			data: { itemId, media, text: item.text },
 		};
 	}
 	if (media === "tool" || media === "command" || media === "fileChange" || media === "approval") {
-		return { type: "data", itemId, name: `archboard-${media}`, data: { ...item, itemId } };
+		return {
+			type: "data",
+			runtimeId,
+			itemId,
+			name: `archboard-${media}`,
+			data: { ...item, itemId },
+		};
 	}
 	return {
 		type: "data",
+		runtimeId,
 		itemId,
 		name: "archboard-unsupported-item",
 		data: {
@@ -161,22 +202,29 @@ function mapStatus(status: BrowserTimeline["turns"][number]["status"]): Workbenc
 
 function mapTimeline(timeline: BrowserTimeline): readonly WorkbenchAssistantMessage[] {
 	const seenTurns = new Set<string>();
-	const seenItems = new Set<string>();
+	const seenMessages = new Set<string>();
+	const seenParts = new Set<string>();
 	return timeline.turns.map((turn) => {
 		if (seenTurns.has(turn.turnId)) {
 			throw new Error(`Duplicate Codex turn identity: ${turn.turnId}`);
 		}
 		seenTurns.add(turn.turnId);
+		const messageId = workbenchRuntimeMessageId(timeline.threadId, turn.turnId);
+		if (seenMessages.has(messageId)) {
+			throw new Error(`Duplicate assistant runtime message identity: ${messageId}`);
+		}
+		seenMessages.add(messageId);
+		const occurrences = new Map<string, number>();
 		const content = turn.items.map((item) => {
-			const part = mapItem(item);
-			if (seenItems.has(part.itemId)) {
-				throw new Error(`Duplicate Codex item identity: ${part.itemId}`);
+			const part = mapItem(item, timeline.threadId, turn.turnId, occurrences);
+			if (seenParts.has(part.runtimeId)) {
+				throw new Error(`Duplicate assistant runtime part identity: ${part.runtimeId}`);
 			}
-			seenItems.add(part.itemId);
+			seenParts.add(part.runtimeId);
 			return part;
 		});
 		return {
-			id: turn.turnId,
+			id: messageId,
 			role: "assistant",
 			createdAt: new Date(0),
 			content,
@@ -201,13 +249,21 @@ function mapTimeline(timeline: BrowserTimeline): readonly WorkbenchAssistantMess
 }
 
 function failureMessage(threadId: string, reason: string): WorkbenchAssistantMessage {
+	const turnId = `runtime-failure:${threadId}`;
 	return {
-		id: `runtime-failure:${threadId}`,
+		id: workbenchRuntimeMessageId(threadId, turnId),
 		role: "assistant",
 		createdAt: new Date(0),
 		content: [
 			{
 				type: "data",
+				runtimeId: workbenchRuntimePartId(
+					threadId,
+					turnId,
+					"runtime-failure" as WorkbenchItemId,
+					"data",
+					0,
+				),
 				name: "archboard-runtime-failure",
 				data: { recoverable: true, message: reason },
 			},
@@ -221,7 +277,7 @@ function failureMessage(threadId: string, reason: string): WorkbenchAssistantMes
 			custom: {
 				archboard: {
 					threadId,
-					turnId: `runtime-failure:${threadId}`,
+					turnId,
 					summary: reason,
 					outputsIncluded: false,
 					outputsTruncated: false,
