@@ -31,6 +31,18 @@ const STATUS_TONES = {
 const UNKNOWN_STATUS_TONE = "text-muted-foreground";
 const VISIBLE_ENTRY_LIMIT = 32;
 
+type SourceKind = "prose" | "technical";
+
+interface SourcePresentation {
+	readonly value: string;
+	readonly kind: SourceKind;
+}
+
+const SOURCE_KIND_CLASSES = {
+	prose: "font-sans text-body break-words",
+	technical: "font-mono text-technical break-all",
+} as const satisfies Readonly<Record<SourceKind, string>>;
+
 interface BoundedEntries<Value> {
 	readonly visible: readonly Value[];
 	readonly omitted: number;
@@ -69,40 +81,59 @@ function keyedValues<Value>(
 	});
 }
 
-function namedSource(value: unknown): string {
+function sourcePresentation(value: string, kind: SourceKind): SourcePresentation | null {
+	return value.length === 0 ? null : { value, kind };
+}
+
+function namedSource(value: unknown): SourcePresentation | null {
 	const item = record(value);
-	if (!item) return "";
+	if (!item) return null;
 	switch (item.type) {
 		case "commandExecution":
-			return textField(item, "command");
+			return sourcePresentation(textField(item, "command"), "technical");
 		case "fileChange": {
 			const count = Array.isArray(item.changes) ? item.changes.length : 0;
-			return `${count} ${count === 1 ? "file" : "files"}`;
+			return sourcePresentation(`${count} ${count === 1 ? "file" : "files"}`, "prose");
 		}
 		case "mcpToolCall":
-			return [textField(item, "server"), textField(item, "tool")].filter(Boolean).join(" / ");
+			return sourcePresentation(
+				[textField(item, "server"), textField(item, "tool")].filter(Boolean).join(" / "),
+				"technical",
+			);
 		case "dynamicToolCall":
-			return [textField(item, "namespace"), textField(item, "tool")].filter(Boolean).join(" / ");
+			return sourcePresentation(
+				[textField(item, "namespace"), textField(item, "tool")].filter(Boolean).join(" / "),
+				"technical",
+			);
 		case "collabAgentToolCall":
-			return textField(item, "tool");
+			return sourcePresentation(textField(item, "tool"), "technical");
 		case "subAgentActivity":
-			return [textField(item, "kind"), textField(item, "agentPath")].filter(Boolean).join(" · ");
+			return sourcePresentation(
+				[textField(item, "kind"), textField(item, "agentPath")].filter(Boolean).join(" · "),
+				"technical",
+			);
 		case "webSearch":
-			return textField(item, "query");
+			return sourcePresentation(textField(item, "query"), "prose");
 		case "imageView":
-			return textField(item, "path");
+			return sourcePresentation(textField(item, "path"), "technical");
 		case "imageGeneration":
-			return textField(item, "savedPath") || textField(item, "result");
+			return sourcePresentation(
+				textField(item, "savedPath") || textField(item, "result"),
+				"technical",
+			);
 		case "functionCallOutput":
-			return [textField(item, "namespace"), textField(item, "name")].filter(Boolean).join(" / ");
+			return sourcePresentation(
+				[textField(item, "namespace"), textField(item, "name")].filter(Boolean).join(" / "),
+				"technical",
+			);
 		case "sleep": {
 			const duration = numberField(item, "durationMs");
-			return duration === null ? "" : `${duration} ms`;
+			return sourcePresentation(duration === null ? "" : `${duration} ms`, "technical");
 		}
 		case "approval":
-			return textField(item, "approvalId");
+			return sourcePresentation(textField(item, "approvalId"), "technical");
 		default:
-			return "";
+			return null;
 	}
 }
 
@@ -125,7 +156,7 @@ function userContent(value: unknown): BoundedEntries<ReactNode> {
 					{source.length > 0 ? (
 						<>
 							{" "}
-							· <SafeSource value={source} />
+							· <SafeSource kind="technical" value={source} />
 						</>
 					) : null}
 				</p>
@@ -193,14 +224,17 @@ function itemLinks(value: unknown): readonly string[] {
 	return [];
 }
 
-function SafeSource({ value }: { readonly value: unknown }) {
+function SafeSource({ value, kind }: SourcePresentation) {
 	const bounded = boundedText(value, 2_048).text;
 	const url = safeHttpUrl(value);
 	return url === null ? (
-		<span className="font-mono text-technical break-all">{bounded || "Unavailable source"}</span>
+		<span className={SOURCE_KIND_CLASSES[kind]}>{bounded || "Unavailable source"}</span>
 	) : (
 		<a
-			className="font-mono text-technical break-all text-primary underline underline-offset-2 focus-visible:rounded-hairline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+			className={cn(
+				"inline-flex min-h-touch-target max-w-full items-center text-primary underline underline-offset-2 focus-visible:rounded-hairline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+				SOURCE_KIND_CLASSES[kind],
+			)}
 			href={url}
 			rel="noreferrer noopener"
 			target="_blank"
@@ -281,7 +315,7 @@ export function RenderTimelineItem({ item }: { readonly item: TimelineItem }) {
 					{status}
 				</p>
 			) : null}
-			{source.length > 0 ? <SafeSource value={source} /> : null}
+			{source === null ? null : <SafeSource {...source} />}
 			<div className="mt-compact grid gap-compact">
 				{user.visible}
 				<OmittedEntries count={user.omitted} />
@@ -290,7 +324,7 @@ export function RenderTimelineItem({ item }: { readonly item: TimelineItem }) {
 				))}
 				<OmittedEntries count={sections.omitted} />
 				{keyedValues(links.visible).map(({ key, value }) => (
-					<SafeSource key={key} value={value} />
+					<SafeSource key={key} kind="technical" value={value} />
 				))}
 				<OmittedEntries count={links.omitted} />
 				{item.malformed ? (

@@ -227,7 +227,6 @@ describe("workbench timeline", () => {
 			"contextCompaction",
 		]);
 	});
-
 	test("normalizes every recovered family and approval by stable thread, turn, and item identity", () => {
 		const first = normalizeTimeline(props());
 		const second = normalizeTimeline(props());
@@ -247,7 +246,6 @@ describe("workbench timeline", () => {
 			type: "approval",
 		});
 	});
-
 	test("tracks streaming completion and delayed arrival without changing item identity", () => {
 		const running = normalizeTimeline(
 			props({ turns: [turn("inProgress")], runtimeTimeline: runtimeTimeline("inProgress") }),
@@ -272,7 +270,6 @@ describe("workbench timeline", () => {
 		expect(complete.streaming).toBe(false);
 		expect(complete.turns.get(turnId)?.items[0]?.identity).toBe(expectedIdentity("item-user"));
 	});
-
 	test("keeps prior-epoch and terminal states explicit", () => {
 		expect(normalizeTimeline(props({ history: "prior_epoch" })).priorEpoch).toBe(true);
 		expect(
@@ -286,7 +283,6 @@ describe("workbench timeline", () => {
 			).turns.get(turnId)?.error,
 		).toMatchObject({ message: "Turn failure" });
 	});
-
 	test("normalizes unknown, malformed, and duplicate items deterministically", () => {
 		const future = {
 			type: "futureCodexItem",
@@ -310,7 +306,6 @@ describe("workbench timeline", () => {
 		});
 		expect(first.turns.get(turnId)?.items[1]?.identity).toBe(expectedIdentity("item-future", 1));
 	});
-
 	test("keeps duplicate occurrences injective from literal suffix-like item ids", () => {
 		const hostile = turn("completed", [
 			{ type: "plan", id: "item-x", text: "First" },
@@ -433,6 +428,11 @@ describe("workbench timeline", () => {
 		expect(markup).not.toContain("TAIL-SENTINEL");
 		expect(markup).toContain("characters omitted");
 		expect(markup.match(new RegExp(`href="${repeatedUrl}"`, "g"))).toHaveLength(2);
+		const linkClass = markup.match(/<a class="([^"]+)"/)?.[1];
+		expect(linkClass).toContain("inline-flex min-h-touch-target max-w-full items-center");
+		expect(markup).toContain('<span class="font-sans text-body break-words">Archboard</span>');
+		expect(markup).toContain('<span class="font-sans text-body break-words">0 files</span>');
+		expect(markup).toContain('<span class="font-mono text-technical break-all">bun test</span>');
 		expect(markup).not.toContain('href="javascript:');
 		expect(markup).toContain("<details");
 		expect(markup).toContain("<summary");
