@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - "@codex"
 created_date: "2026-09-02 01:57"
-updated_date: "2026-09-03 03:36"
+updated_date: "2026-09-03 03:42"
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -73,4 +73,6 @@ Emulation: a pinned temporary `happy-dom`/`@napi-rs/canvas` manifest and lock in
 Chromium: one private-profile, loopback-only, `setsid`-owned process runs three serial normal jobs, checks PNG pixels and SVG structure, exact Mermaid graph edges, deterministic hashes, warm/steady RSS, malformed board/Mermaid, missing image, a 20-second named timeout, child exit, replacement, and TERM/KILL cleanup. Two final contained runs matched PNG `a6439911658614672830df4e4520c04380e08011dfdd634ea93c6310b6fc8bfc` and SVG `b654ec7a2295d9e5b6730280b21b8d78746200b937358942fed90a8388f45a3f`; every observed process and profile was removed.
 
 Validation: cgroup-contained `bun scripts/probe-server-rendering-emulation.ts`; cgroup-contained Chromium probe twice; focused `oxlint` of both probes; `oxfmt`; `git diff --check`. The focused standalone script compile reported no proof-file errors; `bun run type-check` remains blocked by pre-existing errors in `src/runtime/engine/git-process-owner.ts`, `src/runtime/engine/git.ts`, `src/runtime/engine/tests/board-lock-lease.test.ts`, and board-inspection system-test support. ACs remain unchecked and task remains In Progress for parent rereview.
+
+2026-09-03 rereview remediation: emulation now uses the same pre-mkdtemp argv refusal as Chromium. A normal contained run passed; an extra argument exited 1 with the owned-output refusal, and before/after audit of `/tmp/archboard-server-rendering-emulation-proof-*` found no new output or dependency-root residue. Focused format, lint, and diff checks pass. Task remains In Progress with ACs unchecked.
 <!-- SECTION:NOTES:END -->
