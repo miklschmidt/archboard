@@ -140,6 +140,7 @@ const readyAccount = (): BrowserOwnerProjection["account"] => ({
 export function createGatewayHarness(
 	authorities: IdentityAuthorities = createIdentityAuthorities(),
 	lifecycle?: BrowserLifecyclePort,
+	onProjectionDisconnect?: BrowserProjectionPort["onBrowserDisconnect"],
 ): GatewayHarness {
 	const model = createCodexBrowserModel(authorities);
 	const childId = model.ChildIdSchema.parse(authorities.identity.validator.childId);
@@ -335,6 +336,7 @@ export function createGatewayHarness(
 			projectionListeners.add(listener);
 			return () => projectionListeners.delete(listener);
 		},
+		onBrowserDisconnect: onProjectionDisconnect,
 	};
 	const threadLink = { read: (pane: string) => bindingFor(pane, revision, link) };
 	const gateway = createCodexWorkbenchGateway({

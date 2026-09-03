@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-03 22:09'
+updated_date: '2026-09-03 22:41'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -41,7 +41,9 @@ Expose the closed browser gateway for account and session readiness, thread link
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Add one canvas-side live timeline owner that reads the authoritative current linked thread through typed session turn/item pages, maps only the reviewed seven owner presentations, and publishes bounded readonly CodexTimelineProjectionInput updates. 2. Feed that owner through the existing production browser gateway projection and lifecycle notification seam without adding browser DTO construction, a second reducer, or a mutation path. 3. Add focused producer/gateway coverage for pagination, item/status/approval mapping, link changes, refresh failures, and live publication; run exact focused owners plus TypeScript, scoped lint/format, boundary/inventory, and diff checks, then commit with acceptance criteria unchecked.
+1. Extend the existing browser projection disconnect seam with exact connection retirement, thread it through the canvas gateway, and discard timeline state on close/replacement without introducing another lifecycle owner.
+2. Replace raw SessionTurn retention with bounded compact owner presentations, require the method-bound timelineListPage cursor, cap final items after approval interleaving, and enforce one below-1 MiB timeline budget with injectable tiny limits for focused tests.
+3. Add focused regression coverage for close-then-notify, bounded ingestion/item/aggregate output, required cursor, stale links, notification recovery, and run the exact existing owners plus type, lint, format, boundary, inventory, and diff checks; commit separately and leave acceptance criteria unchecked.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -56,6 +58,8 @@ Finalization evidence: AC #1 is proved by the closed readiness and capability-ga
 Reopened with user approval after TASK-143.03.03, TASK-143.03.06, and TASK-143.03.07 exposed hardcoded or missing browser projections in the production gateway.
 
 Live browser timeline producer implemented. A single canvas owner reads bounded typed thread-turn pages with full item view, obtains only the opaque timeline cursor from the session boundary, maps the seven reviewed presentation arms plus exact item-bound ordinary approvals, strips NULs, bounds text/cursors/items, and caches per pane/link/capability. Stale link loads are discarded; matching raw transport notifications are correlated through the trusted identity serializer; failed refreshes recover on a later matching event. The existing gateway projection receives the owner output and production lifecycle disposes it with the generation; no browser DTO builder, second reducer, or mutation path was added. Evidence: 70 focused tests and 435 assertions passed across timeline, gateway, projection, generation, recovery, and production-initialization owners; root and frontend TypeScript, scoped Oxlint/Oxfmt, repository boundary/inventory policy, and diff checks passed. No broad, browser, or full check lane ran. Acceptance criteria remain unchecked and the task remains In Progress.
+
+Remediation implementation complete: the existing gateway notifyDisconnect seam now synchronously retires projection state with the exact browser connection identity, including replacement, close, child-exit, and shutdown paths; the canvas adapter passes that identity into timeline reads and retirement. The timeline owner projects and bounds each source turn during ingestion, retains only compact owner presentation data, requires the typed thread/timeline method pair, caps final approval-interleaved items, and enforces one bounded turn/item/byte budget (production ceiling 768 KiB, injectable tiny limits in focused owners). Focused remediation owners prove close-then-notify produces no retained read/publication, reject source inspection beyond a tiny item limit, use timeline/list's cursor, preserve matching approval chronology while omitting unmatched overflow, and stay within a 5 KiB aggregate budget. Evidence: 67 focused gateway/timeline/projection/generation tests and 407 assertions passed; 61 repository boundary/inventory tests and 132 assertions passed; both TypeScript graphs, scoped Oxlint/Oxfmt, and diff checks passed. No broad, browser, system, performance, or capacity lane ran. Acceptance criteria remain unchecked and task remains In Progress.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

@@ -358,6 +358,19 @@ export function createCodexWorkbenchGateway(
 		state.disconnectNotified = true;
 		for (const [commandId, entry] of inFlightCommands)
 			if (entry.connection === state.instance) inFlightCommands.delete(commandId);
+		try {
+			options.projection.onBrowserDisconnect?.(
+				{
+					browserId: state.browserId,
+					paneId: state.paneId,
+					connection: state.instance,
+				},
+				reason,
+			);
+		} catch {
+			// Projection retirement is best effort; the gateway still settles every
+			// existing disconnect owner and closes the exact connection.
+		}
 		const disconnectActionContext = state.binding;
 		let presenterContext: BrowserPresenterContext | null = null;
 		try {
@@ -519,6 +532,7 @@ export function createCodexWorkbenchGateway(
 			projection = options.projection.read({
 				browserId: state.browserId,
 				paneId: state.paneId,
+				connection: state.instance,
 				binding,
 				lease,
 				mediaReady: state.mediaReady,

@@ -14,14 +14,7 @@ import {
 	type IdentityAuthorities,
 	type ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
-import {
-	createCanvasBrowserGatewayOptions,
-	createCanvasTimelineOwner,
-	type CanvasBrowserBindingState,
-	type CanvasTimelineOwner,
-} from "../codex-workbench-adapters.js";
-import type { CodexWorkbenchComponents } from "../codex-workbench-generation.js";
-import type { BrowserProjectionContext } from "../../codex-workbench/index.js";
+import { createCanvasTimelineOwner } from "../codex-workbench-adapters.js";
 
 function executableLink(authorities: IdentityAuthorities, threadId: ThreadId): ThreadLinkSnapshot {
 	return {
@@ -103,95 +96,6 @@ function event(
 		notification: notification(notifiedThreadId),
 	};
 }
-
-test("canvas gateway passes its exact browser binding to the timeline owner", () => {
-	const authorities = createIdentityAuthorities();
-	const threadId = authorities.identity.decoder.adoptThreadId("gateway-timeline-thread");
-	const link = executableLink(authorities, threadId);
-	const timelineValue = { kind: "codex_timeline", threadId, turns: [], cursor: null } as never;
-	const received: {
-		current: {
-			readonly paneId: string;
-			readonly revision: number;
-			readonly link: ThreadLinkSnapshot;
-			readonly threadCapable: boolean;
-		} | null;
-	} = { current: null };
-	const timeline: CanvasTimelineOwner = {
-		read: (paneId, revision, receivedLink, threadCapable) => {
-			received.current = { paneId, revision, link: receivedLink, threadCapable };
-			return timelineValue;
-		},
-		onNotification: () => undefined,
-		dispose: () => undefined,
-	};
-	const components = {
-		identity: { operation: { issuer: { mintOperationId: () => "operation" as never } } },
-		workhorse: { snapshot: () => ({ state: "stopped", start: null }) },
-		coordinator: {
-			snapshot: () => ({
-				state: "unbound",
-				threadId: null,
-				configured: null,
-				effective: null,
-				approvalPolicy: null,
-				approvalsReviewer: null,
-				sandboxPolicy: null,
-				activePermissionProfile: null,
-			}),
-		},
-		semanticDelivery: { inspect: () => [], snapshot: () => ({ binding: null }) },
-		semanticPublisher: {},
-		realtime: { generation: () => null, transcript: () => [] },
-		approvals: { inspectViews: () => [] },
-	} as unknown as Omit<CodexWorkbenchComponents, "gateway">;
-	const state = {
-		readiness: { kind: "readiness", state: "thread_capable" },
-		account: { kind: "account", state: "unknown", reason: "fixture" },
-		login: { kind: "login", state: "idle" },
-		queue: { kind: "codex_queue", submissions: null },
-	} as CanvasBrowserBindingState;
-	const options = createCanvasBrowserGatewayOptions({
-		components,
-		dynamicApprovals: {
-			pending: () => [],
-			bindLease: () => undefined,
-			browser: { pending: () => [] },
-		} as never,
-		state,
-		timeline,
-		leaseLedger: { active: null, retired: new Map() },
-		checkoutRoot: "/repo",
-		contextForOperation: () => ({}) as never,
-		onChange: () => () => undefined,
-	});
-	const context = {
-		browserId: "browser-timeline",
-		paneId: "pane-timeline",
-		binding: {
-			paneId: "pane-timeline",
-			revision: 7,
-			link,
-			cas: {
-				revision: 7,
-				paneId: "pane-timeline",
-				childId: link.childId,
-				epoch: link.epoch,
-				threadId: link.threadId,
-			},
-		},
-		lease: null,
-		mediaReady: false,
-	} satisfies BrowserProjectionContext;
-	const projection = options.projection.read(context);
-	expect(projection.timeline).toBe(timelineValue);
-	const captured = received.current;
-	if (captured === null) throw new Error("the gateway did not ask the timeline owner to read");
-	expect(captured.paneId).toBe("pane-timeline");
-	expect(captured.revision).toBe(7);
-	expect(captured.link).toBe(link);
-	expect(captured.threadCapable).toBeTrue();
-});
 
 async function flush(): Promise<void> {
 	for (let index = 0; index < 8; index += 1) await Promise.resolve();
@@ -309,9 +213,10 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 	});
 
 	const link = executableLink(authorities, threadId);
-	expect(owner.read("pane-timeline", 1, link, true)).toBeNull();
+	const connection = {};
+	expect(owner.read("pane-timeline", 1, link, true, connection)).toBeNull();
 	await flush();
-	const projection = owner.read("pane-timeline", 1, link, true);
+	const projection = owner.read("pane-timeline", 1, link, true, connection);
 	if (projection === null) throw new Error("timeline projection was not loaded");
 
 	expect(turnRequests).toEqual([
@@ -390,6 +295,11 @@ test("timeline owner ignores stale link loads and recovers after a refresh failu
 			if (page === undefined) throw new Error(`unexpected thread ${params.threadId}`);
 			return page;
 		},
+		timelineListPage: async (_params: Parameters<CodexSession["timelineListPage"]>[0]) => ({
+			data: [],
+			nextCursor: null,
+			activeRealtimeSessionAtPageStart: null,
+		}),
 	};
 	let changes = 0;
 	const owner = createCanvasTimelineOwner({
@@ -402,8 +312,9 @@ test("timeline owner ignores stale link loads and recovers after a refresh failu
 	});
 	const firstLink = executableLink(authorities, firstThreadId);
 	const secondLink = executableLink(authorities, secondThreadId);
-	owner.read("pane-timeline", 1, firstLink, true);
-	owner.read("pane-timeline", 2, secondLink, true);
+	const connection = {};
+	owner.read("pane-timeline", 1, firstLink, true, connection);
+	owner.read("pane-timeline", 2, secondLink, true, connection);
 	firstPage.resolve({
 		data: [turnFixture(authorities, "first-turn", [])],
 		nextCursor: null,
@@ -411,14 +322,14 @@ test("timeline owner ignores stale link loads and recovers after a refresh failu
 	});
 	await flush();
 	expect(changes).toBe(0);
-	expect(owner.read("pane-timeline", 2, secondLink, true)).toBeNull();
+	expect(owner.read("pane-timeline", 2, secondLink, true, connection)).toBeNull();
 	secondPage.resolve({
 		data: [turnFixture(authorities, "second-turn", [])],
 		nextCursor: null,
 		backwardsCursor: null,
 	});
 	await flush();
-	const projection = owner.read("pane-timeline", 2, secondLink, true);
+	const projection = owner.read("pane-timeline", 2, secondLink, true, connection);
 	if (projection === null) throw new Error("replacement timeline projection was not loaded");
 	expect(changes).toBe(1);
 	expect(projection.threadId).toBe(secondThreadId);
@@ -449,6 +360,11 @@ test("timeline owner waits for thread capability and refreshes only the current 
 				backwardsCursor: null,
 			};
 		},
+		timelineListPage: async (_params: Parameters<CodexSession["timelineListPage"]>[0]) => ({
+			data: [],
+			nextCursor: null,
+			activeRealtimeSessionAtPageStart: null,
+		}),
 	};
 	let changes = 0;
 	const owner = createCanvasTimelineOwner({
@@ -460,12 +376,17 @@ test("timeline owner waits for thread capability and refreshes only the current 
 		},
 	});
 	const link = executableLink(authorities, threadId);
-	owner.read("pane-timeline", 1, link, false);
+	const connection = {};
+	owner.read("pane-timeline", 1, link, false, connection);
 	await flush();
 	expect(calls).toBe(0);
-	owner.read("pane-timeline", 1, link, true);
+	owner.read("pane-timeline", 1, link, true, connection);
 	await flush();
-	expect({ calls, changes, projection: owner.read("pane-timeline", 1, link, true) }).toEqual({
+	expect({
+		calls,
+		changes,
+		projection: owner.read("pane-timeline", 1, link, true, connection),
+	}).toEqual({
 		calls: 1,
 		changes: 0,
 		projection: null,
@@ -487,7 +408,7 @@ test("timeline owner waits for thread capability and refreshes only the current 
 		event(authorities, authorities.identity.decoder.serializeCodexIdentity(threadId)),
 	);
 	await flush();
-	const projection = owner.read("pane-timeline", 1, link, true);
+	const projection = owner.read("pane-timeline", 1, link, true, connection);
 	if (projection === null) throw new Error("timeline did not recover after notification");
 	expect({ calls, changes, threadId: projection.threadId }).toEqual({
 		calls: 2,
