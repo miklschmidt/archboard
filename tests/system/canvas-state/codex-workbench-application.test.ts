@@ -159,7 +159,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 			ordinaryApprovals: {
 				pending: (candidate) => {
 					try {
-						return activeApprovals.toBrowserApproval(candidate);
+						return activeApprovals.view(candidate);
 					} catch {
 						return null;
 					}
@@ -193,9 +193,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 				timeline: null,
 				queue: { kind: "codex_queue", submissions: [] },
 				settings: [],
-				approvals: activeApprovals
-					.inspect()
-					.map((approval) => activeApprovals.toBrowserApproval(approval.requestId)),
+				approvals: activeApprovals.inspectViews(),
 				dynamicApprovals: [],
 				semantic: { kind: "codex_semantic", outcome: null, freshness: null },
 				coordinator: {

@@ -211,15 +211,15 @@ describe("Codex workbench browser command routing", () => {
 		value.setOrdinaryApproval(approval);
 		expect(connection.snapshot().snapshot.approvals).toEqual([
 			expect.objectContaining({
-				requestId: approval.requestId,
+				requestId: approval.request.requestId,
 				lifecycle: expect.objectContaining({ state: "pending" }),
 			}),
 		]);
 		const command = value.model.BrowserCommandSchema.parse({
 			...commandTarget(lease),
 			command: "approvalRespond",
-			requestId: approval.requestId,
-			approvalId: approval.approvalId,
+			requestId: approval.request.requestId,
+			approvalId: approval.request.approvalId,
 			response: { approvalKind: "command_execution", decision: "accept" },
 		});
 		const result = await connection.command(command);
@@ -227,7 +227,7 @@ describe("Codex workbench browser command routing", () => {
 		expect(value.calls).toContain("approval.resolve");
 		expect(result.snapshot.approvals).toEqual([
 			expect.objectContaining({
-				requestId: approval.requestId,
+				requestId: approval.request.requestId,
 				lifecycle: expect.objectContaining({
 					state: "settled",
 					decision: "approved",

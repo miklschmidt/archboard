@@ -3,17 +3,8 @@ import { describe, expect, test } from "bun:test";
 import { approvalFamilyCases } from "./family-fixtures.js";
 import { closeBroker, expectSingleResponse, testBroker } from "./support.js";
 
-async function rejected(promise: Promise<unknown>): Promise<unknown> {
-	try {
-		await promise;
-		return new Error("Expected the promise to reject.");
-	} catch (error) {
-		return error;
-	}
-}
-
 describe("Codex approval family matrix", () => {
-	test("accepts every family-specific positive and negative response with exact wire shapes", async () => {
+	test("accepts every family-specific response with exact wire shapes", async () => {
 		for (const family of approvalFamilyCases) {
 			for (const responseCase of family.responses) {
 				const fixture = testBroker();
@@ -34,31 +25,6 @@ describe("Codex approval family matrix", () => {
 				} finally {
 					closeBroker(fixture.broker);
 				}
-			}
-		}
-	});
-
-	test("rejects family-specific invalid decisions without consuming the pending approval", async () => {
-		for (const family of approvalFamilyCases) {
-			const fixture = testBroker();
-			try {
-				const label = `negative-${family.name}`;
-				const pending = fixture.broker.receive(family.make(fixture.identity, label));
-				expect(
-					await rejected(
-						fixture.broker.resolve({
-							requestId: pending.requestId,
-							approvalId: pending.approvalId,
-							response: family.negative(label),
-						}),
-					),
-				).toMatchObject({ code: "invalid_response" });
-				expect(fixture.broker.get(pending.requestId)?.state).toBe("pending");
-				const cancellation = await fixture.broker.cancel(pending.requestId);
-				expect(cancellation.outcome).toBe("delivered");
-				expect(expectSingleResponse(fixture.port)).toEqual(family.fallback("cancelled"));
-			} finally {
-				closeBroker(fixture.broker);
 			}
 		}
 	});

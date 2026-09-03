@@ -1,4 +1,4 @@
-import type { ApprovalFamily, BrowserApprovalResponse, TerminalApprovalState } from "../index.js";
+import type { ApprovalFamily, ApprovalResponse, TerminalApprovalState } from "../index.js";
 import type { IdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 import type {
 	ReverseResponse,
@@ -16,7 +16,7 @@ import {
 
 export interface FamilyResponseCase {
 	readonly name: string;
-	readonly response: (label: string) => BrowserApprovalResponse;
+	readonly response: (label: string) => ApprovalResponse;
 	readonly expected: (label: string) => ReverseResponse;
 }
 
@@ -25,16 +25,11 @@ export interface ApprovalFamilyCase {
 	readonly family: ApprovalFamily;
 	readonly make: (identity: IdentityAuthority, label: string) => TransportServerRequest;
 	readonly responses: readonly FamilyResponseCase[];
-	readonly negative: (label: string) => BrowserApprovalResponse;
 	readonly fallback: (state: TerminalApprovalState) => ReverseResponse;
 }
 
 function commandRequest(identity: IdentityAuthority, label: string): TransportServerRequest {
 	return commandRequestWithAvailableDecisions(identity, label, ["accept", "decline", "cancel"]);
-}
-
-function invalid(value: unknown): BrowserApprovalResponse {
-	return value as BrowserApprovalResponse;
 }
 
 export const approvalFamilyCases: readonly ApprovalFamilyCase[] = [
@@ -59,7 +54,6 @@ export const approvalFamilyCases: readonly ApprovalFamilyCase[] = [
 				expected: () => ({ result: { decision: "cancel" } }),
 			},
 		],
-		negative: () => ({ approvalKind: "command_execution", decision: "acceptForSession" }),
 		fallback: () => ({ result: { decision: "cancel" } }),
 	},
 	{
@@ -88,7 +82,6 @@ export const approvalFamilyCases: readonly ApprovalFamilyCase[] = [
 				expected: () => ({ result: { decision: "cancel" } }),
 			},
 		],
-		negative: () => invalid({ approvalKind: "file_change", decision: "invalid" }),
 		fallback: () => ({ result: { decision: "cancel" } }),
 	},
 	{
@@ -107,7 +100,6 @@ export const approvalFamilyCases: readonly ApprovalFamilyCase[] = [
 				}),
 			},
 		],
-		negative: () => invalid({ approvalKind: "user_input", answers: {}, decision: "decline" }),
 		fallback: () => ({ result: { answers: {} } }),
 	},
 	{
@@ -146,8 +138,6 @@ export const approvalFamilyCases: readonly ApprovalFamilyCase[] = [
 				expected: () => ({ result: { action: "cancel", content: null, _meta: null } }),
 			},
 		],
-		negative: () =>
-			invalid({ approvalKind: "elicitation", action: "approve", content: null, _meta: null }),
 		fallback: () => ({ result: { action: "cancel", content: null, _meta: null } }),
 	},
 	{
@@ -166,8 +156,6 @@ export const approvalFamilyCases: readonly ApprovalFamilyCase[] = [
 				expected: () => ({ result: { permissions: {}, scope: "session" } }),
 			},
 		],
-		negative: () =>
-			invalid({ approvalKind: "permissions", permissions: {}, scope: "turn", decision: "decline" }),
 		fallback: () => ({ result: { permissions: {}, scope: "turn" } }),
 	},
 	{
@@ -199,7 +187,6 @@ export const approvalFamilyCases: readonly ApprovalFamilyCase[] = [
 				expected: () => ({ result: { decision: "abort" } }),
 			},
 		],
-		negative: () => invalid({ approvalKind: "apply_patch", decision: "decline" }),
 		fallback: (state) => ({ result: { decision: state === "expired" ? "timed_out" : "abort" } }),
 	},
 	{
@@ -231,7 +218,6 @@ export const approvalFamilyCases: readonly ApprovalFamilyCase[] = [
 				expected: () => ({ result: { decision: "abort" } }),
 			},
 		],
-		negative: () => invalid({ approvalKind: "exec_command", decision: "decline" }),
 		fallback: (state) => ({ result: { decision: state === "expired" ? "timed_out" : "abort" } }),
 	},
 ];

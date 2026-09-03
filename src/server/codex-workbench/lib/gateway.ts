@@ -1,9 +1,6 @@
 import { createHash } from "node:crypto";
 
-import {
-	createCodexBrowserModel,
-	projectCodexBrowserState,
-} from "../../../shared/codex-browser-model/index.js";
+import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
@@ -27,7 +24,6 @@ import {
 	type BrowserGatewayCommandResult,
 	type BrowserGatewayMessage,
 	type BrowserGatewaySnapshotMessage,
-	type BrowserOwnerProjection,
 	type BrowserWorkbenchConnection,
 	type BrowserApprovalCommand,
 	type CodexWorkbenchGateway,
@@ -38,7 +34,12 @@ import {
 	type BrowserUnsubscribe,
 	type CodexWorkbenchGatewayOptions,
 } from "./contract.js";
-import { assertBrowserSnapshotBounded, diffBrowserSnapshots } from "./projection.js";
+import type { BrowserOwnerProjection } from "./projection-contract.js";
+import {
+	assertBrowserSnapshotBounded,
+	diffBrowserSnapshots,
+	projectCodexBrowserState,
+} from "./projection.js";
 
 const ACCOUNT_READINESS = new Set([
 	"login_capable",
@@ -691,10 +692,10 @@ export function createCodexWorkbenchGateway(
 				const pending = options.actions.ordinaryApprovals.pending(command.requestId);
 				if (
 					pending === null ||
-					pending.requestId !== command.requestId ||
-					pending.threadId !== snapshot.threadLink.threadId ||
-					pending.approvalId !== command.approvalId ||
-					pending.expiresAtMs <= now()
+					pending.request.requestId !== command.requestId ||
+					pending.request.threadId !== snapshot.threadLink.threadId ||
+					pending.request.approvalId !== command.approvalId ||
+					pending.request.expiresAtMs <= now()
 				)
 					throw new CodexWorkbenchGatewayError(
 						"approval_not_pending",

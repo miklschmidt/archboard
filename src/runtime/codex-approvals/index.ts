@@ -4,6 +4,8 @@ export type {
 	ApprovalBindingInput,
 	ApprovalFamily,
 	ApprovalOutcome,
+	ApprovalDecision,
+	ApprovalOwnerView,
 	ApprovalRequest,
 	ApprovalRequestIdentity,
 	ApprovalResolveInput,
@@ -11,6 +13,7 @@ export type {
 	ApprovalSnapshot,
 	ApprovalState,
 	ApprovalResponsePort,
+	ApprovalResponse,
 	ApplyPatchApprovalRequest,
 	CommandApprovalRequest,
 	CodexApprovalBroker,
@@ -29,8 +32,4 @@ export type {
 	TerminalApprovalState,
 	UserInputApprovalRequest,
 } from "./lib/contract.js";
-export type {
-	BrowserApproval,
-	BrowserApprovalResponse,
-} from "../../shared/codex-browser-model/index.js";
 export { CodexApprovalError } from "./lib/contract.js";

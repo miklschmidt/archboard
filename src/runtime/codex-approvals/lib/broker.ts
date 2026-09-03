@@ -1,7 +1,9 @@
-import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import type {
 	ApprovalBinding,
+	ApprovalDecision,
+	ApprovalOwnerView,
 	ApprovalRequest,
+	ApprovalResponse,
 	ApprovalResolveInput,
 	ApprovalSettlement,
 	ApprovalSnapshot,
@@ -20,12 +22,10 @@ import {
 	fallbackResponse,
 	failedSettlement,
 	spokenEligibility as assessSpokenEligibility,
-	toBrowserApproval,
 	toSpokenEffectPresentation,
 	toServerResponse,
-	validateBrowserResponse,
+	validateApprovalResponse,
 } from "./response.js";
-import type { BrowserApprovalResponse } from "../../../shared/codex-browser-model/index.js";
 import { CODEX_APPROVAL_EXPIRY_MS } from "../../../shared/timing/timing.js";
 import type {
 	ChildEpoch,
@@ -40,7 +40,7 @@ interface ApprovalRecord {
 	state: ApprovalState;
 	outcome: ApprovalOutcome | null;
 	reason: string | null;
-	decision: "approved" | "declined" | "cancelled" | null;
+	decision: ApprovalDecision | null;
 	timer?: ReturnType<typeof setTimeout>;
 	settlementPromise?: Promise<ApprovalSettlement>;
 	settlementResolve?: (settlement: ApprovalSettlement) => void;
@@ -65,7 +65,7 @@ function toError(error: unknown): Error {
 	return error instanceof Error ? error : new Error(String(error));
 }
 
-function browserDecision(response: BrowserApprovalResponse): "approved" | "declined" | "cancelled" {
+function approvalDecision(response: ApprovalResponse): ApprovalDecision {
 	switch (response.approvalKind) {
 		case "command_execution":
 		case "file_change":
@@ -106,6 +106,7 @@ function snapshotOf(record: ApprovalRecord): ApprovalSnapshot {
 		expiresAtMs: record.request.expiresAtMs,
 		state: record.state,
 		outcome: record.outcome,
+		decision: record.decision,
 		reason: record.reason,
 	});
 }
@@ -114,7 +115,6 @@ export function createCodexApprovalBroker(
 	options: CodexApprovalBrokerOptions,
 ): CodexApprovalBroker {
 	const identity = options.identity;
-	const model = createCodexBrowserModel(identity);
 	const now = options.now ?? Date.now;
 	const records = new Map<JsonRpcRequestId, ApprovalRecord>();
 	const unsubscribers: Array<() => void> = [];
@@ -183,7 +183,7 @@ export function createCodexApprovalBroker(
 		record: ApprovalRecord,
 		requestedState: TerminalApprovalState,
 		reason: string,
-		response: BrowserApprovalResponse,
+		response: ApprovalResponse,
 	): Promise<ApprovalSettlement> => {
 		if (record.settlementPromise !== undefined) return record.settlementPromise;
 		if (isTerminal(record.state) || record.terminalClaimed)
@@ -209,7 +209,7 @@ export function createCodexApprovalBroker(
 
 		record.state = finalState;
 		record.reason = finalReason;
-		record.decision = finalState === "settled" ? browserDecision(finalResponse) : "cancelled";
+		record.decision = finalState === "settled" ? approvalDecision(finalResponse) : "cancelled";
 		const settlementPromise = new Promise<ApprovalSettlement>((resolve) => {
 			record.settlementResolve = resolve;
 		});
@@ -218,7 +218,7 @@ export function createCodexApprovalBroker(
 
 		let serverResponse: ReturnType<typeof toServerResponse>;
 		try {
-			const validated = validateBrowserResponse(model, record.request, finalResponse, {
+			const validated = validateApprovalResponse(record.request, finalResponse, {
 				respectAvailableDecisions: finalState === "settled",
 			});
 			serverResponse = toServerResponse(record.request, validated);
@@ -391,7 +391,7 @@ export function createCodexApprovalBroker(
 					record.request.requestId,
 				);
 			}
-			const response = validateBrowserResponse(model, record.request, input.response);
+			const response = validateApprovalResponse(record.request, input.response);
 			if (!bindingEvidenceMatches(record, input)) {
 				return settleTransport(
 					record,
@@ -455,36 +455,18 @@ export function createCodexApprovalBroker(
 		);
 	};
 
-	const browserApproval = (requestId: JsonRpcRequestId) => {
+	const view = (requestId: JsonRpcRequestId): ApprovalOwnerView => {
 		const record = requireRecord(requestId);
-		return toBrowserApproval(model, record.request, {
-			lifecycle: (() => {
-				if (record.state === "staged" || record.state === "pending")
-					return { state: record.state, decision: null, outcome: null, reason: null } as const;
-				if (record.state === "outcome_unknown")
-					return {
-						state: record.state,
-						decision: record.decision ?? "cancelled",
-						outcome: record.state,
-						reason: record.reason ?? "The approval outcome is unknown.",
-					} as const;
-				if (record.state === "settled")
-					return {
-						state: record.state,
-						decision: record.decision ?? "cancelled",
-						outcome: record.outcome === "outcome_unknown" ? null : record.outcome,
-						reason: record.reason ?? "The approval settled.",
-					} as const;
-				return {
-					state: record.state,
-					decision: "cancelled",
-					outcome: record.outcome === "outcome_unknown" ? null : record.outcome,
-					reason: record.reason ?? "The approval ended without an effect.",
-				} as const;
-			})(),
+		return Object.freeze({
+			kind: "approval_owner" as const,
+			request: record.request,
+			snapshot: snapshotOf(record),
 			spoken: spokenForRecord(record),
 		});
 	};
+
+	const inspectViews = (): readonly ApprovalOwnerView[] =>
+		Object.freeze(Array.from(records.values(), (record) => view(record.request.requestId)));
 
 	const spokenPresentation = (requestId: JsonRpcRequestId) => {
 		const record = requireRecord(requestId);
@@ -572,7 +554,8 @@ export function createCodexApprovalBroker(
 		get,
 		getRequest,
 		inspect,
-		toBrowserApproval: browserApproval,
+		view,
+		inspectViews,
 		acknowledge,
 		spokenEffectPresentation: spokenPresentation,
 		spokenEligibility: spoken,

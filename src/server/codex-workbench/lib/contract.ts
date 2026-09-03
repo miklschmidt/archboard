@@ -1,10 +1,8 @@
 import type {
-	BrowserApproval,
 	BrowserCommand,
 	BrowserCommandLease,
 	BrowserDynamicApproval,
 	BrowserDynamicApprovalResponse,
-	BrowserProjectionInput,
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
@@ -22,6 +20,8 @@ import type {
 	ThreadLinkSnapshot,
 } from "../../../runtime/codex-thread-link/index.js";
 import type { AnswerSdp } from "../../../shared/codex-realtime-host/index.js";
+import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+import type { BrowserOwnerProjection } from "./projection-contract.js";
 
 export type BrowserConnectionId = string;
 /** Exact process-local WebSocket ownership. Reusable browser ids never substitute for it. */
@@ -121,11 +121,6 @@ export interface BrowserProjectionContext {
  * A projection is read from the owners that already hold Codex state. The
  * gateway does not retain any of these values as a second domain store.
  */
-export type BrowserOwnerProjection = Omit<
-	BrowserProjectionInput,
-	"threadLink" | "lease" | "operation"
->;
-
 export interface BrowserProjectionPort {
 	readonly read: (context: BrowserProjectionContext) => BrowserOwnerProjection;
 	/** One owner notification source may fan out all projection changes. */
@@ -248,7 +243,7 @@ export interface BrowserRealtimeActions {
 }
 
 export interface BrowserOrdinaryApprovalActions {
-	readonly pending: (requestId: JsonRpcRequestId) => BrowserApproval | null;
+	readonly pending: (requestId: JsonRpcRequestId) => ApprovalOwnerView | null;
 	readonly resolve: (
 		command: BrowserApprovalCommand,
 		context: BrowserActionContext,
