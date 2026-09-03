@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 14:33'
+updated_date: '2026-09-03 17:21'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -258,6 +258,8 @@ Focused post-deletion validation: bun test tests/system/board-inspection/package
 Final narrow rereview remediation: board-lock.ts now owns injectLockHandoffFaultForTest, a controlled module-root seam with only malformed and wrong-token variants. It keeps the handoff path and receipt schema private while letting board-write-observers drive the real readHandoff parser and predecessor token matcher through normal successor acquisition. The malformed and wrong-token cases are restored without private filesystem spelling or assertions. The package lifecycle timeout comment now describes the two retained parent-SIGTERM owners rather than the deleted 80-cycle stress loop. Focused board-write-observers passed 4/4 with 53 expectations; exact-file Oxfmt and Oxlint passed. Package read-only was not rerun because its code did not change.
 
 Lifecycle rereview remediation: package-process begins leader/stdout/stderr ownership immediately after spawn, allows the focused capture seam to await fixture readiness, and on capture failure SIGKILLs the fresh detached group by its spawn-owned pgid. Group disappearance plus all three settlements share the existing 1-second cleanup bound; failure reports both startup and cleanup errors. The focused fixture creates one same-group descendant that inherits the owner pipes, then proves leader, descendant, group, and all settlements are gone. owned-canvas now captures child-group/storage-lock cleanup ownership before either TERM or KILL; a TERM timeout marks the path forced, escalates, and completes that captured cleanup. One dedicated real lifecycle owner proves the canvas ignores TERM, its detached child group is reaped, its lock disappears, and its namespace is removed. The production board-lock entrypoint no longer exports any test hook. A dedicated test-support adapter intercepts one receipt read by the known public lease token, without knowing or reconstructing the private path or schema, and retains malformed/wrong-token coverage through normal successor acquisition. The 80-cycle stress owner remains deleted with no replacement. Focused validation: package capture 1/1 (6 expectations, 90ms runner); owned-canvas escalation 1/1 (3 expectations, 1.109s); board-write observers 4/4 (53 expectations, 206ms); boundary policy 7/7 (66 expectations, 2.05s); exact-file Oxfmt and Oxlint passed.
+
+Rebased the complete reviewed c2d86ef9..6191abb1 range onto canonical 9520e093 without a merge. Resolved three TASK-148 overlaps by preserving deterministic fake-time advancement, observed pane-message synchronization, and service-level board creation while retaining the recovery contract changes. Focused post-rebase owners passed: six package/process contracts 6/6 in 6.93s, owned-canvas TERM escalation 1/1 in 1.20s, board-write observers 4/4 in 0.27s, and settled fsync parser in 0.02s. Root typecheck is blocked by canonical TASK-148.07 commit 510c6959: tests/system/repository-policy/support/test-wall-clock-policy.ts accesses arguments and body on generic Babel Node at lines 182-183. The failing file plus package.json, bun.lock, bunfig.toml, and tsconfig.json are unchanged from base 9520e093. Per coordinator instruction, did not patch the unrelated canonical defect and did not start bun run check.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
