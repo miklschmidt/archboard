@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 import {
+	CodexThreadStatusSchema,
+	CodexTurnStatusSchema,
+} from "../../../shared/codex-app-server-contract/index.js";
+
+import {
 	FiniteNumberSchema,
 	IntegerSchema,
 	NonNegativeIntegerSchema,
@@ -86,12 +91,7 @@ export const ActivePermissionProfileSchema = looseObject({
 
 export const ThreadHistoryModeSchema = z.enum(["legacy", "paginated"]);
 export const ThreadActiveFlagSchema = z.enum(["waitingOnApproval", "waitingOnUserInput"]);
-export const ThreadStatusSchema = z.discriminatedUnion("type", [
-	looseObject({ type: z.literal("notLoaded") }),
-	looseObject({ type: z.literal("idle") }),
-	looseObject({ type: z.literal("systemError") }),
-	looseObject({ type: z.literal("active"), activeFlags: z.array(ThreadActiveFlagSchema) }),
-]);
+export const ThreadStatusSchema = CodexThreadStatusSchema;
 
 const SubAgentSourceSchema = z.union([
 	z.enum(["review", "compact", "memory_consolidation"]),
@@ -147,7 +147,7 @@ export const ThreadGoalSchema = looseObject({
 	updatedAt: FiniteNumberSchema,
 });
 
-export const TurnStatusSchema = z.enum(["completed", "interrupted", "failed", "inProgress"]);
+export const TurnStatusSchema = CodexTurnStatusSchema;
 export const NonSteerableTurnKindSchema = z.enum(["review", "compact"]);
 export const CodexErrorInfoSchema = z.union([
 	z.enum([

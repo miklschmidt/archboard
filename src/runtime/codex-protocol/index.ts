@@ -50,7 +50,15 @@ export type {
 	ServerRequestPayloads,
 } from "./lib/decoder.js";
 
-export { CLIENT_REQUEST_PARAM_SCHEMAS } from "./lib/client-request-schemas.js";
+export {
+	CLIENT_REQUEST_PARAM_SCHEMAS,
+	ThreadQueueAddParamsSchema,
+	ThreadQueueDeleteParamsSchema,
+	ThreadQueueListParamsSchema,
+	ThreadQueueReorderParamsSchema,
+	ThreadQueueStartParamsSchema,
+	ThreadQueueUpdateParamsSchema,
+} from "./lib/client-request-schemas.js";
 export type {
 	ClientRequestInput,
 	ClientRequestInputPayloads,
@@ -59,6 +67,12 @@ export type {
 	CodexSessionRequestParams,
 	CodexSessionRequestPayloads,
 	CodexSessionTurnSteerParams,
+	ThreadQueueAddParams,
+	ThreadQueueDeleteParams,
+	ThreadQueueListParams,
+	ThreadQueueReorderParams,
+	ThreadQueueStartParams,
+	ThreadQueueUpdateParams,
 } from "./lib/client-request-schemas.js";
 
 export {

@@ -1,6 +1,21 @@
 import { z } from "zod";
 
-import { CODEX_PROTOCOL_VERSION, UserInputSchema } from "../../codex-protocol/index.js";
+import {
+	CODEX_PROTOCOL_VERSION,
+	ThreadQueueAddParamsSchema,
+	ThreadQueueDeleteParamsSchema,
+	ThreadQueueListParamsSchema,
+	ThreadQueueReorderParamsSchema,
+	ThreadQueueStartParamsSchema,
+	ThreadQueueUpdateParamsSchema,
+	type ThreadQueueAddParams,
+	type ThreadQueueDeleteParams,
+	type ThreadQueueListParams,
+	type ThreadQueueReorderParams,
+	type ThreadQueueStartParams,
+	type ThreadQueueUpdateParams,
+} from "../../codex-protocol/index.js";
+import { CodexThreadStatusTypeSchema } from "../../../shared/codex-app-server-contract/index.js";
 import type {
 	JsonSchema,
 	NamespaceName,
@@ -270,59 +285,22 @@ export function parseCoordinatorToolInput(
 	return parseVoiceToolInput(toolName as VoiceToolName, input);
 }
 
-const ProtocolThreadIdSchema = z.string();
-const ProtocolSubmissionIdSchema = z.string();
-const ProtocolCursorSchema = z.string();
-const ProtocolLimitSchema = z.number().int().nonnegative().max(4_294_967_295);
-const ProtocolInputSchema = z.array(UserInputSchema);
-
-/** Exact generated app-server 0.151.0 queue parameter objects. */
-export const ThreadQueueAddParamsSchema = z
-	.object({
-		threadId: ProtocolThreadIdSchema,
-		input: ProtocolInputSchema,
-		clientUserMessageId: z.string(),
-	})
-	.strict();
-export const ThreadQueueListParamsSchema = z
-	.object({
-		threadId: ProtocolThreadIdSchema,
-		cursor: ProtocolCursorSchema.nullable().optional(),
-		limit: ProtocolLimitSchema.nullable().optional(),
-	})
-	.strict();
-export const ThreadQueueUpdateParamsSchema = z
-	.object({
-		threadId: ProtocolThreadIdSchema,
-		queuedSubmissionId: ProtocolSubmissionIdSchema,
-		input: ProtocolInputSchema,
-	})
-	.strict();
-export const ThreadQueueDeleteParamsSchema = z
-	.object({
-		threadId: ProtocolThreadIdSchema,
-		queuedSubmissionId: ProtocolSubmissionIdSchema,
-	})
-	.strict();
-export const ThreadQueueReorderParamsSchema = z
-	.object({
-		threadId: ProtocolThreadIdSchema,
-		queuedSubmissionIds: z.array(ProtocolSubmissionIdSchema),
-	})
-	.strict();
-export const ThreadQueueStartParamsSchema = z
-	.object({
-		threadId: ProtocolThreadIdSchema,
-		queuedSubmissionId: ProtocolSubmissionIdSchema.nullable().optional(),
-	})
-	.strict();
-
-export type ThreadQueueAddParams = z.infer<typeof ThreadQueueAddParamsSchema>;
-export type ThreadQueueListParams = z.infer<typeof ThreadQueueListParamsSchema>;
-export type ThreadQueueUpdateParams = z.infer<typeof ThreadQueueUpdateParamsSchema>;
-export type ThreadQueueDeleteParams = z.infer<typeof ThreadQueueDeleteParamsSchema>;
-export type ThreadQueueReorderParams = z.infer<typeof ThreadQueueReorderParamsSchema>;
-export type ThreadQueueStartParams = z.infer<typeof ThreadQueueStartParamsSchema>;
+export {
+	ThreadQueueAddParamsSchema,
+	ThreadQueueDeleteParamsSchema,
+	ThreadQueueListParamsSchema,
+	ThreadQueueReorderParamsSchema,
+	ThreadQueueStartParamsSchema,
+	ThreadQueueUpdateParamsSchema,
+};
+export type {
+	ThreadQueueAddParams,
+	ThreadQueueDeleteParams,
+	ThreadQueueListParams,
+	ThreadQueueReorderParams,
+	ThreadQueueStartParams,
+	ThreadQueueUpdateParams,
+};
 
 export const CODEX_QUEUE_PARAMETER_SCHEMAS = Object.freeze({
 	list: ThreadQueueListParamsSchema,
@@ -417,7 +395,6 @@ export const CODEX_QUEUE_PROTOCOL = Object.freeze({
 	operations: CODEX_QUEUE_OPERATION_NAMES,
 });
 
-const WorkhorseStatusSchema = z.enum(["notLoaded", "idle", "systemError", "active"]);
 const DeliverySchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
 const NullableOpaqueIdSchema = OpaqueIdSchema.nullable();
 const QueuedSubmissionIdsSchema = z.array(QueueSubmissionIdSchema).max(100);
@@ -425,7 +402,7 @@ const QueuedSubmissionIdsSchema = z.array(QueueSubmissionIdSchema).max(100);
 export const InspectWorkhorseResultSchema = z
 	.object({
 		threadId: OpaqueIdSchema,
-		status: WorkhorseStatusSchema,
+		status: CodexThreadStatusTypeSchema,
 		activeTurnId: NullableOpaqueIdSchema,
 		queuedSubmissionIds: QueuedSubmissionIdsSchema,
 	})

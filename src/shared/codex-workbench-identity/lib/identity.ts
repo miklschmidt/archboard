@@ -113,6 +113,20 @@ export interface LogicalToolCallCorrelation {
 	readonly manifestHash: string;
 }
 
+/** Stable identity for one logical dynamic-tool call across wire retries and owners. */
+export function logicalToolCallKey(call: LogicalToolCallCorrelation): string {
+	return JSON.stringify([
+		call.child,
+		call.epoch,
+		call.threadId,
+		call.turnId,
+		call.callId,
+		call.namespace,
+		call.tool,
+		call.manifestHash,
+	]);
+}
+
 export interface WireRequestCorrelationInput {
 	readonly requestId: JsonRpcRequestId;
 }

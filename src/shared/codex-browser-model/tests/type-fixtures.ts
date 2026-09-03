@@ -1,10 +1,4 @@
-import type {
-	BrowserDto,
-	BrowserDynamicApprovalResponse,
-	DynamicApprovalState,
-	ServerRequest,
-	ServerRequestMethod,
-} from "../index.js";
+import type { BrowserDto, BrowserDynamicApprovalResponse, DynamicApprovalState } from "../index.js";
 
 type Assert<T extends true> = T;
 type Equal<A, B> = [A, B] extends [B, A] ? true : false;
@@ -31,27 +25,6 @@ export function exhaustiveBrowserDto(dto: BrowserDto): string {
 		default: {
 			const neverDto: never = dto;
 			return neverDto;
-		}
-	}
-}
-
-export function exhaustiveServerRequest(request: ServerRequest): ServerRequestMethod {
-	switch (request.method) {
-		case "item/commandExecution/requestApproval":
-		case "item/fileChange/requestApproval":
-		case "item/tool/requestUserInput":
-		case "mcpServer/elicitation/request":
-		case "item/permissions/requestApproval":
-		case "item/tool/call":
-		case "account/chatgptAuthTokens/refresh":
-		case "attestation/generate":
-		case "currentTime/read":
-		case "applyPatchApproval":
-		case "execCommandApproval":
-			return request.method;
-		default: {
-			const neverRequest: never = request;
-			return neverRequest;
 		}
 	}
 }
@@ -119,5 +92,3 @@ type _BrowserDtoIsClosed = Assert<
 		| "dynamic_approval"
 	>
 >;
-
-type _ServerRequestMethodsAreClosed = Assert<Equal<ServerRequest["method"], ServerRequestMethod>>;

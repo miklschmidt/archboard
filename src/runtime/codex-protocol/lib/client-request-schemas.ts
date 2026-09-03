@@ -339,29 +339,29 @@ const TurnSteerParamsSchema = z.strictObject({
 	expectedTurnId: z.string(),
 });
 const TurnInterruptParamsSchema = z.strictObject({ threadId: z.string(), turnId: z.string() });
-const ThreadQueueAddParamsSchema = z.strictObject({
+export const ThreadQueueAddParamsSchema = z.strictObject({
 	threadId: z.string(),
 	input: z.array(ClientUserInputSchema),
 	clientUserMessageId: z.string(),
 });
-const ThreadQueueListParamsSchema = z.strictObject({
+export const ThreadQueueListParamsSchema = z.strictObject({
 	threadId: z.string(),
 	...NullablePageSchema,
 });
-const ThreadQueueUpdateParamsSchema = z.strictObject({
+export const ThreadQueueUpdateParamsSchema = z.strictObject({
 	threadId: z.string(),
 	queuedSubmissionId: z.string(),
 	input: z.array(ClientUserInputSchema),
 });
-const ThreadQueueDeleteParamsSchema = z.strictObject({
+export const ThreadQueueDeleteParamsSchema = z.strictObject({
 	threadId: z.string(),
 	queuedSubmissionId: z.string(),
 });
-const ThreadQueueReorderParamsSchema = z.strictObject({
+export const ThreadQueueReorderParamsSchema = z.strictObject({
 	threadId: z.string(),
 	queuedSubmissionIds: z.array(z.string()),
 });
-const ThreadQueueStartParamsSchema = z.strictObject({
+export const ThreadQueueStartParamsSchema = z.strictObject({
 	threadId: z.string(),
 	queuedSubmissionId: z.string().nullable().optional(),
 });
@@ -459,6 +459,13 @@ export type ClientRequestInputPayloads = {
 };
 export type ClientRequestInput<Method extends ClientRequestMethod> =
 	Method extends ClientRequestMethodWithoutParams ? undefined : ClientRequestInputPayloads[Method];
+
+export type ThreadQueueAddParams = z.infer<typeof ThreadQueueAddParamsSchema>;
+export type ThreadQueueListParams = z.infer<typeof ThreadQueueListParamsSchema>;
+export type ThreadQueueUpdateParams = z.infer<typeof ThreadQueueUpdateParamsSchema>;
+export type ThreadQueueDeleteParams = z.infer<typeof ThreadQueueDeleteParamsSchema>;
+export type ThreadQueueReorderParams = z.infer<typeof ThreadQueueReorderParamsSchema>;
+export type ThreadQueueStartParams = z.infer<typeof ThreadQueueStartParamsSchema>;
 
 type PreserveNullish<Value, Identity> = Identity | Extract<Value, null | undefined>;
 type BrandIdentityField<Key, Value> = Key extends "threadId" | "parentThreadId" | "ancestorThreadId"

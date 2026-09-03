@@ -1,6 +1,6 @@
 import { createIdentityAuthority } from "../../codex-workbench-identity/index.js";
 import { createCodexBrowserModel } from "../index.js";
-import type { BrowserCommand, BrowserSnapshot, ServerRequest } from "../index.js";
+import type { BrowserCommand, BrowserSnapshot } from "../index.js";
 
 const authority = createIdentityAuthority();
 const model = createCodexBrowserModel(authority);
@@ -149,7 +149,7 @@ export function createFixtureIds(): {
 	snapshot: BrowserSnapshot;
 	textCommand: ReturnType<typeof model.BrowserTextCommandSchema.parse>;
 	browserCommand: BrowserCommand;
-	serverRequests: ServerRequest[];
+	requestId: typeof requestId;
 	model: typeof model;
 	identity: typeof authority;
 } {
@@ -183,89 +183,5 @@ export function createFixtureIds(): {
 		threadId,
 		prompt: "Start",
 	});
-	const base = { id: requestId };
-	const serverRequests: ServerRequest[] = [
-		{
-			...base,
-			method: "item/commandExecution/requestApproval",
-			params: { kind: "command", threadId, turnId, itemId, startedAtMs: 1, environmentId: null },
-		},
-		{
-			...base,
-			method: "item/fileChange/requestApproval",
-			params: { threadId, turnId, itemId, startedAtMs: 1 },
-		},
-		{
-			...base,
-			method: "item/tool/requestUserInput",
-			params: { threadId, turnId, itemId, questions: [], isBlocking: true, autoResolutionMs: null },
-		},
-		{
-			...base,
-			method: "mcpServer/elicitation/request",
-			params: {
-				threadId,
-				turnId: null,
-				serverName: "server",
-				mode: "openai/form",
-				_meta: null,
-				message: "Input",
-				requestedSchema: {},
-			},
-		},
-		{
-			...base,
-			method: "item/permissions/requestApproval",
-			params: {
-				threadId,
-				turnId,
-				itemId,
-				environmentId: null,
-				startedAtMs: 1,
-				cwd: "/repo",
-				reason: null,
-				permissions: { network: null, fileSystem: null },
-			},
-		},
-		{
-			...base,
-			method: "item/tool/call",
-			params: {
-				threadId,
-				turnId,
-				callId: toolCallId,
-				namespace: "archboard",
-				tool: "inspect",
-				arguments: {},
-			},
-		},
-		{ ...base, method: "account/chatgptAuthTokens/refresh", params: { reason: "unauthorized" } },
-		{ ...base, method: "attestation/generate", params: {} },
-		{ ...base, method: "currentTime/read", params: { threadId } },
-		{
-			...base,
-			method: "applyPatchApproval",
-			params: {
-				conversationId: threadId,
-				callId: "patch",
-				fileChanges: {},
-				reason: null,
-				grantRoot: null,
-			},
-		},
-		{
-			...base,
-			method: "execCommandApproval",
-			params: {
-				conversationId: threadId,
-				callId: "exec",
-				approvalId: null,
-				command: ["bun", "test"],
-				cwd: "/repo",
-				reason: null,
-				parsedCmd: [],
-			},
-		},
-	];
-	return { snapshot, textCommand, browserCommand, serverRequests, model, identity: authority };
+	return { snapshot, textCommand, browserCommand, requestId, model, identity: authority };
 }
