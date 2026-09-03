@@ -1,11 +1,11 @@
 ---
 id: TASK-143.08.06.01
 title: Prove and record the server rendering boundary
-status: In Progress
+status: Done
 assignee:
-  - "@codex"
-created_date: "2026-09-02 01:57"
-updated_date: "2026-09-03 04:16"
+  - '@codex'
+created_date: '2026-09-02 01:57'
+updated_date: '2026-09-03 04:25'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -25,26 +25,21 @@ ordinal: 265000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-
 Resolve the remaining implementation uncertainty under ADR 0020: whether the pinned Excalidraw export and Mermaid conversion stack is reliable under Bun or Node DOM and canvas emulation. The evidence must cover real Archboard board features and resource behavior with zero connected browser clients. Emulation remains the required first choice. An isolated server-owned headless Chromium fallback is permitted only for concrete fidelity or reliability failures that cannot be removed at lower total complexity. Record the measured backend choice and keep the accepted board-operation, browser-operation, and rendering boundary accurate.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
-
 <!-- AC:BEGIN -->
-
-- [ ] #1 A bounded proof renders representative Archboard fixtures to PNG and SVG and converts representative Mermaid input with zero browser clients using Bun or Node emulation, covering bound labels and arrows, fonts, images or embedded files where supported, backgrounds, and the element shapes used by current workflows.
-- [ ] #2 The evidence records correctness, determinism expectations, startup and steady-state memory, cleanup, global DOM or canvas isolation, failure behavior, and the exact gaps that affect reachable Archboard workflows; reproducible inputs are canonical and cheaply regenerated outputs are ignored.
-- [ ] #3 Bun or Node emulation is selected when it meets the documented reachable-workflow bar. A headless Chromium fallback is selected only when the evidence names an unresolved material defect, demonstrates that fallback behavior, and proves it is an isolated server-owned resource rather than a user browser or pane.
-- [ ] #4 The measured result confirms ADR 0020 and records the selected rendering backend in a canonical design note. If the fallback is required, ADR 0020 is updated with the concrete emulation defect and the added lifecycle consequence.
-- [ ] #5 `CONTEXT.md` keeps the canonical Board operation, Browser operation, Board render, and Browser capture terms aligned with the proved boundary without introducing Pane or Canvas synonyms.
-
+- [x] #1 A bounded proof renders representative Archboard fixtures to PNG and SVG and converts representative Mermaid input with zero browser clients using Bun or Node emulation, covering bound labels and arrows, fonts, images or embedded files where supported, backgrounds, and the element shapes used by current workflows.
+- [x] #2 The evidence records correctness, determinism expectations, startup and steady-state memory, cleanup, global DOM or canvas isolation, failure behavior, and the exact gaps that affect reachable Archboard workflows; reproducible inputs are canonical and cheaply regenerated outputs are ignored.
+- [x] #3 Bun or Node emulation is selected when it meets the documented reachable-workflow bar. A headless Chromium fallback is selected only when the evidence names an unresolved material defect, demonstrates that fallback behavior, and proves it is an isolated server-owned resource rather than a user browser or pane.
+- [x] #4 The measured result confirms ADR 0020 and records the selected rendering backend in a canonical design note. If the fallback is required, ADR 0020 is updated with the concrete emulation defect and the added lifecycle consequence.
+- [x] #5 `CONTEXT.md` keeps the canonical Board operation, Browser operation, Board render, and Browser capture terms aligned with the proved boundary without introducing Pane or Canvas synonyms.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-
 1. Map the current PNG, SVG, and Mermaid implementations plus their concrete browser, DOM, canvas, font, and file dependencies.
 2. Add only stable, canonical proof inputs needed to drive representative persisted board snapshots and Mermaid source.
 3. Exercise the actual server-side export and Mermaid stack under Bun or Node DOM and canvas emulation with no browser client, recording correctness, repeatability, memory, cleanup, isolation, and failure observations in a temporary evidence directory.
@@ -61,13 +56,11 @@ Resolve the remaining implementation uncertainty under ADR 0020: whether the pin
 12. Audit every helper process, dependency preflight, malformed-input and renderer-death probe under the same 20-second limit plus five-second TERM/KILL cleanup, reporting phase and owned resources on success or failure.
 
 13. Capture a guarded candidate identity immediately after Chromium spawn, exercise failure before and during final group capture, and make the partial-cleanup audit fail closed until raw group absence is proved.
-
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-
 2026-09-03 remediation evidence: The canonical persisted fixture is now `board.excalidraw.md`; both probes read it through `readNote` and `projectPreviewSnapshot`. It covers all current native render shapes, bindings, background, Excalifont text, and an embedded file. The Chromium probe also passes browser Mermaid output through `applyElementInput` using valid Archboard ids without writing a note.
 
 Emulation: a pinned temporary `happy-dom`/`@napi-rs/canvas` manifest and lock install only under a unique `/tmp` directory with `--frozen-lockfile --ignore-scripts`; it registers all seven bundled Excalifont files, restores all globals, removes dependencies, renders PNG/SVG, and has no runtime diagnostics. It still returns zero elements for the valid configured Mermaid graph while malformed Mermaid rejects with `Error`, proving the reachable geometry defect.
@@ -94,3 +87,9 @@ New deterministic renderer acquisition seams cover `after-spawn-before-group-cap
 
 Validation: one cgroup-contained Chromium proof passed in 30.0 s. The three new seams all had matching candidate IDs and clean group/pipe/profile/port audits. The retained positive timeout measured 20,002.99 ms for `Runtime.evaluate` at the named phase; primary, child-exit, and replacement cleanup remained clean. Focused `oxfmt`, `oxlint`, and `git diff --check` pass. Emulation was not rerun. ACs remain unchecked and the task remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Recorded the bounded server-rendering decision. The canonical persisted board fixture renders representative PNG/SVG and Mermaid semantics with zero Archboard browser clients under one serialized, server-owned Chromium/profile; two contained runs matched PNG and SVG hashes and verified exact Mermaid labels/connectivity, timeout typing, replacement, and fail-closed resource cleanup. The pinned disposable Bun emulation run rendered PNG/SVG but reproducibly returned zero Mermaid elements for the valid graph, so ADR 0020 and the design record select isolated Chromium and document its lifecycle boundary. CONTEXT now distinguishes Board operation, Browser operation, Board render, and Browser capture. Focused format, lint, and diff checks passed; no production renderer, CI, package, root lockfile, or routine-suite latency was added.
+<!-- SECTION:FINAL_SUMMARY:END -->
