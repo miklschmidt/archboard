@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 21:36'
-updated_date: '2026-09-03 14:15'
+updated_date: '2026-09-03 14:19'
 labels: []
 dependencies: []
 parent_task_id: TASK-148
@@ -51,4 +51,6 @@ Focused evidence: the five directly changed behavior owners passed 22/22 in 12.5
 Independent-review remediation: bounded pane registration and each registry read with AbortSignal-aware TEST_PANE_MESSAGE_TIMEOUT_MS operations; bounded the complete close path, force-terminating a socket that does not close; and routed open failures through the same awaited cleanup. Registry absence now requires HTTP 200, success=true, a panes array, and string client ids. ObservedPane now owns the only predicate polling loop, while both adapters delegate. Added a focused loopback owner with fake timers for registration abort and cleanup, close termination, malformed registry evidence, and exact client-id isolation.
 
 Remediation validation: observed-pane.test.ts passed 4/4 in 28 ms. The directly affected doing-activity, pane-addressing, and branching-pane-effects owners passed 11/11 in 7.08 s. Exact-file Oxfmt and Oxlint passed.
+
+Narrow type remediation: pane-websocket.ts now reuses the exported JsonRequestOptions contract, so AbortSignal is accepted without an excess-property error. Exact-file Oxfmt/Oxlint passed; pane-addressing passed 7/7 in 4.05 s.
 <!-- SECTION:NOTES:END -->

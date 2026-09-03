@@ -2,7 +2,7 @@ import type { WebSocket } from "ws";
 
 import { TEST_PANE_MESSAGE_TIMEOUT_MS } from "../../../../src/shared/timing/timing.ts";
 import { openObservedPane } from "../../support/observed-pane.ts";
-import type { JsonResponse } from "./http.ts";
+import type { JsonRequestOptions, JsonResponse } from "./http.ts";
 
 export interface PaneMessage {
 	type: string;
@@ -22,10 +22,7 @@ export interface PaneRegistration {
 	viewport: { x: number; y: number; width: number; height: number; zoom: number };
 }
 
-type Request = <T>(
-	path: string,
-	options?: { method?: string; body?: unknown; doing?: string },
-) => Promise<JsonResponse<T>>;
+type Request = <T>(path: string, options?: JsonRequestOptions) => Promise<JsonResponse<T>>;
 
 export interface TestPane {
 	readonly clientId: string;
