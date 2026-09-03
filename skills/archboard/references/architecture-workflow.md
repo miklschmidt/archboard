@@ -16,7 +16,7 @@ belongs there." Read the layout, do not just write it.
 So the loop is always: **draw → look → read back → interpret → propose.**
 
 Never assume the canvas still looks the way you left it. Open any turn that
-touches an existing board with `panes --text`, so you know which board is where,
+touches an existing board with `browser panes --text`, so you know which board is where,
 and then read what moved.
 
 ## Reading back a human's edits
@@ -35,7 +35,7 @@ watch `feedId` and start over if it changes.
 
 Events say whether the change came from the agent or the human, so your own
 drawing is easy to skip. Use `describe --board <key>` when you need the full
-scene rather than the delta, and `selection --text` when the human says "this"
+scene rather than the delta, and `browser selection --pane <spec> --text` when the human says "this"
 or "these".
 
 What to look for:
@@ -132,7 +132,7 @@ The evidence tools answer different questions:
 - `check` decides whole-board structural and routing findings.
 - `render-findings` gives close-ups only while findings remain and a picture
   helps explain them.
-- A fitted full-scene `screenshot` records the board's extent after confirming
+- A fitted full-scene `browser capture --pane <spec>` records the board's extent after confirming
   that the pane holds it. It is an index, not proof that labels and paths read
   well at working zoom. For a pannable board, capture enough working-zoom views
   to verify the important paths and labels. The pane camera changes the view,
@@ -190,8 +190,8 @@ Guidance that holds up on a big screen:
   a database drum reads from two metres away; a labelled rectangle does not.
 - **One concern per board.** Do not put the data model and the request path on
   the same board. Make it a second board and, when they need to be read
-  together, put it beside the first with `pane open --board <name>`, which makes
-  a new pane rather than taking over the one somebody is reading.
+  together, put it beside the first with `browser open`, then point the new pane
+  with `browser show <name> --pane <spec>`.
 - **Layout carries meaning.** Left-to-right for flow, top-to-bottom for layers,
   containment for ownership. Be consistent — the human will read the geometry
   before the labels.
@@ -239,4 +239,4 @@ with the code change when the architecture decision belongs in review.
 - Auto-tidying a layout the human arranged. Ask before running align or
   distribute on anything you did not place yourself.
 - Treating an empty `changes` as "nothing happened" when no browser is open.
-  Check `panes` first: with no tab there is nobody to report an edit.
+  Check `browser panes` first: with no tab there is nobody to report an edit.

@@ -23,30 +23,19 @@ export interface BoardInfo {
 	loadedAt?: string;
 }
 
-/** One pane, named the way an answer points at it: "left", "the only pane". */
-export interface PaneRef {
-	paneId: string;
-	clientId: string;
-	place: string;
-	position: number;
-}
-
 /**
  * What a save did, as the server classified it (ADR 0012). A save writes a
- * file and does not choose what is on screen, so the answer says which of the
- * three acts it was and which panes it moved. Reading `saveKind` is how the
- * shell knows whether the pane in front of the human is holding what was just
- * written: after a branch it is not.
+ * file and does not choose what is on screen. Reading `saveKind` tells the
+ * shell whether it wrote the board back to its note, named scratch, or made a
+ * branch.
  */
 export interface BoardSaveResult extends BoardInfo {
 	file: string;
 	overwrote: boolean;
 	forced?: boolean;
-	saveKind?: "same-board" | "named" | "branch";
+	saveKind: "same-board" | "named" | "branch";
 	/** The board the save read from, which is only interesting when it differs. */
 	savedFrom?: string;
-	/** `moved` was repointed at what was written; `kept` was left on the source. */
-	panes?: { moved: PaneRef[]; kept: PaneRef[] };
 	/**
 	 * Set when this save was one of the two outcomes that end a hold: the board
 	 * had stopped saving, and it is saving again now (ADR 0006, TASK-079).
@@ -125,9 +114,25 @@ export interface NoteWrittenElsewhere {
 	message: string;
 }
 
-export interface BoardListing {
+/** Persisted board inventory returned by `/api/boards`. */
+export interface PersistedBoardListing {
 	vault: string;
 	boards: Array<{ key: string; identity: BoardIdentity; file?: string }>;
+}
+
+/** Browser-session inventory returned by `/api/panes`. */
+export interface BrowserPaneListing {
+	panes: Array<{
+		paneId: string;
+		place: string;
+		board: string;
+		identity: BoardIdentity;
+		elementCount: number;
+	}>;
+}
+
+/** UI-local projection of persisted boards and the live pane inventory. */
+export interface BoardListing extends PersistedBoardListing {
 	open: Array<{ key: string; identity: BoardIdentity; elementCount?: number }>;
 	/** What each pane is holding right now, in reading order. */
 	onScreen: Array<{ paneId: string; place: string; board: string }>;

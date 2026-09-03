@@ -35,7 +35,6 @@ const boardListSchema = z
 			z
 				.object({
 					key: z.string(),
-					source: z.enum(["memory", "vault"]),
 					nodes: z.array(z.object({ path: z.string() }).passthrough()),
 				})
 				.passthrough(),
@@ -205,7 +204,9 @@ describe("two-repository board session", () => {
 				/Alpha \[service\] -> src\/service\.ts/,
 			);
 			expect(fromAlpha.stdout, repositoryFailure(fromAlpha)).not.toMatch(/Beta \[/);
-			expect(fromAlpha.stdout, repositoryFailure(fromAlpha)).toContain("board open systems");
+			expect(fromAlpha.stdout, repositoryFailure(fromAlpha)).toContain(
+				"browser show systems --pane <spec>",
+			);
 			expect(fromBeta.status, repositoryFailure(fromBeta)).toBe(0);
 			expect(fromBeta.stdout, repositoryFailure(fromBeta)).toContain("systems");
 			const stranger = fixture.run(
@@ -261,10 +262,9 @@ describe("two-repository board session", () => {
 			const draftDiagnostic = repositoryFailure(draftList);
 			expect(draftList.status, draftDiagnostic).toBe(0);
 			const withDraft = parseBoardList(draftList);
-			expect(
-				withDraft.boards.find((entry) => entry.key === "drafts")?.source,
-				draftDiagnostic,
-			).toBe("memory");
+			const listedDraft = withDraft.boards.find((entry) => entry.key === "drafts");
+			expect(listedDraft, draftDiagnostic).toBeDefined();
+			expect(listedDraft, draftDiagnostic).not.toHaveProperty("source");
 			const fromVault = boardsForRepo(alphaIdentity, [], fixture.vault);
 			expect(fromVault.boards).toContainEqual(
 				expect.objectContaining({ key: "systems", source: "vault" }),

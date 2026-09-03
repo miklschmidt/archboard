@@ -10,7 +10,9 @@ import type {
 	BoardPreviewSnapshot,
 	BoardSaveResult,
 	BoardWriteConflict,
+	BrowserPaneListing,
 	LockHolder,
+	PersistedBoardListing,
 	ServerElement,
 } from "../types";
 import type { ChangeReport } from "./changes";
@@ -397,8 +399,25 @@ export function fetchBoardInfo(board: string) {
 	return json<BoardInfo & { success: true }>(`/api/boards/info?board=${encodeURIComponent(board)}`);
 }
 
-export function fetchBoards() {
-	return json<BoardListing>("/api/boards");
+export async function fetchBoards(): Promise<BoardListing> {
+	const [persisted, browser] = await Promise.all([
+		json<PersistedBoardListing>("/api/boards"),
+		json<BrowserPaneListing>("/api/panes"),
+	]);
+	const open = new Map<string, BoardListing["open"][number]>();
+	for (const pane of browser.panes) {
+		open.set(pane.board, {
+			key: pane.board,
+			identity: pane.identity,
+			elementCount: pane.elementCount,
+		});
+	}
+	return {
+		vault: persisted.vault,
+		boards: persisted.boards,
+		open: [...open.values()],
+		onScreen: browser.panes.map(({ paneId, place, board }) => ({ paneId, place, board })),
+	};
 }
 
 /** A read-only scene for the navigator; rendering stays in the browser. */

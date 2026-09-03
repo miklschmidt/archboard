@@ -13,7 +13,9 @@ describe("command-contract introspection", () => {
 			file: true,
 			artifact: { path: "/tmp/result", content: "content", encoding: "utf8" },
 		});
-		const json = JSON.stringify(introspectContracts([{ name: "proof", contract }]));
+		const json = JSON.stringify(
+			introspectContracts([{ name: "proof", classification: "neither", contract }]),
+		);
 		expect(json).not.toContain("pendingArtifact");
 		expect(json).not.toContain("content");
 		expect(json).not.toContain("encoding");
@@ -31,8 +33,8 @@ describe("command-contract introspection", () => {
 		const { viewportContract } = await import("../viewport.js");
 		const { exportContract } = await import("../export.js");
 		const proof = introspectContracts([
-			{ name: "viewport", contract: viewportContract },
-			{ name: "export", contract: exportContract },
+			{ name: "browser viewport", classification: "browser", contract: viewportContract },
+			{ name: "export", classification: "board", contract: exportContract },
 		]);
 		const viewportIds = proof[0]?.input.stages.find((stage) => stage.name === "ids");
 		const exportFormat = proof[1]?.input.stages.find((stage) => stage.name === "format");

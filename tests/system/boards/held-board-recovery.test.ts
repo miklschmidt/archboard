@@ -194,13 +194,12 @@ describe("held board recovery", () => {
 		const read = await request<ElementsBody>("/api/elements?board=holdover");
 		expect(read.body.elements.some((element) => element.id === "held1")).toBeTrue();
 		expect(read.body.held?.writes).toBe(1);
-		const listed = await request<{ open: Array<{ key: string; held?: HeldReport }> }>(
-			"/api/boards",
-		);
-		expect(listed.body.open.find((entry) => entry.key === "holdover")?.held).toMatchObject({
-			board: "holdover",
-			writes: 1,
-		});
+		const listed = await request<{
+			boards: Array<{ key: string; held?: HeldReport }>;
+			open?: unknown;
+		}>("/api/boards");
+		expect(listed.body.boards.find((entry) => entry.key === "holdover")).not.toHaveProperty("held");
+		expect(listed.body.open).toBeUndefined();
 		expect((await request<BoardInfo>("/api/boards/info?board=holdover")).body.savedAt).toBe(
 			savedAt,
 		);
@@ -296,7 +295,7 @@ describe("held board recovery", () => {
 		expect(resumed.status).toBe(200);
 	});
 
-	test("save elsewhere keeps both versions and moves the held pane onto the recovered copy", async () => {
+	test("save elsewhere keeps both versions without changing the held pane", async () => {
 		const pane = await openTestPane(canvas.base, request, "held-pane", 0, {
 			primary: true,
 			focused: true,
@@ -322,9 +321,8 @@ describe("held board recovery", () => {
 		expect(fs.readFileSync(elsewhere.body.file!, "utf8")).toContain("held3");
 		expect(fs.readFileSync(stopped.file, "utf8")).toContain("theirs3");
 		expect(fs.readFileSync(stopped.file, "utf8")).not.toContain("held3");
-		expect(elsewhere.body.panes?.moved.map((entry) => entry.place)).toEqual(["the only pane"]);
-		expect(elsewhere.body.panes?.kept).toEqual([]);
-		expect(pane.board()).toBe("holdmine");
+		expect(elsewhere.body).not.toHaveProperty("panes");
+		expect(pane.board()).toBe("holdelse");
 		const source = await request<ElementsBody>("/api/elements?board=holdelse");
 		expect(source.body.held).toBeUndefined();
 		expect(source.body.elements.some((element) => element.id === "theirs3")).toBeTrue();
@@ -356,7 +354,7 @@ describe("held board recovery", () => {
 		expect(refused.code).toBe(5);
 		expect(refused.stderr).toMatch(/Refusing to save/);
 		expect(refused.stderr).toMatch(/has stopped saving/);
-		expect(refused.stderr).toMatch(/board open cliheld --reload/);
+		expect(refused.stderr).toMatch(/browser show cliheld --pane <spec> --reload/);
 		const accepted = await add(2);
 		expect(accepted.code).toBe(0);
 		expect(accepted.stderr).toMatch(/stopped saving/);

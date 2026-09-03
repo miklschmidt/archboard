@@ -13,7 +13,7 @@ export const ViewportInputSchema = z
 		offsetX: z.string().optional(),
 		offsetY: z.string().optional(),
 		zoomFactor: z.string().optional(),
-		pane: z.string().optional(),
+		pane: z.string().min(1, "--pane is required"),
 		tail,
 	})
 	.superRefine((value, context) => {
@@ -68,24 +68,25 @@ export const ViewportResultSchema = z.object({
 export type ViewportResult = z.infer<typeof ViewportResultSchema>;
 
 export const viewportContract = defineCommand({
-	path: ["viewport"],
+	path: ["browser", "viewport"],
 	summary: "Point a pane's camera: fit, centre, or zoom (needs a browser tab)",
 	usage: [
-		"viewport --fit [--zoom-factor 0.8] [--pane <spec>]",
-		"viewport --ids a,b,c [--zoom-factor 0.8] [--pane <spec>]",
-		"viewport --element <id> [--pane <spec>]",
-		"viewport --zoom 1.5 [--offset-x 0] [--offset-y 0] [--pane <spec>]",
+		"browser viewport --pane <spec> --fit [--zoom-factor 0.8]",
+		"browser viewport --pane <spec> --ids a,b,c [--zoom-factor 0.8]",
+		"browser viewport --pane <spec> --element <id>",
+		"browser viewport --pane <spec> --zoom 1.5 [--offset-x 0] [--offset-y 0]",
 		"",
 		"  Exactly one of those four. --fit frames everything on the board, --ids frames those elements,",
 		"  --element centres on one without changing zoom, and the last sets explicit camera values.",
 		"  --zoom-factor is the padding on a fit: lower leaves more room around the content.",
 		"",
-		"  It names a PANE, not a board, because a pane holds one board and that settles which is meant",
-		"  (ADR 0009). With one pane on screen that is the one; with two, --pane says which half moves,",
-		"  and without it the pane that answers for the browser does.",
+		"  It requires a connected browser and names the pane whose visible camera moves.",
 	].join("\n"),
 	description: "Moves the camera owned by a rendered browser pane.",
-	examples: ["archboard viewport --fit", "archboard viewport --zoom 1.5 --offset-x 20"],
+	examples: [
+		"archboard browser viewport --pane left --fit",
+		"archboard browser viewport --pane right --zoom 1.5 --offset-x 20",
+	],
 	parameters: [
 		{
 			kind: "option",
@@ -222,7 +223,7 @@ export const viewportContract = defineCommand({
 			...(input.zoomFactor !== undefined
 				? { viewportZoomFactor: context.parse(finiteNumber("zoom-factor"), input.zoomFactor) }
 				: {}),
-			...(input.pane !== undefined ? { pane: input.pane } : {}),
+			pane: input.pane,
 		});
 		return { result };
 	},

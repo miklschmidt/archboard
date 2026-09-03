@@ -2,13 +2,21 @@ import { z } from "zod";
 import { getPanes, getSelection } from "../../runtime/engine/canvas-client.js";
 import { defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
-import { commonRefusals, serverRefusal } from "../command-contract/common.js";
+import { serverBrowserRefusals, serverRefusal } from "../command-contract/common.js";
 
-const inputSchema = z.object({
+const reportInputSchema = z.object({
 	text: z.boolean().default(false),
 	tail: z.array(z.string()).default([]),
 });
+const inputSchema = reportInputSchema.extend({ pane: z.string().min(1, "--pane is required") });
 const parameters = [
+	{
+		kind: "option" as const,
+		key: "pane",
+		spellings: ["--pane"] as const,
+		value: "required" as const,
+		description: "Live pane selector",
+	},
 	{
 		kind: "option" as const,
 		key: "text",
@@ -50,6 +58,7 @@ const outputs = {
 export const SelectionInputSchema = inputSchema;
 export type SelectionInput = z.infer<typeof SelectionInputSchema>;
 export const SelectionJsonResultSchema = z.looseObject({
+	board: z.string(),
 	elementIds: z.array(z.string()),
 	count: z.number().int().nonnegative(),
 	nodeCount: z.number().int().nonnegative(),
@@ -66,18 +75,18 @@ export const SelectionResultSchema = z.union([SelectionJsonResultSchema, z.strin
 export type SelectionResult = z.infer<typeof SelectionResultSchema>;
 
 export const selectionContract = defineCommand({
-	path: ["selection"],
+	path: ["browser", "selection"],
 	summary: "What a human currently has selected on the board",
-	usage: "selection [--text]",
-	description: "Reads the server-cached browser selection without retransmitting the scene.",
-	examples: ["archboard selection --board system"],
+	usage: "browser selection --pane <spec> [--text]",
+	description: "Reads stable element ids from one connected browser pane without changing it.",
+	examples: ["archboard browser selection --pane left"],
 	parameters,
 	input: { ingress: SelectionInputSchema },
 	result: SelectionResultSchema,
 	output: outputs,
-	prerequisites: ["server", "board"],
-	effects: ["read"],
-	refusals: commonRefusals,
+	prerequisites: ["server", "browser"],
+	effects: ["browser"],
+	refusals: serverBrowserRefusals,
 	relationships: [
 		{
 			method: "GET",
@@ -87,15 +96,16 @@ export const selectionContract = defineCommand({
 		},
 	],
 	async handler(input, context) {
-		await context.require("server", "selection");
-		const report = await getSelection();
+		await context.require("server", "browser selection");
+		await context.require("browser", "browser selection");
+		const report = await getSelection(input.pane);
 		if (input.text) return { result: report.text };
 		const { success: _success, text: _text, ...rest } = report;
 		return { result: SelectionJsonResultSchema.parse(rest) };
 	},
 });
 
-export const PanesInputSchema = inputSchema;
+export const PanesInputSchema = reportInputSchema;
 export type PanesInput = z.infer<typeof PanesInputSchema>;
 const RectSchema = z.object({
 	x: z.number(),
@@ -135,7 +145,6 @@ export const PanesJsonResultSchema = z.looseObject({
 		}),
 	),
 	summary: z.string(),
-	activeBoard: z.string(),
 	held: HoldReportSchema.optional(),
 });
 export type PanesJsonResult = z.infer<typeof PanesJsonResultSchema>;
@@ -143,17 +152,17 @@ export const PanesResultSchema = z.union([PanesJsonResultSchema, z.string()]);
 export type PanesResult = z.infer<typeof PanesResultSchema>;
 
 export const panesContract = defineCommand({
-	path: ["panes"],
+	path: ["browser", "panes"],
 	summary: "What the human is currently looking at — pane by pane",
-	usage: "panes [--text]",
+	usage: "browser panes [--text]",
 	description: "Reads pane layout and view state, including the valid no-pane state.",
-	examples: ["archboard panes --board system"],
-	parameters,
+	examples: ["archboard browser panes"],
+	parameters: parameters.filter((parameter) => parameter.key !== "pane"),
 	input: { ingress: PanesInputSchema },
 	result: PanesResultSchema,
 	output: outputs,
 	prerequisites: ["server"],
-	effects: ["read"],
+	effects: ["browser"],
 	refusals: [serverRefusal],
 	relationships: [
 		{ method: "GET", path: "/api/panes", cardinality: "one", description: "Read pane view state" },
@@ -162,7 +171,7 @@ export const panesContract = defineCommand({
 		await context.require("server", "panes");
 		const report = await getPanes();
 		if (input.text) return { result: report.text };
-		const { success: _success, text: _text, ...rest } = report;
+		const { success: _success, text: _text, activeBoard: _activeBoard, ...rest } = report;
 		return { result: PanesJsonResultSchema.parse(rest) };
 	},
 });

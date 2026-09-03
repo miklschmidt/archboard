@@ -43,7 +43,7 @@ proposal, branch the current board, then put the proposal in a new pane so the
 source stays where the human is reading it.
 
 ```bash
-archboard panes --text
+archboard browser panes --text
 archboard board list
 archboard library list --text
 
@@ -54,7 +54,8 @@ archboard promote --board payments --doing "calling the front door a gateway" \
 
 archboard board save --board payments --variant option-a \
   --doing "branching the cache proposal"
-archboard pane open --board payments@option-a
+archboard browser open
+archboard browser show payments@option-a --pane right
 archboard add --board payments@option-a --doing "adding the orders cache" cache.json
 ```
 
@@ -97,8 +98,9 @@ A board is the persisted drawing that content commands read and write. A pane
 is a browser view of one board. A board can be edited with no pane open. Camera,
 selection, and visible bounds belong to a pane, not to the board.
 
-`pane open --board <key>` creates a new pane and cannot replace the board the
-human is already reading. A third pane is refused. Read `panes --text` before
+`browser open` creates a new pane and cannot replace the board the human is
+already reading. Point it deliberately with `browser show <key> --pane <spec>`.
+A third pane is refused. Read `browser panes --text` before
 using words such as "left", "right", or "this one".
 
 A variant is a modification of its source, not a fresh drawing of the same
@@ -113,9 +115,9 @@ connector routing, camera position, and rendered pixels belong to other owners.
 
 The canvas is shared. A moved box, a new group, or a node pulled out of a zone
 may be a design decision. Begin a turn on an existing board by reading its pane
-and recent changes. Use the live selection when the human says "this" or
-"these". State your interpretation before turning their rearrangement into a
-larger edit.
+and recent changes. Use `browser selection --pane <spec>` when the human says
+"this" or "these", then pass its returned ids explicitly to the board write.
+State your interpretation before turning their rearrangement into a larger edit.
 
 Keep each write meaningful on screen. Add a replacement path before removing
 the old one. Move a subsystem in one patch instead of leaving a trail of
@@ -192,10 +194,10 @@ wins without the human.
 - `check` inspects the whole persisted board deterministically.
 - `render-findings` renders close-ups for current findings from one named board
   snapshot.
-- `screenshot` captures one pane's rendered view. Confirm that pane holds the
+- `browser capture --pane <spec>` captures one pane's rendered view. Confirm that pane holds the
   named board. A fitted full-scene overview indexes the board's extent; readable
   working-zoom views prove the important paths and labels on a pannable board.
-- `viewport` changes a pane's camera. It does not crop inspection or prove what
+- `browser viewport --pane <spec>` changes a pane's camera. It does not crop inspection or prove what
   exists outside the visible area.
 - `export` writes a portable scene file. It does not prove the browser view or
   semantic difference.

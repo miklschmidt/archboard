@@ -183,7 +183,9 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 			});
 			expect((await request<{ paneCount: number }>("/api/panes")).body.paneCount).toBe(1);
 			expect(
-				await request<{ clientId: string; elementIds: string[] }>("/api/selection"),
+				await request<{ clientId: string; elementIds: string[] }>(
+					`/api/selection?pane=${clientId}`,
+				),
 			).toMatchObject({
 				body: { clientId, elementIds: ["selected-by-replacement"] },
 			});
@@ -205,11 +207,10 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 				async () => (await request<{ paneCount: number }>("/api/panes")).body.paneCount === 0,
 				"the exact replacement socket to retire its pane",
 			);
-			expect(
-				await request<{ clientId: null; elementIds: string[] }>("/api/selection"),
-			).toMatchObject({
-				body: { clientId: null, elementIds: [] },
-			});
+			const retiredSelection = await request<{ error: string }>(`/api/selection?pane=${clientId}`);
+			expect(retiredSelection.status).toBe(400);
+			expect(retiredSelection.body.error).toContain("No pane is open");
+			expect(retiredSelection.body.error).toContain(`"${clientId}" names nothing`);
 			expect(
 				(
 					await request<{ created: boolean }>("/api/boards/hold?board=scratch", {

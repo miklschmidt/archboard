@@ -5,8 +5,8 @@ import { cleanupCommandContractTest, proofContract } from "./support.js";
 afterEach(cleanupCommandContractTest);
 
 describe("command-contract schemas", () => {
-	test("board and pane result schemas accept the protected server response shapes", async () => {
-		const { BoardInfoResultSchema, BoardNewResultSchema, BoardOpenResultSchema } =
+	test("board and browser result schemas accept the protected server response shapes", async () => {
+		const { BoardInfoResultSchema, BoardNewResultSchema, BrowserShowResultSchema } =
 			await import("../../commands/board.js");
 		const { PaneOpenResultSchema } = await import("../../commands/pane.js");
 		const identityState = {
@@ -36,22 +36,21 @@ describe("command-contract schemas", () => {
 		const opened = { ...info, source: "vault" as const, pane };
 		expect(BoardInfoResultSchema.parse(info)).toEqual(info);
 		expect(BoardNewResultSchema.parse(created)).toEqual(created);
-		expect(BoardOpenResultSchema.parse(opened)).toEqual(opened);
+		expect(BrowserShowResultSchema.parse(opened)).toEqual(opened);
 		expect(
 			PaneOpenResultSchema.parse({
 				success: true,
 				pane,
 				paneCount: 2,
 				onScreen: [{ paneId: pane.paneId, place: pane.place, board: "payments" }],
-				board: opened,
 			}),
-		).toMatchObject({ board: { version: 7, placeholder: false, source: "vault" } });
+		).toMatchObject({ paneCount: 2 });
 		expect(BoardInfoResultSchema.safeParse({ ...info, version: undefined }).success).toBeFalse();
 		expect(
 			BoardInfoResultSchema.safeParse({ ...info, placeholder: undefined }).success,
 		).toBeFalse();
 		expect(BoardNewResultSchema.safeParse(info).success).toBeFalse();
-		expect(BoardOpenResultSchema.safeParse(info).success).toBeFalse();
+		expect(BrowserShowResultSchema.safeParse(info).success).toBeFalse();
 	});
 
 	test("named Zod schemas own migrated defaults, coercions, enums, and cross-field rules", async () => {
@@ -62,8 +61,9 @@ describe("command-contract schemas", () => {
 		const { ArrangeAlignStageSchema, ArrangeDistributeStageSchema, ArrangeDuplicateStageSchema } =
 			await import("../../commands/arrange.js");
 
-		expect(ScreenshotInputSchema.parse({}).format).toBe("png");
-		expect(ScreenshotInputSchema.safeParse({ format: "pdf" }).success).toBeFalse();
+		expect(ScreenshotInputSchema.parse({ pane: "left" }).format).toBe("png");
+		expect(ScreenshotInputSchema.safeParse({ pane: "left", format: "pdf" }).success).toBeFalse();
+		expect(ScreenshotInputSchema.safeParse({}).success).toBeFalse();
 		expect(ChangesInputSchema.parse({ since: "4" }).since).toBe(4);
 		expect(ChangesInputSchema.parse({}).since).toBe(0);
 		expect(ChangesInputSchema.safeParse({ since: "before" }).success).toBeFalse();

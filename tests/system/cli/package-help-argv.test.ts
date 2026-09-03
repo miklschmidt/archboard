@@ -65,19 +65,6 @@ const compatibility = compatibilitySchema.parse(
 	JSON.parse(readFileSync(compatibilityPath, "utf8")),
 );
 const sha256 = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
-const fixedBaseGeneralHelp = (value: string) =>
-	value
-		.replace(/^  bridge\s+Mark or remove a verified connector crossing\n/m, "")
-		.replace(/^  check\s+Inspect a persisted board for deterministic quality findings\n/m, "")
-		.replace(
-			/^  render-findings\s+Render deterministic PNG close-ups for persisted board findings\n/m,
-			"",
-		)
-		.replace(
-			/^  release\s+Give back a board you claimed\n/m,
-			"$&  inject         Whether the canvas can push board changes into a live Codex thread, and a probe to prove it\n",
-		)
-		.replace(/^               check only: 6 warnings, 7 errors, 8 indeterminate coverage\.\n/m, "");
 
 describe("package bin and help", () => {
 	test("owns byte-identical typed golden fixtures", () => {
@@ -85,12 +72,12 @@ describe("package bin and help", () => {
 			[
 				"src/cli/command-contract/tests/argv-golden.json",
 				argvPath,
-				"93d7f3037a12945432056b1b27a8decf42187f943335b153dc341a03ed6409e6",
+				"101954e3c75f55918f67744aac6715f623bb4d69bf944963800f5bc16c97b793",
 			],
 			[
 				"src/cli/command-contract/tests/fixed-base-compatibility.json",
 				compatibilityPath,
-				"1bc34609ff3ed18214f088006e96919ba8f415281fc6a3b50831d49b192baf95",
+				"dc0124b71eb7bf5aa17b8d7c768e342c9a6cd2a5b255523b55f4ff1d85887a00",
 			],
 		] as const;
 		for (const [oldRelative, owned, digest] of pairs) {
@@ -147,9 +134,7 @@ describe("package bin and help", () => {
 		for (const alias of [["-h"], ["--help"], ["help", "unknown-topic"]]) {
 			const result = await owner.run(alias);
 			expect(result, packageFailure(result)).toMatchObject({ status: 0, stderr: "" });
-			expect(sha256(fixedBaseGeneralHelp(result.stdout)), packageFailure(result)).toBe(
-				argvGolden.generalHelpSha256,
-			);
+			expect(sha256(result.stdout), packageFailure(result)).toBe(argvGolden.generalHelpSha256);
 		}
 	}, 30_000);
 });
@@ -186,7 +171,7 @@ describe("package argv compatibility", () => {
 		await using resources = new AsyncDisposableStack();
 		const owner = resources.use(createPackageCliOwner());
 		expect(compatibility.schemaVersion).toBe(2);
-		expect(compatibility.fixedBase).toBe("6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a");
+		expect(compatibility.fixedBase).toBe("dfb589bd28f6dc95289f5271ba389bfcc48bafbe");
 		for (const path of compatibility.publicPaths) {
 			const [command, ...tail] = path.split(" ");
 			const result = await owner.run(["help", command!, ...tail]);
@@ -203,7 +188,7 @@ describe("package argv compatibility", () => {
 	test("detects an altered argv golden", () => {
 		const altered = readFileSync(argvPath, "utf8").replace('"name"', '"nAme"');
 		expect(sha256(altered)).not.toBe(
-			"93d7f3037a12945432056b1b27a8decf42187f943335b153dc341a03ed6409e6",
+			"101954e3c75f55918f67744aac6715f623bb4d69bf944963800f5bc16c97b793",
 		);
 	});
 });

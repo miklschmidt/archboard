@@ -63,11 +63,11 @@ afterAll(async () => {
 describe.serial("vault-only production interfaces", () => {
 	test("uses a persisted note through representative interfaces without a browser or open step", async () => {
 		const initial = await request<{
-			open: Array<{ key: string }>;
-			onScreen: unknown[];
+			boards: Array<{ key: string }>;
 		}>("/api/boards");
-		expect(initial.body.open.map((entry) => entry.key)).not.toContain("payments");
-		expect(initial.body.onScreen).toEqual([]);
+		expect(initial.body.boards.map((entry) => entry.key)).toContain("payments");
+		expect(initial.body).not.toHaveProperty("open");
+		expect(initial.body).not.toHaveProperty("onScreen");
 
 		const reads = [
 			["elements", "/api/elements?board=payments"],
@@ -81,8 +81,10 @@ describe.serial("vault-only production interfaces", () => {
 			expect(result.status, name).toBe(200);
 			expect(result.body.success, name).not.toBeFalse();
 		}
-		const afterReads = await request<{ open: Array<{ key: string }> }>("/api/boards");
-		expect(afterReads.body.open.map((entry) => entry.key)).not.toContain("payments");
+		const afterReads = await request<{ boards: Array<{ key: string }> }>("/api/boards");
+		expect(afterReads.body.boards.map((entry) => entry.key)).toContain("payments");
+		expect(afterReads.body).not.toHaveProperty("open");
+		expect(afterReads.body).not.toHaveProperty("onScreen");
 
 		const changed = await request<{ fingerprint: { version: number } }>(
 			"/api/elements?board=payments",
@@ -190,16 +192,22 @@ describe.serial("vault-only production interfaces", () => {
 		expect(listBoards(vault).some((entry) => entry.key === "retiredpane")).toBeFalse();
 	});
 
-	test("keeps a read-only resolution out of open-session state", async () => {
+	test("keeps browser-session state out of board inventory", async () => {
 		putNote("read-then-open");
 		expect((await request("/api/elements?board=read-then-open")).status).toBe(200);
-		const beforeOpen = await request<{ open: Array<{ key: string }> }>("/api/boards");
-		expect(beforeOpen.body.open.map((entry) => entry.key)).not.toContain("read-then-open");
+		const beforeOpen = await request<{ boards: Array<{ key: string }> }>("/api/boards");
+		expect(beforeOpen.body.boards.map((entry) => entry.key)).toContain("read-then-open");
+		expect(beforeOpen.body).not.toHaveProperty("open");
+		expect(beforeOpen.body).not.toHaveProperty("onScreen");
 		const opened = await request<{ source: string }>("/api/boards/open", {
 			method: "POST",
 			body: { board: "read-then-open" },
 		});
 		expect(opened).toMatchObject({ status: 200, body: { source: "vault" } });
+		const afterOpen = await request<{ boards: Array<{ key: string }> }>("/api/boards");
+		expect(afterOpen.body.boards).toEqual(beforeOpen.body.boards);
+		expect(afterOpen.body).not.toHaveProperty("open");
+		expect(afterOpen.body).not.toHaveProperty("onScreen");
 	});
 
 	test("serializes normalized creation and establishes a waiting baseline under lock", async () => {

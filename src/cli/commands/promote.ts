@@ -3,12 +3,10 @@ import {
 	applyElementChanges,
 	getBoardInfo,
 	getElements,
-	getSelection,
 } from "../../runtime/engine/canvas-client.js";
 import type { ServerElement } from "../../runtime/engine/types.js";
 import {
 	KINDS,
-	PromotionError,
 	type ElementUpdate,
 	demotionSummary,
 	normalizeKind,
@@ -22,28 +20,11 @@ import { defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
 import { boardWriteRefusals } from "../command-contract/common.js";
 
-async function targetElements(
-	ids: string[] | undefined,
-	board: ServerElement[],
-	verb: string,
-): Promise<ServerElement[]> {
+function targetElements(ids: string[], board: ServerElement[]): ServerElement[] {
 	const byId = new Map(board.map((element) => [element.id, element]));
-	if (ids !== undefined) {
-		const missing = ids.filter((id) => !byId.has(id));
-		if (missing.length) throw new Error(`No element on the canvas with id ${missing.join(", ")}`);
-		return ids.map((id) => byId.get(id)!);
-	}
-	const selection = await getSelection();
-	if (!selection.elementIds.length)
-		throw new PromotionError(
-			`Nothing is selected on the board, so there is nothing to ${verb}. Select the shapes on the canvas, or pass --ids a,b,c.`,
-		);
-	const found = selection.elementIds.map((id) => byId.get(id)).filter(Boolean) as ServerElement[];
-	if (!found.length)
-		throw new Error(
-			`The selected ids are not on the canvas any more: ${selection.elementIds.join(", ")}`,
-		);
-	return found;
+	const missing = ids.filter((id) => !byId.has(id));
+	if (missing.length) throw new Error(`No element on the board with id ${missing.join(", ")}`);
+	return ids.map((id) => byId.get(id)!);
 }
 async function applyUpdates(updates: ElementUpdate[]): Promise<void> {
 	if (updates.length)
@@ -97,7 +78,9 @@ const output = {
 };
 
 export const PromoteInputSchema = z.object({
-	ids: z.string().optional(),
+	ids: z.string({
+		error: "--ids is required; use `browser selection --pane <spec>` to inspect a live selection",
+	}),
 	kind: z.string().optional(),
 	name: z.string().optional(),
 	node: z.string().optional(),
@@ -194,9 +177,9 @@ export const PromoteResultSchema = z.union([PromoteJsonResultSchema, z.string()]
 export type PromoteResult = z.infer<typeof PromoteResultSchema>;
 export const promoteContract = defineCommand({
 	path: ["promote"],
-	summary: "Declare the selected elements a node: kind, identity, binding",
-	usage: "promote --kind <kind> [--ids a,b,c] [--path file] [--text]",
-	description: "Promotes selected or named elements as one architecture node write.",
+	summary: "Declare named elements a node: kind, identity, binding",
+	usage: "promote --kind <kind> --ids a,b,c [--path file] [--text]",
+	description: "Promotes explicitly named elements as one architecture node write.",
 	examples: ['archboard promote --kind service --ids api --board payments --doing "promoting API"'],
 	parameters: [
 		{
@@ -303,12 +286,6 @@ export const promoteContract = defineCommand({
 		{ method: "GET", path: "/api/elements", cardinality: "one", description: "Read the board" },
 		{
 			method: "GET",
-			path: "/api/selection",
-			cardinality: "conditional",
-			description: "Resolve default targets",
-		},
-		{
-			method: "GET",
 			path: "/api/boards/info",
 			cardinality: "one",
 			description: "Read board variant",
@@ -324,8 +301,8 @@ export const promoteContract = defineCommand({
 		const declaration = context.parse(PromotionDeclarationStageSchema, input);
 		await context.require("server", "promote");
 		const board = await getElements();
-		const ids = input.ids ? context.parse(PromotionIdsStageSchema, input.ids) : undefined;
-		const targets = await targetElements(ids, board, "promote");
+		const ids = context.parse(PromotionIdsStageSchema, input.ids);
+		const targets = targetElements(ids, board);
 		context.parse(PromotionBindingStageSchema, input);
 		const binding = input.path
 			? await resolveBinding(
@@ -371,7 +348,9 @@ export const promoteContract = defineCommand({
 });
 
 export const DemoteInputSchema = z.object({
-	ids: z.string().optional(),
+	ids: z.string({
+		error: "--ids is required; use `browser selection --pane <spec>` to inspect a live selection",
+	}),
 	text: z.boolean().default(false),
 	tail,
 });
@@ -389,8 +368,8 @@ export type DemoteResult = z.infer<typeof DemoteResultSchema>;
 export const demoteContract = defineCommand({
 	path: ["demote"],
 	summary: "Turn nodes back into plain elements",
-	usage: "demote [--ids a,b,c] [--text]",
-	description: "Demotes every element belonging to the selected nodes in one write.",
+	usage: "demote --ids a,b,c [--text]",
+	description: "Demotes every element belonging to explicitly named nodes in one write.",
 	examples: ['archboard demote --ids api --board payments --doing "demoting API"'],
 	parameters: commonParameters,
 	input: {
@@ -412,12 +391,6 @@ export const demoteContract = defineCommand({
 	relationships: [
 		{ method: "GET", path: "/api/elements", cardinality: "one", description: "Read the board" },
 		{
-			method: "GET",
-			path: "/api/selection",
-			cardinality: "conditional",
-			description: "Resolve default targets",
-		},
-		{
 			method: "POST",
 			path: "/api/elements/changes",
 			cardinality: "conditional",
@@ -427,8 +400,8 @@ export const demoteContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "demote");
 		const board = await getElements();
-		const ids = input.ids ? context.parse(PromotionIdsStageSchema, input.ids) : undefined;
-		const targets = await targetElements(ids, board, "demote");
+		const ids = context.parse(PromotionIdsStageSchema, input.ids);
+		const targets = targetElements(ids, board);
 		const plan = planDemotion(targets, board);
 		await applyUpdates(plan.updates);
 		const summary = demotionSummary(plan);

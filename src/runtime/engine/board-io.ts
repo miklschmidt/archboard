@@ -2,7 +2,7 @@
 // only place either happens (ADR 0015).
 //
 // One read, `readNoteFile`, under both callers that want a board out of a
-// note: `readBoardFile` for `board open`, which wants the identity the note
+// note: `readBoardFile` for `browser show`, which wants the identity the note
 // declares as well, and `readNote` for the per-request read, which wants the
 // elements in the maps the routes work against. Resolving which file, reading
 // it, and interpreting what came back are three jobs and only the middle one
@@ -125,7 +125,7 @@ export function boardFilesMessage(content: BoardContent): {
 /**
  * A note, plus the identity of the board it turned out to hold.
  *
- * What `board open` needs and a per-request read does not: a request already
+ * What `browser show` needs and a per-request read does not: a request already
  * knows which board it is working on, and opening one is the act that finds
  * out.
  */
@@ -218,7 +218,7 @@ export interface NoteFile {
  *
  * That is not tidiness, it is the bug this had. Two readers stood here — this
  * one for the per-request read every route takes (ADR 0015), and
- * `readBoardFile` for `board open` — and TASK-085 taught only one of them to
+ * `readBoardFile` for `browser show` — and TASK-085 taught only one of them to
  * follow a migrated picture. The two merged with no conflict, and a board the
  * plugin had been through rendered holes on every read until `256369d`
  * repaired it with a targeted change. `tests/system/boards/image-persistence.test.ts` guards both

@@ -138,6 +138,21 @@ function preflightResponse(
 			paneCount: 2,
 			onScreen: [{ paneId: paneRef.paneId, place: paneRef.place, board: "contract" }],
 		});
+	if (method === "GET" && url.pathname === "/api/selection")
+		return Response.json({
+			success: true,
+			board: "contract",
+			elementIds: [element.id],
+			count: 1,
+			nodeCount: 0,
+			elements: [element],
+			missingIds: [],
+			clientId: paneRef.clientId,
+			at: "2026-08-26T10:00:00.000Z",
+			browserClients: 1,
+			summary: "1 element selected",
+			text: "1 element selected",
+		});
 	return null;
 }
 
@@ -194,7 +209,7 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 					actualHash: "actual",
 					versionMove: "ahead",
 					outcomes: {
-						reload: "board open save-conflict --reload",
+						reload: "browser show save-conflict --pane <spec> --reload",
 						overwrite: "board save --force",
 						saveAs: "board save --as save-conflict@from-canvas",
 					},

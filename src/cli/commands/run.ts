@@ -20,7 +20,7 @@ import { startContract, stopContract } from "./server.js";
 import { addContract, applyContract, deleteContract, getContract } from "./elements.js";
 import * as scene from "./scene.js";
 import { panesContract, selectionContract } from "./selection.js";
-import { paneCloseContract, paneContract, paneOpenContract } from "./pane.js";
+import { browserContract, paneCloseContract, paneOpenContract } from "./pane.js";
 import { demoteContract, promoteContract } from "./promote.js";
 import { repoAddContract, repoContract, repoForgetContract, repoListContract } from "./repo.js";
 import {
@@ -35,7 +35,7 @@ import {
 	boardInfoContract,
 	boardListContract,
 	boardNewContract,
-	boardOpenContract,
+	browserShowContract,
 } from "./board.js";
 import { compareContract } from "./compare.js";
 import { checkContract } from "./check.js";
@@ -152,36 +152,15 @@ const COMMANDS: Record<string, CommandRoute> = {
 	query: {
 		owner: contract(queryContract, "src/cli/command-contract/query.ts"),
 	},
-	selection: {
-		owner: contract(selectionContract, "src/cli/commands/selection.ts"),
-		summary: "What a human currently has selected on the board",
-		usage: "selection [--text]",
-	},
-	panes: {
-		owner: contract(panesContract, "src/cli/commands/selection.ts"),
-		summary: "What the human is currently looking at — pane by pane",
-		usage: [
-			"panes [--text]",
-			"",
-			"  One entry per pane on screen, in reading order: where it sits (left/right/top/bottom),",
-			"  which board and variant it holds, how much of that board is in view, and what is selected",
-			'  in it. This is how "the left one" and "move that box over there" get resolved by something',
-			"  that cannot see the screen.",
-			"",
-			"  VIEW STATE ONLY — it never lists elements, so it stays cheap enough to call every turn.",
-			"  Use `describe` for what is on a board and `selection` for the full detail of one pick.",
-			"  No pane at all is normal: it means no browser is open, not that anything is wrong.",
-		].join("\n"),
-	},
 	promote: {
 		owner: contract(promoteContract, "src/cli/commands/promote.ts"),
-		summary: "Declare the selected elements a node: kind, identity, binding",
+		summary: "Declare named elements a node: kind, identity, binding",
 		usage: [
-			'promote --kind service|queue|datastore|gateway|external [--ids a,b,c] [--name "Payments"] [--node payments]',
+			'promote --kind service|queue|datastore|gateway|external --ids a,b,c [--name "Payments"] [--node payments]',
 			"        [--path src/payments/service.ts] [--repo host/owner/name] [--branch main] [--commit sha]",
 			"        [--variant current] [--level system|service|module] [--each] [--text]",
 			"",
-			"  The default target is the live selection; --each makes one node per selected shape.",
+			"  Targets are explicit board element ids. Read live ids with `browser selection --pane <spec>`.",
 			"",
 			"  A BINDING NAMES A REPOSITORY, not a directory (ADR 0011). --path takes an absolute path, or a",
 			"  repo-relative path with --repo naming a registered checkout (`repo add`), or a path relative to",
@@ -190,45 +169,41 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"  nodes in five of them without a single `cd`.",
 		].join("\n"),
 	},
-	pane: {
-		owner: contract(paneContract, "src/cli/commands/pane.ts"),
+	browser: {
+		owner: contract(browserContract, "src/cli/commands/pane.ts"),
 		children: {
 			open: child(contract(paneOpenContract, "src/cli/commands/pane.ts")),
 			close: child(contract(paneCloseContract, "src/cli/commands/pane.ts")),
+			show: child(contract(browserShowContract, "src/cli/commands/board.ts")),
+			panes: child(contract(panesContract, "src/cli/commands/selection.ts")),
+			selection: child(contract(selectionContract, "src/cli/commands/selection.ts")),
+			viewport: child(contract(viewportContract, "src/cli/command-contract/viewport.ts")),
+			capture: child(contract(scene.screenshotContract, "src/cli/commands/scene.ts")),
 		},
 		bare: {
 			kind: "namespace-refusal",
 			message:
-				"pane needs a subcommand: open, close. For what is on screen right now, without changing it, run `archboard panes`.",
+				"browser needs a subcommand: panes, open, close, show, selection, viewport, or capture",
 		},
-		summary: "Split the canvas into another pane, or close one",
+		summary: "Inspect or control the connected browser session",
 		usage: [
-			"pane open [--board <key>] | pane close <left|right|1|2|primary|focused|pane id>",
+			"browser panes [--text]",
+			"        | open | close <pane> | show <board> --pane <pane>",
+			"        | selection --pane <pane> [--text]",
+			"        | viewport --pane <pane> <camera options>",
+			"        | capture --pane <pane> [--out file] [--format png|svg]",
+			"  <pane> accepts left, right, top, bottom, focused, primary, a position, or a pane id.",
 			"",
-			"  A pane is a slot holding one board, and two panes are how the architecture that exists sits",
-			"  beside a proposal. Layout used to be a click in the browser, so a thread that could only",
-			"  talk had one pane and reused it — which meant overwriting the board the human was reading.",
-			"",
-			"  `pane open --board <key>` is the whole side-by-side move in one command: it makes a new pane",
-			"  and opens that board into it. It CANNOT target an existing pane, so it cannot overwrite one.",
-			"  With no --board the new pane shows whatever was already on screen, like pressing Split.",
-			"",
-			"  Two panes is the limit the shell lays out. A pane exists only while a browser tab is",
-			"  rendering it, so both of these need one open and exit 4 when there is none — nothing here",
-			"  invents a pane on a headless canvas. Closing a pane takes a board off the screen and does",
-			"  nothing to the board itself; the last pane cannot be closed.",
-			"",
-			"  `archboard panes` (plural) is the read: which pane holds which board, and what is in view.",
+			"  These commands inspect or visibly change a connected browser session. Except for `panes`,",
+			"  they require a live pane and exit 4 when none exists. None writes a board note.",
+			"  `show`, `selection`, `viewport`, and `capture` require an explicit pane so the visible target",
+			"  never depends on focus. Use `render --board <key>` for persisted-board PNG or SVG output.",
 		].join("\n"),
-	},
-	viewport: {
-		owner: contract(viewportContract, "src/cli/command-contract/viewport.ts"),
 	},
 	demote: {
 		owner: contract(demoteContract, "src/cli/commands/promote.ts"),
 		summary: "Turn nodes back into plain elements",
-		usage:
-			"demote [--ids a,b,c] [--text]  (default target is the live selection; demotes every element of each node it touches)",
+		usage: "demote --ids a,b,c [--text]  (demotes every element of each named node)",
 	},
 	repo: {
 		owner: contract(repoContract, "src/cli/commands/repo.ts"),
@@ -263,24 +238,20 @@ const COMMANDS: Record<string, CommandRoute> = {
 			list: child(contract(boardListContract, "src/cli/commands/board.ts")),
 			info: child(contract(boardInfoContract, "src/cli/commands/board.ts")),
 			new: child(contract(boardNewContract, "src/cli/commands/board.ts")),
-			open: child(contract(boardOpenContract, "src/cli/commands/board.ts")),
 			save: child(contract(boardSaveContract, "src/cli/command-contract/board-save.ts")),
 		},
 		bare: {
 			kind: "namespace-refusal",
-			message: "board needs a subcommand: list, info, new, open, save",
+			message: "board needs a subcommand: list, info, new, or save",
 		},
-		summary: "Load, save and list boards in the vault",
+		summary: "Create, inspect, save, and list persisted boards",
 		usage: [
 			"board list [--repo <host/owner/name> | --here] [--text]",
 			"        | info | new <name> [--variant v] [--level system|service|module]",
-			"        | open <name[@variant]> [--variant v] [--reload] [--pane <spec>]",
 			"        | save --board <key> [--as <name>] [--variant v] [--level l] [--force]",
 			"",
-			"  A board is one .excalidraw.md note in the vault at ARCHBOARD_VAULT; a PANE holds one at a time,",
-			"  and two panes hold two — which is what side-by-side current-vs-proposed is. --pane takes left,",
-			"  right, top, bottom, a 1-based position, primary, or a pane id, and is required once more than",
-			"  one pane is open; with a single pane the board goes there, with none it is loaded unshown.",
+			"  A board is one .excalidraw.md note in ARCHBOARD_VAULT. These commands never inspect or",
+			"  change panes. Use `browser show <board> --pane <spec>` to change what a person sees.",
 			'  The variant "current" owns the bare name — the architecture that exists. Every other variant is',
 			"  addressed and stored as name@variant, so three-way option comparison is just three names.",
 			"",
@@ -291,14 +262,12 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"  a promotion is a write, and a write is in the note.",
 			"  BRANCHING (`save --as name@variant` or `save --variant v`) writes a second board and moves",
 			"  nothing on screen: you branched in order to compare, so the source stays where it is and the",
-			"  branch is put up with `board open` (ADR 0012). The level comes across unless --level says",
-			"  otherwise. The one save that does move a pane is naming the scratch board, and the answer says",
-			"  which pane it moved either way.",
+			"  branch is shown with `browser show`. The level comes across unless --level says otherwise.",
 			"",
 			"  WRITES ARE CHECKED, NOT LOCKED. Every write goes to the note, and archboard verifies that the",
 			"  destination still holds the bytes it last wrote there. If the note changed underneath —",
 			"  Obsidian, a sync client, another editor — the write is refused, nothing is written, and a save",
-			"  exits 5 naming three ways out: reload the note (`board open <name> --reload`), overwrite it",
+			"  exits 5 naming three ways out: reload the displayed note (`browser show <name> --pane <spec> --reload`), overwrite it",
 			"  (`--force`), or keep both (`--as <other>`). archboard never picks for you. Nothing is locked,",
 			"  so keep a board open in one editor at a time: the check catches a changed file, not a copy in",
 			"  another app's memory.",
@@ -393,17 +362,6 @@ const COMMANDS: Record<string, CommandRoute> = {
 		owner: contract(scene.describeContract, "src/cli/commands/scene.ts"),
 		summary: "AI-readable scene description (plain text)",
 		usage: "describe",
-	},
-	screenshot: {
-		owner: contract(scene.screenshotContract, "src/cli/commands/scene.ts"),
-		summary: "Capture one pane (needs an open browser tab)",
-		usage: [
-			"screenshot [--out file.png] [--format png|svg] [--no-background] [--pane <spec>]",
-			"",
-			"  A picture of one pane, so with two on screen it takes --pane left|right|1|2 to say which",
-			"  half. Without it the pane that answers for the browser is photographed, which with a single",
-			"  pane is that pane — and with two is the one you may not have drawn in.",
-		].join("\n"),
 	},
 	render: {
 		owner: contract(scene.renderContract, "src/cli/commands/scene.ts"),
@@ -528,11 +486,56 @@ export function cliSurface(): { name: string; subcommands: readonly string[] }[]
 export interface CliRegistryEntry {
 	name: string;
 	parent: string | null;
+	classification: "board" | "browser" | "neither";
 	handlerOwner: string;
 	parserOwner: string;
 	bare?: CommandRoute["bare"];
 	childDiscovery?: CommandRoute["childDiscovery"];
 	contract: AnyCommandContract;
+}
+
+const boardNamespaces = new Set(["board", "arrange", "snapshot", "compare"]);
+const sessionRelationships = ["/api/selection", "/api/panes", "/api/viewport", "/api/browser/"];
+
+function commandClassification(command: AnyCommandContract): CliRegistryEntry["classification"] {
+	if (command.path[0] === "browser") return "browser";
+	if (command.prerequisites.includes("board") || boardNamespaces.has(command.path[0] ?? "")) {
+		return "board";
+	}
+	return "neither";
+}
+
+function assertCommandArchitecture(entry: CliRegistryEntry): void {
+	const { classification, contract: command, name } = entry;
+	const hasBrowserPrerequisite = command.prerequisites.includes("browser");
+	const hasBrowserEffect = command.effects.includes("browser");
+	const writesBoard = command.effects.includes("write");
+	const usesSessionInput = command.parameters.some(
+		(parameter) =>
+			"spellings" in parameter && parameter.spellings.some((spelling) => spelling === "--pane"),
+	);
+	const usesSessionRelationship = command.relationships.some((relationship) =>
+		sessionRelationships.some((prefix) => relationship.path.startsWith(prefix)),
+	);
+
+	if (
+		(hasBrowserPrerequisite || hasBrowserEffect || usesSessionInput || usesSessionRelationship) &&
+		classification !== "browser"
+	) {
+		throw new Error(`${name} consumes browser-session state but is classified ${classification}.`);
+	}
+	if (classification === "browser" && command.path[0] !== "browser") {
+		throw new Error(`${name} is a browser operation outside the browser namespace.`);
+	}
+	if (classification === "browser" && writesBoard) {
+		throw new Error(`${name} is a browser operation that writes a board note.`);
+	}
+	if (
+		classification === "board" &&
+		(hasBrowserPrerequisite || hasBrowserEffect || usesSessionInput || usesSessionRelationship)
+	) {
+		throw new Error(`${name} is a board operation with a browser-session dependency.`);
+	}
 }
 
 function parserOwner(owner: RouteOwner): string {
@@ -549,6 +552,7 @@ function flattenRoute(
 	const current: CliRegistryEntry = {
 		name,
 		parent,
+		classification: commandClassification(route.owner.contract),
 		handlerOwner: route.owner.handlerOwner,
 		parserOwner: parserOwner(route.owner),
 		...(route.bare ? { bare: route.bare } : {}),
@@ -564,7 +568,11 @@ function flattenRoute(
 }
 
 export function cliContractRegistry(): CliRegistryEntry[] {
-	return Object.entries(COMMANDS).flatMap(([name, route]) => flattenRoute(name, route, null));
+	const entries = Object.entries(COMMANDS).flatMap(([name, route]) =>
+		flattenRoute(name, route, null),
+	);
+	for (const entry of entries) assertCommandArchitecture(entry);
+	return entries;
 }
 
 function dispatchedCommand(
@@ -633,13 +641,13 @@ function printHelp(): void {
 		),
 		"",
 		"Conventions:",
-		"  Results are JSON on stdout — except `describe` (plain text), `selection --text`,",
+		"  Results are JSON on stdout — except `describe` (plain text), `browser selection --text`,",
 		"  and raw-content output when --out is omitted (`export` scene JSON,",
-		"  `screenshot --format svg`).",
+		"  `browser capture --format svg`).",
 		"  Diagnostics go to stderr.",
 		"  --board <key> is global and REQUIRED on every command that touches a board. There is no",
-		'    default: a pane holds its own board, so "the board" would be a guess (ADR 0009). A call',
-		"    without it is refused, and the refusal lists the boards that are open.",
+		'    default: a browser pane is never an authority for "the board" (ADR 0020). A call',
+		"    without it is refused, and the refusal lists persisted boards.",
 		'  --doing "..." is global and REQUIRED on every command that CHANGES a board. One short line',
 		'    in the present tense — "adding the payment queue" — which goes up on the canvas as the',
 		"    write lands, so the person at the board can see what you are up to. A write without it is",
@@ -801,6 +809,18 @@ export async function runCli(argv: string[]): Promise<void> {
 
 	const command = COMMANDS[name];
 	if (!command) {
+		const retired: Record<string, string> = {
+			pane: "Use `archboard browser open` or `archboard browser close <pane>`.",
+			panes: "Use `archboard browser panes`.",
+			selection: "Use `archboard browser selection --pane <spec>`.",
+			viewport: "Use `archboard browser viewport --pane <spec> ...`.",
+			screenshot: "Use `archboard browser capture --pane <spec> ...`.",
+		};
+		if (retired[name]) {
+			process.stderr.write(`Command "${name}" was removed. ${retired[name]}\n`);
+			process.exitCode = 2;
+			return;
+		}
 		const migration =
 			name === "inject"
 				? " Board changes now reach the linked Codex workbench; inspect or test the connection there."
@@ -814,6 +834,19 @@ export async function runCli(argv: string[]): Promise<void> {
 	let selected: RouteOwner = command.owner;
 
 	try {
+		if (name === "board" && rest[0] === "open") {
+			throw new CliUsageError(
+				"`board open` was removed. Use `browser show <board> --pane <spec>`.",
+			);
+		}
+		if (
+			name === "board" &&
+			rest.some((token) => token === "--pane" || token.startsWith("--pane="))
+		) {
+			throw new CliUsageError(
+				"Board commands do not change panes. Use `browser show <board> --pane <spec>`.",
+			);
+		}
 		setRequestedBoard(takeBoardFlag(rest));
 		setWriteDoing(takeDoingFlag(rest));
 		setExpectedVersion(takeExpectVersionFlag(rest));

@@ -3,9 +3,10 @@ import { z } from "zod";
 import {
 	BoardInfoResultSchema,
 	BoardNewResultSchema,
-	BoardOpenResultSchema,
+	BrowserShowResultSchema,
 } from "../../../src/cli/commands/board.ts";
 import { PaneOpenResultSchema } from "../../../src/cli/commands/pane.ts";
+import { SelectionJsonResultSchema } from "../../../src/cli/commands/selection.ts";
 import { QueryResultSchema } from "../../../src/cli/command-contract/query.ts";
 import { UpdateResultSchema } from "../../../src/cli/command-contract/update.ts";
 import { AddResultSchema, DeleteResultSchema } from "../../../src/cli/commands/elements.ts";
@@ -72,7 +73,7 @@ async function closedUrl(): Promise<string> {
 }
 
 describe("package board commands", () => {
-	test("accepts public board and pane schemas without invented fields", async () => {
+	test("separates persisted board and live browser schemas", async () => {
 		await using resources = new AsyncDisposableStack();
 		const http = resources.use(createCliHttpDouble());
 		const owner = resources.use(createPackageCliOwner());
@@ -102,10 +103,12 @@ describe("package board commands", () => {
 		});
 		expect("vaultBacked" in createdBody, diagnostic).toBeFalse();
 
-		const opened = await owner.run(["board", "open", "contract"], { url: http.url });
+		const opened = await owner.run(["browser", "show", "contract", "--pane", "left"], {
+			url: http.url,
+		});
 		diagnostic = packageFailure(opened);
 		expect(opened.status, diagnostic).toBe(0);
-		const openedBody = decodePackage(opened, BoardOpenResultSchema);
+		const openedBody = decodePackage(opened, BrowserShowResultSchema);
 		expect(openedBody, diagnostic).toMatchObject({
 			source: "vault",
 			version: 7,
@@ -113,14 +116,52 @@ describe("package board commands", () => {
 		});
 		expect("vaultBacked" in openedBody, diagnostic).toBeFalse();
 
-		const pane = await owner.run(["pane", "open", "--board", "contract"], { url: http.url });
+		const pane = await owner.run(["browser", "open"], { url: http.url });
 		diagnostic = packageFailure(pane);
 		expect(pane.status, diagnostic).toBe(0);
 		expect(decodePackage(pane, PaneOpenResultSchema), diagnostic).toMatchObject({
 			pane: { paneId: "pane-right", clientId: "client-right", place: "right", position: 2 },
 			paneCount: 2,
-			board: { source: "vault", version: 7, placeholder: false },
 		});
+		expect("board" in decodePackage(pane, PaneOpenResultSchema), diagnostic).toBeFalse();
+
+		const selected = await owner.run(["browser", "selection", "--pane", "right"], {
+			url: http.url,
+		});
+		diagnostic = packageFailure(selected);
+		expect(selected.status, diagnostic).toBe(0);
+		expect(decodePackage(selected, SelectionJsonResultSchema), diagnostic).toMatchObject({
+			board: "contract",
+			elementIds: ["shape1"],
+		});
+		expect(
+			http.requests
+				.find((request) => request.url.pathname === "/api/selection")
+				?.url.searchParams.get("pane"),
+			diagnostic,
+		).toBe("right");
+	});
+
+	test("rejects every removed live-session spelling with replacement guidance", async () => {
+		await using resources = new AsyncDisposableStack();
+		const http = resources.use(createCliHttpDouble());
+		const owner = resources.use(createPackageCliOwner());
+		for (const [argv, replacement] of [
+			[["pane", "open"], "browser open"],
+			[["panes"], "browser panes"],
+			[["selection"], "browser selection"],
+			[["viewport", "--fit"], "browser viewport"],
+			[["screenshot", "--pane", "left"], "browser capture"],
+			[["board", "open", "contract", "--pane", "left"], "browser show"],
+		] as const) {
+			const before = http.contacts.length;
+			const result = await owner.run(argv, { url: http.url });
+			const diagnostic = packageFailure(result);
+			expect(result.status, diagnostic).toBe(2);
+			expect(result.stdout, diagnostic).toBe("");
+			expect(result.stderr, diagnostic).toContain(replacement);
+			expect(http.contacts.slice(before), diagnostic).toEqual([]);
+		}
 	});
 
 	test("retires inject through the ordinary unknown-command path", async () => {
@@ -328,9 +369,10 @@ describe("package board commands", () => {
 			diagnostic,
 		).toContain("/api/elements");
 		let before = http.requests.length;
-		const viewport = await owner.run(["viewport", "ignored", "--zoom=1.5", "--offset-x", "2"], {
-			url: http.url,
-		});
+		const viewport = await owner.run(
+			["browser", "viewport", "ignored", "--pane", "left", "--zoom=1.5", "--offset-x", "2"],
+			{ url: http.url },
+		);
 		diagnostic = packageFailure(viewport);
 		expect(viewport.status, diagnostic).toBe(0);
 		expect(
@@ -338,7 +380,10 @@ describe("package board commands", () => {
 			diagnostic,
 		).toMatchObject({ zoom: 1.5, offsetX: 2 });
 		before = http.requests.length;
-		const ids = await owner.run(["viewport", "--ids", "shape1, shape2,,"], { url: http.url });
+		const ids = await owner.run(
+			["browser", "viewport", "--pane", "left", "--ids", "shape1, shape2,,"],
+			{ url: http.url },
+		);
 		diagnostic = packageFailure(ids);
 		expect(ids.status, diagnostic).toBe(0);
 		expect(
@@ -346,22 +391,25 @@ describe("package board commands", () => {
 				.scrollToElementIds,
 			diagnostic,
 		).toEqual(["shape1", "shape2"]);
-		const numericServer = await owner.run(["viewport", "--zoom", "not-a-number"], {
-			url: await closedUrl(),
-		});
+		const numericServer = await owner.run(
+			["browser", "viewport", "--pane", "left", "--zoom", "not-a-number"],
+			{ url: await closedUrl() },
+		);
 		diagnostic = packageFailure(numericServer);
 		expect(numericServer.status, diagnostic).toBe(3);
 		http.setBrowserClients(0);
-		const numericBrowser = await owner.run(["viewport", "--zoom", "not-a-number"], {
-			url: http.url,
-		});
+		const numericBrowser = await owner.run(
+			["browser", "viewport", "--pane", "left", "--zoom", "not-a-number"],
+			{ url: http.url },
+		);
 		http.setBrowserClients(1);
 		diagnostic = packageFailure(numericBrowser);
 		expect(numericBrowser.status, diagnostic).toBe(4);
 		before = http.contacts.length;
-		const crossField = await owner.run(["viewport", "--fit", "--element", "shape1"], {
-			url: http.url,
-		});
+		const crossField = await owner.run(
+			["browser", "viewport", "--pane", "left", "--fit", "--element", "shape1"],
+			{ url: http.url },
+		);
 		diagnostic = packageFailure(crossField);
 		expect(crossField.status, diagnostic).toBe(2);
 		expect(crossField.stdout, diagnostic).toBe("");

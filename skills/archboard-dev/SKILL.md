@@ -90,7 +90,7 @@ Elements that came back through the browser are tagged
 To exercise the full interaction, click the box in the browser and then:
 
 ```bash
-./bin/canvas selection --text          # what the human has picked
+./bin/canvas browser selection --pane <spec> --text # what the human picked
 ./bin/canvas promote --board scratch --kind service --name "Probe" \
   --path src/runtime/engine/promote.ts --doing "calling the probe box a service"
 ```
@@ -187,7 +187,8 @@ hasBoundTextElement(el) || ...`, so a _labelled_ transparent shape does hit-test
   stale-tab-truncates-the-board hole (TASK-016). Deletions only ever name ids
   the reporting tab already held.
 - **A second pane starts on what the first is showing, and is then pointed
-  somewhere else** — `board open <name> --pane right`. The switch reaches that
+  somewhere else** — `browser open`, then `browser show <name> --pane right`.
+  The switch reaches that
   pane's socket alone (`sendToPane`, not `broadcast`), only that pane's
   selection is retired, and the change feed is reset only when the board was
   not already on screen in another pane. A regression here looks like the other
@@ -198,7 +199,7 @@ hasBoundTextElement(el) || ...`, so a _labelled_ transparent shape does hit-test
   be written once. If you add a route that reads or writes elements, call
   `boardFromRequest(req, 'What it is doing')` and the refusal comes with it.
   Do not add a default "for convenience": that is the whole bug.
-- **A pane exists only while its socket is open.** `panes` is fed by pushes from
+- **A pane exists only while its socket is open.** `browser panes` is fed by pushes from
   the browser keyed by client id, and the close handler retires the pane and its
   selection together. So a closed tab or an unsplit disappears from the report
   with nothing to clean up, and no browser at all reports as no panes — which is

@@ -1,7 +1,7 @@
 {
-	"base": "43d0b982ac39346ae3057edf3c9fdffe400b2853",
-	"description": "Independent literal argv results captured from the legacy binary before the proof migration.",
-	"generalHelpSha256": "d783f487e6fbc120a72bb15b4a2941e769dd87d3a2695f50b2152541676ead3a",
+	"base": "dfb589bd28f6dc95289f5271ba389bfcc48bafbe",
+	"description": "Literal argv results owned by the current released command boundary.",
+	"generalHelpSha256": "1e9075e746e308af0937a1bc661848e5a739702e10c9ec9b2d1251d88920fe1f",
 	"cases": [
 		{
 			"name": "query command-level help remains an unknown flag",
@@ -81,27 +81,6 @@
 			"stderrSha256": "765db7997e40a471cd5a50d3c9781ff8fa7b4edb620c3df3d1868553f0172c6c"
 		},
 		{
-			"name": "viewport ignores excess positional content before semantic refusal",
-			"argv": ["viewport", "ignored"],
-			"status": 2,
-			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-			"stderrSha256": "25e74d8bd39e709e266eab88ef422512f8d43f9ddb820d5705a61c965f87c057"
-		},
-		{
-			"name": "viewport cross-field refusal bytes",
-			"argv": ["viewport", "--fit", "--element", "shape1"],
-			"status": 2,
-			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-			"stderrSha256": "25e74d8bd39e709e266eab88ef422512f8d43f9ddb820d5705a61c965f87c057"
-		},
-		{
-			"name": "fit boolean rejects an attached value",
-			"argv": ["viewport", "--fit=true"],
-			"status": 2,
-			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-			"stderrSha256": "cf5c370938be23984d4a2b02a25ff751c39819ff11ad120b6727c4c566d4edae"
-		},
-		{
 			"name": "export inline format refusal bytes",
 			"argv": ["export", "--format=invalid"],
 			"status": 2,
@@ -151,14 +130,6 @@
 			"status": 3,
 			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 			"stderrSha256": "f36f538c10509cb9224c5a0effdc256e09a6ac0e223db766dc95b33ce1d38759"
-		},
-		{
-			"name": "exit 4 browser required",
-			"argv": ["viewport", "--fit"],
-			"server": "no-browser",
-			"status": 4,
-			"stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-			"stderrSha256": "fc2696eec36dabeab105afd0d86e8f1a40d12b4ded940836438f7b776f04fe14"
 		},
 		{
 			"name": "exit 5 board version refusal",

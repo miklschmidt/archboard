@@ -467,8 +467,12 @@ export async function removeBridge(bridgeId: string): Promise<BridgeRemovalRespo
 
 // What a human currently has picked on the board. Ids plus enough semantic
 // detail (label, node-ness, kind, binding) to act on without a scene fetch.
-export async function getSelection(): Promise<SelectionReport & { success: boolean }> {
-	return requestJson<SelectionReport & { success: boolean }>("/api/selection");
+export async function getSelection(
+	pane: string,
+): Promise<SelectionReport & { success: boolean; board: string }> {
+	return requestJson<SelectionReport & { success: boolean; board: string }>(
+		`/api/selection?pane=${encodeURIComponent(pane)}`,
+	);
 }
 
 // What the human is currently looking at: one entry per pane on screen, with
@@ -497,48 +501,19 @@ export interface PaneLayoutResponse {
 	closed?: PaneAddress & { board: string };
 	paneCount: number;
 	onScreen: Array<{ paneId: string; place: string; board: string }>;
-	/** The board that was opened into the new pane, when one was named. */
-	board?: BoardResponse;
 }
 
 /**
- * Split the canvas, and put a board in the new half if one was named.
- *
- * Two calls on purpose. The pane is made first and answers with its own id,
- * and the board is then opened into that id through the one route that knows
- * how to open a board — vault load, unsaved work kept, frontmatter mismatch
- * reported. A second copy of that logic living behind a layout command is how
- * the two would drift.
- *
- * The pane survives a board that does not: the caller is told both facts
- * rather than left guessing whether the split happened.
+ * Split the canvas. The new pane inherits what is currently displayed;
+ * choosing another board is the separate `browser show` operation.
  */
-export async function openPane(params: { board?: string } = {}): Promise<PaneLayoutResponse> {
+export async function openPane(): Promise<PaneLayoutResponse> {
 	const created = await requestJson<PaneLayoutResponse>("/api/panes/open", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({}),
 	});
-	if (!params.board) return created;
-
-	const target = created.pane?.clientId;
-	try {
-		const board = await openBoard({ board: params.board, ...(target ? { pane: target } : {}) });
-		return { ...created, board };
-	} catch (error) {
-		const where = created.pane ? `the ${created.pane.place} pane` : "a new pane";
-		const failure = new Error(
-			`The canvas was split, but "${params.board}" did not open into ${where}: ` +
-				(error as Error).message +
-				(created.pane
-					? ` The pane is on screen showing what it inherited. Point it somewhere with ` +
-						`\`board open <name> --pane ${created.pane.place}\`, or close it with \`pane close ${created.pane.place}\`.`
-					: ""),
-		);
-		(failure as Error & { code?: unknown }).code =
-			error && typeof error === "object" ? (error as { code?: unknown }).code : undefined;
-		throw failure;
-	}
+	return created;
 }
 
 /** Close one pane, named the way `--pane` names one. */
@@ -756,18 +731,6 @@ export interface BoardResponse {
 		writes: number;
 		since: string;
 	};
-	/**
-	 * What the save did to the screen. `moved` is the panes it repointed at the
-	 * board just written, which only happens when scratch got a name; `kept` is
-	 * the panes deliberately left on the board that was saved from; `onScreen`
-	 * is every pane and what it holds, which is what says whether there is room
-	 * for the board just written to sit beside its source.
-	 */
-	panes?: {
-		moved: PaneRef[];
-		kept: PaneRef[];
-		onScreen?: Array<{ paneId: string; place: string; board: string }>;
-	};
 }
 
 export interface PaneRef {
@@ -781,16 +744,13 @@ export interface PaneRef {
 export interface BoardListResponse {
 	success: boolean;
 	vault: string;
-	// With ?repo=, each entry also carries where it was read from and the nodes
-	// bound to that repository, and `file` is absent for a board that only exists
-	// on the canvas so far.
+	// With ?repo=, each entry also carries the nodes bound to that repository.
 	boards: Array<{
 		key: string;
 		identity: BoardIdentityPayload;
 		file?: string;
 		declaredKey?: string;
 		collidesWith?: string[];
-		source?: "vault" | "memory";
 		nodes?: Array<{
 			node: string;
 			kind?: string;
@@ -800,17 +760,6 @@ export interface BoardListResponse {
 			commit?: string;
 		}>;
 	}>;
-	open: Array<{
-		key: string;
-		identity: BoardIdentityPayload;
-		elementCount: number;
-		vaultBacked: boolean;
-		file?: string;
-		savedAt?: string;
-		loadedAt?: string;
-	}>;
-	/** What each pane is holding right now, in reading order. */
-	onScreen: Array<{ paneId: string; place: string; board: string }>;
 	/** Set when the listing was narrowed to one repository (TASK-030). */
 	repo?: string;
 	scanned?: number;

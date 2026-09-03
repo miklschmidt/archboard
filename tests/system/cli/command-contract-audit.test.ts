@@ -17,6 +17,7 @@ const auditSchema = z.object({
 		z
 			.object({
 				path: z.string(),
+				classification: z.enum(["board", "browser", "neither"]),
 				handlerOwner: z.string(),
 				parserOwner: z.string(),
 				prerequisites: z.array(z.string()),
@@ -24,6 +25,7 @@ const auditSchema = z.object({
 				refusals: z.array(z.object({ code: z.string(), exit: z.number() })),
 				exits: z.array(z.number()),
 				introducedBy: z.string().optional(),
+				changedBy: z.string().optional(),
 			})
 			.passthrough(),
 	),
@@ -121,14 +123,14 @@ describe("command contract audit", () => {
 	});
 
 	test("keeps fixed-base coverage and explicit introduced paths", () => {
-		expect(compatibility.fixedBase).toBe("6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a");
+		expect(compatibility.fixedBase).toBe("dfb589bd28f6dc95289f5271ba389bfcc48bafbe");
 		expect(compatibility.publicPaths).toEqual(
 			auditedPaths.filter((path) => compatibility.publicPaths.includes(path)),
 		);
 		for (const entry of audit.entries.filter(
 			(candidate) => !compatibility.publicPaths.includes(candidate.path),
 		))
-			expect(entry.introducedBy?.length, entry.path).toBeGreaterThan(0);
+			expect(entry.introducedBy?.length ?? entry.changedBy?.length, entry.path).toBeGreaterThan(0);
 		expect(compatibility.orderedCases.map((record) => record.name).toSorted()).toEqual(
 			[
 				"status-unavailable",
@@ -155,6 +157,7 @@ describe("command contract audit", () => {
 			expect(entry.parent, entry.name).toBe(expectedParent);
 			expect(entry.handlerOwner, entry.name).toBe(audited.handlerOwner);
 			expect(entry.parserOwner, entry.name).toBe(audited.parserOwner);
+			expect(entry.classification, entry.name).toBe(audited.classification);
 			expect(JSON.stringify(entry.contract.prerequisites), entry.name).toBe(
 				JSON.stringify(audited.prerequisites),
 			);
@@ -179,6 +182,53 @@ describe("command contract audit", () => {
 			).toBe(true);
 			expect(existsSync(join(checkoutRoot, entry.handlerOwner)), entry.name).toBe(true);
 		}
+	});
+
+	test("enforces the board and browser command split", () => {
+		for (const entry of registry) {
+			const browserPrerequisite = entry.contract.prerequisites.includes("browser");
+			const browserEffect = entry.contract.effects.includes("browser");
+			const boardWrite = entry.contract.effects.includes("write");
+			const paneInput = entry.contract.parameters.some(
+				(parameter) =>
+					"spellings" in parameter && parameter.spellings.some((spelling) => spelling === "--pane"),
+			);
+			if (entry.classification === "board") {
+				expect(browserPrerequisite, entry.name).toBeFalse();
+				expect(browserEffect, entry.name).toBeFalse();
+				expect(paneInput, entry.name).toBeFalse();
+			}
+			if (entry.classification === "browser") {
+				expect(
+					entry.name === "browser" || entry.name.startsWith("browser "),
+					entry.name,
+				).toBeTrue();
+				expect(boardWrite, entry.name).toBeFalse();
+			}
+			if (browserPrerequisite || browserEffect || paneInput) {
+				expect(entry.classification, entry.name).toBe("browser");
+			}
+		}
+
+		const byName = new Map(registry.map((entry) => [entry.name, entry]));
+		expect(byName.get("render")?.classification).toBe("board");
+		expect(byName.get("render")?.contract.effects).not.toContain("browser");
+		expect(
+			byName
+				.get("render")
+				?.contract.parameters.some(
+					(parameter) => "spellings" in parameter && parameter.spellings.includes("--pane"),
+				),
+		).toBeFalse();
+		expect(byName.get("browser capture")?.classification).toBe("browser");
+		expect(byName.get("browser capture")?.contract.prerequisites).toContain("browser");
+		expect(
+			byName
+				.get("browser capture")
+				?.contract.parameters.some(
+					(parameter) => "spellings" in parameter && parameter.spellings.includes("--pane"),
+				),
+		).toBeTrue();
 	});
 
 	test("derives family child discovery from parser flag specs", () => {
@@ -244,7 +294,7 @@ describe("command contract audit", () => {
 				],
 			],
 			[
-				"board open",
+				"browser show",
 				[
 					"success",
 					"board",
@@ -265,20 +315,12 @@ describe("command contract audit", () => {
 				path,
 			).toBe(true);
 		}
-		for (const path of ["board info", "board new", "board open"]) {
+		for (const path of ["board info", "board new", "browser show"]) {
 			const schema = contracts.find((contract) => contract.name === path)?.result as
 				| { properties?: Readonly<Record<string, unknown>> }
 				| undefined;
 			expect(schema?.properties && "vaultBacked" in schema.properties, path).toBeFalse();
 		}
-		const paneBoard = (
-			contracts.find((contract) => contract.name === "pane open")?.result as
-				| { properties?: { board?: { required?: readonly string[] } } }
-				| undefined
-		)?.properties?.board;
-		expect(
-			["source", "version", "placeholder"].every((field) => paneBoard?.required?.includes(field)),
-		).toBeTrue();
 	});
 
 	test("retains update, viewport, and check asymmetries", () => {
@@ -296,7 +338,7 @@ describe("command contract audit", () => {
 			CLAIM_REVOKED: 5,
 		});
 		expect(
-			byName.get("viewport")?.refusals.some((refusal) => refusal.code === "BOARD_REQUIRED"),
+			byName.get("browser viewport")?.refusals.some((refusal) => refusal.code === "BOARD_REQUIRED"),
 		).toBeFalse();
 		const check = byName.get("check");
 		expect(check?.prerequisites).toEqual(["board"]);

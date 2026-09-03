@@ -11,6 +11,7 @@ export const CLI_CONTRACT_ARTIFACT_NAMES = [
 
 interface AuditEntry {
 	path: unknown;
+	classification: unknown;
 	parserOwner: unknown;
 	stdout: unknown;
 	result: unknown;
@@ -66,9 +67,10 @@ export async function renderCliContractArtifacts(root: string) {
 	const registry = cliContractRegistry();
 	const proof = introspectContracts(registry);
 	const routes = registry.map(
-		({ name, parent, handlerOwner, parserOwner, bare, childDiscovery }) => ({
+		({ name, parent, classification, handlerOwner, parserOwner, bare, childDiscovery }) => ({
 			name,
 			parent,
+			classification,
 			handlerOwner,
 			parserOwner,
 			...(bare ? { bare } : {}),
@@ -84,11 +86,11 @@ export async function renderCliContractArtifacts(root: string) {
 		"",
 		`The canonical JSON records ${audit.surface.commands} commands, ${audit.surface.subcommands} subcommands, and ${audit.surface.paths} public paths.`,
 		"",
-		"| Path | Parser | Output/result | Prerequisites and relationships | Semantics and ordering | Next fields | Workflow |",
-		"| --- | --- | --- | --- | --- | --- | --- |",
+		"| Path | Class | Parser | Output/result | Prerequisites and relationships | Semantics and ordering | Next fields | Workflow |",
+		"| --- | --- | --- | --- | --- | --- | --- | --- |",
 		...audit.entries.map(
 			(entry) =>
-				`| \`${cell(entry.path)}\` | ${cell(entry.parserOwner)} | ${cell(entry.stdout)}. ${cell(entry.result)} | ${cell(entry.prerequisites)}. ${cell(entry.relationships)} | ${cell(entry.semantics)}. ${cell(entry.ordering)} | ${cell(entry.nextFields)} | ${cell(entry.workflow)} |`,
+				`| \`${cell(entry.path)}\` | ${cell(entry.classification)} | ${cell(entry.parserOwner)} | ${cell(entry.stdout)}. ${cell(entry.result)} | ${cell(entry.prerequisites)}. ${cell(entry.relationships)} | ${cell(entry.semantics)}. ${cell(entry.ordering)} | ${cell(entry.nextFields)} | ${cell(entry.workflow)} |`,
 		),
 		"",
 		"## Workflow deletion test",
@@ -108,7 +110,7 @@ export async function renderCliContractArtifacts(root: string) {
 	const proofJson =
 		JSON.stringify(
 			{
-				schemaVersion: 6,
+				schemaVersion: 7,
 				generatedFrom: "src/cli/commands/run.ts",
 				routes,
 				contracts: proof,
@@ -127,6 +129,8 @@ export async function renderCliContractArtifacts(root: string) {
 			`## ${contract.path.join(" ")}`,
 			"",
 			contract.description,
+			"",
+			`Classification: ${contract.classification}.`,
 			"",
 			"Usage:",
 			"",

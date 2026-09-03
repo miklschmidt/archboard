@@ -130,7 +130,6 @@ import {
 	makeIdentity,
 	normalizeBoardKey,
 	SCRATCH_BOARD,
-	panesFollowSave,
 	parseBoardKey,
 	requireVaultRoot,
 	validateLevel,
@@ -969,24 +968,6 @@ function releaseBoardHold(
 	return report;
 }
 
-/** The hold on a board, as a caller is told about it — or nothing to say. */
-function holdResponse(key: string): Record<string, unknown> {
-	const hold = holdOn(key);
-	return hold ? { held: reportHold(key, hold) } : {};
-}
-
-/**
- * The boards this canvas has open, each saying whether it is still saving.
- *
- * `board list` is where an agent arriving mid-session finds out, without having
- * to write to a board to discover that writing to it goes nowhere.
- */
-function openBoards(): Array<Record<string, unknown>> {
-	return boardSummaries(boardElementCount).map((summary) =>
-		Object.assign({}, summary, holdResponse(summary.key)),
-	);
-}
-
 // Which board a request is about, and what is on it. `?board=` or a `board`
 // field in the body — and one of them has to be there. A request that names no
 // board is refused (ADR 0009); `what` is the name of the operation, so the
@@ -1316,7 +1297,7 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 				board: startingKey,
 				error:
 					`Could not open "${startingKey}" from ${board.file}. ${renderError.message} ` +
-					`The note was left unchanged. Correct it, then run \`board open ${startingKey} --reload\`.`,
+					`The note was left unchanged. Correct it, then run \`browser show ${startingKey} --pane <spec> --reload\`.`,
 			} satisfies WebSocketMessage),
 		);
 	}
@@ -2767,24 +2748,26 @@ app.post("/api/selection", (req: Request, res: Response) => {
 	});
 });
 
-app.get("/api/selection", (_req: Request, res: Response) => {
-	// Named out of the board the selecting pane is holding, which with two panes
-	// on two boards is the only place those ids exist. No resolution and no
-	// ambiguity: whoever picked the elements settles which board they are on.
-	const owner = selectionState.current?.clientId;
-	const key = (owner ? paneBoards.get(owner) : undefined) ?? SCRATCH_KEY;
-	const board = boards.get(key);
-	const report = buildSelectionReport(
-		selectionState.current,
-		board
-			? presentElements(boardElements(board), {
-					boardKey: key,
-					checkoutSnapshot: checkoutSnapshotFor(res),
-				})
-			: [],
-		clients.size,
-	);
-	res.json({ success: true, board: key, ...report });
+app.get("/api/selection", (req: Request, res: Response) => {
+	try {
+		const pane = paneFromRequest(req.query.pane);
+		if (!pane) return res.status(503).json(noBrowserBody("Reading a live selection"));
+		const key = paneBoards.get(pane.clientId) ?? pane.board;
+		const board = boards.get(key);
+		const report = buildSelectionReport(
+			selectionState.byClient.get(pane.clientId) ?? null,
+			board
+				? presentElements(boardElements(board), {
+						boardKey: key,
+						checkoutSnapshot: checkoutSnapshotFor(res),
+					})
+				: [],
+			clients.size,
+		);
+		res.json({ success: true, board: key, ...report });
+	} catch (error) {
+		res.status(400).json({ success: false, error: (error as Error).message });
+	}
 });
 
 // ─── Panes ────────────────────────────────────────────────────
@@ -2959,8 +2942,8 @@ async function settleAfterLayout(askedAt: string): Promise<void> {
 
 // Split the canvas: one more pane, side by side with what is already there.
 //
-// It takes no board. What lands in the new pane is a separate act — `board
-// open ... --pane <the pane this answered with>` — so that opening a board
+// It takes no board. What lands in the new pane is a separate act — `browser
+// show ... --pane <the pane this answered with>` — so that showing a board
 // stays the one thing that decides which board a pane holds (ADR 0009).
 app.post(
 	"/api/panes/open",
@@ -2978,8 +2961,8 @@ app.post(
 				success: false,
 				error:
 					`The canvas is already showing ${panes.size} panes: ${showing}. ` +
-					"Point one of them at another board with `board open <name> --pane <spec>`, " +
-					"or close one first with `pane close <spec>`.",
+					"Point one of them at another board with `browser show <name> --pane <spec>`, " +
+					"or close one first with `browser close <spec>`.",
 			});
 		}
 
@@ -3044,7 +3027,7 @@ app.post(
 				error:
 					"That is the only pane on screen, and closing it would leave the canvas showing nothing " +
 					"with no way back except reloading the browser. Its board is unaffected either way — " +
-					"point the pane somewhere else with `board open <name>` instead.",
+					"point the pane somewhere else with `browser show <name> --pane <spec>` instead.",
 			});
 		}
 
@@ -3055,7 +3038,7 @@ app.post(
 				throw new Error(
 					"Say which pane to close. " +
 						panesInOrder(registrations)
-							.map((entry) => `\`pane close ${entry.place}\` drops ${entry.pane.board}`)
+							.map((entry) => `\`browser close ${entry.place}\` drops ${entry.pane.board}`)
 							.join(", ") +
 						".",
 				);
@@ -3970,34 +3953,20 @@ app.get("/api/boards", (req: Request, res: Response) => {
 		const vault = requireVaultRoot();
 		const repo = typeof req.query.repo === "string" ? req.query.repo.trim() : "";
 		if (repo) {
-			const open = Array.from(boards.entries()).map(([key, board]) =>
-				Object.assign(
-					{
-						key,
-						identity: board.identity,
-						elements: boardElements(board),
-					},
-					board.file ? { file: board.file } : {},
-				),
-			);
-			const found = boardsForRepo(repo, open, vault);
+			const found = boardsForRepo(repo, [], vault);
 			return res.json({
 				success: true,
 				vault,
 				repo,
-				boards: found.boards,
+				boards: found.boards.map(({ source: _source, ...board }) => board),
 				scanned: found.scanned,
 				...(found.unreadable.length ? { unreadable: found.unreadable } : {}),
-				open: openBoards(),
-				onScreen: boardsOnScreen(),
 			});
 		}
 		res.json({
 			success: true,
 			vault,
 			boards: listBoards(vault),
-			open: openBoards(),
-			onScreen: boardsOnScreen(),
 		});
 	} catch (error) {
 		answerBoardError(res, error, "Error listing boards:");
@@ -4171,20 +4140,12 @@ app.post("/api/boards/save", (req: Request, res: Response) => {
 		// what `variantAnomaly` is for.
 		const kind = classifyBoardSave(source.key, targetKey);
 		// Both senses of "wrote somewhere else": naming scratch and branching a
-		// board that has a home. They differ over panes, not over elements.
+		// board that has a home.
 		const branched = kind !== "same-board";
-		// Who was looking at the board that was saved. Whether they move depends
-		// on what the save was: giving the scratch board a name renames the thing
-		// in front of them, branching writes a second board and leaves the first
-		// one alone (ADR 0012).
-		const watching = Array.from(panes.values()).filter(
-			(pane) => (paneBoards.get(pane.clientId) ?? pane.board) === source.key,
-		);
 		const { board: savedBoard } = getOrCreateBoard(targetIdentity);
 		savedBoard.file = file;
 		const target: BoardWriteTarget = { key: targetKey, board: savedBoard };
 		const heldSource = holdOn(source.key);
-		const moved = panesFollowSave(kind) || (heldSource && branched) ? watching : [];
 
 		answerBoardWrite(res, {
 			source,
@@ -4214,11 +4175,9 @@ app.post("/api/boards/save", (req: Request, res: Response) => {
 				};
 			},
 			afterPersist: ({ content, written }) => {
-				for (const pane of moved) switchPaneTo(pane, targetKey, content, checkoutSnapshotFor(res));
 				logger.info(
 					`Board saved: "${targetKey}" (${written?.elementCount ?? content.elements.size} elements) -> ${file}` +
-						(kind === "same-board" ? "" : ` [${kind}]`) +
-						(moved.length ? `, panes moved: ${moved.map((pane) => pane.paneId).join(", ")}` : ""),
+						(kind === "same-board" ? "" : ` [${kind}]`),
 				);
 			},
 			answer: ({ content, written }) => {
@@ -4242,11 +4201,6 @@ app.post("/api/boards/save", (req: Request, res: Response) => {
 								},
 							}
 						: {}),
-					panes: {
-						moved: moved.map(paneRef),
-						kept: (moved.length === 0 && kind === "branch" ? watching : []).map(paneRef),
-						onScreen: boardsOnScreen(),
-					},
 				};
 			},
 		});

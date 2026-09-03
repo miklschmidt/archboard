@@ -73,17 +73,17 @@ and every delegation becomes a turn in that same thread.
 ```
 
 **Every command that touches a board names it** — `--board payments` — and one
-that does not is refused, with the open boards listed in the refusal. There is
-no active board to fall back on, because a pane holds its own board and two
-panes hold two (ADR 0009). The canvas boots holding `scratch`, which is a board
-like any other and is named like one.
+that does not is refused, with persisted board choices in the refusal. There is
+no active board or browser-session fallback (ADR 0020). The canvas boots holding
+`scratch`, which is a board like any other and is named like one.
 
 Ask the agent to read a codebase and draw its architecture. Then, on the board:
 
 1. **Select a box by tapping its interior** and ask the agent what you have
-   selected — this is `selection`, and it is how "map _this_ to X" works.
-2. **Promote it**: `./bin/canvas promote --kind service --name "Payments"
---path src/payments/index.ts --doing "calling this the payments service"`.
+   selected. `browser selection --pane <spec>` returns the stable ids for
+   "map _this_ to X".
+2. **Promote it**: `./bin/canvas promote --ids <selected-id> --kind service
+--name "Payments" --path src/payments/index.ts --doing "calling this the payments service"`.
    The binding resolves through git to repo, path, branch and commit. Every
    write says what it is doing and is refused without it, and the line shows up
    on the board as the write lands (TASK-095) — watch the top right of the pane
@@ -97,19 +97,20 @@ Ask the agent to read a codebase and draw its architecture. Then, on the board:
    against (ADR 0012). Open the branch where you want it, as in step 6.
 5. **Compare**: ask the agent what changed between `payments` and
    `payments@option-a`.
-6. **Put them side by side**: `./bin/canvas pane open --board payments@option-a`.
+6. **Put them side by side**: `./bin/canvas browser open`, then
+   `./bin/canvas browser show payments@option-a --pane right`.
    That splits the canvas and opens the variant into the pane it made, leaving
    the one you were reading alone — no clicking, so an agent can do it mid
    sentence. **Split** in the chrome does the same thing by hand. Each pane
    holds its own board, keeps its own selection, and is saved against its own
-   baseline; `./bin/canvas panes` says which is which,
-   `./bin/canvas screenshot --pane right` pictures one of them, and
-   `./bin/canvas pane close right` puts you back to one.
+   baseline; `./bin/canvas browser panes` says which is which,
+   `./bin/canvas browser capture --pane right` pictures one of them, and
+   `./bin/canvas browser close right` puts you back to one.
 7. **Draw into the half you mean**: pipe a Mermaid diagram at the variant,
    `... | ./bin/canvas mermaid --board payments@option-a --doing "sketching the
 proposal from mermaid"`, and watch it appear
    on the right while the left keeps the current architecture. `mermaid` takes
-   no `--pane` and never will: it names a board, a board is in at most one
+   no `--pane` and never will: it names a board, while a browser pane is a
    pane, so the pane is already decided (TASK-046). Aim it at a board no pane
    is holding and it converts nothing, and says which panes are up and how to
    put that board on one.

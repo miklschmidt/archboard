@@ -180,7 +180,13 @@ describe.serial("side-by-side proposal workflow", () => {
 		const made = await cli(["board", "new", "payments", "--level", "service"]);
 		expect(made.code, made.stderr).toBe(0);
 		expect(source.board()).toBe("scratch");
-		const opened = await cli<{ pane: { place: string } }>(["board", "open", "payments"]);
+		const opened = await cli<{ pane: { place: string } }>([
+			"browser",
+			"show",
+			"payments",
+			"--pane",
+			"primary",
+		]);
 		expect(opened.code, opened.stderr).toBe(0);
 		await waitFor(() => source.board() === "payments", "source pane to adopt payments");
 		expect(opened.json.pane.place).toBe("the only pane");
@@ -205,17 +211,20 @@ describe.serial("side-by-side proposal workflow", () => {
 		).toBe(3);
 
 		const branchStart = source.mark();
-		const branched = await cli<{
-			board: string;
-			saveKind: string;
-			panes: { moved: unknown[] };
-		}>(["board", "save", "--board", "payments", "--variant", "option-a"]);
+		const branched = await cli<{ board: string; saveKind: string }>([
+			"board",
+			"save",
+			"--board",
+			"payments",
+			"--variant",
+			"option-a",
+		]);
 		expect(branched.code, branched.stderr).toBe(0);
 		expect(branched.json).toMatchObject({
 			board: "payments@option-a",
 			saveKind: "branch",
-			panes: { moved: [] },
 		});
+		expect(branched.json).not.toHaveProperty("panes");
 		expect(source.board()).toBe("payments");
 		expect(
 			source.events.slice(branchStart).some(({ type }) => type === "board_switched"),
@@ -223,17 +232,14 @@ describe.serial("side-by-side proposal workflow", () => {
 
 		const splitStart = source.mark();
 		const beside = await cli<{
-			board: { board: string };
 			paneCount: number;
 			pane: { clientId: string; place: string };
-		}>(["pane", "open", "--board", "payments@option-a"]);
+		}>(["browser", "open"]);
 		expect(beside.code, beside.stderr).toBe(0);
 		expect(beside.json).toMatchObject({
-			board: { board: "payments@option-a" },
 			paneCount: 2,
 			pane: { place: "right" },
 		});
-		expect(beside.stderr).toMatch(/other pane was not touched/i);
 		expect(
 			source.events.slice(splitStart).some(({ type }) => type === "board_switched"),
 		).toBeFalse();
@@ -242,6 +248,8 @@ describe.serial("side-by-side proposal workflow", () => {
 			"new proposal pane registration",
 		);
 		if (!branchPane) throw new Error("The proposal pane registration disappeared.");
+		const shown = await cli(["browser", "show", "payments@option-a", "--pane", "right"]);
+		expect(shown.code, shown.stderr).toBe(0);
 		await waitFor(
 			() => branchPane.board() === "payments@option-a",
 			"proposal pane to adopt branch",
@@ -253,7 +261,7 @@ describe.serial("side-by-side proposal workflow", () => {
 			"payments@option-a",
 		]);
 
-		const third = await cli(["pane", "open"]);
+		const third = await cli(["browser", "open"]);
 		expect(third.code).not.toBe(0);
 		expect([source.board(), branchPane.board()]).toEqual(["payments", "payments@option-a"]);
 
@@ -323,7 +331,7 @@ describe.serial("side-by-side proposal workflow", () => {
 		const leftPictureStart = source.mark();
 		const rightPictureStart = branchPane.mark();
 		const shot = join(shots, "proposal.png");
-		const picture = await cli(["screenshot", "--pane", "right", "--out", shot]);
+		const picture = await cli(["browser", "capture", "--pane", "right", "--out", shot]);
 		expect(picture.code, picture.stderr).toBe(0);
 		expect(existsSync(shot)).toBeTrue();
 		expect(
@@ -373,9 +381,11 @@ describe.serial("side-by-side proposal workflow", () => {
 			"proposal pane to close",
 		);
 		const overwritten = await cli<{ pane: { place: string } }>([
-			"board",
-			"open",
+			"browser",
+			"show",
 			"payments@option-a",
+			"--pane",
+			"primary",
 		]);
 		expect(overwritten.code, overwritten.stderr).toBe(0);
 		expect(overwritten.json.pane.place).toBe("the only pane");
