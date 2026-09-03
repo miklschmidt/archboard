@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import type { BrowserTimeline } from "../../../shared/codex-browser-model/index.js";
+import { cn } from "../../ui-classnames/index.js";
 import {
 	boundedDetails,
 	boundedText,
@@ -9,18 +11,24 @@ import {
 	textField,
 } from "./details.js";
 import type { TimelineItem, TimelineTurn } from "./normalize.js";
+import { stableBoundedKey } from "./stable-key.js";
 
-const STATUS_TONES: Readonly<Record<string, string>> = {
+type BrowserItem = BrowserTimeline["turns"][number]["items"][number];
+type CanonicalItemStatus = Extract<
+	Extract<BrowserItem, { readonly status: unknown }>["status"],
+	string
+>;
+
+const STATUS_TONES = {
 	inProgress: "text-status-foreground",
 	pending: "text-status-foreground",
-	running: "text-status-foreground",
 	completed: "text-muted-foreground",
 	resolved: "text-muted-foreground",
 	failed: "text-destructive",
 	declined: "text-warning",
 	cancelled: "text-warning",
-	interrupted: "text-warning",
-};
+} as const satisfies Readonly<Record<CanonicalItemStatus, string>>;
+const UNKNOWN_STATUS_TONE = "text-muted-foreground";
 
 function numberField(value: unknown, key: string): number | null {
 	const field = record(value)?.[key];
@@ -32,14 +40,8 @@ function statusFor(value: unknown): string | null {
 	return typeof status === "string" && status.length > 0 ? status : null;
 }
 
-function stableValueKey(value: unknown): string {
-	const source = boundedDetails(value).text;
-	let hash = 2_166_136_261;
-	for (let index = 0; index < source.length; index += 1) {
-		hash ^= source.charCodeAt(index);
-		hash = Math.imul(hash, 16_777_619);
-	}
-	return (hash >>> 0).toString(36);
+function isCanonicalStatus(value: string): value is CanonicalItemStatus {
+	return Object.hasOwn(STATUS_TONES, value);
 }
 
 function keyedValues<Value>(
@@ -47,7 +49,7 @@ function keyedValues<Value>(
 ): readonly { readonly key: string; readonly value: Value }[] {
 	const occurrences = new Map<string, number>();
 	return values.map((value) => {
-		const base = stableValueKey(value);
+		const base = stableBoundedKey(value);
 		const occurrence = occurrences.get(base) ?? 0;
 		occurrences.set(base, occurrence + 1);
 		return { key: occurrence === 0 ? base : `${base}:${occurrence}`, value };
@@ -243,7 +245,12 @@ export function RenderTimelineItem({ item }: { readonly item: TimelineItem }) {
 				</span>
 			</header>
 			{status ? (
-				<p className={`m-0 text-body ${STATUS_TONES[status] ?? "text-muted-foreground"}`}>
+				<p
+					className={cn(
+						"m-0 !text-body",
+						isCanonicalStatus(status) ? STATUS_TONES[status] : UNKNOWN_STATUS_TONE,
+					)}
+				>
 					{status}
 				</p>
 			) : null}
@@ -253,8 +260,8 @@ export function RenderTimelineItem({ item }: { readonly item: TimelineItem }) {
 				{keyedValues(sections).map(({ key, value }) => (
 					<BoundedCopy key={key} value={value} />
 				))}
-				{links.map((link) => (
-					<SafeSource key={link} value={link} />
+				{keyedValues(links).map(({ key, value }) => (
+					<SafeSource key={key} value={value} />
 				))}
 				{item.malformed ? (
 					<p className="m-0 text-body text-warning">
@@ -274,7 +281,10 @@ export function TurnTerminalState({ turn }: { readonly turn: TimelineTurn }) {
 	const label = interrupted ? "Turn interrupted" : "Turn failed";
 	return (
 		<section
-			className={`border-b border-border-subtle py-control font-sans text-body ${interrupted ? "text-warning" : "text-destructive"}`}
+			className={cn(
+				"border-b border-border-subtle py-control font-sans !text-body",
+				interrupted ? "text-warning" : "text-destructive",
+			)}
 			role={interrupted ? "status" : "alert"}
 			data-turn-outcome={turn.status}
 		>
