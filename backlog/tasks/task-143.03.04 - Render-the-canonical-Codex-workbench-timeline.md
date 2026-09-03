@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-03 18:48'
+updated_date: '2026-09-03 19:01'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -57,6 +57,16 @@ Render the complete decoded Codex 0.151.0 ThreadItem union as bounded, escaped, 
 13. Add one exact mixed BrowserTimeline owner containing command, matching approval, and later text with the shared authoritative itemId. Pass it through createReadonlyWorkbenchView, ReadonlyWorkbenchThreadProvider, and WorkbenchTimeline and capture the current Duplicate Codex item identity failure.
 14. At the workbench-runtime adapter, mint structured assistant message and part runtime IDs from thread, turn, Codex itemId, media kind, and occurrence. Preserve Codex itemId on the part/data metadata, keep runtime-ID collision checks, and let WorkbenchTimeline resolve the structured message ID through the same public runtime identity function.
 15. Run only the focused timeline and affected workbench-runtime owners, assistant-ui policy, root typecheck, targeted lint, format, and diff checks, then record evidence and commit separately.
+
+16. Replace variable per-item assistant-ui parts with one stable turn shell message and keep timeline-item reconciliation in the Archboard-owned normalized keyed list. Use assistant-ui public ThreadMessageLike.id as the supported message identity; retain BrowserTimeline item identity and kind in the turn payload metadata.
+
+17. Define the fail-closed BrowserTimeline duplicate as one repeated [threadId, turnId, itemId, media] tuple. Keep shared itemId across different media legal, remove occurrence-masked and structurally impossible runtime collision checks, and add provider-backed duplicate coverage.
+
+18. Normalize runtime-only turns and items into the same Archboard TimelineTurn/TimelineItem model so MessagePrimitive.Root supplies turn context while Archboard owns keyed item DOM and visual grouping. Add a mounted delayed-approval owner that marks the later DOM node, publishes the provider update, and proves the mark and node identity move with the later item rather than the inserted approval.
+
+19. Delete the timeline adapter.ts re-export and make tests import helpers only from the public index.tsx.
+
+20. Run only the focused mounted runtime/timeline/public-provider/import-policy owners, root typecheck, targeted lint/format, and diff checks; record the assistant-ui public source evidence and red/green result, keep the task In Progress, and commit separately.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -91,6 +101,18 @@ Third rereview remediation implemented. The timeline owner statically imports Wo
 The exact mixed BrowserTimeline owner failed red with Duplicate Codex item identity: item-approval before the runtime change. The workbench-runtime adapter now preserves the authoritative Codex itemId as part/data metadata while assigning structured message IDs [message, threadId, turnId] and structured part IDs [part, threadId, turnId, itemId, media, occurrence]. A legal command and approval sharing one itemId therefore remain distinct runtime parts, while duplicate authoritative turn identities and any true structured runtime-ID collision still fail closed. WorkbenchTimeline resolves the provider message through the same exported message identity helper, so rendered turn metadata remains the authoritative turnId.
 
 Final focused verification: timeline, runtime projection, mounted provider, and assistant-ui policy owners passed 36 tests, 0 failures, 463 assertions in 5.87 s. The exact provider-backed owner proves command, matching approval, and later text order through createReadonlyWorkbenchView, ReadonlyWorkbenchThreadProvider, and WorkbenchTimeline; it checks the two preserved itemId values and all three exact distinct structured runtime IDs. bun run type-check passed in 2.6 s. Targeted Oxlint passed with --deny-warnings. Targeted Oxfmt check passed on 19 files in 144 ms. git diff --check passed. No broad or browser lane ran. Task remains In Progress for rereview.
+
+Fourth rereview remediation started from clean HEAD a7f07d5a682a6d00fa168627d35860a0ac49a215 on fixed base 23cc54fbc3405a7c5b80bb8de796ae2b53bd5e25. Installed @assistant-ui/react 0.15.17 publicly exports ThreadMessageLike; its public type defines optional message id, while TextMessagePart, ReasoningMessagePart, and DataMessagePart define no part id. The installed client keys every non-tool part as index-N. The remediation will use the supported message id for the stable turn shell and keep variable timeline-item DOM keyed by Archboard normalization, outside assistant-ui part reconciliation.
+
+Fourth rereview remediation implemented. Installed @assistant-ui/react 0.15.17 publicly re-exports ThreadMessageLike from its package root (node_modules/@assistant-ui/react/src/index.ts). The public ThreadMessageLike type defines id as the supported message identity (node_modules/@assistant-ui/core/src/runtime/utils/thread-message-like.ts). Its public TextMessagePart, ReasoningMessagePart, and DataMessagePart types have no stable part-id member, and the installed public client implementation keys every non-tool part as index-N (node_modules/@assistant-ui/core/src/store/clients/thread-message-client.ts). The custom runtimeId field was therefore removed rather than treated as a library contract.
+
+The workbench-runtime adapter now gives each authoritative turn one structured ThreadMessageLike id and one fixed summary text part. Variable BrowserTimeline items do not enter assistant-ui part reconciliation. Their authoritative itemId, media kind, support state, and value remain in Archboard metadata. WorkbenchTimeline normalizes runtime-only turns into the same TimelineTurn/TimelineItem model as decoded turns, preserves one visible turn group, and reconciles rendered items by the existing injective Archboard item identity. The impossible seenMessages/seenParts checks and occurrence-masked runtime IDs are gone.
+
+The authoritative BrowserTimeline duplicate is now the exact [threadId, turnId, itemId, media] tuple. The mounted provider owner proves command and approval may share itemId because their media differs, then proves two command records with the same tuple demote the provider to runtime_failure and expose the exact duplicate identity. Duplicate turn identities remain fail-closed.
+
+Mounted red/green evidence: the delayed-approval owner renders runtime-only command and later activity through createReadonlyWorkbenchView, ReadonlyWorkbenchThreadProvider, and WorkbenchTimeline, marks the later article with DOM-owned state, then inserts the matching approval. With index-key reconciliation it failed because the later DOM node was replaced after moving from position two to three (1 test failed in 1.39 s). With item.identity keys it passed in 117 ms; final focused execution passed in 16 ms and proves the same later DOM node and mark survive, the approval does not inherit the mark, order is command/approval/later, and all items remain in one visual turn group. Mounted updates settled deterministically, so no browser lane ran.
+
+The redundant src/ui/workbench-timeline/adapter.ts entrypoint is deleted. Timeline tests import component, helpers, and public types from index.tsx only. Final focused runtime, mounted runtime, mounted timeline, public timeline/provider, assistant-ui import policy, and test-observer policy run: 38 pass, 0 fail, 479 assertions in 6.79 s. bun run type-check passed. Targeted Oxlint passed with --deny-warnings. Targeted Oxfmt check passed on 19 files in 140 ms. git diff --check passed. No broad module, system, repository, browser, stress, or performance lane ran. Task remains In Progress for rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

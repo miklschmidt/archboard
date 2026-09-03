@@ -26,10 +26,6 @@ type ExecutableLink = Extract<BrowserSnapshot["threadLink"], { readonly state: "
 const childId = "child-a" as ExecutableLink["childId"];
 const epoch = "epoch-a" as ExecutableLink["epoch"];
 
-function runtimePartId(media: string, occurrence = 0): string {
-	return JSON.stringify(["part", threadId, turnId, itemId, media, occurrence]);
-}
-
 function timeline(overrides: Partial<BrowserTimeline["turns"][number]> = {}): BrowserTimeline {
 	return {
 		kind: "timeline",
@@ -122,12 +118,13 @@ describe("workbench runtime projection", () => {
 		expect(view.messages[0]?.id).toBe(workbenchRuntimeMessageId(threadId, turnId));
 		expect(view.messages[0]?.metadata.custom.archboard.turnId).toBe("turn-a");
 		expect("isOptimistic" in (view.messages[0]?.metadata ?? {})).toBe(false);
-		expect(view.messages[0]?.content).toEqual([
+		expect(view.messages[0]?.content).toEqual([{ type: "text", text: "Completed" }]);
+		expect(view.messages[0]?.metadata.custom.archboard.items).toEqual([
 			{
-				type: "text",
-				runtimeId: runtimePartId("text"),
 				itemId,
-				text: "Authoritative response",
+				kind: "text",
+				supported: true,
+				value: { media: "text", itemId, text: "Authoritative response" },
 			},
 		]);
 	});
@@ -142,18 +139,13 @@ describe("workbench runtime projection", () => {
 			items: [unsupported] as unknown as BrowserTimeline["turns"][number]["items"],
 		});
 		const view = projectWorkbenchRuntime(connected(snapshot(hostileTimeline)));
-		expect(view.messages[0]?.content).toEqual([
+		expect(view.messages[0]?.content).toEqual([{ type: "text", text: "Completed" }]);
+		expect(view.messages[0]?.metadata.custom.archboard.items).toEqual([
 			{
-				type: "data",
-				runtimeId: JSON.stringify(["part", threadId, turnId, "item-future", "futureCodexItem", 0]),
 				itemId: "item-future" as typeof itemId,
-				name: "archboard-unsupported-item",
-				data: {
-					itemId: "item-future",
-					media: "futureCodexItem",
-					recoverable: true,
-					message: "This Codex item is not supported by the current workbench.",
-				},
+				kind: "futureCodexItem",
+				supported: false,
+				value: unsupported,
 			},
 		]);
 	});
@@ -168,11 +160,8 @@ describe("workbench runtime projection", () => {
 		expect(view.mode).toBe("readonly");
 		expect(view.state).toBe("runtime_failure");
 		expect(view.reason).toContain("Duplicate Codex turn identity");
-		expect(view.messages[0]?.content[0]).toMatchObject({
-			type: "data",
-			name: "archboard-runtime-failure",
-			data: { recoverable: true },
-		});
+		expect(view.messages[0]?.content[0]?.text).toContain("Duplicate Codex turn identity");
+		expect(view.messages[0]?.status).toMatchObject({ type: "incomplete", reason: "error" });
 	});
 
 	test("stale and reconnecting snapshots retain history without executable controls", () => {

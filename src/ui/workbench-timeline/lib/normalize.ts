@@ -51,6 +51,9 @@ type RuntimeApproval = Extract<
 	NonNullable<WorkbenchTimelineProps["runtimeTimeline"]>["turns"][number]["items"][number],
 	{ readonly media: "approval" }
 >;
+type RuntimeItem = NonNullable<
+	WorkbenchTimelineProps["runtimeTimeline"]
+>["turns"][number]["items"][number];
 
 function itemIdentity(
 	threadId: string,
@@ -102,6 +105,92 @@ function normalizeApproval(
 	};
 }
 
+function runtimeItemPresentation(item: RuntimeItem): {
+	readonly label: string;
+	readonly type: string;
+	readonly value: unknown;
+} {
+	const itemId = item.itemId;
+	switch (item.media) {
+		case "text":
+			return {
+				label: "Assistant message",
+				type: "agentMessage",
+				value: { ...item, type: "agentMessage", id: itemId },
+			};
+		case "reasoning":
+			return {
+				label: "Reasoning",
+				type: "reasoning",
+				value: {
+					...item,
+					type: "reasoning",
+					id: itemId,
+					summary: [item.text],
+					content: [],
+				},
+			};
+		case "plan":
+			return {
+				label: "Plan",
+				type: "plan",
+				value: { ...item, type: "plan", id: itemId },
+			};
+		case "command":
+			return {
+				label: "Command",
+				type: "commandExecution",
+				value: { ...item, type: "commandExecution", id: itemId },
+			};
+		case "fileChange":
+			return {
+				label: "File change",
+				type: "fileChange",
+				value: { ...item, type: "fileChange", id: itemId },
+			};
+		case "tool":
+			return {
+				label: "Tool call",
+				type: "dynamicToolCall",
+				value: {
+					...item,
+					type: "dynamicToolCall",
+					id: itemId,
+					tool: item.name,
+				},
+			};
+		case "approval":
+			return {
+				label: "Approval",
+				type: "approval",
+				value: { ...item, type: "approval", id: itemId },
+			};
+		default:
+			return {
+				label: "Unknown item",
+				type: "unknown",
+				value: { ...record(item), type: "unknown", id: itemId },
+			};
+	}
+}
+
+function normalizeRuntimeItem(
+	threadId: string,
+	turnId: string,
+	item: RuntimeItem,
+	occurrences: Map<string, number>,
+): TimelineItem {
+	const occurrence = occurrences.get(item.itemId) ?? 0;
+	occurrences.set(item.itemId, occurrence + 1);
+	const presentation = runtimeItemPresentation(item);
+	return {
+		identity: itemIdentity(threadId, turnId, item.itemId, occurrence),
+		itemId: item.itemId,
+		...presentation,
+		malformed: false,
+	};
+}
+
 export function normalizeTimeline(props: WorkbenchTimelineProps): NormalizedTimeline {
 	const turns = new Map<string, TimelineTurn>();
 	for (const candidate of props.turns as readonly unknown[]) {
@@ -138,6 +227,19 @@ export function normalizeTimeline(props: WorkbenchTimelineProps): NormalizedTime
 			streaming: status === "inProgress",
 			items,
 			error: turn.error,
+		});
+	}
+	for (const runtimeTurn of props.runtimeTimeline?.turns ?? []) {
+		if (turns.has(runtimeTurn.turnId)) continue;
+		const occurrences = new Map<string, number>();
+		turns.set(runtimeTurn.turnId, {
+			turnId: runtimeTurn.turnId,
+			status: runtimeTurn.status,
+			streaming: runtimeTurn.status === "inProgress",
+			items: runtimeTurn.items.map((item) =>
+				normalizeRuntimeItem(props.threadId, runtimeTurn.turnId, item, occurrences),
+			),
+			error: null,
 		});
 	}
 	return {
