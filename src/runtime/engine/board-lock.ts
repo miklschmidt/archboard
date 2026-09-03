@@ -120,6 +120,17 @@ export interface LockHolder {
 /** The lease as it sits on disk: a holder plus the token that proves it is ours. */
 interface LockRecord extends LockHolder {
 	token: string;
+	/** Exact note hash last committed while this lease was held. Never exposed as holder state. */
+	committedHash?: string;
+}
+
+/** One-use proof passed from a released writer to a waiter that observed it. */
+interface LockHandoff {
+	id: string;
+	process: string;
+	since: string;
+	token: string;
+	hash: string;
 }
 
 /**
@@ -159,6 +170,10 @@ export class BoardLockCancelledError extends Error {
 /** What `holdBoard` gives back: who holds it, and whether this call is what took it. */
 export interface LockHold {
 	holder: LockHolder;
+	/** The disk lease identity, used only to stamp a successful note commit before release. */
+	leaseToken: string;
+	/** Exact committed hash of the immediately preceding lease this waiter observed. */
+	predecessorHash?: string;
 	/**
 	 * Did this call take the lock, or join one the same holder already had?
 	 *
@@ -248,7 +263,7 @@ export async function holdBoard(request: LockRequest): Promise<LockHold> {
 	const startedAt = Date.now();
 	const deadline = startedAt + waitMs;
 
-	let blocker: LockHolder | null = null;
+	let blocker: LockRecord | null = null;
 	// Bounded so that a lock moving between holders faster than we can read it ends
 	// in a refusal naming somebody rather than in a loop.
 	let attemptsPastDeadline = 0;
@@ -260,10 +275,18 @@ export async function holdBoard(request: LockRequest): Promise<LockHold> {
 			if (result.ok && result.created) releaseHold(board, request.holder.id);
 			throw new BoardLockCancelledError(request.board);
 		}
-		if (result.ok) return { holder: result.holder, created: result.created };
+		if (result.ok) {
+			const predecessorHash = result.created ? takeHandoff(board, blocker) : undefined;
+			return {
+				holder: holderOf(result.record),
+				leaseToken: result.record.token,
+				created: result.created,
+				...(predecessorHash !== undefined ? { predecessorHash } : {}),
+			};
+		}
 		// `null` means the file moved under us rather than that somebody has it:
 		// worth another go, and worth not reporting as a holder.
-		if (result.holder) blocker = result.holder;
+		if (result.record) blocker = result.record;
 
 		if (Date.now() >= deadline) {
 			if (blocker || attemptsPastDeadline >= 2) break;
@@ -277,7 +300,20 @@ export async function holdBoard(request: LockRequest): Promise<LockHold> {
 		);
 	}
 
-	throw new BoardHeldError(request.board, blocker, Date.now() - startedAt);
+	throw new BoardHeldError(
+		request.board,
+		blocker ? holderOf(blocker) : null,
+		Date.now() - startedAt,
+	);
+}
+
+/** Attach a successful note commit to the exact lease that enclosed it. */
+export function recordLockCommit(board: string, leaseToken: string, hash: string): boolean {
+	const file = lockPathFor(normalizeBoardKey(board));
+	const current = readRecord(file);
+	if (!current || current.token !== leaseToken || hash.length === 0) return false;
+	writeRecord(file, { ...current, committedHash: hash });
+	return true;
 }
 
 /**
@@ -293,6 +329,15 @@ export function releaseHold(board: string, holderId: string): boolean {
 	const file = lockPathFor(key);
 	const current = readRecord(file);
 	if (!current || current.id !== holderId) return false;
+	if (current.committedHash) {
+		try {
+			writeHandoff(key, current);
+		} catch (error) {
+			// Losing the optional proof is a safe conflict for a waiter. Keeping the
+			// board locked after its note was committed would leave every writer stuck.
+			logger.warn(`Could not record the released-writer handoff for "${key}".`, { error });
+		}
+	}
 	try {
 		fs.unlinkSync(file);
 	} catch {
@@ -652,8 +697,8 @@ export function forgetLockAnnouncements(): void {
 // ── Acquiring ─────────────────────────────────────────────────────────────
 
 type Attempt =
-	| { ok: true; holder: LockHolder; created: boolean }
-	| { ok: false; holder: LockHolder | null };
+	| { ok: true; record: LockRecord; created: boolean }
+	| { ok: false; record: LockRecord | null };
 
 /**
  * One go at taking the board.
@@ -731,14 +776,14 @@ async function attempt(
 		// lapsed lease. The claim still ends.
 		endsClaimHere(renewed);
 		announceHeld(board, holderOf(renewed));
-		return { ok: true, holder: holderOf(renewed), created: false };
+		return { ok: true, record: renewed, created: false };
 	}
 
 	if (live && !revoking) {
 		// Somebody else's, and still theirs. Announce it: this is how a pane in
 		// this process learns an agent in this process has the board.
 		announceHeld(board, holderOf(live));
-		return { ok: false, holder: holderOf(live) };
+		return { ok: false, record: live };
 	}
 
 	const record: LockRecord = {
@@ -766,7 +811,7 @@ async function attempt(
 			// record to read, and the claim above it runs for minutes longer.
 			endsClaimHere(record);
 			announceHeld(board, holderOf(record));
-			return { ok: true, holder: holderOf(record), created: true };
+			return { ok: true, record, created: true };
 		} catch (error) {
 			if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
 			// Somebody created it between our read and our create. Whatever they
@@ -775,7 +820,7 @@ async function attempt(
 			const raced = liveRecord(readRecord(file));
 			if (raced) {
 				announceHeld(board, holderOf(raced));
-				return { ok: false, holder: holderOf(raced) };
+				return { ok: false, record: raced };
 			}
 		}
 	}
@@ -788,7 +833,7 @@ async function attempt(
 	const settled = readRecord(file);
 	if (!settled || settled.token !== record.token) {
 		const rival = liveRecord(settled);
-		return { ok: false, holder: rival ? holderOf(rival) : null };
+		return { ok: false, record: rival };
 	}
 	// Only now, because until the read-back this process did not have the board.
 	// A claim held here stops being renewed at this moment; one held on another
@@ -796,7 +841,7 @@ async function attempt(
 	// discovery arriving one renewal interval later.
 	endsClaimHere(record);
 	announceHeld(board, holderOf(record));
-	return { ok: true, holder: holderOf(record), created: true };
+	return { ok: true, record, created: true };
 }
 
 // ── The lease file ────────────────────────────────────────────────────────
@@ -821,6 +866,63 @@ function lockPathFor(board: string): string {
 		"locks",
 		`${encodeURIComponent(normalizeBoardKey(board))}.lock`,
 	);
+}
+
+function handoffPathFor(board: string): string {
+	return `${lockPathFor(board)}.handoff`;
+}
+
+function readHandoff(file: string): LockHandoff | null {
+	try {
+		const parsed = JSON.parse(fs.readFileSync(file, "utf-8")) as Partial<LockHandoff>;
+		if (
+			typeof parsed.id !== "string" ||
+			typeof parsed.process !== "string" ||
+			typeof parsed.since !== "string" ||
+			typeof parsed.token !== "string" ||
+			typeof parsed.hash !== "string" ||
+			parsed.hash.length === 0
+		) {
+			return null;
+		}
+		return parsed as LockHandoff;
+	} catch {
+		return null;
+	}
+}
+
+function writeHandoff(board: string, record: LockRecord): void {
+	if (!record.committedHash) return;
+	const file = handoffPathFor(board);
+	writeJsonRecord(file, {
+		id: record.id,
+		process: record.process,
+		since: record.since,
+		token: record.token,
+		hash: record.committedHash,
+	});
+}
+
+/** Consume every receipt, but trust it only when this acquirer saw its exact predecessor. */
+function takeHandoff(board: string, predecessor: LockRecord | null): string | undefined {
+	const file = handoffPathFor(board);
+	const handoff = readHandoff(file);
+	try {
+		fs.unlinkSync(file);
+	} catch {
+		/* absent, malformed, or already consumed */
+	}
+	if (
+		!handoff ||
+		!predecessor ||
+		handoff.id !== predecessor.id ||
+		handoff.process !== predecessor.process ||
+		handoff.since !== predecessor.since ||
+		handoff.token !== predecessor.token
+	) {
+		return undefined;
+	}
+	return handoff.hash;
 }
 
 function readRecord(file: string): LockRecord | null {
@@ -855,9 +957,13 @@ function readRecord(file: string): LockRecord | null {
  * inside one process are two different attempts at the same path.
  */
 function writeRecord(file: string, record: LockRecord): void {
+	writeJsonRecord(file, record, record.token);
+}
+
+function writeJsonRecord(file: string, record: object, token = newToken()): void {
 	const dir = path.dirname(file);
 	fs.mkdirSync(dir, { recursive: true });
-	const tmp = path.join(dir, `.${path.basename(file)}.${record.token}.tmp`);
+	const tmp = path.join(dir, `.${path.basename(file)}.${token}.tmp`);
 	try {
 		fs.writeFileSync(tmp, JSON.stringify(record));
 		fs.renameSync(tmp, file);
@@ -884,7 +990,7 @@ function liveHolder(record: LockRecord | null): LockHolder | null {
 
 /** The record without the token: what anybody outside this module is told. */
 function holderOf(record: LockRecord): LockHolder {
-	const { token: _token, ...holder } = record;
+	const { token: _token, committedHash: _committedHash, ...holder } = record;
 	return holder;
 }
 

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 05:31'
+updated_date: '2026-09-03 05:40'
 labels: []
 dependencies:
   - TASK-143.08.06.01
@@ -43,12 +43,12 @@ Make the persisted note, not transient server or browser registration, sufficien
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Resolve only the normalized board key before admission. Move first-baseline establishment into the existing held synchronous write path so queued writers load after acquiring the normalized mutex and see preceding legitimate commits.
-2. Route board creation through the same normalized board mutex, keeping exclusive exact-path atomic publication, so casing and Unicode-equivalent names cannot publish two notes.
-3. Replace inline pane callbacks with a post-answer, per-board ordered scheduler that invokes observers outside response latency, catches synchronous and asynchronous failures, and lets unresolved delivery coexist with later commit notifications.
-4. Preserve typed BOARD_RESOLUTION_FAILED results through explicit compare sides, make board-new input strict, and remove the retired pane field from shell submission.
-5. Extend the compact vault-only, observer, and deterministic lock/write owners with normalized concurrent creation, holder/waiter, browser-state refusal equivalence, strict creation input, one-write counting, latency, failure, and ordering assertions.
-6. Run only focused red/green owners plus narrow lint/format/diff checks. Commit remediation, keep TASK In Progress and ACs unchecked, and callback the parent with exact evidence and remaining protected-lifecycle risk.
+1. Preserve direct vault resolution and strict note-authority behavior for installed boards.
+2. Keep the normalized board-key lock transaction as the single synchronous write boundary.
+3. Stamp the exact committed note hash on the held lease, emit a single-use predecessor handoff on release, and expose it only to a waiter that observed that exact lease.
+4. Reconcile an installed stale baseline only when the under-lock note hash exactly matches that proven predecessor; retain 409 behavior for every other foreign edit.
+5. Extend the vault-only two-canvas owner so the waiter opens H0 before contention, then commits H2 after A commits H1; retain the foreign-byte conflict owner.
+6. Run only focused vault/lock/write owners plus lint, format, diff checks, and a narrow type check if safe; commit cleanly and report to the parent without finalizing the task.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -71,4 +71,10 @@ Review remediation:
 - Compare preserves typed BOARD_RESOLUTION_FAILED missing responses with identical zero-pane/one-pane bodies. BOARD_REQUIRED now exposes available persisted keys instead of a misleading open field through domain, HTTP, and client surfaces.
 - Board-new rejects retired pane input with actionable 400; valid creation separately proves unchanged pane state. New-board dialog placement is open-only, its shell handler has no pane field, and a static rendered component owner proves new omits the choice while open retains it.
 Focused remediation validation: vault-only 6 tests/60 assertions in 2.11s; public refusals 6/60 in 2.24s; observer plus dialog 3/11 in 0.22s; preview 3/34 in 2.11s; branching 3/38 in 2.32s; lifecycle 6/48 in 1.38s; element writes 7/54 in 1.66s; pane addressing 7/55 in 4.49s; package CLI 6/109 in 3.54s; protected first-open 1/7, held reload 1/12, concurrent first-open 1/14; existing cross-process lock 1/17 in 16.91s. Scratch forced-death lifecycle remains excluded and unchanged.
+
+Second-review repair:
+- A successful note persist now stamps its exact hash on the enclosing lease token. Release emits a one-use handoff receipt containing that lease identity and hash; only an acquirer that previously observed the same id/process/since/token receives it, and every fresh acquirer consumes any receipt.
+- Write admission advances an already-installed baseline only when its under-lock note load exactly matches that proven predecessor hash. Missing or mismatched proof keeps the existing BOARD_VERSION_CONFLICT path, so external bytes before release or before the waiter load are not laundered.
+- The vault-only two-canvas owner now explicitly opens H0 in the waiting canvas before A holds and commits H1, then proves B commits H2 with both elements. The existing uncontended foreign-byte conflict remains 409 and preserves bytes.
+Focused validation: vault-only 6 tests/61 assertions in 2.29s; board-version note 8/47 in 0.39s; post-commit observers 2/9 in 0.25s; focused Oxlint; focused Oxfmt; git diff --check. The excluded 16.9s legacy lock owner was not rerun. Task remains In Progress with all ACs unchecked for parent review.
 <!-- SECTION:NOTES:END -->
