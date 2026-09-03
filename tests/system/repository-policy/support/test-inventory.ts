@@ -76,6 +76,15 @@ function executableRunScripts(command: string, unique = true): string[] {
 export function inspectWorkflow(workflow: string): string[] {
 	const parsed = workflowRunCommands(workflow);
 	if (parsed.error) return [parsed.error];
+	const parserErrors = parsed.commands.flatMap((command) =>
+		executableBunInvocations(command)
+			.filter((invocation) => invocation.error !== undefined)
+			.map(
+				(invocation) =>
+					`the workflow has an invalid executable Bun invocation: ${invocation.error}`,
+			),
+	);
+	if (parserErrors.length > 0) return parserErrors;
 	const errors: string[] = [];
 	const canonicalCount = parsed.commands.filter((command) => command === "bun run check").length;
 	if (canonicalCount !== 1) {
@@ -84,10 +93,6 @@ export function inspectWorkflow(workflow: string): string[] {
 		);
 	}
 	for (const command of parsed.commands) {
-		for (const invocation of executableBunInvocations(command)) {
-			if (invocation.error)
-				errors.push(`the workflow has an invalid executable Bun invocation: ${invocation.error}`);
-		}
 		for (const script of executableRunScripts(command)) {
 			if (script === "check") {
 				if (command !== "bun run check") {
@@ -214,16 +219,24 @@ export function discoverNativeTests(repoRoot: string): string[] {
 }
 
 export function inspectTestInventory(input: InventoryInput): InventoryResult {
-	const errors: string[] = [];
-	const pushScript = input.pushScript ?? "check";
+	const parserErrors: string[] = [];
 	for (const [name, command] of Object.entries(input.scripts)) {
 		for (const invocation of executableBunInvocations(command)) {
 			if (invocation.error)
-				errors.push(
+				parserErrors.push(
 					`package script \`${name}\` has invalid executable Bun invocation: ${invocation.error}`,
 				);
 		}
 	}
+	if (parserErrors.length > 0) {
+		return {
+			errors: parserErrors,
+			nativeLanes: new Map(),
+			reachableScripts: new Map(),
+		};
+	}
+	const errors: string[] = [];
+	const pushScript = input.pushScript ?? "check";
 	const reachability = pushReachability(input.scripts, pushScript);
 	for (const cycle of reachability.cycles) errors.push(`package script cycle: ${cycle}`);
 	for (const script of OPT_IN_PACKAGE_SCRIPTS) {

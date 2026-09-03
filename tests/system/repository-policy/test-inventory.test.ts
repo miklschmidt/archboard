@@ -172,6 +172,40 @@ describe("test inventory policy", () => {
 		);
 	});
 
+	test.each([
+		["a following option", "--path-ignore-patterns --isolate src"],
+		["an equals option", "--path-ignore-patterns=--isolate src"],
+		["an empty equals value", "--path-ignore-patterns= src"],
+	])("rejects %s as a path-ignore-patterns value", (_name, args) => {
+		const fixture = input();
+		fixture.scripts["test:modules"] = `bun test ${args}`;
+		const result = inspectTestInventory(fixture);
+		expect(result.errors).toEqual([
+			"package script `test:modules` has invalid executable Bun invocation: `bun test --path-ignore-patterns` requires one explicit static value that does not start with `-`",
+		]);
+		expect(result.nativeLanes.size).toBe(0);
+	});
+
+	test("reports only the contextual error for an unknown bun test option", () => {
+		const fixture = input({ nativeTests: ["src/example/unknown.test.ts"] });
+		fixture.scripts["test:modules"] = "bun test --unknown src";
+		expect(inspectTestInventory(fixture).errors).toEqual([
+			"package script `test:modules` has invalid executable Bun invocation: `bun test` has unsupported or ambiguous option `--unknown`; supported leading flags are `--isolate`, `--max-concurrency=<positive integer>`, and `--path-ignore-patterns <static path>`",
+		]);
+	});
+
+	test("reports only the contextual error for an invalid bun run edge", () => {
+		const fixture = input({ nativeTests: ["src/example/module.test.ts"] });
+		fixture.scripts["test:modules"] = "bun test src";
+		fixture.scripts.test = fixture.scripts.test!.replace(
+			"bun run test:modules",
+			"bun run --cwd repo test:modules",
+		);
+		expect(inspectTestInventory(fixture).errors).toEqual([
+			"package script `test` has invalid executable Bun invocation: `bun run` has unsupported or ambiguous leading option `--cwd`; only `--silent` is supported before the script name",
+		]);
+	});
+
 	test("rejects an opt-in lane after a full-line comment", () => {
 		const fixture = input();
 		fixture.scripts.test += "\n# retained offset\nbun run test:opt-in:capacity";
