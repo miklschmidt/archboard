@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 22:03'
+updated_date: '2026-09-03 22:09'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -155,6 +155,8 @@ Define only the browser-facing workbench state and user-intent model that has no
 69. Retain the first subscribed event publication failure with browser, pane, payload kind, and sequence context until the socket owner drain observes it; keep result-send handling unchanged.
 70. Merge the retained publication failure with owned close failures in one AggregateError, then clear both failure stores before throwing so a second drain succeeds and no error history can grow.
 71. Add one focused OPEN WebSocket callback-failure owner proving no event confirmation, actionable drain rejection, one-shot failure observation, and successful later snapshot publication; rerun only affected module, TypeScript, scoped lint/format/diff, and boundary/inventory owners.
+
+72. Add one combined socket-publication owner that fails two distinguishable subscribed event sends and one close, then asserts one AggregateError contains the close failure plus only the first contextual event failure, omits the later event failure, and clears before a second drain. Change no production code unless this owner fails.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -271,6 +273,11 @@ Event-failure observability remediation:
 - The focused production-adapter owner uses an OPEN callback-based WebSocket. A terminal event callback fails, confirmPublished is not called, drain reports the exact contextual cause once, a second drain resolves, and a later explicit snapshot succeeds and confirms the retained terminal.
 
 Red evidence against 62d8ac8d: the new exact recovery owner failed 0/1 because drain resolved. Green evidence: 58 focused publication/gateway/lifecycle tests passed with 264 assertions; 61 boundary/inventory tests passed with 132 assertions. Root and frontend TypeScript, exact scoped Oxlint/Oxfmt, and git diff checks passed. No broad module, system, repository, browser, full-test, check, topology, load, stress, capacity, performance, tooling, or concurrency lane ran. TASK-143.01.02 remains In Progress for parent rereview.
+
+Combined drain enforcement:
+- Added one focused owner with two distinguishable subscribed event-send failures and one connection-close failure. The single drain AggregateError contains the close failure and only the first contextual event failure; the later event failure is absent, and a second drain resolves.
+- The owner passed immediately against d07c6694, confirming the authored bounded first-failure production contract. Production code did not change.
+- Exact evidence: the publication owner passed 5/5 with 23 assertions. Root and frontend TypeScript, exact file Oxlint/Oxfmt, and git diff checks passed. No other test lane ran. Topology remains one server, one child, one user. TASK-143.01.02 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -459,6 +466,12 @@ author: @codex
 created: 2026-09-03 22:03
 ---
 @codex completed the retained event-publication failure remediation. Preparing a separate commit and READY_FOR_REREVIEW callback; TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 22:09
+---
+@codex added the combined drain enforcement owner with no production change. Preparing a separate commit and READY_FOR_REREVIEW callback; TASK-143.01.02 remains In Progress.
 ---
 <!-- COMMENTS:END -->
 
