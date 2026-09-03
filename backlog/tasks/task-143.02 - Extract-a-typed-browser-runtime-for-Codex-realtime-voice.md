@@ -4,10 +4,12 @@ title: Build a browser-native Codex realtime module
 status: To Do
 assignee: []
 created_date: '2026-08-30 11:44'
-updated_date: '2026-09-02 01:40'
+updated_date: '2026-09-03 22:05'
 labels: []
 dependencies:
   - TASK-143.08.05
+  - TASK-143.04.07
+  - TASK-143.04.09
 references:
   - docs/design/agent-workbench-ui-library-research.md
   - docs/design/desktop-app-server-sharing-research.md
@@ -30,3 +32,9 @@ Integration milestone for a framework-neutral `src/ui/codex-realtime` public con
 - [ ] #2 The sole runtime adapter owns exact realtime V3 binding/phase, unique session IDs, WebRTC SDP handshake, guarded append, timeline recovery, stop/closed/restart serialization, and item-scoped canonical transcript.
 - [ ] #3 Module, process-contract, controlled browser, and clean-process smoke owners cover every reachable lifecycle/failure, stale event, uncertain append, recovery, and cleanup through public exports.
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Finalization is blocked until TASK-143.04.07 supplies controlled-browser voice evidence and TASK-143.04.09 supplies clean-process real-voice smoke evidence for acceptance criterion 3.
+<!-- SECTION:NOTES:END -->
