@@ -34,6 +34,7 @@ import type { DynamicWaitEvent } from "../../../runtime/codex-dynamic-tools/inde
 import type { CodexWorkbenchComponents } from "../codex-workbench-generation.js";
 import {
 	createCanvasCodexBrowserSocketOwner,
+	createCanvasCodexBrowserSocketSend,
 	type BrowserConnectionInstance,
 } from "../codex-workbench-browser.js";
 import { createBrowserLeaseLedger, type BrowserLeaseLedger } from "../../codex-workbench/index.js";
@@ -364,7 +365,7 @@ interface Wiring {
 					instance: BrowserConnectionInstance,
 					browserId: string,
 					input: unknown,
-					send: (message: unknown) => void,
+					send: (message: unknown) => Promise<void>,
 			  ) => Promise<void>)
 			| null;
 	};
@@ -1311,6 +1312,7 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 	// socket — is told outright rather than left assuming the board is free.
 	if (clientId) tellPaneAboutLock(clientId, startingKey);
 
+	const codexTransport = createCanvasCodexBrowserSocketSend(ws);
 	ws.on("message", (raw) => {
 		let message: unknown;
 		try {
@@ -1330,7 +1332,9 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		const action =
 			"action" in message && typeof message.action === "string" ? message.action : null;
 		const send = (response: unknown): void => {
-			if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(response));
+			void codexTransport
+				.send(response)
+				.catch((error) => logger.error("Codex browser response send failed:", error));
 		};
 		if (!clientId) {
 			send({
@@ -1353,7 +1357,7 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 			});
 			return;
 		}
-		void handle(codexSocketInstance, clientId, message, send).catch((error) =>
+		void handle(codexSocketInstance, clientId, message, codexTransport.send).catch((error) =>
 			logger.error("Codex browser request failed:", error),
 		);
 	});

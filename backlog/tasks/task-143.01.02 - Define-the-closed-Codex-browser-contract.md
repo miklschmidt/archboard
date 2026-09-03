@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 21:39'
+updated_date: '2026-09-03 21:55'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -145,6 +145,12 @@ Define only the browser-facing workbench state and user-intent model that has no
 62. Confirm direct snapshot-bearing socket responses only after transport.send succeeds, and add focused two-live-connection plus failed-send publication owners without adding unsupported topology or capacity coverage.
 
 63. Run only directly affected approval, gateway, socket, production, and lifecycle tests, both TypeScript projects, exact scoped Oxlint/Oxfmt, relevant boundary/inventory/diff checks; commit separately and leave TASK-143.01.02 In Progress for rereview.
+
+64. Replace inferred listener-return publication credit with one explicit `confirmPublished(payload)` transition that extracts terminal request ids only from the exact successful gateway payload or snapshot result.
+65. Make the canvas socket transport `send` return `Promise<void>`; the production WebSocket adapter rejects non-open sockets and callback failures, and the socket owner confirms event/result publication only after the awaited send resolves.
+66. Route termination through the existing zero-live terminal acknowledgement rule after connections are cleared.
+67. Add focused regressions for failed terminal delta followed by unrelated readiness, non-open/callback send failures, shutdown retirement, and successful media event followed by failed result.
+68. Run only the named module/system owners plus type, lint, format, and repository inventory gates; keep the task In Progress for parent review.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -246,6 +252,14 @@ Post-integration remediation:
 - Canvas ordinary-approval actions now return ApprovalSettlement.outcome unchanged, so broker not_delivered and outcome_unknown results cannot become optimistic delivered results.
 - Gateway snapshot construction no longer acknowledges spontaneous terminals. Each live connection records terminal publication only after a successful subscribed send or after the canvas socket owner confirms a snapshot-bearing transport send; acknowledgement runs only when every live connection has recorded that request. Failed sends retain the terminal for a later snapshot, and closing the last unserved connection re-evaluates the remaining live set.
 - Red evidence against ea09607c: the focused adapter owner returned delivered for not_delivered, while the gateway removed a terminal before a second live connection published it and after a throwing send. Green evidence: 65 focused module tests passed with 286 assertions; the two exact production-facing system owners passed with 51 assertions; 65 exact boundary, inventory, and composition tests passed with 177 assertions. Both TypeScript projects, exact scoped Oxlint/Oxfmt, and git diff checks passed. No broad module, system, repository, browser, full-test, or check lane ran. TASK-143.01.02 remains In Progress pending rereview.
+
+Publication-order remediation:
+- Replaced listener-return inference with one explicit confirmPublished(payload) transition. Terminal ids are selected only from the exact successful delta, snapshot event, or snapshot-bearing result; an unrelated readiness delta cannot credit a previously failed terminal payload.
+- Made the canvas socket send port awaitable. The production adapter rejects CLOSING/non-OPEN sockets and WebSocket callback errors; result and event publication are confirmed only after the send resolves. Event sends are included in the socket owner drain.
+- Gateway shutdown now clears live connections and reruns the existing zero-live terminal retirement rule. The test harness now matches production by cancelling only pending approvals on browser disconnect.
+- Added focused gateway and socket publication owners for failed-terminal/readiness ordering, media-event success with failing result, shutdown retirement, CLOSING sockets, and asynchronous callback failure. Removed the older synchronous-send owner that the asynchronous case subsumes, plus two unused gateway-test helpers.
+
+Red evidence against 021aacff: the new gateway publication owner failed 0/3 and the socket publication owner failed 0/2 at the reported seams. Final green evidence: 57 focused module/lifecycle tests passed with 256 assertions; 4 exact production-facing system tests passed with 56 assertions; 61 repository boundary/inventory tests passed with 132 assertions. Root and frontend TypeScript, exact scoped Oxlint/Oxfmt, and git diff checks passed. No broad module, system, repository, browser, full-test, check, topology, load, stress, capacity, performance, tooling, or concurrency lane ran. TASK-143.01.02 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -422,6 +436,12 @@ author: @codex
 created: 2026-09-03 21:39
 ---
 Post-integration remediation is green at every requested focused boundary. Preparing one separate commit and parent READY_FOR_REREVIEW callback; TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 21:55
+---
+@codex completed the publication-order remediation at every permitted focused boundary. Preparing one separate commit and READY_FOR_REREVIEW callback; TASK-143.01.02 remains In Progress.
 ---
 <!-- COMMENTS:END -->
 
