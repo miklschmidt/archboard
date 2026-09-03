@@ -6,6 +6,7 @@ import {
 	createPaneReportDeadline,
 	type CanvasDeadlineClock,
 } from "../canvas-deadlines.ts";
+import { scheduleRenewalForOwnedHoldAttempt, type HoldAttempt } from "../hold-attempt.ts";
 
 class ManualClock implements CanvasDeadlineClock {
 	#now = 0;
@@ -66,16 +67,40 @@ describe("pane report deadline", () => {
 });
 
 describe("human hold renewal deadline", () => {
-	test("admits one renewal and runs it at the 1,000 ms boundary", () => {
+	test("stale A1 settlement cannot schedule over A2, while A2 renews at 1,000 ms", () => {
 		const clock = new ManualClock();
 		const deadline = createHoldRenewalDeadline(clock);
-		let renewals = 0;
-		expect(deadline.schedule(LOCK_RENEW_MS, () => (renewals += 1))).toBeTrue();
-		expect(deadline.schedule(LOCK_RENEW_MS, () => (renewals += 1))).toBeFalse();
+		let generation = 0;
+		const firstPromise = Promise.resolve();
+		const first: HoldAttempt = { board: "a", generation, promise: firstPromise };
+		let current: HoldAttempt | null = first;
+		let holds = 1;
+
+		generation += 2;
+		const secondPromise = Promise.resolve();
+		const second: HoldAttempt = { board: "a", generation, promise: secondPromise };
+		current = second;
+		holds += 1;
+
+		const settle = (attempt: HoldAttempt, promise: Promise<unknown>): boolean =>
+			scheduleRenewalForOwnedHoldAttempt(current, attempt, promise, generation, () => {
+				current = null;
+				deadline.schedule(LOCK_RENEW_MS, () => (holds += 1));
+			});
+
+		expect(settle(first, firstPromise)).toBeFalse();
+		clock.advance(LOCK_RENEW_MS);
+		expect(current).toBe(second);
+		expect(deadline.pending).toBeFalse();
+		expect(holds).toBe(2);
+
+		expect(settle(second, secondPromise)).toBeTrue();
+		expect(current).toBeNull();
+		expect(deadline.pending).toBeTrue();
 		clock.advance(LOCK_RENEW_MS - 1);
-		expect(renewals).toBe(0);
+		expect(holds).toBe(2);
 		clock.advance(1);
-		expect(renewals).toBe(1);
+		expect(holds).toBe(3);
 		expect(deadline.pending).toBeFalse();
 	});
 

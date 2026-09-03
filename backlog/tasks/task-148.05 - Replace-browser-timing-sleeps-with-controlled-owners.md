@@ -5,11 +5,12 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 21:36'
-updated_date: '2026-09-03 14:12'
+updated_date: '2026-09-03 14:19'
 labels: []
 dependencies: []
 modified_files:
   - src/ui/canvas/canvas-deadlines.ts
+  - src/ui/canvas/hold-attempt.ts
   - src/ui/canvas/tests/canvas-deadlines.test.ts
   - src/ui/canvas/tests/change-reporting-scheduling.test.ts
   - src/ui/canvas/useCanvasSession.ts
@@ -46,6 +47,8 @@ Browser coverage keeps rendered user-visible behavior while controlled-clock mod
 2. Replace the five production-duration browser sleeps with request completion, pane registry, report completion, and scene-convergence observations while preserving every rendered and user-visible assertion.
 3. Run exact changed module tests, exact-file lint and format checks, and each changed browser owner serially through the verified capped-command wrapper. Record before and after durations in task notes.
 4. Audit BASE..HEAD, owned processes, and temporary artifacts, then commit for independent review.
+
+5. Review remediation: route hold-attempt settlement through one generation-aware renewal decision, then prove stale A1 settlement and current A2 renewal together with the manual clock across LOCK_RENEW_MS.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -59,4 +62,16 @@ Before/after focused browser measurements on the same host, using the serial bro
 - human-edit-performance: 73.93 s before, 76.84 s after. The workload variance exceeded the removed waits; direct after metrics remained 16.7 ms median frame, 16.8 ms worst report-correlated frame, 13 fsyncs, compact 288-byte responses, and zero corrections.
 
 The final serial pass ran exactly the five changed owners without overlap. All passed. Module clock owners passed 16 focused tests in 55 ms. Exact-file Oxlint and Oxfmt checks passed. No changed browser owner contains Bun.sleep. Navigator stale completion now uses an explicitly held/released preview request; claim camera safety waits for the changed viewport in /api/panes; report and human-edit flows wait for report or scene convergence. Controlled module owners advance the 300 ms pane debounce, 1,000 ms hold renewal, and 800 ms report idle tail without wall time.
+
+Review remediation composes generation ownership with renewal scheduling at the production finally-path seam. The controlled-clock owner passes (4 tests, 18 expectations) and proves stale A1 settlement remains inert through LOCK_RENEW_MS while current A2 settlement schedules exactly one renewal. The individual hold-generation browser owner passes (1 test, 22 expectations).
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @codex
+created: 2026-09-03 14:17
+---
+Independent review found that the first implementation tested deadline and generation identity separately, so it did not prove their composition. Remediation adds the smallest production seam used by the real finally path and one composed controlled-clock owner.
+---
+<!-- COMMENTS:END -->
