@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 09:56'
+updated_date: '2026-09-03 10:01'
 labels: []
 dependencies:
   - TASK-143.08.06.02
@@ -64,6 +64,8 @@ Make the public command boundary teach the architecture. Persisted-board work re
 12. Keep the extraction under one file-level owned canvas/browser fixture so full-file execution still has one startup. Give each exact-name case its own board, reset only the browser fetch counters between cases, and cap every recovery wait at three seconds. The first case retains broadcast convergence; the second owns note-hold, save-elsewhere adoption, exact-holder release, and trusted-pointer queue persistence.
 
 13. Record the exact adopted source note as the source board conflict baseline during successful save-elsewhere recovery, before releasing its human lease or queueing board_released. Extend the existing held-board recovery case with an immediate identified-human source write, then validate that exact API case and the exact recovery browser case once.
+
+14. Close the shared browser-fixture adoption race by requiring the focused rendered board identity and that board's unique scene sentinel before resetting hold counters. Restore TASK-136 plan and notes to their fixed-base contents through Backlog CLI, then run the complete two-case browser owner once through the canonical adapter and keep TASK-143.08.06.04 In Progress with all criteria unchecked.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -90,4 +92,6 @@ Final proof extraction at pre-commit HEAD: human-hold-persistence now has two ex
 Focused execution did not complete. Attempt 1 failed in 123 ms before browser startup because the manually isolated runner environment lacked its child TMPDIR; that empty namespace was removed. The one permitted retry started one canvas and one browser, reached save-elsewhere in about 2.2 seconds according to the exact canvas log, then the compound recovery predicate ran until the outer TERM cap at 20.085 seconds with no assertion result. No third run was made. After that evidence, the compound default-timeout poll was replaced by one three-second wait for the concrete source element followed by direct per-contract assertions; the remaining extracted waits are capped at three seconds and the test itself at ten seconds. Scoped Oxlint, Oxfmt, max-lines, and diff checks pass. Exact run-owned browser processes and /tmp namespaces were removed. TASK remains In Progress and all acceptance criteria remain unchecked; completed browser proof is still blocked by the run limit.
 
 Save-elsewhere baseline repair at pre-commit HEAD: after target persistence succeeds, terminal held-source recovery reads the authoritative source note, requires its exact source file/hash/version, records that tuple through board-store recordBaseline, then releases the exact human source lease and queues board_released. The existing held-board recovery case now immediately submits an identified-human source write and proves 200, no held response, and persistence through both source-note bytes and public GET. Focused API proof: 1 pass, 7 filtered, 20 assertions, 1.215s wall, no browser owner. Exact browser proof through the canonical adapter: 1 pass, 1 filtered, 38 assertions, 4.505s wall; 1 frontend build, 1 Bun owner, 1 canvas, 1 browser session, and the adapter cleanup audit retained 0 owned processes/listeners/sockets. Exact-file Oxfmt, Oxlint, and diff checks pass. TASK remains In Progress and all acceptance criteria remain unchecked.
+
+Final standards repair at pre-commit HEAD: prepareBoard now waits first for authoritative server pane state, then for the focused rendered pane title to name the requested board together with that board's expected scene sentinel. The recovery board uses unique sentinel `recovery-auth`, so the prior live-session scene cannot satisfy the client-adoption condition; hold counters reset only afterward. The complete focused human-hold browser owner passed both cases in sequence: 2 tests, 57 assertions, 4.835s wall, 0 frontend builds, 1 Bun owner, 1 canvas, 1 browser session, and 0 retained owned processes/listeners/sockets after adapter audit. TASK-136 contamination was removed through Backlog CLI by restoring its plan and notes from fixed base dfb589bd; it remains Done with all 7 ACs checked and its final summary unchanged. TASK-143.08.06.04 remains In Progress with all 8 ACs unchecked.
 <!-- SECTION:NOTES:END -->
