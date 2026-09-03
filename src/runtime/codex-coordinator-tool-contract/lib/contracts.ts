@@ -15,7 +15,10 @@ import {
 	type ThreadQueueStartParams,
 	type ThreadQueueUpdateParams,
 } from "../../codex-protocol/index.js";
-import { CodexThreadStatusTypeSchema } from "../../../shared/codex-app-server-contract/index.js";
+import {
+	CODEX_THREAD_STATUS_TYPES,
+	CodexThreadStatusTypeSchema,
+} from "../../../shared/codex-app-server-contract/index.js";
 import type {
 	JsonSchema,
 	NamespaceName,
@@ -475,7 +478,7 @@ const ResultOperationSchema: JsonSchema = freezeDeep({
 });
 const ResultStatusSchema: JsonSchema = freezeDeep({
 	type: "string",
-	enum: ["notLoaded", "idle", "systemError", "active"],
+	enum: [...CODEX_THREAD_STATUS_TYPES],
 });
 const ResultDeliverySchema: JsonSchema = freezeDeep({
 	type: "string",

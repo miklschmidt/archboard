@@ -8,6 +8,7 @@ import type {
 import {
 	canonicalDynamicApprovalJson,
 	dynamicApprovalHashForCanonicalJson,
+	type DynamicApprovalCanonicalEffect,
 } from "../../../shared/codex-browser-model/index.js";
 import { CODEX_APPROVAL_EXPIRY_MS } from "../../../shared/timing/timing.js";
 import {
@@ -120,7 +121,26 @@ export function dynamicEffectHash(
 	identity: DynamicApprovalIdentity,
 	effect: DynamicImmutableEffect,
 ): string {
-	return dynamicApprovalHashForCanonicalJson(canonicalDynamicApprovalJson({ identity, effect }));
+	let canonicalEffect: DynamicApprovalCanonicalEffect;
+	if (effect.tool === "fork_thread") {
+		const boundary = effect.effectiveBoundary;
+		if (boundary.relation === "self") {
+			if (boundary.beforeTurnId === null)
+				throw new TypeError("a self fork needs the executing turn as its boundary");
+			canonicalEffect = {
+				...effect,
+				effectiveBoundary: { relation: "self", beforeTurnId: boundary.beforeTurnId },
+			};
+		} else {
+			canonicalEffect = {
+				...effect,
+				effectiveBoundary: { relation: "other", beforeTurnId: boundary.beforeTurnId },
+			};
+		}
+	} else canonicalEffect = effect;
+	return dynamicApprovalHashForCanonicalJson(
+		canonicalDynamicApprovalJson({ identity, effect: canonicalEffect }),
+	);
 }
 
 function summaryFor(
