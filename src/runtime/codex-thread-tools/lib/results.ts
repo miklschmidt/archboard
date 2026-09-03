@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+import {
+	CodexThreadStatusTypeSchema,
+	CodexTurnStatusSchema,
+} from "../../../shared/codex-app-server-contract/index.js";
+
 import { GeneralThreadToolNameSchema, type GeneralThreadToolName } from "./manifest.js";
 import { parseStrictJson } from "./json.js";
 import { boundedText, boundedUtf8Text, nullableUtf8Text } from "./limits.js";
@@ -74,7 +79,7 @@ const ForkThreadValueSchema = z.union([
 const ListedThreadSchema = z.strictObject({
 	threadId: IdentitySchema,
 	title: nullableUtf8Text(512),
-	status: z.enum(["notLoaded", "idle", "systemError", "active"]),
+	status: CodexThreadStatusTypeSchema,
 	source: z.enum(["cli", "vscode", "exec", "appServer"]),
 	epoch: z.enum(["current", "prior", "unknown"]),
 	ownership: z.enum(["created", "attached", "foreign"]),
@@ -89,7 +94,7 @@ const ListThreadsValueSchema = z.strictObject({
 
 const ReadTurnSchema = z.strictObject({
 	turnId: IdentitySchema,
-	status: z.enum(["inProgress", "completed", "interrupted", "failed"]),
+	status: CodexTurnStatusSchema,
 	summary: boundedUtf8Text(512),
 	outputsIncluded: z.boolean(),
 	outputsTruncated: z.boolean(),
