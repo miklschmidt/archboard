@@ -155,12 +155,13 @@ The same fixed-point document includes one bridge created through the product ro
 redraw metadata, unbound line geometry, styling, and z-order therefore make the same single
 sequential headless renderer round trip; TASK-120 adds no pixel or two-pane browser suite.
 
-TASK-121 extends this same lane with one explicit off-screen board. It carries an embedded image,
-one valid bridge crossing, and one unmarked crossing. The check renders its inspection findings
-twice around a visible viewport change and proves identical PNG and manifest bytes, exact bridge
-suppression, clipping to the inspection focus box, and no change to the visible pane's board,
-scene, selection, viewport, or existing full-board screenshot. It uses the existing headless
-browser and condition polling; there is no additional browser suite or two-pane matrix.
+TASK-121's finding-render ownership now lives in
+`tests/system/boards/server-rendering.test.ts`. One persisted snapshot carries
+an embedded image, a valid bridge crossing, and an unmarked crossing. The
+zero-client owner checks the report, fixed focus dimensions, complete PNG
+results, and unchanged note bytes. The same retained renderer owner covers
+PNG/SVG semantics, Mermaid conversion, lease ordering, cancellation, and
+shutdown. Live pane capture and viewport assertions remain in the browser lane.
 
 It also owns the renderer half of malformed-geometry recovery (TASK-117). The
 check starts with malformed auto-resizing Helvetica text in the persisted

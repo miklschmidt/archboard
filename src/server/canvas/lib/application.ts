@@ -224,6 +224,7 @@ import {
 	DEFAULT_MERMAID_CONFIG,
 	type BoardRenderSnapshot,
 	type MermaidRenderJobResult,
+	type MermaidSkeleton,
 } from "../../board-rendering/index.js";
 import {
 	createCodeOpenerPreguard,
@@ -1483,6 +1484,121 @@ function refuseRevokedClaim(res: Response, board: string): boolean {
 	return true;
 }
 
+type AgentUpserts = NonNullable<Extract<ElementInputRequest, { origin: "agent" }>["upserts"]>;
+
+interface PreparedMermaidConversion {
+	readonly kind: "prepared-mermaid";
+	readonly elements: readonly MermaidSkeleton[];
+	readonly files: MermaidRenderJobResult["files"];
+}
+
+const PREPARED_MERMAID = Symbol("prepared-mermaid");
+
+function freezeObjectGraph(value: unknown, seen = new Set<object>()): void {
+	if (!value || typeof value !== "object" || seen.has(value)) return;
+	seen.add(value);
+	for (const key of Reflect.ownKeys(value)) freezeObjectGraph(Reflect.get(value, key), seen);
+	Object.freeze(value);
+}
+
+function canonicalMermaidResult(rendered: MermaidRenderJobResult): PreparedMermaidConversion {
+	if (rendered.error)
+		throw new BoardMutationError(
+			422,
+			`Mermaid conversion failed: ${rendered.error}`,
+			"MERMAID_INVALID",
+		);
+	if (rendered.elements.length === 0)
+		throw new BoardMutationError(
+			422,
+			"Mermaid conversion returned no elements for non-empty source. The board was not changed.",
+			"MERMAID_EMPTY_RESULT",
+		);
+	const ids = new Set<string>();
+	for (const element of rendered.elements) {
+		if (typeof element.id !== "string" || element.id.length === 0)
+			throw new BoardMutationError(422, "Mermaid conversion returned an element without an id.");
+		if (ids.has(element.id))
+			throw new BoardMutationError(
+				422,
+				`Mermaid conversion returned duplicate element id ${JSON.stringify(element.id)}.`,
+			);
+		ids.add(element.id);
+	}
+	const prepared: PreparedMermaidConversion = {
+		kind: "prepared-mermaid",
+		elements: structuredClone(rendered.elements),
+		files: structuredClone(rendered.files),
+	};
+	freezeObjectGraph(prepared);
+	return prepared;
+}
+
+function isPreparedMermaid(value: unknown): value is PreparedMermaidConversion {
+	return (
+		value !== null &&
+		typeof value === "object" &&
+		Reflect.get(value, "kind") === "prepared-mermaid" &&
+		Array.isArray(Reflect.get(value, "elements")) &&
+		Reflect.get(value, "files") !== null &&
+		typeof Reflect.get(value, "files") === "object"
+	);
+}
+
+function preparedMermaidOf(req: Request): PreparedMermaidConversion {
+	const prepared: unknown = Reflect.get(req, PREPARED_MERMAID);
+	if (!isPreparedMermaid(prepared))
+		throw new Error("Mermaid conversion reached its write without a prepared renderer result.");
+	return prepared;
+}
+
+// Mermaid rendering can outlast a board lease. Render and validate first, then
+// let the ordinary write middleware take the board and map ids against its
+// current under-lock note.
+app.use((req: Request, res: Response, next: NextFunction) => {
+	if (req.method !== "POST" || req.path !== "/api/elements/from-mermaid") return next();
+	void trackMutationWork(req, `${req.method} ${req.path} renderer`, async (signal) => {
+		try {
+			const { mermaidDiagram, config } = req.body ?? {};
+			if (typeof mermaidDiagram !== "string" || mermaidDiagram.trim().length === 0) {
+				res.status(400).json({
+					success: false,
+					error: "Mermaid diagram definition is required",
+				});
+				return;
+			}
+			signal.throwIfAborted();
+			const converted = await boardRenderer.execute(
+				{
+					kind: "mermaid",
+					source: mermaidDiagram,
+					config:
+						config && typeof config === "object" && !Array.isArray(config)
+							? { ...DEFAULT_MERMAID_CONFIG, ...config }
+							: DEFAULT_MERMAID_CONFIG,
+				},
+				signal,
+			);
+			signal.throwIfAborted();
+			if (converted.kind !== "mermaid")
+				throw new BoardRendererError("Mermaid renderer returned the wrong result shape.", "result");
+			Object.defineProperty(req, PREPARED_MERMAID, {
+				value: canonicalMermaidResult(converted),
+				configurable: false,
+				writable: false,
+			});
+			signal.throwIfAborted();
+			next();
+		} catch (error) {
+			if (req.aborted || res.destroyed) return;
+			answerBoardError(res, error, "Error preparing Mermaid diagram:");
+		}
+	}).catch((error) => {
+		if (req.aborted || res.destroyed) return;
+		setImmediate(next, error);
+	});
+});
+
 app.use((req: Request, res: Response, next: NextFunction) => {
 	if (req.method === "GET" || req.method === "HEAD") return next();
 	if (!req.path.startsWith("/api/")) return next();
@@ -2242,81 +2358,73 @@ app.post("/api/elements/batch", (req: Request, res: Response) => {
 });
 
 function mermaidElementInput(
-	rendered: MermaidRenderJobResult,
+	elements: readonly MermaidSkeleton[],
 	existingIds: Iterable<string>,
-): unknown[] {
-	if (rendered.elements.length === 0)
-		throw new BoardMutationError(
-			422,
-			"Mermaid conversion returned no elements for non-empty source. The board was not changed.",
-			"MERMAID_EMPTY_RESULT",
-		);
+): AgentUpserts {
 	const used = new Set(existingIds);
 	const ids = new Map<string, string>();
-	for (const element of rendered.elements) {
+	for (const element of elements) {
 		if (typeof element.id !== "string" || element.id.length === 0)
 			throw new BoardMutationError(422, "Mermaid conversion returned an element without an id.");
 		const id = derivedId(`mermaid:${element.id}`, used);
 		used.add(id);
 		ids.set(element.id, id);
 	}
-	return rendered.elements.map((element) => {
-		const input = structuredClone(element) as unknown as Record<string, unknown>;
-		const start = input.start as Record<string, unknown> | undefined;
-		const end = input.end as Record<string, unknown> | undefined;
-		return {
-			...input,
-			id: ids.get(element.id),
-			...(start && typeof start.id === "string"
-				? { start: { ...start, id: ids.get(start.id) } }
-				: {}),
-			...(end && typeof end.id === "string" ? { end: { ...end, id: ids.get(end.id) } } : {}),
-		};
+	const endpoint = (value: unknown): { id: string } | undefined => {
+		if (!value || typeof value !== "object" || typeof Reflect.get(value, "id") !== "string")
+			return undefined;
+		const sourceId = Reflect.get(value, "id");
+		const id = ids.get(sourceId);
+		if (!id)
+			throw new BoardMutationError(
+				422,
+				`Mermaid conversion referred to missing endpoint ${JSON.stringify(sourceId)}.`,
+			);
+		return { id };
+	};
+	return elements.map((element) => {
+		const sourceId = element.id;
+		if (typeof sourceId !== "string")
+			throw new BoardMutationError(422, "Mermaid conversion returned an element without an id.");
+		const id = ids.get(sourceId);
+		if (!id)
+			throw new BoardMutationError(
+				422,
+				`Mermaid conversion lost element id ${JSON.stringify(sourceId)} before the write.`,
+			);
+		const start = "start" in element ? endpoint(element.start) : undefined;
+		const end = "end" in element ? endpoint(element.end) : undefined;
+		return AgentElementInputSchema.parse({
+			...structuredClone(element),
+			id,
+			...(start ? { start } : {}),
+			...(end ? { end } : {}),
+		});
 	});
 }
 
-// Mermaid is rendered in the private server renderer and committed once under
-// the ordinary board lock and write boundary.
+// The route receives one frozen renderer result from the pre-write middleware.
+// Only id mapping and the one synchronous canonical write happen under lease.
 app.post(
 	"/api/elements/from-mermaid",
-	asyncEndpoint(async (req: Request, res: Response) => {
+	asyncEndpoint(async (req: Request, res: Response, _next: NextFunction, signal: AbortSignal) => {
 		try {
-			const { mermaidDiagram, config } = req.body ?? {};
-			if (typeof mermaidDiagram !== "string" || mermaidDiagram.trim().length === 0) {
-				return res.status(400).json({
-					success: false,
-					error: "Mermaid diagram definition is required",
-				});
-			}
+			signal.throwIfAborted();
 			const source = boardTargetFromRequest(req, "Mermaid conversion");
-			const converted = await boardRenderer.execute({
-				kind: "mermaid",
-				source: mermaidDiagram,
-				config:
-					config && typeof config === "object" && !Array.isArray(config)
-						? { ...DEFAULT_MERMAID_CONFIG, ...config }
-						: DEFAULT_MERMAID_CONFIG,
-			});
-			if (converted.kind !== "mermaid")
-				throw new BoardRendererError("Mermaid renderer returned the wrong result shape.", "result");
-			if (converted.error)
-				throw new BoardMutationError(
-					422,
-					`Mermaid conversion failed: ${converted.error}`,
-					"MERMAID_INVALID",
-				);
-			answerBoardWrite(res, {
+			const converted = preparedMermaidOf(req);
+			signal.throwIfAborted();
+			answerBoardWrite<{ count: number; ids: string[] }>(res, {
 				source,
 				origin: "agent",
 				mutation: elementMutation((content) => ({
 					input: {
 						origin: "agent",
-						upserts: mermaidElementInput(converted, content.elements.keys()) as never[],
+						upserts: mermaidElementInput(converted.elements, content.elements.keys()),
 					},
 					addFiles: Object.values(converted.files),
 					value: (applied) => {
 						const elements = [...applied.created, ...applied.updated];
-						return { count: elements.length, ids: elements.map((element) => element.id), elements };
+						return { count: elements.length, ids: elements.map((element) => element.id) };
 					},
 				})),
 				answer: ({ content, value, delta, written, checkoutSnapshot }) => ({
@@ -3096,13 +3204,13 @@ const boardRenderRequestSchema = z.object({
 function copiedRenderSnapshot(
 	scene: NonNullable<ReturnType<typeof readBoardInspectionSnapshot>["renderScene"]>,
 ): BoardRenderSnapshot {
-	return structuredClone(scene) as unknown as BoardRenderSnapshot;
+	return structuredClone(scene);
 }
 
 // Named-board image render: one persisted snapshot, no pane, camera, or browser client.
 app.post(
 	"/api/render/board",
-	asyncEndpoint(async (req: Request, res: Response) => {
+	asyncEndpoint(async (req: Request, res: Response, _next: NextFunction, signal: AbortSignal) => {
 		try {
 			const asked = boardOfRequest(req);
 			if (!asked)
@@ -3118,20 +3226,23 @@ app.post(
 					`Board "${snapshot.board}" has persisted elements that cannot be rendered. Correct the note and try again.`,
 					"BOARD_NOT_RENDERABLE",
 				);
-			const rendered = await boardRenderer.execute({
-				kind: "render",
-				snapshot: copiedRenderSnapshot(snapshot.renderScene),
-				outputs: [
-					{
-						id: "board",
-						kind: "full",
-						format: options.format,
-						background: options.background,
-						padding: options.padding,
-						scale: options.scale,
-					},
-				],
-			});
+			const rendered = await boardRenderer.execute(
+				{
+					kind: "render",
+					snapshot: copiedRenderSnapshot(snapshot.renderScene),
+					outputs: [
+						{
+							id: "board",
+							kind: "full",
+							format: options.format,
+							background: options.background,
+							padding: options.padding,
+							scale: options.scale,
+						},
+					],
+				},
+				signal,
+			);
 			if (rendered.kind !== "render" || rendered.outputs.length !== 1) {
 				if (rendered.kind === "render" && rendered.error)
 					throw new BoardMutationError(422, rendered.error, "BOARD_NOT_RENDERABLE");
@@ -3160,7 +3271,7 @@ app.post(
 // Focused finding render: inspection and every PNG use the same persisted snapshot.
 app.post(
 	"/api/export/findings",
-	asyncEndpoint(async (req: Request, res: Response) => {
+	asyncEndpoint(async (req: Request, res: Response, _next: NextFunction, signal: AbortSignal) => {
 		try {
 			const asked = boardOfRequest(req);
 			if (!asked) {
@@ -3181,21 +3292,24 @@ app.post(
 				sourceRenderable: snapshot.renderScene !== null,
 			};
 			if (!snapshot.renderScene || requests.length === 0) return res.json({ ...base, results: [] });
-			const rendered = await boardRenderer.execute({
-				kind: "render",
-				snapshot: copiedRenderSnapshot(snapshot.renderScene),
-				outputs: requests.map(({ findingIndex, focusBBox }) => {
-					const dimensions = findingRasterDimensions(focusBBox);
-					return {
-						id: String(findingIndex),
-						kind: "focus" as const,
-						format: "png" as const,
-						background: true as const,
-						frame: focusBBox,
-						...dimensions,
-					};
-				}),
-			});
+			const rendered = await boardRenderer.execute(
+				{
+					kind: "render",
+					snapshot: copiedRenderSnapshot(snapshot.renderScene),
+					outputs: requests.map(({ findingIndex, focusBBox }) => {
+						const dimensions = findingRasterDimensions(focusBBox);
+						return {
+							id: String(findingIndex),
+							kind: "focus" as const,
+							format: "png" as const,
+							background: true as const,
+							frame: focusBBox,
+							...dimensions,
+						};
+					}),
+				},
+				signal,
+			);
 			if (rendered.kind !== "render")
 				throw new BoardRendererError("Finding renderer returned the wrong result shape.", "result");
 			if (rendered.error)
