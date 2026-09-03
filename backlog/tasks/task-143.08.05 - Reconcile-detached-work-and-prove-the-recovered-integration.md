@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 12:27'
+updated_date: '2026-09-03 12:36'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -15,6 +15,9 @@ references:
   - docs/agents/boundaries.md
   - skills/archboard/SKILL.md
   - docs/adr/0020-board-work-never-depends-on-a-browser-session.md
+modified_files:
+  - src/runtime/codex-process/lib/storage.ts
+  - tests/system/canvas-state/codex-workbench-production-cleanup.test.ts
 parent_task_id: TASK-143.08
 priority: high
 type: task
@@ -171,6 +174,10 @@ Authoritative gate A15 at b1262780a6b541f1344a86e315266be256f23fb1: lint, format
 Remediation adds TEST_CLI_WORKFLOW_CASE_TIMEOUT_MS=15,000 in the shared timing authority and applies it only to the three command-workflow cases that launch subprocesses. Normal focused timings remain 21.18 ms, 41.13 ms, and 21.53 ms; 15 seconds is a finite 3x margin over the observed nested-run stall, not a product SLA. All result, signal, stdout, stderr, schema, file, and repository assertions remain unchanged, and the non-subprocess registry test retains the default. Focused unit toDG9ECj passed 4/4 with 95 assertions in 233 ms (279 ms runtime, 332 ms CPU, 96.4M peak, 0B swap). No product timeout, test inventory, behavior assertion, lint, or type rule was weakened.
 
 Authoritative gate A16 at ca50b7a4947546a94dac3931880ffa574a884cc3 did not reach the remediated system owner. Lint, formatting, both type checks, and frontend build passed, then unrelated module subprocess owners began intermittently hitting the same 5,000 ms Bun default: presentation-link Git setup and several Codex process lifecycle fixtures timed out while adjacent cases completed at normal tens-of-milliseconds timings. Live exact-unit evidence during the failure showed MemoryCurrent=398,729,216, MemoryPeak=2,229,714,944, MemorySwapCurrent=0, TasksCurrent=34, zero low/high/max/OOM events, and zero cgroup memory pressure. Host memory pressure was also zero; CPU and I/O pressure were negligible. I stopped only exact unit ZYod8Qaj after the failures cascaded. It exited 143/SIGTERM after 1m55.709s, CPU 2m19.535s, 2G peak, and 0B swap, ending MainPID=0, empty ControlGroup, and absent cgroup. No tracked code implicated this earlier cross-module stall, and broad timeout changes would hide rather than correct unrelated owners, so no additional product or test mutation is justified from this run. The committed CLI aggregate budget remains to be exercised by a fresh full gate.
+
+Authoritative gate A17 at 5a3a80f9: lint, formatting, both type checks, frontend build, and 1,902/1,902 module tests passed. The serial system lane passed 355 owners and failed only production Codex cleanup's concurrent public-start owner: statuses were [3, 0], expected [0, 0]. The wrapper's exact unit archboard-task143-worker-command-RHQ0ZI4n.service exited normally with status 1 after 4m59.588s, consumed 5m33.613s CPU, peaked at 2G with 0B swap, and is inactive/dead with MainPID=0, empty ControlGroup, and absent cgroup.
+
+A diagnostic-only assertion preserved both exit-status requirements while attaching each launcher's stderr. In a capped 20-repeat focused run, repetition 2 exposed the loser: both launchers observed absent private CODEX_HOME, the winner created it, and the loser treated mkdir EEXIST as a terminal collision before reaching the existing exclusive owner lock. The run produced 19 passes and one diagnostic failure under unit archboard-task143-worker-command-uiSMyxjv.service. The storage boundary now treats only mkdir EEXIST as a concurrent directory-publication race, immediately inspects the winner's path through the existing ownership, symlink, directory, and mode checks, and then lets the exclusive lock choose the single Codex owner. Every other mkdir failure remains fail-closed. The existing public owner still requires both starts to succeed, exactly one app-server spawn, and complete process cleanup; its assertion now reports stderr on failure. Storage unit tests passed 9/9, and the public concurrent-start owner passed 30/30 repetitions under unit archboard-task143-worker-command-3IexYdLh.service. No lint/type rule, timeout, test owner, or behavior assertion was weakened.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

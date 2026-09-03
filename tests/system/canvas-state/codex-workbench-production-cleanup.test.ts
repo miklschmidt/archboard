@@ -203,7 +203,7 @@ describe.serial("production Codex setup cleanup", () => {
 				runPublicCanvasAsync("start", environment),
 				runPublicCanvasAsync("start", environment),
 			]);
-			expect(starts.map(({ status }) => status)).toEqual([0, 0]);
+			for (const start of starts) expect(start.status, start.stderr).toBe(0);
 			spawned = processRecords(fixture.logPath).filter(
 				(record) => record.kind === "app_server_spawn",
 			);
