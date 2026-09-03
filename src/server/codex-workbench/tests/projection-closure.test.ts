@@ -46,6 +46,7 @@ function projectionInput(authorities: IdentityAuthorities): BrowserProjectionInp
 			kind: "codex_coordinator",
 			state: "unbound",
 			threadId: null,
+			configured: null,
 			effective: null,
 			reason: null,
 		},

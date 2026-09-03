@@ -251,6 +251,7 @@ function projectionInput(
 			kind: "codex_coordinator",
 			state: "ready",
 			threadId: view.request.threadId,
+			configured: { model: "gpt-5.6-sol", effort: "xhigh" },
 			effective: { model: "gpt-5.6-sol", effort: "xhigh", serviceTier: "priority" },
 			reason: null,
 		},
