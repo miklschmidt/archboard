@@ -237,6 +237,8 @@ export interface CanvasSessionOptions {
 	 * into the browser, not because it is a canvas's business.
 	 */
 	onLayoutRequest?: (request: "open" | "close") => void;
+	/** The server accepted a changed authoritative pane report. */
+	onPaneStateAccepted?: () => void;
 	/** A board note could not be rendered and none of it entered Excalidraw. */
 	onBoardError?: (error: string) => void;
 }
@@ -309,6 +311,7 @@ export function useCanvasSession({
 	onStatus,
 	onLibraryChanged,
 	onLayoutRequest,
+	onPaneStateAccepted,
 	onBoardError,
 }: CanvasSessionOptions): CanvasSession {
 	// A pane is a client in its own right: it holds a selection the server can
@@ -409,6 +412,9 @@ export function useCanvasSession({
 
 	const paneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const publishedPaneRef = useRef("");
+	// The navigator only depends on which board this accepted pane contributes,
+	// not on its camera. Do not re-read the vault for every pan or resize.
+	const acceptedPaneListingKeyRef = useRef("");
 	// The build this tab has already been told about, so it is said once and not
 	// once per scroll.
 	const staleBuildRef = useRef("");
@@ -537,6 +543,14 @@ export function useCanvasSession({
 									// connection health follows every current pane report instead.
 									if (currentResult.registered) registration?.acknowledge(true);
 									updatePaneConnectionHealth(currentResult.registered);
+									const listingKey = JSON.stringify([report.clientId, report.board]);
+									if (
+										currentResult.registered &&
+										listingKey !== acceptedPaneListingKeyRef.current
+									) {
+										acceptedPaneListingKeyRef.current = listingKey;
+										onPaneStateAccepted?.();
+									}
 								}
 								if (!currentResult.registered) {
 									// Keep the existing pane-report path as the recovery path. A failed
@@ -587,7 +601,7 @@ export function useCanvasSession({
 			if (immediate) send();
 			else paneTimerRef.current = setTimeout(send, PANE_DEBOUNCE_MS);
 		},
-		[paneReport, paneReportSequencer, updatePaneConnectionHealth],
+		[paneReport, paneReportSequencer, updatePaneConnectionHealth, onPaneStateAccepted],
 	);
 
 	useEffect(() => {
@@ -1274,6 +1288,17 @@ export function useCanvasSession({
 	);
 
 	// ─── The socket ──────────────────────────────────────────────
+	const releaseRecoveredHold = useCallback((): void => {
+		holdRef.current = null;
+		// Recovery terminates the held gesture. Cancel a queued renewal and
+		// invalidate any answer still in flight before releasing this pane's holder.
+		if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+		holdTimerRef.current = null;
+		holdAttemptGenerationRef.current += 1;
+		holdingRef.current = false;
+		releaseBoard(boardKeyRef.current, clientId);
+		publishStatus();
+	}, [clientId, publishStatus]);
 
 	const handleMessage = useCallback(
 		async (data: WebSocketMessage): Promise<void> => {
@@ -1441,16 +1466,16 @@ export function useCanvasSession({
 
 				case "board_released":
 					if (Array.isArray(data.elements)) {
+						// Save-elsewhere keeps the address but adopts a different authoritative
+						// document. Retire reports for the discarded held copy before replacing it.
+						dispatchReporting({ type: "board_adopted" });
 						applyServerScene(data.elements.map(cleanElementForExcalidraw));
 						replaceCanvasFiles(api, Object.values(data.files ?? {}));
 						noteChange();
+					} else {
+						dispatchReporting({ type: "full_report_cleared" });
 					}
-					holdRef.current = null;
-					// Reload carries its replacement in board_switched. Save-elsewhere
-					// carries the source note on this message. Either way, the discarded
-					// held copy has no pending edits after the replacement.
-					dispatchReporting({ type: "full_report_cleared" });
-					publishStatus();
+					releaseRecoveredHold();
 					break;
 
 				// Boardless on purpose: one palette sits behind every board, so this is
@@ -1498,6 +1523,7 @@ export function useCanvasSession({
 			onBoardError,
 			onLibraryChanged,
 			publishStatus,
+			releaseRecoveredHold,
 			removeElements,
 			sendReport,
 		],

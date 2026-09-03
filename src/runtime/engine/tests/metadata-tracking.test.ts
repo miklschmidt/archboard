@@ -75,13 +75,13 @@ test("tracking packs and hydrates immutably while semantic readers cannot observ
 	expect(architectureFacts([tracked])).toEqual(architectureFacts([plain]));
 	expect(
 		compareBoards(
-			{ key: "tracking", identity, elements: [plain], source: "memory" },
-			{ key: "tracking", identity, elements: [tracked], source: "memory" },
+			{ key: "tracking", identity, elements: [plain] },
+			{ key: "tracking", identity, elements: [tracked] },
 		),
 	).toEqual(
 		compareBoards(
-			{ key: "tracking", identity, elements: [plain], source: "memory" },
-			{ key: "tracking", identity, elements: [plain], source: "memory" },
+			{ key: "tracking", identity, elements: [plain] },
+			{ key: "tracking", identity, elements: [plain] },
 		),
 	);
 });

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 08:46'
+updated_date: '2026-09-03 09:08'
 labels: []
 dependencies:
   - TASK-143.08.06.02
@@ -54,6 +54,8 @@ Make the public command boundary teach the architecture. Persisted-board work re
 7. Rereview repair: make comparison side metadata and one-sided address discovery persisted-note-only; remove the stale browser-open board relationship; make the cheap registry/audit owner compare REST relationships; replace its duplicated architecture assertions with narrow render/capture and compare contract checks; and rerun only the two affected focused owners plus scoped formatting and lint.
 
 8. Standards-review repair: resynchronize source panes from the persisted note after save-elsewhere, restore direct replacement/same-board observer assertions, keep persisted draft boards reachable in the navigator, make nested help resolve the selected contract in process with one package smoke, and correct zero-client renderer/Mermaid guidance.
+
+9. Final-spec repair: remove obsolete source/loadedAt fields from all exact compare callers and public shapes; recompose navigator inventory whenever authoritative pane state changes so first-pane scratch is deterministic; correct persisted-only comments/audit fields; and rerun only focused compare owners, zero-client shape owner, scoped UI/static checks, and one capped navigator owner.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -68,4 +70,6 @@ Clarification: those three probe failures are outside this task surface; this de
 Rereview remediation: comparison now reads and discovers only persisted notes and omits transient source/onScreen fields; browser open declares only pane-open REST work; the canonical audit now exactly matches every declared REST relationship; nested help resolves the selected child contract and states its prerequisites/effects; save-elsewhere carries the fresh source-note document on board_released so source panes replace held content without changing address; branch and same-board observer deltas are asserted again; draft-probe remains reachable; README, TESTING, and the tracked skill teach zero-client render/Mermaid behavior. Focused audit, help/argv, artifact, comparison geometry, vault-only, branching, save-elsewhere, frontend build, scoped lint, and scoped format checks pass. The full held-board owner retains its pre-existing excluded held-copy reread failure. The one authorized board-navigator browser run completed in 8.28s: the repaired six-board/draft-probe scenario passed, while the separate empty-state target-count assertion expected 5 and observed 4; no rerun or cap widening was performed. TASK remains In Progress and all acceptance criteria remain unchecked for full rereview.
 
 Review correction: parent standards review confirmed the held-copy reread, forced-death Codex lock collision, and malformed legacy open 422/400 failures are identical at immutable BASE and prior HEAD. They remain explicitly out of scope and untouched.
+
+Final-spec repair at pre-commit HEAD: removed remaining compare source/loadedAt session fields and corrected the audit schema; refreshes the navigator only after an authoritative pane board registration is accepted; restored held save-elsewhere source elements/files in the same pane without board_switched; resets the discarded reporting generation and releases the pane gesture lock on recovery; corrected operator copy and added real-browser source/destination assertions.\n\nFocused green: changes-semantics (6), metadata-tracking (1), geometry-consumers (1), vault-only-production-interfaces (6), command-contract-audit (9), command-contract-artifacts (4), change-reporting-holds-and-adoption (5), exact-file oxlint, exact-file oxfmt, and frontend build. Board navigator passed both browser cases (2 tests, 63 assertions) under the 20s cap, including the former first-pane race.\n\nBlocked evidence: the focused human-hold browser owner reached and passed the new save-elsewhere assertions (35 assertions before its later scenario), then its legacy post-recovery mutex scenario either returned 409 or exceeded the mandatory 20s cap. The focused held-board-recovery owner also had one unrelated held-copy visibility failure (6 pass, 1 fail). Browser retries were stopped; all retained run-owned browser processes were terminated and verified absent. Task remains In Progress; no ACs or DoD items were checked.
 <!-- SECTION:NOTES:END -->
