@@ -22,7 +22,11 @@ import type {
 } from "../../../shared/codex-app-server-contract/index.js";
 import type { ApprovalOwnerView, DeepReadonly } from "../../../runtime/codex-approvals/index.js";
 import type { DynamicToolApprovalRequest } from "../../../runtime/codex-dynamic-tools/index.js";
-import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
+import type {
+	SessionQueuedSubmission,
+	SessionResponsePayloads,
+	SessionTurn,
+} from "../../../runtime/codex-session/index.js";
 import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
 import type { RealtimeTranscriptRecord } from "../../../shared/codex-realtime-host/index.js";
 
@@ -59,6 +63,29 @@ export interface CodexSettingsProjectionInput {
 export interface CodexQueueProjectionInput {
 	readonly kind: "codex_queue";
 	readonly submissions: readonly Pick<SessionQueuedSubmission, "id" | "input">[] | null;
+}
+
+type BrowserTimelineTurn = BrowserTimeline["turns"][number];
+
+/** One browser-safe item selection prepared by the future timeline owner. */
+export type CodexTimelineItemProjectionInput = DeepReadonly<BrowserTimelineTurn["items"][number]> &
+	Readonly<Record<string, unknown>>;
+
+export interface CodexTimelineTurnProjectionInput extends Readonly<Record<string, unknown>> {
+	readonly turn: DeepReadonly<Pick<SessionTurn, "id" | "status">> &
+		Readonly<Record<string, unknown>>;
+	readonly items: readonly CodexTimelineItemProjectionInput[];
+	readonly summary: BrowserTimelineTurn["summary"];
+	readonly outputsIncluded: BrowserTimelineTurn["outputsIncluded"];
+	readonly outputsTruncated: BrowserTimelineTurn["outputsTruncated"];
+}
+
+/** Readonly owner view; TASK-143.01.10 owns the live producer. */
+export interface CodexTimelineProjectionInput extends Readonly<Record<string, unknown>> {
+	readonly kind: "codex_timeline";
+	readonly threadId: ThreadId;
+	readonly turns: readonly CodexTimelineTurnProjectionInput[];
+	readonly nextCursor: SessionResponsePayloads["thread/timeline/list"]["nextCursor"];
 }
 
 export interface CodexSemanticProjectionInput {
@@ -124,7 +151,7 @@ export interface BrowserProjectionInput {
 	readonly account: BrowserAccountProjectionInput;
 	readonly login: BrowserLogin;
 	readonly threadLink: ThreadLinkSnapshot;
-	readonly timeline: BrowserTimeline | null;
+	readonly timeline: CodexTimelineProjectionInput | null;
 	readonly queue: CodexQueueProjectionInput;
 	readonly settings: readonly CodexSettingsProjectionInput[];
 	readonly approvals: readonly ApprovalOwnerView[];

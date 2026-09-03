@@ -10,6 +10,7 @@ import type {
 	BrowserSchemas,
 	BrowserThreadLink,
 	BrowserThreadLinkSourcePresentation,
+	BrowserTimeline,
 } from "../../../shared/codex-browser-model/index.js";
 import {
 	IdentityValidationError,
@@ -24,6 +25,7 @@ import type {
 	CodexQueueProjectionInput,
 	CodexSemanticProjectionInput,
 	CodexSettingsProjectionInput,
+	CodexTimelineItemProjectionInput,
 	CodexVoiceProjectionInput,
 	DynamicApprovalOwnerView,
 } from "./projection-contract.js";
@@ -81,10 +83,31 @@ function projectSettings(input: CodexSettingsProjectionInput): BrowserSettings {
 		model: settings.model,
 		effort: settings.effort,
 		serviceTier: settings.serviceTier,
-		approvalPolicy: settings.approvalPolicy,
+		approvalPolicy: projectApprovalPolicy(settings.approvalPolicy),
 		approvalsReviewer: settings.approvalsReviewer,
 		sandbox: projectSandbox(settings.sandboxPolicy),
-		activePermissionProfile: settings.activePermissionProfile,
+		activePermissionProfile:
+			settings.activePermissionProfile === null
+				? null
+				: {
+						id: settings.activePermissionProfile.id,
+						extends: settings.activePermissionProfile.extends,
+					},
+	};
+}
+
+function projectApprovalPolicy(
+	policy: CodexSettingsProjectionInput["settings"]["approvalPolicy"],
+): BrowserSettings["approvalPolicy"] {
+	if (typeof policy === "string") return policy;
+	return {
+		granular: {
+			sandbox_approval: policy.granular.sandbox_approval,
+			rules: policy.granular.rules,
+			skill_approval: policy.granular.skill_approval,
+			request_permissions: policy.granular.request_permissions,
+			mcp_elicitations: policy.granular.mcp_elicitations,
+		},
 	};
 }
 
@@ -125,6 +148,56 @@ function projectQueue(input: CodexQueueProjectionInput): BrowserQueue {
 				operationId: null,
 			};
 		}),
+	};
+}
+
+type BrowserTimelineItem = BrowserTimeline["turns"][number]["items"][number];
+
+function projectTimelineItem(item: CodexTimelineItemProjectionInput): BrowserTimelineItem {
+	switch (item.media) {
+		case "text":
+			return { media: item.media, itemId: item.itemId, text: item.text };
+		case "tool":
+			return { media: item.media, itemId: item.itemId, name: item.name, status: item.status };
+		case "command":
+			return {
+				media: item.media,
+				itemId: item.itemId,
+				command: item.command,
+				status: item.status,
+			};
+		case "fileChange":
+			return { media: item.media, itemId: item.itemId, status: item.status };
+		case "reasoning":
+			return { media: item.media, itemId: item.itemId, text: item.text };
+		case "plan":
+			return { media: item.media, itemId: item.itemId, text: item.text };
+		case "approval":
+			return {
+				media: item.media,
+				itemId: item.itemId,
+				approvalId: item.approvalId,
+				status: item.status,
+			};
+	}
+	const unhandled: never = item;
+	return unhandled;
+}
+
+function projectTimeline(input: BrowserProjectionInput["timeline"]): BrowserTimeline | null {
+	if (input === null) return null;
+	return {
+		kind: "timeline",
+		threadId: input.threadId,
+		turns: input.turns.map((entry) => ({
+			turnId: entry.turn.id,
+			status: entry.turn.status,
+			items: entry.items.map(projectTimelineItem),
+			summary: entry.summary,
+			outputsIncluded: entry.outputsIncluded,
+			outputsTruncated: entry.outputsTruncated,
+		})),
+		nextCursor: input.nextCursor,
 	};
 }
 
@@ -381,7 +454,7 @@ export function projectCodexBrowserState(
 			account: projectAccount(input.account),
 			login: input.login,
 			threadLink: projectThreadLink(input.threadLink),
-			timeline: input.timeline,
+			timeline: projectTimeline(input.timeline),
 			queue: projectQueue(input.queue),
 			settings: input.settings.map(projectSettings),
 			approvals: input.approvals.map(projectApproval),
