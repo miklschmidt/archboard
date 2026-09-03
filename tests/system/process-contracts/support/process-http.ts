@@ -29,7 +29,7 @@ export function sanitizedEnvironment(
 ): ChildEnvironment {
 	const env: ChildEnvironment = { ...inherited };
 	for (const key of Object.keys(env)) {
-		if (CLEARED.has(key) || key.startsWith("ARCHBOARD_INJECT")) delete env[key];
+		if (CLEARED.has(key)) delete env[key];
 	}
 	return {
 		...env,
