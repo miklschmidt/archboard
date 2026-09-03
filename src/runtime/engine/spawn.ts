@@ -1,4 +1,5 @@
 import { spawn } from "child_process";
+import { readFileSync } from "node:fs";
 import type { Readable } from "node:stream";
 import { fileURLToPath } from "url";
 import logger from "./logger.js";
@@ -22,12 +23,14 @@ import {
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
 } from "../codex-process/executable.js";
-import { CODEX_COMPOSED_SHUTDOWN_MS } from "../../shared/timing/timing.js";
+import { createCodexProcessGroupOperations } from "../codex-process/process-group.js";
+import { CANVAS_STARTUP_READINESS_MS } from "../../shared/timing/timing.js";
+import { CANVAS_STARTUP_TERMINAL_FD_ENV } from "../../shared/canvas-startup-terminal/index.js";
 import {
-	CANVAS_STARTUP_TERMINAL_FD_ENV,
-	parseCanvasStartupTerminalRecord,
-	type CanvasStartupTerminalRecord,
-} from "../../shared/canvas-startup-terminal/index.js";
+	completeFailedCanvasCleanup,
+	createCanvasStartupProtocolReader,
+	failedCanvasCleanupTiming,
+} from "./canvas-startup-cleanup.js";
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
@@ -96,6 +99,16 @@ function waitForPromise<T>(pending: Promise<T>, timeoutMs: number): Promise<T | 
 	});
 }
 
+function processIsStopped(pid: number): boolean {
+	try {
+		const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
+		const state = stat.slice(stat.lastIndexOf(")") + 2).split(" ", 1)[0];
+		return state === "T" || state === "t" || state === "Z" || state === "X";
+	} catch {
+		return false;
+	}
+}
+
 async function healthOrNull(timeoutMs = 500) {
 	try {
 		return await getHealth(timeoutMs);
@@ -144,7 +157,7 @@ export interface EnsureResult {
 export async function ensureCanvasRunning(
 	options: { timeoutMs?: number; force?: boolean } = {},
 ): Promise<EnsureResult> {
-	const timeoutMs = options.timeoutMs ?? 8000;
+	const timeoutMs = options.timeoutMs ?? CANVAS_STARTUP_READINESS_MS;
 
 	const existing = await healthOrNull();
 	if (existing) {
@@ -210,22 +223,7 @@ export async function ensureCanvasRunning(
 	let resolveChildClosed!: () => void;
 	const childClosed = new Promise<void>((resolve) => void (resolveChildClosed = resolve));
 	const terminalStream = child.stdio[3] as Readable | null;
-	let terminalBuffer = "";
-	let resolveTerminal!: (record: CanvasStartupTerminalRecord | null) => void;
-	const terminalRecord = new Promise<CanvasStartupTerminalRecord | null>(
-		(resolve) => void (resolveTerminal = resolve),
-	);
-	terminalStream?.on("data", (chunk: Buffer | string) => {
-		terminalBuffer += typeof chunk === "string" ? chunk : chunk.toString("utf8");
-		const newline = terminalBuffer.indexOf("\n");
-		if (newline < 0) return;
-		try {
-			resolveTerminal(parseCanvasStartupTerminalRecord(terminalBuffer.slice(0, newline)));
-		} catch (error) {
-			childFailure = error instanceof Error ? error : new Error(String(error));
-		}
-	});
-	terminalStream?.once("close", () => resolveTerminal(null));
+	const cleanupProtocol = createCanvasStartupProtocolReader(terminalStream);
 	child.once("error", (error) => {
 		childFailure = error;
 	});
@@ -234,39 +232,47 @@ export async function ensureCanvasRunning(
 		resolveChildClosed();
 	});
 	const cleanupFailedStart = async (failure: Error): Promise<never> => {
-		if (childExit === null) {
+		const groupOperations = createCodexProcessGroupOperations();
+		const signalCanvas = (signal: NodeJS.Signals): void => {
+			if (childExit !== null) return;
 			try {
-				child.kill("SIGTERM");
-			} catch {
-				/* close observation below remains the authority. */
+				child.kill(signal);
+			} catch (error) {
+				if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
 			}
-		}
-		const terminal = await terminalRecord;
-		if (terminal === null || terminal.canvasPid !== child.pid || terminal.cleanup !== "proven") {
-			terminalStream?.destroy();
+		};
+		const cleanup = await completeFailedCanvasCleanup({
+			canvasPid: child.pid!,
+			protocol: cleanupProtocol,
+			timing: failedCanvasCleanupTiming(),
+			operations: {
+				now: Date.now,
+				wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+				canvasExited: () => childExit !== null,
+				canvasStopped: () => childExit !== null || processIsStopped(child.pid!),
+				waitForCanvasExit: async (maxWaitMs) =>
+					(await waitForPromise(
+						childClosed.then(() => true),
+						maxWaitMs,
+					)) === true,
+				signalCanvas,
+				inspectGroup: groupOperations.inspect,
+				signalGroup: groupOperations.signal,
+			},
+		}).catch((error: unknown) => {
+			cleanupProtocol.destroy();
 			throw startupRefusal(
-				`${failure.message} The failed canvas child (pid ${String(child.pid)}) did not prove terminal application cleanup; inspect that exact attempt before retrying.`,
+				`${failure.message} The bounded cleanup state machine failed for exact canvas pid ${String(child.pid)}: ${error instanceof Error ? error.message : String(error)}. Inspect that attempt before retrying.`,
 			);
-		}
-		if (childExit === null) {
-			try {
-				child.kill("SIGKILL");
-			} catch {
-				/* Terminal cleanup was proven before this outer-owner force. */
-			}
-			if (
-				(await waitForPromise(
-					childClosed.then(() => true),
-					CODEX_COMPOSED_SHUTDOWN_MS,
-				)) === null
-			)
-				throw startupRefusal(
-					`${failure.message} Terminal cleanup was proven, but the failed canvas child (pid ${String(child.pid)}) did not reap within the application shutdown boundary.`,
-				);
-		}
-		terminalStream?.destroy();
+		});
+		cleanupProtocol.destroy();
 		if (readPidFile(canvasPort()) === child.pid) removePidFile(canvasPort());
-		throw failure;
+		if (cleanup.cleanup !== "proven")
+			throw startupRefusal(
+				`${failure.message} ${cleanup.reason} Inspect canvas pid ${String(child.pid)}${cleanup.group === null ? "" : ` and Codex group ${cleanup.group.pgid}`} before retrying.`,
+			);
+		const terminalMessage = cleanupProtocol.terminalMessage();
+		throw terminalMessage === null ? failure : startupRefusal(terminalMessage);
 	};
 	logger.info(`Auto-starting canvas server (pid ${child.pid}) at ${EXPRESS_SERVER_URL}`);
 
@@ -274,19 +280,25 @@ export async function ensureCanvasRunning(
 	while (Date.now() < deadline) {
 		if (isCanvasHealth(await healthOrNull(400))) {
 			markCanvasIdentityVerified();
-			terminalStream?.destroy();
+			cleanupProtocol.destroy();
 			child.unref();
 			process.stderr.write(
 				`Canvas server running at ${EXPRESS_SERVER_URL} — open it in a browser for screenshots and mermaid conversion.\n`,
 			);
 			return { url: EXPRESS_SERVER_URL, spawned: true };
 		}
-		if (childFailure !== null)
+		if (childFailure !== null || cleanupProtocol.failure() !== null)
 			return cleanupFailedStart(
-				startupRefusal(`Canvas server could not start. ${childFailure.message}`),
+				startupRefusal(
+					`Canvas server could not start. ${(childFailure ?? cleanupProtocol.failure())!.message}`,
+				),
 			);
-		if (childExit !== null) {
-			const detail = (await terminalRecord)?.message ?? "";
+		const observedExit = childExit as {
+			readonly code: number | null;
+			readonly signal: NodeJS.Signals | null;
+		} | null;
+		if (observedExit !== null) {
+			const detail = cleanupProtocol.terminalMessage() ?? "";
 			if (isConcurrentOwnerRefusal(detail)) {
 				deferredChildFailure ??= startupRefusal(detail);
 				await new Promise((resolve) => setTimeout(resolve, 250));
@@ -295,7 +307,7 @@ export async function ensureCanvasRunning(
 			return cleanupFailedStart(
 				startupRefusal(
 					detail ||
-						`Canvas server exited before readiness with code ${String(childExit.code)} and signal ${String(childExit.signal)}.`,
+						`Canvas server exited before readiness with code ${String(observedExit.code)} and signal ${String(observedExit.signal)}.`,
 				),
 			);
 		}

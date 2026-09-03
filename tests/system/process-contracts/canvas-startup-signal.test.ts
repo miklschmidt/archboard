@@ -1,15 +1,7 @@
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
-import {
-	existsSync,
-	mkdirSync,
-	mkdtempSync,
-	readFileSync,
-	readdirSync,
-	rmSync,
-	writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve as resolvePath } from "node:path";
 
@@ -28,53 +20,17 @@ import {
 	publicStartEnvironment,
 	writePublicCodexExecutable,
 } from "../canvas-state/support/public-codex-startup.ts";
+import {
+	exactProcessExists,
+	killExactGroup,
+	processGroupMembers,
+	processIdentity,
+	type ProcessIdentity,
+} from "../support/process-census.ts";
 
 const repoRoot = resolvePath(import.meta.dir, "../../..");
 const fixtureSource = join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production.ts");
 const serverEntry = join(repoRoot, "src/server.ts");
-
-interface ProcessIdentity {
-	readonly pid: number;
-	readonly parentPid: number;
-	readonly group: number;
-	readonly startTime: string;
-}
-
-function processIdentity(pid: number): ProcessIdentity | null {
-	try {
-		const text = readFileSync(`/proc/${pid}/stat`, "utf8");
-		const fields = text
-			.slice(text.lastIndexOf(")") + 2)
-			.trim()
-			.split(/\s+/u);
-		if (fields[0] === "Z" || fields[0] === "X") return null;
-		return { pid, parentPid: Number(fields[1]), group: Number(fields[2]), startTime: fields[19]! };
-	} catch {
-		return null;
-	}
-}
-
-function exactProcessExists(identity: ProcessIdentity): boolean {
-	return processIdentity(identity.pid)?.startTime === identity.startTime;
-}
-
-function processGroupMembers(group: number): number[] {
-	return readdirSync("/proc", { withFileTypes: true }).flatMap((entry) => {
-		if (!entry.isDirectory() || !/^\d+$/u.test(entry.name)) return [];
-		const identity = processIdentity(Number(entry.name));
-		return identity?.group === group ? [identity.pid] : [];
-	});
-}
-
-function killExactGroup(identity: ProcessIdentity): void {
-	if (!exactProcessExists(identity) || !processGroupMembers(identity.group).includes(identity.pid))
-		return;
-	try {
-		process.kill(-identity.group, "SIGKILL");
-	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
-	}
-}
 
 async function freePort(): Promise<number> {
 	const server = createServer();
@@ -182,14 +138,17 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 	}
 }, 20_000);
 
-test("public failed-start force waits for exact terminal group cleanup", async () => {
+test("public cleanup-error takeover reaps the exact terminal group and outer canvas", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-public-terminal-"));
 	const marker = join(root, "processes.json");
 	const executable = join(root, "codex");
 	const port = await freePort();
 	const base = `http://127.0.0.1:${port}`;
 	const environment = publicStartEnvironment(root, base, executable);
-	environment.ARCHBOARD_TEST_PUBLIC_SHUTDOWN_DELAY_MS = "5500";
+	environment.ARCHBOARD_TEST_PUBLIC_SHUTDOWN_FAILURE = "always";
+	environment.ARCHBOARD_TEST_PUBLIC_READINESS_TIMEOUT_MS = "350";
+	environment.ARCHBOARD_TEST_PUBLIC_CLEANUP_DEADLINE_MS = "900";
+	environment.ARCHBOARD_TEST_PUBLIC_CLEANUP_GRACE_MS = "150";
 	writePublicCodexExecutable(
 		executable,
 		`if (process.argv.includes("--version")) { console.log("codex-cli 0.151.0"); process.exit(0); }
@@ -199,6 +158,7 @@ process.on("SIGTERM", () => {});
 require("node:fs").writeFileSync(${JSON.stringify(marker)}, JSON.stringify({ leader: process.pid, descendant: descendant.pid }));
 process.stdin.resume(); setInterval(() => {}, 1000);`,
 	);
+	const startedAt = performance.now();
 	const launcher = spawn(join(repoRoot, "bin/canvas"), ["start"], {
 		cwd: repoRoot,
 		env: environment,
@@ -229,6 +189,7 @@ process.stdin.resume(); setInterval(() => {}, 1000);`,
 		expect(leader.group).toBe(leader.pid);
 		expect(descendant.group).toBe(leader.group);
 		expect(await result).not.toBe(0);
+		expect(performance.now() - startedAt).toBeLessThan(2_000);
 		await Promise.all([
 			waitForProcessExit(canvas.pid),
 			waitForProcessExit(leader.pid),
