@@ -1,10 +1,11 @@
 ---
 id: TASK-143.01.09
 title: Classify and bind current-epoch thread links
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-02 01:39'
+updated_date: '2026-09-03 18:09'
 labels: []
 dependencies:
   - TASK-143.01.05
@@ -41,7 +42,10 @@ Delegation profile: gpt-5.6-luna, max.
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Paused by TASK-143.08. Reopen only after TASK-143.08.05 is Done. Write a fresh plan against the recovered generated type seam and reuse the existing classifier and binding authority; preserve candidate-discovery behavior without adding a second classifier or replaying detached test scaffolding.
+1. Refactor the existing classifier just enough to classify one target from already exhausted typed SessionThread and ThreadId inventories, retaining authored refusal precedence and generated status/source types.
+2. Add one public candidate-discovery result to the authoritative CodexThreadLinkPort. Exhaust thread/list and thread/loaded/list once, exact-join by ThreadId, derive current-child provenance only from the durable epoch manifest, freeze the result, and reject cursor or authority-generation changes instead of publishing a partial or stale list.
+3. Keep executable adoption in the existing classifyAndBind and pane/link CAS store. Expose each candidate's exact target and classification so the downstream browser workbench can bind through that boundary without a second classifier or store.
+4. Add focused module tests for both inventories' pagination and repeated cursors, duplicate/disappearing rows, allowed and refused sources/capabilities/statuses, prior/stale/current epoch authority, discovery generation conflicts, and discovery-to-CAS adoption. Run focused thread-link tests plus exact formatter, linter, TypeScript, and diff checks only.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -56,6 +60,10 @@ Final remediation follow-up commit f7c281c: thread/start outcome-unknown classif
 Finalization evidence: two independent reviews were clean for e53d27a7..f7c281c3. AC1 is proven by the exhausted paginated exact-join and cursor-failure tests; AC2 by the four allowed-source, status, capability, durable-epoch, and live classify-and-bind tests; AC3 by the persisted-not-loaded, stale/prior, provenance, arbitrary thread/start diagnostic, and turn/start countercase tests; AC4 by the 35-test binding/classifier/precedence/type lane plus formatter, linter, TypeScript, and diff checks. No Definition-of-Done items were defined.
 
 Reopened with user approval after TASK-143.03.03 proved that no public authoritative candidate-discovery result reaches the browser consumer.
+
+Reimplemented current-epoch candidate discovery on fixed base 23cc54fbc3405a7c5b80bb8de796ae2b53bd5e25. The existing classifier now classifies targets from one already exhausted typed SessionThread/ThreadId join, and the authoritative CodexThreadLinkPort exposes one frozen discovery generation for downstream browser consumers. Discovery reads only the durable epoch store, retains current, stale, prior, and thread/start outcome-unknown provenance, rejects cursor loops and manifest-generation changes, and sends selected targets back through the existing two-pass classifyAndBind plus pane/link CAS boundary. No second classifier or binding store was added.
+
+Focused validation: bun test src/runtime/codex-thread-link/tests passed 41 tests and 142 assertions in 6.51s; bunx tsc --noEmit --pretty false passed in 1.92s; exact-file oxlint passed in 0.14s; exact-file oxfmt check passed in 0.10s; git diff --check passed. No full, system, repository, browser, stress, performance, or tooling lane ran.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
