@@ -10,7 +10,6 @@ import type {
 	BrowserSchemas,
 } from "../../../shared/codex-browser-model/index.js";
 import type { TrustedIdentityDecoder } from "../../../shared/codex-workbench-identity/index.js";
-import type { DynamicToolApprovalRequest } from "../../../runtime/codex-dynamic-tools/index.js";
 import type { BrowserSnapshotDelta } from "./contract.js";
 import type {
 	BrowserProjectionInput,
@@ -184,7 +183,7 @@ type DynamicProjectionIdentity = Pick<TrustedIdentityDecoder, "adoptThreadId" | 
 function projectDynamicApprovalEffect(
 	model: DynamicProjectionModel,
 	identity: DynamicProjectionIdentity,
-	request: DynamicToolApprovalRequest,
+	request: DynamicApprovalOwnerView["request"],
 ): BrowserDynamicApprovalEffect {
 	const effect = request.effect;
 	if (effect.tool === "create_thread")
@@ -214,7 +213,7 @@ function projectDynamicApprovalEffect(
 			target: threadId,
 			effectiveBoundary: {
 				relation: effect.effectiveBoundary.relation,
-				beforeTurnId: effect.effectiveBoundary.beforeTurnId,
+				beforeTurnId,
 			},
 			mutationOperationId: effect.mutationOperationId,
 			initialTurnOperationId: effect.initialTurnOperationId,
@@ -242,7 +241,17 @@ function projectDynamicApproval(
 	return model.BrowserDynamicApprovalSchema.parse({
 		kind: "dynamic_approval",
 		state: "pending",
-		identity: request.identity,
+		identity: {
+			child: request.identity.child,
+			epoch: request.identity.epoch,
+			threadId: request.identity.threadId,
+			turnId: request.identity.turnId,
+			callId: request.identity.callId,
+			namespace: request.identity.namespace,
+			tool: request.identity.tool,
+			manifestHash: request.identity.manifestHash,
+			operationId: request.identity.operationId,
+		},
 		effect: projectDynamicApprovalEffect(model, identity, request),
 		effectHash: request.effectHash,
 		createdAtMs: request.createdAtMs,
