@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import type {
 	ApplyPatchApprovalResponse,
 	ClientNotification as GeneratedClientNotification,
@@ -48,12 +50,16 @@ import type {
 	ToolRequestUserInputResponse,
 } from "./generated/current/v2/index.js";
 
+/** JSON representation of one generated ts-rs bigint/i64 field. */
+export const CodexSafeI64Schema = z.number().int().safe().brand<"CodexSafeI64">();
+export type CodexSafeI64 = z.infer<typeof CodexSafeI64Schema>;
+
 export type CodexJsonWire<T> = unknown extends T
 	? keyof T extends never
 		? CodexJsonValue
 		: T
 	: T extends bigint
-		? number
+		? CodexSafeI64
 		: T extends readonly (infer Item)[]
 			? Array<CodexJsonWire<Item>>
 			: T extends object

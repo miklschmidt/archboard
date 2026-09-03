@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 import { FileChangeSchema } from "./item-schemas.js";
-import { JsonValueSchema, NonNegativeIntegerSchema } from "./scalars.js";
+import { CodexSafeI64Schema, JsonValueSchema, NonNegativeIntegerSchema } from "./scalars.js";
+
+const NonNegativeCodexSafeI64Schema = CodexSafeI64Schema.refine((value) => value >= 0, {
+	message: "Expected a non-negative safe i64",
+});
 
 const PermissionDecisionSchema = z.enum(["allow", "deny"]);
 
@@ -96,8 +100,8 @@ const McpElicitationEnumSchema = z.union([
 		type: z.literal("array"),
 		title: z.string().optional(),
 		description: z.string().optional(),
-		minItems: NonNegativeIntegerSchema.optional(),
-		maxItems: NonNegativeIntegerSchema.optional(),
+		minItems: NonNegativeCodexSafeI64Schema.optional(),
+		maxItems: NonNegativeCodexSafeI64Schema.optional(),
 		items: McpElicitationUntitledEnumItemsSchema,
 		default: z.array(z.string()).optional(),
 	}),
@@ -105,8 +109,8 @@ const McpElicitationEnumSchema = z.union([
 		type: z.literal("array"),
 		title: z.string().optional(),
 		description: z.string().optional(),
-		minItems: NonNegativeIntegerSchema.optional(),
-		maxItems: NonNegativeIntegerSchema.optional(),
+		minItems: NonNegativeCodexSafeI64Schema.optional(),
+		maxItems: NonNegativeCodexSafeI64Schema.optional(),
 		items: McpElicitationTitledEnumItemsSchema,
 		default: z.array(z.string()).optional(),
 	}),

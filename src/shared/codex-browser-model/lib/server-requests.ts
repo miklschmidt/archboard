@@ -7,6 +7,7 @@ import type {
 	CodexServerRequestParamsByMethod,
 	CodexServerResponseByMethod,
 } from "../../codex-app-server-contract/index.js";
+import { CodexSafeI64Schema } from "../../codex-app-server-contract/index.js";
 import {
 	CurrentTimeReadResponseSchema,
 	UNSUPPORTED_ATTESTATION_ERROR,
@@ -43,6 +44,9 @@ function codexOutputSchema<Wire>() {
 
 const WireNumberSchema = z.number();
 const WireIntegerSchema = z.number().int();
+const NonNegativeCodexSafeI64Schema = CodexSafeI64Schema.refine((value) => value >= 0, {
+	message: "Expected a non-negative safe i64",
+});
 const WireStringSchema = z.string();
 const OptionalWireStringSchema = () => WireStringSchema.optional();
 
@@ -129,8 +133,8 @@ function createMcpElicitationSchema() {
 		.object({
 			type: z.literal("array"),
 			...CommonStringFields,
-			minItems: WireIntegerSchema.nonnegative().optional(),
-			maxItems: WireIntegerSchema.nonnegative().optional(),
+			minItems: NonNegativeCodexSafeI64Schema.optional(),
+			maxItems: NonNegativeCodexSafeI64Schema.optional(),
 			items: UntitledMultiItemsSchema,
 			default: z.array(WireStringSchema).optional(),
 		})
@@ -144,8 +148,8 @@ function createMcpElicitationSchema() {
 		.object({
 			type: z.literal("array"),
 			...CommonStringFields,
-			minItems: WireIntegerSchema.nonnegative().optional(),
-			maxItems: WireIntegerSchema.nonnegative().optional(),
+			minItems: NonNegativeCodexSafeI64Schema.optional(),
+			maxItems: NonNegativeCodexSafeI64Schema.optional(),
 			items: TitledMultiItemsSchema,
 			default: z.array(WireStringSchema).optional(),
 		})

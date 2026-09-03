@@ -6,7 +6,7 @@ import {
 } from "./approval-schemas.js";
 import { TokenUsageBreakdownSchema } from "./config-schemas.js";
 import { ResponseItemSchema, ResponseUsageMetadataSchema } from "./response-item-schemas.js";
-import { FiniteNumberSchema, IntegerSchema, JsonValueSchema, looseObject } from "./scalars.js";
+import { CodexSafeI64Schema, FiniteNumberSchema, JsonValueSchema, looseObject } from "./scalars.js";
 
 export const HookRunSummarySchema = looseObject({
 	id: z.string(),
@@ -41,12 +41,12 @@ export const HookRunSummarySchema = looseObject({
 		"legacyManagedConfigMdm",
 		"unknown",
 	]),
-	displayOrder: IntegerSchema,
+	displayOrder: CodexSafeI64Schema,
 	status: z.enum(["running", "completed", "failed", "blocked", "stopped"]),
 	statusMessage: z.string().nullable(),
-	startedAt: IntegerSchema,
-	completedAt: IntegerSchema.nullable(),
-	durationMs: IntegerSchema.nullable(),
+	startedAt: CodexSafeI64Schema,
+	completedAt: CodexSafeI64Schema.nullable(),
+	durationMs: CodexSafeI64Schema.nullable(),
 	entries: z.array(
 		looseObject({
 			kind: z.enum(["warning", "stop", "feedback", "context", "error"]),

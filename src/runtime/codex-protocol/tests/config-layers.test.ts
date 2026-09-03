@@ -1,7 +1,35 @@
 import { expect, test } from "bun:test";
 
-import { BrowserUseOriginPolicySchema, decodeResponse, ProtocolDecodeError } from "../index.js";
+import {
+	BrowserUseOriginPolicySchema,
+	decodeResponse,
+	decodeServerNotification,
+	ProtocolDecodeError,
+} from "../index.js";
 import { responseFixtures } from "./fixtures.js";
+
+function localShellNotification(timeout_ms: number | bigint) {
+	return {
+		method: "rawResponseItem/completed" as const,
+		params: {
+			threadId: "thread-1",
+			turnId: "turn-1",
+			item: {
+				type: "local_shell_call",
+				call_id: "call-1",
+				status: "completed",
+				action: {
+					type: "exec",
+					command: ["true"],
+					timeout_ms,
+					working_directory: null,
+					env: null,
+					user: null,
+				},
+			},
+		},
+	};
+}
 
 test("config/read requires the generated disabledReason field", () => {
 	const configResponse = responseFixtures["config/read"] as {
@@ -60,7 +88,7 @@ test("Codex i64 values stay safe JSON numbers and reject bigint", () => {
 		config: { ...configResponse.config, model_context_window: Number.MAX_SAFE_INTEGER },
 	});
 
-	expect(safe.config.model_context_window).toBe(Number.MAX_SAFE_INTEGER);
+	expect(Number(safe.config.model_context_window)).toBe(Number.MAX_SAFE_INTEGER);
 	expect(() =>
 		decodeResponse("config/read", {
 			...configResponse,
@@ -76,4 +104,16 @@ test("Codex i64 values stay safe JSON numbers and reject bigint", () => {
 			config: { ...configResponse.config, model_context_window: 1n },
 		}),
 	).toThrow(/bigint; Codex JSON i64 values must be safe numbers/);
+});
+
+test("local shell i64 timeouts use the same safe-number boundary", () => {
+	const safe = localShellNotification(Number.MAX_SAFE_INTEGER);
+
+	expect(decodeServerNotification(safe) as unknown).toEqual(safe);
+	expect(() =>
+		decodeServerNotification(localShellNotification(Number.MAX_SAFE_INTEGER + 1)),
+	).toThrow(ProtocolDecodeError);
+	expect(() => decodeServerNotification(localShellNotification(1n))).toThrow(
+		/bigint; Codex JSON i64 values must be safe numbers/,
+	);
 });

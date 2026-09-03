@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export { CodexSafeI64Schema } from "../../../shared/codex-app-server-contract/index.js";
+
 /** Use only where Codex's generated 0.151.0 contract deliberately says JsonValue. */
 export const JsonValueSchema = z.json();
 export const StringRecordSchema = z.record(z.string(), z.string());

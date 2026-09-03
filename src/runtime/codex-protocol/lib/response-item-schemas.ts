@@ -5,7 +5,7 @@ import {
 	ImageDetailSchema,
 	MessagePhaseSchema,
 } from "./core-schemas.js";
-import { JsonValueSchema, looseObject } from "./scalars.js";
+import { CodexSafeI64Schema, JsonValueSchema, looseObject } from "./scalars.js";
 
 const InternalChatMessageMetadataPassthroughSchema = looseObject({
 	turn_id: z.string().optional(),
@@ -39,7 +39,7 @@ const ReasoningItemContentSchema = z.discriminatedUnion("type", [
 const LocalShellActionSchema = looseObject({
 	type: z.literal("exec"),
 	command: z.array(z.string()),
-	timeout_ms: z.number().finite().nullable(),
+	timeout_ms: CodexSafeI64Schema.nullable(),
 	working_directory: z.string().nullable(),
 	/** Environment variable names and values are intentionally open in the generated action. */
 	env: z.record(z.string(), z.string()).nullable(),
