@@ -503,6 +503,7 @@ export function projectCodexBrowserState(
 }
 
 export const BROWSER_SNAPSHOT_MAX_BYTES = 1_048_576;
+export const BROWSER_SNAPSHOT_MIN_BYTES = 32_768;
 export const BROWSER_DELTA_MAX_BYTES = 262_144;
 
 type BrowserSnapshotKey = Exclude<keyof BrowserSnapshot, "kind" | "version">;
@@ -541,6 +542,59 @@ function assertBounded(value: unknown, limit: number, kind: string): void {
 	if (wireBytes(value) > limit) throw new Error(`the browser ${kind} exceeds its wire-size bound`);
 }
 
+export function assertBrowserSnapshotBudget(limit: number): void {
+	if (
+		!Number.isSafeInteger(limit) ||
+		limit < BROWSER_SNAPSHOT_MIN_BYTES ||
+		limit > BROWSER_SNAPSHOT_MAX_BYTES
+	)
+		throw new Error(
+			`the browser snapshot budget must be between ${BROWSER_SNAPSHOT_MIN_BYTES} and ${BROWSER_SNAPSHOT_MAX_BYTES} bytes`,
+		);
+}
+
+function truncateTimelineTurn(
+	turn: BrowserTimeline["turns"][number],
+	items: BrowserTimeline["turns"][number]["items"],
+): BrowserTimeline["turns"][number] {
+	return { ...turn, items, outputsTruncated: true };
+}
+
+/** Fit the sole variable-size history field after every competing snapshot field is present. */
+export function fitBrowserSnapshotBounded(
+	snapshot: BrowserSnapshot,
+	limit = BROWSER_SNAPSHOT_MAX_BYTES,
+): BrowserSnapshot {
+	assertBrowserSnapshotBudget(limit);
+	if (wireBytes(snapshot) <= limit) return snapshot;
+	if (snapshot.timeline === null)
+		throw new Error("the browser snapshot exceeds its wire-size bound without timeline history");
+
+	let turns = snapshot.timeline.turns.slice();
+	const candidate = (): BrowserSnapshot => ({
+		...snapshot,
+		timeline: { ...snapshot.timeline!, turns },
+	});
+	while (turns.length > 0) {
+		const lastIndex = turns.length - 1;
+		const last = turns[lastIndex]!;
+		let items = last.items;
+		turns[lastIndex] = truncateTimelineTurn(last, items);
+		while (items.length > 0 && wireBytes(candidate()) > limit) {
+			items = items.slice(0, -1);
+			turns[lastIndex] = truncateTimelineTurn(last, items);
+		}
+		if (wireBytes(candidate()) <= limit) return deepFreeze(candidate());
+		if (turns.length === 1) break;
+		turns = turns.slice(0, -1);
+		const preceding = turns.at(-1)!;
+		turns[turns.length - 1] = truncateTimelineTurn(preceding, preceding.items);
+	}
+	const fitted = candidate();
+	assertBounded(fitted, limit, "snapshot");
+	return deepFreeze(fitted);
+}
+
 function sameWireValue(left: unknown, right: unknown): boolean {
 	return JSON.stringify(left) === JSON.stringify(right);
 }
@@ -558,8 +612,12 @@ export function diffBrowserSnapshots(
 	return deepFreeze(delta) as BrowserSnapshotDelta;
 }
 
-export function assertBrowserSnapshotBounded(snapshot: BrowserSnapshot): void {
-	assertBounded(snapshot, BROWSER_SNAPSHOT_MAX_BYTES, "snapshot");
+export function assertBrowserSnapshotBounded(
+	snapshot: BrowserSnapshot,
+	limit = BROWSER_SNAPSHOT_MAX_BYTES,
+): void {
+	assertBrowserSnapshotBudget(limit);
+	assertBounded(snapshot, limit, "snapshot");
 }
 
 export function assertBrowserDeltaBounded(delta: BrowserSnapshotDelta): void {

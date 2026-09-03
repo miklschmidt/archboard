@@ -21,9 +21,12 @@ export type {
 	CanvasDynamicLifecycleOwner,
 	CanvasDynamicLifecycleOwnerOptions,
 } from "./lib/codex-workbench-operation-lifecycle.js";
-export { createCanvasTimelineOwner } from "./lib/codex-workbench-timeline.js";
+export {
+	createCanvasBrowserProjectionBudget,
+	createCanvasTimelineOwner,
+} from "./lib/codex-workbench-timeline.js";
 export type {
-	CanvasTimelineBudget,
+	CanvasBrowserProjectionBudget,
 	CanvasTimelineOwner,
 	CanvasTimelineOwnerOptions,
 } from "./lib/codex-workbench-timeline.js";

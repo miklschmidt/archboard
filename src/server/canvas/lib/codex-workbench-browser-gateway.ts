@@ -16,7 +16,10 @@ import type { OperationId } from "../../../shared/codex-workbench-identity/index
 import type { ArchboardContext } from "../../../runtime/codex-instructions/index.js";
 import type { CodexWorkbenchComponents } from "./codex-workbench.js";
 import type { CanvasDynamicApprovalOwner } from "./codex-workbench-approvals.js";
-import type { CanvasTimelineOwner } from "./codex-workbench-timeline.js";
+import type {
+	CanvasBrowserProjectionBudget,
+	CanvasTimelineOwner,
+} from "./codex-workbench-timeline.js";
 import { createCanvasThreadLinkActions } from "./codex-workbench-thread-links.js";
 import { createCanvasCanonicalTextActions } from "./codex-workbench-text-actions.js";
 import { createCanvasRealtimeActions } from "./codex-workbench-realtime-actions.js";
@@ -118,6 +121,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 	readonly state: CanvasBrowserBindingState;
 	readonly leaseLedger: BrowserLeaseLedger;
 	readonly timeline: CanvasTimelineOwner;
+	readonly budget: CanvasBrowserProjectionBudget;
 	readonly onChange: (listener: () => void) => () => void;
 	readonly checkoutRoot: string;
 	readonly contextForOperation: (
@@ -360,5 +364,10 @@ export function createCanvasBrowserGatewayOptions(input: {
 		onChange: input.onChange,
 		onBrowserDisconnect: ({ paneId, connection }) => input.timeline.retire(paneId, connection),
 	};
-	return { projection, actions, leaseLedger: input.leaseLedger };
+	return {
+		projection,
+		actions,
+		leaseLedger: input.leaseLedger,
+		snapshotMaxBytes: input.budget.maxBytes,
+	};
 }

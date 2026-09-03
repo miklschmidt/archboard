@@ -14,7 +14,10 @@ import {
 	type IdentityAuthorities,
 	type ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
-import { createCanvasTimelineOwner } from "../codex-workbench-adapters.js";
+import {
+	createCanvasBrowserProjectionBudget,
+	createCanvasTimelineOwner,
+} from "../codex-workbench-adapters.js";
 
 function link(authorities: IdentityAuthorities, threadId: ThreadId): ThreadLinkSnapshot {
 	return {
@@ -131,6 +134,68 @@ test("retiring a closed pane drops its refresh and notification eligibility", as
 	owner.dispose();
 });
 
+test("same-pane connections load independently and only the live pair recovers", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("shared-pane-thread");
+	const firstConnection = {};
+	const secondConnection = {};
+	let calls = 0;
+	let changes = 0;
+	let failNext = false;
+	const session = {
+		threadTurnsListPage: async (
+			_params: Parameters<CodexSession["threadTurnsListPage"]>[0],
+		): Promise<SessionThreadTurnPageResult> => {
+			calls += 1;
+			if (failNext) {
+				failNext = false;
+				throw new Error("recoverable timeline read");
+			}
+			return {
+				data: [turn(authorities, `shared-pane-turn-${calls}`, [])],
+				nextCursor: null,
+				backwardsCursor: null,
+			};
+		},
+		timelineListPage: async (_params: Parameters<CodexSession["timelineListPage"]>[0]) => ({
+			data: [],
+			nextCursor: null,
+			activeRealtimeSessionAtPageStart: null,
+		}),
+	};
+	const owner = createCanvasTimelineOwner({
+		session,
+		identity: authorities.identity.decoder,
+		approvals: { inspectViews: () => [] },
+		onChange: () => {
+			changes += 1;
+		},
+	});
+	const timelineLink = link(authorities, threadId);
+	owner.read("pane-shared", 1, timelineLink, true, firstConnection);
+	owner.read("pane-shared", 1, timelineLink, true, secondConnection);
+	await flush();
+	expect({ calls, changes }).toEqual({ calls: 2, changes: 2 });
+	expect(owner.read("pane-shared", 1, timelineLink, true, firstConnection)?.turns[0]?.turn.id).toBe(
+		authorities.identity.decoder.adoptTurnId("shared-pane-turn-1"),
+	);
+	expect(
+		owner.read("pane-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
+	).toBe(authorities.identity.decoder.adoptTurnId("shared-pane-turn-2"));
+	owner.retire("pane-shared", firstConnection);
+	failNext = true;
+	owner.onNotification(event(authorities, threadId));
+	await flush();
+	expect({ calls, changes }).toEqual({ calls: 3, changes: 2 });
+	owner.onNotification(event(authorities, threadId));
+	await flush();
+	expect({ calls, changes }).toEqual({ calls: 4, changes: 3 });
+	expect(
+		owner.read("pane-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
+	).toBe(authorities.identity.decoder.adoptTurnId("shared-pane-turn-4"));
+	owner.dispose();
+});
+
 test("ingests bounded source items and takes the cursor from timeline/list", async () => {
 	const authorities = createIdentityAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("bounded-ingest-thread");
@@ -173,7 +238,7 @@ test("ingests bounded source items and takes the cursor from timeline/list", asy
 		identity: authorities.identity.decoder,
 		approvals: { inspectViews: () => [] },
 		onChange: () => undefined,
-		budget: { maxTurns: 1, maxItemsPerTurn: 2, maxBytes: 8_192 },
+		budget: createCanvasBrowserProjectionBudget({ maxTurns: 1, maxItemsPerTurn: 2 }),
 	});
 	const connection = {};
 	const timelineLink = link(authorities, threadId);
@@ -252,7 +317,7 @@ test("caps final item chronology after matching and unmatched approvals", async 
 		identity: authorities.identity.decoder,
 		approvals: { inspectViews: () => approvals },
 		onChange: () => undefined,
-		budget: { maxTurns: 1, maxItemsPerTurn: 3, maxBytes: 8_192 },
+		budget: createCanvasBrowserProjectionBudget({ maxTurns: 1, maxItemsPerTurn: 3 }),
 	});
 	const connection = {};
 	const timelineLink = link(authorities, threadId);
@@ -272,23 +337,27 @@ test("caps final item chronology after matching and unmatched approvals", async 
 	owner.dispose();
 });
 
-test("keeps the compact timeline projection below its injected byte budget", async () => {
+test("marks a user summary truncated when text appears beyond its bounded scan", async () => {
 	const authorities = createIdentityAuthorities();
-	const threadId = authorities.identity.decoder.adoptThreadId("timeline-byte-thread");
-	const turns = Array.from({ length: 4 }, (_, index) =>
-		turn(authorities, `byte-turn-${index}`, [
-			item(authorities, `byte-agent-${index}`, {
-				type: "agentMessage",
-				text: "x".repeat(600),
-				phase: null,
-				memoryCitation: null,
-				delivery: null,
-			}),
-		]),
-	);
+	const threadId = authorities.identity.decoder.adoptThreadId("delayed-user-text-thread");
+	const content = [
+		...Array.from({ length: 32 }, (_, index) => ({
+			type: "image" as const,
+			url: `https://example.invalid/${index}`,
+		})),
+		{ type: "text" as const, text: "delayed text", text_elements: [] },
+	];
 	const session = {
 		threadTurnsListPage: async (_params: Parameters<CodexSession["threadTurnsListPage"]>[0]) => ({
-			data: turns,
+			data: [
+				turn(authorities, "delayed-user-text-turn", [
+					item(authorities, "delayed-user-text", {
+						type: "userMessage",
+						clientId: null,
+						content,
+					}),
+				]),
+			],
 			nextCursor: null,
 			backwardsCursor: null,
 		}),
@@ -303,17 +372,20 @@ test("keeps the compact timeline projection below its injected byte budget", asy
 		identity: authorities.identity.decoder,
 		approvals: { inspectViews: () => [] },
 		onChange: () => undefined,
-		budget: { maxTurns: 4, maxItemsPerTurn: 2, maxBytes: 5_000 },
 	});
 	const connection = {};
 	const timelineLink = link(authorities, threadId);
-	owner.read("pane-byte-budget", 1, timelineLink, true, connection);
+	owner.read("pane-delayed-user", 1, timelineLink, true, connection);
 	await flush();
-	const projection = owner.read("pane-byte-budget", 1, timelineLink, true, connection);
-	if (projection === null) throw new Error("byte-budget timeline was not loaded");
-	const bytes = new TextEncoder().encode(JSON.stringify(projection)).byteLength;
-	expect(bytes).toBeLessThanOrEqual(5_000);
-	expect(projection.turns.length).toBeLessThan(turns.length);
-	expect(projection.turns.at(-1)?.presentation.outputs.truncated).toBeTrue();
+	const projection = owner.read("pane-delayed-user", 1, timelineLink, true, connection);
+	if (projection === null) throw new Error("delayed user timeline was not loaded");
+	expect(projection.turns[0]?.presentation.summary).toContain("user: [media]");
+	expect(projection.turns[0]?.presentation.outputs.truncated).toBeTrue();
 	owner.dispose();
+});
+
+test("rejects a browser projection byte budget below its base envelope", () => {
+	expect(() => createCanvasBrowserProjectionBudget({ maxBytes: 8_192 })).toThrow(
+		"browser snapshot budget must be between",
+	);
 });

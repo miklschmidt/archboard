@@ -17,6 +17,10 @@ import type {
 	CodexTimelineProjectionInput,
 	CodexTimelineTurnProjectionInput,
 } from "../../codex-workbench/index.js";
+import {
+	BROWSER_SNAPSHOT_MAX_BYTES,
+	assertBrowserSnapshotBudget,
+} from "../../codex-workbench/index.js";
 
 const TIMELINE_PAGE_LIMIT = 100;
 const TIMELINE_PAGE_LIMIT_MAX = 8;
@@ -31,13 +35,14 @@ const textEncoder = new TextEncoder();
 
 type TimelineSession = Pick<CodexSession, "threadTurnsListPage" | "timelineListPage">;
 
-export interface CanvasTimelineBudget {
+export interface CanvasBrowserProjectionBudget {
 	readonly maxTurns: number;
 	readonly maxItemsPerTurn: number;
+	/** Complete encoded BrowserSnapshot bound; the gateway performs the final fit. */
 	readonly maxBytes: number;
 }
 
-const DEFAULT_TIMELINE_BUDGET: CanvasTimelineBudget = Object.freeze({
+const DEFAULT_BROWSER_PROJECTION_BUDGET: CanvasBrowserProjectionBudget = Object.freeze({
 	maxTurns: TIMELINE_PAGE_LIMIT * TIMELINE_PAGE_LIMIT_MAX,
 	maxItemsPerTurn: TIMELINE_ITEM_LIMIT,
 	maxBytes: TIMELINE_MAX_BYTES,
@@ -100,7 +105,7 @@ export interface CanvasTimelineOwnerOptions {
 		readonly inspectViews: () => readonly TimelineApprovalView[];
 	};
 	readonly onChange: () => void;
-	readonly budget?: Partial<CanvasTimelineBudget>;
+	readonly budget?: CanvasBrowserProjectionBudget;
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -151,8 +156,12 @@ function boundedNormalizedText(value: string, maximum: number): string {
 	return normalizedText(boundedText(value, maximum, "").value);
 }
 
-function userText(item: SessionThreadItem): string | null {
-	if (item.type !== "userMessage") return null;
+function userText(item: SessionThreadItem): {
+	readonly value: string | null;
+	readonly truncated: boolean;
+} {
+	if (item.type !== "userMessage") return { value: null, truncated: false };
+	const scanTruncated = item.content.length > TIMELINE_REASONING_PART_LIMIT;
 	for (
 		let index = 0;
 		index < Math.min(item.content.length, TIMELINE_REASONING_PART_LIMIT);
@@ -161,10 +170,14 @@ function userText(item: SessionThreadItem): string | null {
 		const content = item.content[index];
 		if (content === undefined) continue;
 		if (content.type !== "text") continue;
-		const text = boundedNormalizedText(content.text, TIMELINE_SUMMARY_LIMIT);
-		if (text.length > 0) return text;
+		const bounded = boundedText(content.text, TIMELINE_SUMMARY_LIMIT, "");
+		const text = normalizedText(bounded.value);
+		if (text.length > 0) return { value: text, truncated: scanTruncated || bounded.truncated };
 	}
-	return item.content.length === 0 ? null : "[media]";
+	return {
+		value: item.content.length === 0 ? null : "[media]",
+		truncated: scanTruncated,
+	};
 }
 
 function assistantText(item: SessionThreadItem): string | null {
@@ -303,7 +316,11 @@ function projectTurnData(turn: SessionTurn, maxItems: number): TimelineTurnData 
 	for (let index = 0; index < itemCount; index += 1) {
 		const source = turn.items[index];
 		if (source === undefined) continue;
-		if (user === null) user = userText(source);
+		if (user === null) {
+			const projectedUser = userText(source);
+			user = projectedUser.value;
+			truncated ||= projectedUser.truncated;
+		}
 		const nextAssistant = assistantText(source);
 		if (nextAssistant !== null) assistant = nextAssistant;
 		const projected = projectItem(source);
@@ -408,7 +425,7 @@ function fitTurn(
 function projectData(
 	data: TimelineData,
 	approvals: readonly TimelineApprovalView[],
-	budget: CanvasTimelineBudget,
+	budget: CanvasBrowserProjectionBudget,
 ): CodexTimelineProjectionInput {
 	const turns: CodexTimelineTurnProjectionInput[] = [];
 	let truncated = data.truncated || data.turns.length > budget.maxTurns;
@@ -497,7 +514,7 @@ function isTimelineNotification(method: string): boolean {
 async function readTurnPages(
 	session: TimelineSession,
 	threadId: ThreadId,
-	budget: CanvasTimelineBudget,
+	budget: CanvasBrowserProjectionBudget,
 ): Promise<{ readonly turns: readonly TimelineTurnData[]; readonly truncated: boolean }> {
 	const turns: TimelineTurnData[] = [];
 	const seenCursors = new Set<string>();
@@ -543,32 +560,38 @@ function boundedBudgetValue(value: number | undefined, fallback: number, maximum
 		: fallback;
 }
 
-function normalizedBudget(input: Partial<CanvasTimelineBudget> | undefined): CanvasTimelineBudget {
-	return Object.freeze({
+export function createCanvasBrowserProjectionBudget(
+	input: Partial<CanvasBrowserProjectionBudget> = {},
+): CanvasBrowserProjectionBudget {
+	const budget = Object.freeze({
 		maxTurns: boundedBudgetValue(
 			input?.maxTurns,
-			DEFAULT_TIMELINE_BUDGET.maxTurns,
-			DEFAULT_TIMELINE_BUDGET.maxTurns,
+			DEFAULT_BROWSER_PROJECTION_BUDGET.maxTurns,
+			DEFAULT_BROWSER_PROJECTION_BUDGET.maxTurns,
 		),
 		maxItemsPerTurn: boundedBudgetValue(
 			input?.maxItemsPerTurn,
-			DEFAULT_TIMELINE_BUDGET.maxItemsPerTurn,
-			DEFAULT_TIMELINE_BUDGET.maxItemsPerTurn,
+			DEFAULT_BROWSER_PROJECTION_BUDGET.maxItemsPerTurn,
+			DEFAULT_BROWSER_PROJECTION_BUDGET.maxItemsPerTurn,
 		),
 		maxBytes: boundedBudgetValue(
 			input?.maxBytes,
-			DEFAULT_TIMELINE_BUDGET.maxBytes,
-			DEFAULT_TIMELINE_BUDGET.maxBytes,
+			DEFAULT_BROWSER_PROJECTION_BUDGET.maxBytes,
+			BROWSER_SNAPSHOT_MAX_BYTES,
 		),
 	});
+	assertBrowserSnapshotBudget(budget.maxBytes);
+	return budget;
 }
 
 export function createCanvasTimelineOwner(
 	options: CanvasTimelineOwnerOptions,
 ): CanvasTimelineOwner {
-	const states = new Map<string, TimelinePaneState>();
-	const budget = normalizedBudget(options.budget);
+	const states = new Map<string, Map<BrowserConnectionInstance, TimelinePaneState>>();
+	const budget = createCanvasBrowserProjectionBudget(options.budget);
 	let disposed = false;
+	const isCurrent = (state: TimelinePaneState): boolean =>
+		states.get(state.paneId)?.get(state.connection) === state;
 
 	const refresh = (state: TimelinePaneState): void => {
 		if (disposed || !state.ready || state.link.threadId === null || state.refresh !== null) return;
@@ -592,7 +615,7 @@ export function createCanvasTimelineOwner(
 		state.refresh = load.then(
 			(data) => {
 				state.refresh = null;
-				if (disposed || states.get(state.paneId) !== state) return undefined;
+				if (disposed || !isCurrent(state)) return undefined;
 				state.data = data;
 				options.onChange();
 				if (state.dirty) refresh(state);
@@ -600,7 +623,7 @@ export function createCanvasTimelineOwner(
 			},
 			() => {
 				state.refresh = null;
-				if (disposed || states.get(state.paneId) !== state) return undefined;
+				if (disposed || !isCurrent(state)) return undefined;
 				if (state.dirty) refresh(state);
 				return undefined;
 			},
@@ -615,8 +638,13 @@ export function createCanvasTimelineOwner(
 		connection,
 	): CodexTimelineProjectionInput | null => {
 		const key = bindingKey(paneId, revision, link, threadCapable);
-		let state = states.get(paneId);
-		if (state?.key !== key || state.connection !== connection) {
+		let paneStates = states.get(paneId);
+		if (paneStates === undefined) {
+			paneStates = new Map();
+			states.set(paneId, paneStates);
+		}
+		let state = paneStates.get(connection);
+		if (state?.key !== key) {
 			state = {
 				paneId,
 				key,
@@ -628,7 +656,7 @@ export function createCanvasTimelineOwner(
 				refresh: null,
 				dirty: false,
 			};
-			states.set(paneId, state);
+			paneStates.set(connection, state);
 		} else {
 			state.ready = threadCapable;
 		}
@@ -641,29 +669,33 @@ export function createCanvasTimelineOwner(
 	const onNotification = (event: TransportServerNotification): void => {
 		if (disposed || !isTimelineNotification(event.notification.method)) return;
 		const threadId = eventThreadId(event);
-		for (const state of states.values()) {
-			if (
-				!state.ready ||
-				state.link.threadId === null ||
-				!eventMatchesThread(threadId, state.link.threadId, options.identity) ||
-				(state.link.childId !== null &&
-					(event.correlation.child !== state.link.childId ||
-						event.correlation.epoch !== state.link.epoch))
-			)
-				continue;
-			state.dirty = true;
-			refresh(state);
+		for (const paneStates of states.values()) {
+			for (const state of paneStates.values()) {
+				if (
+					!state.ready ||
+					state.link.threadId === null ||
+					!eventMatchesThread(threadId, state.link.threadId, options.identity) ||
+					(state.link.childId !== null &&
+						(event.correlation.child !== state.link.childId ||
+							event.correlation.epoch !== state.link.epoch))
+				)
+					continue;
+				state.dirty = true;
+				refresh(state);
+			}
 		}
 	};
 
 	const retire = (paneId: string, connection: BrowserConnectionInstance): void => {
-		const state = states.get(paneId);
-		if (state === undefined || state.connection !== connection) return;
+		const paneStates = states.get(paneId);
+		const state = paneStates?.get(connection);
+		if (state === undefined || paneStates === undefined) return;
 		state.ready = false;
 		state.dirty = false;
 		state.data = null;
 		state.refresh = null;
-		states.delete(paneId);
+		paneStates.delete(connection);
+		if (paneStates.size === 0) states.delete(paneId);
 	};
 
 	const dispose = (): void => {

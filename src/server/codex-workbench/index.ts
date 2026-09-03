@@ -2,9 +2,12 @@ export { createCodexWorkbenchGateway } from "./lib/gateway.js";
 export {
 	BROWSER_DELTA_MAX_BYTES,
 	BROWSER_SNAPSHOT_MAX_BYTES,
+	BROWSER_SNAPSHOT_MIN_BYTES,
+	assertBrowserSnapshotBudget,
 	assertBrowserDeltaBounded,
 	assertBrowserSnapshotBounded,
 	diffBrowserSnapshots,
+	fitBrowserSnapshotBounded,
 	projectCodexBrowserState,
 } from "./lib/projection.js";
 export { createBrowserLeaseLedger, createBrowserLeaseManager } from "./lib/lease.js";
