@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-03 18:37'
+updated_date: '2026-09-03 18:48'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -52,6 +52,11 @@ Render the complete decoded Codex 0.151.0 ThreadItem union as bounded, escaped, 
 9. Make userContent the sole user-message media renderer and change the provider-backed repeated-media assertion from four links to the two supplied links.
 10. Index runtime approval events by item identity, consume each match while walking canonical items, and append only unmatched approvals in their runtime order; add a mixed command/approval/later-item regression before changing normalization.
 11. Run only the focused timeline and assistant-ui policy owner, typecheck, targeted lint, format, and diff checks, then record evidence and commit this second remediation separately.
+
+12. Replace the timeline test's runtime cast with a static public WorkbenchTimeline import, add the root JSX typecheck option needed for that direct TS-to-TSX edge, and make valid generated user-message fixtures satisfy the generated type including text_elements. Keep casts only at deliberately invalid fallback inputs.
+13. Add one exact mixed BrowserTimeline owner containing command, matching approval, and later text with the shared authoritative itemId. Pass it through createReadonlyWorkbenchView, ReadonlyWorkbenchThreadProvider, and WorkbenchTimeline and capture the current Duplicate Codex item identity failure.
+14. At the workbench-runtime adapter, mint structured assistant message and part runtime IDs from thread, turn, Codex itemId, media kind, and occurrence. Preserve Codex itemId on the part/data metadata, keep runtime-ID collision checks, and let WorkbenchTimeline resolve the structured message ID through the same public runtime identity function.
+15. Run only the focused timeline and affected workbench-runtime owners, assistant-ui policy, root typecheck, targeted lint, format, and diff checks, then record evidence and commit separately.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -78,6 +83,14 @@ Second rereview remediation started from clean HEAD 48d4de7c8ee2860933479c10e4ef
 Second rereview remediation implemented. userContent now owns user-message media end to end; itemLinks handles only web-search and image-generation URLs. Two repeated user media inputs render exactly two safe links, while javascript media remains inert text. Approval projection now walks recovered canonical items in their original order, inserts each matching runtime approval directly after the canonical item with the same real item id, and appends only unmatched approvals in their original runtime order. Matching command and approval records retain distinct occurrence identities. Missing canonical ids cannot consume a runtime approval.
 
 Red/green evidence: the focused owner initially reported both defects in 164 ms, with command, later assistant item, approval order and four rendered links for two media inputs. After the change it proves command, approval, later assistant order in normalized data and provider-rendered markup, the shared command/approval item id with distinct structured identities, and exactly two links. Final focused timeline plus assistant-ui policy run: 22 pass, 0 fail, 355 assertions in 5.87 s. bun run type-check passed in 2.54 s. Targeted Oxlint passed. Targeted Oxfmt check passed on 11 files in 171 ms. git diff --check passed. No browser rerun was needed because the provider-backed owner exercises both changed output paths. No broad browser, system, module, repository, check, stress, or performance lane ran. Task remains In Progress for rereview.
+
+Third rereview remediation started from clean HEAD fa276cafc5232eb93941497fa14a069eaa6a0bf2 on the fixed base. The affected boundary is the workbench-runtime BrowserTimeline adapter plus the existing timeline provider owner. No duplicate check will be disabled.
+
+Third rereview remediation implemented. The timeline owner statically imports WorkbenchTimeline from its public entrypoint; root TypeScript now enables JSX for that direct TS-to-TSX typechecked edge. Complete generated ThreadItem fixtures use satisfies, function-call output matches the generated input-content array, and the hostile but valid user text part supplies text_elements: []; unchecked CodexWorkbenchItem casts remain only for deliberately unknown future variants.
+
+The exact mixed BrowserTimeline owner failed red with Duplicate Codex item identity: item-approval before the runtime change. The workbench-runtime adapter now preserves the authoritative Codex itemId as part/data metadata while assigning structured message IDs [message, threadId, turnId] and structured part IDs [part, threadId, turnId, itemId, media, occurrence]. A legal command and approval sharing one itemId therefore remain distinct runtime parts, while duplicate authoritative turn identities and any true structured runtime-ID collision still fail closed. WorkbenchTimeline resolves the provider message through the same exported message identity helper, so rendered turn metadata remains the authoritative turnId.
+
+Final focused verification: timeline, runtime projection, mounted provider, and assistant-ui policy owners passed 36 tests, 0 failures, 463 assertions in 5.87 s. The exact provider-backed owner proves command, matching approval, and later text order through createReadonlyWorkbenchView, ReadonlyWorkbenchThreadProvider, and WorkbenchTimeline; it checks the two preserved itemId values and all three exact distinct structured runtime IDs. bun run type-check passed in 2.6 s. Targeted Oxlint passed with --deny-warnings. Targeted Oxfmt check passed on 19 files in 144 ms. git diff --check passed. No broad or browser lane ran. Task remains In Progress for rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
