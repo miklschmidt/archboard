@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { act } from "react";
 
-import type { BrowserTimeline } from "../../../shared/codex-browser-model/index.js";
+import type {
+	BrowserReadiness,
+	BrowserSnapshot,
+	BrowserTimeline,
+} from "../../../shared/codex-browser-model/index.js";
+import type { BrowserWorkbenchState } from "../../workbench-transport/index.js";
 import type { WorkbenchSubmissionResult } from "../index.js";
 import {
 	connected,
@@ -102,6 +107,67 @@ describe("mounted workbench runtime provider", () => {
 				`${incompatibleReason} Update Archboard or Codex so their workbench protocol versions match.`,
 			);
 			expect(visible).not.toContain("select a current executable workhorse");
+		} finally {
+			await mounted.close();
+		}
+	});
+	test("renders every retained account and storage readiness recovery", async () => {
+		const cases = [
+			[
+				{ kind: "readiness", state: "storage_mismatch", reason: "Storage mismatch exactly." },
+				"Correct the Codex storage configuration",
+			],
+			[{ kind: "readiness", state: "login_capable" }, "Sign in to Codex"],
+			[{ kind: "readiness", state: "signed_out" }, "Sign in to Codex"],
+			[
+				{
+					kind: "readiness",
+					state: "login_pending",
+					loginId: "matrix-login" as Extract<
+						BrowserReadiness,
+						{ readonly state: "login_pending" }
+					>["loginId"],
+				},
+				"Complete or cancel the pending Codex sign-in",
+			],
+			[
+				{ kind: "readiness", state: "initialized" },
+				"Wait for Codex to finish preparing a thread-capable workhorse",
+			],
+			[
+				{ kind: "readiness", state: "account_ready" },
+				"Wait for Codex to finish preparing a thread-capable workhorse",
+			],
+			[
+				{
+					kind: "readiness",
+					state: "backoff",
+					retryAtMs: 10,
+					reason: "Readiness backoff exactly.",
+				},
+				"Wait until Codex retries",
+			],
+		] as const satisfies readonly (readonly [BrowserReadiness, string])[];
+		const transport = new MutableTransport();
+		const mounted = await mountProvider();
+		try {
+			await mounted.render(transport);
+			for (const [readiness, recovery] of cases) {
+				const value: BrowserSnapshot = { ...snapshot(), readiness };
+				const state: BrowserWorkbenchState = {
+					kind: "readiness",
+					state: readiness.state,
+					connection: "connected",
+					snapshot: value,
+					sequence: 1,
+				};
+				await act(async () => transport.publish(state));
+				const context = mounted.contexts.at(-1);
+				expect(context?.mode).toBe("readonly");
+				expect(context?.view.state).toBe(readiness.state);
+				expect(context?.assistantRuntime).toBeNull();
+				expect(mounted.container.queryByRole("status")?.textContent).toContain(recovery);
+			}
 		} finally {
 			await mounted.close();
 		}
@@ -341,5 +407,47 @@ describe("mounted workbench runtime provider", () => {
 		await Promise.resolve();
 		expect(deferredMounted.contexts).toHaveLength(rendersBeforeClose);
 		expect(deferredTransport.listeners.size).toBe(0);
+	});
+
+	test("fences every late settlement from a replaced transport", async () => {
+		const cases = [
+			{ outcome: "delivered", turnId },
+			{ outcome: "not_delivered", reason: "Late refusal" },
+			{ outcome: "outcome_unknown", reason: "Late uncertainty" },
+			new Error("Late rejection"),
+		] as const satisfies readonly (WorkbenchSubmissionResult | Error)[];
+		for (const result of cases) {
+			const first = new MutableTransport();
+			const second = new MutableTransport();
+			const mounted = await mountProvider();
+			let resolve!: (value: WorkbenchSubmissionResult) => void;
+			let reject!: (error: Error) => void;
+			const deferred = new Promise<WorkbenchSubmissionResult>((done, fail) => {
+				resolve = done;
+				reject = fail;
+			});
+			try {
+				await mounted.render(first, async () => await deferred);
+				const runtime = latestExecutable(mounted.contexts).assistantRuntime;
+				await act(async () => {
+					runtime.thread.composer.setText("submission for A");
+					runtime.thread.composer.send();
+					await Promise.resolve();
+				});
+				await mounted.render(second, async () => ({ outcome: "delivered", turnId }));
+				await act(async () => {
+					runtime.thread.composer.setText("draft for B");
+					if (result instanceof Error) reject(result);
+					else resolve(result);
+					await deferred.catch(() => undefined);
+				});
+				expect(runtime.thread.composer.getState().text).toBe("draft for B");
+				expect(mounted.container.queryByRole("status")?.textContent).toBe(
+					"The current Codex workhorse is ready.",
+				);
+			} finally {
+				await mounted.close();
+			}
+		}
 	});
 });

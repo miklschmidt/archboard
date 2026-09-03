@@ -176,12 +176,18 @@ export const CodexThreadStatusSchema = z.discriminatedUnion("type", [
 	}),
 ]) satisfies z.ZodType<CodexThreadStatus>;
 
-export const CodexThreadStatusTypeSchema = z.enum([
+export const CODEX_THREAD_STATUS_TYPES = [
 	"notLoaded",
 	"idle",
 	"systemError",
 	"active",
-] satisfies readonly CodexThreadStatus["type"][]);
+] as const satisfies readonly CodexThreadStatus["type"][];
+export type CodexThreadStatusType = (typeof CODEX_THREAD_STATUS_TYPES)[number];
+export const CodexThreadStatusTypeSchema = z.enum(CODEX_THREAD_STATUS_TYPES);
+
+export function isCodexThreadStatusType(value: unknown): value is CodexThreadStatusType {
+	return CODEX_THREAD_STATUS_TYPES.includes(value as CodexThreadStatusType);
+}
 
 export const CodexTurnStatusSchema = z.enum([
 	"completed",

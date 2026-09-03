@@ -22,6 +22,7 @@ import {
 	type DynamicRefusalReason,
 } from "./contract.js";
 import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
+import { isCodexThreadStatusType } from "../../../shared/codex-app-server-contract/index.js";
 
 const DYNAMIC_PARAMS_KEYS = Object.freeze([
 	"threadId",
@@ -529,9 +530,7 @@ function errorCode(error: unknown): DynamicRefusalReason | undefined {
 }
 
 function statusAllowed(status: DynamicStatus): boolean {
-	return (
-		status === "notLoaded" || status === "idle" || status === "systemError" || status === "active"
-	);
+	return isCodexThreadStatusType(status);
 }
 
 function stateFailure(state: DynamicEpochState): CodexDynamicToolsError | null {

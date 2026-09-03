@@ -10,6 +10,7 @@ import type {
 	SessionThread,
 	SessionThreadPageResult,
 } from "../../codex-session/index.js";
+import { CODEX_THREAD_STATUS_TYPES } from "../../../shared/codex-app-server-contract/index.js";
 import {
 	cloneAndFreeze,
 	deepEqual,
@@ -42,7 +43,7 @@ const ALLOWED_SOURCES = Object.freeze([
 	"appServer",
 ] satisfies readonly ThreadLinkAllowedSource[]);
 const ALLOWED_SOURCE_SET = new Set<string>(ALLOWED_SOURCES);
-const STATUS_VALUES = new Set<string>(["notLoaded", "idle", "systemError", "active"]);
+const STATUS_VALUES = new Set<string>(CODEX_THREAD_STATUS_TYPES);
 const NON_EXECUTABLE_STATUS_SET = new Set<string>(
 	ADDITIONAL_CONTEXT_POLICY.threadLink.nonExecutableStatuses,
 );

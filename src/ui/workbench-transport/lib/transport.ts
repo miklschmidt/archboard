@@ -5,6 +5,7 @@ import type {
 	BrowserDynamicApproval,
 	BrowserSnapshot,
 } from "../../../shared/codex-browser-model/index.js";
+import { browserSnapshotRelationshipIssues } from "../../../shared/codex-browser-model/index.js";
 import {
 	BrowserWorkbenchTransportError,
 	type BrowserCommandDraft,
@@ -480,6 +481,16 @@ export function createBrowserWorkbenchTransport(
 			...active.snapshot,
 			...message.delta,
 		}) as BrowserSnapshot;
+		const relationshipIssue = browserSnapshotRelationshipIssues(candidate)[0];
+		if (relationshipIssue !== undefined) {
+			incompatible(
+				active,
+				new BrowserWorkbenchWireError(
+					`The Codex workbench delta contradicts its snapshot at ${relationshipIssue.path.join(".")}: ${relationshipIssue.message}`,
+				),
+			);
+			return "stale";
+		}
 		if (message.sequence < active.sequence) {
 			markStale(active, message.sequence, "A stale workbench delta arrived.");
 			return "stale";

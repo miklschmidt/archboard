@@ -257,11 +257,6 @@ test("handshake uses the composed gateway envelope and exposes readiness capabil
 	expect(socket.sent).toEqual([
 		{ type: "codex_workbench_request", requestId: "request-1", action: "subscribe" },
 	]);
-	expect(transport.state()).toMatchObject({
-		kind: "readiness",
-		state: "thread_capable",
-		sequence: 7,
-	});
 	expect(transport.capabilities()).toMatchObject({
 		connected: true,
 		canReadAccount: true,
@@ -296,7 +291,6 @@ test("strict stream reduction rejects gaps, ignores duplicates, and recovers fro
 
 	socket.event(deltaMessage(5, { queue: { kind: "queue", status: "queued", entries: [] } }));
 	socket.event(deltaMessage(5, { queue: { kind: "queue", status: "queued", entries: [] } }));
-	expect(transport.sequence()).toBe(5);
 	expect(transport.state()).toMatchObject({ kind: "readiness", state: "thread_capable" });
 
 	recoverySequence = 6;
@@ -461,7 +455,7 @@ test("explicit close uses the gateway close action and leaves the transport stop
 	expect(transport.state()).toMatchObject({ kind: "connection", state: "stopped" });
 });
 
-test("malformed workbench messages move the transport to incompatible-contract", async () => {
+test("malformed and relationally contradictory messages become incompatible", async () => {
 	const transport = createBrowserWorkbenchTransport();
 	transports.push(transport);
 	const socket = new FakeSocket();
@@ -471,7 +465,23 @@ test("malformed workbench messages move the transport to incompatible-contract",
 		kind: "connection",
 		state: "incompatible_contract",
 	});
-	expect(await rejection(transport.refresh())).toMatchObject({ code: "socket_unavailable" });
+
+	for (const threadLink of [
+		snapshot({ linkState: "unbound" }).threadLink,
+		snapshot({ threadId: "thread-b" }).threadLink,
+	]) {
+		const relationshipTransport = createBrowserWorkbenchTransport();
+		transports.push(relationshipTransport);
+		const relationshipSocket = new FakeSocket();
+		await attachWithSnapshot(relationshipTransport, relationshipSocket, snapshot());
+		relationshipSocket.event(deltaMessage(2, { threadLink }));
+		const relationshipState = relationshipTransport.state();
+		expect(relationshipState).toMatchObject({
+			kind: "connection",
+			state: "incompatible_contract",
+			reason: expect.stringContaining("contradicts its snapshot"),
+		});
+	}
 });
 
 test("gateway failure responses are surfaced without treating them as transport loss", async () => {

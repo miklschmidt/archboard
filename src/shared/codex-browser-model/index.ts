@@ -1,4 +1,4 @@
-import { createBrowserSchemas, DeliveryOutcomeSchema } from "./lib/browser.js";
+import { createBrowserSchemas } from "./lib/browser.js";
 import {
 	createIdentitySchemas,
 	JsonValueSchema,
@@ -30,7 +30,7 @@ export {
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
 } from "./lib/authored.js";
 
-export { DeliveryOutcomeSchema };
+export { browserSnapshotRelationshipIssues, DeliveryOutcomeSchema } from "./lib/browser.js";
 export {
 	JsonValueSchema,
 	NonNegativeIntegerSchema,
