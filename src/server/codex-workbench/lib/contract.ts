@@ -366,6 +366,9 @@ export interface BrowserGatewayDeltaMessage {
 
 export type BrowserGatewayMessage = BrowserGatewaySnapshotMessage | BrowserGatewayDeltaMessage;
 
+/** The exact browser payload whose transport send completed successfully. */
+export type BrowserPublishedPayload = BrowserGatewayMessage | BrowserSnapshot;
+
 export interface BrowserGatewayCommandResult {
 	readonly kind: "command_result";
 	readonly commandId: BrowserCommandId | null;
@@ -402,8 +405,8 @@ export interface BrowserWorkbenchConnection {
 	readonly paneId: string;
 	readonly instance: BrowserConnectionInstance;
 	readonly snapshot: () => BrowserGatewaySnapshotMessage;
-	/** Confirm a snapshot-bearing result only after its transport send succeeds. */
-	readonly confirmPublished: (snapshot: BrowserSnapshot) => void;
+	/** Confirm this exact event or snapshot result only after its transport send succeeds. */
+	readonly confirmPublished: (payload: BrowserPublishedPayload) => void;
 	readonly claimLease: () => BrowserCommandLease;
 	readonly renewLease: () => BrowserCommandLease;
 	readonly releaseLease: () => BrowserCommandLease | null;

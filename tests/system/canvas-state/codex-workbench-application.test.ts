@@ -253,7 +253,10 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 			const instance = Object.freeze({ socket });
 			socket.on("message", (raw) => {
 				void activeOwner.handle(instance, "browser-public", JSON.parse(raw.toString()), {
-					send: (message) => socket.send(JSON.stringify(message)),
+					send: (message) =>
+						new Promise<void>((resolve, reject) =>
+							socket.send(JSON.stringify(message), (error) => (error ? reject(error) : resolve())),
+						),
 				});
 			});
 			socket.on("close", () => void activeOwner.close(instance, "browser-public"));

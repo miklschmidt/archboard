@@ -361,7 +361,10 @@ describe("Codex workbench browser command routing", () => {
 			value.setOrdinaryApproval(approval);
 			connection.snapshot();
 			const messages: unknown[] = [];
-			connection.subscribe((message) => messages.push(message));
+			connection.subscribe((message) => {
+				messages.push(message);
+				connection.confirmPublished(message);
+			});
 
 			value.setOrdinaryApproval(spontaneousTerminal(approval, terminal.state, terminal.reason));
 
@@ -404,7 +407,10 @@ describe("Codex workbench browser command routing", () => {
 		first.snapshot();
 		second.snapshot();
 		const firstMessages: unknown[] = [];
-		first.subscribe((message) => firstMessages.push(message));
+		first.subscribe((message) => {
+			firstMessages.push(message);
+			first.confirmPublished(message);
+		});
 
 		value.setOrdinaryApproval(spontaneousTerminal(approval));
 

@@ -8,11 +8,9 @@ import type {
 	DynamicApprovalOwnerView,
 	BrowserOwnerProjection,
 	BrowserReadiness,
-	BrowserSnapshot,
 	BrowserWorkbenchActions,
 	BrowserActionResult,
 	BrowserProjectionPort,
-	BrowserGatewayMessage,
 	BrowserDisconnectReason,
 	BrowserLifecyclePort,
 	CodexWorkbenchGateway,
@@ -50,6 +48,7 @@ export interface GatewayHarness {
 	readonly disconnectReasons: BrowserDisconnectReason[];
 	readonly disconnectSettled: string[];
 	readonly durableDisconnects: string[];
+	readonly publishedAcknowledgements: string[];
 	readonly durableState: () => {
 		readonly semanticBound: boolean;
 		readonly realtimeActive: boolean;
@@ -57,7 +56,7 @@ export interface GatewayHarness {
 	readonly advance: (milliseconds: number) => void;
 	readonly setReadiness: (state: BrowserReadiness["state"]) => void;
 	readonly setLink: (link: ThreadLinkSnapshot) => void;
-	readonly setOrdinaryApproval: (approval: ApprovalOwnerView | null) => void;
+	readonly setOrdinaryApproval: (approval: ApprovalOwnerView | null, notify?: boolean) => void;
 	readonly setDynamicApprovals: (approvals: readonly DynamicApprovalOwnerView[]) => void;
 	readonly emitProjectionChange: () => void;
 	readonly setActionError: (error: unknown) => void;
@@ -180,6 +179,7 @@ export function createGatewayHarness(
 	const disconnectReasons: BrowserDisconnectReason[] = [];
 	const disconnectSettled: string[] = [];
 	const durableDisconnects: string[] = [];
+	const publishedAcknowledgements: string[] = [];
 	let semanticBound = true;
 	let realtimeActive = false;
 	const projectionListeners = new Set<() => void>();
@@ -275,6 +275,7 @@ export function createGatewayHarness(
 			unpresentedTerminals: () =>
 				ordinaryApproval?.terminalDelivery === "after_publish" ? [requestId] : [],
 			acknowledgePublished: (candidates) => {
+				publishedAcknowledgements.push(...candidates);
 				if (
 					ordinaryApproval?.terminalDelivery === "after_publish" &&
 					candidates.includes(requestId)
@@ -284,7 +285,8 @@ export function createGatewayHarness(
 			onBrowserDisconnect: (context, reason) => {
 				disconnects.push("ordinary");
 				disconnectReasons.push(reason);
-				if (context.linkRevision === revision) ordinaryApproval = null;
+				if (context.linkRevision === revision && ordinaryApproval?.snapshot.state === "pending")
+					ordinaryApproval = null;
 				return settleDisconnect("ordinary", ordinaryDisconnectGate, ordinaryDisconnectError);
 			},
 		},
@@ -431,15 +433,16 @@ export function createGatewayHarness(
 		disconnectReasons,
 		disconnectSettled,
 		durableDisconnects,
+		publishedAcknowledgements,
 		durableState: () => ({ semanticBound, realtimeActive }),
 		advance: (milliseconds) => {
 			clock += milliseconds;
 		},
 		setReadiness,
 		setLink,
-		setOrdinaryApproval: (approval) => {
+		setOrdinaryApproval: (approval, notify = true) => {
 			ordinaryApproval = approval;
-			emitProjectionChange();
+			if (notify) emitProjectionChange();
 		},
 		setDynamicApprovals: (approvals) => {
 			dynamicApprovals = approvals;
@@ -486,13 +489,4 @@ export function commandTarget(lease: {
 		childId: lease.childId,
 		epoch: lease.epoch,
 	};
-}
-
-export function latestDelta(messages: readonly BrowserGatewayMessage[]) {
-	return messages.findLast((message) => message.kind === "delta");
-}
-
-export function snapshotOf(message: BrowserGatewayMessage): BrowserSnapshot {
-	if (message.kind === "snapshot") return message.snapshot;
-	throw new Error("expected a full browser snapshot");
 }

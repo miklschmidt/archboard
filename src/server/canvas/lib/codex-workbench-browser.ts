@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { WebSocket } from "ws";
 
 import type {
 	BrowserConnectionInstance,
@@ -26,7 +27,33 @@ const BrowserRequestSchema = z.discriminatedUnion("action", [
 type BrowserRequest = z.infer<typeof BrowserRequestSchema>;
 
 export interface CanvasCodexBrowserSocketSend {
-	readonly send: (message: unknown) => void;
+	readonly send: (message: unknown) => Promise<void>;
+}
+
+export interface CanvasCodexBrowserWebSocket {
+	readonly readyState: number;
+	readonly send: (data: string, callback: (error?: Error) => void) => void;
+}
+
+/** Adapt the production callback-based WebSocket into an awaitable send boundary. */
+export function createCanvasCodexBrowserSocketSend(
+	socket: CanvasCodexBrowserWebSocket,
+): CanvasCodexBrowserSocketSend {
+	return Object.freeze({
+		send: async (message: unknown): Promise<void> => {
+			if (socket.readyState !== WebSocket.OPEN)
+				throw new Error("The Codex browser WebSocket is not open.");
+			await new Promise<void>((resolve, reject) => {
+				try {
+					socket.send(JSON.stringify(message), (error) =>
+						error === undefined ? resolve() : reject(error),
+					);
+				} catch (error) {
+					reject(error);
+				}
+			});
+		},
+	});
 }
 
 export interface CanvasCodexBrowserSocketOwnerOptions {
@@ -49,7 +76,7 @@ export interface CanvasCodexBrowserSocketOwner {
 		transport: CanvasCodexBrowserSocketSend,
 	) => Promise<void>;
 	readonly close: (instance: BrowserConnectionInstance, browserId: string) => Promise<void>;
-	/** Wait for every normal-close or teardown close already owned by this generation. */
+	/** Wait for every event publication and close already owned by this generation. */
 	readonly drain: () => Promise<void>;
 	readonly dispose: () => void;
 }
@@ -58,12 +85,12 @@ function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-function sendResult(
+async function sendResult(
 	transport: CanvasCodexBrowserSocketSend,
 	request: BrowserRequest,
 	value: unknown,
-): void {
-	transport.send({
+): Promise<void> {
+	await transport.send({
 		type: "codex_workbench_result",
 		requestId: request.requestId,
 		action: request.action,
@@ -72,13 +99,13 @@ function sendResult(
 	});
 }
 
-function sendPublishedResult(
+async function sendPublishedResult(
 	transport: CanvasCodexBrowserSocketSend,
 	request: BrowserRequest,
 	connection: BrowserWorkbenchConnection,
 	value: { readonly snapshot: BrowserSnapshot },
-): void {
-	sendResult(transport, request, value);
+): Promise<void> {
+	await sendResult(transport, request, value);
 	connection.confirmPublished(value.snapshot);
 }
 
@@ -90,6 +117,7 @@ export function createCanvasCodexBrowserSocketOwner(
 	const connections = new Map<BrowserConnectionInstance, BrowserWorkbenchConnection>();
 	const closePromises = new WeakMap<BrowserConnectionInstance, Promise<void>>();
 	const activeCloses = new Set<Promise<void>>();
+	const activePublications = new Set<Promise<void>>();
 	const closeFailures: unknown[] = [];
 	let disposed = false;
 
@@ -116,12 +144,20 @@ export function createCanvasCodexBrowserSocketOwner(
 		connectionFor(instance, browserId);
 	};
 
-	const failure = (
+	const trackPublication = (publication: Promise<void>): void => {
+		activePublications.add(publication);
+		void publication.then(
+			() => activePublications.delete(publication),
+			() => activePublications.delete(publication),
+		);
+	};
+
+	const failure = async (
 		transport: CanvasCodexBrowserSocketSend,
 		requestId: string | null,
 		action: string | null,
 		error: unknown,
-	): void =>
+	): Promise<void> =>
 		transport.send({
 			type: "codex_workbench_result",
 			requestId,
@@ -138,7 +174,7 @@ export function createCanvasCodexBrowserSocketOwner(
 	): Promise<void> => {
 		const parsed = BrowserRequestSchema.safeParse(input);
 		if (!parsed.success) {
-			failure(transport, null, null, new Error("The Codex browser request is malformed."));
+			await failure(transport, null, null, new Error("The Codex browser request is malformed."));
 			return;
 		}
 		const request = parsed.data;
@@ -146,22 +182,22 @@ export function createCanvasCodexBrowserSocketOwner(
 			const connection = connectionFor(instance, browserId);
 			switch (request.action) {
 				case "connect":
-					sendPublishedResult(transport, request, connection, connection.snapshot());
+					await sendPublishedResult(transport, request, connection, connection.snapshot());
 					return;
 				case "snapshot":
-					sendPublishedResult(transport, request, connection, connection.snapshot());
+					await sendPublishedResult(transport, request, connection, connection.snapshot());
 					return;
 				case "claimLease":
-					sendResult(transport, request, connection.claimLease());
+					await sendResult(transport, request, connection.claimLease());
 					return;
 				case "renewLease":
-					sendResult(transport, request, connection.renewLease());
+					await sendResult(transport, request, connection.renewLease());
 					return;
 				case "releaseLease":
-					sendResult(transport, request, connection.releaseLease());
+					await sendResult(transport, request, connection.releaseLease());
 					return;
 				case "mediaReady":
-					sendPublishedResult(
+					await sendPublishedResult(
 						transport,
 						request,
 						connection,
@@ -169,10 +205,10 @@ export function createCanvasCodexBrowserSocketOwner(
 					);
 					return;
 				case "accountRead":
-					sendPublishedResult(transport, request, connection, await connection.accountRead());
+					await sendPublishedResult(transport, request, connection, await connection.accountRead());
 					return;
 				case "command":
-					sendPublishedResult(
+					await sendPublishedResult(
 						transport,
 						request,
 						connection,
@@ -182,19 +218,23 @@ export function createCanvasCodexBrowserSocketOwner(
 				case "subscribe": {
 					subscriptions.get(instance)?.();
 					const unsubscribe = connection.subscribe((message: BrowserGatewayMessage) => {
-						transport.send({ type: "codex_workbench_event", message });
+						const publication = (async (): Promise<void> => {
+							await transport.send({ type: "codex_workbench_event", message });
+							connection.confirmPublished(message);
+						})();
+						trackPublication(publication);
 					});
 					subscriptions.set(instance, unsubscribe);
-					sendPublishedResult(transport, request, connection, connection.snapshot());
+					await sendPublishedResult(transport, request, connection, connection.snapshot());
 					return;
 				}
 				case "close":
 					await close(instance, browserId);
-					sendResult(transport, request, null);
+					await sendResult(transport, request, null);
 					return;
 			}
 		} catch (error) {
-			failure(transport, request.requestId, request.action, error);
+			await failure(transport, request.requestId, request.action, error);
 		}
 	};
 
@@ -226,7 +266,8 @@ export function createCanvasCodexBrowserSocketOwner(
 	};
 
 	const drain = async (): Promise<void> => {
-		while (activeCloses.size > 0) await Promise.allSettled(activeCloses);
+		while (activeCloses.size > 0 || activePublications.size > 0)
+			await Promise.allSettled([...activeCloses, ...activePublications]);
 		if (closeFailures.length === 0) return;
 		const failures = closeFailures.splice(0);
 		throw new AggregateError(

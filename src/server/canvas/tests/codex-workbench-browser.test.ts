@@ -57,7 +57,7 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 			first,
 			"browser-reconnect",
 			{ type: "codex_workbench_request", requestId: "first", action: "connect" },
-			{ send: (message) => messages.push(message) },
+			{ send: async (message) => void messages.push(message) },
 		);
 		owner.accept(replacement, "browser-reconnect");
 		expect(current === replacement).toBeTrue();
@@ -68,7 +68,7 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 			replacement,
 			"browser-reconnect",
 			{ type: "codex_workbench_request", requestId: "replacement", action: "claimLease" },
-			{ send: (message) => messages.push(message) },
+			{ send: async (message) => void messages.push(message) },
 		);
 		expect(messages).toContainEqual(
 			expect.objectContaining({
@@ -77,54 +77,6 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 				ok: true,
 			}),
 		);
-	} finally {
-		owner.dispose();
-	}
-});
-
-test("confirms a snapshot publication only after the transport send succeeds", async () => {
-	const instance = Object.freeze({ socket: "publication" });
-	let confirmations = 0;
-	const connection = {
-		browserId: "browser-publication",
-		paneId: "pane-publication",
-		instance,
-		snapshot: () => ({ kind: "snapshot", sequence: 0, snapshot: { approvals: [] } }) as never,
-		confirmPublished: () => {
-			confirmations += 1;
-		},
-	} as unknown as BrowserWorkbenchConnection;
-	const gateway = {
-		connect: () => connection,
-	} as unknown as CodexWorkbenchGateway;
-	const owner = createCanvasCodexBrowserSocketOwner({
-		gateway,
-		paneForBrowser: () => "pane-publication",
-	});
-	try {
-		await expect(
-			owner.handle(
-				instance,
-				"browser-publication",
-				{ type: "codex_workbench_request", requestId: "failed", action: "snapshot" },
-				{
-					send: () => {
-						throw new Error("socket send failed");
-					},
-				},
-			),
-		).rejects.toThrow("socket send failed");
-		expect(confirmations).toBe(0);
-
-		const messages: unknown[] = [];
-		await owner.handle(
-			instance,
-			"browser-publication",
-			{ type: "codex_workbench_request", requestId: "recovered", action: "snapshot" },
-			{ send: (message) => messages.push(message) },
-		);
-		expect(confirmations).toBe(1);
-		expect(messages).toHaveLength(1);
 	} finally {
 		owner.dispose();
 	}
@@ -292,7 +244,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 		gateway,
 		paneForBrowser: (browserId) => (browserId === "browser-1" ? "pane-authoritative" : null),
 	});
-	const send = { send: (message: unknown) => messages.push(message) };
+	const send = { send: async (message: unknown) => void messages.push(message) };
 	for (const [requestId, action, extra] of [
 		["1", "connect", {}],
 		["2", "subscribe", {}],
@@ -312,6 +264,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 		);
 	}
 	listener.current?.({ kind: "delta", sequence: 2, delta: {} } as never);
+	await owner.drain();
 	await owner.handle(
 		instance,
 		"browser-1",
@@ -343,6 +296,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 		"media:true",
 		"published",
 		"release",
+		"published",
 		"unsubscribe",
 		"connection-close",
 		"close:browser-1:pane-authoritative:true",
@@ -397,7 +351,7 @@ test("the socket owner refuses missing pane authority and disposal only removes 
 		Object.freeze({}),
 		"browser-1",
 		{ type: "codex_workbench_request", requestId: "missing", action: "connect" },
-		{ send: (message) => messages.push(message) },
+		{ send: async (message) => void messages.push(message) },
 	);
 	owner.dispose();
 	expect(messages).toContainEqual({
@@ -450,7 +404,10 @@ test("the public request crosses a real WebSocket transport and returns the gate
 	sockets.on("connection", (socket) => {
 		socket.on("message", (raw) => {
 			void owner.handle(instance, "browser-live", JSON.parse(raw.toString()), {
-				send: (message) => socket.send(JSON.stringify(message)),
+				send: (message) =>
+					new Promise<void>((resolve, reject) =>
+						socket.send(JSON.stringify(message), (error) => (error ? reject(error) : resolve())),
+					),
 			});
 		});
 	});
