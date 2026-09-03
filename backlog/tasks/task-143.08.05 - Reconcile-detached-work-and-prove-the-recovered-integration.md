@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 14:14'
+updated_date: '2026-09-03 14:18'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -245,6 +245,10 @@ Independent-review remediation at fixed base c2d86ef92b5c902bcf459ce801e75e0dcf7
 - board-io uses one copyHeldContent helper for both resolved and direct held-board reads.
 - TEST_CLI_WORKFLOW_CASE_TIMEOUT_MS and workflowTest were removed; all three subprocess workflow owners again use ordinary test().
 Focused validation only, per remediation policy: BoardDialog 1/1; board-write observers 4/4 (45 expectations); package read-only 12/12 (258 expectations, including capture failure); held-board recovery 8/8 (76 expectations); CLI workflows 4/4 (95 expectations); exact fsync parser browser-adapter case exit 0; module boundaries 7/7 (66 expectations); lock-source policy 1/1 (4 expectations). Focused Oxfmt check and Oxlint over all 12 touched source/test files passed. No complete check, typecheck, complete system lane, or complete browser lane was run.
+
+User-directed anti-over-testing remediation: deleted the complete 80-iteration owner "repeats the real sentinel lifecycle beyond the prior 67-timer failure" and its repeatedLifecycleCount constant. The loop spent about 11.23 seconds and roughly 160 child launches proving a historical Bun/runtime stress threshold, not an Archboard product contract. Existing single-lifecycle and focused timeout, drain, sentinel, delayed-startup, signal, identity, and cleanup owners remain unchanged. Expected complete system-lane saving is approximately 11 seconds; no replacement stress coverage was added.
+
+Focused post-deletion validation: bun test tests/system/board-inspection/package-read-only.test.ts passed 11/11 with 98 expectations in 9.97 seconds (command wall time 9.83 seconds). Exact-file Oxfmt check and Oxlint passed. Compared with the prior 21.22-second focused run, removal saved about 11.4 seconds while retaining every direct product success, failure, identity, signal, and cleanup owner.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

@@ -23,7 +23,6 @@ import {
 	runReadOnlyPackageProcess,
 } from "./support/package-process.js";
 
-const repeatedLifecycleCount = 80;
 const signalOwnerEntry = fileURLToPath(
 	new URL("./fixtures/package-signal-owner.ts", import.meta.url),
 );
@@ -273,28 +272,6 @@ test("stale package identities never signal a live process group", async () => {
 		await owner.dispose();
 	}
 });
-
-test(
-	"repeats the real sentinel lifecycle beyond the prior 67-timer failure",
-	async () => {
-		for (let iteration = 0; iteration < repeatedLifecycleCount; iteration += 1) {
-			const owner = createPackageInspectionOwner();
-			try {
-				owner.startVault();
-				const sentinel = await owner.startHttpSentinel();
-				owner.writeBoard("clean", cleanScene());
-				const result = await owner.runInspection("clean", ["--strict"], {
-					EXPRESS_SERVER_URL: sentinel.url,
-				});
-				expect(result.status).toBe(0);
-				expect(sentinel.contacts()).toBe("");
-			} finally {
-				await owner.dispose();
-			}
-		}
-	},
-	TEST_BOARD_INSPECTION_PACKAGE_LIFECYCLE_CASE_TIMEOUT_MS,
-);
 
 test(
 	"repeated parent SIGTERM joins cleanup and reaps every owner before replay",
