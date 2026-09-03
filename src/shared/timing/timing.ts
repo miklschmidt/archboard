@@ -256,6 +256,13 @@ export const TEST_GIT_FIXTURE_START_MS = GIT_COMMAND_TIMEOUT_MS;
 export const TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS = 2 * GIT_COMMAND_TIMEOUT_MS;
 
 /**
+ * Poll cadence for the delayed-checkout fixture's explicit release files.
+ * The files, not elapsed time, gate each Git probe; a short cadence keeps the
+ * four-stage concurrency owner well inside Bun's ordinary case bound.
+ */
+export const TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS = 25;
+
+/**
  * Outer grace before an interrupted CLI restores the signal's default action.
  * Git may spend one cleanup grace terminating and cancelling its leader and
  * pipes, then another proving the detached group is absent. A third grace is

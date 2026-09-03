@@ -3,6 +3,8 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS } from "../../../../src/shared/timing/timing.ts";
+
 export async function waitForRecordedPid(file: string): Promise<number> {
 	const [pid] = await waitForRecordedPids(file, 1);
 	if (pid === undefined) throw new Error("Delayed Git process did not start.");
@@ -88,7 +90,7 @@ export function createDelayedCheckoutOwner(name: string, checkoutCount = 1) {
 case "$*" in
   *rev-parse*|*remote\\ get-url*)
     echo "$$ $*" >> "${pids}"
-    while [ ! -e "${release}" ] && [ ! -e "${release}.$$" ]; do sleep 1; done
+    while [ ! -e "${release}" ] && [ ! -e "${release}.$$" ]; do sleep ${TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS / 1_000}; done
     exec ${JSON.stringify(realGit)} "$@"
     ;;
   *) exec ${JSON.stringify(realGit)} "$@" ;;
