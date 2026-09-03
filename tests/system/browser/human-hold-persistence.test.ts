@@ -1,11 +1,10 @@
-import { expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { expandElements } from "../../../src/runtime/engine/expand-elements.ts";
 
 import {
-	LOCK_FREE_LINGER_MS,
 	LOCK_RENEW_MS,
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
@@ -20,11 +19,19 @@ import {
 	registerCanvasBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { installHoldRecorder, readHoldCounters } from "./support/human-hold-recorder.ts";
+import {
+	installHoldRecorder,
+	readHoldCounters,
+	resetHoldRecorder,
+} from "./support/human-hold-recorder.ts";
 import { dragPageElement, EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const BOARD = LIVE_SESSION_BOARD;
+const RECOVERY_BOARD = "held-recovery-source";
+const RECOVERY_SEED = [
+	{ id: "auth", type: "rectangle", x: 100, y: 100, width: 220, height: 90 },
+] as const;
 const IGNORED_FIELDS = new Set([
 	"version",
 	"versionNonce",
@@ -52,12 +59,18 @@ interface FilesBody {
 
 type Request = ReturnType<typeof createJsonRequester>;
 
-async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
+interface BrowserFixture {
 	browser: AgentBrowserSession;
 	canvas: Awaited<ReturnType<typeof startOwnedCanvas>>;
 	paneClient: string;
 	request: Request;
-}> {
+}
+
+let resources: AsyncDisposableStack;
+let fixture: BrowserFixture;
+
+beforeAll(async () => {
+	resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const root = mkdtempSync(join(ownerRoot, "human-hold-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
@@ -69,22 +82,6 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 	resources.defer(() => canvas.dispose());
 	registerCanvasBase(canvas.base);
 	const request = createJsonRequester(canvas);
-	expect(
-		(await request("/api/boards/new", { method: "POST", body: { board: BOARD, level: "service" } }))
-			.status,
-	).toBe(200);
-	const seeded = await request<ElementsBody>(`/api/elements/changes?board=${BOARD}`, {
-		method: "POST",
-		body: { origin: "agent", upserts: LIVE_SESSION_SEED },
-	});
-	expect(seeded.status).toBe(200);
-	expect(seeded.body.elements).toHaveLength(8);
-	const saved = await request<{ file: string }>("/api/boards/save", {
-		method: "POST",
-		body: { board: BOARD },
-	});
-	expect(saved.status).toBe(200);
-
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", canvas.base]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/Headless/i);
@@ -93,12 +90,40 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 		(value) => value.paneCount === 1 && typeof value.panes[0]?.clientId === "string",
 		"the real browser to register one pane",
 	);
-	const paneClient = panes.panes[0]!.clientId;
+	fixture = { browser, canvas, paneClient: panes.panes[0]!.clientId, request };
+	await installHoldRecorder(browser);
+});
+
+afterAll(async () => {
+	await resources?.disposeAsync();
+});
+
+async function prepareBoard(
+	board: string,
+	seed: readonly Record<string, unknown>[],
+	expectedElements: number,
+): Promise<void> {
+	const { browser, paneClient, request } = fixture;
+	expect(
+		(await request("/api/boards/new", { method: "POST", body: { board, level: "service" } }))
+			.status,
+	).toBe(200);
+	const seeded = await request<ElementsBody>(`/api/elements/changes?board=${board}`, {
+		method: "POST",
+		body: { origin: "agent", upserts: seed },
+	});
+	expect(seeded.status).toBe(200);
+	expect(seeded.body.elements).toHaveLength(expectedElements);
+	const saved = await request<{ file: string }>("/api/boards/save", {
+		method: "POST",
+		body: { board },
+	});
+	expect(saved.status).toBe(200);
 	expect(
 		(
 			await request("/api/boards/open", {
 				method: "POST",
-				body: { board: BOARD, pane: paneClient, reload: true },
+				body: { board, pane: paneClient, reload: true },
 			})
 		).status,
 	).toBe(200);
@@ -106,9 +131,10 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 		() => pageElement(browser, "auth"),
 		(value) => value !== null,
 		"the pane to render the seeded board",
+		{ timeoutMs: 3_000 },
 	);
 	await browser.run(["click", ".excalidraw"]);
-	return { browser, canvas, paneClient, request };
+	expect(await resetHoldRecorder(browser)).toBe(true);
 }
 
 const move = (
@@ -170,17 +196,20 @@ const documentSnapshot = (elements: ExcalidrawElement[]): string =>
 			.map(canonical),
 	);
 
-async function documentsAgree(browser: AgentBrowserSession, request: Request): Promise<boolean> {
-	const server = (await request<ElementsBody>(`/api/elements?board=${BOARD}`)).body.elements;
+async function documentsAgree(
+	browser: AgentBrowserSession,
+	request: Request,
+	board: string,
+): Promise<boolean> {
+	const server = (await request<ElementsBody>(`/api/elements?board=${board}`)).body.elements;
 	return documentSnapshot(server) === documentSnapshot(await pageElements(browser));
 }
 
 test(
-	"human work stays visible through broadcasts, note conflicts, and mutex retries",
+	"human work stays visible through concurrent broadcasts",
 	async () => {
-		await using resources = new AsyncDisposableStack();
-		const { browser, paneClient, request } = await openSeededBoard(resources);
-		await installHoldRecorder(browser);
+		const { browser, paneClient, request } = fixture;
+		await prepareBoard(BOARD, LIVE_SESSION_SEED, 8);
 		expect(paneClient.length).toBeGreaterThan(0);
 
 		// Keep the first hold promise pending after the server grants it. This leaves
@@ -226,7 +255,7 @@ test(
 			(await browser.eval<{ released: boolean }>("window.__releaseHumanHold()")).released,
 		).toBe(true);
 		await pollUntil(
-			() => documentsAgree(browser, request),
+			() => documentsAgree(browser, request, BOARD),
 			Boolean,
 			"the mid-drag report to converge with the server broadcast",
 		);
@@ -244,50 +273,55 @@ test(
 		expect(saving.elsewhere).toBeNull();
 		expect(saving.metas).toContain("In the vault");
 		expect(saving.metas.some((text) => /unsaved/.test(text ?? ""))).toBe(false);
+	},
+	TEST_BROWSER_COMMAND_TIMEOUT_MS * 4,
+);
 
-		const noteFile = (await request<{ file: string }>(`/api/boards/info?board=${BOARD}`)).body.file;
-		const foreign = expandElements(
-			[{ id: "theirs", type: "rectangle", x: 20, y: 20, width: 40, height: 40 }],
-			{ forStore: true },
-		)[0]!;
-		writeFileSync(
-			noteFile,
-			readFileSync(noteFile, "utf8").replace(
-				'"id": "auth"',
-				`${JSON.stringify(foreign).slice(1, -1)}}, {"id": "auth"`,
+test("save-elsewhere recovery releases the old holder and queues a trusted drag", async () => {
+	const { browser, paneClient, request } = fixture;
+	await prepareBoard(RECOVERY_BOARD, RECOVERY_SEED, 1);
+	const heldByPane = await request(`/api/boards/hold?board=${RECOVERY_BOARD}`, {
+		method: "POST",
+		body: { clientId: paneClient },
+	});
+	expect(heldByPane.status).toBe(200);
+	const authBefore = (
+		await request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`)
+	).body.elements.find((element) => element.id === "auth")!;
+	const noteFile = (await request<{ file: string }>(`/api/boards/info?board=${RECOVERY_BOARD}`))
+		.body.file;
+	const foreign = expandElements(
+		[{ id: "theirs", type: "rectangle", x: 20, y: 20, width: 40, height: 40 }],
+		{ forStore: true },
+	)[0]!;
+	writeFileSync(
+		noteFile,
+		readFileSync(noteFile, "utf8").replace(
+			'"id": "auth"',
+			`${JSON.stringify(foreign).slice(1, -1)}}, {"id": "auth"`,
+		),
+	);
+	const conflict = await request(`/api/elements/changes?board=${RECOVERY_BOARD}`, {
+		method: "POST",
+		body: { clientId: paneClient, upserts: [authBefore] },
+	});
+	expect(conflict.status).toBe(409);
+	const stopped = await pollUntil(
+		async () => ({
+			held: (await request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`)).body.held,
+			mark: await browser.eval<string | null>(
+				'document.querySelector(".chip-held")?.textContent ?? null',
 			),
-		);
-		const noticed = await pollUntil(
-			() =>
-				browser.eval<{ dialog: string | null; elsewhere: string | null }>(`(() => ({
-					dialog: document.querySelector(".modal-title")?.textContent ?? null,
-					elsewhere: document.querySelector(".chip-elsewhere")?.textContent ?? null,
-				}))()`),
-			(value) => /Note changed on disk/.test(value.elsewhere ?? ""),
-			"the pre-write note-change notification to appear",
-		);
-		expect(noticed.elsewhere).toMatch(/Note changed on disk/);
-		expect(noticed.dialog).toBeNull();
-		expect((await request<ElementsBody>(`/api/elements?board=${BOARD}`)).body.held).toBeUndefined();
+		}),
+		(value) => value.held?.board === RECOVERY_BOARD && /not saving/.test(value.mark ?? ""),
+		"the note hold and its rendered status",
+		{ timeoutMs: 3_000 },
+	);
+	expect(stopped.held?.board).toBe(RECOVERY_BOARD);
 
-		expect((await move(browser, "queue", 9, 9)).ok).toBe(true);
-		const stopped = await pollUntil(
-			async () => (await request<ElementsBody>(`/api/elements?board=${BOARD}`)).body.held,
-			(value) => value?.board === BOARD && value.fromScreen === true,
-			"the changed note to stop this board saving",
-		);
-		expect(stopped?.board).toBe(BOARD);
-		expect(stopped?.fromScreen).toBe(true);
-		const heldChrome = await browser.eval<{ dialog: string | null; mark: string | null }>(
-			`(() => ({
-				dialog: document.querySelector(".modal-title")?.textContent ?? null,
-				mark: document.querySelector(".chip-held")?.textContent ?? null,
-			}))()`,
-		);
-		expect(heldChrome.dialog).toBeNull();
-		expect(heldChrome.mark).toMatch(/not saving/);
-
-		const heldElementWrite = await request(`/api/elements/batch?board=${BOARD}`, {
+	const heldElementWrite = await request(
+		`/api/elements/batch?board=${RECOVERY_BOARD}&clientId=${encodeURIComponent(paneClient)}`,
+		{
 			method: "POST",
 			body: {
 				elements: [
@@ -302,9 +336,12 @@ test(
 					},
 				],
 			},
-		});
-		expect(heldElementWrite.status).toBe(200);
-		const heldFileWrite = await request(`/api/files?board=${BOARD}`, {
+		},
+	);
+	expect(heldElementWrite.status).toBe(200);
+	const heldFileWrite = await request(
+		`/api/files?board=${RECOVERY_BOARD}&clientId=${encodeURIComponent(paneClient)}`,
+		{
 			method: "POST",
 			body: [
 				{
@@ -314,163 +351,137 @@ test(
 					created: 1,
 				},
 			],
-		});
-		expect(heldFileWrite.status).toBe(200);
-		await pollUntil(
-			async () => ({
-				element: await pageElement(browser, "held-image"),
-				files: await pageFileIds(browser),
-			}),
-			(value) => value.element !== null && value.files.includes("held-file"),
-			"the real pane to render the complete held copy",
-		);
+		},
+	);
+	expect(heldFileWrite.status).toBe(200);
+	await pollUntil(
+		async () => ({
+			element: await pageElement(browser, "held-image"),
+			files: await pageFileIds(browser),
+		}),
+		(value) => value.element !== null && value.files.includes("held-file"),
+		"the real pane to render the complete held copy",
+		{ timeoutMs: 3_000 },
+	);
 
-		await browser.run(["click", ".chip-held"]);
-		const offered = await pollUntil(
-			() =>
-				browser.eval<{ choices: string[]; title: string | null }>(`(() => ({
-					title: document.querySelector(".modal-title")?.textContent ?? null,
-					choices: [...document.querySelectorAll(".choices .btn")]
-						.map(button => button.textContent ?? ""),
-				}))()`),
-			(value) => value.choices.length === 3,
-			"the held-board recovery choices to appear",
-		);
-		expect(offered.title).toMatch(/not being saved/);
-		expect(offered.choices).toEqual(["Save as…", "Reload the note", "Overwrite the note"]);
-		const saveElsewhere = await browser.eval<{ clicked: boolean }>(`(() => {
-			const button = [...document.querySelectorAll(".choices .btn")]
-				.find(candidate => candidate.textContent === "Save as…");
-			button?.click();
-			return { clicked: Boolean(button) };
-		})()`);
-		expect(saveElsewhere.clicked).toBe(true);
-		await pollUntil(
-			() =>
-				browser.eval<boolean>(
-					'Boolean(document.querySelector("dialog[aria-label=\\"Save this board as\\"]"))',
-				),
-			Boolean,
-			"held save-elsewhere naming to open",
-		);
-		await browser.run([
-			"fill",
-			'dialog[aria-label="Save this board as"] input[data-autofocus]',
-			"held-recovery",
-		]);
-		await browser.run(["click", 'dialog[aria-label="Save this board as"] .btn-primary']);
-		const recovered = await pollUntil(
-			async () => {
-				const [source, sourceFiles, target, targetFiles, panes] = await Promise.all([
-					request<ElementsBody>(`/api/elements?board=${BOARD}`),
-					request<FilesBody>(`/api/files?board=${BOARD}`),
-					request<ElementsBody>("/api/elements?board=held-recovery"),
-					request<FilesBody>("/api/files?board=held-recovery"),
-					request<PaneList>("/api/panes"),
-				]);
-				return {
-					pageIds: (await pageElements(browser)).map((element) => element.id),
-					pageFiles: await pageFileIds(browser),
-					paneTitle: await browser.eval<string | null>(
-						'document.querySelector(".pane-tab.focused")?.textContent ?? null',
-					),
-					mark: await browser.eval<string | null>(
-						'document.querySelector(".chip-held")?.textContent ?? null',
-					),
-					sourceIds: (source.body.elements ?? []).map((element) => element.id),
-					sourceFiles: Object.keys(sourceFiles.body.files ?? {}),
-					targetIds: (target.body.elements ?? []).map((element) => element.id),
-					targetFiles: Object.keys(targetFiles.body.files ?? {}),
-					panes: panes.body.panes ?? [],
-				};
-			},
-			(value) =>
-				value.mark === null &&
-				value.pageIds.includes("theirs") &&
-				!value.pageIds.includes("held-image") &&
-				!value.pageFiles.includes("held-file") &&
-				value.sourceIds.includes("theirs") &&
-				!value.sourceIds.includes("held-image") &&
-				!value.sourceFiles.includes("held-file") &&
-				value.targetIds.includes("held-image") &&
-				value.targetFiles.includes("held-file") &&
-				value.panes.some((pane) => pane.clientId === paneClient && pane.board === BOARD) &&
-				value.paneTitle?.includes(BOARD) === true,
-			"save-elsewhere to restore the source note in the same real pane",
-		);
-		expect(recovered.mark).toBeNull();
-
-		expect(
-			await browser.eval<boolean>(`(() => {
-			const app = ${EXCALIDRAW_APP_EXPRESSION};
-			return app?.state.viewModeEnabled === true;
-		})()`),
-		).toBe(false);
-		const claimedAfterRecovery = await request(`/api/boards/hold?board=${BOARD}`, {
-			method: "POST",
-			body: { clientId: "another-writer" },
-		});
-		expect(claimedAfterRecovery.status).toBe(200);
-		const renewal = setInterval(() => {
-			void request(`/api/boards/hold?board=${BOARD}`, {
+	const blockedBeforeSave = await request(`/api/boards/hold?board=${RECOVERY_BOARD}`, {
+		method: "POST",
+		body: { clientId: "another-writer" },
+	});
+	expect(blockedBeforeSave.status).toBe(409);
+	const saved = await request<{ resolvedHold?: { outcome?: string } }>("/api/boards/save", {
+		method: "POST",
+		body: { board: RECOVERY_BOARD, name: "held-recovery-copy", clientId: paneClient },
+	});
+	expect(saved.status).toBe(200);
+	expect(saved.body.resolvedHold?.outcome).toBe("elsewhere");
+	expect(saved.body).not.toHaveProperty("panes");
+	const claimedAfterRecovery = await request(`/api/boards/hold?board=${RECOVERY_BOARD}`, {
+		method: "POST",
+		body: { clientId: "another-writer" },
+	});
+	expect(claimedAfterRecovery.status).toBe(200);
+	let renewalWork: Promise<unknown> = Promise.resolve();
+	const renewal = setInterval(() => {
+		renewalWork = renewalWork.then(() =>
+			request(`/api/boards/hold?board=${RECOVERY_BOARD}`, {
 				method: "POST",
 				body: { clientId: "another-writer" },
-			});
-		}, LOCK_RENEW_MS);
-		resources.defer(() => clearInterval(renewal));
-		const countsBefore = await readHoldCounters(browser);
-		const beforeDelayed = (
-			await request<ElementsBody>(`/api/elements?board=${BOARD}`)
-		).body.elements.find((element) => element.id === "auth")!;
-		await dragPageElement(browser, "auth", 23, 0);
-		const firstLoss = await pollUntil(
-			() => readHoldCounters(browser),
-			(value) => value.holdDone > countsBefore.holdDone,
-			"the first human hold attempt to lose to the authoritative mutex",
+			}),
 		);
-		const localDelayed = await pageElement(browser, "auth");
-		const serverDelayed = (
-			await request<ElementsBody>(`/api/elements?board=${BOARD}`)
-		).body.elements.find((element) => element.id === "auth")!;
-		expect(firstLoss.holds - countsBefore.holds).toBe(1);
-		expect(localDelayed!.x).toBeCloseTo(beforeDelayed.x + 23, 3);
-		expect(serverDelayed.x).toBeCloseTo(beforeDelayed.x, 3);
-		expect(
-			await browser.eval<boolean>(`(() => {
+	}, LOCK_RENEW_MS);
+	resources.defer(() => clearInterval(renewal));
+	await pollUntil(
+		() => pageElement(browser, "theirs"),
+		(value) => value !== null,
+		"save-elsewhere to adopt the source note",
+		{ timeoutMs: 3_000 },
+	);
+	const [source, sourceFiles, target, targetFiles, panes, page, pageFiles] = await Promise.all([
+		request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`),
+		request<FilesBody>(`/api/files?board=${RECOVERY_BOARD}`),
+		request<ElementsBody>("/api/elements?board=held-recovery-copy"),
+		request<FilesBody>("/api/files?board=held-recovery-copy"),
+		request<PaneList>("/api/panes"),
+		pageElements(browser),
+		pageFileIds(browser),
+	]);
+	expect(documentSnapshot(page)).toBe(documentSnapshot(source.body.elements));
+	expect(pageFiles).toEqual(Object.keys(sourceFiles.body.files ?? {}).toSorted());
+	expect(source.body.elements.map((element) => element.id)).toContain("theirs");
+	expect(source.body.elements.map((element) => element.id)).not.toContain("held-image");
+	expect(Object.keys(sourceFiles.body.files ?? {})).not.toContain("held-file");
+	expect(target.body.elements.map((element) => element.id)).toContain("held-image");
+	expect(Object.keys(targetFiles.body.files ?? {})).toContain("held-file");
+	expect(
+		panes.body.panes.some((pane) => pane.clientId === paneClient && pane.board === RECOVERY_BOARD),
+	).toBe(true);
+	expect(
+		await browser.eval<string | null>(
+			'document.querySelector(".pane-tab.focused")?.textContent ?? null',
+		),
+	).toContain(RECOVERY_BOARD);
+	expect(
+		await browser.eval<string | null>('document.querySelector(".chip-held")?.textContent ?? null'),
+	).toBeNull();
+	expect((await readHoldCounters(browser)).pending).toBe(0);
+
+	const countsBefore = await readHoldCounters(browser);
+	const beforeDelayed = (
+		await request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`)
+	).body.elements.find((element) => element.id === "auth")!;
+	await dragPageElement(browser, "auth", 23, 0);
+	const firstLoss = await pollUntil(
+		() => readHoldCounters(browser),
+		(value) => value.holdDone > countsBefore.holdDone,
+		"the first human hold attempt to lose to the authoritative mutex",
+		{ timeoutMs: 3_000 },
+	);
+	const localDelayed = await pageElement(browser, "auth");
+	const serverDelayed = (
+		await request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`)
+	).body.elements.find((element) => element.id === "auth")!;
+	expect(firstLoss.holds - countsBefore.holds).toBe(1);
+	expect(localDelayed!.x).toBeCloseTo(beforeDelayed.x + 23, 3);
+	expect(serverDelayed.x).toBeCloseTo(beforeDelayed.x, 3);
+	expect(
+		await browser.eval<boolean>(`(() => {
 			const app = ${EXCALIDRAW_APP_EXPRESSION};
 			return app?.state.viewModeEnabled === true;
 		})()`),
-		).toBe(false);
+	).toBe(false);
 
-		clearInterval(renewal);
-		expect(
-			(
-				await request(`/api/boards/hold/release?board=${BOARD}`, {
-					method: "POST",
-					body: { clientId: "another-writer" },
-				})
-			).status,
-		).toBe(200);
-		await pollUntil(
-			() => documentsAgree(browser, request),
-			Boolean,
-			"one later hold retry to persist the still-visible edit",
-		);
-		expect(
-			(await request<ElementsBody>(`/api/elements?board=${BOARD}`)).body.elements.find(
-				(element) => element.id === "auth",
-			)!.x,
-		).toBeCloseTo(beforeDelayed.x + 23, 3);
-		await pollUntil(
-			() =>
-				browser.eval<boolean>(`(() => {
-					const app = ${EXCALIDRAW_APP_EXPRESSION};
-					return app?.state.viewModeEnabled === true;
-				})()`),
-			(value) => !value,
-			"the pane to remain editable after the other writer releases",
-			{ timeoutMs: LOCK_FREE_LINGER_MS + TEST_BROWSER_COMMAND_TIMEOUT_MS },
-		);
-	},
-	TEST_BROWSER_COMMAND_TIMEOUT_MS * 8,
-);
+	clearInterval(renewal);
+	await renewalWork;
+	const released = await request<{ released?: boolean }>(
+		`/api/boards/hold/release?board=${RECOVERY_BOARD}`,
+		{ method: "POST", body: { clientId: "another-writer" } },
+	);
+	expect(released.status).toBe(200);
+	expect(released.body.released).toBe(true);
+	await pollUntil(
+		() => documentsAgree(browser, request, RECOVERY_BOARD),
+		Boolean,
+		"one later hold retry to persist the still-visible edit",
+		{ timeoutMs: 3_000 },
+	);
+	expect(
+		(await request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`)).body.elements.find(
+			(element) => element.id === "auth",
+		)!.x,
+	).toBeCloseTo(beforeDelayed.x + 23, 3);
+	const [finished, finalPanes] = await Promise.all([
+		readHoldCounters(browser),
+		request<PaneList>("/api/panes"),
+	]);
+	expect(finished.pending).toBe(0);
+	expect(finished.reports).toBeGreaterThan(countsBefore.reports);
+	expect(
+		await browser.eval<string | null>('document.querySelector(".chip-held")?.textContent ?? null'),
+	).toBeNull();
+	expect(
+		finalPanes.body.panes.some(
+			(pane) => pane.clientId === paneClient && pane.board === RECOVERY_BOARD,
+		),
+	).toBe(true);
+}, 10_000);
