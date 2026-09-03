@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - "@codex"
 created_date: "2026-09-02 01:57"
-updated_date: "2026-09-03 04:08"
+updated_date: "2026-09-03 04:16"
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -60,6 +60,8 @@ Resolve the remaining implementation uncertainty under ADR 0020: whether the pin
 11. Replace vendor-only proof input with the canonical Archboard board-read/render ingress and in-memory Mermaid inbound conversion seam; validate the block-id contract and final converted element shape without writing a note.
 12. Audit every helper process, dependency preflight, malformed-input and renderer-death probe under the same 20-second limit plus five-second TERM/KILL cleanup, reporting phase and owned resources on success or failure.
 
+13. Capture a guarded candidate identity immediately after Chromium spawn, exercise failure before and during final group capture, and make the partial-cleanup audit fail closed until raw group absence is proved.
+
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -85,4 +87,10 @@ The timeout oracle now requires the causal `CdpTimeoutError` for `Runtime.evalua
 Chromium cleanup now captures the dedicated process-group identity at spawn, confirms absence with `kill(-pgid, 0)`, and uses the repository guard to refuse a reused or unproven group. It sends TERM and then KILL while the group remains live even if the leader exited. Cleanup reports `groupAbsent`, leader settlement, stdout/stderr and combined pipe settlement, profile removal, and port rebindability. The after-spawn injection, normal timeout session, child-exit session, and replacement session all require these facts to be clean.
 
 Validation: one final cgroup-contained Chromium probe passed in 27.9 s. It recorded a 20,005.24 ms `Runtime.evaluate` timeout at the named phase, plus a 2.01 ms same-phase immediate failure rejected for `cause` alone. Injected after-spawn, primary, child-exit, and replacement audits all reported group absent, leader and pipes settled, profile removed, and port released. Focused `oxfmt`, `oxlint`, and `git diff --check` passed. Emulation was not rerun. ACs remain unchecked and the task remains In Progress for parent rereview.
+
+2026-09-03 post-spawn capture remediation: `RendererSession` now records the Chromium child PID, expected dedicated group, and `/proc` start-time identity synchronously after `Bun.spawn`, then attaches stdout/stderr before any awaited group capture. Final capture must match that candidate before cleanup signals the group. If no candidate exists or it cannot be matched, cleanup records `processGroupProven: false`, `groupAbsent: false`, and a non-clean audit.
+
+New deterministic renderer acquisition seams cover `after-spawn-before-group-capture`, immediate group-capture failure, and a bounded group-capture timeout. Each post-spawn case must report a proved group, raw absence, leader and both pipe settlements, removed profile, and released port. The partial-acquisition phase runs before rendering in the standalone proof.
+
+Validation: one cgroup-contained Chromium proof passed in 30.0 s. The three new seams all had matching candidate IDs and clean group/pipe/profile/port audits. The retained positive timeout measured 20,002.99 ms for `Runtime.evaluate` at the named phase; primary, child-exit, and replacement cleanup remained clean. Focused `oxfmt`, `oxlint`, and `git diff --check` pass. Emulation was not rerun. ACs remain unchecked and the task remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->

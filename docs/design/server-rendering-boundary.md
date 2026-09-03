@@ -57,21 +57,25 @@ The Chromium command is run twice for repeatability. One command starts one
 Chromium/profile and runs three serial normal jobs. It also exercises missing
 image, malformed Mermaid, timeout, child-exit, cleanup, and replacement paths.
 Before its normal session, injectable failures cover profile creation, reserved
-port, spawned Chromium, Vite creation, and Vite listen. Each reports the
-captured process group, its absence confirmed with the group probe, leader and
-pipe settlement, profile removal, port rebindability, server state, and watcher
-path count after cleanup.
+port, failure between Chromium spawn and group capture, capture failure,
+capture timeout, spawned Chromium, Vite creation, and Vite listen. Chromium
+records the spawned leader PID and `/proc` start time before it awaits final
+group capture. Each audit reports that candidate, whether the group proof
+matched it, raw group absence, leader and pipe settlement, profile removal,
+port rebindability, server state, and watcher path count after cleanup.
 
 The per-job allowance is 20 seconds. The timeout oracle accepts only the
 `Runtime.evaluate` 20,000 ms timeout cause at 19,800–21,000 ms elapsed; a
 deliberate immediate evaluation error stages the same `intentional-timeout`
 job and fixture phase, then must be rejected solely because it has a different
 cause. Process cleanup confirms absence with `kill(-pgid, 0)`, using the
-captured leader identity to refuse a reused group. It sends TERM, then KILL if
-the group remains live, even after the leader exits. The same five-second
-allowance also bounds leader and stdout/stderr pipe settlement. Every failure
-includes the current fixture phase, page console/exception/network diagnostics,
-and the owned-resource audit.
+captured candidate's leader identity to refuse a reused group. A spawned child
+without a candidate or a candidate that cannot be matched to the dedicated
+group produces a non-clean audit, never a false absence. Once proved, cleanup
+sends TERM, then KILL if the group remains live, even after the leader exits.
+The same five-second allowance also bounds leader and stdout/stderr pipe
+settlement. Every failure includes the current fixture phase, page
+console/exception/network diagnostics, and the owned-resource audit.
 
 ## Emulation result
 
@@ -129,8 +133,9 @@ non-timeout CDP error. The oracle records the cause-only rejection. The process
 is then cleaned and a replacement renders the same normal result. A separately
 terminated renderer rejects a subsequent job with the Chromium-exited error.
 Every injected, normal, terminated, and replacement cleanup report confirms
-group absence, settled output pipes, profile removal, and released port. These
-are direct report facts, rather than longer retry allowances.
+the candidate matched a dedicated group, group absence, settled output pipes,
+profile removal, and released port. These are direct report facts, rather than
+longer retry allowances.
 
 The memory measurement rules out a process per Board render. The production
 implementation needs one application-owned renderer and a serialized request
