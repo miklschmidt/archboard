@@ -839,7 +839,6 @@ export async function newBoard(params: {
 	board: string;
 	variant?: string;
 	level?: string;
-	pane?: string;
 }): Promise<BoardResponse> {
 	return postBoard("/api/boards/new", params);
 }

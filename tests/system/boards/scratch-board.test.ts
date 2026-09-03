@@ -86,7 +86,11 @@ describe("scratch board", () => {
 		const malformedRequest = createJsonRequester(malformedCanvas);
 		try {
 			const response = await malformedRequest<ElementsBody>("/api/elements?board=scratch");
-			expect(response.status).toBe(400);
+			expect(response.status).toBe(422);
+			expect(response.body).toMatchObject({
+				code: "BOARD_RESOLUTION_FAILED",
+				reason: "malformed",
+			});
 			expect(response.body.error).toContain("invalid element shlv (text) at element.width");
 			expect(fs.readFileSync(malformedNote, "utf8")).toBe(malformed);
 		} finally {

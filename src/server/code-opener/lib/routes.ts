@@ -24,8 +24,7 @@ import {
 	type LocalCodeTargetResult,
 } from "../../../runtime/code-target/index.js";
 import { githubUrlForBinding } from "../../../runtime/code-target/presentation.js";
-import { readBoardContent } from "../../../runtime/engine/board-io.js";
-import { resolveBoard } from "../../../runtime/engine/board-store.js";
+import { resolveBoard } from "../../../runtime/engine/board-io.js";
 import { readElementMetadata } from "../../../runtime/engine/metadata.js";
 import { checkBrowserCsrf, type BrowserCsrfKind } from "./browser-csrf.js";
 import { readOpenerSelection, resetOpenerSelection, saveOpenerSelection } from "./configuration.js";
@@ -74,13 +73,13 @@ export interface CodeOpenerRouteDependencies {
 }
 
 function canonicalBinding(boardKey: string, elementId: string): BindingLookup {
-	let board;
+	let content;
 	try {
-		board = resolveBoard(boardKey, "A code-target activation").board;
-	} catch {
-		return { ok: false, code: "BOARD_NOT_FOUND", error: `Board ${boardKey} is not open.` };
+		content = resolveBoard(boardKey, "A code-target activation").content;
+	} catch (error) {
+		return { ok: false, code: "BOARD_NOT_FOUND", error: (error as Error).message };
 	}
-	const element = readBoardContent(board).elements.get(elementId);
+	const element = content.elements.get(elementId);
 	if (!element) {
 		return {
 			ok: false,

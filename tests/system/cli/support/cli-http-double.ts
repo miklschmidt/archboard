@@ -119,11 +119,10 @@ function preflightResponse(
 		return Response.json({
 			success: true,
 			...boardState,
-			version: null,
+			version: 1,
 			elementCount: 0,
 			created: true,
-			saved: false,
-			pane: null,
+			saved: true,
 		});
 	if (method === "POST" && url.pathname === "/api/boards/open")
 		return Response.json({

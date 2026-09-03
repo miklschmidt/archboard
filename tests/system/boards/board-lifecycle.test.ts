@@ -141,10 +141,13 @@ describe("board lifecycle", () => {
 		expect(created.status).toBe(200);
 		expect(created.body).toMatchObject({
 			board: "casetest",
-			pane: null,
 			identity: { board: "casetest", level: "service", displayName: "CaseTest" },
+			created: true,
+			saved: true,
+			version: 1,
 		});
 		expect(path.basename(created.body.file ?? "")).toBe("CaseTest.excalidraw.md");
+		expect(fs.existsSync(created.body.file ?? "")).toBeTrue();
 
 		const otherSpelling = await request("/api/elements?board=casetest", {
 			method: "POST",
@@ -170,7 +173,7 @@ describe("board lifecycle", () => {
 			body: { board: "casetest", level: "service" },
 		});
 		expect(duplicate.status).toBe(409);
-		expect(duplicate.body.error).toMatch(/already open|already exists/);
+		expect(duplicate.body.error).toMatch(/already has a note|already exists/);
 
 		fs.writeFileSync(
 			path.join(vault, "Handover.excalidraw.md"),

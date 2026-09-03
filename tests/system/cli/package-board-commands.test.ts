@@ -96,10 +96,9 @@ describe("package board commands", () => {
 		const createdBody = decodePackage(created, BoardNewResultSchema);
 		expect(createdBody, diagnostic).toMatchObject({
 			created: true,
-			saved: false,
-			version: null,
+			saved: true,
+			version: 1,
 			elementCount: 0,
-			pane: null,
 		});
 		expect("vaultBacked" in createdBody, diagnostic).toBeFalse();
 
