@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"reviewedBase": "3c5c2be4e7d3a0543db8fda5eb9fb9aafc9e1af4",
+	"reviewedBase": "dfb589bd28f6dc95289f5271ba389bfcc48bafbe",
 	"surface": {
-		"commands": 36,
-		"subcommands": 23,
+		"commands": 32,
+		"subcommands": 27,
 		"paths": 59
 	},
 	"globalContract": {
@@ -35,16 +35,41 @@
 			"workflow": "necessary composition",
 			"effects": ["write"],
 			"refusals": [
-				{ "code": "BOARD_REQUIRED", "exit": 2 },
-				{ "code": "CANVAS_UNREACHABLE", "exit": 3 },
-				{ "code": "DOING_REQUIRED", "exit": 1 },
-				{ "code": "BOARD_HELD", "exit": 5 },
-				{ "code": "BOARD_CONFLICT", "exit": 5 },
-				{ "code": "BOARD_VERSION_CONFLICT", "exit": 5 },
-				{ "code": "CLAIM_REVOKED", "exit": 5 },
-				{ "code": "BRIDGE_REFUSED", "exit": 1 }
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				},
+				{
+					"code": "BRIDGE_REFUSED",
+					"exit": 1
+				}
 			],
-			"introducedBy": "TASK-120"
+			"introducedBy": "TASK-120",
+			"classification": "board"
 		},
 		{
 			"path": "bridge remove",
@@ -62,16 +87,41 @@
 			"workflow": "necessary composition",
 			"effects": ["write"],
 			"refusals": [
-				{ "code": "BOARD_REQUIRED", "exit": 2 },
-				{ "code": "CANVAS_UNREACHABLE", "exit": 3 },
-				{ "code": "DOING_REQUIRED", "exit": 1 },
-				{ "code": "BOARD_HELD", "exit": 5 },
-				{ "code": "BOARD_CONFLICT", "exit": 5 },
-				{ "code": "BOARD_VERSION_CONFLICT", "exit": 5 },
-				{ "code": "CLAIM_REVOKED", "exit": 5 },
-				{ "code": "BRIDGE_REFUSED", "exit": 1 }
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				},
+				{
+					"code": "BRIDGE_REFUSED",
+					"exit": 1
+				}
 			],
-			"introducedBy": "TASK-120"
+			"introducedBy": "TASK-120",
+			"classification": "board"
 		},
 		{
 			"path": "start",
@@ -93,7 +143,8 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
+			],
+			"classification": "neither"
 		},
 		{
 			"path": "stop",
@@ -115,7 +166,8 @@
 					"code": "CANVAS_HELD",
 					"exit": 1
 				}
-			]
+			],
+			"classification": "neither"
 		},
 		{
 			"path": "status",
@@ -132,7 +184,8 @@
 			"nextFields": ["running", "health.websocket_clients"],
 			"workflow": "necessary composition",
 			"effects": ["read"],
-			"refusals": []
+			"refusals": [],
+			"classification": "neither"
 		},
 		{
 			"path": "apply",
@@ -178,7 +231,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "add",
@@ -224,7 +278,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "update",
@@ -270,7 +325,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "delete",
@@ -316,7 +372,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "get",
@@ -342,7 +399,8 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "query",
@@ -368,58 +426,12 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
-		},
-		{
-			"path": "selection",
-			"parserOwner": "CommandContract concrete Commander parser",
-			"handlerOwner": "src/cli/commands/selection.ts",
-			"stdout": "json object or text",
-			"result": "selection report or rendered text",
-			"diagnostics": "held note for json",
-			"exits": [0, 1, 2, 3],
-			"prerequisites": ["server", "board"],
-			"relationships": ["GET /api/selection"],
-			"semantics": "read-only browser selection state",
-			"ordering": "server before read",
-			"nextFields": ["ids", "nodes", "elements"],
-			"workflow": "missing handle",
-			"effects": ["read"],
-			"refusals": [
-				{
-					"code": "BOARD_REQUIRED",
-					"exit": 2
-				},
-				{
-					"code": "CANVAS_UNREACHABLE",
-					"exit": 3
-				}
-			]
-		},
-		{
-			"path": "panes",
-			"parserOwner": "CommandContract concrete Commander parser",
-			"handlerOwner": "src/cli/commands/selection.ts",
-			"stdout": "json object or text",
-			"result": "ordered pane report",
-			"diagnostics": "held note for json",
-			"exits": [0, 1, 2, 3],
-			"prerequisites": ["server"],
-			"relationships": ["GET /api/panes"],
-			"semantics": "view state, no elements",
-			"ordering": "server before read",
-			"nextFields": ["panes[].id", "panes[].board", "panes[].selection"],
-			"workflow": "necessary composition",
-			"effects": ["read"],
-			"refusals": [
-				{
-					"code": "CANVAS_UNREACHABLE",
-					"exit": 3
-				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "promote",
+			"changedBy": "TASK-143.08.06.04",
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/promote.ts",
 			"stdout": "json object or text",
@@ -427,9 +439,9 @@
 			"diagnostics": "binding and held notes",
 			"exits": [0, 1, 2, 3, 5],
 			"prerequisites": ["server", "board", "doing"],
-			"relationships": ["selection read then one POST /api/elements/changes"],
-			"semantics": "replace elements once with namespaced binding metadata",
-			"ordering": "resolve repository before write",
+			"relationships": ["GET /api/elements", "GET /api/boards/info", "POST /api/elements/changes"],
+			"semantics": "replace explicitly identified elements once with namespaced binding metadata",
+			"ordering": "explicit target ids and repository resolution before write",
 			"nextFields": ["nodes[].node", "elements", "fingerprint.version"],
 			"workflow": "necessary composition",
 			"effects": ["local-read", "read", "write"],
@@ -462,10 +474,11 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
-			"path": "pane",
+			"path": "browser",
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/pane.ts",
 			"stdout": "none by itself",
@@ -474,26 +487,28 @@
 			"exits": [2],
 			"prerequisites": [],
 			"relationships": [],
-			"semantics": "namespace only",
+			"semantics": "live browser namespace only",
 			"ordering": "subcommand first",
 			"nextFields": [],
 			"workflow": "necessary composition",
 			"effects": [],
-			"refusals": []
+			"refusals": [],
+			"classification": "browser",
+			"introducedBy": "TASK-143.08.06.04"
 		},
 		{
-			"path": "pane open",
+			"path": "browser open",
 			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/pane.ts",
 			"stdout": "json object",
-			"result": "pane layout/open result",
+			"result": "new inherited live pane",
 			"diagnostics": "browser refusal on stderr",
 			"exits": [0, 1, 2, 3, 4],
 			"prerequisites": ["server", "browser"],
 			"relationships": ["POST /api/panes/open"],
-			"semantics": "browser layout, no board write",
+			"semantics": "visible browser layout change; no board write",
 			"ordering": "browser before effect",
-			"nextFields": ["pane.id", "pane.place", "board"],
+			"nextFields": ["pane.id", "pane.place", "onScreen"],
 			"workflow": "necessary composition",
 			"effects": ["browser"],
 			"refusals": [
@@ -505,19 +520,21 @@
 					"code": "BROWSER_REQUIRED",
 					"exit": 4
 				}
-			]
+			],
+			"classification": "browser",
+			"introducedBy": "TASK-143.08.06.04"
 		},
 		{
-			"path": "pane close",
+			"path": "browser close",
 			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/pane.ts",
 			"stdout": "json object",
-			"result": "pane layout/close result",
+			"result": "closed live pane and remaining browser inventory",
 			"diagnostics": "browser refusal on stderr",
 			"exits": [0, 1, 2, 3, 4],
 			"prerequisites": ["server", "browser"],
 			"relationships": ["POST /api/panes/close"],
-			"semantics": "browser layout, no board write",
+			"semantics": "visible browser layout change; no board write",
 			"ordering": "browser before effect",
 			"nextFields": ["closed", "panes"],
 			"workflow": "necessary composition",
@@ -531,19 +548,101 @@
 					"code": "BROWSER_REQUIRED",
 					"exit": 4
 				}
-			]
+			],
+			"classification": "browser",
+			"introducedBy": "TASK-143.08.06.04"
 		},
 		{
-			"path": "viewport",
+			"path": "browser show",
+			"parserOwner": "CommandContract staged token parser",
+			"handlerOwner": "src/cli/commands/board.ts",
+			"stdout": "json object",
+			"result": "named board shown in one explicit live pane",
+			"diagnostics": "reload and declared-key notes",
+			"exits": [0, 1, 2, 3, 4],
+			"prerequisites": ["server", "browser"],
+			"relationships": ["POST /api/boards/open"],
+			"semantics": "read a named persisted board for presentation and repoint one pane; no note write",
+			"ordering": "server and browser before address and pane resolution",
+			"nextFields": ["board", "source", "pane"],
+			"workflow": "necessary composition",
+			"effects": ["browser"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4
+				}
+			],
+			"classification": "browser",
+			"introducedBy": "TASK-143.08.06.04"
+		},
+		{
+			"path": "browser panes",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/selection.ts",
+			"stdout": "json object or text",
+			"result": "ordered live pane and displayed-board report",
+			"diagnostics": "held note for json",
+			"exits": [0, 1, 2, 3],
+			"prerequisites": ["server"],
+			"relationships": ["GET /api/panes"],
+			"semantics": "browser session inventory only; zero panes is valid",
+			"ordering": "server before read",
+			"nextFields": ["panes[].paneId", "panes[].board", "panes[].selection"],
+			"workflow": "necessary composition",
+			"effects": ["browser"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			],
+			"classification": "browser",
+			"introducedBy": "TASK-143.08.06.04"
+		},
+		{
+			"path": "browser selection",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/selection.ts",
+			"stdout": "json object or text",
+			"result": "selected board and stable element identities for one explicit pane",
+			"diagnostics": "held note for json",
+			"exits": [0, 1, 2, 3, 4],
+			"prerequisites": ["server", "browser"],
+			"relationships": ["GET /api/selection?pane=<spec>"],
+			"semantics": "read-only connected-browser selection state",
+			"ordering": "server and browser before explicit pane read",
+			"nextFields": ["board", "elementIds", "nodes", "elements"],
+			"workflow": "missing handle",
+			"effects": ["browser"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4
+				}
+			],
+			"classification": "browser",
+			"introducedBy": "TASK-143.08.06.04"
+		},
+		{
+			"path": "browser viewport",
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/command-contract/viewport.ts",
 			"stdout": "validated json object",
-			"result": "success,message?,held?",
+			"result": "camera acknowledgement for one explicit live pane",
 			"diagnostics": "usage/browser/held on stderr",
 			"exits": [0, 1, 2, 3, 4],
 			"prerequisites": ["server", "browser"],
 			"relationships": ["POST /api/viewport"],
-			"semantics": "browser camera state, no board write",
+			"semantics": "visible browser camera change; no board write",
 			"ordering": "mode rules before server; numerics after browser",
 			"nextFields": ["success", "message"],
 			"workflow": "necessary composition",
@@ -557,10 +656,41 @@
 					"code": "BROWSER_REQUIRED",
 					"exit": 4
 				}
-			]
+			],
+			"classification": "browser",
+			"introducedBy": "TASK-143.08.06.04"
+		},
+		{
+			"path": "browser capture",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/scene.ts",
+			"stdout": "raw SVG or json file receipt",
+			"result": "raw SVG or file receipt from one explicit live pane",
+			"diagnostics": "browser/held errors",
+			"exits": [0, 1, 2, 3, 4],
+			"prerequisites": ["server", "browser"],
+			"relationships": ["POST /api/browser/capture"],
+			"semantics": "capture current rendered browser pixels; no board write",
+			"ordering": "format and explicit pane before server/browser; file after response",
+			"nextFields": ["file", "format"],
+			"workflow": "necessary composition",
+			"effects": ["browser", "local-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "BROWSER_REQUIRED",
+					"exit": 4
+				}
+			],
+			"classification": "browser",
+			"introducedBy": "TASK-143.08.06.04"
 		},
 		{
 			"path": "demote",
+			"changedBy": "TASK-143.08.06.04",
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/promote.ts",
 			"stdout": "json object or text",
@@ -568,9 +698,9 @@
 			"diagnostics": "selection/held notes",
 			"exits": [0, 1, 2, 3, 5],
 			"prerequisites": ["server", "board", "doing"],
-			"relationships": ["selection read then one POST /api/elements/changes"],
-			"semantics": "one metadata-removal write",
-			"ordering": "resolve whole nodes before write",
+			"relationships": ["GET /api/elements", "POST /api/elements/changes"],
+			"semantics": "one metadata-removal write over explicitly identified elements",
+			"ordering": "explicit target ids and whole-node resolution before write",
 			"nextFields": ["elements", "fingerprint.version"],
 			"workflow": "necessary composition",
 			"effects": ["read", "write"],
@@ -603,7 +733,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "repo",
@@ -620,7 +751,8 @@
 			"nextFields": [],
 			"workflow": "necessary composition",
 			"effects": [],
-			"refusals": []
+			"refusals": [],
+			"classification": "neither"
 		},
 		{
 			"path": "repo list",
@@ -637,7 +769,8 @@
 			"nextFields": ["repos[].identity", "repos[].directory"],
 			"workflow": "necessary composition",
 			"effects": ["local-read"],
-			"refusals": []
+			"refusals": [],
+			"classification": "neither"
 		},
 		{
 			"path": "repo add",
@@ -654,7 +787,8 @@
 			"nextFields": ["repo", "directory", "registry"],
 			"workflow": "necessary composition",
 			"effects": ["local-read", "local-write"],
-			"refusals": []
+			"refusals": [],
+			"classification": "neither"
 		},
 		{
 			"path": "repo forget",
@@ -671,10 +805,12 @@
 			"nextFields": ["forgotten", "repo"],
 			"workflow": "necessary composition",
 			"effects": ["local-read", "local-write"],
-			"refusals": []
+			"refusals": [],
+			"classification": "neither"
 		},
 		{
 			"path": "board",
+			"changedBy": "TASK-143.08.06.04",
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/board.ts",
 			"stdout": "none by itself",
@@ -688,21 +824,23 @@
 			"nextFields": [],
 			"workflow": "necessary composition",
 			"effects": [],
-			"refusals": []
+			"refusals": [],
+			"classification": "board"
 		},
 		{
 			"path": "board list",
+			"changedBy": "TASK-143.08.06.04",
 			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/board.ts",
 			"stdout": "json object or text",
-			"result": "open and vault boards with bindings",
+			"result": "persisted vault boards with bindings",
 			"diagnostics": "held notes",
 			"exits": [0, 1, 2, 3],
 			"prerequisites": ["server"],
 			"relationships": ["GET /api/boards"],
-			"semantics": "vault/server read",
+			"semantics": "persisted vault read with no pane, displayed-board, or open-session fields",
 			"ordering": "filters before request",
-			"nextFields": ["open[].key", "vault[].key", "bindings"],
+			"nextFields": ["boards[].key", "boards[].identity", "boards[].nodes"],
 			"workflow": "necessary composition",
 			"effects": ["local-read", "read"],
 			"refusals": [
@@ -710,10 +848,12 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "board info",
+			"changedBy": "TASK-143.08.06.04",
 			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/board.ts",
 			"stdout": "json object",
@@ -736,10 +876,12 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "board new",
+			"changedBy": "TASK-143.08.06.04",
 			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/board.ts",
 			"stdout": "json object",
@@ -758,36 +900,12 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
-		},
-		{
-			"path": "board open",
-			"parserOwner": "CommandContract staged token parser",
-			"handlerOwner": "src/cli/commands/board.ts",
-			"stdout": "json object",
-			"result": "opened board/source/panes",
-			"diagnostics": "reload and declared-key notes",
-			"exits": [0, 1, 2, 3, 4],
-			"prerequisites": ["server"],
-			"relationships": ["POST /api/boards/open"],
-			"semantics": "loads note; optional browser placement",
-			"ordering": "address before load, pane after load",
-			"nextFields": ["board", "source", "panes"],
-			"workflow": "necessary composition",
-			"effects": ["read", "browser"],
-			"refusals": [
-				{
-					"code": "CANVAS_UNREACHABLE",
-					"exit": 3
-				},
-				{
-					"code": "BROWSER_REQUIRED",
-					"exit": 4
-				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "board save",
+			"changedBy": "TASK-143.08.06.04",
 			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/command-contract/board-save.ts",
 			"stdout": "validated json object, including declared structured conflict on refusal",
@@ -830,7 +948,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "compare",
@@ -852,7 +971,8 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "check",
@@ -870,7 +990,8 @@
 			"workflow": "necessary composition",
 			"effects": ["local-read"],
 			"refusals": [],
-			"introducedBy": "TASK-119"
+			"introducedBy": "TASK-119",
+			"classification": "board"
 		},
 		{
 			"path": "render-findings",
@@ -888,10 +1009,17 @@
 			"workflow": "necessary composition",
 			"effects": ["read", "local-read", "local-write"],
 			"refusals": [
-				{ "code": "BOARD_REQUIRED", "exit": 2 },
-				{ "code": "CANVAS_UNREACHABLE", "exit": 3 }
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
 			],
-			"introducedBy": "TASK-121"
+			"introducedBy": "TASK-121",
+			"classification": "board"
 		},
 		{
 			"path": "changes",
@@ -917,7 +1045,8 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "claim",
@@ -951,7 +1080,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "release",
@@ -977,7 +1107,8 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "describe",
@@ -1003,33 +1134,8 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
-		},
-		{
-			"path": "screenshot",
-			"parserOwner": "CommandContract concrete Commander parser",
-			"handlerOwner": "src/cli/commands/scene.ts",
-			"stdout": "raw SVG or json file receipt",
-			"result": "SVG content or success,file,format",
-			"diagnostics": "browser/held errors",
-			"exits": [0, 1, 2, 3, 4],
-			"prerequisites": ["server", "browser"],
-			"relationships": ["POST /api/browser/capture then optional local write"],
-			"semantics": "live browser pane capture, no board write",
-			"ordering": "format before server/browser, file after response",
-			"nextFields": ["file", "format"],
-			"workflow": "necessary composition",
-			"effects": ["browser", "local-write"],
-			"refusals": [
-				{
-					"code": "CANVAS_UNREACHABLE",
-					"exit": 3
-				},
-				{
-					"code": "BROWSER_REQUIRED",
-					"exit": 4
-				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "render",
@@ -1047,10 +1153,17 @@
 			"workflow": "necessary composition",
 			"effects": ["read", "local-write"],
 			"refusals": [
-				{ "code": "BOARD_REQUIRED", "exit": 2 },
-				{ "code": "CANVAS_UNREACHABLE", "exit": 3 }
+				{
+					"code": "BOARD_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
 			],
-			"introducedBy": "TASK-143.08.06.03"
+			"introducedBy": "TASK-143.08.06.03",
+			"classification": "board"
 		},
 		{
 			"path": "export",
@@ -1078,7 +1191,8 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "import",
@@ -1126,7 +1240,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "mermaid",
@@ -1156,7 +1271,8 @@
 					"code": "DOING_REQUIRED",
 					"exit": 1
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "snapshot",
@@ -1173,7 +1289,8 @@
 			"nextFields": [],
 			"workflow": "necessary composition",
 			"effects": [],
-			"refusals": []
+			"refusals": [],
+			"classification": "board"
 		},
 		{
 			"path": "snapshot save",
@@ -1199,7 +1316,8 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "snapshot list",
@@ -1225,7 +1343,8 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "snapshot restore",
@@ -1271,7 +1390,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "library",
@@ -1288,7 +1408,8 @@
 			"nextFields": [],
 			"workflow": "necessary composition",
 			"effects": [],
-			"refusals": []
+			"refusals": [],
+			"classification": "neither"
 		},
 		{
 			"path": "library list",
@@ -1310,7 +1431,8 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
+			],
+			"classification": "neither"
 		},
 		{
 			"path": "library insert",
@@ -1356,7 +1478,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "arrange",
@@ -1373,7 +1496,8 @@
 			"nextFields": [],
 			"workflow": "necessary composition",
 			"effects": [],
-			"refusals": []
+			"refusals": [],
+			"classification": "board"
 		},
 		{
 			"path": "arrange align",
@@ -1419,7 +1543,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "arrange distribute",
@@ -1465,7 +1590,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "arrange group",
@@ -1511,7 +1637,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "arrange ungroup",
@@ -1557,7 +1684,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "arrange lock",
@@ -1603,7 +1731,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "arrange unlock",
@@ -1649,7 +1778,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "arrange duplicate",
@@ -1695,7 +1825,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "share",
@@ -1721,7 +1852,8 @@
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "clear",
@@ -1767,7 +1899,8 @@
 					"code": "CLAIM_REVOKED",
 					"exit": 5
 				}
-			]
+			],
+			"classification": "board"
 		},
 		{
 			"path": "install-skill",
@@ -1784,7 +1917,8 @@
 			"nextFields": ["skill", "doc", "repo", "vault"],
 			"workflow": "necessary composition",
 			"effects": ["local-read", "local-write"],
-			"refusals": []
+			"refusals": [],
+			"classification": "neither"
 		}
 	],
 	"workflows": [
@@ -1798,10 +1932,10 @@
 		},
 		{
 			"name": "promote or demote a selection",
-			"commands": ["selection", "promote", "demote"],
+			"commands": ["browser selection", "promote", "demote"],
 			"classification": "missing handle",
-			"evidence": "Selection is a valid default, but callers needing deterministic chaining must carry selected ids explicitly.",
-			"decision": "retain commands; consider returned selection handle",
+			"evidence": "Live selection is browser state. A caller may read stable ids from one explicit pane and deliberately pass them to a board write.",
+			"decision": "retain the explicit two-step boundary; board writes never read selection",
 			"followUpTask": null
 		},
 		{
@@ -1838,7 +1972,7 @@
 		},
 		{
 			"name": "render and export",
-			"commands": ["viewport", "screenshot", "export"],
+			"commands": ["browser viewport", "browser capture", "export"],
 			"classification": "necessary composition",
 			"evidence": "Camera movement, browser pixels, and document export have different owners and side effects.",
 			"decision": "retain",

@@ -18,7 +18,7 @@ const server = createServer((request, response) => {
 									board: lateHeldBoard,
 									message:
 										`"${lateHeldBoard}" stopped saving. Pick one:\n` +
-										`  reload     -> archboard board open ${lateHeldBoard} --reload\n` +
+										`  reload     -> archboard browser show ${lateHeldBoard} --pane <spec> --reload\n` +
 										`  overwrite  -> archboard board save --board ${lateHeldBoard} --force\n` +
 										`  elsewhere  -> archboard board save --board ${lateHeldBoard} --name <new-name>`,
 								},

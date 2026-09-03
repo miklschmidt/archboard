@@ -1,13 +1,12 @@
 import { z } from "zod";
-import { closePane, currentRequestedBoard, openPane } from "../../runtime/engine/canvas-client.js";
+import { closePane, openPane } from "../../runtime/engine/canvas-client.js";
 import { paneWords } from "../../runtime/engine/panes.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema, PaneRefSchema } from "../command-contract/schemas.js";
 import { serverBrowserRefusals } from "../command-contract/common.js";
-import { BoardOpenResultSchema } from "./board.js";
 
 const usage =
-	"pane needs a subcommand: open, close. For what is on screen right now, without changing it, run `archboard panes`.";
+	"browser needs a subcommand: panes, open, close, show, selection, viewport, or capture.";
 const tokens = z.array(z.string()).default([]);
 const stagedNoFlags = z.array(z.string()).transform((values, context) => {
 	for (const token of values)
@@ -27,12 +26,12 @@ export const PaneNamespaceInputSchema = z.object({ tokens });
 export type PaneNamespaceInput = z.infer<typeof PaneNamespaceInputSchema>;
 export const PaneNamespaceResultSchema = z.never();
 export type PaneNamespaceResult = z.infer<typeof PaneNamespaceResultSchema>;
-export const paneContract = defineCommand({
-	path: ["pane"],
-	summary: "Split the canvas into another pane, or close one",
-	usage: "pane open [--board <key>] | pane close <spec>",
-	description: "Routes pane mutation commands.",
-	examples: ["archboard pane open"],
+export const browserContract = defineCommand({
+	path: ["browser"],
+	summary: "Inspect or control the connected browser session",
+	usage: "browser panes|open|close|show|selection|viewport|capture ...",
+	description: "Routes live browser inspection and control commands; none writes a board note.",
+	examples: ["archboard browser panes"],
 	parameters: [
 		{
 			kind: "positional",
@@ -67,16 +66,15 @@ export const PaneOpenResultSchema = z.looseObject({
 	pane: PaneRefSchema.nullable(),
 	paneCount: z.number().int().nonnegative(),
 	onScreen: z.array(OnScreenPaneSchema),
-	board: BoardOpenResultSchema.optional(),
 	held: HoldReportSchema.optional(),
 });
 export type PaneOpenResult = z.infer<typeof PaneOpenResultSchema>;
 export const paneOpenContract = defineCommand({
-	path: ["pane", "open"],
+	path: ["browser", "open"],
 	summary: "Open a second browser pane",
-	usage: "pane open [--board <key>]",
-	description: "Splits the rendered canvas and optionally opens the globally named board there.",
-	examples: ["archboard pane open --board payments@option-a"],
+	usage: "browser open",
+	description: "Splits the connected browser canvas; the new pane inherits the displayed board.",
+	examples: ["archboard browser open"],
 	parameters: [
 		{
 			kind: "positional",
@@ -128,13 +126,10 @@ export const paneOpenContract = defineCommand({
 		await context.require("server", "Opening a pane");
 		context.parse(PaneOpenStageSchema, input.tokens);
 		await context.require("browser", "Opening a pane");
-		const wanted = currentRequestedBoard();
-		const result = await openPane(wanted ? { board: wanted } : {});
+		const result = await openPane();
 		const place = result.pane?.place;
 		const where = place ? paneWords(place) : "a new pane";
-		const diagnostic = result.board
-			? `"${result.board.board}" is showing in ${where}. The other pane was not touched. Commands still name the board: \`--board ${result.board.board}\`.`
-			: `Opened ${where}. It is showing what was already on screen — point it somewhere else with \`board open <name> --pane ${place ?? "<spec>"}\`.`;
+		const diagnostic = `Opened ${where}. It inherited the displayed board. Show another with \`browser show <board> --pane ${place ?? "<spec>"}\`.`;
 		return { result: PaneOpenResultSchema.parse(result), diagnostics: [diagnostic] };
 	},
 });
@@ -147,7 +142,7 @@ export const PaneCloseStageSchema = stagedNoFlags.transform((values, context) =>
 		context.addIssue({
 			code: "custom",
 			message:
-				"pane close needs to be told which pane: `pane close right`. Run `archboard panes` for what is on screen.",
+				"browser close needs a pane: `browser close right`. Run `archboard browser panes` to inspect the session.",
 		});
 		return z.NEVER;
 	}
@@ -163,11 +158,11 @@ export const PaneCloseResultSchema = z.looseObject({
 });
 export type PaneCloseResult = z.infer<typeof PaneCloseResultSchema>;
 export const paneCloseContract = defineCommand({
-	path: ["pane", "close"],
+	path: ["browser", "close"],
 	summary: "Close one browser pane",
-	usage: "pane close <spec>",
+	usage: "browser close <spec>",
 	description: "Takes one board off screen without changing the board itself.",
-	examples: ["archboard pane close right"],
+	examples: ["archboard browser close right"],
 	parameters: [
 		{
 			kind: "positional",

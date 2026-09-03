@@ -13,9 +13,13 @@ import {
 	HoldReportSchema,
 	PaneRefSchema,
 } from "../command-contract/schemas.js";
-import { browserRefusal, commonRefusals, serverRefusal } from "../command-contract/common.js";
+import {
+	commonRefusals,
+	serverBrowserRefusals,
+	serverRefusal,
+} from "../command-contract/common.js";
 
-const usage = "board needs a subcommand: list, info, new, open, save";
+const usage = "board needs a subcommand: list, info, new, or save";
 const tokens = z.array(z.string()).default([]);
 type Stage = { positionals: string[]; flags: Record<string, string | boolean> };
 function parseStage(
@@ -67,7 +71,7 @@ export const BoardNamespaceResultSchema = z.never();
 export type BoardNamespaceResult = z.infer<typeof BoardNamespaceResultSchema>;
 export const boardContract = defineCommand({
 	path: ["board"],
-	summary: "Load, save and list boards in the vault",
+	summary: "Create, inspect, save, and list persisted boards",
 	usage,
 	description: "Routes board lifecycle commands.",
 	examples: ["archboard board list"],
@@ -111,15 +115,13 @@ function boardListText(result: BoardListResponse): string {
 		const lines = [`Boards describing ${result.repo}:`];
 		for (const entry of result.boards) {
 			const level = entry.identity?.level ? `, ${entry.identity.level}` : "";
-			lines.push(
-				`  ${entry.key} (${entry.identity?.variant ?? "current"}${level}, ${entry.source ?? "vault"})`,
-			);
+			lines.push(`  ${entry.key} (${entry.identity?.variant ?? "current"}${level})`);
 			for (const node of entry.nodes ?? [])
 				lines.push(
 					`    ${node.name ?? node.node}${node.kind ? ` [${node.kind}]` : ""} -> ${node.path}`,
 				);
 		}
-		lines.push(`Open one with \`board open ${result.boards[0]!.key}\`.`);
+		lines.push(`Show one with \`browser show ${result.boards[0]!.key} --pane <spec>\`.`);
 		return lines.join("\n");
 	}
 	if (!result.boards.length) return `No boards in ${result.vault} yet.`;
@@ -148,8 +150,6 @@ export const BoardListJsonResultSchema = z.looseObject({
 	success: z.literal(true),
 	vault: z.string(),
 	boards: z.array(z.looseObject({ key: z.string() })),
-	open: z.array(z.looseObject({ key: z.string() })),
-	onScreen: z.array(z.looseObject({ paneId: z.string(), place: z.string(), board: z.string() })),
 	held: HoldReportSchema.optional(),
 });
 export type BoardListJsonResult = z.infer<typeof BoardListJsonResultSchema>;
@@ -159,7 +159,7 @@ export const boardListContract = defineCommand({
 	path: ["board", "list"],
 	summary: "List boards in the vault or describing one repository",
 	usage: "board list [--repo <host/owner/name> | --here] [--text]",
-	description: "Lists vault and in-memory boards, optionally filtered by repository binding.",
+	description: "Lists persisted vault boards, optionally filtered by repository binding.",
 	examples: ["archboard board list --here --text"],
 	parameters: [
 		{
@@ -240,8 +240,6 @@ export const boardListContract = defineCommand({
 				...(result.repo ? { repo: result.repo, scanned: result.scanned } : {}),
 				...(result.unreadable ? { unreadable: result.unreadable } : {}),
 				boards: result.boards,
-				open: result.open,
-				onScreen: result.onScreen,
 			}),
 			diagnostics,
 		};
@@ -318,7 +316,6 @@ export const boardInfoContract = defineCommand({
 	},
 });
 
-const addressSpecs = { variant: "value", level: "value", pane: "value" } as const;
 const newAddressSpecs = { variant: "value", level: "value" } as const;
 export const BoardNewInputSchema = z.object({ tokens });
 export type BoardNewInput = z.infer<typeof BoardNewInputSchema>;
@@ -408,34 +405,40 @@ export const boardNewContract = defineCommand({
 	},
 });
 
-export const BoardOpenInputSchema = z.object({ tokens });
-export type BoardOpenInput = z.infer<typeof BoardOpenInputSchema>;
-export const BoardOpenStageSchema = z
+export const BrowserShowInputSchema = z.object({ tokens });
+export type BrowserShowInput = z.infer<typeof BrowserShowInputSchema>;
+export const BrowserShowStageSchema = z
 	.array(z.string())
-	.transform((value, context) => parseStage(value, { ...addressSpecs, reload: "flag" }, context))
+	.transform((value, context) =>
+		parseStage(value, { variant: "value", level: "value", pane: "value", reload: "flag" }, context),
+	)
 	.transform((stage, context) => {
 		const name = stage.positionals[0];
 		if (!name) {
-			context.addIssue({ code: "custom", message: "board open needs a board name" });
+			context.addIssue({ code: "custom", message: "browser show needs a board name" });
+			return z.NEVER;
+		}
+		if (typeof stage.flags.pane !== "string" || !stage.flags.pane.trim()) {
+			context.addIssue({ code: "custom", message: "browser show requires --pane <spec>" });
 			return z.NEVER;
 		}
 		return { name, flags: stage.flags };
 	});
-export type BoardOpenStage = z.infer<typeof BoardOpenStageSchema>;
-export const BoardOpenResultSchema = BoardIdentityStateSchema.extend({
+export type BrowserShowStage = z.infer<typeof BrowserShowStageSchema>;
+export const BrowserShowResultSchema = BoardIdentityStateSchema.extend({
 	success: z.literal(true),
 	source: z.enum(["vault", "memory"]),
 	pane: PaneRefSchema.nullable(),
 	declaredKey: z.string().optional(),
 	held: HoldReportSchema.optional(),
 });
-export type BoardOpenResult = z.infer<typeof BoardOpenResultSchema>;
-export const boardOpenContract = defineCommand({
-	path: ["board", "open"],
-	summary: "Open a board from memory or its vault note",
-	usage: "board open <name[@variant]> [--variant v] [--reload] [--pane <spec>]",
-	description: "Loads one board and optionally points a selected pane at it.",
-	examples: ["archboard board open payments@option-a --pane right"],
+export type BrowserShowResult = z.infer<typeof BrowserShowResultSchema>;
+export const browserShowContract = defineCommand({
+	path: ["browser", "show"],
+	summary: "Show a persisted board in one connected browser pane",
+	usage: "browser show <name[@variant]> --pane <spec> [--variant v] [--reload]",
+	description: "Points one explicit live pane at a named board without writing its note.",
+	examples: ["archboard browser show payments@option-a --pane right"],
 	parameters: [
 		{
 			kind: "positional",
@@ -447,17 +450,17 @@ export const boardOpenContract = defineCommand({
 		},
 	],
 	input: {
-		ingress: BoardOpenInputSchema,
+		ingress: BrowserShowInputSchema,
 		stages: [
 			{
 				name: "open-options",
 				when: "after-server",
-				description: "Board address, reload, and pane options",
-				schema: BoardOpenStageSchema,
+				description: "Board address, reload choice, and required live pane",
+				schema: BrowserShowStageSchema,
 			},
 		],
 	},
-	result: BoardOpenResultSchema,
+	result: BrowserShowResultSchema,
 	output: {
 		cases: [
 			{
@@ -471,21 +474,22 @@ export const boardOpenContract = defineCommand({
 		],
 		select: () => "json",
 	},
-	prerequisites: ["server"],
-	effects: ["read", "browser"],
-	refusals: [serverRefusal, browserRefusal],
+	prerequisites: ["server", "browser"],
+	effects: ["browser"],
+	refusals: serverBrowserRefusals,
 	relationships: [
 		{ method: "POST", path: "/api/boards/open", cardinality: "one", description: "Open the board" },
 	],
 	async handler(input, context) {
-		await context.require("server", "board open");
-		const stage = context.parse(BoardOpenStageSchema, input.tokens);
+		await context.require("server", "browser show");
+		const stage = context.parse(BrowserShowStageSchema, input.tokens);
+		await context.require("browser", "browser show");
 		const result = await openBoard({
 			board: stage.name,
 			...(typeof stage.flags.variant === "string" ? { variant: stage.flags.variant } : {}),
 			...(typeof stage.flags.level === "string" ? { level: stage.flags.level } : {}),
 			...(stage.flags.reload ? { reload: true } : {}),
-			...(typeof stage.flags.pane === "string" ? { pane: stage.flags.pane } : {}),
+			pane: stage.flags.pane as string,
 		});
 		const diagnostics = [
 			result.pane
@@ -500,6 +504,6 @@ export const boardOpenContract = defineCommand({
 			diagnostics.push(
 				`Note: this file's frontmatter says it is board "${result.declaredKey}", not "${result.board}". The path is the address, so it opened as the path says; saving rewrites the frontmatter to match.`,
 			);
-		return { result: BoardOpenResultSchema.parse(result), diagnostics };
+		return { result: BrowserShowResultSchema.parse(result), diagnostics };
 	},
 });

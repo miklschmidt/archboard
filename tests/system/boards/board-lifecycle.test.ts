@@ -36,7 +36,7 @@ interface BoardSummary {
 
 interface BoardsBody {
 	boards: BoardSummary[];
-	open: BoardSummary[];
+	open?: BoardSummary[];
 }
 
 interface BoardBody extends BoardSummary {
@@ -165,7 +165,8 @@ describe("board lifecycle", () => {
 		expect(fs.readFileSync(saved.body.file ?? "", "utf8")).toMatch(/^board: CaseTest$/m);
 
 		const listing = await request<BoardsBody>("/api/boards");
-		expect(listing.body.open.some((board) => board.key === "casetest")).toBeTrue();
+		expect(listing.body.boards.some((board) => board.key === "casetest")).toBeTrue();
+		expect(listing.body.open).toBeUndefined();
 		expect(listing.body.boards.filter((board) => board.key === "casetest")).toHaveLength(1);
 
 		const duplicate = await request<BoardBody>("/api/boards/new", {

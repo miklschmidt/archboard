@@ -17,7 +17,7 @@ interface Refusal {
 }
 
 interface BoardsBody {
-	open: Array<{ key: string }>;
+	boards: Array<{ key: string }>;
 }
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
@@ -155,7 +155,7 @@ describe("public HTTP refusals", () => {
 		});
 		expect(create.status).toBe(200);
 		expect(
-			(await request<BoardsBody>("/api/boards")).body.open.some(
+			(await request<BoardsBody>("/api/boards")).body.boards.some(
 				(board) => board.key === "never-made",
 			),
 		).toBeTrue();
@@ -206,13 +206,13 @@ describe("public HTTP refusals", () => {
 			body: {},
 		});
 		expect(unnamedClose.status).toBe(400);
-		expect(unnamedClose.body.error).toContain("pane close left");
-		expect(unnamedClose.body.error).toContain("pane close right");
+		expect(unnamedClose.body.error).toContain("browser close left");
+		expect(unnamedClose.body.error).toContain("browser close right");
 
 		const full = await request<Refusal>("/api/panes/open", { method: "POST" });
 		expect(full.status).toBe(409);
 		expect(full.body.error).toContain("pane-base");
-		expect(full.body.error).toContain("pane close");
+		expect(full.body.error).toContain("browser close");
 
 		await right.close();
 		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
@@ -221,7 +221,7 @@ describe("public HTTP refusals", () => {
 			body: { board: "pane-base@option-a", pane: "right" },
 		});
 		expect(missingPane.status).toBe(400);
-		expect(missingPane.body.error).toContain("archboard pane open");
+		expect(missingPane.body.error).toContain("archboard browser open");
 
 		const last = await request<Refusal>("/api/panes/close", {
 			method: "POST",
@@ -252,10 +252,10 @@ describe("public HTTP refusals", () => {
 			expect(refusal.body.code).toBe("BROWSER_REQUIRED");
 		}
 		for (const args of [
-			["pane", "open"],
-			["pane", "close", "right"],
-			["viewport", "--fit"],
-			["screenshot"],
+			["browser", "open"],
+			["browser", "close", "right"],
+			["browser", "viewport", "--pane", "right", "--fit"],
+			["browser", "capture", "--pane", "right"],
 		]) {
 			const result = await runCli(args);
 			expect(result.code, `${args.join(" ")}: ${result.stderr}`).toBe(4);

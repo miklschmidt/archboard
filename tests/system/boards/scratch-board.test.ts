@@ -105,9 +105,9 @@ describe("scratch board", () => {
 		expect(saved.status).toBe(200);
 		expect(saved.body.file).toBe(scratchNote);
 		expect(fs.existsSync(scratchNote)).toBeTrue();
-		const list = await request<{ boards: unknown[]; open: Array<{ key: string }> }>("/api/boards");
+		const list = await request<{ boards: Array<{ key: string }>; open?: unknown }>("/api/boards");
 		expect(list.body.boards).toEqual([]);
-		expect(list.body.open.some((board) => board.key === "scratch")).toBeTrue();
+		expect(list.body.open).toBeUndefined();
 	});
 
 	test("reads the same drawing after a graceful restart", async () => {
@@ -120,7 +120,7 @@ describe("scratch board", () => {
 		).toBeTrue();
 		const info = await request<BoardBody>("/api/boards/info?board=scratch");
 		expect(info.body.elementCount).toBe(2);
-		expect(info.body.loadedAt).toBeString();
+		expect(info.body.loadedAt).toBeUndefined();
 	});
 
 	test("persists scratch and a newly named board before a forced process death", async () => {

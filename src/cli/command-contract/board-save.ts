@@ -1,13 +1,7 @@
 import { z } from "zod";
 import { boardConflictOf, saveBoard } from "../../runtime/engine/canvas-client.js";
-import { MAX_PANES } from "../../runtime/engine/panes.js";
 import { defineCommand } from "./contract.js";
-import {
-	BoardAddressSchema,
-	BoardWriteConflictSchema,
-	HoldReportSchema,
-	PaneRefSchema,
-} from "./schemas.js";
+import { BoardAddressSchema, BoardWriteConflictSchema, HoldReportSchema } from "./schemas.js";
 import { boardWriteRefusals } from "./lib/common.js";
 
 export const BoardSaveInputSchema = z.object({ tokens: z.array(z.string()).default([]) });
@@ -49,14 +43,6 @@ export const BoardSaveStageSchema = z.array(z.string()).transform((tokens, conte
 });
 export type BoardSaveStage = z.infer<typeof BoardSaveStageSchema>;
 
-const BoardSavePanesSchema = z.looseObject({
-	moved: z.array(PaneRefSchema),
-	kept: z.array(PaneRefSchema),
-	onScreen: z
-		.array(z.looseObject({ paneId: z.string(), place: z.string(), board: z.string() }))
-		.optional(),
-});
-
 export const BoardSaveSuccessResultSchema = z.looseObject({
 	success: z.literal(true),
 	board: z.string(),
@@ -64,7 +50,6 @@ export const BoardSaveSuccessResultSchema = z.looseObject({
 	saveKind: z.enum(["same-board", "named", "branch"]).optional(),
 	savedFrom: z.string().optional(),
 	file: z.string().optional(),
-	panes: BoardSavePanesSchema.optional(),
 	held: HoldReportSchema.optional(),
 });
 export type BoardSaveSuccessResult = z.infer<typeof BoardSaveSuccessResultSchema>;
@@ -82,57 +67,12 @@ export const BoardSaveResultSchema = z.union([
 ]);
 export type BoardSaveResult = z.infer<typeof BoardSaveResultSchema>;
 
-const paneSpec = (place: string, index: number): string =>
-	place.includes(" ") ? String(index + 1) : place;
-
-function listPanes(refs: Array<{ place: string }>): string {
-	const places = refs.map((ref) => (ref.place === "the only pane" ? "only" : ref.place));
-	const noun = places.length === 1 ? "pane" : "panes";
-	if (places.length === 1) return `the ${places[0]} ${noun}`;
-	return `the ${places.slice(0, -1).join(", ")} and ${places[places.length - 1]} ${noun}`;
-}
-
-function howToShowBranch(
-	branch: string,
-	onScreen: Array<{ place: string; board: string }>,
-): string {
-	if (onScreen.length === 0) {
-		return (
-			"No pane is open, so nothing is showing either board. Open the canvas in a browser, " +
-			`then \`pane open --board ${branch}\`.`
-		);
-	}
-	if (onScreen.length < MAX_PANES) {
-		return (
-			`Put it beside ${onScreen.length === 1 ? "that one" : "those"} with ` +
-			`\`pane open --board ${branch}\`, which makes a pane rather than taking one.`
-		);
-	}
-	const cost = onScreen
-		.map(
-			(pane, index) =>
-				`\`board open ${branch} --pane ${paneSpec(pane.place, index)}\` replaces "${pane.board}"`,
-		)
-		.join(", ");
-	return `The screen is full, so putting it up takes a board off: ${cost}.`;
-}
-
 function successDiagnostics(result: Awaited<ReturnType<typeof saveBoard>>): string[] {
 	const diagnostics: string[] = [];
-	const moved = result.panes?.moved ?? [];
-	const kept = result.panes?.kept ?? [];
-	if (moved.length) {
+	if (result.saveKind === "branch") {
 		diagnostics.push(
-			`"${result.board}" is now showing in ${listPanes(moved)}, which held the board it was saved from.`,
-		);
-	} else if (result.saveKind === "branch") {
-		diagnostics.push(
-			`Branched "${result.savedFrom}" to "${result.board}". ` +
-				(kept.length
-					? `Nothing moved: ${listPanes(kept)} still ${kept.length > 1 ? "hold" : "holds"} ` +
-						`"${result.savedFrom}", and the branch is not showing anywhere. `
-					: `No pane was holding "${result.savedFrom}", and the branch is not showing anywhere either. `) +
-				howToShowBranch(result.board, result.panes?.onScreen ?? []),
+			`Branched "${result.savedFrom}" to "${result.board}" without changing the browser. ` +
+				`Show it deliberately with \`browser show ${result.board} --pane <spec>\`.`,
 		);
 	}
 	const ended = result.resolvedHold;
@@ -142,8 +82,8 @@ function successDiagnostics(result: Awaited<ReturnType<typeof saveBoard>>): stri
 			ended.outcome === "overwrite"
 				? `"${ended.board}" is saving again, with the ${held} that were held on the canvas. ` +
 						`Whatever ${result.file} held before is gone.`
-				: `The ${held} that were held are in ${result.file}, and it is what the panes now show. ` +
-						`"${ended.board}" is saving again and holds the version the other editor wrote.`,
+				: `The ${held} that were held are in ${result.file}. ` +
+						`"${ended.board}" is saving again and the browser display was not changed.`,
 		);
 	}
 	if (result.forced) {

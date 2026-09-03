@@ -174,7 +174,9 @@ test("stop reports a hold that appears after the signal and leaves the canvas ru
 		expect(result.stderr, diagnostic).toContain(
 			'Canvas shutdown refused because held work exists only in process memory on "late-hold".',
 		);
-		expect(result.stderr, diagnostic).toContain("archboard board open late-hold --reload");
+		expect(result.stderr, diagnostic).toContain(
+			"archboard browser show late-hold --pane <spec> --reload",
+		);
 		expect(result.stderr, diagnostic).toContain("archboard board save --board late-hold --force");
 		expect(result.stderr, diagnostic).toContain(
 			"archboard board save --board late-hold --name <new-name>",

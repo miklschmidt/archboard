@@ -362,31 +362,6 @@ export function classifyBoardSave(sourceKey: string, targetKey: string): BoardSa
 	return isScratchKey(sourceKey) ? "named" : "branch";
 }
 
-/**
- * Whether the panes holding the source should move onto what was just written.
- *
- * Only when the board they were holding has stopped being worth looking at,
- * which is exactly the scratch case: the placeholder and its new name hold the
- * same drawing, and leaving a pane on `scratch` would show a copy of the board
- * that was just created.
- *
- * A branch does not move anything. You branch in order to compare, so taking
- * the source off screen at the moment the proposal is created is the opposite
- * of what was asked for. `board open` chooses what is on screen; a save writes
- * a file (ADR 0012).
- *
- * There is a second case this cannot see, and the save route adds it: saving a
- * board that has STOPPED SAVING somewhere else (ADR 0006, TASK-079). That is
- * spelt out where the panes are chosen in the server application, because whether a
- * board is held is not something this function is told. Briefly: the two notes
- * hold one drawing, and the board left behind is about to go back to the
- * version another editor wrote, so a pane kept on it would show the human
- * their own work being replaced a second after they were told it was safe.
- */
-export function panesFollowSave(kind: BoardSaveKind): boolean {
-	return kind === "named";
-}
-
 // Render a board as an Obsidian note. `existingNote` is the current content of
 // the destination when there is one: its frontmatter and everything else the
 // vault put there is carried across verbatim, and only the identity keys are

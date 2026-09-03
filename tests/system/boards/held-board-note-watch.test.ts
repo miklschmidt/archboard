@@ -99,7 +99,7 @@ describe("held board note watch", () => {
 					`${board.file} has been written by something other than archboard since archboard last wrote it, so this pane is showing a board the vault no longer holds.`,
 					"The note is still marked version 1, which archboard also wrote, so whatever wrote it does not keep that mark — Obsidian, a sync client or a text editor.",
 					"Nothing has been written and nothing is lost: the next change to this board will be refused rather than saved over theirs.",
-					"Take the note with `board open notewatch-direct --reload`, which discards what is on this canvas, or carry on drawing and choose when you are asked.",
+					"Take the note with `browser show notewatch-direct --pane <spec> --reload`, which discards what is on this canvas, or carry on drawing and choose when you are asked.",
 					"Keep a board open in one editor at a time.",
 				].join("\n"),
 			);

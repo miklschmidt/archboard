@@ -156,7 +156,7 @@ describe("pane addressing", () => {
 			'No pane called "middle". Panes on screen: 1. left (payments), 2. right (payments@option-a). ' +
 				"--pane takes a place (left, right, top, bottom), a position (1, 2), `focused`, `primary`, or a pane id.",
 		);
-		expect(() => resolvePaneSpec([directLeft], "right")).toThrow(/archboard pane open/);
+		expect(() => resolvePaneSpec([directLeft], "right")).toThrow(/archboard browser open/);
 		expect(() => resolvePaneSpec([directLeft], "only")).toThrow(/No pane called "only"/);
 		expect(MAX_PANES).toBe(2);
 		expect(soloPane([directLeft])).toBe(directLeft);
@@ -257,7 +257,7 @@ describe("pane addressing", () => {
 		const onePane = await request<PaneReport>("/api/panes");
 		expect(onePane.body.paneCount).toBe(1);
 		expect(onePane.body.panes[0]?.board).toBe("payments");
-		expect(onePane.body.text).toContain("archboard pane open");
+		expect(onePane.body.text).toContain("archboard browser open");
 		const leftStart = left.since();
 		let shellPane: TestPane | undefined;
 		left.socket.on("message", (data) => {
@@ -298,7 +298,8 @@ describe("pane addressing", () => {
 		const survivor = (await request<PaneReport>("/api/panes")).body.panes[0];
 		expect(survivor?.paneId).toBe("p-left");
 		expect(survivor?.board).toBe("payments");
-		const boards = await request<{ open: Array<{ key: string }> }>("/api/boards");
-		expect(boards.body.open.some((entry) => entry.key === "payments@option-a")).toBeTrue();
+		const boards = await request<{ boards: Array<{ key: string }>; open?: unknown }>("/api/boards");
+		expect(boards.body.boards.some((entry) => entry.key === "payments@option-a")).toBeTrue();
+		expect(boards.body.open).toBeUndefined();
 	});
 });

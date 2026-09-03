@@ -12,7 +12,7 @@ import {
 import { checkoutRoot } from "./support/package-cli.ts";
 
 const proofSchema = z.object({
-	schemaVersion: z.literal(6),
+	schemaVersion: z.literal(7),
 	generatedFrom: z.literal("src/cli/commands/run.ts"),
 	routes: z.array(
 		z
@@ -27,9 +27,9 @@ const proofSchema = z.object({
 	contracts: z.array(z.object({ name: z.string() }).passthrough()),
 });
 const expectedHashes: Readonly<Record<(typeof artifactNames)[number], string>> = {
-	"cli-command-audit.md": "24bbdb698d8b8c745d6fe6f909c90c8c1595f9ce67a58058e1751cd8e8e9fd6c",
-	"command-contract-proof.json": "8c0aef6aa774ffdf0af8cf8804b976c28e52c09a55f4ddf4125caeb4a836d070",
-	"command-contract-proof.md": "59118f8ed32cd75da559080e4e9b22fdb8c584dd987e3add6ac48f11beadc11f",
+	"cli-command-audit.md": "96b019724ceff6d98c6e6b8c3ec325f3604260c1e59ffeccf00720d1e8c36358",
+	"command-contract-proof.json": "93bd63c0cad328d9c495e74530b302285ecc9a9ed75d50b32d6c9d72da9278df",
+	"command-contract-proof.md": "b202c9ebe0ef86e8f31771324edf1ad9a17be9a988b02c86cc88e563162f0eb5",
 };
 const auditSchema = z.object({
 	entries: z.array(z.object({ path: z.string() }).passthrough()),

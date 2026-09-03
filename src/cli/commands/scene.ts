@@ -90,7 +90,7 @@ export const ScreenshotInputSchema = z.object({
 	out: z.string().optional(),
 	format: z.enum(["png", "svg"], { error: "--format must be png or svg" }).default("png"),
 	noBackground: z.boolean().default(false),
-	pane: z.string().optional(),
+	pane: z.string().min(1, "--pane is required"),
 	tail: z.array(z.string()).default([]),
 });
 export type ScreenshotInput = z.infer<typeof ScreenshotInputSchema>;
@@ -104,11 +104,11 @@ export type ScreenshotReceipt = z.infer<typeof ScreenshotReceiptSchema>;
 export const ScreenshotResultSchema = z.union([z.string(), ScreenshotReceiptSchema]);
 export type ScreenshotResult = z.infer<typeof ScreenshotResultSchema>;
 export const screenshotContract = defineCommand({
-	path: ["screenshot"],
-	summary: "Capture one pane (needs an open browser tab)",
-	usage: "screenshot [--out file.png] [--format png|svg] [--no-background] [--pane <spec>]",
-	description: "Renders one pane in the browser and returns raw SVG or a validated file receipt.",
-	examples: ["archboard screenshot --board system --out system.png"],
+	path: ["browser", "capture"],
+	summary: "Capture one explicit live pane (needs an open browser tab)",
+	usage: "browser capture --pane <spec> [--out file.png] [--format png|svg] [--no-background]",
+	description: "Captures what one connected browser pane currently shows without writing a board.",
+	examples: ["archboard browser capture --pane left --out system.png"],
 	parameters: [
 		{
 			kind: "option",

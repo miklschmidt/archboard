@@ -64,7 +64,6 @@ import type {
 	BoardSaveResult,
 	BoardWriteConflict,
 	LockHolder,
-	PaneRef,
 	PaneStatus,
 } from "../types";
 
@@ -142,29 +141,20 @@ interface ConflictState {
 	hold?: BoardHold | null;
 }
 
-/** "the only pane", "the left pane", "the left and right panes". */
-function listPanes(refs: PaneRef[]): string {
-	const places = refs.map((ref) => (ref.place === "the only pane" ? "only" : ref.place));
-	if (places.length === 1) return `the ${places[0]} pane`;
-	return `the ${places.slice(0, -1).join(", ")} and ${places[places.length - 1]} panes`;
-}
-
 /**
  * What to say about a save. Three acts wear one button (ADR 0012), and the one
- * that needs saying out loud is the branch: it writes a second board and puts
- * it nowhere, so the message names the panes still holding the source and the
- * command that puts the branch on screen.
+ * that needs saying out loud is the branch. It writes a second board without
+ * changing the browser, so the message names the command that shows it.
  */
 function saveNotice(saved: BoardSaveResult, paneCount: number): Notice {
 	const wrote = saved.forced
 		? `Overwrote ${saved.file}. Whatever that note held is gone.`
 		: `Saved "${saved.board}" to ${saved.file}.`;
-	const moved = saved.panes?.moved ?? [];
-	const kept = saved.panes?.kept ?? [];
 
 	// The board had stopped saving and this is one of the two outcomes that end
 	// that, so the news is not the file it wrote but that the drawing is written
-	// down again — and, for a save elsewhere, which board is now which.
+	// down again. For a save elsewhere, the board addresses in the browser stay
+	// where they were.
 	const ended = saved.resolvedHold;
 	if (ended) {
 		const held = `${ended.writes} change${ended.writes === 1 ? "" : "s"}`;
@@ -174,37 +164,32 @@ function saveNotice(saved: BoardSaveResult, paneCount: number): Notice {
 			text:
 				ended.outcome === "overwrite"
 					? `${wrote} "${ended.board}" is saving again, with the ${held} that were held on the canvas.`
-					: `${wrote} The ${held} that were held are in it, and the panes are showing it. ` +
+					: `${wrote} The ${held} that were held are in it. The browser is unchanged. ` +
 						`"${ended.board}" is saving again and holds the version the other editor wrote.`,
 		};
 	}
 
 	if (saved.saveKind === "branch") {
-		const source = `"${saved.savedFrom}"`;
-		const stayed = kept.length
-			? `${listPanes(kept)} still ${kept.length > 1 ? "hold" : "holds"} ${source}`
-			: `no pane was holding ${source}`;
-		// `pane open` makes a pane rather than taking one, so it is the move that
-		// cannot overwrite the board being read. It has nowhere to go once the
-		// shell is full, and then the only way up is over a board on screen.
+		const source = saved.savedFrom ? `"${saved.savedFrom}"` : "the source board";
 		const show =
 			paneCount < MAX_PANES
-				? `Put it up beside this one with \`pane open --board ${saved.board}\`.`
-				: `Both panes are full, so put it up with \`board open ${saved.board} --pane left\`` +
+				? `Run \`archboard browser open\`, then \`archboard browser show ${saved.board} --pane <new-pane>\`.`
+				: `Both panes are full, so use \`archboard browser show ${saved.board} --pane left\`` +
 					" or `--pane right`, which replaces the board in that pane.";
 		return {
 			kind: "info",
 			hold: true,
 			text:
-				`${wrote} That branches ${source}, and a branch moves nothing: ` +
-				`${stayed}, and the branch is not on screen anywhere. ${show}`,
+				`${wrote} That branches ${source}. The browser is unchanged, so the branch is not on screen. ` +
+				show,
 		};
 	}
 
-	if (moved.length) {
+	if (saved.saveKind === "named") {
+		const source = saved.savedFrom ? ` and still shows "${saved.savedFrom}"` : "";
 		return {
 			kind: "info",
-			text: `${wrote} It is showing in ${listPanes(moved)}, which held "${saved.savedFrom}".`,
+			text: `${wrote} The browser is unchanged${source}.`,
 		};
 	}
 
@@ -344,13 +329,7 @@ function createAttemptSave(args: {
 					clientId: args.status?.clientId,
 					...request,
 				});
-				const kind = saved.saveKind ?? "same-board";
-				const holdingIt =
-					kind === "branch"
-						? false
-						: kind === "named"
-							? (saved.panes?.moved ?? []).some((pane) => pane.clientId === args.status?.clientId)
-							: saved.board === args.boardKey;
+				const holdingIt = saved.saveKind === "same-board" && saved.board === args.boardKey;
 				if (holdingIt) args.setBoardInfo(saved);
 				else void args.refreshBoardInfo(args.boardKey);
 				args.setDialog(null);

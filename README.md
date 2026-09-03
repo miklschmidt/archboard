@@ -122,7 +122,8 @@ two side by side:
 ```bash
 archboard board save --board payments --variant option-a \
   --doing "branching the queue proposal"
-archboard pane open --board payments@option-a
+archboard browser open
+archboard browser show payments@option-a --pane right
 archboard compare payments payments@option-a
 ```
 

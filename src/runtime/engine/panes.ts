@@ -251,7 +251,7 @@ export function paneWords(place: string): string {
 
 /** The command that makes a pane, said the same way everywhere it is offered. */
 export const HOW_TO_OPEN_A_PANE =
-	"Open one with `archboard pane open [--board <key>]`, which splits the canvas and answers with the pane it made.";
+	"Open one with `archboard browser open`, which splits the live canvas and answers with the pane it made.";
 
 /**
  * Which pane a caller means by `left`, `2`, `focused`, `pane-1`…
@@ -266,7 +266,7 @@ export function resolvePaneSpec(registrations: PaneRegistration[], spec: string)
 	if (ordered.length === 0) {
 		throw new Error(
 			`No pane is open, so there is nowhere to put a board — "${spec}" names nothing. ` +
-				"Open the canvas in a browser first, or omit --pane to load the board without showing it.",
+				"Open the canvas in a browser first, then retry the browser command.",
 		);
 	}
 	const wanted = spec.trim().toLowerCase();
@@ -475,7 +475,7 @@ export function buildPanesReport(
 	if (panes.length > 1 && sameBoard) {
 		lines.push(
 			"These panes are all on the same board. Point one somewhere else with " +
-				"`board open <name> --pane <left|right|…>`.",
+				"`browser show <name> --pane <left|right|…>`.",
 		);
 	}
 	// The consequence of disagreement, said where the disagreement is visible: a

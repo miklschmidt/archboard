@@ -121,8 +121,9 @@ describe("malformed input", () => {
 		expect(opened.status).toBe(400);
 		expect(opened.body.error).toContain("invalid element helv (text) at element.width");
 		expect(fs.readFileSync(file, "utf8")).toBe(note);
-		const boards = await request<{ open: Array<{ key: string }> }>("/api/boards");
-		expect(boards.body.open.some((board) => board.key === "legacy-geometry")).toBeFalse();
+		const boards = await request<{ boards: Array<{ key: string }>; open?: unknown }>("/api/boards");
+		expect(boards.body.boards.some((board) => board.key === "legacy-geometry")).toBeFalse();
+		expect(boards.body.open).toBeUndefined();
 	});
 
 	test("refuses an entire mixed agent batch and preserves exact note bytes", async () => {
