@@ -1,6 +1,7 @@
 import { createElement, useId, useMemo, type ReactNode } from "react";
 
 import { cn } from "../../ui-classnames/index.js";
+import { workbenchRuntimeMessageId } from "../../workbench-runtime/index.js";
 import type { WorkbenchTimelineProps } from "../contract.js";
 import { assistantTimelinePrimitives } from "../timeline.js";
 import { record, textField } from "./details.js";
@@ -97,6 +98,7 @@ const PART_RENDERERS = {
 };
 
 function renderTurn(turn: TimelineTurn | undefined, messageId: string): ReactNode {
+	const turnId = turn?.turnId ?? messageId;
 	return createElement(
 		MessagePrimitive.Root,
 		{
@@ -104,7 +106,7 @@ function renderTurn(turn: TimelineTurn | undefined, messageId: string): ReactNod
 		},
 		createElement(
 			"div",
-			{ "data-turn-id": messageId, "data-turn-status": turn?.status ?? "runtime" },
+			{ "data-turn-id": turnId, "data-turn-status": turn?.status ?? "runtime" },
 			createElement(
 				"header",
 				{
@@ -120,9 +122,9 @@ function renderTurn(turn: TimelineTurn | undefined, messageId: string): ReactNod
 					"span",
 					{
 						className: "min-w-0 truncate font-mono text-technical text-faint-foreground",
-						title: messageId,
+						title: turnId,
 					},
-					messageId,
+					turnId,
 				),
 			),
 			turn === undefined
@@ -149,6 +151,16 @@ function renderTurn(turn: TimelineTurn | undefined, messageId: string): ReactNod
 export function WorkbenchTimeline(props: WorkbenchTimelineProps): ReactNode {
 	const headingId = useId();
 	const normalized = useMemo(() => normalizeTimeline(props), [props]);
+	const runtimeTurns = useMemo(
+		() =>
+			new Map(
+				[...normalized.turns.values()].map((turn) => [
+					workbenchRuntimeMessageId(props.threadId, turn.turnId),
+					turn,
+				]),
+			),
+		[normalized.turns, props.threadId],
+	);
 	const label = props.label ?? "Codex workbench activity";
 	return createElement(
 		ThreadPrimitive.Root,
@@ -203,7 +215,7 @@ export function WorkbenchTimeline(props: WorkbenchTimelineProps): ReactNode {
 					),
 					createElement(TimelineMessageList, {
 						component: ThreadPrimitive.Messages,
-						render: (messageId) => renderTurn(normalized.turns.get(messageId), messageId),
+						render: (messageId) => renderTurn(runtimeTurns.get(messageId), messageId),
 					}),
 				),
 			),

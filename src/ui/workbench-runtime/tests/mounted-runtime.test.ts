@@ -7,7 +7,7 @@ import type {
 	BrowserTimeline,
 } from "../../../shared/codex-browser-model/index.js";
 import type { BrowserWorkbenchState } from "../../workbench-transport/index.js";
-import type { WorkbenchSubmissionResult } from "../index.js";
+import { workbenchRuntimeMessageId, type WorkbenchSubmissionResult } from "../index.js";
 import {
 	connected,
 	latestExecutable,
@@ -34,7 +34,9 @@ describe("mounted workbench runtime provider", () => {
 			expect(latestExecutable(mounted.contexts).assistantRuntime).toBe(runtime);
 			const providerClient = mounted.observations.at(-1)?.client;
 			expect(providerClient).toBeDefined();
-			expect(mounted.observations.at(-1)?.thread.messages[0]?.id).toBe(turnId);
+			expect(mounted.observations.at(-1)?.thread.messages[0]?.id).toBe(
+				workbenchRuntimeMessageId(threadId, turnId),
+			);
 
 			await mounted.render(second);
 			expect(first.teardowns).toBe(1);
@@ -57,7 +59,9 @@ describe("mounted workbench runtime provider", () => {
 				const wrongRuntime = latestExecutable(control.contexts).assistantRuntime;
 				expect(wrongRuntime).not.toBe(runtime);
 				expect(control.observations.at(-1)?.client).not.toBe(providerClient);
-				expect(control.observations.at(-1)?.thread.messages[0]?.id).toBe("wrong-provider-turn");
+				expect(control.observations.at(-1)?.thread.messages[0]?.id).toBe(
+					workbenchRuntimeMessageId(threadId, "wrong-provider-turn"),
+				);
 				expect(mounted.observations.at(-1)?.client).toBe(providerClient);
 			} finally {
 				await control.close();
@@ -280,10 +284,10 @@ describe("mounted workbench runtime provider", () => {
 			]);
 			const observed = mounted.observations.at(-1)?.thread;
 			expect(observed?.messages.map((message) => message.id)).toEqual([
-				"status-running",
-				"status-complete",
-				"status-interrupted",
-				"status-failed",
+				workbenchRuntimeMessageId(threadId, "status-running"),
+				workbenchRuntimeMessageId(threadId, "status-complete"),
+				workbenchRuntimeMessageId(threadId, "status-interrupted"),
+				workbenchRuntimeMessageId(threadId, "status-failed"),
 			]);
 			expect(
 				observed?.messages[0]?.content.map((part) => ("itemId" in part ? part.itemId : null)),
@@ -294,15 +298,25 @@ describe("mounted workbench runtime provider", () => {
 				delete: false,
 			});
 
-			const duplicate = timeline([
-				{ media: "text", itemId: "same" as TimelineItem["itemId"], text: "one" },
-				{ media: "reasoning", itemId: "same" as TimelineItem["itemId"], text: "two" },
+			const sharedItemId = "same" as TimelineItem["itemId"];
+			const sharedIdentity = timeline([
+				{ media: "command", itemId: sharedItemId, command: "bun test", status: "completed" },
+				{
+					media: "approval",
+					itemId: sharedItemId,
+					approvalId: "approval-shared" as never,
+					status: "pending",
+				},
 			]);
-			await act(async () => transport.publish(connected(snapshot(duplicate))));
-			expect(mounted.container.queryByRole("status")?.textContent).toContain(
-				"Duplicate Codex item identity",
-			);
-			expect(mounted.container.queryByRole("status")?.textContent).toContain("reconnect or reload");
+			await act(async () => transport.publish(connected(snapshot(sharedIdentity))));
+			const sharedParts = mounted.observations.at(-1)?.thread.messages[0]?.content ?? [];
+			expect(sharedParts.map((part) => ("itemId" in part ? part.itemId : null))).toEqual([
+				sharedItemId,
+				sharedItemId,
+			]);
+			expect(
+				new Set(sharedParts.map((part) => ("runtimeId" in part ? part.runtimeId : null))).size,
+			).toBe(2);
 		} finally {
 			await mounted.close();
 		}
