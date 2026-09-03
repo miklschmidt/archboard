@@ -8,7 +8,11 @@ import type { BinaryFiles } from "@excalidraw/excalidraw/types";
 import { projectPreviewSnapshot } from "../src/ui/board-preview/index.js";
 import { readNote } from "../src/runtime/engine/board-io.js";
 import { applyElementInput } from "../src/runtime/engine/apply-element-input.js";
-import { processGroupExists } from "../src/runtime/engine/process-group.js";
+import {
+	processGroupExists,
+	processIdentity,
+	type ProcessIdentity,
+} from "../src/runtime/engine/process-group.js";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
@@ -28,7 +32,14 @@ const processGroups = createCodexProcessGroupOperations();
 
 type JsonRecord = Record<string, unknown>;
 type RendererJobMode = "normal" | "missing-image" | "stall" | "immediate-evaluation-failure";
-type RendererAcquisitionFailure = "before-profile" | "after-profile" | "after-port" | "after-spawn";
+type RendererAcquisitionFailure =
+	| "before-profile"
+	| "after-profile"
+	| "after-port"
+	| "after-spawn-before-group-capture"
+	| "group-capture-failure"
+	| "group-capture-timeout"
+	| "after-spawn";
 type FixtureAcquisitionFailure = "before-vite-create" | "after-vite-create" | "after-vite-listen";
 
 function requirePreflight(): void {
@@ -305,6 +316,9 @@ class Cdp {
 interface CleanupAudit {
 	pids: number[];
 	processGroup: number | null;
+	processGroupProven: boolean;
+	candidateLeaderPid: number | null;
+	candidateLeaderStartTime: string | null;
 	groupAbsent: boolean;
 	groupError: string | null;
 	survivors: number[];
@@ -319,6 +333,11 @@ interface CleanupAudit {
 	portReleased: boolean;
 	stdout: string;
 	stderr: string;
+}
+
+interface RendererProcessGroupCandidate {
+	readonly leader: ProcessIdentity;
+	readonly expectedGroup: number;
 }
 
 async function settlesBefore(promise: Promise<unknown>, deadline: number): Promise<boolean> {
@@ -345,19 +364,44 @@ async function waitForProcessGroupAbsence(
 	return true;
 }
 
-async function captureRendererProcessGroup(leaderPid: number): Promise<CodexProcessGroupIdentity> {
-	const deadline = Date.now() + cleanupTimeoutMs;
+function captureRendererProcessGroupCandidate(leaderPid: number): RendererProcessGroupCandidate {
+	return { leader: processIdentity(leaderPid), expectedGroup: leaderPid };
+}
+
+function captureCandidateProcessGroup(
+	candidate: RendererProcessGroupCandidate,
+): CodexProcessGroupIdentity {
+	const captured = processGroups.capture(candidate.leader.pid);
+	if (
+		captured.pgid !== candidate.expectedGroup ||
+		captured.leaderStartTime !== candidate.leader.startTime
+	)
+		throw new Error(
+			`Chromium process group candidate ${candidate.leader.pid} no longer matches its spawn identity.`,
+		);
+	return captured;
+}
+
+async function captureRendererProcessGroup(
+	candidate: RendererProcessGroupCandidate,
+	deadline: number,
+	injectedFailure?: RendererAcquisitionFailure,
+): Promise<CodexProcessGroupIdentity> {
+	if (injectedFailure === "group-capture-failure")
+		throw new Error("Injected acquisition failure at group-capture-failure.");
 	let lastError: unknown;
 	while (Date.now() < deadline) {
 		try {
-			return processGroups.capture(leaderPid);
+			if (injectedFailure === "group-capture-timeout")
+				throw new Error("Injected group capture timeout.");
+			return captureCandidateProcessGroup(candidate);
 		} catch (error) {
 			lastError = error;
-			await Bun.sleep(cleanupPollMs);
+			await Bun.sleep(Math.max(0, Math.min(cleanupPollMs, deadline - Date.now())));
 		}
 	}
 	throw new Error(
-		`Chromium process ${leaderPid} did not establish its dedicated group: ${
+		`Chromium process ${candidate.leader.pid} did not establish its dedicated group: ${
 			lastError instanceof Error ? lastError.message : String(lastError)
 		}.`,
 		{ cause: lastError },
@@ -401,6 +445,7 @@ class RendererSession {
 	#profile: string | null = null;
 	#port: number | null = null;
 	#child: Bun.Subprocess | null = null;
+	#processGroupCandidate: RendererProcessGroupCandidate | null = null;
 	#processGroup: CodexProcessGroupIdentity | null = null;
 	#stdout: Promise<string> | null = null;
 	#stderr: Promise<string> | null = null;
@@ -457,10 +502,20 @@ class RendererSession {
 				stdout: "pipe",
 				stderr: "pipe",
 			});
-			session.#processGroup = await captureRendererProcessGroup(session.child.pid);
+			stage = "post-spawn-candidate";
+			const candidate = captureRendererProcessGroupCandidate(session.child.pid);
+			session.#processGroupCandidate = candidate;
 			session.observe(ownedProcessIds(session.child.pid));
 			session.#stdout = new Response(pipe(session.child.stdout)).text();
 			session.#stderr = new Response(pipe(session.child.stderr)).text();
+			stage = "after-spawn-before-group-capture";
+			injectAcquisitionFailure("after-spawn-before-group-capture", injectedFailure);
+			stage = "group-capture";
+			session.#processGroup = await captureRendererProcessGroup(
+				candidate,
+				Date.now() + cleanupTimeoutMs,
+				injectedFailure,
+			);
 			stage = "after-spawn";
 			injectAcquisitionFailure("after-spawn", injectedFailure);
 			return session;
@@ -586,13 +641,27 @@ class RendererSession {
 	async shutdown(): Promise<CleanupAudit> {
 		this.#cdp?.close();
 		const child = this.#child;
-		const processGroup = this.#processGroup;
+		const candidate = this.#processGroupCandidate;
+		let processGroup = this.#processGroup;
+		let processGroupProven = processGroup !== null;
 		if (child) this.observe(ownedProcessIds(child.pid));
 		const pids = [...this.#observed].toSorted((left, right) => left - right);
 		const cleanupStartedAt = Date.now();
 		const deadline = cleanupStartedAt + cleanupTimeoutMs;
-		let groupAbsent = processGroup === null;
+		let groupAbsent = child === null;
 		let groupError: string | null = null;
+		if (child && !candidate)
+			groupError = "Chromium spawned without a guarded process-group candidate.";
+		if (child && candidate && !processGroup) {
+			try {
+				processGroup = await captureRendererProcessGroup(candidate, deadline);
+				processGroupProven = true;
+			} catch (error) {
+				groupError =
+					"Could not prove Chromium's process group during cleanup: " +
+					(error instanceof Error ? error.message : String(error));
+			}
+		}
 		if (processGroup && processGroupExists(processGroup.pgid)) {
 			try {
 				processGroups.signal(processGroup, "SIGTERM");
@@ -610,9 +679,9 @@ class RendererSession {
 		}
 		if (processGroup && groupError === null) groupAbsent = !processGroupExists(processGroup.pgid);
 		const [leaderSettled, stdoutSettled, stderrSettled] = await Promise.all([
-			settlesBefore(child?.exited ?? Promise.resolve(0), deadline),
-			settlesBefore(this.#stdout ?? Promise.resolve(""), deadline),
-			settlesBefore(this.#stderr ?? Promise.resolve(""), deadline),
+			child ? settlesBefore(child.exited, deadline) : Promise.resolve(true),
+			this.#stdout ? settlesBefore(this.#stdout, deadline) : Promise.resolve(child === null),
+			this.#stderr ? settlesBefore(this.#stderr, deadline) : Promise.resolve(child === null),
 		]);
 		const pipesSettled = stdoutSettled && stderrSettled;
 		let survivors = pids.filter((pid) => existsSync(`/proc/${pid}`));
@@ -627,6 +696,7 @@ class RendererSession {
 		const clean =
 			groupAbsent &&
 			groupError === null &&
+			(!child || processGroupProven) &&
 			processesGone &&
 			leaderSettled &&
 			pipesSettled &&
@@ -634,7 +704,10 @@ class RendererSession {
 			portReleased;
 		return {
 			pids,
-			processGroup: processGroup?.pgid ?? null,
+			processGroup: processGroup?.pgid ?? candidate?.expectedGroup ?? null,
+			processGroupProven,
+			candidateLeaderPid: candidate?.leader.pid ?? null,
+			candidateLeaderStartTime: candidate?.leader.startTime ?? null,
 			groupAbsent,
 			groupError,
 			survivors,
@@ -1180,7 +1253,15 @@ async function proveImmediateFailureIsNotTimeout(session: RendererSession): Prom
 
 async function provePartialAcquisitionCleanup(input: JsonRecord): Promise<JsonRecord> {
 	const renderer: JsonRecord[] = [];
-	for (const stage of ["before-profile", "after-profile", "after-port", "after-spawn"] as const) {
+	for (const stage of [
+		"before-profile",
+		"after-profile",
+		"after-port",
+		"after-spawn-before-group-capture",
+		"group-capture-failure",
+		"group-capture-timeout",
+		"after-spawn",
+	] as const) {
 		try {
 			await RendererSession.acquire(stage);
 			throw new Error(`Injected renderer acquisition failure ${stage} was accepted.`);
@@ -1191,7 +1272,20 @@ async function provePartialAcquisitionCleanup(input: JsonRecord): Promise<JsonRe
 					`Injected renderer acquisition ${stage} did not clean up: ${JSON.stringify(error.cleanup)}`,
 					{ cause: error },
 				);
-			renderer.push({ stage, cleanup: error.cleanup });
+			if (
+				stage !== "before-profile" &&
+				stage !== "after-profile" &&
+				stage !== "after-port" &&
+				(!error.cleanup.processGroupProven ||
+					!error.cleanup.groupAbsent ||
+					!error.cleanup.leaderSettled ||
+					!error.cleanup.pipesSettled)
+			)
+				throw new Error(
+					`Injected post-spawn acquisition ${stage} did not prove group and pipe cleanup: ${JSON.stringify(error.cleanup)}`,
+					{ cause: error },
+				);
+			renderer.push({ stage, failureStage: error.stage, cleanup: error.cleanup });
 		}
 	}
 	const fixture: JsonRecord[] = [];
