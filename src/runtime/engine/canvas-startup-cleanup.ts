@@ -175,6 +175,26 @@ function stoppedCanvasGroup(
 	);
 }
 
+function stoppedCanvasGroups(
+	canvasPid: number,
+	states: readonly {
+		readonly identity: CanvasStartupProcessGroupIdentity;
+		readonly status: CodexProcessGroupInspection;
+	}[],
+): string {
+	return (
+		`Canvas pid ${canvasPid} remains stopped with non-quiescent Codex groups: ` +
+		states
+			.map(
+				({ identity, status }) =>
+					`leader pid ${identity.leaderPid}, pgid ${identity.pgid}, ` +
+					`starttime ${identity.leaderStartTime} in state ${status}`,
+			)
+			.join("; ") +
+		"."
+	);
+}
+
 function validateTiming(timing: FailedCanvasCleanupTiming): void {
 	for (const [name, value] of Object.entries(timing)) {
 		if (!Number.isFinite(value) || value < 0)
@@ -226,13 +246,17 @@ async function takeCleanupOwnership(
 		status: CodexProcessGroupInspection;
 	}>;
 	let operation: "inspection" | "signalling" = "inspection";
+	let currentIdentity = identities[0]!;
 	try {
-		states = identities.map((identity) => ({
-			identity,
-			status: operations.inspectGroup(identity),
-		}));
+		states = [];
+		for (const identity of identities) {
+			currentIdentity = identity;
+			operation = "inspection";
+			states.push({ identity, status: operations.inspectGroup(identity) });
+		}
 		for (const state of states) {
 			if (state.status !== "owned") continue;
+			currentIdentity = state.identity;
 			operation = "signalling";
 			operations.signalGroup(state.identity, "SIGTERM");
 			operation = "inspection";
@@ -244,42 +268,54 @@ async function takeCleanupOwnership(
 			await operations.wait(
 				Math.min(timing.pollMs, remaining(operations.now, applicationGraceAtMs)),
 			);
-			for (const state of states)
-				if (state.status === "owned") state.status = operations.inspectGroup(state.identity);
+			for (const state of states) {
+				if (state.status !== "owned") continue;
+				currentIdentity = state.identity;
+				operation = "inspection";
+				state.status = operations.inspectGroup(state.identity);
+			}
 		}
 		for (const state of states) {
 			if (state.status !== "owned") continue;
+			currentIdentity = state.identity;
 			operation = "signalling";
 			operations.signalGroup(state.identity, "SIGKILL");
 			operation = "inspection";
 		}
-		for (const state of states)
-			if (state.status === "owned") state.status = operations.inspectGroup(state.identity);
+		for (const state of states) {
+			if (state.status !== "owned") continue;
+			currentIdentity = state.identity;
+			operation = "inspection";
+			state.status = operations.inspectGroup(state.identity);
+		}
 		while (states.some((state) => state.status === "owned") && operations.now() < deadlineAtMs) {
 			await operations.wait(Math.min(timing.pollMs, remaining(operations.now, deadlineAtMs)));
-			for (const state of states)
-				if (state.status === "owned") state.status = operations.inspectGroup(state.identity);
+			for (const state of states) {
+				if (state.status !== "owned") continue;
+				currentIdentity = state.identity;
+				operation = "inspection";
+				state.status = operations.inspectGroup(state.identity);
+			}
 		}
 	} catch (error) {
 		return {
 			cleanup: "unproven",
 			owner: "unknown",
-			group: latest,
-			reason: `${stoppedCanvasGroup(options.canvasPid, latest, `${operation}_error`)} ${error instanceof Error ? error.message : String(error)}.`,
+			group: currentIdentity,
+			reason: `${stoppedCanvasGroup(options.canvasPid, currentIdentity, `${operation}_error`)} ${error instanceof Error ? error.message : String(error)}.`,
 		};
 	}
 	const unproven = states.filter((state) => state.status !== "quiescent");
 	if (unproven.length > 0) {
-		const latestState = states.find((state) => state.identity === latest)?.status ?? "unproven";
+		const first = unproven[0]!;
 		return {
 			cleanup: "unproven",
 			owner: "unknown",
-			group: latest,
+			group: first.identity,
 			reason:
-				stoppedCanvasGroup(options.canvasPid, latest, latestState) +
-				(unproven.length === 1 && unproven[0]?.identity === latest
-					? ""
-					: ` Non-quiescent transferred groups: ${unproven.map((state) => `${state.identity.pgid} (${state.status})`).join(", ")}.`),
+				unproven.length === 1
+					? stoppedCanvasGroup(options.canvasPid, first.identity, first.status)
+					: stoppedCanvasGroups(options.canvasPid, unproven),
 		};
 	}
 	if (!(await reapOuter(operations, deadlineAtMs))) {

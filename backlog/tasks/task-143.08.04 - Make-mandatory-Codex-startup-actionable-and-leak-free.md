@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 04:38'
+updated_date: '2026-09-03 04:44'
 labels: []
 dependencies:
   - TASK-143.08.03
@@ -14,6 +14,9 @@ references:
   - src/server/canvas/lib/application.ts
   - src/server/canvas/lib/codex-workbench-production.ts
   - src/runtime/codex-process
+modified_files:
+  - src/runtime/engine/canvas-startup-cleanup.ts
+  - src/runtime/engine/tests/canvas-startup-cleanup.test.ts
 parent_task_id: TASK-143.08
 priority: high
 type: bug
@@ -84,6 +87,10 @@ Moved crash/replacement evidence out of the unrelated composed thread workflow. 
 Final focused serial validation: 79 tests and 461 expectations passed across the cleanup state machine, codex-process lifecycle, application/workbench lifecycle, production initialization, all public executable refusals, concurrent start, signed-out/logged-error state, reload and persistent-state preservation, HTTP lifetime, startup signal cleanup, and crash replacement. Focused strict type checking for the new protocol/state machine passed. Focused Oxlint, Oxfmt, and git diff checks passed before the final audit.
 
 Final Standards tail: after safe transfer, the launcher now leaves the exact canvas SIGSTOPed whenever group inspection or signalling errors, or any transferred group remains owned, reused, or unproven at the single deadline. Only the all-quiescent branch can SIGKILL and reap the outer canvas. Each refusal names the canvas pid, latest leader pid, pgid, starttime, and terminal state. The existing state-machine owner now covers all five non-quiescent classes and proves no outer SIGKILL. It passed 15 tests and 57 expectations in 24 ms. The successful public takeover stayed green at 836 ms, and independent crash replacement stayed green at 1.70 s. Focused type, lint, format, and diff checks passed.
+
+Actual-head Standards remediation from b0f10a16: failed-start takeover now tracks the exact identity at every group inspection and signal, so an exception reports the group that actually failed instead of the last published group. A normal non-quiescent result selects the first failing identity in transfer order and prints leader pid, pgid, starttime, and state for every non-quiescent group. The canvas remains SIGSTOPed and outer SIGKILL/reap remains exclusive to the all-quiescent branch. Deterministic regressions reproduce an earlier group signalling failure while a later group is quiescent, and two non-quiescent groups with complete identity diagnostics. Red evidence failed on the former last-group attribution. Final focused evidence: cleanup owner 17 tests and 61 expectations; public signal/takeover plus crash replacement 3 tests and 23 expectations; focused strict TypeScript, Oxlint, Oxfmt, and git diff checks passed.
+
+Final assertion count is 63 after explicitly proving inspection order 41 then 42 and the sole attempted group signal 41/SIGTERM in the earlier-group failure regression.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
