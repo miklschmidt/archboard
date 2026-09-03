@@ -183,7 +183,7 @@ export function WorkbenchTimeline(props: WorkbenchTimelineProps): ReactNode {
 					"div",
 					{
 						className:
-							"max-h-full min-h-0 overflow-y-auto bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring",
+							"max-h-full min-h-0 overflow-y-auto bg-surface-raised outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
 						role: "log",
 						tabIndex: 0,
 						"aria-labelledby": headingId,

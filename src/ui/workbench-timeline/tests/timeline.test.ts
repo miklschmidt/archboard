@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
+import { createElement, type ComponentType } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import type { BrowserTimeline } from "../../../shared/codex-browser-model/index.js";
+import {
+	ReadonlyWorkbenchThreadProvider,
+	createReadonlyWorkbenchView,
+} from "../../workbench-runtime/index.js";
 import {
 	CODEX_THREAD_ITEM_LABELS,
 	boundedDetails,
@@ -13,6 +19,16 @@ import type {
 	CodexWorkbenchTurn,
 	WorkbenchTimelineProps,
 } from "../contract.js";
+
+const loadedModule: unknown = import.meta.require("../index.tsx");
+if (typeof loadedModule !== "object" || loadedModule === null) {
+	throw new Error("Workbench timeline module did not load as an object.");
+}
+const WorkbenchTimeline = (loadedModule as Readonly<Record<string, unknown>>)
+	.WorkbenchTimeline as ComponentType<WorkbenchTimelineProps>;
+if (typeof WorkbenchTimeline !== "function") {
+	throw new TypeError("WorkbenchTimeline export is not a component.");
+}
 
 const threadId = "thread-timeline" as BrowserTimeline["threadId"];
 const turnId = "turn-timeline" as BrowserTimeline["turns"][number]["turnId"];
@@ -170,6 +186,25 @@ function props(overrides: Partial<WorkbenchTimelineProps> = {}): WorkbenchTimeli
 	return { threadId, turns: [turn()], runtimeTimeline: runtimeTimeline("completed"), ...overrides };
 }
 
+function expectedIdentity(itemId: string, occurrence = 0): string {
+	return JSON.stringify([threadId, turnId, itemId, occurrence]);
+}
+
+function renderTimeline(overrides: Partial<WorkbenchTimelineProps> = {}): string {
+	const timelineProps = props(overrides);
+	const runtime = timelineProps.runtimeTimeline ?? runtimeTimeline("completed");
+	const state = timelineProps.history === "prior_epoch" ? "prior_epoch" : "coordinator";
+	const view = createReadonlyWorkbenchView(runtime, state, "Focused timeline fixture.");
+	if (view.mode !== "readonly") throw new Error("Expected a read-only workbench fixture.");
+	return renderToStaticMarkup(
+		createElement(
+			ReadonlyWorkbenchThreadProvider,
+			{ view },
+			createElement(WorkbenchTimeline, timelineProps),
+		),
+	);
+}
+
 describe("workbench timeline", () => {
 	test("keeps a compile-time-complete label for every recovered ThreadItem arm", () => {
 		expect(Object.keys(CODEX_THREAD_ITEM_LABELS)).toEqual([
@@ -205,7 +240,7 @@ describe("workbench timeline", () => {
 		);
 		for (const item of completeItems()) {
 			expect(items.find((candidate) => candidate.itemId === item.id)?.identity).toBe(
-				`${threadId}:${turnId}:${item.id}`,
+				expectedIdentity(item.id),
 			);
 		}
 		expect(items.at(-1)).toMatchObject({
@@ -224,7 +259,7 @@ describe("workbench timeline", () => {
 		const complete = normalizeTimeline(props());
 		expect(empty.turns.size).toBe(0);
 		expect(complete.streaming).toBe(false);
-		expect(complete.turns.get(turnId)?.items[0]?.identity).toBe(`${threadId}:${turnId}:item-user`);
+		expect(complete.turns.get(turnId)?.items[0]?.identity).toBe(expectedIdentity("item-user"));
 	});
 
 	test("keeps prior-epoch and terminal states explicit", () => {
@@ -256,7 +291,17 @@ describe("workbench timeline", () => {
 			malformed: true,
 		});
 		expect(first.turns.get(turnId)?.items[1]?.itemId).toMatch(/^malformed-/);
-		expect(first.turns.get(turnId)?.items[2]?.identity).toEndWith(":duplicate-1");
+		expect(first.turns.get(turnId)?.items[2]?.identity).toBe(expectedIdentity("item-future", 1));
+	});
+
+	test("keeps duplicate occurrences injective from literal suffix-like item ids", () => {
+		const hostile = turn("completed", [
+			{ type: "plan", id: "item-x", text: "First" },
+			{ type: "plan", id: "item-x", text: "Second" },
+			{ type: "plan", id: "item-x:duplicate-1", text: "Literal suffix" },
+		]);
+		const items = normalizeTimeline(props({ turns: [hostile] })).turns.get(turnId)?.items ?? [];
+		expect(new Set(items.map((item) => item.identity)).size).toBe(items.length);
 	});
 
 	test("bounds inert details and accepts only HTTP media links", () => {
@@ -269,5 +314,73 @@ describe("workbench timeline", () => {
 		expect(safeHttpUrl("file:///tmp/private")).toBeNull();
 		expect(safeHttpUrl("javascript:alert(1)")).toBeNull();
 		expect(safeHttpUrl("https://example.test/image.png")).toBe("https://example.test/image.png");
+	});
+
+	test("renders the public component through the read-only provider with stable log semantics", () => {
+		const running = renderTimeline({
+			turns: [turn("inProgress")],
+			runtimeTimeline: runtimeTimeline("inProgress"),
+		});
+		const headingId = running.match(/<h1[^>]+id="([^"]+)"/)?.[1];
+		const log = running.match(/<div[^>]+role="log"[^>]*>/)?.[0];
+		expect(headingId).toBeTruthy();
+		expect(log).toContain('tabindex="0"');
+		expect(log).toContain(`aria-labelledby="${headingId}"`);
+		expect(log).toContain('aria-relevant="additions"');
+		expect(log).toContain('aria-busy="true"');
+		expect(log).toContain("focus-visible:ring-inset");
+		expect(log).not.toContain("outline-offset-[");
+		expect(running).not.toContain('tabindex="-1"');
+
+		const completed = renderTimeline();
+		expect(completed.match(/<div[^>]+role="log"[^>]*>/)?.[0]).not.toContain("aria-busy");
+	});
+
+	test("renders prior, terminal, hostile, repeated-link, and bounded disclosure states", () => {
+		const repeatedUrl = "https://example.test/repeated.png";
+		const hostileText = "<script>window.hostile = true</script>";
+		const longOutput = `${"x".repeat(20_000)}TAIL-SENTINEL`;
+		const items = [...completeItems(longOutput)];
+		const userMessage = items[0];
+		if (userMessage?.type !== "userMessage") throw new Error("Expected the user fixture first.");
+		items[0] = {
+			...userMessage,
+			content: [
+				{ type: "text", text: hostileText },
+				{ type: "image", url: repeatedUrl },
+				{ type: "image", url: repeatedUrl },
+				{ type: "image", url: "javascript:window.hostile = true" },
+			],
+		} as unknown as CodexWorkbenchItem;
+		const unknown = {
+			type: "futureCodexItem",
+			id: "item-future",
+			status: "futureStatus",
+			payload: hostileText,
+		};
+		const markup = renderTimeline({
+			history: "prior_epoch",
+			turns: [turn("failed", [...items, unknown] as unknown as CodexWorkbenchItem[])],
+			runtimeTimeline: runtimeTimeline("failed"),
+		});
+		expect(markup).toContain("Prior session history · read only");
+		expect(markup).toContain('role="alert"');
+		expect(markup).toContain("Turn failed");
+		expect(markup).toContain("Unknown item");
+		expect(markup).toContain('class="m-0 !text-body text-muted-foreground">futureStatus');
+		expect(markup).toContain("malformed or uses an unknown Codex variant");
+		expect(markup).toContain("&lt;script&gt;window.hostile = true&lt;/script&gt;");
+		expect(markup).not.toContain("TAIL-SENTINEL");
+		expect(markup).toContain("characters omitted");
+		expect(markup.match(new RegExp(`href="${repeatedUrl}"`, "g"))).toHaveLength(4);
+		expect(markup).not.toContain('href="javascript:');
+		expect(markup).toContain("<details");
+		expect(markup).toContain("<summary");
+		expect(markup).toContain("Raw details</summary>");
+		expect(markup).not.toContain('tabindex="-1"');
+
+		const interrupted = renderTimeline({ turns: [turn("interrupted")] });
+		expect(interrupted).toContain('role="status"');
+		expect(interrupted).toContain("Turn interrupted");
 	});
 });
