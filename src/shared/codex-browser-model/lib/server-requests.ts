@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+import type {
+	CodexIngressConformance,
+	CodexOutputConformance,
+	CodexServerRequest as GeneratedCodexServerRequest,
+	CodexServerRequestParamsByMethod,
+	CodexServerResponseByMethod,
+} from "../../codex-app-server-contract/index.js";
 import {
 	CurrentTimeReadResponseSchema,
 	UNSUPPORTED_ATTESTATION_ERROR,
@@ -20,7 +27,19 @@ export const SERVER_REQUEST_METHODS = [
 	"currentTime/read",
 	"applyPatchApproval",
 	"execCommandApproval",
-] as const;
+] as const satisfies readonly (keyof CodexServerRequestParamsByMethod)[];
+
+function codexIngressSchema<Wire>() {
+	return <Schema extends z.ZodType>(
+		schema: Schema & CodexIngressConformance<Wire, z.input<Schema>, z.output<Schema>>,
+	): Schema => schema;
+}
+
+function codexOutputSchema<Wire>() {
+	return <Schema extends z.ZodType>(
+		schema: Schema & CodexOutputConformance<Wire, z.output<Schema>>,
+	): Schema => schema;
+}
 
 const WireNumberSchema = z.number();
 const WireIntegerSchema = z.number().int();
@@ -419,85 +438,87 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 		})
 		.strict();
 
-	const ServerRequestSchema = z.discriminatedUnion("method", [
-		z
-			.object({
-				method: z.literal("item/commandExecution/requestApproval"),
-				id: JsonRpcRequestIdSchema,
-				params: CommandExecutionRequestApprovalParamsSchema,
-			})
-			.strict(),
-		z
-			.object({
-				method: z.literal("item/fileChange/requestApproval"),
-				id: JsonRpcRequestIdSchema,
-				params: FileChangeRequestApprovalParamsSchema,
-			})
-			.strict(),
-		z
-			.object({
-				method: z.literal("item/tool/requestUserInput"),
-				id: JsonRpcRequestIdSchema,
-				params: ToolRequestUserInputParamsSchema,
-			})
-			.strict(),
-		z
-			.object({
-				method: z.literal("mcpServer/elicitation/request"),
-				id: JsonRpcRequestIdSchema,
-				params: ElicitationRequestParamsSchema,
-			})
-			.strict(),
-		z
-			.object({
-				method: z.literal("item/permissions/requestApproval"),
-				id: JsonRpcRequestIdSchema,
-				params: PermissionsRequestApprovalParamsSchema,
-			})
-			.strict(),
-		z
-			.object({
-				method: z.literal("item/tool/call"),
-				id: JsonRpcRequestIdSchema,
-				params: DynamicToolCallParamsSchema,
-			})
-			.strict(),
-		z
-			.object({
-				method: z.literal("account/chatgptAuthTokens/refresh"),
-				id: JsonRpcRequestIdSchema,
-				params: TokenRefreshParamsSchema,
-			})
-			.strict(),
-		z
-			.object({
-				method: z.literal("attestation/generate"),
-				id: JsonRpcRequestIdSchema,
-				params: EmptyParamsSchema,
-			})
-			.strict(),
-		z
-			.object({
-				method: z.literal("currentTime/read"),
-				id: JsonRpcRequestIdSchema,
-				params: CurrentTimeReadParamsSchema,
-			})
-			.strict(),
-		z
-			.object({
-				method: z.literal("applyPatchApproval"),
-				id: JsonRpcRequestIdSchema,
-				params: PatchApprovalParamsSchema,
-			})
-			.strict(),
-		z
-			.object({
-				method: z.literal("execCommandApproval"),
-				id: JsonRpcRequestIdSchema,
-				params: ExecCommandApprovalParamsSchema,
-			})
-			.strict(),
-	]);
+	const ServerRequestSchema = codexIngressSchema<GeneratedCodexServerRequest>()(
+		z.discriminatedUnion("method", [
+			z
+				.object({
+					method: z.literal("item/commandExecution/requestApproval"),
+					id: JsonRpcRequestIdSchema,
+					params: CommandExecutionRequestApprovalParamsSchema,
+				})
+				.strict(),
+			z
+				.object({
+					method: z.literal("item/fileChange/requestApproval"),
+					id: JsonRpcRequestIdSchema,
+					params: FileChangeRequestApprovalParamsSchema,
+				})
+				.strict(),
+			z
+				.object({
+					method: z.literal("item/tool/requestUserInput"),
+					id: JsonRpcRequestIdSchema,
+					params: ToolRequestUserInputParamsSchema,
+				})
+				.strict(),
+			z
+				.object({
+					method: z.literal("mcpServer/elicitation/request"),
+					id: JsonRpcRequestIdSchema,
+					params: ElicitationRequestParamsSchema,
+				})
+				.strict(),
+			z
+				.object({
+					method: z.literal("item/permissions/requestApproval"),
+					id: JsonRpcRequestIdSchema,
+					params: PermissionsRequestApprovalParamsSchema,
+				})
+				.strict(),
+			z
+				.object({
+					method: z.literal("item/tool/call"),
+					id: JsonRpcRequestIdSchema,
+					params: DynamicToolCallParamsSchema,
+				})
+				.strict(),
+			z
+				.object({
+					method: z.literal("account/chatgptAuthTokens/refresh"),
+					id: JsonRpcRequestIdSchema,
+					params: TokenRefreshParamsSchema,
+				})
+				.strict(),
+			z
+				.object({
+					method: z.literal("attestation/generate"),
+					id: JsonRpcRequestIdSchema,
+					params: EmptyParamsSchema,
+				})
+				.strict(),
+			z
+				.object({
+					method: z.literal("currentTime/read"),
+					id: JsonRpcRequestIdSchema,
+					params: CurrentTimeReadParamsSchema,
+				})
+				.strict(),
+			z
+				.object({
+					method: z.literal("applyPatchApproval"),
+					id: JsonRpcRequestIdSchema,
+					params: PatchApprovalParamsSchema,
+				})
+				.strict(),
+			z
+				.object({
+					method: z.literal("execCommandApproval"),
+					id: JsonRpcRequestIdSchema,
+					params: ExecCommandApprovalParamsSchema,
+				})
+				.strict(),
+		]),
+	);
 
 	const FileChangeApprovalDecisionSchema = z.enum([
 		"accept",
@@ -528,40 +549,58 @@ export function createServerRequestSchemas(identities: IdentitySchemas) {
 		z.literal("abort"),
 	]);
 	const UserInputAnswerSchema = z.object({ answers: z.array(WireStringSchema) }).strict();
-	const UserInputResponseSchema = z
-		.object({ answers: z.record(z.string(), UserInputAnswerSchema) })
-		.strict();
-	const ElicitationResponseSchema = z
-		.object({
-			action: z.enum(["accept", "decline", "cancel"]),
-			content: JsonValueSchema.nullable(),
-			_meta: JsonValueSchema.nullable(),
-		})
-		.strict();
-	const DynamicToolCallResponseSchema = z
-		.object({
-			contentItems: z.tuple([
-				z.object({ type: z.literal("inputText"), text: boundedText(16_384) }).strict(),
-			]),
-			success: z.boolean(),
-		})
-		.strict();
-	const PermissionsResponseSchema = z
-		.object({
-			permissions: GrantedPermissionProfileSchema,
-			scope: z.enum(["turn", "session"]),
-			strictAutoReview: z.boolean().optional(),
-		})
-		.strict();
-	const CommandExecutionResponseSchema = z
-		.object({ decision: CommandExecutionApprovalDecisionSchema })
-		.strict();
-	const FileChangeResponseSchema = z
-		.object({ decision: FileChangeApprovalDecisionSchema })
-		.strict();
-	const CurrentTimeResponseSchema = CurrentTimeReadResponseSchema;
-	const ApplyPatchResponseSchema = z.object({ decision: ReviewDecisionSchema }).strict();
-	const ExecCommandResponseSchema = z.object({ decision: ReviewDecisionSchema }).strict();
+	const UserInputResponseSchema = codexOutputSchema<
+		CodexServerResponseByMethod["item/tool/requestUserInput"]
+	>()(z.object({ answers: z.record(z.string(), UserInputAnswerSchema) }).strict());
+	const ElicitationResponseSchema = codexOutputSchema<
+		CodexServerResponseByMethod["mcpServer/elicitation/request"]
+	>()(
+		z
+			.object({
+				action: z.enum(["accept", "decline", "cancel"]),
+				content: JsonValueSchema.nullable(),
+				_meta: JsonValueSchema.nullable(),
+			})
+			.strict(),
+	);
+	const DynamicToolCallResponseSchema = codexOutputSchema<
+		CodexServerResponseByMethod["item/tool/call"]
+	>()(
+		z
+			.object({
+				contentItems: z.tuple([
+					z.object({ type: z.literal("inputText"), text: boundedText(16_384) }).strict(),
+				]),
+				success: z.boolean(),
+			})
+			.strict(),
+	);
+	const PermissionsResponseSchema = codexOutputSchema<
+		CodexServerResponseByMethod["item/permissions/requestApproval"]
+	>()(
+		z
+			.object({
+				permissions: GrantedPermissionProfileSchema,
+				scope: z.enum(["turn", "session"]),
+				strictAutoReview: z.boolean().optional(),
+			})
+			.strict(),
+	);
+	const CommandExecutionResponseSchema = codexOutputSchema<
+		CodexServerResponseByMethod["item/commandExecution/requestApproval"]
+	>()(z.object({ decision: CommandExecutionApprovalDecisionSchema }).strict());
+	const FileChangeResponseSchema = codexOutputSchema<
+		CodexServerResponseByMethod["item/fileChange/requestApproval"]
+	>()(z.object({ decision: FileChangeApprovalDecisionSchema }).strict());
+	const CurrentTimeResponseSchema = codexOutputSchema<
+		CodexServerResponseByMethod["currentTime/read"]
+	>()(CurrentTimeReadResponseSchema);
+	const ApplyPatchResponseSchema = codexOutputSchema<
+		CodexServerResponseByMethod["applyPatchApproval"]
+	>()(z.object({ decision: ReviewDecisionSchema }).strict());
+	const ExecCommandResponseSchema = codexOutputSchema<
+		CodexServerResponseByMethod["execCommandApproval"]
+	>()(z.object({ decision: ReviewDecisionSchema }).strict());
 	const TokenRefreshErrorSchema = z
 		.object({
 			code: z.literal(UNSUPPORTED_TOKEN_REFRESH_ERROR.code),
@@ -640,4 +679,4 @@ export type ServerRequestSchemas = ReturnType<typeof createServerRequestSchemas>
 export type ServerRequestMethod = z.infer<ServerRequestSchemas["ServerRequestMethodSchema"]>;
 export type ServerRequest = z.infer<ServerRequestSchemas["ServerRequestSchema"]>;
 export type ServerRequestResult = z.infer<ServerRequestSchemas["ServerRequestResultSchema"]>;
-export type CodexServerRequest = ServerRequest;
+export type CodexServerRequest = GeneratedCodexServerRequest;

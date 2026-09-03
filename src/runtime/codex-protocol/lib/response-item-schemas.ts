@@ -49,14 +49,14 @@ const LocalShellActionSchema = looseObject({
 const WebSearchActionSchema = z.discriminatedUnion("type", [
 	looseObject({
 		type: z.literal("search"),
-		query: z.string().nullable(),
-		queries: z.array(z.string()).nullable(),
+		query: z.string().optional(),
+		queries: z.array(z.string()).optional(),
 	}),
-	looseObject({ type: z.literal("openPage"), url: z.string().nullable() }),
+	looseObject({ type: z.literal("open_page"), url: z.string().optional() }),
 	looseObject({
-		type: z.literal("findInPage"),
-		url: z.string().nullable(),
-		pattern: z.string().nullable(),
+		type: z.literal("find_in_page"),
+		url: z.string().optional(),
+		pattern: z.string().optional(),
 	}),
 	looseObject({ type: z.literal("other") }),
 ]);

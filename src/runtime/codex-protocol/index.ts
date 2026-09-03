@@ -111,6 +111,7 @@ export {
 	AutoCompactTokenLimitScopeSchema,
 	AllowDenyRequirementSchema,
 	AnalyticsConfigSchema,
+	BrowserUseOriginPolicySchema,
 	BrowserUseConfigSchema,
 	CliAuthCredentialsStoreModeSchema,
 	ConfigLayerMetadataSchema,

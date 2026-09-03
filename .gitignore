@@ -15,8 +15,8 @@ docs/design/generated/cli-command-audit.md
 docs/design/generated/command-contract-proof.json
 docs/design/generated/command-contract-proof.md
 
-# Exact-version Codex protocol bindings are reproducible derived output.
-src/runtime/codex-protocol/generated/
+# Exact-version Codex app-server bindings are reproducible derived output.
+src/shared/codex-app-server-contract/generated/
 
 # Environment files
 .env

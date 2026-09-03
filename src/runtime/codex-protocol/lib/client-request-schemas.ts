@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import type { CodexClientRequestParamsByMethod } from "../../../shared/codex-app-server-contract/index.js";
 import type {
 	LoginId,
 	QueuedSubmissionId,
@@ -34,6 +35,7 @@ import {
 	NonNegativeIntegerSchema,
 } from "./scalars.js";
 import { TurnItemsViewSchema } from "./thread-schemas.js";
+import { codexIngressSchemas } from "./vendor-schema.js";
 
 const NullablePageSchema = {
 	cursor: z.string().nullable().optional(),
@@ -410,7 +412,9 @@ const ThreadTimelineListParamsSchema = z.strictObject({
 });
 
 /** Wire decoder schemas for every generated request the public session can emit. */
-export const CLIENT_REQUEST_PARAM_SCHEMAS = {
+export const CLIENT_REQUEST_PARAM_SCHEMAS = codexIngressSchemas<
+	Pick<CodexClientRequestParamsByMethod, ClientRequestMethod>
+>()({
 	initialize: GeneratedInitializeParamsSchema,
 	"config/read": ConfigReadParamsSchema,
 	"configRequirements/read": z.undefined(),
@@ -443,7 +447,7 @@ export const CLIENT_REQUEST_PARAM_SCHEMAS = {
 	"thread/realtime/appendSpeech": ThreadRealtimeAppendSpeechParamsSchema,
 	"thread/realtime/stop": ThreadRealtimeStopParamsSchema,
 	"thread/timeline/list": ThreadTimelineListParamsSchema,
-} as const satisfies Record<ClientRequestMethod, z.ZodTypeAny>;
+} as const);
 
 export type ClientRequestPayloads = {
 	[Method in ClientRequestMethod]: z.infer<(typeof CLIENT_REQUEST_PARAM_SCHEMAS)[Method]>;

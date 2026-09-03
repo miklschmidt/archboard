@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import type { CodexResponseByMethod } from "../../../shared/codex-app-server-contract/index.js";
 import {
 	ConfigLayerMetadataSchema,
 	ConfigLayerSchema,
@@ -30,6 +31,7 @@ import {
 import { QueuedSubmissionSchema } from "./item-schemas.js";
 import type { ResponseMethod } from "./methods.js";
 import { FiniteNumberSchema, looseObject } from "./scalars.js";
+import { codexIngressSchemas } from "./vendor-schema.js";
 
 export const InitializeResponseSchema = looseObject({
 	userAgent: z.string(),
@@ -115,7 +117,7 @@ export const CurrentTimeReadResponseSchema = looseObject({ currentTimeAt: Finite
 export const EmptyResponseSchema = z.strictObject({});
 
 /** Every response schema used by the public session port. */
-export const RESPONSE_SCHEMAS = {
+export const RESPONSE_SCHEMAS = codexIngressSchemas<Pick<CodexResponseByMethod, ResponseMethod>>()({
 	initialize: InitializeResponseSchema,
 	"config/read": ConfigReadResponseSchema,
 	"configRequirements/read": ConfigRequirementsReadResponseSchema,
@@ -149,6 +151,6 @@ export const RESPONSE_SCHEMAS = {
 	"thread/realtime/stop": EmptyResponseSchema,
 	"thread/timeline/list": ThreadTimelineListResponseSchema,
 	"currentTime/read": CurrentTimeReadResponseSchema,
-} as const satisfies Record<ResponseMethod, z.ZodTypeAny>;
+} as const);
 
 export type ResponseSchemas = typeof RESPONSE_SCHEMAS;

@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import type {
+	CodexClientNotificationByMethod,
+	CodexServerRequestParamsByMethod,
+} from "../../../shared/codex-app-server-contract/index.js";
 import { CommandActionSchema } from "./item-schemas.js";
 import type { ClientNotificationMethod, ServerRequestMethod } from "./methods.js";
 import {
@@ -14,6 +18,7 @@ import {
 	RequestPermissionProfileSchema,
 } from "./approval-schemas.js";
 import { JsonValueSchema, RequestIdSchema, looseObject } from "./scalars.js";
+import { codexIngressSchemas } from "./vendor-schema.js";
 
 export const ClientInfoSchema = z.strictObject({
 	name: z.string(),
@@ -125,7 +130,9 @@ export const ChatgptAuthTokensRefreshParamsSchema = looseObject({
 export const AttestationGenerateParamsSchema = z.strictObject({});
 export const CurrentTimeReadParamsSchema = looseObject({ threadId: z.string() });
 
-export const SERVER_REQUEST_SCHEMAS = {
+export const SERVER_REQUEST_SCHEMAS = codexIngressSchemas<
+	Pick<CodexServerRequestParamsByMethod, ServerRequestMethod>
+>()({
 	"item/commandExecution/requestApproval": CommandExecutionRequestApprovalParamsSchema,
 	"item/fileChange/requestApproval": FileChangeRequestApprovalParamsSchema,
 	"item/tool/requestUserInput": ToolRequestUserInputParamsSchema,
@@ -137,11 +144,13 @@ export const SERVER_REQUEST_SCHEMAS = {
 	"currentTime/read": CurrentTimeReadParamsSchema,
 	applyPatchApproval: ApplyPatchApprovalParamsSchema,
 	execCommandApproval: ExecCommandApprovalParamsSchema,
-} as const satisfies Record<ServerRequestMethod, z.ZodTypeAny>;
+} as const);
 
-export const CLIENT_NOTIFICATION_SCHEMAS = {
+export const CLIENT_NOTIFICATION_SCHEMAS = codexIngressSchemas<
+	Pick<CodexClientNotificationByMethod, ClientNotificationMethod>
+>()({
 	initialized: z.strictObject({ method: z.literal("initialized") }),
-} as const satisfies Record<ClientNotificationMethod, z.ZodTypeAny>;
+} as const);
 
 export const JsonRpcErrorSchema = z.strictObject({
 	id: RequestIdSchema,

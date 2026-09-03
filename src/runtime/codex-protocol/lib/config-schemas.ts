@@ -50,8 +50,7 @@ export const ConfigLayerSchema = looseObject({
 	name: ConfigLayerSourceSchema,
 	version: z.string(),
 	config: JsonValueSchema,
-	/** Current app-server omits this field for enabled layers. */
-	disabledReason: z.string().nullable().optional(),
+	disabledReason: z.string().nullable(),
 });
 
 export const SandboxWorkspaceWriteSchema = looseObject({
@@ -207,7 +206,15 @@ const ComputerUseRequirementsSchema = looseObject({
 	macos: ComputerUseMacosRequirementsSchema.nullable(),
 	windows: ComputerUseWindowsRequirementsSchema.nullable(),
 });
-const BrowserUseOriginPolicySchema = z.enum(["allow", "deny"]);
+export const BrowserUseOriginPolicySchema = looseObject({
+	access: AllowDenyRequirementSchema.nullable(),
+	downloads: AllowDenyRequirementSchema.nullable(),
+	uploads: AllowDenyRequirementSchema.nullable(),
+	fullCdpAccess: AllowDenyRequirementSchema.nullable(),
+	autoReview: AllowDenyRequirementSchema.nullable(),
+	persistentApproval: z.boolean().nullable(),
+	accessApprovalLifetime: z.enum(["turn", "thread"]).nullable(),
+});
 const BrowserUseRequirementsSchema = looseObject({
 	allowHistoryAccess: z.boolean().nullable(),
 	disableAutoReview: z.boolean().nullable(),

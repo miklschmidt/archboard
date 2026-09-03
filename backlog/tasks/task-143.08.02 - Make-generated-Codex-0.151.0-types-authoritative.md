@@ -1,10 +1,11 @@
 ---
 id: TASK-143.08.02
 title: Make generated Codex 0.151.0 types authoritative
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 02:13'
+updated_date: '2026-09-03 01:16'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -36,3 +37,19 @@ Replace the rejected handwritten protocol ownership model with one dependency-ne
 - [ ] #6 Version, generation, missing-tree, and compiler diagnostics are actionable without a digest, method-name inventory, fingerprint corpus, or mirror detector acting as the contract authority.
 - [ ] #7 This recovery task is the sole owner of vendor-derived wire views, reverse-request variants, app-server ingress conformance, BrowserUseOriginPolicy handling, and i64 normalization. TASK-143.01.02 may consume its normalized exports only for browser-only state and user-intent projection.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Move exact @openai/codex 0.151.0 into runtime dependencies. Add one tracked Bun generator that runs the local Codex launcher into a fresh sibling directory, swaps the generated subtree atomically, and runs from postinstall plus an explicit package script. Ignore only that subtree and exclude it from authored Oxlint/Oxfmt input.
+2. Add src/shared/codex-app-server-contract/index.ts as the sole product import path. Export vendor-derived request, response, reverse-request, notification, item, config, thread, turn, queue, session, and realtime wire views, plus one recursive CodexJsonWire<T> adapter that maps bigint leaves to safe JSON numbers and rejects bigint at runtime.
+3. Replace handwritten vendor lookalike types in codex-protocol and the reachable browser/realtime seam with generated-derived views. Keep local browser state and identities local. Make each handwritten Zod ingress schema prove both z.input and z.output conformance to its normalized vendor wire type without casts, any, ts-ignore, or a separate compiler path.
+4. Correct BrowserUseOriginPolicy to its seven generated fields and add focused module coverage for decode/round-trip plus a reachable i64 safe-number case and bigint rejection at the JSON seam. Update existing boundary fixtures only where the module path changed.
+5. Run focused formatting, lint, type checks, and affected module owners. Then prove a clean frozen install, generated output, and both TypeScript graphs in a disposable checkout or temp root. Record exact evidence and implementation notes without checking acceptance criteria or finalizing the task.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation worker started from finalized recovery base 503bae209c970b72240489213e704de771565b77 in an isolated worktree. Scope is TASK-143.08.02 only; finalization remains parent-owned.
+<!-- SECTION:NOTES:END -->
