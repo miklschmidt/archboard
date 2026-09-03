@@ -3,6 +3,7 @@ import { z } from "zod";
 import type {
 	BrowserConnectionInstance,
 	BrowserGatewayMessage,
+	BrowserSnapshot,
 	BrowserWorkbenchConnection,
 	CodexWorkbenchGateway,
 } from "../../codex-workbench/index.js";
@@ -71,6 +72,16 @@ function sendResult(
 	});
 }
 
+function sendPublishedResult(
+	transport: CanvasCodexBrowserSocketSend,
+	request: BrowserRequest,
+	connection: BrowserWorkbenchConnection,
+	value: { readonly snapshot: BrowserSnapshot },
+): void {
+	sendResult(transport, request, value);
+	connection.confirmPublished(value.snapshot);
+}
+
 /** Own the public canvas WebSocket bridge for one installed gateway generation. */
 export function createCanvasCodexBrowserSocketOwner(
 	options: CanvasCodexBrowserSocketOwnerOptions,
@@ -135,10 +146,10 @@ export function createCanvasCodexBrowserSocketOwner(
 			const connection = connectionFor(instance, browserId);
 			switch (request.action) {
 				case "connect":
-					sendResult(transport, request, connection.snapshot());
+					sendPublishedResult(transport, request, connection, connection.snapshot());
 					return;
 				case "snapshot":
-					sendResult(transport, request, connection.snapshot());
+					sendPublishedResult(transport, request, connection, connection.snapshot());
 					return;
 				case "claimLease":
 					sendResult(transport, request, connection.claimLease());
@@ -150,13 +161,23 @@ export function createCanvasCodexBrowserSocketOwner(
 					sendResult(transport, request, connection.releaseLease());
 					return;
 				case "mediaReady":
-					sendResult(transport, request, connection.setMediaReady(request.ready));
+					sendPublishedResult(
+						transport,
+						request,
+						connection,
+						connection.setMediaReady(request.ready),
+					);
 					return;
 				case "accountRead":
-					sendResult(transport, request, await connection.accountRead());
+					sendPublishedResult(transport, request, connection, await connection.accountRead());
 					return;
 				case "command":
-					sendResult(transport, request, await connection.command(request.command));
+					sendPublishedResult(
+						transport,
+						request,
+						connection,
+						await connection.command(request.command),
+					);
 					return;
 				case "subscribe": {
 					subscriptions.get(instance)?.();
@@ -164,7 +185,7 @@ export function createCanvasCodexBrowserSocketOwner(
 						transport.send({ type: "codex_workbench_event", message });
 					});
 					subscriptions.set(instance, unsubscribe);
-					sendResult(transport, request, connection.snapshot());
+					sendPublishedResult(transport, request, connection, connection.snapshot());
 					return;
 				}
 				case "close":

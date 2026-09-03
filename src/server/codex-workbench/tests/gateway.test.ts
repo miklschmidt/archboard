@@ -15,6 +15,25 @@ function harness(): GatewayHarness {
 	return value;
 }
 
+function spontaneousTerminal(
+	approval: ReturnType<GatewayHarness["makeOrdinaryApproval"]>,
+	state: "expired" | "stale" = "expired",
+	reason = "The approval expired.",
+) {
+	return {
+		...approval,
+		terminalDelivery: "after_publish" as const,
+		snapshot: {
+			...approval.snapshot,
+			state,
+			decision: "cancelled" as const,
+			outcome: "delivered" as const,
+			reason,
+		},
+		spoken: { eligible: false as const, reason: "not_pending" as const },
+	};
+}
+
 describe("Codex workbench browser gateway readiness", () => {
 	test("passes authoritative thread provenance through the sole closed projection", () => {
 		for (const source of [
@@ -344,18 +363,7 @@ describe("Codex workbench browser command routing", () => {
 			const messages: unknown[] = [];
 			connection.subscribe((message) => messages.push(message));
 
-			value.setOrdinaryApproval({
-				...approval,
-				terminalDelivery: "after_publish",
-				snapshot: {
-					...approval.snapshot,
-					state: terminal.state,
-					decision: "cancelled",
-					outcome: "delivered",
-					reason: terminal.reason,
-				},
-				spoken: { eligible: false, reason: "not_pending" },
-			});
+			value.setOrdinaryApproval(spontaneousTerminal(approval, terminal.state, terminal.reason));
 
 			expect(messages).toHaveLength(1);
 			expect(JSON.stringify(messages[0])).toContain(`"state":"${terminal.state}"`);
@@ -365,18 +373,7 @@ describe("Codex workbench browser command routing", () => {
 	test("retires a spontaneous terminal immediately when no browser can receive it", () => {
 		const value = harness();
 		const approval = value.makeOrdinaryApproval();
-		value.setOrdinaryApproval({
-			...approval,
-			terminalDelivery: "after_publish",
-			snapshot: {
-				...approval.snapshot,
-				state: "expired",
-				decision: "cancelled",
-				outcome: "delivered",
-				reason: "The approval expired.",
-			},
-			spoken: { eligible: false, reason: "not_pending" },
-		});
+		value.setOrdinaryApproval(spontaneousTerminal(approval));
 
 		const connection = value.gateway.connect(value.browserId, value.paneId);
 		expect(connection.snapshot().snapshot.approvals).toEqual([]);
@@ -386,25 +383,57 @@ describe("Codex workbench browser command routing", () => {
 		const value = harness();
 		const approval = value.makeOrdinaryApproval();
 		const connection = value.gateway.connect(value.browserId, value.paneId);
-		value.setOrdinaryApproval({
-			...approval,
-			terminalDelivery: "after_publish",
-			snapshot: {
-				...approval.snapshot,
-				state: "expired",
-				decision: "cancelled",
-				outcome: "delivered",
-				reason: "The approval expired.",
-			},
-			spoken: { eligible: false, reason: "not_pending" },
-		});
+		value.setOrdinaryApproval(spontaneousTerminal(approval));
 
-		expect(connection.snapshot().snapshot.approvals).toEqual([
+		const published = connection.snapshot();
+		expect(published.snapshot.approvals).toEqual([
 			expect.objectContaining({
 				requestId: approval.request.requestId,
 				lifecycle: expect.objectContaining({ state: "expired", outcome: "delivered" }),
 			}),
 		]);
+		connection.confirmPublished(published.snapshot);
+		expect(connection.snapshot().snapshot.approvals).toEqual([]);
+	});
+
+	test("keeps a spontaneous terminal until both live connections publish it", () => {
+		const value = harness();
+		const first = value.gateway.connect(value.browserId, value.paneId);
+		const second = value.gateway.connect("browser-two", value.paneId);
+		const approval = value.makeOrdinaryApproval();
+		first.snapshot();
+		second.snapshot();
+		const firstMessages: unknown[] = [];
+		first.subscribe((message) => firstMessages.push(message));
+
+		value.setOrdinaryApproval(spontaneousTerminal(approval));
+
+		expect(firstMessages).toHaveLength(1);
+		const secondPublished = second.snapshot();
+		expect(secondPublished.snapshot.approvals).toEqual([
+			expect.objectContaining({ requestId: approval.request.requestId }),
+		]);
+		second.confirmPublished(secondPublished.snapshot);
+		expect(first.snapshot().snapshot.approvals).toEqual([]);
+	});
+
+	test("keeps a spontaneous terminal after a publication send fails", () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const approval = value.makeOrdinaryApproval();
+		connection.snapshot();
+		const unsubscribe = connection.subscribe(() => {
+			throw new Error("socket send failed");
+		});
+
+		value.setOrdinaryApproval(spontaneousTerminal(approval));
+
+		unsubscribe();
+		const recovered = connection.snapshot();
+		expect(recovered.snapshot.approvals).toEqual([
+			expect.objectContaining({ requestId: approval.request.requestId }),
+		]);
+		connection.confirmPublished(recovered.snapshot);
 		expect(connection.snapshot().snapshot.approvals).toEqual([]);
 	});
 
