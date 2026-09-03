@@ -71,6 +71,8 @@ test("browser DTOs cover reachable progress, partial, failure, and recovery stat
 			state: "reconnecting",
 			threadId: null,
 			activeTurnId: null,
+			configuredModel: null,
+			configuredEffort: null,
 			model: null,
 			effort: null,
 			serviceTier: null,
