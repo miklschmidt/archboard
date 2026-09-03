@@ -86,6 +86,20 @@ describe("test inventory policy", () => {
 		);
 	});
 
+	test("does not let quoted echo text claim a native owner", () => {
+		const file = "src/example/quoted.test.ts";
+		const fixture = input({ nativeTests: [file] });
+		fixture.scripts["test:modules"] = `echo "bun test ${file}"`;
+		expectInventoryError(fixture, `native test \`${file}\` belongs to no package lane`);
+	});
+
+	test("does not let commented text claim a native owner", () => {
+		const file = "src/example/commented.test.ts";
+		const fixture = input({ nativeTests: [file] });
+		fixture.scripts["test:modules"] = `true # bun test ${file}`;
+		expectInventoryError(fixture, `native test \`${file}\` belongs to no package lane`);
+	});
+
 	test("rejects a lane reached twice from check", () => {
 		const duplicate = input({ nativeTests: ["tests/system/verify.test.ts"] });
 		duplicate.scripts["test:system"] = "bun test tests/system/verify.test.ts";
