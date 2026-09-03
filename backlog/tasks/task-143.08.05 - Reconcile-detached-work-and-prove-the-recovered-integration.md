@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 11:20'
+updated_date: '2026-09-03 11:21'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -127,6 +127,9 @@ Complete-gate failure and remediation history before the next frozen head:
 
 - Attempt 4 used unit archboard-task143-worker-command-Smhc87QP.service. Lint and formatting passed, then type-check exited 1 after 3.758s on recovered integration drift: the emulation proof still named the deleted UI Mermaid converter; the config-layer schema tolerated an omitted generated field without normalizing its output; Bun IPC and piped-process values had lost their concrete narrowing; recovered observer fixtures did not prove optional paths or heterogeneous case fields; a renderer fixture lacked the Excalidraw angle brand; a React owner remained under the backend .ts inventory; and one nullable help lookup was passed as a string. CPU was 26.398s; memory peak was 1.9G with 0B swap. The exact unit is inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path is absent. No OOM, SIGKILL, or cleanup diagnostic occurred.
 - Remediation points the proof at the server-owned Mermaid configuration, normalizes an omitted disabledReason to the generated null wire value, retains concrete pipe/IPC stream types, makes fixture preconditions and case shapes explicit, brands the synthetic zero angle from the target property, moves the React test into the frontend .tsx inventory, and refuses a missing registry help entry explicitly. No lint rule, type rule, test owner, timeout, or assertion is weakened. No focused validation ran; the next check is one fresh complete gate after this remediation is committed.
+
+- Attempt 5 used unit archboard-task143-worker-command-Lx3xeynw.service and exited 1 in lint after 766 ms. CPU was 1.930s; memory peak was 371.5M with 0B swap. The repository module-entrypoint rule correctly rejected the React owner after it was renamed to .tsx because every test-owned JavaScript-like source must remain a root-tsconfig-owned .ts file. The exact unit is inactive/dead with MainPID 0 and empty ControlGroup; its cgroup path is absent. No OOM, SIGKILL, or cleanup diagnostic occurred.
+- Remediation restores the .ts owner and follows the existing UI-test boundary: load the TSX component through a runtime URL, validate its public export, and apply a local typed component contract. This preserves the rendered markup assertion while keeping the owner in the root type inventory. No lint or type scope changes.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
