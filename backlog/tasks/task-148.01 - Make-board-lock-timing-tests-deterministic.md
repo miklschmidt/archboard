@@ -1,11 +1,11 @@
 ---
 id: TASK-148.01
 title: Make board-lock timing tests deterministic
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 21:36'
-updated_date: '2026-09-03 14:04'
+updated_date: '2026-09-03 14:09'
 labels: []
 dependencies: []
 parent_task_id: TASK-148
@@ -22,10 +22,10 @@ Lock-test owners prove lease expiry, renewal, refusal, recovery, and peer teardo
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Focused board-claim, board-lock-announcements, board-lock-api, and resource-cleanup lease-expiry owners use deterministic control or observable synchronization instead of real lease or retry waiting.
-- [ ] #2 Lock expiry, renewal, refusal, recovery, and real peer teardown behavior remain asserted, with focused duration evidence recorded.
-- [ ] #3 The resource-cleanup 3100 ms lease wait is removed; any retained OS TERM-to-KILL physical-time proof stays under four seconds behind a source-local TEST_* outer bound.
-- [ ] #4 No production timing value changes.
+- [x] #1 Focused board-claim, board-lock-announcements, board-lock-api, and resource-cleanup lease-expiry owners use deterministic control or observable synchronization instead of real lease or retry waiting.
+- [x] #2 Lock expiry, renewal, refusal, recovery, and real peer teardown behavior remain asserted, with focused duration evidence recorded.
+- [x] #3 The resource-cleanup 3100 ms lease wait is removed; any retained OS TERM-to-KILL physical-time proof stays under four seconds behind a source-local TEST_* outer bound.
+- [x] #4 No production timing value changes.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -45,4 +45,12 @@ Implemented deterministic Bun fake-time control in board-claim, board-lock-annou
 Baseline focused run: 12 pass in 28.53 s; board-lock-api 12.16 s, resource-cleanup stubborn peer 5.25 s, announcements 3.44 s, lease 0.53 s, claims 6.41 s. Green focused run: 12 pass in 5.13 s; board-lock-api 2.25 s, stubborn peer 2.17 s, announcements 1.48 ms, lease 5.17 ms, claims 2.86 ms. Mutation-red evidence: default cap 5000 -> 4999 failed exact waitedMs in 4.96 ms; linger +1 ms failed held/free news in 1.30 ms; disabled renewal failed retained claim holder in 7.93 ms. Type-check, focused Oxlint/Oxfmt, git diff check, and repository test inventory passed.
 
 Recovery at fixed base 7d55ebeb found the recorded deterministic implementation in ancestor f9c2a89c. A later cancellation regression in board-lock-lease still referenced the removed real-timer registry and awaited its abort before advancing fake time. The owner now starts the request, advances 25 ms explicitly, and then asserts cancellation. Recovery validation: board-lock-lease 2 pass in 0.13 s; board-claim 1 pass in 0.14 s; board-lock-announcements 1 pass in 0.12 s; board-lock-api 1 pass in 2.50 s; TERM-resistant resource cleanup 1 pass in 2.27 s. Exact-file Oxlint, Oxfmt, and git diff checks passed. Production source and timing values remain unchanged.
+
+Integration validation on codex/task-143-144-workbench: reviewed commit af1d94c applied cleanly as 0249b948; bun test src/runtime/engine/tests/board-lock-lease.test.ts passed 2 tests / 33 assertions in 94 ms. The reviewed range changes only the focused lease owner and this task record; no production timing source changed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Made lock timing owners deterministic without changing production timing. Recorded focused-owner and mutation evidence; integration reran board-lock-lease successfully (2 tests, 33 assertions, 94 ms).
+<!-- SECTION:FINAL_SUMMARY:END -->
