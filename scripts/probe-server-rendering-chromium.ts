@@ -20,6 +20,9 @@ const jobTimeoutMs = 20_000;
 const cleanupTimeoutMs = 5_000;
 
 type JsonRecord = Record<string, unknown>;
+type RendererJobMode = "normal" | "missing-image" | "stall" | "immediate-evaluation-failure";
+type RendererAcquisitionFailure = "before-profile" | "after-profile" | "after-port" | "after-spawn";
+type FixtureAcquisitionFailure = "before-vite-create" | "after-vite-create" | "after-vite-listen";
 
 function requirePreflight(): void {
 	for (const file of [
@@ -98,9 +101,56 @@ function reserveLoopbackPort(): number {
 	return port;
 }
 
+function loopbackPortIsAvailable(port: number | null): boolean {
+	if (port === null) return true;
+	let server: ReturnType<typeof Bun.serve> | null = null;
+	try {
+		server = Bun.serve({ hostname: "127.0.0.1", port, fetch: () => new Response("audit") });
+		return true;
+	} catch {
+		return false;
+	} finally {
+		server?.stop(true);
+	}
+}
+
+function injectAcquisitionFailure<Stage extends string>(
+	stage: Stage,
+	injected: Stage | undefined,
+): void {
+	if (stage === injected) throw new Error(`Injected acquisition failure at ${stage}.`);
+}
+
 interface CdpEvent {
 	method: string;
 	params: JsonRecord;
+}
+
+class CdpTimeoutError extends Error {
+	constructor(
+		readonly method: string,
+		readonly timeoutMs: number,
+	) {
+		super(`DevTools ${method} timed out after ${timeoutMs} ms.`);
+		this.name = "CdpTimeoutError";
+	}
+}
+
+class RendererJobError extends Error {
+	constructor(
+		readonly job: string,
+		readonly phase: JsonRecord,
+		readonly diagnostics: JsonRecord[],
+		readonly proof: JsonRecord,
+		cause: unknown,
+	) {
+		super(
+			`Renderer ${job} failed in phase ${String(phase.phase ?? "unknown")}: ${(cause as Error).message}; ` +
+				`page diagnostics=${JSON.stringify(diagnostics)}; proof=${JSON.stringify(proof)}`,
+			{ cause },
+		);
+		this.name = "RendererJobError";
+	}
 }
 
 class Cdp {
@@ -139,7 +189,7 @@ class Cdp {
 		return await new Promise<JsonRecord>((fulfill, reject) => {
 			const timeout = setTimeout(() => {
 				this.#pending.delete(id);
-				reject(new Error(`DevTools ${method} timed out after ${timeoutMs} ms.`));
+				reject(new CdpTimeoutError(method, timeoutMs));
 			}, timeoutMs);
 			this.#pending.set(id, {
 				resolve: (result) => {
@@ -231,10 +281,13 @@ class Cdp {
 
 interface CleanupAudit {
 	pids: number[];
+	processGroup: number | null;
 	survivors: number[];
 	clean: boolean;
-	profile: string;
+	profile: string | null;
 	profileRemoved: boolean;
+	port: number | null;
+	portReleased: boolean;
 	stdout: string;
 	stderr: string;
 }
@@ -251,41 +304,107 @@ interface JobEvidence {
 	phase: JsonRecord;
 }
 
+class RendererAcquisitionError extends Error {
+	constructor(
+		readonly stage: string,
+		readonly cleanup: CleanupAudit,
+		cause: unknown,
+	) {
+		super(`Renderer acquisition failed at ${stage}; cleanup=${JSON.stringify(cleanup)}`, { cause });
+		this.name = "RendererAcquisitionError";
+	}
+}
+
 class RendererSession {
-	readonly profile = mkdtempSync(join(tmpdir(), "archboard-server-rendering-chromium-"));
-	readonly port = reserveLoopbackPort();
 	readonly startedAt = performance.now();
-	readonly child = Bun.spawn({
-		cmd: [
-			setsid,
-			chromium,
-			"--headless=new",
-			"--disable-gpu",
-			"--no-first-run",
-			"--no-default-browser-check",
-			"--disable-crash-reporter",
-			`--user-data-dir=${this.profile}`,
-			`--remote-debugging-port=${this.port}`,
-			"about:blank",
-		],
-		cwd: root,
-		stdout: "pipe",
-		stderr: "pipe",
-	});
-	readonly stdout = new Response(pipe(this.child.stdout)).text();
-	readonly stderr = new Response(pipe(this.child.stderr)).text();
+	#profile: string | null = null;
+	#port: number | null = null;
+	#child: Bun.Subprocess | null = null;
+	#stdout: Promise<string> | null = null;
+	#stderr: Promise<string> | null = null;
 	#cdp: Cdp | null = null;
 	#running = false;
 	#maxConcurrentJobs = 0;
 	readonly #observed = new Set<number>();
 
+	private constructor() {}
+
+	get profile(): string {
+		if (!this.#profile) throw new Error("Renderer profile is not acquired.");
+		return this.#profile;
+	}
+
+	get port(): number {
+		if (this.#port === null) throw new Error("Renderer port is not acquired.");
+		return this.#port;
+	}
+
+	get child(): Bun.Subprocess {
+		if (!this.#child) throw new Error("Renderer process is not acquired.");
+		return this.#child;
+	}
+
+	static async acquire(injectedFailure?: RendererAcquisitionFailure): Promise<RendererSession> {
+		const session = new RendererSession();
+		let stage = "before-profile";
+		try {
+			injectAcquisitionFailure("before-profile", injectedFailure);
+			stage = "profile";
+			session.#profile = mkdtempSync(join(tmpdir(), "archboard-server-rendering-chromium-"));
+			stage = "after-profile";
+			injectAcquisitionFailure("after-profile", injectedFailure);
+			stage = "port";
+			session.#port = reserveLoopbackPort();
+			stage = "after-port";
+			injectAcquisitionFailure("after-port", injectedFailure);
+			stage = "spawn";
+			session.#child = Bun.spawn({
+				cmd: [
+					setsid,
+					chromium,
+					"--headless=new",
+					"--disable-gpu",
+					"--no-first-run",
+					"--no-default-browser-check",
+					"--disable-crash-reporter",
+					`--user-data-dir=${session.profile}`,
+					`--remote-debugging-port=${session.port}`,
+					"about:blank",
+				],
+				cwd: root,
+				stdout: "pipe",
+				stderr: "pipe",
+			});
+			session.observe(ownedProcessIds(session.child.pid));
+			session.#stdout = new Response(pipe(session.child.stdout)).text();
+			session.#stderr = new Response(pipe(session.child.stderr)).text();
+			stage = "after-spawn";
+			injectAcquisitionFailure("after-spawn", injectedFailure);
+			return session;
+		} catch (error) {
+			const cleanup = await session.shutdown();
+			const acquisitionFailure = new RendererAcquisitionError(stage, cleanup, error);
+			if (!cleanup.clean || !cleanup.profileRemoved || !cleanup.portReleased)
+				throw new AggregateError(
+					[
+						acquisitionFailure,
+						new Error(`Partial renderer acquisition leaked: ${JSON.stringify(cleanup)}`),
+					],
+					"Partial renderer acquisition cleanup failed.",
+					{ cause: error },
+				);
+			throw acquisitionFailure;
+		}
+	}
+
 	async start(url: string): Promise<{ startup: MemorySample; startupMs: number }> {
+		const child = this.child;
 		const base = `http://127.0.0.1:${this.port}`;
 		const deadline = Date.now() + 5_000;
 		while (Date.now() < deadline) {
-			if (this.child.exitCode !== null)
+			if (child.exitCode !== null)
 				throw new Error(
-					`Chromium exited during startup (${this.child.exitCode}): ${snippet(await this.stderr)}`,
+					`Chromium exited during startup (${child.exitCode}): ${snippet(await this.stderrText())}`,
 				);
 			try {
 				if ((await fetch(`${base}/json/version`)).ok) break;
@@ -294,9 +413,9 @@ class RendererSession {
 			}
 			await Bun.sleep(50);
 		}
-		if (this.child.exitCode !== null || !(await fetch(`${base}/json/version`)).ok)
+		if (child.exitCode !== null || !(await fetch(`${base}/json/version`)).ok)
 			throw new Error("Chromium did not bind its private DevTools loopback port within 5 seconds.");
-		const startupPids = ownedProcessIds(this.child.pid);
+		const startupPids = ownedProcessIds(child.pid);
 		this.observe(startupPids);
 		const target = (await (
 			await fetch(`${base}/json/new?${encodeURIComponent("about:blank")}`, { method: "PUT" })
@@ -314,22 +433,22 @@ class RendererSession {
 		};
 	}
 
-	async runJob(
-		name: string,
-		mode: "normal" | "missing-image" | "stall" = "normal",
-	): Promise<JobEvidence> {
-		if (!this.#cdp) throw new Error("Renderer has not started.");
-		if (this.child.exitCode !== null)
-			throw new Error(`Renderer ${name} cannot run: Chromium exited (${this.child.exitCode}).`);
+	async runJob(name: string, mode: RendererJobMode = "normal"): Promise<JobEvidence> {
+		const cdp = this.#cdp;
+		const child = this.child;
+		if (!cdp) throw new Error("Renderer has not started.");
+		if (child.exitCode !== null)
+			throw new Error(`Renderer ${name} cannot run: Chromium exited (${child.exitCode}).`);
 		if (this.#running) throw new Error(`Renderer already owns a job; refused concurrent ${name}.`);
 		this.#running = true;
 		this.#maxConcurrentJobs = Math.max(this.#maxConcurrentJobs, 1);
 		const startedAt = performance.now();
 		try {
-			const value = await this.#cdp.evaluate(
-				`window.runArchboardRendererProof?.(${JSON.stringify(mode)})`,
-				jobTimeoutMs,
-			);
+			const expression =
+				mode === "immediate-evaluation-failure"
+					? '(() => { throw new Error("intentional immediate evaluation failure"); })()'
+					: `window.runArchboardRendererProof?.(${JSON.stringify(mode)})`;
+			const value = await cdp.evaluate(expression, jobTimeoutMs);
 			if (!value || typeof value !== "object")
 				throw new Error(`Renderer ${name} returned no structured result.`);
 			const phase = await this.proofState();
@@ -341,11 +460,7 @@ class RendererSession {
 			};
 		} catch (error) {
 			const phase = await this.proofState().catch(() => ({ phase: "unavailable" }));
-			throw new Error(
-				`Renderer ${name} failed in phase ${String(phase.phase ?? "unknown")}: ${(error as Error).message}; ` +
-					`page diagnostics=${JSON.stringify(this.#cdp.diagnostics())}; proof=${JSON.stringify(phase)}`,
-				{ cause: error },
-			);
+			throw new RendererJobError(name, phase, cdp.diagnostics(), phase, error);
 		} finally {
 			this.#running = false;
 		}
@@ -363,23 +478,24 @@ class RendererSession {
 
 	async shutdown(): Promise<CleanupAudit> {
 		this.#cdp?.close();
-		this.observe(ownedProcessIds(this.child.pid));
+		const child = this.#child;
+		if (child) this.observe(ownedProcessIds(child.pid));
 		const pids = [...this.#observed].toSorted((left, right) => left - right);
 		const cleanupStartedAt = Date.now();
-		if (this.child.exitCode === null) {
+		if (child?.exitCode === null) {
 			try {
-				globalThis.process.kill(-this.child.pid, "SIGTERM");
+				globalThis.process.kill(-child.pid, "SIGTERM");
 			} catch {
 				// The group can exit between observation and termination.
 			}
-			await Promise.race([this.child.exited, Bun.sleep(Math.max(0, cleanupTimeoutMs - 1_000))]);
-			if (this.child.exitCode === null) {
+			await Promise.race([child.exited, Bun.sleep(Math.max(0, cleanupTimeoutMs - 1_000))]);
+			if (child.exitCode === null) {
 				try {
-					globalThis.process.kill(-this.child.pid, "SIGKILL");
+					globalThis.process.kill(-child.pid, "SIGKILL");
 				} catch {
 					// The group can exit between escalation and the signal.
 				}
-				await Promise.race([this.child.exited, Bun.sleep(1_000)]);
+				await Promise.race([child.exited, Bun.sleep(1_000)]);
 			}
 		}
 		const deadline = cleanupStartedAt + cleanupTimeoutMs;
@@ -388,16 +504,22 @@ class RendererSession {
 			await Bun.sleep(50);
 			survivors = pids.filter((pid) => existsSync(`/proc/${pid}`));
 		}
-		const clean = survivors.length === 0;
-		if (clean) rmSync(this.profile, { recursive: true, force: true });
+		const processesGone = survivors.length === 0;
+		if (processesGone && this.#profile) rmSync(this.#profile, { recursive: true, force: true });
+		const profileRemoved = !this.#profile || (processesGone && !existsSync(this.#profile));
+		const portReleased = loopbackPortIsAvailable(this.#port);
+		const clean = processesGone && profileRemoved && portReleased;
 		return {
 			pids,
+			processGroup: child?.pid ?? null,
 			survivors,
 			clean,
-			profile: this.profile,
-			profileRemoved: clean && !existsSync(this.profile),
-			stdout: snippet(await this.stdout),
-			stderr: snippet(await this.stderr),
+			profile: this.#profile,
+			profileRemoved,
+			port: this.#port,
+			portReleased,
+			stdout: snippet(await this.stdoutText()),
+			stderr: snippet(await this.stderrText()),
 		};
 	}
 
@@ -431,6 +553,14 @@ class RendererSession {
 
 	private observe(pids: readonly number[]): void {
 		for (const pid of pids) this.#observed.add(pid);
+	}
+
+	private async stdoutText(): Promise<string> {
+		return await (this.#stdout ?? Promise.resolve(""));
+	}
+
+	private async stderrText(): Promise<string> {
+		return await (this.#stderr ?? Promise.resolve(""));
 	}
 }
 
@@ -617,33 +747,136 @@ async function rejectMalformedPersistedBoard(output: string): Promise<string> {
 	}
 }
 
+interface FixtureCleanupAudit {
+	port: number;
+	portReleased: boolean;
+	serverCreated: boolean;
+	closeCalled: boolean;
+	serverListening: boolean;
+	watcherWatchedPaths: number;
+	closeError: string | null;
+	clean: boolean;
+}
+
+class FixtureAcquisitionError extends Error {
+	constructor(
+		readonly stage: string,
+		readonly cleanup: FixtureCleanupAudit,
+		cause: unknown,
+	) {
+		super(`Fixture acquisition failed at ${stage}; cleanup=${JSON.stringify(cleanup)}`, { cause });
+		this.name = "FixtureAcquisitionError";
+	}
+}
+
+class FixtureServerOwner {
+	#closed = false;
+
+	constructor(
+		readonly server: ViteDevServer,
+		readonly port: number,
+	) {}
+
+	get url(): string {
+		return `http://127.0.0.1:${this.port}/chromium.html`;
+	}
+
+	async close(): Promise<FixtureCleanupAudit> {
+		let closeError: string | null = null;
+		try {
+			await this.server.close();
+			this.#closed = true;
+		} catch (error) {
+			closeError = error instanceof Error ? error.message : String(error);
+		}
+		const serverListening = Boolean(this.server.httpServer?.listening);
+		const watcherWatchedPaths = Object.keys(this.server.watcher.getWatched()).length;
+		const portReleased = loopbackPortIsAvailable(this.port);
+		return {
+			port: this.port,
+			portReleased,
+			serverCreated: true,
+			closeCalled: this.#closed,
+			serverListening,
+			watcherWatchedPaths,
+			closeError,
+			clean:
+				this.#closed &&
+				!serverListening &&
+				watcherWatchedPaths === 0 &&
+				portReleased &&
+				closeError === null,
+		};
+	}
+}
+
+function unownedFixtureCleanup(port: number): FixtureCleanupAudit {
+	const portReleased = loopbackPortIsAvailable(port);
+	return {
+		port,
+		portReleased,
+		serverCreated: false,
+		closeCalled: false,
+		serverListening: false,
+		watcherWatchedPaths: 0,
+		closeError: null,
+		clean: portReleased,
+	};
+}
+
 async function startFixtureServer(
 	input: JsonRecord,
-): Promise<{ server: ViteDevServer; url: string }> {
+	injectedFailure?: FixtureAcquisitionFailure,
+): Promise<FixtureServerOwner> {
 	const port = reserveLoopbackPort();
-	const server = await createServer({
-		root: fixtureRoot,
-		logLevel: "error",
-		server: { host: "127.0.0.1", port, strictPort: true },
-		plugins: [
-			{
-				name: "archboard-server-rendering-input",
-				configureServer(vite) {
-					vite.middlewares.use("/render-input.json", (request, response, next) => {
-						if (request.method !== "GET") return next();
-						const missingImage =
-							new URL(request.url ?? "/", "http://localhost").searchParams.get("case") ===
-							"missing-image";
-						response.statusCode = 200;
-						response.setHeader("content-type", "application/json");
-						response.end(JSON.stringify(missingImage ? { ...input, files: {} } : input));
-					});
+	let owner: FixtureServerOwner | null = null;
+	let stage = "before-vite-create";
+	try {
+		injectAcquisitionFailure("before-vite-create", injectedFailure);
+		stage = "vite-create";
+		const server = await createServer({
+			root: fixtureRoot,
+			logLevel: "error",
+			server: { host: "127.0.0.1", port, strictPort: true },
+			plugins: [
+				{
+					name: "archboard-server-rendering-input",
+					configureServer(vite) {
+						vite.middlewares.use("/render-input.json", (request, response, next) => {
+							if (request.method !== "GET") return next();
+							const missingImage =
+								new URL(request.url ?? "/", "http://localhost").searchParams.get("case") ===
+								"missing-image";
+							response.statusCode = 200;
+							response.setHeader("content-type", "application/json");
+							response.end(JSON.stringify(missingImage ? { ...input, files: {} } : input));
+						});
+					},
 				},
-			},
-		],
-	});
-	await server.listen();
-	return { server, url: `http://127.0.0.1:${port}/chromium.html` };
+			],
+		});
+		owner = new FixtureServerOwner(server, port);
+		stage = "after-vite-create";
+		injectAcquisitionFailure("after-vite-create", injectedFailure);
+		stage = "vite-listen";
+		await server.listen();
+		stage = "after-vite-listen";
+		injectAcquisitionFailure("after-vite-listen", injectedFailure);
+		return owner;
+	} catch (error) {
+		const cleanup = owner ? await owner.close() : unownedFixtureCleanup(port);
+		const acquisitionFailure = new FixtureAcquisitionError(stage, cleanup, error);
+		if (!cleanup.clean)
+			throw new AggregateError(
+				[
+					acquisitionFailure,
+					new Error(`Partial fixture acquisition leaked: ${JSON.stringify(cleanup)}`),
+				],
+				"Partial fixture acquisition cleanup failed.",
+				{ cause: error },
+			);
+		throw acquisitionFailure;
+	}
 }
 
 async function runInboundMermaid(result: JsonRecord): Promise<JsonRecord> {
@@ -736,9 +969,120 @@ async function runInboundMermaid(result: JsonRecord): Promise<JsonRecord> {
 	};
 }
 
+interface TimeoutEvidence {
+	elapsedMs: number;
+	reason: string;
+	phase: JsonRecord;
+}
+
+function timeoutBounds(): { earliestMs: number; latestMs: number } {
+	// Timers can fire a little early against the monotonic clock and a loaded host can deliver late.
+	// The bounds retain the 20-second allowance while allowing one percent early and five percent late.
+	return {
+		earliestMs: jobTimeoutMs - Math.ceil(jobTimeoutMs * 0.01),
+		latestMs: jobTimeoutMs + Math.ceil(jobTimeoutMs * 0.05),
+	};
+}
+
+async function requireRuntimeEvaluateTimeout(
+	session: RendererSession,
+	name: string,
+	mode: RendererJobMode,
+): Promise<TimeoutEvidence> {
+	const startedAt = performance.now();
+	try {
+		await session.runJob(name, mode);
+	} catch (error) {
+		const elapsedMs = performance.now() - startedAt;
+		if (
+			!(error instanceof RendererJobError) ||
+			error.job !== name ||
+			!(error.cause instanceof CdpTimeoutError) ||
+			error.cause.method !== "Runtime.evaluate" ||
+			error.cause.timeoutMs !== jobTimeoutMs
+		)
+			throw new Error(
+				`Intentional timeout oracle expected a Runtime.evaluate ${jobTimeoutMs} ms timeout, received ${
+					error instanceof Error ? error.message : String(error)
+				}.`,
+				{ cause: error },
+			);
+		if (error.phase.phase !== "intentional-timeout")
+			throw new Error(
+				`Intentional timeout did not preserve its fixture phase: ${JSON.stringify(error.phase)}.`,
+				{ cause: error },
+			);
+		const bounds = timeoutBounds();
+		if (elapsedMs < bounds.earliestMs || elapsedMs > bounds.latestMs)
+			throw new Error(
+				`Runtime.evaluate timeout elapsed ${elapsedMs.toFixed(1)} ms outside ${bounds.earliestMs}-${bounds.latestMs} ms.`,
+				{ cause: error },
+			);
+		return { elapsedMs, reason: error.cause.message, phase: error.phase };
+	}
+	throw new Error(`Intentional timeout job ${name} completed instead of timing out.`);
+}
+
+async function proveImmediateFailureIsNotTimeout(session: RendererSession): Promise<JsonRecord> {
+	const startedAt = performance.now();
+	let rejection: string | null = null;
+	try {
+		await requireRuntimeEvaluateTimeout(
+			session,
+			"immediate-different-cause",
+			"immediate-evaluation-failure",
+		);
+	} catch (error) {
+		rejection = error instanceof Error ? error.message : String(error);
+	}
+	const elapsedMs = performance.now() - startedAt;
+	if (!rejection?.includes("Intentional timeout oracle expected a Runtime.evaluate"))
+		throw new Error(
+			`Immediate differently caused failure was accepted as a timeout: ${rejection ?? "no error"}`,
+		);
+	if (elapsedMs > Math.ceil(jobTimeoutMs * 0.05))
+		throw new Error(`Immediate differently caused failure took ${elapsedMs.toFixed(1)} ms.`);
+	return { elapsedMs, rejection };
+}
+
+async function provePartialAcquisitionCleanup(input: JsonRecord): Promise<JsonRecord> {
+	const renderer: JsonRecord[] = [];
+	for (const stage of ["before-profile", "after-profile", "after-port", "after-spawn"] as const) {
+		try {
+			await RendererSession.acquire(stage);
+			throw new Error(`Injected renderer acquisition failure ${stage} was accepted.`);
+		} catch (error) {
+			if (!(error instanceof RendererAcquisitionError)) throw error;
+			if (!error.cleanup.clean || !error.cleanup.profileRemoved || !error.cleanup.portReleased)
+				throw new Error(
+					`Injected renderer acquisition ${stage} did not clean up: ${JSON.stringify(error.cleanup)}`,
+					{ cause: error },
+				);
+			renderer.push({ stage, cleanup: error.cleanup });
+		}
+	}
+	const fixture: JsonRecord[] = [];
+	for (const stage of ["before-vite-create", "after-vite-create", "after-vite-listen"] as const) {
+		try {
+			await startFixtureServer(input, stage);
+			throw new Error(`Injected fixture acquisition failure ${stage} was accepted.`);
+		} catch (error) {
+			if (!(error instanceof FixtureAcquisitionError)) throw error;
+			if (!error.cleanup.clean)
+				throw new Error(
+					`Injected fixture acquisition ${stage} did not clean up: ${JSON.stringify(error.cleanup)}`,
+					{ cause: error },
+				);
+			fixture.push({ stage, cleanup: error.cleanup });
+		}
+	}
+	return { renderer, fixture };
+}
+
 const output = ownedOutputDirectory(Bun.argv.slice(2));
 const reportPath = join(output, "report.json");
-let fixtureServer: ViteDevServer | null = null;
+let fixtureServer: FixtureServerOwner | null = null;
+let fixtureCleanup: FixtureCleanupAudit | null = null;
 let primaryCleanup: CleanupAudit | null = null;
 let childExitCleanup: CleanupAudit | null = null;
 let replacementCleanup: CleanupAudit | null = null;
@@ -754,9 +1098,10 @@ try {
 	const malformedBoard = await rejectMalformedPersistedBoard(output);
 	if (malformedBoard !== "Error")
 		throw new Error(`Malformed persisted board did not reject with Error: ${malformedBoard}`);
+	const partialAcquisition = await provePartialAcquisitionCleanup(input);
 	const fixture = await startFixtureServer(input);
-	fixtureServer = fixture.server;
-	const primary = new RendererSession();
+	fixtureServer = fixture;
+	const primary = await RendererSession.acquire();
 	let primaryActionFailure: unknown = null;
 	try {
 		const startup = await primary.start(fixture.url);
@@ -779,6 +1124,7 @@ try {
 			browserClient: "none",
 			output: { directory: output, owner: "probe", disposable: true },
 			malformedBoard,
+			partialAcquisition,
 			primary: { startup, first, warm, second, third, steady, serial: primary.serialEvidence() },
 		};
 		const inbound = await runInboundMermaid(first.result);
@@ -796,22 +1142,15 @@ try {
 		}
 		if (!missingImageRejected)
 			throw new Error("Missing embedded image was accepted as a complete render.");
-		let timeout: string | null = null;
-		try {
-			await primary.runJob("intentional-timeout", "stall");
-		} catch (error) {
-			timeout = (error as Error).message;
-		}
-		if (!timeout?.includes("intentional-timeout"))
-			throw new Error(
-				`Timed-out renderer did not report its named phase: ${timeout ?? "no error"}`,
-			);
+		const immediateDifferentCause = await proveImmediateFailureIsNotTimeout(primary);
+		const timeout = await requireRuntimeEvaluateTimeout(primary, "intentional-timeout", "stall");
 		report = {
 			status: "passed",
 			backend: "isolated server-owned headless Chromium",
 			browserClient: "none",
 			output: { directory: output, owner: "probe", disposable: true },
 			malformedBoard,
+			partialAcquisition,
 			primary: {
 				startup,
 				first,
@@ -822,6 +1161,7 @@ try {
 				inbound,
 				inboundSecond,
 				serial: primary.serialEvidence(),
+				immediateDifferentCause,
 				timeout,
 			},
 		};
@@ -837,7 +1177,7 @@ try {
 		throw cleanupFailure;
 	}
 	if (primaryActionFailure) throw primaryActionFailure;
-	const childExit = new RendererSession();
+	const childExit = await RendererSession.acquire();
 	let childExitActionFailure: unknown = null;
 	try {
 		const startup = await childExit.start(fixture.url);
@@ -868,7 +1208,7 @@ try {
 		throw cleanupFailure;
 	}
 	if (childExitActionFailure) throw childExitActionFailure;
-	const replacement = new RendererSession();
+	const replacement = await RendererSession.acquire();
 	let replacementActionFailure: unknown = null;
 	try {
 		const startup = await replacement.start(fixture.url);
@@ -914,8 +1254,27 @@ try {
 				: String(error),
 	};
 } finally {
-	if (fixtureServer) await fixtureServer.close();
+	if (fixtureServer) {
+		fixtureCleanup = await fixtureServer.close();
+		if (!fixtureCleanup.clean) {
+			const cleanupFailure = new Error(
+				`Fixture server cleanup failed: ${JSON.stringify(fixtureCleanup)}`,
+			);
+			failure = failure ? new AggregateError([failure, cleanupFailure]) : cleanupFailure;
+			report = {
+				...report,
+				status: "failed",
+				fixtureCleanupFailure: cleanupFailure.message,
+			};
+		}
+	}
 	report.cleanup = {
+		temporaryOutput: {
+			directory: output,
+			exists: existsSync(output),
+			retainedReport: true,
+		},
+		fixture: fixtureCleanup,
 		primary: primaryCleanup,
 		childExit: childExitCleanup,
 		replacement: replacementCleanup,
