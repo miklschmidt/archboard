@@ -304,6 +304,31 @@ describe("workbench timeline", () => {
 		expect(new Set(items.map((item) => item.identity)).size).toBe(items.length);
 	});
 
+	test("keeps a matching approval beside its canonical item before later activity", () => {
+		const command = completeItems().find((item) => item.type === "commandExecution");
+		if (command?.type !== "commandExecution") throw new Error("Expected a command fixture.");
+		const later = completeItems().find((item) => item.type === "agentMessage");
+		if (later?.type !== "agentMessage") throw new Error("Expected an agent fixture.");
+		const mixedTurn = turn("completed", [{ ...command, id: approvalItemId }, later]);
+		const mixedProps = props({ turns: [mixedTurn], runtimeTimeline: runtimeTimeline("completed") });
+		const items = normalizeTimeline(mixedProps).turns.get(turnId)?.items ?? [];
+		expect(items.map((item) => item.type)).toEqual([
+			"commandExecution",
+			"approval",
+			"agentMessage",
+		]);
+		expect(items.map((item) => item.itemId)).toEqual([approvalItemId, approvalItemId, later.id]);
+		expect(items[0]?.identity).not.toBe(items[1]?.identity);
+
+		const markup = renderTimeline(mixedProps);
+		const commandIndex = markup.indexOf('data-item-type="commandExecution"');
+		const approvalIndex = markup.indexOf('data-item-type="approval"');
+		const laterIndex = markup.indexOf('data-item-type="agentMessage"');
+		expect(commandIndex).toBeGreaterThan(-1);
+		expect(commandIndex).toBeLessThan(approvalIndex);
+		expect(approvalIndex).toBeLessThan(laterIndex);
+	});
+
 	test("bounds inert details and accepts only HTTP media links", () => {
 		const cycle: Record<string, unknown> = { value: "x".repeat(20_000) };
 		cycle.self = cycle;
@@ -372,7 +397,7 @@ describe("workbench timeline", () => {
 		expect(markup).toContain("&lt;script&gt;window.hostile = true&lt;/script&gt;");
 		expect(markup).not.toContain("TAIL-SENTINEL");
 		expect(markup).toContain("characters omitted");
-		expect(markup.match(new RegExp(`href="${repeatedUrl}"`, "g"))).toHaveLength(4);
+		expect(markup.match(new RegExp(`href="${repeatedUrl}"`, "g"))).toHaveLength(2);
 		expect(markup).not.toContain('href="javascript:');
 		expect(markup).toContain("<details");
 		expect(markup).toContain("<summary");

@@ -159,12 +159,6 @@ function textSections(value: unknown): readonly string[] {
 function itemLinks(value: unknown): readonly string[] {
 	const item = record(value);
 	if (!item) return [];
-	if (item.type === "userMessage" && Array.isArray(item.content)) {
-		return item.content
-			.map((part) => textField(part, "url"))
-			.map(safeHttpUrl)
-			.filter((url): url is string => url !== null);
-	}
 	if (item.type === "webSearch") {
 		const link = safeHttpUrl(record(item.action)?.url);
 		return link === null ? [] : [link];
