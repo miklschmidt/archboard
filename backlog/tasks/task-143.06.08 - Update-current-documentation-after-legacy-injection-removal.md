@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:29'
-updated_date: '2026-09-03 10:43'
+updated_date: '2026-09-03 10:49'
 labels: []
 dependencies:
   - TASK-143.06.03
@@ -52,6 +52,11 @@ Update current user, agent, test, and architecture documents only after the rema
 2. Replace literal browser-owner counts and duplicated owner lists in AGENTS.md and docs/agents/test-suite.md with BROWSER_TEST_PATHS-derived commands and language; keep browser-free board work separate from explicit archboard browser control.
 3. Rename the existing legacy-removal repository policy owner to the task's retirement owner and extend it with cheap structured/static checks for retired setup/routes/imports, user-global configuration, assistant-transcript authority, private-session/current-doc markers, CLI audit agreement, and executable inventory derivation.
 4. Preserve ADR 0005 and docs/design/stateless-server.md byte-for-byte, run only the renamed repository-policy owner plus scoped format/link/diff checks, record exact evidence, and commit the scoped implementation without finalizing the task.
+
+5. Review remediation: remove the completed owned-workbench item from the DESIGN.md Later section, update the named-board authority pointer to ADR 0020, and strengthen the existing policy owner by extracting the Later and spoken-approval regions before asserting their stable semantic relationships.
+6. Rerun only the exact policy owner, scoped Oxfmt and local-link/static checks, preserved-history comparison, and diff checks; record a new in-progress note and commit without amending or finalizing.
+
+7. Standards remediation: make DESIGN.md's bound app-server section the sole full semantic contract; reduce AGENTS.md, README.md, and TESTING.md to audience-specific facts and direct pointers. Expand the existing policy owner across non-test src TS/TSX with concept-level retired route/module detection and replace prose snapshots with structural section/link/domain-identifier checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -62,4 +67,10 @@ Implemented the current-document reconciliation against fixed base ff889201a306f
 Replaced literal browser-owner counts and the duplicated command list with BROWSER_TEST_PATHS-derived guidance. Renamed the existing removal policy owner to tests/system/repository-policy/legacy-injection-retirement.test.ts and extended the same cheap static owner; no new owner, subprocess test, browser test, timing test, or rule exception was added. The owner checks retired CLI/runtime files, production imports/routes, CLI audit absence, current docs, user-global setup, spoken authority, and count-free executable inventory.
 
 Final capped evidence: the exact policy owner passed 4/4 tests and 59 expectations in 0.046s, reporting 18 owners from BROWSER_TEST_PATHS at execution. It used one Bun test process under one timeout supervisor and started zero product/server/app-server/browser processes. Pinned Oxfmt checked 6 scoped files in 0.268s using one formatter process under one timeout supervisor and 24 worker threads. A Bun static link check resolved local links in 5 current documents in 0.009s using one process under one timeout supervisor. git diff --check passed. ADR 0005 and docs/design/stateless-server.md remain byte-identical to the fixed base. Root typecheck, full repository/system/browser lanes, servers, and browsers were not run, as required. The requested writing-for-agents skill was unavailable in this checkout; repository agent-document rules and the mandatory unslop skill were applied directly.
+
+Review and Standards remediation after 351bd794: removed the completed owned-workbench item from DESIGN.md's Later section and updated the named-board authority paragraph from superseded ADR 0009 language to persisted named-board refusal under ADR 0020. DESIGN.md's bound app-server section is now the sole full semantic delivery contract. AGENTS.md, README.md, and TESTING.md retain only audience-specific state, role, or verification facts and link directly to that section.
+
+The existing retirement owner now scans every non-test TS/TSX file under src and reports concept-level matches for any /api/injection route or subpath, app-server-control token, and retired injection module path including extensionless relative imports. It retains absent-file and CLI-audit checks. Current-doc checks now use stable section extraction, identifiers, and authoritative link targets rather than replacement-prose snapshots. The Later region cannot list the owned workbench. The spoken-approval paragraph must contain the next matching final user item and must place Assistant output inside the explicit cannot-arm source set; a positive Assistant-output arm relationship is rejected. The authoritative voice paragraph must keep coordinator and workhorse distinct. No test file, test process, product process, or rule exception was added.
+
+Final capped remediation evidence: the exact retirement owner passed 4/4 tests and 64 expectations in 0.112s, using one Bun process under one timeout supervisor and starting zero product/server/app-server/browser processes. Scoped Oxfmt checked 5 files in 0.274s using one formatter process under one timeout supervisor and 24 worker threads. The local-link check resolved all links in 4 affected docs in 0.008s using one Bun process under one timeout supervisor. Historical comparison, git diff --check, and scoped static searches passed; ADR 0005 and docs/design/stateless-server.md remain byte-identical to the fixed base. Root typecheck, full repository/system/browser lanes, servers, and browsers were not run.
 <!-- SECTION:NOTES:END -->

@@ -196,13 +196,10 @@ that changed on disk under another editor is refused, never overwritten
 - **Codex communication uses one private package-local app-server session over
   stdio.** Archboard owns its dedicated `CODEX_HOME`, `CODEX_SQLITE_HOME`, strict
   config, epoch state, and sign-in. A pane's explicit thread link names one
-  workhorse. Settled human or mixed-origin context gets one guarded
-  `thread/inject_items` attempt on the owned connection; agent-only and cosmetic
-  changes stay silent. The recorded result is `delivered`, `not_delivered` with
-  a reason, or `outcome_unknown` after lost settlement. Never retry an unknown
-  outcome or choose another thread. Voice belongs to the linked coordinator,
-  whose history and role remain separate from the workhorse. The retired ambient
-  daemon, control client, and environment-selected target are unavailable.
+  workhorse, while voice belongs to its separate coordinator. The retired ambient
+  daemon, control client, and environment-selected target are unavailable. The
+  [bound app-server design](DESIGN.md#2-mid-conversation-context--the-bound-app-server-session)
+  is the semantic delivery and outcome contract.
 
 ## Names on the wire
 

@@ -147,14 +147,11 @@ machine-local `file://` URLs. Human-authored Excalidraw links are preserved;
 tappable code targets are derived for presentation from the portable binding
 and this machine's checkout registry.
 
-Each live pane may link explicitly to one Codex workhorse. After a human or
-mixed-origin layout or structural change settles, Archboard revalidates that
-exact link and makes one `thread/inject_items` attempt with one developer
-message. Agent-only and cosmetic changes are not sent. Delivery is recorded as
-`delivered`, `not_delivered` with a reason, or `outcome_unknown` when settlement
-was lost; an unknown result is inspected, never retried or redirected. Voice
-uses a separate coordinator linked to the workhorse, so conversation and
-sustained implementation do not share a history.
+Each live pane may link explicitly to one Codex workhorse. Voice uses a separate
+coordinator for that link, so conversation and sustained implementation do not
+share a history. The
+[bound app-server design](DESIGN.md#2-mid-conversation-context--the-bound-app-server-session)
+defines semantic delivery, refusal, and uncertain outcomes.
 
 ## Security
 
@@ -162,9 +159,8 @@ The canvas binds to `127.0.0.1` by default and has no authentication. Keep it
 on loopback; use an SSH tunnel rather than exposing it directly to a network.
 
 Archboard owns one private package-local Codex app-server session over stdio.
-It gives that child dedicated Codex state, config, and sign-in. Semantic thread
-context uses the generated `thread/inject_items` protocol path on that
-connection. The retired shared-daemon and control-socket paths are unavailable.
+It gives that child dedicated Codex state, config, and sign-in. The retired
+shared-daemon and control-socket paths are unavailable.
 
 ## Documentation
 

@@ -20,6 +20,28 @@ const currentDocuments = new Map(
 	currentDocumentPaths.map((relativePath) => [relativePath, read(relativePath)]),
 );
 
+const designSectionHeading = "### 2. Mid-conversation context — the bound app-server session";
+const nextDesignSectionHeading = "### 3. On-demand query — CLI";
+const designSectionLink = "DESIGN.md#2-mid-conversation-context--the-bound-app-server-session";
+
+function sectionBetween(source: string, start: string, end: string): string {
+	const startIndex = source.indexOf(start);
+	const endIndex = source.indexOf(end, startIndex + start.length);
+	if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
+		throw new Error(`Could not resolve the section between ${start} and ${end}.`);
+	}
+	return source.slice(startIndex, endIndex);
+}
+
+function isTestOwnedSource(relativePath: string): boolean {
+	const segments = relativePath.split("/");
+	return (
+		segments.includes("tests") ||
+		segments.includes("__tests__") ||
+		/\.(?:test|spec)\.[cm]?[jt]sx?$/.test(relativePath)
+	);
+}
+
 describe("legacy injection retirement policy", () => {
 	test("keeps retired runtime, routes, commands, and control imports unavailable", async () => {
 		for (const retired of [
@@ -31,19 +53,22 @@ describe("legacy injection retirement policy", () => {
 		])
 			expect(existsSync(path.join(repoRoot, retired)), retired).toBeFalse();
 
+		const retiredConcepts = [
+			["retired injection route", /\/api\/injection(?:\/|\b)/i],
+			["retired control module", /\bapp-server-control\b/i],
+			[
+				"retired injection module",
+				/(?:runtime\/engine\/injection|\binjection\.[cm]?[jt]s\b|(?:\.\.?\/)+injection(?:\.[cm]?[jt]s)?\b)/i,
+			],
+		] as const;
 		const forbiddenProductionReferences: string[] = [];
-		for (const area of ["src/server", "src/runtime", "src/ui"] as const) {
-			for await (const file of new Bun.Glob("**/*.{ts,tsx}").scan({
-				cwd: path.join(repoRoot, area),
-			})) {
-				const source = read(path.join(area, file));
-				if (
-					source.includes("injection.js") ||
-					source.includes("app-server-control.js") ||
-					source.includes('"/api/injection"') ||
-					source.includes('"/api/injection/test"')
-				)
-					forbiddenProductionReferences.push(`${area}/${file}`);
+		for await (const file of new Bun.Glob("**/*.{ts,tsx}").scan({
+			cwd: path.join(repoRoot, "src"),
+		})) {
+			if (isTestOwnedSource(file)) continue;
+			const source = read(path.join("src", file));
+			for (const [concept, pattern] of retiredConcepts) {
+				if (pattern.test(source)) forbiddenProductionReferences.push(`src/${file}: ${concept}`);
 			}
 		}
 		expect(forbiddenProductionReferences).toEqual([]);
@@ -61,6 +86,7 @@ describe("legacy injection retirement policy", () => {
 				"/api/injection",
 				"app-server-control",
 				"control.sock",
+				"~/.codex",
 			])
 				expect(source.includes(retired), `${relativePath}: ${retired}`).toBeFalse();
 
@@ -68,42 +94,65 @@ describe("legacy injection retirement policy", () => {
 				(match) => match[1] ?? "",
 			);
 			expect(
-				executableBlocks.some((block) => /(?:inject|control[ -]socket)/i.test(block)),
+				executableBlocks.some((block) =>
+					/(?:inject|control[ -]socket|realtime_conversation\s*=)/i.test(block),
+				),
 				relativePath,
 			).toBeFalse();
 		}
 
+		const design = currentDocuments.get("DESIGN.md")!;
+		const authoritative = sectionBetween(design, designSectionHeading, nextDesignSectionHeading);
+		for (const identifier of [
+			"thread/inject_items",
+			"input_text",
+			"delivered",
+			"not_delivered",
+			"outcome_unknown",
+		])
+			expect(authoritative.includes(identifier), identifier).toBeTrue();
+		const voiceRelationship = authoritative
+			.split(/\n\n+/)
+			.find((paragraph) => /realtime voice/i.test(paragraph));
+		if (voiceRelationship === undefined) {
+			throw new Error("The coordinator-to-workhorse voice relationship is absent.");
+		}
+		expect(voiceRelationship).toMatch(/coordinator/i);
+		expect(voiceRelationship).toMatch(/\bnot\b[^.]*\bworkhorse\b/i);
+
 		const testing = currentDocuments.get("TESTING.md")!;
-		expect(testing).not.toMatch(/~\/\.codex/i);
-		expect(testing).toContain("Do not edit user-global Codex configuration");
-		for (const marker of [
+		for (const identifier of [
 			"CODEX_HOME",
 			"CODEX_SQLITE_HOME",
 			"config.toml",
-			"epoch manifests",
-			"app-server state",
+			"excalidraw-canvas/codex-workbench",
 		])
-			expect(testing.includes(marker), marker).toBeTrue();
-		expect(testing).toMatch(/separate persistent\s+coordinator/);
+			expect(testing.includes(identifier), identifier).toBeTrue();
 
-		const design = currentDocuments.get("DESIGN.md")!;
-		for (const marker of [
-			"thread/inject_items",
-			"one developer message",
-			"one `input_text` part",
-			"`delivered`",
-			"`not_delivered`",
-			"`outcome_unknown`",
-		])
-			expect(design.includes(marker), marker).toBeTrue();
-		expect(design).not.toMatch(/voice session attaches to an \*\*existing\*\* thread|same thread/i);
+		for (const relativePath of ["AGENTS.md", "README.md", "TESTING.md"] as const) {
+			expect(currentDocuments.get(relativePath), relativePath).toContain(designSectionLink);
+		}
+
+		const later = sectionBetween(design, "**Later**", "## Verified element metadata");
+		expect(later).not.toMatch(/owned workbench session/i);
 	});
 
 	test("accepts spoken approval only from the matching final user item", () => {
 		const design = currentDocuments.get("DESIGN.md")!;
-		expect(design).toMatch(/next\s+matching final user item/);
-		expect(design).toContain("Assistant output");
-		expect(design).not.toMatch(/assistant transcript|assistant item[^\n]*arm/i);
+		const authoritative = sectionBetween(design, designSectionHeading, nextDesignSectionHeading);
+		const spokenApproval = authoritative
+			.split(/\n\n+/)
+			.find((paragraph) => /spoken approval/i.test(paragraph) && /\barm\b/i.test(paragraph));
+		if (spokenApproval === undefined) throw new Error("The spoken-approval policy is absent.");
+
+		const normalized = spokenApproval.replace(/\s+/g, " ");
+		expect(normalized).toMatch(/next matching final user item/i);
+		const cannotArm = normalized.match(/(?<sources>[^.]*) cannot arm it\./i);
+		if (cannotArm?.groups?.sources === undefined) {
+			throw new Error("The spoken-approval policy has no explicit cannot-arm source set.");
+		}
+		expect(cannotArm.groups.sources.trim()).toMatch(/(?:^|,\s*)Assistant output(?:,|$)/);
+		expect(normalized).not.toMatch(/Assistant output[^.]*\b(?:may|can|does) arm\b/i);
 	});
 
 	test(`reports ${BROWSER_TEST_PATHS.length} executable browser owners and keeps prose count-free`, () => {
