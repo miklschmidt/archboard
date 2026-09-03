@@ -50,6 +50,10 @@ test("image replace persists one canonical batch before its frames", async () =>
 	resources.defer(() => pane.close());
 	try {
 		await request("/api/boards/new", { method: "POST", body: { board: "replace" } });
+		await request("/api/boards/open", {
+			method: "POST",
+			body: { board: "replace", pane: pane.clientId },
+		});
 		await pane.adopt("replace");
 		await request("/api/elements/batch?board=replace", {
 			method: "POST",

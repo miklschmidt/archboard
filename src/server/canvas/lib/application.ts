@@ -4030,10 +4030,11 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 		const key = boardKey(asked);
 		const prepared = res.locals.preparedBoardOpen as PreparedBoardOpen | undefined;
 		const alreadyRegistered = boards.has(key) && !params.reload;
+		const installOptions = params.reload ? { ignoreHold: true } : {};
 		const { board, content } =
 			prepared?.key === key && !alreadyRegistered
-				? materializeResolvedBoard(prepared.resolution)
-				: resolveInstalledBoard(key, "Opening a board");
+				? materializeResolvedBoard(prepared.resolution, installOptions)
+				: resolveInstalledBoard(key, "Opening a board", installOptions);
 		if (asked.level) board.identity = { ...board.identity, level: asked.level };
 		const pane = paneFromRequest(params.pane);
 		// The bytes just read are what the panes are about to be shown, so they are
@@ -4572,8 +4573,17 @@ function adoptScratchBoard(): void {
 		return;
 	}
 	if (!loaded) {
-		createBoard(identity);
-		return;
+		try {
+			createBoard(identity);
+			return;
+		} catch (error) {
+			// Two canvases may start against one fresh vault together. The scratch
+			// note is an idempotent startup prerequisite: the exclusive creator
+			// still decides its bytes, and the loser adopts those exact bytes.
+			if (!(error instanceof BoardResolutionError) || error.reason !== "conflicting") throw error;
+			loaded = readBoardFile(identity);
+			if (!loaded) throw error;
+		}
 	}
 	board.file = loaded.file;
 

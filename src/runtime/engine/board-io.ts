@@ -371,6 +371,8 @@ export interface InstallBoardOptions {
 	write?: boolean;
 	/** A waiter may accept only this exact hash from the released lease it observed. */
 	trustedPredecessorHash?: string;
+	/** Explicit reload takes the persisted note and discards any held document. */
+	ignoreHold?: boolean;
 }
 
 function availableBoardKeys(root: string): string[] {
@@ -465,9 +467,21 @@ export function resolveBoardNote(asked?: string | null, what?: string): Resolved
 export function resolveBoard(asked?: string | null, what?: string): ResolvedBoard {
 	const resolution = resolveBoardNote(asked, what);
 	const { key, loaded } = resolution;
-	const content = contentFromLoadedBoard(loaded);
+	const content = resolvedBoardContent(key, loaded);
 	const board: BoardState = { identity: loaded.identity, file: loaded.file };
 	return { key, board, content, loaded };
+}
+
+/** A held board has one live document, and its note is deliberately not it. */
+function resolvedBoardContent(key: string, loaded: LoadedBoard): BoardContent {
+	const hold = holdOn(key);
+	return hold
+		? {
+				...hold.content,
+				elements: new Map(hold.content.elements),
+				files: new Map(hold.content.files),
+			}
+		: contentFromLoadedBoard(loaded);
 }
 
 /** Install one already-resolved load for explicit open/create/write bookkeeping. */
@@ -476,7 +490,9 @@ export function materializeResolvedBoard(
 	options: InstallBoardOptions = {},
 ): ResolvedBoard {
 	const { key, loaded } = resolution;
-	const content = contentFromLoadedBoard(loaded);
+	const content = options.ignoreHold
+		? contentFromLoadedBoard(loaded)
+		: resolvedBoardContent(key, loaded);
 	const { board } = getOrCreateBoard(loaded.identity);
 	board.file = loaded.file;
 	const followsTrustedPredecessor =

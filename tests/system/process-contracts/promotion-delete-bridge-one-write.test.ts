@@ -332,7 +332,7 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 			fingerprint: {
 				note: deleted.parsed.fingerprint.note,
 				elements: 8,
-				version: 5,
+				version: 6,
 			},
 		});
 		expect(deleted.body).toEqual({
@@ -409,7 +409,7 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 			underSegmentIndex: 0,
 			crossing: { x: 50, y: 400 },
 			elements: [mask, redraw],
-			fingerprint: { note: bridge.parsed.fingerprint.note, elements: 12, version: 7 },
+			fingerprint: { note: bridge.parsed.fingerprint.note, elements: 12, version: 8 },
 		});
 		expect(mask.customData.archboard.bridge).toEqual({
 			background: "#ffffff",
@@ -448,7 +448,7 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 			bridgeId,
 			deleted: [bridgeId, redraw.id],
 			elements: [],
-			fingerprint: { note: removed.parsed.fingerprint.note, elements: 8, version: 9 },
+			fingerprint: { note: removed.parsed.fingerprint.note, elements: 8, version: 10 },
 		});
 		expect(removed.body).toBeUndefined();
 		expect(removed.method).toBe("DELETE");
