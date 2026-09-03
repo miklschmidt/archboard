@@ -334,7 +334,7 @@ describe("canvas Codex publication boundary", () => {
 			expect(publicationFailure.message).toContain(browserId);
 			expect(publicationFailure.message).toContain(paneId);
 			expect(publicationFailure.message).toContain("delta");
-			expect(publicationFailure.message).toContain("6");
+			expect(publicationFailure.message).toMatch(/\bsequence\s+6\b/);
 			expect(publicationFailure.message).toContain(firstEventFailure.message);
 			expect(
 				failures.some(
