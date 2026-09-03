@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-03 18:31'
+updated_date: '2026-09-03 18:37'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -48,6 +48,10 @@ Render the complete decoded Codex 0.151.0 ThreadItem union as bounded, escaped, 
 6. Make item identities injective across literal suffix-like ids and occurrences, make repeated rendered link keys occurrence-aware, and add only the collision regressions.
 7. Consolidate the private bounded-details hash, type the canonical status variants with an explicit unknown fallback, compose them through cn, and replace the arbitrary inward outline offset with existing semantic focus utilities.
 8. Run only the focused timeline and assistant-ui import-policy owner, typecheck, targeted lint and format, frontend build, and git diff checks; append remediation evidence, keep the task In Progress, and commit separately for rereview.
+
+9. Make userContent the sole user-message media renderer and change the provider-backed repeated-media assertion from four links to the two supplied links.
+10. Index runtime approval events by item identity, consume each match while walking canonical items, and append only unmatched approvals in their runtime order; add a mixed command/approval/later-item regression before changing normalization.
+11. Run only the focused timeline and assistant-ui policy owner, typecheck, targeted lint, format, and diff checks, then record evidence and commit this second remediation separately.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -68,6 +72,12 @@ Review remediation implemented. The module test now loads the literal public ind
 Red/green evidence: the new injectivity regression failed first with four items but only three identities in 164 ms. Item identities now serialize the structured [threadId, turnId, rawItemId, occurrence] tuple, so a literal id such as item-x:duplicate-1 cannot collide with a duplicate occurrence. The first combined rendered run then caught cn/tailwind-merge dropping the custom text-body class when it composed a semantic status color; switching the two composed size/color sites to the repository's existing !text-body convention made the rendered owner green. Repeated URL lists now use occurrence-aware keys. normalize.ts and render-item.tsx share one private stableBoundedKey helper, leaving one FNV implementation. Canonical status tones are an exhaustive Record over the typed BrowserTimeline item-status union with a separate unknown fallback, and all conditional tone composition uses cn. The arbitrary negative outline offset is gone; the log uses the existing semantic inset ring utilities.
 
 Focused verification: timeline plus assistant-ui import policy, 21 pass, 0 fail, 349 assertions in 6.07 s. bun run type-check passed in 2.44 s. Targeted Oxlint passed. Targeted Oxfmt check passed on 11 files in 189 ms. Frontend build passed in 525 ms with the existing large-chunk warning. git diff --check passed. The provider-backed automated render proved the changed visual and semantic points, so no additional browser, system, repository, stress, or performance lane ran. Task remains In Progress for rereview.
+
+Second rereview remediation started from clean HEAD 48d4de7c8ee2860933479c10e4efcb9b2b094f0b on the fixed base. Scope is limited to duplicate user media and approval chronology. Provider-backed rendering remains the direct verification seam.
+
+Second rereview remediation implemented. userContent now owns user-message media end to end; itemLinks handles only web-search and image-generation URLs. Two repeated user media inputs render exactly two safe links, while javascript media remains inert text. Approval projection now walks recovered canonical items in their original order, inserts each matching runtime approval directly after the canonical item with the same real item id, and appends only unmatched approvals in their original runtime order. Matching command and approval records retain distinct occurrence identities. Missing canonical ids cannot consume a runtime approval.
+
+Red/green evidence: the focused owner initially reported both defects in 164 ms, with command, later assistant item, approval order and four rendered links for two media inputs. After the change it proves command, approval, later assistant order in normalized data and provider-rendered markup, the shared command/approval item id with distinct structured identities, and exactly two links. Final focused timeline plus assistant-ui policy run: 22 pass, 0 fail, 355 assertions in 5.87 s. bun run type-check passed in 2.54 s. Targeted Oxlint passed. Targeted Oxfmt check passed on 11 files in 171 ms. git diff --check passed. No browser rerun was needed because the provider-backed owner exercises both changed output paths. No broad browser, system, module, repository, check, stress, or performance lane ran. Task remains In Progress for rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

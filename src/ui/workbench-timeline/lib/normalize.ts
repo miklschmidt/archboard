@@ -47,6 +47,11 @@ export interface NormalizedTimeline {
 	readonly priorEpoch: boolean;
 }
 
+type RuntimeApproval = Extract<
+	NonNullable<WorkbenchTimelineProps["runtimeTimeline"]>["turns"][number]["items"][number],
+	{ readonly media: "approval" }
+>;
+
 function itemIdentity(
 	threadId: string,
 	turnId: string,
@@ -79,29 +84,22 @@ function normalizeItem(
 	};
 }
 
-function approvalItems(
+function normalizeApproval(
 	threadId: string,
 	turnId: string,
-	props: WorkbenchTimelineProps,
+	item: RuntimeApproval,
 	occurrences: Map<string, number>,
-): TimelineItem[] {
-	const runtimeTurn = props.runtimeTimeline?.turns.find((turn) => turn.turnId === turnId);
-	if (!runtimeTurn) return [];
-	return runtimeTurn.items.flatMap((item) => {
-		if (item.media !== "approval") return [];
-		const occurrence = occurrences.get(item.itemId) ?? 0;
-		occurrences.set(item.itemId, occurrence + 1);
-		return [
-			{
-				identity: itemIdentity(threadId, turnId, item.itemId, occurrence),
-				itemId: item.itemId,
-				label: "Approval",
-				type: "approval",
-				value: item,
-				malformed: false,
-			},
-		];
-	});
+): TimelineItem {
+	const occurrence = occurrences.get(item.itemId) ?? 0;
+	occurrences.set(item.itemId, occurrence + 1);
+	return {
+		identity: itemIdentity(threadId, turnId, item.itemId, occurrence),
+		itemId: item.itemId,
+		label: "Approval",
+		type: "approval",
+		value: item,
+		malformed: false,
+	};
 }
 
 export function normalizeTimeline(props: WorkbenchTimelineProps): NormalizedTimeline {
@@ -113,8 +111,26 @@ export function normalizeTimeline(props: WorkbenchTimelineProps): NormalizedTime
 		if (turnId.length === 0 || turns.has(turnId)) continue;
 		const occurrences = new Map<string, number>();
 		const values = Array.isArray(turn.items) ? turn.items : [];
-		const items = values.map((item) => normalizeItem(props.threadId, turnId, item, occurrences));
-		items.push(...approvalItems(props.threadId, turnId, props, occurrences));
+		const runtimeApprovals =
+			props.runtimeTimeline?.turns
+				.find((runtimeTurn) => runtimeTurn.turnId === turnId)
+				?.items.filter((item): item is RuntimeApproval => item.media === "approval") ?? [];
+		const matchedApprovals = new Set<number>();
+		const items: TimelineItem[] = [];
+		for (const value of values) {
+			const item = normalizeItem(props.threadId, turnId, value, occurrences);
+			items.push(item);
+			if (textField(value, "id").length === 0) continue;
+			for (const [approvalIndex, approval] of runtimeApprovals.entries()) {
+				if (matchedApprovals.has(approvalIndex) || approval.itemId !== item.itemId) continue;
+				matchedApprovals.add(approvalIndex);
+				items.push(normalizeApproval(props.threadId, turnId, approval, occurrences));
+			}
+		}
+		for (const [approvalIndex, approval] of runtimeApprovals.entries()) {
+			if (matchedApprovals.has(approvalIndex)) continue;
+			items.push(normalizeApproval(props.threadId, turnId, approval, occurrences));
+		}
 		const status = textField(turn, "status") || "unknown";
 		turns.set(turnId, {
 			turnId,
