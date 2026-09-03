@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type {
+	CodexIngressConformance,
 	CodexInitializeCapabilities,
 	CodexLoginAccountParams,
 	CodexOutputConformance,
@@ -15,6 +16,12 @@ import {
 function codexOutputSchema<Wire>() {
 	return <Schema extends z.ZodType>(
 		schema: Schema & CodexOutputConformance<Wire, z.output<Schema>>,
+	): Schema => schema;
+}
+
+function codexIngressSchema<Wire>() {
+	return <Schema extends z.ZodType>(
+		schema: Schema & CodexIngressConformance<Wire, z.input<Schema>, z.output<Schema>>,
 	): Schema => schema;
 }
 
@@ -116,7 +123,7 @@ const BedrockAccessKeysLoginSchema = z
 	})
 	.strict();
 
-export const LoginAccountParamsSchema = codexOutputSchema<CodexLoginAccountParams>()(
+export const LoginAccountParamsSchema = codexIngressSchema<CodexLoginAccountParams>()(
 	z.discriminatedUnion("type", [
 		ApiKeyLoginSchema,
 		ChatgptLoginSchema,
@@ -128,14 +135,24 @@ export const LoginAccountParamsSchema = codexOutputSchema<CodexLoginAccountParam
 );
 export type LoginAccountParams = z.infer<typeof LoginAccountParamsSchema>;
 
-export const SupportedLoginAccountParamsSchema = codexOutputSchema<CodexLoginAccountParams>()(
-	z.discriminatedUnion("type", [
-		ApiKeyLoginSchema,
-		ChatgptLoginSchema,
-		BedrockApiKeyLoginSchema,
-		BedrockAccessKeysLoginSchema,
-	]),
-);
+type SupportedLoginVariant = Extract<
+	(typeof LOGIN_POLICIES)[number],
+	{ readonly policy: "supported" }
+>["variant"];
+type SupportedCodexLoginAccountParams = Extract<
+	CodexLoginAccountParams,
+	{ type: SupportedLoginVariant }
+>;
+
+export const SupportedLoginAccountParamsSchema =
+	codexIngressSchema<SupportedCodexLoginAccountParams>()(
+		z.discriminatedUnion("type", [
+			ApiKeyLoginSchema,
+			ChatgptLoginSchema,
+			BedrockApiKeyLoginSchema,
+			BedrockAccessKeysLoginSchema,
+		]),
+	);
 export type SupportedLoginAccountParams = z.infer<typeof SupportedLoginAccountParamsSchema>;
 
 export const BedrockSetupParamsSchema = z.discriminatedUnion("type", [

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 01:27'
+updated_date: '2026-09-03 01:34'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -46,6 +46,8 @@ Replace the rejected handwritten protocol ownership model with one dependency-ne
 3. Replace handwritten vendor lookalike types in codex-protocol and the reachable browser/realtime seam with generated-derived views. Keep local browser state and identities local. Make each handwritten Zod ingress schema prove both z.input and z.output conformance to its normalized vendor wire type without casts, any, ts-ignore, or a separate compiler path.
 4. Correct BrowserUseOriginPolicy to its seven generated fields and add focused module coverage for decode/round-trip plus a reachable i64 safe-number case and bigint rejection at the JSON seam. Update existing boundary fixtures only where the module path changed.
 5. Run focused formatting, lint, type checks, and affected module owners. Then prove a clean frozen install, generated output, and both TypeScript graphs in a disposable checkout or temp root. Record exact evidence and implementation notes without checking acceptance criteria or finalizing the task.
+
+6. Remediate fixed-range review findings: preserve reserved JSON keys as own data properties; restrict safe-integer enforcement to named generated i64 fields while keeping arbitrary finite JsonValue numbers valid; serialize generation and atomically switch a stable pointer to a completed versioned tree; and make full plus policy-derived supported login schemas prove two-way generated ingress conformance. Extend only existing focused owners and use a disposable bounded generator recovery probe.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
