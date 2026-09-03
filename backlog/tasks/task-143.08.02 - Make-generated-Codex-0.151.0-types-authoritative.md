@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 01:16'
+updated_date: '2026-09-03 01:27'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -52,4 +52,8 @@ Replace the rejected handwritten protocol ownership model with one dependency-ne
 
 <!-- SECTION:NOTES:BEGIN -->
 Implementation worker started from finalized recovery base 503bae209c970b72240489213e704de771565b77 in an isolated worktree. Scope is TASK-143.08.02 only; finalization remains parent-owned.
+
+Implemented in 225d179e527f0e895822d595afe05c6d7e0bdcc0. @openai/codex 0.151.0 is now an exact runtime dependency. Postinstall and generate:codex-contract run one Bun generator into a fresh sibling directory and atomically replace the ignored generated subtree. src/shared/codex-app-server-contract/index.ts is the sole product import path and supplies generated-derived method maps, normalized wire views, compile-time Zod conformance, and the one pre-ingress JSON/i64 normalizer. Protocol request/response/reverse-request/notification schemas and the reachable browser-model seam now prove generated compatibility during ordinary compilation. BrowserUseOriginPolicy uses all seven generated fields; focused owners cover its shape plus safe-number and bigint behavior.
+
+Validation: clean frozen install plus postinstall generation passed in 0.240 s in a disposable archive checkout; frontend TypeScript graph passed in 0.457 s; focused protocol/browser contract owners passed 544 tests in 0.401 s; repository boundaries passed 7 tests in 2.29 s; affected realtime/authored repository owners passed 7 tests in 0.061 s; focused Oxlint and Oxfmt passed; direct generation passed in 0.113 s. The root TypeScript graph still reports 13 unrelated engine/board-inspection errors, byte-for-byte identical to exact base 503bae209c970b72240489213e704de771565b77 after a clean frozen install. No task acceptance criteria were checked and status remains In Progress for parent review/finalization.
 <!-- SECTION:NOTES:END -->
