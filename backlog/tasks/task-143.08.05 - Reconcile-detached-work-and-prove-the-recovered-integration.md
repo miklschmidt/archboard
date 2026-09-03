@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 12:09'
+updated_date: '2026-09-03 12:18'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -161,6 +161,10 @@ Post-failure diagnosis at unchanged HEAD: exact workflow owner passed 4/4 in 281
 Authoritative gate A13 at 735ebff498b3ae5c95c57aa0754a9ebc3255ee08: lint, formatting, both type checks, frontend build, 1,902/1,902 module tests, 356/356 serial system tests, and 152/152 repository-policy tests passed. The serial browser lane passed the 10,000-element performance owner and all owners through human-hold persistence, then claim-interaction received HTTP 400 where its fixture expected 200 because it sent pane in the strict /api/boards/new body. Exact unit J1np1YQ0 exited normally with status 1 after 8m17.150s, CPU 9m11.968s, 5.4G peak, and 0B swap; it is inactive/dead with MainPID=0, empty ControlGroup, and absent cgroup.
 
 The production contract was already correct and unchanged: board creation atomically publishes one persisted board and BoardNewAddressSchema rejects placement fields; /api/boards/open exclusively owns placing that board in a named pane. The stale rendered owner and its pane-scoped take-back helper now create the second board and then explicitly open it in Pane B, matching the browser-visible two-action workflow and retaining one durable create. The first focused invocation iMpZswFJ intentionally failed closed in 56 ms because the lane requires --focus; the corrected canonical focused invocation WPIEak2I passed claim-interaction 1/1 with 98 assertions in 10.54 s (unit runtime 10.625s, CPU 9.024s, 665.5M peak, 0B swap). No production path, timeout, lint, type, test inventory, or assertion was weakened.
+
+Authoritative gate A14 at 12b8850525d1a4b05299724e1b2ce48bc45376ef: lint, formatting, both type checks, frontend build, 1,902/1,902 module tests, 356/356 serial system tests, and 152/152 repository-policy tests passed. The first serial browser owner completed all measured workload actions but its teardown parsed one partial strace line, 3759291 ???( <unfinished ...>, after the tracer PIDs disappeared. Unit lSJU1A2X exited normally with status 1 after 6m36.833s, CPU 7m35.346s, 5.5G peak, and 0B swap; it is inactive/dead with MainPID=0, empty ControlGroup, and absent cgroup.
+
+The partial line was not an unmatched fsync and the same owner had passed A13, so this was a trace-finalization observation race rather than a product write failure. The existing process-absence poll remains. The owner now also polls the parsed trace through the existing bounded browser poll until no incomplete record remains; a permanently incomplete syscall or malformed line still times out and fails. Focused canonical browser unit KGiSIgPJ passed the full 10,000-element performance owner with 64 assertions in 74.51 s, recording 13 fsyncs, 16.7 ms median frames, 16.8 ms worst report-correlated frame, runtime 1m14.606s, CPU 1m36.837s, 5.4G peak, and 0B swap. No timeout, performance budget, product path, lint/type rule, inventory, or assertion was weakened.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
