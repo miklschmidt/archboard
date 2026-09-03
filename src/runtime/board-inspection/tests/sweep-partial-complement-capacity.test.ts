@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { diagnoseSweepCompatibility, inspectBoardDiagnostics } from "../diagnostics.js";
 import { semanticNode } from "./fixtures/elements.js";
+import { partialComplementLabelBoard } from "./fixtures/partial-complement-cases.js";
 import { interval } from "./fixtures/sweep-cases.js";
 
 function nestedOwnerLabelBoard(height: number, labelCount: number) {
@@ -95,6 +96,22 @@ function distinctConflictingLabelBoard(height: number, labelCount: number) {
 }
 
 describe("sweep partial-complement capacity", () => {
+	test("public partial complements retain linear comparison and bucket work", () => {
+		for (const [count, comparisons, bucketScans] of [
+			[32, 33, 33],
+			[64, 65, 65],
+			[128, 129, 129],
+			[256, 257, 257],
+		] as const) {
+			const report = inspectBoardDiagnostics(partialComplementLabelBoard(count));
+			expect([
+				count,
+				report.report.broadPhaseComparisons,
+				report.work.broadPhaseBucketScans,
+			]).toEqual([count, comparisons, bucketScans]);
+		}
+	});
+
 	test("own-plus-ancestor matrices retain zero public label work", () => {
 		const actual = (
 			[

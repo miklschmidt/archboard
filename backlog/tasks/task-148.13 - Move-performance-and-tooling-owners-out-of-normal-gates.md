@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-03 17:33'
-updated_date: '2026-09-03 18:35'
+updated_date: '2026-09-03 18:43'
 labels: []
 dependencies:
   - TASK-143.08.05
@@ -24,6 +24,7 @@ modified_files:
   - docs/agents/boundaries.md
   - docs/agents/test-suite.md
   - package.json
+  - src/runtime/board-inspection/tests/fixtures/partial-complement-cases.ts
   - src/runtime/board-inspection/tests/large-input-indexes.test.ts
   - src/runtime/board-inspection/tests/large-input-indexes-capacity.test.ts
   - src/runtime/board-inspection/tests/sweep-filtering.test.ts
@@ -44,6 +45,7 @@ modified_files:
   - tests/system/repository-policy/ci-gate.test.ts
   - tests/system/repository-policy/legacy-injection-retirement.test.ts
   - tests/system/repository-policy/support/browser-runner-fixtures.ts
+  - tests/system/repository-policy/support/executable-bun.ts
   - tests/system/repository-policy/support/test-inventory.ts
   - tests/system/repository-policy/test-inventory.test.ts
 parent_task_id: TASK-148
@@ -78,7 +80,7 @@ Implementation must wait for TASK-143.08.05 and for reconciliation of the active
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Reclassify the six board-inspection candidates case by case. Restore sweep-ordering and ordinary sweep semantics to normal module ownership, and move only scale loops or ceilings into clearly named capacity files. 2. Extend the existing package-script graph so whitespace-tolerant Bun edges, all scripts, manual opt-in commands, and reachable helper-selected native owners are checked fail-closed. Add the three requested mutation-red reachability cases. 3. Discover `.test.tsx` and `.spec.tsx` owners and add one static inclusion case. 4. Remove the duplicated real-workflow/environment assertion from the opt-in browser policy owner and correct AGENTS.md plus boundaries.md normal/opt-in wording. 5. Run only the requested focused owners and exact static checks, update task evidence, create a separate remediation commit, and callback READY_FOR_REREVIEW.
+1. Replace the separate Bun-run and Bun-test regex paths with one quote/comment-aware executable Bun invocation extractor; derive graph edges and native selections from its parsed run/test arguments, then add inert quoted/echoed and commented test mutations. 2. Keep one modest partial-complement exact-finding case normal and move the multi-size comparison/bucket-scan matrix into the capacity owner. 3. Reduce package-read-only-contract to command output, unchanged vault bytes, and zero HTTP contact; inspect existing engine coverage before deciding whether ingest rejection needs an owner. 4. Run only focused inventory mutations, the normal semantic case, modest capacity matrix, simplified package owner, both TypeScript projects, exact lint/format/diff, then record evidence and create a separate remediation commit. 5. Send READY_FOR_REREVIEW with the fixed range and keep TASK-148.13 In Progress.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -126,6 +128,22 @@ Removed the duplicated real-workflow and hosted-environment assertion from `ci-b
 Documentation now calls `bun run test` and the four package lanes the whole normal suite. `docs/agents/boundaries.md` names the explicit opt-in categories without owner counts. The test guide documents TSX inventory and helper-chain protection.
 
 Focused validation: inventory plus normal CI policy 44 tests in 33 ms; unique opt-in CI-browser parser case 1 test in 20 ms; normal inspection semantics 20 tests in 614 ms; one deterministic case from each new capacity file passed in 99 ms, 193 ms, and 118 ms; package read-only contract passed in 199 ms; root TypeScript 1.80 s; frontend TypeScript 0.44 s; Oxlint 0.06 s; Oxfmt 0.20 s; diff check passed. Static counts were 200/83/18/16 normal and 8/13/1/2 opt-in with no inventory errors.
+
+Focused tests left no `archboard-inventory-tsx-*` or `archboard-browser-preflight-*` directories in `/tmp`. Previously reported pre-existing residue remains untouched. Task stays In Progress for rereview.
+
+Second review remediation on top of 2ad688f6:
+
+One executable Bun parser now owns both package graph edges and native test selection. `support/executable-bun.ts` extracts quote/comment-aware executable `bun run` and `bun test` records with parsed arguments. `test-inventory.ts` derives run edges, test selectors, and exact ignore arguments from those records. The previous raw Bun-test regex is gone. Repeated edges, whitespace-tolerant run syntax, helper traversal, and manual opt-in protection remain intact.
+
+Two new mutation-red cases prove that `echo "bun test ..."` and `# bun test ...` text cannot claim or reach a native owner. The existing focused CI parser cases still prove echo, single-quoted substitution, comments, and whitespace behavior.
+
+The normal partial-complement owner now runs one 32-item fixture and asserts only exact finding identities and duplicate details. The 32/64/128/256 comparison and bucket-scan matrix moved to the capacity owner. Both use one shared fixture builder under `tests/fixtures`; setup and assertions are not duplicated.
+
+The normal package read-only owner now asserts only command status/output, byte-for-byte unchanged vault snapshot, and zero HTTP contacts. Fake-timer state, event-loop scheduling, support-artifact cleanup, and direct ingest rejection were deleted rather than relocated. Focused engine geometry validation plus normal malformed-input system owners already catch malformed width rejection, so no new ingestScene owner was justified.
+
+Counts remain 200/83/18/16 normal and 8/13/1/2 opt-in; static inventory errors remain empty.
+
+Focused validation: inventory plus CI policy 46 tests in 28 ms; four CI parser compatibility cases in 17 ms; normal partial-complement semantic owner 1 test in 96 ms; opt-in 32/64/128/256 work matrix 1 test in 700 ms; simplified package read-only owner 1 test in 294 ms; root TypeScript 1.69 s; frontend TypeScript 0.44 s; Oxlint 0.03 s; Oxfmt 0.002 s; diff check passed. No broad or long lane ran.
 
 Focused tests left no `archboard-inventory-tsx-*` or `archboard-browser-preflight-*` directories in `/tmp`. Previously reported pre-existing residue remains untouched. Task stays In Progress for rereview.
 <!-- SECTION:NOTES:END -->
