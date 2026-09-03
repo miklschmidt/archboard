@@ -83,8 +83,16 @@ TASK-009 a shape gets a fill on its own (`src/shared/appearance/appearance.ts`),
 what makes its interior tappable.
 
 Open <http://127.0.0.1:3000> only when the change concerns a live browser
-workflow or Excalidraw round-trip fidelity. Then **drag the box** and re-run
-`query`. The position, `customData`, and any human-authored link must survive.
+workflow or Excalidraw round-trip fidelity. Once the browser connects, inspect
+the existing pane and point it at the disposable board:
+
+```bash
+./bin/canvas browser panes --text
+./bin/canvas browser show "$probe_board" --pane primary
+```
+
+Only after that display step, drag the box and re-run `query`. The position,
+`customData`, and any human-authored link must survive.
 A bound code link is different: `query` may present one derived from the
 portable binding and this machine's checkout registry, but the note must never
 store it. That frontend round-trip is where metadata gets silently dropped or
@@ -94,12 +102,12 @@ it.
 Elements that came back through the browser are tagged
 `"source": "frontend_sync"`.
 
-To exercise explicit live interaction, click the box in the browser. Read the
-structured selection, extract its `elementIds` with the existing Bun runtime,
-and pass those ids to the board write:
+To exercise explicit live interaction, click the box in the browser after the
+display step. Read the structured selection, extract its `elementIds` with the
+existing Bun runtime, and pass those ids to the board write:
 
 ```bash
-selection_json="$(./bin/canvas browser selection --pane left)"
+selection_json="$(./bin/canvas browser selection --pane primary)"
 ids="$(bun -e 'process.stdout.write(JSON.parse(await Bun.stdin.text()).elementIds.join(","))' \
   <<<"$selection_json")"
 ./bin/canvas promote --board "$probe_board" --ids "$ids" --kind service --name "Probe" \
@@ -204,12 +212,13 @@ hasBoundTextElement(el) || ...`, so a _labelled_ transparent shape does hit-test
   selection is retired, and the change feed is reset only when the board was
   not already on screen in another pane. A regression here looks like the other
   pane's scene being replaced, so test with two boards, never two panes on one.
-- **There is no active board to fall back to** (ADR 0009). `activeBoardKey()`
-  and friends are deleted, `resolveBoard()` requires a key, and every
-  board-blind caller funnels through it — which is why the refusal only had to
-  be written once. If you add a route that reads or writes elements, call
-  `boardFromRequest(req, 'What it is doing')` and the refusal comes with it.
-  Do not add a default "for convenience": that is the whole bug.
+- **There is no active or default board to fall back to** (ADR 0020).
+  `activeBoardKey()` and friends are deleted. `resolveBoard()` requires a
+  persisted named-board key, and every board-blind caller funnels through it.
+  That is why the refusal only had to be written once. If you add a route that
+  reads or writes elements, call `boardFromRequest(req, 'What it is doing')` and
+  the refusal comes with it. Do not add a default "for convenience": that is
+  the whole bug.
 - **A pane exists only while its socket is open.** `browser panes` is fed by pushes from
   the browser keyed by client id, and the close handler retires the pane and its
   selection together. So a closed tab or an unsplit disappears from the report

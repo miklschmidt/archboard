@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 10:27'
+updated_date: '2026-09-03 10:31'
 labels: []
 dependencies:
   - TASK-143.08.06.04
@@ -54,6 +54,8 @@ Make the browser-independent contract impossible to miss for agents, maintainers
 5. Apply standards-review remediation: keep the skill owner structural around main-path versus browser namespace and workflow owner metadata, then extend the existing no-argument package help smoke with semantic browser-boundary assertions. Run only those two owners plus scoped formatting, lint, and diff checks; commit without amending.
 
 6. Apply spec-review remediation: confine executable browser examples to the live-session skill section; replace the archboard-dev scratch probe with a named disposable zero-client board and pass selection IDs explicitly to promote; correct persisted-board inventory guidance; strengthen the structural skill guard; and revise the retained selection-inspector owner to baseline note bytes before browser setup, use released browser lifecycle CLI calls, and prove right-pane capture with asymmetric markers. Keep one browser launch and one test, with three additional supervised CLI children replacing three direct API calls.
+
+7. Apply standards-rereview corrections only: make the archboard-dev live round trip a deterministic existing-primary-pane workflow and replace the two remaining ADR 0009 no-default-board references with ADR 0020 persisted named-board language. Run no browser owner and add no tests.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -68,4 +70,8 @@ Standards-review remediation after a06495fa: removed command, quoting, heading, 
 Spec-and-standards remediation after a06495fa is complete. Executable browser commands now live only in the canonical skill's explicit live-session section, enforced structurally without prose or command-shape snapshots. Archboard-dev now probes an explicitly named disposable board in a disposable vault with zero clients and passes structured selection elementIds to promote using Bun. AGENTS.md and TESTING.md now describe the persisted-board vault inventory under ADR 0020; INSTALL.md maps repositories to persisted boards and keeps browser show in an optional live-session branch.
 
 The retained selection-inspector owner snapshots both note byte sequences before its first browser open/show, replaces three direct setup APIs with the released browser show/open/show CLI, and verifies a right-pane SVG contains its right-only marker and excludes the left-only marker. This adds no test, owner, or browser launch; it replaces three direct HTTP setup calls with three supervised CLI children (and their three timeout supervisors). Focused validation: skill policy 8/8 in 0.049s; package help/argv 6/6 in 3.482s; exact selection-inspector owner 1/1 in 8.701s. One preceding run passed the new persistence/capture work but timed out at the unchanged late Cancel-dialog interaction; the immediate exact-owner retry passed all 71 assertions. Scoped Oxfmt, Oxlint, and diff checks pass. Task remains In Progress and all acceptance criteria remain unchecked.
+
+Standards rereview after 4d567471 is complete. The tracked archboard-dev skill now inventories the existing browser pane, shows the disposable probe board in the primary pane, and permits drag or click only after that display step. Selection reads from the same primary pane, so the documented round trip remains deterministic and never creates a second pane.
+
+The no-active-board bullet in the skill and the takeBoardFlag comment now cite ADR 0020 and describe persisted named boards. No behavior or test code changed. Added cost is zero tests, zero browser launches, and zero runtime processes. Focused skill policy passed 8/8 in 0.069s. Scoped Oxfmt, Oxlint, and git diff --check pass. The package-help owner was not rerun because the source edit changes only a private comment and leaves public help untouched. The browser owner was not rerun as directed. Task remains In Progress with every AC unchecked.
 <!-- SECTION:NOTES:END -->
