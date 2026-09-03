@@ -1,10 +1,11 @@
 ---
 id: TASK-143.08.05
 title: Reconcile detached work and prove the recovered integration
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 02:14'
+updated_date: '2026-09-03 11:13'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -38,6 +39,82 @@ Reconcile the frozen detached descendants only after the OOM, generated-type, co
 - [ ] #8 The final recovered integration includes TASK-143.08.06.05 evidence: named board work and server rendering pass with zero browser clients, live-session control exists only under `archboard browser`, and the canonical tracked skill teaches that separation before paused feature leaves resume.
 - [ ] #9 At execution time the inventory is regenerated from every worktree registered with Git, not only the audited maximal descendants. Integrated ancestors, review worktrees, unrelated task worktrees, and dirty worktrees are explicitly classified as preserve and untouched when they are not recovery inputs, so no registered worktree is silently omitted.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. The parent approved execution against fixed base c2d86ef92b5c902bcf459ce801e75e0dcf7d59cd. Before mutation, reconfirm that this checkout is still detached at that commit, refs/heads/codex/task-143-144-workbench still names it, ba1aaceefa4b96185b44832d339460c3a9593a86 remains its ancestor, and main-only commit 7b20864889202ea4f0e849d225626f3604639844 still adds only TASK-145, TASK-146, and TASK-147. Stop for parent review on drift. Do not merge, reset, attach this checkout to another branch, or mutate another checkout.
+
+2. Regenerate the worktree inventory twice, once at execution start and again immediately before finalization. The auditor saw 21 rows before this worktree existed and the planning snapshot saw the expected 22 after fa28 registration. Start each inventory from every row returned by git worktree list --porcelain. For each row record path, branch or detached state, exact head, merge-base against the recovered tip, commits unique in both directions, duplicate-head and ancestor relationships, owning Backlog task, task/review state, and tracked plus staged dirty file names. Use git diff and git diff --cached only. Record untracked state as intentionally uninspected under the parent boundary, with the known protected bundle untouched. Classify protected b6e0 and vanished 55ce only from registry and task evidence. Never enter, read, or stat those checkouts. Preserve and leave untouched every unrelated, review-source, duplicate, integrated-ancestor, and dirty worktree unless the frozen detached-input ledger names it.
+
+3. Revalidate every detached input object and its durable protection before accounting for code. Existing refs/codex/snapshots refs protect 3e1670af8ad4e7fa4af5d6ec806bdcea6d65d971, 0e74cbaf46d5ff5a338c87844c927af5c384a953, b0938164f84c84427d6b22b8bebcb678632dc2b1, 0ac9ef2dda4ecf9733f25f425b5968bf9384afcc, 4e93e729dbc4219ed20218cfcf7ec60b0630855e, 52b00a4db235bafb7f9329d6ce4e5be5dc888cb7, and 8bac86bfa2583aa95dc93fa42256f1f22fcb6f92. Create only the missing immutable ref refs/codex/recovery/task-143.08.05/0f1e5807, requiring old-object absence and new object 0f1e58071097628baea0120004e98e4d779f2bef. Never move or delete these refs. Remove no worktree in this task. A drop outcome means no replay, not deletion. Any later removal still needs explicit user approval.
+
+4. Give 0e74cbaf a no-replay outcome. Its legacy environment-clearing implementation is superseded by completed TASK-143.06.06 and its positive allowlist. Preserve the object and snapshot ref; do not merge or cherry-pick it. Preserve and rebuild 3e1670af later under TASK-143.01.09. Its useful behavior is exhaustive persisted and loaded candidate discovery, exact-ID joining, one-generation classification, and epoch/CAS refusal against the recovered generated-derived link seam.
+
+5. Record the approved behavior ledger without changing future leaf plans. Rebuild 54643b59 and b0938164 later under TASK-143.01.02, preserving ordinary approval lifecycle, decision, outcome, reason, binding, spoken eligibility, permission, and elicitation behavior while rejecting handwritten browser contracts and duplicate schema/test layers. Rebuild 70263cf7 and 0ac9ef2d later across TASK-143.01.10 for queue delivery uncertainty and terminal dynamic-approval evidence, TASK-143.01.14 for composed runtime/realtime projection, and TASK-143.01.02 for the resulting browser model only. Rebuild 6438d02e and 4e93e729 later under TASK-143.03.01 after TASK-143.01.14, preserving immutable subscribed media snapshots, generation and correlation, transcript and semantic diagnostics, and stale-generation suppression while rejecting old browser contracts and excess test layers. Rebuild 52b00a4d product behavior later under TASK-143.03.06, preserving Add, List, Edit, Cancel, Reorder, and Start queue UX plus authoritative reconciliation and uncertainty/refusal presentation while rejecting direct-browser and literal-policy scaffolding. Give 8bac86bf no replay because its Backlog-only blocker is already folded into TASK-143.01.10. Give 0f1e5807 no replay because it is patch-equivalent and integrated. Give 54643b59, 70263cf7, 6438d02e, duplicates, and other ancestors no separate replay.
+
+6. Preserve the main-only backlog records by cherry-picking exactly 7b20864889202ea4f0e849d225626f3604639844 after the inventory and ref gates. Reconfirm at execution that the commit changes only the three TASK-145, TASK-146, and TASK-147 files. At the final head, prove each exact file blob matches main with path-limited git diff and prove each task resolves through backlog task view. Do not edit those records. Do not merge main or recreate them by hand. Continue to mutate TASK-143.08.05 only through the Backlog CLI.
+
+7. Keep the recovered product as small as the corrected contracts permit. Expect no product source, test, or current-document change. The current generated Codex contract, mandatory process/application lifetime, browser-only projection seam, named-board resolution, server renderer, browser command namespace, and canonical skill remain authoritative. Do not create or plan future leaf work. Do not implement timeline, composer, queue, approval, or voice UI. Do not edit paused leaf assignments or plans before this task is Done.
+
+8. Run exactly one authoritative complete local gate on the frozen implementation head. Before running it, reverify /home/msc/.codex/task-143.08.01/capped-command has mode and owner 700 msc:users and SHA-256 b0707f67834641cf5243b67e86b0116137a517a2b7a539d2d7f6b6c148c7c880. Do not edit the wrapper. Its verified limits are MemoryMax=6442450944, MemorySwapMax=1073741824, OOMPolicy=kill, KillMode=control-group, TimeoutStopSec=1s, MemoryAccounting=yes, and TasksAccounting=yes. It sets no TasksMax and no wall-clock timeout. Run exactly: /home/msc/.codex/task-143.08.01/capped-command -- /run/current-system/sw/bin/env -u CI -u ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS -u ARCHBOARD_CI_EXCLUDED_SYSTEM_OWNER -u ARCHBOARD_TEST_BROWSER_OWNER_FIXTURE bun run check. Add no outer timeout. Preserve package order, test:system max-concurrency=1, and one browser owner at a time. Run no typecheck, lint, system, browser, or other validation sidecar.
+
+9. Accept the complete gate only on exit 0, never wrapper status 124 or 125, with no OOM, SIGKILL, cleanup diagnostic, residual unit, or residual cgroup. Record the wrapper path, hash, effective limits, unit identity, exit, wall time, and cleanup evidence. Record memory or process peaks only if unchanged wrapper output exposes them. Do not follow a successful gate with duplicate focused reruns. Focused commands are diagnosis only after a failure. For one precisely identified suspected spinning child, the only time boundary is the verified wrapper around timeout --signal=TERM --kill-after=5s 20s followed by the exact child command. After remediation, run one fresh complete gate.
+
+10. After the gate, run only cheap authored-state checks: Backlog parsing, exact ref and tree checks, the path-limited main blob comparison, git diff --check, and tracked/staged dirty audits. Keep generated contracts, frontend output, logs, and inventory scratch data reproducible and ignored or temporary. Author no derived inventory file. Freeze and report HEAD without further tracked mutation. Ask the parent for an independent gpt-daybreak-blue-latest medium review over c2d86ef92b5c902bcf459ce801e75e0dcf7d59cd..HEAD. Do not check ACs, write the final summary, mark Done, integrate canonical, remove worktrees, or push.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Approved detached-behavior map, before implementation:
+- 0e74cbaf: no replay. TASK-143.06.06 supersedes its environment clearing with a positive allowlist.
+- 3e1670af: rebuild later in TASK-143.01.09. Preserve exhaustive persisted-plus-loaded discovery, exact-ID join, one-generation classification, and epoch/CAS refusal.
+- 54643b59 and b0938164: rebuild later in TASK-143.01.02. Preserve ordinary approval lifecycle, decisions, outcomes, reasons, bindings, spoken eligibility, permissions, and elicitation. Reject handwritten browser contracts and duplicate schemas/tests.
+- 70263cf7 and 0ac9ef2d: rebuild later across TASK-143.01.10 for queue uncertainty and terminal dynamic-approval evidence, TASK-143.01.14 for composed runtime/realtime projection, and TASK-143.01.02 for the browser model.
+- 6438d02e and 4e93e729: rebuild later in TASK-143.03.01 after TASK-143.01.14. Preserve immutable subscribed media snapshots, generation/correlation, transcript and semantic diagnostics, and stale-generation suppression. Reject old browser contracts and excess tests.
+- 52b00a4d: rebuild later in TASK-143.03.06. Preserve Add/List/Edit/Cancel/Reorder/Start queue UX, authoritative reconciliation, and uncertainty/refusal presentation. Reject direct-browser and literal-policy scaffolding.
+- 8bac86bf: no replay. Its Backlog-only blocker is already folded into TASK-143.01.10.
+- 0f1e5807: no replay. The four-commit series is patch-equivalent and integrated.
+- 54643b59, 70263cf7, 6438d02e, duplicates, and ancestors receive no separate replay.
+No future leaf plan, assignment, or implementation changes are part of this task.
+
+Execution-start worktree inventory against fixed target c2d86ef92b5c902bcf459ce801e75e0dcf7d59cd. Git reported 22 registered rows. Base means merge-base with the fixed target. Unique means commits reachable from the row head but not the fixed target. Target-ahead records the overlapping ancestor distance. Dirty inspection used tracked and staged diffs only. No row had staged changes. Untracked state was intentionally uninspected, including the known protected bundle.
+
+| Registered worktree | Branch/state | Base | Head | Owner and review state | Unique / overlap | Tracked dirty | Outcome |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| /home/msc/Projects/archboard | refs/heads/codex/task-143-144-workbench | c2d86ef92b5c902bcf459ce801e75e0dcf7d59cd | c2d86ef92b5c902bcf459ce801e75e0dcf7d59cd | TASK-143.06.08 Done, two clean reviews | unique 0; equal to fa28 | none | keep, canonical target |
+| /home/msc/.codex/worktrees/1430701 | detached | 34a37f9d5a0ea0a9a87b1843d6645a58c49c6a92 | 0f1e58071097628baea0120004e98e4d779f2bef | TASK-143.07.01 Done, reviewed | unique f9527f19604ba55946bf2400d6a2c6a904611f47, f3d1e9c0585ae94a20072a3ec02362e311f95aaf, 19680bd1e0029a938850be05d4acc4f704223425, 0f1e58071097628baea0120004e98e4d779f2bef; all patch-equivalent; target ahead 251 | none | drop/no replay; preserve worktree |
+| /home/msc/.codex/worktrees/1727/archboard | detached | fc9234388139e9aae05c553aa7619a0c133536c4 | fc9234388139e9aae05c553aa7619a0c133536c4 | TASK-143.08.06.01 Done, reviewed | unique 0; target ahead 39 | none | keep, integrated ancestor |
+| /home/msc/.codex/worktrees/1735/archboard | detached | 503bae209c970b72240489213e704de771565b77 | 0180b47b6d193398ced27f5ffbf10f18cc7c6ea4 | TASK-143.08.06.01 review-source intermediate | unique 0180b47b6d193398ced27f5ffbf10f18cc7c6ea4; duplicate of e2f5; target ahead 77 | none | keep, superseded review source |
+| /home/msc/.codex/worktrees/3f49/archboard | detached | 351bd7949e97b343f6e7a02a4e7e0c3053ff36cd | 351bd7949e97b343f6e7a02a4e7e0c3053ff36cd | TASK-143.06.08 intermediate review source | unique 0; duplicate of b508; target ahead 4 | none | keep, integrated review source |
+| /home/msc/.codex/worktrees/4d4d/archboard | detached | f93fe79e9c2da476c9f3a6125877cc609e477c21 | f93fe79e9c2da476c9f3a6125877cc609e477c21 | TASK-143.08.06.04 Done, two clean reviews | unique 0; target ahead 11 | none | keep, integrated ancestor |
+| /home/msc/.codex/worktrees/5c9c/archboard | detached | a5146446a07efc127a2c02930f90bbaf64ab8560 | d8488f76d938e9825ada4088283ed0a527d1051b | TASK-143.08.03 superseded implementation source; final task reviewed elsewhere | unique d8488f76d938e9825ada4088283ed0a527d1051b; duplicate of bf71; target ahead 57 | none | keep, superseded review source |
+| /home/msc/.codex/worktrees/6764f94d-dc91-497c-a7da-594955dc39a9/archboard | detached | c98a229bfe1b8f88944fe4062f62afc04be768ee | c98a229bfe1b8f88944fe4062f62afc04be768ee | TASK-138 Done, clean review | unique 0; target ahead 669 | backlog/tasks/task-139 - Present-one-canvas-in-fullscreen.md | keep, unrelated dirty ancestor |
+| /home/msc/.codex/worktrees/72c1/archboard | detached | 7dfce85c9d04fe9d0b96a5313ccc390887b295ac | 7dfce85c9d04fe9d0b96a5313ccc390887b295ac | TASK-143.06.08 reviewed head, REVIEW_CLEAN | unique 0; target ahead 1 | none | keep, integrated review head |
+| /home/msc/.codex/worktrees/931e/archboard | detached | 293f1ba04cb00923b68951a28b1309bb955aa39c | 293f1ba04cb00923b68951a28b1309bb955aa39c | TASK-143.08.06.05 Done, clean Spec and Standards reviews | unique 0; target ahead 6 | none | keep, integrated review head |
+| /home/msc/.codex/worktrees/93c5/archboard | detached | bd79271c42b0d2e0a795c2f7229b0c5c5cb46b42 | bd79271c42b0d2e0a795c2f7229b0c5c5cb46b42 | TASK-143.08.06.03 Done, two clean reviews | unique 0; target ahead 21 | none | keep, integrated review head |
+| /home/msc/.codex/worktrees/b508/archboard | detached | 351bd7949e97b343f6e7a02a4e7e0c3053ff36cd | 351bd7949e97b343f6e7a02a4e7e0c3053ff36cd | TASK-143.06.08 intermediate review source | unique 0; duplicate of 3f49; target ahead 4 | none | keep, duplicate integrated review source |
+| /home/msc/.codex/worktrees/bf71/archboard | detached | a5146446a07efc127a2c02930f90bbaf64ab8560 | d8488f76d938e9825ada4088283ed0a527d1051b | TASK-143.08.03 superseded implementation source; final task reviewed elsewhere | unique d8488f76d938e9825ada4088283ed0a527d1051b; duplicate of 5c9c; target ahead 57 | none | keep, duplicate superseded review source |
+| /home/msc/.codex/worktrees/cca6/archboard | detached | c41f83203ab8bde379a821aaea5c10067f2b93eb | c41f83203ab8bde379a821aaea5c10067f2b93eb | TASK-143.08.06.02 Done, two clean reviews | unique 0; target ahead 27 | none | keep, integrated review head |
+| /home/msc/.codex/worktrees/e2f5/archboard | detached | 503bae209c970b72240489213e704de771565b77 | 0180b47b6d193398ced27f5ffbf10f18cc7c6ea4 | TASK-143.08.06.01 review-source intermediate | unique 0180b47b6d193398ced27f5ffbf10f18cc7c6ea4; duplicate of 1735; target ahead 77 | none | keep, duplicate superseded review source |
+| /home/msc/.codex/worktrees/e4cc1859-b5d8-4f83-929f-57da92d8d0ca/archboard | refs/heads/codex/task-140-operator-shell | 848aa442c1d8cfeeb6d36e67b25f33d595f26de8 | 848aa442c1d8cfeeb6d36e67b25f33d595f26de8 | TASK-140 Done, clean review | unique 0; target ahead 610 | none | keep, unrelated branch |
+| /home/msc/.codex/worktrees/ea03/archboard | detached | e3e831f64f22b750ccccbfd04911da8ab86e729d | e3e831f64f22b750ccccbfd04911da8ab86e729d | TASK-143.08.04 Done, reviewed | unique 0; target ahead 32 | none | keep, integrated review head |
+| /home/msc/.codex/worktrees/f151/archboard | detached | f0a2b448fb3c3b9a77828b6e79cb80007b29735e | f0a2b448fb3c3b9a77828b6e79cb80007b29735e | TASK-136 and TASK-143.08.06.04 review source; both final tasks reviewed | unique 0; duplicate of f662; target ahead 13 | none | keep, integrated review source |
+| /home/msc/.codex/worktrees/f662/archboard | detached | f0a2b448fb3c3b9a77828b6e79cb80007b29735e | f0a2b448fb3c3b9a77828b6e79cb80007b29735e | TASK-136 and TASK-143.08.06.04 review source; both final tasks reviewed | unique 0; duplicate of f151; target ahead 13 | skills-lock.json | keep, dirty integrated review source |
+| /home/msc/.codex/worktrees/fa28/archboard | detached | c2d86ef92b5c902bcf459ce801e75e0dcf7d59cd | c2d86ef92b5c902bcf459ce801e75e0dcf7d59cd | TASK-143.08.05 In Progress, approved plan | unique 0; equal to canonical branch worktree | backlog/tasks/task-143.08.05 - Reconcile-detached-work-and-prove-the-recovered-integration.md | port, sole implementation target |
+| /home/msc/Projects/archboard/.claude/worktrees/test-perf-audit | refs/heads/claude/test-perf-audit | db534cae19e0bae18916d0801915c5509c3080e2 | db534cae19e0bae18916d0801915c5509c3080e2 | TASK-148 In Progress, unrelated | unique 0; target ahead 116 | none | keep, unrelated branch |
+| /tmp/tmp.vYQRhn7vDy/worktree | refs/heads/codex/task-124-rereview | 5cf20f252c0f7f2a44162a289f0d22c89ba4192a | 34a3c857bb07638ed50484814423ba5cf83e91fd | TASK-124 Done, clean reviews | unique 36d0b93a820016c06227f9a923316d82f39081e7, 2f1a775281afcdf54d50230e764d1ccfdc89e3df, 7db7c03e301faca7d796e87e65af79761ff98223, 34a3c857bb07638ed50484814423ba5cf83e91fd; target ahead 1041 | none | keep, unrelated divergent branch |
+
+Protected b6e0 and vanished 55ce did not appear as rows in the current Git registry output. Their task-boundary outcome remains preserve and untouched. They were not entered, read, or statted. Every non-target registered row is preserved and untouched. No worktree removal is part of this task.
+
+Durable-ref and main-record implementation evidence:
+- Rechecked snapshot refs for 3e1670af, 0e74cbaf, b0938164, 0ac9ef2d, 4e93e729, 52b00a4d, and 8bac86bf. Every ref still resolves to its exact frozen object.
+- Created refs/codex/recovery/task-143.08.05/0f1e5807 at 0f1e58071097628baea0120004e98e4d779f2bef with a zero-old-object compare-and-create. Verification resolves the immutable ref to that exact commit.
+- Removed, moved, and deleted no ref or worktree.
+- Cherry-picked only main commit 7b20864889202ea4f0e849d225626f3604639844. Detached implementation commit b043f2f4 adds exactly TASK-145, TASK-146, and TASK-147.
+- A path-limited commit comparison reports no difference between those three b043f2f4 blobs and main. backlog task view resolves all three. They remain byte-for-byte main records and were not edited.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
