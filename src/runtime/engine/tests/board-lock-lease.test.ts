@@ -137,10 +137,9 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		boards.add(cancelled);
 		await lock.holdBoard({ board: cancelled, holder: human("user"), leaseMs: 2_000, waitMs: 0 });
 		const controller = new AbortController();
-		const cancelTimer = setTimeout(() => controller.abort(), 25);
-		timers.add(cancelTimer);
+		setTimeout(() => controller.abort(), 25);
 		const cancelStart = Date.now();
-		const cancellation = await lock
+		const cancellationRequest = lock
 			.holdBoard({
 				board: cancelled,
 				holder: agent("later"),
@@ -148,6 +147,8 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 				signal: controller.signal,
 			})
 			.catch((error: unknown) => error);
+		await advanceLockTime(25);
+		const cancellation = await cancellationRequest;
 		expect(cancellation).toBeInstanceOf(lock.BoardLockCancelledError);
 		expect(Date.now() - cancelStart).toBeLessThan(500);
 		expect(lock.boardLockState(cancelled)?.id).toBe("user");
