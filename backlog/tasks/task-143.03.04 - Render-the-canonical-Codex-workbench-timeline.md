@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.04
 title: Render the canonical Codex workbench timeline
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-03 19:41'
+updated_date: '2026-09-03 19:48'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -30,10 +30,10 @@ Render the complete decoded Codex 0.151.0 ThreadItem union as bounded, escaped, 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The module's only assistant-ui imports are named root ThreadPrimitive, MessagePrimitive, and MessagePartPrimitive; every rendered item, fallback, disclosure, class, and semantic state is Archboard-owned.
-- [ ] #2 User/assistant/reasoning/plan/command/file/MCP/web/image/tool/approval/error/interruption items render by stable thread/turn/item identity with bounded expandable raw details and no copied Elements.
-- [ ] #3 The timeline is a named focusable role=log with aria-relevant additions and aria-busy only while streaming; token deltas do not cause repeated live announcements or steal focus.
-- [ ] #4 Unknown item variants, malformed markdown/media, long output, streaming completion, delayed arrival, and prior-epoch history have safe deterministic renderers and module tests.
+- [x] #1 The module's only assistant-ui imports are named root ThreadPrimitive, MessagePrimitive, and MessagePartPrimitive; every rendered item, fallback, disclosure, class, and semantic state is Archboard-owned.
+- [x] #2 User/assistant/reasoning/plan/command/file/MCP/web/image/tool/approval/error/interruption items render by stable thread/turn/item identity with bounded expandable raw details and no copied Elements.
+- [x] #3 The timeline is a named focusable role=log with aria-relevant additions and aria-busy only while streaming; token deltas do not cause repeated live announcements or steal focus.
+- [x] #4 Unknown item variants, malformed markdown/media, long output, streaming completion, delayed arrival, and prior-epoch history have safe deterministic renderers and module tests.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -145,6 +145,8 @@ Eighth rereview remediation implemented. namedSource now returns a private Sourc
 Ninth rereview remediation started from clean HEAD 52826f6909c928c2b8bf53c221956ebde9a19c88 on fixed base 23cc54fbc3405a7c5b80bb8de796ae2b53bd5e25. Scope is only file-change section typography and its existing provider-rendered owner; TASK-143.03.04 stays In Progress and no broad or synthetic test lane will run.
 
 Ninth rereview remediation implemented. Text sections now retain a required private prose or technical presentation kind through rendering. File-change paths render with font-mono text-technical; diffs render with font-sans text-body. Existing user, agent, reasoning, command-output, tool-error, prompt, review, and revised-prompt copy stays prose. The existing provider-rendered owner now supplies one nonempty file change and asserts both class families. Red evidence: 10 pass, 1 fail, 89 assertions on the missing technical path class. Green timeline evidence: 11 pass, 0 fail, 97 assertions. Final focused runtime, timeline, provider, and import-policy set: 39 pass, 0 fail, 499 assertions across 6 files in 6.25s. Root and frontend typechecks passed; targeted Oxlint, Oxfmt, and git diff checks passed. The test remains at 500 lines. No broad, browser, synthetic concurrency, or product-topology lane ran. TASK-143.03.04 remains In Progress.
+
+Canonical integration validation on 2026-09-03: the focused runtime, timeline, mounted provider, and assistant-ui import-policy owners passed 39 tests with 499 assertions. Root and frontend TypeScript checks, targeted Oxlint with warnings denied, targeted Oxfmt over the changed supported TypeScript paths plus tsconfig.json, and git diff --check over the canonical integration range passed. Dependencies were restored with lockfile-pinned bun install before validation. No broad module, system, repository, browser, topology, stress, capacity, performance, tooling, or runner-concurrency lane ran.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -155,3 +157,9 @@ created: 2026-09-02 01:39
 Course correction, 2026-09-02: this not-yet-started UI leaf is frozen behind TASK-143.08.05 so it cannot build on the rejected protocol and browser contracts.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Integrated the reviewed canonical workbench timeline replay. Focused provider-backed coverage verified all item families, stable ordering and identities, bounded safe details, file-change prose and technical typography, and accessible streaming log behavior. The focused owners passed 39 tests with 499 assertions; both TypeScript projects, targeted Oxlint, targeted Oxfmt, and diff checks passed.
+<!-- SECTION:FINAL_SUMMARY:END -->
