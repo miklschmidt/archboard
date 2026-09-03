@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -115,12 +116,32 @@ describe("test inventory policy", () => {
 		]);
 	});
 
-	test("rejects an opt-in owner leaked into check", () => {
+	test("rejects an opt-in lane reached through whitespace-tolerant script edges", () => {
 		const fixture = input();
-		fixture.scripts.test += " && bun run test:opt-in:capacity";
+		fixture.scripts.test += " && bun  run test:opt-in:capacity";
 		expectInventoryError(
 			fixture,
-			"opt-in test lane `test:opt-in:capacity` is reachable from `check`",
+			"opt-in package script `test:opt-in:capacity` is reachable from `check`",
+		);
+	});
+
+	test("rejects a manual opt-in command reached from check", () => {
+		const fixture = input();
+		fixture.scripts.check += " && bun run opt-in:renderer-chromium";
+		fixture.scripts["opt-in:renderer-chromium"] = "bun scripts/probe-server-rendering-chromium.ts";
+		expectInventoryError(
+			fixture,
+			"opt-in package script `opt-in:renderer-chromium` is reachable from `check`",
+		);
+	});
+
+	test("rejects a native opt-in owner reached through an arbitrary helper", () => {
+		const fixture = input();
+		fixture.scripts.check += " && bun run verify:capacity";
+		fixture.scripts["verify:capacity"] = "bun test tests/opt-in/capacity.test.ts";
+		expectInventoryError(
+			fixture,
+			"opt-in native test `tests/opt-in/capacity.test.ts` is reachable from `check` through package scripts: verify:capacity",
 		);
 	});
 
@@ -167,6 +188,21 @@ describe("test inventory policy", () => {
 			"test:serial-browser",
 			"test:system",
 		]);
+	});
+
+	test("discovers TypeScript JSX test owners", () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-inventory-tsx-"));
+		try {
+			fs.mkdirSync(path.join(root, "src", "owner"), { recursive: true });
+			fs.writeFileSync(path.join(root, "src", "owner", "inspect.spec.tsx"), "");
+			fs.writeFileSync(path.join(root, "src", "owner", "render.test.tsx"), "");
+			expect(discoverNativeTests(root)).toEqual([
+				"src/owner/inspect.spec.tsx",
+				"src/owner/render.test.tsx",
+			]);
+		} finally {
+			fs.rmSync(root, { recursive: true, force: true });
+		}
 	});
 
 	test("keeps the system and browser owners once", () => {

@@ -19,11 +19,10 @@ export interface InventoryResult {
 	reachableScripts: Map<string, number>;
 }
 
-const RUN_SCRIPT = /\bbun run ([\w:-]+)/g;
 const EXECUTABLE_RUN_SCRIPT = /\bbun\s+run\s+([\w:-]+)(?=\s|$|[;&|(){}`])/g;
 const ECHO_ONLY_PREFIX =
 	/^(?:(?:if|elif|while|until|then|else|do)\s+)?(?:(?:env\s+)?(?:[A-Za-z_][A-Za-z0-9_]*=\S+\s+)*|command\s+)?(?:echo|printf)\b/;
-const BUN_TEST = /\bbun test\b([^&;|]*)/g;
+const BUN_TEST = /\bbun\s+test\b([^&;|]*)/g;
 const NORMAL_TEST_LANES = new Set([
 	"test:modules",
 	"test:system",
@@ -35,6 +34,11 @@ const OPT_IN_TEST_LANES = new Set([
 	"test:opt-in:tooling",
 	"test:opt-in:topology",
 	"test:opt-in:browser-performance",
+]);
+const OPT_IN_PACKAGE_SCRIPTS = new Set([
+	...OPT_IN_TEST_LANES,
+	"opt-in:renderer-chromium",
+	"opt-in:renderer-emulation",
 ]);
 
 function workflowRunCommands(workflow: string): { commands: string[]; error?: string } {
@@ -227,23 +231,20 @@ function echoOnly(text: string, invocationIndex: number): boolean {
 	return ECHO_ONLY_PREFIX.test(text.slice(boundary + 1, invocationIndex).trim());
 }
 
-function executableRunScripts(command: string): string[] {
+function executableRunScripts(command: string, unique = true): string[] {
 	const texts = [unquotedShellText(command)];
 	const pending = doubleQuotedSubstitutionBodies(command);
 	for (const body of pending) {
 		texts.push(unquotedShellText(body));
 		pending.push(...doubleQuotedSubstitutionBodies(body));
 	}
-	return [
-		...new Set(
-			texts.flatMap((text) =>
-				[...text.matchAll(EXECUTABLE_RUN_SCRIPT)]
-					.filter((match) => !echoOnly(text, match.index))
-					.map((match) => match[1])
-					.filter((script): script is string => script !== undefined),
-			),
-		),
-	];
+	const scripts = texts.flatMap((text) =>
+		[...text.matchAll(EXECUTABLE_RUN_SCRIPT)]
+			.filter((match) => !echoOnly(text, match.index))
+			.map((match) => match[1])
+			.filter((script): script is string => script !== undefined),
+	);
+	return unique ? [...new Set(scripts)] : scripts;
 }
 
 export function inspectWorkflow(workflow: string): string[] {
@@ -280,9 +281,7 @@ function normalize(value: string): string {
 }
 
 function referencedScripts(command: string): string[] {
-	return [...command.matchAll(RUN_SCRIPT)]
-		.map((match) => match[1])
-		.filter((name): name is string => name !== undefined);
+	return executableRunScripts(command, false);
 }
 
 function pushReachability(
@@ -308,7 +307,7 @@ function pushReachability(
 }
 
 function isTestFile(file: string): boolean {
-	return /(?:^|\/)[^/]+(?:\.|_)(?:test|spec)\.ts$/.test(file);
+	return /(?:^|\/)[^/]+(?:\.|_)(?:test|spec)\.(?:ts|tsx)$/.test(file);
 }
 
 function testSelections(command: string): Array<{ selectors: string[]; ignores: string[] }> {
@@ -389,6 +388,10 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 	const pushScript = input.pushScript ?? "check";
 	const reachability = pushReachability(input.scripts, pushScript);
 	for (const cycle of reachability.cycles) errors.push(`package script cycle: ${cycle}`);
+	for (const script of OPT_IN_PACKAGE_SCRIPTS) {
+		if ((reachability.counts.get(script) ?? 0) > 0)
+			errors.push(`opt-in package script \`${script}\` is reachable from \`${pushScript}\``);
+	}
 
 	for (const suiteName of Object.keys(input.scripts).filter((candidate) =>
 		candidate.startsWith("test:"),
@@ -405,11 +408,9 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 			errors.push(`package test lane \`${suiteName}\` is absent from \`${pushScript}\``);
 		if (normal && count > 1)
 			errors.push(`package test lane \`${suiteName}\` is reached ${count} times`);
-		if (optIn && count > 0)
-			errors.push(`opt-in test lane \`${suiteName}\` is reachable from \`${pushScript}\``);
 	}
 
-	const nativeLanes = new Map<string, string[]>();
+	const scriptOwners = new Map<string, string[]>();
 	for (const [name, command] of Object.entries(input.scripts)) {
 		const adapter = adapterFiles(command);
 		if (adapter.error) errors.push(`browser adapter lane \`${name}\` is invalid: ${adapter.error}`);
@@ -425,8 +426,13 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 				}
 			}
 		}
-		if (occurrences.length > 0 && name.startsWith("test:")) nativeLanes.set(name, occurrences);
+		if (occurrences.length > 0) scriptOwners.set(name, occurrences);
 	}
+	const nativeLanes = new Map(
+		[...scriptOwners].filter(
+			([name]) => NORMAL_TEST_LANES.has(name) || OPT_IN_TEST_LANES.has(name),
+		),
+	);
 
 	for (const file of input.nativeTests) {
 		const owners = [...nativeLanes]
@@ -449,17 +455,25 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 				`opt-in native test \`${file}\` is selected ${optInRuns} times through: ${optInOwners.map((owner) => owner.name).join(", ")}`,
 			);
 		}
-		const ownerRuns = owners.map((name) => ({
-			name: name.name,
-			count: (reachability.counts.get(name.name) ?? 0) * name.occurrences,
-		}));
+		const ownerRuns = [...scriptOwners]
+			.map(([name, files]) => ({
+				name,
+				count:
+					(reachability.counts.get(name) ?? 0) * files.filter((owned) => owned === file).length,
+			}))
+			.filter((owner) => owner.count > 0);
 		const totalRuns = ownerRuns.reduce((total, owner) => total + owner.count, 0);
-		if (owners.length > 0 && totalRuns === 0 && optInRuns === 0) {
+		if (optInRuns > 0 && totalRuns > 0) {
+			errors.push(
+				`opt-in native test \`${file}\` is reachable from \`${pushScript}\` through package scripts: ${ownerRuns.map((owner) => owner.name).join(", ")}`,
+			);
+		}
+		if (normalOwners.length > 0 && totalRuns === 0) {
 			errors.push(
 				`native test \`${file}\` runs zero times from \`${pushScript}\`; matching package lanes: ${owners.map((owner) => owner.name).join(", ")}`,
 			);
 		}
-		if (totalRuns > 1) {
+		if (normalOwners.length > 0 && totalRuns > 1) {
 			errors.push(
 				`native test \`${file}\` runs ${totalRuns} times from \`${pushScript}\` through package lanes: ` +
 					ownerRuns.map((owner) => `${owner.name} (${owner.count})`).join(", "),

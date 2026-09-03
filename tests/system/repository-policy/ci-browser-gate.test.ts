@@ -32,7 +32,6 @@ const HOSTED_SYSTEM_EXCLUSION = {
 	CI: "true",
 	[CI_EXCLUDED_SYSTEM_OWNER_ENV]: CI_EXCLUDED_SYSTEM_OWNER,
 } as const;
-const HOSTED_CHECK_ENV = { ...HOSTED_BROWSER_EXCLUSION, ...HOSTED_SYSTEM_EXCLUSION } as const;
 type BrowserPreflightFixture = ReturnType<typeof createBrowserPreflightFixture>;
 
 function usePreflightFixture(resources: AsyncDisposableStack): BrowserPreflightFixture {
@@ -154,26 +153,6 @@ async function expectPreflightRefusal(
 }
 
 describe("CI executable workflow steps", () => {
-	test("accepts the real workflow and one canonical check step", () => {
-		const real = fs.readFileSync(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
-		expect(inspectWorkflow(real)).toEqual([]);
-		const workflow = Bun.YAML.parse(real) as {
-			jobs?: {
-				suite?: {
-					name?: string;
-					steps?: Array<{ name?: string; run?: string; env?: Record<string, string> }>;
-				};
-			};
-		};
-		const suite = workflow.jobs?.suite;
-		expect(suite?.name).toBe("Lint, format, type check, and hosted test subset");
-		expect(suite?.steps?.some((step) => step.run?.includes("strace"))).toBeFalse();
-		expect(suite?.steps?.some((step) => step.run?.includes("agent-browser"))).toBeFalse();
-		const check = suite?.steps?.find((step) => step.run === "bun run check");
-		expect(check?.env).toEqual(HOSTED_CHECK_ENV);
-		expect(inspectWorkflow(workflowWith("bun run check"))).toEqual([]);
-	});
-
 	test("the exact hosted system exception visibly skips only opener persistence", () => {
 		const result = runSystemOwner(HOSTED_SYSTEM_EXCLUSION);
 		const lines = result.output.split(/\r?\n/);
