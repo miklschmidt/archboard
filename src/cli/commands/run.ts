@@ -719,9 +719,10 @@ function exitCodeFor(error: unknown, command?: RouteOwner): number {
  * Pull `--board <key>` out of the arguments before the command sees it.
  *
  * Global, like `--url`, because it applies to every canvas request a command
- * makes rather than to one of them — and it is the only way to name a board,
- * because there is no default (ADR 0009). Stripped here so no command has to
- * declare it and none can forget to pass it on.
+ * makes rather than to one of them. It is the only way to name the persisted
+ * board for a command because there is no active or default board (ADR 0020).
+ * Stripped here so no command has to declare it and none can forget to pass it
+ * on.
  */
 function takeBoardFlag(argv: string[]): string | null {
 	return takeGlobalFlag(argv, "board");
