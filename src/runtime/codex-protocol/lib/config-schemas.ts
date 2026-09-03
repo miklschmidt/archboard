@@ -13,8 +13,8 @@ import {
 	SandboxPolicySchema,
 } from "./core-schemas.js";
 import {
+	CodexSafeI64Schema,
 	FiniteNumberSchema,
-	IntegerSchema,
 	JsonRecordSchema,
 	JsonValueSchema,
 	looseObject,
@@ -156,8 +156,8 @@ export const ConfigSchema = z
 	.object({
 		model: z.string().nullable(),
 		review_model: z.string().nullable(),
-		model_context_window: IntegerSchema.nullable(),
-		model_auto_compact_token_limit: IntegerSchema.nullable(),
+		model_context_window: CodexSafeI64Schema.nullable(),
+		model_auto_compact_token_limit: CodexSafeI64Schema.nullable(),
 		model_auto_compact_token_limit_scope: AutoCompactTokenLimitScopeSchema.nullable(),
 		model_provider: z.string().nullable(),
 		approval_policy: AskForApprovalSchema.nullable(),
@@ -231,7 +231,7 @@ const ConfiguredHookHandlerSchema = z.discriminatedUnion("type", [
 		type: z.literal("command"),
 		command: z.string(),
 		commandWindows: z.string().nullable(),
-		timeoutSec: IntegerSchema.nullable(),
+		timeoutSec: CodexSafeI64Schema.nullable(),
 		statusMessage: z.string().nullable(),
 		async: z.boolean(),
 		additionalContextLimit: FiniteNumberSchema.nullable(),
@@ -242,7 +242,7 @@ const ConfiguredHookHandlerSchema = z.discriminatedUnion("type", [
 		tool: z.string(),
 		/** Hook tool input is the generated contract's open JSON object. */
 		input: JsonRecordSchema,
-		timeoutSec: IntegerSchema.nullable(),
+		timeoutSec: CodexSafeI64Schema.nullable(),
 		statusMessage: z.string().nullable(),
 	}),
 	looseObject({ type: z.literal("prompt") }),
