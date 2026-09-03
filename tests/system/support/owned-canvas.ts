@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import { spawn, type ChildProcessByStdio } from "node:child_process";
 import { createServer } from "node:net";
-import { join } from "node:path";
 import type { Readable } from "node:stream";
 
 import {
@@ -13,13 +12,9 @@ import {
 import {
 	buildOwnedCanvasEnvironment,
 	createOwnedCanvasPaths,
-	processExists,
 	type OwnedCanvasPaths,
 } from "./owned-canvas-ownership.ts";
-import {
-	createCodexProcessGroupOperations,
-	type CodexProcessGroupIdentity,
-} from "../../../src/runtime/codex-process/process-group.ts";
+import { captureForcedCanvasCleanup } from "./owned-canvas-forced-cleanup.ts";
 
 export {
 	buildOwnedCanvasEnvironment,
@@ -154,52 +149,6 @@ const exitDescription = (exit: Exit | null): string =>
 	exit?.signal ? `signal ${exit.signal}` : `exit ${exit?.code ?? "unknown"}`;
 const tail = (text: string): string => text.trim().split("\n").slice(-20).join("\n");
 
-function directChildGroups(parentPid: number): CodexProcessGroupIdentity[] {
-	let childPids: number[];
-	try {
-		childPids = fs
-			.readFileSync(`/proc/${parentPid}/task/${parentPid}/children`, "utf8")
-			.trim()
-			.split(/\s+/u)
-			.filter(Boolean)
-			.map(Number);
-	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
-		throw error;
-	}
-	const operations = createCodexProcessGroupOperations();
-	return childPids.flatMap((pid) => {
-		try {
-			return [operations.capture(pid)];
-		} catch (error) {
-			if (!processExists(pid)) return [];
-			throw error;
-		}
-	});
-}
-
-async function stopOwnedChildGroups(groups: readonly CodexProcessGroupIdentity[]): Promise<void> {
-	const operations = createCodexProcessGroupOperations();
-	for (const group of groups) {
-		if (operations.inspect(group) === "owned") operations.signal(group, "SIGTERM");
-		let deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
-		while (operations.inspect(group) === "owned" && Date.now() < deadline) {
-			await sleep(TEST_CANVAS_HEALTH_POLL_MS);
-		}
-		if (operations.inspect(group) === "owned") operations.signal(group, "SIGKILL");
-		deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
-		while (operations.inspect(group) === "owned" && Date.now() < deadline) {
-			await sleep(TEST_CANVAS_HEALTH_POLL_MS);
-		}
-		const final = operations.inspect(group);
-		if (final !== "quiescent") {
-			throw new Error(
-				`Owned canvas child group ${group.pgid} did not become quiescent after forced canvas death (${final}).`,
-			);
-		}
-	}
-}
-
 async function discardHeldBoards(generation: Generation): Promise<void> {
 	if (generation.exit !== null) return;
 	let response: Response;
@@ -298,7 +247,10 @@ export async function startOwnedCanvas({
 		generation: Generation,
 		signal: NodeJS.Signals = "SIGTERM",
 	): Promise<void> => {
-		const childGroups = signal === "SIGKILL" ? directChildGroups(generation.pid) : [];
+		const forcedCleanup =
+			signal === "SIGKILL"
+				? captureForcedCanvasCleanup({ canvasPid: generation.pid, xdgState: paths.xdgState })
+				: null;
 		if (!generation.exit) {
 			generation.expectedStop = true;
 			generation.child.kill(signal);
@@ -314,25 +266,7 @@ export async function startOwnedCanvas({
 			);
 		}
 		if (signal === "SIGKILL") {
-			await stopOwnedChildGroups(childGroups);
-			const storageLock = join(
-				fs.realpathSync(paths.xdgState),
-				"excalidraw-canvas",
-				"codex-workbench",
-				"codex-home",
-				".archboard-codex-process.lock",
-			);
-			try {
-				const owner = fs.readFileSync(storageLock, "utf8");
-				if (owner !== `${generation.pid}\n`) {
-					throw new Error(
-						`Refusing to remove Codex storage lock ${storageLock}: expected owner ${generation.pid}, received ${JSON.stringify(owner)}.`,
-					);
-				}
-				fs.unlinkSync(storageLock);
-			} catch (error) {
-				if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-			}
+			await forcedCleanup!.complete();
 		}
 		if (currentGeneration === generation) currentGeneration = null;
 	};
