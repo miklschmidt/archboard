@@ -7,7 +7,12 @@ import type {
 } from "../../../runtime/codex-coordinator/index.js";
 import type { CodexDynamicTools } from "../../../runtime/codex-dynamic-tools/index.js";
 import type { CodexEpochStore } from "../../../runtime/codex-epoch/index.js";
-import type { CodexProcess, CodexProcessChild } from "../../../runtime/codex-process/index.js";
+import {
+	CodexProcessError,
+	type CodexProcess,
+	type CodexProcessChild,
+	type CodexProcessSnapshot,
+} from "../../../runtime/codex-process/index.js";
 import type { CodexRealtimeAdapter } from "../../../runtime/codex-realtime/index.js";
 import type { SemanticContextPublisher } from "../../../runtime/codex-semantic-context/index.js";
 import {
@@ -489,6 +494,8 @@ export interface CodexWorkbenchRetainedState {
 
 export type AssertCodexWorkbenchRetainedState = (retained: CodexWorkbenchRetainedState) => void;
 
+const releasedSnapshots = new WeakMap<CodexWorkbenchOwnerRuntime, CodexWorkbenchSnapshot>();
+
 function emptyRetainedControl(): CodexWorkbenchRetainedControl {
 	const control = { current: null, runtime: null } as CodexWorkbenchRetainedControl;
 	const current = (): CodexWorkbenchOwnerSlots => {
@@ -547,13 +554,36 @@ function snapshot(
 	runtime: CodexWorkbenchOwnerRuntime,
 ): CodexWorkbenchSnapshot {
 	const current = isCurrentRuntime(retained, runtime);
+	if (!current)
+		return (
+			releasedSnapshots.get(runtime) ??
+			Object.freeze({
+				owner: CODEX_WORKBENCH_OWNER,
+				state: "idle",
+				generation: 0,
+				childPid: null,
+				ready: false,
+				failure: null,
+			})
+		);
 	return Object.freeze({
 		owner: CODEX_WORKBENCH_OWNER,
-		state: current ? retained.state : "idle",
-		generation: current ? retained.generation : 0,
-		childPid: current ? (runtime.process.currentChild()?.pid ?? null) : null,
-		ready: current && retained.state === "ready",
-		failure: current ? retained.failure : null,
+		state: retained.state,
+		generation: retained.generation,
+		childPid: runtime.process.currentChild()?.pid ?? null,
+		ready: retained.state === "ready",
+		failure: retained.failure,
+	});
+}
+
+function terminalProcessAcquisitionFailure(current: CodexProcessSnapshot): Error | null {
+	if (current.state !== "terminal_failure") return null;
+	return new CodexProcessError({
+		code: current.failure?.code ?? "shutdown_failed",
+		terminal: true,
+		message:
+			current.failure?.message ??
+			"The Codex process became terminal before the workbench acquired a replacement child.",
 	});
 }
 
@@ -571,6 +601,17 @@ function releaseRegistration(
 	failure: string | null,
 ): void {
 	if (runtime.released) return;
+	releasedSnapshots.set(
+		runtime,
+		Object.freeze({
+			owner: CODEX_WORKBENCH_OWNER,
+			state,
+			generation: state === "failed" ? retained.generation : 0,
+			childPid: null,
+			ready: false,
+			failure,
+		}),
+	);
 	runtime.released = true;
 	runtime.exitBridge.handler = null;
 	runtime.identityLedger = null;
@@ -1071,7 +1112,15 @@ export function installCodexWorkbenchOwnerLifecycle(
 					}
 				};
 				local.nextChild = receiveChild;
+				const observeProcess = (current: CodexProcessSnapshot): void => {
+					if (!ownsTicket(retained, runtime, ticket) || local.nextChild !== receiveChild) return;
+					const failure = terminalProcessAcquisitionFailure(current);
+					if (failure !== null) rejectChild(failure);
+				};
+				let processSnapshotUnsubscribe: (() => void) | null = null;
 				try {
+					processSnapshotUnsubscribe = runtime.process.subscribe(observeProcess);
+					observeProcess(runtime.process.snapshot());
 					const processStart = runtime.process.start().catch((error) => {
 						rejectChild(error);
 						throw error;
@@ -1182,6 +1231,7 @@ export function installCodexWorkbenchOwnerLifecycle(
 						failure,
 					);
 				} finally {
+					processSnapshotUnsubscribe?.();
 					if (local.nextChild === receiveChild) local.nextChild = null;
 					local.startPromise = null;
 				}
@@ -1211,7 +1261,7 @@ export function installCodexWorkbenchOwnerLifecycle(
 		// is revoked. The Canvas lifetime may need one force retry to prove the
 		// detached process group is gone.
 		shutdown: () => terminalShutdown(retained, runtime, local),
-		snapshot: () => retained.control.wrappers.snapshot(),
+		snapshot: () => snapshot(retained, runtime),
 		gateway: () => retained.control.wrappers.gateway(),
 	});
 }

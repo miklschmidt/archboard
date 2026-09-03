@@ -27,6 +27,7 @@ import {
 import { createRequester } from "./support/http.ts";
 import {
 	canvasChildPids,
+	loggedRequestFailure,
 	publicStartEnvironment,
 	runPublicCanvas,
 	runPublicCanvasAsync,
@@ -187,7 +188,6 @@ describe.serial("production Codex setup cleanup", () => {
 			}
 		}
 	}, 20_000);
-
 	test("concurrent public starts share one Codex owner and one canvas", async () => {
 		const resources = new AsyncDisposableStack();
 		let environment: NodeJS.ProcessEnv | null = null;
@@ -215,8 +215,7 @@ describe.serial("production Codex setup cleanup", () => {
 		}
 		await assertProcessesStopped(spawned);
 	}, 20_000);
-
-	test("public start keeps the exact signed-out runtime running with thread actions disabled", async () => {
+	test("public start keeps signed-out and logged-error service state running", async () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-public-signed-out-"));
 		let socket: Awaited<ReturnType<typeof openApplicationSocket>> | null = null;
 		let environment: NodeJS.ProcessEnv | null = null;
@@ -234,7 +233,11 @@ describe.serial("production Codex setup cleanup", () => {
 			const childPids = canvasChildPids(canvasPid);
 			expect(childPids).toHaveLength(1);
 			expect(processExists(childPids[0]!)).toBeTrue();
-
+			expect(await loggedRequestFailure(base, root)).toMatchObject({
+				status: 500,
+				health: { pid: canvasPid },
+				logged: true,
+			});
 			socket = await openApplicationSocket(base, "signed-out-client");
 			const request = createRequester({ base, assertRunning: async () => undefined });
 			expect(

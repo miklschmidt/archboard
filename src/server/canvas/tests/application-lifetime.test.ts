@@ -31,6 +31,7 @@ describe("canvas application lifetime", () => {
 		expect(lifetime.phase()).toBe("running");
 		await lifetime.stop("test");
 		expect(lifetime.phase()).toBe("stopped");
+		expect(lifetime.cleanupProven()).toBeTrue();
 		expect(actions).toEqual([
 			"start:engine",
 			"start:codex",
@@ -69,6 +70,7 @@ describe("canvas application lifetime", () => {
 
 		await expect(failed.start()).rejects.toThrow("codex failed");
 		expect(failed.phase()).toBe("failed");
+		expect(failed.cleanupProven()).toBeTrue();
 		expect(actions).toEqual(["stop:codex", "stop:engine"]);
 
 		const replacement = createCanvasApplicationLifetime({
@@ -121,6 +123,7 @@ describe("canvas application lifetime", () => {
 		await expect(lifetime.stop("test")).rejects.toThrow("Canvas application cleanup failed");
 		expect(actions).toEqual(["http", "codex", "engine"]);
 		expect(lifetime.phase()).toBe("failed");
+		expect(lifetime.cleanupProven()).toBeFalse();
 	});
 
 	test("shares one terminal shutdown across concurrent and repeated callers", async () => {

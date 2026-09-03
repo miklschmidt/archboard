@@ -1,6 +1,7 @@
 import type {
 	CodexProcess,
 	CodexProcessChild,
+	CodexProcessFailureCode,
 	CodexProcessSnapshot,
 } from "../../../../runtime/codex-process/index.js";
 import {
@@ -66,23 +67,38 @@ export interface FakeRestartingProcess {
 	readonly process: CodexProcess;
 	readonly crash: () => void;
 	readonly restart: () => void;
+	readonly terminal: (code: CodexProcessFailureCode, message: string) => void;
 }
 
 export function fakeRestartingProcess(events: string[]): FakeRestartingProcess {
 	const listeners = new Set<(child: CodexProcessChild) => void>();
+	const snapshotListeners = new Set<(snapshot: CodexProcessSnapshot) => void>();
 	let nextPid = 14314;
 	let child: CodexProcessChild | null = null;
 	let started = false;
+	let terminalFailure: CodexProcessSnapshot["failure"] = null;
 	const emitChild = (): void => {
 		child = { pid: nextPid++ } as CodexProcessChild;
 		for (const listener of listeners) listener(child);
 	};
 	const snapshot = (): CodexProcessSnapshot =>
 		({
-			state: child === null ? (started ? "backoff" : "stopped") : "running",
+			state:
+				terminalFailure !== null
+					? "terminal_failure"
+					: child === null
+						? started
+							? "backoff"
+							: "stopped"
+						: "running",
 			pid: child?.pid ?? null,
 			ready: child !== null,
+			failure: terminalFailure,
 		}) as CodexProcessSnapshot;
+	const publish = (): void => {
+		const value = snapshot();
+		for (const listener of snapshotListeners) listener(value);
+	};
 	return {
 		process: {
 			start: async () => {
@@ -96,6 +112,9 @@ export function fakeRestartingProcess(events: string[]): FakeRestartingProcess {
 			stop: async () => {
 				events.push("process:stop");
 				child = null;
+				terminalFailure = null;
+				started = false;
+				publish();
 				return snapshot();
 			},
 			snapshot,
@@ -105,15 +124,26 @@ export function fakeRestartingProcess(events: string[]): FakeRestartingProcess {
 				if (child !== null) listener(child);
 				return () => listeners.delete(listener);
 			},
-			subscribe: () => () => undefined,
+			subscribe: (listener) => {
+				snapshotListeners.add(listener);
+				return () => snapshotListeners.delete(listener);
+			},
 		},
 		crash: () => {
 			events.push("process:crash");
 			child = null;
+			publish();
 		},
 		restart: () => {
 			events.push("process:restart");
 			emitChild();
+			publish();
+		},
+		terminal: (code, message) => {
+			events.push(`process:terminal:${code}`);
+			child = null;
+			terminalFailure = { code, message, terminal: true };
+			publish();
 		},
 	};
 }

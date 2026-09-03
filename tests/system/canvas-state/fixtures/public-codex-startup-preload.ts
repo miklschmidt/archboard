@@ -23,3 +23,33 @@ if (executable !== undefined) {
 		})),
 	);
 }
+
+const shutdownDelayMs = Number(process.env.ARCHBOARD_TEST_PUBLIC_SHUTDOWN_DELAY_MS ?? "0");
+if (
+	process.env.ARCHBOARD_STARTUP_TERMINAL_FD !== undefined &&
+	Number.isFinite(shutdownDelayMs) &&
+	shutdownDelayMs > 0
+) {
+	const applicationPath = resolve(
+		import.meta.dir,
+		"../../../../src/server/canvas/lib/codex-workbench-application.ts",
+	);
+	const actualApplicationModule = await import(applicationPath);
+	const createApplication = actualApplicationModule.createCanvasCodexWorkbenchApplication;
+	await Promise.resolve(
+		mock.module(applicationPath, () => ({
+			...actualApplicationModule,
+			createCanvasCodexWorkbenchApplication: (...args: Parameters<typeof createApplication>) => {
+				const application = createApplication(...args);
+				let delay: Promise<void> | null = null;
+				return {
+					...application,
+					shutdown: () => {
+						delay ??= Bun.sleep(shutdownDelayMs);
+						return delay.then(application.shutdown);
+					},
+				};
+			},
+		})),
+	);
+}
