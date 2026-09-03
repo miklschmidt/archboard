@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-03 19:01'
+updated_date: '2026-09-03 19:08'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -67,6 +67,8 @@ Render the complete decoded Codex 0.151.0 ThreadItem union as bounded, escaped, 
 19. Delete the timeline adapter.ts re-export and make tests import helpers only from the public index.tsx.
 
 20. Run only the focused mounted runtime/timeline/public-provider/import-policy owners, root typecheck, targeted lint/format, and diff checks; record the assistant-ui public source evidence and red/green result, keep the task In Progress, and commit separately.
+
+21. Derive the workbench assistant message from ReadonlyThreadProvider's public messages prop with Extract and Omit intersections, refine only the fixed text tuple and Archboard metadata, and derive mapStatus from that assistant status; run the focused runtime/timeline/provider/policy and exact static gates without adding behavior tests.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -113,6 +115,10 @@ The authoritative BrowserTimeline duplicate is now the exact [threadId, turnId, 
 Mounted red/green evidence: the delayed-approval owner renders runtime-only command and later activity through createReadonlyWorkbenchView, ReadonlyWorkbenchThreadProvider, and WorkbenchTimeline, marks the later article with DOM-owned state, then inserts the matching approval. With index-key reconciliation it failed because the later DOM node was replaced after moving from position two to three (1 test failed in 1.39 s). With item.identity keys it passed in 117 ms; final focused execution passed in 16 ms and proves the same later DOM node and mark survive, the approval does not inherit the mark, order is command/approval/later, and all items remain in one visual turn group. Mounted updates settled deterministically, so no browser lane ran.
 
 The redundant src/ui/workbench-timeline/adapter.ts entrypoint is deleted. Timeline tests import component, helpers, and public types from index.tsx only. Final focused runtime, mounted runtime, mounted timeline, public timeline/provider, assistant-ui import policy, and test-observer policy run: 38 pass, 0 fail, 479 assertions in 6.79 s. bun run type-check passed. Targeted Oxlint passed with --deny-warnings. Targeted Oxfmt check passed on 19 files in 140 ms. git diff --check passed. No broad module, system, repository, browser, stress, or performance lane ran. Task remains In Progress for rereview.
+
+Fifth rereview remediation started from clean HEAD 87fbfbddaa99e0ed50b4ffe89f452d27543707e4 on fixed base 23cc54fbc3405a7c5b80bb8de796ae2b53bd5e25. Installed ReadonlyThreadProvider publicly declares messages as readonly ThreadMessage[]; this remediation will derive the assistant arm, text part, metadata base, and status through its existing imported component signature, with no new assistant-ui import and no runtime behavior change.
+
+Fifth rereview remediation implemented as a type-only provider-boundary correction. WorkbenchAssistantMessage now derives the provider message union from ComponentProps<typeof ReadonlyThreadProvider>["messages"][number], selects its assistant arm with Extract, preserves all provider-owned fields through Omit/intersection, narrows content to one provider-derived text part, and replaces only metadata.custom with the Archboard timeline payload. mapStatus returns the same derived assistant status; the locally redeclared WorkbenchMessageStatus and copied assistant id/role/createdAt/status/metadata field types are deleted. The @assistant-ui/react import remains exactly AssistantRuntimeProvider, MessageNotSentError, ReadonlyThreadProvider, and useExternalStoreRuntime; no timeline import changed and no casts, suppressions, behavior, or tests were added. Focused runtime/timeline/provider/policy validation: 38 pass, 0 fail, 479 assertions across 6 files in 6.34 s. bun run type-check passed both root and frontend. Targeted Oxlint passed with --deny-warnings. Targeted Oxfmt check passed on 20 files in 154 ms after the single mechanical wrap. git diff --check passed. No broad or browser lane ran. Task remains In Progress for rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
