@@ -197,47 +197,58 @@ async function withinCleanup<T>(promise: Promise<T>): Promise<T | undefined> {
 }
 
 async function terminateInspectionGroup(
-	child: ReturnType<typeof Bun.spawn>,
+	identity: ProcessGroupIdentity,
 	settlements: Promise<InspectionSettlements>,
+	groupIdentityForSignal: ReadOnlyRunOptions["groupIdentityForSignal"],
 ): Promise<InspectionSettlements> {
 	const failures: Error[] = [];
 	try {
-		signalProcessGroup(child.pid, "SIGTERM");
+		signalOwnedProcessGroup(
+			groupIdentityForSignal?.(identity, "SIGTERM") ?? identity,
+			"SIGTERM",
+		);
 	} catch (cause) {
 		failures.push(asError(cause));
 	}
 	let disappeared = false;
 	try {
-		disappeared = await processGroupDisappeared(child.pid);
+		disappeared = await processGroupDisappeared(identity.group);
 	} catch (cause) {
 		failures.push(asError(cause));
 	}
 	if (!disappeared) {
 		try {
-			signalProcessGroup(child.pid, "SIGKILL");
+			signalOwnedProcessGroup(
+				groupIdentityForSignal?.(identity, "SIGKILL") ?? identity,
+				"SIGKILL",
+			);
 		} catch (cause) {
 			failures.push(asError(cause));
 		}
 		try {
-			disappeared = await processGroupDisappeared(child.pid);
+			disappeared = await processGroupDisappeared(identity.group);
 		} catch (cause) {
 			failures.push(asError(cause));
 		}
 	}
 	if (!disappeared) {
-		failures.push(new Error(`Package inspection process group ${child.pid} survived SIGKILL.`));
+		failures.push(
+			new Error(`Package inspection process group ${identity.group} survived SIGKILL.`),
+		);
 	}
 	const settled = await withinCleanup(settlements);
 	if (settled === undefined) {
 		failures.push(
-			new Error(`Package inspection process group ${child.pid} left unsettled pipes or leader.`),
+			new Error(
+				`Package inspection process group ${identity.group} left unsettled pipes or leader.`,
+			),
 		);
 	}
 	if (failures.length === 1) throw failures[0];
 	if (failures.length > 1) {
 		throw new AggregateError(
 			failures,
-			`Package inspection process group ${child.pid} cleanup failed.`,
+			`Package inspection process group ${identity.group} cleanup failed.`,
 		);
 	}
 	return settled!;
@@ -277,6 +288,7 @@ export async function runReadOnlyPackageProcess(
 		});
 	};
 	let child: ReturnType<typeof Bun.spawn>;
+	let groupIdentity: ProcessGroupIdentity;
 	try {
 		child = Bun.spawn([...command], {
 			cwd: root,
@@ -291,6 +303,7 @@ export async function runReadOnlyPackageProcess(
 			stdout: "pipe",
 			stderr: "pipe",
 		});
+		groupIdentity = captureDetachedProcessGroup(child.pid);
 	} catch (cause) {
 		throw new Error(`Could not start package inspection: ${(cause as Error).message}`, {
 			cause,
@@ -323,7 +336,7 @@ export async function runReadOnlyPackageProcess(
 	void leader.then((outcome) => {
 		if (outcome.status !== "fulfilled") return undefined;
 		try {
-			if (processGroupExists(child.pid)) {
+			if (processGroupExists(groupIdentity.group)) {
 				requestTermination({
 					kind: "cleanup",
 					error: new Error(
@@ -344,7 +357,7 @@ export async function runReadOnlyPackageProcess(
 		}),
 	);
 	try {
-		options.onSpawn?.(child.pid);
+		options.onSpawn?.(groupIdentity.group);
 	} catch (cause) {
 		requestTermination({ kind: "cleanup", error: asError(cause) });
 	}
@@ -371,7 +384,7 @@ export async function runReadOnlyPackageProcess(
 			if (rejected) requestTermination({ kind: "stream", error: rejected });
 			if (!firstTermination) {
 				try {
-					if (processGroupExists(child.pid)) {
+					if (processGroupExists(groupIdentity.group)) {
 						requestTermination({
 							kind: "cleanup",
 							error: new Error(
@@ -386,7 +399,11 @@ export async function runReadOnlyPackageProcess(
 		}
 		if (firstTermination) {
 			try {
-				completed = await terminateInspectionGroup(child, settlements);
+				completed = await terminateInspectionGroup(
+					groupIdentity,
+					settlements,
+					options.groupIdentityForSignal,
+				);
 			} catch (cause) {
 				cleanupFailure = asError(cause);
 			}
