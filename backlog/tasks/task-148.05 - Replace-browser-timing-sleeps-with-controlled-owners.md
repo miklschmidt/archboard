@@ -1,11 +1,11 @@
 ---
 id: TASK-148.05
 title: Replace browser timing sleeps with controlled owners
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 21:36'
-updated_date: '2026-09-03 14:19'
+updated_date: '2026-09-03 14:24'
 labels: []
 dependencies: []
 modified_files:
@@ -34,10 +34,10 @@ Browser coverage keeps rendered user-visible behavior while controlled-clock mod
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Pure scheduling assertions move from direct 800 ms, 650 ms, 400 ms, 1100 ms, and 400 ms browser sleeps into controlled-clock module owners.
-- [ ] #2 Changed browser owners retain rendered and user-visible behavior through observable conditions.
-- [ ] #3 The real serial browser lane passes for every changed browser owner, with no responsive or human-edit regression.
-- [ ] #4 Browser renderer observations are measured after raw sleeps become observable conditions before any waiver is considered.
+- [x] #1 Pure scheduling assertions move from direct 800 ms, 650 ms, 400 ms, 1100 ms, and 400 ms browser sleeps into controlled-clock module owners.
+- [x] #2 Changed browser owners retain rendered and user-visible behavior through observable conditions.
+- [x] #3 The real serial browser lane passes for every changed browser owner, with no responsive or human-edit regression.
+- [x] #4 Browser renderer observations are measured after raw sleeps become observable conditions before any waiver is considered.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -64,6 +64,8 @@ Before/after focused browser measurements on the same host, using the serial bro
 The final serial pass ran exactly the five changed owners without overlap. All passed. Module clock owners passed 16 focused tests in 55 ms. Exact-file Oxlint and Oxfmt checks passed. No changed browser owner contains Bun.sleep. Navigator stale completion now uses an explicitly held/released preview request; claim camera safety waits for the changed viewport in /api/panes; report and human-edit flows wait for report or scene convergence. Controlled module owners advance the 300 ms pane debounce, 1,000 ms hold renewal, and 800 ms report idle tail without wall time.
 
 Review remediation composes generation ownership with renewal scheduling at the production finally-path seam. The controlled-clock owner passes (4 tests, 18 expectations) and proves stale A1 settlement remains inert through LOCK_RENEW_MS while current A2 settlement schedules exactly one renewal. The individual hold-generation browser owner passes (1 test, 22 expectations).
+
+Integration on codex/task-143-144-workbench: cherry-picked reviewed commits 678622303fb9d89c7099ce82c35ab8d3e40c97cd and b856b228f4782050c6a932f3382c4d6f4959b660 as 23b9962c51b7b23715033232c87de83a9c20e992 and b7fa8331cd27a1472f76f23c203823c7221a7b64. Focused integration passed: bun test src/ui/canvas/tests/canvas-deadlines.test.ts (4 tests, 18 expectations), and bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/hold-generation.test.ts (1 test, 22 expectations).
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -75,3 +77,9 @@ created: 2026-09-03 14:17
 Independent review found that the first implementation tested deadline and generation identity separately, so it did not prove their composition. Remediation adds the smallest production seam used by the real finally path and one composed controlled-clock owner.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced browser timing sleeps with controlled deadline owners and observable browser conditions. Reviewed remediation passed the controlled-clock module owner and the focused real-browser hold-generation workflow; recorded serial evidence covers the remaining changed owners and renderer observations.
+<!-- SECTION:FINAL_SUMMARY:END -->
