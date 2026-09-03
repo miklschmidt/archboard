@@ -127,21 +127,22 @@ export interface ThreadLinkClassification {
 	readonly proof: EpochExecutionProof | null;
 }
 
-/** The durable child generation that owns one complete candidate inventory. */
-export interface ThreadLinkDiscoveryAuthority extends ThreadLinkCurrentEpoch {
-	readonly manifestRevision: number;
-	readonly manifestBytesHash: string | null;
-}
+export type ThreadLinkCandidateSource = ThreadLinkAllowedSource | "custom" | "subAgent" | "unknown";
 
-/** One persisted thread row group joined to exact loaded membership and epoch provenance. */
+/** The complete browser-safe projection for one host-retained candidate. */
 export interface ThreadLinkCandidate {
-	readonly target: ThreadLinkTarget;
-	readonly classification: ThreadLinkClassification;
+	readonly selectionId: string;
+	readonly threadId: ThreadId;
+	readonly state: Exclude<ThreadLinkState, "unbound">;
+	readonly reason: ThreadLinkReason | null;
+	readonly source: ThreadLinkCandidateSource;
+	readonly status: ThreadLinkStatus;
+	readonly loaded: boolean;
+	readonly canAcceptDirectInput: boolean | null;
 }
 
 /** One authoritative inventory. No member comes from a partial page or another generation. */
 export interface ThreadLinkCandidateDiscovery {
-	readonly authority: ThreadLinkDiscoveryAuthority | null;
 	readonly candidates: readonly ThreadLinkCandidate[];
 }
 
@@ -215,6 +216,12 @@ export interface CodexThreadLinkClassifier {
 export interface CodexThreadLinkPort extends CodexThreadLinkClassifier, ThreadLinkBindingStore {
 	/** Exhaust and classify the candidates browser consumers may offer for explicit binding. */
 	readonly discoverCandidates: () => Promise<ThreadLinkCandidateDiscovery>;
+	/** Resolve one opaque candidate once, then adopt it through fresh classification and pane CAS. */
+	readonly bindCandidate: (
+		paneId: string,
+		expected: ThreadLinkCasToken | null,
+		selectionId: string,
+	) => Promise<ThreadLinkBindingSnapshot>;
 	/** Classify twice through the live authorities, then adopt the fresh result by CAS. */
 	readonly classifyAndBind: (
 		paneId: string,
