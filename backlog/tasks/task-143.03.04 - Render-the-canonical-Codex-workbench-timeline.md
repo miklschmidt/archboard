@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-03 19:08'
+updated_date: '2026-09-03 19:16'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -69,6 +69,8 @@ Render the complete decoded Codex 0.151.0 ThreadItem union as bounded, escaped, 
 20. Run only the focused mounted runtime/timeline/public-provider/import-policy owners, root typecheck, targeted lint/format, and diff checks; record the assistant-ui public source evidence and red/green result, keep the task In Progress, and commit separately.
 
 21. Derive the workbench assistant message from ReadonlyThreadProvider's public messages prop with Extract and Omit intersections, refine only the fixed text tuple and Archboard metadata, and derive mapStatus from that assistant status; run the focused runtime/timeline/provider/policy and exact static gates without adding behavior tests.
+
+22. Derive runtime text, reasoning, and data renderer props from assistantTimelinePrimitives.MessagePrimitive.Content component slots, close over the existing Archboard fallback identities, and derive TimelineMessageList's children callback and render contract from assistantTimelinePrimitives.ThreadPrimitive.Messages. Remove ElementType and vendor-shaped local prop declarations, then run the focused owners and exact static gates without adding tests.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -119,6 +121,10 @@ The redundant src/ui/workbench-timeline/adapter.ts entrypoint is deleted. Timeli
 Fifth rereview remediation started from clean HEAD 87fbfbddaa99e0ed50b4ffe89f452d27543707e4 on fixed base 23cc54fbc3405a7c5b80bb8de796ae2b53bd5e25. Installed ReadonlyThreadProvider publicly declares messages as readonly ThreadMessage[]; this remediation will derive the assistant arm, text part, metadata base, and status through its existing imported component signature, with no new assistant-ui import and no runtime behavior change.
 
 Fifth rereview remediation implemented as a type-only provider-boundary correction. WorkbenchAssistantMessage now derives the provider message union from ComponentProps<typeof ReadonlyThreadProvider>["messages"][number], selects its assistant arm with Extract, preserves all provider-owned fields through Omit/intersection, narrows content to one provider-derived text part, and replaces only metadata.custom with the Archboard timeline payload. mapStatus returns the same derived assistant status; the locally redeclared WorkbenchMessageStatus and copied assistant id/role/createdAt/status/metadata field types are deleted. The @assistant-ui/react import remains exactly AssistantRuntimeProvider, MessageNotSentError, ReadonlyThreadProvider, and useExternalStoreRuntime; no timeline import changed and no casts, suppressions, behavior, or tests were added. Focused runtime/timeline/provider/policy validation: 38 pass, 0 fail, 479 assertions across 6 files in 6.34 s. bun run type-check passed both root and frontend. Targeted Oxlint passed with --deny-warnings. Targeted Oxfmt check passed on 20 files in 154 ms after the single mechanical wrap. git diff --check passed. No broad or browser lane ran. Task remains In Progress for rereview.
+
+Sixth rereview remediation started from clean HEAD 3cd9ca80832978401893ecdf710c87d35dc01ae6 on fixed base 23cc54fbc3405a7c5b80bb8de796ae2b53bd5e25. Scope is limited to type derivation in WorkbenchTimeline.tsx and message-list.tsx. The existing runtime-text and runtime-reasoning fallback identities will remain Archboard-owned closure inputs so provider props no longer claim an itemId and rendered behavior does not change.
+
+Sixth rereview remediation implemented as a type-only renderer and message-list correction. WorkbenchTimeline derives the MessagePrimitive.Content component arm with ComponentProps, Extract, NonNullable, and indexed access; it derives Text, Reasoning, and data.Fallback renderer props with React ComponentProps. Text and reasoning no longer claim a provider itemId. Their unchanged runtime-text and runtime-reasoning identities are Archboard-owned values passed into renderer factories and captured by closure. RuntimeDataPart now receives the provider-derived data renderer props. PART_RENDERERS satisfies the derived Content components contract. TimelineMessageList imports the existing assistantTimelinePrimitives bridge, derives ThreadPrimitive.Messages props through ComponentProps, selects the children arm with Extract and NonNullable, and derives the message parameter and React return from Parameters and ReturnType. ElementType, ReactNode, and the handwritten { message: { id: string } } callback shape are deleted from message-list.tsx. No assistant-ui import, cast, suppression, runtime behavior, or test changed. Focused runtime/timeline/provider/import-policy validation: 38 pass, 0 fail, 479 assertions across 6 files in 6.38 s. bun run type-check passed root and frontend. Targeted Oxlint passed with --deny-warnings. Targeted Oxfmt check passed on 20 files in 164 ms after one mechanical format. git diff --check passed. No browser or broad lane ran. TASK-143.03.04 remains In Progress for rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
