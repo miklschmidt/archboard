@@ -29,14 +29,6 @@ function renderSnapshot(): BoardRenderSnapshot {
 	return snapshot;
 }
 
-async function waitFor(predicate: () => boolean, what: string): Promise<void> {
-	const deadline = Date.now() + 1_000;
-	while (!predicate()) {
-		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${what}.`);
-		await Bun.sleep(10);
-	}
-}
-
 async function loopbackPortIsFree(port: number): Promise<boolean> {
 	let server: ReturnType<typeof Bun.serve> | null = null;
 	try {
@@ -62,10 +54,10 @@ describe("board renderer owner", () => {
 			let fixtureStarts = 0;
 			let failedFixturePort = 0;
 			let injectCleanupFailure = true;
-			let block = false;
-			let releaseBlock!: () => void;
-			const blocked = new Promise<void>((resolveBlock) => {
-				releaseBlock = resolveBlock;
+			let pauseNextCdpJob = false;
+			let reportPausedCdp!: (pid: number) => void;
+			const pausedCdp = new Promise<number>((resolvePausedCdp) => {
+				reportPausedCdp = resolvePausedCdp;
 			});
 			const chromiumStarts: number[] = [];
 			const roots: string[] = [];
@@ -89,7 +81,12 @@ describe("board renderer owner", () => {
 							errors: [...cleanup.errors, "injected cleanup audit failure"],
 						};
 					},
-					beforeRun: () => (block ? blocked : undefined),
+					afterCdpDispatch(_job, pid) {
+						if (!pauseNextCdpJob) return;
+						pauseNextCdpJob = false;
+						process.kill(-pid, "SIGSTOP");
+						reportPausedCdp(pid);
+					},
 				},
 			});
 			owner.start();
@@ -145,23 +142,28 @@ describe("board renderer owner", () => {
 			expect(replacement.chromiumPid).not.toBe(first.chromiumPid);
 			expect(replacement.tempRoot).not.toBe(first.tempRoot);
 
-			block = true;
+			pauseNextCdpJob = true;
 			const activeController = new AbortController();
 			const active = owner.execute(mermaidJob, activeController.signal);
-			await waitFor(() => owner.status().active, "active renderer work");
-			const queuedController = new AbortController();
-			const queued = owner.execute(mermaidJob, queuedController.signal);
-			expect(owner.status().queued).toBe(1);
-			queuedController.abort(new Error("cancel queued conversion"));
-			await expect(queued).rejects.toThrow("cancel queued conversion");
-			expect(owner.status().queued).toBe(0);
-			activeController.abort(new Error("cancel active conversion"));
-			await expect(active).rejects.toThrow("cancel active conversion");
-			releaseBlock();
-			block = false;
-			expect(owner.status().chromiumPid).toBe(replacement.chromiumPid);
-
-			const cleanup = await owner.stop();
+			const pausedPid = await pausedCdp;
+			const queued = owner.execute(mermaidJob);
+			const activeWhilePaused = owner.status().active;
+			const queuedWhilePaused = owner.status().queued;
+			const cancellation = new DOMException("cancel active CDP conversion", "AbortError");
+			activeController.abort(cancellation);
+			const stopping = owner.stop();
+			process.kill(-pausedPid, "SIGCONT");
+			const [activeFailure, queuedFailure, cleanup] = await Promise.all([
+				active.catch((error: unknown) => error),
+				queued.catch((error: unknown) => error),
+				stopping,
+			]);
+			expect(pausedPid).toBe(replacement.chromiumPid);
+			expect(activeWhilePaused).toBeTrue();
+			expect(queuedWhilePaused).toBe(1);
+			expect(activeFailure).toBe(cancellation);
+			expect(queuedFailure).toBeInstanceOf(BoardRendererError);
+			expect(queuedFailure).toHaveProperty("phase", "shutdown");
 			expect(fixtureStarts).toBe(2);
 			expect(chromiumStarts).toHaveLength(2);
 			expect(owner.status().chromiumStarts).toBe(2);

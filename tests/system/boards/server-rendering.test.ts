@@ -9,7 +9,7 @@ import { isBlockId } from "../../../src/shared/ids/ids.ts";
 import {
 	LOCK_LEASE_MS,
 	TEST_SERVER_RENDERING_CASE_TIMEOUT_MS,
-	TEST_SERVER_RENDERING_LEASE_CASE_TIMEOUT_MS,
+	TEST_SERVER_RENDERING_WRITE_LEASE_MS,
 } from "../../../src/shared/timing/timing.ts";
 import { findingElements, findingFile } from "../browser/fixtures/fixed-point-scene.ts";
 import { processExists, startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
@@ -36,7 +36,6 @@ interface HealthBody {
 }
 
 interface RenderBody {
-	success: boolean;
 	code?: string;
 	error?: string;
 	board: string;
@@ -49,18 +48,14 @@ interface RenderBody {
 }
 
 interface MermaidElement {
-	id: string;
 	type: string;
 	text?: string;
-	containerId?: string | null;
 	startBinding?: { elementId: string } | null;
 	endBinding?: { elementId: string } | null;
 }
 
 interface FindingBody {
-	board: string;
 	sourceFingerprint: string;
-	sourceRenderable: boolean;
 	report: {
 		findings: Array<{
 			code: string;
@@ -121,6 +116,15 @@ async function waitForHealth(
 	}
 }
 
+async function withStoppedProcessGroup<T>(pid: number, work: () => Promise<T>): Promise<T> {
+	process.kill(-pid, "SIGSTOP");
+	try {
+		return await work();
+	} finally {
+		process.kill(-pid, "SIGCONT");
+	}
+}
+
 beforeAll(async () => {
 	note(
 		"render-proof",
@@ -131,7 +135,14 @@ beforeAll(async () => {
 	);
 	note("missing-file", fixture.replace('"fileId": "pixel"', '"fileId": "absent"'));
 	note("missing-font", fixture.replaceAll('"fontFamily": 5', '"fontFamily": 99'));
-	canvas = await startOwnedCanvas({ serverPath: join(root, "src/server.ts"), vault });
+	canvas = await startOwnedCanvas({
+		serverPath: join(root, "src/server.ts"),
+		vault,
+		env: {
+			ARCHBOARD_TEST_OWNED_CANVAS: "1",
+			ARCHBOARD_TEST_WRITE_LEASE_MS: String(TEST_SERVER_RENDERING_WRITE_LEASE_MS),
+		},
+	});
 	request = createJsonRequester(canvas);
 });
 
@@ -301,6 +312,7 @@ describe.serial("server-owned board rendering", () => {
 	test(
 		"renders before the lease, maps against the locked board, and discards canceled writes",
 		async () => {
+			expect(LOCK_LEASE_MS).toBe(3_000);
 			const source = "graph TD; A[Client] --> B[API]; B --> C[Store];";
 			await request("/api/boards/new", { method: "POST", body: { board: "mermaid-seed" } });
 			const seed = await request<{ board: string; count: number; ids: string[] }>(
@@ -318,44 +330,53 @@ describe.serial("server-owned board rendering", () => {
 			const before = await request<{ version: number }>("/api/boards/info?board=mermaid");
 			const renderer = (await request<HealthBody>("/health")).body.renderer;
 			if (!renderer.chromiumPid) throw new Error("The retained renderer has no process id.");
-			process.kill(-renderer.chromiumPid, "SIGSTOP");
-			const converted = request<{ board: string; count: number; ids: string[] }>(
-				"/api/elements/from-mermaid?board=mermaid",
-				{ method: "POST", body: { mermaidDiagram: source } },
-			);
-			await waitForHealth(
-				(health) => health.renderer.active,
-				"the stopped renderer to own the Mermaid job",
-			);
-			await Bun.sleep(LOCK_LEASE_MS + 100);
 			const holder = "mermaid-concurrent-writer";
-			expect(
-				(
-					await request("/api/boards/hold?board=mermaid", {
+			const { converted, held, concurrent, afterConcurrent } = await withStoppedProcessGroup(
+				renderer.chromiumPid,
+				async () => {
+					const pendingConversion = request<{ board: string; count: number; ids: string[] }>(
+						"/api/elements/from-mermaid?board=mermaid",
+						{ method: "POST", body: { mermaidDiagram: source } },
+					);
+					await waitForHealth(
+						(health) => health.renderer.active,
+						"the stopped renderer to own the Mermaid job",
+					);
+					const holdResponse = await request("/api/boards/hold?board=mermaid", {
 						method: "POST",
 						body: { board: "mermaid", clientId: holder },
-					})
-				).status,
-			).toBe(200);
-			const concurrent = await request("/api/elements/changes?board=mermaid", {
-				method: "POST",
-				body: {
-					origin: "human",
-					clientId: holder,
-					upserts: [{ id: collision, type: "rectangle", x: 10, y: 10, width: 80, height: 40 }],
-					deletes: [],
+					});
+					const concurrentWrite = await request("/api/elements/changes?board=mermaid", {
+						method: "POST",
+						body: {
+							origin: "human",
+							clientId: holder,
+							upserts: [{ id: collision, type: "rectangle", x: 10, y: 10, width: 80, height: 40 }],
+							deletes: [],
+						},
+					});
+					const concurrentState = await request<{ version: number }>(
+						"/api/boards/info?board=mermaid",
+					);
+					return {
+						converted: pendingConversion,
+						held: holdResponse,
+						concurrent: concurrentWrite,
+						afterConcurrent: concurrentState,
+					};
 				},
-			});
+			);
+			expect(held.status).toBe(200);
 			expect(concurrent.status).toBe(200);
-			const afterConcurrent = await request<{ version: number }>("/api/boards/info?board=mermaid");
 			expect(afterConcurrent.body.version).toBe(before.body.version + 1);
-			process.kill(-renderer.chromiumPid, "SIGCONT");
-			let conversionSettled = false;
-			void converted.finally(() => {
-				conversionSettled = true;
-			});
-			await Bun.sleep(200);
-			expect(conversionSettled).toBeFalse();
+			await waitForHealth(
+				(health) =>
+					!health.renderer.active &&
+					health.application.activeMutations.some(({ name }) =>
+						name.includes("POST /api/elements/from-mermaid board-lock wait"),
+					),
+				"the rendered Mermaid request to wait for the concurrent writer",
+			);
 			expect(
 				(
 					await request("/api/boards/hold/release?board=mermaid", {
@@ -448,7 +469,7 @@ describe.serial("server-owned board rendering", () => {
 				(await request<{ version: number }>("/api/boards/info?board=mermaid-cancel")).body.version,
 			).toBe(cancelBefore.body.version);
 		},
-		TEST_SERVER_RENDERING_LEASE_CASE_TIMEOUT_MS,
+		TEST_SERVER_RENDERING_CASE_TIMEOUT_MS,
 	);
 
 	test(
