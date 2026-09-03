@@ -28,11 +28,10 @@ describe("command-contract schemas", () => {
 		const info = { success: true as const, ...identityState };
 		const created = {
 			...info,
-			version: null,
+			version: 1,
 			elementCount: 0,
 			created: true as const,
-			saved: false as const,
-			pane: null,
+			saved: true as const,
 		};
 		const opened = { ...info, source: "vault" as const, pane };
 		expect(BoardInfoResultSchema.parse(info)).toEqual(info);

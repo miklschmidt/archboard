@@ -127,6 +127,14 @@ export interface BoardWriteRequest<T> {
 
 export type TellPanes = (message: WebSocketMessage, board: string) => void;
 
+function tellPanesBestEffort(tellPanes: TellPanes, message: WebSocketMessage, board: string): void {
+	try {
+		tellPanes(message, board);
+	} catch (error) {
+		logger.warn(`Board "${board}" committed, but a pane notification failed`, error);
+	}
+}
+
 export class BoardMutationError extends Error {
 	constructor(
 		readonly status: number,
@@ -240,7 +248,11 @@ function persist<T>(
 		if (error instanceof BoardWriteConflictError && !isHeld(target.key) && !request.save) {
 			const hold = beginHold(target.key, error.conflict, readBoardContent(target.board));
 			logger.warn(`Board "${target.key}" has stopped saving: ${holdMessage(target.key, hold)}`);
-			tellPanes({ type: "board_hold", hold: reportHold(target.key, hold) }, target.key);
+			tellPanesBestEffort(
+				tellPanes,
+				{ type: "board_hold", hold: reportHold(target.key, hold) },
+				target.key,
+			);
 		}
 		throw error;
 	}
@@ -266,7 +278,8 @@ function releaseSavedHold<T>(
 	logger.info(
 		`Board "${request.source.key}" is saving again (${outcome}), after ${hold.writes} held change(s).`,
 	);
-	tellPanes(
+	tellPanesBestEffort(
+		tellPanes,
 		{ type: "board_released", hold: report, outcome } as WebSocketMessage,
 		request.source.key,
 	);
@@ -304,16 +317,20 @@ function tellPanesAboutWrite(
 		origin: clientId,
 		timestamp,
 	};
-	tellPanes(message, target.key);
+	tellPanesBestEffort(tellPanes, message, target.key);
 
 	if (delta.filesAdded && delta.filesAdded.length > 0) {
-		tellPanes({ type: "files_added", files: delta.filesAdded }, target.key);
+		tellPanesBestEffort(tellPanes, { type: "files_added", files: delta.filesAdded }, target.key);
 	}
 	if (delta.filesReplaced) {
-		tellPanes({ type: "files_replaced", files: delta.filesReplaced }, target.key);
+		tellPanesBestEffort(
+			tellPanes,
+			{ type: "files_replaced", files: delta.filesReplaced },
+			target.key,
+		);
 	}
 	for (const fileId of delta.filesDeleted ?? []) {
-		tellPanes({ type: "file_deleted", fileId }, target.key);
+		tellPanesBestEffort(tellPanes, { type: "file_deleted", fileId }, target.key);
 	}
 }
 

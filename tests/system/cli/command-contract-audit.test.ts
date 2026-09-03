@@ -241,7 +241,6 @@ describe("command contract audit", () => {
 					"placeholder",
 					"created",
 					"saved",
-					"pane",
 				],
 			],
 			[

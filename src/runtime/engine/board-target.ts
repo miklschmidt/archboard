@@ -28,15 +28,37 @@ export class BoardRequiredError extends Error {
 	}
 }
 
+export type BoardResolutionFailure = "missing" | "ambiguous" | "malformed" | "conflicting";
+
+/** A named board address that cannot resolve to one valid note in the vault. */
+export class BoardResolutionError extends Error {
+	readonly code = "BOARD_RESOLUTION_FAILED";
+	readonly status: number;
+
+	constructor(
+		readonly board: string,
+		readonly reason: BoardResolutionFailure,
+		message: string,
+		readonly files: readonly string[] = [],
+		options?: ErrorOptions,
+	) {
+		super(message, options);
+		this.name = "BoardResolutionError";
+		this.status = reason === "missing" ? 404 : reason === "malformed" ? 422 : 409;
+	}
+}
+
 function boardRequiredMessage(open: string[], what?: string): string {
 	const subject = what ? `${what} needs a board` : "This needs a board";
-	const openList =
-		open.length > 0 ? `Open right now: ${open.join(", ")}.` : "No board is open in this canvas.";
+	const available =
+		open.length > 0
+			? `The vault currently holds: ${open.join(", ")}.`
+			: "The vault currently holds no named board.";
 	return (
 		`${subject}, and none was named. Nothing was done. ` +
 		"Pass one — `--board <key>` on the command line or `?board=<key>` on the API. " +
-		`${openList} \`board list\` shows what the vault holds, \`panes\` shows what is on screen. ` +
-		"There is no default board on purpose: a board is part of what you are asking for (ADR 0009)."
+		`${available} \`board list\` shows what the vault holds. ` +
+		"There is no default board on purpose: a board is part of what you are asking for (ADR 0020)."
 	);
 }
 
