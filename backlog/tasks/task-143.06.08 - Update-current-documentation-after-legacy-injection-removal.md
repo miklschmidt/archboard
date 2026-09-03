@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 16:29'
-updated_date: '2026-09-03 10:49'
+updated_date: '2026-09-03 10:55'
 labels: []
 dependencies:
   - TASK-143.06.03
@@ -57,6 +57,8 @@ Update current user, agent, test, and architecture documents only after the rema
 6. Rerun only the exact policy owner, scoped Oxfmt and local-link/static checks, preserved-history comparison, and diff checks; record a new in-progress note and commit without amending or finalizing.
 
 7. Standards remediation: make DESIGN.md's bound app-server section the sole full semantic contract; reduce AGENTS.md, README.md, and TESTING.md to audience-specific facts and direct pointers. Expand the existing policy owner across non-test src TS/TSX with concept-level retired route/module detection and replace prose snapshots with structural section/link/domain-identifier checks.
+
+8. Final Standards remediation: add block-level negative guards inside the existing current-document policy for positive same/existing-workhorse voice guidance and actionable control-socket guidance, with explicit retirement/negative exemptions; run only the requested focused owner, file-scoped format/lint, and diff checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -73,4 +75,6 @@ Review and Standards remediation after 351bd794: removed the completed owned-wor
 The existing retirement owner now scans every non-test TS/TSX file under src and reports concept-level matches for any /api/injection route or subpath, app-server-control token, and retired injection module path including extensionless relative imports. It retains absent-file and CLI-audit checks. Current-doc checks now use stable section extraction, identifiers, and authoritative link targets rather than replacement-prose snapshots. The Later region cannot list the owned workbench. The spoken-approval paragraph must contain the next matching final user item and must place Assistant output inside the explicit cannot-arm source set; a positive Assistant-output arm relationship is rejected. The authoritative voice paragraph must keep coordinator and workhorse distinct. No test file, test process, product process, or rule exception was added.
 
 Final capped remediation evidence: the exact retirement owner passed 4/4 tests and 64 expectations in 0.112s, using one Bun process under one timeout supervisor and starting zero product/server/app-server/browser processes. Scoped Oxfmt checked 5 files in 0.274s using one formatter process under one timeout supervisor and 24 worker threads. The local-link check resolved all links in 4 affected docs in 0.008s using one Bun process under one timeout supervisor. Historical comparison, git diff --check, and scoped static searches passed; ADR 0005 and docs/design/stateless-server.md remain byte-identical to the fixed base. Root typecheck, full repository/system/browser lanes, servers, and browsers were not run.
+
+Final Standards remediation at 77d0118e adds two negative, block-scoped structural guards to the existing legacy-injection retirement owner. Current documents now reject actionable guidance that attaches, connects, uses, or runs voice on the same/existing workhorse thread, while allowing explicitly negated guidance; they also reject actionable arm/connect/enable/open/run/start/use control-socket guidance, while allowing retirement, unavailability, supersession, removal, no-socket, and explicit non-use statements. Validation: focused owner 4 tests / 66 expectations in 0.063s (one Bun process); Oxfmt check 0.107s (one process); Oxlint 0.091s (one process); git diff --check passed. Added cost: zero new test cases, files, process owners, browser owners, or server/runtime lanes.
 <!-- SECTION:NOTES:END -->

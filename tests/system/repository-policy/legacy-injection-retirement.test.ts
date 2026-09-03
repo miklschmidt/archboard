@@ -42,6 +42,66 @@ function isTestOwnedSource(relativePath: string): boolean {
 	);
 }
 
+function documentBlocks(source: string): string[] {
+	return source
+		.split(/\n{2,}/)
+		.map((block) => block.replace(/\s+/g, " ").trim())
+		.filter(Boolean);
+}
+
+const voiceAction =
+	/\b(?:attach(?:es|ed|ing)?|connect(?:s|ed|ing)?|use(?:s|d|ing)?|run(?:s|ning)?)\b/i;
+
+function hasPositiveSharedThreadVoiceGuidance(block: string): boolean {
+	return block.split(/(?<=[.!?])\s+/).some((sentence) => {
+		if (!/\bvoice\b/i.test(sentence) || !/\bworkhorse\b/i.test(sentence)) return false;
+		if (!/\bthread\b/i.test(sentence) || !voiceAction.test(sentence)) return false;
+		const sharedTarget =
+			/\b(?:same|existing)\b[^.]{0,48}\bworkhorse\b[^.]{0,24}\bthread\b/i.test(sentence) ||
+			/\b(?:same|existing)\b[^.]{0,24}\bthread\b[^.]{0,48}\bworkhorse\b/i.test(sentence) ||
+			/\bworkhorse\b[^.]{0,48}\b(?:same|existing)\b[^.]{0,24}\bthread\b/i.test(sentence);
+		const negated =
+			new RegExp(
+				`\\b(?:do|does|should|must|can|may|is|are)\\s+not\\b[^.]{0,24}${voiceAction.source}`,
+				"i",
+			).test(sentence) ||
+			/\bnever\b[^.]{0,32}\b(?:attach|connect|use|run)\b/i.test(sentence) ||
+			/\bnot\b[^.]{0,16}\b(?:same|existing)\b/i.test(sentence);
+		return sharedTarget && !negated;
+	});
+}
+
+const controlSocketAction =
+	/\b(?:arm(?:s|ed|ing)?|connect(?:s|ed|ing)?|enable(?:s|d|ing)?|open(?:s|ed|ing)?|run(?:s|ning)?|start(?:s|ed|ing)?|use(?:s|d|ing)?)\b/i;
+
+function hasPositiveControlSocketGuidance(block: string): boolean {
+	if (!/\bcontrol[ -]socket\b/i.test(block)) return false;
+	const controlSocket = "\\bcontrol[ -]socket\\b";
+	const retiredState = "\\b(?:retired|unavailable|superseded|removed)\\b";
+	if (
+		new RegExp(
+			`(?:${retiredState}[^.]{0,64}${controlSocket}|${controlSocket}[^.]{0,64}${retiredState})`,
+			"i",
+		).test(block) ||
+		/\bno\s+control[ -]socket\b/i.test(block) ||
+		/\bcontrol[ -]socket\b[^.]{0,40}\bnot\s+(?:armed|connected|enabled|opened|run|started|used)\b/i.test(
+			block,
+		) ||
+		new RegExp(
+			`\\b(?:do not|does not|never)\\b[^.]{0,40}${controlSocketAction.source}[^.]{0,96}${controlSocket}`,
+			"i",
+		).test(block)
+	)
+		return false;
+	return (
+		new RegExp(`${controlSocketAction.source}[^.]{0,96}${controlSocket}`, "i").test(block) ||
+		new RegExp(
+			`${controlSocket}[^.]{0,96}\\b(?:can|may|must|should|to)\\b[^.]{0,24}${controlSocketAction.source}`,
+			"i",
+		).test(block)
+	);
+}
+
 describe("legacy injection retirement policy", () => {
 	test("keeps retired runtime, routes, commands, and control imports unavailable", async () => {
 		for (const retired of [
@@ -80,6 +140,8 @@ describe("legacy injection retirement policy", () => {
 	});
 
 	test("keeps current setup and architecture on the private linked session", () => {
+		const staleVoiceGuidance: string[] = [];
+		const positiveControlSocketGuidance: string[] = [];
 		for (const [relativePath, source] of currentDocuments) {
 			for (const retired of [
 				"ARCHBOARD_INJECT",
@@ -99,7 +161,18 @@ describe("legacy injection retirement policy", () => {
 				),
 				relativePath,
 			).toBeFalse();
+
+			for (const [blockIndex, block] of documentBlocks(source).entries()) {
+				if (hasPositiveSharedThreadVoiceGuidance(block)) {
+					staleVoiceGuidance.push(`${relativePath} block ${blockIndex + 1}`);
+				}
+				if (hasPositiveControlSocketGuidance(block)) {
+					positiveControlSocketGuidance.push(`${relativePath} block ${blockIndex + 1}`);
+				}
+			}
 		}
+		expect(staleVoiceGuidance).toEqual([]);
+		expect(positiveControlSocketGuidance).toEqual([]);
 
 		const design = currentDocuments.get("DESIGN.md")!;
 		const authoritative = sectionBetween(design, designSectionHeading, nextDesignSectionHeading);
