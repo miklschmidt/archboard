@@ -264,4 +264,83 @@ describe("canvas Codex publication boundary", () => {
 			owner.dispose();
 		}
 	});
+
+	test("drain combines a close failure with only the first event failure and clears both", async () => {
+		const instance = Object.freeze({ socket: "combined-drain" });
+		const browserId = "browser-combined-drain";
+		const paneId = "pane-combined-drain";
+		const firstEvent = { kind: "delta", sequence: 6, delta: {} } satisfies BrowserGatewayMessage;
+		const laterEvent = { kind: "delta", sequence: 7, delta: {} } satisfies BrowserGatewayMessage;
+		const firstEventFailure = new Error("first event send failed");
+		const laterEventFailure = new Error("later event send failed");
+		const closeFailure = new Error("connection close failed");
+		const listeners = new Set<(message: BrowserGatewayMessage) => void>();
+		const connection = {
+			browserId,
+			paneId,
+			instance,
+			snapshot: () =>
+				({
+					kind: "snapshot",
+					sequence: 5,
+					snapshot: { approvals: [] } as unknown as BrowserSnapshot,
+				}) satisfies BrowserGatewaySnapshotMessage,
+			confirmPublished: () => undefined,
+			subscribe: (next: (message: BrowserGatewayMessage) => void) => {
+				listeners.add(next);
+				return () => listeners.delete(next);
+			},
+			close: async () => {
+				throw closeFailure;
+			},
+		} as unknown as BrowserWorkbenchConnection;
+		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
+		const owner = createCanvasCodexBrowserSocketOwner({ gateway, paneForBrowser: () => paneId });
+		const eventFailures = [firstEventFailure, laterEventFailure];
+		let eventSend = 0;
+		const transport = {
+			send: (message: unknown) => {
+				if ((message as { type?: unknown }).type !== "codex_workbench_event")
+					return Promise.resolve();
+				const error = eventFailures[eventSend++];
+				if (error === undefined) throw new Error("unexpected event send");
+				return rejectedSend(error);
+			},
+		};
+		try {
+			await owner.handle(
+				instance,
+				browserId,
+				{ type: "codex_workbench_request", requestId: "subscribe", action: "subscribe" },
+				transport,
+			);
+			for (const event of [firstEvent, laterEvent]) for (const next of listeners) next(event);
+			void owner.close(instance, browserId);
+
+			let drainFailure: unknown = null;
+			try {
+				await owner.drain();
+			} catch (error) {
+				drainFailure = error;
+			}
+			expect(drainFailure).toBeInstanceOf(AggregateError);
+			const failures = (drainFailure as AggregateError).errors;
+			expect(failures).toHaveLength(2);
+			expect(failures[0]).toBe(closeFailure);
+			expect(failures[1]).toMatchObject({
+				message: `Codex browser event publication failed for browser "${browserId}", pane "${paneId}", delta sequence 6: first event send failed`,
+				cause: firstEventFailure,
+			});
+			expect(
+				failures.some(
+					(error) =>
+						error === laterEventFailure ||
+						(error instanceof Error && error.cause === laterEventFailure),
+				),
+			).toBeFalse();
+			await owner.drain();
+		} finally {
+			owner.dispose();
+		}
+	});
 });
