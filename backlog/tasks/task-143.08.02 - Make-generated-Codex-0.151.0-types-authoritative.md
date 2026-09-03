@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 01:40'
+updated_date: '2026-09-03 01:54'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -48,6 +48,10 @@ Replace the rejected handwritten protocol ownership model with one dependency-ne
 5. Run focused formatting, lint, type checks, and affected module owners. Then prove a clean frozen install, generated output, and both TypeScript graphs in a disposable checkout or temp root. Record exact evidence and implementation notes without checking acceptance criteria or finalizing the task.
 
 6. Remediate fixed-range review findings: preserve reserved JSON keys as own data properties; restrict safe-integer enforcement to named generated i64 fields while keeping arbitrary finite JsonValue numbers valid; serialize generation and atomically switch a stable pointer to a completed versioned tree; and make full plus policy-derived supported login schemas prove two-way generated ingress conformance. Extend only existing focused owners and use a disposable bounded generator recovery probe.
+
+7. Bind generation to the absolute checkout-local @openai/codex/bin/codex.js after verifying package name, manifest bin, and exact 0.151.0 version. Fail before locking or staging with bun-install recovery guidance when local dependency state is missing or wrong; prove missing/version-mismatch behavior in bounded disposable probes.
+
+8. Replace the host flock dependency with a Bun/Node atomic filesystem lock whose token and parent/child PIDs make release and stale recovery ownership-safe on supported desktop platforms. Route every reachable generated bigint field through one branded safe-i64 schema and extend the existing protocol owner with LocalShell timeout coverage.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -62,4 +66,8 @@ Validation: clean frozen install plus postinstall generation passed in 0.240 s i
 Fixed-range remediation commits: 384e404d adds the missing unsafe-integer assertion at model_context_window. 78a6cf68 preserves reserved JSON keys as own data properties, permits large finite numbers in generated JsonValue fields, gives full and policy-derived supported login schemas two-way generated ingress conformance, and replaces the generated-tree swap with serialized version generation plus an atomic current symlink.
 
 Remediation validation: a clean disposable archive installed with the frozen lock and generated the contract in 0.268 s. The four focused protocol/browser owners passed 532 tests in 0.347 s, including reserved-key rejection, safe/unsafe/bigint i64 behavior, arbitrary 1.5e20 JsonValue acceptance, BrowserUseOriginPolicy, and login policy. The disposable frontend TypeScript graph passed in 0.500 s. Root TypeScript still reports the same 13 known engine/board-inspection errors as the earlier exact-base comparison. Focused lint and formatting passed. Two concurrent bounded generators both exited 0 and left a valid pointer, two retained versions, zero staging directories, and zero pointer residue. Killing the entire generator process group after staging appeared exited 137 while the old pointer stayed valid; the next bounded run removed the one staging directory, published a valid new pointer, and left zero staging or pointer residue. Acceptance criteria remain unchecked and finalization remains parent-owned.
+
+Combined remediation implemented in 65616c31. Generation now validates the checkout-local @openai/codex package name, manifest bin, and exact 0.151.0 version before creating the generated root, then invokes its absolute bin/codex.js with process.execPath. A token-owned atomic filesystem lock records parent and active child PIDs, uses shared timing constants, refuses non-matching release, and recovers dead owners without flock or an environment bypass. CodexJsonWire brands generated bigint leaves with CodexSafeI64Schema, so ordinary root and frontend conformance forced every reachable i64 schema—including LocalShellExecAction.timeout_ms, hook runs, config limits and hook timeouts, and MCP multi-select bounds—through the same safe-number boundary. The existing config/protocol owner accepts MAX_SAFE_INTEGER and rejects an unsafe number plus bigint for LocalShell timeout.
+
+Validation from a disposable git archive of 65616c31: bun install --frozen-lockfile passed and postinstall generated from local @openai/codex 0.151.0; a second bounded generation was byte-identical by recursive diff and retained two versions with no staging or pointer residue. Missing-package and 0.150.0-mismatch probes each exited 1 with exact-version and bun-install recovery guidance before any lock or staging mutation, preserving the pointer, versions, and bun.lock. Two simultaneous bounded generators both exited 0 with a valid pointer and no residue. Killing the generator process group after staging appeared exited 137 while preserving the old pointer; the next bounded run recovered the stale PID lock and staging and published cleanly. The four focused protocol/browser boundary owners passed 533 tests; frontend TypeScript passed; root TypeScript reports only the same 13 established engine/board-inspection errors; focused Oxlint and Oxfmt passed. Acceptance criteria remain unchecked and task status remains In Progress for parent review.
 <!-- SECTION:NOTES:END -->
