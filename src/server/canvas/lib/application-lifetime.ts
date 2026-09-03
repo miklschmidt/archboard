@@ -226,6 +226,7 @@ export function createCanvasApplicationLifetime(options: CanvasApplicationLifeti
 	let startPromise: Promise<void> | null = null;
 	let stopPromise: Promise<void> | null = null;
 	let unwindPromise: Promise<void> | null = null;
+	let cleanupProven = false;
 	const startup = new AbortController();
 	const entered: CanvasApplicationResource[] = [];
 	const emit = (action: CanvasApplicationEvent["action"], resource: string | null = null): void =>
@@ -309,6 +310,7 @@ export function createCanvasApplicationLifetime(options: CanvasApplicationLifeti
 					failures,
 					`Canvas application cleanup failed: ${failures.map((item) => item.message).join(" ")}`,
 				);
+			cleanupProven = true;
 		})();
 		return unwindPromise;
 	};
@@ -328,6 +330,7 @@ export function createCanvasApplicationLifetime(options: CanvasApplicationLifeti
 
 	return Object.freeze({
 		phase: (): CanvasApplicationPhase => phase,
+		cleanupProven: (): boolean => cleanupProven,
 		start: (): Promise<void> => {
 			if (startPromise !== null) return startPromise;
 			if (phase !== "idle")

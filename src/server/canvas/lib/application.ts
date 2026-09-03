@@ -215,6 +215,11 @@ import {
 	isCodeOpenerBodyRoute,
 } from "../../code-opener/index.js";
 import { createCanvasHttpServer } from "./http-server.js";
+import {
+	canvasStartupTerminalRecord,
+	writeCanvasStartupTerminalRecord,
+} from "../../../shared/canvas-startup-terminal/index.js";
+import { canvasStartupFailureMessage } from "./startup-error.js";
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -5114,7 +5119,22 @@ async function closeBrowserOwners(): Promise<void> {
 	}
 }
 
+const cleanupProvenBeforeResourceAcquisition = (): boolean => true;
+
 async function startServer(): Promise<void> {
+	let cleanupProven = cleanupProvenBeforeResourceAcquisition;
+	let terminalReported = false;
+	const reportStartupTerminal = (message: string | null = null): void => {
+		if (terminalReported) return;
+		terminalReported = true;
+		writeCanvasStartupTerminalRecord(
+			canvasStartupTerminalRecord({
+				canvasPid: process.pid,
+				cleanupProven: cleanupProven(),
+				message,
+			}),
+		);
+	};
 	// No vault, no canvas (ADR 0015). Every board is a note, so a canvas without
 	// a vault has nowhere to put anything, and the failure it used to produce
 	// came later and cost more: the canvas opened, somebody drew on it, and the
@@ -5126,18 +5146,20 @@ async function startServer(): Promise<void> {
 	if (!ARCHBOARD_VAULT) {
 		process.stderr.write(noVaultMessage() + "\n");
 		logger.error("Refusing to start canvas server: no vault (ARCHBOARD_VAULT is unset).");
-		process.exit(1);
+		reportStartupTerminal(noVaultMessage());
+		throw new Error(noVaultMessage());
 	}
 
 	if (LOOPBACK_GUARD_HOSTS.has(HOST)) {
 		const existingHost = await findExistingLoopbackListener(PORT);
 		if (existingHost) {
-			logger.error(
+			const message =
 				`Refusing to start canvas server on ${formatHostForUrl(HOST)}:${PORT}: ` +
-					`${formatHostForUrl(existingHost)}:${PORT} is already listening. ` +
-					"This prevents duplicate IPv4/IPv6 canvas servers from splitting state.",
-			);
-			process.exit(1);
+				`${formatHostForUrl(existingHost)}:${PORT} is already listening. ` +
+				"This prevents duplicate IPv4/IPv6 canvas servers from splitting state.";
+			logger.error(message);
+			reportStartupTerminal(message);
+			throw new Error(message);
 		}
 	}
 
@@ -5171,6 +5193,8 @@ async function startServer(): Promise<void> {
 			if (process.exitCode === undefined) process.exitCode = 0;
 		} catch (error) {
 			reportCanvasStopError(error);
+		} finally {
+			reportStartupTerminal();
 		}
 	};
 	const shutdown = (signal: NodeJS.Signals): void => {
@@ -5336,7 +5360,13 @@ async function startServer(): Promise<void> {
 		],
 	});
 	canvasLifetime = lifetime;
-	await lifetime.start();
+	cleanupProven = lifetime.cleanupProven;
+	try {
+		await lifetime.start();
+	} catch (error) {
+		reportStartupTerminal(canvasStartupFailureMessage(error));
+		throw error;
+	}
 }
 
 export { startServer };

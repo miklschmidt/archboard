@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 03:40'
+updated_date: '2026-09-03 04:05'
 labels: []
 dependencies:
   - TASK-143.08.03
@@ -46,6 +46,8 @@ Keep ADR 0019's mandatory private Codex child. Exactly one package-local codex a
 4. Keep application lifetime as the outer startup and reverse-teardown owner. Remove attempt-local Codex wiring on failed prepare or shutdown while preserving existing persistent Codex files, and ensure HTTP, pidfile, WebSocket, browser, gateway, queue, approval, realtime, epoch, timers, child, and group ownership is terminal before a failed start returns.
 5. Fold regression coverage into the existing executable, process lifecycle, workbench owner, production cleanup, and composed process-contract owners. Drive the public ./bin/canvas start failure matrix with isolated homes and immediate injected proof outcomes, use fake time for proof timeout and backoff, assert exact attempt PIDs/groups and residue, cover signed-out success, initial/concurrent/reload/crash/restart/shutdown census, and keep one minimal real process-group seam.
 6. Run only the focused changed owners, focused formatting/lint/type checks that fit the assigned scope, and git diff checks. Commit coherent conventional slices and leave every acceptance criterion unchecked with TASK-143.08.04 In Progress for parent review.
+
+7. Remediate review findings with one application-owned terminal-cleanup acknowledgement before outer force, process-state observation for recovery acquisition, retained stderr ownership after readiness, and partial executable mocks; consolidate focused lifecycle and public-command owners.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -56,6 +58,12 @@ Diagnosis at exact base 3f2f5ab49a2b7f10ff87798b9ed9b1a0fa29ca22: hiding only th
 Implemented the mandatory-start lifecycle on 2026-09-03. Public start now preflights the package-local runtime, observes the detached server, forwards one bounded refusal, and TERM/KILL-observes a failed server before returning. The server formats typed startup failures without stacks and resets attempt-local Codex wiring only after verified shutdown. Codex-process now distinguishes --version proof timeout and retains/reaps a post-spawn child whose group capture fails. The workbench keeps one process-child subscription, revokes dispatch on exit, cleans the retired graph, and activates only the replacement emitted after codex-process group cleanup. The real 0.151.0 signed-out handshake required accepting its omitted enabled-layer disabledReason field.
 
 Focused evidence: 52 module/repository owners passed serially; all 8 production cleanup owners passed through ./bin/canvas start, including the six failure forms, two concurrent starts sharing one child, signed-out readiness/thread denial, reload no-respawn, and shutdown census. A bounded real-process crash probe observed old pid 2992884 gone before replacement pid 2992905 and exactly two generation spawns. Focused oxlint, oxfmt --check, and git diff --check passed. The pre-existing broad codex-workbench-production owner is not claimed as validation because it already fails at the unrelated threadLinkCreate expectation on the fixed base.
+
+Review remediation opened at dd57c4d03418084fcdae1071cdfcdb8648b83d40. Valid findings: outer failed-start SIGKILL can preempt exact Codex group cleanup; recovery can hang when codex-process terminalizes before onChild; closing detached stderr after readiness can crash the server on a later log write; three process-contract mocks omit newly imported executable exports.
+
+Standards/spec remediation: the detached launcher now gives fd 2 an independent sink and receives startup failure plus terminal-cleanup proof on a dedicated fd 3 record. Canvas lifetime publishes proof only after every entered resource stops successfully; failed-start force cannot SIGKILL the outer canvas before that proof, so the inner Codex owner remains alive through exact group TERM/KILL verification. Recovery acquisitions now subscribe to codex-process snapshots and convert terminal group-cleanup or replacement-spawn states into the exact failed acquisition before any next onChild; the retained owner remains inspectable while public dispatch stays revoked. Process-contract executable mocks now spread the actual module.
+
+Remediation evidence: 27 focused canvas lifecycle/terminal module checks, 13 codex-process owner checks, 3 real group cleanup checks, 8 public production-cleanup checks, 3 HTTP lifetime checks, and 2 startup-signal checks passed. The force-boundary public owner took 18.73s with a 5.5s delayed graph and a TERM-resistant leader/descendant, then proved the exact canvas identity, both Codex start identities, and the whole process group absent. The logged-request owner proved HTTP 500 was written to the file log and /health remained live. Two composed process owners now pass the repaired mocks and reach the pre-existing unrelated threadLinkCreate not_delivered baseline; they are not claimed as green evidence.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

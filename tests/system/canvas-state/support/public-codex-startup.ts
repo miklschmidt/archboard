@@ -68,3 +68,19 @@ export function runPublicCanvasAsync(command: "start" | "stop", environment: Nod
 		},
 	);
 }
+
+export async function loggedRequestFailure(base: string, root: string) {
+	const response = await fetch(`${base}/api/elements?board=scratch&doing=probe`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: "{",
+	});
+	await Bun.sleep(25);
+	return {
+		status: response.status,
+		health: await (await fetch(`${base}/health`)).json(),
+		logged: readFileSync(join(root, "state/archboard/archboard.log"), "utf8").includes(
+			"Unhandled error",
+		),
+	};
+}
