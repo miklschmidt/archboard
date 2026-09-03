@@ -5,7 +5,7 @@ import path from "node:path";
 import {
 	createTestWallClockReporter,
 	type TestWallClockDeclaration,
-} from "../../support/test-wall-clock.ts";
+} from "./support/test-wall-clock.ts";
 import { TEST_WALL_CLOCK_BUDGET_MS } from "../../../src/shared/timing/timing.ts";
 import { inspectTestWallClockPolicy } from "./support/test-wall-clock-policy.ts";
 
@@ -43,7 +43,7 @@ describe("test wall-clock reporter", () => {
 	test("rejects the obsolete 91-second approval-expiry shape with corrective output", () => {
 		expect(TEST_WALL_CLOCK_BUDGET_MS).toBe(20_000);
 		expect(() => reporterAt(91_000).finish("pending visual mutation expires")).toThrow(
-			`Slow test "pending visual mutation expires" took 91000.00 ms, above its ${TEST_WALL_CLOCK_BUDGET_MS} ms wall-clock budget. Replace production-duration waits with controlled time, or add a source-local declareTestWallClockBudget call with a reason, TEST_* outer bound, task, and recorded evidence.`,
+			`Slow test "pending visual mutation expires" took 91000.00 ms, above its ${TEST_WALL_CLOCK_BUDGET_MS} ms wall-clock budget. Replace production-duration waits with controlled time, or add a source-local declareTestWallClockBudget call as the test body's first statement with its exact name, a reason, TEST_* outer bound, task, and recorded evidence.`,
 		);
 	});
 
@@ -61,41 +61,106 @@ describe("test wall-clock repository policy", () => {
 		const sources = new Map([
 			[
 				"tests/system/example/owner.test.ts",
-				`test("real owner", () => {});
-				declareTestWallClockBudget({
-					test: "real owner",
-					reason: "Uses a real external process.",
-					outerBoundMs: TEST_REAL_OWNER_TIMEOUT_MS,
-					task: "TASK-148.07",
-					evidence: "Recorded at 21,104 ms on the hosted runner.",
+				`import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
+				test("real owner", () => {
+					declareTestWallClockBudget({
+						test: "real owner",
+						reason: "Uses a real external process.",
+						outerBoundMs: TEST_REAL_OWNER_TIMEOUT_MS,
+						task: "TASK-148.07",
+						evidence: "Recorded at 21,104 ms on the hosted runner.",
+					});
 				});`,
 			],
 		]);
 		expect(
 			inspectTestWallClockPolicy({
-				bunfig: '[test]\npreload = ["./tests/test-preload.ts"]',
+				bunfig: '[test]\npreload = ["./tests/system/repository-policy/support/test-preload.ts"]',
 				sources,
 			}),
 		).toEqual([]);
 	});
 
-	test("rejects missing preload coverage and unstable declaration fields", () => {
-		const errors = inspectTestWallClockPolicy({
-			bunfig: "[test]",
-			sources: new Map([
-				[
-					"tests/system/example/owner.test.ts",
-					'test("real owner", () => {}); declareTestWallClockBudget({ test: "real owner", outerBoundMs: 42, task: "later" });',
-				],
-			]),
-		});
-		expect(errors).toEqual([
-			"bunfig.toml must preload ./tests/test-preload.ts for every native Bun test lane",
-			"tests/system/example/owner.test.ts: wall-clock declaration needs a non-empty reason string",
-			"tests/system/example/owner.test.ts: wall-clock declaration needs a non-empty evidence string",
-			"tests/system/example/owner.test.ts: wall-clock declaration outerBoundMs must name a TEST_* constant",
-			"tests/system/example/owner.test.ts: wall-clock declaration needs a TASK-* reference",
+	test("parses TOML so a commented preload cannot satisfy coverage", () => {
+		expect(
+			inspectTestWallClockPolicy({
+				bunfig: '[test]\n# preload = ["./tests/system/repository-policy/support/test-preload.ts"]',
+				sources: new Map(),
+			}),
+		).toEqual([
+			"bunfig.toml test.preload must include ./tests/system/repository-policy/support/test-preload.ts",
 		]);
+	});
+
+	test.each([
+		[
+			"commented fields",
+			`import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
+			test("real owner", () => {
+				declareTestWallClockBudget({
+					test: "real owner",
+					// reason: "commented out",
+					outerBoundMs: TEST_REAL_OWNER_TIMEOUT_MS,
+					task: "TASK-148.07",
+					// evidence: "commented out",
+				});
+			});`,
+			"wall-clock declaration needs field reason",
+		],
+		[
+			"aliased helper",
+			`import { declareTestWallClockBudget as approve } from "../repository-policy/support/test-wall-clock.ts";
+			test("real owner", () => { approve({}); });`,
+			"declareTestWallClockBudget must not be aliased",
+		],
+		[
+			"indirect declaration",
+			`import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
+			const declaration = { test: "real owner" };
+			test("real owner", () => { declareTestWallClockBudget(declaration); });`,
+			"declareTestWallClockBudget needs one inline object literal",
+		],
+		[
+			"indirect function",
+			`import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
+			const approve = declareTestWallClockBudget;
+			test("real owner", () => { approve({}); });`,
+			"declareTestWallClockBudget may only appear in its direct import and call",
+		],
+		[
+			"name mismatch",
+			`import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
+			test("real owner", () => {
+				declareTestWallClockBudget({
+					test: "other owner",
+					reason: "Uses real time.",
+					outerBoundMs: TEST_REAL_OWNER_TIMEOUT_MS,
+					task: "TASK-148.07",
+					evidence: "Recorded at 21,104 ms.",
+				});
+			});`,
+			'wall-clock declaration names "other owner", not its containing test "real owner"',
+		],
+		[
+			"wildcard name",
+			`import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
+			test("real * owner", () => {
+				declareTestWallClockBudget({
+					test: "real * owner",
+					reason: "Uses real time.",
+					outerBoundMs: TEST_REAL_OWNER_TIMEOUT_MS,
+					task: "TASK-148.07",
+					evidence: "Recorded at 21,104 ms.",
+				});
+			});`,
+			"wall-clock declaration test must not contain a wildcard",
+		],
+	] as const)("rejects %s", (_case, source, message) => {
+		const errors = inspectTestWallClockPolicy({
+			bunfig: '[test]\npreload = ["./tests/system/repository-policy/support/test-preload.ts"]',
+			sources: new Map([["tests/system/example/owner.test.ts", source]]),
+		});
+		expect(errors.some((error) => error.includes(message))).toBeTrue();
 	});
 
 	test("keeps the real checkout covered and every declaration structured", () => {

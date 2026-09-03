@@ -620,6 +620,8 @@ export const TEST_NOTE_WATCH_CLEAR_TIMEOUT_MS = LOCK_WATCH_MS;
 /** Ordinary browser commands stay at 30s; the 10k-element initial render gets three windows, finite and not an SLA. */
 export const TEST_BROWSER_COMMAND_TIMEOUT_MS = BROWSER_EXPORT_TIMEOUT_MS;
 export const TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS = 3 * TEST_BROWSER_COMMAND_TIMEOUT_MS;
+/** The 10,000-element real-browser performance owner measured 55.9-76.84s; eight command windows preserve its existing finite case bound. */
+export const TEST_HUMAN_EDIT_PERFORMANCE_CASE_TIMEOUT_MS = 8 * TEST_BROWSER_COMMAND_TIMEOUT_MS;
 /** Forty-two real interleaved browser/server cycles were measured at about 40s; four command windows retain the existing finite Bun case bound. */
 export const TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS = 4 * TEST_BROWSER_COMMAND_TIMEOUT_MS;
 /** Matches the existing loopback and lock polling cadence without busy-waiting. */

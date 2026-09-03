@@ -6,10 +6,11 @@ import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 import {
 	REPORT_PROGRESS_MS,
-	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_BROWSER_POLL_MS,
+	TEST_HUMAN_EDIT_PERFORMANCE_CASE_TIMEOUT_MS,
 	TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
+import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { processExists, startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
@@ -172,6 +173,15 @@ const readPageState = inExcalidrawApp(`
 test(
 	"10,000-element human editing stays local and receives compact acknowledgements",
 	async () => {
+		declareTestWallClockBudget({
+			test: "10,000-element human editing stays local and receives compact acknowledgements",
+			reason:
+				"The retained 10,000-element browser workload measures human edits while a real report persists.",
+			outerBoundMs: TEST_HUMAN_EDIT_PERFORMANCE_CASE_TIMEOUT_MS,
+			task: "TASK-148.05",
+			evidence:
+				"TASK-148.05 measured this owner at 73.93 seconds before and 76.84 seconds after its timing-sleep removal.",
+		});
 		await using resources = new AsyncDisposableStack();
 		const { ownerRoot } = browserTestRoots();
 		const vault = path.join(ownerRoot, "vault");
@@ -454,5 +464,5 @@ test(
 		);
 		expect(readFsyncTrace(traceFile).incomplete).toEqual([]);
 	},
-	TEST_BROWSER_COMMAND_TIMEOUT_MS * 8,
+	TEST_HUMAN_EDIT_PERFORMANCE_CASE_TIMEOUT_MS,
 );

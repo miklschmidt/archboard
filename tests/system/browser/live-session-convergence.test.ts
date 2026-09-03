@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { measureLineWidth } from "../../../src/runtime/engine/measure-text.ts";
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
 import { TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
-import { declareTestWallClockBudget } from "../../support/test-wall-clock.ts";
+import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
@@ -40,16 +40,6 @@ import {
 } from "./support/page-scene.js";
 
 setDefaultTimeout(TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS);
-
-declareTestWallClockBudget({
-	test: "42 rotating agent and human cycles converge after every write pair",
-	reason:
-		"The regression needs 42 real browser cycles so divergence cannot hide behind a final-state comparison.",
-	outerBoundMs: TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS,
-	task: "TASK-076",
-	evidence:
-		"The retained serial-browser owner takes about 40 seconds on the measured local runner.",
-});
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const MEASURER_EPSILON = 0.0012;
@@ -132,6 +122,15 @@ return {
 }
 
 test("42 rotating agent and human cycles converge after every write pair", async () => {
+	declareTestWallClockBudget({
+		test: "42 rotating agent and human cycles converge after every write pair",
+		reason:
+			"The regression needs 42 real browser cycles so divergence cannot hide behind a final-state comparison.",
+		outerBoundMs: TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS,
+		task: "TASK-076",
+		evidence:
+			"The retained serial-browser owner takes about 40 seconds on the measured local runner.",
+	});
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const root = mkdtempSync(join(ownerRoot, "live-convergence-"));
