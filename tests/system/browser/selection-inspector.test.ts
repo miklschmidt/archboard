@@ -386,7 +386,7 @@ test(
 			Boolean,
 			"the opener settings recovery dialog to finish loading",
 		);
-		await browser.run(["find", "role", "button", "click", "--name", "Cancel", "--exact"]);
+		await browser.run(["press", "Enter"]);
 		await pollUntil(
 			() => browser.eval<boolean>("!document.querySelector('[role=\"dialog\"]')"),
 			Boolean,
