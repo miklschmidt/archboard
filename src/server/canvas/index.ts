@@ -1,4 +1,5 @@
 export { default, startServer } from "./lib/application.js";
+export { canvasStartupFailureMessage } from "./lib/startup-error.js";
 export {
 	CanvasApplicationBusyError,
 	CanvasApplicationHeldError,

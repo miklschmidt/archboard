@@ -311,6 +311,12 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 	let stopping = false;
 	let nextGeneration = 0;
 	const groups = new Set<ChildRecord>();
+	const unprovenChildren = new Set<UnprovenChild>();
+
+	interface UnprovenChild {
+		readonly child: Child;
+		readonly closed: Promise<void>;
+	}
 
 	interface ChildRecord {
 		readonly child: Child;
@@ -356,9 +362,10 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 	}
 
 	function snapshot(): CodexProcessSnapshot {
+		const unprovenChild = unprovenChildren.values().next().value as UnprovenChild | undefined;
 		return Object.freeze({
 			state,
-			pid: current?.child.pid ?? null,
+			pid: current?.child.pid ?? unprovenChild?.child.pid ?? null,
 			executablePath,
 			argv: Object.freeze([...argv]),
 			cwd,
@@ -385,7 +392,8 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 
 	function retireListener(kind: "snapshot" | "child", cause: unknown): void {
 		terminalFailure(listenerFailure(kind, cause));
-		if (!stopping && (current || groups.size > 0)) void stop().catch(() => undefined);
+		if (!stopping && (current || groups.size > 0 || unprovenChildren.size > 0))
+			void stop().catch(() => undefined);
 	}
 
 	function publish(): void {
@@ -586,7 +594,7 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 		}
 		setState("terminal_failure");
 		rejectPendingStart(error);
-		if (!current && groups.size === 0) {
+		if (!current && groups.size === 0 && unprovenChildren.size === 0) {
 			const cleanupError = releaseStorage();
 			if (cleanupError) {
 				terminalError = cleanupError;
@@ -641,7 +649,7 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 	}
 
 	function waitForClosedOrAt(
-		record: ChildRecord,
+		record: Pick<ChildRecord, "closed"> | UnprovenChild,
 		deadlineAtMs: number,
 	): Promise<"closed" | "time"> {
 		const delayMs = Math.max(0, deadlineAtMs - now());
@@ -1112,13 +1120,27 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 				message: `Could not prove ownership of the Codex process group after spawn. Recovery: refuse restart until the child-group boundary is available.`,
 				cause,
 			});
+			let resolveClosed!: () => void;
+			const unproven: UnprovenChild = {
+				child,
+				closed: new Promise<void>((resolve) => void (resolveClosed = resolve)),
+			};
+			unprovenChildren.add(unproven);
+			child.once("close", () => {
+				unprovenChildren.delete(unproven);
+				resolveClosed();
+				if (!stopping) terminalFailure(error);
+			});
+			terminalError = sanitizeProcessError(error);
+			lastFailure = failureValue(terminalError);
+			accountReady = false;
+			setState("terminal_failure");
 			try {
 				child.kill("SIGKILL");
 			} catch {
-				/* A positive child handle is the only safe fallback when group proof failed. */
+				/* stop() retains this exact child handle and retries before it can report success. */
 			}
-			terminalFailure(error);
-			throw error;
+			return;
 		}
 
 		let resolveClosed!: ChildRecord["resolveClosed"];
@@ -1296,6 +1318,23 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 					})(),
 				);
 			}
+			for (const unproven of unprovenChildren) {
+				work.push(
+					(async () => {
+						try {
+							unproven.child.kill("SIGKILL");
+						} catch (cause) {
+							throw shutdownError(
+								`Could not kill the Codex child whose process group was unavailable: ${safeCauseMessage(cause)}. Recovery: inspect the retained child and retry stop.`,
+							);
+						}
+						if ((await waitForClosedOrAt(unproven, deadlineAtMs)) === "time")
+							throw shutdownError(
+								"The Codex child whose process group was unavailable did not close before the composed shutdown deadline. Recovery: inspect the retained child and retry stop.",
+							);
+					})(),
+				);
+			}
 			const results = await settleBeforeDeadline(work, deadlineAtMs);
 			const failed = results.find(
 				(result): result is PromiseRejectedResult => result.status === "rejected",
@@ -1306,7 +1345,7 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 					? sanitizeProcessError(cause)
 					: shutdownError(`Could not complete Codex shutdown: ${safeCauseMessage(cause)}.`);
 			}
-			if (now() >= deadlineAtMs || current || groups.size > 0)
+			if (now() >= deadlineAtMs || current || groups.size > 0 || unprovenChildren.size > 0)
 				throw shutdownError(
 					"Codex shutdown did not prove that the child and its process group are quiescent. Recovery: inspect the retained ownership and retry stop.",
 				);

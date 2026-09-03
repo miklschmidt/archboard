@@ -41,14 +41,17 @@ export function manualScheduler(): ManualScheduler {
 	return Object.freeze({ now: () => time, schedule, cancel, runNext });
 }
 
-function fakeChild(pid: number): FakeChild {
+function fakeChild(pid: number, onKill: () => void): FakeChild {
 	const child = new EventEmitter() as unknown as FakeChild;
 	Object.assign(child, {
 		pid,
 		stdin: new PassThrough(),
 		stdout: new PassThrough(),
 		stderr: new PassThrough(),
-		kill: () => true,
+		kill: () => {
+			onKill();
+			return true;
+		},
 	});
 	return child;
 }
@@ -59,21 +62,27 @@ export function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
 	let nextPid = 40_000;
 	let groupStatus: GroupStatus = "owned";
 	let nextGroupStatus: GroupStatus = "owned";
+	let captureFails = false;
 	const signals: string[] = [];
 	const dependencies = {
 		spawn: () => {
 			groupStatus = nextGroupStatus;
 			nextGroupStatus = "owned";
-			child = fakeChild(++nextPid);
+			child = fakeChild(++nextPid, () => {
+				if (closeOnKill) child?.emit("close", null, "SIGKILL");
+			});
 			if (autoSpawn) queueMicrotask(() => child?.emit("spawn"));
 			return child!;
 		},
 		processGroup: {
-			capture: (leaderPid: number) => ({
-				leaderPid,
-				pgid: leaderPid,
-				leaderStartTime: `test-start-${leaderPid}`,
-			}),
+			capture: (leaderPid: number) => {
+				if (captureFails) throw new Error("injected process-group capture failure");
+				return {
+					leaderPid,
+					pgid: leaderPid,
+					leaderStartTime: `test-start-${leaderPid}`,
+				};
+			},
 			inspect: () => groupStatus,
 			signal: (_identity: unknown, signal: "SIGTERM" | "SIGKILL") => {
 				signals.push(signal);
@@ -103,6 +112,9 @@ export function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
 		reuse: () => {
 			groupStatus = "reused";
 			nextGroupStatus = "reused";
+		},
+		failCapture: () => {
+			captureFails = true;
 		},
 	});
 }

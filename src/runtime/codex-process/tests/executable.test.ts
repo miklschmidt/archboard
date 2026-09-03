@@ -121,7 +121,11 @@ describe("Codex executable ownership", () => {
 				options: Record<string, unknown>,
 			) => {
 				observedOptions = options;
-				throw new Error("simulated hanging candidate timeout");
+				throw Object.assign(new Error("simulated hanging candidate timeout"), {
+					code: "ETIMEDOUT",
+					killed: true,
+					signal: "SIGKILL",
+				});
 			}) as unknown as typeof execFileSync;
 			let timedOut: unknown;
 			try {
@@ -130,7 +134,7 @@ describe("Codex executable ownership", () => {
 				timedOut = cause;
 			}
 			expect(timedOut).toBeInstanceOf(CodexExecutableError);
-			expect((timedOut as CodexExecutableError).code).toBe("version_unavailable");
+			expect((timedOut as CodexExecutableError).code).toBe("verification_timeout");
 			expect(observedOptions?.timeout).toBe(CODEX_REQUEST_SETTLEMENT_MS);
 			expect(observedOptions?.maxBuffer).toBe(CODEX_EXECUTABLE_PROOF_MAX_BYTES);
 			expect(observedOptions?.env).not.toHaveProperty("OPENAI_API_KEY");
