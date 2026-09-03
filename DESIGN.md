@@ -273,18 +273,15 @@ Ordered by dependency, not ambition. Backlog.md is authoritative —
   it already reported the board each pane adopted rather than a server-wide
   one — only the loss of the line explaining why the two were always the same.
   The hard half was authority, not display: with two boards on screen, "the
-  board" has no referent, so **every call names its board and one that does not
-  is refused** (ADR 0009). The active pointer is deleted rather than defaulted,
-  because a default is the same ambient resolution in a costume. Panes keep one
-  default, on the display axis only: `board open` with a single pane on screen
-  goes into it, with two it needs `--pane`, and the answer always says where
-  the board landed.
+  board" has no referent, so **every content call names one persisted board and
+  a missing name is refused with persisted choices** (ADR 0020). The active
+  pointer is deleted rather than defaulted, because a default is the same
+  ambient resolution in a costume. Panes keep one default, on the display axis
+  only: `board open` with a single pane on screen goes into it, with two it needs
+  `--pane`, and the answer always says where the board landed.
 
 **Later**
 
-- **Owned workbench session** — one exact-binary stdio child, thread links,
-  generated experimental protocol, dynamic coordination tools, semantic context,
-  linked workhorse and coordinator timelines, and browser-native realtime V3.
 - **Architecture node kinds** as a controlled vocabulary — service, queue,
   datastore, gateway, external. Boxes-and-arrows with infra-flavoured types; no
   resource graph underneath.

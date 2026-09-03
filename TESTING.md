@@ -128,18 +128,13 @@ whether the write succeeds.
 
 ## 6. Verify Codex semantic delivery
 
-The controlled module owners cover filtering, exact-link revalidation, the
-single developer-message payload, and all three outcomes:
+The controlled module owners cover the
+[bound app-server contract](DESIGN.md#2-mid-conversation-context--the-bound-app-server-session):
 
 ```bash
 bun test src/runtime/codex-semantic-context/tests \
   src/runtime/codex-thread-context/tests
 ```
-
-`delivered` means the one `thread/inject_items` request settled successfully.
-`not_delivered` records a refusal before or during that attempt and includes an
-inspectable reason. `outcome_unknown` means the request was attempted but its
-settlement was lost; do not retry it or choose another thread.
 
 The real composition owner starts the Canvas application and its owned child,
 links a workhorse, sends one human change through `thread/inject_items`, proves
