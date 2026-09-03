@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 12:45'
+updated_date: '2026-09-03 12:55'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -20,6 +20,8 @@ modified_files:
   - src/shared/timing/timing.ts
   - src/runtime/engine/tests/git-async.test.ts
   - tests/system/canvas-state/codex-workbench-production-cleanup.test.ts
+  - tests/system/canvas-state/codex-workbench-production.test.ts
+  - tests/system/process-contracts/support/delayed-checkout-owner.ts
 parent_task_id: TASK-143.08
 priority: high
 type: task
@@ -184,6 +186,10 @@ A diagnostic-only assertion preserved both exit-status requirements while attach
 Authoritative gate A18 at aae5f49e: lint, formatting, both type checks, frontend build, and 1,902/1,902 module tests passed. The system lane passed 355/356 owners. Its sole failure was the nested Git/opener watchdog: the injected read-failure case waited one second for read-failure.leader, but its 25 ms reader fault had already canceled the operation before the fake Git child published that marker. Exact unit archboard-task143-worker-command-7FVBlsAg.service exited normally with status 1 after 5m1.544s, consumed 5m32.389s CPU, peaked at 1.9G with 0B swap, and is inactive/dead with MainPID=0, empty ControlGroup, and absent cgroup. The same watchdog passed alone in 4.685s under capped unit archboard-task143-worker-command-RsSIUDbV.service.
 
 The first diagnostic adjustment allowed fixture observation for the real Git command deadline. Repetition 2 of five then reached the Bun default 5-second case bound with the same absent marker, proving additional waiting cannot repair a fault that prevents the marker. That diagnostic produced four passes and one failure under capped unit archboard-task143-worker-command-Tw95wwrJ.service. The owner now creates one marker-readiness promise and makes the injected first-reader fault wait on it; only after the child is proven live does the requested 25, 50, or 250 ms fault delay begin. This deterministically exercises cleanup, abort precedence, and timeout precedence against a real owned child. The named fixture-start observation equals the production Git command deadline, while the composed module case receives two command deadlines; the unchanged 20-second external watchdog remains the final owner bound, and all sub-second cleanup assertions remain unchanged. The exact nested process-contract owner passed 10/10 repetitions under capped unit archboard-task143-worker-command-kKneSH8W.service. No product timeout, lifecycle assertion, lint/type rule, or test inventory was weakened.
+
+Authoritative gate A19 at 43c7ad4a: lint, formatting, both type checks, frontend build, and 1,902/1,902 module tests passed. The system lane passed 354/356 owners. The production Codex composition owner read its live NDJSON log during appendFileSync and attempted to parse one unterminated final record. The concurrent first-open checkout owner reached Bun's implicit 5-second case bound; teardown then canceled its second request, which surfaced as a 500 and one reaped dangling process. The exact unit archboard-task143-worker-command-OVUP05vj.service exited normally with status 1 after 4m59.857s, consumed 5m30.758s CPU, peaked at 2.5G with 0B swap, and is inactive/dead with MainPID=0, empty ControlGroup, and absent cgroup.
+
+The NDJSON race reproduced five times in 20 focused repetitions under capped unit archboard-task143-worker-command-1TiLwAqD.service. Its live reader now parses only newline-terminated records, matching the existing lifecycle-support reader: an in-progress tail is deferred, while malformed completed records still fail. The corrected production owner passed 30/30 repetitions under capped unit archboard-task143-worker-command-HZaSyUv9.service. The checkout owner passed 5/5 focused repetitions before remediation but took 4.16-4.18 seconds because each of its four exact release-file barriers polled only once per second. The release file remains the sole gate; its test-only cadence is now the named 25 ms TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS, retaining the ordinary Bun case bound and every process identity, scene, authority, response, and cleanup assertion. The owner then passed 10/10 repetitions in 1.32-1.41 seconds under capped unit archboard-task143-worker-command-wT92tnKL.service. No product timeout, test assertion, lint/type rule, or test inventory was weakened.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
