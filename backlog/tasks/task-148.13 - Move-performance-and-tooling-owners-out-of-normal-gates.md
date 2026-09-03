@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-03 17:33'
-updated_date: '2026-09-03 18:49'
+updated_date: '2026-09-03 18:56'
 labels: []
 dependencies:
   - TASK-143.08.05
@@ -80,7 +80,7 @@ Implementation must wait for TASK-143.08.05 and for reconciliation of the active
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Make comment masking length-preserving in the single executable Bun parser so match offsets stay aligned with source arguments. Add direct parser and inventory mutations for full-line and trailing-comment newline cases, including opt-in reachability. 2. Delete the remaining 32-item partial-complement directional scale/formula case from the normal sweep-filtering owner without moving or replacing it. 3. Run focused parser/inventory checks, remaining normal sweep-filtering semantics, both TypeScript projects, exact lint/format/diff, and inventory counts. 4. Record the remediation through Backlog, commit separately, and callback READY_FOR_REREVIEW while keeping TASK-148.13 In Progress.
+1. Extend the single executable Bun parser with an explicit leading-option grammar: bun run accepts --silent before a required static script; unknown, value-taking, or ambiguous leading run options surface an actionable inventory error. 2. Require each executable bun test invocation to retain at least one explicit static selector after the existing supported runner flags; selectorless or dynamic/ambiguous forms surface an actionable inventory error. 3. Add only the required mutation owners for --silent opt-in reachability and selectorless bun test, preserving existing offset and inert-command coverage. 4. Run focused inventory/CI tests, both TypeScript checks, exact lint/format/diff, record notes, commit separately, and callback READY_FOR_REREVIEW while keeping the task In Progress.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -160,4 +160,14 @@ Counts remain 200/83/18/16 normal and 8/13/1/2 opt-in because the deletion remov
 Focused validation: inventory plus CI policy 49 tests in 36 ms; remaining normal sweep-filtering semantics 8 tests in 59 ms; root TypeScript 1.73 s; frontend TypeScript 0.37 s; Oxlint passed; Oxfmt passed in 2 ms; diff check passed. The capacity representative was unchanged and was not rerun. No broad or long lane ran.
 
 Focused tests left no `archboard-inventory-tsx-*` or `archboard-browser-preflight-*` directories in `/tmp`. Previously reported pre-existing residue remains untouched. Task stays In Progress for rereview.
+
+Fourth review remediation on top of 1bda94ef:
+
+The shared executable Bun parser now applies a narrow fail-closed grammar. `bun run` accepts repeated no-argument `--silent` flags before one required static script name, strips those flags before graph extraction, and reports every other leading option or unresolved script instead of guessing. `bun test` accepts only the leading runner forms used by this repository: `--isolate`, `--max-concurrency=<positive integer>`, and `--path-ignore-patterns` with a static separate or equals value. It requires at least one explicit static selector and reports unsupported options, missing option values, dynamic selectors, and broad selectorless discovery. Inventory and workflow consumers surface parser errors and exclude invalid records from graph and owner inference.
+
+Two mutation-red owners were added. `bun run --silent test:opt-in:capacity` was previously missed and now reaches the opt-in edge, producing the existing reachability error. A reachable lane containing selectorless `bun test` previously produced no parser error and now reports that broad discovery is not inventory-safe. Comment offset preservation, inert echo and comment handling, repeated edges, helpers, manual opt-ins, exact ignores, TSX discovery, and current classifications remain green.
+
+Focused validation: inventory plus normal CI policy passed 51 tests and 61 assertions in 51 ms; root TypeScript passed in 1.55 s; frontend TypeScript passed in 0.29 s; exact Oxlint passed; exact Oxfmt passed in 1 ms; diff check passed.
+
+Operational note: an initial Backlog CLI notes command accidentally expanded Markdown backticks in the shell and launched selectorless `bun test`. It was terminated after 18 seconds during system board-inspection execution; no result from that accidental partial broad run was accepted as validation. No Bun test process remains. The only matching package-test residue remains the previously reported `/tmp/archboard-task-130-05-package-bjuM2J`; no inventory, browser-preflight, or HTTP residue was left. Previously reported pre-existing residue remains untouched. Task stays In Progress for rereview.
 <!-- SECTION:NOTES:END -->

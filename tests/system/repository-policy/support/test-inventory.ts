@@ -67,7 +67,7 @@ function workflowRunCommands(workflow: string): { commands: string[]; error?: st
 
 function executableRunScripts(command: string, unique = true): string[] {
 	const scripts = executableBunInvocations(command)
-		.filter((invocation) => invocation.command === "run")
+		.filter((invocation) => invocation.command === "run" && invocation.error === undefined)
 		.map((invocation) => invocation.args[0])
 		.filter((script): script is string => script !== undefined);
 	return unique ? [...new Set(scripts)] : scripts;
@@ -84,6 +84,10 @@ export function inspectWorkflow(workflow: string): string[] {
 		);
 	}
 	for (const command of parsed.commands) {
+		for (const invocation of executableBunInvocations(command)) {
+			if (invocation.error)
+				errors.push(`the workflow has an invalid executable Bun invocation: ${invocation.error}`);
+		}
 		for (const script of executableRunScripts(command)) {
 			if (script === "check") {
 				if (command !== "bun run check") {
@@ -139,7 +143,7 @@ function isTestFile(file: string): boolean {
 function testSelections(command: string): Array<{ selectors: string[]; ignores: string[] }> {
 	const selections: Array<{ selectors: string[]; ignores: string[] }> = [];
 	for (const invocation of executableBunInvocations(command)) {
-		if (invocation.command !== "test") continue;
+		if (invocation.command !== "test" || invocation.error) continue;
 		const selectors: string[] = [];
 		const ignores: string[] = [];
 		const tokens = invocation.args;
@@ -212,6 +216,14 @@ export function discoverNativeTests(repoRoot: string): string[] {
 export function inspectTestInventory(input: InventoryInput): InventoryResult {
 	const errors: string[] = [];
 	const pushScript = input.pushScript ?? "check";
+	for (const [name, command] of Object.entries(input.scripts)) {
+		for (const invocation of executableBunInvocations(command)) {
+			if (invocation.error)
+				errors.push(
+					`package script \`${name}\` has invalid executable Bun invocation: ${invocation.error}`,
+				);
+		}
+	}
 	const reachability = pushReachability(input.scripts, pushScript);
 	for (const cycle of reachability.cycles) errors.push(`package script cycle: ${cycle}`);
 	for (const script of OPT_IN_PACKAGE_SCRIPTS) {
