@@ -95,7 +95,8 @@ export function diagnoseComparisonBudget(
 	comparisonLimit: number,
 ): ComparisonBudgetDiagnostics {
 	const snapshot = snapshotInspectionInput(records);
-	if (snapshot.limit) throw new Error("Comparison diagnostics require input below the snapshot limit.");
+	if (snapshot.limit)
+		throw new Error("Comparison diagnostics require input below the snapshot limit.");
 	const detection = detectBoard(
 		decodeRecords(snapshot.records, snapshot.blockedSourceIndexes),
 		inspectBoard([]).policy,

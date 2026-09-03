@@ -12,12 +12,8 @@ function detectWithRepresentativeLimit(records: ReturnType<typeof performanceBoa
 describe("comparison limits", () => {
 	test("keeps a smaller comparison matrix below its representative limit", () => {
 		const detection = detectWithRepresentativeLimit(performanceBoard(10, 30, 10));
-		expect(detection.broadPhaseComparisons).toBeLessThanOrEqual(
-			REPRESENTATIVE_COMPARISON_LIMIT,
-		);
-		expect(detection.findings.some((f) => f.code === "INSPECTION_LIMIT_EXCEEDED")).toBe(
-			false,
-		);
+		expect(detection.broadPhaseComparisons).toBeLessThanOrEqual(REPRESENTATIVE_COMPARISON_LIMIT);
+		expect(detection.findings.some((f) => f.code === "INSPECTION_LIMIT_EXCEEDED")).toBe(false);
 	});
 
 	test("stops on the first comparison beyond the representative limit deterministically", () => {
@@ -44,9 +40,9 @@ describe("comparison limits", () => {
 	test("retains completed findings before the representative terminal stop", () => {
 		const detection = detectWithRepresentativeLimit(terminalComparisonBoard());
 		expect(detection.broadPhaseComparisons).toBe(REPRESENTATIVE_COMPARISON_LIMIT + 1);
-		expect(
-			detection.findings.filter((f) => f.code === "INSPECTION_LIMIT_EXCEEDED"),
-		).toHaveLength(1);
+		expect(detection.findings.filter((f) => f.code === "INSPECTION_LIMIT_EXCEEDED")).toHaveLength(
+			1,
+		);
 		expect(
 			detection.findings.some(
 				(f) => f.reason === "zero-length" && f.details.connectorId === "terminal-zero-segments",
