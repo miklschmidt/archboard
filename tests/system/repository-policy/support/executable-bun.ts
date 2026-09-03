@@ -1,6 +1,7 @@
 export interface ExecutableBunInvocation {
 	command: "run" | "test";
 	args: string[];
+	error?: string;
 }
 
 const EXECUTABLE_BUN = /\bbun\s+(run|test)\b/g;
@@ -241,6 +242,80 @@ function shellWords(text: string): string[] {
 	return words;
 }
 
+function staticArgument(argument: string): boolean {
+	return argument.length > 0 && !/[$`*?[\]{}()]/.test(argument);
+}
+
+function runInvocation(args: string[]): ExecutableBunInvocation {
+	let index = 0;
+	while (args[index] === "--silent") index += 1;
+	const script = args[index];
+	if (script?.startsWith("-")) {
+		return {
+			command: "run",
+			args,
+			error: `\`bun run\` has unsupported or ambiguous leading option \`${script}\`; only \`--silent\` is supported before the script name`,
+		};
+	}
+	if (!script || !staticArgument(script)) {
+		return {
+			command: "run",
+			args,
+			error: "`bun run` requires an explicit static script name after optional `--silent`",
+		};
+	}
+	return { command: "run", args: args.slice(index) };
+}
+
+function testInvocation(args: string[]): ExecutableBunInvocation {
+	let hasSelector = false;
+	for (let index = 0; index < args.length; index += 1) {
+		const argument = args[index] ?? "";
+		if (!hasSelector && argument === "--isolate") continue;
+		if (!hasSelector && argument.startsWith("--max-concurrency=")) {
+			const value = argument.slice("--max-concurrency=".length);
+			if (/^[1-9]\d*$/.test(value)) continue;
+		}
+		if (!hasSelector && argument === "--path-ignore-patterns") {
+			const value = args[++index];
+			if (value && staticArgument(value)) continue;
+			return {
+				command: "test",
+				args,
+				error: "`bun test --path-ignore-patterns` requires one explicit static value",
+			};
+		}
+		if (!hasSelector && argument.startsWith("--path-ignore-patterns=")) {
+			const value = argument.slice("--path-ignore-patterns=".length);
+			if (staticArgument(value)) continue;
+		}
+		if (argument.startsWith("-")) {
+			return {
+				command: "test",
+				args,
+				error: `\`bun test\` has unsupported or ambiguous option \`${argument}\`; supported leading flags are \`--isolate\`, \`--max-concurrency=<positive integer>\`, and \`--path-ignore-patterns <static path>\``,
+			};
+		}
+		if (!staticArgument(argument)) {
+			return {
+				command: "test",
+				args,
+				error: `\`bun test\` selector \`${argument}\` is not statically resolvable`,
+			};
+		}
+		hasSelector = true;
+	}
+	if (!hasSelector) {
+		return {
+			command: "test",
+			args,
+			error:
+				"`bun test` requires at least one explicit static selector; broad test discovery is not inventory-safe",
+		};
+	}
+	return { command: "test", args };
+}
+
 export function executableBunInvocations(command: string): ExecutableBunInvocation[] {
 	const sources = [command];
 	const pending = doubleQuotedSubstitutionBodies(command);
@@ -256,10 +331,8 @@ export function executableBunInvocations(command: string): ExecutableBunInvocati
 				const kind = match[1];
 				if (kind !== "run" && kind !== "test") return undefined;
 				const start = (match.index ?? 0) + match[0].length;
-				return {
-					command: kind,
-					args: shellWords(source.slice(start, commandEnd(source, start))),
-				};
+				const args = shellWords(source.slice(start, commandEnd(source, start)));
+				return kind === "run" ? runInvocation(args) : testInvocation(args);
 			})
 			.filter((invocation): invocation is ExecutableBunInvocation => invocation !== undefined);
 	});
