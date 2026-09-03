@@ -1,65 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 
-import {
-	createBrowserWorkbenchTransport,
-	type BrowserCommandDraft,
-	type BrowserWorkbenchSocket,
-} from "../index.js";
-
-type Request = Record<string, unknown>;
-
-class FakeSocket extends EventTarget implements BrowserWorkbenchSocket {
-	readonly sent: Request[] = [];
-	readyState = 1;
-	onRequest: ((request: Request, socket: FakeSocket) => void) | null = null;
-
-	send(raw: string): void {
-		const request = JSON.parse(raw) as Request;
-		this.sent.push(request);
-		this.onRequest?.(request, this);
-	}
-
-	reply(request: Request, value: unknown): void {
-		this.dispatchEvent(
-			new MessageEvent("message", {
-				data: JSON.stringify({
-					type: "codex_workbench_result",
-					requestId: request.requestId,
-					action: request.action,
-					ok: true,
-					value,
-				}),
-			}),
-		);
-	}
-
-	replyFailure(request: Request, error = "request rejected"): void {
-		this.dispatchEvent(
-			new MessageEvent("message", {
-				data: JSON.stringify({
-					type: "codex_workbench_result",
-					requestId: request.requestId,
-					action: request.action,
-					ok: false,
-					error,
-				}),
-			}),
-		);
-	}
-
-	event(message: unknown): void {
-		this.dispatchEvent(
-			new MessageEvent("message", {
-				data: JSON.stringify({ type: "codex_workbench_event", message }),
-			}),
-		);
-	}
-
-	close(): void {
-		this.readyState = 3;
-		this.dispatchEvent(new Event("close"));
-	}
-}
+import { createBrowserWorkbenchTransport, type BrowserCommandDraft } from "../index.js";
+import { FakeSocket, type FakeSocketRequest as Request } from "./fake-socket.js";
 
 function lease(expiresAtMs = 10_000, commandId = "command-a"): Record<string, unknown> {
 	return {
@@ -257,6 +199,11 @@ test("handshake uses the composed gateway envelope and exposes readiness capabil
 	expect(socket.sent).toEqual([
 		{ type: "codex_workbench_request", requestId: "request-1", action: "subscribe" },
 	]);
+	expect(transport.state()).toMatchObject({
+		kind: "readiness",
+		state: "thread_capable",
+		sequence: 7,
+	});
 	expect(transport.capabilities()).toMatchObject({
 		connected: true,
 		canReadAccount: true,
@@ -291,6 +238,7 @@ test("strict stream reduction rejects gaps, ignores duplicates, and recovers fro
 
 	socket.event(deltaMessage(5, { queue: { kind: "queue", status: "queued", entries: [] } }));
 	socket.event(deltaMessage(5, { queue: { kind: "queue", status: "queued", entries: [] } }));
+	expect(transport.sequence()).toBe(5);
 	expect(transport.state()).toMatchObject({ kind: "readiness", state: "thread_capable" });
 
 	recoverySequence = 6;
@@ -465,6 +413,7 @@ test("malformed and relationally contradictory messages become incompatible", as
 		kind: "connection",
 		state: "incompatible_contract",
 	});
+	expect(await rejection(transport.refresh())).toMatchObject({ code: "socket_unavailable" });
 
 	for (const threadLink of [
 		snapshot({ linkState: "unbound" }).threadLink,
