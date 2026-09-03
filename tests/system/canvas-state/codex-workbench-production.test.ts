@@ -146,7 +146,14 @@ describe.serial("actual production Codex composition", () => {
 			const threadLink = linked.threadLink as Record<string, unknown>;
 			expect(threadLink).toMatchObject({ state: "executable" });
 			expect(typeof threadLink.threadId).toBe("string");
-			expect(linked.coordinator).toMatchObject({ state: "ready" });
+			expect(linked.coordinator).toMatchObject({
+				state: "ready",
+				configuredModel: "gpt-5.6-luna",
+				configuredEffort: "medium",
+				model: "gpt-5.6-luna",
+				effort: "medium",
+				serviceTier: null,
+			});
 			expect(typeof (linked.coordinator as Record<string, unknown>).threadId).toBe("string");
 
 			expect(await current.request("mediaReady", { ready: true })).toMatchObject({ ok: true });

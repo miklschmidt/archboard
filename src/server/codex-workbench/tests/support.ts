@@ -273,6 +273,8 @@ export function createGatewayHarness(
 				state: "unbound",
 				threadId: null,
 				activeTurnId: null,
+				configuredModel: null,
+				configuredEffort: null,
 				model: null,
 				effort: null,
 				serviceTier: null,

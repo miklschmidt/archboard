@@ -200,6 +200,8 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 					state: "ready",
 					threadId: coordinatorThreadId,
 					activeTurnId: null,
+					configuredModel: "gpt-5.6-sol",
+					configuredEffort: "xhigh",
 					model: "gpt-5.6-sol",
 					effort: "xhigh",
 					serviceTier: "priority",

@@ -590,6 +590,8 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			state: z.enum(["unbound", "starting", "ready", "active", "reconnecting", "failed"]),
 			threadId: ThreadIdSchema.nullable(),
 			activeTurnId: TurnIdSchema.nullable(),
+			configuredModel: boundedText(256).nullable(),
+			configuredEffort: boundedText(64).nullable(),
 			model: boundedText(256).nullable(),
 			effort: boundedText(64).nullable(),
 			serviceTier: boundedText(64).nullable(),

@@ -13,6 +13,9 @@ import type {
 
 const RECONNECT_RECOVERY = "Wait for a fresh host snapshot before relying on this value.";
 const SETTINGS_RECOVERY = "Reconnect the Codex workbench so the host can publish it.";
+const SNAPSHOT_RECOVERY = "Wait for the Codex workbench to reconnect and publish a fresh snapshot.";
+const HANDSHAKE_RECOVERY = "Wait for the coordinator settings handshake to finish.";
+const HISTORY_RECOVERY = "Open the coordinator task separately to inspect its history.";
 
 function freezeField(value: WorkbenchCoordinatorField): WorkbenchCoordinatorField {
 	return Object.freeze(value);
@@ -27,12 +30,16 @@ function field(
 	return freezeField({ label, value, state, recovery });
 }
 
-function unavailable(label: string, hostFact: string): WorkbenchCoordinatorField {
+function unavailable(
+	label: string,
+	hostFact: string,
+	recovery = SETTINGS_RECOVERY,
+): WorkbenchCoordinatorField {
 	return field(
 		label,
 		`Unavailable: the host did not publish ${hostFact}.`,
 		"unavailable",
-		SETTINGS_RECOVERY,
+		recovery,
 	);
 }
 
@@ -87,27 +94,43 @@ function settingsFields(
 	settings: BrowserSettings | null,
 	effective: BrowserSnapshot["coordinator"],
 ): readonly WorkbenchCoordinatorField[] {
+	const missingRecovery = effective.state === "starting" ? HANDSHAKE_RECOVERY : SETTINGS_RECOVERY;
 	if (settings === null) {
 		return [
-			unavailable("Configured model", "the coordinator's configured model"),
-			unavailable("Configured reasoning effort", "the coordinator's configured reasoning effort"),
-			unavailable("Effective model", "the coordinator's effective model"),
-			unavailable("Effective reasoning effort", "the coordinator's effective reasoning effort"),
-			unavailable("Effective service tier", "the coordinator's effective service tier"),
-			unavailable("Approval policy", "approvalPolicy"),
-			unavailable("Approvals reviewer", "approvalsReviewer"),
-			unavailable("Sandbox policy", "sandboxPolicy"),
-			unavailable("Active permission profile", "activePermissionProfile"),
+			effective.configuredModel === null
+				? unavailable("Configured model", "the coordinator's configured model", missingRecovery)
+				: field("Configured model", effective.configuredModel),
+			effective.configuredEffort === null
+				? unavailable(
+						"Configured reasoning effort",
+						"the coordinator's configured reasoning effort",
+						missingRecovery,
+					)
+				: field("Configured reasoning effort", effective.configuredEffort),
+			unavailable("Effective model", "the coordinator's effective model", missingRecovery),
+			unavailable(
+				"Effective reasoning effort",
+				"the coordinator's effective reasoning effort",
+				missingRecovery,
+			),
+			unavailable(
+				"Effective service tier",
+				"the coordinator's effective service tier",
+				missingRecovery,
+			),
+			unavailable("Approval policy", "approvalPolicy", missingRecovery),
+			unavailable("Approvals reviewer", "approvalsReviewer", missingRecovery),
+			unavailable("Sandbox policy", "sandboxPolicy", missingRecovery),
+			unavailable("Active permission profile", "activePermissionProfile", missingRecovery),
 		];
 	}
 	return [
-		field("Configured model", settings.model),
-		field(
-			"Configured reasoning effort",
-			settings.effort ?? "Unavailable: the host did not publish the configured reasoning effort.",
-			settings.effort === null ? "unavailable" : "confirmed",
-			settings.effort === null ? SETTINGS_RECOVERY : null,
-		),
+		effective.configuredModel === null
+			? unavailable("Configured model", "the coordinator's configured model")
+			: field("Configured model", effective.configuredModel),
+		effective.configuredEffort === null
+			? unavailable("Configured reasoning effort", "the coordinator's configured reasoning effort")
+			: field("Configured reasoning effort", effective.configuredEffort),
 		effective.model === null
 			? unavailable("Effective model", "the coordinator's effective model")
 			: field("Effective model", effective.model),
@@ -149,15 +172,15 @@ function disclosureState(
 	snapshot: BrowserSnapshot | null,
 	settings: BrowserSettings | null,
 ): WorkbenchCoordinatorStatus {
-	if (state.state === "stale_snapshot" || state.connection === "reconnecting") {
-		return status("stale", state.reason, RECONNECT_RECOVERY);
-	}
 	if (snapshot === null) {
 		return status(
 			"unavailable",
 			"The coordinator identity and settings are not available from the host.",
-			SETTINGS_RECOVERY,
+			state.connection === "reconnecting" ? SNAPSHOT_RECOVERY : SETTINGS_RECOVERY,
 		);
+	}
+	if (state.state === "stale_snapshot" || state.connection === "reconnecting") {
+		return status("stale", state.reason, RECONNECT_RECOVERY);
 	}
 	const coordinator = snapshot.coordinator;
 	if (coordinator.state === "starting") {
@@ -181,7 +204,11 @@ function disclosureState(
 			SETTINGS_RECOVERY,
 		);
 	}
-	if (settings === null) {
+	if (
+		settings === null ||
+		coordinator.configuredModel === null ||
+		coordinator.configuredEffort === null
+	) {
 		return status(
 			"unavailable",
 			"The coordinator is linked, but the host did not publish one confirmed coordinator settings record.",
@@ -238,14 +265,11 @@ export function projectWorkbenchCoordinator(
 		snapshot?.coordinator.threadId === null || snapshot?.coordinator.threadId === undefined
 			? [
 					unavailable("Coordinator identity", "the coordinator thread identity"),
-					unavailable("Coordinator history", "the read-only coordinator history"),
+					unavailable("Coordinator history", "the read-only coordinator history", HISTORY_RECOVERY),
 				]
 			: [
 					field("Coordinator identity", snapshot.coordinator.threadId),
-					field(
-						"Coordinator history",
-						`Read-only coordinator history for ${snapshot.coordinator.threadId}`,
-					),
+					unavailable("Coordinator history", "the read-only coordinator history", HISTORY_RECOVERY),
 				];
 	return Object.freeze({
 		status: disclosureState(state, snapshot, settings),
@@ -259,6 +283,8 @@ export function projectWorkbenchCoordinator(
 					state: "unbound",
 					threadId: null,
 					activeTurnId: null,
+					configuredModel: null,
+					configuredEffort: null,
 					model: null,
 					effort: null,
 					serviceTier: null,

@@ -75,6 +75,8 @@ function snapshot(timelineValue: BrowserTimeline | null = timeline()): BrowserSn
 			state: "ready",
 			threadId: "coordinator-a" as BrowserSnapshot["coordinator"]["threadId"],
 			activeTurnId: null,
+			configuredModel: "gpt-daybreak-blue-latest",
+			configuredEffort: "low",
 			model: "gpt-daybreak-blue-latest",
 			effort: "low",
 			serviceTier: "priority",

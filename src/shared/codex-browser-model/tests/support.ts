@@ -116,6 +116,8 @@ const coordinator = {
 	state: "active" as const,
 	threadId: coordinatorThreadId,
 	activeTurnId: coordinatorTurnId,
+	configuredModel: "gpt-5.6-luna",
+	configuredEffort: "medium",
 	model: "gpt-5.6-luna",
 	effort: "medium",
 	serviceTier: "priority",

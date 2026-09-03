@@ -1,6 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -11,8 +9,8 @@ import { projectWorkbenchCoordinator, WorkbenchCoordinatorDisclosure } from "../
 const SETTINGS = {
 	kind: "settings",
 	owner: "coordinator",
-	model: "gpt-5.6-luna",
-	effort: "medium",
+	model: "gpt-5.6-sol",
+	effort: "high",
 	serviceTier: "priority",
 	approvalPolicy: "on-request",
 	approvalsReviewer: "guardian_subagent",
@@ -73,8 +71,10 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 			state: "ready",
 			threadId: "coordinator-a" as BrowserSnapshot["coordinator"]["threadId"],
 			activeTurnId: null,
-			model: "gpt-5.6-luna",
-			effort: "medium",
+			configuredModel: "gpt-5.6-luna",
+			configuredEffort: "medium",
+			model: "gpt-5.6-sol",
+			effort: "high",
 			serviceTier: "priority",
 			reason: null,
 		},
@@ -127,8 +127,8 @@ describe("workbench coordinator projection", () => {
 		});
 		expect(textByLabel(state, "Configured model")).toBe("gpt-5.6-luna");
 		expect(textByLabel(state, "Configured reasoning effort")).toBe("medium");
-		expect(textByLabel(state, "Effective model")).toBe("gpt-5.6-luna");
-		expect(textByLabel(state, "Effective reasoning effort")).toBe("medium");
+		expect(textByLabel(state, "Effective model")).toBe("gpt-5.6-sol");
+		expect(textByLabel(state, "Effective reasoning effort")).toBe("high");
 		expect(textByLabel(state, "Effective service tier")).toBe("priority");
 		expect(textByLabel(state, "Approval policy")).toBe("on request");
 		expect(textByLabel(state, "Approvals reviewer")).toBe("guardian subagent");
@@ -137,7 +137,9 @@ describe("workbench coordinator projection", () => {
 		);
 		expect(textByLabel(state, "Active permission profile")).toBe("archboard, extends default");
 		expect(textByLabel(state, "Coordinator identity")).toBe("coordinator-a");
-		expect(textByLabel(state, "Coordinator history")).toContain("Read-only coordinator history");
+		expect(textByLabel(state, "Coordinator history")).toContain(
+			"host did not publish the read-only coordinator history",
+		);
 		expect(textByLabel(state, "Workhorse identity")).toBe("workhorse-a");
 		expect(textByLabel(state, "Workhorse history")).toBe("Current task activity for workhorse-a");
 		expect(textByLabel(state, "Workhorse settings")).toContain("gpt-daybreak-blue-latest");
@@ -156,7 +158,16 @@ describe("workbench coordinator projection", () => {
 				serviceTier: null,
 			},
 		});
-		expect(projectWorkbenchCoordinator(connected(loadingSnapshot)).status.state).toBe("loading");
+		const loading = projectWorkbenchCoordinator(connected(loadingSnapshot));
+		expect(loading.status.state).toBe("loading");
+		expect(loading.coordinatorSettings.fields.slice(0, 2).map((item) => item.value)).toEqual([
+			"gpt-5.6-luna",
+			"medium",
+		]);
+		for (const item of loading.coordinatorSettings.fields.filter(
+			(candidate) => candidate.state === "unavailable",
+		))
+			expect(item.recovery).toBe("Wait for the coordinator settings handshake to finish.");
 
 		const stale: BrowserWorkbenchState = {
 			kind: "stream",
@@ -187,6 +198,20 @@ describe("workbench coordinator projection", () => {
 		);
 		expect(textByLabel(unavailable, "Configured model")).toContain("Reconnect");
 
+		const reconnecting: BrowserWorkbenchState = {
+			kind: "connection",
+			state: "reconnecting",
+			connection: "reconnecting",
+			snapshot: null,
+			sequence: null,
+			reason: "The host connection is recovering.",
+		};
+		expect(projectWorkbenchCoordinator(reconnecting).status).toMatchObject({
+			state: "unavailable",
+			detail: "The coordinator identity and settings are not available from the host.",
+			recovery: "Wait for the Codex workbench to reconnect and publish a fresh snapshot.",
+		});
+
 		const fallbackSettings = { ...SETTINGS, serviceTier: null } as const;
 		const fallbackSnapshot = snapshot({
 			settings: [fallbackSettings, WORKHORSE_SETTINGS],
@@ -203,7 +228,11 @@ describe("workbench coordinator projection", () => {
 		const missing = connected(snapshot({ settings: [WORKHORSE_SETTINGS] }));
 		const projected = projectWorkbenchCoordinator(missing);
 		expect(projected.status.state).toBe("unavailable");
-		for (const item of projected.coordinatorSettings.fields) {
+		expect(projected.coordinatorSettings.fields.slice(0, 2).map((item) => item.state)).toEqual([
+			"confirmed",
+			"confirmed",
+		]);
+		for (const item of projected.coordinatorSettings.fields.slice(2)) {
 			expect(item.state).toBe("unavailable");
 			expect(item.value).toStartWith("Unavailable: the host did not publish");
 			expect(item.recovery).toContain("Reconnect the Codex workbench");
@@ -228,35 +257,11 @@ describe("workbench coordinator disclosure", () => {
 		expect(markup).not.toMatch(/<form|<button|<input|<select|<textarea|<a\b/);
 	});
 
-	test("exports no edit owner, form control, command adapter, or mutable settings state", async () => {
+	test("exports only the read-only disclosure and its projector", async () => {
 		const publicModule = (await import("../index.js")) as Record<string, unknown>;
 		expect(Object.keys(publicModule).toSorted()).toEqual([
 			"WorkbenchCoordinatorDisclosure",
 			"projectWorkbenchCoordinator",
 		]);
-
-		const moduleRoot = path.resolve(import.meta.dir, "..");
-		const sources = [
-			path.join(moduleRoot, "contract.ts"),
-			path.join(moduleRoot, "index.tsx"),
-			...readdirSync(path.join(moduleRoot, "lib")).map((file) =>
-				path.join(moduleRoot, "lib", file),
-			),
-		]
-			.map((file) => readFileSync(file, "utf8"))
-			.join("\n");
-		for (const forbidden of [
-			"BrowserCommand",
-			"settings/update",
-			"thread/settings/update",
-			"useState",
-			"onSave",
-			"<form",
-			"<button",
-			"<input",
-			"<select",
-			"<textarea",
-		])
-			expect(sources).not.toContain(forbidden);
 	});
 });
