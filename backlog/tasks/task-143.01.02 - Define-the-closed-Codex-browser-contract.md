@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 21:55'
+updated_date: '2026-09-03 22:03'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -151,6 +151,10 @@ Define only the browser-facing workbench state and user-intent model that has no
 66. Route termination through the existing zero-live terminal acknowledgement rule after connections are cleared.
 67. Add focused regressions for failed terminal delta followed by unrelated readiness, non-open/callback send failures, shutdown retirement, and successful media event followed by failed result.
 68. Run only the named module/system owners plus type, lint, format, and repository inventory gates; keep the task In Progress for parent review.
+
+69. Retain the first subscribed event publication failure with browser, pane, payload kind, and sequence context until the socket owner drain observes it; keep result-send handling unchanged.
+70. Merge the retained publication failure with owned close failures in one AggregateError, then clear both failure stores before throwing so a second drain succeeds and no error history can grow.
+71. Add one focused OPEN WebSocket callback-failure owner proving no event confirmation, actionable drain rejection, one-shot failure observation, and successful later snapshot publication; rerun only affected module, TypeScript, scoped lint/format/diff, and boundary/inventory owners.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -260,6 +264,13 @@ Publication-order remediation:
 - Added focused gateway and socket publication owners for failed-terminal/readiness ordering, media-event success with failing result, shutdown retirement, CLOSING sockets, and asynchronous callback failure. Removed the older synchronous-send owner that the asynchronous case subsumes, plus two unused gateway-test helpers.
 
 Red evidence against 021aacff: the new gateway publication owner failed 0/3 and the socket publication owner failed 0/2 at the reported seams. Final green evidence: 57 focused module/lifecycle tests passed with 256 assertions; 4 exact production-facing system tests passed with 56 assertions; 61 repository boundary/inventory tests passed with 132 assertions. Root and frontend TypeScript, exact scoped Oxlint/Oxfmt, and git diff checks passed. No broad module, system, repository, browser, full-test, check, topology, load, stress, capacity, performance, tooling, or concurrency lane ran. TASK-143.01.02 remains In Progress for parent rereview.
+
+Event-failure observability remediation:
+- The canvas socket owner now retains the first subscribed event-send failure until drain. The retained Error names the browser, pane, payload kind, sequence, and transport cause. One slot is enough to fail teardown and prevents a broken socket from growing error history.
+- drain waits for active event sends and closes, combines the retained event failure with close failures in one AggregateError, clears both stores before throwing, and resolves on the next call. Direct result-send behavior remains unchanged.
+- The focused production-adapter owner uses an OPEN callback-based WebSocket. A terminal event callback fails, confirmPublished is not called, drain reports the exact contextual cause once, a second drain resolves, and a later explicit snapshot succeeds and confirms the retained terminal.
+
+Red evidence against 62d8ac8d: the new exact recovery owner failed 0/1 because drain resolved. Green evidence: 58 focused publication/gateway/lifecycle tests passed with 264 assertions; 61 boundary/inventory tests passed with 132 assertions. Root and frontend TypeScript, exact scoped Oxlint/Oxfmt, and git diff checks passed. No broad module, system, repository, browser, full-test, check, topology, load, stress, capacity, performance, tooling, or concurrency lane ran. TASK-143.01.02 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -442,6 +453,12 @@ author: @codex
 created: 2026-09-03 21:55
 ---
 @codex completed the publication-order remediation at every permitted focused boundary. Preparing one separate commit and READY_FOR_REREVIEW callback; TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 22:03
+---
+@codex completed the retained event-publication failure remediation. Preparing a separate commit and READY_FOR_REREVIEW callback; TASK-143.01.02 remains In Progress.
 ---
 <!-- COMMENTS:END -->
 
