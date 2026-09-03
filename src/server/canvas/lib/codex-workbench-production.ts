@@ -11,6 +11,7 @@ import {
 	ArchboardContextSchema,
 	type ArchboardContext,
 } from "../../../runtime/codex-instructions/index.js";
+import type { CodexProcessGroupIdentity } from "../../../runtime/codex-process/process-group.js";
 import type {
 	SemanticContextPublisherOptions,
 	SettledSemanticChangeEvent,
@@ -46,6 +47,7 @@ import {
 
 export interface CanvasCodexWorkbenchHost {
 	readonly checkoutRoot: string;
+	readonly onCodexProcessGroupOwned: (identity: CodexProcessGroupIdentity) => void;
 	readonly semanticPublisher: SemanticContextPublisherOptions;
 	readonly paneIds: () => readonly string[];
 	readonly contextForEvent: (
@@ -614,6 +616,7 @@ export function createCanvasCodexWorkbenchInstallation(
 			executablePath,
 			checkoutRoot: host.checkoutRoot,
 			storage: { rootDirectory: root },
+			onGroupOwned: host.onCodexProcessGroupOwned,
 		},
 		bindings,
 		hooks,
