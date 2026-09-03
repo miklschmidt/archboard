@@ -1,11 +1,11 @@
 ---
 id: TASK-143.08.05
 title: Reconcile detached work and prove the recovered integration
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 17:53'
+updated_date: '2026-09-03 18:02'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -56,15 +56,15 @@ Reconcile the frozen detached descendants only after the OOM, generated-type, co
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The worktree inventory records exact base, head, owned task, review state, unique commits, overlapping ancestors, dirty files, and one keep, port, rebuild, or drop outcome for every registered worktree.
-- [ ] #2 0e74cbaf is considered only as a narrow TASK-143.06.06 replay after the OOM gate; 3e1670af is preserved as thread-discovery behavior to reimplement against the recovered type seam; neither merges before its owning task has a fresh plan and review.
-- [ ] #3 b0938164, 0ac9ef2d, 4e93e729, and 52b00a4d are rebuilt rather than merged because they depend on handwritten browser contracts, repeated validation, or excessive test scaffolding. Useful observable behavior is mapped to existing open tasks before their detached code is dropped.
-- [ ] #4 8bac86bf is folded into recovery notes and dropped as a Backlog-only blocker. Patch-equivalent or superseded heads, including 0f1e5807 and duplicate or ancestor worktrees at 3e1670af, 54643b59, 70263cf7, and 6438d02e, receive no separate replay.
-- [ ] #5 No worktree is removed until its maximal head has a durable ref and the user approves removal. The untracked src-DlBR1tzg.js bundle and unrelated worktree changes remain untouched.
-- [ ] #6 The recovered branch preserves all integrated ba1aacee product behavior that still satisfies the corrected contracts, preserves main-only task records during later reconciliation, passes the complete applicable check under recorded memory limits with no orphan, and receives an independent fixed-range review.
-- [ ] #7 Only after this task is Done are paused TASK-143 and TASK-144 leaves reassigned and given fresh implementation plans. This recovery does not implement the missing timeline, composer, queue, approvals, or voice UI.
-- [ ] #8 The final recovered integration includes TASK-143.08.06.05 evidence: named board work and server rendering pass with zero browser clients, live-session control exists only under `archboard browser`, and the canonical tracked skill teaches that separation before paused feature leaves resume.
-- [ ] #9 At execution time the inventory is regenerated from every worktree registered with Git, not only the audited maximal descendants. Integrated ancestors, review worktrees, unrelated task worktrees, and dirty worktrees are explicitly classified as preserve and untouched when they are not recovery inputs, so no registered worktree is silently omitted.
+- [x] #1 The worktree inventory records exact base, head, owned task, review state, unique commits, overlapping ancestors, dirty files, and one keep, port, rebuild, or drop outcome for every registered worktree.
+- [x] #2 0e74cbaf is considered only as a narrow TASK-143.06.06 replay after the OOM gate; 3e1670af is preserved as thread-discovery behavior to reimplement against the recovered type seam; neither merges before its owning task has a fresh plan and review.
+- [x] #3 b0938164, 0ac9ef2d, 4e93e729, and 52b00a4d are rebuilt rather than merged because they depend on handwritten browser contracts, repeated validation, or excessive test scaffolding. Useful observable behavior is mapped to existing open tasks before their detached code is dropped.
+- [x] #4 8bac86bf is folded into recovery notes and dropped as a Backlog-only blocker. Patch-equivalent or superseded heads, including 0f1e5807 and duplicate or ancestor worktrees at 3e1670af, 54643b59, 70263cf7, and 6438d02e, receive no separate replay.
+- [x] #5 No worktree is removed until its maximal head has a durable ref and the user approves removal. The untracked src-DlBR1tzg.js bundle and unrelated worktree changes remain untouched.
+- [x] #6 The recovered branch preserves all integrated ba1aacee product behavior that still satisfies the corrected contracts, preserves main-only task records during later reconciliation, passes the complete applicable check under recorded memory limits with no orphan, and receives an independent fixed-range review.
+- [x] #7 Only after this task is Done are paused TASK-143 and TASK-144 leaves reassigned and given fresh implementation plans. This recovery does not implement the missing timeline, composer, queue, approvals, or voice UI.
+- [x] #8 The final recovered integration includes TASK-143.08.06.05 evidence: named board work and server rendering pass with zero browser clients, live-session control exists only under `archboard browser`, and the canonical tracked skill teaches that separation before paused feature leaves resume.
+- [x] #9 At execution time the inventory is regenerated from every worktree registered with Git, not only the audited maximal descendants. Integrated ancestors, review worktrees, unrelated task worktrees, and dirty worktrees are explicitly classified as preserve and untouched when they are not recovery inputs, so no registered worktree is silently omitted.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -280,3 +280,9 @@ created: 2026-09-02 01:43
 Initial worktree decision snapshot, 2026-09-02: 074b and 19e3 at 3e1670af share one candidate-discovery behavior port; 4354 at 0e74cbaf is the only narrow replay candidate; fcea at b0938164 with ancestor 1807 at 54643b59 must be rebuilt; 4985 at 0ac9ef2d with ancestor 5a0e at 70263cf7 must be rebuilt; 6bad at 4e93e729 with ancestor 4e9c at 6438d02e must be rebuilt; 3eca at 52b00a4d must be rebuilt; 66d8 at 8bac86bf is Backlog-only and is folded then dropped; 1430701 at 0f1e5807 is patch-equivalent to integrated code and gets no replay. Preserve each maximal head with a durable ref before any user-approved removal. Older integrated heads and unrelated TASK-140, TASK-124, CI, main, and dirty worktrees are not mutation targets.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replayed the independently REVIEW_CLEAN 35-commit TASK-143.08.05 range onto the TASK-148.13 canonical tip without content conflicts. The recorded complete gate at cbbdca1 exited 0 in 8m12.465s under the documented transient-unit limits; current focused integration passed generated-contract plus root TypeScript, owned-canvas cleanup 14/14 with 80 expectations in 7.41s, and six package/process lifecycle contracts 6/6 in 6.33s (the current runner reports 62 expectations, while prior notes said 58). Fixed-range paths and TASK-148.13 are unchanged, git diff --check is clean, and the protected untracked bundle remains untouched.
+<!-- SECTION:FINAL_SUMMARY:END -->
