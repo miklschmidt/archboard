@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.02
 title: Define the browser-only Codex workbench model
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 21:10'
+updated_date: '2026-09-03 21:23'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -38,10 +38,10 @@ Define only the browser-facing workbench state and user-intent model that has no
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The browser-only model covers the reachable readiness, account, thread-link, timeline, queue, settings, approval, text-command, semantic-delivery, coordinator, voice, command-lease, and delivery-outcome states needed by the workbench; every Codex-origin value is imported from the recovered normalized module rather than copied into a browser DTO.
-- [ ] #2 One projection adapter maps recovered protocol and domain outputs into browser-only states, handles every reachable producer outcome, excludes secrets and vendor-private paths, and contains no app-server ingress parser or reverse-request router.
-- [ ] #3 The browser action and result union describes only user intents issued by the workbench and maps each intent to one existing host owner; it consumes recovered generated request or result types where they apply and refuses unsupported actions explicitly.
-- [ ] #4 Focused tests cover browser projection, secret exclusion, domain-only state, and public action results. They do not repeat generated-type conformance, app-server ingress validation, BrowserUseOriginPolicy, i64 normalization, tool resolution, formatter, linter, alias, fixture-cleanup, or prose checks.
+- [x] #1 The browser-only model covers the reachable readiness, account, thread-link, timeline, queue, settings, approval, text-command, semantic-delivery, coordinator, voice, command-lease, and delivery-outcome states needed by the workbench; every Codex-origin value is imported from the recovered normalized module rather than copied into a browser DTO.
+- [x] #2 One projection adapter maps recovered protocol and domain outputs into browser-only states, handles every reachable producer outcome, excludes secrets and vendor-private paths, and contains no app-server ingress parser or reverse-request router.
+- [x] #3 The browser action and result union describes only user intents issued by the workbench and maps each intent to one existing host owner; it consumes recovered generated request or result types where they apply and refuses unsupported actions explicitly.
+- [x] #4 Focused tests cover browser projection, secret exclusion, domain-only state, and public action results. They do not repeat generated-type conformance, app-server ingress validation, BrowserUseOriginPolicy, i64 normalization, tool resolution, formatter, linter, alias, fixture-cleanup, or prose checks.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -135,6 +135,8 @@ Define only the browser-facing workbench state and user-intent model that has no
 57. Confirm unsafe_url has no producer or consumer, delete the unreachable CodexApprovalErrorCode member, and adjust only genuine exhaustiveness owners if any appear.
 
 58. Run focused timeline red/green projection and type owners, affected approval error checks, both TypeScript configs, exact scoped lint/format/boundary/diff checks; commit separately and callback the parent for rereview.
+
+59. Integrate the fourteen review-clean commits into the canonical TASK-143/144 workbench branch, preserve the existing coordinator and timeline contracts at overlapping seams, repair only compatibility failures exposed by direct production and type owners, then finalize from focused evidence.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -229,6 +231,8 @@ Thirteenth review remediation:
 - unsafe_url had no source occurrence beyond CodexApprovalErrorCode, so the stale public arm was deleted without a replacement test or runtime change. No producer, consumer, or exact exhaustiveness owner existed.
 
 Red evidence against 2801d884: the independent seven-arm domain-shaped owner returned invalid_projection while the settings closure owner remained green. Green evidence: the focused projection-closure owner passed 2/2 with 35 assertions in 0.10s. Root TypeScript passed in 1.75s and frontend TypeScript in 0.35s. Exact scoped Oxlint, Oxfmt, browser-timeline-input residue, unsafe_url residue, positive domain-derivation, and git diff checks passed. No broad module, system, repository, browser, full-test, or check lane ran. Topology is unchanged. No known remediation residue remains; future live timeline production stays deferred to TASK-143.01.10. TASK-143.01.02 remains In Progress for parent rereview.
+
+Canonical integration replayed the exact fourteen reviewed commits onto 354706fa with one-to-one positional mapping. Conflict resolution retained coordinator configured and effective host facts while moving all browser shaping into the sole server projection; timeline UI/provider ownership remained intact. Focused production validation exposed two integration seams and both received narrow compatibility fixes: ordinary approval responses now use the original opaque transport request handle while owner views stay cloned and frozen, and coordinator disclosure consumes the closed sandbox and source-presentation browser fields without writable-root or vendor-source leakage. Final evidence: 180 focused module/UI tests across 30 exact files passed with 1,756 assertions; the exact application and production system owners passed 2/2 with 51 assertions; test-inventory policy passed 54/54 with 66 assertions; root and frontend TypeScript passed; Oxlint and Oxfmt passed on the exact 62 changed tracked TypeScript paths; boundary, diff, fourteen-commit count, and range-diff checks passed. No broad module, system, repository, browser, full-test, or check lane ran.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -395,3 +399,9 @@ created: 2026-09-03 21:10
 Thirteenth timeline-owner and approval-error remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Defined and integrated the closed browser-only Codex workbench contract with one domain-to-browser projection, exhaustive user-intent ownership, private-field exclusion, approval lifecycle handling, and independent timeline owner input. Preserved the existing coordinator and timeline UI contracts, fixed opaque reverse-request identity and closed-settings compatibility, and verified the result with 180 focused module/UI tests, two exact production-facing system owners, test-inventory policy, both TypeScript projects, scoped Oxlint/Oxfmt, and source-range audits.
+<!-- SECTION:FINAL_SUMMARY:END -->
