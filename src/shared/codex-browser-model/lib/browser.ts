@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+	type CodexCommandExecutionApprovalDecision,
 	CodexFileChangeApprovalDecisionSchema,
 	CodexThreadStatusTypeSchema,
 	CodexTurnStatusSchema,
@@ -478,10 +479,25 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			.strict(),
 	};
 	const ApprovalReason = { reason: NullableReasonSchema };
+	type CodexNetworkPolicyDecision = Extract<
+		CodexCommandExecutionApprovalDecision,
+		{ readonly applyNetworkPolicyAmendment: unknown }
+	>;
+	type BrowserNetworkPolicyAmendment = Pick<
+		CodexNetworkPolicyDecision["applyNetworkPolicyAmendment"]["network_policy_amendment"],
+		"host" | "action"
+	>;
+	type BrowserCommandApprovalDecision =
+		| Exclude<CodexCommandExecutionApprovalDecision, CodexNetworkPolicyDecision>
+		| {
+				readonly applyNetworkPolicyAmendment: {
+					readonly network_policy_amendment: BrowserNetworkPolicyAmendment;
+				};
+		  };
 	const ApprovalDecisionSchema = createCodexCommandExecutionApprovalDecisionSchema({
 		text: boundedText(16_384),
 		host: boundedText(2048),
-	});
+	}) satisfies z.ZodType<BrowserCommandApprovalDecision>;
 	const ElicitationFieldSchema = z
 		.object({
 			name: boundedText(256),
