@@ -114,6 +114,7 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 			createdAtMs: now,
 			expiresAtMs: now + CODEX_APPROVAL_EXPIRY_MS,
 		};
+		const sourceArguments = request.effect.arguments as { prompt: string };
 		const owner = createCanvasDynamicApprovalOwner({
 			identity,
 			now: () => now,
@@ -130,12 +131,23 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 		owner.port.presentImmutableRequest(request);
 		const projected = owner.pending()[0];
 		if (projected === undefined) throw new Error("The approval was not projected.");
-		expect(projected.request).toBe(request);
+		expect(projected.request).not.toBe(request);
+		expect(projected.request.effect.arguments).not.toBe(sourceArguments);
 		expect(projected.binding.paneId).toBe("pane-expiry");
 		expect(Object.isFrozen(projected)).toBe(true);
+		expect(Object.isFrozen(projected.request)).toBe(true);
+		expect(Object.isFrozen(projected.request.effect)).toBe(true);
+		expect(Object.isFrozen(projected.request.effect.arguments)).toBe(true);
 		expect(Object.isFrozen(projected.binding)).toBe(true);
 		expect(Object.isFrozen(projected.binding.capturedLink)).toBe(true);
 		expect(projected.request.expiresAtMs - request.createdAtMs).toBe(CODEX_APPROVAL_EXPIRY_MS);
+		sourceArguments.prompt = "mutated after presentation";
+		expect(request.effect.arguments.prompt).toBe("mutated after presentation");
+		expect(projected.request.effect.arguments.prompt).toBe("expire without mutation");
+		const mutableOwnerRequest = projected.request as unknown as {
+			effect: { arguments: { prompt: string } };
+		};
+		expect(() => (mutableOwnerRequest.effect.arguments.prompt = "mutated owner")).toThrow();
 		let settlements = 0;
 		const decision = owner.port.awaitOneExactVisualDecision(request).then((value) => {
 			settlements += 1;
@@ -152,6 +164,8 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 		expect(await decision).toMatchObject({
 			outcome: "expired",
 			cause: "deadline_reached",
+			identity: projected.request.identity,
+			effectHash: projected.request.effectHash,
 			decidedAtMs: request.expiresAtMs,
 		});
 		owner.settleAll("host_shutdown");
