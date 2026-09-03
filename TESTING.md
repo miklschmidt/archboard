@@ -118,79 +118,6 @@ Step 5 is the one worth watching closely. The tool returns structure; the agent
 narrates it. If the narration is wrong or thin, the question is usually whether
 the _data_ was sufficient, not whether the model phrased it badly.
 
-## 6. Let the board push back (optional)
-
-Everything above is pull: the agent learns about the board when it next asks.
-With injection on, the canvas tells a live Codex thread as changes happen —
-quietly, so nothing is interrupted.
-
-**This is a separate capability from the canvas being up, and it stays that
-way.** Anything that can reach the canvas could otherwise drive your coding
-agent, so injection is off unless asked for, and refuses to arm at all when the
-canvas is bound to anything but loopback (ADR 0005). On the thin-client path in
-`FLIP_WHITEBOARD.md`, either tunnel the canvas over SSH or leave this off.
-
-```bash
-export ARCHBOARD_VAULT=/path/to/vault
-ARCHBOARD_INJECT=1 ARCHBOARD_INJECT_THREAD=<task-id> ./bin/canvas start
-./bin/canvas inject status                # armed? connected? which thread?
-```
-
-`inject status` answers the three questions that go wrong: whether it armed
-(and if not, why), whether the app-server control socket is there — it exists
-only while the daemon is running, which in practice means while a session is up
-— and **which thread it would tell**. `ARCHBOARD_INJECT_THREAD` is the only
-route. A board does not yet carry a Codex task identity, so recent activity and
-the number of loaded tasks do not prove ownership. Without an exact task id,
-injection declines to arm and `status` says why.
-
-Then rearrange something on the board. One drag produces **one** message, after
-the board settles, and only when the change means something: a node moved
-between clusters, an edge cut, a box promoted. Colour changes and nudges too
-small to matter are silent. What the agent gets is the same text you can read
-yourself:
-
-```bash
-./bin/canvas changes --text                  # events since the start
-./bin/canvas changes --since 4 --coalesce    # one net diff since cursor 4
-./bin/canvas inject test --note "wiring check"   # a probe, no board change needed
-```
-
-The agent's own drawing is never injected back at it, and injected items skip
-`UserPromptSubmit`, so archboard cannot trigger its own hook.
-
-### Loud injection, for testing only
-
-Quiet injection appends to the thread's history without starting a turn. The
-loud channel (`turn/steer`) interrupts the running turn instead, which makes
-the agent **speak, unprompted, over you**. It ships off:
-
-```bash
-ARCHBOARD_INJECT=1 ARCHBOARD_INJECT_THREAD=<task-id> \
-  ARCHBOARD_INJECT_LOUD=1 ./bin/canvas start
-./bin/canvas inject test --loud     # one loud probe, without restarting
-```
-
-With loud on, a change interrupts only when a turn is actually running; with
-nothing to interrupt it falls back to quiet.
-
-### Knobs
-
-| Variable                           | Default     | What it does                                                |
-| ---------------------------------- | ----------- | ----------------------------------------------------------- |
-| `ARCHBOARD_INJECT`                 | unset (off) | Arms injection. Read at server start.                       |
-| `ARCHBOARD_INJECT_LOUD`            | unset (off) | Allows `turn/steer`. Experimental.                          |
-| `ARCHBOARD_INJECT_THREAD`          | unset       | Exact target task id; injection declines to arm without it. |
-| `ARCHBOARD_INJECT_DEBOUNCE_MS`     | 4000        | Coalescing window for changes.                              |
-| `ARCHBOARD_INJECT_MIN_INTERVAL_MS` | 10000       | Floor between injections.                                   |
-| `ARCHBOARD_SETTLE_MS`              | 1200        | How long the board must be still before a change counts.    |
-| `CODEX_HOME`                       | `~/.codex`  | Where the control socket is found.                          |
-
-Those three defaults are set in `src/shared/timing/timing.ts`, alongside the pane's
-fixed progress deadline, trailing idle deadline, and the change feed's settle
-window, because changing one of them moves the others. The reasoning is in
-that file; the numbers here are a copy for reading.
-
 ## What to expect, and what not to
 
 **The voice model never sees command output automatically.** The Codex thread
@@ -209,10 +136,6 @@ Archboard never picks for you. See ADR 0006.
 active board and no default: two panes hold two boards, so "the board" would be
 a guess, and a guess that is right most of the time is the kind of mistake that
 takes longest to find. The refusal lists the boards that are open (ADR 0009).
-
-**Push is off by default, not absent.** The canvas can tell a live thread that
-the board changed, quietly, as it happens — see section 6. It stays off until
-asked for, and refuses to arm when the canvas is not on loopback.
 
 ## If something looks broken
 

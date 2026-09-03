@@ -187,8 +187,10 @@ that changed on disk under another editor is refused, never overwritten
   back through the browser are tagged `"source": "frontend_sync"`.
 - **Keep a board open in one editor at a time.** The conflict check reads the
   file, not another app's memory, so two editors can still cross-write.
-- **Injection is opt-in and loopback-only** (`ARCHBOARD_INJECT=1`, ADR 0005),
-  and an agent's own drawing is never injected back at it. See TESTING.md §6.
+- **Codex communication uses one private package-local app-server session over
+  stdio.** Semantic context uses the generated `thread/inject_items` protocol
+  path on that connection; there is no ambient daemon or environment-selected
+  target.
 
 ## Names on the wire
 
