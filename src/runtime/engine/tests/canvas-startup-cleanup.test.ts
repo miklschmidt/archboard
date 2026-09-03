@@ -225,6 +225,102 @@ describe("failed public canvas cleanup", () => {
 		expect(liveGroups.size).toBe(0);
 	});
 
+	test("reports the exact earlier group whose signal fails", async () => {
+		const second = Object.freeze({ leaderPid: 42, pgid: 42, leaderStartTime: "200" });
+		let canvasStopped = false;
+		const canvasSignals: NodeJS.Signals[] = [];
+		const inspectedGroups: number[] = [];
+		const groupSignals: Array<[number, NodeJS.Signals]> = [];
+		const events: Array<CanvasStartupProtocolEvent | null> = [
+			ownership(),
+			{
+				kind: "record",
+				record: canvasStartupOwnershipRecord({ canvasPid: 31, codexGroup: second }),
+			},
+			terminal("unproven"),
+		];
+		const result = await completeFailedCanvasCleanup({
+			canvasPid: 31,
+			protocol: { next: () => Promise.resolve(events.shift() ?? null) },
+			timing,
+			operations: {
+				now: () => 0,
+				wait: () => Promise.resolve(),
+				canvasExited: () => false,
+				canvasStopped: () => canvasStopped,
+				waitForCanvasExit: () => Promise.resolve(false),
+				signalCanvas: (signal) => {
+					canvasSignals.push(signal);
+					if (signal === "SIGSTOP") canvasStopped = true;
+				},
+				inspectGroup: (identity) => {
+					inspectedGroups.push(identity.pgid);
+					return identity === group ? "owned" : "quiescent";
+				},
+				signalGroup: (identity, signal) => {
+					groupSignals.push([identity.pgid, signal]);
+					if (identity === group && signal === "SIGTERM")
+						throw new Error("injected first-group signalling failure");
+				},
+			},
+		});
+
+		expect(result).toEqual({
+			cleanup: "unproven",
+			owner: "unknown",
+			group,
+			reason:
+				"Canvas pid 31 remains stopped with Codex group leader pid 41, pgid 41, " +
+				"starttime 100 in state signalling_error. injected first-group signalling failure.",
+		});
+		expect(canvasSignals).toEqual(["SIGTERM", "SIGSTOP"]);
+		expect(inspectedGroups).toEqual([41, 42]);
+		expect(groupSignals).toEqual([[41, "SIGTERM"]]);
+	});
+
+	test("reports every non-quiescent group identity and selects the first", async () => {
+		const second = Object.freeze({ leaderPid: 42, pgid: 42, leaderStartTime: "200" });
+		let canvasStopped = false;
+		const canvasSignals: NodeJS.Signals[] = [];
+		const events: Array<CanvasStartupProtocolEvent | null> = [
+			ownership(),
+			{
+				kind: "record",
+				record: canvasStartupOwnershipRecord({ canvasPid: 31, codexGroup: second }),
+			},
+			terminal("unproven"),
+		];
+		const result = await completeFailedCanvasCleanup({
+			canvasPid: 31,
+			protocol: { next: () => Promise.resolve(events.shift() ?? null) },
+			timing,
+			operations: {
+				now: () => 0,
+				wait: () => Promise.resolve(),
+				canvasExited: () => false,
+				canvasStopped: () => canvasStopped,
+				waitForCanvasExit: () => Promise.resolve(false),
+				signalCanvas: (signal) => {
+					canvasSignals.push(signal);
+					if (signal === "SIGSTOP") canvasStopped = true;
+				},
+				inspectGroup: (identity) => (identity === group ? "reused" : "unproven"),
+				signalGroup: () => {},
+			},
+		});
+
+		expect(result).toEqual({
+			cleanup: "unproven",
+			owner: "unknown",
+			group,
+			reason:
+				"Canvas pid 31 remains stopped with non-quiescent Codex groups: " +
+				"leader pid 41, pgid 41, starttime 100 in state reused; " +
+				"leader pid 42, pgid 42, starttime 200 in state unproven.",
+		});
+		expect(canvasSignals).toEqual(["SIGTERM", "SIGSTOP"]);
+	});
+
 	for (const terminalCase of [
 		{
 			name: "owned after TERM and KILL",
