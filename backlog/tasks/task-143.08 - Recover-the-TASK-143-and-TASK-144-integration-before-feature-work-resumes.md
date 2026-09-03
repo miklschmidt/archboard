@@ -1,11 +1,11 @@
 ---
 id: TASK-143.08
 title: Recover the TASK-143 and TASK-144 integration before feature work resumes
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:35'
-updated_date: '2026-09-02 02:39'
+updated_date: '2026-09-03 22:10'
 labels: []
 dependencies: []
 references:
@@ -31,13 +31,13 @@ Stop the audited integration at ba1aacee and recover it before any text, voice, 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The OOM-producing validation mechanism is removed and the bounded repository gate is trustworthy before any other recovery or feature implementation starts.
-- [ ] #2 Ordinary compilation derives every used Codex wire view and local parser contract from the exact generated 0.151.0 types, with one named conversion seam for genuine local models.
-- [ ] #3 Duplicate wire, browser, validation, helper, and test owners are collapsed or deleted while retaining direct coverage of reachable behavior through production module interfaces.
-- [ ] #4 Mandatory Codex startup fails atomically and actionably for missing or invalid runtime prerequisites, and the retired legacy injection path no longer survives in current code or guidance.
-- [ ] #5 Every registered descendant worktree has a recorded keep, port, rebuild, or drop decision; only recovered work is integrated; bounded full validation and independent review pass before feature tasks resume.
-- [ ] #6 The exact Codex package is a runtime dependency, and one Archboard server owns at most one live or starting codex app-server instance; any crash replacement is serialized after complete reaping, with no reload or concurrent-start overlap.
-- [ ] #7 Persisted-board commands are browser-independent and resolve named vault notes directly; all live pane, selection, camera, displayed-board, and user-session control is isolated beneath the explicit `archboard browser` surface, with server-owned rendering and matching canonical skill guidance.
+- [x] #1 The OOM-producing validation mechanism is removed and the bounded repository gate is trustworthy before any other recovery or feature implementation starts.
+- [x] #2 Ordinary compilation derives every used Codex wire view and local parser contract from the exact generated 0.151.0 types, with one named conversion seam for genuine local models.
+- [x] #3 Duplicate wire, browser, validation, helper, and test owners are collapsed or deleted while retaining direct coverage of reachable behavior through production module interfaces.
+- [x] #4 Mandatory Codex startup fails atomically and actionably for missing or invalid runtime prerequisites, and the retired legacy injection path no longer survives in current code or guidance.
+- [x] #5 Every registered descendant worktree has a recorded keep, port, rebuild, or drop decision; only recovered work is integrated; bounded full validation and independent review pass before feature tasks resume.
+- [x] #6 The exact Codex package is a runtime dependency, and one Archboard server owns at most one live or starting codex app-server instance; any crash replacement is serialized after complete reaping, with no reload or concurrent-start overlap.
+- [x] #7 Persisted-board commands are browser-independent and resolve named vault notes directly; all live pane, selection, camera, displayed-board, and user-session control is isolated beneath the explicit `archboard browser` surface, with server-owned rendering and matching canonical skill guidance.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -63,6 +63,10 @@ Orchestration queue at base 71a3e6bf:
 Queue hold after user decision: TASK-143.08.01 implementation is stopped pending a choice between removing only the AST-based module-scope policy and removing the full hot-reload plus kept() lifecycle. Babel, custom TypeScript AST walking, and generated-contract source scanning are rejected. No TASK-143.08 descendant or legacy cleanup leaf may start. The current implementation worktree is preserved and must not be integrated or altered.
 
 User decision and incident update: backend hot reload and kept() will be removed in TASK-143.08.01. The rejected b6e0 implementation recreated an OOM through an uncapped type-aware Oxlint/tsgolint run and is evidence only. Babel, custom TypeScript AST walking, type-aware lint policy, and generated-contract source scanning are forbidden replacements. The ready queue remains empty until the revised plan and ADR receive independent high-stakes review.
+
+Final acceptance audit at exact canonical HEAD 87fc352e8689d01545da699eeb3cf88717ea2287. The recovered plan remains accurate after accepted corrections: TASK-143.08.01 removed the OOM validator rather than adding a replacement; .02 made generated Codex 0.151.0 authoritative; .03 collapsed duplicate contract, validation, helper, and test owners; .04 proved atomic actionable startup and serialized app-server ownership; .06 and .06.01-.05 established browser-free named-board work with an explicit browser surface; .07 removed obsolete fixtures; TASK-143.06.08 completed current-document reconciliation; and .05 recorded descendant decisions, accepted bounded integration validation, and independent fixed-range review.
+
+AC map: 1 -> .01 (10/10 AC, bounded repository passes without OOM); 2 -> .02 (7/7); 3 -> .03 (6/6); 4 -> .04 (7/7) plus .06.08 (4/4 current-doc retirement); 5 -> .05 (9/9, complete gate and fixed-range review); 6 -> .04 (one private 0.151.0 app-server, serialized reaping/replacement) plus .02; 7 -> .06 (7/7) with all five descendants Done and checked. All seven direct children are Done; .06s five direct children are Done with 34/34 AC checked. No broad validation rerun: accepted child integration and review evidence directly proves this parent, and HEAD was clean with git diff --check passing.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -80,3 +84,9 @@ created: 2026-09-02 02:14
 Post-review release-order correction: TASK-143.08.01 remains the only implementation allowed first. After it is Done, TASK-143.08.02 through TASK-143.08.04 form the serialized Codex recovery chain while TASK-143.08.06.01 may investigate the renderer boundary. TASK-143.08.06.02 waits for both TASK-143.08.06.01 and TASK-143.08.04, then TASK-143.08.06.03 through TASK-143.08.06.05 run in order. TASK-143.06.08 is the single final current-documentation gate after the remaining legacy leaves, recovered lifecycle, and browser-independent board work. TASK-143.08.05 waits only on that transitive gate and is terminal. This comment supersedes comment #1 where its dependency list differs.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Recovered TASK-143/TASK-144 integration is complete. Accepted child evidence proves safe bounded validation, generated Codex 0.151.0 authority, collapsed duplicate owners, atomic serialized app-server startup, documented detached-work reconciliation and review, and browser-independent named-board work behind an explicit browser surface.
+<!-- SECTION:FINAL_SUMMARY:END -->
