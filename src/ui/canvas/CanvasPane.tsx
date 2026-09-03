@@ -70,6 +70,7 @@ interface CanvasPaneProps {
 	 * happens to own the socket the request arrived on.
 	 */
 	onLayoutRequest: (paneId: string, request: "open" | "close") => void;
+	onPaneStateAccepted: () => void;
 	onBoardError: (error: string) => void;
 	onCodeTargetNotice: (notice: CodeTargetNotice) => void;
 	onSelectionSnapshot: (paneId: string, snapshot: PaneSelectionSnapshot) => void;
@@ -208,6 +209,7 @@ export function CanvasPane({
 	onLibraryChange,
 	onLibraryChangedElsewhere,
 	onLayoutRequest,
+	onPaneStateAccepted,
 	onBoardError,
 	onCodeTargetNotice,
 	onSelectionSnapshot,
@@ -226,6 +228,7 @@ export function CanvasPane({
 		onStatus,
 		onLibraryChanged: onLibraryChangedElsewhere,
 		onLayoutRequest: layout,
+		onPaneStateAccepted,
 		onBoardError,
 	});
 	const attachPaneElement = session.attachPaneElement;

@@ -138,6 +138,7 @@ describe.serial("vault-only production interfaces", () => {
 		for (const side of [comparison.body.from, comparison.body.to]) {
 			expect(side).not.toHaveProperty("source");
 			expect(side).not.toHaveProperty("onScreen");
+			expect(side).not.toHaveProperty("loadedAt");
 		}
 
 		const inspection = spawnSync(

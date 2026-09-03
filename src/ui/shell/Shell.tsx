@@ -1265,6 +1265,7 @@ export function Shell(): React.JSX.Element {
 									onLibraryChange={library.reportFromPane}
 									onLibraryChangedElsewhere={library.applyFromServer}
 									onLayoutRequest={handleLayoutRequest}
+									onPaneStateAccepted={refreshBoardListing}
 									onBoardError={handleBoardError}
 									onCodeTargetNotice={handleCodeTargetNotice}
 									onSelectionSnapshot={onSelectionSnapshot}
