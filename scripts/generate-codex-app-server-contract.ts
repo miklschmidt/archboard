@@ -213,16 +213,29 @@ function requireOwnedDirectory(root: string, relativeDirectory: string): string 
 	let directory = root;
 	for (const component of relativeDirectory === "." ? [] : relativeDirectory.split(sep)) {
 		directory = join(directory, component);
+		let entry: ReturnType<typeof lstatSync>;
 		try {
-			const entry = lstatSync(directory);
-			if (!entry.isDirectory() || entry.isSymbolicLink()) {
-				throw new Error(
-					`${relative(repositoryRoot, directory)} must be a generated contract directory. Remove the generated tree and retry.`,
-				);
-			}
+			entry = lstatSync(directory);
 		} catch (error) {
 			if (errorCode(error) !== "ENOENT") throw error;
-			mkdirSync(directory);
+			try {
+				mkdirSync(directory);
+			} catch (mkdirError) {
+				if (errorCode(mkdirError) !== "EEXIST") throw mkdirError;
+			}
+			try {
+				entry = lstatSync(directory);
+			} catch (createdEntryError) {
+				throw new Error(
+					`${relative(repositoryRoot, directory)} must be a generated contract directory. Remove the generated tree and retry.`,
+					{ cause: createdEntryError },
+				);
+			}
+		}
+		if (!entry.isDirectory() || entry.isSymbolicLink()) {
+			throw new Error(
+				`${relative(repositoryRoot, directory)} must be a generated contract directory. Remove the generated tree and retry.`,
+			);
 		}
 	}
 	return directory;
