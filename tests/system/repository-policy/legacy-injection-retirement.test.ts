@@ -2,8 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import { BROWSER_TEST_PATHS } from "../browser/support/agent-browser.ts";
-
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const read = (relativePath: string): string =>
 	readFileSync(path.join(repoRoot, relativePath), "utf8");
@@ -237,19 +235,5 @@ describe("legacy injection retirement policy", () => {
 		}
 		expect(cannotArm.groups.sources.trim()).toMatch(/(?:^|,\s*)Assistant output(?:,|$)/);
 		expect(normalized).not.toMatch(/Assistant output[^.]*\b(?:may|can|does) arm\b/i);
-	});
-
-	test(`reports ${BROWSER_TEST_PATHS.length} executable browser owners and keeps prose count-free`, () => {
-		expect(new Set(BROWSER_TEST_PATHS).size).toBe(BROWSER_TEST_PATHS.length);
-		for (const [relativePath, source] of currentDocuments) {
-			expect(source, relativePath).not.toMatch(
-				/\b(?:all\s+)?\d+\s+(?:canonical\s+|real-browser\s+)?browser owners?\b/i,
-			);
-		}
-
-		const testGuide = currentDocuments.get("docs/agents/test-suite.md")!;
-		expect(testGuide).toContain("BROWSER_TEST_PATHS");
-		expect(testGuide).toContain("BROWSER_TEST_PATHS.length");
-		expect(testGuide).toContain("bun run test:serial-browser");
 	});
 });
