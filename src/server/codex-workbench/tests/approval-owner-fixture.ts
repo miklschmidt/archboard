@@ -66,6 +66,7 @@ export function commandApprovalOwnerFixture(input: {
 	};
 	return {
 		kind: "approval_owner",
+		terminalDelivery: null,
 		request: {
 			family: "command_execution",
 			method: request.method,

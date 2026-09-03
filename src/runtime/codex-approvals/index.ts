@@ -12,6 +12,7 @@ export type {
 	ApprovalSettlement,
 	ApprovalSnapshot,
 	ApprovalState,
+	ApprovalTerminalDelivery,
 	ApprovalResponsePort,
 	ApprovalResponse,
 	ApplyPatchApprovalRequest,

@@ -173,6 +173,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 					return { outcome: "delivered" };
 				},
 				acknowledge: (approvalRequestId) => activeApprovals.acknowledge(approvalRequestId),
+				acknowledgePublished: () => undefined,
 			},
 			dynamicApprovals: {
 				pending: () => [],

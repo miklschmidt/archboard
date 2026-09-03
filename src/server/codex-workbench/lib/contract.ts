@@ -249,6 +249,8 @@ export interface BrowserOrdinaryApprovalActions {
 		context: BrowserActionContext,
 	) => Promise<BrowserActionResult>;
 	readonly acknowledge: (requestId: JsonRpcRequestId) => void;
+	/** Retires spontaneous terminals only after every live browser received the published snapshot. */
+	readonly acknowledgePublished: (requestIds: readonly JsonRpcRequestId[]) => void;
 	readonly onBrowserDisconnect?: (
 		context: BrowserActionContext,
 		reason: BrowserDisconnectReason,

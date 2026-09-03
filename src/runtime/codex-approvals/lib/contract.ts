@@ -40,6 +40,17 @@ export type ApprovalState =
 export type ApprovalOutcome = "delivered" | "not_delivered" | "outcome_unknown";
 export type TerminalApprovalState = Exclude<ApprovalState, "staged" | "pending">;
 export type ApprovalDecision = "approved" | "declined" | "cancelled";
+export type ApprovalTerminalDelivery = "authored_response" | "after_publish" | null;
+
+type Primitive = string | number | boolean | bigint | symbol | null | undefined;
+
+export type DeepReadonly<Value> = Value extends Primitive
+	? Value
+	: Value extends readonly (infer Item)[]
+		? readonly DeepReadonly<Item>[]
+		: Value extends object
+			? { readonly [Key in keyof Value]: DeepReadonly<Value[Key]> }
+			: Value;
 
 type ApprovalResponseFor<
 	Kind extends ApprovalFamily,
@@ -234,9 +245,10 @@ export interface ApprovalSnapshot {
 /** Normalized request plus owner settlement state, before browser presentation. */
 export interface ApprovalOwnerView {
 	readonly kind: "approval_owner";
-	readonly request: ApprovalRequest;
-	readonly snapshot: ApprovalSnapshot;
-	readonly spoken: SpokenEligibility;
+	readonly request: DeepReadonly<ApprovalRequest>;
+	readonly snapshot: DeepReadonly<ApprovalSnapshot>;
+	readonly spoken: DeepReadonly<SpokenEligibility>;
+	readonly terminalDelivery: ApprovalTerminalDelivery;
 }
 
 /**
@@ -352,7 +364,7 @@ export interface CodexApprovalBroker {
 	readonly inspect: () => readonly ApprovalSnapshot[];
 	readonly view: (requestId: JsonRpcRequestId) => ApprovalOwnerView;
 	readonly inspectViews: () => readonly ApprovalOwnerView[];
-	/** Removes one terminal card after the browser command result carried it. */
+	/** Removes one terminal card after its authored result or spontaneous browser publication. */
 	readonly acknowledge: (requestId: JsonRpcRequestId) => void;
 	readonly spokenEffectPresentation: (
 		requestId: JsonRpcRequestId,
