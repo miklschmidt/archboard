@@ -320,23 +320,6 @@ export const CODEX_COMPOSED_SHUTDOWN_MS = 10_000;
  */
 export const CODEX_WAIT_TARGET_POLL_MS = 250;
 
-/**
- * How long contract generation waits for another live generator before
- * failing with its process identity. Generation holds no product lock and is
- * normally sub-second; this cap only diagnoses a stuck install or direct run.
- */
-export const CODEX_CONTRACT_GENERATION_LOCK_WAIT_MS = 20_000;
-
-/** Observation cadence while one contract generator waits for another live process. */
-export const CODEX_CONTRACT_GENERATION_LOCK_POLL_MS = 50;
-
-/**
- * Read-back guard after replacing a stale contract-generation lock. Half one
- * poll lets concurrent recovery attempts settle before either starts work.
- */
-export const CODEX_CONTRACT_GENERATION_LOCK_STEAL_GUARD_MS =
-	CODEX_CONTRACT_GENERATION_LOCK_POLL_MS / 2;
-
 // ── One writer at a time (ADR 0016) ───────────────────────────────────────
 //
 // `src/runtime/engine/board-lock.ts` is the only thing that reads these. It was built
