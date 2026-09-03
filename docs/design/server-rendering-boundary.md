@@ -176,12 +176,11 @@ the cumulative Chromium start count for the canvas process.
 `POST /api/render/board?board=<key>` accepts `png` or `svg`, an explicit
 background choice, padding from 0 through 128 scene pixels, and a scale from
 0.25 through 4. The defaults are background on, 16 pixels of padding, and scale
-
 1. The route reads the persisted note once, copies that immutable scene, and
-   returns the artifact data, exact pixel or SVG dimensions, background colour,
-   and source fingerprint. `archboard render --board <key> --out <file>` is the
-   file-producing CLI. It never observes a pane, selection, camera, or connected
-   browser.
+returns the artifact data, exact pixel or SVG dimensions, background colour,
+and source fingerprint. `archboard render --board <key> --out <file>` is the
+file-producing CLI. It never observes a pane, selection, camera, or connected
+browser.
 
 Text render requires a known Excalidraw font family and a loadable face. Image
 render requires every live image element's file id to resolve to persisted

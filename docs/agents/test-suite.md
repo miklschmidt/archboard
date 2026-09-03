@@ -3,7 +3,8 @@
 What each check proves, and the constraints on running them. Read this when
 changing tests or CI, or when a browser check fails.
 
-`bun run test` type-checks first, then runs four native lanes in this order:
+`bun run test` type-checks and runs `build:frontend`, then runs four native lanes
+in this order:
 
 - `test:modules`: isolated module-owned tests discovered under `src/`;
 - `test:system`: system owners under the eight explicit non-browser directories,
@@ -32,6 +33,10 @@ Run one module, system, or repository file with:
 bun test path/to/owner.test.ts
 bun test path/to/owner.test.ts --test-name-pattern "part of the test name"
 ```
+
+The focused server-rendering owners load `dist/frontend/renderer.html`. Run
+`bun run build:frontend` first in a clean checkout. The package `test` command
+already runs that build before its native lanes.
 
 Run browser diagnosis only through the adapter:
 
@@ -108,9 +113,10 @@ clean after failures or interruption.
 
 The full order is human edit performance; fixed-point document; malformed
 geometry recovery; pane telemetry recovery; arrow-binding differential;
-finding export; shell layout; board navigator; fullscreen presentation; typed text; live-session convergence; server
-update ordering; hold generation; human-hold persistence; claim interaction;
-selection inspector; connected path focus; opener settings; and code-target activation.
+shell layout; board navigator; fullscreen presentation; typed text; live-session
+convergence; server update ordering; hold generation; human-hold persistence;
+claim interaction; selection inspector; connected path focus; opener settings;
+and code-target activation.
 
 ### Human edit performance (TASK-118)
 

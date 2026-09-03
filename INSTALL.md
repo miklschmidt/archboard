@@ -36,14 +36,14 @@ writes them down.
 git clone <your fork> ~/Projects/archboard
 cd ~/Projects/archboard
 bun install                 # retry if it fails extracting a tarball
-bunx vite build             # the frontend, the only thing that is built
+bun run build               # the UI and the server-owned renderer entry
 ```
 
 The package is private and never published, so there is nothing to install from
-npm. bun runs the server and the CLI from `src/`, so there is nothing to compile
-for them and nothing to rebuild after pulling (ADR 0014) — only the frontend,
-and only when `frontend/` changed. **bun has to be on PATH**, including the PATH
-of anything that spawns archboard.
+npm. bun runs the server and CLI from `src/`. Run `bun run build` after each
+pull because the built frontend also contains the server-owned renderer entry,
+whose source lives under `src/server/board-rendering/` (ADR 0014). **bun has to
+be on PATH**, including the PATH of anything that spawns archboard.
 
 ## 2. Put the CLI where an agent will find it
 
