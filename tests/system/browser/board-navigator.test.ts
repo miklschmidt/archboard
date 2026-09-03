@@ -90,7 +90,7 @@ test("the operator strip keeps empty, loading, retry, and scratch naming states 
 	const initScript = join(ownerRoot, "delay-board-listing.js");
 	writeFileSync(
 		initScript,
-		`{ const nativeFetch = window.fetch.bind(window); let delayed = false; window.fetch = (input, init) => { const requestUrl = typeof input === 'string' ? input : input.url; const url = new URL(requestUrl, location.href); if (!delayed && url.pathname === '/api/boards') { delayed = true; return new Promise((resolve, reject) => { setTimeout(() => nativeFetch(input, init).then(resolve, reject), 350); }); } return nativeFetch(input, init); }; }`,
+		`{ const nativeFetch = window.fetch.bind(window); let released = false; const pending = []; window.fetch = (input, init) => { const requestUrl = typeof input === 'string' ? input : input.url; const url = new URL(requestUrl, location.href); if (!released && url.pathname === '/api/boards') return new Promise((resolve, reject) => { pending.push(() => nativeFetch(input, init).then(resolve, reject)); window.__releaseBoardListing = () => { released = true; delete window.__releaseBoardListing; for (const start of pending.splice(0)) start(); return true; }; }); return nativeFetch(input, init); }; }`,
 	);
 
 	await browser.run(["--init-script", initScript, "open", canvas.base]);
@@ -102,14 +102,14 @@ test("the operator strip keeps empty, loading, retry, and scratch naming states 
 		"the empty-vault pane to register",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	const loading = await pollUntil(
+	await pollUntil(
 		() =>
 			browser.eval<string | null>("document.querySelector('.board-nav-empty')?.textContent.trim()"),
 		(text) => text === "Reading the vault…",
 		"the delayed real board listing to expose its loading state",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect(loading).toBe("Reading the vault…");
+	expect(await browser.eval<boolean>("window.__releaseBoardListing?.() ?? false")).toBe(true);
 	await pollUntil(
 		() =>
 			browser.eval<string | null>("document.querySelector('.board-nav-empty')?.textContent.trim()"),
@@ -118,13 +118,19 @@ test("the operator strip keeps empty, loading, retry, and scratch naming states 
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 
-	const empty = await browser.eval<{
-		actionLabels: string[];
-		targets: Array<{ height: number; width: number }>;
-		currentScratch: boolean;
-		pageFits: boolean;
-	}>(
-		`(() => { const targets = [...document.querySelectorAll('.board-nav-tools button, .scratch-top, .board-preview-control, .name-button')]; return { actionLabels: [...document.querySelectorAll('.board-nav-tools button')].map(button => button.getAttribute('aria-label')), targets: targets.map(node => { const rect = node.getBoundingClientRect(); return { width: rect.width, height: rect.height }; }), currentScratch: Boolean(document.querySelector('.scratch-section .board-nav-row[aria-current="page"]')), pageFits: document.documentElement.scrollWidth === innerWidth }; })()`,
+	const empty = await pollUntil(
+		() =>
+			browser.eval<{
+				actionLabels: string[];
+				targets: Array<{ height: number; width: number }>;
+				currentScratch: boolean;
+				pageFits: boolean;
+			}>(
+				`(() => { const targets = [...document.querySelectorAll('.board-nav-tools button, .scratch-top, .board-preview-control, .name-button')]; return { actionLabels: [...document.querySelectorAll('.board-nav-tools button')].map(button => button.getAttribute('aria-label')), targets: targets.map(node => { const rect = node.getBoundingClientRect(); return { width: rect.width, height: rect.height }; }), currentScratch: Boolean(document.querySelector('.scratch-section .board-nav-row[aria-current="page"]')), pageFits: document.documentElement.scrollWidth === innerWidth }; })()`,
+			),
+		(state) => state.targets.length === 5,
+		"the empty navigation controls to settle",
+		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 	expect(empty.actionLabels).toEqual(["Refresh boards", "New board"]);
 	expect(empty.targets).toHaveLength(5);
