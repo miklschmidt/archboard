@@ -745,8 +745,6 @@ function lockMessage(board: string, holder: LockHolder | null): WebSocketMessage
 	return { type: "board_lock", board, held: holder !== null, holder };
 }
 
-// hot-safe: replaces the sink rather than adding one, and the sink is what the
-// current module graph's `broadcast` closes over — a reload has to repoint it.
 onBoardLockChanged((board, holder) => {
 	broadcast(lockMessage(board, holder), board);
 });
@@ -811,12 +809,10 @@ function noteMessage(board: string, written: NoteWrittenElsewhere | null): WebSo
 	return { type: "board_note", board, writtenElsewhere: written };
 }
 
-// hot-safe: replaces the sink rather than adding one, for the reason above.
 onNoteWrittenElsewhere((board, written) => {
 	broadcast(noteMessage(board, written), board);
 });
 
-// hot-safe: replaces the sweep's passenger rather than adding a second one.
 // Registered here rather than by the module itself so that the one place the
 // lock watcher is wired is the one place anything rides on it.
 onBoardSweep((board) => {
@@ -838,9 +834,6 @@ onBoardSweep((board) => {
  * connection and every close, so the cost is paid by a canvas somebody is
  * looking at and by no other.
  */
-// hot-safe: replaces the watcher's getter rather than adding a second one, and
-// the getter closes over this module graph's `paneBoards` — a reload has to
-// repoint it, as the sink above does.
 function syncLockWatch(): void {
 	watchBoardLocks(clients.size > 0 ? () => [...paneBoards.values()] : null);
 }
