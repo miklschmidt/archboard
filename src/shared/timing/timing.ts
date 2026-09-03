@@ -583,21 +583,10 @@ export const TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS = 250;
 export const TEST_CANVAS_EARLY_DEATH_DELAY_MS = 25;
 
 /**
- * How long a synthetic pane lets the server's initial socket frames arrive
- * before registering the pane it stands in for.
- *
- * This clears one TEST_PANE_MESSAGE_POLL_MS interval plus ordinary loopback
- * delivery. It is mechanics only: owner tests wait on named messages when a
- * message itself is the contract.
- */
-export const TEST_PANE_SOCKET_SETTLE_MS = 80;
-
-/**
  * How often synthetic pane mechanics inspect their captured socket frames.
  *
- * Four polls fit inside TEST_PANE_SOCKET_SETTLE_MS. The interval stays short
- * enough to observe an already-delivered loopback frame without turning the
- * wait into a busy spin.
+ * The interval stays short enough to observe an already-delivered loopback
+ * frame or registry update without turning the wait into a busy spin.
  */
 export const TEST_PANE_MESSAGE_POLL_MS = 20;
 

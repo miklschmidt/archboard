@@ -10,7 +10,6 @@ import {
 	soloPane,
 	type PaneRegistration,
 } from "../../../src/runtime/engine/panes.ts";
-import { TEST_PANE_SOCKET_SETTLE_MS } from "../../../src/shared/timing/timing.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 import { openTestPane, type PaneMessage, type TestPane } from "./support/pane-websocket.ts";
@@ -253,7 +252,6 @@ describe("pane addressing", () => {
 
 	test("opens and closes a registered second pane through the shell messages", async () => {
 		await right.close();
-		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 		const onePane = await request<PaneReport>("/api/panes");
 		expect(onePane.body.paneCount).toBe(1);
 		expect(onePane.body.panes[0]?.board).toBe("payments");

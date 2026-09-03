@@ -5,7 +5,6 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
-import { TEST_PANE_SOCKET_SETTLE_MS } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "./support/http.ts";
 import { openTestPane, type TestPane } from "./support/pane-websocket.ts";
 
@@ -175,7 +174,6 @@ describe("public HTTP refusals", () => {
 		expect(missing.status).toBe(404);
 		expect(missing.body.error).toContain('Board "never-exists" was not found');
 		await Promise.all([left.close(), right.close()]);
-		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 	});
 
 	test("refuses unknown, unnamed, missing and over-capacity pane operations", async () => {
@@ -215,7 +213,6 @@ describe("public HTTP refusals", () => {
 		expect(full.body.error).toContain("browser close");
 
 		await right.close();
-		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 		const missingPane = await request<Refusal>("/api/boards/open", {
 			method: "POST",
 			body: { board: "pane-base@option-a", pane: "right" },
@@ -233,7 +230,6 @@ describe("public HTTP refusals", () => {
 
 	test("reports browser-required when no pane exists", async () => {
 		await Promise.all(panes.map((pane) => pane.close()));
-		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 		const open = await request<Refusal>("/api/panes/open", { method: "POST" });
 		const close = await request<Refusal>("/api/panes/close", {
 			method: "POST",

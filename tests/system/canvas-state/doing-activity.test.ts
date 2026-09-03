@@ -3,9 +3,8 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { TEST_PANE_SOCKET_SETTLE_MS } from "../../../src/shared/timing/timing.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
-import { createRequester, sleep } from "./support/http.ts";
+import { createRequester } from "./support/http.ts";
 import { openPaneSession, type PaneEvent } from "./support/pane-session.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
@@ -97,7 +96,7 @@ describe.serial("doing activity", () => {
 			body: { x: 1 },
 		});
 		expect(refused.status).toBe(404);
-		await sleep(TEST_PANE_SOCKET_SETTLE_MS * 2);
+		await left.sync();
 		expect(
 			doingEvents(left.events, afterSuccess).some((event) => event.doing?.doing === refusedLine),
 		).toBeFalse();
@@ -113,7 +112,7 @@ describe.serial("doing activity", () => {
 			},
 		});
 		expect(human.status).toBe(200);
-		await sleep(TEST_PANE_SOCKET_SETTLE_MS * 2);
+		await left.sync();
 		expect(doingEvents(left.events, humanStart)).toHaveLength(0);
 
 		for (let index = 0; index < 7; index += 1) {

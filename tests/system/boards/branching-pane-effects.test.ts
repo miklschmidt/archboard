@@ -4,10 +4,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { TEST_PANE_SOCKET_SETTLE_MS } from "../../../src/shared/timing/timing.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
-import { openTestPane, type TestPane } from "./support/pane-websocket.ts";
+import { openTestPane, type TestPane, waitForPaneMessageWhere } from "./support/pane-websocket.ts";
 
 interface Element {
 	id: string;
@@ -55,7 +54,6 @@ afterAll(async () => {
 async function closePanes(): Promise<void> {
 	await Promise.all(panes.map((pane) => pane.close()));
 	panes.length = 0;
-	await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 }
 
 async function runCli(args: string[]): Promise<{ code: number | null; stderr: string }> {
@@ -180,7 +178,11 @@ describe("branching pane effects", () => {
 			method: "POST",
 			body: { name: "save-destination" },
 		});
-		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
+		const replacementDelta = (await waitForPaneMessageWhere(
+			right,
+			destinationStart,
+			(message) => message.type === "elements_changed" && message.board === "save-destination",
+		)) as ElementsChangedMessage | undefined;
 		const persistedReplacement = await request<ElementsBody>(
 			"/api/elements?board=save-destination",
 		);
@@ -198,9 +200,6 @@ describe("branching pane effects", () => {
 		expect(
 			right.seen.slice(destinationStart).every((message) => message.type !== "board_switched"),
 		).toBeTrue();
-		const replacementDelta = right.seen
-			.slice(destinationStart)
-			.find((message) => message.type === "elements_changed") as ElementsChangedMessage | undefined;
 		expect(replacementDelta?.created.map((element) => element.id)).toEqual(["created"]);
 		expect(replacementDelta?.updated.map((element) => element.id)).toEqual(["same"]);
 		expect(replacementDelta?.deleted).toEqual(["deleted"]);
@@ -253,12 +252,13 @@ describe("branching pane effects", () => {
 		const same = await request<SaveBody>("/api/boards/save?board=response-source", {
 			method: "POST",
 		});
-		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
+		const sameBoardDelta = (await waitForPaneMessageWhere(
+			left,
+			sameBoardStart,
+			(message) => message.type === "elements_changed" && message.board === "response-source",
+		)) as ElementsChangedMessage | undefined;
 		expect(same.body).toMatchObject({ saveKind: "same-board" });
 		expect(same.body).not.toHaveProperty("panes");
-		const sameBoardDelta = left.seen
-			.slice(sameBoardStart)
-			.find((message) => message.type === "elements_changed") as ElementsChangedMessage | undefined;
 		expect(sameBoardDelta).toMatchObject({ created: [], updated: [], deleted: [] });
 
 		const full = await runCli([
@@ -274,7 +274,6 @@ describe("branching pane effects", () => {
 		expect(full.stderr).toMatch(/without changing the browser/);
 
 		await right.close();
-		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 		const room = await runCli([
 			"board",
 			"save",
