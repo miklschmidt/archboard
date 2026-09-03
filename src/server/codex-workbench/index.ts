@@ -5,8 +5,6 @@ export {
 	assertBrowserDeltaBounded,
 	assertBrowserSnapshotBounded,
 	diffBrowserSnapshots,
-	readBrowserProjection,
-	readBrowserSnapshot,
 } from "./lib/projection.js";
 export { createBrowserLeaseLedger, createBrowserLeaseManager } from "./lib/lease.js";
 export { CodexWorkbenchGatewayError } from "./lib/contract.js";
@@ -60,7 +58,7 @@ export type {
 	BrowserLeaseRecord,
 	BrowserLifecyclePort,
 	BrowserOrdinaryApprovalActions,
-	BrowserProjection,
+	BrowserOwnerProjection,
 	BrowserProjectionContext,
 	BrowserProjectionPort,
 	BrowserQueueActions,

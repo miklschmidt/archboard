@@ -332,7 +332,11 @@ export function permissionsRequest(
 			reason: `Permission ${label}`,
 			permissions: {
 				network: { enabled: true },
-				fileSystem: { read: ["/workspace"], write: null },
+				fileSystem: {
+					read: ["/workspace"],
+					write: null,
+					entries: [{ path: { type: "path", path: "/private/blocked" }, access: "deny" }],
+				},
 			},
 		},
 		label,

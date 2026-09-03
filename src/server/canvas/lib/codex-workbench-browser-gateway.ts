@@ -1,16 +1,16 @@
 import type {
 	BrowserActionContext,
 	BrowserActionResult,
-	BrowserProjection,
+	BrowserOwnerProjection,
 	BrowserOrdinaryApprovalActions,
 	BrowserWorkbenchActions,
 	BrowserLeaseLedger,
 	CodexWorkbenchGatewayOptions,
 } from "../../codex-workbench/index.js";
 import type { CodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
-import {
-	createCodexBrowserModel,
-	type BrowserQueue,
+import type {
+	BrowserAccountProjectionInput,
+	CodexQueueProjectionInput,
 } from "../../../shared/codex-browser-model/index.js";
 import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
 import type { OperationId } from "../../../shared/codex-workbench-identity/index.js";
@@ -22,10 +22,14 @@ import { createCanvasCanonicalTextActions } from "./codex-workbench-text-actions
 import { createCanvasRealtimeActions } from "./codex-workbench-realtime-actions.js";
 
 export interface CanvasBrowserBindingState {
-	readiness: BrowserProjection["readiness"];
-	account: BrowserProjection["account"];
-	login: BrowserProjection["login"];
-	queue: BrowserQueue;
+	readiness: BrowserOwnerProjection["readiness"];
+	account: BrowserAccountProjectionInput;
+	login: BrowserOwnerProjection["login"];
+	queue: CodexQueueProjectionInput;
+}
+
+function queueOwnerView(queue: readonly SessionQueuedSubmission[]): CodexQueueProjectionInput {
+	return { kind: "codex_queue", submissions: queue };
 }
 
 /** Bind all seven ordinary approval families to one exact pane lifecycle. */
@@ -35,6 +39,7 @@ export function createCanvasOrdinaryApprovalActions(
 	const actions: BrowserOrdinaryApprovalActions = {
 		pending: (requestId) => {
 			try {
+				if (approvals.get(requestId)?.state !== "pending") return null;
 				return approvals.toBrowserApproval(requestId);
 			} catch {
 				return null;
@@ -48,6 +53,7 @@ export function createCanvasOrdinaryApprovalActions(
 			});
 			return { outcome: "delivered" };
 		},
+		acknowledge: (requestId) => approvals.acknowledge(requestId),
 		onBrowserDisconnect: async (context, reason) => {
 			if (context.link.state !== "executable") return;
 			const authoredReason =
@@ -93,25 +99,10 @@ export function createCanvasBrowserGatewayOptions(input: {
 	) => ArchboardContext;
 }): Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink"> {
 	const { components, dynamicApprovals, state } = input;
-	const model = createCodexBrowserModel(components.identity);
-	const queueProjection = (queue: readonly SessionQueuedSubmission[]): BrowserQueue =>
-		model.BrowserQueueSchema.parse({
-			kind: "queue",
-			status: queue.length === 0 ? "empty" : "queued",
-			entries: queue.map((entry) => {
-				const textInput = entry.input.find((item) => item.type === "text");
-				return {
-					submissionId: entry.id,
-					prompt: textInput?.type === "text" ? textInput.text : "[non-text input]",
-					status: "queued",
-					operationId: null,
-				};
-			}),
-		});
 	const updateQueue = <Result extends { readonly queue: readonly SessionQueuedSubmission[] }>(
 		result: Result,
 	): Result => {
-		state.queue = queueProjection(result.queue);
+		state.queue = queueOwnerView(result.queue);
 		return result;
 	};
 	const issueOperation = (): OperationId => components.identity.operation.issuer.mintOperationId();
@@ -125,10 +116,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 		account: {
 			read: async () => {
 				const result = await components.session.accountRead();
-				state.account =
-					result.account === null
-						? { kind: "account", state: "signed_out" }
-						: { kind: "account", state: "ready", accountType: result.account.type };
+				state.account = { kind: "codex_account_response", response: result };
 				state.readiness =
 					result.account === null
 						? { kind: "readiness", state: "signed_out" }
@@ -242,7 +230,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 	const projection = {
 		read: (
 			context: Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0],
-		): BrowserProjection => {
+		): BrowserOwnerProjection => {
 			if (context.lease?.state === "active")
 				dynamicApprovals.bindLease(context.paneId, context.lease.commandId);
 			const coordinator = components.coordinator.snapshot();
@@ -266,17 +254,19 @@ export function createCanvasBrowserGatewayOptions(input: {
 					...(workhorse.start === null
 						? []
 						: [
-								model.BrowserSettingsSchema.parse({
-									kind: "settings",
-									owner: "workhorse",
-									model: workhorse.start.model,
-									effort: null,
-									serviceTier: workhorse.start.serviceTier,
-									approvalPolicy: workhorse.start.approvalPolicy,
-									approvalsReviewer: workhorse.start.approvalsReviewer,
-									sandboxPolicy: workhorse.start.sandbox,
-									activePermissionProfile: workhorse.start.activePermissionProfile,
-								}),
+								{
+									kind: "codex_thread_settings" as const,
+									owner: "workhorse" as const,
+									settings: {
+										model: workhorse.start.model,
+										effort: null,
+										serviceTier: workhorse.start.serviceTier,
+										approvalPolicy: workhorse.start.approvalPolicy,
+										approvalsReviewer: workhorse.start.approvalsReviewer,
+										sandboxPolicy: workhorse.start.sandbox,
+										activePermissionProfile: workhorse.start.activePermissionProfile,
+									},
+								},
 							]),
 					...(coordinator.effective === null ||
 					coordinator.approvalPolicy === null ||
@@ -284,74 +274,52 @@ export function createCanvasBrowserGatewayOptions(input: {
 					coordinator.sandboxPolicy === null
 						? []
 						: [
-								model.BrowserSettingsSchema.parse({
-									kind: "settings",
-									owner: "coordinator",
-									model: coordinator.effective.model,
-									effort: coordinator.effective.effort,
-									serviceTier: coordinator.effective.serviceTier,
-									approvalPolicy: coordinator.approvalPolicy,
-									approvalsReviewer: coordinator.approvalsReviewer,
-									sandboxPolicy: coordinator.sandboxPolicy,
-									activePermissionProfile: coordinator.activePermissionProfile,
-								}),
+								{
+									kind: "codex_thread_settings" as const,
+									owner: "coordinator" as const,
+									settings: {
+										model: coordinator.effective.model,
+										effort: coordinator.effective.effort,
+										serviceTier: coordinator.effective.serviceTier,
+										approvalPolicy: coordinator.approvalPolicy,
+										approvalsReviewer: coordinator.approvalsReviewer,
+										sandboxPolicy: coordinator.sandboxPolicy,
+										activePermissionProfile: coordinator.activePermissionProfile,
+									},
+								},
 							]),
 				],
 				approvals: components.approvals
 					.inspect()
-					.flatMap((approval) =>
-						approval.state === "pending"
-							? [components.approvals.toBrowserApproval(approval.requestId)]
-							: [],
-					),
+					.map((approval) => components.approvals.toBrowserApproval(approval.requestId)),
 				dynamicApprovals: dynamicApprovals.browser.pending(),
-				semantic:
-					semantic?.targetThreadId === undefined ||
-					semantic.targetThreadId === null ||
-					freshSemantic === null
-						? null
-						: {
-								kind: "semantic_delivery",
-								threadId: semantic.targetThreadId,
-								delivery: semantic.outcome,
-								capturedAtMs: freshSemantic.freshness.capturedAtMs,
-								freshUntilMs: freshSemantic.freshness.freshUntilMs,
-								reason: semantic.reason,
-							},
+				semantic: {
+					kind: "codex_semantic",
+					outcome:
+						semantic === undefined
+							? null
+							: {
+									targetThreadId: semantic.targetThreadId,
+									outcome: semantic.outcome,
+									reason: semantic.reason,
+								},
+					freshness: freshSemantic?.freshness ?? null,
+				},
 				coordinator: {
-					kind: "coordinator",
-					state: coordinator.state === "inspect_only" ? "failed" : coordinator.state,
+					kind: "codex_coordinator",
+					state: coordinator.state,
 					threadId: coordinator.threadId,
-					activeTurnId: null,
-					configuredModel: coordinator.configured?.model ?? null,
-					configuredEffort: coordinator.configured?.effort ?? null,
-					model: coordinator.effective?.model ?? null,
-					effort: coordinator.effective?.effort ?? null,
-					serviceTier: coordinator.effective?.serviceTier ?? null,
+					configured: coordinator.configured,
+					effective: coordinator.effective,
 					reason: coordinator.reason,
 				},
-				voice: model.BrowserVoiceSchema.parse({
-					kind: "voice",
-					state: !context.mediaReady
-						? "unavailable"
-						: realtimeGeneration !== null
-							? "active"
-							: coordinator.state === "ready"
-								? "ready"
-								: "unavailable",
-					realtimeSessionId: context.mediaReady
-						? (realtimeGeneration?.browserSessionId ?? null)
-						: null,
-					transcript: components.realtime.transcript().map((record) => ({
-						itemId: record.itemId,
-						sequence: record.sequence,
-						speaker: record.role,
-						text: record.text,
-						final: record.status === "final",
-					})),
-					delivery: null,
-					reason: context.mediaReady ? null : "Browser audio is unavailable for this socket.",
-				}),
+				voice: {
+					kind: "codex_voice",
+					mediaReady: context.mediaReady,
+					generation: realtimeGeneration,
+					coordinatorState: coordinator.state,
+					transcript: components.realtime.transcript(),
+				},
 			};
 		},
 		onChange: input.onChange,

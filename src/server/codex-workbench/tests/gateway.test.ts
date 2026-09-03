@@ -209,6 +209,12 @@ describe("Codex workbench browser command routing", () => {
 		const lease = connection.claimLease();
 		const approval = value.makeOrdinaryApproval();
 		value.setOrdinaryApproval(approval);
+		expect(connection.snapshot().snapshot.approvals).toEqual([
+			expect.objectContaining({
+				requestId: approval.requestId,
+				lifecycle: expect.objectContaining({ state: "pending" }),
+			}),
+		]);
 		const command = value.model.BrowserCommandSchema.parse({
 			...commandTarget(lease),
 			command: "approvalRespond",
@@ -219,7 +225,17 @@ describe("Codex workbench browser command routing", () => {
 		const result = await connection.command(command);
 		expect(result.outcome).toBe("delivered");
 		expect(value.calls).toContain("approval.resolve");
-		value.setOrdinaryApproval(null);
+		expect(result.snapshot.approvals).toEqual([
+			expect.objectContaining({
+				requestId: approval.requestId,
+				lifecycle: expect.objectContaining({
+					state: "settled",
+					decision: "approved",
+					outcome: "delivered",
+				}),
+			}),
+		]);
+		expect(connection.snapshot().snapshot.approvals).toEqual([]);
 		const secondLease = connection.claimLease();
 		const stale = await connection.command({
 			...command,
