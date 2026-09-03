@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 07:34'
+updated_date: '2026-09-03 07:40'
 labels: []
 dependencies:
   - TASK-143.08.06.01
@@ -80,6 +80,8 @@ Give Archboard one server-owned visual conversion boundary for persisted board s
 11. Rework the retained owner test so actual CDP work is paused after entry, a second job queues, and stop plus abort settle both jobs while the same Chromium start yields the full cleanup census without a fixed wait.
 
 12. Correct the executable browser-owner order, focused renderer build prerequisite, INSTALL rebuild rule, and scale prose. Run only the direct fixture owner, shortened public renderer owner, same-start module owner, and exact static documentation checks before committing this rereview repair.
+
+13. Remove the production lease-test environment seam and its timing constant. Prove pre-render lock ordering through health held_boards plus an immediately successful concurrent hold under a short request timeout, then rerun only the focused public owner and scoped static checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -102,4 +104,6 @@ Rereview repair: the owned-canvas marker plus ARCHBOARD_TEST_WRITE_LEASE_MS=75 i
 Rereview containment and shutdown evidence: the private fixture now resolves only regular files below the canonical dist/frontend/assets root and rejects traversal, double encoding, directories, and unrelated paths. Its direct HTTP owner passed 1 test/7 expectations in 0.074 s with no Chromium. The module owner pauses an actually dispatched CDP job, queues a second, then proves typed active cancellation, typed queued shutdown, the same retained second start, and the complete cleanup census: 2 tests/32 expectations in 1.967 s with exactly 2 Chromium starts. The public owner passed 4 tests/79 expectations in 3.488 s with exactly 1 retained Chromium start. Final live-process and recent temp-root censuses were empty.
 
 Rereview documentation and static evidence: removed the retired finding-export browser owner from the documented 18-owner order, documented the focused renderer build prerequisite and package prebuild, fixed scale-1 prose, and made INSTALL require bun run build after pulls because renderer source is bundled. The writing-for-agents skill was found at /home/msc/Projects/archboard/.agents/skills/writing-for-agents/SKILL.md, read in full, and applied; this supersedes the earlier unavailable note. Inventory passed 39 tests/69 expectations in 5.453 s. Scoped Oxlint, Oxfmt, frontend TypeScript, isolated renderer-root TypeScript, static docs checks, and git diff check passed. Broad gates, root TypeScript, browser lane, and standalone probes remain intentionally unrun. Task remains In Progress under @codex with every acceptance criterion unchecked for parent review.
+
+Standards rereview supersedes the earlier injected-lease note. Removed ARCHBOARD_TEST_OWNED_CANVAS, ARCHBOARD_TEST_WRITE_LEASE_MS, injectedTestWriteLeaseMs, testWriteLeaseMs, TEST_SERVER_RENDERING_WRITE_LEASE_MS, and the holdBoard lease override; production has no test lease mode. The real public owner now pauses the retained renderer, proves /health has no Mermaid entry in held_boards while renderer.active, and requires the concurrent human hold to complete within 400 ms. It then preserves the concurrent write, under-lock collision remap, and canceled no-write proofs. Final focused result: 4 tests/80 expectations, ordering case 306.17 ms, owner 3.155 s, exactly 1 retained Chromium start. The prior seam run was 326.65 ms/3.488 s and the original full-lease run was 3601.35 ms/6.740 s. Scoped Oxlint, Oxfmt, frontend TypeScript, symbol-absence, and diff checks passed. No root TypeScript, broad suite, browser lane, or standalone probe ran. Task remains In Progress under @codex with every AC unchecked.
 <!-- SECTION:NOTES:END -->

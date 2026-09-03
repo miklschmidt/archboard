@@ -9,6 +9,7 @@ export interface JsonRequestOptions {
 	method?: string;
 	body?: unknown;
 	doing?: string;
+	signal?: AbortSignal;
 }
 
 export async function readOwnedJsonResponse<T>(
@@ -39,6 +40,7 @@ export function createJsonRequester(canvas: OwnedCanvas) {
 			canvas,
 			fetch(url, {
 				method,
+				signal: options.signal,
 				...(options.body === undefined
 					? {}
 					: {

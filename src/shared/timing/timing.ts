@@ -640,7 +640,7 @@ export const TEST_BOARD_RENDERER_STARTUP_FAILURE_TIMEOUT_MS = 3_000;
 export const TEST_BOARD_RENDERER_FIXTURE_TIMEOUT_MS = 1_000;
 /** Lazy Chromium startup plus concurrent PNG/SVG measured below 2s; no routine case gets a product-timeout sum. */
 export const TEST_SERVER_RENDERING_CASE_TIMEOUT_MS = 5_000;
-/** A short test-only write lease makes pre-render lock ordering observable without a production-duration wait. */
-export const TEST_SERVER_RENDERING_WRITE_LEASE_MS = 75;
+/** A healthy pre-render human hold is immediate; 400ms fails the focused owner before a product lease can expire. */
+export const TEST_SERVER_RENDERING_HOLD_TIMEOUT_MS = 400;
 /** Missing Chromium is a preflight refusal and should never approach the 5s product startup bound. */
 export const TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS = 2_000;
