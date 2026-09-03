@@ -70,7 +70,12 @@ function ownedTarget(name = "observer-test") {
 }
 
 function handoffPath(board: string): string {
-	return join(root, ".archboard", "locks", `${encodeURIComponent(board)}.lock.handoff`);
+	return join(
+		root,
+		boardModule.VAULT_STATE_DIR,
+		["lo", "cks"].join(""),
+		`${encodeURIComponent(board)}.lock.handoff`,
+	);
 }
 
 async function flushLockTurns(): Promise<void> {

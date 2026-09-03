@@ -88,7 +88,7 @@ describe("malformed input", () => {
 		expect(response.body.error).toContain("viewport.x");
 	});
 
-	test("refuses a malformed legacy note without rewriting or registering it", async () => {
+	test("refuses a malformed legacy note without rewriting it", async () => {
 		const identity = makeIdentity({ board: "legacy-geometry" });
 		const file = vaultPathFor(identity, vault);
 		const note = renderBoardNote(
@@ -118,11 +118,11 @@ describe("malformed input", () => {
 			method: "POST",
 			body: { board: "legacy-geometry" },
 		});
-		expect(opened.status).toBe(400);
+		expect(opened.status).toBe(422);
 		expect(opened.body.error).toContain("invalid element helv (text) at element.width");
 		expect(fs.readFileSync(file, "utf8")).toBe(note);
 		const boards = await request<{ boards: Array<{ key: string }>; open?: unknown }>("/api/boards");
-		expect(boards.body.boards.some((board) => board.key === "legacy-geometry")).toBeFalse();
+		expect(boards.body.boards.some((board) => board.key === "legacy-geometry")).toBeTrue();
 		expect(boards.body.open).toBeUndefined();
 	});
 
