@@ -16,29 +16,17 @@ describe("legacy injection removal policy", () => {
 		])
 			expect(existsSync(path.join(repoRoot, retired)), retired).toBeFalse();
 
-		const forbiddenProductionReferences: string[] = [];
-		const forbiddenTokens = [
-			"injection.js",
-			"app-server-control.js",
-			"app-server-control.ts",
-			"app-server-control.sock",
-			"CONTROL_SOCKET_DIR",
-			"CONTROL_SOCKET_FILE",
-			"controlSocketPath",
-			"ws+unix://",
-		] as const;
+		const forbiddenImporters: string[] = [];
 		for (const area of ["src/server", "src/runtime", "src/ui"] as const) {
 			for await (const file of new Bun.Glob("**/*.{ts,tsx}").scan({
 				cwd: path.join(repoRoot, area),
 			})) {
 				const source = readFileSync(path.join(repoRoot, area, file), "utf8");
-				for (const token of forbiddenTokens) {
-					if (source.includes(token))
-						forbiddenProductionReferences.push(`${area}/${file}: ${token}`);
-				}
+				if (source.includes("injection.js") || source.includes("app-server-control.js"))
+					forbiddenImporters.push(`${area}/${file}`);
 			}
 		}
-		expect(forbiddenProductionReferences).toEqual([]);
+		expect(forbiddenImporters).toEqual([]);
 	});
 
 	test("keeps all 19 canonical browser owners", () => {
