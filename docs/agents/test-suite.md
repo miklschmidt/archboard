@@ -289,10 +289,6 @@ note archboard did not write. About fifteen seconds.
   structured refusal and usage exits, and CLI-owned import path resolution.
 - The one-write owners in `test:system` count writes on the wire through a proxy, so a
   loop cannot pass itself off as a batch (TASK-068).
-- The change owners in `test:modules` and `test:system` own injection routing as well as the change feed. They
-  prove injection refuses a non-loopback canvas, stays off without its switch,
-  declines to arm without `ARCHBOARD_INJECT_THREAD`, and targets exactly the
-  configured task when it is set.
 - The lock owners in `test:modules` and `test:system` prove exclusion with two processes over one vault,
   which is the one thing an in-process mutex could not do (ADR 0016).
 - The repository-session owners in `test:system` use RepositoryFixture-owned HOME, XDG state, log,

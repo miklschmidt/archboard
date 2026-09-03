@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:08'
-updated_date: '2026-09-03 02:23'
+updated_date: '2026-09-03 02:27'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -15,6 +15,10 @@ references:
 modified_files:
   - src/runtime/engine/app-server-control.ts
   - tests/system/repository-policy/legacy-injection-removal.test.ts
+  - TESTING.md
+  - README.md
+  - AGENTS.md
+  - docs/agents/test-suite.md
 parent_task_id: TASK-143.06
 priority: high
 type: task
@@ -51,6 +55,8 @@ Delegation profile: gpt-5.6-luna, high.
 Implementation and focused validation, 2026-09-03: deleted src/runtime/engine/app-server-control.ts. The existing legacy-removal repository owner now asserts the module is absent, scans src/server, src/runtime, and src/ui TypeScript/TSX, and rejects control-client paths, socket names, control constants/helpers, and ws+unix framing. Historical ADR/research references were preserved. Capped focused owners passed: legacy-injection-removal repository policy (2 tests), exact Codex stdio process owner (13 tests, 74 assertions), Oxfmt check, and Oxlint. Capped bun run type-check was attempted after frozen-lockfile install and remains red on 12 unrelated pre-existing errors in git-process-owner.ts, git.ts, board-lock-lease.test.ts, board-inspection package support, and related files; no error references this change.
 
 Standards remediation, 2026-09-03: removed the generic control-socket token corpus and broad raw-token scan from the existing legacy-removal owner. The owner now retains only the retired-file absence assertion and exact injection.js/app-server-control.js import-spelling check across src/server, src/runtime, and src/ui TypeScript/TSX. Existing Codex process tests remain the owner for the stdio and alternative-argument contract. Focused policy test passed 2/2, Oxfmt check passed, Oxlint passed, and git diff --check passed under capped units.
+
+Specification documentation remediation, 2026-09-03: removed current runnable legacy-injection instructions from TESTING.md, including inject commands, environment knobs, control-socket status text, and the stale push paragraph. Replaced README.md and AGENTS.md claims with the private package-local stdio session and generated thread/inject_items path. Removed the stale legacy injection ownership claim from docs/agents/test-suite.md. Historical ADR/research and rejected-route architecture references remain. Focused current-doc search found no retired runnable guidance; legacy-removal owner passed 2/2, Oxfmt, Oxlint, and git diff --check passed under capped units.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
