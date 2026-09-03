@@ -29,7 +29,7 @@ function processRecord(pid: number): ProcessRecord {
 		.split(/\s+/);
 	const group = Number(fields[2]);
 	const startTime = fields[19];
-	if (!Number.isSafeInteger(group) || group <= 0 || !startTime) {
+	if (!Number.isSafeInteger(group) || !startTime) {
 		throw new Error(`Process ${pid} did not expose a valid group and start time.`);
 	}
 	return { identity: { pid, startTime }, group };
@@ -60,7 +60,7 @@ export function processIdentityOwnsGroup(identity: ProcessIdentity, group: numbe
 
 export function captureDetachedProcessGroup(leaderPid: number): ProcessGroupIdentity {
 	const record = processRecord(leaderPid);
-	if (record.group !== leaderPid) {
+	if (record.group <= 0 || record.group !== leaderPid) {
 		throw new Error(
 			`Detached process ${leaderPid} joined group ${record.group} instead of owning its group.`,
 		);
