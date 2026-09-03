@@ -5,20 +5,20 @@ import type {
 	BrowserDynamicApproval,
 	BrowserLogin,
 	BrowserOperationOutcome,
-	BrowserQueue,
 	BrowserReadiness,
 	BrowserSemanticDelivery,
 	BrowserSettings,
 	BrowserSnapshot,
 	BrowserThreadLink,
 	BrowserTimeline,
-	BrowserVoice,
 } from "../../../shared/codex-browser-model/index.js";
 import type {
 	CodexResponseByMethod,
 	CodexServerNotificationParamsByMethod,
 } from "../../../shared/codex-app-server-contract/index.js";
 import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
+import type { RealtimeTranscriptRecord } from "../../../shared/codex-realtime-host/index.js";
 
 export interface CodexAccountProjectionInput {
 	readonly kind: "codex_account_response";
@@ -52,12 +52,7 @@ export interface CodexSettingsProjectionInput {
 
 export interface CodexQueueProjectionInput {
 	readonly kind: "codex_queue";
-	readonly submissions:
-		| readonly {
-				readonly id: BrowserQueue["entries"][number]["submissionId"];
-				readonly input: readonly { readonly type: string; readonly text?: string }[];
-		  }[]
-		| null;
+	readonly submissions: readonly Pick<SessionQueuedSubmission, "id" | "input">[] | null;
 }
 
 export interface CodexSemanticProjectionInput {
@@ -94,13 +89,10 @@ export interface CodexVoiceProjectionInput {
 	readonly mediaReady: boolean;
 	readonly generation: { readonly browserSessionId: string } | null;
 	readonly coordinatorState: CodexCoordinatorProjectionInput["state"];
-	readonly transcript: readonly {
-		readonly itemId: string;
-		readonly sequence: number;
-		readonly role: BrowserVoice["transcript"][number]["speaker"];
-		readonly text: string;
-		readonly status: string;
-	}[];
+	readonly transcript: readonly Pick<
+		RealtimeTranscriptRecord,
+		"itemId" | "sequence" | "role" | "text" | "status"
+	>[];
 }
 
 export interface BrowserProjectionInput {

@@ -329,24 +329,22 @@ export function createCodexWorkbenchGateway(
 		for (const [commandId, entry] of inFlightCommands)
 			if (entry.connection === state.instance) inFlightCommands.delete(commandId);
 		const disconnectActionContext = state.binding;
-		let presenterContext: BrowserPresenterContext | null = disconnectActionContext;
-		if (presenterContext === null) {
-			try {
-				const binding = readBinding(state.paneId);
-				const link = binding.link;
-				if (link.state === "executable" && link.childId !== null && link.epoch !== null)
-					presenterContext = {
-						browserId: state.browserId,
-						connection: state.instance,
-						paneId: state.paneId,
-						childId: link.childId,
-						epoch: link.epoch,
-						link,
-						linkRevision: binding.revision,
-					};
-			} catch {
-				// A pane binding that is already gone owns no approval cleanup.
-			}
+		let presenterContext: BrowserPresenterContext | null = null;
+		try {
+			const binding = readBinding(state.paneId);
+			const link = binding.link;
+			if (link.state === "executable" && link.childId !== null && link.epoch !== null)
+				presenterContext = {
+					browserId: state.browserId,
+					connection: state.instance,
+					paneId: state.paneId,
+					childId: link.childId,
+					epoch: link.epoch,
+					link,
+					linkRevision: binding.revision,
+				};
+		} catch {
+			// A pane binding that is already gone owns no approval cleanup.
 		}
 		const hasOtherPresenter = Array.from(connections.values()).some((candidate) => {
 			if (candidate === state || candidate.closed || candidate.paneId !== state.paneId)
