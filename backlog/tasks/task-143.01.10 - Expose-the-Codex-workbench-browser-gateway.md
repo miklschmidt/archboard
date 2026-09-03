@@ -1,10 +1,11 @@
 ---
 id: TASK-143.01.10
 title: Expose the Codex workbench browser gateway
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-02 01:39'
+updated_date: '2026-09-03 22:09'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -40,7 +41,7 @@ Expose the closed browser gateway for account and session readiness, thread link
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Paused by TASK-143.08. Reopen only after TASK-143.08.05 is Done. Replace this pause with a fresh plan that consumes the recovered generated-derived browser contract, one gateway owner, and the retained reachable-behavior matrix; do not restore duplicate state, schema, or remediation-test owners.
+1. Add one canvas-side live timeline owner that reads the authoritative current linked thread through typed session turn/item pages, maps only the reviewed seven owner presentations, and publishes bounded readonly CodexTimelineProjectionInput updates. 2. Feed that owner through the existing production browser gateway projection and lifecycle notification seam without adding browser DTO construction, a second reducer, or a mutation path. 3. Add focused producer/gateway coverage for pagination, item/status/approval mapping, link changes, refresh failures, and live publication; run exact focused owners plus TypeScript, scoped lint/format, boundary/inventory, and diff checks, then commit with acceptance criteria unchecked.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -53,6 +54,8 @@ Async settlement remediation complete: disconnect owners now run independently a
 Finalization evidence: AC #1 is proved by the closed readiness and capability-gate tests. AC #2 is proved by renewable app-global lease, exact link binding, non-retargetable approvals, and expiry or transfer tests. AC #3 is proved by account pre-readiness coverage, every route owner, exact capability and link checks, and preserved dynamic identity fields. AC #4 is proved by bounded snapshots, strict sequenced delivery, duplicate and stale handling, command retention, approval_required, disconnect, recovery, and lifecycle-drain tests. The complete BASE..HEAD range is review-clean. The documented combined repository-policy run remains preserved as capped-OOM and was not rerun.
 
 Reopened with user approval after TASK-143.03.03, TASK-143.03.06, and TASK-143.03.07 exposed hardcoded or missing browser projections in the production gateway.
+
+Live browser timeline producer implemented. A single canvas owner reads bounded typed thread-turn pages with full item view, obtains only the opaque timeline cursor from the session boundary, maps the seven reviewed presentation arms plus exact item-bound ordinary approvals, strips NULs, bounds text/cursors/items, and caches per pane/link/capability. Stale link loads are discarded; matching raw transport notifications are correlated through the trusted identity serializer; failed refreshes recover on a later matching event. The existing gateway projection receives the owner output and production lifecycle disposes it with the generation; no browser DTO builder, second reducer, or mutation path was added. Evidence: 70 focused tests and 435 assertions passed across timeline, gateway, projection, generation, recovery, and production-initialization owners; root and frontend TypeScript, scoped Oxlint/Oxfmt, repository boundary/inventory policy, and diff checks passed. No broad, browser, or full check lane ran. Acceptance criteria remain unchecked and the task remains In Progress.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
