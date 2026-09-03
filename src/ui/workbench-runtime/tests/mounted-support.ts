@@ -73,6 +73,8 @@ export function snapshot(timelineValue: BrowserTimeline = timeline()): BrowserSn
 			state: "ready",
 			threadId: "mounted-coordinator" as BrowserSnapshot["coordinator"]["threadId"],
 			activeTurnId: null,
+			configuredModel: null,
+			configuredEffort: null,
 			model: null,
 			effort: null,
 			serviceTier: null,

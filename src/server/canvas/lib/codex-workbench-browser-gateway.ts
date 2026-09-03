@@ -323,6 +323,8 @@ export function createCanvasBrowserGatewayOptions(input: {
 					state: coordinator.state === "inspect_only" ? "failed" : coordinator.state,
 					threadId: coordinator.threadId,
 					activeTurnId: null,
+					configuredModel: coordinator.configured?.model ?? null,
+					configuredEffort: coordinator.configured?.effort ?? null,
 					model: coordinator.effective?.model ?? null,
 					effort: coordinator.effective?.effort ?? null,
 					serviceTier: coordinator.effective?.serviceTier ?? null,

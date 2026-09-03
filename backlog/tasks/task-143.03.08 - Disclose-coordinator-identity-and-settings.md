@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-03 19:58'
+updated_date: '2026-09-03 20:10'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -18,6 +18,8 @@ references:
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
   - src/ui/workbench-coordinator
+  - src/shared/codex-browser-model
+  - src/server/canvas/lib/codex-workbench-browser-gateway.ts
 parent_task_id: TASK-143.03
 priority: high
 type: task
@@ -45,12 +47,21 @@ Render read-only coordinator identity and host-selected configured/effective mod
 2. Classify loading, confirmed, stale, unavailable, and confirmed priority-fallback states from transport freshness, coordinator lifecycle, and the authoritative coordinator settings row; preserve missing-fact recovery text and deterministic formatting for approval, reviewer, sandbox, and permission-profile values.
 3. Render a flat semantic disclosure using Archboard theme utilities. Give coordinator and linked-workhorse identity, history, and settings separate named regions, keep coordinator history read-only, and expose no form, save, thread-link, or browser-command control.
 4. Add focused public-interface tests for the reachable state matrix, authoritative configured/effective values, absent-field recovery, distinct visual/screen-reader labels, and forbidden edit/control markup. Run only the focused owner, both TypeScript configs, exact scoped Oxlint/Oxfmt, boundary/import policy checks, and diff checks.
+
+5. Remediation: extend the existing BrowserCoordinator host projection with configuredModel and configuredEffort sourced directly from CoordinatorSnapshot.configured, while retaining model, effort, and serviceTier as effective facts and deriving all UI types from the browser schema.
+6. Consume configured and effective fields separately, make coordinator history explicitly unavailable until the host publishes it, and classify snapshotless reconnect as unavailable while retained reconnect data remains stale; keep starting recovery specific to the settings handshake.
+7. Delete the private-source spelling assertion. Add only public state-matrix cases for snapshotless reconnect and starting-without-settings, plus an assertion in the existing single-host production projection owner for configured/effective values.
+8. Run focused red/green coordinator and host-projection owners, both TypeScript configs, exact scoped lint/format, relevant boundary/import owners, and diff checks; commit the remediation separately and leave the task In Progress.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Implemented one read-only src/ui/workbench-coordinator deep module over BrowserWorkbenchState. Its pure projector consumes the existing browser host projection, requires one authoritative coordinator settings row, derives configured and effective values without a second protocol/settings type, distinguishes loading, confirmed, stale, unavailable, and non-advertised-priority fallback, and gives every missing host fact a recovery. The renderer uses flat semantic-token composition and separate named coordinator identity/history, coordinator settings, and linked-workhorse identity/history/settings regions. It exposes no form, control, link, command, settings mutation, or optimistic state.
+Implemented one strictly read-only src/ui/workbench-coordinator deep module over BrowserWorkbenchState. The browser coordinator projection now carries required nullable configuredModel and configuredEffort fields sourced directly from CoordinatorSnapshot.configured. Its existing model, effort, and serviceTier fields remain effective host facts. The UI consumes those distinct fields and uses the coordinator settings row only for approvalPolicy, approvalsReviewer, sandboxPolicy, and activePermissionProfile, without a second settings type.
 
-Focused validation: coordinator module 5 tests/73 expectations; existing workbench runtime/timeline providers 26 tests/212 expectations; boundary and assistant-ui import policies 20 tests/353 expectations. Root and frontend TypeScript passed. Exact src/ui/workbench-coordinator Oxlint and Oxfmt checks passed. git diff --check passed. No broad module, system, repository, browser, or check lane was run.
+The projector distinguishes loading, confirmed, stale retained data, snapshotless unavailable, and non-advertised-priority fallback. Starting snapshots retain configured model and effort while unavailable settings fields use the settings-handshake recovery. Snapshotless reconnect waits for a fresh snapshot. Coordinator history remains unavailable with a named missing host fact and separate-task recovery because the browser host publishes no coordinator timeline. The renderer keeps coordinator identity/history, coordinator settings, and linked-workhorse identity/history/settings in separate named regions. It exposes no form, control, link, command, settings mutation, or optimistic state.
+
+Review remediation removed the private-source spelling test. Public export and SSR output tests retain the stable evidence for the two-function interface, distinct semantics, and absence of form/link controls.
+
+Red evidence: the coordinator owner failed configured/effective separation and starting recovery; the single-host production owner failed because configured fields were absent. Green evidence: final coordinator plus production projection run passed 6 tests/108 expectations; browser model and transport contract owners passed 28/423; runtime/timeline providers passed 26/212; live canvas socket plus production composition passed 2/51; server gateway module passed 41/208; boundary/import policy passed 20/353. Both TypeScript configs, exact changed-file Oxlint/Oxfmt, and diff checks passed. No browser or broad repository/check lane ran.
 <!-- SECTION:NOTES:END -->
