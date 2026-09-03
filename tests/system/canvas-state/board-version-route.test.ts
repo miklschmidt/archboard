@@ -79,42 +79,42 @@ describe.serial("board version write boundary", () => {
 			body: box("one", 10),
 		});
 		const noteFile = join(vault, "payments.excalidraw.md");
-		expect(first.body.fingerprint?.version).toBe(1);
-		expect(versionInOwnedNote(readFileSync(noteFile))).toBe(1);
+		expect(first.body.fingerprint?.version).toBe(2);
+		expect(versionInOwnedNote(readFileSync(noteFile))).toBe(2);
 		expect(first.body.fingerprint?.note).toBe(sha256(readFileSync(noteFile)));
 
 		const second = await request<VersionBody>("/api/elements?board=payments", {
 			method: "POST",
 			body: box("two", 200),
 		});
-		expect(second.body.fingerprint?.version).toBe(2);
+		expect(second.body.fingerprint?.version).toBe(3);
 		const info = await request<VersionBody>("/api/boards/info?board=payments");
-		expect(info.body.version).toBe(2);
+		expect(info.body.version).toBe(3);
 	});
 
 	test("matching expectations pass and stale expectations return the current untouched board", async () => {
-		const kept = await request<VersionBody>("/api/elements?board=payments&expectVersion=2", {
+		const kept = await request<VersionBody>("/api/elements?board=payments&expectVersion=3", {
 			method: "POST",
 			body: box("three", 400),
 		});
 		expect(kept.status).toBe(200);
-		expect(kept.body.fingerprint?.version).toBe(3);
+		expect(kept.body.fingerprint?.version).toBe(4);
 
 		const noteFile = join(vault, "payments.excalidraw.md");
 		const before = readFileSync(noteFile);
-		const stale = await request<VersionBody>("/api/elements?board=payments&expectVersion=2", {
+		const stale = await request<VersionBody>("/api/elements?board=payments&expectVersion=3", {
 			method: "POST",
 			body: box("four", 600),
 		});
 		expect(stale.status).toBe(409);
 		expect(stale.body.code).toBe("BOARD_VERSION_CONFLICT");
-		expect(stale.body.versionConflict).toMatchObject({ expected: 2, actual: 3 });
+		expect(stale.body.versionConflict).toMatchObject({ expected: 3, actual: 4 });
 		expect(stale.body.error).toMatch(/1 time\(s\)/);
 
 		const current = await request<VersionBody>("/api/elements?board=payments");
 		const info = await request<VersionBody>("/api/boards/info?board=payments");
 		expect(stale.body.document).toEqual(current.body.elements);
-		expect(stale.body.version).toBe(3);
+		expect(stale.body.version).toBe(4);
 		expect(stale.body.version).toBe(info.body.version);
 		expect(readFileSync(noteFile)).toEqual(before);
 		expect(info.body.held).toBeUndefined();
@@ -129,12 +129,12 @@ describe.serial("board version write boundary", () => {
 		expect(invalid.body.code).toBe("BAD_EXPECTED_VERSION");
 
 		await request("/api/boards/new", { method: "POST", body: { board: "fresh" } });
-		const first = await request<VersionBody>("/api/elements?board=fresh&expectVersion=0", {
+		const first = await request<VersionBody>("/api/elements?board=fresh&expectVersion=1", {
 			method: "POST",
 			body: box("six", 10),
 		});
 		expect(first.status).toBe(200);
-		expect(first.body.fingerprint?.version).toBe(1);
+		expect(first.body.fingerprint?.version).toBe(2);
 
 		const batch = await request<VersionBody>("/api/elements/batch?board=payments&expectVersion=1", {
 			method: "POST",
