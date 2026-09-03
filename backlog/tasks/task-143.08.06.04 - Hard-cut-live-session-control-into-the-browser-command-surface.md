@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 09:26'
+updated_date: '2026-09-03 09:39'
 labels: []
 dependencies:
   - TASK-143.08.06.02
@@ -58,6 +58,10 @@ Make the public command boundary teach the architecture. Persisted-board work re
 9. Final-spec repair: remove obsolete source/loadedAt fields from all exact compare callers and public shapes; recompose navigator inventory whenever authoritative pane state changes so first-pane scratch is deterministic; correct persisted-only comments/audit fields; and rerun only focused compare owners, zero-client shape owner, scoped UI/static checks, and one capped navigator owner.
 
 10. Resolve the confirmed save-elsewhere release race by carrying the exact human source holder through terminal hold resolution, releasing that holder synchronously after target persistence and before board_released/save completion, and keeping the browser release idempotent. Add the exact browser-free next-writer ordering assertion, replace the post-adoption synthetic move with trusted pointer input in the existing browser owner, then run only the affected owner slices and scoped static checks.
+
+11. Extract the save-elsewhere recovery and post-adoption contention proof into its own exact-name browser case with a fresh owned canvas/browser. Keep the original broadcast-convergence case and delete the moved setup/assertions from it. The extracted case will create only the source scene needed for a note hold, assert source adoption and no repoint, acquire writer B directly after save, exercise the queued edit with a trusted pointer drag, and prove persistence after B releases. Run that exact case once under the 20-second TERM / 5-second KILL cap, then run only exact-file lint, format, and diff checks.
+
+12. Keep the extraction under one file-level owned canvas/browser fixture so full-file execution still has one startup. Give each exact-name case its own board, reset only the browser fetch counters between cases, and cap every recovery wait at three seconds. The first case retains broadcast convergence; the second owns note-hold, save-elsewhere adoption, exact-holder release, and trusted-pointer queue persistence.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -78,4 +82,8 @@ Final-spec repair at pre-commit HEAD: removed remaining compare source/loadedAt 
 Release-order remediation at 88cb018684fcd5c848cf940bd88b0c19bc7a950c: the write boundary now carries its exact source LockHolder through terminal held-board resolution, releases only that human holder after target persistence and commit stamping, then queues board_released; the pane release remains idempotent best effort. The browser-free ordering owner proves human B acquires the source immediately after human A receives a successful save-elsewhere response, with no polling or pane callback.
 
 Focused green: exact next-writer held-board owner (1 test, 8 assertions), existing save-elsewhere source-document owner (1 test, 16 assertions), board-write observer owner (4 tests, 60 assertions), and exact-file Oxlint/Oxfmt/diff checks. The one permitted real-browser run built the frontend and entered human-hold-persistence, then reached the mandatory 20-second TERM / 5-second KILL cap before emitting an assertion result (exit 137); it was not rerun. The capped run left 12 agent-browser/Chromium processes, all terminated; the exact /tmp/ab-lane-S4w69J namespace was removed. Task remains In Progress and all acceptance criteria remain unchecked.
+
+Final proof extraction at pre-commit HEAD: human-hold-persistence now has two exact-name cases sharing one file-level canvas/browser fixture. The broadcast case no longer carries note-conflict or recovery setup. The new one-element recovery case proves the old pane holder blocks B before save, asks save-elsewhere through the public API, requires B to acquire directly after the successful response, compares the adopted page document/files to the authoritative source, checks the held image/file reached only the saved copy, uses the trusted pointer drag while B owns the mutex, and checks the queued report persists after release without changing the pane address. Full-file startup cost stays one canvas and one browser: test count changes 1 to 2, startup count stays 1 to 1.
+
+Focused execution did not complete. Attempt 1 failed in 123 ms before browser startup because the manually isolated runner environment lacked its child TMPDIR; that empty namespace was removed. The one permitted retry started one canvas and one browser, reached save-elsewhere in about 2.2 seconds according to the exact canvas log, then the compound recovery predicate ran until the outer TERM cap at 20.085 seconds with no assertion result. No third run was made. After that evidence, the compound default-timeout poll was replaced by one three-second wait for the concrete source element followed by direct per-contract assertions; the remaining extracted waits are capped at three seconds and the test itself at ten seconds. Scoped Oxlint, Oxfmt, max-lines, and diff checks pass. Exact run-owned browser processes and /tmp namespaces were removed. TASK remains In Progress and all acceptance criteria remain unchecked; completed browser proof is still blocked by the run limit.
 <!-- SECTION:NOTES:END -->

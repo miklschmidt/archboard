@@ -48,3 +48,14 @@ export const readHoldCounters = (browser: AgentBrowserSession): Promise<HoldCoun
 		pending: window.__holdPersistence.pending.length,
 		reports: window.__holdPersistence.reports,
 	}))()`);
+
+export const resetHoldRecorder = (browser: AgentBrowserSession): Promise<boolean> =>
+	browser.eval(`(() => {
+		const state = window.__holdPersistence;
+		if (!state || state.pending.length !== 0) return false;
+		state.delay = 0;
+		state.holds = 0;
+		state.holdDone = 0;
+		state.reports = 0;
+		return true;
+	})()`);
