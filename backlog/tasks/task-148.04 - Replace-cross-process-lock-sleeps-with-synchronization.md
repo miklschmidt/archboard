@@ -1,11 +1,16 @@
 ---
 id: TASK-148.04
 title: Replace cross-process lock sleeps with synchronization
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-09-02 21:36'
+updated_date: '2026-09-03 14:03'
 labels: []
 dependencies: []
+modified_files:
+  - src/shared/timing/timing.ts
+  - tests/system/process-contracts/cross-process-lock.test.ts
 parent_task_id: TASK-148
 priority: high
 type: bug
@@ -25,3 +30,18 @@ Cross-process lock owners synchronize on watcher and lease observations instead 
 - [ ] #3 A real elapsed wait remains only when it proves a genuine integration fact; its reason, measurement, and TEST_* outer bound are documented locally.
 - [ ] #4 Cross-process watcher delivery is measured after raw sleeps move to observable conditions before any waiver is considered.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Replace the three elapsed sleeps in the existing cross-process owner with predicate-based board_lock observations. Keep the human takeover held until the original canvas reports that exact owner, then release and observe both canvases report free before asserting the told-once revocation.
+2. Measure each cross-process watcher delivery from the completed lock mutation to its matching frame and bound it with one named TEST_* constant documented beside the lock timing policy for TASK-148.04. Leave production lease, renewal, and watcher values unchanged.
+3. Run only the focused cross-process owner plus exact-file lint and format checks through the verified capped runner. Audit BASE..HEAD, owned processes, and temporary artifacts, then commit for independent review.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Replaced the two 1,200 ms sleeps and the LOCK_RENEW_MS + 500 ms wait in the cross-process owner with ordered board_lock observations. The owner now observes the recovered writer hold and release, measures remote claim delivery, keeps the human takeover held until the original canvas observes that exact owner, observes both canvases return to free, and then asserts CLAIM_REVOKED. Added TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS as a test-only outer bound composed from LOCK_WATCH_MS; production lock timing is unchanged.
+Focused validation through the verified capped runner: cross-process-lock.test.ts passed three times at 15.97s, 16.15s, and 15.98s. Exact-file Oxlint and oxfmt checks passed for the owner and timing.ts.
+<!-- SECTION:NOTES:END -->
