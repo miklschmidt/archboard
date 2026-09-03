@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-03 17:33'
-updated_date: '2026-09-03 18:24'
+updated_date: '2026-09-03 18:35'
 labels: []
 dependencies:
   - TASK-143.08.05
@@ -21,8 +21,16 @@ references:
   - TASK-143.08.05
 modified_files:
   - AGENTS.md
+  - docs/agents/boundaries.md
   - docs/agents/test-suite.md
   - package.json
+  - src/runtime/board-inspection/tests/large-input-indexes.test.ts
+  - src/runtime/board-inspection/tests/large-input-indexes-capacity.test.ts
+  - src/runtime/board-inspection/tests/sweep-filtering.test.ts
+  - src/runtime/board-inspection/tests/sweep-filtering-capacity.test.ts
+  - src/runtime/board-inspection/tests/sweep-ordering.test.ts
+  - src/runtime/board-inspection/tests/sweep-partial-complement.test.ts
+  - src/runtime/board-inspection/tests/sweep-partial-complement-capacity.test.ts
   - src/runtime/codex-dynamic-tools/tests/wire-ownership.test.ts
   - src/runtime/codex-dynamic-tools/tests/wire-capacity.test.ts
   - src/runtime/codex-transport/tests/write-boundaries.test.ts
@@ -70,11 +78,7 @@ Implementation must wait for TASK-143.08.05 and for reconciliation of the active
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Enumerate every native test owner, adapter, package command, and hosted-CI path reachable from the canonical 23cc54fb normal gate; classify each by concrete Archboard regression, supported topology, and cheapest stable interface.
-2. Remove owners that only test obvious use, duplicate coverage, upstream/test infrastructure, runner behavior, or obsolete performance claims; retain only still-useful performance or tooling checks behind explicit opt-in package commands.
-3. Split normal and opt-in inventories at the existing typed inventory boundary, keep browser execution serial, and add the cheapest fail-closed repository policy proving declared scope completeness, disjointness, and normal-gate unreachability.
-4. Update package wiring, CI-facing truth, AGENTS.md, and docs/agents/test-suite.md without restoring any TASK-148.12 candidate code.
-5. Verify command reachability and representative affected behavior with focused static/inventory/unit checks, exact type/lint/format/diff checks, and one minimum opt-in wiring invocation; record reused timing evidence and commit while leaving the task In Progress for review.
+1. Reclassify the six board-inspection candidates case by case. Restore sweep-ordering and ordinary sweep semantics to normal module ownership, and move only scale loops or ceilings into clearly named capacity files. 2. Extend the existing package-script graph so whitespace-tolerant Bun edges, all scripts, manual opt-in commands, and reachable helper-selected native owners are checked fail-closed. Add the three requested mutation-red reachability cases. 3. Discover `.test.tsx` and `.spec.tsx` owners and add one static inclusion case. 4. Remove the duplicated real-workflow/environment assertion from the opt-in browser policy owner and correct AGENTS.md plus boundaries.md normal/opt-in wording. 5. Run only the requested focused owners and exact static checks, update task evidence, create a separate remediation commit, and callback READY_FOR_REREVIEW.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -105,4 +109,23 @@ Timing evidence: a direct one-off `bun run test:opt-in:capacity` passed 36 tests
 Focused verification: root TypeScript 1.66 s; frontend TypeScript 0.45 s; format 0.18 s; lint 0.11 s; repository inventory plus CI policy 41 tests in 23 ms; normal package read-only contract 1 test in 183 ms. Exact Bun ignore wiring was exercised for both new normal/opt-in wire and transport splits. No broad lane or forbidden path was used.
 
 Residue check found only pre-existing `/tmp/archboard-task-130-05-package-bjuM2J` and `/tmp/archboard-owned-canvas-*` entries with timestamps earlier than this task. They were left untouched.
+
+Review remediation on top of 59ee3a44:
+
+Corrected owner classification:
+- Normal module ownership is now 200 files. Sweep ordering stays wholly normal. `large-input-indexes.test.ts`, `sweep-filtering.test.ts`, and `sweep-partial-complement.test.ts` retain ordinary ordering, filtering, stable identity, exact findings, and semantic oracle cases.
+- Opt-in capacity is now 8 files. Comparison and input ceilings remain opt-in. Three new `*-capacity.test.ts` files contain only large index loads, multi-thousand segment/matrix work, active-profile bounds, and scale formulas. Dynamic-wire retention, transport frame capacity, and frozen app-server capacity remain opt-in.
+- System, repository, serial-browser, tooling, topology, and browser-performance file counts remain 83, 18, 16, 13, 1, and 2.
+
+The package graph now uses the existing quote/comment-aware executable Bun parser for every script edge, preserves repeated edges for duplicate detection, accepts whitespace between `bun`, `run`, and the script name, and records native selections for every package script. Known manual renderer opt-ins and all opt-in test commands are protected explicitly. A native opt-in owner reached from `check` through an arbitrary helper is rejected even when the helper name is not a test lane.
+
+Four mutation-red cases now prove the repaired holes: `bun  run test:opt-in:capacity`, direct `bun run opt-in:renderer-chromium`, `check` through `verify:capacity` to a native capacity owner, and discovery of both `.test.tsx` and `.spec.tsx` fixtures.
+
+Removed the duplicated real-workflow and hosted-environment assertion from `ci-browser-gate.test.ts`; normal `ci-gate.test.ts` remains the single owner. The opt-in file keeps unique workflow-parser, hosted-exception, and browser-adapter behavior.
+
+Documentation now calls `bun run test` and the four package lanes the whole normal suite. `docs/agents/boundaries.md` names the explicit opt-in categories without owner counts. The test guide documents TSX inventory and helper-chain protection.
+
+Focused validation: inventory plus normal CI policy 44 tests in 33 ms; unique opt-in CI-browser parser case 1 test in 20 ms; normal inspection semantics 20 tests in 614 ms; one deterministic case from each new capacity file passed in 99 ms, 193 ms, and 118 ms; package read-only contract passed in 199 ms; root TypeScript 1.80 s; frontend TypeScript 0.44 s; Oxlint 0.06 s; Oxfmt 0.20 s; diff check passed. Static counts were 200/83/18/16 normal and 8/13/1/2 opt-in with no inventory errors.
+
+Focused tests left no `archboard-inventory-tsx-*` or `archboard-browser-preflight-*` directories in `/tmp`. Previously reported pre-existing residue remains untouched. Task stays In Progress for rereview.
 <!-- SECTION:NOTES:END -->

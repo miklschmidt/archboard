@@ -30,15 +30,16 @@ their cheapest product owner. These commands contain everything outside it:
 
 | Command                                                                  | Concrete regressions and cheapest interface                                                                                                    |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bun run test:opt-in:capacity`                                           | Inspection scale ceilings, transport retention/frame capacity, and the frozen app-server capacity authority through focused module owners.     |
+| `bun run test:opt-in:capacity`                                           | Inspection input/comparison ceilings, large-index and sweep work limits, transport capacity, and the frozen app-server capacity authority.     |
 | `bun run test:opt-in:tooling`                                            | Browser adapter, wall-clock preload, owned-process harness, renderer fixture, and external watchdog behavior through their real test adapters. |
 | `bun run test:opt-in:topology`                                           | The two-server same-vault lock handoff through its process boundary.                                                                           |
 | `bun run test:opt-in:browser-performance`                                | The 10,000-element human-edit measurement and 42-cycle convergence soak through the serial real-browser adapter.                               |
 | `bun run opt-in:renderer-chromium` / `bun run opt-in:renderer-emulation` | Manual renderer and upstream-emulation probes. They are never package test owners.                                                             |
 
-The normal/opt-in inventory is static and fail-closed. Every native owner is
-selected exactly once, every opt-in lane is unreachable from `check`, and
-hosted CI may invoke only `bun run check`.
+The normal/opt-in inventory is static and fail-closed. Every `.test.ts`,
+`.spec.ts`, `.test.tsx`, and `.spec.tsx` owner is selected exactly once. Every
+opt-in package command is unreachable from `check`, including through a helper
+script, and hosted CI may invoke only `bun run check`.
 
 The whole chain's duration is machine-dependent. Browser owners run one at a
 time. Re-measure before making a timing claim.

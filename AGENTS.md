@@ -54,7 +54,7 @@ intermittently fails extracting a tarball; just run it again.
 ```bash
 bun install
 bun run build       # frontend only -> dist/frontend/
-bun run test        # type-check first, then the whole suite
+bun run test        # type-check first, then the whole normal suite
 ./bin/canvas start  # canvas server on 127.0.0.1:3000
 ./bin/canvas status # names stale source in a running server, and the remedy
 ./bin/canvas stop

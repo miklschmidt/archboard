@@ -128,6 +128,9 @@ still goes through a root entrypoint.
 
 ## Validation
 
-Run `bun run lint` for code and boundary lint. Run `bun run check` for lint, formatting, type
-checking, and all four native test lanes. `bun run fix` applies safe Oxlint fixes, formats the
-repository, then validates the distributable skills.
+Run `bun run lint` for code and boundary lint. Run `bun run check` for lint,
+formatting, type checking, and all four normal native test lanes. Explicit
+`test:opt-in:*` package commands own capacity, test tooling, unsupported
+topologies, and browser performance outside that normal gate. `bun run fix`
+applies safe Oxlint fixes, formats the repository, then validates the
+distributable skills.
