@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 09:39'
+updated_date: '2026-09-03 09:56'
 labels: []
 dependencies:
   - TASK-143.08.06.02
@@ -62,6 +62,8 @@ Make the public command boundary teach the architecture. Persisted-board work re
 11. Extract the save-elsewhere recovery and post-adoption contention proof into its own exact-name browser case with a fresh owned canvas/browser. Keep the original broadcast-convergence case and delete the moved setup/assertions from it. The extracted case will create only the source scene needed for a note hold, assert source adoption and no repoint, acquire writer B directly after save, exercise the queued edit with a trusted pointer drag, and prove persistence after B releases. Run that exact case once under the 20-second TERM / 5-second KILL cap, then run only exact-file lint, format, and diff checks.
 
 12. Keep the extraction under one file-level owned canvas/browser fixture so full-file execution still has one startup. Give each exact-name case its own board, reset only the browser fetch counters between cases, and cap every recovery wait at three seconds. The first case retains broadcast convergence; the second owns note-hold, save-elsewhere adoption, exact-holder release, and trusted-pointer queue persistence.
+
+13. Record the exact adopted source note as the source board conflict baseline during successful save-elsewhere recovery, before releasing its human lease or queueing board_released. Extend the existing held-board recovery case with an immediate identified-human source write, then validate that exact API case and the exact recovery browser case once.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -86,4 +88,6 @@ Focused green: exact next-writer held-board owner (1 test, 8 assertions), existi
 Final proof extraction at pre-commit HEAD: human-hold-persistence now has two exact-name cases sharing one file-level canvas/browser fixture. The broadcast case no longer carries note-conflict or recovery setup. The new one-element recovery case proves the old pane holder blocks B before save, asks save-elsewhere through the public API, requires B to acquire directly after the successful response, compares the adopted page document/files to the authoritative source, checks the held image/file reached only the saved copy, uses the trusted pointer drag while B owns the mutex, and checks the queued report persists after release without changing the pane address. Full-file startup cost stays one canvas and one browser: test count changes 1 to 2, startup count stays 1 to 1.
 
 Focused execution did not complete. Attempt 1 failed in 123 ms before browser startup because the manually isolated runner environment lacked its child TMPDIR; that empty namespace was removed. The one permitted retry started one canvas and one browser, reached save-elsewhere in about 2.2 seconds according to the exact canvas log, then the compound recovery predicate ran until the outer TERM cap at 20.085 seconds with no assertion result. No third run was made. After that evidence, the compound default-timeout poll was replaced by one three-second wait for the concrete source element followed by direct per-contract assertions; the remaining extracted waits are capped at three seconds and the test itself at ten seconds. Scoped Oxlint, Oxfmt, max-lines, and diff checks pass. Exact run-owned browser processes and /tmp namespaces were removed. TASK remains In Progress and all acceptance criteria remain unchecked; completed browser proof is still blocked by the run limit.
+
+Save-elsewhere baseline repair at pre-commit HEAD: after target persistence succeeds, terminal held-source recovery reads the authoritative source note, requires its exact source file/hash/version, records that tuple through board-store recordBaseline, then releases the exact human source lease and queues board_released. The existing held-board recovery case now immediately submits an identified-human source write and proves 200, no held response, and persistence through both source-note bytes and public GET. Focused API proof: 1 pass, 7 filtered, 20 assertions, 1.215s wall, no browser owner. Exact browser proof through the canonical adapter: 1 pass, 1 filtered, 38 assertions, 4.505s wall; 1 frontend build, 1 Bun owner, 1 canvas, 1 browser session, and the adapter cleanup audit retained 0 owned processes/listeners/sockets. Exact-file Oxfmt, Oxlint, and diff checks pass. TASK remains In Progress and all acceptance criteria remain unchecked.
 <!-- SECTION:NOTES:END -->

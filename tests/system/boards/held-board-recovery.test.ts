@@ -342,6 +342,25 @@ describe("held board recovery", () => {
 				.map((element) => element.id)
 				.toSorted(),
 		).toEqual(source.body.elements.map((element) => element.id).toSorted());
+		const resumed = await request<ElementsBody>("/api/elements?board=holdelse&clientId=held-pane", {
+			method: "POST",
+			body: {
+				id: "after-elsewhere",
+				type: "rectangle",
+				x: 20,
+				y: 20,
+				width: 20,
+				height: 20,
+			},
+		});
+		expect(resumed.status).toBe(200);
+		expect(resumed.body.held).toBeUndefined();
+		expect(fs.readFileSync(stopped.file, "utf8")).toContain("after-elsewhere");
+		expect(
+			(await request<ElementsBody>("/api/elements?board=holdelse")).body.elements.some(
+				(element) => element.id === "after-elsewhere",
+			),
+		).toBeTrue();
 		expect(
 			pane.seen.slice(resolutionStart).every((message) => message.type !== "board_switched"),
 		).toBeTrue();
