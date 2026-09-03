@@ -242,6 +242,19 @@ import { canvasStartupFailureMessage } from "./startup-error.js";
 // Load environment variables
 dotenv.config({ quiet: true });
 
+function injectedTestWriteLeaseMs(): number | undefined {
+	const raw = process.env.ARCHBOARD_TEST_WRITE_LEASE_MS;
+	if (raw === undefined) return undefined;
+	if (process.env.ARCHBOARD_TEST_OWNED_CANVAS !== "1")
+		throw new Error("ARCHBOARD_TEST_WRITE_LEASE_MS is available only to owned canvas tests.");
+	const leaseMs = Number(raw);
+	if (!Number.isSafeInteger(leaseMs) || leaseMs <= 0)
+		throw new Error("ARCHBOARD_TEST_WRITE_LEASE_MS must be a positive integer.");
+	return leaseMs;
+}
+
+const testWriteLeaseMs = injectedTestWriteLeaseMs();
+
 const moduleFile = fileURLToPath(import.meta.url);
 // Keep asset resolution anchored at src/, where the former root application
 // module lived. Moving implementation must not change dist/ or dependency paths.
@@ -1679,7 +1692,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	}
 
 	void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, async (signal) => {
-		const hold = await holdBoard({ board: key, holder: writer, signal });
+		const hold = await holdBoard({
+			board: key,
+			holder: writer,
+			signal,
+			...(testWriteLeaseMs === undefined ? {} : { leaseMs: testWriteLeaseMs }),
+		});
 		res.locals.boardLockKey = key;
 		res.locals.boardLockToken = hold.leaseToken;
 		try {

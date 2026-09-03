@@ -44,6 +44,7 @@ export interface BoardRenderingOwnerOptions {
 
 export interface BoardRenderingOwnerTestHooks extends RendererFixtureTestHooks {
 	beforeRun?(job: BoardRendererJob, signal?: AbortSignal): Promise<void> | void;
+	afterCdpDispatch?(job: BoardRendererJob, pid: number): void;
 	adjustSessionCleanup?(cleanup: RendererSessionCleanup): RendererSessionCleanup;
 	onTempRoot?(root: string): void;
 	onChromiumStart?(pid: number): void;
@@ -582,13 +583,12 @@ class RendererSession {
 				cdp.diagnostics(),
 			);
 		try {
-			const value = await abortable(
-				cdp.evaluate(
-					`window.archboardBoardRenderer?.run(${JSON.stringify(job)})`,
-					this.options.jobTimeoutMs,
-				),
-				signal,
+			const evaluation = cdp.evaluate(
+				`window.archboardBoardRenderer?.run(${JSON.stringify(job)})`,
+				this.options.jobTimeoutMs,
 			);
+			this.options.testHooks.afterCdpDispatch?.(job, this.#child.pid);
+			const value = await abortable(evaluation, signal);
 			signal?.throwIfAborted();
 			if (!isRendererJobResult(value))
 				throw new Error("Renderer page returned no structured result.");
@@ -873,7 +873,9 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 			queued -= 1;
 			state.value = "active";
 			if (!accepting) {
-				rejectResult(new Error("Board renderer stopped before queued work began."));
+				rejectResult(
+					new BoardRendererError("Board renderer stopped before queued work began.", "shutdown"),
+				);
 				state.value = "settled";
 				return undefined;
 			}

@@ -636,9 +636,11 @@ export const TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS = 20_000;
 export const TEST_BOARD_RENDERER_OWNER_TIMEOUT_MS = 9_500;
 /** The injected startup exit settles in under 300ms; 3s leaves room for process and pipe cleanup. */
 export const TEST_BOARD_RENDERER_STARTUP_FAILURE_TIMEOUT_MS = 3_000;
+/** The static fixture performs six loopback reads and starts no Chromium process. */
+export const TEST_BOARD_RENDERER_FIXTURE_TIMEOUT_MS = 1_000;
 /** Lazy Chromium startup plus concurrent PNG/SVG measured below 2s; no routine case gets a product-timeout sum. */
 export const TEST_SERVER_RENDERING_CASE_TIMEOUT_MS = 5_000;
-/** The lease-order owner deliberately crosses the 3s lease and still stays below this local bound. */
-export const TEST_SERVER_RENDERING_LEASE_CASE_TIMEOUT_MS = 7_500;
+/** A short test-only write lease makes pre-render lock ordering observable without a production-duration wait. */
+export const TEST_SERVER_RENDERING_WRITE_LEASE_MS = 75;
 /** Missing Chromium is a preflight refusal and should never approach the 5s product startup bound. */
 export const TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS = 2_000;

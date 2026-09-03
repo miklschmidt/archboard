@@ -1,8 +1,9 @@
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync, statSync } from "node:fs";
 import { extname, resolve, sep } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dir, "../../../..");
 const buildRoot = resolve(repositoryRoot, "dist/frontend");
+const assetsRoot = resolve(buildRoot, "assets");
 const rendererEntry = resolve(buildRoot, "renderer.html");
 
 const contentTypes = new Map([
@@ -25,7 +26,7 @@ export interface RendererFixtureTestHooks {
 	afterListen?(fixture: RendererFixture): Promise<void> | void;
 }
 
-function rendererFile(pathname: string): string | null {
+function rendererFile(pathname: string, canonicalAssetsRoot: string): string | null {
 	if (pathname === "/renderer.html") return rendererEntry;
 	if (!pathname.startsWith("/assets/")) return null;
 	let decoded: string;
@@ -34,19 +35,36 @@ function rendererFile(pathname: string): string | null {
 	} catch {
 		return null;
 	}
-	const candidate = resolve(buildRoot, `.${decoded}`);
-	return candidate.startsWith(`${buildRoot}${sep}`) ? candidate : null;
+	if (decoded.includes("%") || decoded.includes("\\") || encodeURI(decoded) !== pathname)
+		return null;
+	const relative = decoded.slice("/assets/".length);
+	if (!relative || relative.split("/").some((segment) => segment === "." || segment === ".."))
+		return null;
+	const candidate = resolve(assetsRoot, relative);
+	if (!candidate.startsWith(`${assetsRoot}${sep}`) || !existsSync(candidate)) return null;
+	let canonical: string;
+	try {
+		canonical = realpathSync(candidate);
+	} catch {
+		return null;
+	}
+	return canonical.startsWith(`${canonicalAssetsRoot}${sep}`) && statSync(canonical).isFile()
+		? canonical
+		: null;
 }
 
 /** Serve only the built renderer entry and its built runtime assets. */
 export async function createRendererFixture(
 	testHooks: RendererFixtureTestHooks = {},
 ): Promise<RendererFixture> {
-	if (!existsSync(rendererEntry)) {
+	if (!existsSync(rendererEntry) || !statSync(rendererEntry).isFile() || !existsSync(assetsRoot)) {
 		throw new Error(
 			`The built renderer entry is missing at ${rendererEntry}. Run \`bun run build:frontend\` before starting Archboard.`,
 		);
 	}
+	const canonicalAssetsRoot = realpathSync(assetsRoot);
+	if (!statSync(canonicalAssetsRoot).isDirectory())
+		throw new Error(`The built renderer asset directory is missing at ${assetsRoot}.`);
 	let server: ReturnType<typeof Bun.serve> | null = null;
 	let fixture: RendererFixture | null = null;
 	try {
@@ -55,8 +73,8 @@ export async function createRendererFixture(
 			port: 0,
 			development: false,
 			fetch(request) {
-				const file = rendererFile(new URL(request.url).pathname);
-				if (!file || !existsSync(file)) return new Response("Not found", { status: 404 });
+				const file = rendererFile(new URL(request.url).pathname, canonicalAssetsRoot);
+				if (!file) return new Response("Not found", { status: 404 });
 				return new Response(Bun.file(file), {
 					headers: {
 						"Content-Type": contentTypes.get(extname(file)) ?? "application/octet-stream",

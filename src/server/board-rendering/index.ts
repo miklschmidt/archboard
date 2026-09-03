@@ -5,6 +5,7 @@ export {
 	type BoardRenderingOwnerOptions,
 	type BoardRenderingOwnerStatus,
 } from "./lib/owner.js";
+export { createRendererFixture, type RendererFixture } from "./lib/fixture.js";
 export {
 	DEFAULT_MERMAID_CONFIG,
 	type BoardRenderJob,

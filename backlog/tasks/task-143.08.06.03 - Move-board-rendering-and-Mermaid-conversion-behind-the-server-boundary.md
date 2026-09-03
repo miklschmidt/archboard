@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 07:19'
+updated_date: '2026-09-03 07:34'
 labels: []
 dependencies:
   - TASK-143.08.06.01
@@ -72,6 +72,14 @@ Give Archboard one server-owned visual conversion boundary for persisted board s
 7. Enforce the browser renderer in the frontend TypeScript gate and retain focused owners for real rendering, lease ordering, cancellation, replacement, startup and cleanup failure, output atomicity, zero-client behavior, and shutdown. Use measured sub-10/12-second owner timeouts.
 
 8. Leave the task In Progress with acceptance criteria unchecked for parent review; do not run the root TypeScript gate, broad suite, serial browser lane, or standalone probes in this remediation.
+
+9. Replace the public Mermaid lease test full-duration sleep with an injected short lease duration that applies only to its owned canvas process. Pin the production 3000 ms default with one direct assertion and retain real Chromium, pause, concurrent writer, remap, and cancellation behavior.
+
+10. Resolve renderer asset requests only below the canonical dist/frontend/assets root. Reject traversal, unrelated paths, directories, and ambiguous encodings, then add a direct no-Chromium fixture HTTP table.
+
+11. Rework the retained owner test so actual CDP work is paused after entry, a second job queues, and stop plus abort settle both jobs while the same Chromium start yields the full cleanup census without a fixed wait.
+
+12. Correct the executable browser-owner order, focused renderer build prerequisite, INSTALL rebuild rule, and scale prose. Run only the direct fixture owner, shortened public renderer owner, same-start module owner, and exact static documentation checks before committing this rereview repair.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -88,4 +96,10 @@ Final focused evidence: frontend build 0.582 s; module renderer owner 2 tests/31
 The root TypeScript gate, broad suite, serial browser lane, standalone probes, and the 20-second proof scenario were intentionally not run. The requested writing-for-agents skill is unavailable in this checkout; repository documentation rules and the plain-language fallback were applied. Task remains In Progress, assigned to @codex, with all acceptance criteria unchecked.
 
 Final post-format module rerun supersedes the earlier module wall time: 2 tests and 31 expectations passed in 1.781 s, still with exactly 2 Chromium starts. The final live renderer process and recent temp-root census was empty.
+
+Rereview repair: the owned-canvas marker plus ARCHBOARD_TEST_WRITE_LEASE_MS=75 injects a short write lease only into the focused public owner; the product constant remains LOCK_LEASE_MS=3000 and is asserted directly. The real renderer is paused while active, a concurrent human writer lands, ids remap against the locked board, and post-render cancellation remains covered without a fixed sleep. The lease case fell from 3601.35 ms to 326.65 ms and the public owner from 6.740 s to 3.488 s.
+
+Rereview containment and shutdown evidence: the private fixture now resolves only regular files below the canonical dist/frontend/assets root and rejects traversal, double encoding, directories, and unrelated paths. Its direct HTTP owner passed 1 test/7 expectations in 0.074 s with no Chromium. The module owner pauses an actually dispatched CDP job, queues a second, then proves typed active cancellation, typed queued shutdown, the same retained second start, and the complete cleanup census: 2 tests/32 expectations in 1.967 s with exactly 2 Chromium starts. The public owner passed 4 tests/79 expectations in 3.488 s with exactly 1 retained Chromium start. Final live-process and recent temp-root censuses were empty.
+
+Rereview documentation and static evidence: removed the retired finding-export browser owner from the documented 18-owner order, documented the focused renderer build prerequisite and package prebuild, fixed scale-1 prose, and made INSTALL require bun run build after pulls because renderer source is bundled. The writing-for-agents skill was found at /home/msc/Projects/archboard/.agents/skills/writing-for-agents/SKILL.md, read in full, and applied; this supersedes the earlier unavailable note. Inventory passed 39 tests/69 expectations in 5.453 s. Scoped Oxlint, Oxfmt, frontend TypeScript, isolated renderer-root TypeScript, static docs checks, and git diff check passed. Broad gates, root TypeScript, browser lane, and standalone probes remain intentionally unrun. Task remains In Progress under @codex with every acceptance criterion unchecked for parent review.
 <!-- SECTION:NOTES:END -->
