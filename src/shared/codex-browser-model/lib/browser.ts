@@ -21,6 +21,43 @@ import type { IdentityContext, IdentitySchemas } from "./scalars.js";
 const TimestampSchema = z.number().int().nonnegative();
 export const DeliveryOutcomeSchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
 
+export interface BrowserSnapshotRelationshipIssue {
+	readonly path: readonly string[];
+	readonly message: string;
+}
+
+interface BrowserSnapshotRelationshipFields {
+	readonly threadLink: {
+		readonly state: string;
+		readonly threadId: string | null;
+	};
+	readonly timeline: { readonly threadId: string } | null;
+	readonly semantic: { readonly threadId: string } | null;
+}
+
+/** Checks relationships between fields after each field has passed its own schema. */
+export function browserSnapshotRelationshipIssues(
+	value: BrowserSnapshotRelationshipFields,
+): readonly BrowserSnapshotRelationshipIssue[] {
+	const issues: BrowserSnapshotRelationshipIssue[] = [];
+	for (const [name, threadId] of [
+		["timeline", value.timeline?.threadId],
+		["semantic", value.semantic?.threadId],
+	] as const) {
+		if (threadId !== null && threadId !== undefined && value.threadLink.threadId !== threadId)
+			issues.push({
+				path: [name, "threadId"],
+				message: "thread identity contradicts the current thread link",
+			});
+	}
+	if (value.threadLink.state === "unbound" && (value.timeline !== null || value.semantic !== null))
+		issues.push({
+			path: ["threadLink", "state"],
+			message: "an unbound link cannot publish thread-scoped state",
+		});
+	return issues;
+}
+
 function addContextIssue(context: z.RefinementCtx, error: unknown, path: string[]): void {
 	context.addIssue({
 		code: "custom",
@@ -903,30 +940,12 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		})
 		.strict()
 		.superRefine((value, refinementContext) => {
-			const linkedThreadId = value.threadLink.threadId;
-			const threadIds = [
-				["timeline", value.timeline?.threadId],
-				["semantic", value.semantic?.threadId],
-			] as const;
-			for (const [name, threadId] of threadIds) {
-				if (threadId !== null && threadId !== undefined && linkedThreadId !== threadId) {
-					refinementContext.addIssue({
-						code: "custom",
-						path: [name, "threadId"],
-						message: "thread identity contradicts the current thread link",
-					});
-				}
-			}
-			if (
-				value.threadLink.state === "unbound" &&
-				(value.timeline !== null || value.semantic !== null)
-			) {
+			for (const issue of browserSnapshotRelationshipIssues(value))
 				refinementContext.addIssue({
 					code: "custom",
-					path: ["threadLink", "state"],
-					message: "an unbound link cannot publish thread-scoped state",
+					path: [...issue.path],
+					message: issue.message,
 				});
-			}
 		});
 	const BrowserToolResultSchema = z
 		.object({

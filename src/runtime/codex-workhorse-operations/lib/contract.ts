@@ -27,6 +27,7 @@ import type {
 	ThreadId,
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
+import type { CodexThreadStatusType } from "../../../shared/codex-app-server-contract/index.js";
 
 /** The only four operations the coordinator may dispatch to its workhorse. */
 export const WORKHORSE_OPERATION_NAMES = Object.freeze([
@@ -157,7 +158,7 @@ export interface SteerWorkhorseRequest {
 
 export interface InspectWorkhorseResult {
 	readonly threadId: ThreadId;
-	readonly status: "notLoaded" | "idle" | "systemError" | "active";
+	readonly status: CodexThreadStatusType;
 	readonly activeTurnId: TurnId | null;
 	readonly queuedSubmissionIds: readonly QueuedSubmissionId[];
 }

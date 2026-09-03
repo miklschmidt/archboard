@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 02:52'
+updated_date: '2026-09-03 03:03'
 labels: []
 dependencies:
   - TASK-143.08.02
@@ -45,6 +45,8 @@ Deepen the recovered Codex protocol and browser modules after generated types be
 3. Apply the retained-owner matrix recorded in implementation notes. Delete duplicate reload, shutdown, exit-race, approval, remediation, state-matrix, submission-fencing, Tailwind compiler, Oxlint alias, copied authored-contract, fixture-cleanup, and tool-resolution owners; fold any unique reachable product assertion into the retained module owner before removal.
 4. Share only implementations proven byte-for-byte or behaviorally identical. Prefer deletion and direct generated-derived types over adapters; keep distinct bounded text, record predicates, and lifecycle helpers local. Do not edit active-owner paths from TASK-143.06.06 or TASK-143.08.06.01.
 5. Run focused retained owners, both contained TypeScript graphs, focused lint/format, the real Vite production build, and the smallest bounded repository/module evidence needed. Record before/after concepts, validation passes, cases, and lines; commit coherent slices and leave finalization to the parent.
+
+6. Repair standards-review gaps without restoring standalone suites: expose browser snapshot relationship validation for post-merge deltas; fold unique shutdown schedules into retained transport/adversarial tests; fold transport-replacement and readiness rendering tables into mounted-runtime; restore the discriminated dynamic-effect boundary; correct tracked-file metrics; run only affected owners and commit the repair.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -85,4 +87,17 @@ Validation:
 No active-owner path, package.json, bun.lock, CONTEXT.md, ADR/rendering proof path, or protected checkout was modified. Acceptance checkmarks, final summary, and Done transition remain for the parent.
 
 Measurement clarification: the canonical test-case count used in the pre-change audit is lines beginning with test( or it(. On that same measure, ba1aacee/base/current are 1,687 / 1,626 / 1,556, so this change removes 70 cases. The 1,833 / 1,754 / 1,677 figures above are a deliberately broader cross-check that also matches nested references; they are not the canonical case measure.
+
+Standards review requested remediation at d8488f76: preserve the consolidation while restoring cross-field delta checks and unique shutdown, mounted replacement, and rendered readiness schedules. Repair also restores the narrow self/other canonical boundary type and replaces the earlier line metric with a reproducible tracked-file count.
+
+Standards-review repair at d8488f76:
+- Browser-model now owns one cross-field snapshot relationship check. Full snapshot refinement and the post-merge delta path both call it; delta fields are still parsed only once. The retained transport owner covers unbound and mismatched thread-link deltas.
+- Retained cleanup/adversarial transport ownership now covers the five distinct shutdown schedules removed with shutdown.test: no handler, request during flush, admitted but unwritten substitution, response-writer failure, and late diagnostics across shutdown or exit.
+- mounted-runtime now has compact tables for all four late settlements after transport replacement and the seven requested account/storage readiness states.
+- The retained canvas generation approval owner checks immediately before, at, and after CODEX_APPROVAL_EXPIRY_MS using fake timers and an injected clock, including exactly-once settlement.
+- CODEX_THREAD_STATUS_TYPES is the generated-derived status authority used by thread-link membership, InspectWorkhorseResult, coordinator result JSON, browser/thread schemas, and dynamic status acceptance. The canonical fork boundary is discriminated again; runtime effects adapt at the hashing seam and reject a null self boundary.
+
+Metric correction: the earlier 220,087 figure incorrectly applied a diff delta to a baseline collected with different file-selection behavior. The reproducible command is `git grep -I -n "^" <ref> -- src tests scripts tools ":!src/shared/codex-app-server-contract/generated/**" | wc -l`, run independently for each ref. It reports 226,542 at a5146446 and 220,301 at d8488f76, a reduction of 6,241 lines including the 214-line server-responses.ts replacement.
+
+Repair validation: affected transport/UI owners 23 pass; status/dynamic/canvas owners 56 pass; repository boundaries/inventory 46 pass; frontend TypeScript passes; production Vite build passes. Root TypeScript still reports only the same 13 fixed-base diagnostics in protected active-owner files. Focused Oxfmt/Oxlint and git diff checks pass.
 <!-- SECTION:NOTES:END -->

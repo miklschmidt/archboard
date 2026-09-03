@@ -52,10 +52,9 @@ export type DynamicApprovalCanonicalEffect =
 			readonly callerAuthority: string;
 			readonly targetAuthority: string;
 			readonly contextAuthority: string;
-			readonly effectiveBoundary: {
-				readonly relation: "self" | "other";
-				readonly beforeTurnId: string | null;
-			};
+			readonly effectiveBoundary:
+				| { readonly relation: "self"; readonly beforeTurnId: string }
+				| { readonly relation: "other"; readonly beforeTurnId: string | null };
 			readonly mutationOperationId: string;
 			readonly initialTurnOperationId: string | null;
 			readonly visualSummary: string;
