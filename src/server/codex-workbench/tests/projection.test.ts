@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test";
 
-import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
+import {
+	createCodexApprovalBroker,
+	type ApprovalOwnerView,
+} from "../../../runtime/codex-approvals/index.js";
 import type {
 	HumanApprovalMethod,
 	TransportServerRequest,
@@ -52,7 +55,34 @@ const PRIVATE_APPROVAL_PATHS = [
 	"/private/apply-change.ts",
 	"/private/apply-grant",
 	"/private/exec-cwd",
+	"/private/network-policy",
 ] as const;
+
+function withFutureNetworkPolicyField(view: ApprovalOwnerView): ApprovalOwnerView {
+	if (view.request.family !== "command_execution") return view;
+	const networkPolicyAmendment = {
+		host: "example.test",
+		action: "allow" as const,
+		privatePath: PRIVATE_APPROVAL_PATHS[12],
+	};
+	return {
+		...view,
+		request: {
+			...view.request,
+			params: {
+				...view.request.params,
+				availableDecisions: [
+					...(view.request.params.availableDecisions ?? []),
+					{
+						applyNetworkPolicyAmendment: {
+							network_policy_amendment: networkPolicyAmendment,
+						},
+					},
+				],
+			},
+		},
+	};
+}
 
 function approvalRequests(identity: IdentityAuthority): readonly TransportServerRequest[] {
 	const label = "all-families";
@@ -253,7 +283,7 @@ test("the sole public projection owns all seven ordinary approval presentations"
 			const pending = broker.receive(request);
 			const result = projectCodexBrowserState(
 				model,
-				projectionInput(broker.view(pending.requestId)),
+				projectionInput(withFutureNetworkPolicyField(broker.view(pending.requestId))),
 			);
 			expect(result.tag).toBe("projected");
 			if (result.tag !== "projected") throw new Error("approval projection was refused");
@@ -268,6 +298,14 @@ test("the sole public projection owns all seven ordinary approval presentations"
 			"apply_patch",
 			"exec_command",
 		]);
+		const commandApproval = projectedApprovals.find(
+			(approval) => approval.approvalKind === "command_execution",
+		);
+		expect(commandApproval?.availableDecisions.at(-1)).toEqual({
+			applyNetworkPolicyAmendment: {
+				network_policy_amendment: { host: "example.test", action: "allow" },
+			},
+		});
 		const wire = JSON.stringify(projectedApprovals);
 		for (const privatePath of PRIVATE_APPROVAL_PATHS) expect(wire).not.toContain(privatePath);
 	} finally {

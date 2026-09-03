@@ -9,7 +9,6 @@ import {
 	type TransportServerNotification,
 	type TransportServerRequest,
 } from "../server-requests.js";
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 import {
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
@@ -371,49 +370,6 @@ describe("Codex app-server transport", () => {
 			expect((idempotentError as CodexTransportRequestError).accepted).toBeTrue();
 		} finally {
 			if (fakeTimers) jest.useRealTimers();
-			await close();
-		}
-	});
-
-	test("bounds queued writes and drains stderr independently", async () => {
-		const { child, transport, close } = createHarness();
-		try {
-			child.stdin.blockNext = true;
-			const first = transport.sendNotification("initialized");
-			const queued = Array.from(
-				{ length: CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedFrames },
-				() => transport.sendNotification("initialized"),
-			);
-			expect(transport.inspect()).toMatchObject({
-				queuedFrames: CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedFrames,
-				queuedBytes: expect.any(Number),
-				writeInFlight: true,
-			});
-			expect(transport.inspect().queuedBytes).toBeLessThanOrEqual(
-				CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedBytes,
-			);
-			const overflow = transport.sendNotification("initialized");
-			expect(await captureRejection(overflow)).toMatchObject({
-				name: "CodexTransportWriteError",
-				reason: "backpressure",
-			});
-			child.stdin.release();
-			await Promise.all([first, ...queued]);
-			expect(frames(child)).toHaveLength(
-				CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedFrames + 1,
-			);
-
-			const stderrChunks: string[] = [];
-			transport.onStderr((chunk) => stderrChunks.push(chunk.text));
-			child.stderr.write("first stderr\n");
-			child.stderr.write(Buffer.alloc(CODEX_APP_SERVER_CAPACITY.stderrRetainedBytes + 1, 0x73));
-			await flushStreams();
-			expect(stderrChunks.join("")).toContain("first stderr");
-			expect(transport.inspectStderr()).toMatchObject({
-				retainedBytes: CODEX_APP_SERVER_CAPACITY.stderrRetainedBytes,
-				truncated: true,
-			});
-		} finally {
 			await close();
 		}
 	});

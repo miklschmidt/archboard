@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 19:56'
+updated_date: '2026-09-03 20:04'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -91,6 +91,10 @@ Define only the browser-facing workbench state and user-intent model that has no
 31. Delete the settled-cache capacity-fill and oversized-delta capacity tests from the ordinary gateway owner, and remove the now test-only public settled-limit export. Do not create an opt-in suite for two redundant implementation-capacity probes.
 
 32. Run only the affected browser-model, protocol, transport, session, approval, projection, and gateway owners, both TypeScript configs, scoped lint/format/diff and boundary probes; commit separately and callback the parent.
+
+33. Seventh remediation: delete the complete ordinary transport test that fills configured queued-frame and stderr-retention limits. Retain no replacement because existing transport/adversarial ownership already covers stderr delivery and rejection behavior; leave repository-wide opt-in classification to TASK-148.13.
+34. Derive the browser network-policy decision arm from the generated decision with Extract and Pick<host | action>. Project those two fields explicitly, and extend the existing seven-family path owner with a structurally valid future private field that fails against the current spread.
+35. Run only the exact projection red/green owner, affected browser-model/transport/projection tests, both TypeScript projects, scoped Oxlint/Oxfmt, the relevant test-inventory policy, and diff checks. Commit separately and callback the parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -139,6 +143,12 @@ Sixth review remediation:
 - The two ordinary capacity probes (settled-cache fill and 500-approval oversized delta) were deleted instead of creating an opt-in suite for redundant implementation probes. The settled-cache limit is private again.
 
 Red evidence against bfc379f0: the seven-family projection owner failed before projection when a loose user-input extension reached the strict browser DTO. Green evidence: that exact owner passes 1/1 with 20 assertions, including every injected private path. Final affected module validation passed 685/685 tests with 4,853 assertions in 2.15s; composed canvas validation passed 4/4 with 29 assertions; focused repository inventory/composition/retirement policy passed 47/47 with 184 assertions. Root and frontend TypeScript, exact scoped Oxlint, exact scoped Oxfmt, boundary probes, and git diff checks passed. No broad module, system, browser, full-test, or check lane ran. TASK-143.01.02 remains In Progress for parent rereview.
+
+Seventh review remediation:
+- Deleted the complete ordinary transport case that blocked stdin, filled every configured regular queue slot, asserted overflow backpressure, and wrote beyond the configured retained-stderr limit. No smaller replacement was added because the case combined capacity/load proofs and existing transport ownership already covers ordinary protocol delivery, rejection, cleanup, and stderr flow. package.json still selects this file through test:modules, but the synthetic case is gone. No test owner path, package selector, or inventory changed, so the inventory policy was not run. Repository-wide normal/opt-in classification remains TASK-148.13.
+- Browser command network-policy decisions now name a generated-derived presentation type: Extract selects the generated network-policy arm and Pick limits its amendment to host and action. projectCommandDecision selects those fields explicitly. The existing seven-family projection owner adds a structurally valid future privatePath to the owner decision, asserts the exact projected host/action value, and proves the private field never enters browser JSON.
+
+Red evidence against 4b94dff6: the exact seven-family projection test returned refused when the future network-policy field crossed through the spread. Green evidence: the exact owner passed with 22 assertions. Final focused protocol, transport, browser-model, projection, and gateway validation passed 596/596 tests with 3,634 assertions in 0.85s. Root and frontend TypeScript, exact scoped Oxlint/Oxfmt, boundary probes, and git diff checks passed. No broad module, system, repository, browser, full-test, or check lane ran. TASK-143.01.02 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -219,5 +229,17 @@ author: @codex
 created: 2026-09-03 19:56
 ---
 Sixth review remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 20:02
+---
+Seventh review remediation started at 4b94dff6 for the ordinary capacity owner and network-policy projection. TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 20:04
+---
+Seventh review remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
 ---
 <!-- COMMENTS:END -->

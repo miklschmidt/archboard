@@ -152,7 +152,8 @@ function projectCommandDecision(decision: CommandDecision): BrowserCommandDecisi
 	return {
 		applyNetworkPolicyAmendment: {
 			network_policy_amendment: {
-				...decision.applyNetworkPolicyAmendment.network_policy_amendment,
+				host: decision.applyNetworkPolicyAmendment.network_policy_amendment.host,
+				action: decision.applyNetworkPolicyAmendment.network_policy_amendment.action,
 			},
 		},
 	};
