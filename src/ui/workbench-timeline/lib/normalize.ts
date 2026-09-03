@@ -1,5 +1,6 @@
 import type { CodexWorkbenchItem, WorkbenchTimelineProps } from "../contract.js";
-import { boundedDetails, record, textField } from "./details.js";
+import { record, textField } from "./details.js";
+import { stableBoundedKey } from "./stable-key.js";
 
 export const CODEX_THREAD_ITEM_LABELS = {
 	userMessage: "User message",
@@ -46,14 +47,13 @@ export interface NormalizedTimeline {
 	readonly priorEpoch: boolean;
 }
 
-function stableHash(value: unknown): string {
-	const source = boundedDetails(value).text;
-	let hash = 2_166_136_261;
-	for (let index = 0; index < source.length; index += 1) {
-		hash ^= source.charCodeAt(index);
-		hash = Math.imul(hash, 16_777_619);
-	}
-	return (hash >>> 0).toString(36);
+function itemIdentity(
+	threadId: string,
+	turnId: string,
+	itemId: string,
+	occurrence: number,
+): string {
+	return JSON.stringify([threadId, turnId, itemId, occurrence]);
 }
 
 function normalizeItem(
@@ -65,12 +65,11 @@ function normalizeItem(
 	const item = record(value);
 	const type = typeof item?.type === "string" ? item.type : "unknown";
 	const rawId = typeof item?.id === "string" && item.id.length > 0 ? item.id : null;
-	const itemId = rawId ?? `malformed-${stableHash(value)}`;
+	const itemId = rawId ?? `malformed-${stableBoundedKey(value)}`;
 	const occurrence = occurrences.get(itemId) ?? 0;
 	occurrences.set(itemId, occurrence + 1);
-	const suffix = occurrence === 0 ? "" : `:duplicate-${occurrence}`;
 	return {
-		identity: `${threadId}:${turnId}:${itemId}${suffix}`,
+		identity: itemIdentity(threadId, turnId, itemId, occurrence),
 		itemId,
 		label:
 			CODEX_THREAD_ITEM_LABELS[type as keyof typeof CODEX_THREAD_ITEM_LABELS] ?? "Unknown item",
@@ -90,12 +89,11 @@ function approvalItems(
 	if (!runtimeTurn) return [];
 	return runtimeTurn.items.flatMap((item) => {
 		if (item.media !== "approval") return [];
-		const identity = `${threadId}:${turnId}:${item.itemId}`;
 		const occurrence = occurrences.get(item.itemId) ?? 0;
 		occurrences.set(item.itemId, occurrence + 1);
 		return [
 			{
-				identity: occurrence === 0 ? identity : `${identity}:duplicate-${occurrence}`,
+				identity: itemIdentity(threadId, turnId, item.itemId, occurrence),
 				itemId: item.itemId,
 				label: "Approval",
 				type: "approval",
