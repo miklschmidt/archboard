@@ -154,6 +154,24 @@ describe("test inventory policy", () => {
 		);
 	});
 
+	test("rejects an opt-in lane reached through a supported bun run flag", () => {
+		const fixture = input();
+		fixture.scripts.test += " && bun run --silent test:opt-in:capacity";
+		expectInventoryError(
+			fixture,
+			"opt-in package script `test:opt-in:capacity` is reachable from `check`",
+		);
+	});
+
+	test("rejects selectorless bun test discovery", () => {
+		const fixture = input();
+		fixture.scripts["test:modules"] = "bun test";
+		expectInventoryError(
+			fixture,
+			"package script `test:modules` has invalid executable Bun invocation: `bun test` requires at least one explicit static selector; broad test discovery is not inventory-safe",
+		);
+	});
+
 	test("rejects an opt-in lane after a full-line comment", () => {
 		const fixture = input();
 		fixture.scripts.test += "\n# retained offset\nbun run test:opt-in:capacity";
