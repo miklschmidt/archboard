@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 12:55'
+updated_date: '2026-09-03 13:05'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -22,6 +22,7 @@ modified_files:
   - tests/system/canvas-state/codex-workbench-production-cleanup.test.ts
   - tests/system/canvas-state/codex-workbench-production.test.ts
   - tests/system/process-contracts/support/delayed-checkout-owner.ts
+  - tests/system/browser/board-navigator.test.ts
 parent_task_id: TASK-143.08
 priority: high
 type: task
@@ -190,6 +191,12 @@ The first diagnostic adjustment allowed fixture observation for the real Git com
 Authoritative gate A19 at 43c7ad4a: lint, formatting, both type checks, frontend build, and 1,902/1,902 module tests passed. The system lane passed 354/356 owners. The production Codex composition owner read its live NDJSON log during appendFileSync and attempted to parse one unterminated final record. The concurrent first-open checkout owner reached Bun's implicit 5-second case bound; teardown then canceled its second request, which surfaced as a 500 and one reaped dangling process. The exact unit archboard-task143-worker-command-OVUP05vj.service exited normally with status 1 after 4m59.857s, consumed 5m30.758s CPU, peaked at 2.5G with 0B swap, and is inactive/dead with MainPID=0, empty ControlGroup, and absent cgroup.
 
 The NDJSON race reproduced five times in 20 focused repetitions under capped unit archboard-task143-worker-command-1TiLwAqD.service. Its live reader now parses only newline-terminated records, matching the existing lifecycle-support reader: an in-progress tail is deferred, while malformed completed records still fail. The corrected production owner passed 30/30 repetitions under capped unit archboard-task143-worker-command-HZaSyUv9.service. The checkout owner passed 5/5 focused repetitions before remediation but took 4.16-4.18 seconds because each of its four exact release-file barriers polled only once per second. The release file remains the sole gate; its test-only cadence is now the named 25 ms TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS, retaining the ordinary Bun case bound and every process identity, scene, authority, response, and cleanup assertion. The owner then passed 10/10 repetitions in 1.32-1.41 seconds under capped unit archboard-task143-worker-command-wT92tnKL.service. No product timeout, test assertion, lint/type rule, or test inventory was weakened.
+
+Authoritative gate A20 at 90f1693d: lint, formatting, both type checks, frontend build, 1,902/1,902 module tests, 356/356 serial system tests, and 152/152 repository-policy tests passed. The first six real-browser owners passed, including the measured 10,000-element human-edit owner. The first board-navigator case then missed its fixed 350 ms artificial loading window and observed the already settled empty state; its second case passed. Exact unit archboard-task143-worker-command-3rs2RyJt.service exited normally with status 1 after 6m46.803s, consumed 8m9.769s CPU, peaked at 5.5G with 0B swap, and is inactive/dead with MainPID=0, empty ControlGroup, and absent cgroup.
+
+Diagnosis found two test-only ordering assumptions. The test waited for pane registration before observing a loading state whose fixed delay had already begun, and React StrictMode can start the board-list effect twice, so a one-request gate allowed the second request to settle the list. An initial explicit-release diagnostic proved the loading state but then reached the next assertion before all five controls had settled under capped unit archboard-task143-worker-command-zqzvnoM2.service. A second diagnostic exposed the duplicate-effect escape under unit archboard-task143-worker-command-cg1cwrcm.service. The init fixture now holds every pre-release /api/boards request on one explicit barrier, the test observes the visible Reading the vault state, releases every pending request, and waits for the complete five-control empty-state contract before retaining the same size, labels, scratch, retry, and recovery assertions. No UI implementation changed and no fixed sleep replaced an observable condition. The exact browser case passed under capped unit archboard-task143-worker-command-cG42PeYp.service; the complete two-case board-navigator owner then passed with 64 assertions under capped unit archboard-task143-worker-command-Ofaime9o.service. No browser inventory, visible-state assertion, product timing, lint rule, or type rule was weakened.
+
+The final formatted board-navigator owner remains at the repository 500-line ceiling. Its pollUntil predicate itself accepts only the exact Reading the vault text, so the duplicate scalar assertion was removed without changing the visible condition. The compact final case passed again with 11 explicit expectations under capped unit archboard-task143-worker-command-G6FMsudf.service.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
