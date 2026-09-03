@@ -19,13 +19,11 @@ import {
 	renderBoardNote,
 	vaultPathFor,
 } from "../../../src/runtime/engine/board.ts";
-import { expandElements } from "../../../src/runtime/engine/expand-elements.ts";
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
 import { TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { openTestPane, waitForPaneMessage } from "../boards/support/pane-websocket.ts";
-import { findingElements } from "../browser/fixtures/fixed-point-scene.ts";
 import { completeElement } from "./support/elements.ts";
 import { assertIntroducedBindingPresentation } from "./support/presentation-routes.ts";
 
@@ -137,7 +135,6 @@ test(
 				height: 80,
 				link: "/api/code-targets/open?board=human&element=kept",
 			}),
-			...(expandElements([...findingElements], { forStore: true }) as ServerElement[]),
 		] as ServerElement[];
 		const note = vaultPathFor(identity, vault);
 		writeFileSync(
@@ -391,34 +388,15 @@ test(
 
 		const beforeExportBytes = readFileSync(note);
 		const beforeExportMtime = statSync(note, { bigint: true }).mtimeNs;
-
-		const pane = await openTestPane(canvas.base, api, "presentation-observer", 0, {
-			primary: true,
-			focused: true,
-		});
-		resources.defer(() => pane.close());
-		const start = pane.since();
-		const pending = api<{ results: unknown[] }>("/api/export/findings?board=targets", {
+		const rendered = await api<{ data?: string }>("/api/render/board?board=targets", {
 			method: "POST",
-			body: { policy: {} },
+			body: { format: "svg", background: true, padding: 16, scale: 1 },
 		});
-		const message = await waitForPaneMessage(pane, start, "export_findings_request");
-		const outbound = (message?.elements as ServerElement[] | undefined) ?? [];
-		expect(outbound.find((element) => element.id === "local-file")?.link).toBe(
-			"/api/code-targets/open?board=targets&element=local-file",
+		expect(rendered.status).toBe(200);
+		expect(rendered.body.data).toContain("<svg");
+		expect(rendered.body.data).not.toContain(
+			"/api/code-targets/open?board=targets&amp;element=local-file",
 		);
-		for (const finding of (message?.findings as Array<{ findingIndex: number }> | undefined) ??
-			[]) {
-			await api("/api/export/findings/result", {
-				method: "POST",
-				body: {
-					requestId: message?.requestId,
-					findingIndex: finding.findingIndex,
-					error: "controlled",
-				},
-			});
-		}
-		await pending;
 		expect(readFileSync(note)).toEqual(beforeExportBytes);
 		expect(statSync(note, { bigint: true }).mtimeNs).toBe(beforeExportMtime);
 		raw = beforeExportBytes.toString("utf8");

@@ -17,8 +17,7 @@ const FILE_NAME = /^\d{4,}-[A-Z_]+-[0-9a-f]{12}\.png$/;
 export const FindingRenderFailureSchema = z.enum([
 	"focus-unavailable",
 	"source-not-renderable",
-	"browser-export-failed",
-	"browser-timeout",
+	"renderer-failed",
 	"invalid-png",
 ]);
 export type FindingRenderFailure = z.infer<typeof FindingRenderFailureSchema>;
@@ -51,7 +50,7 @@ export const FindingRenderEntrySchema = z.discriminatedUnion("status", [
 
 export const FindingRenderManifestSchema = z
 	.strictObject({
-		schemaVersion: z.literal(1),
+		schemaVersion: z.literal(2),
 		board: z.string().min(1),
 		sourceFingerprint: z.string().regex(HEX_SHA256),
 		report: InspectionReportSchema,
@@ -122,10 +121,10 @@ export const FindingRenderManifestSchema = z
 
 export type FindingRenderManifest = z.infer<typeof FindingRenderManifestSchema>;
 
-export interface BrowserFindingResult {
+export interface RendererFindingResult {
 	findingIndex: number;
 	data?: string;
-	failure?: "browser-export-failed" | "browser-timeout";
+	failure?: "renderer-failed";
 }
 
 export interface FindingRenderServerResult {
@@ -133,7 +132,7 @@ export interface FindingRenderServerResult {
 	sourceFingerprint: string;
 	report: InspectionReport;
 	sourceRenderable: boolean;
-	results: readonly BrowserFindingResult[];
+	results: readonly RendererFindingResult[];
 }
 
 export interface FindingArtifactSet {
@@ -186,10 +185,10 @@ export function assembleFindingArtifacts(
 			return {
 				...common,
 				status: "failed" as const,
-				failure: result?.failure ?? ("browser-timeout" as const),
+				failure: result?.failure ?? ("renderer-failed" as const),
 			};
 		if (typeof result.data !== "string")
-			return { ...common, status: "failed" as const, failure: "browser-export-failed" as const };
+			return { ...common, status: "failed" as const, failure: "renderer-failed" as const };
 		const bytes = Uint8Array.from(Buffer.from(result.data, "base64"));
 		const dimensions = readPngDimensions(bytes);
 		const expected = findingRasterDimensions(finding.focusBBox);
@@ -207,7 +206,7 @@ export function assembleFindingArtifacts(
 		};
 	});
 	const manifest = FindingRenderManifestSchema.parse({
-		schemaVersion: 1,
+		schemaVersion: 2,
 		board: server.board,
 		sourceFingerprint: server.sourceFingerprint,
 		report: server.report,

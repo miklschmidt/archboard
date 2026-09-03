@@ -16,7 +16,7 @@ import type {
 	InitialElementsMessage,
 	Snapshot,
 } from "../../../runtime/engine/types.js";
-import { mintId } from "../../../shared/ids/ids.js";
+import { derivedId, mintId } from "../../../shared/ids/ids.js";
 import { CodeBindingSchema, type CodeBinding } from "../../../shared/code-target/index.js";
 import { buildSelectionReport } from "../../../runtime/engine/describe.js";
 import { describeScene } from "../../../runtime/engine/describe.js";
@@ -44,7 +44,6 @@ import {
 	buildPanesReport,
 	MAX_PANES,
 	panesInOrder,
-	paneWords,
 	resolvePaneSpec,
 	soloPane,
 } from "../../../runtime/engine/panes.js";
@@ -218,6 +217,14 @@ import {
 	InspectionPolicyInputSchema,
 	inspectBoard,
 } from "../../../runtime/board-inspection/index.js";
+import { findingRasterDimensions } from "../../../shared/finding-raster/index.js";
+import {
+	BoardRendererError,
+	createBoardRenderingOwner,
+	DEFAULT_MERMAID_CONFIG,
+	type BoardRenderSnapshot,
+	type MermaidRenderJobResult,
+} from "../../board-rendering/index.js";
 import {
 	createCodeOpenerPreguard,
 	createCodeOpenerRouter,
@@ -240,6 +247,7 @@ const moduleFile = fileURLToPath(import.meta.url);
 const moduleDir = path.resolve(path.dirname(moduleFile), "../../..");
 
 const app = express();
+const boardRenderer = createBoardRenderingOwner();
 
 const mutationAdmission = createCanvasMutationAdmission({
 	drainTimeoutMs: CANVAS_MUTATION_DRAIN_TIMEOUT_MS,
@@ -515,6 +523,12 @@ async function prepareCheckoutSnapshot(
 	next: NextFunction,
 ): Promise<void> {
 	if (!req.path.startsWith("/api/")) return next();
+	if (
+		req.path === "/api/render/board" ||
+		req.path === "/api/export/findings" ||
+		req.path === "/api/elements/from-mermaid"
+	)
+		return next();
 	if (req.method !== "GET" && PROCESS_FREE_HUMAN_ROUTES.has(req.path)) return next();
 	if (
 		req.method === "POST" &&
@@ -1015,6 +1029,7 @@ function boardErrorStatus(error: unknown): number {
 	if (error instanceof BoardRequiredError) return error.status;
 	if (error instanceof BoardResolutionError) return error.status;
 	if (error instanceof BoardMutationError) return error.status;
+	if (error instanceof BoardRendererError) return 503;
 	if (error instanceof RenderGeometryError) return 400;
 	if (error instanceof NativeElementValidationError) return 400;
 	// A refused write is not a fault, it is the other outcome the write always
@@ -1090,6 +1105,7 @@ function boardErrorBody(
 			...document,
 		};
 	}
+	if (error instanceof BoardRendererError) return { ...base, code: error.code };
 	if (error instanceof BoardMutationError && error.code) return { ...base, code: error.code };
 	return base;
 }
@@ -1376,13 +1392,11 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
 	[/^\/api\/boards\/hold/, "is the lock"],
 	[/^\/api\/boards\/claim/, "is the lock, held for longer"],
-	// Waits for a browser to convert, and the elements arrive afterwards as that
-	// pane\'s own change report, which is locked. Holding the board across that
-	// wait would be holding it against the very report that ends the wait.
-	[/^\/api\/elements\/from-mermaid$/, "waits on the pane whose report is the write"],
 	[/^\/api\/panes/, "layout, not board content, and open/close wait on the browser"],
 	[/^\/api\/viewport/, "a camera move, and it waits on the browser"],
+	[/^\/api\/browser\//, "a live browser operation, not board content"],
 	[/^\/api\/export/, "a picture of a board, which only reads it"],
+	[/^\/api\/render/, "a server-owned Board render, which only reads its snapshot"],
 	[/^\/api\/selection/, "a selection is not board content"],
 	[/^\/api\/library/, "one palette behind every board, and not board content"],
 	[/^\/api\/snapshots/, "reads a board into a snapshot and writes no note"],
@@ -1473,9 +1487,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	if (req.method === "GET" || req.method === "HEAD") return next();
 	if (!req.path.startsWith("/api/")) return next();
 	// A route that is not a board write writes no note, so there is no version
-	// for a precondition to be about either. `from-mermaid` is the one to keep in
-	// mind: its elements arrive afterwards as the converting pane's own change
-	// report, and that report is a board write and is checked like any other.
+	// for a precondition to be about either.
 	if (NOT_A_BOARD_WRITE.some(([pattern]) => pattern.test(req.path))) return next();
 
 	let key: string;
@@ -2229,105 +2241,105 @@ app.post("/api/elements/batch", (req: Request, res: Response) => {
 	}
 });
 
-// Convert Mermaid diagram to Excalidraw elements
-app.post("/api/elements/from-mermaid", (req: Request, res: Response) => {
-	try {
-		const { mermaidDiagram, config } = req.body;
-
-		if (!mermaidDiagram || typeof mermaidDiagram !== "string") {
-			return res.status(400).json({
-				success: false,
-				error: "Mermaid diagram definition is required",
-			});
-		}
-
-		logger.info("Received Mermaid conversion request", {
-			diagramLength: mermaidDiagram.length,
-			hasConfig: !!config,
-		});
-
-		// Conversion happens in the browser, and the elements land on whatever
-		// board the converting pane is holding. So the pane is decided by the board
-		// the caller already named (ADR 0009), not by which pane happens to be
-		// first: a proposal drawn on the right must not need the current
-		// architecture taken off the left to make room for it (TASK-046).
-		const { key: wanted } = boardFromRequest(req, "Mermaid conversion");
-
-		// This route is exempt from the lock, not from saying what it is doing.
-		// Only an agent ever calls it — a pane converts nothing on its own — so
-		// there is nobody here to exempt. Asked before the pane, because a caller
-		// that has said nothing has not got as far as needing one.
-		const said = checkDoing(req.query.doing);
-		if (!said.ok) return refuseUndescribedWrite(res, wanted, req.path, said.problem);
-
-		if (panes.size === 0) {
-			return res.status(503).json({
-				success: false,
-				code: "BROWSER_REQUIRED",
-				error:
-					"No browser is open, and mermaid conversion happens in the browser. Open the canvas first.",
-			});
-		}
-		const pane = paneShowing(wanted);
-		if (!pane) {
-			// The board exists, it is just not on screen, and conversion needs a
-			// canvas to run in. Two ways to give it one, and which is available
-			// depends on whether there is still room on the display.
-			const room =
-				panes.size < MAX_PANES
-					? `Put it beside ${panes.size === 1 ? "that one" : "those"} with \`archboard pane open --board ${wanted}\`, `
-					: `Put it on screen with \`board open ${wanted} --pane <left|right>\`, `;
-			return res.status(409).json({
-				success: false,
-				error:
-					`Mermaid converts in the pane holding the board, and no pane is holding "${wanted}". ` +
-					`Nothing was converted. Panes on screen: ${panesShowingList()}. ` +
-					`${room}then convert again.`,
-			});
-		}
-
-		sendToPane(
-			pane.clientId,
-			{
-				type: "mermaid_convert",
-				mermaidDiagram,
-				config: config || {},
-				timestamp: new Date().toISOString(),
-			},
-			wanted,
+function mermaidElementInput(
+	rendered: MermaidRenderJobResult,
+	existingIds: Iterable<string>,
+): unknown[] {
+	if (rendered.elements.length === 0)
+		throw new BoardMutationError(
+			422,
+			"Mermaid conversion returned no elements for non-empty source. The board was not changed.",
+			"MERMAID_EMPTY_RESULT",
 		);
-		changeFeed.expectAgentEcho(wanted);
-		// Said here rather than by the middleware, because this route is outside
-		// it: the write arrives afterwards as the converting pane's own change
-		// report, which is a person's shape and carries nothing. The agent still
-		// asked for it, so the agent still says what it is doing (TASK-095).
-		const writer = holderFromRequest(req, wanted);
-		announceDoing(wanted, {
-			doing: said.doing,
-			at: new Date().toISOString(),
-			by: writer.id,
-			kind: writer.kind,
-			claimed: claimWriterId(wanted) === writer.id,
-		});
-
-		// Return the diagram for frontend processing, and name the pane it went
-		// to, the way `board open` names the pane a board landed in.
-		const place =
-			panesInOrder(Array.from(panes.values())).find(
-				(entry) => entry.pane.clientId === pane.clientId,
-			)?.place ?? "the only pane";
-		res.json({
-			success: true,
-			board: wanted,
-			...paneResponse(pane),
-			mermaidDiagram,
-			config: config || {},
-			message: `Mermaid diagram sent to ${paneWords(place)}, which is holding "${wanted}", for conversion.`,
-		});
-	} catch (error) {
-		answerBoardError(res, error, "Error processing Mermaid diagram:");
+	const used = new Set(existingIds);
+	const ids = new Map<string, string>();
+	for (const element of rendered.elements) {
+		if (typeof element.id !== "string" || element.id.length === 0)
+			throw new BoardMutationError(422, "Mermaid conversion returned an element without an id.");
+		const id = derivedId(`mermaid:${element.id}`, used);
+		used.add(id);
+		ids.set(element.id, id);
 	}
-});
+	return rendered.elements.map((element) => {
+		const input = structuredClone(element) as unknown as Record<string, unknown>;
+		const start = input.start as Record<string, unknown> | undefined;
+		const end = input.end as Record<string, unknown> | undefined;
+		return {
+			...input,
+			id: ids.get(element.id),
+			...(start && typeof start.id === "string"
+				? { start: { ...start, id: ids.get(start.id) } }
+				: {}),
+			...(end && typeof end.id === "string" ? { end: { ...end, id: ids.get(end.id) } } : {}),
+		};
+	});
+}
+
+// Mermaid is rendered in the private server renderer and committed once under
+// the ordinary board lock and write boundary.
+app.post(
+	"/api/elements/from-mermaid",
+	asyncEndpoint(async (req: Request, res: Response) => {
+		try {
+			const { mermaidDiagram, config } = req.body ?? {};
+			if (typeof mermaidDiagram !== "string" || mermaidDiagram.trim().length === 0) {
+				return res.status(400).json({
+					success: false,
+					error: "Mermaid diagram definition is required",
+				});
+			}
+			const source = boardTargetFromRequest(req, "Mermaid conversion");
+			const converted = await boardRenderer.execute({
+				kind: "mermaid",
+				source: mermaidDiagram,
+				config:
+					config && typeof config === "object" && !Array.isArray(config)
+						? { ...DEFAULT_MERMAID_CONFIG, ...config }
+						: DEFAULT_MERMAID_CONFIG,
+			});
+			if (converted.kind !== "mermaid")
+				throw new BoardRendererError("Mermaid renderer returned the wrong result shape.", "result");
+			if (converted.error)
+				throw new BoardMutationError(
+					422,
+					`Mermaid conversion failed: ${converted.error}`,
+					"MERMAID_INVALID",
+				);
+			answerBoardWrite(res, {
+				source,
+				origin: "agent",
+				mutation: elementMutation((content) => ({
+					input: {
+						origin: "agent",
+						upserts: mermaidElementInput(converted, content.elements.keys()) as never[],
+					},
+					addFiles: Object.values(converted.files),
+					value: (applied) => {
+						const elements = [...applied.created, ...applied.updated];
+						return { count: elements.length, ids: elements.map((element) => element.id), elements };
+					},
+				})),
+				answer: ({ content, value, delta, written, checkoutSnapshot }) => ({
+					success: true,
+					board: source.key,
+					count: value.count,
+					ids: value.ids,
+					...agentWriteAnswer(
+						source.key,
+						source.board,
+						content,
+						[...delta.created, ...delta.updated],
+						wantsDocument(req),
+						written,
+						checkoutSnapshot,
+					),
+				}),
+			});
+		} catch (error) {
+			answerBoardError(res, error, "Error processing Mermaid diagram:");
+		}
+	}),
+);
 
 // ─── Change reports from the browser ──────────────────────────
 //
@@ -3074,107 +3086,132 @@ app.delete("/api/files/:id", (req: Request, res: Response) => {
 	}
 });
 
-interface PendingFindingExport {
-	expected: ReadonlySet<number>;
-	results: Map<number, { findingIndex: number; data?: string; failure?: "browser-export-failed" }>;
-	resolve: (
-		results: Array<{
-			findingIndex: number;
-			data?: string;
-			failure?: "browser-export-failed" | "browser-timeout";
-		}>,
-	) => void;
-	timeout: ReturnType<typeof setTimeout>;
-}
-const pendingFindingExports = new Map<string, PendingFindingExport>();
+const boardRenderRequestSchema = z.object({
+	format: z.enum(["png", "svg"]),
+	background: z.boolean().default(true),
+	padding: z.number().int().min(0).max(128).default(16),
+	scale: z.number().min(0.25).max(4).default(1),
+});
 
-// Focused finding export: one persisted snapshot, one immutable browser payload.
+function copiedRenderSnapshot(
+	scene: NonNullable<ReturnType<typeof readBoardInspectionSnapshot>["renderScene"]>,
+): BoardRenderSnapshot {
+	return structuredClone(scene) as unknown as BoardRenderSnapshot;
+}
+
+// Named-board image render: one persisted snapshot, no pane, camera, or browser client.
+app.post(
+	"/api/render/board",
+	asyncEndpoint(async (req: Request, res: Response) => {
+		try {
+			const asked = boardOfRequest(req);
+			if (!asked)
+				throw new BoardRequiredError(
+					listBoards().map((entry) => entry.key),
+					"Rendering a board",
+				);
+			const options = boardRenderRequestSchema.parse(req.body ?? {});
+			const snapshot = readBoardInspectionSnapshot(asked);
+			if (!snapshot.renderScene)
+				throw new BoardMutationError(
+					422,
+					`Board "${snapshot.board}" has persisted elements that cannot be rendered. Correct the note and try again.`,
+					"BOARD_NOT_RENDERABLE",
+				);
+			const rendered = await boardRenderer.execute({
+				kind: "render",
+				snapshot: copiedRenderSnapshot(snapshot.renderScene),
+				outputs: [
+					{
+						id: "board",
+						kind: "full",
+						format: options.format,
+						background: options.background,
+						padding: options.padding,
+						scale: options.scale,
+					},
+				],
+			});
+			if (rendered.kind !== "render" || rendered.outputs.length !== 1) {
+				if (rendered.kind === "render" && rendered.error)
+					throw new BoardMutationError(422, rendered.error, "BOARD_NOT_RENDERABLE");
+				throw new BoardRendererError("Board renderer returned the wrong result shape.", "result");
+			}
+			const output = rendered.outputs[0]!;
+			res.json({
+				success: true,
+				board: snapshot.board,
+				sourceFingerprint: snapshot.fingerprint,
+				format: output.format,
+				data: output.data,
+				width: output.width,
+				height: output.height,
+				padding: options.padding,
+				scale: options.scale,
+				background: options.background,
+				backgroundColor: snapshot.renderScene.appState.viewBackgroundColor,
+			});
+		} catch (error) {
+			answerBoardError(res, error, "Error rendering board");
+		}
+	}),
+);
+
+// Focused finding render: inspection and every PNG use the same persisted snapshot.
 app.post(
 	"/api/export/findings",
 	asyncEndpoint(async (req: Request, res: Response) => {
 		try {
-			const key = boardOfRequest(req);
-			if (!key) {
+			const asked = boardOfRequest(req);
+			if (!asked) {
 				return res
 					.status(400)
 					.json({ success: false, error: "Rendering findings requires a board." });
 			}
 			const policy = InspectionPolicyInputSchema.parse(req.body?.policy ?? {});
-			const snapshot = readBoardInspectionSnapshot(key);
+			const snapshot = readBoardInspectionSnapshot(asked);
 			const report = inspectBoard(snapshot.elements, policy);
 			const requests = report.findings.flatMap((finding, findingIndex) =>
 				finding.focusBBox ? [{ findingIndex, focusBBox: finding.focusBBox }] : [],
 			);
 			const base = {
-				board: key,
+				board: snapshot.board,
 				sourceFingerprint: snapshot.fingerprint,
 				report,
 				sourceRenderable: snapshot.renderScene !== null,
 			};
 			if (!snapshot.renderScene || requests.length === 0) return res.json({ ...base, results: [] });
-
-			const answering = primaryPane();
-			if (!answering) return res.status(503).json(noBrowserBody("Rendering board findings"));
-			const requestId = mintId(pendingFindingExports);
-			const expected = new Set(requests.map(({ findingIndex }) => findingIndex));
-			const completed = new Promise<
-				Array<{
-					findingIndex: number;
-					data?: string;
-					failure?: "browser-export-failed" | "browser-timeout";
-				}>
-			>((resolve) => {
-				const timeout = setTimeout(() => {
-					const pending = pendingFindingExports.get(requestId);
-					if (!pending) return;
-					pendingFindingExports.delete(requestId);
-					resolve(
-						[...pending.expected]
-							.map(
-								(findingIndex) =>
-									pending.results.get(findingIndex) ?? {
-										findingIndex,
-										failure: "browser-timeout" as const,
-									},
-							)
-							.toSorted((left, right) => left.findingIndex - right.findingIndex),
-					);
-				}, BROWSER_EXPORT_TIMEOUT_MS);
-				pendingFindingExports.set(requestId, {
-					expected,
-					results: new Map(),
-					resolve,
-					timeout,
-				});
+			const rendered = await boardRenderer.execute({
+				kind: "render",
+				snapshot: copiedRenderSnapshot(snapshot.renderScene),
+				outputs: requests.map(({ findingIndex, focusBBox }) => {
+					const dimensions = findingRasterDimensions(focusBBox);
+					return {
+						id: String(findingIndex),
+						kind: "focus" as const,
+						format: "png" as const,
+						background: true as const,
+						frame: focusBBox,
+						...dimensions,
+					};
+				}),
 			});
-
-			const paneBoard = paneBoardKey(answering);
-			const delivered = sendToPane(
-				answering.clientId,
-				{
-					type: "export_findings_request",
-					requestId,
-					sourceBoard: key,
-					elements: presentElements(snapshot.renderScene.elements, {
-						boardKey: key,
-						checkoutSnapshot: checkoutSnapshotFor(res),
-					}),
-					files: snapshot.renderScene.files,
-					findings: requests,
-				},
-				paneBoard,
-			);
-			if (!delivered) {
-				const pending = pendingFindingExports.get(requestId);
-				if (pending) clearTimeout(pending.timeout);
-				pendingFindingExports.delete(requestId);
-				return res.status(503).json(noBrowserBody("Rendering board findings"));
-			}
-			const results = await trackMutationWork(
-				req,
-				`${req.method} ${req.path} browser findings`,
-				() => completed,
-			);
+			if (rendered.kind !== "render")
+				throw new BoardRendererError("Finding renderer returned the wrong result shape.", "result");
+			if (rendered.error)
+				return res.json({
+					...base,
+					sourceRenderable: false,
+					results: [],
+					error: rendered.error,
+				});
+			const byId = new Map(rendered.outputs.map((output) => [output.id, output]));
+			const results = requests.map(({ findingIndex }) => {
+				const output = byId.get(String(findingIndex));
+				return output
+					? { findingIndex, data: output.data }
+					: { findingIndex, failure: "renderer-failed" as const };
+			});
 			if (!res.destroyed) res.json({ ...base, results });
 		} catch (error) {
 			if (!res.destroyed) answerBoardError(res, error, "Error rendering board findings");
@@ -3182,52 +3219,17 @@ app.post(
 	}),
 );
 
-app.post("/api/export/findings/result", (req: Request, res: Response) => {
-	try {
-		const { requestId, findingIndex, data, error } = req.body ?? {};
-		if (typeof requestId !== "string" || !requestId || !Number.isInteger(findingIndex)) {
-			return res
-				.status(400)
-				.json({ success: false, error: "requestId and findingIndex are required" });
-		}
-		const pending = pendingFindingExports.get(requestId);
-		if (!pending) return res.json({ success: true });
-		if (!pending.expected.has(findingIndex))
-			return res
-				.status(400)
-				.json({ success: false, error: "findingIndex is not part of this export" });
-		if (pending.results.has(findingIndex))
-			return res.status(409).json({ success: false, error: "findingIndex was already answered" });
-		pending.results.set(
-			findingIndex,
-			typeof data === "string" && !error
-				? { findingIndex, data }
-				: { findingIndex, failure: "browser-export-failed" },
-		);
-		if (pending.results.size === pending.expected.size) {
-			clearTimeout(pending.timeout);
-			pendingFindingExports.delete(requestId);
-			pending.resolve(
-				[...pending.results.values()].toSorted((a, b) => a.findingIndex - b.findingIndex),
-			);
-		}
-		res.json({ success: true });
-	} catch (error) {
-		res.status(500).json({ success: false, error: (error as Error).message });
-	}
-});
-
-// Image export: request (CLI -> Express -> WebSocket -> Frontend)
-interface PendingExport {
+// Browser capture: request (CLI -> Express -> WebSocket -> Frontend)
+interface PendingBrowserCapture {
 	resolve: (data: { format: string; data: string }) => void;
 	reject: (error: Error) => void;
 	timeout: ReturnType<typeof setTimeout>;
 	collectionTimeout: ReturnType<typeof setTimeout> | null;
 	bestResult: { format: string; data: string } | null;
 }
-const pendingExports = new Map<string, PendingExport>();
+const pendingBrowserCaptures = new Map<string, PendingBrowserCapture>();
 
-app.post("/api/export/image", (req: Request, res: Response) => {
+app.post("/api/browser/capture", (req: Request, res: Response) => {
 	try {
 		const { format, background, pane } = req.body ?? {};
 
@@ -3254,21 +3256,21 @@ app.post("/api/export/image", (req: Request, res: Response) => {
 			return res.status(503).json(noBrowserBody("Taking a picture of the canvas"));
 		}
 
-		const requestId = mintId(pendingExports);
+		const requestId = mintId(pendingBrowserCaptures);
 
-		const exportPromise = new Promise<{ format: string; data: string }>((resolve, reject) => {
+		const capturePromise = new Promise<{ format: string; data: string }>((resolve, reject) => {
 			const timeout = setTimeout(() => {
-				const pending = pendingExports.get(requestId);
-				pendingExports.delete(requestId);
+				const pending = pendingBrowserCaptures.get(requestId);
+				pendingBrowserCaptures.delete(requestId);
 				// If we collected any result during the window, use it
 				if (pending?.bestResult) {
 					resolve(pending.bestResult);
 				} else {
-					reject(new Error("Export timed out after 30 seconds"));
+					reject(new Error("Browser capture timed out after 30 seconds"));
 				}
 			}, BROWSER_EXPORT_TIMEOUT_MS);
 
-			pendingExports.set(requestId, {
+			pendingBrowserCaptures.set(requestId, {
 				resolve,
 				reject,
 				timeout,
@@ -3277,50 +3279,50 @@ app.post("/api/export/image", (req: Request, res: Response) => {
 			});
 		});
 
-		// Re-send the board to the pane that will answer, so a stale tab exports
+		// Re-send the board to the pane that will answer, so a stale tab captures
 		// what the server holds rather than what it last happened to render. Sent
 		// to that pane alone and carrying that pane's own board: broadcasting it
 		// would replace every other pane's scene with this one's board, which is
 		// exactly the yank per-pane boards exist to prevent.
-		const exportKey = paneBoards.get(answering.clientId) ?? answering.board;
-		const exportBoard = boards.get(exportKey);
-		if (!exportBoard) {
+		const captureKey = paneBoards.get(answering.clientId) ?? answering.board;
+		const captureBoard = boards.get(captureKey);
+		if (!captureBoard) {
 			return res.status(409).json({
 				success: false,
-				error: `The pane being pictured is showing "${exportKey}", which this canvas no longer holds.`,
+				error: `The pane being pictured is showing "${captureKey}", which this canvas no longer holds.`,
 			});
 		}
-		const exportContent = readBoardContent(exportBoard);
+		const captureContent = readBoardContent(captureBoard);
 		sendToPane(
 			answering.clientId,
 			{
 				type: "initial_elements",
-				board: exportKey,
-				identity: exportBoard.identity,
-				elements: presentElements(exportContent.elements.values(), {
-					boardKey: exportKey,
+				board: captureKey,
+				identity: captureBoard.identity,
+				elements: presentElements(captureContent.elements.values(), {
+					boardKey: captureKey,
 					checkoutSnapshot: checkoutSnapshotFor(res),
 				}),
-				...boardFilesMessage(exportContent),
+				...boardFilesMessage(captureContent),
 			} as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> },
-			exportKey,
+			captureKey,
 		);
 
-		// Give the browser time to process the reload before requesting export
+		// Give the browser time to process the reload before requesting capture.
 		setTimeout(() => {
 			sendToPane(
 				answering.clientId,
 				{
-					type: "export_image_request",
+					type: "browser_capture_request",
 					requestId,
 					format,
 					background: background ?? true,
 				},
-				exportKey,
+				captureKey,
 			);
 		}, 800);
 
-		exportPromise
+		capturePromise
 			.then((result) => {
 				return res.json({
 					success: true,
@@ -3335,7 +3337,7 @@ app.post("/api/export/image", (req: Request, res: Response) => {
 				});
 			});
 	} catch (error) {
-		logger.error("Error initiating image export:", error);
+		logger.error("Error initiating browser capture:", error);
 		// A pane spec that names nothing is the caller's mistake, not a fault.
 		res.status(boardErrorStatus(error)).json({
 			success: false,
@@ -3344,8 +3346,8 @@ app.post("/api/export/image", (req: Request, res: Response) => {
 	}
 });
 
-// Image export: result (Frontend -> Express -> CLI)
-app.post("/api/export/image/result", (req: Request, res: Response) => {
+// Browser capture: result (Frontend -> Express -> CLI)
+app.post("/api/browser/capture/result", (req: Request, res: Response) => {
 	try {
 		const { requestId, format, data, error } = req.body;
 
@@ -3356,7 +3358,7 @@ app.post("/api/export/image/result", (req: Request, res: Response) => {
 			});
 		}
 
-		const pending = pendingExports.get(requestId);
+		const pending = pendingBrowserCaptures.get(requestId);
 		if (!pending) {
 			// Already resolved by another client, or expired — ignore silently
 			return res.json({ success: true });
@@ -3364,7 +3366,7 @@ app.post("/api/export/image/result", (req: Request, res: Response) => {
 
 		if (error) {
 			// Don't reject on error — another WebSocket client may still succeed.
-			logger.warn(`Export error from one client (requestId=${requestId}): ${error}`);
+			logger.warn(`Browser capture error from one client (requestId=${requestId}): ${error}`);
 			return res.json({ success: true });
 		}
 
@@ -3376,10 +3378,10 @@ app.post("/api/export/image/result", (req: Request, res: Response) => {
 		// Start a short collection window on the first response, then resolve with best
 		if (!pending.collectionTimeout) {
 			pending.collectionTimeout = setTimeout(() => {
-				const p = pendingExports.get(requestId);
+				const p = pendingBrowserCaptures.get(requestId);
 				if (p?.bestResult) {
 					clearTimeout(p.timeout);
-					pendingExports.delete(requestId);
+					pendingBrowserCaptures.delete(requestId);
 					p.resolve(p.bestResult);
 				}
 			}, 3000);
@@ -3387,7 +3389,7 @@ app.post("/api/export/image/result", (req: Request, res: Response) => {
 
 		res.json({ success: true });
 	} catch (error) {
-		logger.error("Error processing export result:", error);
+		logger.error("Error processing browser capture result:", error);
 		res.status(500).json({
 			success: false,
 			error: (error as Error).message,
@@ -3822,38 +3824,6 @@ function paneFromRequest(spec: unknown): PaneRegistration | null {
 function primaryPane(): PaneRegistration | null {
 	const registrations = Array.from(panes.values());
 	return registrations.find((pane) => pane.primary) ?? registrations[0] ?? null;
-}
-
-/** What a pane is holding: the server's record of it, or the pane's own claim. */
-function paneBoardKey(pane: PaneRegistration): string {
-	return paneBoards.get(pane.clientId) ?? pane.board ?? SCRATCH_KEY;
-}
-
-/**
- * The pane holding a board, for work that happens in the browser but is about
- * one named board.
- *
- * Mermaid converts inside a pane and the elements land on whatever board that
- * pane holds, so the pane is not a second thing for the caller to choose: the
- * board says which one (ADR 0009). Asking for `--pane` as well would be a
- * second way to say the same thing, and so a way to say two different things.
- *
- * Two panes may hold one board. Either would convert into the same board, so
- * this picks rather than refuses, and it picks the primary one so the same
- * screen gives the same answer twice.
- */
-function paneShowing(board: string): PaneRegistration | null {
-	const holding = panesInOrder(Array.from(panes.values()))
-		.map((entry) => entry.pane)
-		.filter((pane) => paneBoardKey(pane) === board);
-	return holding.find((pane) => pane.primary) ?? holding[0] ?? null;
-}
-
-/** The panes on screen and what each holds, for a refusal that has to list them. */
-function panesShowingList(): string {
-	return panesInOrder(Array.from(panes.values()))
-		.map((entry) => `${entry.position}. ${entry.place} (${paneBoardKey(entry.pane)})`)
-		.join(", ");
 }
 
 /** One pane, named the way a human would point at it: "the left pane". */
@@ -4412,6 +4382,7 @@ app.get("/health", (req: Request, res: Response) => {
 				activeMs: Math.max(0, Date.now() - entry.startedAt),
 			})),
 		},
+		renderer: boardRenderer.status(),
 		held_boards: heldBoardKeys().map((board) => reportHold(board, holdOn(board)!)),
 		// Whether this process is running the source that is on disk now, and
 		// which build the frontend has been rebuilt to. A long-lived process has no
@@ -5010,19 +4981,10 @@ async function closeBrowserOwners(): Promise<void> {
 		clearTimeout(pending.timeout);
 		pending.reject(new Error("Canvas stopped before the pane closed."));
 	}
-	for (const pending of pendingFindingExports.values()) {
-		clearTimeout(pending.timeout);
-		pending.resolve(
-			[...pending.expected].map((findingIndex) => ({
-				findingIndex,
-				failure: "browser-timeout" as const,
-			})),
-		);
-	}
-	for (const pending of pendingExports.values()) {
+	for (const pending of pendingBrowserCaptures.values()) {
 		clearTimeout(pending.timeout);
 		if (pending.collectionTimeout !== null) clearTimeout(pending.collectionTimeout);
-		pending.reject(new Error("Canvas stopped before the export completed."));
+		pending.reject(new Error("Canvas stopped before the browser capture completed."));
 	}
 	for (const pending of pendingViewports.values()) {
 		clearTimeout(pending.timeout);
@@ -5030,8 +4992,7 @@ async function closeBrowserOwners(): Promise<void> {
 	}
 	pendingPaneOpens.clear();
 	pendingPaneCloses.clear();
-	pendingFindingExports.clear();
-	pendingExports.clear();
+	pendingBrowserCaptures.clear();
 	pendingViewports.clear();
 	acceptedSockets.clear();
 	clients.clear();
@@ -5200,6 +5161,16 @@ async function startServer(): Promise<void> {
 				start: prepareCodexWorkbench,
 				stop: stopCodexWorkbench,
 				forceStop: stopCodexWorkbench,
+			},
+			{
+				name: "board-renderer",
+				start: () => boardRenderer.start(),
+				stop: async () => {
+					await boardRenderer.stop();
+				},
+				forceStop: async () => {
+					await boardRenderer.forceStop();
+				},
 			},
 			{
 				name: "http-server",

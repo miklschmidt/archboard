@@ -34,7 +34,7 @@ import { DEFAULT_FILL_STYLE, DEFAULT_SHAPE_BACKGROUND } from "../../shared/appea
 
 interface CanvasPaneProps {
 	paneId: string;
-	/** The pane that answers export / viewport / mermaid requests. */
+	/** The pane preferred for browser capture and viewport requests. */
 	primary: boolean;
 	/**
 	 * Is this the pane the user last interacted with? Reported to the server as part of

@@ -283,7 +283,7 @@ export async function ensureCanvasRunning(
 			cleanupProtocol.destroy();
 			child.unref();
 			process.stderr.write(
-				`Canvas server running at ${EXPRESS_SERVER_URL} — open it in a browser for screenshots and mermaid conversion.\n`,
+				`Canvas server running at ${EXPRESS_SERVER_URL}. Open it in a browser only for live canvas work and capture.\n`,
 			);
 			return { url: EXPRESS_SERVER_URL, spawned: true };
 		}

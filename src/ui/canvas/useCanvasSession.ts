@@ -2,7 +2,7 @@
 //
 // Everything that used to make the canvas *be* the application — the socket,
 // board adoption, applying what arrives, reporting what a human did, publishing
-// the selection, answering export/viewport/mermaid requests — lives here, in a
+// the selection, answering browser capture and viewport requests — lives here, in a
 // hook keyed by pane. That is the seam: hosting a second pane is mounting a
 // second <CanvasPane/>, not copying any of this.
 //
@@ -12,19 +12,10 @@
 // way any other client does, over the socket.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-	CaptureUpdateAction,
-	convertToExcalidrawElements,
-	exportToBlob,
-	exportToSvg,
-} from "@excalidraw/excalidraw";
+import { CaptureUpdateAction, exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
+import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-import type {
-	ExcalidrawElement,
-	ExcalidrawFrameLikeElement,
-} from "@excalidraw/excalidraw/element/types";
 import type { AppState, BinaryFileData, LibraryItems } from "@excalidraw/excalidraw/types";
-import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from "./mermaidConverter";
 import type {
 	BoardHold,
 	BoardIdentity,
@@ -54,7 +45,6 @@ import {
 } from "./change-reporting";
 import { replaceCanvasFiles } from "./files";
 import { ownsHoldAttempt, type HoldAttempt } from "./hold-attempt";
-import { findingRasterDimensions } from "../../shared/finding-raster";
 import {
 	beaconChanges,
 	BoardConflictError,
@@ -62,8 +52,7 @@ import {
 	fetchFiles,
 	holdBoard,
 	loadedBundle,
-	postExportResult,
-	postFindingExportResult,
+	postBrowserCaptureResult,
 	postViewportResult,
 	publishSelection,
 	releaseBoard,
@@ -102,41 +91,6 @@ const CONTENT_MESSAGES = new Set([
 	"files_replaced",
 ]);
 
-function findingFrame(
-	box: { x: number; y: number; width: number; height: number },
-	findingIndex: number,
-): ExcalidrawFrameLikeElement {
-	return {
-		id: `archboard-finding-${findingIndex}`,
-		type: "frame",
-		x: box.x,
-		y: box.y,
-		width: box.width,
-		height: box.height,
-		angle: 0 as ExcalidrawFrameLikeElement["angle"],
-		strokeColor: "#000000",
-		backgroundColor: "transparent",
-		fillStyle: "solid",
-		strokeWidth: 1,
-		strokeStyle: "solid",
-		roughness: 0,
-		opacity: 100,
-		roundness: null,
-		seed: findingIndex + 1,
-		version: 1,
-		versionNonce: findingIndex + 1,
-		index: null,
-		isDeleted: false,
-		groupIds: [],
-		frameId: null,
-		boundElements: null,
-		updated: 1,
-		link: null,
-		locked: true,
-		name: null,
-	};
-}
-
 function applyFileMessage(api: ExcalidrawImperativeAPI, data: WebSocketMessage): boolean {
 	switch (data.type) {
 		case "files_added":
@@ -161,22 +115,6 @@ async function blobBase64(blob: Blob): Promise<string> {
 		reader.addEventListener("error", () => reject(reader.error ?? new Error("FileReader failed")));
 		reader.readAsDataURL(blob);
 	});
-}
-
-async function answerArtifactRequest(
-	data: WebSocketMessage,
-	answerExport: (message: WebSocketMessage) => Promise<void>,
-	answerFindingExport: (message: WebSocketMessage) => Promise<void>,
-): Promise<boolean> {
-	if (data.type === "export_image_request") {
-		await answerExport(data);
-		return true;
-	}
-	if (data.type === "export_findings_request") {
-		await answerFindingExport(data);
-		return true;
-	}
-	return false;
 }
 
 // Every duration this pane waits out. They are in src/shared/timing/timing.ts with the
@@ -276,8 +214,7 @@ export interface CanvasSessionOptions {
 	 * Is this the pane the server picks when a request names no pane and no
 	 * board? Reported, and used for the one message that really is about the
 	 * browser rather than a pane: a library change, which every pane hears and
-	 * only one should send to the shell. Export, viewport and mermaid are
-	 * addressed to a
+	 * only one should send to the shell. Browser capture and viewport are addressed to a
 	 * single socket, so the pane that gets one answers it whether or not it is
 	 * primary.
 	 */
@@ -1247,11 +1184,11 @@ export function useCanvasSession({
 	// else.
 	// ─── Requests addressed to the browser ───────────────────────
 
-	const answerExport = useCallback(async (data: WebSocketMessage): Promise<void> => {
+	const answerBrowserCapture = useCallback(async (data: WebSocketMessage): Promise<void> => {
 		const api = apiRef.current;
 		if (!api || !data.requestId) return;
 		const respond = (payload: Record<string, unknown>) =>
-			postExportResult(data.requestId!, payload).catch(() => {});
+			postBrowserCaptureResult(data.requestId!, payload).catch(() => {});
 
 		try {
 			const elements = api.getSceneElements();
@@ -1270,40 +1207,6 @@ export function useCanvasSession({
 		} catch (error) {
 			void error;
 			await respond({ error: (error as Error).message });
-		}
-	}, []);
-
-	const answerFindingExport = useCallback(async (data: WebSocketMessage): Promise<void> => {
-		if (!data.requestId || !Array.isArray(data.findings) || !Array.isArray(data.elements)) return;
-		const elements = data.elements.filter(
-			(element) => !element.isDeleted,
-		) as unknown as ExcalidrawElement[];
-		const files = data.files ?? {};
-		for (const request of data.findings) {
-			const { findingIndex, focusBBox } = request;
-			try {
-				const dimensions = findingRasterDimensions(focusBBox);
-				const blob = await exportToBlob({
-					elements: elements as never,
-					files,
-					appState: {
-						exportBackground: true,
-						viewBackgroundColor: "#ffffff",
-						exportScale: dimensions.scale,
-					},
-					mimeType: "image/png",
-					exportPadding: 0,
-					exportingFrame: findingFrame(focusBBox, findingIndex),
-					getDimensions: () => dimensions,
-				});
-				await postFindingExportResult(data.requestId, findingIndex, {
-					data: await blobBase64(blob),
-				});
-			} catch (error) {
-				await postFindingExportResult(data.requestId, findingIndex, {
-					error: (error as Error).message,
-				}).catch(() => {});
-			}
 		}
 	}, []);
 
@@ -1370,46 +1273,6 @@ export function useCanvasSession({
 		[dispatchReporting],
 	);
 
-	const answerMermaid = useCallback(
-		async (data: WebSocketMessage): Promise<void> => {
-			const api = apiRef.current;
-			if (!api || !data.mermaidDiagram) return;
-			try {
-				const result = await convertMermaidToExcalidraw(
-					data.mermaidDiagram,
-					data.config || DEFAULT_MERMAID_CONFIG,
-				);
-				if (result.error) {
-					void result.error;
-					return;
-				}
-				if (!result.elements || result.elements.length === 0) return;
-
-				// Regenerate ids: mermaid emits stable ones like "A", which would collide
-				// with a previous conversion already on the board.
-				const converted = convertToExcalidrawElements(
-					[...result.elements] as unknown as Parameters<typeof convertToExcalidrawElements>[0],
-					{
-						regenerateIds: true,
-					},
-				);
-				// The conversion is a local edit and is reported immediately.
-				dispatchReporting({
-					type: "local_update_requested",
-					update: {
-						elements: [...api.getSceneElements(), ...converted] as unknown as SceneElement[],
-						captureUpdate: "immediately",
-					},
-				});
-				if (result.files) api.addFiles(Object.values(result.files));
-				await sendReport();
-			} catch (error) {
-				void error;
-			}
-		},
-		[dispatchReporting, sendReport],
-	);
-
 	// ─── The socket ──────────────────────────────────────────────
 
 	const handleMessage = useCallback(
@@ -1431,7 +1294,10 @@ export function useCanvasSession({
 			// fraction of a second before the pane replaces it again. So board content
 			// waits for the full report; status from the server does not (TASK-079).
 			if (needsFullReport(reportingRef.current.state) && CONTENT_MESSAGES.has(data.type)) return;
-			if (await answerArtifactRequest(data, answerExport, answerFindingExport)) return;
+			if (data.type === "browser_capture_request") {
+				await answerBrowserCapture(data);
+				return;
+			}
 			if (applyFileMessage(api, data)) return;
 
 			switch (data.type) {
@@ -1591,12 +1457,9 @@ export function useCanvasSession({
 					}
 					break;
 
-				// None of these is gated on primary any more. All are addressed to one
+				// This is not gated on primary. It is addressed to one
 				// pane's socket, so the pane that receives one is by definition the pane
-				// that was asked. Gating them on primary was what made the second pane
-				// impossible to photograph, to frame, or to convert into — an agent could
-				// draw a proposal beside the current architecture and never see it, and
-				// could not put a mermaid diagram there at all.
+				// that was asked.
 				case "set_viewport":
 					await answerViewport(data);
 					break;
@@ -1610,19 +1473,13 @@ export function useCanvasSession({
 					onLayoutRequest?.("close");
 					break;
 
-				case "mermaid_convert":
-					await answerMermaid(data);
-					break;
-
 				default:
 					void data.type;
 			}
 		},
 		[
 			adoptBoard,
-			answerExport,
-			answerFindingExport,
-			answerMermaid,
+			answerBrowserCapture,
 			answerViewport,
 			applyServerElements,
 			applyServerScene,

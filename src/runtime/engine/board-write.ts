@@ -85,6 +85,8 @@ export type BoardMutation<T> = (
 
 export interface ElementMutationPlan<T> {
 	input: ElementInputRequest;
+	/** Embedded-file candidates produced with these elements, merged in the same note write. */
+	addFiles?: readonly unknown[];
 	/** Replace the complete scene, including embedded-file membership. */
 	replaceScene?: { files: readonly unknown[] };
 	/** Present for a pane change report; true means its input is the whole scene. */
@@ -219,10 +221,17 @@ export function elementMutation<T>(
 			...plan.input,
 			deletes: plan.wholeScene || plan.replaceScene ? [] : plan.input.deletes,
 		});
+		const addedFiles = plan.addFiles
+			? usableDrawnFiles(content.elements.values(), plan.addFiles).filter(
+					(file) => content.files.get(file.id) !== file,
+				)
+			: [];
+		for (const file of addedFiles) content.files.set(file.id, file);
 		const changed =
 			applied.created.length > 0 ||
 			applied.updated.length > 0 ||
 			applied.deleted.length > 0 ||
+			addedFiles.length > 0 ||
 			plan.replaceScene !== undefined;
 		return {
 			value: plan.value(applied, content),
@@ -230,6 +239,7 @@ export function elementMutation<T>(
 				created: applied.created,
 				updated: applied.updated,
 				deleted: applied.deleted,
+				...(addedFiles.length > 0 ? { filesAdded: addedFiles } : {}),
 			},
 			...(plan.replaceScene ? { replacementFiles: plan.replaceScene.files } : {}),
 			requestedElements: applied.requested,

@@ -4,20 +4,20 @@ import { z } from "zod";
 import {
 	getElements,
 	clearCanvas,
-	exportImage,
+	captureBrowser,
+	renderBoard,
 	sendMermaid,
 	boardHeading,
 } from "../../runtime/engine/canvas-client.js";
 import { importScene } from "../../runtime/engine/scene-document.js";
 import { describeScene } from "../../runtime/engine/describe.js";
 import { exportToExcalidrawUrl } from "../../runtime/engine/share-url.js";
-import { EXPRESS_SERVER_URL } from "../../runtime/engine/config.js";
-import { defineCommand, type PendingArtifact } from "../command-contract/contract.js";
 import {
-	HoldReportSchema,
-	PaneRefSchema,
-	PendingArtifactSchema,
-} from "../command-contract/schemas.js";
+	CliUsageError,
+	defineCommand,
+	type PendingArtifact,
+} from "../command-contract/contract.js";
+import { HoldReportSchema, PendingArtifactSchema } from "../command-contract/schemas.js";
 import {
 	boardWriteRefusals,
 	commonRefusals,
@@ -171,7 +171,7 @@ export const screenshotContract = defineCommand({
 	relationships: [
 		{
 			method: "POST",
-			path: "/api/export/image",
+			path: "/api/browser/capture",
 			cardinality: "one",
 			description: "Render the selected pane",
 		},
@@ -179,7 +179,7 @@ export const screenshotContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "screenshot");
 		await context.require("browser", "screenshot");
-		const image = await exportImage(input.format, !input.noBackground, input.pane);
+		const image = await captureBrowser(input.format, !input.noBackground, input.pane);
 		if (!input.out && input.format === "svg") return { result: image.data };
 		const resolved = context.resolvePath(
 			input.out ?? path.join(os.tmpdir(), `excalidraw-screenshot-${Date.now()}.png`),
@@ -190,6 +190,129 @@ export const screenshotContract = defineCommand({
 				: { path: resolved, content: Buffer.from(image.data, "base64"), encoding: "binary" };
 		return {
 			result: { success: true as const, file: resolved, format: input.format },
+			pendingArtifact: artifact,
+		};
+	},
+});
+
+export const RenderInputSchema = z.object({
+	out: z.string().min(1, "render requires --out <file>"),
+	format: z.enum(["png", "svg"], { error: "--format must be png or svg" }).default("png"),
+	noBackground: z.boolean().default(false),
+	padding: z.coerce.number().int().min(0).max(128).default(16),
+	scale: z.coerce.number().min(0.25).max(4).default(1),
+	tail: z.array(z.string()).default([]),
+});
+export type RenderInput = z.infer<typeof RenderInputSchema>;
+export const RenderResultSchema = z.object({
+	success: z.literal(true),
+	board: z.string(),
+	file: z.string(),
+	format: z.enum(["png", "svg"]),
+	width: z.number().positive(),
+	height: z.number().positive(),
+	padding: z.number().int().nonnegative(),
+	scale: z.number().positive(),
+	background: z.boolean(),
+	backgroundColor: z.string(),
+	sourceFingerprint: z.string(),
+});
+export type RenderResult = z.infer<typeof RenderResultSchema>;
+export const renderContract = defineCommand({
+	path: ["render"],
+	summary: "Render one named persisted board to PNG or SVG",
+	usage:
+		"render --board <key> --out <file> [--format png|svg] [--no-background] [--padding <px>] [--scale <n>]",
+	description:
+		"Renders one persisted board snapshot in the server-owned renderer. The command never reads or changes a live pane or camera.",
+	examples: ["archboard render --board system --out system.png"],
+	parameters: [
+		{
+			kind: "option",
+			key: "out",
+			spellings: ["--out"],
+			value: "required",
+			description: "Destination file",
+		},
+		{
+			kind: "option",
+			key: "format",
+			spellings: ["--format"],
+			value: "required",
+			description: "png or svg",
+		},
+		{
+			kind: "option",
+			key: "noBackground",
+			spellings: ["--no-background"],
+			value: "none",
+			description: "Render with a transparent background",
+		},
+		{
+			kind: "option",
+			key: "padding",
+			spellings: ["--padding"],
+			value: "required",
+			description: "Full-board padding in scene pixels, 0 to 128",
+		},
+		{
+			kind: "option",
+			key: "scale",
+			spellings: ["--scale"],
+			value: "required",
+			description: "Output scale, 0.25 to 4",
+		},
+		{
+			kind: "positional",
+			key: "tail",
+			name: "extra",
+			repeatable: true,
+			description: "Unexpected positional arguments",
+		},
+	],
+	input: { ingress: RenderInputSchema },
+	result: RenderResultSchema,
+	output: {
+		cases: [
+			{
+				id: "file",
+				when: {},
+				mode: "file-receipt",
+				held: "none",
+				description: "Written board render receipt",
+				presentation: ["result"],
+				artifact: PendingArtifactSchema,
+			},
+		],
+		select: () => "file",
+	},
+	prerequisites: ["server", "board"],
+	effects: ["read", "local-write"],
+	refusals: commonRefusals,
+	relationships: [
+		{
+			method: "POST",
+			path: "/api/render/board",
+			cardinality: "one",
+			description: "Render one immutable persisted snapshot",
+		},
+	],
+	async handler(input, context) {
+		if (input.tail.length > 0) throw new CliUsageError("render takes no positional arguments");
+		await context.require("server", "board rendering");
+		const rendered = await renderBoard({
+			format: input.format,
+			background: !input.noBackground,
+			padding: input.padding,
+			scale: input.scale,
+		});
+		const file = context.resolvePath(input.out);
+		const artifact: PendingArtifact =
+			rendered.format === "svg"
+				? { path: file, content: rendered.data, encoding: "utf8" }
+				: { path: file, content: Buffer.from(rendered.data, "base64"), encoding: "binary" };
+		return {
+			result: RenderResultSchema.parse({ ...rendered, file, data: undefined }),
 			pendingArtifact: artifact,
 		};
 	},
@@ -319,19 +442,19 @@ export const MermaidDiagramStageSchema = z.string().refine((value) => value.trim
 });
 export type MermaidDiagramStage = z.infer<typeof MermaidDiagramStageSchema>;
 export const MermaidResultSchema = z.looseObject({
-	success: z.boolean(),
-	board: z.string().optional(),
-	pane: PaneRefSchema.nullable(),
-	message: z.string().optional(),
+	success: z.literal(true),
+	board: z.string(),
+	count: z.number().int().positive(),
+	ids: z.array(z.string()).min(1),
 	held: HoldReportSchema.optional(),
 });
 export type MermaidResult = z.infer<typeof MermaidResultSchema>;
 export const mermaidContract = defineCommand({
 	path: ["mermaid"],
-	summary: "Render a Mermaid diagram onto the canvas (needs a browser tab)",
+	summary: "Convert Mermaid into one named persisted board",
 	usage: "mermaid [diagram.mmd|-] (or stdin)",
 	description:
-		"Reads Mermaid text locally before contacting the canvas, then converts it in the board's pane.",
+		"Reads Mermaid text locally, converts it in the server-owned renderer, and commits one board write.",
 	examples: ['archboard mermaid diagram.mmd --board system --doing "drawing diagram"'],
 	parameters: [
 		{
@@ -375,9 +498,9 @@ export const mermaidContract = defineCommand({
 		],
 		select: () => "json",
 	},
-	prerequisites: ["server", "browser", "board", "doing"],
-	effects: ["local-read", "browser", "write"],
-	refusals: [...commonRefusals, ...serverBrowserRefusals.slice(1), doingRefusal],
+	prerequisites: ["server", "board", "doing"],
+	effects: ["local-read", "write"],
+	refusals: [...commonRefusals, doingRefusal],
 	relationships: [
 		{
 			method: "POST",
@@ -394,21 +517,14 @@ export const mermaidContract = defineCommand({
 				: await context.readStdin(),
 		);
 		await context.require("server", "mermaid conversion");
-		await context.require("browser", "mermaid conversion");
 		const result = await sendMermaid(diagram);
-		const where = result.pane
-			? result.pane.place === "the only pane"
-				? "the only pane"
-				: `the ${result.pane.place} pane`
-			: "the open canvas tab";
 		return {
 			result: MermaidResultSchema.parse({
-				success: result.success ?? true,
+				success: true,
 				board: result.board,
-				pane: result.pane ?? null,
-				message: result.message,
+				count: result.count,
+				ids: result.ids,
 			}),
-			diagnostics: [`Conversion happens in ${where}, at ${EXPRESS_SERVER_URL}.`],
 		};
 	},
 });

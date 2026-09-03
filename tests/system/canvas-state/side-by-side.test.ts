@@ -115,8 +115,8 @@ describe.serial("side-by-side proposal workflow", () => {
 						body: { requestId: message.requestId, success: true },
 					});
 				}
-				if (message.type === "export_image_request") {
-					void request("/api/export/image/result", {
+				if (message.type === "browser_capture_request") {
+					void request("/api/browser/capture/result", {
 						method: "POST",
 						doing: false,
 						body: { requestId: message.requestId, format: "png", data: "aGk=" },
@@ -177,16 +177,13 @@ describe.serial("side-by-side proposal workflow", () => {
 
 		const source = await openShellPane("proposal-source", 0, { primary: true, focused: true });
 		expect(source.board()).toBe("scratch");
-		const made = await cli<{ pane: { place: string } }>([
-			"board",
-			"new",
-			"payments",
-			"--level",
-			"service",
-		]);
+		const made = await cli(["board", "new", "payments", "--level", "service"]);
 		expect(made.code, made.stderr).toBe(0);
+		expect(source.board()).toBe("scratch");
+		const opened = await cli<{ pane: { place: string } }>(["board", "open", "payments"]);
+		expect(opened.code, opened.stderr).toBe(0);
 		await waitFor(() => source.board() === "payments", "source pane to adopt payments");
-		expect(made.json.pane.place).toBe("the only pane");
+		expect(opened.json.pane.place).toBe("the only pane");
 		const noProposalSwitchesFrom = source.mark();
 
 		const palette = await cli(["library", "list", "--text"]);
@@ -332,10 +329,10 @@ describe.serial("side-by-side proposal workflow", () => {
 		expect(
 			branchPane.events
 				.slice(rightPictureStart)
-				.some(({ type }) => type === "export_image_request"),
+				.some(({ type }) => type === "browser_capture_request"),
 		).toBeTrue();
 		expect(
-			source.events.slice(leftPictureStart).some(({ type }) => type === "export_image_request"),
+			source.events.slice(leftPictureStart).some(({ type }) => type === "browser_capture_request"),
 		).toBeFalse();
 		const compared = await cli<{
 			summary: {

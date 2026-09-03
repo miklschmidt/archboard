@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { join } from "node:path";
 import { z } from "zod";
 import { BridgeRemoveResultSchema, BridgeResultSchema } from "../../../src/cli/commands/bridge.ts";
+import { RenderResultSchema } from "../../../src/cli/commands/scene.ts";
 import { FindingRenderManifestSchema } from "../../../src/cli/finding-rendering/index.ts";
 import { createCliHttpDouble } from "./support/cli-http-double.ts";
 import {
@@ -132,17 +133,24 @@ describe("package finding rendering", () => {
 		const noBrowser = join(owner.outside, "no-browser");
 		mkdirSync(noBrowser);
 		http.setBrowserClients(0);
-		before = http.contacts.length;
+		before = http.requests.length;
 		const detached = await owner.run(
 			["render-findings", "--board", "contract", "--out", noBrowser],
 			{ url: http.url },
 		);
 		http.setBrowserClients(1);
 		diagnostic = packageFailure(detached);
-		expect(detached.status, diagnostic).toBe(4);
-		expect(detached.stdout, diagnostic).toBe("");
-		expect(http.contacts.slice(before), diagnostic).toEqual(["GET /health", "GET /health"]);
-		expect(readdirSync(noBrowser), diagnostic).toEqual([]);
+		expect(detached.status, diagnostic).toBe(0);
+		expect(
+			http.requests.slice(before).map((entry) => `${entry.method} ${entry.url.pathname}`),
+			diagnostic,
+		).toEqual(["POST /api/export/findings"]);
+		const noBrowserFiles = readdirSync(noBrowser);
+		expect(noBrowserFiles, diagnostic).toContain("manifest.json");
+		expect(
+			noBrowserFiles.filter((name) => name.endsWith(".png")),
+			diagnostic,
+		).toHaveLength(1);
 	});
 
 	test("commits no artifact for malformed data and a manifest only for unrenderable input", async () => {
@@ -186,6 +194,58 @@ describe("package finding rendering", () => {
 		if (failed?.status !== "failed") throw new Error(diagnostic);
 		expect(failed.failure, diagnostic).toBe("source-not-renderable");
 		expect(readdirSync(unrenderable), diagnostic).toEqual(["manifest.json"]);
+	});
+});
+
+describe("package board rendering", () => {
+	test("writes the requested format through one server render without a browser", async () => {
+		await using resources = new AsyncDisposableStack();
+		const http = resources.use(createCliHttpDouble());
+		const owner = resources.use(createPackageCliOwner());
+		http.setBrowserClients(0);
+		const output = join(owner.outside, "contract.svg");
+		const before = http.requests.length;
+		const result = await owner.run(
+			[
+				"render",
+				"--board",
+				"contract",
+				"--out",
+				output,
+				"--format",
+				"svg",
+				"--padding",
+				"24",
+				"--scale",
+				"2",
+				"--no-background",
+			],
+			{ url: http.url },
+		);
+		const diagnostic = packageFailure(result);
+		expect(result.status, diagnostic).toBe(0);
+		expect(result.stderr, diagnostic).toBe("");
+		expect(readFileSync(output, "utf8"), diagnostic).toBe('<svg width="320" height="180"></svg>');
+		const receipt = decodePackage(result, RenderResultSchema);
+		expect(receipt).toMatchObject({
+			success: true,
+			board: "contract",
+			file: output,
+			format: "svg",
+			padding: 24,
+			scale: 2,
+			background: false,
+		});
+		const contacts = http.requests.slice(before);
+		expect(contacts).toHaveLength(1);
+		expect(contacts[0]?.url.pathname).toBe("/api/render/board");
+		expect(contacts[0]?.url.searchParams.get("board")).toBe("contract");
+		expect(bodyOf(contacts[0]?.body)).toEqual({
+			format: "svg",
+			background: false,
+			padding: 24,
+			scale: 2,
+		});
 	});
 });
 
