@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 11:59'
+updated_date: '2026-09-03 12:09'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -157,6 +157,10 @@ Gate attempt 11 (fresh exact complete gate at 64ef9d7d4f0c012aed4540f07372bc3fab
 Authoritative gate A12 at ac0bae6e495a6838943b6a33ad3fbd7350696877: lint, formatting, both type-check stages, frontend build, and all 1,902 module tests passed. In the serial system lane, three documented CLI workflow tests hit the 5,000 ms owner timeout while trivial jq, shell, and Git children were terminated; the following repository-session owner hit its 30,000 ms timeout and the runner then emitted no output with no child processes remaining. I stopped only exact unit archboard-task143-worker-command-xq0cdQIS.service. It exited 143/SIGTERM after 4m53.872s, consumed 5m40.875s CPU, peaked at 2.5G memory with 0B swap, and ended MainPID=0 with empty ControlGroup; no cgroup remained.
 
 Post-failure diagnosis at unchanged HEAD: exact workflow owner passed 4/4 in 281 ms under unit hlGbybLo (325 ms runtime, 391 ms CPU, 96.6M peak, 0B swap); workflow plus recovered repository-resolution owner passed 12/12 in 2.45 s under q7Y0LItz (2.482 s runtime, 3.041 s CPU, 105.7M peak, 0B swap). The complete serial system lane then passed 356/356 across 87 files in 248.44 s under LwqZ9p1o (4m8.482s runtime, 4m15.577s CPU, 785.2M peak, 0B swap), including the exact prior failure point and all later owners. The failed full-run stall is therefore not reproducible and left no repository or process residue; no timeout, test, lint, type, or product contract was weakened. A fresh unchanged-tree authoritative gate will decide readiness.
+
+Authoritative gate A13 at 735ebff498b3ae5c95c57aa0754a9ebc3255ee08: lint, formatting, both type checks, frontend build, 1,902/1,902 module tests, 356/356 serial system tests, and 152/152 repository-policy tests passed. The serial browser lane passed the 10,000-element performance owner and all owners through human-hold persistence, then claim-interaction received HTTP 400 where its fixture expected 200 because it sent pane in the strict /api/boards/new body. Exact unit J1np1YQ0 exited normally with status 1 after 8m17.150s, CPU 9m11.968s, 5.4G peak, and 0B swap; it is inactive/dead with MainPID=0, empty ControlGroup, and absent cgroup.
+
+The production contract was already correct and unchanged: board creation atomically publishes one persisted board and BoardNewAddressSchema rejects placement fields; /api/boards/open exclusively owns placing that board in a named pane. The stale rendered owner and its pane-scoped take-back helper now create the second board and then explicitly open it in Pane B, matching the browser-visible two-action workflow and retaining one durable create. The first focused invocation iMpZswFJ intentionally failed closed in 56 ms because the lane requires --focus; the corrected canonical focused invocation WPIEak2I passed claim-interaction 1/1 with 98 assertions in 10.54 s (unit runtime 10.625s, CPU 9.024s, 665.5M peak, 0B swap). No production path, timeout, lint, type, test inventory, or assertion was weakened.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

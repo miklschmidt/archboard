@@ -312,11 +312,12 @@ export async function verifyPaneScopedTakeBack(options: {
 	);
 	const secondClientId = split.panes.find((pane) => pane.clientId !== primaryClientId)?.clientId;
 	expect(typeof secondClientId).toBe("string");
+	const otherBoard = `${board}-take-back-other`;
 	expect(
 		(
 			await request("/api/boards/new", {
 				method: "POST",
-				body: { board: `${board}-take-back-other`, level: "service" },
+				body: { board: otherBoard, level: "service" },
 			})
 		).status,
 	).toBe(200);
@@ -324,7 +325,7 @@ export async function verifyPaneScopedTakeBack(options: {
 		(
 			await request("/api/boards/open", {
 				method: "POST",
-				body: { board: `${board}-take-back-other`, pane: secondClientId },
+				body: { board: otherBoard, pane: secondClientId },
 			})
 		).status,
 	).toBe(200);
