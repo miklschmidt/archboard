@@ -1,5 +1,4 @@
 import { spyOn } from "bun:test";
-import fs from "node:fs";
 
 /** Alter one module-owned receipt read without knowing or reconstructing its private path or schema. */
 export async function withLockHandoffReadFault<T>(
@@ -7,19 +6,20 @@ export async function withLockHandoffReadFault<T>(
 	fault: "malformed" | "wrong-token",
 	action: () => Promise<T>,
 ): Promise<T> {
-	const originalRead = fs.readFileSync.bind(fs);
+	const originalParse = JSON.parse.bind(JSON);
 	let injected = false;
-	const readSpy = spyOn(fs, "readFileSync").mockImplementation((file, options) => {
-		const content = originalRead(file, options);
-		if (injected || typeof content !== "string" || !content.includes(leaseToken)) return content;
+	const parseSpy = spyOn(JSON, "parse").mockImplementation((text, reviver) => {
+		if (injected || !text.includes(leaseToken)) return originalParse(text, reviver);
 		injected = true;
-		return fault === "malformed" ? "{broken" : content.replace(leaseToken, "wrong-lease-token");
+		const altered =
+			fault === "malformed" ? "{broken" : text.replace(leaseToken, "wrong-lease-token");
+		return originalParse(altered, reviver);
 	});
 	try {
 		const result = await action();
 		if (!injected) throw new Error(`The ${fault} lock handoff fault was not observed.`);
 		return result;
 	} finally {
-		readSpy.mockRestore();
+		parseSpy.mockRestore();
 	}
 }
