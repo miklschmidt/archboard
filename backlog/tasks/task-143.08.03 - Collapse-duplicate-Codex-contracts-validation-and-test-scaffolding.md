@@ -1,11 +1,11 @@
 ---
 id: TASK-143.08.03
 title: 'Collapse duplicate Codex contracts, validation, and test scaffolding'
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 03:07'
+updated_date: '2026-09-03 03:15'
 labels: []
 dependencies:
   - TASK-143.08.02
@@ -29,12 +29,12 @@ Deepen the recovered Codex protocol and browser modules after generated types be
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 ThreadStatus, TurnStatus, approval decisions, server-request methods, turn/start, turn/steer, thread/fork, thread/inject_items, queue params, call identity, and effect hashing each have one authoritative owner derived from TASK-143.08.02.
-- [ ] #2 One app-server ingress validation and one browser ingress validation protect untrusted data; sequenced deltas validate changed fields only, and the browser does not reparse the complete merged snapshot after each delta.
-- [ ] #3 Before deleting tests, a retained-owner matrix maps each reachable success, progress, empty, partial, failure, and recovery behavior to one module, process, or browser owner. Duplicate reload, shutdown, exit-race, approval, remediation, state-matrix, and submission-fencing cases are removed or folded into that owner.
-- [ ] #4 The Tailwind, Oxfmt, TypeScript-alias, Oxlint-alias, and authored-contract scaffolding that tests tool resolution, fixture cleanup, or copied prose is removed. The real Vite production build, frontend style entry, normal formatter and linter commands, opener browser workflow, module boundaries, and one stable ownership check remain.
-- [ ] #5 Only identical call identity, effect hash, error construction, child/session fake, socket fake, or deep-freeze behavior is shared. Differently constrained isRecord, boundedText, and lifecycle helpers stay local unless the deletion test proves one module owns the same semantics.
-- [ ] #6 The resulting production and test tree has fewer concepts, validation passes, cases, and lines than ba1aacee, with focused and broad checks proving retained behavior and no weakened rule, timeout, assertion, or browser gate.
+- [x] #1 ThreadStatus, TurnStatus, approval decisions, server-request methods, turn/start, turn/steer, thread/fork, thread/inject_items, queue params, call identity, and effect hashing each have one authoritative owner derived from TASK-143.08.02.
+- [x] #2 One app-server ingress validation and one browser ingress validation protect untrusted data; sequenced deltas validate changed fields only, and the browser does not reparse the complete merged snapshot after each delta.
+- [x] #3 Before deleting tests, a retained-owner matrix maps each reachable success, progress, empty, partial, failure, and recovery behavior to one module, process, or browser owner. Duplicate reload, shutdown, exit-race, approval, remediation, state-matrix, and submission-fencing cases are removed or folded into that owner.
+- [x] #4 The Tailwind, Oxfmt, TypeScript-alias, Oxlint-alias, and authored-contract scaffolding that tests tool resolution, fixture cleanup, or copied prose is removed. The real Vite production build, frontend style entry, normal formatter and linter commands, opener browser workflow, module boundaries, and one stable ownership check remain.
+- [x] #5 Only identical call identity, effect hash, error construction, child/session fake, socket fake, or deep-freeze behavior is shared. Differently constrained isRecord, boundedText, and lifecycle helpers stay local unless the deletion test proves one module owns the same semantics.
+- [x] #6 The resulting production and test tree has fewer concepts, validation passes, cases, and lines than ba1aacee, with focused and broad checks proving retained behavior and no weakened rule, timeout, assertion, or browser gate.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -106,4 +106,12 @@ Repair validation: affected transport/UI owners 23 pass; status/dynamic/canvas o
 Rereview source-head check passed: tracked-clean at 9b8d4db77d61b3eedff1e1ff93cd78ce5694d22c before editing.
 
 Final rereview repair: moved the unchanged typed FakeSocket from transport.test.ts into tests/fake-socket.ts, leaving the retained behavioral owner at 449 lines and the support fixture at 56. Restored the exact handshake state/sequence 7 assertion, sequence 5 after the duplicated delta, and socket_unavailable refresh refusal after incompatible_contract. Validation: workbench-transport 9 pass; repository boundaries and inventory 46 pass; frontend TypeScript, focused Oxfmt/Oxlint, and diff check pass.
+
+Final integration evidence at reconciled source head 3f429d55c8dafa5cc599563b7c0c2a44acb3c3e2: both independent Standards and Spec reviews reported RECONCILIATION_CLEAN for 94377043e27610f13403da16e019aa9bc967a69d..3f429d55c8dafa5cc599563b7c0c2a44acb3c3e2. The source is three direct non-merge commits; range-diff and stable patch IDs matched the reviewed pre-rebase commits, changed paths matched, and canonical-since-old-base paths were blob-identical. Focused immutable-head validation: 55 pass, 0 fail, 186 assertions; git diff --check clean. Reconciled absolute authored-line count is 220,731: canonical is 226,579 after its 37-line addition, so this task delta is -5,848. Canonical case delta is -63 and production parse-site delta is -16. These objective results prove AC1-AC6 to the stated scope; no lint/type/browser gate was weakened.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Collapsed duplicate Codex contracts, ingress validation, and redundant test/scaffolding owners while retaining the documented owner matrix. Independent Standards and Spec reviews were clean; immutable-head focused validation passed 55 tests with 186 assertions and a clean diff check. Reconciled task delta: -5,848 authored lines, -63 canonical cases, and -16 production parse sites.
+<!-- SECTION:FINAL_SUMMARY:END -->
