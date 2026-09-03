@@ -20,6 +20,7 @@ interface PreviewBody {
 	}>;
 	files?: Record<string, unknown>;
 	code?: string;
+	reason?: string;
 	error?: string;
 }
 
@@ -170,7 +171,7 @@ describe("read-only board preview", () => {
 		expect(changed.body.fingerprint).not.toBe(cold.body.fingerprint);
 	});
 
-	test("returns explicit empty, unavailable and missing states without leaking a vault path", async () => {
+	test("returns explicit empty and typed resolution failures", async () => {
 		const scratch = await request<PreviewBody>("/api/boards/preview?board=scratch");
 		expect(scratch.status).toBe(200);
 		expect(scratch.body).toMatchObject({
@@ -189,13 +190,16 @@ describe("read-only board preview", () => {
 		expect(malformed.status).toBe(422);
 		expect(malformed.body).toMatchObject({
 			success: false,
-			code: "BOARD_PREVIEW_UNAVAILABLE",
-			error: 'Preview unavailable for board "malformed".',
+			code: "BOARD_RESOLUTION_FAILED",
+			reason: "malformed",
 		});
-		expect(malformed.body.error).not.toContain(vault);
+		expect(malformed.body.error).toContain(malformedFile);
 
 		const missing = await request<PreviewBody>("/api/boards/preview?board=absent");
 		expect(missing.status).toBe(404);
-		expect(missing.body.code).toBe("BOARD_PREVIEW_NOT_FOUND");
+		expect(missing.body).toMatchObject({
+			code: "BOARD_RESOLUTION_FAILED",
+			reason: "missing",
+		});
 	});
 });

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 05:13'
+updated_date: '2026-09-03 05:31'
 labels: []
 dependencies:
   - TASK-143.08.06.01
@@ -43,12 +43,12 @@ Make the persisted note, not transient server or browser registration, sufficien
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Move named-board resolution into board-io as the single vault-backed authority: normalize the explicit key, inspect persisted candidates for collisions and declared-name conflicts, parse the note, and install only a content-free BoardState address for existing callers. Keep missing, ambiguous, malformed, and conflicting outcomes in one typed domain refusal with no pane/open prerequisite.
-2. Route application and code-target board lookups through that resolver. Establish the first write baseline once before lock acquisition, then retain the existing synchronous read-copy-mutate-atomic-write path. Leave TASK-143.08.04 lifecycle composition untouched.
-3. Make board creation publish a canonical empty versioned note through exclusive atomic creation, register it only after commit, and return the persisted identity without resolving or changing a pane.
-4. Keep pane notifications after persistence and make synchronous observer failures best effort so they cannot change the committed command result. Preserve per-pane delivery filtering and persisted bytes.
-5. Add one compact production-interface owner seeded only with vault notes and zero WebSocket clients. Cover representative read/query/change/snapshot/import/export/branch/compare paths, atomic creation, typed resolution failures, version/conflict/lock/one-write behavior, and deterministic notification fakes. Update only directly contradicted retained assertions.
-6. Run the focused board-resolution/public-interface owners, narrow lint/format/type checks where safe, and diff checks. Commit coherent conventional slices; leave TASK In Progress and all acceptance criteria unchecked.
+1. Resolve only the normalized board key before admission. Move first-baseline establishment into the existing held synchronous write path so queued writers load after acquiring the normalized mutex and see preceding legitimate commits.
+2. Route board creation through the same normalized board mutex, keeping exclusive exact-path atomic publication, so casing and Unicode-equivalent names cannot publish two notes.
+3. Replace inline pane callbacks with a post-answer, per-board ordered scheduler that invokes observers outside response latency, catches synchronous and asynchronous failures, and lets unresolved delivery coexist with later commit notifications.
+4. Preserve typed BOARD_RESOLUTION_FAILED results through explicit compare sides, make board-new input strict, and remove the retired pane field from shell submission.
+5. Extend the compact vault-only, observer, and deterministic lock/write owners with normalized concurrent creation, holder/waiter, browser-state refusal equivalence, strict creation input, one-write counting, latency, failure, and ordering assertions.
+6. Run only focused red/green owners plus narrow lint/format/diff checks. Commit remediation, keep TASK In Progress and ACs unchecked, and callback the parent with exact evidence and remaining protected-lifecycle risk.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -62,4 +62,13 @@ Implementation handoff:
 Validation passed: vault-only production interfaces; board write observers; board lifecycle; public HTTP refusals; element writes; branching pane effects; cross-process board lock (16.85s); CLI board commands; CLI schemas; CLI command audit; generated artifact reproducibility; focused Oxlint; focused Oxfmt; git diff --check; recovered checkout lifecycle owners for first-open, held reload, and concurrent first-open.
 Excluded risk: scratch-board owner passes 3/4, but its forced-death restart fails in the recovered TASK-143.08.04 Codex-root lifecycle with locked/colliding owner roots. No protected lifecycle code was changed. A narrow standalone TypeScript invocation reaches two existing unrelated diagnostics in codex-protocol response schemas and runtime/engine/git.ts; it reports no changed-file diagnostic.
 Task intentionally remains In Progress with all acceptance criteria unchecked for parent review.
+
+Review remediation:
+- Creation now acquires the existing normalized cross-canvas board mutex before list/check/exclusive publication. One compact two-canvas owner proves case and NFC-equivalent spellings yield exactly one 200, one 409, and one persisted note.
+- Write admission parses only the normalized lock key before waiting. The exact note is resolved, installed, and given its missing baseline after acquiring the lock. The production owner observes a waiter in /health activeMutations, lets the current holder commit version 1, then proves the waiter commits version 2 with both edits present.
+- Pane observers now enter a per-board microtask queue after persistence. Invocation is outside response latency; commit scheduling is FIFO; synchronous throws and promise rejections are logged; unresolved promises do not block later notifications. The retained module owner uses a fake observer clock, checks one atomic writer call, persisted bytes, throw/reject handling, unresolved delivery, and order.
+- Read-only resolution now returns an ephemeral note-backed BoardState and never installs the open registry. Explicit open, create, and write are the only installation paths. A read-then-open owner proves the listing stays closed and explicit open still reports vault.
+- Compare preserves typed BOARD_RESOLUTION_FAILED missing responses with identical zero-pane/one-pane bodies. BOARD_REQUIRED now exposes available persisted keys instead of a misleading open field through domain, HTTP, and client surfaces.
+- Board-new rejects retired pane input with actionable 400; valid creation separately proves unchanged pane state. New-board dialog placement is open-only, its shell handler has no pane field, and a static rendered component owner proves new omits the choice while open retains it.
+Focused remediation validation: vault-only 6 tests/60 assertions in 2.11s; public refusals 6/60 in 2.24s; observer plus dialog 3/11 in 0.22s; preview 3/34 in 2.11s; branching 3/38 in 2.32s; lifecycle 6/48 in 1.38s; element writes 7/54 in 1.66s; pane addressing 7/55 in 4.49s; package CLI 6/109 in 3.54s; protected first-open 1/7, held reload 1/12, concurrent first-open 1/14; existing cross-process lock 1/17 in 16.91s. Scratch forced-death lifecycle remains excluded and unchanged.
 <!-- SECTION:NOTES:END -->
