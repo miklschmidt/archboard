@@ -29,6 +29,19 @@ const STATUS_TONES = {
 	cancelled: "text-warning",
 } as const satisfies Readonly<Record<CanonicalItemStatus, string>>;
 const UNKNOWN_STATUS_TONE = "text-muted-foreground";
+const VISIBLE_ENTRY_LIMIT = 32;
+
+interface BoundedEntries<Value> {
+	readonly visible: readonly Value[];
+	readonly omitted: number;
+}
+
+function boundedEntries<Value>(values: readonly Value[]): BoundedEntries<Value> {
+	return {
+		visible: values.slice(0, VISIBLE_ENTRY_LIMIT),
+		omitted: Math.max(0, values.length - VISIBLE_ENTRY_LIMIT),
+	};
+}
 
 function numberField(value: unknown, key: string): number | null {
 	const field = record(value)?.[key];
@@ -93,66 +106,76 @@ function namedSource(value: unknown): string {
 	}
 }
 
-function userContent(value: unknown): readonly ReactNode[] {
+function userContent(value: unknown): BoundedEntries<ReactNode> {
 	const content = record(value)?.content;
-	if (!Array.isArray(content)) return [];
-	return keyedValues(content).map(({ key, value: part }) => {
-		const entry = record(part);
-		const type = textField(entry, "type") || "unknown";
-		if (type === "text") {
-			return <BoundedCopy key={key} value={textField(entry, "text")} />;
-		}
-		const source = textField(entry, "url") || textField(entry, "path");
-		return (
-			<p className="m-0 text-body text-muted-foreground" key={key}>
-				<span className="font-medium text-foreground">{type}</span>
-				{source.length > 0 ? (
-					<>
-						{" "}
-						· <SafeSource value={source} />
-					</>
-				) : null}
-			</p>
-		);
-	});
+	if (!Array.isArray(content)) return boundedEntries([]);
+	const bounded = boundedEntries(content);
+	return {
+		omitted: bounded.omitted,
+		visible: keyedValues(bounded.visible).map(({ key, value: part }) => {
+			const entry = record(part);
+			const type = textField(entry, "type") || "unknown";
+			if (type === "text") {
+				return <BoundedCopy key={key} value={textField(entry, "text")} />;
+			}
+			const source = textField(entry, "url") || textField(entry, "path");
+			return (
+				<p className="m-0 text-body text-muted-foreground" key={key}>
+					<span className="font-medium text-foreground">{type}</span>
+					{source.length > 0 ? (
+						<>
+							{" "}
+							· <SafeSource value={source} />
+						</>
+					) : null}
+				</p>
+			);
+		}),
+	};
 }
 
-function textSections(value: unknown): readonly string[] {
+function textSections(value: unknown): BoundedEntries<string> {
 	const item = record(value);
-	if (!item) return [];
+	if (!item) return boundedEntries([]);
 	switch (item.type) {
 		case "userMessage":
-			return [];
-		case "hookPrompt":
-			return Array.isArray(item.fragments)
-				? item.fragments.map((fragment) => textField(fragment, "text")).filter(Boolean)
-				: [];
+			return boundedEntries([]);
+		case "hookPrompt": {
+			const fragments = boundedEntries(Array.isArray(item.fragments) ? item.fragments : []);
+			return {
+				visible: fragments.visible.map((fragment) => textField(fragment, "text")).filter(Boolean),
+				omitted: fragments.omitted,
+			};
+		}
 		case "agentMessage":
 		case "plan":
-			return [textField(item, "text")].filter(Boolean);
+			return boundedEntries([textField(item, "text")].filter(Boolean));
 		case "reasoning":
-			return [...stringList(item.summary), ...stringList(item.content)];
+			return boundedEntries([...stringList(item.summary), ...stringList(item.content)]);
 		case "commandExecution":
-			return [textField(item, "aggregatedOutput")].filter(Boolean);
-		case "fileChange":
-			return Array.isArray(item.changes)
-				? item.changes.flatMap((change) => {
-						const path = textField(change, "path");
-						const diff = textField(change, "diff");
-						return [path, diff].filter(Boolean);
-					})
-				: [];
+			return boundedEntries([textField(item, "aggregatedOutput")].filter(Boolean));
+		case "fileChange": {
+			const changes = boundedEntries(Array.isArray(item.changes) ? item.changes : []);
+			return {
+				visible: changes.visible.flatMap((change) => {
+					const path = textField(change, "path");
+					const diff = textField(change, "diff");
+					return [path, diff].filter(Boolean);
+				}),
+				omitted: changes.omitted,
+			};
+		}
 		case "mcpToolCall":
-			return [textField(item.error, "message")].filter(Boolean);
+			return boundedEntries([textField(item.error, "message")].filter(Boolean));
 		case "collabAgentToolCall":
-			return [textField(item, "prompt")].filter(Boolean);
+			return boundedEntries([textField(item, "prompt")].filter(Boolean));
 		case "enteredReviewMode":
 		case "exitedReviewMode":
-			return [textField(item, "review")].filter(Boolean);
+			return boundedEntries([textField(item, "review")].filter(Boolean));
 		case "imageGeneration":
-			return [textField(item, "revisedPrompt")].filter(Boolean);
+			return boundedEntries([textField(item, "revisedPrompt")].filter(Boolean));
 		default:
-			return [];
+			return boundedEntries([]);
 	}
 }
 
@@ -200,6 +223,15 @@ function BoundedCopy({ value }: { readonly value: unknown }) {
 	);
 }
 
+function OmittedEntries({ count }: { readonly count: number }) {
+	if (count === 0) return null;
+	return (
+		<p className="m-0 text-body text-muted-foreground" data-omitted-entries={count}>
+			{count} {count === 1 ? "entry" : "entries"} omitted
+		</p>
+	);
+}
+
 function RawDetails({ value }: { readonly value: unknown }) {
 	const details = boundedDetails(value);
 	return (
@@ -219,8 +251,9 @@ export function RenderTimelineItem({ item }: { readonly item: TimelineItem }) {
 	const status = statusFor(item.value);
 	const source = namedSource(item.value);
 	const sections = textSections(item.value);
-	const links = itemLinks(item.value);
-	const user = record(item.value)?.type === "userMessage" ? userContent(item.value) : [];
+	const links = boundedEntries(itemLinks(item.value));
+	const user =
+		record(item.value)?.type === "userMessage" ? userContent(item.value) : boundedEntries([]);
 	return (
 		<article
 			className="border-b border-border-subtle py-control font-sans last:border-b-0"
@@ -250,13 +283,16 @@ export function RenderTimelineItem({ item }: { readonly item: TimelineItem }) {
 			) : null}
 			{source.length > 0 ? <SafeSource value={source} /> : null}
 			<div className="mt-compact grid gap-compact">
-				{user}
-				{keyedValues(sections).map(({ key, value }) => (
+				{user.visible}
+				<OmittedEntries count={user.omitted} />
+				{keyedValues(sections.visible).map(({ key, value }) => (
 					<BoundedCopy key={key} value={value} />
 				))}
-				{keyedValues(links).map(({ key, value }) => (
+				<OmittedEntries count={sections.omitted} />
+				{keyedValues(links.visible).map(({ key, value }) => (
 					<SafeSource key={key} value={value} />
 				))}
+				<OmittedEntries count={links.omitted} />
 				{item.malformed ? (
 					<p className="m-0 text-body text-warning">
 						This item is malformed or uses an unknown Codex variant. Its bounded details remain
