@@ -12,7 +12,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { GIT_PROCESS_GROUP_CLEANUP_MS } from "../../../shared/timing/timing.ts";
+import {
+	GIT_PROCESS_GROUP_CLEANUP_MS,
+	TEST_GIT_FIXTURE_START_MS,
+	TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS,
+} from "../../../shared/timing/timing.ts";
 import { git } from "../git.js";
 
 const GIT_PROCESS_OWNER = fileURLToPath(new URL("../git-process-owner.ts", import.meta.url));
@@ -42,7 +46,7 @@ esac
 `;
 
 async function waitForFile(file: string): Promise<void> {
-	const deadline = Date.now() + 1_000;
+	const deadline = Date.now() + TEST_GIT_FIXTURE_START_MS;
 	while (!existsSync(file)) {
 		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${file}.`);
 		await Bun.sleep(5);
@@ -59,7 +63,11 @@ async function expectPidAbsent(pid: number): Promise<void> {
 	expect(existsSync(`/proc/${pid}`), `pid ${pid} must be reaped`).toBeFalse();
 }
 
-async function withFaultingFirstReader<T>(delayMs: number, work: () => Promise<T>): Promise<T> {
+async function withFaultingFirstReader<T>(
+	ready: Promise<void>,
+	delayMs: number,
+	work: () => Promise<T>,
+): Promise<T> {
 	const prototype = ReadableStream.prototype;
 	const original = prototype.getReader as () => ReadableStreamDefaultReader<unknown>;
 	let injected = false;
@@ -75,6 +83,7 @@ async function withFaultingFirstReader<T>(delayMs: number, work: () => Promise<T
 			async read() {
 				if (first) {
 					first = false;
+					await ready;
 					await Bun.sleep(delayMs);
 					throw new Error("injected Git output read failure");
 				}
@@ -180,7 +189,7 @@ test("real Git commands settle for success and nonzero exit", async () => {
 	}
 });
 
-test("Git lifecycle owns overflow, cancellation, signals, descendants, and spawn failure", async () => {
+async function exerciseGitLifecycle(): Promise<void> {
 	const root = mkdtempSync(join(tmpdir(), "archboard-git-lifecycle-"));
 	const bin = join(root, "bin");
 	try {
@@ -232,9 +241,10 @@ test("Git lifecycle owns overflow, cancellation, signals, descendants, and spawn
 			["timeout-before-read-failure", 250, 100, false, "timeout"],
 		] as const) {
 			const marker = join(root, name);
+			const childStarted = waitForFile(`${marker}.leader`);
 			const faultController = new AbortController();
 			const started = performance.now();
-			const failed = withFaultingFirstReader(delayMs, () =>
+			const failed = withFaultingFirstReader(childStarted, delayMs, () =>
 				git(root, ["wait", marker], {
 					executable,
 					timeoutMs,
@@ -244,7 +254,7 @@ test("Git lifecycle owns overflow, cancellation, signals, descendants, and spawn
 				(value) => ({ kind: "resolved" as const, value }),
 				(error: unknown) => ({ kind: "rejected" as const, error }),
 			);
-			await waitForFile(`${marker}.leader`);
+			await childStarted;
 			if (abortFirst) faultController.abort();
 			const outcome = await failed;
 			expect(outcome.kind).toBe("rejected");
@@ -262,7 +272,13 @@ test("Git lifecycle owns overflow, cancellation, signals, descendants, and spawn
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
-});
+}
+
+test(
+	"Git lifecycle owns overflow, cancellation, signals, descendants, and spawn failure",
+	exerciseGitLifecycle,
+	TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS,
+);
 
 test("Git cleanup remains bounded when reader cancellation never settles", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-git-stalled-cancel-"));
