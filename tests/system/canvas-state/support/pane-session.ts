@@ -1,11 +1,6 @@
 import type { WebSocket } from "ws";
-import {
-	TEST_PANE_MESSAGE_POLL_MS,
-	TEST_PANE_MESSAGE_TIMEOUT_MS,
-} from "../../../../src/shared/timing/timing.ts";
 import { openObservedPane } from "../../support/observed-pane.ts";
 import type { CapturedResponse, RequestOptions } from "./http.ts";
-import { sleep } from "./http.ts";
 
 export interface PaneEvent {
 	type: string;
@@ -57,27 +52,15 @@ export async function openPaneSession(
 		base,
 		clientId: options.clientId,
 		preferredBoard: options.board,
-		register: (board) =>
+		register: (board, signal) =>
 			request("/api/panes", {
 				method: "POST",
 				body: { ...registration, board },
 				doing: false,
+				signal,
 			}),
-		readPanes: () => request("/api/panes"),
+		readPanes: (signal) => request("/api/panes", { signal }),
 	});
-	const waitForEvent = async (
-		type: string,
-		start = 0,
-		timeoutMs = TEST_PANE_MESSAGE_TIMEOUT_MS,
-	) => {
-		const deadline = Date.now() + timeoutMs;
-		do {
-			const found = pane.events.slice(start).find((event) => event.type === type);
-			if (found) return found;
-			await sleep(TEST_PANE_MESSAGE_POLL_MS);
-		} while (Date.now() < deadline);
-		return undefined;
-	};
 	return {
 		clientId: options.clientId,
 		socket: pane.socket,
@@ -87,7 +70,8 @@ export async function openPaneSession(
 		board: pane.board,
 		register: async (board = options.board ?? pane.board() ?? "scratch") => pane.register(board),
 		sync: pane.sync,
-		waitFor: waitForEvent,
+		waitFor: (type, start, timeoutMs) =>
+			pane.waitFor((event) => event.type === type, start, timeoutMs),
 		close: pane.close,
 	};
 }

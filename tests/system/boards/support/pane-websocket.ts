@@ -1,9 +1,6 @@
 import type { WebSocket } from "ws";
 
-import {
-	TEST_PANE_MESSAGE_POLL_MS,
-	TEST_PANE_MESSAGE_TIMEOUT_MS,
-} from "../../../../src/shared/timing/timing.ts";
+import { TEST_PANE_MESSAGE_TIMEOUT_MS } from "../../../../src/shared/timing/timing.ts";
 import { openObservedPane } from "../../support/observed-pane.ts";
 import type { JsonResponse } from "./http.ts";
 
@@ -38,10 +35,13 @@ export interface TestPane {
 	board(): string | undefined;
 	since(): number;
 	adopt(board: string): Promise<void>;
+	waitFor(
+		match: (message: PaneMessage) => boolean,
+		start?: number,
+		timeoutMs?: number,
+	): Promise<PaneMessage | undefined>;
 	close(): Promise<void>;
 }
-
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function openTestPane(
 	base: string,
@@ -63,12 +63,13 @@ export async function openTestPane(
 		base,
 		clientId,
 		preferredBoard: options.board,
-		register: (board) =>
+		register: (board, signal) =>
 			request("/api/panes", {
 				method: "POST",
 				body: { ...registration, board },
+				signal,
 			}),
-		readPanes: () => request("/api/panes"),
+		readPanes: (signal) => request("/api/panes", { signal }),
 	});
 	return {
 		clientId,
@@ -78,6 +79,7 @@ export async function openTestPane(
 		board: pane.board,
 		since: () => pane.events.length,
 		adopt: pane.register,
+		waitFor: pane.waitFor,
 		close: pane.close,
 	};
 }
@@ -88,13 +90,7 @@ export async function waitForPaneMessage(
 	type: string,
 	timeoutMs = TEST_PANE_MESSAGE_TIMEOUT_MS,
 ): Promise<PaneMessage | undefined> {
-	const deadline = Date.now() + timeoutMs;
-	while (Date.now() < deadline) {
-		const found = pane.seen.slice(start).find((message) => message.type === type);
-		if (found) return found;
-		await sleep(TEST_PANE_MESSAGE_POLL_MS);
-	}
-	return undefined;
+	return pane.waitFor((message) => message.type === type, start, timeoutMs);
 }
 
 export async function waitForPaneMessageWhere(
@@ -103,11 +99,5 @@ export async function waitForPaneMessageWhere(
 	match: (message: PaneMessage) => boolean,
 	timeoutMs = TEST_PANE_MESSAGE_TIMEOUT_MS,
 ): Promise<PaneMessage | undefined> {
-	const deadline = Date.now() + timeoutMs;
-	while (Date.now() < deadline) {
-		const found = pane.seen.slice(start).find(match);
-		if (found) return found;
-		await sleep(TEST_PANE_MESSAGE_POLL_MS);
-	}
-	return undefined;
+	return pane.waitFor(match, start, timeoutMs);
 }
