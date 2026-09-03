@@ -66,6 +66,19 @@ async function healthOrNull(timeoutMs = 500) {
 	}
 }
 
+function heldCanvasError(health: Awaited<ReturnType<typeof healthOrNull>>): Error | null {
+	if (!health?.held_boards || health.held_boards.length === 0) return null;
+	const boards = health.held_boards.map((hold) => `"${hold.board}"`).join(", ");
+	const error = new Error(
+		[
+			`Canvas shutdown refused because held work exists only in process memory on ${boards}.`,
+			...health.held_boards.map((hold) => hold.message),
+		].join("\n\n"),
+	);
+	(error as Error & { code?: string }).code = "CANVAS_HELD";
+	return error;
+}
+
 // True only for a /health payload from OUR canvas server (v1.1+ identity
 // marker). Anything else answering the port is a foreign service.
 export function isCanvasHealth(health: { service?: string } | null): boolean {
@@ -193,17 +206,8 @@ export async function stopCanvas(): Promise<StopResult> {
 	if (pid === null) {
 		throw foreignServiceError();
 	}
-	if (health.held_boards && health.held_boards.length > 0) {
-		const boards = health.held_boards.map((hold) => `"${hold.board}"`).join(", ");
-		const error = new Error(
-			[
-				`Canvas shutdown refused because held work exists only in process memory on ${boards}.`,
-				...health.held_boards.map((hold) => hold.message),
-			].join("\n\n"),
-		);
-		(error as Error & { code?: string }).code = "CANVAS_HELD";
-		throw error;
-	}
+	const preflightHold = heldCanvasError(health);
+	if (preflightHold) throw preflightHold;
 
 	try {
 		process.kill(pid, "SIGTERM");
@@ -215,10 +219,13 @@ export async function stopCanvas(): Promise<StopResult> {
 
 	const deadline = Date.now() + 5000;
 	while (Date.now() < deadline) {
-		if (!(await healthOrNull(300))) {
+		const postSignalHealth = await healthOrNull(300);
+		if (!postSignalHealth) {
 			removePidFile(port);
 			return { stopped: true, pid, message: `Canvas server (pid ${pid}) stopped.` };
 		}
+		const postSignalHold = heldCanvasError(postSignalHealth);
+		if (postSignalHold) throw postSignalHold;
 		await new Promise((resolve) => setTimeout(resolve, 200));
 	}
 
