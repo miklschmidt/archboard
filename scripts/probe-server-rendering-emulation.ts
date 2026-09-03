@@ -321,7 +321,9 @@ try {
 	let renderFailure: unknown = null;
 	try {
 		const { exportToBlob, exportToSvg } = await import("@excalidraw/excalidraw");
-		const { DEFAULT_MERMAID_CONFIG } = await import("../src/ui/canvas/mermaidConverter.js");
+		const { DEFAULT_MERMAID_CONFIG } = await import(
+			"../src/server/board-rendering/index.js"
+		);
 		const { parseMermaidToExcalidraw } = await import("@excalidraw/mermaid-to-excalidraw");
 		const input = fixtureInput();
 		const png = await exportToBlob({ ...input, mimeType: "image/png" });

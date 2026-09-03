@@ -151,6 +151,8 @@ export function startSentinel(options: SentinelStartOptions = {}): SentinelAcqui
 		rmSync(log, { force: true });
 		throw new Error(`Could not start HTTP sentinel: ${asError(cause).message}`, { cause });
 	}
+	const stdoutStream = child.stdout as ReadableStream<Uint8Array>;
+	const stderrStream = child.stderr as ReadableStream<Uint8Array>;
 	let identity: ProcessIdentity | undefined;
 	let primaryFailure: Error | undefined;
 	let leaderSettled = false;
@@ -173,7 +175,7 @@ export function startSentinel(options: SentinelStartOptions = {}): SentinelAcqui
 		leaderSettled = true;
 	});
 	const stderr = observeOwned(
-		Promise.resolve().then(() => new Response(child.stderr).text()),
+		Promise.resolve().then(() => new Response(stderrStream).text()),
 		rememberFailure,
 	);
 	let resolveReady!: (sentinel: Sentinel) => void;
@@ -223,7 +225,7 @@ export function startSentinel(options: SentinelStartOptions = {}): SentinelAcqui
 			try {
 				if (!identity)
 					throw primaryFailure ?? new Error("HTTP sentinel identity was not captured.");
-				reader = child.stdout.getReader();
+				reader = stdoutStream.getReader();
 				const readLine = sentinelLineReader(reader);
 				options.signal?.addEventListener("abort", onAbort, { once: true });
 				if (options.signal?.aborted) onAbort();
