@@ -13,3 +13,16 @@ export function ownsHoldAttempt(
 ): boolean {
 	return current === attempt && attempt.promise === promise && attempt.generation === generation;
 }
+
+/** Only the current pane generation may turn attempt settlement into a renewal. */
+export function scheduleRenewalForOwnedHoldAttempt(
+	current: HoldAttempt | null,
+	attempt: HoldAttempt,
+	promise: Promise<unknown>,
+	generation: number,
+	scheduleRenewal: () => void,
+): boolean {
+	if (!ownsHoldAttempt(current, attempt, promise, generation)) return false;
+	scheduleRenewal();
+	return true;
+}
