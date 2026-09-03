@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 13:26'
+updated_date: '2026-09-03 13:33'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -208,6 +208,10 @@ The trace reader now consumes only newline-terminated records. An in-progress fi
 Authoritative gate A22 at 187fa523: lint, formatting, both type checks, frontend build, 1,902/1,902 module tests, 356/356 serial system tests, and 152/152 repository-policy tests passed. The repaired human-performance owner passed both cases and the next ten browser owners passed. The selection-inspector owner then reached its opener-recovery dialog, proved the enabled Cancel control had focus, issued an independent selector-and-coordinate click, and waited the full 30-second browser-command window without closure. Exact unit archboard-task143-worker-command-ttokKqOS.service exited from the command with status 1 after 8m42.452s, consumed 9m18.506s CPU, peaked at 5.5G with 0B swap, and cleanup left the unit inactive/dead with MainPID=0, empty ControlGroup, and an absent cgroup. The unchanged owner passed alone in 8.732s under capped unit archboard-task143-worker-command-b0BK8x8Q.service, identifying an intermittent input-driver action rather than a persistent product state failure.
 
 The cross-workflow owner now activates the already-proven focused and enabled Cancel control with Enter, eliminating a second selector lookup and coordinate click after the focus contract is established. The dedicated opener-settings browser owner still exercises pointer dismissal and the selection-inspector owner still proves the dialog opens, loads, focuses Cancel, dismisses, and closes before continuing. The complete selection-inspector owner passed five consecutive repetitions under capped unit archboard-task143-worker-command-5rdcXJpW.service in 42.906s with 745M peak and 0B swap. No product UI, visible assertion, browser inventory, lint rule, type rule, or timeout was weakened.
+
+Authoritative gate A23 at 9db1b759: lint, formatting, both type checks, frontend build, and 1,902/1,902 module tests passed. The serial system lane later reproduced the host-level synchronous child stall recorded in A15/A16: the fourth jq producer and a later Git status each received SIGTERM only at the explicit 15-second case bound, then the two-repository owner timed out after 30 seconds and Bun spun at roughly one core with no child processes and no output. Live exact-unit evidence showed MemoryCurrent=326,238,208, MemoryPeak=2,143,756,288, MemorySwapCurrent=0, TasksCurrent=27, and no process descendants beyond the Bun runner chain. Because the gate was already invalid and the runner had spun for several minutes after its last failure, I interrupted only exact unit archboard-task143-worker-command-K3gz3ZML.service; the wrapper invocation returned 124 and is not accepted. Cleanup left the unit inactive/dead with MainPID=0, empty ControlGroup, and an absent cgroup.
+
+The exact implicated owner passed 4/4 with 95 assertions in 405 ms under the required 20-second diagnostic watchdog and capped unit archboard-task143-worker-command-4csdFkCp.service, consuming 506 ms CPU and 93.2M peak with 0B swap. Together with A20-A22 system-lane passes and the cross-command nature of this recurrence, this remains an intermittent host/Bun runner stall rather than an observable repository defect. No timeout, test, product, lint, or type mutation is justified; a fresh authoritative gate will exercise the unchanged source.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
