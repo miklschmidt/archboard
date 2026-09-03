@@ -8,10 +8,9 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal } from "./Modal";
+import type { BoardDialogMode, BoardDialogProps } from "./board-dialog-contract";
 import { fetchBoards } from "../canvas/api";
-import type { BoardIdentity, BoardListing } from "../types";
-
-export type BoardDialogMode = "open" | "new" | "save-as";
+import type { BoardListing } from "../types";
 
 const LEVELS = ["system", "service", "module"];
 const EMPTY_PANES: Array<{ clientId: string; label: string; board: string | null }> = [];
@@ -22,24 +21,6 @@ const address = (name: string, variant: string): string => {
 	const chosen = variant.trim();
 	return !chosen || chosen === "current" ? board : `${board}@${chosen}`;
 };
-
-interface BoardDialogProps {
-	mode: BoardDialogMode;
-	/** The board in the pane being worked in, to seed "another variant of this". */
-	current: BoardIdentity | null;
-	/**
-	 * The panes a board can be opened into. Offered as a choice only when there
-	 * is more than one — with a split on screen, which half a board lands in is
-	 * the human's call, and the canvas refuses to pick one for them.
-	 */
-	panes?: Array<{ clientId: string; label: string; board: string | null }>;
-	/** The pane to offer first: the one being worked in. */
-	defaultPane?: string | null;
-	busy?: boolean;
-	error?: string | null;
-	onSubmit: (address: { board: string; variant?: string; level?: string; pane?: string }) => void;
-	onCancel: () => void;
-}
 
 const TITLES: Record<BoardDialogMode, string> = {
 	open: "Open a board",

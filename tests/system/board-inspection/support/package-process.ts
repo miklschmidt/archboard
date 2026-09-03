@@ -48,6 +48,7 @@ interface TerminationReason {
 export interface ReadOnlyRunOptions {
 	timeoutMs?: number;
 	signal?: AbortSignal;
+	captureProcessGroup?: (pid: number) => ProcessGroupIdentity;
 	drainStdout?: (stream: ReadableStream<Uint8Array>) => Promise<string>;
 	drainStderr?: (stream: ReadableStream<Uint8Array>) => Promise<string>;
 	onSpawn?: (group: number) => void;
@@ -282,7 +283,6 @@ export async function runReadOnlyPackageProcess(
 		});
 	};
 	let child: ReturnType<typeof Bun.spawn>;
-	let groupIdentity: ProcessGroupIdentity;
 	try {
 		child = Bun.spawn([...command], {
 			cwd: root,
@@ -297,8 +297,25 @@ export async function runReadOnlyPackageProcess(
 			stdout: "pipe",
 			stderr: "pipe",
 		});
-		groupIdentity = captureDetachedProcessGroup(child.pid);
 	} catch (cause) {
+		throw new Error(`Could not start package inspection: ${(cause as Error).message}`, {
+			cause,
+		});
+	}
+	let groupIdentity: ProcessGroupIdentity;
+	try {
+		groupIdentity = (options.captureProcessGroup ?? captureDetachedProcessGroup)(child.pid);
+	} catch (cause) {
+		try {
+			child.kill("SIGKILL");
+		} catch {
+			// The exact spawned child may already have exited.
+		}
+		await Promise.allSettled([
+			child.exited,
+			new Response(child.stdout as ReadableStream<Uint8Array>).arrayBuffer(),
+			new Response(child.stderr as ReadableStream<Uint8Array>).arrayBuffer(),
+		]);
 		throw new Error(`Could not start package inspection: ${(cause as Error).message}`, {
 			cause,
 		});

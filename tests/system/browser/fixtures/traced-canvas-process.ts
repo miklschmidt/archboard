@@ -8,17 +8,24 @@ export interface FsyncTraceEvidence {
 	readonly incomplete: readonly string[];
 }
 
-export function readFsyncTrace(traceFile: string): FsyncTraceEvidence {
+export function readFsyncTrace(
+	traceFile: string,
+	options: { settled?: boolean } = {},
+): FsyncTraceEvidence {
 	if (!fs.existsSync(traceFile)) return { calls: [], incomplete: [] };
 	const text = fs.readFileSync(traceFile, "utf8");
-	const completeText = text.endsWith("\n") ? text : text.slice(0, text.lastIndexOf("\n") + 1);
+	const finalNewline = text.lastIndexOf("\n");
+	const hasDeferredTail = !text.endsWith("\n");
+	const completeText = hasDeferredTail ? text.slice(0, finalNewline + 1) : text;
+	const deferredTail = hasDeferredTail ? text.slice(finalNewline + 1).trim() : "";
 	const lines = completeText
 		.split("\n")
 		.map((line) => line.trim())
 		.filter(Boolean);
 	const successfulFsync = /\bfsync\(\d+\)\s+=\s+0$/;
 	const lifecycle =
-		/^(?:(?:\[pid\s+)?\d+\]?\s+)?(?:\+\+\+ (?:exited with \d+|killed by SIG[A-Z0-9]+) \+\+\+|--- SIG[A-Z0-9]+ .* ---|\?\?\?\( <unfinished \.\.\.>)$/;
+		/^(?:(?:\[pid\s+)?\d+\]?\s+)?(?:\+\+\+ (?:exited with \d+|killed by SIG[A-Z0-9]+) \+\+\+|--- SIG[A-Z0-9]+ .* ---)$/;
+	const terminalTracerNoise = /^(?:(?:\[pid\s+)?\d+\]?\s+)?\?\?\?\( <unfinished \.\.\.>$/;
 	const unfinishedFsync = /^(?:\[pid\s+)?(\d+)\]?\s+fsync\(\d+\s+<unfinished \.\.\.>$/;
 	const resumedFsync = /^(?:\[pid\s+)?(\d+)\]?\s+<\.\.\. fsync resumed>\)\s+=\s+(0|\?)$/;
 	const calls: string[] = [];
@@ -45,12 +52,15 @@ export function readFsyncTrace(traceFile: string): FsyncTraceEvidence {
 			if (starts?.length === 0) pending.delete(pid);
 			continue;
 		}
-		if (!lifecycle.test(line)) incomplete.push(line);
+		if (!lifecycle.test(line) && !terminalTracerNoise.test(line)) incomplete.push(line);
 	}
 	for (const starts of pending.values()) incomplete.push(...starts);
+	if (options.settled && deferredTail && !terminalTracerNoise.test(deferredTail)) {
+		incomplete.push(deferredTail);
+	}
 	return {
-		incomplete,
 		calls,
+		incomplete,
 	};
 }
 

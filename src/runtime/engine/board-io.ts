@@ -473,15 +473,17 @@ export function resolveBoard(asked?: string | null, what?: string): ResolvedBoar
 }
 
 /** A held board has one live document, and its note is deliberately not it. */
+function copyHeldContent(content: BoardContent): BoardContent {
+	return {
+		...content,
+		elements: new Map(content.elements),
+		files: new Map(content.files),
+	};
+}
+
 function resolvedBoardContent(key: string, loaded: LoadedBoard): BoardContent {
 	const hold = holdOn(key);
-	return hold
-		? {
-				...hold.content,
-				elements: new Map(hold.content.elements),
-				files: new Map(hold.content.files),
-			}
-		: contentFromLoadedBoard(loaded);
+	return hold ? copyHeldContent(hold.content) : contentFromLoadedBoard(loaded);
 }
 
 /** Install one already-resolved load for explicit open/create/write bookkeeping. */
@@ -720,13 +722,7 @@ export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapsho
  */
 export function readBoardContent(board: BoardState): BoardContent {
 	const hold = holdOn(boardKey(board.identity));
-	if (hold) {
-		return {
-			...hold.content,
-			elements: new Map(hold.content.elements),
-			files: new Map(hold.content.files),
-		};
-	}
+	if (hold) return copyHeldContent(hold.content);
 	if (!board.file) return emptyContent();
 	return readNote(board.file) ?? emptyContent();
 }
