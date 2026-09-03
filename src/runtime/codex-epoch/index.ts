@@ -19,6 +19,7 @@ export {
 	decodeManifest,
 	emptyManifest,
 	encodeManifest,
+	resolveThreadOwnershipProvenance,
 } from "./lib/manifest.js";
 export type {
 	ActiveEpoch,
@@ -30,4 +31,6 @@ export type {
 	EpochOperationRecord,
 	EpochOperationStatus,
 	EpochProvenance,
+	EpochThreadOwnership,
+	EpochThreadOwnershipProvenance,
 } from "./lib/manifest.js";

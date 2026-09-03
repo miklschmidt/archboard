@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-03 18:18'
+updated_date: '2026-09-03 18:27'
 labels: []
 dependencies:
   - TASK-143.01.05
@@ -52,6 +52,12 @@ Review remediation:
 2. Keep exact targets, SessionThread rows, durable records, and proofs in one per-port in-memory closure. Invalidate its selection map at every discovery start and consume a valid selection before resolving it.
 3. Add a host resolver that maps the opaque selection identity back to its retained exact target and calls the existing two-pass classifyAndBind plus pane/link CAS boundary. Reject unknown, cross-port, stale, and replayed selection identities with one deterministic conflict.
 4. Add focused module owners proving JSON-serialized discovery output cannot contain raw thread/proof/provenance/path/repository/turn/diagnostic data and proving valid, stale, forged, cross-port, and replayed selection behavior. Run focused thread-link tests, root TypeScript, and exact lint/format/diff checks only.
+
+Second review remediation:
+1. Add one epoch-owned resolveThreadOwnershipProvenance query with the recovered authored ownership contracts: create_thread/thread/start and fork_thread/thread/fork are created ownership; thread_link/thread/read is attached ownership. Ignore every other kind/RPC pair.
+2. Make candidate discovery ask that epoch resolver for the last ownership-establishing committed or inspect-only record instead of selecting the last record that merely names the thread.
+3. Align the thread-link epoch fixture default with canonical create_thread/thread/start ownership.
+4. Add focused regressions proving a later committed read cannot shadow valid ownership and an unrelated-only committed record yields unknown_provenance and cannot produce an executable binding. Run focused thread-link tests, the affected epoch owner, root TypeScript, and exact lint/format/diff checks only.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -78,6 +84,8 @@ Each UUID selection is scoped to one successful discovery generation and port, b
 The focused browser-safe seam owner asserts the public discovery and candidate key sets exactly and proves serialized values exclude target, classification, proof, provenance, cwd/path, workspaceRoot, hashes, repository metadata, turns/content, custom payload, and outcome-unknown diagnostics. It would fail against 9c94a7ae, whose public candidate directly contained target and classification. Lifecycle coverage proves valid selection, cross-port, forged, superseded-generation, changed-manifest, and replay behavior.
 
 Focused validation: bun test src/runtime/codex-thread-link/tests passed 43 tests and 167 assertions in 7.64s; root bunx tsc --noEmit --pretty false passed in 1.79s; exact-file oxlint passed in 0.15s; exact-file oxfmt check passed in 0.09s; git diff --check against 9c94a7ae passed. No broad module, system, repository, browser, check, stress, performance, or tooling suite ran.
+
+Second independent-review remediation: candidate discovery now delegates ownership provenance to the epoch-owned resolveThreadOwnershipProvenance query. Its exact authored contracts are create_thread/thread/start and fork_thread/thread/fork as created ownership, plus thread_link/thread/read as attached ownership; all other kind/RPC pairs are ignored. The resolver scans backward for the latest ownership-establishing committed or inspect-only record, so a later read that merely names the thread cannot shadow valid authority. An unrelated-only record leaves the candidate unknown_provenance and its opaque selection cannot bind executable. The real thread-link fixture now defaults to canonical create_thread/thread/start. Focused validation: bun test src/runtime/codex-thread-link/tests passed 45 tests and 171 assertions in 9.40s; the affected epoch owners passed 11 tests and 49 assertions in 1.50s; root bunx tsc --noEmit --pretty false passed in 1.79s; exact-file oxlint passed with no findings in 0.12s; exact-file oxfmt check passed in 0.09s; git diff --check passed. No broad module, system, repository, browser, check, stress, performance, or tooling suite ran. Task remains In Progress for parent review.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
