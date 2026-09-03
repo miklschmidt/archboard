@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-02 02:53'
+updated_date: '2026-09-03 00:00'
 labels: []
 dependencies: []
 references:
@@ -79,6 +79,8 @@ New parent safety requirement, 2026-09-02: the replacement worker is command-cap
 Plan review gate passed. Independent xhigh daybreak reviewer task 01a05ffc-6487-7022-aa56-f825422d7c6b returned REVIEW_OK for the complete fixed range 16d5e23c..a6c8ca6f. It confirmed the worker-wide wrapper contract, delayed restoration of uncapped development, unconditional type-aware lint and tsgolint removal, transitive frontend tooling exception, Canvas application ownership and teardown, held-board restart refusal, lifecycle coverage, and corrected ADR 0014 guidance. No broad or type-aware validation ran during review.
 
 Root-provided wrapper /home/msc/.codex/task-143.08.01/capped-command was preverified before worker dispatch at SHA-256 3c5f4f09f6f916514988471838848a714479536e009d047c111412ff4f4cb858. Direct probes confirmed MemoryMax=6442450944, MemorySwapMax=1073741824, OOMPolicy=kill, KillMode=control-group, MemoryAccounting=yes, TasksAccounting=yes, current directory and environment propagation, exact nonzero exit propagation, descendant reaping, serialized concurrent invocations, fail-closed SIGKILL status 124, syntax, mode 700 ownership, and no residual unit or cgroup.
+
+IPC remediation recovery, 2026-09-03, base/head bfc95fa7 before commit. Root cause: git-process-owner reported one terminal result but retained its message listener and Bun IPC channel after parent release, so the owner could not exit; process-group membership scanning also rejected unrelated Linux kernel records whose process group is zero. The owner now removes the listener, disconnects IPC after release, and exits after exactly one result. Detached leader capture still rejects nonpositive or mismatched groups. The direct owner/release regression passed 1/1 in 14 ms, and src/runtime/engine/tests/git-async.test.ts passed 4/4 in 1.65 s. Focused Oxfmt and type-unaware Oxlint passed for all three changed files. Every named validation unit became not-found, inactive/dead with MainPID 0 and empty ControlGroup; each exact cgroup and runtime gate path was absent, and no archboard-git fixture root remained. Five earlier stale fixture/diagnostic roots were independently attributed, proven to have no live cwd, root, fd, or cgroup owner, removed by exact path, and rechecked absent. The two repository passes are intentionally deferred until this range is rebased onto canonical 4ca545c6b48e8e78e7eb4301d5337aeb930cc4ad.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
