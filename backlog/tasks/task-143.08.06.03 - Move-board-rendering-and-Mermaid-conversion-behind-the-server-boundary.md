@@ -1,11 +1,11 @@
 ---
 id: TASK-143.08.06.03
 title: Move board rendering and Mermaid conversion behind the server boundary
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 07:49'
+updated_date: '2026-09-03 07:52'
 labels: []
 dependencies:
   - TASK-143.08.06.01
@@ -46,12 +46,12 @@ Give Archboard one server-owned visual conversion boundary for persisted board s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Named-board PNG and SVG rendering succeeds with zero browser clients from one immutable persisted snapshot and defines explicit sizing, padding, background, font, image, and output-path behavior.
-- [ ] #2 `render-findings` performs inspection and every requested close-up against one named persisted snapshot with zero browser clients, preserves the manifest contract or replaces it with one documented simpler contract, and never mutates board or browser state.
-- [ ] #3 Mermaid conversion succeeds with zero browser clients, feeds the canonical inbound converter, commits the resulting board as one locked write, and returns stable identities suitable for later board commands.
-- [ ] #4 No product rendering or Mermaid path sends WebSocket work to a pane or waits for browser acknowledgements; superseded export, findings-render, and Mermaid browser message handlers and pending-request state are deleted.
-- [ ] #5 The rendering boundary contains DOM, canvas, font, and exporter initialization, has deterministic cleanup and actionable failures, and cannot leak mutable emulation globals or fallback processes across reload, retry, or shutdown.
-- [ ] #6 Focused public-interface tests cover supported output, malformed Mermaid, missing fonts or files, renderer failure, concurrent requests, shutdown, and zero-client operation without substituting mocks for the rendering boundary.
+- [x] #1 Named-board PNG and SVG rendering succeeds with zero browser clients from one immutable persisted snapshot and defines explicit sizing, padding, background, font, image, and output-path behavior.
+- [x] #2 `render-findings` performs inspection and every requested close-up against one named persisted snapshot with zero browser clients, preserves the manifest contract or replaces it with one documented simpler contract, and never mutates board or browser state.
+- [x] #3 Mermaid conversion succeeds with zero browser clients, feeds the canonical inbound converter, commits the resulting board as one locked write, and returns stable identities suitable for later board commands.
+- [x] #4 No product rendering or Mermaid path sends WebSocket work to a pane or waits for browser acknowledgements; superseded export, findings-render, and Mermaid browser message handlers and pending-request state are deleted.
+- [x] #5 The rendering boundary contains DOM, canvas, font, and exporter initialization, has deterministic cleanup and actionable failures, and cannot leak mutable emulation globals or fallback processes across reload, retry, or shutdown.
+- [x] #6 Focused public-interface tests cover supported output, malformed Mermaid, missing fonts or files, renderer failure, concurrent requests, shutdown, and zero-client operation without substituting mocks for the rendering boundary.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -112,4 +112,12 @@ Standards rereview supersedes the earlier injected-lease note. Removed ARCHBOARD
 Final Spec rereview: fixture startup now realpaths the frontend build, renderer entry, and asset root before listen. RendererFixtureError with code RENDERER_FIXTURE_INVALID_BUILD reports a missing, wrong-kind, or top-level escaping target. The entry and asset root must stay below the canonical build; each requested asset must stay below the canonical asset root and be a regular file. Top-level entry/assets escapes fail before afterListen, while successful fixtures close and release their exact ports. The HTTP contract authorizes canonical targets rather than raw URL spelling, so a client-normalized encoded path to renderer.html is allowed and decoded targets outside assets remain refused.
 
 The browser renderer now has the purpose-specific src/server/board-rendering/browser.ts root entrypoint, which exports browserRenderer and its BrowserRendererEntry/RendererPageState types. frontend/renderer.html and the frontend TypeScript gate use that root. Focused policy checks reject a return to the private lib path. Validation: build:frontend passed in 0.580 s; the direct fixture owner passed 3 tests/26 expectations in 0.084 s with zero Chromium starts; the focused TypeScript-gate owner passed 2 tests/6 expectations in 0.063 s; frontend TypeScript, scoped Oxlint, scoped Oxfmt, deep-import absence, raw-claim absence, and git diff checks passed. No public smoke was needed because the built renderer bytes were served by the direct owner and no runtime behavior changed. Final renderer process and recent temp-root censuses were empty. Task remains In Progress under @codex with every AC unchecked.
+
+Finalization evidence accepted from the reviewed range 3c5c2be4..bd79271c: build:frontend 0.580 s; frontend type gate clean; direct fixture owner 3 tests/26 assertions with zero Chromium; public renderer owner 4 tests/80 assertions with one retained Chromium start and lifecycle cleanup; repository-policy owner 2 tests/6 assertions; prior lifecycle owner clean. Two independent final reviews returned REVIEW_CLEAN for the complete reviewed range. No broad/root gate or serial browser lane was rerun by finalization.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Moved persisted-board rendering and Mermaid conversion behind the server boundary. All six acceptance criteria are verified by accepted focused renderer, fixture, type, lifecycle, and policy evidence; two independent reviews were clean for 3c5c2be4..bd79271c.
+<!-- SECTION:FINAL_SUMMARY:END -->
