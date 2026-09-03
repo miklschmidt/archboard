@@ -17,6 +17,7 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 		paneId: "pane-reconnect",
 		instance,
 		snapshot: () => ({ kind: "snapshot", sequence: 1, snapshot: {} }) as never,
+		confirmPublished: () => undefined,
 		claimLease: () => {
 			if (current !== instance) throw new Error("The stale socket cannot claim authority.");
 			return { kind: "command_lease", commandId: "replacement-command" } as never;
@@ -76,6 +77,54 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 				ok: true,
 			}),
 		);
+	} finally {
+		owner.dispose();
+	}
+});
+
+test("confirms a snapshot publication only after the transport send succeeds", async () => {
+	const instance = Object.freeze({ socket: "publication" });
+	let confirmations = 0;
+	const connection = {
+		browserId: "browser-publication",
+		paneId: "pane-publication",
+		instance,
+		snapshot: () => ({ kind: "snapshot", sequence: 0, snapshot: { approvals: [] } }) as never,
+		confirmPublished: () => {
+			confirmations += 1;
+		},
+	} as unknown as BrowserWorkbenchConnection;
+	const gateway = {
+		connect: () => connection,
+	} as unknown as CodexWorkbenchGateway;
+	const owner = createCanvasCodexBrowserSocketOwner({
+		gateway,
+		paneForBrowser: () => "pane-publication",
+	});
+	try {
+		await expect(
+			owner.handle(
+				instance,
+				"browser-publication",
+				{ type: "codex_workbench_request", requestId: "failed", action: "snapshot" },
+				{
+					send: () => {
+						throw new Error("socket send failed");
+					},
+				},
+			),
+		).rejects.toThrow("socket send failed");
+		expect(confirmations).toBe(0);
+
+		const messages: unknown[] = [];
+		await owner.handle(
+			instance,
+			"browser-publication",
+			{ type: "codex_workbench_request", requestId: "recovered", action: "snapshot" },
+			{ send: (message) => messages.push(message) },
+		);
+		expect(confirmations).toBe(1);
+		expect(messages).toHaveLength(1);
 	} finally {
 		owner.dispose();
 	}
@@ -183,6 +232,9 @@ test("the public socket owner routes the complete gateway workflow through serve
 			calls.push("snapshot");
 			return { kind: "snapshot", sequence: 1, snapshot: {} } as never;
 		},
+		confirmPublished: () => {
+			calls.push("published");
+		},
 		claimLease: () => {
 			calls.push("claim");
 			return { kind: "command_lease", commandId: "command-1" } as never;
@@ -276,14 +328,20 @@ test("the public socket owner routes the complete gateway workflow through serve
 	expect(calls).toEqual([
 		"connect:browser-1:pane-authoritative",
 		"snapshot",
+		"published",
 		"subscribe",
 		"snapshot",
+		"published",
 		"snapshot",
+		"published",
 		"claim",
 		"renew",
 		"account",
+		"published",
 		'command:{"command":"approvalRespond"}',
+		"published",
 		"media:true",
+		"published",
 		"release",
 		"unsubscribe",
 		"connection-close",
@@ -360,6 +418,7 @@ test("the public request crosses a real WebSocket transport and returns the gate
 		instance,
 		snapshot: () =>
 			({ kind: "snapshot", sequence: 3, snapshot: { kind: "browser_snapshot" } }) as never,
+		confirmPublished: () => undefined,
 		claimLease: () => ({}) as never,
 		renewLease: () => ({}) as never,
 		releaseLease: () => null,
