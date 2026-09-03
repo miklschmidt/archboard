@@ -149,10 +149,9 @@ and this machine's checkout registry.
 The canvas binds to `127.0.0.1` by default and has no authentication. Keep it
 on loopback; use an SSH tunnel rather than exposing it directly to a network.
 
-Optional injection into a live Codex thread is disabled by default, must be
-enabled explicitly with `ARCHBOARD_INJECT=1`, must name the exact task with
-`ARCHBOARD_INJECT_THREAD`, and refuses to arm when the canvas is not bound to
-loopback. See [TESTING.md](TESTING.md) before enabling voice or injection.
+Archboard owns one private package-local Codex app-server session over stdio.
+Semantic thread context uses the generated `thread/inject_items` protocol path
+on that connection. It does not attach to Desktop or a shared daemon.
 
 ## Documentation
 
