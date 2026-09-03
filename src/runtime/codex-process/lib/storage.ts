@@ -172,12 +172,16 @@ function verifyPrivateDirectory(
 		try {
 			fileSystem.mkdirSync(candidate, { mode: 0o700, recursive: false });
 		} catch (mkdirCause) {
-			throw failure(
-				"collision",
-				candidate,
-				`Could not create dedicated ${name} ${candidate}; the root may be locked, unwritable, or colliding.`,
-				mkdirCause,
-			);
+			// Concurrent canvas starts may both observe ENOENT before one creates the
+			// directory. Inspect the winner's directory and let the exclusive owner
+			// lock decide which process proceeds.
+			if ((mkdirCause as NodeJS.ErrnoException).code !== "EEXIST")
+				throw failure(
+					"collision",
+					candidate,
+					`Could not create dedicated ${name} ${candidate}; the root may be locked, unwritable, or colliding.`,
+					mkdirCause,
+				);
 		}
 		try {
 			stats = fileSystem.lstatSync(candidate);
