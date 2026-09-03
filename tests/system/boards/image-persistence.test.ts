@@ -4,7 +4,6 @@ import os from "node:os";
 import path from "node:path";
 
 import { buildScene } from "../../../src/runtime/engine/scene-document.ts";
-import { TEST_PANE_SOCKET_SETTLE_MS } from "../../../src/shared/timing/timing.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 import {
@@ -200,7 +199,6 @@ describe("image persistence", () => {
 			body: { success: true, format: "png", data: "aGk=" },
 		});
 		await Promise.all([pane.close(), other.close()]);
-		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 	});
 
 	test("copies images into a branch and filters unreferenced files", async () => {
