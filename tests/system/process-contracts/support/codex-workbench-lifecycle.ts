@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { chmodSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 
@@ -8,6 +8,7 @@ import {
 	type WorkbenchResult,
 } from "../../canvas-state/support/codex-production.ts";
 import { waitFor } from "../../canvas-state/support/http.ts";
+import { buildOwnedCanvasEnvironment } from "../../support/owned-canvas.ts";
 const repoRoot = resolve(import.meta.dir, "../../../..");
 const fixtureSource = join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production.ts");
 const serverEntry = join(repoRoot, "src/server.ts");
@@ -104,6 +105,14 @@ export async function startCanvas(options: {
 	const base = `http://127.0.0.1:${port}`;
 	const wrapper = join(options.root, "production-server.ts");
 	const executableModule = join(repoRoot, "src/runtime/codex-process/executable.ts");
+	const paths = {
+		home: join(options.root, "home"),
+		xdgConfig: join(options.root, "xdg-config"),
+		xdgState: join(options.root, "state"),
+		temporary: join(options.root, "tmp"),
+	};
+	for (const directory of Object.values(paths))
+		mkdirSync(directory, { recursive: true, mode: 0o700 });
 	writeFileSync(
 		wrapper,
 		`import { mock } from "bun:test";\n` +
@@ -114,18 +123,17 @@ export async function startCanvas(options: {
 	const child = spawn(process.execPath, [wrapper], {
 		cwd: repoRoot,
 		detached: true,
-		env: {
-			...process.env,
-			PORT: String(port),
-			HOST: "127.0.0.1",
-			ARCHBOARD_VAULT: options.vault,
-			ARCHBOARD_TEST_CODEX_EXECUTABLE: options.executablePath,
-			ARCHBOARD_TEST_CODEX_LOG: options.logPath,
-			ARCHBOARD_TEST_CODEX_CONTROL: options.controlPath,
-			ARCHBOARD_SETTLE_MS: "20",
-			XDG_STATE_HOME: join(options.root, "state"),
-			LOG_LEVEL: "error",
-		},
+		env: buildOwnedCanvasEnvironment({
+			paths,
+			port,
+			vault: options.vault,
+			env: {
+				ARCHBOARD_TEST_CODEX_EXECUTABLE: options.executablePath,
+				ARCHBOARD_TEST_CODEX_LOG: options.logPath,
+				ARCHBOARD_TEST_CODEX_CONTROL: options.controlPath,
+				ARCHBOARD_SETTLE_MS: "20",
+			},
+		}),
 		stdio: ["ignore", "pipe", "pipe"],
 	});
 	if (child.pid === undefined) throw new Error("The canvas has no pid.");

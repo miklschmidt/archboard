@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve as resolvePath } from "node:path";
-import { writeFileSync } from "node:fs";
 
 import {
 	openApplicationSocket,
@@ -10,7 +10,11 @@ import {
 } from "../canvas-state/support/codex-production.ts";
 import { waitFor } from "../canvas-state/support/http.ts";
 import { records, startCanvas } from "./support/codex-workbench-lifecycle.ts";
-import { processExists, waitForProcessExit } from "../support/owned-canvas.ts";
+import {
+	buildOwnedCanvasEnvironment,
+	processExists,
+	waitForProcessExit,
+} from "../support/owned-canvas.ts";
 
 const repoRoot = resolvePath(import.meta.dir, "../../..");
 const fixtureSource = join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production.ts");
@@ -45,21 +49,28 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 				`await startServer();\n`,
 		);
 		const port = await freePort();
+		const paths = {
+			home: join(fixture.root, "first-home"),
+			xdgConfig: join(fixture.root, "first-xdg-config"),
+			xdgState: join(fixture.root, "first-state"),
+			temporary: join(fixture.root, "first-tmp"),
+		};
+		for (const directory of Object.values(paths))
+			mkdirSync(directory, { recursive: true, mode: 0o700 });
 		const canvas = spawn(process.execPath, [wrapper], {
 			cwd: repoRoot,
 			detached: true,
-			env: {
-				...process.env,
-				PORT: String(port),
-				HOST: "127.0.0.1",
-				ARCHBOARD_VAULT: fixture.vault,
-				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
-				ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
-				ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
-				ARCHBOARD_SETTLE_MS: "20",
-				XDG_STATE_HOME: join(fixture.root, "first-state"),
-				LOG_LEVEL: "error",
-			},
+			env: buildOwnedCanvasEnvironment({
+				paths,
+				port,
+				vault: fixture.vault,
+				env: {
+					ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
+					ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
+					ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
+					ARCHBOARD_SETTLE_MS: "20",
+				},
+			}),
 			stdio: ["ignore", "pipe", "pipe"],
 		});
 		if (canvas.pid === undefined) throw new Error("The startup-signal canvas has no pid.");
