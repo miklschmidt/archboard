@@ -247,14 +247,15 @@ export async function startOwnedCanvas({
 		generation: Generation,
 		signal: NodeJS.Signals = "SIGTERM",
 	): Promise<void> => {
-		const forcedCleanup =
-			signal === "SIGKILL"
-				? captureForcedCanvasCleanup({ canvasPid: generation.pid, xdgState: paths.xdgState })
-				: null;
+		const forcedCleanup = generation.exit
+			? null
+			: captureForcedCanvasCleanup({ canvasPid: generation.pid, xdgState: paths.xdgState });
+		let forced = signal === "SIGKILL";
 		if (!generation.exit) {
 			generation.expectedStop = true;
 			generation.child.kill(signal);
 			if (!(await waitForExit(generation, TEST_CANVAS_SHUTDOWN_TIMEOUT_MS))) {
+				forced = true;
 				generation.child.kill("SIGKILL");
 				await waitForExit(generation, TEST_CANVAS_SHUTDOWN_TIMEOUT_MS);
 			}
@@ -265,9 +266,7 @@ export async function startOwnedCanvas({
 					pathsDiagnostic,
 			);
 		}
-		if (signal === "SIGKILL") {
-			await forcedCleanup!.complete();
-		}
+		if (forced) await forcedCleanup!.complete();
 		if (currentGeneration === generation) currentGeneration = null;
 	};
 	const startAttempt = async (candidate: number): Promise<Generation> => {
