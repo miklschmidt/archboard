@@ -33,7 +33,7 @@
 	},
 	"include": [
 		"frontend/main.tsx",
-		"src/server/board-rendering/lib/browser.ts",
+		"src/server/board-rendering/browser.ts",
 		"src/ui/**/*.ts",
 		"src/ui/**/*.tsx"
 	]

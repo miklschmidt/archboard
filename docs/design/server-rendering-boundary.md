@@ -163,8 +163,15 @@ The selected boundary is implemented by `src/server/board-rendering/`. One
 application-owned, lazy Chromium session is retained behind a serial queue.
 The frontend build produces a dedicated renderer entry. Production serves
 only that entry and files below `dist/frontend/assets` from a narrow Bun
-loopback host; it performs no runtime transform, cache, checkout-wide serving,
-or file watching. Chromium receives one renderer-owned temporary root as
+loopback host. At startup, the host resolves the build directory, renderer
+entry, and asset directory to canonical filesystem paths. Both top-level
+targets must remain below the canonical build directory, and every requested
+asset must remain below the canonical asset directory after resolution. The
+host authorizes canonical targets, not raw URL spellings. A client may normalize
+encoded dot segments before sending the request; the resulting target is served
+only if it is the canonical renderer entry or a canonical asset. The host
+performs no runtime transform, cache, checkout-wide serving, or file watching.
+Chromium receives one renderer-owned temporary root as
 `TMPDIR`, keeps its profile beneath that root, runs in an owned process group,
 and uses a private loopback DevTools port. Canvas shutdown stops admission,
 rejects queued work, interrupts active DevTools work, sends TERM then KILL when
@@ -175,12 +182,12 @@ the cumulative Chromium start count for the canvas process.
 
 `POST /api/render/board?board=<key>` accepts `png` or `svg`, an explicit
 background choice, padding from 0 through 128 scene pixels, and a scale from
-0.25 through 4. The defaults are background on, 16 pixels of padding, and scale
-1. The route reads the persisted note once, copies that immutable scene, and
-returns the artifact data, exact pixel or SVG dimensions, background colour,
-and source fingerprint. `archboard render --board <key> --out <file>` is the
-file-producing CLI. It never observes a pane, selection, camera, or connected
-browser.
+0.25 through 4. The defaults are background on and 16 pixels of padding. The
+default scale is 1. The route reads the persisted note once, copies that
+immutable scene, and returns the artifact data, exact pixel or SVG dimensions,
+background colour, and source fingerprint. The file-producing CLI is
+`archboard render` with `--board <key>` and `--out <file>`. It never observes a
+pane, selection, camera, or connected browser.
 
 Text render requires a known Excalidraw font family and a loadable face. Image
 render requires every live image element's file id to resolve to persisted
