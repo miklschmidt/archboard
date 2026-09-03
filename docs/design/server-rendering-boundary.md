@@ -58,15 +58,20 @@ Chromium/profile and runs three serial normal jobs. It also exercises missing
 image, malformed Mermaid, timeout, child-exit, cleanup, and replacement paths.
 Before its normal session, injectable failures cover profile creation, reserved
 port, spawned Chromium, Vite creation, and Vite listen. Each reports the
-observed process ids, profile removal, port rebindability, server state, and
-watcher path count after cleanup.
+captured process group, its absence confirmed with the group probe, leader and
+pipe settlement, profile removal, port rebindability, server state, and watcher
+path count after cleanup.
 
 The per-job allowance is 20 seconds. The timeout oracle accepts only the
 `Runtime.evaluate` 20,000 ms timeout cause at 19,800–21,000 ms elapsed; a
-deliberate immediate evaluation error must be rejected as a different cause.
-Process cleanup receives TERM, then KILL within the same five-second cleanup
-allowance. Every failure includes the current fixture phase, page
-console/exception/network diagnostics, and the owned-resource audit.
+deliberate immediate evaluation error stages the same `intentional-timeout`
+job and fixture phase, then must be rejected solely because it has a different
+cause. Process cleanup confirms absence with `kill(-pgid, 0)`, using the
+captured leader identity to refuse a reused group. It sends TERM, then KILL if
+the group remains live, even after the leader exits. The same five-second
+allowance also bounds leader and stdout/stderr pipe settlement. Every failure
+includes the current fixture phase, page console/exception/network diagnostics,
+and the owned-resource audit.
 
 ## Emulation result
 
@@ -118,12 +123,14 @@ replacement.
 Malformed persisted input rejects with `Error`. Missing embedded-file data
 cannot pass the SVG semantic check. Malformed Mermaid rejects with `Error`.
 The intentional stalled job fails at the named `intentional-timeout` phase at
-20 seconds only when its DevTools cause is the `Runtime.evaluate` timeout; the
-oracle rejected an immediate evaluation error in about 1 ms. The process is then
-cleaned and a replacement renders the same normal result. A separately
-terminated renderer rejects a subsequent job with the Chromium-exited error,
-and its process group/profile audit is clean. These are all direct report facts,
-rather than longer retry allowances.
+20 seconds only when its DevTools cause is the `Runtime.evaluate` timeout. Its
+negative control reaches that same job and phase, then fails immediately with a
+non-timeout CDP error. The oracle records the cause-only rejection. The process
+is then cleaned and a replacement renders the same normal result. A separately
+terminated renderer rejects a subsequent job with the Chromium-exited error.
+Every injected, normal, terminated, and replacement cleanup report confirms
+group absence, settled output pipes, profile removal, and released port. These
+are direct report facts, rather than longer retry allowances.
 
 The memory measurement rules out a process per Board render. The production
 implementation needs one application-owned renderer and a serialized request
