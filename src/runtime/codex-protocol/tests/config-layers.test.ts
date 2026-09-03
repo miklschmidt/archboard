@@ -69,7 +69,7 @@ test("Codex i64 values stay safe JSON numbers and reject bigint", () => {
 				model_context_window: Number.MAX_SAFE_INTEGER + 1,
 			},
 		}),
-	).toThrow(/outside the safe JSON integer range/);
+	).toThrow(ProtocolDecodeError);
 	expect(() =>
 		decodeResponse("config/read", {
 			...configResponse,

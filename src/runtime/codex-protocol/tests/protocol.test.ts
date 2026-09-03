@@ -429,6 +429,13 @@ describe("fail-closed diagnostics", () => {
 		expect((thrown as Error).message).toContain("visual login flow");
 	});
 
+	test("does not let a reserved JSON key supply inherited login fields", () => {
+		const payload = JSON.parse('{"__proto__":{"type":"apiKey","apiKey":"inherited-secret"}}');
+
+		expect(Object.hasOwn(payload, "__proto__")).toBeTrue();
+		expect(() => decodeLoginAccountParams(payload)).toThrow(ProtocolDecodeError);
+	});
+
 	for (const method of ["attestation/generate", "account/chatgptAuthTokens/refresh"] as const)
 		test(`refuses unsupported server capability ${method}`, () => {
 			expect(() =>
