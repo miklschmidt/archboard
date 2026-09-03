@@ -203,10 +203,7 @@ async function terminateInspectionGroup(
 ): Promise<InspectionSettlements> {
 	const failures: Error[] = [];
 	try {
-		signalOwnedProcessGroup(
-			groupIdentityForSignal?.(identity, "SIGTERM") ?? identity,
-			"SIGTERM",
-		);
+		signalOwnedProcessGroup(groupIdentityForSignal?.(identity, "SIGTERM") ?? identity, "SIGTERM");
 	} catch (cause) {
 		failures.push(asError(cause));
 	}
@@ -218,10 +215,7 @@ async function terminateInspectionGroup(
 	}
 	if (!disappeared) {
 		try {
-			signalOwnedProcessGroup(
-				groupIdentityForSignal?.(identity, "SIGKILL") ?? identity,
-				"SIGKILL",
-			);
+			signalOwnedProcessGroup(groupIdentityForSignal?.(identity, "SIGKILL") ?? identity, "SIGKILL");
 		} catch (cause) {
 			failures.push(asError(cause));
 		}
