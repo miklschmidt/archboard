@@ -1,10 +1,10 @@
 ---
 id: TASK-148.07
 title: Enforce an actual per-test wall-clock budget
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-09-02 21:36'
-updated_date: '2026-09-03 17:24'
+updated_date: '2026-09-03 17:27'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -84,10 +84,12 @@ Canonical integration: cherry-picked reviewed commits bb554660b8b3dfd9c2444192b1
 Canonical typecheck remediation (2026-09-03): reproduced four TS2339 diagnostics at test-wall-clock-policy.ts:182-183 because the custom isNode predicate narrows to Babel's broad published Node union, which does not expose CallExpression.arguments or BlockStatement.body. Replaced those broad checks with Babel Node discriminant narrowing for CallExpression and BlockStatement; no casts, vendor lookalikes, regex fallback, or rule weakening.
 
 Validation: the exact command bun run generate:codex-contract && bunx tsc --noEmit no longer reports test-wall-clock-policy.ts, but remains globally red on unrelated canonical diagnostics outside TASK-148.07. Focused policy/preload tests passed 14 tests, 26 assertions, 0 failures in 104 ms. Exact-file Oxlint, Oxfmt check, and git diff --check passed.
+
+Review-clean AST-narrowing remediation: independently reviewed with zero Standards and zero Spec findings. Canonically integrated source commit 29d02265facf308714ed1b7781d95341571e069d as c20a4162; focused integration validation passed: bun test --isolate ./tests/system/repository-policy/test-wall-clock-budget.test.ts ./tests/system/repository-policy/test-wall-clock-preload.test.ts — 14 tests, 26 assertions, 0 failures (108 ms). The scheduled combined typecheck and complete gate remain owned by TASK-143.08.05.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Enforced the per-test 20,000 ms wall-clock policy with source-local approved real-time bounds and AST-backed policy validation. Verified by the focused repository-policy and preload suite: 14 tests, 26 assertions, 0 failures.
+Enforced the per-test 20,000 ms wall-clock policy with source-local approved real-time bounds and AST-backed policy validation; the review-clean AST narrowing remediation preserves that contract. Focused repository-policy and preload validation passed: 14 tests, 26 assertions, 0 failures.
 <!-- SECTION:FINAL_SUMMARY:END -->
