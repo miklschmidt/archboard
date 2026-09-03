@@ -789,7 +789,7 @@ export function Shell(): React.JSX.Element {
 	);
 
 	const handleNew = useCallback(
-		(address: { board: string; variant?: string; level?: string; pane?: string }): void =>
+		(address: { board: string; variant?: string; level?: string }): void =>
 			void run(async () => {
 				const created = await newBoard(address);
 				setDialog(null);

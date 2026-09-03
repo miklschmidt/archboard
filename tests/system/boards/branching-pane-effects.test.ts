@@ -10,6 +10,7 @@ import { createJsonRequester } from "./support/http.ts";
 import {
 	openTestPane,
 	waitForPaneMessage,
+	waitForPaneMessageWhere,
 	type PaneMessage,
 	type TestPane,
 } from "./support/pane-websocket.ts";
@@ -274,9 +275,13 @@ describe("branching pane effects", () => {
 			method: "POST",
 		});
 		expect(same.body).toMatchObject({ saveKind: "same-board", panes: { moved: [], kept: [] } });
-		expect((await waitForPaneMessage(left, sameStart, "elements_changed"))?.board).toBe(
-			"response-source",
-		);
+		expect(
+			await waitForPaneMessageWhere(
+				left,
+				sameStart,
+				(message) => message.type === "elements_changed" && message.board === "response-source",
+			),
+		).toBeDefined();
 
 		const full = await runCli([
 			"board",

@@ -364,7 +364,7 @@ function responseError(data: unknown, response: Response): Error {
 		typeof body.error === "string"
 			? body.error
 			: `HTTP server error: ${response.status} ${response.statusText}`,
-	) as Error & { code?: unknown; conflict?: unknown; open?: unknown; refusal?: unknown };
+	) as Error & { code?: unknown; conflict?: unknown; available?: unknown; refusal?: unknown };
 	// Refused board writes are results, not faults. Keep their structured body
 	// on the error so the CLI does not have to reconstruct what the canvas
 	// said, or read the board after the refusal.
@@ -373,7 +373,7 @@ function responseError(data: unknown, response: Response): Error {
 		error.conflict = body.conflict as BoardWriteConflict;
 	} else if (typeof body.code === "string") {
 		error.code = body.code;
-		if (Array.isArray(body.open)) error.open = body.open;
+		if (Array.isArray(body.available)) error.available = body.available;
 	}
 	if (isBoardRefusal(data)) error.refusal = data;
 	return error;
