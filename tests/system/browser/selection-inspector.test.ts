@@ -128,6 +128,7 @@ test(
 			const elements =
 				board === "selection-a"
 					? [
+							{ id: "leftmark", type: "text", x: 100, y: 260, text: "LEFT ONLY MARKER" },
 							shape("bound-local", 100, {
 								node: "checkout-service",
 								kind: "service",
@@ -149,6 +150,7 @@ test(
 							}),
 						]
 					: [
+							{ id: "rightmrk", type: "text", x: 100, y: 260, text: "RIGHT ONLY MARKER" },
 							shape("right-bound", 100, {
 								node: "right-service",
 								binding: { repo: repository, path: "src/right.ts" },
@@ -160,32 +162,30 @@ test(
 			).toBe(200);
 			expect((await api("/api/boards/save", { method: "POST", body: { board } })).status).toBe(200);
 		}
+		const notePaths = ["selection-a", "selection-b"].map((board) =>
+			join(vault, `${board}.excalidraw.md`),
+		);
+		const beforeNotes = notePaths.map((path) => readFileSync(path));
 
 		const browser = resources.use(await createAgentBrowser());
 		await browser.run(["open", canvas.base]);
 		await browser.run(["set", "viewport", "1440", "900"]);
-		let panes = await pollUntil(
+		await pollUntil(
 			() => api<Panes>("/api/panes").then((response) => response.body),
 			(value) => value.paneCount === 1,
 			"the initial pane",
 		);
-		await api("/api/boards/open", {
-			method: "POST",
-			body: { board: "selection-a", pane: panes.panes[0]!.clientId, reload: true },
-		});
+		runCanvasCli(canvas.base, vault, ["browser", "show", "selection-a", "--pane", "primary"]);
 		expect((await waitInspector(browser, "empty", "No selection")).title).toBe("No selection");
-		expect((await api("/api/panes/open", { method: "POST" })).status).toBe(200);
-		panes = await pollUntil(
+		runCanvasCli(canvas.base, vault, ["browser", "open"]);
+		const panes = await pollUntil(
 			() => api<Panes>("/api/panes").then((response) => response.body),
 			(value) => value.paneCount === 2,
 			"two rendered panes",
 		);
 		const left = panes.panes.find((pane) => pane.place === "left")!;
 		const right = panes.panes.find((pane) => pane.place === "right")!;
-		await api("/api/boards/open", {
-			method: "POST",
-			body: { board: "selection-b", pane: right.clientId, reload: true },
-		});
+		runCanvasCli(canvas.base, vault, ["browser", "show", "selection-b", "--pane", "right"]);
 		await browser.eval<boolean>(`(() => {
 			const original = window.fetch;
 			window.__selectionChangeReports = 0;
@@ -199,10 +199,6 @@ test(
 			};
 			return true;
 		})()`);
-		const notePaths = ["selection-a", "selection-b"].map((board) =>
-			join(vault, `${board}.excalidraw.md`),
-		);
-		const beforeNotes = notePaths.map((path) => readFileSync(path));
 		const feedBefore = await Promise.all(
 			["selection-a", "selection-b"].map((board) =>
 				api<ChangeFeed>(`/api/changes?board=${board}&since=0`).then((response) => response.body),
@@ -264,16 +260,16 @@ test(
 		) as { board: string; elementIds: string[] };
 		expect(leftSelection).toMatchObject({ board: "selection-a", elementIds: ["bound-local"] });
 		expect(rightSelection).toMatchObject({ board: "selection-b", elementIds: ["right-bound"] });
-		expect(
-			runCanvasCli(canvas.base, vault, [
-				"browser",
-				"capture",
-				"--pane",
-				"right",
-				"--format",
-				"svg",
-			]),
-		).toContain("<svg");
+		const rightCapture = runCanvasCli(canvas.base, vault, [
+			"browser",
+			"capture",
+			"--pane",
+			"right",
+			"--format",
+			"svg",
+		]);
+		expect(rightCapture).toContain("RIGHT ONLY MARKER");
+		expect(rightCapture).not.toContain("LEFT ONLY MARKER");
 		await browser.run(["click", ".pane-tab:nth-child(2)"]);
 		const transferred = await waitInspector(browser, "bound", "src/right.ts");
 		expect(transferred.pane).toContain("Pane B");

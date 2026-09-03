@@ -112,6 +112,10 @@ describe("package bin and help", () => {
 		expect(result.stdout, diagnostic).toContain(
 			"               check only: 6 warnings, 7 errors, 8 indeterminate coverage.",
 		);
+		expect(result.stdout, diagnostic).toMatch(/named-board[\s\S]*need no browser connection/i);
+		expect(result.stdout, diagnostic).toMatch(
+			/only `browser \.\.\.` commands inspect or control a live pane/i,
+		);
 	});
 
 	test("every declared command and subcommand has contract-owned help", async () => {
