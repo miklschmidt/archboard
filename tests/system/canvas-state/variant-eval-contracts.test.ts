@@ -17,19 +17,26 @@ const evals = (
 ).evals;
 
 describe("variant eval contracts", () => {
-	for (const contract of [
-		{ id: 5, path: "tests/system/canvas-state/branch-compare.test.ts" },
-		{ id: 7, path: "tests/system/canvas-state/side-by-side.test.ts" },
-	] as const) {
-		test(`eval ${contract.id} names its final native behavioral owner`, () => {
-			const evaluation = evals.find(({ id }) => id === contract.id);
-			expect(evaluation).toBeDefined();
-			expect(evaluation?.graded_by).toBe(contract.path);
-			expect(evaluation?.files).toEqual([]);
-			expect(evaluation?.expected_output).toContain(contract.path);
-			expect(evaluation?.expected_output).not.toMatch(
-				/scripts\/check-(?:branch-compare|side-by-side)\.mjs/,
-			);
-		});
-	}
+	test("eval 5 names its native branch-comparison owner", () => {
+		const evaluation = evals.find(({ id }) => id === 5);
+		expect(evaluation).toBeDefined();
+		expect(evaluation?.graded_by).toBe("tests/system/canvas-state/branch-compare.test.ts");
+		expect(evaluation?.files).toEqual([]);
+		expect(evaluation?.expected_output).toContain(
+			"tests/system/canvas-state/branch-compare.test.ts",
+		);
+		expect(evaluation?.expected_output).not.toContain("scripts/check-branch-compare.mjs");
+	});
+
+	test("eval 7 keeps human grading backed by the live-session owners", () => {
+		const evaluation = evals.find(({ id }) => id === 7);
+		expect(evaluation).toBeDefined();
+		expect(evaluation?.graded_by).toBe("human");
+		expect(evaluation?.files).toEqual([
+			"tests/system/browser/selection-inspector.test.ts",
+			"tests/system/browser/server-update-ordering.test.ts",
+		]);
+		expect(evaluation?.expected_output).toContain("browser show payments@option-a --pane right");
+		expect(evaluation?.expected_output).not.toContain("scripts/check-side-by-side.mjs");
+	});
 });

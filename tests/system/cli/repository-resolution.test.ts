@@ -312,6 +312,7 @@ test("an interrupted repository command reaps its detached Git group", async () 
 	const marker = join(fixture.root, "git-pids");
 	const descendantMarker = `${marker}.descendant`;
 	const helperReady = `${marker}.helper-ready`;
+	const releaseLeader = `${marker}.release-leader`;
 	const setsid = Bun.which("setsid");
 	if (!setsid) throw new Error("setsid is required for leader-exited cleanup coverage.");
 	mkdirSync(bin);
@@ -325,7 +326,8 @@ test("an interrupted repository command reaps its detached Git group", async () 
 ) &
 helper=$!
 while [ ! -e ${JSON.stringify(descendantMarker)} ] || [ ! -e ${JSON.stringify(helperReady)} ]; do sleep 0.01; done
-echo "$$ $(cat ${JSON.stringify(descendantMarker)}) $helper" > ${JSON.stringify(marker)}
+echo "$$ $(cat ${JSON.stringify(descendantMarker)}) $helper $PPID" > ${JSON.stringify(marker)}
+while [ ! -e ${JSON.stringify(releaseLeader)} ]; do sleep 0.01; done
 exit 0
 `,
 	);
@@ -355,18 +357,24 @@ exit 0
 			await Bun.sleep(5);
 		}
 		gitPids = readFileSync(marker, "utf8").trim().split(/\s+/u).map(Number);
-		const [leader, descendant, helper] = gitPids;
-		if (leader === undefined || descendant === undefined || helper === undefined)
+		const [leader, descendant, helper, ownerGroup] = gitPids;
+		if (
+			leader === undefined ||
+			descendant === undefined ||
+			helper === undefined ||
+			ownerGroup === undefined
+		)
 			throw new Error(`Malformed fake Git process record: ${JSON.stringify(gitPids)}`);
-		await waitForProcessAbsence(leader);
 		expect(
 			processExists(descendant),
-			"the redirected Git descendant residue must outlive its leader",
+			"the redirected Git descendant must exist before its leader exits",
 		).toBeTrue();
 		expect(
-			processGroupExists(leader),
-			"the leader-exited Git group must remain observable",
+			processGroupExists(ownerGroup),
+			"the detached Git owner group must be observable",
 		).toBeTrue();
+		writeFileSync(releaseLeader, "released\n");
+		await waitForProcessAbsence(leader);
 		let cliExited = false;
 		void child.exited.then(() => {
 			cliExited = true;
@@ -375,14 +383,13 @@ exit 0
 		process.kill(child.pid, "SIGTERM");
 		await Bun.sleep(Math.floor(GIT_PROCESS_GROUP_CLEANUP_MS / 2));
 		expect(cliExited, "the CLI exited before the post-leader Git group proof settled").toBeFalse();
-		expect(processGroupExists(leader)).toBeTrue();
 		killGroup(helper);
 		await within(child.exited, "the interrupted CLI leader did not settle");
 		await within(
 			output.then(() => undefined),
 			"the interrupted CLI pipes did not settle",
 		);
-		await waitForGroupAbsence(leader);
+		await waitForGroupAbsence(ownerGroup);
 		for (const pid of gitPids) {
 			expect(processExists(pid), `Git process ${pid} remained when the CLI exited`).toBeFalse();
 		}
@@ -391,7 +398,7 @@ exit 0
 	} finally {
 		try {
 			const groups = new Set(
-				[gitPids[0], gitPids[2], child.pid].filter((pid): pid is number => pid !== undefined),
+				[gitPids[2], gitPids[3], child.pid].filter((pid): pid is number => pid !== undefined),
 			);
 			for (const pgid of groups) killGroup(pgid);
 			try {

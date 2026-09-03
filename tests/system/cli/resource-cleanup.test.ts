@@ -246,7 +246,9 @@ describe("CLI resource cleanup", () => {
 		expect(childError).toBeInstanceOf(Error);
 		const death = childError as Error & { code?: string };
 		expect(death.code).toBe("CANVAS_PROCESS_DIED");
-		expect(death.message).toBe("Owned canvas pid unknown died (has no live generation).");
+		expect(death.message).toBe(
+			`Owned canvas pid unknown died (has no live generation).\nOwned canvas paths: ${JSON.stringify(canvas.paths)}`,
+		);
 		expect(death.cause).toBe(intendedError);
 	}, 30_000);
 });
