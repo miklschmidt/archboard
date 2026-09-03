@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 19:25'
+updated_date: '2026-09-03 19:36'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -75,6 +75,14 @@ Define only the browser-facing workbench state and user-intent model that has no
 22. Route initial and delta snapshots through one post-construction spontaneous-terminal acknowledgement helper; retire owner-reported spontaneous terminals immediately when the connection registry is empty.
 23. Export DeepReadonlyApprovalRequest, use it for every approval request callback/view exposure, and remove the test-only getRequest method.
 24. Add deterministic final-presenter, zero-connection, initial-snapshot, and real broker-to-gateway child-exit owners. Run only the requested focused tests and static gates, commit separately, and callback the parent.
+
+25. Fifth remediation: derive queue submissions from Pick<SessionQueuedSubmission, "id" | "input"> and voice transcript entries from the selected RealtimeTranscriptRecord fields, keeping browser field projection closed.
+
+26. Derive ordinary-approval presenter context only from a fresh pane binding during disconnect; retain the lease-captured binding only for thread-link, realtime, and dynamic teardown callbacks.
+
+27. Add a focused lease-then-relink regression that cancels and acknowledges the current-link approval while proving the old captured lease context cannot clear current durable link state.
+
+28. Run only focused projection, gateway, and approval owners plus both TypeScript configs, exact lint, format, boundary, and diff checks; commit separately and callback the parent.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -110,6 +118,12 @@ Fourth review remediation:
 - Initial and delta snapshots use the same terminal-ID collector and acknowledgement action. A constructed initial snapshot carries a spontaneous terminal once; the next snapshot omits it. With no live connections, the gateway asks the owner for after-publish terminals and retires them immediately.
 - codex-approvals exports DeepReadonly and DeepReadonlyApprovalRequest. ApprovalOwnerView, getCurrentBinding, and getSpokenEligibilityFacts use the deep readonly request. The unused getRequest method was removed. TypeScript expectation checks reject nested mutation at each public seam.
 Red evidence against d15914f2: the focused base archive failed zero-connection retirement, initial-snapshot acknowledgement, and final-presenter preservation; the composed base archive separately failed to publish the child-exit terminal. Both disposable archives were removed. Green evidence: 93 focused approval, gateway, and composed lifecycle tests passed with 1002 assertions. Root and frontend tsc, oxlint, full format check, boundary probes, and git diff check passed. Broad system, browser, module, repository, full test, and check lanes were not run.
+
+Fifth review remediation derives queue projection submissions directly from Pick<SessionQueuedSubmission, "id" | "input"> and transcript entries from a five-field Pick<RealtimeTranscriptRecord>. The copied queue shape and string-widened transcript status are gone; owner changes at those selected fields now reach TypeScript while browser output selection stays in projectCodexBrowserState.
+
+Disconnect now reads the current pane binding for BrowserPresenterContext every time. The lease-captured state.binding remains exclusive to thread-link, realtime, and dynamic teardown. The regression claims revision 0, relinks to revision 1, presents a current-thread approval, then closes the final presenter. Against c2150567 it failed because the approval remained; after the fix the approval is retired and the simulated durable current-link state remains bound.
+
+Validation: 94 focused approval, projection, gateway, and composed canvas lifecycle tests passed with 1005 assertions. Root and frontend tsc passed. Oxlint passed. The full format check passed across 1008 files. Derived-type boundary probes and git diff checks passed. No broad system, serial-browser, module, repository, full-test, or check lane ran.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -166,5 +180,17 @@ author: @codex
 created: 2026-09-03 19:25
 ---
 Fourth review remediation is green at every requested focused boundary. TASK-143.01.02 remains In Progress for parent rereview.
+---
+
+author: @codex
+created: 2026-09-03 19:34
+---
+Fifth review remediation started at c2150567. TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 19:36
+---
+Fifth review remediation is green at every requested focused boundary. TASK-143.01.02 remains In Progress for parent rereview.
 ---
 <!-- COMMENTS:END -->
