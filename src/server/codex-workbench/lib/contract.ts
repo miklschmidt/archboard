@@ -317,6 +317,8 @@ export interface CodexWorkbenchGatewayOptions {
 	readonly actions: BrowserWorkbenchActions;
 	readonly lifecycle?: BrowserLifecyclePort;
 	readonly leaseLedger?: BrowserLeaseLedger;
+	/** Complete encoded snapshot bound, shared with projection producers that retain bounded data. */
+	readonly snapshotMaxBytes?: number;
 	readonly now?: () => number;
 }
 

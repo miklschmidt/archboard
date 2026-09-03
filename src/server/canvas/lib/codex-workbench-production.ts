@@ -44,7 +44,11 @@ import {
 	createCanvasDynamicOperationIdAdapter,
 	type CanvasDynamicLifecycleOwner,
 } from "./codex-workbench-operation-lifecycle.js";
-import { createCanvasTimelineOwner, type CanvasTimelineOwner } from "./codex-workbench-timeline.js";
+import {
+	createCanvasBrowserProjectionBudget,
+	createCanvasTimelineOwner,
+	type CanvasTimelineOwner,
+} from "./codex-workbench-timeline.js";
 
 export interface CanvasCodexWorkbenchHost {
 	readonly checkoutRoot: string;
@@ -491,6 +495,7 @@ export function createCanvasCodexWorkbenchInstallation(
 			}),
 			gateway: (created) => {
 				const dynamic = requireOwners(created).approval;
+				const budget = createCanvasBrowserProjectionBudget();
 				if (owners.timeline === null) {
 					owners.timeline = createCanvasTimelineOwner({
 						session: requireCreated(created, "session"),
@@ -500,12 +505,14 @@ export function createCanvasCodexWorkbenchInstallation(
 							if (!owners.approvalProjectionInstalled) return;
 							for (const listener of owners.projectionListeners) listener();
 						},
+						budget,
 					});
 				}
 				return createCanvasBrowserGatewayOptions({
 					components: created,
 					dynamicApprovals: dynamic,
 					timeline: owners.timeline,
+					budget,
 					state: owners.browserState,
 					leaseLedger: host.browserLeaseLedger,
 					checkoutRoot: host.checkoutRoot,
