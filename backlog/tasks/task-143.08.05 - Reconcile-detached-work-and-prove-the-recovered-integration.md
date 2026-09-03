@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 12:18'
+updated_date: '2026-09-03 12:24'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -165,6 +165,10 @@ The production contract was already correct and unchanged: board creation atomic
 Authoritative gate A14 at 12b8850525d1a4b05299724e1b2ce48bc45376ef: lint, formatting, both type checks, frontend build, 1,902/1,902 module tests, 356/356 serial system tests, and 152/152 repository-policy tests passed. The first serial browser owner completed all measured workload actions but its teardown parsed one partial strace line, 3759291 ???( <unfinished ...>, after the tracer PIDs disappeared. Unit lSJU1A2X exited normally with status 1 after 6m36.833s, CPU 7m35.346s, 5.5G peak, and 0B swap; it is inactive/dead with MainPID=0, empty ControlGroup, and absent cgroup.
 
 The partial line was not an unmatched fsync and the same owner had passed A13, so this was a trace-finalization observation race rather than a product write failure. The existing process-absence poll remains. The owner now also polls the parsed trace through the existing bounded browser poll until no incomplete record remains; a permanently incomplete syscall or malformed line still times out and fails. Focused canonical browser unit KGiSIgPJ passed the full 10,000-element performance owner with 64 assertions in 74.51 s, recording 13 fsyncs, 16.7 ms median frames, 16.8 ms worst report-correlated frame, runtime 1m14.606s, CPU 1m36.837s, 5.4G peak, and 0B swap. No timeout, performance budget, product path, lint/type rule, inventory, or assertion was weakened.
+
+Authoritative gate A15 at b1262780a6b541f1344a86e315266be256f23fb1: lint, formatting, both type checks, frontend build, and 1,902/1,902 module tests passed. The full-run-only subprocess stall reproduced in the serial system lane: the jq and guide-sync workflow cases each hit Bun implicit 5,000 ms case timeout while the intervening strict-exit case passed in 29.19 ms; after those forced child terminations the repository-session owner timed out at 30,000 ms and the runner stopped producing output with no child processes. I stopped only exact unit QYMD5rXL. It exited 143/SIGTERM after 4m1.586s, CPU 4m50.672s, 1.9G peak, and 0B swap; it ended MainPID=0, empty ControlGroup, and absent cgroup. This second full-run reproduction, together with green isolated and complete system-lane runs, shows the implicit aggregate test default is the unstable boundary and the later repository failure is cascade damage after Bun terminates a workflow child.
+
+Remediation adds TEST_CLI_WORKFLOW_CASE_TIMEOUT_MS=15,000 in the shared timing authority and applies it only to the three command-workflow cases that launch subprocesses. Normal focused timings remain 21.18 ms, 41.13 ms, and 21.53 ms; 15 seconds is a finite 3x margin over the observed nested-run stall, not a product SLA. All result, signal, stdout, stderr, schema, file, and repository assertions remain unchanged, and the non-subprocess registry test retains the default. Focused unit toDG9ECj passed 4/4 with 95 assertions in 233 ms (279 ms runtime, 332 ms CPU, 96.4M peak, 0B swap). No product timeout, test inventory, behavior assertion, lint, or type rule was weakened.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

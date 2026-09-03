@@ -520,6 +520,8 @@ export const TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS = 5_000;
 export const TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS = 1_000;
 /** Covers 80 real sentinel lifecycles plus one complete bounded process-group cleanup. */
 export const TEST_BOARD_INSPECTION_PACKAGE_LIFECYCLE_CASE_TIMEOUT_MS = 15_000;
+/** Aggregate CLI workflow owners clear full-gate subprocess stalls beyond Bun's implicit 5s case default. */
+export const TEST_CLI_WORKFLOW_CASE_TIMEOUT_MS = 15_000;
 // ── Canvas subprocesses owned by checks (TASK-086) ───────────────────────
 
 /** Canvas identity startup stays below TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS with bounded shutdown room. */
