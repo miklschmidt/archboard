@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 13:33'
+updated_date: '2026-09-03 13:48'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -212,6 +212,12 @@ The cross-workflow owner now activates the already-proven focused and enabled Ca
 Authoritative gate A23 at 9db1b759: lint, formatting, both type checks, frontend build, and 1,902/1,902 module tests passed. The serial system lane later reproduced the host-level synchronous child stall recorded in A15/A16: the fourth jq producer and a later Git status each received SIGTERM only at the explicit 15-second case bound, then the two-repository owner timed out after 30 seconds and Bun spun at roughly one core with no child processes and no output. Live exact-unit evidence showed MemoryCurrent=326,238,208, MemoryPeak=2,143,756,288, MemorySwapCurrent=0, TasksCurrent=27, and no process descendants beyond the Bun runner chain. Because the gate was already invalid and the runner had spun for several minutes after its last failure, I interrupted only exact unit archboard-task143-worker-command-K3gz3ZML.service; the wrapper invocation returned 124 and is not accepted. Cleanup left the unit inactive/dead with MainPID=0, empty ControlGroup, and an absent cgroup.
 
 The exact implicated owner passed 4/4 with 95 assertions in 405 ms under the required 20-second diagnostic watchdog and capped unit archboard-task143-worker-command-4csdFkCp.service, consuming 506 ms CPU and 93.2M peak with 0B swap. Together with A20-A22 system-lane passes and the cross-command nature of this recurrence, this remains an intermittent host/Bun runner stall rather than an observable repository defect. No timeout, test, product, lint, or type mutation is justified; a fresh authoritative gate will exercise the unchanged source.
+
+Authoritative gate A24 at c6429184: lint, formatting, both type checks, frontend build, 1,902/1,902 module tests, 356/356 serial system tests, and 152/152 repository-policy tests passed. The human-performance parser regression passed and its full workflow completed every measurement, but final tracer validation again retained one newline-terminated unclassified record. Exact unit archboard-task143-worker-command-twUyeVZI.service exited from the command with status 1 after 6m49.888s, consumed 7m30.406s CPU, peaked at 5.4G with 0B swap, and cleanup left the unit inactive/dead with MainPID=0, empty ControlGroup, and an absent cgroup. Reordering diagnostic fields and repeating the complete owner exposed the exact record on repetition 2: PID ???( <unfinished ...>. Capped unit archboard-task143-worker-command-Lpqdbhpj.service exited normally after 2m59.339s with 5.4G peak and 0B swap; repetition 1 had passed, proving a shutdown-timing variant.
+
+The parser now classifies only the exact undecodable unfinished-syscall spelling as tracer lifecycle noise. This is not successful fsync evidence and cannot affect the retained complete-fsync count bounds; completed unknown, failed, malformed, unmatched resumed, and newline-terminated unfinished fsync records remain explicit incomplete evidence. The deterministic parser case covers deferred unterminated bytes, rejection once a malformed record terminates, and isolation of the exact terminal tracer record; it passed under capped unit archboard-task143-worker-command-kPdxr0sR.service. The complete 10,000-element owner then passed three consecutive real shutdown repetitions under capped unit archboard-task143-worker-command-40N2zHhH.service in 3m46.516s with 5.4G peak and 0B swap. No product behavior, fsync count bound, cleanup assertion, browser inventory, timeout, lint rule, or type rule was weakened.
+
+During this remediation the canonical codex/task-143-144-workbench ref advanced from c2d86ef92b5c902bcf459ce801e75e0dcf7d59cd to 7d55ebebf8198409e6082287aef907676375300e. The coordinator identified that commit as documentation-only TASK-148.12 completion and directed this fixed-base validation to continue. This checkout remains based on the approved c2d86ef9 target; final handoff will explicitly preserve 7d55ebeb for parent integration after review.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

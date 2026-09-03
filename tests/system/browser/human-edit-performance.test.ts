@@ -76,11 +76,11 @@ const realServer = path.join(repoRoot, "src/server.ts");
 const tracedServer = path.join(import.meta.dir, "fixtures/traced-canvas-process.ts");
 const responseDelayMs = REPORT_PROGRESS_MS + TEST_BROWSER_POLL_MS * 6;
 
-test("fsync trace parsing defers an unterminated writer tail", () => {
+test("fsync trace parsing defers a writer tail and isolates terminal tracer noise", () => {
 	const traceFile = path.join(browserTestRoots().ownerRoot, "partial-fsync.trace");
 	fs.writeFileSync(traceFile, "101 fsync(9) = 0\n102 fsync(");
 	expect(readFsyncTrace(traceFile)).toEqual({ calls: ["101 fsync(9) = 0"], incomplete: [] });
-	fs.appendFileSync(traceFile, "9) = -1 EIO\n");
+	fs.appendFileSync(traceFile, "9) = -1 EIO\n103 ???( <unfinished ...>\n");
 	expect(readFsyncTrace(traceFile)).toEqual({
 		calls: ["101 fsync(9) = 0"],
 		incomplete: ["102 fsync(9) = -1 EIO"],
