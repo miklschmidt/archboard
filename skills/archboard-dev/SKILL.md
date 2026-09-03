@@ -50,28 +50,31 @@ fails extracting a tarball — run it again.
 
 ## Verify the boundary that changed
 
-Named-board work is browser-free. Exercise reads, writes, Mermaid conversion,
-PNG/SVG rendering, finding close-ups, inspection, snapshots, branches, and
-exports against a configured vault with zero WebSocket clients. Do not open a
-pane as setup for those checks.
+Named-board work is browser-free. Use a disposable vault and one explicitly
+named disposable board. Confirm zero WebSocket clients before exercising reads,
+writes, Mermaid conversion, PNG/SVG rendering, finding close-ups, inspection,
+snapshots, branches, and exports. Do not open a pane as setup for those checks.
 
 ```bash
-./bin/canvas clear --board scratch --yes --doing "emptying scratch for a probe"
-cat <<'EOF' | ./bin/canvas add --board scratch --doing "drawing a probe box"
+export ARCHBOARD_VAULT=/path/to/disposable-vault
+./bin/canvas start
+./bin/canvas status # browserClients must be 0
+probe_board=archboard-dev-probe
+./bin/canvas board new "$probe_board" --level module
+cat <<'EOF' | ./bin/canvas add --board "$probe_board" --doing "drawing a probe box"
 [{"type":"rectangle","x":100,"y":100,"width":300,"height":120,
   "backgroundColor":"#e3f2fd",
   "label":{"text":"Probe"},
   "customData":{"archboard":{"node":"probe","kind":"service"}}}]
 EOF
-./bin/canvas describe --board scratch                # reads as 1 node, not 1 rectangle
-./bin/canvas query --board scratch --type rectangle  # customData + presented links visible here
+./bin/canvas describe --board "$probe_board"                # reads as 1 node, not 1 rectangle
+./bin/canvas query --board "$probe_board" --type rectangle  # metadata remains visible
 ```
 
 Every command that touches a board names it, and one that does not is refused
-(ADR 0009). `scratch` is what a lone pane holds, so it is the board a probe
-usually wants. Every command that _changes_ a board also says what it is doing,
-and is refused without it (TASK-095) — including a throwaway probe, because the
-person at the wall is watching a box appear on their canvas either way.
+(ADR 0020). Every command that _changes_ a board also says what it is doing and
+is refused without it (TASK-095). The browser-client count remains zero through
+this probe.
 
 Metadata goes under `customData.archboard` (ADR 0003) — namespaced, never flat,
 because the Obsidian plugin writes its own top-level keys. The explicit
@@ -91,11 +94,15 @@ it.
 Elements that came back through the browser are tagged
 `"source": "frontend_sync"`.
 
-To exercise explicit live interaction, click the box in the browser and then:
+To exercise explicit live interaction, click the box in the browser. Read the
+structured selection, extract its `elementIds` with the existing Bun runtime,
+and pass those ids to the board write:
 
 ```bash
-./bin/canvas browser selection --pane <spec> --text # what the human picked
-./bin/canvas promote --board scratch --kind service --name "Probe" \
+selection_json="$(./bin/canvas browser selection --pane left)"
+ids="$(bun -e 'process.stdout.write(JSON.parse(await Bun.stdin.text()).elementIds.join(","))' \
+  <<<"$selection_json")"
+./bin/canvas promote --board "$probe_board" --ids "$ids" --kind service --name "Probe" \
   --path src/runtime/engine/promote.ts --doing "calling the probe box a service"
 ```
 

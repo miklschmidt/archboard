@@ -218,7 +218,8 @@ board names differ only in case.
 ## Telling an agent which board covers this repo
 
 Nothing connects a repository to its board automatically. An agent in a fresh
-repo knows archboard exists, from the skill, but not which board to open.
+repo knows archboard exists, from the skill, but not which persisted board
+describes the repository.
 
 That is what the "Boards for this repo" section of the installed block is for.
 Fill it in once the repo has a board:
@@ -227,7 +228,7 @@ Fill it in once the repo has a board:
 ### Boards for this repo
 
 - Boards: `payments` is the architecture as it stands, `payments@*` are
-  proposals. Show with `archboard browser show payments --pane primary`.
+  proposals.
 - Level vocabulary: `service` means one deployable here, not one class.
 - Conventions and gotchas: the worker boxes are drawn from the queue's side,
   because that is how the on-call runbook reads.
@@ -235,3 +236,12 @@ Fill it in once the repo has a board:
 
 Every agent that reads the file then knows where to look, and what the drawing
 conventions are before it starts adding to them.
+
+### Optional live session
+
+When a person asks to see that persisted board in a connected browser, show it
+on an explicit pane:
+
+```bash
+archboard browser show payments --pane primary
+```

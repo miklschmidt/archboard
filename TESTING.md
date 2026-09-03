@@ -140,7 +140,8 @@ Archboard never picks for you. See ADR 0006.
 **A command without `--board` fails, and that is the design.** There is no
 active board and no default: two panes hold two boards, so "the board" would be
 a guess, and a guess that is right most of the time is the kind of mistake that
-takes longest to find. The refusal lists the boards that are open (ADR 0009).
+takes longest to find. The refusal lists persisted boards from the configured
+vault (ADR 0020).
 
 ## If something looks broken
 
