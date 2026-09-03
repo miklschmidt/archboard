@@ -265,6 +265,29 @@ describe("Codex workbench browser recovery and delivery", () => {
 		expect(recovered.snapshot().snapshot.approvals).toEqual([]);
 	});
 
+	test("uses the fresh pane link for approval teardown after a leased presenter relinks", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		connection.claimLease();
+		const currentThread = value.model.ThreadIdSchema.parse(
+			value.authorities.identity.decoder.adoptThreadId("relinked-thread"),
+		);
+		const currentLink = value.binding().link;
+		if (currentLink.state !== "executable") throw new Error("the fixture link must be executable");
+		value.setLink({ ...currentLink, threadId: currentThread });
+		const approval = value.makeOrdinaryApproval(currentThread);
+		value.setOrdinaryApproval(approval);
+		expect(connection.snapshot().snapshot.approvals).toEqual([
+			expect.objectContaining({ requestId: approval.request.requestId }),
+		]);
+
+		await connection.close();
+
+		expect(value.durableState().semanticBound).toBeTrue();
+		const recovered = value.gateway.connect("browser-after-relink", value.paneId);
+		expect(recovered.snapshot().snapshot.approvals).toEqual([]);
+	});
+
 	test("waits for both close settlements after revoking browser authority", async () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);

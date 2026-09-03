@@ -64,7 +64,7 @@ export interface GatewayHarness {
 	readonly setOrdinaryDisconnectError: (error: unknown) => void;
 	readonly setDynamicDisconnectError: (error: unknown) => void;
 	readonly binding: () => ThreadLinkBindingSnapshot;
-	readonly makeOrdinaryApproval: () => ApprovalOwnerView;
+	readonly makeOrdinaryApproval: (targetThreadId?: ThreadId) => ApprovalOwnerView;
 	readonly makeDynamicApproval: (
 		commandId: BrowserCommandId,
 		targetThreadId?: ThreadId,
@@ -210,9 +210,9 @@ export function createGatewayHarness(
 			create: action("threadLink.create"),
 			attach: action("threadLink.attach"),
 			relink: action("threadLink.relink"),
-			onBrowserDisconnect: (_context, reason) => {
+			onBrowserDisconnect: (context, reason) => {
 				durableDisconnects.push(`semantic:${reason}`);
-				semanticBound = false;
+				if (context.linkRevision === revision) semanticBound = false;
 			},
 		},
 		text: {
@@ -277,10 +277,10 @@ export function createGatewayHarness(
 				)
 					ordinaryApproval = null;
 			},
-			onBrowserDisconnect: (_context, reason) => {
+			onBrowserDisconnect: (context, reason) => {
 				disconnects.push("ordinary");
 				disconnectReasons.push(reason);
-				ordinaryApproval = null;
+				if (context.linkRevision === revision) ordinaryApproval = null;
 				return settleDisconnect("ordinary", ordinaryDisconnectGate, ordinaryDisconnectError);
 			},
 		},
@@ -353,13 +353,13 @@ export function createGatewayHarness(
 		revision += 1;
 		emitProjectionChange();
 	};
-	const makeOrdinaryApproval = (): ApprovalOwnerView =>
+	const makeOrdinaryApproval = (targetThreadId = threadId): ApprovalOwnerView =>
 		commandApprovalOwnerFixture({
 			identity: authorities.identity,
 			childId,
 			epoch,
 			requestId,
-			threadId,
+			threadId: targetThreadId,
 			turnId,
 			itemId,
 			approvalId,
