@@ -216,8 +216,9 @@ import {
 } from "../../code-opener/index.js";
 import { createCanvasHttpServer } from "./http-server.js";
 import {
+	canvasStartupOwnershipRecord,
 	canvasStartupTerminalRecord,
-	writeCanvasStartupTerminalRecord,
+	writeCanvasStartupProtocolRecord,
 } from "../../../shared/canvas-startup-terminal/index.js";
 import { canvasStartupFailureMessage } from "./startup-error.js";
 
@@ -4834,6 +4835,11 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 	const checkoutRoot = path.resolve(moduleDir, "..");
 	return {
 		checkoutRoot,
+		onCodexProcessGroupOwned: (codexGroup) => {
+			writeCanvasStartupProtocolRecord(
+				canvasStartupOwnershipRecord({ canvasPid: process.pid, codexGroup }),
+			);
+		},
 		semanticPublisher: {
 			feed: changeFeed,
 			feedId: changeFeed.status().feedId,
@@ -5127,7 +5133,7 @@ async function startServer(): Promise<void> {
 	const reportStartupTerminal = (message: string | null = null): void => {
 		if (terminalReported) return;
 		terminalReported = true;
-		writeCanvasStartupTerminalRecord(
+		writeCanvasStartupProtocolRecord(
 			canvasStartupTerminalRecord({
 				canvasPid: process.pid,
 				cleanupProven: cleanupProven(),

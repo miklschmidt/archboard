@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 04:05'
+updated_date: '2026-09-03 04:29'
 labels: []
 dependencies:
   - TASK-143.08.03
@@ -48,6 +48,14 @@ Keep ADR 0019's mandatory private Codex child. Exactly one package-local codex a
 6. Run only the focused changed owners, focused formatting/lint/type checks that fit the assigned scope, and git diff checks. Commit coherent conventional slices and leave every acceptance criterion unchecked with TASK-143.08.04 In Progress for parent review.
 
 7. Remediate review findings with one application-owned terminal-cleanup acknowledgement before outer force, process-state observation for recovery acquisition, retained stderr ownership after readiness, and partial executable mocks; consolidate focused lifecycle and public-command owners.
+
+8. Replace the one-shot fd3 wait with one bounded launcher cleanup state machine: accept exact Codex group ownership before shutdown, prefer application cleanup proof, and transfer authority under SIGSTOP to guarded TERM/KILL group cleanup before reaping the exact outer canvas.
+
+9. Give the cleanup state machine injected time and process operations. Cover proof, unproven cleanup, malformed protocol, fd close, and deadline without stacking production waits; use compressed preload-only boundaries for the public wiring owner.
+
+10. Move the unique production crash/replacement census out of the unrelated composed thread workflow into one narrow independent process-contract owner, preserving dispatch revocation, exact prior-group-zero-before-replacement, and clean shutdown assertions.
+
+11. Re-run the prior focused public refusal, signed-out, concurrency, reload, logging, lifecycle, and process owners serially; audit exact process identities and residue before rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -64,6 +72,14 @@ Review remediation opened at dd57c4d03418084fcdae1071cdfcdb8648b83d40. Valid fin
 Standards/spec remediation: the detached launcher now gives fd 2 an independent sink and receives startup failure plus terminal-cleanup proof on a dedicated fd 3 record. Canvas lifetime publishes proof only after every entered resource stops successfully; failed-start force cannot SIGKILL the outer canvas before that proof, so the inner Codex owner remains alive through exact group TERM/KILL verification. Recovery acquisitions now subscribe to codex-process snapshots and convert terminal group-cleanup or replacement-spawn states into the exact failed acquisition before any next onChild; the retained owner remains inspectable while public dispatch stays revoked. Process-contract executable mocks now spread the actual module.
 
 Remediation evidence: 27 focused canvas lifecycle/terminal module checks, 13 codex-process owner checks, 3 real group cleanup checks, 8 public production-cleanup checks, 3 HTTP lifetime checks, and 2 startup-signal checks passed. The force-boundary public owner took 18.73s with a 5.5s delayed graph and a TERM-resistant leader/descendant, then proved the exact canvas identity, both Codex start identities, and the whole process group absent. The logged-request owner proved HTTP 500 was written to the file log and /health remained live. Two composed process owners now pass the repaired mocks and reach the pre-existing unrelated threadLinkCreate not_delivered baseline; they are not claimed as green evidence.
+
+Second review remediation at 73212b97 replaces the one-shot fd3 terminal wait with protocol v2 and one bounded cleanup state machine. Codex-process publishes every exact group identity before readiness. On cleanup error, malformed input, early fd close, or deadline, the launcher first proves the canvas stopped, then owns TERM/KILL and zero-census for every transferred group before it reaps the outer pid. Without an exact transfer it leaves the outer owner inspectable and fails closed instead of orphaning an unknown group.
+
+The public cleanup-error owner now injects a 350 ms readiness bound, 150 ms application grace, and 900 ms total cleanup deadline through preload-only partial mocks. It keeps the real TERM-resistant leader and descendant, proves both exact identities, the whole group, and the outer canvas absent, and passes in 0.84 s instead of 18.76 s. Production defaults remain 8 s readiness, 5 s grace, and 10 s total cleanup.
+
+Moved crash/replacement evidence out of the unrelated composed thread workflow. The independent production owner passes in 1.68 s, observes dispatch revocation, records an empty prior-group census inside the replacement process at its spawn boundary, observes one replacement, and proves its exact group empty on shutdown. The known threadLinkCreate not_delivered baseline remains untouched and is not validation evidence.
+
+Final focused serial validation: 79 tests and 461 expectations passed across the cleanup state machine, codex-process lifecycle, application/workbench lifecycle, production initialization, all public executable refusals, concurrent start, signed-out/logged-error state, reload and persistent-state preservation, HTTP lifetime, startup signal cleanup, and crash replacement. Focused strict type checking for the new protocol/state machine passed. Focused Oxlint, Oxfmt, and git diff checks passed before the final audit.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

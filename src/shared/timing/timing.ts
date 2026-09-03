@@ -290,6 +290,9 @@ export const CODEX_TERM_GRACE_MS = 5_000;
 /** Composed-shutdown cap classification. Pulls against realtime stop plus TERM grace. */
 export const CODEX_COMPOSED_SHUTDOWN_MS = 10_000;
 
+/** Public canvas readiness classification. Pulls against mandatory Codex startup readiness. */
+export const CANVAS_STARTUP_READINESS_MS = 8_000;
+
 /**
  * Bounds dynamic wait detection latency against app-server thread status
  * reads. Request uncertainty must contain a whole number of polls so the last

@@ -165,6 +165,8 @@ export interface CodexProcessOptions {
 	readonly executablePath: string;
 	readonly checkoutRoot: string;
 	readonly storage: CodexProcessStorageInput;
+	/** Publish each exact group identity to an outer cleanup owner before readiness. */
+	readonly onGroupOwned?: (identity: CodexProcessGroupIdentity) => void;
 	/** Secrets supplied by a caller are redacted before process diagnostics are retained. */
 	readonly diagnosticSecrets?: readonly string[];
 }
@@ -1217,6 +1219,16 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 			}
 		});
 		child.once("close", (code, signal) => handleClosed(record, { code, signal }));
+		try {
+			options.onGroupOwned?.(group);
+		} catch (cause) {
+			const error = shutdownError(
+				`Could not publish the owned Codex process group to the application cleanup boundary: ${safeCauseMessage(cause)}.`,
+			);
+			terminalFailure(error);
+			rejectPendingStart(sanitizeProcessError(error));
+			void stop().catch(() => undefined);
+		}
 	}
 
 	function beginStart(): Promise<CodexProcessSnapshot> {
