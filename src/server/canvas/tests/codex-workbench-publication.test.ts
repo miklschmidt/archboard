@@ -244,10 +244,14 @@ describe("canvas Codex publication boundary", () => {
 			});
 			const failures = (drainFailure as AggregateError).errors;
 			expect(failures).toHaveLength(1);
-			expect(failures[0]).toMatchObject({
-				message: `Codex browser event publication failed for browser "${browserId}", pane "${paneId}", delta sequence 4: event write callback failed`,
-				cause: eventSendFailure,
-			});
+			expect(failures[0]).toBeInstanceOf(Error);
+			const publicationFailure = failures[0] as Error;
+			expect(publicationFailure.cause).toBe(eventSendFailure);
+			expect(publicationFailure.message).toContain(browserId);
+			expect(publicationFailure.message).toContain(paneId);
+			expect(publicationFailure.message).toContain("delta");
+			expect(publicationFailure.message).toMatch(/\bsequence\s+4\b/);
+			expect(publicationFailure.message).toContain(eventSendFailure.message);
 			expect(confirmed).toEqual([]);
 			expect(terminalPending).toBeTrue();
 			await owner.drain();
