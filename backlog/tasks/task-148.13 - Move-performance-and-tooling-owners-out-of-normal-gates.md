@@ -1,11 +1,11 @@
 ---
 id: TASK-148.13
 title: Move performance and tooling owners out of normal gates
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-03 17:33'
-updated_date: '2026-09-03 19:02'
+updated_date: '2026-09-03 19:10'
 labels: []
 dependencies:
   - TASK-143.08.05
@@ -68,13 +68,13 @@ Implementation must wait for TASK-143.08.05 and for reconciliation of the active
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Normal product tests cover only the supported topology of one Archboard server, one package-local bound Codex app-server session, and one human user/editor; concurrency remains only when it represents reachable behavior in that topology and has the cheapest credible stable owner.
-- [ ] #2 Normal development gates, bun run check, and hosted CI, including future restoration of browser coverage, exclude opt-in-only multi-server, multi-app-server, multi-user, stress, soak, load, capacity, resource-contention, performance/benchmark, runner-concurrency, test-infrastructure, upstream-tooling, and suite-speed/concurrency-proof owners.
-- [ ] #3 Every test owner and command reached by normal development and CI gates is classified repository-wide, including module, system, repository-policy, browser, scripts/adapters, and any other package/check inventory, by concrete regression and cheapest credible interface.
-- [ ] #4 Retained opt-in-only owners are reachable only through clearly named explicit suites or commands.
-- [ ] #5 Redundant, obvious-in-normal-use, duplicate, and tool-only tests are removed or merged rather than automatically relocated.
-- [ ] #6 Static policy uses the cheapest stable enforcement to prove normal and opt-in inventories are complete for their declared scopes, disjoint, and unreachable from the normal gate.
-- [ ] #7 No test exists solely to prove normal-suite speed improvement or browser-runner concurrency; direct one-off timing evidence records runtime removed from normal iteration without a slow performance gate.
+- [x] #1 Normal product tests cover only the supported topology of one Archboard server, one package-local bound Codex app-server session, and one human user/editor; concurrency remains only when it represents reachable behavior in that topology and has the cheapest credible stable owner.
+- [x] #2 Normal development gates, bun run check, and hosted CI, including future restoration of browser coverage, exclude opt-in-only multi-server, multi-app-server, multi-user, stress, soak, load, capacity, resource-contention, performance/benchmark, runner-concurrency, test-infrastructure, upstream-tooling, and suite-speed/concurrency-proof owners.
+- [x] #3 Every test owner and command reached by normal development and CI gates is classified repository-wide, including module, system, repository-policy, browser, scripts/adapters, and any other package/check inventory, by concrete regression and cheapest credible interface.
+- [x] #4 Retained opt-in-only owners are reachable only through clearly named explicit suites or commands.
+- [x] #5 Redundant, obvious-in-normal-use, duplicate, and tool-only tests are removed or merged rather than automatically relocated.
+- [x] #6 Static policy uses the cheapest stable enforcement to prove normal and opt-in inventories are complete for their declared scopes, disjoint, and unreachable from the normal gate.
+- [x] #7 No test exists solely to prove normal-suite speed improvement or browser-runner concurrency; direct one-off timing evidence records runtime removed from normal iteration without a slow performance gate.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -182,4 +182,12 @@ The compact ignore-value mutation table covers a separate option token, an equal
 Focused validation: inventory plus normal CI policy passed 56 tests and 69 assertions in 36 ms; root TypeScript passed in 1.57 s; frontend TypeScript passed in 0.30 s; exact Oxlint passed; exact Oxfmt passed in 1 ms; diff check passed. No broad or long lane ran during this remediation.
 
 No Bun test process remains. Focused tests left no inventory, browser-preflight, or package HTTP residue. The previously reported package-test residue remains pre-existing and untouched. Task stays In Progress for rereview.
+
+Canonical integration verification at f58da572: the focused normal inventory, CI policy, package read-only, and board-inspection semantic owners passed 71 tests with 103 assertions in 409 ms. Root and frontend TypeScript passed. Oxlint and Oxfmt passed on all 27 supported tracked paths changed by d716cbe9..f58da572; diff checks passed. Static policy retains 200/83/18/16 normal and 8/13/1/2 capacity/tooling/topology/browser-performance opt-in owners, with check and hosted CI unable to reach opt-in commands. TASK-148.12 candidate 4d16c2a1 remains absent. The earlier accidental selectorless Bun test was terminated and is unaccepted evidence.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Integrated the reviewed six-commit range. Normal inventory is 200 module, 83 system, 18 repository-policy, and 16 serial-browser owners; explicit opt-in capacity/tooling/topology/browser-performance inventories are 8/13/1/2. Redundant, tool-only, and capacity owners were removed, merged, or moved behind explicit commands. Fail-closed executable-Bun parsing and inventory policy keep check and hosted CI away from opt-in commands. Direct timing removes 9.68 s capacity work and roughly 95.9-116.84 s browser work from normal iteration. Dropped TASK-148.12 candidate 4d16c2a1. Verified with 71 focused tests, both TypeScript checks, scoped tracked-range Oxlint/Oxfmt, and diff checks; the earlier accidental partial Bun run is not accepted as evidence.
+<!-- SECTION:FINAL_SUMMARY:END -->
