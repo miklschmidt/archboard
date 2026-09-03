@@ -39,7 +39,7 @@ import {
 	settleBoardContent,
 	writeBoardContent,
 } from "./board-io.js";
-import { type BoardState, copyElements } from "./board-store.js";
+import { type BoardState, copyElements, recordBaseline } from "./board-store.js";
 import { hashBoardBytes } from "./board.js";
 import { type ChangeOrigin, changeFeed } from "./change-feed.js";
 import {
@@ -334,7 +334,13 @@ function releaseSavedHold<T>(
 		// The held document was written to the destination, but panes keep their
 		// source address. Carry the source note on the release itself so the pane
 		// replaces its scene before clearing pending held reporting.
+		const sourceFile = request.source.board.file;
+		if (!sourceFile) throw new Error(`Board "${request.source.key}" has no source note to adopt.`);
 		const source = readBoardContent(request.source.board);
+		if (!source.hash || source.version === undefined) {
+			throw new Error(`Board "${request.source.key}" source note has no conflict baseline.`);
+		}
+		recordBaseline(request.source.board, sourceFile, source.hash, source.version);
 		sourceDocument = {
 			identity: request.source.board.identity,
 			elements: presentElements(source.elements.values(), {
