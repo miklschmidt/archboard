@@ -52,6 +52,16 @@ export function createCanvasOrdinaryApprovalActions(
 			return { outcome: "delivered" };
 		},
 		acknowledge: (requestId) => approvals.acknowledge(requestId),
+		acknowledgePublished: (requestIds) => {
+			for (const requestId of new Set(requestIds)) {
+				try {
+					const view = approvals.view(requestId);
+					if (view.terminalDelivery === "after_publish") approvals.acknowledge(requestId);
+				} catch {
+					// Another lifecycle boundary may already have acknowledged the terminal.
+				}
+			}
+		},
 		onBrowserDisconnect: async (context, reason) => {
 			if (context.link.state !== "executable") return;
 			const authoredReason =
@@ -72,7 +82,10 @@ export function createCanvasOrdinaryApprovalActions(
 						snapshot.binding.link === exactPaneLink,
 				);
 			await Promise.all(
-				pending.map((snapshot) => approvals.cancel(snapshot.requestId, authoredReason)),
+				pending.map(async (snapshot) => {
+					await approvals.cancel(snapshot.requestId, authoredReason);
+					approvals.acknowledge(snapshot.requestId);
+				}),
 			);
 		},
 	};

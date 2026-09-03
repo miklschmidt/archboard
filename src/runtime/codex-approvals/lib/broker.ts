@@ -9,6 +9,7 @@ import type {
 	ApprovalSnapshot,
 	ApprovalState,
 	ApprovalOutcome,
+	ApprovalTerminalDelivery,
 	CodexApprovalBroker,
 	CodexApprovalBrokerOptions,
 	SpokenApprovalEffectPresentation,
@@ -16,7 +17,7 @@ import type {
 	TerminalApprovalState,
 } from "./contract.js";
 import { CodexApprovalError as ApprovalError } from "./contract.js";
-import { completeBinding, normalizeApprovalRequest } from "./request.js";
+import { completeBinding, normalizeApprovalRequest, rebindApprovalRequest } from "./request.js";
 import {
 	classifyResponseFailure,
 	fallbackResponse,
@@ -36,6 +37,7 @@ import type { TransportServerRequest } from "../../codex-transport/server-reques
 
 interface ApprovalRecord {
 	readonly request: ApprovalRequest;
+	readonly sourceRequest: TransportServerRequest;
 	readonly spokenEffectPresentation: SpokenApprovalEffectPresentation | null;
 	state: ApprovalState;
 	outcome: ApprovalOutcome | null;
@@ -45,6 +47,7 @@ interface ApprovalRecord {
 	settlementPromise?: Promise<ApprovalSettlement>;
 	settlementResolve?: (settlement: ApprovalSettlement) => void;
 	terminalClaimed: boolean;
+	terminalDelivery: ApprovalTerminalDelivery;
 }
 
 function isTerminal(state: ApprovalState): state is TerminalApprovalState {
@@ -184,6 +187,7 @@ export function createCodexApprovalBroker(
 		requestedState: TerminalApprovalState,
 		reason: string,
 		response: ApprovalResponse,
+		terminalDelivery: Exclude<ApprovalTerminalDelivery, null>,
 	): Promise<ApprovalSettlement> => {
 		if (record.settlementPromise !== undefined) return record.settlementPromise;
 		if (isTerminal(record.state) || record.terminalClaimed)
@@ -194,6 +198,7 @@ export function createCodexApprovalBroker(
 			);
 
 		record.terminalClaimed = true;
+		record.terminalDelivery = terminalDelivery;
 		if (record.timer !== undefined) clearTimeout(record.timer);
 		record.timer = undefined;
 
@@ -287,7 +292,13 @@ export function createCodexApprovalBroker(
 				"The approval is not awaiting a terminal decision.",
 				requestId,
 			);
-		return settleTransport(record, state, reason, fallbackResponse(record.request, state));
+		return settleTransport(
+			record,
+			state,
+			reason,
+			fallbackResponse(record.request, state),
+			"after_publish",
+		);
 	};
 
 	const stage = (request: TransportServerRequest): ApprovalSnapshot => {
@@ -299,7 +310,7 @@ export function createCodexApprovalBroker(
 			);
 		const existing = records.get(request.requestId);
 		if (existing !== undefined) {
-			if (existing.request.request === request) return snapshotOf(existing);
+			if (existing.sourceRequest === request) return snapshotOf(existing);
 			throw new ApprovalError(
 				"duplicate_request",
 				"A different approval request reused an existing JSON-RPC request identity.",
@@ -310,9 +321,7 @@ export function createCodexApprovalBroker(
 		const provisional = normalizeApprovalRequest(identity, request, expiresAtMs);
 		const bindingInput = options.getCurrentBinding?.(provisional);
 		const normalized =
-			bindingInput === undefined
-				? provisional
-				: normalizeApprovalRequest(identity, request, expiresAtMs, bindingInput);
+			bindingInput === undefined ? provisional : rebindApprovalRequest(provisional, bindingInput);
 		let spokenEffectPresentation: SpokenApprovalEffectPresentation | null = null;
 		if (normalized.family === "command_execution") {
 			try {
@@ -323,12 +332,14 @@ export function createCodexApprovalBroker(
 		}
 		const record: ApprovalRecord = {
 			request: normalized,
+			sourceRequest: request,
 			spokenEffectPresentation,
 			state: "staged",
 			outcome: null,
 			reason: null,
 			decision: null,
 			terminalClaimed: false,
+			terminalDelivery: null,
 		};
 		records.set(normalized.requestId, record);
 		const delay = Math.max(0, normalized.expiresAtMs - now());
@@ -398,9 +409,16 @@ export function createCodexApprovalBroker(
 					"stale",
 					"The approval evidence no longer matches the pending target or effect.",
 					fallbackResponse(record.request, "stale"),
+					"authored_response",
 				);
 			}
-			return settleTransport(record, "settled", "The approval response was accepted.", response);
+			return settleTransport(
+				record,
+				"settled",
+				"The approval response was accepted.",
+				response,
+				"authored_response",
+			);
 		} catch (error) {
 			return Promise.reject(error);
 		}
@@ -462,6 +480,7 @@ export function createCodexApprovalBroker(
 			request: record.request,
 			snapshot: snapshotOf(record),
 			spoken: spokenForRecord(record),
+			terminalDelivery: record.terminalDelivery,
 		});
 	};
 

@@ -1,15 +1,22 @@
 import {
 	BROWSER_PERMISSION_FILE_ACCESS,
 	type BrowserApproval,
+	JsonValueSchema,
 } from "../../../shared/codex-browser-model/index.js";
-import type {
-	ApprovalOwnerView,
-	CommandApprovalRequest,
-	PermissionsApprovalRequest,
-} from "../../../runtime/codex-approvals/index.js";
+import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
 
-type PermissionFileSystem = PermissionsApprovalRequest["params"]["permissions"]["fileSystem"];
+type OwnerApprovalRequest = ApprovalOwnerView["request"];
+type OwnerCommandRequest = Extract<OwnerApprovalRequest, { readonly family: "command_execution" }>;
+type OwnerPermissionsRequest = Extract<OwnerApprovalRequest, { readonly family: "permissions" }>;
+type PermissionFileSystem = OwnerPermissionsRequest["params"]["permissions"]["fileSystem"];
 type CodexFileAccess = NonNullable<NonNullable<PermissionFileSystem>["entries"]>[number]["access"];
+type BrowserElicitationField = NonNullable<
+	Extract<BrowserApproval, { approvalKind: "elicitation" }>["fields"]
+>[number];
+type BrowserCommandDecision = Extract<
+	BrowserApproval,
+	{ approvalKind: "command_execution" }
+>["availableDecisions"][number];
 const BROWSER_FILE_ACCESS_BY_CODEX_ACCESS = BROWSER_PERMISSION_FILE_ACCESS satisfies Record<
 	CodexFileAccess,
 	string
@@ -77,32 +84,14 @@ function enumOptions(definition: Record<string, unknown>): readonly string[] | n
 	return null;
 }
 
-interface ProjectedElicitationField {
-	readonly name: string;
-	readonly type: "string" | "number" | "integer" | "boolean" | "enum";
-	readonly required: boolean;
-	readonly secret: boolean;
-	readonly title: string | null;
-	readonly description: string | null;
-	readonly format: "email" | "uri" | "date" | "date-time" | null;
-	readonly minimum: number | null;
-	readonly maximum: number | null;
-	readonly minLength: number | null;
-	readonly maxLength: number | null;
-	readonly minimumItems: number | null;
-	readonly maximumItems: number | null;
-	readonly options: readonly string[] | null;
-	readonly defaultValue: unknown;
-}
-
-function formFields(schema: unknown): readonly ProjectedElicitationField[] | null {
+function formFields(schema: unknown): BrowserElicitationField[] | null {
 	if (!isRecord(schema) || !isRecord(schema.properties)) return null;
 	const required = new Set(
 		Array.isArray(schema.required) && schema.required.every((entry) => typeof entry === "string")
 			? schema.required
 			: [],
 	);
-	const fields: ProjectedElicitationField[] = [];
+	const fields: BrowserElicitationField[] = [];
 	for (const [name, definition] of Object.entries(schema.properties)) {
 		const type = fieldType(definition);
 		if (type === null || !isRecord(definition) || name.length === 0 || name.includes("\0"))
@@ -115,6 +104,8 @@ function formFields(schema: unknown): readonly ProjectedElicitationField[] | nul
 			definition.format === "date-time"
 				? definition.format
 				: null;
+		const defaultValue = JsonValueSchema.safeParse(definition.default ?? null);
+		if (!defaultValue.success) return null;
 		fields.push({
 			name,
 			type,
@@ -129,8 +120,8 @@ function formFields(schema: unknown): readonly ProjectedElicitationField[] | nul
 			maxLength: numberValue(definition.maxLength),
 			minimumItems: numberValue(definition.minItems),
 			maximumItems: numberValue(definition.maxItems),
-			options: enumOptions(definition),
-			defaultValue: secret ? null : (definition.default ?? null),
+			options: enumOptions(definition)?.slice() ?? null,
+			defaultValue: secret ? null : defaultValue.data,
 		});
 	}
 	return fields;
@@ -143,11 +134,28 @@ function safeUrl(value: string): string {
 	return value;
 }
 
-type CommandDecision = NonNullable<CommandApprovalRequest["params"]["availableDecisions"]>[number];
+type CommandDecision = NonNullable<OwnerCommandRequest["params"]["availableDecisions"]>[number];
 const DEFAULT_COMMAND_DECISIONS: readonly CommandDecision[] = ["accept", "decline", "cancel"];
 
-function effectiveCommandDecisions(request: CommandApprovalRequest): readonly CommandDecision[] {
+function effectiveCommandDecisions(request: OwnerCommandRequest): readonly CommandDecision[] {
 	return request.params.availableDecisions ?? DEFAULT_COMMAND_DECISIONS;
+}
+
+function projectCommandDecision(decision: CommandDecision): BrowserCommandDecision {
+	if (typeof decision === "string") return decision;
+	if ("acceptWithExecpolicyAmendment" in decision)
+		return {
+			acceptWithExecpolicyAmendment: {
+				execpolicy_amendment: [...decision.acceptWithExecpolicyAmendment.execpolicy_amendment],
+			},
+		};
+	return {
+		applyNetworkPolicyAmendment: {
+			network_policy_amendment: {
+				...decision.applyNetworkPolicyAmendment.network_policy_amendment,
+			},
+		},
+	};
 }
 
 function fileSystemAccesses(value: PermissionFileSystem): readonly CodexFileAccess[] {
@@ -187,7 +195,7 @@ function projectLifecycle(view: ApprovalOwnerView): BrowserApproval["lifecycle"]
 	};
 }
 
-export function projectApproval(view: ApprovalOwnerView): unknown {
+export function projectApproval(view: ApprovalOwnerView): BrowserApproval {
 	const request = view.request;
 	const envelope = {
 		kind: "approval" as const,
@@ -209,7 +217,7 @@ export function projectApproval(view: ApprovalOwnerView): unknown {
 				reason: request.params.reason ?? null,
 				command: request.params.command ?? null,
 				cwd: request.params.cwd ?? null,
-				availableDecisions: effectiveCommandDecisions(request),
+				availableDecisions: effectiveCommandDecisions(request).map(projectCommandDecision),
 			};
 		case "file_change":
 			return {
@@ -220,7 +228,14 @@ export function projectApproval(view: ApprovalOwnerView): unknown {
 				availableDecisions: ["accept", "acceptForSession", "decline", "cancel"],
 			};
 		case "user_input":
-			return { ...envelope, approvalKind: request.family, questions: request.params.questions };
+			return {
+				...envelope,
+				approvalKind: request.family,
+				questions: request.params.questions.map((question) => ({
+					...question,
+					options: question.options?.map((option) => ({ ...option })) ?? null,
+				})),
+			};
 		case "elicitation":
 			return {
 				...envelope,
@@ -238,7 +253,7 @@ export function projectApproval(view: ApprovalOwnerView): unknown {
 				reason: request.params.reason,
 				requestedScope: {
 					network: request.params.permissions.network?.enabled ?? null,
-					fileAccess: fileSystemAccesses(request.params.permissions.fileSystem),
+					fileAccess: [...fileSystemAccesses(request.params.permissions.fileSystem)],
 				},
 			};
 		case "apply_patch":
@@ -254,7 +269,7 @@ export function projectApproval(view: ApprovalOwnerView): unknown {
 				...envelope,
 				approvalKind: request.family,
 				reason: request.params.reason,
-				command: request.params.command,
+				command: [...request.params.command],
 				cwd: request.params.cwd,
 			};
 	}

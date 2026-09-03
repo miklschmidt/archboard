@@ -28,6 +28,17 @@ import type { TransportServerRequest } from "../../codex-transport/server-reques
 
 type HumanRequest = Extract<TransportServerRequest, { readonly owner: "codex-approvals" }>;
 
+function deepFreeze<T>(value: T, seen = new WeakSet<object>()): T {
+	if (value === null || typeof value !== "object" || seen.has(value)) return value;
+	seen.add(value);
+	for (const key of Reflect.ownKeys(value)) deepFreeze(Reflect.get(value, key), seen);
+	return Object.freeze(value);
+}
+
+function cloneAndFreeze<T>(value: T): T {
+	return deepFreeze(structuredClone(value));
+}
+
 function stableJson(value: unknown): string {
 	if (value === null || typeof value !== "object") {
 		const primitive = JSON.stringify(value);
@@ -304,19 +315,20 @@ export function normalizeApprovalRequest(
 			`The ${request.method} request is not owned by codex-approvals.`,
 		);
 	}
-	const common = base(authority, request, expiresAtMs, input);
+	const ownedRequest = cloneAndFreeze(request);
+	const common = base(authority, ownedRequest, expiresAtMs, input);
 	const { child, epoch, requestId } = common.envelope;
 	const { identity } = common;
 	const binding = common.binding;
 
-	switch (request.method) {
+	switch (ownedRequest.method) {
 		case "item/commandExecution/requestApproval": {
-			const item = itemIdentity(authority, request.params, request.params.approvalId);
+			const item = itemIdentity(authority, ownedRequest.params, ownedRequest.params.approvalId);
 			const result: CommandApprovalRequest = {
 				family: "command_execution",
-				method: request.method,
-				request,
-				params: request.params,
+				method: ownedRequest.method,
+				request: ownedRequest,
+				params: ownedRequest.params,
 				child,
 				epoch,
 				requestId,
@@ -328,15 +340,15 @@ export function normalizeApprovalRequest(
 				itemId: item.itemId,
 				approvalId: item.approvalId,
 			};
-			return Object.freeze(result);
+			return deepFreeze(result);
 		}
 		case "item/fileChange/requestApproval": {
-			const item = itemIdentity(authority, request.params, undefined);
+			const item = itemIdentity(authority, ownedRequest.params, undefined);
 			const result: FileApprovalRequest = {
 				family: "file_change",
-				method: request.method,
-				request,
-				params: request.params,
+				method: ownedRequest.method,
+				request: ownedRequest,
+				params: ownedRequest.params,
 				child,
 				epoch,
 				requestId,
@@ -348,15 +360,15 @@ export function normalizeApprovalRequest(
 				itemId: item.itemId,
 				approvalId: null,
 			};
-			return Object.freeze(result);
+			return deepFreeze(result);
 		}
 		case "item/tool/requestUserInput": {
-			const item = itemIdentity(authority, request.params, undefined);
+			const item = itemIdentity(authority, ownedRequest.params, undefined);
 			const result: UserInputApprovalRequest = {
 				family: "user_input",
-				method: request.method,
-				request,
-				params: request.params,
+				method: ownedRequest.method,
+				request: ownedRequest,
+				params: ownedRequest.params,
 				child,
 				epoch,
 				requestId,
@@ -368,7 +380,7 @@ export function normalizeApprovalRequest(
 				itemId: item.itemId,
 				approvalId: null,
 			};
-			return Object.freeze(result);
+			return deepFreeze(result);
 		}
 		case "mcpServer/elicitation/request": {
 			const elicitation = identity as Extract<
@@ -377,9 +389,9 @@ export function normalizeApprovalRequest(
 			>;
 			const result: ElicitationApprovalRequest = {
 				family: "elicitation",
-				method: request.method,
-				request,
-				params: request.params,
+				method: ownedRequest.method,
+				request: ownedRequest,
+				params: ownedRequest.params,
 				child,
 				epoch,
 				requestId,
@@ -393,15 +405,15 @@ export function normalizeApprovalRequest(
 				itemId: null,
 				approvalId: null,
 			};
-			return Object.freeze(result);
+			return deepFreeze(result);
 		}
 		case "item/permissions/requestApproval": {
-			const item = itemIdentity(authority, request.params, undefined);
+			const item = itemIdentity(authority, ownedRequest.params, undefined);
 			const result: PermissionsApprovalRequest = {
 				family: "permissions",
-				method: request.method,
-				request,
-				params: request.params,
+				method: ownedRequest.method,
+				request: ownedRequest,
+				params: ownedRequest.params,
 				child,
 				epoch,
 				requestId,
@@ -413,15 +425,15 @@ export function normalizeApprovalRequest(
 				itemId: item.itemId,
 				approvalId: null,
 			};
-			return Object.freeze(result);
+			return deepFreeze(result);
 		}
 		case "applyPatchApproval": {
 			const legacy = identity as Extract<ApprovalRequestIdentity, { readonly kind: "legacy" }>;
 			const result: ApplyPatchApprovalRequest = {
 				family: "apply_patch",
-				method: request.method,
-				request,
-				params: request.params,
+				method: ownedRequest.method,
+				request: ownedRequest,
+				params: ownedRequest.params,
 				child,
 				epoch,
 				requestId,
@@ -435,15 +447,15 @@ export function normalizeApprovalRequest(
 				turnId: null,
 				itemId: null,
 			};
-			return Object.freeze(result);
+			return deepFreeze(result);
 		}
 		case "execCommandApproval": {
 			const legacy = identity as Extract<ApprovalRequestIdentity, { readonly kind: "legacy" }>;
 			const result: ExecCommandApprovalRequest = {
 				family: "exec_command",
-				method: request.method,
-				request,
-				params: request.params,
+				method: ownedRequest.method,
+				request: ownedRequest,
+				params: ownedRequest.params,
 				child,
 				epoch,
 				requestId,
@@ -457,7 +469,7 @@ export function normalizeApprovalRequest(
 				turnId: null,
 				itemId: null,
 			};
-			return Object.freeze(result);
+			return deepFreeze(result);
 		}
 	}
 	throw new CodexApprovalError("invalid_request", "The approval method is not supported.");
@@ -467,5 +479,5 @@ export function rebindApprovalRequest(
 	request: ApprovalRequest,
 	input: ApprovalBindingInput,
 ): ApprovalRequest {
-	return Object.freeze({ ...request, binding: completeBinding(request, input) });
+	return deepFreeze({ ...request, binding: completeBinding(request, input) });
 }

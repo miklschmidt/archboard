@@ -165,121 +165,23 @@ export function fallbackResponse(
 	}
 }
 
-function fieldType(value: unknown): "string" | "number" | "integer" | "boolean" | "enum" | null {
-	if (!isRecord(value)) return null;
-	if (Array.isArray(value.enum) && value.enum.every((entry) => typeof entry === "string"))
-		return "enum";
-	if (
-		Array.isArray(value.oneOf) &&
-		value.oneOf.every((entry) => isRecord(entry) && typeof entry.const === "string")
-	)
-		return "enum";
-	if (value.type === "array" && isRecord(value.items)) {
-		if (
-			Array.isArray(value.items.enum) &&
-			value.items.enum.every((entry) => typeof entry === "string")
-		)
-			return "enum";
-		if (
-			Array.isArray(value.items.anyOf) &&
-			value.items.anyOf.every((entry) => isRecord(entry) && typeof entry.const === "string")
-		)
-			return "enum";
-	}
-	return value.type === "string" ||
-		value.type === "number" ||
-		value.type === "integer" ||
-		value.type === "boolean"
-		? value.type
-		: null;
-}
-
-interface ProjectedElicitationField {
-	readonly name: string;
-	readonly type: "string" | "number" | "integer" | "boolean" | "enum";
-	readonly required: boolean;
-	readonly secret: boolean;
-	readonly title: string | null;
-	readonly description: string | null;
-	readonly format: "email" | "uri" | "date" | "date-time" | null;
-	readonly minimum: number | null;
-	readonly maximum: number | null;
-	readonly minLength: number | null;
-	readonly maxLength: number | null;
-	readonly minimumItems: number | null;
-	readonly maximumItems: number | null;
-	readonly options: readonly string[] | null;
-	readonly defaultValue: unknown;
-}
-
-function stringValue(value: unknown): string | null {
-	return typeof value === "string" ? value : null;
-}
-
-function numberValue(value: unknown): number | null {
-	return typeof value === "number" ? value : null;
-}
-
-function enumOptions(definition: RecordValue): readonly string[] | null {
-	if (Array.isArray(definition.enum) && definition.enum.every((entry) => typeof entry === "string"))
-		return definition.enum;
-	if (Array.isArray(definition.oneOf))
-		return definition.oneOf.flatMap((entry) =>
-			isRecord(entry) && typeof entry.const === "string" ? [entry.const] : [],
+function supportsSpokenFormSchema(schema: unknown): boolean {
+	if (!isRecord(schema) || !isRecord(schema.properties)) return false;
+	return Object.entries(schema.properties).every(([name, definition]) => {
+		if (name.length === 0 || name.includes("\0") || !isRecord(definition)) return false;
+		if (["string", "number", "integer", "boolean"].includes(String(definition.type))) return true;
+		if (Array.isArray(definition.enum))
+			return definition.enum.every((entry) => typeof entry === "string");
+		if (Array.isArray(definition.oneOf))
+			return definition.oneOf.every((entry) => isRecord(entry) && typeof entry.const === "string");
+		if (definition.type !== "array" || !isRecord(definition.items)) return false;
+		if (Array.isArray(definition.items.enum))
+			return definition.items.enum.every((entry) => typeof entry === "string");
+		return (
+			Array.isArray(definition.items.anyOf) &&
+			definition.items.anyOf.every((entry) => isRecord(entry) && typeof entry.const === "string")
 		);
-	if (definition.type === "array" && isRecord(definition.items)) {
-		if (
-			Array.isArray(definition.items.enum) &&
-			definition.items.enum.every((entry) => typeof entry === "string")
-		)
-			return definition.items.enum;
-		if (Array.isArray(definition.items.anyOf))
-			return definition.items.anyOf.flatMap((entry) =>
-				isRecord(entry) && typeof entry.const === "string" ? [entry.const] : [],
-			);
-	}
-	return null;
-}
-
-function formFields(schema: unknown): ProjectedElicitationField[] | null {
-	if (!isRecord(schema) || !isRecord(schema.properties)) return null;
-	const required = new Set(
-		Array.isArray(schema.required) && schema.required.every((entry) => typeof entry === "string")
-			? schema.required
-			: [],
-	);
-	const fields: ProjectedElicitationField[] = [];
-	for (const [name, definition] of Object.entries(schema.properties)) {
-		const type = fieldType(definition);
-		if (type === null || !isRecord(definition) || name.length === 0 || name.includes("\0"))
-			return null;
-		const secret = definition.secret === true;
-		const format =
-			definition.format === "email" ||
-			definition.format === "uri" ||
-			definition.format === "date" ||
-			definition.format === "date-time"
-				? definition.format
-				: null;
-		fields.push({
-			name,
-			type,
-			required: required.has(name),
-			secret,
-			title: stringValue(definition.title),
-			description: stringValue(definition.description),
-			format,
-			minimum: numberValue(definition.minimum),
-			maximum: numberValue(definition.maximum),
-			minLength: numberValue(definition.minLength),
-			maxLength: numberValue(definition.maxLength),
-			minimumItems: numberValue(definition.minItems),
-			maximumItems: numberValue(definition.maxItems),
-			options: enumOptions(definition),
-			defaultValue: secret ? null : (definition.default ?? null),
-		});
-	}
-	return fields;
+	});
 }
 
 function spokenText(value: unknown): string | null {
@@ -401,7 +303,7 @@ export function spokenEligibility(
 		case "elicitation":
 			if (
 				request.params.mode === "openai/form" &&
-				formFields(request.params.requestedSchema) === null
+				!supportsSpokenFormSchema(request.params.requestedSchema)
 			)
 				return { eligible: false, reason: "unsupported_schema" };
 			return {

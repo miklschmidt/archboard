@@ -268,6 +268,13 @@ export function createGatewayHarness(
 			acknowledge: (candidate) => {
 				if (candidate === requestId) ordinaryApproval = null;
 			},
+			acknowledgePublished: (candidates) => {
+				if (
+					ordinaryApproval?.terminalDelivery === "after_publish" &&
+					candidates.includes(requestId)
+				)
+					ordinaryApproval = null;
+			},
 			onBrowserDisconnect: (_context, reason) => {
 				disconnects.push("ordinary");
 				disconnectReasons.push(reason);
