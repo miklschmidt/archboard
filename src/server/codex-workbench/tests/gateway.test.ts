@@ -1,12 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import {
-	accountCommand,
-	dynamicResponse,
-	expectGatewayError,
-	startCommand,
-	terminalDynamicApproval,
-} from "./helpers.js";
+import { accountCommand, dynamicResponse, expectGatewayError, startCommand } from "./helpers.js";
 import { createGatewayHarness, commandTarget, type GatewayHarness } from "./support.js";
 
 const openHarnesses: GatewayHarness[] = [];
@@ -391,29 +385,6 @@ describe("Codex workbench browser command routing", () => {
 		value.advance(90_001);
 		const result = await connection.command(dynamicResponse(value, approval));
 		expect(result).toMatchObject({
-			code: "dynamic_approval_not_pending",
-			outcome: "not_delivered",
-		});
-		expect(value.calls).not.toContain("dynamic.resolve");
-	});
-
-	test("projects terminal approval_required and rejects its late response", async () => {
-		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
-		const lease = connection.claimLease();
-		const pending = value.makeDynamicApproval(lease.commandId);
-		const terminal = terminalDynamicApproval(value, pending);
-		value.setDynamicApprovals([terminal]);
-		const snapshot = connection.snapshot().snapshot;
-		expect(snapshot.dynamicApprovals).toEqual([terminal]);
-		expect(snapshot.dynamicApprovals[0]).toMatchObject({
-			state: "cancelled",
-			toolResult: "approval_required",
-			binding: null,
-			resumable: false,
-		});
-		const late = await connection.command(dynamicResponse(value, pending));
-		expect(late).toMatchObject({
 			code: "dynamic_approval_not_pending",
 			outcome: "not_delivered",
 		});

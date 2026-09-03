@@ -184,7 +184,7 @@ describe("Codex terminal notification correlation", () => {
 		for (const mismatch of mismatches) {
 			owner.onNotification(mismatch);
 			await Promise.resolve();
-			expect(owner.browser.pending()).toHaveLength(1);
+			expect(owner.pending()).toHaveLength(1);
 			expect(settlements).toBe(0);
 		}
 
@@ -195,11 +195,11 @@ describe("Codex terminal notification correlation", () => {
 		);
 		owner.onNotification(exact);
 		await Promise.resolve();
-		expect(owner.browser.pending()).toHaveLength(0);
+		expect(owner.pending()).toHaveLength(0);
 		expect({ settlements, cause }).toEqual({ settlements: 1, cause: "call_cancelled" });
 		owner.onNotification(exact);
 		await Promise.resolve();
-		expect({ settlements, pending: owner.browser.pending() }).toEqual({
+		expect({ settlements, pending: owner.pending() }).toEqual({
 			settlements: 1,
 			pending: [],
 		});
@@ -375,7 +375,7 @@ describe("Codex terminal notification correlation", () => {
 				event(h.identity.identity.validator.childId, h.identity.identity.validator.epoch, mismatch),
 			);
 			await Promise.resolve();
-			expect({ settlements, pending: owner.browser.pending().length }).toEqual({
+			expect({ settlements, pending: owner.pending().length }).toEqual({
 				settlements: 0,
 				pending: 1,
 			});
@@ -388,14 +388,14 @@ describe("Codex terminal notification correlation", () => {
 		);
 		owner.onNotification(exact);
 		await Promise.resolve();
-		expect({ settlements, cause, pending: owner.browser.pending() }).toEqual({
+		expect({ settlements, cause, pending: owner.pending() }).toEqual({
 			settlements: 1,
 			cause: "caller_turn_interrupted",
 			pending: [],
 		});
 		owner.onNotification(exact);
 		await Promise.resolve();
-		expect({ settlements, cause, pending: owner.browser.pending() }).toEqual({
+		expect({ settlements, cause, pending: owner.pending() }).toEqual({
 			settlements: 1,
 			cause: "caller_turn_interrupted",
 			pending: [],

@@ -283,6 +283,7 @@ test("the sole public projection owns all seven ordinary approval presentations"
 			const pending = broker.receive(request);
 			const result = projectCodexBrowserState(
 				model,
+				authorities.identity.decoder,
 				projectionInput(withFutureNetworkPolicyField(broker.view(pending.requestId))),
 			);
 			expect(result.tag).toBe("projected");
@@ -340,7 +341,7 @@ test("the sole projection strips private account and settings fields and refuses
 			activePermissionProfile: null,
 			modelProvider: "private-provider",
 		};
-		const result = projectCodexBrowserState(model, {
+		const result = projectCodexBrowserState(model, authorities.identity.decoder, {
 			...input,
 			settings: [
 				{
@@ -371,7 +372,7 @@ test("the sole projection strips private account and settings fields and refuses
 			expect(wire).not.toContain(privateValue);
 
 		const secretAccount = { ...input.account, apiKey: "sk-browser-leak" };
-		const secret = projectCodexBrowserState(model, {
+		const secret = projectCodexBrowserState(model, authorities.identity.decoder, {
 			...input,
 			account: secretAccount,
 		} as BrowserProjectionInput);

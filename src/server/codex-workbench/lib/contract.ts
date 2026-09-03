@@ -1,7 +1,6 @@
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
-	BrowserDynamicApproval,
 	BrowserDynamicApprovalResponse,
 	BrowserSnapshot,
 	BrowserThreadLink,
@@ -267,7 +266,6 @@ export interface BrowserOrdinaryApprovalActions {
 }
 
 export interface BrowserDynamicApprovalActions {
-	readonly pending: () => readonly BrowserDynamicApproval[];
 	readonly resolve: (
 		command: BrowserDynamicApprovalResponse,
 		context: BrowserActionContext,
