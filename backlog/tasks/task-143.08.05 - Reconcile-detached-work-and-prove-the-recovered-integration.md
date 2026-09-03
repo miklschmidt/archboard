@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 14:23'
+updated_date: '2026-09-03 14:33'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -20,6 +20,18 @@ modified_files:
   - src/shared/timing/timing.ts
   - src/runtime/engine/board-lock.ts
   - src/runtime/engine/tests/git-async.test.ts
+  - src/runtime/engine/tests/board-write-observers.test.ts
+  - src/runtime/engine/tests/support/board-lock-test-adapter.ts
+  - src/runtime/engine/board-io.ts
+  - src/ui/shell/board-dialog-contract.ts
+  - src/ui/shell/BoardDialog.tsx
+  - src/ui/shell/Shell.tsx
+  - src/ui/shell/tests/board-dialog.test.ts
+  - tests/system/board-inspection/fixtures/package-process-group.ts
+  - tests/system/board-inspection/package-read-only.test.ts
+  - tests/system/board-inspection/support/package-process.ts
+  - tests/system/support/owned-canvas.ts
+  - tests/system/support/owned-canvas-term-escalation.test.ts
   - tests/system/canvas-state/codex-workbench-production-cleanup.test.ts
   - tests/system/canvas-state/codex-workbench-production.test.ts
   - tests/system/process-contracts/support/delayed-checkout-owner.ts
@@ -27,14 +39,6 @@ modified_files:
   - tests/system/browser/fixtures/traced-canvas-process.ts
   - tests/system/browser/human-edit-performance.test.ts
   - tests/system/browser/selection-inspector.test.ts
-  - src/ui/shell/board-dialog-contract.ts
-  - src/ui/shell/BoardDialog.tsx
-  - src/ui/shell/Shell.tsx
-  - src/ui/shell/tests/board-dialog.test.ts
-  - tests/system/board-inspection/support/package-process.ts
-  - tests/system/board-inspection/package-read-only.test.ts
-  - src/runtime/engine/tests/board-write-observers.test.ts
-  - src/runtime/engine/board-io.ts
   - tests/system/cli/command-workflows.test.ts
 parent_task_id: TASK-143.08
 priority: high
@@ -252,6 +256,8 @@ User-directed anti-over-testing remediation: deleted the complete 80-iteration o
 Focused post-deletion validation: bun test tests/system/board-inspection/package-read-only.test.ts passed 11/11 with 98 expectations in 9.97 seconds (command wall time 9.83 seconds). Exact-file Oxfmt check and Oxlint passed. Compared with the prior 21.22-second focused run, removal saved about 11.4 seconds while retaining every direct product success, failure, identity, signal, and cleanup owner.
 
 Final narrow rereview remediation: board-lock.ts now owns injectLockHandoffFaultForTest, a controlled module-root seam with only malformed and wrong-token variants. It keeps the handoff path and receipt schema private while letting board-write-observers drive the real readHandoff parser and predecessor token matcher through normal successor acquisition. The malformed and wrong-token cases are restored without private filesystem spelling or assertions. The package lifecycle timeout comment now describes the two retained parent-SIGTERM owners rather than the deleted 80-cycle stress loop. Focused board-write-observers passed 4/4 with 53 expectations; exact-file Oxfmt and Oxlint passed. Package read-only was not rerun because its code did not change.
+
+Lifecycle rereview remediation: package-process begins leader/stdout/stderr ownership immediately after spawn, allows the focused capture seam to await fixture readiness, and on capture failure SIGKILLs the fresh detached group by its spawn-owned pgid. Group disappearance plus all three settlements share the existing 1-second cleanup bound; failure reports both startup and cleanup errors. The focused fixture creates one same-group descendant that inherits the owner pipes, then proves leader, descendant, group, and all settlements are gone. owned-canvas now captures child-group/storage-lock cleanup ownership before either TERM or KILL; a TERM timeout marks the path forced, escalates, and completes that captured cleanup. One dedicated real lifecycle owner proves the canvas ignores TERM, its detached child group is reaped, its lock disappears, and its namespace is removed. The production board-lock entrypoint no longer exports any test hook. A dedicated test-support adapter intercepts one receipt read by the known public lease token, without knowing or reconstructing the private path or schema, and retains malformed/wrong-token coverage through normal successor acquisition. The 80-cycle stress owner remains deleted with no replacement. Focused validation: package capture 1/1 (6 expectations, 90ms runner); owned-canvas escalation 1/1 (3 expectations, 1.109s); board-write observers 4/4 (53 expectations, 206ms); boundary policy 7/7 (66 expectations, 2.05s); exact-file Oxfmt and Oxlint passed.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
