@@ -501,6 +501,8 @@ export const CLAIM_LEASE_MS = LOCK_LEASE_MS;
  */
 export const LOCK_WATCH_MS = LOCK_RENEW_MS;
 
+/** Actual elapsed ceiling for a test with no reviewed source-local real-time declaration. */
+export const TEST_WALL_CLOCK_BUDGET_MS = 20_000;
 /** Bun lifecycle failure thresholds, not hang ceilings or SLAs, clear hosted sweep 5.274s and totality 5,003.69ms at roughly 3x. */
 export const TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS = 15_000;
 export const TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS = 15_000;
@@ -618,6 +620,8 @@ export const TEST_NOTE_WATCH_CLEAR_TIMEOUT_MS = LOCK_WATCH_MS;
 /** Ordinary browser commands stay at 30s; the 10k-element initial render gets three windows, finite and not an SLA. */
 export const TEST_BROWSER_COMMAND_TIMEOUT_MS = BROWSER_EXPORT_TIMEOUT_MS;
 export const TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS = 3 * TEST_BROWSER_COMMAND_TIMEOUT_MS;
+/** Forty-two real interleaved browser/server cycles were measured at about 40s; four command windows retain the existing finite Bun case bound. */
+export const TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS = 4 * TEST_BROWSER_COMMAND_TIMEOUT_MS;
 /** Matches the existing loopback and lock polling cadence without busy-waiting. */
 export const TEST_BROWSER_POLL_MS = LOCK_POLL_MS;
 /** Extends the negative pane window past one debounce without reaching its settle cap. */

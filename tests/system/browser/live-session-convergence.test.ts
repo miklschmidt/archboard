@@ -4,7 +4,8 @@ import { join, resolve } from "node:path";
 
 import { measureLineWidth } from "../../../src/runtime/engine/measure-text.ts";
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
-import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { declareTestWallClockBudget } from "../../support/test-wall-clock.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
@@ -38,7 +39,17 @@ import {
 	type PageEdit,
 } from "./support/page-scene.js";
 
-setDefaultTimeout(TEST_BROWSER_COMMAND_TIMEOUT_MS * 4);
+setDefaultTimeout(TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS);
+
+declareTestWallClockBudget({
+	test: "42 rotating agent and human cycles converge after every write pair",
+	reason:
+		"The regression needs 42 real browser cycles so divergence cannot hide behind a final-state comparison.",
+	outerBoundMs: TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS,
+	task: "TASK-076",
+	evidence:
+		"The retained serial-browser owner takes about 40 seconds on the measured local runner.",
+});
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const MEASURER_EPSILON = 0.0012;
