@@ -1440,10 +1440,15 @@ export function useCanvasSession({
 					break;
 
 				case "board_released":
+					if (Array.isArray(data.elements)) {
+						applyServerScene(data.elements.map(cleanElementForExcalidraw));
+						replaceCanvasFiles(api, Object.values(data.files ?? {}));
+						noteChange();
+					}
 					holdRef.current = null;
-					// A reload replaces this pane's scene with the note, and the
-					// board_switched that carries it is on its way. The discarded copy has
-					// no pending edits after that replacement.
+					// Reload carries its replacement in board_switched. Save-elsewhere
+					// carries the source note on this message. Either way, the discarded
+					// held copy has no pending edits after the replacement.
 					dispatchReporting({ type: "full_report_cleared" });
 					publishStatus();
 					break;

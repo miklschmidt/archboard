@@ -112,9 +112,7 @@ const aspect = (box: BoundingBox | null): number | null =>
 const sideSummaryOf = (input: CompareSideInput, model: BoardModel): SideSummary => ({
 	board: input.key,
 	identity: input.identity,
-	source: input.source,
 	...(input.file ? { file: input.file } : {}),
-	...(input.onScreen !== undefined ? { onScreen: input.onScreen } : {}),
 	...(input.savedAt ? { savedAt: input.savedAt } : {}),
 	...(input.loadedAt ? { loadedAt: input.loadedAt } : {}),
 	elementCount: input.elements.length,
@@ -152,14 +150,7 @@ export interface CompareSideInput {
 	key: string;
 	identity: BoardIdentity;
 	elements: ServerElement[];
-	// Where the elements came from: the copy this session is holding (which may
-	// carry unsaved work) or the note on disk. Reported because the two can
-	// differ and the human needs to know which they are being told about.
-	source: "memory" | "vault";
 	file?: string;
-	// Is this board in front of somebody in a pane right now? A comparison
-	// never disturbs what is on screen, so this is only ever a remark.
-	onScreen?: boolean;
 	savedAt?: string;
 	loadedAt?: string;
 }
@@ -167,9 +158,7 @@ export interface CompareSideInput {
 export interface SideSummary {
 	board: string;
 	identity: BoardIdentity;
-	source: "memory" | "vault";
 	file?: string;
-	onScreen?: boolean;
 	savedAt?: string;
 	loadedAt?: string;
 	elementCount: number;

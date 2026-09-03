@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 08:28'
+updated_date: '2026-09-03 08:46'
 labels: []
 dependencies:
   - TASK-143.08.06.02
@@ -50,6 +50,10 @@ Make the public command boundary teach the architecture. Persisted-board work re
 4. Require non-empty `--ids` for promote and demote, delete the selection fallback and its HTTP relationship, and make `browser selection` return the board plus stable element identities for deliberate reuse.
 5. Update the authored command audit, derived contract expectations, focused CLI/board owners, and directly contradicted guidance. Delete obsolete alias and pane-coupled assertions instead of preserving compatibility.
 6. Run only focused command-contract, package CLI, board-inventory, and live-session owners plus scoped Oxlint, Oxfmt, and diff checks. Record exact wall times and child/browser counts, leave all acceptance criteria unchecked, and commit the reviewable cut.
+
+7. Rereview repair: make comparison side metadata and one-sided address discovery persisted-note-only; remove the stale browser-open board relationship; make the cheap registry/audit owner compare REST relationships; replace its duplicated architecture assertions with narrow render/capture and compare contract checks; and rerun only the two affected focused owners plus scoped formatting and lint.
+
+8. Standards-review repair: resynchronize source panes from the persisted note after save-elsewhere, restore direct replacement/same-board observer assertions, keep persisted draft boards reachable in the navigator, make nested help resolve the selected contract in process with one package smoke, and correct zero-client renderer/Mermaid guidance.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -60,4 +64,8 @@ Implementation handoff (2026-09-03): hard-cut all live session operations beneat
 Focused validation: 43 command-contract/package owners passed in 26.84s (0 real-browser children); side-by-side, vault-only inventory, public refusals, checkout consistency, socket ownership, branching pane effects, pane addressing, repository session, held save-elsewhere, and 12 shell unit checks passed in focused runs. Scoped Oxfmt, Oxlint, git diff --check, and untracked-file audit passed. No broad suite, root type-check, build, or real-browser lane was run, per delegation. Rendered navigator verification therefore remains for integration review. Additional unrelated owner failures observed while probing were the existing held-copy reread inconsistency, a Codex startup lock collision in the forced-death scratch owner, and malformed legacy open returning 422 where its owner expects 400.
 
 Clarification: those three probe failures are outside this task surface; this delegation did not rerun the fixed base, so their baseline status is unconfirmed.
+
+Rereview remediation: comparison now reads and discovers only persisted notes and omits transient source/onScreen fields; browser open declares only pane-open REST work; the canonical audit now exactly matches every declared REST relationship; nested help resolves the selected child contract and states its prerequisites/effects; save-elsewhere carries the fresh source-note document on board_released so source panes replace held content without changing address; branch and same-board observer deltas are asserted again; draft-probe remains reachable; README, TESTING, and the tracked skill teach zero-client render/Mermaid behavior. Focused audit, help/argv, artifact, comparison geometry, vault-only, branching, save-elsewhere, frontend build, scoped lint, and scoped format checks pass. The full held-board owner retains its pre-existing excluded held-copy reread failure. The one authorized board-navigator browser run completed in 8.28s: the repaired six-board/draft-probe scenario passed, while the separate empty-state target-count assertion expected 5 and observed 4; no rerun or cap widening was performed. TASK remains In Progress and all acceptance criteria remain unchecked for full rereview.
+
+Review correction: parent standards review confirmed the held-copy reread, forced-death Codex lock collision, and malformed legacy open 422/400 failures are identical at immutable BASE and prior HEAD. They remain explicitly out of scope and untouched.
 <!-- SECTION:NOTES:END -->

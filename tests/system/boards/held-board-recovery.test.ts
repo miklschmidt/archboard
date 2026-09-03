@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { expandElements } from "../../../src/runtime/engine/expand-elements.ts";
 import { createJsonRequester } from "./support/http.ts";
-import { openTestPane, type TestPane } from "./support/pane-websocket.ts";
+import { openTestPane, type TestPane, waitForPaneMessage } from "./support/pane-websocket.ts";
 import { waitFor } from "../canvas-state/support/http.ts";
 
 interface HeldReport {
@@ -311,6 +311,7 @@ describe("held board recovery", () => {
 			method: "POST",
 			body: { id: "held3", type: "rectangle", x: 100, y: 100, width: 30, height: 30 },
 		});
+		const resolutionStart = pane.since();
 		const elsewhere = await request<WriteBody>("/api/boards/save", {
 			method: "POST",
 			body: { board: "holdelse", name: "holdmine" },
@@ -327,6 +328,19 @@ describe("held board recovery", () => {
 		expect(source.body.held).toBeUndefined();
 		expect(source.body.elements.some((element) => element.id === "theirs3")).toBeTrue();
 		expect(source.body.elements.some((element) => element.id === "held3")).toBeFalse();
+		expect(await waitForPaneMessage(pane, resolutionStart, "board_released")).toBeDefined();
+		const replacement = pane.seen
+			.slice(resolutionStart)
+			.find((message) => message.type === "board_released");
+		expect(replacement?.board).toBe("holdelse");
+		expect(
+			((replacement?.elements as Element[] | undefined) ?? [])
+				.map((element) => element.id)
+				.toSorted(),
+		).toEqual(source.body.elements.map((element) => element.id).toSorted());
+		expect(
+			pane.seen.slice(resolutionStart).every((message) => message.type !== "board_switched"),
+		).toBeTrue();
 	});
 
 	test("CLI held refusal exits 5 and the following held write succeeds", async () => {

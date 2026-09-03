@@ -29,6 +29,13 @@ interface PanesBody {
 	panes: Array<{ clientId: string; board: string }>;
 }
 
+interface ElementsChangedMessage {
+	type: "elements_changed";
+	created: Element[];
+	updated: Element[];
+	deleted: string[];
+}
+
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-branching-effects-"));
 let canvas: OwnedCanvas;
@@ -191,6 +198,12 @@ describe("branching pane effects", () => {
 		expect(
 			right.seen.slice(destinationStart).every((message) => message.type !== "board_switched"),
 		).toBeTrue();
+		const replacementDelta = right.seen
+			.slice(destinationStart)
+			.find((message) => message.type === "elements_changed") as ElementsChangedMessage | undefined;
+		expect(replacementDelta?.created.map((element) => element.id)).toEqual(["created"]);
+		expect(replacementDelta?.updated.map((element) => element.id)).toEqual(["same"]);
+		expect(replacementDelta?.deleted).toEqual(["deleted"]);
 		expect(
 			authoritative.body.panes.find((pane) => pane.clientId === "replacement-left")?.board,
 		).toBe("save-source");
@@ -236,11 +249,17 @@ describe("branching pane effects", () => {
 		expect(right.board()).toBe("scratch");
 		expect(left.board()).toBe("response-source");
 
+		const sameBoardStart = left.since();
 		const same = await request<SaveBody>("/api/boards/save?board=response-source", {
 			method: "POST",
 		});
+		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 		expect(same.body).toMatchObject({ saveKind: "same-board" });
 		expect(same.body).not.toHaveProperty("panes");
+		const sameBoardDelta = left.seen
+			.slice(sameBoardStart)
+			.find((message) => message.type === "elements_changed") as ElementsChangedMessage | undefined;
+		expect(sameBoardDelta).toMatchObject({ created: [], updated: [], deleted: [] });
 
 		const full = await runCli([
 			"board",

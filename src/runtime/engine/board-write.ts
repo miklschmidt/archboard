@@ -30,6 +30,7 @@ import {
 	writesBoardNote,
 } from "./board-hold.js";
 import {
+	boardFilesMessage,
 	type BoardContent,
 	BoardWriteConflictError,
 	readBoardContent,
@@ -325,9 +326,24 @@ function releaseSavedHold<T>(
 	logger.info(
 		`Board "${request.source.key}" is saving again (${outcome}), after ${hold.writes} held change(s).`,
 	);
+	let sourceDocument: Record<string, unknown> = {};
+	if (outcome === "elsewhere") {
+		// The held document was written to the destination, but panes keep their
+		// source address. Carry the source note on the release itself so the pane
+		// replaces its scene before clearing pending held reporting.
+		const source = readBoardContent(request.source.board);
+		sourceDocument = {
+			identity: request.source.board.identity,
+			elements: presentElements(source.elements.values(), {
+				boardKey: request.source.key,
+				checkoutSnapshot: request.checkoutSnapshot ?? EMPTY_CHECKOUT_SNAPSHOT,
+			}),
+			...boardFilesMessage(source),
+		};
+	}
 	tellPanesBestEffort(
 		tellPanes,
-		{ type: "board_released", hold: report, outcome } as WebSocketMessage,
+		{ type: "board_released", hold: report, outcome, ...sourceDocument } as WebSocketMessage,
 		request.source.key,
 	);
 }

@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
-import { cliSurface } from "../../../src/cli/commands/run.ts";
+import { cliContractRegistry, cliSurface, commandHelp } from "../../../src/cli/commands/run.ts";
 import { createCliHttpDouble } from "./support/cli-http-double.ts";
 import {
 	checkoutRoot,
@@ -77,7 +77,7 @@ describe("package bin and help", () => {
 			[
 				"src/cli/command-contract/tests/fixed-base-compatibility.json",
 				compatibilityPath,
-				"dc0124b71eb7bf5aa17b8d7c768e342c9a6cd2a5b255523b55f4ff1d85887a00",
+				"fa7c2d2081665402214e9ae8361a1f722b3a208e77d542a093e07c3eea33b457",
 			],
 		] as const;
 		for (const [oldRelative, owned, digest] of pairs) {
@@ -114,29 +114,30 @@ describe("package bin and help", () => {
 		);
 	});
 
-	test("every declared command and subcommand has clean help", async () => {
-		await using resources = new AsyncDisposableStack();
-		const owner = resources.use(createPackageCliOwner());
-		const bare = await owner.run([]);
+	test("every declared command and subcommand has contract-owned help", async () => {
+		const registry = new Map(cliContractRegistry().map((entry) => [entry.name, entry.contract]));
 		for (const { name, subcommands } of cliSurface()) {
-			expect(bare.stdout, packageFailure(bare)).toMatch(new RegExp(`^  ${name}\\s`, "m"));
-			const command = await owner.run(["help", name]);
-			expect(command, packageFailure(command)).toMatchObject({ status: 0, stderr: "" });
-			expect(command.stdout, packageFailure(command)).toStartWith("Usage: archboard ");
+			const rootHelp = commandHelp([name]);
+			expect(rootHelp, name).toStartWith("Usage: archboard ");
 			for (const subcommand of subcommands) {
-				const topic = await owner.run(["help", name, subcommand]);
-				expect(topic, packageFailure(topic)).toMatchObject({ status: 0, stderr: "" });
-				expect(topic.stdout, packageFailure(topic)).toMatch(
-					new RegExp(`(^|[^a-z0-9-])${subcommand}([^a-z0-9-]|$)`, "i"),
+				const path = `${name} ${subcommand}`;
+				const contract = registry.get(path)!;
+				const help = commandHelp([name, subcommand]);
+				expect(help, path).toStartWith(`Usage: archboard ${contract.usage}\n`);
+				expect(help, path).toContain(`  ${contract.description}\n`);
+				expect(help, path).toContain(
+					`  Prerequisites: ${contract.prerequisites.join(", ") || "none"}. ` +
+						`Effects: ${contract.effects.join(", ") || "none"}.\n`,
 				);
 			}
 		}
-		for (const alias of [["-h"], ["--help"], ["help", "unknown-topic"]]) {
-			const result = await owner.run(alias);
-			expect(result, packageFailure(result)).toMatchObject({ status: 0, stderr: "" });
-			expect(sha256(result.stdout), packageFailure(result)).toBe(argvGolden.generalHelpSha256);
-		}
-	}, 30_000);
+
+		await using resources = new AsyncDisposableStack();
+		const owner = resources.use(createPackageCliOwner());
+		const smoke = await owner.run(["help", "browser", "capture"]);
+		expect(smoke, packageFailure(smoke)).toMatchObject({ status: 0, stderr: "" });
+		expect(smoke.stdout, packageFailure(smoke)).toBe(commandHelp(["browser", "capture"]));
+	});
 });
 
 describe("package argv compatibility", () => {
@@ -167,18 +168,16 @@ describe("package argv compatibility", () => {
 		}
 	}, 30_000);
 
-	test("preserves fixed-base help bytes and executable record order", async () => {
-		await using resources = new AsyncDisposableStack();
-		const owner = resources.use(createPackageCliOwner());
+	test("preserves fixed-base top-level help bytes and executable record order", () => {
 		expect(compatibility.schemaVersion).toBe(2);
 		expect(compatibility.fixedBase).toBe("dfb589bd28f6dc95289f5271ba389bfcc48bafbe");
 		for (const path of compatibility.publicPaths) {
 			const [command, ...tail] = path.split(" ");
-			const result = await owner.run(["help", command!, ...tail]);
-			expect(result, packageFailure(result)).toMatchObject({ status: 0, stderr: "" });
-			expect(sha256(result.stdout), packageFailure(result)).toBe(
-				compatibility.helpStdoutSha256ByCommand[command!]!,
-			);
+			const help = commandHelp([command!, ...tail]);
+			expect(help, path).not.toBeNull();
+			if (tail.length === 0) {
+				expect(sha256(help!), path).toBe(compatibility.helpStdoutSha256ByCommand[command!]!);
+			}
 		}
 		expect(new Set(compatibility.orderedCases.map((record) => record.name)).size).toBe(
 			compatibility.orderedCases.length,

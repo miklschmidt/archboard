@@ -82,7 +82,7 @@ Ask the agent to read a codebase and draw its architecture. Then, on the board:
 1. **Select a box by tapping its interior** and ask the agent what you have
    selected. `browser selection --pane <spec>` returns the stable ids for
    "map _this_ to X".
-2. **Promote it**: `./bin/canvas promote --ids <selected-id> --kind service
+2. **Promote it**: `./bin/canvas promote --board payments --ids <selected-id> --kind service
 --name "Payments" --path src/payments/index.ts --doing "calling this the payments service"`.
    The binding resolves through git to repo, path, branch and commit. Every
    write says what it is doing and is refused without it, and the line shows up
@@ -106,14 +106,13 @@ Ask the agent to read a codebase and draw its architecture. Then, on the board:
    baseline; `./bin/canvas browser panes` says which is which,
    `./bin/canvas browser capture --pane right` pictures one of them, and
    `./bin/canvas browser close right` puts you back to one.
-7. **Draw into the half you mean**: pipe a Mermaid diagram at the variant,
+7. **Draw into the board you mean**: pipe a Mermaid diagram at the variant,
    `... | ./bin/canvas mermaid --board payments@option-a --doing "sketching the
-proposal from mermaid"`, and watch it appear
-   on the right while the left keeps the current architecture. `mermaid` takes
-   no `--pane` and never will: it names a board, while a browser pane is a
-   pane, so the pane is already decided (TASK-046). Aim it at a board no pane
-   is holding and it converts nothing, and says which panes are up and how to
-   put that board on one.
+proposal from mermaid"`. The server converts and persists the named board with
+   zero connected browser clients. Any pane already showing that board receives
+   the committed update; an off-screen board is converted just the same. Use
+   `browser show` separately when you want to display it. `mermaid` takes no
+   `--pane`, because conversion is board work rather than live-session control.
 
 Step 5 is the one worth watching closely. The tool returns structure; the agent
 narrates it. If the narration is wrong or thin, the question is usually whether

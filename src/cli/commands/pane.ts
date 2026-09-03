@@ -115,12 +115,6 @@ export const paneOpenContract = defineCommand({
 	refusals: serverBrowserRefusals,
 	relationships: [
 		{ method: "POST", path: "/api/panes/open", cardinality: "one", description: "Open the pane" },
-		{
-			method: "POST",
-			path: "/api/boards/open",
-			cardinality: "conditional",
-			description: "Open the named board in the new pane",
-		},
 	],
 	async handler(input, context) {
 		await context.require("server", "Opening a pane");

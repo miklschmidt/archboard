@@ -143,9 +143,10 @@ The evidence tools answer different questions:
 
 ## Drawing an architecture pass
 
-Author with `add` or `apply` rather than `mermaid`. Mermaid is converted
-in the browser and reaches the board as a change report from that tab, so it
-needs a tab open and hands you no ids to work with.
+Use `add` or `apply` when you need stable ids for follow-up edits. `mermaid`
+converts into one explicitly named persisted board through the server-owned
+renderer and needs no connected browser. A pane already showing the board
+receives the committed update; `browser show` is a separate display action.
 
 A whole pass is the shape of work a claim is for, and the human standing at the
 board is who it takes the board from: `SKILL.md`, "One writer at a time".
