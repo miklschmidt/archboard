@@ -63,6 +63,15 @@ describe("Codex generated client request params", () => {
 		}
 	});
 
+	test("keeps large finite numbers inside generated JsonValue fields", () => {
+		const params = {
+			threadId: "thread-1",
+			items: [{ magnitude: 1.5e20 }],
+		};
+
+		expect(decodeClientRequestParams("thread/inject_items", params)).toEqual(params);
+	});
+
 	test("owns the public initialize wire decoder beyond the authored session policy", async () => {
 		const publicProtocol = await import("../index.js");
 		const generatedParams = {

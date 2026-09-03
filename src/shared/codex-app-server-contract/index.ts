@@ -6,7 +6,7 @@ import type {
 	InitializeResponse,
 	ServerNotification as GeneratedServerNotification,
 	ServerRequest as GeneratedServerRequest,
-} from "./generated/index.js";
+} from "./generated/current/index.js";
 import type {
 	CommandExecutionRequestApprovalResponse,
 	CancelLoginAccountResponse,
@@ -46,7 +46,7 @@ import type {
 	TurnStartResponse,
 	TurnSteerResponse,
 	ToolRequestUserInputResponse,
-} from "./generated/v2/index.js";
+} from "./generated/current/v2/index.js";
 
 export type CodexJsonWire<T> = unknown extends T
 	? keyof T extends never
@@ -161,9 +161,6 @@ function normalizeValue(value: unknown, path: string): CodexJsonValue {
 	if (value === null || typeof value === "string" || typeof value === "boolean") return value;
 	if (typeof value === "number") {
 		if (!Number.isFinite(value)) throw new TypeError(`${path} is not a finite JSON number`);
-		if (Number.isInteger(value) && !Number.isSafeInteger(value)) {
-			throw new TypeError(`${path} is outside the safe JSON integer range`);
-		}
 		return value;
 	}
 	if (typeof value === "bigint") {
@@ -177,11 +174,9 @@ function normalizeValue(value: unknown, path: string): CodexJsonValue {
 	if (prototype !== Object.prototype && prototype !== null) {
 		throw new TypeError(`${path} is not a plain JSON object`);
 	}
-	const normalized: { [key: string]: CodexJsonValue } = {};
-	for (const [key, entry] of Object.entries(value)) {
-		normalized[key] = normalizeValue(entry, `${path}.${key}`);
-	}
-	return normalized;
+	return Object.fromEntries(
+		Object.entries(value).map(([key, entry]) => [key, normalizeValue(entry, `${path}.${key}`)]),
+	);
 }
 
 /** Normalizes untrusted app-server JSON before any handwritten ingress parser runs. */
