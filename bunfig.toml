@@ -13,4 +13,4 @@
 exact = true
 
 [test]
-preload = ["./tests/test-preload.ts"]
+preload = ["./tests/system/repository-policy/support/test-preload.ts"]
