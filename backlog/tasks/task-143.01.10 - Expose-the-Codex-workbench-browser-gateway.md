@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-03 22:41'
+updated_date: '2026-09-03 23:44'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -41,9 +41,10 @@ Expose the closed browser gateway for account and session readiness, thread link
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Extend the existing browser projection disconnect seam with exact connection retirement, thread it through the canvas gateway, and discard timeline state on close/replacement without introducing another lifecycle owner.
-2. Replace raw SessionTurn retention with bounded compact owner presentations, require the method-bound timelineListPage cursor, cap final items after approval interleaving, and enforce one below-1 MiB timeline budget with injectable tiny limits for focused tests.
-3. Add focused regression coverage for close-then-notify, bounded ingestion/item/aggregate output, required cursor, stale links, notification recovery, and run the exact existing owners plus type, lint, format, boundary, inventory, and diff checks; commit separately and leave acceptance criteria unchecked.
+1. Re-key timeline ownership by pane and exact browser connection, notify every live connection, and retire only the named pair; add focused same-pane dual-connection lifecycle coverage.
+2. Use one validated canvas browser-projection budget for timeline retention and the complete gateway snapshot; reject below-envelope limits and add a focused full-gateway owner with nonempty competing fields.
+3. Propagate bounded user-content scan truncation and replace type-system bypasses in the canvas gateway timeline owner with typed fixtures.
+4. Run only focused owners, both TypeScript projects, scoped lint/format/diff/boundary checks; update implementation notes, commit separately, and report READY_FOR_REREVIEW without integrating.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -60,6 +61,8 @@ Reopened with user approval after TASK-143.03.03, TASK-143.03.06, and TASK-143.0
 Live browser timeline producer implemented. A single canvas owner reads bounded typed thread-turn pages with full item view, obtains only the opaque timeline cursor from the session boundary, maps the seven reviewed presentation arms plus exact item-bound ordinary approvals, strips NULs, bounds text/cursors/items, and caches per pane/link/capability. Stale link loads are discarded; matching raw transport notifications are correlated through the trusted identity serializer; failed refreshes recover on a later matching event. The existing gateway projection receives the owner output and production lifecycle disposes it with the generation; no browser DTO builder, second reducer, or mutation path was added. Evidence: 70 focused tests and 435 assertions passed across timeline, gateway, projection, generation, recovery, and production-initialization owners; root and frontend TypeScript, scoped Oxlint/Oxfmt, repository boundary/inventory policy, and diff checks passed. No broad, browser, or full check lane ran. Acceptance criteria remain unchecked and the task remains In Progress.
 
 Remediation implementation complete: the existing gateway notifyDisconnect seam now synchronously retires projection state with the exact browser connection identity, including replacement, close, child-exit, and shutdown paths; the canvas adapter passes that identity into timeline reads and retirement. The timeline owner projects and bounds each source turn during ingestion, retains only compact owner presentation data, requires the typed thread/timeline method pair, caps final approval-interleaved items, and enforces one bounded turn/item/byte budget (production ceiling 768 KiB, injectable tiny limits in focused owners). Focused remediation owners prove close-then-notify produces no retained read/publication, reject source inspection beyond a tiny item limit, use timeline/list's cursor, preserve matching approval chronology while omitting unmatched overflow, and stay within a 5 KiB aggregate budget. Evidence: 67 focused gateway/timeline/projection/generation tests and 407 assertions passed; 61 repository boundary/inventory tests and 132 assertions passed; both TypeScript graphs, scoped Oxlint/Oxfmt, and diff checks passed. No broad, browser, system, performance, or capacity lane ran. Acceptance criteria remain unchecked and task remains In Progress.
+
+Hard-review remediation complete at the requested focused boundaries. Timeline state is now owned per pane and exact browser connection, so concurrent same-pane sockets load independently, every live pair observes correlated refreshes, and close retires only the named pair. One validated CanvasBrowserProjectionBudget now supplies both bounded timeline retention and the gateway's complete BrowserSnapshot limit; the gateway fits timeline history only after queue, ordinary approvals, dynamic approvals, semantic/coordinator, voice, lease, and operation fields are present, and rejects budgets below the 32 KiB base envelope. User-message summary scanning now propagates truncation when text lies beyond the 32-part scan. The canvas gateway timeline owner uses typed fixtures with no as-never or double-assertion bypasses; two unused test-support helpers were removed.\n\nVerification: 73 focused gateway/projection/timeline/generation/production-initialization tests passed with 463 assertions; both TypeScript projects passed; scoped Oxlint and Oxfmt passed; repository boundary and test-inventory owners passed 61 tests with 132 assertions; git diff --check passed. No broad, browser, system, stress, capacity, performance, tooling, topology, or concurrency lane ran. Remaining TASK-143.01.02 contract risk: non-timeline browser fields have no truncation semantics, so the gateway preserves them and rejects invalid_projection if they alone exceed the configured complete-snapshot budget. Acceptance criteria remain unchecked and TASK-143.01.10 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -68,5 +71,11 @@ Remediation implementation complete: the existing gateway notifyDisconnect seam 
 created: 2026-09-02 01:39
 ---
 Course correction, 2026-09-02: 8bac86bf is a Backlog-only blocker record with no unique product change. Fold its useful context into recovery and drop it after its head is durably referenced; it receives no replay.
+---
+
+author: @codex
+created: 2026-09-03 23:44
+---
+Hard-review remediation is green at the requested focused boundaries; preparing the separate commit and parent rereview callback. The task remains In Progress.
 ---
 <!-- COMMENTS:END -->

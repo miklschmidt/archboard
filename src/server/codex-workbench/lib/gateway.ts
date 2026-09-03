@@ -42,8 +42,11 @@ import {
 } from "./contract.js";
 import type { BrowserOwnerProjection } from "./projection-contract.js";
 import {
+	BROWSER_SNAPSHOT_MAX_BYTES,
+	assertBrowserSnapshotBudget,
 	assertBrowserSnapshotBounded,
 	diffBrowserSnapshots,
+	fitBrowserSnapshotBounded,
 	projectCodexBrowserState,
 } from "./projection.js";
 
@@ -309,6 +312,8 @@ export function createCodexWorkbenchGateway(
 	const leaseReasons = new Map<BrowserCommandId, CodexWorkbenchGatewayError["code"]>();
 	const pendingSettlements = new Set<Promise<void>>();
 	const now = options.now ?? Date.now;
+	const snapshotMaxBytes = options.snapshotMaxBytes ?? BROWSER_SNAPSHOT_MAX_BYTES;
+	assertBrowserSnapshotBudget(snapshotMaxBytes);
 	let disposed = false;
 	let publishing = false;
 	let publishQueued = false;
@@ -552,8 +557,9 @@ export function createCodexWorkbenchGateway(
 				operation: state.operation,
 			});
 			if (result.tag === "refused") throw new Error(result.message);
-			assertBrowserSnapshotBounded(result.snapshot);
-			return result.snapshot;
+			const snapshot = fitBrowserSnapshotBounded(result.snapshot, snapshotMaxBytes);
+			assertBrowserSnapshotBounded(snapshot, snapshotMaxBytes);
+			return snapshot;
 		} catch (error) {
 			throw new CodexWorkbenchGatewayError(
 				"invalid_projection",

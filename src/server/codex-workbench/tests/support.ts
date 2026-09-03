@@ -74,6 +74,11 @@ export interface GatewayHarness {
 	) => DynamicApprovalOwnerView;
 }
 
+export interface GatewayHarnessOptions {
+	readonly snapshotMaxBytes?: number;
+	readonly project?: (projection: BrowserOwnerProjection) => BrowserOwnerProjection;
+}
+
 function executableLink(
 	childId: ChildId,
 	epoch: ChildEpoch,
@@ -141,6 +146,7 @@ export function createGatewayHarness(
 	authorities: IdentityAuthorities = createIdentityAuthorities(),
 	lifecycle?: BrowserLifecyclePort,
 	onProjectionDisconnect?: BrowserProjectionPort["onBrowserDisconnect"],
+	options: GatewayHarnessOptions = {},
 ): GatewayHarness {
 	const model = createCodexBrowserModel(authorities);
 	const childId = model.ChildIdSchema.parse(authorities.identity.validator.childId);
@@ -306,32 +312,35 @@ export function createGatewayHarness(
 		},
 	};
 	const projection: BrowserProjectionPort = {
-		read: ({ mediaReady }): BrowserOwnerProjection => ({
-			readiness,
-			account,
-			login: { kind: "login", state: "idle" },
-			timeline: null,
-			queue: { kind: "codex_queue", submissions: [] },
-			settings: [],
-			approvals: ordinaryApproval === null ? [] : [ordinaryApproval],
-			dynamicApprovals,
-			semantic: { kind: "codex_semantic", outcome: null, freshness: null },
-			coordinator: {
-				kind: "codex_coordinator",
-				state: "unbound",
-				threadId: null,
-				configured: null,
-				effective: null,
-				reason: null,
-			},
-			voice: {
-				kind: "codex_voice",
-				mediaReady,
-				generation: null,
-				coordinatorState: "ready",
-				transcript: [],
-			},
-		}),
+		read: ({ mediaReady }): BrowserOwnerProjection => {
+			const owner: BrowserOwnerProjection = {
+				readiness,
+				account,
+				login: { kind: "login", state: "idle" },
+				timeline: null,
+				queue: { kind: "codex_queue", submissions: [] },
+				settings: [],
+				approvals: ordinaryApproval === null ? [] : [ordinaryApproval],
+				dynamicApprovals,
+				semantic: { kind: "codex_semantic", outcome: null, freshness: null },
+				coordinator: {
+					kind: "codex_coordinator",
+					state: "unbound",
+					threadId: null,
+					configured: null,
+					effective: null,
+					reason: null,
+				},
+				voice: {
+					kind: "codex_voice",
+					mediaReady,
+					generation: null,
+					coordinatorState: "ready",
+					transcript: [],
+				},
+			};
+			return options.project?.(owner) ?? owner;
+		},
 		onChange: (listener) => {
 			projectionListeners.add(listener);
 			return () => projectionListeners.delete(listener);
@@ -345,6 +354,7 @@ export function createGatewayHarness(
 		threadLink,
 		actions,
 		lifecycle,
+		snapshotMaxBytes: options.snapshotMaxBytes,
 		now: () => clock,
 	});
 
