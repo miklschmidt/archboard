@@ -402,6 +402,8 @@ export interface BrowserWorkbenchConnection {
 	readonly paneId: string;
 	readonly instance: BrowserConnectionInstance;
 	readonly snapshot: () => BrowserGatewaySnapshotMessage;
+	/** Confirm a snapshot-bearing result only after its transport send succeeds. */
+	readonly confirmPublished: (snapshot: BrowserSnapshot) => void;
 	readonly claimLease: () => BrowserCommandLease;
 	readonly renewLease: () => BrowserCommandLease;
 	readonly releaseLease: () => BrowserCommandLease | null;

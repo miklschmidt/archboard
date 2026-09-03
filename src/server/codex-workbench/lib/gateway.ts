@@ -62,6 +62,7 @@ interface ConnectionState {
 	readonly paneId: string;
 	readonly instance: BrowserConnectionInstance;
 	readonly listeners: Set<(message: BrowserGatewayMessage) => void>;
+	readonly publishedTerminals: Set<JsonRpcRequestId>;
 	sequence: number;
 	lastSnapshot: BrowserSnapshot | null;
 	operation: BrowserOperationOutcome | null;
@@ -271,15 +272,19 @@ function currentLeaseOrThrow(
 function emit(
 	listeners: Set<(message: BrowserGatewayMessage) => void>,
 	message: BrowserGatewayMessage,
-): void {
+): boolean {
+	if (listeners.size === 0) return false;
+	let published = true;
 	for (const listener of listeners) {
 		try {
 			listener(message);
 		} catch {
+			published = false;
 			// A broken browser subscriber cannot block other subscribers or the
 			// owner projection from advancing.
 		}
 	}
+	return published;
 }
 
 function publishedTerminalIds(snapshot: BrowserSnapshot): readonly JsonRpcRequestId[] {
@@ -558,7 +563,6 @@ export function createCodexWorkbenchGateway(
 			sequence: state.sequence,
 			snapshot,
 		});
-		acknowledgeSnapshot(snapshot);
 		return message;
 	};
 
@@ -566,8 +570,31 @@ export function createCodexWorkbenchGateway(
 		if (requestIds.length > 0) options.actions.ordinaryApprovals.acknowledgePublished(requestIds);
 	};
 
-	const acknowledgeSnapshot = (snapshot: BrowserSnapshot): void => {
-		acknowledgeRequestIds(publishedTerminalIds(snapshot));
+	const acknowledgeReadyTerminals = (): void => {
+		const candidates = options.actions.ordinaryApprovals.unpresentedTerminals();
+		const candidateSet = new Set(candidates);
+		for (const state of connections.values())
+			for (const requestId of state.publishedTerminals)
+				if (!candidateSet.has(requestId)) state.publishedTerminals.delete(requestId);
+		const requestIds =
+			connections.size === 0
+				? candidates
+				: candidates.filter((requestId) =>
+						Array.from(connections.values()).every(
+							(state) => !state.closed && state.publishedTerminals.has(requestId),
+						),
+					);
+		if (requestIds.length === 0) return;
+		acknowledgeRequestIds(requestIds);
+		for (const state of connections.values())
+			for (const requestId of requestIds) state.publishedTerminals.delete(requestId);
+	};
+
+	const confirmPublished = (state: ConnectionState, snapshot: BrowserSnapshot): void => {
+		if (state.closed || connections.get(connectionKey(state.browserId, state.paneId)) !== state)
+			return;
+		for (const requestId of publishedTerminalIds(snapshot)) state.publishedTerminals.add(requestId);
+		acknowledgeReadyTerminals();
 	};
 
 	const publishConnection = (state: ConnectionState): readonly JsonRpcRequestId[] => {
@@ -578,7 +605,7 @@ export function createCodexWorkbenchGateway(
 			if (delta === null) return [];
 			state.sequence += 1;
 			state.lastSnapshot = snapshot;
-			emit(
+			const published = emit(
 				state.listeners,
 				Object.freeze({
 					kind: "delta",
@@ -586,16 +613,16 @@ export function createCodexWorkbenchGateway(
 					delta,
 				}),
 			);
-			return publishedTerminalIds(snapshot);
+			return published ? publishedTerminalIds(snapshot) : [];
 		} catch (error) {
 			if (!isOversizedDelta(error)) throw error;
 			state.sequence += 1;
 			state.lastSnapshot = snapshot;
-			emit(
+			const published = emit(
 				state.listeners,
 				Object.freeze({ kind: "snapshot", sequence: state.sequence, snapshot }),
 			);
-			return publishedTerminalIds(snapshot);
+			return published ? publishedTerminalIds(snapshot) : [];
 		}
 	};
 
@@ -606,18 +633,17 @@ export function createCodexWorkbenchGateway(
 			return;
 		}
 		publishing = true;
-		const terminalIds = new Set<JsonRpcRequestId>();
 		try {
 			if (connections.size === 0) {
-				acknowledgeRequestIds(options.actions.ordinaryApprovals.unpresentedTerminals());
+				acknowledgeReadyTerminals();
 				return;
 			}
 			do {
 				publishQueued = false;
 				for (const state of connections.values())
-					for (const requestId of publishConnection(state)) terminalIds.add(requestId);
+					for (const requestId of publishConnection(state)) state.publishedTerminals.add(requestId);
 			} while (publishQueued);
-			acknowledgeRequestIds([...terminalIds]);
+			acknowledgeReadyTerminals();
 		} finally {
 			publishing = false;
 		}
@@ -1110,6 +1136,7 @@ export function createCodexWorkbenchGateway(
 			paneId,
 			instance,
 			listeners: new Set(),
+			publishedTerminals: new Set(),
 			sequence: 0,
 			lastSnapshot: null,
 			operation: null,
@@ -1185,6 +1212,7 @@ export function createCodexWorkbenchGateway(
 		state.listeners.clear();
 		const key = connectionKey(state.browserId, state.paneId);
 		if (connections.get(key) === state) connections.delete(key);
+		acknowledgeReadyTerminals();
 		const current = leaseManager.current();
 		if (current?.binding.connection === state.instance) {
 			const released = leaseManager.release(
@@ -1255,6 +1283,7 @@ export function createCodexWorkbenchGateway(
 				const current = stateFor(state.browserId, state.paneId, state.instance);
 				return updateSnapshot(current);
 			},
+			confirmPublished: (snapshot: BrowserSnapshot) => confirmPublished(state, snapshot),
 			claimLease: () => claimLease(state.browserId, state.paneId, state.instance),
 			renewLease: () => {
 				stateFor(state.browserId, state.paneId, state.instance);

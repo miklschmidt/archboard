@@ -55,12 +55,12 @@ export function createCanvasOrdinaryApprovalActions(
 			}
 		},
 		resolve: async (command) => {
-			await approvals.resolve({
+			const settlement = await approvals.resolve({
 				requestId: command.requestId,
 				approvalId: command.approvalId,
 				response: command.response,
 			});
-			return { outcome: "delivered" };
+			return { outcome: settlement.outcome };
 		},
 		acknowledge: (requestId) => approvals.acknowledge(requestId),
 		unpresentedTerminals: () =>
