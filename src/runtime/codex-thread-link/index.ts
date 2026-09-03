@@ -3,6 +3,7 @@ import {
 	createCodexThreadLinkClassifier,
 	discoverCodexThreadLinkCandidates,
 } from "./lib/classifier.js";
+import { CodexThreadLinkConflictError } from "./lib/contract.js";
 import type {
 	CodexThreadLinkClassifierOptions,
 	CodexThreadLinkPort,
@@ -10,11 +11,7 @@ import type {
 } from "./lib/contract.js";
 
 export { createCodexThreadLinkBinding } from "./lib/binding.js";
-export {
-	classifyCodexThreadLink,
-	createCodexThreadLinkClassifier,
-	discoverCodexThreadLinkCandidates,
-} from "./lib/classifier.js";
+export { classifyCodexThreadLink, createCodexThreadLinkClassifier } from "./lib/classifier.js";
 export { CodexThreadLinkConflictError, CodexThreadLinkError } from "./lib/contract.js";
 export type {
 	CodexThreadLinkClassifier,
@@ -37,11 +34,11 @@ export type {
 	ThreadLinkClassification,
 	ThreadLinkCandidate,
 	ThreadLinkCandidateDiscovery,
+	ThreadLinkCandidateSource,
 	ThreadLinkClassificationErrorCode,
 	ThreadLinkCompareAndSwapInput,
 	ThreadLinkCurrentEpoch,
 	ThreadLinkCurrentEpochSource,
-	ThreadLinkDiscoveryAuthority,
 	ThreadLinkCondition,
 	ThreadLinkEpochProof,
 	ThreadLinkEpochAuthority,
@@ -61,10 +58,14 @@ export interface CodexThreadLinkOptions extends Omit<CodexThreadLinkClassifierOp
 	readonly epoch: ThreadLinkEpochAuthority;
 }
 
+type CandidateTargets = Awaited<ReturnType<typeof discoverCodexThreadLinkCandidates>>["targets"];
+
 /** Combine deterministic classification with a proof-checked pane binding boundary. */
 export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThreadLinkPort {
 	const classifier = createCodexThreadLinkClassifier(options);
 	const binding = createCodexThreadLinkBindingController(options);
+	let discoveryGeneration = 0;
+	let candidateTargets: CandidateTargets = new Map();
 	const classifyAndBind: CodexThreadLinkPort["classifyAndBind"] = async (
 		paneId,
 		expected,
@@ -76,9 +77,45 @@ export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThr
 		const fresh = await classifier.classify(target);
 		return binding.commitClassified(paneId, expected, fresh);
 	};
+	const discoverCandidates: CodexThreadLinkPort["discoverCandidates"] = async () => {
+		const generation = ++discoveryGeneration;
+		candidateTargets = new Map();
+		const inventory = await discoverCodexThreadLinkCandidates(options);
+		if (generation !== discoveryGeneration) {
+			throw new CodexThreadLinkConflictError(
+				"A newer thread-candidate discovery replaced this result; refresh the candidate list.",
+			);
+		}
+		candidateTargets = new Map(inventory.targets);
+		return inventory.result;
+	};
+	const bindCandidate: CodexThreadLinkPort["bindCandidate"] = async (
+		paneId,
+		expected,
+		selectionId,
+	) => {
+		const retained = candidateTargets.get(selectionId);
+		if (typeof selectionId !== "string" || selectionId.length === 0 || retained === undefined) {
+			throw new CodexThreadLinkConflictError(
+				"The thread-candidate selection is unknown, stale, or already used; refresh the candidate list.",
+			);
+		}
+		candidateTargets.delete(selectionId);
+		const current = options.epoch.snapshot().cas;
+		if (
+			current.revision !== retained.epochRevision ||
+			current.bytesHash !== retained.epochBytesHash
+		) {
+			throw new CodexThreadLinkConflictError(
+				"The thread-candidate selection is unknown, stale, or already used; refresh the candidate list.",
+			);
+		}
+		return classifyAndBind(paneId, expected, retained.target);
+	};
 	return Object.freeze({
 		classify: classifier.classify,
-		discoverCandidates: () => discoverCodexThreadLinkCandidates(options),
+		discoverCandidates,
+		bindCandidate,
 		snapshot: binding.snapshot,
 		read: binding.read,
 		compareAndSwap: binding.compareAndSwap,

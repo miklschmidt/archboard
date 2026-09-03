@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
 	CodexEpochError,
 	type EpochExecutionProof,
@@ -24,7 +25,9 @@ import {
 	type CodexThreadLinkClassifier,
 	type CodexThreadLinkClassifierOptions,
 	type ThreadLinkClassification,
+	type ThreadLinkCandidate,
 	type ThreadLinkCandidateDiscovery,
+	type ThreadLinkCandidateSource,
 	type ThreadLinkCondition,
 	type ThreadLinkCurrentEpoch,
 	type ThreadLinkEpochAuthority,
@@ -784,6 +787,25 @@ function candidateRecord(
 	);
 }
 
+function candidateSource(source: ThreadLinkSource): ThreadLinkCandidateSource {
+	if (typeof source === "string") return source;
+	if (Object.hasOwn(source, "custom")) return "custom";
+	if (Object.hasOwn(source, "subAgent")) return "subAgent";
+	return "unknown";
+}
+
+interface ThreadLinkCandidateInventory {
+	readonly result: ThreadLinkCandidateDiscovery;
+	readonly targets: Map<
+		string,
+		{
+			readonly target: ThreadLinkTarget;
+			readonly epochRevision: number;
+			readonly epochBytesHash: string | null;
+		}
+	>;
+}
+
 function assertSameDiscoveryGeneration(
 	started: ReturnType<ThreadLinkEpochAuthority["snapshot"]>,
 	current: ReturnType<ThreadLinkEpochAuthority["snapshot"]>,
@@ -808,7 +830,7 @@ function assertSameDiscoveryGeneration(
 /** Publish one complete persisted/loaded join owned by one durable epoch generation. */
 export async function discoverCodexThreadLinkCandidates(
 	options: CodexThreadLinkClassifierOptions & { readonly epoch: ThreadLinkEpochAuthority },
-): Promise<ThreadLinkCandidateDiscovery> {
+): Promise<ThreadLinkCandidateInventory> {
 	const startedSnapshot = options.epoch.snapshot();
 	const startedEpoch = epochFromSnapshot(startedSnapshot);
 	const persisted = await exhaustThreadList(options.session);
@@ -823,31 +845,58 @@ export async function discoverCodexThreadLinkCandidates(
 		"exhausted",
 	);
 
-	const candidates = [...new Set(persisted.map(({ id }) => id))].map((threadId) => {
-		const record = candidateRecord(exhaustedSnapshot.manifest, threadId);
-		const target: ThreadLinkTarget = Object.freeze({
-			threadId,
-			childId: record?.correlation.childId ?? exhaustedEpoch?.childId ?? null,
-			epoch: record?.correlation.epoch ?? exhaustedEpoch?.epoch ?? null,
-			...(record === null
-				? {}
-				: {
-						operationId: record.correlation.operationId,
-						provenance: cloneAndFreeze(record),
-					}),
-		});
-		return Object.freeze({
-			target,
-			classification: classifyFromExhausted(
+	const targets = new Map<
+		string,
+		{
+			readonly target: ThreadLinkTarget;
+			readonly epochRevision: number;
+			readonly epochBytesHash: string | null;
+		}
+	>();
+	const candidates: ThreadLinkCandidate[] = [...new Set(persisted.map(({ id }) => id))].map(
+		(threadId) => {
+			const record = candidateRecord(exhaustedSnapshot.manifest, threadId);
+			const target: ThreadLinkTarget = Object.freeze({
+				threadId,
+				childId: record?.correlation.childId ?? exhaustedEpoch?.childId ?? null,
+				epoch: record?.correlation.epoch ?? exhaustedEpoch?.epoch ?? null,
+				...(record === null
+					? {}
+					: {
+							operationId: record.correlation.operationId,
+							provenance: cloneAndFreeze(record),
+						}),
+			});
+			const classification = classifyFromExhausted(
 				options,
 				target,
 				persisted,
 				loaded,
 				startedEpoch,
 				exhaustedEpoch,
-			),
-		});
-	});
+			);
+			let selectionId = randomUUID();
+			while (targets.has(selectionId)) selectionId = randomUUID();
+			targets.set(
+				selectionId,
+				Object.freeze({
+					target,
+					epochRevision: exhaustedSnapshot.cas.revision,
+					epochBytesHash: exhaustedSnapshot.cas.bytesHash,
+				}),
+			);
+			return Object.freeze({
+				selectionId,
+				threadId,
+				state: classification.link.state,
+				reason: classification.link.reason,
+				source: candidateSource(classification.observation.source),
+				status: classification.observation.status,
+				loaded: classification.observation.loaded,
+				canAcceptDirectInput: classification.observation.canAcceptDirectInput,
+			});
+		},
+	);
 
 	const finishedSnapshot = options.epoch.snapshot();
 	assertSameDiscoveryGeneration(
@@ -858,15 +907,8 @@ export async function discoverCodexThreadLinkCandidates(
 		"classified",
 	);
 	return Object.freeze({
-		authority:
-			exhaustedEpoch === null
-				? null
-				: Object.freeze({
-						...exhaustedEpoch,
-						manifestRevision: exhaustedSnapshot.manifest.revision,
-						manifestBytesHash: exhaustedSnapshot.cas.bytesHash,
-					}),
-		candidates: Object.freeze(candidates),
+		result: Object.freeze({ candidates: Object.freeze(candidates) }),
+		targets,
 	});
 }
 

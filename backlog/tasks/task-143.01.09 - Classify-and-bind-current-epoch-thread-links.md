@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-03 18:09'
+updated_date: '2026-09-03 18:18'
 labels: []
 dependencies:
   - TASK-143.01.05
@@ -46,6 +46,12 @@ Delegation profile: gpt-5.6-luna, max.
 2. Add one public candidate-discovery result to the authoritative CodexThreadLinkPort. Exhaust thread/list and thread/loaded/list once, exact-join by ThreadId, derive current-child provenance only from the durable epoch manifest, freeze the result, and reject cursor or authority-generation changes instead of publishing a partial or stale list.
 3. Keep executable adoption in the existing classifyAndBind and pane/link CAS store. Expose each candidate's exact target and classification so the downstream browser workbench can bind through that boundary without a second classifier or store.
 4. Add focused module tests for both inventories' pagination and repeated cursors, duplicate/disappearing rows, allowed and refused sources/capabilities/statuses, prior/stale/current epoch authority, discovery generation conflicts, and discovery-to-CAS adoption. Run focused thread-link tests plus exact formatter, linter, TypeScript, and diff checks only.
+
+Review remediation:
+1. Replace the public candidate's raw ThreadLinkTarget and ThreadLinkClassification with a closed browser-safe projection: opaque selectionId, threadId, state, reason, normalized source kind, status, loaded, and canAcceptDirectInput.
+2. Keep exact targets, SessionThread rows, durable records, and proofs in one per-port in-memory closure. Invalidate its selection map at every discovery start and consume a valid selection before resolving it.
+3. Add a host resolver that maps the opaque selection identity back to its retained exact target and calls the existing two-pass classifyAndBind plus pane/link CAS boundary. Reject unknown, cross-port, stale, and replayed selection identities with one deterministic conflict.
+4. Add focused module owners proving JSON-serialized discovery output cannot contain raw thread/proof/provenance/path/repository/turn/diagnostic data and proving valid, stale, forged, cross-port, and replayed selection behavior. Run focused thread-link tests, root TypeScript, and exact lint/format/diff checks only.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -64,6 +70,14 @@ Reopened with user approval after TASK-143.03.03 proved that no public authorita
 Reimplemented current-epoch candidate discovery on fixed base 23cc54fbc3405a7c5b80bb8de796ae2b53bd5e25. The existing classifier now classifies targets from one already exhausted typed SessionThread/ThreadId join, and the authoritative CodexThreadLinkPort exposes one frozen discovery generation for downstream browser consumers. Discovery reads only the durable epoch store, retains current, stale, prior, and thread/start outcome-unknown provenance, rejects cursor loops and manifest-generation changes, and sends selected targets back through the existing two-pass classifyAndBind plus pane/link CAS boundary. No second classifier or binding store was added.
 
 Focused validation: bun test src/runtime/codex-thread-link/tests passed 41 tests and 142 assertions in 6.51s; bunx tsc --noEmit --pretty false passed in 1.92s; exact-file oxlint passed in 0.14s; exact-file oxfmt check passed in 0.10s; git diff --check passed. No full, system, repository, browser, stress, performance, or tooling lane ran.
+
+Independent-review remediation after 9c94a7ae: replaced public raw ThreadLinkTarget/ThreadLinkClassification candidates with the exact browser-safe projection selectionId, threadId, state, reason, source, status, loaded, and canAcceptDirectInput. Custom and subagent source payloads normalize to closed display tags. Exact targets, SessionThread rows, durable operation records, proofs, paths, repository metadata, turns, content, and diagnostics now remain in one per-port host closure.
+
+Each UUID selection is scoped to one successful discovery generation and port, bound to the discovery epoch-manifest CAS, and consumed before resolution. New discovery, manifest change, cross-port use, unknown/forged input, or replay returns the same actionable conflict. A valid selection resolves the retained target only through the existing two fresh classifications and pane/link CAS adoption.
+
+The focused browser-safe seam owner asserts the public discovery and candidate key sets exactly and proves serialized values exclude target, classification, proof, provenance, cwd/path, workspaceRoot, hashes, repository metadata, turns/content, custom payload, and outcome-unknown diagnostics. It would fail against 9c94a7ae, whose public candidate directly contained target and classification. Lifecycle coverage proves valid selection, cross-port, forged, superseded-generation, changed-manifest, and replay behavior.
+
+Focused validation: bun test src/runtime/codex-thread-link/tests passed 43 tests and 167 assertions in 7.64s; root bunx tsc --noEmit --pretty false passed in 1.79s; exact-file oxlint passed in 0.15s; exact-file oxfmt check passed in 0.09s; git diff --check against 9c94a7ae passed. No broad module, system, repository, browser, check, stress, performance, or tooling suite ran.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
