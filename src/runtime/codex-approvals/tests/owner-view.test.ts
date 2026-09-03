@@ -1,6 +1,36 @@
 import { expect, test } from "bun:test";
 
+import type {
+	ApprovalOwnerView,
+	CodexApprovalBrokerOptions,
+	DeepReadonlyApprovalRequest,
+} from "../index.js";
 import { closeBroker, commandRequest, permissionsRequest, testBroker } from "./support.js";
+
+function compileDeepReadonlyOwnerContracts(
+	bindingRequest: Parameters<NonNullable<CodexApprovalBrokerOptions["getCurrentBinding"]>>[0],
+	spokenRequest: Parameters<
+		NonNullable<CodexApprovalBrokerOptions["getSpokenEligibilityFacts"]>
+	>[0],
+	view: ApprovalOwnerView,
+): void {
+	const canonical: DeepReadonlyApprovalRequest = view.request;
+	void canonical;
+	if (bindingRequest.family === "command_execution") {
+		// @ts-expect-error Broker-owned generated decisions are deeply readonly.
+		bindingRequest.params.availableDecisions?.push("cancel");
+	}
+	if (spokenRequest.family === "permissions") {
+		// @ts-expect-error Broker-owned nested permission profiles are deeply readonly.
+		spokenRequest.params.permissions.fileSystem?.entries?.push({ access: "deny" });
+	}
+	if (view.request.family === "user_input") {
+		// @ts-expect-error Owner views do not expose mutable generated question arrays.
+		view.request.params.questions.push(view.request.params.questions[0]);
+	}
+}
+
+void compileDeepReadonlyOwnerContracts;
 
 test("the approval owner view retains normalized request and terminal settlement state", async () => {
 	const fixture = testBroker();

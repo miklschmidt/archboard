@@ -49,6 +49,10 @@ export interface CodexWorkbenchGenerationFixture {
 	readonly calls: ReadonlyMap<string, number>;
 	readonly requestListeners: RequestListener[];
 	readonly notificationListeners: NotificationListener[];
+	readonly replaceComponent: <Name extends keyof CodexWorkbenchComponents>(
+		name: Name,
+		value: CodexWorkbenchComponents[Name],
+	) => void;
 }
 
 export function createCodexWorkbenchGenerationFixture(
@@ -209,5 +213,8 @@ export function createCodexWorkbenchGenerationFixture(
 		calls,
 		requestListeners,
 		notificationListeners,
+		replaceComponent: (name, value) => {
+			Object.assign(components, { [name]: value });
+		},
 	};
 }
