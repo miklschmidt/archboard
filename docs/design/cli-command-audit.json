@@ -743,24 +743,20 @@
 			"parserOwner": "CommandContract staged token parser",
 			"handlerOwner": "src/cli/commands/board.ts",
 			"stdout": "json object",
-			"result": "new board and pane placement",
-			"diagnostics": "pane notes",
-			"exits": [0, 1, 2, 3, 4],
+			"result": "persisted empty board identity",
+			"diagnostics": "persisted note path",
+			"exits": [0, 1, 2, 3],
 			"prerequisites": ["server"],
 			"relationships": ["POST /api/boards/new"],
-			"semantics": "creates in-memory board state and optionally points a pane; performs no note write",
-			"ordering": "address validation before write",
-			"nextFields": ["board", "file", "version", "panes"],
+			"semantics": "atomically creates the canonical empty note without changing a pane",
+			"ordering": "address validation before exclusive atomic publication",
+			"nextFields": ["board", "file", "version"],
 			"workflow": "necessary composition",
-			"effects": ["server-state-write", "browser"],
+			"effects": ["server-state-write"],
 			"refusals": [
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
-				},
-				{
-					"code": "BROWSER_REQUIRED",
-					"exit": 4
 				}
 			]
 		},

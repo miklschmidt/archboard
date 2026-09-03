@@ -428,7 +428,7 @@ export function openBoard(
 	return post<BoardInfo>("/api/boards/open", address);
 }
 
-export function newBoard(address: Partial<BoardIdentity> & { board: string; pane?: string }) {
+export function newBoard(address: Partial<BoardIdentity> & { board: string }) {
 	return post<BoardInfo>("/api/boards/new", address);
 }
 

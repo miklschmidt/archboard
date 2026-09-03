@@ -273,7 +273,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 		summary: "Load, save and list boards in the vault",
 		usage: [
 			"board list [--repo <host/owner/name> | --here] [--text]",
-			"        | info | new <name> [--variant v] [--level system|service|module] [--pane <spec>]",
+			"        | info | new <name> [--variant v] [--level system|service|module]",
 			"        | open <name[@variant]> [--variant v] [--reload] [--pane <spec>]",
 			"        | save --board <key> [--as <name>] [--variant v] [--level l] [--force]",
 			"",

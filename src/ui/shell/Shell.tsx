@@ -791,16 +791,15 @@ export function Shell(): React.JSX.Element {
 	const handleNew = useCallback(
 		(address: { board: string; variant?: string; level?: string; pane?: string }): void =>
 			void run(async () => {
-				const created = await newBoard({ ...address, ...paneTarget(address) });
-				setBoardInfo(created);
+				const created = await newBoard(address);
 				setDialog(null);
 				setNotice({
 					kind: "info",
-					text: `${created.board} started. It is not in the vault until you save it.`,
+					text: `${created.board} was created in the vault. Open it when you want to show it.`,
 				});
 				void refreshBoardListing();
 			}),
-		[paneTarget, refreshBoardListing, run],
+		[refreshBoardListing, run],
 	);
 
 	const handleNavigate = useCallback(

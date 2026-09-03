@@ -14,30 +14,18 @@
 // and its note is at <path>", which is a fact about this process rather than
 // about the board.
 //
-// So there is no cache to invalidate here and nothing here is unsaved. A board
-// with no note yet — a `board new` nobody has written, a scratch board in a
-// fresh vault — is empty rather than pending.
+// So there is no cache to invalidate here and nothing here is unsaved. Board
+// creation publishes its empty note before adding an address here.
 //
 // A canvas holds exactly one board at a time (CONTEXT.md) and a pane is a slot
 // holding its own canvas, so the number of boards on screen is the number of
 // panes.
 //
-// The pointer that used to live here — `activeKey`, "the board" — is gone. It
-// answered for every caller that named no board, and with a board per pane
-// there is nothing for it to point at that is not a guess. So resolveBoard()
-// requires a key and refuses without one (ADR 0009), and this module is the
-// single place every board-blind caller funnelled through, which is why the
-// refusal only had to be written once.
+// `resolveBoard()` lives beside note I/O. It resolves the explicit address from
+// the vault before it installs or reuses one of these records (ADR 0020).
 
 import { type ServerElement } from "./types.js";
-import { BoardRequiredError } from "./board-target.js";
-import {
-	type BoardIdentity,
-	boardKey,
-	makeIdentity,
-	normalizeBoardKey,
-	SCRATCH_BOARD,
-} from "./board.js";
+import { type BoardIdentity, boardKey, makeIdentity, SCRATCH_BOARD } from "./board.js";
 
 export interface BoardState {
 	identity: BoardIdentity;
@@ -106,40 +94,12 @@ export function openBoardKeys(): string[] {
 	return Array.from(boards.keys()).toSorted();
 }
 
-// Resolve the board a request names — and it has to name one.
-//
-// There is deliberately no else-branch here. The pointer this function used to
-// fall back to is gone (ADR 0009): with a board per pane there is no single
-// board for it to point at, and any answer invented for a caller who named
-// none is a write landing somewhere nobody chose.
-export function resolveBoard(
-	key?: string | null,
-	what?: string,
-): { key: string; board: BoardState } {
-	if (key === undefined || key === null || key.trim() === "") {
-		throw new BoardRequiredError(openBoardKeys(), what);
-	}
-	// Addresses are case-insensitive (ADR 0010), so `--board Payments` reaches
-	// the board that was opened as `payments`. Normalising here rather than at
-	// each caller is the same reasoning as the refusal above: this is the one
-	// door every board-shaped request comes through.
-	const normalized = normalizeBoardKey(key);
-	const board = boards.get(normalized);
-	if (!board) {
-		throw new Error(
-			`Board "${normalized}" is not open. Open it first (\`board open ${normalized}\`). ` +
-				`Open right now: ${openBoardKeys().join(", ")}.`,
-		);
-	}
-	return { key: normalized, board };
-}
-
 export function getOrCreateBoard(identity: BoardIdentity): { key: string; board: BoardState } {
 	const key = boardKey(identity);
 	const existing = boards.get(key);
 	if (existing) {
 		// Identity can gain a level (or have one corrected) without the board
-		// being reloaded; the address itself cannot change here.
+		// being resolved again; the address itself cannot change here.
 		//
 		// The display casing is the note's, not the caller's: opening `payments`
 		// must not rename a board somebody created as `Payments`, because the

@@ -44,20 +44,29 @@ import fs from "fs";
 import path from "path";
 
 import { type ExcalidrawFile, type ServerElement } from "./types.js";
-import { writeFileAtomic } from "./atomic-write.js";
+import { writeFileAtomic, writeFileAtomicExclusive } from "./atomic-write.js";
 import { holdOn } from "./board-hold.js";
-import { type BoardState, baselineForFile, recordBaseline } from "./board-store.js";
+import {
+	type BoardState,
+	baselineForFile,
+	getOrCreateBoard,
+	openBoardKeys,
+	recordBaseline,
+} from "./board-store.js";
+import { BoardRequiredError, BoardResolutionError } from "./board-target.js";
 import {
 	type BoardIdentity,
 	boardKey,
 	hashBoardBytes,
 	identityFromFrontmatter,
 	identityFromVaultPath,
+	listBoards,
 	makeIdentity,
 	parseBoardKey,
 	renderBoardNote,
 	requireVaultRoot,
 	sceneJsonWithEmbeddedImages,
+	SCRATCH_BOARD,
 	vaultPathFor,
 } from "./board.js";
 import {
@@ -305,6 +314,222 @@ export function readNote(file: string): BoardContent | null {
 	return { elements, files, note: note.raw, hash: note.hash, version: note.version };
 }
 
+function parseLoadedScene(loaded: LoadedBoard): unknown {
+	try {
+		return JSON.parse(loaded.sceneJson);
+	} catch (error) {
+		throw new BoardResolutionError(
+			boardKey(loaded.identity),
+			"malformed",
+			`Board "${boardKey(loaded.identity)}" has malformed drawing JSON in ${loaded.file}. Repair or restore that note, then retry.`,
+			[loaded.file],
+			{ cause: error },
+		);
+	}
+}
+
+function contentFromLoadedBoard(loaded: LoadedBoard): BoardContent {
+	const scene = parseLoadedScene(loaded);
+	try {
+		const { elements, files } = ingestScene(
+			Array.isArray(scene) ? scene : ((scene as { elements?: unknown[] })?.elements ?? []),
+			Array.isArray(scene) ? null : (scene as { files?: Record<string, unknown> })?.files,
+			loaded.file,
+		);
+		return {
+			elements,
+			files,
+			note: loaded.raw,
+			hash: loaded.hash,
+			version: loaded.version,
+		};
+	} catch (error) {
+		if (error instanceof BoardResolutionError) throw error;
+		throw new BoardResolutionError(
+			boardKey(loaded.identity),
+			"malformed",
+			`Board "${boardKey(loaded.identity)}" cannot be read from ${loaded.file}: ${(error as Error).message} Repair or restore that note, then retry.`,
+			[loaded.file],
+			{ cause: error },
+		);
+	}
+}
+
+export interface BoardAccess {
+	key: string;
+	board: BoardState;
+	content: BoardContent;
+}
+
+export interface ResolvedBoard extends BoardAccess {
+	/** The exact persisted load used to build content, for same-load lifecycle observers. */
+	loaded: LoadedBoard;
+}
+
+export interface ResolveBoardOptions {
+	/** Establish the first write baseline before the request takes the board lock. */
+	write?: boolean;
+}
+
+function availableBoardKeys(root: string): string[] {
+	try {
+		return listBoards(root)
+			.map((entry) => entry.key)
+			.filter((key, index, all) => all.indexOf(key) === index)
+			.toSorted();
+	} catch {
+		return openBoardKeys();
+	}
+}
+
+export interface ResolvedBoardNote {
+	key: string;
+	loaded: LoadedBoard;
+}
+
+export function resolveBoardNote(asked?: string | null, what?: string): ResolvedBoardNote {
+	const root = requireVaultRoot();
+	if (asked === undefined || asked === null || asked.trim() === "") {
+		throw new BoardRequiredError(availableBoardKeys(root), what);
+	}
+
+	let identity: BoardIdentity;
+	try {
+		identity = parseBoardKey(asked);
+	} catch (error) {
+		throw new BoardResolutionError(
+			asked,
+			"malformed",
+			`Board address ${JSON.stringify(asked)} is invalid: ${(error as Error).message} Run \`board list\` and pass one exact board key.`,
+			[],
+			{ cause: error },
+		);
+	}
+	const key = boardKey(identity);
+	const candidates =
+		key === boardKey(makeIdentity({ board: SCRATCH_BOARD }))
+			? []
+			: listBoards(root).filter((entry) => entry.key === key);
+	if (candidates.length > 1) {
+		const files = candidates.map((entry) => entry.file).toSorted();
+		throw new BoardResolutionError(
+			key,
+			"ambiguous",
+			`Board "${key}" matches ${files.length} notes: ${files.join(", ")}. Rename or remove the duplicate notes so one key names one board.`,
+			files,
+		);
+	}
+	const candidate = candidates[0];
+	if (candidate?.declaredKey) {
+		throw new BoardResolutionError(
+			key,
+			"conflicting",
+			`Board "${key}" resolves to ${candidate.file}, but that note declares itself as "${candidate.declaredKey}". Make the note path and frontmatter name agree, then retry.`,
+			[candidate.file],
+		);
+	}
+
+	let loaded: LoadedBoard | null;
+	try {
+		loaded = readBoardFile(identity, root);
+	} catch (error) {
+		throw new BoardResolutionError(
+			key,
+			"malformed",
+			`Board "${key}" cannot be read from the vault: ${(error as Error).message} Repair or restore its note, then retry.`,
+			candidate ? [candidate.file] : [],
+			{ cause: error },
+		);
+	}
+	if (!loaded) {
+		throw new BoardResolutionError(
+			key,
+			"missing",
+			`Board "${key}" was not found in the vault at ${root}. Run \`board list\` to see what exists, or \`board new ${key}\` to create it.`,
+		);
+	}
+	if (loaded.declaredKey) {
+		throw new BoardResolutionError(
+			key,
+			"conflicting",
+			`Board "${key}" resolves to ${loaded.file}, but that note declares itself as "${loaded.declaredKey}". Make the note path and frontmatter name agree, then retry.`,
+			[loaded.file],
+		);
+	}
+	return { key, loaded };
+}
+
+/** Resolve one explicit address to exactly one valid persisted note. */
+export function resolveBoard(
+	asked?: string | null,
+	what?: string,
+	options: ResolveBoardOptions = {},
+): ResolvedBoard {
+	return materializeResolvedBoard(resolveBoardNote(asked, what), options);
+}
+
+/** Materialize one already-resolved load without reading or resolving it again. */
+export function materializeResolvedBoard(
+	resolution: ResolvedBoardNote,
+	options: ResolveBoardOptions = {},
+): ResolvedBoard {
+	const { key, loaded } = resolution;
+	const content = contentFromLoadedBoard(loaded);
+	const { board } = getOrCreateBoard(loaded.identity);
+	board.file = loaded.file;
+	if (options.write && (!board.baseline || board.baseline.file !== loaded.file)) {
+		recordBaseline(board, loaded.file, loaded.hash, loaded.version);
+	}
+	return { key, board, content, loaded };
+}
+
+/** Publish and register a canonical empty board without touching browser state. */
+export function createBoard(identity: BoardIdentity): BoardAccess {
+	const root = requireVaultRoot();
+	const key = boardKey(identity);
+	const existing = listBoards(root).filter((entry) => entry.key === key);
+	if (existing.length > 0) {
+		const files = existing.map((entry) => entry.file).toSorted();
+		throw new BoardResolutionError(
+			key,
+			existing.length > 1 ? "ambiguous" : "conflicting",
+			`Board "${key}" already has ${existing.length === 1 ? "a note" : `${existing.length} notes`} in the vault at ${files.join(", ")}. Use another name, or resolve the existing note${existing.length === 1 ? "" : "s"} before retrying.`,
+			files,
+		);
+	}
+	const file = vaultPathFor(identity, root);
+	const content = emptyContent();
+	const rendered = renderContent(identity, content, null);
+	const stamped = stampBoardVersion(rendered, undefined);
+	fs.mkdirSync(path.dirname(file), { recursive: true });
+	try {
+		writeFileAtomicExclusive(file, stamped.bytes);
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+		throw new BoardResolutionError(
+			key,
+			"conflicting",
+			`Board "${key}" was created by another writer at ${file}. Use that board or choose another name.`,
+			[file],
+			{ cause: error },
+		);
+	}
+	const { board } = getOrCreateBoard(identity);
+	board.file = file;
+	board.savedAt = new Date().toISOString();
+	recordBaseline(board, file, hashBoardBytes(stamped.bytes), stamped.version);
+	return {
+		key,
+		board,
+		content: {
+			...content,
+			note: stamped.note,
+			hash: hashBoardBytes(stamped.bytes),
+			version: stamped.version,
+		},
+	};
+}
+
 /**
  * Read raw persisted element records for the read-only inspection command.
  *
@@ -397,12 +622,9 @@ function renderSnapshotFingerprint(noteHash: string, scene: unknown): string {
 
 /** One named note read shared by inspection and focused rendering. */
 export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapshot {
-	const root = requireVaultRoot();
-	const identity = parseBoardKey(key);
-	const file = vaultPathFor(identity, root);
-	const note = readNoteFile(file, root);
-	if (!note) throw new Error(`Board note not found: ${file}`);
-	const scene: unknown = JSON.parse(note.sceneJson);
+	const { loaded: note } = resolveBoardNote(key, "Inspecting a board");
+	const file = note.file;
+	const scene = parseLoadedScene(note);
 	if (Array.isArray(scene)) {
 		const renderScene = strictRenderScene(scene);
 		return {

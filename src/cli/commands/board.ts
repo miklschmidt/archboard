@@ -319,11 +319,12 @@ export const boardInfoContract = defineCommand({
 });
 
 const addressSpecs = { variant: "value", level: "value", pane: "value" } as const;
+const newAddressSpecs = { variant: "value", level: "value" } as const;
 export const BoardNewInputSchema = z.object({ tokens });
 export type BoardNewInput = z.infer<typeof BoardNewInputSchema>;
 export const BoardNewStageSchema = z
 	.array(z.string())
-	.transform((value, context) => parseStage(value, addressSpecs, context))
+	.transform((value, context) => parseStage(value, newAddressSpecs, context))
 	.transform((stage, context) => {
 		const name = stage.positionals[0];
 		if (!name) {
@@ -336,16 +337,15 @@ export type BoardNewStage = z.infer<typeof BoardNewStageSchema>;
 export const BoardNewResultSchema = BoardIdentityStateSchema.extend({
 	success: z.literal(true),
 	created: z.literal(true),
-	saved: z.literal(false),
-	pane: PaneRefSchema.nullable(),
+	saved: z.literal(true),
 	held: HoldReportSchema.optional(),
 });
 export type BoardNewResult = z.infer<typeof BoardNewResultSchema>;
 export const boardNewContract = defineCommand({
 	path: ["board", "new"],
 	summary: "Start a new empty board",
-	usage: "board new <name> [--variant v] [--level l] [--pane <spec>]",
-	description: "Creates an empty board after server contact and optionally shows it in one pane.",
+	usage: "board new <name> [--variant v] [--level l]",
+	description: "Atomically creates one persisted empty board without changing any pane.",
 	examples: ["archboard board new payments --level system"],
 	parameters: [
 		{
@@ -363,7 +363,7 @@ export const boardNewContract = defineCommand({
 			{
 				name: "new-options",
 				when: "after-server",
-				description: "Board address and pane options",
+				description: "Persisted board address",
 				schema: BoardNewStageSchema,
 			},
 		],
@@ -383,8 +383,8 @@ export const boardNewContract = defineCommand({
 		select: () => "json",
 	},
 	prerequisites: ["server"],
-	effects: ["server-state-write", "browser"],
-	refusals: [serverRefusal, browserRefusal],
+	effects: ["server-state-write"],
+	refusals: [serverRefusal],
 	relationships: [
 		{
 			method: "POST",
@@ -400,13 +400,10 @@ export const boardNewContract = defineCommand({
 			board: stage.name,
 			...(typeof stage.flags.variant === "string" ? { variant: stage.flags.variant } : {}),
 			...(typeof stage.flags.level === "string" ? { level: stage.flags.level } : {}),
-			...(typeof stage.flags.pane === "string" ? { pane: stage.flags.pane } : {}),
 		});
 		return {
 			result: BoardNewResultSchema.parse(result),
-			diagnostics: [
-				`Board "${result.board}" is empty. Its note is written the moment something is drawn on it.${result.pane ? ` It is on screen in ${result.pane.place === "the only pane" ? "the only pane" : `the ${result.pane.place} pane`}.` : ""}`,
-			],
+			diagnostics: [`Board "${result.board}" is empty and persisted at ${result.file}.`],
 		};
 	},
 });

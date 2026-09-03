@@ -49,20 +49,18 @@ import {
 	soloPane,
 } from "../../../runtime/engine/panes.js";
 import type { PaneRegistration } from "../../../runtime/engine/panes.js";
-import { BoardRequiredError } from "../../../runtime/engine/board-target.js";
+import { BoardRequiredError, BoardResolutionError } from "../../../runtime/engine/board-target.js";
 import { RenderGeometryError } from "../../../runtime/engine/geometry.js";
 import { NativeElementValidationError } from "../../../runtime/engine/native-element.js";
 import { z } from "zod";
 import { WebSocket } from "ws";
 import { writePidFile, removePidFile } from "../../../runtime/engine/pidfile.js";
-import fs from "fs";
 import {
 	boardSummaries,
 	boards,
 	copyElements,
 	getOrCreateBoard,
 	recordBaseline,
-	resolveBoard,
 	SCRATCH_KEY,
 } from "../../../runtime/engine/board-store.js";
 import type { BoardState } from "../../../runtime/engine/board-store.js";
@@ -81,14 +79,22 @@ import type { HoldReport } from "../../../runtime/engine/board-hold.js";
 import {
 	BoardWriteConflictError,
 	boardFilesMessage,
+	createBoard,
 	emptyContent,
-	ingestScene,
+	materializeResolvedBoard,
 	readBoardContent,
 	readBoardFile,
 	readBoardInspectionSnapshot,
 	renderContent,
+	resolveBoard,
+	resolveBoardNote,
 } from "../../../runtime/engine/board-io.js";
-import type { BoardContent, LoadedBoard } from "../../../runtime/engine/board-io.js";
+import type {
+	BoardContent,
+	LoadedBoard,
+	ResolvedBoard,
+	ResolvedBoardNote,
+} from "../../../runtime/engine/board-io.js";
 import {
 	BoardHeldError,
 	BoardLockCancelledError,
@@ -450,7 +456,7 @@ function codeBindingsInValue(value: unknown): CodeBinding[] {
 
 interface PreparedBoardOpen {
 	readonly key: string;
-	readonly loaded: LoadedBoard | null;
+	readonly resolution: ResolvedBoardNote;
 	readonly reload: boolean;
 }
 
@@ -465,13 +471,13 @@ function unopenedBoardBindings(req: Request, res: Response): CodeBinding[] {
 		const identity = identityFromParams(parsed.data);
 		const key = boardKey(identity);
 		if (boards.has(key) && !parsed.data.reload) return [];
-		const loaded = readBoardFile(identity);
+		const resolution = resolveBoardNote(key, "Opening a board");
 		res.locals.preparedBoardOpen = {
 			key,
-			loaded,
+			resolution,
 			reload: parsed.data.reload === true,
 		} satisfies PreparedBoardOpen;
-		return loaded ? codeBindingsInValue(JSON.parse(loaded.sceneJson)) : [];
+		return codeBindingsInValue(JSON.parse(resolution.loaded.sceneJson));
 	} catch {
 		// The route remains the authority for malformed or unavailable board input.
 		return [];
@@ -479,8 +485,19 @@ function unopenedBoardBindings(req: Request, res: Response): CodeBinding[] {
 }
 
 function requestCheckoutBindings(req: Request, res: Response): CodeBinding[] {
+	const named =
+		req.method === "POST" && req.path === "/api/boards/open" ? undefined : boardOfRequest(req);
+	let namedBindings: CodeBinding[] = [];
+	if (named) {
+		try {
+			namedBindings = codeBindingsOf(resolveBoard(named).content.elements.values());
+		} catch {
+			// The route owns the typed board-resolution refusal.
+		}
+	}
 	return [
 		...openBoardBindings(),
+		...namedBindings,
 		...codeBindingsInValue(req.body),
 		...unopenedBoardBindings(req, res),
 	];
@@ -964,19 +981,17 @@ function boardFromRequest(
 	req: Request,
 	what?: string,
 ): { key: string; board: BoardState; content: BoardContent } {
-	const { key, board } = boardTargetFromRequest(req, what);
-	return { key, board, content: readBoardContent(board) };
+	return resolveBoard(boardOfRequest(req), what);
 }
 
 /** Resolve a write's board without reading its note ahead of the write entry. */
 function boardTargetFromRequest(req: Request, what?: string): BoardWriteTarget {
-	return resolveBoard(boardOfRequest(req), what);
+	const { key, board } = resolveBoard(boardOfRequest(req), what, { write: true });
+	return { key, board };
 }
 
-// Which board a request says it is about, before anything decides whether that
-// board exists. The mutex asks this and nothing else: it needs the address to
-// find the lock, and a request naming no board or a board nobody has open is
-// the handler's refusal to word, not the lock's.
+// Which board a request says it is about, before anything resolves its note.
+// The write boundary uses the resolved key to find the per-board lock.
 function boardOfRequest(req: Request): string | undefined {
 	const fromQuery = typeof req.query.board === "string" ? req.query.board : undefined;
 	const fromBody =
@@ -986,10 +1001,11 @@ function boardOfRequest(req: Request): string | undefined {
 	return fromQuery ?? fromBody;
 }
 
-// A board that was not named, or was named and is not open, is a client error
-// rather than a server fault.
+// A board that was not named, or whose address cannot resolve, is a client
+// error rather than a server fault.
 function boardErrorStatus(error: unknown): number {
 	if (error instanceof BoardRequiredError) return error.status;
+	if (error instanceof BoardResolutionError) return error.status;
 	if (error instanceof BoardMutationError) return error.status;
 	if (error instanceof RenderGeometryError) return 400;
 	if (error instanceof NativeElementValidationError) return 400;
@@ -1032,6 +1048,15 @@ function boardErrorBody(
 	const base = { success: false, error: (error as Error).message };
 	if (error instanceof BoardRequiredError) {
 		return { ...base, code: error.code, open: error.open };
+	}
+	if (error instanceof BoardResolutionError) {
+		return {
+			...base,
+			code: error.code,
+			board: error.board,
+			reason: error.reason,
+			...(error.files.length > 0 ? { files: error.files } : {}),
+		};
 	}
 	// The three outcomes as data, so a surface offers them rather than rewording
 	// them. Which one the human picks is never archboard's to choose.
@@ -1336,7 +1361,10 @@ const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
 	[/^\/api\/library/, "one palette behind every board, and not board content"],
 	[/^\/api\/snapshots/, "reads a board into a snapshot and writes no note"],
 	[/^\/api\/boards\/open$/, "reads a note and points a pane at it"],
-	[/^\/api\/boards\/new$/, "creates no note"],
+	[
+		/^\/api\/boards\/new$/,
+		"exclusively creates a new note rather than modifying an existing board",
+	],
 	[
 		/^\/api\/code-targets\/open$/,
 		"reads canonical board state and launches a process but writes no note",
@@ -1426,10 +1454,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 	let key: string;
 	try {
-		key = resolveBoard(boardOfRequest(req), "A write").key;
+		key = resolveBoard(boardOfRequest(req), "A write", { write: true }).key;
 	} catch {
-		// No board named, or one that is not open. The handler refuses better than
-		// this can — it knows what the operation was called (ADR 0009).
+		// No board named, or the address does not resolve to one valid vault note.
+		// The handler refuses better than this can: it knows the operation's name.
 		return next();
 	}
 
@@ -3848,10 +3876,7 @@ app.get("/api/boards", (req: Request, res: Response) => {
 	}
 });
 
-// One noninteractive board preview. An open board is read through the same
-// request-local content seam as its pane; a vault-only board is inspected
-// without registering or opening it. The browser owns rendering so this route
-// remains a canonical scene read, never a second canvas or an SVG service.
+// One noninteractive board preview, resolved directly from its note.
 app.get("/api/boards/preview", (req: Request, res: Response) => {
 	let key = "";
 	try {
@@ -3863,48 +3888,18 @@ app.get("/api/boards/preview", (req: Request, res: Response) => {
 			});
 		}
 		key = boardKey(parseBoardKey(asked));
-		const open = boards.get(key);
-		if (open) {
-			const content = readBoardContent(open);
-			const fingerprint = hashBoardBytes(renderContent(open.identity, content).bytes);
-			return res.json({
-				success: true,
-				board: key,
-				fingerprint,
-				elements: copyElements(
-					stripBindingPresentationLinks(content.elements.values(), { boardKey: key }),
-				),
-				files: boardFilesMessage(content).files ?? {},
-			});
-		}
-
-		const vault = requireVaultRoot();
-		if (!listBoards(vault).some((entry) => entry.key === key)) {
-			return res.status(404).json({
-				success: false,
-				code: "BOARD_PREVIEW_NOT_FOUND",
-				error: `Board "${key}" was not found.`,
-			});
-		}
-		const snapshot = readBoardInspectionSnapshot(key);
-		if (!snapshot.renderScene) throw new Error("The board has no renderable scene.");
+		const { board, content } = resolveBoard(key, "Previewing a board");
 		return res.json({
 			success: true,
 			board: key,
-			fingerprint: snapshot.fingerprint,
+			fingerprint: hashBoardBytes(renderContent(board.identity, content).bytes),
 			elements: copyElements(
-				stripBindingPresentationLinks(snapshot.renderScene.elements, { boardKey: key }),
+				stripBindingPresentationLinks(content.elements.values(), { boardKey: key }),
 			),
-			files: snapshot.renderScene.files,
+			files: boardFilesMessage(content).files ?? {},
 		});
 	} catch (error) {
-		if (!key) return answerBoardError(res, error);
-		logger.warn(`Preview unavailable for board "${key}"`, error);
-		return res.status(422).json({
-			success: false,
-			code: "BOARD_PREVIEW_UNAVAILABLE",
-			error: `Preview unavailable for board "${key}".`,
-		});
+		return answerBoardError(res, error, key ? `Preview unavailable for board "${key}"` : undefined);
 	}
 });
 
@@ -3929,73 +3924,25 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 		}).parse(req.body ?? {});
 		const asked = identityFromParams(params);
 		const key = boardKey(asked);
-
-		// A board this canvas already has open needs nothing read here: its note is
-		// read on every request that touches it, so pointing a pane at it is all
-		// this is. `--reload` still means something, and means more than it did:
-		// it is ADR 0006's first outcome, the one that takes the note and gives up
-		// the canvas. It re-reads the address off disk and moves the baseline to
-		// whatever is there now, which is what lets writes resume after a refusal.
-		if (boards.has(key) && !params.reload) {
-			const pane = paneFromRequest(params.pane);
-			const board = switchPaneTo(pane, key, undefined, checkoutSnapshotFor(res));
-			return res.json({
-				success: true,
-				...identityResponse(key, board),
-				source: "memory",
-				...paneResponse(pane),
-			});
-		}
-
-		// Whether there is a board at this address at all, asked before which half
-		// of the screen it would go on. A board that is nowhere is a fact about the
-		// address the caller typed, and putting it behind a question about panes
-		// sends them off to add a --pane and meet a second, different refusal
-		// (TASK-055). Reading the note changes nothing, so the pane is still
-		// resolved before anything is created.
 		const prepared = res.locals.preparedBoardOpen as PreparedBoardOpen | undefined;
-		const loaded = prepared ? prepared.loaded : readBoardFile(asked);
-		if (!loaded) {
-			return res.status(404).json({
-				success: false,
-				error:
-					`No board "${key}" in the vault at ${requireVaultRoot()}. ` +
-					`Run \`board list\` to see what is there, or \`board new ${key}\` to start it.`,
-			});
-		}
+		const alreadyRegistered = boards.has(key) && !params.reload;
+		const { board, content } =
+			prepared?.key === key && !alreadyRegistered
+				? materializeResolvedBoard(prepared.resolution)
+				: resolveBoard(key, "Opening a board");
+		if (asked.level) board.identity = { ...board.identity, level: asked.level };
 		const pane = paneFromRequest(params.pane);
-
-		const scene = JSON.parse(loaded.sceneJson);
-		const { elements, files } = ingestScene(
-			Array.isArray(scene) ? scene : (scene.elements ?? []),
-			Array.isArray(scene) ? null : scene.files,
-		);
-		// The note's level wins unless the caller stated one — opening a board is
-		// not usually a claim about what level it sits at. Register it only after
-		// ingestion succeeds, so a malformed legacy note cannot leave an empty
-		// in-memory board that a second open mistakes for success.
-		const { key: openedKey, board } = getOrCreateBoard({
-			...loaded.identity,
-			...(asked.level ? { level: asked.level } : {}),
-		});
-		const content: BoardContent = {
-			elements,
-			files,
-			note: loaded.raw,
-			hash: loaded.hash,
-			version: loaded.version,
-		};
-		board.file = loaded.file;
 		// The bytes just read are what the panes are about to be shown, so they are
 		// the baseline the next write is checked against.
-		recordBaseline(board, loaded.file, loaded.hash, loaded.version);
+		if (!board.file || !content.hash) throw new Error(`Board "${key}" has no persisted note.`);
+		recordBaseline(board, board.file, content.hash, content.version ?? null);
 		board.loadedAt = new Date().toISOString();
 		// ADR 0006's first outcome: take the note, discard the canvas. It is the
 		// one outcome that ends a hold by throwing the held copy away, so this is
 		// the moment everything drawn since the board stopped saving is gone
 		// (TASK-079). It costs what the human was told it costs.
-		const ended = params.reload ? releaseBoardHold(openedKey, "reload") : null;
-		switchPaneTo(pane, openedKey, content, checkoutSnapshotFor(res));
+		const ended = params.reload ? releaseBoardHold(key, "reload") : null;
+		switchPaneTo(pane, key, content, checkoutSnapshotFor(res));
 		// On a reload, every pane holding it — not only the one this was addressed
 		// to. The others are showing the copy that was just discarded, and a pane
 		// left showing it would report the discarded work straight back as a fresh
@@ -4003,82 +3950,39 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 		if (params.reload) {
 			for (const other of panes.values()) {
 				if (other.clientId === pane?.clientId) continue;
-				if ((paneBoards.get(other.clientId) ?? other.board) !== openedKey) continue;
-				switchPaneTo(other, openedKey, content, checkoutSnapshotFor(res));
+				if ((paneBoards.get(other.clientId) ?? other.board) !== key) continue;
+				switchPaneTo(other, key, content, checkoutSnapshotFor(res));
 			}
 		}
 
 		logger.info(
-			`Board opened: "${openedKey}" (${elements.size} elements) from ${loaded.file}` +
+			`Board opened: "${key}" (${content.elements.size} elements) from ${board.file}` +
 				(pane ? ` into pane ${pane.paneId}` : " (no pane open)") +
 				(ended ? `, discarding ${ended.writes} change(s) held since it stopped saving` : ""),
 		);
 		res.json({
 			success: true,
-			...identityResponse(openedKey, board, content),
-			source: "vault",
+			...identityResponse(key, board, content),
+			source: alreadyRegistered ? "memory" : "vault",
 			...paneResponse(pane),
-			...(loaded.declaredKey ? { declaredKey: loaded.declaredKey } : {}),
 		});
 	} catch (error) {
 		answerBoardError(res, error, "Error opening board:");
 	}
 });
 
-// Start a new, empty board.
-//
-// Nothing is written. The address is claimed and the note it would have is
-// resolved, and the first thing drawn on it creates the file — an empty board
-// has nothing to persist, and a `board new` somebody typed wrongly should not
-// leave a note behind in a vault a human reads.
+// Start a new, empty board by atomically publishing its canonical note.
 app.post("/api/boards/new", (req: Request, res: Response) => {
 	try {
-		const params = BoardAddressSchema.extend({ pane: z.string().optional() }).parse(req.body ?? {});
+		const params = BoardAddressSchema.parse(req.body ?? {});
 		const identity = identityFromParams(params);
-		const key = boardKey(identity);
-		// Is the name free, before which pane it would show in. Both questions can
-		// refuse and neither creates anything, so the order is only about which
-		// answer the caller gets first, and one of them is about state they cannot
-		// see. A taken name reported second reads as "you fixed the pane, now here
-		// is a different problem", with nothing having said the board exists
-		// (TASK-055). Board is authority and pane is display (ADR 0009), which is
-		// the same order.
-		if (boards.has(key)) {
-			return res.status(409).json({
-				success: false,
-				error: `Board "${key}" is already open. Switch to it with \`board open ${key}\`.`,
-			});
-		}
-		const wouldBe = vaultPathFor(identity);
-		if (fs.existsSync(wouldBe)) {
-			// Naming the file matters when the collision is only in casing: the
-			// caller typed `CaseTest`, the vault holds `casetest.excalidraw.md`, and
-			// those are one board (ADR 0010). Without the path the refusal looks
-			// like it is talking about something else.
-			return res.status(409).json({
-				success: false,
-				error:
-					`Board "${key}" already exists in the vault, at ${wouldBe}. ` +
-					"Open it instead, or choose another name or variant.",
-			});
-		}
-
-		// Which pane it lands in, and the last thing that can refuse. Nothing has
-		// been created at this point, so a refusal here really means the board was
-		// not started.
-		const pane = paneFromRequest(params.pane);
-
-		const { key: newKey, board } = getOrCreateBoard(identity);
-		board.file = vaultPathFor(identity);
-		const content = emptyContent();
-		switchPaneTo(pane, newKey, content, checkoutSnapshotFor(res));
-		logger.info(`Board created: "${newKey}" (empty, no note yet)`);
+		const { key, board, content } = createBoard(identity);
+		logger.info(`Board created: "${key}" as ${board.file}`);
 		res.json({
 			success: true,
-			...identityResponse(newKey, board, content),
+			...identityResponse(key, board, content),
 			created: true,
-			saved: false,
-			...paneResponse(pane),
+			saved: true,
 		});
 	} catch (error) {
 		answerBoardError(res, error, "Error creating board:");
@@ -4224,41 +4128,23 @@ app.post("/api/boards/save", (req: Request, res: Response) => {
 // differ and the human needs to know which they were told about.
 
 function loadSideForCompare(key: string): CompareSideInput | null {
-	const live = boards.get(key);
-	if (live) {
-		return {
-			key,
-			identity: live.identity,
-			elements: boardElements(live).filter((el) => !el.isDeleted),
-			source: "memory",
-			...(live.file ? { file: live.file } : {}),
-			onScreen: boardsOnScreen().some((shown) => shown.board === key),
-			...(live.savedAt ? { savedAt: live.savedAt } : {}),
-			...(live.loadedAt ? { loadedAt: live.loadedAt } : {}),
-		};
+	const registered = boards.has(key);
+	let resolved: ResolvedBoard;
+	try {
+		resolved = resolveBoard(key, "Comparing boards");
+	} catch (error) {
+		if (error instanceof BoardResolutionError && error.reason === "missing") return null;
+		throw error;
 	}
-	const identity = parseBoardKey(key);
-	const loaded = readBoardFile(identity);
-	if (!loaded) return null;
-	const scene = JSON.parse(loaded.sceneJson);
-	const sceneRecord =
-		scene && typeof scene === "object" && !Array.isArray(scene)
-			? (scene as Record<string, unknown>)
-			: {};
-	const raw: unknown[] = Array.isArray(scene)
-		? scene
-		: Array.isArray(sceneRecord.elements)
-			? sceneRecord.elements
-			: [];
 	return {
 		key,
-		identity: loaded.identity,
-		elements: raw.filter(
-			(el) => el && typeof el === "object" && (el as Record<string, unknown>).isDeleted !== true,
-		) as ServerElement[],
-		source: "vault",
-		file: loaded.file,
-		onScreen: false,
+		identity: resolved.board.identity,
+		elements: Array.from(resolved.content.elements.values()).filter(
+			(element) => !element.isDeleted,
+		),
+		source: registered ? "memory" : "vault",
+		file: resolved.board.file,
+		onScreen: boardsOnScreen().some((shown) => shown.board === key),
 	};
 }
 
@@ -4607,16 +4493,25 @@ function adoptScratchBoard(): void {
 	const identity = makeIdentity({ board: SCRATCH_BOARD });
 	const { board } = getOrCreateBoard(identity);
 	let loaded: LoadedBoard | null = null;
+	let unreadable = false;
 	try {
 		loaded = readBoardFile(identity);
 	} catch (error) {
+		unreadable = true;
 		// A scratch note we cannot read is not worth refusing to start over: it is
 		// a scratch pad, the vault holds the boards that matter, and the file is
 		// left alone rather than replaced.
 		logger.warn(`Scratch note ignored: ${(error as Error).message}`);
 	}
-	board.file = loaded?.file ?? vaultPathFor(identity);
-	if (!loaded) return;
+	if (unreadable) {
+		board.file = vaultPathFor(identity);
+		return;
+	}
+	if (!loaded) {
+		createBoard(identity);
+		return;
+	}
+	board.file = loaded.file;
 
 	// The bytes just read are the baseline the first write is checked against.
 	// Nothing is ingested: the note is the board, and every request that touches

@@ -71,12 +71,13 @@ describe("public HTTP refusals", () => {
 		expect(unnamed.body.error).toContain("Nothing was done");
 		expect(unnamed.body.error).toContain("--board <key>");
 		expect(Array.isArray(unnamed.body.open)).toBeTrue();
-		expect(unnamed.body.open).toContain("scratch");
+		expect(unnamed.body.error).toContain("board list");
 
 		const unopened = await request<Refusal>("/api/elements?board=nope");
-		expect(unopened.status).toBe(400);
-		expect(unopened.body.error).toContain('Board "nope" is not open');
-		expect(unopened.body.error).toContain("Open right now");
+		expect(unopened.status).toBe(404);
+		expect(unopened.body.code).toBe("BOARD_RESOLUTION_FAILED");
+		expect(unopened.body.error).toContain('Board "nope" was not found');
+		expect(unopened.body.error).not.toMatch(/open it first|open a pane/i);
 	});
 
 	test("refuses every destructive board-blind route without changing state", async () => {
@@ -104,7 +105,7 @@ describe("public HTTP refusals", () => {
 		expect(after.body).toMatchObject({ count: 1, elements: [{ id: "kept" }] });
 	});
 
-	test("refuses ambiguous board placement before creating or opening anything", async () => {
+	test("keeps board creation independent from ambiguous browser placement", async () => {
 		await request("/api/boards/new", { method: "POST", body: { board: "payments" } });
 		await request("/api/boards/new", { method: "POST", body: { board: "payments@option-a" } });
 		const left = await openTestPane(canvas.base, request, "refusal-left", 0, {
@@ -119,6 +120,7 @@ describe("public HTTP refusals", () => {
 		});
 		await left.adopt("payments");
 		await right.adopt("payments");
+		const paneBoardsBeforeCreate = [left.board(), right.board()];
 
 		const open = await request<Refusal>("/api/boards/open", {
 			method: "POST",
@@ -130,26 +132,27 @@ describe("public HTTP refusals", () => {
 			method: "POST",
 			body: { board: "never-made", level: "service" },
 		});
-		expect(create.status).toBe(400);
+		expect(create.status).toBe(200);
 		expect(
 			(await request<BoardsBody>("/api/boards")).body.open.some(
 				(board) => board.key === "never-made",
 			),
-		).toBeFalse();
-		expect(fs.existsSync(path.join(vault, "never-made.excalidraw.md"))).toBeFalse();
+		).toBeTrue();
+		expect(fs.existsSync(path.join(vault, "never-made.excalidraw.md"))).toBeTrue();
+		expect([left.board(), right.board()]).toEqual(paneBoardsBeforeCreate);
 
 		const collision = await request<Refusal>("/api/boards/new", {
 			method: "POST",
 			body: { board: "payments" },
 		});
 		expect(collision.status).toBe(409);
-		expect(collision.body.error).toContain("already open");
+		expect(collision.body.error).toContain("already has a note");
 		const missing = await request<Refusal>("/api/boards/open", {
 			method: "POST",
-			body: { board: "never-made" },
+			body: { board: "never-exists" },
 		});
 		expect(missing.status).toBe(404);
-		expect(missing.body.error).toContain('No board "never-made"');
+		expect(missing.body.error).toContain('Board "never-exists" was not found');
 		await Promise.all([left.close(), right.close()]);
 		await Bun.sleep(TEST_PANE_SOCKET_SETTLE_MS);
 	});
