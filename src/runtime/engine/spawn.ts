@@ -17,6 +17,12 @@ import {
 
 export { foreignServiceError };
 import { readPidFile, removePidFile } from "./pidfile.js";
+import { CODEX_PROCESS_STDERR_MAX_BYTES } from "../codex-process/index.js";
+import {
+	resolveProjectCodexExecutable,
+	verifyCodexExecutable,
+} from "../codex-process/executable.js";
+import { CODEX_COMPOSED_SHUTDOWN_MS } from "../../shared/timing/timing.js";
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
@@ -56,6 +62,45 @@ function unreachableError(reason: string): Error {
 	);
 	(error as Error & { code?: string }).code = "CANVAS_UNREACHABLE";
 	return error;
+}
+
+function startupRefusal(message: string): Error {
+	const error = new Error(message.trim());
+	(error as Error & { code?: string }).code = "CANVAS_UNREACHABLE";
+	return error;
+}
+
+function appendBounded(current: string, chunk: Uint8Array | string): string {
+	const next = current + (typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8"));
+	const bytes = Buffer.from(next, "utf8");
+	if (bytes.byteLength <= CODEX_PROCESS_STDERR_MAX_BYTES) return next;
+	return bytes.subarray(bytes.byteLength - CODEX_PROCESS_STDERR_MAX_BYTES).toString("utf8");
+}
+
+function conciseChildFailure(stderr: string): string {
+	const lines = stderr
+		.split(/\r?\n/u)
+		.map((line) => line.trim())
+		.filter(Boolean);
+	return lines.find((line) => line.startsWith("Error:")) ?? lines.at(-1) ?? "";
+}
+
+function isConcurrentOwnerRefusal(message: string): boolean {
+	return message.includes("Dedicated Codex roots are locked or colliding");
+}
+
+function waitForChildClose(closed: Promise<void>, timeoutMs: number): Promise<boolean> {
+	return new Promise((resolve) => {
+		let settled = false;
+		const timer = setTimeout(() => finish(false), timeoutMs);
+		const finish = (value: boolean): void => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timer);
+			resolve(value);
+		};
+		void closed.then(() => finish(true));
+	});
 }
 
 async function healthOrNull(timeoutMs = 500) {
@@ -140,6 +185,16 @@ export async function ensureCanvasRunning(
 		throw error;
 	}
 
+	try {
+		verifyCodexExecutable(resolveProjectCodexExecutable());
+	} catch (cause) {
+		throw startupRefusal(
+			cause instanceof Error
+				? `Codex startup refused. ${cause.message}`
+				: "Codex startup refused because the exact package-local runtime could not be verified.",
+		);
+	}
+
 	// This runtime module resolves the thin src/server.ts process entrypoint;
 	// spawn args must be path strings.
 	// process.execPath is the bun that is running us, which is what can read a
@@ -147,25 +202,87 @@ export async function ensureCanvasRunning(
 	const serverEntry = fileURLToPath(new URL("../../server.ts", import.meta.url));
 	const child = spawn(process.execPath, [serverEntry], {
 		detached: true,
-		stdio: "ignore",
+		stdio: ["ignore", "ignore", "pipe"],
 		env: { ...process.env, PORT: String(canvasPort()), HOST: spawnBindHost() },
 	});
-	child.unref();
+	let childStderr = "";
+	let childFailure: Error | null = null;
+	let deferredChildFailure: Error | null = null;
+	let childExit: { readonly code: number | null; readonly signal: NodeJS.Signals | null } | null =
+		null;
+	let resolveChildClosed!: () => void;
+	const childClosed = new Promise<void>((resolve) => void (resolveChildClosed = resolve));
+	child.stderr.on("data", (chunk: Buffer | string) => {
+		childStderr = appendBounded(childStderr, chunk);
+	});
+	child.once("error", (error) => {
+		childFailure = error;
+	});
+	child.once("close", (code, signal) => {
+		childExit = { code, signal };
+		resolveChildClosed();
+	});
+	const cleanupFailedStart = async (failure: Error): Promise<never> => {
+		if (childExit === null) {
+			try {
+				child.kill("SIGTERM");
+			} catch {
+				/* close observation below remains the authority. */
+			}
+			if (!(await waitForChildClose(childClosed, CODEX_COMPOSED_SHUTDOWN_MS))) {
+				try {
+					child.kill("SIGKILL");
+				} catch {
+					/* close observation below remains the authority. */
+				}
+				if (!(await waitForChildClose(childClosed, timeoutMs)))
+					throw startupRefusal(
+						`${failure.message} The failed canvas child (pid ${String(child.pid)}) could not be reaped; inspect it before retrying.`,
+					);
+			}
+		}
+		child.stderr.destroy();
+		if (readPidFile(canvasPort()) === child.pid) removePidFile(canvasPort());
+		throw failure;
+	};
 	logger.info(`Auto-starting canvas server (pid ${child.pid}) at ${EXPRESS_SERVER_URL}`);
 
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
 		if (isCanvasHealth(await healthOrNull(400))) {
 			markCanvasIdentityVerified();
+			child.stderr.destroy();
+			child.unref();
 			process.stderr.write(
 				`Canvas server running at ${EXPRESS_SERVER_URL} — open it in a browser for screenshots and mermaid conversion.\n`,
 			);
 			return { url: EXPRESS_SERVER_URL, spawned: true };
 		}
+		if (childFailure !== null)
+			return cleanupFailedStart(
+				startupRefusal(`Canvas server could not start. ${childFailure.message}`),
+			);
+		if (childExit !== null) {
+			const detail = conciseChildFailure(childStderr);
+			if (isConcurrentOwnerRefusal(detail)) {
+				deferredChildFailure ??= startupRefusal(detail);
+				await new Promise((resolve) => setTimeout(resolve, 250));
+				continue;
+			}
+			return cleanupFailedStart(
+				startupRefusal(
+					detail ||
+						`Canvas server exited before readiness with code ${String(childExit.code)} and signal ${String(childExit.signal)}.`,
+				),
+			);
+		}
 		await new Promise((resolve) => setTimeout(resolve, 250));
 	}
 
-	throw unreachableError(`auto-started server did not become healthy within ${timeoutMs}ms`);
+	return cleanupFailedStart(
+		deferredChildFailure ??
+			unreachableError(`auto-started server did not become healthy within ${timeoutMs}ms`),
+	);
 }
 
 export interface StopResult {

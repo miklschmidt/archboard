@@ -4943,6 +4943,27 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 
 let codexApplication: ReturnType<typeof createCanvasCodexWorkbenchApplication> | null = null;
 
+function resetCodexWorkbenchWiring(): void {
+	wiring.codex.installed = false;
+	wiring.codex.phase = "idle";
+	wiring.codex.shutdown = null;
+	wiring.codex.acceptBrowser = null;
+	wiring.codex.closeBrowser = null;
+	wiring.codex.drainBrowsers = null;
+	wiring.codex.handleBrowserMessage = null;
+}
+
+async function stopCodexWorkbench(): Promise<void> {
+	const application = codexApplication;
+	if (application === null) {
+		resetCodexWorkbenchWiring();
+		return;
+	}
+	await application.shutdown();
+	if (codexApplication === application) codexApplication = null;
+	resetCodexWorkbenchWiring();
+}
+
 async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	const [applicationModule, productionModule] = await Promise.all([
 		import("../codex-workbench-application.js"),
@@ -5219,8 +5240,8 @@ async function startServer(): Promise<void> {
 			{
 				name: "codex-workbench",
 				start: prepareCodexWorkbench,
-				stop: async () => codexApplication?.shutdown(),
-				forceStop: async () => codexApplication?.shutdown(),
+				stop: stopCodexWorkbench,
+				forceStop: stopCodexWorkbench,
 			},
 			{
 				name: "http-server",

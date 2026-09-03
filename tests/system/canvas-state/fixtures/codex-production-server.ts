@@ -12,16 +12,19 @@ if (logPath !== undefined)
 		`${JSON.stringify({ kind: "canvas_fixture_spawn", pid: process.pid })}\n`,
 	);
 
+const executableModulePath = resolve(
+	import.meta.dir,
+	"../../../../src/runtime/codex-process/executable.ts",
+);
+const executableModule = await import(executableModulePath);
 await Promise.resolve(
-	mock.module(
-		resolve(import.meta.dir, "../../../../src/runtime/codex-process/executable.ts"),
-		() => ({
-			resolveProjectCodexExecutable: () =>
-				process.env.ARCHBOARD_TEST_PRODUCTION_FAIL_STAGE === "child_start"
-					? `${executable}.missing`
-					: executable,
-		}),
-	),
+	mock.module(executableModulePath, () => ({
+		...executableModule,
+		resolveProjectCodexExecutable: () =>
+			process.env.ARCHBOARD_TEST_PRODUCTION_FAIL_STAGE === "child_start"
+				? `${executable}.missing`
+				: executable,
+	})),
 );
 
 const server = await import("../../../../src/server.ts");

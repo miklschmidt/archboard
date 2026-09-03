@@ -31,7 +31,7 @@ function localShellNotification(timeout_ms: number | bigint) {
 	};
 }
 
-test("config/read requires the generated disabledReason field", () => {
+test("config/read accepts Codex 0.151.0 omitting enabled-layer disabledReason", () => {
 	const configResponse = responseFixtures["config/read"] as {
 		readonly config: Record<string, unknown>;
 		readonly origins: Record<string, unknown>;
@@ -48,9 +48,9 @@ test("config/read requires the generated disabledReason field", () => {
 			layers: [{ ...layer, disabledReason: null }],
 		}),
 	).toMatchObject({ layers: [{ disabledReason: null }] });
-	expect(() => decodeResponse("config/read", { ...configResponse, layers: [layer] })).toThrow(
-		ProtocolDecodeError,
-	);
+	expect(decodeResponse("config/read", { ...configResponse, layers: [layer] })).toMatchObject({
+		layers: [layer],
+	});
 });
 
 test("browser origin policy keeps the generated seven-field shape", () => {

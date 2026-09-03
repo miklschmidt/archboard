@@ -28,6 +28,7 @@ export type CodexExecutableFailureCode =
 	| "missing"
 	| "not_file"
 	| "not_executable"
+	| "verification_timeout"
 	| "version_unavailable"
 	| "wrong_version"
 	| "outside_checkout";
@@ -76,6 +77,19 @@ function absolutePath(candidate: string): string {
 	return path.resolve(candidate);
 }
 
+function verificationTimedOut(cause: unknown): boolean {
+	if (cause === null || typeof cause !== "object") return false;
+	const value = cause as {
+		readonly code?: unknown;
+		readonly killed?: unknown;
+		readonly signal?: unknown;
+	};
+	return (
+		value.code === "ETIMEDOUT" ||
+		(value.killed === true && (value.signal === "SIGKILL" || value.signal === "SIGTERM"))
+	);
+}
+
 /** Resolve only the package-local wrapper selected by the pinned dependency. */
 export function resolveProjectCodexExecutable(): string {
 	const require = createRequire(import.meta.url);
@@ -115,14 +129,14 @@ export function verifyCodexExecutable(
 		throw new CodexExecutableError({
 			code: "missing",
 			executablePath,
-			message: `The configured Codex executable does not exist: ${executablePath}. Provide the pinned Codex ${CODEX_PROTOCOL_BINARY_VERSION} binary.`,
+			message: `The configured Codex executable does not exist: ${executablePath}. Run bun install to restore the pinned Codex ${CODEX_PROTOCOL_BINARY_VERSION} runtime, then retry.`,
 		});
 	}
 	if (!stats.isFile())
 		throw new CodexExecutableError({
 			code: "not_file",
 			executablePath,
-			message: `The configured Codex executable is not a file: ${executablePath}.`,
+			message: `The configured Codex executable is not a file: ${executablePath}. Run bun install to restore the exact package-local runtime, then retry.`,
 		});
 	try {
 		fs.accessSync(executablePath, fs.constants.X_OK);
@@ -130,7 +144,7 @@ export function verifyCodexExecutable(
 		throw new CodexExecutableError({
 			code: "not_executable",
 			executablePath,
-			message: `The configured Codex executable is not executable: ${executablePath}.`,
+			message: `The configured Codex executable is not executable: ${executablePath}. Run bun install to restore its executable mode, then retry.`,
 		});
 	}
 
@@ -146,18 +160,26 @@ export function verifyCodexExecutable(
 			stdio: ["ignore", "pipe", "pipe"],
 			windowsHide: true,
 		}).trim();
-	} catch {
+	} catch (cause) {
+		if (verificationTimedOut(cause))
+			throw new CodexExecutableError({
+				code: "verification_timeout",
+				executablePath,
+				message:
+					`Codex ${CODEX_PROTOCOL_BINARY_VERSION} did not answer the bounded --version proof. ` +
+					"Run bun install to restore the exact package-local runtime, then retry.",
+			});
 		throw new CodexExecutableError({
 			code: "version_unavailable",
 			executablePath,
-			message: `Could not run ${executablePath} --version. Provide the exact Codex ${CODEX_PROTOCOL_BINARY_VERSION} executable; PATH lookup is disabled.`,
+			message: `Could not run ${executablePath} --version. Run bun install to restore the exact Codex ${CODEX_PROTOCOL_BINARY_VERSION} runtime; PATH lookup is disabled.`,
 		});
 	}
 	if (version !== CODEX_PROTOCOL_BINARY_VERSION)
 		throw new CodexExecutableError({
 			code: "wrong_version",
 			executablePath,
-			message: `The configured Codex executable reported an unexpected version; expected ${CODEX_PROTOCOL_BINARY_VERSION}.`,
+			message: `The configured Codex executable reported an unexpected version; expected ${CODEX_PROTOCOL_BINARY_VERSION}. Run bun install to restore the pinned package, then retry.`,
 		});
 	return Object.freeze({ executablePath, version: CODEX_PROTOCOL_BINARY_VERSION });
 }
