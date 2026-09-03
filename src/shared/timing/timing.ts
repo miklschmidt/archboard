@@ -632,5 +632,13 @@ export const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2_000 } as const;
 export const TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS = 20_000;
 /** Aggregate Bun case, not an operation cap/SLA: 20s clears hosted 5,034ms and stressed 14,815.78ms. */
 export const TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS = 20_000;
-/** Aggregate public render case: one lazy startup plus bounded serial jobs, capped at the child allowance. */
-export const TEST_BOARD_RENDERING_CASE_TIMEOUT_MS = 20_000;
+/** Two real renderer acquisitions plus cleanup measured below 7s; 9.5s retains a narrow stressed-host margin. */
+export const TEST_BOARD_RENDERER_OWNER_TIMEOUT_MS = 9_500;
+/** The injected startup exit settles in under 300ms; 3s leaves room for process and pipe cleanup. */
+export const TEST_BOARD_RENDERER_STARTUP_FAILURE_TIMEOUT_MS = 3_000;
+/** Lazy Chromium startup plus concurrent PNG/SVG measured below 2s; no routine case gets a product-timeout sum. */
+export const TEST_SERVER_RENDERING_CASE_TIMEOUT_MS = 5_000;
+/** The lease-order owner deliberately crosses the 3s lease and still stays below this local bound. */
+export const TEST_SERVER_RENDERING_LEASE_CASE_TIMEOUT_MS = 7_500;
+/** Missing Chromium is a preflight refusal and should never approach the 5s product startup bound. */
+export const TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS = 2_000;

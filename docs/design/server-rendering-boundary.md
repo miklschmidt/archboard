@@ -97,8 +97,8 @@ reachable board operation, and is sufficient to reject emulation.
 ## Chromium result
 
 The Chromium probe serves only its local ESM fixture and an in-memory snapshot
-through an in-process Vite server. Vite is neither a renderer nor a child
-process. Chromium itself uses `--headless=new`, a fresh temporary profile, a
+through an in-process Vite server. That is probe machinery, not the production
+host. Chromium itself uses `--headless=new`, a fresh temporary profile, a
 reserved loopback DevTools port, and `setsid`; it never inspects an existing
 browser.
 
@@ -160,14 +160,18 @@ must rerun both bounded probes before changing this decision.
 ## Production contract
 
 The selected boundary is implemented by `src/server/board-rendering/`. One
-application-owned, lazy Chromium session is retained behind a serial queue. Its
-Vite module fixture is loopback-only and has no file watcher; the Chromium
-process has a unique temporary profile, an owned process group, and a private
-loopback DevTools port. Canvas shutdown stops admission, rejects queued work,
-interrupts active DevTools work, sends TERM then KILL when necessary, waits for
-the leader, observed process tree, and both output pipes, removes the profile,
-releases the port, and closes the fixture. `/health` exposes only the
-renderer's inspectable ownership state.
+application-owned, lazy Chromium session is retained behind a serial queue.
+The frontend build produces a dedicated renderer entry. Production serves
+only that entry and files below `dist/frontend/assets` from a narrow Bun
+loopback host; it performs no runtime transform, cache, checkout-wide serving,
+or file watching. Chromium receives one renderer-owned temporary root as
+`TMPDIR`, keeps its profile beneath that root, runs in an owned process group,
+and uses a private loopback DevTools port. Canvas shutdown stops admission,
+rejects queued work, interrupts active DevTools work, sends TERM then KILL when
+necessary, waits for the leader, observed process tree, and both output pipes,
+removes the complete temporary root, releases both ports, and closes the
+fixture. `/health` exposes the renderer's inspectable ownership state, including
+the cumulative Chromium start count for the canvas process.
 
 `POST /api/render/board?board=<key>` accepts `png` or `svg`, an explicit
 background choice, padding from 0 through 128 scene pixels, and a scale from
@@ -194,11 +198,14 @@ version 2: it records the persisted source fingerprint and reports
 `invalid-png`; browser callbacks and browser timeout states are not part of the
 contract.
 
-`POST /api/elements/from-mermaid` sends source text through the same retained
-renderer. Valid output receives deterministic Archboard ids, then passes
-through the sole inbound element converter and one ordinary locked note write.
-Malformed input and a non-empty source that yields no elements leave the board
-version unchanged.
+`POST /api/elements/from-mermaid` renders and validates source before it asks
+for the board lease. The request retains one frozen Mermaid skeleton result.
+After the renderer settles, the ordinary write middleware acquires the lease,
+reads the current note, maps collision-safe Archboard ids and endpoints, then
+passes typed inputs through the sole inbound converter and one synchronous
+write. A canceled request never enters or completes that write. Malformed input
+and a non-empty source that yields no elements leave the board version
+unchanged.
 
 Live pane photography remains `POST /api/browser/capture`. That Browser
 operation is deliberately separate from persisted Board render and is the only

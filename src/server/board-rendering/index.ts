@@ -16,4 +16,5 @@ export {
 	type BoardRendererJobResult,
 	type MermaidRenderJob,
 	type MermaidRenderJobResult,
+	type MermaidSkeleton,
 } from "./lib/contract.js";

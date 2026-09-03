@@ -8,6 +8,7 @@ import type {
 	BoardRenderSpec,
 	BoardRendererJob,
 	BoardRendererJobResult,
+	MermaidParserResult,
 } from "./contract";
 
 const state = { phase: "ready", active: false, jobs: 0 };
@@ -99,7 +100,11 @@ async function pngBase64(blob: Blob): Promise<{ data: string; width: number; hei
 	for (let offset = 0; offset < bytes.length; offset += 0x8000)
 		binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
 	const bitmap = await createImageBitmap(blob);
-	return { data: btoa(binary), width: bitmap.width, height: bitmap.height };
+	try {
+		return { data: btoa(binary), width: bitmap.width, height: bitmap.height };
+	} finally {
+		bitmap.close();
+	}
 }
 
 function svgSize(svg: SVGSVGElement): { width: number; height: number } {
@@ -150,10 +155,11 @@ async function run(job: BoardRendererJob): Promise<BoardRendererJobResult> {
 	state.active = true;
 	state.jobs += 1;
 	try {
+		document.body.replaceChildren();
 		if (job.kind === "mermaid") {
 			state.phase = "mermaid";
 			try {
-				const result = await parseMermaidToExcalidraw(job.source, job.config);
+				const result: MermaidParserResult = await parseMermaidToExcalidraw(job.source, job.config);
 				return { kind: "mermaid", elements: result.elements, files: result.files ?? {} };
 			} catch (error) {
 				return {
@@ -180,6 +186,7 @@ async function run(job: BoardRendererJob): Promise<BoardRendererJobResult> {
 		}
 		return { kind: "render", outputs };
 	} finally {
+		document.body.replaceChildren();
 		state.phase = "ready";
 		state.active = false;
 	}

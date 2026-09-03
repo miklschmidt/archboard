@@ -1,8 +1,6 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-
-import { createServer, type ViteDevServer } from "vite";
 
 import { processIdentity, type ProcessIdentity } from "../../../runtime/engine/process-group.js";
 import {
@@ -15,12 +13,24 @@ import {
 	BOARD_RENDER_STARTUP_TIMEOUT_MS,
 } from "../../../shared/timing/timing.js";
 import type { BoardRendererJob, BoardRendererJobResult, RendererPageState } from "./contract.js";
+import {
+	createRendererFixture,
+	type RendererFixture,
+	type RendererFixtureTestHooks,
+} from "./fixture.js";
 
 type JsonRecord = Record<string, unknown>;
 
+function isJsonRecord(value: unknown): value is JsonRecord {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 const repositoryRoot = resolve(import.meta.dir, "../../../..");
-const rendererPage = "/src/server/board-rendering/lib/renderer.html";
 const processGroups = createCodexProcessGroupOperations();
+// Chromium adds two long singleton-directory segments below TMPDIR. Keep the
+// owned root short enough for Linux's Unix-socket path limit even when the
+// canvas itself inherited a deeply nested test or launcher TMPDIR.
+const rendererTempParent = process.platform === "linux" ? "/tmp" : tmpdir();
 
 export interface BoardRenderingOwnerOptions {
 	readonly chromiumPath?: string;
@@ -28,19 +38,35 @@ export interface BoardRenderingOwnerOptions {
 	readonly jobTimeoutMs?: number;
 	readonly startupTimeoutMs?: number;
 	readonly cleanupTimeoutMs?: number;
+	/** Deterministic fault and scheduling controls used only by the focused owner test. */
+	readonly testHooks?: BoardRenderingOwnerTestHooks;
 }
+
+export interface BoardRenderingOwnerTestHooks extends RendererFixtureTestHooks {
+	beforeRun?(job: BoardRendererJob, signal?: AbortSignal): Promise<void> | void;
+	adjustSessionCleanup?(cleanup: RendererSessionCleanup): RendererSessionCleanup;
+	onTempRoot?(root: string): void;
+	onChromiumStart?(pid: number): void;
+}
+
+type ResolvedOwnerOptions = Required<Omit<BoardRenderingOwnerOptions, "testHooks">> & {
+	readonly testHooks: BoardRenderingOwnerTestHooks;
+};
 
 export interface BoardRenderingOwnerStatus {
 	readonly started: boolean;
 	readonly accepting: boolean;
 	readonly active: boolean;
 	readonly queued: number;
+	readonly chromiumStarts: number;
 	readonly chromiumPid: number | null;
+	readonly tempRoot: string | null;
 	readonly profile: string | null;
 	readonly controlPort: number | null;
+	readonly fixturePort: number | null;
 }
 
-export interface BoardRendererCleanup {
+export interface RendererSessionCleanup {
 	readonly clean: boolean;
 	readonly pids: readonly number[];
 	readonly processesGone: boolean;
@@ -50,9 +76,13 @@ export interface BoardRendererCleanup {
 	readonly stdoutSettled: boolean;
 	readonly stderrSettled: boolean;
 	readonly profileRemoved: boolean;
+	readonly tempRootRemoved: boolean;
 	readonly portReleased: boolean;
-	readonly fixtureClosed: boolean;
 	readonly errors: readonly string[];
+}
+
+export interface BoardRendererCleanup extends RendererSessionCleanup {
+	readonly fixtureClosed: boolean;
 }
 
 export class BoardRendererError extends Error {
@@ -146,16 +176,16 @@ class Cdp {
 			{ expression, awaitPromise: true, returnByValue: true },
 			timeoutMs,
 		);
-		if (answer.exceptionDetails) {
-			const details = answer.exceptionDetails as JsonRecord;
-			const exception = details.exception as JsonRecord | undefined;
+		if (isJsonRecord(answer.exceptionDetails)) {
+			const details = answer.exceptionDetails;
+			const exception = isJsonRecord(details.exception) ? details.exception : undefined;
 			throw new Error(
 				typeof exception?.description === "string"
 					? exception.description
 					: `Renderer page evaluation failed: ${JSON.stringify(details)}`,
 			);
 		}
-		return (answer.result as JsonRecord | undefined)?.value;
+		return isJsonRecord(answer.result) ? answer.result.value : undefined;
 	}
 
 	diagnostics(): readonly JsonRecord[] {
@@ -180,24 +210,36 @@ class Cdp {
 	}
 
 	private onMessage(raw: string): void {
-		const message = JSON.parse(raw) as {
-			id?: number;
-			result?: JsonRecord;
-			error?: { message?: string };
-			method?: string;
-			params?: JsonRecord;
-		};
-		if (typeof message.id === "number") {
-			const pending = this.#pending.get(message.id);
-			if (!pending) return;
-			this.#pending.delete(message.id);
-			clearTimeout(pending.timeout);
-			if (message.error)
-				pending.reject(new Error(message.error.message ?? "DevTools command failed."));
-			else pending.resolve(message.result ?? {});
+		let message: unknown;
+		try {
+			message = JSON.parse(raw) as unknown;
+		} catch {
+			this.rejectPending("Renderer DevTools returned invalid JSON.");
 			return;
 		}
-		if (message.method) this.#events.push({ method: message.method, params: message.params ?? {} });
+		if (!isJsonRecord(message)) return;
+		const id = message.id;
+		if (typeof id === "number") {
+			const pending = this.#pending.get(id);
+			if (!pending) return;
+			this.#pending.delete(id);
+			clearTimeout(pending.timeout);
+			if (isJsonRecord(message.error))
+				pending.reject(
+					new Error(
+						typeof message.error.message === "string"
+							? message.error.message
+							: "DevTools command failed.",
+					),
+				);
+			else pending.resolve(isJsonRecord(message.result) ? message.result : {});
+			return;
+		}
+		if (typeof message.method === "string")
+			this.#events.push({
+				method: message.method,
+				params: isJsonRecord(message.params) ? message.params : {},
+			});
 	}
 
 	private rejectPending(message: string): void {
@@ -227,7 +269,7 @@ async function reserveLoopbackPort(): Promise<number> {
 	});
 	const port = server.port;
 	await server.stop(true);
-	if (!Number.isSafeInteger(port) || port <= 0)
+	if (typeof port !== "number" || !Number.isSafeInteger(port) || port <= 0)
 		throw new Error("Board renderer could not reserve a loopback control port.");
 	return port;
 }
@@ -252,6 +294,65 @@ function readablePipe(
 	return stream;
 }
 
+interface CapturedPipe {
+	readonly settled: Promise<void>;
+	tail(): string;
+	error(): string | null;
+}
+
+const OUTPUT_TAIL_CHARACTERS = 8_192;
+
+function capturePipe(stream: ReadableStream<Uint8Array>): CapturedPipe {
+	const reader = stream.getReader();
+	const decoder = new TextDecoder();
+	let output = "";
+	let failure: string | null = null;
+	const append = (chunk: string): void => {
+		output = (output + chunk).slice(-OUTPUT_TAIL_CHARACTERS);
+	};
+	const settled = (async () => {
+		try {
+			for (;;) {
+				const next = await reader.read();
+				if (next.done) break;
+				append(decoder.decode(next.value, { stream: true }));
+			}
+			append(decoder.decode());
+		} catch (error) {
+			failure = error instanceof Error ? error.message : String(error);
+		}
+	})();
+	return Object.freeze({
+		settled,
+		tail: () => output,
+		error: () => failure,
+	});
+}
+
+function abortReason(signal: AbortSignal): Error {
+	return signal.reason instanceof Error
+		? signal.reason
+		: new Error(
+				signal.reason === undefined ? "Board renderer work was canceled." : String(signal.reason),
+			);
+}
+
+async function abortable<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> {
+	if (!signal) return await work;
+	signal.throwIfAborted();
+	let cancel!: (reason: Error) => void;
+	const canceled = new Promise<never>((_resolve, reject) => {
+		cancel = reject;
+	});
+	const onAbort = (): void => cancel(abortReason(signal));
+	signal.addEventListener("abort", onAbort, { once: true });
+	try {
+		return await Promise.race([work, canceled]);
+	} finally {
+		signal.removeEventListener("abort", onAbort);
+	}
+}
+
 async function settlesBefore(promise: Promise<unknown>, deadline: number): Promise<boolean> {
 	return await Promise.race([
 		promise.then(
@@ -273,6 +374,16 @@ async function waitForGroupAbsence(
 		await Bun.sleep(Math.min(25, Math.max(0, deadline - Date.now())));
 	}
 	return processGroups.inspect(identity) === "quiescent";
+}
+
+function rawProcessGroupAbsent(groupId: number): boolean {
+	try {
+		process.kill(-groupId, 0);
+		return false;
+	} catch (error) {
+		if (isJsonRecord(error) && error.code === "ESRCH") return true;
+		throw error;
+	}
 }
 
 async function captureGroup(
@@ -319,22 +430,70 @@ function ownedProcessIds(pid: number): number[] {
 	return [...seen].toSorted((left, right) => left - right);
 }
 
+function isRendererJobResult(value: unknown): value is BoardRendererJobResult {
+	if (!isJsonRecord(value)) return false;
+	const kind = Reflect.get(value, "kind");
+	const error = Reflect.get(value, "error");
+	if (error !== undefined && typeof error !== "string") return false;
+	if (kind === "mermaid") {
+		const elements = Reflect.get(value, "elements");
+		const files = Reflect.get(value, "files");
+		return (
+			Array.isArray(elements) &&
+			elements.every(
+				(element) => isJsonRecord(element) && typeof Reflect.get(element, "type") === "string",
+			) &&
+			isJsonRecord(files) &&
+			Object.values(files).every(
+				(file) =>
+					isJsonRecord(file) &&
+					typeof file.id === "string" &&
+					typeof file.dataURL === "string" &&
+					typeof file.mimeType === "string" &&
+					typeof file.created === "number",
+			)
+		);
+	}
+	if (kind !== "render") return false;
+	const outputs = Reflect.get(value, "outputs");
+	return (
+		Array.isArray(outputs) &&
+		outputs.every(
+			(output) =>
+				output !== null &&
+				typeof output === "object" &&
+				typeof Reflect.get(output, "id") === "string" &&
+				["png", "svg"].includes(String(Reflect.get(output, "format"))) &&
+				typeof Reflect.get(output, "data") === "string" &&
+				typeof Reflect.get(output, "width") === "number" &&
+				typeof Reflect.get(output, "height") === "number",
+		)
+	);
+}
+
+function isRendererPageState(value: unknown): value is RendererPageState {
+	return (
+		isJsonRecord(value) &&
+		typeof value.phase === "string" &&
+		typeof value.active === "boolean" &&
+		typeof value.jobs === "number"
+	);
+}
+
 class RendererSession {
+	#tempRoot: string | null = null;
 	#profile: string | null = null;
 	#port: number | null = null;
 	#child: Bun.Subprocess | null = null;
 	#candidate: ProcessIdentity | null = null;
 	#group: CodexProcessGroupIdentity | null = null;
-	#stdout: Promise<string> | null = null;
-	#stderr: Promise<string> | null = null;
+	#stdout: CapturedPipe | null = null;
+	#stderr: CapturedPipe | null = null;
 	#cdp: Cdp | null = null;
-	#closePromise: Promise<BoardRendererCleanup> | null = null;
+	#closePromise: Promise<RendererSessionCleanup> | null = null;
 	readonly #observed = new Set<number>();
 
-	private constructor(
-		readonly fixture: ViteDevServer,
-		readonly options: Required<BoardRenderingOwnerOptions>,
-	) {}
+	private constructor(readonly options: ResolvedOwnerOptions) {}
 
 	get pid(): number | null {
 		return this.#child?.pid ?? null;
@@ -344,20 +503,23 @@ class RendererSession {
 		return this.#profile;
 	}
 
+	get tempRoot(): string | null {
+		return this.#tempRoot;
+	}
+
 	get port(): number | null {
 		return this.#port;
 	}
 
-	static async acquire(
-		fixture: ViteDevServer,
-		url: string,
-		options: Required<BoardRenderingOwnerOptions>,
-	): Promise<RendererSession> {
-		const session = new RendererSession(fixture, options);
+	static async acquire(url: string, options: ResolvedOwnerOptions): Promise<RendererSession> {
+		const session = new RendererSession(options);
 		try {
 			const chromiumPath = requiredExecutable("chromium", options.chromiumPath || undefined);
 			const setsidPath = requiredExecutable("setsid", options.setsidPath || undefined);
-			session.#profile = mkdtempSync(join(tmpdir(), "archboard-board-renderer-"));
+			session.#tempRoot = mkdtempSync(join(rendererTempParent, "archboard-board-renderer-"));
+			options.testHooks.onTempRoot?.(session.#tempRoot);
+			session.#profile = join(session.#tempRoot, "profile");
+			mkdirSync(session.#profile, { mode: 0o700 });
 			session.#port = await reserveLoopbackPort();
 			session.#child = Bun.spawn({
 				cmd: [
@@ -373,14 +535,16 @@ class RendererSession {
 					"about:blank",
 				],
 				cwd: repositoryRoot,
+				env: { ...process.env, TMPDIR: session.#tempRoot },
 				stdin: "ignore",
 				stdout: "pipe",
 				stderr: "pipe",
 			});
+			session.#stdout = capturePipe(readablePipe(session.#child.stdout));
+			session.#stderr = capturePipe(readablePipe(session.#child.stderr));
+			options.testHooks.onChromiumStart?.(session.#child.pid);
 			session.#candidate = processIdentity(session.#child.pid);
 			session.observe();
-			session.#stdout = new Response(readablePipe(session.#child.stdout)).text();
-			session.#stderr = new Response(readablePipe(session.#child.stderr)).text();
 			session.#group = await captureGroup(
 				session.#candidate,
 				Date.now() + options.cleanupTimeoutMs,
@@ -389,23 +553,25 @@ class RendererSession {
 			return session;
 		} catch (error) {
 			const cleanup = await session.close();
+			const diagnostics = session.processDiagnostics();
 			const acquisition = new BoardRendererError(
 				"Board renderer could not start.",
 				"startup",
-				[],
+				diagnostics,
 				error,
 			);
 			if (!cleanup.clean)
-				throw new AggregateError(
-					[acquisition, new Error(`Renderer startup cleanup failed: ${JSON.stringify(cleanup)}`)],
+				throw new BoardRendererError(
 					"Board renderer startup and cleanup failed.",
-					{ cause: error },
+					"startup-cleanup",
+					[...diagnostics, { cleanup }],
+					acquisition,
 				);
 			throw acquisition;
 		}
 	}
 
-	async run(job: BoardRendererJob): Promise<BoardRendererJobResult> {
+	async run(job: BoardRendererJob, signal?: AbortSignal): Promise<BoardRendererJobResult> {
 		const cdp = this.#cdp;
 		if (!cdp || !this.#child)
 			throw new BoardRendererError("Board renderer is not ready.", "startup");
@@ -416,14 +582,19 @@ class RendererSession {
 				cdp.diagnostics(),
 			);
 		try {
-			const value = await cdp.evaluate(
-				`window.archboardBoardRenderer?.run(${JSON.stringify(job)})`,
-				this.options.jobTimeoutMs,
+			const value = await abortable(
+				cdp.evaluate(
+					`window.archboardBoardRenderer?.run(${JSON.stringify(job)})`,
+					this.options.jobTimeoutMs,
+				),
+				signal,
 			);
-			if (!value || typeof value !== "object")
+			signal?.throwIfAborted();
+			if (!isRendererJobResult(value))
 				throw new Error("Renderer page returned no structured result.");
-			return value as BoardRendererJobResult;
+			return value;
 		} catch (error) {
+			if (signal?.aborted) throw abortReason(signal);
 			const phase = await this.pageState().catch(() => null);
 			throw new BoardRendererError(
 				"Board renderer job failed.",
@@ -434,7 +605,7 @@ class RendererSession {
 		}
 	}
 
-	close(): Promise<BoardRendererCleanup> {
+	close(): Promise<RendererSessionCleanup> {
 		if (this.#closePromise) return this.#closePromise;
 		this.#closePromise = this.closeOnce();
 		return this.#closePromise;
@@ -484,10 +655,10 @@ class RendererSession {
 			"window.archboardBoardRenderer?.state ?? null",
 			this.options.startupTimeoutMs,
 		);
-		return value && typeof value === "object" ? (value as RendererPageState) : null;
+		return isRendererPageState(value) ? value : null;
 	}
 
-	private async closeOnce(): Promise<BoardRendererCleanup> {
+	private async closeOnce(): Promise<RendererSessionCleanup> {
 		const errors: string[] = [];
 		this.#cdp?.close();
 		this.observe();
@@ -519,28 +690,52 @@ class RendererSession {
 		} else if (this.#child && this.#child.exitCode === null) {
 			errors.push("Renderer process group could not be proved during cleanup.");
 			this.#child.kill("SIGKILL");
+		} else if (this.#child) {
+			try {
+				groupAbsent = rawProcessGroupAbsent(this.#child.pid);
+				if (!groupAbsent)
+					errors.push(
+						`Renderer process group ${this.#child.pid} survived after its leader exited before capture.`,
+					);
+			} catch (error) {
+				errors.push(error instanceof Error ? error.message : String(error));
+			}
 		}
 		const [leaderSettled, stdoutSettled, stderrSettled] = await Promise.all([
 			this.#child ? settlesBefore(this.#child.exited, deadline) : Promise.resolve(true),
-			this.#stdout ? settlesBefore(this.#stdout, deadline) : Promise.resolve(true),
-			this.#stderr ? settlesBefore(this.#stderr, deadline) : Promise.resolve(true),
+			this.#stdout ? settlesBefore(this.#stdout.settled, deadline) : Promise.resolve(true),
+			this.#stderr ? settlesBefore(this.#stderr.settled, deadline) : Promise.resolve(true),
 		]);
+		for (const [name, pipe] of [
+			["stdout", this.#stdout],
+			["stderr", this.#stderr],
+		] as const) {
+			const failure = pipe?.error();
+			if (failure) errors.push(`Renderer ${name} pipe failed: ${failure}`);
+		}
 		let survivors = pids.filter((pid) => existsSync(`/proc/${pid}`));
 		while (survivors.length > 0 && Date.now() < deadline) {
 			await Bun.sleep(Math.min(25, Math.max(0, deadline - Date.now())));
 			survivors = pids.filter((pid) => existsSync(`/proc/${pid}`));
 		}
 		const processesGone = survivors.length === 0;
-		if (groupAbsent && processesGone && this.#profile) {
+		if (
+			groupAbsent &&
+			processesGone &&
+			leaderSettled &&
+			stdoutSettled &&
+			stderrSettled &&
+			this.#tempRoot
+		) {
 			try {
-				rmSync(this.#profile, { recursive: true, force: true });
+				rmSync(this.#tempRoot, { recursive: true, force: true });
 			} catch (error) {
 				errors.push(error instanceof Error ? error.message : String(error));
 			}
 		}
 		const profileRemoved = !this.#profile || !existsSync(this.#profile);
+		const tempRootRemoved = !this.#tempRoot || !existsSync(this.#tempRoot);
 		const portReleased = await loopbackPortIsAvailable(this.#port);
-		const fixtureClosed = true;
 		const clean =
 			groupAbsent &&
 			processesGone &&
@@ -548,10 +743,10 @@ class RendererSession {
 			stdoutSettled &&
 			stderrSettled &&
 			profileRemoved &&
+			tempRootRemoved &&
 			portReleased &&
-			fixtureClosed &&
 			errors.length === 0;
-		return {
+		const cleanup: RendererSessionCleanup = {
 			clean,
 			pids,
 			processesGone,
@@ -561,10 +756,18 @@ class RendererSession {
 			stdoutSettled,
 			stderrSettled,
 			profileRemoved,
+			tempRootRemoved,
 			portReleased,
-			fixtureClosed,
 			errors,
 		};
+		return this.options.testHooks.adjustSessionCleanup?.(cleanup) ?? cleanup;
+	}
+
+	private processDiagnostics(): JsonRecord[] {
+		return [
+			...(this.#stdout?.tail() ? [{ stream: "stdout", tail: this.#stdout.tail() }] : []),
+			...(this.#stderr?.tail() ? [{ stream: "stderr", tail: this.#stderr.tail() }] : []),
+		];
 	}
 
 	private observe(): void {
@@ -573,15 +776,10 @@ class RendererSession {
 	}
 }
 
-function fixtureUrl(server: ViteDevServer): string {
-	const address = server.httpServer?.address();
-	if (!address || typeof address === "string")
-		throw new Error("Board renderer fixture server has no loopback address.");
-	return `http://127.0.0.1:${address.port}${rendererPage}`;
-}
-
 export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
-	const resolved: Required<BoardRenderingOwnerOptions> = {
+	let chromiumStarts = 0;
+	const configuredHooks = options.testHooks ?? {};
+	const resolved: ResolvedOwnerOptions = {
 		chromiumPath:
 			options.chromiumPath ??
 			process.env.ARCHBOARD_RENDERER_CHROMIUM ??
@@ -591,13 +789,20 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 		jobTimeoutMs: options.jobTimeoutMs ?? BOARD_RENDER_JOB_TIMEOUT_MS,
 		startupTimeoutMs: options.startupTimeoutMs ?? BOARD_RENDER_STARTUP_TIMEOUT_MS,
 		cleanupTimeoutMs: options.cleanupTimeoutMs ?? BOARD_RENDER_CLEANUP_MS,
+		testHooks: {
+			...configuredHooks,
+			onChromiumStart(pid) {
+				chromiumStarts += 1;
+				configuredHooks.onChromiumStart?.(pid);
+			},
+		},
 	};
 	let started = false;
 	let accepting = false;
 	let stopping = false;
 	let active = false;
 	let queued = 0;
-	let fixture: ViteDevServer | null = null;
+	let fixture: RendererFixture | null = null;
 	let session: RendererSession | null = null;
 	let acquisition: Promise<RendererSession> | null = null;
 	let tail: Promise<void> = Promise.resolve();
@@ -615,20 +820,19 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 		if (acquisition) return acquisition;
 		acquisition = (async () => {
 			if (!fixture) {
-				fixture = await createServer({
-					configFile: false,
-					root: repositoryRoot,
-					logLevel: "error",
-					optimizeDeps: {
-						noDiscovery: true,
-						include: ["@excalidraw/excalidraw", "@excalidraw/mermaid-to-excalidraw", "mermaid"],
-					},
-					server: { host: "127.0.0.1", port: 0, strictPort: false, watch: null },
-				});
-				await fixture.listen();
+				try {
+					fixture = await createRendererFixture(resolved.testHooks);
+				} catch (error) {
+					throw new BoardRendererError(
+						"Board renderer fixture could not start.",
+						"fixture-startup",
+						[],
+						error,
+					);
+				}
 			}
 			if (stopping) throw new Error("Board renderer stopped during startup.");
-			const acquired = await RendererSession.acquire(fixture, fixtureUrl(fixture), resolved);
+			const acquired = await RendererSession.acquire(fixture.url, resolved);
 			if (stopping) {
 				await acquired.close();
 				throw new Error("Board renderer stopped during startup.");
@@ -641,41 +845,66 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 		return acquisition;
 	};
 
-	const execute = async (job: BoardRendererJob): Promise<BoardRendererJobResult> => {
+	const execute = async (
+		job: BoardRendererJob,
+		signal?: AbortSignal,
+	): Promise<BoardRendererJobResult> => {
 		if (!started || !accepting) throw new Error("Board renderer is not accepting work.");
+		signal?.throwIfAborted();
 		queued += 1;
+		const state: { value: "queued" | "active" | "settled" } = { value: "queued" };
 		let resolveResult!: (result: BoardRendererJobResult) => void;
 		let rejectResult!: (error: unknown) => void;
 		const result = new Promise<BoardRendererJobResult>((resolveJob, rejectJob) => {
 			resolveResult = resolveJob;
 			rejectResult = rejectJob;
 		});
+		const onAbort = (): void => {
+			if (state.value !== "queued" || !signal) return;
+			state.value = "settled";
+			queued -= 1;
+			rejectResult(abortReason(signal));
+		};
+		signal?.addEventListener("abort", onAbort, { once: true });
 		const before = tail;
 		tail = (async () => {
 			await before;
+			if (state.value === "settled") return undefined;
 			queued -= 1;
+			state.value = "active";
 			if (!accepting) {
 				rejectResult(new Error("Board renderer stopped before queued work began."));
+				state.value = "settled";
 				return undefined;
 			}
 			active = true;
+			let enteredRenderer = false;
 			try {
-				resolveResult(await (await acquire()).run(job));
+				const current = await acquire();
+				signal?.throwIfAborted();
+				await abortable(Promise.resolve(resolved.testHooks.beforeRun?.(job, signal)), signal);
+				signal?.throwIfAborted();
+				enteredRenderer = true;
+				resolveResult(await current.run(job, signal));
 			} catch (error) {
 				let failure = error;
-				const failed = session;
-				session = null;
+				const failed = enteredRenderer ? session : null;
+				if (failed) session = null;
 				if (failed) {
 					const cleanup = await failed.close();
 					if (!cleanup.clean)
-						failure = new AggregateError(
-							[error, new Error(`Renderer failure cleanup failed: ${JSON.stringify(cleanup)}`)],
+						failure = new BoardRendererError(
 							"Board renderer job and cleanup failed.",
+							error instanceof BoardRendererError ? error.phase : "cleanup",
+							[...(error instanceof BoardRendererError ? error.diagnostics : []), { cleanup }],
+							error,
 						);
 				}
 				rejectResult(failure);
 			} finally {
 				active = false;
+				state.value = "settled";
+				signal?.removeEventListener("abort", onAbort);
 			}
 			return undefined;
 		})();
@@ -692,12 +921,11 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 			session = null;
 			current?.close();
 			await tail;
-			let cleanup: BoardRendererCleanup;
-			if (current) cleanup = await current.close();
+			let sessionCleanup: RendererSessionCleanup;
+			if (current) sessionCleanup = await current.close();
 			else {
-				const errors: string[] = [];
-				cleanup = {
-					clean: errors.length === 0,
+				sessionCleanup = {
+					clean: true,
 					pids: [],
 					processesGone: true,
 					survivors: [],
@@ -706,27 +934,27 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 					stdoutSettled: true,
 					stderrSettled: true,
 					profileRemoved: true,
+					tempRootRemoved: true,
 					portReleased: true,
-					fixtureClosed: true,
-					errors,
+					errors: [],
 				};
 			}
 			let fixtureClosed = true;
-			const errors = [...cleanup.errors];
+			const errors = [...sessionCleanup.errors];
 			if (fixture) {
 				try {
 					await fixture.close();
-					fixtureClosed = !fixture.httpServer?.listening;
+					fixtureClosed = !fixture.listening();
 				} catch (error) {
 					errors.push(error instanceof Error ? error.message : String(error));
 					fixtureClosed = false;
 				}
 			}
-			cleanup = {
-				...cleanup,
+			const cleanup: BoardRendererCleanup = {
+				...sessionCleanup,
 				fixtureClosed,
 				errors,
-				clean: cleanup.clean && fixtureClosed && errors.length === 0,
+				clean: sessionCleanup.clean && fixtureClosed && errors.length === 0,
 			};
 			fixture = null;
 			lastCleanup = cleanup;
@@ -747,9 +975,12 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 			accepting,
 			active,
 			queued,
+			chromiumStarts,
 			chromiumPid: session?.pid ?? null,
+			tempRoot: session?.tempRoot ?? null,
 			profile: session?.profile ?? null,
 			controlPort: session?.port ?? null,
+			fixturePort: fixture?.port ?? null,
 		}),
 		lastCleanup: (): BoardRendererCleanup | null => lastCleanup,
 	});
