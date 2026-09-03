@@ -44,7 +44,11 @@ import {
 	type SceneUpdate,
 } from "./change-reporting";
 import { replaceCanvasFiles } from "./files";
-import { ownsHoldAttempt, type HoldAttempt } from "./hold-attempt";
+import {
+	ownsHoldAttempt,
+	scheduleRenewalForOwnedHoldAttempt,
+	type HoldAttempt,
+} from "./hold-attempt";
 import { createHoldRenewalDeadline, createPaneReportDeadline } from "./canvas-deadlines";
 import {
 	beaconChanges,
@@ -1015,17 +1019,16 @@ export function useCanvasSession({
 						holdingRef.current = false;
 				})
 				.finally(() => {
-					if (
-						!ownsHoldAttempt(
-							holdAttemptRef.current,
-							attempt,
-							promise,
-							holdAttemptGenerationRef.current,
-						)
-					)
-						return;
-					holdAttemptRef.current = null;
-					retryOrRenew(LOCK_RENEW_MS);
+					scheduleRenewalForOwnedHoldAttempt(
+						holdAttemptRef.current,
+						attempt,
+						promise,
+						holdAttemptGenerationRef.current,
+						() => {
+							holdAttemptRef.current = null;
+							retryOrRenew(LOCK_RENEW_MS);
+						},
+					);
 				});
 			attempt.promise = promise;
 			holdAttemptRef.current = attempt;
