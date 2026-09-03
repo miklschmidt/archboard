@@ -1,5 +1,5 @@
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { isAbsolute, join, relative, resolve } from "node:path";
 
 import {
@@ -48,6 +48,26 @@ export interface PollOptions {
 	intervalMs?: number;
 }
 export type TestEnvironment = Readonly<Record<string, string | undefined>>;
+
+export function runCanvasCli(base: string, vault: string, args: string[]): string {
+	const repoRoot = resolve(import.meta.dir, "../../../..");
+	const result = spawnSync(
+		"timeout",
+		["--signal=TERM", "--kill-after=5s", "20s", join(repoRoot, "bin/canvas"), ...args],
+		{
+			cwd: repoRoot,
+			encoding: "utf8",
+			env: {
+				...process.env,
+				ARCHBOARD_VAULT: vault,
+				EXPRESS_SERVER_URL: base,
+				EXCALIDRAW_NO_AUTOSTART: "1",
+			},
+		},
+	);
+	if (result.status !== 0) throw new Error(result.stderr);
+	return result.stdout;
+}
 
 const PATH_INDEX = new Map<string, number>(BROWSER_TEST_PATHS.map((file, index) => [file, index]));
 const REQUIRED_BROWSER_ENV = [

@@ -35,6 +35,17 @@ on its stroke, so reserve transparency for background zones. Draw zones before
 their contents. Use a separate text element near a zone edge instead of a bound
 label centered over the zone.
 
+## Evidence boundary
+
+`render --board <key>` and `render-findings --board <key>` use the server-owned
+renderer over persisted board snapshots. Mermaid conversion is also
+server-owned. None needs a browser pane.
+
+Use `browser panes`, `browser selection`, `browser viewport`, and
+`browser capture` only for a connected live session. Name the pane explicitly.
+Those commands inspect or control what a person sees and never write the board
+note.
+
 ## Architecture drawing
 
 Use left-to-right flow, top-to-bottom layers, and containment for ownership.

@@ -170,6 +170,35 @@ test("server updates cannot absorb ordered user edits or queued reports", async 
 		);
 	await agreement();
 
+	const observationBefore = await readReportStats(browser);
+	const ordinaryWrite = await request(`/api/elements/changes?board=${LIVE_SESSION_BOARD}`, {
+		method: "POST",
+		body: {
+			origin: "agent",
+			upserts: [{ id: "probe", type: "rectangle", x: 1_100, y: 620, width: 120, height: 60 }],
+		},
+		doing: "adding the acknowledgement-independent observation probe",
+	});
+	expect(ordinaryWrite.status).toBe(200);
+	const afterWriteReturned = await readReportStats(browser);
+	expect(afterWriteReturned).toMatchObject({
+		sent: observationBefore.sent,
+		done: observationBefore.done,
+		acknowledgements: observationBefore.acknowledgements,
+	});
+	await pollUntil(
+		() => paneSnapshot(browser),
+		(elements) => elements.some((element) => element.id === "probe"),
+		"the pane to observe the committed ordinary board write",
+	);
+	const afterObservation = await readReportStats(browser);
+	expect(afterObservation).toMatchObject({
+		sent: observationBefore.sent,
+		done: observationBefore.done,
+		acknowledgements: observationBefore.acknowledgements,
+	});
+	await agreement();
+
 	const duringServerUpdate = async (
 		label: string,
 		agentUpserts: Upsert[],

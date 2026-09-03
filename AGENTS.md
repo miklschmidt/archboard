@@ -89,9 +89,12 @@ owner and all 18 browser owners; repository policy pins both exceptions.
 duplicate, or unreachable tests. Changing tests or CI, or a browser owner
 failing → `docs/agents/test-suite.md`.
 
-Open <http://127.0.0.1:3000>. Live pane capture and viewport control require a
-browser tab. Persisted Board PNG/SVG rendering, finding close-ups, Mermaid
-conversion, and pure JSON operations work headless through the server.
+The server is enough for board work. Named-board reads, writes, Mermaid
+conversion, PNG/SVG rendering, finding close-ups, inspection, snapshots,
+branches, and exports work with zero browser clients. Open
+<http://127.0.0.1:3000> only for a live human session. Commands under
+`browser` inspect or control that session; real-browser checks verify browser
+fidelity rather than a board-work prerequisite.
 
 ## Skills (after a fresh clone)
 

@@ -38,6 +38,12 @@ The focused server-rendering owners load `dist/frontend/renderer.html`. Run
 `bun run build:frontend` first in a clean checkout. The package `test` command
 already runs that build before its native lanes.
 
+`tests/system/boards/vault-only-production-interfaces.test.ts` owns the
+zero-client product workflow. It uses named persisted boards with no open,
+load, show, pane, or capture setup. `tests/system/boards/server-rendering.test.ts`
+owns renderer lifecycle and immutable snapshot details. Real-browser owners
+cover only live `browser` commands and Excalidraw fidelity.
+
 Run browser diagnosis only through the adapter:
 
 ```bash
@@ -79,7 +85,8 @@ Every transitional package check now has one final owner lane:
 Everything else in `scripts/` stands a WebSocket in for a pane, which cannot
 catch a renderer disagreeing with us: a socket holds whatever it was sent. The
 18 owners under `tests/system/browser/` drive a real browser through one strict
-adapter instead. The lane:
+adapter for live-session behavior and Excalidraw fidelity. They are not a gate
+for named-board runtime operations. The lane:
 
 - refuses to claim a pass without `agent-browser` on PATH, or without `strace`
   when human-edit performance is selected — it exits 2 before building or

@@ -13,6 +13,45 @@ the source disagree, the source Zod schema and refinements win.
 The examples below extract only values that naturally feed a later released
 command. They are tested against results accepted by the producing contract.
 
+## Persisted-board workflow
+
+Name the board first. This workflow needs a configured vault and server, not a
+browser connection:
+
+```bash
+board=payments
+archboard board new "$board" --level service
+archboard add --board "$board" --doing "drawing the payment path" elements.json
+archboard mermaid flow.mmd --board "$board" --doing "adding the service flow"
+archboard render --board "$board" --out payments.png
+archboard render --board "$board" --out payments.svg --format svg
+archboard check --board "$board" --strict
+archboard describe --board "$board"
+archboard snapshot save before-refactor --board "$board"
+archboard board save --board "$board" --variant option-a --doing "branching the proposal"
+archboard export --board payments@option-a --out payments-option-a.excalidraw
+```
+
+Run `render-findings --board "$board" --out <empty-directory>` only when the
+current inspection has a real focus-box finding that needs a close-up. It
+repeats inspection and renders from one immutable persisted snapshot.
+
+## Live-browser workflow
+
+Enter this separate workflow only to inspect or control what a person currently
+sees. Each command names its pane; none writes the board note.
+
+```bash
+archboard browser panes --text
+archboard browser selection --pane left --text
+archboard browser viewport --pane right --fit
+archboard browser capture --pane right --out live-right.png
+```
+
+Use the selected ids in a later named-board command. A pane observing a board
+receives committed board writes, but delivery does not decide whether the write
+succeeds.
+
 ## Created and queried elements
 
 Take element IDs from `add` or `query`, then choose the IDs needed by

@@ -22,6 +22,9 @@ skills experimental_install
 bun scripts/sync-skills.ts
 ```
 
+Edit only `skills/`. Re-running the sync must reproduce both derived copies;
+do not commit them or any PNG, SVG, manifest, or exported scene made as proof.
+
 ## 2. Pick a vault
 
 Boards are `.excalidraw.md` notes in an Obsidian vault that spans repositories.
@@ -35,8 +38,8 @@ export ARCHBOARD_VAULT=/path/to/vault
 
 **Set it before starting the server** — the server does the vault I/O, so
 exporting it afterwards changes nothing, and with no vault at all the canvas
-refuses to start and tells you how to get one (ADR 0015). Open
-<http://127.0.0.1:3000>.
+refuses to start and tells you how to get one (ADR 0015). The browser at
+<http://127.0.0.1:3000> is optional and belongs only to a live human session.
 
 ## 3. Make the CLI available to Codex
 
@@ -68,8 +71,22 @@ and every delegation becomes a turn in that same thread.
 
 ## 5. A first session
 
+Start with the explicit persisted board. This complete workflow needs no
+browser connection:
+
 ```bash
 ./bin/canvas board new payments --level service
+./bin/canvas add --board payments --doing "drawing the payment path" elements.json
+printf 'graph LR; Gateway --> Orders; Orders --> Store' | \
+  ./bin/canvas mermaid --board payments --doing "adding the service flow"
+./bin/canvas render --board payments --out payments.png
+./bin/canvas render --board payments --out payments.svg --format svg
+./bin/canvas check --board payments --strict
+./bin/canvas describe --board payments
+./bin/canvas snapshot save v1 --board payments
+./bin/canvas board save --board payments --variant option-a \
+  --doing "branching the proposal"
+./bin/canvas export --board payments@option-a --out payments-option-a.excalidraw
 ```
 
 **Every command that touches a board names it** — `--board payments` — and one
@@ -77,46 +94,34 @@ that does not is refused, with persisted board choices in the refusal. There is
 no active board or browser-session fallback (ADR 0020). The canvas boots holding
 `scratch`, which is a board like any other and is named like one.
 
-Ask the agent to read a codebase and draw its architecture. Then, on the board:
+`render` produces PNG or SVG from one immutable named-board snapshot in the
+server-owned renderer. Mermaid conversion uses that same server boundary and
+commits one board write. If `check` reports a real finding with a focus box,
+create an empty output directory and run `render-findings --board payments
+--out <directory>`. Do not make finding renders when there is no finding.
 
-1. **Select a box by tapping its interior** and ask the agent what you have
-   selected. `browser selection --pane <spec>` returns the stable ids for
-   "map _this_ to X".
-2. **Promote it**: `./bin/canvas promote --board payments --ids <selected-id> --kind service
---name "Payments" --path src/payments/index.ts --doing "calling this the payments service"`.
-   The binding resolves through git to repo, path, branch and commit. Every
-   write says what it is doing and is refused without it, and the line shows up
-   on the board as the write lands (TASK-095) — watch the top right of the pane
-   while the agent works, which is the point of the whole thing.
-3. **Save**: `./bin/canvas board save --board payments --doing "writing it down"`.
-4. **Branch a variant**: `./bin/canvas board save --board payments --as payments@option-a
---doing "branching a proposal"`,
-   then rearrange it — move a box out of a cluster, cut an edge, add a node.
-   The branch is written but not put on screen: whatever pane held `payments`
-   still holds it, because branching is how you get something to compare
-   against (ADR 0012). Open the branch where you want it, as in step 6.
-5. **Compare**: ask the agent what changed between `payments` and
-   `payments@option-a`.
-6. **Put them side by side**: `./bin/canvas browser open`, then
-   `./bin/canvas browser show payments@option-a --pane right`.
-   That splits the canvas and opens the variant into the pane it made, leaving
-   the one you were reading alone — no clicking, so an agent can do it mid
-   sentence. **Split** in the chrome does the same thing by hand. Each pane
-   holds its own board, keeps its own selection, and is saved against its own
-   baseline; `./bin/canvas browser panes` says which is which,
-   `./bin/canvas browser capture --pane right` pictures one of them, and
-   `./bin/canvas browser close right` puts you back to one.
-7. **Draw into the board you mean**: pipe a Mermaid diagram at the variant,
-   `... | ./bin/canvas mermaid --board payments@option-a --doing "sketching the
-proposal from mermaid"`. The server converts and persists the named board with
-   zero connected browser clients. Any pane already showing that board receives
-   the committed update; an off-screen board is converted just the same. Use
-   `browser show` separately when you want to display it. `mermaid` takes no
-   `--pane`, because conversion is board work rather than live-session control.
+Read the final note directly at
+`$ARCHBOARD_VAULT/payments.excalidraw.md`. No open, load, show, pane, selection,
+camera, or capture step establishes the board.
 
-Step 5 is the one worth watching closely. The tool returns structure; the agent
-narrates it. If the narration is wrong or thin, the question is usually whether
-the _data_ was sufficient, not whether the model phrased it badly.
+### Live browser collaboration
+
+Enter this branch only when a person is using the canvas or the requested
+evidence concerns the live session:
+
+```bash
+./bin/canvas browser panes --text
+./bin/canvas browser selection --pane left --text
+./bin/canvas browser open
+./bin/canvas browser show payments@option-a --pane right
+./bin/canvas browser viewport --pane right --fit
+./bin/canvas browser capture --pane right --out option-a-live.png
+```
+
+Each command names its live target. None writes the board note. Pass selected
+ids explicitly to a later named-board write. A pane already showing the board
+receives committed writes, but its delivery or acknowledgement does not decide
+whether the write succeeds.
 
 ## What to expect, and what not to
 

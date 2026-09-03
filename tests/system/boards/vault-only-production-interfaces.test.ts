@@ -34,6 +34,29 @@ function putNote(board: string, content = note(board)): string {
 	return file;
 }
 
+function runCli(
+	args: string[],
+	options: { input?: string; expectedStatus?: number } = {},
+): { stdout: string; stderr: string } {
+	const result = spawnSync(
+		"timeout",
+		["--signal=TERM", "--kill-after=5s", "20s", join(repoRoot, "bin/canvas"), ...args],
+		{
+			cwd: repoRoot,
+			encoding: "utf8",
+			input: options.input,
+			env: {
+				...process.env,
+				ARCHBOARD_VAULT: vault,
+				EXPRESS_SERVER_URL: canvas.base,
+				EXCALIDRAW_NO_AUTOSTART: "1",
+			},
+		},
+	);
+	expect(result.status, result.stderr).toBe(options.expectedStatus ?? 0);
+	return { stdout: result.stdout, stderr: result.stderr };
+}
+
 interface Refusal {
 	code?: string;
 	reason?: string;
@@ -61,7 +84,9 @@ afterAll(async () => {
 });
 
 describe.serial("vault-only production interfaces", () => {
-	test("uses a persisted note through representative interfaces without a browser or open step", async () => {
+	test("completes the named-board production workflow with zero browser clients and no open step", async () => {
+		const healthBefore = await request<{ websocket_clients: number }>("/health");
+		expect(healthBefore.body.websocket_clients).toBe(0);
 		const initial = await request<{
 			boards: Array<{ key: string }>;
 		}>("/api/boards");
@@ -141,25 +166,143 @@ describe.serial("vault-only production interfaces", () => {
 			expect(side).not.toHaveProperty("loadedAt");
 		}
 
-		const inspection = spawnSync(
-			"timeout",
-			[
-				"--signal=TERM",
-				"--kill-after=5s",
-				"20s",
-				join(repoRoot, "bin/canvas"),
-				"check",
-				"--board",
-				"payments",
-			],
+		const workflowBoard = "zero-client-workflow";
+		expect(
+			JSON.parse(runCli(["board", "new", workflowBoard, "--level", "service"]).stdout),
+		).toMatchObject({
+			board: workflowBoard,
+			created: true,
+		});
+		const crossingElements = [
 			{
-				cwd: repoRoot,
-				encoding: "utf8",
-				env: { ...process.env, ARCHBOARD_VAULT: vault, EXCALIDRAW_NO_AUTOSTART: "1" },
+				id: "left",
+				type: "rectangle",
+				x: 1_000,
+				y: 100,
+				width: 100,
+				height: 80,
+				label: { text: "Left" },
 			},
-		);
-		expect(inspection.status, inspection.stderr).toBe(0);
-		expect(JSON.parse(inspection.stdout)).toMatchObject({ board: "payments" });
+			{
+				id: "right",
+				type: "rectangle",
+				x: 1_250,
+				y: 100,
+				width: 100,
+				height: 80,
+				label: { text: "Right" },
+			},
+			{
+				id: "route",
+				type: "arrow",
+				x: 1_100,
+				y: 140,
+				points: [
+					[0, 0],
+					[150, 0],
+				],
+				start: { id: "left" },
+				end: { id: "right" },
+			},
+			{
+				id: "crossh",
+				type: "line",
+				x: 600,
+				y: 500,
+				points: [
+					[0, 0],
+					[200, 0],
+				],
+			},
+			{
+				id: "crossv",
+				type: "line",
+				x: 700,
+				y: 440,
+				points: [
+					[0, 0],
+					[0, 120],
+				],
+			},
+		];
+		const added = JSON.parse(
+			runCli(["add", "--board", workflowBoard, "--doing", "drawing the inspected path"], {
+				input: JSON.stringify(crossingElements),
+			}).stdout,
+		) as { elements: unknown[] };
+		expect(added.elements.length).toBeGreaterThanOrEqual(crossingElements.length);
+
+		const converted = JSON.parse(
+			runCli(["mermaid", "--board", workflowBoard, "--doing", "adding the service flow"], {
+				input: "graph LR; Client --> API; API --> Store;",
+			}).stdout,
+		) as { board: string; count: number };
+		expect(converted).toMatchObject({ board: workflowBoard });
+		expect(converted.count).toBeGreaterThan(0);
+
+		const artifacts = join(root, "zero-client-artifacts");
+		mkdirSync(artifacts);
+		const png = join(artifacts, "board.png");
+		const svg = join(artifacts, "board.svg");
+		expect(
+			JSON.parse(runCli(["render", "--board", workflowBoard, "--out", png]).stdout),
+		).toMatchObject({ board: workflowBoard, format: "png", file: png });
+		expect(
+			JSON.parse(
+				runCli(["render", "--board", workflowBoard, "--out", svg, "--format", "svg"]).stdout,
+			),
+		).toMatchObject({ board: workflowBoard, format: "svg", file: svg });
+		expect(readFileSync(png).subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+		expect(readFileSync(svg, "utf8")).toContain("<svg");
+
+		const inspection = JSON.parse(runCli(["check", "--board", workflowBoard]).stdout) as {
+			board: string;
+			findings: Array<{ focusBBox?: unknown }>;
+		};
+		expect(inspection.board).toBe(workflowBoard);
+		expect(inspection.findings.some((finding) => finding.focusBBox !== undefined)).toBeTrue();
+		const findingDirectory = join(artifacts, "findings");
+		mkdirSync(findingDirectory);
+		const findings = JSON.parse(
+			runCli(["render-findings", "--board", workflowBoard, "--out", findingDirectory]).stdout,
+		) as { board: string; entries: Array<{ status: string }> };
+		expect(findings.board).toBe(workflowBoard);
+		expect(
+			findings.entries.some((entry) => entry.status === "rendered"),
+			JSON.stringify(findings),
+		).toBeTrue();
+
+		expect(
+			JSON.parse(runCli(["snapshot", "save", "before-review", "--board", workflowBoard]).stdout),
+		).toMatchObject({ name: "before-review" });
+		const branch = `${workflowBoard}@review`;
+		expect(
+			JSON.parse(
+				runCli([
+					"board",
+					"save",
+					"--board",
+					workflowBoard,
+					"--variant",
+					"review",
+					"--doing",
+					"branching the review",
+				]).stdout,
+			),
+		).toMatchObject({ board: branch, savedFrom: workflowBoard });
+		const exported = join(artifacts, "review.excalidraw");
+		expect(
+			JSON.parse(runCli(["export", "--board", branch, "--out", exported]).stdout),
+		).toMatchObject({ file: exported });
+		expect(JSON.parse(readFileSync(exported, "utf8"))).toMatchObject({ type: "excalidraw" });
+		const description = runCli(["describe", "--board", branch]).stdout;
+		expect(description).toContain("Client");
+		const finalNote = readFileSync(join(vault, `${branch}.excalidraw.md`), "utf8");
+		expect(finalNote).toContain(`variant: review`);
+		expect(finalNote).toContain("Client");
+
+		const healthAfter = await request<{ websocket_clients: number }>("/health");
+		expect(healthAfter.body.websocket_clients).toBe(0);
 	});
 
 	test("creates the canonical empty note without changing pane state", async () => {

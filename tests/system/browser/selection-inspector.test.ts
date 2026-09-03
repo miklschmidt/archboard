@@ -3,10 +3,7 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-	PANE_SETTLE_CAP_MS,
-	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
@@ -15,15 +12,19 @@ import {
 	createAgentBrowser,
 	pollUntil,
 	registerCanvasBase,
+	runCanvasCli,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import type { InspectorContract } from "./support/shell-contract-types.ts";
+import {
+	readInspector,
+	readInspectorContract,
+	waitInspector,
+} from "./support/selection-inspector.ts";
 
 type Panes = {
 	paneCount: number;
 	panes: Array<{ clientId: string; board: string; place: string }>;
 };
-type InspectorView = { state: string | null; text: string; pane: string; title: string };
 type ChangeFeed = { feedId: string; cursor: number; events: unknown[] };
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
@@ -74,80 +75,6 @@ async function select(
 		return true;
 	})()`);
 	expect(applied).toBe(true);
-}
-
-function readInspector(browser: AgentBrowserSession): Promise<InspectorView> {
-	return browser.eval<InspectorView>(`(() => {
-		const inspector = document.querySelector('.selection-inspector');
-		return {
-			state: inspector?.getAttribute('data-selection-state') ?? null,
-			text: inspector?.innerText ?? '',
-			pane: inspector?.getAttribute('aria-label') ?? '',
-			title: inspector?.querySelector('.selection-inspector-title')?.textContent ?? ''
-		};
-	})()`);
-}
-
-function readInspectorContract(browser: AgentBrowserSession): Promise<InspectorContract> {
-	return browser.eval<InspectorContract>(`(() => {
-		const inspector = document.querySelector('.selection-inspector');
-		const metrics = selector => {
-			const style = getComputedStyle(inspector.querySelector(selector));
-			return {
-				family: style.fontFamily.toLowerCase(),
-				size: parseFloat(style.fontSize),
-				lineHeight: parseFloat(style.lineHeight),
-				weight: parseFloat(style.fontWeight),
-				transform: style.textTransform,
-			};
-		};
-		const rgb = value => (value.match(/[\\d.]+/g) ?? []).slice(0, 3).map(Number);
-		const luminance = value => {
-			const [red, green, blue] = rgb(value).map(channel => {
-				const normalized = channel / 255;
-				return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
-			});
-			return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
-		};
-		const contrast = (foreground, background) => {
-			const light = Math.max(luminance(foreground), luminance(background));
-			const dark = Math.min(luminance(foreground), luminance(background));
-			return (light + 0.05) / (dark + 0.05);
-		};
-		const background = getComputedStyle(inspector).backgroundColor;
-		const kicker = inspector.querySelector('.selection-inspector-kicker');
-		const label = inspector.querySelector('.selection-inspector-row dt');
-		return {
-			sections: [...inspector.querySelectorAll('.selection-inspector-section > h2')]
-				.map(heading => heading.textContent),
-			titleType: metrics('.selection-inspector-title'),
-			statusType: metrics('.selection-inspector-status'),
-			kickerType: metrics('.selection-inspector-kicker'),
-			sectionType: metrics('.selection-inspector-section > h2'),
-			labelType: metrics('.selection-inspector-row dt'),
-			humanType: metrics('.selection-inspector-value-human'),
-			technicalType: metrics('.selection-inspector-value-technical'),
-			copyType: metrics('.path-focus-section .selection-inspector-copy'),
-			controlType: metrics('.selection-inspector-focus'),
-			kickerContrast: contrast(getComputedStyle(kicker).color, background),
-			labelContrast: contrast(getComputedStyle(label).color, background),
-			openHeight: inspector.querySelector('.selection-inspector-open').getBoundingClientRect().height,
-			focusHeight: inspector.querySelector('.selection-inspector-focus').getBoundingClientRect().height
-		};
-	})()`);
-}
-
-async function waitInspector(
-	browser: AgentBrowserSession,
-	state: string,
-	text: string,
-): Promise<InspectorView> {
-	return pollUntil(
-		() => readInspector(browser),
-		(view) => view.state === state && view.text.includes(text),
-		`${state} selection inspector state`,
-		{ timeoutMs: PANE_SETTLE_CAP_MS },
-	);
 }
 
 test(
@@ -253,6 +180,7 @@ test(
 			(value) => value.paneCount === 2,
 			"two rendered panes",
 		);
+		const left = panes.panes.find((pane) => pane.place === "left")!;
 		const right = panes.panes.find((pane) => pane.place === "right")!;
 		await api("/api/boards/open", {
 			method: "POST",
@@ -316,6 +244,36 @@ test(
 		expect(bound.text).not.toContain("must-not-render");
 
 		await select(browser, "Pane B", ["right-bound"]);
+		for (const [clientId, elementId] of [
+			[left.clientId, "bound-local"],
+			[right.clientId, "right-bound"],
+		] as const)
+			expect(
+				(
+					await api("/api/selection", {
+						method: "POST",
+						body: { clientId, elementIds: [elementId] },
+					})
+				).status,
+			).toBe(200);
+		const leftSelection = JSON.parse(
+			runCanvasCli(canvas.base, vault, ["browser", "selection", "--pane", "left"]),
+		) as { board: string; elementIds: string[] };
+		const rightSelection = JSON.parse(
+			runCanvasCli(canvas.base, vault, ["browser", "selection", "--pane", "right"]),
+		) as { board: string; elementIds: string[] };
+		expect(leftSelection).toMatchObject({ board: "selection-a", elementIds: ["bound-local"] });
+		expect(rightSelection).toMatchObject({ board: "selection-b", elementIds: ["right-bound"] });
+		expect(
+			runCanvasCli(canvas.base, vault, [
+				"browser",
+				"capture",
+				"--pane",
+				"right",
+				"--format",
+				"svg",
+			]),
+		).toContain("<svg");
 		await browser.run(["click", ".pane-tab:nth-child(2)"]);
 		const transferred = await waitInspector(browser, "bound", "src/right.ts");
 		expect(transferred.pane).toContain("Pane B");
