@@ -76,12 +76,20 @@ const realServer = path.join(repoRoot, "src/server.ts");
 const tracedServer = path.join(import.meta.dir, "fixtures/traced-canvas-process.ts");
 const responseDelayMs = REPORT_PROGRESS_MS + TEST_BROWSER_POLL_MS * 6;
 
-test("fsync trace parsing defers a writer tail and isolates terminal tracer noise", () => {
+test("fsync trace parsing distinguishes live tails from settled evidence", () => {
 	const traceFile = path.join(browserTestRoots().ownerRoot, "partial-fsync.trace");
 	fs.writeFileSync(traceFile, "101 fsync(9) = 0\n102 fsync(");
 	expect(readFsyncTrace(traceFile)).toEqual({ calls: ["101 fsync(9) = 0"], incomplete: [] });
-	fs.appendFileSync(traceFile, "9) = -1 EIO\n103 ???( <unfinished ...>\n");
+	expect(readFsyncTrace(traceFile, { settled: true })).toEqual({
+		calls: ["101 fsync(9) = 0"],
+		incomplete: ["102 fsync("],
+	});
+	fs.appendFileSync(traceFile, "9) = -1 EIO\n103 ???( <unfinished ...>");
 	expect(readFsyncTrace(traceFile)).toEqual({
+		calls: ["101 fsync(9) = 0"],
+		incomplete: ["102 fsync(9) = -1 EIO"],
+	});
+	expect(readFsyncTrace(traceFile, { settled: true })).toEqual({
 		calls: ["101 fsync(9) = 0"],
 		incomplete: ["102 fsync(9) = -1 EIO"],
 	});
@@ -473,11 +481,7 @@ test(
 			(live) => live.length === 0,
 			"the traced canvas descendant to disappear",
 		);
-		const completeTrace = await pollUntil(
-			() => readFsyncTrace(traceFile),
-			(trace) => trace.incomplete.length === 0,
-			"the fsync tracer to flush its final record",
-		);
+		const completeTrace = readFsyncTrace(traceFile, { settled: true });
 		expect(completeTrace.incomplete).toEqual([]);
 	},
 	TEST_HUMAN_EDIT_PERFORMANCE_CASE_TIMEOUT_MS,

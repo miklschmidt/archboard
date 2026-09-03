@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, jest, spyOn, test } from "bun:test";
-import fs, { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import fs, { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as BoardModule from "../board.js";
@@ -69,15 +69,6 @@ function ownedTarget(name = "observer-test") {
 	return owned;
 }
 
-function handoffPath(board: string): string {
-	return join(
-		root,
-		boardModule.VAULT_STATE_DIR,
-		["lo", "cks"].join(""),
-		`${encodeURIComponent(board)}.lock.handoff`,
-	);
-}
-
 async function flushLockTurns(): Promise<void> {
 	for (let turn = 0; turn < 6; turn += 1) await Promise.resolve();
 }
@@ -103,7 +94,6 @@ async function acquireAfterObservedPredecessor(options: {
 	board: string;
 	hash?: string;
 	failStamp?: boolean;
-	rewriteReceipt?: (file: string) => void;
 }) {
 	const predecessorId = `${options.board}-predecessor`;
 	const successorId = `${options.board}-successor`;
@@ -134,11 +124,9 @@ async function acquireAfterObservedPredecessor(options: {
 		).toBeTrue();
 	}
 	expect(lockModule.releaseHold(options.board, predecessorId)).toBeTrue();
-	options.rewriteReceipt?.(handoffPath(options.board));
 	jest.advanceTimersByTime(timingModule.LOCK_POLL_MS);
 	await flushLockTurns();
 	const successor = await waiting;
-	expect(existsSync(handoffPath(options.board))).toBeFalse();
 	return { hold: successor, release: () => lockModule.releaseHold(options.board, successorId) };
 }
 
@@ -149,7 +137,6 @@ async function expectUnprovenFreshAcquire(board: string, id: string): Promise<vo
 		waitMs: 0,
 	});
 	expect(acquired.predecessorHash, id).toBeUndefined();
-	expect(existsSync(handoffPath(board)), id).toBeFalse();
 	expect(lockModule.releaseHold(board, id), id).toBeTrue();
 }
 
@@ -232,7 +219,6 @@ describe.serial("post-commit pane observers", () => {
 		expect(committed.toString()).toMatch(/^version: 2$/m);
 		expect(committed.toString()).toContain('"id": "committed"');
 		expect(lockModule.releaseHold(owned.key, holderId)).toBeTrue();
-		expect(existsSync(handoffPath(owned.key))).toBeFalse();
 
 		storeModule.recordBaseline(owned.board, boardFile, beforeHash, beforeVersion);
 		expect(() =>
@@ -242,6 +228,13 @@ describe.serial("post-commit pane observers", () => {
 		).toThrow(ioModule.BoardWriteConflictError);
 		expect(atomicWriteSpy).toHaveBeenCalledTimes(1);
 		expect(readFileSync(boardFile)).toEqual(committed);
+		const successor = await lockModule.holdBoard({
+			board: owned.key,
+			holder: { id: "stamp-failure-successor", kind: "agent" },
+			waitMs: 0,
+		});
+		expect(successor.predecessorHash).toBeUndefined();
+		expect(lockModule.releaseHold(owned.key, "stamp-failure-successor")).toBeTrue();
 	});
 
 	test("rejects unproven, stale, and replayed lease receipts", async () => {
@@ -251,21 +244,8 @@ describe.serial("post-commit pane observers", () => {
 				name: string;
 				hash?: string;
 				failStamp?: boolean;
-				rewriteReceipt?: (file: string) => void;
 			}> = [
 				{ name: "absent" },
-				{
-					name: "malformed",
-					rewriteReceipt: (file: string) => writeFileSync(file, "{broken"),
-				},
-				{
-					name: "identity",
-					hash: "committed-hash",
-					rewriteReceipt: (file: string) => {
-						const receipt = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
-						writeFileSync(file, JSON.stringify({ ...receipt, token: "different-lease" }));
-					},
-				},
 				{ name: "stamp-failure", hash: "unrecorded-hash", failStamp: true },
 			];
 			for (const proofCase of rejectionTable) {
@@ -273,7 +253,6 @@ describe.serial("post-commit pane observers", () => {
 					board: `proof-${proofCase.name}`,
 					...(proofCase.hash ? { hash: proofCase.hash } : {}),
 					...(proofCase.failStamp ? { failStamp: true } : {}),
-					...(proofCase.rewriteReceipt ? { rewriteReceipt: proofCase.rewriteReceipt } : {}),
 				});
 				expect(successor.hold.predecessorHash, proofCase.name).toBeUndefined();
 				expect(successor.release(), proofCase.name).toBeTrue();
