@@ -77,19 +77,20 @@ work that exists only in process memory and names each board's reload,
 overwrite, and save-elsewhere recovery choices. `bun run dev` starts the same
 backend plus an independent Vite frontend with browser HMR.
 
-**Running the complete local suite needs `agent-browser` on PATH**: one typed
-serial browser lane drives every path in the executable `BROWSER_TEST_PATHS`
-inventory and exits 2 when prerequisites are absent; its human-edit performance
-owner also needs `strace`. It stays headless and runs one owner at a time. The
-lane reports its current owner count at execution, so do not copy that count into
-documentation. `bun run check` is the complete local gate. GitHub Actions invokes
-that command with two fail-closed hosted exceptions:
+**Running the complete normal local suite needs `agent-browser` on PATH**: one
+typed serial browser lane drives every path in the normal executable
+`BROWSER_TEST_PATHS` inventory and exits 2 when prerequisites are absent. The
+separate opt-in browser-performance inventory also needs `strace`. Both stay
+headless and run one owner at a time. The lane reports its selected owner count
+at execution, so do not copy that count into documentation. `bun run check` is
+the complete normal gate. GitHub Actions invokes that command with two
+fail-closed hosted exceptions:
 `tests/system/code-targets/opener-persistence.test.ts` and the complete serial
-browser lane. TASK-141 and TASK-142 own restoring the system owner and the full
-browser inventory; repository policy pins both exceptions.
-`bun run test:repository` includes the inventory that rejects missing,
-duplicate, or unreachable tests. Changing tests or CI, or a browser owner
-failing → `docs/agents/test-suite.md`.
+browser lane. TASK-141 and TASK-142 own restoring the system owner and the
+normal browser inventory; opt-in owners never enter hosted CI through that
+restoration. `bun run test:repository` includes the inventory that rejects
+missing, duplicate, overlapping, or normal-gate-reachable opt-in tests. Changing
+tests or CI, or a browser owner failing → `docs/agents/test-suite.md`.
 
 The server is enough for board work. Named-board reads, writes, Mermaid
 conversion, PNG/SVG rendering, finding close-ups, inspection, snapshots,

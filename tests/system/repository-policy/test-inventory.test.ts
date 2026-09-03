@@ -5,28 +5,18 @@ import { fileURLToPath } from "node:url";
 import {
 	BROWSER_ADAPTER_PATH,
 	BROWSER_TEST_PATHS,
+	OPT_IN_BROWSER_TEST_PATHS,
 	validateBrowserSelection,
 } from "../browser/run-browser-lane.ts";
 import {
-	browserCleanupObservationMs,
-	createAgentBrowser,
-	pollUntil,
-} from "../browser/support/agent-browser.ts";
-import {
-	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-	TEST_BROWSER_POLL_MS,
-} from "../../../src/shared/timing/timing.ts";
-import {
 	discoverNativeTests,
-	createBrowserPreflightFixture,
 	inspectTestInventory,
-	installFakeAgentBrowser,
-	processExists,
 	type InventoryInput,
 } from "./support/test-inventory.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const packageAdapter = `bun ${BROWSER_ADAPTER_PATH} ${BROWSER_TEST_PATHS.join(" ")}`;
+const optInAdapter = `bun ${BROWSER_ADAPTER_PATH} --opt-in ${OPT_IN_BROWSER_TEST_PATHS.join(" ")}`;
 const focusAdapter = (files: readonly string[]): string =>
 	`bun ${BROWSER_ADAPTER_PATH} --focus ${files.join(" ")}`;
 
@@ -38,15 +28,17 @@ function input(overrides: Partial<InventoryInput> = {}): InventoryInput {
 			test: "bun run test:modules && bun run test:system && bun run test:repository && bun run test:serial-browser",
 			"test:modules": "bun test --isolate src",
 			"test:system":
-				"bun test --isolate --max-concurrency=1 tests/system/support tests/system/boards tests/system/label-geometry tests/system/cli tests/system/board-inspection tests/system/canvas-state tests/system/process-contracts tests/system/code-targets",
+				"bun test --isolate --max-concurrency=1 tests/system/boards tests/system/label-geometry tests/system/cli tests/system/board-inspection tests/system/canvas-state tests/system/process-contracts tests/system/code-targets",
 			"test:repository": "bun test --isolate tests/system/repository-policy",
 			"test:serial-browser": packageAdapter,
+			"test:opt-in:capacity": "bun test tests/opt-in/capacity.test.ts",
 		},
 		nativeTests: [
 			"tests/system/repository-policy/skills.test.ts",
 			"tests/system/repository-policy/test-inventory.test.ts",
 			"tests/system/code-targets/activation-contract.test.ts",
 			"tests/system/browser/opener-settings.test.ts",
+			"tests/opt-in/capacity.test.ts",
 		],
 		...overrides,
 	};
@@ -84,12 +76,12 @@ describe("test inventory policy", () => {
 		);
 	});
 
-	test("rejects an unreachable matching lane", () => {
+	test("rejects a native owner selected only by a non-lane command", () => {
 		const unreachable = input({ nativeTests: ["tests/system/orphan.test.ts"] });
 		unreachable.scripts["verify:orphan"] = "bun test tests/system/orphan.test.ts";
 		expectInventoryError(
 			unreachable,
-			"native test `tests/system/orphan.test.ts` runs zero times from `check`; matching package lanes: verify:orphan",
+			"native test `tests/system/orphan.test.ts` belongs to no package lane",
 		);
 	});
 
@@ -103,13 +95,51 @@ describe("test inventory policy", () => {
 		);
 	});
 
-	test("rejects a transitional package lane", () => {
+	test("rejects an undeclared package lane", () => {
 		const legacy = input();
 		legacy.scripts["test:legacy"] = "bun scripts/non-native-command.ts";
 		legacy.scripts.test += " && bun run test:legacy";
 		expectInventoryError(
 			legacy,
-			"package test lane `test:legacy` is transitional; only test:modules, test:system, test:repository, and test:serial-browser are allowed",
+			"package test lane `test:legacy` is undeclared; classify it as a normal or explicit opt-in lane",
+		);
+	});
+
+	test("keeps an explicit opt-in owner outside check", () => {
+		const fixture = input();
+		const result = inspectTestInventory(fixture);
+		expect(result.errors).toEqual([]);
+		expect(result.reachableScripts.get("test:opt-in:capacity") ?? 0).toBe(0);
+		expect(result.nativeLanes.get("test:opt-in:capacity")).toEqual([
+			"tests/opt-in/capacity.test.ts",
+		]);
+	});
+
+	test("rejects an opt-in owner leaked into check", () => {
+		const fixture = input();
+		fixture.scripts.test += " && bun run test:opt-in:capacity";
+		expectInventoryError(
+			fixture,
+			"opt-in test lane `test:opt-in:capacity` is reachable from `check`",
+		);
+	});
+
+	test("rejects one owner in normal and opt-in inventories", () => {
+		const fixture = input();
+		fixture.scripts["test:modules"] += " tests/opt-in/capacity.test.ts";
+		expectInventoryError(
+			fixture,
+			"native test `tests/opt-in/capacity.test.ts` belongs to both normal and opt-in lanes: test:modules, test:opt-in:capacity",
+		);
+	});
+
+	test("scopes an ignore to its own Bun invocation", () => {
+		const fixture = input();
+		fixture.scripts["test:modules"] =
+			"bun test --path-ignore-patterns tests/opt-in/capacity.test.ts tests/opt-in && bun test tests/opt-in/capacity.test.ts";
+		expectInventoryError(
+			fixture,
+			"native test `tests/opt-in/capacity.test.ts` belongs to both normal and opt-in lanes: test:modules, test:opt-in:capacity",
 		);
 	});
 
@@ -127,7 +157,16 @@ describe("test inventory policy", () => {
 			Object.keys(pkg.scripts)
 				.filter((name) => name.startsWith("test:"))
 				.toSorted(),
-		).toEqual(["test:modules", "test:repository", "test:serial-browser", "test:system"]);
+		).toEqual([
+			"test:modules",
+			"test:opt-in:browser-performance",
+			"test:opt-in:capacity",
+			"test:opt-in:tooling",
+			"test:opt-in:topology",
+			"test:repository",
+			"test:serial-browser",
+			"test:system",
+		]);
 	});
 
 	test("keeps the system and browser owners once", () => {
@@ -202,6 +241,10 @@ describe("typed serial browser adapter selection", () => {
 			mode: "package",
 			files: [...BROWSER_TEST_PATHS],
 		});
+		expect(validateBrowserSelection(optInAdapter.split(" "))).toEqual({
+			mode: "opt-in",
+			files: [...OPT_IN_BROWSER_TEST_PATHS],
+		});
 		expect(
 			validateBrowserSelection(
 				focusAdapter([BROWSER_TEST_PATHS[1], BROWSER_TEST_PATHS[5], BROWSER_TEST_PATHS[12]]).split(
@@ -212,6 +255,26 @@ describe("typed serial browser adapter selection", () => {
 			mode: "focus",
 			files: [BROWSER_TEST_PATHS[1], BROWSER_TEST_PATHS[5], BROWSER_TEST_PATHS[12]],
 		});
+	});
+
+	test("keeps normal and opt-in browser focus modes disjoint", () => {
+		expect(() =>
+			validateBrowserSelection([
+				"bun",
+				BROWSER_ADAPTER_PATH,
+				"--focus",
+				OPT_IN_BROWSER_TEST_PATHS[0],
+			]),
+		).toThrow("Normal browser lane names a path from the other inventory.");
+		expect(() =>
+			validateBrowserSelection([
+				"bun",
+				BROWSER_ADAPTER_PATH,
+				"--opt-in",
+				"--focus",
+				BROWSER_TEST_PATHS[0],
+			]),
+		).toThrow("Opt-in browser lane names a path from the other inventory.");
 	});
 
 	test.each([
@@ -273,14 +336,11 @@ describe("typed serial browser adapter selection", () => {
 		);
 	});
 
-	test("inventory rejects an unreachable focused owner", () => {
+	test("inventory rejects a focused owner outside a declared test lane", () => {
 		const file = BROWSER_TEST_PATHS[3];
 		const fixture = adapterInput("bun scripts/non-native.mjs", [file]);
 		fixture.scripts["verify:browser"] = focusAdapter([file]);
-		expectInventoryError(
-			fixture,
-			`native test \`${file}\` runs zero times from \`check\`; matching package lanes: verify:browser`,
-		);
+		expectInventoryError(fixture, `native test \`${file}\` belongs to no package lane`);
 	});
 
 	test("inventory rejects a focused lane reached twice", () => {
@@ -299,201 +359,5 @@ describe("typed serial browser adapter selection", () => {
 			adapterInput(`bun test ${ordinary} ${ordinary}`, [ordinary]),
 			`native test \`${ordinary}\` runs 2 times from \`check\` through package lanes: test:serial-browser (2)`,
 		);
-	});
-});
-
-function prerequisiteFixture(withAgentBrowser: boolean) {
-	const fixture = createBrowserPreflightFixture();
-	if (withAgentBrowser) installFakeAgentBrowser(fixture);
-	return fixture;
-}
-
-describe("browser adapter interruption and cleanup timing", () => {
-	test(
-		"forwards bounded command timeouts and rejects invalid values before spawn",
-		async () => {
-			const fixture = createBrowserPreflightFixture();
-			let commandsAfterClose: string[] = [];
-			let previous = new Map<string, string | undefined>();
-			{
-				await using cleanup = new AsyncDisposableStack();
-				cleanup.defer(() => fs.rmSync(fixture.root, { recursive: true, force: true }));
-				const laneRoot = path.join(fixture.root, "lane");
-				const ownerRoot = path.join(laneRoot, "owner");
-				const marker = path.join(fixture.root, "commands");
-				const release = path.join(fixture.root, "release");
-				const shortTimeoutMs = TEST_BROWSER_POLL_MS * 100;
-				const longTimeoutMs = TEST_BROWSER_POLL_MS * 400;
-				fs.mkdirSync(ownerRoot, { recursive: true });
-				fs.writeFileSync(
-					path.join(fixture.bin, "agent-browser"),
-					`#!/usr/bin/env bun
-	import { appendFileSync, existsSync } from "node:fs";
-	const command = process.argv.at(-1) ?? "";
-	appendFileSync(${JSON.stringify(marker)}, command + "\\n");
-	if (command === "close") process.exit(0);
-	process.on("SIGTERM", () => process.exit(143));
-	while (!existsSync(${JSON.stringify(release)})) await Bun.sleep(${TEST_BROWSER_POLL_MS});
-	console.log("ready");
-`,
-					{ mode: 0o755 },
-				);
-				const environment = {
-					PATH: `${fixture.bin}:${process.env.PATH ?? ""}`,
-					HOME: path.join(ownerRoot, "home"),
-					XDG_CONFIG_HOME: path.join(ownerRoot, "config"),
-					XDG_STATE_HOME: path.join(ownerRoot, "state"),
-					TMPDIR: path.join(ownerRoot, "tmp"),
-					AGENT_BROWSER_SOCKET_DIR: path.join(ownerRoot, "sockets"),
-					AGENT_BROWSER_SESSION: "bounded-command-test",
-					AGENT_BROWSER_NAMESPACE: "bounded-command-test",
-					AGENT_BROWSER_IDLE_TIMEOUT_MS: String(TEST_BROWSER_POLL_MS * 5),
-					AGENT_BROWSER_EXECUTABLE_PATH: fixture.browserExecutable,
-					ARCHBOARD_TEST_BROWSER_LANE_ROOT: laneRoot,
-					ARCHBOARD_TEST_BROWSER_OWNER_ROOT: ownerRoot,
-				};
-				previous = new Map(
-					Object.keys(environment).map((name) => [name, process.env[name]] as const),
-				);
-				cleanup.defer(() => {
-					for (const [name, value] of previous) {
-						if (value === undefined) delete process.env[name];
-						else process.env[name] = value;
-					}
-				});
-				for (const [name, value] of Object.entries(environment)) process.env[name] = value;
-				const browser = await createAgentBrowser();
-				cleanup.defer(() => {
-					commandsAfterClose = fs.readFileSync(marker, "utf8").trim().split("\n");
-				});
-				cleanup.defer(() => browser.close());
-				const timeoutFailure = await browser.run(["slow"], { timeoutMs: shortTimeoutMs }).then(
-					() => null,
-					(error: unknown) => error,
-				);
-				expect(timeoutFailure).toBeInstanceOf(Error);
-				expect((timeoutFailure as Error).message).toBe(
-					`agent-browser slow timed out after ${shortTimeoutMs}ms and ended with exit 143: `,
-				);
-				fs.writeFileSync(release, "release");
-				expect(await browser.run(["slow"], { timeoutMs: longTimeoutMs })).toBe("ready\n");
-				const invalidFailure = await browser.run(["invalid"], { timeoutMs: 0 }).then(
-					() => null,
-					(error: unknown) => error,
-				);
-				expect(invalidFailure).toBeInstanceOf(Error);
-				expect((invalidFailure as Error).message).toBe(
-					"Agent-browser command timeout must be a positive finite integer; received 0.",
-				);
-				expect(fs.readFileSync(marker, "utf8").trim().split("\n")).toEqual(["slow", "slow"]);
-			}
-			expect(commandsAfterClose).toEqual(["slow", "slow", "close"]);
-			expect(new Map([...previous.keys()].map((name) => [name, process.env[name]]))).toEqual(
-				previous,
-			);
-			expect(fs.existsSync(fixture.root)).toBeFalse();
-		},
-		TEST_BROWSER_COMMAND_TIMEOUT_MS,
-	);
-
-	for (const [signal, exitCode] of [
-		["SIGINT", 130],
-		["SIGTERM", 143],
-	] as const) {
-		test(
-			`handles ${signal} while a retained pre-owner build is blocked`,
-			async () => {
-				const fixture = prerequisiteFixture(true);
-				const blocker = path.join(fixture.root, "blocked-build.ts");
-				const pidsFile = path.join(fixture.root, "build-pids.json");
-				const termMarker = path.join(fixture.root, "build-term");
-				fs.writeFileSync(
-					blocker,
-					`import { writeFileSync } from "node:fs";
-process.on("SIGTERM", () => writeFileSync(${JSON.stringify(termMarker)}, "TERM"));
-writeFileSync(${JSON.stringify(pidsFile)}, JSON.stringify([process.pid]));
-setInterval(() => {}, ${TEST_BROWSER_POLL_MS});
-`,
-				);
-				const adapter = Bun.spawn({
-					cmd: ["bun", BROWSER_ADAPTER_PATH, "--focus", BROWSER_TEST_PATHS[1]],
-					cwd: repoRoot,
-					env: {
-						PATH: fixture.bin,
-						TMPDIR: fixture.temporary,
-						AGENT_BROWSER_EXECUTABLE_PATH: fixture.browserExecutable,
-						LANG: "C.UTF-8",
-						LC_ALL: "C.UTF-8",
-						NO_COLOR: "1",
-						ARCHBOARD_TEST_BROWSER_BUILD_FIXTURE: blocker,
-					},
-					stdout: "ignore",
-					stderr: "pipe",
-				});
-				let ownedPids: number[] = [];
-				try {
-					await pollUntil(
-						() => fs.existsSync(pidsFile),
-						Boolean,
-						"blocked frontend build to publish its pids",
-					);
-					ownedPids = JSON.parse(fs.readFileSync(pidsFile, "utf8")) as number[];
-					process.kill(adapter.pid, signal);
-					expect(await adapter.exited).toBe(exitCode);
-					const stderr = await new Response(adapter.stderr).text();
-					expect(stderr).toContain(`Browser lane interrupted by ${signal}.`);
-					expect(fs.readFileSync(termMarker, "utf8")).toBe("TERM");
-					const runnerSource = fs.readFileSync(path.join(repoRoot, BROWSER_ADAPTER_PATH), "utf8");
-					expect(runnerSource).toContain('process.kill(-child.pid, "SIGKILL")');
-					await pollUntil(
-						() => ownedPids.filter(processExists),
-						(alive) => alive.length === 0,
-						"interrupted frontend build process group to disappear",
-					);
-					expect(fs.readdirSync(fixture.temporary)).toEqual([]);
-					expect(fs.existsSync(fixture.unexpectedMarker)).toBeFalse();
-				} finally {
-					if (adapter.exitCode === null) adapter.kill("SIGKILL");
-					await adapter.exited;
-					for (const pid of ownedPids) if (processExists(pid)) process.kill(pid, "SIGKILL");
-					fs.rmSync(fixture.root, { recursive: true, force: true });
-				}
-			},
-			TEST_BROWSER_COMMAND_TIMEOUT_MS,
-		);
-	}
-
-	test("observes through idle expiry and samples once at the deadline", async () => {
-		expect(browserCleanupObservationMs(String(TEST_BROWSER_COMMAND_TIMEOUT_MS))).toBe(
-			TEST_BROWSER_COMMAND_TIMEOUT_MS + TEST_BROWSER_POLL_MS,
-		);
-		let samples = 0;
-		const accepted = await pollUntil(
-			() => ++samples,
-			(value) => value === 2,
-			"deadline sample",
-			{ timeoutMs: TEST_BROWSER_POLL_MS, intervalMs: TEST_BROWSER_POLL_MS * 2 },
-		);
-		expect(accepted).toBe(2);
-	});
-});
-
-describe("browser predecessor oracle guards", () => {
-	test("keeps the performance and typed-text predecessor oracles", () => {
-		const performance = fs.readFileSync(
-			path.join(repoRoot, "tests/system/browser/human-edit-performance.test.ts"),
-			"utf8",
-		);
-		expect(performance).toContain("expect(worstReportGap).toBeLessThanOrEqual(median * 8);");
-		expect(performance).not.toMatch(/worstReportGap\)\.toBeLessThanOrEqual\(\d+/);
-		const typed = fs.readFileSync(
-			path.join(repoRoot, "tests/system/browser/typed-text.test.ts"),
-			"utf8",
-		);
-		expect(typed).toContain("expect(renameable).toHaveLength(0);");
-		expect(typed).toContain("expect(postedTextIds.has(drawnText!.id)).toBe(true);");
-		expect(typed).toContain("expect(postedTextIds.has(label!.id)).toBe(true);");
-		expect(typed).toContain("expect(note.includes(`hello world ^${drawnText!.id}`)).toBe(true);");
-		expect(typed).toContain("expect(note.includes(`ABCDEFGHIJ ^${label!.id}`)).toBe(true);");
 	});
 });

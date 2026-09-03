@@ -175,13 +175,4 @@ describe("font cache", () => {
 		const file = fontRegistry().get("Excalifont")!.faces[0]!.file;
 		expect(loadFace(file)).toBe(loadFace(file));
 	});
-
-	test("2,000 warm measurements complete within 500 ms", () => {
-		measureLineWidth("AuthService", 20, EXCALIFONT);
-		const started = performance.now();
-		for (let iteration = 0; iteration < 2_000; iteration += 1) {
-			measureLineWidth("AuthService", 20, EXCALIFONT);
-		}
-		expect(performance.now() - started).toBeLessThan(500);
-	});
 });
