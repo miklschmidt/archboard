@@ -33,7 +33,7 @@ const VISIBLE_ENTRY_LIMIT = 32;
 
 type SourceKind = "prose" | "technical";
 
-interface SourcePresentation {
+interface TextPresentation {
 	readonly value: string;
 	readonly kind: SourceKind;
 }
@@ -81,11 +81,18 @@ function keyedValues<Value>(
 	});
 }
 
-function sourcePresentation(value: string, kind: SourceKind): SourcePresentation | null {
+function sourcePresentation(value: string, kind: SourceKind): TextPresentation | null {
 	return value.length === 0 ? null : { value, kind };
 }
 
-function namedSource(value: unknown): SourcePresentation | null {
+function textPresentations(
+	values: readonly string[],
+	kind: SourceKind,
+): readonly TextPresentation[] {
+	return values.filter(Boolean).map((value) => ({ value, kind }));
+}
+
+function namedSource(value: unknown): TextPresentation | null {
 	const item = record(value);
 	if (!item) return null;
 	switch (item.type) {
@@ -147,7 +154,7 @@ function userContent(value: unknown): BoundedEntries<ReactNode> {
 			const entry = record(part);
 			const type = textField(entry, "type") || "unknown";
 			if (type === "text") {
-				return <BoundedCopy key={key} value={textField(entry, "text")} />;
+				return <BoundedCopy key={key} kind="prose" value={textField(entry, "text")} />;
 			}
 			const source = textField(entry, "url") || textField(entry, "path");
 			return (
@@ -165,7 +172,7 @@ function userContent(value: unknown): BoundedEntries<ReactNode> {
 	};
 }
 
-function textSections(value: unknown): BoundedEntries<string> {
+function textSections(value: unknown): BoundedEntries<TextPresentation> {
 	const item = record(value);
 	if (!item) return boundedEntries([]);
 	switch (item.type) {
@@ -174,37 +181,42 @@ function textSections(value: unknown): BoundedEntries<string> {
 		case "hookPrompt": {
 			const fragments = boundedEntries(Array.isArray(item.fragments) ? item.fragments : []);
 			return {
-				visible: fragments.visible.map((fragment) => textField(fragment, "text")).filter(Boolean),
+				visible: textPresentations(
+					fragments.visible.map((fragment) => textField(fragment, "text")),
+					"prose",
+				),
 				omitted: fragments.omitted,
 			};
 		}
 		case "agentMessage":
 		case "plan":
-			return boundedEntries([textField(item, "text")].filter(Boolean));
+			return boundedEntries(textPresentations([textField(item, "text")], "prose"));
 		case "reasoning":
-			return boundedEntries([...stringList(item.summary), ...stringList(item.content)]);
+			return boundedEntries(
+				textPresentations([...stringList(item.summary), ...stringList(item.content)], "prose"),
+			);
 		case "commandExecution":
-			return boundedEntries([textField(item, "aggregatedOutput")].filter(Boolean));
+			return boundedEntries(textPresentations([textField(item, "aggregatedOutput")], "prose"));
 		case "fileChange": {
 			const changes = boundedEntries(Array.isArray(item.changes) ? item.changes : []);
 			return {
 				visible: changes.visible.flatMap((change) => {
 					const path = textField(change, "path");
 					const diff = textField(change, "diff");
-					return [path, diff].filter(Boolean);
+					return [...textPresentations([path], "technical"), ...textPresentations([diff], "prose")];
 				}),
 				omitted: changes.omitted,
 			};
 		}
 		case "mcpToolCall":
-			return boundedEntries([textField(item.error, "message")].filter(Boolean));
+			return boundedEntries(textPresentations([textField(item.error, "message")], "prose"));
 		case "collabAgentToolCall":
-			return boundedEntries([textField(item, "prompt")].filter(Boolean));
+			return boundedEntries(textPresentations([textField(item, "prompt")], "prose"));
 		case "enteredReviewMode":
 		case "exitedReviewMode":
-			return boundedEntries([textField(item, "review")].filter(Boolean));
+			return boundedEntries(textPresentations([textField(item, "review")], "prose"));
 		case "imageGeneration":
-			return boundedEntries([textField(item, "revisedPrompt")].filter(Boolean));
+			return boundedEntries(textPresentations([textField(item, "revisedPrompt")], "prose"));
 		default:
 			return boundedEntries([]);
 	}
@@ -224,7 +236,7 @@ function itemLinks(value: unknown): readonly string[] {
 	return [];
 }
 
-function SafeSource({ value, kind }: SourcePresentation) {
+function SafeSource({ value, kind }: TextPresentation) {
 	const bounded = boundedText(value, 2_048).text;
 	const url = safeHttpUrl(value);
 	return url === null ? (
@@ -244,11 +256,16 @@ function SafeSource({ value, kind }: SourcePresentation) {
 	);
 }
 
-function BoundedCopy({ value }: { readonly value: unknown }) {
+function BoundedCopy({ value, kind }: TextPresentation) {
 	const bounded = boundedText(value);
 	if (bounded.text.length === 0) return null;
 	return (
-		<pre className="m-0 max-w-full overflow-x-auto font-sans text-body break-words whitespace-pre-wrap text-foreground">
+		<pre
+			className={cn(
+				"m-0 max-w-full overflow-x-auto whitespace-pre-wrap text-foreground",
+				SOURCE_KIND_CLASSES[kind],
+			)}
+		>
 			{bounded.text}
 			{bounded.omitted > 0 ? (
 				<span className="block text-muted-foreground">[{bounded.omitted} characters omitted]</span>
@@ -320,7 +337,7 @@ export function RenderTimelineItem({ item }: { readonly item: TimelineItem }) {
 				{user.visible}
 				<OmittedEntries count={user.omitted} />
 				{keyedValues(sections.visible).map(({ key, value }) => (
-					<BoundedCopy key={key} value={value} />
+					<BoundedCopy key={key} {...value} />
 				))}
 				<OmittedEntries count={sections.omitted} />
 				{keyedValues(links.visible).map(({ key, value }) => (

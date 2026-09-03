@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-03 19:33'
+updated_date: '2026-09-03 19:41'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -75,6 +75,8 @@ Render the complete decoded Codex 0.151.0 ThreadItem union as bounded, escaped, 
 23. Derive WorkbenchTimelineProps.threadId from CodexWorkbenchThread.id and carry that indexed type through normalization identities. Resolve matching decoded/runtime turn status so runtime terminal state replaces decoded progress while stale runtime progress cannot replace a decoded terminal state. Bound visible nested source collections to 32 entries with stable occurrence keys and an omitted-count line, preserving full raw details. Add one status mismatch owner and one compact provider-rendered collection table, then run only the focused timeline/runtime/provider/policy and exact static gates.
 
 24. Carry a required private prose/technical kind from each named-source item-family mapping into SafeSource, use an exhaustive semantic class map, and require technical kind at media/link call sites. Add inline-flex, max-width, centering, and min-h-touch-target to safe HTTP anchors while retaining wrapping and focus styles. Extend the existing provider-rendered owner with focused touch-target and typography assertions, then run only the requested timeline/provider/import-policy and static gates.
+
+25. Preserve a required prose or technical presentation on every text section, classify file-change paths as technical and diffs as prose, render the kind through BoundedCopy, and extend the existing provider-rendered owner with one nonempty file change before rerunning only the focused timeline/provider/static gates.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -139,6 +141,10 @@ Final seventh-remediation rerun after bounding before key derivation: focused ru
 Eighth rereview remediation started from clean HEAD 25ac1624c4a03f6aac47ef012062e268519a04b9 on fixed base 23cc54fbc3405a7c5b80bb8de796ae2b53bd5e25. The UI authority, operator reference, Tailwind adoption record, and module boundary contract were reviewed. Scope is limited to SafeSource touch geometry and explicit prose-versus-technical source presentation; no generic component, arbitrary size, screenshot, browser, performance, or broad lane will be added.
 
 Eighth rereview remediation implemented. namedSource now returns a private SourcePresentation with a required kind of prose or technical. SOURCE_KIND_CLASSES is an exhaustive Record over that union. Web-search queries and human-facing file counts map to prose and render with font-sans text-body break-words. Commands, MCP and dynamic tool identifiers, collaboration tool names, agent paths, image paths/results, function-call identifiers, durations, approval IDs, user media sources, and item links map to technical and render with font-mono text-technical break-all. SafeSource no longer assigns DM Mono unconditionally. Safe HTTP anchors now use inline-flex min-h-touch-target max-w-full items-center while retaining the existing safe http/https parser, wrapping class chosen by source kind, underline, new-tab rel, and focus-visible outline. The provider-rendered owner failed red because the safe anchor lacked inline-flex. It now proves the complete display/touch class sequence, Onest for the Archboard web query and 0 files count, DM Mono for bun test, two repeated safe hrefs, and continued rejection of javascript hrefs. No screenshot or browser run was needed because the requested semantic and class contract is visible in the provider-rendered markup. Final focused runtime/timeline/provider/import-policy validation: 39 pass, 0 fail, 497 assertions across 6 files in 6.42 s. bun run type-check passed root and frontend. Targeted Oxlint passed with --deny-warnings, including the 500-line owner. Targeted Oxfmt check passed on 20 files in 182 ms. git diff --check passed. No broad or browser lane ran. TASK-143.03.04 remains In Progress for rereview.
+
+Ninth rereview remediation started from clean HEAD 52826f6909c928c2b8bf53c221956ebde9a19c88 on fixed base 23cc54fbc3405a7c5b80bb8de796ae2b53bd5e25. Scope is only file-change section typography and its existing provider-rendered owner; TASK-143.03.04 stays In Progress and no broad or synthetic test lane will run.
+
+Ninth rereview remediation implemented. Text sections now retain a required private prose or technical presentation kind through rendering. File-change paths render with font-mono text-technical; diffs render with font-sans text-body. Existing user, agent, reasoning, command-output, tool-error, prompt, review, and revised-prompt copy stays prose. The existing provider-rendered owner now supplies one nonempty file change and asserts both class families. Red evidence: 10 pass, 1 fail, 89 assertions on the missing technical path class. Green timeline evidence: 11 pass, 0 fail, 97 assertions. Final focused runtime, timeline, provider, and import-policy set: 39 pass, 0 fail, 499 assertions across 6 files in 6.25s. Root and frontend typechecks passed; targeted Oxlint, Oxfmt, and git diff checks passed. The test remains at 500 lines. No broad, browser, synthetic concurrency, or product-topology lane ran. TASK-143.03.04 remains In Progress.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
