@@ -329,6 +329,8 @@ export interface CodexApprovalBroker {
 	readonly getRequest: (requestId: JsonRpcRequestId) => ApprovalRequest | undefined;
 	readonly inspect: () => readonly ApprovalSnapshot[];
 	readonly toBrowserApproval: (requestId: JsonRpcRequestId) => BrowserApproval;
+	/** Removes one terminal card after the browser command result carried it. */
+	readonly acknowledge: (requestId: JsonRpcRequestId) => void;
 	readonly spokenEffectPresentation: (
 		requestId: JsonRpcRequestId,
 	) => SpokenApprovalEffectPresentation;

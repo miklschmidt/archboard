@@ -26,6 +26,8 @@ test("browser approval projection retains authority and terminal decision", asyn
 			lifecycle: { state: "settled", decision: "approved", outcome: "delivered" },
 			spoken: { eligible: false, reason: "not_pending" },
 		});
+		fixture.broker.acknowledge(pending.requestId);
+		expect(fixture.broker.get(pending.requestId)).toBeUndefined();
 	} finally {
 		closeBroker(fixture.broker);
 	}
@@ -55,11 +57,12 @@ test("browser approval projection preserves elicitation constraints and requeste
 		const permissions = fixture.broker.receive(
 			permissionsRequest(fixture.identity, "browser-permissions"),
 		);
-		const request = fixture.broker.getRequest(permissions.requestId);
 		const card = fixture.broker.toBrowserApproval(permissions.requestId);
-		if (request?.family !== "permissions" || card.approvalKind !== "permissions")
+		if (card.approvalKind !== "permissions")
 			throw new Error("permission fixture did not retain its family");
-		expect(card.requestedPermissions).toEqual(request.params.permissions);
+		expect(card.requestedScope).toEqual({ network: true, fileAccess: ["deny", "read"] });
+		expect(card).not.toHaveProperty("requestedPermissions");
+		expect(JSON.stringify(card)).not.toContain("/private/blocked");
 		await fixture.broker.cancel(form.requestId);
 		await fixture.broker.cancel(permissions.requestId);
 	} finally {

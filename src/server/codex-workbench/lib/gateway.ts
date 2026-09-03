@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
 
-import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
+import {
+	createCodexBrowserModel,
+	projectCodexBrowserState,
+} from "../../../shared/codex-browser-model/index.js";
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
@@ -24,7 +27,7 @@ import {
 	type BrowserGatewayCommandResult,
 	type BrowserGatewayMessage,
 	type BrowserGatewaySnapshotMessage,
-	type BrowserProjection,
+	type BrowserOwnerProjection,
 	type BrowserWorkbenchConnection,
 	type BrowserApprovalCommand,
 	type CodexWorkbenchGateway,
@@ -35,7 +38,7 @@ import {
 	type BrowserUnsubscribe,
 	type CodexWorkbenchGatewayOptions,
 } from "./contract.js";
-import { diffBrowserSnapshots, readBrowserProjection } from "./projection.js";
+import { assertBrowserSnapshotBounded, diffBrowserSnapshots } from "./projection.js";
 
 const ACCOUNT_READINESS = new Set([
 	"login_capable",
@@ -70,6 +73,13 @@ interface CachedCommand {
 	readonly connection: BrowserConnectionInstance;
 	readonly result: Promise<BrowserGatewayCommandResult>;
 }
+
+type BrowserActionDispatch = {
+	readonly [Name in BrowserCommand["command"]]: (
+		command: Extract<BrowserCommand, { readonly command: Name }>,
+		context: BrowserActionContext,
+	) => Promise<BrowserActionResult>;
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -429,13 +439,14 @@ export function createCodexWorkbenchGateway(
 
 	const snapshotFor = (state: ConnectionState): BrowserSnapshot => {
 		const binding = readBinding(state.paneId);
-		let projection: BrowserProjection;
+		const lease = leaseForSnapshot(state);
+		let projection: BrowserOwnerProjection;
 		try {
 			projection = options.projection.read({
 				browserId: state.browserId,
 				paneId: state.paneId,
 				binding,
-				lease: leaseForSnapshot(state),
+				lease,
 				mediaReady: state.mediaReady,
 			});
 		} catch (error) {
@@ -446,18 +457,15 @@ export function createCodexWorkbenchGateway(
 			);
 		}
 		try {
-			return readBrowserProjection({
-				model,
-				projection,
-				context: {
-					browserId: state.browserId,
-					paneId: state.paneId,
-					binding,
-					lease: leaseForSnapshot(state),
-					mediaReady: state.mediaReady,
-				},
+			const result = projectCodexBrowserState(model, {
+				...projection,
+				threadLink: binding.link,
+				lease,
 				operation: state.operation,
 			});
+			if (result.tag === "refused") throw new Error(result.message);
+			assertBrowserSnapshotBounded(result.snapshot);
+			return result.snapshot;
 		} catch (error) {
 			throw new CodexWorkbenchGatewayError(
 				"invalid_projection",
@@ -577,56 +585,40 @@ export function createCodexWorkbenchGateway(
 			);
 	};
 
-	const invoke = async (
-		command: BrowserCommand,
+	const dispatch = {
+		accountLogin: (command, context) => options.actions.account.login(command, context),
+		accountLoginCancel: (command, context) => options.actions.account.loginCancel(command, context),
+		accountLogout: (command, context) => options.actions.account.logout(command, context),
+		threadLinkCreate: (command, context) => options.actions.threadLinks.create(command, context),
+		threadLinkAttach: (command, context) => options.actions.threadLinks.attach(command, context),
+		threadLinkRelink: (command, context) => options.actions.threadLinks.relink(command, context),
+		start: (command, context) => options.actions.text.start(command, context),
+		steer: (command, context) => options.actions.text.steer(command, context),
+		interrupt: (command, context) => options.actions.text.interrupt(command, context),
+		queueAdd: (command, context) => options.actions.queue.add(command, context),
+		queueUpdate: (command, context) => options.actions.queue.update(command, context),
+		queueDelete: (command, context) => options.actions.queue.delete(command, context),
+		queueReorder: (command, context) => options.actions.queue.reorder(command, context),
+		queueStart: (command, context) => options.actions.queue.start(command, context),
+		approvalRespond: (command, context) =>
+			options.actions.ordinaryApprovals.resolve(command, context),
+		dynamicApprovalRespond: (command, context) =>
+			options.actions.dynamicApprovals.resolve(command, context),
+		realtimeStart: (command, context) => options.actions.realtime.start(command, context),
+		realtimeAppendText: (command, context) => options.actions.realtime.appendText(command, context),
+		realtimeStop: (command, context) => options.actions.realtime.stop(command, context),
+	} satisfies BrowserActionDispatch;
+
+	const invoke = <Command extends BrowserCommand>(
+		command: Command,
 		context: BrowserActionContext,
-	): Promise<BrowserActionResult> => {
-		switch (command.command) {
-			case "accountLogin":
-				return options.actions.account.login(command, context);
-			case "accountLoginCancel":
-				return options.actions.account.loginCancel(command, context);
-			case "accountLogout":
-				return options.actions.account.logout(command, context);
-			case "threadLinkCreate":
-				return options.actions.threadLinks.create(command, context);
-			case "threadLinkAttach":
-				return options.actions.threadLinks.attach(command, context);
-			case "threadLinkRelink":
-				return options.actions.threadLinks.relink(command, context);
-			case "queueAdd":
-				return options.actions.queue.add(command, context);
-			case "queueUpdate":
-				return options.actions.queue.update(command, context);
-			case "queueDelete":
-				return options.actions.queue.delete(command, context);
-			case "queueReorder":
-				return options.actions.queue.reorder(command, context);
-			case "queueStart":
-				return options.actions.queue.start(command, context);
-			case "approvalRespond":
-				return options.actions.ordinaryApprovals.resolve(command, context);
-			case "realtimeStart":
-				return options.actions.realtime.start(command, context);
-			case "realtimeAppendText":
-				return options.actions.realtime.appendText(command, context);
-			case "realtimeStop":
-				return options.actions.realtime.stop(command, context);
-			case "start":
-				return options.actions.text.start(command, context);
-			case "steer":
-				return options.actions.text.steer(command, context);
-			case "interrupt":
-				return options.actions.text.interrupt(command, context);
-			case "dynamicApprovalRespond":
-				return options.actions.dynamicApprovals.resolve(command, context);
-			default:
-				throw new CodexWorkbenchGatewayError(
-					"unsupported_command",
-					"The command is not supported.",
-				);
-		}
-	};
+	): Promise<BrowserActionResult> =>
+		(
+			dispatch[command.command] as (
+				value: Command,
+				owner: BrowserActionContext,
+			) => Promise<BrowserActionResult>
+		)(command, context);
 
 	const refusal = async (
 		state: ConnectionState,
@@ -780,6 +772,8 @@ export function createCodexWorkbenchGateway(
 				message,
 			});
 			const nextSnapshot = updateSnapshot(state).snapshot;
+			if (command.command === "approvalRespond")
+				options.actions.ordinaryApprovals.acknowledge(command.requestId);
 			return Object.freeze({
 				kind: "command_result",
 				commandId: command.commandId,
@@ -817,6 +811,12 @@ export function createCodexWorkbenchGateway(
 				"A browser command must identify its pane.",
 			);
 		const state = stateFor(browserId, paneId, instance);
+		if (
+			isRecord(value) &&
+			typeof value.command === "string" &&
+			!Object.hasOwn(dispatch, value.command)
+		)
+			return refusal(state, null, "unsupported_command");
 		let parsed: BrowserCommand;
 		try {
 			parsed = model.BrowserCommandSchema.parse(value);

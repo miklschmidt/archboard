@@ -306,16 +306,21 @@ function formFields(schema: unknown): ProjectedElicitationField[] | null {
 	return fields;
 }
 
-function fileSystemMode(value: RecordValue | null): "read" | "write" | "deny" | null {
-	if (value === null) return null;
-	if (value.write !== null && value.write !== undefined) return "write";
-	if (value.read !== null && value.read !== undefined) return "read";
-	if (
-		Array.isArray(value.entries) &&
-		value.entries.some((entry) => isRecord(entry) && entry.access === "deny")
-	)
-		return "deny";
-	return null;
+function fileSystemAccesses(value: RecordValue | null): readonly ("read" | "write" | "deny")[] {
+	if (value === null) return [];
+	const requested = new Set<"read" | "write" | "deny">();
+	if (value.read !== null && value.read !== undefined) requested.add("read");
+	if (value.write !== null && value.write !== undefined) requested.add("write");
+	if (Array.isArray(value.entries))
+		for (const entry of value.entries) {
+			if (
+				isRecord(entry) &&
+				(entry.access === "read" || entry.access === "write" || entry.access === "deny")
+			)
+				requested.add(entry.access);
+		}
+	const order = ["deny", "read", "write"] as const;
+	return order.filter((access) => requested.has(access));
 }
 
 function spokenText(value: unknown): string | null {
@@ -454,9 +459,10 @@ export function toBrowserApproval(
 				approvalKind: "permissions",
 				reason: request.params.reason,
 				cwd: request.params.cwd,
-				network: request.params.permissions.network?.enabled ?? null,
-				fileSystem: fileSystemMode(request.params.permissions.fileSystem),
-				requestedPermissions: request.params.permissions,
+				requestedScope: {
+					network: request.params.permissions.network?.enabled ?? null,
+					fileAccess: fileSystemAccesses(request.params.permissions.fileSystem),
+				},
 			};
 			break;
 		case "apply_patch":

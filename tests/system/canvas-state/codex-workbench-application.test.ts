@@ -10,7 +10,7 @@ import type {
 import { createCodexBrowserModel } from "../../../src/shared/codex-browser-model/index.js";
 import { createIdentityAuthorities } from "../../../src/shared/codex-workbench-identity/index.js";
 import type {
-	BrowserProjection,
+	BrowserOwnerProjection,
 	BrowserWorkbenchActions,
 } from "../../../src/server/codex-workbench/index.js";
 import { createCodexWorkbenchGateway } from "../../../src/server/codex-workbench/index.js";
@@ -172,6 +172,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 					});
 					return { outcome: "delivered" };
 				},
+				acknowledge: (approvalRequestId) => activeApprovals.acknowledge(approvalRequestId),
 			},
 			dynamicApprovals: {
 				pending: () => [],
@@ -179,41 +180,45 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 			},
 		};
 		const projection = {
-			read: (): BrowserProjection => ({
+			read: (): BrowserOwnerProjection => ({
 				readiness: { kind: "readiness", state: "thread_capable" },
-				account: { kind: "account", state: "ready", accountType: "chatgpt" },
+				account: {
+					kind: "codex_account_response",
+					response: {
+						account: { type: "chatgpt", email: "fixture@example.test", planType: "plus" },
+						requiresOpenaiAuth: true,
+					},
+				},
 				login: { kind: "login", state: "idle" },
 				timeline: null,
-				queue: { kind: "queue", status: "empty", entries: [] },
+				queue: { kind: "codex_queue", submissions: [] },
 				settings: [],
 				approvals: activeApprovals
 					.inspect()
-					.flatMap((approval) =>
-						approval.state === "pending"
-							? [activeApprovals.toBrowserApproval(approval.requestId)]
-							: [],
-					),
+					.map((approval) => activeApprovals.toBrowserApproval(approval.requestId)),
 				dynamicApprovals: [],
-				semantic: null,
+				semantic: { kind: "codex_semantic", outcome: null, freshness: null },
 				coordinator: {
-					kind: "coordinator",
+					kind: "codex_coordinator",
 					state: "ready",
 					threadId: coordinatorThreadId,
-					activeTurnId: null,
-					configuredModel: "gpt-5.6-sol",
-					configuredEffort: "xhigh",
-					model: "gpt-5.6-sol",
-					effort: "xhigh",
-					serviceTier: "priority",
+					configured: {
+						model: "gpt-5.6-sol",
+						effort: "xhigh",
+					},
+					effective: {
+						model: "gpt-5.6-sol",
+						effort: "xhigh",
+						serviceTier: "priority",
+					},
 					reason: null,
 				},
 				voice: {
-					kind: "voice",
-					state: "ready",
-					realtimeSessionId: null,
+					kind: "codex_voice",
+					mediaReady: true,
+					generation: null,
+					coordinatorState: "ready",
 					transcript: [],
-					delivery: null,
-					reason: null,
 				},
 			}),
 			onChange: (listener: () => void) => {

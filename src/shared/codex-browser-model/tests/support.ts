@@ -86,7 +86,7 @@ const settings = {
 	serviceTier: "priority",
 	approvalPolicy: "on-request" as const,
 	approvalsReviewer: "user" as const,
-	sandboxPolicy: { type: "dangerFullAccess" as const },
+	sandbox: { mode: "full_access" as const, network: "unspecified" as const },
 	activePermissionProfile: null,
 };
 const approval = {
