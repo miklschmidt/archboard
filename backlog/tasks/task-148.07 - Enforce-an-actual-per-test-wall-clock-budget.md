@@ -4,7 +4,7 @@ title: Enforce an actual per-test wall-clock budget
 status: In Progress
 assignee: []
 created_date: '2026-09-02 21:36'
-updated_date: '2026-09-03 17:03'
+updated_date: '2026-09-03 17:09'
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -76,4 +76,6 @@ Independent-review remediation: moved the preload and helper under the documente
 The real lifecycle owner uses one controlled Bun child and no sleep. A clock preload advances 25,000 ms per observation, the production preload binds it before the fixture installs fake timers and replaces Bun.nanoseconds, one approved slow case passes, an adjacent unapproved case fails, and a nested body plus cleanup failure remains visible beside the recovered budget diagnostic. Bun 1.4 skips outer afterEach and onTestFinished after a test-local cleanup failure, so the preload uses onTestFinished for ordinary enforcement and beforeEach/afterAll recovery to add the budget diagnostic without masking the original failures.
 
 Remediation mutation RED: disconnecting onTestFinished made the lifecycle owner fail in 31 ms because the unapproved neighbor passed. Raising TEST_WALL_CLOCK_BUDGET_MS to 100,000 made both the exact 91,000 ms fixture and real preload lifecycle owner fail in 48 ms. Both mutations were restored. Final focused run passed 14 tests and 26 assertions across the policy and real-preload owners in 81 ms. Focused Oxlint, Oxfmt, bun install --frozen-lockfile, and git diff --check passed. No real browser owner, tsc, broad lane, old wrapper, or production-duration wait ran.
+
+Final narrow Standards remediation: replaced the hand-written AstNode vendor shape and parse(... as unknown as AstNode) with @babel/types published Node/ObjectExpression types plus VISITOR_KEYS traversal; @babel/types 7.29.8 is now an exact direct dev dependency. Added TEST_WALL_CLOCK_PRELOAD_LIFECYCLE_TIMEOUT_MS = 5,000 with its three-fixture controlled-child constraint and used it for both the child and Bun case bounds. Focused final validation passed 14 tests / 26 assertions in 125 ms, focused Oxlint and Oxfmt passed, bun install --frozen-lockfile reported no changes in 185 ms, and git diff --check passed. No browser, tsc, broad lane, real wait, or old wrapper ran.
 <!-- SECTION:NOTES:END -->
