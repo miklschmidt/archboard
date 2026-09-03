@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 10:18'
+updated_date: '2026-09-03 10:27'
 labels: []
 dependencies:
   - TASK-143.08.06.04
@@ -50,6 +50,10 @@ Make the browser-independent contract impossible to miss for agents, maintainers
 2. Replace the stale eval workflows with one explicit zero-browser production workflow and one separate browser-collaboration workflow, then align AGENTS.md, TESTING.md, INSTALL.md, CLI help, archboard-dev guidance, and test-suite ownership language.
 3. Deepen the existing vault-only production-interface owner for the complete zero-client flow. Add browser-command target and note-byte assertions to the existing two-pane browser owner, and add acknowledgement-independent board-update visibility to the existing server-update owner without creating another browser owner or browser start. Add only the cheapest repository assertion needed to keep the skill/eval split explicit.
 4. Build only the renderer prerequisite, run focused repository/contract/system owners and exact retained browser test selectors, apply scoped formatting and lint, run the documented skill sync, and audit that derived skill copies and proof artifacts remain untracked and reproducible. Record exact test/runtime/process counts and leave all acceptance criteria unchecked.
+
+5. Apply standards-review remediation: keep the skill owner structural around main-path versus browser namespace and workflow owner metadata, then extend the existing no-argument package help smoke with semantic browser-boundary assertions. Run only those two owners plus scoped formatting, lint, and diff checks; commit without amending.
+
+6. Apply spec-review remediation: confine executable browser examples to the live-session skill section; replace the archboard-dev scratch probe with a named disposable zero-client board and pass selection IDs explicitly to promote; correct persisted-board inventory guidance; strengthen the structural skill guard; and revise the retained selection-inspector owner to baseline note bytes before browser setup, use released browser lifecycle CLI calls, and prove right-pane capture with asymmetric markers. Keep one browser launch and one test, with three additional supervised CLI children replacing three direct API calls.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -58,4 +62,10 @@ Make the browser-independent contract impossible to miss for agents, maintainers
 Implemented the browser-free teaching and verification cut. Canonical skills/ now starts with an explicit named-board workflow and isolates live panes under one browser-collaboration branch; evals tag one zero-browser workflow and one browser-collaboration workflow. Aligned AGENTS.md, TESTING.md, INSTALL.md, archboard-dev guidance, test-suite ownership, and root CLI help.
 Verification reuses existing owners: one new repository-policy assertion, an expanded vault-only system case, and added assertions inside the existing selection-inspector and server-update-ordering browser owners. No new browser owner or browser start was added. The zero-client case uses one server, one retained renderer, 11 supervised CLI invocations, and zero WebSocket clients; it passed in 4.71s. Exact retained browser selectors passed in 12.55s and 8.29s. CLI help passed in 3.63s; skill policy passed in 0.08s; browser-selector policy passed in 0.04s. Scoped Oxlint, Oxfmt, and diff checks pass.
 The documented skill sync reproduced .agents/skills/archboard and the .claude symlink byte-for-byte from skills/archboard. Both derived trees and dist/frontend are ignored and untracked. No proof artifact is authored. Acceptance criteria remain unchecked as requested.
+
+Standards-review remediation after a06495fa: removed command, quoting, heading, and eval-prompt prose snapshots from the skill policy owner. It now checks only main-path/browser-section namespace separation and the two structured workflow-to-owner file mappings. The existing no-argument package help smoke now semantically asserts that named-board work needs no browser and only browser commands control live panes, reusing its existing package process. Incremental test delta: 0; subprocess delta: 0; browser delta: 0. Focused owners pass: skills policy 8/8 in 0.060s and package help/argv 6/6 in 3.545s. Combined 3.605s versus the prior 3.702s measurement, -0.097s observationally. Scoped Oxlint, Oxfmt, and diff checks pass. Task remains In Progress with every AC unchecked.
+
+Spec-and-standards remediation after a06495fa is complete. Executable browser commands now live only in the canonical skill's explicit live-session section, enforced structurally without prose or command-shape snapshots. Archboard-dev now probes an explicitly named disposable board in a disposable vault with zero clients and passes structured selection elementIds to promote using Bun. AGENTS.md and TESTING.md now describe the persisted-board vault inventory under ADR 0020; INSTALL.md maps repositories to persisted boards and keeps browser show in an optional live-session branch.
+
+The retained selection-inspector owner snapshots both note byte sequences before its first browser open/show, replaces three direct setup APIs with the released browser show/open/show CLI, and verifies a right-pane SVG contains its right-only marker and excludes the left-only marker. This adds no test, owner, or browser launch; it replaces three direct HTTP setup calls with three supervised CLI children (and their three timeout supervisors). Focused validation: skill policy 8/8 in 0.049s; package help/argv 6/6 in 3.482s; exact selection-inspector owner 1/1 in 8.701s. One preceding run passed the new persistence/capture work but timed out at the unchanged late Cancel-dialog interaction; the immediate exact-owner retry passed all 71 assertions. Scoped Oxfmt, Oxlint, and diff checks pass. Task remains In Progress and all acceptance criteria remain unchecked.
 <!-- SECTION:NOTES:END -->

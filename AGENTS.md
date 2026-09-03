@@ -132,7 +132,7 @@ is doing, and restructures in the open.
 ## Invariants
 
 The loud rules teach themselves — a call that names no board is refused and
-told what is open (ADR 0009), an agent write without `--doing` is refused
+lists the persisted boards in the configured vault (ADR 0020), an agent write without `--doing` is refused
 (TASK-095), a stale write is refused once with the board's real version
 (`BOARD_VERSION_CONFLICT`: re-read the board, never retry blind), and a note
 that changed on disk under another editor is refused, never overwritten

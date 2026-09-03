@@ -157,23 +157,31 @@ describe("skill repository policy", () => {
 
 	test("the Archboard skill keeps persisted-board and live-browser workflows separate", () => {
 		const skill = fs.readFileSync(path.join(repoRoot, "skills/archboard/SKILL.md"), "utf8");
-		const mainPath = skill.match(/\n## The main path\n([\s\S]*?)(?=\n## )/)?.[1];
-		const browserBranch = skill.match(
-			/\n## When the request is about a live browser session\n([\s\S]*?)(?=\n## )/,
-		)?.[1];
+		const sections = new Map(
+			skill
+				.split(/^## /m)
+				.slice(1)
+				.map((section) => {
+					const [heading = "", ...body] = section.split("\n");
+					return [heading.trim(), body.join("\n")] as const;
+				}),
+		);
+		const mainPath = [...sections].find(([heading]) => /main path/i.test(heading))?.[1];
+		const browserBranch = [...sections].find(([heading]) => /browser/i.test(heading))?.[1];
+		const executableBrowserCommand = /^\s*archboard browser\b/m;
 		expect(mainPath).toBeDefined();
-		expect(mainPath).not.toMatch(/archboard browser\b/);
-		expect(mainPath).toMatch(/archboard board new "\$board"/);
-		expect(mainPath).toMatch(/archboard render --board "\$board"/);
-		expect(browserBranch).toMatch(/archboard browser panes/);
-		expect(browserBranch).toMatch(/archboard browser capture --pane/);
+		expect(mainPath).not.toMatch(executableBrowserCommand);
+		expect(browserBranch).toMatch(executableBrowserCommand);
+		for (const [heading, body] of sections) {
+			if (body === browserBranch) continue;
+			expect(body, `section ${heading}`).not.toMatch(executableBrowserCommand);
+		}
 
 		const evaluation = JSON.parse(
 			fs.readFileSync(path.join(repoRoot, "skills/archboard/evals/evals.json"), "utf8"),
 		) as {
 			evals: Array<{
 				workflow?: string;
-				prompt: string;
 				files: string[];
 			}>;
 		};
@@ -182,13 +190,13 @@ describe("skill repository policy", () => {
 			(entry) => entry.workflow === "browser-collaboration",
 		);
 		expect(zeroBrowser).toHaveLength(1);
-		expect(zeroBrowser[0]?.prompt).not.toMatch(/archboard browser|browser (?:panes|capture|show)/);
-		expect(zeroBrowser[0]?.files).toContain(
+		expect(zeroBrowser[0]?.files).toEqual([
 			"tests/system/boards/vault-only-production-interfaces.test.ts",
-		);
+		]);
 		expect(collaboration).toHaveLength(1);
-		expect(collaboration[0]?.prompt).toMatch(/browser open/);
-		expect(collaboration[0]?.prompt).toMatch(/browser capture --pane/);
-		expect(collaboration[0]?.files).toContain("tests/system/browser/selection-inspector.test.ts");
+		expect(collaboration[0]?.files).toEqual([
+			"tests/system/browser/selection-inspector.test.ts",
+			"tests/system/browser/server-update-ordering.test.ts",
+		]);
 	});
 });

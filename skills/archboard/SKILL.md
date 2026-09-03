@@ -102,10 +102,8 @@ A board is the persisted drawing that content commands read and write. A pane
 is a browser view of one board. A board can be edited with no pane open. Camera,
 selection, and visible bounds belong to a pane, not to the board.
 
-`browser open` creates a new pane and cannot replace the board the human is
-already reading. Point it deliberately with `browser show <key> --pane <spec>`.
-A third pane is refused. Read `browser panes --text` before
-using words such as "left", "right", or "this one".
+Pane lifecycle and control belong only to the explicit live-browser branch
+below. They do not establish or change the persisted-board identity.
 
 A variant is a modification of its source, not a fresh drawing of the same
 subject. Branch first, then change only what the proposal changes. Promoted node
@@ -121,6 +119,10 @@ Use the `archboard browser` branch only when a person is currently collaborating
 in a browser, or when the requested evidence is specifically about that live
 session. Start by naming the live target. Never let focus choose it.
 
+Opening a pane preserves what the person is already reading. Point the new pane
+at a board explicitly. A third pane is refused. Inspect the pane inventory
+before using words such as "left", "right", or "this one".
+
 ```bash
 archboard browser panes --text
 archboard browser selection --pane left --text
@@ -134,6 +136,10 @@ These commands inspect or control panes, selection, and cameras. They never
 write a board note. Pass selected ids explicitly to a later board command. An
 ordinary named-board write succeeds independently of browser delivery; a pane
 already showing that board observes the committed result.
+
+Live capture records one named pane. Viewport changes move only that pane's
+camera; they do not crop inspection or prove what exists outside the visible
+area.
 
 A moved box, a new group, or a node pulled out of a zone may be a design
 decision. Read recent board changes, state your interpretation, and ask before
@@ -210,10 +216,8 @@ wins without the human.
   snapshot.
 - `render --board <key>` writes a PNG or SVG of the persisted board through the
   server-owned renderer.
-- `browser capture --pane <spec>` records one explicit live pane only when the
-  request is about that session.
-- `browser viewport --pane <spec>` changes that pane's camera. It does not crop
-  inspection or prove what exists outside the visible area.
+- The explicit live-browser branch owns pane capture and camera evidence when
+  the request concerns that session.
 - `export` writes a portable scene file. It does not prove the browser view or
   semantic difference.
 - `compare` describes semantic change between variants. It does not inspect
