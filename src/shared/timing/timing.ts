@@ -242,6 +242,20 @@ export const GIT_PROCESS_GROUP_CLEANUP_MS = CANVAS_MUTATION_DRAIN_TIMEOUT_MS;
 export const GIT_PROCESS_GROUP_POLL_MS = 10;
 
 /**
+ * Bound for a fake Git child to publish its startup marker in the module owner.
+ * The owner also runs inside the serialized system watchdog, so observing the
+ * fixture must allow the real command its complete deadline.
+ */
+export const TEST_GIT_FIXTURE_START_MS = GIT_COMMAND_TIMEOUT_MS;
+
+/**
+ * Bun case bound for the composed Git module lifecycle owner. It leaves one
+ * command deadline for fixture readiness and one for its remaining lifecycle
+ * cases while the outer process-contract watchdog remains the final bound.
+ */
+export const TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS = 2 * GIT_COMMAND_TIMEOUT_MS;
+
+/**
  * Outer grace before an interrupted CLI restores the signal's default action.
  * Git may spend one cleanup grace terminating and cancelling its leader and
  * pipes, then another proving the detached group is absent. A third grace is
