@@ -12,6 +12,7 @@ import {
 	useRef,
 	useState,
 	useSyncExternalStore,
+	type ComponentProps,
 	type ComponentType,
 	type ReactNode,
 } from "react";
@@ -32,28 +33,23 @@ export interface WorkbenchCodexItemMetadata {
 	readonly value: Readonly<Record<string, unknown>>;
 }
 
-type WorkbenchMessageStatus =
-	| { readonly type: "running" }
-	| { readonly type: "complete"; readonly reason: "stop" }
-	| {
-			readonly type: "incomplete";
-			readonly reason: "cancelled" | "error";
-			readonly error?: { readonly message: string };
-	  };
+type ReadonlyProviderMessage = ComponentProps<typeof ReadonlyThreadProvider>["messages"][number];
+type ReadonlyProviderAssistantMessage = Extract<
+	ReadonlyProviderMessage,
+	{ readonly role: "assistant" }
+>;
+type ReadonlyProviderTextPart = Extract<
+	ReadonlyProviderAssistantMessage["content"][number],
+	{ readonly type: "text" }
+>;
 
-export interface WorkbenchAssistantMessage {
-	/** Stable public ThreadMessageLike identity for one authoritative Codex turn. */
-	readonly id: string;
-	readonly role: "assistant";
-	readonly createdAt: Date;
+export type WorkbenchAssistantMessage = Omit<
+	ReadonlyProviderAssistantMessage,
+	"content" | "metadata"
+> & {
 	/** One fixed summary part; variable timeline items remain in Archboard-owned metadata. */
-	readonly content: readonly [{ readonly type: "text"; readonly text: string }];
-	readonly status: WorkbenchMessageStatus;
-	readonly metadata: {
-		readonly unstable_state: null;
-		readonly unstable_annotations: readonly [];
-		readonly unstable_data: readonly [];
-		readonly steps: readonly [];
+	readonly content: readonly [ReadonlyProviderTextPart];
+	readonly metadata: Omit<ReadonlyProviderAssistantMessage["metadata"], "custom"> & {
 		readonly custom: {
 			readonly archboard: {
 				readonly threadId: string;
@@ -65,7 +61,7 @@ export interface WorkbenchAssistantMessage {
 			};
 		};
 	};
-}
+};
 
 export type ReadonlyWorkbenchSource =
 	| "coordinator"
@@ -132,7 +128,9 @@ function codexItemIdentity(
 	return JSON.stringify([threadId, turnId, item.itemId, item.kind]);
 }
 
-function mapStatus(status: BrowserTimeline["turns"][number]["status"]): WorkbenchMessageStatus {
+function mapStatus(
+	status: BrowserTimeline["turns"][number]["status"],
+): ReadonlyProviderAssistantMessage["status"] {
 	switch (status) {
 		case "inProgress":
 			return { type: "running" };
