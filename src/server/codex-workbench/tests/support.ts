@@ -1,7 +1,11 @@
+import {
+	createDynamicAuthorityTokenIssuer,
+	type DynamicToolApprovalRequest,
+} from "../../../runtime/codex-dynamic-tools/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import type {
-	BrowserDynamicApproval,
+	DynamicApprovalOwnerView,
 	BrowserOwnerProjection,
 	BrowserReadiness,
 	BrowserSnapshot,
@@ -54,7 +58,7 @@ export interface GatewayHarness {
 	readonly setReadiness: (state: BrowserReadiness["state"]) => void;
 	readonly setLink: (link: ThreadLinkSnapshot) => void;
 	readonly setOrdinaryApproval: (approval: ApprovalOwnerView | null) => void;
-	readonly setDynamicApprovals: (approvals: readonly BrowserDynamicApproval[]) => void;
+	readonly setDynamicApprovals: (approvals: readonly DynamicApprovalOwnerView[]) => void;
 	readonly emitProjectionChange: () => void;
 	readonly setActionError: (error: unknown) => void;
 	readonly setActionResult: (result: BrowserActionResult | undefined) => void;
@@ -68,7 +72,7 @@ export interface GatewayHarness {
 	readonly makeDynamicApproval: (
 		commandId: BrowserCommandId,
 		targetThreadId?: ThreadId,
-	) => BrowserDynamicApproval;
+	) => DynamicApprovalOwnerView;
 }
 
 function executableLink(
@@ -163,7 +167,7 @@ export function createGatewayHarness(
 	let link: ThreadLinkSnapshot = executableLink(childId, epoch, threadId);
 	let revision = 0;
 	let ordinaryApproval: ApprovalOwnerView | null = null;
-	let dynamicApprovals: readonly BrowserDynamicApproval[] = [];
+	let dynamicApprovals: readonly DynamicApprovalOwnerView[] = [];
 	let actionError: unknown = null;
 	let actionResult: BrowserActionResult | undefined;
 	let actionGate: Promise<BrowserActionResult> | null = null;
@@ -285,8 +289,11 @@ export function createGatewayHarness(
 			},
 		},
 		dynamicApprovals: {
-			pending: () => dynamicApprovals,
-			resolve: action("dynamic.resolve"),
+			resolve: async (..._args) => {
+				const result = await run("dynamic.resolve");
+				dynamicApprovals = [];
+				return result;
+			},
 			onBrowserDisconnect: (_context, reason) => {
 				disconnects.push("dynamic");
 				disconnectReasons.push(reason);
@@ -368,9 +375,10 @@ export function createGatewayHarness(
 	const makeDynamicApproval = (
 		commandId: BrowserCommandId,
 		targetThreadId = threadId,
-	): BrowserDynamicApproval => {
+	): DynamicApprovalOwnerView => {
+		const authority = createDynamicAuthorityTokenIssuer();
 		const operationId = authorities.operation.issuer.mintOperationId();
-		const identity = model.DynamicApprovalIdentitySchema.parse({
+		const identity = {
 			child: childId,
 			epoch,
 			threadId: targetThreadId,
@@ -379,43 +387,33 @@ export function createGatewayHarness(
 			namespace: "archboard_app",
 			tool: "send_message_to_thread",
 			manifestHash: "gateway-manifest",
-			operationId,
-		});
-		const effect = model.BrowserDynamicApprovalEffectSchema.parse({
+			operationId: String(operationId),
+		} as const;
+		const effect = {
 			tool: "send_message_to_thread",
-			arguments: { threadId: targetThreadId, prompt: "Send one bounded message" },
-			target: targetThreadId,
+			arguments: {
+				threadId: authorities.identity.decoder.serializeCodexIdentity(targetThreadId),
+				prompt: "Send one bounded message",
+			},
+			callerAuthority: authority.issue(),
+			targetAuthority: authority.issue(),
+			contextAuthority: authority.issue(),
 			effectiveBoundary: null,
-			mutationOperationId: operationId,
+			mutationOperationId: String(operationId),
 			initialTurnOperationId: null,
 			visualSummary: "Send one bounded message",
-		});
-		const fullEffect = model.DynamicApprovalEffectSchema.parse({
-			tool: "send_message_to_thread",
-			arguments: effect.arguments,
-			callerAuthority: "caller-authority",
-			targetAuthority: "target-authority",
-			contextAuthority: "context-authority",
-			effectiveBoundary: null,
-			mutationOperationId: operationId,
-			initialTurnOperationId: null,
-			visualSummary: effect.visualSummary,
-		});
-		const effectHash = model.effectHashForRequest({ identity, effect: fullEffect });
-		return model.BrowserDynamicApprovalSchema.parse({
-			kind: "dynamic_approval",
-			state: "pending",
+		} as const;
+		const request: DynamicToolApprovalRequest = {
 			identity,
 			effect,
-			effectHash,
+			effectHash: `sha256:${"7".repeat(64)}`,
 			createdAtMs: CLOCK_START,
 			expiresAtMs: CLOCK_START + 90_000,
-			decision: null,
-			delivery: null,
-			toolResult: null,
+		};
+		return {
+			request,
 			binding: { commandId, paneId, capturedLink: { threadId: targetThreadId, childId, epoch } },
-			resumable: false,
-		});
+		};
 	};
 
 	return {

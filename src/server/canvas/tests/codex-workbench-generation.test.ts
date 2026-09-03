@@ -128,9 +128,14 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 			}),
 		});
 		owner.port.presentImmutableRequest(request);
-		const projected = owner.browser.pending()[0];
+		const projected = owner.pending()[0];
 		if (projected === undefined) throw new Error("The approval was not projected.");
-		expect(projected.expiresAtMs - request.createdAtMs).toBe(CODEX_APPROVAL_EXPIRY_MS);
+		expect(projected.request).toBe(request);
+		expect(projected.binding.paneId).toBe("pane-expiry");
+		expect(Object.isFrozen(projected)).toBe(true);
+		expect(Object.isFrozen(projected.binding)).toBe(true);
+		expect(Object.isFrozen(projected.binding.capturedLink)).toBe(true);
+		expect(projected.request.expiresAtMs - request.createdAtMs).toBe(CODEX_APPROVAL_EXPIRY_MS);
 		let settlements = 0;
 		const decision = owner.port.awaitOneExactVisualDecision(request).then((value) => {
 			settlements += 1;
@@ -138,7 +143,7 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 		});
 		jest.advanceTimersByTime(CODEX_APPROVAL_EXPIRY_MS - 1);
 		await Promise.resolve();
-		expect({ pending: owner.browser.pending().length, settlements }).toEqual({
+		expect({ pending: owner.pending().length, settlements }).toEqual({
 			pending: 1,
 			settlements: 0,
 		});

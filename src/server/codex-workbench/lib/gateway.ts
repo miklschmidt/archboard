@@ -524,7 +524,7 @@ export function createCodexWorkbenchGateway(
 			);
 		}
 		try {
-			const result = projectCodexBrowserState(model, {
+			const result = projectCodexBrowserState(model, identity.identity.decoder, {
 				...projection,
 				threadLink: binding.link,
 				lease,
@@ -805,15 +805,13 @@ export function createCodexWorkbenchGateway(
 						"The coordination approval is bound to another thread link.",
 						{ commandId: command.commandId },
 					);
-				const pending = options.actions.dynamicApprovals
-					.pending()
-					.find(
-						(candidate) =>
-							candidate.state === "pending" &&
-							candidate.expiresAtMs > now() &&
-							candidate.effectHash === command.effectHash &&
-							sameWireValue(candidate.identity, command.identity),
-					);
+				const pending = snapshot.dynamicApprovals.find(
+					(candidate) =>
+						candidate.state === "pending" &&
+						candidate.expiresAtMs > now() &&
+						candidate.effectHash === command.effectHash &&
+						sameWireValue(candidate.identity, command.identity),
+				);
 				if (pending === undefined)
 					throw new CodexWorkbenchGatewayError(
 						"dynamic_approval_not_pending",
