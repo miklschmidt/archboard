@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:06'
-updated_date: '2026-09-03 20:59'
+updated_date: '2026-09-03 21:10'
 labels: []
 dependencies:
   - TASK-143.01.01
@@ -127,6 +127,14 @@ Define only the browser-facing workbench state and user-intent model that has no
 52. Rebuild the timeline, every item arm, each turn, and output metadata inside projectCodexBrowserState so private extensions cannot cross the browser boundary. Add one focused non-null command-item owner with top-level, turn, item, and domain-turn extensions.
 53. Project granular approval-policy booleans and active permission profile id/extends explicitly. Add decoded loose-object extensions at both nested settings records and prove projection success, omission, public values, and deep freeze.
 54. Run only focused timeline/settings projection and affected browser/gateway/type owners, both TypeScript projects, exact scoped lint/format/boundary/diff checks; commit separately and callback the parent for rereview.
+
+55. Thirteenth remediation: replace the browser-derived timeline projection input with an independent readonly owner presentation union whose item identities and statuses come from SessionThreadItem, whose approval identity comes from ItemApprovalIdentity, and whose cursor comes from the generated timeline response.
+
+56. Make projectCodexBrowserState translate the independent owner discriminators, nested domain items, turn presentation metadata, and cursor into all seven BrowserTimeline arms; retain private-extension omission and deep-freeze ownership without adding a producer or adapter.
+
+57. Confirm unsafe_url has no producer or consumer, delete the unreachable CodexApprovalErrorCode member, and adjust only genuine exhaustiveness owners if any appear.
+
+58. Run focused timeline red/green projection and type owners, affected approval error checks, both TypeScript configs, exact scoped lint/format/boundary/diff checks; commit separately and callback the parent for rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -214,6 +222,13 @@ Twelfth review remediation:
 - The timeline and nested-settings owners live in projection-closure.test.ts after scoped Oxlint correctly rejected growing projection.test.ts past the 500-line limit. The original file is 420 lines, the new file is 244 lines, and the focused inventory owner proves the new module owner runs exactly once through test:modules. No lint rule or lane was changed.
 
 Red evidence against c95ac1fe: both the non-null timeline with private extensions and valid loose nested settings records returned invalid_projection. Green evidence: 50 focused projection, browser-model, gateway, transport, and runtime tests passed with 293 assertions in 0.50s; the focused test-inventory owner passed 39/39 with 69 assertions. Root TypeScript passed in 1.87s and frontend TypeScript in 0.46s. Exact scoped Oxlint/Oxfmt, closure probes, and git diff checks passed. No broad module, system, repository, browser, full-test, or check lane ran. No known remediation residue remains; future live timeline production stays explicitly deferred to TASK-143.01.10. TASK-143.01.02 remains In Progress for parent rereview.
+
+Thirteenth review remediation:
+- CodexTimelineItemProjectionInput no longer imports or derives BrowserTimeline. Its seven-arm readonly owner union uses nested SessionThreadItem Pick selections for agent message, MCP/dynamic tool, command execution, file change, reasoning identity, and plan; ItemApprovalIdentity plus pending/settled/cancelled ApprovalState owns the approval arm. SessionTurn owns turn id/status and the generated thread/timeline/list response owns the cursor. Reasoning text and turn summary/output flags remain explicit presentation facts.
+- projectCodexBrowserState alone maps the independent owner discriminators to all seven browser media arms. It maps approval pending/settled/cancelled exhaustively to pending/resolved/cancelled, selects turn presentation metadata and cursor, and omits every injected domain, item, approval, presentation, and top-level extension. No live producer, store, protocol mirror, or alternate adapter was added; TASK-143.01.10 retains producer ownership.
+- unsafe_url had no source occurrence beyond CodexApprovalErrorCode, so the stale public arm was deleted without a replacement test or runtime change. No producer, consumer, or exact exhaustiveness owner existed.
+
+Red evidence against 2801d884: the independent seven-arm domain-shaped owner returned invalid_projection while the settings closure owner remained green. Green evidence: the focused projection-closure owner passed 2/2 with 35 assertions in 0.10s. Root TypeScript passed in 1.75s and frontend TypeScript in 0.35s. Exact scoped Oxlint, Oxfmt, browser-timeline-input residue, unsafe_url residue, positive domain-derivation, and git diff checks passed. No broad module, system, repository, browser, full-test, or check lane ran. Topology is unchanged. No known remediation residue remains; future live timeline production stays deferred to TASK-143.01.10. TASK-143.01.02 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -366,5 +381,17 @@ author: @codex
 created: 2026-09-03 20:59
 ---
 Twelfth timeline/settings remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 21:08
+---
+Thirteenth review remediation started at 2801d884. Replacing the browser-derived timeline input and deleting the unreachable unsafe_url error arm; TASK-143.01.02 remains In Progress.
+---
+
+author: @codex
+created: 2026-09-03 21:10
+---
+Thirteenth timeline-owner and approval-error remediation is green at every requested focused boundary. Preparing its separate commit and parent rereview callback; TASK-143.01.02 remains In Progress.
 ---
 <!-- COMMENTS:END -->

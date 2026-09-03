@@ -152,32 +152,56 @@ function projectQueue(input: CodexQueueProjectionInput): BrowserQueue {
 }
 
 type BrowserTimelineItem = BrowserTimeline["turns"][number]["items"][number];
+type BrowserTimelineApprovalStatus = Extract<
+	BrowserTimelineItem,
+	{ readonly media: "approval" }
+>["status"];
+
+function projectTimelineApprovalStatus(
+	state: Extract<CodexTimelineItemProjectionInput, { readonly kind: "approval_request" }>["state"],
+): BrowserTimelineApprovalStatus {
+	switch (state) {
+		case "pending":
+			return "pending";
+		case "settled":
+			return "resolved";
+		case "cancelled":
+			return "cancelled";
+	}
+	const unhandled: never = state;
+	return unhandled;
+}
 
 function projectTimelineItem(item: CodexTimelineItemProjectionInput): BrowserTimelineItem {
-	switch (item.media) {
-		case "text":
-			return { media: item.media, itemId: item.itemId, text: item.text };
-		case "tool":
-			return { media: item.media, itemId: item.itemId, name: item.name, status: item.status };
-		case "command":
+	switch (item.kind) {
+		case "agent_message":
+			return { media: "text", itemId: item.item.id, text: item.item.text };
+		case "tool_call":
 			return {
-				media: item.media,
-				itemId: item.itemId,
-				command: item.command,
-				status: item.status,
+				media: "tool",
+				itemId: item.item.id,
+				name: item.item.tool,
+				status: item.item.status,
 			};
-		case "fileChange":
-			return { media: item.media, itemId: item.itemId, status: item.status };
-		case "reasoning":
-			return { media: item.media, itemId: item.itemId, text: item.text };
-		case "plan":
-			return { media: item.media, itemId: item.itemId, text: item.text };
-		case "approval":
+		case "command_execution":
 			return {
-				media: item.media,
-				itemId: item.itemId,
-				approvalId: item.approvalId,
-				status: item.status,
+				media: "command",
+				itemId: item.item.id,
+				command: item.item.command,
+				status: item.item.status,
+			};
+		case "file_change":
+			return { media: "fileChange", itemId: item.item.id, status: item.item.status };
+		case "reasoning_summary":
+			return { media: "reasoning", itemId: item.item.id, text: item.text };
+		case "plan":
+			return { media: "plan", itemId: item.item.id, text: item.item.text };
+		case "approval_request":
+			return {
+				media: "approval",
+				itemId: item.identity.itemId,
+				approvalId: item.identity.approvalId,
+				status: projectTimelineApprovalStatus(item.state),
 			};
 	}
 	const unhandled: never = item;
@@ -193,11 +217,11 @@ function projectTimeline(input: BrowserProjectionInput["timeline"]): BrowserTime
 			turnId: entry.turn.id,
 			status: entry.turn.status,
 			items: entry.items.map(projectTimelineItem),
-			summary: entry.summary,
-			outputsIncluded: entry.outputsIncluded,
-			outputsTruncated: entry.outputsTruncated,
+			summary: entry.presentation.summary,
+			outputsIncluded: entry.presentation.outputs.included,
+			outputsTruncated: entry.presentation.outputs.truncated,
 		})),
-		nextCursor: input.nextCursor,
+		nextCursor: input.cursor,
 	};
 }
 

@@ -63,20 +63,30 @@ function projectionInput(authorities: IdentityAuthorities): BrowserProjectionInp
 
 function compileReadonlyTimeline(view: CodexTimelineProjectionInput): void {
 	// @ts-expect-error Timeline owner turns are readonly.
-	view.turns[0]!.summary = "mutated";
-	// @ts-expect-error Timeline owner items are deeply readonly.
-	view.turns[0]!.items[0]!.media = "text";
+	view.turns[0]!.presentation.summary = "mutated";
+	const first = view.turns[0]!.items[0]!;
+	if (first.kind === "agent_message") {
+		// @ts-expect-error Timeline owner source items are deeply readonly.
+		first.item.text = "mutated";
+	}
 }
 
 void compileReadonlyTimeline;
 
-test("timeline projection selects one non-null owner view and omits private extensions", () => {
+test("timeline projection maps all seven owner arms and omits private extensions", () => {
 	const authorities = createIdentityAuthorities();
 	const model = createCodexBrowserModel(authorities);
 	const input = projectionInput(authorities);
 	const threadId = authorities.identity.decoder.adoptThreadId("closure-thread");
 	const turnId = authorities.identity.decoder.adoptTurnId("timeline-turn");
-	const itemId = authorities.identity.decoder.adoptItemId("timeline-command");
+	const messageItemId = authorities.identity.decoder.adoptItemId("timeline-message");
+	const toolItemId = authorities.identity.decoder.adoptItemId("timeline-tool");
+	const commandItemId = authorities.identity.decoder.adoptItemId("timeline-command");
+	const fileItemId = authorities.identity.decoder.adoptItemId("timeline-file");
+	const reasoningItemId = authorities.identity.decoder.adoptItemId("timeline-reasoning");
+	const planItemId = authorities.identity.decoder.adoptItemId("timeline-plan");
+	const approvalItemId = authorities.identity.decoder.adoptItemId("timeline-approval-item");
+	const approvalId = authorities.identity.decoder.adoptApprovalId("timeline-approval");
 	const timeline = {
 		kind: "codex_timeline",
 		threadId,
@@ -89,20 +99,83 @@ test("timeline projection selects one non-null owner view and omits private exte
 				},
 				items: [
 					{
-						media: "command",
-						itemId,
-						command: "bun test focused",
-						status: "completed",
-						privateItemPath: "/private/timeline/item",
+						kind: "agent_message",
+						item: {
+							type: "agentMessage",
+							id: messageItemId,
+							text: "assistant text",
+							privateMessagePath: "/private/timeline/message",
+						},
+					},
+					{
+						kind: "tool_call",
+						item: {
+							type: "mcpToolCall",
+							id: toolItemId,
+							tool: "fetch_architecture",
+							status: "completed",
+							privateToolPath: "/private/timeline/tool",
+						},
+					},
+					{
+						kind: "command_execution",
+						item: {
+							type: "commandExecution",
+							id: commandItemId,
+							command: "bun test focused",
+							status: "completed",
+							privateCommandPath: "/private/timeline/command",
+						},
+					},
+					{
+						kind: "file_change",
+						item: {
+							type: "fileChange",
+							id: fileItemId,
+							status: "declined",
+							privateFilePath: "/private/timeline/file",
+						},
+					},
+					{
+						kind: "reasoning_summary",
+						item: {
+							type: "reasoning",
+							id: reasoningItemId,
+							privateReasoningPath: "/private/timeline/reasoning",
+						},
+						text: "reasoning summary",
+					},
+					{
+						kind: "plan",
+						item: {
+							type: "plan",
+							id: planItemId,
+							text: "implementation plan",
+							privatePlanPath: "/private/timeline/plan",
+						},
+					},
+					{
+						kind: "approval_request",
+						identity: {
+							kind: "item",
+							threadId,
+							turnId,
+							itemId: approvalItemId,
+							approvalId,
+							privateApprovalPath: "/private/timeline/approval",
+						},
+						state: "settled",
+						privateResolutionPath: "/private/timeline/resolution",
 					},
 				],
-				summary: "completed command",
-				outputsIncluded: true,
-				outputsTruncated: false,
-				privatePresentationPath: "/private/timeline/presentation",
+				presentation: {
+					summary: "completed turn",
+					outputs: { included: true, truncated: false },
+					privatePresentationPath: "/private/timeline/presentation",
+				},
 			},
 		],
-		nextCursor: "timeline-next",
+		cursor: "timeline-next",
 		activeRealtimeSessionAtPageStart: "private-realtime-session",
 	} as const satisfies CodexTimelineProjectionInput & {
 		readonly activeRealtimeSessionAtPageStart: string;
@@ -120,8 +193,26 @@ test("timeline projection selects one non-null owner view and omits private exte
 			{
 				turnId,
 				status: "completed",
-				items: [{ media: "command", itemId, command: "bun test focused", status: "completed" }],
-				summary: "completed command",
+				items: [
+					{ media: "text", itemId: messageItemId, text: "assistant text" },
+					{ media: "tool", itemId: toolItemId, name: "fetch_architecture", status: "completed" },
+					{
+						media: "command",
+						itemId: commandItemId,
+						command: "bun test focused",
+						status: "completed",
+					},
+					{ media: "fileChange", itemId: fileItemId, status: "declined" },
+					{ media: "reasoning", itemId: reasoningItemId, text: "reasoning summary" },
+					{ media: "plan", itemId: planItemId, text: "implementation plan" },
+					{
+						media: "approval",
+						itemId: approvalItemId,
+						approvalId,
+						status: "resolved",
+					},
+				],
+				summary: "completed turn",
 				outputsIncluded: true,
 				outputsTruncated: false,
 			},
@@ -131,7 +222,14 @@ test("timeline projection selects one non-null owner view and omits private exte
 	const wire = JSON.stringify(result.snapshot.timeline);
 	for (const privateValue of [
 		"/private/timeline/turn",
-		"/private/timeline/item",
+		"/private/timeline/message",
+		"/private/timeline/tool",
+		"/private/timeline/command",
+		"/private/timeline/file",
+		"/private/timeline/reasoning",
+		"/private/timeline/plan",
+		"/private/timeline/approval",
+		"/private/timeline/resolution",
 		"/private/timeline/presentation",
 		"private-realtime-session",
 	])
@@ -140,7 +238,9 @@ test("timeline projection selects one non-null owner view and omits private exte
 	expect(Object.isFrozen(result.snapshot.timeline?.turns)).toBe(true);
 	expect(Object.isFrozen(result.snapshot.timeline?.turns[0])).toBe(true);
 	expect(Object.isFrozen(result.snapshot.timeline?.turns[0]?.items)).toBe(true);
-	expect(Object.isFrozen(result.snapshot.timeline?.turns[0]?.items[0])).toBe(true);
+	expect(result.snapshot.timeline?.turns[0]?.items.every((item) => Object.isFrozen(item))).toBe(
+		true,
+	);
 });
 
 test("settings projection closes loose nested records and refuses secrets", () => {
