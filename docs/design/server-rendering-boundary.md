@@ -56,10 +56,17 @@ bun scripts/probe-server-rendering-chromium.ts
 The Chromium command is run twice for repeatability. One command starts one
 Chromium/profile and runs three serial normal jobs. It also exercises missing
 image, malformed Mermaid, timeout, child-exit, cleanup, and replacement paths.
-The per-job allowance is 20 seconds. Process cleanup receives TERM, then KILL
-within the same five-second cleanup allowance. Every failure includes the
-current fixture phase, page console/exception/network diagnostics, and the
-owned-process/profile audit.
+Before its normal session, injectable failures cover profile creation, reserved
+port, spawned Chromium, Vite creation, and Vite listen. Each reports the
+observed process ids, profile removal, port rebindability, server state, and
+watcher path count after cleanup.
+
+The per-job allowance is 20 seconds. The timeout oracle accepts only the
+`Runtime.evaluate` 20,000 ms timeout cause at 19,800–21,000 ms elapsed; a
+deliberate immediate evaluation error must be rejected as a different cause.
+Process cleanup receives TERM, then KILL within the same five-second cleanup
+allowance. Every failure includes the current fixture phase, page
+console/exception/network diagnostics, and the owned-resource audit.
 
 ## Emulation result
 
@@ -111,10 +118,12 @@ replacement.
 Malformed persisted input rejects with `Error`. Missing embedded-file data
 cannot pass the SVG semantic check. Malformed Mermaid rejects with `Error`.
 The intentional stalled job fails at the named `intentional-timeout` phase at
-20 seconds; the process is then cleaned and a replacement renders the same
-normal result. A separately terminated renderer rejects a subsequent job with
-the Chromium-exited error, and its process group/profile audit is clean. These
-are all direct report facts, rather than longer retry allowances.
+20 seconds only when its DevTools cause is the `Runtime.evaluate` timeout; the
+oracle rejected an immediate evaluation error in about 1 ms. The process is then
+cleaned and a replacement renders the same normal result. A separately
+terminated renderer rejects a subsequent job with the Chromium-exited error,
+and its process group/profile audit is clean. These are all direct report facts,
+rather than longer retry allowances.
 
 The memory measurement rules out a process per Board render. The production
 implementation needs one application-owned renderer and a serialized request

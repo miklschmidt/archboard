@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - "@codex"
 created_date: "2026-09-02 01:57"
-updated_date: "2026-09-03 03:42"
+updated_date: "2026-09-03 03:53"
 labels: []
 dependencies:
   - TASK-143.08.01
@@ -75,4 +75,8 @@ Chromium: one private-profile, loopback-only, `setsid`-owned process runs three 
 Validation: cgroup-contained `bun scripts/probe-server-rendering-emulation.ts`; cgroup-contained Chromium probe twice; focused `oxlint` of both probes; `oxfmt`; `git diff --check`. The focused standalone script compile reported no proof-file errors; `bun run type-check` remains blocked by pre-existing errors in `src/runtime/engine/git-process-owner.ts`, `src/runtime/engine/git.ts`, `src/runtime/engine/tests/board-lock-lease.test.ts`, and board-inspection system-test support. ACs remain unchecked and task remains In Progress for parent rereview.
 
 2026-09-03 rereview remediation: emulation now uses the same pre-mkdtemp argv refusal as Chromium. A normal contained run passed; an extra argument exited 1 with the owned-output refusal, and before/after audit of `/tmp/archboard-server-rendering-emulation-proof-*` found no new output or dependency-root residue. Focused format, lint, and diff checks pass. Task remains In Progress with ACs unchecked.
+
+2026-09-03 architecture rereview remediation: Chromium now acquires profile, loopback port, Chromium group, and output pipes through one owner that self-cleans before exposing a session. The Vite fixture similarly owns and closes server/watcher resources before returning. Direct injected seams covered before-profile, after-profile, after-port, after-spawn, before-vite-create, after-vite-create, and after-vite-listen; every audit had no survivors, removed profile, rebindable port, and (where created) a closed non-listening Vite server with zero watched paths.
+
+The timeout oracle now requires the causal `CdpTimeoutError` for `Runtime.evaluate` at exactly 20,000 ms, the fixture `intentional-timeout` phase, and 19,800–21,000 ms monotonic elapsed time. The normal proof observed 20,005.3 ms; an injected immediate evaluation failure was rejected by the oracle in 1.2 ms. A contained emulation run and one complete Chromium run passed. ACs remain unchecked and task remains In Progress.
 <!-- SECTION:NOTES:END -->
