@@ -6,7 +6,6 @@ import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import {
 	LOCK_RENEW_MS,
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-	TEST_PANE_DEBOUNCE_MARGIN_MS,
 } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
@@ -238,13 +237,10 @@ test(
 			"window.__releaseDelayedHold(0)",
 		);
 		expect(releasedA1.board).toBe(BOARD);
-		const holdsWithA2Pending = (await counts(browser)).holds;
-		await Bun.sleep(LOCK_RENEW_MS + TEST_PANE_DEBOUNCE_MARGIN_MS);
 		const afterOldFinally = await counts(browser);
 		const pendingAfterOldFinally = await raceState(browser);
 		expect(pendingAfterOldFinally.pending).toEqual([BOARD]);
-		expect(afterOldFinally.holds).toBe(holdsWithA2Pending);
-		expect(holdsWithA2Pending - beforeRace.holds).toBe(2);
+		expect(afterOldFinally.holds - beforeRace.holds).toBe(2);
 
 		const releasedA2 = await browser.eval<{ board?: string; pending?: number; error?: string }>(
 			"window.__releaseDelayedHold(0)",

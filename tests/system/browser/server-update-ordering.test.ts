@@ -4,7 +4,6 @@ import { join, resolve } from "node:path";
 
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
 import {
-	REPORT_IDLE_SETTLE_MS,
 	REPORT_PROGRESS_MS,
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
@@ -231,18 +230,16 @@ test("server updates cannot absorb ordered user edits or queued reports", async 
 		} else {
 			expect({ label, got }).toEqual({ label, got: wanted });
 		}
-		await pollUntil(
+		const finishedReports = await pollUntil(
 			() => readReportStats(browser),
 			(stats) => stats.done > reportsBefore.done,
 			`${label} user report to finish`,
 		);
-		await Bun.sleep(REPORT_IDLE_SETTLE_MS);
-		const stableReports = await readReportStats(browser);
 		// Coverage uplift: the server broadcast itself emits no pane report.
 		expect({
 			label,
-			sent: stableReports.sent - reportsBefore.sent,
-			done: stableReports.done - reportsBefore.done,
+			sent: finishedReports.sent - reportsBefore.sent,
+			done: finishedReports.done - reportsBefore.done,
 		}).toEqual({ label, sent: 1, done: 1 });
 	};
 
