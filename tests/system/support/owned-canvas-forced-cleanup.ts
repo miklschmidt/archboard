@@ -8,6 +8,7 @@ import {
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
+	type CodexProcessGroupOperations,
 } from "../../../src/runtime/codex-process/process-group.ts";
 import { processExists } from "./owned-canvas-ownership.ts";
 
@@ -37,25 +38,25 @@ function directChildGroups(parentPid: number): CodexProcessGroupIdentity[] {
 	});
 }
 
-async function stopChildGroups(groups: readonly CodexProcessGroupIdentity[]): Promise<void> {
-	const operations = createCodexProcessGroupOperations();
-	for (const group of groups) {
-		if (operations.inspect(group) === "owned") operations.signal(group, "SIGTERM");
-		let deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
-		while (operations.inspect(group) === "owned" && Date.now() < deadline) {
-			await sleep(TEST_CANVAS_HEALTH_POLL_MS);
-		}
-		if (operations.inspect(group) === "owned") operations.signal(group, "SIGKILL");
-		deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
-		while (operations.inspect(group) === "owned" && Date.now() < deadline) {
-			await sleep(TEST_CANVAS_HEALTH_POLL_MS);
-		}
-		const final = operations.inspect(group);
-		if (final !== "quiescent") {
-			throw new Error(
-				`Owned canvas child group ${group.pgid} did not become quiescent after forced canvas death (${final}).`,
-			);
-		}
+async function stopChildGroup(
+	group: CodexProcessGroupIdentity,
+	operations: Pick<CodexProcessGroupOperations, "inspect" | "signal">,
+): Promise<void> {
+	if (operations.inspect(group) === "owned") operations.signal(group, "SIGTERM");
+	let deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+	while (operations.inspect(group) === "owned" && Date.now() < deadline) {
+		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
+	}
+	if (operations.inspect(group) === "owned") operations.signal(group, "SIGKILL");
+	deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+	while (operations.inspect(group) === "owned" && Date.now() < deadline) {
+		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
+	}
+	const final = operations.inspect(group);
+	if (final !== "quiescent") {
+		throw new Error(
+			`Owned canvas child group ${group.pgid} did not become quiescent after forced canvas death (${final}).`,
+		);
 	}
 }
 
@@ -73,8 +74,46 @@ function removeExactStorageLock(storageLock: string, canvasPid: number): void {
 	}
 }
 
+export type ForcedCanvasParentOutcome =
+	| { readonly exited: true }
+	| { readonly exited: false; readonly failure: Error };
+
+export interface CompleteCapturedCanvasCleanupOptions {
+	readonly groups: readonly CodexProcessGroupIdentity[];
+	readonly operations: Pick<CodexProcessGroupOperations, "inspect" | "signal">;
+	readonly parent: ForcedCanvasParentOutcome;
+	readonly removeStorageLock: () => void;
+}
+
+export async function completeCapturedCanvasCleanup(
+	options: CompleteCapturedCanvasCleanupOptions,
+): Promise<void> {
+	const failures: unknown[] = options.parent.exited ? [] : [options.parent.failure];
+	for (const group of options.groups) {
+		try {
+			await stopChildGroup(group, options.operations);
+		} catch (error) {
+			failures.push(error);
+		}
+	}
+	if (options.parent.exited) {
+		try {
+			options.removeStorageLock();
+		} catch (error) {
+			failures.push(error);
+		}
+	}
+	if (failures.length === 1) throw failures[0];
+	if (failures.length > 1) {
+		throw new AggregateError(
+			failures,
+			"Owned canvas parent and captured descendant cleanup reported multiple failures.",
+		);
+	}
+}
+
 export interface ForcedCanvasCleanup {
-	complete(): Promise<void>;
+	complete(parent: ForcedCanvasParentOutcome): Promise<void>;
 }
 
 /** Capture exact child ownership before SIGKILL makes the parent process tree unavailable. */
@@ -90,10 +129,15 @@ export function captureForcedCanvasCleanup(options: {
 		"codex-home",
 		".archboard-codex-process.lock",
 	);
+	const operations = createCodexProcessGroupOperations();
 	return {
-		async complete() {
-			await stopChildGroups(groups);
-			removeExactStorageLock(storageLock, options.canvasPid);
+		complete(parent) {
+			return completeCapturedCanvasCleanup({
+				groups,
+				operations,
+				parent,
+				removeStorageLock: () => removeExactStorageLock(storageLock, options.canvasPid),
+			});
 		},
 	};
 }

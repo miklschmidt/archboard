@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:36'
-updated_date: '2026-09-03 17:30'
+updated_date: '2026-09-03 17:48'
 labels: []
 dependencies:
   - TASK-143.06.08
@@ -31,6 +31,8 @@ modified_files:
   - tests/system/board-inspection/package-read-only.test.ts
   - tests/system/board-inspection/support/package-process.ts
   - tests/system/support/owned-canvas.ts
+  - tests/system/support/owned-canvas-forced-cleanup.ts
+  - tests/system/support/owned-canvas-forced-cleanup.test.ts
   - tests/system/support/owned-canvas-term-escalation.test.ts
   - tests/system/canvas-state/codex-workbench-production-cleanup.test.ts
   - tests/system/canvas-state/codex-workbench-production.test.ts
@@ -262,6 +264,10 @@ Lifecycle rereview remediation: package-process begins leader/stdout/stderr owne
 Rebased the complete reviewed c2d86ef9..6191abb1 range onto canonical 9520e093 without a merge. Resolved three TASK-148 overlaps by preserving deterministic fake-time advancement, observed pane-message synchronization, and service-level board creation while retaining the recovery contract changes. Focused post-rebase owners passed: six package/process contracts 6/6 in 6.93s, owned-canvas TERM escalation 1/1 in 1.20s, board-write observers 4/4 in 0.27s, and settled fsync parser in 0.02s. Root typecheck is blocked by canonical TASK-148.07 commit 510c6959: tests/system/repository-policy/support/test-wall-clock-policy.ts accesses arguments and body on generic Babel Node at lines 182-183. The failing file plus package.json, bun.lock, bunfig.toml, and tsconfig.json are unchanged from base 9520e093. Per coordinator instruction, did not patch the unrelated canonical defect and did not start bun run check.
 
 Resumed on canonical 72374313 after TASK-148.07's published Babel AST narrowing. The complete 9520e093..0d21e4d range rebased without conflicts or merges, and root typecheck passed in 1.94s. The first cgroup-limited complete gate stopped in lint after 0.77s because replayed board-navigator.test.ts had 506 lines against the existing 500-line rule. Removed seven non-semantic blank lines, leaving the same owner and assertions at 499 lines; exact Oxfmt and Oxlint passed, and the full focused board-navigator browser owner passed 2/2 with 64 expectations in 7.62s. The fresh complete gate will run on the committed remediation head.
+
+Correction to the preceding future-tense statement: the fresh complete gate already ran successfully on pre-remediation head cbbdca1acf4abae711899f907e6de8fad7b56f55. Unit archboard-task143-final-cbbdca1.service used MemoryMax=12G, MemorySwapMax=2G, TasksMax=2048, KillMode=control-group, and TimeoutStopSec=5s. It exited 0 after 8m12.465s wall time, peaked at 5.5G memory with 0B swap, and passed lint, formatting, both TypeScript checks, frontend build (1,906 modules), 361 system owners, 166 repository owners, all 18 browser owners, and cleanup/residue checks. This gate belongs only to cbbdca1; the later review-driven cleanup remediation uses its focused failure-path owner and exact static checks instead of claiming the old complete gate ran on the new head. The fixed pre-remediation range 72374313864089abf71c3eece5bdfdac0f7d5e64..cbbdca1acf4abae711899f907e6de8fad7b56f55 contains 33 commits, superseding the earlier count of 32.
+
+Review remediation after cbbdca1: a new deterministic no-process forced-cleanup owner was first red because completeCapturedCanvasCleanup was absent, then passed all three contracts after implementation. Captured child groups are attempted independently and failures aggregate; exact storage-lock removal is attempted only after the owned parent is proven exited; and an unsettled parent now runs captured descendant cleanup, retains its lock, and surfaces parent plus descendant failures together. Focused validation passed 14/14 tests with 80 expectations across owned-canvas-forced-cleanup.test.ts, owned-canvas.test.ts, and owned-canvas-term-escalation.test.ts in 7.37s. Exact Oxlint, Oxfmt, git diff --check, generated-contract verification, and root TypeScript check passed. No complete gate, broad system lane, browser lane, timeout increase, lint/type weakening, production test hook, or six-package contract rerun was used; the shared package helper was not changed.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

@@ -260,13 +260,18 @@ export async function startOwnedCanvas({
 				await waitForExit(generation, TEST_CANVAS_SHUTDOWN_TIMEOUT_MS);
 			}
 		}
-		if (!generation.exit) {
-			throw new Error(
-				`Owned canvas generation ${generation.number} did not exit after SIGKILL.` +
-					pathsDiagnostic,
+		if (forced)
+			await forcedCleanup!.complete(
+				generation.exit
+					? { exited: true }
+					: {
+							exited: false,
+							failure: new Error(
+								`Owned canvas generation ${generation.number} did not exit after SIGKILL.` +
+									pathsDiagnostic,
+							),
+						},
 			);
-		}
-		if (forced) await forcedCleanup!.complete();
 		if (currentGeneration === generation) currentGeneration = null;
 	};
 	const startAttempt = async (candidate: number): Promise<Generation> => {
