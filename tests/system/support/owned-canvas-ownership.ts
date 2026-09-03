@@ -15,6 +15,34 @@ export interface OwnedCanvasPaths {
 	readonly temporary: string;
 }
 
+export type OwnedCanvasEnvironment = Readonly<Record<string, string | undefined>>;
+export type OwnedCanvasEnvironmentPaths = Pick<
+	OwnedCanvasPaths,
+	"home" | "xdgConfig" | "xdgState" | "temporary"
+>;
+
+export function buildOwnedCanvasEnvironment(options: {
+	paths: OwnedCanvasEnvironmentPaths;
+	port: number;
+	vault: string;
+	env?: OwnedCanvasEnvironment;
+}): OwnedCanvasEnvironment {
+	const toolEnvironment: OwnedCanvasEnvironment =
+		process.env.PATH === undefined ? {} : { PATH: process.env.PATH };
+	return {
+		...toolEnvironment,
+		...options.env,
+		HOME: options.paths.home,
+		XDG_CONFIG_HOME: options.paths.xdgConfig,
+		XDG_STATE_HOME: options.paths.xdgState,
+		TMPDIR: options.paths.temporary,
+		PORT: String(options.port),
+		HOST: "127.0.0.1",
+		ARCHBOARD_VAULT: options.vault,
+		LOG_LEVEL: "error",
+	};
+}
+
 const ownedCanvasNamespaceParent = os.tmpdir();
 const ownedCanvasNamespacePrefix = "archboard-owned-canvas-";
 const ownedCanvasNamespacePattern = /^archboard-owned-canvas-[A-Za-z0-9]{6}$/;

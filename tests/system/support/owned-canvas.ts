@@ -9,14 +9,23 @@ import {
 	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
 	TEST_CANVAS_STARTUP_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
-import { createOwnedCanvasPaths, type OwnedCanvasPaths } from "./owned-canvas-ownership.ts";
+import {
+	buildOwnedCanvasEnvironment,
+	createOwnedCanvasPaths,
+	type OwnedCanvasPaths,
+} from "./owned-canvas-ownership.ts";
 
 export {
+	buildOwnedCanvasEnvironment,
 	isOwnedCanvasNamespaceRoot,
 	processExists,
 	waitForProcessExit,
 } from "./owned-canvas-ownership.ts";
-export type { OwnedCanvasPaths } from "./owned-canvas-ownership.ts";
+export type {
+	OwnedCanvasEnvironment,
+	OwnedCanvasEnvironmentPaths,
+	OwnedCanvasPaths,
+} from "./owned-canvas-ownership.ts";
 
 type Exit = { code: number | null; signal: NodeJS.Signals | null; expected: boolean };
 type Environment = Readonly<Record<string, string | undefined>>;
@@ -254,21 +263,8 @@ export async function startOwnedCanvas({
 		if (currentGeneration === generation) currentGeneration = null;
 	};
 	const startAttempt = async (candidate: number): Promise<Generation> => {
-		const toolEnvironment: Environment =
-			process.env.PATH === undefined ? {} : { PATH: process.env.PATH };
 		const child = spawn(process.execPath, [serverPath], {
-			env: {
-				...toolEnvironment,
-				...env,
-				HOME: paths.home,
-				XDG_CONFIG_HOME: paths.xdgConfig,
-				XDG_STATE_HOME: paths.xdgState,
-				TMPDIR: paths.temporary,
-				PORT: String(candidate),
-				HOST: "127.0.0.1",
-				ARCHBOARD_VAULT: vault,
-				LOG_LEVEL: "error",
-			},
+			env: buildOwnedCanvasEnvironment({ paths, port: candidate, vault, env }),
 			stdio: ["ignore", "ignore", "pipe"],
 		});
 		if (child.pid === undefined) throw new Error("Owned canvas has no process id.");
