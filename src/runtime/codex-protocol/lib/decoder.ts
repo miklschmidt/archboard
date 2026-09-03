@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { normalizeCodexJsonWire } from "../../../shared/codex-app-server-contract/index.js";
 import { CODEX_PROTOCOL_VERSION, isSupportedCodexUserAgent } from "./version.js";
 import {
 	CLIENT_REQUEST_PARAM_SCHEMAS,
@@ -208,12 +209,22 @@ function decodeSchema<T extends z.ZodTypeAny>(
 	schema: T,
 	value: unknown,
 ): z.infer<T> {
-	const result = schema.safeParse(value);
+	let normalized: unknown;
+	try {
+		normalized = normalizeCodexJsonWire(value);
+	} catch (error) {
+		throw new ProtocolDecodeError({
+			method,
+			direction,
+			issues: [{ path: [], message: error instanceof Error ? error.message : String(error) }],
+		});
+	}
+	const result = schema.safeParse(normalized);
 	if (!result.success)
 		throw new ProtocolDecodeError({
 			method,
 			direction,
-			issues: normalizeIssues(result.error.issues, value),
+			issues: normalizeIssues(result.error.issues, normalized),
 		});
 	return result.data;
 }

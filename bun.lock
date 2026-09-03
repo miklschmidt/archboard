@@ -9,6 +9,7 @@
         "@base-ui/react": "1.7.0",
         "@excalidraw/excalidraw": "0.18.1",
         "@excalidraw/mermaid-to-excalidraw": "2.2.2",
+        "@openai/codex": "0.151.0",
         "clsx": "2.1.1",
         "commander": "15.0.0",
         "cors": "2.8.6",
@@ -24,7 +25,6 @@
         "zod": "4.4.3",
       },
       "devDependencies": {
-        "@openai/codex": "0.151.0",
         "@tailwindcss/vite": "4.3.3",
         "@types/bun": "1.4.0",
         "@types/cors": "2.8.19",

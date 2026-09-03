@@ -1,11 +1,22 @@
 import { z } from "zod";
 
+import type {
+	CodexInitializeCapabilities,
+	CodexLoginAccountParams,
+	CodexOutputConformance,
+} from "../../codex-app-server-contract/index.js";
 import {
 	boundedText,
 	JsonValueSchema,
 	NonNegativeIntegerSchema,
 	optionalNullableText,
 } from "./scalars.js";
+
+function codexOutputSchema<Wire>() {
+	return <Schema extends z.ZodType>(
+		schema: Schema & CodexOutputConformance<Wire, z.output<Schema>>,
+	): Schema => schema;
+}
 
 export const INITIALIZE_CAPABILITIES = Object.freeze({
 	experimentalApi: true,
@@ -15,15 +26,17 @@ export const INITIALIZE_CAPABILITIES = Object.freeze({
 	extensions: Object.freeze({}),
 } as const);
 
-export const InitializeCapabilitiesSchema = z
-	.object({
-		experimentalApi: z.literal(true),
-		requestAttestation: z.literal(false),
-		mcpServerOpenaiFormElicitation: z.literal(true),
-		optOutNotificationMethods: z.tuple([]),
-		extensions: z.object({}).strict(),
-	})
-	.strict();
+export const InitializeCapabilitiesSchema = codexOutputSchema<CodexInitializeCapabilities>()(
+	z
+		.object({
+			experimentalApi: z.literal(true),
+			requestAttestation: z.literal(false),
+			mcpServerOpenaiFormElicitation: z.literal(true),
+			optOutNotificationMethods: z.tuple([]),
+			extensions: z.object({}).strict(),
+		})
+		.strict(),
+);
 
 export const LOGIN_VARIANTS = [
 	"apiKey",
@@ -103,22 +116,26 @@ const BedrockAccessKeysLoginSchema = z
 	})
 	.strict();
 
-export const LoginAccountParamsSchema = z.discriminatedUnion("type", [
-	ApiKeyLoginSchema,
-	ChatgptLoginSchema,
-	DeviceCodeLoginSchema,
-	AuthTokensLoginSchema,
-	BedrockApiKeyLoginSchema,
-	BedrockAccessKeysLoginSchema,
-]);
+export const LoginAccountParamsSchema = codexOutputSchema<CodexLoginAccountParams>()(
+	z.discriminatedUnion("type", [
+		ApiKeyLoginSchema,
+		ChatgptLoginSchema,
+		DeviceCodeLoginSchema,
+		AuthTokensLoginSchema,
+		BedrockApiKeyLoginSchema,
+		BedrockAccessKeysLoginSchema,
+	]),
+);
 export type LoginAccountParams = z.infer<typeof LoginAccountParamsSchema>;
 
-export const SupportedLoginAccountParamsSchema = z.discriminatedUnion("type", [
-	ApiKeyLoginSchema,
-	ChatgptLoginSchema,
-	BedrockApiKeyLoginSchema,
-	BedrockAccessKeysLoginSchema,
-]);
+export const SupportedLoginAccountParamsSchema = codexOutputSchema<CodexLoginAccountParams>()(
+	z.discriminatedUnion("type", [
+		ApiKeyLoginSchema,
+		ChatgptLoginSchema,
+		BedrockApiKeyLoginSchema,
+		BedrockAccessKeysLoginSchema,
+	]),
+);
 export type SupportedLoginAccountParams = z.infer<typeof SupportedLoginAccountParamsSchema>;
 
 export const BedrockSetupParamsSchema = z.discriminatedUnion("type", [
