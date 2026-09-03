@@ -117,7 +117,7 @@ function snapshot(
 			childId,
 			epoch,
 			threadId,
-			source: "appServer",
+			sourcePresentation: "standard",
 			status: "idle",
 			loaded: true,
 			canAcceptDirectInput: true,

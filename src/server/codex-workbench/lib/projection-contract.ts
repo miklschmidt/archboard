@@ -8,7 +8,6 @@ import type {
 	BrowserSemanticDelivery,
 	BrowserSettings,
 	BrowserSnapshot,
-	BrowserThreadLink,
 	BrowserTimeline,
 } from "../../../shared/codex-browser-model/index.js";
 import type {
@@ -24,6 +23,7 @@ import type {
 import type { ApprovalOwnerView, DeepReadonly } from "../../../runtime/codex-approvals/index.js";
 import type { DynamicToolApprovalRequest } from "../../../runtime/codex-dynamic-tools/index.js";
 import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
+import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
 import type { RealtimeTranscriptRecord } from "../../../shared/codex-realtime-host/index.js";
 
 export interface CodexAccountProjectionInput {
@@ -123,7 +123,7 @@ export interface BrowserProjectionInput {
 	readonly readiness: BrowserReadiness;
 	readonly account: BrowserAccountProjectionInput;
 	readonly login: BrowserLogin;
-	readonly threadLink: BrowserThreadLink;
+	readonly threadLink: ThreadLinkSnapshot;
 	readonly timeline: BrowserTimeline | null;
 	readonly queue: CodexQueueProjectionInput;
 	readonly settings: readonly CodexSettingsProjectionInput[];

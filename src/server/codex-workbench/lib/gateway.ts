@@ -455,13 +455,12 @@ export function createCodexWorkbenchGateway(
 				binding.revision < 0
 			)
 				throw new Error("the thread-link owner returned an invalid pane binding");
-			model.BrowserThreadLinkSchema.parse(binding.link);
 			return binding;
 		} catch (error) {
 			if (error instanceof CodexWorkbenchGatewayError) throw error;
 			throw new CodexWorkbenchGatewayError(
 				"invalid_projection",
-				"The thread-link owner returned invalid browser state.",
+				"The thread-link owner returned an invalid pane binding.",
 				{ cause: error },
 			);
 		}
