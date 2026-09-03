@@ -111,7 +111,7 @@ evidence concerns the live session:
 
 ```bash
 ./bin/canvas browser panes --text
-./bin/canvas browser selection --pane left --text
+./bin/canvas browser selection --pane primary --text
 ./bin/canvas browser open
 ./bin/canvas browser show payments@option-a --pane right
 ./bin/canvas browser viewport --pane right --fit

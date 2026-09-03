@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-02 01:58'
-updated_date: '2026-09-03 10:31'
+updated_date: '2026-09-03 10:33'
 labels: []
 dependencies:
   - TASK-143.08.06.04
@@ -56,6 +56,8 @@ Make the browser-independent contract impossible to miss for agents, maintainers
 6. Apply spec-review remediation: confine executable browser examples to the live-session skill section; replace the archboard-dev scratch probe with a named disposable zero-client board and pass selection IDs explicitly to promote; correct persisted-board inventory guidance; strengthen the structural skill guard; and revise the retained selection-inspector owner to baseline note bytes before browser setup, use released browser lifecycle CLI calls, and prove right-pane capture with asymmetric markers. Keep one browser launch and one test, with three additional supervised CLI children replacing three direct API calls.
 
 7. Apply standards-rereview corrections only: make the archboard-dev live round trip a deterministic existing-primary-pane workflow and replace the two remaining ADR 0009 no-default-board references with ADR 0020 persisted named-board language. Run no browser owner and add no tests.
+
+8. Apply the final documentation-only selector correction: use primary for the pre-split selection example in the canonical skill and TESTING.md, leaving every post-split right-pane command unchanged. Run only the skill policy owner and scoped documentation checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -74,4 +76,8 @@ The retained selection-inspector owner snapshots both note byte sequences before
 Standards rereview after 4d567471 is complete. The tracked archboard-dev skill now inventories the existing browser pane, shows the disposable probe board in the primary pane, and permits drag or click only after that display step. Selection reads from the same primary pane, so the documented round trip remains deterministic and never creates a second pane.
 
 The no-active-board bullet in the skill and the takeBoardFlag comment now cite ADR 0020 and describe persisted named boards. No behavior or test code changed. Added cost is zero tests, zero browser launches, and zero runtime processes. Focused skill policy passed 8/8 in 0.069s. Scoped Oxfmt, Oxlint, and git diff --check pass. The package-help owner was not rerun because the source edit changes only a private comment and leaves public help untouched. The browser owner was not rerun as directed. Task remains In Progress with every AC unchecked.
+
+Final documentation correction after e4d277b4 is complete. The pre-split selection example now targets the existing primary pane in skills/archboard/SKILL.md and TESTING.md. Command order is unchanged, and every post-split show, viewport, and capture command still targets the right pane.
+
+No production code or tests changed. Added cost is zero runtime behavior, zero tests, zero browser launches, and zero product processes. Focused skill policy passed 8/8 in 0.093s. Scoped Oxfmt and git diff --check pass. No browser or process owner ran. Task remains In Progress with every AC unchecked.
 <!-- SECTION:NOTES:END -->
