@@ -69,6 +69,48 @@ export interface EpochOperationRecord {
 	readonly updatedAtMs: number;
 }
 
+export type EpochThreadOwnership = "created" | "attached";
+
+export interface EpochThreadOwnershipProvenance {
+	readonly ownership: EpochThreadOwnership;
+	readonly record: EpochOperationRecord;
+}
+
+const THREAD_OWNERSHIP_CONTRACTS = [
+	{ ownership: "created", kind: "create_thread", rpc: "thread/start" },
+	{ ownership: "created", kind: "fork_thread", rpc: "thread/fork" },
+	{ ownership: "attached", kind: "thread_link", rpc: "thread/read" },
+] as const satisfies readonly {
+	readonly ownership: EpochThreadOwnership;
+	readonly kind: string;
+	readonly rpc: string;
+}[];
+
+/** Resolve only a canonical operation that establishes ownership of this thread. */
+export function resolveThreadOwnershipProvenance(
+	manifest: EpochManifest,
+	threadId: ThreadId,
+): EpochThreadOwnershipProvenance | null {
+	for (let index = manifest.records.length - 1; index >= 0; index -= 1) {
+		const record = manifest.records[index];
+		if (
+			record === undefined ||
+			record.provenance.threadId !== threadId ||
+			(record.status !== "committed" && record.status !== "inspect_only")
+		) {
+			continue;
+		}
+		const contract = THREAD_OWNERSHIP_CONTRACTS.find(
+			(candidate) =>
+				candidate.kind === record.operation.kind && candidate.rpc === record.operation.rpc,
+		);
+		if (contract !== undefined) {
+			return Object.freeze({ ownership: contract.ownership, record });
+		}
+	}
+	return null;
+}
+
 export interface ActiveEpoch {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
