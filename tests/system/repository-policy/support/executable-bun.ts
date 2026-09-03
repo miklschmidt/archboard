@@ -22,7 +22,7 @@ function unquotedShellText(command: string): string {
 			if (character === "\n") {
 				comment = false;
 				result += "\n";
-			}
+			} else result += " ";
 			continue;
 		}
 		if (escaped) {
@@ -48,6 +48,7 @@ function unquotedShellText(command: string): string {
 		}
 		if (startsShellComment(command, index)) {
 			comment = true;
+			result += " ";
 			continue;
 		}
 		result += character;

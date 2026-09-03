@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-03 17:33'
-updated_date: '2026-09-03 18:43'
+updated_date: '2026-09-03 18:49'
 labels: []
 dependencies:
   - TASK-143.08.05
@@ -80,7 +80,7 @@ Implementation must wait for TASK-143.08.05 and for reconciliation of the active
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Replace the separate Bun-run and Bun-test regex paths with one quote/comment-aware executable Bun invocation extractor; derive graph edges and native selections from its parsed run/test arguments, then add inert quoted/echoed and commented test mutations. 2. Keep one modest partial-complement exact-finding case normal and move the multi-size comparison/bucket-scan matrix into the capacity owner. 3. Reduce package-read-only-contract to command output, unchanged vault bytes, and zero HTTP contact; inspect existing engine coverage before deciding whether ingest rejection needs an owner. 4. Run only focused inventory mutations, the normal semantic case, modest capacity matrix, simplified package owner, both TypeScript projects, exact lint/format/diff, then record evidence and create a separate remediation commit. 5. Send READY_FOR_REREVIEW with the fixed range and keep TASK-148.13 In Progress.
+1. Make comment masking length-preserving in the single executable Bun parser so match offsets stay aligned with source arguments. Add direct parser and inventory mutations for full-line and trailing-comment newline cases, including opt-in reachability. 2. Delete the remaining 32-item partial-complement directional scale/formula case from the normal sweep-filtering owner without moving or replacing it. 3. Run focused parser/inventory checks, remaining normal sweep-filtering semantics, both TypeScript projects, exact lint/format/diff, and inventory counts. 4. Record the remediation through Backlog, commit separately, and callback READY_FOR_REREVIEW while keeping TASK-148.13 In Progress.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -144,6 +144,20 @@ The normal package read-only owner now asserts only command status/output, byte-
 Counts remain 200/83/18/16 normal and 8/13/1/2 opt-in; static inventory errors remain empty.
 
 Focused validation: inventory plus CI policy 46 tests in 28 ms; four CI parser compatibility cases in 17 ms; normal partial-complement semantic owner 1 test in 96 ms; opt-in 32/64/128/256 work matrix 1 test in 700 ms; simplified package read-only owner 1 test in 294 ms; root TypeScript 1.69 s; frontend TypeScript 0.44 s; Oxlint 0.03 s; Oxfmt 0.002 s; diff check passed. No broad or long lane ran.
+
+Focused tests left no `archboard-inventory-tsx-*` or `archboard-browser-preflight-*` directories in `/tmp`. Previously reported pre-existing residue remains untouched. Task stays In Progress for rereview.
+
+Third review remediation on top of b5cd08a0:
+
+The executable Bun parser now preserves source offsets while masking comments. It writes one space for the `#` delimiter and every non-newline comment byte, while retaining each newline. Match indexes in masked text therefore address the same byte positions in the original source before argument parsing.
+
+New focused reds cover both `bun run` and `bun test` after a full-line comment and after a trailing comment plus newline. Both return exact arguments. A separate inventory mutation puts `bun run test:opt-in:capacity` after a full-line comment and now receives the required fail-closed opt-in reachability error. Existing comment, echo, quote, and substitution cases remain green and inert.
+
+Deleted the normal 32-item partial-complement directional pair/formula test from `sweep-filtering.test.ts`. It was duplicate scale coverage already owned by the opt-in partial-complement capacity matrix. The normal file now contains eight unique ordinary filtering cases and passed in 59 ms.
+
+Counts remain 200/83/18/16 normal and 8/13/1/2 opt-in because the deletion removes a duplicate case, not an owner file. Static inventory errors remain empty.
+
+Focused validation: inventory plus CI policy 49 tests in 36 ms; remaining normal sweep-filtering semantics 8 tests in 59 ms; root TypeScript 1.73 s; frontend TypeScript 0.37 s; Oxlint passed; Oxfmt passed in 2 ms; diff check passed. The capacity representative was unchanged and was not rerun. No broad or long lane ran.
 
 Focused tests left no `archboard-inventory-tsx-*` or `archboard-browser-preflight-*` directories in `/tmp`. Previously reported pre-existing residue remains untouched. Task stays In Progress for rereview.
 <!-- SECTION:NOTES:END -->
