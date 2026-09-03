@@ -173,29 +173,6 @@ export const DEFAULT_SETTLE_MS = 1200;
  */
 export const DEFAULT_SETTLE_MAX_MS = 6000;
 
-// ── Pushing change events into a live thread ──────────────────────────────
-
-/**
- * How long injection waits after a change event before pushing it into the
- * thread. Overridable with ARCHBOARD_INJECT_DEBOUNCE_MS.
- *
- * Stacked on top of the settle window rather than replacing it: the feed has
- * already coalesced the movement, and this coalesces the events. A person
- * rearranging three boxes in a row produces three settled events and should
- * cost the agent one interruption.
- */
-export const DEFAULT_INJECT_DEBOUNCE_MS = 4000;
-
-/**
- * The floor on how often the thread may be interrupted, whatever the board is
- * doing. Overridable with ARCHBOARD_INJECT_MIN_INTERVAL_MS.
- *
- * The debounce coalesces a burst; this bounds a steady stream. Somebody
- * working continuously on the board generates events forever, and an agent
- * being told about them every four seconds cannot get anything else done.
- */
-export const DEFAULT_INJECT_MIN_INTERVAL_MS = 10_000;
-
 // ── Canvas application shutdown (ADR 0021) ────────────────────────────────
 
 /**
