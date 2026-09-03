@@ -116,7 +116,8 @@ export async function startCanvas(options: {
 	writeFileSync(
 		wrapper,
 		`import { mock } from "bun:test";\n` +
-			`mock.module(${JSON.stringify(executableModule)}, () => ({ resolveProjectCodexExecutable: () => process.env.ARCHBOARD_TEST_CODEX_EXECUTABLE }));\n` +
+			`const actualExecutable = await import(${JSON.stringify(executableModule)});\n` +
+			`mock.module(${JSON.stringify(executableModule)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => process.env.ARCHBOARD_TEST_CODEX_EXECUTABLE }));\n` +
 			`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
 			`await startServer();\n`,
 	);

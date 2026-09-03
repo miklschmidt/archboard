@@ -68,7 +68,8 @@ function wrapperSource(fixture: ProductionFixture, mode: "bind-race" | "runtime-
 			: "") +
 		`  return ownedServer;\n` +
 		`} }));\n` +
-		`mock.module(${JSON.stringify(executableModule)}, () => ({ resolveProjectCodexExecutable: () => ${JSON.stringify(fixture.executablePath)} }));\n` +
+		`const actualExecutable = await import(${JSON.stringify(executableModule)});\n` +
+		`mock.module(${JSON.stringify(executableModule)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => ${JSON.stringify(fixture.executablePath)} }));\n` +
 		`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
 		`await startServer();\n` +
 		(mode === "runtime-error"
@@ -117,7 +118,8 @@ function delayedListenWrapperSource(
 		`  };\n` +
 		`  return ownedServer;\n` +
 		`} }));\n` +
-		`mock.module(${JSON.stringify(executableModule)}, () => ({ resolveProjectCodexExecutable: () => ${JSON.stringify(fixture.executablePath)} }));\n` +
+		`const actualExecutable = await import(${JSON.stringify(executableModule)});\n` +
+		`mock.module(${JSON.stringify(executableModule)}, () => ({ ...actualExecutable, resolveProjectCodexExecutable: () => ${JSON.stringify(fixture.executablePath)} }));\n` +
 		`const { startServer } = await import(${JSON.stringify(serverEntry)});\n` +
 		`try {\n` +
 		`  await startServer();\n` +

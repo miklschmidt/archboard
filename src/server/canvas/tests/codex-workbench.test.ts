@@ -204,6 +204,59 @@ describe("production Codex owner lifecycle", () => {
 		await owner.shutdown();
 	});
 
+	for (const failure of [
+		{
+			name: "terminal prior-group cleanup",
+			code: "shutdown_failed",
+			message: "the prior Codex process group could not be proved empty",
+		},
+		{
+			name: "terminal replacement spawn",
+			code: "spawn_failed",
+			message: "the replacement Codex child could not spawn",
+		},
+	] as const) {
+		test(`${failure.name} fails the active recovery before another child arrives`, async () => {
+			const retained = emptyCodexWorkbenchRetainedState();
+			const events: string[] = [];
+			const process = fakeRestartingProcess(events);
+			const owner = installFakeCodexWorkbenchOwner(retained, {
+				createProcess: () => process.process,
+				createGeneration: async ({ generation }) => fakeGeneration(events, generation),
+			});
+			await owner.start();
+			const runtime = retained.control.runtime;
+			if (runtime?.identityLedger == null) throw new Error("missing retained identity ledger");
+			const exit = Object.freeze({
+				child: runtime.identityLedger.childId,
+				epoch: runtime.identityLedger.epoch,
+				code: 1,
+				signal: null,
+			});
+			runtime.exitBridge.event = exit;
+			runtime.exitBridge.handler?.handle(exit);
+			process.crash();
+			process.terminal(failure.code, failure.message);
+			for (let turn = 0; turn < 20 && retained.state === "starting"; turn++)
+				await Promise.resolve();
+
+			expect(owner.snapshot()).toMatchObject({
+				state: "failed",
+				ready: false,
+				failure: expect.stringContaining(failure.message),
+			});
+			expect(retained).toMatchObject({ owner: null, process: null, state: "failed" });
+			expect(process.process.snapshot()).toMatchObject({ state: "stopped", pid: null });
+			expect(retained.control.current).toBeNull();
+			expect(() => retained.control.wrappers.snapshot()).toThrow(
+				"no active retained owner dispatch",
+			);
+			expect(() => owner.gateway()).toThrow("no active retained owner dispatch");
+			expect(events).not.toContain("process:restart");
+			await owner.shutdown();
+		});
+	}
+
 	test("stops the owned child when generation startup fails", async () => {
 		const events: string[] = [];
 		const retained = emptyCodexWorkbenchRetainedState();

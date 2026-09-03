@@ -1,4 +1,5 @@
 import { spawn } from "child_process";
+import type { Readable } from "node:stream";
 import { fileURLToPath } from "url";
 import logger from "./logger.js";
 import {
@@ -17,12 +18,16 @@ import {
 
 export { foreignServiceError };
 import { readPidFile, removePidFile } from "./pidfile.js";
-import { CODEX_PROCESS_STDERR_MAX_BYTES } from "../codex-process/index.js";
 import {
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
 } from "../codex-process/executable.js";
 import { CODEX_COMPOSED_SHUTDOWN_MS } from "../../shared/timing/timing.js";
+import {
+	CANVAS_STARTUP_TERMINAL_FD_ENV,
+	parseCanvasStartupTerminalRecord,
+	type CanvasStartupTerminalRecord,
+} from "../../shared/canvas-startup-terminal/index.js";
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
@@ -70,36 +75,24 @@ function startupRefusal(message: string): Error {
 	return error;
 }
 
-function appendBounded(current: string, chunk: Uint8Array | string): string {
-	const next = current + (typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8"));
-	const bytes = Buffer.from(next, "utf8");
-	if (bytes.byteLength <= CODEX_PROCESS_STDERR_MAX_BYTES) return next;
-	return bytes.subarray(bytes.byteLength - CODEX_PROCESS_STDERR_MAX_BYTES).toString("utf8");
-}
-
-function conciseChildFailure(stderr: string): string {
-	const lines = stderr
-		.split(/\r?\n/u)
-		.map((line) => line.trim())
-		.filter(Boolean);
-	return lines.find((line) => line.startsWith("Error:")) ?? lines.at(-1) ?? "";
-}
-
 function isConcurrentOwnerRefusal(message: string): boolean {
-	return message.includes("Dedicated Codex roots are locked or colliding");
+	return (
+		message.includes("Dedicated Codex roots are locked or colliding") ||
+		(message.includes("Refusing to start canvas server") && message.includes("already listening"))
+	);
 }
 
-function waitForChildClose(closed: Promise<void>, timeoutMs: number): Promise<boolean> {
+function waitForPromise<T>(pending: Promise<T>, timeoutMs: number): Promise<T | null> {
 	return new Promise((resolve) => {
 		let settled = false;
-		const timer = setTimeout(() => finish(false), timeoutMs);
-		const finish = (value: boolean): void => {
+		const timer = setTimeout(() => finish(null), timeoutMs);
+		const finish = (value: T | null): void => {
 			if (settled) return;
 			settled = true;
 			clearTimeout(timer);
 			resolve(value);
 		};
-		void closed.then(() => finish(true));
+		void pending.then((value) => finish(value));
 	});
 }
 
@@ -202,19 +195,37 @@ export async function ensureCanvasRunning(
 	const serverEntry = fileURLToPath(new URL("../../server.ts", import.meta.url));
 	const child = spawn(process.execPath, [serverEntry], {
 		detached: true,
-		stdio: ["ignore", "ignore", "pipe"],
-		env: { ...process.env, PORT: String(canvasPort()), HOST: spawnBindHost() },
+		stdio: ["ignore", "ignore", "ignore", "pipe"],
+		env: {
+			...process.env,
+			PORT: String(canvasPort()),
+			HOST: spawnBindHost(),
+			[CANVAS_STARTUP_TERMINAL_FD_ENV]: "3",
+		},
 	});
-	let childStderr = "";
 	let childFailure: Error | null = null;
 	let deferredChildFailure: Error | null = null;
 	let childExit: { readonly code: number | null; readonly signal: NodeJS.Signals | null } | null =
 		null;
 	let resolveChildClosed!: () => void;
 	const childClosed = new Promise<void>((resolve) => void (resolveChildClosed = resolve));
-	child.stderr.on("data", (chunk: Buffer | string) => {
-		childStderr = appendBounded(childStderr, chunk);
+	const terminalStream = child.stdio[3] as Readable | null;
+	let terminalBuffer = "";
+	let resolveTerminal!: (record: CanvasStartupTerminalRecord | null) => void;
+	const terminalRecord = new Promise<CanvasStartupTerminalRecord | null>(
+		(resolve) => void (resolveTerminal = resolve),
+	);
+	terminalStream?.on("data", (chunk: Buffer | string) => {
+		terminalBuffer += typeof chunk === "string" ? chunk : chunk.toString("utf8");
+		const newline = terminalBuffer.indexOf("\n");
+		if (newline < 0) return;
+		try {
+			resolveTerminal(parseCanvasStartupTerminalRecord(terminalBuffer.slice(0, newline)));
+		} catch (error) {
+			childFailure = error instanceof Error ? error : new Error(String(error));
+		}
 	});
+	terminalStream?.once("close", () => resolveTerminal(null));
 	child.once("error", (error) => {
 		childFailure = error;
 	});
@@ -229,19 +240,31 @@ export async function ensureCanvasRunning(
 			} catch {
 				/* close observation below remains the authority. */
 			}
-			if (!(await waitForChildClose(childClosed, CODEX_COMPOSED_SHUTDOWN_MS))) {
-				try {
-					child.kill("SIGKILL");
-				} catch {
-					/* close observation below remains the authority. */
-				}
-				if (!(await waitForChildClose(childClosed, timeoutMs)))
-					throw startupRefusal(
-						`${failure.message} The failed canvas child (pid ${String(child.pid)}) could not be reaped; inspect it before retrying.`,
-					);
-			}
 		}
-		child.stderr.destroy();
+		const terminal = await terminalRecord;
+		if (terminal === null || terminal.canvasPid !== child.pid || terminal.cleanup !== "proven") {
+			terminalStream?.destroy();
+			throw startupRefusal(
+				`${failure.message} The failed canvas child (pid ${String(child.pid)}) did not prove terminal application cleanup; inspect that exact attempt before retrying.`,
+			);
+		}
+		if (childExit === null) {
+			try {
+				child.kill("SIGKILL");
+			} catch {
+				/* Terminal cleanup was proven before this outer-owner force. */
+			}
+			if (
+				(await waitForPromise(
+					childClosed.then(() => true),
+					CODEX_COMPOSED_SHUTDOWN_MS,
+				)) === null
+			)
+				throw startupRefusal(
+					`${failure.message} Terminal cleanup was proven, but the failed canvas child (pid ${String(child.pid)}) did not reap within the application shutdown boundary.`,
+				);
+		}
+		terminalStream?.destroy();
 		if (readPidFile(canvasPort()) === child.pid) removePidFile(canvasPort());
 		throw failure;
 	};
@@ -251,7 +274,7 @@ export async function ensureCanvasRunning(
 	while (Date.now() < deadline) {
 		if (isCanvasHealth(await healthOrNull(400))) {
 			markCanvasIdentityVerified();
-			child.stderr.destroy();
+			terminalStream?.destroy();
 			child.unref();
 			process.stderr.write(
 				`Canvas server running at ${EXPRESS_SERVER_URL} — open it in a browser for screenshots and mermaid conversion.\n`,
@@ -263,7 +286,7 @@ export async function ensureCanvasRunning(
 				startupRefusal(`Canvas server could not start. ${childFailure.message}`),
 			);
 		if (childExit !== null) {
-			const detail = conciseChildFailure(childStderr);
+			const detail = (await terminalRecord)?.message ?? "";
 			if (isConcurrentOwnerRefusal(detail)) {
 				deferredChildFailure ??= startupRefusal(detail);
 				await new Promise((resolve) => setTimeout(resolve, 250));
