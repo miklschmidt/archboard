@@ -102,13 +102,10 @@ function permissionsGrant(
 ): PermissionsResponse {
 	const scope = formValue(form, PERMISSION_SCOPE) === "session" ? "session" : "turn";
 	const strict = formFlag(form, PERMISSION_STRICT_REVIEW);
-	const network =
-		approval.requestedScope.network === null
-			? {}
-			: { network: { enabled: formFlag(form, PERMISSION_NETWORK) } };
 	return {
 		approvalKind: "permissions",
-		permissions: network,
+		// Only a request that names network access offers this decision at all.
+		permissions: { network: { enabled: formFlag(form, PERMISSION_NETWORK) } },
 		scope,
 		...(strict ? { strictAutoReview: true } : {}),
 	};
@@ -200,10 +197,11 @@ export function dynamicApprovalDraft(input: {
 	readonly approval: BrowserDynamicApproval;
 	readonly offerId: string;
 }): WorkbenchApprovalDraftResult {
+	// A dynamic approval offers a decision only while it is pending, and the
+	// closed model gives every pending approval its binding, so an absent
+	// binding and an unoffered decision are the same one refusal.
 	const binding = input.approval.binding;
-	if (binding === null)
-		return invalid("This dynamic approval has no browser binding to answer with.");
-	if (input.offerId !== OFFER_APPROVE && input.offerId !== OFFER_DECLINE)
+	if (binding === null || (input.offerId !== OFFER_APPROVE && input.offerId !== OFFER_DECLINE))
 		return invalid(UNKNOWN_OFFER);
 	const draft: DynamicRespondDraft = {
 		command: "dynamicApprovalRespond",

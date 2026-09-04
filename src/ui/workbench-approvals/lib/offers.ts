@@ -1,7 +1,4 @@
-import type {
-	BrowserApproval,
-	BrowserDynamicApproval,
-} from "../../../shared/codex-browser-model/index.js";
+import type { BrowserApproval } from "../../../shared/codex-browser-model/index.js";
 import type {
 	WorkbenchApprovalOffer,
 	WorkbenchApprovalPhase,
@@ -201,14 +198,16 @@ export function approvalOffers(
 	return Object.freeze(ordinaryOffers(approval, ordinarySpoken(approval, phase).eligible));
 }
 
-/** A dynamic coordination approval offers one approve or decline decision only. */
+/**
+ * A dynamic coordination approval offers one approve or decline decision only,
+ * and only while it is pending — which the closed model already ties to its
+ * browser binding.
+ */
 export function dynamicOffers(
-	approval: BrowserDynamicApproval,
 	phase: WorkbenchApprovalPhase,
 	authority: "live" | "removed",
 ): readonly WorkbenchApprovalOffer[] {
-	if (authority === "removed" || phase !== "pending" || approval.binding === null)
-		return Object.freeze([]);
+	if (authority === "removed" || phase !== "pending") return Object.freeze([]);
 	return Object.freeze([
 		offer({ id: OFFER_APPROVE, label: "Approve this effect", tone: "primary" }),
 		offer({ id: OFFER_DECLINE, label: "Decline this effect", tone: "secondary" }),

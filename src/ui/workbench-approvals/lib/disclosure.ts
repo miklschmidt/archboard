@@ -141,10 +141,12 @@ export function ordinaryNotices(approval: BrowserApproval): readonly string[] {
 	const notices: string[] = [];
 	if (approval.approvalKind === "command_execution" && approval.command === null)
 		notices.push(NO_COMMAND);
-	if (approval.approvalKind === "permissions") {
-		if (approval.requestedScope.fileAccess.length > 0) notices.push(FILE_ACCESS_NOTICE);
-		if (!permissionsAreGrantable(approval)) notices.push(NOTHING_GRANTABLE_NOTICE);
-	}
+	// One unambiguous notice: a request this browser cannot grant at all does not
+	// also need the narrower reason for the file-access half of it.
+	if (approval.approvalKind === "permissions" && !permissionsAreGrantable(approval))
+		notices.push(NOTHING_GRANTABLE_NOTICE);
+	else if (approval.approvalKind === "permissions" && approval.requestedScope.fileAccess.length > 0)
+		notices.push(FILE_ACCESS_NOTICE);
 	if (
 		approval.approvalKind === "user_input" &&
 		approval.questions.some((question) => question.isSecret)

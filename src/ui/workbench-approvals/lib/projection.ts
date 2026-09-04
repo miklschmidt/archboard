@@ -106,7 +106,7 @@ function dynamicCard(
 		request: approval,
 		identity: dynamicIdentityRows(approval),
 		effect: dynamicEffectRows(approval),
-		offers: dynamicOffers(approval, status.phase, status.authority),
+		offers: dynamicOffers(status.phase, status.authority),
 		spoken: dynamicSpoken(),
 		status,
 		effectHash: approval.effectHash,
