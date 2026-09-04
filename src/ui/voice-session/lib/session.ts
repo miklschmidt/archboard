@@ -108,6 +108,8 @@ function sameOutcome(left: VoiceSessionOutcome, right: VoiceSessionOutcome): boo
 function sameControls(left: VoiceSessionControls, right: VoiceSessionControls): boolean {
 	return (
 		left.canStart === right.canStart &&
+		left.canMute === right.canMute &&
+		left.canUnmute === right.canUnmute &&
 		left.canStop === right.canStop &&
 		left.canRestart === right.canRestart &&
 		left.canClose === right.canClose
@@ -298,6 +300,25 @@ export function createVoiceSession({
 		}, "The realtime voice session could not be started.");
 	};
 
+	/**
+	 * The microphone toggle, under the same busy and generation discipline as
+	 * start and stop. It captures and releases no binding: muting changes which
+	 * audio the coordinator hears, never which session this is.
+	 */
+	const mute = async (): Promise<VoiceSessionView> => {
+		if (disposed) return current;
+		const view = publish();
+		if (!view.controls.canMute) return view;
+		return run(() => realtime.mute(), "The microphone could not be muted.");
+	};
+
+	const unmute = async (): Promise<VoiceSessionView> => {
+		if (disposed) return current;
+		const view = publish();
+		if (!view.controls.canUnmute) return view;
+		return run(() => realtime.unmute(), "The microphone could not be unmuted.");
+	};
+
 	const stop = async (): Promise<VoiceSessionView> => {
 		if (disposed) return current;
 		const view = publish();
@@ -360,6 +381,8 @@ export function createVoiceSession({
 		},
 		refresh: () => (disposed ? current : publish()),
 		start,
+		mute,
+		unmute,
 		stop,
 		restart,
 		close,

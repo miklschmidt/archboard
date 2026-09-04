@@ -16,6 +16,8 @@ import { accessibleSentence, narratedDetail, narratedStatus, statusLabel } from 
 const NO_OUTCOME: VoiceSessionOutcome = Object.freeze({ kind: "none" });
 const NO_CONTROLS: VoiceSessionControls = Object.freeze({
 	canStart: false,
+	canMute: false,
+	canUnmute: false,
 	canStop: false,
 	canRestart: false,
 	canClose: false,
@@ -235,6 +237,11 @@ function runView(
 		const running = LIVE_PHASES.has(state.phase);
 		const controls = Object.freeze({
 			canStart: !input.busy && !running && startable,
+			// `muted` is reachable from `listening` alone and `listening` from
+			// `muted` alone, so the phase is the whole offer: the adapter never
+			// offers a toggle the realtime module would refuse.
+			canMute: !input.busy && state.phase === "listening",
+			canUnmute: !input.busy && state.phase === "muted",
 			canStop: !input.busy && running && state.phase !== "stopping",
 			canRestart: !input.busy && startable && state.phase !== "stopping",
 			canClose: false,
@@ -243,14 +250,17 @@ function runView(
 		const narratedDetailText = recovering
 			? `${detail} ${hostVoice?.reason ?? "The host is recovering this voice session."}`
 			: detail;
-		// A coordinator or voice failure the host publishes mid-run is the only
-		// news on the screen; without this the run keeps reading as healthy.
-		if (external === null)
+		// A coordinator or voice failure the host publishes mid-run, or a control
+		// this adapter drove and had refused, is the only news on the screen;
+		// without this the run keeps reading as healthy. A refused mute is the
+		// clearest case: the phase never moves, so the failure is all there is.
+		const attached = external ?? input.controlFailure;
+		if (attached === null)
 			return view(status, narratedDetailText, null, NO_OUTCOME, controls, input);
 		return view(
 			status,
-			`${narratedDetailText} ${failureSubject(external.code)} failed. ${external.message}`,
-			external,
+			`${narratedDetailText} ${failureSubject(attached.code)} failed. ${attached.message}`,
+			attached,
 			controls.canRestart
 				? retry("restart", "Restart voice", RESTART_RECOVERY)
 				: controls.canStop
@@ -276,6 +286,8 @@ function runView(
 		);
 	const controls = Object.freeze({
 		canStart: false,
+		canMute: false,
+		canUnmute: false,
 		canStop: !input.busy,
 		canRestart: !input.busy && startable,
 		canClose: !input.busy,

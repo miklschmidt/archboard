@@ -222,6 +222,7 @@ export interface RealtimeFake extends VoiceRealtimePort {
 	setState: (state: BrowserWorkbenchMediaState) => void;
 	onStart: (handler: () => Promise<RealtimeMediaSnapshot>) => void;
 	onStop: (handler: () => Promise<RealtimeMediaSnapshot>) => void;
+	onMute: (handler: (muted: boolean) => Promise<RealtimeMediaSnapshot>) => void;
 	/** Publishes a new level while reusing the exact state and correlation objects. */
 	setLevel: (level: number) => void;
 	calls: () => readonly string[];
@@ -250,6 +251,15 @@ export function realtimeFake(
 		setMedia(mediaSnapshot({ phase: "listening", reason: "negotiation_succeeded" }));
 	let stopHandler = async (): Promise<RealtimeMediaSnapshot> =>
 		setMedia(mediaSnapshot({ phase: "closed", reason: "stopped" }));
+	/** The real owner toggles the captured track and publishes the new phase. */
+	let muteHandler = async (muted: boolean): Promise<RealtimeMediaSnapshot> =>
+		setMedia(
+			mediaSnapshot(
+				muted
+					? { phase: "muted", reason: "mute_requested" }
+					: { phase: "listening", reason: "unmute_requested" },
+			),
+		);
 	return {
 		snapshot: () => media,
 		state: () => ownerState,
@@ -260,6 +270,14 @@ export function realtimeFake(
 		start: () => {
 			calls.push("start");
 			return startHandler();
+		},
+		mute: () => {
+			calls.push("mute");
+			return muteHandler(true);
+		},
+		unmute: () => {
+			calls.push("unmute");
+			return muteHandler(false);
 		},
 		stop: () => {
 			calls.push("stop");
@@ -279,6 +297,9 @@ export function realtimeFake(
 		},
 		onStop: (handler) => {
 			stopHandler = handler;
+		},
+		onMute: (handler) => {
+			muteHandler = handler;
 		},
 		setLevel: (level: number) => {
 			if (media === null) return;

@@ -161,6 +161,8 @@ describe("voice session binding", () => {
 			expect(view.outcome.kind, name).toBe("terminal");
 			expect(view.controls, name).toEqual({
 				canStart: false,
+				canMute: false,
+				canUnmute: false,
 				canStop: false,
 				canRestart: false,
 				canClose: true,
