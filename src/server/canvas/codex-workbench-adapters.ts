@@ -3,6 +3,11 @@ export {
 	createCanvasOrdinaryApprovalActions,
 } from "./lib/codex-workbench-browser-gateway.js";
 export type { CanvasBrowserBindingState } from "./lib/codex-workbench-browser-gateway.js";
+export { projectCanvasBrowserReadiness } from "./lib/codex-workbench-readiness.js";
+export type {
+	CanvasReadinessInput,
+	CanvasReadinessProcessFacts,
+} from "./lib/codex-workbench-readiness.js";
 export { createCanvasDynamicApprovalOwner } from "./lib/codex-workbench-approvals.js";
 export type {
 	CanvasDynamicApprovalOwner,

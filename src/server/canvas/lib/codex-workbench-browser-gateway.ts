@@ -23,16 +23,31 @@ import type {
 import { createCanvasThreadLinkActions } from "./codex-workbench-thread-links.js";
 import { createCanvasCanonicalTextActions } from "./codex-workbench-text-actions.js";
 import { createCanvasRealtimeActions } from "./codex-workbench-realtime-actions.js";
+import {
+	projectCanvasBrowserReadiness,
+	type CanvasReadinessProcessFacts,
+} from "./codex-workbench-readiness.js";
 
+/**
+ * The account, login, and queue facts this adapter learns from its own command
+ * results. Readiness is never stored: it is derived from the live owned
+ * process, session, account, and coordinator facts on every projection read.
+ */
 export interface CanvasBrowserBindingState {
-	readiness: BrowserOwnerProjection["readiness"];
 	account: BrowserAccountProjectionInput;
 	login: BrowserOwnerProjection["login"];
 	queue: CodexQueueProjectionInput;
 }
 
+const UNAVAILABLE_QUEUE: CodexQueueProjectionInput = { kind: "codex_queue", submissions: null };
+
 function queueOwnerView(queue: readonly SessionQueuedSubmission[]): CodexQueueProjectionInput {
 	return { kind: "codex_queue", submissions: queue };
+}
+
+function failureReason(error: unknown, fallback: string): string {
+	const message = error instanceof Error ? error.message : "";
+	return message.trim().length === 0 ? fallback : message.slice(0, 512);
 }
 
 function visibleApprovalViews(approvals: CodexApprovalBroker) {
@@ -123,6 +138,8 @@ export function createCanvasBrowserGatewayOptions(input: {
 	readonly timeline: CanvasTimelineOwner;
 	readonly budget: CanvasBrowserProjectionBudget;
 	readonly onChange: (listener: () => void) => () => void;
+	/** The live owned-process facts behind every child-lifecycle readiness arm. */
+	readonly process: () => CanvasReadinessProcessFacts;
 	readonly checkoutRoot: string;
 	readonly contextForOperation: (
 		context: BrowserActionContext,
@@ -147,21 +164,60 @@ export function createCanvasBrowserGatewayOptions(input: {
 		await operation();
 		return { outcome: "delivered" };
 	};
+	// A thread link change re-targets every queue: the cached submissions belong
+	// to the previous thread and must not be presented for the new one.
+	const refreshLinkedQueue = async (): Promise<void> => {
+		state.queue = UNAVAILABLE_QUEUE;
+		if (components.workhorse.snapshot().state !== "ready") return;
+		try {
+			updateQueue(await components.queue.list());
+		} catch {
+			// The queue stays unavailable until an owner read succeeds; the browser
+			// presents that as its own state rather than another thread's entries.
+		}
+	};
+	const threadLinks = createCanvasThreadLinkActions({
+		workhorse: components.workhorse,
+		threadLink: components.threadLink,
+		semanticDelivery: components.semanticDelivery,
+		epoch: components.epoch,
+		identity: components.identity,
+		checkoutRoot: input.checkoutRoot,
+	});
 	const actions: BrowserWorkbenchActions = {
 		account: {
 			read: async () => {
-				const result = await components.session.accountRead();
+				let result: Awaited<ReturnType<typeof components.session.accountRead>>;
+				try {
+					result = await components.session.accountRead();
+				} catch (error) {
+					state.account = {
+						kind: "account",
+						state: "failed",
+						reason: failureReason(error, "The Codex account could not be read."),
+					};
+					throw error;
+				}
 				state.account = { kind: "codex_account_response", response: result };
-				state.readiness =
-					result.account === null
-						? { kind: "readiness", state: "signed_out" }
-						: { kind: "readiness", state: "thread_capable" };
+				if (result.account !== null && state.login.state === "pending")
+					state.login = { kind: "login", state: "completed", loginId: state.login.loginId };
 				if (components.workhorse.snapshot().state === "ready")
 					updateQueue(await components.queue.list());
 				return { outcome: "delivered" };
 			},
 			login: async (command) => {
-				const result = await components.session.accountLogin(command.login);
+				let result: Awaited<ReturnType<typeof components.session.accountLogin>>;
+				try {
+					result = await components.session.accountLogin(command.login);
+				} catch (error) {
+					state.login = {
+						kind: "login",
+						state: "failed",
+						loginId: null,
+						reason: failureReason(error, "The Codex sign-in failed."),
+					};
+					throw error;
+				}
 				if ("loginId" in result) {
 					state.login = {
 						kind: "login",
@@ -175,11 +231,6 @@ export function createCanvasBrowserGatewayOptions(input: {
 						loginId: result.loginId,
 						variant: command.login.type,
 					};
-					state.readiness = {
-						kind: "readiness",
-						state: "login_pending",
-						loginId: result.loginId,
-					};
 				}
 				return { outcome: "delivered" };
 			},
@@ -187,22 +238,41 @@ export function createCanvasBrowserGatewayOptions(input: {
 				run(async () => {
 					await components.session.accountLoginCancel({ loginId: command.loginId });
 					state.login = { kind: "login", state: "cancelled", loginId: command.loginId };
+					if (state.account.kind === "account" && state.account.state === "login_pending")
+						state.account = {
+							kind: "account",
+							state: "unknown",
+							reason: "The sign-in was cancelled before an account was read.",
+						};
 				}),
 			logout: () =>
 				run(async () => {
 					await components.session.accountLogout();
 					state.account = { kind: "account", state: "signed_out" };
-					state.readiness = { kind: "readiness", state: "signed_out" };
+					state.login = { kind: "login", state: "idle" };
+					state.queue = UNAVAILABLE_QUEUE;
 				}),
 		},
-		threadLinks: createCanvasThreadLinkActions({
-			workhorse: components.workhorse,
-			threadLink: components.threadLink,
-			semanticDelivery: components.semanticDelivery,
-			epoch: components.epoch,
-			identity: components.identity,
-			checkoutRoot: input.checkoutRoot,
-		}),
+		threadLinks: {
+			create: async (command, context) => {
+				const result = await threadLinks.create(command, context);
+				await refreshLinkedQueue();
+				return result;
+			},
+			attach: async (command, context) => {
+				const result = await threadLinks.attach(command, context);
+				await refreshLinkedQueue();
+				return result;
+			},
+			relink: async (command, context) => {
+				const result = await threadLinks.relink(command, context);
+				await refreshLinkedQueue();
+				return result;
+			},
+			...(threadLinks.onBrowserDisconnect === undefined
+				? {}
+				: { onBrowserDisconnect: threadLinks.onBrowserDisconnect }),
+		},
 		text: createCanvasCanonicalTextActions({
 			identity: components.identity,
 			session: components.session,
@@ -279,15 +349,21 @@ export function createCanvasBrowserGatewayOptions(input: {
 					? null
 					: components.semanticPublisher.freshBrief();
 			const realtimeGeneration = components.realtime.generation();
+			const readiness = projectCanvasBrowserReadiness({
+				process: input.process(),
+				account: state.account,
+				login: state.login,
+				coordinatorReady: coordinator.state === "ready",
+			});
 			return {
-				readiness: state.readiness,
+				readiness,
 				account: state.account,
 				login: state.login,
 				timeline: input.timeline.read(
 					context.paneId,
 					context.binding.revision,
 					context.binding.link,
-					state.readiness.state === "thread_capable",
+					readiness.state === "thread_capable",
 					context.connection,
 				),
 				queue: state.queue,

@@ -18,6 +18,7 @@ import {
 	type CanvasTimelineOwner,
 } from "../codex-workbench-adapters.js";
 import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
+import { runningProcessFacts } from "./support/codex-workbench-process-fixture.js";
 
 const archboardContext: ArchboardContext = {
 	schema: 1,
@@ -96,10 +97,22 @@ test("canvas gateway binds exact connection reads and retires it at disconnect",
 		},
 		dispose: () => undefined,
 	};
-	const components = createCodexWorkbenchGenerationFixture([]).components;
+	const fixture = createCodexWorkbenchGenerationFixture([]).components;
+	const components = {
+		...fixture,
+		coordinator: {
+			...fixture.coordinator,
+			snapshot: () => ({ ...fixture.coordinator.snapshot(), state: "ready" as const }),
+		},
+	};
 	const state = {
-		readiness: { kind: "readiness", state: "thread_capable" },
-		account: { kind: "account", state: "unknown", reason: "fixture" },
+		account: {
+			kind: "codex_account_response",
+			response: {
+				account: { type: "chatgpt", email: "fixture@example.test", planType: "plus" },
+				requiresOpenaiAuth: true,
+			},
+		},
 		login: { kind: "login", state: "idle" },
 		queue: { kind: "codex_queue", submissions: null },
 	} satisfies CanvasBrowserBindingState;
@@ -124,6 +137,7 @@ test("canvas gateway binds exact connection reads and retires it at disconnect",
 		timeline,
 		budget,
 		leaseLedger: { active: null, retired: new Map() },
+		process: () => runningProcessFacts(),
 		checkoutRoot: "/repo",
 		contextForOperation: () => archboardContext,
 		onChange: () => () => undefined,
