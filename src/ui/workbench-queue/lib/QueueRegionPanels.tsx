@@ -140,7 +140,7 @@ export function QueueAddPanel({ view, resetKey, onAdd }: QueueAddPanelProps): Re
 	}, [onAdd]);
 	return (
 		<section
-			aria-labelledby={labelId}
+			aria-label="Add to the queue"
 			className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-control border-t border-border-subtle py-control"
 			data-queue-add-panel=""
 		>
