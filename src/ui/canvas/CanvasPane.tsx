@@ -20,7 +20,12 @@ import {
 	ingestVoiceContextBrowserEvidence,
 	type VoiceContextHistory,
 } from "../voice-context";
-import { createVoiceSession, type VoiceSession } from "../voice-session";
+import {
+	createVoiceSession,
+	type VoiceSession,
+	type VoiceSessionBinding,
+	type VoiceSessionView,
+} from "../voice-session";
 import { createCodeTargetLinkHandler } from "../code-target";
 import type { MountedBoardPreviewController } from "../board-preview";
 import {
@@ -44,10 +49,16 @@ import {
 // draws and a box the agent draws stop matching.
 import { DEFAULT_FILL_STYLE, DEFAULT_SHAPE_BACKGROUND } from "../../shared/appearance/appearance";
 
+export interface CanvasPaneVoicePresentation {
+	readonly view: VoiceSessionView;
+	readonly mute: "Muted" | "Unmuted" | "Unknown";
+}
+
 export interface CanvasPaneVoiceRegistration {
 	readonly transport: BrowserWorkbenchTransport;
 	readonly session: VoiceSession;
 	readonly history: VoiceContextHistory;
+	readonly presentation: () => CanvasPaneVoicePresentation;
 	readonly transcriptRecords: () => readonly RealtimeTranscriptRecord[];
 }
 
@@ -111,6 +122,50 @@ interface OwnedVoiceRegistration {
 
 const EMPTY_TRANSCRIPT_RECORDS: readonly RealtimeTranscriptRecord[] = Object.freeze([]);
 
+function createVoicePresentation(
+	realtime: BrowserWorkbenchMediaOwner,
+	session: VoiceSession,
+): () => CanvasPaneVoicePresentation {
+	let retained: { readonly binding: VoiceSessionBinding; readonly sessionId: string } | null = null;
+	return (): CanvasPaneVoicePresentation => {
+		const view = session.view();
+		if (view.status === "stopped" || view.failure?.code === "replaced") {
+			retained = null;
+			return Object.freeze({ view, mute: "Unknown" });
+		}
+		if (view.binding !== null && view.sessionId !== null) {
+			retained = { binding: view.binding, sessionId: view.sessionId };
+		}
+		const effectiveView =
+			(view.binding === null || view.sessionId === null) && retained !== null
+				? Object.freeze({
+						...view,
+						binding: retained.binding,
+						sessionId: retained.sessionId,
+					})
+				: view;
+		const media = realtime.snapshot();
+		const sameSession =
+			effectiveView.sessionId !== null &&
+			media !== null &&
+			media.correlation !== null &&
+			String(media.correlation.sessionId) === effectiveView.sessionId;
+		const phase = sameSession ? media.state.phase : null;
+		const mute =
+			view.status === "stopping" || view.failure !== null
+				? "Unknown"
+				: phase === "muted"
+					? "Muted"
+					: phase === "listening"
+						? "Unmuted"
+						: "Unknown";
+		return Object.freeze({
+			view: effectiveView,
+			mute,
+		});
+	};
+}
+
 function transcriptRecords(
 	transport: BrowserWorkbenchTransport,
 	realtime: BrowserWorkbenchMediaOwner,
@@ -148,13 +203,13 @@ function transcriptRecords(
 function createVoiceEvidenceIngestor(
 	history: VoiceContextHistory,
 	transport: BrowserWorkbenchTransport,
-	session: VoiceSession,
+	presentation: () => CanvasPaneVoicePresentation,
 ): () => void {
 	let lastSignature: string | null = null;
 	return (): void => {
 		const state = transport.state();
 		if (state.snapshot === null) return;
-		const sessionView = session.view();
+		const sessionView = presentation().view;
 		const connection = state.connection === "connected" ? "connected" : "disconnected";
 		const signature = JSON.stringify([state.snapshot.voiceContext, sessionView, connection]);
 		if (signature === lastSignature) return;
@@ -328,16 +383,18 @@ export function CanvasPane({
 			const realtime = realtimeRef.current;
 			if (realtime === null || ownedVoiceRegistrationRef.current !== null) return;
 			const voiceSession = createVoiceSession({ realtime, transport, paneId });
+			const voicePresentation = createVoicePresentation(realtime, voiceSession);
 			const registration = Object.freeze({
 				transport,
 				session: voiceSession,
 				history: voiceContextHistory,
+				presentation: voicePresentation,
 				transcriptRecords: () => transcriptRecords(transport, realtime, voiceSession),
 			}) satisfies CanvasPaneVoiceRegistration;
 			const ingestEvidence = createVoiceEvidenceIngestor(
 				voiceContextHistory,
 				transport,
-				voiceSession,
+				voicePresentation,
 			);
 			ingestEvidence();
 			const removeSessionEvidenceListener = voiceSession.subscribe(ingestEvidence);

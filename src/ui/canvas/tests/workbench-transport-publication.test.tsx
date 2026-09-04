@@ -127,18 +127,19 @@ function publishVoice(paneId: string, registration: CanvasPaneVoiceRegistration 
 }
 
 function voiceView(sessionId: string): VoiceSessionView {
+	const detached = sessionId === "voice-first" && currentTransport === null;
 	return {
-		status: "listening",
-		label: "Listening",
-		detail: "Voice is listening.",
-		accessibleStatus: "Voice is listening.",
+		status: detached ? "unavailable" : "listening",
+		label: detached ? "Unavailable" : "Listening",
+		detail: detached ? "Voice transport is unavailable." : "Voice is listening.",
+		accessibleStatus: detached ? "Voice transport is unavailable." : "Voice is listening.",
 		failure: null,
 		outcome: { kind: "none" },
 		controls: {
 			canStart: false,
-			canMute: true,
+			canMute: !detached,
 			canUnmute: false,
-			canStop: true,
+			canStop: !detached,
 			canRestart: false,
 			canClose: false,
 		},
@@ -149,28 +150,28 @@ function voiceView(sessionId: string): VoiceSessionView {
 			workhorseThreadId: `workhorse-${sessionId}`,
 			coordinatorThreadId: `coordinator-${sessionId}`,
 		},
-		sessionId,
+		sessionId: detached ? null : sessionId,
 	};
 }
 
 function fakeVoiceSession(sessionId: string): VoiceSession {
 	const listeners = new Set<() => void>();
-	const view = voiceView(sessionId);
+	const view = () => voiceView(sessionId);
 	return Object.freeze({
-		view: () => view,
+		view,
 		subscribe: (listener: () => void) => {
 			listeners.add(listener);
 			return () => listeners.delete(listener);
 		},
 		level: () => 0,
 		subscribeLevel: () => () => undefined,
-		refresh: () => view,
-		start: async () => view,
-		mute: async () => view,
-		unmute: async () => view,
-		stop: async () => view,
-		restart: async () => view,
-		close: async () => view,
+		refresh: view,
+		start: async () => view(),
+		mute: async () => view(),
+		unmute: async () => view(),
+		stop: async () => view(),
+		restart: async () => view(),
+		close: async () => view(),
 		dispose: () => {
 			lifecycle.push(`dispose:${sessionId}`);
 			listeners.clear();
@@ -232,18 +233,21 @@ const session = {
 	takeBack: async () => ({ outcome: "success" as const }),
 	doing: [],
 	realtime: {
-		snapshot: () => ({
-			correlation: {
-				sessionId: (currentTransport === SECOND_TRANSPORT
-					? "voice-second"
-					: "voice-first") as never,
-				correlationId: (currentTransport === SECOND_TRANSPORT
-					? "correlation-second"
-					: "correlation-first") as never,
-			},
-			state: { phase: "listening", reason: "negotiation_succeeded" as const },
-			inputLevel: 0,
-		}),
+		snapshot: () =>
+			currentTransport === null
+				? null
+				: {
+						correlation: {
+							sessionId: (currentTransport === SECOND_TRANSPORT
+								? "voice-second"
+								: "voice-first") as never,
+							correlationId: (currentTransport === SECOND_TRANSPORT
+								? "correlation-second"
+								: "correlation-first") as never,
+						},
+						state: { phase: "listening", reason: "negotiation_succeeded" as const },
+						inputLevel: 0,
+					},
 	} as unknown as BrowserWorkbenchMediaOwner,
 	workbenchTransport: () => currentTransport,
 };
@@ -333,12 +337,17 @@ test("publishes each production pane transport once, clears before replacement, 
 		throw new Error("CanvasPane did not publish its first voice registration.");
 	expect(Object.isFrozen(firstRegistration)).toBe(true);
 	expect(firstRegistration.history).toBe(evidenceInputs[0]!.history);
+	expect(firstRegistration.presentation()).toMatchObject({
+		view: { status: "listening", sessionId: "voice-first" },
+		mute: "Unmuted",
+	});
 	const evidenceCount = evidenceInputs.length;
 	act(() => {
 		for (const listener of transportEvidenceListeners.get(FIRST_TRANSPORT) ?? []) listener();
 	});
 	expect(evidenceInputs).toHaveLength(evidenceCount);
 	firstConnection = "reconnecting";
+	firstDirectSnapshotAvailable = false;
 	act(() => {
 		for (const listener of transportEvidenceListeners.get(FIRST_TRANSPORT) ?? []) listener();
 	});
@@ -366,12 +375,25 @@ test("publishes each production pane transport once, clears before replacement, 
 	firstActiveSessionId = "voice-first";
 
 	currentTransport = null;
-	firstDirectSnapshotAvailable = false;
 	act(() => reportStatus?.(STATUS));
 	expect(publications.at(-1)).toEqual(["pane-1", null]);
 	expect(voicePublications).toHaveLength(1);
 	expect(lifecycle).not.toContain("dispose:voice-first");
-	expect(firstRegistration.transcriptRecords()).toHaveLength(2);
+	expect(firstRegistration.session.view()).toMatchObject({
+		status: "unavailable",
+		binding: { paneId: "pane-1" },
+		sessionId: null,
+	});
+	expect(firstRegistration.presentation()).toMatchObject({
+		view: {
+			status: "unavailable",
+			binding: { paneId: "pane-1" },
+			sessionId: "voice-first",
+			controls: { canStop: false },
+		},
+		mute: "Unknown",
+	});
+	expect(firstRegistration.transcriptRecords()).toEqual([]);
 
 	currentTransport = FIRST_TRANSPORT;
 	firstDirectSnapshotAvailable = true;
