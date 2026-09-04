@@ -368,7 +368,7 @@ repeat them.
   findings, and preservation of completed findings without production-sized work. The persisted
   package case proves the input limit's strict/non-strict exits and text rendering, while other
   package owners prove the absence of diagnostic counters from product output. TASK-120 adds the
-  schema-v3 bridge matrix: strict metadata, incomplete/stale provenance,
+  schema-v2 bridge matrix: strict metadata, incomplete/stale provenance,
   exact one-crossing suppression, a second unmarked crossing, and unchanged architecture/compare/
   describe bytes for valid decoration parts.
 

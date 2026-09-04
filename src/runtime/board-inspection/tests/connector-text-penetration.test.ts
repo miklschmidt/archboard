@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { formatInspectionText, inspectBoard } from "../index.js";
+import { diagnoseComparisonBudget } from "../diagnostics.js";
 import { boundLabel, connector, semanticNode } from "./fixtures/elements.js";
 
 const text = (id: string, x: number, y: number, width: number, height: number) => ({
@@ -163,5 +164,26 @@ describe("connector penetration of unrelated text", () => {
 			text("unrelated", 75, 45, 10, 10),
 		];
 		expect(penetrations(elements).map((finding) => finding.details.textId)).toEqual(["unrelated"]);
+	});
+
+	test("closes connector-text ceiling counts without changing label-analysis meaning", () => {
+		const diagnosed = diagnoseComparisonBudget(
+			[connector({ y: 50 }), text("first", 30, 40, 10, 20), text("second", 60, 40, 10, 20)],
+			1,
+		);
+		const limit = diagnosed.findings.find(
+			(finding) => finding.reason === "broad-phase-comparison-ceiling",
+		);
+		expect(diagnosed.broadPhaseComparisons).toBe(2);
+		expect(limit?.details).toEqual({
+			limit: 2_000_000,
+			attempted: 2_000_001,
+			pass: "connector-text",
+			segmentCount: 1,
+			nodeCount: 0,
+			obstacleCount: 0,
+			labelCount: 0,
+			textCount: 2,
+		});
 	});
 });

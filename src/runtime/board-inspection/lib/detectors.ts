@@ -1759,6 +1759,7 @@ function collisionFindings(
 			semantics: { partition: `text:${textId}`, excludedPartitions: excludedConnectors },
 		};
 	});
+	let labelNodeRecords: DecodedRecord[] = [];
 	let labelNodeItems: PairItem<DecodedRecord>[] = [];
 	let labelLabelItems: PairItem<DecodedRecord>[] = [];
 	const connectorEnds = (segment: Segment) => {
@@ -2048,7 +2049,7 @@ function collisionFindings(
 			records: node.bodies,
 			semantics: unrestrictedPartition(node.id),
 		}));
-		const labelNodeRecords = records.filter((record) => {
+		labelNodeRecords = records.filter((record) => {
 			if (!record.live || !record.id || record.type !== "text" || !record.box) return false;
 			const state = model.labelOwnership.get(record.id)?.state;
 			return state !== undefined && state !== "none" && state !== "blocked";
@@ -2183,7 +2184,8 @@ function collisionFindings(
 					segmentCount: segments.length,
 					nodeCount: leaves.length,
 					obstacleCount: model.obstacles.length,
-					labelCount: textRecords.length,
+					labelCount: labelNodeRecords.length,
+					textCount: textRecords.length,
 				},
 				message: `Inspection stopped pair analysis at comparison ${counter.value}.`,
 				elements: uniqueRefs(

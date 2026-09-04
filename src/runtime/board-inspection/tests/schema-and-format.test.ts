@@ -71,7 +71,7 @@ const findingCases = () =>
 			'["AMBIGUOUS_GEOMETRY","unrepresentable-focus-padding","warning",true,{"padding":16,"failedDeltas":["x-minus-16"],"issue":"exact-16px-padding-is-not-finite-and-representable"}]',
 			'["AMBIGUOUS_GEOMETRY","zero-length","warning",true,{"connectorId":"edge","sourceIndex":0,"segmentIndex":0}]',
 			'["AMBIGUOUS_GEOMETRY","collinear-overlap","warning",true,{"firstConnectorId":"a","firstSegmentIndex":0,"secondConnectorId":"b","secondSegmentIndex":0}]',
-			'["INSPECTION_LIMIT_EXCEEDED","broad-phase-comparison-ceiling","warning",true,{"limit":2000000,"attempted":2000001,"pass":"node-overlap","segmentCount":0,"nodeCount":2001,"obstacleCount":0,"labelCount":0}]',
+			'["INSPECTION_LIMIT_EXCEEDED","broad-phase-comparison-ceiling","warning",true,{"limit":2000000,"attempted":2000001,"pass":"node-overlap","segmentCount":0,"nodeCount":2001,"obstacleCount":0,"labelCount":0,"textCount":0}]',
 			'["INSPECTION_LIMIT_EXCEEDED","input-complexity-ceiling","warning",true,{"limit":1000000,"attempted":1000001,"pass":"input-scan","phase":"snapshot-input","completedRecordCount":0,"sourceIndex":0,"path":["id"],"unitKind":"string-code-unit"}]',
 			'["CONNECTOR_PENETRATES_NODE","leaf-footprint-interior","error",false,{"connectorId":"edge","segmentIndex":0,"nodeId":"node","entry":{"x":0,"y":0},"exit":{"x":1,"y":0}}]',
 			'["CONNECTOR_PENETRATES_OBSTACLE","obstacle-footprint-interior","error",false,{"connectorId":"edge","segmentIndex":0,"obstacleId":"obstacle:body","entry":{"x":0,"y":0},"exit":{"x":1,"y":0}}]',

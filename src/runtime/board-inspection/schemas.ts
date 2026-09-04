@@ -555,6 +555,7 @@ const layoutFindings = [
 		nodeCount: z.number().int().nonnegative(),
 		obstacleCount: z.number().int().nonnegative(),
 		labelCount: z.number().int().nonnegative(),
+		textCount: z.number().int().nonnegative(),
 	}),
 	variant("INSPECTION_LIMIT_EXCEEDED", "input-complexity-ceiling", true, {
 		limit: z.literal(1_000_000),

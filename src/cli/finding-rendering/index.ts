@@ -50,7 +50,7 @@ export const FindingRenderEntrySchema = z.discriminatedUnion("status", [
 
 export const FindingRenderManifestSchema = z
 	.strictObject({
-		schemaVersion: z.literal(2),
+		schemaVersion: z.literal(3),
 		board: z.string().min(1),
 		sourceFingerprint: z.string().regex(HEX_SHA256),
 		report: InspectionReportSchema,
@@ -206,7 +206,7 @@ export function assembleFindingArtifacts(
 		};
 	});
 	const manifest = FindingRenderManifestSchema.parse({
-		schemaVersion: 2,
+		schemaVersion: 3,
 		board: server.board,
 		sourceFingerprint: server.sourceFingerprint,
 		report: server.report,
