@@ -555,8 +555,16 @@ function isJavaScriptLikeSource(relativePath) {
 	return /\.[cm]?[jt]sx?$/.test(relativePath);
 }
 
+/**
+ * A test owner's source must be checked by one of the two TypeScript gates.
+ * tsconfig.json covers `src/**\/*.ts` and `tests/system/**\/*.ts`;
+ * tsconfig.frontend.json is the only gate that reads TSX, and it reads exactly
+ * `src/ui/**\/*.tsx`. A rendered UI owner may therefore be a .tsx file there,
+ * and nowhere else.
+ */
 function isTypedTestSource(relativePath) {
-	return relativePath.endsWith(".ts");
+	if (relativePath.endsWith(".ts")) return true;
+	return relativePath.startsWith("src/ui/") && relativePath.endsWith(".tsx");
 }
 
 function isTopLevelDeclaration(node) {
