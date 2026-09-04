@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-04 12:33'
+updated_date: '2026-09-04 12:45'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -51,6 +51,11 @@ Compose expanded/collapsed workbench layout, app-global request surface, and res
 3. Implement flat semantic Tailwind composition for one/two-pane desktop and Flip-sized hosts through explicit data attributes and grid/overflow rules, controlled disclosure, logical landmarks/focus order, 44px controls, reduced-motion tokens, and forced-color-safe boundaries without owning process, session, timeline, queue, approval, or coordinator state.
 4. Add focused workbench-frame tests on the shared Happy DOM stack for one/two-pane, expanded/collapsed, fullscreen, exact source labels, app-global request persistence and captured-source command routing across active-pane rerenders, keyboard/focus order, landmarks, and loading/empty/error projections.
 5. Run the focused frame tests, root and frontend TypeScript projects, scoped Oxlint/Oxfmt, repository boundary/inventory owners only if new files require them, and git diff --check; record objective evidence without checking acceptance criteria or moving the task from In Progress.
+
+Rereview remediation (2026-09-04):
+6. Subscribe the app-global request owner to its source transport once, validate the captured source against that exact emitted BrowserWorkbenchState snapshot, and pass the same state into WorkbenchApprovals so source disclosure and action availability change in one render.
+7. Strengthen the opaque capture to retain the complete frozen pane identity and originating transport reference, rejecting same-id relabeling, transport substitution, or lease-pane drift.
+8. Replace the arbitrary request max-height utility with the smallest named module-owned semantic allocation that preserves the bounded flex layout, then add mutable lease and same-id relabel regressions and run only the allowed focused checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -89,4 +94,19 @@ Remediation validation:
 - git diff --check — pass.
 
 The accepted jsx-a11y/no-noninteractive-tabindex suppression remains narrowly scoped to the named focusable native overflow rail. Status remains In Progress and acceptance criteria remain unchecked for independent rereview.
+
+Second rereview remediation (2026-09-04):
+- PresentAppGlobalRequest now owns one useSyncExternalStore subscription to the captured source transport. It validates source identity against that emitted BrowserWorkbenchState and passes the same state to WorkbenchApprovals, so the source disclosure and actions change in the same React render. A mutable fixture retargets the lease to Pane A and emits without rerendering frame props; the request changes from present to error while both the Pane B label and Approve action disappear.
+- The opaque source capture now retains the exact frozen pane identity object and transport reference. Validation rejects either reference being replaced, including a same-ID relabel, before any action renders.
+- The request rail uses the module-owned bounded-half-frame allocation backed by Tailwind max-h-1/2 instead of max-h-[40%]. The focused layout owner asserts the named data contract and its concrete bounded/scroll allocation.
+
+Second remediation validation:
+- bun test --isolate src/ui/workbench-frame/tests — 11 pass, 0 fail, 128 assertions.
+- bunx tsc --noEmit — pass.
+- bunx tsc --noEmit -p tsconfig.frontend.json — pass.
+- bunx oxlint src/ui/workbench-frame — pass.
+- bunx oxfmt --check src/ui/workbench-frame — pass.
+- git diff --check — pass.
+
+No repository-policy, browser, broad, system, stress, load, capacity, performance, tooling, topology, or concurrency lane was run. TASK-143.03.11 still owns definite outer height and shell mounting; TASK-143.03.13 owns real-browser measurement. Status remains In Progress and every acceptance criterion remains unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->

@@ -7,30 +7,31 @@ import {
 } from "../../dom-testing/index.js";
 
 registerHappyDom();
-const { cleanup, render, screen, userEvent, waitFor, within } = await loadRenderedUiTools();
+const { act, cleanup, render, screen, userEvent, waitFor, within } = await loadRenderedUiTools();
 const { WorkbenchFrame, captureWorkbenchFrameRequestSource } = await import("../index.js");
 const {
 	TEST_NOW,
+	FRAME_ROOT_THEME_CLASSES,
+	LONG_EMPTY_REQUEST,
+	REQUEST_PROJECTION_CASES,
+	WORKBENCH_PROJECTION_CASES,
 	claimedFramePane,
 	framePane,
+	mutableRequestFrame,
 	onePaneView,
 	requestTransport,
 	retainedSnapshotTransport,
+	retargetRequestTransportLease,
 	stoppedTransport,
 } = await import("./support.js");
 
 afterEach(cleanup);
 afterAll(unregisterHappyDom);
 
+const fixedNow = (): number => TEST_NOW;
 const PANE_A = { id: "pane-a", label: "Pane A" } as const;
 const PANE_B = { id: "pane-b", label: "Pane B" } as const;
 const EMPTY_REQUEST = { state: "empty", detail: "No request needs a response." } as const;
-const LONG_REQUEST = {
-	state: "empty",
-	detail: `No request needs a response. ${"Retained request history remains inspectable. ".repeat(80)}`,
-} as const;
-const ROOT_THEME_CLASSES =
-	"h-full flex flex-col bg-background text-foreground border-border duration-control ease-control forced-color-adjust-auto forced-colors:border-current";
 const PANE_A_TRANSPORT = stoppedTransport(PANE_A.id);
 const PANE_A_PORT = framePane(PANE_A, PANE_A_TRANSPORT);
 const PANE_B_PORT = framePane(PANE_B, stoppedTransport(PANE_B.id));
@@ -63,14 +64,15 @@ const FORGED_REQUEST = {
 	state: "present",
 	source: { ...PRESENT_REQUEST.source, pane: PANE_A },
 } as const;
+const RELABELED_REQUEST = {
+	state: "present",
+	source: { ...PRESENT_REQUEST.source, pane: { id: PANE_B.id, label: "Relabeled Pane B" } },
+} as const;
 const LOADING_VIEW = { state: "loading", detail: "Loading the workbench." } as const;
 const selectedPaneIds: string[] = [];
-
-function noopPane(): void {}
-function noopDisclosure(): void {}
-function fixedNow(): number {
-	return TEST_NOW;
-}
+function noop(): void {}
+const noopPane = noop;
+const noopDisclosure = noop;
 function capturePane(paneId: string): void {
 	selectedPaneIds.push(paneId);
 }
@@ -81,7 +83,7 @@ test("composes one pane in workhorse-first landmark and DOM order", () => {
 			disclosure="expanded"
 			onActivePaneChange={noopPane}
 			onDisclosureChange={noopDisclosure}
-			request={LONG_REQUEST}
+			request={LONG_EMPTY_REQUEST}
 			space="workspace"
 			view={ONE_PANE_VIEW}
 		/>,
@@ -89,7 +91,7 @@ test("composes one pane in workhorse-first landmark and DOM order", () => {
 
 	const frame = screen.getByRole("region", { name: "Agent workbench" });
 	expect(frame.getAttribute("data-pane-count")).toBe("1");
-	for (const className of ROOT_THEME_CLASSES.split(" ")) {
+	for (const className of FRAME_ROOT_THEME_CLASSES.split(" ")) {
 		expect(frame.className).toContain(className);
 	}
 
@@ -110,7 +112,8 @@ test("composes one pane in workhorse-first landmark and DOM order", () => {
 	expect(workArea?.className).toContain("min-h-0");
 	expect(workArea?.className).toContain("flex-1");
 	const request = screen.getByRole("region", { name: "Application-wide Codex requests" });
-	for (const className of ["max-h-[40%]", "shrink-0", "overflow-y-auto"])
+	expect(request.getAttribute("data-workbench-request-allocation")).toBe("bounded-half-frame");
+	for (const className of ["max-h-1/2", "shrink-0", "overflow-y-auto"])
 		expect(request.className).toContain(className);
 	expect(request.textContent).toContain("Retained request history remains inspectable.");
 	const headings = screen.getAllByRole("heading");
@@ -402,52 +405,59 @@ test("keeps the app-global request on its captured source across active-pane nav
 	expect(PANE_A_TRANSPORT.commands).toHaveLength(0);
 });
 
-test("refuses a request source paired with another pane transport", () => {
+test("refuses cross-transport and same-ID relabeled request sources", () => {
 	expect(() =>
 		captureWorkbenchFrameRequestSource({
 			identity: PANE_A,
 			transport: PANE_B_REQUEST_TRANSPORT.transport,
 		}),
 	).toThrow("does not match transport pane pane-b");
+	for (const tamperedRequest of [FORGED_REQUEST, RELABELED_REQUEST]) {
+		const result = render(
+			<WorkbenchFrame
+				disclosure="collapsed"
+				onActivePaneChange={noopPane}
+				onDisclosureChange={noopDisclosure}
+				request={tamperedRequest}
+				space="workspace"
+				view={REQUEST_VIEW_A}
+			/>,
+		);
+		const request = screen.getByRole("region", { name: "Application-wide Codex requests" });
+		expect(request.getAttribute("data-workbench-request")).toBe("error");
+		expect(request.textContent).toContain("not captured from the pane identity it displays");
+		expect(request.querySelector("dd")).toBeNull();
+		expect(within(request).queryByRole("button", { name: "Approve" })).toBeNull();
+		result.unmount();
+	}
+});
+
+test("revokes request actions when its subscribed transport moves to another pane", async () => {
+	const fixture = mutableRequestFrame(PANE_B, fixedNow);
 	render(
 		<WorkbenchFrame
 			disclosure="collapsed"
 			onActivePaneChange={noopPane}
 			onDisclosureChange={noopDisclosure}
-			request={FORGED_REQUEST}
+			request={fixture.request}
 			space="workspace"
-			view={REQUEST_VIEW_A}
+			view={fixture.view}
 		/>,
 	);
-	const request = screen.getByRole("region", { name: "Application-wide Codex requests" });
-	expect(request.getAttribute("data-workbench-request")).toBe("error");
-	expect(within(request).queryByRole("button", { name: "Approve" })).toBeNull();
+	const requestRegion = screen.getByRole("region", { name: "Application-wide Codex requests" });
+	expect(requestRegion.getAttribute("data-workbench-request")).toBe("present");
+	expect(requestRegion.querySelector("dd")?.textContent).toBe(PANE_B.label);
+	expect(within(requestRegion).getByRole("button", { name: "Approve" })).toBeTruthy();
+
+	act(() => retargetRequestTransportLease(fixture.fake, PANE_A.id));
+	await waitFor(() => expect(requestRegion.getAttribute("data-workbench-request")).toBe("error"));
+	expect(requestRegion.textContent).toContain("does not match transport pane pane-a");
+	expect(requestRegion.querySelector("dd")).toBeNull();
+	expect(within(requestRegion).queryByRole("button", { name: "Approve" })).toBeNull();
 });
 
 test("renders honest loading, empty, and error workbench projections", () => {
-	const cases = [
-		{
-			view: { state: "loading", detail: "Loading the Codex workbench." } as const,
-			role: "status",
-			text: "Loading the Codex workbench.",
-		},
-		{
-			view: { state: "empty", detail: "No pane is available for the workbench." } as const,
-			role: "status",
-			text: "No pane is available for the workbench.",
-		},
-		{
-			view: {
-				state: "error",
-				detail: "The workbench projection failed.",
-				recovery: "Reconnect Codex and reload the pane.",
-			} as const,
-			role: "alert",
-			text: "The workbench projection failed.",
-		},
-	] as const;
-
-	for (const item of cases) {
+	for (const item of WORKBENCH_PROJECTION_CASES) {
 		const result = render(
 			<WorkbenchFrame
 				disclosure="expanded"
@@ -469,17 +479,7 @@ test("renders honest loading, empty, and error workbench projections", () => {
 });
 
 test("keeps loading, empty, and error request projections visible in fullscreen", () => {
-	const requests = [
-		{ state: "loading", detail: "Loading requests from the command lease." } as const,
-		{ state: "empty", detail: "No application-wide request is active." } as const,
-		{
-			state: "error",
-			detail: "The request source disconnected.",
-			recovery: "Reconnect the originating pane before responding.",
-		} as const,
-	] as const;
-
-	for (const request of requests) {
+	for (const request of REQUEST_PROJECTION_CASES) {
 		const result = render(
 			<WorkbenchFrame
 				disclosure="expanded"
