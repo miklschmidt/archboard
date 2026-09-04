@@ -265,6 +265,12 @@ export function createCanvasDynamicLifecycleOwner(
 		port,
 		onNotification,
 		childExit,
+		// Asymmetric on purpose: edge release lives in childExit, so a host
+		// shutdown with no quarantined epoch never reaches it. The wait graph is
+		// plain in-process state with no timer, handle, or child behind it, and
+		// host shutdown is the end of the process, so the surviving edges cost
+		// nothing. Releasing them here would only add a second teardown order to
+		// keep in step with the one child exit already owns.
 		shutdown: async () => {
 			if (stopped) return;
 			stopped = true;

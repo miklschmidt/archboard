@@ -74,21 +74,21 @@ describe("production Codex generation ownership", () => {
 				.hooks(first)
 				.cancelDynamicApprovalsAndWaits({} as never, "child_disconnected");
 
-			// Settlement retires the record, so nothing rebuilt for generation 1 can
-			// reach the disposed approval, effect authority, or wait owner.
-			expect(owned.value.bindings(first).dynamicAdapters.approval(created)).not.toBe(approval);
-			expect(owned.value.bindings(first).dynamicAdapters.lifecycle(created)).not.toBe(lifecycle);
+			// Settlement retires the record for good. A late call is refused rather
+			// than handed a rebuilt approval owner with a live expiry timer and an
+			// effect authority nothing will dispose.
+			expect(() => owned.value.bindings(first)).toThrow("is retired");
+			expect(() => owned.value.hooks(first)).toThrow("is retired");
 
-			// A crash replacement that outruns its own cleanup drops the retired
-			// generation too: the map never accumulates one record per restart.
+			// A crash replacement that outruns its own cleanup retires the stranded
+			// generation too: the map never accumulates one record per restart, and
+			// the replaced generation cannot come back.
 			const stranded = owned.value.bindings(generationInput(2)).dynamicAdapters.approval(created);
 			const replacement = owned.value
 				.bindings(generationInput(3))
 				.dynamicAdapters.approval(created);
 			expect(replacement).not.toBe(stranded);
-			expect(owned.value.bindings(generationInput(2)).dynamicAdapters.approval(created)).not.toBe(
-				stranded,
-			);
+			expect(() => owned.value.bindings(generationInput(2))).toThrow("was replaced by 3");
 		} finally {
 			rmSync(owned.root, { recursive: true, force: true });
 		}
