@@ -34,6 +34,7 @@ export type WorkbenchComposerAction = "start" | "steer" | "interrupt";
  */
 export type WorkbenchComposerRefusalCode =
 	| "unavailable"
+	| "unbound"
 	| "inspect_only"
 	| "empty_prompt"
 	| "prompt_too_long"
@@ -42,6 +43,9 @@ export type WorkbenchComposerRefusalCode =
 	| "no_active_turn"
 	| "turn_changed"
 	| "command_pending";
+
+/** The host's own refusal when a start meets a turn that is already running. */
+export const HOST_TURN_IN_PROGRESS_CODE = "turn_in_progress";
 
 export interface WorkbenchComposerRefusal {
 	readonly code: WorkbenchComposerRefusalCode;
@@ -75,6 +79,9 @@ export type WorkbenchComposerTurn =
 
 export type WorkbenchComposerLink =
 	| { readonly kind: "unavailable"; readonly reason: string }
+	/** No workhorse has been chosen for this pane yet. */
+	| { readonly kind: "unbound"; readonly reason: string }
+	/** A workhorse this browser may read but never send to. */
 	| { readonly kind: "inspect_only"; readonly reason: string }
 	| {
 			readonly kind: "executable";
@@ -135,9 +142,15 @@ export interface WorkbenchComposerCommandResult {
 	readonly reason: string;
 }
 
+/**
+ * The three members the composer actually reaches for. `capabilities()` is
+ * deliberately absent: the transport re-checks command support inside
+ * `command()` and refuses with its own code, so a second capability read here
+ * would only be a way for the two to disagree.
+ */
 export type WorkbenchComposerTransport = Pick<
 	BrowserWorkbenchTransport,
-	"capabilities" | "captureCommandTarget" | "command" | "state"
+	"captureCommandTarget" | "command" | "state"
 >;
 
 export interface WorkbenchComposerControllerOptions {
@@ -166,3 +179,12 @@ export interface WorkbenchComposerProps {
 	readonly controller: WorkbenchComposerController;
 	readonly className?: string;
 }
+
+/**
+ * Composition requirement: when `state` carries an executable thread link this
+ * component renders `ComposerPrimitive.Root`, whose `useComposerSend()` throws
+ * without an `AssistantRuntimeProvider` ancestor, so it must be mounted inside
+ * `WorkbenchRuntimeProvider`'s executable branch. Every other link state
+ * renders no primitive and mounts anywhere. TASK-143.03.10 owns the
+ * composition.
+ */

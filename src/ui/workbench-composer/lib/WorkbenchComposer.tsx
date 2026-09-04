@@ -192,11 +192,7 @@ function UnavailableComposer({
 		>
 			<StatusLine
 				message={link.reason}
-				recovery={
-					link.kind === "inspect_only"
-						? REFUSAL_RECOVERIES.inspect_only
-						: REFUSAL_RECOVERIES.unavailable
-				}
+				recovery={REFUSAL_RECOVERIES[link.kind]}
 				state="unavailable"
 			/>
 			<RetainedRegion onDismiss={onDismissRetained} retained={retained} />
@@ -206,6 +202,12 @@ function UnavailableComposer({
 
 /**
  * The Archboard-owned text composer for one linked workhorse.
+ *
+ * Composition requirement: on the executable path this renders
+ * `ComposerPrimitive.Root`, whose `useComposerSend()` throws without an
+ * `AssistantRuntimeProvider` ancestor, so it must be mounted inside
+ * `WorkbenchRuntimeProvider`'s executable branch. Every other link state
+ * renders no primitive and mounts anywhere.
  *
  * `ComposerPrimitive.Root` is the assigned headless composer primitive: it
  * supplies the form element and the mechanic that focuses the input when a

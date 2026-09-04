@@ -18,6 +18,11 @@ import {
 
 const RUNNING = connected(snapshot({ timeline: timeline([[TURN, "inProgress"]]) }));
 
+const unknownOutcome = (): ReturnType<typeof commandResult> =>
+	commandResult({ outcome: "outcome_unknown", code: null });
+const notReady = (): ReturnType<typeof commandResult> =>
+	commandResult({ outcome: "not_delivered", code: "not_ready", message: null });
+
 function deferred(): { readonly promise: Promise<void>; readonly resolve: () => void } {
 	let release: (() => void) | null = null;
 	const promise = new Promise<void>((resolve) => {
@@ -355,5 +360,91 @@ describe("refusals, disconnects, and late results", () => {
 		unsubscribe();
 		await controller.submit({ text: "Again." });
 		expect(seen).toBe(afterSubscribe);
+	});
+});
+
+describe("remediations from the fixed-range review", () => {
+	test("a definitive not_delivered is not relabelled unknown by a relink in flight", async () => {
+		const transport = fakeComposerTransport({
+			command: async () => {
+				transport.setState(
+					connected(
+						snapshot({
+							threadLink: executableLink(OTHER_THREAD),
+							timeline: timeline([], OTHER_THREAD),
+						}),
+					),
+				);
+				throw new BrowserWorkbenchTransportError("link_changed", "moved");
+			},
+		});
+		const controller = createWorkbenchComposerController({ transport });
+		const result = await controller.submit({ text: "Rename the node." });
+		// The host said nothing was delivered, so the text stays safe to resend
+		// rather than moving into the inert region.
+		expect(result).toEqual({
+			outcome: "not_delivered",
+			reason: "The pane moved to another thread link after this message was composed.",
+		});
+		expect(controller.getState().retained).toBeNull();
+	});
+
+	test("the host's in-progress guard on a start is a definitive refusal with a next action", async () => {
+		// What the gateway sends when the canvas start action refuses a start
+		// because its authoritative thread read found a running turn.
+		const transport = fakeComposerTransport({
+			command: async () =>
+				commandResult({
+					outcome: "not_delivered",
+					code: "invalid_command",
+					message:
+						"Starting a turn requires an idle workhorse; steer the in-progress turn instead.",
+				}),
+		});
+		const controller = createWorkbenchComposerController({ transport });
+		expect(await controller.submit({ text: "Go." })).toEqual({
+			outcome: "not_delivered",
+			reason: "Starting a turn requires an idle workhorse; steer the in-progress turn instead.",
+		});
+		expect(controller.getState().retained).toBeNull();
+	});
+
+	test("a refusal the host sent no message for falls back to the composer's own sentence", async () => {
+		const transport = fakeComposerTransport({
+			command: async () =>
+				commandResult({ outcome: "not_delivered", code: "invalid_command", message: null }),
+		});
+		const controller = createWorkbenchComposerController({ transport });
+		expect((await controller.submit({ text: "Go." })).outcome).toBe("not_delivered");
+		expect(controller.getState().status.message).toBe(
+			"The host refused this command for the workhorse's current state. Read the timeline, then send again.",
+		);
+	});
+
+	test("a retained copy stands through a later command and goes on a delivered resend", async () => {
+		let next = unknownOutcome;
+		const transport = fakeComposerTransport({ command: async () => next() });
+		const controller = createWorkbenchComposerController({ transport });
+		await controller.submit({ text: "Rename the node." });
+		expect(controller.getState().retained?.text).toBe("Rename the node.");
+		// A later command answers a different question, so the standing copy stays.
+		next = notReady;
+		await controller.submit({ text: "Something else." });
+		expect(controller.getState().retained?.text).toBe("Rename the node.");
+		// Delivering the same text finally answers it.
+		next = commandResult;
+		await controller.submit({ text: "Rename the node." });
+		expect(controller.getState().retained).toBeNull();
+	});
+
+	test("a refusal leaves a standing retained copy alone", async () => {
+		const transport = fakeComposerTransport({
+			command: async () => commandResult({ outcome: "outcome_unknown", code: null }),
+		});
+		const controller = createWorkbenchComposerController({ transport });
+		await controller.submit({ text: "Rename the node." });
+		await controller.submit({ text: "  " });
+		expect(controller.getState().status.state).toBe("refused");
+		expect(controller.getState().retained?.text).toBe("Rename the node.");
 	});
 });

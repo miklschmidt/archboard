@@ -7,8 +7,10 @@ import type {
 	WorkbenchComposerCommandResult,
 	WorkbenchComposerController,
 	WorkbenchComposerControllerOptions,
+	WorkbenchComposerDraftDisposition,
 	WorkbenchComposerPlan,
 	WorkbenchComposerRefusal,
+	WorkbenchComposerRetainedDraft,
 	WorkbenchComposerState,
 	WorkbenchComposerStatus,
 	WorkbenchComposerSubmissionResult,
@@ -74,6 +76,8 @@ function settlement(
 }
 
 function refusalOf(error: unknown): Settlement {
+	// The host's own message, when it sent one, beats the composer's vocabulary:
+	// only the host knows which of its state guards refused.
 	if (error instanceof BrowserWorkbenchTransportError)
 		return settlement(error.outcome, transportRefusalMessage(error.code));
 	return settlement(
@@ -143,6 +147,28 @@ export function createWorkbenchComposerController(
 	};
 
 	/**
+	 * A retained copy stands until the person dismisses it, or until it is
+	 * replaced by a newer one. A later command settling does not clear it: the
+	 * copy exists precisely because nobody knows whether its message landed, and
+	 * a following command answers a different question. The one exception is a
+	 * delivered send of the same text — that question is now answered, so the
+	 * copy goes. Refusals leave it alone for the same reason.
+	 */
+	const retainedAfter = (
+		disposition: WorkbenchComposerDraftDisposition,
+		text: string | null,
+		threadId: WorkbenchComposerThreadId,
+		reason: string,
+	): WorkbenchComposerRetainedDraft | null => {
+		if (disposition === "retained" && text !== null)
+			return Object.freeze({ text, threadId, reason });
+		const standing = state.retained;
+		if (standing === null) return null;
+		if (disposition === "cleared" && text !== null && standing.text === text) return null;
+		return standing;
+	};
+
+	/**
 	 * A result that arrives after the pane has left the link it was sent against
 	 * is never applied to the composer the person is now looking at: it becomes a
 	 * retained record naming its own thread, and its outcome is reported as
@@ -186,16 +212,19 @@ export function createWorkbenchComposerController(
 		} catch (error) {
 			settled = refusalOf(error);
 		}
-		if (lateFor(threadId)) settled = settlement("outcome_unknown", LATE_RESULT_REASON);
+		// A relink while the command was in flight makes a delivered or unknown
+		// answer unreadable here, because this browser can no longer see that
+		// link's turns. It does not make a *definitive* refusal unknown: the host
+		// said nothing was delivered, and the person's text is still safe to send
+		// again, so relabelling it would move safe text into the inert region.
+		if (settled.outcome !== "not_delivered" && lateFor(threadId))
+			settled = settlement("outcome_unknown", LATE_RESULT_REASON);
 		const disposition = composerDraftDisposition(settled.outcome);
 		publish({
 			pending: null,
 			settled: state.settled + 1,
 			status: outcomeStatus(settled.outcome, settled.message),
-			retained:
-				disposition === "retained" && text !== null
-					? Object.freeze({ text, threadId, reason: settled.message })
-					: null,
+			retained: retainedAfter(disposition, text, threadId, settled.message),
 		});
 		return settled;
 	};

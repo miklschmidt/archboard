@@ -1,8 +1,9 @@
 /**
- * Archboard owns the composer's keyboard, so the reviewed primitive's own Enter
- * handling is switched off with `submitMode="none"` and this decision runs
- * instead. Keeping the decision here — pure, with no DOM — is what lets one
- * cheap owner prove Enter, Shift+Enter, and IME composition without a browser.
+ * Archboard owns the composer's keyboard. The reviewed primitive's own input
+ * and its Enter handling are not used at all (see `../composer.ts`); this
+ * decision is the only one. Keeping it here — pure, with no DOM — is what lets
+ * one cheap owner prove Enter, Shift+Enter, and IME composition without a
+ * browser.
  */
 export interface ComposerKeyEvent {
 	readonly key: string;
