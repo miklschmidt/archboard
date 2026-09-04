@@ -20,6 +20,7 @@ import { WorkbenchRuntimeProvider } from "../../workbench-runtime/index.js";
 import { WorkbenchThreadLink } from "../../workbench-thread-link/index.js";
 import { WorkbenchTimeline } from "../../workbench-timeline/index.js";
 import type { BrowserWorkbenchTransport } from "../../workbench-transport/index.js";
+import { workbenchFrameRequestSourceIssue } from "../contract.js";
 import type {
 	WorkbenchFrameDisclosure,
 	WorkbenchFramePane,
@@ -115,7 +116,7 @@ function PaneControl({ pane, active, onSelect }: PaneControlProps) {
 
 interface FrameHeaderProps {
 	readonly titleId: string;
-	readonly captureTitle: (node: HTMLHeadingElement | null) => void;
+	readonly captureTitle: (node: HTMLParagraphElement | null) => void;
 	readonly captureToggle: (node: HTMLButtonElement | null) => void;
 	readonly view: WorkbenchFrameView;
 	readonly disclosure: WorkbenchFrameDisclosure;
@@ -140,17 +141,18 @@ function FrameHeader({
 	);
 	const ready = view.state === "ready" ? view : null;
 	return (
-		<header className="flex min-h-header items-center gap-control border-b border-border bg-surface px-region">
+		<header className="flex min-h-header shrink-0 items-center gap-control border-b border-border bg-surface px-region">
 			<div className="min-w-0 shrink-0">
 				<p className="m-0 text-kicker font-semibold text-muted-foreground">Codex</p>
-				<h2
+				<p
 					className="m-0 font-sans text-title font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+					data-workbench-title=""
 					id={titleId}
 					ref={captureTitle}
 					tabIndex={-1}
 				>
 					Agent workbench
-				</h2>
+				</p>
 			</div>
 			{ready === null ? null : (
 				<nav aria-label="Workbench panes" className="min-w-0 flex flex-1 items-center gap-control">
@@ -201,10 +203,6 @@ function ActivePane({ pane, timelineId, coordinatorId, approvalsId }: ActivePane
 				className="min-h-0 min-w-0 [&>[data-workbench-runtime]]:min-h-0 col-span-2 flex flex-col overflow-hidden border-r border-border bg-surface [&>[data-workbench-runtime]]:flex [&>[data-workbench-runtime]]:flex-1 [&>[data-workbench-runtime]]:flex-col [&>[data-workbench-runtime]]:overflow-hidden"
 				data-workbench-region="workhorse"
 			>
-				<header className="flex min-h-touch-target items-center justify-between gap-control border-b border-border px-region">
-					<h3 className="m-0 font-sans text-title font-semibold">Workhorse activity</h3>
-					<span className="font-sans text-body text-muted-foreground">{pane.identity.label}</span>
-				</header>
 				<WorkbenchRuntimeProvider
 					onSubmit={pane.composerController.submit}
 					transport={pane.transport}
@@ -281,22 +279,26 @@ function AppGlobalRequest({
 	readonly id: string;
 }) {
 	const present = request.state === "present";
-	const validSource =
-		!present || (request.source.pane.id.trim() !== "" && request.source.pane.label.trim() !== "");
+	const sourceIssue = present ? workbenchFrameRequestSourceIssue(request.source) : null;
+	const validSource = sourceIssue === null;
+	const invalidRequest =
+		sourceIssue === null
+			? INVALID_REQUEST_SOURCE
+			: Object.freeze({ ...INVALID_REQUEST_SOURCE, detail: sourceIssue });
 	return (
 		<section
 			aria-label="Application-wide Codex requests"
-			className="min-w-0 border-t border-border bg-surface shadow-flat"
+			className="min-w-0 max-h-[40%] min-h-touch-target shrink-0 overflow-y-auto overscroll-contain border-t border-border bg-surface shadow-flat"
 			data-workbench-region="app-global-request"
 			data-workbench-request={
 				present && validSource ? "present" : present ? "error" : request.state
 			}
 			id={id}
 		>
-			<header className="flex min-h-touch-target items-center justify-between gap-control px-region">
+			<header className="top-0 sticky z-10 flex min-h-touch-target items-center justify-between gap-control bg-surface px-region">
 				<div className="min-w-0">
 					<p className="m-0 text-kicker font-semibold text-muted-foreground">Application-wide</p>
-					<h3 className="m-0 font-sans text-title font-semibold">Approval and input requests</h3>
+					<p className="m-0 font-sans text-title font-semibold">Approval and input requests</p>
 				</div>
 				{present && validSource ? (
 					<dl className="m-0 min-w-0 flex items-baseline gap-control">
@@ -311,7 +313,7 @@ function AppGlobalRequest({
 				validSource ? (
 					<PresentRequest source={request.source} />
 				) : (
-					<RequestState request={INVALID_REQUEST_SOURCE} />
+					<RequestState request={invalidRequest} />
 				)
 			) : (
 				<RequestState request={request} />
@@ -325,7 +327,7 @@ export function WorkbenchFrame(props: WorkbenchFrameProps): ReactNode {
 	const timelineId = useId();
 	const coordinatorId = useId();
 	const approvalsId = useId();
-	const titleRef = useRef<HTMLHeadingElement | null>(null);
+	const titleRef = useRef<HTMLParagraphElement | null>(null);
 	const toggleRef = useRef<HTMLButtonElement | null>(null);
 	const contentHadFocus = useRef(false);
 	const contentVisible = props.disclosure === "expanded" && props.space === "workspace";
@@ -343,7 +345,7 @@ export function WorkbenchFrame(props: WorkbenchFrameProps): ReactNode {
 	const onContentFocus = useCallback(() => {
 		contentHadFocus.current = true;
 	}, []);
-	const captureTitle = useCallback((node: HTMLHeadingElement | null) => {
+	const captureTitle = useCallback((node: HTMLParagraphElement | null) => {
 		titleRef.current = node;
 	}, []);
 	const captureToggle = useCallback((node: HTMLButtonElement | null) => {
@@ -365,7 +367,7 @@ export function WorkbenchFrame(props: WorkbenchFrameProps): ReactNode {
 		<section
 			aria-labelledby={titleId}
 			className={cn(
-				"min-h-0 min-w-0 max-h-full overflow-hidden border-y border-border bg-background font-sans text-foreground shadow-flat transition-colors duration-control ease-control forced-color-adjust-auto forced-colors:border-current",
+				"min-h-0 min-w-0 flex h-full max-h-full flex-col overflow-hidden border-y border-border bg-background font-sans text-foreground shadow-flat transition-colors duration-control ease-control forced-color-adjust-auto forced-colors:border-current",
 				props.className,
 			)}
 			data-pane-count={ready?.panes.length ?? 0}
@@ -383,37 +385,39 @@ export function WorkbenchFrame(props: WorkbenchFrameProps): ReactNode {
 				titleId={titleId}
 				view={props.view}
 			/>
-			{contentVisible ? (
-				<div
-					className="min-h-0 min-w-0 grid grid-cols-3 overflow-hidden"
-					data-workbench-content="expanded"
-					onBlurCapture={onContentBlur}
-					onFocusCapture={onContentFocus}
-				>
-					{props.view.state !== "ready" ? (
-						<div className="col-span-3">
-							<FrameState view={props.view} />
-						</div>
-					) : issue !== null ? (
-						<div className="col-span-3">
-							<InvalidReadyState detail={issue} />
-						</div>
-					) : activePane !== null ? (
-						<ActivePane
-							approvalsId={approvalsId}
-							coordinatorId={coordinatorId}
-							pane={activePane}
-							timelineId={timelineId}
-						/>
-					) : null}
-				</div>
-			) : props.view.state !== "ready" ? (
-				<FrameState view={props.view} />
-			) : issue !== null ? (
-				<InvalidReadyState detail={issue} />
-			) : activePane !== null ? (
-				<WorkbenchFrameCompact pane={activePane} />
-			) : null}
+			<div className="min-h-0 min-w-0 flex-1 overflow-hidden" data-workbench-work-area="">
+				{contentVisible ? (
+					<div
+						className="min-h-0 min-w-0 grid h-full grid-cols-3 overflow-hidden"
+						data-workbench-content="expanded"
+						onBlurCapture={onContentBlur}
+						onFocusCapture={onContentFocus}
+					>
+						{props.view.state !== "ready" ? (
+							<div className="col-span-3">
+								<FrameState view={props.view} />
+							</div>
+						) : issue !== null ? (
+							<div className="col-span-3">
+								<InvalidReadyState detail={issue} />
+							</div>
+						) : activePane !== null ? (
+							<ActivePane
+								approvalsId={approvalsId}
+								coordinatorId={coordinatorId}
+								pane={activePane}
+								timelineId={timelineId}
+							/>
+						) : null}
+					</div>
+				) : props.view.state !== "ready" ? (
+					<FrameState view={props.view} />
+				) : issue !== null ? (
+					<InvalidReadyState detail={issue} />
+				) : activePane !== null ? (
+					<WorkbenchFrameCompact pane={activePane} />
+				) : null}
+			</div>
 			<AppGlobalRequest id={approvalsId} request={props.request} />
 		</section>
 	);

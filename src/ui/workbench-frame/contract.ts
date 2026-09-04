@@ -52,15 +52,54 @@ export type WorkbenchFrameView =
 			activePaneId: WorkbenchFramePaneIdentity["id"];
 	  }>;
 
+const REQUEST_SOURCE_PANE_ID = Symbol("workbench-frame-request-source-pane");
+
 /**
  * A request carries its originating transport with its originating identity.
  * It is intentionally separate from the active pane so navigation cannot
  * retarget a response.
  */
 export interface WorkbenchFrameRequestSource {
+	readonly [REQUEST_SOURCE_PANE_ID]: WorkbenchFramePaneIdentity["id"];
 	readonly pane: WorkbenchFramePaneIdentity;
 	readonly transport: BrowserWorkbenchTransport;
 	readonly now?: () => number;
+}
+
+/** Return the reason a captured source cannot safely present request actions. */
+export function workbenchFrameRequestSourceIssue(
+	source: WorkbenchFrameRequestSource,
+): string | null {
+	if (source.pane.id.trim() === "" || source.pane.label.trim() === "") {
+		return "The application-wide request has no exact source pane identity and label.";
+	}
+	if (source[REQUEST_SOURCE_PANE_ID] !== source.pane.id) {
+		return "The application-wide request was not captured from the pane identity it displays.";
+	}
+	const lease = source.transport.lease();
+	if (lease !== null && lease.paneId !== source.pane.id) {
+		return `The application-wide request source ${source.pane.label} does not match transport pane ${lease.paneId}.`;
+	}
+	return null;
+}
+
+/**
+ * Capture identity and dispatch from one pane port. Callers cannot construct a
+ * source by freely pairing one pane label with another pane's transport.
+ */
+export function captureWorkbenchFrameRequestSource(
+	pane: Pick<WorkbenchFramePane, "identity" | "transport">,
+	now?: () => number,
+): WorkbenchFrameRequestSource {
+	const captured = Object.freeze({
+		[REQUEST_SOURCE_PANE_ID]: pane.identity.id,
+		pane: Object.freeze({ ...pane.identity }),
+		transport: pane.transport,
+		...(now === undefined ? {} : { now }),
+	}) satisfies WorkbenchFrameRequestSource;
+	const issue = workbenchFrameRequestSourceIssue(captured);
+	if (issue !== null) throw new TypeError(issue);
+	return captured;
 }
 
 export type WorkbenchFrameRequest =

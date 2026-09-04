@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-04 12:18'
+updated_date: '2026-09-04 12:33'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -73,4 +73,20 @@ Independent validation:
 - git diff --check — pass.
 
 Remaining review risk: TASK-143.03.11 still owns allocation of a definite frame height and shell mounting; TASK-143.03.13 owns real-browser verification across desktop/Flip viewports, themes, reduced motion, high contrast, Excalidraw coexistence, and actual horizontal scrolling. No broad suite or browser owner was run here, as required. Acceptance criteria remain unchecked and status remains In Progress for independent review.
+
+Review remediation (2026-09-04):
+- Internal frame allocation now uses a full-height flex column with a min-h-0 flex-1 work area and a shrink-0, max-h-[40%], independently scrollable application-wide request rail. A long retained request owner verifies the request remains in the frame allocation instead of being clipped by work-area overflow.
+- captureWorkbenchFrameRequestSource now captures pane identity and transport from one pane port behind an opaque symbol brand. The frame revalidates the captured identity and current transport lease before rendering actions; mismatched identity/transport construction throws, and a tampered displayed identity renders an error with no Approve action.
+- The frame shell and app-global wrapper no longer introduce competing semantic headings. The workbench timeline owns the sole h1, downstream module headings follow without skipped levels, and the duplicate workhorse header is removed.
+- Compact workhorse status now prioritizes reconnecting, backoff, and stale_snapshot transport state over a retained snapshot thread-link status. Focused retained-snapshot fixtures cover all three states.
+
+Remediation validation:
+- bun test --isolate src/ui/workbench-frame/tests — 10 pass, 0 fail, 114 assertions.
+- bunx tsc --noEmit — pass.
+- bunx tsc --noEmit -p tsconfig.frontend.json — pass.
+- bunx oxlint src/ui/workbench-frame && bunx oxfmt --check src/ui/workbench-frame — pass.
+- focused repository policies (boundaries, test inventory, assistant-ui imports, assistant-ui test observer imports) — 75 pass, 0 fail, 426 assertions.
+- git diff --check — pass.
+
+The accepted jsx-a11y/no-noninteractive-tabindex suppression remains narrowly scoped to the named focusable native overflow rail. Status remains In Progress and acceptance criteria remain unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->
