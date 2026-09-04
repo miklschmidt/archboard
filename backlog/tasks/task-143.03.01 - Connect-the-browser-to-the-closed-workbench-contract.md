@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.01
 title: Connect the browser to the closed workbench contract
-status: In Progress
+status: Done
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-04 02:44'
+updated_date: '2026-09-04 02:56'
 labels: []
 dependencies:
   - TASK-143.01.14
@@ -14,15 +14,23 @@ references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
+  - src/shared/codex-browser-gateway/index.ts
+  - src/shared/codex-browser-gateway/lib/envelope.ts
+  - src/shared/codex-browser-model/lib/browser.ts
+  - src/server/codex-workbench/lib/contract.ts
+  - src/server/canvas/lib/codex-workbench-browser.ts
+  - src/ui/workbench-transport/lib/contract.ts
   - src/ui/workbench-transport/lib/transport.ts
   - src/ui/workbench-transport/lib/wire.ts
-  - src/ui/workbench-transport/tests/remediation-capabilities.test.ts
-  - src/ui/workbench-transport/tests/remediation-second.test.ts
+  - src/ui/workbench-transport/tests/fake-socket.ts
+  - src/ui/workbench-transport/tests/stream-reduction.test.ts
+  - src/ui/workbench-transport/tests/command-targeting.test.ts
+  - src/ui/workbench-transport/tests/capabilities.test.ts
+  - src/ui/workbench-transport/tests/lease-identity.test.ts
+  - src/ui/workbench-transport/tests/dynamic-approval.test.ts
   - src/ui/workbench-transport/tests/shared-socket.test.ts
-  - src/ui/codex-workbench-media/index.ts
-  - src/ui/codex-workbench-media/lib/media-owner.ts
-  - src/ui/canvas/useCanvasSession.ts
   - src/ui/canvas/workbench-socket.ts
+  - src/ui/canvas/useCanvasSession.ts
   - src/ui/canvas/tests/workbench-socket.test.ts
   - src/ui/canvas/tests/pane-report-sequencing.test.ts
   - tests/system/canvas-state/codex-workbench-application-sockets.test.ts
@@ -42,10 +50,10 @@ Delegation profile: gpt-daybreak-blue-latest, low.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The client obtains one versioned full snapshot then applies strictly sequenced deltas from the production gateway; reconnect requests a new snapshot and never replays a command automatically.
-- [ ] #2 Commands carry browser lease, pane, link, child epoch, and command identity and retain their original target across focus/navigation changes.
-- [ ] #3 Stopped/backoff, initialized, storage mismatch, login-capable/signed-out/login pending, account-ready, thread-capable, reconnecting, stale snapshot, and incompatible-contract states are represented without enabling unsupported commands.
-- [ ] #4 Transport tests use the final composed gateway public contract and prove duplicate/out-of-order messages, lost responses, late results, lease expiry, close, and recovery.
+- [x] #1 The client obtains one versioned full snapshot then applies strictly sequenced deltas from the production gateway; reconnect requests a new snapshot and never replays a command automatically.
+- [x] #2 Commands carry browser lease, pane, link, child epoch, and command identity and retain their original target across focus/navigation changes.
+- [x] #3 Stopped/backoff, initialized, storage mismatch, login-capable/signed-out/login pending, account-ready, thread-capable, reconnecting, stale snapshot, and incompatible-contract states are represented without enabling unsupported commands.
+- [x] #4 Transport tests use the final composed gateway public contract and prove duplicate/out-of-order messages, lost responses, late results, lease expiry, close, and recovery.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -131,6 +139,24 @@ Both drift directions were verified to fail type-check: renaming an ingress arm 
 Post-rebase validation from the worktree: bun run type-check pass (both TypeScript projects); bun run lint pass; bun run fmt:check pass across 1055 files; bun run build:frontend pass; bun test --isolate src/ui src/shared src/server/codex-workbench src/server/canvas 492 pass 0 fail 5953 assertions across 74 files; bun run test:repository 122 pass 0 fail 1060 assertions across 18 files; bun test --isolate --max-concurrency=1 tests/system/canvas-state/codex-workbench-application-sockets.test.ts tests/system/canvas-state/codex-workbench-production.test.ts 4 pass 0 fail 84 assertions; bun run test:modules 1966 pass 0 fail 18624 assertions across 220 files. No serial-browser or opt-in lane ran. The pre-existing non-isolated shared-process module-registry artefacts recorded in the previous note do not appear under any of these isolated lanes.
 
 Acceptance criteria remain unchecked and the task remains In Progress for independent re-review.
+
+Review nits and finalization (@claude-opus, 2026-09-04). Independent fixed-range review of 65db721a..e66bfbcd returned CLEAN.
+
+Nit 1 (applied). The comment at transport.ts justifying why the approval binding's link is not compared claimed it was a server presentation value shaped pane:<paneId>. src/runtime/codex-approvals/lib/contract.ts:73 types it string | null, src/runtime/codex-approvals/lib/request.ts:293 defaults it to null, and nothing validates it beyond bounded human text. Reworded: nullable free-form text with no guaranteed value, not an identity.
+
+Nit 2 (applied, with the stronger of the two options). The comment claimed the gateway presents the queue as unavailable to a pane on any other link. projectQueue (src/server/codex-workbench/lib/projection.ts:134) returns unavailable only when submissions is null, so a pane on a different executable link sees that link's queue. The four queue commands that name submission ids are still anchored by those ids, which belong to one link's queue and are absent from another's. queueAdd names none, so rather than leave its protection to the caller remembering to pass a captured target, command() now refuses a queueAdd with no target at all (link_required). Forgetting is refused instead of silently retargeted, and the contract's command() doc says so. New owner: command-targeting.test.ts 'queueAdd must name the target it was composed against, and is refused after navigation' — it drafts on thread-a, proves the no-target call is refused, sends it with the captured target, navigates to thread-b whose queue is present and queued and whose queueAdd capability is true, and asserts the same captured draft is refused link_changed with no second command on the wire. Removing the guard fails that owner (verified).
+
+Nit 3 (applied). hasUsableApproval compared binding.child/epoch against the current thread link while approvalMatchesTarget compared against the lease, so supportsCommand and command() could disagree. Both now go through one approvalBoundTo predicate keyed on the lease, mirroring hasUsableDynamicApproval.
+
+Nit 4 (applied). Removed hasUsableApproval's unreachable snapshot === undefined branch.
+
+Nit 5 (left as is, as directed). BROWSER_GATEWAY_ACTIONS and the delta-key exports have no consumer outside envelope.ts yet; the approvals, queue and thread-link UI modules being built in parallel are their intended callers.
+
+Task metadata refreshed: modified_files now names the twenty surviving files, including the new shared gateway module, the shared browser model, both contracts, the canvas ingress schema, the six behaviour-named transport test files and the sanctioned fixture; the deleted remediation-*.test.ts and transport.test.ts entries are gone.
+
+Finalization validation from the worktree: bun run type-check pass (both TypeScript projects); bun run lint pass; bun run fmt:check pass across 1055 files; bun run build:frontend pass; bun test --isolate src/ui src/shared src/server/codex-workbench src/server/canvas 493 pass 0 fail 5960 assertions across 74 files; bun run test:repository 122 pass 0 fail 1060 assertions across 18 files; bun test --isolate --max-concurrency=1 tests/system/canvas-state/codex-workbench-application-sockets.test.ts tests/system/canvas-state/codex-workbench-production.test.ts 4 pass 0 fail 84 assertions; bun run test:modules 1967 pass 0 fail 18631 assertions across 220 files. No serial-browser or opt-in lane ran.
+
+Acceptance criteria evidence. AC #1: stream-reduction.test.ts 'attach reports the transient reconnecting state before the subscribe baseline arrives' (one subscribe produces the single versioned baseline), 'strict stream reduction rejects gaps, ignores duplicates, and recovers from a snapshot', 'a redelivered older delta is stale and asks for one recovery snapshot', 'lost command responses become outcome-unknown and are never replayed after replacement'; tests/system/canvas-state/codex-workbench-application-sockets.test.ts 'the production canvas socket composes one transport reducer with media behavior' proves the same against the real composed gateway. AC #2: command-targeting.test.ts, all six owners; lease-identity.test.ts 'transport snapshots, leases, and captured targets remain immutable across later deltas'; dynamic-approval.test.ts 'valid dynamic approval responses require one live pending approval and use the shared parser' and 'changing every dynamic identity, binding, state, or expiry component sends no command'. AC #3: capabilities.test.ts 'keeps the readiness, link, lease, and command capability matrix explicit' walks all eleven readiness arms plus both non-executable link arms and the detached case, 'marks a sequence gap stale, disables commands, and keeps the lease renewable' owns stale_snapshot, and 'rejects hostile nested snapshots and every closed delta projection' owns incompatible_contract; stream-reduction.test.ts owns the reconnecting, backoff and stopped connection states. AC #4: duplicate and out-of-order in stream-reduction.test.ts's two stream owners; lost responses and late results in lease-identity.test.ts 'settles an open-socket request once at the deadline and ignores a late result' and stream-reduction's lost-command owner; lease expiry in dynamic-approval.test.ts 'lease expiry makes account, thread, queue, approval, dynamic, renew, and release paths inert'; close and recovery in stream-reduction.test.ts 'explicit close uses the gateway close action and leaves the transport stopped' and 'account results reconcile through a versioned snapshot and socket close exposes backoff'. Every one of these drives the final composed gateway envelope, which is now authored once in src/shared/codex-browser-gateway and imported by the browser transport, the server gateway contract, and the canvas ingress schema.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -141,3 +167,19 @@ created: 2026-09-02 01:39
 Course correction, 2026-09-02: maximal head 4e93e729 and ancestor 6438d02e contain browser realtime and media behavior but depend on the rejected contract and excess test structure. Rebuild the useful behavior after recovery; do not merge the chain.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The browser now speaks the closed workbench contract against the final composed production gateway, and the gateway envelope is authored once instead of copied.
+
+One versioned snapshot arrives from a single subscribe handshake per socket generation, strictly sequenced deltas follow it, and a gap, a duplicate, a redelivered older message, or a lost socket asks for a new snapshot rather than replaying a command. Sequence is decided before a delta is merged, so an out-of-order message is read as old rather than as a broken contract.
+
+Every command carries the lease, pane, link, child epoch and command identity captured at dispatch, and keeps it across focus and navigation changes. Ordinary approvals and the queue commands, which name no thread of their own, are matched against the snapshot's own pending request or against submission ids belonging to the captured link's queue; queueAdd, which has nothing to anchor it, must name the target it was composed against. A caller may pass a target captured when the action was offered and the command is refused rather than retargeted.
+
+Readiness, stale-snapshot, reconnecting, backoff, stopped and incompatible-contract states are each represented, and the capability matrix says exactly which commands each arm enables — including the deliberate choice that a live lease stays renewable and releasable while a stale stream recovers.
+
+The gateway action list, error codes, snapshot and delta messages, delta keys and result shapes now live in src/shared/codex-browser-gateway, imported by the browser transport, the server gateway contract and the canvas ingress schema; adding a snapshot field or a gateway action without handling it everywhere is a compile error in both directions, verified by deliberately breaking each.
+
+Verified with: bun run type-check, bun run lint, bun run fmt:check (1055 files), bun run build:frontend; bun test --isolate src/ui src/shared src/server/codex-workbench src/server/canvas (493 pass, 0 fail, 5960 assertions, 74 files); bun run test:repository (122 pass, 0 fail, 1060 assertions); the two canvas-state system owners against a real canvas server (4 pass, 0 fail, 84 assertions); and bun run test:modules (1967 pass, 0 fail, 18631 assertions, 220 files). Each behavioural fix was also verified to fail its owner with the fix reverted.
+<!-- SECTION:FINAL_SUMMARY:END -->
