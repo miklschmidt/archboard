@@ -16,7 +16,7 @@ import React, {
 	useState,
 	useSyncExternalStore,
 } from "react";
-import { CanvasPane } from "../canvas/CanvasPane";
+import { CanvasPane, type CanvasPaneVoiceRegistration } from "../canvas/CanvasPane";
 import { activateCodeTarget } from "../code-target";
 import type { MountedBoardPreviewController, MountedBoardPreviewScene } from "../board-preview";
 import {
@@ -27,11 +27,14 @@ import {
 } from "../workbench-board-status";
 import {
 	captureWorkbenchFrameRequestSource,
+	captureWorkbenchFrameVoiceSource,
 	WorkbenchFrame,
 	type WorkbenchFrameDisclosure,
 	type WorkbenchFramePane,
 	type WorkbenchFrameRequest,
 	type WorkbenchFrameView,
+	type WorkbenchFrameVoiceSlot,
+	type WorkbenchFrameVoiceSource,
 } from "../workbench-frame";
 import {
 	createWorkbenchComposerController,
@@ -42,6 +45,7 @@ import {
 } from "../workbench-composer";
 import { createThreadLinkController, type ThreadLinkController } from "../workbench-thread-link";
 import type { BrowserWorkbenchTransport } from "../workbench-transport";
+import type { VoiceSessionStatus, VoiceSessionView } from "../voice-session";
 import { SelectionInspector } from "../selection-inspector/SelectionInspector";
 import type { PaneSelectionSnapshot, SelectionProjection } from "../selection-inspector";
 import type { PanePathFocusSnapshot, PathFocusController, PathFocusSnapshot } from "../path-focus";
@@ -134,12 +138,101 @@ interface WorkbenchPaneOwner {
 	readonly threadLinkController: ThreadLinkController;
 }
 
+interface WorkbenchVoiceOwner {
+	readonly registration: CanvasPaneVoiceRegistration;
+	readonly source: WorkbenchFrameVoiceSource;
+}
+
+interface WorkbenchPaneRegistration {
+	readonly text: WorkbenchPaneOwner | null;
+	readonly voice: WorkbenchVoiceOwner | null;
+}
+
 interface PresentationTextSource {
 	readonly paneId: string;
 	readonly paneLabel: string;
 	readonly workhorseId: string | null;
 	readonly turnId: WorkbenchComposerTurnId | null;
 	readonly canStop: boolean;
+}
+
+interface PresentationVoiceSource {
+	readonly state: "active";
+	readonly paneId: string;
+	readonly paneLabel: string;
+	readonly workhorseId: string;
+	readonly coordinatorId: string | null;
+	readonly sessionId: string;
+	readonly mute: "Muted" | "Unmuted";
+	readonly phase: string;
+	readonly canStop: boolean;
+}
+
+interface PresentationVoiceConflict {
+	readonly state: "conflict";
+	readonly count: number;
+}
+
+type ActiveVoiceProjection =
+	| { readonly state: "none" }
+	| {
+			readonly state: "active";
+			readonly owner: WorkbenchVoiceOwner;
+			readonly view: VoiceSessionView;
+			readonly presentation: PresentationVoiceSource;
+	  }
+	| { readonly state: "conflict"; readonly presentation: PresentationVoiceConflict };
+
+const ACTIVE_VOICE_STATUSES = new Set<VoiceSessionStatus>([
+	"requesting_permission",
+	"negotiating",
+	"listening",
+	"muted",
+	"processing",
+	"agent_speaking",
+	"recovering",
+	"stopping",
+	"failed",
+]);
+
+function activeVoiceOwner(owner: WorkbenchVoiceOwner): VoiceSessionView | null {
+	const view = owner.registration.session.view();
+	return view.binding !== null && view.sessionId !== null && ACTIVE_VOICE_STATUSES.has(view.status)
+		? view
+		: null;
+}
+
+function activeVoiceProjection(
+	registrations: Readonly<Record<string, WorkbenchPaneRegistration>>,
+): ActiveVoiceProjection {
+	const active = Object.values(registrations).flatMap((registration) => {
+		const owner = registration.voice;
+		if (owner === null) return [];
+		const view = activeVoiceOwner(owner);
+		return view === null ? [] : [{ owner, view }];
+	});
+	if (active.length === 0) return { state: "none" };
+	if (active.length > 1) {
+		return { state: "conflict", presentation: { state: "conflict", count: active.length } };
+	}
+	const current = active[0]!;
+	const binding = current.view.binding!;
+	return {
+		state: "active",
+		owner: current.owner,
+		view: current.view,
+		presentation: {
+			state: "active",
+			paneId: current.owner.source.pane.id,
+			paneLabel: current.owner.source.pane.label,
+			workhorseId: binding.workhorseThreadId,
+			coordinatorId: binding.coordinatorThreadId,
+			sessionId: current.view.sessionId!,
+			mute: current.view.status === "muted" ? "Muted" : "Unmuted",
+			phase: current.view.label,
+			canStop: current.view.controls.canStop,
+		},
+	};
 }
 
 function claimCampaign(holder: LockHolder | null): string | null {
@@ -330,7 +423,10 @@ interface PresentationDockProps {
 	presentation: FullscreenPresentationSnapshot;
 	dockRef: React.RefObject<HTMLDivElement | null>;
 	textSource: PresentationTextSource | null;
-	onStopText: () => void;
+	voiceSource: PresentationVoiceSource | PresentationVoiceConflict | null;
+	stopEnabled: boolean;
+	stopReason: string | null;
+	onStop: () => void;
 	onTransfer: React.MouseEventHandler<HTMLButtonElement>;
 	onExit: () => void;
 }
@@ -340,7 +436,10 @@ function PresentationDock({
 	presentation,
 	dockRef,
 	textSource,
-	onStopText,
+	voiceSource,
+	stopEnabled,
+	stopReason,
+	onStop,
 	onTransfer,
 	onExit,
 }: PresentationDockProps): React.JSX.Element | null {
@@ -369,43 +468,117 @@ function PresentationDock({
 					</button>
 				))}
 			</fieldset>
-			<div className="presentation-text-source" aria-label="Active text workbench">
-				<span className="presentation-text-kicker">Text</span>
-				<span className="presentation-text-field">
-					<span className="presentation-text-label">Pane</span>
-					<span className="presentation-text-value">
-						{textSource?.paneLabel ?? "No active pane"}
+			<div className="presentation-sources">
+				<div className="presentation-text-source" aria-label="Active text workbench">
+					<span className="presentation-source-kicker">Text</span>
+					<span className="presentation-source-field">
+						<span className="presentation-source-label">Pane</span>
+						<span className="presentation-source-value">
+							{textSource?.paneLabel ?? "No active pane"}
+						</span>
 					</span>
-				</span>
-				<span className="presentation-text-field">
-					<span className="presentation-text-label">Workhorse</span>
-					<span
-						className="presentation-text-value presentation-text-identity"
-						title={textSource?.workhorseId ?? undefined}
+					<span className="presentation-source-field">
+						<span className="presentation-source-label">Workhorse</span>
+						<span
+							className="presentation-source-value presentation-source-identity"
+							title={textSource?.workhorseId ?? undefined}
+						>
+							{textSource?.workhorseId ?? "No workhorse"}
+						</span>
+					</span>
+					<span className="presentation-source-field">
+						<span className="presentation-source-label">Turn</span>
+						<span
+							className="presentation-source-value presentation-source-identity"
+							title={textSource?.turnId ?? undefined}
+						>
+							{textSource?.turnId ?? "No active turn"}
+						</span>
+					</span>
+				</div>
+				{voiceSource?.state === "active" ? (
+					<div
+						className="presentation-voice-source"
+						aria-label="Active voice session"
+						data-voice-session-id={voiceSource.sessionId}
 					>
-						{textSource?.workhorseId ?? "No workhorse"}
-					</span>
-				</span>
-				<span className="presentation-text-field">
-					<span className="presentation-text-label">Turn</span>
-					<span
-						className="presentation-text-value presentation-text-identity"
-						title={textSource?.turnId ?? undefined}
-					>
-						{textSource?.turnId ?? "No active turn"}
-					</span>
-				</span>
+						<span className="presentation-source-kicker">Voice</span>
+						<span className="presentation-source-field">
+							<span className="presentation-source-label">Pane</span>
+							<span className="presentation-source-value">{voiceSource.paneLabel}</span>
+						</span>
+						<span className="presentation-source-field">
+							<span className="presentation-source-label">Workhorse</span>
+							<span
+								className="presentation-source-value presentation-source-identity"
+								title={voiceSource.workhorseId}
+							>
+								{voiceSource.workhorseId}
+							</span>
+						</span>
+						<span className="presentation-source-field">
+							<span className="presentation-source-label">Coordinator</span>
+							<span
+								className="presentation-source-value presentation-source-identity"
+								title={voiceSource.coordinatorId ?? undefined}
+							>
+								{voiceSource.coordinatorId ?? "No coordinator"}
+							</span>
+						</span>
+						<span className="presentation-source-field">
+							<span className="presentation-source-label">Session</span>
+							<span
+								className="presentation-source-value presentation-source-identity"
+								title={voiceSource.sessionId}
+							>
+								{voiceSource.sessionId}
+							</span>
+						</span>
+						<span className="presentation-source-field">
+							<span className="presentation-source-label">Mute</span>
+							<span className="presentation-source-value">{voiceSource.mute}</span>
+						</span>
+						<span className="presentation-source-field">
+							<span className="presentation-source-label">Phase</span>
+							<span className="presentation-source-value">{voiceSource.phase}</span>
+						</span>
+					</div>
+				) : voiceSource?.state === "conflict" ? (
+					<div className="presentation-voice-source" aria-label="Active voice session conflict">
+						<span className="presentation-source-kicker">Voice</span>
+						<span className="presentation-source-field">
+							<span className="presentation-source-label">State</span>
+							<span className="presentation-source-value">Conflicting sources</span>
+						</span>
+						<span className="presentation-source-field">
+							<span className="presentation-source-label">Sessions</span>
+							<span className="presentation-source-value">{voiceSource.count} active</span>
+						</span>
+						<span className="presentation-voice-conflict" role="alert">
+							Stop is disabled until one authoritative voice source remains.
+						</span>
+					</div>
+				) : null}
 			</div>
 			<button
 				type="button"
 				className="presentation-stop"
-				disabled={!textSource?.canStop}
-				onClick={onStopText}
-				data-pane-id={textSource?.paneId}
-				data-turn-id={textSource?.turnId ?? undefined}
+				disabled={!stopEnabled}
+				onClick={onStop}
+				aria-describedby={
+					!stopEnabled && stopReason !== null ? "presentation-stop-reason" : undefined
+				}
+				data-pane-id={voiceSource?.state === "active" ? voiceSource.paneId : textSource?.paneId}
+				data-turn-id={voiceSource === null ? (textSource?.turnId ?? undefined) : undefined}
+				data-voice-session-id={voiceSource?.state === "active" ? voiceSource.sessionId : undefined}
 			>
 				Stop
 			</button>
+			{!stopEnabled && stopReason !== null ? (
+				<span className="sr-only" id="presentation-stop-reason">
+					{stopReason}
+				</span>
+			) : null}
 			{presentation.error && <span role="alert">{presentation.error}</span>}
 			<button type="button" className="presentation-exit" onClick={onExit}>
 				<Icon name="close" size={17} />
@@ -500,8 +673,10 @@ export function Shell(): React.JSX.Element {
 	const [focused, setFocused] = useState("pane-1");
 	const [statuses, setStatuses] = useState<Record<string, PaneStatus>>({});
 	const [agentStates, setAgentStates] = useState<Record<string, AgentState>>({});
-	const [workbenchOwners, setWorkbenchOwners] = useState<Record<string, WorkbenchPaneOwner>>({});
-	const workbenchOwnersRef = useRef<Record<string, WorkbenchPaneOwner>>({});
+	const [workbenchRegistrations, setWorkbenchRegistrations] = useState<
+		Record<string, WorkbenchPaneRegistration>
+	>({});
+	const workbenchRegistrationsRef = useRef<Record<string, WorkbenchPaneRegistration>>({});
 	const [workbenchRevision, setWorkbenchRevision] = useState(0);
 	const [workbenchDisclosure, setWorkbenchDisclosure] =
 		useState<WorkbenchFrameDisclosure>("collapsed");
@@ -701,16 +876,28 @@ export function Shell(): React.JSX.Element {
 	);
 	const onWorkbenchTransport = useCallback(
 		(paneId: string, transport: BrowserWorkbenchTransport | null): void => {
-			const existing = workbenchOwnersRef.current[paneId];
+			const existing = workbenchRegistrationsRef.current[paneId] ?? {
+				text: null,
+				voice: null,
+			};
 			if (transport === null) {
-				if (!existing) return;
-				const { [paneId]: removed, ...remaining } = workbenchOwnersRef.current;
-				void removed;
-				workbenchOwnersRef.current = remaining;
-				setWorkbenchOwners(remaining);
+				if (existing.text === null) return;
+				if (existing.voice === null) {
+					const { [paneId]: removed, ...remaining } = workbenchRegistrationsRef.current;
+					void removed;
+					workbenchRegistrationsRef.current = remaining;
+					setWorkbenchRegistrations(remaining);
+					return;
+				}
+				const next = {
+					...workbenchRegistrationsRef.current,
+					[paneId]: { ...existing, text: null },
+				};
+				workbenchRegistrationsRef.current = next;
+				setWorkbenchRegistrations(next);
 				return;
 			}
-			if (existing?.transport === transport) return;
+			if (existing.text?.transport === transport) return;
 			const owner: WorkbenchPaneOwner = {
 				transport,
 				composerController: createWorkbenchComposerController({ transport }),
@@ -718,23 +905,77 @@ export function Shell(): React.JSX.Element {
 					capturePane: () => ({ paneId, transport, hostRecoveryIntents: [] }),
 				}),
 			};
-			const next = { ...workbenchOwnersRef.current, [paneId]: owner };
-			workbenchOwnersRef.current = next;
-			setWorkbenchOwners(next);
+			const next = {
+				...workbenchRegistrationsRef.current,
+				[paneId]: { ...existing, text: owner },
+			};
+			workbenchRegistrationsRef.current = next;
+			setWorkbenchRegistrations(next);
+		},
+		[],
+	);
+	const onVoiceRegistration = useCallback(
+		(paneId: string, registration: CanvasPaneVoiceRegistration | null): void => {
+			const existing = workbenchRegistrationsRef.current[paneId] ?? {
+				text: null,
+				voice: null,
+			};
+			if (registration === null) {
+				if (existing.voice === null) return;
+				if (existing.text === null) {
+					const { [paneId]: removed, ...remaining } = workbenchRegistrationsRef.current;
+					void removed;
+					workbenchRegistrationsRef.current = remaining;
+					setWorkbenchRegistrations(remaining);
+					return;
+				}
+				const next = {
+					...workbenchRegistrationsRef.current,
+					[paneId]: { ...existing, voice: null },
+				};
+				workbenchRegistrationsRef.current = next;
+				setWorkbenchRegistrations(next);
+				return;
+			}
+			if (existing.voice?.registration === registration) return;
+			const source = captureWorkbenchFrameVoiceSource(
+				{
+					identity: {
+						id: paneId,
+						label: paneLabel(panesRef.current, paneId),
+					},
+				},
+				registration.session,
+			);
+			const next = {
+				...workbenchRegistrationsRef.current,
+				[paneId]: { ...existing, voice: { registration, source } },
+			};
+			workbenchRegistrationsRef.current = next;
+			setWorkbenchRegistrations(next);
 		},
 		[],
 	);
 
 	useEffect(() => {
 		const publish = (): void => setWorkbenchRevision((current) => current + 1);
-		const unsubscribers = Object.values(workbenchOwners).flatMap((owner) => [
-			owner.transport.subscribe(publish),
-			owner.composerController.subscribe(publish),
-		]);
+		const unsubscribers: Array<() => void> = [];
+		for (const registration of Object.values(workbenchRegistrations)) {
+			if (registration.text !== null) {
+				unsubscribers.push(registration.text.transport.subscribe(publish));
+				unsubscribers.push(registration.text.composerController.subscribe(publish));
+			}
+			if (registration.voice !== null) {
+				unsubscribers.push(registration.voice.registration.session.subscribe(publish));
+				if (registration.voice.registration.transport !== registration.text?.transport) {
+					unsubscribers.push(registration.voice.registration.transport.subscribe(publish));
+				}
+			}
+		}
 		return () => {
 			for (const unsubscribe of unsubscribers) unsubscribe();
 		};
-	}, [workbenchOwners]);
+	}, [workbenchRegistrations]);
 	const onSelectionSnapshot = useCallback(
 		(paneId: string, snapshot: PaneSelectionSnapshot): void => {
 			setSelectionSnapshots((previous) => ({
@@ -1176,7 +1417,7 @@ export function Shell(): React.JSX.Element {
 		void workbenchRevision;
 		const nowMs = Date.now();
 		return panes.flatMap((paneId) => {
-			const owner = workbenchOwners[paneId];
+			const owner = workbenchRegistrations[paneId]?.text ?? null;
 			if (!owner) return [];
 			const paneStatus = statuses[paneId] ?? null;
 			const paneAgent = agentStates[paneId] ?? null;
@@ -1197,7 +1438,15 @@ export function Shell(): React.JSX.Element {
 			};
 			return [port];
 		});
-	}, [agentStates, focused, panes, statuses, takeBackFocused, workbenchOwners, workbenchRevision]);
+	}, [
+		agentStates,
+		focused,
+		panes,
+		statuses,
+		takeBackFocused,
+		workbenchRegistrations,
+		workbenchRevision,
+	]);
 	const workbenchView = useMemo<WorkbenchFrameView>(() => {
 		const first = workbenchFramePanes[0];
 		if (!first) {
@@ -1231,15 +1480,59 @@ export function Shell(): React.JSX.Element {
 		return presentationTextSource(
 			panes,
 			presentation.paneId,
-			presentation.paneId ? (workbenchOwners[presentation.paneId] ?? null) : null,
+			presentation.paneId ? (workbenchRegistrations[presentation.paneId]?.text ?? null) : null,
 		);
-	}, [panes, presentation.paneId, workbenchOwners, workbenchRevision]);
-	const handleStopText = useCallback((): void => {
+	}, [panes, presentation.paneId, workbenchRegistrations, workbenchRevision]);
+	const activeVoice = useMemo(() => {
+		void workbenchRevision;
+		return activeVoiceProjection(workbenchRegistrations);
+	}, [workbenchRegistrations, workbenchRevision]);
+	const frameVoiceOwner = useMemo<WorkbenchVoiceOwner | null>(() => {
+		void workbenchRevision;
+		if (activeVoice.state === "conflict") return null;
+		if (activeVoice.state === "active") return activeVoice.owner;
+		const authoritativePaneId = presentation.paneId ?? focused;
+		const candidate = workbenchRegistrations[authoritativePaneId]?.voice ?? null;
+		return candidate?.registration.session.view().status === "stopped" ? null : candidate;
+	}, [activeVoice, focused, presentation.paneId, workbenchRegistrations, workbenchRevision]);
+	const workbenchVoice = useMemo<WorkbenchFrameVoiceSlot | null>(() => {
+		void workbenchRevision;
+		if (frameVoiceOwner === null) return null;
+		return {
+			source: frameVoiceOwner.source,
+			context: { history: frameVoiceOwner.registration.history },
+			transcript: { records: frameVoiceOwner.registration.transcriptRecords() },
+		};
+	}, [frameVoiceOwner, workbenchRevision]);
+	const stopEnabled =
+		activeVoice.state === "active"
+			? activeVoice.presentation.canStop
+			: activeVoice.state === "conflict"
+				? false
+				: (presentedTextSource?.canStop ?? false);
+	const stopReason = stopEnabled
+		? null
+		: activeVoice.state === "conflict"
+			? "More than one active voice source is registered. Stop is disabled until the conflict is resolved."
+			: activeVoice.state === "active"
+				? `Voice is ${activeVoice.presentation.phase.toLowerCase()} and cannot be stopped yet.`
+				: presentedTextSource === null
+					? "There is no active voice session or text turn to stop."
+					: "The active text turn cannot be stopped yet.";
+	const handleStop = useCallback((): void => {
+		const currentVoice = activeVoiceProjection(workbenchRegistrationsRef.current);
+		if (currentVoice.state === "conflict") return;
+		if (currentVoice.state === "active") {
+			const current = activeVoiceOwner(currentVoice.owner);
+			if (current === null || !current.controls.canStop) return;
+			void currentVoice.owner.registration.session.stop();
+			return;
+		}
 		if (!presentedTextSource?.canStop || presentedTextSource.turnId === null) return;
-		const owner = workbenchOwners[presentedTextSource.paneId];
-		if (!owner) return;
+		const owner = workbenchRegistrationsRef.current[presentedTextSource.paneId]?.text ?? null;
+		if (owner === null) return;
 		void owner.composerController.interrupt(presentedTextSource.turnId);
-	}, [presentedTextSource, workbenchOwners]);
+	}, [presentedTextSource]);
 	const dialogPanes = useMemo(
 		() =>
 			panes.map((paneId, index) => ({
@@ -1450,7 +1743,10 @@ export function Shell(): React.JSX.Element {
 				presentation={presentation}
 				dockRef={presentationDockRef}
 				textSource={presentedTextSource}
-				onStopText={handleStopText}
+				voiceSource={activeVoice.state === "none" ? null : activeVoice.presentation}
+				stopEnabled={stopEnabled}
+				stopReason={stopReason}
+				onStop={handleStop}
 				onTransfer={handlePresentationTransfer}
 				onExit={handlePresentationExit}
 			/>
@@ -1521,6 +1817,7 @@ export function Shell(): React.JSX.Element {
 									onStatus={onStatus}
 									onAgentState={onAgentState}
 									onWorkbenchTransport={onWorkbenchTransport}
+									onVoiceRegistration={onVoiceRegistration}
 									onThemeChange={setTheme}
 									onFocus={setFocused}
 									label={`Pane ${String.fromCharCode(65 + index)}`}
@@ -1609,6 +1906,7 @@ export function Shell(): React.JSX.Element {
 						request={workbenchRequest}
 						space={presentation.paneId ? "fullscreen" : "workspace"}
 						view={workbenchView}
+						voice={workbenchVoice}
 					/>
 				</main>
 			</div>

@@ -1358,41 +1358,57 @@
 	border-left: var(--arch-space-rule) solid var(--border);
 	border-radius: 0 var(--arch-radius-control) var(--arch-radius-control) 0;
 }
-.presentation-text-source {
+.presentation-sources {
 	min-width: 0;
-	max-width: min(44vw, 520px);
+	width: min(62vw, 780px);
+	border-inline: var(--arch-space-rule) solid var(--border);
+}
+.presentation-text-source,
+.presentation-voice-source {
+	min-width: 0;
 	min-height: var(--arch-size-touch-target);
 	padding: var(--arch-space-tight) var(--arch-space-control-inline);
 	display: grid;
-	grid-template-columns: auto auto minmax(72px, 1fr) minmax(72px, 1fr);
 	align-items: center;
 	gap: var(--arch-space-control);
-	border-inline: var(--arch-space-rule) solid var(--border);
 	font: var(--arch-weight-medium) var(--type-body) var(--font-ui);
 }
-.presentation-text-kicker {
+.presentation-text-source {
+	grid-template-columns: auto minmax(72px, 0.75fr) minmax(84px, 1fr) minmax(84px, 1fr);
+}
+.presentation-voice-source {
+	grid-template-columns: auto repeat(6, minmax(64px, 1fr));
+	border-top: var(--arch-space-rule) solid var(--border);
+}
+.presentation-source-kicker {
 	color: var(--muted);
 	font: var(--arch-weight-semibold) var(--type-kicker) var(--font-ui);
 }
-.presentation-text-field {
+.presentation-source-field {
 	min-width: 0;
 	display: flex;
 	flex-direction: column;
 }
-.presentation-text-label {
+.presentation-source-label {
 	color: var(--muted);
 	font: var(--arch-weight-semibold) var(--type-kicker) var(--font-ui);
 }
-.presentation-text-value {
+.presentation-source-value {
 	min-width: 0;
 	overflow: hidden;
 	font: var(--arch-weight-medium) var(--type-body) var(--font-ui);
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-.presentation-text-identity {
+.presentation-source-identity {
 	color: var(--muted);
 	font: var(--arch-weight-regular) var(--type-tech) var(--font-mono);
+}
+.presentation-voice-conflict {
+	grid-column: 4 / -1;
+	min-width: 0;
+	color: var(--danger);
+	font: var(--arch-weight-medium) var(--type-body) var(--font-ui);
 }
 .presentation-stop {
 	color: var(--danger);
@@ -2017,7 +2033,9 @@
 
 @media (forced-colors: active) {
 	.presentation-dock,
+	.presentation-sources,
 	.presentation-text-source,
+	.presentation-voice-source,
 	.presentation-pane,
 	.presentation-stop,
 	.presentation-exit {

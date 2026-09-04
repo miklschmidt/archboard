@@ -14,6 +14,13 @@ import type { LockHolder, PaneStatus } from "../types";
 import type { CodeTargetNotice } from "../../shared/code-target";
 import type { WorkbenchTakeBackResult } from "../workbench-board-status";
 import type { BrowserWorkbenchTransport } from "../workbench-transport";
+import type { BrowserWorkbenchMediaOwner } from "../codex-workbench-media";
+import {
+	createVoiceContextHistory,
+	ingestVoiceContextBrowserEvidence,
+	type VoiceContextHistory,
+} from "../voice-context";
+import { createVoiceSession, type VoiceSession } from "../voice-session";
 import { createCodeTargetLinkHandler } from "../code-target";
 import type { MountedBoardPreviewController } from "../board-preview";
 import {
@@ -28,10 +35,21 @@ import {
 	type PathFocusController,
 	type PathFocusSnapshot,
 } from "../path-focus";
+import {
+	parseRealtimeItemId,
+	type RealtimeTranscriptRecord,
+} from "../../shared/codex-realtime-host";
 // The one thing the browser half shares with the server half by import rather
 // than by copy: the two defaults have to be the same colour, or a box the user
 // draws and a box the agent draws stop matching.
 import { DEFAULT_FILL_STYLE, DEFAULT_SHAPE_BACKGROUND } from "../../shared/appearance/appearance";
+
+export interface CanvasPaneVoiceRegistration {
+	readonly transport: BrowserWorkbenchTransport;
+	readonly session: VoiceSession;
+	readonly history: VoiceContextHistory;
+	readonly transcriptRecords: () => readonly RealtimeTranscriptRecord[];
+}
 
 interface CanvasPaneProps {
 	paneId: string;
@@ -55,6 +73,8 @@ interface CanvasPaneProps {
 	) => void;
 	/** Publishes the transport retained by this pane's current socket generation. */
 	onWorkbenchTransport: (paneId: string, transport: BrowserWorkbenchTransport | null) => void;
+	/** Publishes the pane-owned presentation adapter paired with that exact transport. */
+	onVoiceRegistration: (paneId: string, registration: CanvasPaneVoiceRegistration | null) => void;
 	onThemeChange: (theme: "light" | "dark") => void;
 	onFocus: (paneId: string) => void;
 	/** Shown only when more than one pane is mounted. */
@@ -80,6 +100,73 @@ interface CanvasPaneProps {
 	onPathFocusSnapshot: (paneId: string, snapshot: PanePathFocusSnapshot) => void;
 	onPathFocusController: (paneId: string, controller: PathFocusController | null) => void;
 	onPreviewController: (paneId: string, controller: MountedBoardPreviewController | null) => void;
+}
+
+interface OwnedVoiceRegistration {
+	readonly registration: CanvasPaneVoiceRegistration;
+	readonly ingestEvidence: () => void;
+	readonly removeSessionEvidenceListener: () => void;
+	readonly removeTransportEvidenceListener: () => void;
+}
+
+const EMPTY_TRANSCRIPT_RECORDS: readonly RealtimeTranscriptRecord[] = Object.freeze([]);
+
+function transcriptRecords(
+	transport: BrowserWorkbenchTransport,
+	realtime: BrowserWorkbenchMediaOwner,
+	session: VoiceSession,
+): readonly RealtimeTranscriptRecord[] {
+	const snapshot = transport.state().snapshot;
+	const view = session.view();
+	const correlation = realtime.snapshot()?.correlation ?? null;
+	const activeSessionId = snapshot?.voice.realtimeSessionId ?? null;
+	if (
+		snapshot === null ||
+		view.sessionId === null ||
+		correlation === null ||
+		String(correlation.sessionId) !== view.sessionId ||
+		activeSessionId === null ||
+		String(activeSessionId) !== view.sessionId
+	)
+		return EMPTY_TRANSCRIPT_RECORDS;
+	return Object.freeze(
+		snapshot.voice.transcript.map(
+			(record) =>
+				Object.freeze({
+					sessionId: correlation.sessionId,
+					correlationId: correlation.correlationId,
+					itemId: parseRealtimeItemId(String(record.itemId)),
+					sequence: record.sequence,
+					role: record.speaker,
+					status: record.final ? "final" : "provisional",
+					text: record.text,
+				}) satisfies RealtimeTranscriptRecord,
+		),
+	);
+}
+
+function createVoiceEvidenceIngestor(
+	history: VoiceContextHistory,
+	transport: BrowserWorkbenchTransport,
+	session: VoiceSession,
+): () => void {
+	let lastSignature: string | null = null;
+	return (): void => {
+		const state = transport.state();
+		if (state.snapshot === null) return;
+		const sessionView = session.view();
+		const connection = state.connection === "connected" ? "connected" : "disconnected";
+		const signature = JSON.stringify([state.snapshot.voiceContext, sessionView, connection]);
+		if (signature === lastSignature) return;
+		lastSignature = signature;
+		ingestVoiceContextBrowserEvidence(history, {
+			snapshot: state.snapshot,
+			session: sessionView,
+			observedAtMs: Date.now(),
+			provenance: connection === "connected" ? "live" : "recovered",
+			connection,
+		});
+	};
 }
 
 function selectedIds(appState: AppState): string[] {
@@ -206,6 +293,7 @@ export function CanvasPane({
 	onStatus,
 	onAgentState,
 	onWorkbenchTransport,
+	onVoiceRegistration,
 	onThemeChange,
 	onFocus,
 	label,
@@ -222,19 +310,78 @@ export function CanvasPane({
 	onPreviewController,
 }: CanvasPaneProps): React.JSX.Element {
 	const workbenchTransportRef = useRef<() => BrowserWorkbenchTransport | null>(() => null);
+	const realtimeRef = useRef<BrowserWorkbenchMediaOwner | null>(null);
 	const publishedWorkbenchTransportRef = useRef<BrowserWorkbenchTransport | null>(null);
+	const ownedVoiceRegistrationRef = useRef<OwnedVoiceRegistration | null>(null);
+	const [voiceContextHistory] = useState(() => createVoiceContextHistory());
+	const retireVoiceRegistration = useCallback((): void => {
+		const owned = ownedVoiceRegistrationRef.current;
+		if (owned === null) return;
+		ownedVoiceRegistrationRef.current = null;
+		onVoiceRegistration(paneId, null);
+		owned.removeSessionEvidenceListener();
+		owned.removeTransportEvidenceListener();
+		owned.registration.session.dispose();
+	}, [onVoiceRegistration, paneId]);
+	const publishVoiceRegistration = useCallback(
+		(transport: BrowserWorkbenchTransport): void => {
+			const realtime = realtimeRef.current;
+			if (realtime === null || ownedVoiceRegistrationRef.current !== null) return;
+			const voiceSession = createVoiceSession({ realtime, transport, paneId });
+			const registration = Object.freeze({
+				transport,
+				session: voiceSession,
+				history: voiceContextHistory,
+				transcriptRecords: () => transcriptRecords(transport, realtime, voiceSession),
+			}) satisfies CanvasPaneVoiceRegistration;
+			const ingestEvidence = createVoiceEvidenceIngestor(
+				voiceContextHistory,
+				transport,
+				voiceSession,
+			);
+			ingestEvidence();
+			const removeSessionEvidenceListener = voiceSession.subscribe(ingestEvidence);
+			const removeTransportEvidenceListener = transport.subscribe(ingestEvidence);
+			ownedVoiceRegistrationRef.current = {
+				registration,
+				ingestEvidence,
+				removeSessionEvidenceListener,
+				removeTransportEvidenceListener,
+			};
+			onVoiceRegistration(paneId, registration);
+		},
+		[onVoiceRegistration, paneId, voiceContextHistory],
+	);
 	const reportStatus = useCallback(
 		(status: PaneStatus): void => {
 			onStatus(status);
 			const nextTransport = workbenchTransportRef.current();
-			if (publishedWorkbenchTransportRef.current === nextTransport) return;
-			if (publishedWorkbenchTransportRef.current !== null) {
+			const currentTransport = publishedWorkbenchTransportRef.current;
+			const ownedVoice = ownedVoiceRegistrationRef.current;
+			if (currentTransport === nextTransport) {
+				ownedVoice?.ingestEvidence();
+				return;
+			}
+			if (
+				nextTransport !== null &&
+				ownedVoice !== null &&
+				ownedVoice.registration.transport !== nextTransport
+			)
+				retireVoiceRegistration();
+			if (currentTransport !== null) {
+				publishedWorkbenchTransportRef.current = null;
 				onWorkbenchTransport(paneId, null);
 			}
+			if (nextTransport === null) {
+				ownedVoiceRegistrationRef.current?.ingestEvidence();
+				return;
+			}
 			publishedWorkbenchTransportRef.current = nextTransport;
-			if (nextTransport !== null) onWorkbenchTransport(paneId, nextTransport);
+			onWorkbenchTransport(paneId, nextTransport);
+			if (ownedVoiceRegistrationRef.current === null) publishVoiceRegistration(nextTransport);
+			else ownedVoiceRegistrationRef.current.ingestEvidence();
 		},
-		[onStatus, onWorkbenchTransport, paneId],
+		[onStatus, onWorkbenchTransport, paneId, publishVoiceRegistration, retireVoiceRegistration],
 	);
 	const layout = useCallback(
 		(request: "open" | "close") => onLayoutRequest(paneId, request),
@@ -252,16 +399,26 @@ export function CanvasPane({
 	});
 	useLayoutEffect(() => {
 		workbenchTransportRef.current = session.workbenchTransport;
-	}, [session.workbenchTransport]);
-	useEffect(
-		() => () => {
+		realtimeRef.current = session.realtime;
+		const transport = publishedWorkbenchTransportRef.current;
+		if (transport !== null && ownedVoiceRegistrationRef.current === null)
+			publishVoiceRegistration(transport);
+		return () => {
+			retireVoiceRegistration();
 			if (publishedWorkbenchTransportRef.current !== null) {
 				publishedWorkbenchTransportRef.current = null;
 				onWorkbenchTransport(paneId, null);
 			}
-		},
-		[onWorkbenchTransport, paneId],
-	);
+			realtimeRef.current = null;
+		};
+	}, [
+		onWorkbenchTransport,
+		paneId,
+		publishVoiceRegistration,
+		retireVoiceRegistration,
+		session.realtime,
+		session.workbenchTransport,
+	]);
 	const attachPaneElement = session.attachPaneElement;
 	const readOnly = session.readOnly;
 	const paneElementRef = useRef<HTMLDivElement | null>(null);
