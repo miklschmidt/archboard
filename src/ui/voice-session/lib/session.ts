@@ -1,5 +1,5 @@
 import type { BrowserSnapshot } from "../../../shared/codex-browser-model/index.js";
-import type { RealtimeMediaSnapshot } from "../../codex-realtime/index.js";
+import type { RealtimeMediaSnapshot, RealtimeState } from "../../codex-realtime/index.js";
 import type { BrowserWorkbenchMediaState } from "../../codex-workbench-media/index.js";
 import type { BrowserWorkbenchState } from "../../workbench-transport/index.js";
 import type {
@@ -171,6 +171,14 @@ export function createVoiceSession({
 	let busy = false;
 	let disposed = false;
 	let controlFailure: VoiceSessionFailure | null = null;
+	/**
+	 * The exact realtime state a control failure was raised over. A refused
+	 * control says something about the run as it was, so the failure is only news
+	 * until that run moves: without this tag a thrown stop or restart would keep
+	 * its alert and its offered retry on screen through every later phase of a
+	 * session that has since gone on working.
+	 */
+	let controlFailureState: RealtimeState | null = null;
 	/** Bumped by every control, close, and dispose, so a late resolution is inert. */
 	let generation = 0;
 
@@ -212,8 +220,22 @@ export function createVoiceSession({
 		seenTransportState = transportState;
 	};
 
+	/**
+	 * Drops a control failure the run has moved past. It runs on every published
+	 * change — the transport's, the media owner's, and each control's own — so a
+	 * refusal cannot outlive the phase it was about. The level fast path never
+	 * needs it: it returns early precisely when the state has not moved.
+	 */
+	const clearStaleControlFailure = (media: RealtimeMediaSnapshot | null): void => {
+		if (controlFailure === null) return;
+		if ((media?.state ?? null) === controlFailureState) return;
+		controlFailure = null;
+		controlFailureState = null;
+	};
+
 	const publish = (): VoiceSessionView => {
 		const media = realtime.snapshot();
+		clearStaleControlFailure(media);
 		const next = project();
 		remember(media, realtime.state(), transport.state());
 		readLevel(media);
@@ -272,12 +294,15 @@ export function createVoiceSession({
 		const token = (generation += 1);
 		busy = true;
 		controlFailure = null;
+		controlFailureState = null;
 		publish();
 		try {
 			await operation();
 		} catch (error) {
 			if (token !== generation) return current;
 			controlFailure = presentedFailure("realtime", controlMessage(error, fallbackMessage));
+			// Tagged with the run the refusal was about, so the next phase drops it.
+			controlFailureState = realtime.snapshot()?.state ?? null;
 		}
 		if (token !== generation) return current;
 		busy = false;
@@ -347,6 +372,7 @@ export function createVoiceSession({
 		const token = (generation += 1);
 		busy = true;
 		controlFailure = null;
+		controlFailureState = null;
 		publish();
 		try {
 			// A replaced or terminal session may still hold the microphone and the
@@ -363,6 +389,7 @@ export function createVoiceSession({
 		closedSessionId = view.sessionId;
 		busy = false;
 		controlFailure = null;
+		controlFailureState = null;
 		return publish();
 	};
 

@@ -77,14 +77,34 @@ describe("voice session mute", () => {
 		expect(realtime.calls()).toEqual(["start", "mute"]);
 	});
 
-	test("surfaces a refused mute as a failure the person can act on", async () => {
+	test("treats a toggle whose phase moved under it as a silent no-op", async () => {
 		const { session, realtime } = harness();
 		realtime.set(listening());
-		realtime.onMute(async () => {
-			throw new Error("The microphone track could not be disabled.");
-		});
+		expect(session.view().controls.canMute).toBe(true);
+
+		// The real media session never rejects a mute: for any phase but `listening`
+		// it returns the run unchanged. That is what a press losing the race against
+		// a phase change looks like from here, and it must read as nothing happening.
+		realtime.onMute(async () => realtime.snapshot()!);
+		realtime.set(mediaSnapshot({ phase: "processing", reason: "input_completed" }));
 
 		const view = await session.mute();
+
+		expect(realtime.calls()).toEqual([]);
+		expect(view.status).toBe("processing");
+		expect(view.failure).toBeNull();
+		// And the button the person pressed is already refused with a reason.
+		expect(view.controls.canMute).toBe(false);
+	});
+
+	test("surfaces a control this adapter drove and had refused", async () => {
+		const { session, realtime } = harness();
+		realtime.set(listening());
+		realtime.onStop(async () => {
+			throw new Error("The realtime host refused the stop.");
+		});
+
+		const view = await session.stop();
 
 		// The run really is still listening — the refusal is the news, not a new
 		// phase — so the failure is attached to the live run rather than replacing
@@ -92,11 +112,32 @@ describe("voice session mute", () => {
 		expect(view.status).toBe("listening");
 		expect(view.failure).toMatchObject({
 			code: "realtime",
-			message: "The microphone track could not be disabled.",
+			message: "The realtime host refused the stop.",
 		});
-		expect(view.detail).toContain("The microphone track could not be disabled.");
-		expect(view.accessibleStatus).toContain("The microphone track could not be disabled.");
+		expect(view.detail).toContain("The realtime host refused the stop.");
+		expect(view.accessibleStatus).toContain("The realtime host refused the stop.");
 		expect(view.outcome).toMatchObject({ kind: "retry", control: "restart" });
 		expect(view.controls.canMute).toBe(true);
+	});
+
+	test("drops a refused control the moment the run moves past it", async () => {
+		const { session, realtime } = harness();
+		realtime.set(listening());
+		realtime.onStop(async () => {
+			throw new Error("The realtime host refused the stop.");
+		});
+		await session.stop();
+		expect(session.view().failure?.message).toBe("The realtime host refused the stop.");
+
+		realtime.set(mediaSnapshot({ phase: "processing", reason: "input_completed" }));
+
+		// A refusal is news about the run as it was. Without dropping it here the
+		// alert and the offered retry would ride every later phase of a session that
+		// has gone on working.
+		const moved = session.view();
+		expect(moved.status).toBe("processing");
+		expect(moved.failure).toBeNull();
+		expect(moved.outcome.kind).toBe("none");
+		expect(moved.detail).toBe("The coordinator is working on what was just said.");
 	});
 });

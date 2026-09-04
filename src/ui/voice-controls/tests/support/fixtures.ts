@@ -18,6 +18,7 @@ import {
 import { voiceControlState, type VoiceControlState } from "../../index.js";
 
 type ExecutableLink = Extract<BrowserSnapshot["threadLink"], { readonly state: "executable" }>;
+type Coordinator = BrowserSnapshot["coordinator"];
 
 /** The one identity every fixture is bound to, so a test can assert it exactly. */
 export const BINDING: VoiceSessionBinding = Object.freeze({
@@ -54,6 +55,13 @@ export function workbenchSnapshot(): BrowserSnapshot {
 			canAcceptDirectInput: true,
 			reason: null,
 		},
+		threadCandidates: {
+			kind: "thread_candidates",
+			state: "unknown",
+			records: [],
+			truncated: false,
+			reason: null,
+		},
 		timeline: null,
 		queue: { kind: "queue", status: "empty", entries: [] },
 		settings: [],
@@ -63,7 +71,7 @@ export function workbenchSnapshot(): BrowserSnapshot {
 		coordinator: {
 			kind: "coordinator",
 			state: "ready",
-			threadId: BINDING.coordinatorThreadId as BrowserSnapshot["coordinator"]["threadId"],
+			threadId: BINDING.coordinatorThreadId as Coordinator["threadId"],
 			activeTurnId: null,
 			configuredModel: "gpt-5.6-luna",
 			configuredEffort: "medium",
@@ -82,7 +90,7 @@ export function workbenchSnapshot(): BrowserSnapshot {
 		},
 		lease: null,
 		operation: null,
-	} as unknown as BrowserSnapshot;
+	};
 }
 
 export function connectedState(): BrowserWorkbenchState {
@@ -92,7 +100,7 @@ export function connectedState(): BrowserWorkbenchState {
 		connection: "connected",
 		snapshot: workbenchSnapshot(),
 		sequence: 7,
-	} as BrowserWorkbenchState;
+	};
 }
 
 export function reconnectingState(): BrowserWorkbenchState {
@@ -103,7 +111,7 @@ export function reconnectingState(): BrowserWorkbenchState {
 		snapshot: null,
 		sequence: null,
 		reason: "The Codex workbench connection dropped.",
-	} as BrowserWorkbenchState;
+	};
 }
 
 export function capabilities(): BrowserWorkbenchCapabilities {
@@ -118,7 +126,7 @@ export function capabilities(): BrowserWorkbenchCapabilities {
 		canThreadCommands: true,
 		canRealtime: true,
 		supportsCommand: () => true,
-	} as BrowserWorkbenchCapabilities;
+	};
 }
 
 export function mediaSnapshot(state: RealtimeState, inputLevel = 0): RealtimeMediaSnapshot {
@@ -179,6 +187,16 @@ export function voiceView(state: VoiceControlState): VoiceSessionView {
 		return projectVoiceSession(projectionInput({ transportState: reconnectingState() }));
 	if (state === "ready") return projectVoiceSession(projectionInput());
 	return projectVoiceSession(projectionInput({ media: mediaSnapshot(REALTIME_STATES[state]) }));
+}
+
+/**
+ * The same view before anything is bound: a pane whose voice session has never
+ * been started has no pane/thread-link/coordinator identity to show, and the
+ * control must say so rather than printing an empty row.
+ */
+export function unboundView(state: "ready" | "unavailable"): VoiceSessionView {
+	const overrides = state === "ready" ? {} : { transportState: reconnectingState() };
+	return projectVoiceSession(projectionInput({ binding: null, ...overrides }));
 }
 
 /** A live listening view carrying a level, for the meter owners. */
