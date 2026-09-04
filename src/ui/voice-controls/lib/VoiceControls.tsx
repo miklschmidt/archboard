@@ -178,11 +178,11 @@ export function VoiceControls({ session, className }: VoiceControlsProps): React
 				{view.accessibleStatus}
 			</output>
 
-			<p className="text-muted-foreground" data-voice-detail="">
+			<p className="text-body text-muted-foreground" data-voice-detail="">
 				{view.detail}
 			</p>
 			{view.recovery !== null && (
-				<p className="text-muted-foreground" data-voice-recovery="">
+				<p className="text-body text-muted-foreground" data-voice-recovery="">
 					{view.recovery}
 				</p>
 			)}
