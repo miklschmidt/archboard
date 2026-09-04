@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:42'
-updated_date: '2026-09-04 15:21'
+updated_date: '2026-09-04 15:32'
 labels: []
 dependencies:
   - TASK-143.03.11
@@ -55,6 +55,10 @@ Complete the single production voice composition seam. CanvasPane constructs at 
 8. Project retained identity into the dock without text fallback, disclose unknown mute truth honestly, and add one fullscreen-only live status from VoiceSessionView.accessibleStatus with assertive failure announcements.
 
 9. Add production-shaped focused regressions for detach, stopping, outcome unknown, announcement priority, and single registry ownership, then rerun only the authorized focused checks.
+
+10. Make CanvasPane voice presentation an explicit active-or-none contract. Reapply a cached session id only when the current view still carries the same binding; clear identity when close removes binding or replacement marks the session stale.
+
+11. Teach Shell to consume the explicit presentation result without rebuilding identity, and add focused close, replaced, and terminal non-stoppable outcome-unknown regressions that prove no dock/frame resurrection or text Stop fallback.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -79,4 +83,10 @@ CanvasPane now exposes a caller-owned presentation projection that retains the l
 The existing fullscreen dock now carries VoiceSessionView.accessibleStatus through one visually hidden live output. Normal and duplicate-source messages are polite; a view with failure evidence is the only assertive alert. The visible conflict label no longer creates a second voice announcement owner. The required UI worker re-read the visual authority, made the rendered UI changes, and reported no CSS change was needed.
 
 Remediation verification passed: `bun run type-check`; 27 focused CanvasPane, Shell, and WorkbenchFrame tests with 378 assertions; scoped Oxlint and Oxfmt; `bun run build`; and `git diff --check`. Real-browser rendering remains assigned to TASK-143.04.07. TASK-143.04.10 remains In Progress with every acceptance criterion unchecked for rereview.
+
+Second lifecycle rereview remediation complete. CanvasPane voice presentation is now a discriminated active-or-none contract. It caches the last exact binding/session pair but reapplies only the session id, and only while the current view still carries the same field-wise binding. A missing binding clears the cache, so VoiceSession.close cannot resurrect active dock identity. Stopped and replaced projections return an explicit retired result even when the raw replaced view still exposes stale binding/session bytes.
+
+Shell consumes the discriminant directly. Ready or unbound unavailable registrations can still reach WorkbenchFrame, while retired replacement removes both dock and frame voice. Production-shaped terminal stop-unconfirmed evidence remains active and visible with Unknown mute truth, but Stop stays disabled and cannot fall through to the text interrupt. Focused owners cover real CanvasPane presentation close behavior, raw replaced identity retirement, and non-stoppable outcome-unknown routing.
+
+The required UI worker re-read the visual authority and changed only the four authorized TypeScript source/test files; no CSS change was required. Validation passed: root and frontend type checks; 49 focused CanvasPane, Shell, WorkbenchFrame, and VoiceSession lifecycle/projection tests with 1,367 assertions; scoped Oxlint and Oxfmt; frontend build; and diff checks. Real-browser behavior remains TASK-143.04.07. TASK-143.04.10 remains In Progress with all acceptance criteria unchecked.
 <!-- SECTION:NOTES:END -->

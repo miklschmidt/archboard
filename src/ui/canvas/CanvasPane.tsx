@@ -49,10 +49,18 @@ import {
 // draws and a box the agent draws stop matching.
 import { DEFAULT_FILL_STYLE, DEFAULT_SHAPE_BACKGROUND } from "../../shared/appearance/appearance";
 
-export interface CanvasPaneVoicePresentation {
-	readonly view: VoiceSessionView;
-	readonly mute: "Muted" | "Unmuted" | "Unknown";
-}
+type ActiveVoiceSessionView = VoiceSessionView & {
+	readonly binding: VoiceSessionBinding;
+	readonly sessionId: string;
+};
+
+export type CanvasPaneVoicePresentation =
+	| {
+			readonly state: "active";
+			readonly view: ActiveVoiceSessionView;
+			readonly mute: "Muted" | "Unmuted" | "Unknown";
+	  }
+	| { readonly state: "none"; readonly frame: "available" | "retired" };
 
 export interface CanvasPaneVoiceRegistration {
 	readonly transport: BrowserWorkbenchTransport;
@@ -121,6 +129,24 @@ interface OwnedVoiceRegistration {
 }
 
 const EMPTY_TRANSCRIPT_RECORDS: readonly RealtimeTranscriptRecord[] = Object.freeze([]);
+const AVAILABLE_VOICE_PRESENTATION = Object.freeze({
+	state: "none",
+	frame: "available",
+}) satisfies CanvasPaneVoicePresentation;
+const RETIRED_VOICE_PRESENTATION = Object.freeze({
+	state: "none",
+	frame: "retired",
+}) satisfies CanvasPaneVoicePresentation;
+
+function sameVoiceBinding(left: VoiceSessionBinding, right: VoiceSessionBinding): boolean {
+	return (
+		left.paneId === right.paneId &&
+		left.childId === right.childId &&
+		left.epoch === right.epoch &&
+		left.workhorseThreadId === right.workhorseThreadId &&
+		left.coordinatorThreadId === right.coordinatorThreadId
+	);
+}
 
 function createVoicePresentation(
 	realtime: BrowserWorkbenchMediaOwner,
@@ -131,22 +157,31 @@ function createVoicePresentation(
 		const view = session.view();
 		if (view.status === "stopped" || view.failure?.code === "replaced") {
 			retained = null;
-			return Object.freeze({ view, mute: "Unknown" });
+			return RETIRED_VOICE_PRESENTATION;
 		}
-		if (view.binding !== null && view.sessionId !== null) {
+		if (view.binding === null) {
+			retained = null;
+			return AVAILABLE_VOICE_PRESENTATION;
+		}
+		if (view.sessionId !== null) {
 			retained = { binding: view.binding, sessionId: view.sessionId };
 		}
-		const effectiveView =
-			(view.binding === null || view.sessionId === null) && retained !== null
-				? Object.freeze({
-						...view,
-						binding: retained.binding,
-						sessionId: retained.sessionId,
-					})
-				: view;
+		const sessionId =
+			view.sessionId ??
+			(retained !== null && sameVoiceBinding(retained.binding, view.binding)
+				? retained.sessionId
+				: null);
+		if (sessionId === null) {
+			retained = null;
+			return AVAILABLE_VOICE_PRESENTATION;
+		}
+		const effectiveView = Object.freeze({
+			...view,
+			binding: view.binding,
+			sessionId,
+		}) satisfies ActiveVoiceSessionView;
 		const media = realtime.snapshot();
 		const sameSession =
-			effectiveView.sessionId !== null &&
 			media !== null &&
 			media.correlation !== null &&
 			String(media.correlation.sessionId) === effectiveView.sessionId;
@@ -160,6 +195,7 @@ function createVoicePresentation(
 						? "Unmuted"
 						: "Unknown";
 		return Object.freeze({
+			state: "active",
 			view: effectiveView,
 			mute,
 		});
@@ -203,13 +239,16 @@ function transcriptRecords(
 function createVoiceEvidenceIngestor(
 	history: VoiceContextHistory,
 	transport: BrowserWorkbenchTransport,
+	session: VoiceSession,
 	presentation: () => CanvasPaneVoicePresentation,
 ): () => void {
 	let lastSignature: string | null = null;
 	return (): void => {
 		const state = transport.state();
 		if (state.snapshot === null) return;
-		const sessionView = presentation().view;
+		const voicePresentation = presentation();
+		const sessionView =
+			voicePresentation.state === "active" ? voicePresentation.view : session.view();
 		const connection = state.connection === "connected" ? "connected" : "disconnected";
 		const signature = JSON.stringify([state.snapshot.voiceContext, sessionView, connection]);
 		if (signature === lastSignature) return;
@@ -394,6 +433,7 @@ export function CanvasPane({
 			const ingestEvidence = createVoiceEvidenceIngestor(
 				voiceContextHistory,
 				transport,
+				voiceSession,
 				voicePresentation,
 			);
 			ingestEvidence();

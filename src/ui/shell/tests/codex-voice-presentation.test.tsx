@@ -89,7 +89,6 @@ function fakeTransport(suffix: string): FakeTransport {
 	} as unknown as BrowserWorkbenchTransport;
 	return { transport, turnId, commands, listenerCount: () => listeners.size, publish };
 }
-
 interface FakeVoiceSession {
 	readonly session: VoiceSession;
 	readonly presentation: () => CanvasPaneVoicePresentation;
@@ -97,9 +96,7 @@ interface FakeVoiceSession {
 	readonly loseMedia: () => void;
 	readonly set: (status: VoiceSessionStatus, options?: VoiceOptions) => void;
 }
-
-type VoiceOptions = { canStop?: boolean; label?: string; retainedBinding?: boolean };
-
+type VoiceOptions = { bound?: boolean; canStop?: boolean; label?: string; replaced?: boolean };
 function voiceView(
 	paneId: string,
 	suffix: string,
@@ -107,7 +104,7 @@ function voiceView(
 	options: VoiceOptions = {},
 ): VoiceSessionView {
 	const active = status !== "ready" && status !== "unavailable" && status !== "stopped";
-	const bound = active || options.retainedBinding === true;
+	const bound = active || options.bound === true;
 	return Object.freeze({
 		status,
 		label: options.label ?? status.replaceAll("_", " "),
@@ -116,18 +113,17 @@ function voiceView(
 		failure:
 			status === "failed"
 				? {
-						code: "stop" as const,
-						recoverable: true,
+						code: options.replaced ? ("replaced" as const) : ("stop" as const),
+						recoverable: false,
 						message: "Voice Stop outcome is unknown.",
 					}
 				: null,
 		outcome:
 			status === "failed"
 				? {
-						kind: "retry" as const,
-						control: "stop" as const,
-						label: "Reconcile Stop",
-						recovery: "Reconcile the unknown Stop outcome.",
+						kind: "terminal" as const,
+						label: "Close voice",
+						recovery: "Close the failed voice session.",
 					}
 				: { kind: "none" as const },
 		controls: {
@@ -158,15 +154,22 @@ function fakeVoiceSession(paneId: string, suffix: string): FakeVoiceSession {
 	const listeners = new Set<() => void>();
 	const publish = (): void => listeners.forEach((listener) => listener());
 	const presentation = (): CanvasPaneVoicePresentation => {
-		if (current.status === "stopped" || current.failure?.code === "replaced") retained = null;
-		else if (current.binding !== null && current.sessionId !== null) {
+		if (current.status === "stopped" || current.failure?.code === "replaced") {
+			retained = null;
+			return { state: "none", frame: "retired" };
+		}
+		if (current.binding === null) {
+			retained = null;
+			return { state: "none", frame: "available" };
+		}
+		if (current.sessionId !== null) {
 			retained = { binding: current.binding, sessionId: current.sessionId };
 		}
-		const view =
-			(current.binding === null || current.sessionId === null) && retained !== null
-				? Object.freeze({ ...current, ...retained })
-				: current;
+		const sessionId = current.sessionId ?? retained?.sessionId ?? null;
+		if (sessionId === null) return { state: "none", frame: "available" };
+		const view = Object.freeze({ ...current, binding: current.binding, sessionId });
 		return Object.freeze({
+			state: "active",
 			view,
 			mute:
 				current.failure === null && current.status === "listening"
@@ -201,7 +204,7 @@ function fakeVoiceSession(paneId: string, suffix: string): FakeVoiceSession {
 		presentation,
 		stops: () => stopCount,
 		loseMedia() {
-			current = voiceView(paneId, suffix, "unavailable", { retainedBinding: true });
+			current = voiceView(paneId, suffix, "unavailable", { bound: true });
 			publish();
 		},
 		set(status, options) {
@@ -210,7 +213,6 @@ function fakeVoiceSession(paneId: string, suffix: string): FakeVoiceSession {
 		},
 	};
 }
-
 function voiceRegistration(
 	transport: FakeTransport,
 	voice: FakeVoiceSession,
@@ -225,7 +227,6 @@ function voiceRegistration(
 		transcriptRecords: () => records,
 	}) satisfies CanvasPaneVoiceRegistration;
 }
-
 type PaneFixture = ReturnType<typeof createPaneFixture>;
 interface PaneControls {
 	readonly publishText: (transport: BrowserWorkbenchTransport | null) => void;
@@ -233,7 +234,6 @@ interface PaneControls {
 }
 const fixtures = new Map<string, PaneFixture>();
 const paneControls = new Map<string, PaneControls>();
-
 function createPaneFixture(paneId: string, suffix = paneId) {
 	const transport = fakeTransport(suffix);
 	const voice = fakeVoiceSession(paneId, suffix);
@@ -317,11 +317,7 @@ await mock.module(workbenchFrameUrl, () => ({
 	},
 }));
 
-const outsideFailure = async () => ({
-	success: false,
-	code: "OUTSIDE_TEST",
-	error: "Outside test.",
-});
+const outsideFailure = async () => ({ success: false, code: "OUTSIDE", error: "Out." });
 const outsideMutation = async () => {
 	throw new Error("Mutation is outside this owner.");
 };
@@ -378,7 +374,9 @@ test("keeps one immutable voice source visible and routes the only fullscreen St
 			command: "interrupt",
 			turnId: paneA.transport.turnId,
 		});
-
+		act(() => paneA.voice.set("unavailable"));
+		expect(within(dock).queryByLabelText("Active voice session")).toBeNull();
+		expect(latestFrameProps?.voice?.source.session).toBe(paneA.voice.session);
 		act(() => paneA.voice.set("requesting_permission", { canStop: false }));
 		const stop = within(dock).getByRole("button", { name: "Stop" });
 		await waitFor(() => expect(stop.hasAttribute("disabled")).toBeTrue());
@@ -386,7 +384,6 @@ test("keeps one immutable voice source visible and routes the only fullscreen St
 			"requesting permission",
 		);
 		expect(paneA.transport.commands).toHaveLength(1);
-
 		act(() => paneA.voice.set("listening", { label: "Listening" }));
 		await waitFor(() => expect(stop.hasAttribute("disabled")).toBeFalse());
 		const voiceSource = within(dock).getByLabelText("Active voice session");
@@ -405,7 +402,6 @@ test("keeps one immutable voice source visible and routes the only fullscreen St
 		await user.click(stop);
 		await waitFor(() => expect(paneA.voice.stops()).toBe(1));
 		expect(paneA.transport.commands).toHaveLength(1);
-
 		act(() => paneA.voice.loseMedia());
 		await waitFor(() => expect(stop.hasAttribute("disabled")).toBeTrue());
 		expect(voiceSource.textContent).toContain("voice-session-pane-1");
@@ -414,55 +410,27 @@ test("keeps one immutable voice source visible and routes the only fullscreen St
 		expect(latestFrameProps?.voice?.source.session).toBe(paneA.voice.session);
 		await user.click(stop);
 		expect([paneA.voice.stops(), paneA.transport.commands.length]).toEqual([1, 1]);
-
 		act(() => paneA.voice.set("stopping", { label: "Stopping", canStop: false }));
 		expect(voiceSource.textContent).toContain("voice-session-pane-1");
 		expect(voiceSource.textContent).toContain("Unknown");
 		expect(stop.hasAttribute("disabled")).toBeTrue();
-
-		act(() => paneA.voice.set("failed", { label: "Outcome unknown", canStop: true }));
+		act(() => paneA.voice.set("failed", { label: "Outcome unknown", canStop: false }));
+		const outcomeView = paneA.voice.session.view();
+		expect([outcomeView.outcome.kind, outcomeView.controls.canStop]).toEqual(["terminal", false]);
 		expect(within(dock).getByLabelText("Active voice session").textContent).toContain(
 			"Outcome unknown",
 		);
+		expect(voiceSource.textContent).toContain("voice-session-pane-1");
 		expect(voiceSource.textContent).toContain("Unknown");
+		expect(stop.hasAttribute("disabled")).toBeTrue();
 		expect(voiceStatus[0]?.getAttribute("aria-live")).toBe("assertive");
 		expect(voiceStatus[0]?.getAttribute("role")).toBe("alert");
 		expect(voiceStatus[0]?.textContent).toBe("Voice failed.");
-		await user.selectOptions(screen.getByRole("combobox", { name: "Workbench pane" }), "pane-2");
-		await waitFor(() =>
-			expect(
-				within(dock).getByRole("button", { name: "Present Pane B" }).getAttribute("aria-pressed"),
-			).toBe("true"),
-		);
-		expect(within(dock).getByLabelText("Active text workbench").textContent).toContain(
-			"thread-pane-2",
-		);
-		expect(within(dock).getByLabelText("Active voice session").textContent).toContain("Pane A");
-		expect(latestFrameProps?.voice?.source.session).toBe(paneA.voice.session);
-
-		act(() => {
-			paneControls.get("pane-1")?.publishText(null);
-			paneControls.get("pane-2")?.publishText(null);
-		});
-		expect(within(dock).getByLabelText("Active text workbench").textContent).toContain(
-			"No active pane",
-		);
-		expect(within(dock).getByLabelText("Active voice session")).toBeTruthy();
-		const frameBeforeVoiceTransportPublication = latestFrameProps;
-		act(() => paneA.transport.publish());
-		expect(latestFrameProps).not.toBe(frameBeforeVoiceTransportPublication);
-		act(() => paneB.voice.set("listening", { label: "Listening" }));
-		await waitFor(() =>
-			expect(within(dock).getByLabelText("Active voice session conflict")).toBeTruthy(),
-		);
-		expect(voiceStatus[0]?.textContent).toContain("More than one active voice source");
-		expect(within(dock).queryByRole("alert")).toBeNull();
-		expect(latestFrameProps?.voice).toBeNull();
-		expect(stop.hasAttribute("disabled")).toBeTrue();
-		expect([paneA.voice.stops(), paneB.voice.stops()]).toEqual([1, 0]);
-
-		act(() => paneB.voice.set("stopped", { label: "Stopped" }));
-		await waitFor(() => expect(latestFrameProps?.voice?.source.session).toBe(paneA.voice.session));
+		await user.click(stop);
+		expect([paneA.voice.stops(), paneA.transport.commands.length]).toEqual([1, 1]);
+		act(() => paneA.voice.set("failed", { label: "Replaced", canStop: false, replaced: true }));
+		await waitFor(() => expect(latestFrameProps?.voice).toBeNull());
+		expect(within(dock).queryByLabelText("Active voice session")).toBeNull();
 		const replacement = createPaneFixture("pane-1", "replacement");
 		act(() => {
 			paneControls.get("pane-1")?.publishVoice(null);
@@ -474,23 +442,55 @@ test("keeps one immutable voice source visible and routes the only fullscreen St
 				"voice-session-replacement",
 			),
 		);
+		await user.selectOptions(screen.getByRole("combobox", { name: "Workbench pane" }), "pane-2");
+		await waitFor(() =>
+			expect(
+				within(dock).getByRole("button", { name: "Present Pane B" }).getAttribute("aria-pressed"),
+			).toBe("true"),
+		);
+		expect(within(dock).getByLabelText("Active text workbench").textContent).toContain(
+			"thread-pane-2",
+		);
+		expect(within(dock).getByLabelText("Active voice session").textContent).toContain("Pane A");
 		expect(latestFrameProps?.voice?.source.session).toBe(replacement.voice.session);
+
+		act(() => {
+			paneControls.get("pane-1")?.publishText(null);
+			paneControls.get("pane-2")?.publishText(null);
+		});
+		expect(within(dock).getByLabelText("Active text workbench").textContent).toContain(
+			"No active pane",
+		);
+		expect(within(dock).getByLabelText("Active voice session")).toBeTruthy();
+		const frameBeforeVoiceTransportPublication = latestFrameProps;
+		act(() => replacement.transport.publish());
+		expect(latestFrameProps).not.toBe(frameBeforeVoiceTransportPublication);
+		act(() => paneB.voice.set("listening", { label: "Listening" }));
+		await waitFor(() =>
+			expect(within(dock).getByLabelText("Active voice session conflict")).toBeTruthy(),
+		);
+		expect(voiceStatus[0]?.textContent).toContain("More than one active voice source");
+		expect(within(dock).queryByRole("alert")).toBeNull();
+		expect(latestFrameProps?.voice).toBeNull();
+		expect(stop.hasAttribute("disabled")).toBeTrue();
+		expect([replacement.voice.stops(), paneB.voice.stops()]).toEqual([0, 0]);
+		act(() => paneB.voice.set("stopped", { label: "Stopped" }));
+		await waitFor(() =>
+			expect(latestFrameProps?.voice?.source.session).toBe(replacement.voice.session),
+		);
 		await user.click(stop);
 		await waitFor(() => expect(replacement.voice.stops()).toBe(1));
 		expect(paneA.voice.stops()).toBe(1);
-
 		act(() => replacement.voice.set("stopped", { label: "Stopped" }));
 		await waitFor(() => expect(latestFrameProps?.voice).toBeNull());
 		expect(within(dock).queryByLabelText("Active voice session")).toBeNull();
 		expect(stop.hasAttribute("disabled")).toBeTrue();
-
 		act(() => paneB.voice.set("listening", { label: "Listening" }));
 		await waitFor(() => expect(latestFrameProps?.voice?.source.session).toBe(paneB.voice.session));
 		await user.click(within(dock).getByRole("button", { name: "Exit" }));
 		await user.click(screen.getByRole("button", { name: "Unsplit" }));
 		await waitFor(() => expect(paneControls.has("pane-2")).toBeFalse());
 		expect(latestFrameProps?.voice).toBeNull();
-
 		mounted.unmount();
 		expect(paneControls.size).toBe(0);
 	} finally {
