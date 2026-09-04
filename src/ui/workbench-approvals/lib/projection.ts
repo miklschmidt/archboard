@@ -3,7 +3,10 @@ import type {
 	BrowserDynamicApproval,
 	BrowserSnapshot,
 } from "../../../shared/codex-browser-model/index.js";
-import type { BrowserWorkbenchState } from "../../workbench-transport/index.js";
+import type {
+	BrowserWorkbenchCapabilities,
+	BrowserWorkbenchState,
+} from "../../workbench-transport/index.js";
 import type {
 	WorkbenchApprovalBeaconEntry,
 	WorkbenchApprovalCard,
@@ -122,7 +125,10 @@ export function approvalTarget(card: WorkbenchApprovalCard): string {
 	return card.request.effect.target ?? "a new thread that does not exist yet";
 }
 
-function authorityContext(input: WorkbenchApprovalsInput): ApprovalAuthorityContext {
+function authorityContext(
+	input: WorkbenchApprovalsInput,
+	canRespond: boolean,
+): ApprovalAuthorityContext {
 	const state = input.state;
 	const connection =
 		state.connection === "connected"
@@ -133,6 +139,7 @@ function authorityContext(input: WorkbenchApprovalsInput): ApprovalAuthorityCont
 	return Object.freeze({
 		nowMs: input.nowMs,
 		canCommand: input.canCommand,
+		canRespond,
 		connection,
 		staleSnapshot: state.kind === "stream",
 		connectionReason: "reason" in state ? state.reason : null,
@@ -190,11 +197,12 @@ function reconciliation(snapshot: BrowserSnapshot): WorkbenchApprovalsReconcilia
 
 function orderedCards(
 	snapshot: BrowserSnapshot,
-	context: ApprovalAuthorityContext,
+	ordinaryContext: ApprovalAuthorityContext,
+	dynamicContext: ApprovalAuthorityContext,
 ): readonly WorkbenchApprovalCard[] {
 	const cards: WorkbenchApprovalCard[] = [
-		...snapshot.approvals.map((approval) => ordinaryCard(approval, context)),
-		...snapshot.dynamicApprovals.map((approval) => dynamicCard(approval, context)),
+		...snapshot.approvals.map((approval) => ordinaryCard(approval, ordinaryContext)),
+		...snapshot.dynamicApprovals.map((approval) => dynamicCard(approval, dynamicContext)),
 	];
 	const pending = cards.filter((card) => card.status.phase === "pending");
 	const settled = cards.filter((card) => card.status.phase !== "pending");
@@ -205,9 +213,12 @@ function orderedCards(
 }
 
 export function projectWorkbenchApprovals(input: WorkbenchApprovalsInput): WorkbenchApprovalsView {
-	const context = authorityContext(input);
+	const context = authorityContext(input, input.canRespondOrdinary);
 	const snapshot = input.state.snapshot;
-	const cards = snapshot === null ? Object.freeze([]) : orderedCards(snapshot, context);
+	const cards =
+		snapshot === null
+			? Object.freeze([])
+			: orderedCards(snapshot, context, authorityContext(input, input.canRespondDynamic));
 	const authorityReason =
 		snapshot === null
 			? (context.connectionReason ??
@@ -229,10 +240,20 @@ export function projectWorkbenchApprovals(input: WorkbenchApprovalsInput): Workb
 	});
 }
 
+/**
+ * The transport already answers whether it would take each response; asking it
+ * keeps an approval it has stopped accepting from showing a live decision.
+ */
 export function workbenchApprovalsInput(
 	state: BrowserWorkbenchState,
 	nowMs: number,
-	canCommand: boolean,
+	capabilities: BrowserWorkbenchCapabilities,
 ): WorkbenchApprovalsInput {
-	return Object.freeze({ state, nowMs, canCommand });
+	return Object.freeze({
+		state,
+		nowMs,
+		canCommand: capabilities.canCommand,
+		canRespondOrdinary: capabilities.supportsCommand("approvalRespond"),
+		canRespondDynamic: capabilities.supportsCommand("dynamicApprovalRespond"),
+	});
 }

@@ -75,8 +75,7 @@ export type WorkbenchApprovalControl =
 	| "url"
 	| "email"
 	| "date"
-	| "date_time"
-	| "lines";
+	| "date_time";
 
 export interface WorkbenchApprovalOption {
 	readonly label: string;
@@ -214,8 +213,11 @@ export interface WorkbenchApprovalsView {
 export interface WorkbenchApprovalsInput {
 	readonly state: BrowserWorkbenchState;
 	readonly nowMs: number;
-	/** The transport's own answer to whether an approval command can be sent. */
+	/** The transport's own answer to whether any command can be sent. */
 	readonly canCommand: boolean;
+	/** The transport already knows whether it would accept each response. */
+	readonly canRespondOrdinary: boolean;
+	readonly canRespondDynamic: boolean;
 }
 
 export type WorkbenchApprovalDraftResult =
