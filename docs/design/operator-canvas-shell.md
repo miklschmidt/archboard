@@ -79,7 +79,7 @@ The generated reference PNG has no authoritative embedded font metadata. The
 font choice is therefore a reproducible visual match, not a claim that the
 reference's original font was identified. The audit compared tightly cropped
 raster geometry at several antialiasing thresholds, then checked the selected
-faces in the real shell at the supported 1440×900 desktop viewport.
+faces in the real shell at the supported 1920×1080 desktop viewport.
 
 The exact reference rectangles below use `(x, y, width, height)` in the tracked
 1672×941 PNG:

@@ -13,65 +13,14 @@ import {
 	pollUntil,
 	registerCanvasBase,
 } from "./support/agent-browser.ts";
-import type { NavigatorContract } from "./support/shell-contract-types.ts";
+import type { NavigatorContract, NavigatorPreviewView } from "./support/shell-contract-types.ts";
+import { createBoard, addBox } from "./support/navigator-fixture.ts";
 type PanesBody = PanesReport & { success: boolean };
-type Requester = ReturnType<typeof createJsonRequester>;
 type HealthBody = { websocket_clients: number };
 type ElementsBody = { elements: unknown[] };
 type ChangesBody = { cursor: number };
-interface PreviewView {
-	board?: string;
-	cardWidth?: number;
-	flat?: boolean;
-	focusables?: number;
-	frameHeight?: number;
-	rawSvg?: number;
-	source?: string;
-	src?: string;
-	state?: string;
-}
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
-async function createBoard(
-	request: Requester,
-	board: string,
-	options: { save?: boolean; variant?: string } = {},
-): Promise<string> {
-	const key = options.variant ? `${board}@${options.variant}` : board;
-	expect(
-		(
-			await request("/api/boards/new", {
-				method: "POST",
-				body: { board, variant: options.variant, level: "service" },
-			})
-		).status,
-	).toBe(200);
-	if (options.save !== false) {
-		expect(
-			(await request("/api/boards/save", { method: "POST", body: { board: key } })).status,
-		).toBe(200);
-	}
-	return key;
-}
-async function addBox(request: Requester, board: string, id: string, label: string): Promise<void> {
-	expect(
-		(
-			await request(`/api/elements?board=${encodeURIComponent(board)}`, {
-				method: "POST",
-				body: {
-					id,
-					type: "rectangle",
-					x: 40,
-					y: 60,
-					width: 240,
-					height: 120,
-					backgroundColor: "#dbe4ff",
-					label: { text: label },
-				},
-			})
-		).status,
-	).toBe(200);
-}
 test("the operator strip keeps empty, loading, retry, and scratch naming states actionable", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
@@ -93,7 +42,7 @@ test("the operator strip keeps empty, loading, retry, and scratch naming states 
 	);
 	await browser.run(["--init-script", initScript, "open", canvas.base]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
-	await browser.run(["set", "viewport", "1440", "900"]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => request<PanesBody>("/api/panes").then((response) => response.body),
 		(state) => state.paneCount === 1,
@@ -125,12 +74,12 @@ test("the operator strip keeps empty, loading, retry, and scratch naming states 
 			}>(
 				`(() => { const targets = [...document.querySelectorAll('.board-nav-tools button, .scratch-top, .board-preview-control, .name-button')]; return { actionLabels: [...document.querySelectorAll('.board-nav-tools button')].map(button => button.getAttribute('aria-label')), targets: targets.map(node => { const rect = node.getBoundingClientRect(); return { width: rect.width, height: rect.height }; }), currentScratch: Boolean(document.querySelector('.scratch-section .board-nav-row[aria-current="page"]')), pageFits: document.documentElement.scrollWidth === innerWidth }; })()`,
 			),
-		(state) => state.targets.length === 5,
+		(state) => state.targets.length === 4,
 		"the empty navigation controls to settle",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 	expect(empty.actionLabels).toEqual(["Refresh boards", "New board"]);
-	expect(empty.targets).toHaveLength(5);
+	expect(empty.targets).toHaveLength(4);
 	expect(empty.targets.every(({ width, height }) => width >= 43.5 && height >= 43.5)).toBe(true);
 	expect(empty.currentScratch).toBe(true);
 	expect(empty.pageFits).toBe(true);
@@ -190,17 +139,23 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	const request = createJsonRequester(canvas);
 	const primary = await createBoard(request, "primary");
 	const option = await createBoard(request, "primary", { variant: "option-a" });
-	for (const board of ["alpha", "beta", "gamma", "secondary"]) await createBoard(request, board);
+	for (const board of [
+		"alpha",
+		"beta",
+		"gamma-production-event-processing-architecture",
+		"secondary",
+	])
+		await createBoard(request, board);
 	await addBox(request, primary, "pbox", "Primary service");
 	await addBox(request, option, "obox", "Option A");
 	await addBox(request, "beta", "bbox", "Beta service");
-	await addBox(request, "gamma", "gbox", "Gamma service");
+	await addBox(request, "gamma-production-event-processing-architecture", "gbox", "Gamma service");
 	await canvas.restart();
 	await createBoard(request, "draft-probe", { save: false });
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", canvas.base]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
-	await browser.run(["set", "viewport", "1440", "900"]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => request<PanesBody>("/api/panes").then((response) => response.body),
 		(state) => state.paneCount === 1,
@@ -226,7 +181,15 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 			"document.querySelector('[data-board-key=\"draft-probe\"]') !== null",
 		),
 	).toBeTrue();
-	expect(desktop.navWidth).toBeCloseTo(184, 0);
+	expect(desktop.navWidth).toBeCloseTo(280, 0);
+	expect(
+		await browser.eval<boolean>(`(() => {
+		const name = document.querySelector('[data-board-key="gamma-production-event-processing-architecture"] .board-nav-variant');
+		if (!name) return false;
+		const rect = name.getBoundingClientRect();
+		return rect.height > parseFloat(getComputedStyle(name).lineHeight) && name.scrollWidth <= name.clientWidth;
+	})()`),
+	).toBe(true);
 	expect(desktop.primaryVariants).toEqual([primary, option]);
 	expect(desktop.draftMarkers).toEqual([]);
 	expect(desktop.initials).toBe(0);
@@ -239,6 +202,20 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	expect(desktop.humanFonts.every(({ lineHeight, size }) => lineHeight >= size * 1.18)).toBe(true);
 	expect(desktop.technicalFonts.every((family) => family.includes("archboard dm mono"))).toBe(true);
 	expect(desktop.targets.every(({ width, height }) => width >= 43.5 && height >= 43.5)).toBe(true);
+	const navigationOrder = () =>
+		browser.eval<string[]>(
+			`[...document.querySelectorAll('.board-group:not(.scratch-section) .board-nav-row')].map(row => row.dataset.boardKey)`,
+		);
+	const stableOrder = [
+		"alpha",
+		"beta",
+		"draft-probe",
+		"gamma-production-event-processing-architecture",
+		primary,
+		option,
+		"secondary",
+	];
+	expect(await navigationOrder()).toEqual(stableOrder);
 
 	await browser.run(["click", `[data-board-key="${primary}"]`]);
 	await pollUntil(
@@ -247,8 +224,9 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		"the primary board to open",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
+	expect(await navigationOrder()).toEqual(stableOrder);
 	const readPreview = () =>
-		browser.eval<PreviewView>(
+		browser.eval<NavigatorPreviewView>(
 			`(() => { const card = document.querySelector('.board-preview-card'); const frame = card?.querySelector('.board-preview-frame'); if (!card || !frame) return {}; const cardStyle = getComputedStyle(card); const frameStyle = getComputedStyle(frame); return { board: card.dataset.previewBoard, state: card.dataset.previewState, source: card.dataset.previewSource, src: card.querySelector('img')?.src, cardWidth: card.getBoundingClientRect().width, flat: cardStyle.boxShadow === 'none' && parseFloat(cardStyle.borderRadius) === 4 && frameStyle.backgroundImage === 'none' && frameStyle.animationName === 'none', frameHeight: frame.getBoundingClientRect().height, focusables: card.querySelectorAll('button, a, input, [tabindex]').length, rawSvg: card.querySelectorAll('svg').length }; })()`,
 		);
 
@@ -313,13 +291,13 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 
 	expect(
 		await browser.eval<boolean>(
-			`(() => { const control = document.querySelector('.board-group[aria-label="alpha"] .board-preview-control'); if (!control) return false; control.click(); return control.getBoundingClientRect().width >= 43.5; })()`,
+			`(() => { const row = document.querySelector('[data-board-key="alpha"]'); if (!row) return false; row.focus(); return row.getBoundingClientRect().height >= 43.5; })()`,
 		),
 	).toBe(true);
 	await pollUntil(
 		readPreview,
 		(view) => view.board === "alpha" && view.state === "empty",
-		"the 44px preview control to disclose an empty board",
+		"keyboard focus on the board row to disclose an empty preview",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 
@@ -353,11 +331,14 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	);
 	expect(optionDark.src).toMatch(/^blob:/);
 	await browser.eval<boolean>(
-		`(() => { window.__previewProbe.holdBoard = 'gamma'; document.querySelector('[data-board-key="gamma"]')?.focus(); return true; })()`,
+		`(() => { window.__previewProbe.holdBoard = 'gamma-production-event-processing-architecture'; document.querySelector('[data-board-key="gamma-production-event-processing-architecture"]')?.focus(); return true; })()`,
 	);
 	await pollUntil(
 		readPreview,
-		(view) => view.board === "gamma" && view.state === "loading" && view.flat === true,
+		(view) =>
+			view.board === "gamma-production-event-processing-architecture" &&
+			view.state === "loading" &&
+			view.flat === true,
 		"the delayed preview request to begin",
 	);
 	await browser.eval<void>(
@@ -373,17 +354,21 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		"a later disclosure to win over the delayed completion",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect(await browser.eval<boolean>("window.__previewProbe.release('gamma')")).toBe(true);
+	expect(
+		await browser.eval<boolean>(
+			"window.__previewProbe.release('gamma-production-event-processing-architecture')",
+		),
+	).toBe(true);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				"Boolean(window.__previewProbe.requests.find(request => request.board === 'gamma' && request.completed))",
+				"Boolean(window.__previewProbe.requests.find(request => request.board === 'gamma-production-event-processing-architecture' && request.completed))",
 			),
 		Boolean,
-		"the stale gamma preview request to finish",
+		"the stale gamma-production-event-processing-architecture preview request to finish",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect((await readPreview()).board).not.toBe("gamma");
+	expect((await readPreview()).board).not.toBe("gamma-production-event-processing-architecture");
 	await browser.eval<void>(
 		`{
 			const list = document.querySelector('.board-nav-list');
@@ -401,7 +386,10 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		(requests) =>
 			requests.length >= 5 &&
 			requests.every(({ method }) => method === "GET") &&
-			requests.some(({ board, completed }) => board === "gamma" && completed),
+			requests.some(
+				({ board, completed }) =>
+					board === "gamma-production-event-processing-architecture" && completed,
+			),
 	);
 	await browser.eval<boolean>(
 		`(() => { window.__previewProbe.holdBoard = null; document.querySelector('[data-board-key=${JSON.stringify(primary)}]')?.focus(); return true; })()`,
@@ -418,6 +406,8 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		"the mounted pane to receive the new canonical scene",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
+	await browser.run(["click", '[aria-label="Refresh boards"]']);
+	expect(await navigationOrder()).toEqual(stableOrder);
 	await browser.eval<boolean>(
 		`(() => { const row = document.querySelector('[data-board-key=${JSON.stringify(primary)}]'); row?.blur(); row?.focus(); return true; })()`,
 	);
@@ -476,6 +466,7 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 	expect(replaced.panes.find((pane) => pane.paneId !== rightPaneId)?.board).toBe(primary);
+	expect(await navigationOrder()).toEqual(stableOrder);
 
 	await browser.run(["click", `button[aria-label="Present Pane B fullscreen"]`]);
 	await pollUntil(
@@ -491,7 +482,7 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(`document.fullscreenElement === null &&
-			Math.abs(document.querySelector('.board-nav').getBoundingClientRect().width - 184) < 0.6`),
+			Math.abs(document.querySelector('.board-nav').getBoundingClientRect().width - 280) < 0.6`),
 		Boolean,
 		"the exact desktop navigator to return after fullscreen",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },

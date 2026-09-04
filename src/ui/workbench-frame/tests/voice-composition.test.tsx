@@ -89,32 +89,32 @@ function frame(
 	);
 }
 
-test("keeps caller-owned voice beside the canonical text workbench", () => {
+test("keeps voice controls persistent while transcript and context stay disclosed", () => {
 	const slot = voiceSlot(createSessionFake(voiceView("ready")));
 	render(frame(slot));
 
 	const voice = screen.getByRole("region", { name: "Pane A live voice" });
 	const transcriptLog = within(voice).getByRole("log", { name: "Voice transcript" });
-	const workhorse = screen.getByRole("region", { name: "Pane A workhorse" });
-	expect(voice.className).toContain("max-h-1/2");
+	const conversation = screen.getByRole("region", { name: "Pane A agent conversation" });
 	expect(voice.getAttribute("data-workbench-voice-source-pane")).toBe(PANE_A.id);
+	expect(document.querySelector('[data-workbench-voice-source-label=""]')).toBeNull();
 	expect(
-		within(voice).getByText(PANE_A.label).getAttribute("data-workbench-voice-source-label"),
-	).toBe("");
-	expect(within(voice).getByRole("region", { name: "Live voice" })).toBeTruthy();
+		screen.getByRole("region", { name: "Live voice" }).getAttribute("data-voice-controls-variant"),
+	).toBe("toolbar");
 	expect(within(voice).getByRole("region", { name: "Voice transcript" })).toBeTruthy();
 	expect(within(voice).getByRole("region", { name: "Voice context" })).toBeTruthy();
-	expect(within(voice).getByText("No workhorse thread is bound before Start.")).toBeTruthy();
+	expect(screen.queryByText("No workhorse thread is bound before Start.")).toBeNull();
 	expect(transcriptLog.getAttribute("tabindex")).toBe("0");
-	expect(voice.compareDocumentPosition(workhorse) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-	expect(screen.getByRole("log", { name: "Workhorse activity" })).toBeTruthy();
-	expect(screen.getByRole("complementary", { name: "Pane A workbench operations" })).toBeTruthy();
-	expect(screen.getByRole("region", { name: "Board claim and doing" })).toBeTruthy();
-	expect(document.querySelector('[data-workbench-queue=""]')).toBeTruthy();
-	expect(document.querySelector('[data-thread-link-pane="pane-a"]')).toBeTruthy();
-	expect(document.querySelector('[data-coordinator-disclosure="read-only"]')).toBeTruthy();
+	expect(
+		voice.compareDocumentPosition(conversation) & Node.DOCUMENT_POSITION_FOLLOWING,
+	).toBeTruthy();
+	expect(screen.getByRole("log", { name: "Agent activity" })).toBeTruthy();
+	expect(screen.getByRole("region", { name: "Pane A board activity" })).toBeTruthy();
+	expect(document.querySelector('[data-workbench-queue=""]')).toBeNull();
+	expect(document.querySelector('[data-thread-link-pane="pane-a"]')).toBeNull();
+	expect(document.querySelector('[data-coordinator-disclosure="read-only"]')).toBeNull();
 	expect(document.querySelector("[data-workbench-composer]")).toBeTruthy();
-	expect(screen.getByRole("region", { name: "Application-wide Codex requests" })).toBeTruthy();
+	expect(screen.queryByRole("region", { name: "Application-wide Codex requests" })).toBeNull();
 	expect(screen.getByRole("button", { name: /Stop voice on/ })).toBeTruthy();
 });
 
@@ -158,6 +158,11 @@ test("projects reachable session states without taking announcement ownership fr
 			document.querySelector('[data-transcript-status-output=""]')?.hasAttribute("aria-live"),
 		).toBe(false);
 		expect(document.querySelectorAll('[data-voice-announcer=""]')).toHaveLength(1);
+		if (status === "failed") {
+			const recovery = document.querySelector('[data-voice-recovery=""]');
+			expect(recovery?.textContent).toContain(voiceView(status, failure).detail);
+			expect(recovery?.className).not.toContain("sr-only");
+		}
 		result.unmount();
 	}
 });
@@ -172,19 +177,13 @@ test("keeps the captured source immutable across pane focus and frame failure", 
 
 	expect(Object.isFrozen(source)).toBe(true);
 	expect(Object.isFrozen(source.pane)).toBe(true);
-	expect(document.querySelector('[data-workbench-voice-source-label=""]')?.textContent).toBe(
-		PANE_A.label,
-	);
-	expect(
-		[...document.querySelectorAll('[data-workbench-voice-source-thread=""]')].every(
-			(node) => node.textContent === "thread-a",
-		),
-	).toBe(true);
+	expect(document.querySelector('[data-workbench-voice-source-label=""]')).toBeNull();
+	expect(document.querySelector('[data-workbench-voice-source-thread=""]')).toBeNull();
 
 	result.rerender(frame(slot, TWO_PANE_B_VIEW));
-	expect(screen.getByRole("region", { name: "Pane B workhorse" })).toBeTruthy();
+	expect(screen.getByRole("region", { name: "Pane B agent conversation" })).toBeTruthy();
 	expect(document.querySelector('[data-workbench-voice-source-summary=""]')?.textContent).toContain(
-		"thread-a",
+		PANE_A.label,
 	);
 	result.rerender(
 		frame(slot, {
@@ -195,19 +194,17 @@ test("keeps the captured source immutable across pane focus and frame failure", 
 	);
 	expect(screen.getByRole("region", { name: "Pane A live voice" })).toBeTruthy();
 	expect(screen.getByRole("alert").textContent).toContain("The frame projection failed.");
-	expect(document.querySelector('[data-workbench-voice-source-summary=""]')?.textContent).toContain(
-		"thread-a",
-	);
+	expect(document.querySelector('[data-workbench-voice-source-summary=""]')).toBeNull();
 
 	result.rerender(frame(slot, TWO_PANE_B_VIEW, "collapsed"));
 	expect(document.querySelector('[data-workbench-voice="present"]')).toBeNull();
 	expect(document.querySelector('[data-workbench-voice-source-summary=""]')?.textContent).toContain(
-		"thread-a",
+		PANE_A.label,
 	);
 	result.rerender(frame(slot, TWO_PANE_B_VIEW, "expanded", "fullscreen"));
 	expect(document.querySelector('[data-workbench-voice="present"]')).toBeNull();
 	expect(document.querySelector('[data-workbench-voice-source-summary=""]')?.textContent).toContain(
-		"thread-a",
+		PANE_A.label,
 	);
 
 	result.rerender(frame(slot, TWO_PANE_B_VIEW));
@@ -338,6 +335,10 @@ test("removes only the approval relationship when its request source drifts", ()
 	);
 	expect(remainingLinks).toHaveLength(5);
 	for (const link of remainingLinks) {
+		if (["delegation", "callback"].includes(link.dataset.transcriptCrossLink ?? "")) {
+			expect(document.getElementById(link.hash.slice(1))).toBeNull();
+			continue;
+		}
 		expect(document.getElementById(link.hash.slice(1))?.dataset.workbenchTargetPane).toBe(
 			PANE_A.id,
 		);
@@ -417,6 +418,10 @@ test("places spoken evidence immediately above the unchanged ordinary approval o
 	expect(spoken.querySelector("button, input, select, textarea, form")).toBeNull();
 	expect(transcriptLinks).toHaveLength(6);
 	for (const link of transcriptLinks) {
+		if (["delegation", "callback"].includes(link.dataset.transcriptCrossLink ?? "")) {
+			expect(document.getElementById(link.hash.slice(1))).toBeNull();
+			continue;
+		}
 		expect(document.getElementById(link.hash.slice(1))).toBeTruthy();
 	}
 	expect(
@@ -455,9 +460,8 @@ function expectTextOnlyFrame(): void {
 	expect(document.querySelector('[data-voice-context=""]')).toBeNull();
 	expect(document.querySelector("[data-spoken-approval]")).toBeNull();
 	expect(document.querySelector('[data-workbench-voice-source-summary=""]')).toBeNull();
-	expect(screen.getByRole("region", { name: "Pane A workhorse" })).toBeTruthy();
-	expect(screen.getByRole("complementary", { name: "Pane A workbench operations" })).toBeTruthy();
-	expect(document.querySelector('[data-workbench-queue=""]')).toBeTruthy();
+	expect(screen.getByRole("region", { name: "Pane A agent conversation" })).toBeTruthy();
+	expect(document.querySelector('[data-workbench-queue=""]')).toBeNull();
 	expect(document.querySelector("[data-workbench-composer]")).toBeTruthy();
 }
 

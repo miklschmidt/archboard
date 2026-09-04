@@ -4,8 +4,11 @@ import {
 	useLayoutEffect,
 	useMemo,
 	useRef,
+	useState,
 	useSyncExternalStore,
 	type FocusEvent,
+	type MouseEvent,
+	type RefObject,
 	type ReactNode,
 } from "react";
 
@@ -14,15 +17,18 @@ import { cn } from "../../ui-classnames/index.js";
 import { WorkbenchApprovals } from "../../workbench-approvals/index.js";
 import { WorkbenchBoardStatus } from "../../workbench-board-status/index.js";
 import { WorkbenchComposer } from "../../workbench-composer/index.js";
-import { WorkbenchCoordinatorDisclosure } from "../../workbench-coordinator/index.js";
-import { WorkbenchQueue } from "../../workbench-queue/index.js";
+import {
+	projectWorkbenchQueue,
+	WorkbenchQueue,
+	type WorkbenchQueueCrossLinks,
+} from "../../workbench-queue/index.js";
 import { WorkbenchRuntimeProvider } from "../../workbench-runtime/index.js";
-import { WorkbenchThreadLink } from "../../workbench-thread-link/index.js";
 import { WorkbenchTimeline } from "../../workbench-timeline/index.js";
 import type {
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
 } from "../../workbench-transport/index.js";
+import { VoiceControls } from "../../voice-controls/index.js";
 import { useVoiceSession, type VoiceSessionView } from "../../voice-session/index.js";
 import type { VoiceTranscriptCrossLinkIds } from "../../voice-transcript/index.js";
 import { workbenchFrameRequestSourceIssue, workbenchFrameVoiceSourceIssue } from "../contract.js";
@@ -38,6 +44,7 @@ import type {
 	WorkbenchFrameVoiceSource,
 } from "../contract.js";
 import { WorkbenchFrameCompact } from "./WorkbenchFrameCompact.js";
+import { WorkbenchSettingsDialog } from "./WorkbenchSettingsDialog.js";
 import { VoiceComposition, WorkbenchFrameSpokenApproval } from "./VoiceComposition.js";
 
 function useTransportState(transport: BrowserWorkbenchTransport) {
@@ -50,6 +57,16 @@ function subscribeToAbsentRequest(): () => void {
 
 function absentRequestState(): null {
 	return null;
+}
+
+function useOptionalTransportState(
+	transport: BrowserWorkbenchTransport | null,
+): BrowserWorkbenchState | null {
+	return useSyncExternalStore(
+		transport?.subscribe ?? subscribeToAbsentRequest,
+		transport?.state ?? absentRequestState,
+		transport?.state ?? absentRequestState,
+	);
 }
 
 function useRequestState(request: WorkbenchFrameRequest): BrowserWorkbenchState | null {
@@ -146,6 +163,40 @@ function PaneControl({ pane, active, onSelect }: PaneControlProps) {
 	);
 }
 
+function readableState(value: string): string {
+	const words = value.replaceAll("_", " ").replaceAll("-", " ");
+	return `${words.charAt(0).toUpperCase()}${words.slice(1)}`;
+}
+
+function agentConnectionLabel(value: string): string {
+	return value === "notLoaded" || value === "unbound" ? "No agent linked" : readableState(value);
+}
+
+function AgentConnection({ pane }: { readonly pane: WorkbenchFramePane }) {
+	const state = useTransportState(pane.transport);
+	const value =
+		state.kind === "readiness" ? (state.snapshot.threadLink.status ?? state.state) : state.state;
+	const label = agentConnectionLabel(value);
+	return (
+		<output
+			aria-label={`Agent connection: ${label}`}
+			aria-live="polite"
+			className="min-w-0 inline-flex items-center gap-control border-l border-border pl-region font-sans text-body text-muted-foreground"
+			data-workbench-connection-state={state.state}
+		>
+			<span
+				aria-hidden="true"
+				className={
+					state.connection === "connected"
+						? "size-status-dot rounded-round bg-status"
+						: "size-status-dot rounded-round bg-offline"
+				}
+			/>
+			<span className="truncate">{label}</span>
+		</output>
+	);
+}
+
 interface FrameHeaderProps {
 	readonly titleId: string;
 	readonly captureTitle: (node: HTMLParagraphElement | null) => void;
@@ -155,8 +206,11 @@ interface FrameHeaderProps {
 	readonly space: WorkbenchFrameProps["space"];
 	readonly voiceSource: WorkbenchFrameVoiceSource | null;
 	readonly voiceView: VoiceSessionView | null;
+	readonly activePane: WorkbenchFramePane | null;
 	readonly onActivePaneChange: WorkbenchFrameProps["onActivePaneChange"];
 	readonly onDisclosureChange: WorkbenchFrameProps["onDisclosureChange"];
+	readonly onOpenSettings: () => void;
+	readonly settingsRef: RefObject<HTMLButtonElement | null>;
 }
 
 function FrameHeader({
@@ -168,8 +222,11 @@ function FrameHeader({
 	space,
 	voiceSource,
 	voiceView,
+	activePane,
 	onActivePaneChange,
 	onDisclosureChange,
+	onOpenSettings,
+	settingsRef,
 }: FrameHeaderProps) {
 	const toggle = useCallback(
 		() => onDisclosureChange(disclosure === "expanded" ? "collapsed" : "expanded"),
@@ -181,20 +238,20 @@ function FrameHeader({
 			? null
 			: workbenchFrameVoiceSourceIssue(voiceSource, voiceView);
 	return (
-		<header className="flex min-h-header shrink-0 items-center gap-control border-b border-border bg-surface px-region">
+		<header className="flex min-h-header shrink-0 items-center gap-region border-b border-border bg-surface px-region">
 			<div className="min-w-0 shrink-0">
-				<p className="m-0 text-kicker font-semibold text-muted-foreground">Codex</p>
 				<p
-					className="m-0 font-sans text-title font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+					className="m-0 flex items-center gap-control font-sans text-title font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 					data-workbench-title=""
 					id={titleId}
 					ref={captureTitle}
 					tabIndex={-1}
 				>
-					Agent workbench
+					<span aria-hidden="true" className="size-status-dot rounded-round bg-status" />
+					Agent
 				</p>
 			</div>
-			{ready === null ? null : (
+			{ready === null ? null : ready.panes.length > 1 ? (
 				<nav aria-label="Workbench panes" className="min-w-0 flex flex-1 items-center gap-control">
 					{ready.panes.map((pane) => (
 						<PaneControl
@@ -205,34 +262,51 @@ function FrameHeader({
 						/>
 					))}
 				</nav>
+			) : (
+				<span className="min-w-0 flex-1 truncate border-l border-border pl-region font-sans text-body text-muted-foreground">
+					{ready.panes[0]?.identity.label}
+				</span>
 			)}
-			{voiceSource === null || voiceView === null ? null : (
-				<div
-					className="min-w-0 ml-auto shrink overflow-hidden font-sans text-body"
-					data-workbench-voice-source-summary=""
+			{activePane === null ? null : <AgentConnection pane={activePane} />}
+			{voiceSource === null || voiceView === null ? null : voiceSourceIssue !== null ? (
+				<span
+					className="ml-auto font-sans text-body text-destructive"
+					data-workbench-voice-source-mismatch=""
+					role="alert"
 				>
-					<span className="text-muted-foreground">Voice source </span>
-					<span className="font-medium text-foreground">{voiceSource.pane.label}</span>
-					{voiceSourceIssue !== null ? (
-						<span className="block text-destructive" data-workbench-voice-source-mismatch="">
-							Binding unavailable
-						</span>
-					) : voiceView.binding === null ? (
-						<span className="block text-muted-foreground" data-workbench-voice-source-unbound="">
-							No workhorse thread is bound before Start.
-						</span>
-					) : (
+					Voice unavailable
+				</span>
+			) : (
+				<div className="min-w-0 ml-auto flex shrink-0 items-center gap-control">
+					{activePane === null || samePaneIdentity(activePane.identity, voiceSource.pane) ? null : (
 						<span
-							className="block max-w-full truncate font-mono text-foreground"
-							data-workbench-voice-source-thread=""
-							title={voiceView.binding.workhorseThreadId}
+							className="font-sans text-body text-muted-foreground"
+							data-workbench-voice-source-summary=""
 						>
-							{voiceView.binding.workhorseThreadId}
+							Voice · {voiceSource.pane.label}
 						</span>
 					)}
+					<VoiceControls session={voiceSource.session} variant="toolbar" />
 				</div>
 			)}
-			<div className={voiceSource === null ? "ml-auto shrink-0" : "shrink-0"}>
+			<div
+				className={
+					voiceSource === null
+						? "ml-auto flex shrink-0 items-center gap-control"
+						: "flex shrink-0 items-center gap-control"
+				}
+			>
+				{ready === null ? null : (
+					<Button
+						data-workbench-target-pane={activePane?.identity.id}
+						onClick={onOpenSettings}
+						ref={settingsRef}
+						tone="quiet"
+						type="button"
+					>
+						Settings
+					</Button>
+				)}
 				{space === "workspace" ? (
 					<Button onClick={toggle} ref={captureToggle} tone="quiet" type="button">
 						{disclosure === "expanded" ? "Collapse" : "Expand"}
@@ -247,14 +321,69 @@ function FrameHeader({
 
 interface ActivePaneProps {
 	readonly pane: WorkbenchFramePane;
+	readonly state: BrowserWorkbenchState;
 	readonly timelineId: string;
 	readonly coordinatorId: string;
 	readonly queueId: string;
 	readonly approvalsId: string;
+	readonly onOpenSettings: () => void;
 }
 
-function ActivePane({ pane, timelineId, coordinatorId, queueId, approvalsId }: ActivePaneProps) {
-	const state = useTransportState(pane.transport);
+function hasQueue(state: BrowserWorkbenchState): boolean {
+	return (
+		state.snapshot !== null &&
+		(state.snapshot.threadLink.threadId !== null || state.snapshot.queue.entries.length > 0)
+	);
+}
+
+function QueueDisclosure({
+	state,
+	pane,
+	crossLinks,
+	queueId,
+}: {
+	readonly state: BrowserWorkbenchState;
+	readonly pane: WorkbenchFramePane;
+	readonly crossLinks: WorkbenchQueueCrossLinks;
+	readonly queueId: string;
+}) {
+	const queue = projectWorkbenchQueue({ state, capabilities: pane.transport.capabilities() });
+	if (!hasQueue(state)) return null;
+	const summary =
+		queue.entries.length === 0
+			? queue.add.enabled
+				? "Add a request"
+				: queue.label
+			: `${queue.entries.length} ${queue.entries.length === 1 ? "request" : "requests"}`;
+	return (
+		<details
+			className="group max-h-1/2 min-h-touch-target shrink-0 overflow-y-auto overscroll-contain border-t border-border bg-surface"
+			data-workbench-queue-disclosure=""
+			data-workbench-target-pane={pane.identity.id}
+			id={queueId}
+		>
+			<summary className="flex min-h-touch-target cursor-pointer items-center justify-between gap-control px-region font-sans text-body outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+				<span className="font-medium">Queue</span>
+				<span className="text-muted-foreground">{summary}</span>
+			</summary>
+			<WorkbenchQueue
+				className="border-x-0 border-b-0"
+				crossLinks={crossLinks}
+				transport={pane.transport}
+			/>
+		</details>
+	);
+}
+
+function ActivePane({
+	pane,
+	state,
+	timelineId,
+	coordinatorId,
+	queueId,
+	approvalsId,
+	onOpenSettings,
+}: ActivePaneProps) {
 	const crossLinks = useMemo(
 		() => ({
 			workhorseTimelineId: timelineId,
@@ -264,12 +393,26 @@ function ActivePane({ pane, timelineId, coordinatorId, queueId, approvalsId }: A
 		[approvalsId, coordinatorId, timelineId],
 	);
 	return (
-		<>
-			<section
-				aria-label={`${pane.identity.label} workhorse`}
-				className="min-h-0 min-w-0 [&>[data-workbench-runtime]]:min-h-0 col-span-2 flex flex-col overflow-hidden border-r border-border bg-surface [&>[data-workbench-runtime]]:flex [&>[data-workbench-runtime]]:flex-1 [&>[data-workbench-runtime]]:flex-col [&>[data-workbench-runtime]]:overflow-hidden"
-				data-workbench-region="workhorse"
-			>
+		<section
+			aria-label={`${pane.identity.label} agent conversation`}
+			className="min-h-0 min-w-0 [&>[data-workbench-runtime]]:min-h-0 [&>[data-workbench-runtime]]:min-w-0 flex h-full w-full flex-col overflow-hidden bg-surface [&>[data-workbench-runtime]]:flex [&>[data-workbench-runtime]]:w-full [&>[data-workbench-runtime]]:flex-1 [&>[data-workbench-runtime]]:flex-col [&>[data-workbench-runtime]]:overflow-hidden"
+			data-workbench-region="conversation"
+		>
+			<WorkbenchBoardStatus {...pane.boardStatus} paneLabel={pane.identity.label} />
+			{pane.timeline === null ? (
+				<div
+					className="min-h-0 flex flex-1 flex-col items-center justify-center gap-control px-panel py-region text-center"
+					data-workbench-timeline="unbound"
+				>
+					<p className="m-0 font-sans text-title font-semibold">Connect an agent to this pane</p>
+					<p className="m-0 max-w-prose font-sans text-body text-muted-foreground">
+						Create a workhorse or attach an existing thread to start a conversation.
+					</p>
+					<Button onClick={onOpenSettings} tone="primary" type="button">
+						Open Agent settings
+					</Button>
+				</div>
+			) : (
 				<WorkbenchRuntimeProvider
 					onSubmit={pane.composerController.submit}
 					transport={pane.transport}
@@ -280,52 +423,18 @@ function ActivePane({ pane, timelineId, coordinatorId, queueId, approvalsId }: A
 							data-workbench-target-pane={pane.identity.id}
 							id={timelineId}
 						>
-							{pane.timeline === null ? (
-								<output
-									aria-live="polite"
-									className="min-h-touch-target border-b border-border bg-surface px-region py-panel text-muted-foreground"
-									data-workbench-timeline="unbound"
-								>
-									<span className="block font-sans text-body">
-										No workhorse thread is linked to this pane. Use the pane thread-link controls to
-										create or attach one.
-									</span>
-								</output>
-							) : (
-								<WorkbenchTimeline
-									{...pane.timeline}
-									className="h-full"
-									label="Workhorse activity"
-								/>
-							)}
+							<WorkbenchTimeline {...pane.timeline} className="h-full" label="Agent activity" />
 						</div>
-						<WorkbenchComposer controller={pane.composerController} state={state} />
+						<QueueDisclosure crossLinks={crossLinks} pane={pane} queueId={queueId} state={state} />
+						<WorkbenchComposer
+							className="shrink-0"
+							controller={pane.composerController}
+							state={state}
+						/>
 					</div>
 				</WorkbenchRuntimeProvider>
-			</section>
-			<aside
-				aria-label={`${pane.identity.label} workbench operations`}
-				className="min-h-0 min-w-0 col-span-1 overflow-y-auto bg-surface-raised"
-				data-workbench-region="operations"
-			>
-				<section aria-label="Board claim and doing" data-workbench-operation="board-status">
-					<WorkbenchBoardStatus {...pane.boardStatus} paneLabel={pane.identity.label} />
-				</section>
-				<div data-workbench-target-pane={pane.identity.id} id={queueId}>
-					<WorkbenchQueue crossLinks={crossLinks} transport={pane.transport} />
-				</div>
-				<WorkbenchThreadLink
-					controller={pane.threadLink.controller}
-					hostRecoveryIntents={pane.threadLink.hostRecoveryIntents}
-					initialAccountForm={pane.threadLink.initialAccountForm}
-					paneId={pane.identity.id}
-					transport={pane.transport}
-				/>
-				<div data-workbench-target-pane={pane.identity.id} id={coordinatorId}>
-					<WorkbenchCoordinatorDisclosure state={state} />
-				</div>
-			</aside>
-		</>
+			)}
+		</section>
 	);
 }
 
@@ -457,6 +566,7 @@ function AppGlobalRequest({
 	readonly state: BrowserWorkbenchState | null;
 	readonly voicePresent: boolean;
 }) {
+	if (request.state === "empty") return null;
 	if (request.state === "present" && state !== null) {
 		return (
 			<PresentAppGlobalRequest
@@ -491,7 +601,9 @@ function WorkbenchFrameLayout({
 	const approvalsId = useId();
 	const titleRef = useRef<HTMLParagraphElement | null>(null);
 	const toggleRef = useRef<HTMLButtonElement | null>(null);
+	const settingsRef = useRef<HTMLButtonElement | null>(null);
 	const contentHadFocus = useRef(false);
+	const [settingsView, setSettingsView] = useState<"connection" | "coordinator" | null>(null);
 	const requestState = useRequestState(props.request);
 	const contentVisible = props.disclosure === "expanded" && props.space === "workspace";
 	const previousContentVisible = useRef(contentVisible);
@@ -514,6 +626,25 @@ function WorkbenchFrameLayout({
 	const captureToggle = useCallback((node: HTMLButtonElement | null) => {
 		toggleRef.current = node;
 	}, []);
+	const openSettings = useCallback(() => setSettingsView("connection"), []);
+	const closeSettings = useCallback(() => setSettingsView(null), []);
+	const openRelatedSettings = useCallback(
+		(event: MouseEvent<HTMLElement>) => {
+			if (!(event.target instanceof Element)) return;
+			const link = event.target.closest("a");
+			if (link?.getAttribute("href") === `#${coordinatorId}`) {
+				event.preventDefault();
+				setSettingsView("coordinator");
+			} else if (link?.getAttribute("href") === `#${queueId}`) {
+				const queue = event.currentTarget.ownerDocument.getElementById(queueId);
+				if (!(queue instanceof HTMLDetailsElement)) return;
+				event.preventDefault();
+				queue.open = true;
+				queue.querySelector("summary")?.focus();
+			}
+		},
+		[coordinatorId, queueId],
+	);
 	const onContentBlur = useCallback((event: FocusEvent<HTMLDivElement>) => {
 		const next = event.relatedTarget;
 		contentHadFocus.current = next instanceof Node && event.currentTarget.contains(next);
@@ -525,6 +656,9 @@ function WorkbenchFrameLayout({
 		ready === null || issue !== null
 			? null
 			: (ready.panes.find((pane) => pane.identity.id === ready.activePaneId) ?? null);
+	const activePaneState = useOptionalTransportState(activePane?.transport ?? null);
+	const activeQueueVisible =
+		activePane?.timeline != null && activePaneState !== null && hasQueue(activePaneState);
 	const voiceSourceIssue =
 		voice === null || voiceView === null
 			? null
@@ -546,13 +680,21 @@ function WorkbenchFrameLayout({
 	const voiceCrossLinkIds = useMemo<VoiceTranscriptCrossLinkIds>(
 		() => ({
 			delegationId: voiceOwnsMountedPane ? coordinatorId : null,
-			queueId: voiceOwnsMountedPane ? queueId : null,
+			queueId: voiceOwnsMountedPane && activeQueueVisible ? queueId : null,
 			steerId: voiceOwnsMountedPane ? timelineId : null,
 			approvalId: voiceOwnsApproval ? approvalsId : null,
 			callbackId: voiceOwnsMountedPane ? coordinatorId : null,
 			workhorseResultId: voiceOwnsMountedPane ? timelineId : null,
 		}),
-		[approvalsId, coordinatorId, queueId, timelineId, voiceOwnsApproval, voiceOwnsMountedPane],
+		[
+			activeQueueVisible,
+			approvalsId,
+			coordinatorId,
+			queueId,
+			timelineId,
+			voiceOwnsApproval,
+			voiceOwnsMountedPane,
+		],
 	);
 
 	return (
@@ -566,13 +708,17 @@ function WorkbenchFrameLayout({
 			data-workbench-disclosure={props.disclosure}
 			data-workbench-frame=""
 			data-workbench-space={props.space}
+			onClickCapture={openRelatedSettings}
 		>
 			<FrameHeader
+				activePane={activePane}
 				captureTitle={captureTitle}
 				captureToggle={captureToggle}
 				disclosure={props.disclosure}
 				onActivePaneChange={props.onActivePaneChange}
 				onDisclosureChange={props.onDisclosureChange}
+				onOpenSettings={openSettings}
+				settingsRef={settingsRef}
 				space={props.space}
 				titleId={titleId}
 				view={props.view}
@@ -588,11 +734,20 @@ function WorkbenchFrameLayout({
 						onFocusCapture={onContentFocus}
 					>
 						{voice === null || voiceView === null ? null : (
-							<VoiceComposition
-								crossLinkIds={voiceCrossLinkIds}
-								sessionView={voiceView}
-								voice={voice}
-							/>
+							<details
+								className="group max-h-1/2 min-h-touch-target shrink-0 overflow-y-auto overscroll-contain border-b border-border bg-surface-raised"
+								data-workbench-voice-disclosure=""
+							>
+								<summary className="flex min-h-touch-target cursor-pointer items-center justify-between gap-control px-region font-sans text-body outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+									<span className="font-medium">Voice · {voice.source.pane.label}</span>
+									<span className="text-muted-foreground">Transcript and context</span>
+								</summary>
+								<VoiceComposition
+									crossLinkIds={voiceCrossLinkIds}
+									sessionView={voiceView}
+									voice={voice}
+								/>
+							</details>
 						)}
 						{props.view.state !== "ready" ? (
 							<div className="min-h-0 flex-1 overflow-y-auto">
@@ -602,12 +757,14 @@ function WorkbenchFrameLayout({
 							<div className="min-h-0 flex-1 overflow-y-auto">
 								<InvalidReadyState detail={issue} />
 							</div>
-						) : activePane !== null ? (
-							<div className="min-h-0 min-w-0 grid flex-1 grid-cols-3 overflow-hidden">
+						) : activePane !== null && activePaneState !== null ? (
+							<div className="min-h-0 min-w-0 flex flex-1 overflow-hidden">
 								<ActivePane
 									approvalsId={approvalsId}
 									coordinatorId={coordinatorId}
+									onOpenSettings={openSettings}
 									pane={activePane}
+									state={activePaneState}
 									queueId={queueId}
 									timelineId={timelineId}
 								/>
@@ -628,6 +785,18 @@ function WorkbenchFrameLayout({
 				state={requestState}
 				voicePresent={voiceOwnsApproval && voiceSourceIssue === null}
 			/>
+			{ready !== null && issue === null ? (
+				<WorkbenchSettingsDialog
+					open={settingsView !== null}
+					coordinatorId={coordinatorId}
+					showCoordinator={settingsView === "coordinator"}
+					activePaneId={ready.activePaneId}
+					onActivePaneChange={props.onActivePaneChange}
+					onClose={closeSettings}
+					panes={ready.panes}
+					returnFocusRef={settingsRef}
+				/>
+			) : null}
 		</section>
 	);
 }

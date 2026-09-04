@@ -33,6 +33,7 @@ const HOST_INTENTS = [
 
 function render(
 	overrides: {
+		readonly account?: BrowserSnapshot["account"];
 		readonly inventory?: ThreadLinkInventory;
 		readonly readiness?: BrowserSnapshot["readiness"];
 		readonly threadLink?: BrowserSnapshot["threadLink"];
@@ -43,6 +44,7 @@ function render(
 	} = {},
 ): string {
 	const value = snapshot({
+		...(overrides.account === undefined ? {} : { account: overrides.account }),
 		...(overrides.readiness === undefined ? {} : { readiness: overrides.readiness }),
 		...(overrides.threadLink === undefined ? {} : { threadLink: overrides.threadLink }),
 		threadCandidates:
@@ -199,8 +201,8 @@ describe("rendered pane thread link", () => {
 		expect(markup).toContain('data-thread-link-recovery="cancel_login"');
 	});
 
-	test("renders the four supported sign-in forms and the four unavailable methods", () => {
-		const markup = render();
+	test("renders supported sign-in forms and keeps unsupported methods in help while signed out", () => {
+		const markup = render({ account: { kind: "account", state: "signed_out" } });
 		for (const id of ["apiKey", "chatgpt", "amazonBedrock", "amazonBedrockAccessKeys"])
 			expect(markup).toContain(`data-thread-link-form-option="${id}"`);
 		for (const id of [
@@ -210,12 +212,24 @@ describe("rendered pane thread link", () => {
 			"amazonBedrockEnvironment",
 		])
 			expect(markup).toContain(`data-thread-link-unavailable="${id}"`);
-		expect(markup).toContain("Sign-in methods this workbench does not offer");
+		expect(markup).toContain("Sign-in help");
 		expect(markup).toContain("Unavailable: the device-code flow completes on another device");
 	});
 
+	test("collapses account management to status and sign out while signed in", () => {
+		const markup = render();
+		expect(markup).toContain('data-thread-link-account="ready"');
+		expect(markup).toContain("Signed in");
+		expect(markup).toContain(">Sign out<");
+		expect(markup).not.toContain("data-thread-link-form-option=");
+		expect(markup).not.toContain("data-thread-link-unavailable=");
+	});
+
 	test("renders the Bedrock access-key form with its optional session token masked", () => {
-		const markup = render({ initialAccountForm: "amazonBedrockAccessKeys" });
+		const markup = render({
+			account: { kind: "account", state: "signed_out" },
+			initialAccountForm: "amazonBedrockAccessKeys",
+		});
 		expect(markup).toContain('data-thread-link-form="amazonBedrockAccessKeys"');
 		for (const name of ["accessKeyId", "secretAccessKey", "sessionToken", "region"])
 			expect(markup).toContain(`data-thread-link-field="${name}"`);
@@ -226,7 +240,10 @@ describe("rendered pane thread link", () => {
 	});
 
 	test("renders the hosted ChatGPT form as a fieldless flow", () => {
-		const markup = render({ initialAccountForm: "chatgpt" });
+		const markup = render({
+			account: { kind: "account", state: "signed_out" },
+			initialAccountForm: "chatgpt",
+		});
 		expect(markup).toContain('data-thread-link-form="chatgpt"');
 		expect(markup).not.toContain("data-thread-link-field=");
 		expect(markup).toContain("Codex opens it and reports progress here");

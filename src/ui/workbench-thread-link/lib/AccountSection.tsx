@@ -78,6 +78,7 @@ export function AccountSection({
 	const signOut = useCallback(() => {
 		void controller.logout();
 	}, [controller]);
+	const signedIn = account.state === "ready";
 	return (
 		<section
 			aria-labelledby={headingId}
@@ -102,100 +103,108 @@ export function AccountSection({
 				</output>
 			</header>
 			<p className="m-0 pb-control text-body text-muted-foreground">{account.detail}</p>
-			<fieldset aria-describedby={groupId} className="m-0 p-0 border-0">
-				<legend className="text-kicker font-semibold text-muted-foreground">
-					Supported sign-in forms
-				</legend>
-				<p className="m-0 pb-control text-body text-muted-foreground" id={groupId}>
-					{form.description}
-				</p>
-				<div className="flex flex-wrap gap-control-inline pb-control">
-					{account.forms.map((candidate) => (
-						<label
-							className="flex min-h-touch-target items-center gap-control text-body text-foreground"
-							key={candidate.id}
-						>
-							<input
-								checked={candidate.id === formId}
-								data-thread-link-form-option={candidate.id}
-								name={`${groupId}-form`}
-								onChange={changeForm}
-								type="radio"
-								value={candidate.id}
-							/>
-							<span>{candidate.label}</span>
-						</label>
-					))}
-				</div>
-				<div className="grid grid-cols-2 gap-control pb-control" data-thread-link-form={formId}>
-					{form.fields.map((field) => (
-						<label className="min-w-0" key={field.name}>
-							<span className="block text-kicker font-semibold text-muted-foreground">
-								{field.label}
-							</span>
-							<input
-								autoComplete="off"
-								className={FIELD_CLASSES}
-								data-thread-link-field={field.name}
-								onChange={changeField}
-								required={field.required}
-								type={field.secret ? "password" : "text"}
-								value={values[field.name] ?? ""}
-							/>
-							<span className="mt-compact block text-body text-muted-foreground">
-								{field.description}
-							</span>
-						</label>
-					))}
-				</div>
-			</fieldset>
+			{signedIn ? null : (
+				<fieldset aria-describedby={groupId} className="m-0 p-0 border-0">
+					<legend className="text-kicker font-semibold text-muted-foreground">
+						Supported sign-in forms
+					</legend>
+					<p className="m-0 pb-control text-body text-muted-foreground" id={groupId}>
+						{form.description}
+					</p>
+					<div className="flex flex-wrap gap-control-inline pb-control">
+						{account.forms.map((candidate) => (
+							<label
+								className="flex min-h-touch-target items-center gap-control text-body text-foreground"
+								key={candidate.id}
+							>
+								<input
+									checked={candidate.id === formId}
+									data-thread-link-form-option={candidate.id}
+									name={`${groupId}-form`}
+									onChange={changeForm}
+									type="radio"
+									value={candidate.id}
+								/>
+								<span>{candidate.label}</span>
+							</label>
+						))}
+					</div>
+					<div className="grid grid-cols-2 gap-control pb-control" data-thread-link-form={formId}>
+						{form.fields.map((field) => (
+							<label className="min-w-0" key={field.name}>
+								<span className="block text-kicker font-semibold text-muted-foreground">
+									{field.label}
+								</span>
+								<input
+									autoComplete="off"
+									className={FIELD_CLASSES}
+									data-thread-link-field={field.name}
+									onChange={changeField}
+									required={field.required}
+									type={field.secret ? "password" : "text"}
+									value={values[field.name] ?? ""}
+								/>
+								<span className="mt-compact block text-body text-muted-foreground">
+									{field.description}
+								</span>
+							</label>
+						))}
+					</div>
+				</fieldset>
+			)}
 			{validation === null ? null : (
 				<p className="m-0 pb-control text-body text-destructive" id={validationId} role="alert">
 					{validation}
 				</p>
 			)}
 			<div className="flex flex-wrap items-center gap-control pb-control">
-				<Button
-					aria-describedby={validation === null ? undefined : validationId}
-					disabled={!account.canLogin}
-					onClick={submit}
-					tone="primary"
-					type="button"
-				>
-					Sign in
-				</Button>
-				<Button
-					disabled={!account.canCancelLogin || account.pendingLoginId === null}
-					onClick={cancel}
-					tone="secondary"
-					type="button"
-				>
-					Cancel sign-in
-				</Button>
+				{signedIn ? null : (
+					<>
+						<Button
+							aria-describedby={validation === null ? undefined : validationId}
+							disabled={!account.canLogin}
+							onClick={submit}
+							tone="primary"
+							type="button"
+						>
+							Sign in
+						</Button>
+						<Button
+							disabled={!account.canCancelLogin || account.pendingLoginId === null}
+							onClick={cancel}
+							tone="secondary"
+							type="button"
+						>
+							Cancel sign-in
+						</Button>
+					</>
+				)}
 				<Button disabled={!account.canLogout} onClick={signOut} tone="quiet" type="button">
 					Sign out
 				</Button>
 			</div>
-			{account.blockedReason === null ? null : (
+			{signedIn || account.blockedReason === null ? null : (
 				<p className="m-0 pb-control text-body text-muted-foreground">{account.blockedReason}</p>
 			)}
-			<div className="border-t border-border-subtle pt-control">
-				<h4 className="m-0 text-kicker font-semibold text-muted-foreground">
-					Sign-in methods this workbench does not offer
-				</h4>
-				<dl className="m-0">
-					{account.unavailable.map((method) => (
-						<div
-							className="grid grid-cols-[minmax(9rem,0.6fr)_minmax(0,1.4fr)] gap-control border-t border-border-subtle py-compact first:border-t-0"
-							data-thread-link-unavailable={method.id}
-							key={method.id}
-						>
-							<dt className="text-body font-medium text-foreground">{method.label}</dt>
-							<dd className="m-0 text-body text-muted-foreground">{method.explanation}</dd>
-						</div>
-					))}
-				</dl>
-			</div>
+			{signedIn ? null : (
+				<details className="border-t border-border-subtle pt-control">
+					<summary className="min-h-touch-target cursor-pointer text-body font-medium text-muted-foreground outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+						Sign-in help
+					</summary>
+					<dl className="m-0">
+						{account.unavailable.map((method) => (
+							<div
+								className="grid grid-cols-[minmax(9rem,0.6fr)_minmax(0,1.4fr)] gap-control border-t border-border-subtle py-compact first:border-t-0"
+								data-thread-link-unavailable={method.id}
+								key={method.id}
+							>
+								<dt className="text-body font-medium text-foreground">{method.label}</dt>
+								<dd className="m-0 text-body text-muted-foreground">{method.explanation}</dd>
+							</div>
+						))}
+					</dl>
+				</details>
+			)}
 		</section>
 	);
 }

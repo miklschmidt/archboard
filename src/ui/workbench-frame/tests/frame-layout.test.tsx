@@ -77,7 +77,7 @@ function capturePane(paneId: string): void {
 	selectedPaneIds.push(paneId);
 }
 
-test("composes one pane in workhorse-first landmark and DOM order", () => {
+test("composes one pane as one conversation with configuration outside the drawer", () => {
 	render(
 		<WorkbenchFrame
 			disclosure="expanded"
@@ -89,36 +89,33 @@ test("composes one pane in workhorse-first landmark and DOM order", () => {
 		/>,
 	);
 
-	const frame = screen.getByRole("region", { name: "Agent workbench" });
+	const frame = screen.getByRole("region", { name: "Agent" });
 	expect(frame.getAttribute("data-pane-count")).toBe("1");
 	for (const className of FRAME_ROOT_THEME_CLASSES.split(" ")) {
 		expect(frame.className).toContain(className);
 	}
 
-	const paneNav = screen.getByRole("navigation", { name: "Workbench panes" });
-	const paneControl = within(paneNav).getByRole("button", { name: PANE_A.label });
-	expect(paneControl.className).toContain("min-h-touch-target");
+	expect(screen.queryByRole("navigation", { name: "Workbench panes" })).toBeNull();
+	expect(frame.textContent).toContain(PANE_A.label);
+	expect(screen.getByRole("button", { name: "Settings" }).className).toContain(
+		"min-h-touch-target",
+	);
 	expect(screen.getByRole("button", { name: "Collapse" }).className).toContain(
 		"min-h-touch-target",
 	);
 
-	expect(screen.getByRole("region", { name: "Pane A workhorse" })).toBeTruthy();
-	expect(screen.getByRole("complementary", { name: "Pane A workbench operations" })).toBeTruthy();
-	expect(screen.getByRole("region", { name: "Board claim and doing" })).toBeTruthy();
-	expect(document.querySelector('[data-workbench-queue=""]')).toBeTruthy();
-	expect(document.querySelector('[data-thread-link-pane="pane-a"]')).toBeTruthy();
-	expect(document.querySelector('[data-coordinator-disclosure="read-only"]')).toBeTruthy();
+	expect(screen.getByRole("region", { name: "Pane A agent conversation" })).toBeTruthy();
+	expect(screen.getByRole("region", { name: "Pane A board activity" })).toBeTruthy();
+	expect(document.querySelector('[data-workbench-queue-disclosure=""]')).toBeNull();
+	expect(document.querySelector('[data-thread-link-pane="pane-a"]')).toBeNull();
+	expect(document.querySelector('[data-coordinator-disclosure="read-only"]')).toBeNull();
 	const workArea = document.querySelector('[data-workbench-work-area=""]');
 	expect(workArea?.className).toContain("min-h-0");
 	expect(workArea?.className).toContain("flex-1");
-	const request = screen.getByRole("region", { name: "Application-wide Codex requests" });
-	expect(request.getAttribute("data-workbench-request-allocation")).toBe("bounded-half-frame");
-	for (const className of ["max-h-1/2", "shrink-0", "overflow-y-auto"])
-		expect(request.className).toContain(className);
-	expect(request.textContent).toContain("Retained request history remains inspectable.");
+	expect(screen.queryByRole("region", { name: "Application-wide Codex requests" })).toBeNull();
 	const headings = screen.getAllByRole("heading");
 	const levels = headings.map((heading) => Number(heading.tagName.slice(1)));
-	expect(headings[0]?.textContent).toBe("Workhorse activity");
+	expect(headings[0]?.textContent).toBe("Agent activity");
 	expect(levels.filter((level) => level === 1)).toHaveLength(1);
 	for (let index = 1; index < levels.length; index += 1)
 		expect(levels[index]!).toBeLessThanOrEqual(levels[index - 1]! + 1);
@@ -126,7 +123,7 @@ test("composes one pane in workhorse-first landmark and DOM order", () => {
 	const order = [...document.querySelectorAll("[data-workbench-region]")].map((node) =>
 		node.getAttribute("data-workbench-region"),
 	);
-	expect(order).toEqual(["workhorse", "operations", "app-global-request"]);
+	expect(order).toEqual(["conversation"]);
 });
 
 test("keeps two-pane selection controlled and presents exact pane labels", async () => {
@@ -143,7 +140,7 @@ test("keeps two-pane selection controlled and presents exact pane labels", async
 		/>,
 	);
 
-	const frame = screen.getByRole("region", { name: "Agent workbench" });
+	const frame = screen.getByRole("region", { name: "Agent" });
 	expect(frame.getAttribute("data-pane-count")).toBe("2");
 	const paneAControl = screen.getByRole("button", { name: PANE_A.label });
 	const paneBControl = screen.getByRole("button", { name: PANE_B.label });
@@ -167,7 +164,7 @@ test("keeps two-pane selection controlled and presents exact pane labels", async
 	expect(screen.getByRole("button", { name: PANE_B.label }).getAttribute("aria-pressed")).toBe(
 		"true",
 	);
-	expect(screen.getByRole("region", { name: "Pane B workhorse" })).toBeTruthy();
+	expect(screen.getByRole("region", { name: "Pane B agent conversation" })).toBeTruthy();
 });
 
 test("preserves the active hierarchy in collapsed and fullscreen compact projections", async () => {
@@ -183,61 +180,22 @@ test("preserves the active hierarchy in collapsed and fullscreen compact project
 		/>,
 	);
 
-	const frame = screen.getByRole("region", { name: "Agent workbench" });
+	const frame = screen.getByRole("region", { name: "Agent" });
 	expect(frame.getAttribute("data-pane-count")).toBe("2");
 	expect(screen.getByRole("button", { name: PANE_B.label }).getAttribute("aria-pressed")).toBe(
 		"true",
 	);
-	let compact = screen.getByRole("region", { name: "Pane B compact workbench status" });
-	expect(compact.className).toContain("overflow-x-auto");
-	expect(compact.className).toContain("focus-visible:outline-ring");
-	expect(compact.querySelector("dl")?.className).toContain(
-		"grid-cols-[repeat(6,minmax(10rem,1fr))]",
-	);
-	expect(compact.querySelector(".uppercase")).toBeNull();
-	expect(compact.querySelector(".font-mono")).toBeNull();
+	let compact = screen.getByRole("region", { name: "Pane B compact agent status" });
 	expect(
-		[...compact.querySelectorAll("dd")].every((node) => node.classList.contains("font-sans")),
-	).toBe(true);
+		within(compact).getByLabelText("Active board claim: Refactoring frame hierarchy"),
+	).toBeTruthy();
 	expect(
-		[...compact.querySelectorAll("[data-workbench-compact-item]")].map((node) =>
-			node.getAttribute("data-workbench-compact-item"),
-		),
-	).toEqual([
-		"workhorse",
-		"board-claim",
-		"board-doing",
-		"queue",
-		"coordinator-history",
-		"coordinator-settings",
-	]);
-	expect(compact.querySelector('[data-workbench-compact-item="workhorse"]')?.textContent).toContain(
-		"Idle",
-	);
-	expect(
-		compact.querySelector('[data-workbench-compact-item="board-claim"]')?.textContent,
-	).toContain("Refactoring frame hierarchy");
-	expect(
-		compact.querySelector('[data-workbench-compact-item="board-doing"]')?.textContent,
-	).toContain("Preserving compact hierarchy");
-	expect(compact.querySelector('[data-workbench-compact-item="queue"]')?.textContent).toContain(
-		"Outcome unknown · 0 items",
-	);
-	expect(
-		compact.querySelector('[data-workbench-compact-item="coordinator-history"]')?.textContent,
-	).toContain("Unavailable");
-	expect(
-		compact.querySelector('[data-workbench-compact-item="coordinator-settings"]')?.textContent,
-	).toContain("gpt-5.6-luna · medium");
-	for (const expected of [
-		screen.getByRole("button", { name: PANE_A.label }),
-		screen.getByRole("button", { name: PANE_B.label }),
-		screen.getByRole("button", { name: "Expand" }),
-		compact,
-	]) {
-		await user.tab();
-		expect(document.activeElement).toBe(expected);
-	}
+		within(compact).getByLabelText("Current agent action: Preserving compact hierarchy"),
+	).toBeTruthy();
+	expect(within(compact).getByRole("button", { name: "Take back control" })).toBeTruthy();
+	expect(compact.querySelector("dl")).toBeNull();
+	await user.tab();
+	expect(document.activeElement).toBe(screen.getByRole("button", { name: PANE_A.label }));
 
 	view.rerender(
 		<WorkbenchFrame
@@ -249,7 +207,7 @@ test("preserves the active hierarchy in collapsed and fullscreen compact project
 			view={COMPACT_TWO_PANE_B_VIEW}
 		/>,
 	);
-	compact = screen.getByRole("region", { name: "Pane B compact workbench status" });
+	compact = screen.getByRole("region", { name: "Pane B compact agent status" });
 	expect(compact.getAttribute("data-workbench-content")).toBe("compact");
 	expect(document.querySelector('[data-workbench-content="expanded"]')).toBeNull();
 });
@@ -272,8 +230,8 @@ test("prioritizes interrupted transport state over retained workhorse status", (
 				view={paneView}
 			/>,
 		);
-		const fact = document.querySelector('[data-workbench-compact-item="workhorse"]');
-		expect(fact?.getAttribute("data-workbench-compact-state")).toBe(state);
+		const fact = document.querySelector("[data-workbench-connection-state]");
+		expect(fact?.getAttribute("data-workbench-connection-state")).toBe(state);
 		expect(fact?.textContent).toContain(label);
 		result.unmount();
 	}
@@ -295,8 +253,9 @@ test("tabs through pane choice and disclosure before the workhorse log", async (
 	for (const expected of [
 		screen.getByRole("button", { name: PANE_A.label }),
 		screen.getByRole("button", { name: PANE_B.label }),
+		screen.getByRole("button", { name: "Settings" }),
 		screen.getByRole("button", { name: "Collapse" }),
-		screen.getByRole("log", { name: "Workhorse activity" }),
+		screen.getByRole("log", { name: "Agent activity" }),
 	]) {
 		await user.tab();
 		expect(document.activeElement).toBe(expected);
@@ -315,7 +274,7 @@ test("returns focus on collapse or fullscreen and leaves the request landmark vi
 		/>
 	);
 	const view = render(expanded);
-	const log = screen.getByRole("log", { name: "Workhorse activity" });
+	const log = screen.getByRole("log", { name: "Agent activity" });
 	log.focus();
 	expect(document.activeElement).toBe(log);
 
@@ -331,10 +290,10 @@ test("returns focus on collapse or fullscreen and leaves the request landmark vi
 	);
 	expect(document.querySelector('[data-workbench-content="expanded"]')).toBeNull();
 	expect(document.activeElement).toBe(screen.getByRole("button", { name: "Expand" }));
-	expect(screen.getByRole("region", { name: "Application-wide Codex requests" })).toBeTruthy();
+	expect(screen.queryByRole("region", { name: "Application-wide Codex requests" })).toBeNull();
 
 	view.rerender(expanded);
-	screen.getByRole("log", { name: "Workhorse activity" }).focus();
+	screen.getByRole("log", { name: "Agent activity" }).focus();
 	view.rerender(
 		<WorkbenchFrame
 			disclosure="expanded"
@@ -347,7 +306,7 @@ test("returns focus on collapse or fullscreen and leaves the request landmark vi
 	);
 	expect(document.querySelector('[data-workbench-content="expanded"]')).toBeNull();
 	expect(document.activeElement).toBe(document.querySelector('[data-workbench-title=""]'));
-	expect(screen.getByRole("region", { name: "Application-wide Codex requests" })).toBeTruthy();
+	expect(screen.queryByRole("region", { name: "Application-wide Codex requests" })).toBeNull();
 });
 
 test("keeps the app-global request on its captured source across active-pane navigation", async () => {
@@ -478,7 +437,7 @@ test("renders honest loading, empty, and error workbench projections", () => {
 	}
 });
 
-test("keeps loading, empty, and error request projections visible in fullscreen", () => {
+test("keeps actionable request projections visible and omits empty inventory in fullscreen", () => {
 	for (const request of REQUEST_PROJECTION_CASES) {
 		const result = render(
 			<WorkbenchFrame
@@ -490,6 +449,11 @@ test("keeps loading, empty, and error request projections visible in fullscreen"
 				view={LOADING_VIEW}
 			/>,
 		);
+		if (request.state === "empty") {
+			expect(screen.queryByRole("region", { name: "Application-wide Codex requests" })).toBeNull();
+			result.unmount();
+			continue;
+		}
 		const region = screen.getByRole("region", { name: "Application-wide Codex requests" });
 		expect(region.getAttribute("data-workbench-request")).toBe(request.state);
 		expect(region.textContent).toContain(request.detail);

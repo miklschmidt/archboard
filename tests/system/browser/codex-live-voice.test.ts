@@ -99,12 +99,13 @@ function focusedButton(browser: AgentBrowserSession) {
 function voiceSnapshot(browser: AgentBrowserSession): Promise<VoiceSnapshot> {
 	return browser.eval<VoiceSnapshot>(`(() => {
 		const voice = document.querySelector('[data-workbench-voice="present"]');
-		const announcer = voice?.querySelector('[data-voice-announcer]');
+		const announcer = document.querySelector('[data-voice-announcer]');
+		const controlName = document.querySelector('[data-voice-command="mute"]')?.getAttribute('aria-label') ?? '';
 		return {
-			state: voice?.querySelector('[data-voice-controls]')?.getAttribute('data-voice-state') ?? null,
+			state: document.querySelector('[data-voice-controls]')?.getAttribute('data-voice-state') ?? null,
 			sourcePane: voice?.getAttribute('data-workbench-voice-source-pane') ?? null,
-			sourceThread: voice?.querySelector('[data-workbench-voice-source-thread]')?.textContent?.trim() ?? null,
-			coordinator: voice?.querySelector('[data-voice-bound="coordinator"]')?.textContent?.trim() ?? null,
+			sourceThread: controlName.match(/thread link (.*), coordinator /)?.[1] ?? null,
+			coordinator: controlName.match(/, coordinator (.*)$/)?.[1] ?? null,
 			transcript: voice?.querySelector('[data-voice-transcript]')?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
 			context: voice?.querySelector('[data-voice-context]')?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
 			announcer: {
@@ -122,7 +123,7 @@ function layoutSnapshot(browser: AgentBrowserSession): Promise<LayoutSnapshot> {
 		const overlaps = (left, right) => left.width > 0 && left.height > 0 && right.width > 0 &&
 			right.height > 0 && left.left < right.right && left.right > right.left &&
 			left.top < right.bottom && left.bottom > right.top;
-		const voice = document.querySelector('[data-workbench-voice="present"]');
+		const voice = document.querySelector('[data-voice-controls]');
 		const frame = document.querySelector('[data-workbench-frame]');
 		const canvas = document.querySelector('.canvas-stage');
 		const voiceRect = rect(voice);
@@ -206,7 +207,7 @@ test(
 			canvas.base,
 			join(ownerRoot, "controlled-voice-media.js"),
 		);
-		await browser.run(["set", "viewport", "1440", "900", "1"]);
+		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/iu);
 		expect(
 			await browser.eval<readonly [boolean, boolean]>(
@@ -226,7 +227,7 @@ test(
 			() =>
 				browser.eval<boolean>(`(() => {
 					const canvas = document.querySelector('.pane .excalidraw');
-					if (!canvas || !document.querySelector('.statusbar')?.textContent?.includes('1 elements')) return false;
+					if (!canvas || !document.querySelector('.bar-board-meta')?.textContent?.includes('1 element')) return false;
 					globalThis.__codexLiveVoiceCanvas = canvas;
 					return document.querySelector('.board-name')?.textContent?.trim() === 'workbench';
 				})()`),
@@ -246,6 +247,7 @@ test(
 			"the integrated workbench to expand",
 		);
 		await claimRenderedWorkbenchLease(browser);
+		await roleAction(browser, "button", "Settings");
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`[...document.querySelectorAll('button')]
@@ -255,6 +257,7 @@ test(
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 		await roleAction(browser, "button", "Create a workhorse thread");
+		await roleAction(browser, "button", "Close agent settings");
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`(() => {
@@ -266,14 +269,10 @@ test(
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 
-		await roleAction(browser, "button", "Pane A");
-		expect(await focusedButton(browser)).toEqual(["Pane A", null, false, false]);
-		await browser.run(["press", "Tab"]);
-		expect(await focusedButton(browser)).toEqual(["Collapse", null, false, false]);
-		await browser.run(["press", "Tab"]);
+		await browser.run(["focus", '[data-voice-command="start"]']);
 		expect(await focusedButton(browser)).toEqual([PRESTART_NAME, "start", false, false]);
 		const desktop = await layoutSnapshot(browser);
-		expect(desktop.viewport).toEqual([1440, 900, 1]);
+		expect(desktop.viewport).toEqual([1920, 1080, 1]);
 		expect(desktop.pageOverflow).toBe(false);
 		expect(desktop.voiceInsideWorkbench).toBe(true);
 		expect(desktop.voiceOverlapsCanvas).toBe(false);
@@ -284,7 +283,8 @@ test(
 			await workbenchControlOperability(browser, '[data-voice-command="stop"]'),
 		];
 		expect(desktopControls.map(({ operable }) => operable)).toEqual([true, true, true]);
-		await roleAction(browser, "button", PRESTART_NAME);
+		await browser.run(["press", "Enter"]);
+		await browser.run(["click", "[data-workbench-voice-disclosure] > summary"]);
 		const listening = await pollUntil(
 			() => voiceSnapshot(browser),
 			(value) =>
@@ -304,11 +304,7 @@ test(
 		expect(listening.announcer.text).toMatch(/listening/iu);
 		expect(listening.transcript).toContain("Show the controlled voice context.");
 
-		await roleAction(browser, "button", "Pane A");
-		expect(await focusedButton(browser)).toEqual(["Pane A", null, false, true]);
-		await browser.run(["press", "Tab"]);
-		expect(await focusedButton(browser)).toEqual(["Collapse", null, false, true]);
-		await browser.run(["press", "Tab"]);
+		await browser.run(["focus", '[data-voice-command="mute"]']);
 		expect(await focusedButton(browser)).toEqual([MUTE_NAME, "mute", false, true]);
 		await browser.run(["press", "Tab"]);
 		expect(await focusedButton(browser)).toEqual([STOP_NAME, "stop", false, true]);
@@ -355,7 +351,7 @@ test(
 			await workbenchControlOperability(browser, '[data-voice-command="stop"]'),
 		];
 		expect(flipControls.map(({ operable }) => operable)).toEqual([true, true, true]);
-		await browser.run(["set", "viewport", "1440", "900", "1"]);
+		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 
 		await roleAction(browser, "button", "Present Pane A fullscreen");
 		const desktopDock = await pollUntil(
@@ -447,7 +443,7 @@ test(
 		expect(
 			await browser.eval<boolean>(`document.querySelector('.pane .excalidraw') ===
 				globalThis.__codexLiveVoiceCanvas &&
-				document.querySelector('.statusbar')?.textContent?.includes('1 elements') === true`),
+				document.querySelector('.bar-board-meta')?.textContent?.includes('1 element') === true`),
 		).toBe(true);
 
 		const records = productionFixtureRecords<FixtureRecord>(fixture);

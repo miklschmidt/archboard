@@ -53,6 +53,7 @@ interface ClaimBody {
 }
 interface ClaimBanner extends WorkbenchSnapshot {
 	view: boolean | null;
+	connectionLabel: string;
 	headerClaim: {
 		beacon: string;
 		label: string;
@@ -99,6 +100,7 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 	expect(typeof saved.body.file).toBe("string");
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", canvas.base]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/Headless/i);
 	const panes = await pollUntil(
 		async () => (await request<PaneList>("/api/panes")).body,
@@ -136,6 +138,7 @@ const readBanner = (browser: AgentBrowserSession): Promise<ClaimBanner> =>
 		return {
 			...${WORKBENCH_SNAPSHOT_EXPRESSION},
 			view: app ? app.state.viewModeEnabled === true : null,
+			connectionLabel: document.querySelector('.bar .status')?.textContent?.trim() ?? '',
 			headerClaim: headerClaim && headerLabel && headerId ? {
 				beacon: getComputedStyle(headerClaim.querySelector(".dot")).backgroundColor,
 				label: headerLabel.textContent?.trim() ?? "",
@@ -164,7 +167,6 @@ test(
 		const { browser, canvas, clientId, noteFile, request } = await openSeededBoard(resources);
 		await installClaimRecorder(browser);
 		await verifyCollapsedSemanticAnnouncement(browser);
-		await browser.run(["click", ".workbench-toggle"]);
 		const initial = await readBanner(browser);
 		expect(initial).toMatchObject({ live: "polite", pane: "Pane A", state: "ready" });
 		expect(initial).toMatchObject({
@@ -187,40 +189,14 @@ test(
 			(value) => value.reason === claimWhy,
 			"the claimed-board explanation to become readable",
 		);
-		expect(claimed.holder).toBe("Agent has the board");
+		expect(claimed.holder).toBe("Agent working");
 		expect(claimed.reason).toBe(claimWhy);
 		expect(claimed.what).toContain(claimWhy);
 		expect(claimed.view).toBe(false);
 		expect(claimed.take).toBe("Take back control");
-		expect(claimed.beacon).toBe("Agent claim");
-		expect(claimed.heading).toBe("Active claim");
 		expect(claimed.state).toBe("working");
-		expect(claimed.copy).toBe(
-			"Agent edits are serialized while this claim is active. You can return control at any time.",
-		);
-		expect(claimed.workbench).toMatchObject({
-			agentTileCount: 0,
-			beacon: "rgb(163, 230, 53)",
-			bodyHeight: 184,
-			claimCopyType: [expect.stringContaining("archboard onest"), 12, 18, 400],
-			claimReasonType: [expect.stringContaining("archboard onest"), 14, 20, 600],
-			claimStatusType: [expect.stringContaining("archboard onest"), 12, 16, 600],
-			focusHierarchy: ["workbench-current", "workbench-claim"],
-			hierarchy: ["workbench-history", "workbench-focus"],
-			summaryHeight: 44,
-			summaryHierarchy: [
-				"live-badge",
-				"workbench-claim-summary",
-				"workbench-latest",
-				"workbench-pane",
-			],
-			summaryValuesSingleLine: true,
-			takeBackHeight: 44,
-			takeBackType: [expect.stringContaining("archboard onest"), 12, 16, 600],
-			sectionTitleType: [expect.stringContaining("archboard onest"), 9, 12, 600],
-		});
-		expect(claimed.workbench?.historyRatio).toBeCloseTo(0.26, 2);
-		expect(claimed.workbench?.currentRatio).toBeCloseTo(0.55, 2);
+		expect(claimed.takeBackHeight).toBeGreaterThanOrEqual(44);
+		expect(claimed.stripHeight).toBeLessThan(90);
 		expect(claimed.headerClaim).toMatchObject({
 			beacon: "rgb(163, 230, 53)",
 			label: "Claimed by",
@@ -265,6 +241,16 @@ test(
 			body: { type: "rectangle", x: 820, y: 60, width: 60, height: 40 },
 		});
 		expect(claimedWrite.status).toBe(200);
+		const streamedId = claimedWrite.body.elements?.[0]?.id ?? claimedWrite.body.element?.id;
+		if (!streamedId) throw new Error("The claimed agent write returned no element identity");
+		await pollUntil(
+			() => pageElement(browser, streamedId),
+			(element) => element?.x === 820 && element.y === 60,
+			"the claimed agent write to appear on the live canvas without moving the camera",
+		);
+		expect(paneViewport((await request<PaneList>("/api/panes")).body, clientId)).toEqual(
+			cameraAfter,
+		);
 		const narrated = await pollUntil(
 			() => readBanner(browser),
 			(value) => value.steps[0] === step && value.bar === step,
@@ -273,23 +259,7 @@ test(
 		expect(narrated.steps[0]).toBe(step);
 		expect(narrated.bar).toBe(step);
 		expect(narrated.reason).toBe(claimWhy);
-		expect(narrated.holder).toBe("Agent has the board");
-		expect(narrated.copy).toBe(
-			"Agent edits are serialized while this claim is active. You can return control at any time.",
-		);
-		expect(narrated.workbench).toMatchObject({
-			currentType: [expect.stringContaining("archboard onest"), 16, 22, 600],
-			historyRowMinHeight: 30,
-			historyTextType: [expect.stringContaining("archboard onest"), 12, 17, 500],
-			summaryValuesSingleLine: true,
-			timeColumnWidth: 68,
-			timeNoWrap: true,
-			timeType: [expect.stringContaining("archboard dm mono"), 10, 14, 400],
-			theme: "light",
-		});
-		expect(narrated.workbench?.historyRowHeight).toBeGreaterThanOrEqual(30);
-		expect(narrated.workbench?.technicalContrast).toHaveLength(5);
-		expect(narrated.workbench?.technicalContrast.every(({ ratio }) => ratio >= 4.5)).toBe(true);
+		expect(narrated.holder).toBe("Agent working");
 		expect((await request("/api/panes/open", { method: "POST", body: {} })).status).toBe(200);
 		const split = await pollUntil(
 			async () => (await request<PaneList>("/api/panes")).body,
@@ -470,18 +440,17 @@ test(
 			).status,
 		).toBe(200);
 
-		await canvas.restart();
-		const disconnected = await pollUntil(
-			() => readBanner(browser),
-			(value) => value.view === true && value.state === "offline",
-			"the disconnected pane to fail closed as held",
-		);
-		expect(disconnected).toMatchObject({
-			connection: "reconnecting",
-			view: true,
-			state: "offline",
+		await canvas.restart({
+			whileStopped: async () => {
+				const disconnected = await pollUntil(
+					() => readBanner(browser),
+					(value) => value.view === true && value.connectionLabel === "Offline",
+					"the disconnected pane to fail closed as held",
+				);
+				expect(disconnected).toMatchObject({ connectionLabel: "Offline", view: true });
+				expect(disconnected.headerClaim).toBeNull();
+			},
 		});
-		expect(disconnected.headerClaim).toBeNull();
 		const reconnected = await pollUntil(
 			() => readBanner(browser),
 			(value) => value.view === false && value.state === "ready",
@@ -492,7 +461,7 @@ test(
 		await canvas.dispose();
 		await pollUntil(
 			() => readBanner(browser),
-			(value) => value.view === true && value.state === "offline",
+			(value) => value.view === true && value.connectionLabel === "Offline",
 			"the stopped canvas to remain fail closed",
 		);
 	},

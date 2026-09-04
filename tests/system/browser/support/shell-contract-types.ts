@@ -118,3 +118,15 @@ export type NavigatorContract = {
 	targets: Array<{ height: number; width: number }>;
 	technicalFonts: string[];
 };
+
+export interface NavigatorPreviewView {
+	board?: string;
+	cardWidth?: number;
+	flat?: boolean;
+	focusables?: number;
+	frameHeight?: number;
+	rawSvg?: number;
+	source?: string;
+	src?: string;
+	state?: string;
+}
