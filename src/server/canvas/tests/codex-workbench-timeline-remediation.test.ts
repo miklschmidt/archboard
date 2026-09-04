@@ -392,3 +392,79 @@ test("accepts exact snapshot budget boundaries and rejects every supplied invali
 			"browser snapshot budget must be between",
 		);
 });
+
+test("a budget cut drops the oldest turns and keeps the newest in-progress turn", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("truncating-thread");
+	// The thread reads newest-first, so page one carries the running turn and the
+	// older history follows behind it.
+	const pages = [
+		[
+			turnFixture(
+				authorities,
+				"turn-running",
+				[
+					agentMessageItem(authorities, "running-agent", {
+						type: "agentMessage",
+						text: "still working",
+						phase: null,
+						memoryCitation: null,
+						delivery: null,
+					}),
+				],
+				"inProgress",
+			),
+		],
+		[turnFixture(authorities, "turn-older", [])],
+		[turnFixture(authorities, "turn-oldest", [])],
+	];
+	const requests: Parameters<CodexSession["threadTurnsListPage"]>[0][] = [];
+	const session = {
+		threadTurnsListPage: async (
+			params: Parameters<CodexSession["threadTurnsListPage"]>[0],
+		): Promise<SessionThreadTurnPageResult> => {
+			requests.push(params);
+			const index = requests.length - 1;
+			return {
+				data: pages[index] ?? [],
+				nextCursor: index + 1 < pages.length ? `page-${String(index + 1)}` : null,
+				backwardsCursor: null,
+			};
+		},
+		timelineListPage: async (_params: Parameters<CodexSession["timelineListPage"]>[0]) => ({
+			data: [],
+			nextCursor: null,
+			activeRealtimeSessionAtPageStart: null,
+		}),
+	};
+	const owner = createCanvasTimelineOwner({
+		session,
+		identity: authorities.identity.decoder,
+		approvals: { inspectViews: () => [] },
+		onChange: () => undefined,
+		// Two turns fit; the third is history the browser never needed.
+		budget: createCanvasBrowserProjectionBudget({ maxTurns: 2 }),
+	});
+	const connection = {};
+	const timelineLink = link(authorities, threadId);
+	owner.read("pane-truncating", 1, timelineLink, true, connection);
+	await flush();
+	const projection = owner.read("pane-truncating", 1, timelineLink, true, connection);
+	if (projection === null) throw new Error("truncating timeline was not loaded");
+
+	// Newest-first paging is what makes the cut safe.
+	expect(requests.map((request) => request.sortDirection)).toEqual(["desc", "desc"]);
+	// Published chronologically, oldest retained first.
+	expect(projection.turns.map((entry) => entry.turn)).toEqual([
+		{ id: authorities.identity.decoder.adoptTurnId("turn-older"), status: "completed" },
+		{ id: authorities.identity.decoder.adoptTurnId("turn-running"), status: "inProgress" },
+	]);
+	// The composer reads idle-versus-running from this projection, so the running
+	// turn surviving the cut is the whole point.
+	expect(projection.turns.at(-1)?.turn.status).toBe("inProgress");
+	// The oldest retained turn carries the mark, because that is where the
+	// history was cut.
+	expect(projection.turns[0]?.presentation.outputs.truncated).toBeTrue();
+	expect(projection.turns[1]?.presentation.outputs.truncated).toBeFalse();
+	owner.dispose();
+});

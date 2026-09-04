@@ -198,14 +198,14 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 			threadId,
 			cursor: null,
 			limit: 100,
-			sortDirection: "asc",
+			sortDirection: "desc",
 			itemsView: "full",
 		},
 		{
 			threadId,
 			cursor: "turn-next",
 			limit: 100,
-			sortDirection: "asc",
+			sortDirection: "desc",
 			itemsView: "full",
 		},
 	]);
