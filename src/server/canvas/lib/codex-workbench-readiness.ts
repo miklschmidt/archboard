@@ -59,6 +59,7 @@ function accountReadiness(input: CanvasReadinessInput): BrowserReadiness {
 			: { kind: "readiness", state: "account_ready" };
 	}
 	switch (account.state) {
+		// The adapter sets this arm from a successful accountLogin and clears it on cancel.
 		case "login_pending":
 			return { kind: "readiness", state: "login_pending", loginId: account.loginId };
 		case "signed_out":
@@ -88,8 +89,11 @@ export function projectCanvasBrowserReadiness(input: CanvasReadinessInput): Brow
 				state: "storage_mismatch",
 				reason: boundedBrowserReason(failure.message, "The Codex workbench storage was refused."),
 			};
+		// Every binary_* code comes from the one verifyExecutable refusal, and the
+		// canvas startup boundary groups them the same way.
 		if (
 			failure.code === "binary_invalid" ||
+			failure.code === "binary_missing" ||
 			failure.code === "binary_wrong_version" ||
 			failure.code === "strict_config_rejected"
 		)
