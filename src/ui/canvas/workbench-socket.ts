@@ -16,14 +16,57 @@ export interface CanvasPaneReportRequest {
 	readonly requestId: number;
 }
 
+/** The identity a pane report was dispatched under. */
+export interface CanvasPaneReportDispatch {
+	readonly request: CanvasPaneReportRequest;
+	readonly socket: BrowserWorkbenchSocket | null;
+	readonly registration: CanvasPaneRegistration | null;
+}
+
+/** The identity the pane holds when the response comes back. */
+export interface CanvasPaneReportCurrent {
+	readonly socket: BrowserWorkbenchSocket | null;
+	readonly generation: number;
+	readonly registration: CanvasPaneRegistration | null;
+}
+
+export type CanvasPaneReportOutcome =
+	| { readonly settled: true; readonly registered: boolean }
+	| { readonly settled: false };
+
+/** What one pane-report response is allowed to change, and nothing more. */
+export interface CanvasPaneReportEffects {
+	/** A newer request, another socket, or another generation owns the answer. */
+	readonly superseded: boolean;
+	readonly acknowledgeRegistration: boolean;
+	/** null leaves connection health exactly as it was. */
+	readonly connectionHealth: boolean | null;
+	readonly clearPublishedReport: boolean;
+	readonly acceptPaneListing: boolean;
+	readonly applyStaleBuild: boolean;
+}
+
+const SUPERSEDED: CanvasPaneReportEffects = Object.freeze({
+	superseded: true,
+	acknowledgeRegistration: false,
+	connectionHealth: null,
+	clearPublishedReport: false,
+	acceptPaneListing: false,
+	applyStaleBuild: false,
+});
+
 export interface CanvasPaneReportSequencer {
 	readonly begin: (generation: number) => CanvasPaneReportRequest;
-	readonly settle: <T>(
-		request: CanvasPaneReportRequest,
-		currentGeneration: number,
-		value: T,
-		apply: (value: T) => void,
-	) => void;
+	/**
+	 * Decide what this response may change. The caller applies the answer; it
+	 * does not repeat the reasoning, so a test can drive the same decision the
+	 * pane makes.
+	 */
+	readonly settle: (
+		dispatch: CanvasPaneReportDispatch,
+		current: CanvasPaneReportCurrent,
+		outcome: CanvasPaneReportOutcome,
+	) => CanvasPaneReportEffects;
 }
 
 /**
@@ -39,20 +82,41 @@ export function createCanvasPaneReportSequencer(): CanvasPaneReportSequencer {
 		latest = request;
 		return request;
 	};
-	const settle = <T>(
-		request: CanvasPaneReportRequest,
-		currentGeneration: number,
-		value: T,
-		apply: (value: T) => void,
-	): void => {
+	const settle = (
+		dispatch: CanvasPaneReportDispatch,
+		current: CanvasPaneReportCurrent,
+		outcome: CanvasPaneReportOutcome,
+	): CanvasPaneReportEffects => {
+		const request = dispatch.request;
 		if (
 			latest === null ||
 			latest.generation !== request.generation ||
 			latest.requestId !== request.requestId ||
-			request.generation !== currentGeneration
+			request.generation !== current.generation
 		)
-			return;
-		apply(value);
+			return SUPERSEDED;
+		const currentReport = dispatch.socket !== null && dispatch.socket === current.socket;
+		const registration = current.registration;
+		const currentRegistration =
+			currentReport &&
+			registration !== null &&
+			registration === dispatch.registration &&
+			registration.socket === dispatch.socket &&
+			registration.generation === request.generation;
+		const registered = outcome.settled && outcome.registered;
+		return Object.freeze({
+			superseded: false,
+			// The first positive result releases the one-shot attach latch;
+			// connection health follows every current pane report instead.
+			acknowledgeRegistration: currentRegistration && registered,
+			connectionHealth: currentRegistration ? registered : null,
+			// Nothing is lost by a refused or failed report except its freshness,
+			// and the next change resends — but only if this one is not remembered
+			// as sent. That is the recovery path; there is no private retry loop.
+			clearPublishedReport: currentReport && !registered,
+			acceptPaneListing: currentRegistration && registered,
+			applyStaleBuild: currentReport && outcome.settled,
+		});
 	};
 	return Object.freeze({ begin, settle });
 }
