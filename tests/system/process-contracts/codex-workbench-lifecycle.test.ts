@@ -336,6 +336,26 @@ describe.serial("composed Codex process lifecycle", () => {
 				).status,
 			).toBe(200);
 			expect(await socket.request("connect")).toMatchObject({ ok: true });
+			// A bind names a row this pane published, so the list is discovered first.
+			const refreshLease = await socket.request("claimLease");
+			expect(
+				await socket.request("command", {
+					command: {
+						kind: "browser_command",
+						command: "threadLinkRefresh",
+						...target(refreshLease),
+					},
+				}),
+			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
+			const inventory = snapshot(await socket.request("snapshot")).threadCandidates as Record<
+				string,
+				unknown
+			>;
+			expect(inventory).toMatchObject({ state: "listed" });
+			const chosen = (inventory.records as readonly Record<string, unknown>[]).find(
+				(row) => row.threadId === threadLink.threadId,
+			);
+			if (chosen === undefined) throw new Error("The created thread is not in the joined list.");
 			const attachLease = await socket.request("claimLease");
 			expect(
 				await socket.request("command", {
@@ -343,6 +363,7 @@ describe.serial("composed Codex process lifecycle", () => {
 						kind: "browser_command",
 						command: "threadLinkAttach",
 						...target(attachLease),
+						selectionId: chosen.selectionId,
 						threadId: threadLink.threadId,
 					},
 				}),
