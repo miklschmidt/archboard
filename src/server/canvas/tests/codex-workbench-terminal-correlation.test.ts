@@ -3,17 +3,13 @@ import { describe, expect, test } from "bun:test";
 import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicToolApprovalRequest,
-	type DynamicWaitOwner,
 } from "../../../runtime/codex-dynamic-tools/index.js";
 import { decodeServerNotification } from "../../../runtime/codex-protocol/index.js";
-import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
+import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
 import { createCodexWaitGraph } from "../../../runtime/codex-wait-graph/index.js";
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
-import {
-	createCanvasDynamicApprovalOwner,
-	createCanvasDynamicLifecycleOwner,
-} from "../codex-workbench-adapters.js";
+import { createCanvasDynamicApprovalOwner } from "../codex-workbench-adapters.js";
+import { identities, waitOwnerFor, waitProbe } from "./support/codex-workbench-terminal-fixture.js";
 
 function terminalItem(threadId: string, turnId: string, callId: string) {
 	return decodeServerNotification({
@@ -73,26 +69,6 @@ function unrelated(threadId: string) {
 		method: "thread/realtime/closed",
 		params: { threadId, reason: null },
 	});
-}
-
-function identities() {
-	const identity = createIdentityAuthorities();
-	const foreign = createIdentityAuthorities();
-	const thread = identity.identity.decoder.adoptThreadId("thread-current");
-	const turn = identity.identity.decoder.adoptTurnId("turn-current");
-	const call = identity.identity.decoder.adoptDynamicToolCallId("call-current");
-	return {
-		identity,
-		foreign,
-		thread,
-		turn,
-		call,
-		wire: {
-			thread: identity.identity.decoder.serializeCodexIdentity(thread),
-			turn: identity.identity.decoder.serializeCodexIdentity(turn),
-			call: identity.identity.decoder.serializeCodexIdentity(call),
-		},
-	};
 }
 
 describe("Codex terminal notification correlation", () => {
@@ -208,32 +184,8 @@ describe("Codex terminal notification correlation", () => {
 	test("active waits ignore every mismatched dimension and reject one exact call once", async () => {
 		const h = identities();
 		const graph = createCodexWaitGraph();
-		const target = h.identity.identity.decoder.adoptThreadId("thread-target");
-		const waitOwner: DynamicWaitOwner = {
-			child: h.identity.identity.validator.childId,
-			epoch: h.identity.identity.validator.epoch,
-			caller: h.thread,
-			turn: h.turn,
-			call: h.call,
-			namespace: "archboard_app",
-			tool: "wait_threads",
-			manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
-			sortedTargetThreadIds: [target],
-			operationId: null,
-		};
-		let hostCalls = 0;
-		let aborts = 0;
-		const owner = createCanvasDynamicLifecycleOwner({
-			identity: h.identity,
-			waitGraph: graph,
-			waitForTargets: ({ signal }) => {
-				hostCalls += 1;
-				signal.addEventListener("abort", () => (aborts += 1), { once: true });
-				return new Promise(() => undefined);
-			},
-			shutdownEpoch: async () => ({}) as never,
-			onFatal: () => undefined,
-		});
+		const waitOwner = waitOwnerFor(h, "thread-target");
+		const { owner, counters } = waitProbe(h, graph);
 		await Promise.resolve(owner.port.registerWaitOwner({ owner: waitOwner }));
 		let settlements = 0;
 		const waiting = owner.port
@@ -277,7 +229,7 @@ describe("Codex terminal notification correlation", () => {
 		for (const mismatch of mismatches) {
 			owner.onNotification(mismatch);
 			await Promise.resolve();
-			expect({ hostCalls, aborts, settlements, edges: graph.inspect().length }).toEqual({
+			expect({ ...counters, settlements, edges: graph.inspect().length }).toEqual({
 				hostCalls: 1,
 				aborts: 0,
 				settlements: 0,
@@ -296,7 +248,7 @@ describe("Codex terminal notification correlation", () => {
 			(error: unknown) => error,
 		);
 		expect(rejection).toMatchObject({ code: "cancellation" });
-		expect({ hostCalls, aborts, settlements, edges: graph.inspect().length }).toEqual({
+		expect({ ...counters, settlements, edges: graph.inspect().length }).toEqual({
 			hostCalls: 1,
 			aborts: 1,
 			settlements: 1,
@@ -304,7 +256,7 @@ describe("Codex terminal notification correlation", () => {
 		});
 		owner.onNotification(exact);
 		await Promise.resolve();
-		expect({ hostCalls, aborts, settlements, edges: graph.inspect().length }).toEqual({
+		expect({ ...counters, settlements, edges: graph.inspect().length }).toEqual({
 			hostCalls: 1,
 			aborts: 1,
 			settlements: 1,
@@ -405,31 +357,8 @@ describe("Codex terminal notification correlation", () => {
 	test("active waits require one exact interrupted turn and reject it once", async () => {
 		const h = identities();
 		const graph = createCodexWaitGraph();
-		const waitOwner: DynamicWaitOwner = {
-			child: h.identity.identity.validator.childId,
-			epoch: h.identity.identity.validator.epoch,
-			caller: h.thread,
-			turn: h.turn,
-			call: h.call,
-			namespace: "archboard_app",
-			tool: "wait_threads",
-			manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
-			sortedTargetThreadIds: [h.identity.identity.decoder.adoptThreadId("thread-target")],
-			operationId: null,
-		};
-		let hostCalls = 0;
-		let aborts = 0;
-		const owner = createCanvasDynamicLifecycleOwner({
-			identity: h.identity,
-			waitGraph: graph,
-			waitForTargets: ({ signal }) => {
-				hostCalls += 1;
-				signal.addEventListener("abort", () => (aborts += 1), { once: true });
-				return new Promise(() => undefined);
-			},
-			shutdownEpoch: async () => ({}) as never,
-			onFatal: () => undefined,
-		});
+		const waitOwner = waitOwnerFor(h, "thread-target");
+		const { owner, counters } = waitProbe(h, graph);
 		await Promise.resolve(owner.port.registerWaitOwner({ owner: waitOwner }));
 		let settlements = 0;
 		const waiting = owner.port
@@ -446,7 +375,7 @@ describe("Codex terminal notification correlation", () => {
 				event(h.identity.identity.validator.childId, h.identity.identity.validator.epoch, mismatch),
 			);
 			await Promise.resolve();
-			expect({ hostCalls, aborts, settlements, edges: graph.inspect().length }).toEqual({
+			expect({ ...counters, settlements, edges: graph.inspect().length }).toEqual({
 				hostCalls: 1,
 				aborts: 0,
 				settlements: 0,
@@ -465,7 +394,7 @@ describe("Codex terminal notification correlation", () => {
 			(error: unknown) => error,
 		);
 		expect(rejection).toMatchObject({ code: "interruption" });
-		expect({ hostCalls, aborts, settlements, edges: graph.inspect().length }).toEqual({
+		expect({ ...counters, settlements, edges: graph.inspect().length }).toEqual({
 			hostCalls: 1,
 			aborts: 1,
 			settlements: 1,
@@ -473,7 +402,7 @@ describe("Codex terminal notification correlation", () => {
 		});
 		owner.onNotification(exact);
 		await Promise.resolve();
-		expect({ hostCalls, aborts, settlements, edges: graph.inspect().length }).toEqual({
+		expect({ ...counters, settlements, edges: graph.inspect().length }).toEqual({
 			hostCalls: 1,
 			aborts: 1,
 			settlements: 1,
@@ -481,5 +410,38 @@ describe("Codex terminal notification correlation", () => {
 		});
 		await Promise.resolve(owner.port.releaseWaitOwner({ owner: waitOwner, cause: "interruption" }));
 		expect(graph.inspect()).toEqual([]);
+	});
+
+	test("child exit aborts an active wait once as child_disconnected", async () => {
+		const h = identities();
+		const graph = createCodexWaitGraph();
+		const waitOwner = waitOwnerFor(h, "thread-target");
+		const { owner, counters } = waitProbe(h, graph);
+		await Promise.resolve(owner.port.registerWaitOwner({ owner: waitOwner }));
+		const waiting = owner.port.waitForTargets({
+			owner: waitOwner,
+			cursor: null,
+			timeoutMs: 60_000,
+			previousSequence: 0,
+		});
+
+		// A foreign child must not disturb the live wait.
+		await owner.childExit(h.foreign.identity.validator.childId, waitOwner.epoch);
+		expect({ aborts: counters.aborts, edges: graph.inspect().length }).toEqual({
+			aborts: 0,
+			edges: 1,
+		});
+
+		await owner.childExit(waitOwner.child, waitOwner.epoch);
+		expect(
+			await waiting.then(
+				() => null,
+				(error: unknown) => error,
+			),
+		).toMatchObject({ code: "child_disconnected" });
+		expect({ aborts: counters.aborts, edges: graph.inspect().length }).toEqual({
+			aborts: 1,
+			edges: 0,
+		});
 	});
 });
