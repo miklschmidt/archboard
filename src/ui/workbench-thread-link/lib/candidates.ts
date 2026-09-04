@@ -3,7 +3,6 @@ import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js
 
 import type {
 	BrowserWorkbenchCapabilities,
-	ThreadLinkExcludedRow,
 	ThreadLinkInventory,
 	ThreadLinkInventoryRecord,
 	ThreadLinkListedStatus,
@@ -51,9 +50,6 @@ const STATUS_LABELS = {
 	active: "Active",
 	systemError: "System error",
 } as const satisfies Record<ThreadLinkListedStatus, string>;
-
-const DUPLICATE_EXPLANATION =
-	"Excluded: the workbench published this thread more than once, so no single row can be bound.";
 
 export function threadLinkReasonLabel(reason: string | null | undefined, fallback: string): string {
 	if (reason === null || reason === undefined) return fallback;
@@ -125,14 +121,13 @@ function projectRow(
 	});
 }
 
-function summarize(rows: readonly ThreadLinkRow[], excluded: number, truncated: boolean): string {
+function summarize(rows: readonly ThreadLinkRow[], truncated: boolean): string {
 	const executable = rows.filter((row) => row.outcome === "executable").length;
 	const parts = [
 		`${rows.length} joined ${rows.length === 1 ? "record" : "records"}`,
 		`${executable} executable`,
 		`${rows.length - executable} inspect-only`,
 	];
-	if (excluded > 0) parts.push(`${excluded} excluded`);
 	if (truncated) parts.push("the workbench published only the first page of a longer list");
 	return `${parts.join(", ")}.`;
 }
@@ -155,7 +150,6 @@ export function projectThreadLinkSelection(input: {
 			summary:
 				"No thread list has been discovered for this pane. Nothing is chosen for you: refresh the list, or create a workhorse thread.",
 			rows: Object.freeze([]),
-			excluded: Object.freeze([]),
 			recovery,
 		});
 	if (input.inventory.state === "unavailable")
@@ -163,39 +157,22 @@ export function projectThreadLinkSelection(input: {
 			state: "unavailable",
 			summary: input.inventory.reason,
 			rows: Object.freeze([]),
-			excluded: Object.freeze([]),
 			recovery,
 		});
-	const counts = new Map<ThreadId, number>();
-	for (const record of input.inventory.records)
-		counts.set(record.threadId, (counts.get(record.threadId) ?? 0) + 1);
-	const rows: ThreadLinkRow[] = [];
-	const excluded: ThreadLinkExcludedRow[] = [];
-	for (const record of input.inventory.records) {
-		// The host dedupes by thread, so this is a refusal rather than a rule: two
-		// rows that name one thread are indistinguishable to a person, and the
-		// module will not pick one of them on their behalf.
-		if ((counts.get(record.threadId) ?? 0) > 1) {
-			excluded.push(
-				Object.freeze({
-					selectionId: record.selectionId,
-					threadId: record.threadId,
-					exclusion: "duplicate_row",
-					explanation: DUPLICATE_EXPLANATION,
-				}),
-			);
-			continue;
-		}
-		rows.push(projectRow(record, input.currentLink, input.capabilities));
-	}
+	// Duplicate rows are impossible on this wire: the host dedupes by thread and
+	// the shared schema rejects a repeated selection outright, so a duplicated
+	// inventory is a malformed snapshot the transport refuses, never a row this
+	// module has to choose between.
+	const rows = input.inventory.records.map((record) =>
+		projectRow(record, input.currentLink, input.capabilities),
+	);
 	return Object.freeze({
 		state: rows.length === 0 ? "empty" : "listed",
 		summary:
-			rows.length === 0 && excluded.length === 0
+			rows.length === 0
 				? "The workbench discovered no joined thread. Create a workhorse thread, or refresh the list."
-				: summarize(rows, excluded.length, input.inventory.truncated),
+				: summarize(rows, input.inventory.truncated),
 		rows: Object.freeze(rows),
-		excluded: Object.freeze(excluded),
 		recovery,
 	});
 }

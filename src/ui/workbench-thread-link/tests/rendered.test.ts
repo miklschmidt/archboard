@@ -104,16 +104,16 @@ describe("rendered pane thread link", () => {
 		expect(markup).toContain("Attach for inspection");
 	});
 
-	test("renders duplicate and unjoined records as refused rows with a refresh path", () => {
+	test("renders one row per published record with the refresh path beside them", () => {
 		const markup = render({
 			inventory: listed([
 				record({ selectionId: "first" }),
-				record({ selectionId: "second" }),
-				record({ selectionId: "other", threadId: threadB }),
+				record({ selectionId: "second", threadId: threadB }),
 			]),
 		});
-		expect(markup).toContain("Records this pane refuses to bind");
-		expect(markup).toContain('data-thread-link-excluded="duplicate_row"');
+		expect(markup).toContain('data-thread-link-row="first"');
+		expect(markup).toContain('data-thread-link-row="second"');
+		expect(markup).toContain("2 joined records");
 		expect(markup).toContain('data-thread-link-recovery="refresh_inventory"');
 		expect(markup).toContain("Refresh the thread list");
 	});

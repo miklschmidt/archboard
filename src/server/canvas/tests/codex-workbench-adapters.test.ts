@@ -315,6 +315,9 @@ test("create, attach, and relink replace controller authority with the exact ret
 				({ candidates: [{ selectionId: "selection-fresh", threadId }] }) as never,
 			threadIdFor: (selectionId: string) =>
 				selectionId === "selection-published" ? threadId : null,
+			// The epoch stub below never moves, so the published list stays current.
+			generation: () => "1:hash",
+			invalidate: () => undefined,
 		},
 		workhorse: {
 			start: async () => workhorseSnapshot(link(1)),
@@ -384,8 +387,9 @@ test("create, attach, and relink replace controller authority with the exact ret
 		expect.objectContaining({ paneId: "pane-1", link: link(2) }),
 		expect.objectContaining({ paneId: "pane-1", link: link(3) }),
 	]);
-	// Both binds consumed the freshly discovered selection, never a raw thread id.
-	expect(classifiedTargets).toEqual(["selection-fresh", "selection-fresh"]);
+	// The thread already had an ownership record, so both binds consumed the
+	// person's own retained selection rather than a re-resolved one.
+	expect(classifiedTargets).toEqual(["selection-published", "selection-published"]);
 });
 
 test("a stale browser disconnect token cannot clear a newer controller binding", () => {

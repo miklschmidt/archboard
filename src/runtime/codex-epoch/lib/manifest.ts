@@ -76,10 +76,20 @@ export interface EpochThreadOwnershipProvenance {
 	readonly record: EpochOperationRecord;
 }
 
+/**
+ * The one operation that establishes attached ownership of a thread this epoch
+ * did not create. Whoever stages that record uses this descriptor, so a staged
+ * operation and the table below cannot drift into a record nothing resolves.
+ */
+export const EPOCH_THREAD_ATTACH_OPERATION = {
+	kind: "thread_link",
+	rpc: "thread/read",
+} as const;
+
 const THREAD_OWNERSHIP_CONTRACTS = [
 	{ ownership: "created", kind: "create_thread", rpc: "thread/start" },
 	{ ownership: "created", kind: "fork_thread", rpc: "thread/fork" },
-	{ ownership: "attached", kind: "thread_link", rpc: "thread/read" },
+	{ ownership: "attached", ...EPOCH_THREAD_ATTACH_OPERATION },
 ] as const satisfies readonly {
 	readonly ownership: EpochThreadOwnership;
 	readonly kind: string;

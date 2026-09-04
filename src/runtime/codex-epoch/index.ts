@@ -19,6 +19,7 @@ export {
 	decodeManifest,
 	emptyManifest,
 	encodeManifest,
+	EPOCH_THREAD_ATTACH_OPERATION,
 	resolveThreadOwnershipProvenance,
 } from "./lib/manifest.js";
 export type {

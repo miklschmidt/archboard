@@ -46,8 +46,11 @@ const ACCOUNT_COMMANDS = new Set<BrowserCommandName>([
 	"accountLoginCancel",
 	"accountLogout",
 ]);
+// Every command that chooses or discovers a pane's link. None of them needs an
+// executable link, because choosing one is exactly what a pane without one does.
 const THREAD_LINK_COMMANDS = new Set<BrowserCommandName>([
 	"threadLinkCreate",
+	"threadLinkRefresh",
 	"threadLinkAttach",
 	"threadLinkRelink",
 ]);

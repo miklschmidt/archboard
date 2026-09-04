@@ -119,19 +119,6 @@ describe("pane thread-link selection", () => {
 		expect(selection.rows[0]?.outcome).toBe("inspect_only");
 	});
 
-	test("refuses every row of a duplicated thread rather than guessing which one is real", () => {
-		const selection = select([
-			record({ selectionId: "first" }),
-			record({ selectionId: "second" }),
-			record({ selectionId: "other", threadId: threadB }),
-		]);
-		expect(selection.rows.map((row) => row.selectionId)).toEqual(["other"]);
-		expect(selection.excluded.map((row) => row.selectionId)).toEqual(["first", "second"]);
-		expect(selection.excluded[0]?.exclusion).toBe("duplicate_row");
-		expect(selection.excluded[0]?.explanation).toContain("more than once");
-		expect(selection.summary).toContain("2 excluded");
-	});
-
 	test("offers relink rather than attach when the pane already holds a link", () => {
 		const selection = select([record({ threadId: threadB, selectionId: "other" }), record()], {
 			currentLink: executableLink(threadA),

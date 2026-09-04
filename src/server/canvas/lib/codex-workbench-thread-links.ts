@@ -11,7 +11,10 @@ import type {
 	ChildId,
 	ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
-import type { EpochOperationRecord } from "../../../runtime/codex-epoch/index.js";
+import {
+	EPOCH_THREAD_ATTACH_OPERATION,
+	type EpochOperationRecord,
+} from "../../../runtime/codex-epoch/index.js";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
@@ -104,24 +107,52 @@ function expectedBrowserLink(context: BrowserActionContext) {
  * The pane-visible thread inventory. Discovery is explicit: nothing here runs
  * until the browser asks for it, so opening a pane never exhausts two Codex
  * lists on its own and no thread is ever adopted from recency.
+ *
+ * One inventory serves the gateway, not one per pane. Every pane therefore sees
+ * the same list, and a refresh any pane asks for republishes it for all of
+ * them. That is deliberate: the list describes the child epoch, which is also
+ * shared, and a per-pane copy would let two panes disagree about what exists.
  */
 export interface CanvasThreadCandidateInventory {
 	readonly read: () => CodexThreadCandidatesProjectionInput;
 	readonly refresh: () => Promise<ThreadLinkCandidateDiscovery>;
 	/** The thread a published selection named, or null when the list moved on. */
 	readonly threadIdFor: (selectionId: string) => ThreadId | null;
+	/**
+	 * The epoch the published list was discovered under. A retained candidate is
+	 * only valid while this is unchanged, so a caller compares before binding.
+	 */
+	readonly generation: () => string | null;
+	/** Retire the published list and say why, so the browser re-discloses it. */
+	readonly invalidate: (reason: string) => void;
+}
+
+type EpochGenerationSource = Pick<CodexWorkbenchComponents["epoch"], "snapshot">;
+
+function epochGeneration(epoch: EpochGenerationSource): string {
+	const cas = epoch.snapshot().cas;
+	return `${cas.revision}:${cas.bytesHash ?? "none"}`;
 }
 
 export function createCanvasThreadCandidateInventory(
 	threadLink: Pick<CodexThreadLinkPort, "discoverCandidates">,
+	epoch: EpochGenerationSource,
 ): CanvasThreadCandidateInventory {
 	let published: CodexThreadCandidatesProjectionInput = {
 		kind: "codex_thread_candidates",
 		state: "unknown",
 	};
 	let selections = new Map<string, ThreadId>();
+	let generation: string | null = null;
+	const retire = (reason: string): void => {
+		published = { kind: "codex_thread_candidates", state: "unavailable", reason };
+		selections = new Map();
+		generation = null;
+	};
 	return Object.freeze({
 		read: () => published,
+		generation: () => generation,
+		invalidate: retire,
 		refresh: async () => {
 			try {
 				const discovery = await threadLink.discoverCandidates();
@@ -133,17 +164,15 @@ export function createCanvasThreadCandidateInventory(
 				selections = new Map(
 					discovery.candidates.map((candidate) => [candidate.selectionId, candidate.threadId]),
 				);
+				generation = epochGeneration(epoch);
 				return discovery;
 			} catch (error) {
-				published = {
-					kind: "codex_thread_candidates",
-					state: "unavailable",
-					reason: boundedBrowserReason(
+				retire(
+					boundedBrowserReason(
 						error instanceof Error ? error.message : null,
 						"The Codex thread list could not be discovered.",
 					),
-				};
-				selections = new Map();
+				);
 				throw error;
 			}
 		},
@@ -200,8 +229,8 @@ export function createCanvasThreadLinkActions(options: {
 			childId: context.childId,
 			epoch: context.epoch,
 			operationId,
-			kind: "attached",
-			rpc: "thread/read",
+			kind: EPOCH_THREAD_ATTACH_OPERATION.kind,
+			rpc: EPOCH_THREAD_ATTACH_OPERATION.rpc,
 			workspaceRoot: options.checkoutRoot,
 			instructionHash: emptyAuthoredHash,
 			manifestHash: emptyAuthoredHash,
@@ -223,10 +252,22 @@ export function createCanvasThreadLinkActions(options: {
 		}
 	};
 	/**
-	 * Bind the exact row the person chose. The published selection names which
-	 * row that was and is refused once the list has moved on; the bind itself
-	 * goes through the runtime's one-shot, CAS-checked candidate handle, so a
-	 * thread id alone can never adopt a thread this pane did not offer.
+	 * Bind the exact row the person chose.
+	 *
+	 * The published selection names which row that was, and the bind goes through
+	 * the runtime's one-shot, CAS-checked candidate handle, so a thread id alone
+	 * can never adopt a thread this pane did not offer. Two refusals keep that
+	 * check from going vacuous: a selection the pane never published, and a list
+	 * discovered under an epoch that has since moved. The second retires the
+	 * published list so the browser re-discloses it rather than being told to
+	 * retry a row that is no longer what it said it was.
+	 *
+	 * Recording ownership of a thread this epoch did not create is the one thing
+	 * that moves the epoch inside this command. It is not staged for every listed
+	 * thread at discovery, because that would mint ownership of threads nobody
+	 * chose; so when it happens the retained selection is spent and the bind
+	 * consumes a freshly discovered one for the same thread. That re-resolution
+	 * is caused by this command and by nothing else.
 	 */
 	const adoptCandidate = async (
 		command: BrowserThreadLinkTargetCommand,
@@ -237,25 +278,35 @@ export function createCanvasThreadLinkActions(options: {
 			throw new Error(
 				"The chosen thread row is no longer in the published list. Refresh the thread list and choose again.",
 			);
+		const offered = options.candidates.generation();
+		if (offered === null || offered !== epochGeneration(options.epoch)) {
+			options.candidates.invalidate(
+				"The Codex thread list was discovered under an earlier epoch and no longer describes this workbench. Refresh it and choose again.",
+			);
+			throw new Error(
+				"The Codex thread list was discovered under an earlier epoch. Refresh the thread list and choose again.",
+			);
+		}
 		let record = recordFor(threadId);
-		if (record === null) record = await attachRecord(threadId, context);
+		let selectionId = command.selectionId;
+		if (record === null) {
+			record = await attachRecord(threadId, context);
+			const discovery = await options.candidates.refresh();
+			const chosen = discovery.candidates.find((candidate) => candidate.threadId === threadId);
+			if (chosen === undefined)
+				throw new Error("The chosen thread is no longer in the joined Codex thread list.");
+			selectionId = chosen.selectionId;
+		}
 		options.epoch.assertCurrent({
 			childId: context.childId,
 			epoch: context.epoch,
 			operationId: record.operation.id,
 			threadId,
 		});
-		// Staging the ownership record above moves the epoch, and a retained
-		// candidate is only valid while the epoch it was discovered under is
-		// unchanged, so the bind consumes a freshly discovered selection.
-		const discovery = await options.candidates.refresh();
-		const chosen = discovery.candidates.find((candidate) => candidate.threadId === threadId);
-		if (chosen === undefined)
-			throw new Error("The chosen thread is no longer in the joined Codex thread list.");
 		const binding = await options.threadLink.bindCandidate(
 			context.paneId,
 			expectedBrowserLink(context),
-			chosen.selectionId,
+			selectionId,
 		);
 		if (binding.link.state !== "executable")
 			throw new Error(`The requested thread is inspect-only: ${binding.link.reason}.`);
