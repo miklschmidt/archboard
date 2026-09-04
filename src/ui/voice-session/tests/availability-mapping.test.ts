@@ -276,6 +276,8 @@ describe("voice session availability mapping", () => {
 		);
 		expect(view.controls).toEqual({
 			canStart: false,
+			canMute: false,
+			canUnmute: false,
 			canStop: false,
 			canRestart: false,
 			canClose: false,
