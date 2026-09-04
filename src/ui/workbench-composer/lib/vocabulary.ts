@@ -6,6 +6,7 @@ export const MAX_PROMPT_BYTES = 16_384;
 
 export const REFUSAL_RECOVERIES = {
 	unavailable: "Wait for Codex to become thread-capable, then send the message again.",
+	unbound: "Create or attach a Codex workhorse for this pane, then send a message.",
 	inspect_only: "Select a current executable workhorse before sending a message.",
 	empty_prompt: "Type a message before sending.",
 	prompt_too_long: `Shorten the message to at most ${String(MAX_PROMPT_BYTES)} UTF-8 bytes.`,
@@ -18,6 +19,7 @@ export const REFUSAL_RECOVERIES = {
 
 export const REFUSAL_MESSAGES = {
 	unavailable: "The Codex workbench cannot accept direct workhorse input.",
+	unbound: "This pane has no Codex workhorse to send to.",
 	inspect_only: "This pane's thread link is inspect-only, so it accepts no direct input.",
 	empty_prompt: "The workhorse accepts a non-empty message only.",
 	prompt_too_long: "The message is longer than the workbench accepts.",
@@ -44,7 +46,17 @@ export const TRANSPORT_REFUSALS = {
 	incompatible_contract: "The host answered with a workbench contract this browser cannot read.",
 	response_lost: "The host never answered, so the command's outcome is unknown.",
 	replaced: "Another workbench connection replaced this one before the command was sent.",
-	invalid_command: "The host refused this command as invalid.",
+	/**
+	 * The host refusing a command that does not fit the workbench's current
+	 * state. The reachable case for this composer is the authoritative
+	 * in-progress guard on `turn/start`
+	 * (`src/server/canvas/lib/codex-workbench-text-actions.ts`): a browser whose
+	 * projected timeline was behind asked to start a turn while one was running.
+	 * The wire code cannot say which refusal it was, so the sentence names the
+	 * next action rather than guessing the cause.
+	 */
+	invalid_command:
+		"The host refused this command for the workhorse's current state. Read the timeline, then send again.",
 	gateway_error: "The host refused this command.",
 } as const;
 

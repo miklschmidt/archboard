@@ -3,6 +3,7 @@ import type { BrowserWorkbenchState } from "../../workbench-transport/index.js";
 import type { WorkbenchComposerLink, WorkbenchComposerTurn } from "../contract.js";
 
 const INSPECT_ONLY = "This Codex history is inspect-only.";
+const UNBOUND = "This pane has no Codex workhorse yet.";
 
 /**
  * The authoritative in-progress turn.
@@ -40,6 +41,11 @@ export function readComposerLink(state: BrowserWorkbenchState): WorkbenchCompose
 	if (state.kind !== "readiness" || state.state !== "thread_capable")
 		return Object.freeze({ kind: "unavailable", reason: unavailableReason(state) });
 	const link = state.snapshot.threadLink;
+	// An unbound pane has nothing to inspect and nothing to send to, which is a
+	// different sentence and a different next action from a workhorse this
+	// browser may read but never write.
+	if (link.state === "unbound")
+		return Object.freeze({ kind: "unbound", reason: link.reason ?? UNBOUND });
 	if (link.state !== "executable")
 		return Object.freeze({ kind: "inspect_only", reason: link.reason ?? INSPECT_ONLY });
 	return Object.freeze({

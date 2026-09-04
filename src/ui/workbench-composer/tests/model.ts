@@ -70,6 +70,21 @@ export function inspectOnlyLink(reason: string): BrowserSnapshot["threadLink"] {
 	});
 }
 
+export function unboundLink(reason: string | null = null): BrowserSnapshot["threadLink"] {
+	return model.BrowserThreadLinkSchema.parse({
+		kind: "thread_link",
+		state: "unbound",
+		childId: null,
+		epoch: null,
+		threadId: null,
+		sourcePresentation: null,
+		status: "notLoaded",
+		loaded: false,
+		canAcceptDirectInput: false,
+		reason,
+	});
+}
+
 export type TurnEntry = readonly [turnId: typeof TURN, status: TurnStatus];
 
 export function timeline(
@@ -99,6 +114,13 @@ export function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnaps
 		account: { kind: "account", state: "ready", accountType: "chatgpt" },
 		login: { kind: "login", state: "idle" },
 		threadLink: executableLink(),
+		threadCandidates: {
+			kind: "thread_candidates",
+			state: "unknown",
+			records: [],
+			truncated: false,
+			reason: null,
+		},
 		timeline: timeline(),
 		queue: { kind: "queue", status: "empty", entries: [] },
 		settings: [],
@@ -218,7 +240,7 @@ export interface FakeComposerTransportOptions {
 }
 
 /**
- * A transport double that records what left the browser. Only the four members
+ * A transport double that records what left the browser. Only the three members
  * the composer's contract names are implemented, because the composer reaches
  * for nothing else.
  */
@@ -234,7 +256,6 @@ export function fakeComposerTransport(
 			current = next;
 		},
 		state: () => current,
-		capabilities,
 		captureCommandTarget: () => {
 			if (target === null)
 				throw new BrowserWorkbenchTransportError(
@@ -272,11 +293,11 @@ export function runtimeTransport(fake: FakeComposerTransport): BrowserWorkbenchT
 		accountRead: unsupported,
 		command: fake.command,
 		captureCommandTarget: fake.captureCommandTarget,
+		capabilities,
 		snapshot: () => fake.state().snapshot,
 		sequence: () => fake.state().sequence,
 		lease: () => null,
 		state: fake.state,
-		capabilities: fake.capabilities,
 		subscribe: (listener: () => void) => {
 			listeners.add(listener);
 			return () => listeners.delete(listener);
