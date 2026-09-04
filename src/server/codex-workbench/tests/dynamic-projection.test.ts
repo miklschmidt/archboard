@@ -4,6 +4,7 @@ import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicToolApprovalRequest,
 } from "../../../runtime/codex-dynamic-tools/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import {
 	CODEX_APPROVAL_EXPIRY_MS,
 	createCodexBrowserModel,
@@ -251,6 +252,7 @@ function projectionInput(owners: readonly DynamicApprovalOwnerView[]): BrowserPr
 			coordinatorState: "unbound",
 			transcript: [],
 		},
+		spokenApproval: EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
 		lease: null,
 		operation: null,
 	};

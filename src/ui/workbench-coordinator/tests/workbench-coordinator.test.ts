@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "../../../shared/codex-browser-model/index.js";
 import type { BrowserSnapshot } from "../../../shared/codex-browser-model/index.js";
 import type { BrowserWorkbenchState } from "../../workbench-transport/index.js";
 import { projectWorkbenchCoordinator, WorkbenchCoordinatorDisclosure } from "../index.js";
@@ -87,6 +88,7 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 			delivery: null,
 			reason: null,
 		},
+		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,
 		lease: null,
 		operation: null,
 		...overrides,

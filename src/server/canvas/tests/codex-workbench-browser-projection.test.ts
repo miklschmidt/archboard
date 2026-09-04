@@ -5,6 +5,7 @@ import {
 	type BrowserReadiness,
 } from "../../../shared/codex-browser-model/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import {
 	projectCanvasBrowserReadiness,
 	type CanvasReadinessInput,
@@ -174,6 +175,16 @@ test("the production browser projection derives readiness from its live owners",
 	expect(stateNow()).toBe("account_ready");
 	harness.setCoordinatorReady(true);
 	expect(stateNow()).toBe("thread_capable");
+});
+
+test("the production browser projection reads spoken approval from its runtime owner", () => {
+	const spokenApproval = {
+		...EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
+		state: "visual_fallback" as const,
+		reason: "approval_unavailable" as const,
+	};
+	const harness = projectionHarness({ spokenApproval: { snapshot: () => spokenApproval } });
+	expect(harness.options.projection.read(harness.context).spokenApproval).toBe(spokenApproval);
 });
 
 test("cached queue submissions are presented only for the thread they were read for", () => {

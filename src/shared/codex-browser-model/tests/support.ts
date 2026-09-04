@@ -1,5 +1,5 @@
 import { createIdentityAuthorities } from "../../codex-workbench-identity/index.js";
-import { createCodexBrowserModel } from "../index.js";
+import { BROWSER_IDLE_SPOKEN_APPROVAL, createCodexBrowserModel } from "../index.js";
 import type { BrowserCommand, BrowserSnapshot } from "../index.js";
 
 // The queue carries a host OperationId, so the fixture model needs the complete
@@ -189,6 +189,7 @@ export function createFixtureIds(): {
 		semantic,
 		coordinator,
 		voice,
+		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,
 		lease,
 		operation,
 	});

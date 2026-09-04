@@ -3,6 +3,7 @@ import {
 	type DynamicToolApprovalRequest,
 } from "../../../runtime/codex-dynamic-tools/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import type {
 	DynamicApprovalOwnerView,
@@ -284,6 +285,7 @@ export function createGatewayHarness(
 					coordinatorState: "ready",
 					transcript: [],
 				},
+				spokenApproval: EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
 			};
 			return options.project?.(owner) ?? owner;
 		},

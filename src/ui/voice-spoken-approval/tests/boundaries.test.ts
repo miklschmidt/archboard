@@ -38,6 +38,10 @@ describe("spoken approval UI boundary", () => {
 			"dynamicApprovalRespond",
 			"onClick",
 			"awaiting_user",
+			"BrowserVoice",
+			"transcript",
+			"GatePresentation",
+			"nowMs",
 		];
 		for (const source of sources)
 			for (const value of forbidden)

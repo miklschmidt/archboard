@@ -12,6 +12,12 @@ import type { IdentityAuthorities } from "../codex-workbench-identity/index.js";
 import type { IdentityContext } from "./lib/scalars.js";
 
 export {
+	BROWSER_SPOKEN_APPROVAL_REASONS,
+	BROWSER_SPOKEN_APPROVAL_STATES,
+	BROWSER_IDLE_SPOKEN_APPROVAL,
+	createBrowserSpokenApprovalSchema,
+} from "./lib/spoken-approval.js";
+export {
 	BROWSER_PERMISSION_FILE_ACCESS,
 	BROWSER_THREAD_CANDIDATE_LIMIT,
 	browserSnapshotRelationshipIssues,
@@ -69,6 +75,7 @@ export type {
 	BrowserThreadLinkSourcePresentation,
 	BrowserTimeline,
 	BrowserVoice,
+	BrowserSpokenApproval,
 	BrowserSchemas,
 	DeliveryOutcome,
 } from "./lib/browser.js";

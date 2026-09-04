@@ -17,6 +17,7 @@ import {
 	SafeUrlSchema,
 } from "./scalars.js";
 import type { IdentityContext, IdentitySchemas } from "./scalars.js";
+import { createBrowserSpokenApprovalSchema } from "./spoken-approval.js";
 
 const TimestampSchema = z.number().int().nonnegative();
 export const DeliveryOutcomeSchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
@@ -96,6 +97,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		TurnIdSchema,
 	} = identity;
 	const dynamic = createDynamicApprovalSchemas(identity, context);
+	const BrowserSpokenApprovalSchema = createBrowserSpokenApprovalSchema(identity);
 	const NullableReasonSchema = optionalNullableText(512);
 	const PaneIdSchema = boundedText(128);
 
@@ -1023,6 +1025,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			semantic: BrowserSemanticDeliverySchema.nullable(),
 			coordinator: BrowserCoordinatorSchema,
 			voice: BrowserVoiceSchema,
+			spokenApproval: BrowserSpokenApprovalSchema,
 			lease: BrowserCommandLeaseSchema.nullable(),
 			operation: BrowserOperationOutcomeSchema.nullable(),
 		})
@@ -1051,6 +1054,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		BrowserSemanticDeliverySchema,
 		BrowserCoordinatorSchema,
 		BrowserVoiceSchema,
+		BrowserSpokenApprovalSchema,
 		BrowserCommandLeaseSchema,
 		BrowserOperationOutcomeSchema,
 	]);
@@ -1071,6 +1075,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		BrowserSemanticDeliverySchema,
 		BrowserCoordinatorSchema,
 		BrowserVoiceSchema,
+		BrowserSpokenApprovalSchema,
 		BrowserCommandLeaseSchema,
 		BrowserOperationOutcomeSchema,
 		BrowserCommandSchema,
@@ -1098,6 +1103,7 @@ export type BrowserTextCommand = z.infer<BrowserSchemas["BrowserTextCommandSchem
 export type BrowserSemanticDelivery = z.infer<BrowserSchemas["BrowserSemanticDeliverySchema"]>;
 export type BrowserCoordinator = z.infer<BrowserSchemas["BrowserCoordinatorSchema"]>;
 export type BrowserVoice = z.infer<BrowserSchemas["BrowserVoiceSchema"]>;
+export type BrowserSpokenApproval = z.infer<BrowserSchemas["BrowserSpokenApprovalSchema"]>;
 export type BrowserCommandLease = z.infer<BrowserSchemas["BrowserCommandLeaseSchema"]>;
 export type BrowserOperationOutcome = z.infer<BrowserSchemas["BrowserOperationOutcomeSchema"]>;
 export type BrowserCommand = z.infer<BrowserSchemas["BrowserCommandSchema"]>;

@@ -66,7 +66,7 @@ export interface ActiveSlot {
 	timer: ReturnType<typeof setTimeout> | null;
 }
 
-export const EMPTY_SNAPSHOT: SpokenApprovalSnapshot = Object.freeze({
+export const EMPTY_SPOKEN_APPROVAL_SNAPSHOT: SpokenApprovalSnapshot = Object.freeze({
 	state: "idle",
 	requestId: null,
 	approvalId: null,
