@@ -10,7 +10,10 @@ import {
 } from "../../../shared/codex-workbench-identity/index.js";
 import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
 import type { ArchboardContext } from "../../../runtime/codex-instructions/index.js";
-import type { BrowserProjectionContext } from "../../codex-workbench/index.js";
+import type {
+	BrowserActionContext,
+	BrowserProjectionContext,
+} from "../../codex-workbench/index.js";
 import {
 	createCanvasBrowserGatewayOptions,
 	createCanvasBrowserProjectionBudget,
@@ -89,15 +92,21 @@ test("owned-process, session, account, and coordinator facts produce every readi
 			}),
 		}),
 	).toEqual({ kind: "readiness", state: "storage_mismatch", reason: "the sqlite home moved" });
-	expect(
-		readiness({
-			process: processFacts({
-				state: "terminal_failure",
-				ready: false,
-				failure: { code: "binary_wrong_version", message: "codex 0.150.0", terminal: true },
+	for (const code of [
+		"binary_invalid",
+		"binary_missing",
+		"binary_wrong_version",
+		"strict_config_rejected",
+	] as const)
+		expect(
+			readiness({
+				process: processFacts({
+					state: "terminal_failure",
+					ready: false,
+					failure: { code, message: "codex 0.150.0", terminal: true },
+				}),
 			}),
-		}),
-	).toEqual({ kind: "readiness", state: "incompatible_contract", reason: "codex 0.150.0" });
+		).toEqual({ kind: "readiness", state: "incompatible_contract", reason: "codex 0.150.0" });
 	expect(readiness({ process: processFacts({ state: "starting", ready: false }) })).toEqual({
 		kind: "readiness",
 		state: "reconnecting",
@@ -201,6 +210,8 @@ interface ProjectionHarness {
 	readonly options: ReturnType<typeof createCanvasBrowserGatewayOptions>;
 	readonly state: CanvasBrowserBindingState;
 	readonly context: BrowserProjectionContext;
+	readonly actionContext: BrowserActionContext;
+	readonly loginId: ReturnType<IdentityAuthorities["identity"]["decoder"]["adoptLoginId"]>;
 	readonly threadId: ReturnType<typeof executableLink>["threadId"];
 	setFacts: (value: ReturnType<typeof processFacts>) => void;
 	setCoordinatorReady: (value: boolean) => void;
@@ -209,11 +220,22 @@ interface ProjectionHarness {
 /** One production adapter over the generation fixture, with its live sources injectable. */
 function projectionHarness(): ProjectionHarness {
 	const authorities = createIdentityAuthorities();
+	const harnessLoginId = authorities.identity.decoder.adoptLoginId("login-readiness");
+	const harnessCommandId = authorities.identity.issuer.mintBrowserCommandId();
 	const fixture = createCodexWorkbenchGenerationFixture([]).components;
 	let coordinatorReady = false;
 	let facts = processFacts({ state: "starting", ready: false });
 	const components = {
 		...fixture,
+		session: {
+			...fixture.session,
+			accountLogin: async () => ({
+				type: "chatgpt" as const,
+				loginId: harnessLoginId,
+				authUrl: "https://example.test/login",
+			}),
+			accountLoginCancel: async () => ({ status: "canceled" as const }),
+		},
 		coordinator: {
 			...fixture.coordinator,
 			snapshot: () => ({
@@ -276,6 +298,17 @@ function projectionHarness(): ProjectionHarness {
 			lease: null,
 			mediaReady: false,
 		},
+		actionContext: {
+			browserId: "browser-projection",
+			connection: {},
+			paneId: "pane-readiness",
+			commandId: harnessCommandId,
+			childId: authorities.identity.validator.childId,
+			epoch: authorities.identity.validator.epoch,
+			link,
+			linkRevision: 1,
+		},
+		loginId: harnessLoginId,
 		setFacts: (value) => void (facts = value),
 		setCoordinatorReady: (value) => void (coordinatorReady = value),
 	};
@@ -323,4 +356,32 @@ test("cached queue submissions are presented only for the thread they were read 
 
 	state.queueThreadId = null;
 	expect(options.projection.read(context).queue.submissions).toBeNull();
+});
+
+test("cancelling a pending sign-in clears the login-pending account arm", async () => {
+	const harness = projectionHarness();
+	const { options, context } = harness;
+	harness.setFacts(processFacts());
+	const readinessNow = (): BrowserReadiness["state"] =>
+		options.projection.read(context).readiness.state;
+	const command = {
+		kind: "browser_command",
+		commandId: harness.actionContext.commandId,
+		paneId: harness.actionContext.paneId,
+		childId: harness.actionContext.childId,
+		epoch: harness.actionContext.epoch,
+	} as const;
+
+	await options.actions.account.login(
+		{ ...command, command: "accountLogin", login: { type: "chatgpt" } },
+		harness.actionContext,
+	);
+	expect(readinessNow()).toBe("login_pending");
+
+	await options.actions.account.loginCancel(
+		{ ...command, command: "accountLoginCancel", loginId: harness.loginId },
+		harness.actionContext,
+	);
+	// Without clearing the account arm the browser would stay login_pending forever.
+	expect(readinessNow()).toBe("initialized");
 });
