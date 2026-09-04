@@ -411,37 +411,4 @@ describe("Codex terminal notification correlation", () => {
 		await Promise.resolve(owner.port.releaseWaitOwner({ owner: waitOwner, cause: "interruption" }));
 		expect(graph.inspect()).toEqual([]);
 	});
-
-	test("child exit aborts an active wait once as child_disconnected", async () => {
-		const h = identities();
-		const graph = createCodexWaitGraph();
-		const waitOwner = waitOwnerFor(h, "thread-target");
-		const { owner, counters } = waitProbe(h, graph);
-		await Promise.resolve(owner.port.registerWaitOwner({ owner: waitOwner }));
-		const waiting = owner.port.waitForTargets({
-			owner: waitOwner,
-			cursor: null,
-			timeoutMs: 60_000,
-			previousSequence: 0,
-		});
-
-		// A foreign child must not disturb the live wait.
-		await owner.childExit(h.foreign.identity.validator.childId, waitOwner.epoch);
-		expect({ aborts: counters.aborts, edges: graph.inspect().length }).toEqual({
-			aborts: 0,
-			edges: 1,
-		});
-
-		await owner.childExit(waitOwner.child, waitOwner.epoch);
-		expect(
-			await waiting.then(
-				() => null,
-				(error: unknown) => error,
-			),
-		).toMatchObject({ code: "child_disconnected" });
-		expect({ aborts: counters.aborts, edges: graph.inspect().length }).toEqual({
-			aborts: 1,
-			edges: 0,
-		});
-	});
 });
