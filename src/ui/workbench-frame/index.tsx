@@ -1,4 +1,5 @@
 export { WorkbenchFrame } from "./lib/WorkbenchFrame.js";
+export { captureWorkbenchFrameRequestSource } from "./contract.js";
 export type {
 	WorkbenchFrameBoardStatusPort,
 	WorkbenchFrameDisclosure,

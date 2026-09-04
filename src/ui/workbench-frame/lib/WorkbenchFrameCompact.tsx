@@ -36,8 +36,15 @@ function readableState(value: string): string {
 }
 
 function workhorseStatus(state: BrowserWorkbenchState): Readonly<{ state: string; label: string }> {
+	if (
+		state.state === "reconnecting" ||
+		state.state === "backoff" ||
+		state.state === "stale_snapshot"
+	) {
+		return Object.freeze({ state: state.state, label: readableState(state.state) });
+	}
 	const value =
-		state.snapshot?.threadLink.status ?? state.snapshot?.threadLink.state ?? state.state;
+		state.kind === "readiness" ? (state.snapshot.threadLink.status ?? state.state) : state.state;
 	return Object.freeze({ state: value, label: readableState(value) });
 }
 
