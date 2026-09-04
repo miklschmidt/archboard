@@ -24,6 +24,7 @@ import { createCanvasThreadLinkActions } from "./codex-workbench-thread-links.js
 import { createCanvasCanonicalTextActions } from "./codex-workbench-text-actions.js";
 import { createCanvasRealtimeActions } from "./codex-workbench-realtime-actions.js";
 import {
+	boundedBrowserReason,
 	projectCanvasBrowserReadiness,
 	type CanvasReadinessProcessFacts,
 } from "./codex-workbench-readiness.js";
@@ -48,8 +49,7 @@ function queueOwnerView(queue: readonly SessionQueuedSubmission[]): CodexQueuePr
 }
 
 function failureReason(error: unknown, fallback: string): string {
-	const message = error instanceof Error ? error.message : "";
-	return message.trim().length === 0 ? fallback : message.slice(0, 512);
+	return boundedBrowserReason(error instanceof Error ? error.message : null, fallback);
 }
 
 function visibleApprovalViews(approvals: CodexApprovalBroker) {

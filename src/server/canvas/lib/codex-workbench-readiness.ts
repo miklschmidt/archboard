@@ -20,11 +20,12 @@ export interface CanvasReadinessInput {
 }
 
 /**
- * Reduce a diagnostic message to one browser-safe bounded reason. Process
- * diagnostics are already redacted by their owner; this only enforces the
- * closed contract's shape.
+ * Reduce a diagnostic message to one browser-safe bounded reason. Owner
+ * diagnostics are already redacted where they are produced; this only enforces
+ * the closed contract's shape: non-empty, no control characters, at most 512
+ * UTF-8 bytes.
  */
-function readinessReason(value: string | null | undefined, fallback: string): string {
+export function boundedBrowserReason(value: string | null | undefined, fallback: string): string {
 	const collapsed = [...(value ?? "")]
 		.map((character) => {
 			const code = character.codePointAt(0) ?? 0;
@@ -85,7 +86,7 @@ export function projectCanvasBrowserReadiness(input: CanvasReadinessInput): Brow
 			return {
 				kind: "readiness",
 				state: "storage_mismatch",
-				reason: readinessReason(failure.message, "The Codex workbench storage was refused."),
+				reason: boundedBrowserReason(failure.message, "The Codex workbench storage was refused."),
 			};
 		if (
 			failure.code === "binary_invalid" ||
@@ -95,7 +96,7 @@ export function projectCanvasBrowserReadiness(input: CanvasReadinessInput): Brow
 			return {
 				kind: "readiness",
 				state: "incompatible_contract",
-				reason: readinessReason(failure.message, "The Codex app server is incompatible."),
+				reason: boundedBrowserReason(failure.message, "The Codex app server is incompatible."),
 			};
 	}
 	switch (process.state) {
@@ -103,20 +104,20 @@ export function projectCanvasBrowserReadiness(input: CanvasReadinessInput): Brow
 			return {
 				kind: "readiness",
 				state: "stopped",
-				reason: readinessReason(failure?.message, "The Codex app server stopped."),
+				reason: boundedBrowserReason(failure?.message, "The Codex app server stopped."),
 			};
 		case "backoff":
 			return process.nextRestartAtMs === null
 				? {
 						kind: "readiness",
 						state: "stopped",
-						reason: readinessReason(failure?.message, "The Codex app server stopped."),
+						reason: boundedBrowserReason(failure?.message, "The Codex app server stopped."),
 					}
 				: {
 						kind: "readiness",
 						state: "backoff",
 						retryAtMs: process.nextRestartAtMs,
-						reason: readinessReason(
+						reason: boundedBrowserReason(
 							failure?.message,
 							"The Codex app server is waiting before its next start.",
 						),
@@ -127,13 +128,13 @@ export function projectCanvasBrowserReadiness(input: CanvasReadinessInput): Brow
 			return {
 				kind: "readiness",
 				state: "stopped",
-				reason: readinessReason(failure?.message, "The Codex app server is not running."),
+				reason: boundedBrowserReason(failure?.message, "The Codex app server is not running."),
 			};
 		case "starting":
 			return {
 				kind: "readiness",
 				state: "reconnecting",
-				reason: readinessReason(
+				reason: boundedBrowserReason(
 					process.restartAttempt > 0 ? failure?.message : null,
 					"The Codex app server is starting.",
 				),
