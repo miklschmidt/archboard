@@ -1,11 +1,11 @@
 ---
 id: TASK-143.04.04
 title: Render canonical voice transcript and cross-links
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 12:23'
+updated_date: '2026-09-04 12:25'
 labels: []
 dependencies:
   - TASK-143.02.03
@@ -34,10 +34,10 @@ Delegation profile: gpt-5.6-sol, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Empty, provisional, final, interrupted, processing, agent-speaking, completed, reconnecting, stale-session-suppressed, recoverable failure, and terminal failure render from canonical item identity, realtime session, role, and sequence.
-- [ ] #2 Delegation, queue, steer, approval, callback, and workhorse-result links point to canonical records without copying them into transcript text or coordinator history.
-- [ ] #3 Reconnect replay and late prior-session items remain ordered/inspectable according to the adapter outcome; this module never consumes flat transcript notifications or data-channel text directly.
-- [ ] #4 Tests at src/ui/voice-transcript/tests cover every projection/cross-link, batched role=log announcements, aria-busy/relevant, keyboard inspection, no token announcements, and both themes.
+- [x] #1 Empty, provisional, final, interrupted, processing, agent-speaking, completed, reconnecting, stale-session-suppressed, recoverable failure, and terminal failure render from canonical item identity, realtime session, role, and sequence.
+- [x] #2 Delegation, queue, steer, approval, callback, and workhorse-result links point to canonical records without copying them into transcript text or coordinator history.
+- [x] #3 Reconnect replay and late prior-session items remain ordered/inspectable according to the adapter outcome; this module never consumes flat transcript notifications or data-channel text directly.
+- [x] #4 Tests at src/ui/voice-transcript/tests cover every projection/cross-link, batched role=log announcements, aria-busy/relevant, keyboard inspection, no token announcements, and both themes.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -100,4 +100,18 @@ Validation:
 - bunx tsc --noEmit -p tsconfig.frontend.json — pass.
 - git diff --check — clean.
 No broad, browser, system, performance, tooling, topology, or concurrency lane was run. Task remains In Progress with all acceptance criteria unchecked for rereview.
+
+Finalization evidence at implementation HEAD 4967827750b693cc246389607be64139684b9757:
+- Focused voice-transcript suite: 18 pass, 0 fail, 192 assertions. These owners cover every canonical transcript/session projection, six canonical fragment cross-links without copied sibling content, replay and late prior-session ordering with stale text suppression, raw-event/notification/data-channel exclusion, stable batched token updates, role=log aria-busy/relevant, keyboard inspection, single/external announcement ownership, semantic tokens, and theme-independent markup.
+- bunx tsc --noEmit and bunx tsc --noEmit -p tsconfig.frontend.json passed.
+- Scoped bunx oxlint src/ui/voice-transcript and bunx oxfmt --check src/ui/voice-transcript passed.
+- Staged and fixed-range diff checks passed; tracked checkout was clean before finalization.
+- Independent Standards/Spec review returned REVIEW_CLEAN through 4967827750b693cc246389607be64139684b9757.
+Remaining integration work belongs to TASK-143.04.06 (mount canonical records, real sibling IDs, and external announcement ownership), TASK-143.04.07 (rendered browser/theme verification), and TASK-143.04.10 (fullscreen Stop reachability).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Rendered canonical voice transcript state and sibling-record links without creating a second history. Added accessible batched log behavior, stale-session suppression, semantic theme styling, exhaustive state/cross-link owners, and a typed external-announcer mode for composition. Verified by 18 focused tests (192 assertions), both TypeScript projects, scoped Oxlint/Oxfmt, clean diff checks, and independent Standards/Spec REVIEW_CLEAN.
+<!-- SECTION:FINAL_SUMMARY:END -->
