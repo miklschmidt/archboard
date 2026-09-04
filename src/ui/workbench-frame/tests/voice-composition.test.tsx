@@ -7,17 +7,14 @@ import {
 	unregisterHappyDom,
 } from "../../dom-testing/index.js";
 import { createVoiceContextHistory } from "../../voice-context/index.js";
-import type {
-	VoiceSession,
-	VoiceSessionStatus,
-	VoiceSessionView,
-} from "../../voice-session/index.js";
+import type { VoiceSessionStatus } from "../../voice-session/index.js";
 import type {
 	WorkbenchFrameDisclosure,
 	WorkbenchFrameSpace,
 	WorkbenchFrameView,
 	WorkbenchFrameVoiceSlot,
 } from "../index.js";
+import type { VoiceSessionFake } from "./voice-support.js";
 
 registerHappyDom();
 const { act, cleanup, render, screen, userEvent, waitFor, within } = await loadRenderedUiTools();
@@ -25,6 +22,7 @@ const { WorkbenchFrame, captureWorkbenchFrameRequestSource, captureWorkbenchFram
 	await import("../index.js");
 const { TEST_NOW, framePane, mutableRequestFrame, requestTransport, stoppedTransport } =
 	await import("./support.js");
+const { createSessionFake, transcriptRecord, voiceView } = await import("./voice-support.js");
 
 afterEach(cleanup);
 afterAll(unregisterHappyDom);
@@ -41,116 +39,28 @@ const TWO_PANE_B_VIEW = {
 	activePaneId: PANE_B.id,
 } as const;
 
-type VoiceCommand = "start" | "mute" | "unmute" | "stop" | "restart" | "close";
-
-interface VoiceSessionFake {
-	readonly session: VoiceSession;
-	readonly calls: VoiceCommand[];
-	readonly setView: (view: VoiceSessionView) => void;
-}
-
-function voiceView(
-	status: VoiceSessionStatus,
-	failure: "retryable" | "terminal" = "retryable",
-): VoiceSessionView {
-	const running = status !== "ready" && status !== "stopped" && status !== "failed";
-	const failed = status === "failed";
-	const outcome: VoiceSessionView["outcome"] = failed
-		? failure === "terminal"
-			? {
-					kind: "terminal",
-					label: "Voice ended",
-					recovery: "Close this session before starting another.",
-				}
-			: {
-					kind: "retry",
-					control: "restart",
-					label: "Restart voice",
-					recovery: "Restart the existing voice session.",
-				}
-		: { kind: "none" };
-	return Object.freeze({
-		status,
-		label: status.replaceAll("_", " "),
-		detail: `Voice is ${status.replaceAll("_", " ")}.`,
-		accessibleStatus: `Live voice is ${status.replaceAll("_", " ")}.`,
-		failure: failed
-			? {
-					code: "realtime" as const,
-					recoverable: failure === "retryable",
-					message: "The realtime voice connection failed.",
-				}
-			: null,
-		outcome,
-		controls: {
-			canStart: status === "ready",
-			canMute: status === "listening",
-			canUnmute: status === "muted",
-			canStop: running && status !== "stopping",
-			canRestart: failed && failure === "retryable",
-			canClose: failed && failure === "terminal",
-		},
-		binding: running
-			? {
-					paneId: PANE_A.id,
-					childId: "child-a",
-					epoch: "epoch-a",
-					workhorseThreadId: "thread-a",
-					coordinatorThreadId: "coordinator-a",
-				}
-			: null,
-		sessionId: running ? "realtime-a" : null,
-	});
-}
-
-function createSessionFake(initial: VoiceSessionView): VoiceSessionFake {
-	let current = initial;
-	const calls: VoiceCommand[] = [];
-	const listeners = new Set<() => void>();
-	const levels = new Set<() => void>();
-	const run = async (command: VoiceCommand): Promise<VoiceSessionView> => {
-		calls.push(command);
-		return current;
-	};
-	const session: VoiceSession = {
-		view: () => current,
-		subscribe: (listener) => {
-			listeners.add(listener);
-			return () => listeners.delete(listener);
-		},
-		level: () => 0.4,
-		subscribeLevel: (listener) => {
-			levels.add(listener);
-			return () => levels.delete(listener);
-		},
-		refresh: () => current,
-		start: () => run("start"),
-		mute: () => run("mute"),
-		unmute: () => run("unmute"),
-		stop: () => run("stop"),
-		restart: () => run("restart"),
-		close: () => run("close"),
-		dispose: () => undefined,
-	};
-	return {
-		session,
-		calls,
-		setView: (view) => {
-			current = view;
-			for (const listener of listeners) listener();
-		},
-	};
-}
-
-function voiceSlot(fake: VoiceSessionFake): WorkbenchFrameVoiceSlot {
+function voiceSlot(
+	fake: VoiceSessionFake,
+	records: WorkbenchFrameVoiceSlot["transcript"]["records"] = Object.freeze([]),
+): WorkbenchFrameVoiceSlot {
 	return {
 		source: captureWorkbenchFrameVoiceSource(PANE_A_PORT, fake.session),
 		context: { history: createVoiceContextHistory() },
-		transcript: { records: Object.freeze([]) },
+		transcript: { records },
 	};
 }
 
 function noop(): void {}
+
+function transcriptLinkKinds(): (string | undefined)[] {
+	return [...document.querySelectorAll<HTMLElement>("[data-transcript-cross-link]")].map(
+		(link) => link.dataset.transcriptCrossLink,
+	);
+}
+
+function approvalTranscriptLink(): HTMLAnchorElement | null {
+	return document.querySelector<HTMLAnchorElement>('[data-transcript-cross-link="approval"]');
+}
 
 function frame(
 	voice: WorkbenchFrameVoiceSlot | null,
@@ -307,44 +217,98 @@ test("keeps the captured source immutable across pane focus and frame failure", 
 	expect(document.querySelector('[data-workbench-voice-source-thread=""]')).toBeNull();
 });
 
-test("links transcript evidence only to its mounted captured pane", () => {
+test("keeps non-empty transcript evidence while its source relationships unmount", () => {
+	const slot = voiceSlot(createSessionFake(voiceView("listening")), [transcriptRecord()]);
+	const result = render(frame(slot));
+
+	expect(screen.getByText("Keep Pane A evidence visible.")).toBeTruthy();
+	expect(document.querySelector('[data-transcript-visible-status=""]')?.textContent).toBe(
+		"listening",
+	);
+	expect(transcriptLinkKinds()).toEqual([
+		"delegation",
+		"queue",
+		"steer",
+		"callback",
+		"workhorse_result",
+	]);
+	expect(
+		document.querySelector('[data-transcript-cross-link-unavailable="approval"]'),
+	).toBeTruthy();
+
+	result.rerender(frame(slot, TWO_PANE_B_VIEW));
+	expect(screen.getByText("Keep Pane A evidence visible.")).toBeTruthy();
+	expect(document.querySelector('[data-transcript-visible-status=""]')?.textContent).toBe(
+		"listening",
+	);
+	expect(transcriptLinkKinds()).toEqual([]);
+	expect(document.querySelectorAll("[data-transcript-cross-link-unavailable]")).toHaveLength(6);
+
+	result.rerender(
+		frame(slot, {
+			state: "error",
+			detail: "The frame projection failed.",
+			recovery: "Reconnect the frame.",
+		}),
+	);
+	expect(screen.getByText("Keep Pane A evidence visible.")).toBeTruthy();
+	expect(document.querySelector('[data-transcript-visible-status=""]')?.textContent).toBe(
+		"listening",
+	);
+	expect(transcriptLinkKinds()).toEqual([]);
+	expect(document.querySelectorAll("[data-transcript-cross-link-unavailable]")).toHaveLength(6);
+});
+
+test("removes only the approval relationship when its request source drifts", () => {
 	const requestFrame = mutableRequestFrame(PANE_A, () => TEST_NOW);
-	const panes = [requestFrame.view.panes[0], PANE_B_PORT] as const;
-	const slot = voiceSlot(createSessionFake(voiceView("listening")));
-	const renderFrame = (view: WorkbenchFrameView) => (
+	const slot = voiceSlot(createSessionFake(voiceView("listening")), [transcriptRecord()]);
+	const result = render(
 		<WorkbenchFrame
 			disclosure="expanded"
 			onActivePaneChange={noop}
 			onDisclosureChange={noop}
 			request={requestFrame.request}
 			space="workspace"
-			view={view}
+			view={requestFrame.view}
 			voice={slot}
-		/>
+		/>,
 	);
-	const result = render(renderFrame({ state: "ready", panes, activePaneId: PANE_A.id }));
-	const links = [...document.querySelectorAll<HTMLAnchorElement>("[data-transcript-cross-link]")];
-	expect(links).toHaveLength(6);
-	for (const link of links) {
-		const target = document.getElementById(link.hash.slice(1));
-		expect(target?.dataset.workbenchTargetPane).toBe(PANE_A.id);
-	}
-	result.rerender(renderFrame({ state: "ready", panes, activePaneId: PANE_B.id }));
-	expect(document.querySelectorAll("[data-transcript-cross-link]")).toHaveLength(0);
+	expect(approvalTranscriptLink()).toBeTruthy();
 	expect(
-		screen.getByRole("region", { name: "Voice transcript relationships" }).textContent,
-	).toContain("Pane A's workbench is not mounted");
-	expect(document.querySelectorAll('[data-workbench-target-pane="pane-b"]')).toHaveLength(3);
+		document.getElementById(approvalTranscriptLink()?.hash.slice(1) ?? "")?.dataset
+			.workbenchTargetPane,
+	).toBe(PANE_A.id);
 
-	result.rerender(
-		renderFrame({
-			state: "error",
-			detail: "The frame projection failed.",
-			recovery: "Reconnect the frame.",
+	const state = requestFrame.fake.transport.state();
+	if (state.kind !== "readiness" || state.snapshot.lease === null) {
+		throw new Error("The request fixture needs a live pane lease.");
+	}
+	const lease = state.snapshot.lease;
+	act(() =>
+		requestFrame.fake.setState({
+			...state,
+			snapshot: { ...state.snapshot, lease: { ...lease, paneId: PANE_B.id } },
 		}),
 	);
-	expect(document.querySelectorAll("[data-transcript-cross-link]")).toHaveLength(0);
-	expect(document.querySelector('[data-workbench-voice-relationships="unavailable"]')).toBeTruthy();
+	expect(result.container.querySelector('[data-workbench-request="error"]')).toBeTruthy();
+	expect(
+		result.container
+			.querySelector('[data-workbench-region="app-global-request"]')
+			?.hasAttribute("data-workbench-target-pane"),
+	).toBe(false);
+	expect(approvalTranscriptLink()).toBeNull();
+	expect(
+		document.querySelector('[data-transcript-cross-link-unavailable="approval"]'),
+	).toBeTruthy();
+	const remainingLinks = document.querySelectorAll<HTMLAnchorElement>(
+		"[data-transcript-cross-link]",
+	);
+	expect(remainingLinks).toHaveLength(5);
+	for (const link of remainingLinks) {
+		expect(document.getElementById(link.hash.slice(1))?.dataset.workbenchTargetPane).toBe(
+			PANE_A.id,
+		);
+	}
 });
 
 function armSpokenApproval(fake: ReturnType<typeof requestTransport>): void {

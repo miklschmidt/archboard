@@ -14,15 +14,16 @@ export type VoiceTranscriptCrossLinkKind = (typeof VOICE_TRANSCRIPT_CROSS_LINK_K
 
 /**
  * DOM identities owned by sibling workbench records. The transcript renders
- * fragment links to these regions; it never accepts or copies their content.
+ * fragment links only for non-null identities and marks null relationships as
+ * unavailable; it never accepts or copies sibling content.
  */
 export interface VoiceTranscriptCrossLinkIds {
-	readonly delegationId: string;
-	readonly queueId: string;
-	readonly steerId: string;
-	readonly approvalId: string;
-	readonly callbackId: string;
-	readonly workhorseResultId: string;
+	readonly delegationId: string | null;
+	readonly queueId: string | null;
+	readonly steerId: string | null;
+	readonly approvalId: string | null;
+	readonly callbackId: string | null;
+	readonly workhorseResultId: string | null;
 }
 
 export type VoiceTranscriptSessionState =
@@ -44,6 +45,11 @@ export interface VoiceTranscriptCrossLinkView {
 	readonly kind: VoiceTranscriptCrossLinkKind;
 	readonly label: string;
 	readonly targetId: string;
+}
+
+export interface VoiceTranscriptUnavailableCrossLinkView {
+	readonly kind: VoiceTranscriptCrossLinkKind;
+	readonly label: string;
 }
 
 export interface VoiceTranscriptRecordView {
@@ -69,6 +75,7 @@ export interface VoiceTranscriptView {
 	readonly session: VoiceSessionView;
 	readonly records: readonly VoiceTranscriptRecordView[];
 	readonly crossLinks: readonly VoiceTranscriptCrossLinkView[];
+	readonly unavailableCrossLinks: readonly VoiceTranscriptUnavailableCrossLinkView[];
 }
 
 export interface VoiceTranscriptProjectionInput {
