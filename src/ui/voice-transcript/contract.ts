@@ -78,7 +78,15 @@ export interface VoiceTranscriptProjectionInput {
 	readonly crossLinkIds: VoiceTranscriptCrossLinkIds;
 }
 
+/**
+ * Chooses the single owner of voice-session announcements. Standalone
+ * transcripts own them by default; composed workbenches can delegate them to
+ * an external control without changing the visible transcript state.
+ */
+export type VoiceTranscriptAnnouncementOwner = "transcript" | "external";
+
 export interface VoiceTranscriptProps extends VoiceTranscriptProjectionInput {
 	readonly label?: string;
 	readonly className?: string;
+	readonly announcementOwner?: VoiceTranscriptAnnouncementOwner;
 }

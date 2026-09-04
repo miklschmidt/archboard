@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 12:17'
+updated_date: '2026-09-04 12:23'
 labels: []
 dependencies:
   - TASK-143.02.03
@@ -85,4 +85,19 @@ Remediation validation:
 - bunx tsc --noEmit -p tsconfig.frontend.json — pass.
 - git diff --check — clean.
 No repository inventory owner was rerun because the remediation added no files or production dependency edges. No broad or browser lane was run by assignment. Task remains In Progress and all acceptance criteria remain unchecked for rereview.
+
+Second rereview composition remediation from prior HEAD 0abca41b89b7edea71cb798da9c213d7751a6aed:
+- Added the typed public VoiceTranscriptAnnouncementOwner union with "transcript" and "external" modes, exposed through optional VoiceTranscriptProps. Standalone transcript ownership remains the default.
+- Default mode retains exactly one atomic polite output containing canonical accessibleStatus.
+- External mode renders the same visible session label and semantic styling in a roleless div, with no output element, aria-live, aria-atomic, hidden accessibleStatus node, or status role. The transcript role=log and records remain unchanged, so TASK-143.04.06 can designate VoiceControls as the only voice-state announcer without a cross-scope edit.
+- Focused mounted owners prove both modes, including visible-status/log retention and absence of a second voice-state announcer in external mode. The nonblocking repeated-map observation was deliberately left unchanged.
+
+Validation:
+- bun test src/ui/voice-transcript/tests — 18 pass, 0 fail, 192 assertions.
+- bunx oxlint src/ui/voice-transcript — clean.
+- bunx oxfmt --check src/ui/voice-transcript — 8 files formatted.
+- bunx tsc --noEmit — pass.
+- bunx tsc --noEmit -p tsconfig.frontend.json — pass.
+- git diff --check — clean.
+No broad, browser, system, performance, tooling, topology, or concurrency lane was run. Task remains In Progress with all acceptance criteria unchecked for rereview.
 <!-- SECTION:NOTES:END -->
