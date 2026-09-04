@@ -37,7 +37,7 @@
 	);
 	--shell-workbench-expanded-height: calc(
 		var(--shell-workbench-compact-height) + var(--arch-size-touch-target) +
-			var(--arch-size-touch-target) + var(--arch-size-touch-target)
+			var(--arch-size-touch-target) + var(--arch-size-touch-target) + var(--arch-size-touch-target)
 	);
 	--font-ui: var(--arch-font-ui);
 	--font-mono: var(--arch-font-technical);
@@ -1429,6 +1429,10 @@
 .shell-workbench {
 	height: var(--shell-workbench-expanded-height);
 	flex: none;
+}
+.shell-workbench [data-workbench-request="empty"] {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .shell-workbench[data-workbench-disclosure="collapsed"],
 .shell-workbench[data-workbench-space="fullscreen"] {
