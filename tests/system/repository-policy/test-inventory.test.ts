@@ -301,6 +301,9 @@ describe("test inventory policy", () => {
 		const browser = fixture.scripts["test:serial-browser"]!;
 		expect(system.match(/tests\/system\/code-targets/g)).toHaveLength(1);
 		expect(browser.match(/tests\/system\/browser\/opener-settings\.test\.ts/g)).toHaveLength(1);
+		expect(browser.match(/tests\/system\/browser\/codex-text-workbench\.test\.ts/g)).toHaveLength(
+			1,
+		);
 		expect(inspectTestInventory(fixture).errors).toEqual([]);
 	});
 

@@ -320,6 +320,21 @@ withhold fails 9 of its checks and reverting the pane's rename fails 2.
 `settleBlockIds` and the note writer's own rename stay, as the backstop for a
 note archboard did not write. About fifteen seconds.
 
+### Controlled text workbench (TASK-143.03.13)
+
+Starts the production server composition with the exact Codex 0.151.0 protocol
+fake, then drives the real browser transport and rendered shell. One short
+create, send, and decline flow proves the pane workbench is operable, both
+ordinary and dynamic approval effects are visible, and the mounted Excalidraw
+pane keeps its seeded element. The owner also checks the fake's exact version
+probes, single app-server spawn, browser console, and page errors.
+
+The startup and login recovery arms, timeline renderers, queue operations,
+approval family matrices, command reconciliation, focus behavior, shell render
+matrix, fullscreen controls, process cleanup, and stress cases stay in their
+focused module, system, or existing browser owners. This browser owner does not
+repeat them.
+
 ## Source boundary check
 
 - `bun test tests/system/repository-policy/boundaries.test.ts` creates disposable source fixtures outside the checkout and
