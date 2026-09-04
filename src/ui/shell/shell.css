@@ -31,6 +31,14 @@
 }
 
 .shell {
+	--shell-workbench-compact-height: calc(
+		var(--arch-size-header) + var(--arch-size-touch-target) + var(--arch-size-touch-target) +
+			var(--arch-size-touch-target)
+	);
+	--shell-workbench-expanded-height: calc(
+		var(--shell-workbench-compact-height) + var(--arch-size-touch-target) +
+			var(--arch-size-touch-target) + var(--arch-size-touch-target)
+	);
 	--font-ui: var(--arch-font-ui);
 	--font-mono: var(--arch-font-technical);
 	--weight-regular: var(--arch-weight-regular);
@@ -1242,7 +1250,6 @@
 .shell.shell-presenting:fullscreen > .statusbar,
 .shell.shell-presenting:fullscreen > .modal-backdrop,
 .shell.shell-presenting:fullscreen > .workspace > .board-nav,
-.shell.shell-presenting:fullscreen .agent-workbench,
 .shell.shell-presenting:fullscreen .selection-inspector,
 .shell.shell-presenting:fullscreen .pane-bar,
 .shell.shell-presenting:fullscreen .notice-shell,
@@ -1272,6 +1279,8 @@
 }
 .shell.shell-presenting:fullscreen .canvas-stage {
 	display: block;
+	height: auto;
+	flex: 1;
 	background: var(--surface-raised);
 }
 .shell.shell-presenting:fullscreen .panes {
@@ -1291,7 +1300,7 @@
 	position: fixed;
 	z-index: 1200;
 	left: 50%;
-	bottom: 18px;
+	bottom: calc(var(--shell-workbench-compact-height) + var(--arch-space-region));
 	transform: translateX(-50%);
 	max-width: calc(100vw - 24px);
 	min-height: var(--arch-size-touch-target);
@@ -1321,10 +1330,11 @@
 	clip-path: inset(50%);
 }
 .presentation-pane,
+.presentation-stop,
 .presentation-exit {
 	min-height: var(--arch-size-touch-target);
 	padding: 0 14px;
-	border: 0;
+	border: var(--arch-space-rule) solid transparent;
 	border-radius: var(--arch-radius-control);
 	background: transparent;
 	display: inline-flex;
@@ -1336,6 +1346,7 @@
 	white-space: nowrap;
 }
 .presentation-pane:hover,
+.presentation-stop:hover:not(:disabled),
 .presentation-exit:hover {
 	background: var(--surface-hover);
 }
@@ -1347,6 +1358,49 @@
 	border-left: var(--arch-space-rule) solid var(--border);
 	border-radius: 0 var(--arch-radius-control) var(--arch-radius-control) 0;
 }
+.presentation-text-source {
+	min-width: 0;
+	max-width: min(44vw, 520px);
+	min-height: var(--arch-size-touch-target);
+	padding: var(--arch-space-tight) var(--arch-space-control-inline);
+	display: grid;
+	grid-template-columns: auto auto minmax(72px, 1fr) minmax(72px, 1fr);
+	align-items: center;
+	gap: var(--arch-space-control);
+	border-inline: var(--arch-space-rule) solid var(--border);
+	font: var(--arch-weight-medium) var(--type-body) var(--font-ui);
+}
+.presentation-text-kicker {
+	color: var(--muted);
+	font: var(--arch-weight-semibold) var(--type-kicker) var(--font-ui);
+}
+.presentation-text-field {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+.presentation-text-label {
+	color: var(--muted);
+	font: var(--arch-weight-semibold) var(--type-kicker) var(--font-ui);
+}
+.presentation-text-value {
+	min-width: 0;
+	overflow: hidden;
+	font: var(--arch-weight-medium) var(--type-body) var(--font-ui);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.presentation-text-identity {
+	color: var(--muted);
+	font: var(--arch-weight-regular) var(--type-tech) var(--font-mono);
+}
+.presentation-stop {
+	color: var(--danger);
+}
+.presentation-stop:disabled {
+	opacity: var(--arch-opacity-disabled-control);
+	cursor: default;
+}
 .presentation-dock [role="alert"] {
 	max-width: min(420px, 44vw);
 	padding: 0 10px;
@@ -1356,6 +1410,19 @@
 }
 
 /* Focused-pane agent workbench */
+.shell-workbench {
+	height: var(--shell-workbench-expanded-height);
+	flex: none;
+}
+.shell-workbench[data-workbench-disclosure="collapsed"],
+.shell-workbench[data-workbench-space="fullscreen"] {
+	height: var(--shell-workbench-compact-height);
+}
+.shell.shell-presenting:fullscreen .shell-workbench {
+	width: 100%;
+	height: var(--shell-workbench-compact-height);
+	flex: none;
+}
 .agent-workbench {
 	position: relative;
 	flex: none;
@@ -1945,6 +2012,17 @@
 	*::after {
 		animation-duration: 0.001ms !important;
 		animation-iteration-count: 1 !important;
+	}
+}
+
+@media (forced-colors: active) {
+	.presentation-dock,
+	.presentation-text-source,
+	.presentation-pane,
+	.presentation-stop,
+	.presentation-exit {
+		border-color: currentColor;
+		forced-color-adjust: auto;
 	}
 }
 

@@ -21,10 +21,27 @@ import { activateCodeTarget } from "../code-target";
 import type { MountedBoardPreviewController, MountedBoardPreviewScene } from "../board-preview";
 import {
 	claimFromLockHolder,
-	WorkbenchBoardStatus,
 	type WorkbenchTakeBackResult,
 	type WorkbenchTakeBackState,
+	type WorkbenchSemanticContextState,
 } from "../workbench-board-status";
+import {
+	captureWorkbenchFrameRequestSource,
+	WorkbenchFrame,
+	type WorkbenchFrameDisclosure,
+	type WorkbenchFramePane,
+	type WorkbenchFrameRequest,
+	type WorkbenchFrameView,
+} from "../workbench-frame";
+import {
+	createWorkbenchComposerController,
+	readComposerLink,
+	readComposerTurn,
+	type WorkbenchComposerController,
+	type WorkbenchComposerTurnId,
+} from "../workbench-composer";
+import { createThreadLinkController, type ThreadLinkController } from "../workbench-thread-link";
+import type { BrowserWorkbenchTransport } from "../workbench-transport";
 import { SelectionInspector } from "../selection-inspector/SelectionInspector";
 import type { PaneSelectionSnapshot, SelectionProjection } from "../selection-inspector";
 import type { PanePathFocusSnapshot, PathFocusController, PathFocusSnapshot } from "../path-focus";
@@ -109,6 +126,20 @@ interface AgentState {
 	takeBack: () => Promise<WorkbenchTakeBackResult>;
 	takeBackOperation: number;
 	takeBackState: WorkbenchTakeBackState;
+}
+
+interface WorkbenchPaneOwner {
+	readonly transport: BrowserWorkbenchTransport;
+	readonly composerController: WorkbenchComposerController;
+	readonly threadLinkController: ThreadLinkController;
+}
+
+interface PresentationTextSource {
+	readonly paneId: string;
+	readonly paneLabel: string;
+	readonly workhorseId: string | null;
+	readonly turnId: WorkbenchComposerTurnId | null;
+	readonly canStop: boolean;
 }
 
 function claimCampaign(holder: LockHolder | null): string | null {
@@ -224,10 +255,82 @@ function boardConnection(status: PaneStatus | null): "disconnected" | "reconnect
 	return status ? "reconnecting" : "disconnected";
 }
 
+function paneLabel(panes: readonly string[], paneId: string): string {
+	const index = panes.indexOf(paneId);
+	return `Pane ${String.fromCharCode(65 + Math.max(0, index))}`;
+}
+
+function semanticContext(
+	transport: BrowserWorkbenchTransport,
+	nowMs: number,
+): WorkbenchSemanticContextState {
+	const semantic = transport.snapshot()?.semantic ?? null;
+	if (semantic === null) return { state: "unavailable" };
+	if (semantic.delivery === "not_delivered") {
+		return {
+			state: "refused",
+			reason: semantic.reason ?? "The host confirmed that semantic context was not delivered.",
+		};
+	}
+	if (semantic.delivery === "outcome_unknown") {
+		return {
+			state: "outcome_unknown",
+			reason: semantic.reason ?? "The host lost the semantic-context delivery outcome.",
+		};
+	}
+	if (nowMs >= semantic.freshUntilMs) {
+		return { state: "stale", reason: "The delivered semantic context has expired." };
+	}
+	return { state: "fresh", detail: `Delivered to workhorse ${semantic.threadId}.` };
+}
+
+function hasApplicationRequest(transport: BrowserWorkbenchTransport): boolean {
+	const snapshot = transport.snapshot();
+	return Boolean(
+		snapshot && (snapshot.approvals.length > 0 || snapshot.dynamicApprovals.length > 0),
+	);
+}
+
+function workbenchTimeline(owner: WorkbenchPaneOwner): WorkbenchFramePane["timeline"] | null {
+	const snapshot = owner.transport.snapshot();
+	const threadId = snapshot?.threadLink.threadId ?? null;
+	if (threadId === null) return null;
+	return {
+		threadId,
+		turns: [],
+		runtimeTimeline: snapshot?.timeline ?? null,
+	};
+}
+
+function presentationTextSource(
+	panes: readonly string[],
+	paneId: string | null,
+	owner: WorkbenchPaneOwner | null,
+): PresentationTextSource | null {
+	if (paneId === null || owner === null) return null;
+	const state = owner.transport.state();
+	const snapshot = state.snapshot;
+	const turn = snapshot === null ? null : readComposerTurn(snapshot);
+	const link = readComposerLink(state);
+	const turnId = turn?.kind === "active" ? turn.turnId : null;
+	return {
+		paneId,
+		paneLabel: paneLabel(panes, paneId),
+		workhorseId: snapshot?.threadLink.threadId ?? null,
+		turnId,
+		canStop:
+			link.kind === "executable" &&
+			turnId !== null &&
+			owner.composerController.getState().pending === null,
+	};
+}
+
 interface PresentationDockProps {
 	panes: string[];
 	presentation: FullscreenPresentationSnapshot;
 	dockRef: React.RefObject<HTMLDivElement | null>;
+	textSource: PresentationTextSource | null;
+	onStopText: () => void;
 	onTransfer: React.MouseEventHandler<HTMLButtonElement>;
 	onExit: () => void;
 }
@@ -236,6 +339,8 @@ function PresentationDock({
 	panes,
 	presentation,
 	dockRef,
+	textSource,
+	onStopText,
 	onTransfer,
 	onExit,
 }: PresentationDockProps): React.JSX.Element | null {
@@ -264,6 +369,43 @@ function PresentationDock({
 					</button>
 				))}
 			</fieldset>
+			<div className="presentation-text-source" aria-label="Active text workbench">
+				<span className="presentation-text-kicker">Text</span>
+				<span className="presentation-text-field">
+					<span className="presentation-text-label">Pane</span>
+					<span className="presentation-text-value">
+						{textSource?.paneLabel ?? "No active pane"}
+					</span>
+				</span>
+				<span className="presentation-text-field">
+					<span className="presentation-text-label">Workhorse</span>
+					<span
+						className="presentation-text-value presentation-text-identity"
+						title={textSource?.workhorseId ?? undefined}
+					>
+						{textSource?.workhorseId ?? "No workhorse"}
+					</span>
+				</span>
+				<span className="presentation-text-field">
+					<span className="presentation-text-label">Turn</span>
+					<span
+						className="presentation-text-value presentation-text-identity"
+						title={textSource?.turnId ?? undefined}
+					>
+						{textSource?.turnId ?? "No active turn"}
+					</span>
+				</span>
+			</div>
+			<button
+				type="button"
+				className="presentation-stop"
+				disabled={!textSource?.canStop}
+				onClick={onStopText}
+				data-pane-id={textSource?.paneId}
+				data-turn-id={textSource?.turnId ?? undefined}
+			>
+				Stop
+			</button>
 			{presentation.error && <span role="alert">{presentation.error}</span>}
 			<button type="button" className="presentation-exit" onClick={onExit}>
 				<Icon name="close" size={17} />
@@ -358,6 +500,11 @@ export function Shell(): React.JSX.Element {
 	const [focused, setFocused] = useState("pane-1");
 	const [statuses, setStatuses] = useState<Record<string, PaneStatus>>({});
 	const [agentStates, setAgentStates] = useState<Record<string, AgentState>>({});
+	const [workbenchOwners, setWorkbenchOwners] = useState<Record<string, WorkbenchPaneOwner>>({});
+	const workbenchOwnersRef = useRef<Record<string, WorkbenchPaneOwner>>({});
+	const [workbenchRevision, setWorkbenchRevision] = useState(0);
+	const [workbenchDisclosure, setWorkbenchDisclosure] =
+		useState<WorkbenchFrameDisclosure>("collapsed");
 	const nextTakeBackOperation = useRef(0);
 	const [selectionSnapshots, setSelectionSnapshots] = useState<
 		Record<string, PaneSelectionSnapshot>
@@ -552,6 +699,42 @@ export function Shell(): React.JSX.Element {
 		},
 		[],
 	);
+	const onWorkbenchTransport = useCallback(
+		(paneId: string, transport: BrowserWorkbenchTransport | null): void => {
+			const existing = workbenchOwnersRef.current[paneId];
+			if (transport === null) {
+				if (!existing) return;
+				const { [paneId]: removed, ...remaining } = workbenchOwnersRef.current;
+				void removed;
+				workbenchOwnersRef.current = remaining;
+				setWorkbenchOwners(remaining);
+				return;
+			}
+			if (existing?.transport === transport) return;
+			const owner: WorkbenchPaneOwner = {
+				transport,
+				composerController: createWorkbenchComposerController({ transport }),
+				threadLinkController: createThreadLinkController({
+					capturePane: () => ({ paneId, transport, hostRecoveryIntents: [] }),
+				}),
+			};
+			const next = { ...workbenchOwnersRef.current, [paneId]: owner };
+			workbenchOwnersRef.current = next;
+			setWorkbenchOwners(next);
+		},
+		[],
+	);
+
+	useEffect(() => {
+		const publish = (): void => setWorkbenchRevision((current) => current + 1);
+		const unsubscribers = Object.values(workbenchOwners).flatMap((owner) => [
+			owner.transport.subscribe(publish),
+			owner.composerController.subscribe(publish),
+		]);
+		return () => {
+			for (const unsubscribe of unsubscribers) unsubscribe();
+		};
+	}, [workbenchOwners]);
 	const onSelectionSnapshot = useCallback(
 		(paneId: string, snapshot: PaneSelectionSnapshot): void => {
 			setSelectionSnapshots((previous) => ({
@@ -641,7 +824,7 @@ export function Shell(): React.JSX.Element {
 		return result;
 	}, [agentState, focused]);
 	const claimedBy = agentState?.heldBy?.claimed === true ? agentState.heldBy : null;
-	const focusedPaneLabel = `Pane ${String.fromCharCode(65 + Math.max(0, panes.indexOf(focused)))}`;
+	const focusedPaneLabel = paneLabel(panes, focused);
 	const visibleNotice = presentationNotice(presentation, notice);
 	const boardKey = status?.boardKey ?? null;
 	const inspectedSelection = focusedSelection(selectionSnapshots, focused, boardKey);
@@ -980,7 +1163,72 @@ export function Shell(): React.JSX.Element {
 	const handleCancelConflict = useCallback(() => setConflict(null), []);
 	const handleCancelNote = useCallback(() => setAskingAboutNote(false), []);
 	const handleCancelClear = useCallback(() => setConfirmingClear(false), []);
-	const visibleDoing = useMemo(() => status?.doing ?? [], [status?.doing]);
+	const workbenchFramePanes = useMemo(() => {
+		void workbenchRevision;
+		const nowMs = Date.now();
+		return panes.flatMap((paneId) => {
+			const owner = workbenchOwners[paneId];
+			const timeline = owner ? workbenchTimeline(owner) : null;
+			if (!owner || !timeline) return [];
+			const paneStatus = statuses[paneId] ?? null;
+			const paneAgent = agentStates[paneId] ?? null;
+			const port: WorkbenchFramePane = {
+				identity: { id: paneId, label: paneLabel(panes, paneId) },
+				transport: owner.transport,
+				timeline,
+				composerController: owner.composerController,
+				threadLink: { controller: owner.threadLinkController },
+				boardStatus: {
+					connection: boardConnection(paneStatus),
+					claim: claimFromLockHolder(paneAgent?.heldBy ?? null),
+					doing: paneStatus?.doing ?? [],
+					semanticContext: semanticContext(owner.transport, nowMs),
+					onTakeBack: paneId === focused && paneAgent ? takeBackFocused : undefined,
+					takeBackState: paneAgent?.takeBackState ?? "idle",
+				},
+			};
+			return [port];
+		});
+	}, [agentStates, focused, panes, statuses, takeBackFocused, workbenchOwners, workbenchRevision]);
+	const workbenchView = useMemo<WorkbenchFrameView>(() => {
+		const first = workbenchFramePanes[0];
+		if (!first) {
+			return {
+				state: "empty",
+				detail: "No pane has published an exact Codex workhorse yet.",
+			};
+		}
+		const activePaneId = workbenchFramePanes.some((pane) => pane.identity.id === focused)
+			? focused
+			: first.identity.id;
+		return workbenchFramePanes.length === 1
+			? { state: "ready", panes: [first], activePaneId }
+			: {
+					state: "ready",
+					panes: [first, workbenchFramePanes[1]!],
+					activePaneId,
+				};
+	}, [focused, workbenchFramePanes]);
+	const workbenchRequest = useMemo<WorkbenchFrameRequest>(() => {
+		const source = workbenchFramePanes.find((pane) => hasApplicationRequest(pane.transport));
+		return source
+			? { state: "present", source: captureWorkbenchFrameRequestSource(source) }
+			: { state: "empty", detail: "No application-wide Codex request is open." };
+	}, [workbenchFramePanes]);
+	const presentedTextSource = useMemo(() => {
+		void workbenchRevision;
+		return presentationTextSource(
+			panes,
+			presentation.paneId,
+			presentation.paneId ? (workbenchOwners[presentation.paneId] ?? null) : null,
+		);
+	}, [panes, presentation.paneId, workbenchOwners, workbenchRevision]);
+	const handleStopText = useCallback((): void => {
+		if (!presentedTextSource?.canStop || presentedTextSource.turnId === null) return;
+		const owner = workbenchOwners[presentedTextSource.paneId];
+		if (!owner) return;
+		void owner.composerController.interrupt(presentedTextSource.turnId);
+	}, [presentedTextSource, workbenchOwners]);
 	const dialogPanes = useMemo(
 		() =>
 			panes.map((paneId, index) => ({
@@ -1190,6 +1438,8 @@ export function Shell(): React.JSX.Element {
 				panes={panes}
 				presentation={presentation}
 				dockRef={presentationDockRef}
+				textSource={presentedTextSource}
+				onStopText={handleStopText}
 				onTransfer={handlePresentationTransfer}
 				onExit={handlePresentationExit}
 			/>
@@ -1259,6 +1509,7 @@ export function Shell(): React.JSX.Element {
 									theme={theme}
 									onStatus={onStatus}
 									onAgentState={onAgentState}
+									onWorkbenchTransport={onWorkbenchTransport}
 									onThemeChange={setTheme}
 									onFocus={setFocused}
 									label={`Pane ${String.fromCharCode(65 + index)}`}
@@ -1339,13 +1590,14 @@ export function Shell(): React.JSX.Element {
 						/>
 					</div>
 
-					<WorkbenchBoardStatus
-						paneLabel={focusedPaneLabel}
-						connection={boardConnection(status)}
-						claim={claimFromLockHolder(agentState?.heldBy ?? null)}
-						doing={visibleDoing}
-						onTakeBack={agentState ? takeBackFocused : undefined}
-						takeBackState={agentState?.takeBackState ?? "idle"}
+					<WorkbenchFrame
+						className="shell-workbench"
+						disclosure={workbenchDisclosure}
+						onActivePaneChange={setFocused}
+						onDisclosureChange={setWorkbenchDisclosure}
+						request={workbenchRequest}
+						space={presentation.paneId ? "fullscreen" : "workspace"}
+						view={workbenchView}
 					/>
 				</main>
 			</div>

@@ -13,6 +13,7 @@ import { useCanvasSession } from "./useCanvasSession";
 import type { LockHolder, PaneStatus } from "../types";
 import type { CodeTargetNotice } from "../../shared/code-target";
 import type { WorkbenchTakeBackResult } from "../workbench-board-status";
+import type { BrowserWorkbenchTransport } from "../workbench-transport";
 import { createCodeTargetLinkHandler } from "../code-target";
 import type { MountedBoardPreviewController } from "../board-preview";
 import {
@@ -52,6 +53,8 @@ interface CanvasPaneProps {
 		heldBy: LockHolder | null,
 		takeBack: () => Promise<WorkbenchTakeBackResult>,
 	) => void;
+	/** Publishes the transport retained by this pane's current socket generation. */
+	onWorkbenchTransport: (paneId: string, transport: BrowserWorkbenchTransport | null) => void;
 	onThemeChange: (theme: "light" | "dark") => void;
 	onFocus: (paneId: string) => void;
 	/** Shown only when more than one pane is mounted. */
@@ -202,6 +205,7 @@ export function CanvasPane({
 	theme,
 	onStatus,
 	onAgentState,
+	onWorkbenchTransport,
 	onThemeChange,
 	onFocus,
 	label,
@@ -217,6 +221,21 @@ export function CanvasPane({
 	onPathFocusController,
 	onPreviewController,
 }: CanvasPaneProps): React.JSX.Element {
+	const workbenchTransportRef = useRef<() => BrowserWorkbenchTransport | null>(() => null);
+	const publishedWorkbenchTransportRef = useRef<BrowserWorkbenchTransport | null>(null);
+	const reportStatus = useCallback(
+		(status: PaneStatus): void => {
+			onStatus(status);
+			const nextTransport = workbenchTransportRef.current();
+			if (publishedWorkbenchTransportRef.current === nextTransport) return;
+			if (publishedWorkbenchTransportRef.current !== null) {
+				onWorkbenchTransport(paneId, null);
+			}
+			publishedWorkbenchTransportRef.current = nextTransport;
+			if (nextTransport !== null) onWorkbenchTransport(paneId, nextTransport);
+		},
+		[onStatus, onWorkbenchTransport, paneId],
+	);
 	const layout = useCallback(
 		(request: "open" | "close") => onLayoutRequest(paneId, request),
 		[onLayoutRequest, paneId],
@@ -225,12 +244,24 @@ export function CanvasPane({
 		paneId,
 		primary,
 		focused,
-		onStatus,
+		onStatus: reportStatus,
 		onLibraryChanged: onLibraryChangedElsewhere,
 		onLayoutRequest: layout,
 		onPaneStateAccepted,
 		onBoardError,
 	});
+	useLayoutEffect(() => {
+		workbenchTransportRef.current = session.workbenchTransport;
+	}, [session.workbenchTransport]);
+	useEffect(
+		() => () => {
+			if (publishedWorkbenchTransportRef.current !== null) {
+				publishedWorkbenchTransportRef.current = null;
+				onWorkbenchTransport(paneId, null);
+			}
+		},
+		[onWorkbenchTransport, paneId],
+	);
 	const attachPaneElement = session.attachPaneElement;
 	const readOnly = session.readOnly;
 	const paneElementRef = useRef<HTMLDivElement | null>(null);
