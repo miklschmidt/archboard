@@ -979,7 +979,7 @@
 			"path": "check",
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/check.ts",
-			"stdout": "schema-v2 JSON report or deterministic text",
+			"stdout": "schema-v3 JSON report or deterministic text",
 			"result": "board plus closed inspection report",
 			"diagnostics": "usage and operational read errors only",
 			"exits": [0, 1, 2, 6, 7, 8],

@@ -45,6 +45,8 @@ export interface BindingTargetClassification {
 
 export interface ConnectorEndpointClassification {
 	nodeAnalysisEligible: boolean;
+	startElement: string | undefined;
+	endElement: string | undefined;
 	startNode: string | undefined;
 	endNode: string | undefined;
 }
@@ -511,12 +513,13 @@ function buildConnectorEndpoints(
 			continue;
 		const endpoint = (end: "start" | "end") => {
 			const value = record.raw?.[`${end}Binding`];
-			if (value == null) return { blocked: false, node: undefined };
+			if (value == null) return { blocked: false, element: undefined, node: undefined };
 			const target = classifyBindingTarget(value);
 			return {
 				blocked:
 					target.blockingIssue !== null ||
 					(target.readableTargetId !== null && duplicateIds.has(target.readableTargetId)),
+				element: target.readableTargetId ?? undefined,
 				node: target.readableTargetId ? nodeOfElement.get(target.readableTargetId) : undefined,
 			};
 		};
@@ -524,6 +527,8 @@ function buildConnectorEndpoints(
 		const end = endpoint("end");
 		connectorEndpoints.set(record.id, {
 			nodeAnalysisEligible: !start.blocked && !end.blocked,
+			startElement: start.element,
+			endElement: end.element,
 			startNode: start.node,
 			endNode: end.node,
 		});

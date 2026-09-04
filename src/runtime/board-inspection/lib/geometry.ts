@@ -46,7 +46,7 @@ export type FocusBoxResult =
 			failedDeltas: Array<"x-minus-16" | "y-minus-16" | "width-plus-32" | "height-plus-32">;
 	  };
 
-/** Exact schema-v2 focus padding, including the representability of each required delta. */
+/** Exact schema-v3 focus padding, including the representability of each required delta. */
 export function focusBox(value: SceneBBox | null): FocusBoxResult {
 	if (value === null) return { kind: "absent" };
 	const x = value.x - 16;
@@ -159,7 +159,7 @@ export function segmentInsideBox(
 		[dy, bottom - a.y],
 	] as const) {
 		if (p === 0) {
-			if (q < 0) return null;
+			if (q <= 0) return null;
 			continue;
 		}
 		const ratio = q / p;

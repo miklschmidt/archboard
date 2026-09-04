@@ -119,6 +119,7 @@ const CODE_ORDER = [
 	"INSPECTION_LIMIT_EXCEEDED",
 	"CONNECTOR_PENETRATES_NODE",
 	"CONNECTOR_PENETRATES_OBSTACLE",
+	"CONNECTOR_PENETRATES_TEXT",
 	"CONNECTOR_INTERSECTION_UNMARKED",
 	"NODE_OVERLAP",
 	"LABEL_OVERLAP",
@@ -177,6 +178,7 @@ const REASON_ORDER = [
 	"input-complexity-ceiling",
 	"leaf-footprint-interior",
 	"obstacle-footprint-interior",
+	"text-interior",
 	"proper-interior-crossing",
 	"leaf-footprint-overlap",
 	"label-node-overlap",
@@ -1668,6 +1670,17 @@ function mergeSweepWork(work: SweepWork, measured: SweepWork): void {
 	work.peakSelections = Math.max(work.peakSelections, measured.peakSelections);
 }
 
+function rememberConnectorRelationship(
+	index: Map<string, Set<string>>,
+	target: string | undefined,
+	connectorId: string,
+): void {
+	if (target === undefined) return;
+	const connectors = index.get(target) ?? new Set<string>();
+	connectors.add(connectorId);
+	index.set(target, connectors);
+}
+
 function collisionFindings(
 	records: readonly DecodedRecord[],
 	model: InspectionModel,
@@ -1707,13 +1720,53 @@ function collisionFindings(
 	}));
 	let allNodeItems: PairItem<InspectionNode>[] = [];
 	let obstacleItems: PairItem<InspectionObstacle>[] = [];
-	let labelNodeRecords: DecodedRecord[] = [];
+	const endpointConnectorsByElement = new Map<string, Set<string>>();
+	const endpointConnectorsByNode = new Map<string, Set<string>>();
+	for (const [connectorId, ends] of model.connectorEndpoints) {
+		rememberConnectorRelationship(endpointConnectorsByElement, ends.startElement, connectorId);
+		rememberConnectorRelationship(endpointConnectorsByElement, ends.endElement, connectorId);
+		rememberConnectorRelationship(endpointConnectorsByNode, ends.startNode, connectorId);
+		rememberConnectorRelationship(endpointConnectorsByNode, ends.endNode, connectorId);
+	}
+	const textRecords = records.filter((record) => {
+		const angle = record.raw?.angle;
+		return (
+			record.live &&
+			record.usableId &&
+			Boolean(record.id) &&
+			record.type === "text" &&
+			Boolean(record.box && record.box.width > 0 && record.box.height > 0) &&
+			(angle === undefined || angle === 0)
+		);
+	});
+	const textItems = textRecords.map((text) => {
+		const textId = text.id!;
+		const ownerId = model.confirmedLabels.get(textId);
+		const textNode = model.nodeOfElement.get(textId);
+		const excludedConnectors = new Set<string>();
+		const exclude = (connectors: ReadonlySet<string> | undefined) => {
+			if (connectors) for (const connectorId of connectors) excludedConnectors.add(connectorId);
+		};
+		if (ownerId && model.connectorEndpoints.has(ownerId)) excludedConnectors.add(ownerId);
+		exclude(endpointConnectorsByElement.get(textId));
+		if (ownerId) exclude(endpointConnectorsByElement.get(ownerId));
+		if (textNode) exclude(endpointConnectorsByNode.get(textNode));
+		return {
+			id: textId,
+			box: text.box!,
+			value: text,
+			records: [text],
+			semantics: { partition: `text:${textId}`, excludedPartitions: excludedConnectors },
+		};
+	});
 	let labelNodeItems: PairItem<DecodedRecord>[] = [];
 	let labelLabelItems: PairItem<DecodedRecord>[] = [];
 	const connectorEnds = (segment: Segment) => {
 		return (
 			model.connectorEndpoints.get(segment.connectorId) ?? {
 				nodeAnalysisEligible: false,
+				startElement: undefined,
+				endElement: undefined,
 				startNode: undefined,
 				endNode: undefined,
 			}
@@ -1822,6 +1875,40 @@ function collisionFindings(
 			counter,
 			sweepWork,
 			"connector-obstacle",
+		);
+	}
+	if (!counter.limited) {
+		pairSweep(
+			segmentItems,
+			textItems,
+			false,
+			(segment, text) => {
+				const textId = text.id!;
+				const hit = segmentInsideBox(segment.a, segment.b, text.box!, policy.overlapTolerance);
+				if (!hit) return;
+				findings.push(
+					make({
+						code: "CONNECTOR_PENETRATES_TEXT",
+						reason: "text-interior",
+						severity: "error",
+						affectsCoverage: false,
+						details: {
+							connectorId: segment.connectorId,
+							segmentIndex: segment.index,
+							textId,
+							entry: point(hit.entry),
+							exit: point(hit.exit),
+						},
+						message: `Connector ${segment.connectorId} passes through text ${textId}.`,
+						elements: uniqueRefs([byId.get(segment.connectorId)!, text].filter(Boolean)),
+						points: [hit.entry, hit.exit],
+						affected: pointBox([hit.entry, hit.exit]),
+					}),
+				);
+			},
+			counter,
+			sweepWork,
+			"connector-text",
 		);
 	}
 	if (!counter.limited) {
@@ -1961,7 +2048,7 @@ function collisionFindings(
 			records: node.bodies,
 			semantics: unrestrictedPartition(node.id),
 		}));
-		labelNodeRecords = records.filter((record) => {
+		const labelNodeRecords = records.filter((record) => {
 			if (!record.live || !record.id || record.type !== "text" || !record.box) return false;
 			const state = model.labelOwnership.get(record.id)?.state;
 			return state !== undefined && state !== "none" && state !== "blocked";
@@ -2075,9 +2162,13 @@ function collisionFindings(
 		);
 	}
 	if (counter.limited) {
-		const allBoxes = [...segmentItems, ...allNodeItems, ...obstacleItems, ...labelNodeItems].map(
-			(item) => item.box,
-		);
+		const allBoxes = [
+			...segmentItems,
+			...allNodeItems,
+			...obstacleItems,
+			...textItems,
+			...labelNodeItems,
+		].map((item) => item.box);
 		const aggregate = aggregateBoxes(allBoxes);
 		findings.push(
 			make({
@@ -2092,13 +2183,17 @@ function collisionFindings(
 					segmentCount: segments.length,
 					nodeCount: leaves.length,
 					obstacleCount: model.obstacles.length,
-					labelCount: labelNodeRecords.length,
+					labelCount: textRecords.length,
 				},
 				message: `Inspection stopped pair analysis at comparison ${counter.value}.`,
 				elements: uniqueRefs(
-					[...segmentItems, ...allNodeItems, ...obstacleItems, ...labelNodeItems].flatMap(
-						(item) => item.records,
-					),
+					[
+						...segmentItems,
+						...allNodeItems,
+						...obstacleItems,
+						...textItems,
+						...labelNodeItems,
+					].flatMap((item) => item.records),
 				),
 				affected:
 					aggregate.kind === "representable"

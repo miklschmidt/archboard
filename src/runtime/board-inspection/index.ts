@@ -202,7 +202,7 @@ function assembleReport(input: {
 	].toSorted(compareIdentity);
 	const coverage = coverageReasons.length > 0 ? ("indeterminate" as const) : ("complete" as const);
 	return InspectionReportSchema.parse({
-		schemaVersion: 2,
+		schemaVersion: 3,
 		success: true,
 		policy: input.policy,
 		limits: {
