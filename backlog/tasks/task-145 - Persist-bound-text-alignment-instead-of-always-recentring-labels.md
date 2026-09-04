@@ -1,16 +1,22 @@
 ---
 id: TASK-145
 title: Persist bound-text alignment instead of always recentring labels
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-31 18:26'
-updated_date: '2026-09-04 16:03'
+updated_date: '2026-09-04 16:10'
 labels: []
 dependencies: []
 references:
   - src/runtime/engine/labels.ts
   - src/runtime/engine/apply-element-input.ts
+modified_files:
+  - src/runtime/engine/apply-element-input.ts
+  - src/runtime/engine/labels.ts
+  - src/runtime/engine/tests/label-input.test.ts
+  - src/runtime/engine/tests/label-placement.test.ts
+  - tests/system/browser/fixed-point-document.test.ts
 priority: medium
 type: bug
 ordinal: 255000
@@ -24,10 +30,10 @@ Agent updates can persist textAlign and verticalAlign while applyElementInput se
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Top- and left-aligned bound text is persisted at the same coordinates Excalidraw renders without a browser edit
-- [ ] #2 Middle- and center-aligned bound text retains its current placement
-- [ ] #3 A regression test covers alignment changes through the agent write boundary
-- [ ] #4 The real-browser round trip reports no corrective geometry after an aligned-label write
+- [x] #1 Top- and left-aligned bound text is persisted at the same coordinates Excalidraw renders without a browser edit
+- [x] #2 Middle- and center-aligned bound text retains its current placement
+- [x] #3 A regression test covers alignment changes through the agent write boundary
+- [x] #4 The real-browser round trip reports no corrective geometry after an aligned-label write
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -40,6 +46,8 @@ Agent updates can persist textAlign and verticalAlign while applyElementInput se
 5. Commit a clean review-ready range and report READY_FOR_REVIEW to the parent without finalizing TASK-145.
 
 6. Address the standards review with one two-row boundTextPlacement table: ellipse left/top and diamond right/bottom. Keep product and browser files byte-identical, then run only the focused engine owners, scoped static checks, and a fixed-range diff audit before rereview.
+
+7. Integrate the review-clean two-commit range onto the newer canonical workbench head, prove patch equivalence, rerun the focused engine and exact fixed-point browser owners, and finalize the task.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -51,4 +59,12 @@ Validation: focused engine owners passed, 3 tests and 72 expectations; both Type
 
 Standards review remediation: added one compact two-row table to label-placement.test.ts. The ellipse left/top row pins 134.28932188134524,219.64466094067262 and owns the curved inset branch. The diamond right/bottom row pins 375,465 and owns diamond inset, usable-size, and trailing-alignment branches. No product or browser file changed.
 Remediation validation: focused label placement/input owners passed, 4 tests and 74 expectations in 56 ms; both TypeScript projects passed; scoped Oxlint and Oxfmt passed; diff check passed. The fixed-point browser owner was not rerun because this follow-up changes only a module test.
+
+Canonical integration: cherry-picked review-clean commits 0ac0f4b2 and 483484f3 as af2bdd19 and 22e04d9b onto 5b8843df. No conflicts occurred. The reviewed and integrated binary patches have the same SHA-256 (fef445f958a825664cac69e0a7e9840e851e1ca9fc5af1c5b4fed29b336feb11), and git range-diff marks both commits equal. Validation on the canonical branch: focused label input/placement owners passed 4 tests and 74 expectations; both TypeScript projects passed; scoped Oxlint and Oxfmt passed; the exact fixed-point browser owner passed 1 test and 71 expectations in 3.02 seconds, with the test itself at 2.94 seconds and adapter cleanup successful. git diff --check passed. The pre-existing untracked src-DlBR1tzg.js remains untouched and is outside this task.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Persisted bound-label coordinates now follow Excalidraw 0.18.1 horizontal and vertical alignment rules, including rectangle, ellipse, and diamond inner boxes, while linear and center/middle placement stay unchanged. Alignment-only agent updates now settle geometry in the same write. Focused engine tests, both TypeScript projects, scoped static checks, and the exact real-browser fixed-point owner all passed on the canonical branch.
+<!-- SECTION:FINAL_SUMMARY:END -->
