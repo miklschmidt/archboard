@@ -100,7 +100,7 @@
 			},
 		},
 		{
-			"files": ["src/*/*/tests/**/*.ts", "tests/system/**/*.ts"],
+			"files": ["src/*/*/tests/**/*.ts", "src/*/*/tests/**/*.tsx", "tests/system/**/*.ts"],
 			"rules": {
 				"max-lines": [
 					"error",
