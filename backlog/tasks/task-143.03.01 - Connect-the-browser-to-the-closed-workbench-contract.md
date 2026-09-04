@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-04 02:40'
+updated_date: '2026-09-04 02:44'
 labels: []
 dependencies:
   - TASK-143.01.14
@@ -119,6 +119,16 @@ Finding 8 (minor, decided and asserted). canRenewLease/canReleaseLease stay enab
 Finding 9 (fixed). 'attach reports the transient reconnecting state before the subscribe baseline arrives' asserts kind connection, state reconnecting, connection reconnecting, null snapshot and sequence, and that no request is sent before the socket opens.
 
 Validation from the worktree: bun run type-check pass (both TypeScript projects); bun run lint pass; bun run fmt:check pass across 1055 files; bun run build:frontend pass; bun test --isolate src/ui src/shared src/server/codex-workbench 408 pass 0 fail 5532 assertions across 56 files; bun run test:repository 123 pass 0 fail 1074 assertions across 18 files; bun test --isolate --max-concurrency=1 tests/system/canvas-state/codex-workbench-application-sockets.test.ts tests/system/canvas-state/codex-workbench-production.test.ts 4 pass 0 fail 84 assertions; bun run test:modules 1963 pass 0 fail 18632 assertions across 220 files. The same scoped command run without --isolate reports 3 fail and 2 errors; all of them are pre-existing at 863c039d and are shared-process module-registry artefacts, not product failures: 'SyntaxError: Export named openCodeTarget not found in module src/ui/canvas/api.ts', 'SyntaxError: Export named fetchBoards not found in module src/ui/canvas/api.ts', and '(fail) mounted workbench runtime provider > translates submission outcomes without replay and ignores completion after teardown'. All three reproduce unchanged on the base commit and all three pass under the real --isolate lanes. No serial-browser or opt-in lane ran.
+
+Acceptance criteria remain unchecked and the task remains In Progress for independent re-review.
+
+Rebase and residual closure (@claude-opus, 2026-09-04). The branch was rebased cleanly onto codex/task-143-144-workbench at 65db721a, which includes the completed TASK-143.01.14. Correction to the previous note and to the earlier AC #4 caveat: TASK-143.01.14 is Done at 65db721a, not To Do, so the production Codex workbench graph the system owners drive is the final composed one.
+
+Finding 4's residual is now closed. src/server/canvas/lib/codex-workbench-browser.ts was the last hand-copied half of the gateway envelope: its BrowserRequestSchema named the ten ingress actions as free-standing string literals beside the shared list. Each arm now names its action through a gatewayAction<Action extends BrowserGatewayAction> helper imported from src/shared/codex-browser-gateway, and BrowserRequestActionsAreExhaustive rejects any gateway action with no ingress arm. The arms stay written out because their payloads differ (mediaReady carries ready, command carries command); only the action vocabulary is shared, and per-arm payload typing is unchanged. boundaries.md permits the import directly: server depends on shared, and neighbouring canvas lib files already cross the same shared roots. Pure re-homing, no behaviour change — the same ten actions parse into the same ten shapes.
+
+Both drift directions were verified to fail type-check: renaming an ingress arm to an action the shared list does not carry produces TS2345 at the arm, and adding an action to BROWSER_GATEWAY_ACTIONS with no ingress arm produces TS2344 on the exhaustiveness type. Nothing in the browser envelope, the transport, or the gateway now declares an action, error code, delta key, message, or result shape twice.
+
+Post-rebase validation from the worktree: bun run type-check pass (both TypeScript projects); bun run lint pass; bun run fmt:check pass across 1055 files; bun run build:frontend pass; bun test --isolate src/ui src/shared src/server/codex-workbench src/server/canvas 492 pass 0 fail 5953 assertions across 74 files; bun run test:repository 122 pass 0 fail 1060 assertions across 18 files; bun test --isolate --max-concurrency=1 tests/system/canvas-state/codex-workbench-application-sockets.test.ts tests/system/canvas-state/codex-workbench-production.test.ts 4 pass 0 fail 84 assertions; bun run test:modules 1966 pass 0 fail 18624 assertions across 220 files. No serial-browser or opt-in lane ran. The pre-existing non-isolated shared-process module-registry artefacts recorded in the previous note do not appear under any of these isolated lanes.
 
 Acceptance criteria remain unchecked and the task remains In Progress for independent re-review.
 <!-- SECTION:NOTES:END -->
