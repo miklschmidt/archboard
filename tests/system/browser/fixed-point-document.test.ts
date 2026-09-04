@@ -30,7 +30,10 @@ type ServerFields = {
 	version?: number;
 };
 type TextFields = Partial<
-	Pick<Extract<ExcalidrawElement, { type: "text" }>, "containerId" | "fontFamily" | "fontSize">
+	Pick<
+		Extract<ExcalidrawElement, { type: "text" }>,
+		"containerId" | "fontFamily" | "fontSize" | "textAlign" | "verticalAlign"
+	>
 >;
 type ArrowFields = Partial<
 	Pick<Extract<ExcalidrawElement, { type: "arrow" }>, "points" | "startBinding" | "endBinding">
@@ -43,6 +46,7 @@ type Pane = {
 	elementCount?: number;
 };
 type PanesBody = { paneCount?: number; panes?: Pane[] };
+type JsonRequester = ReturnType<typeof createJsonRequester>;
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = path.join(repoRoot, "src/server.ts");
@@ -140,6 +144,30 @@ async function waitForFont(
 	return measured.width;
 }
 
+async function alignRectangleLabel(
+	api: JsonRequester,
+	elements: readonly SceneElement[] | undefined,
+): Promise<SceneElement> {
+	const rectangleLabel = elements?.find(
+		(element) => element.type === "text" && element.containerId === "rect1",
+	);
+	if (rectangleLabel?.type !== "text") throw new Error("rectangle label is missing");
+	const aligned = await api<ElementsBody>(`/api/elements/${rectangleLabel.id}?board=fixedpoint`, {
+		method: "PUT",
+		body: { textAlign: "left", verticalAlign: "top" },
+	});
+	expect(aligned.status).toBe(200);
+	return rectangleLabel;
+}
+
+function expectTopLeftLabel(elements: readonly SceneElement[], labelId: string): void {
+	const label = elements.find((element) => element.id === labelId);
+	expect(label?.textAlign).toBe("left");
+	expect(label?.verticalAlign).toBe("top");
+	expect(label?.x).toBe(105);
+	expect(label?.y).toBe(105);
+}
+
 test(
 	"an agent-authored board is an exact Excalidraw document fixed point",
 	async () => {
@@ -163,6 +191,7 @@ test(
 		});
 		expect(made.status).toBe(200); // check-fixed-point.mjs:777
 		expect(made.body.elements).toHaveLength(15); // check-fixed-point.mjs:777
+		const rectangleLabel = await alignRectangleLabel(api, made.body.elements);
 
 		await api("/api/elements/changes?board=fixedpoint", {
 			method: "POST",
@@ -227,6 +256,7 @@ test(
 		expect(registered.paneCount).toBe(1); // check-fixed-point.mjs:994
 
 		const written = (await api<ElementsBody>("/api/elements?board=fixedpoint")).body.elements ?? [];
+		expectTopLeftLabel(written, rectangleLabel.id);
 		const families = new Set(
 			written
 				.filter((element) => element.type === "text")
