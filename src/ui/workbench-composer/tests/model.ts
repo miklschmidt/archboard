@@ -1,5 +1,8 @@
 import { BrowserWorkbenchTransportError } from "../../workbench-transport/index.js";
-import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
+import {
+	BROWSER_IDLE_SPOKEN_APPROVAL,
+	createCodexBrowserModel,
+} from "../../../shared/codex-browser-model/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import type { BrowserSnapshot } from "../../../shared/codex-browser-model/index.js";
 import type {
@@ -147,6 +150,7 @@ export function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnaps
 			delivery: null,
 			reason: "Voice is unavailable.",
 		},
+		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,
 		lease: null,
 		operation: null,
 		...overrides,
