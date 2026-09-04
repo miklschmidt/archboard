@@ -14,7 +14,9 @@ import {
 	connected,
 	executableLink,
 	FakeTransport,
+	listed,
 	loginA,
+	unknownCandidates,
 	pane,
 	record,
 	snapshot,
@@ -27,7 +29,6 @@ const HOST_INTENTS = [
 	"choose_binary",
 	"unlock_home",
 	"repair_storage",
-	"refresh_inventory",
 ] as const satisfies readonly ThreadLinkRecoveryIntent[];
 
 function render(
@@ -38,11 +39,15 @@ function render(
 		readonly supported?: NonNullable<Parameters<typeof capabilities>[0]>["supported"];
 		readonly hostRecoveryIntents?: readonly ThreadLinkRecoveryIntent[];
 		readonly initialAccountForm?: WorkbenchThreadLinkProps["initialAccountForm"];
+		readonly undiscovered?: boolean;
 	} = {},
 ): string {
 	const value = snapshot({
 		...(overrides.readiness === undefined ? {} : { readiness: overrides.readiness }),
 		...(overrides.threadLink === undefined ? {} : { threadLink: overrides.threadLink }),
+		threadCandidates:
+			overrides.inventory ??
+			(overrides.undiscovered === true ? unknownCandidates : listed([record()])),
 	});
 	const transport = new FakeTransport(
 		connected(value),
@@ -54,11 +59,6 @@ function render(
 			paneId: "pane-a",
 			transport,
 			controller,
-			inventory: overrides.inventory ?? {
-				state: "listed",
-				records: [record()],
-				exhausted: true,
-			},
 			hostRecoveryIntents: overrides.hostRecoveryIntents ?? HOST_INTENTS,
 			...(overrides.initialAccountForm === undefined
 				? {}
@@ -88,17 +88,14 @@ describe("rendered pane thread link", () => {
 			expect(markup).toContain(label);
 		expect(markup).toContain("Standard app-server thread");
 		expect(markup).toContain("Accepts direct input");
-		expect(markup).toContain("Joined from 1 persisted row and 1 current");
+		expect(markup).toContain("1 joined record, 1 executable, 0 inspect-only.");
 		expect(markup).toContain(">Attach<");
+		expect(markup).toContain(`aria-label="Attach thread ${threadA}"`);
 	});
 
 	test("renders an inspect-only row with its reason and its inspection-only action", () => {
 		const markup = render({
-			inventory: {
-				state: "listed",
-				records: [record({ state: "inspect_only", reason: "prior_epoch" })],
-				exhausted: true,
-			},
+			inventory: listed([record({ state: "inspect_only", reason: "prior_epoch" })]),
 		});
 		expect(markup).toContain('data-thread-link-outcome="inspect_only"');
 		expect(markup).toContain(
@@ -109,27 +106,29 @@ describe("rendered pane thread link", () => {
 
 	test("renders duplicate and unjoined records as refused rows with a refresh path", () => {
 		const markup = render({
-			inventory: {
-				state: "listed",
-				records: [
-					record({ selectionId: "first" }),
-					record({ selectionId: "second" }),
-					record({ selectionId: "orphan", threadId: threadB, persistedRows: 0 }),
-				],
-				exhausted: true,
-			},
+			inventory: listed([
+				record({ selectionId: "first" }),
+				record({ selectionId: "second" }),
+				record({ selectionId: "other", threadId: threadB }),
+			]),
 		});
 		expect(markup).toContain("Records this pane refuses to bind");
 		expect(markup).toContain('data-thread-link-excluded="duplicate_row"');
-		expect(markup).toContain('data-thread-link-excluded="not_persisted"');
 		expect(markup).toContain('data-thread-link-recovery="refresh_inventory"');
 		expect(markup).toContain("Refresh the thread list");
 	});
 
+	test("renders the undiscovered inventory as its own state with a refresh path", () => {
+		const markup = render({ inventory: undefined, undiscovered: true });
+		expect(markup).toContain('data-thread-link-selection="unknown"');
+		expect(markup).toContain("Nothing is chosen for you");
+		expect(markup).toContain('data-thread-link-recovery="refresh_inventory"');
+	});
+
 	test("renders the empty inventory as its own state rather than a blank list", () => {
-		const markup = render({ inventory: { state: "listed", records: [], exhausted: true } });
+		const markup = render({ inventory: listed([]) });
 		expect(markup).toContain('data-thread-link-selection="empty"');
-		expect(markup).toContain("No persisted thread joined the current loaded list");
+		expect(markup).toContain("discovered no joined thread");
 	});
 
 	test("keeps create separate from attach and states its own prerequisite", () => {

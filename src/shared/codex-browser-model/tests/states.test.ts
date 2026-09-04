@@ -1,5 +1,6 @@
 import { test, expect } from "bun:test";
 
+import { BROWSER_THREAD_CANDIDATE_LIMIT } from "../index.js";
 import { createFixtureIds } from "./support.js";
 
 test("browser DTOs cover reachable progress, partial, failure, and recovery states", () => {
@@ -102,4 +103,104 @@ test("browser DTOs cover reachable progress, partial, failure, and recovery stat
 		expect(
 			model.BrowserDtoSchema.safeParse({ ...inspectState, sourcePresentation } as unknown).success,
 		).toBeFalse();
+});
+
+test("the thread-candidate inventory is a bounded, deduplicated, browser-safe list", () => {
+	const { model, identity } = createFixtureIds();
+	const candidate = (selectionId: string, threadIdText: string) => ({
+		kind: "thread_candidate",
+		selectionId,
+		threadId: identity.decoder.adoptThreadId(threadIdText),
+		state: "inspect_only",
+		reason: "prior_epoch",
+		sourcePresentation: "subagent",
+		status: "idle",
+		loaded: true,
+		canAcceptDirectInput: null,
+	});
+	const listed = model.BrowserThreadCandidatesSchema.parse({
+		kind: "thread_candidates",
+		state: "listed",
+		records: [candidate("selection-a", "thread-a"), candidate("selection-b", "thread-b")],
+		truncated: true,
+		reason: null,
+	});
+	expect(listed.state === "listed" && listed.records).toHaveLength(2);
+	expect(listed.state === "listed" && listed.truncated).toBeTrue();
+
+	for (const arm of [
+		{ kind: "thread_candidates", state: "unknown", records: [], truncated: false, reason: null },
+		{
+			kind: "thread_candidates",
+			state: "unavailable",
+			records: [],
+			truncated: false,
+			reason: "the thread list could not be exhausted",
+		},
+	])
+		expect(model.BrowserThreadCandidatesSchema.safeParse(arm).success).toBeTrue();
+
+	// One selection cannot appear twice, an undiscovered arm cannot smuggle rows,
+	// and the list cannot outgrow the bound the snapshot fitter does not trim.
+	expect(
+		model.BrowserThreadCandidatesSchema.safeParse({
+			kind: "thread_candidates",
+			state: "listed",
+			records: [candidate("selection-a", "thread-a"), candidate("selection-a", "thread-b")],
+			truncated: false,
+			reason: null,
+		}).success,
+	).toBeFalse();
+	expect(
+		model.BrowserThreadCandidatesSchema.safeParse({
+			kind: "thread_candidates",
+			state: "unknown",
+			records: [candidate("selection-a", "thread-a")],
+			truncated: false,
+			reason: null,
+		}).success,
+	).toBeFalse();
+	expect(
+		model.BrowserThreadCandidatesSchema.safeParse({
+			kind: "thread_candidates",
+			state: "listed",
+			records: Array.from({ length: BROWSER_THREAD_CANDIDATE_LIMIT + 1 }, (_value, index) =>
+				candidate(`selection-${index}`, `thread-${index}`),
+			),
+			truncated: false,
+			reason: null,
+		}).success,
+	).toBeFalse();
+});
+
+test("a bind command names both the one-shot selection and the thread it believes it is", () => {
+	const { model, identity, target } = createFixtureIds();
+	const threadId = identity.decoder.adoptThreadId("thread-bind");
+	for (const command of ["threadLinkAttach", "threadLinkRelink"] as const) {
+		expect(
+			model.BrowserCommandSchema.parse({
+				...target,
+				kind: "browser_command",
+				command,
+				selectionId: "selection-a",
+				threadId,
+			}),
+		).toMatchObject({ command, selectionId: "selection-a", threadId });
+		// A thread id on its own can never adopt a row the pane did not offer.
+		expect(
+			model.BrowserCommandSchema.safeParse({
+				...target,
+				kind: "browser_command",
+				command,
+				threadId,
+			}).success,
+		).toBeFalse();
+	}
+	expect(
+		model.BrowserCommandSchema.parse({
+			...target,
+			kind: "browser_command",
+			command: "threadLinkRefresh",
+		}),
+	).toMatchObject({ command: "threadLinkRefresh" });
 });

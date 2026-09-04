@@ -20,6 +20,15 @@ import type { IdentityContext, IdentitySchemas } from "./scalars.js";
 
 const TimestampSchema = z.number().int().nonnegative();
 export const DeliveryOutcomeSchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
+/**
+ * The most joined thread candidates one snapshot publishes. The list is bounded
+ * here rather than trimmed by the snapshot fitter, which owns the timeline as
+ * its sole variable field. The bound is chosen so a complete inventory still
+ * fits beside a rich snapshot at the smallest budget a gateway may run with,
+ * leaving the fitter timeline history to trim; a longer list is published
+ * truncated rather than crowding history out.
+ */
+export const BROWSER_THREAD_CANDIDATE_LIMIT = 40;
 export const BROWSER_PERMISSION_FILE_ACCESS = {
 	deny: "deny",
 	read: "read",
@@ -259,6 +268,72 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 				}
 			}
 		});
+
+	/**
+	 * One host-discovered thread the pane may bind, projected exactly as the
+	 * thread-link classifier published it. The browser re-derives none of it:
+	 * `state` and `reason` are the classifier's own verdict, and `selectionId`
+	 * is the one-shot handle that names which retained candidate a bind consumes.
+	 */
+	const BrowserThreadCandidateSchema = z
+		.object({
+			kind: z.literal("thread_candidate"),
+			selectionId: boundedText(128),
+			threadId: ThreadIdSchema,
+			state: z.enum(["executable", "inspect_only"]),
+			reason: NullableReasonSchema,
+			sourcePresentation: BrowserThreadLinkSourcePresentationSchema,
+			status: ThreadLinkStatusSchema,
+			loaded: z.boolean(),
+			canAcceptDirectInput: z.boolean().nullable(),
+		})
+		.strict();
+	/**
+	 * The candidate list is bounded rather than fitted. It is the only variable
+	 * snapshot field beside the timeline, and the timeline is the one the
+	 * snapshot fitter trims, so this list must never be able to crowd it out.
+	 */
+	const BrowserThreadCandidatesSchema = z.discriminatedUnion("state", [
+		z
+			.object({
+				kind: z.literal("thread_candidates"),
+				state: z.literal("unknown"),
+				records: z.array(BrowserThreadCandidateSchema).length(0),
+				truncated: z.literal(false),
+				reason: z.null(),
+			})
+			.strict(),
+		z
+			.object({
+				kind: z.literal("thread_candidates"),
+				state: z.literal("listed"),
+				records: z.array(BrowserThreadCandidateSchema).max(BROWSER_THREAD_CANDIDATE_LIMIT),
+				truncated: z.boolean(),
+				reason: z.null(),
+			})
+			.strict()
+			.superRefine((value, refinementContext) => {
+				const seen = new Set<string>();
+				for (const record of value.records) {
+					if (seen.has(record.selectionId))
+						refinementContext.addIssue({
+							code: "custom",
+							path: ["records"],
+							message: "a thread candidate selection appears more than once",
+						});
+					seen.add(record.selectionId);
+				}
+			}),
+		z
+			.object({
+				kind: z.literal("thread_candidates"),
+				state: z.literal("unavailable"),
+				records: z.array(BrowserThreadCandidateSchema).length(0),
+				truncated: z.literal(false),
+				reason: boundedText(512),
+			})
+			.strict(),
+	]);
 
 	const BrowserTimelineItemSchema = z.discriminatedUnion("media", [
 		z
@@ -804,10 +879,15 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			.strict(),
 		z.object({ ...BrowserCommandBase, command: z.literal("accountLogout") }).strict(),
 		z.object({ ...BrowserCommandBase, command: z.literal("threadLinkCreate") }).strict(),
+		z.object({ ...BrowserCommandBase, command: z.literal("threadLinkRefresh") }).strict(),
+		// A bind names the one-shot selection it consumes as well as the thread it
+		// believes that selection is, so a list the host has since replaced is
+		// refused instead of silently binding whatever now sits at that thread id.
 		z
 			.object({
 				...BrowserCommandBase,
 				command: z.literal("threadLinkAttach"),
+				selectionId: boundedText(128),
 				...BrowserThreadIdCommand,
 			})
 			.strict(),
@@ -815,6 +895,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			.object({
 				...BrowserCommandBase,
 				command: z.literal("threadLinkRelink"),
+				selectionId: boundedText(128),
 				...BrowserThreadIdCommand,
 			})
 			.strict(),
@@ -933,6 +1014,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			account: BrowserAccountSchema,
 			login: BrowserLoginSchema,
 			threadLink: BrowserThreadLinkSchema,
+			threadCandidates: BrowserThreadCandidatesSchema,
 			timeline: BrowserTimelineSchema.nullable(),
 			queue: BrowserQueueSchema,
 			settings: z.array(BrowserSettingsSchema),
@@ -959,6 +1041,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		BrowserAccountSchema,
 		BrowserLoginSchema,
 		BrowserThreadLinkSchema,
+		BrowserThreadCandidatesSchema,
 		BrowserTimelineSchema,
 		BrowserQueueSchema,
 		BrowserSettingsSchema,
@@ -974,6 +1057,8 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 
 	return {
 		BrowserReadinessSchema,
+		BrowserThreadCandidateSchema,
+		BrowserThreadCandidatesSchema,
 		BrowserAccountSchema,
 		BrowserLoginSchema,
 		BrowserThreadLinkSourcePresentationSchema,
@@ -1003,6 +1088,8 @@ export type BrowserThreadLinkSourcePresentation = z.infer<
 	BrowserSchemas["BrowserThreadLinkSourcePresentationSchema"]
 >;
 export type BrowserThreadLink = z.infer<BrowserSchemas["BrowserThreadLinkSchema"]>;
+export type BrowserThreadCandidate = z.infer<BrowserSchemas["BrowserThreadCandidateSchema"]>;
+export type BrowserThreadCandidates = z.infer<BrowserSchemas["BrowserThreadCandidatesSchema"]>;
 export type BrowserTimeline = z.infer<BrowserSchemas["BrowserTimelineSchema"]>;
 export type BrowserQueue = z.infer<BrowserSchemas["BrowserQueueSchema"]>;
 export type BrowserSettings = z.infer<BrowserSchemas["BrowserSettingsSchema"]>;

@@ -25,7 +25,10 @@ import type {
 	CanvasBrowserProjectionBudget,
 	CanvasTimelineOwner,
 } from "./codex-workbench-timeline.js";
-import { createCanvasThreadLinkActions } from "./codex-workbench-thread-links.js";
+import {
+	createCanvasThreadCandidateInventory,
+	createCanvasThreadLinkActions,
+} from "./codex-workbench-thread-links.js";
 import { createCanvasCanonicalTextActions } from "./codex-workbench-text-actions.js";
 import { createCanvasRealtimeActions } from "./codex-workbench-realtime-actions.js";
 import {
@@ -271,7 +274,9 @@ export function createCanvasBrowserGatewayOptions(input: {
 		inFlightReread = { threadId, read };
 		return read;
 	};
+	const candidates = createCanvasThreadCandidateInventory(components.threadLink);
 	const threadLinks = createCanvasThreadLinkActions({
+		candidates,
 		workhorse: components.workhorse,
 		threadLink: components.threadLink,
 		semanticDelivery: components.semanticDelivery,
@@ -349,6 +354,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 				}),
 		},
 		threadLinks: {
+			refresh: (command, context) => threadLinks.refresh(command, context),
 			create: async (command, context) => {
 				const result = await threadLinks.create(command, context);
 				await refreshLinkedQueue();
@@ -459,6 +465,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 				readiness,
 				account: state.account,
 				login: state.login,
+				threadCandidates: candidates.read(),
 				timeline: input.timeline.read(
 					context.paneId,
 					context.binding.revision,
