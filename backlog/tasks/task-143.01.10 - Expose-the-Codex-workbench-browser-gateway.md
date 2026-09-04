@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-04 01:56'
+updated_date: '2026-09-04 02:03'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -67,6 +67,28 @@ Remediation implementation complete: the existing gateway notifyDisconnect seam 
 Hard-review remediation complete at the requested focused boundaries. Timeline state is now owned per pane and exact browser connection, so concurrent same-pane sockets load independently, every live pair observes correlated refreshes, and close retires only the named pair. One validated CanvasBrowserProjectionBudget now supplies both bounded timeline retention and the gateway's complete BrowserSnapshot limit; the gateway fits timeline history only after queue, ordinary approvals, dynamic approvals, semantic/coordinator, voice, lease, and operation fields are present, and rejects budgets below the 32 KiB base envelope. User-message summary scanning now propagates truncation when text lies beyond the 32-part scan. The canvas gateway timeline owner uses typed fixtures with no as-never or double-assertion bypasses; two unused test-support helpers were removed.\n\nVerification: 73 focused gateway/projection/timeline/generation/production-initialization tests passed with 463 assertions; both TypeScript projects passed; scoped Oxlint and Oxfmt passed; repository boundary and test-inventory owners passed 61 tests with 132 assertions; git diff --check passed. No broad, browser, system, stress, capacity, performance, tooling, topology, or concurrency lane ran. Remaining TASK-143.01.02 contract risk: non-timeline browser fields have no truncation semantics, so the gateway preserves them and rejects invalid_projection if they alone exceed the configured complete-snapshot budget. Acceptance criteria remain unchecked and TASK-143.01.10 remains In Progress for parent rereview.
 
 Second hard-review remediation complete. Assertion-laundered generation and timeline fixtures were replaced with typed, discriminant-preserving builders; the target canvas gateway owner no longer mutates component fixtures through Object.assign. Explicit snapshot maxBytes values now reject every unsafe, nonintegral, below-minimum, or above-maximum value while omission retains the 768 KiB default. Complete-snapshot fitting can drop the final paginated timeline turn when that makes the full projection fit, retaining nextCursor as the truncation signal; non-timeline-only overflow remains a refusal. Same-pane coverage now proves one correlated notification refreshes both live connections before exact retirement, then only the survivor refreshes and recovers. The full 32 KiB budget owner includes timeline, queue, settings, ordinary and dynamic approvals, semantic delivery, voice transcript, active command lease, and delivered operation. Verification: 38 focused tests with 247 assertions passed; both TypeScript projects passed; scoped Oxlint and Oxfmt passed; repository boundary and test-inventory owners passed 61 tests with 132 assertions; git diff --check passed. No broad, browser, system, stress, capacity, performance, topology, or concurrency lane ran. Residual compatibility behavior is intentional: a lone timeline turn is removed only when a non-null nextCursor preserves a valid truncation indication; without that indication the existing refusal remains. Acceptance criteria remain unchecked and TASK-143.01.10 remains In Progress for parent rereview.
+
+Reopened-scope implementation complete (@claude-opus).
+
+What was still hardcoded or unproven in the production gateway, and what changed:
+
+1. Readiness (AC #1). The canvas adapter kept one hand-set readiness field that only ever became initialized, signed_out, login_pending, or thread_capable. A browser could not distinguish a stopped or backing-off child, a refused storage home, an incompatible binary, a reconnecting session, a login-capable host, or an account that is ready before thread capability exists — all states the closed contract defines and the gateway already gates on, and all states TASK-143.03.03 AC #4 must render. Readiness is now derived, never stored: src/server/canvas/lib/codex-workbench-readiness.ts reduces the live owned-process facts (state, the app-server ready mark, restart attempt, next restart time, failure code) plus the account, login, and coordinator lifecycle onto exactly one contract arm, and bounds any diagnostic message into one contract-legal reason (no control characters, non-empty, at most 512 UTF-8 bytes). Production passes the owned CodexProcess snapshot in and subscribes the gateway's lifecycle change source to process.subscribe, so a child transition or a readiness mark publishes a delta with no browser command; session initialization notifies the projection listeners for the same reason.
+
+2. Account and login projections. A failed account/read left stale account facts, a failed sign-in left login idle, a completed sign-in stayed pending forever, and logout left the login record behind. Each now records its real arm.
+
+3. Queue targeting. The cached queue view carried no record of which workhorse thread produced it, so after an attach or relink a pane presented the previous thread's submissions. The cache now carries its workhorse thread id and a pane on any other link is told the queue is unavailable. A link mutation clears and re-reads it, because the closed browser command union owned by TASK-143.01.02 has no queue-list route the browser could call.
+
+4. Sequenced delivery (AC #4). Nothing owned the gateway half: an owner change that alters nothing publishing no message, each observable change advancing the sequence by exactly one with only its changed fields, and a change too large for the 256 KiB delta bound escalating to a complete snapshot. One focused owner now proves all three plus a reconnect snapshot repeating the current sequence.
+
+5. Dead contract surface. BrowserGatewayApplyResult, BrowserGatewayApplyStatus and BrowserGatewayClientState were exported but never produced or consumed; the browser transport owns delta application with its own status union. Removed rather than kept as a second owner.
+
+6. Branch repair. The gateway test harness had grown past the 500-line oxlint limit for test-owned source, so bun run lint failed at the previous branch head. Its pure builders moved into a sibling fixture.
+
+Verification (all from the worktree): bun run type-check pass (both TypeScript projects); bun run lint pass; bun run fmt:check pass; bun test src/server/canvas src/server/codex-workbench 147 pass 0 fail 829 assertions across 29 files; bun run test:repository 123 pass 0 fail 1074 assertions; bun run test:modules 1958 pass 0 fail 18588 assertions across 219 files. No system, serial-browser, or opt-in lane ran.
+
+Deliberately out of scope: adding a queueList browser command (the closed model is TASK-143.01.02's); live thread/settings/updated workhorse settings (the workhorse owner tracks no live settings, so start facts remain the only source and effort stays null); coordinator activeTurnId and voice delivery (their owners expose no such fact, and TASK-143.04.x owns voice presentation).
+
+Acceptance criteria remain unchecked and the task remains In Progress for reviewer verification.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
