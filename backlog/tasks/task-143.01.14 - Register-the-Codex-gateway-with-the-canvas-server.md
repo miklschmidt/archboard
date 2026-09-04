@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-04 02:20'
+updated_date: '2026-09-04 02:27'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -257,6 +257,16 @@ Finding 6 (MINOR): shutdownEpoch no longer calls input.process.stop() directly. 
 Finding 7 (MINOR): the duplicated installFakeOwner/fakeProcess/fakeGeneration copies in the repository-policy owner are deleted with the retained-state tests that needed them, so no cross-owner support duplication remains. The duplicated 'ordinary:settle:host_shutdown before transport:shutdown' assertion now lives only in the direct generation owner; the integrated owner keeps the fact only it can see, transport:shutdown before process:stop. The three near-identical wait probes in codex-workbench-terminal-correlation.test.ts were merged into src/server/canvas/tests/support/codex-workbench-terminal-fixture.ts. src/server/canvas/tests/support/codex-workbench-owner-fake.ts now drives child exit through the real transport onExit bridge instead of assigning runtime.exitBridge fields, so crash-replacement owners exercise attachExitBridge rather than a hand-set latch.
 
 Validation from the worktree at 2899fcae: bun run type-check passes both TypeScript projects; bun run lint reports 0 warnings and 0 errors; bun run fmt:check passes on 1039 files; bun test src/server/canvas 68 pass / 0 fail / 311 assertions; bun run test:repository 122 pass / 0 fail / 1060 assertions; the four canvas-state Codex system owners 13 pass / 0 fail / 227 assertions; the seven Codex process-contract owners (crash replacement, lifecycle, normal close, termination, interruptions, realtime, resource cleanup) 19 pass / 0 fail / 320 assertions; bun run test:modules 1940 pass / 0 fail / 18446 assertions across 212 files. No unrelated failures. Acceptance criteria remain unchecked and the task remains In Progress for reviewer recheck.
+
+Rebased onto codex/task-143-144-workbench at 863c039d (TASK-143.01.10 integrated). Two conflicting hunks in src/server/canvas/lib/codex-workbench-production.ts, both in hooks(); both sides kept.
+
+Resolution: hooks() keeps my capture-once shape (const owners = ownersFor(input) at the top, no per-callback lookup) and now carries 143.01.10's behaviour inside it -- onNotification forwards to owners.timeline first, initializeSession sets browserState.account and then notifies projectionListeners when the approval projection is installed instead of writing the removed browserState.readiness slot (readiness is derived per read by codex-workbench-readiness.ts), and cancelDynamicApprovalsAndWaits disposes the timeline before settling approvals. My retireDynamicLifecycle hook, approval dispose(), and retire(input.generation, owners) are unchanged, and retire now also nulls the new timeline slot alongside projectionListeners, so the finding-1 bound covers 143.01.10's owner too.
+
+The new owned-process readiness subscription does not reintroduce the finding-1 leak: the composition's gateway binding returns lifecycle.onChange = input.process.subscribe(...), the gateway pushes it onto sourceUnsubscribers, and gateway.dispose() -- which stopBrowser performs during generation stop -- splices and runs them. That chain had no owner, so src/server/canvas/tests/codex-workbench-production-initialization.test.ts gained 'retiring a generation releases its owned-process readiness subscription': it builds the real gateway from the composition's own options and asserts exactly one live process subscriber before dispose and none after. Returning a no-op unsubscribe from the composition fails it.
+
+Also fixed one post-rebase lint error: the retireDynamicLifecycle parameters in the rewritten generation fixture shadowed the outer epoch binding.
+
+Post-rebase validation at 065580b5: bun run type-check passes both projects; bun run lint 0 warnings / 0 errors; bun run fmt:check passes on 1052 files; bun test src/server/canvas src/server/codex-workbench 151 pass / 0 fail / 829 assertions; bun run test:repository 122 pass / 0 fail / 1060 assertions; the four canvas-state Codex system owners 13 pass / 0 fail / 227 assertions; the seven Codex process-contract owners 19 pass / 0 fail / 320 assertions; bun run test:modules 1962 pass / 0 fail / 18588 assertions across 219 files. No unrelated failures. Acceptance criteria remain unchecked and the task remains In Progress.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
