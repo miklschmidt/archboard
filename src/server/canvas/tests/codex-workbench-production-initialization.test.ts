@@ -10,6 +10,7 @@ import {
 import { createCanvasCodexWorkbenchInstallation } from "../codex-workbench-production.js";
 import type { CodexWorkbenchComponents } from "../codex-workbench-generation.js";
 import type { CodexWorkbenchGenerationInput } from "../codex-workbench-owner.js";
+import { identities, waitOwnerFor } from "./support/codex-workbench-terminal-fixture.js";
 
 function generationInput(generation: number): CodexWorkbenchGenerationInput {
 	return {
@@ -27,7 +28,7 @@ function deferred(): {
 	return { promise, resolve };
 }
 
-function installation() {
+function installation(host: Record<string, unknown> = {}) {
 	const root = mkdtempSync(join(tmpdir(), "archboard-production-activation-"));
 	const prior = process.env.XDG_STATE_HOME;
 	process.env.XDG_STATE_HOME = root;
@@ -36,6 +37,7 @@ function installation() {
 			root,
 			value: createCanvasCodexWorkbenchInstallation({
 				checkoutRoot: "/repo",
+				...host,
 			} as never),
 		};
 	} finally {
@@ -81,6 +83,57 @@ describe("production Codex generation ownership", () => {
 			expect(owned.value.bindings(generationInput(2)).dynamicAdapters.approval(created)).not.toBe(
 				stranded,
 			);
+		} finally {
+			rmSync(owned.root, { recursive: true, force: true });
+		}
+	});
+
+	test("child-exit settlement aborts the generation live dynamic waits", async () => {
+		let aborts = 0;
+		const owned = installation({
+			waitForTargets: ({ signal }: { readonly signal: AbortSignal }) => {
+				signal.addEventListener("abort", () => (aborts += 1), { once: true });
+				return new Promise(() => undefined);
+			},
+		});
+		try {
+			const h = identities();
+			const created = {
+				identity: h.identity,
+				epoch: {},
+				threadLink: {},
+				transport: { inspect: () => ({ state: "open" }) },
+			} as unknown as CodexWorkbenchComponents;
+			const input = generationInput(1);
+			// Drive the exact lifecycle port the composition built for this
+			// generation, then settle a child exit through its own hook.
+			const port = owned.value.bindings(input).dynamicAdapters.lifecycle(created);
+			const owner = waitOwnerFor(h, "thread-target");
+			await Promise.resolve(port.registerWaitOwner({ owner }));
+			const waiting = port.waitForTargets({
+				owner,
+				cursor: null,
+				timeoutMs: 60_000,
+				previousSequence: 0,
+			});
+
+			await owned.value.hooks(input).retireDynamicLifecycle(owner.child, owner.epoch);
+
+			// Bounded so an unretired wait reports "still pending" instead of
+			// spending the whole case timeout.
+			expect(
+				await Promise.race([
+					waiting.then(
+						() => "resolved",
+						(error: unknown) => error,
+					),
+					(async () => {
+						for (let turn = 0; turn < 10; turn++) await Promise.resolve();
+						return "still pending";
+					})(),
+				]),
+			).toMatchObject({ code: "child_disconnected" });
+			expect(aborts).toBe(1);
 		} finally {
 			rmSync(owned.root, { recursive: true, force: true });
 		}
