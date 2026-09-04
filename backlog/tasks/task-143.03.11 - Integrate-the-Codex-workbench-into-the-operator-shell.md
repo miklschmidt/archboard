@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-04 13:13'
+updated_date: '2026-09-04 13:29'
 labels: []
 dependencies:
   - TASK-143.03.10
@@ -14,9 +14,13 @@ references:
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
   - src/ui/canvas/CanvasPane.tsx
+  - src/ui/canvas/tests/workbench-transport-publication.test.tsx
   - src/ui/shell/Shell.tsx
   - src/ui/shell/shell.css
+  - src/ui/shell/tests/codex-workbench-integration-support.ts
   - src/ui/shell/tests/codex-workbench-integration.test.tsx
+  - src/ui/workbench-frame/contract.ts
+  - src/ui/workbench-frame/lib/WorkbenchFrame.tsx
 parent_task_id: TASK-143.03
 priority: high
 type: task
@@ -44,6 +48,12 @@ Integrate the accepted text workbench frame into the existing operator shell and
 2. Mount exactly one accepted WorkbenchFrame for each eligible pane, extending the existing dock with exact active pane, workhorse, and turn identity plus its existing fullscreen owner's Stop route.
 3. Add the focused shell module owner for registration, source identity, Stop routing, unmount or reload, and unchanged canvas ownership.
 4. Run only the focused shell and workbench owners, root and frontend type checks, scoped Oxlint and Oxfmt, the frontend build, and final diff and tracked-file audits.
+
+Rereview remediation:
+5. Retain every registered pane in the frame, extending only the narrowest accepted frame timeline port needed to render unbound and signed-out recovery without inventing a thread identity.
+6. Use one active text pane for frame selection, fullscreen dock disclosure, presentation transfer, and Stop dispatch; prove Pane B selection changes the dock and only Pane B receives interrupt.
+7. Add the cheapest real CanvasPane callback owner for one publish per transport, null before replacement, and null on unmount.
+8. Rerun only focused owners, both TypeScript projects, scoped Oxlint/Oxfmt, the frontend build, and fixed-range cleanliness checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -54,4 +64,13 @@ Implementation checkpoint 1f8321e9:
 - The existing PresentationDock now shows the presented pane, workhorse thread, and active turn, and routes its labelled Stop control through that exact pane's existing composer controller. The existing fullscreen owner is unchanged.
 - Focused validation: 23 tests pass across codex-workbench-integration, fullscreen-presentation, and workbench-frame with 184 assertions; root and frontend TypeScript pass; scoped Oxlint and Oxfmt pass; build:frontend passes with only the pre-existing chunk-size advisory; git diff --check passes.
 - No browser, broad normal, system, stress, load, capacity, performance, tooling, topology, or concurrency lane ran. TASK-143.03.13 retains rendered browser behavior. Acceptance criteria remain unchecked and status remains In Progress for parent review.
+
+Independent review at dd2b4c0b returned three accepted findings: registered unbound panes were filtered from the frame; fullscreen frame selection could diverge from PresentationDock and Stop; and the production CanvasPane transport callback had no direct owner. Remediation is in progress at the original fixed base. Acceptance criteria remain unchecked.
+
+Rereview remediation checkpoint bb1b6514:
+- Registered thread-capable unbound and signed-out pane transports remain in WorkbenchFrame. The frame renders an honest no-thread timeline while preserving thread-link Create, Attach, and account recovery controls without inventing a workhorse identity.
+- Workbench pane selection transfers the existing fullscreen presentation owner, so frame selection, PresentationDock identity, canvas presentation, and Stop dispatch share one authoritative pane. The two-pane owner proves Pane B becomes current and only Pane B receives interrupt.
+- A mounted production CanvasPane owner proves transport publication is deduplicated, clears before replacement, and clears on unmount.
+- Focused validation: 27 tests pass across four owners with 194 assertions; root and frontend TypeScript pass; scoped Oxlint and Oxfmt pass; build:frontend passes with only the existing chunk-size advisory; git diff --check passes. No browser, broad normal, system, stress, load, capacity, performance, tooling, topology, or concurrency lane ran.
+- Acceptance criteria remain unchecked and status remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
