@@ -2,99 +2,84 @@ import { describe, expect, mock, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
+import type { CodexWorkbenchComponents } from "../../../src/server/canvas/codex-workbench-generation.js";
+
 const canvasRoot = path.resolve(import.meta.dir, "../../../src/server/canvas");
 const runtimeRoot = path.resolve(import.meta.dir, "../../../src/runtime");
 const serverRoot = path.resolve(import.meta.dir, "../../../src/server");
 
+/** Every assembled component the factories construct; the kernel supplies identity. */
+type ConstructedOwner = Exclude<keyof CodexWorkbenchComponents, "identity">;
+
 /**
- * The owners `createProductionCodexWorkbenchFactories` must construct, and the
- * exact module root plus exported constructor each one comes from. Every entry
- * is one required owner from TASK-143.01.14 AC #1; `identity` is the kernel's
- * own authority and is supplied to the factories rather than built by them.
+ * Every owner `createProductionCodexWorkbenchFactories` must construct, keyed by
+ * its component name, naming the exact module root and exported constructor it
+ * comes from. The satisfies clause pins the key set to the assembled components
+ * minus `identity` (the kernel's own authority, handed to the factories rather
+ * than built by them), so an eighteenth owner added to the composition is a
+ * compile error here until it is listed.
  */
-const REQUIRED_OWNERS = [
-	{ name: "epoch", module: `${runtimeRoot}/codex-epoch/index.ts`, create: "createCodexEpochStore" },
-	{
-		name: "transport",
-		module: `${runtimeRoot}/codex-transport/index.ts`,
-		create: "createCodexTransport",
-	},
-	{
-		name: "session",
-		module: `${runtimeRoot}/codex-session/index.ts`,
-		create: "createCodexSession",
-	},
-	{
-		name: "threadLink",
+const REQUIRED_OWNERS = {
+	epoch: { module: `${runtimeRoot}/codex-epoch/index.ts`, create: "createCodexEpochStore" },
+	transport: { module: `${runtimeRoot}/codex-transport/index.ts`, create: "createCodexTransport" },
+	session: { module: `${runtimeRoot}/codex-session/index.ts`, create: "createCodexSession" },
+	threadLink: {
 		module: `${runtimeRoot}/codex-thread-link/index.ts`,
 		create: "createCodexThreadLink",
 	},
-	{
-		name: "workhorse",
+	workhorse: {
 		module: `${runtimeRoot}/codex-workhorse-start/index.ts`,
 		create: "createCodexWorkhorseStart",
 	},
-	{
-		name: "semanticPublisher",
+	semanticPublisher: {
 		module: `${runtimeRoot}/codex-semantic-context/index.ts`,
 		create: "createSemanticContextPublisher",
 	},
-	{
-		name: "realtime",
+	realtime: {
 		module: `${runtimeRoot}/codex-realtime/index.ts`,
 		create: "createCodexRealtimeAdapter",
 	},
-	{
-		name: "approvals",
+	approvals: {
 		module: `${runtimeRoot}/codex-approvals/index.ts`,
 		create: "createCodexApprovalBroker",
 	},
-	{
-		name: "dynamicTools",
+	dynamicTools: {
 		module: `${runtimeRoot}/codex-dynamic-tools/index.ts`,
 		create: "createCodexDynamicTools",
 	},
-	{
-		name: "semanticDelivery",
+	semanticDelivery: {
 		module: `${runtimeRoot}/codex-thread-context/index.ts`,
 		create: "createCodexThreadContextController",
 	},
-	{
-		name: "coordinator",
+	coordinator: {
 		module: `${runtimeRoot}/codex-coordinator/index.ts`,
 		create: "createCodexCoordinator",
 	},
-	{
-		name: "queue",
+	queue: {
 		module: `${runtimeRoot}/codex-workhorse-queue/index.ts`,
 		create: "createCodexWorkhorseQueue",
 	},
-	{
-		name: "operations",
+	operations: {
 		module: `${runtimeRoot}/codex-workhorse-operations/index.ts`,
 		create: "createCodexWorkhorseOperations",
 	},
-	{
-		name: "spokenApproval",
+	spokenApproval: {
 		module: `${runtimeRoot}/codex-spoken-approval/index.ts`,
 		create: "createCodexSpokenApprovalGate",
 	},
-	{
-		name: "coordinatorTools",
+	coordinatorTools: {
 		module: `${runtimeRoot}/codex-coordinator-tools/index.ts`,
 		create: "createCodexCoordinatorTools",
 	},
-	{
-		name: "callbacks",
+	callbacks: {
 		module: `${runtimeRoot}/codex-coordinator-callbacks/index.ts`,
 		create: "createCodexCoordinatorCallbacks",
 	},
-	{
-		name: "gateway",
+	gateway: {
 		module: `${serverRoot}/codex-workbench/index.ts`,
 		create: "createCodexWorkbenchGateway",
 	},
-] as const;
+} satisfies Record<ConstructedOwner, { readonly module: string; readonly create: string }>;
 
 /** The five dynamic ports the composition must bind once each. */
 const DYNAMIC_ADAPTERS = [
@@ -105,25 +90,8 @@ const DYNAMIC_ADAPTERS = [
 	"lifecycle",
 ] as const;
 
-const BINDING_BUILDERS = [
-	"epoch",
-	"transport",
-	"session",
-	"threadLink",
-	"workhorse",
-	"semanticPublisher",
-	"realtime",
-	"approvals",
-	"dynamicTools",
-	"semanticDelivery",
-	"coordinator",
-	"queue",
-	"operations",
-	"spokenApproval",
-	"coordinatorTools",
-	"callbacks",
-	"gateway",
-] as const;
+/** One binding builder per constructed owner, derived from the same key set. */
+const BINDING_BUILDERS = Object.keys(REQUIRED_OWNERS) as readonly ConstructedOwner[];
 
 describe("production Codex workbench composition policy", () => {
 	test("publishes narrow entrypoints and keeps lifecycle implementation private", () => {
@@ -156,14 +124,14 @@ describe("production Codex workbench composition policy", () => {
 
 	test("the production factories construct every required owner exactly once", async () => {
 		const constructions: string[] = [];
-		for (const owner of REQUIRED_OWNERS) {
+		for (const [name, owner] of Object.entries(REQUIRED_OWNERS)) {
 			const actual = (await import(owner.module)) as Record<string, unknown>;
 			mock.module(owner.module, () => ({
 				...actual,
 				[owner.create]: (...input: readonly unknown[]) => {
 					constructions.push(owner.create);
 					return {
-						owner: owner.name,
+						owner: name,
 						options: input[0],
 						dispose: () => undefined,
 						inspect: () => ({ state: "open" }),
@@ -215,7 +183,11 @@ describe("production Codex workbench composition policy", () => {
 			activate: false,
 		});
 
-		expect(constructions.toSorted()).toEqual(REQUIRED_OWNERS.map((one) => one.create).toSorted());
+		expect(constructions.toSorted()).toEqual(
+			Object.values(REQUIRED_OWNERS)
+				.map((one) => one.create)
+				.toSorted(),
+		);
 		expect(bindingCalls.toSorted()).toEqual(
 			[
 				...BINDING_BUILDERS,
@@ -223,10 +195,10 @@ describe("production Codex workbench composition policy", () => {
 			].toSorted(),
 		);
 		expect(generation.components.identity).toBe(identity.authorities);
-		for (const owner of REQUIRED_OWNERS)
+		for (const name of Object.keys(REQUIRED_OWNERS) as readonly ConstructedOwner[])
 			expect(
-				(generation.components[owner.name] as unknown as { readonly owner?: string }).owner,
-				owner.name,
-			).toBe(owner.name);
+				(generation.components[name] as unknown as { readonly owner?: string }).owner,
+				name,
+			).toBe(name);
 	});
 });
