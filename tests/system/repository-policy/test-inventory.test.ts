@@ -304,6 +304,7 @@ describe("test inventory policy", () => {
 		expect(browser.match(/tests\/system\/browser\/codex-text-workbench\.test\.ts/g)).toHaveLength(
 			1,
 		);
+		expect(browser.match(/tests\/system\/browser\/codex-live-voice\.test\.ts/g)).toHaveLength(1);
 		expect(inspectTestInventory(fixture).errors).toEqual([]);
 	});
 

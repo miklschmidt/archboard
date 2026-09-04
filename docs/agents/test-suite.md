@@ -335,6 +335,21 @@ matrix, fullscreen controls, process cleanup, and stress cases stay in their
 focused module, system, or existing browser owners. This browser owner does not
 repeat them.
 
+### Controlled live voice (TASK-143.04.07)
+
+Extends the same exact-version production composition through one controlled
+browser media session. One short rendered lifecycle proves that CanvasPane's
+caller-owned session reaches Shell and WorkbenchFrame with its source, captured
+context, and transcript visible. It then mutes the session, carries the same
+identity into the fullscreen dock, and stops it there before checking text-only
+cleanup and the unchanged mounted Excalidraw pane.
+
+The owner checks desktop and Samsung Flip scaled geometry, target size, focus
+order, live-region semantics, reduced motion, forced colors, browser errors,
+and resource cleanup. Focused realtime, media, session, transcript, context,
+spoken-approval, frame, and shell owners keep their exhaustive state and
+failure matrices.
+
 ## Source boundary check
 
 - `bun test tests/system/repository-policy/boundaries.test.ts` creates disposable source fixtures outside the checkout and
