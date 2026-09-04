@@ -11,6 +11,7 @@ import {
 	connected,
 	executableLink,
 	inspectOnlyLink,
+	unboundLink,
 	notThreadCapable,
 	OTHER_THREAD,
 	OTHER_TURN,
@@ -73,6 +74,17 @@ describe("the link the composer may target", () => {
 			threadId: THREAD,
 			turn: { kind: "idle" },
 		});
+	});
+
+	test("an unbound pane reads as unbound, not as an inspect-only history", () => {
+		expect(
+			readComposerLink(connected(snapshot({ threadLink: unboundLink(), timeline: null }))),
+		).toEqual({ kind: "unbound", reason: "This pane has no Codex workhorse yet." });
+		expect(
+			readComposerLink(
+				connected(snapshot({ threadLink: unboundLink("Sign in first."), timeline: null })),
+			),
+		).toEqual({ kind: "unbound", reason: "Sign in first." });
 	});
 
 	test("an inspect-only link keeps the host's own reason", () => {
@@ -158,6 +170,16 @@ describe("what the composer refuses before anything is sent", () => {
 				recovery: "Wait for Codex to become thread-capable, then send the message again.",
 			},
 		});
+	});
+
+	test("a submit against an unbound pane is refused as unbound, with its own next action", () => {
+		const value = connected(snapshot({ threadLink: unboundLink(), timeline: null }));
+		const plan = planComposerSubmit(value, "Hello.");
+		if (plan.kind !== "refuse") throw new Error("expected a refusal");
+		expect(plan.refusal.code).toBe("unbound");
+		expect(plan.refusal.recovery).toBe(
+			"Create or attach a Codex workhorse for this pane, then send a message.",
+		);
 	});
 
 	test("a submit against an inspect-only link is refused as inspect_only", () => {

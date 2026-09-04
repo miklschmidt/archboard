@@ -21,26 +21,21 @@ export function composerRefusal(code: WorkbenchComposerRefusalCode): WorkbenchCo
 	});
 }
 
+/**
+ * Each non-executable link keeps the host's own sentence and gains the next
+ * action that belongs to it: an unbound pane needs a workhorse, an inspect-only
+ * link needs a different one, and an unavailable workbench needs time.
+ */
 function linkRefusal(link: WorkbenchComposerLink): WorkbenchComposerPlan | null {
-	if (link.kind === "unavailable")
-		return Object.freeze({
-			kind: "refuse",
-			refusal: Object.freeze({
-				code: "unavailable",
-				message: link.reason,
-				recovery: REFUSAL_RECOVERIES.unavailable,
-			}),
-		});
-	if (link.kind === "inspect_only")
-		return Object.freeze({
-			kind: "refuse",
-			refusal: Object.freeze({
-				code: "inspect_only",
-				message: link.reason,
-				recovery: REFUSAL_RECOVERIES.inspect_only,
-			}),
-		});
-	return null;
+	if (link.kind === "executable") return null;
+	return Object.freeze({
+		kind: "refuse",
+		refusal: Object.freeze({
+			code: link.kind,
+			message: link.reason,
+			recovery: REFUSAL_RECOVERIES[link.kind],
+		}),
+	});
 }
 
 /**
