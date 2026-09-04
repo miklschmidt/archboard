@@ -155,6 +155,8 @@ describe("voice session status mapping", () => {
 		});
 		expect(recoverable.controls).toEqual({
 			canStart: false,
+			canMute: false,
+			canUnmute: false,
 			canStop: true,
 			canRestart: true,
 			canClose: true,
@@ -168,6 +170,8 @@ describe("voice session status mapping", () => {
 		expect(fatal.outcome.kind).toBe("terminal");
 		expect(fatal.controls).toEqual({
 			canStart: false,
+			canMute: false,
+			canUnmute: false,
 			canStop: false,
 			canRestart: false,
 			canClose: true,

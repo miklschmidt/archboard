@@ -89,6 +89,13 @@ export type VoiceSessionOutcome =
 
 export interface VoiceSessionControls {
 	readonly canStart: boolean;
+	/**
+	 * Silences the captured microphone. Offered from `listening` alone, because
+	 * that is the only phase the realtime state machine admits `muted` from.
+	 */
+	readonly canMute: boolean;
+	/** The exact inverse: offered from `muted` alone. */
+	readonly canUnmute: boolean;
 	readonly canStop: boolean;
 	readonly canRestart: boolean;
 	/** Clears an explicit terminal or replaced session so a new one may be started. */
@@ -140,6 +147,13 @@ export interface VoiceRealtimePort {
 	 */
 	readonly subscribe: (listener: () => void) => () => void;
 	readonly start: () => Promise<RealtimeMediaSnapshot>;
+	/**
+	 * Silences and restores the captured microphone. No lease and no command: the
+	 * owner disables the local audio track it already holds, so this is the one
+	 * voice control that changes nothing outside the browser.
+	 */
+	readonly mute: () => Promise<RealtimeMediaSnapshot>;
+	readonly unmute: () => Promise<RealtimeMediaSnapshot>;
 	readonly stop: () => Promise<RealtimeMediaSnapshot>;
 }
 
@@ -181,6 +195,10 @@ export interface VoiceSession {
 	/** Re-reads both authoritative sources and republishes if the view changed. */
 	readonly refresh: () => VoiceSessionView;
 	readonly start: () => Promise<VoiceSessionView>;
+	/** Refused unless the projected `canMute` says the run is listening. */
+	readonly mute: () => Promise<VoiceSessionView>;
+	/** Refused unless the projected `canUnmute` says the run is muted. */
+	readonly unmute: () => Promise<VoiceSessionView>;
 	readonly stop: () => Promise<VoiceSessionView>;
 	readonly restart: () => Promise<VoiceSessionView>;
 	/**
