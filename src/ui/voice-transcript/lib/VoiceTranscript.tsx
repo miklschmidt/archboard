@@ -42,13 +42,13 @@ const SESSION_MARK_CLASSES = {
 } as const satisfies Readonly<Record<VoiceTranscriptSessionState, string>>;
 
 const ROLE_CLASSES = {
-	user: "text-primary",
-	assistant: "text-foreground",
+	user: "text-foreground",
+	assistant: "text-muted-foreground",
 } as const;
 
 const RECORD_STATUS_CLASSES = {
-	provisional: "text-primary",
-	final: "text-status-foreground",
+	provisional: "text-muted-foreground",
+	final: "text-foreground",
 	interrupted: "text-warning",
 } as const;
 
@@ -164,6 +164,8 @@ export function VoiceTranscript(props: VoiceTranscriptProps): ReactNode {
 						{props.label ?? "Voice transcript"}
 					</h2>
 				</div>
+				{/* This standalone region owns the single atomic voice-state announcement.
+				    A later composition with VoiceControls must choose one announcement owner. */}
 				<output
 					aria-atomic="true"
 					aria-live="polite"
@@ -175,12 +177,18 @@ export function VoiceTranscript(props: VoiceTranscriptProps): ReactNode {
 				>
 					<span
 						aria-hidden="true"
-						className={cn(
-							"size-grid-tight shrink-0 rounded-round",
-							SESSION_MARK_CLASSES[view.sessionState],
-						)}
-					/>
-					{view.session.label}
+						className="flex items-center gap-grid-tight"
+						data-transcript-visible-status=""
+					>
+						<span
+							className={cn(
+								"size-grid-tight shrink-0 rounded-round",
+								SESSION_MARK_CLASSES[view.sessionState],
+							)}
+						/>
+						{view.session.label}
+					</span>
+					<span className="sr-only">{view.session.accessibleStatus}</span>
 				</output>
 			</header>
 			<div className="border-b border-border px-region py-control" id={detailId}>
