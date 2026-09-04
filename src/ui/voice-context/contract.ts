@@ -125,6 +125,10 @@ export interface VoiceContextSessionRecord {
 	readonly observations: readonly VoiceContextSessionEvidence[];
 	/** Sorted by the explicitly supplied source order, never promise settlement. */
 	readonly entries: readonly VoiceContextLedgerEntry[];
+	/** Permanent records the callback owner evicted for this exact session. */
+	readonly ownerOmittedPrefixCount: number;
+	/** Greatest exact-generation source total observed before transport fitting. */
+	readonly sourceEntryCount: number;
 }
 
 export interface VoiceContextHistorySnapshot {
@@ -138,14 +142,22 @@ export interface VoiceContextAppend {
 	readonly entry: VoiceContextLedgerEntry;
 }
 
+export interface VoiceContextSourceHistory {
+	readonly session: Pick<PublicVoiceSessionView, "binding" | "sessionId">;
+	readonly ownerOmittedPrefixCount: number;
+	readonly sourceEntryCount: number;
+}
+
 export type VoiceContextMutationIgnoredReason =
 	| "duplicate_session"
 	| "duplicate_entry"
 	| "duplicate_observation"
+	| "duplicate_source_history"
 	| "invalid_brief"
 	| "identity_mismatch"
 	| "invalid_source_order"
 	| "invalid_delivery_evidence"
+	| "invalid_source_history"
 	| "source_order_conflict"
 	| "source_stream_mismatch"
 	| "unbound_session"
@@ -166,6 +178,7 @@ export interface VoiceContextHistory {
 	readonly capture: (input: VoiceContextSessionCapture) => VoiceContextMutationResult;
 	readonly observe: (input: VoiceContextSessionEvidence) => VoiceContextMutationResult;
 	readonly append: (input: VoiceContextAppend) => VoiceContextMutationResult;
+	readonly recordSourceHistory: (input: VoiceContextSourceHistory) => VoiceContextMutationResult;
 }
 
 export interface VoiceContextProjectionLimits {
@@ -249,6 +262,7 @@ export interface VoiceContextSessionView {
 	readonly hiddenEntryCount: number;
 	readonly nextEntryCount: number;
 	readonly newerEntryCount: number;
+	readonly omittedPrefixCount: number;
 }
 
 export interface VoiceContextHistoryView {
@@ -273,6 +287,7 @@ export interface VoiceContextBrowserIngestResult {
 	readonly capture: VoiceContextMutationResult | null;
 	readonly observation: VoiceContextMutationResult | null;
 	readonly entries: readonly VoiceContextMutationResult[];
+	readonly sourceHistory: VoiceContextMutationResult | null;
 	readonly sourceEntriesTruncated: number;
 }
 

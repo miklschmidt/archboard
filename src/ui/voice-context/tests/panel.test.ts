@@ -57,6 +57,11 @@ function populatedHistory(stale = false) {
 describe("voice context panel", () => {
 	test("renders canonical baseline and delivery evidence with external stopped state", () => {
 		const { history } = populatedHistory(true);
+		history.recordSourceHistory({
+			session: SESSION_A,
+			ownerOmittedPrefixCount: 3,
+			sourceEntryCount: 8,
+		});
 		history.observe(
 			evidence(
 				voiceSession(SESSION_A.binding!, "realtime-a", {
@@ -77,6 +82,9 @@ describe("voice context panel", () => {
 		expect(screen.getByRole("region", { name: "Voice context" })).toBeTruthy();
 		expect(screen.getByRole("region", { name: "Captured start brief" })).toBeTruthy();
 		expect(screen.getByRole("region", { name: "Later deliveries" })).toBeTruthy();
+		expect(screen.getByLabelText("Partial delivery history").textContent).toContain(
+			"3 earlier source records are not retained; the retained history contains 5 records",
+		);
 		expect(screen.getByLabelText("Voice context session status: Stopped")).toBeTruthy();
 		expect(screen.getByText(/Stale brief/u)).toBeTruthy();
 		expect(screen.getByText("Freshness")).toBeTruthy();
@@ -89,6 +97,29 @@ describe("voice context panel", () => {
 		expect(
 			screen.getByRole("list", { name: "Later voice context deliveries" }).children,
 		).toHaveLength(2);
+	});
+
+	test("labels an omitted empty delivery history without claiming no delivery existed", () => {
+		const history = createVoiceContextHistory();
+		history.capture(capture(SESSION_A));
+		history.recordSourceHistory({
+			session: SESSION_A,
+			ownerOmittedPrefixCount: 2,
+			sourceEntryCount: 2,
+		});
+		render(createElement(VoiceContextPanel, { history }));
+
+		expect(screen.getByLabelText("Partial delivery history").textContent).toContain(
+			"the retained history contains 0 records",
+		);
+		expect(
+			screen.getByText(
+				"No later delivery is retained for this exact session; earlier source records were omitted.",
+			),
+		).toBeTruthy();
+		expect(
+			screen.queryByText("No later delivery has been recorded for this exact session."),
+		).toBeNull();
 	});
 
 	test("copies exact immutable strings and announces success", async () => {

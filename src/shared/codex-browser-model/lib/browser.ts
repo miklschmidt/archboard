@@ -903,10 +903,19 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			sessionId: BrowserRealtimeSessionIdSchema,
 			ledgerId: boundedText(2_048),
 			canonicalBrief: boundedText(BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES),
+			ownerEntriesTruncated: z.number().int().nonnegative(),
 			entriesTruncated: z.number().int().nonnegative(),
 			entries: z.array(BrowserVoiceContextEntrySchema).max(BROWSER_VOICE_CONTEXT_ENTRY_LIMIT),
 		})
-		.strict();
+		.strict()
+		.superRefine((value, refinementContext) => {
+			if (value.entriesTruncated < value.ownerEntriesTruncated)
+				refinementContext.addIssue({
+					code: "custom",
+					path: ["entriesTruncated"],
+					message: "transport omissions cannot be less than permanent owner omissions",
+				});
+		});
 	const BrowserCommandLeaseSchema = z
 		.object({
 			kind: z.literal("command_lease"),

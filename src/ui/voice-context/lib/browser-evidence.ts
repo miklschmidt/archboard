@@ -58,6 +58,7 @@ export function ingestVoiceContextBrowserEvidence(
 			capture: null,
 			observation: history.observe(sessionEvidence),
 			entries: Object.freeze([]),
+			sourceHistory: null,
 			sourceEntriesTruncated: 0,
 		});
 	}
@@ -66,6 +67,7 @@ export function ingestVoiceContextBrowserEvidence(
 			capture: identityMismatch(history),
 			observation: null,
 			entries: Object.freeze([]),
+			sourceHistory: null,
 			sourceEntriesTruncated: evidence.entriesTruncated,
 		});
 	}
@@ -79,15 +81,22 @@ export function ingestVoiceContextBrowserEvidence(
 			capture,
 			observation,
 			entries: Object.freeze([]),
+			sourceHistory: null,
 			sourceEntriesTruncated: evidence.entriesTruncated,
 		});
 	const entries = evidence.entries.map((value) =>
 		history.append({ session: input.session, entry: ledgerEntry(value, evidence.ledgerId, input) }),
 	);
+	const sourceHistory = history.recordSourceHistory({
+		session: input.session,
+		ownerOmittedPrefixCount: evidence.ownerEntriesTruncated,
+		sourceEntryCount: evidence.entriesTruncated + evidence.entries.length,
+	});
 	return Object.freeze({
 		capture,
 		observation,
 		entries: Object.freeze(entries),
+		sourceHistory,
 		sourceEntriesTruncated: evidence.entriesTruncated,
 	});
 }

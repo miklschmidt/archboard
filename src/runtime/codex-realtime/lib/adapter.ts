@@ -157,12 +157,13 @@ export function createCodexRealtimeAdapter(
 			resolveAnswer = resolve;
 			rejectAnswer = reject;
 		});
-		const semanticBrief = options.freshSemanticBrief();
+		const wireSessionId = options.identity.issuer.mintRealtimeSessionId();
+		const semanticBrief = options.freshSemanticBrief(wireSessionId);
 		const session: ActiveRealtimeSession = {
 			binding,
 			browserSessionId: offer.sessionId,
 			correlationId: offer.correlationId,
-			wireSessionId: options.identity.issuer.mintRealtimeSessionId(),
+			wireSessionId,
 			semanticBrief,
 			answer,
 			resolveAnswer,

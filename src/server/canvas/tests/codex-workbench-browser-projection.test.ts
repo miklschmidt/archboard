@@ -277,13 +277,20 @@ test("the production browser projection publishes immutable voice start and orde
 			});
 			return {
 				realtime: { generation: () => generation },
-				callbacks: { inspect: () => [delivery(4, "selection"), delivery(2, "focus")] },
+				callbacks: {
+					inspectHistory: () => ({
+						deliveries: [delivery(4, "selection"), delivery(2, "focus")],
+						omittedPrefixCount: 3,
+					}),
+				},
 			};
 		},
 	});
 
 	const evidence = harness.options.projection.read(harness.context).voiceContext;
 	expect(evidence?.canonicalBrief).toBe(canonicalBrief);
+	expect(evidence?.ownerEntriesTruncated).toBe(3);
+	expect(evidence?.entriesTruncated).toBe(3);
 	expect(evidence?.entries.map((entry) => entry.sourceOrder)).toEqual([2, 4]);
 	expect(evidence?.entries.map((entry) => entry.kind)).toEqual(["focus", "selection"]);
 	expect(evidence?.entries.map((entry) => entry.body)).toEqual(["exact-focus", "exact-selection"]);

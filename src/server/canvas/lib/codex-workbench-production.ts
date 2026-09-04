@@ -369,7 +369,16 @@ export function createCanvasCodexWorkbenchInstallation(
 			workhorse: () => ({ checkoutRoot: host.checkoutRoot }),
 			semanticPublisher: () => host.semanticPublisher,
 			realtime: (created) => ({
-				freshSemanticBrief: () => requireCreated(created, "semanticPublisher").freshBrief().brief,
+				freshSemanticBrief: (wireSessionId) => {
+					const freshInput = host.semanticPublisher.fresh.read();
+					return requireCreated(created, "semanticPublisher").freshBriefFor({
+						...freshInput,
+						coordinator: {
+							threadId: freshInput.coordinator?.threadId ?? null,
+							realtimeSessionId: wireSessionId,
+						},
+					}).brief;
+				},
 				currentBinding: () => {
 					const workhorse = created.workhorse?.snapshot();
 					const coordinator = created.coordinator?.snapshot();

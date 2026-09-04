@@ -104,6 +104,11 @@ describe("voice context projection", () => {
 	test("computes delivery freshness at attempt and labels adapter outcomes", () => {
 		const history = createVoiceContextHistory();
 		history.capture(capture(SESSION_A, { provenance: "recovered" }));
+		history.recordSourceHistory({
+			session: SESSION_A,
+			ownerOmittedPrefixCount: 4,
+			sourceEntryCount: 8,
+		});
 		const sourceEntries = [
 			ledgerEntry("1", { kind: "semantic", outcome: "delivered" }),
 			ledgerEntry("2", {
@@ -133,6 +138,7 @@ describe("voice context projection", () => {
 			entryPages: new Map([[voiceContextSessionKey(SESSION_A), 2]]),
 		}).sessions[0]!;
 		const recent = projected(history).sessions[0]!;
+		expect(recent.omittedPrefixCount).toBe(4);
 		const entries = [...earlier.entries, ...recent.entries];
 
 		expect(entries.map((entry) => entry.kind)).toEqual([

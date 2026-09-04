@@ -456,10 +456,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 					? null
 					: components.semanticPublisher.freshBrief();
 			const realtimeGeneration = components.realtime.generation();
-			const voiceContext = projectCanvasVoiceContext(
-				realtimeGeneration,
-				components.callbacks.inspect(),
-			);
+			const voiceContext = projectCanvasVoiceContext(realtimeGeneration, components.callbacks);
 			const readiness = projectCanvasBrowserReadiness({
 				process: input.process(),
 				account: state.account,

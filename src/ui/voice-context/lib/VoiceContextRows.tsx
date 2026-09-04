@@ -375,9 +375,23 @@ export function VoiceContextSessionRegion({
 						)}
 					</div>
 				</div>
+				{session.omittedPrefixCount > 0 && (
+					<p
+						aria-label="Partial delivery history"
+						className="m-0 border-t border-warning px-region py-control text-body text-warning"
+						data-voice-context-partial-history=""
+					>
+						Partial history: {session.omittedPrefixCount} earlier source{" "}
+						{session.omittedPrefixCount === 1 ? "record is" : "records are"} not retained; the
+						retained history contains {session.entryCount}{" "}
+						{session.entryCount === 1 ? "record" : "records"}.
+					</p>
+				)}
 				{session.entries.length === 0 ? (
 					<p className="m-0 border-t border-border-subtle px-region py-panel text-body text-muted-foreground">
-						No later delivery has been recorded for this exact session.
+						{session.omittedPrefixCount > 0
+							? "No later delivery is retained for this exact session; earlier source records were omitted."
+							: "No later delivery has been recorded for this exact session."}
 					</p>
 				) : (
 					<ol aria-label="Later voice context deliveries" className="m-0 p-0 list-none">

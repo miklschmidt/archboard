@@ -67,6 +67,25 @@ describe("coordinator callback lifecycle", () => {
 		close(h);
 	});
 
+	test("reports the exact-generation prefix omitted by bounded settled history", async () => {
+		const h = harness(true);
+		const callbacks = createCodexCoordinatorCallbacks({
+			...h.options,
+			settledLedgerLimit: 2,
+		});
+		for (const type of ["accepted", "started", "completed"] as const)
+			await callbacks.enqueue(operationEvent(h.ids, type));
+		const generation = h.state.generation;
+		if (generation === null) throw new Error("The callback harness has no realtime generation.");
+
+		expect(callbacks.inspectHistory(generation)).toMatchObject({
+			omittedPrefixCount: 1,
+			deliveries: [{ sourceOrder: 1 }, { sourceOrder: 2 }],
+		});
+		callbacks.dispose();
+		close(h);
+	});
+
 	test("cleans earlier subscriptions when a later source listener registration fails", () => {
 		const h = harness(false);
 		let cleaned = 0;

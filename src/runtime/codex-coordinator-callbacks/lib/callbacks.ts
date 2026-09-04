@@ -18,7 +18,19 @@ import type {
 } from "./contract.js";
 
 export const CALLBACK_BUFFER_LIMIT = 64;
-const SETTLED_LEDGER_LIMIT = CALLBACK_BUFFER_LIMIT;
+
+function realtimeGenerationKey(
+	generation: NonNullable<CoordinatorCallback["correlation"]["realtimeGeneration"]>,
+): string {
+	return JSON.stringify([
+		generation.childId,
+		generation.epoch,
+		generation.coordinatorThreadId,
+		generation.wireSessionId,
+		generation.browserSessionId,
+		generation.browserCorrelationId,
+	]);
+}
 
 interface PendingCallback {
 	readonly key: string;
@@ -50,12 +62,19 @@ export function createCodexCoordinatorCallbacks(
 	const pendingByKey = new Map<string, PendingCallback>();
 	const settledByKey = new Map<string, CoordinatorCallbackDelivery>();
 	const settledOrder: string[] = [];
+	const omittedPrefixes = new Map<string, number>();
+	const omittedPrefixOrder: string[] = [];
 	let disposed = false;
 	let draining = false;
 	let drainScheduled = false;
 	let drainTail: Promise<void> = Promise.resolve();
 	let nextSourceOrder = 0;
 	const now = options.now ?? Date.now;
+	const settledLedgerLimit = options.settledLedgerLimit ?? CALLBACK_BUFFER_LIMIT;
+	if (!Number.isSafeInteger(settledLedgerLimit) || settledLedgerLimit < 1)
+		throw new TypeError(
+			"The coordinator callback settled ledger limit must be a positive integer.",
+		);
 	const captureEvidence = (callback: CoordinatorCallback | null): CallbackDeliveryEvidence => {
 		const capturedAtMs = callback?.kind === "semantic" ? callback.semantic.capturedAtMs : now();
 		return Object.freeze({
@@ -67,6 +86,17 @@ export function createCodexCoordinatorCallbacks(
 					: capturedAtMs + CODEX_SEMANTIC_FRESHNESS_MS,
 		});
 	};
+	const incrementOmittedPrefix = (
+		generation: NonNullable<CoordinatorCallback["correlation"]["realtimeGeneration"]>,
+	): void => {
+		const key = realtimeGenerationKey(generation);
+		if (!omittedPrefixes.has(key)) omittedPrefixOrder.push(key);
+		omittedPrefixes.set(key, (omittedPrefixes.get(key) ?? 0) + 1);
+		while (omittedPrefixOrder.length > settledLedgerLimit) {
+			const expired = omittedPrefixOrder.shift();
+			if (expired !== undefined) omittedPrefixes.delete(expired);
+		}
+	};
 
 	const settle = (entry: PendingCallback, delivery: CoordinatorCallbackDelivery): void => {
 		if (entry.settled) return;
@@ -74,9 +104,13 @@ export function createCodexCoordinatorCallbacks(
 		pendingByKey.delete(entry.key);
 		settledByKey.set(entry.key, delivery);
 		settledOrder.push(entry.key);
-		while (settledOrder.length > SETTLED_LEDGER_LIMIT) {
+		while (settledOrder.length > settledLedgerLimit) {
 			const expiredKey = settledOrder.shift();
-			if (expiredKey !== undefined) settledByKey.delete(expiredKey);
+			if (expiredKey === undefined) continue;
+			const expired = settledByKey.get(expiredKey);
+			settledByKey.delete(expiredKey);
+			const generation = expired?.callback?.correlation.realtimeGeneration;
+			if (generation !== null && generation !== undefined) incrementOmittedPrefix(generation);
 		}
 		options.onSettled?.();
 		entry.resolve(delivery);
@@ -218,6 +252,24 @@ export function createCodexCoordinatorCallbacks(
 					return delivery === undefined ? [] : [delivery];
 				}),
 			),
+		inspectHistory: (generation) => {
+			const generationKey = realtimeGenerationKey(generation);
+			return freeze({
+				deliveries: freeze(
+					settledOrder.flatMap((key) => {
+						const delivery = settledByKey.get(key);
+						if (delivery === undefined) return [];
+						const captured = delivery?.callback?.correlation.realtimeGeneration;
+						return captured !== null &&
+							captured !== undefined &&
+							realtimeGenerationKey(captured) === generationKey
+							? [delivery]
+							: [];
+					}),
+				),
+				omittedPrefixCount: omittedPrefixes.get(generationKey) ?? 0,
+			});
+		},
 		get: (event: CoordinatorCallbackSource) => {
 			try {
 				const link = options.currentWorkhorseLink();

@@ -237,7 +237,8 @@ test("fits voice delivery history in fixed producer records without altering ret
 			sessionId,
 			ledgerId: "budget-ledger",
 			canonicalBrief: '{"source":"semantic_context"}',
-			entriesTruncated: 0,
+			ownerEntriesTruncated: 2,
+			entriesTruncated: 2,
 			entries: bodies.map((body, sourceOrder) => ({
 				id: `budget-entry-${sourceOrder}`,
 				kind: "callback",
@@ -257,7 +258,8 @@ test("fits voice delivery history in fixed producer records without altering ret
 	const fitted = fitBrowserSnapshotBounded(complete, 32_768);
 	const retained = fitted.voiceContext?.entries ?? [];
 	expect(retained.length).toBeLessThan(bodies.length);
-	expect(fitted.voiceContext?.entriesTruncated).toBe(bodies.length - retained.length);
+	expect(fitted.voiceContext?.ownerEntriesTruncated).toBe(2);
+	expect(fitted.voiceContext?.entriesTruncated).toBe(2 + bodies.length - retained.length);
 	expect(retained.map((entry) => entry.body)).toEqual(
 		bodies.slice(bodies.length - retained.length),
 	);

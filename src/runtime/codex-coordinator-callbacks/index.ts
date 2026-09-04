@@ -20,6 +20,7 @@ export type {
 	CoordinatorCallbackCorrelation,
 	CoordinatorCallbackCurrentChild,
 	CoordinatorCallbackDelivery,
+	CoordinatorCallbackHistory,
 	CoordinatorCallbackDeliveryOutcome,
 	CoordinatorCallbackDeliveryPath,
 	CoordinatorCallbackDeliveryReason,

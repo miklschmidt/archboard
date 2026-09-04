@@ -304,6 +304,7 @@ function sessionView(
 	const entryEnd = Math.max(0, record.entries.length - (entryPage - 1) * resolved.entryPageSize);
 	const entryStart = Math.max(0, entryEnd - resolved.entryPageSize);
 	const entries = record.entries.slice(entryStart, entryEnd);
+	const omittedPrefixCount = Math.max(0, record.sourceEntryCount - record.entries.length);
 	return Object.freeze({
 		key,
 		binding: capturedSession.binding,
@@ -334,6 +335,7 @@ function sessionView(
 		hiddenEntryCount: entryStart,
 		nextEntryCount: Math.min(resolved.entryPageSize, entryStart),
 		newerEntryCount: Math.min(resolved.entryPageSize, record.entries.length - entryEnd),
+		omittedPrefixCount,
 	});
 }
 
