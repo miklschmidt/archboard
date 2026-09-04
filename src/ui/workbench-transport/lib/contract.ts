@@ -7,84 +7,37 @@ import type {
 	DeliveryOutcome,
 } from "../../../shared/codex-browser-model/index.js";
 import type {
+	BrowserGatewayAccountReadResult,
+	BrowserGatewayAction,
+	BrowserGatewayCommandResult,
+	BrowserGatewayDeltaMessage,
+	BrowserGatewayErrorCode,
+	BrowserGatewayMessage,
+	BrowserGatewaySnapshotMessage,
+	BrowserSnapshotDelta,
+} from "../../../shared/codex-browser-gateway/index.js";
+import type {
 	CodexLoginAccountParams,
 	CodexServerResponseByMethod,
 } from "../../../shared/codex-app-server-contract/index.js";
-import type { AnswerSdp } from "../../../shared/codex-realtime-host/index.js";
 
 export interface BrowserWorkbenchSocket extends EventTarget {
 	readonly readyState: number;
 	readonly send: (data: string) => void;
 }
 
-export type BrowserGatewayAction =
-	| "connect"
-	| "snapshot"
-	| "claimLease"
-	| "renewLease"
-	| "releaseLease"
-	| "mediaReady"
-	| "accountRead"
-	| "command"
-	| "subscribe"
-	| "close";
+/**
+ * The browser speaks the one authored gateway envelope rather than a local copy
+ * of it; the shared module is the only place these shapes are declared.
+ */
+export type BrowserWorkbenchSnapshotMessage = BrowserGatewaySnapshotMessage;
+export type BrowserWorkbenchSnapshotDelta = BrowserSnapshotDelta;
+export type BrowserWorkbenchDeltaMessage = BrowserGatewayDeltaMessage;
+export type BrowserWorkbenchGatewayMessage = BrowserGatewayMessage;
+export type BrowserWorkbenchCommandResult = BrowserGatewayCommandResult;
+export type BrowserWorkbenchAccountReadResult = BrowserGatewayAccountReadResult;
 
-export interface BrowserWorkbenchSnapshotMessage {
-	readonly kind: "snapshot";
-	readonly sequence: number;
-	readonly snapshot: BrowserSnapshot;
-}
-
-export type BrowserWorkbenchSnapshotDelta = Partial<Omit<BrowserSnapshot, "kind" | "version">>;
-
-export interface BrowserWorkbenchDeltaMessage {
-	readonly kind: "delta";
-	readonly sequence: number;
-	readonly delta: BrowserWorkbenchSnapshotDelta;
-}
-
-export type BrowserWorkbenchGatewayMessage =
-	| BrowserWorkbenchSnapshotMessage
-	| BrowserWorkbenchDeltaMessage;
-
-export type BrowserGatewayErrorCode =
-	| "disposed"
-	| "invalid_input"
-	| "invalid_command"
-	| "invalid_projection"
-	| "not_ready"
-	| "thread_capability_required"
-	| "link_required"
-	| "link_changed"
-	| "lease_required"
-	| "lease_expired"
-	| "lease_released"
-	| "lease_transferred"
-	| "child_disconnected"
-	| "approval_not_pending"
-	| "dynamic_approval_not_pending"
-	| "unsupported_command"
-	| "command_failed"
-	| "outcome_unknown";
-
-export interface BrowserWorkbenchCommandResult {
-	readonly kind: "command_result";
-	readonly commandId: BrowserCommandLease["commandId"] | null;
-	readonly outcome: DeliveryOutcome;
-	readonly code: BrowserGatewayErrorCode | null;
-	readonly message: string | null;
-	readonly snapshot: BrowserSnapshot;
-	readonly realtimeAnswer?: AnswerSdp;
-	readonly realtimeSessionHandle?: string;
-}
-
-export interface BrowserWorkbenchAccountReadResult {
-	readonly kind: "account_read";
-	readonly outcome: DeliveryOutcome;
-	readonly code: BrowserGatewayErrorCode | null;
-	readonly message: string | null;
-	readonly snapshot: BrowserSnapshot;
-}
+export type { BrowserGatewayAction, BrowserGatewayErrorCode };
 
 type SupportedLoginVariant = "apiKey" | "chatgpt" | "amazonBedrock" | "amazonBedrockAccessKeys";
 type BrowserLoginParams = Extract<
