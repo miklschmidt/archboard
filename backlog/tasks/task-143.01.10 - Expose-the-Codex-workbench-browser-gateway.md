@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.10
 title: Expose the Codex workbench browser gateway
-status: In Progress
+status: Done
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-04 02:03'
+updated_date: '2026-09-04 02:19'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -32,10 +32,10 @@ Expose the closed browser gateway for account and session readiness, thread link
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Browser state distinguishes child stopped or backoff, initialized, storage mismatch, login capable, signed out, login pending, account ready, thread capable, and reconnecting without enabling commands early.
-- [ ] #2 A renewable app-global command lease binds browser, pane, link, child epoch, and command id; navigation or focus changes do not retarget a pending ordinary or dynamic approval, and expiry produces one visible refusal.
-- [ ] #3 Account read, login, cancel, and logout are available before account readiness; all thread, turn, item, queue, tool, realtime, ordinary approval, and dynamic coordination approval operations require composed thread capability and the exact current link. Dynamic responses preserve OperationId, logical call identity, and effect hash.
-- [ ] #4 Reconnect snapshots and sequenced deltas are idempotent and bounded. Tests cover stale sequence, duplicate command, lost response, late result, lease transfer, dynamic approval expiry or disconnect, terminal approval_required without resume, child exit, browser close, and recovery.
+- [x] #1 Browser state distinguishes child stopped or backoff, initialized, storage mismatch, login capable, signed out, login pending, account ready, thread capable, and reconnecting without enabling commands early.
+- [x] #2 A renewable app-global command lease binds browser, pane, link, child epoch, and command id; navigation or focus changes do not retarget a pending ordinary or dynamic approval, and expiry produces one visible refusal.
+- [x] #3 Account read, login, cancel, and logout are available before account readiness; all thread, turn, item, queue, tool, realtime, ordinary approval, and dynamic coordination approval operations require composed thread capability and the exact current link. Dynamic responses preserve OperationId, logical call identity, and effect hash.
+- [x] #4 Reconnect snapshots and sequenced deltas are idempotent and bounded. Tests cover stale sequence, duplicate command, lost response, late result, lease transfer, dynamic approval expiry or disconnect, terminal approval_required without resume, child exit, browser close, and recovery.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -89,6 +89,16 @@ Verification (all from the worktree): bun run type-check pass (both TypeScript p
 Deliberately out of scope: adding a queueList browser command (the closed model is TASK-143.01.02's); live thread/settings/updated workhorse settings (the workhorse owner tracks no live settings, so start facts remain the only source and effort stays null); coordinator activeTurnId and voice delivery (their owners expose no such fact, and TASK-143.04.x owns voice presentation).
 
 Acceptance criteria remain unchecked and the task remains In Progress for reviewer verification.
+
+Independent fixed-range review of 3bc86465..5968075f returned CLEAN.
+
+Two minor review findings resolved:
+
+Finding 2 (applied). The readiness reducer mapped binary_invalid, binary_wrong_version, and strict_config_rejected to incompatible_contract but let binary_missing fall through to stopped. All three binary_* codes are produced by the one verifyExecutable refusal in the process owner, and src/server/canvas/lib/startup-error.ts groups them identically, so binary_missing now reads as incompatible_contract too. The arm matrix owner in codex-workbench-browser-projection.test.ts now covers all four codes that reach that predicate.
+
+Finding 1 (rejected, with evidence). The review read the accountLoginCancel reset of a login-pending account arm as unreachable. It is reachable: a successful accountLogin sets state.account to {kind: account, state: login_pending}, and cancel is the path that clears it. Deleting the block as suggested leaves the browser in login_pending with a stale loginId after a cancel, because state.login becomes cancelled while the account arm still decides readiness. Rather than delete correct code, the previously unproven behaviour now has an owner: 'cancelling a pending sign-in clears the login-pending account arm'. Removing the block makes that owner fail with Expected: "initialized" / Received: "login_pending". The readiness reducer's login_pending case carries a line naming where the arm comes from.
+
+Final validation from the worktree: bun run type-check pass (both TypeScript projects); bun run lint pass; bun run fmt:check pass across 1052 files; bun test src/server/canvas src/server/codex-workbench 148 pass 0 fail 837 assertions across 29 files; bun run test:repository 123 pass 0 fail 1074 assertions across 18 files. The earlier full bun run test:modules run on this branch was 1958 pass 0 fail 18588 assertions across 219 files. No system, serial-browser, or opt-in lane ran.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -105,3 +115,13 @@ created: 2026-09-03 23:44
 Hard-review remediation is green at the requested focused boundaries; preparing the separate commit and parent rereview callback. The task remains In Progress.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The production Codex workbench browser gateway now projects real state instead of hand-set placeholders.
+
+Readiness is derived, never stored: a new canvas reducer (src/server/canvas/lib/codex-workbench-readiness.ts) maps the live owned-process facts, the app-server ready mark, the account and login facts, and the coordinator lifecycle onto exactly one closed-contract arm, so a browser can finally distinguish a stopped or backing-off child, a refused storage home, an incompatible or missing binary, a reconnecting session, a login-capable host, and an account that is ready before thread capability exists. Production passes the owned CodexProcess snapshot in and binds the gateway's lifecycle change source to process.subscribe, so a child transition publishes a delta with no browser command. Account read failure, sign-in failure, sign-in completion, cancellation, and logout each record their real arm, and every projected reason is bounded to the contract's 512 UTF-8 bytes. Cached queue submissions now carry the workhorse thread they were read for, so a pane on another link is told the queue is unavailable rather than shown the previous thread's entries. Three exported gateway types that were never produced or consumed were removed, and the over-limit gateway test harness was split so lint passes again.
+
+Verified: bun run type-check, bun run lint, and bun run fmt:check pass; bun test src/server/canvas src/server/codex-workbench 148 pass 0 fail across 29 files; bun run test:repository 123 pass 0 fail; bun run test:modules 1958 pass 0 fail across 219 files. AC #1 is proved by the readiness arm matrix, bounded-reason, live-owner derivation, and sign-in cancellation owners in codex-workbench-browser-projection.test.ts together with the gateway's command-gating owners; AC #2 and #3 by the lease, link, routing, and dynamic-identity owners in gateway.test.ts and gateway-command-owners.test.ts; AC #4 by the new sequenced-delivery.test.ts plus gateway-recovery.test.ts and snapshot-budget.test.ts. Independent fixed-range review of 3bc86465..5968075f returned CLEAN.
+<!-- SECTION:FINAL_SUMMARY:END -->
