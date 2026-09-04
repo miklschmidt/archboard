@@ -1,11 +1,11 @@
 ---
 id: TASK-143.04.11
 title: Resolve raw realtime notification thread identities
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-04 15:52'
-updated_date: '2026-09-04 15:58'
+updated_date: '2026-09-04 16:02'
 labels: []
 dependencies: []
 modified_files:
@@ -28,9 +28,9 @@ TASK-143.04.07 reached the exact Codex 0.151.0 notification path but valid realt
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every relevant realtime notification record resolves its inbound raw threadId through the existing identity decoder before matching the canonical coordinator ThreadId.
-- [ ] #2 Unknown, invalid, stale, wrong-thread, wrong-session, and wrong-generation notifications remain rejected and cannot advance or mutate the active realtime session.
-- [ ] #3 A focused runtime owner fails for the raw-to-canonical mismatch before the fix and passes after it, covering the legitimate match plus materially distinct invalid, stale, and wrong identity cases.
+- [x] #1 Every relevant realtime notification record resolves its inbound raw threadId through the existing identity decoder before matching the canonical coordinator ThreadId.
+- [x] #2 Unknown, invalid, stale, wrong-thread, wrong-session, and wrong-generation notifications remain rejected and cannot advance or mutate the active realtime session.
+- [x] #3 A focused runtime owner fails for the raw-to-canonical mismatch before the fix and passes after it, covering the legitimate match plus materially distinct invalid, stale, and wrong identity cases.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -49,4 +49,12 @@ Red proof: `bun test src/runtime/codex-realtime/tests/adapter.test.ts --test-nam
 Implemented one inbound notification identity boundary: exactNotification resolves raw threadId through the existing authority decoder, compares the resulting canonical ThreadId to the active coordinator binding, and returns false for unresolved identities. Every realtime notification method passes this gate before reduction. Existing adapter fixtures now send raw app-server IDs.
 
 Validation: 32 focused realtime/identity tests and 531 assertions pass; root and frontend TypeScript pass; scoped Oxlint and Oxfmt pass. Browser and broad suites were not run because TASK-143.04.07 owns browser evidence and this task forbids broad validation.
+
+Final integration evidence on canonical branch: exact fast-forward to reviewed commit bdb58ace from fixed base b3834b12. `bun test` passed 32 tests across the three realtime adapter owners and shared identity owner with 531 assertions. Root and frontend `tsc --noEmit`, scoped Oxlint, and scoped Oxfmt passed. No browser or broad suite ran; TASK-143.04.07 owns the downstream browser proof.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Resolved raw Codex realtime notification thread IDs through the trusted identity decoder before matching the canonical coordinator binding. Focused tests prove valid negotiation now reaches listening while invalid, stale, wrong-thread, wrong-session, and wrong-generation notifications remain inert. Verified with 32 focused tests, 531 assertions, both TypeScript projects, and scoped lint and format checks.
+<!-- SECTION:FINAL_SUMMARY:END -->
