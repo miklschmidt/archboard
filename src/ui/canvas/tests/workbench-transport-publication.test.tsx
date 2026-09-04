@@ -44,6 +44,8 @@ const evidenceInputs: Array<{
 let firstActiveSessionId = "voice-first";
 let firstDirectSnapshotAvailable = true;
 let firstConnection: "connected" | "reconnecting" = "connected";
+let firstVoiceState: "listening" | "failed" | "closed" = "listening";
+let secondVoiceReplaced = false;
 const transportEvidenceListeners = new WeakMap<BrowserWorkbenchTransport, Set<() => void>>();
 
 function browserSnapshot(sessionId: string, suffix: string): BrowserSnapshot {
@@ -127,30 +129,48 @@ function publishVoice(paneId: string, registration: CanvasPaneVoiceRegistration 
 }
 
 function voiceView(sessionId: string): VoiceSessionView {
-	const detached = sessionId === "voice-first" && currentTransport === null;
+	const state =
+		sessionId === "voice-first" ? firstVoiceState : secondVoiceReplaced ? "replaced" : "listening";
+	const closed = state === "closed";
+	const failure = state === "failed" || state === "replaced";
+	const detached = !closed && !failure && sessionId === "voice-first" && currentTransport === null;
 	return {
-		status: detached ? "unavailable" : "listening",
-		label: detached ? "Unavailable" : "Listening",
-		detail: detached ? "Voice transport is unavailable." : "Voice is listening.",
-		accessibleStatus: detached ? "Voice transport is unavailable." : "Voice is listening.",
-		failure: null,
-		outcome: { kind: "none" },
+		status: closed ? "ready" : failure ? "failed" : detached ? "unavailable" : "listening",
+		label: closed ? "Ready" : failure ? "Failed" : detached ? "Unavailable" : "Listening",
+		detail: failure
+			? "Voice session failed."
+			: detached
+				? "Voice transport is unavailable."
+				: "Voice is available.",
+		accessibleStatus: failure ? "Voice session failed." : "Voice is available.",
+		failure: failure
+			? {
+					code: state === "replaced" ? "replaced" : "stop",
+					recoverable: false,
+					message: "Voice session requires reconciliation.",
+				}
+			: null,
+		outcome: failure
+			? { kind: "terminal", label: "Close voice", recovery: "Close the failed session." }
+			: { kind: "none" },
 		controls: {
-			canStart: false,
-			canMute: !detached,
+			canStart: closed,
+			canMute: !closed && !failure && !detached,
 			canUnmute: false,
-			canStop: !detached,
+			canStop: !closed && !failure && !detached,
 			canRestart: false,
-			canClose: false,
+			canClose: failure,
 		},
-		binding: {
-			paneId: "pane-1",
-			childId: `child-${sessionId}`,
-			epoch: `epoch-${sessionId}`,
-			workhorseThreadId: `workhorse-${sessionId}`,
-			coordinatorThreadId: `coordinator-${sessionId}`,
-		},
-		sessionId: detached ? null : sessionId,
+		binding: closed
+			? null
+			: {
+					paneId: "pane-1",
+					childId: `child-${sessionId}`,
+					epoch: `epoch-${sessionId}`,
+					workhorseThreadId: `workhorse-${sessionId}`,
+					coordinatorThreadId: `coordinator-${sessionId}`,
+				},
+		sessionId: closed || detached ? null : sessionId,
 	};
 }
 
@@ -171,7 +191,11 @@ function fakeVoiceSession(sessionId: string): VoiceSession {
 		unmute: async () => view(),
 		stop: async () => view(),
 		restart: async () => view(),
-		close: async () => view(),
+		close: async () => {
+			if (sessionId === "voice-first") firstVoiceState = "closed";
+			for (const listener of listeners) listener();
+			return view();
+		},
 		dispose: () => {
 			lifecycle.push(`dispose:${sessionId}`);
 			listeners.clear();
@@ -274,6 +298,8 @@ afterEach(() => {
 	firstActiveSessionId = "voice-first";
 	firstDirectSnapshotAvailable = true;
 	firstConnection = "connected";
+	firstVoiceState = "listening";
+	secondVoiceReplaced = false;
 });
 afterAll(unregisterHappyDom);
 
@@ -292,7 +318,7 @@ const STATUS: PaneStatus = {
 
 function noop(): void {}
 
-test("publishes each production pane transport once, clears before replacement, and clears on unmount", () => {
+test("publishes each production pane transport once, clears before replacement, and clears on unmount", async () => {
 	const view = render(
 		<CanvasPane
 			focused
@@ -338,6 +364,7 @@ test("publishes each production pane transport once, clears before replacement, 
 	expect(Object.isFrozen(firstRegistration)).toBe(true);
 	expect(firstRegistration.history).toBe(evidenceInputs[0]!.history);
 	expect(firstRegistration.presentation()).toMatchObject({
+		state: "active",
 		view: { status: "listening", sessionId: "voice-first" },
 		mute: "Unmuted",
 	});
@@ -385,6 +412,7 @@ test("publishes each production pane transport once, clears before replacement, 
 		sessionId: null,
 	});
 	expect(firstRegistration.presentation()).toMatchObject({
+		state: "active",
 		view: {
 			status: "unavailable",
 			binding: { paneId: "pane-1" },
@@ -402,6 +430,18 @@ test("publishes each production pane transport once, clears before replacement, 
 	expect(publications.at(-1)).toEqual(["pane-1", FIRST_TRANSPORT]);
 	expect(voiceCreations).toHaveLength(1);
 	expect(voicePublications).toHaveLength(1);
+	firstVoiceState = "failed";
+	expect(firstRegistration.presentation()).toMatchObject({
+		state: "active",
+		view: { status: "failed", sessionId: "voice-first" },
+	});
+	await firstRegistration.session.close();
+	expect(firstRegistration.session.view()).toMatchObject({
+		status: "ready",
+		binding: null,
+		sessionId: null,
+	});
+	expect(firstRegistration.presentation()).toEqual({ state: "none", frame: "available" });
 
 	currentTransport = SECOND_TRANSPORT;
 	act(() => reportStatus?.(STATUS));
@@ -412,6 +452,13 @@ test("publishes each production pane transport once, clears before replacement, 
 	expect(secondRegistration.transport).toBe(SECOND_TRANSPORT);
 	expect(secondRegistration.session).not.toBe(firstRegistration.session);
 	expect(secondRegistration.history).toBe(firstRegistration.history);
+	secondVoiceReplaced = true;
+	expect(secondRegistration.session.refresh()).toMatchObject({
+		failure: { code: "replaced" },
+		binding: { paneId: "pane-1" },
+		sessionId: "voice-second",
+	});
+	expect(secondRegistration.presentation()).toEqual({ state: "none", frame: "retired" });
 	const replacementEvents = lifecycle.slice(lifecycle.indexOf("voice:null"));
 	expect(replacementEvents).toEqual([
 		"voice:null",

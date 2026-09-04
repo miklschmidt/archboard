@@ -166,7 +166,7 @@ interface PresentationVoiceSource {
 	readonly workhorseId: string;
 	readonly coordinatorId: string | null;
 	readonly sessionId: string;
-	readonly mute: CanvasPaneVoicePresentation["mute"];
+	readonly mute: ActiveCanvasVoicePresentation["mute"];
 	readonly phase: string;
 	readonly accessibleStatus: string;
 	readonly failure: boolean;
@@ -187,12 +187,11 @@ type ActiveVoiceProjection =
 	  }
 	| { readonly state: "conflict"; readonly presentation: PresentationVoiceConflict };
 
-function activeVoiceOwner(owner: WorkbenchVoiceOwner): CanvasPaneVoicePresentation | null {
+type ActiveCanvasVoicePresentation = Extract<CanvasPaneVoicePresentation, { state: "active" }>;
+
+function activeVoiceOwner(owner: WorkbenchVoiceOwner): ActiveCanvasVoicePresentation | null {
 	const presentation = owner.registration.presentation();
-	const view = presentation.view;
-	return view.binding !== null && view.sessionId !== null && view.status !== "stopped"
-		? presentation
-		: null;
+	return presentation.state === "active" ? presentation : null;
 }
 
 function activeVoiceProjection(
@@ -211,7 +210,7 @@ function activeVoiceProjection(
 		return { state: "conflict", presentation: { state: "conflict", count: active.length } };
 	}
 	const current = active[0]!;
-	const binding = current.view.binding!;
+	const binding = current.view.binding;
 	return {
 		state: "active",
 		owner: current.owner,
@@ -221,7 +220,7 @@ function activeVoiceProjection(
 			paneLabel: current.owner.source.pane.label,
 			workhorseId: binding.workhorseThreadId,
 			coordinatorId: binding.coordinatorThreadId,
-			sessionId: current.view.sessionId!,
+			sessionId: current.view.sessionId,
 			mute: current.mute,
 			phase: current.view.label,
 			accessibleStatus: current.view.accessibleStatus,
@@ -1501,7 +1500,11 @@ export function Shell(): React.JSX.Element {
 		if (activeVoice.state === "active") return activeVoice.owner;
 		const authoritativePaneId = presentation.paneId ?? focused;
 		const candidate = workbenchRegistrations[authoritativePaneId]?.voice ?? null;
-		return candidate?.registration.presentation().view.status === "stopped" ? null : candidate;
+		if (candidate === null) return null;
+		const candidatePresentation = candidate.registration.presentation();
+		return candidatePresentation.state === "none" && candidatePresentation.frame === "retired"
+			? null
+			: candidate;
 	}, [activeVoice, focused, presentation.paneId, workbenchRegistrations, workbenchRevision]);
 	const workbenchVoice = useMemo<WorkbenchFrameVoiceSlot | null>(() => {
 		void workbenchRevision;
