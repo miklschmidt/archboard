@@ -135,6 +135,13 @@ export interface VoiceSessionView {
 export interface VoiceRealtimePort {
 	readonly snapshot: () => RealtimeMediaSnapshot | null;
 	readonly state: () => BrowserWorkbenchMediaState;
+	/**
+	 * The owner's own publication channel. It carries the browser-originated
+	 * realtime changes — a removed microphone, a dropped ICE connection, a closed
+	 * data channel, each in-start phase — that no transport delta announces, so
+	 * this is what keeps the projected view honest between control calls.
+	 */
+	readonly subscribe: (listener: () => void) => () => void;
 	readonly start: () => Promise<RealtimeMediaSnapshot>;
 	readonly stop: () => Promise<RealtimeMediaSnapshot>;
 }
@@ -161,8 +168,11 @@ export interface VoiceSession {
 	readonly start: () => Promise<VoiceSessionView>;
 	readonly stop: () => Promise<VoiceSessionView>;
 	readonly restart: () => Promise<VoiceSessionView>;
-	/** The explicit rebind guard: releases a terminal or replaced binding. */
-	readonly close: () => VoiceSessionView;
+	/**
+	 * The explicit rebind guard: stops the realtime session and releases a
+	 * terminal or replaced binding, so nothing is left holding the microphone.
+	 */
+	readonly close: () => Promise<VoiceSessionView>;
 	/** Releases this adapter's subscription. It never disposes the owners it reads. */
 	readonly dispose: () => void;
 }
