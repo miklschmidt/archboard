@@ -179,7 +179,7 @@ describe("mounted voice transcript accessibility", () => {
 	});
 
 	test("renders only the six labeled fragment links", () => {
-		ui.render(transcript());
+		const rendered = ui.render(transcript());
 
 		expect(
 			ui.screen.getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")]),
@@ -191,6 +191,39 @@ describe("mounted voice transcript accessibility", () => {
 			["Callback", "#callback-record"],
 			["Workhorse result", "#workhorse-result-record"],
 		]);
+		expect(
+			rendered.container
+				.querySelector("[data-transcript-relationship-state]")
+				?.getAttribute("data-transcript-relationship-state"),
+		).toBe("available");
+	});
+
+	test("keeps unavailable relationships visible without rendering fragment links", () => {
+		const rendered = ui.render(
+			transcript({
+				crossLinkIds: { ...CROSS_LINK_IDS, approvalId: null, callbackId: null },
+			}),
+		);
+
+		expect(ui.screen.getAllByRole("link").map((link) => link.textContent)).toEqual([
+			"Delegation",
+			"Queue",
+			"Steer",
+			"Workhorse result",
+		]);
+		expect(
+			[...rendered.container.querySelectorAll("[data-transcript-cross-link-unavailable]")].map(
+				(node) => [node.getAttribute("data-transcript-cross-link-unavailable"), node.textContent],
+			),
+		).toEqual([
+			["approval", "ApprovalUnavailable"],
+			["callback", "CallbackUnavailable"],
+		]);
+		expect(
+			rendered.container
+				.querySelector("[data-transcript-relationship-state]")
+				?.getAttribute("data-transcript-relationship-state"),
+		).toBe("partial");
 	});
 });
 

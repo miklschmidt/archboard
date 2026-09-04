@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 14:06'
+updated_date: '2026-09-04 14:18'
 labels: []
 dependencies:
   - TASK-143.03.11
@@ -48,6 +48,8 @@ Delegation profile: gpt-5.6-sol, high.
 3. Project the current application-wide ordinary approval card through the existing workbench approval projection and place VoiceSpokenApproval immediately above the unchanged WorkbenchApprovals surface when authoritative spoken state exists.
 4. Add one focused voice-composition owner for reachable slot states, interaction routing, immutable source identity, log/focus order, slot removal, and structural no-second-owner facts without theme/input cross-products.
 5. Run the focused workbench-frame owners, root and frontend TypeScript, scoped Oxlint/Oxfmt, frontend build, and diff/tracked-state checks. Keep the task In Progress with acceptance criteria unchecked for independent review.
+
+6. Preserve VoiceTranscript records and status while making each related-record link independently available only when its exact captured-source target is mounted and valid; show the unavailable relationships without creating another transcript owner. Add focused non-empty, empty-request, and request-source-drift owners, then rerun the scoped validation set.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -66,4 +68,10 @@ Independent-review remediation on 2026-09-04: transcript relationships now appea
 The review risk around spoken approval and voice-source equality was reachable. Spoken voice evidence now appears only when the application-wide request source exactly matches the captured voice pane ID and label. Ordinary approvals remain visible and keep their existing decision owner when sources differ.
 
 The focused owner now proves all six rendered fragments resolve to Pane A targets, no fragment appears for focused Pane B or frame error, the unavailable state is visible, and mismatched spoken evidence is withheld without hiding ordinary approval. Validation passed 20 isolated workbench-frame tests with 247 assertions, scoped Oxlint and Oxfmt, root and frontend TypeScript, frontend build, and diff checks. The existing runtime CSS-resolution and chunk-size build advisories remain unchanged. TASK-143.04.06 stays In Progress with every criterion unchecked for rereview.
+
+Second independent-rereview remediation: VoiceTranscript now accepts nullable identities per related record. It keeps the canonical transcript records, visible session status, log, and single announcement owner mounted while rendering each missing relationship as a non-link "Unavailable" item. Pane changes and frame errors no longer hide transcript evidence.
+
+WorkbenchFrame now derives timeline, queue, coordinator, callback, workhorse-result, and approval availability separately from mounted exact-source targets. An empty application-wide request withholds only Approval. A present request whose subscribed source validation drifts also withholds Approval and removes pane attribution from the error request target, while valid Pane A relationships keep resolving to mounted Pane A nodes. Spoken evidence remains gated by the same validated exact request source.
+
+Focused projection, mounted transcript, voice composition, and frame owners passed 39 tests with 381 assertions. The owners include non-empty transcript persistence through Pane B and frame error, empty-request partial availability, request-source drift, exact DOM target resolution, unavailable relationship semantics, spoken-source gating, and the prior frame behaviors. Scoped Oxfmt and Oxlint, root and frontend TypeScript, frontend build, and diff checks passed. The build retained the existing runtime CSS-resolution and chunk-size advisories. Root corrected a missing type-only import and nullable test-fixture spread found by the first type-check attempt; no behavior or rule was weakened. The task remains In Progress with all criteria unchecked.
 <!-- SECTION:NOTES:END -->

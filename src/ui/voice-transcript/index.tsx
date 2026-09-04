@@ -6,6 +6,7 @@ export type {
 	VoiceTranscriptCrossLinkIds,
 	VoiceTranscriptCrossLinkKind,
 	VoiceTranscriptCrossLinkView,
+	VoiceTranscriptUnavailableCrossLinkView,
 	VoiceTranscriptProjectionInput,
 	VoiceTranscriptProps,
 	VoiceTranscriptRecordView,

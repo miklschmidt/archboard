@@ -1,11 +1,13 @@
 import { createElement, useId, useMemo, type ReactNode } from "react";
 
 import { cn } from "../../ui-classnames/index.js";
-import type {
-	VoiceTranscriptCrossLinkView,
-	VoiceTranscriptProps,
-	VoiceTranscriptRecordView,
-	VoiceTranscriptSessionState,
+import {
+	VOICE_TRANSCRIPT_CROSS_LINK_KINDS,
+	type VoiceTranscriptCrossLinkView,
+	type VoiceTranscriptProps,
+	type VoiceTranscriptRecordView,
+	type VoiceTranscriptSessionState,
+	type VoiceTranscriptUnavailableCrossLinkView,
 } from "../contract.js";
 import { projectVoiceTranscript } from "./projection.js";
 
@@ -63,6 +65,24 @@ function CrossLink({ link }: { readonly link: VoiceTranscriptCrossLinkView }): R
 			>
 				{link.label}
 			</a>
+		</li>
+	);
+}
+
+function UnavailableCrossLink({
+	link,
+}: {
+	readonly link: VoiceTranscriptUnavailableCrossLinkView;
+}): ReactNode {
+	return (
+		<li
+			className="min-w-0 border-r border-border-subtle last:border-r-0"
+			data-transcript-cross-link-unavailable={link.kind}
+		>
+			<span className="flex min-h-touch-target flex-col items-center justify-center px-control text-center text-body text-muted-foreground">
+				<span>{link.label}</span>
+				<span className="text-kicker font-medium">Unavailable</span>
+			</span>
 		</li>
 	);
 }
@@ -255,11 +275,28 @@ export function VoiceTranscript(props: VoiceTranscriptProps): ReactNode {
 					</ol>
 				),
 			)}
-			<nav aria-label="Related workbench records" className="border-t border-border">
+			<nav
+				aria-label="Related workbench records"
+				className="border-t border-border"
+				data-transcript-relationship-state={
+					view.unavailableCrossLinks.length === 0
+						? "available"
+						: view.crossLinks.length === 0
+							? "unavailable"
+							: "partial"
+				}
+			>
 				<ul className="m-0 p-0 grid list-none grid-cols-6">
-					{view.crossLinks.map((link) => (
-						<CrossLink key={link.kind} link={link} />
-					))}
+					{VOICE_TRANSCRIPT_CROSS_LINK_KINDS.map((kind) => {
+						const link = view.crossLinks.find((candidate) => candidate.kind === kind);
+						if (link !== undefined) return <CrossLink key={kind} link={link} />;
+						const unavailable = view.unavailableCrossLinks.find(
+							(candidate) => candidate.kind === kind,
+						);
+						return unavailable === undefined ? null : (
+							<UnavailableCrossLink key={kind} link={unavailable} />
+						);
+					})}
 				</ul>
 			</nav>
 		</section>

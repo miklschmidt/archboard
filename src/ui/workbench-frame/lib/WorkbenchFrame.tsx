@@ -19,7 +19,10 @@ import { WorkbenchQueue } from "../../workbench-queue/index.js";
 import { WorkbenchRuntimeProvider } from "../../workbench-runtime/index.js";
 import { WorkbenchThreadLink } from "../../workbench-thread-link/index.js";
 import { WorkbenchTimeline } from "../../workbench-timeline/index.js";
-import type { BrowserWorkbenchTransport } from "../../workbench-transport/index.js";
+import type {
+	BrowserWorkbenchState,
+	BrowserWorkbenchTransport,
+} from "../../workbench-transport/index.js";
 import { useVoiceSession, type VoiceSessionView } from "../../voice-session/index.js";
 import type { VoiceTranscriptCrossLinkIds } from "../../voice-transcript/index.js";
 import { workbenchFrameRequestSourceIssue, workbenchFrameVoiceSourceIssue } from "../contract.js";
@@ -39,6 +42,23 @@ import { VoiceComposition, WorkbenchFrameSpokenApproval } from "./VoiceCompositi
 
 function useTransportState(transport: BrowserWorkbenchTransport) {
 	return useSyncExternalStore(transport.subscribe, transport.state, transport.state);
+}
+
+function subscribeToAbsentRequest(): () => void {
+	return () => undefined;
+}
+
+function absentRequestState(): null {
+	return null;
+}
+
+function useRequestState(request: WorkbenchFrameRequest): BrowserWorkbenchState | null {
+	const transport = request.state === "present" ? request.source.transport : null;
+	return useSyncExternalStore(
+		transport?.subscribe ?? subscribeToAbsentRequest,
+		transport?.state ?? absentRequestState,
+		transport?.state ?? absentRequestState,
+	);
 }
 
 function paneIssue(view: Extract<WorkbenchFrameView, { readonly state: "ready" }>): string | null {
@@ -386,13 +406,14 @@ function AppGlobalRequestSurface({
 function PresentAppGlobalRequest({
 	source,
 	id,
+	state,
 	voicePresent,
 }: {
 	readonly source: WorkbenchFrameRequestSource;
 	readonly id: string;
+	readonly state: BrowserWorkbenchState;
 	readonly voicePresent: boolean;
 }) {
-	const state = useTransportState(source.transport);
 	const sourceIssue = workbenchFrameRequestSourceIssue(source, state);
 	const nowMs = sourceIssue === null ? (source.now ?? Date.now)() : 0;
 	const approvalNow = useCallback(() => nowMs, [nowMs]);
@@ -428,15 +449,25 @@ function PresentAppGlobalRequest({
 function AppGlobalRequest({
 	request,
 	id,
+	state,
 	voicePresent,
 }: {
 	readonly request: WorkbenchFrameRequest;
 	readonly id: string;
+	readonly state: BrowserWorkbenchState | null;
 	readonly voicePresent: boolean;
 }) {
-	if (request.state === "present") {
-		return <PresentAppGlobalRequest id={id} source={request.source} voicePresent={voicePresent} />;
+	if (request.state === "present" && state !== null) {
+		return (
+			<PresentAppGlobalRequest
+				id={id}
+				source={request.source}
+				state={state}
+				voicePresent={voicePresent}
+			/>
+		);
 	}
+	if (request.state === "present") return null;
 	return (
 		<AppGlobalRequestSurface id={id} projection={request.state}>
 			<RequestState request={request} />
@@ -461,6 +492,7 @@ function WorkbenchFrameLayout({
 	const titleRef = useRef<HTMLParagraphElement | null>(null);
 	const toggleRef = useRef<HTMLButtonElement | null>(null);
 	const contentHadFocus = useRef(false);
+	const requestState = useRequestState(props.request);
 	const contentVisible = props.disclosure === "expanded" && props.space === "workspace";
 	const previousContentVisible = useRef(contentVisible);
 
@@ -497,26 +529,30 @@ function WorkbenchFrameLayout({
 		voice === null || voiceView === null
 			? null
 			: workbenchFrameVoiceSourceIssue(voice.source, voiceView);
-	const voiceMatchesMountedTargets =
+	const voiceOwnsMountedPane =
 		voice !== null &&
 		activePane !== null &&
-		samePaneIdentity(activePane.identity, voice.source.pane) &&
-		(props.request.state !== "present" ||
-			samePaneIdentity(props.request.source.pane, voice.source.pane));
-	const voiceMatchesRequestSource =
+		samePaneIdentity(activePane.identity, voice.source.pane);
+	const requestSourceIssue =
+		props.request.state === "present" && requestState !== null
+			? workbenchFrameRequestSourceIssue(props.request.source, requestState)
+			: null;
+	const voiceOwnsApproval =
 		voice !== null &&
 		props.request.state === "present" &&
+		requestState !== null &&
+		requestSourceIssue === null &&
 		samePaneIdentity(props.request.source.pane, voice.source.pane);
 	const voiceCrossLinkIds = useMemo<VoiceTranscriptCrossLinkIds>(
 		() => ({
-			delegationId: coordinatorId,
-			queueId,
-			steerId: timelineId,
-			approvalId: approvalsId,
-			callbackId: coordinatorId,
-			workhorseResultId: timelineId,
+			delegationId: voiceOwnsMountedPane ? coordinatorId : null,
+			queueId: voiceOwnsMountedPane ? queueId : null,
+			steerId: voiceOwnsMountedPane ? timelineId : null,
+			approvalId: voiceOwnsApproval ? approvalsId : null,
+			callbackId: voiceOwnsMountedPane ? coordinatorId : null,
+			workhorseResultId: voiceOwnsMountedPane ? timelineId : null,
 		}),
-		[approvalsId, coordinatorId, queueId, timelineId],
+		[approvalsId, coordinatorId, queueId, timelineId, voiceOwnsApproval, voiceOwnsMountedPane],
 	);
 
 	return (
@@ -553,7 +589,7 @@ function WorkbenchFrameLayout({
 					>
 						{voice === null || voiceView === null ? null : (
 							<VoiceComposition
-								crossLinkIds={voiceMatchesMountedTargets ? voiceCrossLinkIds : null}
+								crossLinkIds={voiceCrossLinkIds}
 								sessionView={voiceView}
 								voice={voice}
 							/>
@@ -589,7 +625,8 @@ function WorkbenchFrameLayout({
 			<AppGlobalRequest
 				id={approvalsId}
 				request={props.request}
-				voicePresent={voiceMatchesRequestSource && voiceSourceIssue === null}
+				state={requestState}
+				voicePresent={voiceOwnsApproval && voiceSourceIssue === null}
 			/>
 		</section>
 	);
