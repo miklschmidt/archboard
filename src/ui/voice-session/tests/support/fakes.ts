@@ -148,36 +148,49 @@ export function commandTarget(
 	};
 }
 
+/**
+ * The fake keeps `captureCommandTarget` even though the port no longer declares
+ * it, so a test can prove the adapter never reaches for the lease surface from a
+ * read. On the real transport that call expires and renews the lease and
+ * broadcasts before it can refuse.
+ */
 export interface TransportFake extends VoiceTransportPort {
+	captureCommandTarget: () => BrowserWorkbenchCommandTarget;
 	set: (state: BrowserWorkbenchState) => void;
 	setCapabilities: (value: BrowserWorkbenchCapabilities) => void;
-	setPaneId: (value: string) => void;
-	failCapture: (message: string | null) => void;
 	listenerCount: () => number;
 	captureCalls: () => number;
+	reads: () => number;
 }
 
 export function transportFake(initial: BrowserWorkbenchState = connectedState()): TransportFake {
 	let state = initial;
 	let caps = capabilities();
-	let paneId = "pane-a";
-	let captureError: string | null = null;
 	let captures = 0;
+	let reads = 0;
 	const listeners = new Set<() => void>();
 	const notify = (): void => {
 		const notified = [...listeners];
 		for (const listener of notified) listener();
 	};
 	return {
-		state: () => state,
-		snapshot: () => state.snapshot,
-		capabilities: () => caps,
+		state: () => {
+			reads += 1;
+			return state;
+		},
+		snapshot: () => {
+			reads += 1;
+			return state.snapshot;
+		},
+		capabilities: () => {
+			reads += 1;
+			return caps;
+		},
 		captureCommandTarget: () => {
 			captures += 1;
-			if (captureError !== null) throw new Error(captureError);
 			const value = state.snapshot;
 			if (value === null) throw new Error("The Codex workbench has no active socket.");
-			return commandTarget(value, paneId);
+			return commandTarget(value);
 		},
 		subscribe: (listener: () => void) => {
 			listeners.add(listener);
@@ -191,15 +204,9 @@ export function transportFake(initial: BrowserWorkbenchState = connectedState())
 			caps = value;
 			notify();
 		},
-		setPaneId: (value) => {
-			paneId = value;
-			notify();
-		},
-		failCapture: (message) => {
-			captureError = message;
-		},
 		listenerCount: () => listeners.size,
 		captureCalls: () => captures,
+		reads: () => reads,
 	};
 }
 
@@ -208,6 +215,8 @@ export interface RealtimeFake extends VoiceRealtimePort {
 	setState: (state: BrowserWorkbenchMediaState) => void;
 	onStart: (handler: () => Promise<RealtimeMediaSnapshot>) => void;
 	onStop: (handler: () => Promise<RealtimeMediaSnapshot>) => void;
+	/** Publishes a new level while reusing the exact state and correlation objects. */
+	setLevel: (level: number) => void;
 	calls: () => readonly string[];
 	listenerCount: () => number;
 }
@@ -263,6 +272,15 @@ export function realtimeFake(
 		},
 		onStop: (handler) => {
 			stopHandler = handler;
+		},
+		setLevel: (level: number) => {
+			if (media === null) return;
+			media = Object.freeze({
+				correlation: media.correlation,
+				state: media.state,
+				inputLevel: level,
+			});
+			publish();
 		},
 		calls: () => [...calls],
 		listenerCount: () => listeners.size,

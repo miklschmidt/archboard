@@ -86,12 +86,7 @@ describe("voice session adapter boundaries", () => {
 
 	test("exposes no media, protocol, or transport object through the projected view", () => {
 		const view = projectVoiceSession({
-			media: mediaSnapshot(
-				{ phase: "listening", reason: "negotiation_succeeded" },
-				{
-					inputLevel: 0.42,
-				},
-			),
+			media: mediaSnapshot({ phase: "listening", reason: "negotiation_succeeded" }),
 			mediaState: { state: "ready" },
 			transportState: connectedState(),
 			capabilities: capabilities(),
@@ -114,8 +109,9 @@ describe("voice session adapter boundaries", () => {
 			}
 		}
 		expect(view.sessionId).toBe("session-1");
-		expect(view.inputLevel).toBe(0.42);
 		expect(Object.keys(view).includes("transcript")).toBe(false);
+		// The meter is not a status field; it has its own channel.
+		expect(Object.keys(view).includes("inputLevel")).toBe(false);
 	});
 
 	test("chooses no recovery: a recoverable failure only offers a control", async () => {
@@ -127,7 +123,7 @@ describe("voice session adapter boundaries", () => {
 			}),
 		);
 		const transport = transportFake();
-		const session = createVoiceSession({ realtime, transport });
+		const session = createVoiceSession({ realtime, transport, paneId: "pane-a" });
 
 		expect(session.view().outcome).toEqual({
 			kind: "retry",
@@ -152,7 +148,7 @@ describe("voice session adapter boundaries", () => {
 			mediaSnapshot({ phase: "listening", reason: "negotiation_succeeded" }),
 		);
 		const transport = transportFake();
-		const session = createVoiceSession({ realtime, transport });
+		const session = createVoiceSession({ realtime, transport, paneId: "pane-a" });
 		const first = session.view();
 
 		realtime.set(mediaSnapshot({ phase: "speaking", reason: "assistant_started" }));
