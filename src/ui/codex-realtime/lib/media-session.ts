@@ -186,6 +186,15 @@ function stopTrack(run: Run, track: MediaStreamTrack): void {
 	track.stop();
 }
 
+/**
+ * The captured microphone follows the phase. `muted` is the only phase whose
+ * capture is disabled, so this is called on every crossing of that boundary in
+ * either direction and is the sole writer of the flag.
+ */
+function setLocalCaptureEnabled(run: Run, enabled: boolean): void {
+	for (const track of run.localStream?.getAudioTracks() ?? []) track.enabled = enabled;
+}
+
 function cancelRun(run: Run): void {
 	if (run.cancelledNow) return;
 	run.cancelledNow = true;
@@ -349,7 +358,14 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		visible = true,
 	): void => {
 		if (current !== run) return;
+		const previous = run.state.phase;
 		run.state = transitionRealtimeState(run.state, state);
+		// Whatever moved the run, not only an unmute: the table admits
+		// muted -> processing, so once semantic events drive that transition a run
+		// leaving muted by another route must not keep a silent microphone under a
+		// UI that says the coordinator is listening.
+		const nowMuted = run.state.phase === "muted";
+		if (previous === "muted" || nowMuted) setLocalCaptureEnabled(run, !nowMuted);
 		run.snapshot = frozenSnapshot(run.correlation, run.state, inputLevel);
 		if (!visible) return;
 		snapshot = run.snapshot;
@@ -376,7 +392,6 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		const run = current;
 		if (run === null || run.cancelledNow || run.failed) return Promise.resolve(snapshot);
 		if (run.state.phase !== (muted ? "listening" : "muted")) return Promise.resolve(run.snapshot);
-		for (const track of run.localStream?.getAudioTracks() ?? []) track.enabled = !muted;
 		publish(
 			run,
 			muted

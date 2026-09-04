@@ -89,6 +89,24 @@ describe("realtime media mute", () => {
 		env.assertReleased();
 	});
 
+	test("re-enables the capture whenever the run leaves muted, not only on unmute", async () => {
+		const env = new FakeBrowser();
+		const session = createRealtimeMediaSession(host(env));
+		await session.start(correlation());
+		await session.mute();
+		expect(env.localTrack.enabled).toBe(false);
+
+		// Stopping is a route out of `muted` that is not an unmute. The transition
+		// table also admits muted -> processing, which a semantic event will drive
+		// once TASK-143.04.04 wires them; the flag must follow the phase either
+		// way, so `publish` owns it rather than the mute command.
+		await session.stop();
+
+		expect(session.getSnapshot().state).toEqual({ phase: "closed", reason: "stopped" });
+		expect(env.localTrack.enabled).toBe(true);
+		env.assertReleased();
+	});
+
 	test("refuses to mute a failed run and keeps its failure visible", async () => {
 		const env = new FakeBrowser();
 		const session = createRealtimeMediaSession(host(env));

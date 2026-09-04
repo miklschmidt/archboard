@@ -121,14 +121,17 @@ export function VoiceControls({ session, className }: VoiceControlsProps): React
 	const ids = useId();
 	const reducedMotion = useReducedMotion();
 
-	useEffect(
-		() => () => {
+	useEffect(() => {
+		// Set on every mount, not only the first: StrictMode and Activity remount
+		// the same instance, and a flag left false there would leave every control
+		// disabled for good.
+		mounted.current = true;
+		return () => {
 			// A command that settles after this control is gone must not write to
 			// it, and must not re-enable a session nobody is looking at.
 			mounted.current = false;
-		},
-		[],
-	);
+		};
+	}, []);
 
 	const run = useCallback(
 		(command: VoiceControlCommand) => {

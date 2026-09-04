@@ -9,7 +9,13 @@ import {
 	VoiceControls,
 	type VoiceControlState,
 } from "../index.js";
-import { assertFixtureStates, BINDING, listeningView, voiceView } from "./support/fixtures.js";
+import {
+	assertFixtureStates,
+	BINDING,
+	listeningView,
+	unboundView,
+	voiceView,
+} from "./support/fixtures.js";
 import { sessionFake } from "./support/session-fake.js";
 
 function markup(state: VoiceControlState): string {
@@ -139,5 +145,21 @@ describe("voice control states", () => {
 			expect(action.reason, action.command).toBe(
 				"The microphone is being muted. Wait for it to finish before pressing again.",
 			);
+	});
+	test("says so plainly when nothing is bound to this pane yet", () => {
+		for (const state of ["ready", "unavailable"] as const) {
+			const session = sessionFake(unboundView(state));
+			const html = renderToStaticMarkup(createElement(VoiceControls, { session }));
+			const view = projectVoiceControls({ view: unboundView(state), pending: null });
+
+			expect(view.state, state).toBe(state);
+			expect(view.transport.binding, state).toBeNull();
+			// No empty identity row, and no invented pane in an accessible name.
+			expect(text(html), state).toContain("No voice session is bound to this pane.");
+			expect(html, state).not.toContain("data-voice-bound");
+			for (const action of view.actions)
+				expect(action.accessibleLabel, `${state}/${action.command}`).toContain("on this pane");
+			expect(view.transport.detail, state).toContain("this pane");
+		}
 	});
 });

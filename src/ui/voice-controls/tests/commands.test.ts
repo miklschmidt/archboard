@@ -1,5 +1,7 @@
 import { afterAll, afterEach, describe, expect, test } from "bun:test";
-import { createElement } from "react";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { createElement, StrictMode } from "react";
 
 import { loadRenderedUiTools, registerHappyDom, unregisterHappyDom } from "@/ui/dom-testing";
 
@@ -11,6 +13,8 @@ const { sessionFake } = await import("./support/session-fake.js");
 
 afterEach(cleanup);
 afterAll(unregisterHappyDom);
+
+const THEME_PATH = path.resolve(import.meta.dirname, "../../theme/app.css");
 
 type Fake = ReturnType<typeof sessionFake>;
 
@@ -88,8 +92,13 @@ describe("voice control commands", () => {
 		mount(fake);
 		const start = command("start");
 
-		// The semantic 44px target is what makes the control usable on the Flip.
-		expect(start.className).toContain("min-h-touch-target");
+		// The semantic 44px target is what makes every control usable on the Flip,
+		// and the class is only worth asserting because the token is that 44px.
+		for (const button of screen
+			.getByRole("group", { name: "Voice commands" })
+			.querySelectorAll<HTMLElement>("[data-voice-command]"))
+			expect(button.className, button.dataset.voiceCommand).toContain("min-h-touch-target");
+		expect(readFileSync(THEME_PATH, "utf8")).toContain("--arch-size-touch-target: 44px;");
 
 		await user.pointer([
 			{ keys: "[TouchA>]", target: start },
@@ -185,5 +194,20 @@ describe("voice control commands", () => {
 		await act(async () => fake.settle(voiceView("stopped")));
 		expect(fake.disposeCount()).toBe(0);
 		expect(fake.calls()).toEqual(["stop"]);
+	});
+	test("stays usable after a remount, so a settled command re-enables it", async () => {
+		const user = userEvent.setup();
+		const fake = sessionFake(voiceView("ready"));
+		// StrictMode mounts, unmounts, and mounts the same instance again. A flag
+		// set once at construction would be false for the life of that instance.
+		render(createElement(StrictMode, null, createElement(VoiceControls, { session: fake })));
+
+		await user.click(command("start"));
+		expect(refused("start")).toBe(true);
+
+		await act(async () => fake.settle(listeningView(0)));
+
+		expect(refused("stop")).toBe(false);
+		expect(reason("stop")).toBeNull();
 	});
 });
