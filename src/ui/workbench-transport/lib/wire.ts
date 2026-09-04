@@ -7,6 +7,7 @@ import {
 	type BrowserSnapshot,
 	type IdentityContext,
 } from "../../../shared/codex-browser-model/index.js";
+import { BROWSER_GATEWAY_ERROR_CODES } from "../../../shared/codex-browser-gateway/index.js";
 import type { AnswerSdp } from "../../../shared/codex-realtime-host/index.js";
 import type {
 	BrowserGatewayErrorCode,
@@ -18,43 +19,7 @@ import type {
 	BrowserWorkbenchSnapshotMessage,
 } from "./contract.js";
 
-const DELTA_KEYS = new Set([
-	"readiness",
-	"account",
-	"login",
-	"threadLink",
-	"timeline",
-	"queue",
-	"settings",
-	"approvals",
-	"dynamicApprovals",
-	"semantic",
-	"coordinator",
-	"voice",
-	"lease",
-	"operation",
-]);
-
-const GATEWAY_ERROR_CODES = new Set<BrowserGatewayErrorCode>([
-	"disposed",
-	"invalid_input",
-	"invalid_command",
-	"invalid_projection",
-	"not_ready",
-	"thread_capability_required",
-	"link_required",
-	"link_changed",
-	"lease_required",
-	"lease_expired",
-	"lease_released",
-	"lease_transferred",
-	"child_disconnected",
-	"approval_not_pending",
-	"dynamic_approval_not_pending",
-	"unsupported_command",
-	"command_failed",
-	"outcome_unknown",
-]);
+const GATEWAY_ERROR_CODES = new Set<BrowserGatewayErrorCode>(BROWSER_GATEWAY_ERROR_CODES);
 
 const WIRE_IDENTITY_MAX_BYTES = 16_384;
 const WIRE_VALUE_MAX_BYTES = 16_384;
@@ -228,41 +193,42 @@ export function parseBrowserDynamicApprovalResponse(
 	>;
 }
 
-function parseDeltaValue(key: string, value: unknown): unknown {
-	return parseModel(`The Codex workbench ${key} delta is malformed`, () => {
-		switch (key) {
-			case "readiness":
-				return browserModel.BrowserReadinessSchema.parse(value);
-			case "account":
-				return browserModel.BrowserAccountSchema.parse(value);
-			case "login":
-				return browserModel.BrowserLoginSchema.parse(value);
-			case "threadLink":
-				return browserModel.BrowserThreadLinkSchema.parse(value);
-			case "timeline":
-				return browserModel.BrowserTimelineSchema.nullable().parse(value);
-			case "queue":
-				return browserModel.BrowserQueueSchema.parse(value);
-			case "settings":
-				return z.array(browserModel.BrowserSettingsSchema).parse(value);
-			case "approvals":
-				return z.array(browserModel.BrowserApprovalSchema).parse(value);
-			case "dynamicApprovals":
-				return z.array(browserModel.BrowserDynamicApprovalSchema).parse(value);
-			case "semantic":
-				return browserModel.BrowserSemanticDeliverySchema.nullable().parse(value);
-			case "coordinator":
-				return browserModel.BrowserCoordinatorSchema.parse(value);
-			case "voice":
-				return browserModel.BrowserVoiceSchema.parse(value);
-			case "lease":
-				return browserModel.BrowserCommandLeaseSchema.nullable().parse(value);
-			case "operation":
-				return browserModel.BrowserOperationOutcomeSchema.nullable().parse(value);
-			default:
-				return fail(`The Codex workbench delta key ${JSON.stringify(key)} is invalid.`);
-		}
-	});
+/**
+ * One parser per snapshot field a delta may carry. Keyed by the delta type
+ * itself, so adding a field to the shared BrowserSnapshot is a compile error
+ * here rather than a delta the browser silently rejects at runtime.
+ */
+const DELTA_PARSERS = {
+	readiness: (value) => browserModel.BrowserReadinessSchema.parse(value),
+	account: (value) => browserModel.BrowserAccountSchema.parse(value),
+	login: (value) => browserModel.BrowserLoginSchema.parse(value),
+	threadLink: (value) => browserModel.BrowserThreadLinkSchema.parse(value),
+	timeline: (value) => browserModel.BrowserTimelineSchema.nullable().parse(value),
+	queue: (value) => browserModel.BrowserQueueSchema.parse(value),
+	settings: (value) => z.array(browserModel.BrowserSettingsSchema).parse(value),
+	approvals: (value) => z.array(browserModel.BrowserApprovalSchema).parse(value),
+	dynamicApprovals: (value) => z.array(browserModel.BrowserDynamicApprovalSchema).parse(value),
+	semantic: (value) => browserModel.BrowserSemanticDeliverySchema.nullable().parse(value),
+	coordinator: (value) => browserModel.BrowserCoordinatorSchema.parse(value),
+	voice: (value) => browserModel.BrowserVoiceSchema.parse(value),
+	lease: (value) => browserModel.BrowserCommandLeaseSchema.nullable().parse(value),
+	operation: (value) => browserModel.BrowserOperationOutcomeSchema.nullable().parse(value),
+} satisfies {
+	readonly [Key in keyof Required<BrowserWorkbenchSnapshotDelta>]: (
+		value: unknown,
+	) => Required<BrowserWorkbenchSnapshotDelta>[Key];
+};
+
+type DeltaKey = keyof typeof DELTA_PARSERS;
+
+function isDeltaKey(key: string): key is DeltaKey {
+	return Object.hasOwn(DELTA_PARSERS, key);
+}
+
+function parseDeltaValue(key: DeltaKey, value: unknown): unknown {
+	return parseModel(`The Codex workbench ${key} delta is malformed`, () =>
+		DELTA_PARSERS[key](value),
+	);
 }
 
 export function parseBrowserGatewayMessage(value: unknown): BrowserWorkbenchGatewayMessage {
@@ -290,8 +256,7 @@ export function parseBrowserGatewayMessage(value: unknown): BrowserWorkbenchGate
 	const deltaRecord = record(parsed.delta, "The Codex workbench delta is malformed.");
 	const delta: Record<string, unknown> = {};
 	for (const key of Object.keys(deltaRecord)) {
-		if (!DELTA_KEYS.has(key))
-			fail(`The Codex workbench delta key ${JSON.stringify(key)} is invalid.`);
+		if (!isDeltaKey(key)) fail(`The Codex workbench delta key ${JSON.stringify(key)} is invalid.`);
 		if (deltaRecord[key] === undefined) fail("The Codex workbench delta cannot contain undefined.");
 		delta[key] = parseDeltaValue(key, deltaRecord[key]);
 	}

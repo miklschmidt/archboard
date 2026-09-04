@@ -24,6 +24,15 @@ import type {
 	ApprovalResponse,
 } from "../../../runtime/codex-approvals/index.js";
 import type { SupportedLoginAccountParams } from "../../../runtime/codex-protocol/index.js";
+import type {
+	BrowserGatewayAccountReadResult,
+	BrowserGatewayCommandResult,
+	BrowserGatewayDeltaMessage,
+	BrowserGatewayErrorCode,
+	BrowserGatewayMessage,
+	BrowserGatewaySnapshotMessage,
+	BrowserSnapshotDelta,
+} from "../../../shared/codex-browser-gateway/index.js";
 import type { BrowserOwnerProjection } from "./projection-contract.js";
 
 export type BrowserConnectionId = string;
@@ -322,26 +331,6 @@ export interface CodexWorkbenchGatewayOptions {
 	readonly now?: () => number;
 }
 
-export type BrowserGatewayErrorCode =
-	| "disposed"
-	| "invalid_input"
-	| "invalid_command"
-	| "invalid_projection"
-	| "not_ready"
-	| "thread_capability_required"
-	| "link_required"
-	| "link_changed"
-	| "lease_required"
-	| "lease_expired"
-	| "lease_released"
-	| "lease_transferred"
-	| "child_disconnected"
-	| "approval_not_pending"
-	| "dynamic_approval_not_pending"
-	| "unsupported_command"
-	| "command_failed"
-	| "outcome_unknown";
-
 export class CodexWorkbenchGatewayError extends Error {
 	override readonly name = "CodexWorkbenchGatewayError";
 	readonly code: BrowserGatewayErrorCode;
@@ -366,43 +355,8 @@ export class CodexWorkbenchGatewayError extends Error {
 	}
 }
 
-export interface BrowserGatewaySnapshotMessage {
-	readonly kind: "snapshot";
-	readonly sequence: number;
-	readonly snapshot: BrowserSnapshot;
-}
-
-export type BrowserSnapshotDelta = Partial<Omit<BrowserSnapshot, "kind" | "version">>;
-
-export interface BrowserGatewayDeltaMessage {
-	readonly kind: "delta";
-	readonly sequence: number;
-	readonly delta: BrowserSnapshotDelta;
-}
-
-export type BrowserGatewayMessage = BrowserGatewaySnapshotMessage | BrowserGatewayDeltaMessage;
-
 /** The exact browser payload whose transport send completed successfully. */
 export type BrowserPublishedPayload = BrowserGatewayMessage | BrowserSnapshot;
-
-export interface BrowserGatewayCommandResult {
-	readonly kind: "command_result";
-	readonly commandId: BrowserCommandId | null;
-	readonly outcome: DeliveryOutcome;
-	readonly code: BrowserGatewayErrorCode | null;
-	readonly message: string | null;
-	readonly snapshot: BrowserSnapshot;
-	readonly realtimeAnswer?: AnswerSdp;
-	readonly realtimeSessionHandle?: string;
-}
-
-export interface BrowserGatewayAccountReadResult {
-	readonly kind: "account_read";
-	readonly outcome: DeliveryOutcome;
-	readonly code: BrowserGatewayErrorCode | null;
-	readonly message: string | null;
-	readonly snapshot: BrowserSnapshot;
-}
 
 export interface BrowserWorkbenchConnection {
 	readonly browserId: BrowserConnectionId;
@@ -464,3 +418,17 @@ export interface CodexWorkbenchGateway {
 }
 
 export type { BrowserCommandLease, BrowserSnapshot, BrowserThreadLink, ThreadLinkBindingSnapshot };
+
+/**
+ * The gateway envelope is authored once in `shared` so the browser transport
+ * can import the same declarations; server callers keep importing it from here.
+ */
+export type {
+	BrowserGatewayAccountReadResult,
+	BrowserGatewayCommandResult,
+	BrowserGatewayDeltaMessage,
+	BrowserGatewayErrorCode,
+	BrowserGatewayMessage,
+	BrowserGatewaySnapshotMessage,
+	BrowserSnapshotDelta,
+};
