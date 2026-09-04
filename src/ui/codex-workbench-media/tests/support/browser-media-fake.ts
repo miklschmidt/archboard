@@ -1,5 +1,7 @@
 class FakeTrack extends EventTarget {
 	readyState: MediaStreamTrackState = "live";
+	/** A real captured track starts enabled; muting is this flag going false. */
+	enabled = true;
 	stopCount = 0;
 
 	stop(): void {
