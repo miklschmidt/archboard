@@ -59,7 +59,7 @@ async function initialRender(
 				hasCanvas: !!canvas,
 				paneCount: frame?.getAttribute('data-pane-count') ?? null,
 				board: document.querySelector('.board-name')?.textContent?.trim() ?? null,
-				status: document.querySelector('.statusbar')?.textContent?.replace(/\\s+/g, ' ').trim() ?? null,
+				status: document.querySelector('.bar-board-meta')?.textContent?.replace(/\\s+/g, ' ').trim() ?? null,
 			};
 		})()`);
 }
@@ -103,9 +103,9 @@ test(
 
 		await seedBoard(api, "workbench", "wb1");
 		await browser.run(["open", canvas.base]);
-		await browser.run(["set", "viewport", "1440", "900", "1"]);
+		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
-		expect(await browser.eval<[number, number]>("[innerWidth, innerHeight]")).toEqual([1440, 900]);
+		expect(await browser.eval<[number, number]>("[innerWidth, innerHeight]")).toEqual([1920, 1080]);
 		await pollUntil(
 			() => initialRender(browser),
 			(value) => value.hasCanvas && value.paneCount === "1",
@@ -118,7 +118,7 @@ test(
 				value.hasCanvas &&
 				value.paneCount === "1" &&
 				value.board === "workbench" &&
-				value.status?.includes("1 elements") === true,
+				value.status?.includes("1 element") === true,
 			"the seeded canvas and one-pane workbench to render",
 		);
 		await claimRenderedWorkbenchLease(browser);
@@ -134,6 +134,7 @@ test(
 			Boolean,
 			"the integrated workbench to expand",
 		);
+		await roleAction(browser, "button", "Settings");
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`[...document.querySelectorAll('button')]
@@ -144,6 +145,15 @@ test(
 		);
 
 		await roleAction(browser, "button", "Create a workhorse thread");
+		await browser.run(["press", "Escape"]);
+		await pollUntil(
+			() =>
+				browser.eval<boolean>(
+					`!document.querySelector('[data-workbench-settings]') && document.activeElement?.textContent?.trim() === 'Settings'`,
+				),
+			Boolean,
+			"Escape to close Agent settings and restore focus to Settings",
+		);
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(
@@ -186,7 +196,7 @@ test(
 			centerHit: true,
 			operable: true,
 		});
-		await browser.run(["set", "viewport", "1440", "900", "1"]);
+		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		await roleAction(browser, "button", "Send");
 
 		const pending = await pollUntil(
@@ -234,7 +244,7 @@ test(
 			await browser.eval<boolean>(`(() => {
 			const canvas = document.querySelector('.pane .excalidraw');
 			return canvas === window.__codexTextWorkbenchCanvas &&
-				document.querySelector('.statusbar')?.textContent?.includes('1 elements') === true;
+				document.querySelector('.bar-board-meta')?.textContent?.includes('1 element') === true;
 		})()`),
 		).toBe(true);
 

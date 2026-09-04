@@ -113,7 +113,11 @@ function TransportRow({ view }: { readonly view: VoiceControlsView }): React.JSX
  * session, is what makes a repeated or late press inert with something true to
  * say about why.
  */
-export function VoiceControls({ session, className }: VoiceControlsProps): React.JSX.Element {
+export function VoiceControls({
+	session,
+	className,
+	variant = "panel",
+}: VoiceControlsProps): React.JSX.Element {
 	const sessionView = useVoiceSession(session);
 	const [pending, setPending] = useState<VoiceControlCommand | null>(null);
 	const pendingRef = useRef<VoiceControlCommand | null>(null);
@@ -154,10 +158,16 @@ export function VoiceControls({ session, className }: VoiceControlsProps): React
 		<section
 			aria-label="Live voice"
 			className={cn(
-				"min-w-0 flex flex-col gap-control border-border-subtle font-sans text-body text-foreground",
+				"min-w-0 flex border-border-subtle font-sans text-body text-foreground",
+				variant === "toolbar"
+					? view.recovery === null
+						? "items-center gap-control-inline"
+						: "max-w-prose flex-wrap items-center gap-control-inline py-control"
+					: "flex-col gap-control",
 				className,
 			)}
 			data-voice-controls=""
+			data-voice-controls-variant={variant}
 			data-voice-meter-allowed={view.meter ? "" : undefined}
 			data-voice-state={view.state}
 		>
@@ -181,14 +191,18 @@ export function VoiceControls({ session, className }: VoiceControlsProps): React
 				{view.accessibleStatus}
 			</output>
 
-			<p className="text-body text-muted-foreground" data-voice-detail="">
-				{view.detail}
-			</p>
-			{view.recovery !== null && (
-				<p className="text-body text-muted-foreground" data-voice-recovery="">
-					{view.recovery}
-				</p>
-			)}
+			{variant === "panel" ? (
+				<>
+					<p className="text-body text-muted-foreground" data-voice-detail="">
+						{view.detail}
+					</p>
+					{view.recovery !== null && (
+						<p className="text-body text-muted-foreground" data-voice-recovery="">
+							{view.recovery}
+						</p>
+					)}
+				</>
+			) : null}
 
 			{/* A fieldset, not a div with role="group": the grouping is real, and the
 			    repository lint prefers the semantic tag over the role. */}
@@ -206,8 +220,13 @@ export function VoiceControls({ session, className }: VoiceControlsProps): React
 					/>
 				))}
 			</fieldset>
+			{variant === "toolbar" && view.recovery !== null ? (
+				<p className="m-0 basis-full text-body text-destructive" data-voice-recovery="">
+					{view.detail} <span className="text-muted-foreground">{view.recovery}</span>
+				</p>
+			) : null}
 
-			<TransportRow view={view} />
+			{variant === "panel" ? <TransportRow view={view} /> : null}
 		</section>
 	);
 }

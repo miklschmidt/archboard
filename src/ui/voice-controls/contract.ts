@@ -114,6 +114,8 @@ export interface VoiceControlsProps {
 	/** The presentation adapter for this pane's one voice session. */
 	readonly session: VoiceSession;
 	readonly className?: string;
+	/** A compact command row for persistent shell placement, or the full diagnostic panel. */
+	readonly variant?: "panel" | "toolbar";
 }
 
 /** The exact inputs the pure projection reads. */

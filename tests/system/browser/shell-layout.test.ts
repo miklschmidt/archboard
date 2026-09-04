@@ -22,13 +22,14 @@ import {
 	publishActionableNotice,
 } from "./support/fullscreen-presentation.ts";
 import type {
-	ActivityLayout,
 	DesktopShell,
 	NoticeLayout,
 	PaneBarLayout,
 	PanesBody,
 } from "./support/shell-contract-types.ts";
+import { roleAction } from "./support/opener-settings-interaction.ts";
 import { captureShellRenderMatrix } from "./support/shell-render-matrix.ts";
+import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
@@ -61,7 +62,8 @@ test(
 
 		await browser.run(["open", canvas.base]);
 		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
-		await browser.run(["set", "viewport", "1440", "900", "1"]);
+		await browser.run(["set", "viewport", "1920", "1080", "1"]);
+		expect(await browser.eval<boolean>("document.querySelector('.statusbar') === null")).toBe(true);
 		expect(
 			await browser.eval<string[]>(
 				`[...document.styleSheets].flatMap(sheet => [...sheet.cssRules]).filter(rule => rule instanceof CSSMediaRule && [...rule.media].some(query => Number(query.match(/max-width:\\s*(\\d+)px/)?.[1]) <= 900)).filter(rule => /\\.(shell|workspace|bar|board-nav|canvas-zone|canvas-stage|panes|pane-bar|agent-workbench|selection-inspector|statusbar)\\b/.test(rule.cssText)).map(rule => rule.conditionText)`,
@@ -167,7 +169,7 @@ test(
 				snapshot.fontResources.every((url) => new URL(url).origin === new URL(canvas.base).origin),
 			).toBe(true);
 			expect(snapshot.fontResources.join(" ")).toMatch(/Onest-wght.*DMMono-(?:Regular|Medium)/);
-			expect(snapshot.humanLabels).toHaveLength(3);
+			expect(snapshot.humanLabels).toHaveLength(2);
 			expect(
 				snapshot.humanLabels.every(
 					({ family, transform, weight }) =>
@@ -196,7 +198,7 @@ test(
 		const desktop = await browser.eval<DesktopShell | null>(`(() => {
 		const nav = document.querySelector('.board-nav');
 		const canvas = document.querySelector('.canvas-zone');
-		const rail = document.querySelector('.agent-rail');
+		const rail = document.querySelector('[data-workbench-frame]');
 		const pane = document.querySelector('.pane');
 		if (!nav || !canvas || !rail || !pane) return null;
 		const navRect = nav.getBoundingClientRect();
@@ -215,7 +217,7 @@ test(
 		};
 	})()`);
 		expect(desktop?.navLeftOfCanvas).toBe(true);
-		expect(desktop?.navWidth).toBeCloseTo(184, 0);
+		expect(desktop?.navWidth).toBeCloseTo(280, 0);
 		expect(desktop?.workbenchBelowPane).toBe(true);
 		expect(desktop?.workbenchInsideCanvas).toBe(true);
 		expect(desktop?.columnsAlign).toBe(true);
@@ -277,10 +279,10 @@ test(
 		);
 		expect(
 			await browser.eval<boolean>(
-				"document.querySelector('.workbench-toggle').getAttribute('aria-expanded') === 'false'",
+				"document.querySelector('[data-workbench-frame]').getAttribute('data-workbench-disclosure') === 'collapsed'",
 			),
 		).toBe(true);
-		await browser.run(["click", ".workbench-toggle"]);
+		await roleAction(browser, "button", "Expand");
 		for (const [index, doing] of activityLines.entries()) {
 			const wrote = await api(`/api/elements?board=fixedpoint&doing=${encodeURIComponent(doing)}`, {
 				method: "POST",
@@ -295,39 +297,25 @@ test(
 			});
 			expect([200, 201]).toContain(wrote.status);
 		}
-		const activity = await pollUntil(
+		await pollUntil(
 			() =>
-				browser.eval<ActivityLayout | null>(`(() => {
-			const rail = document.querySelector('.agent-rail');
-			const panel = document.querySelector('.pane-doing');
-			const lines = [...document.querySelectorAll('.pane-doing-line')];
-			const pane = document.querySelector('.pane');
-			if (!rail || !panel || !pane || lines.length !== 5) return null;
-			const railRect = rail.getBoundingClientRect();
-			const panelRect = panel.getBoundingClientRect();
-			const timestamps = [...document.querySelectorAll('.pane-doing-when')].map(node => node.getBoundingClientRect().left);
-			return { lineCount: lines.length, linesFit: lines.every(line => line.scrollWidth <= line.clientWidth),
-				panelFits: panelRect.left >= railRect.left && panelRect.right <= railRect.right && panelRect.bottom <= railRect.bottom,
-				canvasClear: railRect.top >= pane.getBoundingClientRect().bottom - 0.5,
-				timestampsAlign: timestamps.every(left => Math.abs(left - timestamps[0]) < 0.5) };
-		})()`),
-			(layout) => layout?.lineCount === 5,
-			"all five desktop activity rows to render",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
+				browser.eval<string | null>(
+					"document.querySelector('[data-agent-current]')?.getAttribute('title') ?? null",
+				),
+			(current) => current === activityLines.at(-1),
+			"the latest live agent action to remain visible in the drawer",
 		);
-		expect(activity).toMatchObject({
-			lineCount: 5,
-			linesFit: true,
-			panelFits: true,
-			canvasClear: true,
-			timestampsAlign: true,
-		});
 		const expandedPaneHeight = await browser.eval<number>(
 			"document.querySelector('.pane').getBoundingClientRect().height",
 		);
 		expect(expandedPaneHeight).toBeLessThan(collapsedPaneHeight - 100);
-		await browser.run(["click", ".workbench-toggle"]);
+		await roleAction(browser, "button", "Collapse");
 
+		await browser.eval<void>(`{
+			const app = ${EXCALIDRAW_APP_EXPRESSION};
+			if (!app) throw new Error('The canvas is unavailable for inspector layout verification');
+			app.updateScene({ appState: { selectedElementIds: { rect1: true } } });
+		}`);
 		expect(await publishActionableNotice(browser)).toBe(true);
 		const notice = await pollUntil(
 			() =>

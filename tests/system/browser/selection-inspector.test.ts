@@ -169,14 +169,21 @@ test(
 
 		const browser = resources.use(await createAgentBrowser());
 		await browser.run(["open", canvas.base]);
-		await browser.run(["set", "viewport", "1440", "900"]);
+		await browser.run(["set", "viewport", "1920", "1080"]);
 		await pollUntil(
 			() => api<Panes>("/api/panes").then((response) => response.body),
 			(value) => value.paneCount === 1,
 			"the initial pane",
 		);
 		runCanvasCli(canvas.base, vault, ["browser", "show", "selection-a", "--pane", "primary"]);
-		expect((await waitInspector(browser, "empty", "No selection")).title).toBe("No selection");
+		await pollUntil(
+			() =>
+				browser.eval<boolean>(
+					`document.querySelector('.board-name')?.textContent?.trim() === 'selection-a' && document.querySelector('.selection-inspector') === null`,
+				),
+			Boolean,
+			"the empty selection to leave the canvas unobstructed",
+		);
 		runCanvasCli(canvas.base, vault, ["browser", "open"]);
 		const panes = await pollUntil(
 			() => api<Panes>("/api/panes").then((response) => response.body),
@@ -428,7 +435,7 @@ test(
 			};
 		})()`);
 		expect(desktop).toEqual({
-			viewport: [1440, 900],
+			viewport: [1920, 1080],
 			visible: true,
 			bodyVisible: true,
 			insideViewport: true,

@@ -58,7 +58,7 @@ export type ShellRenderMatrix = {
 };
 
 const viewports = [
-	{ name: "desktop", width: 1440, height: 900, scale: 1 },
+	{ name: "desktop", width: 1920, height: 1080, scale: 1 },
 	{ name: "flip-scaled", width: 1920, height: 1080, scale: 2 },
 ] as const;
 const themes = ["light", "dark"] as const;
@@ -211,17 +211,16 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		};
 		const flat = ['.shell', '.bar', '.board-nav', '.board-group.active-group',
 			'.board-nav-row-current', '.scratch-section', '.scratch-card', '.canvas-zone',
-			'.pane-bar', '.agent-rail', '.claim-card', '.statusbar', '.btn-primary']
+			'.pane-bar', '[data-workbench-frame]', '.claim-card', '.btn-primary']
 			.map(selector => document.querySelector(selector)).filter(Boolean);
 		const humanLabels = [document.querySelector('.board-nav-title'),
-			document.querySelector('.selection-inspector-kicker'),
-			document.querySelector('.workbench-overview small')].filter(Boolean);
+			document.querySelector('[data-workbench-title]')].filter(Boolean);
 		open.focus();
 		const focusStyle = getComputedStyle(open);
 		const focusRect = open.getBoundingClientRect();
 		const focusExtent = parseFloat(focusStyle.outlineWidth) + parseFloat(focusStyle.outlineOffset);
 		const animationProbe = document.createElement('span');
-		animationProbe.className = 'claim-beacon';
+		animationProbe.className = 'animate-status';
 		document.body.append(animationProbe);
 		const animationStyle = getComputedStyle(animationProbe);
 		const shellStyle = getComputedStyle(shell);
@@ -263,7 +262,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				shellCount: document.querySelectorAll('.shell').length,
 				rootChildCount: document.getElementById('root')?.childElementCount ?? 0 },
 			geometry: { shell: rect(shell), bar: rect(bar), nav: rect(document.querySelector('.board-nav')),
-				canvas: rect(document.querySelector('.canvas-zone')), rail: rect(document.querySelector('.agent-rail')),
+				canvas: rect(document.querySelector('.canvas-zone')), rail: rect(document.querySelector('[data-workbench-frame]')),
 				pane: rect(document.querySelector('.pane')), board: rect(board), open: rect(open) },
 			themeSnapshot: {
 				theme: shell.dataset.theme, wordmark: wordmark.getAttribute('aria-label'),
@@ -327,6 +326,11 @@ export async function captureShellRenderMatrix(
 				const screenshot = join(artifactRoot, `${name}.png`);
 				try {
 					await setTheme(browser, theme);
+					// The default shell has no technical footer. Check its declared
+					// technical face after viewport changes recreate the page context.
+					await browser.eval<boolean>(
+						`document.fonts.load('400 10px "Archboard DM Mono"').then(() => document.fonts.ready).then(() => true)`,
+					);
 					await browser.eval<boolean>(
 						"new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))",
 					);
@@ -369,7 +373,7 @@ export async function captureShellRenderMatrix(
 			}
 		}
 	}
-	await browser.run(["set", "viewport", "1440", "900", "1"]);
+	await browser.run(["set", "viewport", "1920", "1080", "1"]);
 	const restoreMedia = await emulateMedia(browser, "dark", "normal");
 	try {
 		await setTheme(browser, "dark");

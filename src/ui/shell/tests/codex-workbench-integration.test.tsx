@@ -380,9 +380,10 @@ test("keeps a registered thread-capable unbound pane with create and attach choi
 	paneOneInitialTransport = unboundTransport.transport;
 	const user = userEvent.setup();
 	render(<Shell />);
-	const frame = await screen.findByRole("region", { name: "Agent workbench" });
+	const frame = await screen.findByRole("region", { name: "Agent" });
 	expect(frame.getAttribute("data-pane-count")).toBe("1");
 	await user.click(screen.getByRole("button", { name: "Expand" }));
+	await user.click(screen.getByRole("button", { name: "Open Agent settings" }));
 	const link = screen.getByRole("region", { name: "No thread link" });
 	expect(
 		within(link)
@@ -396,9 +397,10 @@ test("keeps a registered unbound signed-out pane and its recovery in the frame",
 	paneOneInitialTransport = signedOutTransport.transport;
 	const user = userEvent.setup();
 	render(<Shell />);
-	const frame = await screen.findByRole("region", { name: "Agent workbench" });
+	const frame = await screen.findByRole("region", { name: "Agent" });
 	expect(frame.getAttribute("data-pane-count")).toBe("1");
 	await user.click(screen.getByRole("button", { name: "Expand" }));
+	await user.click(screen.getByRole("button", { name: "Open Agent settings" }));
 	const link = screen.getByRole("region", { name: "No thread link" });
 	expect(within(link).getByRole("link", { name: "Sign in again" })).toBeTruthy();
 });
@@ -408,10 +410,10 @@ test("registers one exact pane source, routes fullscreen Stop, and replaces it w
 	const user = userEvent.setup();
 	const mounted = render(<Shell />);
 	try {
-		const frame = await screen.findByRole("region", { name: "Agent workbench" });
+		const frame = await screen.findByRole("region", { name: "Agent" });
 		expect(frame.getAttribute("data-pane-count")).toBe("1");
 		expect(screen.getByText("Excalidraw canvas")).toBeTruthy();
-		expect(screen.getAllByText("7 elements")).toHaveLength(2);
+		expect(screen.getAllByText("7 elements")).toHaveLength(1);
 
 		let request = screen.getByRole("region", { name: "Application-wide Codex requests" });
 		expect(request.querySelector("dd")?.textContent).toBe("Pane A");
@@ -450,7 +452,7 @@ test("transfers fullscreen when the workbench selects Pane B and stops only Pane
 	const user = userEvent.setup();
 	render(<Shell />);
 	try {
-		await screen.findByRole("region", { name: "Agent workbench" });
+		await screen.findByRole("region", { name: "Agent" });
 		await user.click(screen.getByRole("button", { name: "Split" }));
 		await waitFor(() =>
 			expect(

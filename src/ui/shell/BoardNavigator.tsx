@@ -27,9 +27,7 @@ interface BoardEntry {
 	inVault: boolean;
 }
 
-interface PreviewDisclosure extends BoardPreviewTarget {
-	pinned: boolean;
-}
+type PreviewDisclosure = BoardPreviewTarget;
 
 interface FocusScrollProtection {
 	key: string;
@@ -90,21 +88,11 @@ export function BoardNavigator({
 			grouped.set(entry.identity.board, list);
 		}
 
-		const groupPriority = (variants: BoardEntry[]): number => {
-			if (variants.some((entry) => entry.key === currentKey)) return 0;
-			if (variants.some((entry) => entry.onScreen)) return 1;
-			return 2;
-		};
 		const allGroups = [...grouped.entries()]
-			.toSorted(([a, aVariants], [b, bVariants]) => {
-				const priority = groupPriority(aVariants) - groupPriority(bVariants);
-				return priority || a.localeCompare(b);
-			})
+			.toSorted(([a], [b]) => a.localeCompare(b))
 			.map(([board, variants]) => ({
 				board,
 				variants: variants.toSorted((a, b) => {
-					if (a.key === currentKey) return -1;
-					if (b.key === currentKey) return 1;
 					if (a.identity.variant === "current") return -1;
 					if (b.identity.variant === "current") return 1;
 					return a.identity.variant.localeCompare(b.identity.variant);
@@ -115,9 +103,8 @@ export function BoardNavigator({
 			groups: allGroups.filter((group) => group.board !== "scratch"),
 			scratch: scratchGroup?.variants[0] ?? null,
 		};
-	}, [listing, currentKey]);
+	}, [listing]);
 
-	const variantCount = groups.reduce((count, group) => count + group.variants.length, 0);
 	const renderedCurrentKey = groups.some((group) =>
 		group.variants.some((entry) => entry.key === currentKey),
 	)
@@ -157,7 +144,7 @@ export function BoardNavigator({
 		const top = navRect
 			? Math.max(8, Math.min(anchorRect.top - navRect.top - 8, navRect.height - 230))
 			: 8;
-		return { key: entry.key, label: entryLabel(entry), top, pinned: false };
+		return { key: entry.key, label: entryLabel(entry), top };
 	}, []);
 	const reveal = useCallback(
 		(entry: BoardEntry, anchor: HTMLElement): void => {
@@ -169,17 +156,8 @@ export function BoardNavigator({
 		[disclosure],
 	);
 	const conceal = useCallback((key: string): void => {
-		setPreview((previous) => (previous?.key === key && !previous.pinned ? null : previous));
+		setPreview((previous) => (previous?.key === key ? null : previous));
 	}, []);
-	const togglePinned = useCallback(
-		(entry: BoardEntry, anchor: HTMLElement): void => {
-			const next = disclosure(entry, anchor);
-			setPreview((previous) =>
-				previous?.key === next.key && previous.pinned ? null : { ...next, pinned: true },
-			);
-		},
-		[disclosure],
-	);
 	const selectEntry = useCallback(
 		(event: React.MouseEvent<HTMLButtonElement>): void => {
 			const key = event.currentTarget.dataset.boardKey;
@@ -188,14 +166,6 @@ export function BoardNavigator({
 			onSelect(key);
 		},
 		[onSelect],
-	);
-	const handlePreviewControlClick = useCallback(
-		(event: React.MouseEvent<HTMLButtonElement>): void => {
-			const key = event.currentTarget.dataset.previewKey;
-			const entry = key ? entriesByKey.get(key) : null;
-			if (entry) togglePinned(entry, event.currentTarget);
-		},
-		[entriesByKey, togglePinned],
 	);
 	const cancelFocusScrollProtection = useCallback(() => {
 		const protection = focusScrollProtectionRef.current;
@@ -222,7 +192,7 @@ export function BoardNavigator({
 	);
 	const handleListScroll = useCallback(() => {
 		const followsFocus = focusScrollProtectionRef.current?.key !== undefined;
-		setPreview((previous) => (followsFocus || previous?.pinned ? previous : null));
+		if (!followsFocus) setPreview(null);
 	}, []);
 
 	const previewEvents = (entry: BoardEntry) => ({
@@ -234,32 +204,11 @@ export function BoardNavigator({
 		},
 		onBlur: () => conceal(entry.key),
 	});
-	const previewControl = (entry: BoardEntry): React.JSX.Element => (
-		<button
-			className="board-preview-control"
-			type="button"
-			aria-label={`Preview ${entryLabel(entry)}`}
-			aria-expanded={visiblePreview?.key === entry.key}
-			data-preview-key={entry.key}
-			onClick={handlePreviewControlClick}
-			{...previewEvents(entry)}
-		>
-			<Icon name="preview" size={18} />
-		</button>
-	);
-
 	return (
 		<aside className="board-nav" aria-label="Boards and variants" ref={navRef}>
 			<div className="board-nav-header">
 				<div className="board-nav-title">
 					<span>Boards</span>
-					{listing && (
-						<small
-							aria-label={`${groups.length} board${groups.length === 1 ? "" : "s"}, ${variantCount} variant${variantCount === 1 ? "" : "s"}`}
-						>
-							{groups.length}B / {variantCount}V
-						</small>
-					)}
 				</div>
 				<div className="board-nav-tools">
 					<button
@@ -308,7 +257,40 @@ export function BoardNavigator({
 					<div className="board-nav-empty">No named boards yet.</div>
 				)}
 				{groups.map((group) => {
-					const defaultEntry = group.variants[0];
+					const only = group.variants.length === 1 ? group.variants[0] : null;
+					if (only?.identity.variant === "current") {
+						const selected = only.key === currentKey;
+						return (
+							<section
+								className="board-group board-group-single"
+								key={group.board}
+								aria-label={group.board}
+							>
+								<button
+									type="button"
+									aria-current={selected ? "page" : undefined}
+									aria-label={entryLabel(only)}
+									className={`board-nav-row board-nav-board${selected ? " board-nav-row-current" : ""}`}
+									data-board-key={only.key}
+									disabled={busy}
+									onClick={selectEntry}
+									ref={selected ? currentRowRef : undefined}
+									title={`${only.key}${only.onScreen ? " · on canvas" : only.open ? " · open" : ""}`}
+									{...previewEvents(only)}
+								>
+									<span className="board-nav-variant">{group.board}</span>
+									<span className="board-nav-markers">
+										{only.onScreen ? (
+											<span className="board-nav-level board-nav-on-screen">on canvas</span>
+										) : (
+											only.open && <span className="board-nav-level board-nav-open">open</span>
+										)}
+										{!only.inVault && <span className="board-nav-state">draft</span>}
+									</span>
+								</button>
+							</section>
+						);
+					}
 					return (
 						<section
 							className={`board-group${group.variants.some((entry) => entry.key === currentKey) ? " active-group" : ""}`}
@@ -316,13 +298,8 @@ export function BoardNavigator({
 							aria-label={group.board}
 						>
 							<div className="board-group-name" title={group.board}>
-								{defaultEntry && previewControl(defaultEntry)}
 								<span className="board-group-copy">
 									<strong>{group.board}</strong>
-									<small>
-										{group.variants[0]?.identity.level ?? "board"} · {group.variants.length} variant
-										{group.variants.length === 1 ? "" : "s"}
-									</small>
 								</span>
 							</div>
 							<div className="board-variants">
@@ -337,6 +314,7 @@ export function BoardNavigator({
 											key={entry.key}
 											disabled={busy}
 											aria-current={selected ? "page" : undefined}
+											aria-label={entryLabel(entry)}
 											ref={selected ? currentRowRef : undefined}
 											onClick={selectEntry}
 											data-board-key={entry.key}
@@ -371,6 +349,7 @@ export function BoardNavigator({
 								className={`board-nav-row scratch-top${scratch?.key === currentKey ? " board-nav-row-current" : ""}`}
 								disabled={busy || !scratch}
 								aria-current={scratch?.key === currentKey ? "page" : undefined}
+								aria-label="Scratch board"
 								ref={scratch?.key === currentKey ? currentRowRef : undefined}
 								onClick={selectEntry}
 								data-board-key={scratch?.key}
@@ -381,7 +360,6 @@ export function BoardNavigator({
 									<small>Unfiled draft</small>
 								</span>
 							</button>
-							{scratch && previewControl(scratch)}
 						</div>
 						{needsName && (
 							<button className="name-button" type="button" onClick={onName} disabled={busy}>

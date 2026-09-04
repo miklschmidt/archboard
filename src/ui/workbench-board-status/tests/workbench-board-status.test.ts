@@ -111,12 +111,6 @@ function semanticAnnouncer(markup: string): string {
 	return region;
 }
 
-function semanticDetail(markup: string): string {
-	const detail = markup.match(/<div class="workbench-semantic [\s\S]*?<\/div>/)?.[0];
-	if (!detail) throw new Error("Semantic visual detail is missing.");
-	return detail;
-}
-
 function regionText(region: string): string {
 	return region
 		.replace(/<[^>]+>/g, " ")
@@ -217,13 +211,9 @@ describe("workbench board status view", () => {
 			const markup = render({ semanticContext });
 			const snapshot = project({ semanticContext });
 			const region = semanticAnnouncer(markup);
-			const detail = semanticDetail(markup);
 			const failure = semanticContext.state === "refused";
 			expect(markup).toContain(`data-semantic="${semanticContext.state}"`);
 			expect(markup.match(/data-semantic-announcer=""/g)).toHaveLength(1);
-			expect(markup).toContain('class="workbench-body"');
-			expect(markup).toContain('hidden=""');
-			expect(markup.indexOf(region)).toBeLessThan(markup.indexOf('class="workbench-body"'));
 			expect(region).toContain(`data-semantic-state="${semanticContext.state}"`);
 			expect(region).toContain(`role="${failure ? "alert" : "status"}"`);
 			expect(region).toContain(`aria-live="${failure ? "assertive" : "polite"}"`);
@@ -233,10 +223,8 @@ describe("workbench board status view", () => {
 				snapshot.semanticContext.description;
 			expect(region).toContain(`aria-label="${announcement}"`);
 			expect(regionText(region)).toBe(announcement);
-			expect(detail).toContain(`data-semantic-state="${semanticContext.state}"`);
-			expect(detail).not.toContain("aria-live");
-			expect(detail).not.toContain('role="status"');
-			expect(detail).not.toContain('role="alert"');
+			if (!["unavailable", "fresh"].includes(semanticContext.state))
+				expect(markup).toContain(snapshot.semanticContext.description);
 		}
 
 		for (const takeBackState of TAKE_BACK_STATES) {
@@ -255,12 +243,13 @@ describe("workbench board status view", () => {
 
 	test("preserves TASK-140 selectors, native keyboard controls, and live announcements", () => {
 		const markup = render();
-		expect(markup).toContain('class="agent-workbench agent-rail"');
-		expect(markup).toContain('class="workbench-toggle"');
-		expect(markup).toContain('aria-expanded="false"');
-		expect(markup).toContain("aria-controls=");
-		expect(markup).toContain('class="pane-claim-take take-back"');
-		expect(markup.match(/type="button"/g)).toHaveLength(2);
+		expect(markup).toContain('class="agent-status-strip');
+		expect(markup).toContain('data-agent-current=""');
+		expect(markup).toContain('data-agent-claim=""');
+		expect(markup).toContain("Current agent action:");
+		expect(markup).toContain("Active board claim:");
+		expect(markup).toContain("pane-claim-take take-back");
+		expect(markup.match(/type="button"/g)).toHaveLength(1);
 		expect(markup).not.toContain('tabindex="-1"');
 		expect(markup).toContain('aria-live="polite"');
 		expect(markup).toContain("Rerouting the payment campaign");

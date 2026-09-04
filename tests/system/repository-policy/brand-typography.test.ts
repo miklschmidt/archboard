@@ -27,6 +27,18 @@ function sha256(filename: string): string {
 	return createHash("sha256").update(fs.readFileSync(filename)).digest("hex");
 }
 
+const layoutAliases = new Map([
+	["--navigator-width", "280px"],
+	[
+		"--shell-workbench-compact-height",
+		"calc(var(--arch-size-header) + var(--arch-size-touch-target))",
+	],
+	[
+		"--shell-workbench-expanded-height",
+		"calc( var(--arch-size-header) + var(--arch-size-touch-target) + var(--arch-size-touch-target) + var(--arch-size-touch-target) + var(--arch-size-touch-target) + var(--arch-size-touch-target) + var(--arch-size-touch-target) )",
+	],
+]);
+
 const typeAliases = new Map([
 	["--font-ui", "var(--arch-font-ui)"],
 	["--font-mono", "var(--arch-font-technical)"],
@@ -99,23 +111,17 @@ function declarationsFor(source: string, selector: string): Map<string, string> 
 }
 
 const curatedShellDeclarations = [
-	[".shell", "grid-template", "var(--arch-size-header) minmax(0, 1fr) 34px / minmax(0, 1fr)"],
+	[".shell", "grid-template", "var(--arch-size-header) minmax(0, 1fr) / minmax(0, 1fr)"],
 	[".bar", "border-bottom", "var(--arch-space-rule) solid var(--border)"],
 	[".bar-board-meta", "gap", "12px"],
 	[".chip", "padding", "0 var(--arch-space-control-inline)"],
-	[".board-group", "border-radius", "var(--arch-radius-panel)"],
+	[".board-group", "border-radius", "0"],
+	[".scratch-card", "border-radius", "var(--arch-radius-panel)"],
 	[".btn", "border-radius", "4px"],
 	[".icon-btn,\n.notice-dismiss,\n.modal-close", "border-radius", "4px"],
-	[".board-preview-control", "border-radius", "4px"],
 	[".present-button", "border-radius", "4px"],
-	[".take-back", "border-radius", "4px"],
 	[".field input,\n.field select", "border-radius", "4px"],
 	[".pane-tab.focused", "border-bottom", "2px solid var(--accent)"],
-	[
-		".claim-copy",
-		"font",
-		"var(--arch-weight-regular) var(--arch-text-body-size) / 18px var(--font-ui)",
-	],
 	[
 		".btn:disabled,\n.icon-btn:disabled,\n.name-button:disabled",
 		"opacity",
@@ -126,15 +132,14 @@ const curatedShellDeclarations = [
 		"transition",
 		"border-color var(--arch-duration-control) var(--arch-ease-control), background var(--arch-duration-control) var(--arch-ease-control)",
 	],
-	[".claim-beacon", "animation", "var(--arch-animation-status)"],
 ] as const;
 
-function shellTokenErrors(source: string): string[] {
+function shellTokenErrors(source: string, themeSource: string): string[] {
 	const errors: string[] = [];
 	const shellAliases = new Map(
 		[...declarationsFor(source, ".shell")].filter(([property]) => property.startsWith("--")),
 	);
-	const expectedShellAliases = new Map([...typeAliases, ...colorAliases]);
+	const expectedShellAliases = new Map([...layoutAliases, ...typeAliases, ...colorAliases]);
 	if (JSON.stringify([...shellAliases]) !== JSON.stringify([...expectedShellAliases])) {
 		errors.push("the .shell legacy bridge does not exactly match the canonical alias map");
 	}
@@ -150,6 +155,11 @@ function shellTokenErrors(source: string): string[] {
 		const actual = declarationsFor(source, selector).get(property);
 		if (actual !== expected) errors.push(`${selector} ${property} maps to ${actual ?? "nothing"}`);
 	}
+	if (
+		declarationsFor(themeSource, "@theme inline").get("--animate-status") !==
+		"var(--arch-animation-status)"
+	)
+		errors.push("status animation does not use the canonical token");
 	return errors;
 }
 
@@ -241,7 +251,8 @@ describe("brand typography assets", () => {
 
 	test("maps the legacy shell bridge and curated roles to exact canonical tokens", () => {
 		const css = fs.readFileSync(path.join(repoRoot, "src/ui/shell/shell.css"), "utf8");
-		expect(shellTokenErrors(css)).toEqual([]);
+		const themeCss = fs.readFileSync(path.join(repoRoot, "src/ui/theme/app.css"), "utf8");
+		expect(shellTokenErrors(css, themeCss)).toEqual([]);
 
 		const hostileSwaps = [
 			[
@@ -265,14 +276,19 @@ describe("brand typography assets", () => {
 				"opacity: var(--arch-opacity-disabled-control);",
 				"opacity: var(--arch-opacity-disabled-item);",
 			],
-			[
-				"motion",
-				"animation: var(--arch-animation-status);",
-				"animation: var(--arch-duration-control);",
-			],
 		] as const;
+		expect(
+			shellTokenErrors(
+				css,
+				replaceOnce(
+					themeCss,
+					"--animate-status: var(--arch-animation-status);",
+					"--animate-status: var(--arch-duration-control);",
+				),
+			),
+		).not.toEqual([]);
 		for (const [family, from, to] of hostileSwaps) {
-			expect(shellTokenErrors(replaceOnce(css, from, to)), family).not.toEqual([]);
+			expect(shellTokenErrors(replaceOnce(css, from, to), themeCss), family).not.toEqual([]);
 		}
 	});
 });

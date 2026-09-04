@@ -29,7 +29,6 @@ interface BoardBarProps {
 	onNoteClick: () => void;
 	paneCount: number;
 	onOpen: () => void;
-	onNew: () => void;
 	onClear: () => void;
 	onOpenOpenerSettings: () => void;
 	onAddPane: () => void;
@@ -103,7 +102,6 @@ export function BoardBar({
 	onNoteClick,
 	paneCount,
 	onOpen,
-	onNew,
 	onClear,
 	onOpenOpenerSettings,
 	onAddPane,
@@ -246,10 +244,6 @@ export function BoardBar({
 					aria-label={theme === "dark" ? "Use light theme" : "Use dark theme"}
 				>
 					<Icon name={theme === "dark" ? "sun" : "moon"} />
-				</button>
-				<button className="btn btn-primary" onClick={onNew} disabled={busy}>
-					<Icon name="plus" />
-					<span>New board</span>
 				</button>
 			</nav>
 		</header>

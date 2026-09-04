@@ -66,7 +66,7 @@ test(
 		await seedBoard(request, CURRENT, "current");
 		await seedBoard(request, PROPOSAL, "propose");
 		await browser.run(["open", canvas.base]);
-		await browser.run(["set", "viewport", "1440", "900"]);
+		await browser.run(["set", "viewport", "1920", "1080"]);
 		const first = await waitForPanes(
 			request,
 			(report) => report.paneCount === 1 && typeof report.panes[0]?.clientId === "string",
@@ -105,6 +105,9 @@ test(
 			"both boards to be visible",
 		);
 		const currentPane = boardsReady.panes.find((pane) => pane.board === CURRENT)!;
+		// Both panes keep a selection so switching presentation targets retains
+		// the same inspector allocation when the split layout returns.
+		expect(await paneAppAction(browser, "Pane B", "propose", "select")).toBe(true);
 		await browser.run(["click", `.pane[aria-label="Pane A"] .excalidraw`]);
 		expect(await paneAppAction(browser, "Pane A", "current", "select")).toBe(true);
 		await waitForPanes(
@@ -197,6 +200,9 @@ test(
 		expect(entered.controlDisplays.length).toBeGreaterThan(0);
 		expect(entered.controlDisplays).toEqual(entered.controlDisplays.map(() => "none"));
 		expect(entered.dockFocused).toBe(true);
+		expect(entered.workbenchCompact).toBe(true);
+		expect(entered.workbenchHeight).toBeGreaterThan(0);
+		expect(entered.workbenchHeight).toBeLessThan(150);
 		expect(entered.sameNodes).toBe(true);
 		const dockType = await browser.eval<{
 			height: number;
@@ -250,8 +256,8 @@ test(
 		expect(during.panes.find((pane) => pane.board === PROPOSAL)?.rect).toEqual({
 			x: 0,
 			y: 0,
-			width: 1440,
-			height: 900,
+			width: 1920,
+			height: 1080 - entered.workbenchHeight,
 		});
 		expect((await request<BoardBody>(`/api/elements?board=${CURRENT}`)).body.held).toEqual(
 			heldBefore,

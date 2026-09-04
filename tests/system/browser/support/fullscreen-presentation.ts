@@ -89,6 +89,8 @@ export async function readPageView(browser: AgentBrowserSession) {
 	return browser.eval<{
 		fullscreen: boolean;
 		chromeHidden: boolean;
+		workbenchHeight: number;
+		workbenchCompact: boolean;
 		controlDisplays: string[];
 		dockVisible: boolean;
 		dockFocused: boolean;
@@ -101,7 +103,8 @@ export async function readPageView(browser: AgentBrowserSession) {
 			const rect = node.getBoundingClientRect();
 			return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
 		};
-		const hiddenChrome = ['.bar', '.board-nav', '.agent-rail', '.statusbar', '.pane-bar'];
+		const hiddenChrome = ['.bar', '.board-nav', '.pane-bar'];
+		const workbench = document.querySelector('[data-workbench-frame]');
 		const controls = [...document.querySelectorAll(
 			'.presentation-current .layer-ui__wrapper, ' +
 			'.presentation-current .App-menu, ' +
@@ -109,6 +112,8 @@ export async function readPageView(browser: AgentBrowserSession) {
 		)];
 		return {
 			fullscreen: document.fullscreenElement === shell,
+			workbenchHeight: workbench?.getBoundingClientRect().height ?? 0,
+			workbenchCompact: workbench?.getAttribute('data-workbench-space') === 'fullscreen',
 			chromeHidden: hiddenChrome.every(selector => {
 				const node = document.querySelector(selector);
 				return !!node && getComputedStyle(node).display === 'none';
