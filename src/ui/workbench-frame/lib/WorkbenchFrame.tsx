@@ -239,11 +239,6 @@ function ActivePane({ pane, timelineId, coordinatorId, approvalsId }: ActivePane
 	);
 }
 
-function PresentRequest({ source }: { readonly source: WorkbenchFrameRequestSource }) {
-	const state = useTransportState(source.transport);
-	return <WorkbenchApprovals now={source.now} state={state} transport={source.transport} />;
-}
-
 function RequestState({
 	request,
 }: {
@@ -271,28 +266,29 @@ const INVALID_REQUEST_SOURCE = Object.freeze({
 	recovery: "Reload the workbench request from its originating pane.",
 }) satisfies Exclude<WorkbenchFrameRequest, { state: "present" }>;
 
-function AppGlobalRequest({
-	request,
-	id,
-}: {
-	readonly request: WorkbenchFrameRequest;
+const APP_GLOBAL_REQUEST_BOUNDED_LAYOUT =
+	"min-w-0 max-h-1/2 min-h-touch-target shrink-0 overflow-y-auto overscroll-contain border-t border-border bg-surface shadow-flat";
+
+interface AppGlobalRequestSurfaceProps {
+	readonly children: ReactNode;
 	readonly id: string;
-}) {
-	const present = request.state === "present";
-	const sourceIssue = present ? workbenchFrameRequestSourceIssue(request.source) : null;
-	const validSource = sourceIssue === null;
-	const invalidRequest =
-		sourceIssue === null
-			? INVALID_REQUEST_SOURCE
-			: Object.freeze({ ...INVALID_REQUEST_SOURCE, detail: sourceIssue });
+	readonly projection: WorkbenchFrameRequest["state"];
+	readonly sourceLabel?: string;
+}
+
+function AppGlobalRequestSurface({
+	children,
+	id,
+	projection,
+	sourceLabel,
+}: AppGlobalRequestSurfaceProps) {
 	return (
 		<section
 			aria-label="Application-wide Codex requests"
-			className="min-w-0 max-h-[40%] min-h-touch-target shrink-0 overflow-y-auto overscroll-contain border-t border-border bg-surface shadow-flat"
+			className={APP_GLOBAL_REQUEST_BOUNDED_LAYOUT}
 			data-workbench-region="app-global-request"
-			data-workbench-request={
-				present && validSource ? "present" : present ? "error" : request.state
-			}
+			data-workbench-request={projection}
+			data-workbench-request-allocation="bounded-half-frame"
 			id={id}
 		>
 			<header className="top-0 sticky z-10 flex min-h-touch-target items-center justify-between gap-control bg-surface px-region">
@@ -300,25 +296,62 @@ function AppGlobalRequest({
 					<p className="m-0 text-kicker font-semibold text-muted-foreground">Application-wide</p>
 					<p className="m-0 font-sans text-title font-semibold">Approval and input requests</p>
 				</div>
-				{present && validSource ? (
+				{sourceLabel === undefined ? null : (
 					<dl className="m-0 min-w-0 flex items-baseline gap-control">
 						<dt className="font-sans text-body text-muted-foreground">Source pane</dt>
 						<dd className="m-0 max-w-full truncate font-sans text-body font-medium">
-							{request.source.pane.label}
+							{sourceLabel}
 						</dd>
 					</dl>
-				) : null}
+				)}
 			</header>
-			{present ? (
-				validSource ? (
-					<PresentRequest source={request.source} />
-				) : (
-					<RequestState request={invalidRequest} />
-				)
-			) : (
-				<RequestState request={request} />
-			)}
+			{children}
 		</section>
+	);
+}
+
+function PresentAppGlobalRequest({
+	source,
+	id,
+}: {
+	readonly source: WorkbenchFrameRequestSource;
+	readonly id: string;
+}) {
+	const state = useTransportState(source.transport);
+	const sourceIssue = workbenchFrameRequestSourceIssue(source, state);
+	const invalidRequest =
+		sourceIssue === null
+			? INVALID_REQUEST_SOURCE
+			: Object.freeze({ ...INVALID_REQUEST_SOURCE, detail: sourceIssue });
+	return (
+		<AppGlobalRequestSurface
+			id={id}
+			projection={sourceIssue === null ? "present" : "error"}
+			sourceLabel={sourceIssue === null ? source.pane.label : undefined}
+		>
+			{sourceIssue === null ? (
+				<WorkbenchApprovals now={source.now} state={state} transport={source.transport} />
+			) : (
+				<RequestState request={invalidRequest} />
+			)}
+		</AppGlobalRequestSurface>
+	);
+}
+
+function AppGlobalRequest({
+	request,
+	id,
+}: {
+	readonly request: WorkbenchFrameRequest;
+	readonly id: string;
+}) {
+	if (request.state === "present") {
+		return <PresentAppGlobalRequest id={id} source={request.source} />;
+	}
+	return (
+		<AppGlobalRequestSurface id={id} projection={request.state}>
+			<RequestState request={request} />
+		</AppGlobalRequestSurface>
 	);
 }
 
