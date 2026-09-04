@@ -209,6 +209,7 @@ export interface RealtimeFake extends VoiceRealtimePort {
 	onStart: (handler: () => Promise<RealtimeMediaSnapshot>) => void;
 	onStop: (handler: () => Promise<RealtimeMediaSnapshot>) => void;
 	calls: () => readonly string[];
+	listenerCount: () => number;
 }
 
 export function realtimeFake(
@@ -218,17 +219,28 @@ export function realtimeFake(
 	let media = initial;
 	let ownerState = initialState;
 	const calls: string[] = [];
-	let startHandler = async (): Promise<RealtimeMediaSnapshot> => {
-		media = mediaSnapshot({ phase: "listening", reason: "negotiation_succeeded" });
-		return media;
+	const listeners = new Set<() => void>();
+	const publish = (): void => {
+		const notified = [...listeners];
+		for (const listener of notified) listener();
 	};
-	let stopHandler = async (): Promise<RealtimeMediaSnapshot> => {
-		media = mediaSnapshot({ phase: "closed", reason: "stopped" });
-		return media;
+	/** The real owner publishes every change it makes; so does this fake. */
+	const setMedia = (next: RealtimeMediaSnapshot): RealtimeMediaSnapshot => {
+		media = next;
+		publish();
+		return next;
 	};
+	let startHandler = async (): Promise<RealtimeMediaSnapshot> =>
+		setMedia(mediaSnapshot({ phase: "listening", reason: "negotiation_succeeded" }));
+	let stopHandler = async (): Promise<RealtimeMediaSnapshot> =>
+		setMedia(mediaSnapshot({ phase: "closed", reason: "stopped" }));
 	return {
 		snapshot: () => media,
 		state: () => ownerState,
+		subscribe: (listener: () => void) => {
+			listeners.add(listener);
+			return () => listeners.delete(listener);
+		},
 		start: () => {
 			calls.push("start");
 			return startHandler();
@@ -240,9 +252,11 @@ export function realtimeFake(
 		set: (next, state) => {
 			media = next;
 			if (state !== undefined) ownerState = state;
+			publish();
 		},
 		setState: (state) => {
 			ownerState = state;
+			publish();
 		},
 		onStart: (handler) => {
 			startHandler = handler;
@@ -251,5 +265,6 @@ export function realtimeFake(
 			stopHandler = handler;
 		},
 		calls: () => [...calls],
+		listenerCount: () => listeners.size,
 	};
 }

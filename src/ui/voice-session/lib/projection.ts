@@ -46,6 +46,40 @@ const MEDIA_UNAVAILABLE_FAILURES = {
 	socket_closed: null,
 } as const satisfies Record<MediaUnavailable["reason"], VoiceSessionFailureCode | null>;
 
+/**
+ * Why each host coordinator state blocks a start, exhaustive over the published
+ * union rather than matched by negation, so a state added to the browser model
+ * is a type error here until it is decided.
+ */
+const COORDINATOR_BLOCKERS = {
+	unbound: "The host has no coordinator bound to this pane for voice.",
+	starting: "The host is still confirming the voice coordinator.",
+	reconnecting: "The host is reconnecting the voice coordinator.",
+	failed: "The host has no usable coordinator for voice.",
+	ready: null,
+	active: null,
+} as const satisfies Record<BrowserSnapshot["coordinator"]["state"], string | null>;
+
+const VOICE_BLOCKERS = {
+	unavailable: "The host reports that voice is unavailable on this pane.",
+	ready: null,
+	starting: null,
+	active: null,
+	recovering: null,
+	stopping: null,
+	failed: null,
+} as const satisfies Record<BrowserSnapshot["voice"]["state"], string | null>;
+
+/** Statuses a host-published recovery renames; a stop or a stopped run is not one. */
+const RECOVERABLE_STATUSES = new Set<VoiceSessionStatus>([
+	"requesting_permission",
+	"negotiating",
+	"listening",
+	"muted",
+	"processing",
+	"agent_speaking",
+]);
+
 const REPLACED_RECOVERY =
 	"Close this session; a new one can then be started on the current thread link.";
 const STOP_UNCONFIRMED_RECOVERY =
@@ -89,6 +123,9 @@ function startBlocker(input: VoiceSessionProjectionInput): string | null {
 		return transportState.state === "incompatible_contract"
 			? "The Codex workbench gateway speaks an incompatible contract."
 			: transportState.reason;
+	// A stale snapshot is a connected socket whose stream lost its place. What it
+	// is showing is no longer known to be current, so it cannot anchor a start.
+	if (transportState.kind === "stream") return transportState.reason;
 	if (mediaState.state === "attaching")
 		return "Archboard is installing realtime microphone and audio support in this browser.";
 	if (mediaState.state === "unavailable") return mediaState.message;
@@ -101,12 +138,10 @@ function startBlocker(input: VoiceSessionProjectionInput): string | null {
 		return "This pane has no executable thread link to bind a voice session to.";
 	if (!capabilities.canClaimLease)
 		return "This pane cannot claim the command lease a voice session needs.";
-	if (snapshot.coordinator.state === "unbound" || snapshot.coordinator.state === "failed")
-		return snapshot.coordinator.reason ?? "The host has no usable coordinator for voice.";
-	if (snapshot.coordinator.state === "starting" || snapshot.coordinator.state === "reconnecting")
-		return snapshot.coordinator.reason ?? "The host is still confirming the voice coordinator.";
-	if (snapshot.voice.state === "unavailable")
-		return snapshot.voice.reason ?? "The host reports that voice is unavailable on this pane.";
+	const coordinatorBlocker = COORDINATOR_BLOCKERS[snapshot.coordinator.state];
+	if (coordinatorBlocker !== null) return snapshot.coordinator.reason ?? coordinatorBlocker;
+	const voiceBlocker = VOICE_BLOCKERS[snapshot.voice.state];
+	if (voiceBlocker !== null) return snapshot.voice.reason ?? voiceBlocker;
 	return null;
 }
 
@@ -183,25 +218,46 @@ function replacedView(input: VoiceSessionProjectionInput): VoiceSessionView {
 function runView(
 	media: RealtimeMediaSnapshot,
 	blocker: string | null,
+	external: VoiceSessionFailure | null,
 	input: VoiceSessionProjectionInput,
 ): VoiceSessionView {
 	const state = media.state;
-	const status = narratedStatus(state);
+	const narrated = narratedStatus(state);
 	const detail = narratedDetail(state);
 	const startable = blocker === null;
+	const hostVoice = input.transportState.snapshot?.voice ?? null;
+	// The host owns the recovery it is running; a live phase under a host-declared
+	// recovery is a recovery, not steady listening.
+	const status =
+		hostVoice?.state === "recovering" && RECOVERABLE_STATUSES.has(narrated)
+			? "recovering"
+			: narrated;
 	if (detail !== null) {
 		const running = LIVE_PHASES.has(state.phase);
+		const controls = Object.freeze({
+			canStart: !input.busy && !running && startable,
+			canStop: !input.busy && running && state.phase !== "stopping",
+			canRestart: !input.busy && startable && state.phase !== "stopping",
+			canClose: false,
+		});
+		const recovering = status === "recovering" && narrated !== status;
+		const narratedDetailText = recovering
+			? `${detail} ${hostVoice?.reason ?? "The host is recovering this voice session."}`
+			: detail;
+		// A coordinator or voice failure the host publishes mid-run is the only
+		// news on the screen; without this the run keeps reading as healthy.
+		if (external === null)
+			return view(status, narratedDetailText, null, NO_OUTCOME, controls, input);
 		return view(
 			status,
-			detail,
-			null,
-			NO_OUTCOME,
-			Object.freeze({
-				canStart: !input.busy && !running && startable,
-				canStop: !input.busy && running && state.phase !== "stopping",
-				canRestart: !input.busy && startable && state.phase !== "stopping",
-				canClose: false,
-			}),
+			`${narratedDetailText} ${failureSubject(external.code)} failed. ${external.message}`,
+			external,
+			controls.canRestart
+				? retry("restart", "Restart voice", RESTART_RECOVERY)
+				: controls.canStop
+					? retry("stop", "Stop voice", STOP_FIRST_RECOVERY)
+					: NO_OUTCOME,
+			controls,
 			input,
 		);
 	}
@@ -252,9 +308,10 @@ export function projectVoiceSession(input: VoiceSessionProjectionInput): VoiceSe
 	// A close() retires exactly the session it was called on. A later run — one
 	// the media owner started after it — is a new session and shows normally.
 	const retired = input.closed && input.closedSessionId === (media?.correlation?.sessionId ?? null);
-	if (!retired && hasRealtimeRun(media)) return runView(media, blocker, input);
+	const external = externalFailure(mediaState, transportState.snapshot);
+	if (!retired && hasRealtimeRun(media)) return runView(media, blocker, external, input);
 
-	const failure = externalFailure(mediaState, transportState.snapshot) ?? input.controlFailure;
+	const failure = external ?? input.controlFailure;
 	if (failure !== null) {
 		const controls = Object.freeze({ ...NO_CONTROLS, canStart: !busy && blocker === null });
 		return view(

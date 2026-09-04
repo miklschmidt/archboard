@@ -174,19 +174,22 @@ describe("voice session binding", () => {
 		expect(await session.restart()).toBe(session.view());
 		expect(realtime.calls()).toEqual(["start"]);
 
-		session.close();
+		await session.close();
+		// A replaced session may still hold the microphone, so close stops it.
+		expect(realtime.calls()).toEqual(["start", "stop"]);
 		expect(session.view().binding).toBeNull();
 		expect(session.view().status).toBe("ready");
 		expect(session.view().controls.canStart).toBe(true);
 	});
 
 	test("close() is refused while the session is usable", async () => {
-		const { session } = harness();
+		const { session, realtime } = harness();
 		await session.start();
 		expect(session.view().controls.canClose).toBe(false);
-		session.close();
+		await session.close();
 		expect(session.view().status).toBe("listening");
 		expect(session.view().binding).not.toBeNull();
+		expect(realtime.calls()).toEqual(["start"]);
 	});
 });
 
@@ -286,9 +289,7 @@ describe("voice session ordering and disposal", () => {
 		const pending = session.start();
 		expect(session.view().controls.canStart).toBe(false);
 
-		// A replacement lands, and the person closes the session, before the
-		// in-flight start resolves.
-		realtime.set(listening());
+		// The pane is disposed before the in-flight start resolves.
 		session.dispose();
 		const settled = session.view();
 		release(listening());
@@ -303,22 +304,42 @@ describe("voice session ordering and disposal", () => {
 		const { session, realtime, transport } = harness();
 		await session.start();
 		transport.set(connectedState(relinked("child-b", "epoch-b", "workhorse-b")));
-		session.close();
+		await session.close();
 
 		realtime.set(mediaSnapshot({ phase: "listening", reason: "negotiation_succeeded" }));
-		expect(session.refresh().status).toBe("ready");
+		expect(session.view().status).toBe("ready");
 
 		// A run the media owner starts afterwards is a new session, not the
 		// retired one, and shows normally.
 		realtime.set(
 			mediaSnapshot(
 				{ phase: "listening", reason: "negotiation_succeeded" },
-				{
-					correlation: correlation("session-2"),
-				},
+				{ correlation: correlation("session-2") },
 			),
 		);
-		expect(session.refresh().status).toBe("listening");
+		expect(session.view().status).toBe("listening");
+	});
+
+	test("sees a browser-originated realtime change with no transport delta", async () => {
+		const { session, realtime, notifications } = harness();
+		await session.start();
+		expect(session.view().status).toBe("listening");
+		const settled = notifications();
+
+		// The microphone is unplugged. Nothing reaches the transport; the media
+		// owner's own publication is the whole news, and the view must move.
+		realtime.set(
+			mediaSnapshot({
+				phase: "recoverable_error",
+				reason: "device_lost",
+				message: "The microphone was removed.",
+			}),
+		);
+
+		expect(notifications()).toBe(settled + 1);
+		expect(session.view().status).toBe("failed");
+		expect(session.view().failure?.code).toBe("device");
+		expect(session.view().outcome.kind).toBe("retry");
 	});
 
 	test("publishes to subscribers only when the projected view changed", async () => {
@@ -331,19 +352,21 @@ describe("voice session ordering and disposal", () => {
 		expect(notifications()).toBeGreaterThan(before);
 	});
 
-	test("disposal releases the transport subscription and refuses further controls", async () => {
+	test("disposal releases both subscriptions and refuses further controls", async () => {
 		const { session, realtime, transport } = harness();
 		await session.start();
 		const settled = session.view();
 		expect(transport.listenerCount()).toBe(1);
+		expect(realtime.listenerCount()).toBe(1);
 
 		session.dispose();
 
 		expect(transport.listenerCount()).toBe(0);
+		expect(realtime.listenerCount()).toBe(0);
 		expect(await session.stop()).toBe(settled);
 		expect(await session.restart()).toBe(settled);
 		expect(await session.start()).toBe(settled);
-		expect(session.close()).toBe(settled);
+		expect(await session.close()).toBe(settled);
 		expect(session.refresh()).toBe(settled);
 		// The adapter reads the media owner; it never stops or disposes one.
 		expect(realtime.calls()).toEqual(["start"]);
