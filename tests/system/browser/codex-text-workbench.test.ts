@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, readFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -7,10 +7,7 @@ import {
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
-import {
-	prepareProductionFixture,
-	type ProductionFixture,
-} from "../canvas-state/support/codex-production.ts";
+import { prepareProductionFixture } from "../canvas-state/support/codex-production.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
 	browserTestRoots,
@@ -20,6 +17,10 @@ import {
 	registerCanvasBase,
 	runCanvasCli,
 } from "./support/agent-browser.ts";
+import {
+	claimRenderedWorkbenchLease,
+	productionFixtureRecords,
+} from "./support/codex-workbench-production.ts";
 import { seedBoard } from "./support/fullscreen-presentation.ts";
 import { fillLabel, roleAction } from "./support/opener-settings-interaction.ts";
 
@@ -62,13 +63,6 @@ async function initialRender(
 		})()`);
 }
 
-function fixtureRecords(fixture: ProductionFixture): FixtureRecord[] {
-	return readFileSync(fixture.logPath, "utf8")
-		.split("\n")
-		.filter(Boolean)
-		.map((line) => JSON.parse(line) as FixtureRecord);
-}
-
 function approvalCards(
 	browser: Awaited<ReturnType<typeof createAgentBrowser>>,
 ): Promise<ApprovalCardSnapshot[]> {
@@ -81,25 +75,6 @@ function approvalCards(
 			phase: card.getAttribute('data-approval-phase'),
 			text: card.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
 		}))`);
-}
-
-async function claimRenderedWorkbenchLease(
-	browser: Awaited<ReturnType<typeof createAgentBrowser>>,
-): Promise<void> {
-	// A lease is an explicit transport precondition rather than a rendered human
-	// control. Claim each one-shot command lease through the pane transport that
-	// owns the controls under test; every actual command still comes from the UI.
-	const lease = await browser.eval<{ kind: string; state: string }>(`(async () => {
-		const frame = document.querySelector('[data-workbench-frame]');
-		const key = frame && Object.keys(frame).find(candidate => candidate.startsWith('__reactFiber$'));
-		let fiber = key ? frame[key] : null;
-		for (let depth = 0; fiber && depth < 30; depth += 1, fiber = fiber.return) {
-			const transport = fiber.memoizedProps?.view?.panes?.[0]?.transport;
-			if (typeof transport?.claimLease === 'function') return transport.claimLease();
-		}
-		throw new Error('The rendered workbench exposed no pane transport for controlled lease setup.');
-	})()`);
-	expect(lease).toMatchObject({ kind: "command_lease", state: "active" });
 }
 
 test(
@@ -226,7 +201,7 @@ test(
 		const settled = await pollUntil(
 			async () => ({
 				cards: await approvalCards(browser),
-				response: fixtureRecords(fixture).find(
+				response: productionFixtureRecords<FixtureRecord>(fixture).find(
 					({ frame, kind }) => kind === "reverse_response" && frame?.id === "ordinary-request-1",
 				),
 			}),
@@ -245,7 +220,7 @@ test(
 		})()`),
 		).toBe(true);
 
-		const records = fixtureRecords(fixture);
+		const records = productionFixtureRecords<FixtureRecord>(fixture);
 		const versionProbes = records.filter(({ kind }) => kind === "version_probe");
 		expect(versionProbes).toHaveLength(2);
 		expect(versionProbes.every(({ args }) => args?.length === 1 && args[0] === "--version")).toBe(

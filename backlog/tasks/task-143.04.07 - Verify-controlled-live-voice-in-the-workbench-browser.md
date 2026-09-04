@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-09-04 16:51'
+updated_date: '2026-09-04 16:59'
 labels: []
 dependencies:
   - TASK-143.02.04
@@ -18,7 +18,9 @@ references:
   - docs/design/operator-canvas-shell.md
 modified_files:
   - tests/system/browser/codex-live-voice.test.ts
+  - tests/system/browser/codex-text-workbench.test.ts
   - tests/system/browser/support/codex-live-voice.ts
+  - tests/system/browser/support/codex-workbench-production.ts
   - tests/system/browser/support/agent-browser.ts
   - tests/system/browser/support/shell-render-matrix.ts
   - tests/system/canvas-state/fixtures/fake-codex-production.ts
@@ -65,4 +67,8 @@ The first controlled browser run exposed raw notification thread IDs at the prod
 Current-base result: the exact controlled browser owner passes 51 assertions in 3.12 seconds. It exercises the production Shell, CanvasPane, WorkbenchFrame, exact Codex 0.151.0 fake, controlled browser media, rendered source/context/transcript, listening and mute, 1440x900 and 1920x1080@2 geometry, focus order, reduced motion, forced colors, fullscreen Stop, text-only cleanup, unchanged Excalidraw, strict version/spawn evidence, empty browser logs, and full media disposal. The fake now emits the protocol-accurate item/started introduction before each item/completed reference required by TASK-143.04.12. Browser and wire realtime session identities are asserted in their separate domains.
 
 Scoped validation on aed53517: root TypeScript passed; frontend TypeScript passed; scoped Oxlint and Oxfmt passed; git diff check passed. A direct inventory audit measured 17 owners at the fixed base and 18 in this range, with the new owner appended once and present once in test:serial-browser. The serial browser adapter completed cleanup, and a follow-up process and recent lane-directory audit found no residue. The repository-policy suite was not run because the delegated boundary forbids it.
+
+Accepted review remediation: the strict production fake now retains the raw coordinator thread created first, rejects realtime start or stop for any other thread with JSON-RPC invalid params, and records the authoritative stop target. The browser owner asserts the exact rendered pane, workhorse, and coordinator identities; exact raw coordinator thread on start and stop; and the distinct stable browser-media and Codex wire realtime-session domains. It now measures live non-fullscreen voice at 1920x1080@2 before presentation, including collision, overflow, and every 44-by-44 target, then asserts both Stop dimensions in fullscreen at 1440x900 and Flip sizes.
+
+The accepted cleanup leaves fewer test concepts and lines. One 29-line browser-test helper replaces about 50 duplicated lines of fixture-log parsing and private lease traversal across the text and voice owners. No production or general test contract changed. The remediated browser owner passes 62 assertions in 3.11 seconds. Root and frontend TypeScript pass; scoped Oxlint, Oxfmt, diff checks, and the direct 17-to-18 inventory audit pass. The serial lane and follow-up process audit found no residue.
 <!-- SECTION:NOTES:END -->
