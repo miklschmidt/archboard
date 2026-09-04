@@ -77,6 +77,19 @@ function approvalCards(
 		}))`);
 }
 
+async function revealComposerCommand(
+	browser: Awaited<ReturnType<typeof createAgentBrowser>>,
+	command: "start" | "steer",
+): Promise<void> {
+	const revealed = await browser.eval<boolean>(`(() => {
+		const control = document.querySelector('[data-composer-send="${command}"]');
+		if (!(control instanceof HTMLButtonElement)) return false;
+		control.scrollIntoView({ block: 'center', inline: 'nearest' });
+		return true;
+	})()`);
+	expect(revealed).toBe(true);
+}
+
 test(
 	"the production text workbench reaches its rendered browser controls",
 	async () => {
@@ -169,6 +182,7 @@ test(
 			"the filled composer to enable Send",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
+		await revealComposerCommand(browser, "start");
 		await roleAction(browser, "button", "Send");
 
 		const pending = await pollUntil(
