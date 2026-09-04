@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-04 16:09'
-updated_date: '2026-09-04 16:28'
+updated_date: '2026-09-04 16:32'
 labels: []
 dependencies: []
 parent_task_id: TASK-143.04
@@ -34,6 +34,8 @@ TASK-143.04.07 now completes SDP and started, then a valid final transcript such
 2. Add a red live-item boundary case at the identity authority maximum and one byte beyond it. Keep item/started as the sole introduction and prove an oversized raw item remains unissued.
 3. Stage all matching recovery records across the complete cursor chain, reject bad pages or loops before authority adoption, batch-adopt once, build the merged entry map locally, then replace retained entries and publish once. Align the neutral transcript presentation length with the authority-owned canonical ItemId maximum without weakening ItemIdSchema.
 4. Correct only the three stale raw-ID expectations in the focused process-contract owner, then run the permitted focused tests, both TypeScript projects, scoped lint/format, and fixed-base diff checks. Commit the complete range and return it for rereview without checking acceptance criteria or finalizing the task.
+
+5. Correct the focused process fixture at both control-write sites by serializing the issued coordinator ThreadId back to its raw app-server value. Preserve the raw notification payloads and canonical transcript expectations, require the exact process owner to pass, then commit the isolated fixture correction.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -44,4 +46,8 @@ Red proof: the focused adapter-to-production-projection test received refused/in
 Independent review reopened the implementation at 6ccdbb6b with three required closures: full-pagination recovery atomicity, authority-safe presentation bounds, and canonical expectations in the existing process owner. The task stays In Progress and all acceptance criteria stay unchecked.
 
 Rereview remediation proof: the new public adapter owner first failed all four cases. It exposed a first recovery page before a deferred second page, retained partial transcript and issued identities after a late oversized item and cursor loop, and dropped an authority-valid 4,096-byte raw item after issuing its 8,208-character canonical value. After the change, all four pass: no transcript record, transcript event, or item issuance occurs until every page and cursor succeeds; late invalid and loop failures leave the item ledger empty; the 4,096-byte value publishes canonically; and 4,097 bytes remain unissued. The permitted focused set passes 51 tests with 681 assertions, both TypeScript projects pass, and scoped lint, format, and diff checks pass. The exact process owner was run under a 20-second command bound and completed in 10.19 seconds with 1 pass and 3 failures. Its two negotiation cases time out before transcript assertions because the existing fixture substitutes the already-canonical coordinator ThreadId into notifications while the adapter resolves raw notification thread IDs. Its three transcript expectations now use resolveItemId as requested; the fixture was not changed. Browser and broad suites were not run.
+
+Parent authorized the previously protected process-fixture correction after rereview. No new product scope or task was added.
+
+Authorized fixture remediation is complete. Both control-write paths now serialize the issued coordinator ThreadId back to the raw app-server value before substituting $THREAD. The restart owner also serializes its fresh generation thread before direct started and SDP notifications, preserving the stale-old-child check and the fresh-answer assertion. The exact process owner passes 4 tests with 65 assertions in 1.84 seconds under the 20-second command cap. The focused relevant unit set still passes 51 tests with 681 assertions; both TypeScript projects, scoped lint, scoped format, and diff checks pass.
 <!-- SECTION:NOTES:END -->
