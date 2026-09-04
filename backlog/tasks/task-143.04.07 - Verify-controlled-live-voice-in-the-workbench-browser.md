@@ -1,11 +1,11 @@
 ---
 id: TASK-143.04.07
 title: Verify controlled live voice in the workbench browser
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-09-04 17:38'
+updated_date: '2026-09-04 17:43'
 labels: []
 dependencies:
   - TASK-143.02.04
@@ -42,10 +42,10 @@ Own one controlled real-browser product check for live voice in the production S
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The production Shell, CanvasPane, and WorkbenchFrame register live voice through the public codex-realtime seam against the exact Codex 0.151.0 fake. The owner proves the version probes and single strict app-server spawn and never resolves or spawns PATH Codex.
-- [ ] #2 One short controlled live lifecycle shows the exact pane, workhorse, coordinator, and realtime-session source; visible context and transcript; listening and mute phase changes; the immutable active-voice Stop in fullscreen; authoritative text-only cleanup; the same mounted Excalidraw element; no console or page errors; and complete test resource cleanup.
-- [ ] #3 Rendered checks at 1440x900 and Samsung Flip desktop dimensions prove the live voice and fullscreen dock avoid shell and Excalidraw overlay collisions, Stop and voice controls retain at least 44px targets, keyboard focus order remains usable, status and live-region semantics remain named, and forced-colors and reduced-motion rules remain active where the browser supplies unique evidence.
-- [ ] #4 Against fixed base aed5351720830cf644447e219bed5b3bcee3cc9e, the normal executable browser inventory moves from its measured 17 owners to 18 by appending this owner exactly once in BROWSER_TEST_PATHS and test:serial-browser. Repository inventory rejects missing, duplicate, reordered, or normal/opt-in-overlap owners, and general documentation describes ownership without copying the count.
+- [x] #1 The production Shell, CanvasPane, and WorkbenchFrame register live voice through the public codex-realtime seam against the exact Codex 0.151.0 fake. The owner proves the version probes and single strict app-server spawn and never resolves or spawns PATH Codex.
+- [x] #2 One short controlled live lifecycle shows the exact pane, workhorse, coordinator, and realtime-session source; visible context and transcript; listening and mute phase changes; the immutable active-voice Stop in fullscreen; authoritative text-only cleanup; the same mounted Excalidraw element; no console or page errors; and complete test resource cleanup.
+- [x] #3 Rendered checks at 1440x900 and Samsung Flip desktop dimensions prove the live voice and fullscreen dock avoid shell and Excalidraw overlay collisions, Stop and voice controls retain at least 44px targets, keyboard focus order remains usable, status and live-region semantics remain named, and forced-colors and reduced-motion rules remain active where the browser supplies unique evidence.
+- [x] #4 Against fixed base aed5351720830cf644447e219bed5b3bcee3cc9e, the normal executable browser inventory moves from its measured 17 owners to 18 by appending this owner exactly once in BROWSER_TEST_PATHS and test:serial-browser. Repository inventory rejects missing, duplicate, reordered, or normal/opt-in-overlap owners, and general documentation describes ownership without copying the count.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -78,4 +78,14 @@ Integration-gate remediation: the exact text owner failed twice because its sole
 UI remediation supersedes the rejected scripted-reveal workaround. A required internal UI worker read the TASK-140 visual authority, module boundaries, and test rules, then measured the smallest layout candidate. Adding one 44px touch-target token alone left Send only 25.5px visible, so the accepted product correction also lays out the empty application-request header and message in two columns. At 1440x900 the canvas/workbench/workhorse/request heights moved from 445/320/56.5/135px to 401/364/111/70px; at 1920x1080@2 they moved from 625/320/56.5/135px to 581/364/111/70px. The canvas remains the largest region at both viewports. Send is now fully visible at 57.671875x44px with no clipping, request overlap, or center obstruction. Desktop Start/Mute/Stop measure 93.3125x44, 133.34375x44, and 91.53125x44; Flip Start/Unmute/Stop measure 93.3125x44, 150.0625x44, and 91.53125x44; fullscreen Stop is 59.703125x44 at both sizes. All scripted reveal/scroll helpers are removed. Public role/name clicks remain. Real Tab traversal proves Pane A -> Collapse -> enabled Start before activation and Pane A -> Collapse -> Mute -> Stop afterward, with disabled Start skipped. Independent focused validation: text owner passed 28 assertions in 2.65s; voice owner passed 68 assertions in 3.36s. Root TypeScript passed in 2.02s, frontend TypeScript in 0.50s, scoped Oxlint/Oxfmt and diff checks passed, direct inventory remains 17 owners at fixed base and 18 now with one serial registration, and the process audit found no residue. The UI worker touched only shell.css and the two assigned owners; the shared 29-line production helper remains unchanged.
 
 Final review remediation: both scripted Pane A focus commands were replaced by the existing accessible role/name click. Each keyboard check now proves that the real click focused Pane A before Tab traversal. The pre-start path remains Pane A -> Collapse -> enabled Start; the live path remains Pane A -> Collapse -> Mute -> Stop with disabled Start skipped. The duplicated operability calculations were removed from both owners. One browser-test-only WorkbenchControlOperability result and workbenchControlOperability probe now live in the existing codex-workbench-production support, with the sole definition of the 44x44, clipping, request-overlap, and center-hit contract. The owner files lost 50 lines while shared support gained 60 readable lines, a net 10-line change that replaces two implementations with one. No production layout changed. Independent exact validation: text owner passed 26 assertions in 2.93s; voice owner passed 63 assertions in 3.51s. Root TypeScript passed in 1.98s, frontend TypeScript in 0.53s, scoped Oxlint/Oxfmt and diff checks passed, direct inventory remains 17 owners at fixed base and 18 now with one registration in each executable list, and the process audit found no residue.
+
+Final integration on codex/task-143-144-workbench applied the complete independently review-clean range without conflicts. Source-to-canonical mapping: f75bc85add4c88a0e53ab8d604da770b7f0d48db -> 86be8f02293f0075c2a86a08cdd468cc5c505849; 68a2a5a09a8c031010a6fd34a03fcbca03032105 -> ad363d400ca2b98acebb71ed02050bb2d12af6ae; d7ce0aa33c99997754613455c2e5eb702f5ddf44 -> e514d3c9; 8b03ae344ed2de4bca500453d66a40c4d85758c8 -> 7c152cd1; 53a7619de6f815fccb0afd661243eb79b7f70d0d -> 7369f2e8. Exact capped browser validation passed: live voice 3.869s wall, 63 assertions; text workbench 2.634s wall, 26 assertions. Root and frontend TypeScript passed in 2.751s; scoped Oxlint passed in 0.137s; scoped Oxfmt passed in 0.271s; diff check passed in 0.011s; direct inventory audit passed in 0.016s and proved 17 -> 18 normal owners, preserved order, one appended voice owner, matching package registration, no duplicates, and no normal/opt-in overlap. Process audit found no residue.
+
+Full canonical hashes for the final three review-clean commits: d7ce0aa33c99997754613455c2e5eb702f5ddf44 -> e514d3c9b1b98f4f58ede0a1b6508e3595e36180; 8b03ae344ed2de4bca500453d66a40c4d85758c8 -> 7c152cd1aea8db9a10cc2389f67c82aece89b9e9; 53a7619de6f815fccb0afd661243eb79b7f70d0d -> 7369f2e827aa2d044f5c235befbb475658acb224.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Integrated the review-clean controlled live-voice browser owner and accepted workbench layout. The focused live-voice and text-workbench owners pass through the production browser lane, all scoped static checks pass, and the executable browser inventory moves from 17 to 18 owners exactly once.
+<!-- SECTION:FINAL_SUMMARY:END -->
