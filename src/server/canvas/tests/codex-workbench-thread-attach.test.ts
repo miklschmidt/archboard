@@ -239,7 +239,7 @@ test("a selection the pane never published, or one naming another thread, is ref
 	} as const;
 
 	// Nothing is published yet, so no selection can name a row.
-	expect(
+	await expect(
 		actions.attach(
 			{ command: "threadLinkAttach", selectionId: "selection-published", threadId } as never,
 			context as never,
@@ -249,7 +249,7 @@ test("a selection the pane never published, or one naming another thread, is ref
 	await actions.refresh({ command: "threadLinkRefresh" } as never, context as never);
 	expect(discoveries).toBe(1);
 	// A selection that names a different thread than the published row is refused.
-	expect(
+	await expect(
 		actions.relink(
 			{
 				command: "threadLinkRelink",
@@ -275,7 +275,7 @@ test("a discovery that fails publishes the unavailable arm with its reason", asy
 		{ snapshot: () => ({ cas: { revision: 1, bytesHash: null } }) } as never,
 	);
 	expect(candidates.read()).toEqual({ kind: "codex_thread_candidates", state: "unknown" });
-	expect(candidates.refresh()).rejects.toThrow("could not be exhausted");
+	await expect(candidates.refresh()).rejects.toThrow("could not be exhausted");
 	await Bun.sleep(0);
 	expect(candidates.read()).toEqual({
 		kind: "codex_thread_candidates",
@@ -343,7 +343,7 @@ test("a list discovered under an earlier epoch is refused and retired, never re-
 	expect(candidates.generation()).toBe("4:hash-4");
 	// Something else moved the child epoch after the list was published.
 	revision = 5;
-	expect(
+	await expect(
 		actions.attach(
 			{ command: "threadLinkAttach", selectionId: "selection-published", threadId } as never,
 			context as never,
