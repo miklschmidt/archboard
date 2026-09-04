@@ -7,10 +7,16 @@ import {
 	createIdentityAuthorities,
 	createIdentityLedger,
 } from "../../../shared/codex-workbench-identity/index.js";
+import {
+	createBrowserLeaseLedger,
+	createCodexWorkbenchGateway,
+} from "../../codex-workbench/index.js";
 import { createCanvasCodexWorkbenchInstallation } from "../codex-workbench-production.js";
 import type { CodexWorkbenchComponents } from "../codex-workbench-generation.js";
 import type { CodexWorkbenchGenerationInput } from "../codex-workbench-owner.js";
+import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
 import { identities, waitOwnerFor } from "./support/codex-workbench-terminal-fixture.js";
+import { runningProcessFacts } from "./support/codex-workbench-process-fixture.js";
 
 function generationInput(generation: number): CodexWorkbenchGenerationInput {
 	return {
@@ -83,6 +89,39 @@ describe("production Codex generation ownership", () => {
 			expect(owned.value.bindings(generationInput(2)).dynamicAdapters.approval(created)).not.toBe(
 				stranded,
 			);
+		} finally {
+			rmSync(owned.root, { recursive: true, force: true });
+		}
+	});
+
+	test("retiring a generation releases its owned-process readiness subscription", async () => {
+		const subscribers = new Set<() => void>();
+		const owned = installation({ browserLeaseLedger: createBrowserLeaseLedger() });
+		try {
+			const fixture = createCodexWorkbenchGenerationFixture([]);
+			const input = {
+				generation: 1,
+				process: {
+					stop: async () => undefined,
+					snapshot: () => runningProcessFacts(),
+					subscribe: (listener: () => void) => {
+						subscribers.add(listener);
+						return () => void subscribers.delete(listener);
+					},
+				},
+			} as unknown as CodexWorkbenchGenerationInput;
+			const options = owned.value.bindings(input).gateway(fixture.components);
+			const gateway = createCodexWorkbenchGateway({
+				...options,
+				identity: fixture.components.identity,
+				threadLink: fixture.components.threadLink,
+			});
+			// Readiness deltas publish without a browser command, so the gateway
+			// holds one subscription on the owned process for this generation.
+			expect(subscribers.size).toBe(1);
+			// stopBrowser disposes the gateway before the generation settles.
+			await gateway.dispose();
+			expect(subscribers.size).toBe(0);
 		} finally {
 			rmSync(owned.root, { recursive: true, force: true });
 		}
