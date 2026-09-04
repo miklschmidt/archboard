@@ -165,11 +165,17 @@ least two constituent elements, and qualifying group evidence. Every multi-eleme
 including a library component, requires qualifying group evidence. An optional library `source`
 is a nonempty string.
 
-The schema-v2 report exposes `broadPhaseComparisons`, whose public meaning is
+The schema-v3 report exposes `broadPhaseComparisons`, whose public meaning is
 the number of semantically eligible x-overlapping pairs tested before the
 y-axis and exact predicates. Heap, event, expiry, compatibility-index, hierarchy-index, and
 path-filter work are private implementation mechanics. They do not enter the check contract or its
 JSON and text results.
+
+Schema v3 adds `CONNECTOR_PENETRATES_TEXT/text-interior` for supported connector segments that
+enter unrelated live text bounds beyond `overlapTolerance`. The finding records the connector,
+text, segment, clipped entry and exit points, and focused scene bounds. It excludes the connector's
+own bound label and text belonging to either bound endpoint. Schema v3 retains schema v2 obstacle
+identity, work-count, and bridge-provenance contracts unchanged.
 
 Schema v2 also owns bridge provenance. A valid bridge is exactly one unbound, ungrouped mask line
 whose element ID equals `bridgeId` and one redraw line carrying identical eight-field facts except
@@ -185,7 +191,7 @@ not require its sources to remain present or unchanged.
 `render-findings` is a standalone root contract. It accepts an explicit board, an existing empty
 directory, and only the four released inspection policy options. One server request reads and
 fingerprints the named note once, inspects those exact raw records, and sends one immutable strict
-render projection to the browser. Each finding reuses its schema-v2 `focusBBox`; the browser exports
+render projection to the browser. Each finding reuses its schema-v3 `focusBBox`; the browser exports
 a synthetic non-persisted frame with white PNG background, zero export padding, and fixed scale
 `min(4, 1024 / longest edge)`. The command validates PNG signature, IHDR dimensions, report order,
 finding digests, file names, hashes, and manifest completeness before committing ordered PNGs and

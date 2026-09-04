@@ -26,6 +26,7 @@ export type BridgeStaleIssue = z.infer<typeof BridgeStaleIssueSchema>;
 export const COLLISION_PASSES = [
 	"connector-node",
 	"connector-obstacle",
+	"connector-text",
 	"connector-intersection",
 	"node-overlap",
 	"label-node-overlap",
@@ -151,6 +152,7 @@ const severityByCode = {
 	INSPECTION_LIMIT_EXCEEDED: "warning",
 	CONNECTOR_PENETRATES_NODE: "error",
 	CONNECTOR_PENETRATES_OBSTACLE: "error",
+	CONNECTOR_PENETRATES_TEXT: "error",
 	CONNECTOR_INTERSECTION_UNMARKED: "error",
 	NODE_OVERLAP: "error",
 	LABEL_OVERLAP: "error",
@@ -578,6 +580,13 @@ const layoutFindings = [
 		entry: ScenePointSchema,
 		exit: ScenePointSchema,
 	}),
+	variant("CONNECTOR_PENETRATES_TEXT", "text-interior", false, {
+		connectorId: z.string().min(1),
+		segmentIndex: z.number().int().nonnegative(),
+		textId: z.string().min(1),
+		entry: ScenePointSchema,
+		exit: ScenePointSchema,
+	}),
 	variant("CONNECTOR_INTERSECTION_UNMARKED", "proper-interior-crossing", false, {
 		firstConnectorId: z.string().min(1),
 		firstSegmentIndex: z.number().int().nonnegative(),
@@ -649,13 +658,14 @@ export const FindingCodeSchema = z.enum([
 	"INSPECTION_LIMIT_EXCEEDED",
 	"CONNECTOR_PENETRATES_NODE",
 	"CONNECTOR_PENETRATES_OBSTACLE",
+	"CONNECTOR_PENETRATES_TEXT",
 	"CONNECTOR_INTERSECTION_UNMARKED",
 	"NODE_OVERLAP",
 	"LABEL_OVERLAP",
 	"BRIDGE_PROVENANCE_INVALID",
 ]);
 export const InspectionReportSchema = z.strictObject({
-	schemaVersion: z.literal(2),
+	schemaVersion: z.literal(3),
 	success: z.literal(true),
 	policy: InspectionPolicySchema,
 	limits: z.strictObject({
