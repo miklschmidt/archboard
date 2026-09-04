@@ -404,18 +404,6 @@ export interface BrowserGatewayAccountReadResult {
 	readonly snapshot: BrowserSnapshot;
 }
 
-export interface BrowserGatewayClientState {
-	readonly sequence: number;
-	readonly snapshot: BrowserSnapshot;
-}
-
-export type BrowserGatewayApplyStatus = "applied" | "duplicate" | "stale" | "gap";
-
-export interface BrowserGatewayApplyResult {
-	readonly status: BrowserGatewayApplyStatus;
-	readonly state: BrowserGatewayClientState | null;
-}
-
 export interface BrowserWorkbenchConnection {
 	readonly browserId: BrowserConnectionId;
 	readonly paneId: string;
