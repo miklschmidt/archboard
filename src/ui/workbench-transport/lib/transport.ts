@@ -4,6 +4,7 @@ import type {
 	BrowserCommandLease,
 	BrowserDynamicApproval,
 	BrowserSnapshot,
+	BrowserThreadLink,
 } from "../../../shared/codex-browser-model/index.js";
 import { browserSnapshotRelationshipIssues } from "../../../shared/codex-browser-model/index.js";
 import {
@@ -49,6 +50,13 @@ const THREAD_LINK_COMMANDS = new Set<BrowserCommandName>([
 	"threadLinkCreate",
 	"threadLinkAttach",
 	"threadLinkRelink",
+]);
+const QUEUE_COMMANDS = new Set<BrowserCommandName>([
+	"queueAdd",
+	"queueUpdate",
+	"queueDelete",
+	"queueReorder",
+	"queueStart",
 ]);
 const ACCOUNT_READINESS = new Set([
 	"login_capable",
@@ -215,6 +223,108 @@ function hasUsableDynamicApproval(
 				sameDynamicLink(candidate.binding.capturedLink, link),
 		) ?? false
 	);
+}
+
+function sameCapturedLink(left: BrowserThreadLink, right: BrowserThreadLink): boolean {
+	return (
+		left.state === right.state &&
+		left.threadId === right.threadId &&
+		left.childId === right.childId &&
+		left.epoch === right.epoch
+	);
+}
+
+function sameCommandTarget(
+	left: BrowserWorkbenchCommandTarget,
+	right: BrowserWorkbenchCommandTarget,
+): boolean {
+	return (
+		left.commandId === right.commandId &&
+		left.paneId === right.paneId &&
+		left.childId === right.childId &&
+		left.epoch === right.epoch &&
+		sameCapturedLink(left.capturedThreadLink, right.capturedThreadLink)
+	);
+}
+
+/**
+ * An ordinary approval carries no threadId of its own in the command, so
+ * nothing about the draft would notice a navigation between the moment the
+ * person read the request and the moment they answered it. The snapshot's own
+ * approval is the check: it must still be pending, unexpired, and bound to the
+ * exact child, epoch and thread the command target captured. The binding's
+ * `link` string is deliberately not compared — it is a server-owned
+ * presentation value, not a browser identity.
+ */
+function approvalMatchesTarget(
+	active: SocketRun,
+	draft: BrowserCommandDraft,
+	target: BrowserWorkbenchCommandTarget,
+	now: () => number,
+): boolean {
+	const snapshot = active.snapshot;
+	const link = target.capturedThreadLink;
+	if (snapshot === null || link.state !== "executable") return false;
+	const draftRecord = draft as unknown as Record<string, unknown>;
+	const requestId = draftRecord.requestId;
+	const approvalId = draftRecord.approvalId ?? null;
+	if (typeof requestId !== "string" || requestId.length === 0) return false;
+	return snapshot.approvals.some(
+		(candidate) =>
+			candidate.requestId === requestId &&
+			(candidate.approvalId ?? null) === approvalId &&
+			candidate.threadId === link.threadId &&
+			candidate.lifecycle.state === "pending" &&
+			candidate.expiresAtMs > now() &&
+			candidate.binding.child === target.childId &&
+			candidate.binding.epoch === target.epoch,
+	);
+}
+
+function hasUsableApproval(active: SocketRun, now: () => number): boolean {
+	const snapshot = active.snapshot;
+	const link = snapshot?.threadLink;
+	if (snapshot === undefined || snapshot === null || link?.state !== "executable") return false;
+	return snapshot.approvals.some(
+		(candidate) =>
+			candidate.threadId === link.threadId &&
+			candidate.lifecycle.state === "pending" &&
+			candidate.expiresAtMs > now() &&
+			candidate.binding.child === link.childId &&
+			candidate.binding.epoch === link.epoch,
+	);
+}
+
+function queueSubmissionIds(draft: BrowserCommandDraft): readonly unknown[] {
+	const draftRecord = draft as unknown as Record<string, unknown>;
+	if (Array.isArray(draftRecord.orderedSubmissionIds)) return draftRecord.orderedSubmissionIds;
+	return draftRecord.submissionId === undefined ? [] : [draftRecord.submissionId];
+}
+
+/**
+ * The queue commands carry no thread identity either. The gateway presents the
+ * queue as unavailable to a pane on any other link, so a queue the browser can
+ * still see is the queue of the captured link — and every submission a command
+ * names must still be in it.
+ */
+function queueCommandRefusal(
+	active: SocketRun,
+	draft: BrowserCommandDraft,
+): { readonly code: "link_changed" | "invalid_command"; readonly message: string } | null {
+	const queue = active.snapshot?.queue;
+	if (queue === undefined || queue.status === "unavailable")
+		return {
+			code: "link_changed",
+			message: "The workbench queue no longer belongs to the captured thread link.",
+		};
+	const present = new Set<unknown>(queue.entries.map((entry) => entry.submissionId));
+	for (const submissionId of queueSubmissionIds(draft))
+		if (!present.has(submissionId))
+			return {
+				code: "invalid_command",
+				message: "The queued submission is no longer in the captured workbench queue.",
+			};
+	return null;
 }
 
 function transportFailure(
@@ -477,10 +587,27 @@ export function createBrowserWorkbenchTransport(
 			markStale(active, message.sequence, "A workbench delta skipped a sequence.");
 			return "gap";
 		}
+		// Sequence first, contradiction second. A redelivered older delta names an
+		// earlier state of a field the current snapshot has moved past, so merging
+		// it produces a contradiction that says nothing about the contract; reading
+		// it as one would strand the transport in incompatible_contract with no
+		// recovery snapshot requested.
+		if (message.sequence < active.sequence) {
+			markStale(active, message.sequence, "A stale workbench delta arrived.");
+			return "stale";
+		}
 		const candidate = Object.freeze({
 			...active.snapshot,
 			...message.delta,
 		}) as BrowserSnapshot;
+		if (message.sequence === active.sequence) {
+			if (sameWireValue(candidate, active.snapshot)) {
+				if (clearDuplicate) setReadinessState(active);
+				return "duplicate";
+			}
+			markStale(active, message.sequence, "The workbench delta changed the current sequence.");
+			return "stale";
+		}
 		const relationshipIssue = browserSnapshotRelationshipIssues(candidate)[0];
 		if (relationshipIssue !== undefined) {
 			incompatible(
@@ -489,18 +616,6 @@ export function createBrowserWorkbenchTransport(
 					`The Codex workbench delta contradicts its snapshot at ${relationshipIssue.path.join(".")}: ${relationshipIssue.message}`,
 				),
 			);
-			return "stale";
-		}
-		if (message.sequence < active.sequence) {
-			markStale(active, message.sequence, "A stale workbench delta arrived.");
-			return "stale";
-		}
-		if (message.sequence === active.sequence) {
-			if (sameWireValue(candidate, active.snapshot)) {
-				if (clearDuplicate) setReadinessState(active);
-				return "duplicate";
-			}
-			markStale(active, message.sequence, "The workbench delta changed the current sequence.");
 			return "stale";
 		}
 		active.snapshot = candidate;
@@ -707,7 +822,33 @@ export function createBrowserWorkbenchTransport(
 		if (THREAD_LINK_COMMANDS.has(command)) return true;
 		if (command === "dynamicApprovalRespond")
 			return hasUsableDynamicApproval(active, currentLease, now);
-		return active.snapshot.threadLink.state === "executable";
+		if (active.snapshot.threadLink.state !== "executable") return false;
+		if (command === "approvalRespond") return hasUsableApproval(active, now);
+		if (QUEUE_COMMANDS.has(command)) return active.snapshot.queue.status !== "unavailable";
+		return true;
+	};
+
+	/**
+	 * Why a disabled command is disabled, when the workbench itself is otherwise
+	 * usable: an approval or queue row that is no longer the one on screen reads
+	 * very differently from a workbench that is not ready at all.
+	 */
+	const disabledCommandCode = (
+		active: SocketRun,
+		commandName: BrowserCommandName,
+	): BrowserWorkbenchTransportErrorCode => {
+		if (
+			!accountReady(active) ||
+			!leaseUsable() ||
+			active.snapshot?.readiness.state !== "thread_capable" ||
+			active.snapshot.threadLink.state !== "executable"
+		)
+			return "not_ready";
+		if (commandName === "approvalRespond") return "approval_not_pending";
+		if (commandName === "dynamicApprovalRespond") return "dynamic_approval_not_pending";
+		if (QUEUE_COMMANDS.has(commandName) && active.snapshot.queue.status === "unavailable")
+			return "link_changed";
+		return "not_ready";
 	};
 
 	const captureLease = (active: SocketRun): BrowserCommandLease => {
@@ -745,7 +886,10 @@ export function createBrowserWorkbenchTransport(
 		});
 	};
 
-	const command = async (draft: BrowserCommandDraft): Promise<BrowserWorkbenchCommandResult> => {
+	const command = async (
+		draft: BrowserCommandDraft,
+		requestedTarget?: BrowserWorkbenchCommandTarget,
+	): Promise<BrowserWorkbenchCommandResult> => {
 		const active = activeRun;
 		if (active === null)
 			throw transportFailure("socket_unavailable", "The Codex workbench has no active socket.");
@@ -762,11 +906,20 @@ export function createBrowserWorkbenchTransport(
 			)
 				captureLease(active);
 			throw transportFailure(
-				"not_ready",
+				disabledCommandCode(active, commandName as BrowserCommandName),
 				"The requested browser command is not enabled in the current workbench state.",
 			);
 		}
 		const target = captureTarget(active);
+		// A caller that captured its target when it rendered the action — the
+		// approval it is answering, the queue row it is moving — gets that exact
+		// target enforced rather than silently swapped for whatever is current.
+		if (requestedTarget !== undefined && !sameCommandTarget(requestedTarget, target))
+			throw transportFailure(
+				"link_changed",
+				"The workbench target changed since this command was captured.",
+				{ commandId: requestedTarget.commandId },
+			);
 		if (
 			!ACCOUNT_COMMANDS.has(commandName as BrowserCommandName) &&
 			!THREAD_LINK_COMMANDS.has(commandName as BrowserCommandName) &&
@@ -800,6 +953,17 @@ export function createBrowserWorkbenchTransport(
 				"The dynamic approval is no longer pending for the captured browser target.",
 				{ commandId: target.commandId },
 			);
+		if (commandName === "approvalRespond" && !approvalMatchesTarget(active, draft, target, now))
+			throw transportFailure(
+				"approval_not_pending",
+				"The approval is no longer pending for the captured browser target.",
+				{ commandId: target.commandId },
+			);
+		if (QUEUE_COMMANDS.has(commandName as BrowserCommandName)) {
+			const refusal = queueCommandRefusal(active, draft);
+			if (refusal !== null)
+				throw transportFailure(refusal.code, refusal.message, { commandId: target.commandId });
+		}
 		const value = await sendRequest(
 			active,
 			"command",
@@ -843,6 +1007,11 @@ export function createBrowserWorkbenchTransport(
 		const readiness = active?.snapshot?.readiness.state ?? null;
 		const canReadAccount = connected && accountReady(active);
 		const canClaimLease = connected && accountReady(active);
+		// Deliberately not gated on ownerState.kind the way canReadAccount and
+		// canCommand are. Renewing and releasing are lease-lifecycle calls to the
+		// gateway, not commands against workbench state, and a stale_snapshot
+		// recovery is exactly when a person must be able to keep or hand back the
+		// lease. The capability matrix owner asserts that value explicitly.
 		const canRenewLease = connected && leaseUsable();
 		const canReleaseLease = connected && leaseUsable();
 		const canCommand =

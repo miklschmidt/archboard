@@ -194,7 +194,15 @@ export interface BrowserWorkbenchTransport {
 	readonly renewLease: () => Promise<BrowserCommandLease>;
 	readonly releaseLease: () => Promise<BrowserCommandLease | null>;
 	readonly accountRead: () => Promise<BrowserWorkbenchAccountReadResult>;
-	readonly command: (draft: BrowserCommandDraft) => Promise<BrowserWorkbenchCommandResult>;
+	/**
+	 * Pass the target captured when the action was offered — the approval that
+	 * was rendered, the queue row that was dragged — and the command is refused
+	 * rather than retargeted if the workbench has moved since.
+	 */
+	readonly command: (
+		draft: BrowserCommandDraft,
+		target?: BrowserWorkbenchCommandTarget,
+	) => Promise<BrowserWorkbenchCommandResult>;
 	readonly captureCommandTarget: () => BrowserWorkbenchCommandTarget;
 	readonly snapshot: () => BrowserSnapshot | null;
 	readonly sequence: () => number | null;
