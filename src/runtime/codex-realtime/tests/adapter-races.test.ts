@@ -60,6 +60,8 @@ interface RaceHarness {
 	startFailure: Error | null;
 }
 
+const COORDINATOR_WIRE_THREAD_ID = "race-coordinator";
+
 const transitionFailures: string[] = [];
 afterEach(() => {
 	expect(transitionFailures).toEqual([]);
@@ -69,7 +71,7 @@ afterEach(() => {
 function raceHarness(): RaceHarness {
 	const identity = createIdentityAuthority();
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
-		threadIds: ["race-linked", "race-coordinator", "replacement-coordinator"],
+		threadIds: ["race-linked", COORDINATOR_WIRE_THREAD_ID, "replacement-coordinator"],
 	});
 	const linkedThreadId = adopted.threadIds[0];
 	const coordinatorThreadId = adopted.threadIds[1];
@@ -158,9 +160,9 @@ async function ready(h: RaceHarness, suffix: string) {
 	const pending = await begin(h, suffix);
 	h.start.resolve({});
 	await Promise.resolve();
-	notify(h, "thread/realtime/sdp", { threadId: h.coordinatorThreadId, sdp: "answer" });
+	notify(h, "thread/realtime/sdp", { threadId: COORDINATOR_WIRE_THREAD_ID, sdp: "answer" });
 	notify(h, "thread/realtime/started", {
-		threadId: h.coordinatorThreadId,
+		threadId: COORDINATOR_WIRE_THREAD_ID,
 		realtimeSessionId: pending.wireSessionId,
 		version: "v3",
 	});
@@ -170,14 +172,14 @@ async function ready(h: RaceHarness, suffix: string) {
 
 function close(h: RaceHarness): void {
 	notify(h, "thread/realtime/closed", {
-		threadId: h.coordinatorThreadId,
+		threadId: COORDINATOR_WIRE_THREAD_ID,
 		reason: "authoritative close",
 	});
 }
 
 function transcript(h: RaceHarness, wireSessionId: string): void {
 	notify(h, "thread/realtime/item/completed", {
-		threadId: h.coordinatorThreadId,
+		threadId: COORDINATOR_WIRE_THREAD_ID,
 		item: {
 			id: "retained-item",
 			realtimeSessionId: wireSessionId,
@@ -257,9 +259,12 @@ describe("Codex realtime adapter races", () => {
 		expect(await h.adapter.recover(failed.correlation)).toMatchObject({ outcome: "delivered" });
 		const replacement = await begin(h, "after-sync-throw");
 		h.start.resolve({});
-		notify(h, "thread/realtime/sdp", { threadId: h.coordinatorThreadId, sdp: "answer" });
+		notify(h, "thread/realtime/sdp", {
+			threadId: COORDINATOR_WIRE_THREAD_ID,
+			sdp: "answer",
+		});
 		notify(h, "thread/realtime/started", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			realtimeSessionId: replacement.wireSessionId,
 			version: "v3",
 		});
@@ -272,7 +277,7 @@ describe("Codex realtime adapter races", () => {
 		const pending = await begin(h, "rpc-reject");
 		const rejection = observeRejection(pending.offer);
 		notify(h, "thread/realtime/error", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			message: "start failed first",
 		});
 		expect(await rejection.message).toBe("start failed first");
@@ -288,15 +293,15 @@ describe("Codex realtime adapter races", () => {
 		const pending = await begin(h, "late-gates");
 		const rejection = observeRejection(pending.offer);
 		notify(h, "thread/realtime/error", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			message: "start closed",
 		});
 		expect(await rejection.message).toBe("start closed");
 		h.start.resolve({});
 		await Promise.resolve();
-		notify(h, "thread/realtime/sdp", { threadId: h.coordinatorThreadId, sdp: "late" });
+		notify(h, "thread/realtime/sdp", { threadId: COORDINATOR_WIRE_THREAD_ID, sdp: "late" });
 		notify(h, "thread/realtime/started", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			realtimeSessionId: pending.wireSessionId,
 			version: "v3",
 		});
@@ -309,14 +314,17 @@ describe("Codex realtime adapter races", () => {
 		const h = raceHarness();
 		const pending = await begin(h, "competing-gates");
 		const rejection = observeRejection(pending.offer);
-		notify(h, "thread/realtime/sdp", { threadId: h.coordinatorThreadId, sdp: "early" });
+		notify(h, "thread/realtime/sdp", {
+			threadId: COORDINATOR_WIRE_THREAD_ID,
+			sdp: "early",
+		});
 		notify(h, "thread/realtime/started", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			realtimeSessionId: pending.wireSessionId,
 			version: "v3",
 		});
 		notify(h, "thread/realtime/error", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			message: "error won",
 		});
 		expect(await rejection.message).toBe("error won");
@@ -352,7 +360,7 @@ describe("Codex realtime adapter races", () => {
 			const active = await ready(h, `recovery-${completion}`);
 			transcript(h, active.wireSessionId);
 			notify(h, "thread/realtime/error", {
-				threadId: h.coordinatorThreadId,
+				threadId: COORDINATOR_WIRE_THREAD_ID,
 				message: "recoverable",
 			});
 			const outcome = h.adapter.recover(active.correlation);
