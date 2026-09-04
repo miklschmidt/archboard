@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:42'
-updated_date: '2026-09-04 15:05'
+updated_date: '2026-09-04 15:21'
 labels: []
 dependencies:
   - TASK-143.03.11
@@ -47,6 +47,14 @@ Complete the single production voice composition seam. CanvasPane constructs at 
 3. Extend the existing PresentationDock with immutable active-voice disclosure beside the text source. Keep one Stop button: route it to the sole active VoiceSession when stoppable, disable it on an active but unstoppable or duplicate-active source, and fall back to text interrupt only when no active voice identity exists.
 4. Extend the focused production CanvasPane owner and add the focused Shell voice owner for the reachable lifecycle, source, conflict, and routing regressions. Keep rendered browser coverage in TASK-143.04.07.
 5. Run only the focused CanvasPane, Shell, and WorkbenchFrame owners, both TypeScript projects, scoped Oxlint and Oxfmt, the frontend build, and diff and tracked-state checks. Keep TASK-143.04.10 In Progress with all acceptance criteria unchecked for independent review.
+
+6. Make the Shell registry ref the single full-record authority and use one revision only to invalidate React consumers and resubscribe exact text, voice, and transport publications.
+
+7. Extend the CanvasPane registration with caller-owned retained presentation identity that captures the last exact session and mute evidence, survives media detach with a stale binding, and clears only on authoritative stop, withdrawal, or replacement.
+
+8. Project retained identity into the dock without text fallback, disclose unknown mute truth honestly, and add one fullscreen-only live status from VoiceSessionView.accessibleStatus with assertive failure announcements.
+
+9. Add production-shaped focused regressions for detach, stopping, outcome unknown, announcement priority, and single registry ownership, then rerun only the authorized focused checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -63,4 +71,12 @@ Parent expanded the authorized seam to CanvasPane after the recorded blocker. Ca
 Shell now keeps nullable text and voice ownership per pane, captures the exact frame voice source once, supplies ready voice so the existing Start control is reachable, holds a sole active source across focus and fullscreen transfer, fails closed on duplicate-active registrations, and removes stopped or withdrawn voice from the frame. The existing PresentationDock discloses voice identity beside text and its single Stop prefers the active VoiceSession, disables during conflict or an unstoppable active state, and falls back to text only when no active voice identity exists.
 
 Scoped verification passed: `bun run type-check`; 27 focused CanvasPane, Shell, and WorkbenchFrame tests with 358 assertions; scoped Oxlint and Oxfmt; `bun run build`; and `git diff --check`. Browser behavior remains owned by TASK-143.04.07. TASK-143.04.10 remains In Progress and all acceptance criteria remain unchecked for independent review.
+
+Independent-review remediation complete. Shell now keeps the pane registry only in its ref; one revision invalidates React readers, and subscription ownership follows registry object identity instead of mirroring records in state or resubscribing on every publication.
+
+CanvasPane now exposes a caller-owned presentation projection that retains the last exact binding and realtime session id across a null media snapshot. Shell treats that retained identity as the active owner even when the current VoiceSession is unavailable, keeps Stop disabled when the adapter cannot stop, and never retargets the button to text. Authoritative stopped, replaced, registration withdrawal, or transport replacement retires the identity. Mute reads Muted or Unmuted only from current same-session media evidence; stopping, failure, or missing media reports Unknown.
+
+The existing fullscreen dock now carries VoiceSessionView.accessibleStatus through one visually hidden live output. Normal and duplicate-source messages are polite; a view with failure evidence is the only assertive alert. The visible conflict label no longer creates a second voice announcement owner. The required UI worker re-read the visual authority, made the rendered UI changes, and reported no CSS change was needed.
+
+Remediation verification passed: `bun run type-check`; 27 focused CanvasPane, Shell, and WorkbenchFrame tests with 378 assertions; scoped Oxlint and Oxfmt; `bun run build`; and `git diff --check`. Real-browser rendering remains assigned to TASK-143.04.07. TASK-143.04.10 remains In Progress with every acceptance criterion unchecked for rereview.
 <!-- SECTION:NOTES:END -->

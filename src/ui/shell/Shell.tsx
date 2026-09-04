@@ -16,7 +16,11 @@ import React, {
 	useState,
 	useSyncExternalStore,
 } from "react";
-import { CanvasPane, type CanvasPaneVoiceRegistration } from "../canvas/CanvasPane";
+import {
+	CanvasPane,
+	type CanvasPaneVoicePresentation,
+	type CanvasPaneVoiceRegistration,
+} from "../canvas/CanvasPane";
 import { activateCodeTarget } from "../code-target";
 import type { MountedBoardPreviewController, MountedBoardPreviewScene } from "../board-preview";
 import {
@@ -45,7 +49,6 @@ import {
 } from "../workbench-composer";
 import { createThreadLinkController, type ThreadLinkController } from "../workbench-thread-link";
 import type { BrowserWorkbenchTransport } from "../workbench-transport";
-import type { VoiceSessionStatus, VoiceSessionView } from "../voice-session";
 import { SelectionInspector } from "../selection-inspector/SelectionInspector";
 import type { PaneSelectionSnapshot, SelectionProjection } from "../selection-inspector";
 import type { PanePathFocusSnapshot, PathFocusController, PathFocusSnapshot } from "../path-focus";
@@ -163,8 +166,10 @@ interface PresentationVoiceSource {
 	readonly workhorseId: string;
 	readonly coordinatorId: string | null;
 	readonly sessionId: string;
-	readonly mute: "Muted" | "Unmuted";
+	readonly mute: CanvasPaneVoicePresentation["mute"];
 	readonly phase: string;
+	readonly accessibleStatus: string;
+	readonly failure: boolean;
 	readonly canStop: boolean;
 }
 
@@ -178,27 +183,15 @@ type ActiveVoiceProjection =
 	| {
 			readonly state: "active";
 			readonly owner: WorkbenchVoiceOwner;
-			readonly view: VoiceSessionView;
 			readonly presentation: PresentationVoiceSource;
 	  }
 	| { readonly state: "conflict"; readonly presentation: PresentationVoiceConflict };
 
-const ACTIVE_VOICE_STATUSES = new Set<VoiceSessionStatus>([
-	"requesting_permission",
-	"negotiating",
-	"listening",
-	"muted",
-	"processing",
-	"agent_speaking",
-	"recovering",
-	"stopping",
-	"failed",
-]);
-
-function activeVoiceOwner(owner: WorkbenchVoiceOwner): VoiceSessionView | null {
-	const view = owner.registration.session.view();
-	return view.binding !== null && view.sessionId !== null && ACTIVE_VOICE_STATUSES.has(view.status)
-		? view
+function activeVoiceOwner(owner: WorkbenchVoiceOwner): CanvasPaneVoicePresentation | null {
+	const presentation = owner.registration.presentation();
+	const view = presentation.view;
+	return view.binding !== null && view.sessionId !== null && view.status !== "stopped"
+		? presentation
 		: null;
 }
 
@@ -208,8 +201,10 @@ function activeVoiceProjection(
 	const active = Object.values(registrations).flatMap((registration) => {
 		const owner = registration.voice;
 		if (owner === null) return [];
-		const view = activeVoiceOwner(owner);
-		return view === null ? [] : [{ owner, view }];
+		const sessionPresentation = activeVoiceOwner(owner);
+		return sessionPresentation === null
+			? []
+			: [{ owner, view: sessionPresentation.view, mute: sessionPresentation.mute }];
 	});
 	if (active.length === 0) return { state: "none" };
 	if (active.length > 1) {
@@ -220,7 +215,6 @@ function activeVoiceProjection(
 	return {
 		state: "active",
 		owner: current.owner,
-		view: current.view,
 		presentation: {
 			state: "active",
 			paneId: current.owner.source.pane.id,
@@ -228,8 +222,10 @@ function activeVoiceProjection(
 			workhorseId: binding.workhorseThreadId,
 			coordinatorId: binding.coordinatorThreadId,
 			sessionId: current.view.sessionId!,
-			mute: current.view.status === "muted" ? "Muted" : "Unmuted",
+			mute: current.mute,
 			phase: current.view.label,
+			accessibleStatus: current.view.accessibleStatus,
+			failure: current.view.failure !== null,
 			canStop: current.view.controls.canStop,
 		},
 	};
@@ -554,12 +550,25 @@ function PresentationDock({
 							<span className="presentation-source-label">Sessions</span>
 							<span className="presentation-source-value">{voiceSource.count} active</span>
 						</span>
-						<span className="presentation-voice-conflict" role="alert">
+						<span className="presentation-voice-conflict">
 							Stop is disabled until one authoritative voice source remains.
 						</span>
 					</div>
 				) : null}
 			</div>
+			<output
+				className="sr-only"
+				data-presentation-voice-status=""
+				aria-live={voiceSource?.state === "active" && voiceSource.failure ? "assertive" : "polite"}
+				aria-atomic="true"
+				role={voiceSource?.state === "active" && voiceSource.failure ? "alert" : "status"}
+			>
+				{voiceSource?.state === "active"
+					? voiceSource.accessibleStatus
+					: voiceSource?.state === "conflict"
+						? "More than one active voice source is registered. Stop is disabled until the conflict is resolved."
+						: ""}
+			</output>
 			<button
 				type="button"
 				className="presentation-stop"
@@ -673,11 +682,16 @@ export function Shell(): React.JSX.Element {
 	const [focused, setFocused] = useState("pane-1");
 	const [statuses, setStatuses] = useState<Record<string, PaneStatus>>({});
 	const [agentStates, setAgentStates] = useState<Record<string, AgentState>>({});
-	const [workbenchRegistrations, setWorkbenchRegistrations] = useState<
-		Record<string, WorkbenchPaneRegistration>
-	>({});
 	const workbenchRegistrationsRef = useRef<Record<string, WorkbenchPaneRegistration>>({});
 	const [workbenchRevision, setWorkbenchRevision] = useState(0);
+	const workbenchRegistrations = workbenchRegistrationsRef.current;
+	const replaceWorkbenchRegistrations = useCallback(
+		(next: Record<string, WorkbenchPaneRegistration>): void => {
+			workbenchRegistrationsRef.current = next;
+			setWorkbenchRevision((current) => current + 1);
+		},
+		[],
+	);
 	const [workbenchDisclosure, setWorkbenchDisclosure] =
 		useState<WorkbenchFrameDisclosure>("collapsed");
 	const nextTakeBackOperation = useRef(0);
@@ -885,16 +899,14 @@ export function Shell(): React.JSX.Element {
 				if (existing.voice === null) {
 					const { [paneId]: removed, ...remaining } = workbenchRegistrationsRef.current;
 					void removed;
-					workbenchRegistrationsRef.current = remaining;
-					setWorkbenchRegistrations(remaining);
+					replaceWorkbenchRegistrations(remaining);
 					return;
 				}
 				const next = {
 					...workbenchRegistrationsRef.current,
 					[paneId]: { ...existing, text: null },
 				};
-				workbenchRegistrationsRef.current = next;
-				setWorkbenchRegistrations(next);
+				replaceWorkbenchRegistrations(next);
 				return;
 			}
 			if (existing.text?.transport === transport) return;
@@ -909,10 +921,9 @@ export function Shell(): React.JSX.Element {
 				...workbenchRegistrationsRef.current,
 				[paneId]: { ...existing, text: owner },
 			};
-			workbenchRegistrationsRef.current = next;
-			setWorkbenchRegistrations(next);
+			replaceWorkbenchRegistrations(next);
 		},
-		[],
+		[replaceWorkbenchRegistrations],
 	);
 	const onVoiceRegistration = useCallback(
 		(paneId: string, registration: CanvasPaneVoiceRegistration | null): void => {
@@ -925,16 +936,14 @@ export function Shell(): React.JSX.Element {
 				if (existing.text === null) {
 					const { [paneId]: removed, ...remaining } = workbenchRegistrationsRef.current;
 					void removed;
-					workbenchRegistrationsRef.current = remaining;
-					setWorkbenchRegistrations(remaining);
+					replaceWorkbenchRegistrations(remaining);
 					return;
 				}
 				const next = {
 					...workbenchRegistrationsRef.current,
 					[paneId]: { ...existing, voice: null },
 				};
-				workbenchRegistrationsRef.current = next;
-				setWorkbenchRegistrations(next);
+				replaceWorkbenchRegistrations(next);
 				return;
 			}
 			if (existing.voice?.registration === registration) return;
@@ -951,16 +960,15 @@ export function Shell(): React.JSX.Element {
 				...workbenchRegistrationsRef.current,
 				[paneId]: { ...existing, voice: { registration, source } },
 			};
-			workbenchRegistrationsRef.current = next;
-			setWorkbenchRegistrations(next);
+			replaceWorkbenchRegistrations(next);
 		},
-		[],
+		[replaceWorkbenchRegistrations],
 	);
 
 	useEffect(() => {
 		const publish = (): void => setWorkbenchRevision((current) => current + 1);
 		const unsubscribers: Array<() => void> = [];
-		for (const registration of Object.values(workbenchRegistrations)) {
+		for (const registration of Object.values(workbenchRegistrationsRef.current)) {
 			if (registration.text !== null) {
 				unsubscribers.push(registration.text.transport.subscribe(publish));
 				unsubscribers.push(registration.text.composerController.subscribe(publish));
@@ -1493,7 +1501,7 @@ export function Shell(): React.JSX.Element {
 		if (activeVoice.state === "active") return activeVoice.owner;
 		const authoritativePaneId = presentation.paneId ?? focused;
 		const candidate = workbenchRegistrations[authoritativePaneId]?.voice ?? null;
-		return candidate?.registration.session.view().status === "stopped" ? null : candidate;
+		return candidate?.registration.presentation().view.status === "stopped" ? null : candidate;
 	}, [activeVoice, focused, presentation.paneId, workbenchRegistrations, workbenchRevision]);
 	const workbenchVoice = useMemo<WorkbenchFrameVoiceSlot | null>(() => {
 		void workbenchRevision;
@@ -1524,7 +1532,7 @@ export function Shell(): React.JSX.Element {
 		if (currentVoice.state === "conflict") return;
 		if (currentVoice.state === "active") {
 			const current = activeVoiceOwner(currentVoice.owner);
-			if (current === null || !current.controls.canStop) return;
+			if (current === null || !current.view.controls.canStop) return;
 			void currentVoice.owner.registration.session.stop();
 			return;
 		}
