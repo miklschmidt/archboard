@@ -238,6 +238,8 @@ function restoreDocument(descriptor: PropertyDescriptor | undefined): void {
 	else Reflect.deleteProperty(globalThis, "document");
 }
 
+const NO_PUBLICATION = (): void => undefined;
+
 afterEach(restoreFakeBrowsers);
 
 test("the media owner delegates leases, commands, readiness, and snapshots to one transport", async () => {
@@ -403,4 +405,66 @@ test("permission and SDP failures revoke voice readiness before returning", asyn
 			restoreDocument(documentDescriptor);
 		}
 	}
+});
+
+test("forwards realtime publications to subscribers and releases them with each run", async () => {
+	let publish: () => void = NO_PUBLICATION;
+	let innerSubscriptions = 0;
+	let innerReleases = 0;
+	const owner = createBrowserWorkbenchMediaOwner({
+		createMediaSession: () =>
+			({
+				getSnapshot: () => null,
+				subscribe: (listener: () => void) => {
+					innerSubscriptions += 1;
+					publish = listener;
+					return () => {
+						innerReleases += 1;
+					};
+				},
+				start: async () => ({}) as never,
+				stop: async () => ({}) as never,
+				appendText: async () => ({}) as never,
+				dispose: async () => undefined,
+			}) as never,
+	});
+	let notifications = 0;
+	const release = owner.subscribe(() => {
+		notifications += 1;
+	});
+	const first = new FakeTransport();
+	await owner.attach(first);
+	expect(innerSubscriptions).toBe(1);
+	expect(notifications).toBeGreaterThan(0);
+
+	// A browser-originated realtime publication — a lost microphone, a dropped
+	// ICE connection, an in-start phase — reaches the owner's subscribers.
+	const attached = notifications;
+	publish();
+	expect(notifications).toBe(attached + 1);
+
+	release();
+	publish();
+	expect(notifications).toBe(attached + 1);
+
+	// Replacing the run releases the previous session's subscription.
+	const resumed = owner.subscribe(() => {
+		notifications += 1;
+	});
+	await owner.attach(new FakeTransport());
+	expect(innerReleases).toBe(1);
+	expect(innerSubscriptions).toBe(2);
+
+	await owner.dispose();
+	expect(innerReleases).toBe(2);
+	const closed = notifications;
+	publish();
+	expect(notifications).toBe(closed);
+	resumed();
+	// A disposed owner accepts no new subscriber.
+	owner.subscribe(() => {
+		notifications += 1;
+	});
+	publish();
+	expect(notifications).toBe(closed);
 });
