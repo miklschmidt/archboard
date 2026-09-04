@@ -12,7 +12,11 @@ import type {
 } from "../../codex-workbench/index.js";
 import type { CodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
 import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
-import type { OperationId, ThreadId } from "../../../shared/codex-workbench-identity/index.js";
+import type {
+	OperationAuthority,
+	OperationId,
+	ThreadId,
+} from "../../../shared/codex-workbench-identity/index.js";
 import type { ArchboardContext } from "../../../runtime/codex-instructions/index.js";
 import type { CodexWorkbenchComponents } from "./codex-workbench.js";
 import type { CanvasDynamicApprovalOwner } from "./codex-workbench-approvals.js";
@@ -44,8 +48,39 @@ export interface CanvasBrowserBindingState {
 
 const UNAVAILABLE_QUEUE: CodexQueueProjectionInput = { kind: "codex_queue", submissions: null };
 
-function queueOwnerView(queue: readonly SessionQueuedSubmission[]): CodexQueueProjectionInput {
-	return { kind: "codex_queue", submissions: queue };
+/**
+ * Which Archboard operation queued a submission, if Archboard queued it at all.
+ *
+ * The queue port sets `clientUserMessageId` to the serialized OperationId on
+ * every add it makes, and an OperationId is its own wire string, so the
+ * authoritative list carries the answer. The operation authority only recognises
+ * identities it issued in the current child epoch: anything else — another
+ * client's submission, the workhorse's own, or a prior epoch's — is foreign, and
+ * this pane has no authority to reorder it.
+ */
+function archboardOperation(
+	submission: SessionQueuedSubmission,
+	operations: OperationAuthority,
+): OperationId | null {
+	try {
+		return operations.decoder.parseOperationId(submission.clientUserMessageId);
+	} catch {
+		return null;
+	}
+}
+
+function queueOwnerView(
+	queue: readonly SessionQueuedSubmission[],
+	operations: OperationAuthority,
+): CodexQueueProjectionInput {
+	return {
+		kind: "codex_queue",
+		submissions: queue.map((submission) => ({
+			id: submission.id,
+			input: submission.input,
+			operationId: archboardOperation(submission, operations),
+		})),
+	};
 }
 
 function failureReason(error: unknown, fallback: string): string {
@@ -156,7 +191,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 	const updateQueue = <Result extends { readonly queue: readonly SessionQueuedSubmission[] }>(
 		result: Result,
 	): Result => {
-		state.queue = queueOwnerView(result.queue);
+		state.queue = queueOwnerView(result.queue, components.identity.operation);
 		state.queueThreadId = components.workhorse.snapshot().threadId;
 		return result;
 	};
@@ -181,6 +216,27 @@ export function createCanvasBrowserGatewayOptions(input: {
 		} catch {
 			// The queue stays unavailable until an owner read succeeds; the browser
 			// presents that as its own state rather than another thread's entries.
+		}
+	};
+	/**
+	 * Re-read the authoritative queue for the link this pane is already on.
+	 *
+	 * A snapshot request is the browser asking for current state, and the cached
+	 * submissions are exactly what a lost mutation or a workhorse-side drain left
+	 * behind. Unlike a link change, the cache is not cleared first: a failed
+	 * re-read must not present a healthy queue as somebody else's.
+	 */
+	const rereadLinkedQueue = async (): Promise<void> => {
+		if (components.workhorse.snapshot().state !== "ready") {
+			clearQueue();
+			return;
+		}
+		try {
+			updateQueue(await components.queue.list());
+		} catch {
+			// The read failed, so nothing about the cache is proven: the browser is
+			// told the queue is unavailable rather than shown an unverified list.
+			clearQueue();
 		}
 	};
 	const threadLinks = createCanvasThreadLinkActions({
@@ -340,6 +396,10 @@ export function createCanvasBrowserGatewayOptions(input: {
 		dynamicApprovals: dynamicApprovals.browser,
 	};
 	const projection: BrowserProjectionPort = {
+		refresh: async (context): Promise<void> => {
+			if (context.binding.link.state !== "executable") return;
+			await rereadLinkedQueue();
+		},
 		read: (
 			context: Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0],
 		): BrowserOwnerProjection => {

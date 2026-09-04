@@ -86,6 +86,22 @@ export function renderedOrder(root: TestElement): string[] {
 	);
 }
 
+/** Every interactive element the region renders, whatever it is for. */
+export function interactives(root: TestElement): TestElement[] {
+	return root
+		.descendants()
+		.filter((candidate) =>
+			["BUTTON", "A", "TEXTAREA", "INPUT", "SELECT"].includes(candidate.tagName),
+		);
+}
+
+/** Whichever settlement region is carrying text right now. */
+export function settlementText(root: TestElement): string {
+	const polite = element(root, "data-queue-settlement").textContent;
+	const alert = element(root, "data-queue-settlement-alert").textContent;
+	return polite === "" ? alert : polite;
+}
+
 export function control(row: TestElement, name: string, direction?: string): TestElement {
 	const found = elements(row, "data-queue-control", name).find(
 		(candidate) =>

@@ -22,6 +22,7 @@ export const QUEUE_STATE_CLASSES = {
 	completed: "border-border bg-surface-subtle text-muted-foreground",
 	stale: "border-warning bg-warning-subtle text-warning",
 	reconnecting: "border-warning bg-warning-subtle text-warning",
+	disconnected: "border-destructive bg-destructive-subtle text-destructive",
 	unavailable: "border-destructive bg-destructive-subtle text-destructive",
 	outcome_unknown: "border-warning bg-warning-subtle text-warning",
 } as const satisfies Record<WorkbenchQueueState, string>;
@@ -191,19 +192,31 @@ export function QueueSettlementOutput({
 			? (settlement?.message ?? "No queue command has been sent from this pane.")
 			: `Sending the ${pending.control} command; its outcome is not settled yet.`;
 	const state = pending === null ? (settlement?.state ?? "reconciled") : "reconciled";
+	const refused = state === "refused";
+	// Two regions with fixed politeness rather than one that changes it: a live
+	// region that switches between polite and assertive is re-announced by some
+	// screen readers and skipped by others.
 	return (
-		<output
-			aria-atomic="true"
-			aria-live={state === "refused" ? "assertive" : "polite"}
-			className={cn(
-				"block border-t border-border-subtle pt-control text-body",
-				SETTLEMENT_CLASSES[state],
-			)}
-			data-queue-settlement={settlement === null ? "none" : settlement.state}
-			data-queue-settlement-code={settlement?.code ?? "none"}
-			data-queue-settlement-control={settlement?.control ?? "none"}
-		>
-			{message}
-		</output>
+		<div className="border-t border-border-subtle pt-control">
+			<output
+				aria-atomic="true"
+				aria-live="polite"
+				className={cn("block text-body", SETTLEMENT_CLASSES[state])}
+				data-queue-settlement={settlement === null ? "none" : settlement.state}
+				data-queue-settlement-code={settlement?.code ?? "none"}
+				data-queue-settlement-control={settlement?.control ?? "none"}
+			>
+				{refused ? "" : message}
+			</output>
+			<p
+				aria-atomic="true"
+				aria-live="assertive"
+				className={cn("m-0 text-body", SETTLEMENT_CLASSES.refused)}
+				data-queue-settlement-alert={refused ? "refused" : "none"}
+				role="alert"
+			>
+				{refused ? message : ""}
+			</p>
+		</div>
 	);
 }

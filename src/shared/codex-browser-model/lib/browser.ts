@@ -77,10 +77,10 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		BrowserCommandIdSchema,
 		ChildEpochSchema,
 		ChildIdSchema,
-		DynamicToolCallIdSchema,
 		ItemIdSchema,
 		JsonRpcRequestIdSchema,
 		LoginIdSchema,
+		OperationIdSchema,
 		QueuedSubmissionIdSchema,
 		RealtimeSessionIdSchema,
 		ThreadIdSchema,
@@ -344,7 +344,13 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 						submissionId: QueuedSubmissionIdSchema,
 						prompt: boundedText(16_384),
 						status: QueueStatusSchema,
-						operationId: DynamicToolCallIdSchema.nullable(),
+						/**
+						 * The Archboard operation that queued this submission, or null when
+						 * Archboard did not queue it. The host recovers it from the
+						 * submission's clientUserMessageId, which the queue port sets to the
+						 * serialized OperationId on every add it makes.
+						 */
+						operationId: OperationIdSchema.nullable(),
 					})
 					.strict(),
 			),

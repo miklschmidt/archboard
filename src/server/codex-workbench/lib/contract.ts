@@ -144,6 +144,16 @@ export interface BrowserProjectionDisconnectContext {
  */
 export interface BrowserProjectionPort {
 	readonly read: (context: BrowserProjectionContext) => BrowserOwnerProjection;
+	/**
+	 * Re-read owner state a snapshot request must not serve from a cache.
+	 *
+	 * `read` is synchronous because a projection is assembled from owners that
+	 * already hold their state. Some of that state is a cache the host filled
+	 * from its own command results — the workhorse queue is one — and a browser
+	 * asking for a snapshot is asking for state it can trust. The gateway awaits
+	 * this before serving a snapshot request so `refresh()` genuinely re-reads.
+	 */
+	readonly refresh?: (context: BrowserProjectionContext) => Promise<void>;
 	/** One owner notification source may fan out all projection changes. */
 	readonly onChange?: (listener: () => void) => BrowserUnsubscribe;
 	/** Retire projection state at the gateway's authoritative connection seam. */
@@ -363,6 +373,8 @@ export interface BrowserWorkbenchConnection {
 	readonly paneId: string;
 	readonly instance: BrowserConnectionInstance;
 	readonly snapshot: () => BrowserGatewaySnapshotMessage;
+	/** Re-read cached owner state, so the next `snapshot()` is a genuine read. */
+	readonly refreshProjection: () => Promise<void>;
 	/** Confirm this exact event or snapshot result only after its transport send succeeds. */
 	readonly confirmPublished: (payload: BrowserPublishedPayload) => void;
 	readonly claimLease: () => BrowserCommandLease;

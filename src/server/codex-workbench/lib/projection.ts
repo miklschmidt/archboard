@@ -17,12 +17,14 @@ import {
 	type TrustedIdentityDecoder,
 	type TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
+import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
 import type { BrowserSnapshotDelta } from "./contract.js";
 import type {
 	BrowserProjectionInput,
 	BrowserProjectionResult,
 	CodexCoordinatorProjectionInput,
 	CodexQueueProjectionInput,
+	CodexQueuedSubmissionProjectionInput,
 	CodexSemanticProjectionInput,
 	CodexSettingsProjectionInput,
 	CodexTimelineItemProjectionInput,
@@ -131,12 +133,53 @@ function projectSandbox(
 	return unhandled;
 }
 
-function projectQueue(input: CodexQueueProjectionInput): BrowserQueue {
+/**
+ * The queue's condition against the workhorse it belongs to.
+ *
+ * Every arm is derived from an authoritative fact the projection already holds:
+ * the thread-link status the host read for this pane, and that thread's own
+ * pending approvals. That is five of the eleven statuses the closed contract
+ * allows, and the other six are deliberately never produced here:
+ *
+ * - `interrupted`, `completed` and `failed` describe a workhorse *turn*. The
+ *   timeline owns turn status; a queue holds pending submissions, and a
+ *   submission that ran has already left the list.
+ * - `stale` and `reconnecting` are transport facts. The browser transport knows
+ *   its own sequence gaps and socket state; the host would only be guessing.
+ * - `outcome_unknown` belongs to one command's settlement, which the gateway
+ *   already publishes as its own operation outcome.
+ *
+ * An executable link is only ever `idle` or `active`, and a queue is published
+ * only for the link it was read for, so there is no unloaded or errored arm to
+ * map here.
+ */
+function projectQueueStatus(
+	submissions: readonly CodexQueuedSubmissionProjectionInput[],
+	link: BrowserProjectionInput["threadLink"],
+	approvals: readonly ApprovalOwnerView[],
+): BrowserQueue["status"] {
+	if (submissions.length === 0) return "empty";
+	if (link.status !== "active") return "queued";
+	const blocked = approvals.some(
+		(view) =>
+			view.snapshot.state === "pending" &&
+			link.threadId !== null &&
+			view.snapshot.threadId === link.threadId,
+	);
+	return blocked ? "approval_blocked" : "running";
+}
+
+function projectQueue(
+	input: CodexQueueProjectionInput,
+	link: BrowserProjectionInput["threadLink"],
+	approvals: readonly ApprovalOwnerView[],
+): BrowserQueue {
 	if (input.submissions === null) return { kind: "queue", status: "unavailable", entries: [] };
+	const submissions = input.submissions;
 	return {
 		kind: "queue",
-		status: input.submissions.length === 0 ? "empty" : "queued",
-		entries: input.submissions.map((entry) => {
+		status: projectQueueStatus(submissions, link, approvals),
+		entries: submissions.map((entry) => {
 			const textInput = entry.input.find((item) => item.type === "text");
 			return {
 				submissionId: entry.id,
@@ -144,8 +187,11 @@ function projectQueue(input: CodexQueueProjectionInput): BrowserQueue {
 					textInput?.type === "text" && typeof textInput.text === "string"
 						? textInput.text
 						: "[non-text input]",
+				// `thread/queue/list` answers with pending submissions only: a started
+				// submission becomes a turn and leaves the list, so the per-entry axis
+				// has exactly one authoritative value at this seam.
 				status: "queued" as const,
-				operationId: null,
+				operationId: entry.operationId,
 			};
 		}),
 	};
@@ -479,7 +525,7 @@ export function projectCodexBrowserState(
 			login: input.login,
 			threadLink: projectThreadLink(input.threadLink),
 			timeline: projectTimeline(input.timeline),
-			queue: projectQueue(input.queue),
+			queue: projectQueue(input.queue, input.threadLink, input.approvals),
 			settings: input.settings.map(projectSettings),
 			approvals: input.approvals.map(projectApproval),
 			dynamicApprovals: input.dynamicApprovals.map((owner) =>

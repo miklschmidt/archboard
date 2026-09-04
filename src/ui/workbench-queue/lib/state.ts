@@ -75,6 +75,11 @@ export const WORKBENCH_QUEUE_NARRATIVES = {
 		detail: "The workbench is reconnecting, so the queue cannot be commanded.",
 		recovery: "Wait for the connection, then refresh the list before commanding the queue.",
 	},
+	disconnected: {
+		label: "Disconnected",
+		detail: "This pane has no workbench socket, so there is nothing to read a queue from.",
+		recovery: "Reconnect the workbench; refreshing needs a socket and cannot recover this.",
+	},
 	unavailable: {
 		label: "Queue unavailable",
 		detail: "The host is not publishing a queue for the thread link this pane is on.",
@@ -155,23 +160,43 @@ function isRestarted(
 	return !sameChild(presented, current);
 }
 
-const UNCOMMANDABLE_READINESS = new Set(["stopped", "backoff", "incompatible_contract"]);
+type Readiness = Extract<BrowserWorkbenchState, { readonly kind: "readiness" }>["state"];
+
+/**
+ * Every readiness arm the host can publish, and what it means for the queue.
+ *
+ * `null` hands the decision to the queue's own status: the workbench is up and
+ * the queue is the only thing left to describe. The exhaustive map is the point
+ * — a new readiness arm fails type-check here rather than silently falling
+ * through to an ordinary label.
+ */
+const READINESS_STATES = {
+	stopped: "disconnected",
+	backoff: "reconnecting",
+	reconnecting: "reconnecting",
+	incompatible_contract: "disconnected",
+	storage_mismatch: "unavailable",
+	initialized: "unavailable",
+	login_capable: "unavailable",
+	signed_out: "unavailable",
+	login_pending: "unavailable",
+	account_ready: "unavailable",
+	thread_capable: null,
+} as const satisfies Record<Readiness, WorkbenchQueueState | null>;
 
 /**
  * The transport state that outranks the queue's own status. The stream owner
  * reports a sequence gap as `stale`; the connection owner reports a dropped or
- * retrying socket; and a readiness of `reconnecting` is the host telling the
- * browser its Codex child is not answering yet.
+ * retrying socket; and readiness is the host telling the browser how far its own
+ * Codex child has got.
  */
 function connectionState(state: BrowserWorkbenchState): WorkbenchQueueState | null {
 	if (state.kind === "stream") return "stale";
 	if (state.kind === "connection")
 		return state.state === "reconnecting" || state.state === "backoff"
 			? "reconnecting"
-			: "unavailable";
-	if (state.state === "reconnecting") return "reconnecting";
-	if (UNCOMMANDABLE_READINESS.has(state.state)) return "unavailable";
-	return null;
+			: "disconnected";
+	return READINESS_STATES[state.state];
 }
 
 /**
@@ -192,8 +217,7 @@ export function resolveWorkbenchQueueState(
 	if (input.settlement?.state === "outcome_unknown") return "outcome_unknown";
 	const connection = connectionState(input.state);
 	if (connection !== null) return connection;
-	if (snapshot.threadLink.state !== "executable" && snapshot.queue.status !== "unavailable")
-		return "unavailable";
+	if (snapshot.threadLink.state !== "executable") return "unavailable";
 	return QUEUE_STATUS_STATES[snapshot.queue.status];
 }
 
