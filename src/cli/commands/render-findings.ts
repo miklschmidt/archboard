@@ -69,7 +69,7 @@ export const renderFindingsContract = defineCommand({
 				when: {},
 				mode: "file-receipt",
 				held: "none",
-				description: "Validated manifest after every artifact commits",
+				description: "Schema-v3 validated manifest after every artifact commits",
 				presentation: ["result"],
 				artifact: PendingArtifactSchema,
 			},

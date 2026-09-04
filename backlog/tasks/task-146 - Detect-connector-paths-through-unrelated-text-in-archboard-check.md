@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-31 23:22'
-updated_date: '2026-09-04 15:55'
+updated_date: '2026-09-04 16:02'
 labels:
   - needs-triage
 dependencies: []
@@ -19,6 +19,8 @@ modified_files:
   - docs/design/cli-command-audit.json
   - docs/design/command-contract-design.md
   - src/cli/commands/check.ts
+  - src/cli/commands/render-findings.ts
+  - src/cli/finding-rendering/index.ts
   - src/cli/finding-rendering/tests/finding-rendering.test.ts
   - src/runtime/board-inspection/index.ts
   - src/runtime/board-inspection/lib/detectors.ts
@@ -62,6 +64,11 @@ This false clean result makes the documented board completion gate unreliable. D
 2. Reuse the existing segment clipping and sweep primitives to compare supported connector segments with live text boxes, excluding the connector's own label and text belonging to either endpoint.
 3. Add one focused board-inspection owner for geometry, tolerance, exemptions, observed device-trust geometry, schema, and formatting; extend the existing finding-rendering owner for the new finding.
 4. Run only focused board-inspection, formatter/rendering, type, lint, format, and diff checks; commit a clean review range and report READY_FOR_REVIEW without finalizing acceptance criteria.
+
+5. Preserve the schema-v2 labelCount meaning and add required schema-v3 textCount evidence, owned by a two-pair connector-text ceiling test at comparison budget 1.
+6. Bump the finding-render manifest and its directly coupled tests, command metadata, and contract documentation to schema v3.
+7. Restore the historical TASK-120 schema-v2 wording and make the focusBox comment version-neutral.
+8. Re-run only the focused inspection, rendering, command-contract generation, type, lint, format, and diff checks, then commit and return the complete range for rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -70,4 +77,8 @@ This false clean result makes the documented board completion gate unreliable. D
 Implemented schema-v3 CONNECTOR_PENETRATES_TEXT/text-interior. The detector uses the existing bounded interval sweep and segmentInsideBox clipping with overlapTolerance, filters unsupported text geometry, and encodes own-label and endpoint-text exemptions as sweep compatibility so excluded pairs do not inflate the public comparison count. Added a three-record device-trust fixture plus focused geometry, tolerance, ordering/count, formatter, schema, and finding-render tests.
 
 Focused validation: 58 tests across 11 board-inspection and finding-rendering owners passed; bunx tsc --noEmit passed; scoped oxlint and oxfmt checks passed; CLI contract artifacts generated successfully in /tmp; git diff --check and fixed-base ancestry passed. Broad/system/browser/repository-policy/capacity/performance suites were intentionally not run per assignment.
+
+Review remediation: restored labelCount to the number of label-analysis records reached before a comparison stop and added required textCount to the closed schema-v3 limit finding. A one-connector/two-text fixture at comparison budget 1 proves connector-text stops with labelCount 0 and textCount 2. Restored TASK-120's historical schema-v2 wording and made the unchanged 16px focus geometry comment version-neutral. Bumped FindingRenderManifestSchema, emitted manifests, focused schema tests, render-findings command metadata, CLI audit metadata, and the contract design to manifest schema v3, which requires inspection report schema v3.
+
+Rereview validation: 51 focused tests across inspection, schema/formatter, finding rendering, and command-contract owners passed in 1.270s; bunx tsc --noEmit passed; scoped oxlint and oxfmt checks passed; CLI contract artifacts generated successfully in /tmp; no broad/system/browser/repository-policy/capacity/performance/tooling/topology/concurrency suites were run.
 <!-- SECTION:NOTES:END -->
