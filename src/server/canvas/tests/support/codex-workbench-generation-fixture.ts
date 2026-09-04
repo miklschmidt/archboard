@@ -377,6 +377,7 @@ export function createCodexWorkbenchGenerationFixture(
 		enqueue: async () => unavailable("callbacks.enqueue"),
 		flush: async () => undefined,
 		inspect: () => [],
+		inspectHistory: () => ({ deliveries: [], omittedPrefixCount: 0 }),
 		get: () => undefined,
 		pendingCount: () => 0,
 		dispose: () => void events.push("callbacks:dispose"),

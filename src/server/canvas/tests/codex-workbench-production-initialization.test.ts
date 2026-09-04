@@ -8,6 +8,16 @@ import {
 	createIdentityLedger,
 } from "../../../shared/codex-workbench-identity/index.js";
 import {
+	parseRealtimeCorrelationId,
+	parseRealtimeSessionId,
+} from "../../../shared/codex-realtime-host/index.js";
+import { createCodexRealtimeAdapter } from "../../../runtime/codex-realtime/index.js";
+import {
+	createSemanticContextPublisher,
+	type SemanticContextInput,
+} from "../../../runtime/codex-semantic-context/index.js";
+import type { SessionParams } from "../../../runtime/codex-session/index.js";
+import {
 	createBrowserLeaseLedger,
 	createCodexWorkbenchGateway,
 } from "../../codex-workbench/index.js";
@@ -53,6 +63,96 @@ function installation(host: Record<string, unknown> = {}) {
 }
 
 describe("production Codex generation ownership", () => {
+	test("captures startup semantics under the exact minted wire session", async () => {
+		const authorities = createIdentityAuthorities(createIdentityLedger());
+		const workhorseThreadId = authorities.identity.decoder.adoptThreadId("voice-workhorse");
+		const coordinatorThreadId = authorities.identity.decoder.adoptThreadId("voice-coordinator");
+		const input: SemanticContextInput = {
+			repository: "/repo",
+			child: {
+				id: authorities.identity.validator.childId,
+				epoch: authorities.identity.validator.epoch,
+			},
+			threadLink: { state: "executable", reason: null },
+			workhorse: { threadId: workhorseThreadId, turnId: null },
+			coordinator: { threadId: coordinatorThreadId, realtimeSessionId: null },
+			board: { key: "architecture", note: "boards/architecture.md", version: 7 },
+			pane: { paneId: "pane-a", focused: true },
+			selection: ["node-a"],
+			claim: { holder: "none", doing: null },
+			doing: "Explaining the architecture",
+			cursor: { feedId: "feed-a", sequence: 4 },
+			description: "Architecture board",
+		};
+		const semanticPublisherOptions = {
+			feed: { onChange: () => () => undefined },
+			feedId: "feed-a",
+			fresh: { read: () => input },
+			contextForChange: () => input,
+			now: () => 1_800_000_000_000,
+		};
+		const owned = installation({ semanticPublisher: semanticPublisherOptions });
+		const publisher = createSemanticContextPublisher(semanticPublisherOptions);
+		const starts: SessionParams<"thread/realtime/start">[] = [];
+		try {
+			const components = {
+				identity: authorities,
+				semanticPublisher: publisher,
+				workhorse: {
+					snapshot: () => ({
+						state: "ready",
+						childId: authorities.identity.validator.childId,
+						epoch: authorities.identity.validator.epoch,
+						threadId: workhorseThreadId,
+					}),
+				},
+				coordinator: {
+					snapshot: () => ({ state: "ready", threadId: coordinatorThreadId }),
+				},
+			} as unknown as CodexWorkbenchComponents;
+			const production = owned.value.bindings(generationInput(1)).realtime(components);
+			const adapter = createCodexRealtimeAdapter({
+				...production,
+				identity: authorities.identity,
+				session: {
+					realtimeStart: async (params) => {
+						starts.push(params);
+						return {};
+					},
+					realtimeAppendText: async () => ({}),
+					realtimeAppendSpeech: async () => ({}),
+					realtimeStop: async () => ({}),
+					timelineListPage: async () => ({
+						data: [],
+						nextCursor: null,
+						activeRealtimeSessionAtPageStart: null,
+					}),
+				},
+			});
+			const pending = adapter.createOffer({
+				sessionId: parseRealtimeSessionId("browser-session"),
+				correlationId: parseRealtimeCorrelationId("browser-correlation"),
+				sdp: "offer",
+			});
+			void pending.catch(() => undefined);
+			await Promise.resolve();
+			const start = starts[0];
+			if (start === undefined) throw new Error("The realtime start was not sent.");
+			const exactBrief = start.initialItems?.[0]?.text;
+			if (exactBrief === undefined) throw new Error("The realtime start has no semantic brief.");
+			expect(JSON.parse(exactBrief).coordinator.realtimeSessionId).toBe(start.realtimeSessionId);
+			expect(adapter.generation()).toMatchObject({
+				wireSessionId: start.realtimeSessionId,
+				semanticBrief: exactBrief,
+			});
+			adapter.dispose();
+			await expect(pending).rejects.toThrow("disposed");
+		} finally {
+			publisher.dispose();
+			rmSync(owned.root, { recursive: true, force: true });
+		}
+	});
+
 	test("a settled or replaced generation leaves no reachable owners behind", async () => {
 		const owned = installation();
 		try {

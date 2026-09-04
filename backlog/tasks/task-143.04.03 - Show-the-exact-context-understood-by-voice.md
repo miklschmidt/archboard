@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 13:02'
+updated_date: '2026-09-04 13:21'
 labels: []
 dependencies:
   - TASK-143.04.01
@@ -24,6 +24,7 @@ modified_files:
   - src/shared/codex-browser-model
   - src/ui/voice-context
   - src/ui/workbench-transport
+  - tests/system/canvas-state/voice-context-producer-contract.test.ts
 parent_task_id: TASK-143.04
 priority: high
 type: task
@@ -70,20 +71,26 @@ Show what the current voice session actually captured and what later context del
 15. Replace cumulative disclosure with fixed previous/next windows. Bound body storage and display to the real producer byte contract, and keep copy-failure recovery inside that fixed window model.
 
 16. Pin the presentation parser to canonical bytes produced by codex-semantic-context at the cheapest stable contract, then run focused affected tests, both TypeScript projects, scoped lint and format, and diff checks only.
+
+17. Mint the wire realtime session identity before reading the start semantic brief, make the production semantic input observe that exact identity, and prove the bytes are sent under the same generation without exposing an installed half-session.
+
+18. Extend the existing callback retention record with an authoritative omitted-prefix count, add transport fitter drops to it, and retain plus render an accessible partial-history marker through the voice-context browser adapter.
+
+19. Replace the isolated producer golden with one focused freshBrief-to-voice-context capture/projection contract that proves required parsed fields and byte-exact storage/copy, then run only the authorized focused checks.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Rereview remediation is implemented and ready for independent review. The task remains In Progress and every acceptance criterion stays unchecked.
+Second rereview remediation is implemented and ready for independent review. TASK-143.04.03 remains In Progress and all acceptance criteria remain unchecked.
 
-Identity and bytes: the exact canonical semantic_context bytes captured once by the realtime start are retained in the existing realtime generation and published through the existing browser projection. The local semantic parser is presentation-only; storage and copy preserve the original bytes. Session association requires exact identity matches, except an ellipsis-terminated prefix the canonical fitter can produce. A complete mismatched identity is refused even when the brief is marked truncated. A producer-byte golden test pins the presentation parser to freshBrief(), and browser limits are pinned to the semantic 8,192-byte and callback 32,768-byte producer contracts.
+Startup identity: the realtime adapter mints the wire session ID before semantic capture and passes it into the existing production semantic capture callback. Production reads the current semantic input once, overrides only coordinator.realtimeSessionId with that minted identity, and calls the existing publisher freshBriefFor path. The adapter installs no temporary generation while capturing. A focused production initialization test proves the canonical brief contains the same wire ID used by thread/realtime/start and retained in the generation.
 
-Delivery evidence: the existing callback owner assigns monotonic first-seen sourceOrder and records capture, freshness, and pre-attempt timestamps. Runtime, browser wire, and UI contracts use discriminated attempted/unattempted records. Browser and history boundaries reject non-finite or reversed timestamps, incoherent attempt/outcome combinations, and oversized bodies. The production browser projection filters entries to the exact active realtime generation, sorts by authoritative sourceOrder, and notifies through the existing projection channel. It adds no second state owner.
+Omitted history: the existing callback owner now retains an exact-generation omitted-prefix count beside its bounded settled suffix. Production still defaults to CALLBACK_BUFFER_LIMIT 64; the regression injects capacity 2 and sends three records. Browser projection carries permanent owner omissions separately from the combined count. Snapshot fitting increments only the combined transport count. Voice-context history tracks total observed source records and unique retained records, so its accessible partial-history marker reports actual missing evidence, clears when transport-dropped entries arrive, and does not falsely mark an entry the UI retained before the runtime owner evicted it.
 
-Presentation: stopped and replaced observations remain in immutable history after the live browser evidence disappears. Session, delivery, canonical-brief, and body navigation now uses fixed previous/next windows rather than cumulative reveal. Clipboard failure returns to the target's first bounded window and gives accurate manual-copy instructions without rendering all text.
+Producer/parser contract: the handwritten semantic golden was removed. A single focused browser-free system owner feeds actual freshBrief().brief bytes through voice-context capture and projection, asserts the required parsed fields, and proves the stored and projected copy source remains byte-exact.
 
-Validation: 177 focused affected tests passed across the touched runtime, shared, server projection, and voice-context modules; bunx tsc --noEmit passed; bunx tsc --noEmit -p tsconfig.frontend.json passed; scoped Oxlint passed; scoped Oxfmt passed; git diff --check passed. No build, browser, system, broad repository, stress, load, performance, runner, tooling, topology, or concurrency lane was run.
+Validation: 64 focused tests passed across 12 exact owner files; bunx tsc --noEmit passed; bunx tsc --noEmit -p tsconfig.frontend.json passed; scoped Oxlint passed over all 25 changed non-deleted TypeScript files; scoped Oxfmt passed over the same files; git diff --check passed. No build, browser, broad system, repository policy, stress, load, capacity, performance, tooling, topology, concurrency, or full-suite lane ran.
 
-Remaining risk: rendered browser workflow coverage remains with TASK-143.04.07. This change proves the production projection seam and module behavior without taking over that owner.
+Remaining risk: rendered browser behavior remains assigned to TASK-143.04.07. The new tests cover the production startup and browser projection seams without taking over that rendered owner.
 <!-- SECTION:NOTES:END -->
