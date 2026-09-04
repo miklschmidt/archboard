@@ -20,7 +20,7 @@ import type {
 	SpokenApprovalToolResult,
 } from "./contract.js";
 import { CodexSpokenApprovalError } from "./contract.js";
-import { EMPTY_SNAPSHOT, type ActiveSlot } from "./state.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT, type ActiveSlot } from "./state.js";
 import {
 	recordKey,
 	sameRealtime,
@@ -55,7 +55,7 @@ export function createCodexSpokenApprovalGate(
 	options: CodexSpokenApprovalGateOptions,
 ): CodexSpokenApprovalGate {
 	const now = options.now ?? Date.now;
-	let currentSnapshot = EMPTY_SNAPSHOT;
+	let currentSnapshot = EMPTY_SPOKEN_APPROVAL_SNAPSHOT;
 	let active: ActiveSlot | null = null;
 	let disposed = false;
 
@@ -111,7 +111,7 @@ export function createCodexSpokenApprovalGate(
 		requestId: SpokenApprovalSnapshot["requestId"] = null,
 	): SpokenApprovalSnapshot => {
 		currentSnapshot = Object.freeze({
-			...EMPTY_SNAPSHOT,
+			...EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
 			state: "visual_fallback",
 			requestId,
 			reason,
@@ -208,7 +208,7 @@ export function createCodexSpokenApprovalGate(
 				"Only one spoken approval may be pending at a time; use the visual approval surface for the second request.",
 			);
 		active = null;
-		currentSnapshot = EMPTY_SNAPSHOT;
+		currentSnapshot = EMPTY_SPOKEN_APPROVAL_SNAPSHOT;
 		const result = validateArm(validationHost, input);
 		if (!result.ok) return fallbackWithoutSlot(result.reason, input.requestId);
 		const slot: ActiveSlot = {

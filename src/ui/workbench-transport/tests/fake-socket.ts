@@ -1,4 +1,5 @@
 import type { createBrowserWorkbenchTransport, BrowserWorkbenchSocket } from "../index.js";
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "../../../shared/codex-browser-model/index.js";
 
 export type FakeSocketRequest = Record<string, unknown>;
 
@@ -251,6 +252,7 @@ export function snapshot(options: SnapshotOptions = {}): Record<string, unknown>
 			delivery: null,
 			reason: null,
 		},
+		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,
 		lease: options.lease ?? null,
 		operation: null,
 	};

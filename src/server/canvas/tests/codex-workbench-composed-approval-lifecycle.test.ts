@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
 import {
 	createCodexWorkbenchGateway,
@@ -96,6 +97,7 @@ test("composed child exit publishes one settled approval before closing presente
 				coordinatorState: "ready",
 				transcript: [],
 			},
+			spokenApproval: EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
 		}),
 		onChange: (listener: () => void) => {
 			projectionListeners.add(listener);

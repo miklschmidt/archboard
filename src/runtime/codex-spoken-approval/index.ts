@@ -6,6 +6,7 @@ export {
 } from "./lib/classifier.js";
 
 export { createCodexSpokenApprovalGate, CodexSpokenApprovalError } from "./lib/gate.js";
+export { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "./lib/state.js";
 
 export type {
 	CodexSpokenApprovalGate,

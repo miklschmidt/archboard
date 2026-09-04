@@ -19,6 +19,7 @@ export function exhaustiveBrowserDto(dto: BrowserDto): string {
 		case "semantic_delivery":
 		case "coordinator":
 		case "voice":
+		case "spoken_approval":
 		case "command_lease":
 		case "operation_outcome":
 		case "dynamic_approval":
@@ -89,6 +90,7 @@ type _BrowserDtoIsClosed = Assert<
 		| "semantic_delivery"
 		| "coordinator"
 		| "voice"
+		| "spoken_approval"
 		| "command_lease"
 		| "operation_outcome"
 		| "dynamic_approval"

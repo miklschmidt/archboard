@@ -1,12 +1,10 @@
-import type { BrowserVoice } from "../../../shared/codex-browser-model/index.js";
+import type { BrowserSpokenApproval } from "../../../shared/codex-browser-model/index.js";
 import {
 	isGenuineBinaryApproval,
-	type WorkbenchApprovalCard,
 	type WorkbenchApprovalDisclosure,
+	type WorkbenchOrdinaryApprovalCard,
 } from "../../workbench-approvals/index.js";
 import type {
-	VoiceSpokenApprovalFallbackReason,
-	VoiceSpokenApprovalGatePresentation,
 	VoiceSpokenApprovalInput,
 	VoiceSpokenApprovalReason,
 	VoiceSpokenApprovalState,
@@ -17,12 +15,9 @@ import type {
 const CLASSIFIER_NOTICE =
 	"A later ordinary coordinator classifier turn settles the typed request; realtime speech does not.";
 
-type EvidenceFailureReason =
-	| "ambiguous"
-	| "missing"
-	| "non_final"
-	| "assistant_only"
-	| "stale_session";
+type SpokenFallbackReason = NonNullable<BrowserSpokenApproval["reason"]>;
+type SpokenApprovalIdentity = NonNullable<BrowserSpokenApproval["approval"]>;
+type SpokenGate = NonNullable<BrowserSpokenApproval["gate"]>;
 
 const STATE_COPY = {
 	eligible: {
@@ -41,7 +36,7 @@ const STATE_COPY = {
 	},
 	resolving: {
 		label: "Resolving",
-		detail: "The final user utterance is captured and the coordinator is classifying it.",
+		detail: "The final user utterance is captured; ordinary coordinator handling is in progress.",
 	},
 	visual_fallback: {
 		label: "Visual only",
@@ -58,7 +53,7 @@ const STATE_COPY = {
 	},
 	stale_session: {
 		label: "Stale session",
-		detail: "The approval identity or realtime session no longer matches these spoken gate facts.",
+		detail: "The approval identity or realtime session no longer matches this spoken state.",
 	},
 } as const satisfies Record<
 	VoiceSpokenApprovalState,
@@ -66,20 +61,27 @@ const STATE_COPY = {
 >;
 
 const FALLBACK_COPY = {
-	ambiguous: "The utterance could not be tied to one plain accept or decline.",
-	missing: "No matching user utterance was captured after the effect prompt.",
-	non_final: "The matching user item was provisional, so it cannot be classified.",
+	approval_unavailable: "The ordinary approval is no longer available.",
+	not_eligible: "The host no longer permits spoken handling for this approval.",
+	coordinator_unavailable: "The ordinary coordinator became unavailable.",
+	realtime_unavailable: "The realtime session became unavailable.",
+	invalid_context: "The spoken request context was incomplete or invalid.",
+	invalid_effect_prompt: "The effect prompt could not be correlated safely.",
+	user_already_spoke: "A user utterance already preceded this effect prompt.",
+	missing_user_final: "No final user utterance was captured after the effect prompt.",
 	assistant_only:
 		"Only assistant output followed the effect prompt; assistant output is non-authoritative.",
-	lost_result:
-		"The host lost the typed decision result after classification. Archboard cannot infer delivery and does not retry.",
-	realtime_unavailable: "The realtime session became unavailable.",
-	coordinator_unavailable: "The ordinary coordinator became unavailable.",
-	stale_identity: "The request, effect, or approval source changed.",
-} as const satisfies Record<
-	Exclude<VoiceSpokenApprovalFallbackReason, "expiry" | "stale_session" | "duplicate">,
-	string
->;
+	ambiguous: "The utterance could not be tied to one plain accept or decline.",
+	changed_effect: "The requested effect changed after the spoken gate was armed.",
+	stale_realtime_session: "The realtime session no longer matches the armed gate.",
+	stale_state: "The approval identity or lifecycle no longer matches the armed gate.",
+	timeout: "The spoken gate expired before a typed decision settled the request.",
+	classifier_lost: "The ordinary classifier turn ended without a typed decision.",
+	resolver_lost:
+		"The host lost the typed decision result after resolver delivery. Archboard cannot infer delivery and does not retry.",
+	child_exit: "The bound Codex child exited while spoken handling was active.",
+	disposed: "The spoken approval owner stopped before this request settled.",
+} as const satisfies Record<SpokenFallbackReason, string>;
 
 function frozenRows(
 	rows: readonly WorkbenchApprovalDisclosure[],
@@ -88,19 +90,9 @@ function frozenRows(
 }
 
 function sourceRows(
-	card: WorkbenchApprovalCard,
-	gate: VoiceSpokenApprovalGatePresentation | null,
+	card: WorkbenchOrdinaryApprovalCard,
+	gate: BrowserSpokenApproval["gate"],
 ): readonly WorkbenchApprovalDisclosure[] {
-	const existing =
-		card.kind === "ordinary"
-			? card.broker
-			: [
-					{
-						label: "Approval source",
-						value: "Dynamic coordination approval",
-						technical: false,
-					},
-				];
 	const coordinator =
 		gate === null
 			? []
@@ -111,26 +103,22 @@ function sourceRows(
 						technical: true,
 					},
 				];
-	return frozenRows([...existing, ...coordinator]);
+	return frozenRows([...card.broker, ...coordinator]);
 }
 
-function gateRows(
-	gate: VoiceSpokenApprovalGatePresentation | null,
-): readonly WorkbenchApprovalDisclosure[] {
+function gateRows(gate: BrowserSpokenApproval["gate"]): readonly WorkbenchApprovalDisclosure[] {
 	if (gate === null) return Object.freeze([]);
-	const expiry = Number.isFinite(gate.expiresAtMs)
-		? new Date(gate.expiresAtMs).toISOString()
-		: "invalid gate expiry";
 	return frozenRows([
 		{ label: "Realtime session", value: String(gate.realtimeSessionId), technical: true },
+		{ label: "Effect summary", value: gate.effectSummary, technical: false },
+		{ label: "Effect fingerprint", value: gate.effectFingerprint, technical: true },
 		{ label: "Effect prompt item", value: String(gate.effectPrompt.itemId), technical: true },
 		{ label: "Effect prompt sequence", value: String(gate.effectPrompt.sequence), technical: true },
-		{ label: "Gate expires", value: expiry, technical: true },
+		{ label: "Gate expires", value: new Date(gate.expiresAtMs).toISOString(), technical: true },
 	]);
 }
 
-function ineligible(card: WorkbenchApprovalCard): VoiceSpokenApprovalReason | null {
-	if (card.kind !== "ordinary") return "dynamic_approval";
+function ineligible(card: WorkbenchOrdinaryApprovalCard): VoiceSpokenApprovalReason | null {
 	const approval = card.request;
 	if (approval.lifecycle.state !== "pending" || card.status.phase !== "pending")
 		return "not_pending";
@@ -142,72 +130,42 @@ function ineligible(card: WorkbenchApprovalCard): VoiceSpokenApprovalReason | nu
 	return null;
 }
 
-function identityMatches(
-	card: WorkbenchApprovalCard,
-	gate: VoiceSpokenApprovalGatePresentation,
+function approvalIdentityMatches(
+	card: WorkbenchOrdinaryApprovalCard,
+	approval: SpokenApprovalIdentity,
 ): boolean {
-	if (card.kind !== "ordinary") return false;
 	const request = card.request;
 	return (
-		request.requestId === gate.requestId &&
-		request.approvalId === gate.approvalId &&
-		request.threadId === gate.threadId &&
-		request.binding.child === gate.binding.child &&
-		request.binding.epoch === gate.binding.epoch &&
-		request.binding.target === gate.binding.target &&
-		request.binding.effect === gate.binding.effect
+		request.requestId === approval.requestId &&
+		request.approvalId === approval.approvalId &&
+		request.threadId === approval.threadId &&
+		request.binding.child === approval.binding.child &&
+		request.binding.epoch === approval.binding.epoch &&
+		request.binding.target === approval.binding.target &&
+		request.binding.effect === approval.binding.effect
 	);
 }
 
-function exactItemMatches(
-	voice: BrowserVoice,
-	item: NonNullable<VoiceSpokenApprovalGatePresentation["capturedItem"]>,
-): number {
-	return voice.transcript.filter(
-		(candidate) =>
-			candidate.itemId === item.itemId &&
-			candidate.sequence === item.sequence &&
-			candidate.speaker === item.speaker &&
-			candidate.text === item.text &&
-			candidate.final === item.final,
-	).length;
+function gateMatchesApproval(approval: SpokenApprovalIdentity, gate: SpokenGate): boolean {
+	return (
+		gate.effectFingerprint === approval.binding.effect &&
+		gate.effectSummary.trim().length > 0 &&
+		Number.isSafeInteger(gate.effectPrompt.sequence) &&
+		gate.effectPrompt.sequence >= 0 &&
+		Number.isFinite(gate.expiresAtMs)
+	);
 }
 
-function utterance(gate: VoiceSpokenApprovalGatePresentation): VoiceSpokenApprovalUtterance | null {
-	const item = gate.capturedItem;
-	if (item === null) return null;
-	const authoritative = item.speaker === "user" && item.final;
+function utterance(spoken: BrowserSpokenApproval): VoiceSpokenApprovalUtterance | null {
+	const item = spoken.capturedUserFinal;
+	const gate = spoken.gate;
+	if (item === null || gate === null) return null;
 	return Object.freeze({
 		...item,
-		authority: authoritative ? "captured_user_final" : "non_authoritative",
-		label: authoritative
-			? "Captured final user utterance"
-			: item.speaker === "assistant"
-				? "Non-authoritative assistant output"
-				: "Provisional user output",
+		realtimeSessionId: gate.realtimeSessionId,
+		authority: "captured_user_final",
+		label: "Captured final user utterance",
 	});
-}
-
-function evidenceFailure(
-	voice: BrowserVoice,
-	gate: VoiceSpokenApprovalGatePresentation,
-): EvidenceFailureReason | null {
-	const item = gate.capturedItem;
-	if (item === null)
-		return gate.state === "resolving" || gate.state === "outcome_unknown" ? "missing" : null;
-	if (
-		item.realtimeSessionId !== gate.realtimeSessionId ||
-		voice.realtimeSessionId !== gate.realtimeSessionId
-	)
-		return "stale_session";
-	const matches = exactItemMatches(voice, item);
-	if (matches === 0) return "missing";
-	if (matches > 1) return "ambiguous";
-	if (item.speaker === "assistant") return "assistant_only";
-	if (!item.final) return "non_final";
-	if (item.text.trim().length === 0) return "missing";
-	if (item.sequence <= gate.effectPrompt.sequence) return "ambiguous";
-	return null;
 }
 
 function view(
@@ -234,10 +192,14 @@ function view(
 		visualCardPreserved: true,
 		request: frozenRows(input.card.identity),
 		effect: frozenRows(input.card.effect),
-		source: sourceRows(input.card, input.gate),
-		gate: gateRows(input.gate),
+		source: sourceRows(input.card, input.spokenApproval.gate),
+		gate: gateRows(input.spokenApproval.gate),
 		utterance: shownUtterance,
 	});
+}
+
+function staleReason(reason: BrowserSpokenApproval["reason"]): VoiceSpokenApprovalReason {
+	return reason ?? "stale_state";
 }
 
 export function projectVoiceSpokenApproval(
@@ -245,43 +207,60 @@ export function projectVoiceSpokenApproval(
 ): VoiceSpokenApprovalView {
 	const refusal = ineligible(input.card);
 	if (refusal !== null) return view(input, "ineligible", refusal, input.card.spoken.detail);
-	const gate = input.gate;
-	if (gate === null) return view(input, "eligible", "eligible");
+
+	const spoken = input.spokenApproval;
+	if (spoken.state === "idle") return view(input, "eligible", "eligible");
+
+	const live = spoken.state === "armed" || spoken.state === "resolving";
 	if (
-		gate.coordinatorThreadId.trim().length === 0 ||
-		!Number.isSafeInteger(gate.effectPrompt.sequence) ||
-		gate.effectPrompt.sequence < 0 ||
-		!Number.isFinite(gate.expiresAtMs)
-	)
-		return view(input, "stale_session", "stale_identity");
-	if (
-		input.card.kind === "ordinary" &&
-		input.card.request.requestId !== gate.requestId &&
-		(gate.state === "armed" || gate.state === "resolving")
+		live &&
+		spoken.approval !== null &&
+		spoken.approval.requestId !== input.card.request.requestId
 	)
 		return view(input, "duplicate", "duplicate");
-	if (!identityMatches(input.card, gate)) return view(input, "stale_session", "stale_identity");
-	if (gate.state === "stale_session") return view(input, "stale_session", "stale_session");
+
+	if (spoken.state === "stale_session")
+		return view(input, "stale_session", staleReason(spoken.reason));
+
+	if (spoken.approval !== null && !approvalIdentityMatches(input.card, spoken.approval))
+		return view(input, "stale_session", staleReason(spoken.reason));
+
 	if (
-		(gate.state === "armed" || gate.state === "resolving") &&
-		input.voice.realtimeSessionId !== gate.realtimeSessionId
+		live &&
+		(spoken.approval === null ||
+			spoken.gate === null ||
+			!gateMatchesApproval(spoken.approval, spoken.gate))
 	)
-		return view(input, "stale_session", "stale_session");
-	const failure = evidenceFailure(input.voice, gate);
-	if (failure === "stale_session") return view(input, "stale_session", failure);
-	if (failure !== null)
+		return view(input, "stale_session", staleReason(spoken.reason));
+
+	const captured = utterance(spoken);
+	if (spoken.state === "resolving" && captured === null)
+		return view(input, "visual_fallback", "missing_user_final", FALLBACK_COPY.missing_user_final);
+
+	if (spoken.state === "settled")
 		return view(
 			input,
 			"visual_fallback",
-			failure,
-			FALLBACK_COPY[failure],
-			failure === "assistant_only" || failure === "non_final" ? utterance(gate) : null,
+			staleReason(spoken.reason),
+			"Spoken handling settled, but the ordinary approval still appears pending.",
+			captured,
 		);
-	const correlatedUtterance = utterance(gate);
-	if ((gate.state === "armed" || gate.state === "resolving") && input.nowMs >= gate.expiresAtMs)
-		return view(input, "expired", "expiry", undefined, correlatedUtterance);
-	if (gate.state === "visual_fallback") {
-		return view(input, gate.state, gate.reason, FALLBACK_COPY[gate.reason], correlatedUtterance);
+
+	if (spoken.state === "visual_fallback") {
+		const reason = spoken.reason ?? "stale_state";
+		return view(input, "visual_fallback", reason, FALLBACK_COPY[reason], captured);
 	}
-	return view(input, gate.state, gate.reason ?? "eligible", undefined, correlatedUtterance);
+
+	return view(
+		input,
+		spoken.state,
+		spoken.reason ??
+			(spoken.state === "expired"
+				? "timeout"
+				: spoken.state === "outcome_unknown"
+					? "resolver_lost"
+					: "eligible"),
+		undefined,
+		captured,
+	);
 }

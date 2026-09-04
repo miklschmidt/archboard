@@ -72,9 +72,7 @@ function Utterance({ item }: { readonly item: VoiceSpokenApprovalUtterance }): R
 					{item.label}
 				</h4>
 				<span className="font-sans text-body text-muted-foreground">
-					{item.authority === "captured_user_final"
-						? "Eligible for later classification"
-						: "Cannot settle this request"}
+					Eligible for later classification
 				</span>
 			</div>
 			<dl className="m-0 grid grid-cols-3 gap-region py-compact">

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 12:08'
+updated_date: '2026-09-04 12:27'
 labels: []
 dependencies:
   - TASK-143.03.07
@@ -45,6 +45,8 @@ Present voice-specific eligibility, one-slot gate, captured user-utterance evide
 2. Render a display-only spoken-approval region intended immediately above the ordinary approval card. Show immutable request, effect, broker/coordinator source, effect-prompt identity, and the captured final user item/session/sequence/text. Label assistant output as non-authoritative and explain in every live/fallback/uncertain state that a later ordinary coordinator classifier turn, not realtime speech, settles the typed request. Add no decision controls and do not duplicate ordinary approval state.
 3. Add focused module tests for every accepted projection and reason arm, static markup and accessible DOM structure, exact evidence disclosure, one-slot duplicate behavior, fail-closed correlation, visual-card preservation, and no action owner. Use the shared opt-in DOM stack only; leave browser interaction to TASK-143.04.07.
 4. Run the module tests, root and frontend TypeScript checks, scoped Oxlint and Oxfmt checks, any repository owner required by new files, and git diff --check. Record implementation evidence without checking acceptance criteria or moving the task from In Progress.
+
+Review remediation: publish one closed BrowserSpokenApproval DTO from the authoritative SpokenApprovalSnapshot at the existing Codex browser projection boundary; wire the owner snapshot through the canvas gateway; make the UI consume that DTO without reconstructing policy or transcript evidence; prove exhaustive state/reason mapping, classifier-lost versus resolver-lost truth, null-captured assistant fallback, schema closure, and compile-time frame composition; run only the focused checks authorized by the review.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -55,4 +57,10 @@ Implemented the isolated display-only src/ui/voice-spoken-approval module. The p
 Evidence by acceptance criterion: AC1 is owned by the host-reason matrix plus exact pending command accept/decline checks; AC2 by exact request/effect/source and post-prompt user-final correlation tests plus assistant-only rendering; AC3 by armed/expired/resolving/visual_fallback/outcome_unknown state and classifier-notice tests; AC4 by duplicate, stale identity/session, ambiguous, missing, non-final, assistant-only, lost-result, and expiry fail-closed tests with visualCardPreserved=true and no awaiting_user state; AC5 by 30 focused module tests across projection, static markup, mounted DOM, and boundary owners. Acceptance criteria remain unchecked for independent review.
 
 Validation: bun test src/ui/voice-spoken-approval/tests (30 pass); bun run generate:codex-contract; bunx tsc --noEmit; bunx tsc --noEmit -p tsconfig.frontend.json; bunx oxlint src/ui/voice-spoken-approval; bunx oxfmt --check src/ui/voice-spoken-approval; bun test tests/system/repository-policy/boundaries.test.ts tests/system/repository-policy/test-inventory.test.ts (62 pass).
+
+Review remediation: added one strict BrowserSpokenApproval DTO to the canonical browser snapshot and delta contract. The server projection joins SpokenApprovalSnapshot to exactly one command ApprovalOwnerView, validates coordinator/realtime/effect/settlement identity, nominates only the runtime-captured post-prompt final user item, and fails closed on incomplete or mismatched facts. All 18 runtime fallback reasons map exhaustively; classifier_lost remains visual-only and only resolver_lost becomes outcome_unknown. coordinatorThreadId retains the shared branded ThreadId. The canvas gateway now publishes the runtime owner snapshot and owner changes trigger browser projection.
+
+The spoken-approval UI now consumes only BrowserSpokenApproval plus the ordinary approval card. It no longer selects transcript records, accepts a synthetic gate, or computes expiry from caller time. Focused owner-view -> browser DTO -> UI tests cover exact identity, assistant-only/null evidence, every state/reason, schema closure, immutable evidence, and a compile-time workbench-frame composition fixture; the frame itself remains owned by TASK-143.04.06.
+
+Remediation validation: 174 focused tests across runtime spoken approval, shared browser model, server projection, canvas projection, browser transport, and spoken UI; 62 repository boundary/inventory tests; root and frontend TypeScript; scoped Oxlint and Oxfmt across 45 changed TypeScript files; git diff --check. Full browser and system lanes were not run as directed; TASK-143.04.07 owns rendered browser interaction. Status remains In Progress and all five acceptance criteria remain unchecked for independent review.
 <!-- SECTION:NOTES:END -->

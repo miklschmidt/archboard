@@ -9,18 +9,13 @@ import {
 registerHappyDom();
 const { cleanup, render, screen } = await loadRenderedUiTools();
 const { VoiceSpokenApproval } = await import("../index.js");
-const { capturedItem, gate, input, voice } = await import("./fixtures.js");
+const { input, spokenApproval } = await import("./fixtures.js");
 
 afterEach(cleanup);
 afterAll(unregisterHappyDom);
 
 test("names the section and status while exposing no decision control", () => {
-	const final = capturedItem();
-	render(
-		<VoiceSpokenApproval
-			{...input({ gate: gate("resolving", { capturedItem: final }), voice: voice([final]) })}
-		/>,
-	);
+	render(<VoiceSpokenApproval {...input({ spokenApproval: spokenApproval("resolving") })} />);
 
 	const region = screen.getByRole("region", { name: "Voice evidence" });
 	expect(region.dataset.spokenApproval).toBe("display-only");
@@ -37,7 +32,11 @@ test("names the section and status while exposing no decision control", () => {
 
 test("keeps the preserved-card signal and a named visual-only status on failure", () => {
 	render(
-		<VoiceSpokenApproval {...input({ gate: gate("visual_fallback", { reason: "ambiguous" }) })} />,
+		<VoiceSpokenApproval
+			{...input({
+				spokenApproval: spokenApproval("visual_fallback", { reason: "classifier_lost" }),
+			})}
+		/>,
 	);
 
 	const region = screen.getByRole("region", { name: "Voice evidence" });
@@ -46,4 +45,5 @@ test("keeps the preserved-card signal and a named visual-only status on failure"
 		screen.getByRole("status", { name: "Spoken approval status: Visual only" }),
 	).not.toBeNull();
 	expect(region.textContent).toContain("later ordinary coordinator classifier turn");
+	expect(region.textContent).toContain("ordinary approval card stays visible");
 });
