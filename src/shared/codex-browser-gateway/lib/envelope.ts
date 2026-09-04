@@ -70,6 +70,7 @@ export const BROWSER_SNAPSHOT_DELTA_KEYS = [
 	"account",
 	"login",
 	"threadLink",
+	"threadCandidates",
 	"timeline",
 	"queue",
 	"settings",

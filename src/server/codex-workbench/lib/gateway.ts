@@ -203,6 +203,7 @@ function isAccountCommand(command: BrowserCommand): boolean {
 function isThreadLinkCommand(command: BrowserCommand): boolean {
 	return (
 		command.command === "threadLinkCreate" ||
+		command.command === "threadLinkRefresh" ||
 		command.command === "threadLinkAttach" ||
 		command.command === "threadLinkRelink"
 	);
@@ -747,6 +748,7 @@ export function createCodexWorkbenchGateway(
 		accountLoginCancel: (command, context) => options.actions.account.loginCancel(command, context),
 		accountLogout: (command, context) => options.actions.account.logout(command, context),
 		threadLinkCreate: (command, context) => options.actions.threadLinks.create(command, context),
+		threadLinkRefresh: (command, context) => options.actions.threadLinks.refresh(command, context),
 		threadLinkAttach: (command, context) => options.actions.threadLinks.attach(command, context),
 		threadLinkRelink: (command, context) => options.actions.threadLinks.relink(command, context),
 		start: (command, context) => options.actions.text.start(command, context),

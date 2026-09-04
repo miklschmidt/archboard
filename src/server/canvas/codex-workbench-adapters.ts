@@ -41,5 +41,6 @@ export { requireExactSemanticPane } from "./lib/codex-workbench-semantic-pane.js
 export {
 	bindThreadContextToReadyWorkhorse,
 	clearCanvasThreadContextForLease,
+	createCanvasThreadCandidateInventory,
 	createCanvasThreadLinkActions,
 } from "./lib/codex-workbench-thread-links.js";

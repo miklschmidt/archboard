@@ -146,7 +146,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 				loginCancel: delivered,
 				logout: delivered,
 			},
-			threadLinks: { create: delivered, attach: delivered, relink: delivered },
+			threadLinks: { create: delivered, refresh: delivered, attach: delivered, relink: delivered },
 			text: { start: delivered, steer: delivered, interrupt: delivered },
 			queue: {
 				add: delivered,
@@ -183,6 +183,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 		const projection = {
 			read: (): BrowserOwnerProjection => ({
 				readiness: { kind: "readiness", state: "thread_capable" },
+				threadCandidates: { kind: "codex_thread_candidates", state: "unknown" },
 				account: {
 					kind: "codex_account_response",
 					response: {
@@ -236,6 +237,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 					cas: { revision: 1, paneId, childId, epoch, threadId },
 				}),
 			},
+
 			actions,
 			now: () => 1_787_682_840_000,
 		});

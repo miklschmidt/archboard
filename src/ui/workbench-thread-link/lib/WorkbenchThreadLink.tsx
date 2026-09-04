@@ -70,7 +70,7 @@ function RecoveryControl({
 	if (recovery.intent === "retry_login")
 		return (
 			<a
-				className="inline-flex min-h-touch-target items-center text-control font-medium text-primary underline"
+				className="inline-flex min-h-touch-target items-center !text-control font-medium text-foreground underline decoration-primary"
 				data-thread-link-recovery={recovery.intent}
 				href={`#${accountSectionId}`}
 			>
@@ -158,13 +158,10 @@ function SelectionRows({
 							))}
 						</dl>
 						<p className="m-0 pt-compact text-body text-muted-foreground">{row.reasonLabel}</p>
-						<p className="m-0 font-mono text-technical text-faint-foreground">
-							Joined from {row.persistedRows} persisted row and {row.loadedOccurrences} current
-							loaded occurrence.
-						</p>
 					</div>
 					<div className="min-w-0">
 						<Button
+							aria-label={`${ROW_ACTION_LABELS[row.intent][row.outcome]} thread ${row.threadId}`}
 							data-thread-link-bind={row.selectionId}
 							disabled={!row.enabled}
 							onClick={onBind}
@@ -202,6 +199,10 @@ function runRecoveryIntent(
 		void controller.logout();
 		return;
 	}
+	if (intent === "refresh_inventory") {
+		void controller.refreshInventory();
+		return;
+	}
 	void controller.recover(intent);
 }
 
@@ -209,7 +210,6 @@ export function WorkbenchThreadLink({
 	paneId,
 	transport,
 	controller,
-	inventory,
 	hostRecoveryIntents = NO_HOST_RECOVERY,
 	initialAccountForm,
 	className,
@@ -230,7 +230,6 @@ export function WorkbenchThreadLink({
 		paneId,
 		state,
 		capabilities: transport.capabilities(),
-		inventory,
 		hostRecoveryIntents,
 		action,
 	});
@@ -270,7 +269,7 @@ export function WorkbenchThreadLink({
 					aria-label={`Codex workbench readiness: ${panel.readiness.label}`}
 					aria-live="polite"
 					className={cn(
-						"shrink-0 rounded-control border px-control py-compact text-body font-medium",
+						"shrink-0 rounded-control border px-control py-compact !text-body font-medium",
 						TONE_CLASSES[panel.readiness.tone],
 					)}
 				>
@@ -299,7 +298,7 @@ export function WorkbenchThreadLink({
 				aria-label="Codex thread-link action"
 				aria-live="polite"
 				className={cn(
-					"block rounded-control border px-control py-compact text-body",
+					"block rounded-control border px-control py-compact !text-body",
 					ACTION_CLASSES[panel.action.state],
 				)}
 				data-thread-link-action={panel.action.state}

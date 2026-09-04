@@ -163,6 +163,7 @@ export function createGatewayHarness(
 		},
 		threadLinks: {
 			create: action("threadLink.create"),
+			refresh: action("threadLink.refresh"),
 			attach: action("threadLink.attach"),
 			relink: action("threadLink.relink"),
 			onBrowserDisconnect: (context, reason) => {
@@ -259,6 +260,7 @@ export function createGatewayHarness(
 		read: ({ mediaReady }): BrowserOwnerProjection => {
 			const owner: BrowserOwnerProjection = {
 				readiness,
+				threadCandidates: { kind: "codex_thread_candidates", state: "unknown" },
 				account,
 				login: { kind: "login", state: "idle" },
 				timeline: null,

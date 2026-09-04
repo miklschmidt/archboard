@@ -309,14 +309,21 @@ test("create, attach, and relink replace controller authority with the exact ret
 	let nextBinding = link(2);
 	const classifiedTargets: unknown[] = [];
 	const actions = createCanvasThreadLinkActions({
+		candidates: {
+			read: () => ({ kind: "codex_thread_candidates", state: "unknown" }),
+			refresh: async () =>
+				({ candidates: [{ selectionId: "selection-fresh", threadId }] }) as never,
+			threadIdFor: (selectionId: string) =>
+				selectionId === "selection-published" ? threadId : null,
+		},
 		workhorse: {
 			start: async () => workhorseSnapshot(link(1)),
 			snapshot: () => workhorseSnapshot(nextBinding),
 		} as never,
 		threadLink: {
 			classify: async () => ({}) as never,
-			classifyAndBind: async (_paneId: string, _expected: unknown, target: unknown) => {
-				classifiedTargets.push(target);
+			bindCandidate: async (_paneId: string, _expected: unknown, selectionId: string) => {
+				classifiedTargets.push(selectionId);
 				return nextBinding;
 			},
 		} as never,
@@ -361,9 +368,15 @@ test("create, attach, and relink replace controller authority with the exact ret
 		link: link(1).link,
 	} as const;
 	await actions.create({ command: "threadLinkCreate" } as never, context);
-	await actions.attach({ command: "threadLinkAttach", threadId } as never, context);
+	await actions.attach(
+		{ command: "threadLinkAttach", selectionId: "selection-published", threadId } as never,
+		context,
+	);
 	nextBinding = link(3);
-	await actions.relink({ command: "threadLinkRelink", threadId } as never, context);
+	await actions.relink(
+		{ command: "threadLinkRelink", selectionId: "selection-published", threadId } as never,
+		context,
+	);
 
 	expect(replacements).toHaveLength(3);
 	expect(replacements).toEqual([
@@ -371,10 +384,8 @@ test("create, attach, and relink replace controller authority with the exact ret
 		expect.objectContaining({ paneId: "pane-1", link: link(2) }),
 		expect.objectContaining({ paneId: "pane-1", link: link(3) }),
 	]);
-	expect(classifiedTargets).toEqual([
-		expect.objectContaining({ threadId, operationId }),
-		expect.objectContaining({ threadId, operationId }),
-	]);
+	// Both binds consumed the freshly discovered selection, never a raw thread id.
+	expect(classifiedTargets).toEqual(["selection-fresh", "selection-fresh"]);
 });
 
 test("a stale browser disconnect token cannot clear a newer controller binding", () => {

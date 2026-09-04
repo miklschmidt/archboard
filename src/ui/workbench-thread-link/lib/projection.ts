@@ -5,6 +5,7 @@ import { projectThreadLinkSelection } from "./candidates.js";
 import { projectThreadLinkReadiness, THREAD_LINK_COMMAND_PREREQUISITE } from "./readiness.js";
 import type {
 	ThreadLinkCreateOffer,
+	ThreadLinkInventory,
 	ThreadLinkPanelInput,
 	ThreadLinkPanelSnapshot,
 } from "./contract.js";
@@ -19,6 +20,14 @@ const UNBOUND_LINK: BrowserThreadLink = Object.freeze({
 	status: "notLoaded",
 	loaded: false,
 	canAcceptDirectInput: false,
+	reason: null,
+});
+
+const UNKNOWN_CANDIDATES: ThreadLinkInventory = Object.freeze({
+	kind: "thread_candidates",
+	state: "unknown",
+	records: [],
+	truncated: false,
 	reason: null,
 });
 
@@ -76,10 +85,9 @@ export function projectThreadLinkPanel(input: ThreadLinkPanelInput): ThreadLinkP
 		currentLink: currentLinkDisclosure(link),
 		create: createOffer(input),
 		selection: projectThreadLinkSelection({
-			inventory: input.inventory,
+			inventory: input.state.snapshot?.threadCandidates ?? UNKNOWN_CANDIDATES,
 			currentLink: link,
 			capabilities: input.capabilities,
-			hostCanRefresh: input.hostRecoveryIntents.includes("refresh_inventory"),
 		}),
 		account: projectThreadLinkAccount({
 			snapshot: input.state.snapshot,

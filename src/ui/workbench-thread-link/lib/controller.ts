@@ -95,6 +95,7 @@ function completion(state: "applied" | "ignored", revision: number): ThreadLinkA
 	return Object.freeze({ state, revision });
 }
 
+/** The three commands that must settle into a confirmed executable link. */
 function linkAction(action: CommandAction): boolean {
 	return action === "create" || action === "attach" || action === "relink";
 }
@@ -270,9 +271,12 @@ export function createThreadLinkController(
 				}),
 			);
 		}
+		// The one-shot selection the host published names the exact row; the
+		// thread id travels with it so a list the host has replaced is refused
+		// rather than binding whatever now sits at that thread.
 		return run(
 			row.command === "threadLinkRelink" ? "relink" : "attach",
-			{ command: row.command, threadId: row.threadId },
+			{ command: row.command, selectionId: row.selectionId, threadId: row.threadId },
 			row.threadId,
 		);
 	};
@@ -344,6 +348,7 @@ export function createThreadLinkController(
 			};
 		},
 		create: () => run("create", { command: "threadLinkCreate" }, null),
+		refreshInventory: () => run("refresh_inventory", { command: "threadLinkRefresh" }, null),
 		bind,
 		login: (login: ThreadLinkLoginParams) => run("login", { command: "accountLogin", login }, null),
 		cancelLogin: (loginId: LoginId) =>

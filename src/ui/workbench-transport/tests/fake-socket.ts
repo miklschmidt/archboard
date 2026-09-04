@@ -162,6 +162,7 @@ export interface SnapshotOptions {
 	readonly dynamicApprovals?: readonly Record<string, unknown>[];
 	readonly queue?: Record<string, unknown>;
 	readonly voiceState?: string;
+	readonly threadCandidates?: Record<string, unknown>;
 }
 
 function threadLinkFor(linkState: string, threadId: string): Record<string, unknown> {
@@ -216,6 +217,13 @@ export function snapshot(options: SnapshotOptions = {}): Record<string, unknown>
 		account: { kind: "account", state: "ready", accountType: "chatgpt" },
 		login: { kind: "login", state: "idle" },
 		threadLink: threadLinkFor(linkState, threadId),
+		threadCandidates: options.threadCandidates ?? {
+			kind: "thread_candidates",
+			state: "unknown",
+			records: [],
+			truncated: false,
+			reason: null,
+		},
 		timeline:
 			linkState === "unbound" ? null : { kind: "timeline", threadId, turns: [], nextCursor: null },
 		queue: options.queue ?? queue(),

@@ -94,7 +94,7 @@ export function AccountSection({
 					aria-label={`Codex account: ${account.label}`}
 					aria-live="polite"
 					className={cn(
-						"shrink-0 rounded-control border px-control py-compact text-body font-medium",
+						"shrink-0 rounded-control border px-control py-compact !text-body font-medium",
 						STATE_CLASSES[account.state],
 					)}
 				>
