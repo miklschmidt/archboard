@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 14:18'
+updated_date: '2026-09-04 14:25'
 labels: []
 dependencies:
   - TASK-143.03.11
@@ -18,6 +18,12 @@ references:
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
   - src/ui/workbench-frame
+  - src/ui/voice-transcript/contract.ts
+  - src/ui/voice-transcript/index.tsx
+  - src/ui/voice-transcript/lib/VoiceTranscript.tsx
+  - src/ui/voice-transcript/lib/projection.ts
+  - src/ui/voice-transcript/tests/mounted-transcript.test.tsx
+  - src/ui/voice-transcript/tests/projection.test.ts
 parent_task_id: TASK-143.04
 priority: high
 type: task
@@ -27,7 +33,7 @@ ordinal: 214000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Extend only `src/ui/workbench-frame` to fill its optional voice slot with controls, context, transcript, and spoken-approval presentation. Preserve the text workbench as canonical fallback; fullscreen projection is a separate shell leaf.
+Extend `src/ui/workbench-frame` and only the smallest relationship-navigation contract in `src/ui/voice-transcript` needed to fill the optional voice slot with controls, context, transcript, and spoken-approval presentation. Preserve the text workbench as the canonical fallback; fullscreen projection is a separate shell leaf.
 
 Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
@@ -50,6 +56,8 @@ Delegation profile: gpt-5.6-sol, high.
 5. Run the focused workbench-frame owners, root and frontend TypeScript, scoped Oxlint/Oxfmt, frontend build, and diff/tracked-state checks. Keep the task In Progress with acceptance criteria unchecked for independent review.
 
 6. Preserve VoiceTranscript records and status while making each related-record link independently available only when its exact captured-source target is mounted and valid; show the unavailable relationships without creating another transcript owner. Add focused non-empty, empty-request, and request-source-drift owners, then rerun the scoped validation set.
+
+7. Require a mounted captured pane for Approval as well as a valid exact request source, and simplify transcript output to one canonical ordered relationship tuple with nullable targets before rerunning the same focused validation.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -74,4 +82,12 @@ Second independent-rereview remediation: VoiceTranscript now accepts nullable id
 WorkbenchFrame now derives timeline, queue, coordinator, callback, workhorse-result, and approval availability separately from mounted exact-source targets. An empty application-wide request withholds only Approval. A present request whose subscribed source validation drifts also withholds Approval and removes pane attribution from the error request target, while valid Pane A relationships keep resolving to mounted Pane A nodes. Spoken evidence remains gated by the same validated exact request source.
 
 Focused projection, mounted transcript, voice composition, and frame owners passed 39 tests with 381 assertions. The owners include non-empty transcript persistence through Pane B and frame error, empty-request partial availability, request-source drift, exact DOM target resolution, unavailable relationship semantics, spoken-source gating, and the prior frame behaviors. Scoped Oxfmt and Oxlint, root and frontend TypeScript, frontend build, and diff checks passed. The build retained the existing runtime CSS-resolution and chunk-size advisories. Root corrected a missing type-only import and nullable test-fixture spread found by the first type-check attempt; no behavior or rule was weakened. The task remains In Progress with all criteria unchecked.
+
+Third independent-rereview remediation: Approval relationship availability now requires both a valid exact-source application request and the captured voice pane's canonical targets to remain mounted. A valid Pane A request therefore exposes all six links only while Pane A is mounted. Pane B focus and frame error keep the same non-empty transcript log, record text, and listening status while showing zero anchors and all six labeled unavailable relationships.
+
+The transcript projection now returns one fixed six-entry relationships tuple in canonical order. Each literal-kind entry has targetId string or null, so duplicate or missing kinds and renderer-side order reconstruction are no longer representable. Nullable input IDs remain compatible for callers, and the renderer maps the single tuple directly to a link or unavailable text.
+
+The Backlog description now names the narrow src/ui/voice-transcript relationship-navigation extension. modified_files contains src/ui/workbench-frame plus the six actual voice-transcript contract, index, renderer, projection, and test files. AC #3 is unchanged, all criteria remain unchecked, and the task stays In Progress.
+
+Validation passed the same four isolated owners with 39 tests and 382 assertions, scoped Oxfmt and Oxlint, root and frontend TypeScript, frontend build, and diff checks. Existing runtime CSS-resolution and chunk-size build advisories remain unchanged.
 <!-- SECTION:NOTES:END -->

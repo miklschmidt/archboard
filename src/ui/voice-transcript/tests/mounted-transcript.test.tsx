@@ -220,6 +220,18 @@ describe("mounted voice transcript accessibility", () => {
 			["callback", "CallbackUnavailable"],
 		]);
 		expect(
+			[...rendered.container.querySelectorAll("[data-transcript-relationship-state] li")].map(
+				(relationship) => relationship.textContent,
+			),
+		).toEqual([
+			"Delegation",
+			"Queue",
+			"Steer",
+			"ApprovalUnavailable",
+			"CallbackUnavailable",
+			"Workhorse result",
+		]);
+		expect(
 			rendered.container
 				.querySelector("[data-transcript-relationship-state]")
 				?.getAttribute("data-transcript-relationship-state"),
