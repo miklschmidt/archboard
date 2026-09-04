@@ -21,7 +21,7 @@ import * as phase from "./phase.js";
 import { exactNotification, orderedRecords } from "./records.js";
 import { runRealtimeMutation } from "./mutation.js";
 import { createRealtimeStartParams } from "./start-policy.js";
-import type { ActiveRealtimeSession } from "./state.js";
+import { realtimeGeneration, type ActiveRealtimeSession } from "./state.js";
 const TIMELINE_PAGE_LIMIT = 100;
 
 export function createCodexRealtimeAdapter(
@@ -157,11 +157,13 @@ export function createCodexRealtimeAdapter(
 			resolveAnswer = resolve;
 			rejectAnswer = reject;
 		});
+		const semanticBrief = options.freshSemanticBrief();
 		const session: ActiveRealtimeSession = {
 			binding,
 			browserSessionId: offer.sessionId,
 			correlationId: offer.correlationId,
 			wireSessionId: options.identity.issuer.mintRealtimeSessionId(),
+			semanticBrief,
 			answer,
 			resolveAnswer,
 			rejectAnswer,
@@ -178,7 +180,6 @@ export function createCodexRealtimeAdapter(
 		state(session, { phase: "requesting_permission", reason: "start_requested" });
 		state(session, { phase: "negotiating", reason: "permission_granted" });
 		state(session, { phase: "negotiating", reason: "offer_created" });
-		const semanticBrief = options.freshSemanticBrief();
 		void Promise.resolve()
 			.then(() => {
 				if (session.answerSettled) return;
@@ -480,15 +481,7 @@ export function createCodexRealtimeAdapter(
 		recover,
 		onNotification,
 		transcript: () => (active ? orderedRecords(active) : retainedTranscript),
-		generation: () =>
-			active === null
-				? null
-				: Object.freeze({
-						...active.binding,
-						browserSessionId: active.browserSessionId,
-						browserCorrelationId: active.correlationId,
-						wireSessionId: active.wireSessionId,
-					}),
+		generation: () => (active === null ? null : realtimeGeneration(active)),
 		dispose: () => {
 			disposed = true;
 			listeners.clear();

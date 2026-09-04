@@ -31,6 +31,7 @@ import {
 } from "./codex-workbench-thread-links.js";
 import { createCanvasCanonicalTextActions } from "./codex-workbench-text-actions.js";
 import { createCanvasRealtimeActions } from "./codex-workbench-realtime-actions.js";
+import { projectCanvasVoiceContext } from "./codex-workbench-voice-context.js";
 import {
 	boundedBrowserReason,
 	projectCanvasBrowserReadiness,
@@ -455,6 +456,10 @@ export function createCanvasBrowserGatewayOptions(input: {
 					? null
 					: components.semanticPublisher.freshBrief();
 			const realtimeGeneration = components.realtime.generation();
+			const voiceContext = projectCanvasVoiceContext(
+				realtimeGeneration,
+				components.callbacks.inspect(),
+			);
 			const readiness = projectCanvasBrowserReadiness({
 				process: input.process(),
 				account: state.account,
@@ -548,6 +553,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 					transcript: components.realtime.transcript(),
 				},
 				spokenApproval: components.spokenApproval.snapshot(),
+				voiceContext,
 			};
 		},
 		onChange: input.onChange,

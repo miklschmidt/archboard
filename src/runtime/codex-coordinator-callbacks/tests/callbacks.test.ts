@@ -88,6 +88,10 @@ describe("coordinator callbacks", () => {
 			role: "developer",
 		});
 		expect(delivery.realtimeRequest?.generation).toEqual(h.state.generation);
+		expect(delivery.sourceOrder).toBe(0);
+		expect(delivery.freshness.freshUntilMs).toBeGreaterThanOrEqual(delivery.freshness.capturedAtMs);
+		expect(delivery.attempted).toBe(true);
+		expect(delivery.attemptedAtMs).toBeGreaterThanOrEqual(delivery.freshness.capturedAtMs);
 		expect(h.injections).toHaveLength(0);
 		close(h);
 	});

@@ -14,14 +14,25 @@ import type {
 	CoordinatorCallbackRealtimeRequest,
 } from "./contract.js";
 
+export interface CallbackDeliveryEvidence {
+	readonly sourceOrder: number;
+	readonly capturedAtMs: number;
+	readonly freshUntilMs: number;
+}
+
 function freeze<T>(value: T): T {
 	return Object.freeze(value);
 }
 
+function deliveryKind(): "coordinator_callback_delivery" {
+	return "coordinator_callback_delivery";
+}
+
 export function makeDelivery(
 	callback: CoordinatorCallback | null,
+	evidence: CallbackDeliveryEvidence,
 	input: {
-		readonly attempted: boolean;
+		readonly attemptedAtMs: number | null;
 		readonly path: CoordinatorCallbackDeliveryPath;
 		readonly outcome: CoordinatorCallbackDeliveryOutcome;
 		readonly reason: CoordinatorCallbackDeliveryReason | null;
@@ -30,17 +41,28 @@ export function makeDelivery(
 		readonly realtimeRequest?: CoordinatorCallbackRealtimeRequest | null;
 	},
 ): CoordinatorCallbackDelivery {
-	return freeze({
-		kind: "coordinator_callback_delivery",
+	const shared = {
+		kind: deliveryKind(),
 		callback,
-		attempted: input.attempted,
+		sourceOrder: evidence.sourceOrder,
+		freshness: freeze({
+			capturedAtMs: evidence.capturedAtMs,
+			freshUntilMs: evidence.freshUntilMs,
+		}),
 		path: input.path,
-		outcome: input.outcome,
 		reason: input.reason,
 		text: input.text ?? null,
 		payload: input.payload ?? null,
 		realtimeRequest: input.realtimeRequest ?? null,
-	});
+	};
+	return input.attemptedAtMs === null
+		? freeze({ ...shared, attempted: false, attemptedAtMs: null, outcome: "not_delivered" })
+		: freeze({
+				...shared,
+				attempted: true,
+				attemptedAtMs: input.attemptedAtMs,
+				outcome: input.outcome,
+			});
 }
 
 function sameJson(left: unknown, right: unknown): boolean {
@@ -165,10 +187,11 @@ export async function deliverOne(
 	callback: CoordinatorCallback,
 	options: CoordinatorCallbackOptions,
 	isDisposed: () => boolean,
+	evidence: CallbackDeliveryEvidence,
 ): Promise<CoordinatorCallbackDelivery> {
 	if (isDisposed())
-		return makeDelivery(callback, {
-			attempted: false,
+		return makeDelivery(callback, evidence, {
+			attemptedAtMs: null,
 			path: "none",
 			outcome: "not_delivered",
 			reason: "disposed",
@@ -177,8 +200,8 @@ export async function deliverOne(
 	try {
 		text = encodeCoordinatorCallback(callback);
 	} catch {
-		return makeDelivery(callback, {
-			attempted: false,
+		return makeDelivery(callback, evidence, {
+			attemptedAtMs: null,
 			path: "none",
 			outcome: "not_delivered",
 			reason: "invalid_callback",
@@ -188,8 +211,8 @@ export async function deliverOne(
 	try {
 		live = await options.threadLink.classify(callback.correlation.workhorseLink.target);
 	} catch {
-		return makeDelivery(callback, {
-			attempted: false,
+		return makeDelivery(callback, evidence, {
+			attemptedAtMs: null,
 			path: "none",
 			outcome: "not_delivered",
 			reason: "transport_failure",
@@ -197,8 +220,8 @@ export async function deliverOne(
 		});
 	}
 	if (!classificationAccepted(callback, live))
-		return makeDelivery(callback, {
-			attempted: false,
+		return makeDelivery(callback, evidence, {
+			attemptedAtMs: null,
 			path: "none",
 			outcome: "not_delivered",
 			reason: "stale_link",
@@ -206,8 +229,8 @@ export async function deliverOne(
 		});
 	const authorityReason = isDisposed() ? "disposed" : finalAuthorityReason(callback, options);
 	if (authorityReason !== null)
-		return makeDelivery(callback, {
-			attempted: false,
+		return makeDelivery(callback, evidence, {
+			attemptedAtMs: null,
 			path: "none",
 			outcome: "not_delivered",
 			reason: authorityReason,
@@ -224,12 +247,13 @@ export async function deliverOne(
 				role: "developer",
 			}),
 		});
+		const attemptedAtMs = (options.now ?? Date.now)();
 		const result = await options.realtime.appendDeveloper(realtimeRequest);
 		const lostAuthority = result.attempted
 			? afterAttemptReason(callback, options, isDisposed())
 			: null;
-		return makeDelivery(callback, {
-			attempted: result.attempted,
+		return makeDelivery(callback, evidence, {
+			attemptedAtMs: result.attempted ? attemptedAtMs : null,
 			path: "realtime_appendText",
 			outcome: lostAuthority === null ? result.outcome : "outcome_unknown",
 			reason: lostAuthority ?? result.reason,
@@ -239,21 +263,22 @@ export async function deliverOne(
 	}
 
 	if (callback.kind === "semantic")
-		return makeDelivery(callback, {
-			attempted: false,
+		return makeDelivery(callback, evidence, {
+			attemptedAtMs: null,
 			path: "silent",
 			outcome: "not_delivered",
 			reason: "voice_inactive",
 			text,
 		});
 	const payload = developerPayload(callback, text);
+	const attemptedAtMs = (options.now ?? Date.now)();
 	try {
 		await options.session.threadInjectItems(payload);
 	} catch (error) {
 		const failure = sessionFailure(error);
 		const lostAuthority = afterAttemptReason(callback, options, isDisposed());
-		return makeDelivery(callback, {
-			attempted: true,
+		return makeDelivery(callback, evidence, {
+			attemptedAtMs,
 			path: "thread_inject_items",
 			outcome: lostAuthority === null ? failure.outcome : "outcome_unknown",
 			reason: lostAuthority ?? failure.reason,
@@ -262,8 +287,8 @@ export async function deliverOne(
 		});
 	}
 	const lostAuthority = afterAttemptReason(callback, options, isDisposed());
-	return makeDelivery(callback, {
-		attempted: true,
+	return makeDelivery(callback, evidence, {
+		attemptedAtMs,
 		path: "thread_inject_items",
 		outcome: lostAuthority === null ? "delivered" : "outcome_unknown",
 		reason: lostAuthority,

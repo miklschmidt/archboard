@@ -8,7 +8,7 @@ import type {
 	RealtimeTranscriptRole,
 } from "../../../shared/codex-realtime-host/index.js";
 import type { RealtimeSessionId as WireRealtimeSessionId } from "../../../shared/codex-workbench-identity/index.js";
-import type { CodexRealtimeBinding } from "./contract.js";
+import type { CodexRealtimeBinding, CodexRealtimeGeneration } from "./contract.js";
 
 export interface RealtimeTranscriptEntry {
 	readonly itemId: RealtimeItemId;
@@ -23,6 +23,7 @@ export interface ActiveRealtimeSession {
 	readonly browserSessionId: BrowserRealtimeSessionId;
 	readonly correlationId: RealtimeCorrelationId;
 	readonly wireSessionId: WireRealtimeSessionId;
+	readonly semanticBrief: string;
 	readonly answer: Promise<AnswerSdp>;
 	readonly resolveAnswer: (answer: AnswerSdp) => void;
 	readonly rejectAnswer: (error: Error) => void;
@@ -33,4 +34,14 @@ export interface ActiveRealtimeSession {
 	answerSdp: string | null;
 	answerSettled: boolean;
 	nextLiveOrder: number;
+}
+
+export function realtimeGeneration(session: ActiveRealtimeSession): CodexRealtimeGeneration {
+	return Object.freeze({
+		...session.binding,
+		browserSessionId: session.browserSessionId,
+		browserCorrelationId: session.correlationId,
+		wireSessionId: session.wireSessionId,
+		semanticBrief: session.semanticBrief,
+	});
 }

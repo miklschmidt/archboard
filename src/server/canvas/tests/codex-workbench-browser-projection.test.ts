@@ -1,9 +1,21 @@
 import { expect, test } from "bun:test";
 
 import {
+	CALLBACK_MAX_UTF8_BYTES,
+	type CoordinatorCallbackDelivery,
+} from "../../../runtime/codex-coordinator-callbacks/index.js";
+import type { CodexRealtimeGeneration } from "../../../runtime/codex-realtime/index.js";
+import { SEMANTIC_CONTEXT_LIMITS } from "../../../runtime/codex-semantic-context/index.js";
+import {
+	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
+	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
 	createCodexBrowserModel,
 	type BrowserReadiness,
 } from "../../../shared/codex-browser-model/index.js";
+import {
+	parseRealtimeCorrelationId,
+	parseRealtimeSessionId,
+} from "../../../shared/codex-realtime-host/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import {
@@ -24,6 +36,11 @@ const signedInAccount = {
 		requiresOpenaiAuth: true,
 	},
 } as const satisfies CanvasReadinessInput["account"];
+
+test("the browser voice-context byte limits stay pinned to their producer contracts", () => {
+	expect(BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES).toBe(CALLBACK_MAX_UTF8_BYTES);
+	expect(BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES).toBe(SEMANTIC_CONTEXT_LIMITS.briefBytes);
+});
 
 function readiness(overrides: Partial<CanvasReadinessInput>): BrowserReadiness {
 	const value = projectCanvasBrowserReadiness({
@@ -210,6 +227,66 @@ test("cached queue submissions are presented only for the thread they were read 
 
 	state.queueThreadId = null;
 	expect(options.projection.read(context).queue.submissions).toBeNull();
+});
+
+test("the production browser projection publishes immutable voice start and ordered delivery evidence", () => {
+	const canonicalBrief = '{"source":"semantic_context","captured":"exact-start"}';
+	const harness = projectionHarness({
+		voiceContext: (authorities) => {
+			const voiceIdentity = authorities.identity;
+			const generation: CodexRealtimeGeneration = {
+				child: voiceIdentity.validator.childId,
+				epoch: voiceIdentity.validator.epoch,
+				linkedThreadId: voiceIdentity.decoder.adoptThreadId("voice-workhorse"),
+				coordinatorThreadId: voiceIdentity.decoder.adoptThreadId("voice-coordinator"),
+				browserSessionId: parseRealtimeSessionId("browser-voice-session"),
+				browserCorrelationId: parseRealtimeCorrelationId("browser-voice-correlation"),
+				wireSessionId: voiceIdentity.issuer.mintRealtimeSessionId(),
+				semanticBrief: canonicalBrief,
+			};
+			const realtimeGeneration = {
+				childId: generation.child,
+				epoch: generation.epoch,
+				coordinatorThreadId: generation.coordinatorThreadId,
+				wireSessionId: generation.wireSessionId,
+				browserSessionId: generation.browserSessionId,
+				browserCorrelationId: generation.browserCorrelationId,
+			};
+			const callback = (type: "focus" | "selection") =>
+				({
+					kind: "semantic",
+					type,
+					correlation: { realtimeGeneration },
+				}) as unknown as NonNullable<CoordinatorCallbackDelivery["callback"]>;
+			const delivery = (
+				sourceOrder: number,
+				type: "focus" | "selection",
+			): CoordinatorCallbackDelivery => ({
+				kind: "coordinator_callback_delivery",
+				callback: callback(type),
+				sourceOrder,
+				freshness: { capturedAtMs: 100 + sourceOrder, freshUntilMs: 200 + sourceOrder },
+				attempted: true,
+				attemptedAtMs: 150 + sourceOrder,
+				path: "realtime_appendText",
+				outcome: "delivered",
+				reason: null,
+				text: `exact-${type}`,
+				payload: null,
+				realtimeRequest: null,
+			});
+			return {
+				realtime: { generation: () => generation },
+				callbacks: { inspect: () => [delivery(4, "selection"), delivery(2, "focus")] },
+			};
+		},
+	});
+
+	const evidence = harness.options.projection.read(harness.context).voiceContext;
+	expect(evidence?.canonicalBrief).toBe(canonicalBrief);
+	expect(evidence?.entries.map((entry) => entry.sourceOrder)).toEqual([2, 4]);
+	expect(evidence?.entries.map((entry) => entry.kind)).toEqual(["focus", "selection"]);
+	expect(evidence?.entries.map((entry) => entry.body)).toEqual(["exact-focus", "exact-selection"]);
 });
 
 test("cancelling a pending sign-in clears the login-pending account arm", async () => {

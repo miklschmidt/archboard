@@ -564,6 +564,10 @@ export function createCanvasCodexWorkbenchInstallation(
 					};
 				},
 				currentRealtimeGeneration: () => currentRealtimeGeneration(created),
+				onSettled: () => {
+					if (!owners.approvalProjectionInstalled) return;
+					for (const listener of owners.projectionListeners) listener();
+				},
 			}),
 			gateway: (created) => {
 				const dynamic = requireOwners(created).approval;

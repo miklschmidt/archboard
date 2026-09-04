@@ -300,6 +300,7 @@ function callbackDocument(callback: CoordinatorCallback) {
 		"significance",
 		"brief",
 		"capturedAtMs",
+		"freshUntilMs",
 		"paneId",
 		"focused",
 		"selection",

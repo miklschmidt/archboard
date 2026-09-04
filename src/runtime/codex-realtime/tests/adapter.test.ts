@@ -232,6 +232,7 @@ describe("Codex realtime adapter", () => {
 			version: "v3",
 			voice: "breeze",
 		});
+		expect(h.adapter.generation()?.semanticBrief).toBe(semanticBrief());
 		notify(h, "thread/realtime/sdp", { threadId: h.coordinatorThreadId, sdp: "answer" });
 		await Promise.resolve();
 		expect(settled).toBe(false);

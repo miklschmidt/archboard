@@ -76,6 +76,11 @@ export interface HarnessOverrides {
 	readonly workhorse?: Partial<FixtureComponents["workhorse"]>;
 	readonly queue?: Partial<FixtureComponents["queue"]>;
 	readonly spokenApproval?: Partial<FixtureComponents["spokenApproval"]>;
+	/** Exact realtime and callback evidence supplied to the browser projection. */
+	readonly voiceContext?: (authorities: IdentityAuthorities) => {
+		readonly realtime: Partial<FixtureComponents["realtime"]>;
+		readonly callbacks: Partial<FixtureComponents["callbacks"]>;
+	};
 }
 
 /** One production adapter over the generation fixture, with its live sources injectable. */
@@ -86,6 +91,7 @@ export function projectionHarness(overrides: HarnessOverrides = {}): ProjectionH
 	const fixture = createCodexWorkbenchGenerationFixture([]).components;
 	let coordinatorReady = false;
 	let facts = processFacts({ state: "starting", ready: false });
+	const voiceContext = overrides.voiceContext?.(authorities);
 	const components = {
 		...fixture,
 		session: {
@@ -107,6 +113,8 @@ export function projectionHarness(overrides: HarnessOverrides = {}): ProjectionH
 		workhorse: { ...fixture.workhorse, ...overrides.workhorse },
 		queue: { ...fixture.queue, ...overrides.queue },
 		spokenApproval: { ...fixture.spokenApproval, ...overrides.spokenApproval },
+		realtime: { ...fixture.realtime, ...voiceContext?.realtime },
+		callbacks: { ...fixture.callbacks, ...voiceContext?.callbacks },
 	};
 	const state: CanvasBrowserBindingState = {
 		account: { kind: "account", state: "unknown", reason: "not read" },

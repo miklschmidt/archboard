@@ -20,6 +20,9 @@ export {
 export {
 	BROWSER_PERMISSION_FILE_ACCESS,
 	BROWSER_THREAD_CANDIDATE_LIMIT,
+	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
+	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
+	BROWSER_VOICE_CONTEXT_ENTRY_LIMIT,
 	browserSnapshotRelationshipIssues,
 	DeliveryOutcomeSchema,
 } from "./lib/browser.js";
@@ -76,6 +79,7 @@ export type {
 	BrowserTimeline,
 	BrowserVoice,
 	BrowserSpokenApproval,
+	BrowserVoiceContext,
 	BrowserSchemas,
 	DeliveryOutcome,
 } from "./lib/browser.js";

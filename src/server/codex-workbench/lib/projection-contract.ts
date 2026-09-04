@@ -8,6 +8,7 @@ import type {
 	BrowserSemanticDelivery,
 	BrowserSettings,
 	BrowserSnapshot,
+	BrowserVoiceContext,
 } from "../../../shared/codex-browser-model/index.js";
 import type {
 	BrowserCommandId,
@@ -273,6 +274,7 @@ export interface BrowserProjectionInput {
 	readonly coordinator: CodexCoordinatorProjectionInput;
 	readonly voice: CodexVoiceProjectionInput;
 	readonly spokenApproval: SpokenApprovalSnapshot;
+	readonly voiceContext?: BrowserVoiceContext | null;
 	readonly lease: BrowserCommandLease | null;
 	readonly operation: BrowserOperationOutcome | null;
 }

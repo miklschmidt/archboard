@@ -3,6 +3,7 @@ import type {
 	VoiceSessionStatus,
 	VoiceSessionView as PublicVoiceSessionView,
 } from "../voice-session/index.js";
+import type { BrowserSnapshot } from "../../shared/codex-browser-model/index.js";
 
 export const VOICE_CONTEXT_ENTRY_KINDS = Object.freeze([
 	"semantic",
@@ -78,19 +79,30 @@ export interface VoiceContextDeliveryFreshness {
 }
 
 /** One exact later body and the adapter outcome for attempting to deliver it. */
-export interface VoiceContextLedgerEntry {
+interface VoiceContextLedgerEntryBase {
 	readonly id: string;
 	readonly kind: VoiceContextEntryKind;
 	readonly sourceOrder: VoiceContextSourceOrder;
 	readonly freshness: VoiceContextDeliveryFreshness;
-	readonly attemptedAtMs: number;
-	readonly attempted: boolean;
-	readonly outcome: VoiceContextDeliveryOutcome;
 	readonly reason: string | null;
 	readonly body: string;
 	readonly provenance: VoiceContextProvenance;
 	readonly connection: VoiceContextConnection;
 }
+
+export type VoiceContextLedgerEntry = VoiceContextLedgerEntryBase &
+	(
+		| {
+				readonly attempted: false;
+				readonly attemptedAtMs: null;
+				readonly outcome: "not_delivered";
+		  }
+		| {
+				readonly attempted: true;
+				readonly attemptedAtMs: number;
+				readonly outcome: VoiceContextDeliveryOutcome;
+		  }
+	);
 
 export interface VoiceContextSessionEvidence {
 	/** An externally projected session view. This module never transitions it. */
@@ -129,9 +141,11 @@ export interface VoiceContextAppend {
 export type VoiceContextMutationIgnoredReason =
 	| "duplicate_session"
 	| "duplicate_entry"
+	| "duplicate_observation"
 	| "invalid_brief"
 	| "identity_mismatch"
 	| "invalid_source_order"
+	| "invalid_delivery_evidence"
 	| "source_order_conflict"
 	| "source_stream_mismatch"
 	| "unbound_session"
@@ -183,7 +197,7 @@ export interface VoiceContextEntryView {
 	readonly sourceOrderLabel: string;
 	readonly capturedAt: string;
 	readonly freshUntil: string;
-	readonly attemptedAt: string;
+	readonly attemptedAt: string | null;
 	readonly attemptLabel: string;
 	readonly freshnessLabel: string;
 	readonly outcome: VoiceContextDeliveryOutcome;
@@ -193,6 +207,10 @@ export interface VoiceContextEntryView {
 	readonly bodyLabel: string;
 	readonly bodyPreview: string;
 	readonly bodyPage: number;
+	readonly bodyWindowStart: number;
+	readonly bodyWindowEnd: number;
+	readonly bodyTotalCharacters: number;
+	readonly previousBodyCharacters: number;
 	readonly bodyRemainingCharacters: number;
 	readonly nextBodyCharacters: number;
 	readonly provenanceLabel: string;
@@ -219,6 +237,10 @@ export interface VoiceContextSessionView {
 	readonly canonicalBrief: string;
 	readonly canonicalBriefPreview: string;
 	readonly canonicalBriefPage: number;
+	readonly canonicalBriefWindowStart: number;
+	readonly canonicalBriefWindowEnd: number;
+	readonly canonicalBriefTotalCharacters: number;
+	readonly previousCanonicalBriefCharacters: number;
 	readonly canonicalBriefRemainingCharacters: number;
 	readonly nextCanonicalBriefCharacters: number;
 	readonly entries: readonly VoiceContextEntryView[];
@@ -226,6 +248,7 @@ export interface VoiceContextSessionView {
 	readonly entryPage: number;
 	readonly hiddenEntryCount: number;
 	readonly nextEntryCount: number;
+	readonly newerEntryCount: number;
 }
 
 export interface VoiceContextHistoryView {
@@ -234,6 +257,23 @@ export interface VoiceContextHistoryView {
 	readonly sessionPage: number;
 	readonly hiddenSessionCount: number;
 	readonly nextSessionCount: number;
+	readonly newerSessionCount: number;
+}
+
+/** One browser snapshot observation; the panel may ingest it before projecting. */
+export interface VoiceContextBrowserEvidenceInput {
+	readonly snapshot: BrowserSnapshot;
+	readonly session: PublicVoiceSessionView;
+	readonly observedAtMs: number;
+	readonly provenance: VoiceContextProvenance;
+	readonly connection: VoiceContextConnection;
+}
+
+export interface VoiceContextBrowserIngestResult {
+	readonly capture: VoiceContextMutationResult | null;
+	readonly observation: VoiceContextMutationResult | null;
+	readonly entries: readonly VoiceContextMutationResult[];
+	readonly sourceEntriesTruncated: number;
 }
 
 export interface VoiceContextClipboardPort {
@@ -242,6 +282,7 @@ export interface VoiceContextClipboardPort {
 
 export interface VoiceContextPanelProps {
 	readonly history: VoiceContextHistory;
+	readonly browserEvidence?: VoiceContextBrowserEvidenceInput | null;
 	readonly clipboard?: VoiceContextClipboardPort;
 	readonly limits?: Partial<VoiceContextProjectionLimits>;
 	readonly className?: string;

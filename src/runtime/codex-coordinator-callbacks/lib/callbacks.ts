@@ -1,4 +1,6 @@
 import { deliverOne, makeDelivery } from "./deliver.js";
+import type { CallbackDeliveryEvidence } from "./deliver.js";
+import { CODEX_SEMANTIC_FRESHNESS_MS } from "../../../shared/timing/timing.js";
 import {
 	coordinatorCallbackCoalescingKey,
 	coordinatorCallbackKey,
@@ -22,6 +24,7 @@ interface PendingCallback {
 	readonly key: string;
 	readonly coalescingKey: string;
 	readonly callback: CoordinatorCallback;
+	readonly evidence: CallbackDeliveryEvidence;
 	readonly promise: Promise<CoordinatorCallbackDelivery>;
 	readonly resolve: (delivery: CoordinatorCallbackDelivery) => void;
 	settled: boolean;
@@ -31,9 +34,9 @@ function freeze<T>(value: T): T {
 	return Object.freeze(value);
 }
 
-function invalidDelivery(): CoordinatorCallbackDelivery {
-	return makeDelivery(null, {
-		attempted: false,
+function invalidDelivery(evidence: CallbackDeliveryEvidence): CoordinatorCallbackDelivery {
+	return makeDelivery(null, evidence, {
+		attemptedAtMs: null,
 		path: "none",
 		outcome: "not_delivered",
 		reason: "invalid_callback",
@@ -51,6 +54,19 @@ export function createCodexCoordinatorCallbacks(
 	let draining = false;
 	let drainScheduled = false;
 	let drainTail: Promise<void> = Promise.resolve();
+	let nextSourceOrder = 0;
+	const now = options.now ?? Date.now;
+	const captureEvidence = (callback: CoordinatorCallback | null): CallbackDeliveryEvidence => {
+		const capturedAtMs = callback?.kind === "semantic" ? callback.semantic.capturedAtMs : now();
+		return Object.freeze({
+			sourceOrder: nextSourceOrder++,
+			capturedAtMs,
+			freshUntilMs:
+				callback?.kind === "semantic"
+					? callback.semantic.freshUntilMs
+					: capturedAtMs + CODEX_SEMANTIC_FRESHNESS_MS,
+		});
+	};
 
 	const settle = (entry: PendingCallback, delivery: CoordinatorCallbackDelivery): void => {
 		if (entry.settled) return;
@@ -62,6 +78,7 @@ export function createCodexCoordinatorCallbacks(
 			const expiredKey = settledOrder.shift();
 			if (expiredKey !== undefined) settledByKey.delete(expiredKey);
 		}
+		options.onSettled?.();
 		entry.resolve(delivery);
 	};
 
@@ -72,8 +89,8 @@ export function createCodexCoordinatorCallbacks(
 	): void => {
 		settle(
 			entry,
-			makeDelivery(entry.callback, {
-				attempted: false,
+			makeDelivery(entry.callback, entry.evidence, {
+				attemptedAtMs: null,
 				path: "none",
 				outcome,
 				reason,
@@ -90,10 +107,10 @@ export function createCodexCoordinatorCallbacks(
 				if (entry === undefined || entry.settled) continue;
 				let delivery: CoordinatorCallbackDelivery;
 				try {
-					delivery = await deliverOne(entry.callback, options, () => disposed);
+					delivery = await deliverOne(entry.callback, options, () => disposed, entry.evidence);
 				} catch {
-					delivery = makeDelivery(entry.callback, {
-						attempted: false,
+					delivery = makeDelivery(entry.callback, entry.evidence, {
+						attemptedAtMs: null,
 						path: "none",
 						outcome: "not_delivered",
 						reason: "invalid_callback",
@@ -120,15 +137,16 @@ export function createCodexCoordinatorCallbacks(
 		let callback: CoordinatorCallback;
 		try {
 			const link = options.currentWorkhorseLink();
-			if (link === null) return Promise.resolve(invalidDelivery());
+			if (link === null) return Promise.resolve(invalidDelivery(captureEvidence(null)));
 			callback = normalizeCoordinatorCallback(event, link, options.currentRealtimeGeneration());
 		} catch {
-			return Promise.resolve(invalidDelivery());
+			return Promise.resolve(invalidDelivery(captureEvidence(null)));
 		}
+		const evidence = captureEvidence(callback);
 		if (disposed)
 			return Promise.resolve(
-				makeDelivery(callback, {
-					attempted: false,
+				makeDelivery(callback, evidence, {
+					attemptedAtMs: null,
 					path: "none",
 					outcome: "not_delivered",
 					reason: "disposed",
@@ -148,6 +166,7 @@ export function createCodexCoordinatorCallbacks(
 			key,
 			coalescingKey: coordinatorCallbackCoalescingKey(callback),
 			callback,
+			evidence,
 			promise,
 			resolve,
 			settled: false,

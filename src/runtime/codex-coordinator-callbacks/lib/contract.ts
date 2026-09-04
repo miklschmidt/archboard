@@ -102,6 +102,7 @@ export interface CoordinatorSemanticCallbackData {
 	readonly significance: SemanticChangeSignificance | null;
 	readonly brief: string;
 	readonly capturedAtMs: number;
+	readonly freshUntilMs: number;
 	readonly paneId: string;
 	readonly focused: boolean;
 	readonly selection: readonly string[];
@@ -183,17 +184,35 @@ export type CoordinatorCallbackDeliveryReason =
 	| "response_lost"
 	| "transport_failure";
 
-export interface CoordinatorCallbackDelivery {
+interface CoordinatorCallbackDeliveryBase {
 	readonly kind: "coordinator_callback_delivery";
 	readonly callback: CoordinatorCallback | null;
-	readonly attempted: boolean;
+	/** Monotonic first-seen order assigned by this callback owner. */
+	readonly sourceOrder: number;
+	readonly freshness: {
+		readonly capturedAtMs: number;
+		readonly freshUntilMs: number;
+	};
 	readonly path: CoordinatorCallbackDeliveryPath;
-	readonly outcome: CoordinatorCallbackDeliveryOutcome;
 	readonly reason: CoordinatorCallbackDeliveryReason | null;
 	readonly text: string | null;
 	readonly payload: SessionParams<"thread/inject_items"> | null;
 	readonly realtimeRequest: CoordinatorCallbackRealtimeRequest | null;
 }
+
+export type CoordinatorCallbackDelivery = CoordinatorCallbackDeliveryBase &
+	(
+		| {
+				readonly attempted: false;
+				readonly attemptedAtMs: null;
+				readonly outcome: "not_delivered";
+		  }
+		| {
+				readonly attempted: true;
+				readonly attemptedAtMs: number;
+				readonly outcome: CoordinatorCallbackDeliveryOutcome;
+		  }
+	);
 
 export interface CoordinatorCallbackOptions {
 	readonly semantic: Pick<
@@ -208,6 +227,10 @@ export interface CoordinatorCallbackOptions {
 	readonly currentCoordinator: () => CoordinatorCallbackReadyCoordinator | null;
 	readonly currentWorkhorseLink: () => CoordinatorCallbackLinkCorrelation | null;
 	readonly currentRealtimeGeneration: () => CoordinatorCallbackRealtimeGeneration | null;
+	/** Captures callback receipt and the instant immediately before an outbound attempt. */
+	readonly now?: () => number;
+	/** Publishes one settled immutable record to presentation subscribers. */
+	readonly onSettled?: () => void;
 }
 
 export interface CoordinatorCallbacks {

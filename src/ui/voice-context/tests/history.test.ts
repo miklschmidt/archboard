@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createVoiceContextHistory } from "../index.js";
+import { BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES } from "../../../shared/codex-browser-model/index.js";
 import {
 	BINDING_A,
 	BINDING_B,
@@ -154,5 +155,72 @@ describe("voice context history", () => {
 			reason: "identity_mismatch",
 		});
 		expect(history.snapshot().sessions).toHaveLength(0);
+	});
+
+	test("accepts only identity values carrying the fitter's clipped-prefix evidence", () => {
+		const clipped = JSON.parse(canonicalBrief(SESSION_A, { truncated: true })) as Record<
+			string,
+			unknown
+		>;
+		clipped.child = { id: "child-…", epoch: "epoch-…" };
+		clipped.workhorse = { threadId: "workhorse-…", turnId: "turn-a" };
+		clipped.coordinator = { threadId: "coordinator-…", realtimeSessionId: "wire-session" };
+		clipped.pane = { paneId: "prim…", focused: true };
+		const exact = JSON.stringify(clipped);
+		const history = createVoiceContextHistory();
+
+		expect(history.capture(capture(SESSION_A, { canonicalBrief: exact })).outcome).toBe("applied");
+		expect(history.snapshot().sessions[0]?.captured.canonicalBrief).toBe(exact);
+
+		const other = createVoiceContextHistory();
+		expect(
+			other.capture(
+				capture(SESSION_A, { canonicalBrief: canonicalBrief(SESSION_B, { truncated: true }) }),
+			),
+		).toMatchObject({ outcome: "ignored", reason: "identity_mismatch" });
+	});
+
+	test("rejects incoherent timing, outcomes, and bodies before retention", () => {
+		const history = createVoiceContextHistory();
+		history.capture(capture());
+		const invalid = [
+			ledgerEntry("bad-capture", {
+				freshness: { capturedAtMs: Number.NaN, freshUntilMs: 2 },
+			}),
+			ledgerEntry("bad-window", {
+				freshness: { capturedAtMs: 10, freshUntilMs: 9 },
+			}),
+			ledgerEntry("bad-attempt-order", {
+				freshness: { capturedAtMs: 10, freshUntilMs: 20 },
+				attemptedAtMs: 9,
+			}),
+			{
+				...ledgerEntry("bad-unattempted-outcome"),
+				attempted: false,
+				attemptedAtMs: null,
+				outcome: "outcome_unknown",
+			} as never,
+			{
+				...ledgerEntry("bad-unattempted-time"),
+				attempted: false,
+				attemptedAtMs: 12,
+				outcome: "not_delivered",
+			} as never,
+			ledgerEntry("bad-body", {
+				body: "x".repeat(BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES + 1),
+			}),
+		];
+		for (const entry of invalid)
+			expect(history.append({ session: SESSION_A, entry })).toMatchObject({
+				outcome: "ignored",
+				reason: "invalid_delivery_evidence",
+			});
+		expect(history.snapshot().sessions[0]?.entries).toHaveLength(0);
+
+		const notAttempted = ledgerEntry("valid-no-attempt", {
+			attempted: false,
+			outcome: "not_delivered",
+		});
+		expect(history.append({ session: SESSION_A, entry: notAttempted }).outcome).toBe("applied");
 	});
 });

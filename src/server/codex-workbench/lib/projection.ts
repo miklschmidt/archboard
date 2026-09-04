@@ -837,6 +837,7 @@ export function projectCodexBrowserState(
 				input.coordinator,
 				input.voice,
 			),
+			voiceContext: input.voiceContext ?? null,
 			lease: input.lease,
 			operation: input.operation,
 		});
@@ -871,6 +872,7 @@ const SNAPSHOT_KEYS: readonly BrowserSnapshotKey[] = [
 	"coordinator",
 	"voice",
 	"spokenApproval",
+	"voiceContext",
 	"lease",
 	"operation",
 ];
@@ -911,22 +913,21 @@ function truncateTimelineTurn(
 	return { ...turn, items, outputsTruncated: true };
 }
 
-/** Fit the sole variable-size history field after every competing snapshot field is present. */
+/** Fit variable-size histories after every competing snapshot field is present. */
 export function fitBrowserSnapshotBounded(
 	snapshot: BrowserSnapshot,
 	limit = BROWSER_SNAPSHOT_MAX_BYTES,
 ): BrowserSnapshot {
 	assertBrowserSnapshotBudget(limit);
 	if (wireBytes(snapshot) <= limit) return snapshot;
-	if (snapshot.timeline === null)
-		throw new Error("the browser snapshot exceeds its wire-size bound without timeline history");
-
-	let turns = snapshot.timeline.turns.slice();
+	let turns = snapshot.timeline?.turns.slice() ?? [];
+	let voiceContext = snapshot.voiceContext ?? null;
 	const candidate = (): BrowserSnapshot => ({
 		...snapshot,
-		timeline: { ...snapshot.timeline!, turns },
+		timeline: snapshot.timeline === null ? null : { ...snapshot.timeline, turns },
+		voiceContext,
 	});
-	while (turns.length > 0) {
+	while (snapshot.timeline !== null && turns.length > 0) {
 		const lastIndex = turns.length - 1;
 		const last = turns[lastIndex]!;
 		let items = last.items;
@@ -945,6 +946,13 @@ export function fitBrowserSnapshotBounded(
 		turns = turns.slice(0, -1);
 		const preceding = turns.at(-1)!;
 		turns[turns.length - 1] = truncateTimelineTurn(preceding, preceding.items);
+	}
+	while (voiceContext !== null && voiceContext.entries.length > 0) {
+		voiceContext = Object.assign({}, voiceContext, {
+			entriesTruncated: voiceContext.entriesTruncated + 1,
+			entries: voiceContext.entries.slice(1),
+		});
+		if (wireBytes(candidate()) <= limit) return deepFreeze(candidate());
 	}
 	const fitted = candidate();
 	assertBounded(fitted, limit, "snapshot");
