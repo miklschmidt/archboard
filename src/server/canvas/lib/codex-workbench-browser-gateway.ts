@@ -547,6 +547,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 					coordinatorState: coordinator.state,
 					transcript: components.realtime.transcript(),
 				},
+				spokenApproval: components.spokenApproval.snapshot(),
 			};
 		},
 		onChange: input.onChange,

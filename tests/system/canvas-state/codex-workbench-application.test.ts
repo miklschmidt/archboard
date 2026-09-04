@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 
 import { createCodexApprovalBroker } from "../../../src/runtime/codex-approvals/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../src/runtime/codex-spoken-approval/index.js";
 import type {
 	ReverseResponse,
 	TransportServerRequest,
@@ -220,6 +221,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 					coordinatorState: "ready",
 					transcript: [],
 				},
+				spokenApproval: EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
 			}),
 			onChange: (listener: () => void) => {
 				projectionListeners.add(listener);

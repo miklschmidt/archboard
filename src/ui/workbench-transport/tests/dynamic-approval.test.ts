@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 
 import {
+	BROWSER_IDLE_SPOKEN_APPROVAL,
 	CODEX_APPROVAL_EXPIRY_MS,
 	createCodexBrowserModel,
 	type BrowserDynamicApproval,
@@ -126,6 +127,7 @@ function snapshot(
 			delivery: null,
 			reason: null,
 		},
+		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,
 		lease: options.lease ?? null,
 		operation: null,
 	};

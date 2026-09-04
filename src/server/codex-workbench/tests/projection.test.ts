@@ -4,6 +4,7 @@ import {
 	createCodexApprovalBroker,
 	type ApprovalOwnerView,
 } from "../../../runtime/codex-approvals/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import type {
 	HumanApprovalMethod,
 	TransportServerRequest,
@@ -263,6 +264,7 @@ function projectionInput(
 			coordinatorState: "ready",
 			transcript: [],
 		},
+		spokenApproval: EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
 		lease: null,
 		operation: null,
 	};

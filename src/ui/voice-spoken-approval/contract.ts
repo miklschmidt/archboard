@@ -1,7 +1,10 @@
-import type { BrowserApproval, BrowserVoice } from "../../shared/codex-browser-model/index.js";
 import type {
-	WorkbenchApprovalCard,
+	BrowserApproval,
+	BrowserSpokenApproval,
+} from "../../shared/codex-browser-model/index.js";
+import type {
 	WorkbenchApprovalDisclosure,
+	WorkbenchOrdinaryApprovalCard,
 } from "../workbench-approvals/index.js";
 
 export const VOICE_SPOKEN_APPROVAL_STATES = Object.freeze([
@@ -18,78 +21,21 @@ export const VOICE_SPOKEN_APPROVAL_STATES = Object.freeze([
 
 export type VoiceSpokenApprovalState = (typeof VOICE_SPOKEN_APPROVAL_STATES)[number];
 
-export type VoiceSpokenApprovalFallbackReason =
-	| "ambiguous"
-	| "missing"
-	| "non_final"
-	| "assistant_only"
-	| "lost_result"
-	| "expiry"
-	| "realtime_unavailable"
-	| "coordinator_unavailable"
-	| "stale_identity"
-	| "stale_session"
-	| "duplicate";
-
 export type VoiceSpokenApprovalReason =
 	| BrowserApproval["spoken"]["reason"]
-	| VoiceSpokenApprovalFallbackReason
-	| "dynamic_approval";
+	| NonNullable<BrowserSpokenApproval["reason"]>
+	| "duplicate";
 
-type BrowserVoiceItem = BrowserVoice["transcript"][number];
-type BrowserApprovalBinding = BrowserApproval["binding"];
-
-export type VoiceSpokenApprovalEffectPrompt = Readonly<
-	Pick<BrowserVoiceItem, "itemId" | "sequence">
->;
-
-export type VoiceSpokenApprovalCapturedItem = Readonly<
-	Pick<BrowserVoiceItem, "itemId" | "sequence" | "speaker" | "text" | "final"> & {
-		readonly realtimeSessionId: NonNullable<BrowserVoice["realtimeSessionId"]>;
-	}
->;
-
-type GateIdentity = Readonly<
-	Pick<BrowserApproval, "requestId" | "approvalId" | "threadId"> & {
-		readonly binding: Readonly<
-			Pick<BrowserApprovalBinding, "child" | "epoch" | "target" | "effect">
-		>;
-		readonly coordinatorThreadId: string;
-		readonly realtimeSessionId: NonNullable<BrowserVoice["realtimeSessionId"]>;
-		readonly effectPrompt: VoiceSpokenApprovalEffectPrompt;
-		readonly capturedItem: VoiceSpokenApprovalCapturedItem | null;
-		readonly expiresAtMs: number;
-	}
->;
-
-type GateState =
-	| { readonly state: "armed" | "resolving"; readonly reason: null }
-	| { readonly state: "expired"; readonly reason: "expiry" }
-	| {
-			readonly state: "visual_fallback";
-			readonly reason: Exclude<
-				VoiceSpokenApprovalFallbackReason,
-				"expiry" | "stale_session" | "duplicate"
-			>;
-	  }
-	| { readonly state: "outcome_unknown"; readonly reason: "lost_result" }
-	| { readonly state: "stale_session"; readonly reason: "stale_session" };
-
-type WithGateIdentity<State> = State extends GateState ? GateIdentity & State : never;
-
-export type VoiceSpokenApprovalGatePresentation = WithGateIdentity<GateState>;
-
-export type VoiceSpokenApprovalEvidenceAuthority = "captured_user_final" | "non_authoritative";
+type CapturedUserFinal = NonNullable<BrowserSpokenApproval["capturedUserFinal"]>;
+type SpokenGate = NonNullable<BrowserSpokenApproval["gate"]>;
 
 export interface VoiceSpokenApprovalUtterance {
-	readonly itemId: BrowserVoiceItem["itemId"];
-	readonly realtimeSessionId: NonNullable<BrowserVoice["realtimeSessionId"]>;
-	readonly sequence: number;
-	readonly speaker: BrowserVoiceItem["speaker"];
-	readonly text: string;
-	readonly final: boolean;
-	readonly authority: VoiceSpokenApprovalEvidenceAuthority;
-	readonly label: string;
+	readonly itemId: CapturedUserFinal["itemId"];
+	readonly realtimeSessionId: SpokenGate["realtimeSessionId"];
+	readonly sequence: CapturedUserFinal["sequence"];
+	readonly text: CapturedUserFinal["text"];
+	readonly authority: "captured_user_final";
+	readonly label: "Captured final user utterance";
 }
 
 export interface VoiceSpokenApprovalView {
@@ -108,12 +54,9 @@ export interface VoiceSpokenApprovalView {
 
 export interface VoiceSpokenApprovalInput {
 	/** The ordinary card remains the only owner of approval decisions. */
-	readonly card: WorkbenchApprovalCard;
-	/** Immutable facts projected by the caller from its spoken-gate owner. */
-	readonly gate: VoiceSpokenApprovalGatePresentation | null;
-	/** The browser model used to verify exact realtime item correlation. */
-	readonly voice: BrowserVoice;
-	readonly nowMs: number;
+	readonly card: WorkbenchOrdinaryApprovalCard;
+	/** The authoritative browser projection of the single spoken-approval owner. */
+	readonly spokenApproval: BrowserSpokenApproval;
 }
 
 export interface VoiceSpokenApprovalProps extends VoiceSpokenApprovalInput {

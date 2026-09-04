@@ -7,6 +7,7 @@ import type {
 	BrowserSemanticDelivery,
 	BrowserSettings,
 	BrowserSnapshot,
+	BrowserSpokenApproval,
 	BrowserSchemas,
 	BrowserThreadLink,
 	BrowserThreadLinkSourcePresentation,
@@ -19,6 +20,10 @@ import {
 	type TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+import type {
+	SpokenApprovalFallbackReason,
+	SpokenApprovalSnapshot,
+} from "../../../runtime/codex-spoken-approval/index.js";
 import type { BrowserSnapshotDelta } from "./contract.js";
 import type {
 	BrowserProjectionInput,
@@ -449,9 +454,233 @@ function projectVoice(input: CodexVoiceProjectionInput) {
 	};
 }
 
+function joinedSpokenApproval(
+	snapshot: SpokenApprovalSnapshot,
+	approvals: readonly ApprovalOwnerView[],
+): BrowserSpokenApproval["approval"] {
+	if (snapshot.requestId === null) return null;
+	const matches = approvals.filter((owner) => owner.snapshot.requestId === snapshot.requestId);
+	if (matches.length !== 1) return null;
+	const owner = matches[0]!;
+	const approval = owner.snapshot;
+	if (
+		approval.family !== "command_execution" ||
+		approval.approvalId !== snapshot.approvalId ||
+		approval.child !== snapshot.child ||
+		approval.epoch !== snapshot.epoch ||
+		approval.binding.effect !== snapshot.effectFingerprint
+	)
+		return null;
+	return {
+		requestId: approval.requestId,
+		approvalId: approval.approvalId,
+		threadId: approval.threadId,
+		binding: {
+			child: approval.binding.child,
+			epoch: approval.binding.epoch,
+			target: approval.binding.target,
+			effect: approval.binding.effect,
+		},
+	};
+}
+
+function spokenGate(snapshot: SpokenApprovalSnapshot): BrowserSpokenApproval["gate"] {
+	if (
+		snapshot.coordinatorThreadId === null ||
+		snapshot.realtimeSessionId === null ||
+		snapshot.effectSummary === null ||
+		snapshot.effectSummary.trim().length === 0 ||
+		snapshot.effectFingerprint === null ||
+		snapshot.effectFingerprint.trim().length === 0 ||
+		snapshot.effectPromptItemId === null ||
+		snapshot.effectPromptSequence === null ||
+		!Number.isSafeInteger(snapshot.effectPromptSequence) ||
+		snapshot.effectPromptSequence < 0 ||
+		snapshot.expiresAtMs === null ||
+		!Number.isSafeInteger(snapshot.expiresAtMs) ||
+		snapshot.expiresAtMs < 0
+	)
+		return null;
+	return {
+		coordinatorThreadId: snapshot.coordinatorThreadId,
+		realtimeSessionId: snapshot.realtimeSessionId,
+		effectSummary: snapshot.effectSummary,
+		effectFingerprint: snapshot.effectFingerprint,
+		effectPrompt: {
+			itemId: snapshot.effectPromptItemId,
+			sequence: snapshot.effectPromptSequence,
+		},
+		expiresAtMs: snapshot.expiresAtMs,
+	};
+}
+
+function capturedSpokenUserFinal(
+	snapshot: SpokenApprovalSnapshot,
+): BrowserSpokenApproval["capturedUserFinal"] {
+	if (
+		snapshot.finalUserItemId === null ||
+		snapshot.finalUserSequence === null ||
+		!Number.isSafeInteger(snapshot.finalUserSequence) ||
+		snapshot.finalUserSequence < 0 ||
+		snapshot.finalUserText === null ||
+		snapshot.finalUserText.length === 0
+	)
+		return null;
+	return {
+		itemId: snapshot.finalUserItemId,
+		sequence: snapshot.finalUserSequence,
+		text: snapshot.finalUserText,
+	};
+}
+
+function spokenSettlement(snapshot: SpokenApprovalSnapshot): BrowserSpokenApproval["settlement"] {
+	if (snapshot.settlement === null) return null;
+	if (
+		snapshot.settlement.requestId !== snapshot.requestId ||
+		snapshot.settlement.family !== "command_execution"
+	)
+		return null;
+	return {
+		state: snapshot.settlement.state,
+		outcome: snapshot.settlement.outcome,
+		reason: snapshot.settlement.reason,
+	};
+}
+
+function browserFallbackState(
+	reason: SpokenApprovalFallbackReason,
+): Extract<
+	BrowserSpokenApproval["state"],
+	"expired" | "visual_fallback" | "outcome_unknown" | "stale_session"
+> {
+	switch (reason) {
+		case "timeout":
+			return "expired";
+		case "resolver_lost":
+			return "outcome_unknown";
+		case "changed_effect":
+		case "stale_realtime_session":
+		case "stale_state":
+			return "stale_session";
+		case "approval_unavailable":
+		case "not_eligible":
+		case "coordinator_unavailable":
+		case "realtime_unavailable":
+		case "invalid_context":
+		case "invalid_effect_prompt":
+		case "user_already_spoke":
+		case "missing_user_final":
+		case "assistant_only":
+		case "ambiguous":
+		case "classifier_lost":
+		case "child_exit":
+		case "disposed":
+			return "visual_fallback";
+	}
+	const unhandled: never = reason;
+	return unhandled;
+}
+
+function projectSpokenApproval(
+	model: Pick<BrowserSchemas, "BrowserSpokenApprovalSchema">,
+	snapshot: SpokenApprovalSnapshot,
+	approvals: readonly ApprovalOwnerView[],
+	coordinator: CodexCoordinatorProjectionInput,
+	voice: CodexVoiceProjectionInput,
+): BrowserSpokenApproval {
+	const approval = joinedSpokenApproval(snapshot, approvals);
+	const gate = spokenGate(snapshot);
+	const capturedUserFinal = capturedSpokenUserFinal(snapshot);
+	const settlement = spokenSettlement(snapshot);
+	const exactCore =
+		approval !== null &&
+		gate !== null &&
+		coordinator.threadId === gate.coordinatorThreadId &&
+		voice.generation?.browserSessionId === gate.realtimeSessionId;
+	const stale = (): BrowserSpokenApproval =>
+		model.BrowserSpokenApprovalSchema.parse({
+			kind: "spoken_approval",
+			state: "stale_session",
+			approval,
+			gate,
+			capturedUserFinal,
+			settlement,
+			reason: "stale_state",
+		});
+	const missingUserFinal = (): BrowserSpokenApproval =>
+		model.BrowserSpokenApprovalSchema.parse({
+			kind: "spoken_approval",
+			state: "visual_fallback",
+			approval,
+			gate,
+			capturedUserFinal: null,
+			settlement,
+			reason: "missing_user_final",
+		});
+	const parse = (
+		state: BrowserSpokenApproval["state"],
+		reason: SpokenApprovalFallbackReason | null,
+	): BrowserSpokenApproval => {
+		const browserReason: BrowserSpokenApproval["reason"] = reason;
+		return model.BrowserSpokenApprovalSchema.parse({
+			kind: "spoken_approval",
+			state,
+			approval,
+			gate,
+			capturedUserFinal,
+			settlement,
+			reason: browserReason,
+		});
+	};
+
+	switch (snapshot.state) {
+		case "idle":
+			return model.BrowserSpokenApprovalSchema.parse({
+				kind: "spoken_approval",
+				state: "idle",
+				approval: null,
+				gate: null,
+				capturedUserFinal: null,
+				settlement: null,
+				reason: null,
+			});
+		case "awaiting_user":
+			if (!exactCore || capturedUserFinal !== null || snapshot.reason !== null) return stale();
+			return parse("armed", null);
+		case "classifying":
+		case "awaiting_resolver":
+		case "resolving":
+			if (!exactCore || snapshot.reason !== null) return stale();
+			if (capturedUserFinal === null || capturedUserFinal.sequence <= gate.effectPrompt.sequence)
+				return missingUserFinal();
+			return parse("resolving", null);
+		case "settled":
+			if (!exactCore || snapshot.reason !== null || settlement === null) return stale();
+			if (capturedUserFinal === null || capturedUserFinal.sequence <= gate.effectPrompt.sequence)
+				return missingUserFinal();
+			return parse("settled", null);
+		case "visual_fallback": {
+			if (snapshot.reason === null) return stale();
+			const state = browserFallbackState(snapshot.reason);
+			if (state === "expired" && !exactCore) return stale();
+			if (state === "outcome_unknown") {
+				if (!exactCore) return stale();
+				if (capturedUserFinal === null || capturedUserFinal.sequence <= gate.effectPrompt.sequence)
+					return missingUserFinal();
+			}
+			return parse(state, snapshot.reason);
+		}
+	}
+	const unhandled: never = snapshot.state;
+	return unhandled;
+}
+
 type DynamicProjectionModel = Pick<
 	BrowserSchemas,
-	"BrowserDynamicApprovalEffectSchema" | "BrowserDynamicApprovalSchema" | "BrowserSnapshotSchema"
+	| "BrowserDynamicApprovalEffectSchema"
+	| "BrowserDynamicApprovalSchema"
+	| "BrowserSnapshotSchema"
+	| "BrowserSpokenApprovalSchema"
 >;
 
 type DynamicProjectionIdentity = Pick<
@@ -596,6 +825,13 @@ export function projectCodexBrowserState(
 			semantic: projectSemantic(input.semantic),
 			coordinator: projectCoordinator(input.coordinator),
 			voice: projectVoice(input.voice),
+			spokenApproval: projectSpokenApproval(
+				model,
+				input.spokenApproval,
+				input.approvals,
+				input.coordinator,
+				input.voice,
+			),
 			lease: input.lease,
 			operation: input.operation,
 		});
@@ -629,6 +865,7 @@ const SNAPSHOT_KEYS: readonly BrowserSnapshotKey[] = [
 	"semantic",
 	"coordinator",
 	"voice",
+	"spokenApproval",
 	"lease",
 	"operation",
 ];

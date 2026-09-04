@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import {
 	createIdentityAuthorities,
@@ -58,6 +59,7 @@ function projectionInput(authorities: IdentityAuthorities): BrowserProjectionInp
 			coordinatorState: "unbound",
 			transcript: [],
 		},
+		spokenApproval: EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
 		lease: null,
 		operation: null,
 	};

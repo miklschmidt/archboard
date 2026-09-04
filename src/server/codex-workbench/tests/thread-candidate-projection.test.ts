@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import {
 	BROWSER_THREAD_CANDIDATE_LIMIT,
 	createCodexBrowserModel,
@@ -50,6 +51,7 @@ function baseInput(authorities: IdentityAuthorities): BrowserProjectionInput {
 			coordinatorState: "unbound",
 			transcript: [],
 		},
+		spokenApproval: EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
 		lease: null,
 		operation: null,
 	} satisfies BrowserProjectionInput & { readonly identity?: typeof authorities };

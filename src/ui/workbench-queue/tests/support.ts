@@ -1,3 +1,4 @@
+import { BROWSER_IDLE_SPOKEN_APPROVAL } from "../../../shared/codex-browser-model/index.js";
 import type { BrowserQueue, BrowserSnapshot } from "../../../shared/codex-browser-model/index.js";
 import type {
 	BrowserCommandDraft,
@@ -168,6 +169,7 @@ export function snapshot(seed: SnapshotSeed = {}): BrowserSnapshot {
 			delivery: null,
 			reason: "Voice is unavailable.",
 		},
+		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,
 		lease: null,
 		operation: null,
 	};

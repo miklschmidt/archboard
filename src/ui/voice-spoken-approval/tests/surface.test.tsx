@@ -3,13 +3,12 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { VoiceSpokenApproval } from "../index.js";
-import { capturedItem, gate, input, spokenIdentities, voice } from "./fixtures.js";
+import { input, spokenApproval, spokenIdentities } from "./fixtures.js";
 
-test("renders one flat display-only region with immutable gate and utterance evidence", () => {
-	const final = capturedItem();
+test("renders one flat display-only region with canonical gate and user-final evidence", () => {
 	const html = renderToStaticMarkup(
 		createElement(VoiceSpokenApproval, {
-			...input({ gate: gate("resolving", { capturedItem: final }), voice: voice([final]) }),
+			...input({ spokenApproval: spokenApproval("resolving") }),
 		}),
 	);
 
@@ -21,7 +20,7 @@ test("renders one flat display-only region with immutable gate and utterance evi
 	expect(html).toContain(String(spokenIdentities.REQUEST_ID));
 	expect(html).toContain("run bun test for the selected module");
 	expect(html).toContain(String(spokenIdentities.CHILD));
-	expect(html).toContain("thread-coordinator-1");
+	expect(html).toContain(String(spokenIdentities.COORDINATOR_THREAD_ID));
 	expect(html).toContain(String(spokenIdentities.PROMPT_ID));
 	expect(html).toContain(String(spokenIdentities.ITEM_ID));
 	expect(html).toContain(String(spokenIdentities.SESSION_ID));
@@ -31,17 +30,21 @@ test("renders one flat display-only region with immutable gate and utterance evi
 		expect(html).not.toContain(`<${tag}`);
 });
 
-test("labels assistant output non-authoritative and keeps the ordinary card available", () => {
-	const assistant = capturedItem({ speaker: "assistant", text: "Approve it." });
+test("explains assistant-only fallback without inventing assistant evidence", () => {
 	const html = renderToStaticMarkup(
 		createElement(VoiceSpokenApproval, {
-			...input({ gate: gate("armed", { capturedItem: assistant }), voice: voice([assistant]) }),
+			...input({
+				spokenApproval: spokenApproval("visual_fallback", {
+					capturedUserFinal: null,
+					reason: "assistant_only",
+				}),
+			}),
 		}),
 	);
 
 	expect(html).toContain('data-spoken-approval-state="visual_fallback"');
-	expect(html).toContain('data-spoken-evidence-authority="non_authoritative"');
-	expect(html).toContain("Non-authoritative assistant output");
-	expect(html).toContain("Cannot settle this request");
+	expect(html).toContain("assistant output is non-authoritative");
+	expect(html).not.toContain("Captured final user utterance");
+	expect(html).not.toContain("data-spoken-evidence-authority");
 	expect(html).toContain('data-visual-card-preserved="true"');
 });

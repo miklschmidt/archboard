@@ -1,31 +1,29 @@
 import type {
 	BrowserApproval,
-	BrowserDynamicApproval,
-	BrowserVoice,
+	BrowserSpokenApproval,
 } from "../../../shared/codex-browser-model/index.js";
 import type {
 	WorkbenchApprovalStatus,
-	WorkbenchDynamicApprovalCard,
 	WorkbenchOrdinaryApprovalCard,
 } from "../../workbench-approvals/index.js";
-import type {
-	VoiceSpokenApprovalCapturedItem,
-	VoiceSpokenApprovalGatePresentation,
-	VoiceSpokenApprovalInput,
-} from "../index.js";
+import type { VoiceSpokenApprovalInput } from "../index.js";
 
 export const NOW = 1_799_000_000_000;
 
 type CommandApproval = Extract<BrowserApproval, { readonly approvalKind: "command_execution" }>;
+type SpokenIdentity = NonNullable<BrowserSpokenApproval["approval"]>;
+type SpokenGate = NonNullable<BrowserSpokenApproval["gate"]>;
+type CapturedUserFinal = NonNullable<BrowserSpokenApproval["capturedUserFinal"]>;
 
 const REQUEST_ID = "request-spoken-1" as CommandApproval["requestId"];
 const APPROVAL_ID = "approval-spoken-1" as NonNullable<CommandApproval["approvalId"]>;
 const THREAD_ID = "thread-workhorse-1" as CommandApproval["threadId"];
 const CHILD = "child-codex-1" as CommandApproval["binding"]["child"];
 const EPOCH = "epoch-codex-1" as CommandApproval["binding"]["epoch"];
-const ITEM_ID = "item-user-1" as BrowserVoice["transcript"][number]["itemId"];
-const PROMPT_ID = "item-effect-prompt" as BrowserVoice["transcript"][number]["itemId"];
-const SESSION_ID = "realtime-session-1" as NonNullable<BrowserVoice["realtimeSessionId"]>;
+const ITEM_ID = "item-user-1" as CapturedUserFinal["itemId"];
+const PROMPT_ID = "item-effect-prompt" as SpokenGate["effectPrompt"]["itemId"];
+const SESSION_ID = "realtime-session-1" as SpokenGate["realtimeSessionId"];
+const COORDINATOR_THREAD_ID = "thread-coordinator-1" as SpokenGate["coordinatorThreadId"];
 
 const PENDING_STATUS: WorkbenchApprovalStatus = Object.freeze({
 	phase: "pending",
@@ -108,64 +106,7 @@ export function ordinaryCard(
 	});
 }
 
-export function dynamicCard(): WorkbenchDynamicApprovalCard {
-	return {
-		kind: "dynamic",
-		key: "dynamic:one",
-		tool: "send_message_to_thread",
-		title: "Dynamic coordination approval",
-		summary: "Send a message.",
-		request: {} as BrowserDynamicApproval,
-		identity: Object.freeze([{ label: "Call", value: "dynamic-call-1", technical: true }]),
-		effect: Object.freeze([{ label: "Effect", value: "send one message", technical: false }]),
-		offers: Object.freeze([]),
-		spoken: Object.freeze({
-			eligible: false,
-			label: "Visual only",
-			detail: "Dynamic coordination approvals are never spoken-eligible.",
-		}),
-		status: PENDING_STATUS,
-		effectHash: `sha256:${"a".repeat(64)}`,
-		toolResult: null,
-		expiresAtMs: NOW + 60_000,
-		notices: Object.freeze([]),
-	};
-}
-
-export function capturedItem(
-	overrides: Partial<VoiceSpokenApprovalCapturedItem> = {},
-): VoiceSpokenApprovalCapturedItem {
-	return Object.freeze({
-		itemId: ITEM_ID,
-		realtimeSessionId: SESSION_ID,
-		sequence: 12,
-		speaker: "user",
-		text: "Approve that command.",
-		final: true,
-		...overrides,
-	});
-}
-
-export function gate(
-	state: VoiceSpokenApprovalGatePresentation["state"] = "armed",
-	options: {
-		readonly capturedItem?: VoiceSpokenApprovalCapturedItem | null;
-		readonly reason?: VoiceSpokenApprovalGatePresentation["reason"];
-		readonly expiresAtMs?: number;
-		readonly identity?: Partial<
-			Pick<VoiceSpokenApprovalGatePresentation, "requestId" | "approvalId" | "threadId">
-		>;
-		readonly sessionId?: NonNullable<BrowserVoice["realtimeSessionId"]>;
-	} = {},
-): VoiceSpokenApprovalGatePresentation {
-	const reasons: Record<VoiceSpokenApprovalGatePresentation["state"], string | null> = {
-		armed: null,
-		expired: "expiry",
-		resolving: null,
-		visual_fallback: "ambiguous",
-		outcome_unknown: "lost_result",
-		stale_session: "stale_session",
-	};
+export function spokenIdentity(overrides: Partial<SpokenIdentity> = {}): SpokenIdentity {
 	return Object.freeze({
 		requestId: REQUEST_ID,
 		approvalId: APPROVAL_ID,
@@ -176,28 +117,63 @@ export function gate(
 			target: "workhorse command execution",
 			effect: "run bun test for the selected module",
 		},
-		coordinatorThreadId: "thread-coordinator-1",
-		realtimeSessionId: options.sessionId ?? SESSION_ID,
-		effectPrompt: { itemId: PROMPT_ID, sequence: 10 },
-		capturedItem: options.capturedItem === undefined ? null : options.capturedItem,
-		expiresAtMs: options.expiresAtMs ?? NOW + 30_000,
-		state,
-		reason: options.reason === undefined ? reasons[state] : options.reason,
-		...options.identity,
-	} as VoiceSpokenApprovalGatePresentation);
+		...overrides,
+	});
 }
 
-export function voice(
-	items: readonly VoiceSpokenApprovalCapturedItem[] = [capturedItem()],
-	overrides: Partial<BrowserVoice> = {},
-): BrowserVoice {
+export function spokenGate(overrides: Partial<SpokenGate> = {}): SpokenGate {
 	return Object.freeze({
-		kind: "voice",
-		state: "active",
+		coordinatorThreadId: COORDINATOR_THREAD_ID,
 		realtimeSessionId: SESSION_ID,
-		transcript: items.map(({ realtimeSessionId: _session, ...item }) => Object.freeze(item)),
-		delivery: null,
-		reason: null,
+		effectSummary: "Run the focused module test.",
+		effectFingerprint: "run bun test for the selected module",
+		effectPrompt: { itemId: PROMPT_ID, sequence: 10 },
+		expiresAtMs: NOW + 30_000,
+		...overrides,
+	});
+}
+
+export function capturedUserFinal(overrides: Partial<CapturedUserFinal> = {}): CapturedUserFinal {
+	return Object.freeze({
+		itemId: ITEM_ID,
+		sequence: 12,
+		text: "Approve that command.",
+		...overrides,
+	});
+}
+
+export function spokenApproval(
+	state: BrowserSpokenApproval["state"] = "idle",
+	overrides: Partial<BrowserSpokenApproval> = {},
+): BrowserSpokenApproval {
+	const active = state !== "idle";
+	const captured =
+		state === "resolving" || state === "settled" || state === "outcome_unknown"
+			? capturedUserFinal()
+			: null;
+	const reasons: Partial<Record<BrowserSpokenApproval["state"], BrowserSpokenApproval["reason"]>> =
+		{
+			expired: "timeout",
+			visual_fallback: "classifier_lost",
+			outcome_unknown: "resolver_lost",
+			stale_session: "stale_state",
+		};
+	const settlement: BrowserSpokenApproval["settlement"] =
+		state === "settled"
+			? {
+					state: "settled",
+					outcome: "delivered",
+					reason: "The ordinary approval decision was delivered.",
+				}
+			: null;
+	return Object.freeze({
+		kind: "spoken_approval",
+		state,
+		approval: active ? spokenIdentity() : null,
+		gate: active ? spokenGate() : null,
+		capturedUserFinal: captured,
+		settlement,
+		reason: reasons[state] ?? null,
 		...overrides,
 	});
 }
@@ -205,9 +181,7 @@ export function voice(
 export function input(overrides: Partial<VoiceSpokenApprovalInput> = {}): VoiceSpokenApprovalInput {
 	return {
 		card: ordinaryCard(),
-		gate: null,
-		voice: voice(),
-		nowMs: NOW,
+		spokenApproval: spokenApproval(),
 		...overrides,
 	};
 }
@@ -221,4 +195,7 @@ export const spokenIdentities = {
 	ITEM_ID,
 	PROMPT_ID,
 	SESSION_ID,
+	COORDINATOR_THREAD_ID,
 } as const;
+
+export const pendingStatus = PENDING_STATUS;

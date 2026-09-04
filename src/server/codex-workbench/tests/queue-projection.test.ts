@@ -6,6 +6,7 @@ import {
 	type IdentityAuthorities,
 } from "../../../shared/codex-workbench-identity/index.js";
 import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
+import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
 import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
 import { projectCodexBrowserState } from "../index.js";
 import type { BrowserProjectionInput, CodexQueueProjectionInput } from "../index.js";
@@ -121,6 +122,7 @@ function projectionInput(
 			coordinatorState: "ready",
 			transcript: [],
 		},
+		spokenApproval: EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
 		lease: null,
 		operation: null,
 	};

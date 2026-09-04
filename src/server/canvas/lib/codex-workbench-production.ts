@@ -491,6 +491,10 @@ export function createCanvasCodexWorkbenchInstallation(
 								correlationId: generation.browserCorrelationId,
 							};
 				},
+				onChange: () => {
+					if (!owners.approvalProjectionInstalled) return;
+					for (const listener of owners.projectionListeners) listener();
+				},
 			}),
 			coordinatorTools: (created) => ({
 				authority: {

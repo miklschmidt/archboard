@@ -212,6 +212,7 @@ const DELTA_PARSERS = {
 	semantic: (value) => browserModel.BrowserSemanticDeliverySchema.nullable().parse(value),
 	coordinator: (value) => browserModel.BrowserCoordinatorSchema.parse(value),
 	voice: (value) => browserModel.BrowserVoiceSchema.parse(value),
+	spokenApproval: (value) => browserModel.BrowserSpokenApprovalSchema.parse(value),
 	lease: (value) => browserModel.BrowserCommandLeaseSchema.nullable().parse(value),
 	operation: (value) => browserModel.BrowserOperationOutcomeSchema.nullable().parse(value),
 } satisfies {

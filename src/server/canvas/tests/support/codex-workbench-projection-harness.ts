@@ -75,6 +75,7 @@ export interface HarnessOverrides {
 	/** A live workhorse and queue, for the paths that read authoritative state. */
 	readonly workhorse?: Partial<FixtureComponents["workhorse"]>;
 	readonly queue?: Partial<FixtureComponents["queue"]>;
+	readonly spokenApproval?: Partial<FixtureComponents["spokenApproval"]>;
 }
 
 /** One production adapter over the generation fixture, with its live sources injectable. */
@@ -105,6 +106,7 @@ export function projectionHarness(overrides: HarnessOverrides = {}): ProjectionH
 		},
 		workhorse: { ...fixture.workhorse, ...overrides.workhorse },
 		queue: { ...fixture.queue, ...overrides.queue },
+		spokenApproval: { ...fixture.spokenApproval, ...overrides.spokenApproval },
 	};
 	const state: CanvasBrowserBindingState = {
 		account: { kind: "account", state: "unknown", reason: "not read" },

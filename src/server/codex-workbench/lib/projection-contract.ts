@@ -38,6 +38,7 @@ import type {
 	ThreadLinkSnapshot,
 } from "../../../runtime/codex-thread-link/index.js";
 import type { RealtimeTranscriptRecord } from "../../../shared/codex-realtime-host/index.js";
+import type { SpokenApprovalSnapshot } from "../../../runtime/codex-spoken-approval/index.js";
 
 export interface CodexAccountProjectionInput {
 	readonly kind: "codex_account_response";
@@ -271,6 +272,7 @@ export interface BrowserProjectionInput {
 	readonly semantic: CodexSemanticProjectionInput;
 	readonly coordinator: CodexCoordinatorProjectionInput;
 	readonly voice: CodexVoiceProjectionInput;
+	readonly spokenApproval: SpokenApprovalSnapshot;
 	readonly lease: BrowserCommandLease | null;
 	readonly operation: BrowserOperationOutcome | null;
 }
