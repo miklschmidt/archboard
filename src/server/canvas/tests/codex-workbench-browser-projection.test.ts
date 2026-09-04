@@ -197,7 +197,17 @@ function executableLink(authorities: IdentityAuthorities): ThreadLinkSnapshot {
 	};
 }
 
-test("the production browser projection derives readiness from its live owners", () => {
+interface ProjectionHarness {
+	readonly options: ReturnType<typeof createCanvasBrowserGatewayOptions>;
+	readonly state: CanvasBrowserBindingState;
+	readonly context: BrowserProjectionContext;
+	readonly threadId: ReturnType<typeof executableLink>["threadId"];
+	setFacts: (value: ReturnType<typeof processFacts>) => void;
+	setCoordinatorReady: (value: boolean) => void;
+}
+
+/** One production adapter over the generation fixture, with its live sources injectable. */
+function projectionHarness(): ProjectionHarness {
 	const authorities = createIdentityAuthorities();
 	const fixture = createCodexWorkbenchGenerationFixture([]).components;
 	let coordinatorReady = false;
@@ -216,6 +226,7 @@ test("the production browser projection derives readiness from its live owners",
 		account: { kind: "account", state: "unknown", reason: "not read" },
 		login: { kind: "login", state: "idle" },
 		queue: { kind: "codex_queue", submissions: null },
+		queueThreadId: null,
 	};
 	const timeline: CanvasTimelineOwner = {
 		read: () => null,
@@ -229,7 +240,7 @@ test("the production browser projection derives readiness from its live owners",
 			identity: authorities,
 			now: () => 1,
 			bindingForCaller: () => {
-				throw new Error("The readiness owner issues no dynamic approvals.");
+				throw new Error("The projection owner issues no dynamic approvals.");
 			},
 		}),
 		state,
@@ -242,30 +253,42 @@ test("the production browser projection derives readiness from its live owners",
 		onChange: () => () => undefined,
 	});
 	const link = executableLink(authorities);
-	const context: BrowserProjectionContext = {
-		browserId: "browser-readiness",
-		paneId: "pane-readiness",
-		connection: {},
-		binding: {
+	return {
+		options,
+		state,
+		threadId: link.threadId,
+		context: {
+			browserId: "browser-projection",
 			paneId: "pane-readiness",
-			revision: 1,
-			link,
-			cas: {
-				revision: 1,
+			connection: {},
+			binding: {
 				paneId: "pane-readiness",
-				childId: link.childId,
-				epoch: link.epoch,
-				threadId: link.threadId,
+				revision: 1,
+				link,
+				cas: {
+					revision: 1,
+					paneId: "pane-readiness",
+					childId: link.childId,
+					epoch: link.epoch,
+					threadId: link.threadId,
+				},
 			},
+			lease: null,
+			mediaReady: false,
 		},
-		lease: null,
-		mediaReady: false,
+		setFacts: (value) => void (facts = value),
+		setCoordinatorReady: (value) => void (coordinatorReady = value),
 	};
+}
+
+test("the production browser projection derives readiness from its live owners", () => {
+	const harness = projectionHarness();
+	const { options, state, context } = harness;
 	const stateNow = (): BrowserReadiness["state"] =>
 		options.projection.read(context).readiness.state;
 
 	expect(stateNow()).toBe("reconnecting");
-	facts = processFacts();
+	harness.setFacts(processFacts());
 	expect(stateNow()).toBe("initialized");
 	state.account = { kind: "account", state: "signed_out" };
 	expect(stateNow()).toBe("signed_out");
@@ -274,6 +297,30 @@ test("the production browser projection derives readiness from its live owners",
 	state.login = { kind: "login", state: "completed", loginId };
 	state.account = signedInAccount;
 	expect(stateNow()).toBe("account_ready");
-	coordinatorReady = true;
+	harness.setCoordinatorReady(true);
 	expect(stateNow()).toBe("thread_capable");
+});
+
+test("cached queue submissions are presented only for the thread they were read for", () => {
+	const harness = projectionHarness();
+	const { options, state, context } = harness;
+	const decoder = createIdentityAuthorities().identity.decoder;
+	state.queue = {
+		kind: "codex_queue",
+		submissions: [
+			{
+				id: decoder.adoptQueuedSubmissionId("queued-one"),
+				input: [{ type: "text", text: "queued prompt", text_elements: [] }],
+			},
+		],
+	};
+
+	state.queueThreadId = harness.threadId;
+	expect(options.projection.read(context).queue.submissions).toHaveLength(1);
+
+	state.queueThreadId = decoder.adoptThreadId("another-thread");
+	expect(options.projection.read(context).queue.submissions).toBeNull();
+
+	state.queueThreadId = null;
+	expect(options.projection.read(context).queue.submissions).toBeNull();
 });

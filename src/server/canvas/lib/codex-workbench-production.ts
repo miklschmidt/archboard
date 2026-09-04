@@ -198,6 +198,7 @@ export function createCanvasCodexWorkbenchInstallation(
 					},
 					login: { kind: "login", state: "idle" },
 					queue: { kind: "codex_queue", submissions: null },
+					queueThreadId: null,
 				},
 			};
 			byGeneration.set(input.generation, owners);

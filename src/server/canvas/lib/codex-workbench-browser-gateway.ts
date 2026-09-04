@@ -12,7 +12,7 @@ import type {
 } from "../../codex-workbench/index.js";
 import type { CodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
 import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
-import type { OperationId } from "../../../shared/codex-workbench-identity/index.js";
+import type { OperationId, ThreadId } from "../../../shared/codex-workbench-identity/index.js";
 import type { ArchboardContext } from "../../../runtime/codex-instructions/index.js";
 import type { CodexWorkbenchComponents } from "./codex-workbench.js";
 import type { CanvasDynamicApprovalOwner } from "./codex-workbench-approvals.js";
@@ -37,6 +37,8 @@ export interface CanvasBrowserBindingState {
 	account: BrowserAccountProjectionInput;
 	login: BrowserOwnerProjection["login"];
 	queue: CodexQueueProjectionInput;
+	/** The workhorse thread the cached submissions were read for. */
+	queueThreadId: ThreadId | null;
 }
 
 const UNAVAILABLE_QUEUE: CodexQueueProjectionInput = { kind: "codex_queue", submissions: null };
@@ -155,7 +157,12 @@ export function createCanvasBrowserGatewayOptions(input: {
 		result: Result,
 	): Result => {
 		state.queue = queueOwnerView(result.queue);
+		state.queueThreadId = components.workhorse.snapshot().threadId;
 		return result;
+	};
+	const clearQueue = (): void => {
+		state.queue = UNAVAILABLE_QUEUE;
+		state.queueThreadId = null;
 	};
 	const issueOperation = (): OperationId => components.identity.operation.issuer.mintOperationId();
 	// Kept beside the action table so every mutation returns the same browser outcome shape.
@@ -167,7 +174,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 	// A thread link change re-targets every queue: the cached submissions belong
 	// to the previous thread and must not be presented for the new one.
 	const refreshLinkedQueue = async (): Promise<void> => {
-		state.queue = UNAVAILABLE_QUEUE;
+		clearQueue();
 		if (components.workhorse.snapshot().state !== "ready") return;
 		try {
 			updateQueue(await components.queue.list());
@@ -250,7 +257,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 					await components.session.accountLogout();
 					state.account = { kind: "account", state: "signed_out" };
 					state.login = { kind: "login", state: "idle" };
-					state.queue = UNAVAILABLE_QUEUE;
+					clearQueue();
 				}),
 		},
 		threadLinks: {
@@ -366,7 +373,12 @@ export function createCanvasBrowserGatewayOptions(input: {
 					readiness.state === "thread_capable",
 					context.connection,
 				),
-				queue: state.queue,
+				// Cached submissions belong to one workhorse thread; a pane looking at
+				// another link is told the queue is unavailable, never shown the wrong one.
+				queue:
+					state.queueThreadId !== null && state.queueThreadId === context.binding.link.threadId
+						? state.queue
+						: UNAVAILABLE_QUEUE,
 				settings: [
 					...(workhorse.start === null
 						? []

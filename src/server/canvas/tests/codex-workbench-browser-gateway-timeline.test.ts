@@ -115,6 +115,7 @@ test("canvas gateway binds exact connection reads and retires it at disconnect",
 		},
 		login: { kind: "login", state: "idle" },
 		queue: { kind: "codex_queue", submissions: null },
+		queueThreadId: null,
 	} satisfies CanvasBrowserBindingState;
 	const dynamicApprovals = createCanvasDynamicApprovalOwner({
 		identity: authorities,
