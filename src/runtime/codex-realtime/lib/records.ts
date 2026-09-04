@@ -1,4 +1,7 @@
-import type { RealtimeTranscriptRecord } from "../../../shared/codex-realtime-host/index.js";
+import {
+	parseRealtimeItemId,
+	type RealtimeTranscriptRecord,
+} from "../../../shared/codex-realtime-host/index.js";
 import type { TrustedIdentityDecoder } from "../../../shared/codex-workbench-identity/index.js";
 import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 import type { ActiveRealtimeSession } from "./state.js";
@@ -11,7 +14,7 @@ export function orderedRecords(
 		.map((entry, sequence) => ({
 			sessionId: session.browserSessionId,
 			correlationId: session.correlationId,
-			itemId: entry.itemId,
+			itemId: parseRealtimeItemId(entry.itemId),
 			sequence,
 			role: entry.role,
 			status: entry.status,
