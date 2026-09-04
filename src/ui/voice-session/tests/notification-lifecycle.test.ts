@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { RealtimeMediaSnapshot } from "../../codex-realtime/index.js";
-import { connectedState, correlation, mediaSnapshot } from "./support/fakes.js";
+import { capabilities, connectedState, correlation, mediaSnapshot } from "./support/fakes.js";
 import { harness, listening, relinked } from "./support/harness.js";
 
 const NEVER_RELEASED = (): void => undefined;
@@ -112,6 +112,22 @@ describe("voice session ordering and disposal", () => {
 		expect(notifications()).toBe(status + 1);
 		expect(levelNotifications()).toBe(levels + 1);
 		expect(session.level()).toBe(0.5);
+	});
+
+	test("republishes on a capabilities-only transport notification", async () => {
+		const { session, transport, notifications } = harness();
+		await session.start();
+		expect(session.view().controls.canRestart).toBe(true);
+		const status = notifications();
+
+		// The transport rebuilds capabilities on every call and moves them on lease
+		// claim, renewal, release and expiry without touching the state object, so
+		// the transport channel is never gated on state identity.
+		transport.setCapabilities(capabilities({ canClaimLease: false }));
+
+		expect(notifications()).toBe(status + 1);
+		expect(session.view().controls.canRestart).toBe(false);
+		expect(session.view()).toBe(session.refresh());
 	});
 
 	test("publishes to subscribers only when the projected view changed", async () => {

@@ -240,16 +240,27 @@ export function createVoiceSession({
 		return true;
 	};
 
-	const republish = (): void => {
+	/**
+	 * The transport is always projected in full. Its notification carries changes
+	 * the identity gate cannot see: `capabilities()` builds a fresh record on every
+	 * call and the transport moves it on lease claim, renewal, release, and expiry
+	 * without touching the state object the gate compares. The meter is the only
+	 * channel that repeats itself, and it is the only one gated.
+	 */
+	const republishTransport = (): void => {
+		if (disposed) return;
+		publish();
+	};
+	const republishRealtime = (): void => {
 		if (disposed) return;
 		if (levelOnly()) return;
 		publish();
 	};
-	const releaseTransport = transport.subscribe(republish);
+	const releaseTransport = transport.subscribe(republishTransport);
 	// The media owner's channel is the only one that carries a lost microphone,
 	// a dropped ICE connection, or an in-start phase; the transport announces none
 	// of them. refresh() remains an escape hatch, not the notification path.
-	const releaseRealtime = realtime.subscribe(republish);
+	const releaseRealtime = realtime.subscribe(republishRealtime);
 
 	/** Runs one control, discarding its result when a later control superseded it. */
 	const run = async (
