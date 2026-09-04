@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.13
 title: Verify the complete text workbench in a browser owner
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-09-04 13:59'
+updated_date: '2026-09-04 14:02'
 labels: []
 dependencies:
   - TASK-143.03.11
@@ -35,11 +35,11 @@ Own and register one canonical controlled real-browser owner for the text workbe
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The owner explicitly selects the exact Codex 0.151.0 protocol fake, proves exact --version probes and one strict app-server spawn, and never resolves or spawns PATH Codex.
-- [ ] #2 Through a headless real browser at 1440x900 and the production server boundary, the owner expands the one-pane workbench, creates a workhorse thread, fills and sends the composer, and uses the rendered ordinary Decline control.
-- [ ] #3 The rendered flow exposes one ordinary command-execution approval and one dynamic create-thread approval with their concrete effects, and the ordinary decision reaches the fake as the authoritative reverse response.
-- [ ] #4 The seeded Excalidraw pane remains the same mounted canvas with its element, browser console and page errors stay empty, and test-owned browser, server, fake, socket, vault, and temporary resources are reaped.
-- [ ] #5 Against fixed base 1451e58c3e1f38a00238d5b20667b9b4f2e3f171, the normal executable browser inventory moves from 16 to 17 by appending this owner exactly once in BROWSER_TEST_PATHS and test:serial-browser; repository inventory proves no missing, duplicate, reordered, or normal/opt-in-overlap owner, and docs describe the narrow ownership without a copied count.
+- [x] #1 The owner explicitly selects the exact Codex 0.151.0 protocol fake, proves exact --version probes and one strict app-server spawn, and never resolves or spawns PATH Codex.
+- [x] #2 Through a headless real browser at 1440x900 and the production server boundary, the owner expands the one-pane workbench, creates a workhorse thread, fills and sends the composer, and uses the rendered ordinary Decline control.
+- [x] #3 The rendered flow exposes one ordinary command-execution approval and one dynamic create-thread approval with their concrete effects, and the ordinary decision reaches the fake as the authoritative reverse response.
+- [x] #4 The seeded Excalidraw pane remains the same mounted canvas with its element, browser console and page errors stay empty, and test-owned browser, server, fake, socket, vault, and temporary resources are reaped.
+- [x] #5 Against fixed base 1451e58c3e1f38a00238d5b20667b9b4f2e3f171, the normal executable browser inventory moves from 16 to 17 by appending this owner exactly once in BROWSER_TEST_PATHS and test:serial-browser; repository inventory proves no missing, duplicate, reordered, or normal/opt-in-overlap owner, and docs describe the narrow ownership without a copied count.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -61,4 +61,12 @@ Registration appends the owner after the existing 16 normal browser owners, so t
 Validation: focused serial browser owner passed in 2.7s (23 assertions); focused repository inventory passed 54/54; root and frontend TypeScript passed; scoped Oxlint and Oxfmt passed; git diff --check passed; normal inventory reports 17 owners; no test-owned browser, server, or Codex processes remained. Left In Progress with acceptance criteria unchecked for independent review.
 
 Final post-format browser rerun passed in 2.5s with the explicit 1440x900 viewport assertion (24 assertions total).
+
+Final integration validation on codex/task-143-144-workbench: the focused serial-browser owner passed 1/1 with 24 assertions in 2.89s; repository inventory passed 54/54; root and frontend TypeScript passed; scoped Oxlint passed; the executable inventory contains 17 unique normal owners with this owner last and no opt-in overlap. The adapter cleanup completed, and a process audit found no owner, browser-lane, or controlled-fake residue.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added the narrow controlled real-browser owner for the production text workbench. It proves exact Codex 0.151.0 fake selection, rendered create/send/Decline and approval disclosure, the authoritative reverse response, and an unchanged mounted Excalidraw pane. Registered it as normal browser owner 17 and verified it through the focused browser adapter, repository inventory, TypeScript, lint, diff, and cleanup checks.
+<!-- SECTION:FINAL_SUMMARY:END -->
