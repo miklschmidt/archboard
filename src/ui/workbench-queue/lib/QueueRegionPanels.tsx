@@ -23,6 +23,8 @@ export const QUEUE_STATE_CLASSES = {
 	stale: "border-warning bg-warning-subtle text-warning",
 	reconnecting: "border-warning bg-warning-subtle text-warning",
 	disconnected: "border-destructive bg-destructive-subtle text-destructive",
+	session_stopped: "border-destructive bg-destructive-subtle text-destructive",
+	session_incompatible: "border-destructive bg-destructive-subtle text-destructive",
 	unavailable: "border-destructive bg-destructive-subtle text-destructive",
 	outcome_unknown: "border-warning bg-warning-subtle text-warning",
 } as const satisfies Record<WorkbenchQueueState, string>;

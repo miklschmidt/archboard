@@ -55,6 +55,8 @@ export type WorkbenchQueueState =
 	| "stale"
 	| "reconnecting"
 	| "disconnected"
+	| "session_stopped"
+	| "session_incompatible"
 	| "unavailable"
 	| "outcome_unknown";
 
