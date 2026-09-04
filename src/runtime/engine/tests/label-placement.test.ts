@@ -296,3 +296,43 @@ test("places labels on containers and follows geometry changes", () => {
 		}
 	}
 });
+
+test("matches Excalidraw 0.18.1 non-rectangular alignment placement", () => {
+	const cases: readonly {
+		name: string;
+		container: LabelledElement;
+		text: LabelledElement;
+		expected: { x: number; y: number };
+	}[] = [
+		{
+			name: "ellipse left/top",
+			container: { id: "ellipse", type: "ellipse", x: 100, y: 200, width: 200, height: 100 },
+			text: {
+				id: "ellipse-label",
+				type: "text",
+				width: 40,
+				height: 20,
+				textAlign: "left",
+				verticalAlign: "top",
+			},
+			expected: { x: 134.28932188134524, y: 219.64466094067262 },
+		},
+		{
+			name: "diamond right/bottom",
+			container: { id: "diamond", type: "diamond", x: 300, y: 400, width: 160, height: 120 },
+			text: {
+				id: "diamond-label",
+				type: "text",
+				width: 40,
+				height: 20,
+				textAlign: "right",
+				verticalAlign: "bottom",
+			},
+			expected: { x: 375, y: 465 },
+		},
+	];
+
+	for (const { name, container, text, expected } of cases) {
+		expect(boundTextPlacement(container, text), name).toEqual(expected);
+	}
+});
