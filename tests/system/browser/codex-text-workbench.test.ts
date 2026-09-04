@@ -47,6 +47,16 @@ interface InitialRenderSnapshot {
 	readonly status: string | null;
 }
 
+interface ControlSnapshot {
+	readonly width: number;
+	readonly height: number;
+	readonly visibleWidth: number;
+	readonly visibleHeight: number;
+	readonly clipped: boolean;
+	readonly requestOverlap: boolean;
+	readonly centerHit: boolean;
+}
+
 async function initialRender(
 	browser: Awaited<ReturnType<typeof createAgentBrowser>>,
 ): Promise<InitialRenderSnapshot> {
@@ -77,17 +87,43 @@ function approvalCards(
 		}))`);
 }
 
-async function revealComposerCommand(
+function controlSnapshot(
 	browser: Awaited<ReturnType<typeof createAgentBrowser>>,
-	command: "start" | "steer",
-): Promise<void> {
-	const revealed = await browser.eval<boolean>(`(() => {
-		const control = document.querySelector('[data-composer-send="${command}"]');
-		if (!(control instanceof HTMLButtonElement)) return false;
-		control.scrollIntoView({ block: 'center', inline: 'nearest' });
-		return true;
+	selector: string,
+): Promise<ControlSnapshot> {
+	return browser.eval<ControlSnapshot>(`(() => {
+		const control = document.querySelector(${JSON.stringify(selector)});
+		if (!(control instanceof HTMLButtonElement)) throw new Error('Missing rendered control');
+		const rect = node => node?.getBoundingClientRect() ?? new DOMRect();
+		const overlaps = (left, right) => left.width > 0 && left.height > 0 && right.width > 0 &&
+			right.height > 0 && left.left < right.right && left.right > right.left &&
+			left.top < right.bottom && left.bottom > right.top;
+		const bounds = rect(control);
+		const visible = { left: Math.max(0, bounds.left), top: Math.max(0, bounds.top),
+			right: Math.min(innerWidth, bounds.right), bottom: Math.min(innerHeight, bounds.bottom) };
+		for (let owner = control.parentElement; owner; owner = owner.parentElement) {
+			const style = getComputedStyle(owner);
+			const clip = rect(owner);
+			if (/^(auto|clip|hidden|scroll)$/.test(style.overflowX)) {
+				visible.left = Math.max(visible.left, clip.left); visible.right = Math.min(visible.right, clip.right);
+			}
+			if (/^(auto|clip|hidden|scroll)$/.test(style.overflowY)) {
+				visible.top = Math.max(visible.top, clip.top); visible.bottom = Math.min(visible.bottom, clip.bottom);
+			}
+		}
+		const hit = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+		const visibleWidth = Math.max(0, visible.right - visible.left);
+		const visibleHeight = Math.max(0, visible.bottom - visible.top);
+		return { width: bounds.width, height: bounds.height, visibleWidth, visibleHeight,
+			clipped: visibleWidth < bounds.width || visibleHeight < bounds.height,
+			requestOverlap: overlaps(bounds, rect(document.querySelector('[data-workbench-region="app-global-request"]'))),
+			centerHit: control.contains(hit) };
 	})()`);
-	expect(revealed).toBe(true);
+}
+
+function expectOperableControl(control: ControlSnapshot): void {
+	expect(control).toMatchObject({ clipped: false, requestOverlap: false, centerHit: true });
+	expect([control.visibleWidth >= 44, control.visibleHeight >= 44]).toEqual([true, true]);
 }
 
 test(
@@ -182,7 +218,11 @@ test(
 			"the filled composer to enable Send",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		await revealComposerCommand(browser, "start");
+		const desktopSend = await controlSnapshot(browser, '[data-composer-send="start"]');
+		expectOperableControl(desktopSend);
+		await browser.run(["set", "viewport", "1920", "1080", "2"]);
+		expectOperableControl(await controlSnapshot(browser, '[data-composer-send="start"]'));
+		await browser.run(["set", "viewport", "1440", "900", "1"]);
 		await roleAction(browser, "button", "Send");
 
 		const pending = await pollUntil(

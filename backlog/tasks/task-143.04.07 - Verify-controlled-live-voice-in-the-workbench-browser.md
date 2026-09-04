@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-09-04 17:10'
+updated_date: '2026-09-04 17:32'
 labels: []
 dependencies:
   - TASK-143.02.04
@@ -25,6 +25,7 @@ modified_files:
   - tests/system/browser/support/shell-render-matrix.ts
   - tests/system/canvas-state/fixtures/fake-codex-production.ts
   - tests/system/repository-policy/test-inventory.test.ts
+  - src/ui/shell/shell.css
   - package.json
   - docs/agents/test-suite.md
 parent_task_id: TASK-143.04
@@ -73,4 +74,6 @@ Accepted review remediation: the strict production fake now retains the raw coor
 The accepted cleanup leaves fewer test concepts and lines. One 29-line browser-test helper replaces about 50 duplicated lines of fixture-log parsing and private lease traversal across the text and voice owners. No production or general test contract changed. The remediated browser owner passes 62 assertions in 3.11 seconds. Root and frontend TypeScript pass; scoped Oxlint, Oxfmt, diff checks, and the direct 17-to-18 inventory audit pass. The serial lane and follow-up process audit found no residue.
 
 Integration-gate remediation: the exact text owner failed twice because its sole enabled Send button (44px high at y=708.5–752.5) was clipped by the 57px workhorse region, leaving its center at the boundary of the adjacent 69px sticky application-request header (y=731–800). Temporarily restoring the text owner’s original local fixture-log and lease helpers reproduced the identical @e3 coverage failure, proving the shared-helper extraction was not causal; the diagnostic-only changes were then removed. The smallest repair explicitly reveals the rendered data-composer-send="start" control with scrollIntoView and still activates it through the exact accessible button click—no forced click, direct handler call, sleep, timeout increase, or assertion weakening. The repaired text owner passes 25 assertions in 2.72 seconds, and the voice owner independently passes 62 assertions in 3.04 seconds. Root and frontend TypeScript, file-scoped Oxlint/Oxfmt, and diff checks pass. Serial owner cleanup reported no cleanup failure.
+
+UI remediation supersedes the rejected scripted-reveal workaround. A required internal UI worker read the TASK-140 visual authority, module boundaries, and test rules, then measured the smallest layout candidate. Adding one 44px touch-target token alone left Send only 25.5px visible, so the accepted product correction also lays out the empty application-request header and message in two columns. At 1440x900 the canvas/workbench/workhorse/request heights moved from 445/320/56.5/135px to 401/364/111/70px; at 1920x1080@2 they moved from 625/320/56.5/135px to 581/364/111/70px. The canvas remains the largest region at both viewports. Send is now fully visible at 57.671875x44px with no clipping, request overlap, or center obstruction. Desktop Start/Mute/Stop measure 93.3125x44, 133.34375x44, and 91.53125x44; Flip Start/Unmute/Stop measure 93.3125x44, 150.0625x44, and 91.53125x44; fullscreen Stop is 59.703125x44 at both sizes. All scripted reveal/scroll helpers are removed. Public role/name clicks remain. Real Tab traversal proves Pane A -> Collapse -> enabled Start before activation and Pane A -> Collapse -> Mute -> Stop afterward, with disabled Start skipped. Independent focused validation: text owner passed 28 assertions in 2.65s; voice owner passed 68 assertions in 3.36s. Root TypeScript passed in 2.02s, frontend TypeScript in 0.50s, scoped Oxlint/Oxfmt and diff checks passed, direct inventory remains 17 owners at fixed base and 18 now with one serial registration, and the process audit found no residue. The UI worker touched only shell.css and the two assigned owners; the shared 29-line production helper remains unchanged.
 <!-- SECTION:NOTES:END -->
