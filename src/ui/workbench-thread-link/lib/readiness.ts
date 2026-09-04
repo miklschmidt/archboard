@@ -11,7 +11,6 @@ import type {
 } from "./contract.js";
 
 const HOST_INTENTS = [
-	"refresh_inventory",
 	"start_workbench",
 	"choose_binary",
 	"unlock_home",
@@ -148,11 +147,13 @@ export function threadLinkRecovery(
 			? capabilities.connected
 			: intent === "read_account"
 				? capabilities.canReadAccount
-				: intent === "retry_login"
-					? capabilities.supportsCommand("accountLogin")
-					: intent === "cancel_login"
-						? capabilities.supportsCommand("accountLoginCancel")
-						: capabilities.supportsCommand("accountLogout");
+				: intent === "refresh_inventory"
+					? capabilities.supportsCommand("threadLinkRefresh")
+					: intent === "retry_login"
+						? capabilities.supportsCommand("accountLogin")
+						: intent === "cancel_login"
+							? capabilities.supportsCommand("accountLoginCancel")
+							: capabilities.supportsCommand("accountLogout");
 	return Object.freeze({
 		intent,
 		label: text.label,

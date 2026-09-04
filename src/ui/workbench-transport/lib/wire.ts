@@ -203,6 +203,7 @@ const DELTA_PARSERS = {
 	account: (value) => browserModel.BrowserAccountSchema.parse(value),
 	login: (value) => browserModel.BrowserLoginSchema.parse(value),
 	threadLink: (value) => browserModel.BrowserThreadLinkSchema.parse(value),
+	threadCandidates: (value) => browserModel.BrowserThreadCandidatesSchema.parse(value),
 	timeline: (value) => browserModel.BrowserTimelineSchema.nullable().parse(value),
 	queue: (value) => browserModel.BrowserQueueSchema.parse(value),
 	settings: (value) => z.array(browserModel.BrowserSettingsSchema).parse(value),

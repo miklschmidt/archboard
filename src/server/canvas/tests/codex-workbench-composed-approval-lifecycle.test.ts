@@ -50,7 +50,7 @@ test("composed child exit publishes one settled approval before closing presente
 	};
 	const actions: BrowserWorkbenchActions = {
 		account: { read: delivered, login: delivered, loginCancel: delivered, logout: delivered },
-		threadLinks: { create: delivered, attach: delivered, relink: delivered },
+		threadLinks: { create: delivered, refresh: delivered, attach: delivered, relink: delivered },
 		text: { start: delivered, steer: delivered, interrupt: delivered },
 		queue: {
 			add: delivered,
@@ -66,6 +66,7 @@ test("composed child exit publishes one settled approval before closing presente
 	const projection = {
 		read: ({ mediaReady }: { readonly mediaReady: boolean }): BrowserOwnerProjection => ({
 			readiness: { kind: "readiness", state: "thread_capable" },
+			threadCandidates: { kind: "codex_thread_candidates", state: "unknown" },
 			account: {
 				kind: "codex_account_response",
 				response: {

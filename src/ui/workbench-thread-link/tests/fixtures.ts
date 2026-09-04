@@ -17,6 +17,7 @@ import type {
 	BrowserWorkbenchTransport,
 } from "../../workbench-transport/index.js";
 import type {
+	ThreadLinkInventory,
 	ThreadLinkInventoryRecord,
 	ThreadLinkPaneCapture,
 	ThreadLinkRecoveryIntent,
@@ -71,6 +72,28 @@ export function inspectOnlyLink(reason: string, threadId: ThreadId = threadA): B
 	};
 }
 
+export const unknownCandidates: ThreadLinkInventory = {
+	kind: "thread_candidates",
+	state: "unknown",
+	records: [],
+	truncated: false,
+	reason: null,
+};
+
+/** One listed inventory arm, exactly as the workbench snapshot publishes it. */
+export function listed(
+	records: readonly ThreadLinkInventoryRecord[],
+	truncated = false,
+): ThreadLinkInventory {
+	return {
+		kind: "thread_candidates",
+		state: "listed",
+		records: [...records],
+		truncated,
+		reason: null,
+	};
+}
+
 export function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 	return {
 		kind: "snapshot",
@@ -79,6 +102,7 @@ export function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnaps
 		account: { kind: "account", state: "ready", accountType: "chatgpt" },
 		login: { kind: "login", state: "idle" },
 		threadLink: unboundLink,
+		threadCandidates: unknownCandidates,
 		timeline: null,
 		queue: { kind: "queue", status: "empty", entries: [] },
 		settings: [],
@@ -129,6 +153,7 @@ export function capabilities(
 	const supported = new Set<BrowserCommandName>(
 		overrides.supported ?? [
 			"threadLinkCreate",
+			"threadLinkRefresh",
 			"threadLinkAttach",
 			"threadLinkRelink",
 			"accountLogin",
@@ -154,16 +179,15 @@ export function record(
 	overrides: Partial<ThreadLinkInventoryRecord> = {},
 ): ThreadLinkInventoryRecord {
 	return {
+		kind: "thread_candidate",
 		selectionId: "selection-a",
 		threadId: threadA,
 		state: "executable",
 		reason: null,
-		source: "standard",
+		sourcePresentation: "standard",
 		status: "idle",
 		loaded: true,
 		canAcceptDirectInput: true,
-		persistedRows: 1,
-		loadedOccurrences: 1,
 		...overrides,
 	};
 }

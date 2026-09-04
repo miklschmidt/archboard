@@ -72,6 +72,10 @@ export type BrowserThreadLinkCreateCommand = Extract<
 	BrowserCommand,
 	{ readonly command: "threadLinkCreate" }
 >;
+export type BrowserThreadLinkRefreshCommand = Extract<
+	BrowserCommand,
+	{ readonly command: "threadLinkRefresh" }
+>;
 export type BrowserThreadLinkTargetCommand = Extract<
 	BrowserCommand,
 	{ readonly command: "threadLinkAttach" | "threadLinkRelink" }
@@ -207,6 +211,11 @@ export interface BrowserAccountActions {
 export interface BrowserThreadLinkActions {
 	readonly create: (
 		command: BrowserThreadLinkCreateCommand,
+		context: BrowserActionContext,
+	) => Promise<BrowserActionResult>;
+	/** Discover the joined persisted and current loaded lists again. */
+	readonly refresh: (
+		command: BrowserThreadLinkRefreshCommand,
 		context: BrowserActionContext,
 	) => Promise<BrowserActionResult>;
 	readonly attach: (

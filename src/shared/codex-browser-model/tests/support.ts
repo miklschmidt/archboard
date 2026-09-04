@@ -165,6 +165,7 @@ export function createFixtureIds(): {
 	requestId: typeof requestId;
 	model: typeof model;
 	identity: typeof authority;
+	target: typeof target;
 } {
 	const snapshot: BrowserSnapshot = model.BrowserSnapshotSchema.parse({
 		kind: "snapshot",
@@ -173,6 +174,13 @@ export function createFixtureIds(): {
 		account,
 		login,
 		threadLink,
+		threadCandidates: {
+			kind: "thread_candidates",
+			state: "unknown",
+			records: [],
+			truncated: false,
+			reason: null,
+		},
 		timeline,
 		queue,
 		settings: [settings],
@@ -196,5 +204,5 @@ export function createFixtureIds(): {
 		threadId,
 		prompt: "Start",
 	});
-	return { snapshot, textCommand, browserCommand, requestId, model, identity: authority };
+	return { snapshot, textCommand, browserCommand, requestId, model, identity: authority, target };
 }

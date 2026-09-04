@@ -8,6 +8,7 @@ import {
 	epochA,
 	epochB,
 	connected,
+	listed,
 	executableLink,
 	FakeTransport,
 	inspectOnlyLink,
@@ -37,10 +38,9 @@ function controllerFor(
 
 function rowFor(transport: FakeTransport, threadId = threadA): ThreadLinkRow {
 	const selection = projectThreadLinkSelection({
-		inventory: { state: "listed", records: [record({ threadId })], exhausted: true },
+		inventory: listed([record({ threadId, selectionId: `selection-${threadId}` })]),
 		currentLink: transport.snapshot()?.threadLink ?? unboundLink,
 		capabilities: transport.capabilities(),
-		hostCanRefresh: true,
 	});
 	const row = selection.rows[0];
 	if (row === undefined) throw new Error("The fixture produced no bindable row.");
@@ -61,7 +61,10 @@ describe("thread-link action controller", () => {
 			"threadLinkAttach",
 		]);
 		expect(transport.commands[0]?.draft).not.toHaveProperty("threadId");
-		expect(transport.commands[1]?.draft).toMatchObject({ threadId: threadA });
+		expect(transport.commands[1]?.draft).toMatchObject({
+			threadId: threadA,
+			selectionId: `selection-${threadA}`,
+		});
 	});
 
 	test("relink is a third command, chosen by the pane's current link", async () => {
@@ -75,6 +78,7 @@ describe("thread-link action controller", () => {
 		expect(transport.commands[0]?.draft).toMatchObject({
 			command: "threadLinkRelink",
 			threadId: threadB,
+			selectionId: `selection-${threadB}`,
 		});
 	});
 
@@ -85,10 +89,11 @@ describe("thread-link action controller", () => {
 			snapshot: snapshot({ threadLink: executableLink(threadA) }),
 		});
 		await controller.create();
+		await controller.refreshInventory();
 		await controller.login({ type: "apiKey", apiKey: "key" });
 		await controller.cancelLogin(loginA);
 		await controller.logout();
-		expect(transport.commands).toHaveLength(4);
+		expect(transport.commands).toHaveLength(5);
 		for (const entry of transport.commands) {
 			expect(entry.target).toBeDefined();
 			expect(entry.target?.childId).toBe(transport.childId);
@@ -97,6 +102,7 @@ describe("thread-link action controller", () => {
 		}
 		expect(transport.commands.map((entry) => entry.draft.command)).toEqual([
 			"threadLinkCreate",
+			"threadLinkRefresh",
 			"accountLogin",
 			"accountLoginCancel",
 			"accountLogout",
@@ -246,10 +252,9 @@ describe("thread-link action controller", () => {
 		);
 		const controller = controllerFor(transport);
 		const selection = projectThreadLinkSelection({
-			inventory: { state: "listed", records: [record()], exhausted: true },
+			inventory: listed([record()]),
 			currentLink: executableLink(threadA),
 			capabilities: transport.capabilities(),
-			hostCanRefresh: true,
 		});
 		const current = selection.rows[0];
 		if (current === undefined) throw new Error("The fixture produced no current row.");

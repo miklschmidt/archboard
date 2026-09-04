@@ -5,6 +5,7 @@ import {
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
 } from "../../../shared/codex-realtime-host/index.js";
+import { BROWSER_THREAD_CANDIDATE_LIMIT } from "../../../shared/codex-browser-model/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { fitBrowserSnapshotBounded } from "../index.js";
 import { startCommand } from "./helpers.js";
@@ -62,6 +63,23 @@ test("fits timeline history after every competing snapshot field is present", as
 					},
 				],
 				cursor: "next-page",
+			},
+			// A full inventory competes for the same bytes as the timeline. It is
+			// bounded rather than fitted, so it must stay small enough that the
+			// fitter still has timeline history left to trim.
+			threadCandidates: {
+				kind: "codex_thread_candidates",
+				state: "listed",
+				candidates: Array.from({ length: BROWSER_THREAD_CANDIDATE_LIMIT }, (_row, index) => ({
+					selectionId: `budget-selection-${index}-`.padEnd(48, "x"),
+					threadId: decoder.adoptThreadId(`budget-candidate-${index}`),
+					state: "inspect_only" as const,
+					reason: "prior_epoch" as const,
+					source: "appServer",
+					status: "idle" as const,
+					loaded: true,
+					canAcceptDirectInput: null,
+				})) as never,
 			},
 			queue: {
 				kind: "codex_queue",
@@ -131,6 +149,12 @@ test("fits timeline history after every competing snapshot field is present", as
 	expect(snapshot.operation).toMatchObject({ operationId: lease.commandId, outcome: "delivered" });
 	expect(snapshot.timeline?.turns[0]?.items.length).toBeLessThan(3);
 	expect(snapshot.timeline?.turns[0]?.outputsTruncated).toBeTrue();
+	// The complete bounded inventory survived the fit; only history was trimmed.
+	expect(snapshot.threadCandidates.state).toBe("listed");
+	expect(
+		snapshot.threadCandidates.state === "listed" && snapshot.threadCandidates.records,
+	).toHaveLength(BROWSER_THREAD_CANDIDATE_LIMIT);
+	expect(wireBytes(snapshot.threadCandidates)).toBeLessThan(32_768 / 2);
 });
 
 test("removes the final paginated timeline turn when that alone crosses the byte boundary", () => {

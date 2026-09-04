@@ -2,14 +2,21 @@ import type {
 	BrowserActionContext,
 	BrowserActionResult,
 	BrowserThreadLinkActions,
+	BrowserThreadLinkTargetCommand,
+	CodexThreadCandidatesProjectionInput,
 } from "../../codex-workbench/index.js";
+import { boundedBrowserReason } from "./codex-workbench-readiness.js";
 import type {
 	ChildEpoch,
 	ChildId,
 	ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import type { EpochOperationRecord } from "../../../runtime/codex-epoch/index.js";
-import type { ThreadLinkBindingSnapshot } from "../../../runtime/codex-thread-link/index.js";
+import type {
+	CodexThreadLinkPort,
+	ThreadLinkBindingSnapshot,
+	ThreadLinkCandidateDiscovery,
+} from "../../../runtime/codex-thread-link/index.js";
 import type { CodexWorkhorseStart } from "../../../runtime/codex-workhorse-start/index.js";
 import type {
 	CodexThreadContextBindingToken,
@@ -93,12 +100,64 @@ function expectedBrowserLink(context: BrowserActionContext) {
 	};
 }
 
+/**
+ * The pane-visible thread inventory. Discovery is explicit: nothing here runs
+ * until the browser asks for it, so opening a pane never exhausts two Codex
+ * lists on its own and no thread is ever adopted from recency.
+ */
+export interface CanvasThreadCandidateInventory {
+	readonly read: () => CodexThreadCandidatesProjectionInput;
+	readonly refresh: () => Promise<ThreadLinkCandidateDiscovery>;
+	/** The thread a published selection named, or null when the list moved on. */
+	readonly threadIdFor: (selectionId: string) => ThreadId | null;
+}
+
+export function createCanvasThreadCandidateInventory(
+	threadLink: Pick<CodexThreadLinkPort, "discoverCandidates">,
+): CanvasThreadCandidateInventory {
+	let published: CodexThreadCandidatesProjectionInput = {
+		kind: "codex_thread_candidates",
+		state: "unknown",
+	};
+	let selections = new Map<string, ThreadId>();
+	return Object.freeze({
+		read: () => published,
+		refresh: async () => {
+			try {
+				const discovery = await threadLink.discoverCandidates();
+				published = {
+					kind: "codex_thread_candidates",
+					state: "listed",
+					candidates: discovery.candidates,
+				};
+				selections = new Map(
+					discovery.candidates.map((candidate) => [candidate.selectionId, candidate.threadId]),
+				);
+				return discovery;
+			} catch (error) {
+				published = {
+					kind: "codex_thread_candidates",
+					state: "unavailable",
+					reason: boundedBrowserReason(
+						error instanceof Error ? error.message : null,
+						"The Codex thread list could not be discovered.",
+					),
+				};
+				selections = new Map();
+				throw error;
+			}
+		},
+		threadIdFor: (selectionId: string) => selections.get(selectionId) ?? null,
+	});
+}
+
 export function createCanvasThreadLinkActions(options: {
 	readonly workhorse: CodexWorkbenchComponents["workhorse"];
 	readonly threadLink: CodexWorkbenchComponents["threadLink"];
 	readonly semanticDelivery: CodexWorkbenchComponents["semanticDelivery"];
 	readonly epoch: CodexWorkbenchComponents["epoch"];
 	readonly identity: CodexWorkbenchComponents["identity"];
+	readonly candidates: CanvasThreadCandidateInventory;
 	readonly checkoutRoot: string;
 }): BrowserThreadLinkActions {
 	const controllerTokens = new Map<
@@ -163,10 +222,21 @@ export function createCanvasThreadLinkActions(options: {
 			throw error;
 		}
 	};
-	const adoptCurrentThread = async (
-		threadId: ThreadId,
+	/**
+	 * Bind the exact row the person chose. The published selection names which
+	 * row that was and is refused once the list has moved on; the bind itself
+	 * goes through the runtime's one-shot, CAS-checked candidate handle, so a
+	 * thread id alone can never adopt a thread this pane did not offer.
+	 */
+	const adoptCandidate = async (
+		command: BrowserThreadLinkTargetCommand,
 		context: BrowserActionContext,
 	): Promise<BrowserActionResult> => {
+		const threadId = options.candidates.threadIdFor(command.selectionId);
+		if (threadId === null || threadId !== command.threadId)
+			throw new Error(
+				"The chosen thread row is no longer in the published list. Refresh the thread list and choose again.",
+			);
 		let record = recordFor(threadId);
 		if (record === null) record = await attachRecord(threadId, context);
 		options.epoch.assertCurrent({
@@ -175,16 +245,17 @@ export function createCanvasThreadLinkActions(options: {
 			operationId: record.operation.id,
 			threadId,
 		});
-		const binding = await options.threadLink.classifyAndBind(
+		// Staging the ownership record above moves the epoch, and a retained
+		// candidate is only valid while the epoch it was discovered under is
+		// unchanged, so the bind consumes a freshly discovered selection.
+		const discovery = await options.candidates.refresh();
+		const chosen = discovery.candidates.find((candidate) => candidate.threadId === threadId);
+		if (chosen === undefined)
+			throw new Error("The chosen thread is no longer in the joined Codex thread list.");
+		const binding = await options.threadLink.bindCandidate(
 			context.paneId,
 			expectedBrowserLink(context),
-			{
-				threadId,
-				childId: context.childId,
-				epoch: context.epoch,
-				operationId: record.operation.id,
-				provenance: record,
-			},
+			chosen.selectionId,
 		);
 		if (binding.link.state !== "executable")
 			throw new Error(`The requested thread is inspect-only: ${binding.link.reason}.`);
@@ -229,8 +300,12 @@ export function createCanvasThreadLinkActions(options: {
 			controllerTokens.set(context.connection, token);
 			return { outcome: "delivered" };
 		},
-		attach: (command, context) => adoptCurrentThread(command.threadId, context),
-		relink: (command, context) => adoptCurrentThread(command.threadId, context),
+		refresh: async () => {
+			await options.candidates.refresh();
+			return { outcome: "delivered" };
+		},
+		attach: (command, context) => adoptCandidate(command, context),
+		relink: (command, context) => adoptCandidate(command, context),
 		onBrowserDisconnect: (context, reason) => {
 			if (
 				reason !== "browser_disconnected" &&

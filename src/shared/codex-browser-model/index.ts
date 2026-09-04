@@ -13,6 +13,7 @@ import type { IdentityContext } from "./lib/scalars.js";
 
 export {
 	BROWSER_PERMISSION_FILE_ACCESS,
+	BROWSER_THREAD_CANDIDATE_LIMIT,
 	browserSnapshotRelationshipIssues,
 	DeliveryOutcomeSchema,
 } from "./lib/browser.js";
@@ -62,6 +63,8 @@ export type {
 	BrowserSettings,
 	BrowserSnapshot,
 	BrowserTextCommand,
+	BrowserThreadCandidate,
+	BrowserThreadCandidates,
 	BrowserThreadLink,
 	BrowserThreadLinkSourcePresentation,
 	BrowserTimeline,

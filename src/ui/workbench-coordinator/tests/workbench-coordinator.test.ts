@@ -49,6 +49,13 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 			canAcceptDirectInput: true,
 			reason: null,
 		},
+		threadCandidates: {
+			kind: "thread_candidates",
+			state: "unknown",
+			records: [],
+			truncated: false,
+			reason: null,
+		},
 		timeline: {
 			kind: "timeline",
 			threadId: "workhorse-a" as NonNullable<BrowserSnapshot["timeline"]>["threadId"],

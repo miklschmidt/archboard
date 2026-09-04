@@ -263,3 +263,48 @@ test("gateway failure responses are surfaced without treating them as transport 
 	});
 	expect(transport.state()).toMatchObject({ kind: "readiness", state: "account_ready" });
 });
+
+test("a thread-candidate delta reduces into the snapshot and a malformed one does not", async () => {
+	const transport = track(createBrowserWorkbenchTransport());
+	const socket = new FakeSocket();
+	socket.onRequest = (request, activeSocket) => {
+		if (request.action === "subscribe") activeSocket.reply(request, snapshotMessage(1, snapshot()));
+	};
+	await transport.attach(socket);
+	expect(transport.snapshot()?.threadCandidates.state).toBe("unknown");
+
+	const listed = {
+		kind: "thread_candidates",
+		state: "listed",
+		records: [
+			{
+				kind: "thread_candidate",
+				selectionId: "selection-a",
+				threadId: "thread-a",
+				state: "executable",
+				reason: null,
+				sourcePresentation: "standard",
+				status: "idle",
+				loaded: true,
+				canAcceptDirectInput: true,
+			},
+		],
+		truncated: false,
+		reason: null,
+	};
+	socket.event(deltaMessage(2, { threadCandidates: listed }));
+	expect(transport.snapshot()?.threadCandidates).toMatchObject({
+		state: "listed",
+		truncated: false,
+	});
+	expect(transport.sequence()).toBe(2);
+
+	// A candidate the shared contract rejects is a malformed delta, never a row
+	// the browser guesses at.
+	socket.event(
+		deltaMessage(3, {
+			threadCandidates: { ...listed, records: [{ ...listed.records[0], state: "attached" }] },
+		}),
+	);
+	expect(transport.state()).toMatchObject({ kind: "connection", state: "incompatible_contract" });
+});

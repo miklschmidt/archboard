@@ -64,6 +64,13 @@ function snapshot(timelineValue: BrowserTimeline | null = timeline()): BrowserSn
 			canAcceptDirectInput: true,
 			reason: null,
 		},
+		threadCandidates: {
+			kind: "thread_candidates",
+			state: "unknown",
+			records: [],
+			truncated: false,
+			reason: null,
+		},
 		timeline: timelineValue,
 		queue: { kind: "queue", status: "empty", entries: [] },
 		settings: [],
@@ -223,6 +230,13 @@ describe("workbench runtime projection", () => {
 					loaded: true,
 					canAcceptDirectInput: false,
 					reason: "The history belongs to a prior process.",
+				},
+				threadCandidates: {
+					kind: "thread_candidates",
+					state: "unknown",
+					records: [],
+					truncated: false,
+					reason: null,
 				},
 			}),
 		);

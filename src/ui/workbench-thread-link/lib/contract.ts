@@ -1,6 +1,7 @@
 import type {
+	BrowserThreadCandidate,
+	BrowserThreadCandidates,
 	BrowserThreadLink,
-	BrowserThreadLinkSourcePresentation,
 } from "../../../shared/codex-browser-model/index.js";
 import type { LoginId, ThreadId } from "../../../shared/codex-workbench-identity/index.js";
 import type {
@@ -29,45 +30,17 @@ export type ThreadLinkLoginParams = Extract<
 export type ThreadLinkAccountFormId = ThreadLinkLoginParams["type"];
 
 /**
- * One host-discovered thread record, already joined against both exhausted
- * lists by the owner that discovered it.
- *
- * The closed workbench gateway publishes the pane's own `threadLink` and no
- * candidate route, so the inventory reaches the browser as data rather than as
- * a call this module can make. The shape mirrors the runtime thread-link
- * candidate projection plus the two join counts from its observation, so the
- * host has nothing to invent when it supplies one.
+ * The host's own joined inventory, exactly as the workbench snapshot publishes
+ * it. TASK-143.01.09 owns the join and the classification; this module renders
+ * that verdict and never re-derives one.
  */
-export interface ThreadLinkInventoryRecord {
-	/** The opaque host-retained selection handle; never a thread id. */
-	readonly selectionId: string;
-	readonly threadId: ThreadId;
-	readonly state: ListedThreadLink["state"];
-	readonly reason: string | null;
-	readonly source: BrowserThreadLinkSourcePresentation;
-	readonly status: ThreadLinkListedStatus;
-	readonly loaded: boolean;
-	/** Null is an unknown capability, which is not a controllable thread. */
-	readonly canAcceptDirectInput: boolean | null;
-	/** Rows for this thread in the exhausted persisted list. Exactly one joins. */
-	readonly persistedRows: number;
-	/** Occurrences of this thread in the exhausted current loaded list. */
-	readonly loadedOccurrences: number;
-}
-
-export type ThreadLinkInventory =
-	| { readonly state: "loading" }
-	| { readonly state: "unavailable"; readonly reason: string }
-	| {
-			readonly state: "listed";
-			readonly records: readonly ThreadLinkInventoryRecord[];
-			/** When the host exhausted both lists in one uninterrupted generation. */
-			readonly exhausted: boolean;
-	  };
+export type ThreadLinkInventory = BrowserThreadCandidates;
+export type ThreadLinkInventoryRecord = BrowserThreadCandidate;
 
 export type ThreadLinkRecoveryIntent =
 	| "refresh_snapshot"
 	| "read_account"
+	/** Runs the threadLinkRefresh command; the host owns discovery itself. */
 	| "refresh_inventory"
 	| "start_workbench"
 	| "choose_binary"
@@ -84,7 +57,7 @@ export type ThreadLinkRecoveryIntent =
  */
 export type ThreadLinkControllerRecoveryIntent = Exclude<
 	ThreadLinkRecoveryIntent,
-	"retry_login" | "cancel_login" | "sign_out"
+	"retry_login" | "cancel_login" | "sign_out" | "refresh_inventory"
 >;
 
 /** Who can actually perform a recovery, so a dead control is never rendered. */
@@ -149,15 +122,10 @@ export interface ThreadLinkRow {
 	readonly reasonLabel: string;
 	readonly enabled: boolean;
 	readonly blockedReason: string | null;
-	readonly persistedRows: number;
-	readonly loadedOccurrences: number;
 }
 
-export type ThreadLinkExclusion =
-	| "not_persisted"
-	| "persisted_ambiguous"
-	| "loaded_ambiguous"
-	| "duplicate_row";
+/** The one presentation refusal this module owns; the host owns the join. */
+export type ThreadLinkExclusion = "duplicate_row";
 
 export interface ThreadLinkExcludedRow {
 	readonly selectionId: string;
@@ -167,7 +135,7 @@ export interface ThreadLinkExcludedRow {
 }
 
 export interface ThreadLinkSelection {
-	readonly state: "loading" | "unavailable" | "empty" | "listed";
+	readonly state: "unknown" | "unavailable" | "empty" | "listed";
 	readonly summary: string;
 	readonly rows: readonly ThreadLinkRow[];
 	readonly excluded: readonly ThreadLinkExcludedRow[];
@@ -233,6 +201,7 @@ export interface ThreadLinkAccountDisclosure {
 
 export type ThreadLinkActionName =
 	| "create"
+	| "refresh_inventory"
 	| "attach"
 	| "relink"
 	| "login"
@@ -310,6 +279,7 @@ export interface ThreadLinkController {
 	readonly subscribe: (listener: () => void) => () => void;
 	readonly create: () => Promise<ThreadLinkActionCompletion>;
 	readonly bind: (row: ThreadLinkRow) => Promise<ThreadLinkActionCompletion>;
+	readonly refreshInventory: () => Promise<ThreadLinkActionCompletion>;
 	readonly login: (login: ThreadLinkLoginParams) => Promise<ThreadLinkActionCompletion>;
 	readonly cancelLogin: (loginId: LoginId) => Promise<ThreadLinkActionCompletion>;
 	readonly logout: () => Promise<ThreadLinkActionCompletion>;
@@ -322,7 +292,6 @@ export interface ThreadLinkPanelInput {
 	readonly paneId: string;
 	readonly state: BrowserWorkbenchState;
 	readonly capabilities: BrowserWorkbenchCapabilities;
-	readonly inventory: ThreadLinkInventory;
 	readonly hostRecoveryIntents: readonly ThreadLinkRecoveryIntent[];
 	readonly action: ThreadLinkActionSnapshot;
 }
@@ -346,7 +315,6 @@ export interface WorkbenchThreadLinkProps {
 	readonly paneId: string;
 	readonly transport: BrowserWorkbenchTransport;
 	readonly controller: ThreadLinkController;
-	readonly inventory: ThreadLinkInventory;
 	readonly hostRecoveryIntents?: readonly ThreadLinkRecoveryIntent[];
 	/** Which supported sign-in form opens first; every form stays reachable. */
 	readonly initialAccountForm?: ThreadLinkAccountFormId;

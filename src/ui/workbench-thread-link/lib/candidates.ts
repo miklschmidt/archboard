@@ -4,14 +4,12 @@ import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js
 import type {
 	BrowserWorkbenchCapabilities,
 	ThreadLinkExcludedRow,
-	ThreadLinkExclusion,
 	ThreadLinkInventory,
 	ThreadLinkInventoryRecord,
 	ThreadLinkListedStatus,
 	ThreadLinkRecovery,
 	ThreadLinkRow,
 	ThreadLinkRowIntent,
-	ThreadLinkRowOutcome,
 	ThreadLinkSelection,
 } from "./contract.js";
 
@@ -45,7 +43,7 @@ const SOURCE_LABELS = {
 	subagent: "Sub-agent thread",
 	custom: "Custom-source thread",
 	unknown: "Unknown source",
-} as const satisfies Record<ThreadLinkInventoryRecord["source"], string>;
+} as const satisfies Record<ThreadLinkInventoryRecord["sourcePresentation"], string>;
 
 const STATUS_LABELS = {
 	notLoaded: "Not loaded",
@@ -54,77 +52,25 @@ const STATUS_LABELS = {
 	systemError: "System error",
 } as const satisfies Record<ThreadLinkListedStatus, string>;
 
-const EXCLUSION_EXPLANATIONS = {
-	not_persisted:
-		"Excluded: no row for this thread survived the exhausted persisted list, so it is not a joined record.",
-	persisted_ambiguous:
-		"Excluded: the exhausted persisted list holds more than one row for this thread, so the join is ambiguous.",
-	loaded_ambiguous:
-		"Excluded: this record's loaded membership contradicts the exhausted current loaded list.",
-	duplicate_row:
-		"Excluded: the inventory offered this thread more than once, so no single row can be bound.",
-} as const satisfies Record<ThreadLinkExclusion, string>;
+const DUPLICATE_EXPLANATION =
+	"Excluded: the workbench published this thread more than once, so no single row can be bound.";
 
-export function threadLinkReasonLabel(reason: string | null, fallback: string): string {
-	if (reason === null) return fallback;
+export function threadLinkReasonLabel(reason: string | null | undefined, fallback: string): string {
+	if (reason === null || reason === undefined) return fallback;
 	return REASON_LABELS[reason] ?? reason;
 }
 
-function refreshInventoryRecovery(hostCanRefresh: boolean): ThreadLinkRecovery {
+function refreshInventoryRecovery(capabilities: BrowserWorkbenchCapabilities): ThreadLinkRecovery {
+	const available = capabilities.supportsCommand("threadLinkRefresh");
 	return Object.freeze({
 		intent: "refresh_inventory",
 		label: "Refresh the thread list",
-		description: hostCanRefresh
-			? "Discover the persisted and current loaded lists again, then choose a row from the fresh result."
-			: "This pane has no thread-list owner attached, so the list cannot be discovered again from here.",
-		owner: hostCanRefresh ? "host" : "none",
-		available: hostCanRefresh,
+		description: available
+			? "Ask the workbench to exhaust the persisted and current loaded lists again, then choose a row from the fresh result."
+			: "The workbench cannot discover the thread lists until this pane is connected, signed in, thread-capable, and holding an active command lease.",
+		owner: available ? "transport" : "none",
+		available,
 	});
-}
-
-/**
- * A record joins only when exactly one exhausted persisted row produced it and
- * its loaded membership agrees with the exhausted current loaded list.
- */
-function exclusionOf(
-	record: ThreadLinkInventoryRecord,
-	duplicated: boolean,
-): ThreadLinkExclusion | null {
-	if (duplicated) return "duplicate_row";
-	if (record.persistedRows === 0) return "not_persisted";
-	if (record.persistedRows > 1) return "persisted_ambiguous";
-	if (record.loadedOccurrences > 1) return "loaded_ambiguous";
-	if (record.loaded !== (record.loadedOccurrences === 1)) return "loaded_ambiguous";
-	return null;
-}
-
-/** Executable is a claim about six facts; a record that contradicts one is not one. */
-function outcomeOf(record: ThreadLinkInventoryRecord): {
-	readonly outcome: ThreadLinkRowOutcome;
-	readonly contradiction: string | null;
-} {
-	if (record.state !== "executable") return { outcome: "inspect_only", contradiction: null };
-	if (record.source !== "standard")
-		return {
-			outcome: "inspect_only",
-			contradiction: "The record claims executable from a non-standard source.",
-		};
-	if (record.status === "notLoaded" || record.status === "systemError")
-		return {
-			outcome: "inspect_only",
-			contradiction: `The record claims executable while its status is ${STATUS_LABELS[record.status].toLowerCase()}.`,
-		};
-	if (!record.loaded)
-		return {
-			outcome: "inspect_only",
-			contradiction: "The record claims executable while it is not loaded.",
-		};
-	if (record.canAcceptDirectInput !== true)
-		return {
-			outcome: "inspect_only",
-			contradiction: "The record claims executable without a confirmed direct-input capability.",
-		};
-	return { outcome: "executable", contradiction: null };
 }
 
 function intentOf(
@@ -147,7 +93,6 @@ function projectRow(
 	currentLink: BrowserThreadLink,
 	capabilities: BrowserWorkbenchCapabilities,
 ): ThreadLinkRow {
-	const { outcome, contradiction } = outcomeOf(record);
 	const { intent, command } = intentOf(currentLink, record.threadId);
 	const supported = command !== null && capabilities.supportsCommand(command);
 	const blockedReason =
@@ -160,31 +105,27 @@ function projectRow(
 		selectionId: record.selectionId,
 		threadId: record.threadId,
 		intent,
-		outcome,
+		outcome: record.state,
 		command,
-		stateLabel: outcome === "executable" ? "Executable" : "Inspect-only",
-		sourceLabel: SOURCE_LABELS[record.source],
+		stateLabel: record.state === "executable" ? "Executable" : "Inspect-only",
+		sourceLabel: SOURCE_LABELS[record.sourcePresentation],
 		statusLabel: STATUS_LABELS[record.status],
 		loadedLabel: record.loaded
 			? "Loaded in the current child"
 			: "Not loaded; binding it never loads it",
 		controllabilityLabel: controllabilityLabel(record.canAcceptDirectInput),
-		reasonLabel:
-			contradiction ??
-			threadLinkReasonLabel(
-				record.reason,
-				outcome === "executable"
-					? "Classified executable against the current child epoch."
-					: "The host did not name a reason for this classification.",
-			),
+		reasonLabel: threadLinkReasonLabel(
+			record.reason,
+			record.state === "executable"
+				? "Classified executable against the current child epoch."
+				: "The host did not name a reason for this classification.",
+		),
 		enabled: supported && blockedReason === null,
 		blockedReason,
-		persistedRows: record.persistedRows,
-		loadedOccurrences: record.loadedOccurrences,
 	});
 }
 
-function summarize(rows: readonly ThreadLinkRow[], excluded: number, exhausted: boolean): string {
+function summarize(rows: readonly ThreadLinkRow[], excluded: number, truncated: boolean): string {
 	const executable = rows.filter((row) => row.outcome === "executable").length;
 	const parts = [
 		`${rows.length} joined ${rows.length === 1 ? "record" : "records"}`,
@@ -192,27 +133,27 @@ function summarize(rows: readonly ThreadLinkRow[], excluded: number, exhausted: 
 		`${rows.length - executable} inspect-only`,
 	];
 	if (excluded > 0) parts.push(`${excluded} excluded`);
-	if (!exhausted)
-		parts.push("the host did not exhaust both lists in one generation, so this list is partial");
+	if (truncated) parts.push("the workbench published only the first page of a longer list");
 	return `${parts.join(", ")}.`;
 }
 
 /**
- * Project the pane's thread-link selection. Nothing here infers a thread from
- * recency, loads a thread, or binds one: it discloses what each joined record
- * is and which separate command that record would run.
+ * Present the pane's thread-link selection. Every classification fact comes
+ * from the host record unchanged: this module runs no second classifier, joins
+ * no list, infers no thread from recency, and loads nothing. It decides only
+ * which separate command a row would run and whether that command is offered.
  */
 export function projectThreadLinkSelection(input: {
 	readonly inventory: ThreadLinkInventory;
 	readonly currentLink: BrowserThreadLink;
 	readonly capabilities: BrowserWorkbenchCapabilities;
-	readonly hostCanRefresh: boolean;
 }): ThreadLinkSelection {
-	const recovery = refreshInventoryRecovery(input.hostCanRefresh);
-	if (input.inventory.state === "loading")
+	const recovery = refreshInventoryRecovery(input.capabilities);
+	if (input.inventory.state === "unknown")
 		return Object.freeze({
-			state: "loading",
-			summary: "Discovering the persisted and current loaded thread lists.",
+			state: "unknown",
+			summary:
+				"No thread list has been discovered for this pane. Nothing is chosen for you: refresh the list, or create a workhorse thread.",
 			rows: Object.freeze([]),
 			excluded: Object.freeze([]),
 			recovery,
@@ -231,26 +172,28 @@ export function projectThreadLinkSelection(input: {
 	const rows: ThreadLinkRow[] = [];
 	const excluded: ThreadLinkExcludedRow[] = [];
 	for (const record of input.inventory.records) {
-		const exclusion = exclusionOf(record, (counts.get(record.threadId) ?? 0) > 1);
-		if (exclusion === null) {
-			rows.push(projectRow(record, input.currentLink, input.capabilities));
+		// The host dedupes by thread, so this is a refusal rather than a rule: two
+		// rows that name one thread are indistinguishable to a person, and the
+		// module will not pick one of them on their behalf.
+		if ((counts.get(record.threadId) ?? 0) > 1) {
+			excluded.push(
+				Object.freeze({
+					selectionId: record.selectionId,
+					threadId: record.threadId,
+					exclusion: "duplicate_row",
+					explanation: DUPLICATE_EXPLANATION,
+				}),
+			);
 			continue;
 		}
-		excluded.push(
-			Object.freeze({
-				selectionId: record.selectionId,
-				threadId: record.threadId,
-				exclusion,
-				explanation: EXCLUSION_EXPLANATIONS[exclusion],
-			}),
-		);
+		rows.push(projectRow(record, input.currentLink, input.capabilities));
 	}
 	return Object.freeze({
 		state: rows.length === 0 ? "empty" : "listed",
 		summary:
 			rows.length === 0 && excluded.length === 0
-				? "No persisted thread joined the current loaded list. Create a workhorse thread, or refresh the list."
-				: summarize(rows, excluded.length, input.inventory.exhausted),
+				? "The workbench discovered no joined thread. Create a workhorse thread, or refresh the list."
+				: summarize(rows, excluded.length, input.inventory.truncated),
 		rows: Object.freeze(rows),
 		excluded: Object.freeze(excluded),
 		recovery,
