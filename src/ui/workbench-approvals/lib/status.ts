@@ -8,6 +8,8 @@ import { PHASE_LABELS, TERMINAL_PHASES } from "./vocabulary.js";
 export interface ApprovalAuthorityContext {
 	readonly nowMs: number;
 	readonly canCommand: boolean;
+	/** Whether the transport would accept this kind of approval response now. */
+	readonly canRespond: boolean;
 	readonly connection: "connected" | "reconnecting" | "stopped";
 	readonly staleSnapshot: boolean;
 	readonly connectionReason: string | null;
@@ -61,6 +63,7 @@ function authorityRemoval(
 		return "This snapshot is behind the host, so a decision could name the wrong request.";
 	if (!context.canCommand)
 		return "This browser cannot answer approvals until it holds a usable workbench command lease.";
+	if (!context.canRespond) return "The workbench no longer accepts a response for this request.";
 	return null;
 }
 

@@ -135,25 +135,27 @@ function elicitationFields(approval: Elicitation): readonly WorkbenchApprovalFie
 
 /**
  * The browser contract publishes which file-access modes were requested but no
- * paths, and a granted path list is never invented here. Network access, grant
- * scope, and strict auto review are the reviewed permission fields this surface
- * can answer honestly.
+ * paths, and a granted path list is never invented here. Network access is the
+ * only permission this surface can actually grant, so a request that does not
+ * name it has nothing to review and nothing to submit.
  */
+export function permissionsAreGrantable(approval: BrowserApproval): boolean {
+	return approval.approvalKind === "permissions" && approval.requestedScope.network !== null;
+}
+
 function permissionFields(approval: Permissions): readonly WorkbenchApprovalField[] {
-	const fields: WorkbenchApprovalField[] = [];
-	if (approval.requestedScope.network !== null)
-		fields.push(
-			field({
-				name: PERMISSION_NETWORK,
-				label: "Grant network access",
-				description: approval.requestedScope.network
+	if (!permissionsAreGrantable(approval)) return [];
+	const fields: WorkbenchApprovalField[] = [
+		field({
+			name: PERMISSION_NETWORK,
+			label: "Grant network access",
+			description:
+				approval.requestedScope.network === true
 					? "The agent asked for network access."
 					: "The agent asked for network access to be withheld.",
-				control: "boolean",
-				defaultValue: approval.requestedScope.network ? "true" : "false",
-			}),
-		);
-	fields.push(
+			control: "boolean",
+			defaultValue: approval.requestedScope.network === true ? "true" : "false",
+		}),
 		field({
 			name: PERMISSION_SCOPE,
 			label: "Grant scope",
@@ -173,7 +175,7 @@ function permissionFields(approval: Permissions): readonly WorkbenchApprovalFiel
 			control: "boolean",
 			defaultValue: "false",
 		}),
-	);
+	];
 	return fields;
 }
 

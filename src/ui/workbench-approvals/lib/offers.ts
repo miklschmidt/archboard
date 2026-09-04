@@ -8,6 +8,7 @@ import type {
 	WorkbenchApprovalSpoken,
 	WorkbenchApprovalTone,
 } from "../contract.js";
+import { permissionsAreGrantable } from "./fields.js";
 import { DYNAMIC_SPOKEN_DETAIL, SPOKEN_REASONS, spokenDetail } from "./vocabulary.js";
 
 type CommandApproval = Extract<BrowserApproval, { readonly approvalKind: "command_execution" }>;
@@ -131,15 +132,19 @@ function ordinaryOffers(
 		case "elicitation":
 			return elicitationOffers(approval);
 		case "permissions":
-			return [
-				offer({
-					id: OFFER_SUBMIT,
-					label: "Grant the reviewed permissions",
-					tone: "primary",
-					submitsForm: true,
-				}),
-				offer({ id: OFFER_DECLINE, label: "Grant nothing", tone: "secondary" }),
-			];
+			// A request that names no grantable permission has nothing to submit: a
+			// "grant" would send the same empty profile as the decline.
+			return permissionsAreGrantable(approval)
+				? [
+						offer({
+							id: OFFER_SUBMIT,
+							label: "Grant the reviewed permissions",
+							tone: "primary",
+							submitsForm: true,
+						}),
+						offer({ id: OFFER_DECLINE, label: "Grant nothing", tone: "secondary" }),
+					]
+				: [offer({ id: OFFER_DECLINE, label: "Grant nothing", tone: "primary" })];
 		case "apply_patch":
 		case "exec_command":
 			return [
