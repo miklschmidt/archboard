@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-04 10:35'
+updated_date: '2026-09-04 10:44'
 labels: []
 dependencies:
   - TASK-143.01.09
@@ -123,4 +123,8 @@ Finding 4 (MINOR). The duplicate_row refusal, ThreadLinkExclusion, ThreadLinkExc
 Finding 5 (MINOR). The inventory is gateway-global and a refresh republishes it to every pane. Kept — the list describes the shared child epoch, and a per-pane copy would let two panes disagree about which threads exist — and now documented on both the server interface and the module's ThreadLinkInventory type: a pane can see its rows change without that pane acting.
 
 Verification, all green: bun run type-check; bun run lint; bun run fmt:check; bun run build:frontend; bun test --isolate over workbench-thread-link, workbench-transport, workbench-runtime, codex-browser-model, server codex-workbench and codex-epoch — 211 pass, 0 fail, 2032 expect() calls across 35 files; the three system owners — 5 pass, 0 fail; bun run test:repository — 122 pass, 0 fail across 18 files; bun run test:modules — 2042 pass, 0 fail across 228 files.
+
+Rebased onto codex/task-143-144-workbench at cdd0cd4b (TASK-143.03.06, .07 and 143.04.01 integrated). Two conflicts, both in src/server/canvas/lib/codex-workbench-browser-gateway.ts and both at the same seam: TASK-143.03.06's coalesced queue re-read and this task's candidate inventory construction sit next to each other. Both behaviours kept — the queue re-read, its floor, and its in-flight coalescing are untouched, and the inventory is constructed beside them and published from the same projection read. Commit f16d7440 carries the required threadCandidates field into the queue, approvals and voice-session fixtures that landed with those tasks; no behaviour changed there.
+
+Verification after the rebase, all green: bun run type-check; bun run lint; bun run fmt:check (1131 files); bun run build:frontend; bun test --isolate over workbench-thread-link, workbench-transport, workbench-runtime, codex-browser-model, server codex-workbench and codex-epoch — 217 pass, 0 fail, 2045 expect() calls across 36 files; the three system owners — 5 pass, 0 fail, 172 expect() calls; bun run test:repository — 123 pass, 0 fail across 18 files; bun run test:modules — 2253 pass, 0 fail, 20953 expect() calls across 244 files.
 <!-- SECTION:NOTES:END -->
