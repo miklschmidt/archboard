@@ -1,11 +1,11 @@
 ---
 id: TASK-143.04.03
 title: Show the exact context understood by voice
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 13:21'
+updated_date: '2026-09-04 13:28'
 labels: []
 dependencies:
   - TASK-143.04.01
@@ -39,11 +39,11 @@ Show what the current voice session actually captured and what later context del
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The panel renders the exact start brief captured for the active child/coordinator/realtime session, including repository, workhorse, coordinator, board, pane, version, selection/focus freshness, claim, doing, cursor, ambiguity, and truncation.
-- [ ] #2 Later semantic/focus/selection/callback entries show attempted timestamp plus delivered, not_delivered, or outcome_unknown from the adapter; the UI never substitutes the publisher's current sample for what the session received.
-- [ ] #3 Stale brief, session replacement, disconnected append, uncertain response, and history recovery are labelled against immutable session identity and remain inspectable after Stop.
-- [ ] #4 Screen-reader structure, bounded expansion, copy behavior, and freshness language distinguish captured baseline from live delivery outcomes.
-- [ ] #5 Module tests prove immutable baseline capture, ordered later outcomes, stale/replaced session labeling, bounded expansion, and retention after Stop; TASK-143.04.07 owns rendered browser coverage.
+- [x] #1 The panel renders the exact start brief captured for the active child/coordinator/realtime session, including repository, workhorse, coordinator, board, pane, version, selection/focus freshness, claim, doing, cursor, ambiguity, and truncation.
+- [x] #2 Later semantic/focus/selection/callback entries show attempted timestamp plus delivered, not_delivered, or outcome_unknown from the adapter; the UI never substitutes the publisher's current sample for what the session received.
+- [x] #3 Stale brief, session replacement, disconnected append, uncertain response, and history recovery are labelled against immutable session identity and remain inspectable after Stop.
+- [x] #4 Screen-reader structure, bounded expansion, copy behavior, and freshness language distinguish captured baseline from live delivery outcomes.
+- [x] #5 Module tests prove immutable baseline capture, ordered later outcomes, stale/replaced session labeling, bounded expansion, and retention after Stop; TASK-143.04.07 owns rendered browser coverage.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -93,4 +93,14 @@ Producer/parser contract: the handwritten semantic golden was removed. A single 
 Validation: 64 focused tests passed across 12 exact owner files; bunx tsc --noEmit passed; bunx tsc --noEmit -p tsconfig.frontend.json passed; scoped Oxlint passed over all 25 changed non-deleted TypeScript files; scoped Oxfmt passed over the same files; git diff --check passed. No build, browser, broad system, repository policy, stress, load, capacity, performance, tooling, topology, concurrency, or full-suite lane ran.
 
 Remaining risk: rendered browser behavior remains assigned to TASK-143.04.07. The new tests cover the production startup and browser projection seams without taking over that rendered owner.
+
+Canonical integration: cherry-picked the four review-clean commits onto codex/task-143-144-workbench. Shared projection conflicts were additive only: retained canonical spoken-approval state and added reviewed voice-context evidence beside it.
+
+Integration validation: 58 tests passed across the 12 affected owners; root and frontend TypeScript passed through bun run type-check; scoped Oxlint and Oxfmt passed over 41 changed TypeScript files; git diff --check and four-commit range-diff passed. No broad, browser, repository-policy, performance, topology, concurrency, or full-suite lane ran. Rendered browser coverage remains owned by TASK-143.04.07.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added an immutable, session-bound voice-context history that shows the exact captured start brief and authoritative later delivery outcomes, including partial, stale, replaced, stopped, uncertain, and recovered states. Verified the producer-to-parser bytes, ordered retention, bounded accessible disclosure, exact copy behavior, shared browser projection, and both TypeScript projects with 58 focused tests plus scoped lint, format, and diff checks.
+<!-- SECTION:FINAL_SUMMARY:END -->
