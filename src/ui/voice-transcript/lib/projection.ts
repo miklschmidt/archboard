@@ -1,10 +1,13 @@
-import type {
-	VoiceTranscriptCrossLinkIds,
-	VoiceTranscriptCrossLinkView,
-	VoiceTranscriptProjectionInput,
-	VoiceTranscriptRecordView,
-	VoiceTranscriptSessionState,
-	VoiceTranscriptView,
+import {
+	VOICE_TRANSCRIPT_CROSS_LINK_KINDS,
+	type VoiceTranscriptCrossLinkKind,
+	type VoiceTranscriptCrossLinkIds,
+	type VoiceTranscriptCrossLinkView,
+	type VoiceTranscriptProjectionInput,
+	type VoiceTranscriptRecordView,
+	type VoiceTranscriptSessionState,
+	type VoiceTranscriptUnavailableCrossLinkView,
+	type VoiceTranscriptView,
 } from "../contract.js";
 
 const ROLE_LABELS = {
@@ -50,6 +53,17 @@ const CROSS_LINK_LABELS = {
 	workhorse_result: "Workhorse result",
 } as const;
 
+const CROSS_LINK_ID_KEYS = {
+	delegation: "delegationId",
+	queue: "queueId",
+	steer: "steerId",
+	approval: "approvalId",
+	callback: "callbackId",
+	workhorse_result: "workhorseResultId",
+} as const satisfies Readonly<
+	Record<VoiceTranscriptCrossLinkKind, keyof VoiceTranscriptCrossLinkIds>
+>;
+
 function sessionState(input: VoiceTranscriptProjectionInput): VoiceTranscriptSessionState {
 	if (input.session.status !== "failed") return SESSION_STATES[input.session.status];
 	return input.session.outcome.kind === "retry" ||
@@ -92,33 +106,22 @@ function projectRecords(
 	);
 }
 
-function projectCrossLinks(
-	ids: VoiceTranscriptCrossLinkIds,
-): readonly VoiceTranscriptCrossLinkView[] {
-	return Object.freeze([
-		Object.freeze({
-			kind: "delegation",
-			label: CROSS_LINK_LABELS.delegation,
-			targetId: ids.delegationId,
-		}),
-		Object.freeze({ kind: "queue", label: CROSS_LINK_LABELS.queue, targetId: ids.queueId }),
-		Object.freeze({ kind: "steer", label: CROSS_LINK_LABELS.steer, targetId: ids.steerId }),
-		Object.freeze({
-			kind: "approval",
-			label: CROSS_LINK_LABELS.approval,
-			targetId: ids.approvalId,
-		}),
-		Object.freeze({
-			kind: "callback",
-			label: CROSS_LINK_LABELS.callback,
-			targetId: ids.callbackId,
-		}),
-		Object.freeze({
-			kind: "workhorse_result",
-			label: CROSS_LINK_LABELS.workhorse_result,
-			targetId: ids.workhorseResultId,
-		}),
-	]);
+function projectCrossLinks(ids: VoiceTranscriptCrossLinkIds): Readonly<{
+	available: readonly VoiceTranscriptCrossLinkView[];
+	unavailable: readonly VoiceTranscriptUnavailableCrossLinkView[];
+}> {
+	const available: VoiceTranscriptCrossLinkView[] = [];
+	const unavailable: VoiceTranscriptUnavailableCrossLinkView[] = [];
+	for (const kind of VOICE_TRANSCRIPT_CROSS_LINK_KINDS) {
+		const label = CROSS_LINK_LABELS[kind];
+		const targetId = ids[CROSS_LINK_ID_KEYS[kind]];
+		if (targetId === null) unavailable.push(Object.freeze({ kind, label }));
+		else available.push(Object.freeze({ kind, label, targetId }));
+	}
+	return Object.freeze({
+		available: Object.freeze(available),
+		unavailable: Object.freeze(unavailable),
+	});
 }
 
 export function projectVoiceTranscript(input: VoiceTranscriptProjectionInput): VoiceTranscriptView {
@@ -127,12 +130,14 @@ export function projectVoiceTranscript(input: VoiceTranscriptProjectionInput): V
 	const streaming = records.some(
 		(record) => !record.textSuppressed && record.status === "provisional",
 	);
+	const crossLinks = projectCrossLinks(input.crossLinkIds);
 	return Object.freeze({
 		contentState: records.length === 0 ? "empty" : "records",
 		sessionState: projectedSessionState,
 		busy: BUSY_STATES.has(projectedSessionState) || streaming,
 		session: input.session,
 		records,
-		crossLinks: projectCrossLinks(input.crossLinkIds),
+		crossLinks: crossLinks.available,
+		unavailableCrossLinks: crossLinks.unavailable,
 	});
 }

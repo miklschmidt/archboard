@@ -201,5 +201,25 @@ describe("canonical voice transcript projection", () => {
 			"workhorse-result-record",
 		]);
 		expect(Object.keys(view.crossLinks[0] ?? {})).toEqual(["kind", "label", "targetId"]);
+		expect(view.unavailableCrossLinks).toEqual([]);
+	});
+
+	test("projects only available targets and reports each unavailable relationship", () => {
+		const view = projectVoiceTranscript({
+			records: [],
+			session: voiceSession(),
+			crossLinkIds: { ...CROSS_LINK_IDS, approvalId: null, callbackId: null },
+		});
+
+		expect(view.crossLinks.map((link) => link.kind)).toEqual([
+			"delegation",
+			"queue",
+			"steer",
+			"workhorse_result",
+		]);
+		expect(view.unavailableCrossLinks).toEqual([
+			{ kind: "approval", label: "Approval" },
+			{ kind: "callback", label: "Callback" },
+		]);
 	});
 });
