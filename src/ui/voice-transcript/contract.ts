@@ -41,16 +41,22 @@ export type VoiceTranscriptSessionState =
 	| "recoverable_failure"
 	| "terminal_failure";
 
-export interface VoiceTranscriptCrossLinkView {
-	readonly kind: VoiceTranscriptCrossLinkKind;
+export interface VoiceTranscriptRelationshipView<
+	Kind extends VoiceTranscriptCrossLinkKind = VoiceTranscriptCrossLinkKind,
+> {
+	readonly kind: Kind;
 	readonly label: string;
-	readonly targetId: string;
+	readonly targetId: string | null;
 }
 
-export interface VoiceTranscriptUnavailableCrossLinkView {
-	readonly kind: VoiceTranscriptCrossLinkKind;
-	readonly label: string;
-}
+export type VoiceTranscriptRelationshipsView = readonly [
+	VoiceTranscriptRelationshipView<"delegation">,
+	VoiceTranscriptRelationshipView<"queue">,
+	VoiceTranscriptRelationshipView<"steer">,
+	VoiceTranscriptRelationshipView<"approval">,
+	VoiceTranscriptRelationshipView<"callback">,
+	VoiceTranscriptRelationshipView<"workhorse_result">,
+];
 
 export interface VoiceTranscriptRecordView {
 	/** Stable across provisional text updates for the same canonical item. */
@@ -74,8 +80,7 @@ export interface VoiceTranscriptView {
 	readonly busy: boolean;
 	readonly session: VoiceSessionView;
 	readonly records: readonly VoiceTranscriptRecordView[];
-	readonly crossLinks: readonly VoiceTranscriptCrossLinkView[];
-	readonly unavailableCrossLinks: readonly VoiceTranscriptUnavailableCrossLinkView[];
+	readonly relationships: VoiceTranscriptRelationshipsView;
 }
 
 export interface VoiceTranscriptProjectionInput {
