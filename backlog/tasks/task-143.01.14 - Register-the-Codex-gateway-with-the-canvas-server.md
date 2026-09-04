@@ -1,11 +1,11 @@
 ---
 id: TASK-143.01.14
 title: Compose the production Codex workbench graph
-status: In Progress
+status: Done
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:47'
-updated_date: '2026-09-04 02:27'
+updated_date: '2026-09-04 02:37'
 labels: []
 dependencies:
   - TASK-143.01.10
@@ -100,10 +100,10 @@ Own the one feature composition root in the canvas server after recovery. It rec
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The composition receives the recovered process and application lifecycle owner and instantiates identity and OperationId authority, epoch and session, workhorse transaction, realtime, approval broker, general and coordinator dispatchers, semantic delivery, coordinator, queue, callbacks, spoken gate, and browser gateway exactly once.
-- [ ] #2 One exhaustive router consumes the generated server-request union and sends each reachable approval, item, tool, call, time, token, and attestation variant to its sole reviewed feature owner; dynamic approval never enters the ordinary broker and no default branch responds generically.
-- [ ] #3 The composition adds no process-lifetime retained state. Feature dispatch closures installed into the recovered kept owner are replaceable as one generation, and no generation-bound decoder, route handler, callback, approval decision, effect authority, or UI adapter survives reload.
-- [ ] #4 Startup, shutdown, child exit, restart, reaping, reload, and failed-start cleanup delegate unchanged to TASK-143.08.04. This task only registers and revokes feature owners through that lifecycle and cannot create another child, application phase, cleanup order, or recovery path.
+- [x] #1 The composition receives the recovered process and application lifecycle owner and instantiates identity and OperationId authority, epoch and session, workhorse transaction, realtime, approval broker, general and coordinator dispatchers, semantic delivery, coordinator, queue, callbacks, spoken gate, and browser gateway exactly once.
+- [x] #2 One exhaustive router consumes the generated server-request union and sends each reachable approval, item, tool, call, time, token, and attestation variant to its sole reviewed feature owner; dynamic approval never enters the ordinary broker and no default branch responds generically.
+- [x] #3 The composition adds no process-lifetime retained state. Feature dispatch closures installed into the recovered kept owner are replaceable as one generation, and no generation-bound decoder, route handler, callback, approval decision, effect authority, or UI adapter survives reload.
+- [x] #4 Startup, shutdown, child exit, restart, reaping, reload, and failed-start cleanup delegate unchanged to TASK-143.08.04. This task only registers and revokes feature owners through that lifecycle and cannot create another child, application phase, cleanup order, or recovery path.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -267,6 +267,18 @@ The new owned-process readiness subscription does not reintroduce the finding-1 
 Also fixed one post-rebase lint error: the retireDynamicLifecycle parameters in the rewritten generation fixture shadowed the outer epoch binding.
 
 Post-rebase validation at 065580b5: bun run type-check passes both projects; bun run lint 0 warnings / 0 errors; bun run fmt:check passes on 1052 files; bun test src/server/canvas src/server/codex-workbench 151 pass / 0 fail / 829 assertions; bun run test:repository 122 pass / 0 fail / 1060 assertions; the four canvas-state Codex system owners 13 pass / 0 fail / 227 assertions; the seven Codex process-contract owners 19 pass / 0 fail / 320 assertions; bun run test:modules 1962 pass / 0 fail / 18588 assertions across 219 files. No unrelated failures. Acceptance criteria remain unchecked and the task remains In Progress.
+
+Three minor findings from the CLEAN re-review are applied.
+
+Minor 1: ownersFor rebuilt a record for any generation number it was handed, so a late call on a settled or replaced generation would mint a fresh approval owner with a live expiry timer and a fresh effect authority nobody disposes. Unreachable today because bindings() and hooks() only run inside that generation's serialized start, but the invariant no longer rests on caller discipline. GenerationOwners gained retired: boolean; retire() sets it and leaves the record in the map as an owner-free tombstone (inert data only, pruned by the next generation) instead of deleting it, so a late call is refused rather than served; ownersFor also refuses any generation below the highest this installation has built. The ownership owner in codex-workbench-production-initialization.test.ts now asserts both refusals ('is retired', 'was replaced by 3') instead of documenting the rebuild. Both arms are red-capable: dropping owners.retired = true and neutering the below-current guard each fail it. retire() moved to module scope since it no longer closes over the map.
+
+Minor 2: REQUIRED_OWNERS in tests/system/repository-policy/codex-workbench-composition.test.ts is keyed by component name under satisfies Record<ConstructedOwner, ...>, where ConstructedOwner is Exclude<keyof CodexWorkbenchComponents, 'identity'> (identity is the kernel's own authority, handed to the factories rather than built by them). BINDING_BUILDERS derives from the same keys. An eighteenth owner added to createProductionCodexWorkbenchFactories is now a compile error until it is listed.
+
+Minor 3 (informational, no behaviour change): codex-workbench-operation-lifecycle.ts records why wait-graph edge release lives in childExit and not in shutdown -- the graph is plain in-process state with no timer, handle, or child behind it, host shutdown ends the process, and a second release would only add a teardown order to keep in step with the one child exit already owns.
+
+Final validation at c144ab93: bun run type-check passes both projects; bun run lint 0 warnings / 0 errors; bun run fmt:check passes on 1052 files; bun test src/server/canvas src/server/codex-workbench 151 pass / 0 fail / 829 assertions across 29 files; bun run test:repository 122 pass / 0 fail / 1060 assertions; the four canvas-state Codex system owners 13 pass / 0 fail / 227 assertions; the seven Codex process-contract owners 19 pass / 0 fail / 320 assertions. The last full module lane at 065580b5 was 1962 pass / 0 fail / 18588 assertions across 219 files. No unrelated failures.
+
+Independent fixed-range review of 863c039d..e1524281 returned CLEAN.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -277,3 +289,15 @@ created: 2026-09-02 01:39
 Course correction, 2026-09-02: maximal head 0ac9ef2d and ancestor 70263cf7 depend on rejected contract and validation choices. Preserve their observable approval, realtime, and browser-projection behavior as evidence, then rebuild it on the recovered base rather than merging either head.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The canvas server now has one production Codex workbench composition root that owns its graph for one application lifetime and nothing longer.
+
+What changed. The composition assembles every reviewed runtime owner and the five dynamic adapters exactly once behind createProductionCodexWorkbenchFactories, routes the generated eleven-variant server-request union through one private exhaustive router, and registers the browser-only model. Four correctness changes came out of independent review. Per-generation owner records are captured once, retired when their generation settles, pruned when a replacement arrives, and refused afterwards, so crash replacement no longer pins a retired generation's approval owner, effect authority, wait owner, timeline, browser adapter state, or its owned-process readiness subscription; the dynamic approval decision ledger is released with its generation instead of growing per answered approval. Child-exit settlement now retires the dynamic wait and quarantine owner, so an in-flight wait is aborted with child_disconnected rather than outliving its child. Fail-closed epoch teardown routes through the owner's terminal path and reads its proof back from the transport and the terminal snapshot instead of asserting it. The retained-state and reload indirection -- a caller-supplied retained object, its structural policy module, and the control.wrappers cell -- is deleted: no reload exists (ADR 0021, TASK-143.08.01 AC #1), so it guarded an object nothing could observe, and the owner keeps only the process-lifetime kernel it actually needs. The application owner stopped publishing installed/phase/shutdown into the canvas wiring, leaving createCanvasApplicationLifetime the sole owner of application phases (TASK-143.08.04 AC #7).
+
+Why. Every one of those was a lifetime that outlived what it belonged to, or a second owner for something TASK-143.08.04 already owns. The reload clauses of AC #3 are satisfied vacuously -- the only reload is a full restart -- so the substantive guarantee is proven against crash replacement instead.
+
+How it was verified. AC #1 by the repository-policy owner that drives the production factories with recorded runtime constructors and asserts each required owner is constructed exactly once, with the required set derived from keyof CodexWorkbenchComponents; AC #2 by the generation owner that drives the installed transport listener across a method list derived from CODEX_SERVER_REQUEST_METHODS at compile and run time; AC #3 by the generation-ownership owner covering settlement, replacement, refusal, and readiness-subscription release; AC #4 by the application, terminal-cleanup, and owner-lifecycle owners plus the canvas-state and process-contract system owners. Each new owner was mutation-checked red against the defect it exists for. Final gate: type-check passes both projects, lint 0 warnings and 0 errors, formatting clean on 1052 files, canvas plus gateway modules 151 pass / 0 fail, repository policy 122 pass / 0 fail, four canvas-state Codex owners 13 pass / 0 fail, seven Codex process-contract owners 19 pass / 0 fail, and the full module lane 1962 pass / 0 fail. Independent fixed-range review of 863c039d..e1524281 returned CLEAN.
+<!-- SECTION:FINAL_SUMMARY:END -->
