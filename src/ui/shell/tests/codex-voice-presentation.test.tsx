@@ -1,14 +1,11 @@
 import { afterAll, afterEach, expect, mock, test } from "bun:test";
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 
 import type { BrowserSnapshot } from "../../../shared/codex-browser-model/index.js";
-import {
-	parseRealtimeCorrelationId,
-	parseRealtimeItemId,
-	parseRealtimeSessionId,
-	type RealtimeTranscriptRecord,
-} from "../../../shared/codex-realtime-host/index.js";
-import type { CanvasPaneVoiceRegistration } from "../../canvas/CanvasPane.js";
+import type {
+	CanvasPaneVoicePresentation,
+	CanvasPaneVoiceRegistration,
+} from "../../canvas/CanvasPane.js";
 import {
 	loadRenderedUiTools,
 	registerHappyDom,
@@ -73,20 +70,6 @@ function fakeTransport(suffix: string): FakeTransport {
 	const transport = {
 		snapshot: () => snapshot,
 		state: () => state,
-		sequence: () => 1,
-		lease: () => null,
-		capabilities: () => ({
-			connected: true,
-			readiness: "thread_capable",
-			canReadAccount: true,
-			canClaimLease: true,
-			canRenewLease: false,
-			canReleaseLease: false,
-			canCommand: true,
-			canThreadCommands: true,
-			canRealtime: true,
-			supportsCommand: () => true,
-		}),
 		captureCommandTarget: () => ({}),
 		command: async (draft: { readonly command: string; readonly turnId?: string }) => {
 			commands.push(draft);
@@ -109,26 +92,35 @@ function fakeTransport(suffix: string): FakeTransport {
 
 interface FakeVoiceSession {
 	readonly session: VoiceSession;
+	readonly presentation: () => CanvasPaneVoicePresentation;
 	readonly stops: () => number;
-	readonly set: (
-		status: VoiceSessionStatus,
-		options?: { readonly canStop?: boolean; readonly label?: string },
-	) => void;
+	readonly loseMedia: () => void;
+	readonly set: (status: VoiceSessionStatus, options?: VoiceOptions) => void;
 }
+
+type VoiceOptions = { canStop?: boolean; label?: string; retainedBinding?: boolean };
 
 function voiceView(
 	paneId: string,
 	suffix: string,
 	status: VoiceSessionStatus,
-	options: { readonly canStop?: boolean; readonly label?: string } = {},
+	options: VoiceOptions = {},
 ): VoiceSessionView {
 	const active = status !== "ready" && status !== "unavailable" && status !== "stopped";
+	const bound = active || options.retainedBinding === true;
 	return Object.freeze({
 		status,
 		label: options.label ?? status.replaceAll("_", " "),
 		detail: `Voice ${status.replaceAll("_", " ")}.`,
 		accessibleStatus: `Voice ${status.replaceAll("_", " ")}.`,
-		failure: null,
+		failure:
+			status === "failed"
+				? {
+						code: "stop" as const,
+						recoverable: true,
+						message: "Voice Stop outcome is unknown.",
+					}
+				: null,
 		outcome:
 			status === "failed"
 				? {
@@ -146,7 +138,7 @@ function voiceView(
 			canRestart: status === "failed",
 			canClose: status === "failed" || status === "stopped",
 		},
-		binding: active
+		binding: bound
 			? {
 					paneId,
 					childId: `child-${suffix}`,
@@ -161,8 +153,29 @@ function voiceView(
 
 function fakeVoiceSession(paneId: string, suffix: string): FakeVoiceSession {
 	let current = voiceView(paneId, suffix, "ready");
+	let retained: Pick<VoiceSessionView, "binding" | "sessionId"> | null = null;
 	let stopCount = 0;
 	const listeners = new Set<() => void>();
+	const publish = (): void => listeners.forEach((listener) => listener());
+	const presentation = (): CanvasPaneVoicePresentation => {
+		if (current.status === "stopped" || current.failure?.code === "replaced") retained = null;
+		else if (current.binding !== null && current.sessionId !== null) {
+			retained = { binding: current.binding, sessionId: current.sessionId };
+		}
+		const view =
+			(current.binding === null || current.sessionId === null) && retained !== null
+				? Object.freeze({ ...current, ...retained })
+				: current;
+		return Object.freeze({
+			view,
+			mute:
+				current.failure === null && current.status === "listening"
+					? "Unmuted"
+					: current.failure === null && current.status === "muted"
+						? "Muted"
+						: "Unknown",
+		});
+	};
 	const session = Object.freeze({
 		view: () => current,
 		subscribe: (listener: () => void) => {
@@ -185,59 +198,46 @@ function fakeVoiceSession(paneId: string, suffix: string): FakeVoiceSession {
 	}) satisfies VoiceSession;
 	return {
 		session,
+		presentation,
 		stops: () => stopCount,
+		loseMedia() {
+			current = voiceView(paneId, suffix, "unavailable", { retainedBinding: true });
+			publish();
+		},
 		set(status, options) {
 			current = voiceView(paneId, suffix, status, options);
-			for (const listener of listeners) listener();
+			publish();
 		},
 	};
 }
 
-interface PaneFixture {
-	readonly transport: FakeTransport;
-	voice: FakeVoiceSession;
-	registration: CanvasPaneVoiceRegistration;
-}
-
 function voiceRegistration(
-	paneId: string,
-	suffix: string,
 	transport: FakeTransport,
 	voice: FakeVoiceSession,
 ): CanvasPaneVoiceRegistration {
 	const history = createVoiceContextHistory();
-	const records = Object.freeze([
-		Object.freeze({
-			sessionId: parseRealtimeSessionId(`voice-session-${suffix}`),
-			correlationId: parseRealtimeCorrelationId(`voice-correlation-${suffix}`),
-			itemId: parseRealtimeItemId(`voice-item-${suffix}`),
-			sequence: 1,
-			role: "user",
-			status: "final",
-			text: `Transcript ${suffix}`,
-		}) satisfies RealtimeTranscriptRecord,
-	]);
+	const records = Object.freeze([]);
 	return Object.freeze({
 		transport: transport.transport,
 		session: voice.session,
 		history,
+		presentation: voice.presentation,
 		transcriptRecords: () => records,
 	}) satisfies CanvasPaneVoiceRegistration;
 }
 
+type PaneFixture = ReturnType<typeof createPaneFixture>;
+interface PaneControls {
+	readonly publishText: (transport: BrowserWorkbenchTransport | null) => void;
+	readonly publishVoice: (registration: CanvasPaneVoiceRegistration | null) => void;
+}
 const fixtures = new Map<string, PaneFixture>();
-const paneControls = new Map<
-	string,
-	{
-		readonly publishText: (transport: BrowserWorkbenchTransport | null) => void;
-		readonly publishVoice: (registration: CanvasPaneVoiceRegistration | null) => void;
-	}
->();
+const paneControls = new Map<string, PaneControls>();
 
-function createPaneFixture(paneId: string, suffix = paneId): PaneFixture {
+function createPaneFixture(paneId: string, suffix = paneId) {
 	const transport = fakeTransport(suffix);
 	const voice = fakeVoiceSession(paneId, suffix);
-	return { transport, voice, registration: voiceRegistration(paneId, suffix, transport, voice) };
+	return { transport, voice, registration: voiceRegistration(transport, voice) };
 }
 
 function fixtureFor(paneId: string): PaneFixture {
@@ -295,6 +295,9 @@ await mock.module(canvasPaneUrl, () => ({
 
 const frameContract = await import("../../workbench-frame/contract.js");
 let latestFrameProps: WorkbenchFrameProps | null = null;
+function handlePaneChange(event: React.ChangeEvent<HTMLSelectElement>): void {
+	latestFrameProps?.onActivePaneChange(event.currentTarget.value);
+}
 const workbenchFrameUrl = new URL("../../workbench-frame/index.tsx", import.meta.url).href;
 await mock.module(workbenchFrameUrl, () => ({
 	captureWorkbenchFrameRequestSource: frameContract.captureWorkbenchFrameRequestSource,
@@ -302,29 +305,26 @@ await mock.module(workbenchFrameUrl, () => ({
 	WorkbenchFrame(props: WorkbenchFrameProps) {
 		latestFrameProps = props;
 		const panes = props.view.state === "ready" ? props.view.panes : [];
-		const { onActivePaneChange } = props;
-		const handlePaneChange = useCallback(
-			(event: React.ChangeEvent<HTMLSelectElement>) =>
-				onActivePaneChange(event.currentTarget.value),
-			[onActivePaneChange],
-		);
 		return (
-			<section aria-label="Agent workbench" data-workbench-frame="true">
-				<label>
-					Workbench pane
-					<select aria-label="Workbench pane" onChange={handlePaneChange}>
-						{panes.map((pane) => (
-							<option key={pane.identity.id} value={pane.identity.id}>
-								{pane.identity.label}
-							</option>
-						))}
-					</select>
-				</label>
-			</section>
+			<select aria-label="Workbench pane" onChange={handlePaneChange}>
+				{panes.map((pane) => (
+					<option key={pane.identity.id} value={pane.identity.id}>
+						{pane.identity.label}
+					</option>
+				))}
+			</select>
 		);
 	},
 }));
 
+const outsideFailure = async () => ({
+	success: false,
+	code: "OUTSIDE_TEST",
+	error: "Outside test.",
+});
+const outsideMutation = async () => {
+	throw new Error("Mutation is outside this owner.");
+};
 const apiUrl = new URL("../../canvas/api.ts", import.meta.url).href;
 await mock.module(apiUrl, () => ({
 	BoardConflictError: class BoardConflictError extends Error {},
@@ -333,37 +333,15 @@ await mock.module(apiUrl, () => ({
 	fetchBoardPreview: async () => null,
 	fetchBoards: async () => ({ vault: "/test-vault", boards: [], open: [], onScreen: [] }),
 	fetchLibrary: async () => ({ items: [] }),
-	fetchOpenerSettings: async () => ({
-		success: false,
-		code: "OUTSIDE_TEST",
-		error: "Outside test.",
-	}),
-	newBoard: async () => {
-		throw new Error("New board is outside this owner.");
-	},
-	openBoard: async () => {
-		throw new Error("Open board is outside this owner.");
-	},
-	openCodeTarget: async () => ({ success: false, code: "OUTSIDE_TEST", error: "Outside test." }),
+	fetchOpenerSettings: outsideFailure,
+	newBoard: outsideMutation,
+	openBoard: outsideMutation,
+	openCodeTarget: outsideFailure,
 	putLibrary: async () => ({ success: true }),
-	resetOpenerSettings: async () => ({
-		success: false,
-		code: "OUTSIDE_TEST",
-		error: "Outside test.",
-	}),
-	saveBoard: async () => {
-		throw new Error("Save board is outside this owner.");
-	},
-	saveOpenerSettings: async () => ({
-		success: false,
-		code: "OUTSIDE_TEST",
-		error: "Outside test.",
-	}),
-	testOpenerSettings: async () => ({
-		success: false,
-		code: "OUTSIDE_TEST",
-		error: "Outside test.",
-	}),
+	resetOpenerSettings: outsideFailure,
+	saveBoard: outsideMutation,
+	saveOpenerSettings: outsideFailure,
+	testOpenerSettings: outsideFailure,
 }));
 
 const { Shell } = await import("../Shell.js");
@@ -380,17 +358,19 @@ test("keeps one immutable voice source visible and routes the only fullscreen St
 	const user = userEvent.setup();
 	const mounted = render(<Shell />);
 	try {
-		await screen.findByRole("region", { name: "Agent workbench" });
+		await screen.findByRole("combobox", { name: "Workbench pane" });
 		await user.click(screen.getByRole("button", { name: "Split" }));
 		await waitFor(() => expect(paneControls.size).toBe(2));
 		const paneA = fixtureFor("pane-1");
 		const paneB = fixtureFor("pane-2");
 		expect(paneA.transport.listenerCount()).toBe(1);
-
 		await user.click(screen.getByRole("button", { name: "Present Pane A fullscreen" }));
 		const dock = await screen.findByRole("toolbar", { name: "Presentation controls" });
 		expect(within(dock).getAllByRole("button", { name: "Stop" })).toHaveLength(1);
 		expect(within(dock).queryByLabelText("Active voice session")).toBeNull();
+		const voiceStatus = dock.querySelectorAll("[data-presentation-voice-status]");
+		expect(voiceStatus).toHaveLength(1);
+		expect(voiceStatus[0]?.getAttribute("aria-live")).toBe("polite");
 		expect(latestFrameProps?.voice?.source.session).toBe(paneA.voice.session);
 		await user.click(within(dock).getByRole("button", { name: "Stop" }));
 		await waitFor(() => expect(paneA.transport.commands).toHaveLength(1));
@@ -426,10 +406,28 @@ test("keeps one immutable voice source visible and routes the only fullscreen St
 		await waitFor(() => expect(paneA.voice.stops()).toBe(1));
 		expect(paneA.transport.commands).toHaveLength(1);
 
+		act(() => paneA.voice.loseMedia());
+		await waitFor(() => expect(stop.hasAttribute("disabled")).toBeTrue());
+		expect(voiceSource.textContent).toContain("voice-session-pane-1");
+		expect(voiceSource.textContent).toContain("unavailable");
+		expect(voiceSource.textContent).toContain("Unknown");
+		expect(latestFrameProps?.voice?.source.session).toBe(paneA.voice.session);
+		await user.click(stop);
+		expect([paneA.voice.stops(), paneA.transport.commands.length]).toEqual([1, 1]);
+
+		act(() => paneA.voice.set("stopping", { label: "Stopping", canStop: false }));
+		expect(voiceSource.textContent).toContain("voice-session-pane-1");
+		expect(voiceSource.textContent).toContain("Unknown");
+		expect(stop.hasAttribute("disabled")).toBeTrue();
+
 		act(() => paneA.voice.set("failed", { label: "Outcome unknown", canStop: true }));
 		expect(within(dock).getByLabelText("Active voice session").textContent).toContain(
 			"Outcome unknown",
 		);
+		expect(voiceSource.textContent).toContain("Unknown");
+		expect(voiceStatus[0]?.getAttribute("aria-live")).toBe("assertive");
+		expect(voiceStatus[0]?.getAttribute("role")).toBe("alert");
+		expect(voiceStatus[0]?.textContent).toBe("Voice failed.");
 		await user.selectOptions(screen.getByRole("combobox", { name: "Workbench pane" }), "pane-2");
 		await waitFor(() =>
 			expect(
@@ -453,11 +451,12 @@ test("keeps one immutable voice source visible and routes the only fullscreen St
 		const frameBeforeVoiceTransportPublication = latestFrameProps;
 		act(() => paneA.transport.publish());
 		expect(latestFrameProps).not.toBe(frameBeforeVoiceTransportPublication);
-
 		act(() => paneB.voice.set("listening", { label: "Listening" }));
 		await waitFor(() =>
 			expect(within(dock).getByLabelText("Active voice session conflict")).toBeTruthy(),
 		);
+		expect(voiceStatus[0]?.textContent).toContain("More than one active voice source");
+		expect(within(dock).queryByRole("alert")).toBeNull();
 		expect(latestFrameProps?.voice).toBeNull();
 		expect(stop.hasAttribute("disabled")).toBeTrue();
 		expect([paneA.voice.stops(), paneB.voice.stops()]).toEqual([1, 0]);
