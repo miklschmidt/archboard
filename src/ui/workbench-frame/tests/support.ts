@@ -1,4 +1,5 @@
 import {
+	BROWSER_IDLE_SPOKEN_APPROVAL,
 	createCodexBrowserModel,
 	type BrowserSnapshot,
 } from "../../../shared/codex-browser-model/index.js";
@@ -208,6 +209,7 @@ function pendingSnapshot(paneId: string, threadId: TestTransport["threadId"]): B
 			delivery: "delivered",
 			reason: null,
 		},
+		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,
 		lease: {
 			kind: "command_lease",
 			commandId,
