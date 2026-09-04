@@ -131,6 +131,30 @@ function TranscriptRecord({ record }: { readonly record: VoiceTranscriptRecordVi
 	);
 }
 
+function VisibleSessionStatus({
+	hiddenFromAssistiveTechnology,
+	label,
+	state,
+}: {
+	readonly hiddenFromAssistiveTechnology: boolean;
+	readonly label: string;
+	readonly state: VoiceTranscriptSessionState;
+}): ReactNode {
+	return (
+		<span
+			aria-hidden={hiddenFromAssistiveTechnology || undefined}
+			className="flex items-center gap-grid-tight"
+			data-transcript-visible-status=""
+		>
+			<span
+				aria-hidden="true"
+				className={cn("size-grid-tight shrink-0 rounded-round", SESSION_MARK_CLASSES[state])}
+			/>
+			{label}
+		</span>
+	);
+}
+
 export function VoiceTranscript(props: VoiceTranscriptProps): ReactNode {
 	const headingId = useId();
 	const detailId = useId();
@@ -144,6 +168,11 @@ export function VoiceTranscript(props: VoiceTranscriptProps): ReactNode {
 		[props.crossLinkIds, props.records, props.session],
 	);
 	const recovery = view.session.outcome.kind === "none" ? null : view.session.outcome.recovery;
+	const announcementOwner = props.announcementOwner ?? "transcript";
+	const statusClassName = cn(
+		"flex items-center gap-grid-tight text-body font-medium",
+		SESSION_TONE_CLASSES[view.sessionState],
+	);
 
 	return (
 		<section
@@ -164,32 +193,34 @@ export function VoiceTranscript(props: VoiceTranscriptProps): ReactNode {
 						{props.label ?? "Voice transcript"}
 					</h2>
 				</div>
-				{/* This standalone region owns the single atomic voice-state announcement.
-				    A later composition with VoiceControls must choose one announcement owner. */}
-				<output
-					aria-atomic="true"
-					aria-live="polite"
-					className={cn(
-						"flex items-center gap-grid-tight text-body font-medium",
-						SESSION_TONE_CLASSES[view.sessionState],
-					)}
-					data-transcript-status-output=""
-				>
-					<span
-						aria-hidden="true"
-						className="flex items-center gap-grid-tight"
-						data-transcript-visible-status=""
+				{announcementOwner === "transcript" ? (
+					<output
+						aria-atomic="true"
+						aria-live="polite"
+						className={statusClassName}
+						data-transcript-announcement-owner="transcript"
+						data-transcript-status-output=""
 					>
-						<span
-							className={cn(
-								"size-grid-tight shrink-0 rounded-round",
-								SESSION_MARK_CLASSES[view.sessionState],
-							)}
+						<VisibleSessionStatus
+							hiddenFromAssistiveTechnology
+							label={view.session.label}
+							state={view.sessionState}
 						/>
-						{view.session.label}
-					</span>
-					<span className="sr-only">{view.session.accessibleStatus}</span>
-				</output>
+						<span className="sr-only">{view.session.accessibleStatus}</span>
+					</output>
+				) : (
+					<div
+						className={statusClassName}
+						data-transcript-announcement-owner="external"
+						data-transcript-status-output=""
+					>
+						<VisibleSessionStatus
+							hiddenFromAssistiveTechnology={false}
+							label={view.session.label}
+							state={view.sessionState}
+						/>
+					</div>
+				)}
 			</header>
 			<div className="border-b border-border px-region py-control" id={detailId}>
 				<p className="m-0 text-body text-muted-foreground">{view.session.detail}</p>
