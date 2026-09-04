@@ -1,11 +1,11 @@
 ---
 id: TASK-143.04.06
 title: Integrate live voice into the Codex workbench frame
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 14:25'
+updated_date: '2026-09-04 14:28'
 labels: []
 dependencies:
   - TASK-143.03.11
@@ -40,10 +40,10 @@ Delegation profile: gpt-5.6-sol, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Voice ready/start/active/recovering/stopping/failure states occupy the approved regions without hiding text composer, ordinary approvals, queue, board status, source thread link, or Stop.
-- [ ] #2 The bound source link remains visible and immutable across pane focus, one/two panes, collapse/expand, and frame-level failure; terminal stop restores the text-only layout with no stale slot content.
-- [ ] #3 Frame tests at src/ui/workbench-frame/tests/voice-composition.test.tsx cover representative composition states, immutable source and real-target cross-link behavior across pane/frame changes, canonical text and request reachability, terminal slot cleanup, single voice announcement ownership, command and decision routing, and no duplicate voice or transcript owner. Existing voice-module owners retain exhaustive lifecycle, theme, reduced-motion, keyboard, pointer, and touch mechanics; TASK-143.04.07 owns rendered desktop, Flip, and browser integration.
-- [ ] #4 This leaf owns no browser inventory or real-audio smoke; deterministic integration belongs to TASK-143.04.07 and real acceptance to TASK-143.04.09.
+- [x] #1 Voice ready/start/active/recovering/stopping/failure states occupy the approved regions without hiding text composer, ordinary approvals, queue, board status, source thread link, or Stop.
+- [x] #2 The bound source link remains visible and immutable across pane focus, one/two panes, collapse/expand, and frame-level failure; terminal stop restores the text-only layout with no stale slot content.
+- [x] #3 Frame tests at src/ui/workbench-frame/tests/voice-composition.test.tsx cover representative composition states, immutable source and real-target cross-link behavior across pane/frame changes, canonical text and request reachability, terminal slot cleanup, single voice announcement ownership, command and decision routing, and no duplicate voice or transcript owner. Existing voice-module owners retain exhaustive lifecycle, theme, reduced-motion, keyboard, pointer, and touch mechanics; TASK-143.04.07 owns rendered desktop, Flip, and browser integration.
+- [x] #4 This leaf owns no browser inventory or real-audio smoke; deterministic integration belongs to TASK-143.04.07 and real acceptance to TASK-143.04.09.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -90,4 +90,12 @@ The transcript projection now returns one fixed six-entry relationships tuple in
 The Backlog description now names the narrow src/ui/voice-transcript relationship-navigation extension. modified_files contains src/ui/workbench-frame plus the six actual voice-transcript contract, index, renderer, projection, and test files. AC #3 is unchanged, all criteria remain unchecked, and the task stays In Progress.
 
 Validation passed the same four isolated owners with 39 tests and 382 assertions, scoped Oxfmt and Oxlint, root and frontend TypeScript, frontend build, and diff checks. Existing runtime CSS-resolution and chunk-size build advisories remain unchanged.
+
+Canonical integration on 2026-09-04: cherry-picked the review-clean four-commit range onto fe137e85 with no conflicts. git range-diff mapped all four commits as exact equivalents. Focused validation passed 39 tests across the four isolated voice-transcript/workbench-frame owners with 382 assertions; root and frontend TypeScript, scoped Oxfmt and Oxlint, git diff --check, and the frontend build all passed. The build retained the existing unresolved runtime CSS and chunk-size advisories. The integrated range changes no browser inventory, fullscreen shell, or real-audio owner.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Integrated caller-owned live voice into the Codex workbench frame while preserving the immutable source, canonical text fallback, transcript evidence, exact relationship and spoken-approval gating, and single state ownership. Verified by 39 focused tests with 382 assertions, both TypeScript configurations, scoped lint and format checks, an exact four-commit range-diff, and the frontend production build.
+<!-- SECTION:FINAL_SUMMARY:END -->
