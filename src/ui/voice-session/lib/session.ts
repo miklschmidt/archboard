@@ -36,7 +36,10 @@ function observeBinding(transport: VoiceTransportPort): ObservedBinding {
 	const snapshot = state.snapshot;
 	if (snapshot === null) return null;
 	const link = snapshot.threadLink;
-	if (link.state !== "executable") return state.connection === "connected" ? "gone" : null;
+	// Only a current readiness projection is evidence about the link. A stale
+	// snapshot is a connected socket that lost its place in the stream, so what
+	// it holds is not known to be current and cannot condemn a binding.
+	if (link.state !== "executable") return state.kind === "readiness" ? "gone" : null;
 	let paneId: string | null;
 	try {
 		paneId = text(transport.captureCommandTarget().paneId);
@@ -130,10 +133,15 @@ export function createVoiceSession({ realtime, transport }: VoiceSessionPorts): 
 		return current;
 	};
 
-	const releaseTransport = transport.subscribe(() => {
+	const republish = (): void => {
 		if (disposed) return;
 		publish();
-	});
+	};
+	const releaseTransport = transport.subscribe(republish);
+	// The media owner's channel is the only one that carries a lost microphone,
+	// a dropped ICE connection, or an in-start phase; the transport announces none
+	// of them. refresh() remains an escape hatch, not the notification path.
+	const releaseRealtime = realtime.subscribe(republish);
 
 	/** Runs one control, discarding its result when a later control superseded it. */
 	const run = async (
@@ -192,11 +200,24 @@ export function createVoiceSession({ realtime, transport }: VoiceSessionPorts): 
 		}, "The realtime voice session could not be restarted.");
 	};
 
-	const close = (): VoiceSessionView => {
+	const close = async (): Promise<VoiceSessionView> => {
 		if (disposed) return current;
 		const view = publish();
 		if (!view.controls.canClose) return view;
-		generation += 1;
+		const token = (generation += 1);
+		busy = true;
+		controlFailure = null;
+		publish();
+		try {
+			// A replaced or terminal session may still hold the microphone and the
+			// remote audio element. Retiring the binding without stopping it would
+			// leave a live capture behind a UI that says the session is over.
+			await realtime.stop();
+		} catch {
+			// The media owner publishes its own failure state; the close still
+			// releases this adapter's binding rather than stranding the person.
+		}
+		if (token !== generation) return current;
 		binding = null;
 		closed = true;
 		closedSessionId = view.sessionId;
@@ -223,6 +244,7 @@ export function createVoiceSession({ realtime, transport }: VoiceSessionPorts): 
 			generation += 1;
 			busy = false;
 			releaseTransport();
+			releaseRealtime();
 			listeners.clear();
 		},
 	});
