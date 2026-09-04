@@ -198,6 +198,10 @@ export interface BrowserWorkbenchTransport {
 	 * Pass the target captured when the action was offered — the approval that
 	 * was rendered, the queue row that was dragged — and the command is refused
 	 * rather than retargeted if the workbench has moved since.
+	 *
+	 * `queueAdd` requires one: it names neither a thread nor a submission, so it
+	 * is the only command with nothing of its own to anchor it to the link it was
+	 * composed against.
 	 */
 	readonly command: (
 		draft: BrowserCommandDraft,
