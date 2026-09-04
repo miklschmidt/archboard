@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.10
 title: Compose the expanded and collapsed Codex workbench
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-04 12:45'
+updated_date: '2026-09-04 12:49'
 labels: []
 dependencies:
   - TASK-143.03.02
@@ -37,10 +37,10 @@ Compose expanded/collapsed workbench layout, app-global request surface, and res
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Expanded and collapsed layouts preserve workhorse-first hierarchy, separate coordinator history/settings, queue, approval, board claim/doing, and exact source-pane labels at one/two-pane desktop and Flip sizes.
-- [ ] #2 A lease-owned app-global approval/input request remains visible and actionable when another pane is focused or navigation changes; its immutable source is shown and no action retargets it.
+- [x] #2 A lease-owned app-global approval/input request remains visible and actionable when another pane is focused or navigation changes; its immutable source is shown and no action retargets it.
 - [ ] #3 Keyboard order, focus transitions, screen-reader landmarks, reduced motion, light/dark/high-contrast, 44px touch targets, overflow, and empty/loading/error states follow the aesthetic contract.
-- [ ] #4 The frame consumes module ports only and owns no process/session/timeline/queue/approval/coordinator state.
-- [ ] #5 Frame module tests prove one/two-pane, collapsed, fullscreen, app-global request visibility, captured-source routing, focus order, and empty/loading/error projections; TASK-143.03.13 owns rendered browser coverage.
+- [x] #4 The frame consumes module ports only and owns no process/session/timeline/queue/approval/coordinator state.
+- [x] #5 Frame module tests prove one/two-pane, collapsed, fullscreen, app-global request visibility, captured-source routing, focus order, and empty/loading/error projections; TASK-143.03.13 owns rendered browser coverage.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -109,4 +109,17 @@ Second remediation validation:
 - git diff --check — pass.
 
 No repository-policy, browser, broad, system, stress, load, capacity, performance, tooling, topology, or concurrency lane was run. TASK-143.03.11 still owns definite outer height and shell mounting; TASK-143.03.13 owns real-browser measurement. Status remains In Progress and every acceptance criterion remains unchecked for independent rereview.
+
+Finalization evidence (2026-09-04):
+- Independent reviewer thread 01a06c5b-e580-7d22-967d-726c8abf141b returned REVIEW_CLEAN for fixed range aeb12be2f91493611fee4b2eb3f74a93c5517c60..ed4924b646a2c1109479fd4df083e2b475810bdf.
+- AC #2 is checked from the focused navigation, captured-target dispatch, mutable lease-retarget, cross-transport, and same-ID relabel owners. They prove the request remains application-global, names one immutable source, dispatches only through that source, and revokes both its label and action when authority moves.
+- AC #4 is checked from the reviewed frame contract and passing root/frontend type checks. The frame accepts existing module-root transports, controllers, timeline inputs, and board-status inputs without creating process or domain state.
+- AC #5 is checked from bun test --isolate src/ui/workbench-frame/tests: 11 pass, 0 fail, 128 assertions. The owner covers one/two-pane, expanded/collapsed/fullscreen, request persistence and captured routing, focus order, and loading/empty/error projections.
+- AC #1 remains unchecked because TASK-143.03.13 owns rendered desktop and Flip sizing. AC #3 remains unchecked because TASK-143.03.13 owns actual scrolling, themes, forced colors, reduced motion, and touch verification. TASK-143.03.11 owns shell mounting and definite outer height. Those later owners were not run or claimed here.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Composed the controlled expanded, collapsed, and fullscreen Codex workbench from existing module ports. The frame keeps approval requests bound to their exact source transport, updates authority reactively, preserves a workhorse-first accessible DOM hierarchy, and uses a bounded semantic request allocation. Focused frame tests pass 11 cases with 128 assertions, both TypeScript projects and scoped lint/format pass, and the independent reviewer returned REVIEW_CLEAN at ed4924b646a2c1109479fd4df083e2b475810bdf. Rendered shell sizing and browser-specific visual behavior remain assigned to TASK-143.03.11 and TASK-143.03.13.
+<!-- SECTION:FINAL_SUMMARY:END -->
