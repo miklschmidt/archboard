@@ -241,6 +241,85 @@ describe("canonical spoken state", () => {
 		expect(resolverLost.detail).not.toContain("classifier result was lost");
 	});
 
+	test("keeps a matching canonical unknown outcome ahead of ordinary terminal eligibility", () => {
+		const request = commandApproval({
+			lifecycle: {
+				state: "outcome_unknown",
+				decision: "approved",
+				outcome: "outcome_unknown",
+				reason: "The resolver result was lost.",
+			},
+			spoken: { eligible: false, reason: "not_pending" },
+		});
+		const status = {
+			...pendingStatus,
+			phase: "outcome_unknown" as const,
+			label: "Outcome unknown",
+			detail: "The resolver result was lost.",
+			recovery: "Read the thread before assuming either result.",
+			decision: "You approved this request.",
+			delivery: "outcome_unknown" as const,
+			terminal: true,
+			authority: "removed" as const,
+			authorityReason: "This request is no longer waiting for a decision.",
+		};
+		const card = ordinaryCard({ request, status });
+		const projected = projectVoiceSpokenApproval(
+			input({ card, spokenApproval: spokenApproval("outcome_unknown") }),
+		);
+
+		expect(card.request.lifecycle.state).toBe("outcome_unknown");
+		expect(card.status.phase).toBe("outcome_unknown");
+		expect(projected.state).toBe("outcome_unknown");
+		expect(projected.reason).toBe("resolver_lost");
+		expect(projected.visualCardPreserved).toBe(true);
+	});
+
+	test("states a known not-delivered settlement without claiming delivery is unknown", () => {
+		const request = commandApproval({
+			lifecycle: {
+				state: "settled",
+				decision: "approved",
+				outcome: "not_delivered",
+				reason: "The broker confirmed nothing was delivered.",
+			},
+			spoken: { eligible: false, reason: "not_pending" },
+		});
+		const status = {
+			...pendingStatus,
+			phase: "not_delivered" as const,
+			label: "Not delivered",
+			detail: "The broker confirmed nothing was delivered.",
+			recovery: "Nothing was executed.",
+			decision: "You approved this request.",
+			delivery: "not_delivered" as const,
+			terminal: true,
+			authority: "removed" as const,
+			authorityReason: "This request is no longer waiting for a decision.",
+		};
+		const settlement = {
+			state: "settled" as const,
+			outcome: "not_delivered" as const,
+			reason: "The broker confirmed nothing was delivered.",
+		};
+		const projected = projectVoiceSpokenApproval(
+			input({
+				card: ordinaryCard({ request, status }),
+				spokenApproval: spokenApproval("visual_fallback", {
+					capturedUserFinal: capturedUserFinal(),
+					reason: "resolver_lost",
+					settlement,
+				}),
+			}),
+		);
+
+		expect(projected.state).toBe("visual_fallback");
+		expect(projected.reason).toBe("resolver_lost");
+		expect(projected.detail).toContain("host confirmed it was not delivered");
+		expect(projected.detail).toContain(settlement.reason);
+		expect(projected.detail).not.toContain("cannot infer delivery");
+	});
+
 	test("fails a settled snapshot closed while an ordinary card still appears pending", () => {
 		const projected = projectVoiceSpokenApproval(
 			input({ spokenApproval: spokenApproval("settled") }),
