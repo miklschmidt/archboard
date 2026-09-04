@@ -419,38 +419,55 @@ function fitTurn(
 	return timelineBytes(threadId, turns.concat(fitted), cursor) <= maxBytes ? fitted : null;
 }
 
+/**
+ * Projects the retained turns newest-first and publishes them chronologically.
+ *
+ * The direction matters for correctness, not presentation. A budget cut must
+ * remove the *oldest* history, because the newest turn is the one every current
+ * decision reads: the browser composer decides idle-versus-running from it
+ * (`src/ui/workbench-composer/lib/link.ts`), and this projection is the only
+ * place it can see an in-progress turn. Trimming from the tail hid a running
+ * turn on any thread long enough to hit `maxTurns` or `maxBytes`, which made a
+ * steer look like a fresh start. The oldest retained turn carries the
+ * truncation mark, because that is where history was cut.
+ */
 function projectData(
 	data: TimelineData,
 	approvals: readonly TimelineApprovalView[],
 	budget: CanvasBrowserProjectionBudget,
 ): CodexTimelineProjectionInput {
-	const turns: CodexTimelineTurnProjectionInput[] = [];
+	const newestFirst: CodexTimelineTurnProjectionInput[] = [];
 	let truncated = data.truncated || data.turns.length > budget.maxTurns;
-	for (let index = 0; index < Math.min(data.turns.length, budget.maxTurns); index += 1) {
+	for (let index = data.turns.length - 1; index >= 0; index -= 1) {
+		if (newestFirst.length >= budget.maxTurns) {
+			truncated = true;
+			break;
+		}
 		const source = data.turns[index];
 		if (source === undefined) continue;
 		const candidate = projectTurn(data.threadId, source, approvals, budget.maxItemsPerTurn);
-		if (timelineBytes(data.threadId, turns.concat(candidate), data.cursor) <= budget.maxBytes) {
-			turns.push(candidate);
+		if (
+			timelineBytes(data.threadId, newestFirst.concat(candidate), data.cursor) <= budget.maxBytes
+		) {
+			newestFirst.push(candidate);
 			continue;
 		}
-		const fitted = fitTurn(data.threadId, turns, candidate, data.cursor, budget.maxBytes);
-		if (fitted !== null) turns.push(fitted);
+		const fitted = fitTurn(data.threadId, newestFirst, candidate, data.cursor, budget.maxBytes);
+		if (fitted !== null) newestFirst.push(fitted);
 		truncated = true;
 		break;
 	}
+	const turns: CodexTimelineTurnProjectionInput[] = newestFirst.toReversed();
 	if (truncated && turns.length > 0) {
-		let last = turns.length - 1;
-		turns[last] = markTruncated(turns[last]!);
-		while (timelineBytes(data.threadId, turns, data.cursor) > budget.maxBytes && last >= 0) {
-			const current = turns[last]!;
-			if (current.items.length > 0) {
-				turns[last] = { ...markTruncated(current), items: current.items.slice(0, -1) };
+		turns[0] = markTruncated(turns[0]!);
+		while (turns.length > 0 && timelineBytes(data.threadId, turns, data.cursor) > budget.maxBytes) {
+			const oldest: CodexTimelineTurnProjectionInput = turns[0]!;
+			if (oldest.items.length > 0) {
+				turns[0] = { ...markTruncated(oldest), items: oldest.items.slice(0, -1) };
 				continue;
 			}
-			turns.pop();
-			last -= 1;
-			if (last >= 0) turns[last] = markTruncated(turns[last]!);
+			turns.shift();
+			if (turns.length > 0) turns[0] = markTruncated(turns[0]!);
 		}
 	}
 	return { kind: "codex_timeline", threadId: data.threadId, turns, cursor: data.cursor };
@@ -508,40 +525,57 @@ function isTimelineNotification(method: string): boolean {
 	);
 }
 
+/**
+ * Reads the thread's turns newest-first and returns them chronologically.
+ *
+ * `desc` is what makes the budget safe: the ingestion budget stops at whatever
+ * is retained, so it must stop at the *oldest* end. Reading `asc` dropped the
+ * newest turns on a long thread — including a turn still in progress — and it
+ * also read every page before discarding most of them. Paging from the newest
+ * end reads strictly fewer pages for the same retained bytes.
+ */
 async function readTurnPages(
 	session: TimelineSession,
 	threadId: ThreadId,
 	budget: CanvasBrowserProjectionBudget,
 ): Promise<{ readonly turns: readonly TimelineTurnData[]; readonly truncated: boolean }> {
-	const turns: TimelineTurnData[] = [];
+	const newestFirst: TimelineTurnData[] = [];
 	const seenCursors = new Set<string>();
 	let retainedBytes = timelineBytes(threadId, [], "x".repeat(TIMELINE_CURSOR_LIMIT));
 	let cursor: string | null = null;
+	const settled = (
+		truncated: boolean,
+	): { readonly turns: readonly TimelineTurnData[]; readonly truncated: boolean } => ({
+		turns: newestFirst.toReversed(),
+		truncated,
+	});
 	for (let pageNumber = 0; pageNumber < TIMELINE_PAGE_LIMIT_MAX; pageNumber += 1) {
 		const page: SessionThreadTurnPageResult = await session.threadTurnsListPage({
 			threadId,
 			cursor,
 			limit: TIMELINE_PAGE_LIMIT,
-			sortDirection: "asc",
+			sortDirection: "desc",
 			itemsView: "full",
 		});
 		const nextCursor = boundedCursor(page.nextCursor);
 		for (const turn of page.data) {
-			if (turns.length >= budget.maxTurns) return { turns, truncated: true };
+			if (newestFirst.length >= budget.maxTurns) return settled(true);
 			const projected = projectTurnData(turn, budget.maxItemsPerTurn);
 			const projectedBytes = textEncoder.encode(JSON.stringify(projected)).byteLength;
-			const nextBytes = retainedBytes + projectedBytes + (turns.length === 0 ? 0 : 1);
-			if (nextBytes > budget.maxBytes) return { turns, truncated: true };
-			turns.push(projected);
+			const nextBytes = retainedBytes + projectedBytes + (newestFirst.length === 0 ? 0 : 1);
+			if (nextBytes > budget.maxBytes) return settled(true);
+			newestFirst.push(projected);
 			retainedBytes = nextBytes;
 		}
-		if (nextCursor === null) return { turns, truncated: false };
+		if (nextCursor === null) return settled(false);
+		// Stop before fetching history the budget has already spent.
+		if (newestFirst.length >= budget.maxTurns) return settled(true);
 		if (nextCursor === cursor || seenCursors.has(nextCursor))
 			throw new Error("The Codex timeline turn cursor repeated before its bound.");
 		seenCursors.add(nextCursor);
 		cursor = nextCursor;
 	}
-	return { turns, truncated: true };
+	return settled(true);
 }
 
 function boundedCursor(cursor: string | null): string | null {
