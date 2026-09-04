@@ -63,6 +63,13 @@ const respond = (
 	record({ kind: "response", method: frame.method, result });
 	send({ id: frame.id, result });
 };
+const reject = (
+	frame: { readonly id: unknown; readonly method: string },
+	message: string,
+): void => {
+	record({ kind: "fixture_rejection", method: frame.method, message });
+	send({ id: frame.id, error: { code: -32602, message } });
+};
 const notify = (method: string, params: unknown): void => {
 	record({ kind: "notification", method, params });
 	send({ method, params });
@@ -103,6 +110,7 @@ type FixtureThread = Record<string, unknown> & {
 const threads = new Map<string, FixtureThread>();
 let threadSequence = 0;
 let turnSequence = 0;
+let coordinatorThreadId: string | null = null;
 let workhorseThreadId: string | null = null;
 let reverseRequestsSent = false;
 let realtimeSessionId: string | null = null;
@@ -161,7 +169,8 @@ const createThread = (params: Record<string, unknown>): FixtureThread => {
 	const id = `thread-${++threadSequence}`;
 	const thread = buildThread(id, params, threadSequence);
 	threads.set(id, thread);
-	if (threadSequence === 2) workhorseThreadId = id;
+	if (threadSequence === 1) coordinatorThreadId = id;
+	else if (threadSequence === 2) workhorseThreadId = id;
 	return thread;
 };
 
@@ -377,6 +386,10 @@ const handle = (frame: WireFrame): void => {
 			respond(frame as never, {});
 			return;
 		case "thread/realtime/start": {
+			if (coordinatorThreadId === null || params.threadId !== coordinatorThreadId) {
+				reject(frame as never, "Realtime start must target the retained coordinator thread.");
+				return;
+			}
 			realtimeSessionId = String(params.realtimeSessionId);
 			respond(frame as never, {});
 			setTimeout(() => {
@@ -423,7 +436,11 @@ const handle = (frame: WireFrame): void => {
 			return;
 		}
 		case "thread/realtime/stop":
-			record({ kind: "realtime_stop", realtimeSessionId });
+			if (coordinatorThreadId === null || params.threadId !== coordinatorThreadId) {
+				reject(frame as never, "Realtime stop must target the retained coordinator thread.");
+				return;
+			}
+			record({ kind: "realtime_stop", realtimeSessionId, threadId: params.threadId });
 			respond(frame as never, {});
 			realtimeSessionId = null;
 			return;

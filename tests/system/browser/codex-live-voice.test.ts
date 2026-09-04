@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, readFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -7,10 +7,7 @@ import {
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
-import {
-	prepareProductionFixture,
-	type ProductionFixture,
-} from "../canvas-state/support/codex-production.ts";
+import { prepareProductionFixture } from "../canvas-state/support/codex-production.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
 	browserTestRoots,
@@ -25,12 +22,19 @@ import {
 	openWithControlledVoiceMedia,
 	readControlledVoiceMediaAudit,
 } from "./support/codex-live-voice.ts";
+import {
+	claimRenderedWorkbenchLease,
+	productionFixtureRecords,
+} from "./support/codex-workbench-production.ts";
 import { seedBoard } from "./support/fullscreen-presentation.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import { emulateMedia } from "./support/shell-render-matrix.ts";
 
 const serverPath = join(import.meta.dir, "../canvas-state/fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "../canvas-state/fixtures/fake-codex-production.ts");
+const RAW_COORDINATOR_THREAD_ID = "thread-1";
+const RENDERED_COORDINATOR_THREAD_ID = "archboard:thread:s7468726561642d31";
+const RENDERED_WORKHORSE_THREAD_ID = "archboard:thread:s7468726561642d32";
 
 interface FixtureRecord {
 	readonly kind?: string;
@@ -43,6 +47,7 @@ interface VoiceSnapshot {
 	readonly state: string | null;
 	readonly sourcePane: string | null;
 	readonly sourceThread: string | null;
+	readonly coordinator: string | null;
 	readonly transcript: string;
 	readonly context: string;
 	readonly announcer: {
@@ -85,30 +90,6 @@ interface DockSnapshot {
 	readonly excalidrawChromeHidden: boolean;
 }
 
-function fixtureRecords(fixture: ProductionFixture): FixtureRecord[] {
-	return readFileSync(fixture.logPath, "utf8")
-		.split("\n")
-		.filter(Boolean)
-		.map((line) => JSON.parse(line) as FixtureRecord);
-}
-
-async function claimRenderedWorkbenchLease(browser: AgentBrowserSession): Promise<void> {
-	const lease = await browser.eval<{
-		readonly kind: string;
-		readonly state: string;
-	}>(`(async () => {
-		const frame = document.querySelector('[data-workbench-frame]');
-		const key = frame && Object.keys(frame).find(candidate => candidate.startsWith('__reactFiber$'));
-		let fiber = key ? frame[key] : null;
-		for (let depth = 0; fiber && depth < 30; depth += 1, fiber = fiber.return) {
-			const transport = fiber.memoizedProps?.view?.panes?.[0]?.transport;
-			if (typeof transport?.claimLease === 'function') return transport.claimLease();
-		}
-		throw new Error('The rendered workbench exposed no pane transport for controlled lease setup.');
-	})()`);
-	expect(lease).toMatchObject({ kind: "command_lease", state: "active" });
-}
-
 function voiceSnapshot(browser: AgentBrowserSession): Promise<VoiceSnapshot> {
 	return browser.eval<VoiceSnapshot>(`(() => {
 		const voice = document.querySelector('[data-workbench-voice="present"]');
@@ -117,6 +98,7 @@ function voiceSnapshot(browser: AgentBrowserSession): Promise<VoiceSnapshot> {
 			state: voice?.querySelector('[data-voice-controls]')?.getAttribute('data-voice-state') ?? null,
 			sourcePane: voice?.getAttribute('data-workbench-voice-source-pane') ?? null,
 			sourceThread: voice?.querySelector('[data-workbench-voice-source-thread]')?.textContent?.trim() ?? null,
+			coordinator: voice?.querySelector('[data-voice-bound="coordinator"]')?.textContent?.trim() ?? null,
 			transcript: voice?.querySelector('[data-voice-transcript]')?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
 			context: voice?.querySelector('[data-voice-context]')?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
 			announcer: {
@@ -302,14 +284,17 @@ test(
 			() => voiceSnapshot(browser),
 			(value) =>
 				value.state === "listening" &&
-				value.sourcePane !== null &&
-				value.sourceThread !== null &&
+				value.sourcePane === "pane-1" &&
+				value.sourceThread === RENDERED_WORKHORSE_THREAD_ID &&
+				value.coordinator === RENDERED_COORDINATOR_THREAD_ID &&
 				value.transcript.includes("The controlled voice context is visible.") &&
 				value.context.includes("workbench"),
 			"the live source, transcript, and captured context to render",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		expect(listening.sourcePane).toMatch(/^pane-/u);
+		expect(listening.sourcePane).toBe("pane-1");
+		expect(listening.sourceThread).toBe(RENDERED_WORKHORSE_THREAD_ID);
+		expect(listening.coordinator).toBe(RENDERED_COORDINATOR_THREAD_ID);
 		expect(listening.announcer).toMatchObject({ role: "status", live: "polite" });
 		expect(listening.announcer.text).toMatch(/listening/iu);
 		expect(listening.transcript).toContain("Show the controlled voice context.");
@@ -363,6 +348,18 @@ test(
 			playCount: 1,
 		});
 
+		await browser.run(["set", "viewport", "1920", "1080", "2"]);
+		const flipLive = await layoutSnapshot(browser);
+		expect(flipLive.viewport).toEqual([1920, 1080, 2]);
+		expect(flipLive.pageOverflow).toBe(false);
+		expect(flipLive.voiceInsideWorkbench).toBe(true);
+		expect(flipLive.voiceOverlapsCanvas).toBe(false);
+		expect(flipLive.targetSizes.map(({ command }) => command)).toEqual(["start", "unmute", "stop"]);
+		expect(flipLive.targetSizes.every(({ width, height }) => width >= 44 && height >= 44)).toBe(
+			true,
+		);
+		await browser.run(["set", "viewport", "1440", "900", "1"]);
+
 		await browser.run(["click", 'button[aria-label="Present Pane A fullscreen"]']);
 		const desktopDock = await pollUntil(
 			() => dockSnapshot(browser),
@@ -375,6 +372,7 @@ test(
 		expect(desktopDock.status).toMatchObject({ role: "status", live: "polite" });
 		expect(desktopDock.status.text).toMatch(/muted/iu);
 		expect(desktopDock.stop.sessionId).toBe(desktopDock.sessionId);
+		expect(desktopDock.stop.width).toBeGreaterThanOrEqual(44);
 		expect(desktopDock.stop.height).toBeGreaterThanOrEqual(44);
 		expect(desktopDock.insideViewport).toBe(true);
 		expect(desktopDock.avoidsWorkbench).toBe(true);
@@ -447,7 +445,7 @@ test(
 				document.querySelector('.statusbar')?.textContent?.includes('1 elements') === true`),
 		).toBe(true);
 
-		const records = fixtureRecords(fixture);
+		const records = productionFixtureRecords<FixtureRecord>(fixture);
 		const versionProbes = records.filter(({ kind }) => kind === "version_probe");
 		expect(versionProbes).toHaveLength(2);
 		expect(versionProbes.every(({ args }) => args?.length === 1 && args[0] === "--version")).toBe(
@@ -458,7 +456,7 @@ test(
 			({ kind, method }) => kind === "frame" && method === "thread/realtime/start",
 		);
 		expect(realtimeStart?.params).toMatchObject({
-			threadId: expect.any(String),
+			threadId: RAW_COORDINATOR_THREAD_ID,
 			transport: { type: "webrtc", sdp: "controlled-offer-sdp" },
 			version: "v3",
 		});
@@ -466,7 +464,14 @@ test(
 			/^archboard:realtime-session:h[a-f0-9]{32}$/u,
 		);
 		expect(realtimeStart?.params?.realtimeSessionId).not.toBe(desktopDock.sessionId);
-		expect(records.filter(({ kind }) => kind === "realtime_stop")).toHaveLength(1);
+		const realtimeStop = records.find(
+			({ kind, method }) => kind === "frame" && method === "thread/realtime/stop",
+		);
+		expect(realtimeStop?.params).toEqual({ threadId: RAW_COORDINATOR_THREAD_ID });
+		expect(records.filter(({ kind }) => kind === "realtime_stop")).toEqual([
+			expect.objectContaining({ threadId: RAW_COORDINATOR_THREAD_ID }),
+		]);
+		expect(records.some(({ kind }) => kind === "fixture_rejection")).toBe(false);
 		expect(records.some(({ kind }) => kind === "fixture_error")).toBe(false);
 		expect(await browser.run(["console"])).toBe("");
 		expect(await browser.run(["errors"])).toBe("");
