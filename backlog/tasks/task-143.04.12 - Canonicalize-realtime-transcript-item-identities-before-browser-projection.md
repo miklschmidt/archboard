@@ -1,11 +1,11 @@
 ---
 id: TASK-143.04.12
 title: Canonicalize realtime transcript item identities before browser projection
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-04 16:09'
-updated_date: '2026-09-04 16:41'
+updated_date: '2026-09-04 16:47'
 labels: []
 dependencies: []
 parent_task_id: TASK-143.04
@@ -22,9 +22,9 @@ TASK-143.04.07 now completes SDP and started, then a valid final transcript such
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every item-scoped realtime transcript notification resolves its raw Codex item identity to the authority-issued canonical ItemId before the adapter retains or publishes a transcript record.
-- [ ] #2 Invalid, unissued, stale-authority, wrong-thread, and wrong-realtime-session item notifications do not mutate retained transcript state or publish a transcript event.
-- [ ] #3 A focused adapter-to-production-projection owner fails on the raw-item invalid_projection path before the fix and passes with the canonical item while proving invalid and stale items never publish.
+- [x] #1 Every item-scoped realtime transcript notification resolves its raw Codex item identity to the authority-issued canonical ItemId before the adapter retains or publishes a transcript record.
+- [x] #2 Invalid, unissued, stale-authority, wrong-thread, and wrong-realtime-session item notifications do not mutate retained transcript state or publish a transcript event.
+- [x] #3 A focused adapter-to-production-projection owner fails on the raw-item invalid_projection path before the fix and passes with the canonical item while proving invalid and stale items never publish.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -56,4 +56,12 @@ Authorized fixture remediation is complete. Both control-write paths now seriali
 The independent rereviewer accepted the product behavior and found one low-cost unit coverage gap: the adapter recovery owner no longer carried a live record through the local merged-map path. This turn repairs that owner only.
 
 Low rereview finding repaired in the existing adapter recovery owner. The owner now introduces and completes raw live items for one overlay identity and one live-only identity. Recovery replaces the overlay role/text/order, adds a recovered-only identity, and preserves the live-only canonical record at the live ordering slot. The duplicate cursor-loop subcase was removed from this owner because transcript-identity-atomicity.test.ts already owns that exact regression. A bounded mutation check replaced new Map(session.entries) with an empty map and the repaired owner failed solely because live-only disappeared; after restoring the product line, the owner passed. Final focused matrix: 51 tests, 679 assertions, all green. Root/frontend type-check, scoped Oxlint, scoped Oxfmt, and diff checks pass.
+
+Final integration: review-clean commits 6ccdbb6b86a1160cb4bdc6199840b3d39d4344c1 -> 349be32dfc79b642ce8267541038c95dd7a1691f, d9106f3a6ae0d4084284185a3bde584464bc242a -> f6b3ddd82f162470084028031bfca2ed0b8ded1b, 3b85b08638728f7e39fa09831103a39f630126fe -> 862b227004777d618a2983c08f08f2a7965875e9, and ba6ca0c2c94815d917d066b209fec3fc7c6d6e55 -> f35b2c261cfaa53f1159a10ea081b44e816aa6fa. Review-clean evidence covered 52 focused tests with 650 assertions, both TypeScript projects, scoped lint and format, diff checks, and the exact process owner at 4 tests with 65 assertions in 1.84s. Post-integration checks passed the focused identity/projection subset at 35 tests with 558 assertions in 0.16s, the exact process owner at 4 tests with 65 assertions in 1.85s, and git diff --check.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Canonicalized realtime transcript item identities before retention and browser projection. Invalid, unissued, stale, wrong-thread, and wrong-session notifications now fail without mutation or publication; recovery adopts identities atomically and preserves live overlays. Focused identity, projection, atomicity, and exact process-contract checks pass.
+<!-- SECTION:FINAL_SUMMARY:END -->
