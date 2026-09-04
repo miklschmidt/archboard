@@ -35,7 +35,7 @@ describe("inspection input snapshot", () => {
 		}).not.toThrow();
 		expect(InspectionReportSchema.safeParse(report).success).toBe(true);
 		expect(report).toMatchObject({
-			schemaVersion: 2,
+			schemaVersion: 3,
 			totalElementCount: 0,
 			liveElementCount: 0,
 			locatableElementCount: 0,

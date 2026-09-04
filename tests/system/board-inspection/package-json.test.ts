@@ -21,7 +21,7 @@ describe("package inspection JSON", () => {
 			const parsed = CheckResultSchema.parse(JSON.parse(result.stdout));
 			expect(parsed).toMatchObject({
 				board: "clean",
-				schemaVersion: 2,
+				schemaVersion: 3,
 				clean: true,
 			});
 			expect(result.stdout).toBe(`${JSON.stringify(parsed, null, 2)}\n`);

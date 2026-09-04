@@ -150,6 +150,16 @@ function verifyObstaclePenetration(finding: FindingFor<"CONNECTOR_PENETRATES_OBS
 	}
 }
 
+function verifyTextPenetration(finding: FindingFor<"CONNECTOR_PENETRATES_TEXT">): void {
+	const { reason } = finding;
+	switch (reason) {
+		case "text-interior":
+			return;
+		default:
+			return assertNever(reason);
+	}
+}
+
 function verifyConnectorIntersection(finding: FindingFor<"CONNECTOR_INTERSECTION_UNMARKED">): void {
 	const { reason } = finding;
 	switch (reason) {
@@ -214,6 +224,8 @@ function verifyClosedFinding(finding: InspectionFinding): void {
 			return verifyNodePenetration(finding);
 		case "CONNECTOR_PENETRATES_OBSTACLE":
 			return verifyObstaclePenetration(finding);
+		case "CONNECTOR_PENETRATES_TEXT":
+			return verifyTextPenetration(finding);
 		case "CONNECTOR_INTERSECTION_UNMARKED":
 			return verifyConnectorIntersection(finding);
 		case "NODE_OVERLAP":

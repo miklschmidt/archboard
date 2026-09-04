@@ -75,6 +75,7 @@ const findingCases = () =>
 			'["INSPECTION_LIMIT_EXCEEDED","input-complexity-ceiling","warning",true,{"limit":1000000,"attempted":1000001,"pass":"input-scan","phase":"snapshot-input","completedRecordCount":0,"sourceIndex":0,"path":["id"],"unitKind":"string-code-unit"}]',
 			'["CONNECTOR_PENETRATES_NODE","leaf-footprint-interior","error",false,{"connectorId":"edge","segmentIndex":0,"nodeId":"node","entry":{"x":0,"y":0},"exit":{"x":1,"y":0}}]',
 			'["CONNECTOR_PENETRATES_OBSTACLE","obstacle-footprint-interior","error",false,{"connectorId":"edge","segmentIndex":0,"obstacleId":"obstacle:body","entry":{"x":0,"y":0},"exit":{"x":1,"y":0}}]',
+			'["CONNECTOR_PENETRATES_TEXT","text-interior","error",false,{"connectorId":"edge","segmentIndex":0,"textId":"copy","entry":{"x":0,"y":0},"exit":{"x":1,"y":0}}]',
 			'["CONNECTOR_INTERSECTION_UNMARKED","proper-interior-crossing","error",false,{"firstConnectorId":"a","firstSegmentIndex":0,"secondConnectorId":"b","secondSegmentIndex":0,"point":{"x":0,"y":0}}]',
 			'["NODE_OVERLAP","leaf-footprint-overlap","error",false,{"firstNodeId":"a","secondNodeId":"b","overlapWidth":1,"overlapHeight":1}]',
 			'["LABEL_OVERLAP","label-node-overlap","error",false,{"labelId":"label","nodeId":"node","overlapWidth":1,"overlapHeight":1}]',
@@ -91,10 +92,10 @@ const findingCases = () =>
 const cleanReport = () => inspectBoard(Object.freeze([]));
 
 describe("board inspection public schema", () => {
-	test("publishes schema v2 and only the two public ceilings", () => {
+	test("publishes schema v3 and only the two public ceilings", () => {
 		const clean = cleanReport();
 		expect(clean).toMatchObject({
-			schemaVersion: 2,
+			schemaVersion: 3,
 			clean: true,
 			coverage: "complete",
 			limits: {

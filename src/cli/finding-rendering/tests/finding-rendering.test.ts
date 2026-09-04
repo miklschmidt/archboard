@@ -14,6 +14,35 @@ const report = inspectBoard([
 	{ id: "bad", type: "rectangle", x: 10, y: 20, width: null, height: 40 },
 ]);
 const finding = report.findings[0]!;
+const textPenetrationReport = inspectBoard([
+	{
+		id: "edge",
+		type: "arrow",
+		x: 0,
+		y: 50,
+		width: 100,
+		height: 0,
+		angle: 0,
+		points: [
+			[0, 0],
+			[100, 0],
+		],
+	},
+	{
+		id: "copy",
+		type: "text",
+		x: 40,
+		y: 40,
+		width: 20,
+		height: 20,
+		angle: 0,
+		fontFamily: 5,
+		text: "copy",
+	},
+]);
+const textPenetration = textPenetrationReport.findings.find(
+	(candidate) => candidate.code === "CONNECTOR_PENETRATES_TEXT",
+)!;
 
 function png(width: number, height: number): Uint8Array {
 	const bytes = new Uint8Array(24);
@@ -108,6 +137,29 @@ describe("finding rendering", () => {
 		expect(assembled.artifact.files).toHaveLength(1);
 		expect(assembled.artifact.manifest.content.endsWith("\n")).toBeTrue();
 		expect(FindingRenderManifestSchema.parse(assembled.manifest)).toEqual(assembled.manifest);
+	});
+
+	test("renders connector-through-text evidence from its focused bounds", () => {
+		const dimensions = findingRasterDimensions(textPenetration.focusBBox!);
+		const bytes = png(dimensions.width, dimensions.height);
+		const assembled = assembleFindingArtifacts(
+			{
+				board: "device-trust",
+				sourceFingerprint: "f".repeat(64),
+				report: textPenetrationReport,
+				sourceRenderable: true,
+				results: [{ findingIndex: 0, data: Buffer.from(bytes).toString("base64") }],
+			},
+			"/tmp/findings",
+		);
+		expect(assembled.manifest.entries[0]).toMatchObject({
+			findingIndex: 0,
+			code: "CONNECTOR_PENETRATES_TEXT",
+			status: "rendered",
+			width: dimensions.width,
+			height: dimensions.height,
+		});
+		expect(assembled.artifact.files[0]?.name).toBe(findingFileName(0, textPenetration));
 	});
 
 	test("invalid PNG and unrenderable sources stay truthful", () => {
