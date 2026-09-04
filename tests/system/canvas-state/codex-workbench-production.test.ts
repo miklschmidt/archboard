@@ -156,6 +156,34 @@ describe.serial("actual production Codex composition", () => {
 			});
 			expect(typeof (linked.coordinator as Record<string, unknown>).threadId).toBe("string");
 
+			// Nothing is discovered until the browser asks. The refresh exhausts the
+			// real persisted and loaded lists and publishes the joined inventory.
+			expect(linked.threadCandidates).toMatchObject({ state: "unknown", records: [] });
+			const refreshLease = await current.request("claimLease");
+			expect(
+				await current.request("command", {
+					command: {
+						kind: "browser_command",
+						command: "threadLinkRefresh",
+						...leaseTarget(refreshLease),
+					},
+				}),
+			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
+			const discovered = snapshots(await current.request("snapshot"));
+			const inventory = discovered.threadCandidates as Record<string, unknown>;
+			expect(inventory).toMatchObject({ state: "listed", truncated: false });
+			const rows = inventory.records as readonly Record<string, unknown>[];
+			expect(rows.length).toBeGreaterThan(0);
+			const createdRow = rows.find((row) => row.threadId === threadLink.threadId);
+			expect(createdRow).toMatchObject({
+				kind: "thread_candidate",
+				state: "executable",
+				sourcePresentation: "standard",
+				loaded: true,
+			});
+			expect(typeof createdRow?.selectionId).toBe("string");
+			expect(new Set(rows.map((row) => row.selectionId)).size).toBe(rows.length);
+
 			expect(await current.request("mediaReady", { ready: true })).toMatchObject({ ok: true });
 			expect(snapshots(await current.request("snapshot")).voice).toMatchObject({ state: "ready" });
 			expect(await current.request("mediaReady", { ready: false })).toMatchObject({ ok: true });
