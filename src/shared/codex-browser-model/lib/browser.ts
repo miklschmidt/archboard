@@ -625,10 +625,15 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 					message: "only pending approvals may be spoken eligible",
 				});
 			}
-			if (
-				approval.binding.child !== context.validator.childId ||
-				approval.binding.epoch !== context.validator.epoch
-			) {
+			// Asked of the validator rather than compared against its fields, so a
+			// parse context that holds no issuance ledger — the browser's — can
+			// leave the current-epoch question to the gateway that owns it.
+			try {
+				assertCurrentTarget(context.validator, {
+					childId: approval.binding.child,
+					epoch: approval.binding.epoch,
+				});
+			} catch {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["binding"],
