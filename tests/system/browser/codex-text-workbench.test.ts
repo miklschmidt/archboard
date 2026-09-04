@@ -20,6 +20,7 @@ import {
 import {
 	claimRenderedWorkbenchLease,
 	productionFixtureRecords,
+	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
 import { seedBoard } from "./support/fullscreen-presentation.ts";
 import { fillLabel, roleAction } from "./support/opener-settings-interaction.ts";
@@ -45,16 +46,6 @@ interface InitialRenderSnapshot {
 	readonly paneCount: string | null;
 	readonly board: string | null;
 	readonly status: string | null;
-}
-
-interface ControlSnapshot {
-	readonly width: number;
-	readonly height: number;
-	readonly visibleWidth: number;
-	readonly visibleHeight: number;
-	readonly clipped: boolean;
-	readonly requestOverlap: boolean;
-	readonly centerHit: boolean;
 }
 
 async function initialRender(
@@ -85,45 +76,6 @@ function approvalCards(
 			phase: card.getAttribute('data-approval-phase'),
 			text: card.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
 		}))`);
-}
-
-function controlSnapshot(
-	browser: Awaited<ReturnType<typeof createAgentBrowser>>,
-	selector: string,
-): Promise<ControlSnapshot> {
-	return browser.eval<ControlSnapshot>(`(() => {
-		const control = document.querySelector(${JSON.stringify(selector)});
-		if (!(control instanceof HTMLButtonElement)) throw new Error('Missing rendered control');
-		const rect = node => node?.getBoundingClientRect() ?? new DOMRect();
-		const overlaps = (left, right) => left.width > 0 && left.height > 0 && right.width > 0 &&
-			right.height > 0 && left.left < right.right && left.right > right.left &&
-			left.top < right.bottom && left.bottom > right.top;
-		const bounds = rect(control);
-		const visible = { left: Math.max(0, bounds.left), top: Math.max(0, bounds.top),
-			right: Math.min(innerWidth, bounds.right), bottom: Math.min(innerHeight, bounds.bottom) };
-		for (let owner = control.parentElement; owner; owner = owner.parentElement) {
-			const style = getComputedStyle(owner);
-			const clip = rect(owner);
-			if (/^(auto|clip|hidden|scroll)$/.test(style.overflowX)) {
-				visible.left = Math.max(visible.left, clip.left); visible.right = Math.min(visible.right, clip.right);
-			}
-			if (/^(auto|clip|hidden|scroll)$/.test(style.overflowY)) {
-				visible.top = Math.max(visible.top, clip.top); visible.bottom = Math.min(visible.bottom, clip.bottom);
-			}
-		}
-		const hit = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
-		const visibleWidth = Math.max(0, visible.right - visible.left);
-		const visibleHeight = Math.max(0, visible.bottom - visible.top);
-		return { width: bounds.width, height: bounds.height, visibleWidth, visibleHeight,
-			clipped: visibleWidth < bounds.width || visibleHeight < bounds.height,
-			requestOverlap: overlaps(bounds, rect(document.querySelector('[data-workbench-region="app-global-request"]'))),
-			centerHit: control.contains(hit) };
-	})()`);
-}
-
-function expectOperableControl(control: ControlSnapshot): void {
-	expect(control).toMatchObject({ clipped: false, requestOverlap: false, centerHit: true });
-	expect([control.visibleWidth >= 44, control.visibleHeight >= 44]).toEqual([true, true]);
 }
 
 test(
@@ -218,10 +170,22 @@ test(
 			"the filled composer to enable Send",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		const desktopSend = await controlSnapshot(browser, '[data-composer-send="start"]');
-		expectOperableControl(desktopSend);
+		const desktopSend = await workbenchControlOperability(browser, '[data-composer-send="start"]');
+		expect(desktopSend).toMatchObject({
+			clipped: false,
+			requestOverlap: false,
+			centerHit: true,
+			operable: true,
+		});
 		await browser.run(["set", "viewport", "1920", "1080", "2"]);
-		expectOperableControl(await controlSnapshot(browser, '[data-composer-send="start"]'));
+		expect(
+			await workbenchControlOperability(browser, '[data-composer-send="start"]'),
+		).toMatchObject({
+			clipped: false,
+			requestOverlap: false,
+			centerHit: true,
+			operable: true,
+		});
 		await browser.run(["set", "viewport", "1440", "900", "1"]);
 		await roleAction(browser, "button", "Send");
 
