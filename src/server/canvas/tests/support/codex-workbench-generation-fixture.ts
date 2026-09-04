@@ -467,8 +467,8 @@ export function createCodexWorkbenchGenerationFixture(
 		stopBrowser: async (browserGateway) => browserGateway.dispose(),
 		stopRealtime: async () => void events.push("realtime:stop"),
 		stopQueue: () => void events.push("queue:stop"),
-		retireDynamicLifecycle: async (child, epoch) =>
-			void events.push(`dynamic:child-exit:${String(child)}:${String(epoch)}`),
+		retireDynamicLifecycle: async (exitChild, exitEpoch) =>
+			void events.push(`dynamic:child-exit:${String(exitChild)}:${String(exitEpoch)}`),
 		cancelDynamicApprovalsAndWaits: async (_components, cause) =>
 			void events.push(`dynamic:cancel:${cause}`),
 		settleOrdinaryRequests: async (_approvals, cause) =>
