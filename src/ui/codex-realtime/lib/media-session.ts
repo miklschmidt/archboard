@@ -24,6 +24,16 @@ export interface RealtimeMediaSession {
 	readonly getSnapshot: () => RealtimeMediaSnapshot;
 	readonly subscribe: (listener: RealtimeMediaListener) => RealtimeUnsubscribe;
 	readonly start: (correlation: RealtimeCorrelation) => Promise<RealtimeMediaSnapshot>;
+	/**
+	 * Silences the captured microphone without touching the negotiated
+	 * connection: every local audio track is disabled and the run publishes
+	 * `muted`. It sends the realtime host nothing, because a disabled track is a
+	 * browser-native operation and the frozen host interface has no mute command
+	 * to send. A run that is not `listening` is left exactly as it is.
+	 */
+	readonly mute: () => Promise<RealtimeMediaSnapshot>;
+	/** The exact inverse of `mute`, from `muted` only. */
+	readonly unmute: () => Promise<RealtimeMediaSnapshot>;
 	readonly stop: () => Promise<RealtimeMediaSnapshot>;
 	readonly dispose: () => Promise<void>;
 }
@@ -351,6 +361,29 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 		run.snapshot = frozenSnapshot(run.correlation, run.state, inputLevel);
 		snapshot = run.snapshot;
 		notify();
+	};
+
+	/**
+	 * Toggles the captured microphone. The transition table admits `muted` from
+	 * `listening` and `listening` from `muted` and from nowhere else, so the phase
+	 * is the whole guard: any other phase — starting, processing, speaking,
+	 * stopping, closed, failed, or no run at all — leaves the published snapshot
+	 * exactly as it is rather than raising a failure over a late press. The track
+	 * is toggled before the publication so a subscriber never reads `muted` over
+	 * a microphone that is still open.
+	 */
+	const setMuted = (muted: boolean): Promise<RealtimeMediaSnapshot> => {
+		const run = current;
+		if (run === null || run.cancelledNow || run.failed) return Promise.resolve(snapshot);
+		if (run.state.phase !== (muted ? "listening" : "muted")) return Promise.resolve(run.snapshot);
+		for (const track of run.localStream?.getAudioTracks() ?? []) track.enabled = !muted;
+		publish(
+			run,
+			muted
+				? { phase: "muted", reason: "mute_requested" }
+				: { phase: "listening", reason: "unmute_requested" },
+		);
+		return Promise.resolve(run.snapshot);
 	};
 
 	const stopHost = async (run: Run): Promise<boolean> => {
@@ -805,6 +838,8 @@ export function createRealtimeMediaSession(host: RealtimeHost): RealtimeMediaSes
 			return () => listeners.delete(listener);
 		},
 		start,
+		mute: () => setMuted(true),
+		unmute: () => setMuted(false),
 		stop,
 		dispose,
 	});
