@@ -1,3 +1,9 @@
+import type {
+	VoiceSessionBinding,
+	VoiceSessionStatus,
+	VoiceSessionView as PublicVoiceSessionView,
+} from "../voice-session/index.js";
+
 export const VOICE_CONTEXT_ENTRY_KINDS = Object.freeze([
 	"semantic",
 	"focus",
@@ -16,67 +22,67 @@ export type VoiceContextDeliveryOutcome = (typeof VOICE_CONTEXT_DELIVERY_OUTCOME
 export type VoiceContextProvenance = "live" | "recovered";
 export type VoiceContextConnection = "connected" | "disconnected";
 
-/** Every value that binds one voice ledger to one immutable realtime run. */
-export interface VoiceContextSessionIdentity {
-	readonly childId: string;
-	readonly epoch: string;
-	readonly workhorseThreadId: string;
-	readonly coordinatorThreadId: string;
-	readonly realtimeSessionId: string;
-	readonly paneId: string;
-}
-
-export interface VoiceContextCursor {
+/** The complete JSON value encoded by codex-semantic-context's canonical brief. */
+export interface VoiceContextCanonicalBrief {
+	readonly source: "semantic_context";
 	readonly feedId: string;
-	readonly sequence: number;
+	readonly repository: string;
+	readonly workhorse: { readonly threadId: string | null; readonly turnId: string | null };
+	readonly coordinator: {
+		readonly threadId: string | null;
+		readonly realtimeSessionId: string | null;
+	};
+	readonly board: { readonly key: string; readonly note: string; readonly version: number | null };
+	readonly pane: { readonly paneId: string; readonly focused: boolean };
+	readonly version: number | null;
+	readonly selection: readonly string[];
+	readonly claim: {
+		readonly holder: "human" | "agent" | "none";
+		readonly doing: string | null;
+	};
+	readonly doing: string | null;
+	readonly cursor: { readonly feedId: string; readonly sequence: number } | null;
+	readonly description: string;
+	readonly freshness: {
+		readonly capturedAtMs: number;
+		readonly freshUntilMs: number;
+		readonly state: "fresh" | "stale";
+	};
+	readonly truncated: boolean;
+	readonly ambiguity: readonly string[];
+	readonly staleness: { readonly state: "current" | "stale"; readonly reasons: readonly string[] };
+	readonly child: { readonly id: string | null; readonly epoch: string | null };
+	readonly threadLink: {
+		readonly state: "executable" | "inspect_only" | "unbound";
+		readonly reason: string | null;
+	};
 }
 
-export interface VoiceContextSelectionCapture {
-	readonly elementIds: readonly string[];
+export type VoiceContextSourceOrder =
+	| {
+			/** The exact cursor published with a semantic event. */
+			readonly kind: "semantic_sequence";
+			readonly feedId: string;
+			readonly sequence: number;
+	  }
+	| {
+			/** A position read from an authoritative adapter inspect ledger. */
+			readonly kind: "adapter_ledger";
+			readonly ledgerId: string;
+			readonly position: number;
+	  };
+
+export interface VoiceContextDeliveryFreshness {
 	readonly capturedAtMs: number;
 	readonly freshUntilMs: number;
-	readonly freshness: "fresh" | "stale";
-}
-
-export interface VoiceContextClaim {
-	readonly holder: "human" | "agent" | "none";
-	readonly doing: string | null;
-}
-
-/**
- * The exact baseline handed to voice when the session started.
- * `canonicalBrief` is the copy source; the remaining fields explain those bytes.
- */
-export interface VoiceContextStartBrief {
-	readonly canonicalBrief: string;
-	readonly capturedAtMs: number;
-	readonly repository: string;
-	readonly board: {
-		readonly key: string;
-		readonly note: string;
-	};
-	readonly version: number | null;
-	readonly focused: boolean;
-	readonly focusCapturedAtMs: number;
-	readonly focusFreshUntilMs: number;
-	readonly focusFreshness: "fresh" | "stale";
-	readonly selection: VoiceContextSelectionCapture;
-	readonly claim: VoiceContextClaim;
-	readonly doing: string | null;
-	readonly cursor: VoiceContextCursor | null;
-	readonly ambiguity: readonly string[];
-	readonly truncated: boolean;
-	readonly staleness: {
-		readonly state: "current" | "stale";
-		readonly reasons: readonly string[];
-	};
 }
 
 /** One exact later body and the adapter outcome for attempting to deliver it. */
 export interface VoiceContextLedgerEntry {
 	readonly id: string;
 	readonly kind: VoiceContextEntryKind;
-	readonly capturedAtMs: number;
+	readonly sourceOrder: VoiceContextSourceOrder;
+	readonly freshness: VoiceContextDeliveryFreshness;
 	readonly attemptedAtMs: number;
 	readonly attempted: boolean;
 	readonly outcome: VoiceContextDeliveryOutcome;
@@ -86,72 +92,50 @@ export interface VoiceContextLedgerEntry {
 	readonly connection: VoiceContextConnection;
 }
 
-export type VoiceContextSessionStatus =
-	| { readonly state: "active"; readonly startedAtMs: number }
-	| {
-			readonly state: "replaced";
-			readonly startedAtMs: number;
-			readonly replacedAtMs: number;
-			readonly replacedBy: VoiceContextSessionIdentity;
-	  }
-	| {
-			readonly state: "stopped";
-			readonly startedAtMs: number;
-			readonly stoppedAtMs: number;
-	  };
+export interface VoiceContextSessionEvidence {
+	/** An externally projected session view. This module never transitions it. */
+	readonly session: PublicVoiceSessionView;
+	readonly observedAtMs: number;
+	readonly provenance: VoiceContextProvenance;
+}
 
-export type VoiceContextBriefCondition =
-	| { readonly state: "current" }
-	| {
-			readonly state: "stale";
-			readonly markedAtMs: number;
-			readonly reasons: readonly string[];
-	  };
+export interface VoiceContextSessionCapture extends VoiceContextSessionEvidence {
+	/** The byte-exact copy source and sole source for structured baseline display. */
+	readonly canonicalBrief: string;
+}
 
 export interface VoiceContextSessionRecord {
-	readonly identity: VoiceContextSessionIdentity;
-	readonly brief: VoiceContextStartBrief;
-	readonly briefCondition: VoiceContextBriefCondition;
-	readonly status: VoiceContextSessionStatus;
-	readonly provenance: VoiceContextProvenance;
+	readonly captured: VoiceContextSessionEvidence & {
+		readonly canonicalBrief: string;
+		readonly brief: VoiceContextCanonicalBrief;
+	};
+	/** Oldest first, including the externally supplied view at capture. */
+	readonly observations: readonly VoiceContextSessionEvidence[];
+	/** Sorted by the explicitly supplied source order, never promise settlement. */
 	readonly entries: readonly VoiceContextLedgerEntry[];
 }
 
 export interface VoiceContextHistorySnapshot {
 	readonly revision: number;
-	/** Oldest first. Presentation may reverse this, but the ledger never does. */
+	/** Oldest captured session first. */
 	readonly sessions: readonly VoiceContextSessionRecord[];
 }
 
-export interface VoiceContextSessionStart {
-	readonly identity: VoiceContextSessionIdentity;
-	readonly brief: VoiceContextStartBrief;
-	readonly startedAtMs: number;
-	readonly provenance: VoiceContextProvenance;
-}
-
 export interface VoiceContextAppend {
-	readonly identity: VoiceContextSessionIdentity;
+	readonly session: Pick<PublicVoiceSessionView, "binding" | "sessionId">;
 	readonly entry: VoiceContextLedgerEntry;
-}
-
-export interface VoiceContextBriefStaleMutation {
-	readonly identity: VoiceContextSessionIdentity;
-	readonly markedAtMs: number;
-	readonly reasons: readonly string[];
-}
-
-export interface VoiceContextStopMutation {
-	readonly identity: VoiceContextSessionIdentity;
-	readonly stoppedAtMs: number;
 }
 
 export type VoiceContextMutationIgnoredReason =
 	| "duplicate_session"
 	| "duplicate_entry"
-	| "unknown_session"
-	| "session_not_active"
-	| "already_stale";
+	| "invalid_brief"
+	| "identity_mismatch"
+	| "invalid_source_order"
+	| "source_order_conflict"
+	| "source_stream_mismatch"
+	| "unbound_session"
+	| "unknown_session";
 
 export type VoiceContextMutationResult =
 	| { readonly outcome: "applied"; readonly revision: number }
@@ -161,28 +145,27 @@ export type VoiceContextMutationResult =
 			readonly revision: number;
 	  };
 
-/** The sole session/history owner. Every accepted value is copied and frozen. */
+/** Retains evidence supplied by existing owners; it owns no session lifecycle. */
 export interface VoiceContextHistory {
 	readonly snapshot: () => VoiceContextHistorySnapshot;
 	readonly subscribe: (listener: () => void) => () => void;
-	readonly start: (input: VoiceContextSessionStart) => VoiceContextMutationResult;
+	readonly capture: (input: VoiceContextSessionCapture) => VoiceContextMutationResult;
+	readonly observe: (input: VoiceContextSessionEvidence) => VoiceContextMutationResult;
 	readonly append: (input: VoiceContextAppend) => VoiceContextMutationResult;
-	readonly markBriefStale: (input: VoiceContextBriefStaleMutation) => VoiceContextMutationResult;
-	readonly stop: (input: VoiceContextStopMutation) => VoiceContextMutationResult;
 }
 
 export interface VoiceContextProjectionLimits {
-	readonly collapsedSessions: number;
-	readonly collapsedEntries: number;
-	readonly collapsedBodyCharacters: number;
+	readonly sessionPageSize: number;
+	readonly entryPageSize: number;
+	readonly bodyWindowCharacters: number;
 }
 
 export interface VoiceContextProjectionInput {
 	readonly snapshot: VoiceContextHistorySnapshot;
-	readonly showAllSessions: boolean;
-	readonly expandedSessions: ReadonlySet<string>;
-	readonly expandedBriefs: ReadonlySet<string>;
-	readonly expandedEntries: ReadonlySet<string>;
+	readonly sessionPage: number;
+	readonly entryPages: ReadonlyMap<string, number>;
+	readonly briefPages: ReadonlyMap<string, number>;
+	readonly entryBodyPages: ReadonlyMap<string, number>;
 	readonly limits?: Partial<VoiceContextProjectionLimits>;
 }
 
@@ -197,49 +180,60 @@ export interface VoiceContextEntryView {
 	readonly expansionKey: string;
 	readonly kind: VoiceContextEntryKind;
 	readonly kindLabel: string;
+	readonly sourceOrderLabel: string;
 	readonly capturedAt: string;
+	readonly freshUntil: string;
 	readonly attemptedAt: string;
 	readonly attemptLabel: string;
+	readonly freshnessLabel: string;
 	readonly outcome: VoiceContextDeliveryOutcome;
 	readonly outcomeLabel: string;
 	readonly reason: string;
 	readonly body: string;
 	readonly bodyLabel: string;
 	readonly bodyPreview: string;
-	readonly bodyExpanded: boolean;
-	readonly bodyTruncated: boolean;
+	readonly bodyPage: number;
+	readonly bodyRemainingCharacters: number;
+	readonly nextBodyCharacters: number;
 	readonly provenanceLabel: string;
 	readonly disconnected: boolean;
 	readonly connectionLabel: string;
 }
 
+export type VoiceContextStatusTone = "quiet" | "status" | "warning" | "destructive";
+
 export interface VoiceContextSessionView {
 	readonly key: string;
-	readonly identity: VoiceContextSessionIdentity;
+	readonly binding: VoiceSessionBinding;
+	readonly sessionId: string;
 	readonly heading: string;
-	readonly status: VoiceContextSessionStatus["state"];
+	readonly status: VoiceSessionStatus;
 	readonly statusLabel: string;
 	readonly statusDetail: string;
-	readonly briefState: VoiceContextBriefCondition["state"];
+	readonly statusTone: VoiceContextStatusTone;
+	readonly replaced: boolean;
 	readonly briefLabel: string;
 	readonly briefDetail: string;
 	readonly provenanceLabel: string;
 	readonly fields: readonly VoiceContextFieldView[];
 	readonly canonicalBrief: string;
 	readonly canonicalBriefPreview: string;
-	readonly canonicalBriefExpanded: boolean;
-	readonly canonicalBriefTruncated: boolean;
+	readonly canonicalBriefPage: number;
+	readonly canonicalBriefRemainingCharacters: number;
+	readonly nextCanonicalBriefCharacters: number;
 	readonly entries: readonly VoiceContextEntryView[];
 	readonly entryCount: number;
-	readonly entriesExpanded: boolean;
+	readonly entryPage: number;
 	readonly hiddenEntryCount: number;
+	readonly nextEntryCount: number;
 }
 
 export interface VoiceContextHistoryView {
 	readonly sessions: readonly VoiceContextSessionView[];
 	readonly sessionCount: number;
+	readonly sessionPage: number;
 	readonly hiddenSessionCount: number;
-	readonly sessionsExpanded: boolean;
+	readonly nextSessionCount: number;
 }
 
 export interface VoiceContextClipboardPort {

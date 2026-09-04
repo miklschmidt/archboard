@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 12:08'
+updated_date: '2026-09-04 12:29'
 labels: []
 dependencies:
   - TASK-143.04.01
@@ -46,18 +46,26 @@ Show what the current voice session actually captured and what later context del
 4. Render the panel as a flat semantic-token composition with named baseline and later-delivery regions, definition lists and ordered history, accessible status/detail text, 44px copy and expansion controls, and technical values in the mono role. Use the shared opt-in DOM stack for interactions.
 5. Add focused module owners for immutable capture, ordered outcomes, stale/replaced/disconnected/uncertain/recovered labeling, bounded expansion, exact copy behavior, accessible structure, and retention after Stop; leave rendered browser coverage to TASK-143.04.07.
 6. Validate focused voice-context tests, both strict TypeScript projects, scoped Oxlint and Oxfmt, repository boundary/inventory owners only if required by new files, frontend build, and git diff --check. Commit only src/ui/voice-context plus this task record; keep acceptance criteria unchecked and status In Progress.
+
+7. Review remediation supersedes the parallel session lifecycle in the earlier plan: derive identity, binding, and status from the existing public voice-session view, and let voice-context own only immutable evidence retention plus presentation.
+8. Make the exact canonical semantic brief string the single baseline source. Parse and validate its complete lossless semantic_context shape locally for display, including workhorse turnId, one authoritative freshness object, pane.focused, selection IDs, description, child, and thread-link state.
+9. Require each delivery to carry authoritative adapter order plus captured/attempted/fresh-until values. Insert deterministically or refuse duplicates so semantic, focus, selection, and callback records render in source order with attempt-time fresh/stale language and no current publisher read.
+10. Replace Show all disclosures with bounded windows/pages and remaining counts while preserving the full ledger. On copy failure, reveal the exact target automatically before directing manual copy.
+11. Remove duplicated boundary/lint owners and the local 500-line assertion, retaining only a focused no-runtime/deep-import contract if it catches a gap not owned by repository checks. Rerun only the requested focused, type, scoped lint/format, relevant repository, build-if-needed, and diff gates.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Implementation ready for independent review. Scope is src/ui/voice-context/** plus this task record.
+Implementation ready for independent rereview. Scope is src/ui/voice-context/** plus this task record.
 
-Design: one UI-owned immutable ledger accepts an exact canonical start brief and typed semantic/focus/selection/callback outcomes under a full child/epoch/workhorse/coordinator/realtime/pane identity. Starting a new identity labels prior active sessions replaced; stop labels only the matching active identity and retains its baseline and entries. Disconnected, outcome_unknown, and recovered records remain inspectable. No method reads live publisher state, so later samples cannot rewrite captured evidence.
+Design: voice-context retains immutable evidence supplied by the existing public voice-session owner; it does not mint session identity or transition lifecycle. The byte-exact canonical semantic_context string is the sole baseline source and is locally validated against its complete current shape. Structured display is derived from those bytes, including the full workhorse turn, pane focus, selection, freshness window, description, child, and thread-link fields. Valid byte-capped briefs remain accepted when identity-shaped display fields are clipped; the stable session key and stopped/replaced status derive from VoiceSessionView.
 
-AC evidence: #1 contract.ts and projection.ts expose and render repository, identity, board/note, pane, version, distinct focus and selection freshness, claim/doing, cursor, ambiguity, truncation, and the byte-exact canonical copy source. #2 ordered ledger entries render captured and attempted timestamps, attempted/not-attempted, delivered/not_delivered/outcome_unknown, reason, connection, provenance, and exact body. #3 history.ts preserves stale, replaced, stopped, disconnected, uncertain, and recovered evidence under immutable identities. #4 VoiceContextPanel.tsx uses labelled semantic regions, definition and ordered lists, bounded disclosure, 44px Button controls, exact clipboard writes, and polite success/actionable failure announcements. #5 focused history/projection/panel/boundary owners prove immutable capture, stale focus distinct from fresh selection, ordered outcomes, bounded expansion without ledger loss, keyboard/pointer/touch operation, exact copy, replacement, and retention after Stop.
+Delivery evidence carries either a semantic feed sequence or one authoritative adapter-ledger position plus captured, fresh-until, and attempted timestamps. History sorts deterministically within one source stream and refuses duplicate positions or mixed streams. Projection reports fresh or stale at attempt and preserves exact delivered, not-delivered, uncertain, disconnected, and recovered bodies without consulting current publisher state.
 
-Validation: bun test --isolate src/ui/voice-context = 16 pass / 0 fail / 106 expectations; bunx tsc --noEmit and bunx tsc --noEmit -p tsconfig.frontend.json both exit 0; bunx oxlint src/ui/voice-context exits 0; bunx oxfmt --check src/ui/voice-context reports all 10 files correct; repository boundary and test-inventory owners = 62 pass / 0 fail / 139 expectations; bun run build:frontend succeeds with only the existing chunk-size warning; git diff --check is clean.
+The panel uses bounded session, entry, brief, and body windows with explicit remaining counts and collapse controls. Clipboard writes use the immutable canonical bytes; failure expands the exact target before giving manual-copy guidance. The redundant local boundary owner was removed because repository policy already enforces the boundary and file-size rule.
 
-Remaining risk is deliberate integration scope: TASK-143.04.06 must supply this closed UI contract from the workbench frame, and TASK-143.04.07 owns real rendered browser coverage. No browser, system, broad module, performance, or full-suite lane was run here.
+Validation: focused voice-context tests 14 pass, 0 fail, 84 expectations; both TypeScript projects pass; scoped Oxlint and Oxfmt pass; repository boundary and inventory owners 62 pass, 0 fail, 139 expectations; frontend build passes with only existing asset and chunk-size warnings; git diff --check is clean.
+
+Remaining integration risk is deliberate: TASK-143.04.06 must map the existing semantic sequence or adapter inspect-ledger order into this closed UI contract, and TASK-143.04.07 owns real rendered-browser coverage. No browser, broad, system, performance, stress, load, capacity, topology, or concurrency lane was run.
 <!-- SECTION:NOTES:END -->

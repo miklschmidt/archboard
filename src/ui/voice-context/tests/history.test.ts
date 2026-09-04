@@ -1,82 +1,127 @@
 import { describe, expect, test } from "bun:test";
 
 import { createVoiceContextHistory } from "../index.js";
-import { ledgerEntry, SESSION_A, SESSION_B, sessionStart, startBrief } from "./support/fixtures.js";
+import {
+	BINDING_A,
+	BINDING_B,
+	canonicalBrief,
+	capture,
+	evidence,
+	ledgerEntry,
+	SESSION_A,
+	SESSION_B,
+	voiceSession,
+} from "./support/fixtures.js";
 
 describe("voice context history", () => {
-	test("copies and freezes the exact baseline instead of retaining publisher-owned values", () => {
-		const selection = ["api", "worker"];
-		const ambiguity = ["Two panes named primary"];
-		const reasons = ["Focus was older than the freshness window"];
-		const canonicalBrief = '{"exact":"captured bytes stay unchanged"}';
-		const brief = startBrief({
-			canonicalBrief,
-			focusFreshness: "stale",
-			selection: {
-				elementIds: selection,
-				capturedAtMs: 1_799_999_999_800,
-				freshUntilMs: 1_800_000_001_800,
-				freshness: "fresh",
-			},
-			ambiguity,
-			staleness: { state: "stale", reasons },
+	test("parses, copies, and freezes the exact canonical baseline", () => {
+		const binding = {
+			paneId: String(BINDING_A.paneId),
+			childId: String(BINDING_A.childId),
+			epoch: String(BINDING_A.epoch),
+			workhorseThreadId: String(BINDING_A.workhorseThreadId),
+			coordinatorThreadId: String(BINDING_A.coordinatorThreadId),
+		};
+		const session = voiceSession(binding);
+		const exact = canonicalBrief(session, {
+			selection: ["api", "worker"],
+			ambiguity: ["Two paths meet here"],
 		});
 		const history = createVoiceContextHistory();
-		expect(history.start(sessionStart(SESSION_A, { brief })).outcome).toBe("applied");
+		expect(history.capture(capture(session, { canonicalBrief: exact })).outcome).toBe("applied");
 
-		selection.push("late-current-selection");
-		ambiguity.push("late-current-ambiguity");
-		reasons.push("late-current-reason");
+		binding.paneId = "later-current-pane";
 		const captured = history.snapshot().sessions[0]!;
-
-		expect(captured.brief.selection.elementIds).toEqual(["api", "worker"]);
-		expect(captured.brief.ambiguity).toEqual(["Two panes named primary"]);
-		expect(captured.brief.staleness.reasons).toEqual(["Focus was older than the freshness window"]);
-		expect(captured.brief.focusFreshness).toBe("stale");
-		expect(captured.brief.selection.freshness).toBe("fresh");
-		expect(captured.brief.canonicalBrief).toBe(canonicalBrief);
-		expect(Object.isFrozen(captured.brief.selection.elementIds)).toBe(true);
-		expect(Object.isFrozen(captured.brief)).toBe(true);
+		expect(captured.captured.canonicalBrief).toBe(exact);
+		expect(captured.captured.brief.pane.paneId).toBe("primary");
+		expect(captured.captured.brief.selection).toEqual(["api", "worker"]);
+		expect(captured.captured.brief.ambiguity).toEqual(["Two paths meet here"]);
+		expect(captured.captured.session.binding?.paneId).toBe("primary");
+		expect(Object.isFrozen(captured.captured.brief.selection)).toBe(true);
+		expect(Object.isFrozen(captured.captured.session.controls)).toBe(true);
 		expect(Object.isFrozen(history.snapshot().sessions)).toBe(true);
 	});
 
-	test("marks a prior exact session replaced and later stops only the active identity", () => {
+	test("retains externally observed replaced and stopped views without owning transitions", () => {
 		const history = createVoiceContextHistory();
-		history.start(sessionStart(SESSION_A));
-		history.append({ identity: SESSION_A, entry: ledgerEntry("entry-1") });
-		history.start(
-			sessionStart(SESSION_B, {
-				startedAtMs: 1_800_000_002_000,
-				provenance: "recovered",
-			}),
-		);
-
-		const replaced = history.snapshot().sessions[0]!;
-		expect(replaced.status).toMatchObject({
-			state: "replaced",
-			replacedAtMs: 1_800_000_002_000,
-			replacedBy: SESSION_B,
+		history.capture(capture(SESSION_A));
+		history.append({ session: SESSION_A, entry: ledgerEntry("1") });
+		const replaced = voiceSession(BINDING_A, "realtime-a", {
+			status: "failed",
+			label: "Failed",
+			detail: "The bound session was replaced.",
+			failure: { code: "replaced", recoverable: false, message: "Binding changed." },
 		});
-		expect(replaced.entries.map((entry) => entry.id)).toEqual(["entry-1"]);
-		expect(history.stop({ identity: SESSION_A, stoppedAtMs: 1_800_000_003_000 })).toMatchObject({
-			outcome: "ignored",
-			reason: "session_not_active",
-		});
-		expect(history.stop({ identity: SESSION_B, stoppedAtMs: 1_800_000_003_100 }).outcome).toBe(
+		expect(history.observe(evidence(replaced, 1_800_000_002_000)).outcome).toBe("applied");
+		expect(history.capture(capture(SESSION_B, { provenance: "recovered" })).outcome).toBe(
 			"applied",
 		);
-		expect(history.snapshot().sessions[1]!.status).toEqual({
-			state: "stopped",
-			startedAtMs: 1_800_000_002_000,
-			stoppedAtMs: 1_800_000_003_100,
+		const stopped = voiceSession(BINDING_B, "realtime-b", {
+			status: "stopped",
+			label: "Stopped",
+			detail: "Voice stopped.",
+			controls: { ...SESSION_B.controls, canMute: false, canStop: false },
 		});
-		expect(history.snapshot().sessions[1]!.brief.canonicalBrief).toContain("archboard");
+		history.observe(evidence(stopped, 1_800_000_003_000, "recovered"));
+
+		const [oldSession, newSession] = history.snapshot().sessions;
+		expect(oldSession?.observations.at(-1)?.session.failure?.code).toBe("replaced");
+		expect(oldSession?.entries.map((entry) => entry.id)).toEqual(["1"]);
+		expect(newSession?.observations.at(-1)?.session.status).toBe("stopped");
+		expect(newSession?.captured.canonicalBrief).toBe(canonicalBrief(SESSION_B));
 	});
 
-	test("retains disconnected, uncertain, and recovered entries under their exact identity", () => {
+	test("inserts semantic, focus, selection, and callback evidence by authoritative order", () => {
 		const history = createVoiceContextHistory();
-		history.start(sessionStart(SESSION_A, { provenance: "recovered" }));
-		const uncertain = ledgerEntry("uncertain", {
+		history.capture(capture());
+		const inputs = [
+			ledgerEntry("callback", {
+				kind: "callback",
+				sourceOrder: { kind: "adapter_ledger", ledgerId: "coordinator-a", position: 4 },
+			}),
+			ledgerEntry("semantic", {
+				kind: "semantic",
+				sourceOrder: { kind: "adapter_ledger", ledgerId: "coordinator-a", position: 1 },
+			}),
+			ledgerEntry("selection", {
+				kind: "selection",
+				sourceOrder: { kind: "adapter_ledger", ledgerId: "coordinator-a", position: 3 },
+			}),
+			ledgerEntry("focus", {
+				kind: "focus",
+				sourceOrder: { kind: "adapter_ledger", ledgerId: "coordinator-a", position: 2 },
+			}),
+		] as const;
+		for (const entry of inputs)
+			expect(history.append({ session: SESSION_A, entry }).outcome).toBe("applied");
+		expect(history.snapshot().sessions[0]?.entries.map((entry) => entry.kind)).toEqual([
+			"semantic",
+			"focus",
+			"selection",
+			"callback",
+		]);
+		expect(
+			history.append({
+				session: SESSION_A,
+				entry: ledgerEntry("conflict", {
+					sourceOrder: { kind: "adapter_ledger", ledgerId: "coordinator-a", position: 2 },
+				}),
+			}),
+		).toMatchObject({ outcome: "ignored", reason: "source_order_conflict" });
+		expect(
+			history.append({
+				session: SESSION_A,
+				entry: ledgerEntry("other", {
+					sourceOrder: { kind: "adapter_ledger", ledgerId: "other-ledger", position: 5 },
+				}),
+			}),
+		).toMatchObject({ outcome: "ignored", reason: "source_stream_mismatch" });
+	});
+
+	test("retains disconnected, uncertain, and recovered delivery evidence", () => {
+		const history = createVoiceContextHistory();
+		history.capture(capture(SESSION_A, { provenance: "recovered" }));
+		const uncertain = ledgerEntry("8", {
 			kind: "callback",
 			outcome: "outcome_unknown",
 			reason: "response_lost",
@@ -84,44 +129,30 @@ describe("voice context history", () => {
 			connection: "disconnected",
 			provenance: "recovered",
 		});
-		expect(history.append({ identity: SESSION_A, entry: uncertain }).outcome).toBe("applied");
-
-		const mismatched = { ...SESSION_A, paneId: "other-pane" };
-		expect(history.append({ identity: mismatched, entry: ledgerEntry("wrong") })).toMatchObject({
-			outcome: "ignored",
-			reason: "unknown_session",
-		});
-		expect(history.append({ identity: SESSION_A, entry: uncertain })).toMatchObject({
+		expect(history.append({ session: SESSION_A, entry: uncertain }).outcome).toBe("applied");
+		expect(history.append({ session: SESSION_A, entry: uncertain })).toMatchObject({
 			outcome: "ignored",
 			reason: "duplicate_entry",
 		});
-		expect(history.snapshot().sessions[0]!.entries).toEqual([uncertain]);
+		const mismatched = voiceSession({ ...BINDING_A, paneId: "other-pane" });
+		expect(history.append({ session: mismatched, entry: ledgerEntry("9") })).toMatchObject({
+			outcome: "ignored",
+			reason: "unknown_session",
+		});
+		expect(history.snapshot().sessions[0]?.entries).toEqual([uncertain]);
 	});
 
-	test("marks stale against one exact session and publishes only accepted mutations", () => {
+	test("refuses malformed or contradictory canonical bytes", () => {
 		const history = createVoiceContextHistory();
-		const revisions: number[] = [];
-		const unsubscribe = history.subscribe(() => revisions.push(history.snapshot().revision));
-		history.start(sessionStart(SESSION_A));
-		expect(
-			history.markBriefStale({
-				identity: SESSION_A,
-				markedAtMs: 1_800_000_004_000,
-				reasons: ["The pane focus changed after capture."],
-			}),
-		).toMatchObject({ outcome: "applied", revision: 2 });
-		expect(
-			history.markBriefStale({
-				identity: SESSION_A,
-				markedAtMs: 1_800_000_004_100,
-				reasons: ["A later reason must not replace the captured one."],
-			}),
-		).toMatchObject({ outcome: "ignored", reason: "already_stale", revision: 2 });
-		expect(history.snapshot().sessions[0]!.briefCondition).toMatchObject({
-			state: "stale",
-			reasons: ["The pane focus changed after capture."],
+		expect(history.capture(capture(SESSION_A, { canonicalBrief: "not json" }))).toMatchObject({
+			outcome: "ignored",
+			reason: "invalid_brief",
 		});
-		expect(revisions).toEqual([1, 2]);
-		unsubscribe();
+		const contradictory = canonicalBrief(SESSION_B);
+		expect(history.capture(capture(SESSION_A, { canonicalBrief: contradictory }))).toMatchObject({
+			outcome: "ignored",
+			reason: "identity_mismatch",
+		});
+		expect(history.snapshot().sessions).toHaveLength(0);
 	});
 });
