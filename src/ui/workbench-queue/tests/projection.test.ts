@@ -225,13 +225,69 @@ describe("workbench queue states", () => {
 		);
 	});
 
+	test("a stopped Codex session is not a lost socket, and refreshing is still offered", () => {
+		const readinessStates = ["stopped", "storage_mismatch"] as const;
+		for (const readiness of readinessStates) {
+			const view = project({
+				kind: "readiness",
+				state: readiness,
+				connection: "connected",
+				snapshot: snapshot({ queue: queue("queued", SEEDS) }),
+				sequence: 4,
+			});
+
+			expect([readiness, view.state]).toEqual([readiness, "session_stopped"]);
+			expect(view.label).toBe("Codex session stopped");
+			expect(view.detail).toContain("This pane is connected");
+			// The recovery has to agree with the control: the socket is up, so a
+			// refresh is reachable, and it is what recovers this.
+			expect(view.recovery).toBe(
+				"Refresh the list once the host's Codex session is running again.",
+			);
+			expect(view.list.enabled).toBe(true);
+			expect(view.stale).toBe(true);
+			expect(view.add.reason).toBe(view.recovery);
+			expect(view.entries[0]?.cancel.reason).toBe(view.recovery);
+		}
+	});
+
+	test("an incompatible Codex session says a refresh will keep reporting it", () => {
+		const view = project({
+			kind: "readiness",
+			state: "incompatible_contract",
+			connection: "connected",
+			snapshot: snapshot({ queue: queue("queued", SEEDS) }),
+			sequence: 4,
+		});
+
+		expect(view.state).toBe("session_incompatible");
+		expect(view.label).toBe("Codex session incompatible");
+		expect(view.recovery).toContain("refreshing will keep reporting this until then");
+		expect(view.list.enabled).toBe(true);
+		expect(view.stale).toBe(true);
+	});
+
+	test("the same readiness word over a lost socket is disconnected, not a session state", () => {
+		const overSocketLoss = project({
+			kind: "connection",
+			state: "incompatible_contract",
+			connection: "stopped",
+			snapshot: null,
+			sequence: null,
+			reason: "The workbench gateway contract is incompatible.",
+		});
+
+		expect(overSocketLoss.state).toBe("disconnected");
+		expect(overSocketLoss.list.enabled).toBe(false);
+	});
+
 	test("every readiness arm the host can publish has its own queue state", () => {
 		const arms = [
-			["stopped", "disconnected"],
+			["stopped", "session_stopped"],
 			["backoff", "reconnecting"],
 			["reconnecting", "reconnecting"],
-			["incompatible_contract", "disconnected"],
-			["storage_mismatch", "unavailable"],
+			["incompatible_contract", "session_incompatible"],
+			["storage_mismatch", "session_stopped"],
 			["initialized", "unavailable"],
 			["login_capable", "unavailable"],
 			["signed_out", "unavailable"],

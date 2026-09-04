@@ -36,7 +36,10 @@ export const WORKBENCH_QUEUE_NARRATIVES = {
 	},
 	running: {
 		label: "Running",
-		detail: "The linked workhorse is running a submission from this queue.",
+		// The authoritative list holds pending submissions only, and the busy turn
+		// may be direct input rather than anything this queue supplied, so this
+		// says what the host's facts support: the workhorse is busy.
+		detail: "The linked workhorse is busy, so this queue is waiting behind the current turn.",
 		recovery: "Wait for the turn to settle, or interrupt it from the workhorse timeline.",
 	},
 	interrupted_preserved: {
@@ -79,6 +82,18 @@ export const WORKBENCH_QUEUE_NARRATIVES = {
 		label: "Disconnected",
 		detail: "This pane has no workbench socket, so there is nothing to read a queue from.",
 		recovery: "Reconnect the workbench; refreshing needs a socket and cannot recover this.",
+	},
+	session_stopped: {
+		label: "Codex session stopped",
+		detail: "This pane is connected, but the host's Codex session is not running.",
+		recovery: "Refresh the list once the host's Codex session is running again.",
+	},
+	session_incompatible: {
+		label: "Codex session incompatible",
+		detail:
+			"This pane is connected, but the host's Codex session reports a contract it cannot serve.",
+		recovery:
+			"Install the pinned Codex version and restart the host session; refreshing will keep reporting this until then.",
 	},
 	unavailable: {
 		label: "Queue unavailable",
@@ -165,17 +180,22 @@ type Readiness = Extract<BrowserWorkbenchState, { readonly kind: "readiness" }>[
 /**
  * Every readiness arm the host can publish, and what it means for the queue.
  *
- * `null` hands the decision to the queue's own status: the workbench is up and
- * the queue is the only thing left to describe. The exhaustive map is the point
- * — a new readiness arm fails type-check here rather than silently falling
- * through to an ordinary label.
+ * A readiness state always arrives over a live socket, so none of these arms is
+ * `disconnected`: they say something about the host's Codex session, not about
+ * this pane's connection. `null` hands the decision to the queue's own status —
+ * the session is up and the queue is the only thing left to describe. The
+ * exhaustive map is the point: a new readiness arm fails type-check here rather
+ * than silently falling through to an ordinary label.
  */
 const READINESS_STATES = {
-	stopped: "disconnected",
+	// The child is down or terminally failed. A storage mismatch is the same
+	// thing with a named cause: the session cannot run until it is fixed.
+	stopped: "session_stopped",
+	storage_mismatch: "session_stopped",
 	backoff: "reconnecting",
 	reconnecting: "reconnecting",
-	incompatible_contract: "disconnected",
-	storage_mismatch: "unavailable",
+	incompatible_contract: "session_incompatible",
+	// The session runs; it has no thread link to hold a queue for yet.
 	initialized: "unavailable",
 	login_capable: "unavailable",
 	signed_out: "unavailable",
@@ -187,8 +207,9 @@ const READINESS_STATES = {
 /**
  * The transport state that outranks the queue's own status. The stream owner
  * reports a sequence gap as `stale`; the connection owner reports a dropped or
- * retrying socket; and readiness is the host telling the browser how far its own
- * Codex child has got.
+ * retrying socket, which is the only thing `disconnected` ever means; and
+ * readiness is the host telling the browser how far its own Codex child has got
+ * over a socket that is still up.
  */
 function connectionState(state: BrowserWorkbenchState): WorkbenchQueueState | null {
 	if (state.kind === "stream") return "stale";
@@ -228,6 +249,8 @@ export function isStaleWorkbenchQueueState(state: WorkbenchQueueState): boolean 
 		state === "reconnecting" ||
 		state === "restarted" ||
 		state === "outcome_unknown" ||
+		state === "session_stopped" ||
+		state === "session_incompatible" ||
 		state === "loading"
 	);
 }
