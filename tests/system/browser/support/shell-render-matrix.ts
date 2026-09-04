@@ -79,7 +79,7 @@ function stable(value: unknown): string {
 	return JSON.stringify(value);
 }
 
-async function emulateMedia(
+export async function emulateMedia(
 	browser: AgentBrowserSession,
 	theme: ShellTheme,
 	mode: MediaMode,

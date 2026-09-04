@@ -105,6 +105,7 @@ let threadSequence = 0;
 let turnSequence = 0;
 let workhorseThreadId: string | null = null;
 let reverseRequestsSent = false;
+let realtimeSessionId: string | null = null;
 
 const configResponse = () => ({
 	config: { ...configFixture, sqlite_home: process.env.CODEX_SQLITE_HOME },
@@ -374,6 +375,57 @@ const handle = (frame: WireFrame): void => {
 		case "thread/inject_items":
 			record({ kind: "semantic_injection", params });
 			respond(frame as never, {});
+			return;
+		case "thread/realtime/start": {
+			realtimeSessionId = String(params.realtimeSessionId);
+			respond(frame as never, {});
+			setTimeout(() => {
+				const userTranscript = {
+					id: "controlled-user-transcript",
+					realtimeSessionId,
+					type: "transcriptSegment",
+					role: "user",
+					text: "Show the controlled voice context.",
+				};
+				const assistantTranscript = {
+					id: "controlled-assistant-transcript",
+					realtimeSessionId,
+					type: "transcriptSegment",
+					role: "assistant",
+					text: "The controlled voice context is visible.",
+				};
+				notify("thread/realtime/sdp", {
+					threadId: params.threadId,
+					sdp: "controlled-answer-sdp",
+				});
+				notify("thread/realtime/started", {
+					threadId: params.threadId,
+					realtimeSessionId,
+					version: "v3",
+				});
+				notify("thread/realtime/item/started", {
+					threadId: params.threadId,
+					item: userTranscript,
+				});
+				notify("thread/realtime/item/completed", {
+					threadId: params.threadId,
+					item: userTranscript,
+				});
+				notify("thread/realtime/item/started", {
+					threadId: params.threadId,
+					item: assistantTranscript,
+				});
+				notify("thread/realtime/item/completed", {
+					threadId: params.threadId,
+					item: assistantTranscript,
+				});
+			}, 10);
+			return;
+		}
+		case "thread/realtime/stop":
+			record({ kind: "realtime_stop", realtimeSessionId });
+			respond(frame as never, {});
+			realtimeSessionId = null;
 			return;
 		case "thread/delete":
 			threads.delete(String(params.threadId));
