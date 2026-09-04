@@ -15,7 +15,7 @@ export {
 export { isGenuineBinaryApproval } from "./lib/offers.js";
 export { dynamicApprovalDraft, ordinaryApprovalDraft } from "./lib/response.js";
 export { submitApprovalDecision } from "./lib/submit.js";
-export { approvalFocusReturn } from "./lib/focus.js";
+export { approvalDecisionSignature, approvalFocusReturn } from "./lib/focus.js";
 export type { ApprovalFocusReturn } from "./lib/focus.js";
 export type {
 	WorkbenchApprovalAuthority,
