@@ -195,7 +195,6 @@ function view(
 		outcome,
 		controls,
 		binding: input.binding,
-		inputLevel: input.media?.inputLevel ?? 0,
 		sessionId: input.media?.correlation?.sessionId ?? null,
 	});
 }

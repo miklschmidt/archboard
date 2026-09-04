@@ -2,7 +2,6 @@ import type { RealtimeMediaSnapshot } from "../codex-realtime/index.js";
 import type { BrowserWorkbenchMediaState } from "../codex-workbench-media/index.js";
 import type {
 	BrowserWorkbenchCapabilities,
-	BrowserWorkbenchCommandTarget,
 	BrowserWorkbenchState,
 } from "../workbench-transport/index.js";
 import type { BrowserSnapshot } from "../../shared/codex-browser-model/index.js";
@@ -121,8 +120,6 @@ export interface VoiceSessionView {
 	readonly outcome: VoiceSessionOutcome;
 	readonly controls: VoiceSessionControls;
 	readonly binding: VoiceSessionBinding | null;
-	/** The module's own microphone level, 0 to 1. */
-	readonly inputLevel: number;
 	/** The realtime session identity as a plain string, for cross-linking only. */
 	readonly sessionId: string | null;
 }
@@ -146,23 +143,41 @@ export interface VoiceRealtimePort {
 	readonly stop: () => Promise<RealtimeMediaSnapshot>;
 }
 
-/** The already-constructed workbench transport, seen through its read surface. */
+/**
+ * The already-constructed workbench transport, seen through its read surface.
+ * Deliberately narrower than the transport: `captureCommandTarget` is absent
+ * because it is not a read. On the real transport it expires and renews the
+ * command lease and broadcasts before it can refuse, so calling it from a
+ * projection would write from inside a documented pure read.
+ */
 export interface VoiceTransportPort {
 	readonly state: () => BrowserWorkbenchState;
 	readonly snapshot: () => BrowserSnapshot | null;
 	readonly capabilities: () => BrowserWorkbenchCapabilities;
-	readonly captureCommandTarget: () => BrowserWorkbenchCommandTarget;
 	readonly subscribe: (listener: () => void) => () => void;
 }
 
 export interface VoiceSessionPorts {
 	readonly realtime: VoiceRealtimePort;
 	readonly transport: VoiceTransportPort;
+	/**
+	 * This pane's identity, supplied once by the caller that owns the pane. The
+	 * adapter never asks the transport for it: the only transport call that
+	 * reports a pane is a lease operation, not a read.
+	 */
+	readonly paneId: string;
 }
 
 export interface VoiceSession {
 	readonly view: () => VoiceSessionView;
 	readonly subscribe: (listener: () => void) => () => void;
+	/**
+	 * The microphone level, 0 to 1, kept off the status view on purpose: the
+	 * realtime meter publishes it from an animation frame, and a status view
+	 * carrying it would re-render every status consumer sixty times a second.
+	 */
+	readonly level: () => number;
+	readonly subscribeLevel: (listener: () => void) => () => void;
 	/** Re-reads both authoritative sources and republishes if the view changed. */
 	readonly refresh: () => VoiceSessionView;
 	readonly start: () => Promise<VoiceSessionView>;

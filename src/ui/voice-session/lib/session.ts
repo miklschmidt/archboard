@@ -1,8 +1,13 @@
 import type { BrowserSnapshot } from "../../../shared/codex-browser-model/index.js";
+import type { RealtimeMediaSnapshot } from "../../codex-realtime/index.js";
+import type { BrowserWorkbenchMediaState } from "../../codex-workbench-media/index.js";
+import type { BrowserWorkbenchState } from "../../workbench-transport/index.js";
 import type {
 	VoiceSession,
 	VoiceSessionBinding,
+	VoiceSessionControls,
 	VoiceSessionFailure,
+	VoiceSessionOutcome,
 	VoiceSessionPorts,
 	VoiceSessionView,
 	VoiceTransportPort,
@@ -27,28 +32,23 @@ function controlMessage(error: unknown, fallback: string): string {
 
 /**
  * What the transport currently says this pane is bound to. `null` means the
- * binding cannot be observed — a reconnect that has retired the snapshot is not
- * evidence that anything was replaced — and `"gone"` means a connected workbench
+ * binding cannot be observed — a reconnect that has retired the snapshot, or a
+ * stale snapshot that lost its place in the stream, is not evidence that
+ * anything was replaced — and `"gone"` means a current readiness projection
  * published a pane with no executable thread link at all.
+ *
+ * Every field is read from the published snapshot. Nothing here calls the
+ * transport's lease surface, so a projection stays a read.
  */
-function observeBinding(transport: VoiceTransportPort): ObservedBinding {
+function observeBinding(transport: VoiceTransportPort, paneId: string): ObservedBinding {
 	const state = transport.state();
+	// Only a current readiness projection is evidence about the link.
+	if (state.kind !== "readiness") return null;
 	const snapshot = state.snapshot;
-	if (snapshot === null) return null;
 	const link = snapshot.threadLink;
-	// Only a current readiness projection is evidence about the link. A stale
-	// snapshot is a connected socket that lost its place in the stream, so what
-	// it holds is not known to be current and cannot condemn a binding.
-	if (link.state !== "executable") return state.kind === "readiness" ? "gone" : null;
-	let paneId: string | null;
-	try {
-		paneId = text(transport.captureCommandTarget().paneId);
-	} catch {
-		// A pane whose socket has gone is unobservable, not replaced.
-		paneId = null;
-	}
+	if (link.state !== "executable") return "gone";
 	return {
-		paneId: paneId ?? "",
+		paneId,
 		childId: String(link.childId),
 		epoch: String(link.epoch),
 		workhorseThreadId: String(link.threadId),
@@ -62,7 +62,10 @@ function bindingReplaced(bound: VoiceSessionBinding, observed: ObservedBinding):
 	if (observed.childId !== bound.childId) return true;
 	if (observed.epoch !== bound.epoch) return true;
 	if (observed.workhorseThreadId !== bound.workhorseThreadId) return true;
-	if (observed.paneId !== "" && observed.paneId !== bound.paneId) return true;
+	// Unconditional: a binding must never be presented under a pane it was not
+	// captured for. Within one adapter both sides are the caller's pane id, so
+	// this holds by construction and fails loudly if that ever stops being true.
+	if (observed.paneId !== bound.paneId) return true;
 	// A coordinator the host has not published yet is not a replacement; a
 	// different published coordinator is.
 	return (
@@ -72,18 +75,80 @@ function bindingReplaced(bound: VoiceSessionBinding, observed: ObservedBinding):
 	);
 }
 
-function captureBinding(transport: VoiceTransportPort): VoiceSessionBinding {
-	const target = transport.captureCommandTarget();
-	const link = target.capturedThreadLink;
-	if (link.state !== "executable" || link.threadId === null)
+function captureBinding(transport: VoiceTransportPort, paneId: string): VoiceSessionBinding {
+	const snapshot = transport.snapshot();
+	const link = snapshot?.threadLink;
+	if (link === undefined || link.state !== "executable" || link.threadId === null)
 		throw new Error("A voice session requires an executable thread link to bind to.");
 	return Object.freeze({
-		paneId: String(target.paneId),
-		childId: String(target.childId),
-		epoch: String(target.epoch),
+		paneId,
+		childId: String(link.childId),
+		epoch: String(link.epoch),
 		workhorseThreadId: String(link.threadId),
-		coordinatorThreadId: coordinatorThreadId(transport.snapshot()),
+		coordinatorThreadId: coordinatorThreadId(snapshot),
 	});
+}
+
+function sameFailure(left: VoiceSessionFailure | null, right: VoiceSessionFailure | null): boolean {
+	if (left === null || right === null) return left === right;
+	return (
+		left.code === right.code &&
+		left.recoverable === right.recoverable &&
+		left.message === right.message
+	);
+}
+
+function sameOutcome(left: VoiceSessionOutcome, right: VoiceSessionOutcome): boolean {
+	if (left.kind !== right.kind) return false;
+	if (left.kind === "none" || right.kind === "none") return true;
+	if (left.label !== right.label || left.recovery !== right.recovery) return false;
+	return left.kind !== "retry" || right.kind !== "retry" || left.control === right.control;
+}
+
+function sameControls(left: VoiceSessionControls, right: VoiceSessionControls): boolean {
+	return (
+		left.canStart === right.canStart &&
+		left.canStop === right.canStop &&
+		left.canRestart === right.canRestart &&
+		left.canClose === right.canClose
+	);
+}
+
+function sameBinding(left: VoiceSessionBinding | null, right: VoiceSessionBinding | null): boolean {
+	if (left === null || right === null) return left === right;
+	return (
+		left.paneId === right.paneId &&
+		left.childId === right.childId &&
+		left.epoch === right.epoch &&
+		left.workhorseThreadId === right.workhorseThreadId &&
+		left.coordinatorThreadId === right.coordinatorThreadId
+	);
+}
+
+/** Field-wise, because this runs on every published change and JSON does not. */
+function sameView(left: VoiceSessionView, right: VoiceSessionView): boolean {
+	return (
+		left.status === right.status &&
+		left.label === right.label &&
+		left.detail === right.detail &&
+		left.accessibleStatus === right.accessibleStatus &&
+		left.sessionId === right.sessionId &&
+		sameFailure(left.failure, right.failure) &&
+		sameOutcome(left.outcome, right.outcome) &&
+		sameControls(left.controls, right.controls) &&
+		sameBinding(left.binding, right.binding)
+	);
+}
+
+function announce(subscribers: Set<() => void>): void {
+	const notified = [...subscribers];
+	for (const listener of notified) {
+		try {
+			listener();
+		} catch {
+			// A subscriber cannot take ownership of the voice lifecycle.
+		}
+	}
 }
 
 /**
@@ -91,8 +156,13 @@ function captureBinding(transport: VoiceTransportPort): VoiceSessionBinding {
  * guards around it, and the projection; the media owner and the transport it
  * reads are constructed elsewhere and are never disposed here.
  */
-export function createVoiceSession({ realtime, transport }: VoiceSessionPorts): VoiceSession {
+export function createVoiceSession({
+	realtime,
+	transport,
+	paneId,
+}: VoiceSessionPorts): VoiceSession {
 	const listeners = new Set<() => void>();
+	const levelListeners = new Set<() => void>();
 	let binding: VoiceSessionBinding | null = null;
 	let closed = false;
 	let closedSessionId: string | null = null;
@@ -109,7 +179,7 @@ export function createVoiceSession({ realtime, transport }: VoiceSessionPorts): 
 			transportState: transport.state(),
 			capabilities: transport.capabilities(),
 			binding,
-			replaced: binding !== null && bindingReplaced(binding, observeBinding(transport)),
+			replaced: binding !== null && bindingReplaced(binding, observeBinding(transport, paneId)),
 			busy,
 			closed,
 			closedSessionId,
@@ -117,24 +187,62 @@ export function createVoiceSession({ realtime, transport }: VoiceSessionPorts): 
 		});
 
 	let current = project();
+	let inputLevel = realtime.snapshot()?.inputLevel ?? 0;
+	/** The exact source objects `current` was projected from. */
+	let seenMedia: RealtimeMediaSnapshot | null = realtime.snapshot();
+	let seenMediaState: BrowserWorkbenchMediaState = realtime.state();
+	let seenTransportState: BrowserWorkbenchState = transport.state();
+
+	const readLevel = (media: RealtimeMediaSnapshot | null): void => {
+		const next = media?.inputLevel ?? 0;
+		if (next === inputLevel) return;
+		inputLevel = next;
+		announce(levelListeners);
+	};
+
+	const remember = (
+		media: RealtimeMediaSnapshot | null,
+		mediaState: BrowserWorkbenchMediaState,
+		transportState: BrowserWorkbenchState,
+	): void => {
+		seenMedia = media;
+		seenMediaState = mediaState;
+		seenTransportState = transportState;
+	};
 
 	const publish = (): VoiceSessionView => {
+		const media = realtime.snapshot();
 		const next = project();
-		if (JSON.stringify(next) === JSON.stringify(current)) return current;
+		remember(media, realtime.state(), transport.state());
+		readLevel(media);
+		if (sameView(next, current)) return current;
 		current = next;
-		const notified = [...listeners];
-		for (const listener of notified) {
-			try {
-				listener();
-			} catch {
-				// A subscriber cannot take ownership of the voice lifecycle.
-			}
-		}
+		announce(listeners);
 		return current;
+	};
+
+	/**
+	 * The realtime meter republishes from an animation frame, and only the level
+	 * moves: the module reuses the same frozen state and correlation objects. That
+	 * identity is the fast path — no projection, and no status subscriber woken —
+	 * so sixty level frames a second cost sixty meter renders, not sixty of every
+	 * status consumer in the pane.
+	 */
+	const levelOnly = (): boolean => {
+		const media = realtime.snapshot();
+		if (media === null || seenMedia === null) return false;
+		if (media.state !== seenMedia.state || media.correlation !== seenMedia.correlation)
+			return false;
+		if (realtime.state() !== seenMediaState || transport.state() !== seenTransportState)
+			return false;
+		remember(media, seenMediaState, seenTransportState);
+		readLevel(media);
+		return true;
 	};
 
 	const republish = (): void => {
 		if (disposed) return;
+		if (levelOnly()) return;
 		publish();
 	};
 	const releaseTransport = transport.subscribe(republish);
@@ -164,7 +272,7 @@ export function createVoiceSession({ realtime, transport }: VoiceSessionPorts): 
 	};
 
 	const bindNewSession = (): void => {
-		binding = captureBinding(transport);
+		binding = captureBinding(transport, paneId);
 		closed = false;
 		closedSessionId = null;
 	};
@@ -233,6 +341,12 @@ export function createVoiceSession({ realtime, transport }: VoiceSessionPorts): 
 			listeners.add(listener);
 			return () => listeners.delete(listener);
 		},
+		level: () => inputLevel,
+		subscribeLevel: (listener: () => void) => {
+			if (disposed) return () => undefined;
+			levelListeners.add(listener);
+			return () => levelListeners.delete(listener);
+		},
 		refresh: () => (disposed ? current : publish()),
 		start,
 		stop,
@@ -246,6 +360,7 @@ export function createVoiceSession({ realtime, transport }: VoiceSessionPorts): 
 			releaseTransport();
 			releaseRealtime();
 			listeners.clear();
+			levelListeners.clear();
 		},
 	});
 }
