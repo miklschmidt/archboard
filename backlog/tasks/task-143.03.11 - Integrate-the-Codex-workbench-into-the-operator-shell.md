@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.11
 title: Integrate the Codex workbench into the operator shell
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-04 13:29'
+updated_date: '2026-09-04 13:34'
 labels: []
 dependencies:
   - TASK-143.03.10
@@ -35,10 +35,10 @@ Integrate the accepted text workbench frame into the existing operator shell and
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Shell.tsx mounts one workbench per eligible pane through the accepted frame, preserves Excalidraw ownership, pane/navigator/status/claim/doing flows, and introduces no second shell/workbench store.
-- [ ] #2 The existing PresentationDock identifies the active text pane/workhorse/turn and keeps a labelled Stop control reachable in fullscreen without changing fullscreen ownership or inventing a second dock.
-- [ ] #3 CSS consumes the semantic aesthetic contract for desktop, two-pane, collapsed, fullscreen, high contrast, reduced motion, and Flip touch without default assistant-ui/shadcn styling.
-- [ ] #4 The named module test covers one registration, source identity, fullscreen Stop routing, unmount/reload, and unchanged shell/canvas behavior; TASK-143.03.13 owns rendered browser behavior.
+- [x] #1 Shell.tsx mounts one workbench per eligible pane through the accepted frame, preserves Excalidraw ownership, pane/navigator/status/claim/doing flows, and introduces no second shell/workbench store.
+- [x] #2 The existing PresentationDock identifies the active text pane/workhorse/turn and keeps a labelled Stop control reachable in fullscreen without changing fullscreen ownership or inventing a second dock.
+- [x] #3 CSS consumes the semantic aesthetic contract for desktop, two-pane, collapsed, fullscreen, high contrast, reduced motion, and Flip touch without default assistant-ui/shadcn styling.
+- [x] #4 The named module test covers one registration, source identity, fullscreen Stop routing, unmount/reload, and unchanged shell/canvas behavior; TASK-143.03.13 owns rendered browser behavior.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -73,4 +73,12 @@ Rereview remediation checkpoint bb1b6514:
 - A mounted production CanvasPane owner proves transport publication is deduplicated, clears before replacement, and clears on unmount.
 - Focused validation: 27 tests pass across four owners with 194 assertions; root and frontend TypeScript pass; scoped Oxlint and Oxfmt pass; build:frontend passes with only the existing chunk-size advisory; git diff --check passes. No browser, broad normal, system, stress, load, capacity, performance, tooling, topology, or concurrency lane ran.
 - Acceptance criteria remain unchecked and status remains In Progress for parent rereview.
+
+Canonical integration at eba39372 applied the independently review-clean range without conflicts: 1f8321e9 -> 53017346, dd2b4c0b -> 0e70dc69, bb1b6514 -> d5b3af8f, a76502cd -> 4c13defe. The reconciled implementation and task checkpoint are byte-identical to a76502cd on all reviewed paths, while TASK-143.04.03 remains preserved. Final focused evidence: 27 tests across the shell integration, fullscreen presentation, frame layout, and production CanvasPane publication owners passed with 194 assertions; root and frontend TypeScript passed; scoped Oxlint and Oxfmt passed; the frontend build passed with its existing chunk-size advisory; diff checks passed. TASK-143.03.13 still owns rendered browser coverage.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Integrated the accepted Codex workbench frame into the canonical operator shell. Every registered pane remains recoverable in one frame, fullscreen canvas, dock identity, pane selection, and Stop share one authoritative pane, and CanvasPane transport publication has a focused lifecycle owner. Verified with 27 focused tests and 194 assertions, both TypeScript projects, scoped lint and formatting, the frontend build, and exact reviewed-range checks.
+<!-- SECTION:FINAL_SUMMARY:END -->
