@@ -120,8 +120,8 @@ test("composed child exit publishes one settled approval before closing presente
 		},
 		actions,
 	});
-	fixture.replaceComponent("approvals", approvals);
-	fixture.replaceComponent("gateway", gateway);
+	fixture.replaceApprovals(approvals);
+	fixture.replaceGateway(gateway);
 	const generation = await composeCodexWorkbenchGeneration({
 		identityLedger: fixture.identityLedger,
 		factories: fixture.factories,

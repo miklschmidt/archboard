@@ -585,7 +585,12 @@ export function fitBrowserSnapshotBounded(
 			turns[lastIndex] = truncateTimelineTurn(last, items);
 		}
 		if (wireBytes(candidate()) <= limit) return deepFreeze(candidate());
-		if (turns.length === 1) break;
+		if (turns.length === 1) {
+			if (snapshot.timeline.nextCursor === null) break;
+			turns = [];
+			if (wireBytes(candidate()) <= limit) return deepFreeze(candidate());
+			break;
+		}
 		turns = turns.slice(0, -1);
 		const preceding = turns.at(-1)!;
 		turns[turns.length - 1] = truncateTimelineTurn(preceding, preceding.items);

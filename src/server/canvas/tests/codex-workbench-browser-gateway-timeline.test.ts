@@ -97,27 +97,6 @@ test("canvas gateway binds exact connection reads and retires it at disconnect",
 		dispose: () => undefined,
 	};
 	const components = createCodexWorkbenchGenerationFixture([]).components;
-	Object.assign(components.workhorse, {
-		snapshot: () => ({ state: "stopped", start: null }),
-	});
-	Object.assign(components.coordinator, {
-		snapshot: () => ({
-			state: "unbound",
-			threadId: null,
-			configured: null,
-			effective: null,
-			approvalPolicy: null,
-			approvalsReviewer: null,
-			sandboxPolicy: null,
-			activePermissionProfile: null,
-		}),
-	});
-	Object.assign(components.semanticDelivery, {
-		inspect: () => [],
-		snapshot: () => ({ binding: null }),
-	});
-	Object.assign(components.realtime, { generation: () => null, transcript: () => [] });
-	Object.assign(components.approvals, { inspectViews: () => [] });
 	const state = {
 		readiness: { kind: "readiness", state: "thread_capable" },
 		account: { kind: "account", state: "unknown", reason: "fixture" },
