@@ -3,9 +3,7 @@ import { expect, test } from "bun:test";
 import { decodeServerNotification } from "../../../runtime/codex-protocol/index.js";
 import type {
 	CodexSession,
-	SessionThreadItem,
 	SessionThreadTurnPageResult,
-	SessionTurn,
 } from "../../../runtime/codex-session/index.js";
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
 import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
@@ -15,9 +13,20 @@ import {
 	type ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import {
+	BROWSER_SNAPSHOT_MAX_BYTES,
+	BROWSER_SNAPSHOT_MIN_BYTES,
+} from "../../codex-workbench/index.js";
+import {
 	createCanvasBrowserProjectionBudget,
 	createCanvasTimelineOwner,
 } from "../codex-workbench-adapters.js";
+import {
+	agentMessageItem,
+	commandExecutionItem,
+	fileChangeItem,
+	turnFixture,
+	userMessageItem,
+} from "./support/codex-workbench-timeline-fixture.js";
 
 function link(authorities: IdentityAuthorities, threadId: ThreadId): ThreadLinkSnapshot {
 	return {
@@ -32,37 +41,6 @@ function link(authorities: IdentityAuthorities, threadId: ThreadId): ThreadLinkS
 		canAcceptDirectInput: true,
 		reason: null,
 	};
-}
-
-function turn(
-	authorities: IdentityAuthorities,
-	rawId: string,
-	items: readonly SessionThreadItem[],
-): SessionTurn {
-	return {
-		id: authorities.identity.decoder.adoptTurnId(rawId),
-		items,
-		itemsView: "full",
-		status: "completed",
-		error: null,
-		startedAt: 1,
-		completedAt: 2,
-		durationMs: 1,
-	} as SessionTurn;
-}
-
-type ItemWithoutId = SessionThreadItem extends infer Item
-	? Item extends { readonly id: unknown }
-		? Omit<Item, "id">
-		: never
-	: never;
-
-function item(
-	authorities: IdentityAuthorities,
-	rawId: string,
-	value: ItemWithoutId,
-): SessionThreadItem {
-	return { ...value, id: authorities.identity.decoder.adoptItemId(rawId) } as SessionThreadItem;
 }
 
 function event(authorities: IdentityAuthorities, threadId: ThreadId): TransportServerNotification {
@@ -105,7 +83,7 @@ test("retiring a closed pane drops its refresh and notification eligibility", as
 		threadTurnsListPage: async (_params: Parameters<CodexSession["threadTurnsListPage"]>[0]) => {
 			calls += 1;
 			return {
-				data: [turn(authorities, "retired-turn", [])],
+				data: [turnFixture(authorities, "retired-turn", [])],
 				nextCursor: null,
 				backwardsCursor: null,
 			} satisfies SessionThreadTurnPageResult;
@@ -152,7 +130,7 @@ test("same-pane connections load independently and only the live pair recovers",
 				throw new Error("recoverable timeline read");
 			}
 			return {
-				data: [turn(authorities, `shared-pane-turn-${calls}`, [])],
+				data: [turnFixture(authorities, `shared-pane-turn-${calls}`, [])],
 				nextCursor: null,
 				backwardsCursor: null,
 			};
@@ -182,17 +160,26 @@ test("same-pane connections load independently and only the live pair recovers",
 	expect(
 		owner.read("pane-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
 	).toBe(authorities.identity.decoder.adoptTurnId("shared-pane-turn-2"));
+	owner.onNotification(event(authorities, threadId));
+	await flush();
+	expect({ calls, changes }).toEqual({ calls: 4, changes: 4 });
+	expect(owner.read("pane-shared", 1, timelineLink, true, firstConnection)?.turns[0]?.turn.id).toBe(
+		authorities.identity.decoder.adoptTurnId("shared-pane-turn-3"),
+	);
+	expect(
+		owner.read("pane-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
+	).toBe(authorities.identity.decoder.adoptTurnId("shared-pane-turn-4"));
 	owner.retire("pane-shared", firstConnection);
 	failNext = true;
 	owner.onNotification(event(authorities, threadId));
 	await flush();
-	expect({ calls, changes }).toEqual({ calls: 3, changes: 2 });
+	expect({ calls, changes }).toEqual({ calls: 5, changes: 4 });
 	owner.onNotification(event(authorities, threadId));
 	await flush();
-	expect({ calls, changes }).toEqual({ calls: 4, changes: 3 });
+	expect({ calls, changes }).toEqual({ calls: 6, changes: 5 });
 	expect(
 		owner.read("pane-shared", 1, timelineLink, true, secondConnection)?.turns[0]?.turn.id,
-	).toBe(authorities.identity.decoder.adoptTurnId("shared-pane-turn-4"));
+	).toBe(authorities.identity.decoder.adoptTurnId("shared-pane-turn-6"));
 	owner.dispose();
 });
 
@@ -200,12 +187,12 @@ test("ingests bounded source items and takes the cursor from timeline/list", asy
 	const authorities = createIdentityAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("bounded-ingest-thread");
 	const sourceItems = [
-		item(authorities, "bounded-user", {
+		userMessageItem(authorities, "bounded-user", {
 			type: "userMessage",
 			clientId: null,
 			content: [{ type: "text", text: "hello", text_elements: [] }],
 		}),
-		item(authorities, "bounded-agent", {
+		agentMessageItem(authorities, "bounded-agent", {
 			type: "agentMessage",
 			text: "answer",
 			phase: null,
@@ -223,7 +210,7 @@ test("ingests bounded source items and takes the cursor from timeline/list", asy
 		threadTurnsListPage: async (
 			_params: Parameters<CodexSession["threadTurnsListPage"]>[0],
 		): Promise<SessionThreadTurnPageResult> => ({
-			data: [turn(authorities, "bounded-turn", sourceItems)],
+			data: [turnFixture(authorities, "bounded-turn", sourceItems)],
 			nextCursor: null,
 			backwardsCursor: null,
 		}),
@@ -281,8 +268,8 @@ test("caps final item chronology after matching and unmatched approvals", async 
 	const session = {
 		threadTurnsListPage: async (_params: Parameters<CodexSession["threadTurnsListPage"]>[0]) => ({
 			data: [
-				turn(authorities, "approval-cap-turn", [
-					item(authorities, "approval-command", {
+				turnFixture(authorities, "approval-cap-turn", [
+					commandExecutionItem(authorities, "approval-command", {
 						type: "commandExecution",
 						pluginId: null,
 						scriptPath: null,
@@ -296,7 +283,7 @@ test("caps final item chronology after matching and unmatched approvals", async 
 						exitCode: 0,
 						durationMs: 1,
 					}),
-					item(authorities, "approval-file", {
+					fileChangeItem(authorities, "approval-file", {
 						type: "fileChange",
 						changes: [],
 						status: "completed",
@@ -350,8 +337,8 @@ test("marks a user summary truncated when text appears beyond its bounded scan",
 	const session = {
 		threadTurnsListPage: async (_params: Parameters<CodexSession["threadTurnsListPage"]>[0]) => ({
 			data: [
-				turn(authorities, "delayed-user-text-turn", [
-					item(authorities, "delayed-user-text", {
+				turnFixture(authorities, "delayed-user-text-turn", [
+					userMessageItem(authorities, "delayed-user-text", {
 						type: "userMessage",
 						clientId: null,
 						content,
@@ -384,8 +371,24 @@ test("marks a user summary truncated when text appears beyond its bounded scan",
 	owner.dispose();
 });
 
-test("rejects a browser projection byte budget below its base envelope", () => {
-	expect(() => createCanvasBrowserProjectionBudget({ maxBytes: 8_192 })).toThrow(
-		"browser snapshot budget must be between",
-	);
+test("accepts exact snapshot budget boundaries and rejects every supplied invalid value", () => {
+	expect(createCanvasBrowserProjectionBudget().maxBytes).toBe(768 * 1024);
+	expect(
+		createCanvasBrowserProjectionBudget({ maxBytes: BROWSER_SNAPSHOT_MIN_BYTES }).maxBytes,
+	).toBe(BROWSER_SNAPSHOT_MIN_BYTES);
+	expect(
+		createCanvasBrowserProjectionBudget({ maxBytes: BROWSER_SNAPSHOT_MAX_BYTES }).maxBytes,
+	).toBe(BROWSER_SNAPSHOT_MAX_BYTES);
+	for (const maxBytes of [
+		0,
+		-1,
+		BROWSER_SNAPSHOT_MIN_BYTES - 1,
+		BROWSER_SNAPSHOT_MAX_BYTES + 1,
+		BROWSER_SNAPSHOT_MIN_BYTES + 0.5,
+		Number.NaN,
+		Number.POSITIVE_INFINITY,
+	])
+		expect(() => createCanvasBrowserProjectionBudget({ maxBytes })).toThrow(
+			"browser snapshot budget must be between",
+		);
 });

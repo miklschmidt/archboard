@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-03 23:44'
+updated_date: '2026-09-04 00:02'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -41,10 +41,11 @@ Expose the closed browser gateway for account and session readiness, thread link
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Re-key timeline ownership by pane and exact browser connection, notify every live connection, and retire only the named pair; add focused same-pane dual-connection lifecycle coverage.
-2. Use one validated canvas browser-projection budget for timeline retention and the complete gateway snapshot; reject below-envelope limits and add a focused full-gateway owner with nonempty competing fields.
-3. Propagate bounded user-content scan truncation and replace type-system bypasses in the canvas gateway timeline owner with typed fixtures.
-4. Run only focused owners, both TypeScript projects, scoped lint/format/diff/boundary checks; update implementation notes, commit separately, and report READY_FOR_REREVIEW without integrating.
+1. Replace assertion-based canvas generation and timeline fixtures with typed discriminant-preserving builders and explicit typed approvals/gateway replacement seams; preserve existing owner behavior.
+2. Reject every supplied snapshot byte limit outside 32768..1048576 and add exact minimum, maximum, omission-default, and invalid-value owners.
+3. Let complete-snapshot fitting remove the final timeline turn when that alone reaches the limit and an existing pagination cursor preserves truncation, while continuing to refuse non-timeline overflow; add the exact near-bound regression.
+4. Strengthen same-pane lifecycle coverage for simultaneous live refresh, then exact retirement and survivor refresh.
+5. Extend the complete gateway budget owner with nonempty settings, semantic state, lease, and operation; run only focused owners, both TypeScript projects, scoped static and repository-policy checks, then commit and callback for rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -63,6 +64,8 @@ Live browser timeline producer implemented. A single canvas owner reads bounded 
 Remediation implementation complete: the existing gateway notifyDisconnect seam now synchronously retires projection state with the exact browser connection identity, including replacement, close, child-exit, and shutdown paths; the canvas adapter passes that identity into timeline reads and retirement. The timeline owner projects and bounds each source turn during ingestion, retains only compact owner presentation data, requires the typed thread/timeline method pair, caps final approval-interleaved items, and enforces one bounded turn/item/byte budget (production ceiling 768 KiB, injectable tiny limits in focused owners). Focused remediation owners prove close-then-notify produces no retained read/publication, reject source inspection beyond a tiny item limit, use timeline/list's cursor, preserve matching approval chronology while omitting unmatched overflow, and stay within a 5 KiB aggregate budget. Evidence: 67 focused gateway/timeline/projection/generation tests and 407 assertions passed; 61 repository boundary/inventory tests and 132 assertions passed; both TypeScript graphs, scoped Oxlint/Oxfmt, and diff checks passed. No broad, browser, system, performance, or capacity lane ran. Acceptance criteria remain unchecked and task remains In Progress.
 
 Hard-review remediation complete at the requested focused boundaries. Timeline state is now owned per pane and exact browser connection, so concurrent same-pane sockets load independently, every live pair observes correlated refreshes, and close retires only the named pair. One validated CanvasBrowserProjectionBudget now supplies both bounded timeline retention and the gateway's complete BrowserSnapshot limit; the gateway fits timeline history only after queue, ordinary approvals, dynamic approvals, semantic/coordinator, voice, lease, and operation fields are present, and rejects budgets below the 32 KiB base envelope. User-message summary scanning now propagates truncation when text lies beyond the 32-part scan. The canvas gateway timeline owner uses typed fixtures with no as-never or double-assertion bypasses; two unused test-support helpers were removed.\n\nVerification: 73 focused gateway/projection/timeline/generation/production-initialization tests passed with 463 assertions; both TypeScript projects passed; scoped Oxlint and Oxfmt passed; repository boundary and test-inventory owners passed 61 tests with 132 assertions; git diff --check passed. No broad, browser, system, stress, capacity, performance, tooling, topology, or concurrency lane ran. Remaining TASK-143.01.02 contract risk: non-timeline browser fields have no truncation semantics, so the gateway preserves them and rejects invalid_projection if they alone exceed the configured complete-snapshot budget. Acceptance criteria remain unchecked and TASK-143.01.10 remains In Progress for parent rereview.
+
+Second hard-review remediation complete. Assertion-laundered generation and timeline fixtures were replaced with typed, discriminant-preserving builders; the target canvas gateway owner no longer mutates component fixtures through Object.assign. Explicit snapshot maxBytes values now reject every unsafe, nonintegral, below-minimum, or above-maximum value while omission retains the 768 KiB default. Complete-snapshot fitting can drop the final paginated timeline turn when that makes the full projection fit, retaining nextCursor as the truncation signal; non-timeline-only overflow remains a refusal. Same-pane coverage now proves one correlated notification refreshes both live connections before exact retirement, then only the survivor refreshes and recovers. The full 32 KiB budget owner includes timeline, queue, settings, ordinary and dynamic approvals, semantic delivery, voice transcript, active command lease, and delivered operation. Verification: 38 focused tests with 247 assertions passed; both TypeScript projects passed; scoped Oxlint and Oxfmt passed; repository boundary and test-inventory owners passed 61 tests with 132 assertions; git diff --check passed. No broad, browser, system, stress, capacity, performance, topology, or concurrency lane ran. Residual compatibility behavior is intentional: a lone timeline turn is removed only when a non-null nextCursor preserves a valid truncation indication; without that indication the existing refusal remains. Acceptance criteria remain unchecked and TASK-143.01.10 remains In Progress for parent rereview.
 <!-- SECTION:NOTES:END -->
 
 ## Comments

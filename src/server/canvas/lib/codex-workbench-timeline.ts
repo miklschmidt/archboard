@@ -17,10 +17,7 @@ import type {
 	CodexTimelineProjectionInput,
 	CodexTimelineTurnProjectionInput,
 } from "../../codex-workbench/index.js";
-import {
-	BROWSER_SNAPSHOT_MAX_BYTES,
-	assertBrowserSnapshotBudget,
-} from "../../codex-workbench/index.js";
+import { assertBrowserSnapshotBudget } from "../../codex-workbench/index.js";
 
 const TIMELINE_PAGE_LIMIT = 100;
 const TIMELINE_PAGE_LIMIT_MAX = 8;
@@ -563,6 +560,8 @@ function boundedBudgetValue(value: number | undefined, fallback: number, maximum
 export function createCanvasBrowserProjectionBudget(
 	input: Partial<CanvasBrowserProjectionBudget> = {},
 ): CanvasBrowserProjectionBudget {
+	const maxBytes = input.maxBytes ?? DEFAULT_BROWSER_PROJECTION_BUDGET.maxBytes;
+	assertBrowserSnapshotBudget(maxBytes);
 	const budget = Object.freeze({
 		maxTurns: boundedBudgetValue(
 			input?.maxTurns,
@@ -574,13 +573,8 @@ export function createCanvasBrowserProjectionBudget(
 			DEFAULT_BROWSER_PROJECTION_BUDGET.maxItemsPerTurn,
 			DEFAULT_BROWSER_PROJECTION_BUDGET.maxItemsPerTurn,
 		),
-		maxBytes: boundedBudgetValue(
-			input?.maxBytes,
-			DEFAULT_BROWSER_PROJECTION_BUDGET.maxBytes,
-			BROWSER_SNAPSHOT_MAX_BYTES,
-		),
+		maxBytes,
 	});
-	assertBrowserSnapshotBudget(budget.maxBytes);
 	return budget;
 }
 

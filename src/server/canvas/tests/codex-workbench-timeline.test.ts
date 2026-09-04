@@ -5,7 +5,6 @@ import type {
 	CodexSession,
 	SessionThreadItem,
 	SessionThreadTurnPageResult,
-	SessionTurn,
 } from "../../../runtime/codex-session/index.js";
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
 import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
@@ -15,6 +14,17 @@ import {
 	type ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import { createCanvasTimelineOwner } from "../codex-workbench-adapters.js";
+import {
+	agentMessageItem,
+	commandExecutionItem,
+	dynamicToolCallItem,
+	fileChangeItem,
+	mcpToolCallItem,
+	planItem,
+	reasoningItem,
+	turnFixture,
+	userMessageItem,
+} from "./support/codex-workbench-timeline-fixture.js";
 
 function executableLink(authorities: IdentityAuthorities, threadId: ThreadId): ThreadLinkSnapshot {
 	return {
@@ -29,41 +39,6 @@ function executableLink(authorities: IdentityAuthorities, threadId: ThreadId): T
 		canAcceptDirectInput: true,
 		reason: null,
 	};
-}
-
-function turnFixture(
-	authorities: IdentityAuthorities,
-	rawId: string,
-	items: readonly SessionThreadItem[],
-	status: SessionTurn["status"] = "completed",
-): SessionTurn {
-	return {
-		id: authorities.identity.decoder.adoptTurnId(rawId),
-		items,
-		itemsView: "full",
-		status,
-		error: null,
-		startedAt: 1,
-		completedAt: 2,
-		durationMs: 1,
-	} as SessionTurn;
-}
-
-type SessionThreadItemWithoutId = SessionThreadItem extends infer Item
-	? Item extends { readonly id: unknown }
-		? Omit<Item, "id">
-		: never
-	: never;
-
-function item(
-	authorities: IdentityAuthorities,
-	rawId: string,
-	value: SessionThreadItemWithoutId,
-): SessionThreadItem {
-	return {
-		...value,
-		id: authorities.identity.decoder.adoptItemId(rawId),
-	} as SessionThreadItem;
 }
 
 function notification(threadId: string): TransportServerNotification["notification"] {
@@ -108,19 +83,19 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 	const commandItemId = authorities.identity.decoder.adoptItemId("timeline-command");
 	const approvalId = authorities.identity.decoder.adoptApprovalId("timeline-approval");
 	const items: readonly SessionThreadItem[] = [
-		item(authorities, "timeline-user", {
+		userMessageItem(authorities, "timeline-user", {
 			type: "userMessage",
 			clientId: null,
 			content: [{ type: "text", text: "hello", text_elements: [] }],
 		}),
-		item(authorities, "timeline-agent", {
+		agentMessageItem(authorities, "timeline-agent", {
 			type: "agentMessage",
 			text: "assistant answer",
 			phase: null,
 			memoryCitation: null,
 			delivery: null,
 		}),
-		item(authorities, "timeline-mcp", {
+		mcpToolCallItem(authorities, "timeline-mcp", {
 			type: "mcpToolCall",
 			server: "private-server",
 			tool: "inspect",
@@ -133,7 +108,7 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 			error: null,
 			durationMs: 1,
 		}),
-		item(authorities, "timeline-dynamic", {
+		dynamicToolCallItem(authorities, "timeline-dynamic", {
 			type: "dynamicToolCall",
 			namespace: "archboard_app",
 			tool: "inspect",
@@ -143,9 +118,8 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 			success: false,
 			durationMs: 1,
 		}),
-		{
+		commandExecutionItem(authorities, "timeline-command", {
 			type: "commandExecution",
-			id: commandItemId,
 			pluginId: null,
 			scriptPath: null,
 			command: "bun test",
@@ -157,18 +131,18 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 			aggregatedOutput: "private output",
 			exitCode: 0,
 			durationMs: 1,
-		} as SessionThreadItem,
-		item(authorities, "timeline-file", {
+		}),
+		fileChangeItem(authorities, "timeline-file", {
 			type: "fileChange",
 			changes: [],
 			status: "declined",
 		}),
-		item(authorities, "timeline-reasoning", {
+		reasoningItem(authorities, "timeline-reasoning", {
 			type: "reasoning",
 			summary: ["first", "second"],
 			content: [],
 		}),
-		item(authorities, "timeline-plan", {
+		planItem(authorities, "timeline-plan", {
 			type: "plan",
 			text: `${"p".repeat(16_500)}\0`,
 		}),
