@@ -1,10 +1,11 @@
 ---
 id: TASK-143.04.10
 title: Keep live voice Stop reachable in fullscreen
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-08-30 15:42'
-updated_date: '2026-08-30 16:29'
+updated_date: '2026-09-04 15:05'
 labels: []
 dependencies:
   - TASK-143.03.11
@@ -12,6 +13,8 @@ dependencies:
 references:
   - docs/design/operator-canvas-shell.md
 modified_files:
+  - src/ui/canvas/CanvasPane.tsx
+  - src/ui/canvas/tests/workbench-transport-publication.test.tsx
   - src/ui/shell/Shell.tsx
   - src/ui/shell/shell.css
   - src/ui/shell/tests/codex-voice-presentation.test.tsx
@@ -24,13 +27,40 @@ ordinal: 237000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Extend the existing PresentationDock in Shell.tsx with the active voice source and Stop action; do not create another dock or fullscreen state owner. Delegation profile: gpt-5.6-sol, high.
+Complete the single production voice composition seam. CanvasPane constructs at most one VoiceSession for its current workbench transport from the pane’s existing media owner, publishes the exact caller-owned voice registration and evidence to Shell, and Shell supplies that source to the accepted WorkbenchFrame while extending the existing PresentationDock with immutable active-voice disclosure and Stop. Shell never owns media, realtime, or session lifecycle and no second dock, fullscreen owner, or global store is introduced. Delegation profile: gpt-5.6-sol, high.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The same PresentationDock identifies active voice pane, workhorse, coordinator, realtime session, mute/phase, and retains one labelled Stop control across enter/exit fullscreen and focus/navigation changes.
-- [ ] #2 Stop routes to the immutable active voice session rather than the focused pane; stale/closed/outcome-unknown states remain visible until authoritative reconciliation.
-- [ ] #3 Shell CSS preserves the accepted dock hierarchy, 44px touch target, keyboard focus, high contrast, reduced motion, and no overlay collision at desktop and Flip sizes.
-- [ ] #4 The named module test proves one dock/state owner, text-only, voice-only, simultaneous text/voice, stale session, unmount/reload, and exact Stop routing; browser rendering remains TASK-143.04.07.
+- [ ] #1 CanvasPane creates at most one VoiceSession for its current transport from useCanvasSession’s existing media owner, publishes one exact pane/transport/session registration with caller-owned context and transcript evidence, retains it through a transient disconnect, and clears/disposes it deterministically before replacement or unmount.
+- [ ] #2 Shell supplies that registration to the accepted WorkbenchFrame without constructing or disposing media, realtime, or session state; the bound voice source stays immutable across pane focus, workbench navigation, one/two panes, and fullscreen transfer, and authoritative stopped/withdrawn state restores the text-only frame.
+- [ ] #3 The same PresentationDock identifies active voice pane, workhorse, coordinator, realtime session, mute and phase beside the existing text source. Its one labelled Stop routes to the immutable active VoiceSession, falls back to text only when no active voice identity exists, and keeps stale/stopping/failed/outcome-unknown identity visible until authoritative reconciliation.
+- [ ] #4 Shell CSS preserves the accepted dock hierarchy, 44px touch target, keyboard focus, high contrast, reduced motion, and no overlay collision at desktop and Flip sizes.
+- [ ] #5 The focused CanvasPane and shell owners prove single ownership/publication, text-only, voice-only, simultaneous text/voice, exact context/transcript source, focus/fullscreen invariance, fail-closed duplicate-active state, replacement, stopped/unmount/reload cleanup, and exact Stop routing. Rendered browser behavior remains TASK-143.04.07.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Add the narrow CanvasPane voice registration beside CanvasPaneProps. Build one VoiceSession per current workbench transport from the pane’s existing realtime owner, retain it through transient disconnect, publish null before replacement or unmount, and dispose only the adapter subscriptions. Keep one VoiceContextHistory per mount and expose guarded read-only transcript records from the exact snapshot/session correlation.
+2. Refactor the Shell pane registry so text ownership and voice registration can appear and retire independently. Supply the exact captured voice source, context, and transcript slot to the accepted WorkbenchFrame without creating or disposing media, realtime, session, history, or transcript state in Shell.
+3. Extend the existing PresentationDock with immutable active-voice disclosure beside the text source. Keep one Stop button: route it to the sole active VoiceSession when stoppable, disable it on an active but unstoppable or duplicate-active source, and fall back to text interrupt only when no active voice identity exists.
+4. Extend the focused production CanvasPane owner and add the focused Shell voice owner for the reachable lifecycle, source, conflict, and routing regressions. Keep rendered browser coverage in TASK-143.04.07.
+5. Run only the focused CanvasPane, Shell, and WorkbenchFrame owners, both TypeScript projects, scoped Oxlint and Oxfmt, the frontend build, and diff and tracked-state checks. Keep TASK-143.04.10 In Progress with all acceptance criteria unchecked for independent review.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implementation paused before UI edits. Shell receives only each pane BrowserWorkbenchTransport through CanvasPane.onWorkbenchTransport. CanvasSession owns the existing BrowserWorkbenchMediaOwner, but CanvasPane does not publish it or a captured VoiceSession, and production has no createVoiceSession or captureWorkbenchFrameVoiceSource caller. Constructing a new media/session owner in Shell or dispatching realtimeStop directly through the transport would create the duplicate owner or Stop path this task forbids.
+
+Mandatory UI-worker audit independently confirmed the same gap and edited no files. The smallest required contract change is a pane-level immutable voice registration with lifecycle/null cleanup that retains one VoiceSession built from the pane existing realtime owner and current transport. Shell can then capture that exact source, subscribe to its view, pass it to WorkbenchFrame, disclose it in PresentationDock, and call source.session.stop(). If the frame must also render live voice, the registration needs the already caller-owned context and transcript slot, whose production construction is likewise absent.
+
+No code or CSS changed and no tests ran because the task requires a parent callback before expanding beyond Shell.tsx, shell.css, the focused test, and this Backlog record. TASK-143.04.10 remains In Progress with all acceptance criteria unchecked.
+
+Parent expanded the authorized seam to CanvasPane after the recorded blocker. CanvasPane now creates one VoiceSession from the existing pane media owner and exact current workbench transport, publishes one frozen registration with mount-owned context history and guarded transcript evidence, retains it through transient transport loss, and retires it in voice-null / adapter-dispose / text-null order before replacement or unmount. Evidence ingestion deduplicates unchanged voice context, session view, and connection state.
+
+Shell now keeps nullable text and voice ownership per pane, captures the exact frame voice source once, supplies ready voice so the existing Start control is reachable, holds a sole active source across focus and fullscreen transfer, fails closed on duplicate-active registrations, and removes stopped or withdrawn voice from the frame. The existing PresentationDock discloses voice identity beside text and its single Stop prefers the active VoiceSession, disables during conflict or an unstoppable active state, and falls back to text only when no active voice identity exists.
+
+Scoped verification passed: `bun run type-check`; 27 focused CanvasPane, Shell, and WorkbenchFrame tests with 358 assertions; scoped Oxlint and Oxfmt; `bun run build`; and `git diff --check`. Browser behavior remains owned by TASK-143.04.07. TASK-143.04.10 remains In Progress and all acceptance criteria remain unchecked for independent review.
+<!-- SECTION:NOTES:END -->
