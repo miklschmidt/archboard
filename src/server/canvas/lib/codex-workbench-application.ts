@@ -10,19 +10,19 @@ export interface CanvasCodexWorkbenchModule {
 	) => CodexWorkbenchOwner;
 }
 
-export interface CanvasCodexWorkbenchApplicationState {
-	installed: boolean;
-	phase: "idle" | "preparing" | "installed" | "stopping" | "stopped";
-	shutdown: (() => Promise<void>) | null;
-}
-
 export interface CanvasCodexWorkbenchApplicationOptions {
-	readonly state: CanvasCodexWorkbenchApplicationState;
 	readonly module: CanvasCodexWorkbenchModule;
 	readonly installation: () => InstallProductionCodexWorkbenchOptions;
 }
 
-/** Own one production Codex graph for one canvas application lifetime. */
+/**
+ * Own one production Codex graph for one canvas application stage.
+ *
+ * The Canvas application lifetime owns application phases (TASK-143.08.04);
+ * this owner publishes none of its own. It keeps exactly the one closure-local
+ * guard `prepare` needs so a second installation cannot start a second child,
+ * and it hands `start`/`stop`/`forceStop` straight to the stage.
+ */
 export function createCanvasCodexWorkbenchApplication(
 	options: CanvasCodexWorkbenchApplicationOptions,
 ): {
@@ -30,6 +30,7 @@ export function createCanvasCodexWorkbenchApplication(
 	readonly shutdown: () => Promise<void>;
 } {
 	let owner: CodexWorkbenchOwner | null = null;
+	let installed = false;
 	let preparePromise: Promise<CodexWorkbenchSnapshot> | null = null;
 	let shutdownPromise: Promise<void> | null = null;
 	let shutdownRequested = false;
@@ -41,8 +42,7 @@ export function createCanvasCodexWorkbenchApplication(
 		const stoppingOwner = owner;
 		let stopped = false;
 		const operation = (async () => {
-			options.state.installed = false;
-			options.state.phase = "stopping";
+			installed = false;
 			// Do not wait for readiness before stopping. The owner invalidates its
 			// startup ticket, rejects readiness, and TERM/KILL-reaps the process
 			// group. Waiting for prepare here would make a pre-readiness signal
@@ -57,8 +57,6 @@ export function createCanvasCodexWorkbenchApplication(
 			}
 			stopped = true;
 			owner = null;
-			options.state.phase = "stopped";
-			options.state.shutdown = shutdown;
 		})();
 		shutdownPromise = operation.finally(() => {
 			// A failed verified stop keeps its owner reachable so a force/retry
@@ -70,13 +68,12 @@ export function createCanvasCodexWorkbenchApplication(
 
 	const prepare = (): Promise<CodexWorkbenchSnapshot> => {
 		if (preparePromise !== null) return preparePromise;
-		if (options.state.phase !== "idle")
+		if (installed || owner !== null)
 			return Promise.reject(
-				new Error(`Cannot prepare the Codex workbench from ${options.state.phase}.`),
+				new Error("The Codex workbench is already installed; stop it before preparing again."),
 			);
 		shutdownRequested = false;
-		options.state.phase = "preparing";
-		options.state.shutdown = shutdown;
+		shutdownPromise = null;
 		preparePromise = (async () => {
 			try {
 				owner = options.module.installProductionCodexWorkbench(options.installation());
@@ -84,11 +81,10 @@ export function createCanvasCodexWorkbenchApplication(
 				if (shutdownRequested) {
 					throw new Error("The Codex workbench was stopped during startup.");
 				}
-				options.state.installed = true;
-				options.state.phase = "installed";
+				installed = true;
 				return snapshot;
 			} catch (error) {
-				options.state.installed = false;
+				installed = false;
 				if (!shutdownRequested) {
 					let cleanupFailure: unknown = null;
 					try {
@@ -96,21 +92,15 @@ export function createCanvasCodexWorkbenchApplication(
 					} catch (cleanupError) {
 						cleanupFailure = cleanupError;
 					}
-					if (cleanupFailure !== null) {
-						options.state.phase = "stopping";
-						options.state.shutdown = shutdown;
+					// A failed terminal cleanup keeps its owner reachable for the
+					// stage's force pass; a clean one releases it for a later retry.
+					if (cleanupFailure !== null)
 						throw new AggregateError(
 							[error, cleanupFailure],
 							"Codex workbench startup and terminal cleanup both failed.",
 							{ cause: error },
 						);
-					}
-					// A concurrent shutdown owns the final publication once requested.
-					if (!shutdownRequested) {
-						owner = null;
-						options.state.phase = "idle";
-						options.state.shutdown = null;
-					}
+					if (!shutdownRequested) owner = null;
 				}
 				throw error;
 			} finally {

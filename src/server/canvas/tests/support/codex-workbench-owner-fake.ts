@@ -15,7 +15,6 @@ import type {
 	CodexWorkbenchKernelAcquisition,
 	CodexWorkbenchOwner,
 	CodexWorkbenchOwnerOptions,
-	CodexWorkbenchRetainedState,
 	CodexWorkbenchStopReason,
 } from "../../codex-workbench-owner.js";
 import { installCodexWorkbenchOwner } from "../../codex-workbench-owner.js";
@@ -219,12 +218,38 @@ export function fakeGeneration(
 	};
 }
 
-export function fakeKernelAcquisition(): CodexWorkbenchKernelAcquisition {
+export interface FakeKernel {
+	readonly acquisition: CodexWorkbenchKernelAcquisition;
+	/** Deliver one transport exit for this acquired child, as the real bridge sees it. */
+	readonly exit: () => void;
+}
+
+export function fakeKernelAcquisition(): FakeKernel {
 	const source = fakeGeneration([], 0);
-	return {
-		kernel: { identityLedger: source.identityLedger, transport: source.transport },
-		identity: source.components.identity,
+	const ledger = source.identityLedger;
+	const transport = source.transport as unknown as {
+		onExit: (listener: (event: unknown) => void) => () => void;
 	};
+	const listeners = new Set<(event: unknown) => void>();
+	transport.onExit = (listener) => {
+		listeners.add(listener);
+		return () => void listeners.delete(listener);
+	};
+	return Object.freeze({
+		acquisition: {
+			kernel: { identityLedger: ledger, transport: source.transport },
+			identity: source.components.identity,
+		},
+		exit: () => {
+			const event = Object.freeze({
+				child: ledger.childId,
+				epoch: ledger.epoch,
+				code: 1,
+				signal: null,
+			});
+			for (const listener of listeners) listener(event);
+		},
+	});
 }
 
 export function adoptFakeKernel(
@@ -244,14 +269,30 @@ export function adoptFakeKernel(
 	return candidate;
 }
 
+export interface FakeOwnerHandle {
+	readonly owner: CodexWorkbenchOwner;
+	/** Emit a child exit through the transport bridge of the current kernel. */
+	readonly exitChild: () => void;
+}
+
 export function installFakeCodexWorkbenchOwner(
-	retained: CodexWorkbenchRetainedState,
 	options: Omit<CodexWorkbenchOwnerOptions, "createKernel">,
-): CodexWorkbenchOwner {
-	return installCodexWorkbenchOwner(retained, {
+): FakeOwnerHandle {
+	let current: FakeKernel | null = null;
+	const owner = installCodexWorkbenchOwner({
 		...options,
-		createKernel: fakeKernelAcquisition,
+		createKernel: () => {
+			current = fakeKernelAcquisition();
+			return current.acquisition;
+		},
 		createGeneration: async (input) =>
 			adoptFakeKernel(input, await options.createGeneration(input)),
+	});
+	return Object.freeze({
+		owner,
+		exitChild: () => {
+			if (current === null) throw new Error("The fake owner has no acquired child kernel.");
+			current.exit();
+		},
 	});
 }

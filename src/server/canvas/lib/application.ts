@@ -352,9 +352,6 @@ function asyncEndpoint(
 
 interface Wiring {
 	codex: {
-		installed: boolean;
-		phase: "idle" | "preparing" | "installed" | "stopping" | "stopped";
-		shutdown: (() => Promise<void>) | null;
 		acceptBrowser: ((instance: BrowserConnectionInstance, browserId: string) => void) | null;
 		closeBrowser:
 			| ((instance: BrowserConnectionInstance, browserId: string) => Promise<void>)
@@ -376,9 +373,6 @@ let wss: WebSocketServer | null = null;
 let canvasLifetime: ReturnType<typeof createCanvasApplicationLifetime> | null = null;
 const wiring: Wiring = {
 	codex: {
-		installed: false,
-		phase: "idle",
-		shutdown: null,
 		acceptBrowser: null,
 		closeBrowser: null,
 		drainBrowsers: null,
@@ -4928,9 +4922,6 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 let codexApplication: ReturnType<typeof createCanvasCodexWorkbenchApplication> | null = null;
 
 function resetCodexWorkbenchWiring(): void {
-	wiring.codex.installed = false;
-	wiring.codex.phase = "idle";
-	wiring.codex.shutdown = null;
 	wiring.codex.acceptBrowser = null;
 	wiring.codex.closeBrowser = null;
 	wiring.codex.drainBrowsers = null;
@@ -4955,7 +4946,6 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	]);
 	if (signal.aborted) throw new Error("Codex startup was canceled before installation.");
 	const application = applicationModule.createCanvasCodexWorkbenchApplication({
-		state: wiring.codex,
 		module: productionModule,
 		installation: () =>
 			productionModule.createCanvasCodexWorkbenchInstallation(createCodexWorkbenchHost()),

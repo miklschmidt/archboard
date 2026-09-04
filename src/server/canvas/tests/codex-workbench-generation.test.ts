@@ -5,6 +5,7 @@ import {
 	type DynamicToolApprovalRequest,
 } from "../../../runtime/codex-dynamic-tools/index.js";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
+import { CODEX_SERVER_REQUEST_METHODS } from "../../../shared/codex-app-server-contract/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { CODEX_APPROVAL_EXPIRY_MS } from "../../../shared/timing/timing.js";
 import { createCanvasDynamicApprovalOwner } from "../codex-workbench-adapters.js";
@@ -13,6 +14,28 @@ import {
 	CODEX_WORKBENCH_COMPONENT_ORDER,
 	createCodexWorkbenchGenerationFixture,
 } from "./support/codex-workbench-generation-fixture.js";
+
+/** Every generated reverse request and the sole reviewed owner it reaches. */
+const ROUTED_OWNERS = {
+	"item/commandExecution/requestApproval": ["codex-approvals"],
+	"item/fileChange/requestApproval": ["codex-approvals"],
+	"item/tool/requestUserInput": ["codex-approvals"],
+	"mcpServer/elicitation/request": ["codex-approvals"],
+	"item/permissions/requestApproval": ["codex-approvals"],
+	applyPatchApproval: ["codex-approvals"],
+	execCommandApproval: ["codex-approvals"],
+	"item/tool/call": ["codex-dynamic-tools", "codex-coordinator-tools"],
+	"currentTime/read": ["codex-session"],
+	"account/chatgptAuthTokens/refresh": ["codex-session"],
+	"attestation/generate": ["codex-session"],
+} satisfies Record<(typeof CODEX_SERVER_REQUEST_METHODS)[number], readonly string[]>;
+
+const EVENT_PREFIX: Record<string, string> = {
+	"codex-approvals": "approval",
+	"codex-dynamic-tools": "dynamic",
+	"codex-coordinator-tools": "coordinator",
+	"codex-session": "session",
+};
 
 test("the production generation creates every owner once before readiness and shuts down in order", async () => {
 	const events: string[] = [];
@@ -31,29 +54,19 @@ test("the production generation creates every owner once before readiness and sh
 	expect(events.indexOf("browser:install")).toBeLessThan(events.indexOf("ready"));
 	const route = fixture.requestListeners.at(-1);
 	if (route === undefined) throw new Error("missing private production router");
-	for (const method of [
-		"item/commandExecution/requestApproval",
-		"item/fileChange/requestApproval",
-		"item/tool/requestUserInput",
-		"mcpServer/elicitation/request",
-		"item/permissions/requestApproval",
-		"applyPatchApproval",
-		"execCommandApproval",
-	] as const)
-		route({ method, owner: "codex-approvals" } as never);
-	route({ method: "item/tool/call", owner: "codex-dynamic-tools" } as never);
-	route({ method: "item/tool/call", owner: "codex-coordinator-tools" } as never);
-	for (const method of [
-		"currentTime/read",
-		"account/chatgptAuthTokens/refresh",
-		"attestation/generate",
-	] as const)
-		route({ method, owner: "codex-session" } as never);
+	// The generated union is the authority. A new reverse request fails this
+	// owner at compile time through the satisfies clause and at run time here.
+	expect(Object.keys(ROUTED_OWNERS).toSorted()).toEqual(
+		[...CODEX_SERVER_REQUEST_METHODS].toSorted(),
+	);
+	const routed: string[] = [];
+	for (const [method, owners] of Object.entries(ROUTED_OWNERS))
+		for (const owner of owners) {
+			route({ method, owner } as never);
+			routed.push(`${EVENT_PREFIX[owner]}:${method}`);
+		}
 	await Promise.resolve();
-	expect(events.filter((event) => event.startsWith("approval:"))).toHaveLength(7);
-	expect(events).toContain("dynamic:item/tool/call");
-	expect(events).toContain("coordinator:item/tool/call");
-	expect(events.filter((event) => event.startsWith("session:"))).toHaveLength(3);
+	expect(events.filter((event) => routed.includes(event)).toSorted()).toEqual(routed.toSorted());
 	await generation.retireChild({
 		child: "child" as never,
 		epoch: "epoch" as never,
@@ -61,6 +74,9 @@ test("the production generation creates every owner once before readiness and sh
 		signal: null,
 	});
 	expect(events).toContain("semantic:child-exit");
+	// Child-exit settlement, not shutdown, is what retires the dynamic wait and
+	// quarantine owner: this holds before any stop has run.
+	expect(events).toContain("dynamic:child-exit:child:epoch");
 	const stopping = generation.stop("shutdown");
 	for (const listener of fixture.requestListeners) listener({} as never);
 	for (const listener of fixture.notificationListeners) listener({} as never);

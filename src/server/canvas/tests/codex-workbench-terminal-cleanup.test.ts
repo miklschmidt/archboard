@@ -1,9 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	CodexWorkbenchCompositionError,
-	emptyCodexWorkbenchRetainedState,
-} from "../codex-workbench-owner.js";
+import { CodexWorkbenchCompositionError } from "../codex-workbench-owner.js";
 import {
 	fakeGeneration,
 	fakeProcess,
@@ -21,11 +18,10 @@ function messages(value: unknown): string[] {
 
 describe("production Codex owner terminal cleanup", () => {
 	for (const stage of ["graph", "process", "final"] as const) {
-		test(`${stage} failure revokes retained authority and permits reinstall`, async () => {
+		test(`${stage} failure revokes owner authority and permits a fresh install`, async () => {
 			const events: string[] = [];
-			const retained = emptyCodexWorkbenchRetainedState();
 			const baseProcess = fakeProcess(events);
-			const owner = installFakeCodexWorkbenchOwner(retained, {
+			const { owner } = installFakeCodexWorkbenchOwner({
 				createProcess: () =>
 					stage === "process"
 						? {
@@ -60,20 +56,19 @@ describe("production Codex owner terminal cleanup", () => {
 			expect(failure).toBeInstanceOf(CodexWorkbenchCompositionError);
 			expect(messages(failure)).toContain(`${stage} cleanup failed`);
 			expect(events).toContain("process:stop");
-			expect(retained).toMatchObject({ owner: null, process: null, state: "failed" });
-			expect(retained.control).toMatchObject({ current: null, runtime: null });
-			const replacement = installFakeCodexWorkbenchOwner(retained, {
+			expect(owner.snapshot()).toMatchObject({ state: "failed", ready: false });
+			expect(() => owner.gateway()).toThrow("no active owner dispatch");
+			const replacement = installFakeCodexWorkbenchOwner({
 				createProcess: () => fakeProcess([]),
 				createGeneration: async () => fakeGeneration([], 3),
 			});
-			await replacement.shutdown();
+			await replacement.owner.shutdown();
 		});
 	}
 
 	test("aggregates simultaneous graph, process, and final failures", async () => {
-		const retained = emptyCodexWorkbenchRetainedState();
 		const process = fakeProcess([]);
-		const owner = installFakeCodexWorkbenchOwner(retained, {
+		const { owner } = installFakeCodexWorkbenchOwner({
 			createProcess: () => ({
 				...process,
 				stop: async () => {
@@ -102,14 +97,13 @@ describe("production Codex owner terminal cleanup", () => {
 			"final cleanup failed",
 		])
 			expect(messages(failure)).toContain(message);
-		expect(retained.control).toMatchObject({ current: null, runtime: null });
+		expect(() => owner.gateway()).toThrow("no active owner dispatch");
 	});
 
 	test("a failed process stop can perform one fresh terminal retry", async () => {
-		const retained = emptyCodexWorkbenchRetainedState();
 		const process = fakeProcess([]);
 		let stops = 0;
-		const owner = installFakeCodexWorkbenchOwner(retained, {
+		const { owner } = installFakeCodexWorkbenchOwner({
 			createProcess: () => ({
 				...process,
 				stop: async () => {
