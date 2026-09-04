@@ -7,11 +7,13 @@ import {
 	CodexTurnStatusSchema,
 	createCodexCommandExecutionApprovalDecisionSchema,
 } from "../../codex-app-server-contract/index.js";
+import { parseRealtimeSessionId as parseBrowserRealtimeSessionId } from "../../codex-realtime-host/index.js";
 
 import { createDynamicApprovalSchemas } from "./dynamic-approval.js";
 import {
 	assertCurrentTarget,
 	boundedText,
+	boundedWireText,
 	JsonValueSchema,
 	optionalNullableText,
 	SafeUrlSchema,
@@ -23,13 +25,17 @@ const TimestampSchema = z.number().int().nonnegative();
 export const DeliveryOutcomeSchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
 /**
  * The most joined thread candidates one snapshot publishes. The list is bounded
- * here rather than trimmed by the snapshot fitter, which owns the timeline as
- * its sole variable field. The bound is chosen so a complete inventory still
+ * here rather than trimmed by the snapshot fitter, which owns timeline and
+ * voice-context history. The bound is chosen so a complete inventory still
  * fits beside a rich snapshot at the smallest budget a gateway may run with,
- * leaving the fitter timeline history to trim; a longer list is published
+ * leaving those histories to trim; a longer list is published
  * truncated rather than crowding history out.
  */
 export const BROWSER_THREAD_CANDIDATE_LIMIT = 40;
+/** Exact callback JSON is retained up to the callback encoder's wire contract. */
+export const BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES = 32_768;
+export const BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES = 8_192;
+export const BROWSER_VOICE_CONTEXT_ENTRY_LIMIT = 64;
 export const BROWSER_PERMISSION_FILE_ACCESS = {
 	deny: "deny",
 	read: "read",
@@ -48,6 +54,8 @@ interface BrowserSnapshotRelationshipFields {
 	};
 	readonly timeline: { readonly threadId: string } | null;
 	readonly semantic: { readonly threadId: string } | null;
+	readonly voice?: { readonly realtimeSessionId: string | null };
+	readonly voiceContext?: { readonly sessionId: string } | null;
 }
 
 /** Checks relationships between fields after each field has passed its own schema. */
@@ -69,6 +77,15 @@ export function browserSnapshotRelationshipIssues(
 		issues.push({
 			path: ["threadLink", "state"],
 			message: "an unbound link cannot publish thread-scoped state",
+		});
+	if (
+		value.voiceContext !== null &&
+		value.voiceContext !== undefined &&
+		value.voice?.realtimeSessionId !== value.voiceContext.sessionId
+	)
+		issues.push({
+			path: ["voiceContext", "sessionId"],
+			message: "voice context identity contradicts the active voice session",
 		});
 	return issues;
 }
@@ -92,7 +109,6 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		LoginIdSchema,
 		OperationIdSchema,
 		QueuedSubmissionIdSchema,
-		RealtimeSessionIdSchema,
 		ThreadIdSchema,
 		TurnIdSchema,
 	} = identity;
@@ -100,6 +116,11 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 	const BrowserSpokenApprovalSchema = createBrowserSpokenApprovalSchema(identity);
 	const NullableReasonSchema = optionalNullableText(512);
 	const PaneIdSchema = boundedText(128);
+	const BrowserRealtimeSessionIdSchema = z
+		.string()
+		.min(1)
+		.refine((value) => !value.includes("\0"), "NUL is not allowed")
+		.transform(parseBrowserRealtimeSessionId);
 
 	const BrowserReadinessSchema = z.union([
 		z
@@ -822,7 +843,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 				"stopping",
 				"failed",
 			]),
-			realtimeSessionId: RealtimeSessionIdSchema.nullable(),
+			realtimeSessionId: BrowserRealtimeSessionIdSchema.nullable(),
 			transcript: z.array(
 				z
 					.object({
@@ -836,6 +857,54 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			),
 			delivery: DeliveryOutcomeSchema.nullable(),
 			reason: NullableReasonSchema,
+		})
+		.strict();
+	const BrowserVoiceContextEntryBaseSchema = z
+		.object({
+			id: boundedText(2_048),
+			kind: z.enum(["semantic", "focus", "selection", "callback"]),
+			sourceOrder: z.number().int().nonnegative(),
+			capturedAtMs: TimestampSchema,
+			freshUntilMs: TimestampSchema,
+			reason: boundedText(512).nullable(),
+			body: boundedWireText(BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES),
+		})
+		.strict();
+	const BrowserVoiceContextEntrySchema = z
+		.discriminatedUnion("attempted", [
+			BrowserVoiceContextEntryBaseSchema.extend({
+				attempted: z.literal(false),
+				attemptedAtMs: z.null(),
+				outcome: z.literal("not_delivered"),
+			}),
+			BrowserVoiceContextEntryBaseSchema.extend({
+				attempted: z.literal(true),
+				attemptedAtMs: TimestampSchema,
+				outcome: DeliveryOutcomeSchema,
+			}),
+		])
+		.superRefine((value, refinementContext) => {
+			if (value.freshUntilMs < value.capturedAtMs)
+				refinementContext.addIssue({
+					code: "custom",
+					path: ["freshUntilMs"],
+					message: "freshness cannot end before capture",
+				});
+			if (value.attempted && value.attemptedAtMs < value.capturedAtMs)
+				refinementContext.addIssue({
+					code: "custom",
+					path: ["attemptedAtMs"],
+					message: "attempt timing and delivery outcome are incoherent",
+				});
+		});
+	const BrowserVoiceContextSchema = z
+		.object({
+			kind: z.literal("voice_context"),
+			sessionId: BrowserRealtimeSessionIdSchema,
+			ledgerId: boundedText(2_048),
+			canonicalBrief: boundedText(BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES),
+			entriesTruncated: z.number().int().nonnegative(),
+			entries: z.array(BrowserVoiceContextEntrySchema).max(BROWSER_VOICE_CONTEXT_ENTRY_LIMIT),
 		})
 		.strict();
 	const BrowserCommandLeaseSchema = z
@@ -1026,6 +1095,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			coordinator: BrowserCoordinatorSchema,
 			voice: BrowserVoiceSchema,
 			spokenApproval: BrowserSpokenApprovalSchema,
+			voiceContext: BrowserVoiceContextSchema.nullable().optional(),
 			lease: BrowserCommandLeaseSchema.nullable(),
 			operation: BrowserOperationOutcomeSchema.nullable(),
 		})
@@ -1076,6 +1146,7 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		BrowserCoordinatorSchema,
 		BrowserVoiceSchema,
 		BrowserSpokenApprovalSchema,
+		BrowserVoiceContextSchema,
 		BrowserCommandLeaseSchema,
 		BrowserOperationOutcomeSchema,
 		BrowserCommandSchema,
@@ -1104,6 +1175,7 @@ export type BrowserSemanticDelivery = z.infer<BrowserSchemas["BrowserSemanticDel
 export type BrowserCoordinator = z.infer<BrowserSchemas["BrowserCoordinatorSchema"]>;
 export type BrowserVoice = z.infer<BrowserSchemas["BrowserVoiceSchema"]>;
 export type BrowserSpokenApproval = z.infer<BrowserSchemas["BrowserSpokenApprovalSchema"]>;
+export type BrowserVoiceContext = z.infer<BrowserSchemas["BrowserVoiceContextSchema"]>;
 export type BrowserCommandLease = z.infer<BrowserSchemas["BrowserCommandLeaseSchema"]>;
 export type BrowserOperationOutcome = z.infer<BrowserSchemas["BrowserOperationOutcomeSchema"]>;
 export type BrowserCommand = z.infer<BrowserSchemas["BrowserCommandSchema"]>;

@@ -218,3 +218,48 @@ test("removes the final paginated timeline turn when that alone crosses the byte
 	expect(wireBytes(fitted)).toBe(32_659);
 	expect(fitted.timeline).toMatchObject({ nextCursor: "older-turns", turns: [] });
 });
+
+test("fits voice delivery history in fixed producer records without altering retained bodies", () => {
+	const authorities = createIdentityAuthorities();
+	const value = createGatewayHarness(authorities);
+	const base = value.gateway.connect(value.browserId, value.paneId).snapshot().snapshot;
+	const sessionId = parseRealtimeSessionId("budget-voice-context");
+	const bodies = Array.from(
+		{ length: 3 },
+		(_, index) => `${index}:${String(index).repeat(12_000)}`,
+	);
+	const complete = value.model.BrowserSnapshotSchema.parse({
+		...base,
+		timeline: null,
+		voice: { ...base.voice, state: "active", realtimeSessionId: sessionId },
+		voiceContext: {
+			kind: "voice_context",
+			sessionId,
+			ledgerId: "budget-ledger",
+			canonicalBrief: '{"source":"semantic_context"}',
+			entriesTruncated: 0,
+			entries: bodies.map((body, sourceOrder) => ({
+				id: `budget-entry-${sourceOrder}`,
+				kind: "callback",
+				sourceOrder,
+				capturedAtMs: 100,
+				freshUntilMs: 200,
+				attempted: true,
+				attemptedAtMs: 150,
+				outcome: "delivered",
+				reason: null,
+				body,
+			})),
+		},
+	});
+	expect(wireBytes(complete)).toBeGreaterThan(32_768);
+
+	const fitted = fitBrowserSnapshotBounded(complete, 32_768);
+	const retained = fitted.voiceContext?.entries ?? [];
+	expect(retained.length).toBeLessThan(bodies.length);
+	expect(fitted.voiceContext?.entriesTruncated).toBe(bodies.length - retained.length);
+	expect(retained.map((entry) => entry.body)).toEqual(
+		bodies.slice(bodies.length - retained.length),
+	);
+	expect(wireBytes(fitted)).toBeLessThanOrEqual(32_768);
+});

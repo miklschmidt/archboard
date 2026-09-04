@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 12:29'
+updated_date: '2026-09-04 13:02'
 labels: []
 dependencies:
   - TASK-143.04.01
@@ -15,7 +15,15 @@ references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
+  - src/runtime/codex-coordinator-callbacks
+  - src/runtime/codex-realtime
+  - src/runtime/codex-semantic-context/tests/canonical-brief.test.ts
+  - src/server/canvas
+  - src/server/codex-workbench
+  - src/shared/codex-browser-gateway
+  - src/shared/codex-browser-model
   - src/ui/voice-context
+  - src/ui/workbench-transport
 parent_task_id: TASK-143.04
 priority: high
 type: task
@@ -52,20 +60,30 @@ Show what the current voice session actually captured and what later context del
 9. Require each delivery to carry authoritative adapter order plus captured/attempted/fresh-until values. Insert deterministically or refuse duplicates so semantic, focus, selection, and callback records render in source order with attempt-time fresh/stale language and no current publisher read.
 10. Replace Show all disclosures with bounded windows/pages and remaining counts while preserving the full ledger. On copy failure, reveal the exact target automatically before directing manual copy.
 11. Remove duplicated boundary/lint owners and the local 500-line assertion, retaining only a focused no-runtime/deep-import contract if it catches a gap not owned by repository checks. Rerun only the requested focused, type, scoped lint/format, relevant repository, build-if-needed, and diff gates.
+
+12. Tighten truncated-brief association by validating every canonical identity field that remains exact and exempting only values the real canonical fitter can clip; prove that a truncated brief from another session is refused.
+
+13. Make delivery retention accept only coherent evidence: finite ordered timestamps, nonnegative freshness windows, and attempted/outcome combinations that cannot contradict what the adapter reports.
+
+14. Extend the existing browser-owned voice projection with the immutable captured canonical brief and ordered delivery outcomes required by VoiceContextPanel. Reuse existing publisher and adapter records; do not add another state owner.
+
+15. Replace cumulative disclosure with fixed previous/next windows. Bound body storage and display to the real producer byte contract, and keep copy-failure recovery inside that fixed window model.
+
+16. Pin the presentation parser to canonical bytes produced by codex-semantic-context at the cheapest stable contract, then run focused affected tests, both TypeScript projects, scoped lint and format, and diff checks only.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Implementation ready for independent rereview. Scope is src/ui/voice-context/** plus this task record.
+Rereview remediation is implemented and ready for independent review. The task remains In Progress and every acceptance criterion stays unchecked.
 
-Design: voice-context retains immutable evidence supplied by the existing public voice-session owner; it does not mint session identity or transition lifecycle. The byte-exact canonical semantic_context string is the sole baseline source and is locally validated against its complete current shape. Structured display is derived from those bytes, including the full workhorse turn, pane focus, selection, freshness window, description, child, and thread-link fields. Valid byte-capped briefs remain accepted when identity-shaped display fields are clipped; the stable session key and stopped/replaced status derive from VoiceSessionView.
+Identity and bytes: the exact canonical semantic_context bytes captured once by the realtime start are retained in the existing realtime generation and published through the existing browser projection. The local semantic parser is presentation-only; storage and copy preserve the original bytes. Session association requires exact identity matches, except an ellipsis-terminated prefix the canonical fitter can produce. A complete mismatched identity is refused even when the brief is marked truncated. A producer-byte golden test pins the presentation parser to freshBrief(), and browser limits are pinned to the semantic 8,192-byte and callback 32,768-byte producer contracts.
 
-Delivery evidence carries either a semantic feed sequence or one authoritative adapter-ledger position plus captured, fresh-until, and attempted timestamps. History sorts deterministically within one source stream and refuses duplicate positions or mixed streams. Projection reports fresh or stale at attempt and preserves exact delivered, not-delivered, uncertain, disconnected, and recovered bodies without consulting current publisher state.
+Delivery evidence: the existing callback owner assigns monotonic first-seen sourceOrder and records capture, freshness, and pre-attempt timestamps. Runtime, browser wire, and UI contracts use discriminated attempted/unattempted records. Browser and history boundaries reject non-finite or reversed timestamps, incoherent attempt/outcome combinations, and oversized bodies. The production browser projection filters entries to the exact active realtime generation, sorts by authoritative sourceOrder, and notifies through the existing projection channel. It adds no second state owner.
 
-The panel uses bounded session, entry, brief, and body windows with explicit remaining counts and collapse controls. Clipboard writes use the immutable canonical bytes; failure expands the exact target before giving manual-copy guidance. The redundant local boundary owner was removed because repository policy already enforces the boundary and file-size rule.
+Presentation: stopped and replaced observations remain in immutable history after the live browser evidence disappears. Session, delivery, canonical-brief, and body navigation now uses fixed previous/next windows rather than cumulative reveal. Clipboard failure returns to the target's first bounded window and gives accurate manual-copy instructions without rendering all text.
 
-Validation: focused voice-context tests 14 pass, 0 fail, 84 expectations; both TypeScript projects pass; scoped Oxlint and Oxfmt pass; repository boundary and inventory owners 62 pass, 0 fail, 139 expectations; frontend build passes with only existing asset and chunk-size warnings; git diff --check is clean.
+Validation: 177 focused affected tests passed across the touched runtime, shared, server projection, and voice-context modules; bunx tsc --noEmit passed; bunx tsc --noEmit -p tsconfig.frontend.json passed; scoped Oxlint passed; scoped Oxfmt passed; git diff --check passed. No build, browser, system, broad repository, stress, load, performance, runner, tooling, topology, or concurrency lane was run.
 
-Remaining integration risk is deliberate: TASK-143.04.06 must map the existing semantic sequence or adapter inspect-ledger order into this closed UI contract, and TASK-143.04.07 owns real rendered-browser coverage. No browser, broad, system, performance, stress, load, capacity, topology, or concurrency lane was run.
+Remaining risk: rendered browser workflow coverage remains with TASK-143.04.07. This change proves the production projection seam and module behavior without taking over that owner.
 <!-- SECTION:NOTES:END -->

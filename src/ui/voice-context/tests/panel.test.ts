@@ -121,7 +121,7 @@ describe("voice context panel", () => {
 		expect(screen.getByText("Callback body copied.")).toBeTruthy();
 	});
 
-	test("auto-expands the exact failed copy target before directing manual copy", async () => {
+	test("moves a failed copy target to its first fixed window with accurate guidance", async () => {
 		const user = userEvent.setup();
 		const { history } = populatedHistory();
 		const exactBody = "exact body 5 that is intentionally longer than several preview windows";
@@ -135,10 +135,11 @@ describe("voice context panel", () => {
 		expect(screen.queryByText(exactBody)).toBeNull();
 		await user.click(screen.getByRole("button", { name: "Copy exact body for callback entry 5" }));
 
-		await waitFor(() => expect(screen.getByText(exactBody)).toBeTruthy());
-		expect(screen.getByText(/Copy failed/u).textContent).toContain(
-			"The full exact text is expanded below",
+		await waitFor(() =>
+			expect(screen.getByText([...exactBody].slice(0, 12).join(""))).toBeTruthy(),
 		);
+		expect(screen.getByText(/Copy failed/u).textContent).toContain("first bounded window below");
+		expect(screen.queryByText(exactBody)).toBeNull();
 		expect(document.querySelector("[data-voice-context-copy-status='failure']")).toBeTruthy();
 	});
 
@@ -158,12 +159,14 @@ describe("voice context panel", () => {
 		});
 		rows.focus();
 		await user.keyboard("{Enter}");
-		expect(list.children).toHaveLength(4);
+		expect(list.children).toHaveLength(2);
 		await user.click(
 			screen.getByRole("button", { name: "Show next 1 earlier deliveries. 1 remain" }),
 		);
-		expect(list.children).toHaveLength(5);
-		await user.click(screen.getByRole("button", { name: "Collapse to recent deliveries" }));
+		expect(list.children).toHaveLength(1);
+		await user.click(screen.getByRole("button", { name: "Previous 2 newer deliveries" }));
+		expect(list.children).toHaveLength(2);
+		await user.click(screen.getByRole("button", { name: "Back to newest deliveries" }));
 		expect(list.children).toHaveLength(2);
 
 		const briefButton = screen.getAllByRole("button", { name: /Show next 12 characters/u })[0]!;
@@ -171,6 +174,7 @@ describe("voice context panel", () => {
 			{ keys: "[TouchA>]", target: briefButton },
 			{ keys: "[/TouchA]", target: briefButton },
 		]);
-		expect(screen.getByRole("button", { name: "Collapse start brief" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "First start-brief window" })).toBeTruthy();
+		expect(document.querySelector("[data-voice-context-brief]")?.textContent).toHaveLength(12);
 	});
 });

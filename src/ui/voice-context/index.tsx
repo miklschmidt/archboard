@@ -1,4 +1,5 @@
 export { createVoiceContextHistory, voiceContextSessionKey } from "./lib/history.js";
+export { ingestVoiceContextBrowserEvidence } from "./lib/browser-evidence.js";
 export {
 	DEFAULT_VOICE_CONTEXT_LIMITS,
 	projectVoiceContext,
@@ -9,6 +10,8 @@ export { VOICE_CONTEXT_DELIVERY_OUTCOMES, VOICE_CONTEXT_ENTRY_KINDS } from "./co
 export type {
 	VoiceContextAppend,
 	VoiceContextCanonicalBrief,
+	VoiceContextBrowserEvidenceInput,
+	VoiceContextBrowserIngestResult,
 	VoiceContextClipboardPort,
 	VoiceContextConnection,
 	VoiceContextDeliveryFreshness,

@@ -204,3 +204,45 @@ test("a bind command names both the one-shot selection and the thread it believe
 		}),
 	).toMatchObject({ command: "threadLinkRefresh" });
 });
+
+test("voice-context delivery attempts are a closed wire union with ordered timing", () => {
+	const { model } = createFixtureIds();
+	const shared = {
+		id: "voice-entry",
+		kind: "callback",
+		sourceOrder: 1,
+		capturedAtMs: 100,
+		freshUntilMs: 200,
+		reason: null,
+		body: "exact callback body",
+	} as const;
+	expect(
+		model.BrowserVoiceContextSchema.safeParse({
+			kind: "voice_context",
+			sessionId: "browser-session",
+			ledgerId: "ledger",
+			canonicalBrief: '{"source":"semantic_context"}',
+			entriesTruncated: 0,
+			entries: [
+				{ ...shared, attempted: false, attemptedAtMs: null, outcome: "not_delivered" },
+				{ ...shared, id: "attempted", attempted: true, attemptedAtMs: 150, outcome: "delivered" },
+			],
+		}).success,
+	).toBeTrue();
+	for (const incoherent of [
+		{ attempted: false, attemptedAtMs: null, outcome: "outcome_unknown" },
+		{ attempted: false, attemptedAtMs: 150, outcome: "not_delivered" },
+		{ attempted: true, attemptedAtMs: null, outcome: "delivered" },
+		{ attempted: true, attemptedAtMs: 99, outcome: "delivered" },
+	])
+		expect(
+			model.BrowserVoiceContextSchema.safeParse({
+				kind: "voice_context",
+				sessionId: "browser-session",
+				ledgerId: "ledger",
+				canonicalBrief: '{"source":"semantic_context"}',
+				entriesTruncated: 0,
+				entries: [{ ...shared, ...incoherent }],
+			}).success,
+		).toBeFalse();
+});
