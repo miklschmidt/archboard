@@ -54,6 +54,13 @@ export function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnaps
 			canAcceptDirectInput: true,
 			reason: null,
 		},
+		threadCandidates: {
+			kind: "thread_candidates",
+			state: "unknown",
+			records: [],
+			truncated: false,
+			reason: null,
+		},
 		timeline: null,
 		queue: { kind: "queue", status: "empty", entries: [] },
 		settings: [],

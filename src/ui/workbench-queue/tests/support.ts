@@ -134,6 +134,13 @@ export function snapshot(seed: SnapshotSeed = {}): BrowserSnapshot {
 		account: { kind: "account", state: "ready", accountType: "chatgpt" },
 		login: { kind: "login", state: "idle" },
 		threadLink: seed.threadLink ?? executableLink(),
+		threadCandidates: {
+			kind: "thread_candidates",
+			state: "unknown",
+			records: [],
+			truncated: false,
+			reason: null,
+		},
 		timeline: seed.timeline === undefined ? timeline() : seed.timeline,
 		queue: seed.queue ?? queue("empty"),
 		settings: [],
