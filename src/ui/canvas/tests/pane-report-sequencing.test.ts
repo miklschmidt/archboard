@@ -9,26 +9,11 @@ import {
 	attachCanvasWorkbenchAfterRegistration,
 	createCanvasPaneRegistration,
 	createCanvasPaneReportSequencer,
-	type CanvasPaneRegistration,
-	type CanvasPaneReportRequest,
+	type CanvasPaneReportCurrent,
+	type CanvasPaneReportEffects,
+	type CanvasPaneReportOutcome,
 	type CanvasPaneReportSequencer,
 } from "../workbench-socket.js";
-
-interface Deferred<T> {
-	promise: Promise<T>;
-	resolve: (value: T) => void;
-	reject: (reason?: unknown) => void;
-}
-
-function deferred<T>(): Deferred<T> {
-	let resolveDeferred!: (value: T) => void;
-	let rejectDeferred!: (reason?: unknown) => void;
-	const promise = new Promise<T>((resolve, reject) => {
-		resolveDeferred = resolve;
-		rejectDeferred = reject;
-	});
-	return { promise, resolve: resolveDeferred, reject: rejectDeferred };
-}
 
 class FakeSocket extends EventTarget implements BrowserWorkbenchSocket {
 	readyState = 1;
@@ -48,206 +33,191 @@ const CONNECTED_STATE: BrowserWorkbenchState = {
 	sequence: 1,
 };
 
-interface CurrentPaneReport {
-	readonly socket: BrowserWorkbenchSocket;
-	readonly generation: number;
-	readonly registration: CanvasPaneRegistration;
+const REGISTERED: CanvasPaneReportOutcome = { settled: true, registered: true };
+const REFUSED: CanvasPaneReportOutcome = { settled: true, registered: false };
+const FAILED: CanvasPaneReportOutcome = { settled: false };
+
+/**
+ * One in-flight pane report, dispatched under whatever identity the pane held
+ * at the time. Nothing here re-implements the decision; it only holds the
+ * dispatch identity the way the hook's closure does.
+ */
+function dispatch(sequencer: CanvasPaneReportSequencer, current: CanvasPaneReportCurrent) {
+	return {
+		request: sequencer.begin(current.generation),
+		socket: current.socket,
+		registration: current.registration,
+	};
 }
 
-interface DispatchedPaneReport {
-	readonly request: CanvasPaneReportRequest;
-	readonly response: Deferred<{ registered: boolean }>;
-	readonly settled: Promise<void>;
-}
-
-function dispatchPaneReport(
-	sequencer: CanvasPaneReportSequencer,
-	generation: number,
-	reportSocket: BrowserWorkbenchSocket,
-	current: { value: CurrentPaneReport },
-	health: boolean[],
+/** The pane applying the decision, the way useCanvasSession applies it. */
+function applied(
+	effects: CanvasPaneReportEffects,
+	registration: { acknowledge: (registered: boolean) => boolean } | null,
+	health: (boolean | null)[],
 	freshness: string[],
-): DispatchedPaneReport {
-	const response = deferred<{ registered: boolean }>();
-	const reportRequest = sequencer.begin(generation);
-	const reportRegistration = current.value.registration;
-	const isCurrent = (): boolean => {
-		const currentPane = current.value;
-		return (
-			currentPane.socket === reportSocket &&
-			currentPane.generation === generation &&
-			currentPane.registration === reportRegistration
-		);
-	};
-	const apply = (registered: boolean): void => {
-		if (!isCurrent()) return;
-		if (registered) reportRegistration.acknowledge(true);
-		health.push(registered);
-		freshness.push(registered ? "published" : "cleared");
-	};
-	const settled = response.promise.then(
-		(result) => {
-			sequencer.settle(reportRequest, current.value.generation, result, (currentResult) => {
-				apply(currentResult.registered);
-			});
-			return undefined;
-		},
-		() => {
-			sequencer.settle(reportRequest, current.value.generation, undefined, () => apply(false));
-			return undefined;
-		},
-	);
-	return { request: reportRequest, response, settled };
+): void {
+	if (effects.superseded) return;
+	if (effects.acknowledgeRegistration) registration?.acknowledge(true);
+	if (effects.connectionHealth !== null) health.push(effects.connectionHealth);
+	if (effects.clearPublishedReport) freshness.push("cleared");
+	else if (effects.acceptPaneListing) freshness.push("published");
 }
 
-test("newer same-generation pane-report success wins over older rejection and negative result", async () => {
-	for (const staleKind of ["rejection", "negative"] as const) {
+test("a newer same-generation pane report wins over an older refusal and an older failure", () => {
+	for (const stale of [REFUSED, FAILED]) {
 		const socket = new FakeSocket();
 		const registration = createCanvasPaneRegistration(socket, 1);
-		const current: { value: CurrentPaneReport } = {
-			value: { socket, generation: 1, registration },
-		};
+		const current: CanvasPaneReportCurrent = { socket, generation: 1, registration };
 		const sequencer = createCanvasPaneReportSequencer();
-		const health: boolean[] = [];
+		const health: (boolean | null)[] = [];
 		const freshness: string[] = [];
-		let attachCount = 0;
-		let subscribeCount = 0;
-		const attachPromise = attachCanvasWorkbenchAfterRegistration({
-			registration,
-			isCurrent: () =>
-				current.value.socket === socket &&
-				current.value.generation === 1 &&
-				current.value.registration === registration,
-			attach: async () => {
-				attachCount += 1;
-				subscribeCount += 1;
-				return CONNECTED_STATE;
-			},
-		});
-		const older = dispatchPaneReport(sequencer, 1, socket, current, health, freshness);
-		const newer = dispatchPaneReport(sequencer, 1, socket, current, health, freshness);
+
+		const older = dispatch(sequencer, current);
+		const newer = dispatch(sequencer, current);
 		expect(newer.request.requestId).toBeGreaterThan(older.request.requestId);
 
-		newer.response.resolve({ registered: true });
-		await newer.settled;
+		applied(sequencer.settle(newer, current, REGISTERED), registration, health, freshness);
 		expect(health).toEqual([true]);
 		expect(freshness).toEqual(["published"]);
-		expect(await attachPromise).toBe(CONNECTED_STATE);
 
-		if (staleKind === "rejection") older.response.reject(new Error("older report lost"));
-		else older.response.resolve({ registered: false });
-		await older.settled;
+		const olderEffects = sequencer.settle(older, current, stale);
+		expect(olderEffects.superseded).toBeTrue();
+		applied(olderEffects, registration, health, freshness);
 		expect(health).toEqual([true]);
 		expect(freshness).toEqual(["published"]);
-		expect(attachCount).toBe(1);
-		expect(subscribeCount).toBe(1);
 	}
 });
 
-test("a newer failure ignores older success, then current recovery keeps one attach and subscribe", async () => {
+test("a newer refusal ignores an older success, and a later report recovers health", () => {
 	const socket = new FakeSocket();
 	const registration = createCanvasPaneRegistration(socket, 1);
-	const current: { value: CurrentPaneReport } = {
-		value: { socket, generation: 1, registration },
-	};
+	const current: CanvasPaneReportCurrent = { socket, generation: 1, registration };
 	const sequencer = createCanvasPaneReportSequencer();
-	const health: boolean[] = [];
+	const health: (boolean | null)[] = [];
 	const freshness: string[] = [];
 	let attachCount = 0;
-	let subscribeCount = 0;
 	const attachPromise = attachCanvasWorkbenchAfterRegistration({
 		registration,
-		isCurrent: () => current.value.registration === registration,
+		isCurrent: () => true,
 		attach: async () => {
 			attachCount += 1;
-			subscribeCount += 1;
 			return CONNECTED_STATE;
 		},
 	});
 
-	const olderSuccess = dispatchPaneReport(sequencer, 1, socket, current, health, freshness);
-	const newerFailure = dispatchPaneReport(sequencer, 1, socket, current, health, freshness);
-	newerFailure.response.resolve({ registered: false });
-	await newerFailure.settled;
+	const olderSuccess = dispatch(sequencer, current);
+	const newerRefusal = dispatch(sequencer, current);
+	applied(sequencer.settle(newerRefusal, current, REFUSED), registration, health, freshness);
 	expect(health).toEqual([false]);
 	expect(freshness).toEqual(["cleared"]);
-	expect(attachCount).toBe(0);
 
-	olderSuccess.response.resolve({ registered: true });
-	await olderSuccess.settled;
+	expect(sequencer.settle(olderSuccess, current, REGISTERED).superseded).toBeTrue();
 	expect(health).toEqual([false]);
-	expect(freshness).toEqual(["cleared"]);
-	expect(attachCount).toBe(0);
 
-	const recovery = dispatchPaneReport(sequencer, 1, socket, current, health, freshness);
-	recovery.response.resolve({ registered: true });
-	await recovery.settled;
-	expect(health).toEqual([false, true]);
-	expect(freshness).toEqual(["cleared", "published"]);
-	expect(await attachPromise).toBe(CONNECTED_STATE);
-	expect(attachCount).toBe(1);
-	expect(subscribeCount).toBe(1);
-
-	const currentFailure = dispatchPaneReport(sequencer, 1, socket, current, health, freshness);
-	currentFailure.response.resolve({ registered: false });
-	await currentFailure.settled;
-	const currentRecovery = dispatchPaneReport(sequencer, 1, socket, current, health, freshness);
-	currentRecovery.response.resolve({ registered: true });
-	await currentRecovery.settled;
+	// The one-shot attach latch is released by the first current positive result,
+	// after the earlier refusal, and never released twice.
+	applied(
+		sequencer.settle(dispatch(sequencer, current), current, REGISTERED),
+		registration,
+		health,
+		freshness,
+	);
+	applied(
+		sequencer.settle(dispatch(sequencer, current), current, FAILED),
+		registration,
+		health,
+		freshness,
+	);
+	applied(
+		sequencer.settle(dispatch(sequencer, current), current, REGISTERED),
+		registration,
+		health,
+		freshness,
+	);
 	expect(health).toEqual([false, true, false, true]);
 	expect(freshness).toEqual(["cleared", "published", "cleared", "published"]);
-	expect(attachCount).toBe(1);
-	expect(subscribeCount).toBe(1);
+	return attachPromise.then((state) => {
+		expect(state).toBe(CONNECTED_STATE);
+		expect(attachCount).toBe(1);
+		return undefined;
+	});
 });
 
-test("a stale socket generation cannot mutate the current pane report or transport", async () => {
+test("a stale socket generation or registration cannot change the current pane", async () => {
 	const firstSocket = new FakeSocket();
 	const secondSocket = new FakeSocket();
 	const firstRegistration = createCanvasPaneRegistration(firstSocket, 1);
 	const secondRegistration = createCanvasPaneRegistration(secondSocket, 2);
-	const current: { value: CurrentPaneReport } = {
-		value: { socket: firstSocket, generation: 1, registration: firstRegistration },
-	};
 	const sequencer = createCanvasPaneReportSequencer();
-	const health: boolean[] = [];
+	const health: (boolean | null)[] = [];
 	const freshness: string[] = [];
 	const attachedSockets: BrowserWorkbenchSocket[] = [];
-	let subscribeCount = 0;
+	let current: CanvasPaneReportCurrent = {
+		socket: firstSocket,
+		generation: 1,
+		registration: firstRegistration,
+	};
 	const firstAttach = attachCanvasWorkbenchAfterRegistration({
 		registration: firstRegistration,
-		isCurrent: () => current.value.registration === firstRegistration,
+		isCurrent: () => current.registration === firstRegistration,
 		attach: async () => {
 			attachedSockets.push(firstSocket);
-			subscribeCount += 1;
 			return CONNECTED_STATE;
 		},
 	});
-	const staleReport = dispatchPaneReport(sequencer, 1, firstSocket, current, health, freshness);
+	const staleReport = dispatch(sequencer, current);
 
-	current.value = { socket: secondSocket, generation: 2, registration: secondRegistration };
+	current = { socket: secondSocket, generation: 2, registration: secondRegistration };
 	const secondAttach = attachCanvasWorkbenchAfterRegistration({
 		registration: secondRegistration,
-		isCurrent: () => current.value.registration === secondRegistration,
+		isCurrent: () => current.registration === secondRegistration,
 		attach: async () => {
 			attachedSockets.push(secondSocket);
-			subscribeCount += 1;
 			return CONNECTED_STATE;
 		},
 	});
-	const currentReport = dispatchPaneReport(sequencer, 2, secondSocket, current, health, freshness);
-	currentReport.response.resolve({ registered: true });
-	await currentReport.settled;
-	staleReport.response.resolve({ registered: true });
-	await staleReport.settled;
+	const currentReport = dispatch(sequencer, current);
+	applied(
+		sequencer.settle(currentReport, current, REGISTERED),
+		secondRegistration,
+		health,
+		freshness,
+	);
+	expect(sequencer.settle(staleReport, current, REGISTERED).superseded).toBeTrue();
 
 	expect(health).toEqual([true]);
 	expect(freshness).toEqual(["published"]);
 	expect(await secondAttach).toBe(CONNECTED_STATE);
 	expect(attachedSockets).toEqual([secondSocket]);
-	expect(subscribeCount).toBe(1);
 	// Resolve the retired gate only to dispose the test's pending promise; its
 	// current-generation check must still prevent an old attach.
 	expect(firstRegistration.acknowledge(true)).toBeTrue();
 	expect(await firstAttach).toBeNull();
 	expect(attachedSockets).toEqual([secondSocket]);
+});
+
+test("a report dispatched from a replaced socket on the same generation changes nothing", () => {
+	const reportSocket = new FakeSocket();
+	const replacementSocket = new FakeSocket();
+	const registration = createCanvasPaneRegistration(replacementSocket, 1);
+	const sequencer = createCanvasPaneReportSequencer();
+	const dispatched = {
+		request: sequencer.begin(1),
+		socket: reportSocket,
+		registration: null,
+	};
+	const effects = sequencer.settle(
+		dispatched,
+		{ socket: replacementSocket, generation: 1, registration },
+		REGISTERED,
+	);
+	expect(effects).toMatchObject({
+		superseded: false,
+		acknowledgeRegistration: false,
+		connectionHealth: null,
+		clearPublishedReport: false,
+		acceptPaneListing: false,
+		applyStaleBuild: false,
+	});
 });
