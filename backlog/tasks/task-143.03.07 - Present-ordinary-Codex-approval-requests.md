@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-04 02:55'
+updated_date: '2026-09-04 09:34'
 labels: []
 dependencies:
   - TASK-143.05.02
@@ -50,3 +50,22 @@ Render and resolve the seven ordinary app-server human-interaction request famil
 6. Tests under src/ui/workbench-approvals/tests: approval-surface.test.tsx renders all seven ordinary families and all three dynamic effects with secret non-echo, safe and unsafe URLs, spoken eligibility, exact dynamic effect disclosure, app-global visibility and focus return; approval-forms, approval-lifecycle and approval-dispatch own field validation, every AC #4 state, terminal no-resume and delivered/not_delivered/outcome_unknown reconciliation. Shared fixtures live in the same test owner. No package.json, shell, or browser-inventory edit.
 7. Verify: bun run type-check, lint, fmt:check, build:frontend, focused module tests, test:repository, test:modules; record counts and any unrelated failures in the notes.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented src/ui/workbench-approvals as the complete approval workbench: contract.ts (public card, status, field, offer, beacon and submission types), lib/vocabulary.ts, lib/status.ts (one lifecycle vocabulary for both kinds plus dead-authority removal), lib/fields.ts, lib/form.ts, lib/offers.ts, lib/response.ts, lib/disclosure.ts, lib/projection.ts, lib/focus.ts, lib/submit.ts, and the rendered WorkbenchApprovals, ApprovalCard and ApprovalFieldControl. The module receives a transport, instantiates no owner, claims no lease, and writes no protocol response: it hands the transport one typed approvalRespond or dynamicApprovalRespond draft together with the target captured while the offers were on screen, so a navigated workbench is refused (approval_not_pending, dynamic_approval_not_pending, link_changed, link_required) rather than retargeted.
+
+Decisions taken and why:
+- Command execution and file change offers are built one-to-one from the host's availableDecisions, including the proposed exec-policy and network-policy amendment arms. The browser never composes an amendment of its own, so there is no amendment form and no way to widen a decision the host did not offer.
+- Spoken eligibility is annotated only when the host says eligible AND the request is a command execution whose offered set is exactly accept plus decline AND it is still pending. That mirrors the broker's own gate (src/runtime/codex-approvals/lib/response.ts), so a host annotation the browser cannot confirm degrades to visual-only instead of being trusted. Dynamic coordination approvals carry no spoken field and are always visual-only.
+- Permissions: the browser contract publishes requestedScope.network and the requested fileAccess modes but no paths, while GrantedPermissionProfile.fileSystem is a path list. Rather than invent one, the card grants network access, grant scope (turn or session) and strictAutoReview, discloses the requested file-access modes, and states plainly that Archboard will not invent a path list. Declining sends the broker's own empty grant shape ({}, scope turn).
+- Legacy applyPatchApproval and execCommandApproval have no availableDecisions, so the card offers approved, denied with an optional person-written rejection (defaulting to a fixed sentence), and abort. No approved_for_session is ever offered unasked.
+- App-global visibility is an always-present assertive live region ('data-approvals-scope=app-global') that carries every card's title, phase and immutable target, so a pending request and every terminal outcome are readable when the workbench region does not have focus.
+- Focus return is a pure decision (approvalDecisionSignature plus approvalFocusReturn) applied by one effect that only calls focus() on the tabindex=-1 surface heading; the projection rebuilds its cards each snapshot, so a signature rather than array identity is what the surface compares.
+- A pending request whose expiry has passed on the clock renders as expired with its authority removed and says the host has not published a terminal record yet, matching the transport's own expiresAtMs > now() refusal.
+
+Two lint-configuration changes were needed and are the minimum to satisfy AC #5's named .tsx owner: tools/oxlint-plugin-archboard.js isTypedTestSource now accepts a .tsx file under src/ui (tsconfig.frontend.json is the gate that reads src/ui/**/*.tsx, so the rule's stated intent still holds; .js and .jsx and .tsx elsewhere stay refused, and tests/system/repository-policy/boundaries.test.ts still passes), and the .oxlintrc.jsonc 500-line test cap now also matches src/*/*/tests/**/*.tsx. No package.json dependency, src/ui/shell, tsconfig, or browser-inventory edit was made. React Testing Library and happy-dom are not present in this repository and adding them would be a serialized root dependency edit, so the rendered assertions use renderToStaticMarkup the way src/ui/workbench-coordinator, workbench-board-status and workbench-timeline tests already do, with interaction proved through the same exported pure decision, form and submit functions the components call.
+
+Verification from the worktree: bun run type-check passed; bun run lint passed; bun run fmt:check passed (1075 files); bun run build:frontend passed; bun test --isolate over workbench-approvals, workbench-transport, workbench-runtime and codex-browser-model passed 144 tests, 992 expect() calls, 16 files; the module's own four files are 93 tests with 370 expect() calls; bun run test:repository passed 122 tests, 1060 expect() calls, 18 files; bun run test:modules passed 2059 tests, 18994 expect() calls, 224 files. No unrelated failures.
+<!-- SECTION:NOTES:END -->
