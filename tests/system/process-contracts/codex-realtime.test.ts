@@ -476,7 +476,8 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 			const freshStart = requestParams(harness, "thread/realtime/start")[2];
 			if (typeof freshStart?.realtimeSessionId !== "string")
 				throw new Error("Fresh start identity missing.");
-			const freshThread = second.binding.coordinatorThreadId;
+			const { decoder } = second.identity;
+			const freshThread = decoder.serializeCodexIdentity(second.binding.coordinatorThreadId);
 			second.adapter.onNotification(
 				makeNotification(second.identity, "thread/realtime/started", {
 					threadId: freshThread,
