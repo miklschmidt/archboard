@@ -1,17 +1,19 @@
 import type {
 	AnswerSdp,
 	RealtimeCorrelationId,
-	RealtimeItemId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
 	RealtimeState,
 	RealtimeTranscriptRecord,
 	RealtimeTranscriptRole,
 } from "../../../shared/codex-realtime-host/index.js";
-import type { RealtimeSessionId as WireRealtimeSessionId } from "../../../shared/codex-workbench-identity/index.js";
+import type {
+	ItemId,
+	RealtimeSessionId as WireRealtimeSessionId,
+} from "../../../shared/codex-workbench-identity/index.js";
 import type { CodexRealtimeBinding, CodexRealtimeGeneration } from "./contract.js";
 
 export interface RealtimeTranscriptEntry {
-	readonly itemId: RealtimeItemId;
+	readonly itemId: ItemId;
 	role: RealtimeTranscriptRole;
 	status: RealtimeTranscriptRecord["status"];
 	text: string;
@@ -27,7 +29,7 @@ export interface ActiveRealtimeSession {
 	readonly answer: Promise<AnswerSdp>;
 	readonly resolveAnswer: (answer: AnswerSdp) => void;
 	readonly rejectAnswer: (error: Error) => void;
-	readonly entries: Map<RealtimeItemId, RealtimeTranscriptEntry>;
+	readonly entries: Map<ItemId, RealtimeTranscriptEntry>;
 	state: RealtimeState;
 	startReturned: boolean;
 	started: boolean;

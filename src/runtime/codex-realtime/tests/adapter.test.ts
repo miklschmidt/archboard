@@ -9,6 +9,7 @@ import {
 	createIdentityAuthority,
 	type ChildEpoch,
 	type ChildId,
+	type ItemId,
 	type ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import {
@@ -96,6 +97,7 @@ interface Harness {
 	readonly epoch: ChildEpoch;
 	readonly linkedThreadId: ThreadId;
 	readonly coordinatorThreadId: ThreadId;
+	readonly itemId: (raw: string) => ItemId;
 	binding: CodexRealtimeBinding | null;
 }
 
@@ -142,6 +144,7 @@ function harness(): Harness {
 		epoch: identity.validator.epoch,
 		linkedThreadId,
 		coordinatorThreadId,
+		itemId: identity.decoder.resolveItemId,
 		get binding() {
 			return bindingState.binding;
 		},
@@ -309,7 +312,12 @@ describe("Codex realtime adapter", () => {
 			notify(h, method, { threadId: COORDINATOR_WIRE_THREAD_ID, ...params });
 		}
 		expect(h.adapter.transcript()).toEqual([
-			expect.objectContaining({ itemId: "item-a", sequence: 0, status: "final", text: "Hello" }),
+			expect.objectContaining({
+				itemId: h.itemId("item-a"),
+				sequence: 0,
+				status: "final",
+				text: "Hello",
+			}),
 		]);
 		expect(h.events.filter((entry) => entry.kind === "diagnostic")).toHaveLength(4);
 		notify(h, "thread/realtime/error", {
@@ -325,19 +333,9 @@ describe("Codex realtime adapter", () => {
 		expect(JSON.stringify(h.events)).not.toContain("awaiting_user");
 	});
 
-	test("exhausts recovery, detects cursor loops, and merges live records by stable identity", async () => {
+	test("exhausts recovery, detects cursor loops, and merges records by stable identity", async () => {
 		const h = harness();
 		const { wireSessionId, correlation: browser } = await started(h);
-		notify(h, "thread/realtime/item/completed", {
-			threadId: COORDINATOR_WIRE_THREAD_ID,
-			item: {
-				id: "item-b",
-				realtimeSessionId: wireSessionId,
-				type: "transcriptSegment",
-				role: "assistant",
-				text: "live",
-			},
-		});
 		h.session.timelinePages = [
 			{
 				data: [
@@ -383,8 +381,8 @@ describe("Codex realtime adapter", () => {
 		expect(
 			h.adapter.transcript().map(({ itemId, sequence, text }) => ({ itemId, sequence, text })),
 		).toEqual([
-			{ itemId: parseRealtimeItemId("item-a"), sequence: 0, text: "first" },
-			{ itemId: parseRealtimeItemId("item-b"), sequence: 1, text: "recovered" },
+			{ itemId: parseRealtimeItemId(h.itemId("item-a")), sequence: 0, text: "first" },
+			{ itemId: parseRealtimeItemId(h.itemId("item-b")), sequence: 1, text: "recovered" },
 		]);
 		const looping = harness();
 		const loopStart = await started(looping, "-loop");

@@ -178,6 +178,16 @@ function close(h: RaceHarness): void {
 }
 
 function transcript(h: RaceHarness, wireSessionId: string): void {
+	notify(h, "thread/realtime/item/started", {
+		threadId: COORDINATOR_WIRE_THREAD_ID,
+		item: {
+			id: "retained-item",
+			realtimeSessionId: wireSessionId,
+			type: "transcriptSegment",
+			role: "assistant",
+			text: "retained",
+		},
+	});
 	notify(h, "thread/realtime/item/completed", {
 		threadId: COORDINATOR_WIRE_THREAD_ID,
 		item: {

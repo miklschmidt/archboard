@@ -237,9 +237,11 @@ describe("codex workbench identities", () => {
 			decoder.adoptCodexResponseIdentities({
 				threadIds: ["valid-before-failure", ""],
 				turnIds: ["turn-before-failure"],
+				itemIds: ["item-before-failure"],
 			}),
 		).toThrow(IdentityValidationError);
 		expect(errorCode(() => decoder.resolveThreadId("valid-before-failure"))).toBe("unissued");
+		expect(errorCode(() => decoder.resolveItemId("item-before-failure"))).toBe("unissued");
 
 		const adopted = decoder.adoptCodexResponseIdentities({
 			threadIds: ["same-thread", "same-thread"],
@@ -249,6 +251,7 @@ describe("codex workbench identities", () => {
 			loginIds: ["same-login", "same-login"],
 		});
 		for (const values of Object.values(adopted)) expect(values[0]).toBe(values[1]);
+		expect(decoder.resolveItemId("same-item")).toBe(adopted.itemIds[0]!);
 	});
 
 	test("rejects empty, malformed, and caller-fabricated identities", () => {

@@ -482,6 +482,8 @@ export interface TrustedIdentityDecoder {
 	readonly parseApprovalId: (value: unknown) => ApprovalId;
 	/** Resolves a raw Codex thread id only when this authority already issued it. */
 	readonly resolveThreadId: (raw: unknown) => ThreadId;
+	/** Resolves a raw Codex item id only when this authority already issued it. */
+	readonly resolveItemId: (raw: unknown) => ItemId;
 	readonly adoptThreadId: (raw: unknown) => ThreadId;
 	readonly adoptTurnId: (raw: unknown) => TurnId;
 	readonly adoptItemId: (raw: unknown) => ItemId;
@@ -685,11 +687,14 @@ function createAuthority(ledger: IdentityLedger): IdentityAuthorities {
 		assertIssued(parsed, "operation", issued);
 		return parsed;
 	};
-	const resolveThreadId = (rawValue: unknown): ThreadId => {
+	const resolve = <Domain extends "thread" | "item">(
+		domain: Domain,
+		rawValue: unknown,
+	): IdentityValue<Domain> => {
 		if (typeof rawValue !== "string") {
-			return fail("invalid-shape", "The server thread identity must be a string.", "thread");
+			return fail("invalid-shape", `The server ${domain} identity must be a string.`, domain);
 		}
-		return parseIssued("thread", wireValue("thread", encodeRawIdentity(rawValue, "thread")));
+		return parseIssued(domain, wireValue(domain, encodeRawIdentity(rawValue, domain)));
 	};
 	const serialize = (value: CodexIdentity): string => {
 		const domain = identityDomain(value);
@@ -768,7 +773,8 @@ function createAuthority(ledger: IdentityLedger): IdentityAuthorities {
 		parseDynamicToolCallId: (value) => parseIssued("dynamic-tool-call", value),
 		parseRealtimeSessionId: (value) => parseIssued("realtime-session", value),
 		parseApprovalId: (value) => parseIssued("approval", value),
-		resolveThreadId,
+		resolveThreadId: (raw) => resolve("thread", raw),
+		resolveItemId: (raw) => resolve("item", raw),
 		adoptThreadId: (raw) => adopt("thread", raw),
 		adoptTurnId: (raw) => adopt("turn", raw),
 		adoptItemId: (raw) => adopt("item", raw),
