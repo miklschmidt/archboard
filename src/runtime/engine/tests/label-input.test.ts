@@ -353,3 +353,54 @@ test("applies label input, preserves order, and pins converter output", () => {
 		);
 	}
 });
+
+test("persists bound text alignment through the agent write boundary", () => {
+	const board = new Map<string, ServerElement>();
+	const applied = applyElementInput(board, {
+		origin: "agent",
+		upserts: [
+			{
+				id: "svc",
+				type: "rectangle",
+				x: 100,
+				y: 200,
+				width: 200,
+				height: 80,
+				label: { text: "Orders" },
+			},
+		],
+	});
+	const container = required(applied.named[0], "the labelled container is missing");
+	const initial = [...board.values()].find(
+		(element) => element.type === "text" && element.containerId === container.id,
+	);
+	if (initial?.type !== "text") throw new Error("the bound text is missing");
+	assert(
+		initial.x === container.x + (container.width - initial.width) / 2 &&
+			initial.y === container.y + (container.height - initial.height) / 2,
+		"the initial center/middle placement changed",
+	);
+
+	applyElementInput(board, {
+		origin: "agent",
+		upserts: [{ id: initial.id, textAlign: "left", verticalAlign: "top" }],
+	});
+	const aligned = board.get(initial.id);
+	if (aligned?.type !== "text") throw new Error("the aligned bound text is missing");
+	assert(
+		aligned.x === container.x + 5 && aligned.y === container.y + 5,
+		`the left/top label was persisted at ${aligned.x},${aligned.y}, not Excalidraw's 105,205`,
+	);
+
+	applyElementInput(board, {
+		origin: "agent",
+		upserts: [{ id: initial.id, textAlign: "center", verticalAlign: "middle" }],
+	});
+	const centred = board.get(initial.id);
+	if (centred?.type !== "text") throw new Error("the centred bound text is missing");
+	assert(
+		centred.x === container.x + (container.width - centred.width) / 2 &&
+			centred.y === container.y + (container.height - centred.height) / 2,
+		"restoring center/middle did not restore the current placement",
+	);
+});

@@ -201,7 +201,16 @@ function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): El
 	return {
 		element,
 		statement: mergedStatement,
-		geometryChanged: ["x", "y", "width", "height", "points", "angle"].some(changed),
+		geometryChanged: [
+			"x",
+			"y",
+			"width",
+			"height",
+			"points",
+			"angle",
+			"textAlign",
+			"verticalAlign",
+		].some(changed),
 		reboundArrow: isLinear && ["start", "end", "startBinding", "endBinding"].some(changed),
 	};
 }

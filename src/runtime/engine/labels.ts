@@ -83,7 +83,10 @@ type LabelCommon = Pick<WritableVendorElement, "id" | "type"> &
 		boundElements?: readonly Readonly<BoundRef>[] | null;
 	};
 type LabelTextFields = Partial<
-	Pick<Extract<WritableVendorElement, { type: "text" }>, "containerId" | "text">
+	Pick<
+		Extract<WritableVendorElement, { type: "text" }>,
+		"containerId" | "text" | "textAlign" | "verticalAlign"
+	>
 >;
 type LabelPoint = Extract<
 	WritableVendorElement,
@@ -181,6 +184,9 @@ export interface BoundTextPlacement {
 	y: number;
 }
 
+/** Excalidraw 0.18.1's inset between a container and its bound text box. */
+const BOUND_TEXT_PADDING = 5;
+
 function num(value: unknown): number | undefined {
 	return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
@@ -242,8 +248,10 @@ function anchorSlack(container: LabelledElement): number {
 }
 
 /**
- * Where this container's label belongs: its anchor, less half the label's own
- * size, because a text element is stored by its top-left corner.
+ * Where this container's label belongs under Excalidraw's placement rules.
+ * Linear labels sit on the path midpoint. Other containers place the label
+ * within their padded inner box according to its horizontal and vertical
+ * alignment; ellipses and diamonds narrow that box to fit inside their edges.
  *
  * Undefined when the answer is not knowable — a container with no coordinates,
  * an arrow with no path, a text with no measurements — because moving a label
@@ -258,7 +266,46 @@ export function boundTextPlacement(
 	const width = num(text.width);
 	const height = num(text.height);
 	if (width === undefined || height === undefined) return undefined;
-	return { x: anchor.x - width / 2, y: anchor.y - height / 2 };
+	if (isLinear(container)) return { x: anchor.x - width / 2, y: anchor.y - height / 2 };
+
+	const containerX = num(container.x);
+	const containerY = num(container.y);
+	const containerWidth = num(container.width) ?? 0;
+	const containerHeight = num(container.height) ?? 0;
+	if (containerX === undefined || containerY === undefined) return undefined;
+
+	let offsetX = BOUND_TEXT_PADDING;
+	let offsetY = BOUND_TEXT_PADDING;
+	let usableWidth = containerWidth - BOUND_TEXT_PADDING * 2;
+	let usableHeight = containerHeight - BOUND_TEXT_PADDING * 2;
+	if (container.type === "ellipse") {
+		offsetX += (containerWidth / 2) * (1 - Math.SQRT1_2);
+		offsetY += (containerHeight / 2) * (1 - Math.SQRT1_2);
+		usableWidth = Math.round((containerWidth / 2) * Math.SQRT2) - BOUND_TEXT_PADDING * 2;
+		usableHeight = Math.round((containerHeight / 2) * Math.SQRT2) - BOUND_TEXT_PADDING * 2;
+	} else if (container.type === "diamond") {
+		offsetX += containerWidth / 4;
+		offsetY += containerHeight / 4;
+		usableWidth = Math.round(containerWidth / 2) - BOUND_TEXT_PADDING * 2;
+		usableHeight = Math.round(containerHeight / 2) - BOUND_TEXT_PADDING * 2;
+	}
+
+	const x = containerX + offsetX;
+	const y = containerY + offsetY;
+	return {
+		x:
+			text.textAlign === "left"
+				? x
+				: text.textAlign === "right"
+					? x + usableWidth - width
+					: x + (usableWidth - width) / 2,
+		y:
+			text.verticalAlign === "top"
+				? y
+				: text.verticalAlign === "bottom"
+					? y + usableHeight - height
+					: y + (usableHeight - height) / 2,
+	};
 }
 
 /** One bound text whose stored position no longer matches its container. */
