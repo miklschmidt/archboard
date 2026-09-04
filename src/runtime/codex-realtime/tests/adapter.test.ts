@@ -99,6 +99,9 @@ interface Harness {
 	binding: CodexRealtimeBinding | null;
 }
 
+const LINKED_WIRE_THREAD_ID = "linked-thread";
+const COORDINATOR_WIRE_THREAD_ID = "coordinator-thread";
+
 const transitionFailures: string[] = [];
 afterEach(() => {
 	expect(transitionFailures).toEqual([]);
@@ -108,7 +111,7 @@ afterEach(() => {
 function harness(): Harness {
 	const identity = createIdentityAuthority();
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
-		threadIds: ["linked-thread", "coordinator-thread", "other-thread"],
+		threadIds: [LINKED_WIRE_THREAD_ID, COORDINATOR_WIRE_THREAD_ID, "other-thread"],
 	});
 	const linkedThreadId = adopted.threadIds[0];
 	const coordinatorThreadId = adopted.threadIds[1];
@@ -188,11 +191,11 @@ async function started(
 	const start = h.session.starts[startIndex];
 	if (!start?.realtimeSessionId) throw new Error("Start did not mint a realtime identity.");
 	notify(h, "thread/realtime/sdp", {
-		threadId: h.coordinatorThreadId,
+		threadId: COORDINATOR_WIRE_THREAD_ID,
 		sdp: "answer-sdp",
 	});
 	notify(h, "thread/realtime/started", {
-		threadId: h.coordinatorThreadId,
+		threadId: COORDINATOR_WIRE_THREAD_ID,
 		realtimeSessionId: start.realtimeSessionId,
 		version: "v3",
 	});
@@ -233,17 +236,20 @@ describe("Codex realtime adapter", () => {
 			voice: "breeze",
 		});
 		expect(h.adapter.generation()?.semanticBrief).toBe(semanticBrief());
-		notify(h, "thread/realtime/sdp", { threadId: h.coordinatorThreadId, sdp: "answer" });
+		notify(h, "thread/realtime/sdp", {
+			threadId: COORDINATOR_WIRE_THREAD_ID,
+			sdp: "answer",
+		});
 		await Promise.resolve();
 		expect(settled).toBe(false);
 		notify(h, "thread/realtime/started", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			realtimeSessionId: "wrong",
 			version: "v3",
 		});
 		expect(settled).toBe(false);
 		notify(h, "thread/realtime/started", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			realtimeSessionId: start.realtimeSessionId,
 			version: "v3",
 		});
@@ -258,7 +264,7 @@ describe("Codex realtime adapter", () => {
 		const h = harness();
 		const { wireSessionId } = await started(h);
 		notify(h, "thread/realtime/item/started", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			item: {
 				id: "item-a",
 				realtimeSessionId: wireSessionId,
@@ -268,12 +274,12 @@ describe("Codex realtime adapter", () => {
 			},
 		});
 		notify(h, "thread/realtime/item/transcript/delta", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			itemId: "item-a",
 			delta: "lo",
 		});
 		notify(h, "thread/realtime/item/completed", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			item: {
 				id: "item-a",
 				realtimeSessionId: wireSessionId,
@@ -300,18 +306,18 @@ describe("Codex realtime adapter", () => {
 			["thread/realtime/itemAdded", { item: { type: "appendAudio" } }],
 		];
 		for (const [method, params] of rejectedEvents) {
-			notify(h, method, { threadId: h.coordinatorThreadId, ...params });
+			notify(h, method, { threadId: COORDINATOR_WIRE_THREAD_ID, ...params });
 		}
 		expect(h.adapter.transcript()).toEqual([
 			expect.objectContaining({ itemId: "item-a", sequence: 0, status: "final", text: "Hello" }),
 		]);
 		expect(h.events.filter((entry) => entry.kind === "diagnostic")).toHaveLength(4);
 		notify(h, "thread/realtime/error", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			message: "server error",
 		});
 		notify(h, "thread/realtime/closed", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			reason: "closed",
 		});
 		expect(h.adapter.transcript()).toHaveLength(1);
@@ -323,7 +329,7 @@ describe("Codex realtime adapter", () => {
 		const h = harness();
 		const { wireSessionId, correlation: browser } = await started(h);
 		notify(h, "thread/realtime/item/completed", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			item: {
 				id: "item-b",
 				realtimeSessionId: wireSessionId,
@@ -369,7 +375,7 @@ describe("Codex realtime adapter", () => {
 			},
 		];
 		notify(h, "thread/realtime/error", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			message: "recover timeline",
 		});
 		expect(await h.adapter.recover(browser)).toEqual({ ...browser, outcome: "delivered" });
@@ -383,7 +389,7 @@ describe("Codex realtime adapter", () => {
 		const looping = harness();
 		const loopStart = await started(looping, "-loop");
 		notify(looping, "thread/realtime/error", {
-			threadId: looping.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			message: "recover loop",
 		});
 		looping.session.timelinePages = [
@@ -400,7 +406,7 @@ describe("Codex realtime adapter", () => {
 		const h = harness();
 		const first = await started(h, "-first");
 		notify(h, "thread/realtime/item/completed", {
-			threadId: h.coordinatorThreadId,
+			threadId: COORDINATOR_WIRE_THREAD_ID,
 			item: {
 				id: "closed-item",
 				realtimeSessionId: first.wireSessionId,
@@ -463,7 +469,7 @@ describe("Codex realtime adapter", () => {
 		expect(await h.adapter.stop(browser)).toMatchObject({ outcome: "not_delivered" });
 	});
 
-	test("ignores mismatched child, epoch, thread, session, and version and cleans up pending start", async () => {
+	test("ignores mismatched child, thread, session, and version and cleans up pending start", async () => {
 		const h = harness();
 		const browser = correlation();
 		const pending = h.adapter.createOffer({ ...browser, sdp: "offer" });
@@ -476,13 +482,13 @@ describe("Codex realtime adapter", () => {
 				h,
 				decodeServerNotification({
 					method: "thread/realtime/sdp",
-					params: { threadId: h.coordinatorThreadId, sdp: "wrong-child" },
+					params: { threadId: COORDINATOR_WIRE_THREAD_ID, sdp: "wrong-child" },
 				}),
 				{ child: other.validator.childId, epoch: other.validator.epoch },
 			),
 		);
 		notify(h, "thread/realtime/started", {
-			threadId: h.linkedThreadId,
+			threadId: LINKED_WIRE_THREAD_ID,
 			realtimeSessionId: start.realtimeSessionId,
 			version: "v2",
 		});

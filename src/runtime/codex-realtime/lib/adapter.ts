@@ -238,7 +238,12 @@ export function createCodexRealtimeAdapter(
 
 	const onNotification = (event: TransportServerNotification): void => {
 		const session = active;
-		if (!session || !exactNotification(session, event) || !bindingIsCurrent(session)) return;
+		if (
+			!session ||
+			!exactNotification(session, event, options.identity.decoder) ||
+			!bindingIsCurrent(session)
+		)
+			return;
 		const notification = event.notification;
 		switch (notification.method) {
 			case "thread/realtime/sdp":
