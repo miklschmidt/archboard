@@ -191,7 +191,6 @@ export function createCanvasCodexWorkbenchInstallation(
 				dynamicProjectionUnsubscribe: null,
 				timeline: null,
 				browserState: {
-					readiness: { kind: "readiness", state: "initialized" },
 					account: {
 						kind: "account",
 						state: "unknown",
@@ -508,7 +507,7 @@ export function createCanvasCodexWorkbenchInstallation(
 						budget,
 					});
 				}
-				return createCanvasBrowserGatewayOptions({
+				const options = createCanvasBrowserGatewayOptions({
 					components: created,
 					dynamicApprovals: dynamic,
 					timeline: owners.timeline,
@@ -516,6 +515,7 @@ export function createCanvasCodexWorkbenchInstallation(
 					state: owners.browserState,
 					leaseLedger: host.browserLeaseLedger,
 					checkoutRoot: host.checkoutRoot,
+					process: () => input.process.snapshot(),
 					contextForOperation: (context, operation) =>
 						host.contextForOperation(
 							{
@@ -532,6 +532,12 @@ export function createCanvasCodexWorkbenchInstallation(
 						return () => void owners.projectionListeners.delete(listener);
 					},
 				});
+				return {
+					...options,
+					// Child lifecycle transitions change readiness without any browser
+					// command, so the owned process is the gateway's change source.
+					lifecycle: { onChange: (listener) => input.process.subscribe(() => listener()) },
+				};
 			},
 		};
 	};
@@ -599,10 +605,10 @@ export function createCanvasCodexWorkbenchInstallation(
 			input.assertActivationCurrent();
 			const owners = ownersFor(input);
 			owners.browserState.account = { kind: "codex_account_response", response: account };
-			owners.browserState.readiness =
-				account.account === null
-					? { kind: "readiness", state: "signed_out" }
-					: { kind: "readiness", state: "thread_capable" };
+			// Readiness is derived, so the browser only learns the new account facts
+			// once the projection listeners publish them.
+			if (owners.approvalProjectionInstalled)
+				for (const listener of owners.projectionListeners) listener();
 			if (account.account !== null) {
 				input.assertActivationCurrent();
 				input.child.lifecycle.markAccountReady();

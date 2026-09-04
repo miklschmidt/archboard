@@ -3,9 +3,9 @@ id: TASK-143.01.10
 title: Expose the Codex workbench browser gateway
 status: In Progress
 assignee:
-  - '@codex'
+  - '@claude-opus'
 created_date: '2026-08-30 15:07'
-updated_date: '2026-09-04 00:02'
+updated_date: '2026-09-04 01:56'
 labels: []
 dependencies:
   - TASK-143.01.02
@@ -41,11 +41,12 @@ Expose the closed browser gateway for account and session readiness, thread link
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Replace assertion-based canvas generation and timeline fixtures with typed discriminant-preserving builders and explicit typed approvals/gateway replacement seams; preserve existing owner behavior.
-2. Reject every supplied snapshot byte limit outside 32768..1048576 and add exact minimum, maximum, omission-default, and invalid-value owners.
-3. Let complete-snapshot fitting remove the final timeline turn when that alone reaches the limit and an existing pagination cursor preserves truncation, while continuing to refuse non-timeline overflow; add the exact near-bound regression.
-4. Strengthen same-pane lifecycle coverage for simultaneous live refresh, then exact retirement and survivor refresh.
-5. Extend the complete gateway budget owner with nonempty settings, semantic state, lease, and operation; run only focused owners, both TypeScript projects, scoped static and repository-policy checks, then commit and callback for rereview.
+1. Replace the hand-set browser readiness field with one derived projection: a canvas-owned pure reducer over live owned-process, session, account, login, and coordinator facts that produces every AC #1 arm (stopped, backoff, storage_mismatch, incompatible_contract, reconnecting, initialized, login_capable, signed_out, login_pending, account_ready, thread_capable).
+2. Feed that reducer from production: pass the owned CodexProcess snapshot into the gateway options, subscribe the gateway's lifecycle change source to the process so child-lifecycle transitions publish deltas, and notify projection listeners when session initialization settles the account.
+3. Close the remaining hardcoded account and login projections: record account failure, login failure, login completion, and logout, and stop presenting one thread's queue after a link change.
+4. Prove AC #1 in one focused canvas owner: the complete readiness matrix validated against the closed BrowserReadinessSchema, bounded contract-legal reasons from raw diagnostics, and the production adapter deriving readiness from its live owners.
+5. Repair the branch's over-limit gateway test support file by splitting its pure builders into a sibling fixture.
+6. Verify: type-check, lint, fmt:check, the codex-workbench and canvas module trees, test:repository, and the full test:modules lane.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
