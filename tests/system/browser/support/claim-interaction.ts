@@ -118,11 +118,11 @@ interface SemanticAnnouncerSnapshot {
 const readSemanticAnnouncer = (browser: AgentBrowserSession): Promise<SemanticAnnouncerSnapshot> =>
 	browser.eval(`(() => {
 		const announcer = document.querySelector(".workbench-semantic-announcer");
-		const body = document.querySelector(".workbench-body");
-		const workbench = document.querySelector(".agent-workbench");
+		const body = document.querySelector('[data-workbench-content="expanded"]');
+		const workbench = document.querySelector("[data-workbench-frame]");
 		return {
 			atomic: announcer?.getAttribute("aria-atomic") ?? null,
-			bodyHidden: body?.hidden === true,
+			bodyHidden: body === null,
 			count: document.querySelectorAll(".workbench-semantic-announcer").length,
 			hiddenAncestor: announcer?.closest("[hidden]") !== null,
 			label: announcer?.getAttribute("aria-label") ?? null,
@@ -130,7 +130,7 @@ const readSemanticAnnouncer = (browser: AgentBrowserSession): Promise<SemanticAn
 			role: announcer?.getAttribute("role") ?? null,
 			state: announcer?.getAttribute("data-semantic-state") ?? null,
 			text: announcer?.textContent?.replace(/\\s+/g, " ").trim() ?? "",
-			workbenchExpanded: workbench?.getAttribute("data-expanded") ?? null,
+			workbenchExpanded: workbench?.getAttribute("data-workbench-disclosure") ?? null,
 		};
 	})()`);
 
@@ -149,7 +149,7 @@ export async function verifyCollapsedSemanticAnnouncement(
 		role: "status",
 		state: "unavailable",
 		text: unavailableText,
-		workbenchExpanded: "false",
+		workbenchExpanded: "collapsed",
 	});
 	expect(await readSemanticAccessibility(browser)).toEqual({
 		atomic: true,
@@ -201,7 +201,7 @@ export async function verifyBoardStatusPresentation(options: {
 	expect(keyboardFocus.outlineWidth).toBeGreaterThanOrEqual(2);
 
 	const lightWorkbench = await browser.eval<{ background: string; foreground: string }>(`(() => {
-		const workbench = document.querySelector(".agent-workbench");
+		const workbench = document.querySelector(".agent-status-strip");
 		return {
 			background: getComputedStyle(workbench).backgroundColor,
 			foreground: getComputedStyle(workbench).color,
@@ -216,7 +216,7 @@ export async function verifyBoardStatusPresentation(options: {
 				semantic: string | null;
 				theme: string;
 			}>(`(() => {
-				const workbench = document.querySelector(".agent-workbench");
+				const workbench = document.querySelector(".agent-status-strip");
 				return {
 					background: getComputedStyle(workbench).backgroundColor,
 					foreground: getComputedStyle(workbench).color,
@@ -224,7 +224,10 @@ export async function verifyBoardStatusPresentation(options: {
 					theme: document.documentElement.dataset.theme ?? "",
 				};
 			})()`),
-		(value) => value.theme === "dark",
+		(value) =>
+			value.theme === "dark" &&
+			value.background !== lightWorkbench.background &&
+			value.foreground !== lightWorkbench.foreground,
 		"the board-status view to render in the dark theme",
 	);
 	expect(darkWorkbench.background).not.toBe(lightWorkbench.background);
@@ -250,6 +253,7 @@ export async function verifyBoardStatusPresentation(options: {
 		state: "working",
 		take: "Try Take back control again",
 		takeBackState: "failure",
+		takeBackOutcomeVisible: true,
 	});
 	expectNoteUnchanged(noteFile, before);
 
@@ -369,6 +373,7 @@ export async function verifyPaneScopedTakeBack(options: {
 	expect(paneASettled).toMatchObject({
 		takeBackAnnouncement: "Board control returned.",
 		takeBackState: "success",
+		takeBackOutcomeVisible: true,
 		what: null,
 	});
 	expect(

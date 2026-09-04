@@ -69,6 +69,7 @@
 	--arch-space-panel: 22px;
 	--arch-size-touch-target: 44px;
 	--arch-size-header: 56px;
+	--arch-size-status-dot: 7px;
 
 	--arch-shadow-flat: none;
 	--arch-opacity-disabled-control: 0.46;
@@ -196,6 +197,7 @@
 	--spacing-panel: var(--arch-space-panel);
 	--spacing-touch-target: var(--arch-size-touch-target);
 	--spacing-header: var(--arch-size-header);
+	--spacing-status-dot: var(--arch-size-status-dot);
 
 	--shadow-flat: var(--arch-shadow-flat);
 	--opacity-disabled-control: var(--arch-opacity-disabled-control);
@@ -208,4 +210,8 @@
 	--ease-control: var(--arch-ease-control);
 	--ease-status: var(--arch-ease-status);
 	--animate-status: var(--arch-animation-status);
+}
+
+.agent-settings-dialog {
+	width: min(42rem, calc(100vw - 2 * var(--arch-space-panel)));
 }

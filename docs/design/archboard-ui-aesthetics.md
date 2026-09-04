@@ -31,12 +31,17 @@ Use the reference composition:
 - a narrow selection inspector on the right when selection warrants it; and
 - a collapsible agent workbench below the canvas.
 
+Keep connection, persistence, and element counts in the shared header. Do not duplicate them in
+a bottom status bar. Give board names a 280px navigator and up to two lines, with stable ordering
+that does not change when a board is viewed or edited. Agent configuration belongs in Settings;
+the drawer gives the conversation and composer the available width.
+
 One-pane, two-pane, and fullscreen presentations may change which supporting regions are visible,
 but they must keep the same hierarchy. Keep a supporting region open only while it exposes a needed
 action or current state. Do not add a second drawing toolbar. Excalidraw owns drawing tools.
 
 The shell is desktop-only. Do not design, implement, or gate phone or narrow responsive layouts.
-Verify at the supported 1440 by 900 desktop viewport and at desktop dimensions suitable for the
+Verify at the supported 1920 by 1080 desktop viewport and at desktop dimensions suitable for the
 Samsung Flip. Visual density must not shrink pointer targets: interactive controls used on the
 Flip retain the semantic 44px touch target even when their visible mark is smaller.
 
@@ -203,7 +208,7 @@ During implementation:
 
 1. Work in one named module and use the canonical semantic theme.
 2. Preserve real product states and remove any replaced interaction owner.
-3. Render early in the actual shell. Inspect light and dark themes at 1440 by 900, then exercise the
+3. Render early in the actual shell. Inspect light and dark themes at 1920 by 1080, then exercise the
    affected one-pane, two-pane, fullscreen, keyboard, and Flip-sized touch workflows.
 4. Compare composition, density, alignment, typography, color roles, and finish against the
    reference. Do not use a pixel-perfect screenshot threshold.

@@ -108,6 +108,21 @@ const EMPTY_PATH_FOCUS: PathFocusSnapshot = Object.freeze({ state: "inactive" })
 const readEmptyPresentation = (): FullscreenPresentationSnapshot => EMPTY_PRESENTATION;
 const subscribeToNothing = (): (() => void) => () => undefined;
 
+function inspectorIsVisible(selection: SelectionProjection, pathFocus: PathFocusSnapshot): boolean {
+	return selection.state !== "empty" || pathFocus.state !== "inactive";
+}
+
+function canvasStageClass(selection: SelectionProjection, pathFocus: PathFocusSnapshot): string {
+	return `canvas-stage${inspectorIsVisible(selection, pathFocus) ? " canvas-stage-inspecting" : ""}`;
+}
+
+function InspectorPane(
+	props: React.ComponentProps<typeof SelectionInspector>,
+): React.JSX.Element | null {
+	if (!inspectorIsVisible(props.selection, props.pathFocus)) return null;
+	return <SelectionInspector {...props} />;
+}
+
 function initialTheme(): "light" | "dark" {
 	if (typeof window === "undefined") return "light";
 	try {
@@ -1739,7 +1754,6 @@ export function Shell(): React.JSX.Element {
 				onThemeChange={setTheme}
 				busy={busy}
 				onOpen={handleOpenDialog}
-				onNew={handleNewDialog}
 				onClear={handleClearDialog}
 				onOpenOpenerSettings={openOpenerSettings}
 				onAddPane={addPane}
@@ -1815,7 +1829,7 @@ export function Shell(): React.JSX.Element {
 						</button>
 					</div>
 
-					<div className="canvas-stage">
+					<div className={canvasStageClass(inspectedSelection, inspectedPathFocus)}>
 						<div className={`panes panes-${panes.length}`}>
 							{panes.map((paneId, index) => (
 								<CanvasPane
@@ -1898,7 +1912,7 @@ export function Shell(): React.JSX.Element {
 							)}
 						</div>
 
-						<SelectionInspector
+						<InspectorPane
 							paneLabel={focusedPaneLabel}
 							boardKey={boardKey}
 							selection={inspectedSelection}
@@ -1921,23 +1935,6 @@ export function Shell(): React.JSX.Element {
 					/>
 				</main>
 			</div>
-
-			<footer className="statusbar">
-				<div className="status-cluster">
-					<span className={`status-item ${status?.connected ? "status-good" : "status-bad"}`}>
-						<span className="live-dot" />
-						{status?.connected ? "Connected" : "Offline"}
-					</span>
-					<span className="status-item">
-						<Icon name="check" size={14} />
-						{hold ? "Changes held" : writtenElsewhere ? "Note changed" : "In the vault"}
-					</span>
-					<span className="status-item">{status?.elementCount ?? 0} elements</span>
-				</div>
-				<div className="status-cluster status-muted">
-					<span>{boardKey ?? boardListing?.vault ?? "Waiting for board"}</span>
-				</div>
-			</footer>
 
 			{dialogContent}
 			{openerSettingsOpen && (
