@@ -145,6 +145,11 @@ like ordinary unknown routes:
 bun test tests/system/canvas-state/codex-workbench-production.test.ts
 ```
 
+Before accepting a release that changes the workbench or realtime path, follow
+the [clean-process real-voice smoke](docs/design/codex-workbench-voice-acceptance.md).
+Its deterministic gates run first; a person then proves the real microphone,
+speaker, signed-in session, reconnect, callback, and spoken-approval path.
+
 ## What to expect, and what not to
 
 **The voice model never sees command output automatically.** The Codex thread
