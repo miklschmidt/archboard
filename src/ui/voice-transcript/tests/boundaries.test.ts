@@ -36,45 +36,39 @@ const FORBIDDEN_RAW_INPUTS = Object.freeze([
 	"addEventListener('message'",
 ] as const);
 
-function namedTypeImports(source: string, modulePath: string): readonly string[] {
-	const escapedPath = modulePath.replaceAll(".", "\\.").replaceAll("/", "\\/");
-	const match = new RegExp(`import type \\{([^}]+)\\} from "${escapedPath}";`, "u").exec(source);
-	if (match?.[1] === undefined) return [];
-	return match[1]
-		.split(",")
-		.map((name) => name.trim())
-		.filter(Boolean);
-}
+const FORBIDDEN_DEPENDENCIES = Object.freeze([
+	"codex-app-server-contract",
+	"codex-protocol",
+	"codex-realtime-host",
+	"workbench-transport",
+] as const);
 
 describe("voice transcript input boundary", () => {
-	test("finds every product source owned by the module", () => {
-		expect(SOURCES.map((source) => source.file).toSorted()).toEqual([
-			"contract.ts",
-			"index.tsx",
-			"lib/VoiceTranscript.tsx",
-			"lib/projection.ts",
-		]);
-	});
-
-	test("accepts only canonical transcript records and the projected voice session", () => {
-		const contract = SOURCES.find((source) => source.file === "contract.ts")?.text ?? "";
-		const combined = SOURCES.map((source) => source.text).join("\n");
-
-		expect(namedTypeImports(contract, "../codex-realtime/index.js")).toEqual([
-			"RealtimeTranscriptRecord",
-		]);
-		expect(namedTypeImports(contract, "../voice-session/index.js")).toEqual(["VoiceSessionView"]);
-		expect(contract).toContain("readonly records: readonly RealtimeTranscriptRecord[];");
-		expect(contract).toContain("readonly session: VoiceSessionView;");
-		expect(combined.match(/from "\.\.\/codex-realtime\/index\.js"/gu)).toHaveLength(1);
-		expect(combined.match(/from "\.\.\/voice-session\/index\.js"/gu)).toHaveLength(1);
-	});
-
-	test("names no raw semantic event, transport notification, or data-channel text path", () => {
+	test("depends on no raw semantic event, transport notification, or data-channel text path", () => {
+		expect(SOURCES.length).toBeGreaterThan(0);
 		for (const { file, text } of SOURCES) {
 			for (const forbidden of FORBIDDEN_RAW_INPUTS) {
 				expect(text, `${file} names ${forbidden}`).not.toContain(forbidden);
 			}
+			const imports = [...text.matchAll(/from "([^"]+)"/gu)].map((match) => match[1] ?? "");
+			for (const dependency of FORBIDDEN_DEPENDENCIES) {
+				expect(
+					imports.some((modulePath) => modulePath.includes(dependency)),
+					`${file} imports ${dependency}`,
+				).toBe(false);
+			}
 		}
+	});
+
+	test("uses semantic theme names without raw palettes or theme-specific variants", () => {
+		const combined = SOURCES.map((source) => source.text).join("\n");
+		expect(combined).toContain("text-foreground");
+		expect(combined).toContain("text-muted-foreground");
+		expect(combined).toContain("border-border");
+		expect(combined).not.toContain("dark:");
+		expect(combined).not.toMatch(/#[0-9a-fA-F]{3,8}\b/u);
+		expect(combined).not.toMatch(/\b(?:rgb|rgba|hsl|oklch)\(/u);
+		expect(combined).not.toMatch(/(?:slate|gray|zinc|neutral|stone|red|blue|green)-[0-9]/u);
+		expect(combined).not.toMatch(/\b(?:bg|text|border|p|m|gap|h|w)-\[/u);
 	});
 });

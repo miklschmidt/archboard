@@ -1,7 +1,63 @@
 import { describe, expect, test } from "bun:test";
 
-import { projectVoiceTranscript, VOICE_TRANSCRIPT_CROSS_LINK_KINDS } from "../index.js";
+import { VOICE_SESSION_STATUSES } from "../../voice-session/index.js";
+import {
+	projectVoiceTranscript,
+	VOICE_TRANSCRIPT_CROSS_LINK_KINDS,
+	type VoiceTranscriptSessionState,
+} from "../index.js";
 import { CROSS_LINK_IDS, transcriptRecord, voiceSession } from "./fixtures.js";
+
+interface SessionStateCase {
+	readonly session: ReturnType<typeof voiceSession>;
+	readonly expected: VoiceTranscriptSessionState;
+	readonly busy: boolean;
+}
+
+const SESSION_STATE_CASES = [
+	{ session: voiceSession("unavailable"), expected: "unavailable", busy: false },
+	{ session: voiceSession("ready"), expected: "ready", busy: false },
+	{
+		session: voiceSession("requesting_permission"),
+		expected: "requesting_permission",
+		busy: false,
+	},
+	{ session: voiceSession("negotiating"), expected: "negotiating", busy: false },
+	{ session: voiceSession("listening"), expected: "listening", busy: false },
+	{ session: voiceSession("muted"), expected: "muted", busy: false },
+	{ session: voiceSession("processing"), expected: "processing", busy: true },
+	{ session: voiceSession("agent_speaking"), expected: "agent_speaking", busy: true },
+	{ session: voiceSession("recovering"), expected: "reconnecting", busy: true },
+	{ session: voiceSession("stopping"), expected: "stopping", busy: false },
+	{ session: voiceSession("stopped"), expected: "completed", busy: false },
+	{
+		session: voiceSession("failed", {
+			accessibleStatus: "Voice failed. Microphone lost. Reconnect the microphone.",
+			failure: { code: "device", recoverable: true, message: "Microphone lost." },
+			outcome: {
+				kind: "retry",
+				control: "restart",
+				label: "Restart voice",
+				recovery: "Reconnect the microphone.",
+			},
+		}),
+		expected: "recoverable_failure",
+		busy: false,
+	},
+	{
+		session: voiceSession("failed", {
+			accessibleStatus: "Voice failed. Voice stopped. Start a new session.",
+			failure: { code: "fatal", recoverable: false, message: "Voice stopped." },
+			outcome: {
+				kind: "terminal",
+				label: "Close voice",
+				recovery: "Start a new session.",
+			},
+		}),
+		expected: "terminal_failure",
+		busy: false,
+	},
+] as const satisfies readonly SessionStateCase[];
 
 describe("canonical voice transcript projection", () => {
 	test("preserves adapter order and keeps canonical item keys stable across text updates", () => {
@@ -98,7 +154,7 @@ describe("canonical voice transcript projection", () => {
 		expect(view.records[1]).toMatchObject({ text: null, textSuppressed: true });
 	});
 
-	test("projects every transcript state and the adapter-owned session outcomes", () => {
+	test("projects every transcript state", () => {
 		const recordStates = ["provisional", "final", "interrupted"] as const;
 		const recordView = projectVoiceTranscript({
 			records: recordStates.map((status, index) =>
@@ -108,50 +164,22 @@ describe("canonical voice transcript projection", () => {
 			crossLinkIds: CROSS_LINK_IDS,
 		});
 		expect(recordView.records.map((record) => record.status)).toEqual([...recordStates]);
+	});
 
-		const sessions = [
-			[voiceSession("ready"), "ready"],
-			[voiceSession("processing"), "processing"],
-			[voiceSession("agent_speaking"), "agent_speaking"],
-			[voiceSession("stopped"), "completed"],
-			[voiceSession("recovering"), "reconnecting"],
-			[
-				voiceSession("failed", {
-					failure: { code: "device", recoverable: true, message: "Microphone lost." },
-					outcome: {
-						kind: "retry",
-						control: "restart",
-						label: "Restart voice",
-						recovery: "Reconnect the microphone.",
-					},
-				}),
-				"recoverable_failure",
-			],
-			[
-				voiceSession("failed", {
-					failure: { code: "fatal", recoverable: false, message: "Voice stopped." },
-					outcome: {
-						kind: "terminal",
-						label: "Close voice",
-						recovery: "Start a new session.",
-					},
-				}),
-				"terminal_failure",
-			],
-		] as const;
+	test("maps every reachable voice-session status and both failure outcomes", () => {
+		expect([...new Set(SESSION_STATE_CASES.map(({ session }) => session.status))]).toEqual([
+			...VOICE_SESSION_STATUSES,
+		]);
+		expect(SESSION_STATE_CASES.filter(({ session }) => session.status === "failed")).toHaveLength(
+			2,
+		);
 
-		for (const [session, expected] of sessions) {
-			expect(
-				projectVoiceTranscript({ records: [], session, crossLinkIds: CROSS_LINK_IDS }).sessionState,
-			).toBe(expected);
+		for (const { session, expected, busy } of SESSION_STATE_CASES) {
+			const view = projectVoiceTranscript({ records: [], session, crossLinkIds: CROSS_LINK_IDS });
+			expect(view.sessionState).toBe(expected);
+			expect(view.busy).toBe(busy);
+			expect(view.contentState).toBe("empty");
 		}
-		expect(
-			projectVoiceTranscript({
-				records: [],
-				session: voiceSession("processing"),
-				crossLinkIds: CROSS_LINK_IDS,
-			}).contentState,
-		).toBe("empty");
 	});
 
 	test("exposes six fragment targets and no sibling record content", () => {

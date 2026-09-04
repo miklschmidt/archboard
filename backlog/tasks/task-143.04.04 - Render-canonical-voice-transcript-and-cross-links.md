@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 12:08'
+updated_date: '2026-09-04 12:17'
 labels: []
 dependencies:
   - TASK-143.02.03
@@ -69,4 +69,20 @@ Validation:
 - bun test tests/system/repository-policy/test-inventory.test.ts tests/system/repository-policy/boundaries.test.ts — 62 pass, 0 fail, 139 assertions.
 
 Remaining integration risk: TASK-143.04.06 must supply the canonical record stream and real sibling DOM IDs when mounting this module. Rendered real-browser/fullscreen integration remains with TASK-143.04.06 and TASK-143.04.07; no browser or broad suite was run by assignment. Acceptance criteria remain unchecked and the task remains In Progress for independent review.
+
+Independent review remediation from prior HEAD 7ddb637667009db712d088fc0c5c2674418127f3:
+- Accessibility: the existing single atomic status output now reads VoiceSessionView.accessibleStatus through one screen-reader-only child, so recoverable and terminal failure reason/recovery sentences are announced. The short visible label and status mark are aria-hidden inside that output. This standalone transcript owns the announcement; TASK-143.04.06 must choose one owner when composing it with VoiceControls rather than mounting duplicate live regions.
+- Color semantics: user/assistant roles and provisional/final record states now use neutral foreground semantic tokens. Cobalt is no longer a role or transcript-status category.
+- State coverage: one table-driven projection owner exhaustively matches every exported VoiceSessionStatus and distinguishes recoverable and terminal failed outcomes, including expected transcript busy and empty states.
+- Boundary coverage: removed exact product filename inventory and import-spelling assertions. The focused owner dynamically scans module product sources only to reject raw semantic-event, transport-notification, data-channel/message paths and direct raw-layer dependencies.
+- Theme evidence remains cheap: source and mounted owners require semantic tokens, reject raw palette values/dark variants, and prove theme-independent markup. Rendered theme behavior remains with TASK-143.04.07.
+
+Remediation validation:
+- bun test src/ui/voice-transcript/tests — 17 pass, 0 fail, 176 assertions.
+- bunx oxlint src/ui/voice-transcript — clean.
+- bunx oxfmt --check src/ui/voice-transcript — 8 files formatted.
+- bunx tsc --noEmit — pass.
+- bunx tsc --noEmit -p tsconfig.frontend.json — pass.
+- git diff --check — clean.
+No repository inventory owner was rerun because the remediation added no files or production dependency edges. No broad or browser lane was run by assignment. Task remains In Progress and all acceptance criteria remain unchecked for rereview.
 <!-- SECTION:NOTES:END -->

@@ -39,6 +39,49 @@ function record(container: HTMLElement, itemId: string): HTMLElement {
 }
 
 describe("mounted voice transcript accessibility", () => {
+	test("owns one atomic session announcer using the canonical accessible status", () => {
+		const recoverable = voiceSession("failed", {
+			label: "Voice failed",
+			detail: "Microphone access failed.",
+			accessibleStatus:
+				"Voice failed. Microphone access failed. Reconnect the microphone and restart voice.",
+			failure: { code: "device", recoverable: true, message: "Microphone access failed." },
+			outcome: {
+				kind: "retry",
+				control: "restart",
+				label: "Restart voice",
+				recovery: "Reconnect the microphone and restart voice.",
+			},
+		});
+		const terminal = voiceSession("failed", {
+			label: "Voice failed",
+			detail: "The realtime session is invalid.",
+			accessibleStatus:
+				"Voice failed. The realtime session is invalid. Close voice and start a new session.",
+			failure: { code: "session", recoverable: false, message: "Invalid session." },
+			outcome: {
+				kind: "terminal",
+				label: "Close voice",
+				recovery: "Close voice and start a new session.",
+			},
+		});
+		const rendered = ui.render(transcript({ session: recoverable }));
+
+		for (const session of [recoverable, terminal]) {
+			rendered.rerender(transcript({ session }));
+			const announcers = rendered.container.querySelectorAll<HTMLElement>(
+				'[aria-live="polite"][aria-atomic="true"]',
+			);
+			expect(announcers).toHaveLength(1);
+			expect(announcers[0]?.textContent).toContain(session.accessibleStatus);
+			expect(
+				announcers[0]
+					?.querySelector<HTMLElement>("[data-transcript-visible-status]")
+					?.getAttribute("aria-hidden"),
+			).toBe("true");
+		}
+	});
+
 	test("batches streaming log announcements without replacing the canonical item node", () => {
 		const provisional = transcriptRecord("spoken-item", 3, {
 			status: "provisional",
@@ -104,6 +147,26 @@ describe("mounted voice transcript accessibility", () => {
 });
 
 describe("mounted voice transcript states", () => {
+	test("uses neutral semantic text for roles and provisional state", () => {
+		const rendered = ui.render(
+			transcript({
+				records: [
+					transcriptRecord("user-provisional", 1, { status: "provisional" }),
+					transcriptRecord("assistant-final", 2, { role: "assistant" }),
+				],
+			}),
+		);
+		const user = ui.within(record(rendered.container, "user-provisional"));
+		const assistant = ui.within(record(rendered.container, "assistant-final"));
+
+		expect(user.getByText("User").className).toContain("text-foreground");
+		expect(user.getByText("Provisional").className).toContain("text-muted-foreground");
+		expect(assistant.getByText("Assistant").className).toContain("text-muted-foreground");
+		expect(assistant.getByText("Final").className).toContain("text-foreground");
+		expect(user.getByText("User").className).not.toContain("text-primary");
+		expect(user.getByText("Provisional").className).not.toContain("text-primary");
+	});
+
 	test("keeps stale-session identity visible but never mounts its transcript text", () => {
 		const stale = transcriptRecord("stale-item", 41, {
 			sessionId: "session-prior" as ReturnType<typeof transcriptRecord>["sessionId"],
