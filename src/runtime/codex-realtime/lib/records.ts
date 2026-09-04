@@ -1,4 +1,5 @@
 import type { RealtimeTranscriptRecord } from "../../../shared/codex-realtime-host/index.js";
+import type { TrustedIdentityDecoder } from "../../../shared/codex-workbench-identity/index.js";
 import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 import type { ActiveRealtimeSession } from "./state.js";
 
@@ -21,11 +22,20 @@ export function orderedRecords(
 export function exactNotification(
 	session: ActiveRealtimeSession,
 	event: TransportServerNotification,
+	identity: TrustedIdentityDecoder,
 ): boolean {
-	return (
-		event.correlation.child === session.binding.child &&
-		event.correlation.epoch === session.binding.epoch &&
-		"threadId" in event.notification.params &&
-		event.notification.params.threadId === session.binding.coordinatorThreadId
-	);
+	if (
+		event.correlation.child !== session.binding.child ||
+		event.correlation.epoch !== session.binding.epoch ||
+		!("threadId" in event.notification.params)
+	)
+		return false;
+	try {
+		return (
+			identity.resolveThreadId(event.notification.params.threadId) ===
+			session.binding.coordinatorThreadId
+		);
+	} catch {
+		return false;
+	}
 }
