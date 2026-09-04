@@ -3,8 +3,11 @@ import {
 	useEffect,
 	useId,
 	useRef,
+	useState,
 	useSyncExternalStore,
+	type ChangeEvent,
 	type CompositionEvent,
+	type FormEvent,
 	type KeyboardEvent,
 	type ReactNode,
 } from "react";
@@ -13,16 +16,21 @@ import { Button } from "../../button/index.js";
 import { cn } from "../../ui-classnames/index.js";
 import { assistantComposerPrimitives } from "../composer.js";
 import type {
+	WorkbenchComposerController,
 	WorkbenchComposerLink,
 	WorkbenchComposerProps,
-	WorkbenchComposerStatus,
+	WorkbenchComposerRetainedDraft,
 	WorkbenchComposerStatusState,
 	WorkbenchComposerTurnId,
 } from "../contract.js";
+import { composerDraftDisposition } from "./draft.js";
 import { composerKeyIntent } from "./keys.js";
 import { readComposerLink } from "./link.js";
+import { REFUSAL_RECOVERIES } from "./vocabulary.js";
 
 const { ComposerPrimitive } = assistantComposerPrimitives;
+
+const COMPOSER_STATUS_LABEL = "Codex composer status";
 
 const STATUS_CLASSES = {
 	idle: "text-muted-foreground",
@@ -35,39 +43,42 @@ const STATUS_CLASSES = {
 } as const satisfies Record<WorkbenchComposerStatusState, string>;
 
 const INPUT_CLASSES =
-	"m-0 w-full resize-none border-0 bg-transparent px-control-inline py-control font-sans !text-control text-foreground outline-none placeholder:text-faint-foreground disabled:cursor-default disabled:opacity-disabled-control";
+	"m-0 min-h-touch-target w-full resize-none border-0 bg-transparent px-control-inline py-control font-sans !text-control text-foreground outline-none placeholder:text-faint-foreground focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring disabled:cursor-default disabled:opacity-disabled-control";
 
 /** The accessible name says which of the two sends this keystroke performs. */
-function inputLabel(link: WorkbenchComposerLink): string {
-	if (link.kind !== "executable") return "Message the Codex workhorse (unavailable)";
-	return link.turn.kind === "active"
-		? "Steer the current Codex turn"
-		: "Message the Codex workhorse";
+function inputLabel(turnId: WorkbenchComposerTurnId | null): string {
+	return turnId === null ? "Message the Codex workhorse" : "Steer the current Codex turn";
 }
 
-function placeholderFor(link: WorkbenchComposerLink): string {
-	if (link.kind !== "executable") return link.reason;
-	return link.turn.kind === "active"
-		? "Add a correction to the running turn."
-		: "Ask the workhorse for something.";
+function placeholderFor(turnId: WorkbenchComposerTurnId | null): string {
+	return turnId === null
+		? "Ask the workhorse for something."
+		: "Add a correction to the running turn.";
 }
 
-function StatusLine({ status }: { readonly status: WorkbenchComposerStatus }): ReactNode {
+function StatusLine({
+	state,
+	message,
+	recovery,
+}: {
+	readonly state: WorkbenchComposerStatusState;
+	readonly message: string;
+	readonly recovery: string | null;
+}): ReactNode {
+	// `output` carries the implicit `status` role the contract names, so the
+	// announcement has one owner rather than an element plus a redundant role.
 	return (
-		<p
-			aria-label={status.label}
+		<output
+			aria-label={COMPOSER_STATUS_LABEL}
 			className={cn(
-				"m-0 border-t border-border-subtle px-control-inline py-compact font-sans text-body",
-				STATUS_CLASSES[status.state],
+				"m-0 block border-t border-border-subtle px-control-inline py-compact font-sans text-body",
+				STATUS_CLASSES[state],
 			)}
-			data-composer-status={status.state}
-			role={status.role}
+			data-composer-status={state}
 		>
-			{status.message}
-			{status.recovery === null ? null : (
-				<span className="text-muted-foreground"> {status.recovery}</span>
-			)}
-		</p>
+			{message}
+			{recovery === null ? null : <span className="text-muted-foreground"> {recovery}</span>}
+		</output>
 	);
 }
 
@@ -112,6 +123,18 @@ function RetainedDraft({
 	);
 }
 
+/** The retained region, shared by both branches so it has one shape. */
+function RetainedRegion({
+	retained,
+	onDismiss,
+}: {
+	readonly retained: WorkbenchComposerRetainedDraft | null;
+	readonly onDismiss: () => void;
+}): ReactNode {
+	if (retained === null) return null;
+	return <RetainedDraft onDismiss={onDismiss} reason={retained.reason} text={retained.text} />;
+}
+
 /**
  * Interrupt names the turn that was on screen when the control was rendered.
  * The id travels as a prop so the handler closes over one plain value, and the
@@ -125,7 +148,7 @@ function InterruptButton({
 }: {
 	readonly turnId: WorkbenchComposerTurnId;
 	readonly disabled: boolean;
-	readonly onInterrupt: (turnId: WorkbenchComposerTurnId) => Promise<unknown>;
+	readonly onInterrupt: WorkbenchComposerController["interrupt"];
 }): ReactNode {
 	const handleClick = useCallback(() => {
 		void onInterrupt(turnId);
@@ -144,14 +167,57 @@ function InterruptButton({
 }
 
 /**
+ * A workbench that cannot take direct workhorse input offers no input at all:
+ * an empty box that refuses every keystroke is worse than one sentence saying
+ * why. No reviewed primitive is rendered on this path, so a pane may place the
+ * composer outside the runtime's executable branch and still show a person the
+ * state and any text a command left behind.
+ */
+function UnavailableComposer({
+	link,
+	className,
+	retained,
+	onDismissRetained,
+}: {
+	readonly link: Exclude<WorkbenchComposerLink, { readonly kind: "executable" }>;
+	readonly className: string | undefined;
+	readonly retained: WorkbenchComposerRetainedDraft | null;
+	readonly onDismissRetained: () => void;
+}): ReactNode {
+	return (
+		<section
+			aria-label="Codex workhorse composer"
+			className={cn("min-w-0 border-t border-border bg-surface", className)}
+			data-workbench-composer={link.kind}
+		>
+			<StatusLine
+				message={link.reason}
+				recovery={
+					link.kind === "inspect_only"
+						? REFUSAL_RECOVERIES.inspect_only
+						: REFUSAL_RECOVERIES.unavailable
+				}
+				state="unavailable"
+			/>
+			<RetainedRegion onDismiss={onDismissRetained} retained={retained} />
+		</section>
+	);
+}
+
+/**
  * The Archboard-owned text composer for one linked workhorse.
  *
- * `ComposerPrimitive.Root` supplies the form whose submit reaches the runtime,
- * and `ComposerPrimitive.Input` supplies the textarea bound to the composer's
- * own text buffer with `submitMode="none"`, so this module owns the keyboard.
- * Everything else — the send and interrupt controls, the disabled policy, the
- * status region, the retained draft — is Archboard source, and every dispatch
- * goes through the controller so the captured target cannot be swapped.
+ * `ComposerPrimitive.Root` is the assigned headless composer primitive: it
+ * supplies the form element and the mechanic that focuses the input when a
+ * person taps blank composer space, which is what makes the composer usable on
+ * a 75-inch display. Its own send is deliberately suppressed — the submit
+ * handler prevents the default, which is also how the primitive skips its
+ * internal send — because assistant-ui refuses to send while a run is in
+ * progress unless its forbidden Queue is enabled, and steering a running turn
+ * is exactly what this composer exists to do. Archboard therefore owns the text
+ * buffer, the keyboard, the draft policy, the pending policy, and every
+ * dispatch; `ComposerPrimitive.Input` is not used, because its buffer and its
+ * Enter policy belong to assistant-ui and cannot express a steer.
  */
 export function WorkbenchComposer({
 	state,
@@ -162,17 +228,16 @@ export function WorkbenchComposer({
 	const inputRef = useRef<HTMLTextAreaElement | null>(null);
 	const composingRef = useRef(false);
 	const settledRef = useRef(0);
+	const [text, setText] = useState("");
 	const composer = useSyncExternalStore(
 		controller.subscribe,
 		controller.getState,
 		controller.getState,
 	);
 	const link = readComposerLink(state);
-	const executable = link.kind === "executable";
 	const pending = composer.pending !== null;
-	const disabled = !executable || pending;
 	const activeTurn: WorkbenchComposerTurnId | null =
-		executable && link.turn.kind === "active" ? link.turn.turnId : null;
+		link.kind === "executable" && link.turn.kind === "active" ? link.turn.turnId : null;
 
 	/**
 	 * Focus returns to the input when a command settles, but only when focus is
@@ -190,8 +255,32 @@ export function WorkbenchComposer({
 		if (inside === true) inputRef.current?.focus();
 	}, [composer.settled]);
 
+	/**
+	 * One submit funnel for the keyboard and the send control. The draft policy
+	 * decides what happens to the text: `restored` leaves it in place, and both
+	 * other dispositions clear it — the retained copy, when there is one, is the
+	 * controller's, not this buffer's. A person who kept typing while the command
+	 * was in flight keeps their newer text.
+	 */
+	const handleSubmit = useCallback(
+		(event: FormEvent<HTMLFormElement>) => {
+			event.preventDefault();
+			const submitted = text;
+			void (async () => {
+				const result = await controller.submit({ text: submitted });
+				if (composerDraftDisposition(result.outcome) === "restored") return;
+				setText((current) => (current === submitted ? "" : current));
+			})();
+		},
+		[controller, text],
+	);
+
 	const submitForm = useCallback(() => {
 		formRef.current?.requestSubmit();
+	}, []);
+
+	const handleChange = useCallback((event: ChangeEvent<HTMLTextAreaElement>) => {
+		setText(event.target.value);
 	}, []);
 
 	const handleKeyDown = useCallback(
@@ -221,29 +310,40 @@ export function WorkbenchComposer({
 		composingRef.current = false;
 	}, []);
 
+	if (link.kind !== "executable")
+		return (
+			<UnavailableComposer
+				className={className}
+				link={link}
+				onDismissRetained={controller.dismissRetainedDraft}
+				retained={composer.retained}
+			/>
+		);
+
 	return (
 		<section
 			aria-label="Codex workhorse composer"
 			className={cn("min-w-0 border-t border-border bg-surface", className)}
-			data-workbench-composer={executable ? "executable" : link.kind}
+			data-workbench-composer="executable"
 		>
 			<ComposerPrimitive.Root
 				aria-busy={pending}
 				className="m-0 min-w-0 p-0 flex items-end gap-control"
+				onSubmit={handleSubmit}
 				ref={formRef}
 			>
-				<ComposerPrimitive.Input
-					aria-label={inputLabel(link)}
+				<textarea
+					aria-label={inputLabel(activeTurn)}
 					className={INPUT_CLASSES}
-					disabled={disabled}
-					maxRows={12}
-					minRows={2}
+					disabled={pending}
+					onChange={handleChange}
 					onCompositionEnd={handleCompositionEnd}
 					onCompositionStart={handleCompositionStart}
 					onKeyDown={handleKeyDown}
-					placeholder={placeholderFor(link)}
+					placeholder={placeholderFor(activeTurn)}
 					ref={inputRef}
-					submitMode="none"
+					rows={2}
+					value={text}
 				/>
 				<div className="flex shrink-0 items-center gap-control px-control-inline py-control">
 					{activeTurn === null ? null : (
@@ -254,8 +354,8 @@ export function WorkbenchComposer({
 						/>
 					)}
 					<Button
-						data-composer-send={executable && activeTurn !== null ? "steer" : "start"}
-						disabled={disabled}
+						data-composer-send={activeTurn === null ? "start" : "steer"}
+						disabled={pending}
 						tone="primary"
 						type="submit"
 					>
@@ -263,14 +363,12 @@ export function WorkbenchComposer({
 					</Button>
 				</div>
 			</ComposerPrimitive.Root>
-			<StatusLine status={composer.status} />
-			{composer.retained === null ? null : (
-				<RetainedDraft
-					onDismiss={controller.dismissRetainedDraft}
-					reason={composer.retained.reason}
-					text={composer.retained.text}
-				/>
-			)}
+			<StatusLine
+				message={composer.status.message}
+				recovery={composer.status.recovery}
+				state={composer.status.state}
+			/>
+			<RetainedRegion onDismiss={controller.dismissRetainedDraft} retained={composer.retained} />
 		</section>
 	);
 }
