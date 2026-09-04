@@ -14,8 +14,9 @@ Borrow Archify's bounded geometry loop, not its document or renderer:
    `archboard check`. This repairs a demonstrated false-clean completion gate.
 2. Then run a narrow, fixture-backed spike for an explicit connector-routing operation. Generate
    a small deterministic set of routes for named connectors, reject candidates through the public
-   inspection contract, rank the survivors lexicographically, and return one replacement set for
-   one atomic write. Do not move nodes or silently tidy a human's layout.
+   inspection contract, rank the survivors lexicographically, and emit one proposed replacement set
+   without writing it. A later product command would apply that set in one atomic write. Do not move
+   nodes or silently tidy a human's layout.
 
 Do not add general auto-layout, topology classification, another JSON IR, or an Archify-style SVG
 renderer. The investigated Archify does not automatically classify or lay out architecture
@@ -24,10 +25,11 @@ choices reproducible and checks them. Its more capable workflow compiler still b
 author-supplied lanes and logical columns.
 
 The affected Archboard workflow is an agent composing or repairing a 6–12-node architecture
-board. The observable improvement is fewer manual routing batches while retaining the person's
-arrangement, followed by a trustworthy `archboard check --strict` result. The second proposal is
-deliberately a spike because Archboard has evidence for missed text collisions, but not yet enough
-evidence to justify a permanent global layout system.
+board. TASK-146 has an observable improvement: `archboard check --strict` stops approving the
+known connector-through-text defect. The routing spike tests whether one computed replacement set
+can remove those findings without moving anything else. Fewer human repair batches remain a
+hypothesis. Archboard has no captured manual baseline for that claim, which is why the second
+proposal is an experiment rather than a permanent layout system.
 
 ## Which Archify
 
@@ -97,13 +99,15 @@ deterministic. Here that coarse structure is the current board itself, including
 human rearrangement; adding persistent rank/lane metadata would be a new model with no demonstrated
 need.
 
-### 3. Routing is candidate search with hard feasibility and stable preference
+### 3. Routing uses stable candidates; workflow enforces hard feasibility
 
 The architecture router assigns deterministic side anchors and spreads shared ports, then tries a
-bounded family of straight, midpoint dogleg, side-aware bridge, and outside-channel routes. It
-accepts the first route that honors endpoint sides and clears endpoint and unrelated component
-boxes
-([`render-architecture.mjs`](https://github.com/tt-a1i/archify/blob/c826e6c3a7abad19c0f3cd1ca57207d54b1ad8de/archify/renderers/architecture/render-architecture.mjs)).
+bounded family of straight, midpoint dogleg, side-aware bridge, and outside-channel routes in a
+stable order. It accepts passing candidates where available. Two deliberate exceptions matter: the
+near-axis direct fast path checks endpoint direction but not obstacles, and the historical fallback
+may return a route that still violates an obstacle or endpoint direction rule. The shared validator
+reports those failures
+([`render-architecture.mjs`](https://github.com/tt-a1i/archify/blob/c826e6c3a7abad19c0f3cd1ca57207d54b1ad8de/archify/renderers/architecture/render-architecture.mjs#L829-L902)).
 
 The workflow compiler is the stronger model. For automatic edges it explores side pairs and nine
 route families. Hard checks reject paths that violate endpoint direction, node/label/frame
@@ -111,10 +115,13 @@ clearance, route rhythm, or canvas bounds. Feasible candidates are compared in a
 forward-edge reversal, proper crossings, shared corridor length, label-route deficit, short
 interior segments, bends, Manhattan stretch, canvas growth, port displacement, legacy displacement,
 then a stable ordinal. If no bounded candidate works, it returns the typed
-`workflow/solver-budget-exhausted` failure instead of searching indefinitely.
+`workflow/solver-budget-exhausted` failure instead of searching indefinitely. The failure reports
+the attempted candidate families and candidate count, but its `supportedFixes` list is empty
+([`workflow-compiler.mjs`](https://github.com/tt-a1i/archify/blob/c826e6c3a7abad19c0f3cd1ca57207d54b1ad8de/archify/renderers/workflow/workflow-compiler.mjs#L3445-L3461)).
 
 The particular dogleg formula is less interesting than the split between hard semantic feasibility
-and stable visual preference. The search has an explicit budget and an actionable failure.
+and stable visual preference. The workflow search has an explicit budget and typed exhaustion
+evidence. Final exhaustion does not currently offer a supported repair.
 
 ### 4. Validation is part of authoring, but it is not visual truth
 
@@ -190,32 +197,41 @@ new focus box. This is stable module/CLI behavior, so a new broad browser owner 
 
 ### 2. Spike an explicit, targeted connector-route planner
 
-**Value and need.** The observed text collisions required repeated manual rerouting. Archify's
-route candidate model could reduce those batches, but its unresolved convergence and shared-port
-defects show why Archboard should prove the mechanism before adding a permanent command or module.
+**Value and need.** People repaired the observed text collisions manually, but the repository does
+not record how many edit/check batches that took. Archify's route candidate model might reduce that
+work. Its unresolved convergence and shared-port defects show why Archboard should prove the
+mechanism before adding a permanent command or module.
 
 **Smallest experiment.** Add no command in the spike. A pure proposed
 `src/runtime/connector-routing/` module should accept an inert board snapshot and named connector
 IDs, preserve every node and text position, and emit replacement candidates only. Generate a small
 stable family from current, straight, horizontal-first, vertical-first, and obstacle-edge channels.
-Use the public `inspectBoard` result as the hard feasibility oracle after TASK-146. Compare clean
-candidates lexicographically by new error/warning count, connector intersections/corridors, bends,
-length/stretch, displacement from the current path, then stable candidate ordinal. Bound both the
-candidate count and repair rounds; report no feasible route with measured obstacles rather than
-moving a node.
+Use the public `inspectBoard` result as the hard feasibility oracle after TASK-146. Compare each
+candidate with an inspection of the inert input board. A candidate is feasible when inspection
+coverage remains complete for the supported target geometry, the selected connectors' target
+findings disappear, and the candidate adds no finding relative to that baseline. Unrelated existing
+findings do not make the route impossible. Rank feasible candidates only by non-hard preferences:
+bends, length/stretch, displacement from the current path, then stable candidate ordinal. Bound
+both the candidate count and repair rounds; report no feasible route with measured obstacles rather
+than moving a node.
 
-The spike succeeds only if real reduced fixtures show a material reduction in manual batches and
-stable output under input reordering. If it succeeds, expose it as an explicit `arrange route`
-operation for named connectors, compute the complete candidate board before writing, and send one
-replacement batch through the existing one-write boundary. Claim/progress remains visible while
-computing. Human-authored layout is never routed implicitly, and a failed plan writes nothing.
+The spike's machine-observable gate is one computed replacement set making each isolated reduced
+real fixture strict-clean without moving non-target content, with stable output under input
+reordering. Passing that gate does not prove a reduction in human repair batches. If the proxy and
+rendered review justify a product command, expose it as an explicit `arrange route` operation for
+named connectors, compute the complete candidate board before writing, and send one replacement
+batch through the existing one-write boundary. Claim/progress remains visible while computing.
+Human-authored layout is never routed implicitly, and a failed plan writes nothing.
 
 **Direct verification.** Reuse reduced real-board fixtures, not synthetic topology classes. Assert
-strict-dirty before and strict-clean after; byte/field equality for every non-target element; stable
-connector IDs and bindings; deterministic output under reordered input; one public write if the
-command is later added; and no new unsupported-geometry claim. Render the accepted board through
-`archboard render` for direct visual review. Only add a browser owner if a browser round trip changes
-the produced connector, because the stable contract is board geometry, inspection, and one write.
+strict-dirty before and strict-clean after on each isolated target fixture; byte/field equality for
+every non-target element; stable connector IDs and bindings; deterministic output under reordered
+input; and complete supported-geometry coverage. Add a case with an unrelated baseline finding and
+prove the route removes its target finding without adding another one or requiring the whole board
+to become clean. If a command follows, prove one public write and no new unsupported-geometry claim.
+Render the accepted board through `archboard render` for direct visual review. Only add a browser
+owner if a browser round trip changes the produced connector, because the stable contract is board
+geometry, inspection, and one write.
 
 Automatic port reassignment should be a later, separately proved extension. Archboard bindings use
 Excalidraw's `focus` and `gap`, and a person's rebinding is authored state. Port movement therefore
