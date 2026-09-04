@@ -19,6 +19,8 @@ import {
 interface MediaRun {
 	readonly transport: BrowserWorkbenchTransport;
 	remove: () => void;
+	/** Releases this run's subscription to its own realtime media session. */
+	releaseMedia: () => void;
 	media: RealtimeMediaSession | null;
 	handle: string | null;
 	startOperation: { lease: BrowserCommandLease | null } | null;
@@ -49,6 +51,14 @@ export interface BrowserWorkbenchMediaOwner {
 	readonly stop: () => Promise<RealtimeMediaSnapshot>;
 	readonly snapshot: () => RealtimeMediaSnapshot | null;
 	readonly state: () => BrowserWorkbenchMediaState;
+	/**
+	 * Fires whenever `snapshot()` or `state()` may have changed, including the
+	 * browser-originated realtime publications — a lost microphone, a dropped ICE
+	 * connection, a closed data channel, and every in-start phase — that reach
+	 * only the inner realtime session. Without this a presentation adapter would
+	 * still be showing "listening" after the microphone was unplugged.
+	 */
+	readonly subscribe: (listener: () => void) => () => void;
 	readonly dispose: () => Promise<void>;
 }
 export interface BrowserWorkbenchMediaOwnerOptions {
@@ -130,6 +140,23 @@ export function createBrowserWorkbenchMediaOwner(
 		reason: "detached",
 		message: "No Codex workbench transport is attached.",
 	};
+	const listeners = new Set<() => void>();
+	const notify = (): void => {
+		const notified = [...listeners];
+		for (const listener of notified) {
+			try {
+				listener();
+			} catch {
+				// A subscriber cannot take ownership of the media lifecycle.
+			}
+		}
+	};
+	/** Every owner-state write goes through here so no change is published silently. */
+	const setOwnerState = (state: BrowserWorkbenchMediaState): BrowserWorkbenchMediaState => {
+		ownerState = state;
+		notify();
+		return state;
+	};
 	const isCurrent = (active: MediaRun): boolean => !disposed && run === active && !active.closed;
 	const requireCurrent = (active: MediaRun): void => {
 		if (!isCurrent(active)) throw new Error("The Codex browser media run was replaced.");
@@ -157,7 +184,7 @@ export function createBrowserWorkbenchMediaOwner(
 		state: BrowserWorkbenchMediaState,
 	): Promise<BrowserWorkbenchMediaState> => {
 		requireCurrent(active);
-		ownerState = state;
+		setOwnerState(state);
 		await publishMediaReady(active, false).catch(() => undefined);
 		requireCurrent(active);
 		return state;
@@ -261,21 +288,24 @@ export function createBrowserWorkbenchMediaOwner(
 		if (active.closed) return;
 		active.closed = true;
 		active.remove();
+		active.releaseMedia();
+		active.releaseMedia = () => undefined;
 		const media = active.media;
 		active.media = null;
 		active.handle = null;
 		active.startOperation = null;
 		removeAudioElements(active);
 		await media?.dispose();
+		notify();
 	};
 
 	const transportLost = (active: MediaRun): void => {
 		if (!isCurrent(active)) return;
-		ownerState = {
+		setOwnerState({
 			state: "unavailable",
 			reason: "socket_closed",
 			message: "The Codex workbench socket closed.",
-		};
+		});
 		void closeRun(active).finally(() => {
 			if (run === active) run = null;
 		});
@@ -289,6 +319,7 @@ export function createBrowserWorkbenchMediaOwner(
 		const active: MediaRun = {
 			transport,
 			remove: () => undefined,
+			releaseMedia: () => undefined,
 			media: null,
 			handle: null,
 			startOperation: null,
@@ -323,7 +354,7 @@ export function createBrowserWorkbenchMediaOwner(
 			}
 		});
 		run = active;
-		ownerState = { state: "attaching" };
+		setOwnerState({ state: "attaching" });
 		try {
 			if (previous !== null) await closeRun(previous);
 			requireCurrent(active);
@@ -331,7 +362,7 @@ export function createBrowserWorkbenchMediaOwner(
 				const state = transport.state();
 				await closeRun(active);
 				if (run === active) run = null;
-				ownerState = {
+				return setOwnerState({
 					state: "unavailable",
 					reason:
 						state.kind === "connection" && state.state !== "stopped" ? "socket_closed" : "detached",
@@ -339,30 +370,34 @@ export function createBrowserWorkbenchMediaOwner(
 						state.kind === "connection"
 							? state.reason
 							: "The Codex workbench transport has no full snapshot.",
-				};
-				return ownerState;
+				});
 			}
 			active.media = createMediaSession(host(active));
+			// The realtime session publishes every browser-originated change — a
+			// removed microphone, a dropped ICE connection, a closed data channel,
+			// and each in-start phase — to its own subscribers alone. Forwarding it
+			// is what lets a presentation adapter see them at all.
+			active.releaseMedia = active.media.subscribe(() => {
+				if (run === active && !active.closed) notify();
+			});
 			const unavailable = capabilityFailure();
 			if (unavailable !== null) return publishUnavailable(active, unavailable);
 			await publishMediaReady(active, true);
 			requireCurrent(active);
-			ownerState = { state: "ready" };
-			return ownerState;
+			return setOwnerState({ state: "ready" });
 		} catch (error) {
 			const current = isCurrent(active);
 			await closeRun(active);
 			if (!current || run !== active || disposed) return ownerState;
 			run = null;
-			ownerState = {
+			return setOwnerState({
 				state: "unavailable",
 				reason:
 					transport.state().kind === "connection" && transport.state().state !== "stopped"
 						? "socket_closed"
 						: "negotiation_failed",
 				message: error instanceof Error ? error.message : "Media attachment failed.",
-			};
-			return ownerState;
+			});
 		}
 	};
 
@@ -380,11 +415,11 @@ export function createBrowserWorkbenchMediaOwner(
 		await closeRun(active);
 		if (run !== active || disposed) return;
 		run = null;
-		ownerState = {
+		setOwnerState({
 			state: "unavailable",
 			reason: "detached",
 			message: "No Codex workbench transport is attached.",
-		};
+		});
 	};
 
 	return Object.freeze({
@@ -416,7 +451,7 @@ export function createBrowserWorkbenchMediaOwner(
 					removeAudioElements(active);
 					const snapshot = await media.start(correlation);
 					requireCurrentStart(active, operation);
-					if (snapshot.state.phase === "listening") ownerState = { state: "ready" };
+					if (snapshot.state.phase === "listening") setOwnerState({ state: "ready" });
 					else await publishUnavailable(active, unavailableFromSnapshot(snapshot));
 					return snapshot;
 				} catch (error) {
@@ -449,7 +484,7 @@ export function createBrowserWorkbenchMediaOwner(
 				if (isCurrent(active)) {
 					await publishMediaReady(active, true);
 					requireCurrent(active);
-					ownerState = { state: "ready" };
+					setOwnerState({ state: "ready" });
 				}
 				return snapshot;
 			} finally {
@@ -458,17 +493,23 @@ export function createBrowserWorkbenchMediaOwner(
 		},
 		snapshot: () => run?.media?.getSnapshot() ?? null,
 		state: () => ownerState,
+		subscribe: (listener: () => void) => {
+			if (disposed) return () => undefined;
+			listeners.add(listener);
+			return () => listeners.delete(listener);
+		},
 		dispose: async () => {
 			if (disposed) return;
 			disposed = true;
 			const active = run;
 			run = null;
 			if (active !== null) await closeRun(active);
-			ownerState = {
+			setOwnerState({
 				state: "unavailable",
 				reason: "detached",
 				message: "The Codex browser media owner is disposed.",
-			};
+			});
+			listeners.clear();
 		},
 	});
 }
