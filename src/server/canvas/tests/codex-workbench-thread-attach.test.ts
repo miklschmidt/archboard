@@ -2,7 +2,11 @@ import { expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { createCodexEpochStore } from "../../../runtime/codex-epoch/index.js";
+import {
+	createCodexEpochStore,
+	EPOCH_THREAD_ATTACH_OPERATION,
+	resolveThreadOwnershipProvenance,
+} from "../../../runtime/codex-epoch/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import {
 	createCanvasThreadCandidateInventory,
@@ -106,7 +110,7 @@ test("attach records genuine current-child provenance before making the link exe
 					thread: { id: threadId },
 				}) as never,
 		} as never;
-		const candidates = createCanvasThreadCandidateInventory(threadLink);
+		const candidates = createCanvasThreadCandidateInventory(threadLink, epoch);
 		const actions = createCanvasThreadLinkActions({
 			workhorse: {} as never,
 			threadLink,
@@ -143,13 +147,14 @@ test("attach records genuine current-child provenance before making the link exe
 			context as never,
 		);
 
-		const attached = epoch
-			.snapshot()
-			.manifest.records.findLast((record) => record.operation.kind === "attached");
-		expect(attached).toMatchObject({
+		// The staged record must be the descriptor the epoch's ownership table
+		// resolves, or a foreign thread stays unowned however often it is attached.
+		const attached = resolveThreadOwnershipProvenance(epoch.snapshot().manifest, threadId);
+		expect(attached).toMatchObject({ ownership: "attached" });
+		expect(attached?.record).toMatchObject({
 			status: "committed",
 			outcome: "delivered",
-			operation: { kind: "attached", rpc: "thread/read" },
+			operation: EPOCH_THREAD_ATTACH_OPERATION,
 			provenance: {
 				threadId,
 				threadSource: "appServer",
@@ -158,11 +163,22 @@ test("attach records genuine current-child provenance before making the link exe
 				manifestHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 			},
 		});
-		// Staging the ownership record moved the epoch, so the bind consumed a
-		// selection from a fresh discovery rather than the one the browser held.
+		// Recording ownership moved the epoch, so the bind consumed a selection
+		// from the discovery that staging forced rather than a stale one.
 		expect(discoveries).toBe(2);
 		expect(boundSelections).toEqual(["selection-2"]);
-		expect(attached?.operation.id).toBeString();
+		expect(attached?.record.operation.id).toBeString();
+
+		// A second attach of the same thread finds the ownership record, so the
+		// person's own retained selection is what the bind consumes.
+		await actions.refresh({ command: "threadLinkRefresh" } as never, context as never);
+		expect(discoveries).toBe(3);
+		await actions.attach(
+			{ command: "threadLinkAttach", selectionId: "selection-3", threadId } as never,
+			context as never,
+		);
+		expect(discoveries).toBe(3);
+		expect(boundSelections).toEqual(["selection-2", "selection-3"]);
 	} finally {
 		epoch.close();
 		rmSync(root, { recursive: true, force: true });
@@ -199,13 +215,15 @@ test("a selection the pane never published, or one naming another thread, is ref
 			throw new Error("a refused selection must never reach the classifier");
 		},
 	} as never;
-	const candidates = createCanvasThreadCandidateInventory(threadLink);
+	// A still epoch, so a refused selection is refused for its own reason.
+	const stillEpoch = { snapshot: () => ({ cas: { revision: 4, bytesHash: "still" } }) } as never;
+	const candidates = createCanvasThreadCandidateInventory(threadLink, stillEpoch);
 	const actions = createCanvasThreadLinkActions({
 		candidates,
 		threadLink,
 		workhorse: {} as never,
 		semanticDelivery: {} as never,
-		epoch: {} as never,
+		epoch: stillEpoch,
 		identity: authorities,
 		checkoutRoot: "/workspace/archboard",
 	});
@@ -248,11 +266,14 @@ test("a selection the pane never published, or one naming another thread, is ref
 });
 
 test("a discovery that fails publishes the unavailable arm with its reason", async () => {
-	const candidates = createCanvasThreadCandidateInventory({
-		discoverCandidates: async () => {
-			throw new Error("the persisted list could not be exhausted");
-		},
-	} as never);
+	const candidates = createCanvasThreadCandidateInventory(
+		{
+			discoverCandidates: async () => {
+				throw new Error("the persisted list could not be exhausted");
+			},
+		} as never,
+		{ snapshot: () => ({ cas: { revision: 1, bytesHash: null } }) } as never,
+	);
 	expect(candidates.read()).toEqual({ kind: "codex_thread_candidates", state: "unknown" });
 	expect(candidates.refresh()).rejects.toThrow("could not be exhausted");
 	await Bun.sleep(0);
@@ -262,4 +283,80 @@ test("a discovery that fails publishes the unavailable arm with its reason", asy
 		reason: "the persisted list could not be exhausted",
 	});
 	expect(candidates.threadIdFor("selection-published")).toBeNull();
+});
+
+test("a list discovered under an earlier epoch is refused and retired, never re-resolved", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("listed-thread");
+	let revision = 4;
+	const epoch = {
+		snapshot: () => ({ cas: { revision, bytesHash: `hash-${revision}` } }),
+		assertCurrent: () => {
+			throw new Error("a refused selection must never reach the epoch authority");
+		},
+	} as never;
+	let discoveries = 0;
+	const threadLink = {
+		discoverCandidates: async () => {
+			discoveries += 1;
+			return {
+				candidates: [
+					{
+						selectionId: "selection-published",
+						threadId,
+						state: "executable",
+						reason: null,
+						source: "appServer",
+						status: "idle",
+						loaded: true,
+						canAcceptDirectInput: true,
+					},
+				],
+			};
+		},
+		bindCandidate: async () => {
+			throw new Error("a moved list must never reach the bind boundary");
+		},
+	} as never;
+	const candidates = createCanvasThreadCandidateInventory(threadLink, epoch);
+	const actions = createCanvasThreadLinkActions({
+		candidates,
+		threadLink,
+		workhorse: {} as never,
+		semanticDelivery: {} as never,
+		epoch,
+		identity: authorities,
+		checkoutRoot: "/workspace/archboard",
+	});
+	const context = {
+		browserId: "browser-moved",
+		connection: Object.freeze({}),
+		paneId: "pane-moved",
+		commandId: authorities.identity.issuer.mintBrowserCommandId(),
+		childId: authorities.identity.validator.childId,
+		epoch: authorities.identity.validator.epoch,
+		linkRevision: 1,
+		link: { state: "unbound", childId: null, epoch: null, threadId: null },
+	} as const;
+
+	await actions.refresh({ command: "threadLinkRefresh" } as never, context as never);
+	expect(candidates.generation()).toBe("4:hash-4");
+	// Something else moved the child epoch after the list was published.
+	revision = 5;
+	expect(
+		actions.attach(
+			{ command: "threadLinkAttach", selectionId: "selection-published", threadId } as never,
+			context as never,
+		),
+	).rejects.toThrow("discovered under an earlier epoch");
+	await Bun.sleep(0);
+	// The stale list is retired rather than silently re-resolved, so the browser
+	// re-discloses it instead of being told to retry the same row.
+	expect(candidates.read()).toMatchObject({
+		state: "unavailable",
+		reason: expect.stringContaining("no longer describes this workbench"),
+	});
+	expect(candidates.generation()).toBeNull();
+	expect(candidates.threadIdFor("selection-published")).toBeNull();
+	expect(discoveries).toBe(1);
 });

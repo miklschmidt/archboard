@@ -6,6 +6,7 @@ import type {
 import type { LoginId, ThreadId } from "../../../shared/codex-workbench-identity/index.js";
 import type {
 	BrowserCommandDraft,
+	BrowserCommandName,
 	BrowserWorkbenchCapabilities,
 	BrowserWorkbenchCommandTarget,
 	BrowserWorkbenchState,
@@ -13,6 +14,22 @@ import type {
 } from "../../workbench-transport/index.js";
 
 type ListedThreadLink = Exclude<BrowserThreadLink, { readonly state: "unbound" }>;
+
+/**
+ * Every browser command this module can issue. One list, so a fixture and the
+ * module cannot disagree about what the workbench must support, and the
+ * real-transport owner can assert the transport enables exactly these on a
+ * thread-capable pane that holds no link yet.
+ */
+export const THREAD_LINK_MODULE_COMMANDS = [
+	"threadLinkCreate",
+	"threadLinkRefresh",
+	"threadLinkAttach",
+	"threadLinkRelink",
+	"accountLogin",
+	"accountLoginCancel",
+	"accountLogout",
+] as const satisfies readonly BrowserCommandName[];
 
 /** The four Codex thread statuses a listed record can carry. */
 export type ThreadLinkListedStatus = ListedThreadLink["status"];
@@ -33,6 +50,12 @@ export type ThreadLinkAccountFormId = ThreadLinkLoginParams["type"];
  * The host's own joined inventory, exactly as the workbench snapshot publishes
  * it. TASK-143.01.09 owns the join and the classification; this module renders
  * that verdict and never re-derives one.
+ *
+ * The inventory is gateway-global, not per pane: it describes the shared child
+ * epoch, so a refresh any pane asks for republishes the same list to every
+ * pane. A pane therefore sees a list refresh it did not start, which is
+ * correct — two panes must not disagree about which threads exist — but it
+ * means a pane's rows can change without that pane acting.
  */
 export type ThreadLinkInventory = BrowserThreadCandidates;
 export type ThreadLinkInventoryRecord = BrowserThreadCandidate;
@@ -124,21 +147,10 @@ export interface ThreadLinkRow {
 	readonly blockedReason: string | null;
 }
 
-/** The one presentation refusal this module owns; the host owns the join. */
-export type ThreadLinkExclusion = "duplicate_row";
-
-export interface ThreadLinkExcludedRow {
-	readonly selectionId: string;
-	readonly threadId: ThreadId;
-	readonly exclusion: ThreadLinkExclusion;
-	readonly explanation: string;
-}
-
 export interface ThreadLinkSelection {
 	readonly state: "unknown" | "unavailable" | "empty" | "listed";
 	readonly summary: string;
 	readonly rows: readonly ThreadLinkRow[];
-	readonly excluded: readonly ThreadLinkExcludedRow[];
 	readonly recovery: ThreadLinkRecovery;
 }
 

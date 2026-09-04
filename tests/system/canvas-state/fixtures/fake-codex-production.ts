@@ -121,12 +121,15 @@ const configResponse = () => ({
 	layers: null,
 });
 
-const createThread = (params: Record<string, unknown>): FixtureThread => {
-	const id = `thread-${++threadSequence}`;
-	const thread: FixtureThread = {
+const buildThread = (
+	id: string,
+	params: Record<string, unknown>,
+	sequence: number,
+): FixtureThread =>
+	({
 		id,
 		extra: {},
-		sessionId: `session-${threadSequence}`,
+		sessionId: `session-${sequence}`,
 		forkedFromId: null,
 		parentThreadId: null,
 		preview: "",
@@ -151,11 +154,26 @@ const createThread = (params: Record<string, unknown>): FixtureThread => {
 		gitInfo: null,
 		name: null,
 		turns: [],
-	};
+	}) satisfies FixtureThread;
+
+const createThread = (params: Record<string, unknown>): FixtureThread => {
+	const id = `thread-${++threadSequence}`;
+	const thread = buildThread(id, params, threadSequence);
 	threads.set(id, thread);
 	if (threadSequence === 2) workhorseThreadId = id;
 	return thread;
 };
+
+/**
+ * One persisted thread this workbench did not create. It exists before any
+ * thread/start, so attaching it has to record ownership first — the path a
+ * workbench-created thread never takes.
+ */
+const FOREIGN_FIXTURE_THREAD_ID = "thread-foreign";
+threads.set(
+	FOREIGN_FIXTURE_THREAD_ID,
+	buildThread(FOREIGN_FIXTURE_THREAD_ID, { cwd: process.cwd() }, 0),
+);
 
 const threadStartResponse = (params: Record<string, unknown>, thread: FixtureThread) => ({
 	thread,
