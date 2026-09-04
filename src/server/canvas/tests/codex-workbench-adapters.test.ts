@@ -72,13 +72,15 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 	const starts: unknown[] = [];
 	const steers: unknown[] = [];
 	const contexts: unknown[] = [];
+	// Both mutations read the authoritative thread first, so the fake reports the
+	// thread the host would actually see: idle for the start, running for the steer.
+	let activeTurns: readonly { readonly id: unknown; readonly status: string }[] = [];
 	const session = {
 		turnStart: async (params: unknown) => {
 			starts.push(params);
 			return {} as never;
 		},
-		threadRead: async () =>
-			({ thread: { turns: [{ id: turnId, status: "inProgress" }] } }) as never,
+		threadRead: async () => ({ thread: { turns: activeTurns } }) as never,
 		turnSteer: async (params: unknown) => {
 			steers.push(params);
 			return { turnId } as never;
@@ -146,6 +148,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 		},
 		context,
 	);
+	activeTurns = [{ id: turnId, status: "inProgress" }];
 	await actions.steer(
 		{
 			kind: "browser_command",
@@ -188,6 +191,73 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 		{ paneId: "pane-exact", operation: expect.objectContaining({ rpc: "turn/start" }) },
 		{ paneId: "pane-exact", operation: expect.objectContaining({ rpc: "turn/steer" }) },
 	]);
+});
+
+test("browser start is refused while the authoritative thread read shows a running turn", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("thread-busy");
+	const runningTurnId = authorities.identity.decoder.adoptTurnId("turn-running");
+	let startCalls = 0;
+	const activeTurns: readonly { readonly id: unknown; readonly status: string }[] = [
+		{ id: runningTurnId, status: "inProgress" },
+	];
+	const actions = createCanvasCanonicalTextActions({
+		identity: authorities,
+		session: {
+			turnStart: async () => {
+				startCalls += 1;
+				return {} as never;
+			},
+			threadRead: async () => ({ thread: { turns: activeTurns } }) as never,
+			turnSteer: async () => ({}) as never,
+			turnInterrupt: async () => ({}) as never,
+		},
+		contextForOperation: () => {
+			throw new Error("a refused start must fail before context capture");
+		},
+	});
+	const commandId = authorities.identity.issuer.mintBrowserCommandId();
+	const context = {
+		browserId: "browser-1",
+		connection: Object.freeze({}),
+		paneId: "pane-busy",
+		commandId,
+		childId: authorities.identity.validator.childId,
+		epoch: authorities.identity.validator.epoch,
+		linkRevision: 1,
+		link: {
+			kind: "thread_link",
+			state: "executable",
+			childId: authorities.identity.validator.childId,
+			epoch: authorities.identity.validator.epoch,
+			threadId,
+			source: "appServer",
+			status: "active",
+			loaded: true,
+			canAcceptDirectInput: true,
+			reason: null,
+		},
+	} as const;
+	const command = {
+		kind: "browser_command",
+		command: "start",
+		commandId,
+		paneId: "pane-busy",
+		childId: context.childId,
+		epoch: context.epoch,
+		threadId,
+		prompt: "start anyway",
+	} as const;
+	// A browser whose bounded timeline no longer shows the running turn would
+	// otherwise race a second turn onto one thread.
+	// Definitive and actionable on the wire, not the gateway's opaque
+	// `command_failed`: nothing was started and the person may steer instead.
+	await expect(actions.start(command, context)).rejects.toMatchObject({
+		code: "invalid_command",
+		outcome: "not_delivered",
+	});
+	await expect(actions.start(command, context)).rejects.toThrow("requires an idle workhorse");
+	expect(startCalls).toBe(0);
 });
 
 test("browser steering rejects a stale requested turn at the authoritative session boundary", async () => {
