@@ -58,7 +58,7 @@ function DisclosureRows({
 						<dt className="font-sans text-body font-medium text-muted-foreground">{entry.label}</dt>
 						<dd
 							className={cn(
-								"m-0 min-w-0 text-body break-words text-foreground",
+								"m-0 min-w-0 !text-body break-words text-foreground",
 								entry.technical ? "font-mono" : "font-sans",
 							)}
 						>
@@ -163,7 +163,7 @@ export function ApprovalCard({
 					aria-label={`Approval status: ${status.label}`}
 					aria-live="polite"
 					className={cn(
-						"shrink-0 rounded-control border px-control py-compact font-sans text-body font-medium",
+						"shrink-0 rounded-control border px-control py-compact font-sans !text-body font-medium",
 						PHASE_CLASSES[status.phase],
 					)}
 				>

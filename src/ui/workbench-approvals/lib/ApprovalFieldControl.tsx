@@ -6,7 +6,7 @@ import { formFlag, formSelection, formValue } from "./form.js";
 import type { WorkbenchApprovalFormState } from "../contract.js";
 
 const CONTROL_CLASSES =
-	"min-h-touch-target w-full rounded-control border border-border bg-surface-raised px-control py-compact font-sans text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring";
+	"min-h-touch-target w-full rounded-control border border-border bg-surface-raised px-control py-compact font-sans !text-body text-foreground outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring";
 const LABEL_CLASSES = "font-sans text-body font-medium text-foreground";
 const HINT_CLASSES = "m-0 font-sans text-body text-muted-foreground";
 const ERROR_CLASSES = "m-0 font-sans text-body text-destructive";
