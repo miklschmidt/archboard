@@ -53,16 +53,7 @@ function voiceView(
 	status: VoiceSessionStatus,
 	failure: "retryable" | "terminal" = "retryable",
 ): VoiceSessionView {
-	const running = new Set<VoiceSessionStatus>([
-		"requesting_permission",
-		"negotiating",
-		"listening",
-		"muted",
-		"processing",
-		"agent_speaking",
-		"recovering",
-		"stopping",
-	]);
+	const running = status !== "ready" && status !== "stopped" && status !== "failed";
 	const failed = status === "failed";
 	const outcome: VoiceSessionView["outcome"] = failed
 		? failure === "terminal"
@@ -95,11 +86,11 @@ function voiceView(
 			canStart: status === "ready",
 			canMute: status === "listening",
 			canUnmute: status === "muted",
-			canStop: running.has(status) && status !== "stopping",
+			canStop: running && status !== "stopping",
 			canRestart: failed && failure === "retryable",
 			canClose: failed && failure === "terminal",
 		},
-		binding: running.has(status)
+		binding: running
 			? {
 					paneId: PANE_A.id,
 					childId: "child-a",
@@ -108,7 +99,7 @@ function voiceView(
 					coordinatorThreadId: "coordinator-a",
 				}
 			: null,
-		sessionId: running.has(status) ? "realtime-a" : null,
+		sessionId: running ? "realtime-a" : null,
 	});
 }
 
@@ -277,7 +268,6 @@ test("keeps the captured source immutable across pane focus and frame failure", 
 	expect(document.querySelector('[data-workbench-voice-source-summary=""]')?.textContent).toContain(
 		"thread-a",
 	);
-
 	result.rerender(
 		frame(slot, {
 			state: "error",
@@ -315,6 +305,46 @@ test("keeps the captured source immutable across pane focus and frame failure", 
 	);
 	expect(document.querySelector('[data-workbench-voice-source-mismatch=""]')).toBeTruthy();
 	expect(document.querySelector('[data-workbench-voice-source-thread=""]')).toBeNull();
+});
+
+test("links transcript evidence only to its mounted captured pane", () => {
+	const requestFrame = mutableRequestFrame(PANE_A, () => TEST_NOW);
+	const panes = [requestFrame.view.panes[0], PANE_B_PORT] as const;
+	const slot = voiceSlot(createSessionFake(voiceView("listening")));
+	const renderFrame = (view: WorkbenchFrameView) => (
+		<WorkbenchFrame
+			disclosure="expanded"
+			onActivePaneChange={noop}
+			onDisclosureChange={noop}
+			request={requestFrame.request}
+			space="workspace"
+			view={view}
+			voice={slot}
+		/>
+	);
+	const result = render(renderFrame({ state: "ready", panes, activePaneId: PANE_A.id }));
+	const links = [...document.querySelectorAll<HTMLAnchorElement>("[data-transcript-cross-link]")];
+	expect(links).toHaveLength(6);
+	for (const link of links) {
+		const target = document.getElementById(link.hash.slice(1));
+		expect(target?.dataset.workbenchTargetPane).toBe(PANE_A.id);
+	}
+	result.rerender(renderFrame({ state: "ready", panes, activePaneId: PANE_B.id }));
+	expect(document.querySelectorAll("[data-transcript-cross-link]")).toHaveLength(0);
+	expect(
+		screen.getByRole("region", { name: "Voice transcript relationships" }).textContent,
+	).toContain("Pane A's workbench is not mounted");
+	expect(document.querySelectorAll('[data-workbench-target-pane="pane-b"]')).toHaveLength(3);
+
+	result.rerender(
+		renderFrame({
+			state: "error",
+			detail: "The frame projection failed.",
+			recovery: "Reconnect the frame.",
+		}),
+	);
+	expect(document.querySelectorAll("[data-transcript-cross-link]")).toHaveLength(0);
+	expect(document.querySelector('[data-workbench-voice-relationships="unavailable"]')).toBeTruthy();
 });
 
 function armSpokenApproval(fake: ReturnType<typeof requestTransport>): void {
@@ -367,7 +397,7 @@ test("places spoken evidence immediately above the unchanged ordinary approval o
 	armSpokenApproval(requestFrame.fake);
 	const fakeVoice = createSessionFake(voiceView("listening"));
 	const user = userEvent.setup();
-	render(
+	const result = render(
 		<WorkbenchFrame
 			disclosure="expanded"
 			onActivePaneChange={noop}
@@ -399,6 +429,26 @@ test("places spoken evidence immediately above the unchanged ordinary approval o
 	await user.click(within(approvals as HTMLElement).getByRole("button", { name: "Approve" }));
 	await waitFor(() => expect(requestFrame.fake.commands).toHaveLength(1));
 	expect(requestFrame.fake.commands[0]?.draft.command).toBe("approvalRespond");
+	const paneBRequest = mutableRequestFrame(PANE_B, () => TEST_NOW);
+	armSpokenApproval(paneBRequest.fake);
+	result.rerender(
+		<WorkbenchFrame
+			disclosure="expanded"
+			onActivePaneChange={noop}
+			onDisclosureChange={noop}
+			request={paneBRequest.request}
+			space="workspace"
+			view={TWO_PANE_B_VIEW}
+			voice={voiceSlot(fakeVoice)}
+		/>,
+	);
+	expect(screen.queryByRole("region", { name: "Voice evidence" })).toBeNull();
+	expect(
+		within(screen.getByRole("region", { name: "Application-wide Codex requests" })).getByText(
+			PANE_B.label,
+		),
+	).toBeTruthy();
+	expect(document.querySelector('[data-workbench-approvals="surface"]')).toBeTruthy();
 });
 
 function expectTextOnlyFrame(): void {
@@ -422,7 +472,6 @@ test("restores the text-only frame after authoritative stop and caller withdrawa
 	act(() => fake.setView(voiceView("stopped")));
 	expectTextOnlyFrame();
 	result.unmount();
-
 	const withdrawal = render(frame(voiceSlot(createSessionFake(voiceView("listening")))));
 	expect(document.querySelector('[data-workbench-voice="present"]')).toBeTruthy();
 	withdrawal.rerender(frame(null));
@@ -437,7 +486,6 @@ test("keeps the source capture paired with its public session", () => {
 		framePane(PANE_A, requestTransport(PANE_A.id)),
 		() => TEST_NOW,
 	);
-
 	expect(source.pane).toEqual(PANE_A);
 	expect(source.session).toBe(voice.session);
 	expect(requestSource.pane).toEqual(PANE_A);
@@ -445,13 +493,7 @@ test("keeps the source capture paired with its public session", () => {
 
 test("keeps composition free of a second voice or transcript owner", async () => {
 	const source = await Bun.file(new URL("../lib/VoiceComposition.tsx", import.meta.url)).text();
-	for (const forbidden of [
-		"createVoiceSession",
-		"createVoiceContextHistory",
-		"createRealtimeMediaSession",
-		"useReducer",
-		"useState",
-	]) {
-		expect(source).not.toContain(forbidden);
-	}
+	expect(source).not.toMatch(
+		/createVoiceSession|createVoiceContextHistory|createRealtimeMediaSession|useReducer|useState/,
+	);
 });

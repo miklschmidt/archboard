@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 13:54'
+updated_date: '2026-09-04 14:06'
 labels: []
 dependencies:
   - TASK-143.03.11
@@ -36,7 +36,7 @@ Delegation profile: gpt-5.6-sol, high.
 <!-- AC:BEGIN -->
 - [ ] #1 Voice ready/start/active/recovering/stopping/failure states occupy the approved regions without hiding text composer, ordinary approvals, queue, board status, source thread link, or Stop.
 - [ ] #2 The bound source link remains visible and immutable across pane focus, one/two panes, collapse/expand, and frame-level failure; terminal stop restores the text-only layout with no stale slot content.
-- [ ] #3 Frame tests at src/ui/workbench-frame/tests/voice-composition.test.ts cover every voice-slot state, focus/log order, both themes, reduced motion, keyboard/pointer/touch, and no duplicate state owner.
+- [ ] #3 Frame tests at src/ui/workbench-frame/tests/voice-composition.test.tsx cover representative composition states, immutable source and real-target cross-link behavior across pane/frame changes, canonical text and request reachability, terminal slot cleanup, single voice announcement ownership, command and decision routing, and no duplicate voice or transcript owner. Existing voice-module owners retain exhaustive lifecycle, theme, reduced-motion, keyboard, pointer, and touch mechanics; TASK-143.04.07 owns rendered desktop, Flip, and browser integration.
 - [ ] #4 This leaf owns no browser inventory or real-audio smoke; deterministic integration belongs to TASK-143.04.07 and real acceptance to TASK-143.04.09.
 <!-- AC:END -->
 
@@ -60,4 +60,10 @@ Added focused mounted coverage for canonical text-surface preservation, command 
 Validation: bun test --isolate src/ui/workbench-frame/tests/voice-composition.test.tsx src/ui/workbench-frame/tests/frame-layout.test.tsx passed 19 tests with 236 assertions; root and frontend TypeScript passed; scoped Oxfmt and Oxlint passed; the frontend build passed; git diff --check passed. The frontend build retained its existing unresolved runtime CSS and chunk-size advisory warnings. An initial non-isolated two-file test invocation exposed the known per-file Happy DOM teardown collision, so the final owner command used Bun isolation and passed cleanly.
 
 The task remains In Progress with every acceptance criterion unchecked for independent review. Browser, fullscreen-shell, and real-audio evidence remain with the downstream owners named by the task.
+
+Independent-review remediation on 2026-09-04: transcript relationships now appear only when the captured voice source pane owns the mounted workhorse timeline, queue, coordinator, and matching application-wide request target. Focusing another pane or entering a frame error renders an explicit relationships-unavailable state instead of links to the focused pane or missing elements. Canonical targets expose their pane identity for direct mounted verification.
+
+The review risk around spoken approval and voice-source equality was reachable. Spoken voice evidence now appears only when the application-wide request source exactly matches the captured voice pane ID and label. Ordinary approvals remain visible and keep their existing decision owner when sources differ.
+
+The focused owner now proves all six rendered fragments resolve to Pane A targets, no fragment appears for focused Pane B or frame error, the unavailable state is visible, and mismatched spoken evidence is withheld without hiding ordinary approval. Validation passed 20 isolated workbench-frame tests with 247 assertions, scoped Oxlint and Oxfmt, root and frontend TypeScript, frontend build, and diff checks. The existing runtime CSS-resolution and chunk-size build advisories remain unchanged. TASK-143.04.06 stays In Progress with every criterion unchecked for rereview.
 <!-- SECTION:NOTES:END -->

@@ -21,7 +21,7 @@ export function VoiceComposition({
 	sessionView,
 	voice,
 }: {
-	readonly crossLinkIds: VoiceTranscriptCrossLinkIds;
+	readonly crossLinkIds: VoiceTranscriptCrossLinkIds | null;
 	readonly sessionView: VoiceSessionView;
 	readonly voice: WorkbenchFrameVoiceSlot;
 }): ReactNode {
@@ -81,13 +81,30 @@ export function VoiceComposition({
 					<VoiceControls className="px-region py-control" session={session} />
 				</div>
 				<div className="min-h-0 min-w-0 overflow-y-auto border-r border-border">
-					<VoiceTranscript
-						{...voice.transcript}
-						announcementOwner="external"
-						className="min-h-full border-y-0"
-						crossLinkIds={crossLinkIds}
-						session={sessionView}
-					/>
+					{crossLinkIds === null ? (
+						<section
+							aria-label="Voice transcript relationships"
+							className="min-h-full bg-surface text-foreground"
+							data-workbench-voice-relationships="unavailable"
+						>
+							<header className="border-b border-border px-region py-control">
+								<p className="m-0 text-kicker font-semibold text-muted-foreground">Live voice</p>
+								<h2 className="m-0 text-title font-semibold">Related workbench records</h2>
+							</header>
+							<p className="m-0 px-region py-panel font-sans text-body text-muted-foreground">
+								Links are unavailable while {voice.source.pane.label}&apos;s workbench is not
+								mounted.
+							</p>
+						</section>
+					) : (
+						<VoiceTranscript
+							{...voice.transcript}
+							announcementOwner="external"
+							className="min-h-full border-y-0"
+							crossLinkIds={crossLinkIds}
+							session={sessionView}
+						/>
+					)}
 				</div>
 				<div className="min-h-0 min-w-0 overflow-y-auto">
 					<VoiceContextPanel {...voice.context} className="min-h-full border-y-0" />

@@ -55,6 +55,13 @@ function paneIssue(view: Extract<WorkbenchFrameView, { readonly state: "ready" }
 	return null;
 }
 
+function samePaneIdentity(
+	left: WorkbenchFramePaneIdentity,
+	right: WorkbenchFramePaneIdentity,
+): boolean {
+	return left.id === right.id && left.label === right.label;
+}
+
 function FrameState({ view }: { readonly view: Exclude<WorkbenchFrameView, { state: "ready" }> }) {
 	const error = view.state === "error";
 	return (
@@ -248,7 +255,11 @@ function ActivePane({ pane, timelineId, coordinatorId, queueId, approvalsId }: A
 					transport={pane.transport}
 				>
 					<div className="min-h-0 min-w-0 flex flex-1 flex-col overflow-hidden">
-						<div className="min-h-0 flex-1 overflow-y-auto" id={timelineId}>
+						<div
+							className="min-h-0 flex-1 overflow-y-auto"
+							data-workbench-target-pane={pane.identity.id}
+							id={timelineId}
+						>
 							{pane.timeline === null ? (
 								<output
 									aria-live="polite"
@@ -280,7 +291,7 @@ function ActivePane({ pane, timelineId, coordinatorId, queueId, approvalsId }: A
 				<section aria-label="Board claim and doing" data-workbench-operation="board-status">
 					<WorkbenchBoardStatus {...pane.boardStatus} paneLabel={pane.identity.label} />
 				</section>
-				<div id={queueId}>
+				<div data-workbench-target-pane={pane.identity.id} id={queueId}>
 					<WorkbenchQueue crossLinks={crossLinks} transport={pane.transport} />
 				</div>
 				<WorkbenchThreadLink
@@ -290,7 +301,7 @@ function ActivePane({ pane, timelineId, coordinatorId, queueId, approvalsId }: A
 					paneId={pane.identity.id}
 					transport={pane.transport}
 				/>
-				<div id={coordinatorId}>
+				<div data-workbench-target-pane={pane.identity.id} id={coordinatorId}>
 					<WorkbenchCoordinatorDisclosure state={state} />
 				</div>
 			</aside>
@@ -332,6 +343,7 @@ interface AppGlobalRequestSurfaceProps {
 	readonly children: ReactNode;
 	readonly id: string;
 	readonly projection: WorkbenchFrameRequest["state"];
+	readonly sourcePaneId?: string;
 	readonly sourceLabel?: string;
 }
 
@@ -339,6 +351,7 @@ function AppGlobalRequestSurface({
 	children,
 	id,
 	projection,
+	sourcePaneId,
 	sourceLabel,
 }: AppGlobalRequestSurfaceProps) {
 	return (
@@ -348,6 +361,7 @@ function AppGlobalRequestSurface({
 			data-workbench-region="app-global-request"
 			data-workbench-request={projection}
 			data-workbench-request-allocation="bounded-half-frame"
+			data-workbench-target-pane={sourcePaneId}
 			id={id}
 		>
 			<header className="top-0 sticky z-10 flex min-h-touch-target items-center justify-between gap-control bg-surface px-region">
@@ -390,6 +404,7 @@ function PresentAppGlobalRequest({
 		<AppGlobalRequestSurface
 			id={id}
 			projection={sourceIssue === null ? "present" : "error"}
+			sourcePaneId={sourceIssue === null ? source.pane.id : undefined}
 			sourceLabel={sourceIssue === null ? source.pane.label : undefined}
 		>
 			{sourceIssue === null ? (
@@ -482,6 +497,16 @@ function WorkbenchFrameLayout({
 		voice === null || voiceView === null
 			? null
 			: workbenchFrameVoiceSourceIssue(voice.source, voiceView);
+	const voiceMatchesMountedTargets =
+		voice !== null &&
+		activePane !== null &&
+		samePaneIdentity(activePane.identity, voice.source.pane) &&
+		(props.request.state !== "present" ||
+			samePaneIdentity(props.request.source.pane, voice.source.pane));
+	const voiceMatchesRequestSource =
+		voice !== null &&
+		props.request.state === "present" &&
+		samePaneIdentity(props.request.source.pane, voice.source.pane);
 	const voiceCrossLinkIds = useMemo<VoiceTranscriptCrossLinkIds>(
 		() => ({
 			delegationId: coordinatorId,
@@ -528,7 +553,7 @@ function WorkbenchFrameLayout({
 					>
 						{voice === null || voiceView === null ? null : (
 							<VoiceComposition
-								crossLinkIds={voiceCrossLinkIds}
+								crossLinkIds={voiceMatchesMountedTargets ? voiceCrossLinkIds : null}
 								sessionView={voiceView}
 								voice={voice}
 							/>
@@ -564,7 +589,7 @@ function WorkbenchFrameLayout({
 			<AppGlobalRequest
 				id={approvalsId}
 				request={props.request}
-				voicePresent={voice !== null && voiceSourceIssue === null}
+				voicePresent={voiceMatchesRequestSource && voiceSourceIssue === null}
 			/>
 		</section>
 	);
