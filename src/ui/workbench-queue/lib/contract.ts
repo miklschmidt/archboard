@@ -11,11 +11,11 @@ import type {
  * The six controls this module is allowed to offer, and nothing else.
  *
  * Five of them are queue commands the gateway publishes. `list` is not: the
- * closed browser contract has no `queueList` command, because the gateway
- * already reads the authoritative queue for the thread the link names and
- * republishes it on every snapshot. `list` therefore re-reads that authoritative
- * snapshot through the transport instead of inventing a command the host would
- * refuse.
+ * closed browser contract has no `queueList` command. It does not need one —
+ * serving a browser snapshot request re-reads the authoritative queue for the
+ * link this pane is on before it projects, so asking the transport to refresh is
+ * a genuine read of the host's list rather than a redraw of the last command's
+ * result. Inventing a command the gateway would refuse would be the lie.
  */
 export const WORKBENCH_QUEUE_CONTROLS = [
 	"add",
@@ -54,6 +54,7 @@ export type WorkbenchQueueState =
 	| "completed"
 	| "stale"
 	| "reconnecting"
+	| "disconnected"
 	| "unavailable"
 	| "outcome_unknown";
 

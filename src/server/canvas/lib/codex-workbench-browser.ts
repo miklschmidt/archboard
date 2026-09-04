@@ -217,6 +217,10 @@ export function createCanvasCodexBrowserSocketOwner(
 					await sendPublishedResult(transport, request, connection, connection.snapshot());
 					return;
 				case "snapshot":
+					// The browser asked for current state, so cached owner state is
+					// re-read before it is projected: this is what makes a queue
+					// refresh a genuine read rather than a redraw of the last command.
+					await connection.refreshProjection();
 					await sendPublishedResult(transport, request, connection, connection.snapshot());
 					return;
 				case "claimLease":

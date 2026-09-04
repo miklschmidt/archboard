@@ -15,7 +15,7 @@ import type {
 
 const DELIVERED_MESSAGES = {
 	add: "The host queued the submission and republished the queue.",
-	list: "The host republished the authoritative queue for this thread link.",
+	list: "The host re-read and republished the authoritative queue for this thread link.",
 	edit: "The host updated the queued submission and republished the queue.",
 	cancel: "The host deleted the queued submission and republished the queue.",
 	reorder: "The host applied the submitted order and republished the queue.",
@@ -111,10 +111,11 @@ async function send(
  * The six queue operations, and no others.
  *
  * Five are gateway commands. `list` is a snapshot re-read: the closed browser
- * contract publishes no `queueList` command because the gateway's queue cache is
- * bound to the thread it was read for and re-read on every link mutation, so the
- * authoritative list is already a field of every snapshot. Refreshing asks for
- * that snapshot again rather than inventing a command the host would refuse.
+ * contract publishes no `queueList` command because a snapshot request already
+ * re-reads the authoritative queue for the link it is served for. Refreshing
+ * asks for that snapshot rather than inventing a command the host would refuse,
+ * and it is the recovery for every state where the queue on screen is not proven
+ * — stale, reconnecting, restarted, unavailable, and a lost outcome.
  */
 export function createWorkbenchQueueActions(
 	transport: WorkbenchQueueTransport,

@@ -132,8 +132,8 @@ function entryCorrelation(
 	if (entry.status === "approval_blocked")
 		return `Held on ${workhorse} behind ${correlation.blockingApprovals} pending approval request(s).`;
 	if (entry.operationId === null)
-		return `Queued on ${workhorse} outside this coordinator; Archboard did not queue it.`;
-	return `Queued on ${workhorse} by coordinator operation ${entry.operationId}.`;
+		return `Queued on ${workhorse} outside this coordinator. This pane can still edit, cancel or start it; only submissions this coordinator queued can be reordered.`;
+	return `Queued on ${workhorse} by coordinator operation ${entry.operationId}. This pane can edit, cancel, start and reorder it.`;
 }
 
 function entryBlock(entry: WorkbenchQueueEntry): string | null {

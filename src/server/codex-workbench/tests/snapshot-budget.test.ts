@@ -69,6 +69,7 @@ test("fits timeline history after every competing snapshot field is present", as
 					{
 						id: decoder.adoptQueuedSubmissionId("budget-queue"),
 						input: [{ type: "text", text: "queued prompt", text_elements: [] }],
+						operationId: null,
 					},
 				],
 			},

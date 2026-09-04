@@ -36,6 +36,7 @@ import {
 	type BrowserDisconnectReason,
 	type BrowserLeaseRecord,
 	type BrowserPresenterContext,
+	type BrowserProjectionPort,
 	type BrowserPublishedPayload,
 	type BrowserUnsubscribe,
 	type CodexWorkbenchGatewayOptions,
@@ -527,6 +528,27 @@ export function createCodexWorkbenchGateway(
 		)
 			return current.lease;
 		return state.lease;
+	};
+
+	const projectionContext = (
+		state: ConnectionState,
+	): Parameters<BrowserProjectionPort["read"]>[0] => ({
+		browserId: state.browserId,
+		paneId: state.paneId,
+		connection: state.instance,
+		binding: readBinding(state.paneId),
+		lease: leaseForSnapshot(state),
+		mediaReady: state.mediaReady,
+	});
+
+	/**
+	 * A snapshot request asks for state the browser can trust, so any owner that
+	 * serves a projection from its own cache re-reads first. A failed re-read is
+	 * the owner's to present; it never fails the snapshot.
+	 */
+	const refreshProjection = async (state: ConnectionState): Promise<void> => {
+		if (options.projection.refresh === undefined || state.closed) return;
+		await options.projection.refresh(projectionContext(state));
 	};
 
 	const snapshotFor = (state: ConnectionState): BrowserSnapshot => {
@@ -1304,6 +1326,8 @@ export function createCodexWorkbenchGateway(
 				const current = stateFor(state.browserId, state.paneId, state.instance);
 				return updateSnapshot(current);
 			},
+			refreshProjection: () =>
+				refreshProjection(stateFor(state.browserId, state.paneId, state.instance)),
 			confirmPublished: (payload: BrowserPublishedPayload) => confirmPublished(state, payload),
 			claimLease: () => claimLease(state.browserId, state.paneId, state.instance),
 			renewLease: () => {

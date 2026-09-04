@@ -210,12 +210,46 @@ describe("workbench queue states", () => {
 		expect(view.correlation.linkState).toBe("inspect_only");
 	});
 
-	test("a stopped socket is the one state that cannot be refreshed", () => {
+	test("a lost socket is its own state, and the one that refreshing cannot recover", () => {
 		const view = project(stopped());
 
-		expect(view.state).toBe("unavailable");
+		expect(view.state).toBe("disconnected");
+		expect(view.label).toBe("Disconnected");
+		expect(view.recovery).toContain("Reconnect the workbench");
 		expect(view.list.enabled).toBe(false);
 		expect(view.list.reason).toContain("no socket");
+		// A queue this pane cannot reach reads differently from a link that has no
+		// queue: only the second is recovered by choosing another thread link.
+		expect(view.detail).not.toBe(
+			project(connected(snapshot({ queue: queue("unavailable") }))).detail,
+		);
+	});
+
+	test("every readiness arm the host can publish has its own queue state", () => {
+		const arms = [
+			["stopped", "disconnected"],
+			["backoff", "reconnecting"],
+			["reconnecting", "reconnecting"],
+			["incompatible_contract", "disconnected"],
+			["storage_mismatch", "unavailable"],
+			["initialized", "unavailable"],
+			["login_capable", "unavailable"],
+			["signed_out", "unavailable"],
+			["login_pending", "unavailable"],
+			["account_ready", "unavailable"],
+			["thread_capable", "queued"],
+		] as const;
+
+		for (const [readiness, expected] of arms) {
+			const view = project({
+				kind: "readiness",
+				state: readiness,
+				connection: "connected",
+				snapshot: snapshot({ queue: queue("queued", SEEDS) }),
+				sequence: 4,
+			});
+			expect([readiness, view.state]).toEqual([readiness, expected]);
+		}
 	});
 });
 

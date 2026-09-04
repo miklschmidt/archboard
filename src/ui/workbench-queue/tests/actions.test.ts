@@ -66,7 +66,7 @@ describe("workbench queue commands", () => {
 			control: "list",
 			state: "reconciled",
 			code: null,
-			message: "The host republished the authoritative queue for this thread link.",
+			message: "The host re-read and republished the authoritative queue for this thread link.",
 			submissionId: null,
 		});
 	});
