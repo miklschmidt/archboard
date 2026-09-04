@@ -20,7 +20,9 @@ import { WorkbenchRuntimeProvider } from "../../workbench-runtime/index.js";
 import { WorkbenchThreadLink } from "../../workbench-thread-link/index.js";
 import { WorkbenchTimeline } from "../../workbench-timeline/index.js";
 import type { BrowserWorkbenchTransport } from "../../workbench-transport/index.js";
-import { workbenchFrameRequestSourceIssue } from "../contract.js";
+import { useVoiceSession, type VoiceSessionView } from "../../voice-session/index.js";
+import type { VoiceTranscriptCrossLinkIds } from "../../voice-transcript/index.js";
+import { workbenchFrameRequestSourceIssue, workbenchFrameVoiceSourceIssue } from "../contract.js";
 import type {
 	WorkbenchFrameDisclosure,
 	WorkbenchFramePane,
@@ -29,8 +31,11 @@ import type {
 	WorkbenchFrameRequest,
 	WorkbenchFrameRequestSource,
 	WorkbenchFrameView,
+	WorkbenchFrameVoiceSlot,
+	WorkbenchFrameVoiceSource,
 } from "../contract.js";
 import { WorkbenchFrameCompact } from "./WorkbenchFrameCompact.js";
+import { VoiceComposition, WorkbenchFrameSpokenApproval } from "./VoiceComposition.js";
 
 function useTransportState(transport: BrowserWorkbenchTransport) {
 	return useSyncExternalStore(transport.subscribe, transport.state, transport.state);
@@ -121,6 +126,8 @@ interface FrameHeaderProps {
 	readonly view: WorkbenchFrameView;
 	readonly disclosure: WorkbenchFrameDisclosure;
 	readonly space: WorkbenchFrameProps["space"];
+	readonly voiceSource: WorkbenchFrameVoiceSource | null;
+	readonly voiceView: VoiceSessionView | null;
 	readonly onActivePaneChange: WorkbenchFrameProps["onActivePaneChange"];
 	readonly onDisclosureChange: WorkbenchFrameProps["onDisclosureChange"];
 }
@@ -132,6 +139,8 @@ function FrameHeader({
 	view,
 	disclosure,
 	space,
+	voiceSource,
+	voiceView,
 	onActivePaneChange,
 	onDisclosureChange,
 }: FrameHeaderProps) {
@@ -140,6 +149,10 @@ function FrameHeader({
 		[disclosure, onDisclosureChange],
 	);
 	const ready = view.state === "ready" ? view : null;
+	const voiceSourceIssue =
+		voiceSource === null || voiceView === null
+			? null
+			: workbenchFrameVoiceSourceIssue(voiceSource, voiceView);
 	return (
 		<header className="flex min-h-header shrink-0 items-center gap-control border-b border-border bg-surface px-region">
 			<div className="min-w-0 shrink-0">
@@ -166,7 +179,33 @@ function FrameHeader({
 					))}
 				</nav>
 			)}
-			<div className="ml-auto shrink-0">
+			{voiceSource === null || voiceView === null ? null : (
+				<div
+					className="min-w-0 ml-auto shrink overflow-hidden font-sans text-body"
+					data-workbench-voice-source-summary=""
+				>
+					<span className="text-muted-foreground">Voice source </span>
+					<span className="font-medium text-foreground">{voiceSource.pane.label}</span>
+					{voiceSourceIssue !== null ? (
+						<span className="block text-destructive" data-workbench-voice-source-mismatch="">
+							Binding unavailable
+						</span>
+					) : voiceView.binding === null ? (
+						<span className="block text-muted-foreground" data-workbench-voice-source-unbound="">
+							No workhorse thread is bound before Start.
+						</span>
+					) : (
+						<span
+							className="block max-w-full truncate font-mono text-foreground"
+							data-workbench-voice-source-thread=""
+							title={voiceView.binding.workhorseThreadId}
+						>
+							{voiceView.binding.workhorseThreadId}
+						</span>
+					)}
+				</div>
+			)}
+			<div className={voiceSource === null ? "ml-auto shrink-0" : "shrink-0"}>
 				{space === "workspace" ? (
 					<Button onClick={toggle} ref={captureToggle} tone="quiet" type="button">
 						{disclosure === "expanded" ? "Collapse" : "Expand"}
@@ -183,10 +222,11 @@ interface ActivePaneProps {
 	readonly pane: WorkbenchFramePane;
 	readonly timelineId: string;
 	readonly coordinatorId: string;
+	readonly queueId: string;
 	readonly approvalsId: string;
 }
 
-function ActivePane({ pane, timelineId, coordinatorId, approvalsId }: ActivePaneProps) {
+function ActivePane({ pane, timelineId, coordinatorId, queueId, approvalsId }: ActivePaneProps) {
 	const state = useTransportState(pane.transport);
 	const crossLinks = useMemo(
 		() => ({
@@ -240,7 +280,9 @@ function ActivePane({ pane, timelineId, coordinatorId, approvalsId }: ActivePane
 				<section aria-label="Board claim and doing" data-workbench-operation="board-status">
 					<WorkbenchBoardStatus {...pane.boardStatus} paneLabel={pane.identity.label} />
 				</section>
-				<WorkbenchQueue crossLinks={crossLinks} transport={pane.transport} />
+				<div id={queueId}>
+					<WorkbenchQueue crossLinks={crossLinks} transport={pane.transport} />
+				</div>
 				<WorkbenchThreadLink
 					controller={pane.threadLink.controller}
 					hostRecoveryIntents={pane.threadLink.hostRecoveryIntents}
@@ -330,12 +372,16 @@ function AppGlobalRequestSurface({
 function PresentAppGlobalRequest({
 	source,
 	id,
+	voicePresent,
 }: {
 	readonly source: WorkbenchFrameRequestSource;
 	readonly id: string;
+	readonly voicePresent: boolean;
 }) {
 	const state = useTransportState(source.transport);
 	const sourceIssue = workbenchFrameRequestSourceIssue(source, state);
+	const nowMs = sourceIssue === null ? (source.now ?? Date.now)() : 0;
+	const approvalNow = useCallback(() => nowMs, [nowMs]);
 	const invalidRequest =
 		sourceIssue === null
 			? INVALID_REQUEST_SOURCE
@@ -347,7 +393,16 @@ function PresentAppGlobalRequest({
 			sourceLabel={sourceIssue === null ? source.pane.label : undefined}
 		>
 			{sourceIssue === null ? (
-				<WorkbenchApprovals now={source.now} state={state} transport={source.transport} />
+				<>
+					{voicePresent ? (
+						<WorkbenchFrameSpokenApproval
+							nowMs={nowMs}
+							state={state}
+							transport={source.transport}
+						/>
+					) : null}
+					<WorkbenchApprovals now={approvalNow} state={state} transport={source.transport} />
+				</>
 			) : (
 				<RequestState request={invalidRequest} />
 			)}
@@ -358,12 +413,14 @@ function PresentAppGlobalRequest({
 function AppGlobalRequest({
 	request,
 	id,
+	voicePresent,
 }: {
 	readonly request: WorkbenchFrameRequest;
 	readonly id: string;
+	readonly voicePresent: boolean;
 }) {
 	if (request.state === "present") {
-		return <PresentAppGlobalRequest id={id} source={request.source} />;
+		return <PresentAppGlobalRequest id={id} source={request.source} voicePresent={voicePresent} />;
 	}
 	return (
 		<AppGlobalRequestSurface id={id} projection={request.state}>
@@ -372,10 +429,19 @@ function AppGlobalRequest({
 	);
 }
 
-export function WorkbenchFrame(props: WorkbenchFrameProps): ReactNode {
+function WorkbenchFrameLayout({
+	props,
+	voice,
+	voiceView,
+}: {
+	readonly props: WorkbenchFrameProps;
+	readonly voice: WorkbenchFrameVoiceSlot | null;
+	readonly voiceView: VoiceSessionView | null;
+}): ReactNode {
 	const titleId = useId();
 	const timelineId = useId();
 	const coordinatorId = useId();
+	const queueId = useId();
 	const approvalsId = useId();
 	const titleRef = useRef<HTMLParagraphElement | null>(null);
 	const toggleRef = useRef<HTMLButtonElement | null>(null);
@@ -412,6 +478,21 @@ export function WorkbenchFrame(props: WorkbenchFrameProps): ReactNode {
 		ready === null || issue !== null
 			? null
 			: (ready.panes.find((pane) => pane.identity.id === ready.activePaneId) ?? null);
+	const voiceSourceIssue =
+		voice === null || voiceView === null
+			? null
+			: workbenchFrameVoiceSourceIssue(voice.source, voiceView);
+	const voiceCrossLinkIds = useMemo<VoiceTranscriptCrossLinkIds>(
+		() => ({
+			delegationId: coordinatorId,
+			queueId,
+			steerId: timelineId,
+			approvalId: approvalsId,
+			callbackId: coordinatorId,
+			workhorseResultId: timelineId,
+		}),
+		[approvalsId, coordinatorId, queueId, timelineId],
+	);
 
 	return (
 		<section
@@ -434,30 +515,42 @@ export function WorkbenchFrame(props: WorkbenchFrameProps): ReactNode {
 				space={props.space}
 				titleId={titleId}
 				view={props.view}
+				voiceSource={voice?.source ?? null}
+				voiceView={voiceView}
 			/>
 			<div className="min-h-0 min-w-0 flex-1 overflow-hidden" data-workbench-work-area="">
 				{contentVisible ? (
 					<div
-						className="min-h-0 min-w-0 grid h-full grid-cols-3 overflow-hidden"
+						className="min-h-0 min-w-0 flex h-full flex-col overflow-hidden"
 						data-workbench-content="expanded"
 						onBlurCapture={onContentBlur}
 						onFocusCapture={onContentFocus}
 					>
+						{voice === null || voiceView === null ? null : (
+							<VoiceComposition
+								crossLinkIds={voiceCrossLinkIds}
+								sessionView={voiceView}
+								voice={voice}
+							/>
+						)}
 						{props.view.state !== "ready" ? (
-							<div className="col-span-3">
+							<div className="min-h-0 flex-1 overflow-y-auto">
 								<FrameState view={props.view} />
 							</div>
 						) : issue !== null ? (
-							<div className="col-span-3">
+							<div className="min-h-0 flex-1 overflow-y-auto">
 								<InvalidReadyState detail={issue} />
 							</div>
 						) : activePane !== null ? (
-							<ActivePane
-								approvalsId={approvalsId}
-								coordinatorId={coordinatorId}
-								pane={activePane}
-								timelineId={timelineId}
-							/>
+							<div className="min-h-0 min-w-0 grid flex-1 grid-cols-3 overflow-hidden">
+								<ActivePane
+									approvalsId={approvalsId}
+									coordinatorId={coordinatorId}
+									pane={activePane}
+									queueId={queueId}
+									timelineId={timelineId}
+								/>
+							</div>
 						) : null}
 					</div>
 				) : props.view.state !== "ready" ? (
@@ -468,7 +561,38 @@ export function WorkbenchFrame(props: WorkbenchFrameProps): ReactNode {
 					<WorkbenchFrameCompact pane={activePane} />
 				) : null}
 			</div>
-			<AppGlobalRequest id={approvalsId} request={props.request} />
+			<AppGlobalRequest
+				id={approvalsId}
+				request={props.request}
+				voicePresent={voice !== null && voiceSourceIssue === null}
+			/>
 		</section>
+	);
+}
+
+function VoiceSubscribedWorkbenchFrame({
+	props,
+	voice,
+}: {
+	readonly props: WorkbenchFrameProps;
+	readonly voice: WorkbenchFrameVoiceSlot;
+}): ReactNode {
+	const voiceView = useVoiceSession(voice.source.session);
+	const activeVoice = voiceView.status === "stopped" ? null : voice;
+	return (
+		<WorkbenchFrameLayout
+			props={props}
+			voice={activeVoice}
+			voiceView={activeVoice === null ? null : voiceView}
+		/>
+	);
+}
+
+export function WorkbenchFrame(props: WorkbenchFrameProps): ReactNode {
+	const voice = props.voice ?? null;
+	return voice === null ? (
+		<WorkbenchFrameLayout props={props} voice={null} voiceView={null} />
+	) : (
+		<VoiceSubscribedWorkbenchFrame props={props} voice={voice} />
 	);
 }

@@ -1,5 +1,8 @@
 import type { WorkbenchBoardStatusProps } from "../workbench-board-status/index.js";
 import type { WorkbenchComposerController } from "../workbench-composer/index.js";
+import type { VoiceContextPanelProps } from "../voice-context/index.js";
+import type { VoiceSession, VoiceSessionView } from "../voice-session/index.js";
+import type { VoiceTranscriptProps } from "../voice-transcript/index.js";
 import type {
 	ThreadLinkAccountFormId,
 	ThreadLinkController,
@@ -45,6 +48,75 @@ export interface WorkbenchFramePane {
 export type WorkbenchFramePanes =
 	| readonly [WorkbenchFramePane]
 	| readonly [WorkbenchFramePane, WorkbenchFramePane];
+
+const VOICE_SOURCE_CAPTURE = Symbol("workbench-frame-voice-source-capture");
+
+interface WorkbenchFrameVoiceSourceCapture {
+	readonly pane: WorkbenchFramePaneIdentity;
+	readonly session: VoiceSession;
+}
+
+/** A voice slot keeps the pane and session pair captured by its caller. */
+export interface WorkbenchFrameVoiceSource {
+	readonly [VOICE_SOURCE_CAPTURE]: WorkbenchFrameVoiceSourceCapture;
+	readonly pane: WorkbenchFramePaneIdentity;
+	readonly session: VoiceSession;
+}
+
+export type WorkbenchFrameVoiceContextPort = Pick<
+	VoiceContextPanelProps,
+	"history" | "clipboard" | "limits"
+>;
+
+export type WorkbenchFrameVoiceTranscriptPort = Pick<VoiceTranscriptProps, "records" | "label">;
+
+/** Caller-owned voice presentation inputs. The frame creates no voice state. */
+export interface WorkbenchFrameVoiceSlot {
+	readonly source: WorkbenchFrameVoiceSource;
+	readonly context: WorkbenchFrameVoiceContextPort;
+	readonly transcript: WorkbenchFrameVoiceTranscriptPort;
+}
+
+export function workbenchFrameVoiceSourceIssue(
+	source: WorkbenchFrameVoiceSource,
+	view: VoiceSessionView = source.session.view(),
+): string | null {
+	if (source.pane.id.trim() === "" || source.pane.label.trim() === "") {
+		return "The voice session has no exact source pane identity and label.";
+	}
+	const captured = source[VOICE_SOURCE_CAPTURE];
+	if (captured === undefined) {
+		return "The voice session has no captured source pane.";
+	}
+	if (captured.pane !== source.pane) {
+		return "The voice session was not captured from the pane identity it displays.";
+	}
+	if (captured.session !== source.session) {
+		return "The voice session no longer matches its captured source pane.";
+	}
+	if (view.binding !== null && view.binding.paneId !== source.pane.id) {
+		return `The voice session is bound to pane ${view.binding.paneId}, not source pane ${source.pane.id}.`;
+	}
+	return null;
+}
+
+/** Capture one immutable source identity with its caller-owned voice adapter. */
+export function captureWorkbenchFrameVoiceSource(
+	pane: Pick<WorkbenchFramePane, "identity">,
+	session: VoiceSession,
+): WorkbenchFrameVoiceSource {
+	const identity = Object.freeze({ ...pane.identity });
+	const view = session.view();
+	const capture = Object.freeze({ pane: identity, session });
+	const source = Object.freeze({
+		[VOICE_SOURCE_CAPTURE]: capture,
+		pane: identity,
+		session,
+	});
+	const issue = workbenchFrameVoiceSourceIssue(source, view);
+	if (issue !== null) throw new TypeError(issue);
+	return source;
+}
 
 export type WorkbenchFrameView =
 	| Readonly<{ state: "loading"; detail: string }>
@@ -127,6 +199,7 @@ export type WorkbenchFrameRequest =
 export interface WorkbenchFrameProps {
 	readonly view: WorkbenchFrameView;
 	readonly request: WorkbenchFrameRequest;
+	readonly voice?: WorkbenchFrameVoiceSlot | null;
 	readonly disclosure: WorkbenchFrameDisclosure;
 	readonly space: WorkbenchFrameSpace;
 	readonly onActivePaneChange: (paneId: WorkbenchFramePaneIdentity["id"]) => void;

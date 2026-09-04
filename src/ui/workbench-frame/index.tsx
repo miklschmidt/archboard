@@ -1,5 +1,8 @@
 export { WorkbenchFrame } from "./lib/WorkbenchFrame.js";
-export { captureWorkbenchFrameRequestSource } from "./contract.js";
+export {
+	captureWorkbenchFrameRequestSource,
+	captureWorkbenchFrameVoiceSource,
+} from "./contract.js";
 export type {
 	WorkbenchFrameBoardStatusPort,
 	WorkbenchFrameDisclosure,
@@ -12,4 +15,8 @@ export type {
 	WorkbenchFrameSpace,
 	WorkbenchFrameThreadLinkPort,
 	WorkbenchFrameView,
+	WorkbenchFrameVoiceContextPort,
+	WorkbenchFrameVoiceSlot,
+	WorkbenchFrameVoiceSource,
+	WorkbenchFrameVoiceTranscriptPort,
 } from "./contract.js";
