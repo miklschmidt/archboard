@@ -149,7 +149,7 @@ session.
 
 ## 4. Sign in and link one workhorse
 
-Open the real desktop browser through the public interface.
+Use a 1920×1080 desktop viewport. Open the real desktop browser through the public interface.
 
 ```bash
 ./bin/canvas browser open
@@ -158,14 +158,15 @@ Open the real desktop browser through the public interface.
 
 In the browser:
 
-1. Expand the workbench. Confirm the board name matches `$accept_board`.
+1. Expand the Agent drawer. Confirm the board name matches `$accept_board`, then open `Settings`.
 2. Confirm `Codex account: Signed in`. If it is signed out, choose `Hosted
 ChatGPT`, press `Sign in`, and finish the hosted flow. Do not copy the URL or
    any account detail into evidence.
 3. Confirm the readiness label says `Ready to create or attach a thread link`.
    That is the product-visible result of the effective storage proof.
-4. Press `Create a workhorse thread`. Record the rendered workhorse and
-   coordinator identities only as `present`; do not copy their opaque values.
+4. Press `Create a workhorse thread`. Expand `Coordinator details` if needed.
+   Record the rendered workhorse and coordinator identities only as `present`;
+   do not copy their opaque values. Close Agent settings to use the conversation.
 
 There must be one browser, one pane, one linked workhorse, and one coordinator.
 Do not open a second pane or server.
@@ -203,13 +204,14 @@ asked. Do not use virtual devices. Say:
 What is the first heading in TESTING.md, and which board are we viewing? Answer in one short sentence.
 ```
 
-Confirm all of these by direct observation:
+Open the `Voice` disclosure for transcript and context. Confirm all of these by direct observation:
 
 - the live meter reacts to your real voice;
 - your final words appear once in the voice transcript;
 - a relevant answer is audible through the real speaker;
 - the same answer appears once in the coordinator transcript;
-- the visible source still names this pane, workhorse, and coordinator.
+- the voice controls still target the same pane; the linked workhorse and
+  coordinator in Agent settings remain unchanged.
 
 A transcript without audible output, or audible output without the matching
 transcript, fails the smoke.
@@ -254,7 +256,7 @@ While its `Interrupt` control is visible, say:
 Queue exactly one follow-up for the linked workhorse. Its prompt is: read TESTING.md and reply with only its first heading. Do not steer the active turn and do not add another queue item.
 ```
 
-Confirm the queue region shows one queued submission and the coordinator says
+Open the `Queue` disclosure and confirm it shows one queued submission and the coordinator says
 it queued rather than steered the workhorse. After the active turn settles,
 say `Start that one queued follow-up now.` Confirm the queue item starts once.
 When it finishes, the coordinator timeline must show the correlated operation
