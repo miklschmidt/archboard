@@ -133,6 +133,10 @@ describe("finding rendering", () => {
 			"/tmp/findings",
 		);
 		expect(assembled.manifest.complete).toBeTrue();
+		expect(assembled.manifest.schemaVersion).toBe(3);
+		expect(
+			FindingRenderManifestSchema.safeParse({ ...assembled.manifest, schemaVersion: 2 }).success,
+		).toBeFalse();
 		expect(assembled.manifest.entries[0]?.status).toBe("rendered");
 		expect(assembled.artifact.files).toHaveLength(1);
 		expect(assembled.artifact.manifest.content.endsWith("\n")).toBeTrue();
@@ -223,7 +227,7 @@ describe("finding rendering", () => {
 		};
 		expect(
 			FindingRenderManifestSchema.safeParse({
-				schemaVersion: 2,
+				schemaVersion: 3,
 				board: "payments",
 				sourceFingerprint: "c".repeat(64),
 				report,
@@ -247,7 +251,7 @@ describe("finding rendering", () => {
 		]) {
 			expect(
 				FindingRenderManifestSchema.safeParse({
-					schemaVersion: 2,
+					schemaVersion: 3,
 					board: "payments",
 					sourceFingerprint: "c".repeat(64),
 					report,

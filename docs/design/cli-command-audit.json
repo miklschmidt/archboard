@@ -998,7 +998,7 @@
 			"path": "render-findings",
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/render-findings.ts",
-			"stdout": "schema-v2 JSON manifest after artifact commit",
+			"stdout": "schema-v3 JSON manifest after artifact commit",
 			"result": "source fingerprint, exact inspection report, ordered rendered or failed entries",
 			"diagnostics": "usage, server, renderer, read, validation, and filesystem errors",
 			"exits": [0, 1, 2, 3],

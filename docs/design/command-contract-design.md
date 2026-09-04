@@ -175,7 +175,9 @@ Schema v3 adds `CONNECTOR_PENETRATES_TEXT/text-interior` for supported connector
 enter unrelated live text bounds beyond `overlapTolerance`. The finding records the connector,
 text, segment, clipped entry and exit points, and focused scene bounds. It excludes the connector's
 own bound label and text belonging to either bound endpoint. Schema v3 retains schema v2 obstacle
-identity, work-count, and bridge-provenance contracts unchanged.
+identity and bridge-provenance contracts unchanged. The comparison-limit finding preserves
+`labelCount` as the number of records reached by label analysis and adds `textCount` for the new
+connector-text pass.
 
 Schema v2 also owns bridge provenance. A valid bridge is exactly one unbound, ungrouped mask line
 whose element ID equals `bridgeId` and one redraw line carrying identical eight-field facts except
@@ -195,7 +197,8 @@ render projection to the browser. Each finding reuses its schema-v3 `focusBBox`;
 a synthetic non-persisted frame with white PNG background, zero export padding, and fixed scale
 `min(4, 1024 / longest edge)`. The command validates PNG signature, IHDR dimensions, report order,
 finding digests, file names, hashes, and manifest completeness before committing ordered PNGs and
-then `manifest.json`. Stdout is the validated manifest and appears only after that commit.
+then `manifest.json`. Manifest schema v3 requires the embedded inspection report to use schema v3.
+Stdout is the validated manifest and appears only after that commit.
 
 This path does not adopt the requested board into a pane, update a scene, add files, move a camera,
 or change selection. A source that inspection can describe but the strict renderer cannot consume
