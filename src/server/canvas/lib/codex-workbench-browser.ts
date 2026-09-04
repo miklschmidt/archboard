@@ -8,23 +8,42 @@ import type {
 	BrowserWorkbenchConnection,
 	CodexWorkbenchGateway,
 } from "../../codex-workbench/index.js";
+import type { BrowserGatewayAction } from "../../../shared/codex-browser-gateway/index.js";
 
 const RequestIdSchema = z.string().min(1).max(128);
 const RequestBase = { type: z.literal("codex_workbench_request"), requestId: RequestIdSchema };
+
+/**
+ * The ingress arms name their action through the shared gateway envelope, so an
+ * action the browser can send and this schema does not accept — or the reverse —
+ * is a compile error rather than a request refused at runtime. The arms stay
+ * written out because their payloads differ; only the action vocabulary is
+ * shared.
+ */
+function gatewayAction<Action extends BrowserGatewayAction>(action: Action): z.ZodLiteral<Action> {
+	return z.literal(action);
+}
+
 const BrowserRequestSchema = z.discriminatedUnion("action", [
-	z.object({ ...RequestBase, action: z.literal("connect") }).strict(),
-	z.object({ ...RequestBase, action: z.literal("snapshot") }).strict(),
-	z.object({ ...RequestBase, action: z.literal("claimLease") }).strict(),
-	z.object({ ...RequestBase, action: z.literal("renewLease") }).strict(),
-	z.object({ ...RequestBase, action: z.literal("releaseLease") }).strict(),
-	z.object({ ...RequestBase, action: z.literal("mediaReady"), ready: z.boolean() }).strict(),
-	z.object({ ...RequestBase, action: z.literal("accountRead") }).strict(),
-	z.object({ ...RequestBase, action: z.literal("command"), command: z.unknown() }).strict(),
-	z.object({ ...RequestBase, action: z.literal("subscribe") }).strict(),
-	z.object({ ...RequestBase, action: z.literal("close") }).strict(),
+	z.object({ ...RequestBase, action: gatewayAction("connect") }).strict(),
+	z.object({ ...RequestBase, action: gatewayAction("snapshot") }).strict(),
+	z.object({ ...RequestBase, action: gatewayAction("claimLease") }).strict(),
+	z.object({ ...RequestBase, action: gatewayAction("renewLease") }).strict(),
+	z.object({ ...RequestBase, action: gatewayAction("releaseLease") }).strict(),
+	z.object({ ...RequestBase, action: gatewayAction("mediaReady"), ready: z.boolean() }).strict(),
+	z.object({ ...RequestBase, action: gatewayAction("accountRead") }).strict(),
+	z.object({ ...RequestBase, action: gatewayAction("command"), command: z.unknown() }).strict(),
+	z.object({ ...RequestBase, action: gatewayAction("subscribe") }).strict(),
+	z.object({ ...RequestBase, action: gatewayAction("close") }).strict(),
 ]);
 
 type BrowserRequest = z.infer<typeof BrowserRequestSchema>;
+
+/** Every gateway action has an ingress arm; an unlisted one fails to compile. */
+type AssertNoUnhandledAction<Action extends never> = Action;
+export type BrowserRequestActionsAreExhaustive = AssertNoUnhandledAction<
+	Exclude<BrowserGatewayAction, BrowserRequest["action"]>
+>;
 
 export interface CanvasCodexBrowserSocketSend {
 	readonly send: (message: unknown) => Promise<void>;
