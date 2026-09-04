@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-04 16:09'
-updated_date: '2026-09-04 16:32'
+updated_date: '2026-09-04 16:41'
 labels: []
 dependencies: []
 parent_task_id: TASK-143.04
@@ -36,6 +36,8 @@ TASK-143.04.07 now completes SDP and started, then a valid final transcript such
 4. Correct only the three stale raw-ID expectations in the focused process-contract owner, then run the permitted focused tests, both TypeScript projects, scoped lint/format, and fixed-base diff checks. Commit the complete range and return it for rereview without checking acceptance criteria or finalizing the task.
 
 5. Correct the focused process fixture at both control-write sites by serializing the issued coordinator ThreadId back to its raw app-server value. Preserve the raw notification payloads and canonical transcript expectations, require the exact process owner to pass, then commit the isolated fixture correction.
+
+6. Repair the existing adapter recovery owner only: introduce and complete two raw live transcript items, recover an overlay for one plus a new item, and assert canonical ordering, recovered role/text replacement, and preservation of the live-only record. Keep the cursor-loop proof and process owner unchanged.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -50,4 +52,8 @@ Rereview remediation proof: the new public adapter owner first failed all four c
 Parent authorized the previously protected process-fixture correction after rereview. No new product scope or task was added.
 
 Authorized fixture remediation is complete. Both control-write paths now serialize the issued coordinator ThreadId back to the raw app-server value before substituting $THREAD. The restart owner also serializes its fresh generation thread before direct started and SDP notifications, preserving the stale-old-child check and the fresh-answer assertion. The exact process owner passes 4 tests with 65 assertions in 1.84 seconds under the 20-second command cap. The focused relevant unit set still passes 51 tests with 681 assertions; both TypeScript projects, scoped lint, scoped format, and diff checks pass.
+
+The independent rereviewer accepted the product behavior and found one low-cost unit coverage gap: the adapter recovery owner no longer carried a live record through the local merged-map path. This turn repairs that owner only.
+
+Low rereview finding repaired in the existing adapter recovery owner. The owner now introduces and completes raw live items for one overlay identity and one live-only identity. Recovery replaces the overlay role/text/order, adds a recovered-only identity, and preserves the live-only canonical record at the live ordering slot. The duplicate cursor-loop subcase was removed from this owner because transcript-identity-atomicity.test.ts already owns that exact regression. A bounded mutation check replaced new Map(session.entries) with an empty map and the repaired owner failed solely because live-only disappeared; after restoring the product line, the owner passed. Final focused matrix: 51 tests, 679 assertions, all green. Root/frontend type-check, scoped Oxlint, scoped Oxfmt, and diff checks pass.
 <!-- SECTION:NOTES:END -->

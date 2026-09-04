@@ -333,9 +333,20 @@ describe("Codex realtime adapter", () => {
 		expect(JSON.stringify(h.events)).not.toContain("awaiting_user");
 	});
 
-	test("exhausts recovery, detects cursor loops, and merges records by stable identity", async () => {
+	test("exhausts recovery and overlays live records by stable identity", async () => {
 		const h = harness();
 		const { wireSessionId, correlation: browser } = await started(h);
+		for (const [id, role, text] of [
+			["item-b", "user", "live overlay"],
+			["live-only", "assistant", "preserved"],
+		] as const) {
+			const item = { id, realtimeSessionId: wireSessionId, type: "transcriptSegment", role, text };
+			for (const method of ["started", "completed"] as const)
+				notify(h, `thread/realtime/item/${method}`, {
+					threadId: COORDINATOR_WIRE_THREAD_ID,
+					item,
+				});
+		}
 		h.session.timelinePages = [
 			{
 				data: [
@@ -378,26 +389,18 @@ describe("Codex realtime adapter", () => {
 		});
 		expect(await h.adapter.recover(browser)).toEqual({ ...browser, outcome: "delivered" });
 		expect(h.session.timelineRequests.map((request) => request.cursor)).toEqual([null, "next"]);
+		const itemA = parseRealtimeItemId(h.itemId("item-a"));
+		const itemB = parseRealtimeItemId(h.itemId("item-b"));
+		const liveOnly = parseRealtimeItemId(h.itemId("live-only"));
 		expect(
-			h.adapter.transcript().map(({ itemId, sequence, text }) => ({ itemId, sequence, text })),
+			h.adapter
+				.transcript()
+				.map(({ itemId, sequence, role, text }) => ({ itemId, sequence, role, text })),
 		).toEqual([
-			{ itemId: parseRealtimeItemId(h.itemId("item-a")), sequence: 0, text: "first" },
-			{ itemId: parseRealtimeItemId(h.itemId("item-b")), sequence: 1, text: "recovered" },
+			{ itemId: itemA, sequence: 0, role: "user", text: "first" },
+			{ itemId: itemB, sequence: 1, role: "assistant", text: "recovered" },
+			{ itemId: liveOnly, sequence: 2, role: "assistant", text: "preserved" },
 		]);
-		const looping = harness();
-		const loopStart = await started(looping, "-loop");
-		notify(looping, "thread/realtime/error", {
-			threadId: COORDINATOR_WIRE_THREAD_ID,
-			message: "recover loop",
-		});
-		looping.session.timelinePages = [
-			{ data: [], nextCursor: "loop", activeRealtimeSessionAtPageStart: loopStart.wireSessionId },
-			{ data: [], nextCursor: "loop", activeRealtimeSessionAtPageStart: loopStart.wireSessionId },
-		];
-		expect(await looping.adapter.recover(loopStart.correlation)).toMatchObject({
-			outcome: "outcome_unknown",
-			reason: "transport_failure",
-		});
 	});
 
 	test("finalizes authoritative close, rejects stale commands, and accepts a replacement", async () => {
