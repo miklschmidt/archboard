@@ -38,6 +38,12 @@ export interface CanvasDynamicApprovalOwner {
 	readonly subscribe: (listener: () => void) => () => void;
 	readonly onNotification: (event: TransportServerNotification) => void;
 	readonly settleAll: (cause: "host_shutdown" | "child_disconnected") => void;
+	/**
+	 * Release the generation's presentation and its at-most-once decision ledger.
+	 * The ledger only has to outlive the epoch that issued the decisions, so a
+	 * settled generation must not keep one entry per approval it ever answered.
+	 */
+	readonly dispose: () => void;
 }
 
 export interface CanvasDynamicApprovalOwnerOptions {
@@ -248,6 +254,12 @@ export function createCanvasDynamicApprovalOwner(
 		settleAll: (cause: "host_shutdown" | "child_disconnected") => {
 			for (const entry of pending.values())
 				terminal(entry, cause === "host_shutdown" ? "cancelled" : "disconnected", cause);
+		},
+		dispose: () => {
+			for (const entry of pending.values()) clearTimeout(entry.timer);
+			pending.clear();
+			decisions.clear();
+			listeners.clear();
 		},
 	});
 }

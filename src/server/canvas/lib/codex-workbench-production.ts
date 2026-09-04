@@ -149,6 +149,15 @@ function currentOperationBinding(
 	};
 }
 
+/** A transport that refuses inspection has already lost its child. */
+function closedTransport(transport: CodexWorkbenchComponents["transport"]): boolean {
+	try {
+		return transport.inspect().state !== "open";
+	} catch {
+		return true;
+	}
+}
+
 function currentRealtimeGeneration(created: Readonly<Partial<CodexWorkbenchComponents>>) {
 	const generation = created.realtime?.generation();
 	return generation === null || generation === undefined
@@ -177,10 +186,28 @@ export function createCanvasCodexWorkbenchInstallation(
 	const sqliteHome = path.join(root, "sqlite-home");
 	const epochRoot = path.join(root, "epoch");
 	const waitGraph = createCodexWaitGraph();
+	// One record per live generation, shared by the kernel and generation calls
+	// that carry the same generation number. Every caller captures its record
+	// once, so retiring an entry cannot strand a cleanup that is still running.
 	const byGeneration = new Map<number, GenerationOwners>();
+	const retire = (generation: number, owners: GenerationOwners): void => {
+		if (byGeneration.get(generation) === owners) byGeneration.delete(generation);
+		owners.approval = null;
+		owners.authority = null;
+		owners.lifecycle = null;
+		owners.timeline = null;
+		owners.currentCoordinatorCall = null;
+		owners.dynamicProjectionUnsubscribe = null;
+		owners.projectionListeners.clear();
+	};
 	const ownersFor = (input: CodexWorkbenchGenerationInput): GenerationOwners => {
 		let owners = byGeneration.get(input.generation);
 		if (owners === undefined) {
+			// Generation numbers only increase, and one child owns one generation,
+			// so every lower entry belongs to a replaced child. Dropping them here
+			// bounds the map when a crash replacement outruns its own cleanup.
+			for (const retired of byGeneration.keys())
+				if (retired < input.generation) byGeneration.delete(retired);
 			owners = {
 				approval: null,
 				authority: null,
@@ -270,12 +297,25 @@ export function createCanvasCodexWorkbenchInstallation(
 				});
 			}
 			if (owners.lifecycle === null) {
+				const transport = requireCreated(created, "transport");
 				owners.lifecycle = createCanvasDynamicLifecycleOwner({
 					identity: requireCreated(created, "identity"),
 					waitGraph,
 					waitForTargets: host.waitForTargets,
 					shutdownEpoch: async (child, epoch) => {
-						await input.process.stop();
+						// Fail-closed epoch teardown is the owner's terminal path, not a
+						// bare process stop: it revokes public dispatch and the browser
+						// gateway before the child goes away. The proof is then read back
+						// from the transport and the terminal owner snapshot rather than
+						// asserted.
+						const terminal = await input.shutdownOwner();
+						const transportClosed = closedTransport(transport);
+						const sessionClosed =
+							transportClosed && terminal.state !== "ready" && terminal.childPid === null;
+						if (!transportClosed || !sessionClosed)
+							throw new Error(
+								"The fail-closed Codex epoch shutdown did not observe a closed session and transport.",
+							);
 						return { child, epoch, sessionClosed: true, transportClosed: true };
 					},
 					onFatal: host.onFatal,
@@ -543,102 +583,106 @@ export function createCanvasCodexWorkbenchInstallation(
 		};
 	};
 
-	const hooks = (input: CodexWorkbenchGenerationInput): CodexWorkbenchGenerationHooks => ({
-		threadContext: {
-			contextForEvent: (event, binding) => host.contextForEvent(event, binding.paneId),
-		},
-		onNotification: (event) => {
-			const owners = ownersFor(input);
-			owners.timeline?.onNotification(event);
-			owners.approval?.onNotification(event);
-			owners.lifecycle?.onNotification(event);
-		},
-		installIdentityDecoders: host.installIdentityDecoders,
-		installLifecycleSignals: host.installLifecycleSignals,
-		installApprovalProjection: () => {
-			const owners = ownersFor(input);
-			if (owners.approvalProjectionInstalled)
-				throw new Error("The Codex approval projection is already installed.");
-			owners.approvalProjectionInstalled = true;
-			return () => {
-				owners.approvalProjectionInstalled = false;
-			};
-		},
-		installBrowserGateway: host.installBrowserGateway,
-		initializeSession: async (session, components) => {
-			input.assertActivationCurrent();
-			if (input.adoptedSession === null) {
-				const epochSnapshot = components.epoch.snapshot();
+	const hooks = (input: CodexWorkbenchGenerationInput): CodexWorkbenchGenerationHooks => {
+		const owners = ownersFor(input);
+		return {
+			threadContext: {
+				contextForEvent: (event, binding) => host.contextForEvent(event, binding.paneId),
+			},
+			onNotification: (event) => {
+				owners.timeline?.onNotification(event);
+				owners.approval?.onNotification(event);
+				owners.lifecycle?.onNotification(event);
+			},
+			installIdentityDecoders: host.installIdentityDecoders,
+			installLifecycleSignals: host.installLifecycleSignals,
+			installApprovalProjection: () => {
+				if (owners.approvalProjectionInstalled)
+					throw new Error("The Codex approval projection is already installed.");
+				owners.approvalProjectionInstalled = true;
+				return () => {
+					owners.approvalProjectionInstalled = false;
+				};
+			},
+			installBrowserGateway: host.installBrowserGateway,
+			initializeSession: async (session, components) => {
 				input.assertActivationCurrent();
-				components.epoch.startEpoch({
-					childId: components.identity.identity.validator.childId,
-					epoch: components.identity.identity.validator.epoch,
-					operationId: components.identity.operation.issuer.mintOperationId(),
-					kind: "epoch_start",
-					rpc: "epoch/start",
-					workspaceRoot: host.checkoutRoot,
-					// Epoch ownership has no remote instruction or tool-manifest effect.
-					instructionHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-					manifestHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-					...(epochSnapshot.manifest.activeEpoch === null ? {} : { expected: epochSnapshot.cas }),
-				});
+				if (input.adoptedSession === null) {
+					const epochSnapshot = components.epoch.snapshot();
+					input.assertActivationCurrent();
+					components.epoch.startEpoch({
+						childId: components.identity.identity.validator.childId,
+						epoch: components.identity.identity.validator.epoch,
+						operationId: components.identity.operation.issuer.mintOperationId(),
+						kind: "epoch_start",
+						rpc: "epoch/start",
+						workspaceRoot: host.checkoutRoot,
+						// Epoch ownership has no remote instruction or tool-manifest effect.
+						instructionHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+						manifestHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+						...(epochSnapshot.manifest.activeEpoch === null ? {} : { expected: epochSnapshot.cas }),
+					});
+					input.assertActivationCurrent();
+					await session.initialize();
+					input.assertActivationCurrent();
+					input.child.lifecycle.markAppServerReady();
+				}
 				input.assertActivationCurrent();
-				await session.initialize();
+				const account = await session.accountRead();
 				input.assertActivationCurrent();
-				input.child.lifecycle.markAppServerReady();
-			}
-			input.assertActivationCurrent();
-			const account = await session.accountRead();
-			input.assertActivationCurrent();
-			if (account.account !== null) {
+				if (account.account !== null) {
+					input.assertActivationCurrent();
+					const coordinator = await components.coordinator.ensure({
+						operationId: components.identity.operation.issuer.mintOperationId(),
+					});
+					input.assertActivationCurrent();
+					if (coordinator.state !== "ready")
+						throw new Error(
+							coordinator.reason ?? "The production Codex coordinator did not become ready.",
+						);
+				}
 				input.assertActivationCurrent();
-				const coordinator = await components.coordinator.ensure({
-					operationId: components.identity.operation.issuer.mintOperationId(),
-				});
+				input.markSessionReady(account.account !== null);
 				input.assertActivationCurrent();
-				if (coordinator.state !== "ready")
-					throw new Error(
-						coordinator.reason ?? "The production Codex coordinator did not become ready.",
-					);
-			}
-			input.assertActivationCurrent();
-			input.markSessionReady(account.account !== null);
-			input.assertActivationCurrent();
-			const owners = ownersFor(input);
-			owners.browserState.account = { kind: "codex_account_response", response: account };
-			// Readiness is derived, so the browser only learns the new account facts
-			// once the projection listeners publish them.
-			if (owners.approvalProjectionInstalled)
-				for (const listener of owners.projectionListeners) listener();
-			if (account.account !== null) {
-				input.assertActivationCurrent();
-				input.child.lifecycle.markAccountReady();
-			}
-		},
-		stopBrowser: host.stopBrowser,
-		stopRealtime: host.stopRealtime,
-		stopQueue: host.stopQueue,
-		cancelDynamicApprovalsAndWaits: async (_components, cause) => {
-			const owners = ownersFor(input);
-			owners.timeline?.dispose();
-			owners.timeline = null;
-			owners.approval?.settleAll(cause);
-			await owners.lifecycle?.shutdown();
-			owners.authority?.dispose();
-			owners.dynamicProjectionUnsubscribe?.();
-			owners.dynamicProjectionUnsubscribe = null;
-			owners.projectionListeners.clear();
-		},
-		settleOrdinaryRequests: async (approvals, cause) => {
-			for (const snapshot of approvals.inspect()) {
-				if (snapshot.state === "pending")
-					await approvals.cancel(
-						snapshot.requestId,
-						cause === "host_shutdown" ? "host shutdown" : "child disconnected",
-					);
-			}
-		},
-	});
+				owners.browserState.account = { kind: "codex_account_response", response: account };
+				// Readiness is derived, so the browser only learns the new account facts
+				// once the projection listeners publish them.
+				if (owners.approvalProjectionInstalled)
+					for (const listener of owners.projectionListeners) listener();
+				if (account.account !== null) {
+					input.assertActivationCurrent();
+					input.child.lifecycle.markAccountReady();
+				}
+			},
+			stopBrowser: host.stopBrowser,
+			stopRealtime: host.stopRealtime,
+			stopQueue: host.stopQueue,
+			retireDynamicLifecycle: async (child, epoch) => {
+				await owners.lifecycle?.childExit(child, epoch);
+			},
+			cancelDynamicApprovalsAndWaits: async (_components, cause) => {
+				owners.timeline?.dispose();
+				owners.approval?.settleAll(cause);
+				await owners.lifecycle?.shutdown();
+				owners.authority?.dispose();
+				owners.dynamicProjectionUnsubscribe?.();
+				owners.approval?.dispose();
+				// The settled generation keeps nothing: its timeline, approval
+				// decisions, wait owners, effect authority, and browser projection
+				// listeners all leave with the record itself.
+				retire(input.generation, owners);
+			},
+			settleOrdinaryRequests: async (approvals, cause) => {
+				for (const snapshot of approvals.inspect()) {
+					if (snapshot.state === "pending")
+						await approvals.cancel(
+							snapshot.requestId,
+							cause === "host_shutdown" ? "host shutdown" : "child disconnected",
+						);
+				}
+			},
+		};
+	};
 
 	return {
 		process: {

@@ -110,11 +110,9 @@ import {
 	type CodexWorkbenchGatewayOptions,
 } from "../../codex-workbench/index.js";
 import { CodexWorkbenchCompositionError } from "./codex-workbench-error.js";
-import { assertCodexWorkbenchRetainedState } from "./codex-workbench-retained-policy.js";
 import {
 	CODEX_WORKBENCH_OWNER,
 	createCodexWorkbenchGenerationLifecycle,
-	emptyCodexWorkbenchRetainedState,
 	installCodexWorkbenchOwnerLifecycle,
 	type CodexWorkbenchComponents,
 	type CodexWorkbenchGeneration,
@@ -124,22 +122,13 @@ import {
 	type CodexWorkbenchKernelAcquisition,
 	type CodexWorkbenchOwner,
 	type CodexWorkbenchOwnerOptions,
-	type CodexWorkbenchOwnerRuntime,
-	type CodexWorkbenchOwnerSlots,
-	type CodexWorkbenchRetainedControl,
-	type CodexWorkbenchRetainedState,
 	type CodexWorkbenchSnapshot,
 	type CodexWorkbenchStableKernel,
 	type CodexWorkbenchState,
 	type CodexWorkbenchStopReason,
 } from "./codex-workbench-lifecycle.js";
 
-export {
-	CodexWorkbenchCompositionError,
-	assertCodexWorkbenchRetainedState,
-	CODEX_WORKBENCH_OWNER,
-	emptyCodexWorkbenchRetainedState,
-};
+export { CodexWorkbenchCompositionError, CODEX_WORKBENCH_OWNER };
 export type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGeneration,
@@ -149,10 +138,6 @@ export type {
 	CodexWorkbenchKernelAcquisition,
 	CodexWorkbenchOwner,
 	CodexWorkbenchOwnerOptions,
-	CodexWorkbenchOwnerRuntime,
-	CodexWorkbenchOwnerSlots,
-	CodexWorkbenchRetainedControl,
-	CodexWorkbenchRetainedState,
 	CodexWorkbenchSnapshot,
 	CodexWorkbenchStableKernel,
 	CodexWorkbenchState,
@@ -635,7 +620,7 @@ function productionKernelFactory(
 export function installProductionCodexWorkbench(
 	options: InstallProductionCodexWorkbenchOptions,
 ): CodexWorkbenchOwner {
-	return installCodexWorkbenchOwner(emptyCodexWorkbenchRetainedState(), {
+	return installCodexWorkbenchOwner({
 		createProcess: () => createCodexProcess(options.process),
 		createKernel: productionKernelFactory(options),
 		createGeneration: productionGenerationFactory(options),
@@ -643,8 +628,7 @@ export function installProductionCodexWorkbench(
 }
 
 export function installCodexWorkbenchOwner(
-	retained: CodexWorkbenchRetainedState,
 	options: CodexWorkbenchOwnerOptions,
 ): CodexWorkbenchOwner {
-	return installCodexWorkbenchOwnerLifecycle(retained, options, assertCodexWorkbenchRetainedState);
+	return installCodexWorkbenchOwnerLifecycle(options);
 }
