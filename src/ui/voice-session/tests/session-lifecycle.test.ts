@@ -1,66 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
-import type { RealtimeMediaSnapshot } from "../../codex-realtime/index.js";
-import { createVoiceSession, type VoiceSession } from "../index.js";
 import {
 	capabilities,
 	connectedState,
 	coordinator,
-	correlation,
 	mediaSnapshot,
 	reconnectingState,
-	realtimeFake,
 	snapshot,
-	transportFake,
-	type RealtimeFake,
 	type TransportFake,
 } from "./support/fakes.js";
-
-type ExecutableLink = Extract<
-	ReturnType<typeof snapshot>["threadLink"],
-	{ readonly state: "executable" }
->;
-
-interface Harness {
-	readonly session: VoiceSession;
-	readonly realtime: RealtimeFake;
-	readonly transport: TransportFake;
-	readonly notifications: () => number;
-}
-
-function harness(): Harness {
-	const realtime = realtimeFake();
-	const transport = transportFake();
-	const session = createVoiceSession({ realtime, transport });
-	let notifications = 0;
-	session.subscribe(() => {
-		notifications += 1;
-	});
-	return { session, realtime, transport, notifications: () => notifications };
-}
-
-const NEVER_RELEASED = (): void => undefined;
-
-function listening(): RealtimeMediaSnapshot {
-	return mediaSnapshot({ phase: "listening", reason: "negotiation_succeeded" });
-}
-
-function relinked(childId: string, epoch: string, threadId: string) {
-	return snapshot({
-		threadLink: {
-			kind: "thread_link",
-			state: "executable",
-			childId: childId as ExecutableLink["childId"],
-			epoch: epoch as ExecutableLink["epoch"],
-			threadId: threadId as ExecutableLink["threadId"],
-			sourcePresentation: "standard",
-			status: "idle",
-			loaded: true,
-			canAcceptDirectInput: true,
-			reason: null,
-		},
-	});
-}
+import { harness, relinked } from "./support/harness.js";
 
 describe("voice session binding", () => {
 	test("binds one session to the pane, child epoch, link, and coordinator it started on", async () => {
@@ -77,7 +26,62 @@ describe("voice session binding", () => {
 			coordinatorThreadId: "coordinator-a",
 		});
 		expect(session.view().status).toBe("listening");
-		expect(transport.captureCalls()).toBeGreaterThan(0);
+		// The pane comes from the caller. Nothing here touches the lease surface.
+		expect(transport.captureCalls()).toBe(0);
+	});
+
+	test("keeps the caller's pane on the binding across start and restart", async () => {
+		const right = harness("pane-right");
+		await right.session.start();
+		expect(right.session.view().binding?.paneId).toBe("pane-right");
+		await right.session.restart();
+		expect(right.session.view().binding?.paneId).toBe("pane-right");
+		expect(right.session.view().status).toBe("listening");
+
+		// Two adapters over one workbench keep their own panes.
+		const left = harness("pane-left");
+		await left.session.start();
+		expect(left.session.view().binding?.paneId).toBe("pane-left");
+		expect(right.session.view().binding?.paneId).toBe("pane-right");
+	});
+
+	test("never reaches for the lease surface while projecting", async () => {
+		const { session, realtime, transport } = harness();
+		await session.start();
+		transport.set(connectedState());
+		realtime.set(mediaSnapshot({ phase: "speaking", reason: "assistant_started" }));
+		for (let frame = 0; frame < 30; frame += 1) realtime.setLevel(frame / 30);
+		session.refresh();
+		await session.stop();
+
+		// captureCommandTarget expires and renews the command lease and broadcasts
+		// before it can refuse, so a read that called it would write.
+		expect(transport.captureCalls()).toBe(0);
+	});
+
+	test("a stale snapshot naming another child never condemns the binding", async () => {
+		const { session, transport } = harness();
+		await session.start();
+		const bound = session.view().binding;
+
+		transport.set({
+			kind: "stream",
+			state: "stale_snapshot",
+			connection: "connected",
+			snapshot: relinked("child-b", "epoch-b", "workhorse-b"),
+			sequence: 7,
+			expectedSequence: 8,
+			receivedSequence: 12,
+			reason: "The Codex workbench stream skipped a sequence.",
+		});
+
+		expect(session.view().status).toBe("listening");
+		expect(session.view().failure).toBeNull();
+		expect(session.view().binding).toEqual(bound);
+
+		// The same identities on a current readiness projection are a replacement.
+		transport.set(connectedState(relinked("child-b", "epoch-b", "workhorse-b")));
+		expect(session.view().failure?.code).toBe("replaced");
 	});
 
 	test("keeps its binding through a reconnect that returns the same child", async () => {
@@ -146,7 +150,6 @@ describe("voice session binding", () => {
 						),
 					),
 			],
-			["pane", (t: TransportFake) => t.setPaneId("pane-b")],
 		] as const) {
 			const { session, transport } = harness();
 			await session.start();
@@ -272,105 +275,5 @@ describe("voice session controls", () => {
 		expect(session.view().controls.canStart).toBe(false);
 		await session.start();
 		expect(session.view().status).toBe("unavailable");
-	});
-});
-
-describe("voice session ordering and disposal", () => {
-	test("discards a superseded control's late resolution", async () => {
-		const { session, realtime } = harness();
-		let release: (value: RealtimeMediaSnapshot) => void = NEVER_RELEASED;
-		realtime.onStart(
-			() =>
-				new Promise<RealtimeMediaSnapshot>((resolve) => {
-					release = resolve;
-				}),
-		);
-
-		const pending = session.start();
-		expect(session.view().controls.canStart).toBe(false);
-
-		// The pane is disposed before the in-flight start resolves.
-		session.dispose();
-		const settled = session.view();
-		release(listening());
-		const late = await pending;
-
-		expect(late).toBe(settled);
-		expect(session.view()).toBe(settled);
-		expect(session.view().status).not.toBe("listening");
-	});
-
-	test("a late resolution cannot revive a session close() retired", async () => {
-		const { session, realtime, transport } = harness();
-		await session.start();
-		transport.set(connectedState(relinked("child-b", "epoch-b", "workhorse-b")));
-		await session.close();
-
-		realtime.set(mediaSnapshot({ phase: "listening", reason: "negotiation_succeeded" }));
-		expect(session.view().status).toBe("ready");
-
-		// A run the media owner starts afterwards is a new session, not the
-		// retired one, and shows normally.
-		realtime.set(
-			mediaSnapshot(
-				{ phase: "listening", reason: "negotiation_succeeded" },
-				{ correlation: correlation("session-2") },
-			),
-		);
-		expect(session.view().status).toBe("listening");
-	});
-
-	test("sees a browser-originated realtime change with no transport delta", async () => {
-		const { session, realtime, notifications } = harness();
-		await session.start();
-		expect(session.view().status).toBe("listening");
-		const settled = notifications();
-
-		// The microphone is unplugged. Nothing reaches the transport; the media
-		// owner's own publication is the whole news, and the view must move.
-		realtime.set(
-			mediaSnapshot({
-				phase: "recoverable_error",
-				reason: "device_lost",
-				message: "The microphone was removed.",
-			}),
-		);
-
-		expect(notifications()).toBe(settled + 1);
-		expect(session.view().status).toBe("failed");
-		expect(session.view().failure?.code).toBe("device");
-		expect(session.view().outcome.kind).toBe("retry");
-	});
-
-	test("publishes to subscribers only when the projected view changed", async () => {
-		const { session, transport, notifications } = harness();
-		const before = notifications();
-		transport.set(connectedState());
-		expect(notifications()).toBe(before);
-
-		await session.start();
-		expect(notifications()).toBeGreaterThan(before);
-	});
-
-	test("disposal releases both subscriptions and refuses further controls", async () => {
-		const { session, realtime, transport } = harness();
-		await session.start();
-		const settled = session.view();
-		expect(transport.listenerCount()).toBe(1);
-		expect(realtime.listenerCount()).toBe(1);
-
-		session.dispose();
-
-		expect(transport.listenerCount()).toBe(0);
-		expect(realtime.listenerCount()).toBe(0);
-		expect(await session.stop()).toBe(settled);
-		expect(await session.restart()).toBe(settled);
-		expect(await session.start()).toBe(settled);
-		expect(await session.close()).toBe(settled);
-		expect(session.refresh()).toBe(settled);
-		// The adapter reads the media owner; it never stops or disposes one.
-		expect(realtime.calls()).toEqual(["start"]);
-		session.dispose();
-		expect(transport.listenerCount()).toBe(0);
 	});
 });
