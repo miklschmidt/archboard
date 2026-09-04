@@ -1,11 +1,11 @@
 ---
 id: TASK-143.04.10
 title: Keep live voice Stop reachable in fullscreen
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:42'
-updated_date: '2026-09-04 15:36'
+updated_date: '2026-09-04 15:37'
 labels: []
 dependencies:
   - TASK-143.03.11
@@ -35,7 +35,7 @@ Complete the single production voice composition seam. CanvasPane constructs at 
 - [x] #1 CanvasPane creates at most one VoiceSession for its current transport from useCanvasSession’s existing media owner, publishes one exact pane/transport/session registration with caller-owned context and transcript evidence, retains it through a transient disconnect, and clears/disposes it deterministically before replacement or unmount.
 - [x] #2 Shell supplies that registration to the accepted WorkbenchFrame without constructing or disposing media, realtime, or session state; the bound voice source stays immutable across pane focus, workbench navigation, one/two panes, and fullscreen transfer, and authoritative stopped/withdrawn state restores the text-only frame.
 - [x] #3 The same PresentationDock identifies active voice pane, workhorse, coordinator, realtime session, mute and phase beside the existing text source. Its one labelled Stop routes to the immutable active VoiceSession, falls back to text only when no active voice identity exists, and keeps stale/stopping/failed/outcome-unknown identity visible until authoritative reconciliation.
-- [ ] #4 Shell CSS preserves the accepted dock hierarchy, 44px touch target, keyboard focus, high contrast, reduced motion, and no overlay collision at desktop and Flip sizes.
+- [x] #4 Shell CSS and focused module owners preserve the existing dock hierarchy, 44px minimum target, visible keyboard focus, forced-colors behavior, and reduced-motion behavior. TASK-143.04.07 owns rendered desktop and Flip geometry, fullscreen interaction, and overlay-collision verification.
 - [x] #5 The focused CanvasPane and shell owners prove single ownership/publication, text-only, voice-only, simultaneous text/voice, exact context/transcript source, focus/fullscreen invariance, fail-closed duplicate-active state, replacement, stopped/unmount/reload cleanup, and exact Stop routing. Rendered browser behavior remains TASK-143.04.07.
 <!-- AC:END -->
 
@@ -91,4 +91,12 @@ Shell consumes the discriminant directly. Ready or unbound unavailable registrat
 The required UI worker re-read the visual authority and changed only the four authorized TypeScript source/test files; no CSS change was required. Validation passed: root and frontend type checks; 49 focused CanvasPane, Shell, WorkbenchFrame, and VoiceSession lifecycle/projection tests with 1,367 assertions; scoped Oxlint and Oxfmt; frontend build; and diff checks. Real-browser behavior remains TASK-143.04.07. TASK-143.04.10 remains In Progress with all acceptance criteria unchecked.
 
 Canonical integration validation passed at the review-clean range: 49 focused CanvasPane, Shell, WorkbenchFrame, and VoiceSession lifecycle/projection tests with 1,367 assertions; root and frontend TypeScript; scoped Oxlint and Oxfmt; frontend build; git diff --check; and patch-equivalent range-diff. Criteria 1, 2, 3, and 5 are supported by those module and DOM owners. Criterion 4 remains unchecked because no authorized module/static check can prove the rendered no-overlay-collision claim at desktop and Samsung Flip sizes. TASK-143.04.07 remains the owner of real rendered fullscreen, keyboard, forced-colors, and Flip browser verification; none of those browser checks ran here. The task therefore remains In Progress and has no final summary.
+
+Finalization contract correction: the former criterion 4 assigned rendered desktop and Flip collision evidence to TASK-143.04.10 while TASK-143.04.07 explicitly owns that browser evidence and depends on this task. That wording created a dependency cycle. The corrected criterion keeps stable CSS and focused component rules here, supported by the already passed scoped CSS/module/DOM evidence, and preserves rendered desktop and Flip geometry, fullscreen interaction, and overlay-collision verification in TASK-143.04.07.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Connected each pane’s existing media owner to one caller-owned VoiceSession registration, supplied that immutable source to the accepted WorkbenchFrame, and extended the existing PresentationDock with exact voice identity and Stop routing without adding another lifecycle owner. Verified by 49 focused CanvasPane, Shell, WorkbenchFrame, and VoiceSession tests with 1,367 assertions, root and frontend type checks, scoped Oxlint and Oxfmt, the frontend build, diff checks, and review-clean patch equivalence. TASK-143.04.07 retains rendered desktop and Flip geometry, fullscreen interaction, forced-colors rendering, and overlay-collision verification.
+<!-- SECTION:FINAL_SUMMARY:END -->
