@@ -11,10 +11,12 @@ import type {
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
 } from "../../workbench-transport/index.js";
-import type {
-	WorkbenchFramePane,
-	WorkbenchFramePaneIdentity,
-	WorkbenchFrameView,
+import {
+	captureWorkbenchFrameRequestSource,
+	type WorkbenchFrameRequest,
+	type WorkbenchFramePane,
+	type WorkbenchFramePaneIdentity,
+	type WorkbenchFrameView,
 } from "../index.js";
 
 const authorities = createIdentityAuthorities();
@@ -38,6 +40,44 @@ const realtimeSessionId = model.RealtimeSessionIdSchema.parse(
 );
 
 export const TEST_NOW = 1_800_000_000_000;
+export const LONG_EMPTY_REQUEST = {
+	state: "empty",
+	detail: `No request needs a response. ${"Retained request history remains inspectable. ".repeat(80)}`,
+} as const;
+export const FRAME_ROOT_THEME_CLASSES =
+	"h-full flex flex-col bg-background text-foreground border-border duration-control ease-control forced-color-adjust-auto forced-colors:border-current";
+
+export const WORKBENCH_PROJECTION_CASES = [
+	{
+		view: { state: "loading", detail: "Loading the Codex workbench." } as const,
+		role: "status",
+		text: "Loading the Codex workbench.",
+	},
+	{
+		view: { state: "empty", detail: "No pane is available for the workbench." } as const,
+		role: "status",
+		text: "No pane is available for the workbench.",
+	},
+	{
+		view: {
+			state: "error",
+			detail: "The workbench projection failed.",
+			recovery: "Reconnect Codex and reload the pane.",
+		} as const,
+		role: "alert",
+		text: "The workbench projection failed.",
+	},
+] as const;
+
+export const REQUEST_PROJECTION_CASES = [
+	{ state: "loading", detail: "Loading requests from the command lease." } as const,
+	{ state: "empty", detail: "No application-wide request is active." } as const,
+	{
+		state: "error",
+		detail: "The request source disconnected.",
+		recovery: "Reconnect the originating pane before responding.",
+	} as const,
+] as const;
 
 export interface RecordedCommand {
 	readonly draft: BrowserCommandDraft;
@@ -50,6 +90,7 @@ export interface TestTransport {
 	readonly commands: RecordedCommand[];
 	readonly target: BrowserWorkbenchCommandTarget | null;
 	readonly threadId: NonNullable<BrowserSnapshot["threadLink"]["threadId"]>;
+	readonly setState: (state: BrowserWorkbenchState) => void;
 }
 
 function capabilities(connected: boolean) {
@@ -186,9 +227,11 @@ function createTransport(
 	target: BrowserWorkbenchCommandTarget | null,
 ): TestTransport {
 	const commands: RecordedCommand[] = [];
-	const snapshot = state.snapshot;
+	const listeners = new Set<() => void>();
+	let currentState = state;
+	const currentSnapshot = () => currentState.snapshot;
 	const transport: BrowserWorkbenchTransport = {
-		attach: async () => state,
+		attach: async () => currentState,
 		detach: async () => undefined,
 		close: async () => undefined,
 		refresh: async () => {
@@ -198,18 +241,21 @@ function createTransport(
 			throw new Error("Media is outside this frame fixture.");
 		},
 		claimLease: async () => {
-			if (snapshot?.lease === null || snapshot?.lease === undefined) throw new Error("No lease.");
-			return snapshot.lease;
+			const lease = currentSnapshot()?.lease;
+			if (lease === null || lease === undefined) throw new Error("No lease.");
+			return lease;
 		},
 		renewLease: async () => {
-			if (snapshot?.lease === null || snapshot?.lease === undefined) throw new Error("No lease.");
-			return snapshot.lease;
+			const lease = currentSnapshot()?.lease;
+			if (lease === null || lease === undefined) throw new Error("No lease.");
+			return lease;
 		},
 		releaseLease: async () => null,
 		accountRead: async () => {
 			throw new Error("Account reads are outside this frame fixture.");
 		},
 		command: async (draft, captured) => {
+			const snapshot = currentSnapshot();
 			if (target === null || snapshot === null) {
 				throw new Error("This frame fixture cannot send a command.");
 			}
@@ -227,18 +273,25 @@ function createTransport(
 			if (target === null) throw new Error("This pane has no command target.");
 			return target;
 		},
-		snapshot: () => snapshot,
-		sequence: () => state.sequence,
-		lease: () => snapshot?.lease ?? null,
-		state: () => state,
-		capabilities: () => capabilities(state.kind === "readiness"),
-		subscribe: () => () => undefined,
+		snapshot: currentSnapshot,
+		sequence: () => currentState.sequence,
+		lease: () => currentSnapshot()?.lease ?? null,
+		state: () => currentState,
+		capabilities: () => capabilities(currentState.kind === "readiness"),
+		subscribe: (listener) => {
+			listeners.add(listener);
+			return () => listeners.delete(listener);
+		},
 		dispose: async () => undefined,
 	};
+	const setState = (nextState: BrowserWorkbenchState): void => {
+		currentState = nextState;
+		for (const listener of listeners) listener();
+	};
 	const threadId =
-		snapshot?.threadLink.threadId ??
+		currentSnapshot()?.threadLink.threadId ??
 		model.ThreadIdSchema.parse(identity.decoder.adoptThreadId(`thread-${paneId}`));
-	return { paneId, transport, commands, target, threadId };
+	return { paneId, transport, commands, target, threadId, setState };
 }
 
 export function stoppedTransport(paneId: string): TestTransport {
@@ -277,6 +330,18 @@ export function requestTransport(paneId: string): TestTransport {
 		},
 		target,
 	);
+}
+
+export function retargetRequestTransportLease(fake: TestTransport, paneId: string): void {
+	const state = fake.transport.state();
+	if (state.kind !== "readiness" || state.snapshot.lease === null) {
+		throw new Error("Only a ready request transport has a lease to retarget.");
+	}
+	const snapshot = model.BrowserSnapshotSchema.parse({
+		...state.snapshot,
+		lease: { ...state.snapshot.lease, paneId },
+	});
+	fake.setState({ ...state, snapshot });
 }
 
 export function retainedSnapshotTransport(
@@ -372,4 +437,14 @@ export function onePaneView(
 	pane: WorkbenchFramePane,
 ): Extract<WorkbenchFrameView, { readonly state: "ready" }> {
 	return { state: "ready", panes: [pane], activePaneId: pane.identity.id };
+}
+
+export function mutableRequestFrame(identityValue: WorkbenchFramePaneIdentity, now: () => number) {
+	const fake = requestTransport(identityValue.id);
+	const pane = framePane(identityValue, fake);
+	const request: WorkbenchFrameRequest = {
+		state: "present",
+		source: captureWorkbenchFrameRequestSource(pane, now),
+	};
+	return { fake, request, view: onePaneView(pane) };
 }

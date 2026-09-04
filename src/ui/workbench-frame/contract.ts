@@ -6,7 +6,10 @@ import type {
 	ThreadLinkRecoveryIntent,
 } from "../workbench-thread-link/index.js";
 import type { WorkbenchTimelineProps } from "../workbench-timeline/index.js";
-import type { BrowserWorkbenchTransport } from "../workbench-transport/index.js";
+import type {
+	BrowserWorkbenchState,
+	BrowserWorkbenchTransport,
+} from "../workbench-transport/index.js";
 
 export type WorkbenchFrameDisclosure = "expanded" | "collapsed";
 export type WorkbenchFrameSpace = "workspace" | "fullscreen";
@@ -52,7 +55,12 @@ export type WorkbenchFrameView =
 			activePaneId: WorkbenchFramePaneIdentity["id"];
 	  }>;
 
-const REQUEST_SOURCE_PANE_ID = Symbol("workbench-frame-request-source-pane");
+const REQUEST_SOURCE_CAPTURE = Symbol("workbench-frame-request-source-capture");
+
+interface WorkbenchFrameRequestSourceCapture {
+	readonly pane: WorkbenchFramePaneIdentity;
+	readonly transport: BrowserWorkbenchTransport;
+}
 
 /**
  * A request carries its originating transport with its originating identity.
@@ -60,7 +68,7 @@ const REQUEST_SOURCE_PANE_ID = Symbol("workbench-frame-request-source-pane");
  * retarget a response.
  */
 export interface WorkbenchFrameRequestSource {
-	readonly [REQUEST_SOURCE_PANE_ID]: WorkbenchFramePaneIdentity["id"];
+	readonly [REQUEST_SOURCE_CAPTURE]: WorkbenchFrameRequestSourceCapture;
 	readonly pane: WorkbenchFramePaneIdentity;
 	readonly transport: BrowserWorkbenchTransport;
 	readonly now?: () => number;
@@ -69,14 +77,19 @@ export interface WorkbenchFrameRequestSource {
 /** Return the reason a captured source cannot safely present request actions. */
 export function workbenchFrameRequestSourceIssue(
 	source: WorkbenchFrameRequestSource,
+	state: BrowserWorkbenchState,
 ): string | null {
 	if (source.pane.id.trim() === "" || source.pane.label.trim() === "") {
 		return "The application-wide request has no exact source pane identity and label.";
 	}
-	if (source[REQUEST_SOURCE_PANE_ID] !== source.pane.id) {
+	const captured = source[REQUEST_SOURCE_CAPTURE];
+	if (captured.pane !== source.pane) {
 		return "The application-wide request was not captured from the pane identity it displays.";
 	}
-	const lease = source.transport.lease();
+	if (captured.transport !== source.transport) {
+		return "The application-wide request was not captured with the transport it dispatches through.";
+	}
+	const lease = state.snapshot?.lease ?? null;
 	if (lease !== null && lease.paneId !== source.pane.id) {
 		return `The application-wide request source ${source.pane.label} does not match transport pane ${lease.paneId}.`;
 	}
@@ -91,13 +104,15 @@ export function captureWorkbenchFrameRequestSource(
 	pane: Pick<WorkbenchFramePane, "identity" | "transport">,
 	now?: () => number,
 ): WorkbenchFrameRequestSource {
+	const identity = Object.freeze({ ...pane.identity });
+	const sourceCapture = Object.freeze({ pane: identity, transport: pane.transport });
 	const captured = Object.freeze({
-		[REQUEST_SOURCE_PANE_ID]: pane.identity.id,
-		pane: Object.freeze({ ...pane.identity }),
+		[REQUEST_SOURCE_CAPTURE]: sourceCapture,
+		pane: identity,
 		transport: pane.transport,
 		...(now === undefined ? {} : { now }),
 	}) satisfies WorkbenchFrameRequestSource;
-	const issue = workbenchFrameRequestSourceIssue(captured);
+	const issue = workbenchFrameRequestSourceIssue(captured, pane.transport.state());
 	if (issue !== null) throw new TypeError(issue);
 	return captured;
 }
