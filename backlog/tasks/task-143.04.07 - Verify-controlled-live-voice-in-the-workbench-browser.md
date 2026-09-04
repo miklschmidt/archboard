@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-09-04 16:59'
+updated_date: '2026-09-04 17:10'
 labels: []
 dependencies:
   - TASK-143.02.04
@@ -71,4 +71,6 @@ Scoped validation on aed53517: root TypeScript passed; frontend TypeScript passe
 Accepted review remediation: the strict production fake now retains the raw coordinator thread created first, rejects realtime start or stop for any other thread with JSON-RPC invalid params, and records the authoritative stop target. The browser owner asserts the exact rendered pane, workhorse, and coordinator identities; exact raw coordinator thread on start and stop; and the distinct stable browser-media and Codex wire realtime-session domains. It now measures live non-fullscreen voice at 1920x1080@2 before presentation, including collision, overflow, and every 44-by-44 target, then asserts both Stop dimensions in fullscreen at 1440x900 and Flip sizes.
 
 The accepted cleanup leaves fewer test concepts and lines. One 29-line browser-test helper replaces about 50 duplicated lines of fixture-log parsing and private lease traversal across the text and voice owners. No production or general test contract changed. The remediated browser owner passes 62 assertions in 3.11 seconds. Root and frontend TypeScript pass; scoped Oxlint, Oxfmt, diff checks, and the direct 17-to-18 inventory audit pass. The serial lane and follow-up process audit found no residue.
+
+Integration-gate remediation: the exact text owner failed twice because its sole enabled Send button (44px high at y=708.5–752.5) was clipped by the 57px workhorse region, leaving its center at the boundary of the adjacent 69px sticky application-request header (y=731–800). Temporarily restoring the text owner’s original local fixture-log and lease helpers reproduced the identical @e3 coverage failure, proving the shared-helper extraction was not causal; the diagnostic-only changes were then removed. The smallest repair explicitly reveals the rendered data-composer-send="start" control with scrollIntoView and still activates it through the exact accessible button click—no forced click, direct handler call, sleep, timeout increase, or assertion weakening. The repaired text owner passes 25 assertions in 2.72 seconds, and the voice owner independently passes 62 assertions in 3.04 seconds. Root and frontend TypeScript, file-scoped Oxlint/Oxfmt, and diff checks pass. Serial owner cleanup reported no cleanup failure.
 <!-- SECTION:NOTES:END -->
