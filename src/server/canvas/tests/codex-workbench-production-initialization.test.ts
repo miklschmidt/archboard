@@ -11,6 +11,13 @@ import { createCanvasCodexWorkbenchInstallation } from "../codex-workbench-produ
 import type { CodexWorkbenchComponents } from "../codex-workbench-generation.js";
 import type { CodexWorkbenchGenerationInput } from "../codex-workbench-owner.js";
 
+function generationInput(generation: number): CodexWorkbenchGenerationInput {
+	return {
+		generation,
+		process: { stop: async () => undefined },
+	} as unknown as CodexWorkbenchGenerationInput;
+}
+
 function deferred(): {
 	readonly promise: Promise<void>;
 	readonly resolve: () => void;
@@ -36,6 +43,49 @@ function installation() {
 		else process.env.XDG_STATE_HOME = prior;
 	}
 }
+
+describe("production Codex generation ownership", () => {
+	test("a settled or replaced generation leaves no reachable owners behind", async () => {
+		const owned = installation();
+		try {
+			const created = {
+				identity: createIdentityAuthorities(createIdentityLedger()),
+				epoch: {},
+				threadLink: {},
+				transport: { inspect: () => ({ state: "open" }) },
+			} as unknown as CodexWorkbenchComponents;
+			const first = generationInput(1);
+			const adapters = owned.value.bindings(first).dynamicAdapters;
+			const approval = adapters.approval(created);
+			const lifecycle = adapters.lifecycle(created);
+			// The kernel and generation calls of one generation share one record.
+			expect(owned.value.bindings(first).dynamicAdapters.approval(created)).toBe(approval);
+			expect(owned.value.bindings(first).dynamicAdapters.lifecycle(created)).toBe(lifecycle);
+
+			await owned.value
+				.hooks(first)
+				.cancelDynamicApprovalsAndWaits({} as never, "child_disconnected");
+
+			// Settlement retires the record, so nothing rebuilt for generation 1 can
+			// reach the disposed approval, effect authority, or wait owner.
+			expect(owned.value.bindings(first).dynamicAdapters.approval(created)).not.toBe(approval);
+			expect(owned.value.bindings(first).dynamicAdapters.lifecycle(created)).not.toBe(lifecycle);
+
+			// A crash replacement that outruns its own cleanup drops the retired
+			// generation too: the map never accumulates one record per restart.
+			const stranded = owned.value.bindings(generationInput(2)).dynamicAdapters.approval(created);
+			const replacement = owned.value
+				.bindings(generationInput(3))
+				.dynamicAdapters.approval(created);
+			expect(replacement).not.toBe(stranded);
+			expect(owned.value.bindings(generationInput(2)).dynamicAdapters.approval(created)).not.toBe(
+				stranded,
+			);
+		} finally {
+			rmSync(owned.root, { recursive: true, force: true });
+		}
+	});
+});
 
 describe("production Codex activation guards", () => {
 	for (const stage of ["initialize", "account", "coordinator"] as const)
