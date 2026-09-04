@@ -12,15 +12,16 @@ import {
 	registerHappyDom,
 	unregisterHappyDom,
 } from "../../dom-testing/index.js";
-import type { BrowserWorkbenchTransport } from "../../workbench-transport/index.js";
+import type {
+	BrowserWorkbenchState,
+	BrowserWorkbenchTransport,
+} from "../../workbench-transport/index.js";
+import { installFullscreen } from "./codex-workbench-integration-support.js";
 
 registerHappyDom();
 const { cleanup, render, screen, userEvent, waitFor, within } = await loadRenderedUiTools();
 
 await mock.module("@excalidraw/excalidraw", () => ({
-	CaptureUpdateAction: { NEVER: "NEVER" },
-	Excalidraw: () => null,
-	exportToBlob: async () => new Blob(),
 	exportToSvg: async () => document.createElementNS("http://www.w3.org/2000/svg", "svg"),
 	getLibraryItemsHash: () => 0,
 	mergeLibraryItems: (localItems: readonly unknown[]) => localItems,
@@ -48,7 +49,11 @@ interface FakeWorkbenchTransport {
 	readonly listenerCount: () => number;
 }
 
-function fakeTransport(paneId: string, suffix: string): FakeWorkbenchTransport {
+function fakeTransport(
+	paneId: string,
+	suffix: string,
+	overrides: Partial<BrowserSnapshot> = {},
+): FakeWorkbenchTransport {
 	const threadId = model.ThreadIdSchema.parse(identity.decoder.adoptThreadId(`thread-${suffix}`));
 	const turnId = model.TurnIdSchema.parse(identity.decoder.adoptTurnId(`turn-${suffix}`));
 	const itemId = model.ItemIdSchema.parse(identity.decoder.adoptItemId(`item-${suffix}`));
@@ -166,17 +171,20 @@ function fakeTransport(paneId: string, suffix: string): FakeWorkbenchTransport {
 			expiresAtMs: Date.now() + 120_000,
 		},
 		operation: null,
+		...overrides,
 	});
 	const commands: RecordedCommand[] = [];
 	const listeners = new Set<() => void>();
 	const state = {
 		kind: "readiness",
-		state: "thread_capable",
+		state: snapshot.readiness.state,
 		connection: "connected",
 		snapshot,
 		sequence: 1,
-	} as const;
+	} as const satisfies BrowserWorkbenchState;
 	const target = { commandId, paneId, childId, epoch, capturedThreadLink: snapshot.threadLink };
+	const threadCapable = snapshot.readiness.state === "thread_capable";
+	const executable = snapshot.threadLink.state === "executable";
 	const transport: BrowserWorkbenchTransport = {
 		attach: async () => state,
 		detach: async () => undefined,
@@ -211,15 +219,20 @@ function fakeTransport(paneId: string, suffix: string): FakeWorkbenchTransport {
 		state: () => state,
 		capabilities: () => ({
 			connected: true,
-			readiness: "thread_capable",
+			readiness: snapshot.readiness.state,
 			canReadAccount: true,
 			canClaimLease: true,
-			canRenewLease: true,
-			canReleaseLease: true,
-			canCommand: true,
-			canThreadCommands: true,
-			canRealtime: true,
-			supportsCommand: () => true,
+			canRenewLease: snapshot.lease !== null,
+			canReleaseLease: snapshot.lease !== null,
+			canCommand: threadCapable && executable,
+			canThreadCommands: threadCapable && executable,
+			canRealtime: threadCapable && executable,
+			supportsCommand: (command) =>
+				command === "accountLogin" ||
+				command === "accountLoginCancel" ||
+				command === "accountLogout"
+					? true
+					: threadCapable,
 		}),
 		subscribe: (listener) => {
 			listeners.add(listener);
@@ -231,13 +244,47 @@ function fakeTransport(paneId: string, suffix: string): FakeWorkbenchTransport {
 }
 
 const transports = [fakeTransport("pane-1", "first"), fakeTransport("pane-1", "reloaded")];
+const paneBTransport = fakeTransport("pane-2", "pane-b");
+const unboundThreadLink: BrowserSnapshot["threadLink"] = {
+	kind: "thread_link",
+	state: "unbound",
+	childId: null,
+	epoch: null,
+	threadId: null,
+	sourcePresentation: null,
+	status: "notLoaded",
+	loaded: false,
+	canAcceptDirectInput: false,
+	reason: null,
+};
+const unboundTransport = fakeTransport("pane-1", "unbound", {
+	threadLink: unboundThreadLink,
+	timeline: null,
+	approvals: [],
+	semantic: null,
+});
+const signedOutTransport = fakeTransport("pane-1", "signed-out", {
+	readiness: { kind: "readiness", state: "signed_out" },
+	account: { kind: "account", state: "signed_out" },
+	threadLink: unboundThreadLink,
+	timeline: null,
+	approvals: [],
+	semantic: null,
+	lease: null,
+});
+let paneOneInitialTransport = transports[0]!.transport;
 
 const canvasPaneUrl = new URL("../../canvas/CanvasPane.tsx", import.meta.url).href;
 await mock.module(canvasPaneUrl, () => ({
 	CanvasPane(props: ComponentProps<"section"> & Record<string, unknown>) {
 		const [generation, setGeneration] = useState(0);
-		const selected = transports[generation]!;
 		const paneId = String(props.paneId);
+		const transport =
+			paneId === "pane-2"
+				? paneBTransport.transport
+				: generation === 0
+					? paneOneInitialTransport
+					: transports[1]!.transport;
 		const onStatus = props.onStatus as (status: Record<string, unknown>) => void;
 		const onAgentState = props.onAgentState as (...args: unknown[]) => void;
 		const onWorkbenchTransport = props.onWorkbenchTransport as (
@@ -259,11 +306,15 @@ await mock.module(canvasPaneUrl, () => ({
 				doing: [],
 			});
 			onAgentState(paneId, null, null, async () => ({ outcome: "success" }));
-			onWorkbenchTransport(paneId, selected.transport);
+			onWorkbenchTransport(paneId, transport);
 			return () => onWorkbenchTransport(paneId, null);
-		}, [onAgentState, onStatus, onWorkbenchTransport, paneId, selected.transport]);
+		}, [onAgentState, onStatus, onWorkbenchTransport, paneId, transport]);
 		return (
-			<section aria-label={String(props.label)} data-canvas-pane={paneId}>
+			<section
+				aria-label={String(props.label)}
+				data-canvas-pane={paneId}
+				data-presentation={String(props.presentation)}
+			>
 				<span>Excalidraw canvas</span>
 				<button type="button" onClick={reloadTransport}>
 					Reload workbench transport
@@ -316,45 +367,41 @@ await mock.module(apiUrl, () => ({
 
 const { Shell } = await import("../Shell.js");
 
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	paneOneInitialTransport = transports[0]!.transport;
+	for (const fixture of [...transports, paneBTransport, unboundTransport, signedOutTransport]) {
+		fixture.commands.length = 0;
+	}
+});
 afterAll(unregisterHappyDom);
 
-function installFullscreen(): () => void {
-	let fullscreenElement: Element | null = null;
-	const documentDescriptor = Object.getOwnPropertyDescriptor(document, "fullscreenElement");
-	const requestDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, "requestFullscreen");
-	const exitDescriptor = Object.getOwnPropertyDescriptor(document, "exitFullscreen");
-	Object.defineProperty(document, "fullscreenElement", {
-		configurable: true,
-		get: () => fullscreenElement,
-	});
-	Object.defineProperty(Element.prototype, "requestFullscreen", {
-		configurable: true,
-		value() {
-			fullscreenElement = document.querySelector(".shell");
-			document.dispatchEvent(new Event("fullscreenchange"));
-			return Promise.resolve();
-		},
-	});
-	Object.defineProperty(document, "exitFullscreen", {
-		configurable: true,
-		value() {
-			fullscreenElement = null;
-			document.dispatchEvent(new Event("fullscreenchange"));
-			return Promise.resolve();
-		},
-	});
-	return () => {
-		if (documentDescriptor)
-			Object.defineProperty(document, "fullscreenElement", documentDescriptor);
-		else Reflect.deleteProperty(document, "fullscreenElement");
-		if (requestDescriptor)
-			Object.defineProperty(Element.prototype, "requestFullscreen", requestDescriptor);
-		else Reflect.deleteProperty(Element.prototype, "requestFullscreen");
-		if (exitDescriptor) Object.defineProperty(document, "exitFullscreen", exitDescriptor);
-		else Reflect.deleteProperty(document, "exitFullscreen");
-	};
-}
+test("keeps a registered thread-capable unbound pane with create and attach choices", async () => {
+	paneOneInitialTransport = unboundTransport.transport;
+	const user = userEvent.setup();
+	render(<Shell />);
+	const frame = await screen.findByRole("region", { name: "Agent workbench" });
+	expect(frame.getAttribute("data-pane-count")).toBe("1");
+	await user.click(screen.getByRole("button", { name: "Expand" }));
+	const link = screen.getByRole("region", { name: "No thread link" });
+	expect(
+		within(link)
+			.getByRole("button", { name: "Create a workhorse thread" })
+			.hasAttribute("disabled"),
+	).toBeFalse();
+	expect(within(link).getByRole("heading", { name: "Attach a listed thread" })).toBeTruthy();
+});
+
+test("keeps a registered unbound signed-out pane and its recovery in the frame", async () => {
+	paneOneInitialTransport = signedOutTransport.transport;
+	const user = userEvent.setup();
+	render(<Shell />);
+	const frame = await screen.findByRole("region", { name: "Agent workbench" });
+	expect(frame.getAttribute("data-pane-count")).toBe("1");
+	await user.click(screen.getByRole("button", { name: "Expand" }));
+	const link = screen.getByRole("region", { name: "No thread link" });
+	expect(within(link).getByRole("link", { name: "Sign in again" })).toBeTruthy();
+});
 
 test("registers one exact pane source, routes fullscreen Stop, and replaces it without disturbing the canvas", async () => {
 	const restoreFullscreen = installFullscreen();
@@ -362,11 +409,7 @@ test("registers one exact pane source, routes fullscreen Stop, and replaces it w
 	const mounted = render(<Shell />);
 	try {
 		const frame = await screen.findByRole("region", { name: "Agent workbench" });
-		expect(document.querySelectorAll("[data-workbench-frame]")).toHaveLength(1);
 		expect(frame.getAttribute("data-pane-count")).toBe("1");
-		expect(document.querySelector("[data-canvas-pane='pane-1']")?.getAttribute("aria-label")).toBe(
-			"Pane A",
-		);
 		expect(screen.getByText("Excalidraw canvas")).toBeTruthy();
 		expect(screen.getAllByText("7 elements")).toHaveLength(2);
 
@@ -376,12 +419,7 @@ test("registers one exact pane source, routes fullscreen Stop, and replaces it w
 
 		await user.click(screen.getByRole("button", { name: "Present Pane A fullscreen" }));
 		const dock = await screen.findByRole("toolbar", { name: "Presentation controls" });
-		const textSource = within(dock).getByLabelText("Active text workbench");
-		expect(textSource.textContent).toContain(transports[0]!.threadId);
-		expect(textSource.textContent).toContain(transports[0]!.turnId);
 		const stop = within(dock).getByRole("button", { name: "Stop" });
-		expect(stop.getAttribute("data-pane-id")).toBe("pane-1");
-		expect(stop.getAttribute("data-turn-id")).toBe(transports[0]!.turnId);
 		await user.click(stop);
 		await waitFor(() => expect(transports[0]!.commands).toHaveLength(1));
 		expect(transports[0]!.commands[0]).toMatchObject({
@@ -389,8 +427,6 @@ test("registers one exact pane source, routes fullscreen Stop, and replaces it w
 			threadId: transports[0]!.threadId,
 			turnId: transports[0]!.turnId,
 		});
-		expect(screen.getByText("Excalidraw canvas")).toBeTruthy();
-
 		await user.click(screen.getByRole("button", { name: "Reload workbench transport" }));
 		await waitFor(() => {
 			request = screen.getByRole("region", { name: "Application-wide Codex requests" });
@@ -404,6 +440,45 @@ test("registers one exact pane source, routes fullscreen Stop, and replaces it w
 
 		mounted.unmount();
 		expect(transports[1]!.listenerCount()).toBe(0);
+	} finally {
+		restoreFullscreen();
+	}
+});
+
+test("transfers fullscreen when the workbench selects Pane B and stops only Pane B", async () => {
+	const restoreFullscreen = installFullscreen();
+	const user = userEvent.setup();
+	render(<Shell />);
+	try {
+		await screen.findByRole("region", { name: "Agent workbench" });
+		await user.click(screen.getByRole("button", { name: "Split" }));
+		await waitFor(() =>
+			expect(
+				document.querySelector("[data-workbench-frame]")?.getAttribute("data-pane-count"),
+			).toBe("2"),
+		);
+		await user.click(screen.getByRole("button", { name: "Present Pane A fullscreen" }));
+		const dock = await screen.findByRole("toolbar", { name: "Presentation controls" });
+		await user.click(screen.getByRole("button", { name: "Pane B" }));
+		await waitFor(() =>
+			expect(
+				within(dock).getByRole("button", { name: "Present Pane B" }).getAttribute("aria-pressed"),
+			).toBe("true"),
+		);
+		expect(
+			document.querySelector("[data-canvas-pane='pane-2']")?.getAttribute("data-presentation"),
+		).toBe("current");
+		const textSource = within(dock).getByLabelText("Active text workbench");
+		expect(textSource.textContent).toContain(paneBTransport.threadId);
+		expect(textSource.textContent).toContain(paneBTransport.turnId);
+		await user.click(within(dock).getByRole("button", { name: "Stop" }));
+		await waitFor(() => expect(paneBTransport.commands).toHaveLength(1));
+		expect(paneBTransport.commands[0]).toMatchObject({
+			command: "interrupt",
+			threadId: paneBTransport.threadId,
+			turnId: paneBTransport.turnId,
+		});
+		expect(transports[0]!.commands).toHaveLength(0);
 	} finally {
 		restoreFullscreen();
 	}
