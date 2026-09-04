@@ -262,4 +262,32 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 			},
 		);
 	});
+
+	// tsconfig.frontend.json is the only TypeScript gate that reads TSX, and it
+	// reads exactly src/ui/**/*.tsx, so a rendered UI owner may be a .tsx file
+	// there and nowhere else. The 500-line cap follows it.
+	test("accepts a rendered .tsx owner only under src/ui and still caps it", async () => {
+		await withProject(
+			{
+				"src/ui/widget/index.ts": "export const value = 1;\n",
+				"src/ui/widget/tests/rendered.test.tsx": "export const rendered = true;\n",
+				"src/ui/widget/tests/oversized.test.tsx": "// fixture\n".repeat(501),
+				"src/domain/widget/index.ts": "export const value = 1;\n",
+				"src/domain/widget/tests/rendered.test.tsx": "export const rendered = true;\n",
+			},
+			(root) => {
+				expectPass(lint(root, ["src/ui/widget/tests/rendered.test.tsx"]));
+				expectRule(
+					lint(root, ["src/domain/widget/tests/rendered.test.tsx"]),
+					"archboard(module-entrypoints)",
+					"must be a .ts file",
+				);
+				expectRule(
+					lint(root, ["src/ui/widget/tests/oversized.test.tsx"]),
+					"eslint(max-lines)",
+					"Maximum allowed is 500",
+				);
+			},
+		);
+	});
 });
