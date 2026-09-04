@@ -291,7 +291,7 @@ function hasApplicationRequest(transport: BrowserWorkbenchTransport): boolean {
 	);
 }
 
-function workbenchTimeline(owner: WorkbenchPaneOwner): WorkbenchFramePane["timeline"] | null {
+function workbenchTimeline(owner: WorkbenchPaneOwner): WorkbenchFramePane["timeline"] {
 	const snapshot = owner.transport.snapshot();
 	const threadId = snapshot?.threadLink.threadId ?? null;
 	if (threadId === null) return null;
@@ -1113,6 +1113,15 @@ export function Shell(): React.JSX.Element {
 		},
 		[presentationOwner],
 	);
+	const handleWorkbenchPaneChange = useCallback(
+		(paneId: string): void => {
+			setFocused(paneId);
+			if (presentationOwner && presentationOwner.getTargetPaneId() !== null) {
+				presentationOwner.present(paneId);
+			}
+		},
+		[presentationOwner],
+	);
 	const handlePresentationExit = useCallback(() => presentationOwner?.exit(), [presentationOwner]);
 	const handleBoardError = useCallback((error: string) => {
 		setNotice({ kind: "error", text: error, hold: true });
@@ -1168,14 +1177,13 @@ export function Shell(): React.JSX.Element {
 		const nowMs = Date.now();
 		return panes.flatMap((paneId) => {
 			const owner = workbenchOwners[paneId];
-			const timeline = owner ? workbenchTimeline(owner) : null;
-			if (!owner || !timeline) return [];
+			if (!owner) return [];
 			const paneStatus = statuses[paneId] ?? null;
 			const paneAgent = agentStates[paneId] ?? null;
 			const port: WorkbenchFramePane = {
 				identity: { id: paneId, label: paneLabel(panes, paneId) },
 				transport: owner.transport,
-				timeline,
+				timeline: workbenchTimeline(owner),
 				composerController: owner.composerController,
 				threadLink: { controller: owner.threadLinkController },
 				boardStatus: {
@@ -1195,11 +1203,14 @@ export function Shell(): React.JSX.Element {
 		if (!first) {
 			return {
 				state: "empty",
-				detail: "No pane has published an exact Codex workhorse yet.",
+				detail: "No pane has published a Codex workbench transport yet.",
 			};
 		}
-		const activePaneId = workbenchFramePanes.some((pane) => pane.identity.id === focused)
-			? focused
+		const authoritativePaneId = presentation.paneId ?? focused;
+		const activePaneId = workbenchFramePanes.some(
+			(pane) => pane.identity.id === authoritativePaneId,
+		)
+			? authoritativePaneId
 			: first.identity.id;
 		return workbenchFramePanes.length === 1
 			? { state: "ready", panes: [first], activePaneId }
@@ -1208,7 +1219,7 @@ export function Shell(): React.JSX.Element {
 					panes: [first, workbenchFramePanes[1]!],
 					activePaneId,
 				};
-	}, [focused, workbenchFramePanes]);
+	}, [focused, presentation.paneId, workbenchFramePanes]);
 	const workbenchRequest = useMemo<WorkbenchFrameRequest>(() => {
 		const source = workbenchFramePanes.find((pane) => hasApplicationRequest(pane.transport));
 		return source
@@ -1593,7 +1604,7 @@ export function Shell(): React.JSX.Element {
 					<WorkbenchFrame
 						className="shell-workbench"
 						disclosure={workbenchDisclosure}
-						onActivePaneChange={setFocused}
+						onActivePaneChange={handleWorkbenchPaneChange}
 						onDisclosureChange={setWorkbenchDisclosure}
 						request={workbenchRequest}
 						space={presentation.paneId ? "fullscreen" : "workspace"}

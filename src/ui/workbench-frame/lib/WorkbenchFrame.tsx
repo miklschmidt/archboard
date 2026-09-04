@@ -209,7 +209,24 @@ function ActivePane({ pane, timelineId, coordinatorId, approvalsId }: ActivePane
 				>
 					<div className="min-h-0 min-w-0 flex flex-1 flex-col overflow-hidden">
 						<div className="min-h-0 flex-1 overflow-y-auto" id={timelineId}>
-							<WorkbenchTimeline {...pane.timeline} className="h-full" label="Workhorse activity" />
+							{pane.timeline === null ? (
+								<output
+									aria-live="polite"
+									className="min-h-touch-target border-b border-border bg-surface px-region py-panel text-muted-foreground"
+									data-workbench-timeline="unbound"
+								>
+									<span className="block font-sans text-body">
+										No workhorse thread is linked to this pane. Use the pane thread-link controls to
+										create or attach one.
+									</span>
+								</output>
+							) : (
+								<WorkbenchTimeline
+									{...pane.timeline}
+									className="h-full"
+									label="Workhorse activity"
+								/>
+							)}
 						</div>
 						<WorkbenchComposer controller={pane.composerController} state={state} />
 					</div>

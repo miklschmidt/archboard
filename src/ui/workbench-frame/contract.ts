@@ -35,7 +35,8 @@ export interface WorkbenchFrameThreadLinkPort {
 export interface WorkbenchFramePane {
 	readonly identity: WorkbenchFramePaneIdentity;
 	readonly transport: BrowserWorkbenchTransport;
-	readonly timeline: Omit<WorkbenchTimelineProps, "className" | "label">;
+	/** Null until this exact pane has a thread whose timeline can be named. */
+	readonly timeline: Omit<WorkbenchTimelineProps, "className" | "label"> | null;
 	readonly composerController: WorkbenchComposerController;
 	readonly threadLink: WorkbenchFrameThreadLinkPort;
 	readonly boardStatus: WorkbenchFrameBoardStatusPort;
