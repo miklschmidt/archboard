@@ -6,38 +6,8 @@ import {
 	type BrowserDynamicApproval,
 } from "../../../shared/codex-browser-model/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
-import {
-	createBrowserWorkbenchTransport,
-	type BrowserCommandDraft,
-	type BrowserWorkbenchSocket,
-} from "../index.js";
-
-type Request = Record<string, unknown>;
-
-class FakeSocket extends EventTarget implements BrowserWorkbenchSocket {
-	readonly sent: Request[] = [];
-	readyState = 1;
-	onRequest: ((request: Request, socket: FakeSocket) => void) | null = null;
-
-	send(raw: string): void {
-		const request = JSON.parse(raw) as Request;
-		this.sent.push(request);
-		this.onRequest?.(request, this);
-	}
-	reply(request: Request, value: unknown): void {
-		this.dispatchEvent(
-			new MessageEvent("message", {
-				data: JSON.stringify({
-					type: "codex_workbench_result",
-					requestId: request.requestId,
-					action: request.action,
-					ok: true,
-					value,
-				}),
-			}),
-		);
-	}
-}
+import { createBrowserWorkbenchTransport, type BrowserCommandDraft } from "../index.js";
+import { FakeSocket, rejection, type Transport } from "./fake-socket.js";
 
 const authorities = createIdentityAuthorities();
 const model = createCodexBrowserModel(authorities);
@@ -188,7 +158,7 @@ function commandResult(value: Record<string, unknown>) {
 }
 
 async function attach(
-	transport: ReturnType<typeof createBrowserWorkbenchTransport>,
+	transport: Transport,
 	socket: FakeSocket,
 	value: Record<string, unknown>,
 ): Promise<void> {
@@ -199,16 +169,7 @@ async function attach(
 	await transport.attach(socket);
 }
 
-async function rejection(promise: Promise<unknown>): Promise<unknown> {
-	try {
-		await promise;
-	} catch (error) {
-		return error;
-	}
-	throw new Error("The promise unexpectedly resolved.");
-}
-
-const transports: Array<ReturnType<typeof createBrowserWorkbenchTransport>> = [];
+const transports: Transport[] = [];
 
 afterEach(async () => {
 	for (const transport of transports.splice(0)) await transport.dispose();
