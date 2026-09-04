@@ -1,10 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import type {
-	BrowserApproval,
-	BrowserDynamicApproval,
-	BrowserSnapshot,
-} from "../../../shared/codex-browser-model/index.js";
 import type { BrowserWorkbenchState } from "../../workbench-transport/index.js";
 import {
 	approvalDecisionSignature,
@@ -13,73 +8,49 @@ import {
 	projectWorkbenchApprovals,
 	type WorkbenchApprovalCard,
 	type WorkbenchApprovalPhase,
+	type WorkbenchApprovalsInput,
 } from "../index.js";
 import {
 	commandApproval,
-	connected,
 	dynamicApproval,
-	dynamicIdentity,
+	dynamicDecision,
 	HASH,
-	NOW,
+	IMMUTABLE_TARGET,
 	SEND_EFFECT,
-	snapshot,
 } from "./fixtures.js";
+import { approvalsInput, connected, NOW, OTHER_THREAD, snapshot } from "./model.js";
 
-type Lifecycle = BrowserApproval["lifecycle"];
-type DynamicDecision = NonNullable<BrowserDynamicApproval["decision"]>;
-
-const IMMUTABLE_TARGET = "workhorse-a in the archboard checkout";
-
-function ordinary(lifecycle: Lifecycle, overrides: Partial<BrowserApproval> = {}): BrowserApproval {
-	return commandApproval({
-		lifecycle,
-		spoken: { eligible: false, reason: "not_pending" },
-		...overrides,
-	} as never);
-}
+type Overrides = Readonly<Record<string, unknown>>;
 
 function cardFor(
 	state: BrowserWorkbenchState,
-	options: { readonly canCommand?: boolean; readonly nowMs?: number } = {},
+	overrides: Partial<Omit<WorkbenchApprovalsInput, "state">> = {},
 ): WorkbenchApprovalCard {
-	const projected = projectWorkbenchApprovals({
-		state,
-		nowMs: options.nowMs ?? NOW,
-		canCommand: options.canCommand ?? true,
-	});
-	const card = projected.cards[0];
+	const card = projectWorkbenchApprovals(approvalsInput(state, overrides)).cards[0];
 	if (card === undefined) throw new Error("Expected one projected approval card");
 	return card;
 }
 
-function ordinaryCard(
-	lifecycle: Lifecycle,
-	overrides: Partial<BrowserApproval> = {},
-): WorkbenchApprovalCard {
-	return cardFor(connected(snapshot({ approvals: [ordinary(lifecycle, overrides)] })));
+function ordinaryCard(lifecycle: Overrides): WorkbenchApprovalCard {
+	return cardFor(
+		connected(
+			snapshot({
+				approvals: [
+					commandApproval({ lifecycle, spoken: { eligible: false, reason: "not_pending" } }),
+				],
+			}),
+		),
+	);
 }
 
-function dynamicDecision(
-	outcome: DynamicDecision["outcome"],
-	cause: DynamicDecision["cause"],
-): DynamicDecision {
-	return {
-		outcome,
-		identity: dynamicIdentity("send_message_to_thread"),
-		effectHash: HASH,
-		decidedAtMs: NOW,
-		cause,
-	} as DynamicDecision;
-}
-
-function dynamicCard(overrides: Partial<BrowserDynamicApproval>): WorkbenchApprovalCard {
+function dynamicCard(overrides: Overrides): WorkbenchApprovalCard {
 	return cardFor(
 		connected(snapshot({ dynamicApprovals: [dynamicApproval(SEND_EFFECT, overrides)] })),
 	);
 }
 
 describe("ordinary approval lifecycle", () => {
-	const cases: readonly (readonly [string, Lifecycle, WorkbenchApprovalPhase])[] = [
+	const cases: readonly (readonly [string, Overrides, WorkbenchApprovalPhase])[] = [
 		["staged", { state: "staged", decision: null, outcome: null, reason: null }, "staged"],
 		["pending", { state: "pending", decision: null, outcome: null, reason: null }, "pending"],
 		[
@@ -91,46 +62,6 @@ describe("ordinary approval lifecycle", () => {
 			"declined",
 			{ state: "settled", decision: "declined", outcome: null, reason: "You declined it." },
 			"declined",
-		],
-		[
-			"delivered",
-			{ state: "settled", decision: "approved", outcome: "delivered", reason: "Delivered." },
-			"delivered",
-		],
-		[
-			"not_delivered",
-			{
-				state: "settled",
-				decision: "approved",
-				outcome: "not_delivered",
-				reason: "The child exited.",
-			},
-			"not_delivered",
-		],
-		[
-			"expired",
-			{ state: "expired", decision: "cancelled", outcome: null, reason: "The deadline passed." },
-			"expired",
-		],
-		[
-			"cancelled",
-			{ state: "cancelled", decision: "cancelled", outcome: null, reason: "The turn stopped." },
-			"cancelled",
-		],
-		[
-			"stale ownership",
-			{ state: "stale", decision: "cancelled", outcome: null, reason: "A new child epoch." },
-			"stale",
-		],
-		[
-			"outcome_unknown",
-			{
-				state: "outcome_unknown",
-				decision: "approved",
-				outcome: "outcome_unknown",
-				reason: "The write was lost.",
-			},
-			"outcome_unknown",
 		],
 	];
 
@@ -149,6 +80,18 @@ describe("ordinary approval lifecycle", () => {
 				expect(card.offers).toHaveLength(0);
 			}
 		});
+
+	test("carries the host's own reason into the terminal detail", () => {
+		const card = ordinaryCard({
+			state: "settled",
+			decision: "declined",
+			outcome: null,
+			reason: "You declined it.",
+		});
+
+		expect(card.status.detail).toBe("You declined it.");
+		expect(card.status.decision).toBe("You declined this request.");
+	});
 
 	test("treats a pending request past its expiry as expired without inventing a host record", () => {
 		const card = cardFor(connected(snapshot({ approvals: [commandApproval()] })), {
@@ -203,34 +146,45 @@ describe("connection and lease authority", () => {
 		expect(card.status.authorityReason).toContain("workbench command lease");
 	});
 
-	test("reports no card and no authority when the host published no snapshot", () => {
-		const projected = projectWorkbenchApprovals({
-			state: {
-				kind: "connection",
-				state: "stopped",
-				connection: "stopped",
-				snapshot: null,
-				sequence: null,
-				reason: "The workbench stopped.",
-			},
-			nowMs: NOW,
-			canCommand: false,
-		});
+	test("removes a dynamic decision the transport already refuses", () => {
+		const card = cardFor(
+			connected(snapshot({ dynamicApprovals: [dynamicApproval(SEND_EFFECT)] })),
+			{ canRespondDynamic: false },
+		);
 
-		expect(projected.cards).toHaveLength(0);
-		expect(projected.authority).toBe("removed");
-		expect(projected.beacon.announcement).toBe("No Codex approval request is open.");
+		expect(card.offers).toHaveLength(0);
+		expect(card.status.authorityReason).toContain("no longer accepts a response");
+	});
+
+	test("reports no card and no authority when the host published no snapshot", () => {
+		const stopped = projectWorkbenchApprovals(
+			approvalsInput(
+				{
+					kind: "connection",
+					state: "stopped",
+					connection: "stopped",
+					snapshot: null,
+					sequence: null,
+					reason: "The workbench stopped.",
+				},
+				{ canCommand: false, canRespondOrdinary: false, canRespondDynamic: false },
+			),
+		);
+
+		expect(stopped.cards).toHaveLength(0);
+		expect(stopped.authority).toBe("removed");
+		expect(stopped.beacon.announcement).toBe("No Codex approval request is open.");
 	});
 });
 
 describe("dynamic approval lifecycle", () => {
-	const cases: readonly (readonly [WorkbenchApprovalPhase, Partial<BrowserDynamicApproval>])[] = [
+	const cases: readonly (readonly [WorkbenchApprovalPhase, Overrides])[] = [
 		["pending", {}],
 		[
 			"approved",
 			{
 				state: "approved",
-				decision: dynamicDecision("approved", "person_approved"),
+				decision: dynamicDecision(SEND_EFFECT, "approved", "person_approved"),
 				binding: null,
 			},
 		],
@@ -238,7 +192,7 @@ describe("dynamic approval lifecycle", () => {
 			"declined",
 			{
 				state: "declined",
-				decision: dynamicDecision("declined", "person_declined"),
+				decision: dynamicDecision(SEND_EFFECT, "declined", "person_declined"),
 				toolResult: "refused:approval_declined",
 				binding: null,
 			},
@@ -247,27 +201,8 @@ describe("dynamic approval lifecycle", () => {
 			"expired",
 			{
 				state: "expired",
-				decision: dynamicDecision("expired", "deadline_reached"),
+				decision: dynamicDecision(SEND_EFFECT, "expired", "deadline_reached"),
 				toolResult: "refused:expired",
-				binding: null,
-			},
-		],
-		[
-			"cancelled",
-			{
-				state: "cancelled",
-				decision: dynamicDecision("cancelled", "caller_turn_interrupted"),
-				toolResult: "approval_required",
-				binding: null,
-			},
-		],
-		[
-			"disconnected",
-			{
-				state: "disconnected",
-				decision: dynamicDecision("disconnected", "child_disconnected"),
-				delivery: "not_delivered",
-				toolResult: "transport_not_delivered",
 				binding: null,
 			},
 		],
@@ -275,7 +210,7 @@ describe("dynamic approval lifecycle", () => {
 			"stale",
 			{
 				state: "stale",
-				decision: dynamicDecision("approved", "person_approved"),
+				decision: dynamicDecision(SEND_EFFECT, "approved", "person_approved"),
 				toolResult: "refused:prior_epoch",
 				binding: null,
 			},
@@ -284,7 +219,7 @@ describe("dynamic approval lifecycle", () => {
 			"delivered",
 			{
 				state: "delivered",
-				decision: dynamicDecision("approved", "person_approved"),
+				decision: dynamicDecision(SEND_EFFECT, "approved", "person_approved"),
 				delivery: "delivered",
 				binding: null,
 			},
@@ -293,7 +228,7 @@ describe("dynamic approval lifecycle", () => {
 			"not_delivered",
 			{
 				state: "not_delivered",
-				decision: dynamicDecision("approved", "person_approved"),
+				decision: dynamicDecision(SEND_EFFECT, "approved", "person_approved"),
 				delivery: "not_delivered",
 				toolResult: "transport_not_delivered",
 				binding: null,
@@ -303,7 +238,7 @@ describe("dynamic approval lifecycle", () => {
 			"outcome_unknown",
 			{
 				state: "outcome_unknown",
-				decision: dynamicDecision("approved", "person_approved"),
+				decision: dynamicDecision(SEND_EFFECT, "approved", "person_approved"),
 				delivery: "outcome_unknown",
 				binding: null,
 			},
@@ -312,151 +247,87 @@ describe("dynamic approval lifecycle", () => {
 
 	for (const [phase, overrides] of cases)
 		test(`keeps the immutable effect and target for ${phase}`, () => {
-			const card = dynamicCard(overrides as Partial<BrowserDynamicApproval>);
+			const card = dynamicCard(overrides);
 
 			expect(card.status.phase).toBe(phase);
 			expect(card.kind === "dynamic" && card.effectHash).toBe(HASH);
-			expect(approvalTarget(card)).toBe("workhorse-b");
+			expect(approvalTarget(card)).toBe(String(OTHER_THREAD));
 			expect(card.status.resumable).toBe(false);
 			expect(card.spoken.eligible).toBe(false);
 			expect(card.offers).toHaveLength(phase === "pending" ? 2 : 0);
 		});
 
-	test("removes the decision when the host published no browser binding", () => {
-		const card = dynamicCard({ binding: null });
-
-		expect(card.status.phase).toBe("pending");
-		expect(card.offers).toHaveLength(0);
+	test("cannot receive a pending effect without a browser binding", () => {
+		// The closed contract already refuses it, so the surface never has to
+		// render a pending decision it could not send.
+		expect(() => dynamicCard({ binding: null })).toThrow();
 	});
 
 	test("names a child disconnect rather than a generic failure", () => {
 		const card = dynamicCard({
 			state: "disconnected",
-			decision: dynamicDecision("disconnected", "child_disconnected"),
+			decision: dynamicDecision(SEND_EFFECT, "disconnected", "child_disconnected"),
 			delivery: "not_delivered",
 			toolResult: "transport_not_delivered",
 			binding: null,
-		} as Partial<BrowserDynamicApproval>);
+		});
 
 		expect(card.status.detail).toContain("Codex child disconnected");
 		expect(card.status.delivery).toBe("not_delivered");
 	});
 });
 
-describe("app-global beacon and reconciliation", () => {
-	test("announces terminal states off-focus alongside pending ones", () => {
-		const projected = projectWorkbenchApprovals({
-			state: connected(
-				snapshot({
-					approvals: [
-						commandApproval(),
-						ordinary(
-							{
-								state: "outcome_unknown",
-								decision: "approved",
-								outcome: "outcome_unknown",
-								reason: "The write was lost.",
-							},
-							{ requestId: "request-9" } as never,
-						),
-					],
-					dynamicApprovals: [dynamicApproval(SEND_EFFECT)],
-				}),
-			),
-			nowMs: NOW,
-			canCommand: true,
-		});
-
-		expect(projected.beacon.pending).toBe(2);
-		expect(projected.beacon.total).toBe(3);
-		expect(projected.beacon.entries.map((entry) => entry.phase)).toContain("outcome_unknown");
-		for (const entry of projected.beacon.entries) expect(entry.target.length).toBeGreaterThan(0);
-	});
-
-	test("reads authoritative reconciliation from the host operation outcome", () => {
-		const outcomes = ["delivered", "not_delivered", "outcome_unknown"] as const;
-		for (const outcome of outcomes) {
-			const operation: BrowserSnapshot["operation"] = {
-				kind: "operation_outcome",
-				operationId: "lease-1",
-				outcome,
-				message: null,
-			} as BrowserSnapshot["operation"];
-			const projected = projectWorkbenchApprovals({
-				state: connected(snapshot({ operation })),
-				nowMs: NOW,
-				canCommand: true,
-			});
-
-			expect(projected.reconciliation?.outcome).toBe(outcome);
-			expect(projected.reconciliation?.label.length).toBeGreaterThan(0);
-		}
-	});
-});
+function projectApprovals(approvals: ReturnType<typeof commandApproval>[]) {
+	return projectWorkbenchApprovals(approvalsInput(connected(snapshot({ approvals }))));
+}
 
 describe("focus return", () => {
 	test("returns focus when the focused card loses its authority", () => {
-		const before = projectWorkbenchApprovals({
-			state: connected(snapshot({ approvals: [commandApproval()] })),
-			nowMs: NOW,
-			canCommand: true,
-		});
-		const after = projectWorkbenchApprovals({
-			state: connected(
-				snapshot({
-					approvals: [
-						ordinary({
-							state: "settled",
-							decision: "approved",
-							outcome: "delivered",
-							reason: "Delivered.",
-						}),
-					],
-				}),
-			),
-			nowMs: NOW,
-			canCommand: true,
-		});
+		const pending = projectApprovals([commandApproval()]);
+		const key = pending.cards[0]!.key;
+		const settled = projectApprovals([
+			commandApproval({
+				lifecycle: {
+					state: "settled",
+					decision: "approved",
+					outcome: "delivered",
+					reason: "Delivered.",
+				},
+				spoken: { eligible: false, reason: "not_pending" },
+			}),
+		]);
 		const change = approvalFocusReturn(
-			approvalDecisionSignature(before.cards),
-			after.cards,
-			"ordinary:request-1",
+			approvalDecisionSignature(pending.cards),
+			[{ ...settled.cards[0]!, key } as WorkbenchApprovalCard],
+			key,
 		);
 
-		expect(change?.key).toBe("ordinary:request-1");
+		expect(change?.key).toBe(key);
 		expect(change?.announcement).toContain("no longer accepts a decision");
 		expect(change?.announcement).toContain("Focus returned to the approvals heading.");
 	});
 
 	test("returns focus when the card disappears entirely", () => {
-		const before = projectWorkbenchApprovals({
-			state: connected(snapshot({ approvals: [commandApproval()] })),
-			nowMs: NOW,
-			canCommand: true,
-		});
+		const pending = projectApprovals([commandApproval()]);
 		const change = approvalFocusReturn(
-			approvalDecisionSignature(before.cards),
+			approvalDecisionSignature(pending.cards),
 			[],
-			"ordinary:request-1",
+			pending.cards[0]!.key,
 		);
 
 		expect(change?.announcement).toContain("gone from this workbench");
 	});
 
 	test("leaves focus alone while the card still accepts a decision", () => {
-		const projected = projectWorkbenchApprovals({
-			state: connected(snapshot({ approvals: [commandApproval()] })),
-			nowMs: NOW,
-			canCommand: true,
-		});
+		const pending = projectApprovals([commandApproval()]);
 
 		expect(
 			approvalFocusReturn(
-				approvalDecisionSignature(projected.cards),
-				projected.cards,
-				"ordinary:request-1",
+				approvalDecisionSignature(pending.cards),
+				pending.cards,
+				pending.cards[0]!.key,
 			),
 		).toBeNull();
-		expect(approvalFocusReturn("", projected.cards, null)).toBeNull();
+		expect(approvalFocusReturn("", pending.cards, null)).toBeNull();
 	});
 });

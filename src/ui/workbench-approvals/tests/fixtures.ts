@@ -1,85 +1,96 @@
 import type {
 	BrowserApproval,
 	BrowserDynamicApproval,
-	BrowserSnapshot,
 } from "../../../shared/codex-browser-model/index.js";
-import type {
-	BrowserWorkbenchCommandResult,
-	BrowserWorkbenchCommandTarget,
-	BrowserWorkbenchState,
-} from "../../workbench-transport/index.js";
-import type { WorkbenchApprovalsTransport } from "../index.js";
+import {
+	APPROVAL_ID,
+	CHILD,
+	callId,
+	COMMAND_ID,
+	EPOCH,
+	EXPIRES_AT,
+	EXPIRY_MS,
+	HASH,
+	ITEM,
+	NOW,
+	operationId,
+	OTHER_THREAD,
+	PANE,
+	parseApproval,
+	parseDynamicApproval,
+	requestId,
+	THREAD,
+	TURN,
+} from "./model.js";
 
-type ExecutableLink = Extract<BrowserSnapshot["threadLink"], { readonly state: "executable" }>;
-type Envelope = Pick<
-	BrowserApproval,
-	| "kind"
-	| "requestId"
-	| "threadId"
-	| "turnId"
-	| "itemId"
-	| "approvalId"
-	| "expiresAtMs"
-	| "lifecycle"
-	| "binding"
-	| "spoken"
->;
-type Identity = BrowserDynamicApproval["identity"];
+type Overrides = Readonly<Record<string, unknown>>;
 type DynamicEffect = BrowserDynamicApproval["effect"];
 
-export const NOW = 1_700_000_000_000;
-export const EXPIRY_MS = 90_000;
-export const EXPIRES_AT = NOW + EXPIRY_MS;
-export const CHILD = "child-a" as ExecutableLink["childId"];
-export const EPOCH = "epoch-a" as ExecutableLink["epoch"];
-export const THREAD = "workhorse-a" as ExecutableLink["threadId"];
-export const OTHER_THREAD = "workhorse-b" as ExecutableLink["threadId"];
-export const TURN = "turn-a" as NonNullable<BrowserApproval["turnId"]>;
-export const HASH = `sha256:${"a".repeat(64)}`;
+const BINDING = {
+	child: CHILD,
+	epoch: EPOCH,
+	link: "pane primary to workhorse-a",
+	target: "workhorse-a in the archboard checkout",
+	effect: "run one command in the workspace",
+};
 
-function identity<Value>(value: string): Value {
-	return value as unknown as Value;
-}
+export const IMMUTABLE_TARGET = BINDING.target;
 
-export function executableLink(): ExecutableLink {
-	return {
-		kind: "thread_link",
-		state: "executable",
-		childId: CHILD,
-		epoch: EPOCH,
-		threadId: THREAD,
-		sourcePresentation: "standard",
-		status: "idle",
-		loaded: true,
-		canAcceptDirectInput: true,
-		reason: null,
-	};
-}
+/** Every ordinary terminal decision the closed lifecycle can publish. */
+export const TERMINAL_LIFECYCLES: readonly (readonly [string, Overrides])[] = [
+	["stale", { state: "stale", decision: "cancelled", outcome: null, reason: "A new epoch." }],
+	[
+		"expired",
+		{ state: "expired", decision: "cancelled", outcome: null, reason: "The deadline passed." },
+	],
+	[
+		"cancelled",
+		{ state: "cancelled", decision: "cancelled", outcome: null, reason: "The turn stopped." },
+	],
+	[
+		"delivered",
+		{ state: "settled", decision: "approved", outcome: "delivered", reason: "Delivered." },
+	],
+	[
+		"not_delivered",
+		{
+			state: "settled",
+			decision: "approved",
+			outcome: "not_delivered",
+			reason: "The child exited.",
+		},
+	],
+	[
+		"outcome_unknown",
+		{
+			state: "outcome_unknown",
+			decision: "approved",
+			outcome: "outcome_unknown",
+			reason: "The write was lost.",
+		},
+	],
+];
+export { HASH } from "./model.js";
+export const PENDING = { state: "pending", decision: null, outcome: null, reason: null } as const;
 
-export function envelope(overrides: Partial<Envelope> = {}): Envelope {
+export function envelope(overrides: Overrides = {}): Readonly<Record<string, unknown>> {
 	return {
 		kind: "approval",
-		requestId: identity<Envelope["requestId"]>("request-1"),
+		requestId: requestId(),
 		threadId: THREAD,
 		turnId: TURN,
-		itemId: identity<NonNullable<Envelope["itemId"]>>("item-1"),
-		approvalId: identity<NonNullable<Envelope["approvalId"]>>("approval-1"),
+		itemId: ITEM,
+		approvalId: APPROVAL_ID,
 		expiresAtMs: EXPIRES_AT,
-		lifecycle: { state: "pending", decision: null, outcome: null, reason: null },
-		binding: {
-			child: CHILD,
-			epoch: EPOCH,
-			link: "pane primary to workhorse-a",
-			target: "workhorse-a in the archboard checkout",
-			effect: "run one command in the workspace",
-		},
+		lifecycle: PENDING,
+		binding: BINDING,
 		spoken: { eligible: false, reason: "not_binary" },
 		...overrides,
 	};
 }
 
-export function commandApproval(overrides: Partial<BrowserApproval> = {}): BrowserApproval {
-	return {
+export function commandApproval(overrides: Overrides = {}): BrowserApproval {
+	return parseApproval({
 		...envelope(),
 		approvalKind: "command_execution",
 		reason: "The sandbox refused the write.",
@@ -87,61 +98,56 @@ export function commandApproval(overrides: Partial<BrowserApproval> = {}): Brows
 		availableDecisions: ["accept", "decline"],
 		spoken: { eligible: true, reason: "eligible" },
 		...overrides,
-	} as BrowserApproval;
+	});
 }
 
-export function fileChangeApproval(overrides: Partial<BrowserApproval> = {}): BrowserApproval {
-	return {
-		...envelope({ requestId: identity<Envelope["requestId"]>("request-2") }),
+export function fileChangeApproval(overrides: Overrides = {}): BrowserApproval {
+	return parseApproval({
+		...envelope(),
 		approvalKind: "file_change",
 		reason: "Two files leave the workspace root.",
 		availableDecisions: ["accept", "acceptForSession", "decline", "cancel"],
 		spoken: { eligible: false, reason: "broader_grant" },
 		...overrides,
-	} as BrowserApproval;
+	});
 }
 
-export function permissionsApproval(overrides: Partial<BrowserApproval> = {}): BrowserApproval {
-	return {
-		...envelope({ requestId: identity<Envelope["requestId"]>("request-3") }),
+export function permissionsApproval(overrides: Overrides = {}): BrowserApproval {
+	return parseApproval({
+		...envelope(),
 		approvalKind: "permissions",
 		reason: "The agent wants the network for a package install.",
 		requestedScope: { network: true, fileAccess: ["read", "write"] },
 		spoken: { eligible: false, reason: "permission_scope" },
 		...overrides,
-	} as BrowserApproval;
+	});
 }
 
-export function applyPatchApproval(overrides: Partial<BrowserApproval> = {}): BrowserApproval {
-	return {
-		...envelope({
-			requestId: identity<Envelope["requestId"]>("request-4"),
-			turnId: null,
-			itemId: null,
-			approvalId: null,
-		}),
+export function applyPatchApproval(overrides: Overrides = {}): BrowserApproval {
+	return parseApproval({
+		...envelope({ turnId: null, itemId: null, approvalId: null }),
 		approvalKind: "apply_patch",
 		reason: "A legacy conversation asked to apply a patch.",
 		fileCount: 3,
 		spoken: { eligible: false, reason: "not_binary" },
 		...overrides,
-	} as BrowserApproval;
+	});
 }
 
-export function execCommandApproval(overrides: Partial<BrowserApproval> = {}): BrowserApproval {
-	return {
-		...envelope({ requestId: identity<Envelope["requestId"]>("request-5"), turnId: null }),
+export function execCommandApproval(overrides: Overrides = {}): BrowserApproval {
+	return parseApproval({
+		...envelope({ turnId: null }),
 		approvalKind: "exec_command",
 		reason: "A legacy conversation asked to run a command.",
 		command: ["git", "status"],
 		spoken: { eligible: false, reason: "not_binary" },
 		...overrides,
-	} as BrowserApproval;
+	});
 }
 
-export function userInputApproval(overrides: Partial<BrowserApproval> = {}): BrowserApproval {
-	return {
-		...envelope({ requestId: identity<Envelope["requestId"]>("request-6") }),
+export function userInputApproval(overrides: Overrides = {}): BrowserApproval {
+	return parseApproval({
+		...envelope(),
 		approvalKind: "user_input",
 		questions: [
 			{
@@ -166,134 +172,111 @@ export function userInputApproval(overrides: Partial<BrowserApproval> = {}): Bro
 		],
 		spoken: { eligible: false, reason: "secret" },
 		...overrides,
-	} as BrowserApproval;
+	});
 }
 
-export function elicitationApproval(overrides: Partial<BrowserApproval> = {}): BrowserApproval {
+export function elicitationField(overrides: Overrides = {}): Readonly<Record<string, unknown>> {
 	return {
-		...envelope({ requestId: identity<Envelope["requestId"]>("request-7") }),
+		name: "value",
+		type: "string",
+		required: false,
+		secret: false,
+		title: null,
+		description: null,
+		format: null,
+		minimum: null,
+		maximum: null,
+		minLength: null,
+		maxLength: null,
+		minimumItems: null,
+		maximumItems: null,
+		options: null,
+		defaultValue: null,
+		...overrides,
+	};
+}
+
+export const ELICITATION_FIELDS = [
+	elicitationField({
+		name: "host",
+		required: true,
+		title: "Host",
+		description: "The service host.",
+		format: "uri",
+		defaultValue: "https://example.test",
+	}),
+	elicitationField({
+		name: "port",
+		type: "integer",
+		required: true,
+		title: "Port",
+		minimum: 1,
+		maximum: 65_535,
+		defaultValue: 443,
+	}),
+	elicitationField({ name: "apiKey", required: true, secret: true, title: "API key" }),
+	elicitationField({ name: "tls", type: "boolean", title: "Use TLS" }),
+	elicitationField({ name: "tier", type: "enum", title: "Tier", options: ["basic", "premium"] }),
+];
+
+export function elicitationApproval(overrides: Overrides = {}): BrowserApproval {
+	return parseApproval({
+		...envelope(),
 		approvalKind: "elicitation",
 		serverName: "archboard-mcp",
 		mode: "form",
 		message: "The server needs connection details.",
 		url: null,
-		fields: [
-			{
-				name: "host",
-				type: "string",
-				required: true,
-				secret: false,
-				title: "Host",
-				description: "The service host.",
-				format: "uri",
-				minimum: null,
-				maximum: null,
-				minLength: null,
-				maxLength: null,
-				minimumItems: null,
-				maximumItems: null,
-				options: null,
-				defaultValue: "https://example.test",
-			},
-			{
-				name: "port",
-				type: "integer",
-				required: true,
-				secret: false,
-				title: "Port",
-				description: null,
-				format: null,
-				minimum: 1,
-				maximum: 65_535,
-				minLength: null,
-				maxLength: null,
-				minimumItems: null,
-				maximumItems: null,
-				options: null,
-				defaultValue: 443,
-			},
-			{
-				name: "apiKey",
-				type: "string",
-				required: true,
-				secret: true,
-				title: "API key",
-				description: null,
-				format: null,
-				minimum: null,
-				maximum: null,
-				minLength: null,
-				maxLength: null,
-				minimumItems: null,
-				maximumItems: null,
-				options: null,
-				defaultValue: null,
-			},
-			{
-				name: "tls",
-				type: "boolean",
-				required: false,
-				secret: false,
-				title: "Use TLS",
-				description: null,
-				format: null,
-				minimum: null,
-				maximum: null,
-				minLength: null,
-				maxLength: null,
-				minimumItems: null,
-				maximumItems: null,
-				options: null,
-				defaultValue: null,
-			},
-			{
-				name: "tier",
-				type: "enum",
-				required: false,
-				secret: false,
-				title: "Tier",
-				description: null,
-				format: null,
-				minimum: null,
-				maximum: null,
-				minLength: null,
-				maxLength: null,
-				minimumItems: null,
-				maximumItems: null,
-				options: ["basic", "premium"],
-				defaultValue: null,
-			},
-		],
+		fields: ELICITATION_FIELDS,
 		spoken: { eligible: false, reason: "form" },
 		...overrides,
-	} as BrowserApproval;
+	});
 }
 
-export function dynamicIdentity(
-	tool: Identity["tool"],
-	overrides: Partial<Identity> = {},
-): Identity {
+/**
+ * The closed model already refuses a non-http URL, so this one is deliberately
+ * built outside it. `elicitationSchema` proves the contract rejects it while the
+ * surface proves the browser refuses to render it as a link.
+ */
+export function unsafeUrlElicitation(): Readonly<Record<string, unknown>> {
 	return {
-		child: CHILD,
-		epoch: EPOCH,
-		threadId: THREAD,
-		turnId: TURN,
-		callId: identity<Identity["callId"]>(`call-${tool}`),
-		namespace: "archboard_app",
-		tool,
-		manifestHash: "manifest-1",
-		operationId: identity<Identity["operationId"]>(`operation-${tool}`),
-		...overrides,
+		...envelope(),
+		approvalKind: "elicitation",
+		serverName: "archboard-mcp",
+		mode: "url",
+		message: "Open the consent page.",
+		url: "javascript:alert(1)",
+		fields: null,
+		spoken: { eligible: false, reason: "url" },
 	};
 }
+
+export function safeUrlElicitation(overrides: Overrides = {}): BrowserApproval {
+	return parseApproval({
+		...envelope(),
+		approvalKind: "elicitation",
+		serverName: "archboard-mcp",
+		mode: "url",
+		message: "Open the consent page.",
+		url: "https://example.test/consent",
+		fields: null,
+		spoken: { eligible: false, reason: "url" },
+		...overrides,
+	});
+}
+
+const CREATE_MUTATION = operationId();
+const SELF_FORK_MUTATION = operationId();
+const OTHER_FORK_MUTATION = operationId();
+const SEND_MUTATION = operationId();
 
 export const CREATE_EFFECT: DynamicEffect = {
 	tool: "create_thread",
 	arguments: { prompt: "Investigate the queue backlog." },
 	target: null,
 	effectiveBoundary: null,
-	mutationOperationId: identity<Identity["operationId"]>("operation-create_thread"),
-	initialTurnOperationId: identity<Identity["operationId"]>("operation-create_thread-turn"),
+	mutationOperationId: CREATE_MUTATION,
+	initialTurnOperationId: operationId(),
 	visualSummary: "Create a thread and start it on the queue backlog.",
 };
 
@@ -302,8 +285,8 @@ export const SELF_FORK_EFFECT: DynamicEffect = {
 	arguments: { threadId: THREAD, beforeTurnId: TURN, prompt: "Try the other migration." },
 	target: THREAD,
 	effectiveBoundary: { relation: "self", beforeTurnId: TURN },
-	mutationOperationId: identity<Identity["operationId"]>("operation-fork_thread"),
-	initialTurnOperationId: identity<Identity["operationId"]>("operation-fork_thread-turn"),
+	mutationOperationId: SELF_FORK_MUTATION,
+	initialTurnOperationId: operationId(),
 	visualSummary: "Fork this thread before its current turn and try the other migration.",
 };
 
@@ -312,7 +295,7 @@ export const OTHER_FORK_EFFECT: DynamicEffect = {
 	arguments: { threadId: OTHER_THREAD, beforeTurnId: null, prompt: null },
 	target: OTHER_THREAD,
 	effectiveBoundary: { relation: "other", beforeTurnId: null },
-	mutationOperationId: identity<Identity["operationId"]>("operation-fork_thread"),
+	mutationOperationId: OTHER_FORK_MUTATION,
 	initialTurnOperationId: null,
 	visualSummary: "Fork the other thread from its current head without starting a turn.",
 };
@@ -322,19 +305,40 @@ export const SEND_EFFECT: DynamicEffect = {
 	arguments: { threadId: OTHER_THREAD, prompt: "Rebase onto the transport branch." },
 	target: OTHER_THREAD,
 	effectiveBoundary: null,
-	mutationOperationId: identity<Identity["operationId"]>("operation-send_message_to_thread"),
+	mutationOperationId: SEND_MUTATION,
 	initialTurnOperationId: null,
 	visualSummary: "Send one message to the other thread.",
 };
 
+const CALL_NAMES = new Map<DynamicEffect, string>([
+	[CREATE_EFFECT, "call-create"],
+	[SELF_FORK_EFFECT, "call-self-fork"],
+	[OTHER_FORK_EFFECT, "call-other-fork"],
+	[SEND_EFFECT, "call-send"],
+]);
+
+export function dynamicIdentity(effect: DynamicEffect): BrowserDynamicApproval["identity"] {
+	return {
+		child: CHILD,
+		epoch: EPOCH,
+		threadId: THREAD,
+		turnId: TURN,
+		callId: callId(CALL_NAMES.get(effect) ?? `call-${effect.tool}`),
+		namespace: "archboard_app",
+		tool: effect.tool,
+		manifestHash: "manifest-1",
+		operationId: effect.mutationOperationId,
+	};
+}
+
 export function dynamicApproval(
 	effect: DynamicEffect,
-	overrides: Partial<BrowserDynamicApproval> = {},
+	overrides: Overrides = {},
 ): BrowserDynamicApproval {
-	return {
+	return parseDynamicApproval({
 		kind: "dynamic_approval",
 		state: "pending",
-		identity: dynamicIdentity(effect.tool),
+		identity: dynamicIdentity(effect),
 		effect,
 		effectHash: HASH,
 		createdAtMs: NOW,
@@ -343,116 +347,25 @@ export function dynamicApproval(
 		delivery: null,
 		toolResult: null,
 		binding: {
-			commandId: identity<BrowserWorkbenchCommandTarget["commandId"]>("lease-1"),
-			paneId: "primary",
+			commandId: COMMAND_ID,
+			paneId: PANE,
 			capturedLink: { threadId: THREAD, childId: CHILD, epoch: EPOCH },
 		},
 		resumable: false,
 		...overrides,
-	} as BrowserDynamicApproval;
+	});
 }
 
-export function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
+export function dynamicDecision(
+	effect: DynamicEffect,
+	outcome: string,
+	cause: string,
+): Readonly<Record<string, unknown>> {
 	return {
-		kind: "snapshot",
-		version: 1,
-		readiness: { kind: "readiness", state: "thread_capable" },
-		account: { kind: "account", state: "ready", accountType: "chatgpt" },
-		login: { kind: "login", state: "idle" },
-		threadLink: executableLink(),
-		timeline: { kind: "timeline", threadId: THREAD, turns: [], nextCursor: null },
-		queue: { kind: "queue", status: "empty", entries: [] },
-		settings: [],
-		approvals: [],
-		dynamicApprovals: [],
-		semantic: null,
-		coordinator: {
-			kind: "coordinator",
-			state: "ready",
-			threadId: identity<NonNullable<BrowserSnapshot["coordinator"]["threadId"]>>("coordinator-a"),
-			activeTurnId: null,
-			configuredModel: null,
-			configuredEffort: null,
-			model: null,
-			effort: null,
-			serviceTier: null,
-			reason: null,
-		},
-		voice: {
-			kind: "voice",
-			state: "unavailable",
-			realtimeSessionId: null,
-			transcript: [],
-			delivery: null,
-			reason: "Voice is unavailable.",
-		},
-		lease: null,
-		operation: null,
-		...overrides,
-	};
-}
-
-export function connected(value = snapshot()): BrowserWorkbenchState {
-	return {
-		kind: "readiness",
-		state: "thread_capable",
-		connection: "connected",
-		snapshot: value,
-		sequence: 4,
-	};
-}
-
-export function commandTarget(): BrowserWorkbenchCommandTarget {
-	return {
-		commandId: identity<BrowserWorkbenchCommandTarget["commandId"]>("lease-1"),
-		paneId: "primary",
-		childId: CHILD,
-		epoch: EPOCH,
-		capturedThreadLink: executableLink(),
-	};
-}
-
-export interface RecordedCommand {
-	readonly draft: unknown;
-	readonly target: BrowserWorkbenchCommandTarget | undefined;
-}
-
-export interface FakeTransport extends WorkbenchApprovalsTransport {
-	readonly sent: RecordedCommand[];
-}
-
-export function fakeTransport(
-	options: {
-		readonly canCommand?: boolean;
-		readonly target?: BrowserWorkbenchCommandTarget | null;
-		readonly result?: Partial<BrowserWorkbenchCommandResult>;
-		readonly failure?: unknown;
-	} = {},
-): FakeTransport {
-	const sent: RecordedCommand[] = [];
-	const target = options.target === undefined ? commandTarget() : options.target;
-	return {
-		sent,
-		capabilities: () =>
-			({ canCommand: options.canCommand ?? true }) as ReturnType<
-				WorkbenchApprovalsTransport["capabilities"]
-			>,
-		captureCommandTarget: () => {
-			if (target === null) throw new Error("A browser command lease is required.");
-			return target;
-		},
-		command: async (draft, commandTargetValue) => {
-			sent.push({ draft, target: commandTargetValue });
-			if (options.failure !== undefined) throw options.failure;
-			return {
-				kind: "command_result",
-				commandId: identity<BrowserWorkbenchCommandResult["commandId"]>("lease-1"),
-				outcome: "delivered",
-				code: null,
-				message: null,
-				snapshot: snapshot(),
-				...options.result,
-			} as BrowserWorkbenchCommandResult;
-		},
+		outcome,
+		identity: dynamicIdentity(effect),
+		effectHash: HASH,
+		decidedAtMs: NOW,
+		cause,
 	};
 }
