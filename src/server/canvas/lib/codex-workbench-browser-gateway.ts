@@ -274,7 +274,7 @@ export function createCanvasBrowserGatewayOptions(input: {
 		inFlightReread = { threadId, read };
 		return read;
 	};
-	const candidates = createCanvasThreadCandidateInventory(components.threadLink);
+	const candidates = createCanvasThreadCandidateInventory(components.threadLink, components.epoch);
 	const threadLinks = createCanvasThreadLinkActions({
 		candidates,
 		workhorse: components.workhorse,

@@ -217,7 +217,6 @@ export function WorkbenchThreadLink({
 	const headingId = useId();
 	const readinessId = useId();
 	const selectionId = useId();
-	const excludedId = useId();
 	const accountSectionId = useId();
 	const store = useMemo(() => createWorkbenchRuntimeStore(transport), [transport]);
 	const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
@@ -347,28 +346,6 @@ export function WorkbenchThreadLink({
 					{panel.selection.summary}
 				</p>
 				<SelectionRows controller={controller} rows={rows} />
-				{panel.selection.excluded.length === 0 ? null : (
-					<div className="border-t border-border-subtle pt-control">
-						<h4
-							className="m-0 text-kicker font-semibold text-muted-foreground"
-							id={`${excludedId}-heading`}
-						>
-							Records this pane refuses to bind
-						</h4>
-						<ul aria-labelledby={`${excludedId}-heading`} className="m-0 p-0 list-none">
-							{panel.selection.excluded.map((row) => (
-								<li
-									className="border-t border-border-subtle py-compact text-body text-muted-foreground first:border-t-0"
-									data-thread-link-excluded={row.exclusion}
-									key={row.selectionId}
-								>
-									<span className="font-mono text-technical text-foreground">{row.threadId}</span>{" "}
-									{row.explanation}
-								</li>
-							))}
-						</ul>
-					</div>
-				)}
 				<div className="pt-control">
 					<RecoveryControl
 						accountSectionId={accountSectionId}

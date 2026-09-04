@@ -150,6 +150,9 @@ test("keeps the readiness, link, lease, and command capability matrix explicit",
 		expect(capabilities.canReleaseLease).toBe(true);
 		expect(capabilities.supportsCommand("accountLogout")).toBe(accountReady);
 		expect(capabilities.supportsCommand("threadLinkCreate")).toBe(state === "thread_capable");
+		// Discovering the list is how a pane with no link finds one, so it needs
+		// thread capability and nothing more.
+		expect(capabilities.supportsCommand("threadLinkRefresh")).toBe(state === "thread_capable");
 		expect(capabilities.supportsCommand("start")).toBe(state === "thread_capable");
 		expect(capabilities.supportsCommand("queueAdd")).toBe(state === "thread_capable");
 		expect(capabilities.supportsCommand("approvalRespond")).toBe(false);
@@ -169,6 +172,7 @@ test("keeps the readiness, link, lease, and command capability matrix explicit",
 		expect(capabilities.supportsCommand("approvalRespond")).toBe(false);
 		expect(capabilities.supportsCommand("dynamicApprovalRespond")).toBe(false);
 		expect(capabilities.supportsCommand("threadLinkCreate")).toBe(true);
+		expect(capabilities.supportsCommand("threadLinkRefresh")).toBe(true);
 		expect(capabilities.supportsCommand("threadLinkAttach")).toBe(true);
 		expect(capabilities.supportsCommand("threadLinkRelink")).toBe(true);
 		expect(capabilities.canRenewLease).toBe(true);

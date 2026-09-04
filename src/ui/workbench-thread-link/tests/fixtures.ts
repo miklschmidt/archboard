@@ -16,6 +16,7 @@ import type {
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
 } from "../../workbench-transport/index.js";
+import { THREAD_LINK_MODULE_COMMANDS } from "../index.js";
 import type {
 	ThreadLinkInventory,
 	ThreadLinkInventoryRecord,
@@ -150,17 +151,7 @@ export function capabilities(
 		readonly supported?: readonly BrowserCommandName[];
 	} = {},
 ): BrowserWorkbenchCapabilities {
-	const supported = new Set<BrowserCommandName>(
-		overrides.supported ?? [
-			"threadLinkCreate",
-			"threadLinkRefresh",
-			"threadLinkAttach",
-			"threadLinkRelink",
-			"accountLogin",
-			"accountLoginCancel",
-			"accountLogout",
-		],
-	);
+	const supported = new Set<BrowserCommandName>(overrides.supported ?? THREAD_LINK_MODULE_COMMANDS);
 	return Object.freeze({
 		connected: overrides.connected ?? true,
 		readiness: overrides.readiness ?? "thread_capable",
