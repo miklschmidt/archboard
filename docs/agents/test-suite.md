@@ -102,6 +102,41 @@ bun -e 'import { BROWSER_TEST_PATHS, OPT_IN_BROWSER_TEST_PATHS } from "./tests/s
 System and browser owners must reap children,
 listeners, sockets, vaults, and temporary roots on success, failure, or signal.
 
+## Rendered UI owners
+
+A module owner that must _mount_ React — focus, roles, pointer and keyboard
+sequences — opts into a real DOM per file through the `src/ui/dom-testing`
+module root. Happy DOM is never registered for the whole suite: the
+`bunfig.toml` preload stays the wall-clock reporter, and server, process, and
+system owners keep a plain Node-like global, because a suite-wide `document`
+would change what those owners prove. The pinned stack is `happy-dom` and
+`@happy-dom/global-registrator` for the window, and `@testing-library/react`
+with `@testing-library/dom` and `@testing-library/user-event` for mounting and
+input.
+
+```ts
+import { afterAll, expect, test } from "bun:test";
+import { createElement } from "react";
+
+import { loadRenderedUiTools, registerHappyDom, unregisterHappyDom } from "@/ui/dom-testing";
+
+registerHappyDom();
+const { render, screen, userEvent } = await loadRenderedUiTools();
+
+afterAll(unregisterHappyDom);
+```
+
+`loadRenderedUiTools()` exists because import order is not a style choice:
+`@testing-library/user-event` reads `globalThis.document` while its module body
+evaluates, and ES module imports run before any statement in the importing
+file. Never import `@testing-library/*` directly from a test file — await the
+loader after `registerHappyDom()`, and release the window in `afterAll` so the
+next isolated file starts from the plain global.
+`src/ui/dom-testing/tests/mounted-button.test.ts` is the owner for the harness
+itself. The hand-written harnesses under `src/ui/workbench-runtime/tests/` and
+the `renderToStaticMarkup` owners elsewhere in `src/ui/` still stand; migrating
+one is its own leaf owner's work, not a side effect of touching this module.
+
 ## Former check inventory
 
 Every transitional package check now has one final owner lane:
