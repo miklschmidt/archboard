@@ -30,8 +30,15 @@ import type {
 } from "../../../runtime/codex-thread-link/index.js";
 import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
 import { commandApprovalOwnerFixture } from "./approval-owner-fixture.js";
+import {
+	CLOCK_START,
+	bindingFor,
+	executableLink,
+	readinessFor,
+	readyAccount,
+} from "./support-values.js";
 
-const CLOCK_START = 1_787_682_840_000;
+export { commandTarget } from "./support-values.js";
 
 export interface GatewayHarness {
 	readonly authorities: IdentityAuthorities;
@@ -78,69 +85,6 @@ export interface GatewayHarnessOptions {
 	readonly snapshotMaxBytes?: number;
 	readonly project?: (projection: BrowserOwnerProjection) => BrowserOwnerProjection;
 }
-
-function executableLink(
-	childId: ChildId,
-	epoch: ChildEpoch,
-	threadId: ThreadId,
-): ThreadLinkSnapshot {
-	return {
-		kind: "thread_link",
-		state: "executable",
-		childId,
-		epoch,
-		threadId,
-		source: "appServer",
-		status: "idle",
-		loaded: true,
-		canAcceptDirectInput: true,
-		reason: null,
-	};
-}
-
-function bindingFor(
-	paneId: string,
-	revision: number,
-	link: ThreadLinkSnapshot,
-): ThreadLinkBindingSnapshot {
-	return {
-		paneId,
-		revision,
-		link,
-		cas: {
-			revision,
-			paneId,
-			childId: link.childId,
-			epoch: link.epoch,
-			threadId: link.threadId,
-		},
-	};
-}
-
-function readinessFor(
-	state: BrowserReadiness["state"],
-	loginId: ReturnType<GatewayHarness["authorities"]["identity"]["decoder"]["adoptLoginId"]>,
-): BrowserReadiness {
-	if (
-		state === "stopped" ||
-		state === "storage_mismatch" ||
-		state === "reconnecting" ||
-		state === "incompatible_contract"
-	)
-		return { kind: "readiness", state, reason: "fixture" };
-	if (state === "backoff")
-		return { kind: "readiness", state, retryAtMs: CLOCK_START + 1, reason: "fixture" };
-	if (state === "login_pending") return { kind: "readiness", state, loginId };
-	return { kind: "readiness", state };
-}
-
-const readyAccount = (): BrowserOwnerProjection["account"] => ({
-	kind: "codex_account_response",
-	response: {
-		account: { type: "chatgpt", email: "gateway@example.test", planType: "plus" },
-		requiresOpenaiAuth: true,
-	},
-});
 
 export function createGatewayHarness(
 	authorities: IdentityAuthorities = createIdentityAuthorities(),
@@ -485,20 +429,5 @@ export function createGatewayHarness(
 		binding: () => bindingFor(paneId, revision, link),
 		makeOrdinaryApproval,
 		makeDynamicApproval,
-	};
-}
-
-export function commandTarget(lease: {
-	readonly commandId: BrowserCommandId;
-	readonly paneId: string;
-	readonly childId: ChildId;
-	readonly epoch: ChildEpoch;
-}) {
-	return {
-		kind: "browser_command" as const,
-		commandId: lease.commandId,
-		paneId: lease.paneId,
-		childId: lease.childId,
-		epoch: lease.epoch,
 	};
 }
