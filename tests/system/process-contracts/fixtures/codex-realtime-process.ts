@@ -227,7 +227,11 @@ export async function createHarness(
 		bridgeExitForwarded = false;
 		const identity = createIdentityAuthority();
 		const binding = makeBinding(identity);
-		writeControl(controlPath, controlState, String(binding.coordinatorThreadId));
+		writeControl(
+			controlPath,
+			controlState,
+			identity.decoder.serializeCodexIdentity(binding.coordinatorThreadId),
+		);
 		const readyState = { settled: false };
 		let adapter!: CodexRealtimeAdapter;
 		bridge.stdout.prependOnceListener("end", () => bridge?.emit("exit", null, null));
@@ -306,7 +310,9 @@ export async function createHarness(
 		writeControl(
 			controlPath,
 			next,
-			current ? String(current.binding.coordinatorThreadId) : "$THREAD",
+			current
+				? current.identity.decoder.serializeCodexIdentity(current.binding.coordinatorThreadId)
+				: "$THREAD",
 		);
 	};
 	const close = async (): Promise<void> => {
