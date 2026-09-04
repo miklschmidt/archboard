@@ -1,11 +1,11 @@
 ---
 id: TASK-143.04.01
 title: Project realtime lifecycle into voice UI state
-status: In Progress
+status: Done
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 10:05'
+updated_date: '2026-09-04 10:27'
 labels: []
 dependencies:
   - TASK-143.02.02
@@ -17,6 +17,7 @@ references:
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
   - src/ui/voice-session
+  - src/ui/codex-workbench-media
 parent_task_id: TASK-143.04
 priority: high
 type: task
@@ -31,10 +32,10 @@ Own the React-facing presentation adapter in src/ui/voice-session. It consumes o
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Presentation covers unavailable, ready, permission, negotiating, listening, muted, processing, agent-speaking, recovering, stopping, stopped, permission/device/ICE/SDP/channel/realtime/app-server/coordinator failure, and actionable retry/terminal outcomes.
-- [ ] #2 One session remains bound to its original pane/thread link/coordinator across focus changes; close/rebind guards are explicit, no second session starts, and restart follows codex-realtime stop/closed serialization.
-- [ ] #3 The adapter never reduces protocol events, deduplicates transcripts, owns media, or chooses recovery; it projects the authoritative module/host-adapter state only.
-- [ ] #4 Tests at src/ui/voice-session/tests exhaust mapping, same-child reconnect, replacement terminal state, late suppression, start/stop/restart, accessibility status text, and disposal.
+- [x] #1 Presentation covers unavailable, ready, permission, negotiating, listening, muted, processing, agent-speaking, recovering, stopping, stopped, permission/device/ICE/SDP/channel/realtime/app-server/coordinator failure, and actionable retry/terminal outcomes.
+- [x] #2 One session remains bound to its original pane/thread link/coordinator across focus changes; close/rebind guards are explicit, no second session starts, and restart follows codex-realtime stop/closed serialization.
+- [x] #3 The adapter never reduces protocol events, deduplicates transcripts, owns media, or chooses recovery; it projects the authoritative module/host-adapter state only.
+- [x] #4 Tests at src/ui/voice-session/tests exhaust mapping, same-child reconnect, replacement terminal state, late suppression, start/stop/restart, accessibility status text, and disposal.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -105,4 +106,30 @@ D (LOW, stale snapshot). observeBinding returns null before it reads the link un
 Test files after splitting the ordering and disposal cases into tests/notification-lifecycle.test.ts and hoisting the shared harness into tests/support/harness.ts: adapter-boundaries 163, availability-mapping 284, notification-lifecycle 148, projection-mapping 241, session-lifecycle 280, support/fakes 288, support/harness 65. All well under the 500-line cap.
 
 Re-verification, all green: type-check exit 0; lint exit 0; fmt:check 1071 files correct; build:frontend exit 0; bun test --isolate over voice-session + codex-realtime + codex-workbench-media + workbench-transport = 179 pass / 0 fail / 4737 expect across 16 files; bun test --isolate src/ui/codex-workbench-media = 8 pass / 0 fail; test:repository = 122 pass / 0 fail across 18 files; test:modules = 2011 pass / 0 fail across 226 files.
+
+Round-three remediation (52f62b11) and finalization.
+
+Independent fixed-range review of badb5a60..c7967834 returned CLEAN apart from the transport-channel gate, fixed in 52f62b11.
+
+MEDIUM (transport-channel gate). The level-only identity gate was registered on both ports. It compares the transport's state object, but a projection also reads capabilities(), which the real transport rebuilds on every call and moves on lease claim, renewal, release and expiry without touching that state object, so a capabilities-only notification matched the gate and published nothing while refresh() showed canRestart had flipped. It was latent only because startBlocker reads the snapshot-derived canClaimLease today; TASK-143.04.02 will naturally read canRealtime or canCommand. The gate now belongs to realtime.subscribe alone — the only channel that repeats itself — and transport.subscribe always projects in full. Owner: tests/notification-lifecycle.test.ts 'republishes on a capabilities-only transport notification'. Confirmed non-vacuous: reverting the transport channel to the gated callback fails it with 3 notifications instead of 4.
+
+Corrected line count from the previous note: session-lifecycle.test.ts is 279 lines, not 280. Current test files: adapter-boundaries 163, availability-mapping 284, notification-lifecycle 164, projection-mapping 241, session-lifecycle 279, support/fakes 288, support/harness 65. All well under the 500-line cap.
+
+HAND-OFF for TASK-143.04.06: the pane guarantee rests on constructing one voice session per pane and never reusing one across panes; no runtime check remains. createVoiceSession takes paneId as a plain constructor value, and bindingReplaced compares it unconditionally, but within one adapter both sides are that same constant, so the comparison is an invariant rather than a live signal. The live pane axis was transport.captureCommandTarget(), removed deliberately because it is a lease operation that expires and renews the lease and broadcasts before it can refuse — calling it from a projection wrote from inside a documented pure read. A live pane signal, if one is wanted, must come from a published snapshot field.
+
+INTERFACE GAP (restated): voice-session exposes no mute or unmute control because nothing in the browser could reach the module's 'muted' phase — createRealtimeMediaSession never drives it and the media owner published no mute command. TASK-143.04.02 is implementing mute as a sibling edit; voice-session already presents the 'muted' status the moment the module publishes that phase, so no change is needed here to consume it.
+
+Final verification, all green: bun run type-check exit 0 (both tsconfig projects); bun run lint exit 0 (oxlint .); bun run fmt:check 1071 files correct; bun run build:frontend exit 0; bun test --isolate over voice-session + codex-realtime + codex-workbench-media + workbench-transport = 180 pass / 0 fail / 4741 expect across 16 files; bun run test:repository = 122 pass / 0 fail / 1060 expect across 18 files (the codex-realtime neutral-contract, dependency and boundary owners stay green).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Built src/ui/voice-session, the React-facing presentation adapter that turns authoritative realtime, media-owner and transport state into render-ready voice values: a 12-state status enum, an accessible status sentence, a retry/terminal outcome, and control availability. No media, protocol or transport object crosses its contract; the microphone level has its own channel so a sixty-frame meter never re-renders a status consumer.
+
+AC #1 is proved by tests/projection-mapping.test.ts, which derives every reachable realtime state from REALTIME_PHASES and REALTIME_TRANSITIONS rather than a hand-kept list and requires each to map to a defined status, label, sentence and accessible string, plus a distinct presentation code for all 14 recoverable and all 4 terminal reasons carrying the module's message verbatim; tests/availability-mapping.test.ts owns the transport, media and host gates, a mid-run host coordinator or voice failure, a host-declared recovery, and a stale snapshot. AC #2 is proved by tests/session-lifecycle.test.ts: the binding survives a reconnect returning the same child, a retained snapshot with no executable link, and a stale snapshot naming another child, while a changed child, epoch, thread link or coordinator is terminal until close() clears it; no second start while a session is live; restart awaits the codex-realtime stop and starts only on phase closed, and an unconfirmed stop presents as terminal because the module refuses every later start on that run. AC #3 is proved by tests/adapter-boundaries.test.ts, which pins the real owners to the declared ports at compile time, rejects every media, protocol, transcript and owner-construction identifier in the module's own source, shows no nested object escapes the view, and shows a recoverable failure drives nothing until the person presses. AC #4's remaining subjects are proved by tests/notification-lifecycle.test.ts: late-resolution suppression, sixty meter frames costing zero status notifications, a capabilities-only transport notification republishing, and disposal releasing both subscriptions.
+
+One serialized sibling edit was required and is included: src/ui/codex-workbench-media created the realtime media session and discarded its subscription, so a removed microphone, a dropped ICE connection, a closed data channel and every in-start phase reached nobody. BrowserWorkbenchMediaOwner now has subscribe, forwarding those publications and every owner-state write, released on run replacement and disposal, with its own owner in that module's tests.
+
+Verified with bun run type-check (exit 0, both tsconfig projects), bun run lint (exit 0), bun run fmt:check (1071 files), bun run build:frontend (exit 0), bun test --isolate over voice-session, codex-realtime, codex-workbench-media and workbench-transport (180 pass, 0 fail, 4741 assertions across 16 files), and bun run test:repository (122 pass, 0 fail across 18 files). Three independent fixed-range reviews were remediated in place; the last returned clean apart from the transport-channel gate, fixed in 52f62b11.
+<!-- SECTION:FINAL_SUMMARY:END -->
