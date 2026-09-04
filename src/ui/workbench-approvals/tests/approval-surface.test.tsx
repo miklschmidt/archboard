@@ -13,21 +13,34 @@ import {
 import {
 	applyPatchApproval,
 	commandApproval,
-	connected,
 	CREATE_EFFECT,
 	dynamicApproval,
+	dynamicDecision,
 	elicitationApproval,
 	execCommandApproval,
-	fakeTransport,
 	fileChangeApproval,
-	NOW,
+	IMMUTABLE_TARGET,
 	OTHER_FORK_EFFECT,
 	permissionsApproval,
+	safeUrlElicitation,
 	SELF_FORK_EFFECT,
 	SEND_EFFECT,
-	snapshot,
+	TERMINAL_LIFECYCLES,
+	unsafeUrlElicitation,
 	userInputApproval,
 } from "./fixtures.js";
+import {
+	approvalsInput,
+	connected,
+	fakeTransport,
+	model,
+	NOW,
+	OPERATION_OUTCOME_ID,
+	OTHER_THREAD,
+	snapshot,
+	TURN,
+	type FakeTransportOptions,
+} from "./model.js";
 
 const ORDINARY = [
 	commandApproval(),
@@ -48,22 +61,27 @@ const DYNAMIC = [
 
 const fixedNow = (): number => NOW;
 
-function render(overrides: Partial<BrowserSnapshot> = {}): string {
+function render(
+	overrides: Partial<BrowserSnapshot> = {},
+	transport: FakeTransportOptions = {},
+): string {
 	return renderToStaticMarkup(
 		<WorkbenchApprovals
 			now={fixedNow}
 			state={connected(snapshot(overrides))}
-			transport={fakeTransport()}
+			transport={fakeTransport(transport)}
 		/>,
 	);
 }
 
 function view(overrides: Partial<BrowserSnapshot> = {}) {
-	return projectWorkbenchApprovals({
-		state: connected(snapshot(overrides)),
-		nowMs: NOW,
-		canCommand: true,
-	});
+	return projectWorkbenchApprovals(approvalsInput(connected(snapshot(overrides))));
+}
+
+function first(overrides: Partial<BrowserSnapshot>): WorkbenchApprovalCard {
+	const card = view(overrides).cards[0];
+	if (card === undefined) throw new Error("Expected one projected approval card");
+	return card;
 }
 
 function rowValue(card: WorkbenchApprovalCard, label: string): string {
@@ -99,20 +117,19 @@ describe("ordinary approval families", () => {
 
 	test("renders the broker identity on every ordinary card", () => {
 		const markup = render({ approvals: ORDINARY });
-		const cards = view({ approvals: ORDINARY }).cards;
 
 		expect(markup).toContain("Approval broker identity");
 		expect(markup).toContain("pane primary to workhorse-a");
 		expect(markup).toContain("run one command in the workspace");
-		for (const card of cards) {
+		for (const card of view({ approvals: ORDINARY }).cards) {
 			expect(card.kind).toBe("ordinary");
-			expect(rowValue(card, "Broker child")).toBe("child-a");
-			expect(rowValue(card, "Broker child epoch")).toBe("epoch-a");
+			expect(rowValue(card, "Broker child")).toBe(String(snapshot().threadLink.childId));
+			expect(rowValue(card, "Broker target")).toBe(IMMUTABLE_TARGET);
 		}
 	});
 
 	test("names a missing turn, item and ApprovalId rather than inventing one", () => {
-		const card = view({ approvals: [applyPatchApproval()] }).cards[0]!;
+		const card = first({ approvals: [applyPatchApproval()] });
 
 		expect(rowValue(card, "Turn")).toContain("no turn identity");
 		expect(rowValue(card, "Item")).toContain("no item identity");
@@ -120,9 +137,8 @@ describe("ordinary approval families", () => {
 	});
 
 	test("offers exactly the decisions the host published", () => {
-		const cards = view({ approvals: [commandApproval(), fileChangeApproval()] }).cards;
-		const command = cards.find((card) => card.key === "ordinary:request-1")!;
-		const fileChange = cards.find((card) => card.key === "ordinary:request-2")!;
+		const command = first({ approvals: [commandApproval()] });
+		const fileChange = first({ approvals: [fileChangeApproval()] });
 
 		expect(command.offers.map((offer) => offer.label)).toEqual(["Approve", "Decline"]);
 		expect(fileChange.offers.map((offer) => offer.label)).toEqual([
@@ -134,18 +150,22 @@ describe("ordinary approval families", () => {
 	});
 
 	test("renders a host-proposed amendment as its own offer instead of an editable one", () => {
-		const approval = commandApproval({
-			availableDecisions: [
-				"accept",
-				{ acceptWithExecpolicyAmendment: { execpolicy_amendment: ["allow rm"] } },
-				{
-					applyNetworkPolicyAmendment: {
-						network_policy_amendment: { host: "registry.test", action: "allow" },
-					},
-				},
+		const card = first({
+			approvals: [
+				commandApproval({
+					availableDecisions: [
+						"accept",
+						{ acceptWithExecpolicyAmendment: { execpolicy_amendment: ["allow rm"] } },
+						{
+							applyNetworkPolicyAmendment: {
+								network_policy_amendment: { host: "registry.test", action: "allow" },
+							},
+						},
+					],
+					spoken: { eligible: false, reason: "broader_grant" },
+				}),
 			],
-		} as never);
-		const card = view({ approvals: [approval] }).cards[0]!;
+		});
 
 		expect(card.offers.map((offer) => offer.label)).toEqual([
 			"Approve",
@@ -161,18 +181,15 @@ describe("reviewed fields, secrets and URLs", () => {
 		const markup = render({ approvals: [elicitationApproval()] });
 
 		expect(markup).toContain('data-approval-field="field:host"');
-		expect(markup).toContain('data-approval-field-control="url"');
-		expect(markup).toContain('data-approval-field-control="integer"');
-		expect(markup).toContain('data-approval-field-control="boolean"');
-		expect(markup).toContain('data-approval-field-control="enum"');
-		expect(markup).toContain('data-approval-field-control="secret"');
+		for (const control of ["url", "integer", "boolean", "enum", "secret"])
+			expect(markup).toContain(`data-approval-field-control="${control}"`);
 	});
 
 	test("never echoes a secret answer or defaults one", () => {
-		const markup = render({ approvals: [userInputApproval(), elicitationApproval()] });
-		const cards = view({ approvals: [userInputApproval(), elicitationApproval()] }).cards;
-		const secrets = cards
-			.flatMap((card) => (card.kind === "ordinary" ? card.fields : []))
+		const approvals = [userInputApproval(), elicitationApproval()];
+		const markup = render({ approvals });
+		const secrets = view({ approvals })
+			.cards.flatMap((card) => (card.kind === "ordinary" ? card.fields : []))
 			.filter((field) => field.secret);
 
 		expect(secrets).toHaveLength(2);
@@ -183,27 +200,22 @@ describe("reviewed fields, secrets and URLs", () => {
 		expect(markup).toContain("A secret answer is never shown back");
 	});
 
-	test("links a safe http URL and refuses an unsafe one", () => {
-		const safe = elicitationApproval({
-			mode: "url",
-			url: "https://example.test/consent",
-			fields: null,
-		} as never);
-		const unsafe = elicitationApproval({
-			mode: "url",
-			url: "javascript:alert(1)",
-			fields: null,
-		} as never);
+	test("links a safe http URL and refuses an unsafe one the contract also rejects", () => {
+		const unsafe = unsafeUrlElicitation();
 
-		expect(render({ approvals: [safe] })).toContain('href="https://example.test/consent"');
-		const unsafeMarkup = render({ approvals: [unsafe] });
-		expect(unsafeMarkup).not.toContain("javascript:alert(1)");
-		expect(unsafeMarkup).toContain("no safe http or https URL");
+		expect(model.BrowserApprovalSchema.safeParse(unsafe).success).toBe(false);
+		expect(render({ approvals: [safeUrlElicitation()] })).toContain(
+			'href="https://example.test/consent"',
+		);
+		const markup = render({
+			approvals: [unsafe as unknown as BrowserSnapshot["approvals"][number]],
+		});
+		expect(markup).not.toContain("javascript:alert(1)");
+		expect(markup).toContain("no safe http or https URL");
 	});
 
 	test("validates the exact fields it rendered", () => {
-		const card = view({ approvals: [elicitationApproval()] })
-			.cards[0] as WorkbenchOrdinaryApprovalCard;
+		const card = first({ approvals: [elicitationApproval()] }) as WorkbenchOrdinaryApprovalCard;
 		const empty = initialApprovalForm(card.fields);
 
 		expect(validateApprovalForm(card.fields, empty).map((error) => error.name)).toEqual([
@@ -223,44 +235,61 @@ describe("reviewed fields, secrets and URLs", () => {
 		expect(markup).toContain('data-approval-field="permission:scope"');
 		expect(markup).toContain('data-approval-field="permission:network"');
 	});
+
+	test("offers no grant when the request names nothing this browser can grant", () => {
+		const approval = permissionsApproval({
+			requestedScope: { network: null, fileAccess: ["read"] },
+		});
+		const card = first({ approvals: [approval] }) as WorkbenchOrdinaryApprovalCard;
+		const markup = render({ approvals: [approval] });
+
+		expect(card.fields).toHaveLength(0);
+		expect(card.offers.map((offer) => offer.id)).toEqual(["decline"]);
+		expect(card.notices).toContain(
+			"This request names no permission this browser can grant, so the only honest answer here is to grant nothing.",
+		);
+		expect(markup).not.toContain("Grant the reviewed permissions");
+	});
 });
 
 describe("dynamic coordination approvals", () => {
 	test("discloses the exact target, prompt, boundary, OperationIds and expiry", () => {
-		const cards = view({ dynamicApprovals: DYNAMIC }).cards;
-		const [create, selfFork, otherFork, send] = cards;
+		const [create, selfFork, otherFork, send] = view({ dynamicApprovals: DYNAMIC }).cards;
 
 		expect(rowValue(create!, "Target thread")).toContain("new thread that does not exist yet");
 		expect(rowValue(create!, "Prompt")).toBe("Investigate the queue backlog.");
 		expect(rowValue(create!, "Effective fork boundary")).toContain("no fork boundary");
-		expect(rowValue(create!, "Mutation OperationId")).toBe("operation-create_thread");
-		expect(rowValue(create!, "Initial turn OperationId")).toBe("operation-create_thread-turn");
+		expect(rowValue(create!, "Mutation OperationId")).toBe(
+			String(CREATE_EFFECT.mutationOperationId),
+		);
+		expect(rowValue(create!, "Initial turn OperationId")).toBe(
+			String(CREATE_EFFECT.initialTurnOperationId),
+		);
 		expect(rowValue(selfFork!, "Effective fork boundary")).toBe(
-			"Self fork before the calling turn turn-a.",
+			`Self fork before the calling turn ${String(TURN)}.`,
 		);
 		expect(rowValue(otherFork!, "Effective fork boundary")).toBe(
 			"Fork of another thread from its current head.",
 		);
 		expect(rowValue(otherFork!, "Prompt")).toContain("starts no turn");
-		expect(rowValue(send!, "Target thread")).toBe("workhorse-b");
+		expect(rowValue(send!, "Target thread")).toBe(String(OTHER_THREAD));
 		expect(rowValue(send!, "Expires")).toBe(new Date(NOW + 90_000).toISOString());
 	});
 
 	test("retains the immutable effect hash and fabricates no ApprovalId or turn", () => {
 		const markup = render({ dynamicApprovals: DYNAMIC });
-		const card = view({ dynamicApprovals: DYNAMIC }).cards[0]!;
+		const card = first({ dynamicApprovals: DYNAMIC });
 
 		expect(rowValue(card, "Effect hash")).toBe(`sha256:${"a".repeat(64)}`);
-		expect(rowValue(card, "Calling turn")).toBe("turn-a");
+		expect(rowValue(card, "Calling turn")).toBe(String(TURN));
 		expect(card.identity.some((row) => row.label === "Approval id")).toBe(false);
 		expect(markup).toContain("The effect and its hash are fixed");
 	});
 
 	test("permits one approve or decline decision only", () => {
 		const markup = render({ dynamicApprovals: DYNAMIC });
-		const cards = view({ dynamicApprovals: DYNAMIC }).cards;
 
-		for (const card of cards)
+		for (const card of view({ dynamicApprovals: DYNAMIC }).cards)
 			expect(card.offers.map((offer) => offer.id)).toEqual(["approve", "decline"]);
 		expect(markup).not.toContain("for this session");
 		expect(markup).toContain('data-approval-resumable="false"');
@@ -270,17 +299,11 @@ describe("dynamic coordination approvals", () => {
 	test("keeps a terminal approval_required tool result unresumable", () => {
 		const cancelled = dynamicApproval(SEND_EFFECT, {
 			state: "cancelled",
-			decision: {
-				outcome: "cancelled",
-				identity: dynamicApproval(SEND_EFFECT).identity,
-				effectHash: `sha256:${"a".repeat(64)}`,
-				decidedAtMs: NOW,
-				cause: "call_cancelled",
-			},
+			decision: dynamicDecision(SEND_EFFECT, "cancelled", "call_cancelled"),
 			toolResult: "approval_required",
 			binding: null,
-		} as never);
-		const card = view({ dynamicApprovals: [cancelled] }).cards[0]!;
+		});
+		const card = first({ dynamicApprovals: [cancelled] });
 		const markup = render({ dynamicApprovals: [cancelled] });
 
 		expect(card.offers).toHaveLength(0);
@@ -303,11 +326,14 @@ describe("spoken eligibility", () => {
 	});
 
 	test("refuses a host annotation that is not a plain accept or decline", () => {
-		const broader = commandApproval({
-			availableDecisions: ["accept", "acceptForSession", "decline"],
-			spoken: { eligible: true, reason: "eligible" },
-		} as never);
-		const card = view({ approvals: [broader] }).cards[0]!;
+		const card = first({
+			approvals: [
+				commandApproval({
+					availableDecisions: ["accept", "acceptForSession", "decline"],
+					spoken: { eligible: true, reason: "eligible" },
+				}),
+			],
+		});
 
 		expect(card.spoken.eligible).toBe(false);
 		expect(card.spoken.detail).toContain("could not confirm a plain accept or decline");
@@ -324,17 +350,108 @@ describe("spoken eligibility", () => {
 	});
 });
 
-describe("app-global visibility and lifecycle", () => {
-	test("announces every card in one app-global live region", () => {
-		const markup = render({ approvals: ORDINARY, dynamicApprovals: DYNAMIC });
-		const beacon = view({ approvals: ORDINARY, dynamicApprovals: DYNAMIC }).beacon;
+describe("terminal lifecycle states", () => {
+	for (const [phase, lifecycle] of TERMINAL_LIFECYCLES)
+		test(`renders the ${phase} decision against its immutable target with no authority`, () => {
+			const approval = commandApproval({
+				lifecycle,
+				spoken: { eligible: false, reason: "not_pending" },
+			});
+			const card = first({ approvals: [approval] });
+			const markup = render({ approvals: [approval] });
+
+			expect(String(card.status.phase)).toBe(phase);
+			expect(rowValue(card, "Broker target")).toBe(IMMUTABLE_TARGET);
+			expect(card.offers).toHaveLength(0);
+			expect(card.spoken.eligible).toBe(false);
+			expect(markup).toContain(`data-approval-phase="${phase}"`);
+			expect(markup).toContain('data-approval-offers="removed"');
+			expect(markup).not.toContain('data-approval-offers="live"');
+		});
+
+	test("renders a browser and a child disconnect as terminal dynamic decisions", () => {
+		for (const cause of ["browser_disconnected", "child_disconnected"] as const) {
+			const approval = dynamicApproval(SEND_EFFECT, {
+				state: "disconnected",
+				decision: dynamicDecision(SEND_EFFECT, "disconnected", cause),
+				delivery: cause === "child_disconnected" ? "not_delivered" : null,
+				toolResult:
+					cause === "child_disconnected" ? "transport_not_delivered" : "approval_required",
+				binding: null,
+			});
+			const card = first({ dynamicApprovals: [approval] });
+
+			expect(card.status.phase).toBe("disconnected");
+			expect(card.offers).toHaveLength(0);
+			expect(card.kind === "dynamic" && card.effectHash).toBe(`sha256:${"a".repeat(64)}`);
+			expect(render({ dynamicApprovals: [approval] })).toContain(
+				'data-approval-phase="disconnected"',
+			);
+		}
+	});
+
+	test("removes the decision when the transport already refuses that response", () => {
+		const projected = projectWorkbenchApprovals(
+			approvalsInput(
+				connected(
+					snapshot({
+						approvals: [commandApproval()],
+						dynamicApprovals: [dynamicApproval(SEND_EFFECT)],
+					}),
+				),
+				{ canRespondOrdinary: false },
+			),
+		);
+
+		expect(projected.cards[0]?.offers).toHaveLength(0);
+		expect(projected.cards[0]?.status.authorityReason).toContain("no longer accepts a response");
+		expect(projected.cards[1]?.offers).toHaveLength(2);
+		expect(
+			render({ approvals: [permissionsApproval()] }, { unsupported: ["approvalRespond"] }),
+		).toContain('data-approval-fields="read_only"');
+	});
+
+	test("reads authoritative delivered, not_delivered and outcome_unknown reconciliation", () => {
+		for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const) {
+			const operation = {
+				kind: "operation_outcome",
+				operationId: OPERATION_OUTCOME_ID,
+				outcome,
+				message: null,
+			} as BrowserSnapshot["operation"];
+			const projected = view({ operation });
+
+			expect(projected.reconciliation?.outcome).toBe(outcome);
+			expect(render({ operation })).toContain(`data-approvals-reconciliation="${outcome}"`);
+		}
+	});
+});
+
+describe("app-global visibility", () => {
+	test("announces every card, pending and terminal, in one app-global live region", () => {
+		const settled = commandApproval({
+			lifecycle: {
+				state: "outcome_unknown",
+				decision: "approved",
+				outcome: "outcome_unknown",
+				reason: "The write was lost.",
+			},
+			spoken: { eligible: false, reason: "not_pending" },
+		});
+		const overrides = { approvals: [...ORDINARY, settled], dynamicApprovals: DYNAMIC };
+		const markup = render(overrides);
+		const beacon = view(overrides).beacon;
 
 		expect(beacon.scope).toBe("app_global");
-		expect(beacon.entries).toHaveLength(ORDINARY.length + DYNAMIC.length);
+		expect(beacon.pending).toBe(ORDINARY.length + DYNAMIC.length);
+		expect(beacon.total).toBe(ORDINARY.length + DYNAMIC.length + 1);
+		expect(beacon.entries.map((entry) => entry.phase)).toContain("outcome_unknown");
 		expect(markup).toContain('data-approvals-scope="app-global"');
 		expect(markup).toContain('aria-live="assertive"');
-		for (const entry of beacon.entries)
+		for (const entry of beacon.entries) {
 			expect(markup).toContain(`data-approval-beacon="${entry.key}"`);
+			expect(entry.target.length).toBeGreaterThan(0);
+		}
 	});
 
 	test("keeps a focus anchor on the surface heading", () => {

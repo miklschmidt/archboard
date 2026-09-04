@@ -17,27 +17,34 @@ import {
 import {
 	applyPatchApproval,
 	commandApproval,
-	commandTarget,
-	connected,
 	CREATE_EFFECT,
 	dynamicApproval,
+	dynamicIdentity,
 	elicitationApproval,
 	execCommandApproval,
-	fakeTransport,
 	fileChangeApproval,
 	HASH,
-	NOW,
 	permissionsApproval,
-	snapshot,
 	userInputApproval,
 } from "./fixtures.js";
+import {
+	approvalsInput,
+	CHILD,
+	commandTarget,
+	connected,
+	EPOCH,
+	fakeTransport,
+	snapshot,
+	THREAD,
+	type RecordedCommand,
+} from "./model.js";
 
 function cards(overrides: Partial<BrowserSnapshot>): readonly WorkbenchApprovalCard[] {
-	return projectWorkbenchApprovals({
-		state: connected(snapshot(overrides)),
-		nowMs: NOW,
-		canCommand: true,
-	}).cards;
+	return projectWorkbenchApprovals(approvalsInput(connected(snapshot(overrides)))).cards;
+}
+
+function responseOf(sent: readonly RecordedCommand[]): unknown {
+	return (sent[0]?.draft as { readonly response?: unknown } | undefined)?.response;
 }
 
 function only(approval: BrowserApproval): WorkbenchOrdinaryApprovalCard {
@@ -74,8 +81,8 @@ describe("ordinary approval payloads", () => {
 		expect(outcome.status).toBe("sent");
 		expect(sent[0]?.draft).toEqual({
 			command: "approvalRespond",
-			requestId: "request-1",
-			approvalId: "approval-1",
+			requestId: card.request.requestId,
+			approvalId: card.request.approvalId,
 			response: { approvalKind: "command_execution", decision: "decline" },
 		});
 		expect(sent[0]?.target).toEqual(commandTarget());
@@ -85,10 +92,8 @@ describe("ordinary approval payloads", () => {
 		const card = only(fileChangeApproval());
 		const { sent } = await send(card, "decision:1", seeded(card));
 
-		expect(sent[0]?.draft).toMatchObject({
-			response: { approvalKind: "file_change", decision: "acceptForSession" },
-		});
-		const narrow = only(fileChangeApproval({ availableDecisions: ["accept"] } as never));
+		expect(responseOf(sent)).toEqual({ approvalKind: "file_change", decision: "acceptForSession" });
+		const narrow = only(fileChangeApproval({ availableDecisions: ["accept"] }));
 		expect(narrow.offers.map((offer) => offer.id)).toEqual(["decision:0"]);
 	});
 
@@ -112,13 +117,11 @@ describe("ordinary approval payloads", () => {
 		});
 		const { sent } = await send(card, "submit", form);
 
-		expect(sent[0]?.draft).toMatchObject({
-			response: {
-				approvalKind: "user_input",
-				answers: {
-					environment: { answers: ["staging", "canary"] },
-					token: { answers: ["s3cret"] },
-				},
+		expect(responseOf(sent)).toEqual({
+			approvalKind: "user_input",
+			answers: {
+				environment: { answers: ["staging", "canary"] },
+				token: { answers: ["s3cret"] },
 			},
 		});
 	});
@@ -134,18 +137,16 @@ describe("ordinary approval payloads", () => {
 		form = applyApprovalFormEvent(form, { kind: "flag", name: "field:tls", value: true });
 		const { sent } = await send(card, "submit", form);
 
-		expect(sent[0]?.draft).toMatchObject({
-			response: {
-				approvalKind: "elicitation",
-				action: "accept",
-				content: {
-					host: "https://example.test",
-					port: 443,
-					apiKey: "token-1",
-					tls: true,
-				},
-				_meta: null,
+		expect(responseOf(sent)).toEqual({
+			approvalKind: "elicitation",
+			action: "accept",
+			content: {
+				host: "https://example.test",
+				port: 443,
+				apiKey: "token-1",
+				tls: true,
 			},
+			_meta: null,
 		});
 	});
 
@@ -163,11 +164,17 @@ describe("ordinary approval payloads", () => {
 		const declined = await send(card, "decline", seeded(card));
 		const cancelled = await send(card, "cancel", seeded(card));
 
-		expect(declined.sent[0]?.draft).toMatchObject({
-			response: { approvalKind: "elicitation", action: "decline", content: null },
+		expect(responseOf(declined.sent)).toEqual({
+			approvalKind: "elicitation",
+			action: "decline",
+			content: null,
+			_meta: null,
 		});
-		expect(cancelled.sent[0]?.draft).toMatchObject({
-			response: { approvalKind: "elicitation", action: "cancel", content: null },
+		expect(responseOf(cancelled.sent)).toEqual({
+			approvalKind: "elicitation",
+			action: "cancel",
+			content: null,
+			_meta: null,
 		});
 	});
 
@@ -187,16 +194,16 @@ describe("ordinary approval payloads", () => {
 		const granted = await send(card, "submit", form);
 		const declined = await send(card, "decline", seeded(card));
 
-		expect(granted.sent[0]?.draft).toMatchObject({
-			response: {
-				approvalKind: "permissions",
-				permissions: { network: { enabled: true } },
-				scope: "session",
-				strictAutoReview: true,
-			},
+		expect(responseOf(granted.sent)).toEqual({
+			approvalKind: "permissions",
+			permissions: { network: { enabled: true } },
+			scope: "session",
+			strictAutoReview: true,
 		});
-		expect(declined.sent[0]?.draft).toMatchObject({
-			response: { approvalKind: "permissions", permissions: {}, scope: "turn" },
+		expect(responseOf(declined.sent)).toEqual({
+			approvalKind: "permissions",
+			permissions: {},
+			scope: "turn",
 		});
 	});
 
@@ -216,23 +223,18 @@ describe("ordinary approval payloads", () => {
 		);
 		const silent = await send(exec, "decline", seeded(exec));
 
-		expect(approved.sent[0]?.draft).toMatchObject({
-			response: { approvalKind: "apply_patch", decision: "approved" },
+		expect(responseOf(approved.sent)).toEqual({
+			approvalKind: "apply_patch",
+			decision: "approved",
 		});
-		expect(aborted.sent[0]?.draft).toMatchObject({
-			response: { approvalKind: "apply_patch", decision: "abort" },
+		expect(responseOf(aborted.sent)).toEqual({ approvalKind: "apply_patch", decision: "abort" });
+		expect(responseOf(declined.sent)).toEqual({
+			approvalKind: "exec_command",
+			decision: { denied: { rejection: "Not on this branch." } },
 		});
-		expect(declined.sent[0]?.draft).toMatchObject({
-			response: {
-				approvalKind: "exec_command",
-				decision: { denied: { rejection: "Not on this branch." } },
-			},
-		});
-		expect(silent.sent[0]?.draft).toMatchObject({
-			response: {
-				approvalKind: "exec_command",
-				decision: { denied: { rejection: "Declined at the Archboard workbench." } },
-			},
+		expect(responseOf(silent.sent)).toEqual({
+			approvalKind: "exec_command",
+			decision: { denied: { rejection: "Declined at the Archboard workbench." } },
 		});
 	});
 });
@@ -245,18 +247,8 @@ describe("dynamic approval dispatch", () => {
 		expect(outcome.status).toBe("sent");
 		expect(sent[0]?.draft).toEqual({
 			command: "dynamicApprovalRespond",
-			capturedLink: { threadId: "workhorse-a", childId: "child-a", epoch: "epoch-a" },
-			identity: {
-				child: "child-a",
-				epoch: "epoch-a",
-				threadId: "workhorse-a",
-				turnId: "turn-a",
-				callId: "call-create_thread",
-				namespace: "archboard_app",
-				tool: "create_thread",
-				manifestHash: "manifest-1",
-				operationId: "operation-create_thread",
-			},
+			capturedLink: { threadId: THREAD, childId: CHILD, epoch: EPOCH },
+			identity: dynamicIdentity(CREATE_EFFECT),
 			effectHash: HASH,
 			decision: "approve",
 		});
@@ -268,7 +260,13 @@ describe("dynamic approval dispatch", () => {
 		const declined = await send(card, "decline", initialApprovalForm([]));
 		const broader = await send(card, "acceptForSession", initialApprovalForm([]));
 
-		expect(declined.sent[0]?.draft).toMatchObject({ decision: "decline" });
+		expect(declined.sent[0]?.draft).toEqual({
+			command: "dynamicApprovalRespond",
+			capturedLink: { threadId: THREAD, childId: CHILD, epoch: EPOCH },
+			identity: dynamicIdentity(CREATE_EFFECT),
+			effectHash: HASH,
+			decision: "decline",
+		});
 		expect(broader.outcome.status).toBe("refused");
 		expect(broader.outcome.status === "refused" && broader.outcome.code).toBe("not_offered");
 		expect(broader.sent).toHaveLength(0);
