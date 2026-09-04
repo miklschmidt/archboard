@@ -11,7 +11,11 @@ import type {
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
 } from "../../workbench-transport/index.js";
-import type { WorkbenchFramePane, WorkbenchFramePaneIdentity } from "../index.js";
+import type {
+	WorkbenchFramePane,
+	WorkbenchFramePaneIdentity,
+	WorkbenchFrameView,
+} from "../index.js";
 
 const authorities = createIdentityAuthorities();
 const identity = authorities.identity;
@@ -227,7 +231,7 @@ function createTransport(
 		sequence: () => state.sequence,
 		lease: () => snapshot?.lease ?? null,
 		state: () => state,
-		capabilities: () => capabilities(state.connection === "connected"),
+		capabilities: () => capabilities(state.kind === "readiness"),
 		subscribe: () => () => undefined,
 		dispose: async () => undefined,
 	};
@@ -275,6 +279,39 @@ export function requestTransport(paneId: string): TestTransport {
 	);
 }
 
+export function retainedSnapshotTransport(
+	paneId: string,
+	stateName: "reconnecting" | "backoff" | "stale_snapshot",
+): TestTransport {
+	const threadId = model.ThreadIdSchema.parse(identity.decoder.adoptThreadId(`thread-${paneId}`));
+	const snapshot = pendingSnapshot(paneId, threadId);
+	const common = {
+		snapshot,
+		sequence: 2,
+		reason: `The frame fixture is ${stateName}.`,
+	} as const;
+	const state: BrowserWorkbenchState =
+		stateName === "reconnecting"
+			? { ...common, kind: "connection", state: stateName, connection: "reconnecting" }
+			: stateName === "backoff"
+				? {
+						...common,
+						kind: "connection",
+						state: stateName,
+						connection: "reconnecting",
+						retryAtMs: TEST_NOW + 1_000,
+					}
+				: {
+						...common,
+						kind: "stream",
+						state: stateName,
+						connection: "connected",
+						expectedSequence: 3,
+						receivedSequence: 4,
+					};
+	return createTransport(paneId, state, null);
+}
+
 export function framePane(
 	identityValue: WorkbenchFramePaneIdentity,
 	fake: TestTransport,
@@ -300,4 +337,39 @@ export function framePane(
 			semanticContext: { state: "unavailable" },
 		},
 	};
+}
+
+export function claimedFramePane(
+	identityValue: WorkbenchFramePaneIdentity,
+	fake: TestTransport,
+): WorkbenchFramePane {
+	const pane = framePane(identityValue, fake);
+	return {
+		...pane,
+		boardStatus: {
+			...pane.boardStatus,
+			claim: {
+				state: "claimed",
+				holderId: "agent-frame",
+				holderKind: "agent",
+				claimedAt: "2026-09-04T12:00:00.000Z",
+				reason: "Refactoring frame hierarchy",
+			},
+			doing: [
+				{
+					doing: "Preserving compact hierarchy",
+					at: "2026-09-04T12:01:00.000Z",
+					by: "agent-frame",
+					kind: "agent",
+					claimed: true,
+				},
+			],
+		},
+	};
+}
+
+export function onePaneView(
+	pane: WorkbenchFramePane,
+): Extract<WorkbenchFrameView, { readonly state: "ready" }> {
+	return { state: "ready", panes: [pane], activePaneId: pane.identity.id };
 }
