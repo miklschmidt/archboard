@@ -11,6 +11,7 @@ import type {
 	VoiceContextSessionEvidence,
 	VoiceContextSessionRecord,
 	VoiceContextSourceOrder,
+	VoiceContextSourceHistory,
 } from "../contract.js";
 import { parseCanonicalBrief } from "./semantic-brief.js";
 
@@ -204,6 +205,8 @@ export function createVoiceContextHistory(): VoiceContextHistory {
 					}),
 					observations: Object.freeze([evidence]),
 					entries: Object.freeze([]),
+					ownerOmittedPrefixCount: 0,
+					sourceEntryCount: 0,
 				}),
 			]);
 		},
@@ -256,6 +259,36 @@ export function createVoiceContextHistory(): VoiceContextHistory {
 						(left, right) => position(left.sourceOrder) - position(right.sourceOrder),
 					),
 				),
+			});
+			return publish(sessions);
+		},
+		recordSourceHistory: (input: VoiceContextSourceHistory) => {
+			if (boundKey(input.session) === null) return ignored("unbound_session", current.revision);
+			if (
+				!Number.isSafeInteger(input.ownerOmittedPrefixCount) ||
+				input.ownerOmittedPrefixCount < 0 ||
+				!Number.isSafeInteger(input.sourceEntryCount) ||
+				input.sourceEntryCount < input.ownerOmittedPrefixCount
+			)
+				return ignored("invalid_source_history", current.revision);
+			const index = locate(input.session);
+			if (index === -1) return ignored("unknown_session", current.revision);
+			const record = current.sessions[index]!;
+			const ownerOmittedPrefixCount = Math.max(
+				record.ownerOmittedPrefixCount,
+				input.ownerOmittedPrefixCount,
+			);
+			const sourceEntryCount = Math.max(record.sourceEntryCount, input.sourceEntryCount);
+			if (
+				ownerOmittedPrefixCount === record.ownerOmittedPrefixCount &&
+				sourceEntryCount === record.sourceEntryCount
+			)
+				return ignored("duplicate_source_history", current.revision);
+			const sessions = [...current.sessions];
+			sessions[index] = freezeRecord({
+				...record,
+				ownerOmittedPrefixCount,
+				sourceEntryCount,
 			});
 			return publish(sessions);
 		},

@@ -222,6 +222,7 @@ test("voice-context delivery attempts are a closed wire union with ordered timin
 			sessionId: "browser-session",
 			ledgerId: "ledger",
 			canonicalBrief: '{"source":"semantic_context"}',
+			ownerEntriesTruncated: 0,
 			entriesTruncated: 0,
 			entries: [
 				{ ...shared, attempted: false, attemptedAtMs: null, outcome: "not_delivered" },
@@ -241,8 +242,20 @@ test("voice-context delivery attempts are a closed wire union with ordered timin
 				sessionId: "browser-session",
 				ledgerId: "ledger",
 				canonicalBrief: '{"source":"semantic_context"}',
+				ownerEntriesTruncated: 0,
 				entriesTruncated: 0,
 				entries: [{ ...shared, ...incoherent }],
 			}).success,
 		).toBeFalse();
+	expect(
+		model.BrowserVoiceContextSchema.safeParse({
+			kind: "voice_context",
+			sessionId: "browser-session",
+			ledgerId: "ledger",
+			canonicalBrief: '{"source":"semantic_context"}',
+			ownerEntriesTruncated: 2,
+			entriesTruncated: 1,
+			entries: [],
+		}).success,
+	).toBeFalse();
 });

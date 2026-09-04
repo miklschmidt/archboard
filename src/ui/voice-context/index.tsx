@@ -34,5 +34,6 @@ export type {
 	VoiceContextSessionRecord,
 	VoiceContextSessionView,
 	VoiceContextSourceOrder,
+	VoiceContextSourceHistory,
 	VoiceContextStatusTone,
 } from "./contract.js";

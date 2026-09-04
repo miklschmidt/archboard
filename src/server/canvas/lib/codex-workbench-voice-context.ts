@@ -1,4 +1,7 @@
-import type { CoordinatorCallbackDelivery } from "../../../runtime/codex-coordinator-callbacks/index.js";
+import type {
+	CoordinatorCallbackDelivery,
+	CoordinatorCallbacks,
+} from "../../../runtime/codex-coordinator-callbacks/index.js";
 import type { CodexRealtimeGeneration } from "../../../runtime/codex-realtime/index.js";
 import type { BrowserVoiceContext } from "../../../shared/codex-browser-model/index.js";
 
@@ -53,9 +56,17 @@ function browserEntry(
 /** Project only evidence captured under the exact active realtime generation. */
 export function projectCanvasVoiceContext(
 	generation: CodexRealtimeGeneration | null,
-	deliveries: readonly CoordinatorCallbackDelivery[],
+	callbacks: Pick<CoordinatorCallbacks, "inspectHistory">,
 ): BrowserVoiceContext | null {
 	if (generation === null) return null;
+	const history = callbacks.inspectHistory({
+		childId: generation.child,
+		epoch: generation.epoch,
+		coordinatorThreadId: generation.coordinatorThreadId,
+		wireSessionId: generation.wireSessionId,
+		browserSessionId: generation.browserSessionId,
+		browserCorrelationId: generation.browserCorrelationId,
+	});
 	const ledgerId = JSON.stringify([
 		generation.child,
 		generation.epoch,
@@ -63,7 +74,7 @@ export function projectCanvasVoiceContext(
 		generation.wireSessionId,
 		generation.browserSessionId,
 	]);
-	const entries = deliveries
+	const entries = history.deliveries
 		.filter((delivery) => sameGeneration(delivery, generation))
 		.toSorted((left, right) => left.sourceOrder - right.sourceOrder)
 		.map(browserEntry);
@@ -72,7 +83,8 @@ export function projectCanvasVoiceContext(
 		sessionId: generation.browserSessionId,
 		ledgerId,
 		canonicalBrief: generation.semanticBrief,
-		entriesTruncated: 0,
+		ownerEntriesTruncated: history.omittedPrefixCount,
+		entriesTruncated: history.omittedPrefixCount,
 		entries,
 	};
 }

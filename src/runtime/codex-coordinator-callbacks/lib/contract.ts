@@ -231,12 +231,23 @@ export interface CoordinatorCallbackOptions {
 	readonly now?: () => number;
 	/** Publishes one settled immutable record to presentation subscribers. */
 	readonly onSettled?: () => void;
+	/** Injectable bounded history capacity; production uses CALLBACK_BUFFER_LIMIT. */
+	readonly settledLedgerLimit?: number;
+}
+
+export interface CoordinatorCallbackHistory {
+	readonly deliveries: readonly CoordinatorCallbackDelivery[];
+	/** Records evicted before the retained suffix for this exact realtime generation. */
+	readonly omittedPrefixCount: number;
 }
 
 export interface CoordinatorCallbacks {
 	readonly enqueue: (event: CoordinatorCallbackSource) => Promise<CoordinatorCallbackDelivery>;
 	readonly flush: () => Promise<void>;
 	readonly inspect: () => readonly CoordinatorCallbackDelivery[];
+	readonly inspectHistory: (
+		generation: CoordinatorCallbackRealtimeGeneration,
+	) => CoordinatorCallbackHistory;
 	readonly get: (event: CoordinatorCallbackSource) => CoordinatorCallbackDelivery | undefined;
 	readonly pendingCount: () => number;
 	readonly dispose: () => void;

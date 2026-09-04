@@ -39,7 +39,7 @@ export interface CodexRealtimeAdapterOptions {
 		| "timelineListPage"
 	>;
 	readonly identity: IdentityAuthority;
-	readonly freshSemanticBrief: () => FreshSemanticBrief["brief"];
+	readonly freshSemanticBrief: (wireSessionId: RealtimeSessionId) => FreshSemanticBrief["brief"];
 	readonly currentBinding: () => CodexRealtimeBinding | null;
 }
 
