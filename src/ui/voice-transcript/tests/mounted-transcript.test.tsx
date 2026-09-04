@@ -39,7 +39,7 @@ function record(container: HTMLElement, itemId: string): HTMLElement {
 }
 
 describe("mounted voice transcript accessibility", () => {
-	test("owns one atomic session announcer using the canonical accessible status", () => {
+	test("defaults to one atomic session announcer using the canonical accessible status", () => {
 		const recoverable = voiceSession("failed", {
 			label: "Voice failed",
 			detail: "Microphone access failed.",
@@ -73,6 +73,8 @@ describe("mounted voice transcript accessibility", () => {
 				'[aria-live="polite"][aria-atomic="true"]',
 			);
 			expect(announcers).toHaveLength(1);
+			expect(announcers[0]?.tagName).toBe("OUTPUT");
+			expect(announcers[0]?.getAttribute("data-transcript-announcement-owner")).toBe("transcript");
 			expect(announcers[0]?.textContent).toContain(session.accessibleStatus);
 			expect(
 				announcers[0]
@@ -80,6 +82,52 @@ describe("mounted voice transcript accessibility", () => {
 					?.getAttribute("aria-hidden"),
 			).toBe("true");
 		}
+	});
+
+	test("delegates session announcements without hiding visible status or the transcript log", () => {
+		const session = voiceSession("failed", {
+			label: "Voice failed",
+			detail: "Microphone access failed.",
+			accessibleStatus:
+				"Voice failed. Microphone access failed. Reconnect the microphone and restart voice.",
+			failure: { code: "device", recoverable: true, message: "Microphone access failed." },
+			outcome: {
+				kind: "retry",
+				control: "restart",
+				label: "Restart voice",
+				recovery: "Reconnect the microphone and restart voice.",
+			},
+		});
+		const rendered = ui.render(
+			transcript({
+				announcementOwner: "external",
+				records: [transcriptRecord("spoken-item", 3)],
+				session,
+			}),
+		);
+		const status = rendered.container.querySelector<HTMLElement>(
+			'[data-transcript-announcement-owner="external"]',
+		);
+		if (status === null) throw new Error("External session status was not rendered");
+
+		expect(status.tagName).toBe("DIV");
+		expect(status.getAttribute("role")).toBe(null);
+		expect(status.getAttribute("aria-live")).toBe(null);
+		expect(status.getAttribute("aria-atomic")).toBe(null);
+		expect(status.textContent).toBe(session.label);
+		expect(status.textContent).not.toContain(session.accessibleStatus);
+		expect(status.querySelector(".sr-only")).toBe(null);
+		expect(
+			status
+				.querySelector<HTMLElement>("[data-transcript-visible-status]")
+				?.getAttribute("aria-hidden"),
+		).toBe(null);
+		expect(rendered.container.querySelector("output")).toBe(null);
+		expect(rendered.container.querySelector('[aria-live="polite"]')).toBe(null);
+		expect(ui.screen.getByRole("log", { name: "Voice transcript" })).toBeDefined();
+		expect(record(rendered.container, "spoken-item").textContent).toContain(
+			"Transcript spoken-item",
+		);
 	});
 
 	test("batches streaming log announcements without replacing the canonical item node", () => {
