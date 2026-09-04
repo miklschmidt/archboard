@@ -2,12 +2,10 @@ import { createElement, useId, useMemo, type ReactNode } from "react";
 
 import { cn } from "../../ui-classnames/index.js";
 import {
-	VOICE_TRANSCRIPT_CROSS_LINK_KINDS,
-	type VoiceTranscriptCrossLinkView,
 	type VoiceTranscriptProps,
 	type VoiceTranscriptRecordView,
+	type VoiceTranscriptRelationshipView,
 	type VoiceTranscriptSessionState,
-	type VoiceTranscriptUnavailableCrossLinkView,
 } from "../contract.js";
 import { projectVoiceTranscript } from "./projection.js";
 
@@ -54,33 +52,39 @@ const RECORD_STATUS_CLASSES = {
 	interrupted: "text-warning",
 } as const;
 
-function CrossLink({ link }: { readonly link: VoiceTranscriptCrossLinkView }): ReactNode {
+function CrossLink({
+	relationship,
+	targetId,
+}: {
+	readonly relationship: VoiceTranscriptRelationshipView;
+	readonly targetId: string;
+}): ReactNode {
 	return (
 		<li className="min-w-0 border-r border-border-subtle last:border-r-0">
 			<a
-				aria-label={`Inspect ${link.label.toLowerCase()} record`}
+				aria-label={`Inspect ${relationship.label.toLowerCase()} record`}
 				className="flex min-h-touch-target items-center justify-center px-control text-center text-body font-medium text-primary underline-offset-2 hover:bg-surface-hover hover:underline focus-visible:rounded-hairline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-				data-transcript-cross-link={link.kind}
-				href={`#${link.targetId}`}
+				data-transcript-cross-link={relationship.kind}
+				href={`#${targetId}`}
 			>
-				{link.label}
+				{relationship.label}
 			</a>
 		</li>
 	);
 }
 
-function UnavailableCrossLink({
-	link,
+function UnavailableRelationship({
+	relationship,
 }: {
-	readonly link: VoiceTranscriptUnavailableCrossLinkView;
+	readonly relationship: VoiceTranscriptRelationshipView;
 }): ReactNode {
 	return (
 		<li
 			className="min-w-0 border-r border-border-subtle last:border-r-0"
-			data-transcript-cross-link-unavailable={link.kind}
+			data-transcript-cross-link-unavailable={relationship.kind}
 		>
 			<span className="flex min-h-touch-target flex-col items-center justify-center px-control text-center text-body text-muted-foreground">
-				<span>{link.label}</span>
+				<span>{relationship.label}</span>
 				<span className="text-kicker font-medium">Unavailable</span>
 			</span>
 		</li>
@@ -188,6 +192,9 @@ export function VoiceTranscript(props: VoiceTranscriptProps): ReactNode {
 		[props.crossLinkIds, props.records, props.session],
 	);
 	const recovery = view.session.outcome.kind === "none" ? null : view.session.outcome.recovery;
+	const availableRelationshipCount = view.relationships.filter(
+		(relationship) => relationship.targetId !== null,
+	).length;
 	const announcementOwner = props.announcementOwner ?? "transcript";
 	const statusClassName = cn(
 		"flex items-center gap-grid-tight text-body font-medium",
@@ -279,24 +286,25 @@ export function VoiceTranscript(props: VoiceTranscriptProps): ReactNode {
 				aria-label="Related workbench records"
 				className="border-t border-border"
 				data-transcript-relationship-state={
-					view.unavailableCrossLinks.length === 0
+					availableRelationshipCount === view.relationships.length
 						? "available"
-						: view.crossLinks.length === 0
+						: availableRelationshipCount === 0
 							? "unavailable"
 							: "partial"
 				}
 			>
 				<ul className="m-0 p-0 grid list-none grid-cols-6">
-					{VOICE_TRANSCRIPT_CROSS_LINK_KINDS.map((kind) => {
-						const link = view.crossLinks.find((candidate) => candidate.kind === kind);
-						if (link !== undefined) return <CrossLink key={kind} link={link} />;
-						const unavailable = view.unavailableCrossLinks.find(
-							(candidate) => candidate.kind === kind,
-						);
-						return unavailable === undefined ? null : (
-							<UnavailableCrossLink key={kind} link={unavailable} />
-						);
-					})}
+					{view.relationships.map((relationship) =>
+						relationship.targetId === null ? (
+							<UnavailableRelationship key={relationship.kind} relationship={relationship} />
+						) : (
+							<CrossLink
+								key={relationship.kind}
+								relationship={relationship}
+								targetId={relationship.targetId}
+							/>
+						),
+					)}
 				</ul>
 			</nav>
 		</section>

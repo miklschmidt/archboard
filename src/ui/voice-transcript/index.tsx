@@ -5,11 +5,11 @@ export type {
 	VoiceTranscriptAnnouncementOwner,
 	VoiceTranscriptCrossLinkIds,
 	VoiceTranscriptCrossLinkKind,
-	VoiceTranscriptCrossLinkView,
-	VoiceTranscriptUnavailableCrossLinkView,
 	VoiceTranscriptProjectionInput,
 	VoiceTranscriptProps,
 	VoiceTranscriptRecordView,
+	VoiceTranscriptRelationshipsView,
+	VoiceTranscriptRelationshipView,
 	VoiceTranscriptSessionState,
 	VoiceTranscriptView,
 } from "./contract.js";

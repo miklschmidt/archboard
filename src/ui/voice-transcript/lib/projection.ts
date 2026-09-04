@@ -1,12 +1,10 @@
 import {
-	VOICE_TRANSCRIPT_CROSS_LINK_KINDS,
-	type VoiceTranscriptCrossLinkKind,
 	type VoiceTranscriptCrossLinkIds,
-	type VoiceTranscriptCrossLinkView,
 	type VoiceTranscriptProjectionInput,
 	type VoiceTranscriptRecordView,
+	type VoiceTranscriptRelationshipsView,
+	type VoiceTranscriptRelationshipView,
 	type VoiceTranscriptSessionState,
-	type VoiceTranscriptUnavailableCrossLinkView,
 	type VoiceTranscriptView,
 } from "../contract.js";
 
@@ -53,17 +51,6 @@ const CROSS_LINK_LABELS = {
 	workhorse_result: "Workhorse result",
 } as const;
 
-const CROSS_LINK_ID_KEYS = {
-	delegation: "delegationId",
-	queue: "queueId",
-	steer: "steerId",
-	approval: "approvalId",
-	callback: "callbackId",
-	workhorse_result: "workhorseResultId",
-} as const satisfies Readonly<
-	Record<VoiceTranscriptCrossLinkKind, keyof VoiceTranscriptCrossLinkIds>
->;
-
 function sessionState(input: VoiceTranscriptProjectionInput): VoiceTranscriptSessionState {
 	if (input.session.status !== "failed") return SESSION_STATES[input.session.status];
 	return input.session.outcome.kind === "retry" ||
@@ -106,22 +93,22 @@ function projectRecords(
 	);
 }
 
-function projectCrossLinks(ids: VoiceTranscriptCrossLinkIds): Readonly<{
-	available: readonly VoiceTranscriptCrossLinkView[];
-	unavailable: readonly VoiceTranscriptUnavailableCrossLinkView[];
-}> {
-	const available: VoiceTranscriptCrossLinkView[] = [];
-	const unavailable: VoiceTranscriptUnavailableCrossLinkView[] = [];
-	for (const kind of VOICE_TRANSCRIPT_CROSS_LINK_KINDS) {
-		const label = CROSS_LINK_LABELS[kind];
-		const targetId = ids[CROSS_LINK_ID_KEYS[kind]];
-		if (targetId === null) unavailable.push(Object.freeze({ kind, label }));
-		else available.push(Object.freeze({ kind, label, targetId }));
-	}
-	return Object.freeze({
-		available: Object.freeze(available),
-		unavailable: Object.freeze(unavailable),
-	});
+function relationship<Kind extends keyof typeof CROSS_LINK_LABELS>(
+	kind: Kind,
+	targetId: string | null,
+): VoiceTranscriptRelationshipView<Kind> {
+	return Object.freeze({ kind, label: CROSS_LINK_LABELS[kind], targetId });
+}
+
+function projectRelationships(ids: VoiceTranscriptCrossLinkIds): VoiceTranscriptRelationshipsView {
+	return Object.freeze([
+		relationship("delegation", ids.delegationId),
+		relationship("queue", ids.queueId),
+		relationship("steer", ids.steerId),
+		relationship("approval", ids.approvalId),
+		relationship("callback", ids.callbackId),
+		relationship("workhorse_result", ids.workhorseResultId),
+	]);
 }
 
 export function projectVoiceTranscript(input: VoiceTranscriptProjectionInput): VoiceTranscriptView {
@@ -130,14 +117,12 @@ export function projectVoiceTranscript(input: VoiceTranscriptProjectionInput): V
 	const streaming = records.some(
 		(record) => !record.textSuppressed && record.status === "provisional",
 	);
-	const crossLinks = projectCrossLinks(input.crossLinkIds);
 	return Object.freeze({
 		contentState: records.length === 0 ? "empty" : "records",
 		sessionState: projectedSessionState,
 		busy: BUSY_STATES.has(projectedSessionState) || streaming,
 		session: input.session,
 		records,
-		crossLinks: crossLinks.available,
-		unavailableCrossLinks: crossLinks.unavailable,
+		relationships: projectRelationships(input.crossLinkIds),
 	});
 }

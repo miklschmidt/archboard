@@ -538,7 +538,7 @@ function WorkbenchFrameLayout({
 			? workbenchFrameRequestSourceIssue(props.request.source, requestState)
 			: null;
 	const voiceOwnsApproval =
-		voice !== null &&
+		voiceOwnsMountedPane &&
 		props.request.state === "present" &&
 		requestState !== null &&
 		requestSourceIssue === null &&

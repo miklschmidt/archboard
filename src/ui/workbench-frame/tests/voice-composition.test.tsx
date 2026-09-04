@@ -10,6 +10,7 @@ import { createVoiceContextHistory } from "../../voice-context/index.js";
 import type { VoiceSessionStatus } from "../../voice-session/index.js";
 import type {
 	WorkbenchFrameDisclosure,
+	WorkbenchFrameRequest,
 	WorkbenchFrameSpace,
 	WorkbenchFrameView,
 	WorkbenchFrameVoiceSlot,
@@ -62,18 +63,25 @@ function approvalTranscriptLink(): HTMLAnchorElement | null {
 	return document.querySelector<HTMLAnchorElement>('[data-transcript-cross-link="approval"]');
 }
 
+function unavailableRelationshipLabels(): (string | null)[] {
+	return [
+		...document.querySelectorAll<HTMLElement>("[data-transcript-cross-link-unavailable]"),
+	].map((relationship) => relationship.textContent);
+}
+
 function frame(
 	voice: WorkbenchFrameVoiceSlot | null,
 	view: WorkbenchFrameView = ONE_PANE_VIEW,
 	disclosure: WorkbenchFrameDisclosure = "expanded",
 	space: WorkbenchFrameSpace = "workspace",
+	request: WorkbenchFrameRequest = EMPTY_REQUEST,
 ) {
 	return (
 		<WorkbenchFrame
 			disclosure={disclosure}
 			onActivePaneChange={noop}
 			onDisclosureChange={noop}
-			request={EMPTY_REQUEST}
+			request={request}
 			space={space}
 			view={view}
 			voice={voice}
@@ -218,8 +226,12 @@ test("keeps the captured source immutable across pane focus and frame failure", 
 });
 
 test("keeps non-empty transcript evidence while its source relationships unmount", () => {
+	const requestFrame = mutableRequestFrame(PANE_A, () => TEST_NOW);
 	const slot = voiceSlot(createSessionFake(voiceView("listening")), [transcriptRecord()]);
-	const result = render(frame(slot));
+	const result = render(
+		frame(slot, requestFrame.view, "expanded", "workspace", requestFrame.request),
+	);
+	const transcriptLog = screen.getByRole("log", { name: "Voice transcript" });
 
 	expect(screen.getByText("Keep Pane A evidence visible.")).toBeTruthy();
 	expect(document.querySelector('[data-transcript-visible-status=""]')?.textContent).toBe(
@@ -229,34 +241,55 @@ test("keeps non-empty transcript evidence while its source relationships unmount
 		"delegation",
 		"queue",
 		"steer",
+		"approval",
 		"callback",
 		"workhorse_result",
 	]);
-	expect(
-		document.querySelector('[data-transcript-cross-link-unavailable="approval"]'),
-	).toBeTruthy();
+	expect(unavailableRelationshipLabels()).toEqual([]);
 
-	result.rerender(frame(slot, TWO_PANE_B_VIEW));
+	result.rerender(frame(slot, TWO_PANE_B_VIEW, "expanded", "workspace", requestFrame.request));
 	expect(screen.getByText("Keep Pane A evidence visible.")).toBeTruthy();
+	expect(screen.getByRole("log", { name: "Voice transcript" })).toBe(transcriptLog);
 	expect(document.querySelector('[data-transcript-visible-status=""]')?.textContent).toBe(
 		"listening",
 	);
 	expect(transcriptLinkKinds()).toEqual([]);
-	expect(document.querySelectorAll("[data-transcript-cross-link-unavailable]")).toHaveLength(6);
+	expect(unavailableRelationshipLabels()).toEqual([
+		"DelegationUnavailable",
+		"QueueUnavailable",
+		"SteerUnavailable",
+		"ApprovalUnavailable",
+		"CallbackUnavailable",
+		"Workhorse resultUnavailable",
+	]);
 
 	result.rerender(
-		frame(slot, {
-			state: "error",
-			detail: "The frame projection failed.",
-			recovery: "Reconnect the frame.",
-		}),
+		frame(
+			slot,
+			{
+				state: "error",
+				detail: "The frame projection failed.",
+				recovery: "Reconnect the frame.",
+			},
+			"expanded",
+			"workspace",
+			requestFrame.request,
+		),
 	);
 	expect(screen.getByText("Keep Pane A evidence visible.")).toBeTruthy();
+	expect(screen.getByRole("log", { name: "Voice transcript" })).toBe(transcriptLog);
 	expect(document.querySelector('[data-transcript-visible-status=""]')?.textContent).toBe(
 		"listening",
 	);
 	expect(transcriptLinkKinds()).toEqual([]);
-	expect(document.querySelectorAll("[data-transcript-cross-link-unavailable]")).toHaveLength(6);
+	expect(unavailableRelationshipLabels()).toEqual([
+		"DelegationUnavailable",
+		"QueueUnavailable",
+		"SteerUnavailable",
+		"ApprovalUnavailable",
+		"CallbackUnavailable",
+		"Workhorse resultUnavailable",
+	]);
 });
 
 test("removes only the approval relationship when its request source drifts", () => {

@@ -189,10 +189,10 @@ describe("canonical voice transcript projection", () => {
 			crossLinkIds: CROSS_LINK_IDS,
 		});
 
-		expect(view.crossLinks.map((link) => link.kind)).toEqual([
+		expect(view.relationships.map((relationship) => relationship.kind)).toEqual([
 			...VOICE_TRANSCRIPT_CROSS_LINK_KINDS,
 		]);
-		expect(view.crossLinks.map((link) => link.targetId)).toEqual([
+		expect(view.relationships.map((relationship) => relationship.targetId)).toEqual([
 			"delegation-record",
 			"queue-record",
 			"steer-record",
@@ -200,26 +200,27 @@ describe("canonical voice transcript projection", () => {
 			"callback-record",
 			"workhorse-result-record",
 		]);
-		expect(Object.keys(view.crossLinks[0] ?? {})).toEqual(["kind", "label", "targetId"]);
-		expect(view.unavailableCrossLinks).toEqual([]);
+		expect(Object.keys(view.relationships[0])).toEqual(["kind", "label", "targetId"]);
 	});
 
-	test("projects only available targets and reports each unavailable relationship", () => {
+	test("keeps all relationships ordered while marking individual targets unavailable", () => {
 		const view = projectVoiceTranscript({
 			records: [],
 			session: voiceSession(),
 			crossLinkIds: { ...CROSS_LINK_IDS, approvalId: null, callbackId: null },
 		});
 
-		expect(view.crossLinks.map((link) => link.kind)).toEqual([
-			"delegation",
-			"queue",
-			"steer",
-			"workhorse_result",
-		]);
-		expect(view.unavailableCrossLinks).toEqual([
-			{ kind: "approval", label: "Approval" },
-			{ kind: "callback", label: "Callback" },
+		expect(view.relationships).toEqual([
+			{ kind: "delegation", label: "Delegation", targetId: "delegation-record" },
+			{ kind: "queue", label: "Queue", targetId: "queue-record" },
+			{ kind: "steer", label: "Steer", targetId: "steer-record" },
+			{ kind: "approval", label: "Approval", targetId: null },
+			{ kind: "callback", label: "Callback", targetId: null },
+			{
+				kind: "workhorse_result",
+				label: "Workhorse result",
+				targetId: "workhorse-result-record",
+			},
 		]);
 	});
 });
