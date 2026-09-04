@@ -51,6 +51,19 @@ function expectedBrowserState(reason: SpokenApprovalFallbackReason) {
 	return unhandled;
 }
 
+function settlement(
+	approval: ApprovalOwnerView,
+	outcome: "delivered" | "not_delivered" | "outcome_unknown",
+): NonNullable<SpokenApprovalSnapshot["settlement"]> {
+	return {
+		requestId: approval.snapshot.requestId,
+		family: "command_execution",
+		state: outcome === "not_delivered" ? "cancelled" : "outcome_unknown",
+		outcome,
+		reason: outcome === "not_delivered" ? "response was not delivered" : "delivery is unknown",
+	};
+}
+
 function owner(authorities: IdentityAuthorities): ApprovalOwnerView {
 	const identity = authorities.identity;
 	return commandApprovalOwnerFixture({
@@ -265,6 +278,36 @@ describe("spoken approval browser projection", () => {
 		}
 	});
 
+	test("preserves a known not-delivered resolver settlement as visual fallback", () => {
+		const authorities = createIdentityAuthorities();
+		const approval = owner(authorities);
+		const projected = project(authorities, approval, {
+			...withCapturedFinal(authorities, spokenSnapshot(authorities, approval)),
+			state: "visual_fallback",
+			reason: "resolver_lost",
+			settlement: settlement(approval, "not_delivered"),
+		});
+
+		expect(projected.state).toBe("visual_fallback");
+		expect(projected.reason).toBe("resolver_lost");
+		expect(projected.settlement?.outcome).toBe("not_delivered");
+	});
+
+	test("keeps a genuinely unknown resolver settlement outcome unknown", () => {
+		const authorities = createIdentityAuthorities();
+		const approval = owner(authorities);
+		const projected = project(authorities, approval, {
+			...withCapturedFinal(authorities, spokenSnapshot(authorities, approval)),
+			state: "visual_fallback",
+			reason: "resolver_lost",
+			settlement: settlement(approval, "outcome_unknown"),
+		});
+
+		expect(projected.state).toBe("outcome_unknown");
+		expect(projected.reason).toBe("resolver_lost");
+		expect(projected.settlement?.outcome).toBe("outcome_unknown");
+	});
+
 	test("fails closed when the gate effect no longer matches the approval owner", () => {
 		const authorities = createIdentityAuthorities();
 		const approval = owner(authorities);
@@ -310,6 +353,22 @@ describe("spoken approval browser projection", () => {
 		const model = createCodexBrowserModel(authorities);
 		expect(
 			model.BrowserSpokenApprovalSchema.safeParse({ ...resolved, reason: "classifier_lost" })
+				.success,
+		).toBe(false);
+	});
+
+	test("the shared schema rejects unknown presentation for a known resolver settlement", () => {
+		const authorities = createIdentityAuthorities();
+		const approval = owner(authorities);
+		const projected = project(authorities, approval, {
+			...withCapturedFinal(authorities, spokenSnapshot(authorities, approval)),
+			state: "visual_fallback",
+			reason: "resolver_lost",
+			settlement: settlement(approval, "not_delivered"),
+		});
+		const model = createCodexBrowserModel(authorities);
+		expect(
+			model.BrowserSpokenApprovalSchema.safeParse({ ...projected, state: "outcome_unknown" })
 				.success,
 		).toBe(false);
 	});

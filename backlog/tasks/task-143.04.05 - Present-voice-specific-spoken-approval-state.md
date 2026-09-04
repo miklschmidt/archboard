@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 12:27'
+updated_date: '2026-09-04 12:40'
 labels: []
 dependencies:
   - TASK-143.03.07
@@ -47,6 +47,8 @@ Present voice-specific eligibility, one-slot gate, captured user-utterance evide
 4. Run the module tests, root and frontend TypeScript checks, scoped Oxlint and Oxfmt checks, any repository owner required by new files, and git diff --check. Record implementation evidence without checking acceptance criteria or moving the task from In Progress.
 
 Review remediation: publish one closed BrowserSpokenApproval DTO from the authoritative SpokenApprovalSnapshot at the existing Codex browser projection boundary; wire the owner snapshot through the canvas gateway; make the UI consume that DTO without reconstructing policy or transcript evidence; prove exhaustive state/reason mapping, classifier-lost versus resolver-lost truth, null-captured assistant fallback, schema closure, and compile-time frame composition; run only the focused checks authorized by the review.
+
+Terminal-state rereview remediation: 1. Make exact canonical spoken identity/state win before ordinary pending eligibility in the UI, while keeping idle/live/unrelated cards subject to ordinary eligibility. Prove a reachable ordinary outcome_unknown card still renders canonical outcome_unknown. 2. Project resolver_lost as outcome_unknown only when settlement is absent or its outcome is outcome_unknown; preserve known not_delivered as visual_fallback. Encode the relation in the shared schema and focused server tests. 3. Run only focused projection/UI owners, both TypeScript projects, scoped Oxlint/Oxfmt, and diff checks; commit separately and return the fixed range for rereview.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -63,4 +65,10 @@ Review remediation: added one strict BrowserSpokenApproval DTO to the canonical 
 The spoken-approval UI now consumes only BrowserSpokenApproval plus the ordinary approval card. It no longer selects transcript records, accepts a synthetic gate, or computes expiry from caller time. Focused owner-view -> browser DTO -> UI tests cover exact identity, assistant-only/null evidence, every state/reason, schema closure, immutable evidence, and a compile-time workbench-frame composition fixture; the frame itself remains owned by TASK-143.04.06.
 
 Remediation validation: 174 focused tests across runtime spoken approval, shared browser model, server projection, canvas projection, browser transport, and spoken UI; 62 repository boundary/inventory tests; root and frontend TypeScript; scoped Oxlint and Oxfmt across 45 changed TypeScript files; git diff --check. Full browser and system lanes were not run as directed; TASK-143.04.07 owns rendered browser interaction. Status remains In Progress and all five acceptance criteria remain unchecked for independent review.
+
+Terminal-state rereview remediation: the spoken UI now validates the canonical spoken approval identity before ordinary pending eligibility. Matching terminal outcome_unknown, expired, stale, and visual-fallback state remains visible even after the ordinary card becomes terminal; settled ordinary state keeps its existing ineligible presentation. A real broker regression produces an outcome_unknown ApprovalOwnerView, projects the BrowserSpokenApproval and BrowserApproval, derives the ordinary card with lifecycle/status outcome_unknown and spoken not_pending, then verifies the spoken UI still renders outcome_unknown.
+
+The server now maps resolver_lost to outcome_unknown only when settlement is absent or explicitly outcome_unknown. A known delivered or not_delivered settlement maps to visual_fallback and remains attached to the DTO. The shared schema rejects unknown presentation for known settlement and requires exact approval, gate, and captured-user evidence for resolver loss. UI copy for a known settlement states delivered or not delivered instead of claiming uncertainty.
+
+Validation: 58 focused tests across shared browser model, server spoken projection, spoken UI, and the real broker-to-UI chain; root and frontend TypeScript checks; scoped Oxlint and Oxfmt across six changed TypeScript files; git diff --check. No broad test lane ran. Status remains In Progress and all five acceptance criteria remain unchecked for independent rereview.
 <!-- SECTION:NOTES:END -->

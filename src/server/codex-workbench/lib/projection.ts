@@ -549,6 +549,7 @@ function spokenSettlement(snapshot: SpokenApprovalSnapshot): BrowserSpokenApprov
 
 function browserFallbackState(
 	reason: SpokenApprovalFallbackReason,
+	settlement: BrowserSpokenApproval["settlement"],
 ): Extract<
 	BrowserSpokenApproval["state"],
 	"expired" | "visual_fallback" | "outcome_unknown" | "stale_session"
@@ -557,7 +558,9 @@ function browserFallbackState(
 		case "timeout":
 			return "expired";
 		case "resolver_lost":
-			return "outcome_unknown";
+			return settlement === null || settlement.outcome === "outcome_unknown"
+				? "outcome_unknown"
+				: "visual_fallback";
 		case "changed_effect":
 		case "stale_realtime_session":
 		case "stale_state":
@@ -592,9 +595,11 @@ function projectSpokenApproval(
 	const gate = spokenGate(snapshot);
 	const capturedUserFinal = capturedSpokenUserFinal(snapshot);
 	const settlement = spokenSettlement(snapshot);
+	const exactSettlement = snapshot.settlement === null || settlement !== null;
 	const exactCore =
 		approval !== null &&
 		gate !== null &&
+		exactSettlement &&
 		coordinator.threadId === gate.coordinatorThreadId &&
 		voice.generation?.browserSessionId === gate.realtimeSessionId;
 	const stale = (): BrowserSpokenApproval =>
@@ -661,9 +666,9 @@ function projectSpokenApproval(
 			return parse("settled", null);
 		case "visual_fallback": {
 			if (snapshot.reason === null) return stale();
-			const state = browserFallbackState(snapshot.reason);
+			const state = browserFallbackState(snapshot.reason, settlement);
 			if (state === "expired" && !exactCore) return stale();
-			if (state === "outcome_unknown") {
+			if (snapshot.reason === "resolver_lost") {
 				if (!exactCore) return stale();
 				if (capturedUserFinal === null || capturedUserFinal.sequence <= gate.effectPrompt.sequence)
 					return missingUserFinal();
