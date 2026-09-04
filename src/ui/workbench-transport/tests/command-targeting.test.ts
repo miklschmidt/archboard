@@ -239,3 +239,63 @@ test("queue commands are bound to the queue the captured link is presenting", as
 	).toMatchObject({ code: "link_changed", outcome: "not_delivered" });
 	expect(socket.actions("command")).toHaveLength(1);
 });
+
+test("queueAdd must name the target it was composed against, and is refused after navigation", async () => {
+	const transport = track(createBrowserWorkbenchTransport({ now: () => CLOCK }));
+	const socket = new FakeSocket();
+	const onThreadA = snapshot({
+		lease: lease(CLOCK + 60_000),
+		queue: queue("queued", ["submission-a"]),
+	});
+	let commandRequest: Request | null = null;
+	socket.onRequest = (request, activeSocket) => {
+		if (request.action === "subscribe") activeSocket.reply(request, snapshotMessage(1, onThreadA));
+		else if (request.action === "snapshot")
+			activeSocket.reply(request, snapshotMessage(1, onThreadA));
+		else if (request.action === "command") {
+			commandRequest = request;
+			activeSocket.reply(request, commandResult(onThreadA));
+		}
+	};
+	await transport.attach(socket);
+
+	// A queued submission names neither a thread nor a submission id, so a caller
+	// that forgets to say what it was composed against is refused rather than
+	// quietly aimed at whatever link is current.
+	const draft = {
+		command: "queueAdd",
+		prompt: "run the migration",
+	} as unknown as BrowserCommandDraft;
+	expect(await rejection(transport.command(draft))).toMatchObject({
+		code: "link_required",
+		outcome: "not_delivered",
+	});
+	expect(socket.actions("command")).toHaveLength(0);
+
+	const captured = transport.captureCommandTarget();
+	await transport.command(draft, captured);
+	expect(requiredRequest(commandRequest).command).toMatchObject({
+		command: "queueAdd",
+		prompt: "run the migration",
+		childId: "child-a",
+		epoch: "epoch-a",
+	});
+
+	// The pane navigates to thread-b, whose queue is present and perfectly
+	// usable. Only the captured target says this submission was not meant for it.
+	const onThreadB = navigatedSnapshot([]);
+	onThreadB.queue = queue("queued", ["submission-b"]);
+	socket.onRequest = (request, activeSocket) => {
+		if (request.action === "snapshot") activeSocket.reply(request, snapshotMessage(2, onThreadB));
+	};
+	await transport.refresh();
+	expect(transport.snapshot()?.queue.status).toBe("queued");
+	expect(transport.capabilities().supportsCommand("queueAdd")).toBe(true);
+
+	expect(await rejection(transport.command(draft, captured))).toMatchObject({
+		code: "link_changed",
+		outcome: "not_delivered",
+		commandId: "command-a",
+	});
+	expect(socket.actions("command")).toHaveLength(1);
+});

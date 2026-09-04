@@ -248,13 +248,42 @@ function sameCommandTarget(
 }
 
 /**
+ * The identity an ordinary approval must still be bound to. Both the capability
+ * answer and the dispatch check read it from the lease, so supportsCommand and
+ * command() cannot disagree about which approvals are answerable.
+ */
+interface ApprovalTargetIdentity {
+	readonly childId: BrowserCommandLease["childId"];
+	readonly epoch: BrowserCommandLease["epoch"];
+	readonly threadId: BrowserThreadLink["threadId"];
+}
+
+/**
+ * The binding's `link` is deliberately not compared. The approvals contract
+ * types it as nullable free-form text, the request builder defaults it to null,
+ * and nothing validates it beyond a bounded human string — so it carries no
+ * guaranteed value and is not an identity.
+ */
+function approvalBoundTo(
+	candidate: BrowserSnapshot["approvals"][number],
+	identity: ApprovalTargetIdentity,
+	now: () => number,
+): boolean {
+	return (
+		candidate.threadId === identity.threadId &&
+		candidate.lifecycle.state === "pending" &&
+		candidate.expiresAtMs > now() &&
+		candidate.binding.child === identity.childId &&
+		candidate.binding.epoch === identity.epoch
+	);
+}
+
+/**
  * An ordinary approval carries no threadId of its own in the command, so
  * nothing about the draft would notice a navigation between the moment the
  * person read the request and the moment they answered it. The snapshot's own
  * approval is the check: it must still be pending, unexpired, and bound to the
- * exact child, epoch and thread the command target captured. The binding's
- * `link` string is deliberately not compared — it is a server-owned
- * presentation value, not a browser identity.
+ * exact child, epoch and thread the command target captured.
  */
 function approvalMatchesTarget(
 	active: SocketRun,
@@ -269,30 +298,29 @@ function approvalMatchesTarget(
 	const requestId = draftRecord.requestId;
 	const approvalId = draftRecord.approvalId ?? null;
 	if (typeof requestId !== "string" || requestId.length === 0) return false;
+	const identity = { childId: target.childId, epoch: target.epoch, threadId: link.threadId };
 	return snapshot.approvals.some(
 		(candidate) =>
 			candidate.requestId === requestId &&
 			(candidate.approvalId ?? null) === approvalId &&
-			candidate.threadId === link.threadId &&
-			candidate.lifecycle.state === "pending" &&
-			candidate.expiresAtMs > now() &&
-			candidate.binding.child === target.childId &&
-			candidate.binding.epoch === target.epoch,
+			approvalBoundTo(candidate, identity, now),
 	);
 }
 
-function hasUsableApproval(active: SocketRun, now: () => number): boolean {
+function hasUsableApproval(
+	active: SocketRun,
+	targetLease: BrowserCommandLease | null,
+	now: () => number,
+): boolean {
 	const snapshot = active.snapshot;
 	const link = snapshot?.threadLink;
-	if (snapshot === undefined || snapshot === null || link?.state !== "executable") return false;
-	return snapshot.approvals.some(
-		(candidate) =>
-			candidate.threadId === link.threadId &&
-			candidate.lifecycle.state === "pending" &&
-			candidate.expiresAtMs > now() &&
-			candidate.binding.child === link.childId &&
-			candidate.binding.epoch === link.epoch,
-	);
+	if (snapshot === null || targetLease === null || link?.state !== "executable") return false;
+	const identity = {
+		childId: targetLease.childId,
+		epoch: targetLease.epoch,
+		threadId: link.threadId,
+	};
+	return snapshot.approvals.some((candidate) => approvalBoundTo(candidate, identity, now));
 }
 
 function queueSubmissionIds(draft: BrowserCommandDraft): readonly unknown[] {
@@ -302,10 +330,14 @@ function queueSubmissionIds(draft: BrowserCommandDraft): readonly unknown[] {
 }
 
 /**
- * The queue commands carry no thread identity either. The gateway presents the
- * queue as unavailable to a pane on any other link, so a queue the browser can
- * still see is the queue of the captured link — and every submission a command
- * names must still be in it.
+ * The queue commands carry no thread identity. A queue reads as unavailable
+ * only when the workhorse has no submissions to show at all, so a pane that has
+ * navigated sees the *new* link's queue rather than nothing: presence alone
+ * proves nothing about which link a command was composed against.
+ *
+ * The four commands that name submissions are anchored by those ids, which
+ * belong to one link's queue and are gone from another's. queueAdd names none,
+ * so it must carry the target it was composed against — see command().
  */
 function queueCommandRefusal(
 	active: SocketRun,
@@ -823,7 +855,7 @@ export function createBrowserWorkbenchTransport(
 		if (command === "dynamicApprovalRespond")
 			return hasUsableDynamicApproval(active, currentLease, now);
 		if (active.snapshot.threadLink.state !== "executable") return false;
-		if (command === "approvalRespond") return hasUsableApproval(active, now);
+		if (command === "approvalRespond") return hasUsableApproval(active, currentLease, now);
 		if (QUEUE_COMMANDS.has(command)) return active.snapshot.queue.status !== "unavailable";
 		return true;
 	};
@@ -919,6 +951,15 @@ export function createBrowserWorkbenchTransport(
 				"link_changed",
 				"The workbench target changed since this command was captured.",
 				{ commandId: requestedTarget.commandId },
+			);
+		// queueAdd is the one command with nothing of its own to anchor it: no
+		// thread, no submission id. Forgetting to name a target would make it land
+		// on whatever link the pane has navigated to, so forgetting is refused.
+		if (commandName === "queueAdd" && requestedTarget === undefined)
+			throw transportFailure(
+				"link_required",
+				"A queued submission must name the workbench target it was composed against.",
+				{ commandId: target.commandId },
 			);
 		if (
 			!ACCOUNT_COMMANDS.has(commandName as BrowserCommandName) &&
