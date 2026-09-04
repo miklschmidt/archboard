@@ -25,6 +25,7 @@ import {
 import {
 	claimRenderedWorkbenchLease,
 	productionFixtureRecords,
+	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
 import { seedBoard } from "./support/fullscreen-presentation.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
@@ -39,16 +40,6 @@ const VOICE_CONTROL_IDENTITY = `pane pane-1, thread link ${RENDERED_WORKHORSE_TH
 const PRESTART_NAME = "Start voice on this pane";
 const MUTE_NAME = `Mute the microphone on ${VOICE_CONTROL_IDENTITY}`;
 const STOP_NAME = `Stop voice on ${VOICE_CONTROL_IDENTITY}`;
-const CONTROL_GEOMETRY_SOURCE = String.raw`
-	const rect = node => node?.getBoundingClientRect() ?? new DOMRect(), overlaps = (left, right) => left.width > 0 && left.height > 0 && right.width > 0 && right.height > 0 && left.left < right.right && left.right > right.left && left.top < right.bottom && left.bottom > right.top;
-	const geometry = node => { const bounds = rect(node), visible = { left: Math.max(0, bounds.left), top: Math.max(0, bounds.top), right: Math.min(innerWidth, bounds.right), bottom: Math.min(innerHeight, bounds.bottom) };
-		for (let owner = node.parentElement; owner; owner = owner.parentElement) { const style = getComputedStyle(owner), clip = rect(owner);
-			if (/^(auto|clip|hidden|scroll)$/.test(style.overflowX)) { visible.left = Math.max(visible.left, clip.left); visible.right = Math.min(visible.right, clip.right); }
-			if (/^(auto|clip|hidden|scroll)$/.test(style.overflowY)) { visible.top = Math.max(visible.top, clip.top); visible.bottom = Math.min(visible.bottom, clip.bottom); }
-		}
-		const visibleWidth = Math.max(0, visible.right - visible.left), visibleHeight = Math.max(0, visible.bottom - visible.top), clipped = visibleWidth < bounds.width || visibleHeight < bounds.height, requestOverlap = overlaps(bounds, rect(document.querySelector('[data-workbench-region="app-global-request"]'))), centerHit = node.contains(document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2));
-		return { width: bounds.width, height: bounds.height, visibleWidth, visibleHeight, clipped, requestOverlap, centerHit, operable: visibleWidth >= 44 && visibleHeight >= 44 && !clipped && !requestOverlap && centerHit };
-	};`;
 
 interface FixtureRecord {
 	readonly kind?: string;
@@ -78,15 +69,6 @@ interface LayoutSnapshot {
 	readonly voiceOverlapsCanvas: boolean;
 	readonly canvasHeight: number;
 	readonly workbenchHeight: number;
-	readonly targetSizes: readonly {
-		readonly command: string | null;
-		readonly visibleWidth: number;
-		readonly visibleHeight: number;
-		readonly clipped: boolean;
-		readonly requestOverlap: boolean;
-		readonly centerHit: boolean;
-		readonly operable: boolean;
-	}[];
 }
 
 interface DockSnapshot {
@@ -101,11 +83,6 @@ interface DockSnapshot {
 	readonly stop: {
 		readonly enabled: boolean;
 		readonly sessionId: string | null;
-		readonly width: number;
-		readonly height: number;
-		readonly clipped: boolean;
-		readonly requestOverlap: boolean;
-		readonly centerHit: boolean;
 	};
 	readonly insideViewport: boolean;
 	readonly avoidsWorkbench: boolean;
@@ -141,7 +118,10 @@ function voiceSnapshot(browser: AgentBrowserSession): Promise<VoiceSnapshot> {
 
 function layoutSnapshot(browser: AgentBrowserSession): Promise<LayoutSnapshot> {
 	return browser.eval<LayoutSnapshot>(`(() => {
-		${CONTROL_GEOMETRY_SOURCE}
+		const rect = node => node?.getBoundingClientRect() ?? new DOMRect();
+		const overlaps = (left, right) => left.width > 0 && left.height > 0 && right.width > 0 &&
+			right.height > 0 && left.left < right.right && left.right > right.left &&
+			left.top < right.bottom && left.bottom > right.top;
 		const voice = document.querySelector('[data-workbench-voice="present"]');
 		const frame = document.querySelector('[data-workbench-frame]');
 		const canvas = document.querySelector('.canvas-stage');
@@ -156,16 +136,13 @@ function layoutSnapshot(browser: AgentBrowserSession): Promise<LayoutSnapshot> {
 			voiceOverlapsCanvas: overlaps(voiceRect, rect(canvas)),
 			canvasHeight: rect(canvas).height,
 			workbenchHeight: frameRect.height,
-			targetSizes: [...voice.querySelectorAll('[data-voice-command]')].map(node => {
-				return { command: node.getAttribute('data-voice-command'), ...geometry(node) };
-			}),
 		};
 	})()`);
 }
 
 function dockSnapshot(browser: AgentBrowserSession): Promise<DockSnapshot> {
 	return browser.eval<DockSnapshot>(`(() => {
-		${CONTROL_GEOMETRY_SOURCE}
+		const rect = node => node?.getBoundingClientRect() ?? new DOMRect();
 		const dock = document.querySelector('.presentation-dock');
 		const source = dock?.querySelector('[aria-label="Active voice session"]');
 		const status = dock?.querySelector('[data-presentation-voice-status]');
@@ -173,7 +150,6 @@ function dockSnapshot(browser: AgentBrowserSession): Promise<DockSnapshot> {
 		const workbench = document.querySelector('.shell-workbench');
 		const dockRect = rect(dock);
 		const workbenchRect = rect(workbench);
-		const stopRect = rect(stop);
 		const sourceContainer = dock?.querySelector('.presentation-sources');
 		const chrome = [...document.querySelectorAll(
 			'.presentation-current .layer-ui__wrapper, ' +
@@ -192,7 +168,6 @@ function dockSnapshot(browser: AgentBrowserSession): Promise<DockSnapshot> {
 			stop: {
 				enabled: stop instanceof HTMLButtonElement && !stop.disabled,
 				sessionId: stop?.getAttribute('data-voice-session-id') ?? null,
-				...geometry(stop),
 			},
 			insideViewport: dockRect.left >= 0 && dockRect.top >= 0 &&
 				dockRect.right <= innerWidth && dockRect.bottom <= innerHeight,
@@ -291,7 +266,7 @@ test(
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 
-		await browser.run(["focus", 'button[aria-label="Pane A"]']);
+		await roleAction(browser, "button", "Pane A");
 		expect(await focusedButton(browser)).toEqual(["Pane A", null, false, false]);
 		await browser.run(["press", "Tab"]);
 		expect(await focusedButton(browser)).toEqual(["Collapse", null, false, false]);
@@ -303,8 +278,12 @@ test(
 		expect(desktop.voiceInsideWorkbench).toBe(true);
 		expect(desktop.voiceOverlapsCanvas).toBe(false);
 		expect(desktop.canvasHeight).toBeGreaterThan(desktop.workbenchHeight);
-		expect(desktop.targetSizes.map(({ command }) => command)).toEqual(["start", "mute", "stop"]);
-		expect(desktop.targetSizes.every(({ operable }) => operable)).toBe(true);
+		const desktopControls = [
+			await workbenchControlOperability(browser, '[data-voice-command="start"]'),
+			await workbenchControlOperability(browser, '[data-voice-command="mute"]'),
+			await workbenchControlOperability(browser, '[data-voice-command="stop"]'),
+		];
+		expect(desktopControls.map(({ operable }) => operable)).toEqual([true, true, true]);
 		await roleAction(browser, "button", PRESTART_NAME);
 		const listening = await pollUntil(
 			() => voiceSnapshot(browser),
@@ -325,7 +304,8 @@ test(
 		expect(listening.announcer.text).toMatch(/listening/iu);
 		expect(listening.transcript).toContain("Show the controlled voice context.");
 
-		await browser.run(["focus", 'button[aria-label="Pane A"]']);
+		await roleAction(browser, "button", "Pane A");
+		expect(await focusedButton(browser)).toEqual(["Pane A", null, false, true]);
 		await browser.run(["press", "Tab"]);
 		expect(await focusedButton(browser)).toEqual(["Collapse", null, false, true]);
 		await browser.run(["press", "Tab"]);
@@ -369,8 +349,12 @@ test(
 		expect(flipLive.voiceInsideWorkbench).toBe(true);
 		expect(flipLive.voiceOverlapsCanvas).toBe(false);
 		expect(flipLive.canvasHeight).toBeGreaterThan(flipLive.workbenchHeight);
-		expect(flipLive.targetSizes.map(({ command }) => command)).toEqual(["start", "unmute", "stop"]);
-		expect(flipLive.targetSizes.every(({ operable }) => operable)).toBe(true);
+		const flipControls = [
+			await workbenchControlOperability(browser, '[data-voice-command="start"]'),
+			await workbenchControlOperability(browser, '[data-voice-command="unmute"]'),
+			await workbenchControlOperability(browser, '[data-voice-command="stop"]'),
+		];
+		expect(flipControls.map(({ operable }) => operable)).toEqual([true, true, true]);
 		await browser.run(["set", "viewport", "1440", "900", "1"]);
 
 		await roleAction(browser, "button", "Present Pane A fullscreen");
@@ -385,12 +369,11 @@ test(
 		expect(desktopDock.status).toMatchObject({ role: "status", live: "polite" });
 		expect(desktopDock.status.text).toMatch(/muted/iu);
 		expect(desktopDock.stop.sessionId).toBe(desktopDock.sessionId);
-		expect(desktopDock.stop.width).toBeGreaterThanOrEqual(44);
-		expect(desktopDock.stop.height).toBeGreaterThanOrEqual(44);
-		expect(desktopDock.stop).toMatchObject({
+		expect(await workbenchControlOperability(browser, ".presentation-stop")).toMatchObject({
 			clipped: false,
 			requestOverlap: false,
 			centerHit: true,
+			operable: true,
 		});
 		expect(desktopDock.insideViewport).toBe(true);
 		expect(desktopDock.avoidsWorkbench).toBe(true);
@@ -424,9 +407,12 @@ test(
 			),
 		).toEqual([1920, 1080, 2]);
 		expect(flipDock.stop.sessionId).toBe(desktopDock.sessionId);
-		expect(flipDock.stop.width).toBeGreaterThanOrEqual(44);
-		expect(flipDock.stop.height).toBeGreaterThanOrEqual(44);
-		expect(flipDock.stop).toMatchObject({ clipped: false, requestOverlap: false, centerHit: true });
+		expect(await workbenchControlOperability(browser, ".presentation-stop")).toMatchObject({
+			clipped: false,
+			requestOverlap: false,
+			centerHit: true,
+			operable: true,
+		});
 		expect(flipDock.insideViewport).toBe(true);
 		expect(flipDock.avoidsWorkbench).toBe(true);
 		expect(flipDock.sourceFits).toBe(true);
