@@ -99,6 +99,7 @@ interface GenerationOwners {
 	projectionListeners: Set<() => void>;
 	dynamicProjectionUnsubscribe: (() => void) | null;
 	timeline: CanvasTimelineOwner | null;
+	retired: boolean;
 }
 
 function requireCreated<Name extends keyof CodexWorkbenchComponents>(
@@ -172,6 +173,22 @@ function currentRealtimeGeneration(created: Readonly<Partial<CodexWorkbenchCompo
 			};
 }
 
+/**
+ * Retire one generation record. It stays in its map as an owner-free tombstone
+ * so a late caller is refused instead of rebuilding a dead generation; what is
+ * left is inert data, and the next generation prunes it.
+ */
+function retire(owners: GenerationOwners): void {
+	owners.retired = true;
+	owners.approval = null;
+	owners.authority = null;
+	owners.lifecycle = null;
+	owners.timeline = null;
+	owners.currentCoordinatorCall = null;
+	owners.dynamicProjectionUnsubscribe = null;
+	owners.projectionListeners.clear();
+}
+
 /** Build the one mandatory real production installation used by the canvas application. */
 export function createCanvasCodexWorkbenchInstallation(
 	host: CanvasCodexWorkbenchHost,
@@ -190,47 +207,58 @@ export function createCanvasCodexWorkbenchInstallation(
 	// that carry the same generation number. Every caller captures its record
 	// once, so retiring an entry cannot strand a cleanup that is still running.
 	const byGeneration = new Map<number, GenerationOwners>();
-	const retire = (generation: number, owners: GenerationOwners): void => {
-		if (byGeneration.get(generation) === owners) byGeneration.delete(generation);
-		owners.approval = null;
-		owners.authority = null;
-		owners.lifecycle = null;
-		owners.timeline = null;
-		owners.currentCoordinatorCall = null;
-		owners.dynamicProjectionUnsubscribe = null;
-		owners.projectionListeners.clear();
-	};
+	// The highest generation number this installation has ever built a record
+	// for. Nothing below it can be current, so a request for one is a caller
+	// mistake rather than a reason to build owners nobody will dispose.
+	let highestGeneration = 0;
 	const ownersFor = (input: CodexWorkbenchGenerationInput): GenerationOwners => {
-		let owners = byGeneration.get(input.generation);
-		if (owners === undefined) {
-			// Generation numbers only increase, and one child owns one generation,
-			// so every lower entry belongs to a replaced child. Dropping them here
-			// bounds the map when a crash replacement outruns its own cleanup.
-			for (const retired of byGeneration.keys())
-				if (retired < input.generation) byGeneration.delete(retired);
-			owners = {
-				approval: null,
-				authority: null,
-				lifecycle: null,
-				currentCoordinatorCall: null,
-				approvalProjectionInstalled: false,
-				projectionListeners: new Set(),
-				dynamicProjectionUnsubscribe: null,
-				timeline: null,
-				browserState: {
-					account: {
-						kind: "account",
-						state: "unknown",
-						reason: "Account state has not been read.",
-					},
-					login: { kind: "login", state: "idle" },
-					queue: { kind: "codex_queue", submissions: null },
-					queueThreadId: null,
-				},
-			};
-			byGeneration.set(input.generation, owners);
+		const owners = byGeneration.get(input.generation);
+		if (owners !== undefined) {
+			// Retirement is terminal. Rebuilding here would hand a dead generation a
+			// fresh approval owner with a live expiry timer and a fresh effect
+			// authority that nothing will ever dispose.
+			if (owners.retired)
+				throw new Error(
+					`The Codex workbench generation ${input.generation} is retired and cannot own more work.`,
+				);
+			return owners;
 		}
-		return owners;
+		if (input.generation < highestGeneration)
+			throw new Error(
+				`The Codex workbench generation ${input.generation} was replaced by ${highestGeneration} and cannot own more work.`,
+			);
+		// Generation numbers only increase, and one child owns one generation, so
+		// every lower entry belongs to a replaced child. Dropping them here bounds
+		// the map when a crash replacement outruns its own cleanup.
+		for (const [replaced, record] of byGeneration)
+			if (replaced < input.generation) {
+				record.retired = true;
+				byGeneration.delete(replaced);
+			}
+		highestGeneration = input.generation;
+		const created: GenerationOwners = {
+			approval: null,
+			authority: null,
+			lifecycle: null,
+			currentCoordinatorCall: null,
+			approvalProjectionInstalled: false,
+			projectionListeners: new Set(),
+			dynamicProjectionUnsubscribe: null,
+			timeline: null,
+			retired: false,
+			browserState: {
+				account: {
+					kind: "account",
+					state: "unknown",
+					reason: "Account state has not been read.",
+				},
+				login: { kind: "login", state: "idle" },
+				queue: { kind: "codex_queue", submissions: null },
+				queueThreadId: null,
+			},
+		};
+		byGeneration.set(input.generation, created);
+		return created;
 	};
 
 	const bindings = (input: CodexWorkbenchGenerationInput): ProductionCodexWorkbenchBindings => {
@@ -670,7 +698,7 @@ export function createCanvasCodexWorkbenchInstallation(
 				// The settled generation keeps nothing: its timeline, approval
 				// decisions, wait owners, effect authority, and browser projection
 				// listeners all leave with the record itself.
-				retire(input.generation, owners);
+				retire(owners);
 			},
 			settleOrdinaryRequests: async (approvals, cause) => {
 				for (const snapshot of approvals.inspect()) {
