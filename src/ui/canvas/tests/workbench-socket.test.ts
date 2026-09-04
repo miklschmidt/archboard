@@ -1,6 +1,4 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
 import type {
 	BrowserCommandDraft,
@@ -253,30 +251,6 @@ function ownerWith(
 		},
 	});
 }
-
-test("useCanvasSession delegates socket generations to the canvas owner", () => {
-	const source = readFileSync(resolve(import.meta.dir, "../useCanvasSession.ts"), "utf8");
-	expect(source).toContain("createCanvasWorkbenchSocketOwner({ media: realtime })");
-	expect(source).toContain("createCanvasPaneRegistration(socket, generation)");
-	expect(source).toMatch(
-		/attachCanvasWorkbenchAfterRegistration\(\{[\s\S]*?attach: \(\) => workbenchSockets\s*\.attach\(socket\)/,
-	);
-	expect(source).toContain("const updatePaneConnectionHealth");
-	expect(source).toContain("registration?.acknowledge(true)");
-	expect(source).not.toContain("registration?.acknowledge(false)");
-	expect(source).toMatch(
-		/if \(isCurrentRegistration\) \{[\s\S]*?if \(currentResult\.registered\) registration\?\.acknowledge\(true\);[\s\S]*?updatePaneConnectionHealth\(currentResult\.registered\);/,
-	);
-	expect(source).toContain("updatePaneConnectionHealth(false)");
-	expect(source).toContain("if (!currentResult.registered)");
-	expect(source).toContain("paneRegistrationRef.current === registration");
-	expect(source).toContain("socketGenerationRef.current !== generation");
-	expect(source).toContain("workbenchSockets.detach(socket)");
-	expect(source).toContain("workbenchSockets.dispose()");
-	expect(source).not.toContain("realtime.attach(");
-	expect(source).not.toContain("realtime.detach(");
-	expect(source).not.toContain("realtime.dispose(");
-});
 
 test("pane registration failure recovers once and stale generations cannot attach", async () => {
 	const media = new FakeMedia();

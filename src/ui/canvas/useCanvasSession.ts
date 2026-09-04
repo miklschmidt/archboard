@@ -65,7 +65,7 @@ import {
 	reportPane,
 	takeBoardBack,
 } from "./api";
-import type { ChangeReportReply, PaneReport } from "./api";
+import type { ChangeReportReply, PaneReply, PaneReport } from "./api";
 import type { WorkbenchTakeBackResult } from "../workbench-board-status/contract";
 import {
 	createBrowserWorkbenchMediaOwner,
@@ -77,6 +77,8 @@ import {
 	createCanvasPaneReportSequencer,
 	createCanvasWorkbenchSocketOwner,
 	type CanvasPaneRegistration,
+	type CanvasPaneReportCurrent,
+	type CanvasPaneReportEffects,
 	type CanvasWorkbenchSocketOwner,
 } from "./workbench-socket.js";
 import type { BrowserWorkbenchTransport } from "../workbench-transport/index.js";
@@ -524,79 +526,55 @@ export function useCanvasSession({
 				const key = JSON.stringify(report, (_k, v) => (typeof v === "number" ? Math.round(v) : v));
 				if (key === publishedPaneRef.current) return;
 				publishedPaneRef.current = key;
-				const reportSocket = socketRef.current;
-				const reportGeneration = socketGenerationRef.current;
-				const reportRequest = paneReportSequencer.begin(reportGeneration);
+				const dispatch = {
+					request: paneReportSequencer.begin(socketGenerationRef.current),
+					socket: socketRef.current,
+					registration: paneRegistrationRef.current,
+				};
+				const current = (): CanvasPaneReportCurrent => ({
+					socket: socketRef.current,
+					generation: socketGenerationRef.current,
+					registration: paneRegistrationRef.current,
+				});
+				const apply = (effects: CanvasPaneReportEffects, result: PaneReply | null): void => {
+					if (effects.superseded) return;
+					if (effects.acknowledgeRegistration) dispatch.registration?.acknowledge(true);
+					if (effects.connectionHealth !== null)
+						updatePaneConnectionHealth(effects.connectionHealth);
+					if (effects.acceptPaneListing) {
+						const listingKey = JSON.stringify([report.clientId, report.board]);
+						if (listingKey !== acceptedPaneListingKeyRef.current) {
+							acceptedPaneListingKeyRef.current = listingKey;
+							onPaneStateAccepted?.();
+						}
+					}
+					if (effects.clearPublishedReport) publishedPaneRef.current = "";
+					// Somebody rebuilt the frontend while this tab was open, so this tab is
+					// running old code. Said here, at the pane's own pulse, rather than
+					// discovered ten seconds later by a command timing out on a tab that
+					// does not know how to answer it (TASK-056). Once per build: this
+					// fires on every scroll otherwise.
+					if (effects.applyStaleBuild) {
+						const stale = result?.staleFrontend;
+						if (stale?.message && staleBuildRef.current !== stale.current) {
+							staleBuildRef.current = stale.current ?? "";
+							void stale;
+						}
+					}
+				};
 				void reportPane(report)
 					.then((result) => {
-						paneReportSequencer.settle(
-							reportRequest,
-							socketGenerationRef.current,
+						apply(
+							paneReportSequencer.settle(dispatch, current(), {
+								settled: true,
+								registered: result.registered,
+							}),
 							result,
-							(currentResult) => {
-								const isCurrentReport = reportSocket === socketRef.current;
-								const registration = paneRegistrationRef.current;
-								const isCurrentRegistration =
-									registration?.socket === reportSocket &&
-									registration?.generation === reportGeneration &&
-									isCurrentReport;
-								if (isCurrentRegistration) {
-									// The first positive result releases the one-shot attach latch;
-									// connection health follows every current pane report instead.
-									if (currentResult.registered) registration?.acknowledge(true);
-									updatePaneConnectionHealth(currentResult.registered);
-									const listingKey = JSON.stringify([report.clientId, report.board]);
-									if (
-										currentResult.registered &&
-										listingKey !== acceptedPaneListingKeyRef.current
-									) {
-										acceptedPaneListingKeyRef.current = listingKey;
-										onPaneStateAccepted?.();
-									}
-								}
-								if (!currentResult.registered) {
-									// Keep the existing pane-report path as the recovery path. A failed
-									// registration must be visible, but adding a private retry loop here
-									// would race the normal debounce and make the socket lifecycle opaque.
-									if (isCurrentReport) publishedPaneRef.current = "";
-								}
-								// The server refuses a pane whose socket is gone. Forget that we sent
-								// this, so a reconnection re-announces rather than assuming it stuck.
-								// Somebody rebuilt the frontend while this tab was open, so this tab is
-								// running old code. Said here, at the pane's own pulse, rather than
-								// discovered ten seconds later by a command timing out on a tab that
-								// does not know how to answer it (TASK-056). Once per build: this
-								// fires on every scroll otherwise. An old generation's response is not
-								// allowed to update the current tab's freshness marker.
-								if (isCurrentReport) {
-									const stale = currentResult.staleFrontend;
-									if (stale?.message && staleBuildRef.current !== stale.current) {
-										staleBuildRef.current = stale.current ?? "";
-										void stale;
-									}
-								}
-							},
 						);
 						return undefined;
 					})
 					.catch((error) => {
-						paneReportSequencer.settle(
-							reportRequest,
-							socketGenerationRef.current,
-							undefined,
-							() => {
-								const isCurrentReport = reportSocket === socketRef.current;
-								const registration = paneRegistrationRef.current;
-								const isCurrentRegistration =
-									registration?.socket === reportSocket &&
-									registration?.generation === reportGeneration &&
-									isCurrentReport;
-								if (isCurrentRegistration) updatePaneConnectionHealth(false);
-								// Nothing is lost by a failed report except its freshness, and the next
-								// change resends — but only if this one is not remembered as sent.
-								if (isCurrentReport) publishedPaneRef.current = "";
-							},
-						);
+						apply(paneReportSequencer.settle(dispatch, current(), { settled: false }), null);
 						void error;
 					});
 			};

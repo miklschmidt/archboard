@@ -9,9 +9,7 @@ import type { BrowserWorkbenchSocket } from "../../../src/ui/workbench-transport
 import {
 	attachCanvasWorkbenchAfterRegistration,
 	createCanvasPaneRegistration,
-	createCanvasPaneReportSequencer,
 	createCanvasWorkbenchSocketOwner,
-	type CanvasPaneReportRequest,
 } from "../../../src/ui/canvas/workbench-socket.js";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createRequester, waitFor } from "./support/http.ts";
@@ -376,36 +374,25 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 			expect(attachCount).toBe(1);
 			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(1);
 			expect(transport.snapshot()).not.toBeNull();
-			// A later pane report is allowed to refresh health, but an older response
-			// from the same generation cannot disturb the retained production transport.
-			const reportSequencer = createCanvasPaneReportSequencer();
-			const reportHealth: boolean[] = [];
-			const reportFreshness: string[] = [];
-			const olderReport = deferred<{ registered: boolean }>();
-			const newerReport = deferred<{ registered: boolean }>();
-			const settleReport = (
-				paneRequest: CanvasPaneReportRequest,
-				result: { registered: boolean },
-			): void => {
-				reportSequencer.settle(paneRequest, 1, result, (currentResult) => {
-					expect(owner.current()?.socket).toBe(socketAdapter);
-					if (currentResult.registered) {
-						expect(registrationGate.acknowledge(true)).toBeFalse();
-					}
-					reportHealth.push(currentResult.registered);
-					reportFreshness.push(currentResult.registered ? "published" : "cleared");
-				});
-			};
-			const olderRequest = reportSequencer.begin(1);
-			const newerRequest = reportSequencer.begin(1);
-			const olderSettled = olderReport.promise.then((result) => settleReport(olderRequest, result));
-			const newerSettled = newerReport.promise.then((result) => settleReport(newerRequest, result));
-			newerReport.resolve({ registered: true });
-			await newerSettled;
-			olderReport.resolve({ registered: false });
-			await olderSettled;
-			expect(reportHealth).toEqual([true]);
-			expect(reportFreshness).toEqual(["published"]);
+			// A second authoritative pane registration on the same generation is a
+			// no-op for the retained production transport; the ordering rules that
+			// decide which response may change health are owned by the pane-report
+			// sequencer's own tests, not simulated again here.
+			const secondRegistrationReply = await request<{ registered: boolean }>("/api/panes", {
+				method: "POST",
+				doing: false,
+				body: {
+					clientId,
+					paneId: clientId,
+					primary: true,
+					focused: true,
+					elementCount: 0,
+					board: "scratch",
+					rect: { x: 0, y: 0, width: 1280, height: 800 },
+					viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
+				},
+			});
+			expect(secondRegistrationReply.body.registered).toBeTrue();
 			expect(attachCount).toBe(1);
 			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(1);
 			expect(owner.current()?.transport).toBe(transport);
