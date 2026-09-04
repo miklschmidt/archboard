@@ -1,4 +1,5 @@
 import { safeHttpUrl } from "../../workbench-timeline/index.js";
+import { permissionsAreGrantable } from "./fields.js";
 import type {
 	BrowserApproval,
 	BrowserDynamicApproval,
@@ -19,6 +20,8 @@ export const NO_FIELDS =
 	"The host published no reviewed fields for this form, so it cannot be answered here.";
 export const SECRET_NOTICE =
 	"A secret answer is never shown back, never defaulted, and never spoken.";
+export const NOTHING_GRANTABLE_NOTICE =
+	"This request names no permission this browser can grant, so the only honest answer here is to grant nothing.";
 export const FILE_ACCESS_NOTICE =
 	"The host published which file-access modes were asked for but no paths. Archboard never invents a path list, so only network access, grant scope, and strict auto review can be granted here.";
 
@@ -138,8 +141,10 @@ export function ordinaryNotices(approval: BrowserApproval): readonly string[] {
 	const notices: string[] = [];
 	if (approval.approvalKind === "command_execution" && approval.command === null)
 		notices.push(NO_COMMAND);
-	if (approval.approvalKind === "permissions" && approval.requestedScope.fileAccess.length > 0)
-		notices.push(FILE_ACCESS_NOTICE);
+	if (approval.approvalKind === "permissions") {
+		if (approval.requestedScope.fileAccess.length > 0) notices.push(FILE_ACCESS_NOTICE);
+		if (!permissionsAreGrantable(approval)) notices.push(NOTHING_GRANTABLE_NOTICE);
+	}
 	if (
 		approval.approvalKind === "user_input" &&
 		approval.questions.some((question) => question.isSecret)

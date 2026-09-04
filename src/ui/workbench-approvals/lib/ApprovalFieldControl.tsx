@@ -10,11 +10,17 @@ const CONTROL_CLASSES =
 const LABEL_CLASSES = "font-sans text-body font-medium text-foreground";
 const HINT_CLASSES = "m-0 font-sans text-body text-muted-foreground";
 const ERROR_CLASSES = "m-0 font-sans text-body text-destructive";
+const ROW_CLASSES = "min-w-0 border-t border-border-subtle py-control first:border-t-0";
+// The visible mark is small; the label keeps the semantic 44px touch target the
+// Samsung Flip needs, the way the opener settings choices do.
+const CHECKBOX_ROW_CLASSES =
+	"min-h-touch-target flex cursor-pointer items-center gap-control rounded-control px-compact";
 const CHECKBOX_CLASSES =
-	"size-grid-tight m-0 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring";
+	"m-0 accent-primary outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 const INPUT_TYPES = {
 	text: "text",
+	multiline: "text",
 	secret: "password",
 	number: "number",
 	integer: "number",
@@ -22,7 +28,6 @@ const INPUT_TYPES = {
 	email: "email",
 	date: "date",
 	date_time: "datetime-local",
-	lines: "text",
 } as const;
 
 export interface ApprovalFieldControlProps {
@@ -74,9 +79,45 @@ export function ApprovalFieldControl({
 	const describedBy = described.length === 0 ? undefined : described;
 	const selectedValues = formSelection(form, name);
 	const options = field.options ?? [];
+	const hint =
+		field.description === null ? null : (
+			<p className={HINT_CLASSES} id={hintId}>
+				{field.description}
+			</p>
+		);
+	const message =
+		error === null ? null : (
+			<p className={ERROR_CLASSES} id={errorId} role="alert">
+				{error}
+			</p>
+		);
+	if (field.control === "boolean")
+		return (
+			<div
+				className={ROW_CLASSES}
+				data-approval-field={field.name}
+				data-approval-field-control={field.control}
+				data-approval-field-secret="false"
+			>
+				<label className={CHECKBOX_ROW_CLASSES}>
+					<input
+						aria-describedby={describedBy}
+						checked={formFlag(form, name)}
+						className={CHECKBOX_CLASSES}
+						id={controlId}
+						onChange={handleFlag}
+						onFocus={handleFocus}
+						type="checkbox"
+					/>
+					<span className={LABEL_CLASSES}>{field.label}</span>
+				</label>
+				{hint}
+				{message}
+			</div>
+		);
 	return (
 		<div
-			className="min-w-0 border-t border-border-subtle py-control first:border-t-0"
+			className={ROW_CLASSES}
 			data-approval-field={field.name}
 			data-approval-field-control={field.control}
 			data-approval-field-secret={field.secret ? "true" : "false"}
@@ -85,22 +126,8 @@ export function ApprovalFieldControl({
 				{field.label}
 				{field.required ? <span aria-hidden="true"> *</span> : null}
 			</label>
-			{field.description === null ? null : (
-				<p className={HINT_CLASSES} id={hintId}>
-					{field.description}
-				</p>
-			)}
-			{field.control === "boolean" ? (
-				<input
-					aria-describedby={describedBy}
-					checked={formFlag(form, name)}
-					className={CHECKBOX_CLASSES}
-					id={controlId}
-					onChange={handleFlag}
-					onFocus={handleFocus}
-					type="checkbox"
-				/>
-			) : field.control === "enum" ? (
+			{hint}
+			{field.control === "enum" ? (
 				<select
 					aria-describedby={describedBy}
 					className={CONTROL_CLASSES}
@@ -185,11 +212,7 @@ export function ApprovalFieldControl({
 					value={formValue(form, name)}
 				/>
 			) : null}
-			{error === null ? null : (
-				<p className={ERROR_CLASSES} id={errorId} role="alert">
-					{error}
-				</p>
-			)}
+			{message}
 		</div>
 	);
 }

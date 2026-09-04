@@ -219,8 +219,8 @@ export function ApprovalCard({
 			{fields.length === 0 ? null : (
 				<fieldset
 					className="m-0 min-w-0 p-0 border-0"
-					data-approval-fields={decidable ? "editable" : "read_only"}
-					disabled={!decidable}
+					data-approval-fields={decidable && !busy ? "editable" : "read_only"}
+					disabled={!decidable || busy}
 				>
 					{fields.map((field) => (
 						<ApprovalFieldControl

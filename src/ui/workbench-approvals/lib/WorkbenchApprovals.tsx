@@ -14,7 +14,7 @@ import type {
 import { ApprovalCard } from "./ApprovalCard.js";
 import { approvalDecisionSignature, approvalFocusReturn } from "./focus.js";
 import { applyApprovalFormEvent, initialApprovalForm } from "./form.js";
-import { projectWorkbenchApprovals } from "./projection.js";
+import { projectWorkbenchApprovals, workbenchApprovalsInput } from "./projection.js";
 import { submitApprovalDecision } from "./submit.js";
 
 type FormMap = Readonly<Record<string, WorkbenchApprovalFormState>>;
@@ -41,10 +41,11 @@ function cardFields(card: WorkbenchApprovalCard): readonly WorkbenchApprovalFiel
 }
 
 /**
- * The target is read while the offers are on screen, so it is the target the
- * person was actually looking at. The transport refuses the command outright if
- * the workbench has moved on since, rather than answering another thread's
- * request.
+ * The target is read after the offers are on screen, so it is the target the
+ * person is actually looking at. Capturing it is a transport call that can
+ * expire a lease and notify subscribers, so it belongs in an effect and never
+ * in the render body. The transport refuses the command outright if the
+ * workbench has moved on since, rather than answering another thread's request.
  */
 function captureTarget(
 	transport: WorkbenchApprovalsProps["transport"],
@@ -74,11 +75,9 @@ export function WorkbenchApprovals({
 	const [focusedKey, setFocusedKey] = useState<string | null>(null);
 
 	const nowMs = (now ?? Date.now)();
-	const view = projectWorkbenchApprovals({
-		state,
-		nowMs,
-		canCommand: transport.capabilities().canCommand,
-	});
+	const view = projectWorkbenchApprovals(
+		workbenchApprovalsInput(state, nowMs, transport.capabilities()),
+	);
 	const signature = approvalDecisionSignature(view.cards);
 	const [tracked, setTracked] = useState<TrackedDecisions>({ signature, announcement: null });
 	if (tracked.signature !== signature) {
@@ -93,10 +92,14 @@ export function WorkbenchApprovals({
 	}, [announcement]);
 
 	const decidableCount = view.cards.filter((card) => card.offers.length > 0).length;
-	const commandTarget = captureTarget(transport, decidableCount > 0);
 	const offered = useRef<OfferedDecisions>({ cards: view.cards, forms, target: null, transport });
 	useEffect(() => {
-		offered.current = { cards: view.cards, forms, target: commandTarget, transport };
+		offered.current = {
+			cards: view.cards,
+			forms,
+			target: captureTarget(transport, decidableCount > 0),
+			transport,
+		};
 	});
 
 	const handleFormEvent = useCallback(
