@@ -132,22 +132,32 @@ export function evidence(
 
 export function ledgerEntry(
 	id: string,
-	overrides: Partial<VoiceContextLedgerEntry> = {},
+	overrides: Partial<Omit<VoiceContextLedgerEntry, "attempted" | "attemptedAtMs" | "outcome">> & {
+		readonly attempted?: boolean;
+		readonly attemptedAtMs?: number | null;
+		readonly outcome?: VoiceContextLedgerEntry["outcome"];
+	} = {},
 ): VoiceContextLedgerEntry {
 	const numeric = Number(id.replace(/\D/gu, "") || 0);
 	const capturedAtMs = 1_800_000_001_000 + numeric;
-	return {
+	const { attempted = true, attemptedAtMs, outcome = "delivered", ...rest } = overrides;
+	const shared = {
 		id,
 		kind: "semantic",
 		sourceOrder: { kind: "adapter_ledger", ledgerId: "coordinator-a", position: numeric },
 		freshness: { capturedAtMs, freshUntilMs: capturedAtMs + 500 },
-		attemptedAtMs: capturedAtMs + 100,
-		attempted: true,
-		outcome: "delivered",
 		reason: null,
 		body: `exact-body-${id}`,
 		provenance: "live",
 		connection: "connected",
-		...overrides,
-	};
+		...rest,
+	} as const;
+	return attempted
+		? {
+				...shared,
+				attempted: true,
+				attemptedAtMs: attemptedAtMs ?? capturedAtMs + 100,
+				outcome,
+			}
+		: { ...shared, attempted: false, attemptedAtMs: null, outcome: "not_delivered" };
 }

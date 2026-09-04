@@ -1,10 +1,11 @@
 import type React from "react";
-import { useCallback, useId, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useId, useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/ui/button";
 import { cn } from "@/ui/ui-classnames";
 
 import type { VoiceContextClipboardPort, VoiceContextPanelProps } from "../contract.js";
+import { ingestVoiceContextBrowserEvidence } from "./browser-evidence.js";
 import { projectVoiceContext } from "./projection.js";
 import { VoiceContextSessionRegion, type VoiceContextCopyTarget } from "./VoiceContextRows.js";
 
@@ -22,9 +23,13 @@ interface CopyNotice {
 	readonly text: string;
 }
 
-function increment(current: ReadonlyMap<string, number>, key: string): ReadonlyMap<string, number> {
+function shift(
+	current: ReadonlyMap<string, number>,
+	key: string,
+	delta: -1 | 1,
+): ReadonlyMap<string, number> {
 	const next = new Map(current);
-	next.set(key, (next.get(key) ?? 1) + 1);
+	next.set(key, Math.max(1, (next.get(key) ?? 1) + delta));
 	return next;
 }
 
@@ -34,18 +39,17 @@ function reset(current: ReadonlyMap<string, number>, key: string): ReadonlyMap<s
 	return next;
 }
 
-function revealAll(current: ReadonlyMap<string, number>, key: string): ReadonlyMap<string, number> {
-	const next = new Map(current);
-	next.set(key, Number.MAX_SAFE_INTEGER);
-	return next;
-}
-
 export function VoiceContextPanel({
 	history,
+	browserEvidence,
 	clipboard = browserClipboard,
 	limits,
 	className,
 }: VoiceContextPanelProps): React.JSX.Element {
+	useEffect(() => {
+		if (browserEvidence !== null && browserEvidence !== undefined)
+			ingestVoiceContextBrowserEvidence(history, browserEvidence);
+	}, [browserEvidence, history]);
 	const snapshot = useSyncExternalStore(history.subscribe, history.snapshot, history.snapshot);
 	const [sessionPage, setSessionPage] = useState(1);
 	const [entryPages, setEntryPages] = useState<ReadonlyMap<string, number>>(new Map());
@@ -68,18 +72,22 @@ export function VoiceContextPanel({
 				.then(
 					() => setCopyNotice({ state: "success", text: label }),
 					() => {
-						if (target.kind === "brief") setBriefPages((current) => revealAll(current, target.key));
-						else setEntryBodyPages((current) => revealAll(current, target.key));
+						if (target.kind === "brief") setBriefPages((current) => reset(current, target.key));
+						else setEntryBodyPages((current) => reset(current, target.key));
 						setCopyNotice({
 							state: "failure",
-							text: "Copy failed. The full exact text is expanded below; select it and copy it manually.",
+							text: "Copy failed. The exact target is at its first bounded window below; use Previous and Next to select and copy each segment manually.",
 						});
 					},
 				);
 		},
 		[clipboard],
 	);
-	const collapseSessions = useCallback(() => setSessionPage(1), []);
+	const firstSessions = useCallback(() => setSessionPage(1), []);
+	const previousSessions = useCallback(
+		() => setSessionPage((current) => Math.max(1, current - 1)),
+		[],
+	);
 	const nextSessions = useCallback(() => setSessionPage((current) => current + 1), []);
 	const collapseBody = useCallback(
 		(key: string) => setEntryBodyPages((current) => reset(current, key)),
@@ -94,15 +102,27 @@ export function VoiceContextPanel({
 		[],
 	);
 	const nextBody = useCallback(
-		(key: string) => setEntryBodyPages((current) => increment(current, key)),
+		(key: string) => setEntryBodyPages((current) => shift(current, key, 1)),
+		[],
+	);
+	const previousBody = useCallback(
+		(key: string) => setEntryBodyPages((current) => shift(current, key, -1)),
 		[],
 	);
 	const nextBrief = useCallback(
-		(key: string) => setBriefPages((current) => increment(current, key)),
+		(key: string) => setBriefPages((current) => shift(current, key, 1)),
+		[],
+	);
+	const previousBrief = useCallback(
+		(key: string) => setBriefPages((current) => shift(current, key, -1)),
 		[],
 	);
 	const nextEntries = useCallback(
-		(key: string) => setEntryPages((current) => increment(current, key)),
+		(key: string) => setEntryPages((current) => shift(current, key, 1)),
+		[],
+	);
+	const previousEntries = useCallback(
+		(key: string) => setEntryPages((current) => shift(current, key, -1)),
 		[],
 	);
 
@@ -124,8 +144,13 @@ export function VoiceContextPanel({
 				</div>
 				<div className="flex flex-wrap items-center justify-end gap-control">
 					{view.sessionPage > 1 && (
-						<Button onClick={collapseSessions} tone="quiet">
-							Collapse to recent sessions
+						<Button onClick={firstSessions} tone="quiet">
+							Back to newest sessions
+						</Button>
+					)}
+					{view.newerSessionCount > 0 && (
+						<Button onClick={previousSessions} tone="quiet">
+							Previous {view.newerSessionCount} newer sessions
 						</Button>
 					)}
 					{view.hiddenSessionCount > 0 && (
@@ -162,6 +187,9 @@ export function VoiceContextPanel({
 						onNextBody={nextBody}
 						onNextBrief={nextBrief}
 						onNextEntries={nextEntries}
+						onPreviousBody={previousBody}
+						onPreviousBrief={previousBrief}
+						onPreviousEntries={previousEntries}
 						session={session}
 					/>
 				))

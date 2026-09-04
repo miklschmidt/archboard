@@ -168,6 +168,7 @@ function semanticBase(
 			significance: event.kind === "settled_change" ? event.change.significance : null,
 			brief: event.brief,
 			capturedAtMs: semanticCapturedAt(event),
+			freshUntilMs: event.freshness.freshUntilMs,
 			paneId: event.pane.paneId,
 			focused: event.pane.focused,
 			selection: freezeArray(event.selection),

@@ -75,7 +75,7 @@ describe("voice context projection", () => {
 		expect(fields["Focus freshness"]).toBeUndefined();
 		expect(fields["Selection freshness"]).toBeUndefined();
 		expect(session.canonicalBrief).toBe(exact);
-		expect(session.canonicalBriefPreview).toBe(`${[...exact].slice(0, 12).join("")}…`);
+		expect(session.canonicalBriefPreview).toBe([...exact].slice(0, 12).join(""));
 	});
 
 	test("retains byte-capped identity fields while session identity stays external", () => {
@@ -104,7 +104,7 @@ describe("voice context projection", () => {
 	test("computes delivery freshness at attempt and labels adapter outcomes", () => {
 		const history = createVoiceContextHistory();
 		history.capture(capture(SESSION_A, { provenance: "recovered" }));
-		const entries = [
+		const sourceEntries = [
 			ledgerEntry("1", { kind: "semantic", outcome: "delivered" }),
 			ledgerEntry("2", {
 				kind: "focus",
@@ -128,30 +128,32 @@ describe("voice context projection", () => {
 				provenance: "recovered",
 			}),
 		] as const;
-		for (const entry of entries.toReversed()) history.append({ session: SESSION_A, entry });
-		const result = projected(history, {
+		for (const entry of sourceEntries.toReversed()) history.append({ session: SESSION_A, entry });
+		const earlier = projected(history, {
 			entryPages: new Map([[voiceContextSessionKey(SESSION_A), 2]]),
 		}).sessions[0]!;
+		const recent = projected(history).sessions[0]!;
+		const entries = [...earlier.entries, ...recent.entries];
 
-		expect(result.entries.map((entry) => entry.kind)).toEqual([
+		expect(entries.map((entry) => entry.kind)).toEqual([
 			"semantic",
 			"focus",
 			"selection",
 			"callback",
 		]);
-		expect(result.entries.map((entry) => entry.freshnessLabel)).toEqual([
+		expect(entries.map((entry) => entry.freshnessLabel)).toEqual([
 			"Fresh at attempt",
 			"Not attempted",
 			"Stale at attempt",
 			"Fresh at attempt",
 		]);
-		expect(result.entries.map((entry) => entry.outcomeLabel)).toEqual([
+		expect(entries.map((entry) => entry.outcomeLabel)).toEqual([
 			"Delivered",
 			"Not delivered",
 			"Delivered",
 			"Outcome unknown",
 		]);
-		expect(result.entries[3]).toMatchObject({
+		expect(entries[3]).toMatchObject({
 			connectionLabel: "Recorded while disconnected",
 			provenanceLabel: "Recovered history",
 			reason: "response_lost",
@@ -173,26 +175,28 @@ describe("voice context projection", () => {
 		const first = projected(history);
 		expect(first.sessions).toHaveLength(1);
 		expect(first.hiddenSessionCount).toBe(2);
-		expect(projected(history, { sessionPage: 2 }).sessions).toHaveLength(2);
+		expect(projected(history, { sessionPage: 2 }).sessions).toHaveLength(1);
 		const all = projected(history, { sessionPage: 3 });
-		expect(all.sessions).toHaveLength(3);
+		expect(all.sessions).toHaveLength(1);
 		const key = voiceContextSessionKey(SESSION_A);
-		const older = all.sessions[2]!;
+		const older = all.sessions[0]!;
 		expect(older.entries.map((entry) => entry.id)).toEqual(["4", "5"]);
 		expect(older.hiddenEntryCount).toBe(3);
 		const twoPages = projected(history, {
 			sessionPage: 3,
 			entryPages: new Map([[key, 2]]),
-		}).sessions[2]!;
-		expect(twoPages.entries.map((entry) => entry.id)).toEqual(["2", "3", "4", "5"]);
+		}).sessions[0]!;
+		expect(twoPages.entries.map((entry) => entry.id)).toEqual(["2", "3"]);
 		expect(twoPages.hiddenEntryCount).toBe(1);
+		expect(twoPages.newerEntryCount).toBe(2);
 
 		const bodyKey = voiceContextEntryExpansionKey(key, "5");
 		const bodyPage = projected(history, {
 			sessionPage: 3,
 			entryBodyPages: new Map([[bodyKey, 2]]),
-		}).sessions[2]!.entries[1]!;
-		expect([...bodyPage.bodyPreview].length).toBeLessThanOrEqual(25);
+		}).sessions[0]!.entries[1]!;
+		expect([...bodyPage.bodyPreview].length).toBeLessThanOrEqual(12);
+		expect(bodyPage.bodyWindowStart).toBe(12);
 		expect(bodyPage.bodyRemainingCharacters).toBeGreaterThan(0);
 		expect(history.snapshot().sessions[0]?.entries).toHaveLength(5);
 	});
@@ -230,15 +234,16 @@ describe("voice context projection", () => {
 				1_800_000_003_000,
 			),
 		);
-		const sessions = projected(history, { sessionPage: 2 }).sessions;
-		expect(sessions[0]).toMatchObject({ status: "stopped", statusLabel: "Stopped" });
-		expect(sessions[0]?.statusDetail).toContain("captured baseline and ledger remain available");
-		expect(sessions[1]).toMatchObject({
+		const stopped = projected(history).sessions[0]!;
+		const replaced = projected(history, { sessionPage: 2 }).sessions[0]!;
+		expect(stopped).toMatchObject({ status: "stopped", statusLabel: "Stopped" });
+		expect(stopped.statusDetail).toContain("captured baseline and ledger remain available");
+		expect(replaced).toMatchObject({
 			status: "failed",
 			statusLabel: "Replaced",
 			replaced: true,
 			briefLabel: "Stale brief",
 		});
-		expect(sessions[1]?.briefDetail).toContain("semantic freshness window expired");
+		expect(replaced.briefDetail).toContain("semantic freshness window expired");
 	});
 });

@@ -77,14 +77,27 @@ function visibleText(
 	pageSize: number,
 ): {
 	readonly preview: string;
+	readonly page: number;
+	readonly start: number;
+	readonly end: number;
+	readonly total: number;
+	readonly previous: number;
 	readonly remaining: number;
 	readonly next: number;
 } {
 	const characters = [...text];
-	const visible = Math.min(characters.length, pageNumber * pageSize);
-	const remaining = characters.length - visible;
+	const pageCount = Math.max(1, Math.ceil(characters.length / pageSize));
+	const resolvedPage = Math.min(pageNumber, pageCount);
+	const start = (resolvedPage - 1) * pageSize;
+	const end = Math.min(characters.length, start + pageSize);
+	const remaining = characters.length - end;
 	return {
-		preview: remaining === 0 ? text : `${characters.slice(0, visible).join("")}…`,
+		preview: characters.slice(start, end).join(""),
+		page: resolvedPage,
+		start,
+		end,
+		total: characters.length,
+		previous: Math.min(pageSize, start),
 		remaining,
 		next: Math.min(pageSize, remaining),
 	};
@@ -200,16 +213,25 @@ function entryView(
 		sourceOrderLabel: sourceOrderLabel(entry),
 		capturedAt: timestamp(entry.freshness.capturedAtMs),
 		freshUntil: timestamp(entry.freshness.freshUntilMs),
-		attemptedAt: timestamp(entry.attemptedAtMs),
+		attemptedAt: entry.attemptedAtMs === null ? null : timestamp(entry.attemptedAtMs),
 		attemptLabel: entry.attempted ? "Attempted" : "Not attempted",
 		freshnessLabel: attemptFreshness(entry),
 		outcome: entry.outcome,
 		outcomeLabel: OUTCOME_LABELS[entry.outcome],
 		reason: entry.reason ?? "No reason reported",
 		body: entry.body,
-		bodyLabel: entry.outcome === "delivered" ? "Exact delivered body" : "Exact attempted body",
+		bodyLabel:
+			entry.outcome === "delivered"
+				? "Exact delivered body"
+				: entry.attempted
+					? "Exact attempted body"
+					: "Exact prepared body",
 		bodyPreview: body.preview,
-		bodyPage,
+		bodyPage: body.page,
+		bodyWindowStart: body.start,
+		bodyWindowEnd: body.end,
+		bodyTotalCharacters: body.total,
+		previousBodyCharacters: body.previous,
 		bodyRemainingCharacters: body.remaining,
 		nextBodyCharacters: body.next,
 		provenanceLabel: entry.provenance === "recovered" ? "Recovered history" : "Live record",
@@ -270,15 +292,18 @@ function sessionView(
 			? `${latest.detail} Its captured baseline and ledger remain available.`
 			: latest.detail;
 	const briefNarrated = briefNarration(record.captured.brief);
-	const briefPage = page(input.briefPages.get(key));
+	const requestedBriefPage = page(input.briefPages.get(key));
 	const canonical = visibleText(
 		record.captured.canonicalBrief,
-		briefPage,
+		requestedBriefPage,
 		resolved.bodyWindowCharacters,
 	);
-	const entryPage = page(input.entryPages.get(key));
-	const visibleEntries = Math.min(record.entries.length, entryPage * resolved.entryPageSize);
-	const entries = record.entries.slice(record.entries.length - visibleEntries);
+	const requestedEntryPage = page(input.entryPages.get(key));
+	const entryPageCount = Math.max(1, Math.ceil(record.entries.length / resolved.entryPageSize));
+	const entryPage = Math.min(requestedEntryPage, entryPageCount);
+	const entryEnd = Math.max(0, record.entries.length - (entryPage - 1) * resolved.entryPageSize);
+	const entryStart = Math.max(0, entryEnd - resolved.entryPageSize);
+	const entries = record.entries.slice(entryStart, entryEnd);
 	return Object.freeze({
 		key,
 		binding: capturedSession.binding,
@@ -296,28 +321,37 @@ function sessionView(
 		fields: baselineFields(record.captured.brief),
 		canonicalBrief: record.captured.canonicalBrief,
 		canonicalBriefPreview: canonical.preview,
-		canonicalBriefPage: briefPage,
+		canonicalBriefPage: canonical.page,
+		canonicalBriefWindowStart: canonical.start,
+		canonicalBriefWindowEnd: canonical.end,
+		canonicalBriefTotalCharacters: canonical.total,
+		previousCanonicalBriefCharacters: canonical.previous,
 		canonicalBriefRemainingCharacters: canonical.remaining,
 		nextCanonicalBriefCharacters: canonical.next,
 		entries: Object.freeze(entries.map((entry) => entryView(key, entry, input, resolved))),
 		entryCount: record.entries.length,
 		entryPage,
-		hiddenEntryCount: record.entries.length - visibleEntries,
-		nextEntryCount: Math.min(resolved.entryPageSize, record.entries.length - visibleEntries),
+		hiddenEntryCount: entryStart,
+		nextEntryCount: Math.min(resolved.entryPageSize, entryStart),
+		newerEntryCount: Math.min(resolved.entryPageSize, record.entries.length - entryEnd),
 	});
 }
 
 export function projectVoiceContext(input: VoiceContextProjectionInput): VoiceContextHistoryView {
 	const resolved = limits(input);
-	const sessionPage = page(input.sessionPage);
 	const newestFirst = input.snapshot.sessions.toReversed();
-	const visibleSessions = Math.min(newestFirst.length, sessionPage * resolved.sessionPageSize);
-	const sessions = newestFirst.slice(0, visibleSessions);
+	const requestedSessionPage = page(input.sessionPage);
+	const sessionPageCount = Math.max(1, Math.ceil(newestFirst.length / resolved.sessionPageSize));
+	const sessionPage = Math.min(requestedSessionPage, sessionPageCount);
+	const start = (sessionPage - 1) * resolved.sessionPageSize;
+	const end = Math.min(newestFirst.length, start + resolved.sessionPageSize);
+	const sessions = newestFirst.slice(start, end);
 	return Object.freeze({
 		sessions: Object.freeze(sessions.map((session) => sessionView(session, input, resolved))),
 		sessionCount: newestFirst.length,
 		sessionPage,
-		hiddenSessionCount: newestFirst.length - visibleSessions,
-		nextSessionCount: Math.min(resolved.sessionPageSize, newestFirst.length - visibleSessions),
+		hiddenSessionCount: newestFirst.length - end,
+		nextSessionCount: Math.min(resolved.sessionPageSize, newestFirst.length - end),
+		newerSessionCount: Math.min(resolved.sessionPageSize, start),
 	});
 }

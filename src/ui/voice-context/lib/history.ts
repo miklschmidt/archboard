@@ -1,4 +1,5 @@
 import type { VoiceSessionBinding, VoiceSessionView } from "../../voice-session/index.js";
+import { BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES } from "../../../shared/codex-browser-model/index.js";
 import type {
 	VoiceContextAppend,
 	VoiceContextHistory,
@@ -40,11 +41,19 @@ function copyOrder(value: VoiceContextSourceOrder): VoiceContextSourceOrder {
 }
 
 function copyEntry(value: VoiceContextLedgerEntry): VoiceContextLedgerEntry {
-	return Object.freeze({
+	const shared = {
 		...value,
 		sourceOrder: copyOrder(value.sourceOrder),
 		freshness: Object.freeze({ ...value.freshness }),
-	});
+	} as const;
+	return value.attempted
+		? Object.freeze({ ...shared, attempted: true, attemptedAtMs: value.attemptedAtMs })
+		: Object.freeze({
+				...shared,
+				attempted: false,
+				attemptedAtMs: null,
+				outcome: "not_delivered",
+			});
 }
 
 function boundKey(value: Pick<VoiceSessionView, "binding" | "sessionId">): string | null {
@@ -71,18 +80,21 @@ function sameCapturedIdentity(
 	input: VoiceContextSessionCapture,
 	brief: NonNullable<ReturnType<typeof parseCanonicalBrief>>,
 ): boolean {
-	// The semantic brief fitter may clip any display identity under its byte cap.
-	// `truncated` is the only lossless signal that those fields cannot be used as
-	// binding evidence; the external VoiceSessionView still owns the session key.
-	if (brief.truncated) return true;
 	const { binding } = input.session;
+	const matches = (captured: string | null, expected: string | null): boolean => {
+		if (captured === expected) return true;
+		if (!brief.truncated || captured === null || expected === null || !captured.endsWith("…"))
+			return false;
+		const prefix = captured.slice(0, -1);
+		return prefix.length < expected.length && expected.startsWith(prefix);
+	};
 	return (
 		binding !== null &&
-		brief.child.id === binding.childId &&
-		brief.child.epoch === binding.epoch &&
-		brief.workhorse.threadId === binding.workhorseThreadId &&
-		brief.coordinator.threadId === binding.coordinatorThreadId &&
-		brief.pane.paneId === binding.paneId
+		matches(brief.child.id, binding.childId) &&
+		matches(brief.child.epoch, binding.epoch) &&
+		matches(brief.workhorse.threadId, binding.workhorseThreadId) &&
+		matches(brief.coordinator.threadId, binding.coordinatorThreadId) &&
+		matches(brief.pane.paneId, binding.paneId)
 	);
 }
 
@@ -99,6 +111,37 @@ function position(order: VoiceContextSourceOrder): number {
 function validOrder(order: VoiceContextSourceOrder): boolean {
 	const identifier = order.kind === "semantic_sequence" ? order.feedId : order.ledgerId;
 	return identifier.length > 0 && Number.isSafeInteger(position(order)) && position(order) >= 0;
+}
+
+function validDelivery(entry: VoiceContextLedgerEntry): boolean {
+	const capturedAtMs = entry.freshness.capturedAtMs;
+	const freshUntilMs = entry.freshness.freshUntilMs;
+	if (
+		!Number.isFinite(capturedAtMs) ||
+		!Number.isFinite(freshUntilMs) ||
+		freshUntilMs < capturedAtMs ||
+		new TextEncoder().encode(entry.body).byteLength > BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES
+	)
+		return false;
+	if (!entry.attempted) return entry.attemptedAtMs === null && entry.outcome === "not_delivered";
+	return (
+		Number.isFinite(entry.attemptedAtMs) &&
+		entry.attemptedAtMs >= capturedAtMs &&
+		(entry.outcome === "delivered" ||
+			entry.outcome === "not_delivered" ||
+			entry.outcome === "outcome_unknown")
+	);
+}
+
+function sameObservation(
+	left: VoiceContextSessionEvidence,
+	right: VoiceContextSessionEvidence,
+): boolean {
+	return (
+		left.observedAtMs === right.observedAtMs &&
+		left.provenance === right.provenance &&
+		JSON.stringify(left.session) === JSON.stringify(right.session)
+	);
 }
 
 function freezeRecord(value: VoiceContextSessionRecord): VoiceContextSessionRecord {
@@ -169,6 +212,8 @@ export function createVoiceContextHistory(): VoiceContextHistory {
 			const index = locate(input.session);
 			if (index === -1) return ignored("unknown_session", current.revision);
 			const record = current.sessions[index]!;
+			if (record.observations.some((observation) => sameObservation(observation, input)))
+				return ignored("duplicate_observation", current.revision);
 			const sessions = [...current.sessions];
 			sessions[index] = freezeRecord({
 				...record,
@@ -186,6 +231,8 @@ export function createVoiceContextHistory(): VoiceContextHistory {
 			if (index === -1) return ignored("unknown_session", current.revision);
 			if (!validOrder(input.entry.sourceOrder))
 				return ignored("invalid_source_order", current.revision);
+			if (!validDelivery(input.entry))
+				return ignored("invalid_delivery_evidence", current.revision);
 			const record = current.sessions[index]!;
 			if (record.entries.some((entry) => entry.id === input.entry.id))
 				return ignored("duplicate_entry", current.revision);

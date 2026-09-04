@@ -34,11 +34,13 @@ function EntryRow({
 	entry,
 	onCopy,
 	onNextBody,
+	onPreviousBody,
 	onCollapseBody,
 }: {
 	readonly entry: VoiceContextEntryView;
 	readonly onCopy: CopyHandler;
 	readonly onNextBody: (key: string) => void;
+	readonly onPreviousBody: (key: string) => void;
 	readonly onCollapseBody: (key: string) => void;
 }): React.JSX.Element {
 	const bodyId = useId();
@@ -57,6 +59,10 @@ function EntryRow({
 	const nextBody = useCallback(
 		() => onNextBody(entry.expansionKey),
 		[entry.expansionKey, onNextBody],
+	);
+	const previousBody = useCallback(
+		() => onPreviousBody(entry.expansionKey),
+		[entry.expansionKey, onPreviousBody],
 	);
 	return (
 		<li
@@ -88,9 +94,13 @@ function EntryRow({
 					<span className="block text-kicker font-semibold text-muted-foreground">
 						{entry.attemptLabel}
 					</span>
-					<time className="block font-mono text-technical" dateTime={entry.attemptedAt}>
-						{entry.attemptedAt}
-					</time>
+					{entry.attemptedAt === null ? (
+						<span className="block font-mono text-technical">No outbound attempt</span>
+					) : (
+						<time className="block font-mono text-technical" dateTime={entry.attemptedAt}>
+							{entry.attemptedAt}
+						</time>
+					)}
 					<span className="text-body">{entry.freshnessLabel}</span>
 				</div>
 				<div className="min-w-0">
@@ -129,6 +139,10 @@ function EntryRow({
 				>
 					{entry.bodyPreview}
 				</pre>
+				<p className="m-0 text-body text-muted-foreground">
+					Characters {entry.bodyTotalCharacters === 0 ? 0 : entry.bodyWindowStart + 1}–
+					{entry.bodyWindowEnd} of {entry.bodyTotalCharacters}
+				</p>
 			</div>
 			<div className="flex min-h-touch-target flex-wrap items-center justify-end gap-control border-t border-border-subtle px-control">
 				<Button
@@ -140,7 +154,12 @@ function EntryRow({
 				</Button>
 				{entry.bodyPage > 1 && (
 					<Button onClick={collapseBody} tone="quiet">
-						Collapse body
+						First body window
+					</Button>
+				)}
+				{entry.previousBodyCharacters > 0 && (
+					<Button aria-controls={bodyId} onClick={previousBody} tone="quiet">
+						Previous {entry.previousBodyCharacters} characters
 					</Button>
 				)}
 				{entry.bodyRemainingCharacters > 0 && (
@@ -162,19 +181,25 @@ export function VoiceContextSessionRegion({
 	session,
 	onCopy,
 	onNextBrief,
+	onPreviousBrief,
 	onCollapseBrief,
 	onNextBody,
+	onPreviousBody,
 	onCollapseBody,
 	onNextEntries,
+	onPreviousEntries,
 	onCollapseEntries,
 }: {
 	readonly session: VoiceContextSessionView;
 	readonly onCopy: CopyHandler;
 	readonly onNextBrief: (key: string) => void;
+	readonly onPreviousBrief: (key: string) => void;
 	readonly onCollapseBrief: (key: string) => void;
 	readonly onNextBody: (key: string) => void;
+	readonly onPreviousBody: (key: string) => void;
 	readonly onCollapseBody: (key: string) => void;
 	readonly onNextEntries: (key: string) => void;
+	readonly onPreviousEntries: (key: string) => void;
 	readonly onCollapseEntries: (key: string) => void;
 }): React.JSX.Element {
 	const headingId = useId();
@@ -194,11 +219,19 @@ export function VoiceContextSessionRegion({
 		[onCollapseBrief, session.key],
 	);
 	const nextBrief = useCallback(() => onNextBrief(session.key), [onNextBrief, session.key]);
+	const previousBrief = useCallback(
+		() => onPreviousBrief(session.key),
+		[onPreviousBrief, session.key],
+	);
 	const collapseEntries = useCallback(
 		() => onCollapseEntries(session.key),
 		[onCollapseEntries, session.key],
 	);
 	const nextEntries = useCallback(() => onNextEntries(session.key), [onNextEntries, session.key]);
+	const previousEntries = useCallback(
+		() => onPreviousEntries(session.key),
+		[onPreviousEntries, session.key],
+	);
 	return (
 		<article
 			aria-labelledby={headingId}
@@ -283,10 +316,19 @@ export function VoiceContextSessionRegion({
 					>
 						{session.canonicalBriefPreview}
 					</pre>
+					<p className="m-0 text-body text-muted-foreground">
+						Characters {session.canonicalBriefWindowStart + 1}–{session.canonicalBriefWindowEnd} of{" "}
+						{session.canonicalBriefTotalCharacters}
+					</p>
 					<div className="flex min-h-touch-target flex-wrap items-center justify-end gap-control">
 						{session.canonicalBriefPage > 1 && (
 							<Button onClick={collapseBrief} tone="quiet">
-								Collapse start brief
+								First start-brief window
+							</Button>
+						)}
+						{session.previousCanonicalBriefCharacters > 0 && (
+							<Button aria-controls={exactBriefId} onClick={previousBrief} tone="quiet">
+								Previous {session.previousCanonicalBriefCharacters} characters
 							</Button>
 						)}
 						{session.canonicalBriefRemainingCharacters > 0 && (
@@ -317,7 +359,12 @@ export function VoiceContextSessionRegion({
 					<div className="flex flex-wrap items-center justify-end gap-control">
 						{session.entryPage > 1 && (
 							<Button onClick={collapseEntries} tone="quiet">
-								Collapse to recent deliveries
+								Back to newest deliveries
+							</Button>
+						)}
+						{session.newerEntryCount > 0 && (
+							<Button onClick={previousEntries} tone="quiet">
+								Previous {session.newerEntryCount} newer deliveries
 							</Button>
 						)}
 						{session.hiddenEntryCount > 0 && (
@@ -341,6 +388,7 @@ export function VoiceContextSessionRegion({
 								onCollapseBody={onCollapseBody}
 								onCopy={onCopy}
 								onNextBody={onNextBody}
+								onPreviousBody={onPreviousBody}
 							/>
 						))}
 					</ol>
