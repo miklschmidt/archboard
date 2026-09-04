@@ -245,10 +245,11 @@ describe("reviewed fields, secrets and URLs", () => {
 
 		expect(card.fields).toHaveLength(0);
 		expect(card.offers.map((offer) => offer.id)).toEqual(["decline"]);
-		expect(card.notices).toContain(
+		expect(card.notices).toEqual([
 			"This request names no permission this browser can grant, so the only honest answer here is to grant nothing.",
-		);
+		]);
 		expect(markup).not.toContain("Grant the reviewed permissions");
+		expect(markup).not.toContain("Archboard never invents a path list");
 	});
 });
 
