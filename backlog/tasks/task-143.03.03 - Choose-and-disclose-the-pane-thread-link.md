@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.03
 title: Choose and disclose the pane thread link
-status: In Progress
+status: Done
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-04 10:44'
+updated_date: '2026-09-04 10:53'
 labels: []
 dependencies:
   - TASK-143.01.09
@@ -15,7 +15,37 @@ references:
   - docs/design/operator-canvas-shell.md
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
+  - src/shared/codex-browser-model/lib/browser.ts
+  - src/shared/codex-browser-model/index.ts
+  - src/shared/codex-browser-gateway/lib/envelope.ts
+  - src/server/codex-workbench/lib/projection.ts
+  - src/server/codex-workbench/lib/projection-contract.ts
+  - src/server/codex-workbench/lib/contract.ts
+  - src/server/codex-workbench/lib/gateway.ts
+  - src/server/codex-workbench/index.ts
+  - src/server/canvas/lib/codex-workbench-thread-links.ts
+  - src/server/canvas/lib/codex-workbench-browser-gateway.ts
+  - src/server/canvas/codex-workbench-adapters.ts
+  - src/runtime/codex-epoch/lib/manifest.ts
+  - src/runtime/codex-epoch/index.ts
+  - src/runtime/codex-epoch/tests/thread-ownership.test.ts
+  - src/ui/workbench-transport/lib/transport.ts
+  - src/ui/workbench-transport/lib/wire.ts
+  - src/ui/workbench-transport/tests/capabilities.test.ts
+  - src/ui/workbench-transport/tests/stream-reduction.test.ts
+  - src/ui/workbench-transport/tests/fake-socket.ts
   - src/ui/workbench-thread-link
+  - src/server/codex-workbench/tests/thread-candidate-projection.test.ts
+  - src/server/codex-workbench/tests/snapshot-budget.test.ts
+  - src/server/canvas/tests/codex-workbench-thread-attach.test.ts
+  - src/server/canvas/tests/codex-workbench-adapters.test.ts
+  - src/shared/codex-browser-model/tests/states.test.ts
+  - tests/system/canvas-state/codex-workbench-production.test.ts
+  - tests/system/canvas-state/fixtures/fake-codex-production.ts
+  - tests/system/process-contracts/codex-workbench-lifecycle.test.ts
+  - src/ui/workbench-queue/tests/support.ts
+  - src/ui/workbench-approvals/tests/model.ts
+  - src/ui/voice-session/tests/support/fakes.ts
 parent_task_id: TASK-143.03
 priority: high
 type: task
@@ -30,11 +60,11 @@ Own pane thread-link selection and readiness disclosure. Create and Attach are s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Pane selection lists only joined persisted/current loaded records and shows executable, inspect-only, stale, prior-epoch, source, loaded, status, and controllability reasons before bind.
-- [ ] #2 Create/attach/relink/recover actions target captured pane and epoch; a focus change cannot retarget an in-flight action, and ambiguous creation remains inspect-only.
-- [ ] #3 The account UI distinctly renders API key, hosted ChatGPT, explicit amazonBedrock apiKey+region, and amazonBedrockAccessKeys accessKeyId+secretAccessKey+optional sessionToken+region forms; device code, client tokens, and Bedrock profile/environment setup are unavailable with an explanation.
-- [ ] #4 Missing/wrong binary, locked home, backoff/stopped, config/storage mismatch, login progress/failure/logout, command-before-ready, empty list, duplicate rows, and stale response have accessible recovery paths.
-- [ ] #5 Module tests exhaust create, attach, relink, recovery, login, stale-response, ambiguous-creation, and focus-change races against captured pane/epoch identity; TASK-143.03.13 owns rendered browser coverage.
+- [x] #1 Pane selection lists only joined persisted/current loaded records and shows executable, inspect-only, stale, prior-epoch, source, loaded, status, and controllability reasons before bind.
+- [x] #2 Create/attach/relink/recover actions target captured pane and epoch; a focus change cannot retarget an in-flight action, and ambiguous creation remains inspect-only.
+- [x] #3 The account UI distinctly renders API key, hosted ChatGPT, explicit amazonBedrock apiKey+region, and amazonBedrockAccessKeys accessKeyId+secretAccessKey+optional sessionToken+region forms; device code, client tokens, and Bedrock profile/environment setup are unavailable with an explanation.
+- [x] #4 Missing/wrong binary, locked home, backoff/stopped, config/storage mismatch, login progress/failure/logout, command-before-ready, empty list, duplicate rows, and stale response have accessible recovery paths.
+- [x] #5 Module tests exhaust create, attach, relink, recovery, login, stale-response, ambiguous-creation, and focus-change races against captured pane/epoch identity; TASK-143.03.13 owns rendered browser coverage.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -127,4 +157,28 @@ Verification, all green: bun run type-check; bun run lint; bun run fmt:check; bu
 Rebased onto codex/task-143-144-workbench at cdd0cd4b (TASK-143.03.06, .07 and 143.04.01 integrated). Two conflicts, both in src/server/canvas/lib/codex-workbench-browser-gateway.ts and both at the same seam: TASK-143.03.06's coalesced queue re-read and this task's candidate inventory construction sit next to each other. Both behaviours kept — the queue re-read, its floor, and its in-flight coalescing are untouched, and the inventory is constructed beside them and published from the same projection read. Commit f16d7440 carries the required threadCandidates field into the queue, approvals and voice-session fixtures that landed with those tasks; no behaviour changed there.
 
 Verification after the rebase, all green: bun run type-check; bun run lint; bun run fmt:check (1131 files); bun run build:frontend; bun test --isolate over workbench-thread-link, workbench-transport, workbench-runtime, codex-browser-model, server codex-workbench and codex-epoch — 217 pass, 0 fail, 2045 expect() calls across 36 files; the three system owners — 5 pass, 0 fail, 172 expect() calls; bun run test:repository — 123 pass, 0 fail across 18 files; bun run test:modules — 2253 pass, 0 fail, 20953 expect() calls across 244 files.
+
+Finalization. Independent fixed-range review of cdd0cd4b..ee3526f2 returned CLEAN. Commit bf028e5c awaits the four rejection assertions in src/server/canvas/tests/codex-workbench-thread-attach.test.ts, which Bun already failed un-awaited; awaiting them says so at the call site.
+
+Final verification, all green: bun run type-check; bun run lint (oxlint, no findings); bun run fmt:check (1131 files, all correct); bun run build:frontend (built, only the pre-existing chunk-size advisory); bun test --isolate src/ui/workbench-thread-link src/ui/workbench-transport src/ui/workbench-runtime src/shared src/server/codex-workbench src/server/canvas src/runtime/codex-epoch — 348 pass, 0 fail, 2979 expect() calls across 61 files; bun run test:repository — 123 pass, 0 fail, 1067 expect() calls across 18 files; the three system owners (codex-workbench-production, codex-workbench-application-sockets, codex-workbench-lifecycle) — 5 pass, 0 fail, 172 expect() calls. The earlier full-branch run of bun run test:modules was 2253 pass, 0 fail across 244 files.
+
+Two follow-ups recorded for the coordinator rather than taken here, both outside this task's acceptance criteria:
+
+(a) The created half of the epoch ownership table is still spelled independently in four places. src/runtime/codex-epoch/lib/manifest.ts holds create_thread/thread/start and fork_thread/thread/fork as literals, and the same pairs are re-spelled in src/runtime/codex-dynamic-tools/lib/mutations.ts, src/runtime/codex-workhorse-start/lib/model.ts, and src/runtime/codex-workhorse-operations/lib/internal.ts. That is the exact drift that made attaching a foreign thread silently impossible until this task fixed the attached half by exporting EPOCH_THREAD_ATTACH_OPERATION and building the table from it. Export the two created descriptors the same way and have every staging site consume them, so no staged record can miss the table that must resolve it.
+
+(b) Inventory retirement reaches the browser on the next publication rather than as a push. When a bind is refused because the list moved epoch, the canvas retires the published inventory immediately, but a pane only sees the unavailable arm on its next snapshot or delta. The refusal itself is delivered as the command result, so the person is told what happened and the refresh control is already on screen; a pane that never reads again would keep showing rows it can no longer bind. Whoever owns push propagation for retired projection state should decide whether that warrants an out-of-band publication.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Built src/ui/workbench-thread-link, the browser module that chooses and discloses one pane's Codex thread link, and wired the joined thread inventory it needs from the classifier to the browser.
+
+Create, refresh, attach, and relink are four separate commands with separate prerequisites. No thread is inferred from recency, nothing is loaded implicitly, and opening a pane exhausts no Codex list: discovery only happens when somebody asks for it. Every action captures its pane, epoch, lease, and link once through the transport's captureCommandTarget and passes that exact target back to command(draft, target), so a focus change is refused instead of retargeted, and a link command that does not settle into a confirmed executable link for the thread it named stays inspect-only rather than retrying.
+
+The list could not reach the browser when this task started: the snapshot carried the pane's own link and nothing else, and the runtime's candidate discovery is unreachable from src/ui. TASK-143.01.09 deferred that wiring to whoever proved the gap, so this task took it: a bounded, deduplicated threadCandidates snapshot field carrying the classifier's own verdict, the delta key its exhaustiveness guard demands, a threadLinkRefresh command, selectionId on both bind commands, one projection that maps the classifier's source presentation and bounds the list so a full inventory still fits beside a rich snapshot at the smallest gateway budget, and a canvas route that binds through the runtime's CAS-checked retained selection. Fixing that path also uncovered and fixed a pre-existing defect that made attaching a thread the workbench had not created permanently impossible: the staged ownership record used a descriptor the epoch's ownership table did not recognise. That descriptor is now one exported value the table is built from.
+
+Verified through the product interface, not code reading. Three independent fixed-range reviews; the third returned CLEAN. AC #1 by src/ui/workbench-thread-link/tests/candidates.test.ts and the rendered owners, end to end by the production system owner, which refreshes the real list and finds the created thread as an executable joined row. AC #2 by tests/controller.test.ts (captured-target and both focus-change races, ambiguous creation stays inspect-only), tests/transport-integration.test.ts driving the real BrowserWorkbenchTransport through refresh, list, and attach, and the canvas selection-refusal owners. AC #3 by tests/account.test.ts and three rendered form owners. AC #4 by tests/recovery.test.ts and the rendered startup, login, and stale arms. AC #5 by tests/controller.test.ts and tests/recovery.test.ts, with rendered browser coverage left to TASK-143.03.13 as the criterion states.
+
+Final run: bun run type-check, bun run lint, bun run fmt:check, bun run build:frontend all clean; bun test --isolate over workbench-thread-link, workbench-transport, workbench-runtime, shared, server codex-workbench, server canvas, and codex-epoch — 348 pass, 0 fail, 2979 expect() calls across 61 files; bun run test:repository — 123 pass, 0 fail; the three Codex workbench system owners — 5 pass, 0 fail; bun run test:modules on the branch — 2253 pass, 0 fail across 244 files.
+<!-- SECTION:FINAL_SUMMARY:END -->
