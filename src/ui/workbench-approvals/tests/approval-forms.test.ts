@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BrowserApproval } from "../../../shared/codex-browser-model/index.js";
 import {
 	applyApprovalFormEvent,
 	approvalFields,
@@ -10,38 +9,20 @@ import {
 	type WorkbenchApprovalControl,
 	type WorkbenchApprovalField,
 } from "../index.js";
-import { commandApproval, elicitationApproval, userInputApproval } from "./fixtures.js";
+import {
+	commandApproval,
+	elicitationApproval,
+	elicitationField,
+	userInputApproval,
+} from "./fixtures.js";
 
-type ElicitationField = NonNullable<
-	Extract<BrowserApproval, { readonly approvalKind: "elicitation" }>["fields"]
->[number];
+type Overrides = Readonly<Record<string, unknown>>;
 
-function elicitationField(overrides: Partial<ElicitationField>): ElicitationField {
-	return {
-		name: "value",
-		type: "string",
-		required: false,
-		secret: false,
-		title: null,
-		description: null,
-		format: null,
-		minimum: null,
-		maximum: null,
-		minLength: null,
-		maxLength: null,
-		minimumItems: null,
-		maximumItems: null,
-		options: null,
-		defaultValue: null,
-		...overrides,
-	} as ElicitationField;
+function fieldsFor(overrides: Overrides): readonly WorkbenchApprovalField[] {
+	return approvalFields(elicitationApproval({ fields: [elicitationField(overrides)] }));
 }
 
-function fieldsFor(overrides: Partial<ElicitationField>): readonly WorkbenchApprovalField[] {
-	return approvalFields(elicitationApproval({ fields: [elicitationField(overrides)] } as never));
-}
-
-function errorFor(overrides: Partial<ElicitationField>, value: string): string | null {
+function errorFor(overrides: Overrides, value: string): string | null {
 	const fields = fieldsFor(overrides);
 	const form = applyApprovalFormEvent(initialApprovalForm(fields), {
 		kind: "value",
@@ -52,7 +33,7 @@ function errorFor(overrides: Partial<ElicitationField>, value: string): string |
 }
 
 describe("reviewed field descriptors", () => {
-	const controls: readonly (readonly [Partial<ElicitationField>, WorkbenchApprovalControl])[] = [
+	const controls: readonly (readonly [Overrides, WorkbenchApprovalControl])[] = [
 		[{ type: "string" }, "text"],
 		[{ type: "string", maxLength: 2048 }, "multiline"],
 		[{ type: "string", secret: true }, "secret"],
@@ -187,9 +168,7 @@ describe("genuine binary approvals", () => {
 	test("accepts exactly one accept and one decline on a command execution", () => {
 		expect(isGenuineBinaryApproval(commandApproval())).toBe(true);
 		expect(
-			isGenuineBinaryApproval(
-				commandApproval({ availableDecisions: ["decline", "accept"] } as never),
-			),
+			isGenuineBinaryApproval(commandApproval({ availableDecisions: ["decline", "accept"] })),
 		).toBe(true);
 	});
 
@@ -200,9 +179,9 @@ describe("genuine binary approvals", () => {
 			["acceptForSession", "decline"],
 			[{ acceptWithExecpolicyAmendment: { execpolicy_amendment: ["allow"] } }, "decline"],
 		])
-			expect(
-				isGenuineBinaryApproval(commandApproval({ availableDecisions: decisions } as never)),
-			).toBe(false);
+			expect(isGenuineBinaryApproval(commandApproval({ availableDecisions: decisions }))).toBe(
+				false,
+			);
 		expect(isGenuineBinaryApproval(userInputApproval())).toBe(false);
 		expect(isGenuineBinaryApproval(elicitationApproval())).toBe(false);
 	});
