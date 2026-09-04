@@ -4,9 +4,19 @@ import {
 	createVoiceContextHistory,
 	projectVoiceContext,
 	voiceContextEntryExpansionKey,
-	voiceContextIdentityKey,
+	voiceContextSessionKey,
 } from "../index.js";
-import { ledgerEntry, SESSION_A, SESSION_B, sessionStart, startBrief } from "./support/fixtures.js";
+import {
+	BINDING_A,
+	BINDING_B,
+	canonicalBrief,
+	capture,
+	evidence,
+	ledgerEntry,
+	SESSION_A,
+	SESSION_B,
+	voiceSession,
+} from "./support/fixtures.js";
 
 function projected(
 	history: ReturnType<typeof createVoiceContextHistory>,
@@ -14,177 +24,221 @@ function projected(
 ) {
 	return projectVoiceContext({
 		snapshot: history.snapshot(),
-		showAllSessions: false,
-		expandedSessions: new Set(),
-		expandedBriefs: new Set(),
-		expandedEntries: new Set(),
-		limits: { collapsedSessions: 1, collapsedEntries: 2, collapsedBodyCharacters: 12 },
+		sessionPage: 1,
+		entryPages: new Map(),
+		briefPages: new Map(),
+		entryBodyPages: new Map(),
+		limits: { sessionPageSize: 1, entryPageSize: 2, bodyWindowCharacters: 12 },
 		...overrides,
 	});
 }
 
 describe("voice context projection", () => {
-	test("projects every captured baseline fact and exact canonical copy source", () => {
-		const exact = '{"exact":"canonical start brief whose bytes do not change"}';
+	test("derives every baseline field from the exact canonical copy bytes", () => {
+		const exact = canonicalBrief(SESSION_A, {
+			ambiguity: ["Selection spans two architectural paths"],
+			truncated: true,
+			description: "API calls worker through queue.",
+			coordinatorRealtimeSessionId: "wire-realtime-a",
+		});
 		const history = createVoiceContextHistory();
-		history.start(
-			sessionStart(SESSION_A, {
-				brief: startBrief({
-					canonicalBrief: exact,
-					ambiguity: ["Selection spans two architectural paths"],
-					truncated: true,
-				}),
-			}),
-		);
+		history.capture(capture(SESSION_A, { canonicalBrief: exact }));
 		const session = projected(history).sessions[0]!;
 		const fields = Object.fromEntries(session.fields.map((field) => [field.label, field.value]));
 
 		expect(fields).toMatchObject({
+			Feed: "feed-a",
 			Repository: "archboard",
 			Child: "child-a",
 			Epoch: "epoch-a",
+			"Thread link": "executable",
 			Workhorse: "workhorse-a",
+			"Workhorse turn": "turn-a",
 			Coordinator: "coordinator-a",
-			"Realtime session": "realtime-a",
+			"Coordinator realtime": "wire-realtime-a",
 			Board: "checkout",
+			"Board note": "Architecture/checkout.excalidraw.md",
 			Pane: "primary",
-			Version: "42",
 			"Focused at capture": "Focused",
-			"Focus freshness": "Fresh at capture",
-			"Selection freshness": "Fresh at capture",
+			Version: "42",
+			Selection: "api, worker",
 			Claim: "agent",
+			"Claim doing": "Inspecting the delivery seam",
 			Doing: "Explaining the selected path",
 			Cursor: "feed-a:17",
+			Description: "API calls worker through queue.",
+			Freshness: "Fresh at capture",
 			Ambiguity: "Selection spans two architectural paths",
 			Truncation: "Truncated",
+			Staleness: "current",
 		});
+		expect(fields["Focus freshness"]).toBeUndefined();
+		expect(fields["Selection freshness"]).toBeUndefined();
 		expect(session.canonicalBrief).toBe(exact);
-		expect(session.canonicalBriefPreview).toBe('{"exact":"ca…');
-		expect(session.canonicalBriefTruncated).toBe(true);
-
-		const expanded = projected(history, { expandedBriefs: new Set([session.key]) }).sessions[0]!;
-		expect(expanded.canonicalBriefPreview).toBe(exact);
+		expect(session.canonicalBriefPreview).toBe(`${[...exact].slice(0, 12).join("")}…`);
 	});
 
-	test("distinguishes stale focus from a fresh captured selection", () => {
+	test("retains byte-capped identity fields while session identity stays external", () => {
+		const exact = canonicalBrief(SESSION_A, { clippedIdentity: "…", truncated: true });
 		const history = createVoiceContextHistory();
-		history.start(
-			sessionStart(SESSION_A, {
-				brief: startBrief({
-					focusFreshness: "stale",
-					focusFreshUntilMs: 1_799_999_999_950,
-					selection: {
-						elementIds: ["api"],
-						capturedAtMs: 1_799_999_999_980,
-						freshUntilMs: 1_800_000_001_980,
-						freshness: "fresh",
-					},
-				}),
-			}),
-		);
-		const fields = Object.fromEntries(
-			projected(history).sessions[0]!.fields.map((field) => [field.label, field.value]),
-		);
+		expect(history.capture(capture(SESSION_A, { canonicalBrief: exact })).outcome).toBe("applied");
+		const session = projected(history).sessions[0]!;
+		const fields = Object.fromEntries(session.fields.map((field) => [field.label, field.value]));
 
-		expect(fields["Focus freshness"]).toBe("Stale at capture");
-		expect(fields["Focus fresh until"]).toBe("2027-01-15T07:59:59.950Z");
-		expect(fields["Selection freshness"]).toBe("Fresh at capture");
-		expect(fields["Selection fresh until"]).toBe("2027-01-15T08:00:01.980Z");
+		expect(history.snapshot().sessions[0]?.captured.canonicalBrief).toBe(exact);
+		expect(fields).toMatchObject({
+			Child: "…",
+			Epoch: "…",
+			Workhorse: "…",
+			"Workhorse turn": "…",
+			Coordinator: "…",
+			"Coordinator realtime": "…",
+			Pane: "…",
+			Truncation: "Truncated",
+		});
+		expect(session.key).toBe(voiceContextSessionKey(SESSION_A));
+		expect(session.sessionId).toBe("realtime-a");
+		expect(session.status).toBe(SESSION_A.status);
 	});
 
-	test("keeps outcomes ordered and labels disconnected, uncertain, and recovered records", () => {
+	test("computes delivery freshness at attempt and labels adapter outcomes", () => {
 		const history = createVoiceContextHistory();
-		history.start(sessionStart(SESSION_A, { provenance: "recovered" }));
-		const variants = [
+		history.capture(capture(SESSION_A, { provenance: "recovered" }));
+		const entries = [
 			ledgerEntry("1", { kind: "semantic", outcome: "delivered" }),
 			ledgerEntry("2", {
 				kind: "focus",
+				attempted: false,
 				outcome: "not_delivered",
 				reason: "stale_session",
-				attempted: false,
 			}),
 			ledgerEntry("3", {
 				kind: "selection",
+				freshness: {
+					capturedAtMs: 1_800_000_001_003,
+					freshUntilMs: 1_800_000_001_103,
+				},
+				attemptedAtMs: 1_800_000_001_103,
+			}),
+			ledgerEntry("4", {
+				kind: "callback",
 				outcome: "outcome_unknown",
 				reason: "response_lost",
 				connection: "disconnected",
 				provenance: "recovered",
 			}),
 		] as const;
-		for (const entry of variants) history.append({ identity: SESSION_A, entry });
-		const sessionKey = voiceContextIdentityKey(SESSION_A);
-		const result = projected(history, { expandedSessions: new Set([sessionKey]) }).sessions[0]!;
+		for (const entry of entries.toReversed()) history.append({ session: SESSION_A, entry });
+		const result = projected(history, {
+			entryPages: new Map([[voiceContextSessionKey(SESSION_A), 2]]),
+		}).sessions[0]!;
 
-		expect(result.provenanceLabel).toBe("Recovered history");
-		expect(result.entries.map((entry) => entry.kind)).toEqual(["semantic", "focus", "selection"]);
+		expect(result.entries.map((entry) => entry.kind)).toEqual([
+			"semantic",
+			"focus",
+			"selection",
+			"callback",
+		]);
+		expect(result.entries.map((entry) => entry.freshnessLabel)).toEqual([
+			"Fresh at attempt",
+			"Not attempted",
+			"Stale at attempt",
+			"Fresh at attempt",
+		]);
 		expect(result.entries.map((entry) => entry.outcomeLabel)).toEqual([
 			"Delivered",
 			"Not delivered",
+			"Delivered",
 			"Outcome unknown",
 		]);
-		expect(result.entries[1]).toMatchObject({
-			attemptLabel: "Not attempted",
-			reason: "stale_session",
-		});
-		expect(result.entries[2]).toMatchObject({
-			disconnected: true,
+		expect(result.entries[3]).toMatchObject({
 			connectionLabel: "Recorded while disconnected",
 			provenanceLabel: "Recovered history",
+			reason: "response_lost",
 		});
 	});
 
-	test("bounds collapsed sessions, rows, and bodies while the full ledger remains intact", () => {
+	test("reveals only one bounded session, entry, and body window per page", () => {
 		const history = createVoiceContextHistory();
-		history.start(sessionStart(SESSION_A));
+		history.capture(capture(SESSION_A));
 		for (let index = 1; index <= 5; index += 1)
 			history.append({
-				identity: SESSION_A,
-				entry: ledgerEntry(String(index), { body: `body-${index}-is-longer-than-the-preview` }),
+				session: SESSION_A,
+				entry: ledgerEntry(String(index), { body: `body-${index}-is-longer-than-two-windows` }),
 			});
-		history.start(sessionStart(SESSION_B));
+		history.capture(capture(SESSION_B));
+		const third = voiceSession({ ...BINDING_B, childId: "child-c", paneId: "third" }, "realtime-c");
+		history.capture(capture(third));
 
-		const collapsed = projected(history);
-		expect(collapsed.sessionCount).toBe(2);
-		expect(collapsed.sessions).toHaveLength(1);
-		expect(collapsed.hiddenSessionCount).toBe(1);
-		const allSessions = projected(history, { showAllSessions: true });
-		expect(allSessions.sessions).toHaveLength(2);
-		const older = allSessions.sessions[1]!;
+		const first = projected(history);
+		expect(first.sessions).toHaveLength(1);
+		expect(first.hiddenSessionCount).toBe(2);
+		expect(projected(history, { sessionPage: 2 }).sessions).toHaveLength(2);
+		const all = projected(history, { sessionPage: 3 });
+		expect(all.sessions).toHaveLength(3);
+		const key = voiceContextSessionKey(SESSION_A);
+		const older = all.sessions[2]!;
 		expect(older.entries.map((entry) => entry.id)).toEqual(["4", "5"]);
 		expect(older.hiddenEntryCount).toBe(3);
-		expect(older.entries[0]!.bodyPreview).toBe("body-4-is-lo…");
-		expect(history.snapshot().sessions[0]!.entries).toHaveLength(5);
+		const twoPages = projected(history, {
+			sessionPage: 3,
+			entryPages: new Map([[key, 2]]),
+		}).sessions[2]!;
+		expect(twoPages.entries.map((entry) => entry.id)).toEqual(["2", "3", "4", "5"]);
+		expect(twoPages.hiddenEntryCount).toBe(1);
 
-		const key = voiceContextIdentityKey(SESSION_A);
-		const bodyKey = voiceContextEntryExpansionKey(key, "1");
-		const expanded = projected(history, {
-			showAllSessions: true,
-			expandedSessions: new Set([key]),
-			expandedEntries: new Set([bodyKey]),
-		}).sessions[1]!;
-		expect(expanded.entries).toHaveLength(5);
-		expect(expanded.entries[0]!.bodyPreview).toBe("body-1-is-longer-than-the-preview");
+		const bodyKey = voiceContextEntryExpansionKey(key, "5");
+		const bodyPage = projected(history, {
+			sessionPage: 3,
+			entryBodyPages: new Map([[bodyKey, 2]]),
+		}).sessions[2]!.entries[1]!;
+		expect([...bodyPage.bodyPreview].length).toBeLessThanOrEqual(25);
+		expect(bodyPage.bodyRemainingCharacters).toBeGreaterThan(0);
+		expect(history.snapshot().sessions[0]?.entries).toHaveLength(5);
 	});
 
-	test("labels stale, replaced, and stopped sessions without dropping their evidence", () => {
+	test("derives stale, replaced, and stopped labels from captured bytes and session views", () => {
 		const history = createVoiceContextHistory();
-		history.start(sessionStart(SESSION_A));
-		history.markBriefStale({
-			identity: SESSION_A,
-			markedAtMs: 1_800_000_004_000,
-			reasons: ["Pane focus changed after capture."],
+		const stale = canonicalBrief(SESSION_A, {
+			freshness: {
+				capturedAtMs: 1_800_000_000_000,
+				freshUntilMs: 1_800_000_000_500,
+				state: "stale",
+			},
+			staleness: { state: "stale", reasons: ["semantic freshness window expired"] },
 		});
-		history.start(sessionStart(SESSION_B));
-		history.stop({ identity: SESSION_B, stoppedAtMs: 1_800_000_005_000 });
-		const sessions = projected(history, { showAllSessions: true }).sessions;
-
+		history.capture(capture(SESSION_A, { canonicalBrief: stale }));
+		history.observe(
+			evidence(
+				voiceSession(BINDING_A, "realtime-a", {
+					status: "failed",
+					label: "Failed",
+					detail: "The bound session was replaced.",
+					failure: { code: "replaced", recoverable: false, message: "Binding changed." },
+				}),
+				1_800_000_002_000,
+			),
+		);
+		history.capture(capture(SESSION_B));
+		history.observe(
+			evidence(
+				voiceSession(BINDING_B, "realtime-b", {
+					status: "stopped",
+					label: "Stopped",
+					detail: "Voice stopped.",
+				}),
+				1_800_000_003_000,
+			),
+		);
+		const sessions = projected(history, { sessionPage: 2 }).sessions;
 		expect(sessions[0]).toMatchObject({ status: "stopped", statusLabel: "Stopped" });
+		expect(sessions[0]?.statusDetail).toContain("captured baseline and ledger remain available");
 		expect(sessions[1]).toMatchObject({
-			status: "replaced",
+			status: "failed",
 			statusLabel: "Replaced",
-			briefState: "stale",
+			replaced: true,
 			briefLabel: "Stale brief",
 		});
-		expect(sessions[1]!.briefDetail).toContain("Pane focus changed after capture.");
+		expect(sessions[1]?.briefDetail).toContain("semantic freshness window expired");
 	});
 });

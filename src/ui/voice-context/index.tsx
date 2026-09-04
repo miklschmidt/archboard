@@ -1,4 +1,4 @@
-export { createVoiceContextHistory, voiceContextIdentityKey } from "./lib/history.js";
+export { createVoiceContextHistory, voiceContextSessionKey } from "./lib/history.js";
 export {
 	DEFAULT_VOICE_CONTEXT_LIMITS,
 	projectVoiceContext,
@@ -8,11 +8,10 @@ export { VoiceContextPanel } from "./lib/VoiceContextPanel.js";
 export { VOICE_CONTEXT_DELIVERY_OUTCOMES, VOICE_CONTEXT_ENTRY_KINDS } from "./contract.js";
 export type {
 	VoiceContextAppend,
-	VoiceContextBriefCondition,
-	VoiceContextBriefStaleMutation,
+	VoiceContextCanonicalBrief,
 	VoiceContextClipboardPort,
 	VoiceContextConnection,
-	VoiceContextCursor,
+	VoiceContextDeliveryFreshness,
 	VoiceContextDeliveryOutcome,
 	VoiceContextEntryKind,
 	VoiceContextEntryView,
@@ -27,12 +26,10 @@ export type {
 	VoiceContextProjectionInput,
 	VoiceContextProjectionLimits,
 	VoiceContextProvenance,
-	VoiceContextSelectionCapture,
-	VoiceContextSessionIdentity,
+	VoiceContextSessionCapture,
+	VoiceContextSessionEvidence,
 	VoiceContextSessionRecord,
-	VoiceContextSessionStart,
-	VoiceContextSessionStatus,
 	VoiceContextSessionView,
-	VoiceContextStartBrief,
-	VoiceContextStopMutation,
+	VoiceContextSourceOrder,
+	VoiceContextStatusTone,
 } from "./contract.js";
