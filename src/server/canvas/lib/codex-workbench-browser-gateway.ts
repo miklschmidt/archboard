@@ -17,6 +17,7 @@ import type {
 	OperationId,
 	ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
+import { CODEX_QUEUE_REREAD_FLOOR_MS } from "../../../shared/timing/timing.js";
 import type { ArchboardContext } from "../../../runtime/codex-instructions/index.js";
 import type { CodexWorkbenchComponents } from "./codex-workbench.js";
 import type { CanvasDynamicApprovalOwner } from "./codex-workbench-approvals.js";
@@ -178,6 +179,8 @@ export function createCanvasBrowserGatewayOptions(input: {
 	/** The live owned-process facts behind every child-lifecycle readiness arm. */
 	readonly process: () => CanvasReadinessProcessFacts;
 	readonly checkoutRoot: string;
+	/** Injectable clock for the authoritative re-read floor. */
+	readonly now?: () => number;
 	readonly contextForOperation: (
 		context: BrowserActionContext,
 		operation: {
@@ -238,6 +241,35 @@ export function createCanvasBrowserGatewayOptions(input: {
 			// told the queue is unavailable rather than shown an unverified list.
 			clearQueue();
 		}
+	};
+	/**
+	 * One authoritative re-read at a time, per thread link, no faster than the
+	 * reviewed floor.
+	 *
+	 * A browser may ask for a snapshot as often as it likes, and each re-read is
+	 * a paginated `thread/queue/list`. Concurrent requests share the one
+	 * in-flight read, and a request that arrives inside the floor is served from
+	 * the read that just finished — so a looping client cannot amplify app-server
+	 * traffic. The floor is keyed to the link, so navigating to another workhorse
+	 * always reads rather than reusing the previous link's timing.
+	 */
+	const now = input.now ?? Date.now;
+	let inFlightReread: { readonly threadId: ThreadId; readonly read: Promise<void> } | null = null;
+	let lastRereadAtMs: { readonly threadId: ThreadId; readonly atMs: number } | null = null;
+	const coalescedReread = (threadId: ThreadId): Promise<void> => {
+		if (inFlightReread !== null && inFlightReread.threadId === threadId) return inFlightReread.read;
+		if (
+			lastRereadAtMs !== null &&
+			lastRereadAtMs.threadId === threadId &&
+			now() - lastRereadAtMs.atMs < CODEX_QUEUE_REREAD_FLOOR_MS
+		)
+			return Promise.resolve();
+		const read = rereadLinkedQueue().finally(() => {
+			lastRereadAtMs = { threadId, atMs: now() };
+			if (inFlightReread?.threadId === threadId) inFlightReread = null;
+		});
+		inFlightReread = { threadId, read };
+		return read;
 	};
 	const threadLinks = createCanvasThreadLinkActions({
 		workhorse: components.workhorse,
@@ -397,8 +429,9 @@ export function createCanvasBrowserGatewayOptions(input: {
 	};
 	const projection: BrowserProjectionPort = {
 		refresh: async (context): Promise<void> => {
-			if (context.binding.link.state !== "executable") return;
-			await rereadLinkedQueue();
+			const link = context.binding.link;
+			if (link.state !== "executable" || link.threadId === null) return;
+			await coalescedReread(link.threadId);
 		},
 		read: (
 			context: Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0],

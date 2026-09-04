@@ -3,7 +3,29 @@ import { expect, test } from "bun:test";
 import type { IdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
+import { CODEX_QUEUE_REREAD_FLOOR_MS } from "../../../shared/timing/timing.js";
 import { projectionHarness } from "./support/codex-workbench-projection-harness.js";
+
+/** A live workhorse holding one thread, as the ready adapter paths need. */
+function readyWorkhorse(
+	authorities: IdentityAuthorities,
+	threadId: ReturnType<IdentityAuthorities["identity"]["decoder"]["adoptThreadId"]>,
+) {
+	return {
+		kind: "codex_workhorse" as const,
+		state: "ready" as const,
+		paneId: "pane-readiness",
+		childId: authorities.identity.validator.childId,
+		epoch: authorities.identity.validator.epoch,
+		threadId,
+		operationId: null,
+		outcome: null,
+		start: null,
+		binding: null,
+		cleanup: null,
+		reason: null,
+	};
+}
 
 /** One authoritative submission, as the workhorse queue owner answers with it. */
 function submission(
@@ -175,4 +197,49 @@ test("a submission's coordinator operation is recovered from its client user mes
 		[adopt("theirs"), null],
 		[adopt("prior"), null],
 	]);
+});
+
+test("concurrent snapshot re-reads share one read, and a looping client is floored", async () => {
+	const authorities = createIdentityAuthorities();
+	const threadId = authorities.identity.decoder.adoptThreadId("readiness-thread");
+	let reads = 0;
+	const pending: (() => void)[] = [];
+	const release = (): void => {
+		for (const resolve of pending.splice(0)) resolve();
+	};
+	let clock = 10_000;
+	const harness = projectionHarness({
+		now: () => clock,
+		workhorse: { snapshot: () => readyWorkhorse(authorities, threadId) },
+		queue: {
+			list: async () => {
+				reads += 1;
+				await new Promise<void>((resolve) => pending.push(resolve));
+				return { operation: "list" as const, queue: [] };
+			},
+		},
+	});
+	harness.state.queueThreadId = harness.threadId;
+
+	// Three requests arrive while the first paginated read is still open.
+	const concurrent = [
+		harness.options.projection.refresh?.(harness.context),
+		harness.options.projection.refresh?.(harness.context),
+		harness.options.projection.refresh?.(harness.context),
+	];
+	expect(reads).toBe(1);
+	release();
+	await Promise.all(concurrent);
+	expect(reads).toBe(1);
+
+	// A fourth inside the floor is served from the read that just finished.
+	await harness.options.projection.refresh?.(harness.context);
+	expect(reads).toBe(1);
+
+	// Past the floor, the host reads again.
+	clock += CODEX_QUEUE_REREAD_FLOOR_MS;
+	const past = harness.options.projection.refresh?.(harness.context);
+	expect(reads).toBe(2);
+	release();
+	await past;
 });

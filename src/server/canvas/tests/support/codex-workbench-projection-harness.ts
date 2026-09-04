@@ -70,6 +70,8 @@ export interface ProjectionHarness {
 type FixtureComponents = ReturnType<typeof createCodexWorkbenchGenerationFixture>["components"];
 
 export interface HarnessOverrides {
+	/** The clock the authoritative re-read floor reads. */
+	readonly now?: () => number;
 	/** A live workhorse and queue, for the paths that read authoritative state. */
 	readonly workhorse?: Partial<FixtureComponents["workhorse"]>;
 	readonly queue?: Partial<FixtureComponents["queue"]>;
@@ -131,6 +133,7 @@ export function projectionHarness(overrides: HarnessOverrides = {}): ProjectionH
 		leaseLedger: { active: null, retired: new Map() },
 		process: () => facts,
 		checkoutRoot: "/repo",
+		...(overrides.now === undefined ? {} : { now: overrides.now }),
 		contextForOperation: () => archboardContext,
 		onChange: () => () => undefined,
 	});

@@ -345,6 +345,20 @@ export const CANVAS_STARTUP_READINESS_MS = 8_000;
  */
 export const CODEX_WAIT_TARGET_POLL_MS = 250;
 
+/**
+ * Read-amplification floor classification. Pulls against the wait-target poll
+ * below and request settlement above.
+ *
+ * Serving a browser snapshot request re-reads the authoritative workhorse
+ * queue, which is a paginated app-server call. A client is free to ask for a
+ * snapshot as often as it likes, so the host coalesces concurrent re-reads and
+ * will not start a new one inside this floor. It sits at or above one
+ * wait-target poll, because a browser must not out-run the cadence the host
+ * observes thread state at, and far below request settlement, so a person's
+ * refresh still reads as immediate.
+ */
+export const CODEX_QUEUE_REREAD_FLOOR_MS = 1_000;
+
 // ── One writer at a time (ADR 0016) ───────────────────────────────────────
 //
 // `src/runtime/engine/board-lock.ts` is the only thing that reads these. It was built
