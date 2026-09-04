@@ -1,11 +1,11 @@
 ---
 id: TASK-143.04.02
 title: Render persistent live voice controls
-status: In Progress
+status: Done
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 11:04'
+updated_date: '2026-09-04 11:26'
 labels: []
 dependencies:
   - TASK-143.04.01
@@ -15,6 +15,9 @@ references:
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
   - src/ui/voice-controls
+  - src/ui/voice-session
+  - src/ui/codex-workbench-media
+  - src/ui/codex-realtime
 parent_task_id: TASK-143.04
 priority: high
 type: task
@@ -31,10 +34,10 @@ Delegation profile: gpt-5.6-sol, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Controls render unavailable, ready, requesting permission, negotiating, listening, muted, processing, agent-speaking, recovering, stopping, stopped, retryable failure, and terminal failure with exact bound identity.
-- [ ] #2 Start, mute/unmute, retry when permitted, and Stop emit only explicit presentation-adapter commands; pending/repeated/late input is disabled with an actionable reason.
-- [ ] #3 Level/waveform visualization is supplemental to named status, respects reduced motion, never animates after stop, and never exposes raw media objects.
-- [ ] #4 Tests at src/ui/voice-controls/tests cover keyboard/pointer/touch, visible focus, labels/status, color independence, both themes, Samsung Flip targets, failure recovery, and disposal.
+- [x] #1 Controls render unavailable, ready, requesting permission, negotiating, listening, muted, processing, agent-speaking, recovering, stopping, stopped, retryable failure, and terminal failure with exact bound identity.
+- [x] #2 Start, mute/unmute, retry when permitted, and Stop emit only explicit presentation-adapter commands; pending/repeated/late input is disabled with an actionable reason.
+- [x] #3 Level/waveform visualization is supplemental to named status, respects reduced motion, never animates after stop, and never exposes raw media objects.
+- [x] #4 Tests at src/ui/voice-controls/tests cover keyboard/pointer/touch, visible focus, labels/status, color independence, both themes, Samsung Flip targets, failure recovery, and disposal.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -80,4 +83,38 @@ Decisions recorded rather than asked:
 Verification from the worktree, all green: type-check exit 0 (both projects); lint exit 0; fmt:check 1110 files correct; build:frontend built in 590ms; bun test --isolate over voice-controls + voice-session + codex-realtime + codex-workbench-media + dom-testing = 190 pass / 0 fail / 5056 expect across 18 files; test:repository = 123 pass / 0 fail across 18 files; tests/system/process-contracts/codex-realtime.test.ts = 4 pass / 0 fail; test:modules = 2145 pass / 0 fail across 238 files.
 
 Deliberately out of scope: no shell or frame wiring (TASK-143.04.06 owns it, and the pane guarantee still rests on constructing one voice session per pane); no captured-context panel (.04.03), transcript (.04.04) or spoken-approval presentation (.04.05); no browser owner (.04.07 owns the inventory edit); no package.json, src/ui/shell or test-inventory edit.
+
+Independent fixed-range review of 57c677f6..c2946577 confirmed the mute path and returned NOT CLEAN only on the controlFailure clearing, fixed in 69942788.
+
+Rebased onto codex/task-143-144-workbench at 512a97f4 (143.03.06 and 143.03.03 landed) and re-ran bun install; the expected fakes.ts overlap merged without conflict and both threadCandidates and the mute fake are present.
+
+Review remediation (69942788), all seven items.
+
+1 (MEDIUM, the real finding). controlFailure was cleared only at the top of run() and in close(), so a thrown stop() or restart() kept its failure, its retry("restart") and its role="alert" riding every later phase of a live run indefinitely. It is now tagged with the exact realtime state it was raised over (controlFailureState), and clearStaleControlFailure runs inside publish() — which every path goes through: the transport channel, the media-owner channel, refresh(), and each control's own publications. The level fast path needs no check because it returns early precisely when the state identity has not moved. Owner: src/ui/voice-session/tests/voice-mute.test.ts 'drops a refused control the moment the run moves past it' — a thrown stop, then a phase advance to processing, and the failure, the outcome and the alert are gone while the narration is the new phase's. Verified to fail with the clear removed (1 fail) and pass with it.
+
+2 (LOW, honesty of the justification). Recorded caveat: setMuted never rejects. For any phase but the matching one it returns the run's current snapshot unchanged, so 'a refused mute' is not a path layer 1 can take, and the original owner proved it only by throwing from a fake. The widened live-run failure surface is kept, because it fixes a real hole for a thrown stop or restart, and it is now owned by 'surfaces a control this adapter drove and had refused' using a thrown stop — a path the layer really has. The sub-tick race the person can actually hit has its own owner, 'treats a toggle whose phase moved under it as a silent no-op': the phase moves between the canMute read and the press, the adapter sends nothing, no failure appears, and the button is already refused.
+
+3 (LOW, the flag and the phase). publish() in src/ui/codex-realtime/lib/media-session.ts is now the sole writer of the local track's enabled flag, toggling it on every crossing of the muted boundary in either direction; setMuted only publishes the transition. The table admits muted -> processing, so once TASK-143.04.04/.05 wire semantic events a run leaving muted by another route would have kept a silent microphone under a UI saying Listening. Owner: 'the capture is re-enabled whenever the run leaves muted, not only on unmute' exercises the route that is reachable today, muted -> stopping, and asserts the flag is back true.
+
+4 (LOW, the remount). VoiceControls sets mounted.current = true in the effect body rather than only at construction. StrictMode and Activity remount the same instance, so the cleanup's false was permanent and every control stayed disabled. Owner: 'stays usable after a remount, so a settled command re-enables it' renders inside StrictMode, presses Start and settles. Verified to fail with the assignment removed.
+
+5 (LOW, the fixture cast). src/ui/voice-controls/tests/support/fixtures.ts builds the snapshot, the two transport states and the capabilities through the closed browser model with no cast at all — the blanket 'as unknown as BrowserSnapshot' is gone and threadCandidates is present — so a shared-model change now names this fixture at type-check time.
+
+6 (LOW, the unbound branch). New fixture unboundView plus owner 'says so plainly when nothing is bound to this pane yet' for ready and unavailable: the transport row says 'No voice session is bound to this pane.', no data-voice-bound element is rendered, and every accessible label falls back to 'on this pane' rather than inventing an identity.
+
+7 (INFO, the tautological owner). The two-themes owner is replaced by 'owns no second palette: no module-owned dark variant anywhere', which scans every product source for a dark: variant, a prefers-color-scheme query, or a data-theme read — the actual single-palette violation — and self-checks against the theme's own :root[data-theme="dark"] block and a positive pattern match. The duplicated touch-target assertion in appearance.test.ts is gone; the surviving owner in commands.test.ts now covers every command button and keeps the 44px token link.
+
+Re-verification from the worktree, all green: type-check exit 0 (both projects); lint exit 0; fmt:check 1148 files correct; build:frontend built in 532ms; bun test --isolate over voice-controls + voice-session + codex-realtime + codex-workbench-media + dom-testing = 194 pass / 0 fail / 5101 expect across 18 files; test:repository = 123 pass / 0 fail across 18 files; tests/system/process-contracts/codex-realtime.test.ts = 4 pass / 0 fail / 65 expect; test:modules = 2293 pass / 0 fail across 251 files. Every file is well under the 500-line cap; the largest are lib/projection.ts at 242, tests/support/fixtures.ts at 217 and tests/commands.test.ts at 213.
+
+Acceptance criteria checked on that evidence. AC #1: state-rendering.test.ts 'every fixture really is the state it claims', 'renders all thirteen states with a named status and the exact bound identity', 'keeps the three command slots in the same place in all thirteen states', 'says so plainly when nothing is bound to this pane yet'. AC #2: commands.test.ts 'emits one adapter command per pointer press and nothing else', 'disables every control while one command is unsettled and says what is running', 'keeps an unavailable control refused with the reason the workbench gave', 'recovers from a retryable failure through the offered control only', 'offers close, and only close, on a replaced session', 'stays usable after a remount…', with boundaries.test.ts 'owns no media resource and constructs no owner' and voice-mute.test.ts 'sends nothing for a toggle the projection did not offer'. AC #3: state-rendering 'permits a meter in the five live states and in none of the others' and 'quantizes the level into segments and never announces it'; appearance 'does not open a per-frame level subscription when reduced motion is asked for', 'runs the meter when motion is allowed and drops it the moment voice stops', 'takes its motion durations from the theme rather than declaring its own'; boundaries 'exposes no raw media, protocol, or transport object through its contract'. AC #4: the four owners together — keyboard, pointer and touch activation, visible focus, labels and status text, colour independence by text plus a distinct glyph, both themes by single-palette proof, the semantic 44px target, failure recovery, and disposal with a late resolution that writes to nothing.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Built src/ui/voice-controls: the persistent live voice control for one pane, rendering Start, the microphone toggle, Stop, the offered retry or close, permission and negotiation progress, a supplemental level meter, and a persistent transport row that always names the bound pane, thread link and coordinator. Thirteen states come from the presentation adapter's twelve statuses with 'failed' split by the adapter's own outcome into the failure the person can act on now and the one that is over. Every command is one method on the voice-session adapter — checked exhaustively by satisfies and by a source owner that rejects every media, protocol and owner name — and the first three command slots hold still in all thirteen states. A disabled control always carries an actionable reason in an sr-only element referenced by aria-describedby, including the module's own record of which command it sent and has not seen settle, which is what makes a repeated press and a press that resolves after unmount inert. The meter runs only in the five live states and only when reduced motion was not asked for, so it cannot animate after a stop; the canonical theme stays the sole owner of motion values and of the palette.
+
+AC #2 needed a mute that did not exist, so the missing path was added as three serialized sibling edits, smallest first: codex-realtime's RealtimeMediaSession gained mute()/unmute() driving the existing muted/mute_requested and listening/unmute_requested transitions by toggling the captured local audio track's browser-native enabled flag, which needs no host call and leaves the frozen host interface and the module's frozen export surface untouched; publish() owns that flag on every crossing of the muted boundary so a run leaving muted by any route re-enables the capture; BrowserWorkbenchMediaOwner forwards both without a lease or a command; and VoiceSessionControls gained canMute/canUnmute offered from listening and muted alone, with mute()/unmute() under the adapter's existing busy and generation discipline. A control failure the adapter drove is now visible on a live run and is dropped once the run's phase moves past it.
+
+Verified with bun run type-check (exit 0, both projects), bun run lint (exit 0), bun run fmt:check (1148 files), bun run build:frontend, bun test --isolate over voice-controls, voice-session, codex-realtime, codex-workbench-media and dom-testing (194 pass / 0 fail / 5101 expect across 18 files), bun run test:repository (123 pass / 0 fail), tests/system/process-contracts/codex-realtime.test.ts (4 pass / 0 fail) and bun run test:modules (2293 pass / 0 fail across 251 files). Two of the three fixes for the independent review were confirmed by removing them and watching their owners fail.
+<!-- SECTION:FINAL_SUMMARY:END -->
