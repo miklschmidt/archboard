@@ -1,5 +1,6 @@
 export {
 	IdentityValidationError,
+	CANONICAL_ITEM_ID_MAX_LENGTH,
 	OPERATION_ID_MAX_BYTES,
 	createIdentityAuthorities,
 	createIdentityAuthority,

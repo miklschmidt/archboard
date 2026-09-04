@@ -134,7 +134,7 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 			expect(start!.realtimeSessionId).toMatch(/^archboard:realtime-session:h[a-f0-9]{32}$/);
 			expect(generation.adapter.transcript()).toEqual([
 				expect.objectContaining({
-					itemId: "assistant-item",
+					itemId: parseRealtimeItemId(generation.identity.decoder.resolveItemId("assistant-item")),
 					role: "assistant",
 					status: "final",
 					text: "Hello",
@@ -387,13 +387,15 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 				[null, "next"],
 			);
 			expect(generation.adapter.transcript()).toHaveLength(2);
+			const itemA = parseRealtimeItemId(generation.identity.decoder.resolveItemId("item-a"));
+			const itemB = parseRealtimeItemId(generation.identity.decoder.resolveItemId("item-b"));
 			expect(
 				generation.adapter
 					.transcript()
 					.map(({ itemId, sequence, text }) => ({ itemId, sequence, text })),
 			).toEqual([
-				{ itemId: parseRealtimeItemId("item-a"), sequence: 0, text: "first" },
-				{ itemId: parseRealtimeItemId("item-b"), sequence: 1, text: "recovered" },
+				{ itemId: itemA, sequence: 0, text: "first" },
+				{ itemId: itemB, sequence: 1, text: "recovered" },
 			]);
 
 			const looping = await createHarness({

@@ -1,12 +1,14 @@
 import { z } from "zod";
 
+import { CANONICAL_ITEM_ID_MAX_LENGTH } from "../../codex-workbench-identity/index.js";
+
 const BrowserRealtimeIdentitySchemas = {
 	session: z.string().brand<"BrowserRealtimeSessionId">(),
 	correlation: z.string().brand<"BrowserRealtimeCorrelationId">(),
 	item: z
 		.string()
 		.min(1)
-		.max(4096)
+		.max(CANONICAL_ITEM_ID_MAX_LENGTH)
 		.refine((value) => !value.includes("\0"))
 		.brand<"BrowserRealtimeItemId">(),
 };

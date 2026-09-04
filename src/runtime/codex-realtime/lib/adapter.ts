@@ -439,6 +439,12 @@ export function createCodexRealtimeAdapter(
 		if (session.state.phase !== "recoverable_error")
 			return { ...request, outcome: "not_delivered", reason: "not_ready" };
 		const cursors = new Set<string>();
+		const transcriptEntries: Array<{
+			readonly id: string;
+			readonly role: RealtimeTranscriptRecord["role"];
+			readonly text: string;
+			readonly position: number;
+		}> = [];
 		let cursor: string | null = null;
 		try {
 			for (;;) {
@@ -456,12 +462,6 @@ export function createCodexRealtimeAdapter(
 					page.activeRealtimeSessionAtPageStart !== session.wireSessionId
 				)
 					throw new Error("Timeline recovery belongs to another realtime session.");
-				const transcriptEntries: Array<{
-					readonly id: string;
-					readonly role: RealtimeTranscriptRecord["role"];
-					readonly text: string;
-					readonly position: number;
-				}> = [];
 				for (const entry of page.data) {
 					if (entry.type !== "realtime" || entry.item.type !== "transcriptSegment") continue;
 					if (entry.item.realtimeSessionId !== session.wireSessionId) continue;
@@ -472,27 +472,28 @@ export function createCodexRealtimeAdapter(
 						position: entry.position,
 					});
 				}
-				const itemIds = options.identity.decoder.adoptCodexResponseIdentities({
-					itemIds: transcriptEntries.map((entry) => entry.id),
-				}).itemIds;
-				for (const itemId of itemIds) parseRealtimeItemId(itemId);
-				for (const [index, entry] of transcriptEntries.entries()) {
-					const itemId = itemIds[index];
-					if (!itemId) throw new Error("Timeline recovery omitted a transcript item identity.");
-					session.entries.set(itemId, {
-						itemId,
-						role: entry.role,
-						status: "final",
-						text: entry.text,
-						order: entry.position,
-					});
-				}
 				if (page.nextCursor === null) break;
 				if (cursors.has(page.nextCursor))
 					throw new Error("Timeline recovery cursor loop detected.");
 				cursors.add(page.nextCursor);
 				cursor = page.nextCursor;
 			}
+			const itemIds = options.identity.decoder.adoptCodexResponseIdentities({
+				itemIds: transcriptEntries.map((entry) => entry.id),
+			}).itemIds;
+			const recoveredEntries = new Map(session.entries);
+			for (const [index, entry] of transcriptEntries.entries()) {
+				const itemId = itemIds[index]!;
+				recoveredEntries.set(itemId, {
+					itemId,
+					role: entry.role,
+					status: "final",
+					text: entry.text,
+					order: entry.position,
+				});
+			}
+			session.entries.clear();
+			for (const [itemId, entry] of recoveredEntries) session.entries.set(itemId, entry);
 			publishTranscript(session);
 			state(session, { phase: "idle", reason: "recovered" });
 			retainedTranscript = orderedRecords(session);

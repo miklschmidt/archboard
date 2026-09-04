@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-04 16:09'
-updated_date: '2026-09-04 16:17'
+updated_date: '2026-09-04 16:28'
 labels: []
 dependencies: []
 parent_task_id: TASK-143.04
@@ -30,13 +30,18 @@ TASK-143.04.07 now completes SDP and started, then a valid final transcript such
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Keep one focused cross-module owner that sends a raw realtime transcript item through the adapter and production browser projection, reproducing the invalid_projection failure and proving rejected item paths never publish.
-2. Canonicalize transcript item identities at the adapter input boundary with the existing authority ledger: adopt the item introduced by a fully correlated item/started notification, resolve later delta/completed references, and batch-adopt recovered timeline items before mutating transcript state. Retain and publish canonical identity values while preserving the browser-neutral realtime media contract.
-3. Run the focused realtime, identity, and projection owners, both TypeScript projects, scoped Oxlint and Oxfmt checks, inspect the fixed-base diff, and commit the review-ready range without finalizing the task.
+1. Extend the adapter public-boundary owners with three red recovery cases: a delayed second page, a late invalid item, and a cursor loop. Assert that transcript publication and raw-to-canonical issuance stay unchanged until the full page chain succeeds.
+2. Add a red live-item boundary case at the identity authority maximum and one byte beyond it. Keep item/started as the sole introduction and prove an oversized raw item remains unissued.
+3. Stage all matching recovery records across the complete cursor chain, reject bad pages or loops before authority adoption, batch-adopt once, build the merged entry map locally, then replace retained entries and publish once. Align the neutral transcript presentation length with the authority-owned canonical ItemId maximum without weakening ItemIdSchema.
+4. Correct only the three stale raw-ID expectations in the focused process-contract owner, then run the permitted focused tests, both TypeScript projects, scoped lint/format, and fixed-base diff checks. Commit the complete range and return it for rereview without checking acceptance criteria or finalizing the task.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Red proof: the focused adapter-to-production-projection test received refused/invalid_projection for raw controlled-user-transcript before the adapter boundary changed. Implementation uses the existing identity authority ledger: item/started introduces an ID only after child, epoch, thread, session, type, role, and text validation; delta and completed resolve only already-issued IDs; recovery batch-adopts matching transcript IDs before inserting them. Rejected stale epoch, wrong thread, wrong session, invalid, and unissued reference paths leave the retained transcript and publication count unchanged. Validation is recorded in the delegated callback and commit; the task remains In Progress for parent review and final browser verification.
+
+Independent review reopened the implementation at 6ccdbb6b with three required closures: full-pagination recovery atomicity, authority-safe presentation bounds, and canonical expectations in the existing process owner. The task stays In Progress and all acceptance criteria stay unchecked.
+
+Rereview remediation proof: the new public adapter owner first failed all four cases. It exposed a first recovery page before a deferred second page, retained partial transcript and issued identities after a late oversized item and cursor loop, and dropped an authority-valid 4,096-byte raw item after issuing its 8,208-character canonical value. After the change, all four pass: no transcript record, transcript event, or item issuance occurs until every page and cursor succeeds; late invalid and loop failures leave the item ledger empty; the 4,096-byte value publishes canonically; and 4,097 bytes remain unissued. The permitted focused set passes 51 tests with 681 assertions, both TypeScript projects pass, and scoped lint, format, and diff checks pass. The exact process owner was run under a 20-second command bound and completed in 10.19 seconds with 1 pass and 3 failures. Its two negotiation cases time out before transcript assertions because the existing fixture substitutes the already-canonical coordinator ThreadId into notifications while the adapter resolves raw notification thread IDs. Its three transcript expectations now use resolveItemId as requested; the fixture was not changed. Browser and broad suites were not run.
 <!-- SECTION:NOTES:END -->
