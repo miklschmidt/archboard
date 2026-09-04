@@ -4,7 +4,7 @@ title: Verify controlled live voice in the workbench browser
 status: To Do
 assignee: []
 created_date: '2026-08-30 15:37'
-updated_date: '2026-09-04 15:52'
+updated_date: '2026-09-04 16:10'
 labels: []
 dependencies:
   - TASK-143.02.04
@@ -12,6 +12,7 @@ dependencies:
   - TASK-143.04.06
   - TASK-143.04.10
   - TASK-143.04.11
+  - TASK-143.04.12
 references:
   - docs/design/operator-canvas-shell.md
 modified_files:

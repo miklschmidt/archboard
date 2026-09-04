@@ -218,12 +218,23 @@ export function createCodexRealtimeAdapter(
 			readonly text?: string;
 		},
 		status: "provisional" | "final",
+		identityMode: "introduce" | "reference",
 	): void => {
 		if (item.realtimeSessionId !== session.wireSessionId || item.type !== "transcriptSegment")
 			return;
 		if (item.role === undefined || item.text === undefined) return;
-		const itemId = parseRealtimeItemId(item.id);
+		let itemId;
+		try {
+			itemId =
+				identityMode === "introduce"
+					? options.identity.decoder.adoptItemId(item.id)
+					: options.identity.decoder.resolveItemId(item.id);
+			parseRealtimeItemId(itemId);
+		} catch {
+			return;
+		}
 		const existing = session.entries.get(itemId);
+		if (identityMode === "reference" && existing === undefined) return;
 		session.entries.set(itemId, {
 			itemId,
 			role: item.role,
@@ -268,10 +279,16 @@ export function createCodexRealtimeAdapter(
 				settleAnswer(session);
 				break;
 			case "thread/realtime/item/started":
-				upsertLiveItem(session, notification.params.item, "provisional");
+				upsertLiveItem(session, notification.params.item, "provisional", "introduce");
 				break;
 			case "thread/realtime/item/transcript/delta": {
-				const itemId = parseRealtimeItemId(notification.params.itemId);
+				let itemId;
+				try {
+					itemId = options.identity.decoder.resolveItemId(notification.params.itemId);
+					parseRealtimeItemId(itemId);
+				} catch {
+					break;
+				}
 				const entry = session.entries.get(itemId);
 				if (entry) {
 					entry.text += notification.params.delta;
@@ -281,7 +298,7 @@ export function createCodexRealtimeAdapter(
 				break;
 			}
 			case "thread/realtime/item/completed":
-				upsertLiveItem(session, notification.params.item, "final");
+				upsertLiveItem(session, notification.params.item, "final", "reference");
 				if (
 					notification.params.item.type === "realtimeSessionClosed" &&
 					notification.params.item.realtimeSessionId === session.wireSessionId
@@ -439,15 +456,34 @@ export function createCodexRealtimeAdapter(
 					page.activeRealtimeSessionAtPageStart !== session.wireSessionId
 				)
 					throw new Error("Timeline recovery belongs to another realtime session.");
+				const transcriptEntries: Array<{
+					readonly id: string;
+					readonly role: RealtimeTranscriptRecord["role"];
+					readonly text: string;
+					readonly position: number;
+				}> = [];
 				for (const entry of page.data) {
 					if (entry.type !== "realtime" || entry.item.type !== "transcriptSegment") continue;
 					if (entry.item.realtimeSessionId !== session.wireSessionId) continue;
-					const itemId = parseRealtimeItemId(entry.item.id);
+					transcriptEntries.push({
+						id: entry.item.id,
+						role: entry.item.role,
+						text: entry.item.text,
+						position: entry.position,
+					});
+				}
+				const itemIds = options.identity.decoder.adoptCodexResponseIdentities({
+					itemIds: transcriptEntries.map((entry) => entry.id),
+				}).itemIds;
+				for (const itemId of itemIds) parseRealtimeItemId(itemId);
+				for (const [index, entry] of transcriptEntries.entries()) {
+					const itemId = itemIds[index];
+					if (!itemId) throw new Error("Timeline recovery omitted a transcript item identity.");
 					session.entries.set(itemId, {
 						itemId,
-						role: entry.item.role,
+						role: entry.role,
 						status: "final",
-						text: entry.item.text,
+						text: entry.text,
 						order: entry.position,
 					});
 				}
