@@ -146,10 +146,10 @@ export interface WorkbenchComposerControllerOptions {
 
 /**
  * One state owner for submit, steer, interrupt, pending, and the retained
- * draft. The pane hands `submit` to `WorkbenchRuntimeProvider` as its
- * `onSubmit` and the same controller to `WorkbenchComposer`, so the rendered
- * surface and the runtime's submission path can never disagree about what is
- * pending or what happened.
+ * draft. `WorkbenchComposer` renders from it, and its `submit` is shaped to fit
+ * `WorkbenchRuntimeProvider`'s `onSubmit` seam as well, so a pane that also
+ * binds it there cannot end up with two answers about what is pending or what
+ * happened.
  */
 export interface WorkbenchComposerController {
 	readonly submit: (submission: {

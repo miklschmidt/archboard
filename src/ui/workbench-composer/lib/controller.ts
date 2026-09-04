@@ -83,6 +83,20 @@ function refusalOf(error: unknown): Settlement {
 }
 
 /**
+ * Failing to capture a target is always `not_delivered`, whatever the error
+ * says: the capture happens before the command exists, so nothing reached the
+ * host and the person's text is safe to send again.
+ */
+function captureRefusal(error: unknown): Settlement {
+	if (error instanceof BrowserWorkbenchTransportError)
+		return settlement("not_delivered", transportRefusalMessage(error.code));
+	return settlement(
+		"not_delivered",
+		error instanceof Error ? error.message : "The workbench command target is unavailable.",
+	);
+}
+
+/**
  * The turn a delivered command may claim. A steer names the turn it steered,
  * which the host already re-proved as `expectedTurnId`. A start has no id of
  * its own, so the id comes from the authoritative snapshot the host answered
@@ -148,7 +162,12 @@ export function createWorkbenchComposerController(
 		try {
 			target = transport.captureCommandTarget();
 		} catch (error) {
-			return refusalOf(error);
+			const refused = captureRefusal(error);
+			publish({
+				settled: state.settled + 1,
+				status: outcomeStatus(refused.outcome, refused.message),
+			});
+			return refused;
 		}
 		publish({
 			pending: plan.action,
