@@ -13,6 +13,7 @@ import type {
 	BrowserCommandId,
 	ChildEpoch,
 	ChildId,
+	OperationId,
 	ThreadId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import type {
@@ -65,9 +66,26 @@ export interface CodexSettingsProjectionInput {
 	>;
 }
 
+/**
+ * One authoritative queued submission, with the Archboard operation that queued
+ * it when Archboard queued it.
+ *
+ * The queue port sets a submission's `clientUserMessageId` to the serialized
+ * OperationId on every add it makes, so the composition root can recover the
+ * operation from the authoritative list and hand it over here. A null operation
+ * is a submission Archboard did not queue, and this pane has no authority to
+ * reorder it.
+ */
+export interface CodexQueuedSubmissionProjectionInput extends Pick<
+	SessionQueuedSubmission,
+	"id" | "input"
+> {
+	readonly operationId: OperationId | null;
+}
+
 export interface CodexQueueProjectionInput {
 	readonly kind: "codex_queue";
-	readonly submissions: readonly Pick<SessionQueuedSubmission, "id" | "input">[] | null;
+	readonly submissions: readonly CodexQueuedSubmissionProjectionInput[] | null;
 }
 
 type SessionItem<Type extends SessionThreadItem["type"]> = Extract<

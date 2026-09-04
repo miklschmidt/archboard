@@ -200,6 +200,7 @@ describe("canvas Codex publication boundary", () => {
 			paneId,
 			instance,
 			snapshot: () => (terminalPending ? recovered : empty),
+			refreshProjection: async () => undefined,
 			confirmPublished: (payload: unknown) => {
 				confirmed.push(payload);
 				if (payload === recovered.snapshot) terminalPending = false;

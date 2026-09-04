@@ -6,6 +6,7 @@ import {
 	useRef,
 	useState,
 	useSyncExternalStore,
+	type DragEvent,
 	type ReactNode,
 } from "react";
 
@@ -201,6 +202,17 @@ export function WorkbenchQueue({
 		},
 		[dragging, submitReorder],
 	);
+	const handleDragOverEnd = useCallback((event: DragEvent<HTMLDivElement>) => {
+		event.preventDefault();
+	}, []);
+	const handleDropEnd = useCallback(
+		(event: DragEvent<HTMLDivElement>) => {
+			event.preventDefault();
+			// One past the last row: the only drop position that means "the end".
+			handleDropAt(view.entries.length + 1);
+		},
+		[handleDropAt, view.entries.length],
+	);
 
 	return (
 		<section
@@ -284,6 +296,19 @@ export function WorkbenchQueue({
 						/>
 					))}
 				</ol>
+			)}
+			{view.entries.length === 0 ? null : (
+				// The rows drop *before* the row they land on, so without this the last
+				// place in the queue is unreachable by pointer: a person would have to
+				// drag twice to get there.
+				<div
+					className="border-t border-border-subtle py-control text-body text-muted-foreground"
+					data-queue-drop-end=""
+					onDragOver={handleDragOverEnd}
+					onDrop={handleDropEnd}
+				>
+					Drop a submission here to move it to the end of the queue.
+				</div>
 			)}
 			<QueueSettlementOutput pending={view.pending} settlement={view.settlement} />
 		</section>

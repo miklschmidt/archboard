@@ -225,6 +225,8 @@ export interface FakeQueueTransportOptions {
 		target: BrowserWorkbenchCommandTarget | undefined,
 	) => Promise<BrowserWorkbenchCommandResult> | BrowserWorkbenchCommandResult;
 	readonly onRefresh?: () => Promise<unknown>;
+	/** The authoritative state a refresh republishes, as the real transport does. */
+	readonly refreshPublishes?: () => BrowserWorkbenchState;
 }
 
 /**
@@ -266,6 +268,8 @@ export class FakeQueueTransport {
 			},
 			refresh: async () => {
 				this.refreshes += 1;
+				const republished = this.options.refreshPublishes?.();
+				if (republished !== undefined) this.publish(republished);
 				const result = await (this.options.onRefresh?.() ??
 					Promise.resolve({ kind: "snapshot", sequence: 1, snapshot: this.current.snapshot }));
 				return result as Awaited<ReturnType<WorkbenchQueueTransport["refresh"]>>;

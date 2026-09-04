@@ -17,6 +17,7 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 		paneId: "pane-reconnect",
 		instance,
 		snapshot: () => ({ kind: "snapshot", sequence: 1, snapshot: {} }) as never,
+		refreshProjection: async () => undefined,
 		confirmPublished: () => undefined,
 		claimLease: () => {
 			if (current !== instance) throw new Error("The stale socket cannot claim authority.");
@@ -180,6 +181,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 		browserId: "browser-1",
 		paneId: "pane-authoritative",
 		instance,
+		refreshProjection: async () => undefined,
 		snapshot: () => {
 			calls.push("snapshot");
 			return { kind: "snapshot", sequence: 1, snapshot: {} } as never;
@@ -370,6 +372,7 @@ test("the public request crosses a real WebSocket transport and returns the gate
 		browserId: "browser-live",
 		paneId: "pane-live",
 		instance,
+		refreshProjection: async () => undefined,
 		snapshot: () =>
 			({ kind: "snapshot", sequence: 3, snapshot: { kind: "browser_snapshot" } }) as never,
 		confirmPublished: () => undefined,

@@ -7,11 +7,13 @@ import {
 	dragTo,
 	element,
 	elements,
+	interactives,
 	mountQueue,
 	press,
 	publish,
 	renderedOrder,
 	rowFor,
+	settlementText,
 	type MountedQueue,
 } from "./mounted-support.ts";
 import {
@@ -76,7 +78,7 @@ describe("rendered workbench queue", () => {
 		]);
 	});
 
-	test("offers exactly the six named controls and no other queue control", async () => {
+	test("offers exactly the six named controls and no other interactive element", async () => {
 		const { view } = await mountWith();
 
 		const named = new Set(
@@ -85,6 +87,27 @@ describe("rendered workbench queue", () => {
 			),
 		);
 		expect([...named].toSorted()).toEqual(["add", "cancel", "edit", "list", "reorder", "start"]);
+
+		// Every interactive element in the region is one of the six controls, a
+		// prompt field, or a cross-link — nothing else can be reached or activated.
+		const other = interactives(view.container).filter(
+			(node) => node.getAttribute("data-queue-control") === null,
+		);
+		expect(
+			other.map((node) =>
+				node.tagName === "A" ? `link:${node.getAttribute("data-queue-cross-link")}` : node.tagName,
+			),
+		).toEqual([
+			"link:workhorse-timeline",
+			"link:coordinator",
+			"link:approvals",
+			"TEXTAREA",
+			"TEXTAREA",
+			"link:coordinator-operation",
+			"TEXTAREA",
+			"TEXTAREA",
+			"link:coordinator-operation",
+		]);
 	});
 
 	test("labels every control and states why a disabled one is disabled", async () => {
@@ -193,12 +216,29 @@ describe("workbench queue reorder from the rendered region", () => {
 		});
 	});
 
-	test("a pointer drag submits every id and moves only the coordinator entries", async () => {
+	test("a pointer drag submits every id, moves only coordinator entries, and keeps focus", async () => {
 		const { fake, view } = await mountWith();
 
 		await dragTo(
 			element(view.container, "data-queue-drag-surface", "s3"),
 			element(view.container, "data-queue-drag-surface", "s1"),
+		);
+
+		expect(draftAt(fake, 0)).toEqual({
+			command: "queueReorder",
+			orderedSubmissionIds: ["s3", "s2", "s1"],
+		});
+		expect(view.container.ownerDocument.activeElement?.getAttribute("aria-label")).toBe(
+			"Move submission 3 earlier",
+		);
+	});
+
+	test("dropping past the last row moves a submission to the end in one gesture", async () => {
+		const { fake, view } = await mountWith();
+
+		await dragTo(
+			element(view.container, "data-queue-drag-surface", "s1"),
+			element(view.container, "data-queue-drop-end"),
 		);
 
 		expect(draftAt(fake, 0)).toEqual({
@@ -216,7 +256,7 @@ describe("workbench queue reorder from the rendered region", () => {
 		);
 
 		expect(fake.commands).toEqual([]);
-		expect(element(view.container, "data-queue-settlement").textContent).toBe(
+		expect(settlementText(view.container)).toBe(
 			"Only a submission this coordinator queued can be reordered.",
 		);
 	});
@@ -243,9 +283,7 @@ describe("workbench queue reconciliation", () => {
 		expect(
 			element(view.container, "data-queue-settlement").getAttribute("data-queue-settlement"),
 		).toBe("refused");
-		expect(element(view.container, "data-queue-settlement").textContent).toBe(
-			"The host refused the reorder.",
-		);
+		expect(settlementText(view.container)).toBe("The host refused the reorder.");
 	});
 
 	test("re-renders in the host's new order once the authoritative snapshot arrives", async () => {
@@ -349,4 +387,33 @@ describe("workbench queue recovery from the rendered region", () => {
 			element(view.container, "data-queue-control", "list").getAttribute("aria-disabled"),
 		).toBe("false");
 	});
+});
+
+test("refreshing clears a lost outcome and puts every control back in reach", async () => {
+	const authoritative = connected(snapshot({ queue: queue("queued", SEEDS) }), 9);
+	const { fake, view } = await mountWith({
+		onCommand: () =>
+			commandResult(snapshot({ queue: queue("queued", SEEDS) }), {
+				outcome: "outcome_unknown",
+				code: "outcome_unknown",
+			}),
+		refreshPublishes: () => authoritative,
+	});
+	mounted = view;
+
+	await click(control(rowFor(view.container, "s1"), "cancel"));
+	expect(element(view.container, "data-workbench-queue").getAttribute("data-queue-state")).toBe(
+		"outcome_unknown",
+	);
+
+	await click(element(view.container, "data-queue-control", "list"));
+
+	expect(fake.refreshes).toBe(1);
+	expect(element(view.container, "data-workbench-queue").getAttribute("data-queue-state")).toBe(
+		"queued",
+	);
+	expect(control(rowFor(view.container, "s1"), "cancel").getAttribute("aria-disabled")).toBe(
+		"false",
+	);
+	expect(settlementText(view.container)).toContain("re-read and republished");
 });

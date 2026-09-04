@@ -1,9 +1,12 @@
-import { createIdentityAuthority } from "../../codex-workbench-identity/index.js";
+import { createIdentityAuthorities } from "../../codex-workbench-identity/index.js";
 import { createCodexBrowserModel } from "../index.js";
 import type { BrowserCommand, BrowserSnapshot } from "../index.js";
 
-const authority = createIdentityAuthority();
-const model = createCodexBrowserModel(authority);
+// The queue carries a host OperationId, so the fixture model needs the complete
+// authority pair rather than the identity half alone.
+const authorities = createIdentityAuthorities();
+const authority = authorities.identity;
+const model = createCodexBrowserModel(authorities);
 const childId = model.ChildIdSchema.parse(authority.validator.childId);
 const epoch = model.ChildEpochSchema.parse(authority.validator.epoch);
 const requestId = model.JsonRpcRequestIdSchema.parse(authority.issuer.mintJsonRpcRequestId());
@@ -20,8 +23,8 @@ const itemId = model.ItemIdSchema.parse(authority.decoder.adoptItemId("item-fixt
 const approvalId = model.ApprovalIdSchema.parse(
 	authority.decoder.adoptApprovalId("approval-fixture"),
 );
-const toolCallId = model.DynamicToolCallIdSchema.parse(
-	authority.decoder.adoptDynamicToolCallId("call-fixture"),
+const queueOperationId = model.OperationIdSchema.parse(
+	authorities.operation.issuer.mintOperationId(),
 );
 const queueId = model.QueuedSubmissionIdSchema.parse(
 	authority.decoder.adoptQueuedSubmissionId("queue-fixture"),
@@ -74,7 +77,7 @@ const queue = {
 			submissionId: queueId,
 			prompt: "Queue me",
 			status: "queued" as const,
-			operationId: toolCallId,
+			operationId: queueOperationId,
 		},
 	],
 };
