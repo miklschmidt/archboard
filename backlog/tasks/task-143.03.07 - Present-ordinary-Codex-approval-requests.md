@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.07
 title: Present Codex approval requests
-status: In Progress
+status: Done
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-04 09:59'
+updated_date: '2026-09-04 10:09'
 labels: []
 dependencies:
   - TASK-143.05.02
@@ -18,6 +18,10 @@ references:
 modified_files:
   - src/ui/workbench-approvals
   - src/ui/workbench-approvals/tests/approval-surface.test.tsx
+  - src/ui/workbench-approvals/tests/mounted-approvals.test.tsx
+  - tests/system/repository-policy/boundaries.test.ts
+  - tools/oxlint-plugin-archboard.js
+  - .oxlintrc.jsonc
 parent_task_id: TASK-143.03
 priority: high
 type: task
@@ -32,11 +36,11 @@ Render and resolve the seven ordinary app-server human-interaction request famil
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Cards cover command execution, file change, permissions, legacy exec and apply, multi-question requestUserInput, MCP elicitation, openai form and URL elicitation, plus create_thread, fork_thread, and send_message_to_thread dynamic effects. Each uses its real discriminated identity; dynamic cards disclose the exact target, prompt, effective fork boundary, OperationId, and expiry without fabricating ApprovalId or turn identity.
-- [ ] #2 Ordinary forms support every reviewed field, secret, permission, and safe-URL rule. Dynamic cards permit one approve or decline decision only, retain the immutable effect hash, and never offer a session grant, target edit, hidden boundary, or approval_required resume action.
-- [ ] #3 Only genuine ordinary accept or decline approvals may be spoken-eligible. Multi-field input, secrets, URLs, scoped permissions, unsupported forms, coordinator-blocking requests, and every dynamic coordination approval remain visual-only.
-- [ ] #4 Pending, app-global off-focus visibility, stale ownership or effect, expiry, cancellation, browser or child disconnect, approved, declined, delivered, not_delivered, outcome_unknown, terminal approval_required, and authoritative reconciliation retain the original immutable target, remove dead authority, and return focus accessibly.
-- [ ] #5 src/ui/workbench-approvals/tests/approval-surface.test.tsx exhausts all seven ordinary families and all three dynamic effects, field validation, secret non-echo, safe and unsafe URLs, spoken eligibility, exact effect disclosure, app-global focus, stale, expired, cancelled, and disconnected decisions, terminal no-resume behavior, and delivered, not_delivered, or outcome_unknown reconciliation.
+- [x] #1 Cards cover command execution, file change, permissions, legacy exec and apply, multi-question requestUserInput, MCP elicitation, openai form and URL elicitation, plus create_thread, fork_thread, and send_message_to_thread dynamic effects. Each uses its real discriminated identity; dynamic cards disclose the exact target, prompt, effective fork boundary, OperationId, and expiry without fabricating ApprovalId or turn identity.
+- [x] #2 Ordinary forms support every reviewed field, secret, permission, and safe-URL rule. Dynamic cards permit one approve or decline decision only, retain the immutable effect hash, and never offer a session grant, target edit, hidden boundary, or approval_required resume action.
+- [x] #3 Only genuine ordinary accept or decline approvals may be spoken-eligible. Multi-field input, secrets, URLs, scoped permissions, unsupported forms, coordinator-blocking requests, and every dynamic coordination approval remain visual-only.
+- [x] #4 Pending, app-global off-focus visibility, stale ownership or effect, expiry, cancellation, browser or child disconnect, approved, declined, delivered, not_delivered, outcome_unknown, terminal approval_required, and authoritative reconciliation retain the original immutable target, remove dead authority, and return focus accessibly.
+- [x] #5 src/ui/workbench-approvals/tests/approval-surface.test.tsx exhausts all seven ordinary families and all three dynamic effects, field validation, secret non-echo, safe and unsafe URLs, spoken eligibility, exact effect disclosure, app-global focus, stale, expired, cancelled, and disconnected decisions, terminal no-resume behavior, and delivered, not_delivered, or outcome_unknown reconciliation.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -82,4 +86,25 @@ Review remediation (range badb5a60..HEAD), rebased onto codex/task-143-144-workb
 9 (INFO, unused control): the 'lines' control is removed from the contract and from the input-type map.
 
 Verification after remediation: bun run type-check passed; bun run lint passed; bun run fmt:check passed (1079 files); bun run build:frontend passed; bun test --isolate over workbench-approvals, workbench-transport, workbench-runtime and codex-browser-model passed 149 tests with 1039 expect() calls across 17 files; the module's own six test files are 97 tests with 410 expect() calls; bun run test:repository passed 123 tests with 1067 expect() calls across 18 files; bun run test:modules passed 2065 tests with 19045 expect() calls across 226 files. No unrelated failures. bun install was run in the worktree to pick up the serialized happy-dom and testing-library pins.
+
+Finalization tidy-ups after the clean re-review:
+- Removed the unreachable defensive branches. permissionsGrant writes the network profile outright, because only a request that names network access offers that decision at all; dynamicOffers no longer re-checks the binding, because it only offers a decision while the approval is pending and the closed model gives every pending approval its binding; dynamicApprovalDraft folds the absent binding into the one 'not offered' refusal instead of carrying a second unreachable message. The binding is still read from the approval rather than derived, so the response keeps echoing the captured link the host published.
+- A permissions request this browser cannot grant at all now carries exactly one notice; the narrower file-access reason is no longer stacked above it. approval-surface 'offers no grant when the request names nothing this browser can grant' now asserts the complete notice list and that the file-access notice is absent.
+- Correction to an earlier note: the module's tests are five owners (approval-surface.test.tsx, approval-lifecycle.test.ts, approval-dispatch.test.ts, approval-forms.test.ts, mounted-approvals.test.tsx) plus two test-support files (model.ts, fixtures.ts), not six test files.
+
+Independent fixed-range review of badb5a60..3b75d47e returned CLEAN.
+
+Final verification: bun run type-check passed; bun run lint passed; bun run fmt:check passed (1079 files); bun run build:frontend passed; bun test --isolate over workbench-approvals, workbench-transport, workbench-runtime, codex-browser-model and dom-testing passed 150 tests with 1044 expect() calls across 18 files; the module's five owners are 97 tests with 411 expect() calls; bun run test:repository passed 123 tests with 1067 expect() calls across 18 files; bun run test:modules passed 2065 tests with 19046 expect() calls across 226 files. No unrelated failures.
+
+Acceptance-criteria evidence. AC #1: approval-surface 'renders all seven families under their real discriminated identity', 'renders the broker identity on every ordinary card', 'names a missing turn, item and ApprovalId rather than inventing one', 'discloses the exact target, prompt, boundary, OperationIds and expiry', 'retains the immutable effect hash and fabricates no ApprovalId or turn'. AC #2: approval-dispatch's seven exact-payload owners plus the dynamic echo and single-decision owners, approval-forms' control matrix and validation block, and approval-surface 'renders a host-proposed amendment as its own offer instead of an editable one', 'offers no grant when the request names nothing this browser can grant', 'permits one approve or decline decision only', 'keeps a terminal approval_required tool result unresumable', 'links a safe http URL and refuses an unsafe one the contract also rejects'. AC #3: approval-surface 'annotates only a genuine ordinary binary approval', 'refuses a host annotation that is not a plain accept or decline', 'says why every other family stays visual only', and approval-forms' genuine-binary matrix. AC #4: approval-surface's six-state terminal matrix, disconnect owner, transport-refusal owner, reconciliation owner and app-global beacon owner; approval-lifecycle's staged/pending/approved/declined matrix, clock-expiry, reconnecting, stale-snapshot, lease and dynamic-refusal owners, the eight-state dynamic matrix and the focus-return owners; mounted-approvals 'returns focus to the approvals heading when the decision it held is settled'. AC #5: src/ui/workbench-approvals/tests/approval-surface.test.tsx, 24 tests over all seven ordinary families, all three dynamic effects across four cards and both fork relations, field validation, secret non-echo, safe and unsafe URLs, spoken eligibility, exact effect disclosure, app-global visibility and focus anchor, stale, expired, cancelled and disconnected decisions, terminal no-resume, and delivered, not_delivered and outcome_unknown reconciliation.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Built src/ui/workbench-approvals, the complete approval workbench: one projection over the closed browser contract that reduces the seven ordinary app-server human-interaction families and the three dynamic coordination effects to cards keyed by their real discriminated identity, and one rendered surface that resolves them.
+
+Ordinary cards disclose the request identity, the approval broker's own identity and the reviewed effect, offer exactly the decisions the host published (including its proposed exec-policy and network-policy amendments, never a browser-composed one), and support every reviewed field with non-echoing secrets, honest permission grants and http-or-https-only URLs. Dynamic cards disclose the exact target, prompt, effective fork boundary, both OperationIds, the immutable effect hash and the expiry, fabricate neither an ApprovalId nor a turn identity, permit one approve or decline decision only, and never offer a session grant, a target edit, a hidden boundary or an approval_required resume. Spoken eligibility is annotated only on a pending command execution whose offered set is exactly accept plus decline, mirroring the broker's own gate; everything else, and every dynamic approval, is visual-only. Every lifecycle state keeps the original immutable target, removes dead authority when the host, the connection, the lease or the transport's own supportsCommand answer stops accepting a response, returns focus to the surface heading, and stays visible app-globally through one assertive live region. Decisions leave through the transport's captured-target command, so a workbench that navigated is refused rather than retargeted. The module owns no host mutation, writes no protocol response and instantiates no owner.
+
+Verified with bun run type-check, bun run lint, bun run fmt:check (1079 files) and bun run build:frontend, all passing; 150 tests and 1044 expect() calls across the workbench-approvals, workbench-transport, workbench-runtime, codex-browser-model and dom-testing modules; 97 tests and 411 expect() calls in this module's five owners, whose fixtures are parsed by the closed model so an impossible shape fails rather than proves anything; a mounted Happy DOM owner for focus return and the in-flight fieldset; bun run test:repository at 123 tests and bun run test:modules at 2065 tests, both clean. Independent fixed-range review of badb5a60..3b75d47e returned CLEAN.
+<!-- SECTION:FINAL_SUMMARY:END -->
