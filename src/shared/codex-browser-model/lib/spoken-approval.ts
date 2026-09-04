@@ -139,6 +139,8 @@ export function createBrowserSpokenApprovalSchema(identity: IdentitySchemas) {
 		})
 		.strict()
 		.superRefine((value, context) => {
+			const resolverOutcomeUnknown =
+				value.settlement === null || value.settlement.outcome === "outcome_unknown";
 			if (value.state === "idle") {
 				if (
 					value.approval !== null ||
@@ -189,11 +191,15 @@ export function createBrowserSpokenApprovalSchema(identity: IdentitySchemas) {
 					path: ["reason"],
 					message: "only the runtime timeout reason produces an expired spoken approval",
 				});
-			if (value.state === "outcome_unknown" && value.reason !== "resolver_lost")
+			if (
+				value.state === "outcome_unknown" &&
+				(value.reason !== "resolver_lost" || !resolverOutcomeUnknown)
+			)
 				context.addIssue({
 					code: "custom",
 					path: ["reason"],
-					message: "only a lost resolver result produces an unknown spoken outcome",
+					message:
+						"only a lost resolver result without a known settlement produces an unknown spoken outcome",
 				});
 			if (
 				value.state === "stale_session" &&
@@ -212,12 +218,23 @@ export function createBrowserSpokenApprovalSchema(identity: IdentitySchemas) {
 					path: ["state"],
 					message: "the runtime timeout reason must be presented as expired",
 				});
-			if (value.reason === "resolver_lost" && value.state !== "outcome_unknown")
-				context.addIssue({
-					code: "custom",
-					path: ["state"],
-					message: "a lost resolver result must be presented as outcome unknown",
-				});
+			if (value.reason === "resolver_lost") {
+				const expectedState = resolverOutcomeUnknown ? "outcome_unknown" : "visual_fallback";
+				if (value.state !== expectedState)
+					context.addIssue({
+						code: "custom",
+						path: ["state"],
+						message: resolverOutcomeUnknown
+							? "a lost resolver without a known settlement must be presented as outcome unknown"
+							: "a lost resolver with a known settlement must preserve that truth as visual fallback",
+					});
+				if (value.approval === null || value.gate === null || value.capturedUserFinal === null)
+					context.addIssue({
+						code: "custom",
+						path: ["reason"],
+						message: "a lost resolver requires its exact approval, gate, and captured user item",
+					});
+			}
 			if (
 				(value.reason === "changed_effect" ||
 					value.reason === "stale_realtime_session" ||

@@ -202,16 +202,35 @@ function staleReason(reason: BrowserSpokenApproval["reason"]): VoiceSpokenApprov
 	return reason ?? "stale_state";
 }
 
+function visualFallbackDetail(spoken: BrowserSpokenApproval): string {
+	const reason = spoken.reason ?? "stale_state";
+	const settlement = spoken.settlement;
+	if (reason !== "resolver_lost" || settlement === null || settlement.outcome === "outcome_unknown")
+		return FALLBACK_COPY[reason];
+	const delivery = settlement.outcome === "delivered" ? "delivered" : "not delivered";
+	return `The later classifier produced a typed decision, and the host confirmed it was ${delivery}. ${settlement.reason}`;
+}
+
 export function projectVoiceSpokenApproval(
 	input: VoiceSpokenApprovalInput,
 ): VoiceSpokenApprovalView {
-	const refusal = ineligible(input.card);
-	if (refusal !== null) return view(input, "ineligible", refusal, input.card.spoken.detail);
-
 	const spoken = input.spokenApproval;
+	const live = spoken.state === "armed" || spoken.state === "resolving";
+	const sameRequest =
+		spoken.approval !== null && spoken.approval.requestId === input.card.request.requestId;
+	const exactApproval =
+		sameRequest && spoken.approval !== null && approvalIdentityMatches(input.card, spoken.approval);
+
+	if (sameRequest && !exactApproval)
+		return view(input, "stale_session", staleReason(spoken.reason));
+
+	if (spoken.state === "idle" || live || !exactApproval) {
+		const refusal = ineligible(input.card);
+		if (refusal !== null) return view(input, "ineligible", refusal, input.card.spoken.detail);
+	}
+
 	if (spoken.state === "idle") return view(input, "eligible", "eligible");
 
-	const live = spoken.state === "armed" || spoken.state === "resolving";
 	if (
 		live &&
 		spoken.approval !== null &&
@@ -222,7 +241,7 @@ export function projectVoiceSpokenApproval(
 	if (spoken.state === "stale_session")
 		return view(input, "stale_session", staleReason(spoken.reason));
 
-	if (spoken.approval !== null && !approvalIdentityMatches(input.card, spoken.approval))
+	if (spoken.approval !== null && !exactApproval)
 		return view(input, "stale_session", staleReason(spoken.reason));
 
 	if (
@@ -237,7 +256,9 @@ export function projectVoiceSpokenApproval(
 	if (spoken.state === "resolving" && captured === null)
 		return view(input, "visual_fallback", "missing_user_final", FALLBACK_COPY.missing_user_final);
 
-	if (spoken.state === "settled")
+	if (spoken.state === "settled") {
+		if (input.card.status.terminal)
+			return view(input, "ineligible", "not_pending", input.card.spoken.detail, captured);
 		return view(
 			input,
 			"visual_fallback",
@@ -245,10 +266,11 @@ export function projectVoiceSpokenApproval(
 			"Spoken handling settled, but the ordinary approval still appears pending.",
 			captured,
 		);
+	}
 
 	if (spoken.state === "visual_fallback") {
 		const reason = spoken.reason ?? "stale_state";
-		return view(input, "visual_fallback", reason, FALLBACK_COPY[reason], captured);
+		return view(input, "visual_fallback", reason, visualFallbackDetail(spoken), captured);
 	}
 
 	return view(
