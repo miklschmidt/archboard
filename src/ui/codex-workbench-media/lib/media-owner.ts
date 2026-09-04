@@ -48,6 +48,14 @@ export interface BrowserWorkbenchMediaOwner {
 	readonly detach: (transport: BrowserWorkbenchTransport) => Promise<void>;
 	readonly start: () => Promise<RealtimeMediaSnapshot>;
 	readonly appendText: (text: string) => Promise<AppendOutcome>;
+	/**
+	 * Silences and restores the captured microphone. Neither claims a lease nor
+	 * sends a command: the realtime session disables the local audio track it
+	 * already owns, so there is no wire operation to authorize. The forwarded
+	 * subscription below is what publishes the resulting phase.
+	 */
+	readonly mute: () => Promise<RealtimeMediaSnapshot>;
+	readonly unmute: () => Promise<RealtimeMediaSnapshot>;
 	readonly stop: () => Promise<RealtimeMediaSnapshot>;
 	readonly snapshot: () => RealtimeMediaSnapshot | null;
 	readonly state: () => BrowserWorkbenchMediaState;
@@ -401,6 +409,15 @@ export function createBrowserWorkbenchMediaOwner(
 		}
 	};
 
+	/** The realtime session of the current, open run, or a refusal naming why not. */
+	const activeMedia = (): RealtimeMediaSession => {
+		const active = run;
+		const media = active?.media;
+		if (active === null || active.closed || media === null || media === undefined)
+			throw new Error("No realtime media session is active.");
+		return media;
+	};
+
 	const attach = async (
 		transport: BrowserWorkbenchTransport,
 	): Promise<BrowserWorkbenchMediaState> => {
@@ -473,6 +490,14 @@ export function createBrowserWorkbenchMediaOwner(
 			if (active === null || snapshot?.correlation === null || snapshot?.correlation === undefined)
 				throw new Error("No realtime media session is active.");
 			return host(active).appendText({ ...snapshot.correlation, text });
+		},
+		mute: async () => {
+			const media = activeMedia();
+			return media.mute();
+		},
+		unmute: async () => {
+			const media = activeMedia();
+			return media.unmute();
 		},
 		stop: async () => {
 			const active = run;
