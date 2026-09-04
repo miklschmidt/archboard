@@ -1,11 +1,11 @@
 ---
 id: TASK-143.04.05
 title: Present voice-specific spoken approval state
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:10'
-updated_date: '2026-09-04 12:40'
+updated_date: '2026-09-04 12:44'
 labels: []
 dependencies:
   - TASK-143.03.07
@@ -31,44 +31,36 @@ Present voice-specific eligibility, one-slot gate, captured user-utterance evide
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Only a genuine broker binary approval can be spoken-eligible; secrets, forms/URLs, permission scope, coordinator-blocking, and unsupported requests remain visual-only with a reason.
-- [ ] #2 The view shows immutable request/effect/source plus the matching final user realtime item/session/sequence captured after the effect prompt; assistant output is labelled non-authoritative and never arms the gate.
-- [ ] #3 Armed/expired/resolving/visual-fallback/outcome_unknown states explain that a later ordinary classifier turn—not realtime speech—settles the typed request.
-- [ ] #4 A second request, stale identity, ambiguous/missing/non-final user utterance, assistant-only output, lost result, or expiry preserves the visual card and leaves no awaiting_user.
-- [ ] #5 Module tests exhaust eligible, ineligible, armed, expired, resolving, visual-fallback, outcome_unknown, duplicate, and stale-session projections; TASK-143.04.07 owns the rendered browser interaction.
+- [x] #1 Only a genuine broker binary approval can be spoken-eligible; secrets, forms/URLs, permission scope, coordinator-blocking, and unsupported requests remain visual-only with a reason.
+- [x] #2 The view shows immutable request/effect/source plus the matching final user realtime item/session/sequence captured after the effect prompt; assistant output is labelled non-authoritative and never arms the gate.
+- [x] #3 Armed/expired/resolving/visual-fallback/outcome_unknown states explain that a later ordinary classifier turn—not realtime speech—settles the typed request.
+- [x] #4 A second request, stale identity, ambiguous/missing/non-final user utterance, assistant-only output, lost result, or expiry preserves the visual card and leaves no awaiting_user.
+- [x] #5 Module tests exhaust eligible, ineligible, armed, expired, resolving, visual-fallback, outcome_unknown, duplicate, and stale-session projections; TASK-143.04.07 owns the rendered browser interaction.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Define a closed presentation contract and pure projector under src/ui/voice-spoken-approval. Consume the existing ordinary approval card as the eligibility authority plus immutable spoken-gate and canonical voice evidence supplied by the caller. Recheck that the request is a current broker binary accept/decline, correlate request/effect/source/realtime/final-user identities, and fail closed into explicit eligible, ineligible, armed, expired, resolving, visual-fallback, outcome_unknown, duplicate, and stale projections. Missing, ambiguous, provisional, assistant-only, lost-result, and expiry inputs must preserve the ordinary card and never project awaiting_user.
-2. Render a display-only spoken-approval region intended immediately above the ordinary approval card. Show immutable request, effect, broker/coordinator source, effect-prompt identity, and the captured final user item/session/sequence/text. Label assistant output as non-authoritative and explain in every live/fallback/uncertain state that a later ordinary coordinator classifier turn, not realtime speech, settles the typed request. Add no decision controls and do not duplicate ordinary approval state.
-3. Add focused module tests for every accepted projection and reason arm, static markup and accessible DOM structure, exact evidence disclosure, one-slot duplicate behavior, fail-closed correlation, visual-card preservation, and no action owner. Use the shared opt-in DOM stack only; leave browser interaction to TASK-143.04.07.
-4. Run the module tests, root and frontend TypeScript checks, scoped Oxlint and Oxfmt checks, any repository owner required by new files, and git diff --check. Record implementation evidence without checking acceptance criteria or moving the task from In Progress.
-
-Review remediation: publish one closed BrowserSpokenApproval DTO from the authoritative SpokenApprovalSnapshot at the existing Codex browser projection boundary; wire the owner snapshot through the canvas gateway; make the UI consume that DTO without reconstructing policy or transcript evidence; prove exhaustive state/reason mapping, classifier-lost versus resolver-lost truth, null-captured assistant fallback, schema closure, and compile-time frame composition; run only the focused checks authorized by the review.
-
-Terminal-state rereview remediation: 1. Make exact canonical spoken identity/state win before ordinary pending eligibility in the UI, while keeping idle/live/unrelated cards subject to ordinary eligibility. Prove a reachable ordinary outcome_unknown card still renders canonical outcome_unknown. 2. Project resolver_lost as outcome_unknown only when settlement is absent or its outcome is outcome_unknown; preserve known not_delivered as visual_fallback. Encode the relation in the shared schema and focused server tests. 3. Run only focused projection/UI owners, both TypeScript projects, scoped Oxlint/Oxfmt, and diff checks; commit separately and return the fixed range for rereview.
+1. Publish one strict BrowserSpokenApproval DTO through the canonical browser projection. Derive it from SpokenApprovalSnapshot joined to exactly one ordinary ApprovalOwnerView, and fail closed on identity, effect, coordinator, realtime, evidence, or settlement mismatch.
+2. Map every runtime state and fallback reason without inventing certainty. classifier_lost stays visual-only. resolver_lost becomes outcome_unknown only when settlement is absent or unknown; known delivered or not_delivered remains visual fallback with the settlement attached.
+3. Present the DTO above the ordinary approval card through a display-only UI module. The UI validates exact identity before ordinary eligibility, preserves matching terminal spoken state, shows canonical gate and final-user evidence, and owns no decision or transcript-selection behavior.
+4. Verify eligibility, evidence authority, every presentation state, fallback and race behavior, schema closure, frame composition typing, and the public approval-owner to browser DTO to ordinary-card to spoken-UI chain. TASK-143.04.07 owns rendered browser interaction.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Implemented the isolated display-only src/ui/voice-spoken-approval module. The pure projector reuses the ordinary approval card and isGenuineBinaryApproval as the eligibility authority, accepts a narrow immutable gate-facts presentation, correlates the exact final user item against the canonical BrowserVoice transcript and effect-prompt sequence, and fails closed to visible-card states without dispatching a decision. The rendered region uses the semantic TASK-140 theme, names its status accessibly, shows request/effect/broker/coordinator/gate/final-user evidence, labels assistant output non-authoritative, and contains no controls. A genuine second request against an occupied live slot projects duplicate; same-request identity or session drift stays stale. Caller integration above the ordinary card remains TASK-143.04.06.
+Implemented one closed spoken-approval path from runtime truth to browser presentation. The server joins SpokenApprovalSnapshot to one command ApprovalOwnerView and validates request, approval, child epoch, effect, coordinator thread, realtime session, effect prompt, final user evidence, and settlement identity. The shared schema closes state, reason, evidence, and settlement combinations. classifier_lost remains visual fallback. resolver_lost is outcome_unknown only with absent or unknown settlement; known delivered and not_delivered results remain visual fallback and keep their settlement.
 
-Evidence by acceptance criterion: AC1 is owned by the host-reason matrix plus exact pending command accept/decline checks; AC2 by exact request/effect/source and post-prompt user-final correlation tests plus assistant-only rendering; AC3 by armed/expired/resolving/visual_fallback/outcome_unknown state and classifier-notice tests; AC4 by duplicate, stale identity/session, ambiguous, missing, non-final, assistant-only, lost-result, and expiry fail-closed tests with visualCardPreserved=true and no awaiting_user state; AC5 by 30 focused module tests across projection, static markup, mounted DOM, and boundary owners. Acceptance criteria remain unchecked for independent review.
+The display-only spoken UI consumes BrowserSpokenApproval plus the ordinary card. It does not inspect BrowserVoice transcripts, accept a synthetic gate, compute expiry, or dispatch decisions. Exact matching terminal state is considered before ordinary pending eligibility, so a genuine unknown resolver result remains visible after the ordinary card publishes lifecycle and status outcome_unknown. Known settlement copy states delivered or not delivered without claiming uncertainty.
 
-Validation: bun test src/ui/voice-spoken-approval/tests (30 pass); bun run generate:codex-contract; bunx tsc --noEmit; bunx tsc --noEmit -p tsconfig.frontend.json; bunx oxlint src/ui/voice-spoken-approval; bunx oxfmt --check src/ui/voice-spoken-approval; bun test tests/system/repository-policy/boundaries.test.ts tests/system/repository-policy/test-inventory.test.ts (62 pass).
+Acceptance evidence: the focused eligibility matrix proves AC1. Projection and rendered module tests for immutable request, effect, source, effect-prompt, final-user evidence, and assistant-only fallback prove AC2. The complete state matrix and classifier notice prove AC3. Duplicate, stale identity and session, missing or ambiguous evidence, assistant-only, expiry, classifier loss, resolver loss, and visual-card preservation tests prove AC4. Thirty-five spoken UI module tests cover every required presentation state, and the focused public chain starts with the real approval broker, crosses BrowserSpokenApproval and BrowserApproval projection, derives the ordinary terminal card, and reaches the spoken UI; this proves AC5 without taking over TASK-143.04.07 browser interaction.
 
-Review remediation: added one strict BrowserSpokenApproval DTO to the canonical browser snapshot and delta contract. The server projection joins SpokenApprovalSnapshot to exactly one command ApprovalOwnerView, validates coordinator/realtime/effect/settlement identity, nominates only the runtime-captured post-prompt final user item, and fails closed on incomplete or mismatched facts. All 18 runtime fallback reasons map exhaustively; classifier_lost remains visual-only and only resolver_lost becomes outcome_unknown. coordinatorThreadId retains the shared branded ThreadId. The canvas gateway now publishes the runtime owner snapshot and owner changes trigger browser projection.
-
-The spoken-approval UI now consumes only BrowserSpokenApproval plus the ordinary approval card. It no longer selects transcript records, accepts a synthetic gate, or computes expiry from caller time. Focused owner-view -> browser DTO -> UI tests cover exact identity, assistant-only/null evidence, every state/reason, schema closure, immutable evidence, and a compile-time workbench-frame composition fixture; the frame itself remains owned by TASK-143.04.06.
-
-Remediation validation: 174 focused tests across runtime spoken approval, shared browser model, server projection, canvas projection, browser transport, and spoken UI; 62 repository boundary/inventory tests; root and frontend TypeScript; scoped Oxlint and Oxfmt across 45 changed TypeScript files; git diff --check. Full browser and system lanes were not run as directed; TASK-143.04.07 owns rendered browser interaction. Status remains In Progress and all five acceptance criteria remain unchecked for independent review.
-
-Terminal-state rereview remediation: the spoken UI now validates the canonical spoken approval identity before ordinary pending eligibility. Matching terminal outcome_unknown, expired, stale, and visual-fallback state remains visible even after the ordinary card becomes terminal; settled ordinary state keeps its existing ineligible presentation. A real broker regression produces an outcome_unknown ApprovalOwnerView, projects the BrowserSpokenApproval and BrowserApproval, derives the ordinary card with lifecycle/status outcome_unknown and spoken not_pending, then verifies the spoken UI still renders outcome_unknown.
-
-The server now maps resolver_lost to outcome_unknown only when settlement is absent or explicitly outcome_unknown. A known delivered or not_delivered settlement maps to visual_fallback and remains attached to the DTO. The shared schema rejects unknown presentation for known settlement and requires exact approval, gate, and captured-user evidence for resolver loss. UI copy for a known settlement states delivered or not delivered instead of claiming uncertainty.
-
-Validation: 58 focused tests across shared browser model, server spoken projection, spoken UI, and the real broker-to-UI chain; root and frontend TypeScript checks; scoped Oxlint and Oxfmt across six changed TypeScript files; git diff --check. No broad test lane ran. Status remains In Progress and all five acceptance criteria remain unchecked for independent rereview.
+Validation at reviewed implementation HEAD 07b6e86472a60805bb60ba51d83a9ac6efe5061e: 174 focused owner, projection, transport, and UI tests passed in the first remediation; 58 focused shared-model, server-projection, spoken-UI, and public broker-to-UI tests passed after the terminal-state fix; root and frontend TypeScript passed; scoped Oxlint and Oxfmt passed; diff checks passed. Repository boundary and inventory owners passed during the first remediation. The independent reviewer reported REVIEW_CLEAN for FIXED_BASE aeb12be2f91493611fee4b2eb3f74a93c5517c60 through reviewed HEAD 07b6e86472a60805bb60ba51d83a9ac6efe5061e. No browser evidence is claimed here.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Published authoritative spoken-approval state from the runtime owner through the closed browser contract and a display-only UI. Exact identity and final-user evidence now fail closed, terminal state survives ordinary-card settlement, and known resolver delivery truth is never presented as unknown. Focused owner, projection, module, and public broker-to-UI tests passed, and an independent review found the complete implementation range clean. TASK-143.04.07 retains rendered browser verification.
+<!-- SECTION:FINAL_SUMMARY:END -->
