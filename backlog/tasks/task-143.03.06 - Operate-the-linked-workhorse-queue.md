@@ -1,11 +1,11 @@
 ---
 id: TASK-143.03.06
 title: Operate the linked workhorse queue
-status: In Progress
+status: Done
 assignee:
   - '@claude-opus'
 created_date: '2026-08-30 15:09'
-updated_date: '2026-09-04 10:05'
+updated_date: '2026-09-04 10:34'
 labels: []
 dependencies:
   - TASK-143.03.01
@@ -18,6 +18,20 @@ references:
   - docs/design/agent-workbench-ui-library-research.md
 modified_files:
   - src/ui/workbench-queue
+  - src/ui/workbench-queue/tests
+  - src/shared/codex-browser-model/lib/browser.ts
+  - src/shared/codex-browser-model/tests/support.ts
+  - src/shared/timing/timing.ts
+  - src/shared/timing/tests/codex-workbench-policy.test.ts
+  - src/server/codex-workbench/lib/contract.ts
+  - src/server/codex-workbench/lib/gateway.ts
+  - src/server/codex-workbench/lib/projection.ts
+  - src/server/codex-workbench/lib/projection-contract.ts
+  - src/server/codex-workbench/tests/queue-projection.test.ts
+  - src/server/codex-workbench/tests/snapshot-budget.test.ts
+  - src/server/canvas/lib/codex-workbench-browser-gateway.ts
+  - src/server/canvas/lib/codex-workbench-browser.ts
+  - src/server/canvas/tests
 parent_task_id: TASK-143.03
 priority: high
 type: task
@@ -34,10 +48,10 @@ Delegation profile: gpt-5.6-sol, high.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The UI exposes Add, List/refresh, Edit, Cancel, Reorder, and Start; Edit emits queue update and Cancel emits queue delete, and no additional queue control exists.
-- [ ] #2 Empty, loading, running, queued, interrupted-preserved, approval-blocked, failed, restarted, completed, stale, reconnecting, unavailable, and outcome_unknown states show exact queue/workhorse correlation and recovery.
-- [ ] #3 Reorder submits all IDs and moves only coordinator-owned entries while preserving foreign relative order; no optimistic terminal/reorder state is committed, and authoritative reconciliation controls visible success.
-- [ ] #4 src/ui/workbench-queue/tests covers all six operations, keyboard/pointer reorder, focus, labels, disabled reasons, stale snapshots, refusal, uncertainty, and cross-links.
+- [x] #1 The UI exposes Add, List/refresh, Edit, Cancel, Reorder, and Start; Edit emits queue update and Cancel emits queue delete, and no additional queue control exists.
+- [x] #2 Empty, loading, running, queued, interrupted-preserved, approval-blocked, failed, restarted, completed, stale, reconnecting, unavailable, and outcome_unknown states show exact queue/workhorse correlation and recovery.
+- [x] #3 Reorder submits all IDs and moves only coordinator-owned entries while preserving foreign relative order; no optimistic terminal/reorder state is committed, and authoritative reconciliation controls visible success.
+- [x] #4 src/ui/workbench-queue/tests covers all six operations, keyboard/pointer reorder, focus, labels, disabled reasons, stale snapshots, refusal, uncertainty, and cross-links.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -114,6 +128,22 @@ Finding 12 (MAJOR, deferred) — done. mounted-dom.ts is deleted. tests/mounted-
 Verification after remediation, from the worktree: bun run type-check passed (both projects); bun run lint passed with 0 findings; bun run fmt:check reported all 1078 matched files correctly formatted; bun run build:frontend succeeded; bun test --isolate src/ui/workbench-queue src/ui/workbench-transport src/ui/workbench-runtime passed 99 tests / 786 expectations across 13 files (workbench-queue alone 57 tests / 266 expectations across 4 files); bun test --isolate src/server/codex-workbench src/server/canvas passed 160 tests / 848 expectations across 31 files; bun run test:repository passed 122 tests / 1060 expectations across 18 files; bun run test:modules passed 2034 tests / 18920 expectations across 227 files; bun test --isolate --max-concurrency=1 tests/system/canvas-state/codex-workbench-production.test.ts tests/system/canvas-state/codex-workbench-application-sockets.test.ts passed 4 tests / 84 expectations. No unrelated failures.
 
 Acceptance criteria remain unchecked and no final summary is written; the task stays In Progress for rereview.
+
+Re-review remediation, 2026-09-04. Independent fixed-range review of badb5a60..aba4123b returned CLEAN apart from the readiness/connection copy, fixed in 2553e0f9.
+
+Finding 1 (MODERATE, readiness mapped to a socket state) — fixed in 2553e0f9. A readiness transport state always arrives over a live socket, so mapping `stopped` and `incompatible_contract` to `disconnected` told a person the pane had no socket while List stayed enabled and nothing was marked stale. `disconnected` is now produced only by the connection owner's socket loss. The host's own session arms have their own states and narratives whose recovery agrees with the control that is actually offered: `session_stopped` ("This pane is connected, but the host's Codex session is not running" / "Refresh the list once the host's Codex session is running again") for readiness `stopped` and `storage_mismatch`, and `session_incompatible` ("...reports a contract it cannot serve" / "Install the pinned Codex version and restart the host session; refreshing will keep reporting this until then") for readiness `incompatible_contract`. Both are stale, so every command carries the recovery sentence as its disabled reason while List stays reachable. Owners in tests/projection.test.ts: "a stopped Codex session is not a lost socket, and refreshing is still offered", "an incompatible Codex session says a refresh will keep reporting it", "the same readiness word over a lost socket is disconnected, not a session state", and the extended "every readiness arm the host can publish has its own queue state".
+
+Finding 2 (MINOR, running copy) — fixed in 2553e0f9. The region now reads "The linked workhorse is busy, so this queue is waiting behind the current turn." The authoritative list holds pending submissions only and the busy turn may be direct input, so the old wording claimed more than the host's facts support.
+
+Finding 3 (MINOR, uncoalesced re-reads) — fixed in 2f5dfb9c. Concurrent snapshot re-reads share one in-flight `thread/queue/list` per thread link, and a request arriving inside CODEX_QUEUE_REREAD_FLOOR_MS (1,000 ms, added to src/shared/timing/timing.ts with its pulls-against reasoning and pinned by src/shared/timing/tests/codex-workbench-policy.test.ts) is served from the read that just finished. The floor is keyed to the link, so navigating to another workhorse always reads rather than reusing the previous link's timing. The constant sits at or above CODEX_WAIT_TARGET_POLL_MS — a browser must not out-run the cadence the host observes thread state at — and far below CODEX_REQUEST_SETTLEMENT_MS so a person's refresh still reads as immediate. Owner: src/server/canvas/tests/codex-workbench-browser-queue.test.ts "concurrent snapshot re-reads share one read, and a looping client is floored", with an injectable clock on the projection harness.
+
+Known follow-ups for the coordinator, recorded rather than changed:
+
+Observation 4 — the browser queue contract admits eleven per-entry statuses, and this seam can authoritatively produce exactly one. `thread/queue/list` answers with pending submissions only: a submission that started has become a turn and left the list, so `running`, `interrupted`, `failed` and `completed` describe turn state the timeline owns, not a queued entry. The UI keeps handling the other arms defensively because the closed contract admits them, and those branches are unit-covered rather than producer-reachable. Narrowing the per-entry status axis to what a producer can supply — or giving it a producer that correlates a started submission with its turn — is a contract decision above this leaf.
+
+Observation 5 — ownership is recovered from an OperationId the current host process issued, so the ledger is per host-process lifetime. A submission Archboard queued before a canvas restart reads as foreign after it, and therefore becomes non-reorderable rather than mis-attributed. That fails safe and matches ADR 0019's rule that replacing the child voids every execution proof, but it does mean coordinator-owned entries are forgotten across a restart. Persisting the operation ledger, or accepting the restart as the boundary, is a decision for the queue-policy owner.
+
+Final verification, from the worktree: bun run type-check passed (both projects); bun run lint passed with 0 findings; bun run fmt:check reported all 1078 matched files correctly formatted; bun run build:frontend built dist/frontend in 426 ms; bun test --isolate src/ui/workbench-queue src/ui/workbench-transport src/ui/workbench-runtime src/server/codex-workbench src/server/canvas src/shared/codex-browser-model passed 273 tests / 1770 expectations across 47 files (src/ui/workbench-queue alone 60 tests / 289 expectations across 4 files); bun run test:repository passed 122 tests / 1060 expectations across 18 files; bun test --isolate --max-concurrency=1 tests/system/canvas-state/codex-workbench-production.test.ts tests/system/canvas-state/codex-workbench-application-sockets.test.ts passed 4 tests / 84 expectations; bun run test:modules passed 2038 tests / 18949 expectations across 227 files. No unrelated failures.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -124,3 +154,11 @@ created: 2026-09-02 01:42
 Course correction, 2026-09-02: divergent head 52b00a4d is not a merge candidate. Its 3,165 inserted lines and broad policy/test churn were built on the rejected browser contract after the OOM failures. Preserve only observable queue behavior as evidence and rebuild this UI leaf from the recovered base after TASK-143.08.05.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Built src/ui/workbench-queue as owned source: the closed six-control surface (Add, List/refresh, Edit, Cancel, Reorder, Start) over the exhaustive server snapshot, emitting only queueAdd, queueUpdate, queueDelete, queueReorder and queueStart, each against the target captured for the queue it drew so a link change refuses instead of retargeting. List/refresh is honest rather than invented: the gateway publishes no queueList command, so this task also took the serialized gateway edits it needed — a browser snapshot request now re-reads the authoritative queue before projecting (coalesced per link and floored by CODEX_QUEUE_REREAD_FLOOR_MS), and the queue projection carries the Archboard OperationId that queued each entry, recovered from its clientUserMessageId, with the region status derived from the authoritative thread link and its pending approvals. Reorder submits every submission id, moves only coordinator-owned entries and leaves foreign ones in their absolute slots; nothing commits an optimistic terminal or reordered state, and a lost outcome holds every command until a refresh. Every reachable state names its queue/workhorse correlation and one recovery sentence that agrees with the control it offers.
+
+Verified with 60 module tests / 289 expectations in src/ui/workbench-queue (projection, reorder planning, command settlement, and a rendered owner on the repository's happy-dom and Testing Library harness driving keyboard, pointer, drag and focus by accessible name), plus the new server owners src/server/codex-workbench/tests/queue-projection.test.ts and src/server/canvas/tests/codex-workbench-browser-queue.test.ts. Full gates: bun run type-check, bun run lint (0 findings), bun run fmt:check (1078 files), bun run build:frontend, 273 tests / 1770 expectations across the queue, transport, runtime, gateway, canvas and browser-model modules, bun run test:repository (122 / 1060), bun run test:modules (2038 / 18949), and the two named canvas-state system owners (4 / 84). Two independent reviews: the first returned NOT CLEAN with twelve findings, all fixed; the fixed-range re-review of badb5a60..aba4123b returned CLEAN apart from the readiness/connection copy, fixed in 2553e0f9, with the re-read amplification floor in 2f5dfb9c. Two contract-level observations are recorded in the notes as follow-ups for the coordinator: the per-entry status axis admits eleven values but has one authoritative producer, and the ownership ledger is per host-process lifetime so a canvas restart makes prior Archboard entries read as foreign and therefore non-reorderable, which fails safe.
+<!-- SECTION:FINAL_SUMMARY:END -->
