@@ -88,9 +88,12 @@ fail-closed hosted exceptions:
 `tests/system/code-targets/opener-persistence.test.ts` and the complete serial
 browser lane. TASK-141 and TASK-142 own restoring the system owner and the
 normal browser inventory; opt-in owners never enter hosted CI through that
-restoration. `bun run test:repository` includes the inventory that rejects
-missing, duplicate, overlapping, or normal-gate-reachable opt-in tests. Changing
-tests or CI, or a browser owner failing → `docs/agents/test-suite.md`.
+restoration. The controlled text-workbench owner runs the production browser
+composition against the exact Codex 0.151.0 protocol fake; it never resolves a
+Codex executable through `PATH`. `bun run test:repository` includes the
+inventory that rejects missing, duplicate, overlapping, or normal-gate-reachable
+opt-in tests. Changing tests or CI, or a browser owner failing →
+`docs/agents/test-suite.md`.
 
 The server is enough for board work. Named-board reads, writes, Mermaid
 conversion, PNG/SVG rendering, finding close-ups, inspection, snapshots,

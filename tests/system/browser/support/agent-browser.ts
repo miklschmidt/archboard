@@ -26,6 +26,7 @@ export const BROWSER_TEST_PATHS = [
 	"tests/system/browser/connected-path-focus.test.ts",
 	"tests/system/browser/opener-settings.test.ts",
 	"tests/system/browser/code-target-activation.test.ts",
+	"tests/system/browser/codex-text-workbench.test.ts",
 ] as const;
 
 export const OPT_IN_BROWSER_TEST_PATHS = [

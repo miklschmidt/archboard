@@ -1,0 +1,260 @@
+import { expect, test } from "bun:test";
+import { mkdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
+import {
+	TEST_BROWSER_COMMAND_TIMEOUT_MS,
+	TEST_PANE_MESSAGE_TIMEOUT_MS,
+} from "../../../src/shared/timing/timing.ts";
+import { createJsonRequester } from "../boards/support/http.ts";
+import {
+	prepareProductionFixture,
+	type ProductionFixture,
+} from "../canvas-state/support/codex-production.ts";
+import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import {
+	browserTestRoots,
+	canvasTestEnvironment,
+	createAgentBrowser,
+	pollUntil,
+	registerCanvasBase,
+	runCanvasCli,
+} from "./support/agent-browser.ts";
+import { seedBoard } from "./support/fullscreen-presentation.ts";
+import { fillLabel, roleAction } from "./support/opener-settings-interaction.ts";
+
+const serverPath = join(import.meta.dir, "../canvas-state/fixtures/codex-production-server.ts");
+const executableSource = join(import.meta.dir, "../canvas-state/fixtures/fake-codex-production.ts");
+
+interface FixtureRecord {
+	readonly kind?: string;
+	readonly args?: readonly string[];
+	readonly frame?: { readonly id?: unknown; readonly result?: unknown };
+}
+
+interface ApprovalCardSnapshot {
+	readonly kind: string | null;
+	readonly family: string | null;
+	readonly phase: string | null;
+	readonly text: string;
+}
+
+interface InitialRenderSnapshot {
+	readonly hasCanvas: boolean;
+	readonly paneCount: string | null;
+	readonly board: string | null;
+	readonly status: string | null;
+}
+
+async function initialRender(
+	browser: Awaited<ReturnType<typeof createAgentBrowser>>,
+): Promise<InitialRenderSnapshot> {
+	return browser.eval<InitialRenderSnapshot>(`(() => {
+			const canvas = document.querySelector('.pane .excalidraw');
+			const frame = document.querySelector('[data-workbench-frame]');
+			if (canvas) window.__codexTextWorkbenchCanvas = canvas;
+			return {
+				hasCanvas: !!canvas,
+				paneCount: frame?.getAttribute('data-pane-count') ?? null,
+				board: document.querySelector('.board-name')?.textContent?.trim() ?? null,
+				status: document.querySelector('.statusbar')?.textContent?.replace(/\\s+/g, ' ').trim() ?? null,
+			};
+		})()`);
+}
+
+function fixtureRecords(fixture: ProductionFixture): FixtureRecord[] {
+	return readFileSync(fixture.logPath, "utf8")
+		.split("\n")
+		.filter(Boolean)
+		.map((line) => JSON.parse(line) as FixtureRecord);
+}
+
+function approvalCards(
+	browser: Awaited<ReturnType<typeof createAgentBrowser>>,
+): Promise<ApprovalCardSnapshot[]> {
+	return browser.eval<
+		ApprovalCardSnapshot[]
+	>(`[...document.querySelectorAll('[data-approval-kind]')]
+		.map(card => ({
+			kind: card.getAttribute('data-approval-kind'),
+			family: card.getAttribute('data-approval-family'),
+			phase: card.getAttribute('data-approval-phase'),
+			text: card.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
+		}))`);
+}
+
+async function claimRenderedWorkbenchLease(
+	browser: Awaited<ReturnType<typeof createAgentBrowser>>,
+): Promise<void> {
+	// A lease is an explicit transport precondition rather than a rendered human
+	// control. Claim each one-shot command lease through the pane transport that
+	// owns the controls under test; every actual command still comes from the UI.
+	const lease = await browser.eval<{ kind: string; state: string }>(`(async () => {
+		const frame = document.querySelector('[data-workbench-frame]');
+		const key = frame && Object.keys(frame).find(candidate => candidate.startsWith('__reactFiber$'));
+		let fiber = key ? frame[key] : null;
+		for (let depth = 0; fiber && depth < 30; depth += 1, fiber = fiber.return) {
+			const transport = fiber.memoizedProps?.view?.panes?.[0]?.transport;
+			if (typeof transport?.claimLease === 'function') return transport.claimLease();
+		}
+		throw new Error('The rendered workbench exposed no pane transport for controlled lease setup.');
+	})()`);
+	expect(lease).toMatchObject({ kind: "command_lease", state: "active" });
+}
+
+test(
+	"the production text workbench reaches its rendered browser controls",
+	async () => {
+		await using resources = new AsyncDisposableStack();
+		const fixture = prepareProductionFixture(resources, executableSource);
+		const { ownerRoot } = browserTestRoots();
+		const vault = join(ownerRoot, "vault");
+		mkdirSync(vault, { recursive: true });
+
+		const canvas = await startOwnedCanvas({
+			serverPath,
+			vault,
+			env: canvasTestEnvironment({
+				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
+				ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
+				ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
+			}),
+		});
+		resources.defer(() => canvas.dispose());
+		registerCanvasBase(canvas.base);
+		const browser = resources.use(await createAgentBrowser());
+		const api = createJsonRequester(canvas);
+
+		await seedBoard(api, "workbench", "wb1");
+		await browser.run(["open", canvas.base]);
+		await browser.run(["set", "viewport", "1440", "900", "1"]);
+		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
+		expect(await browser.eval<[number, number]>("[innerWidth, innerHeight]")).toEqual([1440, 900]);
+		await pollUntil(
+			() => initialRender(browser),
+			(value) => value.hasCanvas && value.paneCount === "1",
+			"the initial one-pane canvas shell",
+		);
+		runCanvasCli(canvas.base, vault, ["browser", "show", "workbench", "--pane", "primary"]);
+		await pollUntil(
+			() => initialRender(browser),
+			(value) =>
+				value.hasCanvas &&
+				value.paneCount === "1" &&
+				value.board === "workbench" &&
+				value.status?.includes("1 elements") === true,
+			"the seeded canvas and one-pane workbench to render",
+		);
+		await claimRenderedWorkbenchLease(browser);
+
+		await browser.run(["console", "--clear"]);
+		await browser.run(["errors", "--clear"]);
+		await roleAction(browser, "button", "Expand");
+		await pollUntil(
+			() =>
+				browser.eval<boolean>(
+					"document.querySelector('[data-workbench-frame]')?.getAttribute('data-workbench-disclosure') === 'expanded'",
+				),
+			Boolean,
+			"the integrated workbench to expand",
+		);
+		await pollUntil(
+			() =>
+				browser.eval<boolean>(`[...document.querySelectorAll('button')]
+					.some(button => button.textContent?.trim() === 'Create a workhorse thread' && !button.disabled)`),
+			Boolean,
+			"the workhorse creation control to become enabled",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+
+		await roleAction(browser, "button", "Create a workhorse thread");
+		await pollUntil(
+			() =>
+				browser.eval<boolean>(
+					`document.querySelector('textarea[aria-label="Message the Codex workhorse"]') !== null`,
+				),
+			Boolean,
+			"the created workhorse to expose the composer",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		await claimRenderedWorkbenchLease(browser);
+		await fillLabel(browser, "Message the Codex workhorse", "Check the rendered workbench.");
+		await pollUntil(
+			() =>
+				browser.eval<{ disabled: boolean | null; value: string }>(`(() => {
+					const input = document.querySelector('textarea[aria-label="Message the Codex workhorse"]');
+					const send = [...document.querySelectorAll('button')]
+						.find(button => button.textContent?.trim() === 'Send');
+					return {
+						disabled: send instanceof HTMLButtonElement ? send.disabled : null,
+						value: input instanceof HTMLTextAreaElement ? input.value : '',
+					};
+				})()`),
+			(value) => value.value === "Check the rendered workbench." && value.disabled === false,
+			"the filled composer to enable Send",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		await roleAction(browser, "button", "Send");
+
+		const pending = await pollUntil(
+			() => approvalCards(browser),
+			(cards) => cards.length === 2 && cards.every(({ phase }) => phase === "pending"),
+			"the ordinary and dynamic approval cards",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect(pending.map(({ kind, family }) => ({ kind, family }))).toEqual([
+			{ kind: "ordinary", family: "command_execution" },
+			{ kind: "dynamic", family: "create_thread" },
+		]);
+		expect(pending[0]?.text).toContain("bun test");
+		expect(pending[0]?.text).toContain("Prove the production approval route.");
+		expect(pending[1]?.text).toContain("Create a new Codex thread");
+		expect(pending[1]?.text).toContain("Create the production proof thread.");
+		expect(pending[1]?.text).toContain("Approve this effect");
+		expect(pending[1]?.text).toContain("Decline this effect");
+
+		await claimRenderedWorkbenchLease(browser);
+		await pollUntil(
+			() =>
+				browser.eval<boolean>(`[...document.querySelectorAll('button')]
+					.some(button => button.textContent?.trim() === 'Decline' && !button.disabled)`),
+			Boolean,
+			"the ordinary Decline action to receive fresh command authority",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		await roleAction(browser, "button", "Decline");
+		const settled = await pollUntil(
+			async () => ({
+				cards: await approvalCards(browser),
+				response: fixtureRecords(fixture).find(
+					({ frame, kind }) => kind === "reverse_response" && frame?.id === "ordinary-request-1",
+				),
+			}),
+			({ cards, response }) =>
+				response !== undefined && cards.length === 1 && cards[0]?.kind === "dynamic",
+			"the rendered ordinary decision to settle authoritatively",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect(settled.response?.frame?.result).toEqual({ decision: "decline" });
+		expect(settled.cards[0]).toMatchObject({ kind: "dynamic", phase: "pending" });
+		expect(
+			await browser.eval<boolean>(`(() => {
+			const canvas = document.querySelector('.pane .excalidraw');
+			return canvas === window.__codexTextWorkbenchCanvas &&
+				document.querySelector('.statusbar')?.textContent?.includes('1 elements') === true;
+		})()`),
+		).toBe(true);
+
+		const records = fixtureRecords(fixture);
+		const versionProbes = records.filter(({ kind }) => kind === "version_probe");
+		expect(versionProbes).toHaveLength(2);
+		expect(versionProbes.every(({ args }) => args?.length === 1 && args[0] === "--version")).toBe(
+			true,
+		);
+		expect(records.filter(({ kind }) => kind === "app_server_spawn")).toHaveLength(1);
+		expect(records.some(({ kind }) => kind === "fixture_error")).toBe(false);
+		expect(await browser.run(["console"])).toBe("");
+		expect(await browser.run(["errors"])).toBe("");
+	},
+	TEST_BROWSER_COMMAND_TIMEOUT_MS,
+);
