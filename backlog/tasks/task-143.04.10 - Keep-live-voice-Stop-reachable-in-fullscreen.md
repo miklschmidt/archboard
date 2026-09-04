@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:42'
-updated_date: '2026-09-04 15:32'
+updated_date: '2026-09-04 15:36'
 labels: []
 dependencies:
   - TASK-143.03.11
@@ -32,11 +32,11 @@ Complete the single production voice composition seam. CanvasPane constructs at 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 CanvasPane creates at most one VoiceSession for its current transport from useCanvasSession’s existing media owner, publishes one exact pane/transport/session registration with caller-owned context and transcript evidence, retains it through a transient disconnect, and clears/disposes it deterministically before replacement or unmount.
-- [ ] #2 Shell supplies that registration to the accepted WorkbenchFrame without constructing or disposing media, realtime, or session state; the bound voice source stays immutable across pane focus, workbench navigation, one/two panes, and fullscreen transfer, and authoritative stopped/withdrawn state restores the text-only frame.
-- [ ] #3 The same PresentationDock identifies active voice pane, workhorse, coordinator, realtime session, mute and phase beside the existing text source. Its one labelled Stop routes to the immutable active VoiceSession, falls back to text only when no active voice identity exists, and keeps stale/stopping/failed/outcome-unknown identity visible until authoritative reconciliation.
+- [x] #1 CanvasPane creates at most one VoiceSession for its current transport from useCanvasSession’s existing media owner, publishes one exact pane/transport/session registration with caller-owned context and transcript evidence, retains it through a transient disconnect, and clears/disposes it deterministically before replacement or unmount.
+- [x] #2 Shell supplies that registration to the accepted WorkbenchFrame without constructing or disposing media, realtime, or session state; the bound voice source stays immutable across pane focus, workbench navigation, one/two panes, and fullscreen transfer, and authoritative stopped/withdrawn state restores the text-only frame.
+- [x] #3 The same PresentationDock identifies active voice pane, workhorse, coordinator, realtime session, mute and phase beside the existing text source. Its one labelled Stop routes to the immutable active VoiceSession, falls back to text only when no active voice identity exists, and keeps stale/stopping/failed/outcome-unknown identity visible until authoritative reconciliation.
 - [ ] #4 Shell CSS preserves the accepted dock hierarchy, 44px touch target, keyboard focus, high contrast, reduced motion, and no overlay collision at desktop and Flip sizes.
-- [ ] #5 The focused CanvasPane and shell owners prove single ownership/publication, text-only, voice-only, simultaneous text/voice, exact context/transcript source, focus/fullscreen invariance, fail-closed duplicate-active state, replacement, stopped/unmount/reload cleanup, and exact Stop routing. Rendered browser behavior remains TASK-143.04.07.
+- [x] #5 The focused CanvasPane and shell owners prove single ownership/publication, text-only, voice-only, simultaneous text/voice, exact context/transcript source, focus/fullscreen invariance, fail-closed duplicate-active state, replacement, stopped/unmount/reload cleanup, and exact Stop routing. Rendered browser behavior remains TASK-143.04.07.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -89,4 +89,6 @@ Second lifecycle rereview remediation complete. CanvasPane voice presentation is
 Shell consumes the discriminant directly. Ready or unbound unavailable registrations can still reach WorkbenchFrame, while retired replacement removes both dock and frame voice. Production-shaped terminal stop-unconfirmed evidence remains active and visible with Unknown mute truth, but Stop stays disabled and cannot fall through to the text interrupt. Focused owners cover real CanvasPane presentation close behavior, raw replaced identity retirement, and non-stoppable outcome-unknown routing.
 
 The required UI worker re-read the visual authority and changed only the four authorized TypeScript source/test files; no CSS change was required. Validation passed: root and frontend type checks; 49 focused CanvasPane, Shell, WorkbenchFrame, and VoiceSession lifecycle/projection tests with 1,367 assertions; scoped Oxlint and Oxfmt; frontend build; and diff checks. Real-browser behavior remains TASK-143.04.07. TASK-143.04.10 remains In Progress with all acceptance criteria unchecked.
+
+Canonical integration validation passed at the review-clean range: 49 focused CanvasPane, Shell, WorkbenchFrame, and VoiceSession lifecycle/projection tests with 1,367 assertions; root and frontend TypeScript; scoped Oxlint and Oxfmt; frontend build; git diff --check; and patch-equivalent range-diff. Criteria 1, 2, 3, and 5 are supported by those module and DOM owners. Criterion 4 remains unchecked because no authorized module/static check can prove the rendered no-overlay-collision claim at desktop and Samsung Flip sizes. TASK-143.04.07 remains the owner of real rendered fullscreen, keyboard, forced-colors, and Flip browser verification; none of those browser checks ran here. The task therefore remains In Progress and has no final summary.
 <!-- SECTION:NOTES:END -->
