@@ -7,18 +7,23 @@ import type {
 	RuntimeElementTracking,
 } from "../../../shared/board-elements/index.js";
 
-export class NativeElementValidationError extends Error {
-	readonly status = 400;
+class NativeElementValidationError extends Error {
+	public readonly status = 400;
+
+	public constructor(message: string) {
+		super(message);
+		this.name = "NativeElementValidationError";
+	}
 }
 
-export type PersistedArm<Kind extends PersistedBoardElement["type"]> = Extract<
+type PersistedArm<Kind extends PersistedBoardElement["type"]> = Extract<
 	PersistedBoardElement,
 	{ type: Kind }
 >;
-export type PersistedBase = Omit<PersistedArm<"rectangle">, "type">;
+type PersistedBase = Omit<PersistedArm<"rectangle">, "type">;
 type FixedPointBinding = NonNullable<ElbowArrowElement["startBinding"]>;
 
-export function fail(
+function fail(
 	context: string,
 	id: string | undefined,
 	type: string | undefined,
@@ -29,43 +34,49 @@ export function fail(
 	);
 }
 
-export function recordAt(
+function recordAt(
 	value: unknown,
 	context: string,
 	id: string | undefined,
 	type: string | undefined,
 	path: string,
 ): Record<string, unknown> {
-	if (!value || typeof value !== "object" || Array.isArray(value)) fail(context, id, type, path);
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		fail(context, id, type, path);
+	}
 	return value as Record<string, unknown>;
 }
 
-export function finite(
+function finite(
 	value: unknown,
 	context: string,
 	id: string | undefined,
 	type: string | undefined,
 	path: string,
 ): number {
-	if (typeof value !== "number" || !Number.isFinite(value)) fail(context, id, type, path);
+	if (typeof value !== "number" || !Number.isFinite(value)) {
+		fail(context, id, type, path);
+	}
 	return value;
 }
 
-export function point(
+function point(
 	value: unknown,
 	context: string,
 	id: string | undefined,
 	type: string | undefined,
 	path: string,
 ): [number, number] {
-	if (!Array.isArray(value) || value.length !== 2) fail(context, id, type, path);
+	if (!Array.isArray(value) || value.length !== 2) {
+		fail(context, id, type, path);
+	}
 	return [
 		finite(value[0], context, id, type, `${path}[0]`),
 		finite(value[1], context, id, type, `${path}[1]`),
 	];
 }
 
-export function nullablePoint(
+function nullablePoint(
 	value: unknown,
 	context: string,
 	id: string | undefined,
@@ -75,7 +86,7 @@ export function nullablePoint(
 	return value === null ? null : point(value, context, id, type, path);
 }
 
-export function points(
+function points(
 	value: unknown,
 	minimum: number,
 	context: string,
@@ -83,7 +94,9 @@ export function points(
 	type: string | undefined,
 	path: string,
 ): [number, number][] {
-	if (!Array.isArray(value) || value.length < minimum) fail(context, id, type, path);
+	if (!Array.isArray(value) || value.length < minimum) {
+		fail(context, id, type, path);
+	}
 	return value.map((candidate, index) => point(candidate, context, id, type, `${path}[${index}]`));
 }
 
@@ -95,16 +108,22 @@ function bindingRecord(
 	type: string,
 	path: string,
 ): Record<string, unknown> | null {
-	if (value === null) return null;
+	if (value === null) {
+		return null;
+	}
 	const record = recordAt(value, context, id, type, path);
-	for (const key of Object.keys(record))
-		if (!allowed.has(key)) fail(context, id, type, `${path}.${key}`);
-	if (typeof record["elementId"] !== "string" || !record["elementId"])
+	for (const key of Object.keys(record)) {
+		if (!allowed.has(key)) {
+			fail(context, id, type, `${path}.${key}`);
+		}
+	}
+	if (typeof record["elementId"] !== "string" || !record["elementId"]) {
 		fail(context, id, type, `${path}.elementId`);
+	}
 	return record;
 }
 
-export function pointBindingAt(
+function pointBindingAt(
 	value: unknown,
 	context: string,
 	id: string,
@@ -119,7 +138,9 @@ export function pointBindingAt(
 		type,
 		path,
 	);
-	if (!record) return null;
+	if (!record) {
+		return null;
+	}
 	return {
 		elementId: record["elementId"] as string,
 		focus: finite(record["focus"], context, id, type, `${path}.focus`),
@@ -127,7 +148,7 @@ export function pointBindingAt(
 	} satisfies ElementBinding;
 }
 
-export function fixedPointBindingAt(
+function fixedPointBindingAt(
 	value: unknown,
 	context: string,
 	id: string,
@@ -142,7 +163,9 @@ export function fixedPointBindingAt(
 		type,
 		path,
 	);
-	if (!record) return null;
+	if (!record) {
+		return null;
+	}
 	return {
 		elementId: record["elementId"] as string,
 		focus: finite(record["focus"], context, id, type, `${path}.focus`),
@@ -151,29 +174,33 @@ export function fixedPointBindingAt(
 	} satisfies FixedPointBinding;
 }
 
-export function stringAt(
+function stringAt(
 	value: unknown,
 	context: string,
 	id: string | undefined,
 	type: string | undefined,
 	path: string,
 ): string {
-	if (typeof value !== "string") fail(context, id, type, path);
+	if (typeof value !== "string") {
+		fail(context, id, type, path);
+	}
 	return value;
 }
 
-export function booleanAt(
+function booleanAt(
 	value: unknown,
 	context: string,
 	id: string | undefined,
 	type: string | undefined,
 	path: string,
 ): boolean {
-	if (typeof value !== "boolean") fail(context, id, type, path);
+	if (typeof value !== "boolean") {
+		fail(context, id, type, path);
+	}
 	return value;
 }
 
-export function nullableBooleanAt(
+function nullableBooleanAt(
 	value: unknown,
 	context: string,
 	id: string,
@@ -183,7 +210,7 @@ export function nullableBooleanAt(
 	return value === null ? null : booleanAt(value, context, id, type, path);
 }
 
-export function nullableStringAt(
+function nullableStringAt(
 	value: unknown,
 	context: string,
 	id: string | undefined,
@@ -193,38 +220,56 @@ export function nullableStringAt(
 	return value === null ? null : stringAt(value, context, id, type, path);
 }
 
-export function fillStyleAt(value: unknown, context: string, id: string, type: string) {
+function fillStyleAt(
+	value: unknown,
+	context: string,
+	id: string,
+	type: string,
+): PersistedBase["fillStyle"] {
 	switch (value) {
 		case "hachure":
 		case "cross-hatch":
 		case "solid":
-		case "zigzag":
+		case "zigzag": {
 			return value;
-		default:
+		}
+		default: {
 			fail(context, id, type, "element.fillStyle");
+		}
 	}
 }
 
-export function strokeStyleAt(value: unknown, context: string, id: string, type: string) {
+function strokeStyleAt(
+	value: unknown,
+	context: string,
+	id: string,
+	type: string,
+): PersistedBase["strokeStyle"] {
 	switch (value) {
 		case "solid":
 		case "dashed":
-		case "dotted":
+		case "dotted": {
 			return value;
-		default:
+		}
+		default: {
 			fail(context, id, type, "element.strokeStyle");
+		}
 	}
 }
 
-export function arrowheadAt(
+function arrowheadAt(
 	value: unknown,
 	context: string,
 	id: string,
 	type: string,
 	path: string,
 ): PersistedArm<"arrow">["startArrowhead"] {
-	if (value === null) return null;
-	if (typeof value !== "string") fail(context, id, type, path);
+	if (value === null) {
+		return null;
+	}
+	if (typeof value !== "string") {
+		fail(context, id, type, path);
+	}
 	switch (value) {
 		case "arrow":
 		case "bar":
@@ -237,23 +282,29 @@ export function arrowheadAt(
 		case "diamond_outline":
 		case "crowfoot_one":
 		case "crowfoot_many":
-		case "crowfoot_one_or_many":
+		case "crowfoot_one_or_many": {
 			return value;
-		default:
+		}
+		default: {
 			fail(context, id, type, path);
+		}
 	}
 }
 
-export function roundnessAt(
+function roundnessAt(
 	value: unknown,
 	context: string,
 	id: string,
 	type: string,
 ): PersistedBase["roundness"] {
-	if (value === null) return null;
+	if (value === null) {
+		return null;
+	}
 	const record = recordAt(value, context, id, type, "element.roundness");
 	const kind = record["type"];
-	if (kind !== 1 && kind !== 2 && kind !== 3) fail(context, id, type, "element.roundness.type");
+	if (kind !== 1 && kind !== 2 && kind !== 3) {
+		fail(context, id, type, "element.roundness.type");
+	}
 	return {
 		type: kind,
 		...(record["value"] === undefined
@@ -262,19 +313,27 @@ export function roundnessAt(
 	};
 }
 
-export function boundElementsAt(
+function boundElementsAt(
 	value: unknown,
 	context: string,
 	id: string,
 	type: string,
 ): BoundElement[] | null {
-	if (value === null) return null;
-	if (!Array.isArray(value)) fail(context, id, type, "element.boundElements");
+	if (value === null) {
+		return null;
+	}
+	if (!Array.isArray(value)) {
+		fail(context, id, type, "element.boundElements");
+	}
 	return value.map((raw, index) => {
 		const path = `element.boundElements[${index}]`;
 		const bound = recordAt(raw, context, id, type, path);
-		if (typeof bound["id"] !== "string" || !bound["id"]) fail(context, id, type, `${path}.id`);
-		if (bound["type"] !== "text" && bound["type"] !== "arrow") fail(context, id, type, `${path}.type`);
+		if (typeof bound["id"] !== "string" || !bound["id"]) {
+			fail(context, id, type, `${path}.id`);
+		}
+		if (bound["type"] !== "text" && bound["type"] !== "arrow") {
+			fail(context, id, type, `${path}.type`);
+		}
 		return { id: bound["id"], type: bound["type"] } satisfies BoundElement;
 	});
 }
@@ -287,16 +346,19 @@ const TRACKING_KEYS = [
 	"syncTimestamp",
 ] as const satisfies readonly (keyof RuntimeElementTracking)[];
 
-export function customDataAt(
+function customDataAt(
 	value: unknown,
 	context: string,
 	id: string,
 	type: string,
-): PersistedBase["customData"] {
-	if (value === undefined) return undefined;
+): NonNullable<PersistedBase["customData"]> {
 	const record = recordAt(value, context, id, type, "element.customData");
 	const custom: Record<string, unknown> & { archboard?: PersistedArchboardEnvelope } = {};
-	for (const [key, entry] of Object.entries(record)) if (key !== "archboard") custom[key] = entry;
+	for (const [key, entry] of Object.entries(record)) {
+		if (key !== "archboard") {
+			custom[key] = entry;
+		}
+	}
 	if ("archboard" in record) {
 		const rawEnvelope = recordAt(
 			record["archboard"],
@@ -311,7 +373,9 @@ export function customDataAt(
 				envelope[key] = entry;
 				continue;
 			}
-			if (typeof entry !== "string") fail(context, id, type, `element.customData.archboard.${key}`);
+			if (typeof entry !== "string") {
+				fail(context, id, type, `element.customData.archboard.${key}`);
+			}
 			Object.assign(envelope, { [key]: entry });
 		}
 		custom.archboard = envelope;
@@ -319,7 +383,7 @@ export function customDataAt(
 	return custom;
 }
 
-export function persistedBase(
+function persistedBase(
 	initial: Record<string, unknown>,
 	context: string,
 	id: string,
@@ -355,7 +419,9 @@ export function persistedBase(
 		version: finite(initial["version"], context, id, type, "element.version"),
 		versionNonce: finite(initial["versionNonce"], context, id, type, "element.versionNonce"),
 		index:
-			initial["index"] === null ? null : stringAt(initial["index"], context, id, type, "element.index"),
+			initial["index"] === null
+				? null
+				: stringAt(initial["index"], context, id, type, "element.index"),
 		isDeleted: booleanAt(initial["isDeleted"], context, id, type, "element.isDeleted"),
 		groupIds: Array.isArray(initial["groupIds"])
 			? initial["groupIds"].map((entry, at) =>
@@ -373,7 +439,7 @@ export function persistedBase(
 	} satisfies PersistedBase;
 }
 
-export function runtimeTrackingAt(
+function runtimeTrackingAt(
 	initial: Record<string, unknown>,
 	context: string,
 	id: string,
@@ -381,8 +447,36 @@ export function runtimeTrackingAt(
 ): RuntimeElementTracking {
 	const tracking: RuntimeElementTracking = {};
 	for (const key of TRACKING_KEYS) {
-		if (initial[key] === undefined) continue;
+		if (initial[key] === undefined) {
+			continue;
+		}
 		tracking[key] = stringAt(initial[key], context, id, type, `element.${key}`);
 	}
 	return tracking;
 }
+
+export {
+	NativeElementValidationError,
+	type PersistedArm,
+	type PersistedBase,
+	fail,
+	recordAt,
+	finite,
+	point,
+	nullablePoint,
+	points,
+	pointBindingAt,
+	fixedPointBindingAt,
+	stringAt,
+	booleanAt,
+	nullableBooleanAt,
+	nullableStringAt,
+	fillStyleAt,
+	strokeStyleAt,
+	arrowheadAt,
+	roundnessAt,
+	boundElementsAt,
+	customDataAt,
+	persistedBase,
+	runtimeTrackingAt,
+};
