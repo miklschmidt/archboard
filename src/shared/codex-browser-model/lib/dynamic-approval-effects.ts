@@ -2,14 +2,10 @@ import { z } from "zod";
 
 import { boundedText, type IdentityContext, type IdentitySchemas } from "./scalars.js";
 
-export const DYNAMIC_APPROVAL_NAMESPACE = "archboard_app" as const;
-export const DYNAMIC_APPROVAL_TOOLS = [
-	"create_thread",
-	"fork_thread",
-	"send_message_to_thread",
-] as const;
-export const DYNAMIC_APPROVAL_DECISIONS = ["approve", "decline"] as const;
-export const DYNAMIC_APPROVAL_STATES = [
+const DYNAMIC_APPROVAL_NAMESPACE = "archboard_app" as const;
+const DYNAMIC_APPROVAL_TOOLS = ["create_thread", "fork_thread", "send_message_to_thread"] as const;
+const DYNAMIC_APPROVAL_DECISIONS = ["approve", "decline"] as const;
+const DYNAMIC_APPROVAL_STATES = [
 	"pending",
 	"approved",
 	"declined",
@@ -28,10 +24,7 @@ function addIssue(context: z.RefinementCtx, path: string[], message: string): vo
 	context.addIssue({ code: "custom", path, message });
 }
 
-export function createDynamicApprovalEffectSchemas(
-	identity: IdentitySchemas,
-	context: IdentityContext,
-) {
+function createDynamicApprovalEffectSchemas(identity: IdentitySchemas, context: IdentityContext) {
 	const {
 		ChildEpochSchema,
 		ChildIdSchema,
@@ -262,4 +255,13 @@ export function createDynamicApprovalEffectSchemas(
 	};
 }
 
-export type DynamicApprovalEffectSchemas = ReturnType<typeof createDynamicApprovalEffectSchemas>;
+type DynamicApprovalEffectSchemas = ReturnType<typeof createDynamicApprovalEffectSchemas>;
+
+export {
+	DYNAMIC_APPROVAL_NAMESPACE,
+	DYNAMIC_APPROVAL_TOOLS,
+	DYNAMIC_APPROVAL_DECISIONS,
+	DYNAMIC_APPROVAL_STATES,
+	createDynamicApprovalEffectSchemas,
+	type DynamicApprovalEffectSchemas,
+};

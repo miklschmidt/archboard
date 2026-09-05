@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-export const ElementIdSchema = z.string();
-export type ElementId = z.infer<typeof ElementIdSchema>;
+const ElementIdSchema = z.string();
+type ElementId = z.infer<typeof ElementIdSchema>;
 
-export const ElementTypeSchema = z.enum([
+const ElementTypeSchema = z.enum([
 	"rectangle",
 	"ellipse",
 	"diamond",
@@ -15,24 +15,24 @@ export const ElementTypeSchema = z.enum([
 ]);
 
 /** Server-owned element payloads keep fields that the command does not interpret. */
-export const ServerElementSchema = z.looseObject({
+const ServerElementSchema = z.looseObject({
 	id: ElementIdSchema,
 	type: ElementTypeSchema,
 	x: z.number(),
 	y: z.number(),
 });
-export type ServerElementResult = z.infer<typeof ServerElementSchema>;
+type ServerElementResult = z.infer<typeof ServerElementSchema>;
 
-export const BoardAddressSchema = z.object({
+const BoardAddressSchema = z.object({
 	board: z.string(),
 	variant: z.string(),
 	level: z.string().optional(),
 	displayName: z.string().optional(),
 });
-export type BoardAddress = z.infer<typeof BoardAddressSchema>;
+type BoardAddress = z.infer<typeof BoardAddressSchema>;
 
 /** Stable fields returned by the server's protected board identity response. */
-export const BoardIdentityStateSchema = z.looseObject({
+const BoardIdentityStateSchema = z.looseObject({
 	board: z.string(),
 	identity: BoardAddressSchema,
 	elementCount: z.number().int().nonnegative(),
@@ -42,34 +42,34 @@ export const BoardIdentityStateSchema = z.looseObject({
 	savedAt: z.string().optional(),
 	loadedAt: z.string().optional(),
 });
-export type BoardIdentityState = z.infer<typeof BoardIdentityStateSchema>;
+type BoardIdentityState = z.infer<typeof BoardIdentityStateSchema>;
 
-export const BoardVersionSchema = z.number().int().nonnegative().nullable();
-export type BoardVersion = z.infer<typeof BoardVersionSchema>;
+const BoardVersionSchema = z.number().int().nonnegative().nullable();
+type BoardVersion = z.infer<typeof BoardVersionSchema>;
 
-export const BoardFingerprintSchema = z.object({
+const BoardFingerprintSchema = z.object({
 	elements: z.number().int().nonnegative(),
 	note: z.string(),
 	version: BoardVersionSchema,
 });
-export type BoardFingerprint = z.infer<typeof BoardFingerprintSchema>;
+type BoardFingerprint = z.infer<typeof BoardFingerprintSchema>;
 
-export const BoardRefusalSchema = z.looseObject({
+const BoardRefusalSchema = z.looseObject({
 	success: z.literal(false),
 	code: z.string(),
 	error: z.string(),
 	document: z.array(ServerElementSchema),
 	version: BoardVersionSchema,
 });
-export type BoardRefusal = z.infer<typeof BoardRefusalSchema>;
+type BoardRefusal = z.infer<typeof BoardRefusalSchema>;
 
-export const BoardConflictOutcomesSchema = z.object({
+const BoardConflictOutcomesSchema = z.object({
 	reload: z.string(),
 	overwrite: z.string(),
 	saveAs: z.string(),
 });
 
-export const BoardWriteConflictSchema = z.looseObject({
+const BoardWriteConflictSchema = z.looseObject({
 	board: z.string(),
 	file: z.string(),
 	reason: z.enum(["changed", "unseen"]),
@@ -78,73 +78,73 @@ export const BoardWriteConflictSchema = z.looseObject({
 	outcomes: BoardConflictOutcomesSchema,
 	message: z.string(),
 });
-export type BoardWriteConflict = z.infer<typeof BoardWriteConflictSchema>;
+type BoardWriteConflict = z.infer<typeof BoardWriteConflictSchema>;
 
-export const HoldReportSchema = z.looseObject({
+const HoldReportSchema = z.looseObject({
 	board: z.string(),
 	message: z.string(),
 });
-export type HoldReport = z.infer<typeof HoldReportSchema>;
+type HoldReport = z.infer<typeof HoldReportSchema>;
 
-export const PaneRefSchema = z.looseObject({
+const PaneRefSchema = z.looseObject({
 	paneId: z.string(),
 	clientId: z.string(),
 	place: z.string(),
 	position: z.number().int(),
 });
-export type PaneRef = z.infer<typeof PaneRefSchema>;
+type PaneRef = z.infer<typeof PaneRefSchema>;
 
-export const RepositoryIdentitySchema = z.string();
-export type RepositoryIdentity = z.infer<typeof RepositoryIdentitySchema>;
+const RepositoryIdentitySchema = z.string();
+type RepositoryIdentity = z.infer<typeof RepositoryIdentitySchema>;
 
-export const CodeBindingSchema = z.looseObject({
+const CodeBindingSchema = z.looseObject({
 	repository: RepositoryIdentitySchema,
 	path: z.string(),
 	branch: z.string().optional(),
 	commit: z.string().optional(),
 });
-export type CodeBinding = z.infer<typeof CodeBindingSchema>;
+type CodeBinding = z.infer<typeof CodeBindingSchema>;
 
-export const SnapshotNameSchema = z.string().min(1);
-export type SnapshotName = z.infer<typeof SnapshotNameSchema>;
+const SnapshotNameSchema = z.string().min(1);
+type SnapshotName = z.infer<typeof SnapshotNameSchema>;
 
-export const ChangeCursorSchema = z.string().min(1);
-export type ChangeCursor = z.infer<typeof ChangeCursorSchema>;
+const ChangeCursorSchema = z.string().min(1);
+type ChangeCursor = z.infer<typeof ChangeCursorSchema>;
 
-export const LibraryItemIdSchema = z.string().min(1);
-export type LibraryItemId = z.infer<typeof LibraryItemIdSchema>;
+const LibraryItemIdSchema = z.string().min(1);
+type LibraryItemId = z.infer<typeof LibraryItemIdSchema>;
 
-export const ServerStateSchema = z.looseObject({
+const ServerStateSchema = z.looseObject({
 	running: z.boolean(),
 	url: z.string(),
 });
-export type ServerState = z.infer<typeof ServerStateSchema>;
+type ServerState = z.infer<typeof ServerStateSchema>;
 
-export const ClaimSchema = z.looseObject({
+const ClaimSchema = z.looseObject({
 	board: z.string(),
 	reason: z.string(),
 });
-export type Claim = z.infer<typeof ClaimSchema>;
+type Claim = z.infer<typeof ClaimSchema>;
 
-export const AffectedElementsSchema = z.array(ServerElementSchema);
-export type AffectedElements = z.infer<typeof AffectedElementsSchema>;
+const AffectedElementsSchema = z.array(ServerElementSchema);
+type AffectedElements = z.infer<typeof AffectedElementsSchema>;
 
-export const BoardDocumentSchema = z.array(ServerElementSchema);
-export type BoardDocument = z.infer<typeof BoardDocumentSchema>;
+const BoardDocumentSchema = z.array(ServerElementSchema);
+type BoardDocument = z.infer<typeof BoardDocumentSchema>;
 
-export const GeneratedHandlesSchema = z.array(z.string());
-export type GeneratedHandles = z.infer<typeof GeneratedHandlesSchema>;
+const GeneratedHandlesSchema = z.array(z.string());
+type GeneratedHandles = z.infer<typeof GeneratedHandlesSchema>;
 
-export const WriteReceiptSchema = z.looseObject({
+const WriteReceiptSchema = z.looseObject({
 	success: z.literal(true),
 	elements: AffectedElementsSchema,
 	fingerprint: BoardFingerprintSchema,
 	document: BoardDocumentSchema.optional(),
 	held: HoldReportSchema.optional(),
 });
-export type WriteReceipt = z.infer<typeof WriteReceiptSchema>;
+type WriteReceipt = z.infer<typeof WriteReceiptSchema>;
 
-export const PendingArtifactSchema = z.discriminatedUnion("encoding", [
+const PendingArtifactSchema = z.discriminatedUnion("encoding", [
 	z.object({
 		path: z.string(),
 		content: z.string(),
@@ -178,4 +178,53 @@ export const PendingArtifactSchema = z.discriminatedUnion("encoding", [
 			}
 		}),
 ]);
-export type PendingArtifactValue = z.infer<typeof PendingArtifactSchema>;
+type PendingArtifactValue = z.infer<typeof PendingArtifactSchema>;
+
+export {
+	ElementIdSchema,
+	type ElementId,
+	ElementTypeSchema,
+	ServerElementSchema,
+	type ServerElementResult,
+	BoardAddressSchema,
+	type BoardAddress,
+	BoardIdentityStateSchema,
+	type BoardIdentityState,
+	BoardVersionSchema,
+	type BoardVersion,
+	BoardFingerprintSchema,
+	type BoardFingerprint,
+	BoardRefusalSchema,
+	type BoardRefusal,
+	BoardConflictOutcomesSchema,
+	BoardWriteConflictSchema,
+	type BoardWriteConflict,
+	HoldReportSchema,
+	type HoldReport,
+	PaneRefSchema,
+	type PaneRef,
+	RepositoryIdentitySchema,
+	type RepositoryIdentity,
+	CodeBindingSchema,
+	type CodeBinding,
+	SnapshotNameSchema,
+	type SnapshotName,
+	ChangeCursorSchema,
+	type ChangeCursor,
+	LibraryItemIdSchema,
+	type LibraryItemId,
+	ServerStateSchema,
+	type ServerState,
+	ClaimSchema,
+	type Claim,
+	AffectedElementsSchema,
+	type AffectedElements,
+	BoardDocumentSchema,
+	type BoardDocument,
+	GeneratedHandlesSchema,
+	type GeneratedHandles,
+	WriteReceiptSchema,
+	type WriteReceipt,
+	PendingArtifactSchema,
+	type PendingArtifactValue,
+};

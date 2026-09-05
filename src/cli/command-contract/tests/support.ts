@@ -16,7 +16,7 @@ import { defineCommand, type AnyCommandContract, type PendingArtifact } from "..
 import { runCommand } from "../runner.js";
 import { PendingArtifactSchema } from "../schemas.js";
 
-export const heldCompatibility = JSON.parse(
+const heldCompatibility = JSON.parse(
 	readFileSync(join(import.meta.dir, "held-output-compatibility.json"), "utf8"),
 ) as {
 	fixedBase: string;
@@ -35,14 +35,14 @@ export const heldCompatibility = JSON.parse(
 
 const temporaryDirectories: string[] = [];
 
-export function cleanupCommandContractTest() {
+function cleanupCommandContractTest() {
 	process.exitCode = 0;
 	for (const directory of temporaryDirectories.splice(0)) {
 		rmSync(directory, { recursive: true, force: true });
 	}
 }
 
-export function proofContract(options: {
+function proofContract(options: {
 	result: unknown;
 	resultSchema?: z.ZodType;
 	file?: boolean;
@@ -100,7 +100,7 @@ export function proofContract(options: {
 	});
 }
 
-export async function executePublic(contract: AnyCommandContract, argv: readonly string[] = []) {
+async function executePublic(contract: AnyCommandContract, argv: readonly string[] = []) {
 	let stdout = "";
 	let stderr = "";
 	let error: unknown;
@@ -123,13 +123,13 @@ export async function executePublic(contract: AnyCommandContract, argv: readonly
 	return { stdout, stderr, error };
 }
 
-export function temporaryPath(name: string) {
+function temporaryPath(name: string) {
 	const directory = mkdtempSync(join(tmpdir(), "archboard-contract-"));
 	temporaryDirectories.push(directory);
 	return join(directory, name);
 }
 
-export function runPublicFixture(
+function runPublicFixture(
 	record: Record<string, unknown>,
 	artifactPath: string,
 	merged = false,
@@ -187,3 +187,12 @@ export function runPublicFixture(
 		});
 	});
 }
+
+export {
+	heldCompatibility,
+	cleanupCommandContractTest,
+	proofContract,
+	executePublic,
+	temporaryPath,
+	runPublicFixture,
+};

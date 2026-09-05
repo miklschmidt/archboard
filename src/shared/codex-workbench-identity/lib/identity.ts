@@ -1,7 +1,7 @@
 const WIRE_PREFIX = "archboard";
 const WIRE_TOKEN_LIMIT = 8193;
 const RAW_ID_LIMIT_BYTES = 4096;
-export const CANONICAL_ITEM_ID_MAX_LENGTH = `${WIRE_PREFIX}:item:`.length + WIRE_TOKEN_LIMIT;
+const CANONICAL_ITEM_ID_MAX_LENGTH = `${WIRE_PREFIX}:item:`.length + WIRE_TOKEN_LIMIT;
 const TOKEN_PATTERN = new RegExp(`^[A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}}$`);
 const WIRE_PATTERN = new RegExp(
 	`^${WIRE_PREFIX}:([a-z-]+):([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})$`,
@@ -9,7 +9,7 @@ const WIRE_PATTERN = new RegExp(
 const EPOCH_TOKEN_PATTERN = new RegExp(
 	`^([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})\\.([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})$`,
 );
-export const OPERATION_ID_MAX_BYTES = 128 as const;
+const OPERATION_ID_MAX_BYTES = 128 as const;
 const OPERATION_ID_MAX_ISSUE_ATTEMPTS = 16 as const;
 const OPERATION_TOKEN_PATTERN = new RegExp(
 	`^([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})\\.(h[0-9a-f]{32})$`,
@@ -19,7 +19,7 @@ const TEXT_LIMIT = 256;
 
 declare const identityBrand: unique symbol;
 
-export type IdentityDomain =
+type IdentityDomain =
 	| "child"
 	| "epoch"
 	| "browser-command"
@@ -54,24 +54,24 @@ type BrandedIdentity<Domain extends IdentityDomain> = string & {
 	readonly [identityBrand]: Domain;
 };
 
-export type JsonRpcRequestIdWireValue = string | number;
+type JsonRpcRequestIdWireValue = string | number;
 
-export type ChildId = BrandedIdentity<"child">;
-export type ChildEpoch = BrandedIdentity<"epoch">;
-export type BrowserCommandId = BrandedIdentity<"browser-command">;
-export type ThreadId = BrandedIdentity<"thread">;
-export type TurnId = BrandedIdentity<"turn">;
-export type ItemId = BrandedIdentity<"item">;
-export type QueuedSubmissionId = BrandedIdentity<"queued-submission">;
-export type LoginId = BrandedIdentity<"login">;
-export type JsonRpcRequestId = BrandedIdentity<"json-rpc-request">;
-export type DynamicToolCallId = BrandedIdentity<"dynamic-tool-call">;
-export type RealtimeSessionId = BrandedIdentity<"realtime-session">;
-export type ApprovalId = BrandedIdentity<"approval">;
+type ChildId = BrandedIdentity<"child">;
+type ChildEpoch = BrandedIdentity<"epoch">;
+type BrowserCommandId = BrandedIdentity<"browser-command">;
+type ThreadId = BrandedIdentity<"thread">;
+type TurnId = BrandedIdentity<"turn">;
+type ItemId = BrandedIdentity<"item">;
+type QueuedSubmissionId = BrandedIdentity<"queued-submission">;
+type LoginId = BrandedIdentity<"login">;
+type JsonRpcRequestId = BrandedIdentity<"json-rpc-request">;
+type DynamicToolCallId = BrandedIdentity<"dynamic-tool-call">;
+type RealtimeSessionId = BrandedIdentity<"realtime-session">;
+type ApprovalId = BrandedIdentity<"approval">;
 /** A host-issued workbench mutation correlation, bound to one child epoch. */
-export type OperationId = BrandedIdentity<"operation">;
+type OperationId = BrandedIdentity<"operation">;
 
-export type AnyIdentity =
+type AnyIdentity =
 	| ChildId
 	| ChildEpoch
 	| BrowserCommandId
@@ -87,7 +87,7 @@ export type AnyIdentity =
 	| OperationId;
 
 /** Identities that may appear in Codex requests or reverse requests. */
-export type CodexIdentity =
+type CodexIdentity =
 	| ThreadId
 	| TurnId
 	| ItemId
@@ -97,13 +97,13 @@ export type CodexIdentity =
 	| DynamicToolCallId
 	| ApprovalId;
 
-export interface WireRequestCorrelation {
+interface WireRequestCorrelation {
 	readonly child: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly requestId: JsonRpcRequestId;
 }
 
-export interface LogicalToolCallCorrelation {
+interface LogicalToolCallCorrelation {
 	readonly child: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly threadId: ThreadId;
@@ -115,7 +115,7 @@ export interface LogicalToolCallCorrelation {
 }
 
 /** Stable identity for one logical dynamic-tool call across wire retries and owners. */
-export function logicalToolCallKey(call: LogicalToolCallCorrelation): string {
+function logicalToolCallKey(call: LogicalToolCallCorrelation): string {
 	return JSON.stringify([
 		call.child,
 		call.epoch,
@@ -128,11 +128,11 @@ export function logicalToolCallKey(call: LogicalToolCallCorrelation): string {
 	]);
 }
 
-export interface WireRequestCorrelationInput {
+interface WireRequestCorrelationInput {
 	readonly requestId: JsonRpcRequestId;
 }
 
-export interface LogicalToolCallCorrelationInput {
+interface LogicalToolCallCorrelationInput {
 	readonly threadId: ThreadId;
 	readonly turnId: TurnId;
 	readonly callId: DynamicToolCallId;
@@ -141,7 +141,7 @@ export interface LogicalToolCallCorrelationInput {
 	readonly manifestHash: string;
 }
 
-export type IdentityValidationCode =
+type IdentityValidationCode =
 	| "invalid-shape"
 	| "empty"
 	| "wrong-domain"
@@ -152,7 +152,7 @@ export type IdentityValidationCode =
 	| "extra-field"
 	| "invalid-field";
 
-export class IdentityValidationError extends Error {
+class IdentityValidationError extends Error {
 	readonly code: IdentityValidationCode;
 	readonly domain: IdentityDomain | undefined;
 
@@ -443,7 +443,7 @@ const TOOL_CORRELATION_KEYS = [
 	"manifestHash",
 ] as const;
 
-export interface IdentityValidator {
+interface IdentityValidator {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly isCurrentEpoch: (child: ChildId, epoch: ChildEpoch) => boolean;
@@ -451,13 +451,13 @@ export interface IdentityValidator {
 }
 
 /** The only capability ordinary mutation owners need to validate an OperationId. */
-export interface OperationIdValidator {
+interface OperationIdValidator {
 	readonly isCurrentOperationId: (operationId: OperationId) => boolean;
 	readonly assertCurrentOperationId: (operationId: OperationId) => void;
 }
 
 /** Host-owned IDs are minted here; server-owned IDs can only enter via the trusted decoder. */
-export interface IdentityIssuer {
+interface IdentityIssuer {
 	readonly mintBrowserCommandId: () => BrowserCommandId;
 	readonly mintJsonRpcRequestId: () => JsonRpcRequestId;
 	readonly mintRealtimeSessionId: () => RealtimeSessionId;
@@ -465,12 +465,12 @@ export interface IdentityIssuer {
 }
 
 /** The only capability that can issue a host-owned OperationId. */
-export interface OperationIdIssuer {
+interface OperationIdIssuer {
 	readonly mintOperationId: () => OperationId;
 }
 
 /** Raw server identities collected from one decoded app-server response. */
-export interface CodexResponseIdentityBatch {
+interface CodexResponseIdentityBatch {
 	readonly threadIds?: readonly unknown[];
 	readonly turnIds?: readonly unknown[];
 	readonly itemIds?: readonly unknown[];
@@ -479,7 +479,7 @@ export interface CodexResponseIdentityBatch {
 }
 
 /** Branded identities returned in the same order as one response batch. */
-export interface AdoptedCodexResponseIdentityBatch {
+interface AdoptedCodexResponseIdentityBatch {
 	readonly threadIds: readonly ThreadId[];
 	readonly turnIds: readonly TurnId[];
 	readonly itemIds: readonly ItemId[];
@@ -491,7 +491,7 @@ export interface AdoptedCodexResponseIdentityBatch {
  * This capability is passed only to protocol decoders. Its adoption methods
  * are deliberately absent from IdentityValidator and IdentityIssuer.
  */
-export interface TrustedIdentityDecoder {
+interface TrustedIdentityDecoder {
 	readonly parseChildId: (value: unknown) => ChildId;
 	readonly parseChildEpoch: (value: unknown) => ChildEpoch;
 	readonly parseBrowserCommandId: (value: unknown) => BrowserCommandId;
@@ -533,26 +533,26 @@ export interface TrustedIdentityDecoder {
 }
 
 /** Trusted protocol code may parse and serialize, but never adopt, OperationIds. */
-export interface TrustedOperationIdDecoder {
+interface TrustedOperationIdDecoder {
 	readonly parseOperationId: (value: unknown) => OperationId;
 	readonly serializeOperationId: (identity: OperationId) => string;
 }
 
 /** The complete operation capability is composed only at the authority boundary. */
-export interface OperationAuthority {
+interface OperationAuthority {
 	readonly validator: OperationIdValidator;
 	readonly issuer: OperationIdIssuer;
 	readonly decoder: TrustedOperationIdDecoder;
 }
 
-export interface IdentityAuthority {
+interface IdentityAuthority {
 	readonly validator: IdentityValidator;
 	readonly issuer: IdentityIssuer;
 	readonly decoder: TrustedIdentityDecoder;
 }
 
 /** The factory return type composes legacy identity capabilities with operation capabilities. */
-export interface IdentityAuthorities {
+interface IdentityAuthorities {
 	readonly identity: IdentityAuthority;
 	readonly operation: OperationAuthority;
 }
@@ -561,7 +561,7 @@ export interface IdentityAuthorities {
  * Process-lifetime identity facts and issuance history. The ledger is data only;
  * every source generation builds fresh validators, issuers, and decoders over it.
  */
-export interface IdentityLedger {
+interface IdentityLedger {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly issued: Map<IdentityDomain, Set<string>>;
@@ -913,7 +913,7 @@ function parseLogicalToolCallCorrelationValue(
 	});
 }
 
-export function createIdentityLedger(): IdentityLedger {
+function createIdentityLedger(): IdentityLedger {
 	const childId = mintHostValue("child");
 	return {
 		childId,
@@ -923,17 +923,17 @@ export function createIdentityLedger(): IdentityLedger {
 	};
 }
 
-export function createIdentityAuthorities(
+function createIdentityAuthorities(
 	ledger: IdentityLedger = createIdentityLedger(),
 ): IdentityAuthorities {
 	return createAuthority(ledger);
 }
 
-export function createIdentityAuthority(): IdentityAuthority {
+function createIdentityAuthority(): IdentityAuthority {
 	return createIdentityAuthorities().identity;
 }
 
-export function restoreIdentityAuthorities(input: {
+function restoreIdentityAuthorities(input: {
 	readonly childId: unknown;
 	readonly epoch: unknown;
 }): IdentityAuthorities {
@@ -942,9 +942,55 @@ export function restoreIdentityAuthorities(input: {
 	return createAuthority({ childId, epoch, issued: new Map(), rawByIdentity: new Map() });
 }
 
-export function restoreIdentityAuthority(input: {
+function restoreIdentityAuthority(input: {
 	readonly childId: unknown;
 	readonly epoch: unknown;
 }): IdentityAuthority {
 	return restoreIdentityAuthorities(input).identity;
 }
+
+export {
+	CANONICAL_ITEM_ID_MAX_LENGTH,
+	OPERATION_ID_MAX_BYTES,
+	type IdentityDomain,
+	type JsonRpcRequestIdWireValue,
+	type ChildId,
+	type ChildEpoch,
+	type BrowserCommandId,
+	type ThreadId,
+	type TurnId,
+	type ItemId,
+	type QueuedSubmissionId,
+	type LoginId,
+	type JsonRpcRequestId,
+	type DynamicToolCallId,
+	type RealtimeSessionId,
+	type ApprovalId,
+	type OperationId,
+	type AnyIdentity,
+	type CodexIdentity,
+	type WireRequestCorrelation,
+	type LogicalToolCallCorrelation,
+	logicalToolCallKey,
+	type WireRequestCorrelationInput,
+	type LogicalToolCallCorrelationInput,
+	type IdentityValidationCode,
+	IdentityValidationError,
+	type IdentityValidator,
+	type OperationIdValidator,
+	type IdentityIssuer,
+	type OperationIdIssuer,
+	type CodexResponseIdentityBatch,
+	type AdoptedCodexResponseIdentityBatch,
+	type TrustedIdentityDecoder,
+	type TrustedOperationIdDecoder,
+	type OperationAuthority,
+	type IdentityAuthority,
+	type IdentityAuthorities,
+	type IdentityLedger,
+	createIdentityLedger,
+	createIdentityAuthorities,
+	createIdentityAuthority,
+	restoreIdentityAuthorities,
+	restoreIdentityAuthority,
+};

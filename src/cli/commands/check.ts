@@ -13,15 +13,15 @@ import {
 	inspectionPolicyOf,
 } from "../inspection-policy/index.js";
 
-export const CheckInputSchema = InspectionOptionsInputSchema.extend({
+const CheckInputSchema = InspectionOptionsInputSchema.extend({
 	text: z.boolean().default(false),
 	strict: z.boolean().default(false),
 	tail: z.array(z.string()).default([]),
 });
-export type CheckInput = z.infer<typeof CheckInputSchema>;
-export const CheckCommandResultSchema = z.union([CheckResultSchema, z.string()]);
+type CheckInput = z.infer<typeof CheckInputSchema>;
+const CheckCommandResultSchema = z.union([CheckResultSchema, z.string()]);
 
-export const checkContract = defineCommand({
+const checkContract = defineCommand({
 	path: ["check"],
 	summary: "Inspect a persisted board for deterministic quality findings",
 	usage: [
@@ -142,3 +142,5 @@ export const checkContract = defineCommand({
 		};
 	},
 });
+
+export { CheckInputSchema, type CheckInput, CheckCommandResultSchema, checkContract };

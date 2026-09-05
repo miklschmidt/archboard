@@ -63,13 +63,13 @@ const bridgeFactsWithoutRole = ({
 	...facts
 }: BridgeMetadata) => facts;
 
-export const BridgeInputSchema = z.object({
+const BridgeInputSchema = z.object({
 	over: z.string().min(1, "--over is required"),
 	under: z.string().min(1, "--under is required"),
 	background: opaqueBackground,
 	at: atPoint.optional(),
 });
-export const BridgeResultSchema = z
+const BridgeResultSchema = z
 	.strictObject({
 		success: z.literal(true),
 		board: z.string().min(1),
@@ -110,7 +110,7 @@ export const BridgeResultSchema = z
 		}
 	});
 
-export const bridgeContract = defineCommand({
+const bridgeContract = defineCommand({
 	path: ["bridge"],
 	summary: "Mark one unavoidable connector crossing",
 	usage: "bridge --over <id> --under <id> --background <#RRGGBB> [--at <x,y>]",
@@ -186,8 +186,8 @@ export const bridgeContract = defineCommand({
 	},
 });
 
-export const BridgeRemoveInputSchema = z.object({ bridgeId: z.string().min(1) });
-export const BridgeRemoveResultSchema = z
+const BridgeRemoveInputSchema = z.object({ bridgeId: z.string().min(1) });
+const BridgeRemoveResultSchema = z
 	.strictObject({
 		success: z.literal(true),
 		board: z.string().min(1),
@@ -203,7 +203,7 @@ export const BridgeRemoveResultSchema = z
 		}
 	});
 
-export const bridgeRemoveContract = defineCommand({
+const bridgeRemoveContract = defineCommand({
 	path: ["bridge", "remove"],
 	summary: "Remove one connector bridge by provenance",
 	usage: "bridge remove <bridge-id>",
@@ -251,3 +251,12 @@ export const bridgeRemoveContract = defineCommand({
 		};
 	},
 });
+
+export {
+	BridgeInputSchema,
+	BridgeResultSchema,
+	bridgeContract,
+	BridgeRemoveInputSchema,
+	BridgeRemoveResultSchema,
+	bridgeRemoveContract,
+};

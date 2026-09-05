@@ -1,22 +1,22 @@
 import fs from "node:fs";
 
-export const CANVAS_STARTUP_TERMINAL_FD_ENV = "ARCHBOARD_STARTUP_TERMINAL_FD";
+const CANVAS_STARTUP_TERMINAL_FD_ENV = "ARCHBOARD_STARTUP_TERMINAL_FD";
 const PROTOCOL = "archboard-canvas-startup-terminal/v2";
 
-export interface CanvasStartupProcessGroupIdentity {
+interface CanvasStartupProcessGroupIdentity {
 	readonly leaderPid: number;
 	readonly pgid: number;
 	readonly leaderStartTime: string;
 }
 
-export interface CanvasStartupOwnershipRecord {
+interface CanvasStartupOwnershipRecord {
 	readonly protocol: typeof PROTOCOL;
 	readonly kind: "ownership";
 	readonly canvasPid: number;
 	readonly codexGroup: CanvasStartupProcessGroupIdentity;
 }
 
-export interface CanvasStartupTerminalRecord {
+interface CanvasStartupTerminalRecord {
 	readonly protocol: typeof PROTOCOL;
 	readonly kind: "terminal";
 	readonly canvasPid: number;
@@ -24,11 +24,9 @@ export interface CanvasStartupTerminalRecord {
 	readonly message: string | null;
 }
 
-export type CanvasStartupProtocolRecord =
-	| CanvasStartupOwnershipRecord
-	| CanvasStartupTerminalRecord;
+type CanvasStartupProtocolRecord = CanvasStartupOwnershipRecord | CanvasStartupTerminalRecord;
 
-export type CanvasStartupProtocolEvent =
+type CanvasStartupProtocolEvent =
 	| { readonly kind: "record"; readonly record: CanvasStartupProtocolRecord }
 	| { readonly kind: "invalid"; readonly message: string }
 	| { readonly kind: "closed" };
@@ -37,7 +35,7 @@ function positiveInteger(value: unknown): value is number {
 	return Number.isSafeInteger(value) && Number(value) > 0;
 }
 
-export function canvasStartupOwnershipRecord(input: {
+function canvasStartupOwnershipRecord(input: {
 	readonly canvasPid: number;
 	readonly codexGroup: CanvasStartupProcessGroupIdentity;
 }): CanvasStartupOwnershipRecord {
@@ -49,7 +47,7 @@ export function canvasStartupOwnershipRecord(input: {
 	});
 }
 
-export function canvasStartupTerminalRecord(input: {
+function canvasStartupTerminalRecord(input: {
 	readonly canvasPid: number;
 	readonly cleanupProven: boolean;
 	readonly message?: string | null;
@@ -63,7 +61,7 @@ export function canvasStartupTerminalRecord(input: {
 	});
 }
 
-export function parseCanvasStartupProtocolRecord(line: string): CanvasStartupProtocolRecord {
+function parseCanvasStartupProtocolRecord(line: string): CanvasStartupProtocolRecord {
 	const value = JSON.parse(line) as Partial<CanvasStartupProtocolRecord>;
 	if (value.protocol !== PROTOCOL || !positiveInteger(value.canvasPid)) {
 		throw new Error("The canvas child returned an invalid startup cleanup record.");
@@ -99,7 +97,7 @@ export function parseCanvasStartupProtocolRecord(line: string): CanvasStartupPro
 }
 
 /** Report to the exact launcher pipe. A departed launcher is an expected closed reader. */
-export function writeCanvasStartupProtocolRecord(record: CanvasStartupProtocolRecord): void {
+function writeCanvasStartupProtocolRecord(record: CanvasStartupProtocolRecord): void {
 	const descriptor = process.env[CANVAS_STARTUP_TERMINAL_FD_ENV];
 	if (descriptor === undefined) {
 		return;
@@ -118,3 +116,16 @@ export function writeCanvasStartupProtocolRecord(record: CanvasStartupProtocolRe
 		throw error;
 	}
 }
+
+export {
+	CANVAS_STARTUP_TERMINAL_FD_ENV,
+	type CanvasStartupProcessGroupIdentity,
+	type CanvasStartupOwnershipRecord,
+	type CanvasStartupTerminalRecord,
+	type CanvasStartupProtocolRecord,
+	type CanvasStartupProtocolEvent,
+	canvasStartupOwnershipRecord,
+	canvasStartupTerminalRecord,
+	parseCanvasStartupProtocolRecord,
+	writeCanvasStartupProtocolRecord,
+};

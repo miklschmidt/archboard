@@ -44,7 +44,7 @@ const ID_LENGTH = 8;
 const BLOCK_ID_RE = /^[A-Za-z0-9-]{1,8}$/;
 
 /** Can this id be written as an Obsidian block reference as it stands? */
-export function isBlockId(id: unknown): boolean {
+function isBlockId(id: unknown): boolean {
 	return typeof id === "string" && BLOCK_ID_RE.test(id);
 }
 
@@ -53,7 +53,7 @@ export function isBlockId(id: unknown): boolean {
  * with the board's element map available passes it directly rather than
  * building a copy of the keys.
  */
-export interface IdsInUse {
+interface IdsInUse {
 	has(id: string): boolean;
 }
 
@@ -70,7 +70,7 @@ function encode(bits: bigint): string {
 }
 
 /** A fresh id nobody is using. */
-export function mintId(inUse: IdsInUse = NOTHING_IN_USE): string {
+function mintId(inUse: IdsInUse = NOTHING_IN_USE): string {
 	for (;;) {
 		let id = "";
 		for (let i = 0; i < ID_LENGTH; i++) {
@@ -83,7 +83,7 @@ export function mintId(inUse: IdsInUse = NOTHING_IN_USE): string {
 }
 
 // FNV-1a 32-bit — a stable positive int from a string.
-export function fnv1a(str: string): number {
+function fnv1a(str: string): number {
 	let h = 0x811c9dc5;
 	for (let i = 0; i < str.length; i++) {
 		h ^= str.charCodeAt(i);
@@ -102,7 +102,7 @@ export function fnv1a(str: string): number {
  * derivation, and a later one whose derivation is taken gets the next salted
  * attempt.
  */
-export function derivedId(sourceKey: string, inUse: IdsInUse = NOTHING_IN_USE): string {
+function derivedId(sourceKey: string, inUse: IdsInUse = NOTHING_IN_USE): string {
 	for (let attempt = 0; ; attempt++) {
 		const salted = attempt === 0 ? sourceKey : `${sourceKey}:${attempt}`;
 		const bits = (BigInt(fnv1a(salted)) << 32n) | BigInt(fnv1a(`${salted}#2`));
@@ -112,3 +112,5 @@ export function derivedId(sourceKey: string, inUse: IdsInUse = NOTHING_IN_USE): 
 		}
 	}
 }
+
+export { isBlockId, type IdsInUse, mintId, fnv1a, derivedId };

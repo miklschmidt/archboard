@@ -1,18 +1,18 @@
-export interface FindingFocusBox {
+interface FindingFocusBox {
 	x: number;
 	y: number;
 	width: number;
 	height: number;
 }
 
-export interface FindingRasterDimensions {
+interface FindingRasterDimensions {
 	width: number;
 	height: number;
 	scale: number;
 }
 
 /** The one fixed raster policy used by the browser exporter and the validator. */
-export function findingRasterDimensions(box: FindingFocusBox): FindingRasterDimensions {
+function findingRasterDimensions(box: FindingFocusBox): FindingRasterDimensions {
 	const longest = Math.max(box.width, box.height);
 	if (!Number.isFinite(longest) || longest <= 0) {
 		throw new Error("A finding focus box must have a finite positive extent.");
@@ -24,3 +24,5 @@ export function findingRasterDimensions(box: FindingFocusBox): FindingRasterDime
 		scale,
 	};
 }
+
+export { type FindingFocusBox, type FindingRasterDimensions, findingRasterDimensions };

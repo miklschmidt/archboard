@@ -11,11 +11,11 @@ import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 const usage = "Usage: repo list [--text] | repo add [dir] | repo forget <identity>";
 const tail = z.array(z.string()).default([]);
 
-export const RepoNamespaceInputSchema = z.object({ action: z.string().optional(), tail });
-export type RepoNamespaceInput = z.infer<typeof RepoNamespaceInputSchema>;
-export const RepoNamespaceResultSchema = z.never();
-export type RepoNamespaceResult = z.infer<typeof RepoNamespaceResultSchema>;
-export const repoContract = defineCommand({
+const RepoNamespaceInputSchema = z.object({ action: z.string().optional(), tail });
+type RepoNamespaceInput = z.infer<typeof RepoNamespaceInputSchema>;
+const RepoNamespaceResultSchema = z.never();
+type RepoNamespaceResult = z.infer<typeof RepoNamespaceResultSchema>;
+const repoContract = defineCommand({
 	path: ["repo"],
 	summary:
 		"The repository checkouts on this machine, so a binding can name a repo instead of a directory",
@@ -48,25 +48,25 @@ export const repoContract = defineCommand({
 	},
 });
 
-export const RegisteredRepoResultSchema = z.object({
+const RegisteredRepoResultSchema = z.object({
 	repo: z.string(),
 	root: z.string(),
 	source: z.enum(["declared", "observed"]),
 	addedAt: z.string(),
 	exists: z.boolean().optional(),
 });
-export type RegisteredRepoResult = z.infer<typeof RegisteredRepoResultSchema>;
-export const RepoListInputSchema = z.object({ text: z.boolean().default(false), tail });
-export type RepoListInput = z.infer<typeof RepoListInputSchema>;
-export const RepoListJsonResultSchema = z.object({
+type RegisteredRepoResult = z.infer<typeof RegisteredRepoResultSchema>;
+const RepoListInputSchema = z.object({ text: z.boolean().default(false), tail });
+type RepoListInput = z.infer<typeof RepoListInputSchema>;
+const RepoListJsonResultSchema = z.object({
 	success: z.literal(true),
 	registry: z.string(),
 	repos: z.array(RegisteredRepoResultSchema),
 });
-export type RepoListJsonResult = z.infer<typeof RepoListJsonResultSchema>;
-export const RepoListResultSchema = z.union([RepoListJsonResultSchema, z.string()]);
-export type RepoListResult = z.infer<typeof RepoListResultSchema>;
-export const repoListContract = defineCommand({
+type RepoListJsonResult = z.infer<typeof RepoListJsonResultSchema>;
+const RepoListResultSchema = z.union([RepoListJsonResultSchema, z.string()]);
+type RepoListResult = z.infer<typeof RepoListResultSchema>;
+const repoListContract = defineCommand({
 	path: ["repo", "list"],
 	summary: "List registered repository checkouts",
 	usage: "repo list [--text]",
@@ -136,9 +136,9 @@ export const repoListContract = defineCommand({
 	},
 });
 
-export const RepoAddInputSchema = z.object({ dir: z.string().optional(), tail });
-export type RepoAddInput = z.infer<typeof RepoAddInputSchema>;
-export const RepoAddResultSchema = z.object({
+const RepoAddInputSchema = z.object({ dir: z.string().optional(), tail });
+type RepoAddInput = z.infer<typeof RepoAddInputSchema>;
+const RepoAddResultSchema = z.object({
 	success: z.literal(true),
 	repo: z.string(),
 	root: z.string(),
@@ -146,8 +146,8 @@ export const RepoAddResultSchema = z.object({
 	addedAt: z.string(),
 	registry: z.string(),
 });
-export type RepoAddResult = z.infer<typeof RepoAddResultSchema>;
-export const repoAddContract = defineCommand({
+type RepoAddResult = z.infer<typeof RepoAddResultSchema>;
+const repoAddContract = defineCommand({
 	path: ["repo", "add"],
 	summary: "Register a repository checkout",
 	usage: "repo add [dir]",
@@ -204,21 +204,21 @@ export const repoAddContract = defineCommand({
 	},
 });
 
-export const RepoForgetInputSchema = z.object({
+const RepoForgetInputSchema = z.object({
 	identity: z
 		.string({ error: "repo forget needs a repository identity, e.g. github.com/acme/payments" })
 		.min(1),
 	tail,
 });
-export type RepoForgetInput = z.infer<typeof RepoForgetInputSchema>;
-export const RepoForgetResultSchema = z.object({
+type RepoForgetInput = z.infer<typeof RepoForgetInputSchema>;
+const RepoForgetResultSchema = z.object({
 	success: z.literal(true),
 	repo: z.string(),
 	forgotten: z.boolean(),
 	registry: z.string(),
 });
-export type RepoForgetResult = z.infer<typeof RepoForgetResultSchema>;
-export const repoForgetContract = defineCommand({
+type RepoForgetResult = z.infer<typeof RepoForgetResultSchema>;
+const repoForgetContract = defineCommand({
 	path: ["repo", "forget"],
 	summary: "Forget a local repository checkout",
 	usage: "repo forget <identity>",
@@ -266,3 +266,30 @@ export const repoForgetContract = defineCommand({
 		};
 	},
 });
+
+export {
+	RepoNamespaceInputSchema,
+	type RepoNamespaceInput,
+	RepoNamespaceResultSchema,
+	type RepoNamespaceResult,
+	repoContract,
+	RegisteredRepoResultSchema,
+	type RegisteredRepoResult,
+	RepoListInputSchema,
+	type RepoListInput,
+	RepoListJsonResultSchema,
+	type RepoListJsonResult,
+	RepoListResultSchema,
+	type RepoListResult,
+	repoListContract,
+	RepoAddInputSchema,
+	type RepoAddInput,
+	RepoAddResultSchema,
+	type RepoAddResult,
+	repoAddContract,
+	RepoForgetInputSchema,
+	type RepoForgetInput,
+	RepoForgetResultSchema,
+	type RepoForgetResult,
+	repoForgetContract,
+};

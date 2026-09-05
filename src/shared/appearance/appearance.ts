@@ -21,19 +21,19 @@
 
 // Fills apply to closed shapes only. Arrows, lines, text and freedraw either
 // ignore backgroundColor or change meaning when filled.
-export const FILLABLE_TYPES = new Set(["rectangle", "ellipse", "diamond"]);
+const FILLABLE_TYPES = new Set(["rectangle", "ellipse", "diamond"]);
 
 // The neutral: an interior that is there without saying anything. White reads
 // as "just a box" on a light canvas and inverts to near-black on a dark one,
 // so the board looks the way it did before — its interior is only now selectable.
-export const DEFAULT_SHAPE_BACKGROUND = "#ffffff";
+const DEFAULT_SHAPE_BACKGROUND = "#ffffff";
 
 // Hachure over a fill is sketchy and, at low contrast, invisible. Solid is
 // what the tracked skill reference tells agents to use.
-export const DEFAULT_FILL_STYLE = "solid";
+const DEFAULT_FILL_STYLE = "solid";
 
 // Excalidraw's own test: "transparent", or an 8-digit hex with a zero alpha.
-export function isTransparentBackground(color: unknown): boolean {
+function isTransparentBackground(color: unknown): boolean {
 	if (typeof color !== "string" || color === "") {
 		return true;
 	}
@@ -54,7 +54,7 @@ export function isTransparentBackground(color: unknown): boolean {
 // one thing every node has. These pairings are the skill reference's stroke
 // semantics — purple services, orange queues/events, cyan data stores, blue
 // front doors, gray secondary — read across to its pastel fills.
-export const KIND_BACKGROUND: Record<string, string> = {
+const KIND_BACKGROUND: Record<string, string> = {
 	service: "#eebefa", // light purple
 	queue: "#ffd8a8", // light orange
 	datastore: "#99e9f2", // light cyan
@@ -62,6 +62,15 @@ export const KIND_BACKGROUND: Record<string, string> = {
 	external: "#e9ecef", // light gray
 };
 
-export function backgroundForKind(kind: string): string {
+function backgroundForKind(kind: string): string {
 	return KIND_BACKGROUND[kind] ?? DEFAULT_SHAPE_BACKGROUND;
 }
+
+export {
+	FILLABLE_TYPES,
+	DEFAULT_SHAPE_BACKGROUND,
+	DEFAULT_FILL_STYLE,
+	isTransparentBackground,
+	KIND_BACKGROUND,
+	backgroundForKind,
+};

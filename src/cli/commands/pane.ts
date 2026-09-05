@@ -23,11 +23,11 @@ const OnScreenPaneSchema = z.looseObject({
 	board: z.string(),
 });
 
-export const PaneNamespaceInputSchema = z.object({ tokens });
-export type PaneNamespaceInput = z.infer<typeof PaneNamespaceInputSchema>;
-export const PaneNamespaceResultSchema = z.never();
-export type PaneNamespaceResult = z.infer<typeof PaneNamespaceResultSchema>;
-export const browserContract = defineCommand({
+const PaneNamespaceInputSchema = z.object({ tokens });
+type PaneNamespaceInput = z.infer<typeof PaneNamespaceInputSchema>;
+const PaneNamespaceResultSchema = z.never();
+type PaneNamespaceResult = z.infer<typeof PaneNamespaceResultSchema>;
+const browserContract = defineCommand({
 	path: ["browser"],
 	summary: "Inspect or control the connected browser session",
 	usage: "browser panes|open|close|show|selection|viewport|capture ...",
@@ -58,19 +58,19 @@ export const browserContract = defineCommand({
 	},
 });
 
-export const PaneOpenInputSchema = z.object({ tokens });
-export type PaneOpenInput = z.infer<typeof PaneOpenInputSchema>;
-export const PaneOpenStageSchema = stagedNoFlags;
-export type PaneOpenStage = z.infer<typeof PaneOpenStageSchema>;
-export const PaneOpenResultSchema = z.looseObject({
+const PaneOpenInputSchema = z.object({ tokens });
+type PaneOpenInput = z.infer<typeof PaneOpenInputSchema>;
+const PaneOpenStageSchema = stagedNoFlags;
+type PaneOpenStage = z.infer<typeof PaneOpenStageSchema>;
+const PaneOpenResultSchema = z.looseObject({
 	success: z.literal(true),
 	pane: PaneRefSchema.nullable(),
 	paneCount: z.number().int().nonnegative(),
 	onScreen: z.array(OnScreenPaneSchema),
 	held: HoldReportSchema.optional(),
 });
-export type PaneOpenResult = z.infer<typeof PaneOpenResultSchema>;
-export const paneOpenContract = defineCommand({
+type PaneOpenResult = z.infer<typeof PaneOpenResultSchema>;
+const paneOpenContract = defineCommand({
 	path: ["browser", "open"],
 	summary: "Open a second browser pane",
 	usage: "browser open",
@@ -129,9 +129,9 @@ export const paneOpenContract = defineCommand({
 	},
 });
 
-export const PaneCloseInputSchema = z.object({ tokens });
-export type PaneCloseInput = z.infer<typeof PaneCloseInputSchema>;
-export const PaneCloseStageSchema = stagedNoFlags.transform((values, context) => {
+const PaneCloseInputSchema = z.object({ tokens });
+type PaneCloseInput = z.infer<typeof PaneCloseInputSchema>;
+const PaneCloseStageSchema = stagedNoFlags.transform((values, context) => {
 	const spec = values[0];
 	if (!spec) {
 		context.addIssue({
@@ -143,16 +143,16 @@ export const PaneCloseStageSchema = stagedNoFlags.transform((values, context) =>
 	}
 	return { spec };
 });
-export type PaneCloseStage = z.infer<typeof PaneCloseStageSchema>;
-export const PaneCloseResultSchema = z.looseObject({
+type PaneCloseStage = z.infer<typeof PaneCloseStageSchema>;
+const PaneCloseResultSchema = z.looseObject({
 	success: z.literal(true),
 	closed: PaneRefSchema.extend({ board: z.string() }),
 	paneCount: z.number().int().nonnegative(),
 	onScreen: z.array(OnScreenPaneSchema),
 	held: HoldReportSchema.optional(),
 });
-export type PaneCloseResult = z.infer<typeof PaneCloseResultSchema>;
-export const paneCloseContract = defineCommand({
+type PaneCloseResult = z.infer<typeof PaneCloseResultSchema>;
+const paneCloseContract = defineCommand({
 	path: ["browser", "close"],
 	summary: "Close one browser pane",
 	usage: "browser close <spec>",
@@ -217,3 +217,25 @@ export const paneCloseContract = defineCommand({
 		};
 	},
 });
+
+export {
+	PaneNamespaceInputSchema,
+	type PaneNamespaceInput,
+	PaneNamespaceResultSchema,
+	type PaneNamespaceResult,
+	browserContract,
+	PaneOpenInputSchema,
+	type PaneOpenInput,
+	PaneOpenStageSchema,
+	type PaneOpenStage,
+	PaneOpenResultSchema,
+	type PaneOpenResult,
+	paneOpenContract,
+	PaneCloseInputSchema,
+	type PaneCloseInput,
+	PaneCloseStageSchema,
+	type PaneCloseStage,
+	PaneCloseResultSchema,
+	type PaneCloseResult,
+	paneCloseContract,
+};
