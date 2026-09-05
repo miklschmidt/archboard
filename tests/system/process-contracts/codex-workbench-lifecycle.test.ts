@@ -33,7 +33,7 @@ describe.serial("composed Codex process lifecycle", () => {
 		let canvas: CanvasProcess | null = null;
 		try {
 			const staging = join(
-				process.env.TMPDIR ?? "/tmp",
+				process.env["TMPDIR"] ?? "/tmp",
 				`archboard-lifecycle-source-${process.pid}`,
 			);
 			rmSync(staging, { recursive: true, force: true });
@@ -93,7 +93,7 @@ describe.serial("composed Codex process lifecycle", () => {
 			});
 			expect(linked).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 			const linkedSnapshot = snapshot(await socket.request("snapshot"));
-			const threadLink = linkedSnapshot.threadLink as Record<string, unknown>;
+			const threadLink = linkedSnapshot["threadLink"] as Record<string, unknown>;
 			const currentTimeLowerBound = Math.floor(Date.now() / 1000);
 			const startLease = await socket.request("claimLease");
 			expect(
@@ -102,7 +102,7 @@ describe.serial("composed Codex process lifecycle", () => {
 						kind: "browser_command",
 						command: "start",
 						...target(startLease),
-						threadId: threadLink.threadId,
+						threadId: threadLink["threadId"],
 						prompt: "Drive the composed lifecycle owner.",
 					},
 				}),
@@ -110,12 +110,12 @@ describe.serial("composed Codex process lifecycle", () => {
 
 			const pending = await waitFor(async () => {
 				const value = snapshot(await socket.request("snapshot"));
-				const approvals = value.approvals as Record<string, unknown>[];
-				const dynamic = value.dynamicApprovals as Record<string, unknown>[];
+				const approvals = value["approvals"] as Record<string, unknown>[];
+				const dynamic = value["dynamicApprovals"] as Record<string, unknown>[];
 				return approvals.length === 7 && dynamic.length === 1 ? { approvals, dynamic } : undefined;
 			}, "all seven ordinary families and one dynamic approval");
 			if (pending === undefined) throw new Error("The approval projection disappeared.");
-			expect(new Set(pending.approvals.map((approval) => approval.approvalKind))).toEqual(
+			expect(new Set(pending.approvals.map((approval) => approval["approvalKind"]))).toEqual(
 				new Set([
 					"command_execution",
 					"file_change",
@@ -165,7 +165,7 @@ describe.serial("composed Codex process lifecycle", () => {
 				writeFileSync(fixture.controlPath, JSON.stringify({ emit }));
 				const approval = await waitFor(async () => {
 					const value = snapshot(await socket.request("snapshot"));
-					const dynamic = value.dynamicApprovals as Record<string, unknown>[];
+					const dynamic = value["dynamicApprovals"] as Record<string, unknown>[];
 					return dynamic.length === 1 ? dynamic[0] : undefined;
 				}, `${id} visual approval`).catch((error: unknown) => {
 					throw new Error(
@@ -213,7 +213,7 @@ describe.serial("composed Codex process lifecycle", () => {
 				writeFileSync(fixture.controlPath, JSON.stringify({ emit: outcome }));
 				const approval = await waitFor(async () => {
 					const value = snapshot(await socket.request("snapshot"));
-					const dynamic = value.dynamicApprovals as Record<string, unknown>[];
+					const dynamic = value["dynamicApprovals"] as Record<string, unknown>[];
 					return dynamic.length === 1 ? dynamic[0] : undefined;
 				}, `${outcome} visual approval`);
 				if (approval === undefined) throw new Error(`${outcome} approval disappeared.`);
@@ -269,7 +269,7 @@ describe.serial("composed Codex process lifecycle", () => {
 			const initialization = records(fixture.logPath).find(
 				(entry) => entry.kind === "response" && entry.method === "initialize",
 			) as FixtureRecord & { readonly result?: Record<string, unknown> };
-			expect(initialization.result?.codexHome).toBe(join(configPath, ".."));
+			expect(initialization.result?.["codexHome"]).toBe(join(configPath, ".."));
 			const configRead = records(fixture.logPath).find(
 				(entry) => entry.kind === "response" && entry.method === "config/read",
 			) as FixtureRecord & { readonly result?: Record<string, unknown> };
@@ -284,11 +284,11 @@ describe.serial("composed Codex process lifecycle", () => {
 					(entry) => entry.kind === "response" && entry.method === "configRequirements/read",
 				),
 			).toHaveLength(1);
-			expect(linkedSnapshot.readiness).toMatchObject({ state: "thread_capable" });
+			expect(linkedSnapshot["readiness"]).toMatchObject({ state: "thread_capable" });
 			expect(threadLink).toMatchObject({ state: "executable" });
 			const operationIds = records(fixture.logPath)
 				.filter((entry) => entry.kind === "frame" && entry.method === "turn/start")
-				.map((entry) => entry.params?.clientUserMessageId)
+				.map((entry) => entry.params?.["clientUserMessageId"])
 				.filter((value): value is string => typeof value === "string");
 			expect(operationIds.length).toBeGreaterThan(0);
 			for (const operationId of operationIds)
@@ -299,8 +299,8 @@ describe.serial("composed Codex process lifecycle", () => {
 			writeFileSync(fixture.controlPath, JSON.stringify({ emit: "disconnect" }));
 			await waitFor(async () => {
 				const value = snapshot(await socket.request("snapshot"));
-				return (value.approvals as unknown[]).length === 1 &&
-					(value.dynamicApprovals as unknown[]).length === 1
+				return (value["approvals"] as unknown[]).length === 1 &&
+					(value["dynamicApprovals"] as unknown[]).length === 1
 					? value
 					: undefined;
 			}, "browser disconnect approvals");
@@ -347,13 +347,13 @@ describe.serial("composed Codex process lifecycle", () => {
 					},
 				}),
 			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
-			const inventory = snapshot(await socket.request("snapshot")).threadCandidates as Record<
+			const inventory = snapshot(await socket.request("snapshot"))["threadCandidates"] as Record<
 				string,
 				unknown
 			>;
 			expect(inventory).toMatchObject({ state: "listed" });
-			const chosen = (inventory.records as readonly Record<string, unknown>[]).find(
-				(row) => row.threadId === threadLink.threadId,
+			const chosen = (inventory["records"] as readonly Record<string, unknown>[]).find(
+				(row) => row["threadId"] === threadLink["threadId"],
 			);
 			if (chosen === undefined) throw new Error("The created thread is not in the joined list.");
 			const attachLease = await socket.request("claimLease");
@@ -363,8 +363,8 @@ describe.serial("composed Codex process lifecycle", () => {
 						kind: "browser_command",
 						command: "threadLinkAttach",
 						...target(attachLease),
-						selectionId: chosen.selectionId,
-						threadId: threadLink.threadId,
+						selectionId: chosen["selectionId"],
+						threadId: threadLink["threadId"],
 					},
 				}),
 			).toMatchObject({ ok: true, value: { outcome: "delivered" } });

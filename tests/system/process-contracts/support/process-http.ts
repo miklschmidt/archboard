@@ -14,7 +14,7 @@ export function sanitizedEnvironment(
 	vault: string,
 	inherited: ChildEnvironment = process.env,
 ): ChildEnvironment {
-	const env: ChildEnvironment = inherited.PATH === undefined ? {} : { PATH: inherited.PATH };
+	const env: ChildEnvironment = inherited["PATH"] === undefined ? {} : { PATH: inherited["PATH"] };
 	return {
 		...env,
 		HOME: join(root, "home"),
@@ -105,8 +105,8 @@ export function runCli(options: {
 	stdin?: string;
 }): CliProcessResult {
 	const env = sanitizedEnvironment(options.root, options.vault);
-	env.EXPRESS_SERVER_URL = options.base;
-	env.EXCALIDRAW_NO_AUTOSTART = "1";
+	env["EXPRESS_SERVER_URL"] = options.base;
+	env["EXCALIDRAW_NO_AUTOSTART"] = "1";
 	const argv = [process.execPath, join(options.repoRoot, "src/bin.ts"), ...options.args];
 	const result = spawnSync(argv[0]!, argv.slice(1), {
 		cwd: options.repoRoot,

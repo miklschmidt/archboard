@@ -43,27 +43,27 @@ function canonicalValue<Name extends CoordinatorToolName>(
 	switch (name) {
 		case "inspect_workhorse":
 			return {
-				threadId: record.threadId,
-				status: record.status,
-				activeTurnId: record.activeTurnId,
-				queuedSubmissionIds: [...(record.queuedSubmissionIds as readonly unknown[])],
+				threadId: record["threadId"],
+				status: record["status"],
+				activeTurnId: record["activeTurnId"],
+				queuedSubmissionIds: [...(record["queuedSubmissionIds"] as readonly unknown[])],
 			} as DynamicToolValue;
 		case "delegate_to_workhorse":
 			return {
-				mode: record.mode,
-				clientUserMessageId: record.clientUserMessageId,
-				queuedSubmissionId: record.queuedSubmissionId,
-				turnId: record.turnId,
+				mode: record["mode"],
+				clientUserMessageId: record["clientUserMessageId"],
+				queuedSubmissionId: record["queuedSubmissionId"],
+				turnId: record["turnId"],
 			} as DynamicToolValue;
 		case "manage_workhorse_queue":
 			return {
-				operation: record.operation,
-				queuedSubmissionIds: [...(record.queuedSubmissionIds as readonly unknown[])],
+				operation: record["operation"],
+				queuedSubmissionIds: [...(record["queuedSubmissionIds"] as readonly unknown[])],
 			} as DynamicToolValue;
 		case "steer_workhorse":
-			return { turnId: record.turnId, delivery: record.delivery } as DynamicToolValue;
+			return { turnId: record["turnId"], delivery: record["delivery"] } as DynamicToolValue;
 		case "resolve_spoken_approval":
-			return { verdict: record.verdict, settlement: record.settlement } as DynamicToolValue;
+			return { verdict: record["verdict"], settlement: record["settlement"] } as DynamicToolValue;
 	}
 }
 

@@ -49,10 +49,10 @@ if (process.argv[2] === "inherited-descendant") {
 	process.stdout.write(`${JSON.stringify(identity(process.pid))}\n`);
 	holdOpen();
 } else {
-	const marker = process.env.ARCHBOARD_PACKAGE_PROCESS_READY;
+	const marker = process.env["ARCHBOARD_PACKAGE_PROCESS_READY"];
 	if (!marker) throw new Error("ARCHBOARD_PACKAGE_PROCESS_READY is required.");
 	const entry = fileURLToPath(import.meta.url);
-	const inheritPipes = process.env.ARCHBOARD_PACKAGE_PROCESS_DESCENDANT_INHERITS_PIPES === "1";
+	const inheritPipes = process.env["ARCHBOARD_PACKAGE_PROCESS_DESCENDANT_INHERITS_PIPES"] === "1";
 	const descendantMarker = `${marker}.descendant`;
 	const descendant = Bun.spawn(
 		[
@@ -86,7 +86,7 @@ if (process.argv[2] === "inherited-descendant") {
 		leader: identity(process.pid),
 		descendant: descendantIdentity,
 	};
-	await Bun.sleep(Number(process.env.ARCHBOARD_PACKAGE_PROCESS_READY_DELAY_MS ?? 0));
+	await Bun.sleep(Number(process.env["ARCHBOARD_PACKAGE_PROCESS_READY_DELAY_MS"] ?? 0));
 	writeFileSync(marker, JSON.stringify(ready));
 	process.stdout.write(`${JSON.stringify(ready)}\n`);
 	holdOpen();

@@ -120,7 +120,7 @@ describe("Codex app-server test transport cleanup", () => {
 			expect(delivered).toBe(0);
 			flushing.child.stdin.release();
 			await Promise.all([regular, shutdown]);
-			expect(frames(flushing.child).findLast((frame) => frame.id === "closing-reverse")).toEqual({
+			expect(frames(flushing.child).findLast((frame) => frame["id"] === "closing-reverse")).toEqual({
 				id: "closing-reverse",
 				error: { code: -32603, message: "Codex transport is shutting down." },
 			});
@@ -146,7 +146,7 @@ describe("Codex app-server test transport cleanup", () => {
 			child.stdin.release();
 			expect(await captureRejection(response)).toBeInstanceOf(CodexTransportClosedError);
 			await Promise.all([regular, shutdown]);
-			expect(frames(child).filter((frame) => frame.id === "shutdown-substitute")).toEqual([
+			expect(frames(child).filter((frame) => frame["id"] === "shutdown-substitute")).toEqual([
 				{
 					id: "shutdown-substitute",
 					error: { code: -32603, message: "Codex transport is shutting down." },
@@ -185,7 +185,7 @@ describe("Codex app-server test transport cleanup", () => {
 				const late = captureRejection(
 					harness.transport.request("turn/steer", {}, { signal: controller.signal }),
 				);
-				const id = frameAt(harness.child, 0).id;
+				const id = frameAt(harness.child, 0)["id"];
 				await flushStreams();
 				controller.abort();
 				await late;

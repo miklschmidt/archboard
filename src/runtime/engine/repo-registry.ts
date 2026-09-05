@@ -51,7 +51,7 @@ const FILE_NAME = "repos.json";
  * process, or in a test, actually takes effect.
  */
 export function registryPath(): string {
-	return process.env.ARCHBOARD_REPOS || path.join(stateDir(), FILE_NAME);
+	return process.env["ARCHBOARD_REPOS"] || path.join(stateDir(), FILE_NAME);
 }
 
 function normalize(entry: unknown): RegisteredRepo | null {

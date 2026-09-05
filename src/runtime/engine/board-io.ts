@@ -648,7 +648,7 @@ function hydratedFileFingerprintProjection(scene: unknown): readonly unknown[] {
 	if (Array.isArray(scene) || !scene || typeof scene !== "object") return [];
 	const sceneRecord = scene as Record<string, unknown>;
 	if (!Object.hasOwn(sceneRecord, "files")) return [];
-	const rawFiles = sceneRecord.files;
+	const rawFiles = sceneRecord["files"];
 	if (!rawFiles || typeof rawFiles !== "object" || Array.isArray(rawFiles))
 		return [["invalid-files-value", rawFiles]];
 	return Object.keys(rawFiles)
@@ -753,8 +753,8 @@ export function renderContent(
 	);
 	// expandElements normalizes a missing link to null, so apply the same
 	// portability rule once more to the normalized copies.
-	scene.elements = stripBindingPresentationLinks(
-		(scene.elements as ServerElement[]).map(packElementTracking),
+	scene["elements"] = stripBindingPresentationLinks(
+		(scene["elements"] as ServerElement[]).map(packElementTracking),
 		{ boardKey: boardKey(identity) },
 	);
 	const note = renderBoardNote(scene, existingNote, identity);

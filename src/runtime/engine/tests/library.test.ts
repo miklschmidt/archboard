@@ -5,9 +5,9 @@ import os from "node:os";
 import { join, resolve } from "node:path";
 import type { RawElement } from "../library-catalogue.ts";
 
-const previousVault = process.env.ARCHBOARD_VAULT;
+const previousVault = process.env["ARCHBOARD_VAULT"];
 const vault = fs.mkdtempSync(join(os.tmpdir(), "archboard-library-"));
-process.env.ARCHBOARD_VAULT = vault;
+process.env["ARCHBOARD_VAULT"] = vault;
 
 const {
 	curatedSets,
@@ -30,8 +30,8 @@ const { AmbiguousStencilError, UnknownStencilError, chooseStencil, remapElements
 afterAll(() => {
 	resetLibraryCache();
 	fs.rmSync(vault, { recursive: true, force: true });
-	if (previousVault === undefined) delete process.env.ARCHBOARD_VAULT;
-	else process.env.ARCHBOARD_VAULT = previousVault;
+	if (previousVault === undefined) delete process.env["ARCHBOARD_VAULT"];
+	else process.env["ARCHBOARD_VAULT"] = previousVault;
 });
 
 describe("library file parsing", () => {
@@ -215,19 +215,19 @@ describe("stencil placement", () => {
 		const arrow = placed[1]!;
 		const label = placed[2]!;
 
-		expect(placed.map((element) => element.id)).not.toContainAnyValues(["a", "b", "c"]);
-		expect(new Set(placed.map((element) => element.id))).toHaveLength(3);
-		expect([shape.x, shape.y]).toEqual([0, 0]);
-		expect([arrow.x, arrow.y]).toEqual([20, 60]);
-		expect(arrow.type).toBe("arrow");
-		expect(arrow.startBinding).toMatchObject({ elementId: shape.id, focus: 0 });
-		expect(arrow.endBinding).toMatchObject({ elementId: shape.id, focus: 1 });
-		expect(arrow.start).toBeUndefined();
-		expect(arrow.end).toBeUndefined();
-		expect(label.containerId).toBe(shape.id);
-		expect((shape.groupIds as string[])[0]).toBe((arrow.groupIds as string[])[0]);
-		expect((shape.groupIds as string[])[0]).not.toBe("g");
-		expect(shape.customData).toMatchObject({ library: { item: "Fixture" } });
+		expect(placed.map((element) => element["id"])).not.toContainAnyValues(["a", "b", "c"]);
+		expect(new Set(placed.map((element) => element["id"]))).toHaveLength(3);
+		expect([shape["x"], shape["y"]]).toEqual([0, 0]);
+		expect([arrow["x"], arrow["y"]]).toEqual([20, 60]);
+		expect(arrow["type"]).toBe("arrow");
+		expect(arrow["startBinding"]).toMatchObject({ elementId: shape["id"], focus: 0 });
+		expect(arrow["endBinding"]).toMatchObject({ elementId: shape["id"], focus: 1 });
+		expect(arrow["start"]).toBeUndefined();
+		expect(arrow["end"]).toBeUndefined();
+		expect(label["containerId"]).toBe(shape["id"]);
+		expect((shape["groupIds"] as string[])[0]).toBe((arrow["groupIds"] as string[])[0]);
+		expect((shape["groupIds"] as string[])[0]).not.toBe("g");
+		expect(shape["customData"]).toMatchObject({ library: { item: "Fixture" } });
 		expect(stencil[0]).toMatchObject({ id: "a", x: 500 });
 	});
 });

@@ -68,7 +68,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 		const { child, transport, close } = createHarness();
 		try {
 			const pending = transport.request("turn/steer", {});
-			const id = frameAt(child, 0).id;
+			const id = frameAt(child, 0)["id"];
 			sendJson(child, {
 				id,
 				method: "currentTime/read",
@@ -100,16 +100,16 @@ describe("Codex app-server transport adversarial public contract", () => {
 			});
 			sendJson(child, { method: "future/notification", params: {} });
 			await flushStreams();
-			expect(frames(child).findLast((frame) => frame.id === "unknown")).toMatchObject({
+			expect(frames(child).findLast((frame) => frame["id"] === "unknown")).toMatchObject({
 				error: { code: -32601 },
 			});
-			expect(frames(child).findLast((frame) => frame.id === "invalid-params")).toMatchObject({
+			expect(frames(child).findLast((frame) => frame["id"] === "invalid-params")).toMatchObject({
 				error: { code: -32602 },
 			});
-			expect(frames(child).findLast((frame) => frame.id === "missing-owner")).toMatchObject({
+			expect(frames(child).findLast((frame) => frame["id"] === "missing-owner")).toMatchObject({
 				error: { code: -32601 },
 			});
-			expect(frames(child).filter((frame) => frame.id === undefined)).toHaveLength(0);
+			expect(frames(child).filter((frame) => frame["id"] === undefined)).toHaveLength(0);
 		} finally {
 			await close();
 		}
@@ -120,7 +120,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 		try {
 			const pending = transport.request("turn/steer", {});
 			const malformed = captureRejection(pending);
-			const id = frameAt(child, 0).id;
+			const id = frameAt(child, 0)["id"];
 			sendRaw(
 				child,
 				`{"id":${JSON.stringify(id)},"result":{"turnId":"first"},"result":{"turnId":"second"}}`,
@@ -137,7 +137,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				expect.objectContaining({ kind: "duplicate-key" }),
 			);
 			const recovered = transport.request("turn/steer", {});
-			const recoveredId = frameAt(child, 1).id;
+			const recoveredId = frameAt(child, 1)["id"];
 			sendJson(child, { id: recoveredId, result: { turnId: "recovered" } });
 			expect((await recovered).result).toEqual({ turnId: "recovered" });
 
@@ -174,8 +174,8 @@ describe("Codex app-server transport adversarial public contract", () => {
 			);
 			expect(
 				frames(child)
-					.filter((frame) => frame.result !== undefined)
-					.map((frame) => frame.id),
+					.filter((frame) => frame["result"] !== undefined)
+					.map((frame) => frame["id"]),
 			).toEqual([1, "1"]);
 		} finally {
 			await close();
@@ -238,7 +238,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 			});
 			await flushStreams();
 			expect(
-				frames(child).findLast((frame) => frame.id === "dynamic-null-namespace"),
+				frames(child).findLast((frame) => frame["id"] === "dynamic-null-namespace"),
 			).toMatchObject({ error: { code: -32602 } });
 		} finally {
 			await close();
@@ -265,7 +265,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 		const { child, transport, close } = createHarness();
 		try {
 			const remote = captureRejection(transport.request("turn/steer", {}));
-			const remoteId = frameAt(child, 0).id;
+			const remoteId = frameAt(child, 0)["id"];
 			sendJson(child, {
 				id: remoteId,
 				error: { code: -32000, message: "m".repeat(10_000), data: { secret: "x".repeat(10_000) } },
@@ -283,7 +283,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				transport.request("turn/steer", {}, { signal: controller.signal }),
 			);
 			await flushStreams();
-			const lateId = frameAt(child, 1).id;
+			const lateId = frameAt(child, 1)["id"];
 			controller.abort();
 			await lateRequest;
 			sendJson(child, { id: lateId, result: { turnId: "z".repeat(8_192) } });
@@ -304,7 +304,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 			const lateRequest = captureRejection(
 				longId.transport.request("turn/steer", {}, { signal: controller.signal }),
 			);
-			const lateId = frameAt(longId.child, 0).id;
+			const lateId = frameAt(longId.child, 0)["id"];
 			controller.abort();
 			await lateRequest;
 			sendJson(longId.child, { id: lateId, result: { turnId: "late" } });
@@ -417,7 +417,7 @@ describe("Codex app-server transport adversarial public contract", () => {
 				CODEX_APP_SERVER_CAPACITY.frameBytes,
 			]) {
 				const pending = boundary.transport.request("turn/steer", {});
-				const id = frameAt(boundary.child, frames(boundary.child).length - 1).id;
+				const id = frameAt(boundary.child, frames(boundary.child).length - 1)["id"];
 				const response = exactTurnResponse(id as string | number, target);
 				boundary.child.stdout.write(response.frame.subarray(0, 17));
 				boundary.child.stdout.write(response.frame.subarray(17));

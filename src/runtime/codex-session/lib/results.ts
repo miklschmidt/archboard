@@ -463,47 +463,47 @@ function collection(): ResponseIdentityCollection {
 
 function collectThreadItem(value: unknown, identities: ResponseIdentityCollection): void {
 	if (!isRecord(value)) return;
-	identities.itemIds.push(value.id);
-	if (value.type === "agentMessage" && isRecord(value.memoryCitation)) {
-		const threadIds = value.memoryCitation.threadIds;
+	identities.itemIds.push(value["id"]);
+	if (value["type"] === "agentMessage" && isRecord(value["memoryCitation"])) {
+		const threadIds = value["memoryCitation"]["threadIds"];
 		if (Array.isArray(threadIds)) identities.threadIds.push(...threadIds);
 	}
-	if (value.type === "collabAgentToolCall") {
-		identities.threadIds.push(value.senderThreadId);
-		if (Array.isArray(value.receiverThreadIds))
-			identities.threadIds.push(...value.receiverThreadIds);
-		if (isRecord(value.agentsStates)) identities.threadIds.push(...Object.keys(value.agentsStates));
+	if (value["type"] === "collabAgentToolCall") {
+		identities.threadIds.push(value["senderThreadId"]);
+		if (Array.isArray(value["receiverThreadIds"]))
+			identities.threadIds.push(...value["receiverThreadIds"]);
+		if (isRecord(value["agentsStates"])) identities.threadIds.push(...Object.keys(value["agentsStates"]));
 	}
-	if (value.type === "subAgentActivity") identities.threadIds.push(value.agentThreadId);
+	if (value["type"] === "subAgentActivity") identities.threadIds.push(value["agentThreadId"]);
 }
 
 function collectTurn(value: unknown, identities: ResponseIdentityCollection): void {
 	if (!isRecord(value)) return;
-	identities.turnIds.push(value.id);
-	if (Array.isArray(value.items)) {
-		for (const item of value.items) collectThreadItem(item, identities);
+	identities.turnIds.push(value["id"]);
+	if (Array.isArray(value["items"])) {
+		for (const item of value["items"]) collectThreadItem(item, identities);
 	}
 }
 
 function collectThreadSource(value: unknown, identities: ResponseIdentityCollection): void {
-	if (!isRecord(value) || !isRecord(value.subAgent) || !isRecord(value.subAgent.thread_spawn))
+	if (!isRecord(value) || !isRecord(value["subAgent"]) || !isRecord(value["subAgent"]["thread_spawn"]))
 		return;
-	identities.threadIds.push(value.subAgent.thread_spawn.parent_thread_id);
+	identities.threadIds.push(value["subAgent"]["thread_spawn"]["parent_thread_id"]);
 }
 
 function collectThread(value: unknown, identities: ResponseIdentityCollection): void {
 	if (!isRecord(value)) return;
-	identities.threadIds.push(value.id);
-	if (value.forkedFromId !== null) identities.threadIds.push(value.forkedFromId);
-	if (value.parentThreadId !== null) identities.threadIds.push(value.parentThreadId);
-	collectThreadSource(value.source, identities);
-	if (Array.isArray(value.turns)) {
-		for (const turn of value.turns) collectTurn(turn, identities);
+	identities.threadIds.push(value["id"]);
+	if (value["forkedFromId"] !== null) identities.threadIds.push(value["forkedFromId"]);
+	if (value["parentThreadId"] !== null) identities.threadIds.push(value["parentThreadId"]);
+	collectThreadSource(value["source"], identities);
+	if (Array.isArray(value["turns"])) {
+		for (const turn of value["turns"]) collectTurn(turn, identities);
 	}
 }
 
 function collectQueue(value: unknown, identities: ResponseIdentityCollection): void {
-	if (isRecord(value)) identities.queuedSubmissionIds.push(value.id);
+	if (isRecord(value)) identities.queuedSubmissionIds.push(value["id"]);
 }
 
 function collectResponseIdentities(
@@ -514,46 +514,46 @@ function collectResponseIdentities(
 	if (!isRecord(payload)) return identities;
 	switch (kind) {
 		case "login":
-			if (Object.hasOwn(payload, "loginId")) identities.loginIds.push(payload.loginId);
+			if (Object.hasOwn(payload, "loginId")) identities.loginIds.push(payload["loginId"]);
 			break;
 		case "thread-start":
 		case "thread":
-			collectThread(payload.thread, identities);
+			collectThread(payload["thread"], identities);
 			break;
 		case "thread-page":
-			if (Array.isArray(payload.data)) {
-				for (const thread of payload.data) collectThread(thread, identities);
+			if (Array.isArray(payload["data"])) {
+				for (const thread of payload["data"]) collectThread(thread, identities);
 			}
 			break;
 		case "loaded-thread-page":
-			if (Array.isArray(payload.data)) identities.threadIds.push(...payload.data);
+			if (Array.isArray(payload["data"])) identities.threadIds.push(...payload["data"]);
 			break;
 		case "turn":
-			collectTurn(payload.turn, identities);
+			collectTurn(payload["turn"], identities);
 			break;
 		case "turn-page":
-			if (Array.isArray(payload.data)) {
-				for (const turn of payload.data) collectTurn(turn, identities);
+			if (Array.isArray(payload["data"])) {
+				for (const turn of payload["data"]) collectTurn(turn, identities);
 			}
 			break;
 		case "item-page":
-			if (Array.isArray(payload.data)) {
-				for (const entry of payload.data) {
+			if (Array.isArray(payload["data"])) {
+				for (const entry of payload["data"]) {
 					if (!isRecord(entry)) continue;
-					identities.turnIds.push(entry.turnId);
-					collectThreadItem(entry.item, identities);
+					identities.turnIds.push(entry["turnId"]);
+					collectThreadItem(entry["item"], identities);
 				}
 			}
 			break;
 		case "turn-id":
-			identities.turnIds.push(payload.turnId);
+			identities.turnIds.push(payload["turnId"]);
 			break;
 		case "queue":
-			collectQueue(payload.queuedSubmission, identities);
+			collectQueue(payload["queuedSubmission"], identities);
 			break;
 		case "queue-page":
-			if (Array.isArray(payload.data)) {
-				for (const queued of payload.data) collectQueue(queued, identities);
+			if (Array.isArray(payload["data"])) {
+				for (const queued of payload["data"]) collectQueue(queued, identities);
 			}
 			break;
 		case "none":
@@ -579,32 +579,32 @@ function adoptedMap<Identity>(
 }
 
 function brandThreadItem(value: Record<string, unknown>, maps: ResponseIdentityMaps): unknown {
-	const branded: Record<string, unknown> = { ...value, id: maps.itemIds.get(value.id) };
-	if (value.type === "agentMessage" && isRecord(value.memoryCitation)) {
-		const citation = value.memoryCitation;
-		branded.memoryCitation = {
+	const branded: Record<string, unknown> = { ...value, id: maps.itemIds.get(value["id"]) };
+	if (value["type"] === "agentMessage" && isRecord(value["memoryCitation"])) {
+		const citation = value["memoryCitation"];
+		branded["memoryCitation"] = {
 			...citation,
-			threadIds: Array.isArray(citation.threadIds)
-				? citation.threadIds.map((threadId) => maps.threadIds.get(threadId))
-				: citation.threadIds,
+			threadIds: Array.isArray(citation["threadIds"])
+				? citation["threadIds"].map((threadId) => maps.threadIds.get(threadId))
+				: citation["threadIds"],
 		};
 	}
-	if (value.type === "collabAgentToolCall") {
-		branded.senderThreadId = maps.threadIds.get(value.senderThreadId);
-		branded.receiverThreadIds = Array.isArray(value.receiverThreadIds)
-			? value.receiverThreadIds.map((threadId) => maps.threadIds.get(threadId))
-			: value.receiverThreadIds;
-		if (isRecord(value.agentsStates)) {
-			branded.agentsStates = Object.fromEntries(
-				Object.entries(value.agentsStates).map(([threadId, state]) => [
+	if (value["type"] === "collabAgentToolCall") {
+		branded["senderThreadId"] = maps.threadIds.get(value["senderThreadId"]);
+		branded["receiverThreadIds"] = Array.isArray(value["receiverThreadIds"])
+			? value["receiverThreadIds"].map((threadId) => maps.threadIds.get(threadId))
+			: value["receiverThreadIds"];
+		if (isRecord(value["agentsStates"])) {
+			branded["agentsStates"] = Object.fromEntries(
+				Object.entries(value["agentsStates"]).map(([threadId, state]) => [
 					maps.threadIds.get(threadId),
 					state,
 				]),
 			);
 		}
 	}
-	if (value.type === "subAgentActivity") {
-		branded.agentThreadId = maps.threadIds.get(value.agentThreadId);
+	if (value["type"] === "subAgentActivity") {
+		branded["agentThreadId"] = maps.threadIds.get(value["agentThreadId"]);
 	}
 	return branded;
 }
@@ -612,23 +612,23 @@ function brandThreadItem(value: Record<string, unknown>, maps: ResponseIdentityM
 function brandTurn(value: Record<string, unknown>, maps: ResponseIdentityMaps): SessionTurn {
 	return {
 		...value,
-		id: maps.turnIds.get(value.id),
-		items: Array.isArray(value.items)
-			? value.items.map((item) => brandThreadItem(item as Record<string, unknown>, maps))
-			: value.items,
+		id: maps.turnIds.get(value["id"]),
+		items: Array.isArray(value["items"])
+			? value["items"].map((item) => brandThreadItem(item as Record<string, unknown>, maps))
+			: value["items"],
 	} as SessionTurn;
 }
 
 function brandThreadSource(value: unknown, maps: ResponseIdentityMaps): unknown {
-	if (!isRecord(value) || !isRecord(value.subAgent) || !isRecord(value.subAgent.thread_spawn))
+	if (!isRecord(value) || !isRecord(value["subAgent"]) || !isRecord(value["subAgent"]["thread_spawn"]))
 		return value;
 	return {
 		...value,
 		subAgent: {
-			...value.subAgent,
+			...value["subAgent"],
 			thread_spawn: {
-				...value.subAgent.thread_spawn,
-				parent_thread_id: maps.threadIds.get(value.subAgent.thread_spawn.parent_thread_id),
+				...value["subAgent"]["thread_spawn"],
+				parent_thread_id: maps.threadIds.get(value["subAgent"]["thread_spawn"]["parent_thread_id"]),
 			},
 		},
 	};
@@ -637,18 +637,18 @@ function brandThreadSource(value: unknown, maps: ResponseIdentityMaps): unknown 
 function brandThread(value: Record<string, unknown>, maps: ResponseIdentityMaps): SessionThread {
 	return {
 		...value,
-		id: maps.threadIds.get(value.id),
-		forkedFromId: value.forkedFromId === null ? null : maps.threadIds.get(value.forkedFromId),
-		parentThreadId: value.parentThreadId === null ? null : maps.threadIds.get(value.parentThreadId),
-		source: brandThreadSource(value.source, maps),
-		turns: Array.isArray(value.turns)
-			? value.turns.map((turn) => brandTurn(turn as Record<string, unknown>, maps))
-			: value.turns,
+		id: maps.threadIds.get(value["id"]),
+		forkedFromId: value["forkedFromId"] === null ? null : maps.threadIds.get(value["forkedFromId"]),
+		parentThreadId: value["parentThreadId"] === null ? null : maps.threadIds.get(value["parentThreadId"]),
+		source: brandThreadSource(value["source"], maps),
+		turns: Array.isArray(value["turns"])
+			? value["turns"].map((turn) => brandTurn(turn as Record<string, unknown>, maps))
+			: value["turns"],
 	} as SessionThread;
 }
 
 function brandQueue(value: Record<string, unknown>, maps: ResponseIdentityMaps): unknown {
-	return { ...value, id: maps.queuedSubmissionIds.get(value.id) };
+	return { ...value, id: maps.queuedSubmissionIds.get(value["id"]) };
 }
 
 function brandItemEntry(
@@ -657,8 +657,8 @@ function brandItemEntry(
 ): Record<string, unknown> {
 	return {
 		...entry,
-		turnId: maps.turnIds.get(entry.turnId),
-		item: brandThreadItem(entry.item as Record<string, unknown>, maps),
+		turnId: maps.turnIds.get(entry["turnId"]),
+		item: brandThreadItem(entry["item"] as Record<string, unknown>, maps),
 	};
 }
 
@@ -667,48 +667,48 @@ function brandResponse(kind: ResponseIdentityKind, payload: unknown, maps: Respo
 	switch (kind) {
 		case "login":
 			return Object.hasOwn(payload, "loginId")
-				? { ...payload, loginId: maps.loginIds.get(payload.loginId) }
+				? { ...payload, loginId: maps.loginIds.get(payload["loginId"]) }
 				: payload;
 		case "thread-start":
 		case "thread":
-			return { ...payload, thread: brandThread(payload.thread as Record<string, unknown>, maps) };
+			return { ...payload, thread: brandThread(payload["thread"] as Record<string, unknown>, maps) };
 		case "thread-page":
 			return {
 				...payload,
-				data: (payload.data as Record<string, unknown>[]).map((thread) =>
+				data: (payload["data"] as Record<string, unknown>[]).map((thread) =>
 					brandThread(thread, maps),
 				),
 			};
 		case "loaded-thread-page":
 			return {
 				...payload,
-				data: (payload.data as unknown[]).map((threadId) => maps.threadIds.get(threadId)),
+				data: (payload["data"] as unknown[]).map((threadId) => maps.threadIds.get(threadId)),
 			};
 		case "turn":
-			return { ...payload, turn: brandTurn(payload.turn as Record<string, unknown>, maps) };
+			return { ...payload, turn: brandTurn(payload["turn"] as Record<string, unknown>, maps) };
 		case "turn-page":
 			return {
 				...payload,
-				data: (payload.data as Record<string, unknown>[]).map((turn) => brandTurn(turn, maps)),
+				data: (payload["data"] as Record<string, unknown>[]).map((turn) => brandTurn(turn, maps)),
 			};
 		case "item-page":
 			return {
 				...payload,
-				data: (payload.data as Record<string, unknown>[]).map((entry) =>
+				data: (payload["data"] as Record<string, unknown>[]).map((entry) =>
 					brandItemEntry(entry, maps),
 				),
 			};
 		case "turn-id":
-			return { ...payload, turnId: maps.turnIds.get(payload.turnId) };
+			return { ...payload, turnId: maps.turnIds.get(payload["turnId"]) };
 		case "queue":
 			return {
 				...payload,
-				queuedSubmission: brandQueue(payload.queuedSubmission as Record<string, unknown>, maps),
+				queuedSubmission: brandQueue(payload["queuedSubmission"] as Record<string, unknown>, maps),
 			};
 		case "queue-page":
 			return {
 				...payload,
-				data: (payload.data as Record<string, unknown>[]).map((queued) => brandQueue(queued, maps)),
+				data: (payload["data"] as Record<string, unknown>[]).map((queued) => brandQueue(queued, maps)),
 			};
 		case "none":
 		case "raw-realtime":

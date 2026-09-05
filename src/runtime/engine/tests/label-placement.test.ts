@@ -282,7 +282,7 @@ test("places labels on containers and follows geometry changes", () => {
 		const polluted = pollutedLabels();
 		const plan = planLabelRepair(polluted);
 		const doomed = new Set(plan.removeIds);
-		boards.repaired = polluted.filter((element) => !doomed.has(element.id));
+		boards["repaired"] = polluted.filter((element) => !doomed.has(element.id));
 
 		for (const [name, elements] of Object.entries(boards)) {
 			const drifted = boundTextDrift(elements);

@@ -102,9 +102,9 @@ describe("Codex executable ownership", () => {
 				string,
 				string | undefined
 			>;
-			expect(observed.openai).toBeUndefined();
-			expect(observed.aws).toBeUndefined();
-			expect(observed.path).toBe(process.env.PATH);
+			expect(observed["openai"]).toBeUndefined();
+			expect(observed["aws"]).toBeUndefined();
+			expect(observed["path"]).toBe(process.env["PATH"]);
 		} finally {
 			fs.rmSync(root, { recursive: true, force: true });
 		}
@@ -135,9 +135,9 @@ describe("Codex executable ownership", () => {
 			}
 			expect(timedOut).toBeInstanceOf(CodexExecutableError);
 			expect((timedOut as CodexExecutableError).code).toBe("verification_timeout");
-			expect(observedOptions?.timeout).toBe(CODEX_REQUEST_SETTLEMENT_MS);
-			expect(observedOptions?.maxBuffer).toBe(CODEX_EXECUTABLE_PROOF_MAX_BYTES);
-			expect(observedOptions?.env).not.toHaveProperty("OPENAI_API_KEY");
+			expect(observedOptions?.["timeout"]).toBe(CODEX_REQUEST_SETTLEMENT_MS);
+			expect(observedOptions?.["maxBuffer"]).toBe(CODEX_EXECUTABLE_PROOF_MAX_BYTES);
+			expect(observedOptions?.["env"]).not.toHaveProperty("OPENAI_API_KEY");
 
 			let oversized: unknown = undefined;
 			try {

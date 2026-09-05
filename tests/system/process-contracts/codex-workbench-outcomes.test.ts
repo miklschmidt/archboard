@@ -38,7 +38,7 @@ describe.serial("composed Codex mutation outcomes", () => {
 		const resources = new AsyncDisposableStack();
 		try {
 			const staging = join(
-				process.env.TMPDIR ?? "/tmp",
+				process.env["TMPDIR"] ?? "/tmp",
 				`archboard-process-outcomes-${process.pid}`,
 			);
 			rmSync(staging, { recursive: true, force: true });
@@ -70,7 +70,7 @@ describe.serial("composed Codex mutation outcomes", () => {
 					command: { kind: "browser_command", command: "threadLinkCreate", ...target(createLease) },
 				}),
 			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
-			const linked = snapshot(await socket.request("snapshot")).threadLink as Record<
+			const linked = snapshot(await socket.request("snapshot"))["threadLink"] as Record<
 				string,
 				unknown
 			>;
@@ -81,15 +81,15 @@ describe.serial("composed Codex mutation outcomes", () => {
 						kind: "browser_command",
 						command: "start",
 						...target(startLease),
-						threadId: linked.threadId,
+						threadId: linked["threadId"],
 						prompt: "Exercise deterministic mutation outcomes.",
 					},
 				}),
 			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 			const initial = await waitFor(async () => {
 				const state = snapshot(await socket.request("snapshot"));
-				const approvals = state.approvals as Record<string, unknown>[];
-				const dynamic = state.dynamicApprovals as Record<string, unknown>[];
+				const approvals = state["approvals"] as Record<string, unknown>[];
+				const dynamic = state["dynamicApprovals"] as Record<string, unknown>[];
 				return approvals.length === 7 && dynamic.length === 1 ? { approvals, dynamic } : undefined;
 			}, "initial process approvals");
 			if (initial === undefined) throw new Error("The initial approvals did not remain pending.");
@@ -134,7 +134,7 @@ describe.serial("composed Codex mutation outcomes", () => {
 				const id = `scenario-${scenario}`;
 				writeFileSync(fixture.controlPath, JSON.stringify({ scenario }));
 				const approval = await waitFor(async () => {
-					const dynamic = snapshot(await socket.request("snapshot")).dynamicApprovals as Record<
+					const dynamic = snapshot(await socket.request("snapshot"))["dynamicApprovals"] as Record<
 						string,
 						unknown
 					>[];

@@ -49,12 +49,12 @@ describe("Codex child environment", () => {
 			"CODEX_HOME",
 			"CODEX_SQLITE_HOME",
 		]);
-		expect(child.CODEX_HOME).toBe("/tmp/dedicated home");
-		expect(child.CODEX_SQLITE_HOME).toBe("/tmp/dedicated sqlite");
-		expect(child.PWD).toBeUndefined();
-		expect(child.OPENAI_API_KEY).toBeUndefined();
-		expect(child.CODEX_HOME).not.toBe("poisoned-home");
-		expect(child.PATH).toBe("value:PATH");
+		expect(child["CODEX_HOME"]).toBe("/tmp/dedicated home");
+		expect(child["CODEX_SQLITE_HOME"]).toBe("/tmp/dedicated sqlite");
+		expect(child["PWD"]).toBeUndefined();
+		expect(child["OPENAI_API_KEY"]).toBeUndefined();
+		expect(child["CODEX_HOME"]).not.toBe("poisoned-home");
+		expect(child["PATH"]).toBe("value:PATH");
 
 		const optional = buildCodexChildEnvironment({
 			ambient: { HOME: "home", PATH: undefined },

@@ -342,7 +342,7 @@ test(
 		});
 		expect(humanChange.status).toBe(200);
 		const peerChange = await waitForPaneMessage(peerPane, peerStart, "elements_changed");
-		const peerUpdated = (peerChange?.updated as ServerElement[] | undefined) ?? [];
+		const peerUpdated = (peerChange?.["updated"] as ServerElement[] | undefined) ?? [];
 		expect(peerUpdated.find((element) => element.id === "local-file")?.link).toBe(
 			"https://github.com/acme/local/tree/HEAD/src/index.ts",
 		);
@@ -378,7 +378,7 @@ test(
 		});
 		expect(stalePeerChange.status).toBe(200);
 		const stalePeerMessage = await waitForPaneMessage(peerPane, stalePeerStart, "elements_changed");
-		const stalePeerElements = (stalePeerMessage?.updated as ServerElement[] | undefined) ?? [];
+		const stalePeerElements = (stalePeerMessage?.["updated"] as ServerElement[] | undefined) ?? [];
 		expect(stalePeerElements.find(({ id }) => id === "local-file")?.link).toBe(
 			"https://github.com/acme/local/tree/HEAD/src/index.ts",
 		);

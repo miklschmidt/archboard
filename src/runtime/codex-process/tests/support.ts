@@ -33,7 +33,7 @@ export function processOptions(root: string, executablePath: string): CodexProce
 		storage: { rootDirectory: path.join(root, "storage") },
 		ambientEnvironment: {
 			HOME: "/poisoned/home",
-			PATH: process.env.PATH ?? "",
+			PATH: process.env["PATH"] ?? "",
 			CODEX_HOME: "/poisoned/codex-home",
 			OPENAI_API_KEY: "poisoned-secret",
 			PWD: "/poisoned/pwd",

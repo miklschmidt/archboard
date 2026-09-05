@@ -80,8 +80,8 @@ export function createReverseResponder(options: ReverseResponderOptions): Revers
 				{
 					id: record.wireId,
 					...(hasOwn(canonical, "result")
-						? { result: canonical.result }
-						: { error: canonical.error }),
+						? { result: canonical["result"] }
+						: { error: canonical["error"] }),
 				},
 				"reverse response",
 				CODEX_APP_SERVER_CAPACITY.outbound.maxReverseResponseBytes,

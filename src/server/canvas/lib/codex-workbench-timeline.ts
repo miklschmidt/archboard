@@ -500,9 +500,9 @@ function eventThreadId(event: TransportServerNotification): string | null {
 		event.notification.method === "thread/started" &&
 		isRecord(params) &&
 		isRecord(params.thread) &&
-		typeof params.thread.id === "string"
+		typeof params.thread["id"] === "string"
 	)
-		return params.thread.id;
+		return params.thread["id"];
 	return null;
 }
 

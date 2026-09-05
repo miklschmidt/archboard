@@ -54,7 +54,7 @@ const isServerElement = (value: Record<string, unknown>): value is LabelElement 
 	(() => {
 		try {
 			const { label: _label, start: _start, end: _end, ...native } = value;
-			if (native.type !== "text") delete native.text;
+			if (native["type"] !== "text") delete native["text"];
 			validatePersistedBoardElement(native, "label-cycle element");
 			return true;
 		} catch {
@@ -161,8 +161,8 @@ export function blank(
 /** POST /api/elements/changes: upserts are *merged*, so stored fields survive. */
 export function applyUpserts(store: LabelStore, upserts: readonly Record<string, unknown>[]): void {
 	for (const upsert of upserts) {
-		if (typeof upsert.id !== "string") continue;
-		const previous = store.has(upsert.id) ? store.get(upsert.id) : undefined;
+		if (typeof upsert["id"] !== "string") continue;
+		const previous = store.has(upsert["id"]) ? store.get(upsert["id"]) : undefined;
 		if (!previous) {
 			try {
 				applyElementInput(store, {
@@ -175,7 +175,7 @@ export function applyUpserts(store: LabelStore, upserts: readonly Record<string,
 			continue;
 		}
 		const merged = { ...previous, ...upsert };
-		if (isServerElement(merged)) store.set(upsert.id, merged);
+		if (isServerElement(merged)) store.set(upsert["id"], merged);
 	}
 }
 

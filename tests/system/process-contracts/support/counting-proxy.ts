@@ -65,8 +65,8 @@ export async function startCountingProxy(options: {
 }
 
 if (import.meta.main) {
-	const port = Number(process.env.ARCHBOARD_TEST_PROXY_PORT);
-	const upstream = process.env.ARCHBOARD_TEST_PROXY_UPSTREAM;
+	const port = Number(process.env["ARCHBOARD_TEST_PROXY_PORT"]);
+	const upstream = process.env["ARCHBOARD_TEST_PROXY_UPSTREAM"];
 	if (!port || !upstream) throw new Error("Proxy port and upstream are required.");
 	let records: ProxyRecord[] = [];
 	const server = createServer((request, response) => {

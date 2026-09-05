@@ -176,15 +176,15 @@ test("sanitized child environments retain only approved state", () => {
 		ARCHBOARD_SETTLE_MAX_MS: "2",
 		UNAPPROVED_INHERITED_KEY: "must-not-cross",
 	});
-	expect(env.PATH).toBe("/owned/bin");
-	expect(env.HOME).toBe("/owned/root/home");
-	expect(env.XDG_STATE_HOME).toBe("/owned/root/state");
-	expect(env.ARCHBOARD_VAULT).toBe("/owned/vault");
-	expect(env.CODEX_HOME).toBeUndefined();
-	expect(env.CODEX_SQLITE_HOME).toBeUndefined();
-	expect(env.ARCHBOARD_SETTLE_MS).toBeUndefined();
-	expect(env.ARCHBOARD_SETTLE_MAX_MS).toBeUndefined();
-	expect(env.UNAPPROVED_INHERITED_KEY).toBeUndefined();
+	expect(env["PATH"]).toBe("/owned/bin");
+	expect(env["HOME"]).toBe("/owned/root/home");
+	expect(env["XDG_STATE_HOME"]).toBe("/owned/root/state");
+	expect(env["ARCHBOARD_VAULT"]).toBe("/owned/vault");
+	expect(env["CODEX_HOME"]).toBeUndefined();
+	expect(env["CODEX_SQLITE_HOME"]).toBeUndefined();
+	expect(env["ARCHBOARD_SETTLE_MS"]).toBeUndefined();
+	expect(env["ARCHBOARD_SETTLE_MAX_MS"]).toBeUndefined();
+	expect(env["UNAPPROVED_INHERITED_KEY"]).toBeUndefined();
 });
 
 test("every dynamic owner establishes lexical disposal before its first acquisition", () => {

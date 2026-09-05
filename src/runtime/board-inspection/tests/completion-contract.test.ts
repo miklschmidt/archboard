@@ -41,12 +41,12 @@ describe("inspection completion contract", () => {
 		const after = scene("dense-after.excalidraw.json") as Record<string, unknown>[];
 		expect(inspectBoard(before).coverage).toBe("complete");
 		expect(inspectBoard(after).coverage).toBe("complete");
-		const beforeById = new Map(before.map((element) => [element.id, element]));
+		const beforeById = new Map(before.map((element) => [element["id"], element]));
 		expect(
 			after.every(
 				(element) =>
-					element.id === "v" ||
-					JSON.stringify(element) === JSON.stringify(beforeById.get(element.id)),
+					element["id"] === "v" ||
+					JSON.stringify(element) === JSON.stringify(beforeById.get(element["id"])),
 			),
 		).toBe(true);
 	});

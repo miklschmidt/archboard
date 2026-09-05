@@ -468,10 +468,10 @@ test(
 			transport: { type: "webrtc", sdp: "controlled-offer-sdp" },
 			version: "v3",
 		});
-		expect(realtimeStart?.params?.realtimeSessionId).toMatch(
+		expect(realtimeStart?.params?.["realtimeSessionId"]).toMatch(
 			/^archboard:realtime-session:h[a-f0-9]{32}$/u,
 		);
-		expect(realtimeStart?.params?.realtimeSessionId).not.toBe(desktopDock.sessionId);
+		expect(realtimeStart?.params?.["realtimeSessionId"]).not.toBe(desktopDock.sessionId);
 		const realtimeStop = records.find(
 			({ kind, method }) => kind === "frame" && method === "thread/realtime/stop",
 		);

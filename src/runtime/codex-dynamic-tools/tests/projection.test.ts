@@ -64,10 +64,10 @@ describe("codex dynamic read projection", () => {
 		const parsed = parseDynamicToolCallResponse("read_thread", response);
 		if (parsed.envelope.tag !== "ok") throw new Error("output fixture did not succeed");
 		const value = record(parsed.envelope.value);
-		if (!Array.isArray(value.turns) || value.turns.length !== 1)
+		if (!Array.isArray(value["turns"]) || value["turns"].length !== 1)
 			throw new Error("output fixture returned an unexpected turn list");
-		const turnValue = record(value.turns[0]);
-		const summary = turnValue.summary;
+		const turnValue = record(value["turns"][0]);
+		const summary = turnValue["summary"];
 		if (typeof summary !== "string") throw new Error("output fixture returned no summary");
 
 		expect(summary).toContain("commandExecution: command output");
@@ -77,8 +77,8 @@ describe("codex dynamic read projection", () => {
 		expect(summary.indexOf("commandExecution:")).toBeLessThan(summary.indexOf("fileChange:"));
 		expect(summary.indexOf("fileChange:")).toBeLessThan(summary.indexOf("functionCallOutput:"));
 		expect(summary.indexOf("functionCallOutput:")).toBeLessThan(summary.indexOf("mcpToolCall:"));
-		expect(turnValue.outputsIncluded).toBe(true);
-		expect(turnValue.outputsTruncated).toBe(false);
+		expect(turnValue["outputsIncluded"]).toBe(true);
+		expect(turnValue["outputsTruncated"]).toBe(false);
 	});
 
 	test("reserves summary space for a short requested output after a long base", async () => {
@@ -106,14 +106,14 @@ describe("codex dynamic read projection", () => {
 		);
 		const parsed = parseDynamicToolCallResponse("read_thread", response);
 		if (parsed.envelope.tag !== "ok") throw new Error("long-base fixture did not succeed");
-		const turns = record(parsed.envelope.value).turns;
+		const turns = record(parsed.envelope.value)["turns"];
 		if (!Array.isArray(turns) || turns.length !== 1) throw new Error("missing projected turn");
 		const turnValue = record(turns[0]);
-		const summary = String(turnValue.summary);
+		const summary = String(turnValue["summary"]);
 
 		expect(Buffer.byteLength(summary, "utf8")).toBeLessThanOrEqual(512);
 		expect(summary).toContain(" · outputs: commandExecution: VISIBLE_OUTPUT");
-		expect(turnValue.outputsTruncated).toBe(true);
+		expect(turnValue["outputsTruncated"]).toBe(true);
 	});
 
 	test("keeps a visible prefix for long multibyte output after a long base", async () => {
@@ -136,15 +136,15 @@ describe("codex dynamic read projection", () => {
 		);
 		const parsed = parseDynamicToolCallResponse("read_thread", response);
 		if (parsed.envelope.tag !== "ok") throw new Error("multibyte fixture did not succeed");
-		const turns = record(parsed.envelope.value).turns;
+		const turns = record(parsed.envelope.value)["turns"];
 		if (!Array.isArray(turns) || turns.length !== 1) throw new Error("missing projected turn");
 		const turnValue = record(turns[0]);
-		const summary = String(turnValue.summary);
+		const summary = String(turnValue["summary"]);
 
 		expect(Buffer.byteLength(summary, "utf8")).toBeLessThanOrEqual(512);
 		expect(summary).toContain(" · outputs: commandExecution: 終");
 		expect(summary).not.toContain("�");
-		expect(turnValue.outputsTruncated).toBe(true);
+		expect(turnValue["outputsTruncated"]).toBe(true);
 	});
 
 	test("does not request or reveal output when includeOutputs is false", async () => {
@@ -172,14 +172,14 @@ describe("codex dynamic read projection", () => {
 		);
 		const parsed = parseDynamicToolCallResponse("read_thread", response);
 		if (parsed.envelope.tag !== "ok") throw new Error("no-output fixture did not succeed");
-		const turns = record(parsed.envelope.value).turns;
+		const turns = record(parsed.envelope.value)["turns"];
 		if (!Array.isArray(turns) || turns.length !== 1) throw new Error("missing projected turn");
 		const turnValue = record(turns[0]);
-		const summary = String(turnValue.summary);
+		const summary = String(turnValue["summary"]);
 
 		expect(summary).not.toContain("outputs:");
 		expect(summary).not.toContain("MUST_NOT_APPEAR");
-		expect(turnValue.outputsIncluded).toBe(false);
+		expect(turnValue["outputsIncluded"]).toBe(false);
 		expect(fixture.session.calls.map(({ method }) => method)).not.toContain("thread/items/list");
 	});
 
@@ -231,14 +231,14 @@ describe("codex dynamic read projection", () => {
 		const parsed = parseDynamicToolCallResponse("read_thread", response);
 		if (parsed.envelope.tag !== "ok") throw new Error("truncation fixture did not succeed");
 		const value = record(parsed.envelope.value);
-		if (!Array.isArray(value.turns) || value.turns.length !== 1)
+		if (!Array.isArray(value["turns"]) || value["turns"].length !== 1)
 			throw new Error("truncation fixture returned an unexpected turn list");
-		const turnValue = record(value.turns[0]);
-		const summary = turnValue.summary;
+		const turnValue = record(value["turns"][0]);
+		const summary = turnValue["summary"];
 		if (typeof summary !== "string") throw new Error("truncation fixture returned no summary");
 
 		expect(Buffer.byteLength(summary, "utf8")).toBeLessThanOrEqual(512);
 		expect(summary).toContain("…");
-		expect(turnValue.outputsTruncated).toBe(true);
+		expect(turnValue["outputsTruncated"]).toBe(true);
 	});
 });

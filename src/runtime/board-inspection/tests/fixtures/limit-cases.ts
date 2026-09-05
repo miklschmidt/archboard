@@ -35,12 +35,12 @@ export function performanceBoard(
 			startBinding: { elementId: `n${start}`, focus: 0, gap: 0 },
 			endBinding: { elementId: `n${end}`, focus: 0, gap: 0 },
 		});
-		(nodes[start]!.boundElements as RawElement[]).push({ id: edge.id, type: "arrow" });
-		(nodes[end]!.boundElements as RawElement[]).push({ id: edge.id, type: "arrow" });
+		(nodes[start]!["boundElements"] as RawElement[]).push({ id: edge["id"], type: "arrow" });
+		(nodes[end]!["boundElements"] as RawElement[]).push({ id: edge["id"], type: "arrow" });
 		return edge;
 	});
 	for (let index = 0; index < labelCount; index += 1)
-		(nodes[index]!.boundElements as RawElement[]).push({ id: `t${index}`, type: "text" });
+		(nodes[index]!["boundElements"] as RawElement[]).push({ id: `t${index}`, type: "text" });
 	return [...nodes, ...connectors, ...labels];
 }
 

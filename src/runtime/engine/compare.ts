@@ -554,11 +554,11 @@ function buildEdges(
 				elementId: el.id,
 				type: el.type,
 				...(el.strokeStyle ? { strokeStyle: el.strokeStyle } : {}),
-				...(raw.startArrowhead !== undefined
-					? { startArrowhead: typeof raw.startArrowhead === "string" ? raw.startArrowhead : null }
+				...(raw["startArrowhead"] !== undefined
+					? { startArrowhead: typeof raw["startArrowhead"] === "string" ? raw["startArrowhead"] : null }
 					: {}),
-				...(raw.endArrowhead !== undefined
-					? { endArrowhead: typeof raw.endArrowhead === "string" ? raw.endArrowhead : null }
+				...(raw["endArrowhead"] !== undefined
+					? { endArrowhead: typeof raw["endArrowhead"] === "string" ? raw["endArrowhead"] : null }
 					: {}),
 				...(Object.keys(extra).length ? { extra } : {}),
 				fromName: nodes.get(fromNode)?.name ?? fromNode,
@@ -1335,7 +1335,7 @@ export function compareBoards(
 		//
 		// A board rearranged wholesale is untouched by this: every centre moved,
 		// so nothing is suppressed and every move is still reported.
-		if (layout.region && sameCentre(a.box, b.box)) delete layout.region;
+		if (layout["region"] && sameCentre(a.box, b.box)) delete layout["region"];
 		layoutSignalsChanged += Object.keys(layout).length;
 		if (Object.keys(layout).length > 0) {
 			moved.push({ node: id, name: b.name, changes: layout });

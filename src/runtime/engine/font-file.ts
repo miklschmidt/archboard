@@ -216,19 +216,19 @@ export function parseFont(path: string): ParsedFont {
 		if (!tables[required]) throw new Error(`${path} carries no ${required} table`);
 	}
 
-	const head = new Reader((tables.head as FontTable).buf, 18);
+	const head = new Reader((tables["head"] as FontTable).buf, 18);
 	const unitsPerEm = head.u16();
 
-	const maxp = new Reader((tables.maxp as FontTable).buf, 4);
+	const maxp = new Reader((tables["maxp"] as FontTable).buf, 4);
 	const numGlyphs = maxp.u16();
 
-	const hhea = new Reader((tables.hhea as FontTable).buf, 34);
+	const hhea = new Reader((tables["hhea"] as FontTable).buf, 34);
 	const numberOfHMetrics = hhea.u16();
 
 	// hmtx comes transformed (version 1) or not. Either way the advance widths
 	// come first, as `numberOfHMetrics` uint16s; the transform only drops the
 	// left-side-bearing arrays, which measuring does not read.
-	const hmtx = tables.hmtx as FontTable;
+	const hmtx = tables["hmtx"] as FontTable;
 	const hm = new Reader(hmtx.buf);
 	const transformed = hmtx.transformVersion !== 0;
 	if (transformed) hm.u8();
@@ -246,9 +246,9 @@ export function parseFont(path: string): ParsedFont {
 		unitsPerEm,
 		numGlyphs,
 		advances,
-		cmap: parseCmap((tables.cmap as FontTable).buf),
-		gpos: tables.GPOS ? tables.GPOS.buf : null,
-		gsub: tables.GSUB ? tables.GSUB.buf : null,
+		cmap: parseCmap((tables["cmap"] as FontTable).buf),
+		gpos: tables["GPOS"] ? tables["GPOS"].buf : null,
+		gsub: tables["GSUB"] ? tables["GSUB"].buf : null,
 	};
 }
 

@@ -18,9 +18,9 @@ export function stateDir(): string {
 		return path.join(homedir(), "Library", "Application Support", "excalidraw-canvas");
 	}
 	if (process.platform === "win32") {
-		const base = process.env.LOCALAPPDATA || path.join(homedir(), "AppData", "Local");
+		const base = process.env["LOCALAPPDATA"] || path.join(homedir(), "AppData", "Local");
 		return path.join(base, "Excalidraw-Canvas");
 	}
-	const xdgState = process.env.XDG_STATE_HOME || path.join(homedir(), ".local", "state");
+	const xdgState = process.env["XDG_STATE_HOME"] || path.join(homedir(), ".local", "state");
 	return path.join(xdgState, "excalidraw-canvas");
 }

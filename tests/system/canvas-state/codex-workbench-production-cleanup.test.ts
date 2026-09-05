@@ -158,7 +158,7 @@ describe.serial("production Codex setup cleanup", () => {
 					);
 				const environment = publicStartEnvironment(root, base, executable);
 				if (scenario === "verification-timeout")
-					environment.ARCHBOARD_TEST_PUBLIC_CODEX_PROOF_FAILURE = "verification_timeout";
+					environment["ARCHBOARD_TEST_PUBLIC_CODEX_PROOF_FAILURE"] = "verification_timeout";
 				const result = runPublicCanvas("start", environment);
 				expect(result.status, scenario).not.toBe(0);
 				const lines = result.stderr.split(/\r?\n/u).filter(Boolean);
@@ -251,19 +251,19 @@ describe.serial("production Codex setup cleanup", () => {
 			).toBe(200);
 			const connected = await socket.request("connect");
 			expect(connected).toMatchObject({ ok: true });
-			const snapshot = connected.value?.snapshot as Record<string, unknown> | undefined;
-			expect(snapshot?.account).toMatchObject({ state: "signed_out" });
-			expect(snapshot?.readiness).toMatchObject({ state: "signed_out" });
+			const snapshot = connected.value?.["snapshot"] as Record<string, unknown> | undefined;
+			expect(snapshot?.["account"]).toMatchObject({ state: "signed_out" });
+			expect(snapshot?.["readiness"]).toMatchObject({ state: "signed_out" });
 			const lease = await socket.request("claimLease");
 			const target = lease.value ?? {};
 			const action = await socket.request("command", {
 				command: {
 					kind: "browser_command",
 					command: "threadLinkCreate",
-					commandId: target.commandId,
-					paneId: target.paneId,
-					childId: target.childId,
-					epoch: target.epoch,
+					commandId: target["commandId"],
+					paneId: target["paneId"],
+					childId: target["childId"],
+					epoch: target["epoch"],
 				},
 			});
 			expect(action.value).not.toMatchObject({ outcome: "delivered" });

@@ -84,33 +84,33 @@ function canonicalQuery(query: unknown): string {
 function validateBinding(value: unknown): DynamicCursorBinding {
 	if (!isRecord(value) || !exactKeys(value)) throw failure("The cursor envelope is not exact.");
 	if (
-		value.schema !== 1 ||
-		typeof value.child !== "string" ||
-		value.child.length === 0 ||
-		typeof value.epoch !== "string" ||
-		value.epoch.length === 0 ||
-		typeof value.method !== "string" ||
-		value.method.length === 0 ||
-		(value.direction !== "asc" && value.direction !== "desc" && value.direction !== "event") ||
-		typeof value.query !== "string" ||
-		value.query.length === 0 ||
-		(value.cursor !== null && typeof value.cursor !== "string") ||
-		(typeof value.cursor === "string" && value.cursor.length === 0) ||
-		typeof value.sequence !== "number" ||
-		!Number.isSafeInteger(value.sequence) ||
-		value.sequence < 0
+		value["schema"] !== 1 ||
+		typeof value["child"] !== "string" ||
+		value["child"].length === 0 ||
+		typeof value["epoch"] !== "string" ||
+		value["epoch"].length === 0 ||
+		typeof value["method"] !== "string" ||
+		value["method"].length === 0 ||
+		(value["direction"] !== "asc" && value["direction"] !== "desc" && value["direction"] !== "event") ||
+		typeof value["query"] !== "string" ||
+		value["query"].length === 0 ||
+		(value["cursor"] !== null && typeof value["cursor"] !== "string") ||
+		(typeof value["cursor"] === "string" && value["cursor"].length === 0) ||
+		typeof value["sequence"] !== "number" ||
+		!Number.isSafeInteger(value["sequence"]) ||
+		value["sequence"] < 0
 	)
 		throw failure("The cursor envelope contains invalid binding fields.");
-	const sequence = value.sequence;
+	const sequence = value["sequence"];
 	if (typeof sequence !== "number") throw failure("The cursor sequence is not a number.");
 	return Object.freeze({
 		schema: 1,
-		child: value.child,
-		epoch: value.epoch,
-		method: value.method,
-		direction: value.direction,
-		query: value.query,
-		cursor: value.cursor,
+		child: value["child"],
+		epoch: value["epoch"],
+		method: value["method"],
+		direction: value["direction"],
+		query: value["query"],
+		cursor: value["cursor"],
 		sequence,
 	});
 }

@@ -40,8 +40,8 @@ function normalizePoints(points: unknown): unknown {
 			point && typeof point === "object" && !Array.isArray(point)
 				? (point as Record<string, unknown>)
 				: null;
-		const x = Array.isArray(point) ? point[0] : record?.x;
-		const y = Array.isArray(point) ? point[1] : record?.y;
+		const x = Array.isArray(point) ? point[0] : record?.["x"];
+		const y = Array.isArray(point) ? point[1] : record?.["y"];
 		if (typeof x !== "number" || !Number.isFinite(x)) return points;
 		if (typeof y !== "number" || !Number.isFinite(y)) return points;
 		normalized.push([x, y]);
@@ -55,7 +55,7 @@ export function wellFormAgentStatement(
 	existingType?: string,
 ): Record<string, unknown> {
 	const statement = stripUntrustedTrackingClaims(raw);
-	if (hasOwn(statement, "points")) statement.points = normalizePoints(statement.points);
+	if (hasOwn(statement, "points")) statement["points"] = normalizePoints(statement["points"]);
 	for (const [alias, ref] of [
 		["startElementId", "start"],
 		["endElementId", "end"],
@@ -66,16 +66,16 @@ export function wellFormAgentStatement(
 		}
 		delete statement[alias];
 	}
-	const type = typeof statement.type === "string" ? statement.type : existingType;
-	if (type !== EXCALIDRAW_ELEMENT_TYPES.TEXT) {
-		const label = statement.label;
+	const type = typeof statement["type"] === "string" ? statement["type"] : existingType;
+	if (type !== EXCALIDRAW_ELEMENT_TYPES["TEXT"]) {
+		const label = statement["label"];
 		const labelText =
 			label && typeof label === "object" && !Array.isArray(label)
-				? (label as Record<string, unknown>).text
+				? (label as Record<string, unknown>)["text"]
 				: undefined;
-		const text = statement.text;
-		delete statement.label;
-		delete statement.text;
+		const text = statement["text"];
+		delete statement["label"];
+		delete statement["text"];
 		withAgentLabelIntent(statement, typeof labelText === "string" ? labelText : text);
 	}
 	for (const key of ["startBinding", "endBinding"] as const) {
@@ -84,10 +84,10 @@ export function wellFormAgentStatement(
 		if (value === null || !value || typeof value !== "object" || Array.isArray(value)) continue;
 		const record = value as Record<string, unknown>;
 		statement[key] = {
-			elementId: record.elementId,
-			focus: record.focus,
-			gap: record.gap,
-			...(hasOwn(record, "fixedPoint") ? { fixedPoint: record.fixedPoint } : {}),
+			elementId: record["elementId"],
+			focus: record["focus"],
+			gap: record["gap"],
+			...(hasOwn(record, "fixedPoint") ? { fixedPoint: record["fixedPoint"] } : {}),
 		};
 	}
 	return statement;
@@ -97,7 +97,7 @@ export function spendArrowRefs(
 	element: Record<string, unknown>,
 	stated: Record<string, unknown>,
 ): void {
-	if (element.type !== "arrow" && element.type !== "line") return;
+	if (element["type"] !== "arrow" && element["type"] !== "line") return;
 	for (const [ref, binding] of [
 		["start", "startBinding"],
 		["end", "endBinding"],
@@ -132,17 +132,17 @@ export function buildAgentElement(
 	} as LegacyElementIngress;
 	if (
 		(element.type === "arrow" || element.type === "line") &&
-		((element as unknown as Record<string, unknown>).start !== undefined ||
-			(element as unknown as Record<string, unknown>).end !== undefined) &&
+		((element as unknown as Record<string, unknown>)["start"] !== undefined ||
+			(element as unknown as Record<string, unknown>)["end"] !== undefined) &&
 		!Array.isArray(element.points)
 	) {
-		(element as unknown as Record<string, unknown>).points = DEFAULT_LINEAR_POINTS.map((point) =>
+		(element as unknown as Record<string, unknown>)["points"] = DEFAULT_LINEAR_POINTS.map((point) =>
 			point.slice(),
 		);
 	}
 	if (FILLABLE_TYPES.has(element.type) && element.backgroundColor === undefined) {
 		element.backgroundColor = DEFAULT_SHAPE_BACKGROUND;
-		(element as unknown as Record<string, unknown>).fillStyle ??= DEFAULT_FILL_STYLE;
+		(element as unknown as Record<string, unknown>)["fillStyle"] ??= DEFAULT_FILL_STYLE;
 	}
 	spendArrowRefs(
 		element as unknown as Record<string, unknown>,

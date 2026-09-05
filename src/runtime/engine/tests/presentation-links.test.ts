@@ -48,12 +48,12 @@ function createResolverFixture(): ResolverFixture {
 }
 beforeEach(() => {
 	fixture = createResolverFixture();
-	previousRegistry = process.env.ARCHBOARD_REPOS;
-	process.env.ARCHBOARD_REPOS = fixture.registry;
+	previousRegistry = process.env["ARCHBOARD_REPOS"];
+	process.env["ARCHBOARD_REPOS"] = fixture.registry;
 });
 afterEach(() => {
-	if (previousRegistry === undefined) delete process.env.ARCHBOARD_REPOS;
-	else process.env.ARCHBOARD_REPOS = previousRegistry;
+	if (previousRegistry === undefined) delete process.env["ARCHBOARD_REPOS"];
+	else process.env["ARCHBOARD_REPOS"] = previousRegistry;
 	fixture.dispose();
 });
 

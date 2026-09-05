@@ -215,8 +215,8 @@ test(
 		expect(bridge.body.elements).toHaveLength(2); // check-fixed-point.mjs:834
 		const [mask, redraw] = bridge.body.elements ?? [];
 		expect(mask?.id).toBe(bridge.body.bridgeId); // check-fixed-point.mjs:834
-		expect(mask?.customData?.archboard?.bridge?.role).toBe("mask"); // check-fixed-point.mjs:834
-		expect(redraw?.customData?.archboard?.bridge?.role).toBe("redraw"); // check-fixed-point.mjs:834
+		expect(mask?.customData?.["archboard"]?.bridge?.role).toBe("mask"); // check-fixed-point.mjs:834
+		expect(redraw?.customData?.["archboard"]?.bridge?.role).toBe("redraw"); // check-fixed-point.mjs:834
 		expect(mask?.strokeColor).toBe("#ffffff");
 		expect(mask?.strokeWidth).toBe((redraw?.strokeWidth ?? 0) + 4);
 		expect(mask?.strokeStyle).toBe("solid");
@@ -346,7 +346,7 @@ test(
 		const afterPlant = await settledScene(browser);
 		const plantedServer =
 			(await api<ElementsBody>("/api/elements?board=fixedpoint")).body.elements ?? [];
-		expect(changedFields(plantedServer, afterPlant).text1).toContain("index"); // check-fixed-point.mjs:1923
+		expect(changedFields(plantedServer, afterPlant)["text1"]).toContain("index"); // check-fixed-point.mjs:1923
 
 		expect(ignoredFields).toEqual([
 			"createdAt",

@@ -103,7 +103,7 @@ export async function assertIntroducedBindingPresentation(options: {
 		});
 		expect(opened.status, JSON.stringify(opened.body)).toBe(200);
 		const switched = await waitForPaneMessage(pane, start, "board_switched");
-		const elements = (switched?.elements as ServerElement[] | undefined) ?? [];
+		const elements = (switched?.["elements"] as ServerElement[] | undefined) ?? [];
 		expect(elements.find(({ id }) => id === "first-open-node")?.link).toBe(
 			"/api/code-targets/open?board=first-open-bound&element=first-open-node",
 		);

@@ -116,7 +116,7 @@ export function createLifecycleChildRunner(
 				try {
 					const record = JSON.parse(line) as Record<string, unknown>;
 					onRecord?.(record);
-					if (!markerTimeoutArmed && record.marker === timeoutAfterRecord) {
+					if (!markerTimeoutArmed && record["marker"] === timeoutAfterRecord) {
 						markerTimeoutArmed = true;
 						armTimeout(timeoutMs);
 					}
@@ -135,10 +135,10 @@ export function createLifecycleChildRunner(
 			timeoutOutcome,
 		]).finally(() => clearTimeout(timeout));
 		const records = parseRecords(stdout);
-		const owned = records.find((record) => record.marker === "owned-canvas") as
+		const owned = records.find((record) => record["marker"] === "owned-canvas") as
 			| OwnedRecord
 			| undefined;
-		const replacement = records.find((record) => record.marker === "replacement-canvas") as
+		const replacement = records.find((record) => record["marker"] === "replacement-canvas") as
 			| ReplacementRecord
 			| undefined;
 		if (outcome === timedOut) {

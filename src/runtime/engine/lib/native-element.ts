@@ -16,8 +16,8 @@ export function validatePersistedBoardElement(
 	context: string,
 ): RuntimeBoardElement {
 	const initial = recordAt(value, context, undefined, undefined, "element");
-	const id = typeof initial.id === "string" ? initial.id : undefined;
-	const type = typeof initial.type === "string" ? initial.type : undefined;
+	const id = typeof initial["id"] === "string" ? initial["id"] : undefined;
+	const type = typeof initial["type"] === "string" ? initial["type"] : undefined;
 	if (!id) fail(context, id, type, "element.id");
 	if (!type || !TYPES.has(type)) fail(context, id, type, "element.type");
 	for (const alias of ["label", "start", "end", "startElementId", "endElementId"])

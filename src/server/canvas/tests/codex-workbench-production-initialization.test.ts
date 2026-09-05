@@ -46,8 +46,8 @@ function deferred(): {
 
 function installation(host: Record<string, unknown> = {}) {
 	const root = mkdtempSync(join(tmpdir(), "archboard-production-activation-"));
-	const prior = process.env.XDG_STATE_HOME;
-	process.env.XDG_STATE_HOME = root;
+	const prior = process.env["XDG_STATE_HOME"];
+	process.env["XDG_STATE_HOME"] = root;
 	try {
 		return {
 			root,
@@ -57,8 +57,8 @@ function installation(host: Record<string, unknown> = {}) {
 			} as never),
 		};
 	} finally {
-		if (prior === undefined) delete process.env.XDG_STATE_HOME;
-		else process.env.XDG_STATE_HOME = prior;
+		if (prior === undefined) delete process.env["XDG_STATE_HOME"];
+		else process.env["XDG_STATE_HOME"] = prior;
 	}
 }
 

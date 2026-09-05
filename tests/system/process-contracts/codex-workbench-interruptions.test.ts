@@ -35,7 +35,7 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 				writeFileSync(fixture.controlPath, JSON.stringify({ emit: cause }));
 				const approval = await waitFor(async () => {
 					const state = snapshot(await socket.request("snapshot"));
-					const dynamic = state.dynamicApprovals as Record<string, unknown>[];
+					const dynamic = state["dynamicApprovals"] as Record<string, unknown>[];
 					return dynamic.length === 1 ? dynamic[0] : undefined;
 				}, `${cause} visual approval`);
 				if (approval === undefined) throw new Error(`${cause} approval did not remain pending.`);
@@ -45,7 +45,7 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 							(entry) =>
 								entry.kind === "frame" &&
 								entry.method === "thread/read" &&
-								entry.params?.threadId === "thread-3",
+								entry.params?.["threadId"] === "thread-3",
 						)
 							? true
 							: undefined,
@@ -58,7 +58,7 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 						(entry) =>
 							entry.kind === "frame" &&
 							entry.method === "thread/read" &&
-							entry.params?.threadId === "thread-3",
+							entry.params?.["threadId"] === "thread-3",
 					).length;
 					writeFileSync(
 						fixture.controlPath,
@@ -82,14 +82,14 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 								(entry) =>
 									entry.kind === "frame" &&
 									entry.method === "thread/read" &&
-									entry.params?.threadId === "thread-3",
+									entry.params?.["threadId"] === "thread-3",
 							).length > targetPollsBefore
 								? true
 								: undefined,
 						`${cause} ${terminalMismatch} retained wait poll`,
 					);
 					const stillPending = snapshot(await socket.request("snapshot"));
-					expect(stillPending.dynamicApprovals).toHaveLength(1);
+					expect(stillPending["dynamicApprovals"]).toHaveLength(1);
 					expect(reverseResponses(fixture.logPath, `${cause}-dynamic`)).toHaveLength(0);
 					expect(reverseResponses(fixture.logPath, `${cause}-wait`)).toHaveLength(0);
 					expect(mutationCount(fixture.logPath)).toBe(effectsBefore);
@@ -161,8 +161,8 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 			);
 			const approval = await waitFor(async () => {
 				const state = snapshot(await socket.request("snapshot"));
-				const ordinary = state.approvals as Record<string, unknown>[];
-				const dynamic = state.dynamicApprovals as Record<string, unknown>[];
+				const ordinary = state["approvals"] as Record<string, unknown>[];
+				const dynamic = state["dynamicApprovals"] as Record<string, unknown>[];
 				return ordinary.length === 1 && dynamic.length === 1
 					? { ordinary: ordinary[0]!, dynamic: dynamic[0]! }
 					: undefined;
@@ -212,18 +212,18 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 			expect(reverseResponses(fixture.logPath, "child-exit-dynamic")).toHaveLength(0);
 			expect(reverseResponses(fixture.logPath, "child-exit-wait")).toHaveLength(0);
 			expect(mutationCount(fixture.logPath)).toBe(effectsBefore);
-			const staleBinding = approval.dynamic.binding as Record<string, unknown>;
+			const staleBinding = approval.dynamic["binding"] as Record<string, unknown>;
 			expect(
 				await socket.request("command", {
 					command: {
 						kind: "browser_command",
 						command: "dynamicApprovalRespond",
-						commandId: staleBinding.commandId,
-						paneId: staleBinding.paneId,
-						...(staleBinding.capturedLink as Record<string, unknown>),
-						capturedLink: staleBinding.capturedLink,
-						identity: approval.dynamic.identity,
-						effectHash: approval.dynamic.effectHash,
+						commandId: staleBinding["commandId"],
+						paneId: staleBinding["paneId"],
+						...(staleBinding["capturedLink"] as Record<string, unknown>),
+						capturedLink: staleBinding["capturedLink"],
+						identity: approval.dynamic["identity"],
+						effectHash: approval.dynamic["effectHash"],
 						decision: "approve",
 					},
 				}),

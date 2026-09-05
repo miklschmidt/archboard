@@ -15,15 +15,15 @@ function defaultLogPath(): string {
 		return path.join(homedir(), "Library", "Logs", "archboard.log");
 	}
 	if (process.platform === "win32") {
-		const base = process.env.LOCALAPPDATA || path.join(homedir(), "AppData", "Local");
+		const base = process.env["LOCALAPPDATA"] || path.join(homedir(), "AppData", "Local");
 		return path.join(base, "Archboard", "archboard.log");
 	}
 	// Linux and other POSIX platforms: follow the XDG state convention.
-	const xdgState = process.env.XDG_STATE_HOME || path.join(homedir(), ".local", "state");
+	const xdgState = process.env["XDG_STATE_HOME"] || path.join(homedir(), ".local", "state");
 	return path.join(xdgState, "archboard", "archboard.log");
 }
 
-const LOG_FILE_PATH = process.env.LOG_FILE_PATH || defaultLogPath();
+const LOG_FILE_PATH = process.env["LOG_FILE_PATH"] || defaultLogPath();
 
 function ensureWritableLogFile(filePath: string): string {
 	const logDir = path.dirname(filePath);
@@ -36,7 +36,7 @@ function resolveLogFilePath(): string {
 	try {
 		return ensureWritableLogFile(LOG_FILE_PATH);
 	} catch (error) {
-		if (process.env.LOG_FILE_PATH) {
+		if (process.env["LOG_FILE_PATH"]) {
 			throw error;
 		}
 	}
@@ -47,7 +47,7 @@ function resolveLogFilePath(): string {
 const RESOLVED_LOG_FILE_PATH = resolveLogFilePath();
 
 const logger: winston.Logger = winston.createLogger({
-	level: process.env.LOG_LEVEL || "info",
+	level: process.env["LOG_LEVEL"] || "info",
 
 	format: winston.format.combine(
 		winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss.SSS" }),
@@ -55,10 +55,10 @@ const logger: winston.Logger = winston.createLogger({
 		winston.format.metadata({ fillExcept: ["message", "level", "timestamp"] }),
 		winston.format.printf((info) => {
 			const extra =
-				info.metadata && Object.keys(info.metadata).length
-					? ` ${JSON.stringify(info.metadata)}`
+				info["metadata"] && Object.keys(info["metadata"]).length
+					? ` ${JSON.stringify(info["metadata"])}`
 					: "";
-			return `${String(info.timestamp)} [${String(info.level)}] ${String(info.message)}${extra}`;
+			return `${String(info["timestamp"])} [${String(info.level)}] ${String(info.message)}${extra}`;
 		}),
 	),
 

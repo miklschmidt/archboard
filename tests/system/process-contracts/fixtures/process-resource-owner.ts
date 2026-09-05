@@ -74,20 +74,20 @@ export async function registerResourceSet(
 }
 
 async function lockMode(): Promise<void> {
-	const repoRoot = process.env.ARCHBOARD_TEST_REPO_ROOT;
+	const repoRoot = process.env["ARCHBOARD_TEST_REPO_ROOT"];
 	if (!repoRoot) throw new Error("ARCHBOARD_TEST_REPO_ROOT is required.");
 	const { holdBoard, releaseHold } = await import(
 		join(repoRoot, "src/runtime/engine/board-lock.ts")
 	);
-	const board = process.env.ARCHBOARD_TEST_LOCK_BOARD ?? "resource-cleanup";
-	const holderId = process.env.ARCHBOARD_TEST_LOCK_HOLDER ?? "resource-owner";
+	const board = process.env["ARCHBOARD_TEST_LOCK_BOARD"] ?? "resource-cleanup";
+	const holderId = process.env["ARCHBOARD_TEST_LOCK_HOLDER"] ?? "resource-owner";
 	const hold = await holdBoard({
 		board,
 		holder: { id: holderId, kind: "agent" },
 		waitMs: 0,
 	});
-	const lockFile = join(process.env.ARCHBOARD_VAULT!, ".archboard/locks", `${board}.lock`);
-	const port = Number(process.env.ARCHBOARD_TEST_STUBBORN_PORT) || undefined;
+	const lockFile = join(process.env["ARCHBOARD_VAULT"]!, ".archboard/locks", `${board}.lock`);
+	const port = Number(process.env["ARCHBOARD_TEST_STUBBORN_PORT"]) || undefined;
 	const server = port ? createServer((socket) => socket.end()) : undefined;
 	if (server)
 		await new Promise<void>((resolve, reject) => {
@@ -109,12 +109,12 @@ async function lockMode(): Promise<void> {
 		if (server) server.close(() => process.exit(0));
 		else process.exit(0);
 	};
-	process.on("SIGTERM", process.env.ARCHBOARD_TEST_IGNORE_TERM === "1" ? () => {} : stop);
+	process.on("SIGTERM", process.env["ARCHBOARD_TEST_IGNORE_TERM"] === "1" ? () => {} : stop);
 	process.on("SIGINT", stop);
 }
 
 async function outerMode(): Promise<void> {
-	const root = process.env.ARCHBOARD_TEST_ROOT!;
+	const root = process.env["ARCHBOARD_TEST_ROOT"]!;
 	const resources = new AsyncDisposableStack();
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	let setup: Promise<z.infer<typeof ResourceReadySchema>> | undefined;
@@ -140,10 +140,10 @@ async function outerMode(): Promise<void> {
 		setup = registerResourceSet(resources, {
 			root,
 			vault: join(root, "vault"),
-			upstreamPort: Number(process.env.ARCHBOARD_TEST_UPSTREAM_PORT),
-			proxyPort: Number(process.env.ARCHBOARD_TEST_PROXY_PORT),
-			repoRoot: process.env.ARCHBOARD_TEST_REPO_ROOT!,
-			failAfterLock: process.env.ARCHBOARD_TEST_FAIL_AFTER_LOCK === "1",
+			upstreamPort: Number(process.env["ARCHBOARD_TEST_UPSTREAM_PORT"]),
+			proxyPort: Number(process.env["ARCHBOARD_TEST_PROXY_PORT"]),
+			repoRoot: process.env["ARCHBOARD_TEST_REPO_ROOT"]!,
+			failAfterLock: process.env["ARCHBOARD_TEST_FAIL_AFTER_LOCK"] === "1",
 		});
 		const ready = await setup;
 		if (signalRequested) return await stop();
@@ -156,4 +156,4 @@ async function outerMode(): Promise<void> {
 }
 
 if (import.meta.main)
-	await (process.env.ARCHBOARD_TEST_RESOURCE_MODE === "lock" ? lockMode() : outerMode());
+	await (process.env["ARCHBOARD_TEST_RESOURCE_MODE"] === "lock" ? lockMode() : outerMode());

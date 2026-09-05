@@ -3,14 +3,14 @@ import { resolve } from "node:path";
 
 const modulePath = resolve(import.meta.dir, "../../../../src/runtime/codex-process/executable.ts");
 const actual = await import(modulePath);
-const executable = process.env.ARCHBOARD_TEST_PUBLIC_CODEX_EXECUTABLE;
+const executable = process.env["ARCHBOARD_TEST_PUBLIC_CODEX_EXECUTABLE"];
 if (executable !== undefined) {
 	await Promise.resolve(
 		mock.module(modulePath, () => ({
 			...actual,
 			resolveProjectCodexExecutable: () => executable,
 			verifyCodexExecutable:
-				process.env.ARCHBOARD_TEST_PUBLIC_CODEX_PROOF_FAILURE === "verification_timeout"
+				process.env["ARCHBOARD_TEST_PUBLIC_CODEX_PROOF_FAILURE"] === "verification_timeout"
 					? () => {
 							throw new actual.CodexExecutableError({
 								code: "verification_timeout",
@@ -24,10 +24,10 @@ if (executable !== undefined) {
 	);
 }
 
-const shutdownDelayMs = Number(process.env.ARCHBOARD_TEST_PUBLIC_SHUTDOWN_DELAY_MS ?? "0");
-const shutdownFailure = process.env.ARCHBOARD_TEST_PUBLIC_SHUTDOWN_FAILURE === "always";
+const shutdownDelayMs = Number(process.env["ARCHBOARD_TEST_PUBLIC_SHUTDOWN_DELAY_MS"] ?? "0");
+const shutdownFailure = process.env["ARCHBOARD_TEST_PUBLIC_SHUTDOWN_FAILURE"] === "always";
 if (
-	process.env.ARCHBOARD_STARTUP_TERMINAL_FD !== undefined &&
+	process.env["ARCHBOARD_STARTUP_TERMINAL_FD"] !== undefined &&
 	((Number.isFinite(shutdownDelayMs) && shutdownDelayMs > 0) || shutdownFailure)
 ) {
 	const applicationPath = resolve(
@@ -56,7 +56,7 @@ if (
 	);
 }
 
-const readinessTimeoutMs = Number(process.env.ARCHBOARD_TEST_PUBLIC_READINESS_TIMEOUT_MS ?? "0");
+const readinessTimeoutMs = Number(process.env["ARCHBOARD_TEST_PUBLIC_READINESS_TIMEOUT_MS"] ?? "0");
 if (Number.isFinite(readinessTimeoutMs) && readinessTimeoutMs > 0) {
 	const timingPath = resolve(import.meta.dir, "../../../../src/shared/timing/timing.ts");
 	const actualTiming = await import(timingPath);
@@ -68,8 +68,8 @@ if (Number.isFinite(readinessTimeoutMs) && readinessTimeoutMs > 0) {
 	);
 }
 
-const cleanupDeadlineMs = Number(process.env.ARCHBOARD_TEST_PUBLIC_CLEANUP_DEADLINE_MS ?? "0");
-const cleanupGraceMs = Number(process.env.ARCHBOARD_TEST_PUBLIC_CLEANUP_GRACE_MS ?? "0");
+const cleanupDeadlineMs = Number(process.env["ARCHBOARD_TEST_PUBLIC_CLEANUP_DEADLINE_MS"] ?? "0");
+const cleanupGraceMs = Number(process.env["ARCHBOARD_TEST_PUBLIC_CLEANUP_GRACE_MS"] ?? "0");
 if (
 	Number.isFinite(cleanupDeadlineMs) &&
 	cleanupDeadlineMs > 0 &&

@@ -47,10 +47,10 @@ export function architectureBindingTarget(
 	end: "start" | "end",
 ): string | undefined {
 	const record = element && typeof element === "object" ? (element as Record<string, unknown>) : {};
-	const binding = end === "start" ? record.startBinding : record.endBinding;
+	const binding = end === "start" ? record["startBinding"] : record["endBinding"];
 	const bindingRecord =
 		binding && typeof binding === "object" ? (binding as Record<string, unknown>) : {};
-	const id = bindingRecord.elementId;
+	const id = bindingRecord["elementId"];
 	return typeof id === "string" ? id : undefined;
 }
 

@@ -193,7 +193,7 @@ describe("package inspection totality", () => {
 					height: 10,
 					angle: 0,
 				};
-				if (label !== "missing") target.type = rawType;
+				if (label !== "missing") target["type"] = rawType;
 				return [
 					connector({
 						id: `incoming-edge-${label}`,
@@ -203,7 +203,7 @@ describe("package inspection totality", () => {
 							[0, 0],
 							[10, 0],
 						],
-						startBinding: { elementId: target.id, focus: 0, gap: 0 },
+						startBinding: { elementId: target["id"], focus: 0, gap: 0 },
 					}),
 					target,
 				];

@@ -210,8 +210,8 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 				deletes: [],
 			},
 		});
-		expect(human.body.document).toBeUndefined();
-		expect(human.body.corrections).toBeDefined();
+		expect(human.body["document"]).toBeUndefined();
+		expect(human.body["corrections"]).toBeDefined();
 		const compact = await request<{
 			document?: unknown;
 			corrections: { upserts: ElementIdView[]; deletes: string[] };
@@ -358,8 +358,8 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 			body: { clientId: "blocking" },
 		});
 		const agent = await pending;
-		expect(agent.elements).toBeDefined();
-		expect(agent.corrections).toBeUndefined();
+		expect(agent["elements"]).toBeDefined();
+		expect(agent["corrections"]).toBeUndefined();
 		const completedWrites = nonReadRecords(await proxy.snapshot());
 		expect(completedWrites).toHaveLength(1);
 		expect(Buffer.from(completedWrites[0]!.bodyBase64, "base64").toString()).toBe(pendingBody);

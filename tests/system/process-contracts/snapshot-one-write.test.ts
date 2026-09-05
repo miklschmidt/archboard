@@ -183,8 +183,8 @@ test("snapshot refusal is zero writes and restore replaces scene once", async ()
 		const frames = pane.seen.slice(frameStart);
 		const deltas = frames.filter((frame) => frame.type === "elements_changed");
 		expect(deltas).toHaveLength(1);
-		expect(deltas[0]?.deleted).toContain("old");
-		expect(deltas[0]?.created).toEqual(
+		expect(deltas[0]?.["deleted"]).toContain("old");
+		expect(deltas[0]?.["created"]).toEqual(
 			expect.arrayContaining([expect.objectContaining({ id: "snap-node" })]),
 		);
 		expect(frames.filter((frame) => frame.type === "files_replaced")).toEqual([

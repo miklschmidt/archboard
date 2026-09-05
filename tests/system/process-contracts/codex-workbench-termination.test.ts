@@ -23,7 +23,7 @@ import {
 
 async function pendingShutdownBatch(resources: AsyncDisposableStack, label: string) {
 	const staging = join(
-		process.env.TMPDIR ?? "/tmp",
+		process.env["TMPDIR"] ?? "/tmp",
 		`archboard-process-termination-${process.pid}-${label}`,
 	);
 	rmSync(staging, { recursive: true, force: true });
@@ -55,7 +55,7 @@ async function pendingShutdownBatch(resources: AsyncDisposableStack, label: stri
 			command: { kind: "browser_command", command: "threadLinkCreate", ...target(createLease) },
 		}),
 	).toMatchObject({ ok: true, value: { outcome: "delivered" } });
-	const link = snapshot(await socket.request("snapshot")).threadLink as Record<string, unknown>;
+	const link = snapshot(await socket.request("snapshot"))["threadLink"] as Record<string, unknown>;
 	const startLease = await socket.request("claimLease");
 	expect(
 		await socket.request("command", {
@@ -63,15 +63,15 @@ async function pendingShutdownBatch(resources: AsyncDisposableStack, label: stri
 				kind: "browser_command",
 				command: "start",
 				...target(startLease),
-				threadId: link.threadId,
+				threadId: link["threadId"],
 				prompt: "Prepare pending shutdown work.",
 			},
 		}),
 	).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 	const initial = await waitFor(async () => {
 		const state = snapshot(await socket.request("snapshot"));
-		const approvals = state.approvals as Record<string, unknown>[];
-		const dynamic = state.dynamicApprovals as Record<string, unknown>[];
+		const approvals = state["approvals"] as Record<string, unknown>[];
+		const dynamic = state["dynamicApprovals"] as Record<string, unknown>[];
 		return approvals.length === 7 && dynamic.length === 1 ? { approvals, dynamic } : undefined;
 	}, `${label} initial approvals`);
 	if (initial === undefined) throw new Error(`${label} initial approvals did not remain pending.`);
@@ -84,8 +84,8 @@ async function pendingShutdownBatch(resources: AsyncDisposableStack, label: stri
 	writeFileSync(fixture.controlPath, JSON.stringify({ emit: "shutdown" }));
 	await waitFor(async () => {
 		const state = snapshot(await socket.request("snapshot"));
-		return (state.approvals as unknown[]).length === 1 &&
-			(state.dynamicApprovals as unknown[]).length === 1
+		return (state["approvals"] as unknown[]).length === 1 &&
+			(state["dynamicApprovals"] as unknown[]).length === 1
 			? state
 			: undefined;
 	}, `${label} pending shutdown batch`);

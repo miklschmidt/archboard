@@ -48,7 +48,7 @@ async function openSocket(
 
 async function waitForInitial(messages: Array<Record<string, unknown>>): Promise<void> {
 	await waitFor(
-		() => (messages.some((message) => message.type === "initial_elements") ? true : undefined),
+		() => (messages.some((message) => message["type"] === "initial_elements") ? true : undefined),
 		"WebSocket initial scene",
 	);
 }
@@ -110,7 +110,7 @@ test("the newest accepted duplicate remains authoritative after reverse initiali
 			"the stale older initializer to close",
 		);
 		expect(newer.readyState).toBe(WebSocket.OPEN);
-		expect(olderMessages.some((message) => message.type === "initial_elements")).toBeTrue();
+		expect(olderMessages.some((message) => message["type"] === "initial_elements")).toBeTrue();
 	} finally {
 		owner.release();
 		original?.terminate();
