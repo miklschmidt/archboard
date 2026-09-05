@@ -58,6 +58,48 @@ function track(transport: Transport): Transport {
 	return transport;
 }
 
+async function realtimeResult(sdp: unknown) {
+	const initial = snapshot({ lease: lease(CLOCK + 60_000) });
+	const transport = track(createBrowserWorkbenchTransport({ now: () => CLOCK }));
+	const socket = new FakeSocket();
+	socket.onRequest = (request, activeSocket) => {
+		if (request.action === "subscribe" || request.action === "snapshot")
+			activeSocket.reply(request, snapshotMessage(1, initial));
+		else if (request.action === "command")
+			activeSocket.reply(request, {
+				...commandResult(initial),
+				realtimeAnswer: { sessionId: "command-a", correlationId: "command-a", sdp },
+				realtimeSessionHandle: "command-a",
+			});
+	};
+	await transport.attach(socket);
+	const result = await transport.command({
+		command: "realtimeStart",
+		threadId: "thread-a",
+		sdp: "offer",
+	} as BrowserCommandDraft);
+	return { result, state: transport.state() };
+}
+
+test("preserves a realtime SDP answer's terminal CRLF through the browser transport", async () => {
+	const sdp = "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n";
+	const { result, state } = await realtimeResult(sdp);
+	expect(result.outcome).toBe("delivered");
+	expect(result.realtimeAnswer?.sdp).toBe(sdp);
+	expect(state.state).toBe("thread_capable");
+});
+
+test.each([
+	{ name: "empty", value: "" },
+	{ name: "whitespace-only", value: "\r\n " },
+	{ name: "NUL-containing", value: "v=0\0\r\n" },
+	{ name: "oversized", value: "x".repeat(16_385) },
+	{ name: "non-string", value: null },
+])("rejects a $name realtime SDP answer", async ({ value }) => {
+	const error = await rejection(realtimeResult(value));
+	expect(error).toMatchObject({ code: "incompatible_contract" });
+});
+
 test("commands carry the target captured at dispatch, not the one navigation moved to", async () => {
 	const activeLease = lease(Date.now() + 10_000);
 	const initial = snapshot({ lease: activeLease });

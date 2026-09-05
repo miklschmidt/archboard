@@ -110,6 +110,15 @@ describe("Codex workbench browser command owners", () => {
 		expect(result).toMatchObject({ outcome: "delivered", realtimeAnswer });
 	});
 
+	test("returns the accepted start turn even when the snapshot has no active turn", async () => {
+		const value = harness();
+		const connection = value.gateway.connect(value.browserId, value.paneId);
+		value.setActionResult({ outcome: "delivered", turnId: value.turnId });
+		const result = await connection.command(startCommand(value, connection.claimLease()));
+		expect(result).toMatchObject({ outcome: "delivered", turnId: value.turnId });
+		expect(result.snapshot.timeline).toBeNull();
+	});
+
 	test("reports realtime negotiation unavailability as an explicit command refusal", async () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);

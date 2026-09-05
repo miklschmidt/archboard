@@ -304,6 +304,10 @@ const handle = (frame: WireFrame): void => {
 			respond(frame as never, { data: [...threads.keys()], nextCursor: null });
 			return;
 		case "thread/read":
+			if (params.includeTurns === true) {
+				reject(frame as never, "list_turns is not supported yet");
+				return;
+			}
 			respond(frame as never, { thread: threads.get(String(params.threadId)) });
 			return;
 		case "thread/queue/list":
@@ -390,7 +394,7 @@ const handle = (frame: WireFrame): void => {
 				};
 				notify("thread/realtime/sdp", {
 					threadId: params.threadId,
-					sdp: "controlled-answer-sdp",
+					sdp: "v=0\r\ns=controlled-answer-sdp\r\n",
 				});
 				notify("thread/realtime/started", {
 					threadId: params.threadId,

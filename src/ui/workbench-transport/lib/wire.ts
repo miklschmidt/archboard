@@ -298,7 +298,15 @@ function parseRealtimeAnswer(value: unknown): AnswerSdp {
 	);
 	boundedString(parsed.sessionId, "The Codex workbench realtime session id is invalid.");
 	boundedString(parsed.correlationId, "The Codex workbench realtime correlation id is invalid.");
-	boundedString(parsed.sdp, "The Codex workbench realtime SDP is invalid.");
+	// SDP uses terminal CRLF (RFC 8866 §5). Preserve the document exactly; the
+	// trimmed-token contract for identities must not reject its line endings.
+	if (
+		typeof parsed.sdp !== "string" ||
+		parsed.sdp.trim().length === 0 ||
+		parsed.sdp.includes("\0") ||
+		new TextEncoder().encode(parsed.sdp).byteLength > WIRE_VALUE_MAX_BYTES
+	)
+		fail("The Codex workbench realtime SDP is invalid.");
 	return cloneImmutable(parsed) as unknown as AnswerSdp;
 }
 
@@ -313,6 +321,7 @@ export function parseBrowserCommandResult(value: unknown): BrowserWorkbenchComma
 			"code",
 			"message",
 			"snapshot",
+			"turnId",
 			"realtimeAnswer",
 			"realtimeSessionHandle",
 		],
@@ -332,6 +341,7 @@ export function parseBrowserCommandResult(value: unknown): BrowserWorkbenchComma
 		);
 	const snapshot = parseBrowserSnapshot(parsed.snapshot);
 	const result: Record<string, unknown> = { ...parsed, snapshot };
+	if (Object.hasOwn(parsed, "turnId")) parseIdentity(parsed.turnId, "turn");
 	if (Object.hasOwn(parsed, "realtimeAnswer"))
 		result.realtimeAnswer = parseRealtimeAnswer(parsed.realtimeAnswer);
 	if (Object.hasOwn(parsed, "realtimeSessionHandle"))

@@ -104,10 +104,13 @@ describe("what the composer sends, and what it names", () => {
 });
 
 describe("the authoritative turn a delivered command may claim", () => {
-	test("a start claims the in-progress turn from the host's own answer", async () => {
+	test("a start keeps its accepted turn identity after that turn already completed", async () => {
 		const transport = fakeComposerTransport({
 			command: async () =>
-				commandResult({ snapshot: snapshot({ timeline: timeline([[OTHER_TURN, "inProgress"]]) }) }),
+				commandResult({
+					turnId: OTHER_TURN,
+					snapshot: snapshot({ timeline: timeline([[OTHER_TURN, "completed"]]) }),
+				}),
 		});
 		const controller = createWorkbenchComposerController({ transport });
 		expect(await controller.submit({ text: "Go." })).toEqual({
@@ -116,16 +119,15 @@ describe("the authoritative turn a delivered command may claim", () => {
 		});
 	});
 
-	test("a start the host answers with no in-progress turn is an unknown outcome, not a claim", async () => {
+	test("a start without an accepted turn identity remains unknown", async () => {
 		const transport = fakeComposerTransport({
-			command: async () =>
-				commandResult({ snapshot: snapshot({ timeline: timeline([[TURN, "completed"]]) }) }),
+			command: async () => commandResult({ turnId: undefined }),
 		});
 		const controller = createWorkbenchComposerController({ transport });
 		const result = await controller.submit({ text: "Go." });
 		expect(result).toEqual({
 			outcome: "outcome_unknown",
-			reason: "Codex reported delivery, but published no single authoritative in-progress turn.",
+			reason: "Codex reported delivery without identifying the accepted turn.",
 		});
 	});
 
