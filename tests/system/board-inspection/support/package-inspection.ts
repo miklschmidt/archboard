@@ -4,111 +4,63 @@ import {
 	lstatSync,
 	mkdtempSync,
 	readFileSync,
-	readdirSync,
-	realpathSync,
 	rmSync,
-	statSync,
 	writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join, relative, resolve } from "node:path";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderBoardNote } from "../../../../src/runtime/engine/board.js";
 import { TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS } from "../../../../src/shared/timing/timing.js";
+import type {
+	PackageInspectionOwner,
+	PackageProcessFixtureRun,
+	StartedHttpSentinel,
+} from "./package-inspection-contract.js";
 import {
 	forcePackageProcessGroupGone,
 	packageProcessGroupIdentityExists,
+	processIdentityExists,
 	runReadOnlyPackageProcess,
 	waitForPackageProcessFixtureIdentity,
-	type OwnedSettlementName,
-	type PackageProcessGroupIdentity,
-	type ProcessIdentity,
-	type ProcessResult,
-	type ReadOnlyRunOptions,
 } from "./package-process.js";
+import type {
+	OwnedSettlementName,
+	PackageProcessGroupIdentity,
+	ProcessIdentity,
+	ProcessResult,
+	ReadOnlyRunOptions,
+} from "./package-process.js";
+import { startSentinel } from "./package-sentinel.js";
+import type { Sentinel, SentinelAcquisition, SentinelStartOptions } from "./package-sentinel.js";
 import {
-	startSentinel,
-	type Sentinel,
-	type SentinelAcquisition,
-	type SentinelStartOptions,
-} from "./package-sentinel.js";
+	assertOwnedVault,
+	packageVaultTempRoot,
+	snapshotGuardedVault,
+	snapshotVault,
+} from "./package-vault.js";
+import type { VaultEntry } from "./package-vault.js";
 
-export {
-	processIdentityExists,
-	type PackageProcessGroupIdentity,
-	type ProcessIdentity,
-} from "./package-process.js";
+const { join, resolve } = path;
 
-export interface VaultEntry {
-	path: string;
-	bytes: string;
-	mtimeMs: number;
+const root = resolve(import.meta.dirname, "../../../..");
+const manifestValue: unknown = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+if (
+	manifestValue === null ||
+	typeof manifestValue !== "object" ||
+	!("bin" in manifestValue) ||
+	manifestValue.bin === null ||
+	typeof manifestValue.bin !== "object" ||
+	!("archboard" in manifestValue.bin) ||
+	typeof manifestValue.bin.archboard !== "string"
+) {
+	throw new Error("Package manifest does not declare the archboard binary.");
 }
-
-export interface PackageProcessFixtureRun {
-	group: number;
-	ready: Promise<PackageProcessGroupIdentity>;
-	result: Promise<ProcessResult>;
-	settled: () => OwnedSettlementName[];
-}
-
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
-const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
-	bin: { archboard: string };
-};
-export const shippedBinary = join(root, manifest.bin.archboard);
-const tempRoot = realpathSync(tmpdir());
-const vaultPrefix = `${tempRoot}/archboard-task-130-05-package-`;
+const shippedBinary = join(root, manifestValue.bin.archboard);
+const tempRoot = packageVaultTempRoot;
 const processFixtureEntry = fileURLToPath(
 	new URL("../fixtures/package-process-group.ts", import.meta.url),
 );
 const injectedDrainFailure = "Injected package stdout drain failure.";
-
-function assertOwnedVault(vault: string): string {
-	const resolved = realpathSync(vault);
-	if (!resolved.startsWith(vaultPrefix))
-		throw new Error(`Refusing unsafe package vault: ${resolved}`);
-	return resolved;
-}
-
-export function snapshotVault(vault: string): VaultEntry[] {
-	if (!existsSync(vault)) return [];
-	const rootInfo = lstatSync(vault);
-	if (!rootInfo.isDirectory())
-		return [
-			{
-				path: ".",
-				bytes: readFileSync(vault).toString("base64"),
-				mtimeMs: statSync(vault).mtimeMs,
-			},
-		];
-	const visit = (directory: string): VaultEntry[] =>
-		readdirSync(directory).flatMap((name) => {
-			const full = join(directory, name);
-			const info = lstatSync(full);
-			if (info.isDirectory()) return visit(full);
-			return [
-				{
-					path: relative(vault, full),
-					bytes: readFileSync(full).toString("base64"),
-					mtimeMs: statSync(full).mtimeMs,
-				},
-			];
-		});
-	return visit(vault).toSorted((a, b) => a.path.localeCompare(b.path));
-}
-
-function snapshotGuardedVault(vault: string): VaultEntry[] {
-	const info = lstatSync(vault);
-	const mode = info.mode & 0o777;
-	if (info.isDirectory() || (mode & 0o400) !== 0) return snapshotVault(vault);
-	chmodSync(vault, mode | 0o600);
-	try {
-		return snapshotVault(vault);
-	} finally {
-		chmodSync(vault, mode);
-	}
-}
 
 function asError(cause: unknown): Error {
 	return cause instanceof Error ? cause : new Error(String(cause));
@@ -117,8 +69,8 @@ function asError(cause: unknown): Error {
 async function readOnlyRun(
 	vault: string,
 	command: readonly string[],
-	env: Record<string, string>,
-	options: ReadOnlyRunOptions = {},
+	env: Readonly<Record<string, string>>,
+	options: Readonly<ReadOnlyRunOptions> = {},
 ): Promise<ProcessResult> {
 	return runReadOnlyPackageProcess(
 		root,
@@ -130,24 +82,26 @@ async function readOnlyRun(
 	);
 }
 
-async function drainThenFail(stream: ReadableStream<Uint8Array>): Promise<string> {
+async function drainThenFail(stream: Readonly<ReadableStream<Uint8Array>>): Promise<string> {
 	const reader = stream.getReader();
 	try {
 		const first = await reader.read();
-		if (first.done) throw new Error("Package fixture stdout ended before drain injection.");
+		if (first.done) {
+			throw new Error("Package fixture stdout ended before drain injection.");
+		}
 		throw new Error(injectedDrainFailure);
 	} finally {
 		reader.releaseLock();
 	}
 }
 
-async function drainThenDelay(stream: ReadableStream<Uint8Array>): Promise<string> {
+async function drainThenDelay(stream: Readonly<ReadableStream<Uint8Array>>): Promise<string> {
 	const output = await new Response(stream).text();
 	await Bun.sleep(TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS / 2);
 	return output;
 }
 
-export function createPackageInspectionOwner() {
+function createPackageInspectionOwner(): PackageInspectionOwner {
 	let vault: string | null = null;
 	let sentinel: Sentinel | null = null;
 	let sentinelAcquisition: SentinelAcquisition | null = null;
@@ -167,17 +121,31 @@ export function createPackageInspectionOwner() {
 	const beforeSignalReplay = new Set<() => void>();
 	const fixtureFiles = new Set<string>();
 	const fixtureGroups = new Map<number, PackageProcessGroupIdentity>();
+	const signalListeners: {
+		sigint?: () => void;
+		sigterm?: () => void;
+	} = {};
 	const removeSignalListeners = (): void => {
-		process.removeListener("SIGINT", onSigint);
-		process.removeListener("SIGTERM", onSigterm);
+		if (signalListeners.sigint !== undefined) {
+			process.removeListener("SIGINT", signalListeners.sigint);
+		}
+		if (signalListeners.sigterm !== undefined) {
+			process.removeListener("SIGTERM", signalListeners.sigterm);
+		}
 	};
 	const removeVault = (): void => {
-		if (!vault) return;
+		if (vault === null) {
+			return;
+		}
 		const owned = vault;
 		vault = null;
-		if (!existsSync(owned)) return;
+		if (!existsSync(owned)) {
+			return;
+		}
 		const checked = assertOwnedVault(owned);
-		if (!lstatSync(checked).isDirectory()) chmodSync(checked, 0o600);
+		if (!lstatSync(checked).isDirectory()) {
+			chmodSync(checked, 0o600);
+		}
 		rmSync(checked, { recursive: true });
 	};
 	const shutdown = async (): Promise<void> => {
@@ -197,11 +165,15 @@ export function createPackageInspectionOwner() {
 		if (ownedSentinel) {
 			try {
 				await ownedSentinel.stop();
-			} catch (cause) {
-				if (cause !== reason) failures.push(asError(cause));
+			} catch (error) {
+				if (error !== reason) {
+					failures.push(asError(error));
+				}
 			} finally {
 				rmSync(ownedSentinel.log, { force: true });
-				if (sentinelAcquisition === ownedSentinel) sentinelAcquisition = null;
+				if (sentinelAcquisition === ownedSentinel) {
+					sentinelAcquisition = null;
+				}
 				sentinel = null;
 			}
 		}
@@ -215,72 +187,118 @@ export function createPackageInspectionOwner() {
 				failures.push(asError(outcome.reason));
 			}
 		}
-		for (const [group, identity] of fixtureGroups) {
+		const groups = fixtureGroups.entries();
+		const cleanNextGroup = async (): Promise<void> => {
+			const next = groups.next();
+			if (next.done === true) {
+				return;
+			}
+			const [group, identity] = next.value;
 			if (!packageProcessGroupIdentityExists(identity)) {
 				fixtureGroups.delete(group);
-				continue;
+			} else {
+				try {
+					await forcePackageProcessGroupGone(identity);
+					fixtureGroups.delete(group);
+				} catch (error) {
+					failures.push(asError(error));
+				}
 			}
-			try {
-				await forcePackageProcessGroupGone(identity);
-				fixtureGroups.delete(group);
-			} catch (cause) {
-				failures.push(asError(cause));
-			}
-		}
+			await cleanNextGroup();
+		};
+		await cleanNextGroup();
 		for (const file of fixtureFiles) {
 			rmSync(file, { force: true });
 			fixtureFiles.delete(file);
 		}
 		try {
 			removeVault();
-		} catch (cause) {
-			failures.push(asError(cause));
+		} catch (error) {
+			failures.push(asError(error));
 		}
-		if (failures.length === 0 && firstSignal) {
+		if (failures.length === 0 && firstSignal !== undefined) {
 			for (const callback of beforeSignalReplay) {
 				try {
 					callback();
-				} catch (cause) {
-					failures.push(asError(cause));
+				} catch (error) {
+					failures.push(asError(error));
 				}
 			}
 		}
-		if (failures.length === 1) throw failures[0];
+		const [firstFailure] = failures;
+		if (firstFailure !== undefined && failures.length === 1) {
+			throw firstFailure;
+		}
 		if (failures.length > 1) {
 			throw new AggregateError(failures, "Package inspection owner shutdown failed.");
 		}
-		if (firstSignal) {
+		if (firstSignal !== undefined) {
 			removeSignalListeners();
 			process.kill(process.pid, firstSignal);
-			await new Promise<never>(() => undefined);
+			await new Promise<never>(() => {
+				// Signal replay terminates the process, so this promise intentionally remains pending.
+			});
 		}
 		removeSignalListeners();
 	};
-	const requestShutdown = (signal?: "SIGINT" | "SIGTERM"): Promise<void> => {
-		if (signal) firstSignal ??= signal;
+	const requestShutdown = async (signal?: "SIGINT" | "SIGTERM"): Promise<void> => {
+		if (signal !== undefined) {
+			firstSignal ??= signal;
+		}
 		shutdownPromise ??= shutdown();
 		return shutdownPromise;
 	};
 	const handleSignal = (signal: "SIGINT" | "SIGTERM"): void => {
-		for (const callback of signalCaptured) callback(signal);
-		void requestShutdown(signal).catch((cause) => {
-			process.stderr.write(`Package inspection signal cleanup failed: ${asError(cause).message}\n`);
+		for (const callback of signalCaptured) {
+			callback(signal);
+		}
+		void requestShutdown(signal).catch((error: unknown) => {
+			process.stderr.write(`Package inspection signal cleanup failed: ${asError(error).message}\n`);
 			process.exitCode = 1;
 		});
 	};
-	const onSigint = (): void => handleSignal("SIGINT");
-	const onSigterm = (): void => handleSignal("SIGTERM");
+	const onSigint = (): void => {
+		handleSignal("SIGINT");
+	};
+	const onSigterm = (): void => {
+		handleSignal("SIGTERM");
+	};
+	signalListeners.sigint = onSigint;
+	signalListeners.sigterm = onSigterm;
 	process.on("SIGINT", onSigint);
 	process.on("SIGTERM", onSigterm);
-	const requireVault = () => {
-		if (!vault) throw new Error("Package inspection owner has not started its vault");
+	const requireVault = (): string => {
+		if (vault === null) {
+			throw new Error("Package inspection owner has not started its vault");
+		}
 		return vault;
 	};
-	const startProcessFixture = (options: {
-		timeoutMs?: number;
-		failStdout?: boolean;
-		readinessDelayMs?: number;
-	}): PackageProcessFixtureRun => {
+	const runOwned = async (
+		command: readonly string[],
+		env: Readonly<Record<string, string>>,
+		options: Readonly<ReadOnlyRunOptions> = {},
+	): Promise<ProcessResult> => {
+		if (closing) {
+			throw new Error("Package inspection owner is shutting down; no new run was started.");
+		}
+		const result = readOnlyRun(requireVault(), command, env, {
+			...options,
+			signal: abortController.signal,
+		});
+		activeRuns.add(result);
+		const retire = (): void => {
+			activeRuns.delete(result);
+		};
+		void result.then(retire, retire);
+		return result;
+	};
+	const startProcessFixture = (
+		options: Readonly<{
+			timeoutMs?: number;
+			failStdout?: boolean;
+			readinessDelayMs?: number;
+		}>,
+	): PackageProcessFixtureRun => {
 		const marker = join(requireVault(), `.archboard-process-${crypto.randomUUID()}.json`);
 		writeFileSync(marker, "");
 		fixtureFiles.add(marker);
@@ -294,18 +312,22 @@ export function createPackageInspectionOwner() {
 			},
 			{
 				...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
-				...(options.failStdout ? { drainStdout: drainThenFail } : {}),
-				...(options.failStdout ? { drainStderr: drainThenDelay } : {}),
+				...(options.failStdout === true ? { drainStdout: drainThenFail } : {}),
+				...(options.failStdout === true ? { drainStderr: drainThenDelay } : {}),
 				onSpawn: (spawnedGroup) => {
 					group = spawnedGroup;
 				},
-				onSettlement: (name) => settled.add(name),
+				onSettlement: (name) => {
+					settled.add(name);
+				},
 			},
 		);
-		if (group <= 0) throw new Error("Package process fixture did not transfer spawn ownership.");
-		void result.catch(() => undefined);
+		if (group <= 0) {
+			throw new Error("Package process fixture did not transfer spawn ownership.");
+		}
+		void result.catch(() => null);
 		const ready = waitForPackageProcessFixtureIdentity(marker, abortController.signal).then(
-			(identity) => {
+			(identity: Readonly<PackageProcessGroupIdentity>) => {
 				fixtureGroups.set(identity.group, identity);
 				const retire = (): void => {
 					if (
@@ -324,35 +346,21 @@ export function createPackageInspectionOwner() {
 			activeReadiness.delete(ready);
 		};
 		void ready.then(retireReadiness, retireReadiness);
-		void ready.catch(() => undefined);
+		void ready.catch(() => null);
 		return { group, ready, result, settled: () => [...settled].toSorted() };
-	};
-	const runOwned = async (
-		command: readonly string[],
-		env: Record<string, string>,
-		options: ReadOnlyRunOptions = {},
-	): Promise<ProcessResult> => {
-		if (closing)
-			throw new Error("Package inspection owner is shutting down; no new run was started.");
-		const result = readOnlyRun(requireVault(), command, env, {
-			...options,
-			signal: abortController.signal,
-		});
-		activeRuns.add(result);
-		const retire = (): void => {
-			activeRuns.delete(result);
-		};
-		void result.then(retire, retire);
-		return result;
 	};
 	return {
 		startVault(): string {
-			if (vault) throw new Error("Package inspection owner already started its vault");
+			if (vault !== null) {
+				throw new Error("Package inspection owner already started its vault");
+			}
 			vault = assertOwnedVault(mkdtempSync(join(tempRoot, "archboard-task-130-05-package-")));
 			return vault;
 		},
 		startVaultFile(): string {
-			if (vault) throw new Error("Package inspection owner already started its vault");
+			if (vault !== null) {
+				throw new Error("Package inspection owner already started its vault");
+			}
 			const target = join(
 				tempRoot,
 				`archboard-task-130-05-package-policy-${process.pid}-${crypto.randomUUID()}`,
@@ -380,14 +388,14 @@ export function createPackageInspectionOwner() {
 			writeFileSync(target, note);
 			return target;
 		},
-		runInspection(
+		async runInspection(
 			board: string,
 			args: readonly string[] = [],
-			env: Record<string, string> = {},
+			env: Readonly<Record<string, string>> = {},
 		): Promise<ProcessResult> {
 			return runOwned([shippedBinary, "check", "--board", board, ...args], env);
 		},
-		runBinary(args: readonly string[]): Promise<ProcessResult> {
+		async runBinary(args: readonly string[]): Promise<ProcessResult> {
 			return runOwned([shippedBinary, ...args], {});
 		},
 		startTimeoutFixture(timeoutMs: number): PackageProcessFixtureRun {
@@ -404,7 +412,7 @@ export function createPackageInspectionOwner() {
 		},
 		artifactPaths(): string[] {
 			return [vault, sentinelAcquisition?.log ?? sentinel?.log].filter(
-				(path): path is string => path !== null && path !== undefined,
+				(candidate): candidate is string => candidate !== null && candidate !== undefined,
 			);
 		},
 		pendingSentinelIdentity(): ProcessIdentity | undefined {
@@ -414,29 +422,35 @@ export function createPackageInspectionOwner() {
 			return sentinelAcquisition?.ownership;
 		},
 		onBeforeSignalReplay(callback: () => void): void {
-			if (closing) throw new Error("Package inspection owner shutdown already started.");
+			if (closing) {
+				throw new Error("Package inspection owner shutdown already started.");
+			}
 			beforeSignalReplay.add(callback);
 		},
 		onSignalCaptured(callback: (signal: "SIGINT" | "SIGTERM") => void): void {
-			if (closing) throw new Error("Package inspection owner shutdown already started.");
+			if (closing) {
+				throw new Error("Package inspection owner shutdown already started.");
+			}
 			signalCaptured.add(callback);
 		},
 		snapshot(): VaultEntry[] {
 			return snapshotVault(requireVault());
 		},
-		async startHttpSentinel(options: Omit<SentinelStartOptions, "signal"> = {}): Promise<{
-			url: string;
-			contacts: () => string;
-			identity: ProcessIdentity;
-		}> {
-			if (closing) throw new Error("Package inspection owner is shutting down.");
+		async startHttpSentinel(
+			options: Readonly<Omit<SentinelStartOptions, "signal">> = {},
+		): Promise<StartedHttpSentinel> {
+			if (closing) {
+				throw new Error("Package inspection owner is shutting down.");
+			}
 			if (sentinelAcquisition) {
 				throw new Error("Package inspection owner already started its sentinel");
 			}
 			const acquisition = startSentinel({ ...options, signal: abortController.signal });
 			sentinelAcquisition = acquisition;
-			const starting = acquisition.ready.then((started) => {
-				if (closing || abortController.signal.aborted) {
+			const starting = (async (): Promise<StartedHttpSentinel> => {
+				const started = await acquisition.ready;
+				const stoppedDuringStartup = (): boolean => closing || abortController.signal.aborted;
+				if (stoppedDuringStartup()) {
 					throw (
 						shutdownReason ?? new Error("Package inspection owner stopped during sentinel startup.")
 					);
@@ -446,14 +460,18 @@ export function createPackageInspectionOwner() {
 				}
 				sentinel = started;
 				return { url: started.url, contacts: started.contacts, identity: started.identity };
-			});
+			})();
 			pendingSentinelStart = starting;
-			void starting.catch(() => undefined);
+			void starting.catch(() => null);
 			try {
 				return await starting;
 			} finally {
-				if (pendingSentinelStart === starting) pendingSentinelStart = null;
-				if (!sentinel && sentinelAcquisition === acquisition) sentinelAcquisition = null;
+				if (pendingSentinelStart === starting) {
+					pendingSentinelStart = null;
+				}
+				if (sentinel === null && sentinelAcquisition === acquisition) {
+					sentinelAcquisition = null;
+				}
 			}
 		},
 		async dispose(): Promise<void> {
@@ -461,3 +479,14 @@ export function createPackageInspectionOwner() {
 		},
 	};
 }
+
+export {
+	createPackageInspectionOwner,
+	processIdentityExists,
+	shippedBinary,
+	snapshotVault,
+	type PackageProcessFixtureRun,
+	type PackageProcessGroupIdentity,
+	type ProcessIdentity,
+	type VaultEntry,
+};

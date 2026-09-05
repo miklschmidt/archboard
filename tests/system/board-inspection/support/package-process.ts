@@ -1,229 +1,154 @@
-import { readFileSync } from "node:fs";
 import {
 	TEST_BOARD_INSPECTION_PACKAGE_COMMAND_TIMEOUT_MS,
 	TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS,
-	TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_POLL_MS,
-	TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS,
 } from "../../../../src/shared/timing/timing.js";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,
 	processIdentity,
 	processIdentityExists,
-	processIdentityOwnsGroup,
 	signalOwnedProcessGroup,
-	type ProcessGroupIdentity,
-	type ProcessIdentity,
 } from "../../../../src/runtime/engine/process-group.js";
+import type {
+	ProcessGroupIdentity,
+	ProcessIdentity,
+} from "../../../../src/runtime/engine/process-group.js";
+import {
+	forcePackageProcessGroupGone,
+	packageProcessGroupIdentityExists,
+	processGroupDisappeared,
+	waitForPackageProcessFixtureIdentity,
+} from "./package-process-identity.js";
+import type { PackageProcessGroupIdentity } from "./package-process-identity.js";
 
-export interface ProcessResult {
-	status: number;
-	stdout: string;
-	stderr: string;
+interface ProcessResult {
+	readonly status: number;
+	readonly stdout: string;
+	readonly stderr: string;
 }
 
-export { processIdentity, processIdentityExists, type ProcessIdentity };
+type OwnedSettlementName = "leader" | "stderr" | "stdout";
 
-export interface PackageProcessGroupIdentity {
-	group: number;
-	leader: ProcessIdentity;
-	descendant: ProcessIdentity;
-}
-
-export type OwnedSettlementName = "leader" | "stderr" | "stdout";
-
-type OwnedSettlement<T> = { status: "fulfilled"; value: T } | { status: "rejected"; error: Error };
+type OwnedSettlement<T> =
+	| { readonly status: "fulfilled"; readonly value: T }
+	| { readonly status: "rejected"; readonly error: Readonly<Error> };
 
 interface InspectionSettlements {
-	leader: OwnedSettlement<number>;
-	stdout: OwnedSettlement<string>;
-	stderr: OwnedSettlement<string>;
+	readonly leader: OwnedSettlement<number>;
+	readonly stdout: OwnedSettlement<string>;
+	readonly stderr: OwnedSettlement<string>;
 }
 
 interface TerminationReason {
-	kind: "cleanup" | "signal" | "stream" | "timeout";
-	error: Error;
+	readonly kind: "cleanup" | "signal" | "stream" | "timeout";
+	readonly error: Readonly<Error>;
 }
 
-export interface ReadOnlyRunOptions {
-	timeoutMs?: number;
-	signal?: AbortSignal;
-	captureProcessGroup?: (pid: number) => ProcessGroupIdentity | Promise<ProcessGroupIdentity>;
-	drainStdout?: (stream: ReadableStream<Uint8Array>) => Promise<string>;
-	drainStderr?: (stream: ReadableStream<Uint8Array>) => Promise<string>;
-	onSpawn?: (group: number) => void;
-	onSettlement?: (name: OwnedSettlementName) => void;
-	groupIdentityForSignal?: (
-		identity: ProcessGroupIdentity,
+interface ReadOnlyRunOptions {
+	readonly timeoutMs?: number;
+	readonly signal?: Readonly<AbortSignal>;
+	readonly captureProcessGroup?: (
+		pid: number,
+	) => Readonly<ProcessGroupIdentity> | Promise<Readonly<ProcessGroupIdentity>>;
+	readonly drainStdout?: (stream: Readonly<ReadableStream<Uint8Array>>) => Promise<string>;
+	readonly drainStderr?: (stream: Readonly<ReadableStream<Uint8Array>>) => Promise<string>;
+	readonly onSpawn?: (group: number) => void;
+	readonly onSettlement?: (name: OwnedSettlementName) => void;
+	readonly groupIdentityForSignal?: (
+		identity: Readonly<ProcessGroupIdentity>,
 		signal: NodeJS.Signals,
-	) => ProcessGroupIdentity;
+	) => Readonly<ProcessGroupIdentity>;
 }
 
 function asError(cause: unknown): Error {
 	return cause instanceof Error ? cause : new Error(String(cause));
 }
 
-export function packageProcessGroupIdentityExists(identity: PackageProcessGroupIdentity): boolean {
-	return processIdentityExists(identity.leader) || processIdentityExists(identity.descendant);
+function signalAborted(signal: Readonly<AbortSignal> | undefined): boolean {
+	return signal?.aborted === true;
 }
 
-function recordedIdentityOwnsGroup(identity: PackageProcessGroupIdentity): boolean {
-	return (
-		processIdentityOwnsGroup(identity.leader, identity.group) ||
-		processIdentityOwnsGroup(identity.descendant, identity.group)
-	);
-}
-
-async function processGroupDisappeared(pgid: number): Promise<boolean> {
-	const deadline = Date.now() + TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS;
-	for (;;) {
-		if (!processGroupExists(pgid)) return true;
-		if (Date.now() >= deadline) return false;
-		await Bun.sleep(TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_POLL_MS);
-	}
-}
-
-export async function forcePackageProcessGroupGone(
-	identity: PackageProcessGroupIdentity,
-): Promise<void> {
-	if (!processGroupExists(identity.group)) return;
-	if (!recordedIdentityOwnsGroup(identity)) {
-		throw new Error(
-			`Refusing to signal package process group ${identity.group}: its recorded identities no longer own that group.`,
-		);
-	}
-	const owner = processIdentityOwnsGroup(identity.leader, identity.group)
-		? identity.leader
-		: identity.descendant;
-	signalOwnedProcessGroup({ group: identity.group, leader: owner }, "SIGKILL");
-	if (!(await processGroupDisappeared(identity.group))) {
-		throw new Error(`Package process fixture group ${identity.group} survived owner disposal.`);
-	}
-}
-
-function parseFixtureIdentity(raw: string): PackageProcessGroupIdentity {
-	const value = JSON.parse(raw) as Partial<PackageProcessGroupIdentity>;
-	for (const candidate of [value.leader, value.descendant]) {
-		if (
-			!candidate ||
-			!Number.isSafeInteger(candidate.pid) ||
-			candidate.pid! <= 0 ||
-			typeof candidate.startTime !== "string"
-		)
-			throw new Error(`Package process fixture published invalid identity: ${raw}`);
-	}
-	if (
-		!Number.isSafeInteger(value.group) ||
-		value.group! <= 0 ||
-		value.group !== value.leader!.pid
-	) {
-		throw new Error(`Package process fixture published invalid group: ${raw}`);
-	}
-	return value as PackageProcessGroupIdentity;
-}
-
-async function abortableFixtureSleep(ms: number, signal: AbortSignal): Promise<void> {
-	if (signal.aborted) throw asError(signal.reason ?? "Package fixture readiness was aborted.");
-	await new Promise<void>((resolveSleep, rejectSleep) => {
-		const timer = setTimeout(() => {
-			signal.removeEventListener("abort", onAbort);
-			resolveSleep();
-		}, ms);
-		const onAbort = (): void => {
-			clearTimeout(timer);
-			signal.removeEventListener("abort", onAbort);
-			rejectSleep(asError(signal.reason ?? "Package fixture readiness was aborted."));
-		};
-		signal.addEventListener("abort", onAbort, { once: true });
-		if (signal.aborted) onAbort();
-	});
-}
-
-export async function waitForPackageProcessFixtureIdentity(
-	path: string,
-	signal: AbortSignal,
-): Promise<PackageProcessGroupIdentity> {
-	const deadline = Date.now() + TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS;
-	let lastError: Error | undefined;
-	while (Date.now() < deadline) {
-		if (signal.aborted) throw asError(signal.reason ?? "Package fixture readiness was aborted.");
-		try {
-			const raw = readFileSync(path, "utf8");
-			if (raw) return parseFixtureIdentity(raw);
-		} catch (cause) {
-			lastError = asError(cause);
+function requestIfGroupExists(
+	identity: Readonly<ProcessGroupIdentity>,
+	message: string,
+	requestTermination: (reason: Readonly<TerminationReason>) => void,
+): void {
+	try {
+		if (processGroupExists(identity.group)) {
+			requestTermination({ kind: "cleanup", error: new Error(message) });
 		}
-		await abortableFixtureSleep(TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_POLL_MS, signal);
+	} catch (error) {
+		requestTermination({ kind: "cleanup", error: asError(error) });
 	}
-	throw new Error(
-		`Package process fixture did not publish readiness: ${lastError?.message ?? path}`,
-	);
 }
 
-function observeOwned<T>(
+async function observeOwned<T>(
 	name: OwnedSettlementName,
-	promise: Promise<T>,
+	promise: Readonly<Promise<T>>,
 	onSettlement: (name: OwnedSettlementName) => void,
-	onFailure: (error: Error) => void,
+	onFailure: (error: Readonly<Error>) => void,
 ): Promise<OwnedSettlement<T>> {
 	return promise.then(
 		(value) => {
 			onSettlement(name);
 			return { status: "fulfilled", value };
 		},
-		(cause) => {
-			const error = asError(cause);
+		(error: unknown) => {
+			const failure = asError(error);
 			onSettlement(name);
-			onFailure(error);
-			return { status: "rejected", error };
+			onFailure(failure);
+			return { status: "rejected", error: failure };
 		},
 	);
 }
 
-async function withinCleanup<T>(promise: Promise<T>): Promise<T | undefined> {
+async function withinCleanup<T>(promise: Readonly<Promise<T>>): Promise<T | undefined> {
+	const deadlineReached = Symbol("deadlineReached");
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	try {
-		return await Promise.race([
+		const outcome = await Promise.race([
 			promise,
-			new Promise<undefined>((resolveDeadline) => {
-				timer = setTimeout(
-					() => resolveDeadline(undefined),
-					TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS,
-				);
+			new Promise<typeof deadlineReached>((resolve) => {
+				timer = setTimeout(() => {
+					resolve(deadlineReached);
+				}, TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS);
 			}),
 		]);
+		return outcome === deadlineReached ? undefined : outcome;
 	} finally {
-		if (timer !== undefined) clearTimeout(timer);
+		if (timer !== undefined) {
+			clearTimeout(timer);
+		}
 	}
 }
 
 async function terminateInspectionGroup(
-	identity: ProcessGroupIdentity,
-	settlements: Promise<InspectionSettlements>,
+	identity: Readonly<ProcessGroupIdentity>,
+	settlements: Readonly<Promise<InspectionSettlements>>,
 	groupIdentityForSignal: ReadOnlyRunOptions["groupIdentityForSignal"],
 ): Promise<InspectionSettlements> {
 	const failures: Error[] = [];
 	try {
 		signalOwnedProcessGroup(groupIdentityForSignal?.(identity, "SIGTERM") ?? identity, "SIGTERM");
-	} catch (cause) {
-		failures.push(asError(cause));
+	} catch (error) {
+		failures.push(asError(error));
 	}
 	let disappeared = false;
 	try {
 		disappeared = await processGroupDisappeared(identity.group);
-	} catch (cause) {
-		failures.push(asError(cause));
+	} catch (error) {
+		failures.push(asError(error));
 	}
 	if (!disappeared) {
 		try {
 			signalOwnedProcessGroup(groupIdentityForSignal?.(identity, "SIGKILL") ?? identity, "SIGKILL");
-		} catch (cause) {
-			failures.push(asError(cause));
+		} catch (error) {
+			failures.push(asError(error));
 		}
 		try {
 			disappeared = await processGroupDisappeared(identity.group);
-		} catch (cause) {
-			failures.push(asError(cause));
+		} catch (error) {
+			failures.push(asError(error));
 		}
 	}
 	if (!disappeared) {
@@ -239,31 +164,43 @@ async function terminateInspectionGroup(
 			),
 		);
 	}
-	if (failures.length === 1) throw failures[0];
+	const [firstFailure] = failures;
+	if (firstFailure !== undefined && failures.length === 1) {
+		throw firstFailure;
+	}
 	if (failures.length > 1) {
 		throw new AggregateError(
 			failures,
 			`Package inspection process group ${identity.group} cleanup failed.`,
 		);
 	}
-	return settled!;
+	if (settled === undefined) {
+		throw new Error("Package inspection cleanup did not settle.");
+	}
+	return settled;
 }
 
-function rejectedSettlement(settlements: InspectionSettlements): Error | undefined {
+function rejectedSettlement(
+	settlements: Readonly<InspectionSettlements>,
+): Readonly<Error> | undefined {
 	for (const settlement of [settlements.leader, settlements.stdout, settlements.stderr]) {
-		if (settlement.status === "rejected") return settlement.error;
+		if (settlement.status === "rejected") {
+			return settlement.error;
+		}
 	}
 	return undefined;
 }
 
 async function terminateFreshDetachedGroup(
 	group: number,
-	settlements: Promise<InspectionSettlements>,
+	settlements: Readonly<Promise<InspectionSettlements>>,
 ): Promise<void> {
 	try {
 		process.kill(-group, "SIGKILL");
-	} catch (cause) {
-		if ((cause as NodeJS.ErrnoException).code !== "ESRCH") throw cause;
+	} catch (error) {
+		if (!(error instanceof Error && "code" in error && error.code === "ESRCH")) {
+			throw asError(error);
+		}
 	}
 	const completed = await withinCleanup(Promise.all([processGroupDisappeared(group), settlements]));
 	if (completed === undefined) {
@@ -276,23 +213,27 @@ async function terminateFreshDetachedGroup(
 	}
 }
 
-export async function runReadOnlyPackageProcess(
+async function runReadOnlyPackageProcess(
 	root: string,
 	vault: string,
 	command: readonly string[],
-	env: Record<string, string>,
+	env: Readonly<Record<string, string>>,
 	snapshotVault: () => unknown,
-	options: ReadOnlyRunOptions = {},
+	options: Readonly<ReadOnlyRunOptions> = {},
 ): Promise<ProcessResult> {
-	if (options.signal?.aborted) throw asError(options.signal.reason);
+	if (options.signal?.aborted === true) {
+		throw asError(options.signal.reason);
+	}
 	const before = snapshotVault();
 	let firstTermination: TerminationReason | undefined;
-	let resolveTermination!: (reason: TerminationReason) => void;
-	const terminationRequested = new Promise<TerminationReason>((resolveRequest) => {
-		resolveTermination = resolveRequest;
+	let resolveTermination!: (reason: Readonly<TerminationReason>) => void;
+	const terminationRequested = new Promise<TerminationReason>((resolve) => {
+		resolveTermination = resolve;
 	});
-	const requestTermination = (reason: TerminationReason): void => {
-		if (firstTermination) return;
+	const requestTermination = (reason: Readonly<TerminationReason>): void => {
+		if (firstTermination !== undefined) {
+			return;
+		}
 		firstTermination = reason;
 		resolveTermination(reason);
 	};
@@ -302,138 +243,154 @@ export async function runReadOnlyPackageProcess(
 			error: asError(options.signal?.reason ?? "Package inspection interrupted."),
 		});
 	};
-	let child: ReturnType<typeof Bun.spawn>;
-	try {
-		child = Bun.spawn([...command], {
-			cwd: root,
-			detached: true,
-			env: {
-				...process.env,
-				...env,
-				ARCHBOARD_VAULT: vault,
-				EXCALIDRAW_NO_AUTOSTART: "1",
-			},
-			stdin: "ignore",
-			stdout: "pipe",
-			stderr: "pipe",
-		});
-	} catch (cause) {
-		throw new Error(`Could not start package inspection: ${(cause as Error).message}`, {
-			cause,
-		});
-	}
-	const recordSettlement = (name: OwnedSettlementName): void => options.onSettlement?.(name);
-	const stdoutStream = child.stdout as ReadableStream<Uint8Array>;
-	const stderrStream = child.stderr as ReadableStream<Uint8Array>;
-	const leader = observeOwned("leader", child.exited, recordSettlement, (error) =>
-		requestTermination({ kind: "cleanup", error }),
-	);
+	const child = ((): Bun.Subprocess<"ignore", "pipe", "pipe"> => {
+		try {
+			return Bun.spawn([...command], {
+				cwd: root,
+				detached: true,
+				env: {
+					...process.env,
+					...env,
+					ARCHBOARD_VAULT: vault,
+					EXCALIDRAW_NO_AUTOSTART: "1",
+				},
+				stdin: "ignore",
+				stdout: "pipe",
+				stderr: "pipe",
+			});
+		} catch (error) {
+			throw new Error(`Could not start package inspection: ${asError(error).message}`, {
+				cause: error,
+			});
+		}
+	})();
+	const recordSettlement = (name: OwnedSettlementName): void => {
+		options.onSettlement?.(name);
+	};
+	const stdoutStream = child.stdout;
+	const stderrStream = child.stderr;
+	const leader = observeOwned("leader", child.exited, recordSettlement, (error) => {
+		requestTermination({ kind: "cleanup", error });
+	});
 	const stdout = observeOwned(
 		"stdout",
-		Promise.resolve().then(() =>
-			(options.drainStdout ?? ((stream) => new Response(stream).text()))(stdoutStream),
-		),
+		Promise.resolve().then(async (): Promise<string> => {
+			const drain =
+				options.drainStdout ??
+				(async (stream: Readonly<ReadableStream<Uint8Array>>): Promise<string> =>
+					new Response(stream).text());
+			return drain(stdoutStream);
+		}),
 		recordSettlement,
-		(error) => requestTermination({ kind: "stream", error }),
+		(error) => {
+			requestTermination({ kind: "stream", error });
+		},
 	);
 	const stderr = observeOwned(
 		"stderr",
-		Promise.resolve().then(() =>
-			(options.drainStderr ?? ((stream) => new Response(stream).text()))(stderrStream),
-		),
+		Promise.resolve().then(async (): Promise<string> => {
+			const drain =
+				options.drainStderr ??
+				(async (stream: Readonly<ReadableStream<Uint8Array>>): Promise<string> =>
+					new Response(stream).text());
+			return drain(stderrStream);
+		}),
 		recordSettlement,
-		(error) => requestTermination({ kind: "stream", error }),
+		(error) => {
+			requestTermination({ kind: "stream", error });
+		},
 	);
 	const settlements = Promise.all([leader, stdout, stderr]).then(
-		([settledLeader, settledStdout, settledStderr]): InspectionSettlements => ({
-			leader: settledLeader,
-			stdout: settledStdout,
-			stderr: settledStderr,
-		}),
+		(
+			values: readonly [OwnedSettlement<number>, OwnedSettlement<string>, OwnedSettlement<string>],
+		): InspectionSettlements => {
+			const [settledLeader, settledStdout, settledStderr] = values;
+			return {
+				leader: settledLeader,
+				stdout: settledStdout,
+				stderr: settledStderr,
+			};
+		},
 	);
 	let groupIdentity: ProcessGroupIdentity;
 	try {
 		const captured = (options.captureProcessGroup ?? captureDetachedProcessGroup)(child.pid);
 		groupIdentity = captured instanceof Promise ? await captured : captured;
-	} catch (cause) {
+	} catch (error) {
 		let cleanupFailure: unknown;
 		try {
 			await terminateFreshDetachedGroup(child.pid, settlements);
-		} catch (error) {
-			cleanupFailure = error;
+		} catch (cleanupError) {
+			cleanupFailure = cleanupError;
 		}
 		const startFailure = new Error(
-			`Could not start package inspection: ${(cause as Error).message}`,
+			`Could not start package inspection: ${asError(error).message}`,
 			{
-				cause,
+				cause: error,
 			},
 		);
 		if (cleanupFailure !== undefined) {
 			throw new AggregateError(
 				[startFailure, cleanupFailure],
 				`${startFailure.message}; detached process-group cleanup failed.`,
-				{ cause },
+				{ cause: error },
 			);
 		}
 		throw startFailure;
 	}
 	options.signal?.addEventListener("abort", onAbort, { once: true });
-	if (options.signal?.aborted) onAbort();
-	void leader.then((outcome) => {
-		if (outcome.status !== "fulfilled") return undefined;
-		try {
-			if (processGroupExists(groupIdentity.group)) {
-				requestTermination({
-					kind: "cleanup",
-					error: new Error(
-						"Package inspection leader exited while its process group remained live.",
-					),
-				});
-			}
-		} catch (cause) {
-			requestTermination({ kind: "cleanup", error: asError(cause) });
+	if (signalAborted(options.signal)) {
+		onAbort();
+	}
+	void leader.then((outcome: Readonly<OwnedSettlement<number>>) => {
+		if (outcome.status !== "fulfilled") {
+			return null;
 		}
-		return undefined;
+		requestIfGroupExists(
+			groupIdentity,
+			"Package inspection leader exited while its process group remained live.",
+			requestTermination,
+		);
+		return null;
 	});
 	try {
 		options.onSpawn?.(groupIdentity.group);
-	} catch (cause) {
-		requestTermination({ kind: "cleanup", error: asError(cause) });
+	} catch (error) {
+		requestTermination({ kind: "cleanup", error: asError(error) });
 	}
 	const timeoutMs = options.timeoutMs ?? TEST_BOARD_INSPECTION_PACKAGE_COMMAND_TIMEOUT_MS;
 	let timeout: ReturnType<typeof setTimeout> | undefined;
 	let completed: InspectionSettlements | undefined;
 	let cleanupFailure: Error | undefined;
 	try {
-		timeout = setTimeout(
-			() =>
-				requestTermination({
-					kind: "timeout",
-					error: new Error(`Package inspection exceeded ${timeoutMs}ms.`),
-				}),
-			timeoutMs,
-		);
+		timeout = setTimeout(() => {
+			requestTermination({
+				kind: "timeout",
+				error: new Error(`Package inspection exceeded ${timeoutMs}ms.`),
+			});
+		}, timeoutMs);
 		const first = await Promise.race([
-			settlements.then((value) => ({ kind: "complete" as const, value })),
-			terminationRequested.then((reason) => ({ kind: "terminate" as const, reason })),
+			settlements.then((value: Readonly<InspectionSettlements>) => ({
+				kind: "complete" as const,
+				value,
+			})),
+			terminationRequested.then((reason: Readonly<TerminationReason>) => ({
+				kind: "terminate" as const,
+				reason,
+			})),
 		]);
 		if (first.kind === "complete") {
 			completed = first.value;
 			const rejected = rejectedSettlement(completed);
-			if (rejected) requestTermination({ kind: "stream", error: rejected });
-			if (!firstTermination) {
-				try {
-					if (processGroupExists(groupIdentity.group)) {
-						requestTermination({
-							kind: "cleanup",
-							error: new Error(
-								"Package inspection completed while its process group remained live.",
-							),
-						});
-					}
-				} catch (cause) {
-					requestTermination({ kind: "cleanup", error: asError(cause) });
-				}
+			if (rejected !== undefined) {
+				requestTermination({ kind: "stream", error: rejected });
+			}
+			if (firstTermination === undefined) {
+				requestIfGroupExists(
+					groupIdentity,
+					"Package inspection completed while its process group remained live.",
+					requestTermination,
+				);
 			}
 		}
 		if (firstTermination) {
@@ -443,12 +400,14 @@ export async function runReadOnlyPackageProcess(
 					settlements,
 					options.groupIdentityForSignal,
 				);
-			} catch (cause) {
-				cleanupFailure = asError(cause);
+			} catch (error) {
+				cleanupFailure = asError(error);
 			}
 		}
 	} finally {
-		if (timeout !== undefined) clearTimeout(timeout);
+		if (timeout !== undefined) {
+			clearTimeout(timeout);
+		}
 		options.signal?.removeEventListener("abort", onAbort);
 	}
 	if (firstTermination) {
@@ -458,23 +417,41 @@ export async function runReadOnlyPackageProcess(
 				`Package inspection ${firstTermination.kind} and cleanup both failed.`,
 			);
 		}
-		throw firstTermination.error;
+		throw asError(firstTermination.error);
 	}
-	if (!completed) throw new Error("Package inspection settlements were not observed.");
+	if (!completed) {
+		throw new Error("Package inspection settlements were not observed.");
+	}
 	if (
 		completed.leader.status !== "fulfilled" ||
 		completed.stdout.status !== "fulfilled" ||
 		completed.stderr.status !== "fulfilled"
-	)
+	) {
 		throw new Error("Package inspection completed without all owned results.");
+	}
 	const after = snapshotVault();
-	if (JSON.stringify(after) !== JSON.stringify(before))
+	if (JSON.stringify(after) !== JSON.stringify(before)) {
 		throw new Error(
 			`Package inspection mutated its vault: ${JSON.stringify({ before, after }, null, 2)}`,
 		);
+	}
 	return {
 		status: completed.leader.value,
 		stdout: completed.stdout.value,
 		stderr: completed.stderr.value,
 	};
 }
+
+export {
+	forcePackageProcessGroupGone,
+	packageProcessGroupIdentityExists,
+	processIdentity,
+	processIdentityExists,
+	runReadOnlyPackageProcess,
+	waitForPackageProcessFixtureIdentity,
+	type OwnedSettlementName,
+	type PackageProcessGroupIdentity,
+	type ProcessIdentity,
+	type ProcessResult,
+	type ReadOnlyRunOptions,
+};
