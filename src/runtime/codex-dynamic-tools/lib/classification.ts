@@ -78,7 +78,6 @@ function assertMutationTargetAllowed(
 			"Foreign thread provenance cannot receive a mutation.",
 		);
 	}
-	// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 	if (target.ownership !== "created" && target.ownership !== "attached") {
 		throw dynamicError("unknown_provenance", "The target ownership is not proven.");
 	}
@@ -139,7 +138,6 @@ function assertWaitTargetAllowed(
 	if (!target.loaded || target.status === "notLoaded") {
 		throw dynamicError("not_loaded", "The wait target is not loaded.");
 	}
-	// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 	if (target.status !== "active" && target.status !== "idle" && target.status !== "systemError") {
 		throw dynamicError("not_ready", "The wait target is not in a waitable state.");
 	}

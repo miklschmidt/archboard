@@ -193,7 +193,6 @@ function validateDynamicCall(request: unknown, options: CatalogueOptions): Valid
 	if (
 		logicalCall["child"] !== request["child"] ||
 		logicalCall["epoch"] !== request["epoch"] ||
-		// oxlint-disable-next-line typescript/no-unnecessary-condition -- This rechecks the untrusted decoded envelope after exact-key validation.
 		logicalCall["namespace"] !== params["namespace"] ||
 		logicalCall["tool"] !== params["tool"]
 	) {

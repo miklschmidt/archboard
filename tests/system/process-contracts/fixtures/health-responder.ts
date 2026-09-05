@@ -5,7 +5,6 @@ const port = Number(process.env["PORT"]);
 const reportedPid = Number(process.env["REPORTED_PID"] ?? process.pid);
 const lateHeldBoard = process.env["ARCHBOARD_TEST_LATE_HELD_BOARD"];
 let stopWasRefused = false;
-// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Node's authoritative RequestListener requires mutable IncomingMessage and ServerResponse parameters.
 const respondToHealth: RequestListener = (request, response) => {
 	if (request.url === "/health") {
 		response.writeHead(200, { "Content-Type": "application/json" });
@@ -13,7 +12,7 @@ const respondToHealth: RequestListener = (request, response) => {
 			JSON.stringify({
 				pid: reportedPid,
 				service: "mcp-excalidraw-canvas",
-					...(lateHeldBoard !== undefined && lateHeldBoard.length > 0 && stopWasRefused
+				...(lateHeldBoard !== undefined && lateHeldBoard.length > 0 && stopWasRefused
 					? {
 							held_boards: [
 								{

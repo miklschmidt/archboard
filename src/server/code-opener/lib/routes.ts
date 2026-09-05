@@ -96,7 +96,10 @@ function canonicalBinding(boardKey: string, elementId: string): BindingLookup {
 const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
 	bindingForElement: canonicalBinding,
 	resolveTarget: async (binding, signal) =>
-		resolveLocalCodeTarget(binding, await snapshotCheckoutAccess({ signal, bindings: [binding] })),
+		resolveLocalCodeTarget(
+			binding,
+			await snapshotCheckoutAccess({ ...(signal ? { signal } : {}), bindings: [binding] }),
+		),
 	launch: launchOpener,
 	runCheckout: async (_request, _response, _name, work) => work(new AbortController().signal),
 	runMutation: async (_request, _name, work) => work(new AbortController().signal),
@@ -105,11 +108,15 @@ const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
 function guard(kind: BrowserCsrfKind) {
 	return (request: Request, response: Response, next: NextFunction): void => {
 		response.removeHeader("Access-Control-Allow-Origin");
+		const host = request.get("host");
+		const origin = request.get("origin");
+		const referer = request.get("referer");
+		const secFetchSite = request.get("sec-fetch-site");
 		const result = checkBrowserCsrf(kind, {
-			host: request.get("host"),
-			origin: request.get("origin"),
-			referer: request.get("referer"),
-			secFetchSite: request.get("sec-fetch-site"),
+			...(host ? { host } : {}),
+			...(origin ? { origin } : {}),
+			...(referer ? { referer } : {}),
+			...(secFetchSite ? { secFetchSite } : {}),
 		});
 		if (!result.ok) {
 			response.status(403).json({ success: false, code: result.code, error: result.error });

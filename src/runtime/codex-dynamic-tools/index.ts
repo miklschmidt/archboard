@@ -3,8 +3,8 @@ export {
 	CodexDynamicEpochQuarantinedError,
 	CodexDynamicOperationTerminalizationError,
 	CodexDynamicToolsError,
+	createDynamicAuthorityTokenIssuer,
 } from "./lib/contract.js";
-export { createDynamicAuthorityTokenIssuer } from "./lib/contract.js";
 export {
 	assertMutationTargetAllowed,
 	assertWaitTargetAllowed,

@@ -20,14 +20,12 @@ type RendererFiles = Parameters<typeof exportToBlob>[0]["files"];
 function rendererElements(elements: BoardRenderJob["snapshot"]["elements"]): RendererElements {
 	// Excalidraw's nominal Radians/point brands have no runtime representation. Board I/O has
 	// already validated every persisted field before this renderer-only type restoration.
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 	return elements as unknown as RendererElements;
 }
 
 function rendererFiles(files: BoardRenderJob["snapshot"]["files"]): RendererFiles {
 	// File ids and MIME values are validated at board I/O; Excalidraw's nominal brands disappear
 	// from the persisted JSON representation and are restored only at this renderer boundary.
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 	return files as unknown as RendererFiles;
 }
 

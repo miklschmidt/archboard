@@ -83,10 +83,10 @@ describe("write-boundary conversion", () => {
 		expect(board.body.elements.every((element) => element.label === undefined)).toBeTrue();
 		expect(board.body.elements.every((element) => element.start === undefined)).toBeTrue();
 		expect(board.body.elements.every((element) => element.end === undefined)).toBeTrue();
-			const edge = board.body.elements.find((element) => element.id === "edge");
-			if (edge === undefined) {
-				throw new Error("Converted board did not retain its edge.");
-			}
+		const edge = board.body.elements.find((element) => element.id === "edge");
+		if (edge === undefined) {
+			throw new Error("Converted board did not retain its edge.");
+		}
 		expect(edge.startBinding?.elementId).toBe("left");
 		expect(edge.endBinding?.elementId).toBe("right");
 		for (const container of board.body.elements.filter((element) => element.boundElements)) {

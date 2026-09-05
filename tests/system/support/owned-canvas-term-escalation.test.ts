@@ -66,9 +66,7 @@ test("ordinary TERM escalation completes forced canvas cleanup", async () => {
 				process.kill(-state.descendant, "SIGKILL");
 			} catch (error) {
 				const code =
-					typeof error === "object" && error !== null && "code" in error
-						? error.code
-						: undefined;
+					typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
 				if (code !== "ESRCH") {
 					disposalFailure ??= error;
 				}

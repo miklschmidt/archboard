@@ -95,8 +95,8 @@ describe.serial("side-by-side proposal workflow", () => {
 			const pane = await openPaneSession(canvas.base, request, {
 				clientId,
 				x,
-				primary: options.primary,
-				focused: options.focused,
+				...(options.primary === undefined ? {} : { primary: options.primary }),
+				...(options.focused === undefined ? {} : { focused: options.focused }),
 			});
 			panes.push(pane);
 			pane.socket.on("message", (data) => {

@@ -25,9 +25,7 @@ const WORKHORSE_MANIFEST_HASH = ARCHBOARD_APP_MANIFEST_SHA256;
  * @param checkoutRoot Canonical checkout root assigned to the workhorse.
  * @returns The literal thread-start request profile.
  */
-function createWorkhorseThreadStartParams(
-	checkoutRoot: string,
-): SessionParams<"thread/start"> {
+function createWorkhorseThreadStartParams(checkoutRoot: string): SessionParams<"thread/start"> {
 	assertCanonicalInstructionBytes("workhorse", WORKHORSE_DEVELOPER_INSTRUCTIONS);
 	return {
 		cwd: checkoutRoot,

@@ -135,6 +135,7 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 				resolve: (value) => resolve(value as CodexTransportResponse<Method>),
 				reject,
 				signal: requestOptions.signal,
+				job: undefined,
 				accepted: false,
 				settled: false,
 			};

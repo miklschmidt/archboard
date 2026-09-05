@@ -48,7 +48,9 @@ function targetWithoutAttachedProof(fixture: RealEpochFixture): ThreadLinkTarget
 		threadId: fixture.target.threadId,
 		childId: fixture.target.childId,
 		epoch: fixture.target.epoch,
-		operationId: fixture.target.operationId,
+		...(fixture.target.operationId === undefined
+			? {}
+			: { operationId: fixture.target.operationId }),
 	};
 }
 

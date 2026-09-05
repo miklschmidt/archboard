@@ -12,7 +12,9 @@ function refusalCode(action: () => unknown): string {
 	try {
 		action();
 	} catch (error) {
-		if (error !== null && typeof error === "object" && "code" in error) return String(error.code);
+		if (error !== null && typeof error === "object" && "code" in error) {
+			return String(error.code);
+		}
 		throw error;
 	}
 	throw new Error("expected a policy refusal");

@@ -136,6 +136,6 @@ function epochInput(
 		workspaceRoot: "/workspace/archboard",
 		instructionHash: INSTRUCTION_HASH,
 		manifestHash: MANIFEST_HASH,
-		expected,
+		...(expected === undefined ? {} : { expected }),
 	};
 }

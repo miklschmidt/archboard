@@ -91,7 +91,7 @@ export function createCanvasDynamicAuthorityAdapters(
 			threadId,
 			childId: record?.correlation.childId ?? null,
 			epoch: record?.correlation.epoch ?? null,
-			operationId: record?.operation.id,
+			...(record ? { operationId: record.operation.id } : {}),
 			provenance: record,
 		};
 		const classification = await options.threadLink.classify(threadLinkTarget);

@@ -44,7 +44,6 @@ function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- The authoritative Express handler must mutate Response through json/status.
 const readLibraryRoute: RequestHandler = (_request, response): void => {
 	try {
 		const state = readLibrary();
@@ -78,12 +77,9 @@ function libraryItemFromRequest(item: LibraryWriteInput): LibraryItem {
  * @param dependencies Narrow notification boundary for successful writes.
  * @returns Router that owns both library endpoints.
  */
-function createLibraryRouter(
-	dependencies: Readonly<LibraryRouteDependencies>,
-): ExpressRouter {
+function createLibraryRouter(dependencies: Readonly<LibraryRouteDependencies>): ExpressRouter {
 	const router = createRouter();
 	router.get("/api/library", readLibraryRoute);
-	// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- The authoritative Express handler must mutate Response through json/status.
 	const writeLibraryRoute: RequestHandler = (request, response): void => {
 		try {
 			const body = LibraryWriteSchema.parse(request.body ?? {});

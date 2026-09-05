@@ -55,7 +55,12 @@ const request = (
 	wire: ResponseMethod,
 	params?: Record<string, unknown>,
 	mutation = false,
-): RequestCase => ({ kind: "request", wire, params, mutation });
+): RequestCase => ({
+	kind: "request",
+	wire,
+	...(params === undefined ? {} : { params }),
+	mutation,
+});
 const reverse = (): ReverseCase => ({ kind: "reverse" });
 
 const OPERATION_CASES = {

@@ -23,12 +23,19 @@
 // that is not in this server update would make Excalidraw throw, and a pane can
 // legitimately receive a partial board.
 
-import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import type { ServerElement } from "../types";
+import type {
+	ExcalidrawElement,
+	NonDeletedExcalidrawElement,
+} from "@excalidraw/excalidraw/element/types";
+import type { ServerElement } from "@/ui/types";
 
-// The server's own bookkeeping, which is not board content and which
-// Excalidraw has no field for.
-const cleanElementForExcalidraw = (element: ServerElement): Partial<ExcalidrawElement> => {
+/**
+ * Strip the server's own bookkeeping, which is not board content and which
+ * Excalidraw has no field for, and hand the element to Excalidraw as its own.
+ * @param element A validated element as the server sent it.
+ * @returns The same element without runtime tracking keys, typed as Excalidraw's.
+ */
+const cleanElementForExcalidraw = (element: ServerElement): ExcalidrawElement => {
 	const {
 		createdAt: _createdAt,
 		updatedAt: _updatedAt,
@@ -38,9 +45,49 @@ const cleanElementForExcalidraw = (element: ServerElement): Partial<ExcalidrawEl
 		syncTimestamp: _syncTimestamp,
 		...cleanElement
 	} = element;
-	// Excalidraw brands JSON numbers and strings at compile time. The wire has
-	// already been validated by the server; this is the one UI brand boundary.
-	return cleanElement as unknown as Partial<ExcalidrawElement>;
+	// Excalidraw brands JSON numbers and strings at compile time, and the shared
+	// element type deliberately strips those brands (`JsonWritable`) because the
+	// server validated the wire. This is the one UI brand boundary; no compliant
+	// spelling can re-brand without asserting.
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion
+	return cleanElement as unknown as ExcalidrawElement;
+};
+
+const BINDABLE_TYPES: ReadonlySet<string> = new Set(["text", "arrow"]);
+
+/**
+ * Drop `boundElements` entries that point outside this server update.
+ * @param element The element whose bindings are checked.
+ * @param carried Ids of every element in the update.
+ * @returns The element with only bindings Excalidraw can dereference, or `null` bindings.
+ */
+const repairBoundElements = (
+	element: ExcalidrawElement,
+	carried: ReadonlySet<string>,
+): ExcalidrawElement => {
+	if (element.boundElements === null) {
+		return element;
+	}
+	const boundElements = element.boundElements.filter(
+		(binding) => carried.has(binding.id) && BINDABLE_TYPES.has(binding.type),
+	);
+	return { ...element, boundElements: boundElements.length === 0 ? null : boundElements };
+};
+
+/**
+ * Drop a text element's `containerId` when its container is not in this update.
+ * @param element The element whose container is checked.
+ * @param carried Ids of every element in the update.
+ * @returns The element, detached from an absent container.
+ */
+const repairContainer = (
+	element: ExcalidrawElement,
+	carried: ReadonlySet<string>,
+): ExcalidrawElement => {
+	if (element.type !== "text" || element.containerId === null || carried.has(element.containerId)) {
+		return element;
+	}
+	return { ...element, containerId: null };
 };
 
 /**
@@ -51,53 +98,12 @@ const cleanElementForExcalidraw = (element: ServerElement): Partial<ExcalidrawEl
  * `containerId` and every `boundElements` entry as it renders. Pointing at
  * something that is not there is the one shape it will not survive, so the
  * pointer goes rather than the render.
+ * @param elements The elements in one server update.
+ * @returns Copies whose bindings and containers all resolve within the update.
  */
-const validateAndFixBindings = (
-	elements: Partial<ExcalidrawElement>[],
-): Partial<ExcalidrawElement>[] => {
-	const elementMap = new Map(elements.map((el) => [el.id!, el]));
-
-	return elements.map((element) => {
-		// A loose view on purpose: boundElements and containerId only exist on some
-		// members of the element union, and this function runs before we know which.
-		const fixedElement = { ...element } as Record<string, unknown>;
-
-		if (fixedElement["boundElements"]) {
-			if (Array.isArray(fixedElement["boundElements"])) {
-				const boundElements = fixedElement["boundElements"].filter((binding: unknown) => {
-					if (!binding || typeof binding !== "object") {
-						return false;
-					}
-					const record = binding as Record<string, unknown>;
-					if (typeof record["id"] !== "string" || typeof record["type"] !== "string") {
-						return false;
-					}
-					if (!elementMap.has(record["id"])) {
-						return false;
-					}
-					if (!["text", "arrow"].includes(record["type"])) {
-						return false;
-					}
-					return true;
-				});
-				fixedElement["boundElements"] = boundElements;
-				if (boundElements.length === 0) {
-					fixedElement["boundElements"] = null;
-				}
-			} else {
-				fixedElement["boundElements"] = null;
-			}
-		}
-
-		if (
-			typeof fixedElement["containerId"] === "string" &&
-			!elementMap.has(fixedElement["containerId"])
-		) {
-			fixedElement["containerId"] = null;
-		}
-
-		return fixedElement;
-	});
+const validateAndFixBindings = (elements: readonly ExcalidrawElement[]): ExcalidrawElement[] => {
+	const carried: ReadonlySet<string> = new Set(elements.map((element) => element.id));
+	return elements.map((element) => repairContainer(repairBoundElements(element, carried), carried));
 };
 
 /**
@@ -106,12 +112,22 @@ const validateAndFixBindings = (
  * The name has kept its shape while what it does has shrunk to a guard,
  * because every caller means the same thing by it: these are the elements, put
  * them on the canvas.
+ * @param elements The cleaned elements of one server update.
+ * @returns The elements Excalidraw can render without dangling references.
  */
-const elementsForScene = (elements: Partial<ExcalidrawElement>[]): Partial<ExcalidrawElement>[] => {
+const elementsForScene = (elements: readonly ExcalidrawElement[]): ExcalidrawElement[] => {
 	if (elements.length === 0) {
 		return [];
 	}
 	return validateAndFixBindings(elements);
 };
 
-export { cleanElementForExcalidraw, elementsForScene };
+/**
+ * Whether Excalidraw should still draw this element.
+ * @param element Any element of the scene.
+ * @returns True when the element has not been deleted.
+ */
+const isNonDeletedElement = (element: ExcalidrawElement): element is NonDeletedExcalidrawElement =>
+	!element.isDeleted;
+
+export { cleanElementForExcalidraw, elementsForScene, isNonDeletedElement };

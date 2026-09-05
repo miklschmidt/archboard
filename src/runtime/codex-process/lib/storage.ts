@@ -40,7 +40,7 @@ export class CodexStorageError extends Error {
 	readonly code: CodexStorageFailureCode;
 	readonly target: string;
 	/** Present when config preparation failed after the lock was acquired. */
-	readonly retryCleanup?: () => void;
+	readonly retryCleanup: (() => void) | undefined;
 
 	constructor(init: {
 		readonly code: CodexStorageFailureCode;
@@ -98,7 +98,13 @@ function failure(
 	cause?: unknown,
 	retryCleanup?: () => void,
 ): CodexStorageError {
-	return new CodexStorageError({ code, target, message, cause, retryCleanup });
+	return new CodexStorageError({
+		code,
+		target,
+		message,
+		...(cause === undefined ? {} : { cause }),
+		...(retryCleanup === undefined ? {} : { retryCleanup }),
+	});
 }
 
 function absolutePath(candidate: unknown, name: string): string {
@@ -419,7 +425,11 @@ function resolveInputs(
 		input.sqliteHome ?? (root === undefined ? undefined : path.join(root, "sqlite-home")),
 		"sqliteHome",
 	);
-	return { root, codexHome, sqliteHome };
+	return {
+		...(root === undefined ? {} : { root }),
+		codexHome,
+		sqliteHome,
+	};
 }
 
 /**

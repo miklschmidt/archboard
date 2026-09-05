@@ -42,9 +42,7 @@ export function plantStaticProbes(
 				rmdirSync(directory);
 			} catch (error) {
 				const code =
-					typeof error === "object" && error !== null && "code" in error
-						? error.code
-						: undefined;
+					typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
 				if (code !== "ENOENT" && code !== "ENOTEMPTY") {
 					throw error;
 				}

@@ -14,10 +14,7 @@ async function requests(browser: BrowserEvaluator): Promise<RecordedRequest[]> {
 	return browser.eval<RecordedRequest[]>("window.__openerProbe?.requests ?? []");
 }
 
-async function setProbeHold(
-	browser: BrowserEvaluator,
-	key: string,
-): Promise<void> {
+async function setProbeHold(browser: BrowserEvaluator, key: string): Promise<void> {
 	expect(
 		await browser.eval<boolean>(
 			`Boolean(window.__openerProbe && (window.__openerProbe.hold(${JSON.stringify(key)}), true))`,
@@ -36,10 +33,7 @@ async function setNextGet(
 	).toBe(true);
 }
 
-async function releaseProbe(
-	browser: BrowserEvaluator,
-	key: string,
-): Promise<void> {
+async function releaseProbe(browser: BrowserEvaluator, key: string): Promise<void> {
 	await pollUntil(
 		async () => {
 			const pending = await browser.eval<boolean>(

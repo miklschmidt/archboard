@@ -21,7 +21,6 @@ import {
 	type CoordinatorToolAuthorityPort,
 	type CoordinatorToolCoordinatorAuthority,
 	type CoordinatorToolDispatcher,
-	type DynamicToolResponse,
 } from "../index.js";
 import {
 	createIdentityAuthorities,
@@ -476,39 +475,10 @@ function fixture(
 	};
 }
 
-function copyRequest(request: DynamicServerRequest): DynamicServerRequest {
-	return {
-		...request,
-		params: { ...request.params },
-	};
-}
-
-function responseValue(response: DynamicToolResponse): unknown {
-	const text = response.contentItems[0]?.text;
-	if (text === undefined) {
-		throw new Error("response has no inputText item");
-	}
-	return JSON.parse(text) as unknown;
-}
-
-function responseEnvelope(response: DynamicToolResponse): Record<string, unknown> {
-	const value = responseValue(response);
-	if (value === null || typeof value !== "object" || Array.isArray(value)) {
-		throw new Error("response envelope is not an object");
-	}
-	return value as Record<string, unknown>;
-}
-
-function nextMicrotasks(): Promise<void> {
-	return Promise.resolve().then(() => undefined);
-}
-
+export { type ResponseWrite, type CoordinatorToolsFixture, fixture };
 export {
-	type ResponseWrite,
-	type CoordinatorToolsFixture,
-	fixture,
 	copyRequest,
 	responseValue,
 	responseEnvelope,
 	nextMicrotasks,
-};
+} from "./response-inspection.js";

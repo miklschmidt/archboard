@@ -13,7 +13,9 @@ process.env["ARCHBOARD_VAULT"] = selectedVault;
 const expectedLibraryFile = path.join(selectedVault, ".archboard", "library.excalidrawlib");
 const { libraryFilePath } = await import("../../../runtime/engine/library.js");
 if (libraryFilePath() !== expectedLibraryFile) {
-	throw new Error("Library route test did not select its disposable vault before module evaluation.");
+	throw new Error(
+		"Library route test did not select its disposable vault before module evaluation.",
+	);
 }
 const { createLibraryRouter } = await import("../index.js");
 

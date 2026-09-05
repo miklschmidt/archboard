@@ -424,12 +424,14 @@ export function createSessionFixture(
 		storage,
 		checkoutRoot,
 		lifecycle,
-		now: options.now,
+		...(options.now === undefined ? {} : { now: options.now }),
 		onNotification: (event) => {
 			events.push(event);
 			options.onNotification?.(event);
 		},
-		listenerOwnership: options.listenerOwnership,
+		...(options.listenerOwnership === undefined
+			? {}
+			: { listenerOwnership: options.listenerOwnership }),
 	});
 	return {
 		root,
