@@ -1,6 +1,6 @@
 type PackageElement = Record<string, unknown>;
 
-const connector = (overrides: PackageElement = {}): PackageElement => ({
+const connector = (overrides: Readonly<PackageElement> = {}): PackageElement => ({
 	id: "edge",
 	type: "arrow",
 	x: 0,
@@ -15,7 +15,7 @@ const connector = (overrides: PackageElement = {}): PackageElement => ({
 	...overrides,
 });
 
-const labelContainer = (overrides: PackageElement = {}): PackageElement => ({
+const labelContainer = (overrides: Readonly<PackageElement> = {}): PackageElement => ({
 	id: "svc",
 	type: "rectangle",
 	x: 0,
@@ -27,7 +27,7 @@ const labelContainer = (overrides: PackageElement = {}): PackageElement => ({
 	...overrides,
 });
 
-const boundLabel = (overrides: PackageElement = {}): PackageElement => ({
+const boundLabel = (overrides: Readonly<PackageElement> = {}): PackageElement => ({
 	id: "svc-label",
 	type: "text",
 	containerId: "svc",
