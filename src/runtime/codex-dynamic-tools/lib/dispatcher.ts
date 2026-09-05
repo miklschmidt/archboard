@@ -25,12 +25,14 @@ import {
 import {
 	assertMutationTargetAllowed,
 	dynamicErrorForResponse,
+} from "./classification.js";
+import {
 	resolveCaller,
 	resolveTarget,
 	revalidateCaller,
 	revalidateTarget,
-	validateDynamicCall,
-} from "./classification.js";
+} from "./authority-classification.js";
+import { validateDynamicCall } from "./request-validation.js";
 import {
 	approvalExpiry,
 	createDynamicOperationRecoverySettlement,
@@ -600,7 +602,7 @@ async function dispatchOne(
 			const wait = await waitForDynamicThreads({
 				threadIds: args.threadIds,
 				timeoutMs: args.timeoutMs ?? 120_000,
-				cursor: args.cursor,
+				...(args.cursor === undefined ? {} : { cursor: args.cursor }),
 				caller,
 				call: {
 					callId: immutableRequest.logicalCall.callId,
@@ -662,7 +664,6 @@ async function dispatchOne(
 			);
 		}
 		const operations = issueMutationOperations(
-			mutationName,
 			options,
 			mutationName === "create_thread" ||
 				(mutationName === "fork_thread" && call.arguments.prompt !== undefined),
@@ -802,6 +803,7 @@ export function createCodexDynamicTools(options: CodexDynamicToolsOptions): Code
 	let disposed = false;
 	const responses = new WeakMap<object, Promise<DynamicToolCallResponse>>();
 	const quarantine = createDynamicQuarantineDispatcher(options);
+	// oxlint-disable-next-line typescript/promise-function-async -- Duplicate wire calls must receive the exact same owned Promise identity.
 	const dispatch = (request: DynamicServerRequest): Promise<DynamicToolCallResponse> => {
 		const cacheKey = isRecord(request) ? request : null;
 		if (cacheKey !== null) {
