@@ -14,13 +14,16 @@ const REALTIME_PHASES = Object.freeze([
 	"closed",
 ] as const);
 type StateFor<Phase extends RealtimePhase> = Extract<RealtimeState, { readonly phase: Phase }>;
-type TransitionTable = Readonly<{
-	[phase in RealtimePhase]: Readonly<
-		Partial<{
-			[destination in RealtimePhase]: readonly StateFor<destination>["reason"][];
-		}>
-	>;
-}>;
+type TransitionTable = Readonly<
+	Record<
+		RealtimePhase,
+		Readonly<
+			Partial<{
+				[destination in RealtimePhase]: readonly StateFor<destination>["reason"][];
+			}>
+		>
+	>
+>;
 
 const REALTIME_TRANSITIONS: TransitionTable = Object.freeze({
 	idle: Object.freeze({

@@ -88,12 +88,13 @@ const renderFindingsContract = defineCommand({
 			description: "One correlated persisted-snapshot finding export",
 		},
 	],
+	// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- Contextual command callbacks carry mutable Zod schema internals but only read their inputs.
 	async handler(input, context) {
 		if (input.tail.length > 0) {
 			throw new CliUsageError("render-findings takes no positional arguments");
 		}
 		const board = currentRequestedBoard();
-		if (!board) {
+		if (board === null || board.length === 0) {
 			throw new CliUsageError("render-findings requires --board <key>");
 		}
 		const out = context.resolvePath(input.out);
