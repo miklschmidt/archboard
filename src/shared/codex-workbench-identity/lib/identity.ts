@@ -312,13 +312,13 @@ function requireOperationToken(value: unknown, childId: ChildId, epoch: ChildEpo
 function isWellFormedUnicode(value: string): boolean {
 	for (let index = 0; index < value.length; index++) {
 		const codeUnit = value.charCodeAt(index);
-		if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
+		if (codeUnit >= 0xd8_00 && codeUnit <= 0xdb_ff) {
 			const next = value.charCodeAt(index + 1);
-			if (Number.isNaN(next) || next < 0xdc00 || next > 0xdfff) {
+			if (Number.isNaN(next) || next < 0xdc_00 || next > 0xdf_ff) {
 				return false;
 			}
 			index++;
-		} else if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
+		} else if (codeUnit >= 0xdc_00 && codeUnit <= 0xdf_ff) {
 			return false;
 		}
 	}
