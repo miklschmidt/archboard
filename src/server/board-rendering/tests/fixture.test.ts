@@ -14,7 +14,9 @@ async function expectPortReleased(port: number): Promise<void> {
 		probe = Bun.serve({ hostname: "127.0.0.1", port, fetch: () => new Response("released") });
 		expect(probe.port).toBe(port);
 	} finally {
-		if (probe) await probe.stop(true);
+		if (probe) {
+			await probe.stop(true);
+		}
 	}
 }
 
@@ -25,14 +27,17 @@ function writeBuild(
 ): string {
 	const buildRoot = join(root, name);
 	mkdirSync(buildRoot);
-	if (options.entryTarget) symlinkSync(options.entryTarget, join(buildRoot, "renderer.html"));
-	else
+	if (options.entryTarget) {
+		symlinkSync(options.entryTarget, join(buildRoot, "renderer.html"));
+	} else {
 		writeFileSync(
 			join(buildRoot, "renderer.html"),
 			'<script type="module" src="/assets/app.js"></script>',
 		);
-	if (options.assetsTarget) symlinkSync(options.assetsTarget, join(buildRoot, "assets"));
-	else {
+	}
+	if (options.assetsTarget) {
+		symlinkSync(options.assetsTarget, join(buildRoot, "assets"));
+	} else {
 		mkdirSync(join(buildRoot, "assets"));
 		writeFileSync(join(buildRoot, "assets/app.js"), "export const built = true;\n");
 	}
@@ -44,7 +49,9 @@ test(
 	async () => {
 		const rendererHtml = readFileSync(rendererEntry, "utf8");
 		const asset = rendererHtml.match(/(?:src|href)="(\/assets\/[^"]+)"/)?.[1];
-		if (!asset) throw new Error("The built renderer entry names no runtime asset.");
+		if (!asset) {
+			throw new Error("The built renderer entry names no runtime asset.");
+		}
 		const fixture = await createRendererFixture();
 		const port = fixture.port;
 		try {

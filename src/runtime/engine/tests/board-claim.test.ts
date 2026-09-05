@@ -59,7 +59,9 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 			const rival = await lock
 				.holdBoard({ board, holder: agent(`rival-${index}`), waitMs: 0 })
 				.catch((error: unknown) => error);
-			if (!(rival instanceof lock.BoardHeldError)) gaps += 1;
+			if (!(rival instanceof lock.BoardHeldError)) {
+				gaps += 1;
+			}
 		}
 		expect(gaps).toBe(0);
 		expect(lock.boardLockState(board)?.since).toBe(since);
@@ -99,14 +101,18 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 				const record = JSON.parse(readFileSync(file, "utf8")) as { until: string };
 				record.until = new Date(Date.now() - 1_000).toISOString();
 				writeFileSync(file, JSON.stringify(record));
-			} else rmSync(file);
+			} else {
+				rmSync(file);
+			}
 			const lapsedTakeover = lock.holdBoard({
 				board: lapsed,
 				holder: human("person"),
 				waitMs: 0,
 				revokeClaim: true,
 			});
-			if (mode === "expired") await advanceLockTime(LOCK_STEAL_GUARD_MS);
+			if (mode === "expired") {
+				await advanceLockTime(LOCK_STEAL_GUARD_MS);
+			}
 			const taken = await lapsedTakeover;
 			expect(taken.holder.id).toBe("person");
 			expect(lock.claimOn(lapsed)).toBeNull();
@@ -155,13 +161,18 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		lock.onBoardLockChanged(null);
 		for (const board of boards) {
 			lock.releaseClaim(board);
-			for (const id of ["person", "camera", "one-write"]) lock.releaseHold(board, id);
+			for (const id of ["person", "camera", "one-write"]) {
+				lock.releaseHold(board, id);
+			}
 		}
 		lock.forgetLockAnnouncements();
 		jest.useRealTimers();
 		logger.warn = originalWarn;
-		if (previousVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-		else process.env["ARCHBOARD_VAULT"] = previousVault;
+		if (previousVault === undefined) {
+			delete process.env["ARCHBOARD_VAULT"];
+		} else {
+			process.env["ARCHBOARD_VAULT"] = previousVault;
+		}
 		rmSync(vault, { recursive: true, force: true });
 	}
 }, 15_000);

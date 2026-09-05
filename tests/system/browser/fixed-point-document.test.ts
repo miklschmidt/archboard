@@ -87,15 +87,21 @@ function changedFields(
 		const changes = [...fields]
 			.filter((field) => !ignored.has(field))
 			.flatMap((field) => {
-				if (!(field in serverElement)) return [`+${field}`];
-				if (!(field in pageElement)) return [`-${field}`];
+				if (!(field in serverElement)) {
+					return [`+${field}`];
+				}
+				if (!(field in pageElement)) {
+					return [`-${field}`];
+				}
 				return JSON.stringify(serverElement[field as keyof SceneElement]) ===
 					JSON.stringify(pageElement[field as keyof SceneElement])
 					? []
 					: [field];
 			})
 			.toSorted();
-		if (changes.length > 0) moved[elementName(serverElement)] = changes;
+		if (changes.length > 0) {
+			moved[elementName(serverElement)] = changes;
+		}
 	}
 	for (const pageElement of pageElements) {
 		if (!serverElements.some((element) => element.id === pageElement.id)) {
@@ -113,7 +119,9 @@ async function settledScene(
 	return pollUntil(
 		() => browser.eval<{ error?: string; elements?: SceneElement[] }>(READ_PAGE_SCENE_EXPRESSION),
 		(read) => {
-			if (read.error) throw new Error(`Could not read the page scene: ${read.error}`);
+			if (read.error) {
+				throw new Error(`Could not read the page scene: ${read.error}`);
+			}
 			const shot = JSON.stringify((read.elements ?? []).map(strip));
 			repeats = shot === previous ? repeats + 1 : 0;
 			previous = shot;
@@ -151,7 +159,9 @@ async function alignRectangleLabel(
 	const rectangleLabel = elements?.find(
 		(element) => element.type === "text" && element.containerId === "rect1",
 	);
-	if (rectangleLabel?.type !== "text") throw new Error("rectangle label is missing");
+	if (rectangleLabel?.type !== "text") {
+		throw new Error("rectangle label is missing");
+	}
 	const aligned = await api<ElementsBody>(`/api/elements/${rectangleLabel.id}?board=fixedpoint`, {
 		method: "PUT",
 		body: { textAlign: "left", verticalAlign: "top" },
@@ -272,7 +282,9 @@ test(
 		for (const family of families) {
 			const probe = fontProbes[Number(family)] ?? null;
 			expect(probe).not.toBeNull(); // check-fixed-point.mjs:345
-			if (!probe) continue;
+			if (!probe) {
+				continue;
+			}
 			const width = await waitForFont(browser, probe);
 			expect(Math.abs(width - probe.loaded)).toBeLessThan(0.05); // check-fixed-point.mjs:358
 			expect(Math.abs(width - probe.fallback)).toBeGreaterThan(10);
@@ -313,13 +325,17 @@ test(
 			);
 		}
 		const negativePath = held.find((element) => element.id === "negative-path");
-		if (negativePath?.type !== "arrow") throw new Error("negative path is not an arrow");
+		if (negativePath?.type !== "arrow") {
+			throw new Error("negative path is not an arrow");
+		}
 		expect(negativePath.points.map(([x, y]) => [x, y])).toEqual([
 			[0, 0],
 			[-120, -90],
 		]);
 		const boundArrow = held.find((element) => element.id === "arr1");
-		if (boundArrow?.type !== "arrow") throw new Error("bound arrow is not an arrow");
+		if (boundArrow?.type !== "arrow") {
+			throw new Error("bound arrow is not an arrow");
+		}
 		const rect = held.find((element) => element.id === "rect1")!;
 		expect(rect.x).toBe(100);
 		expect(rect.y).toBe(100);

@@ -83,7 +83,9 @@ function sameLink(
 }
 
 function proofRecord(value: ThreadLinkEpochProof | null | undefined): unknown {
-	if (value === null || value === undefined) return null;
+	if (value === null || value === undefined) {
+		return null;
+	}
 	return "record" in value ? value.record : value;
 }
 
@@ -118,32 +120,45 @@ function finalAuthorityReason(
 ): CoordinatorCallbackDeliveryReason | null {
 	const correlation = callback.correlation;
 	const child = options.currentChild();
-	if (child === null) return "child_exit";
-	if (child.childId !== correlation.childId) return "stale_child";
-	if (child.epoch !== correlation.epoch) return "prior_epoch";
+	if (child === null) {
+		return "child_exit";
+	}
+	if (child.childId !== correlation.childId) {
+		return "stale_child";
+	}
+	if (child.epoch !== correlation.epoch) {
+		return "prior_epoch";
+	}
 	const coordinator = options.currentCoordinator();
 	if (
 		coordinator === null ||
 		coordinator.childId !== correlation.childId ||
 		coordinator.epoch !== correlation.epoch ||
 		coordinator.threadId !== correlation.coordinatorThreadId
-	)
+	) {
 		return "stale_coordinator";
-	if (!sameLink(options.currentWorkhorseLink(), correlation.workhorseLink)) return "stale_link";
+	}
+	if (!sameLink(options.currentWorkhorseLink(), correlation.workhorseLink)) {
+		return "stale_link";
+	}
 	if (
 		correlation.workhorseThreadId === null ||
 		correlation.workhorseLink.binding.link.state !== "executable" ||
 		correlation.workhorseLink.binding.link.threadId !== correlation.workhorseThreadId
-	)
+	) {
 		return "stale_link";
+	}
 	const generation = options.currentRealtimeGeneration();
-	if (!sameRealtimeGeneration(generation, correlation.realtimeGeneration)) return "stale_session";
+	if (!sameRealtimeGeneration(generation, correlation.realtimeGeneration)) {
+		return "stale_session";
+	}
 	if (
 		correlation.realtimeGeneration !== null &&
 		callback.kind === "semantic" &&
 		correlation.realtimeSessionId !== correlation.realtimeGeneration.wireSessionId
-	)
+	) {
 		return "stale_session";
+	}
 	return null;
 }
 
@@ -152,7 +167,9 @@ function afterAttemptReason(
 	options: CoordinatorCallbackOptions,
 	disposed: boolean,
 ): CoordinatorCallbackDeliveryReason | null {
-	if (disposed) return "disposed";
+	if (disposed) {
+		return "disposed";
+	}
 	return finalAuthorityReason(callback, options);
 }
 
@@ -161,7 +178,9 @@ function developerPayload(
 	text: string,
 ): SessionParams<"thread/inject_items"> {
 	const threadId = callback.correlation.coordinatorThreadId;
-	if (threadId === null) throw new TypeError("Callback has no coordinator thread.");
+	if (threadId === null) {
+		throw new TypeError("Callback has no coordinator thread.");
+	}
 	return {
 		threadId,
 		items: [
@@ -178,8 +197,9 @@ function sessionFailure(error: unknown): {
 	readonly outcome: CoordinatorCallbackDeliveryOutcome;
 	readonly reason: CoordinatorCallbackDeliveryReason;
 } {
-	if (error instanceof CodexSessionMutationError && error.outcome === "not_delivered")
+	if (error instanceof CodexSessionMutationError && error.outcome === "not_delivered") {
 		return { outcome: "not_delivered", reason: "session_rejected" };
+	}
 	return { outcome: "outcome_unknown", reason: "response_lost" };
 }
 
@@ -189,13 +209,14 @@ export async function deliverOne(
 	isDisposed: () => boolean,
 	evidence: CallbackDeliveryEvidence,
 ): Promise<CoordinatorCallbackDelivery> {
-	if (isDisposed())
+	if (isDisposed()) {
 		return makeDelivery(callback, evidence, {
 			attemptedAtMs: null,
 			path: "none",
 			outcome: "not_delivered",
 			reason: "disposed",
 		});
+	}
 	let text: string;
 	try {
 		text = encodeCoordinatorCallback(callback);
@@ -219,7 +240,7 @@ export async function deliverOne(
 			text,
 		});
 	}
-	if (!classificationAccepted(callback, live))
+	if (!classificationAccepted(callback, live)) {
 		return makeDelivery(callback, evidence, {
 			attemptedAtMs: null,
 			path: "none",
@@ -227,8 +248,9 @@ export async function deliverOne(
 			reason: "stale_link",
 			text,
 		});
+	}
 	const authorityReason = isDisposed() ? "disposed" : finalAuthorityReason(callback, options);
-	if (authorityReason !== null)
+	if (authorityReason !== null) {
 		return makeDelivery(callback, evidence, {
 			attemptedAtMs: null,
 			path: "none",
@@ -236,6 +258,7 @@ export async function deliverOne(
 			reason: authorityReason,
 			text,
 		});
+	}
 
 	const generation = callback.correlation.realtimeGeneration;
 	if (generation !== null) {
@@ -262,7 +285,7 @@ export async function deliverOne(
 		});
 	}
 
-	if (callback.kind === "semantic")
+	if (callback.kind === "semantic") {
 		return makeDelivery(callback, evidence, {
 			attemptedAtMs: null,
 			path: "silent",
@@ -270,6 +293,7 @@ export async function deliverOne(
 			reason: "voice_inactive",
 			text,
 		});
+	}
 	const payload = developerPayload(callback, text);
 	const attemptedAtMs = (options.now ?? Date.now)();
 	try {

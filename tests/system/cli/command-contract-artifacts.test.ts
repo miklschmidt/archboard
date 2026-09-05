@@ -41,8 +41,9 @@ const audit = auditSchema.parse(
 const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 
 function validateArtifacts(directory: string): void {
-	for (const name of artifactNames)
+	for (const name of artifactNames) {
 		expect(sha256(readFileSync(join(directory, name)))).toBe(expectedHashes[name]);
+	}
 }
 
 describe("command contract artifact generation", () => {
@@ -78,8 +79,9 @@ describe("command contract artifact generation", () => {
 		);
 		const proofJson = fixture.bytes(fixture.first, "command-contract-proof.json").toString();
 		expect(proof.routes.every((route) => !("handlerName" in route))).toBeTrue();
-		for (const privateName of ["pendingArtifact", "artifactSchema", "CommanderArgvParser"])
+		for (const privateName of ["pendingArtifact", "artifactSchema", "CommanderArgvParser"]) {
 			expect(proofJson, privateName).not.toContain(privateName);
+		}
 		expect(proofJson).not.toMatch(/"stdout"\s*:/);
 		const proofMarkdown = fixture.bytes(fixture.first, "command-contract-proof.md").toString();
 		expect(proofMarkdown).not.toMatch(/^Usage: `archboard/m);
@@ -88,8 +90,9 @@ describe("command contract artifact generation", () => {
 		);
 		const auditMarkdown = fixture.bytes(fixture.first, "cli-command-audit.md").toString();
 		expect(auditMarkdown.match(/^\| +`[^`]+` +\|/gm)).toHaveLength(audit.entries.length);
-		for (const workflow of audit.workflows)
+		for (const workflow of audit.workflows) {
 			expect(auditMarkdown, workflow.name).toContain(`### ${workflow.name}`);
+		}
 		for (const name of artifactNames) {
 			const ignored = fixture.git([
 				"check-ignore",
@@ -110,7 +113,9 @@ describe("command contract artifact generation", () => {
 		expect(result.stdout, artifactFailure(result)).toBe(
 			artifactNames.map((name) => `generated ${join(fixture.first, name)}\n`).join(""),
 		);
-		for (const name of artifactNames) expect(existsSync(join(fixture.first, name))).toBe(true);
+		for (const name of artifactNames) {
+			expect(existsSync(join(fixture.first, name))).toBe(true);
+		}
 	});
 
 	test("rejects an incomplete private output request", () => {

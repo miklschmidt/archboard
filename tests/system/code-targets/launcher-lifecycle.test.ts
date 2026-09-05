@@ -35,7 +35,9 @@ async function beforeDeadline<T>(
 	description: string,
 ): Promise<T> {
 	const remaining = deadline - Date.now();
-	if (remaining <= 0) throw new Error(`Timed out waiting for ${description}`);
+	if (remaining <= 0) {
+		throw new Error(`Timed out waiting for ${description}`);
+	}
 	let timeout: ReturnType<typeof setTimeout> | undefined;
 	try {
 		return await Promise.race([
@@ -48,7 +50,9 @@ async function beforeDeadline<T>(
 			}),
 		]);
 	} finally {
-		if (timeout !== undefined) clearTimeout(timeout);
+		if (timeout !== undefined) {
+			clearTimeout(timeout);
+		}
 	}
 }
 
@@ -90,7 +94,9 @@ describe("Linux opener process evidence", () => {
 			});
 			expect(statSync(file).ino).toBe(inode);
 		} finally {
-			if (descriptor !== -1) closeSync(descriptor);
+			if (descriptor !== -1) {
+				closeSync(descriptor);
+			}
 			rmSync(root, { recursive: true });
 		}
 	});
@@ -106,7 +112,9 @@ describe("Linux opener process evidence", () => {
 				(error: unknown) => error,
 			);
 			expect(failure).toBeInstanceOf(Error);
-			if (!(failure instanceof Error)) throw new Error("Expected capture readiness to fail.");
+			if (!(failure instanceof Error)) {
+				throw new Error("Expected capture readiness to fail.");
+			}
 			expect(failure.message).toBe(
 				`Timed out waiting for schema-valid opener capture JSON in ${file}; latest raw=${JSON.stringify(raw)}; latest cause=capture.pid must be a positive safe integer.`,
 			);
@@ -172,7 +180,9 @@ describe("Linux opener process evidence", () => {
 	});
 
 	test("observes a retained real child until its handle kills and reaps it", async () => {
-		if (process.platform !== "linux") return;
+		if (process.platform !== "linux") {
+			return;
+		}
 		const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(60_000)"], {
 			stdout: "ignore",
 			stderr: "ignore",
@@ -190,7 +200,9 @@ describe("Linux opener process evidence", () => {
 	});
 
 	test("waits past a direct zombie until its retained parent handle reaps it", async () => {
-		if (process.platform !== "linux") return;
+		if (process.platform !== "linux") {
+			return;
+		}
 		const child = spawn(process.execPath, ["-e", "process.exit(0)"], {
 			detached: true,
 			stdio: "ignore",
@@ -207,7 +219,9 @@ describe("Linux opener process evidence", () => {
 				child.once("error", reject);
 			});
 			const pid = child.pid;
-			if (pid === undefined) throw new Error("Direct child has no PID after spawn.");
+			if (pid === undefined) {
+				throw new Error("Direct child has no PID after spawn.");
+			}
 			const zombieDeadline = Date.now() + TEST_OPENER_LIFECYCLE.timeoutMs;
 			let evidence = readLinuxProcessStatEvidence(pid);
 			while (evidence?.state !== "Z" && Date.now() < zombieDeadline) {
@@ -221,13 +235,17 @@ describe("Linux opener process evidence", () => {
 			expect(readLinuxProcessStatEvidence(pid)).toBeNull();
 			expect(await exited).toEqual({ code: 0, signal: null });
 		} finally {
-			if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+			if (child.exitCode === null && child.signalCode === null) {
+				child.kill("SIGKILL");
+			}
 			await exited;
 		}
 	});
 
 	test("treats a missing Linux stat entry as absent", () => {
-		if (process.platform !== "linux") return;
+		if (process.platform !== "linux") {
+			return;
+		}
 		expect(readLinuxProcessStatEvidence(Number.MAX_SAFE_INTEGER)).toBeNull();
 	});
 });
@@ -268,7 +286,9 @@ describe("shell-free launcher lifecycle", () => {
 		const invocation = fixture.invocation("hold");
 		resources.defer(() => invocation.releaseAndWaitForNonrunning());
 		const plan = planOpenerCommand(invocation.selection, fixture.checkout, process.platform);
-		if (!plan.ok) throw new Error(`${plan.code}: ${plan.error}`);
+		if (!plan.ok) {
+			throw new Error(`${plan.code}: ${plan.error}`);
+		}
 
 		const owner = Bun.spawn([process.execPath, LAUNCHER_OWNER, JSON.stringify(plan.command)], {
 			stdout: "ignore",
@@ -281,15 +301,21 @@ describe("shell-free launcher lifecycle", () => {
 			const reader = owner.stderr.getReader();
 			while (true) {
 				const chunk = await reader.read();
-				if (chunk.done) break;
+				if (chunk.done) {
+					break;
+				}
 				ownerStderr += decoder.decode(chunk.value, { stream: true });
 			}
 			ownerStderr += decoder.decode();
 		})();
 		let ownerCleanupComplete = false;
 		const cleanupOwner = async (): Promise<void> => {
-			if (ownerCleanupComplete) return;
-			if (owner.exitCode === null && owner.signalCode === null) owner.kill("SIGKILL");
+			if (ownerCleanupComplete) {
+				return;
+			}
+			if (owner.exitCode === null && owner.signalCode === null) {
+				owner.kill("SIGKILL");
+			}
 			const cleanupDeadline = Date.now() + TEST_OPENER_LIFECYCLE.timeoutMs;
 			const cleanupFailures: unknown[] = [];
 			try {

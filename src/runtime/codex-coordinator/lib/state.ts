@@ -108,7 +108,9 @@ export function freezePersistence(value: CoordinatorPersistedState): Coordinator
 }
 
 export function sameValue(left: unknown, right: unknown): boolean {
-	if (Object.is(left, right)) return true;
+	if (Object.is(left, right)) {
+		return true;
+	}
 	if (Array.isArray(left) || Array.isArray(right)) {
 		return (
 			Array.isArray(left) &&
@@ -137,7 +139,9 @@ export function coordinatorError(
 	code: ConstructorParameters<typeof CodexCoordinatorError>[0],
 	prefix: string,
 ): CodexCoordinatorError {
-	if (error instanceof CodexCoordinatorError) return error;
+	if (error instanceof CodexCoordinatorError) {
+		return error;
+	}
 	return new CodexCoordinatorError(code, `${prefix} ${errorMessage(error)}`, error);
 }
 
@@ -146,7 +150,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function deepFreeze<Value>(value: Value): Value {
-	if (value === null || typeof value !== "object" || Object.isFrozen(value)) return value;
-	for (const key of Reflect.ownKeys(value)) deepFreeze(Reflect.get(value, key));
+	if (value === null || typeof value !== "object" || Object.isFrozen(value)) {
+		return value;
+	}
+	for (const key of Reflect.ownKeys(value)) {
+		deepFreeze(Reflect.get(value, key));
+	}
 	return Object.freeze(value);
 }

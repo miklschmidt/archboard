@@ -33,20 +33,27 @@ interface FixtureRecord {
 const records = (path: string): FixtureRecord[] => {
 	const contents = readFileSync(path, "utf8");
 	const lines = contents.split("\n");
-	if (!contents.endsWith("\n")) lines.pop();
+	if (!contents.endsWith("\n")) {
+		lines.pop();
+	}
 	return lines.filter(Boolean).map((line) => JSON.parse(line) as FixtureRecord);
 };
 
 const snapshots = (result: WorkbenchResult): Record<string, unknown> => {
-	if (!result.ok) throw new Error(result.error ?? "The workbench snapshot failed.");
+	if (!result.ok) {
+		throw new Error(result.error ?? "The workbench snapshot failed.");
+	}
 	const message = result.value as { readonly snapshot?: Record<string, unknown> } | undefined;
-	if (message?.snapshot === undefined) throw new Error("The workbench returned no snapshot.");
+	if (message?.snapshot === undefined) {
+		throw new Error("The workbench returned no snapshot.");
+	}
 	return message.snapshot;
 };
 
 const leaseTarget = (result: WorkbenchResult): Record<string, unknown> => {
-	if (!result.ok || result.value === undefined)
+	if (!result.ok || result.value === undefined) {
 		throw new Error(result.error ?? "The workbench lease failed.");
+	}
 	return {
 		commandId: result.value["commandId"],
 		paneId: result.value["paneId"],
@@ -165,7 +172,9 @@ describe.serial("actual production Codex composition", () => {
 			expect(typeof (linked["coordinator"] as Record<string, unknown>)["threadId"]).toBe("string");
 
 			expect(await current.request("mediaReady", { ready: true })).toMatchObject({ ok: true });
-			expect(snapshots(await current.request("snapshot"))["voice"]).toMatchObject({ state: "ready" });
+			expect(snapshots(await current.request("snapshot"))["voice"]).toMatchObject({
+				state: "ready",
+			});
 			expect(await current.request("mediaReady", { ready: false })).toMatchObject({ ok: true });
 			expect(snapshots(await current.request("snapshot"))["voice"]).toMatchObject({
 				state: "unavailable",
@@ -213,7 +222,9 @@ describe.serial("actual production Codex composition", () => {
 					entry.method === "turn/start" &&
 					entry.params?.["threadId"] === "thread-2",
 			);
-			if (semanticStart === undefined) throw new Error("The semantic turn/start was not logged.");
+			if (semanticStart === undefined) {
+				throw new Error("The semantic turn/start was not logged.");
+			}
 			const additionalContext = semanticStart.params?.["additionalContext"] as {
 				readonly archboard?: { readonly value?: unknown };
 			};
@@ -254,7 +265,9 @@ describe.serial("actual production Codex composition", () => {
 			const semanticDelivery = records(logPath).find(
 				(entry) => entry.kind === "semantic_injection",
 			);
-			if (semanticDelivery === undefined) throw new Error("The semantic delivery was not logged.");
+			if (semanticDelivery === undefined) {
+				throw new Error("The semantic delivery was not logged.");
+			}
 			expect(semanticDelivery.params).toMatchObject({
 				threadId: semanticStart.params?.["threadId"],
 				items: [
@@ -295,7 +308,9 @@ describe.serial("actual production Codex composition", () => {
 					cause: error,
 				});
 			});
-			if (pending === undefined) throw new Error("The approval projection disappeared.");
+			if (pending === undefined) {
+				throw new Error("The approval projection disappeared.");
+			}
 			const ordinary = pending.approvals[0]!;
 			const ordinaryLease = await current.request("claimLease");
 			const ordinaryCommand = {
@@ -343,17 +358,19 @@ describe.serial("actual production Codex composition", () => {
 			const startedThreads = records(logPath).filter(
 				(entry) => entry.kind === "frame" && entry.method === "thread/start",
 			);
-			if (startedThreads.length !== 3)
+			if (startedThreads.length !== 3) {
 				throw new Error(
 					`The approved dynamic create did not start its thread.\n${readFileSync(logPath, "utf8")}`,
 				);
+			}
 
 			// History exists after the first message; finish that turn before switching conversations.
 			writeFileSync(controlPath, JSON.stringify({ completeWorkhorseTurn: true }));
 			await waitFor(
 				async () =>
-					(snapshots(await current.request("snapshot"))["threadLink"] as Record<string, unknown>)
-						["status"] === "idle",
+					(snapshots(await current.request("snapshot"))["threadLink"] as Record<string, unknown>)[
+						"status"
+					] === "idle",
 				"the workhorse turn to finish",
 			);
 			// Nothing is discovered until the browser asks. The refresh exhausts the
@@ -394,8 +411,9 @@ describe.serial("actual production Codex composition", () => {
 				createIdentityAuthorities().identity.decoder.adoptThreadId(FOREIGN_FIXTURE_THREAD_ID),
 			);
 			const foreignRow = rows.find((row) => row["threadId"] === foreignThreadId);
-			if (foreignRow === undefined)
+			if (foreignRow === undefined) {
 				throw new Error("The foreign persisted thread is not in the joined list.");
+			}
 			expect(foreignRow).toMatchObject({ state: "inspect_only", reason: "unknown_provenance" });
 			const attachLease = await current.request("claimLease");
 			expect(
@@ -431,7 +449,9 @@ describe.serial("actual production Codex composition", () => {
 				snapshots(await current.request("snapshot"))["threadCandidates"] as Record<string, unknown>
 			)["records"] as readonly Record<string, unknown>[];
 			const createdAgain = relinkRows.find((row) => row["threadId"] === threadLink["threadId"]);
-			if (createdAgain === undefined) throw new Error("The created thread left the joined list.");
+			if (createdAgain === undefined) {
+				throw new Error("The created thread left the joined list.");
+			}
 			const relinkLease = await current.request("claimLease");
 			expect(
 				await current.request("command", {
@@ -450,7 +470,9 @@ describe.serial("actual production Codex composition", () => {
 			});
 
 			const childPid = records(logPath).find((entry) => entry.kind === "app_server_spawn")?.pid;
-			if (childPid === undefined) throw new Error("The controlled app-server pid was not logged.");
+			if (childPid === undefined) {
+				throw new Error("The controlled app-server pid was not logged.");
+			}
 			expect(processExists(childPid)).toBeTrue();
 			writeFileSync(controlPath, JSON.stringify({ exit: true }));
 			await waitFor(
@@ -461,7 +483,9 @@ describe.serial("actual production Codex composition", () => {
 				const result = await current!.request("snapshot");
 				return result.ok ? undefined : result;
 			}, "the production gateway to retire after child exit");
-			if (retired === undefined) throw new Error("The retired gateway result disappeared.");
+			if (retired === undefined) {
+				throw new Error("The retired gateway result disappeared.");
+			}
 			expect(retired.error).toContain("unavailable");
 			await canvas.assertRunning();
 		} finally {

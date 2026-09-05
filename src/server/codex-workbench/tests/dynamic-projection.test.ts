@@ -267,7 +267,9 @@ test("the sole public projection closes all three dynamic approval presentations
 		projectionInput(owners),
 	);
 	expect(result.tag).toBe("projected");
-	if (result.tag !== "projected") throw new Error("dynamic projection was refused");
+	if (result.tag !== "projected") {
+		throw new Error("dynamic projection was refused");
+	}
 	const projected = result.snapshot.dynamicApprovals;
 	expect(projected.map((approval) => approval.effect.tool)).toEqual([
 		"create_thread",
@@ -313,8 +315,9 @@ test("the sole public projection closes all three dynamic approval presentations
 		"tool",
 		"visualSummary",
 	];
-	for (const approval of projected)
+	for (const approval of projected) {
 		expect(Object.keys(approval.effect).toSorted()).toEqual(effectKeys);
+	}
 	expect(projected.map((approval) => Object.keys(approval.effect.arguments).toSorted())).toEqual([
 		["prompt"],
 		["beforeTurnId", "prompt", "threadId"],
@@ -323,18 +326,22 @@ test("the sole public projection closes all three dynamic approval presentations
 	expect(projected[0]?.effect.target).toBeNull();
 	const fork = projected[1]!.effect;
 	const send = projected[2]!.effect;
-	if (fork.tool !== "fork_thread" || send.tool !== "send_message_to_thread")
+	if (fork.tool !== "fork_thread" || send.tool !== "send_message_to_thread") {
 		throw new Error("dynamic effect order changed");
+	}
 	expect(fork.target).toBe(fork.arguments.threadId);
 	expect(fork.effectiveBoundary.beforeTurnId).toBe(fork.arguments.beforeTurnId);
 	expect(send.target).toBe(send.arguments.threadId);
 	const wire = JSON.stringify(projected);
-	for (const privatePath of PRIVATE_PATHS) expect(wire).not.toContain(privatePath);
+	for (const privatePath of PRIVATE_PATHS) {
+		expect(wire).not.toContain(privatePath);
+	}
 	for (const owner of owners) {
 		expect(wire).not.toContain(owner.request.effect.callerAuthority);
 		expect(wire).not.toContain(owner.request.effect.contextAuthority);
-		if (owner.request.effect.targetAuthority !== null)
+		if (owner.request.effect.targetAuthority !== null) {
 			expect(wire).not.toContain(owner.request.effect.targetAuthority);
+		}
 	}
 	expect(Object.isFrozen(projected)).toBe(true);
 	expect(Object.isFrozen(projected[0]?.effect)).toBe(true);
@@ -349,9 +356,13 @@ test("self-fork projection keeps the requested and effective boundaries distinct
 		projectionInput([owner]),
 	);
 	expect(result.tag).toBe("projected");
-	if (result.tag !== "projected") throw new Error("self-fork projection was refused");
+	if (result.tag !== "projected") {
+		throw new Error("self-fork projection was refused");
+	}
 	const effect = result.snapshot.dynamicApprovals[0]?.effect;
-	if (effect?.tool !== "fork_thread") throw new Error("self-fork effect was not projected");
+	if (effect?.tool !== "fork_thread") {
+		throw new Error("self-fork effect was not projected");
+	}
 	expect(effect.arguments.beforeTurnId).toBeNull();
 	expect(effect.effectiveBoundary).toEqual({
 		relation: "self",
@@ -383,11 +394,14 @@ test("effective fork boundaries refuse canonical wrong-domain and unissued ident
 			throw new Error("invalid boundary unexpectedly parsed");
 		} catch (error) {
 			expect(error).toBeInstanceOf(IdentityValidationError);
-			if (!(error instanceof IdentityValidationError)) throw error;
+			if (!(error instanceof IdentityValidationError)) {
+				throw error;
+			}
 			expect(error.code).toBe(boundary.code);
 		}
-		if (owner.request.effect.tool !== "fork_thread")
+		if (owner.request.effect.tool !== "fork_thread") {
 			throw new Error("other-fork fixture changed tools");
+		}
 		const invalidOwner: DynamicApprovalOwnerView = {
 			...owner,
 			request: {

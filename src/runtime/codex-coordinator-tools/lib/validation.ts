@@ -157,24 +157,27 @@ function sameCall(left: LogicalToolCallCorrelation, right: LogicalToolCallCorrel
 
 function mapIdentityFailure(error: unknown): CoordinatorToolValidationError {
 	if (error instanceof IdentityValidationError) {
-		if (error.code === "wrong-child")
+		if (error.code === "wrong-child") {
 			return new CoordinatorToolValidationError(
 				"stale_child",
 				"The coordinator tool call belongs to another Codex child.",
 				error,
 			);
-		if (error.code === "stale-epoch")
+		}
+		if (error.code === "stale-epoch") {
 			return new CoordinatorToolValidationError(
 				"prior_epoch",
 				"The coordinator tool call belongs to a prior child epoch.",
 				error,
 			);
-		if (error.code === "wrong-domain")
+		}
+		if (error.code === "wrong-domain") {
 			return new CoordinatorToolValidationError(
 				"unknown_provenance",
 				"The coordinator tool call contains an identity from the wrong domain.",
 				error,
 			);
+		}
 	}
 	return new CoordinatorToolValidationError(
 		"invalid_call",
@@ -187,15 +190,18 @@ function assertRequestEnvelope(
 	options: CodexCoordinatorToolsOptions,
 	request: DynamicServerRequest,
 ): void {
-	if (request.owner !== COORDINATOR_TOOLS_OWNER || request.method !== "item/tool/call")
+	if (request.owner !== COORDINATOR_TOOLS_OWNER || request.method !== "item/tool/call") {
 		fail(
 			"invalid_call",
 			"Only coordinator-owned item/tool/call requests may enter this dispatcher.",
 		);
-	if (request.correlation.requestId !== request.requestId)
+	}
+	if (request.correlation.requestId !== request.requestId) {
 		fail("invalid_call", "The dynamic request and wire correlation use different request ids.");
-	if (request.correlation.child !== request.child || request.correlation.epoch !== request.epoch)
+	}
+	if (request.correlation.child !== request.child || request.correlation.epoch !== request.epoch) {
 		fail("invalid_call", "The dynamic request correlation is not internally consistent.");
+	}
 	try {
 		options.identity.validator.assertCurrentEpoch(request.child, request.epoch);
 	} catch (error) {
@@ -207,10 +213,13 @@ function assertRequestEnvelope(
 			correlation.child !== request.child ||
 			correlation.epoch !== request.epoch ||
 			correlation.requestId !== request.requestId
-		)
+		) {
 			fail("invalid_call", "The dynamic wire correlation is not internally consistent.");
+		}
 	} catch (error) {
-		if (error instanceof CoordinatorToolValidationError) throw error;
+		if (error instanceof CoordinatorToolValidationError) {
+			throw error;
+		}
 		throw mapIdentityFailure(error);
 	}
 }
@@ -225,30 +234,40 @@ function assertLogicalCall(
 	} catch (error) {
 		throw mapIdentityFailure(error);
 	}
-	if (call.child !== request.child || call.epoch !== request.epoch)
+	if (call.child !== request.child || call.epoch !== request.epoch) {
 		fail("invalid_call", "The logical call does not belong to the dynamic request epoch.");
-	if (typeof request.params.namespace !== "string")
+	}
+	if (typeof request.params.namespace !== "string") {
 		fail("invalid_call", "The dynamic tool namespace must be present.");
+	}
 	if (
 		call.namespace !== request.params.namespace ||
 		call.tool !== request.params.tool ||
 		call.threadId === undefined ||
 		call.turnId === undefined ||
 		call.callId === undefined
-	)
+	) {
 		fail("invalid_call", "The logical call does not match the app-server tool-call fields.");
+	}
 	try {
-		if (options.identity.decoder.serializeCodexIdentity(call.threadId) !== request.params.threadId)
+		if (
+			options.identity.decoder.serializeCodexIdentity(call.threadId) !== request.params.threadId
+		) {
 			fail(
 				"unknown_provenance",
 				"The caller thread identity is not the issued logical-call target.",
 			);
-		if (options.identity.decoder.serializeCodexIdentity(call.turnId) !== request.params.turnId)
+		}
+		if (options.identity.decoder.serializeCodexIdentity(call.turnId) !== request.params.turnId) {
 			fail("unknown_provenance", "The caller turn identity is not the issued logical-call target.");
-		if (options.identity.decoder.serializeCodexIdentity(call.callId) !== request.params.callId)
+		}
+		if (options.identity.decoder.serializeCodexIdentity(call.callId) !== request.params.callId) {
 			fail("unknown_provenance", "The dynamic call identity is not the issued logical-call id.");
+		}
 	} catch (error) {
-		if (error instanceof CoordinatorToolValidationError) throw error;
+		if (error instanceof CoordinatorToolValidationError) {
+			throw error;
+		}
 		throw mapIdentityFailure(error);
 	}
 	const expectedHash =
@@ -257,11 +276,13 @@ function assertLogicalCall(
 			: call.namespace === "archboard_voice"
 				? ARCHBOARD_VOICE_MANIFEST_SHA256
 				: null;
-	if (expectedHash === null || call.manifestHash !== expectedHash)
+	if (expectedHash === null || call.manifestHash !== expectedHash) {
 		fail("invalid_call", "The dynamic call does not carry the reviewed namespace manifest hash.");
+	}
 	const current = options.authority.currentCall();
-	if (current === null || !sameCall(current, call))
+	if (current === null || !sameCall(current, call)) {
 		fail("invalid_call", "The coordinator call is no longer the current executing call.");
+	}
 	return call;
 }
 
@@ -270,14 +291,18 @@ function currentCoordinator(
 	call: LogicalToolCallCorrelation,
 ): CoordinatorToolCoordinatorAuthority {
 	const current = options.authority.currentCoordinator();
-	if (current?.state !== "ready")
+	if (current?.state !== "ready") {
 		fail("not_ready", "The coordinator is not ready to execute dynamic tools.");
-	if (current.childId !== options.identity.validator.childId)
+	}
+	if (current.childId !== options.identity.validator.childId) {
 		fail("stale_child", "The coordinator belongs to another Codex child.");
-	if (current.epoch !== options.identity.validator.epoch)
+	}
+	if (current.epoch !== options.identity.validator.epoch) {
 		fail("prior_epoch", "The coordinator belongs to a prior Codex child epoch.");
-	if (current.threadId === null || current.threadId !== call.threadId)
+	}
+	if (current.threadId === null || current.threadId !== call.threadId) {
 		fail("invalid_call", "The dynamic call did not originate from the current coordinator thread.");
+	}
 	return current;
 }
 
@@ -287,28 +312,35 @@ function workhorseBinding(
 	coordinator: CoordinatorToolCoordinatorAuthority,
 ): WorkhorseOperationBinding {
 	const binding = options.authority.currentWorkhorseBinding();
-	if (binding === null) fail("not_ready", "The coordinator has no current host-bound workhorse.");
-	if (binding.childId !== options.identity.validator.childId)
+	if (binding === null) {
+		fail("not_ready", "The coordinator has no current host-bound workhorse.");
+	}
+	if (binding.childId !== options.identity.validator.childId) {
 		fail("stale_child", "The bound workhorse belongs to another Codex child.");
-	if (binding.epoch !== options.identity.validator.epoch)
+	}
+	if (binding.epoch !== options.identity.validator.epoch) {
 		fail("prior_epoch", "The bound workhorse belongs to a prior Codex child epoch.");
+	}
 	if (
 		binding.coordinator.threadId !== call.threadId ||
 		binding.coordinator.childId !== coordinator.childId ||
 		binding.coordinator.epoch !== coordinator.epoch
-	)
+	) {
 		fail("unknown_provenance", "The host workhorse binding is not attached to this coordinator.");
+	}
 	if (
 		binding.workhorse.childId !== binding.childId ||
 		binding.workhorse.epoch !== binding.epoch ||
 		binding.workhorse.threadId === binding.coordinator.threadId
-	)
+	) {
 		fail(
 			"unknown_provenance",
 			"The workhorse target is missing or points back to the coordinator.",
 		);
-	if (binding.workhorse.operationId.length === 0)
+	}
+	if (binding.workhorse.operationId.length === 0) {
 		fail("unknown_provenance", "The workhorse binding has no host ownership proof.");
+	}
 	return binding;
 }
 
@@ -355,12 +387,13 @@ export function validateCoordinatorToolRequest(
 			)) ||
 		(namespace === "archboard_voice" &&
 			!ARCHBOARD_VOICE_TOOL_NAMES.includes(tool as (typeof ARCHBOARD_VOICE_TOOL_NAMES)[number]))
-	)
+	) {
 		fail("invalid_call", `The reviewed namespace does not declare ${tool}.`);
+	}
 	const coordinator = currentCoordinator(options, call);
 	const input = parseInput(namespace, tool, request.params.arguments);
 	const fingerprint = inputFingerprint(namespace, tool, input);
-	if (namespace === "archboard_voice")
+	if (namespace === "archboard_voice") {
 		return Object.freeze({
 			namespace,
 			tool,
@@ -371,11 +404,14 @@ export function validateCoordinatorToolRequest(
 			workhorseBinding: null,
 			expectedTurnId: null,
 		});
+	}
 	const binding = workhorseBinding(options, call, coordinator);
 	let expectedTurnId: TurnId | null = null;
 	if (tool === "steer_workhorse") {
 		expectedTurnId = options.authority.expectedTurnId();
-		if (expectedTurnId === null) fail("busy", "The host has not proven an active workhorse turn.");
+		if (expectedTurnId === null) {
+			fail("busy", "The host has not proven an active workhorse turn.");
+		}
 		try {
 			options.identity.decoder.parseTurnId(expectedTurnId);
 		} catch (error) {

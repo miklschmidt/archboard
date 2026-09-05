@@ -130,13 +130,16 @@ test("all note-changing routes cross the sole lock and write boundary", () => {
 		"delete /api/files/:id",
 		"post /api/boards/save",
 	]);
-	for (const route of changingRoutes) expect(route.index).toBeGreaterThan(middleware);
+	for (const route of changingRoutes) {
+		expect(route.index).toBeGreaterThan(middleware);
+	}
 	const exemptions = application.slice(exemptionsAt, middleware);
 	const exemptionPatterns = [...exemptions.matchAll(/\[\/\^((?:\\.|[^/])*)\/\s*,/g)].map(
 		(match) => new RegExp(`^${match[1]}`),
 	);
-	for (const route of changingRoutes)
+	for (const route of changingRoutes) {
 		expect(exemptionPatterns.some((pattern) => pattern.test(route[2]!))).toBeFalse();
+	}
 	expect(application.match(/answerBoardWrite\(res, \{/g)).toHaveLength(11);
 	const wrapper = application.slice(
 		application.indexOf("function answerBoardWrite"),

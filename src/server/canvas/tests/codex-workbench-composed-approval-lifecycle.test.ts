@@ -34,7 +34,9 @@ test("composed child exit publishes one settled approval before closing presente
 		},
 		getCurrentBinding: () => ({ link: `pane:${paneId}` }),
 		onChange: () => {
-			for (const listener of projectionListeners) listener();
+			for (const listener of projectionListeners) {
+				listener();
+			}
 		},
 	});
 	const link: ThreadLinkSnapshot = {

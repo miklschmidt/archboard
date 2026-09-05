@@ -15,7 +15,9 @@ function finishTest(): void {
 }
 
 function reportFailedTestWithoutMaskingIt(): void {
-	if (!reporter.started()) return;
+	if (!reporter.started()) {
+		return;
+	}
 	try {
 		finishTest();
 	} catch (error) {

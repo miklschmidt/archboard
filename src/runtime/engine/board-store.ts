@@ -154,7 +154,9 @@ export function baselineForFile(
 	let best: { hash: string; at: string; version: number | null } | null = null;
 	for (const board of boards.values()) {
 		const baseline = board.baseline;
-		if (!baseline || baseline.file !== file) continue;
+		if (!baseline || baseline.file !== file) {
+			continue;
+		}
 		if (!best || baseline.at > best.at) {
 			best = { hash: baseline.hash, at: baseline.at, version: baseline.version };
 		}

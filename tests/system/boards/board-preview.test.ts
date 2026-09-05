@@ -59,7 +59,9 @@ beforeAll(async () => {
 		["remote", "add", "origin", `https://${repository}.git`],
 	]) {
 		const result = Bun.spawnSync(["git", ...args], { cwd: checkout, stderr: "pipe" });
-		if (result.exitCode !== 0) throw new Error(result.stderr.toString());
+		if (result.exitCode !== 0) {
+			throw new Error(result.stderr.toString());
+		}
 	}
 	fs.writeFileSync(
 		registry,

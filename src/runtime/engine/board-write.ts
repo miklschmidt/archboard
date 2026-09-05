@@ -170,8 +170,12 @@ export function elementMutation<T>(
 ): BoardMutation<T> {
 	return (content) => {
 		const plan = prepare(content);
-		if (plan.wholeScene || plan.replaceScene) content.elements.clear();
-		if (plan.replaceScene) content.files.clear();
+		if (plan.wholeScene || plan.replaceScene) {
+			content.elements.clear();
+		}
+		if (plan.replaceScene) {
+			content.files.clear();
+		}
 		const applied = applyElementInput(content.elements, {
 			...plan.input,
 			...(plan.wholeScene || plan.replaceScene
@@ -185,7 +189,9 @@ export function elementMutation<T>(
 					(file) => content.files.get(file.id) !== file,
 				)
 			: [];
-		for (const file of addedFiles) content.files.set(file.id, file);
+		for (const file of addedFiles) {
+			content.files.set(file.id, file);
+		}
 		const changed =
 			applied.created.length > 0 ||
 			applied.updated.length > 0 ||
@@ -277,9 +283,13 @@ function releaseSavedHold<T>(
 	target: BoardWriteTarget,
 	tellPanes: TellPanes,
 ): void {
-	if (!request.save) return;
+	if (!request.save) {
+		return;
+	}
 	const hold = releaseNoteHold(request.source.key);
-	if (!hold) return;
+	if (!hold) {
+		return;
+	}
 	const outcome = target.key === request.source.key ? "overwrite" : "elsewhere";
 	const report = reportHold(request.source.key, hold);
 	logger.info(
@@ -291,7 +301,9 @@ function releaseSavedHold<T>(
 		// source address. Carry the source note on the release itself so the pane
 		// replaces its scene before clearing pending held reporting.
 		const sourceFile = request.source.board.file;
-		if (!sourceFile) throw new Error(`Board "${request.source.key}" has no source note to adopt.`);
+		if (!sourceFile) {
+			throw new Error(`Board "${request.source.key}" has no source note to adopt.`);
+		}
 		const source = readBoardContent(request.source.board);
 		if (!source.hash || source.version === undefined) {
 			throw new Error(`Board "${request.source.key}" source note has no conflict baseline.`);
@@ -371,7 +383,9 @@ export function writeBoard<T>(
 
 	if (shouldWrite) {
 		request.afterPersist?.(context);
-		if (written) releaseSavedHold(request, target, tellPanes);
+		if (written) {
+			releaseSavedHold(request, target, tellPanes);
+		}
 		// The mutation delta describes what the caller named. Panes need every
 		// canonical side effect of the persisted document as well: repaired arrow
 		// back-references, dependent labels, and deletions outside that input.
@@ -425,7 +439,9 @@ export function canonicalCorrections(
 	const upserts: ServerElement[] = [];
 	for (const [id, element] of after) {
 		const prior = before.get(id);
-		if (!prior || !isDeepStrictEqual(prior, element)) upserts.push(element);
+		if (!prior || !isDeepStrictEqual(prior, element)) {
+			upserts.push(element);
+		}
 	}
 	return { upserts, deletes };
 }

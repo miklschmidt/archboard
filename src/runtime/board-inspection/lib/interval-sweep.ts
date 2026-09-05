@@ -60,11 +60,18 @@ export function buildSweepHierarchy(
 	parents: ReadonlyMap<string, string | null | undefined>,
 ): SweepHierarchy {
 	const parentById = new Map<string, string | null>();
-	for (const [id, parent] of parents)
+	for (const [id, parent] of parents) {
 		parentById.set(id, parent && parents.has(parent) ? parent : null);
+	}
 	const children = new Map<string, string[]>();
-	for (const id of parentById.keys()) children.set(id, []);
-	for (const [id, parent] of parentById) if (parent) children.get(parent)!.push(id);
+	for (const id of parentById.keys()) {
+		children.set(id, []);
+	}
+	for (const [id, parent] of parentById) {
+		if (parent) {
+			children.get(parent)!.push(id);
+		}
+	}
 	for (const [parent, values] of children) {
 		children.set(parent, values.toSorted(compareIdentity));
 	}
@@ -84,8 +91,9 @@ export function buildSweepHierarchy(
 			positions.set(current.id, cursor++);
 			stack.push({ id: current.id, leaving: true });
 			const nested = children.get(current.id)!;
-			for (let index = nested.length - 1; index >= 0; index -= 1)
+			for (let index = nested.length - 1; index >= 0; index -= 1) {
 				stack.push({ id: nested[index]!, leaving: false });
+			}
 		}
 	}
 	const ancestors = (id: string, step?: () => void): string[] => {
@@ -142,12 +150,18 @@ const eventOrder = (left: Event<unknown>, right: Event<unknown>): number =>
 	left.ordinal - right.ordinal;
 
 function partitionExcluded(profile: SweepPartition, partition: string, work: SweepWork): boolean {
-	if (profile.excludedPartitions.has(partition)) return true;
-	if (!profile.hierarchy) return false;
+	if (profile.excludedPartitions.has(partition)) {
+		return true;
+	}
+	if (!profile.hierarchy) {
+		return false;
+	}
 	const targets = profile.ancestorTargets ?? [];
 	for (const target of targets) {
 		work.hierarchyNodeVisits += 1;
-		if (profile.hierarchy.isAncestor(partition, target)) return true;
+		if (profile.hierarchy.isAncestor(partition, target)) {
+			return true;
+		}
 	}
 	return false;
 }
@@ -163,11 +177,14 @@ export function sweepIntervalPairs<A, B>(
 	type Value = A | B;
 	const work = options?.work ?? emptySweepWork();
 	const events: Event<Value>[] = [];
-	for (let ordinal = 0; ordinal < left.length; ordinal += 1)
+	for (let ordinal = 0; ordinal < left.length; ordinal += 1) {
 		events.push({ interval: left[ordinal]!, set: 0, ordinal });
-	if (!sameSet)
-		for (let ordinal = 0; ordinal < right.length; ordinal += 1)
+	}
+	if (!sameSet) {
+		for (let ordinal = 0; ordinal < right.length; ordinal += 1) {
 			events.push({ interval: right[ordinal]!, set: 1, ordinal });
+		}
+	}
 	const orderedEvents = events.toSorted(eventOrder);
 
 	const active: [Array<Event<Value>>, Array<Event<Value>>] = [[], []];
@@ -181,9 +198,14 @@ export function sweepIntervalPairs<A, B>(
 					work.expiryPops += 1;
 					const profile = candidate.interval.semantics;
 					const remaining = activeProfiles.get(profile)! - 1;
-					if (remaining === 0) activeProfiles.delete(profile);
-					else activeProfiles.set(profile, remaining);
-				} else retained.push(candidate);
+					if (remaining === 0) {
+						activeProfiles.delete(profile);
+					} else {
+						activeProfiles.set(profile, remaining);
+					}
+				} else {
+					retained.push(candidate);
+				}
 			}
 			active[set] = retained;
 		}
@@ -200,14 +222,18 @@ export function sweepIntervalPairs<A, B>(
 				event.interval.semantics.partition,
 				work,
 			);
-			if (eventExcludes || activeExcludes) continue;
+			if (eventExcludes || activeExcludes) {
+				continue;
+			}
 			work.bucketScans += 1;
 			work.activeVisits += 1;
 			const shouldContinue =
 				event.set === 0
 					? visit(event.interval as SweepInterval<A>, candidate.interval as SweepInterval<B>)
 					: visit(candidate.interval as SweepInterval<A>, event.interval as SweepInterval<B>);
-			if (shouldContinue === false) return work;
+			if (shouldContinue === false) {
+				return work;
+			}
 		}
 		active[event.set].push(event);
 		activeProfiles.set(

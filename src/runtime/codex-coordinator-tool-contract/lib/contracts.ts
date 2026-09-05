@@ -44,8 +44,12 @@ export const COORDINATOR_NAMESPACE_NAMES = Object.freeze([
 ] as const);
 
 function freezeDeep<T>(value: T): T {
-	if (typeof value !== "object" || value === null || Object.isFrozen(value)) return value;
-	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
+	if (typeof value !== "object" || value === null || Object.isFrozen(value)) {
+		return value;
+	}
+	for (const child of Object.values(value as Record<string, unknown>)) {
+		freezeDeep(child);
+	}
 	Object.freeze(value);
 	return value;
 }
@@ -158,8 +162,9 @@ export const DynamicToolEnvelopeTextSchema = z
 			return;
 		}
 		const parsed = DynamicToolEnvelopeSchema.safeParse(value);
-		if (!parsed.success || JSON.stringify(parsed.data) !== text)
+		if (!parsed.success || JSON.stringify(parsed.data) !== text) {
 			context.addIssue({ code: "custom", message: "tool response text must be canonical JSON" });
+		}
 	});
 
 const DynamicToolContentItemsSchema = z.tuple([
@@ -183,12 +188,13 @@ export const UnknownDynamicToolResponseSchema = z
 	.strict()
 	.superRefine((response, context) => {
 		const envelope = JSON.parse(response.contentItems[0].text) as { tag?: unknown };
-		if (envelope.tag !== "refused")
+		if (envelope.tag !== "refused") {
 			context.addIssue({
 				code: "custom",
 				path: ["contentItems"],
 				message: "unknown calls must return a refused envelope",
 			});
+		}
 	});
 
 export const DynamicToolResponseSchema = ValidDynamicToolResponseSchema;
@@ -279,12 +285,14 @@ export function parseCoordinatorToolInput(
 	input: unknown,
 ): unknown {
 	if (namespace === "archboard_workhorse") {
-		if (!ARCHBOARD_WORKHORSE_TOOL_NAMES.includes(toolName as WorkhorseToolName))
+		if (!ARCHBOARD_WORKHORSE_TOOL_NAMES.includes(toolName as WorkhorseToolName)) {
 			throw new TypeError(`${namespace} does not declare ${toolName}.`);
+		}
 		return parseWorkhorseToolInput(toolName as WorkhorseToolName, input);
 	}
-	if (!ARCHBOARD_VOICE_TOOL_NAMES.includes(toolName as VoiceToolName))
+	if (!ARCHBOARD_VOICE_TOOL_NAMES.includes(toolName as VoiceToolName)) {
 		throw new TypeError(`${namespace} does not declare ${toolName}.`);
+	}
 	return parseVoiceToolInput(toolName as VoiceToolName, input);
 }
 

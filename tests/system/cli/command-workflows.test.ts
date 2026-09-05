@@ -97,7 +97,9 @@ const report = inspectBoard([
 	},
 ]);
 const focus = report.findings[0]?.focusBBox;
-if (!focus) throw new Error("Workflow crossing fixture has no focus box.");
+if (!focus) {
+	throw new Error("Workflow crossing fixture has no focus box.");
+}
 const dimensions = findingRasterDimensions(focus);
 const png = new Uint8Array(24);
 png.set([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -234,13 +236,17 @@ describe("documented CLI workflows", () => {
 	test("runs every marked jq producer through its public result schema", () => {
 		const blocks = new Map<string, string>();
 		const pattern = /<!-- tested-jq: ([a-z0-9-]+) -->\s*```jq\n([\s\S]*?)\n```/g;
-		for (const match of guide.matchAll(pattern)) blocks.set(match[1]!, match[2]!);
+		for (const match of guide.matchAll(pattern)) {
+			blocks.set(match[1]!, match[2]!);
+		}
 		expect(blocks.size).toBe(Object.keys(workflowCases).length);
 		expect(/(?:^|[^\w-])jq(?:\s|$)/m.test(guide.replace(pattern, ""))).toBe(false);
 		for (const [id, workflow] of Object.entries(workflowCases)) {
 			const contract = contracts.get(workflow.producer);
 			expect(contract, id).toBeDefined();
-			for (const consumer of workflow.consumers) expect(contracts.has(consumer), id).toBe(true);
+			for (const consumer of workflow.consumers) {
+				expect(contracts.has(consumer), id).toBe(true);
+			}
 			const parsed = contract!.result.parse(workflow.fixture);
 			const result = runSync(["jq", ...workflow.jq, blocks.get(id)!], {
 				stdin: new TextEncoder().encode(JSON.stringify(parsed)),
@@ -323,8 +329,9 @@ describe("documented CLI workflows", () => {
 			for (const target of [
 				join(scratch, ".agents/skills/archboard/references/cli-workflows.md"),
 				join(scratch, ".claude/skills/archboard/references/cli-workflows.md"),
-			])
+			]) {
 				expect(readFileSync(target)).toEqual(readFileSync(guidePath));
+			}
 			const statusAfter = runSync(["git", "status", "--porcelain", "--untracked-files=all"], {
 				cwd: checkoutRoot,
 			});

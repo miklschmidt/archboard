@@ -146,8 +146,12 @@ function prepareScenario(state: TestState, transition: Transition): Scenario {
 }
 
 function transitionKind(transition: Transition): string {
-	if (transition === "commit") return "link";
-	if (transition === "outcome_unknown") return "create_thread";
+	if (transition === "commit") {
+		return "link";
+	}
+	if (transition === "outcome_unknown") {
+		return "create_thread";
+	}
 	return "other";
 }
 
@@ -157,8 +161,12 @@ function targetsFor(order: Scenario["order"]): readonly StateTarget[] {
 
 function expectedRestart(targetIndex: number, phase: AtomicPhase): RestartState {
 	const afterRename = phase.startsWith("directory_");
-	if (targetIndex === 0 && !afterRename) return "before";
-	if (targetIndex === 1 && afterRename) return "after";
+	if (targetIndex === 0 && !afterRename) {
+		return "before";
+	}
+	if (targetIndex === 1 && afterRename) {
+		return "after";
+	}
 	return "corrupt";
 }
 
@@ -188,7 +196,9 @@ function restoreState(state: TestState, baseline: StateBytes): void {
 
 function restoreFile(path: string, contents: string | null): void {
 	if (contents === null) {
-		if (existsSync(path)) unlinkSync(path);
+		if (existsSync(path)) {
+			unlinkSync(path);
+		}
 		return;
 	}
 	writeFileSync(path, contents, { mode: 0o600 });

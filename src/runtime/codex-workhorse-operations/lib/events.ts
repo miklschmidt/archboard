@@ -88,12 +88,16 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 				return;
 		}
 		publications.push({ event, cohort: Array.from(listeners) });
-		if (drainingPublications) return;
+		if (drainingPublications) {
+			return;
+		}
 		drainingPublications = true;
 		try {
 			for (;;) {
 				const publication = publications.shift();
-				if (publication === undefined) break;
+				if (publication === undefined) {
+					break;
+				}
 				for (const listener of publication.cohort) {
 					try {
 						listener(publication.event);
@@ -108,11 +112,13 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 	};
 
 	const stage = (input: StageInput): OperationState => {
-		if (input.workhorse.proof === null)
+		if (input.workhorse.proof === null) {
 			throw operationError("unknown_provenance", "Workhorse proof is missing.");
-		if (input.workhorse.proof.record.provenance.threadSource === null)
+		}
+		if (input.workhorse.proof.record.provenance.threadSource === null) {
 			throw operationError("unknown_provenance", "Workhorse source provenance is missing.");
-		if (operations.has(input.operationIdWire))
+		}
+		if (operations.has(input.operationIdWire)) {
 			throw operationError(
 				"transaction_failed",
 				"The operation identity was already used in this session.",
@@ -121,6 +127,7 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 					operationId: input.operationId,
 				},
 			);
+		}
 		const rpc = operationRpc(input.operation, input.queueOperation ?? undefined, input.rpc);
 		let transaction: EpochTransaction;
 		try {
@@ -151,7 +158,7 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 			record.operation.id !== input.operationIdWire ||
 			record.operation.kind !== input.operation ||
 			record.operation.rpc !== rpc
-		)
+		) {
 			throw operationError(
 				"transaction_failed",
 				"The epoch store returned a non-canonical staged record.",
@@ -160,6 +167,7 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 					operationId: input.operationId,
 				},
 			);
+		}
 		const state: OperationState = {
 			operationId: input.operationId,
 			operationIdWire: input.operationIdWire,
@@ -213,15 +221,17 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 				turnId: state.turnId,
 				threadSource: state.workhorseThreadSource,
 			};
-			if (requested === "delivered") options.epoch.commitOperation(state.transaction, confirmation);
-			else if (requested === "not_delivered")
+			if (requested === "delivered") {
+				options.epoch.commitOperation(state.transaction, confirmation);
+			} else if (requested === "not_delivered") {
 				options.epoch.rollbackOperation(state.transaction, detail ?? "operation was not delivered");
-			else
+			} else {
 				options.epoch.markOutcomeUnknown(
 					state.transaction,
 					detail ?? "operation outcome is unknown",
 					confirmation,
 				);
+			}
 		} catch (error) {
 			outcome = "outcome_unknown";
 			try {
@@ -250,17 +260,25 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 		queue: readonly { readonly id: QueuedSubmissionId }[],
 		detail: string | null,
 	): void => {
-		if (state.terminalEmitted) return;
-		if (state.outcome === "outcome_unknown") return;
+		if (state.terminalEmitted) {
+			return;
+		}
+		if (state.outcome === "outcome_unknown") {
+			return;
+		}
 		clear(state);
 		emit(state, type, state.outcome, queue, detail);
 	};
 
 	const clear = (state: OperationState): void => {
-		if (state.terminalEmitted) return;
+		if (state.terminalEmitted) {
+			return;
+		}
 		state.terminalEmitted = true;
 		operations.delete(state.operationIdWire);
-		if (state.turnId !== null) activeTurns.delete(threadIdWire(options, state.workhorseThreadId));
+		if (state.turnId !== null) {
+			activeTurns.delete(threadIdWire(options, state.workhorseThreadId));
+		}
 	};
 
 	const correlateTurn = (
@@ -278,16 +296,21 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 							sameBinding(candidate.binding, state.binding),
 					);
 		for (const candidate of related) {
-			if (candidate.terminalEmitted) continue;
-			if (candidate.turnId !== null && candidate.turnId !== turnId) continue;
+			if (candidate.terminalEmitted) {
+				continue;
+			}
+			if (candidate.turnId !== null && candidate.turnId !== turnId) {
+				continue;
+			}
 			candidate.turnId = turnId;
 			activeTurns.set(threadIdWire(options, candidate.workhorseThreadId), turnId);
-			if (candidate.outcome === "pending" || candidate.outcome === "outcome_unknown")
+			if (candidate.outcome === "pending" || candidate.outcome === "outcome_unknown") {
 				settleDurable(
 					candidate,
 					"delivered",
 					"The exact workhorse turn was observed for the queued submission.",
 				);
+			}
 			if (candidate.outcome === "delivered" && !candidate.startedEmitted) {
 				candidate.startedEmitted = true;
 				emit(candidate, "started", "delivered", queue);
@@ -304,14 +327,19 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 				state.outcome !== "outcome_unknown" ||
 				state.clientUserMessageId === null ||
 				state.terminalEmitted
-			)
+			) {
 				continue;
+			}
 			const current = options.currentBinding();
-			if (current === null || !sameBinding(current, state.binding)) continue;
+			if (current === null || !sameBinding(current, state.binding)) {
+				continue;
+			}
 			const matches = queue.filter(
 				(submission) => submission.clientUserMessageId === state.clientUserMessageId,
 			);
-			if (matches.length !== 1) continue;
+			if (matches.length !== 1) {
+				continue;
+			}
 			state.queuedSubmissionId = matches[0]!.id;
 			if (
 				settleDurable(

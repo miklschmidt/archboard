@@ -50,8 +50,9 @@ export function createRepositoryFixture(): RepositoryFixture {
 	const log = join(root, "logs", "archboard.log");
 	const registry = join(root, "repos.json");
 	const vault = join(root, "vault");
-	for (const directory of [nowhere, home, state, dirname(log), vault])
+	for (const directory of [nowhere, home, state, dirname(log), vault]) {
 		mkdirSync(directory, { recursive: true });
+	}
 	const serverEnvironment: RepositoryServerEnvironment = {
 		...process.env,
 		CODEX_HOME: undefined,

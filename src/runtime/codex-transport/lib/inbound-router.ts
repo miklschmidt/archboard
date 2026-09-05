@@ -119,14 +119,16 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 		const pending = options.pendingRequests.get(key);
 		if (!pending) {
 			const tombstone = options.tombstones.get(key);
-			if (tombstone) options.retainLateResponse(tombstone, value);
-			else
+			if (tombstone) {
+				options.retainLateResponse(tombstone, value);
+			} else {
 				options.emitIssue({
 					kind: "unknown-response",
 					direction: "response",
 					requestId: rawId,
 					detail: "No request in this child epoch owns the response id",
 				});
+			}
 			return;
 		}
 		const kind = responseKind(value);
@@ -142,9 +144,11 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 			return;
 		}
 		try {
-			if (kind === "result")
+			if (kind === "result") {
 				options.settleDelivered(pending, decodeResponseEnvelope(pending.method, value).result);
-			else options.settleRemoteError(pending, decodeJsonRpcError(value, pending.method).error);
+			} else {
+				options.settleRemoteError(pending, decodeJsonRpcError(value, pending.method).error);
+			}
 		} catch {
 			options.emitIssue({
 				kind: "malformed-frame",
@@ -165,7 +169,7 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 		const correlation: WireRequestCorrelation = identity.decoder.createWireRequestCorrelation({
 			requestId,
 		});
-		if (isInList(HUMAN_APPROVAL_METHODS, decoded.method))
+		if (isInList(HUMAN_APPROVAL_METHODS, decoded.method)) {
 			return {
 				child: correlation.child,
 				epoch: correlation.epoch,
@@ -175,13 +179,16 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 				params: decoded.params,
 				owner: "codex-approvals",
 			} as TransportServerRequest;
+		}
 		if (decoded.method === "item/tool/call") {
 			const params = decoded.params as ServerRequestPayloads["item/tool/call"];
-			if (params.namespace === null)
+			if (params.namespace === null) {
 				throw new CodexTransportUsageError("dynamic tool namespace is null");
+			}
 			const registration = options.dynamicDispatchers.get(params.namespace);
-			if (!registration)
+			if (!registration) {
 				throw new CodexTransportUsageError("no dynamic dispatcher owns the requested namespace");
+			}
 			const logicalCall: LogicalToolCallCorrelation =
 				identity.decoder.createLogicalToolCallCorrelation({
 					threadId: identity.decoder.adoptThreadId(params.threadId),
@@ -217,7 +224,7 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 				owner: "codex-session",
 			} as TransportServerRequest;
 		}
-		if (isInList(SESSION_SERVER_REQUEST_METHODS, decoded.method))
+		if (isInList(SESSION_SERVER_REQUEST_METHODS, decoded.method)) {
 			return {
 				child: correlation.child,
 				epoch: correlation.epoch,
@@ -227,6 +234,7 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 				params: decoded.params,
 				owner: "codex-session",
 			} as TransportServerRequest;
+		}
 		throw new CodexTransportUsageError("no response owner exists for the reverse method");
 	};
 	const handleServerRequest = (value: Record<string, unknown>, frameBytes: number): void => {
@@ -390,7 +398,9 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 	};
 	const handleLine = (line: Buffer): void => {
 		const state = options.state();
-		if (state === "closed") return;
+		if (state === "closed") {
+			return;
+		}
 		if (line.byteLength === 0) {
 			options.emitIssue({
 				kind: "malformed-frame",
@@ -418,8 +428,9 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 					...(pending === undefined ? {} : { method: pending.method }),
 					...(error.wireId === undefined ? {} : { requestId: error.wireId }),
 				});
-				if (pending) options.settleFailure(pending, "malformed-response");
-				else if (error.methodPresent && error.wireId !== undefined)
+				if (pending) {
+					options.settleFailure(pending, "malformed-response");
+				} else if (error.methodPresent && error.wireId !== undefined) {
 					protocolError(
 						error.wireId,
 						state === "closing"
@@ -429,6 +440,7 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 							? "Codex transport is shutting down."
 							: REVERSE_ERROR_MESSAGES.invalidRequest,
 					);
+				}
 			} else {
 				options.emitIssue({
 					kind: "malformed-frame",
@@ -450,58 +462,68 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 		const hasMethod = hasOwn(decoded, "method");
 		const hasResultOrError = hasOwn(decoded, "result") || hasOwn(decoded, "error");
 		if (state === "closing") {
-			if (hasMethod && hasId && isWireId(decoded["id"]))
+			if (hasMethod && hasId && isWireId(decoded["id"])) {
 				protocolError(
 					decoded["id"],
 					JSON_RPC_ERROR_CODES.internalError,
 					"Codex transport is shutting down.",
 				);
-			else if (hasMethod && hasId)
+			} else if (hasMethod && hasId) {
 				options.emitIssue({
 					kind: "malformed-frame",
 					direction: "server-request",
 					detail: "A closing reverse request id is invalid",
 				});
+			}
 			return;
 		}
 		if (hasMethod) {
-			if (hasId) handleServerRequest(decoded, line.byteLength);
-			else handleNotification(decoded);
-		} else if (hasId && hasResultOrError) handleResponse(decoded);
-		else if (hasId && isWireId(decoded["id"])) {
+			if (hasId) {
+				handleServerRequest(decoded, line.byteLength);
+			} else {
+				handleNotification(decoded);
+			}
+		} else if (hasId && hasResultOrError) {
+			handleResponse(decoded);
+		} else if (hasId && isWireId(decoded["id"])) {
 			const key = wireKey(decoded["id"]);
-			if (options.pendingRequests.has(key)) handleResponse(decoded);
-			else if (options.reverseRequests.has(key) || options.completedReverseIds.has(key))
+			if (options.pendingRequests.has(key)) {
+				handleResponse(decoded);
+			} else if (options.reverseRequests.has(key) || options.completedReverseIds.has(key)) {
 				issueReverse(
 					"duplicate-server-request",
 					"A reverse request id was already used",
 					decoded["id"],
 				);
-			else
+			} else {
 				protocolError(
 					decoded["id"],
 					JSON_RPC_ERROR_CODES.invalidRequest,
 					REVERSE_ERROR_MESSAGES.invalidRequest,
 				);
-		} else
+			}
+		} else {
 			options.emitIssue({
 				kind: "unknown-frame",
 				direction: "stdout",
 				detail: "The JSON frame has no known direction",
 			});
+		}
 	};
 	const registerDynamicDispatcher = (registration: DynamicDispatcherRegistration): void => {
 		if (
 			registration.owner !== "codex-dynamic-tools" &&
 			registration.owner !== "codex-coordinator-tools"
-		)
+		) {
 			throw new CodexTransportUsageError("a dynamic dispatcher must use an approved dynamic owner");
+		}
 		boundedText(registration.namespace, "dynamic dispatcher namespace");
 		boundedText(registration.manifestHash, "dynamic dispatcher manifestHash");
-		if (options.dynamicDispatchers.has(registration.namespace))
+		if (options.dynamicDispatchers.has(registration.namespace)) {
 			throw new CodexTransportUsageError(
 				`namespace ${registration.namespace} already has a dynamic owner`,
 			);
+		}
 		options.dynamicDispatchers.set(registration.namespace, Object.freeze({ ...registration }));
 	};
 	const responder = createReverseResponder({

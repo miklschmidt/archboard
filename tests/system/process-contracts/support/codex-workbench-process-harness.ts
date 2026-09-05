@@ -66,15 +66,21 @@ export async function startLinkedWorkbench(
 		const dynamic = state["dynamicApprovals"] as Record<string, unknown>[];
 		return approvals.length === 7 && dynamic.length === 1 ? { approvals, dynamic } : undefined;
 	}, `${label} initial approvals`);
-	if (initial === undefined) throw new Error(`${label} initial approvals did not remain pending.`);
-	for (const approval of initial.approvals) await approveOrdinary(socket, approval);
+	if (initial === undefined) {
+		throw new Error(`${label} initial approvals did not remain pending.`);
+	}
+	for (const approval of initial.approvals) {
+		await approveOrdinary(socket, approval);
+	}
 	await resolveDynamic(socket, initial.dynamic[0]!);
 	await waitFor(
 		() => (reverseResponses(fixture.logPath, "dynamic-request-1").length === 1 ? true : undefined),
 		`${label} initial mutation`,
 	);
 	const childPid = records(fixture.logPath).find((entry) => entry.kind === "app_server_spawn")?.pid;
-	if (childPid === undefined) throw new Error(`${label} child did not start.`);
+	if (childPid === undefined) {
+		throw new Error(`${label} child did not start.`);
+	}
 	return { canvas, childPid, fixture, link, request, socket };
 }
 

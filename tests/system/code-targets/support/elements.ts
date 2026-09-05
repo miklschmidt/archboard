@@ -13,6 +13,8 @@ export function completeElement(input: LegacyElementIngress): RuntimeBoardElemen
 	const element = expandElements([statement], { deterministic: true, forStore: true }).find(
 		(candidate) => candidate.id === input.id,
 	);
-	if (!element) throw new Error(`Fixture did not produce ${input.id}`);
+	if (!element) {
+		throw new Error(`Fixture did not produce ${input.id}`);
+	}
 	return element;
 }

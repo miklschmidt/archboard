@@ -40,8 +40,9 @@ export function bindThreadContextToReadyWorkhorse(
 		snapshot.epoch === null ||
 		snapshot.operationId === null ||
 		snapshot.binding?.link.state !== "executable"
-	)
+	) {
 		throw new Error("Thread context can bind only to an exact ready workhorse snapshot.");
+	}
 	controller.compareAndSwap({
 		expected: controller.snapshot().token,
 		next: {
@@ -72,8 +73,9 @@ function replaceThreadContextBinding(
 		link.link.threadId !== target.threadId ||
 		link.link.childId !== target.childId ||
 		link.link.epoch !== target.epoch
-	)
+	) {
 		throw new Error("Thread context requires the exact adopted workhorse link proof.");
+	}
 	return controller.compareAndSwap({
 		expected: controller.snapshot().token,
 		next: {
@@ -89,7 +91,9 @@ export function clearCanvasThreadContextForLease(
 	expected: CodexThreadContextBindingToken,
 ): void {
 	const current = controller.snapshot();
-	if (current.token.revision !== expected.revision || current.binding === null) return;
+	if (current.token.revision !== expected.revision || current.binding === null) {
+		return;
+	}
 	controller.compareAndSwap({ expected: current.token, next: null });
 }
 
@@ -196,7 +200,9 @@ export function createCanvasThreadLinkActions(options: {
 	const emptyAuthoredHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 	const recordFor = (threadId: ThreadId): EpochOperationRecord | null => {
 		const active = options.epoch.snapshot().manifest.activeEpoch;
-		if (active === null) return null;
+		if (active === null) {
+			return null;
+		}
 		return (
 			options.epoch
 				.snapshot()
@@ -218,12 +224,14 @@ export function createCanvasThreadLinkActions(options: {
 			childId: context.childId,
 			epoch: context.epoch,
 		});
-		if (observed.link.state !== "inspect_only" || observed.link.reason !== "unknown_provenance")
+		if (observed.link.state !== "inspect_only" || observed.link.reason !== "unknown_provenance") {
 			throw new Error(
 				`The requested thread is inspect-only: ${observed.link.reason ?? "invalid_result"}.`,
 			);
-		if (observed.thread === null)
+		}
+		if (observed.thread === null) {
 			throw new Error("The requested thread has no exact persisted session row.");
+		}
 		const operationId = options.identity.operation.issuer.mintOperationId();
 		const transaction = options.epoch.stageOperation({
 			childId: context.childId,
@@ -274,10 +282,11 @@ export function createCanvasThreadLinkActions(options: {
 		context: BrowserActionContext,
 	): Promise<BrowserActionResult> => {
 		const threadId = options.candidates.threadIdFor(command.selectionId);
-		if (threadId === null || threadId !== command.threadId)
+		if (threadId === null || threadId !== command.threadId) {
 			throw new Error(
 				"The chosen thread row is no longer in the published list. Refresh the thread list and choose again.",
 			);
+		}
 		const offered = options.candidates.generation();
 		if (offered === null || offered !== epochGeneration(options.epoch)) {
 			options.candidates.invalidate(
@@ -293,8 +302,9 @@ export function createCanvasThreadLinkActions(options: {
 			record = await attachRecord(threadId, context);
 			const discovery = await options.candidates.refresh();
 			const chosen = discovery.candidates.find((candidate) => candidate.threadId === threadId);
-			if (chosen === undefined)
+			if (chosen === undefined) {
 				throw new Error("The chosen thread is no longer in the joined Codex thread list.");
+			}
 			selectionId = chosen.selectionId;
 		}
 		options.epoch.assertCurrent({
@@ -308,8 +318,9 @@ export function createCanvasThreadLinkActions(options: {
 			expectedBrowserLink(context),
 			selectionId,
 		);
-		if (binding.link.state !== "executable")
+		if (binding.link.state !== "executable") {
 			throw new Error(`The requested thread is inspect-only: ${binding.link.reason}.`);
+		}
 		const token = replaceThreadContextBinding(
 			options.semanticDelivery,
 			{
@@ -329,15 +340,17 @@ export function createCanvasThreadLinkActions(options: {
 				paneId: context.paneId,
 				expected: expectedBrowserLink(context),
 			});
-			if (started.binding === null)
+			if (started.binding === null) {
 				throw new Error("The created workhorse did not return its adopted pane link.");
+			}
 			if (
 				started.threadId === null ||
 				started.childId === null ||
 				started.epoch === null ||
 				started.operationId === null
-			)
+			) {
 				throw new Error("The created workhorse did not return exact target authority.");
+			}
 			const token = replaceThreadContextBinding(
 				options.semanticDelivery,
 				{
@@ -362,11 +375,14 @@ export function createCanvasThreadLinkActions(options: {
 				reason !== "browser_disconnected" &&
 				reason !== "child_disconnected" &&
 				reason !== "gateway_shutdown"
-			)
+			) {
 				return;
+			}
 			const token = controllerTokens.get(context.connection);
 			controllerTokens.delete(context.connection);
-			if (token !== undefined) clearCanvasThreadContextForLease(options.semanticDelivery, token);
+			if (token !== undefined) {
+				clearCanvasThreadContextForLease(options.semanticDelivery, token);
+			}
 		},
 	} satisfies BrowserThreadLinkActions);
 }

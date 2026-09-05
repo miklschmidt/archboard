@@ -61,7 +61,9 @@ function sameBinding(
 	left: CodexThreadContextBinding | null,
 	right: CodexThreadContextBinding | null,
 ): boolean {
-	if (left === null || right === null) return left === right;
+	if (left === null || right === null) {
+		return left === right;
+	}
 	return (
 		left.paneId === right.paneId &&
 		left.target.threadId === right.target.threadId &&
@@ -93,11 +95,12 @@ function unboundOutcome(
 
 function validateCapturedLink(binding: CodexThreadContextBinding): void {
 	const { link, paneId, target } = binding;
-	if (paneId.length === 0 || link.paneId !== paneId)
+	if (paneId.length === 0 || link.paneId !== paneId) {
 		throw new CodexThreadContextControllerError(
 			"invalid_binding",
 			"The thread-context binding does not name its captured pane.",
 		);
+	}
 	if (
 		link.link.state !== "executable" ||
 		link.link.threadId !== target.threadId ||
@@ -107,16 +110,18 @@ function validateCapturedLink(binding: CodexThreadContextBinding): void {
 		link.cas.threadId !== target.threadId ||
 		link.cas.childId !== target.childId ||
 		link.cas.epoch !== target.epoch
-	)
+	) {
 		throw new CodexThreadContextControllerError(
 			"invalid_binding",
 			"The captured thread-link CAS proof does not match the exact delivery target.",
 		);
-	if (typeof target.operationId !== "string" || target.operationId.length === 0)
+	}
+	if (typeof target.operationId !== "string" || target.operationId.length === 0) {
 		throw new CodexThreadContextControllerError(
 			"invalid_binding",
 			"The thread-context target has no durable operation authority.",
 		);
+	}
 }
 
 export function createCodexThreadContextController(
@@ -141,9 +146,13 @@ export function createCodexThreadContextController(
 		const id = eventId(event);
 		const key = eventKey(id);
 		const inFlight = pending.get(key);
-		if (inFlight !== undefined) return inFlight;
+		if (inFlight !== undefined) {
+			return inFlight;
+		}
 		const previous = settled.get(key);
-		if (previous !== undefined) return Promise.resolve(previous);
+		if (previous !== undefined) {
+			return Promise.resolve(previous);
+		}
 		order.push(key);
 		const captured = active;
 		const operation =
@@ -164,21 +173,24 @@ export function createCodexThreadContextController(
 	});
 
 	const compareAndSwap: CodexThreadContextController["compareAndSwap"] = ({ expected, next }) => {
-		if (disposed)
+		if (disposed) {
 			throw new CodexThreadContextControllerError(
 				"disposed",
 				"The thread-context controller is disposed.",
 			);
-		if (!Number.isSafeInteger(expected.revision) || expected.revision !== revision)
+		}
+		if (!Number.isSafeInteger(expected.revision) || expected.revision !== revision) {
 			throw new CodexThreadContextControllerError(
 				"stale_binding",
 				`Thread-context binding revision ${expected.revision} is stale; current revision is ${revision}.`,
 			);
-		if (sameBinding(active?.binding ?? null, next))
+		}
+		if (sameBinding(active?.binding ?? null, next)) {
 			throw new CodexThreadContextControllerError(
 				"duplicate_binding",
 				"The thread-context binding transition does not change authority.",
 			);
+		}
 		if (next !== null) {
 			validateCapturedLink(next);
 			try {
@@ -190,8 +202,9 @@ export function createCodexThreadContextController(
 					threadId: next.target.threadId,
 				});
 				const currentLink = options.threadLink.read(next.paneId);
-				if (!sameLink(currentLink, next.link))
+				if (!sameLink(currentLink, next.link)) {
 					throw new Error("The captured thread-link CAS proof is stale.");
+				}
 			} catch (error) {
 				throw new CodexThreadContextControllerError(
 					"invalid_binding",
@@ -225,7 +238,9 @@ export function createCodexThreadContextController(
 	};
 
 	const dispose = (): void => {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		disposed = true;
 		executionAvailable = false;
 		const retiring = active;
@@ -248,11 +263,12 @@ export function createCodexThreadContextController(
 		snapshot,
 		compareAndSwap,
 		replaceHooks(next: CodexThreadContextControllerHooks) {
-			if (disposed)
+			if (disposed) {
 				throw new CodexThreadContextControllerError(
 					"disposed",
 					"The thread-context controller is disposed.",
 				);
+			}
 			hooks = next;
 		},
 		async childExit(child: ChildId, epoch: ChildEpoch) {
@@ -260,8 +276,9 @@ export function createCodexThreadContextController(
 				active === null ||
 				active.binding.target.childId !== child ||
 				active.binding.target.epoch !== epoch
-			)
+			) {
 				return;
+			}
 			executionAvailable = false;
 			const current = token();
 			compareAndSwap({ expected: current, next: null });

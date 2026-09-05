@@ -33,8 +33,9 @@ function replaceGeneratedAt(
 	containingUnionPath?: readonly string[],
 ): ReplacementResult {
 	if (!path.length) {
-		if (fieldName === "output" || fieldName === "requestId")
+		if (fieldName === "output" || fieldName === "requestId") {
 			return { value: false, targetPath: actualPath, allowedContainingUnionPaths: [] };
+		}
 		if (Array.isArray(value)) {
 			const entries = value.length ? value : [arrayMember(fieldName ?? "", "")];
 			return {
@@ -66,8 +67,9 @@ function replaceGeneratedAt(
 		};
 	}
 	if (isRecord(value)) {
-		if (value["type"] === head)
+		if (value["type"] === head) {
 			return replaceGeneratedAt(value, tail, fieldName, actualPath, containingUnionPath);
+		}
 		if (Object.hasOwn(value, head!)) {
 			const nextContainingUnionPath =
 				tail.length && head === "output" ? [...actualPath, head] : containingUnionPath;
@@ -85,7 +87,9 @@ function replaceGeneratedAt(
 			};
 		}
 		const branch = generatedBranch(head!);
-		if (branch) return replaceGeneratedAt(branch, path, fieldName, actualPath, containingUnionPath);
+		if (branch) {
+			return replaceGeneratedAt(branch, path, fieldName, actualPath, containingUnionPath);
+		}
 		if (fieldName === "agentsStates") {
 			const states = Object.keys(value).length
 				? value
@@ -107,16 +111,18 @@ function replaceGeneratedAt(
 	}
 	if (value === null || !isRecord(value)) {
 		const prepared = nullableMember(fieldName ?? "");
-		if (isRecord(prepared) && Object.keys(prepared).length)
+		if (isRecord(prepared) && Object.keys(prepared).length) {
 			return replaceGeneratedAt(prepared, path, fieldName, actualPath, containingUnionPath);
+		}
 	}
 	throw new Error(`Generated union challenge path could not reach ${path.join(".")}`);
 }
 
 function prepareGeneratedAt(value: unknown, path: readonly string[], fieldName?: string): unknown {
 	if (!path.length) {
-		if (Array.isArray(value) && value.length === 0 && fieldName !== "output")
+		if (Array.isArray(value) && value.length === 0 && fieldName !== "output") {
 			return [arrayMember(fieldName ?? "", "")];
+		}
 		return value;
 	}
 	const [head, ...tail] = path;
@@ -127,17 +133,22 @@ function prepareGeneratedAt(value: unknown, path: readonly string[], fieldName?:
 		);
 	}
 	if (isRecord(value)) {
-		if (value["type"] === head) return prepareGeneratedAt(value, tail, fieldName);
+		if (value["type"] === head) {
+			return prepareGeneratedAt(value, tail, fieldName);
+		}
 		if (Object.hasOwn(value, head!)) {
 			const current = value[head!];
 			const prepared = current === null && tail.length ? nullableMember(head!) : current;
 			return { ...value, [head!]: prepareGeneratedAt(prepared, tail, head!) };
 		}
 		const branch = generatedBranch(head!);
-		if (branch) return prepareGeneratedAt(branch, path, fieldName);
+		if (branch) {
+			return prepareGeneratedAt(branch, path, fieldName);
+		}
 		const optional = optionalMember(head!);
-		if (optional !== undefined)
+		if (optional !== undefined) {
 			return prepareGeneratedAt({ ...value, [head!]: optional }, path, fieldName);
+		}
 		if (fieldName === "agentsStates") {
 			const states = Object.keys(value).length
 				? value
@@ -151,8 +162,9 @@ function prepareGeneratedAt(value: unknown, path: readonly string[], fieldName?:
 	}
 	if (value === null || !isRecord(value)) {
 		const prepared = nullableMember(fieldName ?? "");
-		if (isRecord(prepared) && Object.keys(prepared).length)
+		if (isRecord(prepared) && Object.keys(prepared).length) {
 			return prepareGeneratedAt(prepared, path, fieldName);
+		}
 	}
 	throw new Error(`Generated union challenge path could not reach ${path.join(".")}`);
 }

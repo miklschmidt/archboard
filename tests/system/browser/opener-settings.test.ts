@@ -220,8 +220,9 @@ test("the migrated opener dialog keeps its rendered interaction and persistence 
 		'button "Test"',
 		'button "Cancel"',
 		'button "Save"',
-	])
+	]) {
 		expect(accessibilityTree).toContain(contract);
+	}
 	const auditText = await browser.run(["a11y", "--selector", '[role="dialog"]', "--json"]);
 	const audit = JSON.parse(auditText) as {
 		violations?: unknown[];

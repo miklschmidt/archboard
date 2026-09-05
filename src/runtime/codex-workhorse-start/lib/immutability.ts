@@ -4,9 +4,15 @@ export function cloneAndFreeze<T>(value: T): T {
 }
 
 function deepFreeze<T>(value: T, seen: WeakSet<object>): T {
-	if (value === null || typeof value !== "object") return value;
-	if (seen.has(value)) return value;
+	if (value === null || typeof value !== "object") {
+		return value;
+	}
+	if (seen.has(value)) {
+		return value;
+	}
 	seen.add(value);
-	for (const key of Reflect.ownKeys(value)) deepFreeze(Reflect.get(value, key), seen);
+	for (const key of Reflect.ownKeys(value)) {
+		deepFreeze(Reflect.get(value, key), seen);
+	}
 	return Object.freeze(value);
 }

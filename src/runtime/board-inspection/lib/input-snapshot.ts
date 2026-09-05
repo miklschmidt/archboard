@@ -32,10 +32,15 @@ class InputComplexityAccumulator {
 	}
 
 	claim(units: number, context: InputStopContext): void {
-		if (!validUnits(units)) throw new Error(`Invalid input complexity claim: ${units}`);
-		if (units === 0) return;
-		if (units > INSPECTION_INPUT_COMPLEXITY_LIMIT - this.#inputUnits)
+		if (!validUnits(units)) {
+			throw new Error(`Invalid input complexity claim: ${units}`);
+		}
+		if (units === 0) {
+			return;
+		}
+		if (units > INSPECTION_INPUT_COMPLEXITY_LIMIT - this.#inputUnits) {
 			throw new InputComplexityCeilingReached(context);
+		}
 		this.#inputUnits += units;
 	}
 }
@@ -207,7 +212,9 @@ export function snapshotInspectionInput(input: readonly unknown[]): InspectionIn
 		try {
 			budget.claim(1, stopContext(completedRecordCount, sourceIndex, [], "record"));
 		} catch (error) {
-			if (!(error instanceof InputComplexityCeilingReached)) throw error;
+			if (!(error instanceof InputComplexityCeilingReached)) {
+				throw error;
+			}
 			limit = error;
 			break;
 		}
@@ -298,7 +305,9 @@ export function snapshotInspectionInput(input: readonly unknown[]): InspectionIn
 					tasks.push({ kind: "leave", value: objectValue });
 					for (let index = length - 1; index >= 0; index -= 1) {
 						const descriptor = Object.getOwnPropertyDescriptor(objectValue, String(index));
-						if (!descriptor) continue;
+						if (!descriptor) {
+							continue;
+						}
 						if (!("value" in descriptor)) {
 							blocked = true;
 							recordIssues.push({
@@ -334,7 +343,9 @@ export function snapshotInspectionInput(input: readonly unknown[]): InspectionIn
 				for (let index = INSPECTION_FIELDS.length - 1; index >= 0; index -= 1) {
 					const field = INSPECTION_FIELDS[index]!;
 					const descriptor = Object.getOwnPropertyDescriptor(objectValue, field);
-					if (!descriptor) continue;
+					if (!descriptor) {
+						continue;
+					}
 					if (!("value" in descriptor)) {
 						blocked = true;
 						recordIssues.push({ sourceIndex, path: [...path, field], issue: "accessor" });
@@ -356,7 +367,9 @@ export function snapshotInspectionInput(input: readonly unknown[]): InspectionIn
 				}
 			}
 		} catch (error) {
-			if (!(error instanceof InputComplexityCeilingReached)) throw error;
+			if (!(error instanceof InputComplexityCeilingReached)) {
+				throw error;
+			}
 			limit = error;
 		}
 
@@ -364,10 +377,16 @@ export function snapshotInspectionInput(input: readonly unknown[]): InspectionIn
 			admittedRoot && typeof admittedRoot === "object" && !Array.isArray(admittedRoot)
 				? (admittedRoot as SnapshotRecord)
 				: null;
-		for (const issue of recordIssues) issues.push({ ...issue, admittedRecord });
-		if (blocked) blockedSourceIndexes.add(sourceIndex);
+		for (const issue of recordIssues) {
+			issues.push({ ...issue, admittedRecord });
+		}
+		if (blocked) {
+			blockedSourceIndexes.add(sourceIndex);
+		}
 		records.push(blocked ? null : admittedRecord);
-		if (limit) break;
+		if (limit) {
+			break;
+		}
 		completedRecordCount += 1;
 	}
 

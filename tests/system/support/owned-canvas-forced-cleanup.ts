@@ -24,7 +24,9 @@ function directChildGroups(parentPid: number): CodexProcessGroupIdentity[] {
 			.filter(Boolean)
 			.map(Number);
 	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+			return [];
+		}
 		throw error;
 	}
 	const operations = createCodexProcessGroupOperations();
@@ -32,7 +34,9 @@ function directChildGroups(parentPid: number): CodexProcessGroupIdentity[] {
 		try {
 			return [operations.capture(pid)];
 		} catch (error) {
-			if (!processExists(pid)) return [];
+			if (!processExists(pid)) {
+				return [];
+			}
 			throw error;
 		}
 	});
@@ -42,12 +46,16 @@ async function stopChildGroup(
 	group: CodexProcessGroupIdentity,
 	operations: Pick<CodexProcessGroupOperations, "inspect" | "signal">,
 ): Promise<void> {
-	if (operations.inspect(group) === "owned") operations.signal(group, "SIGTERM");
+	if (operations.inspect(group) === "owned") {
+		operations.signal(group, "SIGTERM");
+	}
 	let deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
 	while (operations.inspect(group) === "owned" && Date.now() < deadline) {
 		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
 	}
-	if (operations.inspect(group) === "owned") operations.signal(group, "SIGKILL");
+	if (operations.inspect(group) === "owned") {
+		operations.signal(group, "SIGKILL");
+	}
 	deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
 	while (operations.inspect(group) === "owned" && Date.now() < deadline) {
 		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
@@ -70,7 +78,9 @@ function removeExactStorageLock(storageLock: string, canvasPid: number): void {
 		}
 		fs.unlinkSync(storageLock);
 	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+		if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+			throw error;
+		}
 	}
 }
 
@@ -103,7 +113,9 @@ export async function completeCapturedCanvasCleanup(
 			failures.push(error);
 		}
 	}
-	if (failures.length === 1) throw failures[0];
+	if (failures.length === 1) {
+		throw failures[0];
+	}
 	if (failures.length > 1) {
 		throw new AggregateError(
 			failures,

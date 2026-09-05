@@ -51,12 +51,16 @@ function parseBoardList(result: RepositorySpawn): z.infer<typeof boardListSchema
 		throw new Error(`${diagnostic}\nparse: ${(error as Error).message}`, { cause: error });
 	}
 	const parsed = boardListSchema.safeParse(decoded);
-	if (!parsed.success) throw new Error(`${diagnostic}\nparse: ${parsed.error.message}`);
+	if (!parsed.success) {
+		throw new Error(`${diagnostic}\nparse: ${parsed.error.message}`);
+	}
 	return parsed.data;
 }
 
 const doingUrl = (path: string, method: string) => {
-	if (method === "GET") return path;
+	if (method === "GET") {
+		return path;
+	}
 	const separator = path.includes("?") ? "&" : "?";
 	return `${path}${separator}doing=${encodeURIComponent("checking repository session")}`;
 };

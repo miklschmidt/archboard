@@ -198,14 +198,20 @@ export interface ParsedDynamicToolCallResponse<Name extends GeneralThreadToolNam
 }
 
 function freezeDeep<T>(value: T): T {
-	if (typeof value !== "object" || value === null) return value;
-	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
+	if (typeof value !== "object" || value === null) {
+		return value;
+	}
+	for (const child of Object.values(value as Record<string, unknown>)) {
+		freezeDeep(child);
+	}
 	return Object.freeze(value);
 }
 
 function schemaFor(name: unknown): z.ZodTypeAny {
 	const parsedName = GeneralThreadToolNameSchema.safeParse(name);
-	if (!parsedName.success) throw new TypeError(`Unknown archboard_app tool: ${String(name)}.`);
+	if (!parsedName.success) {
+		throw new TypeError(`Unknown archboard_app tool: ${String(name)}.`);
+	}
 	return TOOL_RESULT_ENVELOPE_SCHEMAS[parsedName.data];
 }
 
@@ -221,10 +227,11 @@ function orderedObject(
 	overrides: Readonly<JsonRecord> = {},
 ): JsonRecord {
 	const result: JsonRecord = {};
-	for (const key of keys)
+	for (const key of keys) {
 		result[key] = Object.prototype.hasOwnProperty.call(overrides, key)
 			? overrides[key]
 			: value[key];
+	}
 	return result;
 }
 
@@ -319,11 +326,15 @@ export function parseToolResultEnvelope(
 	const label = `${String(name)} result envelope`;
 	const value = parseStrictJson(text, label);
 	const parsed = schemaFor(name).safeParse(value);
-	if (!parsed.success) invalidResult(label, parsed.error.issues);
+	if (!parsed.success) {
+		invalidResult(label, parsed.error.issues);
+	}
 	const canonicalText = JSON.stringify(
 		canonicalEnvelope(name as GeneralThreadToolName, parsed.data),
 	);
-	if (canonicalText !== text) throw new TypeError(`${label} must use canonical compact JSON.`);
+	if (canonicalText !== text) {
+		throw new TypeError(`${label} must use canonical compact JSON.`);
+	}
 	return freezeDeep(parsed.data) as ToolResultEnvelope<GeneralThreadToolName>;
 }
 
@@ -340,13 +351,16 @@ export function parseDynamicToolCallResponse(
 	response: unknown,
 ): ParsedDynamicToolCallResponse<GeneralThreadToolName> {
 	const parsed = DynamicToolCallResponseSchema.safeParse(response);
-	if (!parsed.success) invalidResult(`${String(name)} dynamic tool response`, parsed.error.issues);
+	if (!parsed.success) {
+		invalidResult(`${String(name)} dynamic tool response`, parsed.error.issues);
+	}
 	const envelope = parseToolResultEnvelope(name, parsed.data.contentItems[0].text);
 	if (!parsed.data.success) {
-		if (envelope.tag !== "refused" || !OUTER_FAILURE_REASONS.has(envelope.reason))
+		if (envelope.tag !== "refused" || !OUTER_FAILURE_REASONS.has(envelope.reason)) {
 			throw new TypeError(
 				`${String(name)} dynamic tool response must use a boundary-refusal envelope when success is false.`,
 			);
+		}
 	}
 	return freezeDeep({
 		contentItems: parsed.data.contentItems,

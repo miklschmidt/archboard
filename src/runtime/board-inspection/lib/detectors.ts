@@ -215,7 +215,9 @@ const pointOrder = (a: ScenePoint, b: ScenePoint) => a.x - b.x || a.y - b.y;
 const numberListOrder = (a: readonly number[], b: readonly number[]): number => {
 	for (let index = 0; index < Math.min(a.length, b.length); index += 1) {
 		const difference = a[index]! - b[index]!;
-		if (difference) return difference;
+		if (difference) {
+			return difference;
+		}
 	}
 	return a.length - b.length;
 };
@@ -242,21 +244,34 @@ function identityRoles(record: DecodedRecord): IntendedRole[] {
 	const roles = new Set<IntendedRole>();
 	const type = record.type;
 	const metadata = archboardMetadata(record);
-	if (type === "arrow" || type === "line") roles.add("connector");
-	if (metadata && "node" in metadata) roles.add("semantic-node-member");
+	if (type === "arrow" || type === "line") {
+		roles.add("connector");
+	}
+	if (metadata && "node" in metadata) {
+		roles.add("semantic-node-member");
+	}
 	if (type === "rectangle" || type === "ellipse" || type === "diamond") {
-		if (libraryAttribution(record)?.valid) roles.add("valid-library-body");
-		if (groupIds(record).length > 0) roles.add("qualifying-group-body");
+		if (libraryAttribution(record)?.valid) {
+			roles.add("valid-library-body");
+		}
+		if (groupIds(record).length > 0) {
+			roles.add("qualifying-group-body");
+		}
 		roles.add("node-overlap-body");
 	}
 	if (type === "text") {
 		roles.add("font-policy-text");
 		roles.add("label-overlap-body");
 	}
-	if (type === "text" && record.raw?.containerId !== undefined) roles.add("bound-label");
-	if (record.raw?.boundElements !== undefined) roles.add("label-container");
-	if (["rectangle", "ellipse", "diamond", "frame"].includes(type ?? ""))
+	if (type === "text" && record.raw?.containerId !== undefined) {
+		roles.add("bound-label");
+	}
+	if (record.raw?.boundElements !== undefined) {
+		roles.add("label-container");
+	}
+	if (["rectangle", "ellipse", "diamond", "frame"].includes(type ?? "")) {
 		roles.add("closed-boundary");
+	}
 	return [...roles].toSorted();
 }
 
@@ -302,7 +317,7 @@ function identityFindings(records: readonly DecodedRecord[]): InspectionFinding[
 			duplicate.set(record.id, list);
 		}
 	}
-	for (const [id, matches] of duplicate)
+	for (const [id, matches] of duplicate) {
 		if (matches.length > 1) {
 			findings.push(
 				make({
@@ -320,6 +335,7 @@ function identityFindings(records: readonly DecodedRecord[]): InspectionFinding[
 				}),
 			);
 		}
+	}
 	return findings;
 }
 
@@ -328,13 +344,15 @@ function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] 
 	for (const record of records.filter((candidate) => candidate.live)) {
 		const raw = record.raw;
 		const fields = record.invalidRenderFields;
-		if (fields.length === 0) continue;
+		if (fields.length === 0) {
+			continue;
+		}
 		const locatable =
 			typeof raw?.x === "number" &&
 			Number.isFinite(raw.x) &&
 			typeof raw?.y === "number" &&
 			Number.isFinite(raw.y);
-		if (!locatable)
+		if (!locatable) {
 			findings.push(
 				make({
 					code: "INVALID_RENDER_GEOMETRY",
@@ -351,7 +369,7 @@ function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] 
 					affected: null,
 				}),
 			);
-		else
+		} else {
 			findings.push(
 				make({
 					code: "INVALID_RENDER_GEOMETRY",
@@ -368,6 +386,7 @@ function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] 
 					affected: record.evidenceBox,
 				}),
 			);
+		}
 	}
 	return findings;
 }
@@ -425,27 +444,33 @@ function coordinateSpanFindings(
 	produced: readonly InspectionFinding[],
 ): InspectionFinding[] {
 	const findings: InspectionFinding[] = [];
-	for (const record of records)
+	for (const record of records) {
 		if (
 			record.live &&
 			record.raw &&
 			record.invalidRenderFields.length === 0 &&
 			!record.extentRepresentable
-		)
+		) {
 			findings.push(coordinateSpanFinding("record-extent", record.id, [record]));
-	for (const failure of model.aggregateFailures)
+		}
+	}
+	for (const failure of model.aggregateFailures) {
 		findings.push(coordinateSpanFinding(failure.scope, failure.subjectId, failure.members));
+	}
 	const bySource = new Map(records.map((record) => [record.sourceIndex, record]));
 	const seen = new Set<string>();
 	for (const finding of produced) {
 		const members = finding.elements
 			.map((reference) => bySource.get(reference.sourceIndex))
 			.filter((record): record is DecodedRecord => !!record && !!record.evidenceBox);
-		if (members.length < 2 || aggregateBoxes(evidenceBoxesOf(members)).kind !== "unrepresentable")
+		if (members.length < 2 || aggregateBoxes(evidenceBoxesOf(members)).kind !== "unrepresentable") {
 			continue;
+		}
 		const keyMembers = members.map((record) => record.sourceIndex);
 		const key = keyMembers.toSorted((a, b) => a - b).join(",");
-		if (seen.has(key)) continue;
+		if (seen.has(key)) {
+			continue;
+		}
 		seen.add(key);
 		findings.push(coordinateSpanFinding("finding-affected-union", null, members));
 	}
@@ -458,10 +483,13 @@ function focusPaddingFindings(produced: readonly InspectionFinding[]): Inspectio
 			finding.affectedBBox === null ||
 			finding.focusBBox !== null ||
 			(finding.code === "AMBIGUOUS_GEOMETRY" && finding.reason === "unrepresentable-focus-padding")
-		)
+		) {
 			return [];
+		}
 		const focusResult = focusBox(finding.affectedBBox);
-		if (focusResult.kind !== "unrepresentable") return [];
+		if (focusResult.kind !== "unrepresentable") {
+			return [];
+		}
 		return [
 			make({
 				code: "AMBIGUOUS_GEOMETRY",
@@ -501,8 +529,9 @@ function decodedPathEvidence(
 	raw: RawRecord,
 	scenePoints: readonly ExactPoint[] | null | undefined,
 ): { points: readonly ExactPoint[]; affected: ExactBox | null } {
-	if (scenePoints === null || (scenePoints === undefined && !locatableOrigin(raw)))
+	if (scenePoints === null || (scenePoints === undefined && !locatableOrigin(raw))) {
 		return { points: [], affected: null };
+	}
 	const points = scenePoints ?? [];
 	const pathBox = points.length > 0 ? pointBox(points) : null;
 	return {
@@ -513,7 +542,9 @@ function decodedPathEvidence(
 
 function unusablePathFinding(record: DecodedRecord, raw: RawRecord): InspectionFinding {
 	const decoded = decodePath(record);
-	if (decoded.ok) throw new Error("usable connector path passed to unusablePathFinding");
+	if (decoded.ok) {
+		throw new Error("usable connector path passed to unusablePathFinding");
+	}
 	if (decoded.issue === "absolute-point-overflow") {
 		const evidence = decodedPathEvidence(record, raw, decoded.scenePoints);
 		return make({
@@ -632,7 +663,7 @@ function connectorGeometryFindings(
 	const pathEvidence = decodedPathEvidence(record, raw, decoded.scenePoints);
 	const angle = raw["angle"];
 	const unsupportedRotation = angle !== undefined && angle !== 0;
-	if (unsupportedRotation)
+	if (unsupportedRotation) {
 		findings.push(
 			make({
 				code: "UNSUPPORTED_GEOMETRY",
@@ -648,8 +679,9 @@ function connectorGeometryFindings(
 				...pathEvidence,
 			}),
 		);
+	}
 	const unsupportedCurve = raw["curve"] !== undefined || raw["curveKind"] !== undefined;
-	if (unsupportedCurve)
+	if (unsupportedCurve) {
 		findings.push(
 			make({
 				code: "UNSUPPORTED_GEOMETRY",
@@ -662,8 +694,9 @@ function connectorGeometryFindings(
 				...pathEvidence,
 			}),
 		);
+	}
 	const eligibility = decoded.ok ? persistedConnectorPointChainEligibility(record, decoded) : null;
-	if (eligibility && !eligibility.eligible)
+	if (eligibility && !eligibility.eligible) {
 		findings.push(
 			make({
 				code: "UNSUPPORTED_GEOMETRY",
@@ -685,8 +718,11 @@ function connectorGeometryFindings(
 				...pathEvidence,
 			}),
 		);
-	if (!decoded.ok) return [...findings, unusablePathFinding(record, raw)];
-	for (const segmentIndex of decoded.zeroSegments)
+	}
+	if (!decoded.ok) {
+		return [...findings, unusablePathFinding(record, raw)];
+	}
+	for (const segmentIndex of decoded.zeroSegments) {
 		findings.push(
 			make({
 				code: "AMBIGUOUS_GEOMETRY",
@@ -700,12 +736,17 @@ function connectorGeometryFindings(
 				affected: decoded.scenePoints ? pointBox([decoded.scenePoints[segmentIndex]!]) : null,
 			}),
 		);
+	}
 	const unsupported = unsupportedRotation || unsupportedCurve || eligibility?.eligible === false;
-	if (unsupported || !record.usableId || !record.id || !decoded.scenePoints) return findings;
+	if (unsupported || !record.usableId || !record.id || !decoded.scenePoints) {
+		return findings;
+	}
 	const zeroSegments = new Set(decoded.zeroSegments);
 	for (let index = 0; index < decoded.scenePoints.length - 1; index += 1) {
 		work.pathSegmentChecks += 1;
-		if (zeroSegments.has(index)) continue;
+		if (zeroSegments.has(index)) {
+			continue;
+		}
 		segments.push({
 			connectorId: record.id,
 			sourceIndex: record.sourceIndex,
@@ -721,13 +762,14 @@ function connectorGeometryFindings(
 		!Number.isFinite(raw["width"]) ||
 		typeof raw["height"] !== "number" ||
 		!Number.isFinite(raw["height"])
-	)
+	) {
 		return findings;
+	}
 	const widthDelta = Math.abs(raw["width"] - measured.width),
 		heightDelta = Math.abs(raw["height"] - measured.height);
 	const staleWidth = widthDelta >= policy.dimensionTolerance,
 		staleHeight = heightDelta >= policy.dimensionTolerance;
-	if (staleWidth || staleHeight)
+	if (staleWidth || staleHeight) {
 		findings.push(
 			make({
 				code: "STALE_LINEAR_DIMENSIONS",
@@ -748,6 +790,7 @@ function connectorGeometryFindings(
 				affected: pointBox(decoded.scenePoints),
 			}),
 		);
+	}
 	return findings;
 }
 
@@ -778,28 +821,32 @@ function bindingIssue(value: unknown): BindingInspection {
 			? (value as Record<string, unknown>)
 			: null;
 	const target = classifyBindingTarget(value);
-	if (target.blockingIssue)
+	if (target.blockingIssue) {
 		return {
 			binding,
 			issue: target.blockingIssue,
 			readableTargetId: null,
 			classificationBlocked: true,
 		};
+	}
 	let issue: Exclude<BindingIssue, BlockingBindingIssue> | null = null;
 	if (binding) {
-		if (!("focus" in binding)) issue = "missing-focus";
-		else if (typeof binding["focus"] !== "number" || !Number.isFinite(binding["focus"]))
+		if (!("focus" in binding)) {
+			issue = "missing-focus";
+		} else if (typeof binding["focus"] !== "number" || !Number.isFinite(binding["focus"])) {
 			issue = "nonfinite-focus";
-		else if (!("gap" in binding)) issue = "missing-gap";
-		else if (typeof binding["gap"] !== "number" || !Number.isFinite(binding["gap"]))
+		} else if (!("gap" in binding)) {
+			issue = "missing-gap";
+		} else if (typeof binding["gap"] !== "number" || !Number.isFinite(binding["gap"])) {
 			issue = "nonfinite-gap";
-		else if (
+		} else if (
 			binding["fixedPoint"] != null &&
 			(!Array.isArray(binding["fixedPoint"]) ||
 				binding["fixedPoint"].length !== 2 ||
 				binding["fixedPoint"].some((n) => typeof n !== "number" || !Number.isFinite(n)))
-		)
+		) {
 			issue = "invalid-fixed-point";
+		}
 	}
 	return {
 		binding: binding!,
@@ -818,7 +865,9 @@ function connectorBindingFindings(
 	const findings: InspectionFinding[] = [];
 	for (const end of ["start", "end"] as const) {
 		const value = raw[`${end}Binding`];
-		if (value == null) continue;
+		if (value == null) {
+			continue;
+		}
 		const { issue, readableTargetId, classificationBlocked } = bindingIssue(value);
 		if (issue) {
 			const shared = {
@@ -829,7 +878,7 @@ function connectorBindingFindings(
 				elements: [record.ref],
 				affected: record.evidenceBox,
 			} as const;
-			if (classificationBlocked)
+			if (classificationBlocked) {
 				findings.push(
 					make({
 						...shared,
@@ -844,7 +893,7 @@ function connectorBindingFindings(
 						},
 					}),
 				);
-			else
+			} else {
 				findings.push(
 					make({
 						...shared,
@@ -859,11 +908,13 @@ function connectorBindingFindings(
 						},
 					}),
 				);
+			}
 		}
-		if (!readableTargetId || !record.usableId || !record.id || duplicateIds.has(readableTargetId))
+		if (!readableTargetId || !record.usableId || !record.id || duplicateIds.has(readableTargetId)) {
 			continue;
+		}
 		const target = byId.get(readableTargetId);
-		if (!target)
+		if (!target) {
 			findings.push(
 				make({
 					code: "BROKEN_REFERENCE",
@@ -876,7 +927,7 @@ function connectorBindingFindings(
 					affected: record.evidenceBox,
 				}),
 			);
-		else if (target.type === "arrow" || target.type === "line")
+		} else if (target.type === "arrow" || target.type === "line") {
 			findings.push(
 				make({
 					code: "BROKEN_REFERENCE",
@@ -894,7 +945,7 @@ function connectorBindingFindings(
 					affected: affectedOf([record, target]),
 				}),
 			);
-		else {
+		} else {
 			const targetBounds = target.raw?.boundElements;
 			if (
 				!Array.isArray(targetBounds) ||
@@ -906,7 +957,7 @@ function connectorBindingFindings(
 						(entry as Record<string, unknown>)["id"] === record.id &&
 						(entry as Record<string, unknown>)["type"] === "arrow",
 				)
-			)
+			) {
 				findings.push(
 					make({
 						code: "BROKEN_REFERENCE",
@@ -919,25 +970,32 @@ function connectorBindingFindings(
 						affected: affectedOf([record, target]),
 					}),
 				);
+			}
 		}
 	}
 	return findings;
 }
 
 function persistedEndpointFindings(record: DecodedRecord, raw: RawRecord): InspectionFinding[] {
-	if (!record.id) return [];
+	if (!record.id) {
+		return [];
+	}
 	const findings: InspectionFinding[] = [];
 	for (const end of ["start", "end"] as const) {
 		const input = raw[end];
-		if (!input || typeof input !== "object" || Array.isArray(input)) continue;
+		if (!input || typeof input !== "object" || Array.isArray(input)) {
+			continue;
+		}
 		const inputId = (input as Record<string, unknown>)["id"];
-		if (typeof inputId !== "string" || !inputId) continue;
+		if (typeof inputId !== "string" || !inputId) {
+			continue;
+		}
 		const binding = raw[`${end}Binding`];
 		const bindingId =
 			binding && typeof binding === "object" && !Array.isArray(binding)
 				? (binding as Record<string, unknown>)["elementId"]
 				: null;
-		if (bindingId !== inputId)
+		if (bindingId !== inputId) {
 			findings.push(
 				make({
 					code: "BROKEN_REFERENCE",
@@ -955,6 +1013,7 @@ function persistedEndpointFindings(record: DecodedRecord, raw: RawRecord): Inspe
 					affected: record.evidenceBox,
 				}),
 			);
+		}
 	}
 	return findings;
 }
@@ -966,10 +1025,12 @@ function boundElementFindings(
 	duplicateIds: ReadonlySet<string>,
 ): InspectionFinding[] {
 	const bounds = raw["boundElements"];
-	if (bounds == null) return [];
+	if (bounds == null) {
+		return [];
+	}
 	const findings: InspectionFinding[] = [];
 	const { readableEntries, problems } = classifyBoundElements(bounds);
-	for (const problem of problems)
+	for (const problem of problems) {
 		findings.push(
 			make({
 				code: "BROKEN_REFERENCE",
@@ -990,11 +1051,16 @@ function boundElementFindings(
 				affected: record.evidenceBox,
 			}),
 		);
-	if (!record.usableId || !record.id) return findings;
+	}
+	if (!record.usableId || !record.id) {
+		return findings;
+	}
 	for (const entry of readableEntries) {
-		if (duplicateIds.has(entry.id)) continue;
+		if (duplicateIds.has(entry.id)) {
+			continue;
+		}
 		const target = byId.get(entry.id);
-		if (!target)
+		if (!target) {
 			findings.push(
 				make({
 					code: "BROKEN_REFERENCE",
@@ -1007,11 +1073,11 @@ function boundElementFindings(
 					affected: record.evidenceBox,
 				}),
 			);
-		else if (
+		} else if (
 			target.type !== null &&
 			KNOWN_ELEMENT_TYPES.has(target.type) &&
 			!boundElementTargetCompatible(entry.type, target.type)
-		)
+		) {
 			findings.push(
 				make({
 					code: "BROKEN_REFERENCE",
@@ -1029,6 +1095,7 @@ function boundElementFindings(
 					affected: affectedOf([record, target]),
 				}),
 			);
+		}
 	}
 	return findings;
 }
@@ -1041,7 +1108,7 @@ function metadataFindings(record: DecodedRecord, raw: RawRecord): InspectionFind
 		"node" in metadata &&
 		(typeof metadata["node"] !== "string" || metadata["node"].length === 0) &&
 		record.id
-	)
+	) {
 		findings.push(
 			make({
 				code: "BROKEN_REFERENCE",
@@ -1054,26 +1121,33 @@ function metadataFindings(record: DecodedRecord, raw: RawRecord): InspectionFind
 				affected: record.evidenceBox,
 			}),
 		);
+	}
 	const binding = metadata?.["binding"];
-	if (binding === undefined || !record.id) return findings;
+	if (binding === undefined || !record.id) {
+		return findings;
+	}
 	const object =
 		binding && typeof binding === "object" && !Array.isArray(binding)
 			? (binding as Record<string, unknown>)
 			: null;
 	const issues: string[] = [];
-	if (!object) issues.push("binding must be an object");
-	else {
-		if (typeof object["path"] !== "string" || !object["path"])
+	if (!object) {
+		issues.push("binding must be an object");
+	} else {
+		if (typeof object["path"] !== "string" || !object["path"]) {
 			issues.push("path must be a nonempty string");
+		}
 		if (
 			typeof object["path"] === "string" &&
 			(object["path"].startsWith("/") || object["path"].split("/").includes(".."))
-		)
+		) {
 			issues.push("path must be repository-relative and usable");
-		if (object["repo"] !== undefined && typeof object["repo"] !== "string")
+		}
+		if (object["repo"] !== undefined && typeof object["repo"] !== "string") {
 			issues.push("repo must be a string");
+		}
 	}
-	if (issues.length)
+	if (issues.length) {
 		findings.push(
 			make({
 				code: "BROKEN_REFERENCE",
@@ -1086,7 +1160,8 @@ function metadataFindings(record: DecodedRecord, raw: RawRecord): InspectionFind
 				affected: record.evidenceBox,
 			}),
 		);
-	if (typeof raw["link"] === "string" && raw["link"])
+	}
+	if (typeof raw["link"] === "string" && raw["link"]) {
 		findings.push(
 			make({
 				code: "BROKEN_REFERENCE",
@@ -1099,6 +1174,7 @@ function metadataFindings(record: DecodedRecord, raw: RawRecord): InspectionFind
 				affected: record.evidenceBox,
 			}),
 		);
+	}
 	return findings;
 }
 
@@ -1107,7 +1183,9 @@ function fontFindings(
 	raw: RawRecord,
 	policy: InspectionPolicy,
 ): InspectionFinding[] {
-	if (record.type !== "text") return [];
+	if (record.type !== "text") {
+		return [];
+	}
 	const allowed = policy.allowedFontFamilies;
 	const points = record.box
 		? [
@@ -1117,7 +1195,7 @@ function fontFindings(
 				},
 			]
 		: [];
-	if (!("fontFamily" in raw) || raw["fontFamily"] === undefined)
+	if (!("fontFamily" in raw) || raw["fontFamily"] === undefined) {
 		return allowed !== "any" && !allowed.includes(1)
 			? [
 					make({
@@ -1133,11 +1211,12 @@ function fontFindings(
 					}),
 				]
 			: [];
+	}
 	if (
 		typeof raw["fontFamily"] !== "number" ||
 		!Number.isInteger(raw["fontFamily"]) ||
 		![1, 2, 3, 5, 6, 7, 8].includes(raw["fontFamily"])
-	)
+	) {
 		return [
 			make({
 				code: "FONT_POLICY_VIOLATION",
@@ -1155,6 +1234,7 @@ function fontFindings(
 				affected: record.evidenceBox,
 			}),
 		];
+	}
 	return allowed !== "any" && !allowed.includes(raw["fontFamily"] as 1 | 2 | 3 | 5 | 6 | 7 | 8)
 		? [
 				make({
@@ -1181,8 +1261,9 @@ function containerFindings(record: DecodedRecord, raw: RawRecord): InspectionFin
 		record.type !== "text" ||
 		raw["containerId"] == null ||
 		(typeof raw["containerId"] === "string" && raw["containerId"].length > 0)
-	)
+	) {
 		return [];
+	}
 	return [
 		make({
 			code: "BROKEN_REFERENCE",
@@ -1206,7 +1287,9 @@ function containerFindings(record: DecodedRecord, raw: RawRecord): InspectionFin
 
 function libraryFindings(record: DecodedRecord, model: InspectionModel): InspectionFinding[] {
 	const library = libraryAttribution(record);
-	if (!library || library.valid || !record.id) return [];
+	if (!library || library.valid || !record.id) {
+		return [];
+	}
 	const rescuedByGroup = model.qualifyingGroupedObstacleElementIds.has(record.id);
 	const shared = {
 		code: "BROKEN_REFERENCE",
@@ -1289,7 +1372,7 @@ function unsupportedGeometryFindings(
 		raw["angle"] !== undefined &&
 		raw["angle"] !== 0 &&
 		hasCoverageRoleEvidence(record, hasIncomingReference)
-	)
+	) {
 		findings.push(
 			make({
 				code: "UNSUPPORTED_GEOMETRY",
@@ -1307,6 +1390,7 @@ function unsupportedGeometryFindings(
 				affected: record.evidenceBox,
 			}),
 		);
+	}
 	const rawType = raw["type"];
 	const canonicalType = typeof rawType === "string" && rawType.length > 0;
 	if (
@@ -1333,20 +1417,27 @@ function unsupportedGeometryFindings(
 function incomingReferenceIds(records: readonly DecodedRecord[]): ReadonlySet<string> {
 	const ids = new Set<string>();
 	const add = (value: unknown) => {
-		if (typeof value === "string" && value.length > 0) ids.add(value);
+		if (typeof value === "string" && value.length > 0) {
+			ids.add(value);
+		}
 	};
 	for (const record of records.filter((candidate) => candidate.live && candidate.raw)) {
 		const raw = record.raw!;
 		add(raw.containerId);
 		for (const end of ["start", "end"] as const) {
 			const binding = raw[`${end}Binding`];
-			if (binding && typeof binding === "object" && !Array.isArray(binding))
+			if (binding && typeof binding === "object" && !Array.isArray(binding)) {
 				add((binding as RawRecord)["elementId"]);
+			}
 		}
-		if (!Array.isArray(raw.boundElements)) continue;
-		for (const entry of raw.boundElements)
-			if (entry && typeof entry === "object" && !Array.isArray(entry))
+		if (!Array.isArray(raw.boundElements)) {
+			continue;
+		}
+		for (const entry of raw.boundElements) {
+			if (entry && typeof entry === "object" && !Array.isArray(entry)) {
 				add((entry as RawRecord)["id"]);
+			}
+		}
 	}
 	return ids;
 }
@@ -1370,12 +1461,16 @@ function structuralFindings(
 		if (record.type === "arrow" || record.type === "line") {
 			findings.push(...connectorGeometryFindings(record, raw, policy, segments, work));
 			findings.push(...connectorBindingFindings(record, raw, byId, model.duplicateIds));
-			if (record.usableId) findings.push(...persistedEndpointFindings(record, raw));
+			if (record.usableId) {
+				findings.push(...persistedEndpointFindings(record, raw));
+			}
 		}
 		findings.push(...boundElementFindings(record, raw, byId, model.duplicateIds));
 		findings.push(...containerFindings(record, raw));
 		findings.push(...metadataFindings(record, raw));
-		if (record.usableId) findings.push(...libraryFindings(record, model));
+		if (record.usableId) {
+			findings.push(...libraryFindings(record, model));
+		}
 		findings.push(...fontFindings(record, raw, policy));
 		findings.push(
 			...unsupportedGeometryFindings(
@@ -1393,9 +1488,11 @@ function labelFindings(
 	model: InspectionModel,
 ): InspectionFinding[] {
 	const valid: Array<Record<string, unknown>> = [];
-	for (const record of records)
-		if (record.live && record.raw && record.usableId && record.id && record.type)
+	for (const record of records) {
+		if (record.live && record.raw && record.usableId && record.id && record.type) {
 			valid.push(record.raw);
+		}
+	}
 	const findings: InspectionFinding[] = [];
 	const byId = model.byId;
 	const emit = (finding: InspectionFinding): void => {
@@ -1429,7 +1526,7 @@ function labelFindings(
 		const text = byId.get(textId);
 		const containerId =
 			typeof text?.raw?.containerId === "string" ? text.raw.containerId : "unknown";
-		if (text)
+		if (text) {
 			emit(
 				make({
 					code: "LABEL_CORRUPTION",
@@ -1442,12 +1539,15 @@ function labelFindings(
 					affected: text.evidenceBox,
 				}),
 			);
+		}
 	}
 	const drifted = boundTextDrift(valid as never);
 	for (const drift of drifted) {
 		const text = byId.get(drift.textId),
 			container = byId.get(drift.containerId);
-		if (!text || !container) continue;
+		if (!text || !container) {
+			continue;
+		}
 		const anchor = labelAnchorOf(container.raw as never);
 		const centre = text.box
 			? { x: text.box.x + text.box.width / 2, y: text.box.y + text.box.height / 2 }
@@ -1472,7 +1572,7 @@ function labelFindings(
 		);
 	}
 	for (const record of records.filter((r) => r.live && r.raw && r.id)) {
-		if (record.type !== "text" && record.raw?.label && typeof record.raw.label === "object")
+		if (record.type !== "text" && record.raw?.label && typeof record.raw.label === "object") {
 			emit(
 				make({
 					code: "LABEL_CORRUPTION",
@@ -1485,7 +1585,8 @@ function labelFindings(
 					affected: record.evidenceBox,
 				}),
 			);
-		if (record.type !== "text" && typeof record.raw?.text === "string")
+		}
+		if (record.type !== "text" && typeof record.raw?.text === "string") {
 			emit(
 				make({
 					code: "LABEL_CORRUPTION",
@@ -1498,14 +1599,17 @@ function labelFindings(
 					affected: record.evidenceBox,
 				}),
 			);
+		}
 	}
 	for (const ownership of model.labelOwnership.values()) {
 		const textId = ownership.labelId;
 		const text = byId.get(textId);
-		if (text?.type !== "text") continue;
+		if (text?.type !== "text") {
+			continue;
+		}
 		if (ownership.state === "forward-only" && ownership.forwardOwnerId) {
 			const owner = byId.get(ownership.forwardOwnerId);
-			if (owner)
+			if (owner) {
 				emit(
 					make({
 						code: "LABEL_CORRUPTION",
@@ -1518,6 +1622,7 @@ function labelFindings(
 						affected: affectedOf([text, owner]),
 					}),
 				);
+			}
 		}
 		if (
 			ownership.state === "reverse-only" ||
@@ -1525,7 +1630,9 @@ function labelFindings(
 		) {
 			for (const ownerId of ownership.reverseOwnerIds) {
 				const owner = byId.get(ownerId);
-				if (!owner) continue;
+				if (!owner) {
+					continue;
+				}
 				emit(
 					make({
 						code: "LABEL_CORRUPTION",
@@ -1540,17 +1647,25 @@ function labelFindings(
 				);
 			}
 		}
-		if (ownership.state !== "conflicting") continue;
+		if (ownership.state !== "conflicting") {
+			continue;
+		}
 		const primaryOwnerId = ownership.forwardOwnerId ?? ownership.reverseOwnerIds[0];
-		if (!primaryOwnerId) continue;
+		if (!primaryOwnerId) {
+			continue;
+		}
 		const other: string[] = [];
 		const involved: DecodedRecord[] = [text];
 		for (const ownerId of ownership.candidateOwnerIds) {
-			if (ownerId !== primaryOwnerId) other.push(ownerId);
+			if (ownerId !== primaryOwnerId) {
+				other.push(ownerId);
+			}
 			const owner = byId.get(ownerId);
-			if (owner) involved.push(owner);
+			if (owner) {
+				involved.push(owner);
+			}
 		}
-		if (ownership.forwardOwnerId)
+		if (ownership.forwardOwnerId) {
 			emit(
 				make({
 					code: "BROKEN_REFERENCE",
@@ -1567,6 +1682,7 @@ function labelFindings(
 					affected: affectedOf(involved),
 				}),
 			);
+		}
 		emit(
 			make({
 				code: "LABEL_CORRUPTION",
@@ -1650,7 +1766,9 @@ function pairSweep<A, B>(
 				counter.pass = pass;
 				return false;
 			}
-			if (b.box.y > a.box.y + a.box.height || b.box.y + b.box.height < a.box.y) return true;
+			if (b.box.y > a.box.y + a.box.height || b.box.y + b.box.height < a.box.y) {
+				return true;
+			}
 			visit(a.value, b.value);
 			return true;
 		},
@@ -1677,7 +1795,9 @@ function rememberConnectorRelationship(
 	target: string | undefined,
 	connectorId: string,
 ): void {
-	if (target === undefined) return;
+	if (target === undefined) {
+		return;
+	}
 	const connectors = index.get(target) ?? new Set<string>();
 	connectors.add(connectorId);
 	index.set(target, connectors);
@@ -1747,12 +1867,22 @@ function collisionFindings(
 		const textNode = model.nodeOfElement.get(textId);
 		const excludedConnectors = new Set<string>();
 		const exclude = (connectors: ReadonlySet<string> | undefined) => {
-			if (connectors) for (const connectorId of connectors) excludedConnectors.add(connectorId);
+			if (connectors) {
+				for (const connectorId of connectors) {
+					excludedConnectors.add(connectorId);
+				}
+			}
 		};
-		if (ownerId && model.connectorEndpoints.has(ownerId)) excludedConnectors.add(ownerId);
+		if (ownerId && model.connectorEndpoints.has(ownerId)) {
+			excludedConnectors.add(ownerId);
+		}
 		exclude(endpointConnectorsByElement.get(textId));
-		if (ownerId) exclude(endpointConnectorsByElement.get(ownerId));
-		if (textNode) exclude(endpointConnectorsByNode.get(textNode));
+		if (ownerId) {
+			exclude(endpointConnectorsByElement.get(ownerId));
+		}
+		if (textNode) {
+			exclude(endpointConnectorsByNode.get(textNode));
+		}
 		return {
 			id: textId,
 			box: text.box!,
@@ -1782,9 +1912,13 @@ function collisionFindings(
 	const sweepHierarchy = buildSweepHierarchy(hierarchyParents);
 	const connectorNodePartitions = new Map<string, SweepPartition>();
 	for (const segment of segments) {
-		if (connectorNodePartitions.has(segment.connectorId)) continue;
+		if (connectorNodePartitions.has(segment.connectorId)) {
+			continue;
+		}
 		const ends = connectorEnds(segment);
-		if (!ends.nodeAnalysisEligible) continue;
+		if (!ends.nodeAnalysisEligible) {
+			continue;
+		}
 		const ancestorTargets: string[] = [];
 		if (ends.startNode !== undefined) {
 			ancestorTargets.push(ends.startNode);
@@ -1811,7 +1945,9 @@ function collisionFindings(
 		false,
 		(segment, node) => {
 			const hit = segmentInsideBox(segment.a, segment.b, node.body, policy.overlapTolerance);
-			if (!hit) return;
+			if (!hit) {
+				return;
+			}
 			findings.push(
 				make({
 					code: "CONNECTOR_PENETRATES_NODE",
@@ -1851,7 +1987,9 @@ function collisionFindings(
 			false,
 			(segment, obstacle) => {
 				const hit = segmentInsideBox(segment.a, segment.b, obstacle.box, policy.overlapTolerance);
-				if (!hit) return;
+				if (!hit) {
+					return;
+				}
 				findings.push(
 					make({
 						code: "CONNECTOR_PENETRATES_OBSTACLE",
@@ -1888,7 +2026,9 @@ function collisionFindings(
 			(segment, text) => {
 				const textId = text.id!;
 				const hit = segmentInsideBox(segment.a, segment.b, text.box!, policy.overlapTolerance);
-				if (!hit) return;
+				if (!hit) {
+					return;
+				}
 				findings.push(
 					make({
 						code: "CONNECTOR_PENETRATES_TEXT",
@@ -1952,7 +2092,7 @@ function collisionFindings(
 							canonical.y === bridge.crossing.y
 						);
 					});
-				if (hit.kind === "proper" && !suppressed)
+				if (hit.kind === "proper" && !suppressed) {
 					findings.push(
 						make({
 							code: "CONNECTOR_INTERSECTION_UNMARKED",
@@ -1974,7 +2114,7 @@ function collisionFindings(
 							affected: pointBox([hit.point]),
 						}),
 					);
-				else if (hit.kind === "collinear")
+				} else if (hit.kind === "collinear") {
 					findings.push(
 						make({
 							code: "AMBIGUOUS_GEOMETRY",
@@ -1995,6 +2135,7 @@ function collisionFindings(
 							affected: pointBox(hit.points),
 						}),
 					);
+				}
 			},
 			counter,
 			sweepWork,
@@ -2017,8 +2158,9 @@ function collisionFindings(
 			true,
 			(a, b) => {
 				const hit = overlap(a.body, b.body);
-				if (!hit || hit.width <= policy.overlapTolerance || hit.height <= policy.overlapTolerance)
+				if (!hit || hit.width <= policy.overlapTolerance || hit.height <= policy.overlapTolerance) {
 					return;
+				}
 				findings.push(
 					make({
 						code: "NODE_OVERLAP",
@@ -2052,7 +2194,9 @@ function collisionFindings(
 			semantics: unrestrictedPartition(node.id),
 		}));
 		labelNodeRecords = records.filter((record) => {
-			if (!record.live || !record.id || record.type !== "text" || !record.box) return false;
+			if (!record.live || !record.id || record.type !== "text" || !record.box) {
+				return false;
+			}
 			const state = model.labelOwnership.get(record.id)?.state;
 			return state !== undefined && state !== "none" && state !== "blocked";
 		});
@@ -2089,8 +2233,9 @@ function collisionFindings(
 			false,
 			(label, node) => {
 				const hit = overlap(label.box!, node.body);
-				if (!hit || hit.width <= policy.overlapTolerance || hit.height <= policy.overlapTolerance)
+				if (!hit || hit.width <= policy.overlapTolerance || hit.height <= policy.overlapTolerance) {
 					return;
+				}
 				findings.push(
 					make({
 						code: "LABEL_OVERLAP",
@@ -2139,8 +2284,9 @@ function collisionFindings(
 			true,
 			(a, b) => {
 				const hit = overlap(a.box!, b.box!);
-				if (!hit || hit.width <= policy.overlapTolerance || hit.height <= policy.overlapTolerance)
+				if (!hit || hit.width <= policy.overlapTolerance || hit.height <= policy.overlapTolerance) {
 					return;
+				}
 				findings.push(
 					make({
 						code: "LABEL_OVERLAP",
@@ -2219,31 +2365,45 @@ function collisionFindings(
 function orderedFindings(findings: readonly InspectionFinding[]): InspectionFinding[] {
 	return findings.toSorted((a, b) => {
 		const severity = (a.severity === "error" ? 0 : 1) - (b.severity === "error" ? 0 : 1);
-		if (severity) return severity;
+		if (severity) {
+			return severity;
+		}
 		const code = CODE_ORDER.indexOf(a.code) - CODE_ORDER.indexOf(b.code);
-		if (code) return code;
+		if (code) {
+			return code;
+		}
 		const reason = REASON_ORDER.indexOf(a.reason) - REASON_ORDER.indexOf(b.reason);
-		if (reason) return reason;
+		if (reason) {
+			return reason;
+		}
 		const nodes = compareIdentityLists(
 			a.nodes.map((node) => node.id),
 			b.nodes.map((node) => node.id),
 		);
-		if (nodes) return nodes;
+		if (nodes) {
+			return nodes;
+		}
 		const obstacles = compareIdentityLists(
 			a.obstacles.map((obstacle) => obstacle.id),
 			b.obstacles.map((obstacle) => obstacle.id),
 		);
-		if (obstacles) return obstacles;
+		if (obstacles) {
+			return obstacles;
+		}
 		const elements = compareIdentityLists(
 			a.elements.map((element) => element.id ?? ""),
 			b.elements.map((element) => element.id ?? ""),
 		);
-		if (elements) return elements;
+		if (elements) {
+			return elements;
+		}
 		const sources = numberListOrder(
 			a.elements.map((element) => element.sourceIndex),
 			b.elements.map((element) => element.sourceIndex),
 		);
-		if (sources) return sources;
+		if (sources) {
+			return sources;
+		}
 		const boxA = a.affectedBBox;
 		const boxB = b.affectedBBox;
 		return (

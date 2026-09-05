@@ -22,8 +22,9 @@ export type AgentElementStatement = LegacyElementIngress & {
 };
 
 export function withAgentLabelIntent<T extends object>(value: T, label: unknown): T {
-	if (typeof label === "string")
+	if (typeof label === "string") {
 		Object.defineProperty(value, agentLabelIntent, { value: label, enumerable: false });
+	}
 	return value;
 }
 
@@ -33,7 +34,9 @@ export function agentLabelIntentOf(value: object): string | undefined {
 }
 
 function normalizePoints(points: unknown): unknown {
-	if (!Array.isArray(points)) return points;
+	if (!Array.isArray(points)) {
+		return points;
+	}
 	const normalized: [number, number][] = [];
 	for (const point of points) {
 		const record =
@@ -42,8 +45,12 @@ function normalizePoints(points: unknown): unknown {
 				: null;
 		const x = Array.isArray(point) ? point[0] : record?.["x"];
 		const y = Array.isArray(point) ? point[1] : record?.["y"];
-		if (typeof x !== "number" || !Number.isFinite(x)) return points;
-		if (typeof y !== "number" || !Number.isFinite(y)) return points;
+		if (typeof x !== "number" || !Number.isFinite(x)) {
+			return points;
+		}
+		if (typeof y !== "number" || !Number.isFinite(y)) {
+			return points;
+		}
 		normalized.push([x, y]);
 	}
 	return normalized;
@@ -55,7 +62,9 @@ export function wellFormAgentStatement(
 	existingType?: string,
 ): Record<string, unknown> {
 	const statement = stripUntrustedTrackingClaims(raw);
-	if (hasOwn(statement, "points")) statement["points"] = normalizePoints(statement["points"]);
+	if (hasOwn(statement, "points")) {
+		statement["points"] = normalizePoints(statement["points"]);
+	}
 	for (const [alias, ref] of [
 		["startElementId", "start"],
 		["endElementId", "end"],
@@ -79,9 +88,13 @@ export function wellFormAgentStatement(
 		withAgentLabelIntent(statement, typeof labelText === "string" ? labelText : text);
 	}
 	for (const key of ["startBinding", "endBinding"] as const) {
-		if (!hasOwn(statement, key)) continue;
+		if (!hasOwn(statement, key)) {
+			continue;
+		}
 		const value = statement[key];
-		if (value === null || !value || typeof value !== "object" || Array.isArray(value)) continue;
+		if (value === null || !value || typeof value !== "object" || Array.isArray(value)) {
+			continue;
+		}
 		const record = value as Record<string, unknown>;
 		statement[key] = {
 			elementId: record["elementId"],
@@ -97,7 +110,9 @@ export function spendArrowRefs(
 	element: Record<string, unknown>,
 	stated: Record<string, unknown>,
 ): void {
-	if (element["type"] !== "arrow" && element["type"] !== "line") return;
+	if (element["type"] !== "arrow" && element["type"] !== "line") {
+		return;
+	}
 	for (const [ref, binding] of [
 		["start", "startBinding"],
 		["end", "endBinding"],

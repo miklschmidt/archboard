@@ -32,8 +32,9 @@ async function invokeTurnStart(
 ): Promise<DelegateToWorkhorseResult> {
 	try {
 		const validated = await runtime.classify(state.binding, request.call, "delegate_to_workhorse");
-		if (validated.workhorse.link.status !== "idle")
+		if (validated.workhorse.link.status !== "idle") {
 			throw operationError("busy", "The workhorse is no longer idle for direct delegation.");
+		}
 	} catch (error) {
 		const outcome = runtime.settleDurable(state, "not_delivered", messageOf(error));
 		runtime.terminal(state, "failed", [], messageOf(error));
@@ -60,8 +61,9 @@ async function invokeTurnStart(
 			context.operation.kind !== "delegate_to_workhorse" ||
 			context.operation.rpc !== "turn/start" ||
 			context.operation.outcome !== null
-		)
+		) {
 			throw new TypeError("delegate context does not carry the current operation identity");
+		}
 	} catch (error) {
 		runtime.settleDurable(state, "not_delivered", "The delegate context was invalid.");
 		runtime.terminal(state, "failed", [], messageOf(error));
@@ -95,8 +97,9 @@ async function invokeTurnStart(
 
 	try {
 		const validated = await runtime.classify(state.binding, request.call, "delegate_to_workhorse");
-		if (validated.workhorse.link.status !== "idle")
+		if (validated.workhorse.link.status !== "idle") {
 			throw operationError("busy", "The workhorse is no longer idle for direct delegation.");
+		}
 	} catch (error) {
 		const outcome = runtime.settleDurable(state, "not_delivered", messageOf(error));
 		runtime.terminal(state, "failed", [], messageOf(error));
@@ -116,9 +119,11 @@ async function invokeTurnStart(
 	} catch (error) {
 		const requested = sessionMutationOutcome(error);
 		const outcome = runtime.settleDurable(state, requested, messageOf(error));
-		if (outcome === "outcome_unknown")
+		if (outcome === "outcome_unknown") {
 			runtime.emit(state, "outcome_unknown", outcome, [], messageOf(error));
-		else runtime.terminal(state, "failed", [], messageOf(error));
+		} else {
+			runtime.terminal(state, "failed", [], messageOf(error));
+		}
 		throw operationError(mutationErrorCode(outcome), "The delegate turn was not delivered.", {
 			operation: "delegate_to_workhorse",
 			outcome,
@@ -131,9 +136,12 @@ async function invokeTurnStart(
 	try {
 		turn = response.turn;
 		const turnId = runtime.options.identity.decoder.parseTurnId(turn.id);
-		if (turn.id !== turnId) throw new TypeError("turn identity is not canonical");
-		if (state.turnId !== null && state.turnId !== turnId)
+		if (turn.id !== turnId) {
+			throw new TypeError("turn identity is not canonical");
+		}
+		if (state.turnId !== null && state.turnId !== turnId) {
 			throw new TypeError("turn/start returned a different turn identity than observed");
+		}
 		state.turnId = turnId;
 		runtime.assertCurrentBinding(state.binding);
 		await runtime.classify(state.binding, request.call, "delegate_to_workhorse");
@@ -143,8 +151,9 @@ async function invokeTurnStart(
 			"outcome_unknown",
 			"The delegate response could not be correlated to the current link.",
 		);
-		if (outcome === "outcome_unknown")
+		if (outcome === "outcome_unknown") {
 			runtime.emit(state, "outcome_unknown", outcome, [], messageOf(error));
+		}
 		throw operationError(
 			"outcome_unknown",
 			"The delegate response cannot be correlated; inspect before retrying.",
@@ -182,14 +191,16 @@ async function invokeTurnStart(
 			state.startedEmitted = true;
 			runtime.emit(state, "started", "delivered", []);
 		}
-		if (turn.status === "completed") runtime.terminal(state, "completed", [], null);
-		else if (turn.status === "failed" || turn.status === "interrupted")
+		if (turn.status === "completed") {
+			runtime.terminal(state, "completed", [], null);
+		} else if (turn.status === "failed" || turn.status === "interrupted") {
 			runtime.terminal(
 				state,
 				"failed",
 				[],
 				"The delegate turn ended before further workhorse events.",
 			);
+		}
 	}
 	return Object.freeze({
 		mode: "started",
@@ -249,8 +260,9 @@ export function createDelegate(
 				try {
 					const staged = await runtime.classify(binding, request.call, "delegate_to_workhorse");
 					assertCreatedWorkhorse(staged.workhorse);
-					if (staged.workhorse.link.status !== "active")
+					if (staged.workhorse.link.status !== "active") {
 						throw operationError("busy", "The workhorse is no longer active for queueing.");
+					}
 					effectStarted = true;
 					result = await runtime.options.queue.add({
 						operationId,
@@ -262,8 +274,9 @@ export function createDelegate(
 								"delegate_to_workhorse",
 							);
 							assertCreatedWorkhorse(current.workhorse);
-							if (current.workhorse.link.status !== "active")
+							if (current.workhorse.link.status !== "active") {
 								throw operationError("busy", "The workhorse is no longer active for queueing.");
+							}
 						},
 					});
 					runtime.assertCurrentBinding(binding);
@@ -271,9 +284,11 @@ export function createDelegate(
 				} catch (error) {
 					const requested = queueMutationOutcome(error, effectStarted);
 					const outcome = runtime.settleDurable(state, requested, messageOf(error));
-					if (outcome === "outcome_unknown")
+					if (outcome === "outcome_unknown") {
 						runtime.emit(state, "outcome_unknown", outcome, [], messageOf(error));
-					else runtime.terminal(state, "failed", [], messageOf(error));
+					} else {
+						runtime.terminal(state, "failed", [], messageOf(error));
+					}
 					throw operationError(
 						mutationErrorCode(outcome),
 						"The queued delegate outcome was not delivered.",
@@ -288,7 +303,9 @@ export function createDelegate(
 				const matches = result.queue.filter(
 					(submission) => submission.clientUserMessageId === operationIdWire,
 				);
-				if (matches.length === 1) state.queuedSubmissionId = matches[0]!.id;
+				if (matches.length === 1) {
+					state.queuedSubmissionId = matches[0]!.id;
+				}
 				const hasExactQueueIdentity = state.queuedSubmissionId !== null;
 				const requestedOutcome =
 					(result.outcome === "delivered" || result.outcome === "outcome_unknown") &&
@@ -303,7 +320,7 @@ export function createDelegate(
 						state.queuedEmitted = true;
 						runtime.emit(state, "queued", outcome, result.queue);
 					}
-				} else if (outcome === "outcome_unknown")
+				} else if (outcome === "outcome_unknown") {
 					runtime.emit(
 						state,
 						"outcome_unknown",
@@ -311,8 +328,10 @@ export function createDelegate(
 						result.queue,
 						"The queue response was not attributable; inspect the exact client identity.",
 					);
-				else runtime.terminal(state, "failed", result.queue, "The delegate was not queued.");
-				if (outcome !== "delivered" || state.queuedSubmissionId === null)
+				} else {
+					runtime.terminal(state, "failed", result.queue, "The delegate was not queued.");
+				}
+				if (outcome !== "delivered" || state.queuedSubmissionId === null) {
 					throw operationError(
 						mutationErrorCode(outcome),
 						"The delegate queue outcome was not delivered.",
@@ -322,6 +341,7 @@ export function createDelegate(
 							operationId,
 						},
 					);
+				}
 				return Object.freeze({
 					mode: "queued",
 					clientUserMessageId: operationIdWire,

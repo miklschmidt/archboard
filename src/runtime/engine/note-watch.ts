@@ -112,8 +112,12 @@ const sinkHolder = () => processSink;
 export function noteWrittenElsewhere(board: string): NoteWrittenElsewhere | null {
 	const key = normalizeBoardKey(board);
 	const state = boards.get(key);
-	if (!state?.file) return null;
-	if (holdOn(key)) return null;
+	if (!state?.file) {
+		return null;
+	}
+	if (holdOn(key)) {
+		return null;
+	}
 
 	const file = state.file;
 	let stat: fs.Stats | undefined;
@@ -165,7 +169,9 @@ export function refreshNoteWatch(board: string): void {
 	const stamp =
 		written === null ? null : `${written.reason}:${written.writtenAt}:${written.version ?? "-"}`;
 	const before = announced();
-	if (before.has(key) && before.get(key) === stamp) return;
+	if (before.has(key) && before.get(key) === stamp) {
+		return;
+	}
 	before.set(key, stamp);
 	sinkHolder().notify?.(key, written);
 }
@@ -189,8 +195,12 @@ function baselineHashFor(file: string): string {
 	let best: { hash: string; at: string } | null = null;
 	for (const board of boards.values()) {
 		const baseline = board.baseline;
-		if (!baseline || baseline.file !== file) continue;
-		if (!best || baseline.at > best.at) best = baseline;
+		if (!baseline || baseline.file !== file) {
+			continue;
+		}
+		if (!best || baseline.at > best.at) {
+			best = baseline;
+		}
 	}
 	return best?.hash ?? "";
 }
@@ -206,7 +216,9 @@ function baselineHashFor(file: string): string {
  * only thing that prevents it.
  */
 function describe(board: string, foreign: ForeignWrite | null): NoteWrittenElsewhere | null {
-	if (!foreign) return null;
+	if (!foreign) {
+		return null;
+	}
 	const lead =
 		foreign.reason === "changed"
 			? `${foreign.file} has been written by something other than archboard since archboard last wrote it, ` +

@@ -60,7 +60,9 @@ describe("Codex process owner", () => {
 			expect(stopped.lastExit?.classification).toBe("requested");
 			expect(await processOwner.stop()).toBe(stopped);
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -80,7 +82,9 @@ describe("Codex process owner", () => {
 			await owner.stop();
 			expect(owner.snapshot().state).toBe("stopped");
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -96,18 +100,24 @@ describe("Codex process owner", () => {
 			owner = createCodexProcessForTesting(processOptions(root, executable));
 			await startReady(owner);
 			const currentChild = owner.currentChild();
-			if (!currentChild) throw new Error("Expected a running Codex child.");
+			if (!currentChild) {
+				throw new Error("Expected a running Codex child.");
+			}
 			currentChild.lifecycle.markAccountReady();
 			expect(owner.snapshot().accountReady).toBe(true);
 			const child = owner.currentChild();
-			if (!child) throw new Error("Expected a running Codex child.");
+			if (!child) {
+				throw new Error("Expected a running Codex child.");
+			}
 			process.kill(child.pid, "SIGKILL");
 			const backoff = await waitForState(owner, (state) => state === "backoff");
 			expect(backoff.accountReady).toBe(false);
 			expect(backoff.restartAttempt).toBe(1);
 			expect(backoff.restartDelayMs).toBe(CODEX_PROCESS_RESTART_BASE_MS);
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -133,7 +143,9 @@ describe("Codex process owner", () => {
 			expect(snapshot.stderr.text).toContain("strict-config rejected");
 			await owner.stop();
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -158,7 +170,9 @@ describe("Codex process owner", () => {
 			expect(backoff.failure?.code).toBe("crash");
 			await owner.stop();
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -184,7 +198,9 @@ describe("Codex process owner", () => {
 			expect(snapshot.stderr.text).not.toContain("config");
 			await owner.stop();
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -205,7 +221,9 @@ describe("Codex process owner", () => {
 			expect(backoff.stderr.totalBytes).toBeGreaterThan(CODEX_PROCESS_STDERR_MAX_BYTES);
 			expect(backoff.stderr.truncated).toBe(true);
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -230,7 +248,9 @@ describe("Codex process owner", () => {
 			expect(backoff.failure).not.toHaveProperty("cause");
 			expect(published.join("\n")).not.toContain("poisoned-secret");
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -259,7 +279,9 @@ describe("Codex process owner", () => {
 				await owner.stop();
 			}
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -290,7 +312,9 @@ describe("Codex process owner", () => {
 			expect(fs.readdirSync(path.join(root, "storage", "codex-home"))).toEqual(["config.toml"]);
 			await processOwner.stop();
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -321,7 +345,9 @@ describe("Codex process owner", () => {
 			expect(processOwner.snapshot().failure?.message).not.toContain(secret);
 			await processOwner.stop();
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -343,7 +369,9 @@ describe("Codex process owner", () => {
 			const terminal = waitForState(owner, (state) => state === "terminal_failure");
 			owner.subscribe((snapshot) => published.push(JSON.stringify(snapshot)));
 			owner.subscribe((snapshot) => {
-				if (snapshot.state === "running") throw new Error(secret);
+				if (snapshot.state === "running") {
+					throw new Error(secret);
+				}
 			});
 			let failure: unknown;
 			try {
@@ -364,7 +392,9 @@ describe("Codex process owner", () => {
 				fs.existsSync(path.join(root, "storage", "codex-home", ".archboard-codex-process.lock")),
 			).toBe(false);
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -407,7 +437,9 @@ describe("Codex process owner", () => {
 				fs.existsSync(path.join(root, "storage", "codex-home", ".archboard-codex-process.lock")),
 			).toBe(false);
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});

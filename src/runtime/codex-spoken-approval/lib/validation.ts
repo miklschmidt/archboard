@@ -111,10 +111,12 @@ export function oneLine(value: unknown, label: string): string {
 		value.length === 0 ||
 		value.includes("\r") ||
 		value.includes("\n")
-	)
+	) {
 		throw new TypeError(`${label} must be a non-empty one-line value.`);
-	if (Buffer.byteLength(value, "utf8") > 256)
+	}
+	if (Buffer.byteLength(value, "utf8") > 256) {
 		throw new TypeError(`${label} must be at most 256 UTF-8 bytes.`);
+	}
 	return value;
 }
 
@@ -138,18 +140,20 @@ function failure(
 
 function failureForIdentity(error: unknown): CallValidationFailure {
 	if (error instanceof IdentityValidationError) {
-		if (error.code === "wrong-child")
+		if (error.code === "wrong-child") {
 			return failure(
 				"stale_realtime_session",
 				"stale_child",
 				"The spoken approval belongs to another Codex child.",
 			);
-		if (error.code === "stale-epoch")
+		}
+		if (error.code === "stale-epoch") {
 			return failure(
 				"stale_state",
 				"prior_epoch",
 				"The spoken approval belongs to a prior Codex child epoch.",
 			);
+		}
 	}
 	return failure(
 		"stale_state",
@@ -175,12 +179,17 @@ export function validateArm(
 	} catch {
 		return invalid("invalid_context");
 	}
-	if (!validSequence(input.effectPrompt.sequence)) return invalid("invalid_effect_prompt");
+	if (!validSequence(input.effectPrompt.sequence)) {
+		return invalid("invalid_effect_prompt");
+	}
 	const coordinator = host.currentCoordinator();
-	if (coordinator === null) return invalid("coordinator_unavailable");
+	if (coordinator === null) {
+		return invalid("coordinator_unavailable");
+	}
 	const realtime = host.currentRealtime();
-	if (realtime === null || !sameRealtime(realtime, input.realtime))
+	if (realtime === null || !sameRealtime(realtime, input.realtime)) {
 		return invalid("realtime_unavailable");
+	}
 	try {
 		host.identity.validator.assertCurrentEpoch(coordinator.child, coordinator.epoch);
 	} catch {
@@ -194,12 +203,18 @@ export function validateArm(
 	} catch {
 		return invalid("approval_unavailable");
 	}
-	if (approval === undefined) return invalid("approval_unavailable");
-	if (!eligibility.eligible || approval.state !== "pending")
+	if (approval === undefined) {
+		return invalid("approval_unavailable");
+	}
+	if (!eligibility.eligible || approval.state !== "pending") {
 		return invalid(eligibility.reason === "not_pending" ? "approval_unavailable" : "not_eligible");
-	if (approval.family !== "command_execution") return invalid("not_eligible");
-	if (approval.child !== coordinator.child || approval.epoch !== coordinator.epoch)
+	}
+	if (approval.family !== "command_execution") {
+		return invalid("not_eligible");
+	}
+	if (approval.child !== coordinator.child || approval.epoch !== coordinator.epoch) {
 		return invalid("stale_state");
+	}
 	let presentation: SpokenApprovalEffectPresentation;
 	try {
 		presentation = host.approvalBroker.spokenEffectPresentation(input.requestId);
@@ -209,8 +224,9 @@ export function validateArm(
 	if (
 		!sameSpokenEffectPresentation(presentation, approval) ||
 		presentation.effectSummary !== effectSummary
-	)
+	) {
 		return invalid("invalid_effect_prompt");
+	}
 	return validateArmContext(host, input, {
 		effectSummary: presentation.effectSummary,
 		operationId,
@@ -234,7 +250,9 @@ function validateArmContext(
 	},
 ): ArmValidationResult {
 	const parsedContext = ArchboardContextSchema.safeParse(input.classifier.context);
-	if (!parsedContext.success) return invalid("invalid_context");
+	if (!parsedContext.success) {
+		return invalid("invalid_context");
+	}
 	const context = parsedContext.data;
 	const operation = context.operation;
 	if (
@@ -247,8 +265,9 @@ function validateArmContext(
 		context.child.epoch !== values.coordinator.epoch ||
 		context.coordinator.threadId !== values.coordinator.threadId ||
 		context.coordinator.realtimeSessionId !== values.realtime.sessionId
-	)
+	) {
 		return invalid("invalid_context");
+	}
 	let records: readonly RealtimeTranscriptRecord[];
 	try {
 		records = host.transcript();
@@ -266,21 +285,36 @@ function validateArmContext(
 		prompt?.status !== "final" ||
 		prompt?.text.length === 0 ||
 		prompt.text !== values.effectSummary
-	)
+	) {
 		return invalid("invalid_effect_prompt");
+	}
 	const baselineRecordKeys = new Set<string>();
 	for (const record of records) {
-		if (!sameRealtime(record, input.realtime)) continue;
-		if (!validSequence(record.sequence)) return invalid("stale_state");
+		if (!sameRealtime(record, input.realtime)) {
+			continue;
+		}
+		if (!validSequence(record.sequence)) {
+			return invalid("stale_state");
+		}
 		baselineRecordKeys.add(recordKey(record));
-		if (record.sequence <= prompt.sequence) continue;
-		if (record.role === "assistant") return invalid("assistant_only");
-		if (record.status !== "interrupted") return invalid("user_already_spoke");
+		if (record.sequence <= prompt.sequence) {
+			continue;
+		}
+		if (record.role === "assistant") {
+			return invalid("assistant_only");
+		}
+		if (record.status !== "interrupted") {
+			return invalid("user_already_spoke");
+		}
 	}
 	const time = host.currentTime();
-	if (time === null || !Number.isFinite(values.approval.expiresAtMs)) return invalid("stale_state");
+	if (time === null || !Number.isFinite(values.approval.expiresAtMs)) {
+		return invalid("stale_state");
+	}
 	const expiresAtMs = Math.min(values.approval.expiresAtMs, time + CODEX_SPOKEN_GATE_EXPIRY_MS);
-	if (time >= expiresAtMs) return invalid("timeout");
+	if (time >= expiresAtMs) {
+		return invalid("timeout");
+	}
 	return {
 		ok: true,
 		effectSummary: values.effectSummary,
@@ -301,12 +335,13 @@ export function validateResolverCall(
 	request: DynamicServerRequest,
 	requireTurn: boolean,
 ): CallValidationFailure | null {
-	if (request.owner !== "codex-coordinator-tools")
+	if (request.owner !== "codex-coordinator-tools") {
 		return failure(
 			"ambiguous",
 			"invalid_call",
 			"Only coordinator-owned voice calls can resolve a spoken approval.",
 		);
+	}
 	try {
 		host.identity.decoder.parseJsonRpcRequestId(request.requestId);
 		host.identity.decoder.parseWireRequestCorrelation(request.correlation);
@@ -318,24 +353,27 @@ export function validateResolverCall(
 		request.correlation.requestId !== request.requestId ||
 		request.logicalCall.child !== request.child ||
 		request.logicalCall.epoch !== request.epoch
-	)
+	) {
 		return failure(
 			"stale_state",
 			"unknown_provenance",
 			"The voice call correlation is internally inconsistent.",
 		);
-	if (request.child !== slot.child || request.correlation.child !== slot.child)
+	}
+	if (request.child !== slot.child || request.correlation.child !== slot.child) {
 		return failure(
 			"stale_realtime_session",
 			"stale_child",
 			"The voice call belongs to another Codex child.",
 		);
-	if (request.epoch !== slot.epoch || request.correlation.epoch !== slot.epoch)
+	}
+	if (request.epoch !== slot.epoch || request.correlation.epoch !== slot.epoch) {
 		return failure(
 			"stale_state",
 			"prior_epoch",
 			"The voice call belongs to a prior Codex child epoch.",
 		);
+	}
 	try {
 		host.identity.validator.assertCurrentEpoch(request.child, request.epoch);
 	} catch (error) {
@@ -352,77 +390,88 @@ export function validateResolverCall(
 		request.logicalCall.manifestHash !== ARCHBOARD_VOICE_MANIFEST_SHA256 ||
 		request.params.turnId !== request.logicalCall.turnId ||
 		request.params.callId !== request.logicalCall.callId
-	)
+	) {
 		return failure(
 			"ambiguous",
 			"invalid_call",
 			"The voice call does not match the reviewed resolver contract.",
 		);
+	}
 	const coordinator = host.currentCoordinator();
-	if (coordinator === null)
+	if (coordinator === null) {
 		return failure(
 			"stale_state",
 			"not_ready",
 			"The coordinator is no longer ready for spoken approval resolution.",
 		);
-	if (coordinator.child !== slot.child)
+	}
+	if (coordinator.child !== slot.child) {
 		return failure(
 			"stale_realtime_session",
 			"stale_child",
 			"The coordinator child changed while the spoken approval was pending.",
 		);
-	if (coordinator.epoch !== slot.epoch)
+	}
+	if (coordinator.epoch !== slot.epoch) {
 		return failure(
 			"stale_state",
 			"prior_epoch",
 			"The coordinator epoch changed while the spoken approval was pending.",
 		);
-	if (coordinator.threadId !== slot.coordinatorThreadId)
+	}
+	if (coordinator.threadId !== slot.coordinatorThreadId) {
 		return failure(
 			"stale_state",
 			"unknown_provenance",
 			"The coordinator thread changed while the spoken approval was pending.",
 		);
+	}
 	const realtime = host.currentRealtime();
-	if (realtime === null || !sameRealtime(realtime, slot.realtime))
+	if (realtime === null || !sameRealtime(realtime, slot.realtime)) {
 		return failure(
 			"stale_realtime_session",
 			"unknown_provenance",
 			"The realtime session changed while the spoken approval was pending.",
 		);
+	}
 	const time = host.currentTime();
-	if (time === null || time >= slot.expiresAtMs)
+	if (time === null || time >= slot.expiresAtMs) {
 		return failure(
 			"timeout",
 			"expired",
 			"The spoken approval gate has expired; use the visual approval surface.",
 		);
+	}
 	const approval = host.approvalBroker.get(slot.requestId);
-	if (approval === undefined)
+	if (approval === undefined) {
 		return failure(
 			"resolver_lost",
 			"not_ready",
 			"The pending approval is no longer known to the approval broker.",
 		);
-	if (approval.state === "expired")
+	}
+	if (approval.state === "expired") {
 		return failure(
 			"timeout",
 			"expired",
 			"The visual approval expired before the spoken resolver ran.",
 		);
-	if (approval.state !== "pending")
+	}
+	if (approval.state !== "pending") {
 		return failure("stale_state", "not_ready", "The approval is no longer pending.");
+	}
 	if (
 		approval.approvalId !== slot.approvalId ||
 		approval.family !== slot.approvalFamily ||
 		approval.expiresAtMs !== slot.approvalExpiresAtMs ||
 		!sameBinding(approval.binding, slot.approvalBinding)
-	)
+	) {
 		return failure(
 			"changed_effect",
 			"unknown_provenance",
 			"The approval target or effect changed while the spoken gate was pending.",
 		);
+	}
 	let eligibility;
 	try {
 		eligibility = host.approvalBroker.spokenEligibility(slot.requestId);
@@ -433,20 +482,22 @@ export function validateResolverCall(
 			"The approval broker could not revalidate the spoken approval.",
 		);
 	}
-	if (!eligibility.eligible)
+	if (!eligibility.eligible) {
 		return failure(
 			eligibility.reason === "stale_ownership" ? "changed_effect" : "ambiguous",
 			eligibility.reason === "stale_ownership" ? "unknown_provenance" : "unsupported",
 			"The pending approval is no longer eligible for spoken resolution.",
 		);
+	}
 	if (requireTurn) {
 		const expectedTurn = slot.classifierTurnId ?? slot.startedTurnId;
-		if (expectedTurn !== null && request.logicalCall.turnId !== expectedTurn)
+		if (expectedTurn !== null && request.logicalCall.turnId !== expectedTurn) {
 			return failure(
 				"ambiguous",
 				"invalid_call",
 				"The resolver call did not come from the classifier turn.",
 			);
+		}
 	}
 	return null;
 }

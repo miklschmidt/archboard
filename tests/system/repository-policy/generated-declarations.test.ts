@@ -40,7 +40,9 @@ test("the structural exception contains the pinned output with only approved cor
 			const raw = readFileSync(join(root, file), "utf8");
 			const correction = corrections.get(file);
 			const expected = correction ? raw.replace(correction[0], correction[1]) : raw;
-			if (correction) expect(raw.split(correction[0]).length - 1, file).toBe(1);
+			if (correction) {
+				expect(raw.split(correction[0]).length - 1, file).toBe(1);
+			}
 			expect(readFileSync(join(repoRoot, generated, file), "utf8"), file).toBe(expected);
 		}
 	} finally {

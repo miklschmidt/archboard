@@ -39,8 +39,9 @@ const WaitThreadIdsSchema = z
 	.min(1)
 	.max(8)
 	.superRefine((threadIds, context) => {
-		if (new Set(threadIds).size !== threadIds.length)
+		if (new Set(threadIds).size !== threadIds.length) {
 			context.addIssue({ code: "custom", message: "threadIds must be unique" });
+		}
 	});
 
 const WaitThreadsArgumentsSchema = z.strictObject({
@@ -65,8 +66,12 @@ export type ToolArguments = {
 export type ToolArgument<Name extends GeneralThreadToolName> = ToolArguments[Name];
 
 function freezeDeep<T>(value: T): T {
-	if (typeof value !== "object" || value === null) return value;
-	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
+	if (typeof value !== "object" || value === null) {
+		return value;
+	}
+	for (const child of Object.values(value as Record<string, unknown>)) {
+		freezeDeep(child);
+	}
 	return Object.freeze(value);
 }
 
@@ -87,10 +92,16 @@ export function parseToolArguments(
 	value: unknown,
 ): ToolArguments[GeneralThreadToolName] {
 	const parsedName = GeneralThreadToolNameSchema.safeParse(name);
-	if (!parsedName.success) throw new TypeError(`Unknown archboard_app tool: ${String(name)}.`);
+	if (!parsedName.success) {
+		throw new TypeError(`Unknown archboard_app tool: ${String(name)}.`);
+	}
 	const json = JsonValueSchema.safeParse(value);
-	if (!json.success) invalid(`${parsedName.data} arguments`, json.error.issues);
+	if (!json.success) {
+		invalid(`${parsedName.data} arguments`, json.error.issues);
+	}
 	const parsed = TOOL_ARGUMENT_SCHEMAS[parsedName.data].safeParse(json.data);
-	if (!parsed.success) invalid(`${parsedName.data} arguments`, parsed.error.issues);
+	if (!parsed.success) {
+		invalid(`${parsedName.data} arguments`, parsed.error.issues);
+	}
 	return freezeDeep(parsed.data) as ToolArguments[GeneralThreadToolName];
 }

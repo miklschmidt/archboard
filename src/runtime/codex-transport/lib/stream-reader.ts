@@ -25,7 +25,9 @@ function toBuffer(chunk: unknown): { readonly buffer: Buffer; readonly text: str
 		const buffer = Buffer.from(chunk, "utf8");
 		return { buffer, text: chunk };
 	}
-	if (Buffer.isBuffer(chunk)) return { buffer: chunk, text: chunk.toString("utf8") };
+	if (Buffer.isBuffer(chunk)) {
+		return { buffer: chunk, text: chunk.toString("utf8") };
+	}
 	if (chunk instanceof Uint8Array) {
 		const buffer = Buffer.from(chunk);
 		return { buffer, text: buffer.toString("utf8") };
@@ -46,7 +48,9 @@ export function attachCodexStreamReader(
 	let failed = false;
 
 	const failOversized = (): void => {
-		if (disposed || failed) return;
+		if (disposed || failed) {
+			return;
+		}
 		failed = true;
 		stdoutBuffer = Buffer.alloc(0);
 		handlers.onIssue({
@@ -58,7 +62,9 @@ export function attachCodexStreamReader(
 	};
 
 	const consumeStdout = (chunk: unknown): void => {
-		if (disposed || failed) return;
+		if (disposed || failed) {
+			return;
+		}
 		const { buffer } = toBuffer(chunk);
 		let offset = 0;
 		while (offset < buffer.byteLength) {
@@ -70,7 +76,9 @@ export function attachCodexStreamReader(
 					CODEX_APP_SERVER_CAPACITY.partialFrameBytes
 				) {
 					failOversized();
-				} else stdoutBuffer = Buffer.concat([stdoutBuffer, tail]);
+				} else {
+					stdoutBuffer = Buffer.concat([stdoutBuffer, tail]);
+				}
 				return;
 			}
 			const part = buffer.subarray(offset, newline);
@@ -80,7 +88,9 @@ export function attachCodexStreamReader(
 				return;
 			} else {
 				let line = Buffer.concat([stdoutBuffer, part]);
-				if (line.at(-1) === 0x0d) line = line.subarray(0, line.byteLength - 1);
+				if (line.at(-1) === 0x0d) {
+					line = line.subarray(0, line.byteLength - 1);
+				}
 				handlers.onLine(line);
 				stdoutBuffer = Buffer.alloc(0);
 			}
@@ -89,20 +99,27 @@ export function attachCodexStreamReader(
 	};
 
 	const finishStdout = (): void => {
-		if (disposed || stdoutFinished) return;
+		if (disposed || stdoutFinished) {
+			return;
+		}
 		stdoutFinished = true;
-		if (failed) return;
-		if (stdoutBuffer.byteLength > 0)
+		if (failed) {
+			return;
+		}
+		if (stdoutBuffer.byteLength > 0) {
 			handlers.onIssue({
 				kind: "malformed-frame",
 				direction: "stdout",
 				detail: "Codex stdout ended with a partial frame",
 			});
+		}
 		stdoutBuffer = Buffer.alloc(0);
 		handlers.onStdoutEnd();
 	};
 	const onStderrData = (chunk: unknown): void => {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		const { buffer, text } = toBuffer(chunk);
 		handlers.onStderr(buffer, text);
 	};
@@ -117,7 +134,9 @@ export function attachCodexStreamReader(
 	stderr.on("error", onStderrError);
 
 	const dispose = (): void => {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		disposed = true;
 		stdout.removeListener("data", consumeStdout);
 		stdout.removeListener("error", handlers.onStdoutError);

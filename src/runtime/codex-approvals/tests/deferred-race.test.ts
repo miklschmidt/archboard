@@ -35,8 +35,11 @@ describe("Codex approval in-flight settlement races", () => {
 					expect(cancel).toBe(first);
 					expect(expire).toBe(first);
 					expect(stale).toBe(first);
-					if (outcome === "delivered") fixture.port.resolveDeferred();
-					else fixture.port.rejectDeferred(outcome);
+					if (outcome === "delivered") {
+						fixture.port.resolveDeferred();
+					} else {
+						fixture.port.rejectDeferred(outcome);
+					}
 
 					const settlement = await first;
 					expect(await duplicateResolve).toBe(settlement);

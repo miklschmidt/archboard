@@ -79,8 +79,9 @@ function refusalFromError(error: unknown): DynamicToolRefusalReason | null {
 		code === "busy" ||
 		code === "expired" ||
 		code === "unsupported"
-	)
+	) {
 		return code;
+	}
 	return null;
 }
 
@@ -119,8 +120,9 @@ export function invokeWorkhorse(
 			} as Parameters<CodexWorkhorseOperations["manageQueue"]>[0]);
 		}
 		case "steer_workhorse":
-			if (validated.expectedTurnId === null)
+			if (validated.expectedTurnId === null) {
 				return Promise.reject(new Error("The host did not supply expectedTurnId."));
+			}
 			return operations.steer({
 				call: validated.call,
 				expectedTurnId: validated.expectedTurnId,
@@ -139,7 +141,9 @@ export function workhorseResponse(
 	result: unknown,
 ): DynamicToolResponse {
 	const current = operationIdentity(options, operation.id);
-	if (current.id !== operation.id) throw new TypeError("The workhorse operation identity changed.");
+	if (current.id !== operation.id) {
+		throw new TypeError("The workhorse operation identity changed.");
+	}
 	switch (validated.tool) {
 		case "inspect_workhorse":
 			return okResponse(validated.tool, current.wire, result as InspectWorkhorseResult);
@@ -160,7 +164,9 @@ function errorUsesOperation(
 	operation: IssuedOperationIdentity,
 ): boolean {
 	const value = errorField(error, "operationId");
-	if (value === null || value === undefined) return true;
+	if (value === null || value === undefined) {
+		return true;
+	}
 	try {
 		return operationIdentity(options, value).id === operation.id;
 	} catch {
@@ -175,7 +181,9 @@ export function responseForWorkhorseError(
 	operation: IssuedOperationIdentity,
 ): DynamicToolResponse {
 	if (!errorUsesOperation(options, error, operation)) {
-		if (isMutation(validated)) return outcomeUnknownResponse(operation.wire);
+		if (isMutation(validated)) {
+			return outcomeUnknownResponse(operation.wire);
+		}
 		return refusedResponse(
 			"system_error",
 			"The workhorse returned an operation identity that does not match this call.",
@@ -185,16 +193,22 @@ export function responseForWorkhorseError(
 	if (
 		outcome === "outcome_unknown" ||
 		(error instanceof CodexWorkhorseOperationsError && error.code === "outcome_unknown")
-	)
+	) {
 		return outcomeUnknownResponse(operation.wire);
-	if (outcome === "not_delivered")
+	}
+	if (outcome === "not_delivered") {
 		return refusedResponse(
 			"system_error",
 			`The workhorse operation was not delivered: ${errorMessage(error)}`,
 		);
+	}
 	const reason = refusalFromError(error);
-	if (reason !== null) return refusedResponse(reason, errorMessage(error));
-	if (isMutation(validated)) return outcomeUnknownResponse(operation.wire);
+	if (reason !== null) {
+		return refusedResponse(reason, errorMessage(error));
+	}
+	if (isMutation(validated)) {
+		return outcomeUnknownResponse(operation.wire);
+	}
 	return refusedResponse("system_error", `The workhorse tool failed: ${errorMessage(error)}`);
 }
 
@@ -202,12 +216,15 @@ export function spokenResponse(
 	result: Awaited<ReturnType<CodexCoordinatorToolsOptions["spokenApproval"]["resolve"]>>,
 	operation: IssuedOperationIdentity | null,
 ): DynamicToolResponse {
-	if (result.tag === "refused") return refusedResponse(result.reason, result.message);
-	if (operation === null)
+	if (result.tag === "refused") {
+		return refusedResponse(result.reason, result.message);
+	}
+	if (operation === null) {
 		return refusedResponse(
 			"system_error",
 			"The spoken approval settled without its canonical classifier operation identity.",
 		);
+	}
 	return okResponse("resolve_spoken_approval", operation.wire, {
 		verdict: result.value.verdict,
 		settlement: result.value.settlement,

@@ -22,10 +22,7 @@ import {
 	type DynamicToolApprovalDecision,
 	type DynamicToolApprovalRequest,
 } from "./contract.js";
-import {
-	assertMutationTargetAllowed,
-	dynamicErrorForResponse,
-} from "./classification.js";
+import { assertMutationTargetAllowed, dynamicErrorForResponse } from "./classification.js";
 import {
 	resolveCaller,
 	resolveTarget,
@@ -68,11 +65,12 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 
 function nowOf(options: CodexDynamicToolsOptions): number {
 	const now = options.now?.() ?? Date.now();
-	if (!Number.isSafeInteger(now) || now < 0)
+	if (!Number.isSafeInteger(now) || now < 0) {
 		throw new CodexDynamicToolsError(
 			"system_error",
 			"The host clock returned an invalid timestamp.",
 		);
+	}
 	return now;
 }
 
@@ -87,7 +85,7 @@ function approvalDecisionFallback(
 	request: DynamicToolApprovalRequest,
 	nowMs: number,
 ): DynamicToolApprovalDecision {
-	if (nowMs >= request.expiresAtMs)
+	if (nowMs >= request.expiresAtMs) {
 		return Object.freeze({
 			outcome: "expired",
 			identity: request.identity,
@@ -95,6 +93,7 @@ function approvalDecisionFallback(
 			decidedAtMs: nowMs,
 			cause: "deadline_reached",
 		});
+	}
 	return Object.freeze({
 		outcome: "disconnected",
 		identity: request.identity,
@@ -133,11 +132,12 @@ function assertContextAuthority(
 		authority.epoch !== caller.epoch ||
 		authority.threadId !== caller.threadId ||
 		authority.turnId !== caller.turnId
-	)
+	) {
 		throw new CodexDynamicToolsError(
 			"unknown_provenance",
 			"The pane-link authority does not match the executing caller.",
 		);
+	}
 	return Object.freeze({ ...authority });
 }
 
@@ -174,7 +174,9 @@ async function assertCallExecuting(
 	try {
 		await options.lifecycle.assertCallExecuting({ request, caller, phase });
 	} catch (error) {
-		if (error instanceof CodexDynamicToolsError) throw error;
+		if (error instanceof CodexDynamicToolsError) {
+			throw error;
+		}
 		const code = isRecord(error) && typeof error["code"] === "string" ? error["code"] : null;
 		if (
 			code === "stale_child" ||
@@ -183,12 +185,13 @@ async function assertCallExecuting(
 			code === "not_loaded" ||
 			code === "not_controllable" ||
 			code === "system_error"
-		)
+		) {
 			throw new CodexDynamicToolsError(
 				code,
 				"The logical dynamic call is no longer executing.",
 				error,
 			);
+		}
 		throw new CodexDynamicToolsError(
 			"invalid_call",
 			"The logical dynamic call is no longer executing.",
@@ -225,21 +228,24 @@ function boundaryForFork(
 			relation,
 		})
 		.then((boundary) => {
-			if (boundary !== null && (typeof boundary !== "string" || boundary.length === 0))
+			if (boundary !== null && (typeof boundary !== "string" || boundary.length === 0)) {
 				throw new CodexDynamicToolsError(
 					"invalid_call",
 					"The turn-boundary authority returned an invalid boundary.",
 				);
-			if (relation === "self" && boundary !== caller.turnId)
+			}
+			if (relation === "self" && boundary !== caller.turnId) {
 				throw new CodexDynamicToolsError(
 					"invalid_call",
 					"A self-fork boundary must be the executing caller turn.",
 				);
-			if (relation === "other" && (requestedBeforeTurnId === undefined) !== (boundary === null))
+			}
+			if (relation === "other" && (requestedBeforeTurnId === undefined) !== (boundary === null)) {
 				throw new CodexDynamicToolsError(
 					"invalid_call",
 					"The resolved fork boundary does not match the requested boundary.",
 				);
+			}
 			return Object.freeze({ relation, boundary });
 		})
 		.catch((error) => {
@@ -248,7 +254,9 @@ function boundaryForFork(
 }
 
 function boundaryAuthorityError(error: unknown, message: string): CodexDynamicToolsError {
-	if (error instanceof CodexDynamicToolsError) return error;
+	if (error instanceof CodexDynamicToolsError) {
+		return error;
+	}
 	const code = isRecord(error) && typeof error["code"] === "string" ? error["code"] : null;
 	if (
 		code === "stale_child" ||
@@ -257,8 +265,9 @@ function boundaryAuthorityError(error: unknown, message: string): CodexDynamicTo
 		code === "not_loaded" ||
 		code === "not_controllable" ||
 		code === "system_error"
-	)
+	) {
 		return new CodexDynamicToolsError(code, message, error);
+	}
 	return new CodexDynamicToolsError("invalid_call", message, error);
 }
 
@@ -266,9 +275,15 @@ function effectArguments(
 	name: DynamicMutationToolName,
 	argumentsValue: Readonly<Record<string, unknown>>,
 ): DynamicImmutableEffect["arguments"] {
-	if (name === "create_thread") return { prompt: String(argumentsValue["prompt"]) };
-	if (name === "send_message_to_thread")
-		return { threadId: String(argumentsValue["threadId"]), prompt: String(argumentsValue["prompt"]) };
+	if (name === "create_thread") {
+		return { prompt: String(argumentsValue["prompt"]) };
+	}
+	if (name === "send_message_to_thread") {
+		return {
+			threadId: String(argumentsValue["threadId"]),
+			prompt: String(argumentsValue["prompt"]),
+		};
+	}
 	return {
 		threadId: String(argumentsValue["threadId"]),
 		beforeTurnId:
@@ -294,20 +309,22 @@ async function revalidateMutation(
 			!approvalIdentityExact(decision.identity, prepared.identity) ||
 			decision.effectHash !== prepared.effectHash ||
 			dynamicEffectHash(prepared.identity, prepared.effect) !== prepared.effectHash
-		)
+		) {
 			throw new CodexDynamicToolsError(
 				"invalid_call",
 				"The approved dynamic effect is no longer exact.",
 			);
+		}
 	} catch (error) {
 		throw dynamicErrorForResponse(error);
 	}
 	const freshCaller = await revalidateCaller(request, caller, options, "after_approval");
-	if (freshCaller.authority !== prepared.effect.callerAuthority)
+	if (freshCaller.authority !== prepared.effect.callerAuthority) {
 		throw new CodexDynamicToolsError(
 			"invalid_call",
 			"The caller authority changed during revalidation.",
 		);
+	}
 	let freshTarget: DynamicTargetAuthority | null = null;
 	if (prepared.target !== null) {
 		freshTarget = await revalidateTarget(prepared.target, options);
@@ -315,14 +332,16 @@ async function revalidateMutation(
 			prepared.effect.tool === "fork_thread" || prepared.effect.tool === "send_message_to_thread"
 				? prepared.effect.arguments.threadId
 				: null;
-		if (targetThreadId === null || freshTarget.wireThreadId !== targetThreadId)
+		if (targetThreadId === null || freshTarget.wireThreadId !== targetThreadId) {
 			throw new CodexDynamicToolsError(
 				"invalid_call",
 				"The target identity changed during revalidation.",
 			);
+		}
 		const relation = assertMutationTargetAllowed(prepared.effect.tool, freshCaller, freshTarget);
-		if (prepared.relation !== relation)
+		if (prepared.relation !== relation) {
 			throw new CodexDynamicToolsError("cycle", "The target relation changed during revalidation.");
+		}
 		if (prepared.effect.tool === "fork_thread") {
 			let boundary: TurnId | null;
 			try {
@@ -336,34 +355,38 @@ async function revalidateMutation(
 			} catch (error) {
 				throw boundaryAuthorityError(error, "The fork turn boundary became stale.");
 			}
-			if (boundary !== null && (typeof boundary !== "string" || boundary.length === 0))
+			if (boundary !== null && (typeof boundary !== "string" || boundary.length === 0)) {
 				throw new CodexDynamicToolsError(
 					"invalid_call",
 					"The turn-boundary authority returned an invalid boundary.",
 				);
+			}
 			const expectedBoundary = prepared.effect.effectiveBoundary?.beforeTurnId ?? null;
 			if (
 				(relation === "self" && boundary !== freshCaller.turnId) ||
 				(boundary === null ? null : String(boundary)) !== expectedBoundary
-			)
+			) {
 				throw new CodexDynamicToolsError(
 					"invalid_call",
 					"The fork boundary changed during revalidation.",
 				);
+			}
 		}
 	}
-	if ((freshTarget?.authority ?? null) !== prepared.effect.targetAuthority)
+	if ((freshTarget?.authority ?? null) !== prepared.effect.targetAuthority) {
 		throw new CodexDynamicToolsError(
 			"invalid_call",
 			"The target authority changed during revalidation.",
 		);
+	}
 	if (
 		prepared.effect.tool === "fork_thread" &&
 		(prepared.effect.effectiveBoundary?.relation !== prepared.relation ||
 			prepared.effect.effectiveBoundary?.beforeTurnId !==
 				(prepared.boundary === null ? null : String(prepared.boundary)))
-	)
+	) {
 		throw new CodexDynamicToolsError("invalid_call", "The immutable fork boundary is not exact.");
+	}
 	let freshContextAuthority: DynamicContextAuthority;
 	try {
 		freshContextAuthority = assertContextAuthority(
@@ -374,7 +397,9 @@ async function revalidateMutation(
 			freshCaller,
 		);
 	} catch (error) {
-		if (error instanceof CodexDynamicToolsError) throw error;
+		if (error instanceof CodexDynamicToolsError) {
+			throw error;
+		}
 		throw new CodexDynamicToolsError(
 			"unknown_provenance",
 			"The pane-link authority changed during revalidation.",
@@ -388,11 +413,12 @@ async function revalidateMutation(
 		freshContextAuthority.epoch !== freshCaller.epoch ||
 		freshContextAuthority.threadId !== freshCaller.threadId ||
 		freshContextAuthority.turnId !== freshCaller.turnId
-	)
+	) {
 		throw new CodexDynamicToolsError(
 			"invalid_call",
 			"The context authority changed during revalidation.",
 		);
+	}
 	const operations: readonly { readonly id: OperationId; readonly wire: string }[] = [
 		{ id: prepared.operations.mutationOperationId, wire: prepared.effect.mutationOperationId },
 		...(prepared.operations.initialTurnOperationId === null ||
@@ -408,8 +434,9 @@ async function revalidateMutation(
 	for (const operation of operations) {
 		try {
 			options.operationId.validateCurrentUnconsumedOperationId(operation.id);
-			if (options.operationId.serializeForOwnedWireFields(operation.id) !== operation.wire)
+			if (options.operationId.serializeForOwnedWireFields(operation.id) !== operation.wire) {
 				throw new Error("the operation serializer returned a different identity");
+			}
 		} catch (error) {
 			throw new CodexDynamicToolsError(
 				"invalid_call",
@@ -418,8 +445,9 @@ async function revalidateMutation(
 			);
 		}
 	}
-	if (approvalExpiry(prepared.request, nowOf(options)))
+	if (approvalExpiry(prepared.request, nowOf(options))) {
 		throw new CodexDynamicToolsError("expired", "The visual approval expired before the effect.");
+	}
 	return Object.freeze({
 		caller: freshCaller,
 		target: freshTarget,
@@ -463,8 +491,9 @@ async function approveMutation(
 				cause: "deadline_reached",
 			});
 		}
-		if (decision.outcome === "expired" && decision.decidedAtMs < prepared.request.expiresAtMs)
+		if (decision.outcome === "expired" && decision.decidedAtMs < prepared.request.expiresAtMs) {
 			throw new CodexDynamicToolsError("invalid_call", "The approval expired before its deadline.");
+		}
 	} catch (error) {
 		const fallback = approvalDecisionFallback(prepared.request, nowOf(options));
 		await settleApproval(options, prepared.request, fallback);
@@ -494,8 +523,9 @@ async function executeMutation(
 				operationSettlement,
 			);
 		case "fork_thread":
-			if (target === null || prepared.relation === null)
+			if (target === null || prepared.relation === null) {
 				throw new CodexDynamicToolsError("invalid_call", "The fork target authority is missing.");
+			}
 			return executeFork(
 				prepared,
 				request,
@@ -507,8 +537,9 @@ async function executeMutation(
 				operationSettlement,
 			);
 		case "send_message_to_thread":
-			if (target === null)
+			if (target === null) {
 				throw new CodexDynamicToolsError("invalid_call", "The send target authority is missing.");
+			}
 			return executeSend(
 				prepared,
 				request,
@@ -621,11 +652,12 @@ async function dispatchOne(
 		}
 
 		const mutationName = call.name;
-		if (!isMutationToolName(mutationName))
+		if (!isMutationToolName(mutationName)) {
 			throw new CodexDynamicToolsError(
 				"unsupported",
 				"The dynamic tool is not a mutation or read operation.",
 			);
+		}
 		state.mutationName = mutationName;
 		let target: DynamicTargetAuthority | null = null;
 		let relation: "self" | "other" | null = null;
@@ -633,19 +665,21 @@ async function dispatchOne(
 		if (mutationName !== "create_thread") {
 			const rawTargetId = isRecord(call.arguments) ? call.arguments.threadId : undefined;
 			target = await resolveTarget(caller, rawTargetId, options);
-			if (target.wireThreadId !== rawTargetId)
+			if (target.wireThreadId !== rawTargetId) {
 				throw new CodexDynamicToolsError(
 					"invalid_call",
 					"The target authority returned a different ThreadId.",
 				);
+			}
 			relation = assertMutationTargetAllowed(mutationName, caller, target);
 			if (mutationName === "fork_thread") {
 				const fork = await boundaryForFork(caller, target, call.arguments.beforeTurnId, options);
-				if (fork.relation !== relation)
+				if (fork.relation !== relation) {
 					throw new CodexDynamicToolsError(
 						"invalid_call",
 						"The fork relation changed while resolving its boundary.",
 					);
+				}
 				boundary = fork.boundary;
 			}
 		}
@@ -656,7 +690,9 @@ async function dispatchOne(
 				caller,
 			);
 		} catch (error) {
-			if (error instanceof CodexDynamicToolsError) throw error;
+			if (error instanceof CodexDynamicToolsError) {
+				throw error;
+			}
 			throw new CodexDynamicToolsError(
 				"unknown_provenance",
 				"The pane-link authority could not be issued.",
@@ -720,24 +756,29 @@ async function dispatchOne(
 			options,
 			operationSettlement,
 		);
-		if (execution.kind === "outcome_unknown")
+		if (execution.kind === "outcome_unknown") {
 			return outcomeUnknownDynamicResponse(mutationName, execution.operationId);
-		if (execution.kind === "refused")
+		}
+		if (execution.kind === "refused") {
 			return refusedDynamicResponse(mutationName, execution.reason, execution.message);
+		}
 		return dynamicResponse(mutationName, {
 			tag: "ok",
 			operationId: execution.operationId,
 			value: execution.value,
 		});
 	} catch (error) {
-		if (error instanceof CodexDynamicOperationTerminalizationError) throw error;
+		if (error instanceof CodexDynamicOperationTerminalizationError) {
+			throw error;
+		}
 		const failure = dynamicErrorForResponse(error);
-		if (boundaryValidated && knownName !== null)
+		if (boundaryValidated && knownName !== null) {
 			return refusedDynamicResponse(
 				knownName,
 				refusalReasonForResponse(failure.code),
 				boundedFailureMessage(failure.message),
 			);
+		}
 		return invalidDynamicResponse(
 			failure.code === "unsupported" ? "unsupported" : "invalid_call",
 			boundedFailureMessage(failure.message),
@@ -751,12 +792,16 @@ function refusalReasonForResponse(code: DynamicDispatchErrorCode): DynamicRefusa
 
 function boundedFailureMessage(value: string): string {
 	const normalized = value.trim() || "The dynamic call was refused.";
-	if (Buffer.byteLength(normalized, "utf8") <= 512) return normalized;
+	if (Buffer.byteLength(normalized, "utf8") <= 512) {
+		return normalized;
+	}
 	const ellipsis = "…";
 	const budget = 512 - Buffer.byteLength(ellipsis, "utf8");
 	let result = "";
 	for (const character of normalized) {
-		if (Buffer.byteLength(result + character, "utf8") > budget) break;
+		if (Buffer.byteLength(result + character, "utf8") > budget) {
+			break;
+		}
 		result += character;
 	}
 	return `${result}${ellipsis}`;
@@ -785,7 +830,9 @@ function wrapPageCursor(
 	direction: "asc" | "desc",
 	query: unknown,
 ): string | null {
-	if (cursor === null) return null;
+	if (cursor === null) {
+		return null;
+	}
 	return encodeDynamicCursor({
 		child: caller.childId,
 		epoch: caller.epoch,
@@ -798,8 +845,9 @@ function wrapPageCursor(
 }
 
 export function createCodexDynamicTools(options: CodexDynamicToolsOptions): CodexDynamicTools {
-	if (options.checkoutRoot.length === 0)
+	if (options.checkoutRoot.length === 0) {
 		throw new CodexDynamicToolsError("invalid_call", "Dynamic tools require a checkout root.");
+	}
 	let disposed = false;
 	const responses = new WeakMap<object, Promise<DynamicToolCallResponse>>();
 	const quarantine = createDynamicQuarantineDispatcher(options);
@@ -808,13 +856,17 @@ export function createCodexDynamicTools(options: CodexDynamicToolsOptions): Code
 		const cacheKey = isRecord(request) ? request : null;
 		if (cacheKey !== null) {
 			const existing = responses.get(cacheKey);
-			if (existing !== undefined) return existing;
+			if (existing !== undefined) {
+				return existing;
+			}
 		}
 		if (disposed) {
 			const response = Promise.resolve(
 				invalidDynamicResponse("invalid_call", "Dynamic tools are disposed."),
 			);
-			if (cacheKey !== null) responses.set(cacheKey, response);
+			if (cacheKey !== null) {
+				responses.set(cacheKey, response);
+			}
 			return response;
 		}
 		const state: {
@@ -831,8 +883,12 @@ export function createCodexDynamicTools(options: CodexDynamicToolsOptions): Code
 					settlement: state.operationSettlement,
 				};
 			} catch (error) {
-				if (!(error instanceof CodexDynamicOperationTerminalizationError)) throw error;
-				if (state.mutationName === null) throw error;
+				if (!(error instanceof CodexDynamicOperationTerminalizationError)) {
+					throw error;
+				}
+				if (state.mutationName === null) {
+					throw error;
+				}
 				return {
 					response: refusedDynamicResponse(
 						state.mutationName,
@@ -844,11 +900,15 @@ export function createCodexDynamicTools(options: CodexDynamicToolsOptions): Code
 				};
 			}
 		});
-		if (cacheKey !== null) responses.set(cacheKey, response);
+		if (cacheKey !== null) {
+			responses.set(cacheKey, response);
+		}
 		return response;
 	};
 	const dispose = (): void => {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		disposed = true;
 		quarantine.dispose();
 	};

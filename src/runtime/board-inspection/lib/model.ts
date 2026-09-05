@@ -114,35 +114,53 @@ function object(value: unknown): Readonly<Record<string, unknown>> | null {
 export function classifyBoundElements(value: unknown): BoundElementsClassification {
 	const readableEntries: BoundElementsClassification["readableEntries"] = [];
 	const problems: BoundElementsClassification["problems"] = [];
-	if (!Array.isArray(value))
+	if (!Array.isArray(value)) {
 		return { readableEntries, problems: [{ issue: "not-array", entryIndex: null }] };
+	}
 	value.forEach((entry, entryIndex) => {
 		const item = object(entry);
 		let issue: BoundElementIssue | null = null;
-		if (!item) issue = "entry-not-object";
-		else if (!("id" in item)) issue = "missing-id";
-		else if (item["id"] === "") issue = "empty-id";
-		else if (typeof item["id"] !== "string") issue = "non-string-id";
-		else if (!("type" in item)) issue = "missing-type";
-		else if (item["type"] !== "text" && item["type"] !== "arrow") issue = "invalid-type";
-		else readableEntries.push({ id: item["id"], type: item["type"] });
-		if (issue) problems.push({ issue, entryIndex });
+		if (!item) {
+			issue = "entry-not-object";
+		} else if (!("id" in item)) {
+			issue = "missing-id";
+		} else if (item["id"] === "") {
+			issue = "empty-id";
+		} else if (typeof item["id"] !== "string") {
+			issue = "non-string-id";
+		} else if (!("type" in item)) {
+			issue = "missing-type";
+		} else if (item["type"] !== "text" && item["type"] !== "arrow") {
+			issue = "invalid-type";
+		} else {
+			readableEntries.push({ id: item["id"], type: item["type"] });
+		}
+		if (issue) {
+			problems.push({ issue, entryIndex });
+		}
 	});
 	return { readableEntries, problems };
 }
 
 export function classifyBindingTarget(value: unknown): BindingTargetClassification {
-	if (!value || typeof value !== "object")
+	if (!value || typeof value !== "object") {
 		return {
 			readableTargetId: null,
 			blockingIssue: Array.isArray(value) ? "array" : "not-object",
 		};
-	if (Array.isArray(value)) return { readableTargetId: null, blockingIssue: "array" };
-	if (!("elementId" in value))
+	}
+	if (Array.isArray(value)) {
+		return { readableTargetId: null, blockingIssue: "array" };
+	}
+	if (!("elementId" in value)) {
 		return { readableTargetId: null, blockingIssue: "missing-element-id" };
-	if (value.elementId === "") return { readableTargetId: null, blockingIssue: "empty-element-id" };
-	if (typeof value.elementId !== "string")
+	}
+	if (value.elementId === "") {
+		return { readableTargetId: null, blockingIssue: "empty-element-id" };
+	}
+	if (typeof value.elementId !== "string") {
 		return { readableTargetId: null, blockingIssue: "non-string-element-id" };
+	}
 	return { readableTargetId: value.elementId, blockingIssue: null };
 }
 
@@ -166,7 +184,9 @@ export function nodeId(record: DecodedRecord): string | null {
 
 export function groupIds(record: DecodedRecord): string[] {
 	const raw = record.raw?.groupIds;
-	if (!Array.isArray(raw)) return [];
+	if (!Array.isArray(raw)) {
+		return [];
+	}
 	return raw.filter((value): value is string => typeof value === "string" && value.length > 0);
 }
 
@@ -177,9 +197,13 @@ export function libraryAttribution(record: DecodedRecord): {
 	issues: string[];
 } | null {
 	const custom = object(record.raw?.customData);
-	if (!custom || !("library" in custom)) return null;
+	if (!custom || !("library" in custom)) {
+		return null;
+	}
 	const library = object(custom["library"]);
-	if (!library) return { valid: false, issues: ["library must be an object"] };
+	if (!library) {
+		return { valid: false, issues: ["library must be an object"] };
+	}
 	const item =
 		typeof library["itemId"] === "string" && library["itemId"].length > 0
 			? library["itemId"]
@@ -187,12 +211,15 @@ export function libraryAttribution(record: DecodedRecord): {
 				? library["item"]
 				: undefined;
 	const issues: string[] = [];
-	if (!item) issues.push("itemId or item must be a nonempty string");
+	if (!item) {
+		issues.push("itemId or item must be a nonempty string");
+	}
 	if (
 		library["source"] !== undefined &&
 		(typeof library["source"] !== "string" || library["source"].length === 0)
-	)
+	) {
 		issues.push("source must be a nonempty string");
+	}
 	return {
 		valid: issues.length === 0,
 		...(item ? { item } : {}),
@@ -225,7 +252,9 @@ function buildLabelClassifications(
 	const labelsWithBlockedReverseClassification = new Set<string>();
 	for (let ownerIndex = 0; ownerIndex < live.length; ownerIndex += 1) {
 		const owner = live[ownerIndex]!;
-		if (!owner.id || owner.raw?.boundElements == null) continue;
+		if (!owner.id || owner.raw?.boundElements == null) {
+			continue;
+		}
 		const bounds = classifyBoundElements(owner.raw.boundElements);
 		for (
 			let referenceIndex = 0;
@@ -233,7 +262,9 @@ function buildLabelClassifications(
 			referenceIndex += 1
 		) {
 			const reference = bounds.readableEntries[referenceIndex]!;
-			if (reference.type !== "text" || byId.get(reference.id)?.type !== "text") continue;
+			if (reference.type !== "text" || byId.get(reference.id)?.type !== "text") {
+				continue;
+			}
 			if (!owner.usableId) {
 				labelsWithBlockedReverseClassification.add(reference.id);
 				continue;
@@ -250,7 +281,9 @@ function buildLabelClassifications(
 	const confirmedLabels = new Map<string, string>();
 	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
 		const record = live[recordIndex]!;
-		if (record.type !== "text" || !record.usableId || !record.id) continue;
+		if (record.type !== "text" || !record.usableId || !record.id) {
+			continue;
+		}
 		const rawContainer = record.raw?.containerId;
 		const blocked =
 			(rawContainer !== undefined &&
@@ -264,15 +297,19 @@ function buildLabelClassifications(
 		const reverseOwnerInput = reverseOwners ? [...reverseOwners] : [];
 		const reverseOwnerIds = orderedIdentities(reverseOwnerInput);
 		const candidateOwnerSet = new Set<string>();
-		if (forwardOwnerId) candidateOwnerSet.add(forwardOwnerId);
-		for (let index = 0; index < reverseOwnerIds.length; index += 1)
+		if (forwardOwnerId) {
+			candidateOwnerSet.add(forwardOwnerId);
+		}
+		for (let index = 0; index < reverseOwnerIds.length; index += 1) {
 			candidateOwnerSet.add(reverseOwnerIds[index]!);
+		}
 		const candidateOwnerInput = [...candidateOwnerSet];
 		const candidateOwnerIds = orderedIdentities(candidateOwnerInput);
 		let state: LabelOwnershipClassification["state"];
 		let resolvedOwnerId: string | null = null;
-		if (blocked) state = "blocked";
-		else if (forwardOwnerId && reverseOwnerIds.length === 0) {
+		if (blocked) {
+			state = "blocked";
+		} else if (forwardOwnerId && reverseOwnerIds.length === 0) {
 			state = "forward-only";
 			resolvedOwnerId = forwardOwnerId;
 		} else if (!forwardOwnerId && reverseOwnerIds.length === 1) {
@@ -285,8 +322,11 @@ function buildLabelClassifications(
 		) {
 			state = "matching";
 			resolvedOwnerId = forwardOwnerId;
-		} else if (forwardOwnerId || reverseOwnerIds.length > 0) state = "conflicting";
-		else state = "none";
+		} else if (forwardOwnerId || reverseOwnerIds.length > 0) {
+			state = "conflicting";
+		} else {
+			state = "none";
+		}
 		const classification = {
 			labelId: record.id,
 			forwardOwnerId,
@@ -313,7 +353,9 @@ function buildNodes(
 	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
 		const record = live[recordIndex]!;
 		const node = nodeId(record);
-		if (!node || !record.usableId || !record.id || !record.box) continue;
+		if (!node || !record.usableId || !record.id || !record.box) {
+			continue;
+		}
 		const members = grouped.get(node) ?? [];
 		members.push(record);
 		grouped.set(node, members);
@@ -322,7 +364,9 @@ function buildNodes(
 	for (const [labelId, containerId] of confirmedLabels) {
 		const owner = nodeOfElement.get(containerId);
 		const label = byId.get(labelId);
-		if (!owner || !label || nodeOfElement.has(labelId) || !label.box) continue;
+		if (!owner || !label || nodeOfElement.has(labelId) || !label.box) {
+			continue;
+		}
 		grouped.get(owner)!.push(label);
 		nodeOfElement.set(labelId, owner);
 	}
@@ -350,12 +394,13 @@ function buildNodes(
 			continue;
 		}
 		const aggregate = aggregateResult.kind === "representable" ? aggregateResult.box : null;
-		if (!aggregate)
+		if (!aggregate) {
 			aggregateFailures.push({
 				scope: "semantic-node-aggregate",
 				subjectId: id,
 				members,
 			});
+		}
 		const elementIds = orderedIdentities(collected(bodies, (record) => record.id!));
 		const labelElementIds = orderedIdentities(collected(labels, (record) => record.id!));
 		nodes.set(id, {
@@ -380,7 +425,9 @@ interface BinaryFactor {
 }
 
 function binaryFactor(value: number): BinaryFactor {
-	if (value === 0) return { significand: 0n, exponent: 0 };
+	if (value === 0) {
+		return { significand: 0n, exponent: 0 };
+	}
 	const view = new DataView(new ArrayBuffer(8));
 	view.setFloat64(0, value, false);
 	const bits = view.getBigUint64(0, false);
@@ -408,11 +455,14 @@ function bitLength(value: bigint): number {
 }
 
 function compareAreaFactors(aa: BinaryFactor, bb: BinaryFactor): number {
-	if (aa.significand === 0n || bb.significand === 0n)
+	if (aa.significand === 0n || bb.significand === 0n) {
 		return aa.significand === bb.significand ? 0 : aa.significand === 0n ? -1 : 1;
+	}
 	const aMagnitude = bitLength(aa.significand) + aa.exponent;
 	const bMagnitude = bitLength(bb.significand) + bb.exponent;
-	if (aMagnitude !== bMagnitude) return aMagnitude < bMagnitude ? -1 : 1;
+	if (aMagnitude !== bMagnitude) {
+		return aMagnitude < bMagnitude ? -1 : 1;
+	}
 	const commonExponent = Math.min(aa.exponent, bb.exponent);
 	const alignedA = aa.significand << BigInt(aa.exponent - commonExponent);
 	const alignedB = bb.significand << BigInt(bb.exponent - commonExponent);
@@ -471,23 +521,28 @@ function assignNodeHierarchy(nodes: Map<string, InspectionNode>): SweepWork {
 		(childInterval, boundaryInterval) => {
 			const child = childInterval.value;
 			const { owner, boundary } = boundaryInterval.value;
-			if (boundaryInterval.min > childInterval.min || boundaryInterval.max < childInterval.max)
+			if (boundaryInterval.min > childInterval.min || boundaryInterval.max < childInterval.max) {
 				return;
+			}
 			if (
 				compareAreaFactors(boundaryAreas.get(boundary)!, childAreas.get(child.id)!) <= 0 ||
 				!contains(boundary.box!, child.body)
-			)
+			) {
 				return;
+			}
 			const candidate = { owner, boundary };
 			const selected = selectedByChild.get(child.id);
-			if (!selected || candidateOrder(candidate, selected) < 0)
+			if (!selected || candidateOrder(candidate, selected) < 0) {
 				selectedByChild.set(child.id, candidate);
+			}
 		},
 	);
 	for (let childIndex = 0; childIndex < children.length; childIndex += 1) {
 		const child = children[childIndex]!;
 		const selected = selectedByChild.get(child.id);
-		if (selected) child.parentId = selected.owner.id;
+		if (selected) {
+			child.parentId = selected.owner.id;
+		}
 	}
 	work.peakSelections = selectedByChild.size;
 	for (const node of nodes.values()) {
@@ -509,11 +564,14 @@ function buildConnectorEndpoints(
 	const connectorEndpoints = new Map<string, ConnectorEndpointClassification>();
 	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
 		const record = live[recordIndex]!;
-		if (!record.usableId || !record.id || (record.type !== "arrow" && record.type !== "line"))
+		if (!record.usableId || !record.id || (record.type !== "arrow" && record.type !== "line")) {
 			continue;
+		}
 		const endpoint = (end: "start" | "end") => {
 			const value = record.raw?.[`${end}Binding`];
-			if (value == null) return { blocked: false, element: undefined, node: undefined };
+			if (value == null) {
+				return { blocked: false, element: undefined, node: undefined };
+			}
 			const target = classifyBindingTarget(value);
 			return {
 				blocked:
@@ -608,12 +666,16 @@ function buildObstacles(
 		let current = id;
 		while (true) {
 			const next = parent.get(current);
-			if (next === current) break;
+			if (next === current) {
+				break;
+			}
 			current = next!;
 		}
 		let next = id;
 		while (true) {
-			if (parent.get(next) === current) break;
+			if (parent.get(next) === current) {
+				break;
+			}
 			const previous = parent.get(next)!;
 			parent.set(next, current);
 			next = previous;
@@ -623,9 +685,14 @@ function buildObstacles(
 	const join = (a: string, b: string) => {
 		const aa = find(a),
 			bb = find(b);
-		if (aa === bb) return;
-		if (compareIdentity(aa, bb) < 0) parent.set(bb, aa);
-		else parent.set(aa, bb);
+		if (aa === bb) {
+			return;
+		}
+		if (compareIdentity(aa, bb) < 0) {
+			parent.set(bb, aa);
+		} else {
+			parent.set(aa, bb);
+		}
 	};
 	const firstByGroup = new Map<string, string>();
 	for (let recordIndex = 0; recordIndex < eligible.length; recordIndex += 1) {
@@ -634,8 +701,11 @@ function buildObstacles(
 		for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
 			const group = groups[groupIndex]!;
 			const first = firstByGroup.get(group);
-			if (first) join(first, record.id!);
-			else firstByGroup.set(group, record.id!);
+			if (first) {
+				join(first, record.id!);
+			} else {
+				firstByGroup.set(group, record.id!);
+			}
 		}
 	}
 	const components = new Map<string, DecodedRecord[]>();
@@ -654,7 +724,9 @@ function buildObstacles(
 			Boolean(libraryAttribution(record)?.valid),
 		);
 		const sharedGroup = members.length >= 2;
-		if (validLibrary.length === 0 && !sharedGroup) continue;
+		if (validLibrary.length === 0 && !sharedGroup) {
+			continue;
+		}
 		if (sharedGroup) {
 			for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
 				const member = members[memberIndex]!;
@@ -666,8 +738,9 @@ function buildObstacles(
 		for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
 			const member = members[memberIndex]!;
 			const memberGroups = groupsById.get(member.id!) ?? [];
-			for (let groupIndex = 0; groupIndex < memberGroups.length; groupIndex += 1)
+			for (let groupIndex = 0; groupIndex < memberGroups.length; groupIndex += 1) {
 				uniqueGroups.add(memberGroups[groupIndex]!);
+			}
 		}
 		const groups = orderedIdentities([...uniqueGroups]);
 		const library = collected(validLibrary, (record) => {

@@ -34,7 +34,9 @@ const repository = "github.com/acme/inspector";
 
 function git(cwd: string, ...args: string[]): void {
 	const result = Bun.spawnSync(["git", ...args], { cwd, stderr: "pipe" });
-	if (result.exitCode !== 0) throw new Error(result.stderr.toString());
+	if (result.exitCode !== 0) {
+		throw new Error(result.stderr.toString());
+	}
 }
 
 function shape(id: string, x: number, archboard: Record<string, unknown>) {
@@ -241,8 +243,9 @@ test(
 			"main",
 			"62f0cef",
 			"2026-08-24T10:30:00Z",
-		])
+		]) {
 			expect(bound.text).toContain(value);
+		}
 		expect(bound.text).not.toContain(checkout);
 		expect(bound.text).not.toContain("must-not-render");
 
@@ -250,7 +253,7 @@ test(
 		for (const [clientId, elementId] of [
 			[left.clientId, "bound-local"],
 			[right.clientId, "right-bound"],
-		] as const)
+		] as const) {
 			expect(
 				(
 					await api("/api/selection", {
@@ -259,6 +262,7 @@ test(
 					})
 				).status,
 			).toBe(200);
+		}
 		const leftSelection = JSON.parse(
 			runCanvasCli(canvas.base, vault, ["browser", "selection", "--pane", "left"]),
 		) as { board: string; elementIds: string[] };
@@ -328,11 +332,12 @@ test(
 			expect(contract.labelContrast).toBeGreaterThanOrEqual(4.5);
 			expect(contract.openHeight).toBeGreaterThanOrEqual(44);
 			expect(contract.focusHeight).toBeGreaterThanOrEqual(44);
-			if (index === 0)
+			if (index === 0) {
 				await browser.run([
 					"click",
 					`.bar-actions [aria-label="Use ${theme === "light" ? "dark" : "light"} theme"]`,
 				]);
+			}
 		}
 		expect(themes.toSorted()).toEqual(["dark", "light"]);
 

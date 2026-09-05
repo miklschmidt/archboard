@@ -11,15 +11,21 @@ function isRecord(value: unknown): value is JsonRecord {
 }
 
 function issuePath(issue: unknown): string[] {
-	if (!isRecord(issue) || !Array.isArray(issue["path"])) return [];
+	if (!isRecord(issue) || !Array.isArray(issue["path"])) {
+		return [];
+	}
 	return issue["path"].map((segment) => String(segment));
 }
 
 function nestedIssuePaths(issue: unknown, prefix: JsonPath = []): string[][] {
-	if (!isRecord(issue)) return [];
+	if (!isRecord(issue)) {
+		return [];
+	}
 	const path = [...prefix, ...issuePath(issue)];
 	const nested = issue["errors"];
-	if (!Array.isArray(nested)) return [path];
+	if (!Array.isArray(nested)) {
+		return [path];
+	}
 	return [
 		path,
 		...nested.flatMap((group) =>
@@ -31,7 +37,9 @@ function nestedIssuePaths(issue: unknown, prefix: JsonPath = []): string[][] {
 }
 
 export function changedPaths(left: unknown, right: unknown, path: JsonPath = []): string[][] {
-	if (Object.is(left, right)) return [];
+	if (Object.is(left, right)) {
+		return [];
+	}
 	if (Array.isArray(left) && Array.isArray(right)) {
 		const length = Math.max(left.length, right.length);
 		return Array.from({ length }, (_, index) =>
@@ -63,7 +71,8 @@ export function assertChallengeFailure(
 	// containing paths cover the regular Zod union collapses in the fixtures.
 	expect(allPaths).toContain(targetPath);
 	const directKey = pathKey(directPath);
-	if (allowedContainingPaths.has(directKey))
+	if (allowedContainingPaths.has(directKey)) {
 		expect(error.issues[0]).toMatchObject({ code: "invalid_union" });
+	}
 	expect(directKey === targetPath || allowedContainingPaths.has(directKey)).toBe(true);
 }

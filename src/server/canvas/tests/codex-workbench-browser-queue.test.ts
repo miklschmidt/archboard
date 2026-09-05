@@ -205,7 +205,9 @@ test("concurrent snapshot re-reads share one read, and a looping client is floor
 	let reads = 0;
 	const pending: (() => void)[] = [];
 	const release = (): void => {
-		for (const resolve of pending.splice(0)) resolve();
+		for (const resolve of pending.splice(0)) {
+			resolve();
+		}
 	};
 	let clock = 10_000;
 	const harness = projectionHarness({

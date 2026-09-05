@@ -27,7 +27,9 @@ async function mutate(
 		case "add":
 			return fixtureValue.operations.manageQueue({ call, operation, prompt: "add" });
 		case "update":
-			if (target === undefined) throw new Error("missing update target");
+			if (target === undefined) {
+				throw new Error("missing update target");
+			}
 			return fixtureValue.operations.manageQueue({
 				call,
 				operation,
@@ -35,17 +37,23 @@ async function mutate(
 				prompt: "updated",
 			});
 		case "delete":
-			if (target === undefined) throw new Error("missing delete target");
+			if (target === undefined) {
+				throw new Error("missing delete target");
+			}
 			return fixtureValue.operations.manageQueue({ call, operation, submissionId: target.id });
 		case "reorder":
-			if (target === undefined) throw new Error("missing reorder target");
+			if (target === undefined) {
+				throw new Error("missing reorder target");
+			}
 			return fixtureValue.operations.manageQueue({
 				call,
 				operation,
 				orderedSubmissionIds: [target.id],
 			});
 		case "start":
-			if (target === undefined) throw new Error("missing start target");
+			if (target === undefined) {
+				throw new Error("missing start target");
+			}
 			return fixtureValue.operations.manageQueue({ call, operation, submissionId: target.id });
 	}
 }
@@ -151,7 +159,9 @@ describe("codex workhorse operation authority and correlation", () => {
 			const fixtureValue = fixture();
 			try {
 				fixtureValue.operations.subscribe((event) => {
-					if (event.type !== "accepted") return;
+					if (event.type !== "accepted") {
+						return;
+					}
 					const replacementIdentity = createIdentityAuthority();
 					const childId =
 						change === "child"
@@ -239,7 +249,9 @@ describe("codex workhorse operation authority and correlation", () => {
 				input: "queued unknown start",
 				transcriptDelta: "",
 			});
-			if (delegated.queuedSubmissionId === null) throw new Error("delegate was not queued");
+			if (delegated.queuedSubmissionId === null) {
+				throw new Error("delegate was not queued");
+			}
 			fixtureValue.queue.nextOutcome = "outcome_unknown";
 			fixtureValue.queue.nextStartTurnId = null;
 			expect(
@@ -299,7 +311,7 @@ describe("codex workhorse operation authority and correlation", () => {
 			for (const [method, status] of [
 				["turn/started", "inProgress"],
 				["turn/completed", "completed"],
-			] as const)
+			] as const) {
 				fixtureValue.operations.onNotification(
 					notification(fixtureValue, {
 						method,
@@ -314,6 +326,7 @@ describe("codex workhorse operation authority and correlation", () => {
 						},
 					}),
 				);
+			}
 			expect(events.map(({ type }) => type)).toEqual([
 				"accepted",
 				"outcome_unknown",
@@ -365,8 +378,9 @@ describe("codex workhorse operation authority and correlation", () => {
 			});
 			fixtureValue.operations.subscribe((event) => {
 				ordered.push(`existing:${event.type}`);
-				if (event.type === "accepted")
+				if (event.type === "accepted") {
 					fixtureValue.operations.subscribe((later) => ordered.push(`late:${later.type}`));
+				}
 			});
 			const result = await fixtureValue.operations.delegate({
 				call: fixtureValue.setCall("delegate_to_workhorse"),
@@ -387,9 +401,11 @@ describe("codex workhorse operation authority and correlation", () => {
 			fixtureValue.session.nextStartTurn = turn(fixtureValue.identity, "nested", "inProgress");
 			const order: string[] = [];
 			fixtureValue.operations.subscribe((event) => {
-				if (event.type !== "started" && event.type !== "completed") return;
+				if (event.type !== "started" && event.type !== "completed") {
+					return;
+				}
 				order.push(`one:${event.type}`);
-				if (event.type === "started")
+				if (event.type === "started") {
 					fixtureValue.operations.onNotification(
 						notification(fixtureValue, {
 							method: "turn/completed",
@@ -404,9 +420,12 @@ describe("codex workhorse operation authority and correlation", () => {
 							},
 						}),
 					);
+				}
 			});
 			fixtureValue.operations.subscribe((event) => {
-				if (event.type === "started" || event.type === "completed") order.push(`two:${event.type}`);
+				if (event.type === "started" || event.type === "completed") {
+					order.push(`two:${event.type}`);
+				}
 			});
 			await fixtureValue.operations.delegate({
 				call: fixtureValue.setCall("delegate_to_workhorse"),
@@ -430,7 +449,9 @@ describe("codex workhorse operation authority and correlation", () => {
 				input: "queued lifecycle",
 				transcriptDelta: "",
 			});
-			if (delegated.queuedSubmissionId === null) throw new Error("delegate was not queued");
+			if (delegated.queuedSubmissionId === null) {
+				throw new Error("delegate was not queued");
+			}
 			const startResult = await fixtureValue.operations.manageQueue({
 				call: fixtureValue.setCall("manage_workhorse_queue"),
 				operation: "start",
@@ -480,13 +501,19 @@ describe("codex workhorse operation authority and correlation", () => {
 					expect(fixtureValue.queue.calls).toEqual([]);
 					expect(fixtureValue.queue.nextOutcome).toBe("delivered");
 					expect(fixtureValue.epoch.snapshot().manifest.records).toHaveLength(4);
-					if (operation !== "add") fixtureValue.queue.state = [queuedItem(fixtureValue)];
+					if (operation !== "add") {
+						fixtureValue.queue.state = [queuedItem(fixtureValue)];
+					}
 					fixtureValue.queue.nextOutcome = outcome;
-					if (operation === "start" && outcome === "outcome_unknown")
+					if (operation === "start" && outcome === "outcome_unknown") {
 						fixtureValue.queue.nextStartTurnId = null;
+					}
 					const pending = mutate(fixtureValue, operation);
-					if (outcome === "delivered") expect((await pending).operation).toBe(operation);
-					else expect(await rejected(pending)).toMatchObject({ outcome });
+					if (outcome === "delivered") {
+						expect((await pending).operation).toBe(operation);
+					} else {
+						expect(await rejected(pending)).toMatchObject({ outcome });
+					}
 					expect(fixtureValue.queue.calls).toEqual([operation]);
 				} finally {
 					fixtureValue.cleanup();

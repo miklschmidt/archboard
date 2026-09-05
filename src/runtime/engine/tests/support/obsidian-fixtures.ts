@@ -144,6 +144,8 @@ export const ELEMENT_LINKS = "## Element Links\nrect-one: [[Payments]]\n\n";
 export function insertBeforeDrawing(note: string, sections: string): string {
 	const marker = "\n%%\n## Drawing\n";
 	const at = note.indexOf(marker);
-	if (at < 0) throw new Error("Fixture note has no Drawing block");
+	if (at < 0) {
+		throw new Error("Fixture note has no Drawing block");
+	}
 	return `${note.slice(0, at)}\n${sections}${note.slice(at + 1)}`;
 }

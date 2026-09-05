@@ -40,13 +40,16 @@ export function prepareProductionFixture(
 		options.onRootCleanup?.(root);
 	});
 	options.onRoot?.(root);
-	if (options.failAt === "root_setup") throw new Error("injected production root setup failure");
+	if (options.failAt === "root_setup") {
+		throw new Error("injected production root setup failure");
+	}
 	const logPath = join(root, "codex.ndjson");
 	const controlPath = join(root, "control.json");
 	const executablePath = join(root, "codex-fixture");
 	writeFileSync(logPath, "");
-	if (options.failAt === "fixture_setup")
+	if (options.failAt === "fixture_setup") {
 		throw new Error("injected production fixture setup failure");
+	}
 	writeFileSync(controlPath, JSON.stringify({ exit: false }));
 	writeFileSync(
 		executablePath,
@@ -64,11 +67,15 @@ export function prepareProductionFixture(
 }
 
 async function closeSocket(socket: WebSocket): Promise<void> {
-	if (socket.readyState === WebSocket.CLOSED) return;
+	if (socket.readyState === WebSocket.CLOSED) {
+		return;
+	}
 	await new Promise<void>((resolve) => {
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		const done = (): void => {
-			if (timer !== undefined) clearTimeout(timer);
+			if (timer !== undefined) {
+				clearTimeout(timer);
+			}
 			socket.off("close", done);
 			resolve();
 		};
@@ -81,8 +88,11 @@ async function closeSocket(socket: WebSocket): Promise<void> {
 			}
 		}, 100);
 		try {
-			if (socket.readyState === WebSocket.CONNECTING) socket.terminate();
-			else socket.close();
+			if (socket.readyState === WebSocket.CONNECTING) {
+				socket.terminate();
+			} else {
+				socket.close();
+			}
 		} catch {
 			done();
 		}
@@ -90,14 +100,17 @@ async function closeSocket(socket: WebSocket): Promise<void> {
 }
 
 function socketError(value: unknown): Error {
-	if (value instanceof Error) return value;
+	if (value instanceof Error) {
+		return value;
+	}
 	if (
 		value !== null &&
 		typeof value === "object" &&
 		"message" in value &&
 		typeof value.message === "string"
-	)
+	) {
 		return new Error(value.message, { cause: value });
+	}
 	return new Error("The production workbench socket failed.", { cause: value });
 }
 
@@ -120,12 +133,16 @@ export async function openApplicationSocket(
 	let sequence = 0;
 	const onMessage = (raw: WebSocket.RawData): void => {
 		const message = JSON.parse(raw.toString()) as WorkbenchResult & { requestId?: unknown };
-		if (typeof message.requestId !== "string") return;
+		if (typeof message.requestId !== "string") {
+			return;
+		}
 		pending.get(message.requestId)?.resolve(message);
 		pending.delete(message.requestId);
 	};
 	const rejectPending = (message: string): void => {
-		for (const waiter of pending.values()) waiter.reject(new Error(message));
+		for (const waiter of pending.values()) {
+			waiter.reject(new Error(message));
+		}
 		pending.clear();
 	};
 	socket.on("message", onMessage);

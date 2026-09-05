@@ -98,7 +98,9 @@ describe("Codex workbench sequenced browser delivery", () => {
 
 		expect(messages).toHaveLength(1);
 		const published = messages[0]!;
-		if (published.kind !== "snapshot") throw new Error("the oversized change stayed a delta");
+		if (published.kind !== "snapshot") {
+			throw new Error("the oversized change stayed a delta");
+		}
 		expect(published.sequence).toBe(1);
 		expect(published.snapshot.timeline?.turns[0]?.items).toHaveLength(32);
 		expect(wireBytes(published.snapshot)).toBeGreaterThan(262_144);

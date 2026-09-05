@@ -12,7 +12,9 @@ import {
 
 async function reachQuarantine(tools: CodexDynamicTools): Promise<void> {
 	for (let index = 0; index < 100; index++) {
-		if (tools.inspectMutationQuarantine().callCount > 0) return;
+		if (tools.inspectMutationQuarantine().callCount > 0) {
+			return;
+		}
 		await Promise.resolve();
 	}
 	throw new Error("the mutation did not reach quarantine");
@@ -114,7 +116,7 @@ describe("codex dynamic quarantine fail-closed ownership", () => {
 				.catch((error: unknown) => error),
 		];
 		await reachQuarantine(tools);
-		for (let index = 1; index < 128; index++)
+		for (let index = 1; index < 128; index++) {
 			observed.push(
 				tools
 					.dispatch(
@@ -122,6 +124,7 @@ describe("codex dynamic quarantine fail-closed ownership", () => {
 					)
 					.catch((error: unknown) => error),
 			);
+		}
 		observed.push(
 			tools
 				.dispatch(

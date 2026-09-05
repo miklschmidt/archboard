@@ -50,8 +50,12 @@ function base64urlEncode(value: string): string {
 }
 
 function base64urlDecode(value: string): string {
-	if (!/^[A-Za-z0-9_-]+$/u.test(value)) throw failure("The cursor is not a valid opaque token.");
-	if (value.length % 4 === 1) throw failure("The cursor is not a valid opaque token.");
+	if (!/^[A-Za-z0-9_-]+$/u.test(value)) {
+		throw failure("The cursor is not a valid opaque token.");
+	}
+	if (value.length % 4 === 1) {
+		throw failure("The cursor is not a valid opaque token.");
+	}
 	try {
 		const padded =
 			value.replaceAll("-", "+").replaceAll("_", "/") + "=".repeat((4 - (value.length % 4)) % 4);
@@ -61,10 +65,14 @@ function base64urlDecode(value: string): string {
 			.replaceAll("+", "-")
 			.replaceAll("/", "_")
 			.replace(/=+$/u, "");
-		if (canonical !== value) throw failure("The cursor is not a canonical opaque token.");
+		if (canonical !== value) {
+			throw failure("The cursor is not a canonical opaque token.");
+		}
 		return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 	} catch (error) {
-		if (error instanceof CodexDynamicToolsError) throw error;
+		if (error instanceof CodexDynamicToolsError) {
+			throw error;
+		}
 		throw failure("The cursor is not valid UTF-8.", error);
 	}
 }
@@ -76,13 +84,16 @@ function canonicalQuery(query: unknown): string {
 	} catch (error) {
 		throw failure("The cursor query is not JSON-serializable.", error);
 	}
-	if (encoded === undefined || encoded.length === 0)
+	if (encoded === undefined || encoded.length === 0) {
 		throw failure("The cursor query must be a JSON value.");
+	}
 	return encoded;
 }
 
 function validateBinding(value: unknown): DynamicCursorBinding {
-	if (!isRecord(value) || !exactKeys(value)) throw failure("The cursor envelope is not exact.");
+	if (!isRecord(value) || !exactKeys(value)) {
+		throw failure("The cursor envelope is not exact.");
+	}
 	if (
 		value["schema"] !== 1 ||
 		typeof value["child"] !== "string" ||
@@ -91,7 +102,9 @@ function validateBinding(value: unknown): DynamicCursorBinding {
 		value["epoch"].length === 0 ||
 		typeof value["method"] !== "string" ||
 		value["method"].length === 0 ||
-		(value["direction"] !== "asc" && value["direction"] !== "desc" && value["direction"] !== "event") ||
+		(value["direction"] !== "asc" &&
+			value["direction"] !== "desc" &&
+			value["direction"] !== "event") ||
 		typeof value["query"] !== "string" ||
 		value["query"].length === 0 ||
 		(value["cursor"] !== null && typeof value["cursor"] !== "string") ||
@@ -99,10 +112,13 @@ function validateBinding(value: unknown): DynamicCursorBinding {
 		typeof value["sequence"] !== "number" ||
 		!Number.isSafeInteger(value["sequence"]) ||
 		value["sequence"] < 0
-	)
+	) {
 		throw failure("The cursor envelope contains invalid binding fields.");
+	}
 	const sequence = value["sequence"];
-	if (typeof sequence !== "number") throw failure("The cursor sequence is not a number.");
+	if (typeof sequence !== "number") {
+		throw failure("The cursor sequence is not a number.");
+	}
 	return Object.freeze({
 		schema: 1,
 		child: value["child"],
@@ -131,8 +147,9 @@ export function encodeDynamicCursor(
 		(input.cursor !== null && (typeof input.cursor !== "string" || input.cursor.length === 0)) ||
 		!Number.isSafeInteger(input.sequence) ||
 		input.sequence < 0
-	)
+	) {
 		throw failure("The cursor binding contains invalid fields.");
+	}
 	const binding: DynamicCursorBinding = Object.freeze({
 		schema: 1,
 		child: input.child,
@@ -141,22 +158,25 @@ export function encodeDynamicCursor(
 		direction: input.direction,
 		query: (() => {
 			const query = canonicalQuery(input.query);
-			if (Buffer.byteLength(query, "utf8") > 16_384)
+			if (Buffer.byteLength(query, "utf8") > 16_384) {
 				throw failure("The cursor query is too large.");
+			}
 			return query;
 		})(),
 		cursor: input.cursor,
 		sequence: input.sequence,
 	});
 	const encoded = base64urlEncode(JSON.stringify(binding));
-	if (Buffer.byteLength(encoded, "utf8") > 1_024)
+	if (Buffer.byteLength(encoded, "utf8") > 1_024) {
 		throw failure("The cursor exceeds the reviewed size bound.");
+	}
 	return encoded;
 }
 
 export function decodeDynamicCursor(value: string): DynamicCursorBinding {
-	if (typeof value !== "string" || value.length === 0 || value.length > 1_024)
+	if (typeof value !== "string" || value.length === 0 || value.length > 1_024) {
 		throw failure("The cursor must be a bounded non-empty string.");
+	}
 	const json = base64urlDecode(value);
 	let parsed: unknown;
 	try {
@@ -165,15 +185,18 @@ export function decodeDynamicCursor(value: string): DynamicCursorBinding {
 		throw failure("The cursor envelope is not JSON.", error);
 	}
 	const binding = validateBinding(parsed);
-	if (JSON.stringify(binding) !== json) throw failure("The cursor envelope is not canonical JSON.");
+	if (JSON.stringify(binding) !== json) {
+		throw failure("The cursor envelope is not canonical JSON.");
+	}
 	let parsedQuery: unknown;
 	try {
 		parsedQuery = JSON.parse(binding.query) as unknown;
 	} catch (error) {
 		throw failure("The cursor query is not canonical JSON.", error);
 	}
-	if (JSON.stringify(parsedQuery) !== binding.query)
+	if (JSON.stringify(parsedQuery) !== binding.query) {
 		throw failure("The cursor query is not canonical JSON.");
+	}
 	return binding;
 }
 
@@ -191,7 +214,9 @@ export function unwrapDynamicCursor(
 		readonly query: unknown;
 	},
 ): { readonly cursor: string | null; readonly sequence: number } {
-	if (value === undefined) return { cursor: null, sequence: 0 };
+	if (value === undefined) {
+		return { cursor: null, sequence: 0 };
+	}
 	const binding = decodeDynamicCursor(value);
 	if (
 		binding.child !== expected.child ||
@@ -199,7 +224,8 @@ export function unwrapDynamicCursor(
 		binding.method !== expected.method ||
 		binding.direction !== expected.direction ||
 		binding.query !== canonicalQuery(expected.query)
-	)
+	) {
 		throw failure("The cursor is bound to another child epoch, method, direction, or query.");
+	}
 	return Object.freeze({ cursor: binding.cursor, sequence: binding.sequence });
 }

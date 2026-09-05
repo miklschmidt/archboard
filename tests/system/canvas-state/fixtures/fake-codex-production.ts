@@ -125,8 +125,11 @@ const createThread = (params: Record<string, unknown>): FixtureThread => {
 	const id = `thread-${++threadSequence}`;
 	const thread = buildThread(id, params, threadSequence);
 	threads.set(id, thread);
-	if (threadSequence === 1) coordinatorThreadId = id;
-	else if (threadSequence === 2) workhorseThreadId = id;
+	if (threadSequence === 1) {
+		coordinatorThreadId = id;
+	} else if (threadSequence === 2) {
+		workhorseThreadId = id;
+	}
 	return thread;
 };
 
@@ -193,7 +196,9 @@ const dynamicItem = {
 };
 
 const emitReverseRequests = (): void => {
-	if (reverseRequestsSent || workhorseThreadId === null) return;
+	if (reverseRequestsSent || workhorseThreadId === null) {
+		return;
+	}
 	reverseRequestsSent = true;
 	request("ordinary-request-1", "item/commandExecution/requestApproval", {
 		threadId: workhorseThreadId,
@@ -363,7 +368,9 @@ const handle = (frame: WireFrame): void => {
 					: { type: "idle" };
 			}
 			respond(frame as never, { turn });
-			if (isWorkhorse) setTimeout(emitReverseRequests, 10);
+			if (isWorkhorse) {
+				setTimeout(emitReverseRequests, 10);
+			}
 			return;
 		}
 		case "thread/inject_items":
@@ -445,7 +452,9 @@ process.stdin.on("data", (chunk) => {
 	while ((newline = input.indexOf("\n")) >= 0) {
 		const line = input.slice(0, newline);
 		input = input.slice(newline + 1);
-		if (line.trim().length === 0) continue;
+		if (line.trim().length === 0) {
+			continue;
+		}
 		try {
 			handle(JSON.parse(line) as WireFrame);
 		} catch (error) {
@@ -464,7 +473,9 @@ const controlTimer = setInterval(() => {
 			completeLogin?: boolean;
 			completeWorkhorseTurn?: boolean;
 		};
-		if (control.exit === true) process.exit(17);
+		if (control.exit === true) {
+			process.exit(17);
+		}
 		const workhorse = threads.get(workhorseThreadId ?? "");
 		const turn = workhorse?.turns[0];
 		if (control.completeWorkhorseTurn === true && workhorse && turn?.["status"] === "inProgress") {

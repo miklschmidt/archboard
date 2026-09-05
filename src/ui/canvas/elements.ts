@@ -65,11 +65,19 @@ const validateAndFixBindings = (
 		if (fixedElement["boundElements"]) {
 			if (Array.isArray(fixedElement["boundElements"])) {
 				const boundElements = fixedElement["boundElements"].filter((binding: unknown) => {
-					if (!binding || typeof binding !== "object") return false;
+					if (!binding || typeof binding !== "object") {
+						return false;
+					}
 					const record = binding as Record<string, unknown>;
-					if (typeof record["id"] !== "string" || typeof record["type"] !== "string") return false;
-					if (!elementMap.has(record["id"])) return false;
-					if (!["text", "arrow"].includes(record["type"])) return false;
+					if (typeof record["id"] !== "string" || typeof record["type"] !== "string") {
+						return false;
+					}
+					if (!elementMap.has(record["id"])) {
+						return false;
+					}
+					if (!["text", "arrow"].includes(record["type"])) {
+						return false;
+					}
 					return true;
 				});
 				fixedElement["boundElements"] = boundElements;
@@ -81,7 +89,10 @@ const validateAndFixBindings = (
 			}
 		}
 
-		if (typeof fixedElement["containerId"] === "string" && !elementMap.has(fixedElement["containerId"])) {
+		if (
+			typeof fixedElement["containerId"] === "string" &&
+			!elementMap.has(fixedElement["containerId"])
+		) {
 			fixedElement["containerId"] = null;
 		}
 
@@ -99,6 +110,8 @@ const validateAndFixBindings = (
 export const elementsForScene = (
 	elements: Partial<ExcalidrawElement>[],
 ): Partial<ExcalidrawElement>[] => {
-	if (elements.length === 0) return [];
+	if (elements.length === 0) {
+		return [];
+	}
 	return validateAndFixBindings(elements);
 };

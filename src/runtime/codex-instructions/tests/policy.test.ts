@@ -8,9 +8,13 @@ import {
 import { contextFixture, reviewedAdditionalContextPolicy } from "./fixtures.js";
 
 function expectDeepFrozen(value: unknown): void {
-	if (typeof value !== "object" || value === null) return;
+	if (typeof value !== "object" || value === null) {
+		return;
+	}
 	expect(Object.isFrozen(value)).toBe(true);
-	for (const child of Object.values(value as Record<string, unknown>)) expectDeepFrozen(child);
+	for (const child of Object.values(value as Record<string, unknown>)) {
+		expectDeepFrozen(child);
+	}
 }
 
 function expectReviewedPolicy(value: unknown): void {
@@ -66,7 +70,9 @@ describe("additional-context policy contract", () => {
 			tupleAction: "retain_existing_turn_id",
 		});
 		for (const evidence of operation.turnEvidence.slice(2)) {
-			if (!("status" in evidence)) throw new Error("terminal evidence must have a status");
+			if (!("status" in evidence)) {
+				throw new Error("terminal evidence must have a status");
+			}
 			expect(evidence.event).toBe("turn/completed");
 			expect(evidence.status).toMatch(/^(completed|interrupted|failed)$/);
 			expect(evidence.rpcs).toEqual(["turn/start", "turn/steer"]);
@@ -102,7 +108,9 @@ describe("additional-context policy contract", () => {
 				).toBe(true);
 			}
 			for (const rpc of ["turn/start", "turn/steer"] as const) {
-				if ((producer.rpcs as readonly string[]).includes(rpc)) continue;
+				if ((producer.rpcs as readonly string[]).includes(rpc)) {
+					continue;
+				}
 				expect(
 					ArchboardContextSchema.safeParse({
 						...contextFixture,
@@ -149,8 +157,12 @@ describe("additional-context policy contract", () => {
 			(policy: Record<string, unknown>) => {
 				const entries = Object.entries(policy);
 				[entries[0], entries[1]] = [entries[1]!, entries[0]!];
-				for (const field of Object.keys(policy)) delete policy[field];
-				for (const [field, value] of entries) policy[field] = value;
+				for (const field of Object.keys(policy)) {
+					delete policy[field];
+				}
+				for (const [field, value] of entries) {
+					policy[field] = value;
+				}
 			},
 			(policy: Record<string, unknown>) => {
 				const threadLink = policy["threadLink"] as Record<string, unknown>;

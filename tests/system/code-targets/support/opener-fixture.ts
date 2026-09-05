@@ -74,11 +74,15 @@ export interface OpenerFixtureOptions {
 
 function git(cwd: string, ...args: string[]): void {
 	const result = Bun.spawnSync(["git", ...args], { cwd, stdout: "ignore", stderr: "pipe" });
-	if (result.exitCode !== 0) throw new Error(result.stderr.toString());
+	if (result.exitCode !== 0) {
+		throw new Error(result.stderr.toString());
+	}
 }
 
 function assertBefore(deadline: number, description: string): void {
-	if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${description}`);
+	if (Date.now() >= deadline) {
+		throw new Error(`Timed out waiting for ${description}`);
+	}
 }
 
 async function waitForFile(file: string, deadline: number): Promise<void> {
@@ -93,7 +97,9 @@ async function waitForCount(directory: string, count: number, deadline: number):
 		const files = readdirSync(directory)
 			.filter((file) => file.endsWith(".json"))
 			.toSorted();
-		if (files.length >= count) return files;
+		if (files.length >= count) {
+			return files;
+		}
 		assertBefore(deadline, `${count} records in ${directory}`);
 		await Bun.sleep(TEST_OPENER_LIFECYCLE.pollMs);
 	}
@@ -107,8 +113,13 @@ function captureRecord(value: unknown): OpenerCapture {
 	if (!Number.isSafeInteger(record["pid"]) || (record["pid"] as number) <= 0) {
 		throw new Error("capture.pid must be a positive safe integer.");
 	}
-	if (typeof record["target"] !== "string") throw new Error("capture.target must be a string.");
-	if (!Array.isArray(record["extra"]) || !record["extra"].every((item) => typeof item === "string")) {
+	if (typeof record["target"] !== "string") {
+		throw new Error("capture.target must be a string.");
+	}
+	if (
+		!Array.isArray(record["extra"]) ||
+		!record["extra"].every((item) => typeof item === "string")
+	) {
 		throw new Error("capture.extra must be an array of strings.");
 	}
 	if (!Array.isArray(record["argv"]) || !record["argv"].every((item) => typeof item === "string")) {
@@ -128,7 +139,9 @@ async function readCompleteCaptureBefore(file: string, deadline: number): Promis
 		try {
 			return captureRecord(JSON.parse(latestRaw));
 		} catch (error) {
-			if (!(error instanceof Error)) throw error;
+			if (!(error instanceof Error)) {
+				throw error;
+			}
 			if (Date.now() >= deadline) {
 				throw new Error(
 					`Timed out waiting for schema-valid opener capture JSON in ${file}; latest raw=${JSON.stringify(latestRaw)}; latest cause=${error.message}`,
@@ -238,7 +251,9 @@ export function readLinuxProcessStatEvidence(pid: number): LinuxProcessStatEvide
 		stat = readFileSync(statPath, "utf8");
 	} catch (error) {
 		const failure = error as NodeJS.ErrnoException;
-		if (failure.code === "ENOENT" || failure.code === "ESRCH") return null;
+		if (failure.code === "ENOENT" || failure.code === "ESRCH") {
+			return null;
+		}
 		throw new Error(
 			`Could not read Linux process stat for PID ${pid} at ${statPath}: ${failure.message}`,
 			{ cause: error },
@@ -248,13 +263,17 @@ export function readLinuxProcessStatEvidence(pid: number): LinuxProcessStatEvide
 }
 
 export function processExistsEvidence(pid: number): boolean {
-	if (process.platform === "linux") return readLinuxProcessStatEvidence(pid)?.running ?? false;
+	if (process.platform === "linux") {
+		return readLinuxProcessStatEvidence(pid)?.running ?? false;
+	}
 	const command =
 		process.platform === "win32"
 			? ["tasklist", "/FI", `PID eq ${pid}`, "/FO", "CSV", "/NH"]
 			: ["ps", "-p", String(pid), "-o", "pid="];
 	const result = Bun.spawnSync(command, { stdout: "pipe", stderr: "ignore" });
-	if (result.exitCode !== 0) return false;
+	if (result.exitCode !== 0) {
+		return false;
+	}
 	const output = result.stdout.toString();
 	return process.platform === "win32"
 		? output.includes(`,"${pid}",`)
@@ -271,7 +290,9 @@ async function waitForProcessCompletion(
 			process.platform === "linux"
 				? processCompletionObserved(readLinuxProcessStatEvidence(pid), completion)
 				: !processExistsEvidence(pid);
-		if (completed) return;
+		if (completed) {
+			return;
+		}
 		assertBefore(
 			deadline,
 			completion === "absent"
@@ -355,13 +376,16 @@ export async function createOpenerFixture(
 			candidate.once("error", reject);
 		});
 		const address = server.address();
-		if (!address || typeof address === "string")
+		if (!address || typeof address === "string") {
 			throw new Error("Opener server has no TCP address.");
+		}
 		visibleBase = `http://127.0.0.1:${address.port}`;
 	};
 
 	const stop = async (): Promise<void> => {
-		if (!server) return;
+		if (!server) {
+			return;
+		}
 		const current = server;
 		server = null;
 		await new Promise<void>((resolve, reject) =>
@@ -374,11 +398,18 @@ export async function createOpenerFixture(
 		() =>
 		async (requestPath: string, init: RequestInit = {}): Promise<JsonResult> => {
 			const headers = new Headers(init.headers);
-			if (!headers.has("Host")) headers.set("Host", new URL(visibleBase).host);
-			if (!headers.has("Origin")) headers.set("Origin", visibleBase);
-			if (!headers.has("Sec-Fetch-Site")) headers.set("Sec-Fetch-Site", "same-origin");
-			if (init.body !== undefined && !headers.has("Content-Type"))
+			if (!headers.has("Host")) {
+				headers.set("Host", new URL(visibleBase).host);
+			}
+			if (!headers.has("Origin")) {
+				headers.set("Origin", visibleBase);
+			}
+			if (!headers.has("Sec-Fetch-Site")) {
+				headers.set("Sec-Fetch-Site", "same-origin");
+			}
+			if (init.body !== undefined && !headers.has("Content-Type")) {
 				headers.set("Content-Type", "application/json");
+			}
 			const response = await fetch(new URL(requestPath, visibleBase), { ...init, headers });
 			return { status: response.status, body: await response.json(), headers: response.headers };
 		};
@@ -462,13 +493,21 @@ export async function createOpenerFixture(
 			await start();
 		},
 		async dispose() {
-			if (disposed) return;
+			if (disposed) {
+				return;
+			}
 			disposed = true;
 			await stop();
-			if (previousRepos === undefined) delete process.env["ARCHBOARD_REPOS"];
-			else process.env["ARCHBOARD_REPOS"] = previousRepos;
-			if (previousConfig === undefined) delete process.env["ARCHBOARD_OPENER_CONFIG"];
-			else process.env["ARCHBOARD_OPENER_CONFIG"] = previousConfig;
+			if (previousRepos === undefined) {
+				delete process.env["ARCHBOARD_REPOS"];
+			} else {
+				process.env["ARCHBOARD_REPOS"] = previousRepos;
+			}
+			if (previousConfig === undefined) {
+				delete process.env["ARCHBOARD_OPENER_CONFIG"];
+			} else {
+				process.env["ARCHBOARD_OPENER_CONFIG"] = previousConfig;
+			}
 			rmSync(root, { recursive: true });
 		},
 	};

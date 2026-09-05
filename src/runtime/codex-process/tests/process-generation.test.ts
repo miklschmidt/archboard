@@ -5,7 +5,9 @@ import { driveManual, fakeLifecycle, type ManualScheduler } from "./lifecycle-su
 import { fixture, processOptions, removeRoot, temporaryRoot, waitForState } from "./support.js";
 
 async function flushMicrotasks(): Promise<void> {
-	for (let turn = 0; turn < 6; turn += 1) await Promise.resolve();
+	for (let turn = 0; turn < 6; turn += 1) {
+		await Promise.resolve();
+	}
 }
 
 async function startReplacement(root: string) {
@@ -20,7 +22,9 @@ async function startReplacement(root: string) {
 	const started = owner.start();
 	await flushMicrotasks();
 	const first = children[0];
-	if (!first) throw new Error("Expected the first fake Codex child.");
+	if (!first) {
+		throw new Error("Expected the first fake Codex child.");
+	}
 	first.lifecycle.markAppServerReady();
 	await started;
 	const backoff = waitForState(owner, (state) => state === "backoff");
@@ -29,7 +33,9 @@ async function startReplacement(root: string) {
 	expect(lifecycle.clock.runNext()).toBe(true);
 	await flushMicrotasks();
 	const second = children[1];
-	if (!second) throw new Error("Expected the replacement fake Codex child.");
+	if (!second) {
+		throw new Error("Expected the replacement fake Codex child.");
+	}
 	return { owner, lifecycle, first, second };
 }
 
@@ -53,7 +59,9 @@ describe("Codex process child-generation capabilities", () => {
 			expect(owner.snapshot().ready).toBe(true);
 			await stopFake(owner, replacement.lifecycle.clock);
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -74,7 +82,9 @@ describe("Codex process child-generation capabilities", () => {
 			expect(owner.snapshot().restartAttempt).toBe(0);
 			await stopFake(owner, replacement.lifecycle.clock);
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -97,7 +107,9 @@ describe("Codex process child-generation capabilities", () => {
 			expect((await terminal).failure?.code).toBe("strict_config_rejected");
 			await stopFake(owner, replacement.lifecycle.clock);
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});

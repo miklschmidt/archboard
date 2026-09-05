@@ -14,7 +14,9 @@ export function recordReducerCheckedEvents(
 	const states = new Map<string, RealtimeState>();
 	adapter.onSemanticEvent((event) => {
 		events.push(event);
-		if (event.kind !== "state") return;
+		if (event.kind !== "state") {
+			return;
+		}
 		try {
 			states.set(
 				event.sessionId,

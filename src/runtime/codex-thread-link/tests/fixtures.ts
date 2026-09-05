@@ -83,8 +83,12 @@ function resolvePage<Page>(
 	method: string,
 ): Page {
 	const page = pages.get(cursor);
-	if (page === undefined) throw new Error(`${method} fixture has no page for ${String(cursor)}`);
-	if (page instanceof Error) throw page;
+	if (page === undefined) {
+		throw new Error(`${method} fixture has no page for ${String(cursor)}`);
+	}
+	if (page instanceof Error) {
+		throw page;
+	}
 	return page;
 }
 

@@ -53,32 +53,39 @@ function verificationEnvironment(): NodeJS.ProcessEnv {
 	const environment: NodeJS.ProcessEnv = {};
 	for (const key of VERIFICATION_ENVIRONMENT_KEYS) {
 		const value = process.env[key];
-		if (value === undefined) continue;
-		if (value.includes("\0"))
+		if (value === undefined) {
+			continue;
+		}
+		if (value.includes("\0")) {
 			throw new Error(`The executable verification environment contains a NUL in ${key}.`);
+		}
 		environment[key] = value;
 	}
 	return Object.freeze(environment);
 }
 
 function absolutePath(candidate: string): string {
-	if (typeof candidate !== "string" || candidate.length === 0 || candidate.includes("\0"))
+	if (typeof candidate !== "string" || candidate.length === 0 || candidate.includes("\0")) {
 		throw new CodexExecutableError({
 			code: "not_absolute",
 			executablePath: String(candidate),
 			message: "The configured Codex executable must be a nonempty NUL-free absolute path.",
 		});
-	if (!path.isAbsolute(candidate))
+	}
+	if (!path.isAbsolute(candidate)) {
 		throw new CodexExecutableError({
 			code: "not_absolute",
 			executablePath: candidate,
 			message: `The configured Codex executable must be absolute, received ${JSON.stringify(candidate)}. PATH lookup is disabled.`,
 		});
+	}
 	return path.resolve(candidate);
 }
 
 function verificationTimedOut(cause: unknown): boolean {
-	if (cause === null || typeof cause !== "object") return false;
+	if (cause === null || typeof cause !== "object") {
+		return false;
+	}
 	const value = cause as {
 		readonly code?: unknown;
 		readonly killed?: unknown;
@@ -107,12 +114,13 @@ export function resolveProjectCodexExecutable(): string {
 	}
 	const localNodeModules = `${path.join(projectRoot, "node_modules")}${path.sep}`;
 	const absolute = path.resolve(resolved);
-	if (!absolute.startsWith(localNodeModules))
+	if (!absolute.startsWith(localNodeModules)) {
 		throw new CodexExecutableError({
 			code: "outside_checkout",
 			executablePath: absolute,
 			message: `The resolved Codex executable is outside this checkout: ${absolute}. PATH and global package resolution are disabled.`,
 		});
+	}
 	return absolute;
 }
 
@@ -132,12 +140,13 @@ export function verifyCodexExecutable(
 			message: `The configured Codex executable does not exist: ${executablePath}. Run bun install to restore the pinned Codex ${CODEX_PROTOCOL_BINARY_VERSION} runtime, then retry.`,
 		});
 	}
-	if (!stats.isFile())
+	if (!stats.isFile()) {
 		throw new CodexExecutableError({
 			code: "not_file",
 			executablePath,
 			message: `The configured Codex executable is not a file: ${executablePath}. Run bun install to restore the exact package-local runtime, then retry.`,
 		});
+	}
 	try {
 		fs.accessSync(executablePath, fs.constants.X_OK);
 	} catch {
@@ -161,7 +170,7 @@ export function verifyCodexExecutable(
 			windowsHide: true,
 		}).trim();
 	} catch (cause) {
-		if (verificationTimedOut(cause))
+		if (verificationTimedOut(cause)) {
 			throw new CodexExecutableError({
 				code: "verification_timeout",
 				executablePath,
@@ -169,17 +178,19 @@ export function verifyCodexExecutable(
 					`Codex ${CODEX_PROTOCOL_BINARY_VERSION} did not answer the bounded --version proof. ` +
 					"Run bun install to restore the exact package-local runtime, then retry.",
 			});
+		}
 		throw new CodexExecutableError({
 			code: "version_unavailable",
 			executablePath,
 			message: `Could not run ${executablePath} --version. Run bun install to restore the exact Codex ${CODEX_PROTOCOL_BINARY_VERSION} runtime; PATH lookup is disabled.`,
 		});
 	}
-	if (version !== CODEX_PROTOCOL_BINARY_VERSION)
+	if (version !== CODEX_PROTOCOL_BINARY_VERSION) {
 		throw new CodexExecutableError({
 			code: "wrong_version",
 			executablePath,
 			message: `The configured Codex executable reported an unexpected version; expected ${CODEX_PROTOCOL_BINARY_VERSION}. Run bun install to restore the pinned package, then retry.`,
 		});
+	}
 	return Object.freeze({ executablePath, version: CODEX_PROTOCOL_BINARY_VERSION });
 }

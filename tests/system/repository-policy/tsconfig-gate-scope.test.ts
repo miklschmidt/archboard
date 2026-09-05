@@ -25,9 +25,7 @@ test("every retained TypeScript file is a compiler root and a real lint input", 
 		};
 	});
 	const roots = new Set(
-		configs.flatMap((config) =>
-			config.files.map((file) => realpathSync(resolve(repoRoot, file))),
-		),
+		configs.flatMap((config) => config.files.map((file) => realpathSync(resolve(repoRoot, file)))),
 	);
 	const lint = Bun.spawnSync([process.execPath, "run", "lint", "--debug", "files"], {
 		cwd: repoRoot,
@@ -57,9 +55,14 @@ test("every retained TypeScript file is a compiler root and a real lint input", 
 		"noUnusedLocals",
 		"noUnusedParameters",
 		"noPropertyAccessFromIndexSignature",
-	])
-		for (const config of configs) expect(config.compilerOptions[option], option).toBe(true);
-	for (const config of configs) expect(config.compilerOptions["skipLibCheck"]).toBe(false);
+	]) {
+		for (const config of configs) {
+			expect(config.compilerOptions[option], option).toBe(true);
+		}
+	}
+	for (const config of configs) {
+		expect(config.compilerOptions["skipLibCheck"]).toBe(false);
+	}
 	const frontend: { extends: string; include: string[] } = JSON.parse(
 		readFileSync(join(repoRoot, "tsconfig.frontend.json"), "utf8"),
 	);
@@ -69,7 +72,9 @@ test("every retained TypeScript file is a compiler root and a real lint input", 
 	expect(configs[1]?.compilerOptions["types"]).toEqual(["node", "vite/client"]);
 	const uiTest = realpathSync(join(repoRoot, "src/ui/board-preview/tests/board-preview.test.ts"));
 	expect(configs[0]?.files.map((file) => realpathSync(resolve(repoRoot, file)))).toContain(uiTest);
-	expect(configs[1]?.files.map((file) => realpathSync(resolve(repoRoot, file)))).not.toContain(uiTest);
+	expect(configs[1]?.files.map((file) => realpathSync(resolve(repoRoot, file)))).not.toContain(
+		uiTest,
+	);
 });
 
 test("the renderer host enters through the browser module root", () => {

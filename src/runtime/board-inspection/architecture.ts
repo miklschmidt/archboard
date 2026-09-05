@@ -56,7 +56,9 @@ export function architectureBindingTarget(
 
 function unionBox(elements: readonly ServerElement[]): Box {
 	const frame = boundingBoxOf(elements.map((element) => boxOf(element)));
-	if (!frame) return { x: 0, y: 0, w: 0, h: 0 };
+	if (!frame) {
+		return { x: 0, y: 0, w: 0, h: 0 };
+	}
 	return {
 		x: frame.minX,
 		y: frame.minY,
@@ -82,9 +84,13 @@ function mergedMetadata(
 	const metadata: ArchboardBlock = {};
 	for (const element of [primary, ...elements]) {
 		const block = readElementMetadata(element).archboard;
-		if (!block) continue;
+		if (!block) {
+			continue;
+		}
 		for (const [key, value] of Object.entries(block)) {
-			if (metadata[key] === undefined && value !== undefined) metadata[key] = value;
+			if (metadata[key] === undefined && value !== undefined) {
+				metadata[key] = value;
+			}
 		}
 	}
 	return metadata;
@@ -116,7 +122,9 @@ export function architectureFacts(elements: readonly ServerElement[]): Architect
 	const nodeOfElement = new Map<string, string>();
 	for (const element of all) {
 		const node = nodeIdOf(element);
-		if (!node) continue;
+		if (!node) {
+			continue;
+		}
 		const members = grouped.get(node) ?? [];
 		members.push(element);
 		grouped.set(node, members);
@@ -124,9 +132,13 @@ export function architectureFacts(elements: readonly ServerElement[]): Architect
 	}
 	for (const element of all) {
 		const container = element.type === "text" ? element.containerId : null;
-		if (!confirmedBoundLabelIds.has(element.id) || !container) continue;
+		if (!confirmedBoundLabelIds.has(element.id) || !container) {
+			continue;
+		}
 		const node = nodeOfElement.get(container);
-		if (!node || nodeOfElement.has(element.id)) continue;
+		if (!node || nodeOfElement.has(element.id)) {
+			continue;
+		}
 		grouped.get(node)!.push(element);
 		nodeOfElement.set(element.id, node);
 	}
@@ -150,7 +162,9 @@ export function architectureFacts(elements: readonly ServerElement[]): Architect
 
 	const connectors: ArchitectureConnector[] = [];
 	for (const element of all) {
-		if (!isArchitectureConnectorType(element.type)) continue;
+		if (!isArchitectureConnectorType(element.type)) {
+			continue;
+		}
 		const startTargetId = architectureBindingTarget(element, "start");
 		const endTargetId = architectureBindingTarget(element, "end");
 		connectors.push({

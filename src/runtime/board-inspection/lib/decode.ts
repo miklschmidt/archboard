@@ -33,17 +33,26 @@ export type ValueKind =
 	| "object";
 
 export const kindOf = (value: unknown): ValueKind => {
-	if (value === undefined) return "undefined";
-	if (value === null) return "null";
-	if (Array.isArray(value)) return "array";
+	if (value === undefined) {
+		return "undefined";
+	}
+	if (value === null) {
+		return "null";
+	}
+	if (Array.isArray(value)) {
+		return "array";
+	}
 	return typeof value as ValueKind;
 };
 
 export function stableDescription(value: unknown): string {
 	const kind = kindOf(value);
-	if (kind === "string") return JSON.stringify(String(value).slice(0, 80));
-	if (kind === "number" || kind === "boolean" || kind === "bigint")
+	if (kind === "string") {
+		return JSON.stringify(String(value).slice(0, 80));
+	}
+	if (kind === "number" || kind === "boolean" || kind === "bigint") {
 		return String(value).slice(0, 80);
+	}
 	return kind;
 }
 
@@ -57,12 +66,14 @@ export function decodeRecords(
 			value && typeof value === "object" && !Array.isArray(value)
 				? (value as Readonly<Record<string, unknown>>)
 				: null;
-		if (raw?.["isDeleted"] === true || typeof raw?.["id"] !== "string" || raw["id"].length === 0) continue;
+		if (raw?.["isDeleted"] === true || typeof raw?.["id"] !== "string" || raw["id"].length === 0) {
+			continue;
+		}
 		idCounts.set(raw["id"], (idCounts.get(raw["id"]) ?? 0) + 1);
 	}
 	return records.map((value, sourceIndex) => {
 		const raw = value;
-		if (blockedSourceIndexes.has(sourceIndex))
+		if (blockedSourceIndexes.has(sourceIndex)) {
 			return {
 				raw: null,
 				sourceIndex,
@@ -76,6 +87,7 @@ export function decodeRecords(
 				invalidRenderFields: [],
 				extentRepresentable: false,
 			};
+		}
 		const rawId = raw?.id;
 		const id = typeof rawId === "string" && rawId.length > 0 ? rawId : null;
 		const type = typeof raw?.type === "string" ? raw.type : null;
@@ -163,10 +175,15 @@ export type PersistedConnectorPointChainEligibility =
 
 export function decodePath(record: DecodedRecord): PathDecode {
 	const raw = record.raw;
-	if (!raw || !("points" in raw) || raw.points === undefined)
+	if (!raw || !("points" in raw) || raw.points === undefined) {
 		return { ok: false, issue: "missing" };
-	if (!Array.isArray(raw.points)) return { ok: false, issue: "non-array" };
-	if (raw.points.length === 0) return { ok: false, issue: "empty" };
+	}
+	if (!Array.isArray(raw.points)) {
+		return { ok: false, issue: "non-array" };
+	}
+	if (raw.points.length === 0) {
+		return { ok: false, issue: "empty" };
+	}
 	const origin = finite(raw.x) && finite(raw.y) ? { x: raw.x, y: raw.y } : null;
 	const relativePoints: ExactPoint[] = [];
 	const scenePoints: ExactPoint[] | null = origin ? [] : null;
@@ -174,7 +191,7 @@ export function decodePath(record: DecodedRecord): PathDecode {
 		const candidate = raw.points[index];
 		const x = Array.isArray(candidate) ? candidate[0] : undefined;
 		const y = Array.isArray(candidate) ? candidate[1] : undefined;
-		if (!finite(x) || !finite(y))
+		if (!finite(x) || !finite(y)) {
 			return {
 				ok: false,
 				issue: "malformed-point",
@@ -182,10 +199,11 @@ export function decodePath(record: DecodedRecord): PathDecode {
 				relativePoints,
 				scenePoints,
 			};
+		}
 		relativePoints.push({ x, y });
 		if (origin && scenePoints) {
 			const absolute = { x: origin.x + x, y: origin.y + y };
-			if (!finite(absolute.x) || !finite(absolute.y))
+			if (!finite(absolute.x) || !finite(absolute.y)) {
 				return {
 					ok: false,
 					issue: "absolute-point-overflow",
@@ -193,13 +211,14 @@ export function decodePath(record: DecodedRecord): PathDecode {
 					relativePoints,
 					scenePoints,
 				};
+			}
 			scenePoints.push(absolute);
 			const previous = scenePoints.at(-2);
 			if (
 				previous &&
 				(Math.abs(absolute.x - previous.x) > MAX_ANALYZABLE_SEGMENT_COMPONENT ||
 					Math.abs(absolute.y - previous.y) > MAX_ANALYZABLE_SEGMENT_COMPONENT)
-			)
+			) {
 				return {
 					ok: false,
 					issue: "absolute-point-overflow",
@@ -207,15 +226,19 @@ export function decodePath(record: DecodedRecord): PathDecode {
 					relativePoints,
 					scenePoints,
 				};
+			}
 		}
 	}
-	if (relativePoints.length === 1)
+	if (relativePoints.length === 1) {
 		return { ok: false, issue: "one-point", relativePoints, scenePoints };
+	}
 	const zeroSegments: number[] = [];
 	for (let index = 0; index < relativePoints.length - 1; index += 1) {
 		const a = relativePoints[index]!;
 		const b = relativePoints[index + 1]!;
-		if (a.x === b.x && a.y === b.y) zeroSegments.push(index);
+		if (a.x === b.x && a.y === b.y) {
+			zeroSegments.push(index);
+		}
 	}
 	return { ok: true, relativePoints, scenePoints, zeroSegments };
 }
@@ -225,14 +248,16 @@ export function persistedConnectorPointChainEligibility(
 	decoded: Extract<PathDecode, { ok: true }>,
 ): PersistedConnectorPointChainEligibility {
 	const raw = record.raw;
-	if (!raw) return { eligible: false, issue: "malformed-elbowed" };
-	if (record.type === "arrow" && Boolean(raw.elbowed))
-		for (const [pointIndex, candidate] of decoded.relativePoints.entries())
+	if (!raw) {
+		return { eligible: false, issue: "malformed-elbowed" };
+	}
+	if (record.type === "arrow" && Boolean(raw.elbowed)) {
+		for (const [pointIndex, candidate] of decoded.relativePoints.entries()) {
 			for (const [axis, coordinate] of [
 				["x", candidate.x],
 				["y", candidate.y],
-			] as const)
-				if (Math.abs(coordinate) > ELBOW_POINT_COMPONENT_LIMIT)
+			] as const) {
+				if (Math.abs(coordinate) > ELBOW_POINT_COMPONENT_LIMIT) {
 					return {
 						eligible: false,
 						issue: "elbow-coordinate-limit",
@@ -241,10 +266,16 @@ export function persistedConnectorPointChainEligibility(
 						coordinate,
 						limit: ELBOW_POINT_COMPONENT_LIMIT,
 					};
+				}
+			}
+		}
+	}
 	const elbowed = raw.elbowed;
-	if (elbowed !== undefined && elbowed !== null && elbowed !== false && elbowed !== true)
+	if (elbowed !== undefined && elbowed !== null && elbowed !== false && elbowed !== true) {
 		return { eligible: false, issue: "malformed-elbowed" };
-	if (raw.fixedSegments != null && !(record.type === "arrow" && elbowed === true))
+	}
+	if (raw.fixedSegments != null && !(record.type === "arrow" && elbowed === true)) {
 		return { eligible: false, issue: "fixed-segments-without-elbow" };
+	}
 	return { eligible: true };
 }

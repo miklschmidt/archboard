@@ -75,8 +75,11 @@ test("announcements isolate passenger failure and coalesce free news", async () 
 		lock.forgetLockAnnouncements();
 		jest.useRealTimers();
 		logger.warn = originalWarn;
-		if (previousVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-		else process.env["ARCHBOARD_VAULT"] = previousVault;
+		if (previousVault === undefined) {
+			delete process.env["ARCHBOARD_VAULT"];
+		} else {
+			process.env["ARCHBOARD_VAULT"] = previousVault;
+		}
 		rmSync(vault, { recursive: true, force: true });
 	}
 }, 10_000);

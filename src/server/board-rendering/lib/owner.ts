@@ -159,7 +159,9 @@ class Cdp {
 	}
 
 	async call(method: string, params: JsonRecord = {}, timeoutMs: number): Promise<JsonRecord> {
-		if (this.#closed) throw new Error("Renderer DevTools connection is closed.");
+		if (this.#closed) {
+			throw new Error("Renderer DevTools connection is closed.");
+		}
 		const id = this.#nextId++;
 		return await new Promise<JsonRecord>((resolveCall, rejectCall) => {
 			const timeout = setTimeout(() => {
@@ -204,7 +206,9 @@ class Cdp {
 	}
 
 	close(): void {
-		if (this.#closed) return;
+		if (this.#closed) {
+			return;
+		}
 		this.#closed = true;
 		this.rejectPending("Renderer DevTools connection closed during shutdown.");
 		this.socket.close();
@@ -218,14 +222,18 @@ class Cdp {
 			this.rejectPending("Renderer DevTools returned invalid JSON.");
 			return;
 		}
-		if (!isJsonRecord(message)) return;
+		if (!isJsonRecord(message)) {
+			return;
+		}
 		const id = message["id"];
 		if (typeof id === "number") {
 			const pending = this.#pending.get(id);
-			if (!pending) return;
+			if (!pending) {
+				return;
+			}
 			this.#pending.delete(id);
 			clearTimeout(pending.timeout);
-			if (isJsonRecord(message["error"]))
+			if (isJsonRecord(message["error"])) {
 				pending.reject(
 					new Error(
 						typeof message["error"]["message"] === "string"
@@ -233,14 +241,17 @@ class Cdp {
 							: "DevTools command failed.",
 					),
 				);
-			else pending.resolve(isJsonRecord(message["result"]) ? message["result"] : {});
+			} else {
+				pending.resolve(isJsonRecord(message["result"]) ? message["result"] : {});
+			}
 			return;
 		}
-		if (typeof message["method"] === "string")
+		if (typeof message["method"] === "string") {
 			this.#events.push({
 				method: message["method"],
 				params: isJsonRecord(message["params"]) ? message["params"] : {},
 			});
+		}
 	}
 
 	private rejectPending(message: string): void {
@@ -254,11 +265,12 @@ class Cdp {
 
 function requiredExecutable(name: string, explicit?: string): string {
 	const candidate = explicit ?? Bun.which(name);
-	if (!candidate || !existsSync(candidate))
+	if (!candidate || !existsSync(candidate)) {
 		throw new BoardRendererError(
 			`Board rendering requires the local ${name} executable. Install it or set the renderer path before starting Archboard.`,
 			"preflight",
 		);
+	}
 	return candidate;
 }
 
@@ -270,13 +282,16 @@ async function reserveLoopbackPort(): Promise<number> {
 	});
 	const port = server.port;
 	await server.stop(true);
-	if (typeof port !== "number" || !Number.isSafeInteger(port) || port <= 0)
+	if (typeof port !== "number" || !Number.isSafeInteger(port) || port <= 0) {
 		throw new Error("Board renderer could not reserve a loopback control port.");
+	}
 	return port;
 }
 
 async function loopbackPortIsAvailable(port: number | null): Promise<boolean> {
-	if (port === null) return true;
+	if (port === null) {
+		return true;
+	}
 	let server: ReturnType<typeof Bun.serve> | null = null;
 	try {
 		server = Bun.serve({ hostname: "127.0.0.1", port, fetch: () => new Response("audit") });
@@ -284,14 +299,18 @@ async function loopbackPortIsAvailable(port: number | null): Promise<boolean> {
 	} catch {
 		return false;
 	} finally {
-		if (server) await server.stop(true);
+		if (server) {
+			await server.stop(true);
+		}
 	}
 }
 
 function readablePipe(
 	stream: ReadableStream<Uint8Array> | number | undefined,
 ): ReadableStream<Uint8Array> {
-	if (!stream || typeof stream === "number") throw new Error("Renderer child has no output pipe.");
+	if (!stream || typeof stream === "number") {
+		throw new Error("Renderer child has no output pipe.");
+	}
 	return stream;
 }
 
@@ -315,7 +334,9 @@ function capturePipe(stream: ReadableStream<Uint8Array>): CapturedPipe {
 		try {
 			for (;;) {
 				const next = await reader.read();
-				if (next.done) break;
+				if (next.done) {
+					break;
+				}
 				append(decoder.decode(next.value, { stream: true }));
 			}
 			append(decoder.decode());
@@ -339,7 +360,9 @@ function abortReason(signal: AbortSignal): Error {
 }
 
 async function abortable<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> {
-	if (!signal) return await work;
+	if (!signal) {
+		return await work;
+	}
 	signal.throwIfAborted();
 	let cancel!: (reason: Error) => void;
 	const canceled = new Promise<never>((_resolve, reject) => {
@@ -370,8 +393,12 @@ async function waitForGroupAbsence(
 ): Promise<boolean> {
 	while (Date.now() < deadline) {
 		const state = processGroups.inspect(identity);
-		if (state === "quiescent") return true;
-		if (state === "reused" || state === "unproven") return false;
+		if (state === "quiescent") {
+			return true;
+		}
+		if (state === "reused" || state === "unproven") {
+			return false;
+		}
 		await Bun.sleep(Math.min(25, Math.max(0, deadline - Date.now())));
 	}
 	return processGroups.inspect(identity) === "quiescent";
@@ -382,7 +409,9 @@ function rawProcessGroupAbsent(groupId: number): boolean {
 		process.kill(-groupId, 0);
 		return false;
 	} catch (error) {
-		if (isJsonRecord(error) && error["code"] === "ESRCH") return true;
+		if (isJsonRecord(error) && error["code"] === "ESRCH") {
+			return true;
+		}
 		throw error;
 	}
 }
@@ -395,8 +424,9 @@ async function captureGroup(
 	while (Date.now() < deadline) {
 		try {
 			const group = processGroups.capture(candidate.pid);
-			if (group.leaderStartTime !== candidate.startTime)
+			if (group.leaderStartTime !== candidate.startTime) {
 				throw new Error("Renderer process identity changed before group capture.");
+			}
 			return group;
 		} catch (error) {
 			failure = error;
@@ -414,14 +444,18 @@ async function captureGroup(
 function ownedProcessIds(pid: number): number[] {
 	const seen = new Set<number>();
 	const visit = (candidate: number): void => {
-		if (seen.has(candidate) || !existsSync(`/proc/${candidate}`)) return;
+		if (seen.has(candidate) || !existsSync(`/proc/${candidate}`)) {
+			return;
+		}
 		seen.add(candidate);
 		try {
 			for (const child of readFileSync(`/proc/${candidate}/task/${candidate}/children`, "utf8")
 				.trim()
 				.split(/\s+/)) {
 				const parsed = Number(child);
-				if (Number.isInteger(parsed) && parsed > 0) visit(parsed);
+				if (Number.isInteger(parsed) && parsed > 0) {
+					visit(parsed);
+				}
 			}
 		} catch {
 			// A child can exit between the directory check and the process-tree read.
@@ -432,10 +466,14 @@ function ownedProcessIds(pid: number): number[] {
 }
 
 function isRendererJobResult(value: unknown): value is BoardRendererJobResult {
-	if (!isJsonRecord(value)) return false;
+	if (!isJsonRecord(value)) {
+		return false;
+	}
 	const kind = Reflect.get(value, "kind");
 	const error = Reflect.get(value, "error");
-	if (error !== undefined && typeof error !== "string") return false;
+	if (error !== undefined && typeof error !== "string") {
+		return false;
+	}
 	if (kind === "mermaid") {
 		const elements = Reflect.get(value, "elements");
 		const files = Reflect.get(value, "files");
@@ -455,7 +493,9 @@ function isRendererJobResult(value: unknown): value is BoardRendererJobResult {
 			)
 		);
 	}
-	if (kind !== "render") return false;
+	if (kind !== "render") {
+		return false;
+	}
 	const outputs = Reflect.get(value, "outputs");
 	return (
 		Array.isArray(outputs) &&
@@ -561,27 +601,30 @@ class RendererSession {
 				diagnostics,
 				error,
 			);
-			if (!cleanup.clean)
+			if (!cleanup.clean) {
 				throw new BoardRendererError(
 					"Board renderer startup and cleanup failed.",
 					"startup-cleanup",
 					[...diagnostics, { cleanup }],
 					acquisition,
 				);
+			}
 			throw acquisition;
 		}
 	}
 
 	async run(job: BoardRendererJob, signal?: AbortSignal): Promise<BoardRendererJobResult> {
 		const cdp = this.#cdp;
-		if (!cdp || !this.#child)
+		if (!cdp || !this.#child) {
 			throw new BoardRendererError("Board renderer is not ready.", "startup");
-		if (this.#child.exitCode !== null)
+		}
+		if (this.#child.exitCode !== null) {
 			throw new BoardRendererError(
 				`Board renderer Chromium exited with code ${this.#child.exitCode}.`,
 				"process-exit",
 				cdp.diagnostics(),
 			);
+		}
 		try {
 			const evaluation = cdp.evaluate(
 				`window.archboardBoardRenderer?.run(${JSON.stringify(job)})`,
@@ -590,11 +633,14 @@ class RendererSession {
 			this.options.testHooks.afterCdpDispatch?.(job, this.#child.pid);
 			const value = await abortable(evaluation, signal);
 			signal?.throwIfAborted();
-			if (!isRendererJobResult(value))
+			if (!isRendererJobResult(value)) {
 				throw new Error("Renderer page returned no structured result.");
+			}
 			return value;
 		} catch (error) {
-			if (signal?.aborted) throw abortReason(signal);
+			if (signal?.aborted) {
+				throw abortReason(signal);
+			}
 			const phase = await this.pageState().catch(() => null);
 			throw new BoardRendererError(
 				"Board renderer job failed.",
@@ -606,20 +652,27 @@ class RendererSession {
 	}
 
 	close(): Promise<RendererSessionCleanup> {
-		if (this.#closePromise) return this.#closePromise;
+		if (this.#closePromise) {
+			return this.#closePromise;
+		}
 		this.#closePromise = this.closeOnce();
 		return this.#closePromise;
 	}
 
 	private async connect(url: string): Promise<void> {
-		if (!this.#child || this.#port === null) throw new Error("Renderer process is incomplete.");
+		if (!this.#child || this.#port === null) {
+			throw new Error("Renderer process is incomplete.");
+		}
 		const base = `http://127.0.0.1:${this.#port}`;
 		const deadline = Date.now() + this.options.startupTimeoutMs;
 		while (Date.now() < deadline) {
-			if (this.#child.exitCode !== null)
+			if (this.#child.exitCode !== null) {
 				throw new Error(`Chromium exited during startup with code ${this.#child.exitCode}.`);
+			}
 			try {
-				if ((await fetch(`${base}/json/version`)).ok) break;
+				if ((await fetch(`${base}/json/version`)).ok) {
+					break;
+				}
 			} catch {
 				// Chromium has not bound the private loopback control port yet.
 			}
@@ -631,26 +684,34 @@ class RendererSession {
 		} catch (error) {
 			throw new Error("Chromium did not bind its private control port.", { cause: error });
 		}
-		if (!version.ok) throw new Error("Chromium did not bind its private control port.");
+		if (!version.ok) {
+			throw new Error("Chromium did not bind its private control port.");
+		}
 		const target = (await (
 			await fetch(`${base}/json/new?${encodeURIComponent("about:blank")}`, { method: "PUT" })
 		).json()) as { webSocketDebuggerUrl?: unknown };
-		if (typeof target.webSocketDebuggerUrl !== "string")
+		if (typeof target.webSocketDebuggerUrl !== "string") {
 			throw new Error("Chromium did not create the private renderer target.");
+		}
 		this.#cdp = await Cdp.connect(target.webSocketDebuggerUrl, this.options.startupTimeoutMs);
-		for (const domain of ["Page.enable", "Runtime.enable", "Network.enable", "Log.enable"])
+		for (const domain of ["Page.enable", "Runtime.enable", "Network.enable", "Log.enable"]) {
 			await this.#cdp.call(domain, {}, this.options.startupTimeoutMs);
+		}
 		await this.#cdp.call("Page.navigate", { url }, this.options.startupTimeoutMs);
 		while (Date.now() < deadline) {
 			const state = await this.pageState().catch(() => null);
-			if (state?.phase === "ready") return;
+			if (state?.phase === "ready") {
+				return;
+			}
 			await Bun.sleep(25);
 		}
 		throw new Error("Renderer page did not become ready before its startup deadline.");
 	}
 
 	private async pageState(): Promise<RendererPageState | null> {
-		if (!this.#cdp) return null;
+		if (!this.#cdp) {
+			return null;
+		}
 		const value = await this.#cdp.evaluate(
 			"window.archboardBoardRenderer?.state ?? null",
 			this.options.startupTimeoutMs,
@@ -675,7 +736,9 @@ class RendererSession {
 		let groupAbsent = this.#child === null;
 		if (group) {
 			try {
-				if (processGroups.inspect(group) === "owned") processGroups.signal(group, "SIGTERM");
+				if (processGroups.inspect(group) === "owned") {
+					processGroups.signal(group, "SIGTERM");
+				}
 				groupAbsent = await waitForGroupAbsence(
 					group,
 					Date.now() + Math.max(0, this.options.cleanupTimeoutMs - 1_000),
@@ -693,10 +756,11 @@ class RendererSession {
 		} else if (this.#child) {
 			try {
 				groupAbsent = rawProcessGroupAbsent(this.#child.pid);
-				if (!groupAbsent)
+				if (!groupAbsent) {
 					errors.push(
 						`Renderer process group ${this.#child.pid} survived after its leader exited before capture.`,
 					);
+				}
 			} catch (error) {
 				errors.push(error instanceof Error ? error.message : String(error));
 			}
@@ -711,7 +775,9 @@ class RendererSession {
 			["stderr", this.#stderr],
 		] as const) {
 			const failure = pipe?.error();
-			if (failure) errors.push(`Renderer ${name} pipe failed: ${failure}`);
+			if (failure) {
+				errors.push(`Renderer ${name} pipe failed: ${failure}`);
+			}
 		}
 		let survivors = pids.filter((pid) => existsSync(`/proc/${pid}`));
 		while (survivors.length > 0 && Date.now() < deadline) {
@@ -771,8 +837,12 @@ class RendererSession {
 	}
 
 	private observe(): void {
-		if (!this.#child) return;
-		for (const pid of ownedProcessIds(this.#child.pid)) this.#observed.add(pid);
+		if (!this.#child) {
+			return;
+		}
+		for (const pid of ownedProcessIds(this.#child.pid)) {
+			this.#observed.add(pid);
+		}
 	}
 }
 
@@ -810,14 +880,20 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 	let lastCleanup: BoardRendererCleanup | null = null;
 
 	const start = (): void => {
-		if (started) return;
+		if (started) {
+			return;
+		}
 		started = true;
 		accepting = true;
 	};
 
 	const acquire = async (): Promise<RendererSession> => {
-		if (session) return session;
-		if (acquisition) return acquisition;
+		if (session) {
+			return session;
+		}
+		if (acquisition) {
+			return acquisition;
+		}
 		acquisition = (async () => {
 			if (!fixture) {
 				try {
@@ -831,7 +907,9 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 					);
 				}
 			}
-			if (stopping) throw new Error("Board renderer stopped during startup.");
+			if (stopping) {
+				throw new Error("Board renderer stopped during startup.");
+			}
 			const acquired = await RendererSession.acquire(fixture.url, resolved);
 			if (stopping) {
 				await acquired.close();
@@ -849,7 +927,9 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 		job: BoardRendererJob,
 		signal?: AbortSignal,
 	): Promise<BoardRendererJobResult> => {
-		if (!started || !accepting) throw new Error("Board renderer is not accepting work.");
+		if (!started || !accepting) {
+			throw new Error("Board renderer is not accepting work.");
+		}
 		signal?.throwIfAborted();
 		queued += 1;
 		const state: { value: "queued" | "active" | "settled" } = { value: "queued" };
@@ -860,7 +940,9 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 			rejectResult = rejectJob;
 		});
 		const onAbort = (): void => {
-			if (state.value !== "queued" || !signal) return;
+			if (state.value !== "queued" || !signal) {
+				return;
+			}
 			state.value = "settled";
 			queued -= 1;
 			rejectResult(abortReason(signal));
@@ -869,7 +951,9 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 		const before = tail;
 		tail = (async () => {
 			await before;
-			if (state.value === "settled") return undefined;
+			if (state.value === "settled") {
+				return undefined;
+			}
 			queued -= 1;
 			state.value = "active";
 			if (!accepting) {
@@ -891,16 +975,19 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 			} catch (error) {
 				let failure = error;
 				const failed = enteredRenderer ? session : null;
-				if (failed) session = null;
+				if (failed) {
+					session = null;
+				}
 				if (failed) {
 					const cleanup = await failed.close();
-					if (!cleanup.clean)
+					if (!cleanup.clean) {
 						failure = new BoardRendererError(
 							"Board renderer job and cleanup failed.",
 							error instanceof BoardRendererError ? error.phase : "cleanup",
 							[...(error instanceof BoardRendererError ? error.diagnostics : []), { cleanup }],
 							error,
 						);
+					}
 				}
 				rejectResult(failure);
 			} finally {
@@ -914,7 +1001,9 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 	};
 
 	const stop = (): Promise<BoardRendererCleanup> => {
-		if (stopPromise) return stopPromise;
+		if (stopPromise) {
+			return stopPromise;
+		}
 		accepting = false;
 		stopping = true;
 		stopPromise = (async () => {
@@ -924,8 +1013,9 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 			current?.close();
 			await tail;
 			let sessionCleanup: RendererSessionCleanup;
-			if (current) sessionCleanup = await current.close();
-			else {
+			if (current) {
+				sessionCleanup = await current.close();
+			} else {
 				sessionCleanup = {
 					clean: true,
 					pids: [],
@@ -960,8 +1050,9 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 			};
 			fixture = null;
 			lastCleanup = cleanup;
-			if (!cleanup.clean)
+			if (!cleanup.clean) {
 				throw new Error(`Board renderer cleanup failed: ${JSON.stringify(cleanup)}`);
+			}
 			return cleanup;
 		})();
 		return stopPromise;

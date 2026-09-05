@@ -94,8 +94,9 @@ test("image replace persists one canonical batch before its frames", async () =>
 		let observe = false;
 		pane.socket.on("message", (data) => {
 			const message = JSON.parse(data.toString()) as { type?: string; board?: string };
-			if (observe && message.type === "elements_changed" && message.board === "replace")
+			if (observe && message.type === "elements_changed" && message.board === "replace") {
 				noteAtDelta = readFileSync(before.body.file, "utf8");
+			}
 		});
 		const file = join(root, "replace.excalidraw");
 		writeFileSync(file, JSON.stringify(replaceScene));

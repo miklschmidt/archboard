@@ -165,14 +165,19 @@ function expectRawIdentity(
 
 function expectRichThread(fixture: SessionFixture, thread: SessionThread): void {
 	expectRawIdentity(fixture, thread.id, "thread-child");
-	if (!thread.forkedFromId || !thread.parentThreadId)
+	if (!thread.forkedFromId || !thread.parentThreadId) {
 		throw new Error("rich thread ancestry was not returned");
+	}
 	expect(thread.forkedFromId).toBe(thread.parentThreadId);
 	expectRawIdentity(fixture, thread.parentThreadId, "thread-parent");
-	if (!hasSpawnSource(thread.source)) throw new Error("rich thread source was not returned");
+	if (!hasSpawnSource(thread.source)) {
+		throw new Error("rich thread source was not returned");
+	}
 	expect(thread.source.subAgent.thread_spawn.parent_thread_id).toBe(thread.parentThreadId);
 	const turn = thread.turns[0];
-	if (!turn) throw new Error("rich turn was not returned");
+	if (!turn) {
+		throw new Error("rich turn was not returned");
+	}
 	expectRawIdentity(fixture, turn.id, "turn-rich");
 	const agent = turn.items.find(
 		(item): item is SessionAgentMessageItem => item.type === "agentMessage",
@@ -183,8 +188,9 @@ function expectRichThread(fixture: SessionFixture, thread: SessionThread): void 
 	const subagent = turn.items.find(
 		(item): item is SessionSubAgentActivityItem => item.type === "subAgentActivity",
 	);
-	if (!agent?.memoryCitation || !collab || !subagent)
+	if (!agent?.memoryCitation || !collab || !subagent) {
 		throw new Error("rich identity-bearing items were not returned");
+	}
 	expect(agent.memoryCitation.threadIds).toEqual([thread.parentThreadId]);
 	expect(collab.senderThreadId).toBe(thread.parentThreadId);
 	expect(collab.receiverThreadIds).toEqual([thread.id, thread.parentThreadId]);
@@ -195,8 +201,9 @@ function expectRichThread(fixture: SessionFixture, thread: SessionThread): void 
 		[agent, "item-agent"],
 		[collab, "item-collab"],
 		[subagent, "item-subagent"],
-	] as const)
+	] as const) {
 		expectRawIdentity(fixture, item.id, raw);
+	}
 }
 
 describe("Codex session response identities", () => {
@@ -224,7 +231,9 @@ describe("Codex session response identities", () => {
 			expect(threads.nextCursor).toBe("thread-next");
 			expect(threads.backwardsCursor).toBe("thread-back");
 			expect(threads.data[0]?.id).toBe(threads.data[1]?.id);
-			if (!threads.data[0]) throw new Error("thread page was empty");
+			if (!threads.data[0]) {
+				throw new Error("thread page was empty");
+			}
 			expectRichThread(fixture, threads.data[0]);
 
 			fixture.transport.enqueueResponse("thread/loaded/list", {
@@ -249,7 +258,9 @@ describe("Codex session response identities", () => {
 			} satisfies ResponsePayloads["thread/turns/list"]);
 			const turns = await fixture.session.threadTurnsListPage({ threadId });
 			const listedTurn = turns.data[0];
-			if (!listedTurn) throw new Error("turn page was empty");
+			if (!listedTurn) {
+				throw new Error("turn page was empty");
+			}
 			expectRawIdentity(fixture, listedTurn.id, "turn-rich");
 			expect(turns.nextCursor).toBe("turn-next");
 			expect(turns.backwardsCursor).toBe("turn-back");
@@ -328,8 +339,9 @@ describe("Codex session response identities", () => {
 			} satisfies ResponsePayloads["thread/timeline/list"]);
 			const timeline = await fixture.session.timelineListPage({ threadId });
 			const timelineEntry = timeline.data[0];
-			if (timelineEntry?.type !== "turnStarted")
+			if (timelineEntry?.type !== "turnStarted") {
 				throw new Error("timeline fixture was not returned");
+			}
 			expect(timelineEntry.turnId).toBe("raw-realtime-turn");
 			expect(() => fixture.identity.decoder.parseTurnId(timelineEntry.turnId)).toThrow(
 				IdentityValidationError,

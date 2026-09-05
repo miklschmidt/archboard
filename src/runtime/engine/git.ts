@@ -69,7 +69,9 @@ function drainBounded(
 		return { bytes, exceeded, ...(error ? { error } : {}) };
 	};
 	const settle = (value: { bytes: Uint8Array; exceeded: boolean; error?: Error }): void => {
-		if (finished) return;
+		if (finished) {
+			return;
+		}
 		finished = true;
 		finish(value);
 		chunks = [];
@@ -83,7 +85,9 @@ function drainBounded(
 		try {
 			for (;;) {
 				const { done, value } = await reader.read();
-				if (done) break;
+				if (done) {
+					break;
+				}
 				seen += value.byteLength;
 				if (kept < GIT_OUTPUT_LIMIT_BYTES) {
 					const remaining = GIT_OUTPUT_LIMIT_BYTES - kept;
@@ -120,8 +124,12 @@ function drainBounded(
 async function processGroupDisappeared(pgid: number): Promise<boolean> {
 	const deadline = Date.now() + GIT_PROCESS_GROUP_CLEANUP_MS;
 	for (;;) {
-		if (!processGroupExists(pgid)) return true;
-		if (Date.now() >= deadline) return false;
+		if (!processGroupExists(pgid)) {
+			return true;
+		}
+		if (Date.now() >= deadline) {
+			return false;
+		}
 		await new Promise((resolve) => setTimeout(resolve, GIT_PROCESS_GROUP_POLL_MS));
 	}
 }
@@ -139,13 +147,22 @@ interface GitOwnerExit {
 }
 
 function gitOwnerMessage(message: unknown): GitOwnerResult | undefined {
-	if (typeof message !== "object" || message === null || !("kind" in message)) return undefined;
-	if (message.kind !== "result") return undefined;
-	const value = message as Partial<GitOwnerResult>;
-	if (value.exitCode !== undefined && !Number.isInteger(value.exitCode)) return undefined;
-	if (value.signalCode !== undefined && !["string", "number"].includes(typeof value.signalCode))
+	if (typeof message !== "object" || message === null || !("kind" in message)) {
 		return undefined;
-	if (value.spawnError !== undefined && typeof value.spawnError !== "string") return undefined;
+	}
+	if (message.kind !== "result") {
+		return undefined;
+	}
+	const value = message as Partial<GitOwnerResult>;
+	if (value.exitCode !== undefined && !Number.isInteger(value.exitCode)) {
+		return undefined;
+	}
+	if (value.signalCode !== undefined && !["string", "number"].includes(typeof value.signalCode)) {
+		return undefined;
+	}
+	if (value.spawnError !== undefined && typeof value.spawnError !== "string") {
+		return undefined;
+	}
 	return value as GitOwnerResult;
 }
 
@@ -155,12 +172,16 @@ export async function git(
 	args: readonly string[],
 	options: { signal?: AbortSignal; timeoutMs?: number; executable?: string } = {},
 ): Promise<string | undefined> {
-	if (options.signal?.aborted) throw new GitCommandError("aborted", "Git command was cancelled.");
+	if (options.signal?.aborted) {
+		throw new GitCommandError("aborted", "Git command was cancelled.");
+	}
 	let finishOwner!: (outcome: GitOwnerResult | GitOwnerExit) => void;
 	let ownerFinished = false;
 	const ownerResult = new Promise<GitOwnerResult | GitOwnerExit>((resolve) => {
 		finishOwner = (outcome) => {
-			if (ownerFinished) return;
+			if (ownerFinished) {
+				return;
+			}
 			ownerFinished = true;
 			resolve(outcome);
 		};
@@ -172,7 +193,9 @@ export async function git(
 			detached: true,
 			ipc: (message) => {
 				const parsed = gitOwnerMessage(message);
-				if (parsed) finishOwner(parsed);
+				if (parsed) {
+					finishOwner(parsed);
+				}
 			},
 			stdin: "ignore",
 			stdout: "pipe",
@@ -207,7 +230,9 @@ export async function git(
 		terminationStarted = resolve;
 	});
 	const terminate = (failure: GitFailure, cause?: unknown): void => {
-		if (termination) return;
+		if (termination) {
+			return;
+		}
 		termination = {
 			failure,
 			...(cause === undefined
@@ -237,11 +262,14 @@ export async function git(
 	});
 	const inspectedOwnerResult = ownerResult.then((outcome) => {
 		if (outcome.kind === "owner-exit") {
-			if (!termination)
+			if (!termination) {
 				terminate("cleanup", new Error("Git process owner exited before reporting a result."));
+			}
 			return outcome;
 		}
-		if (termination) return outcome;
+		if (termination) {
+			return outcome;
+		}
 		try {
 			if (processGroupHasOtherMember(groupIdentity)) {
 				terminate(
@@ -297,14 +325,18 @@ export async function git(
 	} finally {
 		clearTimeout(timeout);
 		options.signal?.removeEventListener("abort", abort);
-		if (cleanupTimer !== undefined) clearTimeout(cleanupTimer);
+		if (cleanupTimer !== undefined) {
+			clearTimeout(cleanupTimer);
+		}
 	}
 	const ownerExitCode = settled?.[0];
 	const commandResult = settled?.[1];
 	const out = settled?.[2];
 	const err = settled?.[3];
 	const exitCode = commandResult?.kind === "result" ? commandResult.exitCode : undefined;
-	if (out?.error || err?.error) terminate("cleanup", out?.error ?? err?.error);
+	if (out?.error || err?.error) {
+		terminate("cleanup", out?.error ?? err?.error);
+	}
 	if (!termination && (ownerExitCode !== 0 || child.signalCode !== null)) {
 		terminate("cleanup", new Error("Git process owner did not exit normally."));
 	}
@@ -321,28 +353,35 @@ export async function git(
 				exitCode,
 			);
 		}
-		if (termination.failure === "output")
+		if (termination.failure === "output") {
 			throw new GitCommandError("output", "Git command output exceeded 64 KiB.", exitCode);
+		}
 		throw new GitCommandError(
 			termination.failure,
 			termination.cause?.message ?? `Git command ${termination.failure}.`,
 			exitCode,
 		);
 	}
-	if (!settled) throw new GitCommandError("cleanup", "Git command did not settle.");
-	if (commandResult?.kind !== "result")
+	if (!settled) {
+		throw new GitCommandError("cleanup", "Git command did not settle.");
+	}
+	if (commandResult?.kind !== "result") {
 		throw new GitCommandError("cleanup", "Git process owner exited without a command result.");
-	if (commandResult.spawnError)
+	}
+	if (commandResult.spawnError) {
 		throw new GitCommandError("spawn", `Could not start Git: ${commandResult.spawnError}`);
-	if (commandResult.signalCode !== undefined)
+	}
+	if (commandResult.signalCode !== undefined) {
 		throw new GitCommandError(
 			"signal",
 			`Git exited from ${commandResult.signalCode}.`,
 			commandResult.exitCode,
 		);
+	}
 	const settledExitCode = commandResult.exitCode;
-	if (settledExitCode === undefined)
+	if (settledExitCode === undefined) {
 		throw new GitCommandError("cleanup", "Git process owner reported no exit status.");
+	}
 	if (settledExitCode !== 0) {
 		const detail = new TextDecoder().decode(err!.bytes).trim();
 		throw new GitCommandError(
@@ -370,9 +409,13 @@ export function repoIdentityFromRemote(remote: string): string {
 export function existingDir(p: string): string | undefined {
 	let dir = fs.existsSync(p) && fs.statSync(p).isDirectory() ? p : path.dirname(p);
 	for (let i = 0; i < 64; i++) {
-		if (fs.existsSync(dir)) return dir;
+		if (fs.existsSync(dir)) {
+			return dir;
+		}
 		const parent = path.dirname(dir);
-		if (parent === dir) return undefined;
+		if (parent === dir) {
+			return undefined;
+		}
 		dir = parent;
 	}
 	return undefined;
@@ -384,11 +427,15 @@ export async function repoRootOf(
 	options: { signal?: AbortSignal } = {},
 ): Promise<string | undefined> {
 	const searchDir = existingDir(path.resolve(anyPath));
-	if (!searchDir) return undefined;
+	if (!searchDir) {
+		return undefined;
+	}
 	try {
 		return await git(searchDir, ["rev-parse", "--show-toplevel"], options);
 	} catch (error) {
-		if (error instanceof GitCommandError && error.failure === "exit") return undefined;
+		if (error instanceof GitCommandError && error.failure === "exit") {
+			return undefined;
+		}
 		throw error;
 	}
 }
@@ -409,8 +456,11 @@ export async function repoIdentityAt(
 	try {
 		remote = await git(root, ["remote", "get-url", "origin"], options);
 	} catch (error) {
-		if (error instanceof GitCommandError && error.failure === "exit") remote = undefined;
-		else throw error;
+		if (error instanceof GitCommandError && error.failure === "exit") {
+			remote = undefined;
+		} else {
+			throw error;
+		}
 	}
 	return remote ? repoIdentityFromRemote(remote) : path.basename(root);
 }
@@ -430,7 +480,9 @@ async function optionalGit(
 	try {
 		return await git(root, args, options);
 	} catch (error) {
-		if (error instanceof GitCommandError && error.failure === "exit") return undefined;
+		if (error instanceof GitCommandError && error.failure === "exit") {
+			return undefined;
+		}
 		throw error;
 	}
 }
@@ -441,7 +493,9 @@ export async function inspectCheckout(
 	options: { signal?: AbortSignal } = {},
 ): Promise<Readonly<CheckoutGitInspection> | undefined> {
 	const root = await repoRootOf(anyPath, options);
-	if (!root) return undefined;
+	if (!root) {
+		return undefined;
+	}
 	const settled = await Promise.allSettled([
 		repoIdentityAt(root, options),
 		optionalGit(root, ["rev-parse", "--abbrev-ref", "HEAD"], options),
@@ -450,7 +504,9 @@ export async function inspectCheckout(
 	const failed = settled.find(
 		(result): result is PromiseRejectedResult => result.status === "rejected",
 	);
-	if (failed) throw failed.reason;
+	if (failed) {
+		throw failed.reason;
+	}
 	const [identity, branch, commit] = settled.map(
 		(result) => (result as PromiseFulfilledResult<string | undefined>).value,
 	);

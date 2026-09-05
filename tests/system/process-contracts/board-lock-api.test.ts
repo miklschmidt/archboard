@@ -146,8 +146,9 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 			["/api/boards/claim", { reason: "anything" }],
 			["/api/boards/claim?board=scratch", {}],
 			["/api/boards/hold?board=scratch", {}],
-		] as const)
+		] as const) {
 			expect((await request(path, { method: "POST", body })).status).toBe(400);
+		}
 	} finally {
 		await resources.disposeAsync();
 	}

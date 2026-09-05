@@ -90,7 +90,9 @@ export class FakeRealtime {
 	}
 
 	emit(event: RealtimeSemanticEvent): void {
-		for (const listener of this.listeners) listener(event);
+		for (const listener of this.listeners) {
+			listener(event);
+		}
 	}
 
 	emitTranscript(record: RealtimeTranscriptRecord): void {
@@ -228,10 +230,12 @@ export function makeHarness(options: HarnessOptions = {}): GateHarness {
 			response: unknown,
 		) => {
 			responses.push({ request, owner, response });
-			if (options.settlementFailure === "not_delivered")
+			if (options.settlementFailure === "not_delivered") {
 				throw { accepted: false, outcome: "not_delivered", reason: "test backpressure" };
-			if (options.settlementFailure === "outcome_unknown")
+			}
+			if (options.settlementFailure === "outcome_unknown") {
 				throw { accepted: true, outcome: "outcome_unknown", reason: "test lost response" };
+			}
 		},
 	} satisfies ApprovalResponsePort & { readonly responses: unknown[] };
 	let currentBinding: ApprovalBindingInput = {};
@@ -258,8 +262,12 @@ export function makeHarness(options: HarnessOptions = {}): GateHarness {
 	const session: Pick<CodexSession, "turnStart"> = {
 		turnStart: async (params): Promise<SessionResponse<"turn/start">> => {
 			startParams.push(params);
-			if (options.turnFailure) throw options.turnFailure;
-			if (!options.deferTurn) return { turn };
+			if (options.turnFailure) {
+				throw options.turnFailure;
+			}
+			if (!options.deferTurn) {
+				return { turn };
+			}
 			return new Promise((resolve) => {
 				resolveTurn = () => resolve({ turn });
 			});

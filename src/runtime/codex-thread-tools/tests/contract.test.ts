@@ -41,9 +41,13 @@ function sha256(bytes: Uint8Array): string {
 }
 
 function expectDeepFrozen(value: unknown): void {
-	if (typeof value !== "object" || value === null) return;
+	if (typeof value !== "object" || value === null) {
+		return;
+	}
 	expect(Object.isFrozen(value)).toBe(true);
-	for (const child of Object.values(value as Record<string, unknown>)) expectDeepFrozen(child);
+	for (const child of Object.values(value as Record<string, unknown>)) {
+		expectDeepFrozen(child);
+	}
 }
 
 function expectRejected(action: () => unknown): void {
@@ -89,8 +93,9 @@ describe("archboard_app manifest", () => {
 			'"deferLoading": false',
 			'"deferLoading": true',
 		);
-		for (const candidate of [proseMutation, orderMutation, limitMutation, eagerMutation])
+		for (const candidate of [proseMutation, orderMutation, limitMutation, eagerMutation]) {
 			expectRejected(() => assertCanonicalArchboardAppManifest(candidate));
+		}
 		expect(parseArchboardAppManifest(ARCHBOARD_APP_MANIFEST_BYTES)).toEqual(ARCHBOARD_APP_MANIFEST);
 	});
 });
@@ -234,13 +239,14 @@ describe("strict dynamic-tool result boundary", () => {
 				},
 			},
 		];
-		for (const value of createVariants)
+		for (const value of createVariants) {
 			expect(
 				parseToolResultEnvelope(
 					"create_thread",
 					JSON.stringify({ tag: "ok", operationId: "operation-1", value }),
 				),
 			).toMatchObject({ tag: "ok", value });
+		}
 
 		const forkVariants = [
 			{
@@ -250,13 +256,14 @@ describe("strict dynamic-tool result boundary", () => {
 			},
 			...createVariants,
 		];
-		for (const value of forkVariants)
+		for (const value of forkVariants) {
 			expect(
 				parseToolResultEnvelope(
 					"fork_thread",
 					JSON.stringify({ tag: "ok", operationId: "operation-1", value }),
 				),
 			).toMatchObject({ tag: "ok", value });
+		}
 
 		const invalidCreateVariants = [
 			{ state: "executable", initialTurn: createVariants[2]!.initialTurn },
@@ -280,7 +287,7 @@ describe("strict dynamic-tool result boundary", () => {
 				},
 			},
 		];
-		for (const value of invalidCreateVariants)
+		for (const value of invalidCreateVariants) {
 			expectRejected(() =>
 				parseToolResultEnvelope(
 					"create_thread",
@@ -291,6 +298,7 @@ describe("strict dynamic-tool result boundary", () => {
 					}),
 				),
 			);
+		}
 		const invalidFork = {
 			state: "inspect_only",
 			initialTurn: { delivery: "not_requested", turnId: null, operationId: null, reason: null },
@@ -424,12 +432,13 @@ describe("fresh workhorse tool binding", () => {
 		} as const;
 		expect(archboardAppToolBindingFor(eligible)).toBe(ARCHBOARD_APP_TOOL_BINDING);
 		expect(archboardAppDynamicToolsFor(eligible)).toBe(ARCHBOARD_APP_DYNAMIC_TOOLS);
-		for (const lifecycle of ["attach", "reconnect"] as const)
+		for (const lifecycle of ["attach", "reconnect"] as const) {
 			for (const provenance of ["archboard_created", "attached", "foreign", "unknown"] as const) {
 				const request = { lifecycle, provenance };
 				expect(archboardAppToolBindingFor(request)).toBeNull();
 				expect(archboardAppDynamicToolsFor(request)).toEqual([]);
 			}
+		}
 		for (const provenance of ["attached", "foreign", "unknown"] as const) {
 			const request = { lifecycle: "fresh_workhorse_start" as const, provenance };
 			expect(archboardAppToolBindingFor(request)).toBeNull();

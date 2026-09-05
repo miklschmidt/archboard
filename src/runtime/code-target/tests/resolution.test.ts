@@ -20,8 +20,11 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-	if (previousRegistry === undefined) delete process.env["ARCHBOARD_REPOS"];
-	else process.env["ARCHBOARD_REPOS"] = previousRegistry;
+	if (previousRegistry === undefined) {
+		delete process.env["ARCHBOARD_REPOS"];
+	} else {
+		process.env["ARCHBOARD_REPOS"] = previousRegistry;
+	}
 	fixture.dispose();
 });
 

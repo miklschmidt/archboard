@@ -6,7 +6,9 @@ import { createGatewayHarness, type GatewayHarness } from "./support.js";
 const openHarnesses: GatewayHarness[] = [];
 
 afterEach(async () => {
-	for (const openHarness of openHarnesses.splice(0)) await openHarness.gateway.dispose();
+	for (const openHarness of openHarnesses.splice(0)) {
+		await openHarness.gateway.dispose();
+	}
 });
 
 describe("Codex workbench durable browser lifecycle", () => {

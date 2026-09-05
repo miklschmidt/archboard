@@ -154,7 +154,9 @@ describe("held board note watch", () => {
 			arrivalNotes = pane.seen.filter(
 				(message) => message.type === "board_note" && message.board === "watched",
 			);
-			if (arrivalNotes.length === 0) await Bun.sleep(TEST_NOTE_WATCH_MESSAGE_POLL_MS);
+			if (arrivalNotes.length === 0) {
+				await Bun.sleep(TEST_NOTE_WATCH_MESSAGE_POLL_MS);
+			}
 		}
 		expect(arrivalNotes.length).toBeGreaterThan(0);
 		expect(arrivalNotes.at(-1)?.["writtenElsewhere"]).toBeNull();
@@ -172,7 +174,9 @@ describe("held board note watch", () => {
 						message.type === "board_note" &&
 						(message["writtenElsewhere"] as WrittenElsewhere | null)?.reason === "changed",
 				);
-			if (!changed) await Bun.sleep(TEST_NOTE_WATCH_MESSAGE_POLL_MS);
+			if (!changed) {
+				await Bun.sleep(TEST_NOTE_WATCH_MESSAGE_POLL_MS);
+			}
 		}
 		expect(changed).toBeDefined();
 		const writtenElsewhere = changed?.["writtenElsewhere"] as WrittenElsewhere | null | undefined;

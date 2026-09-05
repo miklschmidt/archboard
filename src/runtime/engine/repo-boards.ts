@@ -61,11 +61,15 @@ export interface OpenBoard {
 
 function labelOf(el: ServerElement, elements: ServerElement[]): string | undefined {
 	const direct = el.type === "text" ? el.text : undefined;
-	if (direct) return String(direct);
+	if (direct) {
+		return String(direct);
+	}
 	for (const other of elements) {
 		if (other.type === "text" && other.containerId === el.id) {
 			const text = other.text ?? other.originalText;
-			if (text) return String(text);
+			if (text) {
+				return String(text);
+			}
 		}
 	}
 	return undefined;
@@ -82,9 +86,13 @@ export function nodesBoundTo(elements: ServerElement[], repo: string): BoundNode
 	for (const el of elements) {
 		const block = archboardBlock(el);
 		const binding = block?.binding;
-		if (!binding || binding.repo !== repo) continue;
+		if (!binding || binding.repo !== repo) {
+			continue;
+		}
 		const id = typeof block?.node === "string" && block.node ? block.node : el.id;
-		if (byNode.has(id)) continue;
+		if (byNode.has(id)) {
+			continue;
+		}
 		const name = typeof block?.name === "string" && block.name ? block.name : labelOf(el, elements);
 		byNode.set(id, {
 			node: id,
@@ -118,7 +126,9 @@ export function boardsForRepo(
 		seen.add(board.key);
 		result.scanned += 1;
 		const nodes = nodesBoundTo(board.elements, repo);
-		if (nodes.length === 0) continue;
+		if (nodes.length === 0) {
+			continue;
+		}
 		result.boards.push({
 			key: board.key,
 			identity: board.identity,
@@ -129,7 +139,9 @@ export function boardsForRepo(
 	}
 
 	for (const found of listBoards(root)) {
-		if (seen.has(found.key)) continue;
+		if (seen.has(found.key)) {
+			continue;
+		}
 		result.scanned += 1;
 		let elements: ServerElement[];
 		try {
@@ -139,7 +151,9 @@ export function boardsForRepo(
 			continue;
 		}
 		const nodes = nodesBoundTo(elements, repo);
-		if (nodes.length === 0) continue;
+		if (nodes.length === 0) {
+			continue;
+		}
 		result.boards.push({
 			key: found.key,
 			identity: found.identity,

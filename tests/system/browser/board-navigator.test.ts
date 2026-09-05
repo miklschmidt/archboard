@@ -144,8 +144,9 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		"beta",
 		"gamma-production-event-processing-architecture",
 		"secondary",
-	])
+	]) {
 		await createBoard(request, board);
+	}
 	await addBox(request, primary, "pbox", "Primary service");
 	await addBox(request, option, "obox", "Option A");
 	await addBox(request, "beta", "bbox", "Beta service");

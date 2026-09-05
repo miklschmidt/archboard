@@ -81,27 +81,37 @@ export function createCanvasStartupProtocolReader(
 	};
 	const onClose = (): void => {
 		closed = true;
-		if (!terminalSeen)
+		if (!terminalSeen) {
 			protocolFailure = new Error(
 				"The canvas startup cleanup protocol closed before terminal proof.",
 			);
+		}
 		push({ kind: "closed" });
 	};
 	stream?.on("data", onData);
 	stream?.once("close", onClose);
-	if (stream === null) events.push({ kind: "closed" });
+	if (stream === null) {
+		events.push({ kind: "closed" });
+	}
 	return {
 		failure: () => protocolFailure,
 		terminalMessage: () => message,
 		next: (maxWaitMs) => {
 			const ready = events.shift();
-			if (ready !== undefined) return Promise.resolve(ready);
-			if (closed) return Promise.resolve({ kind: "closed" });
-			if (maxWaitMs <= 0) return Promise.resolve(null);
-			if (waiter !== null)
+			if (ready !== undefined) {
+				return Promise.resolve(ready);
+			}
+			if (closed) {
+				return Promise.resolve({ kind: "closed" });
+			}
+			if (maxWaitMs <= 0) {
+				return Promise.resolve(null);
+			}
+			if (waiter !== null) {
 				return Promise.reject(
 					new Error("The canvas startup cleanup protocol already has a waiter."),
 				);
+			}
 			return new Promise((resolve) => {
 				const timer = setTimeout(() => {
 					waiter = null;
@@ -197,21 +207,28 @@ function stoppedCanvasGroups(
 
 function validateTiming(timing: FailedCanvasCleanupTiming): void {
 	for (const [name, value] of Object.entries(timing)) {
-		if (!Number.isFinite(value) || value < 0)
+		if (!Number.isFinite(value) || value < 0) {
 			throw new Error(`Failed canvas cleanup ${name} must be a non-negative finite duration.`);
+		}
 	}
-	if (timing.pollMs <= 0)
+	if (timing.pollMs <= 0) {
 		throw new Error("Failed canvas cleanup pollMs must be greater than zero.");
-	if (timing.applicationGraceMs > timing.shutdownDeadlineMs)
+	}
+	if (timing.applicationGraceMs > timing.shutdownDeadlineMs) {
 		throw new Error("Failed canvas cleanup application grace cannot exceed its deadline.");
+	}
 }
 
 async function reapOuter(
 	operations: FailedCanvasCleanupOperations,
 	deadlineAtMs: number,
 ): Promise<boolean> {
-	if (!operations.canvasExited()) operations.signalCanvas("SIGKILL");
-	if (operations.canvasExited()) return true;
+	if (!operations.canvasExited()) {
+		operations.signalCanvas("SIGKILL");
+	}
+	if (operations.canvasExited()) {
+		return true;
+	}
 	const waitMs = remaining(operations.now, deadlineAtMs);
 	return waitMs > 0 && (await operations.waitForCanvasExit(waitMs));
 }
@@ -230,8 +247,9 @@ async function takeCleanupOwnership(
 			!operations.canvasExited() &&
 			!operations.canvasStopped() &&
 			operations.now() < deadlineAtMs
-		)
+		) {
 			await operations.wait(Math.min(timing.pollMs, remaining(operations.now, deadlineAtMs)));
+		}
 		if (!operations.canvasExited() && !operations.canvasStopped()) {
 			return {
 				cleanup: "unproven",
@@ -255,7 +273,9 @@ async function takeCleanupOwnership(
 			states.push({ identity, status: operations.inspectGroup(identity) });
 		}
 		for (const state of states) {
-			if (state.status !== "owned") continue;
+			if (state.status !== "owned") {
+				continue;
+			}
 			currentIdentity = state.identity;
 			operation = "signalling";
 			operations.signalGroup(state.identity, "SIGTERM");
@@ -269,21 +289,27 @@ async function takeCleanupOwnership(
 				Math.min(timing.pollMs, remaining(operations.now, applicationGraceAtMs)),
 			);
 			for (const state of states) {
-				if (state.status !== "owned") continue;
+				if (state.status !== "owned") {
+					continue;
+				}
 				currentIdentity = state.identity;
 				operation = "inspection";
 				state.status = operations.inspectGroup(state.identity);
 			}
 		}
 		for (const state of states) {
-			if (state.status !== "owned") continue;
+			if (state.status !== "owned") {
+				continue;
+			}
 			currentIdentity = state.identity;
 			operation = "signalling";
 			operations.signalGroup(state.identity, "SIGKILL");
 			operation = "inspection";
 		}
 		for (const state of states) {
-			if (state.status !== "owned") continue;
+			if (state.status !== "owned") {
+				continue;
+			}
 			currentIdentity = state.identity;
 			operation = "inspection";
 			state.status = operations.inspectGroup(state.identity);
@@ -291,7 +317,9 @@ async function takeCleanupOwnership(
 		while (states.some((state) => state.status === "owned") && operations.now() < deadlineAtMs) {
 			await operations.wait(Math.min(timing.pollMs, remaining(operations.now, deadlineAtMs)));
 			for (const state of states) {
-				if (state.status !== "owned") continue;
+				if (state.status !== "owned") {
+					continue;
+				}
 				currentIdentity = state.identity;
 				operation = "inspection";
 				state.status = operations.inspectGroup(state.identity);
@@ -346,10 +374,14 @@ export async function completeFailedCanvasCleanup(
 	const groups: CanvasStartupProcessGroupIdentity[] = [];
 	let transferReason = "The canvas cleanup proof timed out.";
 
-	if (!operations.canvasExited()) operations.signalCanvas("SIGTERM");
+	if (!operations.canvasExited()) {
+		operations.signalCanvas("SIGTERM");
+	}
 	while (operations.now() < applicationGraceAtMs) {
 		const event = await protocol.next(remaining(operations.now, applicationGraceAtMs));
-		if (event === null) break;
+		if (event === null) {
+			break;
+		}
 		if (event.kind === "invalid") {
 			transferReason = `The canvas cleanup protocol failed: ${event.message}`;
 			break;
@@ -371,8 +403,9 @@ export async function completeFailedCanvasCleanup(
 						group.pgid === ownedGroup.pgid &&
 						group.leaderStartTime === ownedGroup.leaderStartTime,
 				)
-			)
+			) {
 				groups.push(ownedGroup);
+			}
 			continue;
 		}
 		if (event.record.cleanup === "proven") {
@@ -391,8 +424,9 @@ export async function completeFailedCanvasCleanup(
 		break;
 	}
 
-	if (groups.length > 0)
+	if (groups.length > 0) {
 		return takeCleanupOwnership(groups, options, applicationGraceAtMs, deadlineAtMs);
+	}
 	return {
 		cleanup: "unproven",
 		owner: "unknown",

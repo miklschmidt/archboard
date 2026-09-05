@@ -16,9 +16,13 @@ function encodeField(value: string): string {
 
 export function githubUrlForBinding(binding: CodeBinding): GitHubHttpsUrl | undefined {
 	const parsed = CodeBindingSchema.safeParse(binding);
-	if (!parsed.success) return undefined;
+	if (!parsed.success) {
+		return undefined;
+	}
 	const [host, owner, repository, ...extra] = parsed.data.repo.split("/");
-	if (host !== "github.com" || !owner || !repository || extra.length > 0) return undefined;
+	if (host !== "github.com" || !owner || !repository || extra.length > 0) {
+		return undefined;
+	}
 	const ref = parsed.data.commit ?? parsed.data.branch ?? "HEAD";
 	let suffix = "";
 	if (parsed.data.path !== "" && parsed.data.path !== ".") {
@@ -27,11 +31,13 @@ export function githubUrlForBinding(binding: CodeBinding): GitHubHttpsUrl | unde
 			path.posix.isAbsolute(candidate) ||
 			path.win32.isAbsolute(candidate) ||
 			candidate.includes("\\")
-		)
+		) {
 			return undefined;
+		}
 		const segments = candidate.split("/");
-		if (segments.some((segment) => segment === "" || segment === "." || segment === ".."))
+		if (segments.some((segment) => segment === "" || segment === "." || segment === "..")) {
 			return undefined;
+		}
 		suffix = `/${segments.map(encodeField).join("/")}`;
 	}
 	const target = `https://github.com/${encodeField(owner)}/${encodeField(repository)}/tree/${encodeField(ref)}${suffix}`;

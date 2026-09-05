@@ -44,7 +44,9 @@ if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "early-death") {
 		port: Number(process.env["PORT"]),
 		fetch(request) {
 			const pathname = new URL(request.url).pathname;
-			if (pathname === "/health") return Response.json({ pid: process.pid });
+			if (pathname === "/health") {
+				return Response.json({ pid: process.pid });
+			}
 			if (pathname === "/die-after-headers") {
 				const body = new ReadableStream({
 					start(controller) {
@@ -88,12 +90,20 @@ if (childMode) {
 				at: Date.now(),
 			} satisfies OwnedRecord),
 		);
-		if (childMode === "interrupt") await new Promise(() => undefined);
+		if (childMode === "interrupt") {
+			await new Promise(() => undefined);
+		}
 		if (childMode === "concurrent" || childMode === "concurrent-failure") {
 			const releaseFile = process.env["ARCHBOARD_LIFECYCLE_RELEASE_FILE"];
-			if (!releaseFile) throw new Error("Concurrent lifecycle child has no release file.");
-			while (!fs.existsSync(releaseFile)) await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
-			if (childMode === "concurrent-failure") throw new Error("intentional concurrent failure");
+			if (!releaseFile) {
+				throw new Error("Concurrent lifecycle child has no release file.");
+			}
+			while (!fs.existsSync(releaseFile)) {
+				await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
+			}
+			if (childMode === "concurrent-failure") {
+				throw new Error("intentional concurrent failure");
+			}
 		}
 		if (childMode === "timeout") {
 			await owned.restart({
@@ -129,7 +139,9 @@ if (childMode) {
 				},
 			});
 		}
-		if (childMode === "normal") await Promise.all([owned.dispose(), owned.dispose()]);
+		if (childMode === "normal") {
+			await Promise.all([owned.dispose(), owned.dispose()]);
+		}
 		if (childMode === "failure") {
 			let failed = false;
 			try {
@@ -139,7 +151,9 @@ if (childMode) {
 			} finally {
 				await owned.dispose();
 			}
-			if (!failed) throw new Error("The lifecycle failure probe did not fail its fetch.");
+			if (!failed) {
+				throw new Error("The lifecycle failure probe did not fail its fetch.");
+			}
 		}
 		if (childMode === "restart-dispose-race") {
 			let releaseRestart!: () => void;
@@ -188,7 +202,9 @@ if (childMode) {
 		process.exit(0);
 	} catch (error) {
 		await owned?.dispose();
-		if (!owned) fs.rmSync(vault, { recursive: true, force: true });
+		if (!owned) {
+			fs.rmSync(vault, { recursive: true, force: true });
+		}
 		// oxlint-disable-next-line no-console -- the parent retains child diagnostics.
 		console.error(error instanceof Error ? error.stack : String(error));
 		process.exit(1);
@@ -200,7 +216,9 @@ const runLifecycleChild = createLifecycleChildRunner(thisFile);
 describe("owned canvas lifecycle", () => {
 	const emergencyVaults = new Set<string>();
 	afterAll(() => {
-		for (const vault of emergencyVaults) fs.rmSync(vault, { recursive: true, force: true });
+		for (const vault of emergencyVaults) {
+			fs.rmSync(vault, { recursive: true, force: true });
+		}
 	});
 
 	test("cleans mixed concurrent success and forced failure processes", async () => {
@@ -212,9 +230,13 @@ describe("owned canvas lifecycle", () => {
 		const releaseFile = path.join(coordinationRoot, "release");
 		const ready = new Set<string>();
 		const releaseWhenAllAreOwned = (record: Record<string, unknown>): void => {
-			if (record["marker"] !== "owned-canvas" || typeof record["base"] !== "string") return;
+			if (record["marker"] !== "owned-canvas" || typeof record["base"] !== "string") {
+				return;
+			}
 			ready.add(record["base"]);
-			if (ready.size === 4) fs.writeFileSync(releaseFile, "release\n");
+			if (ready.size === 4) {
+				fs.writeFileSync(releaseFile, "release\n");
+			}
 		};
 		const results = await Promise.all(
 			["concurrent", "concurrent", "concurrent-failure", "concurrent-failure"].map((mode) =>
@@ -276,7 +298,9 @@ describe("owned canvas lifecycle", () => {
 			await runLifecycleChild("timeout", {
 				timeoutMs: TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
 				onRecord(record) {
-					if (record["marker"] !== "retired-canvas") return;
+					if (record["marker"] !== "retired-canvas") {
+						return;
+					}
 					const base = String(record["base"]);
 					foreign = Bun.serve({
 						hostname: "127.0.0.1",

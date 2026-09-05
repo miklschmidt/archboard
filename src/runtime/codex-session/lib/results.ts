@@ -56,27 +56,39 @@ function collection(): ResponseIdentityCollection {
 }
 
 function collectThreadItem(value: unknown, identities: ResponseIdentityCollection): void {
-	if (!isRecord(value)) return;
+	if (!isRecord(value)) {
+		return;
+	}
 	identities.itemIds.push(value["id"]);
 	if (value["type"] === "agentMessage" && isRecord(value["memoryCitation"])) {
 		const threadIds = value["memoryCitation"]["threadIds"];
-		if (Array.isArray(threadIds)) identities.threadIds.push(...threadIds);
+		if (Array.isArray(threadIds)) {
+			identities.threadIds.push(...threadIds);
+		}
 	}
 	if (value["type"] === "collabAgentToolCall") {
 		identities.threadIds.push(value["senderThreadId"]);
-		if (Array.isArray(value["receiverThreadIds"]))
+		if (Array.isArray(value["receiverThreadIds"])) {
 			identities.threadIds.push(...value["receiverThreadIds"]);
-		if (isRecord(value["agentsStates"]))
+		}
+		if (isRecord(value["agentsStates"])) {
 			identities.threadIds.push(...Object.keys(value["agentsStates"]));
+		}
 	}
-	if (value["type"] === "subAgentActivity") identities.threadIds.push(value["agentThreadId"]);
+	if (value["type"] === "subAgentActivity") {
+		identities.threadIds.push(value["agentThreadId"]);
+	}
 }
 
 function collectTurn(value: unknown, identities: ResponseIdentityCollection): void {
-	if (!isRecord(value)) return;
+	if (!isRecord(value)) {
+		return;
+	}
 	identities.turnIds.push(value["id"]);
 	if (Array.isArray(value["items"])) {
-		for (const item of value["items"]) collectThreadItem(item, identities);
+		for (const item of value["items"]) {
+			collectThreadItem(item, identities);
+		}
 	}
 }
 
@@ -85,24 +97,35 @@ function collectThreadSource(value: unknown, identities: ResponseIdentityCollect
 		!isRecord(value) ||
 		!isRecord(value["subAgent"]) ||
 		!isRecord(value["subAgent"]["thread_spawn"])
-	)
+	) {
 		return;
+	}
 	identities.threadIds.push(value["subAgent"]["thread_spawn"]["parent_thread_id"]);
 }
 
 function collectThread(value: unknown, identities: ResponseIdentityCollection): void {
-	if (!isRecord(value)) return;
+	if (!isRecord(value)) {
+		return;
+	}
 	identities.threadIds.push(value["id"]);
-	if (value["forkedFromId"] !== null) identities.threadIds.push(value["forkedFromId"]);
-	if (value["parentThreadId"] !== null) identities.threadIds.push(value["parentThreadId"]);
+	if (value["forkedFromId"] !== null) {
+		identities.threadIds.push(value["forkedFromId"]);
+	}
+	if (value["parentThreadId"] !== null) {
+		identities.threadIds.push(value["parentThreadId"]);
+	}
 	collectThreadSource(value["source"], identities);
 	if (Array.isArray(value["turns"])) {
-		for (const turn of value["turns"]) collectTurn(turn, identities);
+		for (const turn of value["turns"]) {
+			collectTurn(turn, identities);
+		}
 	}
 }
 
 function collectQueue(value: unknown, identities: ResponseIdentityCollection): void {
-	if (isRecord(value)) identities.queuedSubmissionIds.push(value["id"]);
+	if (isRecord(value)) {
+		identities.queuedSubmissionIds.push(value["id"]);
+	}
 }
 
 function collectResponseIdentities(
@@ -110,10 +133,14 @@ function collectResponseIdentities(
 	payload: unknown,
 ): ResponseIdentityCollection {
 	const identities = collection();
-	if (!isRecord(payload)) return identities;
+	if (!isRecord(payload)) {
+		return identities;
+	}
 	switch (kind) {
 		case "login":
-			if (Object.hasOwn(payload, "loginId")) identities.loginIds.push(payload["loginId"]);
+			if (Object.hasOwn(payload, "loginId")) {
+				identities.loginIds.push(payload["loginId"]);
+			}
 			break;
 		case "thread-start":
 		case "thread":
@@ -121,24 +148,32 @@ function collectResponseIdentities(
 			break;
 		case "thread-page":
 			if (Array.isArray(payload["data"])) {
-				for (const thread of payload["data"]) collectThread(thread, identities);
+				for (const thread of payload["data"]) {
+					collectThread(thread, identities);
+				}
 			}
 			break;
 		case "loaded-thread-page":
-			if (Array.isArray(payload["data"])) identities.threadIds.push(...payload["data"]);
+			if (Array.isArray(payload["data"])) {
+				identities.threadIds.push(...payload["data"]);
+			}
 			break;
 		case "turn":
 			collectTurn(payload["turn"], identities);
 			break;
 		case "turn-page":
 			if (Array.isArray(payload["data"])) {
-				for (const turn of payload["data"]) collectTurn(turn, identities);
+				for (const turn of payload["data"]) {
+					collectTurn(turn, identities);
+				}
 			}
 			break;
 		case "item-page":
 			if (Array.isArray(payload["data"])) {
 				for (const entry of payload["data"]) {
-					if (!isRecord(entry)) continue;
+					if (!isRecord(entry)) {
+						continue;
+					}
 					identities.turnIds.push(entry["turnId"]);
 					collectThreadItem(entry["item"], identities);
 				}
@@ -152,7 +187,9 @@ function collectResponseIdentities(
 			break;
 		case "queue-page":
 			if (Array.isArray(payload["data"])) {
-				for (const queued of payload["data"]) collectQueue(queued, identities);
+				for (const queued of payload["data"]) {
+					collectQueue(queued, identities);
+				}
 			}
 			break;
 		case "none":
@@ -223,8 +260,9 @@ function brandThreadSource(value: unknown, maps: ResponseIdentityMaps): unknown 
 		!isRecord(value) ||
 		!isRecord(value["subAgent"]) ||
 		!isRecord(value["subAgent"]["thread_spawn"])
-	)
+	) {
 		return value;
+	}
 	return {
 		...value,
 		subAgent: {
@@ -267,7 +305,9 @@ function brandItemEntry(
 }
 
 function brandResponse(kind: ResponseIdentityKind, payload: unknown, maps: ResponseIdentityMaps) {
-	if (!isRecord(payload)) return payload;
+	if (!isRecord(payload)) {
+		return payload;
+	}
 	switch (kind) {
 		case "login":
 			return Object.hasOwn(payload, "loginId")

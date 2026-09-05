@@ -151,7 +151,9 @@ class ChangeFeed extends EventEmitter {
 	 */
 	reset(key: string, identity: BoardIdentity, read: () => ServerElement[]): void {
 		const existing = this.watches.get(key);
-		if (existing?.timer) clearTimeout(existing.timer);
+		if (existing?.timer) {
+			clearTimeout(existing.timer);
+		}
 		this.watches.set(key, {
 			key,
 			identity,
@@ -191,14 +193,18 @@ class ChangeFeed extends EventEmitter {
 		watch.read = read;
 		watch.mutations += 1;
 		watch.origins.add(origin);
-		if (watch.firstPendingAt === null) watch.firstPendingAt = Date.now();
+		if (watch.firstPendingAt === null) {
+			watch.firstPendingAt = Date.now();
+		}
 
 		const waited = Date.now() - watch.firstPendingAt;
 		if (waited >= MAX_PENDING_MS) {
 			this.settle(key);
 			return;
 		}
-		if (watch.timer) clearTimeout(watch.timer);
+		if (watch.timer) {
+			clearTimeout(watch.timer);
+		}
 		watch.timer = setTimeout(() => this.settle(key), SETTLE_MS);
 		watch.timer.unref?.();
 	}
@@ -206,10 +212,16 @@ class ChangeFeed extends EventEmitter {
 	/** Force the pending window closed now. Used by tests and by `changes --coalesce`. */
 	settle(key: string): ChangeEvent | null {
 		const watch = this.watches.get(key);
-		if (!watch) return null;
-		if (watch.timer) clearTimeout(watch.timer);
+		if (!watch) {
+			return null;
+		}
+		if (watch.timer) {
+			clearTimeout(watch.timer);
+		}
 		watch.timer = null;
-		if (watch.mutations === 0) return null;
+		if (watch.mutations === 0) {
+			return null;
+		}
 
 		const mutations = watch.mutations;
 		const origins = watch.origins;
@@ -256,13 +268,17 @@ class ChangeFeed extends EventEmitter {
 			at: watch.baselineAt,
 			elements: watch.baseline,
 		});
-		if (this.checkpoints.length > MAX_CHECKPOINTS) this.checkpoints.shift();
+		if (this.checkpoints.length > MAX_CHECKPOINTS) {
+			this.checkpoints.shift();
+		}
 
 		watch.baseline = copyElements(after);
 		watch.baselineAt = at;
 
 		this.events.push(event);
-		if (this.events.length > MAX_EVENTS) this.events.shift();
+		if (this.events.length > MAX_EVENTS) {
+			this.events.shift();
+		}
 
 		logger.info(
 			`Change event ${event.cursor} on "${key}" (${event.origin}, ${event.significance}): ${event.headline}`,
@@ -276,7 +292,9 @@ class ChangeFeed extends EventEmitter {
 		const out: ChangeEvent[] = [];
 		for (const key of this.watches.keys()) {
 			const event = this.settle(key);
-			if (event) out.push(event);
+			if (event) {
+				out.push(event);
+			}
 		}
 		return out;
 	}
@@ -304,7 +322,9 @@ class ChangeFeed extends EventEmitter {
 		board: string,
 	): { since: string; change: SemanticChange; events: ChangeEvent[]; cursor: number } | null {
 		const watch = this.watches.get(board);
-		if (!watch) return null;
+		if (!watch) {
+			return null;
+		}
 		const events = this.since(since, board);
 		if (events.length === 0) {
 			return {
@@ -316,7 +336,9 @@ class ChangeFeed extends EventEmitter {
 		}
 		const first = events[0]!;
 		const checkpoint = this.checkpoints.find((c) => c.cursor === first.cursor && c.board === board);
-		if (!checkpoint) return null;
+		if (!checkpoint) {
+			return null;
+		}
 		return {
 			since: checkpoint.at,
 			change: diffBoardStates(checkpoint.elements, watch.read(), watch.identity, board),
@@ -350,7 +372,9 @@ class ChangeFeed extends EventEmitter {
 	/** Release every timer and process-local history owned by this feed. */
 	dispose(): void {
 		for (const watch of this.watches.values()) {
-			if (watch.timer) clearTimeout(watch.timer);
+			if (watch.timer) {
+				clearTimeout(watch.timer);
+			}
 		}
 		this.watches.clear();
 		this.events = [];

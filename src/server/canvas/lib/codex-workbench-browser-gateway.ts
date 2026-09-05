@@ -107,7 +107,9 @@ export function createCanvasOrdinaryApprovalActions(
 	const actions: BrowserOrdinaryApprovalActions = {
 		pending: (requestId) => {
 			try {
-				if (approvals.get(requestId)?.state !== "pending") return null;
+				if (approvals.get(requestId)?.state !== "pending") {
+					return null;
+				}
 				return approvals.view(requestId);
 			} catch {
 				return null;
@@ -131,14 +133,18 @@ export function createCanvasOrdinaryApprovalActions(
 			for (const requestId of new Set(requestIds)) {
 				try {
 					const view = approvals.view(requestId);
-					if (view.terminalDelivery === "after_publish") approvals.acknowledge(requestId);
+					if (view.terminalDelivery === "after_publish") {
+						approvals.acknowledge(requestId);
+					}
 				} catch {
 					// Another lifecycle boundary may already have acknowledged the terminal.
 				}
 			}
 		},
 		onBrowserDisconnect: async (context, reason) => {
-			if (context.link.state !== "executable") return;
+			if (context.link.state !== "executable") {
+				return;
+			}
 			const authoredReason =
 				reason === "gateway_shutdown"
 					? "host shutdown"
@@ -159,8 +165,9 @@ export function createCanvasOrdinaryApprovalActions(
 			await Promise.all(
 				pending.map(async (snapshot) => {
 					await approvals.cancel(snapshot.requestId, authoredReason);
-					if (approvals.get(snapshot.requestId) !== undefined)
+					if (approvals.get(snapshot.requestId) !== undefined) {
 						approvals.acknowledge(snapshot.requestId);
+					}
 				}),
 			);
 		},
@@ -217,7 +224,9 @@ export function createCanvasBrowserGatewayOptions(input: {
 	// to the previous thread and must not be presented for the new one.
 	const refreshLinkedQueue = async (): Promise<void> => {
 		clearQueue();
-		if (components.workhorse.snapshot().state !== "ready") return;
+		if (components.workhorse.snapshot().state !== "ready") {
+			return;
+		}
 		try {
 			updateQueue(await components.queue.list());
 		} catch {
@@ -261,16 +270,21 @@ export function createCanvasBrowserGatewayOptions(input: {
 	let inFlightReread: { readonly threadId: ThreadId; readonly read: Promise<void> } | null = null;
 	let lastRereadAtMs: { readonly threadId: ThreadId; readonly atMs: number } | null = null;
 	const coalescedReread = (threadId: ThreadId): Promise<void> => {
-		if (inFlightReread !== null && inFlightReread.threadId === threadId) return inFlightReread.read;
+		if (inFlightReread !== null && inFlightReread.threadId === threadId) {
+			return inFlightReread.read;
+		}
 		if (
 			lastRereadAtMs !== null &&
 			lastRereadAtMs.threadId === threadId &&
 			now() - lastRereadAtMs.atMs < CODEX_QUEUE_REREAD_FLOOR_MS
-		)
+		) {
 			return Promise.resolve();
+		}
 		const read = rereadLinkedQueue().finally(() => {
 			lastRereadAtMs = { threadId, atMs: now() };
-			if (inFlightReread?.threadId === threadId) inFlightReread = null;
+			if (inFlightReread?.threadId === threadId) {
+				inFlightReread = null;
+			}
 		});
 		inFlightReread = { threadId, read };
 		return read;
@@ -296,8 +310,9 @@ export function createCanvasBrowserGatewayOptions(input: {
 			...account.actions,
 			read: async (context) => {
 				const result = await account.actions.read(context);
-				if (components.workhorse.snapshot().state === "ready")
+				if (components.workhorse.snapshot().state === "ready") {
 					updateQueue(await components.queue.list());
+				}
 				return result;
 			},
 		},
@@ -384,14 +399,17 @@ export function createCanvasBrowserGatewayOptions(input: {
 	const projection: BrowserProjectionPort = {
 		refresh: async (context): Promise<void> => {
 			const link = context.binding.link;
-			if (link.state !== "executable" || link.threadId === null) return;
+			if (link.state !== "executable" || link.threadId === null) {
+				return;
+			}
 			await coalescedReread(link.threadId);
 		},
 		read: (
 			context: Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0],
 		): BrowserOwnerProjection => {
-			if (context.lease?.state === "active")
+			if (context.lease?.state === "active") {
 				dynamicApprovals.bindLease(context.paneId, context.lease.commandId);
+			}
 			const coordinator = components.coordinator.snapshot();
 			const workhorse = components.workhorse.snapshot();
 			const latestSemantic = components.semanticDelivery.inspect().at(-1);

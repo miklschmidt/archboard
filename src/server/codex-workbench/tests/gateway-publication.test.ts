@@ -6,7 +6,9 @@ import { createGatewayHarness, type GatewayHarness } from "./support.js";
 const openHarnesses: GatewayHarness[] = [];
 
 afterEach(async () => {
-	for (const value of openHarnesses.splice(0)) await value.gateway.dispose();
+	for (const value of openHarnesses.splice(0)) {
+		await value.gateway.dispose();
+	}
 });
 
 function harness(): GatewayHarness {
@@ -40,7 +42,9 @@ describe("Codex workbench terminal publication", () => {
 		const messages: unknown[] = [];
 		connection.subscribe((message) => {
 			messages.push(message);
-			if (messages.length === 1) throw new Error("terminal delta send failed");
+			if (messages.length === 1) {
+				throw new Error("terminal delta send failed");
+			}
 			connection.confirmPublished(message);
 		});
 

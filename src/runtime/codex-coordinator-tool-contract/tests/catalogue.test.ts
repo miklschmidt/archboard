@@ -59,9 +59,9 @@ describe("coordinator namespace manifests", () => {
 			expect(namespace.type).toBe("namespace");
 			expect(namespace.tools.every((tool) => tool.type === "function")).toBe(true);
 			expect(namespace.tools.every((tool) => !tool.deferLoading)).toBe(true);
-			expect(namespace.tools.every((tool) => tool.inputSchema["additionalProperties"] === false)).toBe(
-				true,
-			);
+			expect(
+				namespace.tools.every((tool) => tool.inputSchema["additionalProperties"] === false),
+			).toBe(true);
 		}
 	});
 
@@ -121,10 +121,11 @@ describe("dynamic tool schemas and queue protocol", () => {
 			{ operation: "reorder", orderedSubmissionIds: ["queue-2", "queue-1"] },
 			{ operation: "start", submissionId: "queue-1" },
 		] as const;
-		for (const input of valid)
+		for (const input of valid) {
 			expect(ManageWorkhorseQueueInputSchema.parse(input)).toEqual(
 				JSON.parse(JSON.stringify(input)),
 			);
+		}
 		expect(() => ManageWorkhorseQueueInputSchema.parse({ operation: "pause" })).toThrow();
 		expect(() =>
 			ManageWorkhorseQueueInputSchema.parse({ operation: "list", prompt: "x" }),
@@ -198,8 +199,9 @@ describe("dynamic tool schemas and queue protocol", () => {
 		expect(
 			ThreadQueueStartParamsSchema.parse({ threadId: "thread-1", queuedSubmissionId: null }),
 		).toEqual({ threadId: "thread-1", queuedSubmissionId: null });
-		for (const schema of Object.values(CODEX_QUEUE_PARAMETER_SCHEMAS))
+		for (const schema of Object.values(CODEX_QUEUE_PARAMETER_SCHEMAS)) {
 			expect(() => schema.parse({ threadId: "thread-1", revision: 1 })).toThrow();
+		}
 		expect(CODEX_QUEUE_OPERATION_CONTRACTS.map(({ operation }) => operation)).toEqual([
 			...QUEUE_OPERATION_SNAPSHOT,
 		]);
@@ -255,8 +257,9 @@ describe("dynamic tool schemas and queue protocol", () => {
 			[SteerWorkhorseResultSchema, { turnId: "turn-1", delivery: "delivered" }],
 			[ResolveSpokenApprovalResultSchema, { verdict: "decline", settlement: "not_delivered" }],
 		] as const;
-		for (const [schema, value] of values)
+		for (const [schema, value] of values) {
 			expect(schema.parse(value)).toEqual(JSON.parse(JSON.stringify(value)));
+		}
 		expect(() =>
 			parseCoordinatorToolResult("inspect_workhorse", {
 				threadId: "thread-1",

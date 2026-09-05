@@ -64,7 +64,9 @@ class ModelPort {
 	async modelList(params?: SessionParams<"model/list">): Promise<SessionResponse<"model/list">> {
 		this.requests.push(params);
 		const page = this.pages.get(params?.cursor ?? null);
-		if (page === undefined) throw new Error(`no page for ${params?.cursor ?? null}`);
+		if (page === undefined) {
+			throw new Error(`no page for ${params?.cursor ?? null}`);
+		}
 		return page;
 	}
 }

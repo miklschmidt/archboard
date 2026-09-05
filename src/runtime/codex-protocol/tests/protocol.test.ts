@@ -20,12 +20,13 @@ import { notificationFixture, serverNotificationFixtures } from "./notification-
 import { assertChallengeFailure, changedPaths, pathKey } from "./union-challenge-audit.js";
 import { SERVER_NOTIFICATION_UNION_CHALLENGES } from "./union-challenges.js";
 describe("public response boundary", () => {
-	for (const method of RESPONSE_METHODS)
+	for (const method of RESPONSE_METHODS) {
 		test(`decodes ${method}`, () => {
 			expect(decodeResponse(method, responseFixtures[method]) as unknown).toEqual(
 				responseFixtures[method],
 			);
 		});
+	}
 
 	test("retains JSON-RPC result identity and decodes the result payload", () => {
 		expect(
@@ -38,13 +39,14 @@ describe("public response boundary", () => {
 });
 
 describe("public notification boundary", () => {
-	for (const method of SERVER_NOTIFICATION_METHODS)
+	for (const method of SERVER_NOTIFICATION_METHODS) {
 		test(`decodes ${method}`, () => {
 			const input = { method, params: notificationFixture(method), emittedAtMs: 42 };
 			expect(decodeServerNotification(input) as unknown).toEqual(input);
 		});
+	}
 
-	for (const method of SERVER_NOTIFICATION_METHODS)
+	for (const method of SERVER_NOTIFICATION_METHODS) {
 		test(`rejects an incomplete ${method}`, () => {
 			const fixture = serverNotificationFixtures[method];
 			const malformed = Object.keys(fixture as object).length
@@ -54,13 +56,15 @@ describe("public notification boundary", () => {
 				ProtocolDecodeError,
 			);
 		});
+	}
 
-	for (const method of CLIENT_NOTIFICATION_METHODS)
+	for (const method of CLIENT_NOTIFICATION_METHODS) {
 		test(`decodes client ${method}`, () => {
 			expect(decodeClientNotification(clientNotificationFixtures[method]) as unknown).toEqual(
 				clientNotificationFixtures[method],
 			);
 		});
+	}
 
 	test("accepts notifications from older servers without emittedAtMs", () => {
 		expect(
@@ -85,8 +89,8 @@ describe("closed-union challenges", () => {
 		expect(new Set(challengePaths).size).toBe(challengePaths.length);
 	});
 
-	for (const method of SERVER_NOTIFICATION_METHODS)
-		for (const challenge of SERVER_NOTIFICATION_UNION_CHALLENGES[method])
+	for (const method of SERVER_NOTIFICATION_METHODS) {
+		for (const challenge of SERVER_NOTIFICATION_UNION_CHALLENGES[method]) {
 			test(`rejects ${method} ${challenge.name} future member`, () => {
 				const prepared = challenge.prepare(notificationFixture(method));
 				expect(decodeServerNotification({ method, params: prepared }) as unknown).toEqual({
@@ -102,14 +106,18 @@ describe("closed-union challenges", () => {
 					throw new Error("expected generated union challenge to fail");
 				} catch (error) {
 					expect(error).toBeInstanceOf(ProtocolDecodeError);
-					if (error instanceof ProtocolDecodeError) assertChallengeFailure(error, mutation);
+					if (error instanceof ProtocolDecodeError) {
+						assertChallengeFailure(error, mutation);
+					}
 				}
 			});
+		}
+	}
 
 	test("aggregates prepared and mutated coverage for every challenge", () => {
 		const failures: string[] = [];
 		let audited = 0;
-		for (const method of SERVER_NOTIFICATION_METHODS)
+		for (const method of SERVER_NOTIFICATION_METHODS) {
 			for (const challenge of SERVER_NOTIFICATION_UNION_CHALLENGES[method]) {
 				audited += 1;
 				try {
@@ -123,13 +131,16 @@ describe("closed-union challenges", () => {
 						decodeServerNotification({ method, params: mutation.params });
 						failures.push(`${method}:${challenge.name}: mutated branch decoded`);
 					} catch (error) {
-						if (!(error instanceof ProtocolDecodeError)) throw error;
+						if (!(error instanceof ProtocolDecodeError)) {
+							throw error;
+						}
 						assertChallengeFailure(error, mutation);
 					}
 				} catch (error) {
 					failures.push(`${method}:${challenge.name}: ${String(error)}`);
 				}
 			}
+		}
 
 		expect(audited).toBeGreaterThan(0);
 		expect(failures).toEqual([]);
@@ -169,11 +180,12 @@ describe("reverse request boundary", () => {
 		(candidateMethod) =>
 			candidateMethod !== "account/chatgptAuthTokens/refresh" &&
 			candidateMethod !== "attestation/generate",
-	))
+	)) {
 		test(`decodes ${method}`, () => {
 			const input = { id: 1, method, params: serverRequestFixtures[method] };
 			expect(decodeServerRequest(input) as unknown).toEqual({ ...input });
 		});
+	}
 
 	test("decodes JSON-RPC errors with their original id and data", () => {
 		const error = {
@@ -436,12 +448,13 @@ describe("fail-closed diagnostics", () => {
 		expect(() => decodeLoginAccountParams(payload)).toThrow(ProtocolDecodeError);
 	});
 
-	for (const method of ["attestation/generate", "account/chatgptAuthTokens/refresh"] as const)
+	for (const method of ["attestation/generate", "account/chatgptAuthTokens/refresh"] as const) {
 		test(`refuses unsupported server capability ${method}`, () => {
 			expect(() =>
 				decodeServerRequest({ id: 1, method, params: serverRequestFixtures[method] }),
 			).toThrow(ProtocolDecodeError);
 		});
+	}
 
 	test("rejects unknown methods in every envelope direction", () => {
 		expect(() => decodeClientNotification({ method: "future/notification" })).toThrow(

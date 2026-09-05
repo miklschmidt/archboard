@@ -148,7 +148,9 @@ describe("codex workhorse operation delivery", () => {
 			expect(delegated.mode).toBe("queued");
 			expect(fixtureValue.session.starts).toHaveLength(0);
 			const first = fixtureValue.queue.state[0];
-			if (first === undefined) throw new Error("delegate did not create a queue item");
+			if (first === undefined) {
+				throw new Error("delegate did not create a queue item");
+			}
 			const second = {
 				...first,
 				id: fixtureValue.identity.decoder.adoptQueuedSubmissionId("second"),

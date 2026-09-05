@@ -53,22 +53,25 @@ function requirePreflight(): void {
 		join(root, "node_modules", "@excalidraw", "mermaid-to-excalidraw", "package.json"),
 		join(root, "node_modules", "mermaid", "package.json"),
 	]) {
-		if (!existsSync(file))
+		if (!existsSync(file)) {
 			throw new Error(`Preflight failed: required local input is absent: ${file}`);
+		}
 	}
 }
 
 function ownedOutputDirectory(argv: readonly string[]): string {
-	if (argv.length > 0)
+	if (argv.length > 0) {
 		throw new Error(
 			"This proof owns its output. Run without arguments; it creates one disposable report directory under the system temporary root.",
 		);
+	}
 	return mkdtempSync(join(tmpdir(), "archboard-server-rendering-proof-"));
 }
 
 function pipe(stream: ReadableStream<Uint8Array> | number | undefined): ReadableStream<Uint8Array> {
-	if (!stream || typeof stream === "number")
+	if (!stream || typeof stream === "number") {
 		throw new Error("Child did not expose the requested output pipe.");
+	}
 	return stream;
 }
 
@@ -79,14 +82,18 @@ function snippet(text: string, limit = 4_000): string {
 function ownedProcessIds(pid: number): number[] {
 	const seen = new Set<number>();
 	const visit = (candidate: number) => {
-		if (seen.has(candidate) || !existsSync(`/proc/${candidate}`)) return;
+		if (seen.has(candidate) || !existsSync(`/proc/${candidate}`)) {
+			return;
+		}
 		seen.add(candidate);
 		try {
 			for (const child of readFileSync(`/proc/${candidate}/task/${candidate}/children`, "utf8")
 				.trim()
 				.split(/\s+/)) {
 				const parsed = Number(child);
-				if (Number.isInteger(parsed) && parsed > 0) visit(parsed);
+				if (Number.isInteger(parsed) && parsed > 0) {
+					visit(parsed);
+				}
 			}
 		} catch {
 			// Processes can finish while their group is sampled.
@@ -115,12 +122,16 @@ function reserveLoopbackPort(): number {
 	});
 	const { port } = server;
 	server.stop(true);
-	if (typeof port !== "number") throw new Error("Could not reserve a loopback port.");
+	if (typeof port !== "number") {
+		throw new Error("Could not reserve a loopback port.");
+	}
 	return port;
 }
 
 function loopbackPortIsAvailable(port: number | null): boolean {
-	if (port === null) return true;
+	if (port === null) {
+		return true;
+	}
 	let server: ReturnType<typeof Bun.serve> | null = null;
 	try {
 		server = Bun.serve({ hostname: "127.0.0.1", port, fetch: () => new Response("audit") });
@@ -136,7 +147,9 @@ function injectAcquisitionFailure<Stage extends string>(
 	stage: Stage,
 	injected: Stage | undefined,
 ): void {
-	if (stage === injected) throw new Error(`Injected acquisition failure at ${stage}.`);
+	if (stage === injected) {
+		throw new Error(`Injected acquisition failure at ${stage}.`);
+	}
 }
 
 interface CdpEvent {
@@ -245,8 +258,9 @@ class Cdp {
 			{ expression, awaitPromise: true, returnByValue: true },
 			timeoutMs,
 		);
-		if (answer["exceptionDetails"])
+		if (answer["exceptionDetails"]) {
 			throw new Error(`Page evaluation failed: ${JSON.stringify(answer["exceptionDetails"])}`);
+		}
 		return (answer["result"] as JsonRecord | undefined)?.["value"];
 	}
 
@@ -260,9 +274,12 @@ class Cdp {
 				if (
 					event.method === "Runtime.consoleAPICalled" ||
 					event.method === "Runtime.exceptionThrown"
-				)
+				) {
 					return true;
-				if (event.method === "Network.loadingFailed") return true;
+				}
+				if (event.method === "Network.loadingFailed") {
+					return true;
+				}
 				if (event.method === "Network.responseReceived") {
 					const response = event.params["response"] as JsonRecord | undefined;
 					return typeof response?.["status"] === "number" && response["status"] >= 400;
@@ -290,25 +307,34 @@ class Cdp {
 		};
 		if (typeof message.id === "number") {
 			const pending = this.#pending.get(message.id);
-			if (!pending) return;
+			if (!pending) {
+				return;
+			}
 			this.#pending.delete(message.id);
-			if (message.error)
+			if (message.error) {
 				pending.reject(new Error(message.error.message ?? "DevTools command failed."));
-			else pending.resolve(message.result ?? {});
+			} else {
+				pending.resolve(message.result ?? {});
+			}
 			return;
 		}
-		if (!message.method) return;
+		if (!message.method) {
+			return;
+		}
 		const params = message.params ?? {};
 		if (message.method === "Network.requestWillBeSent") {
 			const request = params["request"] as JsonRecord | undefined;
-			if (typeof params["requestId"] === "string" && typeof request?.["url"] === "string")
+			if (typeof params["requestId"] === "string" && typeof request?.["url"] === "string") {
 				this.#requests.set(params["requestId"], request["url"]);
+			}
 		}
 		this.events.push({ method: message.method, params });
 	}
 
 	private rejectPending(message: string): void {
-		for (const pending of this.#pending.values()) pending.reject(new Error(message));
+		for (const pending of this.#pending.values()) {
+			pending.reject(new Error(message));
+		}
 		this.#pending.clear();
 	}
 }
@@ -357,8 +383,12 @@ async function waitForProcessGroupAbsence(
 ): Promise<boolean> {
 	while (processGroupExists(identity.pgid)) {
 		const ownership = processGroups.inspect(identity);
-		if (ownership === "reused" || ownership === "unproven") return false;
-		if (Date.now() >= deadline) return false;
+		if (ownership === "reused" || ownership === "unproven") {
+			return false;
+		}
+		if (Date.now() >= deadline) {
+			return false;
+		}
 		await Bun.sleep(Math.min(cleanupPollMs, deadline - Date.now()));
 	}
 	return true;
@@ -375,10 +405,11 @@ function captureCandidateProcessGroup(
 	if (
 		captured.pgid !== candidate.expectedGroup ||
 		captured.leaderStartTime !== candidate.leader.startTime
-	)
+	) {
 		throw new Error(
 			`Chromium process group candidate ${candidate.leader.pid} no longer matches its spawn identity.`,
 		);
+	}
 	return captured;
 }
 
@@ -387,13 +418,15 @@ async function captureRendererProcessGroup(
 	deadline: number,
 	injectedFailure?: RendererAcquisitionFailure,
 ): Promise<CodexProcessGroupIdentity> {
-	if (injectedFailure === "group-capture-failure")
+	if (injectedFailure === "group-capture-failure") {
 		throw new Error("Injected acquisition failure at group-capture-failure.");
+	}
 	let lastError: unknown;
 	while (Date.now() < deadline) {
 		try {
-			if (injectedFailure === "group-capture-timeout")
+			if (injectedFailure === "group-capture-timeout") {
 				throw new Error("Injected group capture timeout.");
+			}
 			return captureCandidateProcessGroup(candidate);
 		} catch (error) {
 			lastError = error;
@@ -409,7 +442,9 @@ async function captureRendererProcessGroup(
 }
 
 async function settledPipeText(promise: Promise<string> | null, settled: boolean): Promise<string> {
-	if (!settled) return "[pipe did not settle before cleanup deadline]";
+	if (!settled) {
+		return "[pipe did not settle before cleanup deadline]";
+	}
 	try {
 		return snippet(await (promise ?? Promise.resolve("")));
 	} catch (error) {
@@ -457,17 +492,23 @@ class RendererSession {
 	private constructor() {}
 
 	get profile(): string {
-		if (!this.#profile) throw new Error("Renderer profile is not acquired.");
+		if (!this.#profile) {
+			throw new Error("Renderer profile is not acquired.");
+		}
 		return this.#profile;
 	}
 
 	get port(): number {
-		if (this.#port === null) throw new Error("Renderer port is not acquired.");
+		if (this.#port === null) {
+			throw new Error("Renderer port is not acquired.");
+		}
 		return this.#port;
 	}
 
 	get child(): Bun.Subprocess {
-		if (!this.#child) throw new Error("Renderer process is not acquired.");
+		if (!this.#child) {
+			throw new Error("Renderer process is not acquired.");
+		}
 		return this.#child;
 	}
 
@@ -522,7 +563,7 @@ class RendererSession {
 		} catch (error) {
 			const cleanup = await session.shutdown();
 			const acquisitionFailure = new RendererAcquisitionError(stage, cleanup, error);
-			if (!cleanup.clean || !cleanup.profileRemoved || !cleanup.portReleased)
+			if (!cleanup.clean || !cleanup.profileRemoved || !cleanup.portReleased) {
 				throw new AggregateError(
 					[
 						acquisitionFailure,
@@ -531,6 +572,7 @@ class RendererSession {
 					"Partial renderer acquisition cleanup failed.",
 					{ cause: error },
 				);
+			}
 			throw acquisitionFailure;
 		}
 	}
@@ -540,29 +582,35 @@ class RendererSession {
 		const base = `http://127.0.0.1:${this.port}`;
 		const deadline = Date.now() + 5_000;
 		while (Date.now() < deadline) {
-			if (child.exitCode !== null)
+			if (child.exitCode !== null) {
 				throw new Error(
 					`Chromium exited during startup (${child.exitCode}): ${snippet(await this.stderrText())}`,
 				);
+			}
 			try {
-				if ((await fetch(`${base}/json/version`)).ok) break;
+				if ((await fetch(`${base}/json/version`)).ok) {
+					break;
+				}
 			} catch {
 				// The private DevTools server has not bound its loopback port yet.
 			}
 			await Bun.sleep(50);
 		}
-		if (child.exitCode !== null || !(await fetch(`${base}/json/version`)).ok)
+		if (child.exitCode !== null || !(await fetch(`${base}/json/version`)).ok) {
 			throw new Error("Chromium did not bind its private DevTools loopback port within 5 seconds.");
+		}
 		const startupPids = ownedProcessIds(child.pid);
 		this.observe(startupPids);
 		const target = (await (
 			await fetch(`${base}/json/new?${encodeURIComponent("about:blank")}`, { method: "PUT" })
 		).json()) as { webSocketDebuggerUrl?: unknown };
-		if (typeof target.webSocketDebuggerUrl !== "string")
+		if (typeof target.webSocketDebuggerUrl !== "string") {
 			throw new Error("Chromium did not create the private renderer target.");
+		}
 		this.#cdp = await Cdp.connect(target.webSocketDebuggerUrl);
-		for (const domain of ["Page.enable", "Runtime.enable", "Network.enable", "Log.enable"])
+		for (const domain of ["Page.enable", "Runtime.enable", "Network.enable", "Log.enable"]) {
 			await this.#cdp.call(domain);
+		}
 		await this.#cdp.call("Page.navigate", { url });
 		await this.waitForReady();
 		return {
@@ -574,10 +622,15 @@ class RendererSession {
 	async runJob(name: string, mode: RendererJobMode = "normal"): Promise<JobEvidence> {
 		const cdp = this.#cdp;
 		const child = this.child;
-		if (!cdp) throw new Error("Renderer has not started.");
-		if (child.exitCode !== null)
+		if (!cdp) {
+			throw new Error("Renderer has not started.");
+		}
+		if (child.exitCode !== null) {
 			throw new Error(`Renderer ${name} cannot run: Chromium exited (${child.exitCode}).`);
-		if (this.#running) throw new Error(`Renderer already owns a job; refused concurrent ${name}.`);
+		}
+		if (this.#running) {
+			throw new Error(`Renderer already owns a job; refused concurrent ${name}.`);
+		}
 		this.#running = true;
 		this.#maxConcurrentJobs = Math.max(this.#maxConcurrentJobs, 1);
 		const startedAt = performance.now();
@@ -592,10 +645,11 @@ class RendererSession {
 					typeof staged !== "object" ||
 					(staged as JsonRecord)["job"] !== name ||
 					(staged as JsonRecord)["phase"] !== "intentional-timeout"
-				)
+				) {
 					throw new Error(
 						`Immediate failure did not stage ${name} at intentional-timeout: ${JSON.stringify(staged)}.`,
 					);
+				}
 				stagedImmediateFailure = true;
 			}
 			const expression =
@@ -603,8 +657,9 @@ class RendererSession {
 					? '(() => { throw new Error("intentional immediate evaluation failure"); })()'
 					: `window.runArchboardRendererProof?.(${JSON.stringify(mode)})`;
 			const value = await cdp.evaluate(expression, jobTimeoutMs);
-			if (!value || typeof value !== "object")
+			if (!value || typeof value !== "object") {
 				throw new Error(`Renderer ${name} returned no structured result.`);
+			}
 			const phase = await this.proofState();
 			return {
 				name,
@@ -616,8 +671,9 @@ class RendererSession {
 			const phase = await this.proofState().catch(() => ({ phase: "unavailable" }));
 			throw new RendererJobError(name, phase, cdp.diagnostics(), phase, error);
 		} finally {
-			if (stagedImmediateFailure)
+			if (stagedImmediateFailure) {
 				await cdp.evaluate("window.releaseArchboardRendererProof?.()").catch(() => undefined);
+			}
 			this.#running = false;
 		}
 	}
@@ -633,9 +689,12 @@ class RendererSession {
 	}
 
 	terminateProcessGroupForProof(): void {
-		if (!this.#processGroup) throw new Error("Renderer process group is not acquired.");
-		if (processGroupExists(this.#processGroup.pgid))
+		if (!this.#processGroup) {
+			throw new Error("Renderer process group is not acquired.");
+		}
+		if (processGroupExists(this.#processGroup.pgid)) {
 			processGroups.signal(this.#processGroup, "SIGTERM");
+		}
 	}
 
 	async shutdown(): Promise<CleanupAudit> {
@@ -644,14 +703,17 @@ class RendererSession {
 		const candidate = this.#processGroupCandidate;
 		let processGroup = this.#processGroup;
 		let processGroupProven = processGroup !== null;
-		if (child) this.observe(ownedProcessIds(child.pid));
+		if (child) {
+			this.observe(ownedProcessIds(child.pid));
+		}
 		const pids = [...this.#observed].toSorted((left, right) => left - right);
 		const cleanupStartedAt = Date.now();
 		const deadline = cleanupStartedAt + cleanupTimeoutMs;
 		let groupAbsent = child === null;
 		let groupError: string | null = null;
-		if (child && !candidate)
+		if (child && !candidate) {
 			groupError = "Chromium spawned without a guarded process-group candidate.";
+		}
 		if (child && candidate && !processGroup) {
 			try {
 				processGroup = await captureRendererProcessGroup(candidate, deadline);
@@ -677,7 +739,9 @@ class RendererSession {
 				groupError = error instanceof Error ? error.message : String(error);
 			}
 		}
-		if (processGroup && groupError === null) groupAbsent = !processGroupExists(processGroup.pgid);
+		if (processGroup && groupError === null) {
+			groupAbsent = !processGroupExists(processGroup.pgid);
+		}
 		const [leaderSettled, stdoutSettled, stderrSettled] = await Promise.all([
 			child ? settlesBefore(child.exited, deadline) : Promise.resolve(true),
 			this.#stdout ? settlesBefore(this.#stdout, deadline) : Promise.resolve(child === null),
@@ -690,7 +754,9 @@ class RendererSession {
 			survivors = pids.filter((pid) => existsSync(`/proc/${pid}`));
 		}
 		const processesGone = survivors.length === 0;
-		if (groupAbsent && this.#profile) rmSync(this.#profile, { recursive: true, force: true });
+		if (groupAbsent && this.#profile) {
+			rmSync(this.#profile, { recursive: true, force: true });
+		}
 		const profileRemoved = !this.#profile || (groupAbsent && !existsSync(this.#profile));
 		const portReleased = loopbackPortIsAvailable(this.#port);
 		const clean =
@@ -730,8 +796,12 @@ class RendererSession {
 		let state: JsonRecord = { phase: "unavailable" };
 		while (Date.now() < deadline) {
 			state = await this.proofState();
-			if (state["phase"] === "ready") return;
-			if (state["status"] === "failed") break;
+			if (state["phase"] === "ready") {
+				return;
+			}
+			if (state["status"] === "failed") {
+				break;
+			}
 			await Bun.sleep(50);
 		}
 		throw new Error(
@@ -741,11 +811,15 @@ class RendererSession {
 	}
 
 	private async proofState(): Promise<JsonRecord> {
-		if (!this.#cdp) return { phase: "unavailable" };
+		if (!this.#cdp) {
+			return { phase: "unavailable" };
+		}
 		const encoded = await this.#cdp.evaluate(
 			"JSON.stringify(window.__archboardRendererProof ?? null)",
 		);
-		if (typeof encoded !== "string") return { phase: "unavailable" };
+		if (typeof encoded !== "string") {
+			return { phase: "unavailable" };
+		}
 		try {
 			return JSON.parse(encoded) as JsonRecord;
 		} catch {
@@ -754,7 +828,9 @@ class RendererSession {
 	}
 
 	private observe(pids: readonly number[]): void {
-		for (const pid of pids) this.#observed.add(pid);
+		for (const pid of pids) {
+			this.#observed.add(pid);
+		}
 	}
 
 	private async stderrText(): Promise<string> {
@@ -764,28 +840,37 @@ class RendererSession {
 
 function requireRecord(record: JsonRecord, key: string): JsonRecord {
 	const found = record[key];
-	if (!found || typeof found !== "object" || Array.isArray(found))
+	if (!found || typeof found !== "object" || Array.isArray(found)) {
 		throw new Error(`Proof result has no ${key} object.`);
+	}
 	return found as JsonRecord;
 }
 
 function requireBoolean(value: unknown, message: string): void {
-	if (value !== true) throw new Error(message);
+	if (value !== true) {
+		throw new Error(message);
+	}
 }
 
 function requireNumber(value: unknown, message: string): number {
-	if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(message);
+	if (typeof value !== "number" || !Number.isFinite(value)) {
+		throw new Error(message);
+	}
 	return value;
 }
 
 function requireSha256(value: unknown, message: string): string {
-	if (typeof value !== "string" || !/^[0-9a-f]{64}$/.test(value)) throw new Error(message);
+	if (typeof value !== "string" || !/^[0-9a-f]{64}$/.test(value)) {
+		throw new Error(message);
+	}
 	return value;
 }
 
 function exportFiles(files: Record<string, unknown>): BinaryFiles {
 	for (const [id, raw] of Object.entries(files)) {
-		if (!raw || typeof raw !== "object") throw new Error(`Persisted file ${id} is invalid.`);
+		if (!raw || typeof raw !== "object") {
+			throw new Error(`Persisted file ${id} is invalid.`);
+		}
 		const file = raw as JsonRecord;
 		if (
 			file["id"] !== id ||
@@ -793,79 +878,93 @@ function exportFiles(files: Record<string, unknown>): BinaryFiles {
 			typeof file["dataURL"] !== "string" ||
 			!file["dataURL"].startsWith("data:image/png;base64,") ||
 			typeof file["created"] !== "number"
-		)
+		) {
 			throw new Error(`Persisted file ${id} is not a complete PNG export file.`);
+		}
 	}
 	return files as unknown as BinaryFiles;
 }
 
 function assertPng(result: JsonRecord): void {
 	const png = requireRecord(result, "png");
-	if (requireNumber(png["bytes"], "PNG byte count is missing.") < 1)
+	if (requireNumber(png["bytes"], "PNG byte count is missing.") < 1) {
 		throw new Error("PNG export is empty.");
+	}
 	requireSha256(png["hash"], "PNG SHA-256 is missing.");
 	requireBoolean(png["isPng"], "PNG signature is invalid.");
 	const semantics = requireRecord(png, "semantics");
 	const width = requireNumber(semantics["width"], "PNG width is missing.");
 	const height = requireNumber(semantics["height"], "PNG height is missing.");
-	if (width < 500 || height < 300)
+	if (width < 500 || height < 300) {
 		throw new Error(`PNG dimensions are implausible: ${width}x${height}.`);
+	}
 	const colors = requireRecord(semantics, "colors");
 	const background = requireRecord(colors, "background");
 	const service = requireRecord(colors, "service");
 	const store = requireRecord(colors, "store");
 	const decision = requireRecord(colors, "decision");
 	for (const [name, color] of Object.entries({ background, service, store, decision })) {
-		if (requireNumber(color["count"], `PNG ${name} colour count is missing.`) < 100)
+		if (requireNumber(color["count"], `PNG ${name} colour count is missing.`) < 100) {
 			throw new Error(`PNG lacks visible ${name} colour pixels.`);
+		}
 	}
 	if (
 		requireNumber(service["maxX"], "PNG service bounds missing.") >=
 			requireNumber(store["minX"], "PNG store bounds missing.") ||
 		requireNumber(decision["minY"], "PNG decision bounds missing.") <=
 			requireNumber(service["maxY"], "PNG service bounds missing.")
-	)
+	) {
 		throw new Error("PNG fixture regions are not in the expected service, store, decision layout.");
+	}
 }
 
 function assertSvg(result: JsonRecord): void {
 	const svg = requireRecord(result, "svg");
-	if (requireNumber(svg["bytes"], "SVG byte count is missing.") < 1)
+	if (requireNumber(svg["bytes"], "SVG byte count is missing.") < 1) {
 		throw new Error("SVG export is empty.");
+	}
 	requireSha256(svg["hash"], "SVG SHA-256 is missing.");
 	const semantics = requireRecord(svg, "semantics");
-	if (semantics["root"] !== "svg") throw new Error("SVG root is not svg.");
+	if (semantics["root"] !== "svg") {
+		throw new Error("SVG root is not svg.");
+	}
 	requireBoolean(semantics["background"], "SVG lacks the persisted background.");
 	if (
 		!Array.isArray(semantics["fills"]) ||
 		semantics["fills"].some(
 			(fill) => !fill || typeof fill !== "object" || (fill as JsonRecord)["present"] !== true,
 		)
-	)
+	) {
 		throw new Error("SVG lacks one of the persisted fixture fills.");
+	}
 	for (const [key, message] of [
 		["hasBoundLabel", "SVG lacks the bound Service API label."],
 		["hasExcalifont", "SVG lacks the required Excalifont text."],
 		["fontLoaded", "The bundled Excalifont is not loaded."],
 		["hasEmbeddedImage", "SVG lacks the persisted embedded image."],
 		["hasArrowVisual", "SVG lacks the bound arrow visual."],
-	] as const)
+	] as const) {
 		requireBoolean(semantics[key], message);
-	if (!Array.isArray(semantics["shapes"]) || semantics["shapes"].length < 8)
+	}
+	if (!Array.isArray(semantics["shapes"]) || semantics["shapes"].length < 8) {
 		throw new Error("SVG does not contain enough native rendered shapes.");
+	}
 }
 
 function assertMermaid(result: JsonRecord): void {
 	const mermaid = requireRecord(result, "mermaid");
-	if (requireNumber(mermaid["elementCount"], "Mermaid element count is missing.") < 5)
+	if (requireNumber(mermaid["elementCount"], "Mermaid element count is missing.") < 5) {
 		throw new Error("Mermaid conversion returned too few elements.");
-	if (result["invalidMermaid"] !== "Error")
+	}
+	if (result["invalidMermaid"] !== "Error") {
 		throw new Error("Malformed Mermaid did not reject with Error.");
+	}
 	const semantics = requireRecord(mermaid, "elements");
 	const nodes = semantics["nodes"];
 	const edges = semantics["edges"];
-	if (!Array.isArray(nodes) || !Array.isArray(edges))
+	if (!Array.isArray(nodes) || !Array.isArray(edges)) {
 		throw new Error("Mermaid graph summary is absent.");
+	}
 	const labels = nodes.map((node) => (node as JsonRecord)["label"]).toSorted();
 	const connections = edges
 		.map((edge) => `${String((edge as JsonRecord)["from"])}>${String((edge as JsonRecord)["to"])}`)
@@ -875,14 +974,17 @@ function assertMermaid(result: JsonRecord): void {
 			JSON.stringify(["Board operation", "PNG and SVG", "Server render"]) ||
 		JSON.stringify(connections) !==
 			JSON.stringify(["Board operation>Server render", "Server render>PNG and SVG"])
-	)
+	) {
 		throw new Error(
 			`Mermaid graph does not match the canonical labels and connectivity: ${JSON.stringify(semantics)}`,
 		);
+	}
 }
 
 function assertSemantics(result: JsonRecord): void {
-	if ("error" in result) throw new Error(`Browser probe failed: ${JSON.stringify(result["error"])}`);
+	if ("error" in result) {
+		throw new Error(`Browser probe failed: ${JSON.stringify(result["error"])}`);
+	}
 	assertPng(result);
 	assertSvg(result);
 	assertMermaid(result);
@@ -894,17 +996,21 @@ function comparable(result: JsonRecord): string {
 
 function loadPersistedRenderInput(): JsonRecord {
 	const content = readNote(fixtureNote);
-	if (!content) throw new Error(`Canonical persisted board fixture cannot be read: ${fixtureNote}`);
+	if (!content) {
+		throw new Error(`Canonical persisted board fixture cannot be read: ${fixtureNote}`);
+	}
 	const snapshot = projectPreviewSnapshot({
 		board: "render-proof",
 		fingerprint: "canonical-fixture",
 		elements: Array.from(content.elements.values()),
 		files: exportFiles(Object.fromEntries(content.files)),
 	});
-	if (snapshot.elements.length !== 9 || Object.keys(snapshot.files).length !== 1)
+	if (snapshot.elements.length !== 9 || Object.keys(snapshot.files).length !== 1) {
 		throw new Error("Canonical board read did not preserve the expected elements and file.");
-	if (!snapshot.elements.every((element) => isBlockId(element.id)))
+	}
+	if (!snapshot.elements.every((element) => isBlockId(element.id))) {
 		throw new Error("Canonical persisted board fixture contains an invalid block id.");
+	}
 	const byId = new Map(snapshot.elements.map((element) => [element.id, element]));
 	const service = byId.get("svc") as JsonRecord | undefined;
 	const label = byId.get("label") as JsonRecord | undefined;
@@ -918,10 +1024,11 @@ function loadPersistedRenderInput(): JsonRecord {
 		label["containerId"] !== "svc" ||
 		(arrow["startBinding"] as JsonRecord | undefined)?.["elementId"] !== "svc" ||
 		(arrow["endBinding"] as JsonRecord | undefined)?.["elementId"] !== "store"
-	)
+	) {
 		throw new Error(
 			"Canonical persisted board fixture lost its bound label or arrow relationship.",
 		);
+	}
 	return {
 		elements: snapshot.elements,
 		files: exportFiles(snapshot.files),
@@ -937,8 +1044,9 @@ async function rejectMalformedPersistedBoard(output: string): Promise<string> {
 		readNote(malformed);
 		throw new Error("Malformed persisted board was accepted.");
 	} catch (error) {
-		if (error instanceof Error && error.message === "Malformed persisted board was accepted.")
+		if (error instanceof Error && error.message === "Malformed persisted board was accepted.") {
 			throw error;
+		}
 		return error instanceof Error ? error.name : String(error);
 	} finally {
 		rmSync(malformed, { force: true });
@@ -1041,7 +1149,9 @@ async function startFixtureServer(
 					name: "archboard-server-rendering-input",
 					configureServer(vite) {
 						vite.middlewares.use("/render-input.json", (request, response, next) => {
-							if (request.method !== "GET") return next();
+							if (request.method !== "GET") {
+								return next();
+							}
 							const missingImage =
 								new URL(request.url ?? "/", "http://localhost").searchParams.get("case") ===
 								"missing-image";
@@ -1064,7 +1174,7 @@ async function startFixtureServer(
 	} catch (error) {
 		const cleanup = owner ? await owner.close() : unownedFixtureCleanup(port);
 		const acquisitionFailure = new FixtureAcquisitionError(stage, cleanup, error);
-		if (!cleanup.clean)
+		if (!cleanup.clean) {
 			throw new AggregateError(
 				[
 					acquisitionFailure,
@@ -1073,6 +1183,7 @@ async function startFixtureServer(
 				"Partial fixture acquisition cleanup failed.",
 				{ cause: error },
 			);
+		}
 		throw acquisitionFailure;
 	}
 }
@@ -1080,12 +1191,16 @@ async function startFixtureServer(
 async function runInboundMermaid(result: JsonRecord): Promise<JsonRecord> {
 	const mermaid = requireRecord(result, "mermaid");
 	const raw = mermaid["rawElements"];
-	if (!Array.isArray(raw)) throw new Error("Browser Mermaid result has no element array.");
+	if (!Array.isArray(raw)) {
+		throw new Error("Browser Mermaid result has no element array.");
+	}
 	const ids = new Map<string, string>();
 	const used = new Set<string>();
 	for (const element of raw) {
 		const source = (element as JsonRecord)["id"];
-		if (typeof source !== "string") throw new Error("Mermaid element has no source id.");
+		if (typeof source !== "string") {
+			throw new Error("Mermaid element has no source id.");
+		}
 		const id = derivedId(`mermaid:${source}`, used);
 		used.add(id);
 		ids.set(source, id);
@@ -1111,10 +1226,11 @@ async function runInboundMermaid(result: JsonRecord): Promise<JsonRecord> {
 		);
 	}
 	const elements = [...board.values()];
-	if (elements.length === 0 || !elements.every((element) => isBlockId(element.id)))
+	if (elements.length === 0 || !elements.every((element) => isBlockId(element.id))) {
 		throw new Error(
 			"Canonical inbound Mermaid conversion did not yield block-safe Archboard elements.",
 		);
+	}
 	const labels = elements
 		.filter((element) => element.type === "text")
 		.map((element) => `${element.containerId ?? ""}:${element.text}`)
@@ -1139,10 +1255,11 @@ async function runInboundMermaid(result: JsonRecord): Promise<JsonRecord> {
 				].toSorted(),
 			) ||
 		JSON.stringify(arrows) !== JSON.stringify([`${caller}>${render}`, `${render}>${artifact}`])
-	)
+	) {
 		throw new Error(
 			`Inbound Mermaid shape lost labels or bindings: ${JSON.stringify({ labels, arrows })}`,
 		);
+	}
 	if (
 		elements.length !== 8 ||
 		JSON.stringify(elements.map((element) => element.type).toSorted()) !==
@@ -1156,10 +1273,11 @@ async function runInboundMermaid(result: JsonRecord): Promise<JsonRecord> {
 				"text",
 				"text",
 			])
-	)
+	) {
 		throw new Error(
 			"Inbound Mermaid conversion did not expand to the expected Archboard element shape.",
 		);
+	}
 	return {
 		count: elements.length,
 		ids: elements.map((element) => element.id).toSorted(),
@@ -1192,17 +1310,25 @@ async function requireRuntimeEvaluateTimeout(
 		await session.runJob(name, mode);
 	} catch (error) {
 		const elapsedMs = performance.now() - startedAt;
-		if (!(error instanceof RendererJobError)) throw new TimeoutOracleRejectionError("job", error);
-		if (error.job !== name) throw new TimeoutOracleRejectionError("job", error);
-		if (error.phase["phase"] !== "intentional-timeout")
+		if (!(error instanceof RendererJobError)) {
+			throw new TimeoutOracleRejectionError("job", error);
+		}
+		if (error.job !== name) {
+			throw new TimeoutOracleRejectionError("job", error);
+		}
+		if (error.phase["phase"] !== "intentional-timeout") {
 			throw new TimeoutOracleRejectionError("phase", error);
-		if (!(error.cause instanceof CdpTimeoutError))
+		}
+		if (!(error.cause instanceof CdpTimeoutError)) {
 			throw new TimeoutOracleRejectionError("cause", error);
-		if (error.cause.method !== "Runtime.evaluate" || error.cause.timeoutMs !== jobTimeoutMs)
+		}
+		if (error.cause.method !== "Runtime.evaluate" || error.cause.timeoutMs !== jobTimeoutMs) {
 			throw new TimeoutOracleRejectionError("method", error);
+		}
 		const bounds = timeoutBounds();
-		if (elapsedMs < bounds.earliestMs || elapsedMs > bounds.latestMs)
+		if (elapsedMs < bounds.earliestMs || elapsedMs > bounds.latestMs) {
 			throw new TimeoutOracleRejectionError("duration", error);
+		}
 		return { elapsedMs, reason: error.cause.message, phase: error.phase };
 	}
 	throw new Error(`Intentional timeout job ${name} completed instead of timing out.`);
@@ -1218,27 +1344,33 @@ async function proveImmediateFailureIsNotTimeout(session: RendererSession): Prom
 			"immediate-evaluation-failure",
 		);
 	} catch (error) {
-		if (error instanceof TimeoutOracleRejectionError) rejection = error;
-		else throw error;
+		if (error instanceof TimeoutOracleRejectionError) {
+			rejection = error;
+		} else {
+			throw error;
+		}
 	}
 	const elapsedMs = performance.now() - startedAt;
-	if (!rejection || rejection.reason !== "cause")
+	if (!rejection || rejection.reason !== "cause") {
 		throw new Error(
 			`Immediate failure did not prove a non-timeout cause: ${rejection?.reason ?? "no rejection"}.`,
 		);
+	}
 	if (
 		!(rejection.cause instanceof RendererJobError) ||
 		rejection.cause.job !== "intentional-timeout" ||
 		rejection.cause.phase["phase"] !== "intentional-timeout" ||
 		rejection.cause.cause instanceof CdpTimeoutError
-	)
+	) {
 		throw new Error(
 			`Immediate failure did not match the timeout job and phase before its cause was rejected: ${JSON.stringify(
 				rejection.cause,
 			)}.`,
 		);
-	if (elapsedMs > Math.ceil(jobTimeoutMs * 0.05))
+	}
+	if (elapsedMs > Math.ceil(jobTimeoutMs * 0.05)) {
 		throw new Error(`Immediate differently caused failure took ${elapsedMs.toFixed(1)} ms.`);
+	}
 	return {
 		elapsedMs,
 		rejection: rejection.message,
@@ -1262,12 +1394,15 @@ async function provePartialAcquisitionCleanup(input: JsonRecord): Promise<JsonRe
 			await RendererSession.acquire(stage);
 			throw new Error(`Injected renderer acquisition failure ${stage} was accepted.`);
 		} catch (error) {
-			if (!(error instanceof RendererAcquisitionError)) throw error;
-			if (!error.cleanup.clean || !error.cleanup.profileRemoved || !error.cleanup.portReleased)
+			if (!(error instanceof RendererAcquisitionError)) {
+				throw error;
+			}
+			if (!error.cleanup.clean || !error.cleanup.profileRemoved || !error.cleanup.portReleased) {
 				throw new Error(
 					`Injected renderer acquisition ${stage} did not clean up: ${JSON.stringify(error.cleanup)}`,
 					{ cause: error },
 				);
+			}
 			if (
 				stage !== "before-profile" &&
 				stage !== "after-profile" &&
@@ -1276,11 +1411,12 @@ async function provePartialAcquisitionCleanup(input: JsonRecord): Promise<JsonRe
 					!error.cleanup.groupAbsent ||
 					!error.cleanup.leaderSettled ||
 					!error.cleanup.pipesSettled)
-			)
+			) {
 				throw new Error(
 					`Injected post-spawn acquisition ${stage} did not prove group and pipe cleanup: ${JSON.stringify(error.cleanup)}`,
 					{ cause: error },
 				);
+			}
 			renderer.push({ stage, failureStage: error.stage, cleanup: error.cleanup });
 		}
 	}
@@ -1290,12 +1426,15 @@ async function provePartialAcquisitionCleanup(input: JsonRecord): Promise<JsonRe
 			await startFixtureServer(input, stage);
 			throw new Error(`Injected fixture acquisition failure ${stage} was accepted.`);
 		} catch (error) {
-			if (!(error instanceof FixtureAcquisitionError)) throw error;
-			if (!error.cleanup.clean)
+			if (!(error instanceof FixtureAcquisitionError)) {
+				throw error;
+			}
+			if (!error.cleanup.clean) {
 				throw new Error(
 					`Injected fixture acquisition ${stage} did not clean up: ${JSON.stringify(error.cleanup)}`,
 					{ cause: error },
 				);
+			}
 			fixture.push({ stage, cleanup: error.cleanup });
 		}
 	}
@@ -1319,8 +1458,9 @@ try {
 	requirePreflight();
 	const input = loadPersistedRenderInput();
 	const malformedBoard = await rejectMalformedPersistedBoard(output);
-	if (malformedBoard !== "Error")
+	if (malformedBoard !== "Error") {
 		throw new Error(`Malformed persisted board did not reject with Error: ${malformedBoard}`);
+	}
 	const partialAcquisition = await provePartialAcquisitionCleanup(input);
 	const fixture = await startFixtureServer(input);
 	fixtureServer = fixture;
@@ -1339,8 +1479,9 @@ try {
 		if (
 			comparable(first.result) !== comparable(second.result) ||
 			comparable(first.result) !== comparable(third.result)
-		)
+		) {
 			throw new Error("Identical persistent-renderer jobs diverged in output or semantics.");
+		}
 		report = {
 			status: "running",
 			backend: "isolated server-owned headless Chromium",
@@ -1352,10 +1493,11 @@ try {
 		};
 		const inbound = await runInboundMermaid(first.result);
 		const inboundSecond = await runInboundMermaid(second.result);
-		if (JSON.stringify(inbound) !== JSON.stringify(inboundSecond))
+		if (JSON.stringify(inbound) !== JSON.stringify(inboundSecond)) {
 			throw new Error(
 				"Canonical inbound Mermaid conversion did not preserve stable ids and bindings.",
 			);
+		}
 		const missingImage = await primary.runJob("missing-image", "missing-image");
 		let missingImageRejected = false;
 		try {
@@ -1363,8 +1505,9 @@ try {
 		} catch {
 			missingImageRejected = true;
 		}
-		if (!missingImageRejected)
+		if (!missingImageRejected) {
 			throw new Error("Missing embedded image was accepted as a complete render.");
+		}
 		const immediateDifferentCause = await proveImmediateFailureIsNotTimeout(primary);
 		const timeout = await requireRuntimeEvaluateTimeout(primary, "intentional-timeout", "stall");
 		report = {
@@ -1396,28 +1539,34 @@ try {
 		const cleanupFailure = new Error(
 			`Primary renderer cleanup failed: ${JSON.stringify(primaryCleanup)}`,
 		);
-		if (primaryActionFailure) throw new AggregateError([primaryActionFailure, cleanupFailure]);
+		if (primaryActionFailure) {
+			throw new AggregateError([primaryActionFailure, cleanupFailure]);
+		}
 		throw cleanupFailure;
 	}
-	if (primaryActionFailure) throw primaryActionFailure;
+	if (primaryActionFailure) {
+		throw primaryActionFailure;
+	}
 	const childExit = await RendererSession.acquire();
 	let childExitActionFailure: unknown = null;
 	try {
 		const startup = await childExit.start(fixture.url);
 		childExit.terminateProcessGroupForProof();
 		await Promise.race([childExit.child.exited, Bun.sleep(cleanupTimeoutMs)]);
-		if (childExit.child.exitCode === null)
+		if (childExit.child.exitCode === null) {
 			throw new Error(`Renderer child did not exit within ${cleanupTimeoutMs} ms.`);
+		}
 		let rejection: string | null = null;
 		try {
 			await childExit.runJob("after-child-exit");
 		} catch (error) {
 			rejection = (error as Error).message;
 		}
-		if (!rejection?.includes("Chromium exited"))
+		if (!rejection?.includes("Chromium exited")) {
 			throw new Error(
 				`Renderer child exit was not surfaced to the caller: ${rejection ?? "no error"}`,
 			);
+		}
 		report["childExit"] = { startup, exitCode: childExit.child.exitCode, rejection };
 	} catch (error) {
 		childExitActionFailure = error;
@@ -1427,10 +1576,14 @@ try {
 		const cleanupFailure = new Error(
 			`Child-exit renderer cleanup failed: ${JSON.stringify(childExitCleanup)}`,
 		);
-		if (childExitActionFailure) throw new AggregateError([childExitActionFailure, cleanupFailure]);
+		if (childExitActionFailure) {
+			throw new AggregateError([childExitActionFailure, cleanupFailure]);
+		}
 		throw cleanupFailure;
 	}
-	if (childExitActionFailure) throw childExitActionFailure;
+	if (childExitActionFailure) {
+		throw childExitActionFailure;
+	}
 	const replacement = await RendererSession.acquire();
 	let replacementActionFailure: unknown = null;
 	try {
@@ -1451,11 +1604,14 @@ try {
 		const cleanupFailure = new Error(
 			`Replacement renderer cleanup failed: ${JSON.stringify(replacementCleanup)}`,
 		);
-		if (replacementActionFailure)
+		if (replacementActionFailure) {
 			throw new AggregateError([replacementActionFailure, cleanupFailure]);
+		}
 		throw cleanupFailure;
 	}
-	if (replacementActionFailure) throw replacementActionFailure;
+	if (replacementActionFailure) {
+		throw replacementActionFailure;
+	}
 	const primaryResult = requireRecord(
 		requireRecord(requireRecord(report, "primary"), "first"),
 		"result",
@@ -1464,8 +1620,9 @@ try {
 		requireRecord(requireRecord(report, "replacement"), "job"),
 		"result",
 	);
-	if (comparable(primaryResult) !== comparable(replacementResult))
+	if (comparable(primaryResult) !== comparable(replacementResult)) {
 		throw new Error("Replacement renderer diverged from the persistent renderer.");
+	}
 } catch (error) {
 	failure = error;
 	report = {
@@ -1505,7 +1662,9 @@ try {
 	await Bun.write(reportPath, JSON.stringify(report, null, 2) + "\n");
 }
 
-if (failure) throw new Error(`Server rendering proof failed. Disposable report: ${reportPath}`);
+if (failure) {
+	throw new Error(`Server rendering proof failed. Disposable report: ${reportPath}`);
+}
 globalThis.process.stdout.write(
 	`Server rendering proof passed. Disposable report: ${reportPath}\n`,
 );

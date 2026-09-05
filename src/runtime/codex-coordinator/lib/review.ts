@@ -43,11 +43,21 @@ export function reviewedCoordinatorHashes(settingsHash: string): CoordinatorRevi
 }
 
 function canonicalJson(value: unknown): string {
-	if (value === null) return "null";
-	if (typeof value === "string") return JSON.stringify(value);
-	if (typeof value === "boolean") return value ? "true" : "false";
-	if (typeof value === "number") return JSON.stringify(value);
-	if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+	if (value === null) {
+		return "null";
+	}
+	if (typeof value === "string") {
+		return JSON.stringify(value);
+	}
+	if (typeof value === "boolean") {
+		return value ? "true" : "false";
+	}
+	if (typeof value === "number") {
+		return JSON.stringify(value);
+	}
+	if (Array.isArray(value)) {
+		return `[${value.map(canonicalJson).join(",")}]`;
+	}
 	if (isRecord(value)) {
 		return `{${Object.keys(value)
 			.toSorted()

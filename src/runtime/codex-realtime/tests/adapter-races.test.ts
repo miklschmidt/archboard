@@ -76,8 +76,9 @@ function raceHarness(): RaceHarness {
 	const linkedThreadId = adopted.threadIds[0];
 	const coordinatorThreadId = adopted.threadIds[1];
 	const replacementThreadId = adopted.threadIds[2];
-	if (!linkedThreadId || !coordinatorThreadId || !replacementThreadId)
+	if (!linkedThreadId || !coordinatorThreadId || !replacementThreadId) {
 		throw new Error("Missing adopted race identity.");
+	}
 	const start = deferred<StartResult>();
 	const stop = deferred<StopResult>();
 	const append = deferred<AppendResult>();
@@ -97,7 +98,9 @@ function raceHarness(): RaceHarness {
 		session: {
 			realtimeStart: (params) => {
 				starts.push(params);
-				if (control.startFailure) throw control.startFailure;
+				if (control.startFailure) {
+					throw control.startFailure;
+				}
 				return start.promise;
 			},
 			realtimeAppendText: () => append.promise,
@@ -152,7 +155,9 @@ async function begin(h: RaceHarness, suffix: string) {
 	const offer = h.adapter.createOffer({ ...correlation, sdp: "offer" });
 	await Promise.resolve();
 	const wireSessionId = h.starts[startIndex]?.realtimeSessionId;
-	if (!wireSessionId) throw new Error("Race start has no realtime session identity.");
+	if (!wireSessionId) {
+		throw new Error("Race start has no realtime session identity.");
+	}
 	return { correlation, offer, wireSessionId };
 }
 
@@ -352,11 +357,13 @@ describe("Codex realtime adapter races", () => {
 			const outcome = h.adapter.stop(active.correlation);
 			close(h);
 			const stateEventsAtClose = stateEventCount(h);
-			if (completion === "resolve") h.stop.resolve({});
-			else
+			if (completion === "resolve") {
+				h.stop.resolve({});
+			} else {
 				h.stop.reject(
 					new CodexSessionMutationError("thread/realtime/stop", "outcome_unknown", "late"),
 				);
+			}
 			expect(await outcome).toMatchObject({ outcome: "outcome_unknown", reason: "response_lost" });
 			expect(h.adapter.transcript()).toHaveLength(1);
 			expect(stateCount(h, "closed")).toBe(1);
@@ -376,13 +383,15 @@ describe("Codex realtime adapter races", () => {
 			const outcome = h.adapter.recover(active.correlation);
 			close(h);
 			const stateEventsAtClose = stateEventCount(h);
-			if (completion === "resolve")
+			if (completion === "resolve") {
 				h.timeline.resolve({
 					data: [],
 					nextCursor: null,
 					activeRealtimeSessionAtPageStart: active.wireSessionId,
 				});
-			else h.timeline.reject(new Error("late timeline failure"));
+			} else {
+				h.timeline.reject(new Error("late timeline failure"));
+			}
 			expect(await outcome).toMatchObject({ outcome: "outcome_unknown", reason: "response_lost" });
 			expect(h.adapter.transcript()).toHaveLength(1);
 			expect(stateCount(h, "closed")).toBe(1);

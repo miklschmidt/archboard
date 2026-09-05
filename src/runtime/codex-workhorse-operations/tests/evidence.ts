@@ -33,5 +33,7 @@ export async function rejected(promise: Promise<unknown>): Promise<unknown> {
 }
 
 export async function flush(): Promise<void> {
-	for (let index = 0; index < 8; index += 1) await Promise.resolve();
+	for (let index = 0; index < 8; index += 1) {
+		await Promise.resolve();
+	}
 }

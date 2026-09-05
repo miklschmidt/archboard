@@ -58,8 +58,11 @@ afterAll(async () => {
 		try {
 			fs.rmSync(vault, { recursive: true, force: true });
 		} finally {
-			if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-			else process.env["ARCHBOARD_VAULT"] = callerVault;
+			if (callerVault === undefined) {
+				delete process.env["ARCHBOARD_VAULT"];
+			} else {
+				process.env["ARCHBOARD_VAULT"] = callerVault;
+			}
 		}
 	}
 });

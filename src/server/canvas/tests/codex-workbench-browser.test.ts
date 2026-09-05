@@ -20,7 +20,9 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 		refreshProjection: async () => undefined,
 		confirmPublished: () => undefined,
 		claimLease: () => {
-			if (current !== instance) throw new Error("The stale socket cannot claim authority.");
+			if (current !== instance) {
+				throw new Error("The stale socket cannot claim authority.");
+			}
 			return { kind: "command_lease", commandId: "replacement-command" } as never;
 		},
 		renewLease: () => ({}) as never,
@@ -30,7 +32,9 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 		command: async () => ({}) as never,
 		subscribe: () => () => undefined,
 		close: async () => {
-			if (current === instance) current = null;
+			if (current === instance) {
+				current = null;
+			}
 		},
 	});
 	const gateway = {
@@ -43,7 +47,9 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 			_paneId: string,
 			instance: BrowserConnectionInstance,
 		) => {
-			if (current === instance) current = null;
+			if (current === instance) {
+				current = null;
+			}
 		},
 	} as unknown as CodexWorkbenchGateway;
 	const owner = createCanvasCodexBrowserSocketOwner({
@@ -146,7 +152,9 @@ test("teardown drains every normal close and preserves a delayed close failure",
 				close: async () => {
 					closed.push(String((instance as { socket: string }).socket));
 					await gate;
-					if (instance === failedInstance) throw new Error("delayed browser close failed");
+					if (instance === failedInstance) {
+						throw new Error("delayed browser close failed");
+					}
 				},
 			}) as unknown as BrowserWorkbenchConnection,
 		closeConnection: async () => undefined,
@@ -416,7 +424,9 @@ test("the public request crosses a real WebSocket transport and returns the gate
 	});
 	await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
 	const address = server.address();
-	if (address === null || typeof address === "string") throw new Error("missing live test port");
+	if (address === null || typeof address === "string") {
+		throw new Error("missing live test port");
+	}
 	const client = new WebSocket(`ws://127.0.0.1:${address.port}`);
 	await new Promise<void>((resolve, reject) => {
 		client.once("open", resolve);

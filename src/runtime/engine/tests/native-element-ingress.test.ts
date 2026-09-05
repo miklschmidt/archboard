@@ -125,7 +125,9 @@ test("binding input extensions are spent and trusted reads reject them at either
 	});
 	const joined = board.get("joined");
 	expect(joined?.type).toBe("arrow");
-	if (joined?.type !== "arrow") throw new Error("fixture did not create an arrow");
+	if (joined?.type !== "arrow") {
+		throw new Error("fixture did not create an arrow");
+	}
 	expect(joined.startBinding).toMatchObject({ elementId: "left", focus: 0, gap: 4 });
 	expect(Reflect.get(joined.startBinding!, "fixedPoint")).toBeUndefined();
 	expect(Object.keys(joined.startBinding!)).toEqual(["elementId", "focus", "gap"]);

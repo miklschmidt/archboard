@@ -61,7 +61,9 @@ function measurementNoise(
 	serverValue: string,
 	paneValue: string,
 ): boolean {
-	if (element.type !== "text" || key !== "width") return false;
+	if (element.type !== "text" || key !== "width") {
+		return false;
+	}
 	const serverWidth = Number(serverValue);
 	const paneWidth = Number(paneValue);
 	return (
@@ -99,8 +101,9 @@ function divergences(server: SnapshotElement[], pane: SnapshotElement[]): string
 		}
 	}
 	for (const [id, element] of theirs) {
-		if (!ours.has(id))
+		if (!ours.has(id)) {
 			found.push(`${elementName(element)}: the pane holds it, the server does not`);
+		}
 	}
 	return found;
 }
@@ -206,8 +209,9 @@ test("42 rotating agent and human cycles converge after every write pair", async
 		pollUntil(
 			async () => {
 				const pane = await paneSnapshot(browser);
-				if (pane.error || !pane.elements)
+				if (pane.error || !pane.elements) {
 					throw new Error(pane.error ?? "pane returned no elements");
+				}
 				return divergences(snapshotOf(await held()), pane.elements);
 			},
 			(value) => value.length === 0,
@@ -307,7 +311,9 @@ test("42 rotating agent and human cycles converge after every write pair", async
 			divergences: [],
 		});
 		const after = await readReportStats(browser);
-		if (after.done - before.done > (edit ? 1 : 0)) bounced += 1;
+		if (after.done - before.done > (edit ? 1 : 0)) {
+			bounced += 1;
+		}
 	}
 
 	expect(created).toBeGreaterThan(0);

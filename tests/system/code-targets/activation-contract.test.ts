@@ -46,8 +46,11 @@ afterAll(() => {
 	try {
 		rmSync(ownerVault, { recursive: true, force: true });
 	} finally {
-		if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-		else process.env["ARCHBOARD_VAULT"] = callerVault;
+		if (callerVault === undefined) {
+			delete process.env["ARCHBOARD_VAULT"];
+		} else {
+			process.env["ARCHBOARD_VAULT"] = callerVault;
+		}
 	}
 });
 
@@ -81,10 +84,12 @@ describe("public code-target activation contract", () => {
 		await using resources = new AsyncDisposableStack();
 		const fixture = await createOpenerFixture();
 		resources.defer(() => fixture.dispose());
-		if (relative === "src/inside-file.ts")
+		if (relative === "src/inside-file.ts") {
 			symlinkSync("index.ts", join(fixture.checkout, relative));
-		if (relative === "src/inside-directory")
+		}
+		if (relative === "src/inside-directory") {
 			symlinkSync("directory", join(fixture.checkout, relative));
+		}
 		fixture.writeBinding({ repo: fixture.repository, path: relative });
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
@@ -121,10 +126,12 @@ describe("public code-target activation contract", () => {
 		const outside = join(fixture.root, "outside");
 		mkdirSync(outside, { recursive: true });
 		writeFileSync(join(outside, "secret.ts"), "secret\n");
-		if (relative === "src/outside-file.ts")
+		if (relative === "src/outside-file.ts") {
 			symlinkSync(join(outside, "secret.ts"), join(fixture.checkout, relative));
-		if (relative === "src/outside-directory")
+		}
+		if (relative === "src/outside-directory") {
 			symlinkSync(outside, join(fixture.checkout, relative));
+		}
 		fixture.writeBinding({ repo: fixture.repository, path: relative });
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
@@ -427,7 +434,9 @@ describe("public code-target activation contract", () => {
 				},
 			],
 		});
-		if (reply.success) throw new Error("Expected spawn failure.");
+		if (reply.success) {
+			throw new Error("Expected spawn failure.");
+		}
 		expect(reply.error).toContain(brokenExecutable);
 		expect(readdirSync(invocation.captureDirectory)).toEqual([]);
 		expect(readFileSync(note)).toEqual(noteBytes);

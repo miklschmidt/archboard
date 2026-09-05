@@ -190,10 +190,15 @@ export function operationEvent(
 		queuedSubmissionIds: queueOperation === null ? [] : [queued],
 		detail: "callback detail",
 	};
-	if (type === "accepted") return Object.freeze({ ...base, type, outcome: "pending" });
-	if (type === "failed") return Object.freeze({ ...base, type, outcome: "not_delivered" });
-	if (type === "outcome_unknown")
+	if (type === "accepted") {
+		return Object.freeze({ ...base, type, outcome: "pending" });
+	}
+	if (type === "failed") {
+		return Object.freeze({ ...base, type, outcome: "not_delivered" });
+	}
+	if (type === "outcome_unknown") {
 		return Object.freeze({ ...base, type, outcome: "outcome_unknown" });
+	}
 	return Object.freeze({ ...base, type, outcome: "delivered" });
 }
 
@@ -245,7 +250,7 @@ export function semanticSources(ids: Identities, active: boolean): SemanticSourc
 	});
 	const focus = publisher.publishPaneFocus(input);
 	const selection = publisher.publishPaneSelection({ ...input, selection: ["element-c"] });
-	for (const listener of listeners)
+	for (const listener of listeners) {
 		listener({
 			cursor: 7,
 			board: "architecture",
@@ -254,7 +259,10 @@ export function semanticSources(ids: Identities, active: boolean): SemanticSourc
 			significance: "structural",
 			text: "A structural change.",
 		});
-	if (change === null) throw new Error("semantic fixture failed");
+	}
+	if (change === null) {
+		throw new Error("semantic fixture failed");
+	}
 	return { publisher, change, focus, selection, dispose: () => publisher.dispose() };
 }
 
@@ -289,7 +297,9 @@ export function harness(active = true): Harness {
 	const ids = identities();
 	const capturedLink = link(ids);
 	const classifiedLink = capturedLink.binding.link;
-	if (classifiedLink.state !== "executable") throw new Error("workhorse link fixture failed");
+	if (classifiedLink.state !== "executable") {
+		throw new Error("workhorse link fixture failed");
+	}
 	const activeGeneration = active ? generation(ids) : null;
 	const state: HarnessState = {
 		child: { childId: ids.child, epoch: ids.epoch },
@@ -339,9 +349,12 @@ export function harness(active = true): Harness {
 		threadInjectItems: async (params: SessionParams<"thread/inject_items">) => {
 			injections.push(params);
 			mutationHook?.();
-			if (mode === "rejected")
+			if (mode === "rejected") {
 				throw new CodexSessionMutationError("thread/inject_items", "not_delivered", "rejected");
-			if (mode === "lost") throw new Error("lost");
+			}
+			if (mode === "lost") {
+				throw new Error("lost");
+			}
 			return {};
 		},
 	};
@@ -351,13 +364,16 @@ export function harness(active = true): Harness {
 			realtimeAppendText: async (params) => {
 				realtimeRequests.push({ generation: activeGeneration ?? generation(ids), params });
 				mutationHook?.();
-				if (mode === "rejected")
+				if (mode === "rejected") {
 					throw new CodexSessionMutationError(
 						"thread/realtime/appendText",
 						"not_delivered",
 						"rejected",
 					);
-				if (mode === "lost") throw new Error("lost");
+				}
+				if (mode === "lost") {
+					throw new Error("lost");
+				}
 				return {};
 			},
 		},
@@ -389,7 +405,9 @@ export function harness(active = true): Harness {
 		semantic,
 		operations: {
 			emit: (event) => {
-				for (const listener of listeners) listener(event);
+				for (const listener of listeners) {
+					listener(event);
+				}
 			},
 			listenerCount: () => listeners.size,
 		},

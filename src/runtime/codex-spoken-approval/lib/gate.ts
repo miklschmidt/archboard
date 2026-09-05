@@ -35,14 +35,18 @@ import {
 } from "./classifier-turn.js";
 
 function clearTimer(slot: ActiveSlot): void {
-	if (slot.timer === null) return;
+	if (slot.timer === null) {
+		return;
+	}
 	clearTimeout(slot.timer);
 	slot.timer = null;
 }
 
 function rejectTurnReady(slot: ActiveSlot, error: unknown): void {
 	const ready = slot.turnReady;
-	if (ready === null || ready.settled) return;
+	if (ready === null || ready.settled) {
+		return;
+	}
 	ready.settled = true;
 	ready.reject(error);
 }
@@ -122,7 +126,9 @@ export function createCodexSpokenApprovalGate(
 	};
 
 	const enterFallback = (slot: ActiveSlot, reason: SpokenApprovalFallbackReason): void => {
-		if (slot.phase === "settled" || slot.phase === "visual_fallback") return;
+		if (slot.phase === "settled" || slot.phase === "visual_fallback") {
+			return;
+		}
 		slot.phase = "visual_fallback";
 		slot.reason = reason;
 		clearTimer(slot);
@@ -156,8 +162,9 @@ export function createCodexSpokenApprovalGate(
 				snapshot.childId === null ||
 				snapshot.epoch === null ||
 				snapshot.threadId === null
-			)
+			) {
 				return null;
+			}
 			return {
 				child: snapshot.childId,
 				epoch: snapshot.epoch,
@@ -197,20 +204,24 @@ export function createCodexSpokenApprovalGate(
 	};
 
 	const arm = (input: SpokenApprovalArmInput): SpokenApprovalSnapshot => {
-		if (disposed)
+		if (disposed) {
 			throw new CodexSpokenApprovalError(
 				"disposed",
 				"The spoken approval gate has been disposed and cannot be armed.",
 			);
-		if (active !== null && active.phase !== "settled" && active.phase !== "visual_fallback")
+		}
+		if (active !== null && active.phase !== "settled" && active.phase !== "visual_fallback") {
 			throw new CodexSpokenApprovalError(
 				"busy",
 				"Only one spoken approval may be pending at a time; use the visual approval surface for the second request.",
 			);
+		}
 		active = null;
 		currentSnapshot = EMPTY_SPOKEN_APPROVAL_SNAPSHOT;
 		const result = validateArm(validationHost, input);
-		if (!result.ok) return fallbackWithoutSlot(result.reason, input.requestId);
+		if (!result.ok) {
+			return fallbackWithoutSlot(result.reason, input.requestId);
+		}
 		const slot: ActiveSlot = {
 			requestId: input.requestId,
 			approvalId: result.approval.approvalId,
@@ -244,36 +255,52 @@ export function createCodexSpokenApprovalGate(
 		};
 		active = slot;
 		const snapshot = publish(slot);
-		if (!isLive(slot)) return currentSnapshot;
+		if (!isLive(slot)) {
+			return currentSnapshot;
+		}
 		const delay = Math.max(0, result.expiresAtMs - (currentTime() ?? result.expiresAtMs));
 		slot.timer = setTimeout(() => {
-			if (isLive(slot)) enterFallback(slot, "timeout");
+			if (isLive(slot)) {
+				enterFallback(slot, "timeout");
+			}
 		}, delay);
-		if (typeof slot.timer.unref === "function") slot.timer.unref();
+		if (typeof slot.timer.unref === "function") {
+			slot.timer.unref();
+		}
 		return snapshot;
 	};
 
 	const onSemanticEvent = (event: RealtimeSemanticEvent): void => {
 		const slot = active;
-		if (!isLive(slot)) return;
+		if (!isLive(slot)) {
+			return;
+		}
 		if (event.kind === "transcript") {
 			const record: RealtimeTranscriptRecord = event.record;
 			if (!sameRealtime(record, slot.realtime)) {
 				enterFallback(slot, "stale_realtime_session");
 				return;
 			}
-			if (slot.phase !== "awaiting_user") return;
+			if (slot.phase !== "awaiting_user") {
+				return;
+			}
 			if (!validSequence(record.sequence)) {
 				enterFallback(slot, "stale_state");
 				return;
 			}
-			if (slot.baselineRecordKeys.has(recordKey(record))) return;
-			if (record.sequence <= slot.effectPrompt.sequence) return;
+			if (slot.baselineRecordKeys.has(recordKey(record))) {
+				return;
+			}
+			if (record.sequence <= slot.effectPrompt.sequence) {
+				return;
+			}
 			if (record.role === "assistant") {
 				enterFallback(slot, "assistant_only");
 				return;
 			}
-			if (record.status !== "final") return;
+			if (record.status !== "final") {
+				return;
+			}
 			if (record.text.length === 0) {
 				enterFallback(slot, "missing_user_final");
 				return;
@@ -297,16 +324,23 @@ export function createCodexSpokenApprovalGate(
 			event.state.phase === "recoverable_error" ||
 			event.state.phase === "terminal_error" ||
 			event.state.phase === "idle"
-		)
+		) {
 			enterFallback(slot, "realtime_unavailable");
+		}
 	};
 
 	const onNotification = (event: TransportServerNotification): void => {
 		const slot = active;
-		if (!isLive(slot)) return;
+		if (!isLive(slot)) {
+			return;
+		}
 		const notification = event.notification;
-		if (notification.method !== "turn/started" && notification.method !== "turn/completed") return;
-		if (notification.params.threadId !== slot.coordinatorThreadId) return;
+		if (notification.method !== "turn/started" && notification.method !== "turn/completed") {
+			return;
+		}
+		if (notification.params.threadId !== slot.coordinatorThreadId) {
+			return;
+		}
 		if (event.correlation.child !== slot.child || event.correlation.epoch !== slot.epoch) {
 			enterFallback(slot, "stale_state");
 			return;
@@ -332,7 +366,9 @@ export function createCodexSpokenApprovalGate(
 		}
 		if (notification.method === "turn/started") {
 			if (slot.phase === "awaiting_user" || slot.phase === "awaiting_resolver") {
-				if (slot.classifierTurnId !== turnId) enterFallback(slot, "stale_state");
+				if (slot.classifierTurnId !== turnId) {
+					enterFallback(slot, "stale_state");
+				}
 				return;
 			}
 			if (slot.startedTurnId !== null && slot.startedTurnId !== turnId) {
@@ -356,18 +392,23 @@ export function createCodexSpokenApprovalGate(
 		if (slot.phase === "classifying") {
 			slot.startedTurnId ??= turnId;
 			slot.turnCompleted = true;
-			if (slot.pendingResolverRequest === null) enterFallback(slot, "classifier_lost");
+			if (slot.pendingResolverRequest === null) {
+				enterFallback(slot, "classifier_lost");
+			}
 			return;
 		}
-		if (slot.phase === "awaiting_resolver") enterFallback(slot, "classifier_lost");
+		if (slot.phase === "awaiting_resolver") {
+			enterFallback(slot, "classifier_lost");
+		}
 	};
 
 	const resolve = (request: DynamicServerRequest): Promise<SpokenApprovalToolResult> => {
 		const slot = active;
-		if (!isLive(slot))
+		if (!isLive(slot)) {
 			return Promise.resolve(
 				refusal("not_ready", "There is no pending spoken approval to resolve."),
 			);
+		}
 		return resolveSpokenApproval(classifierHost, slot, request);
 	};
 
@@ -376,8 +417,12 @@ export function createCodexSpokenApprovalGate(
 		readonly epoch: ActiveSlot["epoch"];
 	}): void => {
 		const slot = active;
-		if (!isLive(slot)) return;
-		if (exit.child === slot.child && exit.epoch === slot.epoch) enterFallback(slot, "child_exit");
+		if (!isLive(slot)) {
+			return;
+		}
+		if (exit.child === slot.child && exit.epoch === slot.epoch) {
+			enterFallback(slot, "child_exit");
+		}
 	};
 
 	const unsubscribe = options.realtime.onSemanticEvent(onSemanticEvent);
@@ -389,8 +434,12 @@ export function createCodexSpokenApprovalGate(
 		resolve,
 		onChildExit,
 		dispose: () => {
-			if (disposed) return;
-			if (active !== null && isLive(active)) enterFallback(active, "disposed");
+			if (disposed) {
+				return;
+			}
+			if (active !== null && isLive(active)) {
+				enterFallback(active, "disposed");
+			}
 			disposed = true;
 			unsubscribe();
 		},

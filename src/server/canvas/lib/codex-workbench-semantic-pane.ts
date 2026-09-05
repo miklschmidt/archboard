@@ -11,14 +11,16 @@ export function requireExactSemanticPane<Pane extends SemanticPaneRegistration>(
 	readonly panes: Iterable<Pane>;
 	readonly boardForPane: (pane: Pane) => string;
 }): Pane {
-	if (input.bindingPaneId === null)
+	if (input.bindingPaneId === null) {
 		throw new Error("The Codex semantic publisher has no current thread-context binding.");
+	}
 	for (const pane of input.panes) {
 		if (
 			pane.paneId === input.bindingPaneId &&
 			(input.contextBoard === undefined || input.boardForPane(pane) === input.contextBoard)
-		)
+		) {
 			return pane;
+		}
 	}
 	throw new Error(
 		input.contextBoard === undefined

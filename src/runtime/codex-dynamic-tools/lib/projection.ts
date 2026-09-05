@@ -82,10 +82,12 @@ function assertCursorPage(
 	readonly data: readonly unknown[];
 	readonly nextCursor: string | null;
 } {
-	if (!isRecord(value) || !Array.isArray(value["data"]))
+	if (!isRecord(value) || !Array.isArray(value["data"])) {
 		throw projectionError(`${label} returned an invalid page.`);
-	if (value["nextCursor"] !== null && typeof value["nextCursor"] !== "string")
+	}
+	if (value["nextCursor"] !== null && typeof value["nextCursor"] !== "string") {
 		throw projectionError(`${label} returned an invalid nextCursor.`);
+	}
 }
 
 function threadListParams(cursor: string | null, limit: number): SessionParams<"thread/list"> {
@@ -119,13 +121,17 @@ async function exhaustThreadList(
 		}
 		assertCursorPage(page, "thread/list");
 		for (const row of page.data) {
-			if (!isRecord(row) || typeof row.id !== "string" || row.id.length === 0)
+			if (!isRecord(row) || typeof row.id !== "string" || row.id.length === 0) {
 				throw projectionError("thread/list returned a row without a ThreadId.");
+			}
 			rows.push(row as SessionThread);
 		}
-		if (page.nextCursor === null) return rows;
-		if (page.nextCursor === cursor || seen.has(page.nextCursor))
+		if (page.nextCursor === null) {
+			return rows;
+		}
+		if (page.nextCursor === cursor || seen.has(page.nextCursor)) {
 			throw projectionError("thread/list repeated a cursor before exhaustion.");
+		}
 		seen.add(page.nextCursor);
 		cursor = page.nextCursor;
 	}
@@ -146,13 +152,17 @@ async function exhaustLoadedList(
 		}
 		assertCursorPage(page, "thread/loaded/list");
 		for (const id of page.data) {
-			if (typeof id !== "string" || id.length === 0)
+			if (typeof id !== "string" || id.length === 0) {
 				throw projectionError("thread/loaded/list returned an invalid ThreadId.");
+			}
 			ids.push(id as ThreadId);
 		}
-		if (page.nextCursor === null) return ids;
-		if (page.nextCursor === cursor || seen.has(page.nextCursor))
+		if (page.nextCursor === null) {
+			return ids;
+		}
+		if (page.nextCursor === cursor || seen.has(page.nextCursor)) {
 			throw projectionError("thread/loaded/list repeated a cursor before exhaustion.");
+		}
 		seen.add(page.nextCursor);
 		cursor = page.nextCursor;
 	}
@@ -160,7 +170,9 @@ async function exhaustLoadedList(
 
 function countIds(ids: readonly ThreadId[]): ReadonlyMap<string, number> {
 	const counts = new Map<string, number>();
-	for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
+	for (const id of ids) {
+		counts.set(id, (counts.get(id) ?? 0) + 1);
+	}
 	return counts;
 }
 
@@ -168,8 +180,9 @@ function sourceOf(thread: SessionThread): ListedThreadProjection["source"] {
 	if (
 		typeof thread.source === "string" &&
 		(THREAD_SOURCE_KINDS as readonly string[]).includes(thread.source)
-	)
+	) {
 		return thread.source as ListedThreadProjection["source"];
+	}
 	throw projectionError("thread/list returned a source outside the reviewed sourceKinds filter.");
 }
 
@@ -177,12 +190,16 @@ function truncateUtf8(
 	value: string,
 	maximum: number,
 ): { readonly value: string; readonly truncated: boolean } {
-	if (Buffer.byteLength(value, "utf8") <= maximum) return { value, truncated: false };
+	if (Buffer.byteLength(value, "utf8") <= maximum) {
+		return { value, truncated: false };
+	}
 	const ellipsis = "…";
 	const budget = maximum - Buffer.byteLength(ellipsis, "utf8");
 	let result = "";
 	for (const character of value) {
-		if (Buffer.byteLength(result + character, "utf8") > budget) break;
+		if (Buffer.byteLength(result + character, "utf8") > budget) {
+			break;
+		}
 		result += character;
 	}
 	return { value: `${result}${ellipsis}`, truncated: true };
@@ -190,7 +207,9 @@ function truncateUtf8(
 
 function threadTitle(thread: SessionThread): string | null {
 	const value = thread.name ?? (thread.preview.length === 0 ? null : thread.preview);
-	if (value === null || value.length === 0) return null;
+	if (value === null || value.length === 0) {
+		return null;
+	}
 	return truncateUtf8(value, 512).value;
 }
 
@@ -221,15 +240,17 @@ export async function projectList(
 	const persisted = countIds(page.data.map((thread) => thread.id));
 	const rows: ListedThreadProjection[] = [];
 	for (const thread of page.data) {
-		if (!isRecord(thread) || typeof thread.id !== "string" || thread.id.length === 0)
+		if (!isRecord(thread) || typeof thread.id !== "string" || thread.id.length === 0) {
 			throw projectionError("thread/list returned a row without a ThreadId.");
+		}
 		const occurrences = loaded.get(thread.id) ?? 0;
 		const target = await options.classifyTarget(
 			thread.id,
 			observationFor(thread, persisted.get(thread.id) ?? 0, occurrences),
 		);
-		if (target.threadId !== thread.id)
+		if (target.threadId !== thread.id) {
 			throw projectionError("target authority changed the listed ThreadId.");
+		}
 		rows.push({
 			threadId: target.wireThreadId,
 			title: threadTitle(thread),
@@ -253,21 +274,29 @@ function normalizeWhitespace(value: string): string {
 }
 
 function userContentText(item: SessionThreadItem): string | null {
-	if (item.type !== "userMessage") return null;
+	if (item.type !== "userMessage") {
+		return null;
+	}
 	let sawText = false;
 	let sawMedia = false;
 	for (const content of item.content) {
 		if (content.type === "text") {
 			sawText = true;
 			const text = normalizeWhitespace(content.text);
-			if (text.length > 0) return text;
-		} else sawMedia = true;
+			if (text.length > 0) {
+				return text;
+			}
+		} else {
+			sawMedia = true;
+		}
 	}
 	return sawMedia ? "[media]" : sawText ? null : item.content.length > 0 ? "[media]" : null;
 }
 
 function assistantText(item: SessionThreadItem): string | null {
-	if (item.type !== "agentMessage") return null;
+	if (item.type !== "agentMessage") {
+		return null;
+	}
 	const text = normalizeWhitespace(item.text);
 	return text.length === 0 ? null : text;
 }
@@ -285,21 +314,31 @@ interface OutputProjection {
 }
 
 function textBodiesFromFunctionOutput(value: unknown): readonly string[] {
-	if (typeof value === "string") return [value];
-	if (!Array.isArray(value)) return [];
+	if (typeof value === "string") {
+		return [value];
+	}
+	if (!Array.isArray(value)) {
+		return [];
+	}
 	const bodies: string[] = [];
 	for (const item of value) {
-		if (!isRecord(item) || item["type"] !== "input_text" || typeof item["text"] !== "string") continue;
+		if (!isRecord(item) || item["type"] !== "input_text" || typeof item["text"] !== "string") {
+			continue;
+		}
 		bodies.push(item["text"]);
 	}
 	return bodies;
 }
 
 function textBodiesFromMcpResult(value: unknown): readonly string[] {
-	if (!isRecord(value) || !Array.isArray(value["content"])) return [];
+	if (!isRecord(value) || !Array.isArray(value["content"])) {
+		return [];
+	}
 	const bodies: string[] = [];
 	for (const item of value["content"]) {
-		if (!isRecord(item) || item["type"] !== "text" || typeof item["text"] !== "string") continue;
+		if (!isRecord(item) || item["type"] !== "text" || typeof item["text"] !== "string") {
+			continue;
+		}
 		bodies.push(item["text"]);
 	}
 	return bodies;
@@ -334,13 +373,17 @@ function outputProjection(items: readonly SessionThreadItem[]): OutputProjection
 	for (const item of items) {
 		for (const entry of outputEntries(item)) {
 			const body = normalizeWhitespace(entry.body);
-			if (body.length === 0) continue;
+			if (body.length === 0) {
+				continue;
+			}
 			const renderedEntry = truncateUtf8(`${entry.kind}: ${body}`, OUTPUT_ENTRY_MAX_UTF8_BYTES);
 			truncated ||= renderedEntry.truncated;
 			rendered.push(renderedEntry.value);
 		}
 	}
-	if (rendered.length === 0) return { value: null, truncated };
+	if (rendered.length === 0) {
+		return { value: null, truncated };
+	}
 	const aggregate = truncateUtf8(rendered.join(" | "), OUTPUT_AGGREGATE_MAX_UTF8_BYTES);
 	return { value: aggregate.value, truncated: truncated || aggregate.truncated };
 }
@@ -349,9 +392,13 @@ function rawTurnSummary(turn: SessionTurn): string {
 	let user: string | null = null;
 	let assistant: string | null = null;
 	for (const item of turn.items) {
-		if (user === null) user = userContentText(item);
+		if (user === null) {
+			user = userContentText(item);
+		}
 		const nextAssistant = assistantText(item);
-		if (nextAssistant !== null) assistant = nextAssistant;
+		if (nextAssistant !== null) {
+			assistant = nextAssistant;
+		}
 	}
 	return `${turn.status} · user: ${user ?? "none"} · assistant: ${assistant ?? "none"}`;
 }
@@ -363,8 +410,9 @@ function turnSummary(
 	const base = rawTurnSummary(turn);
 	const outputValue = outputs?.value;
 	const outputWasTruncated = outputs?.truncated === true;
-	if (outputValue === undefined || outputValue === null)
+	if (outputValue === undefined || outputValue === null) {
 		return truncateUtf8(base, SUMMARY_MAX_UTF8_BYTES);
+	}
 	const visibleOutput = truncateUtf8(outputValue, OUTPUT_SUMMARY_MAX_UTF8_BYTES);
 	const baseBudget =
 		SUMMARY_MAX_UTF8_BYTES -
@@ -384,8 +432,9 @@ function itemForRequestedTurn(value: unknown, requestedTurnId: string): SessionT
 		value["turnId"] !== requestedTurnId ||
 		!isRecord(value["item"]) ||
 		typeof value["item"]["type"] !== "string"
-	)
+	) {
 		throw projectionError("thread/items/list returned an item for a different or invalid turn.");
+	}
 	return value["item"] as SessionThreadItem;
 }
 
@@ -420,25 +469,32 @@ export async function projectRead(
 				loadedOccurrences.get(thread.id) ?? 0,
 			),
 		);
-		if (candidate.wireThreadId !== requestedThreadId && candidate.threadId !== input.targetThreadId)
+		if (
+			candidate.wireThreadId !== requestedThreadId &&
+			candidate.threadId !== input.targetThreadId
+		) {
 			continue;
+		}
 		if (target !== null) {
 			if (
 				candidate.authority !== target.authority ||
 				candidate.threadId !== target.threadId ||
 				candidate.wireThreadId !== target.wireThreadId
-			)
+			) {
 				throw projectionError(
 					"thread/list returned ambiguous authority for the requested ThreadId.",
 				);
+			}
 			continue;
 		}
 		target = candidate;
 	}
-	if (target === null)
+	if (target === null) {
 		target = await options.classifyTarget(input.targetThreadId, observationFor(null, 0, 0));
-	if (target.wireThreadId !== requestedThreadId && target.threadId !== input.targetThreadId)
+	}
+	if (target.wireThreadId !== requestedThreadId && target.threadId !== input.targetThreadId) {
 		throw projectionError("The target authority changed the requested ThreadId.");
+	}
 	let page: SessionThreadTurnPageResult;
 	try {
 		page = await options.session.threadTurnsListPage({

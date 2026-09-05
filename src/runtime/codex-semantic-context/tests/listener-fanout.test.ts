@@ -49,7 +49,9 @@ function publisherWithFeed() {
 	return {
 		publisher,
 		emit: (event: SettledChangeSourceEvent) => {
-			for (const listener of listeners) listener(event);
+			for (const listener of listeners) {
+				listener(event);
+			}
 		},
 	};
 }
@@ -212,7 +214,9 @@ describe("semantic context listener fanout", () => {
 		expect(laterDeliveries).toBe(1);
 		const batch = h.publisher.drainListenerFailures();
 		const entry = batch.entries[0];
-		if (entry === undefined) throw new Error("expected a listener diagnostic");
+		if (entry === undefined) {
+			throw new Error("expected a listener diagnostic");
+		}
 		expect(utf8(JSON.stringify(entry.errorName))).toBeLessThanOrEqual(
 			SEMANTIC_LISTENER_DIAGNOSTIC_POLICY.errorNameBytes,
 		);
@@ -284,7 +288,9 @@ describe("semantic context listener fanout", () => {
 		let next = 0;
 		let laterDeliveries = 0;
 		h.publisher.subscribeSettledChange(() => {
-			if (next < thrownValues.length) throw thrownValues[next++];
+			if (next < thrownValues.length) {
+				throw thrownValues[next++];
+			}
 		});
 		h.publisher.subscribeSettledChange(() => {
 			laterDeliveries++;

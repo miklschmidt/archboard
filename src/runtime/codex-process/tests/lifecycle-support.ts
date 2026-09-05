@@ -32,7 +32,9 @@ export function manualScheduler(): ManualScheduler {
 		const next = [...timers.entries()].toSorted(
 			([, left], [, right]) => left.at - right.at || left.order - right.order,
 		)[0];
-		if (!next) return false;
+		if (!next) {
+			return false;
+		}
 		timers.delete(next[0]);
 		time = next[1].at;
 		next[1].callback();
@@ -69,14 +71,20 @@ export function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
 			groupStatus = nextGroupStatus;
 			nextGroupStatus = "owned";
 			child = fakeChild(++nextPid, () => {
-				if (closeOnKill) child?.emit("close", null, "SIGKILL");
+				if (closeOnKill) {
+					child?.emit("close", null, "SIGKILL");
+				}
 			});
-			if (autoSpawn) queueMicrotask(() => child?.emit("spawn"));
+			if (autoSpawn) {
+				queueMicrotask(() => child?.emit("spawn"));
+			}
 			return child!;
 		},
 		processGroup: {
 			capture: (leaderPid: number) => {
-				if (captureFails) throw new Error("injected process-group capture failure");
+				if (captureFails) {
+					throw new Error("injected process-group capture failure");
+				}
 				return {
 					leaderPid,
 					pgid: leaderPid,
@@ -142,9 +150,13 @@ export async function driveManual<T>(
 		await Promise.resolve();
 		await Promise.resolve();
 		await Promise.resolve();
-		if (settled) break;
+		if (settled) {
+			break;
+		}
 		clock.runNext();
-		if (options.yieldToProcessEvents) await new Promise<void>((resolve) => setImmediate(resolve));
+		if (options.yieldToProcessEvents) {
+			await new Promise<void>((resolve) => setImmediate(resolve));
+		}
 	}
 	return promise;
 }

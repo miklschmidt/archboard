@@ -13,7 +13,9 @@ export interface ResolverFixture {
 
 function git(cwd: string, ...args: string[]): void {
 	const result = Bun.spawnSync(["git", ...args], { cwd, stdout: "ignore", stderr: "pipe" });
-	if (result.exitCode !== 0) throw new Error(result.stderr.toString());
+	if (result.exitCode !== 0) {
+		throw new Error(result.stderr.toString());
+	}
 }
 
 export function createResolverFixture(): ResolverFixture {

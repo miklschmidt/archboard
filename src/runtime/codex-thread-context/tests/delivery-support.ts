@@ -311,7 +311,9 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 	const epochPort: CodexThreadContextDeliveryOptions["epoch"] = {
 		assertCurrent: (request) => {
 			epochRequests.push(request);
-			if (epochError !== null) throw epochError;
+			if (epochError !== null) {
+				throw epochError;
+			}
 			return proofFor(authority, threadId, request.operationId);
 		},
 	};
