@@ -63,6 +63,7 @@
 		"unicorn/prefer-export-from": "Explicit imported public bindings are needed for local use; module entrypoint rule owns re-export boundaries.",
 		"unicorn/no-array-reduce": "Typed reductions are supported data projections; forbidding the API is not a product contract.",
 		"unicorn/no-process-exit": "CLI and child-process fixtures need explicit exit status semantics.",
+		"unicorn/number-literal-case": "Oxlint 1.80.0 requires uppercase hexadecimal digits while mandatory Oxfmt 0.65.0 deterministically restores lowercase (for example 0x428A2F98 to 0x428a2f98), and the rule exposes no configuration. Reconsider on either tool upgrade; Oxfmt owns literal case while numeric-separators-style remains enforced.",
 		"promise/avoid-new": "Event-driven platform APIs require explicit Promise adapters.",
 		"promise/prefer-await-to-callbacks": "Node event/listener callbacks are lifecycle API contracts.",
 		"promise/prefer-await-to-then": "Promise chains are required in event adapters where no async caller owns the result; typed safety remains enabled.",

@@ -118,6 +118,7 @@
 		"unicorn/prefer-export-from": "off",
 		"unicorn/no-array-reduce": "off",
 		"unicorn/no-process-exit": "off",
+		"unicorn/number-literal-case": "off",
 		"promise/avoid-new": "off",
 		"promise/prefer-await-to-callbacks": "off",
 		"promise/prefer-await-to-then": "off",
