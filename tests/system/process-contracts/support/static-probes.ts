@@ -1,19 +1,20 @@
 import { existsSync, mkdirSync, rmSync, rmdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import path from "node:path";
 
 export interface StaticProbeHooks {
-	beforeCreate?(path: string, index: number): void;
+	readonly beforeCreate?: (path: string, index: number) => void;
 }
 
 export function plantStaticProbes(
 	repoRoot: string,
-	hooks: StaticProbeHooks = {},
+	hooks: Readonly<StaticProbeHooks> = {},
 ): {
 	frontend: string;
 	stale: string;
 	hidden: string;
-	restore(): void;
+	readonly restore: () => void;
 } {
+	const { join } = path;
 	const names = {
 		frontend: "task-130-09-frontend-probe.js",
 		stale: "task-130-09-stale-probe.js",
@@ -25,34 +26,42 @@ export function plantStaticProbes(
 		join(repoRoot, "dist/frontend", names.hidden),
 	];
 	const directories = [join(repoRoot, "dist"), join(repoRoot, "dist/frontend")];
-	for (const path of paths)
-		if (existsSync(path)) throw new Error(`Static probe target already exists: ${path}.`);
+	for (const probePath of paths) {
+		if (existsSync(probePath)) {
+			throw new Error(`Static probe target already exists: ${probePath}.`);
+		}
+	}
 	const created: string[] = [];
 	const createdDirectories: string[] = [];
-	const clean = () => {
-		for (const path of created.toReversed()) rmSync(path, { force: true });
+	const clean = (): void => {
+		for (const probePath of created.toReversed()) {
+			rmSync(probePath, { force: true });
+		}
 		for (const directory of createdDirectories.toReversed()) {
 			try {
 				rmdirSync(directory);
 			} catch (error) {
-				if (
-					(error as NodeJS.ErrnoException).code !== "ENOENT" &&
-					(error as NodeJS.ErrnoException).code !== "ENOTEMPTY"
-				)
+				const code =
+					typeof error === "object" && error !== null && "code" in error
+						? error.code
+						: undefined;
+				if (code !== "ENOENT" && code !== "ENOTEMPTY") {
 					throw error;
+				}
 			}
 		}
 	};
 	try {
-		for (const directory of directories)
+		for (const directory of directories) {
 			if (!existsSync(directory)) {
 				mkdirSync(directory);
 				createdDirectories.push(directory);
 			}
-		for (const [index, path] of paths.entries()) {
-			hooks.beforeCreate?.(path, index);
-			writeFileSync(path, "// TASK-130.09 static probe\n", { flag: "wx" });
-			created.push(path);
+		}
+		for (const [index, probePath] of paths.entries()) {
+			hooks.beforeCreate?.(probePath, index);
+			writeFileSync(probePath, "// TASK-130.09 static probe\n", { flag: "wx" });
+			created.push(probePath);
 		}
 	} catch (error) {
 		clean();
