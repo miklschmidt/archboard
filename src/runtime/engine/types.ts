@@ -1,33 +1,33 @@
-import {
-	type ArrowElement,
-	type BoardElementType,
-	type BoundElement,
-	type DiamondElement,
-	type ElementBinding,
-	type EllipseElement,
-	type FreeDrawElement,
-	type LineElement,
-	type PersistedBoardElement,
-	type RectangleElement,
-	type RuntimeBoardElement,
-	type TextElement,
+import type {
+	ArrowElement,
+	BoardElementType,
+	BoundElement,
+	DiamondElement,
+	ElementBinding,
+	EllipseElement,
+	FreeDrawElement,
+	LineElement,
+	PersistedBoardElement,
+	RectangleElement,
+	RuntimeBoardElement,
+	TextElement,
 } from "../../shared/board-elements/index.js";
 
-export type ExcalidrawElement = PersistedBoardElement;
-export type ExcalidrawTextElement = TextElement;
-export type ExcalidrawRectangleElement = RectangleElement;
-export type ExcalidrawEllipseElement = EllipseElement;
-export type ExcalidrawDiamondElement = DiamondElement;
-export type ExcalidrawArrowElement = ArrowElement;
-export type ExcalidrawLineElement = LineElement;
-export type ExcalidrawFreedrawElement = FreeDrawElement;
-export type ExcalidrawBoundElement = BoundElement;
-export type ExcalidrawBinding = ElementBinding;
-export type ExcalidrawElementType = BoardElementType;
-export type ServerElement = RuntimeBoardElement;
+type ExcalidrawElement = PersistedBoardElement;
+type ExcalidrawTextElement = TextElement;
+type ExcalidrawRectangleElement = RectangleElement;
+type ExcalidrawEllipseElement = EllipseElement;
+type ExcalidrawDiamondElement = DiamondElement;
+type ExcalidrawArrowElement = ArrowElement;
+type ExcalidrawLineElement = LineElement;
+type ExcalidrawFreedrawElement = FreeDrawElement;
+type ExcalidrawBoundElement = BoundElement;
+type ExcalidrawBinding = ElementBinding;
+type ExcalidrawElementType = BoardElementType;
+type ServerElement = RuntimeBoardElement;
 
 // Excalidraw element types
-export const EXCALIDRAW_ELEMENT_TYPES: Record<string, ExcalidrawElementType> = {
+const EXCALIDRAW_ELEMENT_TYPES: Record<string, ExcalidrawElementType> = {
 	RECTANGLE: "rectangle",
 	ELLIPSE: "ellipse",
 	DIAMOND: "diamond",
@@ -39,23 +39,23 @@ export const EXCALIDRAW_ELEMENT_TYPES: Record<string, ExcalidrawElementType> = {
 } as const;
 
 // API Response types
-export interface ApiResponse<T = unknown> {
+interface ApiResponse<T = unknown> {
 	success: boolean;
 	data?: T;
 	error?: string;
 	message?: string;
 }
 
-export interface ElementsResponse extends ApiResponse {
+interface ElementsResponse extends ApiResponse {
 	elements: ServerElement[];
 	count: number;
 }
 
-export interface ElementResponse extends ApiResponse {
+interface ElementResponse extends ApiResponse {
 	element: ServerElement;
 }
 
-export interface SyncResponse extends ApiResponse {
+interface SyncResponse extends ApiResponse {
 	count: number;
 	syncedAt: string;
 	beforeCount: number;
@@ -68,13 +68,13 @@ export interface SyncResponse extends ApiResponse {
 // time, so a client that is showing board A must be able to tell that an
 // element_created for board B is not its business — otherwise a board switch
 // races with in-flight broadcasts and the wrong elements land on screen.
-export interface WebSocketMessage {
+interface WebSocketMessage {
 	type: WebSocketMessageType;
 	board?: string;
 	[key: string]: unknown;
 }
 
-export type WebSocketMessageType =
+type WebSocketMessageType =
 	| "initial_elements"
 	| "element_created"
 	| "element_updated"
@@ -123,7 +123,7 @@ export type WebSocketMessageType =
 	| "pane_open"
 	| "pane_close";
 
-export interface InitialElementsMessage extends WebSocketMessage {
+interface InitialElementsMessage extends WebSocketMessage {
 	type: "initial_elements";
 	elements: ServerElement[];
 	board: string;
@@ -132,7 +132,7 @@ export interface InitialElementsMessage extends WebSocketMessage {
 // The canvas is now showing a different board. Carries the whole scene rather
 // than a delta: nothing about board A's elements helps render board B, so the
 // client replaces what it has instead of merging.
-export interface BoardSwitchedMessage extends WebSocketMessage {
+interface BoardSwitchedMessage extends WebSocketMessage {
 	type: "board_switched";
 	board: string;
 	identity: { board: string; variant: string; level?: string };
@@ -140,22 +140,22 @@ export interface BoardSwitchedMessage extends WebSocketMessage {
 	timestamp: string;
 }
 
-export interface ElementCreatedMessage extends WebSocketMessage {
+interface ElementCreatedMessage extends WebSocketMessage {
 	type: "element_created";
 	element: ServerElement;
 }
 
-export interface ElementUpdatedMessage extends WebSocketMessage {
+interface ElementUpdatedMessage extends WebSocketMessage {
 	type: "element_updated";
 	element: ServerElement;
 }
 
-export interface ElementDeletedMessage extends WebSocketMessage {
+interface ElementDeletedMessage extends WebSocketMessage {
 	type: "element_deleted";
 	elementId: string;
 }
 
-export interface BatchCreatedMessage extends WebSocketMessage {
+interface BatchCreatedMessage extends WebSocketMessage {
 	type: "elements_batch_created";
 	elements: ServerElement[];
 }
@@ -166,7 +166,7 @@ export interface BatchCreatedMessage extends WebSocketMessage {
 //
 // `origin` is the client that reported the change. That client already has the
 // result on screen and skips its own echo; every other client applies it.
-export interface ElementsChangedMessage extends WebSocketMessage {
+interface ElementsChangedMessage extends WebSocketMessage {
 	type: "elements_changed";
 	created: ServerElement[];
 	updated: ServerElement[];
@@ -177,7 +177,7 @@ export interface ElementsChangedMessage extends WebSocketMessage {
 
 // Pushed whenever the reported selection changes, so a later change-event feed
 // or a second pane can follow it without polling.
-export interface SelectionChangedMessage extends WebSocketMessage {
+interface SelectionChangedMessage extends WebSocketMessage {
 	type: "selection_changed";
 	elementIds: string[];
 	clientId: string | null;
@@ -185,13 +185,13 @@ export interface SelectionChangedMessage extends WebSocketMessage {
 }
 
 // Canvas cleared message
-export interface CanvasClearedMessage extends WebSocketMessage {
+interface CanvasClearedMessage extends WebSocketMessage {
 	type: "canvas_cleared";
 	timestamp: string;
 }
 
 // Image export types
-export interface BrowserCaptureRequestMessage extends WebSocketMessage {
+interface BrowserCaptureRequestMessage extends WebSocketMessage {
 	type: "browser_capture_request";
 	requestId: string;
 	format: "png" | "svg";
@@ -199,7 +199,7 @@ export interface BrowserCaptureRequestMessage extends WebSocketMessage {
 }
 
 // Viewport control types
-export interface SetViewportMessage extends WebSocketMessage {
+interface SetViewportMessage extends WebSocketMessage {
 	type: "set_viewport";
 	requestId: string;
 	scrollToContent?: boolean;
@@ -216,14 +216,14 @@ export interface SetViewportMessage extends WebSocketMessage {
 // Selection is what a human has picked on the board — the thing they mean when
 // they say "map this to the payments service". One canvas, one selection:
 // whichever browser client reported last owns it (see /api/selection).
-export interface CanvasSelection {
+interface CanvasSelection {
 	elementIds: string[];
 	clientId: string;
 	at: string;
 }
 
 // Snapshot types
-export interface Snapshot {
+interface Snapshot {
 	name: string;
 	// Which board the snapshot was taken from — a snapshot of one board says
 	// nothing about another, and restoring across boards would be a data loss.
@@ -255,7 +255,7 @@ export interface Snapshot {
 // costs the ability to go back and costs no work.
 //
 // Snapshots last for one canvas application lifetime.
-export const snapshots = new Map<string, Snapshot>();
+const snapshots = new Map<string, Snapshot>();
 
 // The current selection, or null when nothing is selected. A mutable holder so
 // the server can swap the value while importers keep a single reference.
@@ -265,7 +265,7 @@ export const snapshots = new Map<string, Snapshot>();
 // picked in *each* pane, which is not the same thing once two panes are on
 // screen, because a pane the human clicked away from still shows its selection.
 // `panes` reads the map; `selection` reads `current`; both stay true.
-export const selectionState: {
+const selectionState: {
 	current: CanvasSelection | null;
 	byClient: Map<string, CanvasSelection>;
 } = { current: null, byClient: new Map() };
@@ -278,7 +278,7 @@ export const selectionState: {
 // says nothing about which board it belongs to, so saving board A wrote board
 // B's images into A's note (TASK-060). The map lives on `BoardState` now,
 // because a board's images are the ones its own elements reference.
-export interface ExcalidrawFile {
+interface ExcalidrawFile {
 	id: string;
 	dataURL: string;
 	mimeType: string;
@@ -286,7 +286,7 @@ export interface ExcalidrawFile {
 }
 
 // Validation function for Excalidraw elements
-export function validateElement(element: Partial<ServerElement>): element is ServerElement {
+function validateElement(element: Partial<ServerElement>): element is ServerElement {
 	const requiredFields: (keyof ServerElement)[] = ["type", "x", "y"];
 	const hasRequiredFields = requiredFields.every((field) => field in element);
 
@@ -307,9 +307,13 @@ export function validateElement(element: Partial<ServerElement>): element is Ser
 // Normalize fontFamily from string names to numeric values that Excalidraw expects
 // Excalidraw uses: 1 = Virgil (handwritten), 2 = Helvetica (sans-serif), 3 = Cascadia (monospace)
 // 5 = Excalifont, 6 = Nunito, 7 = Lilita One, 8 = Comic Shanns
-export function normalizeFontFamily(fontFamily: string | number | undefined): number | undefined {
-	if (fontFamily === undefined) return undefined;
-	if (typeof fontFamily === "number") return fontFamily;
+function normalizeFontFamily(fontFamily: string | number | undefined): number | undefined {
+	if (fontFamily === undefined) {
+		return undefined;
+	}
+	if (typeof fontFamily === "number") {
+		return fontFamily;
+	}
 	const map: Record<string, number> = {
 		virgil: 1,
 		hand: 1,
@@ -336,3 +340,43 @@ export function normalizeFontFamily(fontFamily: string | number | undefined): nu
 	};
 	return map[fontFamily.toLowerCase()];
 }
+
+export {
+	type ExcalidrawElement,
+	type ExcalidrawTextElement,
+	type ExcalidrawRectangleElement,
+	type ExcalidrawEllipseElement,
+	type ExcalidrawDiamondElement,
+	type ExcalidrawArrowElement,
+	type ExcalidrawLineElement,
+	type ExcalidrawFreedrawElement,
+	type ExcalidrawBoundElement,
+	type ExcalidrawBinding,
+	type ExcalidrawElementType,
+	type ServerElement,
+	EXCALIDRAW_ELEMENT_TYPES,
+	type ApiResponse,
+	type ElementsResponse,
+	type ElementResponse,
+	type SyncResponse,
+	type WebSocketMessage,
+	type WebSocketMessageType,
+	type InitialElementsMessage,
+	type BoardSwitchedMessage,
+	type ElementCreatedMessage,
+	type ElementUpdatedMessage,
+	type ElementDeletedMessage,
+	type BatchCreatedMessage,
+	type ElementsChangedMessage,
+	type SelectionChangedMessage,
+	type CanvasClearedMessage,
+	type BrowserCaptureRequestMessage,
+	type SetViewportMessage,
+	type CanvasSelection,
+	type Snapshot,
+	snapshots,
+	selectionState,
+	type ExcalidrawFile,
+	validateElement,
+	normalizeFontFamily,
+};

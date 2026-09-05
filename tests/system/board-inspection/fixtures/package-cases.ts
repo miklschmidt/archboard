@@ -1,4 +1,4 @@
-type PackageElement = Readonly<Record<string, unknown>>;
+type PackageElement = Record<string, unknown>;
 
 const connector = (overrides: PackageElement = {}): PackageElement => ({
 	id: "edge",
