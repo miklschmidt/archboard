@@ -48,6 +48,56 @@ function rowFor(transport: FakeTransport, threadId = threadA): ThreadLinkRow {
 }
 
 describe("thread-link action controller", () => {
+	test("does not announce completed sign-in when ChatGPT only accepted the login start", async () => {
+		const transport = new FakeTransport();
+		transport.nextResult = transport.result({
+			snapshot: snapshot({
+				account: { kind: "account", state: "login_pending", loginId: loginA, variant: "chatgpt" },
+				login: {
+					kind: "login",
+					state: "pending",
+					loginId: loginA,
+					variant: "chatgpt",
+					authUrl: "https://example.test/login",
+				},
+			}),
+		});
+		const controller = controllerFor(transport);
+		await controller.login({ type: "chatgpt" });
+		const result = controller.snapshot();
+		expect(result.state).toBe("succeeded");
+		if (result.state !== "succeeded") throw new Error("The login request should be accepted.");
+		expect(result.announcement).toContain("Complete the sign-in");
+		expect(result.announcement).not.toMatch(/completed|signed in/i);
+	});
+
+	test.each([
+		{
+			account: { kind: "account", state: "ready", accountType: "chatgpt" },
+			state: "succeeded",
+			announcement: "Signed in.",
+		},
+		{
+			account: { kind: "account", state: "failed", reason: "Codex rejected the sign-in." },
+			state: "failed",
+			announcement: "Codex rejected the sign-in.",
+		},
+		{
+			account: { kind: "account", state: "unknown", reason: "Account read has not completed." },
+			state: "inspect_only",
+			announcement: "Sign-in has not been confirmed. Check the account status before trying again.",
+		},
+	] as const)("reports authoritative $account.state login settlement", async (expected) => {
+		const transport = new FakeTransport();
+		transport.nextResult = transport.result({ snapshot: snapshot({ account: expected.account }) });
+		const controller = controllerFor(transport);
+		await controller.login({ type: "chatgpt" });
+		expect(controller.snapshot()).toMatchObject({
+			state: expected.state,
+			announcement: expected.announcement,
+		});
+	});
+
 	test("create and attach are separate commands with separate drafts", async () => {
 		const transport = new FakeTransport();
 		const controller = controllerFor(transport);

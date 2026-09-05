@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-04 22:09'
-updated_date: '2026-09-05 00:38'
+updated_date: '2026-09-05 00:58'
 labels: []
 dependencies: []
 references:
@@ -44,6 +44,8 @@ Before the real voice acceptance smoke, the user found decorative sidebar groups
 9. Repair the command authority bootstrap exposed by settings review at the shared transport boundary, preserving one-shot command identity and explicit selection; verify create and subsequent text actions without private browser lease setup.
 
 Simplify the signed-out account flow, make ChatGPT first and default, widen Agent settings, and verify provider selection and reachable account actions through the rendered dialog before rebuilding the smoke worktree.
+
+Repair ChatGPT sign-in continuation: reproduce missing authorization URL through the gateway and misleading request-completed UI, preserve a reachable pending login continuation, and verify cancellation and authoritative account completion before rebuilding the smoke worktree.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -94,6 +96,8 @@ User also reports most dialog text is barely readable. Increase settings typogra
 Inspection against the official base-nova registry confirms local Dialog and Button replace shadcn typography with forced custom 12px body, 14px title and 13px controls, while theme reset removes standard Tailwind tokens. User rejects preserving these styles. Remove the proposed scoped font workaround; use standard shadcn typography for touched settings components and retain the separate full-migration strict-lint prerequisite.
 
 Account follow-up complete: 640px dialog, ChatGPT first/default, state-specific account actions, full-width credential fields and no generic unsupported-method help dump. Removed forced legacy typography from shared Dialog/Button and tiny settings copy; restored standard Tailwind text-sm and text-base tokens rather than a local font override. Removed the legacy chip font override exposed by the broader control check. Rendered 1920x1080 checks verify first/default ChatGPT, provider switching, no idle Cancel/Sign out, 14px account copy, width and overflow. Shell, navigation, opener settings, text workbench, fullscreen and controlled voice browser owners pass. 90 focused tests plus chip test, lint/format/both TypeScript projects and 124 repository checks pass; independent Astra review clear. Full native-component and legacy-style migration remains TASK-150 with strict lint restoration first.
+
+ChatGPT sign-in integration repaired after real smoke screenshot. Production adapter dropped authUrl and lacked completion-notification routing; UI confused command delivery with successful authentication. Added validated HTTPS continuation through pending login, explicit Continue to ChatGPT link, truthful status, and existing notification fan-out handling with login/child/epoch/cancellation/disposal guards and authoritative account re-read. Browser regression failed with a missing continuation then passed signed-out login through controlled completion, agent creation and text actions; final shell/text/voice browser owners pass. Module suite 2539 passed before final focused additions, final 26 backend and 29 UI focused tests pass, 13 production/application/socket system tests pass, lint/format/both TypeScript projects and 124 repository tests pass. Independent review clear. Old pending login must restart after smoke backend reload; real authentication remains the human step.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

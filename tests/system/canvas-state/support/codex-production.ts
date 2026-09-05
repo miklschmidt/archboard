@@ -1,6 +1,6 @@
 import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { WebSocket } from "ws";
 
 export interface WorkbenchResult {
@@ -51,6 +51,10 @@ export function prepareProductionFixture(
 	writeFileSync(
 		executablePath,
 		readFileSync(executableSource, "utf8")
+			.replaceAll(
+				"./fake-codex-production-data.ts",
+				join(dirname(executableSource), "fake-codex-production-data.ts"),
+			)
 			.replace(/^#!.*\n/, `#!${process.execPath}\n`)
 			.replaceAll("__ARCHBOARD_TEST_CODEX_LOG__", logPath)
 			.replaceAll("__ARCHBOARD_TEST_CODEX_CONTROL__", controlPath),
