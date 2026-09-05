@@ -36,8 +36,9 @@ import type {
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
 
-type ProtocolObjectOutput<
+type ProtocolObjectFields<
 	Schema extends z.ZodObject,
+	Retained extends boolean,
 	Shape extends z.ZodRawShape = Schema["shape"],
 	Output extends object = z.output<Schema>,
 > = {
@@ -47,7 +48,7 @@ type ProtocolObjectOutput<
 				? never
 				: Key
 			: never
-	]-?: ProtocolOutput<Shape[Key]>;
+	]-?: ProtocolOutput<Shape[Key], Retained>;
 } & {
 	[
 		Key in keyof Shape as Key extends keyof Output
@@ -55,30 +56,47 @@ type ProtocolObjectOutput<
 				? Key
 				: never
 			: never
-	]?: ProtocolOutput<Shape[Key]>;
+	]?: ProtocolOutput<Shape[Key], Retained>;
 };
-type ProtocolOutput<Schema> =
+type ProtocolObjectOutput<
+	Schema extends z.ZodObject,
+	Retained extends boolean,
+> = Retained extends true
+	? Readonly<ProtocolObjectFields<Schema, Retained>>
+	: ProtocolObjectFields<Schema, Retained>;
+type ProtocolOutput<Schema, Retained extends boolean = false> =
 	Schema extends z.ZodLazy<infer Inner>
-		? ProtocolOutput<Inner>
-		: Schema extends z.ZodObject<infer Shape>
-			? ProtocolObjectOutput<Schema, Shape>
+		? ProtocolOutput<Inner, Retained>
+		: Schema extends z.ZodObject
+			? ProtocolObjectOutput<Schema, Retained>
 			: Schema extends z.ZodArray<infer Element>
-				? ProtocolOutput<Element>[]
-				: Schema extends z.ZodNullable<infer Inner>
-					? ProtocolOutput<Inner> | null
-					: Schema extends z.ZodOptional<infer Inner>
-						? ProtocolOutput<Inner> | undefined
-						: Schema extends z.ZodUnion<infer Options>
-							? ProtocolOutput<Options[number]>
-							: Schema extends z.core.$ZodType
-								? z.output<Schema>
-								: never;
+				? Retained extends true
+					? readonly ProtocolOutput<Element, Retained>[]
+					: ProtocolOutput<Element, Retained>[]
+				: Schema extends z.ZodRecord<infer Key, infer Value>
+					? Retained extends true
+						? {
+								readonly [RecordKey in z.output<Key> & PropertyKey]: ProtocolOutput<
+									Value,
+									Retained
+								>;
+							}
+						: z.output<Schema>
+					: Schema extends z.ZodNullable<infer Inner>
+						? ProtocolOutput<Inner, Retained> | null
+						: Schema extends z.ZodOptional<infer Inner>
+							? ProtocolOutput<Inner, Retained> | undefined
+							: Schema extends z.ZodUnion<infer Options>
+								? ProtocolOutput<Options[number], Retained>
+								: Schema extends z.core.$ZodType
+									? z.output<Schema>
+									: never;
 type Replace<Value, Fields extends object> = Value extends unknown
 	? Omit<Value, keyof Fields> & Fields
 	: never;
-type RawThread = ProtocolOutput<typeof ThreadSchema>;
-type RawTurn = ProtocolOutput<typeof TurnSchema>;
-type RawThreadItem = ProtocolOutput<typeof ThreadItemSchema>;
+type RawThread = ProtocolOutput<typeof ThreadSchema, true>;
+type RawTurn = ProtocolOutput<typeof TurnSchema, true>;
+type RawThreadItem = ProtocolOutput<typeof ThreadItemSchema, true>;
 type RawAgentMessageItem = Extract<RawThreadItem, { readonly type: "agentMessage" }>;
 type RawCollabAgentItem = Extract<RawThreadItem, { readonly type: "collabAgentToolCall" }>;
 type RawSubAgentActivityItem = Extract<RawThreadItem, { readonly type: "subAgentActivity" }>;
@@ -127,7 +145,7 @@ export type SessionThreadItem =
 	| SessionSubAgentActivityItem
 	| SessionOtherThreadItem;
 
-type RawThreadSource = ProtocolOutput<typeof SessionSourceSchema>;
+type RawThreadSource = ProtocolOutput<typeof SessionSourceSchema, true>;
 type RawNamedThreadSource = Extract<RawThreadSource, string>;
 type RawCustomThreadSource = Extract<RawThreadSource, { readonly custom: unknown }>;
 type RawSubAgentThreadSource = Extract<RawThreadSource, { readonly subAgent: unknown }>;
@@ -472,7 +490,8 @@ function collectThreadItem(value: unknown, identities: ResponseIdentityCollectio
 		identities.threadIds.push(value["senderThreadId"]);
 		if (Array.isArray(value["receiverThreadIds"]))
 			identities.threadIds.push(...value["receiverThreadIds"]);
-		if (isRecord(value["agentsStates"])) identities.threadIds.push(...Object.keys(value["agentsStates"]));
+		if (isRecord(value["agentsStates"]))
+			identities.threadIds.push(...Object.keys(value["agentsStates"]));
 	}
 	if (value["type"] === "subAgentActivity") identities.threadIds.push(value["agentThreadId"]);
 }
@@ -486,7 +505,11 @@ function collectTurn(value: unknown, identities: ResponseIdentityCollection): vo
 }
 
 function collectThreadSource(value: unknown, identities: ResponseIdentityCollection): void {
-	if (!isRecord(value) || !isRecord(value["subAgent"]) || !isRecord(value["subAgent"]["thread_spawn"]))
+	if (
+		!isRecord(value) ||
+		!isRecord(value["subAgent"]) ||
+		!isRecord(value["subAgent"]["thread_spawn"])
+	)
 		return;
 	identities.threadIds.push(value["subAgent"]["thread_spawn"]["parent_thread_id"]);
 }
@@ -620,7 +643,11 @@ function brandTurn(value: Record<string, unknown>, maps: ResponseIdentityMaps): 
 }
 
 function brandThreadSource(value: unknown, maps: ResponseIdentityMaps): unknown {
-	if (!isRecord(value) || !isRecord(value["subAgent"]) || !isRecord(value["subAgent"]["thread_spawn"]))
+	if (
+		!isRecord(value) ||
+		!isRecord(value["subAgent"]) ||
+		!isRecord(value["subAgent"]["thread_spawn"])
+	)
 		return value;
 	return {
 		...value,
@@ -639,7 +666,8 @@ function brandThread(value: Record<string, unknown>, maps: ResponseIdentityMaps)
 		...value,
 		id: maps.threadIds.get(value["id"]),
 		forkedFromId: value["forkedFromId"] === null ? null : maps.threadIds.get(value["forkedFromId"]),
-		parentThreadId: value["parentThreadId"] === null ? null : maps.threadIds.get(value["parentThreadId"]),
+		parentThreadId:
+			value["parentThreadId"] === null ? null : maps.threadIds.get(value["parentThreadId"]),
 		source: brandThreadSource(value["source"], maps),
 		turns: Array.isArray(value["turns"])
 			? value["turns"].map((turn) => brandTurn(turn as Record<string, unknown>, maps))
@@ -671,7 +699,10 @@ function brandResponse(kind: ResponseIdentityKind, payload: unknown, maps: Respo
 				: payload;
 		case "thread-start":
 		case "thread":
-			return { ...payload, thread: brandThread(payload["thread"] as Record<string, unknown>, maps) };
+			return {
+				...payload,
+				thread: brandThread(payload["thread"] as Record<string, unknown>, maps),
+			};
 		case "thread-page":
 			return {
 				...payload,
@@ -708,7 +739,9 @@ function brandResponse(kind: ResponseIdentityKind, payload: unknown, maps: Respo
 		case "queue-page":
 			return {
 				...payload,
-				data: (payload["data"] as Record<string, unknown>[]).map((queued) => brandQueue(queued, maps)),
+				data: (payload["data"] as Record<string, unknown>[]).map((queued) =>
+					brandQueue(queued, maps),
+				),
 			};
 		case "none":
 		case "raw-realtime":

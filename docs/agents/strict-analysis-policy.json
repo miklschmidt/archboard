@@ -13,7 +13,8 @@
 				"TurnId",
 				"OperationId",
 				"DynamicToolCallId",
-				"JsonRpcRequestId"
+				"JsonRpcRequestId",
+				"ItemId"
 			],
 			"path": "src/shared/codex-workbench-identity/lib/identity.ts"
 		},

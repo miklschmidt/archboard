@@ -147,6 +147,7 @@
 							"OperationId",
 							"DynamicToolCallId",
 							"JsonRpcRequestId",
+							"ItemId",
 						],
 						"path": "src/shared/codex-workbench-identity/lib/identity.ts",
 					},
