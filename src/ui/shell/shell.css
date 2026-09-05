@@ -293,7 +293,6 @@
 	border-radius: var(--arch-radius-control);
 	color: var(--muted);
 	background: var(--surface-soft);
-	font: var(--arch-weight-semibold) var(--type-body) var(--font-ui);
 	letter-spacing: 0;
 	white-space: nowrap;
 }

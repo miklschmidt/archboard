@@ -11,10 +11,10 @@ import { projectWorkbenchCoordinator } from "./projection.js";
 function DisclosureField({ item }: { readonly item: WorkbenchCoordinatorField }): ReactNode {
 	return (
 		<div className="grid min-w-0 grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-control py-control">
-			<dt className="font-sans text-body text-muted-foreground">{item.label}</dt>
+			<dt className="font-sans text-sm text-muted-foreground">{item.label}</dt>
 			<dd
 				className={cn(
-					"m-0 min-w-0 font-sans text-body break-words",
+					"m-0 min-w-0 font-sans text-sm break-words",
 					item.state === "fallback" ? "text-warning" : "text-foreground",
 				)}
 			>
@@ -32,7 +32,7 @@ function DisclosureSection({ value }: { readonly value: WorkbenchCoordinatorSect
 			className="min-w-0 border-t border-border-subtle pt-control"
 			aria-labelledby={headingId}
 		>
-			<h3 className="m-0 font-sans text-body font-semibold" id={headingId}>
+			<h3 className="m-0 font-sans text-sm font-semibold" id={headingId}>
 				{value.label}
 			</h3>
 			<dl className="m-0">
@@ -57,7 +57,7 @@ export function WorkbenchCoordinatorDisclosure({
 			data-coordinator-state={projected.status.state}
 		>
 			<output
-				className="m-0 block pb-region text-body text-muted-foreground"
+				className="m-0 block pb-region text-sm text-muted-foreground"
 				aria-live="polite"
 				aria-atomic="true"
 				aria-label={`Coordinator status: ${projected.status.label}`}

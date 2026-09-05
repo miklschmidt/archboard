@@ -189,9 +189,17 @@ export function BoardDialog({
 										disabled={busy}
 									>
 										<span className="board-row-key">{entry.key}</span>
-										{entry.onScreen && <span className="chip chip-quiet">on screen</span>}
-										{!entry.onScreen && entry.open && <span className="chip chip-quiet">open</span>}
-										{!entry.inVault && <span className="chip chip-quiet">unsaved</span>}
+										{entry.onScreen && (
+											<span className="chip chip-quiet font-sans text-sm font-medium">
+												on screen
+											</span>
+										)}
+										{!entry.onScreen && entry.open && (
+											<span className="chip chip-quiet font-sans text-sm font-medium">open</span>
+										)}
+										{!entry.inVault && (
+											<span className="chip chip-quiet font-sans text-sm font-medium">unsaved</span>
+										)}
 									</button>
 								</li>
 							))}
