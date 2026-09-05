@@ -12,22 +12,36 @@ try {
 			? { startupDelayMs: TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS * 5 }
 			: {}),
 	});
-	if (delayedStartup) await owner.pendingSentinelOwnership();
+	if (delayedStartup) {
+		await owner.pendingSentinelOwnership();
+	}
 	const sentinelIdentity = owner.pendingSentinelIdentity();
-	if (!sentinelIdentity) throw new Error("Package signal owner did not capture sentinel identity.");
+	if (sentinelIdentity === undefined) {
+		throw new Error("Package signal owner did not capture sentinel identity.");
+	}
 	const sentinel = delayedStartup ? undefined : await startingSentinel;
 	const fixtures = delayedStartup ? [] : [owner.startSignalFixture(), owner.startSignalFixture()];
-	const identities = await Promise.all(fixtures.map((fixture) => fixture.ready));
+	const ready: Promise<unknown>[] = [];
+	for (const fixture of fixtures) {
+		ready.push(fixture.ready);
+	}
+	const identities = await Promise.all(ready);
 	owner.onSignalCaptured((signal) => {
 		capturedSignals += 1;
-		if (capturedSignals === 1) process.kill(process.pid, signal);
+		if (capturedSignals === 1) {
+			process.kill(process.pid, signal);
+		}
 	});
 	owner.onBeforeSignalReplay(() => {
+		const settlements: unknown[] = [];
+		for (const fixture of fixtures) {
+			settlements.push(fixture.settled());
+		}
 		process.stdout.write(
 			`${JSON.stringify({
 				shutdown: true,
 				capturedSignals,
-				settlements: fixtures.map((fixture) => fixture.settled()),
+				settlements,
 				remainingArtifacts: owner.artifactPaths(),
 			})}\n`,
 		);
@@ -41,8 +55,14 @@ try {
 			artifacts: owner.artifactPaths(),
 		})}\n`,
 	);
-	if (delayedStartup) await startingSentinel;
-	await Promise.all(fixtures.map((fixture) => fixture.result));
+	if (delayedStartup) {
+		await startingSentinel;
+	}
+	const results: Promise<unknown>[] = [];
+	for (const fixture of fixtures) {
+		results.push(fixture.result);
+	}
+	await Promise.all(results);
 	throw new Error("Package signal fixture completed without an interrupt.");
 } finally {
 	await owner.dispose();
