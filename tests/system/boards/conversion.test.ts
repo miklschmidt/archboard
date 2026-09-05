@@ -4,19 +4,20 @@ import os from "node:os";
 import path from "node:path";
 
 import { labelTextIdFor } from "../../../src/runtime/engine/labels.ts";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import type { OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 
 interface Element {
-	id: string;
-	type: string;
-	label?: unknown;
-	start?: unknown;
-	end?: unknown;
-	containerId?: string;
-	startBinding?: { elementId: string } | null;
-	endBinding?: { elementId: string } | null;
-	boundElements?: Array<{ id: string; type: string }>;
+	readonly id: string;
+	readonly type: string;
+	readonly label?: unknown;
+	readonly start?: unknown;
+	readonly end?: unknown;
+	readonly containerId?: string;
+	readonly startBinding?: { readonly elementId: string } | null;
+	readonly endBinding?: { readonly elementId: string } | null;
+	readonly boundElements?: readonly { readonly id: string; readonly type: string }[];
 }
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
@@ -30,7 +31,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-	await canvas?.dispose();
+	await canvas.dispose();
 });
 
 describe("write-boundary conversion", () => {
@@ -82,7 +83,10 @@ describe("write-boundary conversion", () => {
 		expect(board.body.elements.every((element) => element.label === undefined)).toBeTrue();
 		expect(board.body.elements.every((element) => element.start === undefined)).toBeTrue();
 		expect(board.body.elements.every((element) => element.end === undefined)).toBeTrue();
-		const edge = board.body.elements.find((element) => element.id === "edge")!;
+			const edge = board.body.elements.find((element) => element.id === "edge");
+			if (edge === undefined) {
+				throw new Error("Converted board did not retain its edge.");
+			}
 		expect(edge.startBinding?.elementId).toBe("left");
 		expect(edge.endBinding?.elementId).toBe("right");
 		for (const container of board.body.elements.filter((element) => element.boundElements)) {
