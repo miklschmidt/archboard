@@ -1,38 +1,48 @@
 // The bottom workbench dock: connection, claim and `doing` data in a header
-// row, and a body reserved for the thread (TASK-150.05).
+// row with a disclosure, and a body reserved for the thread (TASK-150.05).
 
 import { RiArrowDownSLine, RiArrowUpSLine } from "@remixicon/react";
 import { useCallback, useState } from "react";
 
 import { Button } from "@/ui/components/button";
 import { Collapsible, CollapsibleContent } from "@/ui/components/collapsible";
-import type { ShellPane } from "@/ui/shell/lib/contracts";
+import { agentClaim } from "@/ui/shell/lib/claim-banner";
+import type { ShellPane, TakeBackState } from "@/ui/shell/lib/contracts";
 import { StatusDot } from "@/ui/shell/lib/status-dot";
+import { clockTime } from "@/ui/shell/lib/time";
 import type { DoingEntry } from "@/ui/types";
 
-/** Inputs for the dock and its activity line. */
+/** How many `doing` lines the disclosure shows. */
+const DOING_LINES = 4;
+
+/** Inputs for the dock. */
 interface WorkbenchDockProps {
 	/** The pane the dock describes, or null when none is open. */
 	pane: ShellPane | null;
+	paneCount: number;
 }
 
 /**
- * The most recent `doing` line, which is the last entry.
+ * The last few `doing` lines, oldest first.
  * @param pane The pane, or null when none is open.
- * @returns The entry, or null when nobody has said anything.
+ * @returns At most `DOING_LINES` entries.
  */
-function latestDoing(pane: ShellPane | null): DoingEntry | null {
-	const entries = pane?.status.doing ?? [];
-	return entries.at(-1) ?? null;
+function recentDoing(pane: ShellPane | null): DoingEntry[] {
+	return (pane?.status.doing ?? []).slice(-DOING_LINES);
+}
+
+/** Inputs for the current activity line. */
+interface DoingLineProps {
+	entry: DoingEntry | null;
 }
 
 /**
- * The current activity line: what the agent said it was doing, and when.
- * @param props The pane.
+ * The current activity line: what was last said, and when.
+ * @param props The latest entry.
  * @returns The line, or a quiet placeholder.
  */
-function DoingLine(props: WorkbenchDockProps): React.JSX.Element {
-	const entry = latestDoing(props.pane);
+function DoingLine(props: DoingLineProps): React.JSX.Element {
+	const { entry } = props;
 	if (!entry) {
 		return <span className="text-muted-foreground text-sm">Nothing in progress</span>;
 	}
@@ -40,21 +50,147 @@ function DoingLine(props: WorkbenchDockProps): React.JSX.Element {
 		<span className="flex min-w-0 items-baseline gap-2 text-sm">
 			<span className="truncate">{entry.doing}</span>
 			<time dateTime={entry.at} className="text-muted-foreground shrink-0 font-mono text-xs">
-				{entry.at.slice(11, 19)}
+				{clockTime(entry.at)}
 			</time>
 		</span>
 	);
 }
 
+/** Inputs for the `doing` history. */
+interface DoingHistoryProps {
+	entries: readonly DoingEntry[];
+}
+
+/**
+ * The last few `doing` lines, oldest first, each naming who said it.
+ * @param props The entries.
+ * @returns A list, or nothing when nobody has said anything.
+ */
+function DoingHistory(props: DoingHistoryProps): React.JSX.Element | null {
+	if (props.entries.length === 0) {
+		return null;
+	}
+	return (
+		<ol aria-label="Recent activity" className="flex flex-col gap-1 px-3 py-2 text-sm">
+			{props.entries.map((entry) => (
+				<li key={`${entry.by}:${entry.at}`} className="flex items-baseline gap-2">
+					<time dateTime={entry.at} className="text-muted-foreground shrink-0 font-mono text-xs">
+						{clockTime(entry.at)}
+					</time>
+					<span className="text-muted-foreground shrink-0 text-xs">
+						{entry.kind === "agent" ? "agent" : "human"}
+					</span>
+					<span className="truncate">{entry.doing}</span>
+				</li>
+			))}
+		</ol>
+	);
+}
+
+/** Inputs for the take-back state line. */
+interface TakeBackLineProps {
+	state: TakeBackState;
+}
+
+/**
+ * Where the take-back operation stands, when it is not idle.
+ * @param props The state.
+ * @returns A short line, or nothing while idle.
+ */
+function TakeBackLine(props: TakeBackLineProps): React.JSX.Element | null {
+	const { state } = props;
+	if (state.kind === "idle") {
+		return null;
+	}
+	return (
+		<span
+			className={
+				state.kind === "failed" ? "text-destructive text-xs" : "text-muted-foreground text-xs"
+			}
+		>
+			{state.kind === "failed" ? state.message : "Taking back control"}
+		</span>
+	);
+}
+
+/** Inputs for the activity dot. */
+interface ActivityDotProps {
+	connected: boolean;
+	/** A claimed agent is working: the dot pulses, unless motion is reduced. */
+	active: boolean;
+}
+
+/**
+ * The dock's state dot: lime while connected, pulsing while an agent works.
+ * @param props Connection and activity.
+ * @returns The dot.
+ */
+function ActivityDot(props: ActivityDotProps): React.JSX.Element {
+	return (
+		<StatusDot
+			tone={props.connected ? "live" : "idle"}
+			className={props.active ? "motion-safe:animate-pulse" : undefined}
+		/>
+	);
+}
+
 /**
  * The workbench dock.
- * @param props The pane the dock describes.
+ * @param props The pane the dock describes and the pane count.
+ * @returns The collapsible dock.
+ */
+/** Inputs for the dock's state cluster. */
+interface DockStateProps {
+	pane: ShellPane | null;
+	paneCount: number;
+}
+
+/**
+ * The dot, the title and the latest `doing` line.
+ * @param props The pane and the pane count.
+ * @returns The left part of the dock header.
+ */
+function DockActivity(props: DockStateProps): React.JSX.Element {
+	const { pane } = props;
+	const claim = pane ? agentClaim(pane.holder) : null;
+	return (
+		<>
+			<ActivityDot connected={pane?.status.connected === true} active={claim !== null} />
+			<span className="shrink-0 text-[11px] font-medium tracking-wide uppercase">
+				Agent workbench
+			</span>
+			<DoingLine entry={recentDoing(pane).at(-1) ?? null} />
+		</>
+	);
+}
+
+/**
+ * The take-back state and the pane count.
+ * @param props The pane and the pane count.
+ * @returns The right part of the dock header.
+ */
+function DockCounts(props: DockStateProps): React.JSX.Element {
+	const { pane, paneCount } = props;
+	return (
+		<>
+			{pane && <TakeBackLine state={pane.takeBack} />}
+			<span className="text-muted-foreground shrink-0 text-xs">
+				<span className="font-mono">{paneCount}</span> {paneCount === 1 ? "pane" : "panes"}
+			</span>
+		</>
+	);
+}
+
+/**
+ * The workbench dock.
+ * @param props The pane the dock describes and the pane count.
  * @returns The collapsible dock.
  */
 function WorkbenchDock(props: WorkbenchDockProps): React.JSX.Element {
+	const { pane, paneCount } = props;
 	const [open, setOpen] = useState(true);
 	const handleToggle = useCallback(() => setOpen((value) => !value), []);
-	const connected = props.pane?.status.connected === true;
+	const entries = recentDoing(pane);
 	return (
 		<Collapsible
 			open={open}
@@ -62,10 +198,9 @@ function WorkbenchDock(props: WorkbenchDockProps): React.JSX.Element {
 			className="border-border bg-background shrink-0 border-t"
 		>
 			<div className="flex h-10 items-center gap-3 px-3">
-				<StatusDot tone={connected ? "live" : "idle"} />
-				<span className="text-[11px] font-medium tracking-wide uppercase">Agent workbench</span>
-				<DoingLine pane={props.pane} />
+				<DockActivity pane={pane} paneCount={paneCount} />
 				<span className="flex-1" />
+				<DockCounts pane={pane} paneCount={paneCount} />
 				<Button
 					variant="ghost"
 					size="icon-xs"
@@ -77,9 +212,12 @@ function WorkbenchDock(props: WorkbenchDockProps): React.JSX.Element {
 				</Button>
 			</div>
 			<CollapsibleContent>
+				<div className="border-border border-t">
+					<DoingHistory entries={entries} />
+				</div>
 				<section
 					aria-label="Workbench thread"
-					className="border-border text-muted-foreground flex h-40 items-center justify-center border-t text-sm"
+					className="border-border text-muted-foreground flex h-36 items-center justify-center border-t text-sm"
 				>
 					Workbench presentation arrives with the text and voice workbench.
 				</section>
