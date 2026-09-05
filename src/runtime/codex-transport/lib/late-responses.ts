@@ -1,14 +1,25 @@
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 import { decodeJsonRpcError, decodeResponseEnvelope } from "../../codex-protocol/index.js";
 import type { RequestTombstone } from "./internals.js";
-import type { TransportIssue, TransportLateResponse } from "./types.js";
+import type {
+	TransportIssue,
+	TransportLateResponse,
+	TransportLateResponseFor,
+} from "./types.js";
+import type { ResponseMethod } from "../../codex-protocol/index.js";
 import { cloneAndFreeze, jsonByteLength } from "./public-values.js";
+
+type RetainedTombstone = Readonly<
+	Omit<RequestTombstone, "correlation"> & {
+		readonly correlation: Readonly<RequestTombstone["correlation"]>;
+	}
+>;
 
 function redactError(error: {
 	readonly code: number;
 	readonly message: string;
 	readonly data?: unknown;
-}) {
+}): Readonly<{ code: number; message: string; dataPresent: boolean }> {
 	const maximum = CODEX_APP_SERVER_CAPACITY.text.maxChars;
 	const suffix = "...";
 	return Object.freeze({
@@ -17,21 +28,31 @@ function redactError(error: {
 			error.message.length > maximum
 				? `${error.message.slice(0, maximum - suffix.length)}${suffix}`
 				: error.message,
-		dataPresent: Object.prototype.hasOwnProperty.call(error, "data"),
+	dataPresent: Object.hasOwn(error, "data"),
 	});
 }
 
-export interface LateResponseStore {
-	readonly values: TransportLateResponse[];
-	readonly retain: (tombstone: RequestTombstone, value: Record<string, unknown>) => void;
+interface LateResponseStore {
+	readonly values: readonly TransportLateResponse[];
+	// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- Method preserves the request/response payload correlation checked during retention.
+	readonly retain: <Method extends ResponseMethod>(
+		// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- The tombstone is shallow-readonly plus a readonly branded correlation; this store only copies it.
+		tombstone: RetainedTombstone & { readonly method: Method },
+		value: Readonly<Record<string, unknown>>,
+	) => void;
 }
 
-export function createLateResponseStore(
-	emitIssue: (issue: TransportIssue) => void,
+function createLateResponseStore(
+	emitIssue: (issue: Readonly<TransportIssue>) => void,
 ): LateResponseStore {
 	const values: TransportLateResponse[] = [];
 
-	const retain = (tombstone: RequestTombstone, value: Record<string, unknown>): void => {
+	// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- Method preserves the request/response payload correlation checked during retention.
+	const retain = <Method extends ResponseMethod>(
+		// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- The tombstone is shallow-readonly plus a readonly branded correlation; this function only projects it.
+		tombstone: RetainedTombstone & { readonly method: Method },
+		value: Readonly<Record<string, unknown>>,
+	): void => {
 		const common = {
 			outcome: tombstone.settlement === "delivered" ? "duplicate" : "outcome_unknown",
 			method: tombstone.method,
@@ -41,9 +62,9 @@ export function createLateResponseStore(
 			retryEligible: tombstone.retryEligible,
 			...(tombstone.reason === undefined ? {} : { reason: tombstone.reason }),
 		} as const;
-		let late: TransportLateResponse;
-		const hasResult = Object.prototype.hasOwnProperty.call(value, "result");
-		const hasError = Object.prototype.hasOwnProperty.call(value, "error");
+		let late: TransportLateResponseFor<Method>;
+		const hasResult = Object.hasOwn(value, "result");
+		const hasError = Object.hasOwn(value, "error");
 		if (hasResult && !hasError) {
 			try {
 				const result = cloneAndFreeze(decodeResponseEnvelope(tombstone.method, value).result);
@@ -54,32 +75,33 @@ export function createLateResponseStore(
 								...common,
 								kind: "redacted",
 								payload: { reason: "retained-size", byteLength: resultBytes },
-							} as TransportLateResponse)
-						: ({ ...common, kind: "result", payload: result } as TransportLateResponse);
+							})
+						: { ...common, kind: "result", payload: result };
 			} catch {
 				late = {
 					...common,
 					kind: "malformed",
 					payload: { reason: "response-schema" },
-				} as TransportLateResponse;
+				};
 			}
 		} else if (hasError && !hasResult) {
 			try {
-				const error = decodeJsonRpcError(value, tombstone.method).error;
-				late = { ...common, kind: "error", payload: redactError(error) } as TransportLateResponse;
+				const { error } = decodeJsonRpcError(value, tombstone.method);
+				late = { ...common, kind: "error", payload: redactError(error) };
 			} catch {
 				late = {
 					...common,
 					kind: "malformed",
 					payload: { reason: "response-schema" },
-				} as TransportLateResponse;
+				};
 			}
-		} else
+		} else {
 			late = {
 				...common,
 				kind: "malformed",
 				payload: { reason: "response-schema" },
-			} as TransportLateResponse;
+			};
+		}
 
 		const frozen = cloneAndFreeze(late);
 		const recordBytes = jsonByteLength(frozen);
@@ -92,10 +114,15 @@ export function createLateResponseStore(
 				...(common.reason === undefined ? {} : { reason: common.reason }),
 				kind: "redacted",
 				payload: { reason: "retained-size", byteLength: recordBytes },
-			} as TransportLateResponse;
+			};
 		}
-		if (values.length >= CODEX_APP_SERVER_CAPACITY.retention.lateResponses) values.shift();
-		values.push(cloneAndFreeze(late));
+		if (values.length >= CODEX_APP_SERVER_CAPACITY.retention.lateResponses) {
+			values.shift();
+		}
+		// `late` is already checked as the exact method-indexed member; TypeScript cannot
+		// collapse that generic member back into the equivalent mapped union.
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Bridges only that distributive-union limitation after method-specific construction.
+		values.push(cloneAndFreeze(late) as TransportLateResponse);
 		emitIssue({
 			kind: "duplicate-response",
 			direction: "response",
@@ -107,3 +134,6 @@ export function createLateResponseStore(
 
 	return Object.freeze({ values, retain });
 }
+
+export { createLateResponseStore };
+export type { LateResponseStore };
