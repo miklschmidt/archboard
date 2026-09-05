@@ -42,11 +42,14 @@ marker in review evidence. Replace the vault and state paths with `<vault>` and
 ## 2. Run the deterministic gates
 
 Install once if this is a clean worktree, then run only these focused owners.
-Each command has a 25-second outer limit, including its own cleanup. A timeout,
+Each focused test command has a 25-second limit before termination, followed by
+at most five seconds for forced cleanup. Installation and the frontend build
+are separate prerequisites. A timeout,
 signal, prerequisite refusal, or nonzero exit is a failed gate, not a pass.
 
 ```bash
 bun install
+bun run build
 test "$(node_modules/.bin/codex --version)" = "codex-cli 0.151.0"
 
 timeout -k 5s 25s bun test \
@@ -56,6 +59,7 @@ timeout -k 5s 25s bun test \
 
 timeout -k 5s 25s bun test \
   src/server/codex-workbench/tests/sequenced-delivery.test.ts \
+  src/server/canvas/tests/codex-workbench-text-actions.test.ts \
   src/ui/workbench-transport/tests/stream-reduction.test.ts \
   src/ui/workbench-composer/tests/mounted-composer.test.tsx
 
@@ -159,15 +163,20 @@ Use a 1920×1080 desktop viewport. Open the real desktop browser through the pub
 In the browser:
 
 1. Expand the Agent drawer. Confirm the board name matches `$accept_board`, then open `Settings`.
-2. Confirm `Codex account: Signed in`. If it is signed out, choose `Hosted
-ChatGPT`, press `Sign in`, and finish the hosted flow. Do not copy the URL or
-   any account detail into evidence.
+2. Confirm the `Account` section says `Signed in`. If signed out, leave the
+   default `ChatGPT` option selected, press `Sign in`, then use `Continue to
+ChatGPT` to finish signing in. Wait for `Signed in` in Archboard; a login
+   command notification alone is not proof of completion. Do not copy the URL
+   or account details into evidence.
 3. Confirm `Start agent` is enabled. If it is unavailable, resolve the reason
    shown in settings before continuing.
 4. Press `Start agent`. Settings closes and the message composer receives focus.
    Reopen `Settings` and expand `Conversation details` and `Coordinator details`
    to inspect the linked identities. Record them only as `present`; do not copy
    their opaque values. Close settings to return to the conversation.
+
+A newly created conversation may have no history until its first message.
+An empty history alone is not a failed link.
 
 There must be one browser, one pane, one linked workhorse, and one coordinator.
 Do not open a second pane or server.
@@ -198,8 +207,17 @@ and visible error text.
 
 ## 6. Prove real microphone and speaker audio
 
-Press `Start voice on this pane` and grant the browser microphone permission if
-asked. Do not use virtual devices. Say:
+Before starting, confirm that the operating system has a connected default
+microphone and an audible output device. In particular, a disconnected USB
+microphone can remain the configured default. On a PipeWire desktop,
+`wpctl status` and `wpctl inspect @DEFAULT_AUDIO_SOURCE@` can identify this
+problem; inspect locally without retaining device details. Select the intended
+physical input in system audio settings or reconnect it.
+
+Press `Start voice` in the Agent drawer and grant microphone permission if
+asked. If the browser reports `Requested device not found`, stop the failed
+session, repair the default input, and start again. Successful SDP negotiation
+does not prove microphone capture. Do not use virtual devices. Say:
 
 ```text
 What is the first heading in TESTING.md, and which board are we viewing? Answer in one short sentence.
@@ -207,7 +225,8 @@ What is the first heading in TESTING.md, and which board are we viewing? Answer 
 
 Open the `Voice` disclosure for transcript and context. Confirm all of these by direct observation:
 
-- the live meter reacts to your real voice;
+- the live meter reacts to your real voice when reduced motion is off (the
+  supplemental meter is intentionally hidden with reduced motion);
 - your final words appear once in the voice transcript;
 - a relevant answer is audible through the real speaker;
 - the same answer appears once in the coordinator transcript;
@@ -293,7 +312,7 @@ must raise a new approval; never repeat an approval whose outcome is unknown.
 
 ## 10. Stop, start a new voice session, and shut down
 
-1. Press the visible `Stop voice` control. Confirm the meter stops, the active
+1. Press the visible `Stop voice` control. Confirm the meter disappears if shown, the active
    audio transport disappears, and the text workbench remains usable.
 2. Press `Start voice` again. Say `Reply with the word restarted.` Confirm one
    new final user item and one audible `restarted` response.
@@ -306,8 +325,9 @@ must raise a new approval; never repeat an approval whose outcome is unknown.
 ./bin/canvas status
 ```
 
-The final status must be stopped. The guarded stop must not report held work,
-an app-server child, or a browser media owner left behind. Keep the dedicated
+The final status must be stopped. The guarded stop must complete without held work. Confirm the owned app-server
+child exits and the browser microphone indicator is gone; CLI status alone
+does not prove browser media cleanup. Keep the dedicated
 Codex roots because they contain the supported sign-in. Remove only the exact
 disposable vault after validating its prefix:
 
