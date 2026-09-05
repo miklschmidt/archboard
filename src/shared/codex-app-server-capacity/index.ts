@@ -23,9 +23,9 @@ export const CODEX_APP_SERVER_CAPACITY = Object.freeze({
 		requestTombstones: 256,
 		completedReverseIds: 256,
 		lateResponses: 128,
-		lateResponseRecordBytes: 4_096,
+		lateResponseRecordBytes: 4096,
 		issues: 256,
-		issueRecordBytes: 2_048,
+		issueRecordBytes: 2048,
 	}),
 	listenersPerEvent: 1,
 } as const);

@@ -34,7 +34,7 @@ const DeliveryOutcomeSchema = z.enum(["delivered", "not_delivered", "outcome_unk
 const BROWSER_THREAD_CANDIDATE_LIMIT = 40;
 /** Exact callback JSON is retained up to the callback encoder's wire contract. */
 const BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES = 32_768;
-const BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES = 8_192;
+const BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES = 8192;
 const BROWSER_VOICE_CONTEXT_ENTRY_LIMIT = 64;
 const BROWSER_PERMISSION_FILE_ACCESS = {
 	deny: "deny",
@@ -878,7 +878,7 @@ function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContex
 		.strict();
 	const BrowserVoiceContextEntryBaseSchema = z
 		.object({
-			id: boundedText(2_048),
+			id: boundedText(2048),
 			kind: z.enum(["semantic", "focus", "selection", "callback"]),
 			sourceOrder: z.number().int().nonnegative(),
 			capturedAtMs: TimestampSchema,
@@ -920,7 +920,7 @@ function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContex
 		.object({
 			kind: z.literal("voice_context"),
 			sessionId: BrowserRealtimeSessionIdSchema,
-			ledgerId: boundedText(2_048),
+			ledgerId: boundedText(2048),
 			canonicalBrief: boundedText(BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES),
 			ownerEntriesTruncated: z.number().int().nonnegative(),
 			entriesTruncated: z.number().int().nonnegative(),
