@@ -30,10 +30,12 @@ Desktop-sized touch interaction for the Samsung Flip remains supported.
 ## UI visual authority
 
 Every UI-design or UI-implementation worker must read
-`docs/design/archboard-ui-aesthetics.md` before changing rendered Archboard UI.
-The TASK-140 operator canvas shell reference and its light/dark mockup, together
-with that guide, are the visual authority. Keep UI code boundaries and
-verification requirements in their existing documents.
+`docs/design/operator-canvas-shell.md` and inspect
+`docs/design/assets/operator-canvas-shell.png` before changing rendered Archboard
+UI. For board navigation, also inspect the approved sidebar reference at
+`docs/design/assets/operator-sidebar-reference.png`. These references are the
+visual authority. Keep UI code boundaries and verification requirements in their
+existing documents.
 
 ## Upstream
 
