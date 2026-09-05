@@ -30,6 +30,7 @@ import type {
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import { captureShellRenderMatrix } from "./support/shell-render-matrix.ts";
 import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
+import { assertCoordinatorSettingsLayout } from "./support/coordinator-settings-layout.ts";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
@@ -357,6 +358,8 @@ test(
 		expect(notice.actionHeight).toBeGreaterThanOrEqual(43.5);
 		expect(notice.dismissHeight).toBeGreaterThanOrEqual(43.5);
 		expect(notice.flat).toBe(true);
+		await roleAction(browser, "button", "Settings");
+		await assertCoordinatorSettingsLayout(browser, "unavailable");
 	},
 	TEST_BROWSER_COMMAND_TIMEOUT_MS * 2,
 );
